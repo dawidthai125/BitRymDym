@@ -6,9 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-26 — PHASE 1.5 — COMPLETE / LOCKED
+
+**Status:** COMPLETE / COMMITTED / PUSHED — `0ec0be0` on `main` / `origin/main`
+
+- Commit: `0ec0be0` — `feat(audio): complete phase 1.5 private storage and access gate`
+- Design Freeze: `0e5c491`
+- Migration `20260925220000_phase_1_5_audio_storage.sql` / live `phase_1_5_audio_storage`
+- Private bucket `beat-audio`; `beat_audio_assets`; Access Gate; signed URL PLAYBACK 120s / DOWNLOAD 300s
+- Unit 28/28; live Storage/RLS/signed URL PASS; pre-commit audit PASS
+- OD-12 remains OPEN; player/limits/Quick Take/community/payments out of scope
+- Next: Phase 1.6 Cold-Start Audit
+
+---
+
 ## 2026-09-26 — PHASE 1.5 — PRIVATE AUDIO STORAGE + ACCESS GATE (IMPLEMENTATION)
 
-**Status:** READY FOR PRE-COMMIT AUDIT (no commit/push)
+**Status:** superseded by COMPLETE / LOCKED entry above (`0ec0be0`)
 
 - Migration `20260925220000_phase_1_5_audio_storage.sql` applied live (`phase_1_5_audio_storage`)
 - Private bucket `beat-audio`; table `beat_audio_assets`; no audio columns on `beats`

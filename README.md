@@ -10,10 +10,10 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 |---------|---------|
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
-| Faza | 1 — Fundament (**Phase 1.5 audio Storage/Access Gate** LIVE VERIFIED, pre-commit) |
+| Faza | 1 — Fundament (**Phase 1.5 COMPLETE / LOCKED** @ `0ec0be0`) |
 | Płatności / Premium | wyłączone |
-| Application | Auth + Profiles + Roles + Permissions + Beats metadata + **private beat-audio Access Gate** |
-| Next | Phase 1.5 pre-commit → Phase 1.6 player planning (**NOT STARTED**) |
+| Application | Auth + Profiles + Roles + Permissions + Beats metadata + private `beat-audio` Access Gate |
+| Next | Phase 1.6 Cold-Start Audit — **NOT STARTED** |
 
 ## Nowy agent — start tutaj
 

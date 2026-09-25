@@ -70,6 +70,6 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Storage/Access Gate (1.5 LIVE VERIFIED, pre-commit).
-**Canonical Design Freeze:** `0e5c491`.
-**Audio UI / limits / Quick Take / payments:** **NOT STARTED**.
+**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Storage/Access Gate (1.5 COMPLETE / LOCKED @ `0ec0be0`).
+**Canonical baseline:** `main` @ `0ec0be0`.
+**Next:** Phase 1.6 Cold-Start Audit — **NOT STARTED**.

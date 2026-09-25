@@ -383,9 +383,9 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.5 — PRIVATE AUDIO STORAGE + ACCESS GATE — IMPLEMENTED / LIVE VERIFIED
-Design Freeze locked: 0e5c491
-Next: PRE-COMMIT AUDIT → commit/push → PHASE 1.6 PLANNING
+PHASE 1.5 — PRIVATE AUDIO STORAGE + ACCESS GATE — COMPLETE / LOCKED
+Canonical: main @ 0ec0be0
+Next: PHASE 1.6 COLD-START AUDIT / DESIGN FREEZE (not started)
 ```
 
 ### IMPLEMENTED / LOCKED
@@ -393,14 +393,13 @@ Next: PRE-COMMIT AUDIT → commit/push → PHASE 1.6 PLANNING
 - Auth / profiles / roles / permissions / account levels (Phase 1.3)
 - Beats metadata domain (Phase 1.4 @ `6cb1e9a`)
 - Phase 1.5 Design Freeze (@ `0e5c491`)
-
-### IMPLEMENTED / LIVE VERIFIED (Phase 1.5 — uncommitted)
-- Private Storage bucket `beat-audio`
-- `beat_audio_assets` + RLS + privilege triggers
-- Server-mediated ADMIN PLATFORM upload/replace/archive
-- Access Gate (`requestBeatAudioAccess`) — anon / auth / admin paths
-- Signed URL PLAYBACK 120s / DOWNLOAD 300s
-- Interim MIME allow-list + 50 MiB (OD-12 remains OPEN)
+- Private Storage + Access Gate (Phase 1.5 @ `0ec0be0`)
+  - Private bucket `beat-audio`
+  - `beat_audio_assets` + RLS + privilege triggers
+  - Server-mediated ADMIN PLATFORM upload/replace/archive
+  - Access Gate (`requestBeatAudioAccess`) — anon / auth / admin paths
+  - Signed URL PLAYBACK 120s / DOWNLOAD 300s
+  - Interim MIME allow-list + 50 MiB (OD-12 remains OPEN)
 
 ### PLANNED (not started)
 - Custom player (1.6), download limits (1.7), Quick Take (1.8), tracks, payments

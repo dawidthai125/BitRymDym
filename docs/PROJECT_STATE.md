@@ -24,29 +24,31 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| HEAD (committed baseline before 1.5 impl) | `0e5c491` (Design Freeze) |
-| Working tree | **DIRTY** — Phase 1.5 implementation present, **uncommitted** (pre-commit audit) |
+| HEAD | `0ec0be0` |
+| Remote | `origin/main` = `0ec0be0` |
+| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
 Phase 1.4 lock: `6cb1e9a` / docs `ec32b97`.
 Phase 1.5 Design Freeze: `0e5c491`.
+Phase 1.5 implementation: `0ec0be0` — `feat(audio): complete phase 1.5 private storage and access gate`.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.5 AUDIO STORAGE — IMPLEMENTED / LIVE VERIFIED — READY FOR PRE-COMMIT AUDIT
+FOUNDATION — PHASE 1.5 COMPLETE / LOCKED — READY FOR PHASE 1.6 COLD-START AUDIT
 ```
 
 | Etap | Status |
 |------|--------|
 | 1.0–1.4 | **LOCKED** on main |
 | 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
-| 1.5 Implementation | **IMPLEMENTED / LIVE VERIFIED** — awaiting pre-commit / Owner commit |
+| 1.5 Implementation | **COMPLETE / CLOSED / LOCKED** @ `0ec0be0` |
 | 1.6+ | **NOT STARTED** |
 
-**Phase 1.5 scope:** Private `beat-audio` bucket + `beat_audio_assets` + Access Gate signed URLs.
+**Phase 1.5 delivered:** Private `beat-audio` bucket + `beat_audio_assets` + Access Gate (signed URLs).
 **Out of 1.5:** Player, download limits, Quick Take, community upload, watermark, payments.
 **OD-12 remains OPEN** (interim MIME allow-list only).
 
@@ -63,16 +65,19 @@ FOUNDATION — PHASE 1.5 AUDIO STORAGE — IMPLEMENTED / LIVE VERIFIED — READY
 
 ## 5. Verification status
 
-### Phase 1.5 (this session)
+### Phase 1.5 (locked)
 
 | Layer | Status |
 |-------|--------|
-| Migration applied (live) | **PASS** — `phase_1_5_audio_storage` |
-| Private bucket `beat-audio` | **PASS** |
-| Unit tests | **PASS** (28) |
-| Live Storage/RLS/signed URL | **PASS** |
-| Lint / typecheck / build | **PASS** |
-| Commit / push | **NOT DONE** |
+| Migration | **PASS** — `phase_1_5_audio_storage` / `20260925220000_phase_1_5_audio_storage.sql` |
+| Bucket | **PASS** — `beat-audio` PRIVATE |
+| Asset model | **PASS** — `beat_audio_assets` |
+| Access Gate | **PASS** — anon / auth / admin upload |
+| Signed URL TTL | **PASS** — PLAYBACK 120s · DOWNLOAD 300s |
+| Unit / live / lint / typecheck / build | **PASS** |
+| Pre-commit audit | **PASS** |
+| Commit / push | **PASS** (`0ec0be0` on `main` / `origin/main`) |
+| Phase lock | **LOCKED** |
 
 ---
 
@@ -85,7 +90,7 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ## 7. Current Blockers
 
-1. Owner pre-commit audit / commit of Phase 1.5 implementation
+1. Phase 1.6 Custom Player — Design Freeze / Owner GO required
 2. Operator must manually provision first ADMIN when admin features are required (OD-20)
 
 ---
@@ -96,7 +101,7 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 |--------|--------|
 | Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** |
 | Beats metadata domain | **COMPLETE / LOCKED** |
-| Private audio Storage + Access Gate | **IMPLEMENTED / LIVE VERIFIED** (uncommitted) |
+| Private audio Storage + Access Gate | **COMPLETE / LOCKED** (`0ec0be0`) |
 | Custom Player / Downloads limits / Quick Take / Payments | **NOT STARTED** |
 
 ---
@@ -105,14 +110,16 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.5 PRE-COMMIT AUDIT → COMMIT/PUSH (if approved) → PHASE 1.6 PLANNING (separate GO)
+PHASE 1.6 COLD-START AUDIT / DESIGN FREEZE (Owner / Architect GO required before implementation)
 ```
+
+Do not implement Phase 1.6 until an explicit Design Freeze + Owner GO.
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.5 Implementation GO (2026-09-26)
+**Sesja:** Phase 1.5 Commit → Push → Closeout (2026-09-26)
 
-**Done:** `beat_audio_assets` + private `beat-audio` + Access Gate + unit/live verification + docs draft.
-**Not done:** commit/push; Phase 1.6.
+**Done:** Phase 1.5 COMPLETE / LOCKED on `origin/main` @ `0ec0be0`.
+**Not done:** Phase 1.6.

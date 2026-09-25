@@ -155,7 +155,7 @@ Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implemen
 - Codec finalization (**OD-12 remains OPEN**)
 - Quick Take, community upload, watermark
 
-### Phase 1.5 audio assets (IMPLEMENTED / LIVE VERIFIED — uncommitted)
+### Phase 1.5 audio assets (COMPLETE / LOCKED @ `0ec0be0`)
 
 - Table: `public.beat_audio_assets` (no audio columns on `beats`)
 - Private bucket: `beat-audio`
@@ -163,6 +163,7 @@ Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implemen
 - Access Gate: anonymous / authenticated / admin upload paths
 - Signed URL TTL: PLAYBACK 120s · DOWNLOAD 300s
 - ADMIN PLATFORM upload only; USER community audio DENY
+- Migration: `20260925220000_phase_1_5_audio_storage.sql` (live: `phase_1_5_audio_storage`)
 
 ## 9. Verification
 
@@ -170,4 +171,4 @@ Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implemen
 |-------|--------|
 | Phase 1.4 metadata | **LOCKED** @ `6cb1e9a` |
 | Phase 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
-| Phase 1.5 Storage / Access Gate live | **PASS** (implementation pending commit) |
+| Phase 1.5 Storage / Access Gate | **LOCKED** @ `0ec0be0` — live **PASS** |

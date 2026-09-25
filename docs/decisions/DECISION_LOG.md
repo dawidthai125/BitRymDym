@@ -285,12 +285,13 @@ Prevents privilege escalation and accidental admin grant on first registration.
 | Pole | Wartość |
 |------|---------|
 | Title | Phase 1.5 Private Audio Storage + Controlled Access Gate |
-| Status | IMPLEMENTED / LIVE VERIFIED — awaiting commit |
+| Status | COMPLETE / CLOSED / LOCKED |
 | Date | 2026-09-26 |
 | Design Freeze | `0e5c491` — APPROVED / LOCKED |
+| Implementation commit | `0ec0be0` — `feat(audio): complete phase 1.5 private storage and access gate` |
 | Baseline before impl | `origin/main` @ `0e5c491` |
 
-**Frozen scope delivered (uncommitted code):**
+**Frozen scope delivered:**
 
 - Private bucket `beat-audio`
 - `beat_audio_assets` separate from `beats` metadata

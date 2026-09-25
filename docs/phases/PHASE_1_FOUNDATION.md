@@ -55,7 +55,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.2 | Scaffold projektu + bootstrap techniczny | 1.1 + Owner approval | **COMPLETED / LOCKED** |
 | 1.3 | Auth (Supabase) + Users / Roles / Permissions / Profiles | 1.2 | **COMPLETE / LOCKED** on `main` @ `efe3f71` — live Auth/RLS **PASS** |
 | 1.4 | Beats + metadata + statusy + max duration (server) | 1.3 | **COMPLETE / LOCKED** on `main` @ `6cb1e9a` — live Beats/RLS **PASS** |
-| 1.5 | Private audio storage + controlled playback/download access | 1.4; OD-12 częściowo | **IMPLEMENTED / LIVE VERIFIED** — Design Freeze `0e5c491`; impl uncommitted |
+| 1.5 | Private audio storage + controlled playback/download access | 1.4; OD-12 częściowo | **COMPLETE / LOCKED** on `main` @ `0ec0be0` — live Storage/Access Gate **PASS** |
 | 1.6 | Custom Player (playback UI) | 1.5; OD-15 może być roboczy | NOT STARTED |
 | 1.7 | Download permissions + limity (konfigurowalne) | 1.5; OD-05, OD-06, OD-17 | NOT STARTED |
 | 1.8 | Quick Take + temporary recordings + TTL | 1.6 | NOT STARTED |
@@ -76,7 +76,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - [ ] `payments_enabled` / `premium_enabled` = false.
 - [x] Testy krytycznych reguł serwerowych (Auth + beats metadata/RLS + audio Storage/Access Gate).
 
-**Cała Faza 1 ≠ COMPLETE** — ukończone: **1.0–1.4 LOCKED**; **1.5 IMPLEMENTED / LIVE VERIFIED** (awaiting commit). 1.6+ NOT STARTED.
+**Cała Faza 1 ≠ COMPLETE** — ukończone: **1.0–1.5 LOCKED** on `main` (`0ec0be0`). 1.6+ NOT STARTED.
 
 ---
 
@@ -89,7 +89,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.2 Application scaffold | **COMPLETED / LOCKED** (Owner APPROVED) |
 | 1.3 Auth + identity / access | **COMPLETE / LOCKED** — commit `efe3f71`; promoted to `main` / `origin/main`; live Auth/RLS **PASS** |
 | 1.4 Beats domain foundation | **COMPLETE / LOCKED** — commit `6cb1e9a` on `main` / `origin/main`; live Beats/RLS **PASS** |
-| 1.5 Private audio + Access Gate | **IMPLEMENTED / LIVE VERIFIED** — Design Freeze `0e5c491`; migration + bucket + gate; **no commit** yet |
+| 1.5 Private audio + Access Gate | **COMPLETE / LOCKED** — commit `0ec0be0`; Design Freeze `0e5c491`; live Storage/Access Gate **PASS** |
 | 1.6–1.8 | NOT STARTED — nie rozpoczynać bez Owner GO |
 
 ### Phase 1.3 lock notes
