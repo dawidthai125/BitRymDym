@@ -144,24 +144,30 @@ API-first: no admin UI / player / upload surface in Phase 1.4.
 
 ---
 
-## 8. Future audio boundary (NOT Phase 1.4)
+## 8. Future audio boundary
 
-Deferred to Phase 1.5+:
+Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implementation notes below and [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md).
 
-- Private Storage buckets
-- Audio asset columns / refs
-- Playback / download signed URLs
-- Codec / bitrate / processing (**OD-12 remains OPEN**)
-- Player, waveform, Quick Take, community upload
+**Still deferred to 1.6+:**
 
----
+- Custom player / waveform
+- Download limit counters (OD-05/06/17)
+- Codec finalization (**OD-12 remains OPEN**)
+- Quick Take, community upload, watermark
+
+### Phase 1.5 audio assets (IMPLEMENTED / LIVE VERIFIED — uncommitted)
+
+- Table: `public.beat_audio_assets` (no audio columns on `beats`)
+- Private bucket: `beat-audio`
+- Object keys: `platform/{beatId}/{assetId}/{purpose}.bin` only
+- Access Gate: anonymous / authenticated / admin upload paths
+- Signed URL TTL: PLAYBACK 120s · DOWNLOAD 300s
+- ADMIN PLATFORM upload only; USER community audio DENY
 
 ## 9. Verification
 
 | Layer | Status |
 |-------|--------|
-| Unit (validation + transitions + permission matrix) | **PASS** |
-| Live PostgreSQL / RLS on `rzzxrgcdogkybkiidqgw` | **PASS** |
-| Lint / typecheck / build | **PASS** |
-| Commit / push | **PASS** — `6cb1e9a` on `main` / `origin/main` |
-| Phase lock | **LOCKED** |
+| Phase 1.4 metadata | **LOCKED** @ `6cb1e9a` |
+| Phase 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
+| Phase 1.5 Storage / Access Gate live | **PASS** (implementation pending commit) |

@@ -24,32 +24,31 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| HEAD | `6cb1e9a` |
-| Remote | `origin/main` = `6cb1e9a` |
-| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist; excluded from Phase 1.4) |
+| HEAD (committed baseline before 1.5 impl) | `0e5c491` (Design Freeze) |
+| Working tree | **DIRTY** — Phase 1.5 implementation present, **uncommitted** (pre-commit audit) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-Phase 1.3 lock: `efe3f71`. Phase 1.3 docs lock: `68486dd`.
-Phase 1.4 lock: `6cb1e9a` — `feat(beats): complete phase 1.4 beats domain foundation`.
+Phase 1.4 lock: `6cb1e9a` / docs `ec32b97`.
+Phase 1.5 Design Freeze: `0e5c491`.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.4 COMPLETE / LOCKED — READY FOR PHASE 1.5 DESIGN FREEZE
+FOUNDATION — PHASE 1.5 AUDIO STORAGE — IMPLEMENTED / LIVE VERIFIED — READY FOR PRE-COMMIT AUDIT
 ```
 
 | Etap | Status |
 |------|--------|
-| 1.0–1.2 | **LOCKED** on main |
-| 1.3 | **COMPLETE / LOCKED** on main (`efe3f71`) |
-| 1.4 | **COMPLETE / LOCKED** on main (`6cb1e9a`) — live verified + pushed |
-| 1.5+ | **NOT STARTED** |
+| 1.0–1.4 | **LOCKED** on main |
+| 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
+| 1.5 Implementation | **IMPLEMENTED / LIVE VERIFIED** — awaiting pre-commit / Owner commit |
+| 1.6+ | **NOT STARTED** |
 
-**Phase 1.4 scope (locked):** Beats Domain Foundation — metadata only.
-**Out of Phase 1.4:** Audio Storage, player, downloads, Quick Take, payments, community upload.
-**OD-12 remains OPEN.** Do not start Phase 1.5 implementation until Design Freeze + Owner GO.
+**Phase 1.5 scope:** Private `beat-audio` bucket + `beat_audio_assets` + Access Gate signed URLs.
+**Out of 1.5:** Player, download limits, Quick Take, community upload, watermark, payments.
+**OD-12 remains OPEN** (interim MIME allow-list only).
 
 ---
 
@@ -64,24 +63,16 @@ FOUNDATION — PHASE 1.4 COMPLETE / LOCKED — READY FOR PHASE 1.5 DESIGN FREEZE
 
 ## 5. Verification status
 
-### Phase 1.3 (locked)
+### Phase 1.5 (this session)
 
 | Layer | Status |
 |-------|--------|
-| Auth / RLS live | **PASS** (locked) |
-| Commit / main | **PASS** |
-
-### Phase 1.4 (locked)
-
-| Layer | Status |
-|-------|--------|
-| Migration applied (live) | **PASS** — `phase_1_4_beats` on `rzzxrgcdogkybkiidqgw` |
-| Unit tests | **PASS** (21/21) |
-| Live RLS suite | **PASS** |
+| Migration applied (live) | **PASS** — `phase_1_5_audio_storage` |
+| Private bucket `beat-audio` | **PASS** |
+| Unit tests | **PASS** (28) |
+| Live Storage/RLS/signed URL | **PASS** |
 | Lint / typecheck / build | **PASS** |
-| Security / pre-commit audit | **PASS** |
-| Commit / push / origin/main | **PASS** (`6cb1e9a`) |
-| Phase lock | **LOCKED** |
+| Commit / push | **NOT DONE** |
 
 ---
 
@@ -90,13 +81,11 @@ FOUNDATION — PHASE 1.4 COMPLETE / LOCKED — READY FOR PHASE 1.5 DESIGN FREEZE
 Still OPEN: **OD-04 … OD-18** (OD-12 encoding remains OPEN).
 See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
-CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
-
 ---
 
 ## 7. Current Blockers
 
-1. Phase 1.5 Design Freeze / Owner GO (planning only — no implementation yet)
+1. Owner pre-commit audit / commit of Phase 1.5 implementation
 2. Operator must manually provision first ADMIN when admin features are required (OD-20)
 
 ---
@@ -105,9 +94,10 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 
 | Obszar | Status |
 |--------|--------|
-| Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** + LIVE VERIFIED |
-| Beats metadata / ownership / status / RLS / validation | **COMPLETE / LOCKED** + LIVE VERIFIED (`6cb1e9a`) |
-| Audio Storage / Player / Downloads / Quick Take / Payments | **NOT STARTED** |
+| Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** |
+| Beats metadata domain | **COMPLETE / LOCKED** |
+| Private audio Storage + Access Gate | **IMPLEMENTED / LIVE VERIFIED** (uncommitted) |
+| Custom Player / Downloads limits / Quick Take / Payments | **NOT STARTED** |
 
 ---
 
@@ -115,16 +105,14 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.5 DESIGN FREEZE / PLANNING (Owner / Architect GO required before implementation)
+PHASE 1.5 PRE-COMMIT AUDIT → COMMIT/PUSH (if approved) → PHASE 1.6 PLANNING (separate GO)
 ```
-
-Do not implement Phase 1.5 until an explicit Design Freeze + Owner GO.
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.4 Post-Push Documentation Lock (2026-09-25)
+**Sesja:** Phase 1.5 Implementation GO (2026-09-26)
 
-**Done:** Docs aligned to canonical `main` / `origin/main` @ `6cb1e9a`; Phase 1.4 marked **COMPLETE / LOCKED**.
-**Not done:** Phase 1.5 (NOT STARTED).
+**Done:** `beat_audio_assets` + private `beat-audio` + Access Gate + unit/live verification + docs draft.
+**Not done:** commit/push; Phase 1.6.

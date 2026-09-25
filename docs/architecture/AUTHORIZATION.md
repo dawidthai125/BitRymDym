@@ -1,9 +1,9 @@
 # Authorization — Phase 1.3
 
-**Status:** COMPLETE / LOCKED / PROMOTED TO MAIN  
-**Canonical:** `main` @ `efe3f71`  
-**Runtime verification:** LIVE SUPABASE VERIFIED (2026-09-25) — project `rzzxrgcdogkybkiidqgw`  
-**SSOT:** §3–5, §36, §39  
+**Status:** COMPLETE / LOCKED / PROMOTED TO MAIN
+**Canonical:** `main` @ `efe3f71`
+**Runtime verification:** LIVE SUPABASE VERIFIED (2026-09-25) — project `rzzxrgcdogkybkiidqgw`
+**SSOT:** §3–5, §36, §39
 **Architecture:** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)
 
 ## Model
@@ -59,7 +59,7 @@ profiles.role = ADMIN
 - client-side admin escalation
 - magic admin token
 
-Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL only.  
+Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL only.
 Do not document secrets.
 
 ---
@@ -105,7 +105,23 @@ Permissions reused (no new `beats.publish` / `beats.view`):
 | MODERATOR | approve / reject + non-public moderation visibility; **no** full metadata edit |
 | USER | no `beats.create` in Phase 1.4; no publish / ownership / status escalation |
 
-SQL helpers: `is_moderator()`, `is_staff()` (plus existing `is_admin()`).  
+SQL helpers: `is_moderator()`, `is_staff()` (plus existing `is_admin()`).
 **AccountLevel does not affect beat authorization.**
 
 Live beats RLS verification on `rzzxrgcdogkybkiidqgw`: **PASS** (2026-09-25).
+
+---
+
+## Phase 1.5 — Audio Access Gate AuthZ
+
+Design Freeze: [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md).
+
+| Path | AuthZ |
+|------|-------|
+| Anonymous PLAYBACK/DOWNLOAD | No `requireUser`; PUBLISHED + READY asset only |
+| Authenticated USER | `requireUser`; PUBLISHED for public purposes |
+| MODERATOR | Staff PLAYBACK (incl. non-published); **DOWNLOAD DENY** |
+| ADMIN upload/replace/archive | `beats.edit` + PLATFORM beat only |
+| Signed URL | Server-only; PLAYBACK 120s; DOWNLOAD 300s |
+
+No new permission keys. Role ≠ AccountLevel. OD-12 remains OPEN.

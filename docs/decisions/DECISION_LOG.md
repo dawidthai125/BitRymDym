@@ -123,7 +123,7 @@ Supabase Auth → Profile → Role → Permissions → Account Level
 
 **Role ≠ Account Level**
 
-Role: `ADMIN` | `MODERATOR` | `USER`  
+Role: `ADMIN` | `MODERATOR` | `USER`
 Account Level (robocze, OD-09 OPEN): `BEGINNER_RAPPER` | `PRO_RAPPER` | `LEGEND_RAPPER`
 
 **Scope**
@@ -277,3 +277,26 @@ Prevents privilege escalation and accidental admin grant on first registration.
 - [PROJECT_STATE.md](../PROJECT_STATE.md)
 - [PHASE_1_FOUNDATION.md](../phases/PHASE_1_FOUNDATION.md)
 - [OPEN_DECISIONS.md](./OPEN_DECISIONS.md) — OD-04…OD-18 still OPEN
+
+---
+
+### Phase 1.5 — Private Audio Storage + Access Gate (implementation closeout note)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.5 Private Audio Storage + Controlled Access Gate |
+| Status | IMPLEMENTED / LIVE VERIFIED — awaiting commit |
+| Date | 2026-09-26 |
+| Design Freeze | `0e5c491` — APPROVED / LOCKED |
+| Baseline before impl | `origin/main` @ `0e5c491` |
+
+**Frozen scope delivered (uncommitted code):**
+
+- Private bucket `beat-audio`
+- `beat_audio_assets` separate from `beats` metadata
+- Opaque `.bin` object keys; MIME authoritative; OD-12 remains OPEN
+- Access Gate anonymous / authenticated / admin upload paths
+- Signed URL PLAYBACK 120s / DOWNLOAD 300s
+- ADMIN PLATFORM upload only
+
+**Still out of scope:** player, download limits, Quick Take, community upload, watermark, payments.

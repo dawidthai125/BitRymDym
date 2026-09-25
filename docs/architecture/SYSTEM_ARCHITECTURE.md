@@ -1,11 +1,11 @@
 # BitRymDym — System Architecture
 
-**Status:** BASELINE ACCEPTED (OD-01 / OD-02 / OD-03)  
-**Data baseline:** 2026-09-25  
-**Produkt / domena:** [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md)  
+**Status:** BASELINE ACCEPTED (OD-01 / OD-02 / OD-03)
+**Data baseline:** 2026-09-25
+**Produkt / domena:** [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md)
 **Decyzje:** [DECISION_LOG.md](../decisions/DECISION_LOG.md) · [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-Ten dokument jest źródłem prawdy dla **HOW / TECHNICAL ARCHITECTURE**.  
+Ten dokument jest źródłem prawdy dla **HOW / TECHNICAL ARCHITECTURE**.
 SSOT pozostaje źródłem prawdy dla **WHAT / PRODUCT TRUTH**.
 
 ---
@@ -133,8 +133,8 @@ PRO_RAPPER
 LEGEND_RAPPER
 ```
 
-**ROLE ≠ ACCOUNT LEVEL.**  
-Signup: `USER` + `BEGINNER_RAPPER`.  
+**ROLE ≠ ACCOUNT LEVEL.**
+Signup: `USER` + `BEGINNER_RAPPER`.
 First ADMIN: manual / operator-controlled only (**OD-20 CLOSED**) — no automatic first-user admin.
 
 ---
@@ -252,10 +252,10 @@ Po zatwierdzeniu bitu użytkownika (domyślnie, przyszłość):
 - playback: **YES**
 - download: **NO** → prośba o udostępnienie / kontakt z właścicielem
 
-Max duration opublikowanego bitu: **180 s** — walidacja serwerowa + DB check.  
+Max duration opublikowanego bitu: **180 s** — walidacja serwerowa + DB check.
 BPM: wartość **liczbowa** (1–300).
 
-Phase 1.4 implemented: table `public.beats`, RLS, ownership integrity, central validator, beat service/actions.  
+Phase 1.4 implemented: table `public.beats`, RLS, ownership integrity, central validator, beat service/actions.
 **Not** in 1.4: audio Storage, player, downloads, community upload.
 ---
 
@@ -338,7 +338,7 @@ Krytyczne reguły zawsze serwerowo m.in.: download limits, beat ownership/access
 REQUEST → AUTH → ROLE/ACCOUNT ACCESS → LIMIT → ANTI-ABUSE → RECORD → SIGNED URL → DOWNLOAD
 ```
 
-Wartości limitów: **OD-05 / OD-06 OPEN** (mechanizm konfigurowalny — CONFIRMED).  
+Wartości limitów: **OD-05 / OD-06 OPEN** (mechanizm konfigurowalny — CONFIRMED).
 Liczenie powtórzeń: **OD-17 OPEN**.
 
 ---
@@ -383,34 +383,31 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.4 — BEATS DOMAIN FOUNDATION — COMPLETE / LOCKED
-Canonical: main @ 6cb1e9a
-Next: PHASE 1.5 DESIGN FREEZE / PLANNING (not started)
+PHASE 1.5 — PRIVATE AUDIO STORAGE + ACCESS GATE — IMPLEMENTED / LIVE VERIFIED
+Design Freeze locked: 0e5c491
+Next: PRE-COMMIT AUDIT → commit/push → PHASE 1.6 PLANNING
 ```
 
 ### IMPLEMENTED / LOCKED
-- Next.js scaffold (Phase 1.2 LOCKED on main)
-- Auth / profiles / roles / permissions / account levels (Phase 1.3 LOCKED)
-- RLS policies + escalation guards — **live verified**
-- Minimal auth UI (`/sign-in`, `/sign-up`, `/account`)
-- Beats metadata domain (Phase 1.4 LOCKED @ `6cb1e9a`)
-  - `public.beats` + `beat_status` / `beat_ownership_type`
-  - Ownership integrity + status transition guards
-  - Beat validation / service / server actions
-  - Beats RLS (published public read; admin write; moderator review path)
-  - See [BEATS.md](./BEATS.md)
+- Next.js scaffold (Phase 1.2)
+- Auth / profiles / roles / permissions / account levels (Phase 1.3)
+- Beats metadata domain (Phase 1.4 @ `6cb1e9a`)
+- Phase 1.5 Design Freeze (@ `0e5c491`)
+
+### IMPLEMENTED / LIVE VERIFIED (Phase 1.5 — uncommitted)
+- Private Storage bucket `beat-audio`
+- `beat_audio_assets` + RLS + privilege triggers
+- Server-mediated ADMIN PLATFORM upload/replace/archive
+- Access Gate (`requestBeatAudioAccess`) — anon / auth / admin paths
+- Signed URL PLAYBACK 120s / DOWNLOAD 300s
+- Interim MIME allow-list + 50 MiB (OD-12 remains OPEN)
 
 ### PLANNED (not started)
-- Audio Storage, player, Quick Take, downloads, tracks, payments
+- Custom player (1.6), download limits (1.7), Quick Take (1.8), tracks, payments
 
 ### OPEN
-- OD-04 … OD-18 (as listed in OPEN_DECISIONS) — **OD-12 remains OPEN**
-- Next.js middleware → proxy migration (NON-BLOCKING TECHNICAL NOTE)
-
-### CLOSED (Phase 1.3 identity decisions)
-- OD-19 — signup default `BEGINNER_RAPPER`
-- OD-20 — manual/operator-controlled ADMIN bootstrap (no auto-admin)
-- Live Supabase Auth/RLS verification: **PASS** (2026-09-25) — project `rzzxrgcdogkybkiidqgw`
+- OD-04 … OD-18 — **OD-12 remains OPEN**
+- Next.js middleware → proxy migration (NON-BLOCKING)
 
 ## 19. Open Architecture Decisions
 

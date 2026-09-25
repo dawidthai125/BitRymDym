@@ -70,7 +70,6 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** SCAFFOLDED (1.2) + Auth (1.3 LOCKED) + Beats metadata (1.4 COMPLETE / LOCKED).
-**Foundation Documentation Baseline:** LOCKED (2026-09-25).
-**Canonical baseline:** `main` @ `6cb1e9a`.
-**Audio modules** (Storage, player, Quick Take, downloads, payments, community): **NOT STARTED**.
+**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Storage/Access Gate (1.5 LIVE VERIFIED, pre-commit).
+**Canonical Design Freeze:** `0e5c491`.
+**Audio UI / limits / Quick Take / payments:** **NOT STARTED**.

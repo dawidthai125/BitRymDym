@@ -6,6 +6,28 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-26 — PHASE 1.5 — PRIVATE AUDIO STORAGE + ACCESS GATE (IMPLEMENTATION)
+
+**Status:** READY FOR PRE-COMMIT AUDIT (no commit/push)
+
+- Migration `20260925220000_phase_1_5_audio_storage.sql` applied live (`phase_1_5_audio_storage`)
+- Private bucket `beat-audio`; table `beat_audio_assets`; no audio columns on `beats`
+- Object keys opaque `.bin`; interim MIME allow-list + 50 MiB (OD-12 OPEN)
+- Access Gate: anonymous / authenticated / admin upload paths; signed URL PLAYBACK 120s / DOWNLOAD 300s
+- ADMIN PLATFORM upload only; USER/MODERATOR upload DENY; MODERATOR download DENY
+- Unit 28 PASS; live Storage/RLS/signed URL PASS; lint / typecheck / build PASS
+- Out of scope: player, limits, Quick Take, community upload, watermark, payments
+
+---
+
+## 2026-09-26 — PHASE 1.5 — DESIGN FREEZE LOCKED
+
+- Commit: `0e5c491` — `docs(phase-1.5): freeze private audio storage architecture`
+- Document: `docs/phases/PHASE_1_5_DESIGN_FREEZE.md`
+- Pushed to `origin/main`
+
+---
+
 ## 2026-09-25 — PHASE 1.4 — BEATS DOMAIN FOUNDATION (COMPLETE / LOCKED)
 
 **Status:** COMPLETE / COMMITTED / PUSHED — `6cb1e9a` on `main` / `origin/main`
@@ -160,7 +182,7 @@ Format: data, zakres, skrót.
 - Foundation documentation approved by Owner
 - No application implementation started
 
-**Foundation Documentation Baseline:** LOCKED  
+**Foundation Documentation Baseline:** LOCKED
 **Application implementation:** not started.
 
 ---

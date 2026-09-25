@@ -10,10 +10,10 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 |---------|---------|
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
-| Faza | 1 — Fundament (**Phase 1.4 COMPLETE / LOCKED** @ `6cb1e9a`) |
+| Faza | 1 — Fundament (**Phase 1.5 audio Storage/Access Gate** LIVE VERIFIED, pre-commit) |
 | Płatności / Premium | wyłączone |
-| Application | Auth + Profiles + Roles + Permissions + **Beats Domain Foundation** (metadata) |
-| Next | Phase 1.5 Design Freeze — **NOT STARTED** (no Storage / player yet) |
+| Application | Auth + Profiles + Roles + Permissions + Beats metadata + **private beat-audio Access Gate** |
+| Next | Phase 1.5 pre-commit → Phase 1.6 player planning (**NOT STARTED**) |
 
 ## Nowy agent — start tutaj
 
@@ -53,8 +53,8 @@ npm run build
 
 Skopiuj `.env.example` → `.env.local` (placeholdery). Nie commituj sekretów.
 
-**Zaimplementowane (LOCKED):** Auth, Profiles, Roles, Permissions, Account levels, Beats metadata domain.
-**Nie zaimplementowane:** Audio Storage, player, downloads, Quick Take, payments, community upload.
+**Zaimplementowane:** Auth, Profiles, Roles, Permissions, Account levels, Beats metadata, private `beat-audio` Storage + Access Gate.
+**Nie zaimplementowane:** Custom player, download limits, Quick Take, payments, community upload.
 
 ## Zasady rozwoju
 

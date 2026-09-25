@@ -45,5 +45,5 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2** scaffold LOCKED. **Phase 1.3** Auth LOCKED. **Phase 1.4** beats metadata **COMPLETE / LOCKED** (`6cb1e9a`).
-See [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [BEATS.md](./BEATS.md).
+**Phase 1.2** scaffold LOCKED. **Phase 1.3** Auth LOCKED. **Phase 1.4** beats metadata LOCKED. **Phase 1.5** private audio + Access Gate IMPLEMENTED / LIVE VERIFIED (uncommitted).
+See [BEATS.md](./BEATS.md), [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md).
