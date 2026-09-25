@@ -1,9 +1,9 @@
 # Beats Domain — Phase 1.4
 
-**Status:** IMPLEMENTED / LIVE VERIFIED — pending Owner Review (no commit yet)  
-**Canonical baseline before this phase:** `main` @ `68486dd`  
-**Supabase project:** `rzzxrgcdogkybkiidqgw`  
-**SSOT:** §6–§8, §29–§30, §36  
+**Status:** COMPLETE / LOCKED
+**Canonical commit:** `main` @ `6cb1e9a`
+**Supabase project:** `rzzxrgcdogkybkiidqgw`
+**SSOT:** §6–§8, §29–§30, §36
 **Related:** [AUTHORIZATION.md](./AUTHORIZATION.md) · [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)
 
 Phase 1.4 = **beats metadata foundation only**. Audio Storage, player, downloads, Quick Take, community upload = **OUT OF SCOPE**.
@@ -39,7 +39,7 @@ Table: `public.beats`
 | `PLATFORM` | `owner_id` **MUST** be `NULL` |
 | `USER` | `owner_id` **MUST** be a `profiles.id` |
 
-DB constraint: `beats_ownership_integrity_chk`.  
+DB constraint: `beats_ownership_integrity_chk`.
 Trigger: `prevent_beat_privilege_escalation` blocks non-admin ownership changes.
 
 No system user / fake platform profile.
@@ -74,7 +74,7 @@ ARCHIVED → DRAFT
 
 ### Schema-ready (not active product workflow)
 
-`PENDING_REVIEW` / `APPROVED` / `REJECTED` remain for future user-upload moderation.  
+`PENDING_REVIEW` / `APPROVED` / `REJECTED` remain for future user-upload moderation.
 MODERATOR may transition `PENDING_REVIEW → APPROVED|REJECTED` only (no full metadata edit).
 
 ---
@@ -163,4 +163,5 @@ Deferred to Phase 1.5+:
 | Unit (validation + transitions + permission matrix) | **PASS** |
 | Live PostgreSQL / RLS on `rzzxrgcdogkybkiidqgw` | **PASS** |
 | Lint / typecheck / build | **PASS** |
-| Commit / push | **NOT DONE** — Owner Review first |
+| Commit / push | **PASS** — `6cb1e9a` on `main` / `origin/main` |
+| Phase lock | **LOCKED** |

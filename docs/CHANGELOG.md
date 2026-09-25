@@ -6,9 +6,9 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-09-25 — PHASE 1.4 — BEATS DOMAIN FOUNDATION (IMPLEMENTATION)
+## 2026-09-25 — PHASE 1.4 — BEATS DOMAIN FOUNDATION (COMPLETE / LOCKED)
 
-**Status:** READY FOR OWNER REVIEW (no commit/push)
+**Status:** COMPLETE / COMMITTED / PUSHED — `6cb1e9a` on `main` / `origin/main`
 
 - Migration `20260925130000_phase_1_4_beats.sql` applied live on `rzzxrgcdogkybkiidqgw` (additive; no `db reset`)
 - `beat_status` / `beat_ownership_type` enums; `public.beats` metadata table (no audio columns)
@@ -19,6 +19,7 @@ Format: data, zakres, skrót.
 - Docs: `BEATS.md` + PROJECT_STATE / PHASE_1 / SYSTEM_ARCHITECTURE / AUTHORIZATION / README
 - Out of scope: Storage, player, downloads, Quick Take, community upload, payments
 - OD-04…OD-18 remain OPEN (OD-12 OPEN)
+- Next: Phase 1.5 Design Freeze (NOT STARTED)
 
 ---
 

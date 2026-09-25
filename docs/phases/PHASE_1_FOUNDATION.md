@@ -54,7 +54,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.1 | Decyzja stacku FE/BE + architektury Supabase + SYSTEM_ARCHITECTURE | OD-01, OD-02, OD-03 | **COMPLETED** (docs) — Owner APPROVED · LOCKED |
 | 1.2 | Scaffold projektu + bootstrap techniczny | 1.1 + Owner approval | **COMPLETED / LOCKED** |
 | 1.3 | Auth (Supabase) + Users / Roles / Permissions / Profiles | 1.2 | **COMPLETE / LOCKED** on `main` @ `efe3f71` — live Auth/RLS **PASS** |
-| 1.4 | Beats + metadata + statusy + max duration (server) | 1.3 | **IMPLEMENTED / LIVE VERIFIED** — Owner Review (uncommitted on `main` @ `68486dd`) |
+| 1.4 | Beats + metadata + statusy + max duration (server) | 1.3 | **COMPLETE / LOCKED** on `main` @ `6cb1e9a` — live Beats/RLS **PASS** |
 | 1.5 | Private audio storage + controlled playback/download access | 1.4; OD-12 częściowo | NOT STARTED |
 | 1.6 | Custom Player (playback UI) | 1.5; OD-15 może być roboczy | NOT STARTED |
 | 1.7 | Download permissions + limity (konfigurowalne) | 1.5; OD-05, OD-06, OD-17 | NOT STARTED |
@@ -77,7 +77,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - [ ] `payments_enabled` / `premium_enabled` = false.
 - [x] Testy krytycznych reguł serwerowych (Auth + beats metadata/RLS).
 
-**Cała Faza 1 ≠ COMPLETE** — ukończone: **1.0–1.3 LOCKED**; **1.4 IMPLEMENTED / LIVE VERIFIED** (Owner Review). 1.5+ NOT STARTED.
+**Cała Faza 1 ≠ COMPLETE** — ukończone: **1.0–1.4 LOCKED** on `main` (`6cb1e9a`). 1.5+ NOT STARTED.
 
 ---
 
@@ -89,8 +89,8 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.1 Architektura OD-01–03 | COMPLETED / LOCKED |
 | 1.2 Application scaffold | **COMPLETED / LOCKED** (Owner APPROVED) |
 | 1.3 Auth + identity / access | **COMPLETE / LOCKED** — commit `efe3f71`; promoted to `main` / `origin/main`; live Auth/RLS **PASS** |
-| 1.4 Beats domain foundation | **IMPLEMENTED / LIVE VERIFIED** — migration + domain + AuthZ + RLS; **no commit** pending Owner Review |
-| 1.5–1.8 | NOT STARTED — nie rozpoczynać bez Owner GO |
+| 1.4 Beats domain foundation | **COMPLETE / LOCKED** — commit `6cb1e9a` on `main` / `origin/main`; live Beats/RLS **PASS** |
+| 1.5–1.8 | NOT STARTED — czeka na Design Freeze / Owner GO etapu 1.5 |
 
 ### Phase 1.3 lock notes
 
@@ -100,10 +100,13 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - Main promotion: fast-forward `92251d7` → `efe3f71` (2026-09-25)
 - Live Supabase project: `rzzxrgcdogkybkiidqgw`
 
-### Phase 1.4 notes
+### Phase 1.4 lock notes
 
+- Canonical commit: `6cb1e9a` — `feat(beats): complete phase 1.4 beats domain foundation`
+- Promoted / pushed to `main` / `origin/main` (2026-09-25)
 - Migration: `supabase/migrations/20260925130000_phase_1_4_beats.sql` (applied live; additive)
 - Domain: [BEATS.md](../architecture/BEATS.md)
 - Active workflow: ADMIN DRAFT → PUBLISHED → ARCHIVED → DRAFT; no PUBLISHED → DRAFT
 - Out of scope: Storage, player, downloads, Quick Take, community upload, payments
 - OD-12 remains OPEN
+- Next: Phase 1.5 Design Freeze (NOT STARTED)

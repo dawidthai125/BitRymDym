@@ -6,13 +6,13 @@
 
 ### Kolejność czytania
 
-1. [PROJECT_STATE.md](./PROJECT_STATE.md) — gdzie jesteśmy teraz  
-2. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) — prawda produktowa  
-3. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) — architektura techniczna  
-4. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN  
-5. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte  
-6. [phases/PHASE_1_FOUNDATION.md](./phases/PHASE_1_FOUNDATION.md) — zakres Fazy 1  
-7. Dokumentacja konkretnego feature’a — jeżeli agent wykonuje feature  
+1. [PROJECT_STATE.md](./PROJECT_STATE.md) — gdzie jesteśmy teraz
+2. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) — prawda produktowa
+3. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) — architektura techniczna
+4. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN
+5. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
+6. [phases/PHASE_1_FOUNDATION.md](./phases/PHASE_1_FOUNDATION.md) — zakres Fazy 1
+7. Dokumentacja konkretnego feature’a — jeżeli agent wykonuje feature
 
 **Nie zaczynaj implementacji** przed sprawdzeniem: PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS.
 
@@ -39,11 +39,11 @@ Nie duplikować całych treści — stosować linki.
 
 ## Hierarchia źródła prawdy
 
-1. Najnowszy zatwierdzony SSOT  
-2. Dokumentacja architektury  
-3. Zatwierdzona specyfikacja funkcji  
-4. Zatwierdzony kod  
-5. Rozmowy i pomysły robocze  
+1. Najnowszy zatwierdzony SSOT
+2. Dokumentacja architektury
+3. Zatwierdzona specyfikacja funkcji
+4. Zatwierdzony kod
+5. Rozmowy i pomysły robocze
 
 ---
 
@@ -70,7 +70,7 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** SCAFFOLDED (1.2) + Auth (1.3 LOCKED) + Beats metadata (1.4 LIVE VERIFIED, Owner Review).  
-**Foundation Documentation Baseline:** LOCKED (2026-09-25).  
-**Committed baseline:** `main` @ `68486dd`.  
+**APPLICATION:** SCAFFOLDED (1.2) + Auth (1.3 LOCKED) + Beats metadata (1.4 COMPLETE / LOCKED).
+**Foundation Documentation Baseline:** LOCKED (2026-09-25).
+**Canonical baseline:** `main` @ `6cb1e9a`.
 **Audio modules** (Storage, player, Quick Take, downloads, payments, community): **NOT STARTED**.

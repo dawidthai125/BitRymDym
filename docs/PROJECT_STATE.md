@@ -1,6 +1,6 @@
 # BitRymDym — PROJECT STATE
 
-**Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.  
+**Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta.**
 
 ---
@@ -24,29 +24,32 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| HEAD (committed) | `68486dd` |
-| Remote | `origin/main` = `68486dd` |
-| Working tree | **DIRTY** — Phase 1.4 implementation present, **uncommitted** (Owner Review) |
+| HEAD | `6cb1e9a` |
+| Remote | `origin/main` = `6cb1e9a` |
+| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist; excluded from Phase 1.4) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-Phase 1.3 lock commit: `efe3f71`. Docs lock: `68486dd`.
+Phase 1.3 lock: `efe3f71`. Phase 1.3 docs lock: `68486dd`.
+Phase 1.4 lock: `6cb1e9a` — `feat(beats): complete phase 1.4 beats domain foundation`.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.4 BEATS DOMAIN — READY FOR OWNER REVIEW
+FOUNDATION — PHASE 1.4 COMPLETE / LOCKED — READY FOR PHASE 1.5 DESIGN FREEZE
 ```
 
 | Etap | Status |
 |------|--------|
 | 1.0–1.2 | **LOCKED** on main |
-| 1.3 | **COMPLETE / LOCKED** on main (`efe3f71` / docs `68486dd`) |
-| 1.4 | **IMPLEMENTED / LIVE VERIFIED** — awaiting Owner Review; **no commit/push** |
-| 1.5+ | NOT STARTED |
+| 1.3 | **COMPLETE / LOCKED** on main (`efe3f71`) |
+| 1.4 | **COMPLETE / LOCKED** on main (`6cb1e9a`) — live verified + pushed |
+| 1.5+ | **NOT STARTED** |
 
-**Do not start Phase 1.5.** OD-12 remains OPEN.
+**Phase 1.4 scope (locked):** Beats Domain Foundation — metadata only.
+**Out of Phase 1.4:** Audio Storage, player, downloads, Quick Take, payments, community upload.
+**OD-12 remains OPEN.** Do not start Phase 1.5 implementation until Design Freeze + Owner GO.
 
 ---
 
@@ -68,7 +71,7 @@ FOUNDATION — PHASE 1.4 BEATS DOMAIN — READY FOR OWNER REVIEW
 | Auth / RLS live | **PASS** (locked) |
 | Commit / main | **PASS** |
 
-### Phase 1.4 (this session)
+### Phase 1.4 (locked)
 
 | Layer | Status |
 |-------|--------|
@@ -76,14 +79,15 @@ FOUNDATION — PHASE 1.4 BEATS DOMAIN — READY FOR OWNER REVIEW
 | Unit tests | **PASS** (21/21) |
 | Live RLS suite | **PASS** |
 | Lint / typecheck / build | **PASS** |
-| Security audit | **PASS** |
-| Commit / push | **NOT DONE** |
+| Security / pre-commit audit | **PASS** |
+| Commit / push / origin/main | **PASS** (`6cb1e9a`) |
+| Phase lock | **LOCKED** |
 
 ---
 
 ## 6. Open Decisions
 
-Still OPEN: **OD-04 … OD-18** (OD-12 encoding remains OPEN).  
+Still OPEN: **OD-04 … OD-18** (OD-12 encoding remains OPEN).
 See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
@@ -92,7 +96,7 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 
 ## 7. Current Blockers
 
-1. Owner Review of Phase 1.4 (then commit/push)
+1. Phase 1.5 Design Freeze / Owner GO (planning only — no implementation yet)
 2. Operator must manually provision first ADMIN when admin features are required (OD-20)
 
 ---
@@ -102,8 +106,8 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 | Obszar | Status |
 |--------|--------|
 | Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** + LIVE VERIFIED |
-| Beats metadata / ownership / status / RLS / validation | **IMPLEMENTED / LIVE VERIFIED** — Owner Review |
-| Audio Storage / Player / Downloads / Quick Take / Payments | NOT STARTED |
+| Beats metadata / ownership / status / RLS / validation | **COMPLETE / LOCKED** + LIVE VERIFIED (`6cb1e9a`) |
+| Audio Storage / Player / Downloads / Quick Take / Payments | **NOT STARTED** |
 
 ---
 
@@ -111,14 +115,16 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 
 ```text
 NEXT SESSION ENTRY:
-OWNER REVIEW OF PHASE 1.4 → COMMIT/PUSH (if approved) → PHASE 1.5 PLANNING (separate GO)
+PHASE 1.5 DESIGN FREEZE / PLANNING (Owner / Architect GO required before implementation)
 ```
+
+Do not implement Phase 1.5 until an explicit Design Freeze + Owner GO.
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.4 Beats Domain Foundation — Implementation GO (2026-09-25)
+**Sesja:** Phase 1.4 Post-Push Documentation Lock (2026-09-25)
 
-**Done:** `public.beats` + enums + RLS + domain/validation/service/actions + unit + live RLS + docs (`BEATS.md` + continuity).  
-**Not done:** commit/push; Phase 1.5.
+**Done:** Docs aligned to canonical `main` / `origin/main` @ `6cb1e9a`; Phase 1.4 marked **COMPLETE / LOCKED**.
+**Not done:** Phase 1.5 (NOT STARTED).

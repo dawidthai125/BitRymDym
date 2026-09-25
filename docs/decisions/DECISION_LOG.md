@@ -241,3 +241,39 @@ Prevents privilege escalation and accidental admin grant on first registration.
 
 - [AUTHORIZATION.md](../architecture/AUTHORIZATION.md)
 - [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §3, §36
+
+---
+
+### Phase 1.4 — Beats Domain Foundation (formal closeout)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.4 Beats Domain Foundation — COMPLETE / LOCKED |
+| Status | CLOSED / LOCKED (implementation + docs continuity) |
+| Date | 2026-09-25 |
+| Decydent | Owner (Prezes Dawid) — accepted Design Freeze + commit/push |
+| Canonical commit | `6cb1e9a` — `feat(beats): complete phase 1.4 beats domain foundation` |
+| Branch | `main` / `origin/main` |
+
+**Frozen scope (metadata only)**
+
+- `public.beats` + `beat_status` + `beat_ownership_type`
+- Canonical metadata fields; BPM numeric; duration ≤ 180 s
+- Ownership: `PLATFORM` ⇒ `owner_id` NULL; `USER` ⇒ `owner_id` = `profiles.id`
+- Active ADMIN status lifecycle: DRAFT → PUBLISHED → ARCHIVED → DRAFT; **PUBLISHED → DRAFT forbidden**
+- AuthZ via existing `beats.create|edit|delete|approve|reject` (no new permission keys)
+- RLS: public `PUBLISHED` read; ADMIN write; MODERATOR review visibility/path
+- Central server validation + status transitions; Role ≠ AccountLevel
+
+**Explicitly out of Phase 1.4**
+
+- Audio Storage / buckets
+- Audio columns / upload / codecs (OD-12 remains OPEN)
+- Player, downloads, Quick Take, payments, community upload
+
+**Related documentation**
+
+- [BEATS.md](../architecture/BEATS.md)
+- [PROJECT_STATE.md](../PROJECT_STATE.md)
+- [PHASE_1_FOUNDATION.md](../phases/PHASE_1_FOUNDATION.md)
+- [OPEN_DECISIONS.md](./OPEN_DECISIONS.md) — OD-04…OD-18 still OPEN

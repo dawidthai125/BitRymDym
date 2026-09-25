@@ -383,9 +383,9 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.4 — BEATS DOMAIN FOUNDATION — IMPLEMENTED / LIVE VERIFIED
-Committed baseline: main @ 68486dd (Phase 1.3 docs lock)
-Next: OWNER REVIEW → commit/push → PHASE 1.5 PLANNING (separate GO)
+PHASE 1.4 — BEATS DOMAIN FOUNDATION — COMPLETE / LOCKED
+Canonical: main @ 6cb1e9a
+Next: PHASE 1.5 DESIGN FREEZE / PLANNING (not started)
 ```
 
 ### IMPLEMENTED / LOCKED
@@ -393,13 +393,12 @@ Next: OWNER REVIEW → commit/push → PHASE 1.5 PLANNING (separate GO)
 - Auth / profiles / roles / permissions / account levels (Phase 1.3 LOCKED)
 - RLS policies + escalation guards — **live verified**
 - Minimal auth UI (`/sign-in`, `/sign-up`, `/account`)
-
-### IMPLEMENTED / LIVE VERIFIED (Phase 1.4 — uncommitted)
-- `public.beats` + `beat_status` / `beat_ownership_type`
-- Ownership integrity + status transition guards
-- Beat validation / service / server actions
-- Beats RLS (published public read; admin write; moderator review path)
-- See [BEATS.md](./BEATS.md)
+- Beats metadata domain (Phase 1.4 LOCKED @ `6cb1e9a`)
+  - `public.beats` + `beat_status` / `beat_ownership_type`
+  - Ownership integrity + status transition guards
+  - Beat validation / service / server actions
+  - Beats RLS (published public read; admin write; moderator review path)
+  - See [BEATS.md](./BEATS.md)
 
 ### PLANNED (not started)
 - Audio Storage, player, Quick Take, downloads, tracks, payments
@@ -412,7 +411,6 @@ Next: OWNER REVIEW → commit/push → PHASE 1.5 PLANNING (separate GO)
 - OD-19 — signup default `BEGINNER_RAPPER`
 - OD-20 — manual/operator-controlled ADMIN bootstrap (no auto-admin)
 - Live Supabase Auth/RLS verification: **PASS** (2026-09-25) — project `rzzxrgcdogkybkiidqgw`
----
 
 ## 19. Open Architecture Decisions
 

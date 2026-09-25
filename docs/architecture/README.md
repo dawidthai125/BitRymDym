@@ -1,7 +1,7 @@
 # Architektura — status
 
-**SSOT (produkt):** [MASTER SSOT v0.1](../ssot/MASTER_SSOT_v0.1.md)  
-**Architektura (technika):** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)  
+**SSOT (produkt):** [MASTER SSOT v0.1](../ssot/MASTER_SSOT_v0.1.md)
+**Architektura (technika):** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)
 **Status:** BASELINE ACCEPTED — OD-01 / OD-02 / OD-03 CLOSED (2026-09-25)
 
 ---
@@ -45,5 +45,5 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2** scaffold LOCKED. **Phase 1.3** Auth LOCKED. **Phase 1.4** beats metadata IMPLEMENTED / LIVE VERIFIED (Owner Review).  
+**Phase 1.2** scaffold LOCKED. **Phase 1.3** Auth LOCKED. **Phase 1.4** beats metadata **COMPLETE / LOCKED** (`6cb1e9a`).
 See [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [BEATS.md](./BEATS.md).
