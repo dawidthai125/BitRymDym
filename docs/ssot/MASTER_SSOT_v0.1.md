@@ -182,7 +182,9 @@ Użytkownik zalogowany otrzymuje między innymi:
 - wiadomości,
 - powiadomienia.
 
-Autoryzacja ma zostać oparta o Supabase Auth, o ile późniejsza decyzja architektoniczna tego nie zmieni.
+Autoryzacja jest oparta o **Supabase Auth** (decyzja **OD-03 CLOSED / ACCEPTED**, 2026-09-25).
+
+Architektura techniczna (stack FE, application server, infrastruktura): patrz [SYSTEM_ARCHITECTURE.md](../architecture/SYSTEM_ARCHITECTURE.md) oraz [DECISION_LOG.md](../decisions/DECISION_LOG.md) (OD-01, OD-02, OD-03).
 
 ---
 
@@ -1225,6 +1227,10 @@ IMPLEMENTACJA
  ↓
 TESTY
  ↓
+DOCUMENTATION UPDATE
+ ↓
+AUDIT
+ ↓
 REVIEW
  ↓
 OWNER APPROVAL
@@ -1237,6 +1243,8 @@ DEPLOY
  ↓
 PRODUCTION VERIFY
 ```
+
+Obowiązuje stała **Documentation Continuity Rule**: każda decyzja, funkcja, zmiana architektury lub reguły biznesowej musi być odzwierciedlona w dokumentacji przed uznaniem zadania za ukończone. Patrz [DOCUMENTATION_CONTINUITY.md](../DOCUMENTATION_CONTINUITY.md).
 
 Cursor Agent nie może samodzielnie zmieniać założeń produktu.
 
@@ -1276,26 +1284,35 @@ Jeżeli rozmowa lub nowy pomysł jest sprzeczny z zatwierdzonym SSOT, konflikt m
 
 # 44. ELEMENTY WYMAGAJĄCE JESZCZE DECYZJI
 
+## Zamknięte baseline architektury (2026-09-25)
+
+Następujące elementy **nie** są już otwarte — szczegóły w Decision Log:
+
+- stack frontendowy — **OD-01 CLOSED** (Next.js, TypeScript, Tailwind, shadcn/ui jako baza, własny Design System, App Router),
+- application server — **OD-02 CLOSED** (Next.js Server Actions / Route Handlers; bez osobnego Express/Nest/Fastify na start),
+- infrastruktura Supabase — **OD-03 CLOSED** (PostgreSQL, Auth, RLS, Storage; Edge Functions gdy potrzebne).
+
+## Nadal OPEN — nie zamrażać samodzielnie
+
 Nie należy samodzielnie wymyślać i zamrażać przez Cursor następujących elementów:
 
-- dokładny stack frontendowy,
-- dokładny stack backendowy,
-- szczegółowa architektura Supabase,
-- operator płatności,
-- dokładny limit pobrań dla anonimowego użytkownika,
-- dokładny limit pobrań dla zwykłego użytkownika,
-- ceny Premium,
-- dokładne poziomy Premium,
-- ostateczne nazwy poziomów kont,
-- finalne nazwy głosowania,
-- dokładny system moderacji komentarzy,
-- dokładna metoda kodowania audio,
-- dokładna metoda watermarkingu audio,
-- dokładna metoda miksowania nagrania z bitem,
-- finalna identyfikacja wizualna,
-- finalny język marki,
-- zasady liczenia powtórnych pobrań,
-- zasady liczenia udostępnień.
+- operator płatności (OD-04),
+- dokładny limit pobrań dla anonimowego użytkownika (OD-05),
+- dokładny limit pobrań dla zwykłego użytkownika (OD-06),
+- ceny Premium (OD-07),
+- dokładne poziomy Premium (OD-08),
+- ostateczne nazwy poziomów kont (OD-09),
+- finalne nazwy głosowania (OD-10),
+- dokładny system moderacji komentarzy (OD-11),
+- dokładna metoda kodowania audio (OD-12),
+- dokładna metoda watermarkingu audio (OD-13),
+- dokładna metoda miksowania nagrania z bitem (OD-14),
+- finalna identyfikacja wizualna (OD-15),
+- finalny język marki (OD-16),
+- zasady liczenia powtórnych pobrań (OD-17),
+- zasady liczenia udostępnień (OD-18).
+
+Pełny rejestr: [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md).
 
 ---
 
@@ -1417,6 +1434,8 @@ VERSION 0.1
 ```
 
 Dokument jest pierwszą wersją konstytucji produktu.
+
+**Baseline architektury technicznej (OD-01 / OD-02 / OD-03):** ACCEPTED 2026-09-25 — szczegóły w [SYSTEM_ARCHITECTURE.md](../architecture/SYSTEM_ARCHITECTURE.md) i [DECISION_LOG.md](../decisions/DECISION_LOG.md). Status SSOT produktu pozostaje FOUNDATION DRAFT do dalszego zatwierdzenia Ownera.
 
 Każda istotna przyszła zmiana powinna:
 
