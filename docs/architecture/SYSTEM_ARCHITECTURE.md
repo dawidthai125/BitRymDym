@@ -383,10 +383,10 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.6 — PUBLISHED BEATS SURFACE + PLAYBACK SHELL — IMPLEMENTED (LOCAL)
-Design Freeze: APPROVED / LOCKED
-Canonical pushed baseline: main @ 7de20a3
-Next: PHASE 1.6 IMPLEMENTATION AUDIT → COMMIT / PUSH
+PHASE 1.6 — PUBLISHED BEATS SURFACE + PLAYBACK SHELL — COMPLETE / CLOSED / LOCKED
+Canonical: main @ 39be430
+Production: GREEN / VERIFIED
+Next: PHASE 1.7 DESIGN FREEZE (Owner candidate selection; Cold-Start Audit complete)
 ```
 
 ### IMPLEMENTED / LOCKED
@@ -402,14 +402,16 @@ Next: PHASE 1.6 IMPLEMENTATION AUDIT → COMMIT / PUSH
   - Signed URL PLAYBACK 120s / DOWNLOAD 300s
   - Interim MIME allow-list + 50 MiB (OD-12 remains OPEN)
 - Phase 1.6 Design Freeze — APPROVED / LOCKED
-- Phase 1.6 Published Beats Surface + Playback Shell (**local, uncommitted**)
-  - `/beats`, `/beat/[id]`
+- Phase 1.6 Published Beats Surface + Playback Shell (**CLOSED / LOCKED** @ `39be430`)
+  - `/beats` PUBLISHED-only catalog
+  - `/beat/[id]` PUBLISHED-only detail
   - Custom Playback Shell (no native `<audio controls>` UI)
   - PLAYBACK only via existing Access Gate
-  - DOWNLOAD / Quick Take / waveform hard OUT
+  - DOWNLOAD UI / limits / Quick Take / waveform hard OUT
+  - Downloads capability remains **PARTIAL**; Quick Take **NOT STARTED**
 
 ### PLANNED (not started)
-- Download limits (1.7), Quick Take (1.8), tracks, payments
+- Download limits / UI / audit (1.7), Quick Take (1.8), tracks, payments
 
 ### OPEN
 - OD-04 … OD-18 — **OD-12 remains OPEN**

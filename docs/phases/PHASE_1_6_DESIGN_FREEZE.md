@@ -6,7 +6,7 @@
 **Supabase project:** `rzzxrgcdogkybkiidqgw`
 **SSOT:** §6–§11, §39–§40
 **Document status:** DESIGN FREEZE — **APPROVED / LOCKED**
-**Implementation:** **COMPLETE (local, uncommitted)** — READY FOR PRE-COMMIT AUDIT / commit
+**Implementation:** **COMPLETE / CLOSED / LOCKED** @ `39be430` — production **GREEN / VERIFIED**
 
 Legend:
 
@@ -24,7 +24,8 @@ Legend:
 |------|--------|
 | Phase 1.5 | COMPLETE / CLOSED / LOCKED |
 | Phase 1.6 Design Freeze | **APPROVED / LOCKED** |
-| Phase 1.6 Implementation | **COMPLETE (local)** |
+| Phase 1.6 Implementation | **COMPLETE / CLOSED / LOCKED** @ `39be430` |
+| Production | **GREEN / VERIFIED** |
 | Candidate | Published Beats Surface + Playback Shell |
 
 ---
@@ -253,9 +254,10 @@ Remain **OPEN** (do not close): OD-04 … OD-18.
 ## FINAL STATUS
 
 **PHASE 1.6 DESIGN FREEZE = APPROVED / LOCKED**
-**PHASE 1.6 IMPLEMENTATION = COMPLETE (local, uncommitted) — READY FOR PRE-COMMIT AUDIT**
+**PHASE 1.6 IMPLEMENTATION = COMPLETE / CLOSED / LOCKED** @ `39be430`
+**PRODUCTION = GREEN / VERIFIED**
 
-Delivered locally: `/beats`, `/beat/[id]`, Playback Shell, Access Gate PLAYBACK (anon + auth).
-No DOWNLOAD / Quick Take / waveform / Admin CMS / payments.
-Phase 1.6 is **not** production-closed (no commit / push / production verification yet).
-Commit/push deferred to Owner pre-commit GO.
+Delivered: `/beats` PUBLISHED-only catalog; `/beat/[id]` PUBLISHED-only detail; Playback Shell; Access Gate PLAYBACK (anon + auth).
+Downloads remain **PARTIAL** (no UI / limits / counters / audit). Quick Take **NOT STARTED**.
+Hard OUT retained: DOWNLOAD productization, Quick Take, waveform, Admin CMS, payments.
+OD-04 … OD-18 remain OPEN.

@@ -56,7 +56,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.3 | Auth (Supabase) + Users / Roles / Permissions / Profiles | 1.2 | **COMPLETE / LOCKED** on `main` @ `efe3f71` — live Auth/RLS **PASS** |
 | 1.4 | Beats + metadata + statusy + max duration (server) | 1.3 | **COMPLETE / LOCKED** on `main` @ `6cb1e9a` — live Beats/RLS **PASS** |
 | 1.5 | Private audio storage + controlled playback/download access | 1.4; OD-12 częściowo | **COMPLETE / CLOSED / LOCKED** on `main` @ `0ec0be0` — live Storage/Access Gate **PASS** |
-| 1.6 | Published Beats Surface + Playback Shell | 1.5; OD-15 interim | **IMPLEMENTED (local)** — Design Freeze APPROVED / LOCKED |
+| 1.6 | Published Beats Surface + Playback Shell | 1.5; OD-15 interim | **COMPLETE / CLOSED / LOCKED** on `main` @ `39be430` |
 | 1.7 | Download permissions + limity (konfigurowalne) | 1.5; OD-05, OD-06, OD-17 | NOT STARTED |
 | 1.8 | Quick Take + temporary recordings + TTL | 1.6 | NOT STARTED |
 
@@ -70,13 +70,13 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - [x] Użytkownik może się zarejestrować / zalogować (Auth) — Phase 1.3 live verified.
 - [x] Role i permissions są rozdzielone od poziomu konta — w kodzie + RLS live verified.
 - [x] Master audio nie jest wystawione jako stały publiczny URL — Phase 1.5 private bucket + signed URLs.
-- [x] Odtwarzanie przez autorski player (nie natywne `<audio controls>` jako UI). *(Phase 1.6 Playback Shell — local)*
+- [x] Odtwarzanie przez autorski player (nie natywne `<audio controls>` jako UI). *(Phase 1.6 Playback Shell @ `39be430`)*
 - [ ] Pobieranie: auth + limit + signed URL + rejestracja. *(signed URL foundation: 1.5; limity: 1.7)*
 - [ ] Quick Take: max 30 s; anonimowe z TTL; zalogowane z retencją 24 h.
 - [ ] `payments_enabled` / `premium_enabled` = false.
 - [x] Testy krytycznych reguł serwerowych (Auth + beats metadata/RLS + audio Storage/Access Gate + Phase 1.6 public surface).
 
-**Cała Faza 1 ≠ COMPLETE** — ukończone on origin: **1.0–1.5**. Phase 1.6: **IMPLEMENTED locally** (awaiting audit/commit). 1.7–1.8 NOT STARTED.
+**Cała Faza 1 ≠ COMPLETE** — ukończone on origin: **1.0–1.6 COMPLETE / CLOSED / LOCKED** (`39be430`). Downloads remain PARTIAL; 1.7–1.8 NOT STARTED.
 
 ---
 
@@ -90,7 +90,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.3 Auth + identity / access | **COMPLETE / LOCKED** — commit `efe3f71`; promoted to `main` / `origin/main`; live Auth/RLS **PASS** |
 | 1.4 Beats domain foundation | **COMPLETE / LOCKED** — commit `6cb1e9a` on `main` / `origin/main`; live Beats/RLS **PASS** |
 | 1.5 Private audio + Access Gate | **COMPLETE / CLOSED / LOCKED** — commit `0ec0be0`; Design Freeze `0e5c491`; docs closeout `7de20a3`; live Storage/Access Gate **PASS** |
-| 1.6 Published Beats + Playback Shell | **IMPLEMENTED (local)** — Design Freeze APPROVED / LOCKED — routes `/beats`, `/beat/[id]` |
+| 1.6 Published Beats + Playback Shell | **COMPLETE / CLOSED / LOCKED** — commit `39be430`; Design Freeze APPROVED / LOCKED; production **GREEN** |
 | 1.7–1.8 | NOT STARTED — nie rozpoczynać bez Owner GO |
 
 ### Phase 1.3 lock notes
@@ -118,13 +118,17 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - Docs closeout: `7de20a3`
 - Status: **COMPLETE / CLOSED / LOCKED**
 - Delivered: private `beat-audio`, `beat_audio_assets`, Access Gate, signed URLs (120s / 300s)
-- Next: **Phase 1.6** — Published Beats Surface + Playback Shell — **IMPLEMENTED (local)** / awaiting audit+commit
+- Next: **Phase 1.6** — Published Beats Surface + Playback Shell — **COMPLETE / CLOSED / LOCKED** @ `39be430`
 
-### Phase 1.6 lock notes (local)
+### Phase 1.6 lock notes
 
 - Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](./PHASE_1_6_DESIGN_FREEZE.md) — **APPROVED / LOCKED**
-- Routes: `/beats` (PUBLISHED catalog), `/beat/[id]` (detail + Playback Shell)
+- Implementation commit: `39be430` — `feat(beats): complete phase 1.6 playback surface`
+- Status: **COMPLETE / CLOSED / LOCKED** on `main` / `origin/main`
+- Production: **GREEN / VERIFIED**
+- Routes: `/beats` (PUBLISHED-only catalog), `/beat/[id]` (PUBLISHED-only detail + Playback Shell)
 - Playback: existing `requestBeatAudioAccess` purpose `PLAYBACK` only
-- Hard OUT: DOWNLOAD UI, Quick Take, waveform engine
-- Unit: 40/40; lint / typecheck / build PASS
-- Commit/push: **pending Owner audit GO**
+- Downloads after 1.6: **PARTIAL** (no UI / limits / counters / audit)
+- Quick Take: **NOT STARTED**
+- Hard OUT retained: DOWNLOAD productization, Quick Take, waveform engine
+- Next: Phase 1.7 Design Freeze for Owner-selected candidate

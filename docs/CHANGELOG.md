@@ -6,17 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-09-26 — PHASE 1.6 — PUBLISHED BEATS + PLAYBACK SHELL (LOCAL IMPLEMENTATION)
+## 2026-09-26 — PHASE 1.6 — COMPLETE / CLOSED / LOCKED
 
-**Status:** IMPLEMENTED locally — Design Freeze APPROVED / LOCKED — **not committed**
+**Status:** COMPLETE / COMMITTED / PUSHED — `39be430` on `main` / `origin/main`
 
-- Freeze: `docs/phases/PHASE_1_6_DESIGN_FREEZE.md`
-- Routes: `/beats` (PUBLISHED catalog), `/beat/[id]` (detail + Playback Shell)
-- Playback via existing Access Gate (`PLAYBACK` only); no second signed-URL service
-- Hard OUT: DOWNLOAD UI, Quick Take, waveform engine
-- Unit 40/40; lint / typecheck / build PASS
-- Prior docs reconciliation (Phase 1.5 stale pointers) included in dirty tree
-- Next: Implementation Audit → commit / push
+- Commit: `39be430` — `feat(beats): complete phase 1.6 playback surface`
+- Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](./phases/PHASE_1_6_DESIGN_FREEZE.md) — APPROVED / LOCKED
+- Routes: `/beats` (PUBLISHED-only catalog), `/beat/[id]` (PUBLISHED-only detail + PlaybackShell)
+- Playback via existing Access Gate (`PLAYBACK` only); signed PLAYBACK URL
+- Hard OUT: DOWNLOAD UI / limits / counters / audit; Quick Take; waveform engine
+- Production: **GREEN / VERIFIED**
+- OD-04 … OD-18 remain OPEN
+- Downloads remain **PARTIAL**; Quick Take **NOT STARTED**
+- Next: Phase 1.7 Cold-Start candidates → Owner Design Freeze selection
 
 ---
 

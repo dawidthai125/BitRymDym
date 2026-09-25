@@ -9,7 +9,7 @@
 | `beat_audio_assets` | **COMPLETE / LOCKED** @ `0ec0be0` |
 | Access Gate | **COMPLETE / LOCKED** @ `0ec0be0` |
 | Signed URLs (PLAYBACK 120s / DOWNLOAD 300s) | **COMPLETE / LOCKED** @ `0ec0be0` |
-| Player / playback UI | **COMPLETE (local)** — Phase 1.6 Playback Shell |
+| Player / playback UI | **COMPLETE / CLOSED / LOCKED** @ `39be430` — Phase 1.6 Playback Shell |
 
 **Supabase project:** `rzzxrgcdogkybkiidqgw`
 **SSOT:** §6–§9, §12–§13, §29–§30, §36
@@ -179,14 +179,16 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 - Codec finalization (**OD-12 remains OPEN**)
 - Quick Take, community upload, watermark
 
-### Phase 1.6 public surface (IMPLEMENTED locally)
+### Phase 1.6 public surface (COMPLETE / CLOSED / LOCKED @ `39be430`)
 
 - Routes: `/beats`, `/beat/[id]`
 - PUBLISHED-only catalog + detail
 - `PlaybackShell` — custom UI; `HTMLAudioElement` engine; no `<audio controls>` product UI
 - Playback via existing `requestBeatAudioAccess` (`PLAYBACK` only)
-- Hard OUT: DOWNLOAD CTA, Quick Take, waveform engine
+- Hard OUT: DOWNLOAD CTA / limits / counters / audit; Quick Take; waveform engine
+- Downloads remain **PARTIAL**; Quick Take **NOT STARTED**
 - Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md)
+- Production: **GREEN / VERIFIED**
 
 ## 9. Verification
 
@@ -195,4 +197,4 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 | Phase 1.4 metadata | **LOCKED** @ `6cb1e9a` |
 | Phase 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
 | Phase 1.5 Storage / Access Gate | **LOCKED** @ `0ec0be0` — live **PASS** |
-| Phase 1.6 surface + Playback Shell | **IMPLEMENTED (local)** — unit/lint/typecheck/build **PASS** |
+| Phase 1.6 surface + Playback Shell | **CLOSED / LOCKED** @ `39be430` — production **GREEN** |
