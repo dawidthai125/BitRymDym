@@ -369,13 +369,15 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.3 — IDENTITY & ACCESS (PENDING OWNER REVIEW)
+PHASE 1.3 — IDENTITY & ACCESS — COMPLETE / LOCKED
+Canonical: main @ efe3f71
+Next: PHASE 1.4 PLANNING (not started)
 ```
 
-### IMPLEMENTED
+### IMPLEMENTED / LOCKED
 - Next.js scaffold (Phase 1.2 LOCKED on main)
 - Auth / profiles / roles / permissions / account levels (code + SQL migration)
-- RLS policies + escalation guards (SQL)
+- RLS policies + escalation guards (SQL) — **live verified**
 - Minimal auth UI (`/sign-in`, `/sign-up`, `/account`)
 
 ### PLANNED (not started)
@@ -383,12 +385,12 @@ PHASE 1.3 — IDENTITY & ACCESS (PENDING OWNER REVIEW)
 
 ### OPEN
 - OD-04 … OD-18 (as listed in OPEN_DECISIONS)
-- Live Supabase Auth/RLS verification: **PASS** (2026-09-25) on project `rzzxrgcdogkybkiidqgw` — Phase 1.3 **OWNER REVIEW COMPLETE / READY TO COMMIT** (not locked; commit/push pending)
 - Next.js middleware → proxy migration (NON-BLOCKING TECHNICAL NOTE)
 
 ### CLOSED (Phase 1.3 identity decisions)
 - OD-19 — signup default `BEGINNER_RAPPER`
 - OD-20 — manual/operator-controlled ADMIN bootstrap (no auto-admin)
+- Live Supabase Auth/RLS verification: **PASS** (2026-09-25) — project `rzzxrgcdogkybkiidqgw`
 
 ---
 

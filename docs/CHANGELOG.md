@@ -6,6 +6,25 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-25 — PHASE 1.3 — DOCUMENTATION LOCK CLOSEOUT
+
+- Docs aligned to canonical `main` @ `efe3f71`
+- Phase 1.3 marked **COMPLETE / LOCKED**
+- Ready for Phase 1.4 planning (no implementation in this closeout)
+
+---
+
+## 2026-09-25 — PHASE 1.3 — COMMIT + MAIN PROMOTION
+
+- Commit: `efe3f71` — `feat(auth): complete phase 1.3 identity and rls`
+- Branch: `cursor/phase-1-3-auth` pushed; fast-forward promoted to `main` / `origin/main`
+- Identity / Auth foundation: profiles, roles, account levels, permissions, authorization helpers
+- RLS + privilege escalation protection
+- Live Supabase verification PASS (project `rzzxrgcdogkybkiidqgw`)
+- Excluded from commit: `.env.local`, `.agents/`, `.cursor/`, `skills-lock.json`, `supabase/.temp/`
+
+---
+
 ## 2026-09-25 — PHASE 1.3 — FINAL PRE-COMMIT AUDIT PASS
 
 - Git: `.env.local` ignored; no secrets in diff

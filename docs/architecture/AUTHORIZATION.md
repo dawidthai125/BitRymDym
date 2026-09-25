@@ -1,8 +1,8 @@
 # Authorization — Phase 1.3
 
-**Status:** OWNER REVIEW COMPLETE — READY TO COMMIT — OD-19 / OD-20 CLOSED; live Auth/RLS **PASS**  
+**Status:** COMPLETE / LOCKED / PROMOTED TO MAIN  
+**Canonical:** `main` @ `efe3f71`  
 **Runtime verification:** LIVE SUPABASE VERIFIED (2026-09-25) — project `rzzxrgcdogkybkiidqgw`  
- 
 **SSOT:** §3–5, §36, §39  
 **Architecture:** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)
 
@@ -80,8 +80,12 @@ Do not document secrets.
 | STATIC SECURITY AUDIT | PASS |
 | UNIT TESTS | PASS (authorization helpers) |
 | LIVE POSTGRES / SUPABASE VERIFICATION | **PASS** (2026-09-25) |
+| Role escalation | **DENY** (live) |
+| Account-level escalation | **DENY** (live) |
+| Permission INSERT / UPDATE / DELETE | **DENY** (live) |
+| Canonical promotion | `main` @ `efe3f71` — **LOCKED** |
 
-Static audit ≠ proof of live RLS on a production database.
+Static audit ≠ proof of live RLS on a production database. Live suite confirmed RLS on project `rzzxrgcdogkybkiidqgw`.
 
 ## Next.js note
 

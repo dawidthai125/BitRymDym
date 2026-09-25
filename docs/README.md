@@ -69,6 +69,7 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** SCAFFOLDED (Phase 1.2).  
+**APPLICATION:** SCAFFOLDED (Phase 1.2) + Auth foundation (Phase 1.3).  
 **Foundation Documentation Baseline:** LOCKED (2026-09-25).  
-**Auth / product modules:** NOT STARTED.
+**Foundation / Auth (through Phase 1.3):** COMPLETE / LOCKED on `main` @ `efe3f71`.  
+**Product modules** (beats, player, Quick Take, downloads, payments, community): **NOT STARTED**.
