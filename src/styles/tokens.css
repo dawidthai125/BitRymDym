@@ -1,0 +1,27 @@
+/*
+  BitRymDym Design Tokens (foundation)
+
+  Placeholders for future BitRymDym Design System (OD-15 OPEN).
+
+  Do NOT treat current shadcn/neutral theme as final brand identity.
+  Final colors, typography, and visual language remain OPEN.
+
+  Structural hooks only — no invented brand palette.
+*/
+
+:root {
+  /* Reserved for BitRymDym brand tokens (OD-15). */
+  --brd-space-1: 0.25rem;
+  --brd-space-2: 0.5rem;
+  --brd-space-3: 0.75rem;
+  --brd-space-4: 1rem;
+  --brd-space-6: 1.5rem;
+  --brd-space-8: 2rem;
+
+  /* Semantic aliases — map to theme until brand tokens exist */
+  --brd-surface: var(--background);
+  --brd-ink: var(--foreground);
+  --brd-muted: var(--muted-foreground);
+  --brd-border: var(--border);
+  --brd-focus: var(--ring);
+}

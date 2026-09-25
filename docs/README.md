@@ -54,6 +54,7 @@ Nie duplikować całych treści — stosować linki.
 | [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu / handoff |
 | [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) | Konstytucja produktu (v0.1) |
 | [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) | Baseline architektury (OD-01–03) |
+| [architecture/APPLICATION_SCAFFOLD.md](./architecture/APPLICATION_SCAFFOLD.md) | Phase 1.2 scaffold notes |
 | [architecture/README.md](./architecture/README.md) | Status architektury (skrót) |
 | [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) | Decyzje OPEN / CLOSED |
 | [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) | Historia zatwierdzonych decyzji |
@@ -67,5 +68,6 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION IMPLEMENTATION:** NOT STARTED.  
-**Foundation Documentation Baseline:** LOCKED (2026-09-25).
+**APPLICATION:** SCAFFOLDED (Phase 1.2).  
+**Foundation Documentation Baseline:** LOCKED (2026-09-25).  
+**Auth / product modules:** NOT STARTED.

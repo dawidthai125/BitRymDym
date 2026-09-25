@@ -10,9 +10,9 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 |---------|---------|
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
-| Faza | 1 — Fundament (dokumentacja architektury; aplikacja NOT STARTED) |
+| Faza | 1 — Fundament (Phase 1.2 scaffold COMPLETED — Owner Review) |
 | Płatności / Premium | wyłączone |
-| Application implementation | **NOT STARTED** |
+| Application | **SCAFFOLDED** (brak Auth / beats / player) |
 
 ## Nowy agent — start tutaj
 
@@ -36,7 +36,21 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 | Application server | Next.js Server Actions / Route Handlers (**OD-02**) |
 | Infrastruktura | Supabase: PostgreSQL, Auth, RLS, Storage (**OD-03**) |
 
-Szczegóły: [SYSTEM_ARCHITECTURE.md](./docs/architecture/SYSTEM_ARCHITECTURE.md).
+Szczegóły: [SYSTEM_ARCHITECTURE.md](./docs/architecture/SYSTEM_ARCHITECTURE.md) · [APPLICATION_SCAFFOLD.md](./docs/architecture/APPLICATION_SCAFFOLD.md)
+
+## App (Phase 1.2 scaffold)
+
+```bash
+npm install
+npm run dev
+npm run lint
+npm run typecheck
+npm run build
+```
+
+Skopiuj `.env.example` → `.env.local` (placeholdery). Nie commituj sekretów.
+
+**Status aplikacji:** SCAFFOLDED — Auth / beats / player / Quick Take **nie** zaimplementowane.
 
 ## Zasady rozwoju
 

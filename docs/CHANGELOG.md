@@ -6,6 +6,24 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-25 — PHASE 1.2 — APPLICATION SCAFFOLD / TECHNICAL BOOTSTRAP
+
+**Status:** LOCKED (Owner APPROVED)
+
+- Next.js 16 App Router + TypeScript + Tailwind CSS v4
+- shadcn/ui baseline (minimal `Button` + utils) as technical base only
+- BitRymDym Design System foundation (`src/styles/tokens.css`, `src/components/brand`)
+- Supabase client integration stubs (`src/lib/supabase/*`) — no schema / Auth / RLS / Storage
+- `.env.example` placeholders only
+- Base application shell `/` + `loading` / `error` / `not-found`
+- Domain type foundation (`Role` ≠ `AccountLevel`)
+- Validation: lint PASS, typecheck PASS, build PASS
+- Documentation updated (PROJECT_STATE, PHASE_1, APPLICATION_SCAFFOLD, architecture)
+
+**Not included:** Auth, Users, Roles, Permissions, Profiles, beats, player, Quick Take, downloads, payments, production Supabase setup.
+
+---
+
 ## 2026-09-25 — Foundation Documentation Baseline LOCKED
 
 - OD-01 closed

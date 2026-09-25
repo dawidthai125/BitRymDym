@@ -368,12 +368,13 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-FOUNDATION DOCUMENTATION ONLY
+PHASE 1.2 — APPLICATION SCAFFOLD LOCKED
 ```
 
 - OD-01 / OD-02 / OD-03 zamknięte i udokumentowane.
-- **APPLICATION IMPLEMENTATION: NOT STARTED**
-- Brak scaffoldu Next.js, brak schematu DB w kodzie, brak RLS w repo, brak UI aplikacji.
+- Aplikacja: **SCAFFOLDED** — [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md).
+- **Auth / Users / Roles / Permissions / Profiles / Beats / Player / Quick Take / Payments: NOT STARTED**
+- Brak schematu DB, RLS, Storage buckets, audio pipeline w kodzie.
 
 ---
 

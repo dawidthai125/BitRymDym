@@ -45,4 +45,5 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**NOT STARTED.** Dokumentacja baseline ≠ kod aplikacji.
+**SCAFFOLDED** (Phase 1.2). Auth / domain modules: **NOT STARTED**.  
+See [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md).

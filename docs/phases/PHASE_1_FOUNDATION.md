@@ -52,7 +52,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 |------|------|---------|--------|
 | 1.0 | Dokumentacja SSOT + rejestr decyzji + struktura docs | — | **COMPLETED** |
 | 1.1 | Decyzja stacku FE/BE + architektury Supabase + SYSTEM_ARCHITECTURE | OD-01, OD-02, OD-03 | **COMPLETED** (docs) — Owner APPROVED · LOCKED |
-| 1.2 | Scaffold projektu + CI podstawowe | 1.1 + Owner approval | NOT STARTED |
+| 1.2 | Scaffold projektu + bootstrap techniczny | 1.1 + Owner approval | **COMPLETED / LOCKED** |
 | 1.3 | Auth (Supabase) + Users / Roles / Permissions / Profiles | 1.2 | NOT STARTED |
 | 1.4 | Beats + metadata + statusy + max duration (server) | 1.3 | NOT STARTED |
 | 1.5 | Private audio storage + controlled playback/download access | 1.4; OD-12 częściowo | NOT STARTED |
@@ -77,7 +77,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - [ ] `payments_enabled` / `premium_enabled` = false.
 - [ ] Testy krytycznych reguł serwerowych.
 
-**Cała Faza 1 ≠ COMPLETE** — tylko etapy dokumentacyjne 1.0–1.1.
+**Cała Faza 1 ≠ COMPLETE** — ukończone i LOCKED: 1.0–1.2. 1.3+ NOT STARTED.
 
 ---
 
@@ -85,6 +85,7 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 
 | Etap | Status |
 |------|--------|
-| 1.0 Dokumentacja SSOT | COMPLETED |
-| 1.1 Architektura OD-01–03 | COMPLETED (dokumentacja) — Owner APPROVED · BASELINE LOCKED |
-| 1.2–1.8 Implementacja aplikacji | NOT STARTED — czeka na Owner GO / prompt etapu 1.2 |
+| 1.0 Dokumentacja SSOT | COMPLETED / LOCKED |
+| 1.1 Architektura OD-01–03 | COMPLETED / LOCKED |
+| 1.2 Application scaffold | **COMPLETED / LOCKED** (Owner APPROVED) |
+| 1.3–1.8 | NOT STARTED — czeka na Owner GO / prompt etapu 1.3 |
