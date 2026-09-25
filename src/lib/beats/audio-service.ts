@@ -53,6 +53,9 @@ export async function uploadPlatformBeatAudio(params: {
   originalFilename?: string | null;
 }): Promise<BeatAudioAsset> {
   const context = await requirePermission("beats.edit");
+  if (context.profile.role !== "ADMIN") {
+    throw new AuthError("FORBIDDEN", "Only ADMIN may upload PLATFORM audio.");
+  }
   await loadPlatformBeatOrThrow(params.beatId);
 
   const purpose: BeatAudioPurpose = params.purpose ?? "MASTER";
@@ -154,7 +157,10 @@ export async function uploadPlatformBeatAudio(params: {
 export async function archivePlatformBeatAudio(
   assetId: string,
 ): Promise<BeatAudioAsset> {
-  await requirePermission("beats.edit");
+  const context = await requirePermission("beats.edit");
+  if (context.profile.role !== "ADMIN") {
+    throw new AuthError("FORBIDDEN", "Only ADMIN may archive PLATFORM audio.");
+  }
   const admin = createSupabaseAdminClient();
 
   const { data: current, error } = await admin

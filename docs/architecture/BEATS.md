@@ -10,6 +10,7 @@
 | Access Gate | **COMPLETE / LOCKED** @ `0ec0be0` |
 | Signed URLs (PLAYBACK 120s / DOWNLOAD 300s) | **COMPLETE / LOCKED** @ `0ec0be0` |
 | Player / playback UI | **COMPLETE / CLOSED / LOCKED** @ `39be430` — Phase 1.6 Playback Shell |
+| Admin PLATFORM content ops | **IMPLEMENTED (local)** — Phase 1.7 `/admin/beats*` |
 
 **Supabase project:** `rzzxrgcdogkybkiidqgw`
 **SSOT:** §6–§9, §12–§13, §29–§30, §36
@@ -173,7 +174,7 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 - ADMIN PLATFORM upload only; USER community audio DENY
 - Migration: `20260925220000_phase_1_5_audio_storage.sql` (live: `phase_1_5_audio_storage`)
 
-**Still deferred to 1.7+:**
+**Still deferred (post–content-ops):**
 
 - Download limit counters (OD-05/06/17)
 - Codec finalization (**OD-12 remains OPEN**)
@@ -190,6 +191,15 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 - Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md)
 - Production: **GREEN / VERIFIED**
 
+### Phase 1.7 admin PLATFORM ops (IMPLEMENTED locally)
+
+- Routes: `/admin/beats`, `/admin/beats/new`, `/admin/beats/[id]`
+- ADMIN-only; PLATFORM `owner_id=NULL`
+- REUSE create / metadata / `uploadPlatformBeatAudio` / `DRAFT→PUBLISHED`
+- UI Publish requires active READY MASTER; server hard rule = GAP-PUBLISH-READY
+- Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md)
+- Not CLOSED / not deployed yet
+
 ## 9. Verification
 
 | Layer | Status |
@@ -198,3 +208,4 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 | Phase 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
 | Phase 1.5 Storage / Access Gate | **LOCKED** @ `0ec0be0` — live **PASS** |
 | Phase 1.6 surface + Playback Shell | **CLOSED / LOCKED** @ `39be430` — production **GREEN** |
+| Phase 1.7 admin PLATFORM ops | **IMPLEMENTED (local)** — unit/lint/typecheck/build **PASS**; live E2E **NOT FULLY VERIFIED** |

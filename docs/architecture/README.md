@@ -45,6 +45,6 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2–1.5 LOCKED** on `main` @ `7de20a3` closeout / `0ec0be0` impl.
-**Phase 1.6** Design Freeze APPROVED / LOCKED — Published Beats Surface + Playback Shell **implemented locally** (uncommitted).
-See [BEATS.md](./BEATS.md), [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md).
+**Phase 1.2–1.6 LOCKED** on `main` (1.6 @ `39be430`; docs closeout @ `d5b4e91`).
+**Phase 1.7** Design Freeze APPROVED / LOCKED — Admin PLATFORM Content Ops Surface **implementation complete** (awaiting push / production verification — **not CLOSED**).
+See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md).

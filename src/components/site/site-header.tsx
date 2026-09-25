@@ -33,12 +33,22 @@ export async function SiteHeader({
             Bity
           </Link>
           {session ? (
-            <Link
-              href="/account"
-              className="underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Konto
-            </Link>
+            <>
+              {session.profile.role === "ADMIN" ? (
+                <Link
+                  href="/admin/beats"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Admin
+                </Link>
+              ) : null}
+              <Link
+                href="/account"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Konto
+              </Link>
+            </>
           ) : (
             <Link
               href="/sign-in"

@@ -24,41 +24,46 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| HEAD | `39be430e91f5e8474d09007f254e49b963962a7d` |
-| Remote | `origin/main` = `39be430e91f5e8474d09007f254e49b963962a7d` |
-| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist) |
+| Last pushed HEAD | `d5b4e91518306ee82590e79ea7c5aa47c614ee20` |
+| Remote | `origin/main` = `d5b4e91518306ee82590e79ea7c5aa47c614ee20` |
+| Working tree | **DIRTY** — Phase 1.7 implementation + docs (local, uncommitted) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | **GREEN / VERIFIED** @ `39be430` |
+| Production (last pushed) | **GREEN / VERIFIED** @ `39be430` (docs closeout `d5b4e91`; Phase 1.7 not deployed) |
 
 Phase 1.4 lock: `6cb1e9a` / docs `ec32b97`.
 Phase 1.5 Design Freeze: `0e5c491`.
 Phase 1.5 implementation: `0ec0be0`.
 Phase 1.5 documentation closeout: `7de20a3`.
 Phase 1.6 Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](./phases/PHASE_1_6_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
-Phase 1.6 implementation: `39be430` — `feat(beats): complete phase 1.6 playback surface`.
+Phase 1.6 implementation: `39be430`.
+Phase 1.6 docs reconciliation: `d5b4e91`.
+Phase 1.7 Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) — **APPROVED / LOCKED** (2026-09-26).
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.6 CLOSED / LOCKED — READY FOR PHASE 1.7 CANDIDATE DESIGN FREEZE
+FOUNDATION — PHASE 1.7 IMPLEMENTATION COMPLETE (LOCAL) — READY FOR IMPLEMENTATION AUDIT
 ```
 
 | Etap | Status |
 |------|--------|
-| 1.0–1.5 | **COMPLETE / CLOSED / LOCKED** on `origin/main` |
-| 1.6 Design Freeze | **APPROVED / LOCKED** |
-| 1.6 Implementation | **COMPLETE / CLOSED / LOCKED** @ `39be430` |
-| 1.6 Production | **GREEN / VERIFIED** |
-| 1.7+ | **NOT STARTED** |
+| 1.0–1.6 | **COMPLETE / CLOSED / LOCKED** on `origin/main` |
+| 1.7 Design Freeze | **APPROVED / LOCKED** (2026-09-26) |
+| 1.7 Implementation | **COMPLETE (local, uncommitted)** — Admin PLATFORM Content Ops Surface |
+| 1.7 Production close | **NOT DONE** (no commit / push / live ADMIN ops verify yet) |
+| 1.8+ | **NOT STARTED** |
 
-**Phase 1.6 delivered:** `/beats` PUBLISHED-only catalog; `/beat/[id]` PUBLISHED-only detail; PlaybackShell + existing Access Gate + PLAYBACK signed URL.
+**Phase 1.7 delivered (local):** `/admin/beats`, `/admin/beats/new`, `/admin/beats/[id]`; PLATFORM create DRAFT; metadata edit; MASTER upload via existing `uploadPlatformBeatAudio`; UI Publish gate requires READY MASTER; lifecycle REUSE (`DRAFT → PUBLISHED`).
 
-**Still PARTIAL after 1.6:** Downloads (signed DOWNLOAD exists; no UI / limits / counters / audit).
-**NOT STARTED:** Quick Take, download limits productization, payments, community.
+**Still PARTIAL:** Downloads (signed DOWNLOAD only; no UI / limits).
+**NOT STARTED:** Quick Take, payments, community.
+**GAP-PUBLISH-READY:** server hard READY rule NOT implemented (UI-only).
+**AUDIT GAP:** preserved (no audit system).
 
 **OD-04 … OD-18 remain OPEN.**
+**OD-20:** first ADMIN = operator-controlled (live `admin_count = 0` at verification time).
 
 ---
 
@@ -73,40 +78,36 @@ FOUNDATION — PHASE 1.6 CLOSED / LOCKED — READY FOR PHASE 1.7 CANDIDATE DESIG
 
 ## 5. Verification status
 
-### Phase 1.5 (locked)
-
-| Layer | Status |
-|-------|--------|
-| Storage / Access Gate / RLS | **PASS** (locked) |
-
 ### Phase 1.6 (locked)
 
 | Layer | Status |
 |-------|--------|
-| `/beats` PUBLISHED catalog | **PASS** |
-| `/beat/[id]` PUBLISHED detail | **PASS** |
-| Playback Shell (no `<audio controls>` UI) | **PASS** |
-| Access Gate PLAYBACK only | **PASS** |
-| DOWNLOAD / Quick Take / waveform hard-out | **PASS** |
-| Unit / lint / typecheck / build | **PASS** |
-| Commit / push | **PASS** (`39be430` on `main` / `origin/main`) |
-| Production | **GREEN / VERIFIED** |
-| Phase lock | **CLOSED / LOCKED** |
+| Public surface + Playback | **PASS** (locked @ `39be430`) |
+
+### Phase 1.7 (local)
+
+| Layer | Status |
+|-------|--------|
+| Admin routes + AuthZ gate | **PASS** (unit/lint/typecheck/build) |
+| UI Publish gate (READY MASTER) | **PASS** (unit) |
+| REUSE create/upload/lifecycle/Access Gate | **PASS** |
+| Live ADMIN create→publish→playback | **NOT FULLY VERIFIED** (no provisioned ADMIN; no audio fixture; not deployed) |
+| Commit / push | **NOT DONE** (Owner Implementation Audit) |
 
 ---
 
 ## 6. Open Decisions
 
-Still OPEN: **OD-04 … OD-18** (including OD-05 / OD-06 / OD-12 / OD-13 / OD-14 / OD-15 / OD-16 / OD-17 / OD-18).
+Still OPEN: **OD-04 … OD-18**.
 See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ---
 
 ## 7. Current Blockers
 
-1. Phase 1.7 Design Freeze requires Owner selection of next candidate (Cold-Start Audit material)
-2. Operator must manually provision first ADMIN when admin features are required (OD-20)
-3. Production catalog may be empty (0 PUBLISHED) — listening demo needs PLATFORM content ops
+1. Phase 1.7 Implementation Audit → commit / push (Owner GO)
+2. Operator must provision first ADMIN (OD-20) before live ops loop
+3. Live E2E with real audio fixture deferred until ADMIN exists
 
 ---
 
@@ -118,6 +119,7 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 | Beats metadata domain | **COMPLETE / LOCKED** |
 | Private audio Storage + Access Gate | **COMPLETE / LOCKED** (`0ec0be0`) |
 | Published Beats Surface + Playback Shell | **COMPLETE / CLOSED / LOCKED** (`39be430`) |
+| Admin PLATFORM Content Ops Surface | **COMPLETE (local)** — Phase 1.7 |
 | Downloads (limits / UI / audit) | **PARTIAL** (signed DOWNLOAD only) |
 | Quick Take / Payments | **NOT STARTED** |
 
@@ -127,17 +129,15 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.7 — DESIGN FREEZE FOR SELECTED CANDIDATE
-(Cold-Start Audit complete; Owner chooses candidate before Design Freeze)
+PHASE 1.7 IMPLEMENTATION AUDIT → COMMIT / PUSH (Owner GO)
+Phase 1.7 is NOT production-closed until audit + commit + push + live verification with ADMIN.
 ```
-
-Do not implement Phase 1.7 until Design Freeze + Owner GO.
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Post–Phase 1.6 documentation reconciliation (2026-09-26)
+**Sesja:** Phase 1.7 Implementation GO (2026-09-26)
 
-**Done:** Docs aligned to Phase 1.6 CLOSED / LOCKED @ `39be430` (production GREEN).
-**Not done:** Phase 1.7 Design Freeze / implementation.
+**Done:** Admin PLATFORM ops surface implemented locally per APPROVED freeze; tests/lint/typecheck/build PASS.
+**Not done:** commit, push, live ADMIN ops E2E, Phase 1.7 CLOSED.

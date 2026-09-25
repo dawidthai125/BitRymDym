@@ -63,6 +63,7 @@ Nie duplikować całych treści — stosować linki.
 | [phases/PHASE_1_FOUNDATION.md](./phases/PHASE_1_FOUNDATION.md) | Faza 1 — Fundament |
 | [phases/PHASE_1_5_DESIGN_FREEZE.md](./phases/PHASE_1_5_DESIGN_FREEZE.md) | Phase 1.5 Design Freeze (LOCKED) |
 | [phases/PHASE_1_6_DESIGN_FREEZE.md](./phases/PHASE_1_6_DESIGN_FREEZE.md) | Phase 1.6 Design Freeze (APPROVED / LOCKED) |
+| [phases/PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) | Phase 1.7 Design Freeze (APPROVED / LOCKED) |
 | [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) | Stała zasada ciągłości docs |
 | [CHANGELOG.md](./CHANGELOG.md) | Historia zmian dokumentacji |
 
@@ -72,6 +73,6 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Access Gate (1.5 LOCKED) + Published Beats Surface / Playback Shell (1.6 local).
-**Canonical pushed baseline:** `main` @ `7de20a3`.
-**Next:** Phase 1.6 Implementation Audit → commit / push.
+**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Access Gate (1.5 LOCKED) + Published Beats Surface / Playback Shell (1.6 LOCKED) + Admin PLATFORM Content Ops (1.7 implementation complete, awaiting push / production verification — not CLOSED).
+**Canonical pushed baseline:** `main` @ `d5b4e91` (pre–1.7 commit).
+**Next:** Phase 1.7 push → production verification → closeout.

@@ -142,3 +142,21 @@ Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md
 | DOWNLOAD from UI | HARD OUT |
 
 No new permission keys. AccountLevel unused for playback.
+
+---
+
+## Phase 1.7 — Admin PLATFORM Content Ops
+
+Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md).
+
+| Surface | Rule |
+|---------|------|
+| `/admin/beats*` | ADMIN role required (layout gate) |
+| Create / edit / upload / publish | `beats.create` / `beats.edit` + ADMIN |
+| USER / MODERATOR / anonymous | DENY PLATFORM write ops |
+| Ownership | `PLATFORM` + `owner_id = NULL` |
+| Publish UI | Blocked without active READY MASTER |
+| Server publish READY hard rule | **GAP-PUBLISH-READY** (not implemented) |
+| AccountLevel | Unused for admin AuthZ |
+
+No new permission keys. No admin bootstrap endpoint. OD-20 CLOSED (operator ADMIN).

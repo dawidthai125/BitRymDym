@@ -324,3 +324,24 @@ Prevents privilege escalation and accidental admin grant on first registration.
 
 **Still out of scope / remaining state:** DOWNLOAD UI / limits / counters / audit (**PARTIAL** backend signed DOWNLOAD only); Quick Take **NOT STARTED**; waveform; Admin CMS; payments.
 **OD-04 … OD-18 remain OPEN.**
+
+---
+
+### Phase 1.7 — Admin PLATFORM Content Ops Surface (implementation note — local)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.7 Admin PLATFORM Content Ops Surface |
+| Status | Design Freeze APPROVED / LOCKED; implementation COMPLETE (local, uncommitted) — **not CLOSED** |
+| Date | 2026-09-26 |
+| Design Freeze | [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md) — APPROVED / LOCKED |
+| Baseline | `origin/main` @ `d5b4e91` |
+
+**Frozen scope delivered locally:**
+
+- `/admin/beats*` ADMIN-only ops surface
+- PLATFORM create/edit + MASTER upload via existing services
+- UI Publish gate requires READY MASTER; server hard READY rule remains GAP-PUBLISH-READY
+- Audit infrastructure GAP preserved
+
+**OD-04 … OD-18 remain OPEN.** No new OD. OD-20 CLOSED (operator ADMIN).

@@ -57,8 +57,9 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.4 | Beats + metadata + statusy + max duration (server) | 1.3 | **COMPLETE / LOCKED** on `main` @ `6cb1e9a` — live Beats/RLS **PASS** |
 | 1.5 | Private audio storage + controlled playback/download access | 1.4; OD-12 częściowo | **COMPLETE / CLOSED / LOCKED** on `main` @ `0ec0be0` — live Storage/Access Gate **PASS** |
 | 1.6 | Published Beats Surface + Playback Shell | 1.5; OD-15 interim | **COMPLETE / CLOSED / LOCKED** on `main` @ `39be430` |
-| 1.7 | Download permissions + limity (konfigurowalne) | 1.5; OD-05, OD-06, OD-17 | NOT STARTED |
-| 1.8 | Quick Take + temporary recordings + TTL | 1.6 | NOT STARTED |
+| 1.7 | Admin PLATFORM Content Ops Surface | 1.6; OD-20 ops ADMIN | **IMPLEMENTED (local)** — Design Freeze APPROVED / LOCKED |
+| 1.8 | Download permissions + limity (konfigurowalne) | 1.5; OD-05, OD-06, OD-17 | NOT STARTED |
+| 1.9 | Quick Take + temporary recordings + TTL | 1.6 | NOT STARTED |
 
 ---
 
@@ -71,12 +72,12 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - [x] Role i permissions są rozdzielone od poziomu konta — w kodzie + RLS live verified.
 - [x] Master audio nie jest wystawione jako stały publiczny URL — Phase 1.5 private bucket + signed URLs.
 - [x] Odtwarzanie przez autorski player (nie natywne `<audio controls>` jako UI). *(Phase 1.6 Playback Shell @ `39be430`)*
-- [ ] Pobieranie: auth + limit + signed URL + rejestracja. *(signed URL foundation: 1.5; limity: 1.7)*
+- [ ] Pobieranie: auth + limit + signed URL + rejestracja. *(signed URL foundation: 1.5; limity: later / was historically labeled 1.7)*
 - [ ] Quick Take: max 30 s; anonimowe z TTL; zalogowane z retencją 24 h.
 - [ ] `payments_enabled` / `premium_enabled` = false.
-- [x] Testy krytycznych reguł serwerowych (Auth + beats metadata/RLS + audio Storage/Access Gate + Phase 1.6 public surface).
+- [x] Testy krytycznych reguł serwerowych (Auth + beats metadata/RLS + audio Storage/Access Gate + Phase 1.6 public surface + Phase 1.7 admin publish gate).
 
-**Cała Faza 1 ≠ COMPLETE** — ukończone on origin: **1.0–1.6 COMPLETE / CLOSED / LOCKED** (`39be430`). Downloads remain PARTIAL; 1.7–1.8 NOT STARTED.
+**Cała Faza 1 ≠ COMPLETE** — ukończone on origin: **1.0–1.6**. Phase 1.7: **IMPLEMENTED locally** (awaiting audit/commit). Downloads remain PARTIAL; Quick Take NOT STARTED.
 
 ---
 
@@ -91,7 +92,8 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 | 1.4 Beats domain foundation | **COMPLETE / LOCKED** — commit `6cb1e9a` on `main` / `origin/main`; live Beats/RLS **PASS** |
 | 1.5 Private audio + Access Gate | **COMPLETE / CLOSED / LOCKED** — commit `0ec0be0`; Design Freeze `0e5c491`; docs closeout `7de20a3`; live Storage/Access Gate **PASS** |
 | 1.6 Published Beats + Playback Shell | **COMPLETE / CLOSED / LOCKED** — commit `39be430`; Design Freeze APPROVED / LOCKED; production **GREEN** |
-| 1.7–1.8 | NOT STARTED — nie rozpoczynać bez Owner GO |
+| 1.7 Admin PLATFORM Content Ops | **IMPLEMENTED (local)** — Design Freeze APPROVED / LOCKED — `/admin/beats*` |
+| 1.8–1.9 | NOT STARTED — nie rozpoczynać bez Owner GO |
 
 ### Phase 1.3 lock notes
 
@@ -131,4 +133,15 @@ Każdy etap wymaga osobnego promptu Architekta / akceptacji PO. Cursor Agent nie
 - Downloads after 1.6: **PARTIAL** (no UI / limits / counters / audit)
 - Quick Take: **NOT STARTED**
 - Hard OUT retained: DOWNLOAD productization, Quick Take, waveform engine
-- Next: Phase 1.7 Design Freeze for Owner-selected candidate
+- Next: Phase 1.7 Admin PLATFORM Content Ops — **IMPLEMENTED (local)** / awaiting audit+commit
+
+### Phase 1.7 lock notes (local)
+
+- Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./PHASE_1_7_DESIGN_FREEZE.md) — **APPROVED / LOCKED** (2026-09-26)
+- Status: **IMPLEMENTED (local, uncommitted)** — not CLOSED
+- Routes: `/admin/beats`, `/admin/beats/new`, `/admin/beats/[id]`
+- REUSE: createPlatformBeat, uploadPlatformBeatAudio, lifecycle DRAFT→PUBLISHED, Access Gate
+- UI Publish gate: READY MASTER required; GAP-PUBLISH-READY server hard rule deferred
+- No migration; audit GAP preserved; OD-04…18 OPEN
+- Live E2E: NOT FULLY VERIFIED (admin_count=0; no audio fixture)
+- Next: Implementation Audit → commit / push

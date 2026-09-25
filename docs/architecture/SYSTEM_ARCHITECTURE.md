@@ -383,10 +383,9 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.6 — PUBLISHED BEATS SURFACE + PLAYBACK SHELL — COMPLETE / CLOSED / LOCKED
-Canonical: main @ 39be430
-Production: GREEN / VERIFIED
-Next: PHASE 1.7 DESIGN FREEZE (Owner candidate selection; Cold-Start Audit complete)
+PHASE 1.7 — ADMIN PLATFORM CONTENT OPS SURFACE — IMPLEMENTED (LOCAL)
+Baseline: d5b4e91 · Freeze APPROVED / LOCKED 2026-09-26
+Next: IMPLEMENTATION AUDIT → commit / push (not CLOSED)
 ```
 
 ### IMPLEMENTED / LOCKED
@@ -409,9 +408,15 @@ Next: PHASE 1.7 DESIGN FREEZE (Owner candidate selection; Cold-Start Audit compl
   - PLAYBACK only via existing Access Gate
   - DOWNLOAD UI / limits / Quick Take / waveform hard OUT
   - Downloads capability remains **PARTIAL**; Quick Take **NOT STARTED**
+- Phase 1.7 Design Freeze — APPROVED / LOCKED
+- Phase 1.7 Admin PLATFORM Content Ops (**local, uncommitted**)
+  - `/admin/beats*` ADMIN-only ops surface
+  - REUSE create / metadata / uploadPlatformBeatAudio / lifecycle
+  - UI Publish blocked without READY MASTER (GAP-PUBLISH-READY preserved)
+  - No new migration / no audit system / no download UI
 
 ### PLANNED (not started)
-- Download limits / UI / audit (1.7), Quick Take (1.8), tracks, payments
+- Download limits / UI / audit (later), Quick Take, tracks, payments
 
 ### OPEN
 - OD-04 … OD-18 — **OD-12 remains OPEN**
