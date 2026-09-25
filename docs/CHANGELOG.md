@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-26 — PHASE 1.6 — PUBLISHED BEATS + PLAYBACK SHELL (LOCAL IMPLEMENTATION)
+
+**Status:** IMPLEMENTED locally — Design Freeze APPROVED / LOCKED — **not committed**
+
+- Freeze: `docs/phases/PHASE_1_6_DESIGN_FREEZE.md`
+- Routes: `/beats` (PUBLISHED catalog), `/beat/[id]` (detail + Playback Shell)
+- Playback via existing Access Gate (`PLAYBACK` only); no second signed-URL service
+- Hard OUT: DOWNLOAD UI, Quick Take, waveform engine
+- Unit 40/40; lint / typecheck / build PASS
+- Prior docs reconciliation (Phase 1.5 stale pointers) included in dirty tree
+- Next: Implementation Audit → commit / push
+
+---
+
 ## 2026-09-26 — PHASE 1.5 — COMPLETE / LOCKED
 
 **Status:** COMPLETE / COMMITTED / PUSHED — `0ec0be0` on `main` / `origin/main`

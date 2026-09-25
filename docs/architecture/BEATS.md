@@ -1,12 +1,27 @@
-# Beats Domain — Phase 1.4
+# Beats Domain
 
-**Status:** COMPLETE / LOCKED
-**Canonical commit:** `main` @ `6cb1e9a`
+**Domain status (current):**
+
+| Layer | Status |
+|-------|--------|
+| Beats metadata (Phase 1.4) | **COMPLETE / LOCKED** @ `6cb1e9a` |
+| Private audio storage (`beat-audio`) | **COMPLETE / LOCKED** @ `0ec0be0` |
+| `beat_audio_assets` | **COMPLETE / LOCKED** @ `0ec0be0` |
+| Access Gate | **COMPLETE / LOCKED** @ `0ec0be0` |
+| Signed URLs (PLAYBACK 120s / DOWNLOAD 300s) | **COMPLETE / LOCKED** @ `0ec0be0` |
+| Player / playback UI | **COMPLETE (local)** — Phase 1.6 Playback Shell |
+
 **Supabase project:** `rzzxrgcdogkybkiidqgw`
-**SSOT:** §6–§8, §29–§30, §36
-**Related:** [AUTHORIZATION.md](./AUTHORIZATION.md) · [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)
+**SSOT:** §6–§9, §12–§13, §29–§30, §36
+**Related:** [AUTHORIZATION.md](./AUTHORIZATION.md) · [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md)
 
-Phase 1.4 = **beats metadata foundation only**. Audio Storage, player, downloads, Quick Take, community upload = **OUT OF SCOPE**.
+---
+
+## Phase 1.4 — metadata foundation (historical)
+
+**Status:** COMPLETE / LOCKED @ `6cb1e9a`
+
+Phase 1.4 delivered **beats metadata foundation only**. At that stage: Audio Storage, player, downloads, Quick Take, community upload = **OUT OF SCOPE** (Storage + Access Gate later delivered in Phase 1.5).
 
 ---
 
@@ -144,16 +159,9 @@ API-first: no admin UI / player / upload surface in Phase 1.4.
 
 ---
 
-## 8. Future audio boundary
+## 8. Phase 1.5 audio boundary (COMPLETE / LOCKED)
 
-Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implementation notes below and [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md).
-
-**Still deferred to 1.6+:**
-
-- Custom player / waveform
-- Download limit counters (OD-05/06/17)
-- Codec finalization (**OD-12 remains OPEN**)
-- Quick Take, community upload, watermark
+Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md).
 
 ### Phase 1.5 audio assets (COMPLETE / LOCKED @ `0ec0be0`)
 
@@ -165,6 +173,21 @@ Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implemen
 - ADMIN PLATFORM upload only; USER community audio DENY
 - Migration: `20260925220000_phase_1_5_audio_storage.sql` (live: `phase_1_5_audio_storage`)
 
+**Still deferred to 1.7+:**
+
+- Download limit counters (OD-05/06/17)
+- Codec finalization (**OD-12 remains OPEN**)
+- Quick Take, community upload, watermark
+
+### Phase 1.6 public surface (IMPLEMENTED locally)
+
+- Routes: `/beats`, `/beat/[id]`
+- PUBLISHED-only catalog + detail
+- `PlaybackShell` — custom UI; `HTMLAudioElement` engine; no `<audio controls>` product UI
+- Playback via existing `requestBeatAudioAccess` (`PLAYBACK` only)
+- Hard OUT: DOWNLOAD CTA, Quick Take, waveform engine
+- Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md)
+
 ## 9. Verification
 
 | Layer | Status |
@@ -172,3 +195,4 @@ Phase 1.5 implements private Storage + Access Gate. See Design Freeze / implemen
 | Phase 1.4 metadata | **LOCKED** @ `6cb1e9a` |
 | Phase 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
 | Phase 1.5 Storage / Access Gate | **LOCKED** @ `0ec0be0` — live **PASS** |
+| Phase 1.6 surface + Playback Shell | **IMPLEMENTED (local)** — unit/lint/typecheck/build **PASS** |

@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const siteConfig = {
   name: "BitRymDym",
   description:
-    "Platforma muzyczna — rap, hip-hop i kultura tworzenia bitów. Scaffold techniczny Fazy 1.2.",
+    "Platforma muzyczna — rap, hip-hop i bity. Publiczny katalog i odsłuch PUBLISHED (Phase 1.6).",
 } as const;
 
 export const siteMetadata: Metadata = {

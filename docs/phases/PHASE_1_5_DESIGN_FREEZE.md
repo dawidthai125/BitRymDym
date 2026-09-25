@@ -1,18 +1,19 @@
 # Phase 1.5 Design Freeze
 
 **Title:** Private Audio Storage + Controlled Access Gate
-**Baseline:** `origin/main` @ `ec32b97` (docs lock over Phase 1.4 `6cb1e9a`)
+**Baseline (at freeze authoring):** `origin/main` @ `ec32b97` (docs lock over Phase 1.4 `6cb1e9a`)
 **Supabase project:** `rzzxrgcdogkybkiidqgw`
 **SSOT:** §9, §12–§13, §38–§39
 **Depends on:** Phase 1.3 AuthZ LOCKED · Phase 1.4 Beats Domain LOCKED
-**Document status:** DESIGN FREEZE — **READY FOR FINAL OWNER APPROVAL**
-**Implementation:** NOT STARTED (this document is design-only)
+**Document role:** Original Phase 1.5 Design Freeze (historical architecture freeze)
+**Document status:** **COMPLETE / CLOSED / LOCKED** (freeze approved; implementation delivered)
+**Implementation:** **COMPLETE / CLOSED / LOCKED** @ `0ec0be0` — docs closeout @ `7de20a3`
 
-Legend used throughout:
+Legend used throughout (historical freeze vocabulary):
 
 | Label | Meaning |
 |-------|---------|
-| **FROZEN** | Approved design decision for Phase 1.5 implementation (pending Owner accept of this freeze) |
+| **FROZEN** | Approved design decision for Phase 1.5 (locked by freeze + delivered in implementation) |
 | **OPEN** | Existing OD still OPEN — not closed by this freeze |
 | **DEFERRED** | Intentionally out of Phase 1.5; later phase / later OD |
 
@@ -23,9 +24,9 @@ Legend used throughout:
 | Item | State |
 |------|--------|
 | Phase 1.4 | COMPLETE / LOCKED |
-| Phase 1.5 Design Freeze | **READY FOR FINAL OWNER APPROVAL** |
-| Phase 1.5 Implementation | **NOT STARTED** |
-| Storage buckets (live) | none yet |
+| Phase 1.5 Design Freeze | **COMPLETE / CLOSED / LOCKED** @ `0e5c491` |
+| Phase 1.5 Implementation | **COMPLETE / CLOSED / LOCKED** @ `0ec0be0` |
+| Storage buckets (live) | `beat-audio` PRIVATE |
 | OD-12 (encoding) | remains **OPEN** (interim upload policy only — see § OD-12) |
 
 ---
@@ -694,7 +695,9 @@ Phase 1.5 implementation is ACCEPTABLE only if:
 
 ## FINAL STATUS
 
-**PHASE 1.5 DESIGN FREEZE = READY FOR FINAL OWNER APPROVAL**
+**PHASE 1.5 = COMPLETE / CLOSED / LOCKED**
 
-Required review corrections applied (Access Gate anonymous branch; object key `.bin` only).
-No implementation. No migration. No buckets created. No commit. No push.
+This document remains the original Design Freeze record (authored before implementation).
+Freeze commit: `0e5c491`. Implementation: `0ec0be0`. Documentation closeout: `7de20a3`.
+Required review corrections (Access Gate anonymous branch; object key `.bin` only) were applied before freeze lock and remain in force.
+Next: Phase 1.6 — **READY FOR DESIGN FREEZE** (not started).

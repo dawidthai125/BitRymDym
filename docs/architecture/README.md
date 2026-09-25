@@ -45,5 +45,6 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2–1.5 LOCKED** on `main` @ `0ec0be0` (private audio + Access Gate). Next: Phase 1.6 player planning (**NOT STARTED**).
-See [BEATS.md](./BEATS.md), [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md).
+**Phase 1.2–1.5 LOCKED** on `main` @ `7de20a3` closeout / `0ec0be0` impl.
+**Phase 1.6** Design Freeze APPROVED / LOCKED — Published Beats Surface + Playback Shell **implemented locally** (uncommitted).
+See [BEATS.md](./BEATS.md), [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md).

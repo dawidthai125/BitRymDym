@@ -300,4 +300,25 @@ Prevents privilege escalation and accidental admin grant on first registration.
 - Signed URL PLAYBACK 120s / DOWNLOAD 300s
 - ADMIN PLATFORM upload only
 
-**Still out of scope:** player, download limits, Quick Take, community upload, watermark, payments.
+**Still out of scope:** download limits, Quick Take, community upload, watermark, payments.
+
+---
+
+### Phase 1.6 — Published Beats Surface + Playback Shell (implementation closeout note — local)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.6 Published Beats Surface + Playback Shell |
+| Status | Design Freeze APPROVED / LOCKED; implementation COMPLETE (local, uncommitted) |
+| Date | 2026-09-26 |
+| Design Freeze | [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md) |
+| Baseline | `origin/main` @ `7de20a3` |
+
+**Frozen scope delivered locally:**
+
+- `/beats` PUBLISHED catalog; `/beat/[id]` detail
+- Custom Playback Shell (no native audio controls UI)
+- PLAYBACK via existing Access Gate only
+
+**Still out of scope:** DOWNLOAD UI / limits, Quick Take, waveform, Admin CMS, payments.
+**OD-04 … OD-18 remain OPEN.**

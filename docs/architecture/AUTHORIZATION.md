@@ -125,3 +125,20 @@ Design Freeze: [PHASE_1_5_DESIGN_FREEZE.md](../phases/PHASE_1_5_DESIGN_FREEZE.md
 | Signed URL | Server-only; PLAYBACK 120s; DOWNLOAD 300s |
 
 No new permission keys. Role ≠ AccountLevel. OD-12 remains OPEN.
+
+---
+
+## Phase 1.6 — Public Playback Surface
+
+Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md).
+
+| Surface | Rule |
+|---------|------|
+| `/beats`, `/beat/[id]` | PUBLISHED only (explicit status filter + RLS) |
+| Playback | Existing Access Gate `PLAYBACK` only |
+| Anonymous | ALLOW for PUBLISHED |
+| Authenticated USER | ALLOW for PUBLISHED |
+| Non-published on public routes | DENY (`notFound`) |
+| DOWNLOAD from UI | HARD OUT |
+
+No new permission keys. AccountLevel unused for playback.

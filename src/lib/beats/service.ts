@@ -190,3 +190,25 @@ export async function listPublishedBeats(): Promise<Beat[]> {
 
   return (data as BeatRow[] | null)?.map(mapBeatRow) ?? [];
 }
+
+/**
+ * Public surface only — PUBLISHED beats.
+ * Staff RLS may expose non-published rows; this gate keeps /beat/[id] public-only.
+ */
+export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .select(BEAT_SELECT)
+    .eq("id", beatId)
+    .eq("status", "PUBLISHED")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data) {
+    return null;
+  }
+  return mapBeatRow(data as BeatRow);
+}

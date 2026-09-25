@@ -383,9 +383,10 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.5 — PRIVATE AUDIO STORAGE + ACCESS GATE — COMPLETE / LOCKED
-Canonical: main @ 0ec0be0
-Next: PHASE 1.6 COLD-START AUDIT / DESIGN FREEZE (not started)
+PHASE 1.6 — PUBLISHED BEATS SURFACE + PLAYBACK SHELL — IMPLEMENTED (LOCAL)
+Design Freeze: APPROVED / LOCKED
+Canonical pushed baseline: main @ 7de20a3
+Next: PHASE 1.6 IMPLEMENTATION AUDIT → COMMIT / PUSH
 ```
 
 ### IMPLEMENTED / LOCKED
@@ -400,9 +401,15 @@ Next: PHASE 1.6 COLD-START AUDIT / DESIGN FREEZE (not started)
   - Access Gate (`requestBeatAudioAccess`) — anon / auth / admin paths
   - Signed URL PLAYBACK 120s / DOWNLOAD 300s
   - Interim MIME allow-list + 50 MiB (OD-12 remains OPEN)
+- Phase 1.6 Design Freeze — APPROVED / LOCKED
+- Phase 1.6 Published Beats Surface + Playback Shell (**local, uncommitted**)
+  - `/beats`, `/beat/[id]`
+  - Custom Playback Shell (no native `<audio controls>` UI)
+  - PLAYBACK only via existing Access Gate
+  - DOWNLOAD / Quick Take / waveform hard OUT
 
 ### PLANNED (not started)
-- Custom player (1.6), download limits (1.7), Quick Take (1.8), tracks, payments
+- Download limits (1.7), Quick Take (1.8), tracks, payments
 
 ### OPEN
 - OD-04 … OD-18 — **OD-12 remains OPEN**
