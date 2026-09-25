@@ -8,6 +8,7 @@
 **SSOT:** §3, §6–§9, §35–§37, §39–§40
 **Document status:** DESIGN FREEZE — **APPROVED / LOCKED**
 **Approved:** 2026-09-26 (Owner)
+**Implementation:** **COMPLETE / CLOSED / LOCKED** @ `ed499ee` — production **GREEN / VERIFIED**
 
 Legend:
 
@@ -28,8 +29,10 @@ Legend:
 | Phase 1.6 | COMPLETE / CLOSED / LOCKED @ `39be430` |
 | Documentation reconciliation | COMPLETE @ `d5b4e91` |
 | Phase 1.7 Design Freeze | **APPROVED / LOCKED** (2026-09-26) |
-| Phase 1.7 Implementation | **NOT STARTED** — READY FOR IMPLEMENTATION |
-| Production | GREEN @ `39be430` (docs HEAD `d5b4e91`) |
+| Phase 1.7 Implementation | **COMPLETE / CLOSED / LOCKED** @ `ed499ee` |
+| Production | **GREEN / VERIFIED** @ `ed499ee` |
+| Live Admin E2E | **NOT VERIFIED** — OD-20 / `admin_count=0` (non-blocking) |
+| Published Content E2E | **NOT VERIFIED** — `published_count=0` (non-blocking) |
 
 ---
 
@@ -690,14 +693,18 @@ OD-05, OD-06, OD-12, OD-13, OD-14, OD-15, OD-16, OD-17, OD-18 — remain **OPEN*
 
 ```text
 PHASE 1.7 DESIGN FREEZE = APPROVED / LOCKED
+PHASE 1.7 IMPLEMENTATION = COMPLETE / CLOSED / LOCKED
 APPROVED = 2026-09-26
+CLOSED = 2026-09-26
 CANDIDATE = Admin PLATFORM Content Ops Surface
-BASELINE = d5b4e91
-IMPLEMENTATION = NOT STARTED — READY FOR IMPLEMENTATION
-DATABASE = NO CHANGE EXPECTED
+IMPLEMENTATION COMMIT = ed499ee
+PRODUCTION = GREEN / VERIFIED
+DATABASE = NO CHANGE
 GAP-PUBLISH-READY = PRESERVED (UI block FROZEN; server hard rule DEFERRED)
 AUDIT GAP = PRESERVED
+LIVE ADMIN E2E = NOT VERIFIED (OD-20 / admin_count=0) — non-blocking
+PUBLISHED CONTENT E2E = NOT VERIFIED (published_count=0) — non-blocking
 NEW OD = NONE
 ```
 
-**Owner APPROVED / LOCKED → Implementation GO (separate prompt).**
+**Owner CLOSEOUT COMPLETE.** Next: Phase cold-start audit (no Phase 1.8 implementation without Owner GO).

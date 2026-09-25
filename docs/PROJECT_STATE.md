@@ -24,11 +24,12 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| Last pushed HEAD | `d5b4e91518306ee82590e79ea7c5aa47c614ee20` |
-| Remote | `origin/main` = `d5b4e91518306ee82590e79ea7c5aa47c614ee20` |
-| Working tree | **DIRTY** — Phase 1.7 implementation + docs (local, uncommitted) |
+| Canonical implementation | `ed499ee93182146317ad18da932615d1dfa1a6b8` |
+| Remote (production) | `origin/main` = `ed499ee93182146317ad18da932615d1dfa1a6b8` |
+| Local | docs closeout commit ahead of origin (push pending) |
+| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production (last pushed) | **GREEN / VERIFIED** @ `39be430` (docs closeout `d5b4e91`; Phase 1.7 not deployed) |
+| Production | **GREEN / VERIFIED** @ `ed499ee` |
 
 Phase 1.4 lock: `6cb1e9a` / docs `ec32b97`.
 Phase 1.5 Design Freeze: `0e5c491`.
@@ -37,33 +38,38 @@ Phase 1.5 documentation closeout: `7de20a3`.
 Phase 1.6 Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](./phases/PHASE_1_6_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
 Phase 1.6 implementation: `39be430`.
 Phase 1.6 docs reconciliation: `d5b4e91`.
-Phase 1.7 Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) — **APPROVED / LOCKED** (2026-09-26).
+Phase 1.7 Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
+Phase 1.7 implementation: `ed499ee` — `feat(admin): complete phase 1.7 platform content ops`.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.7 IMPLEMENTATION COMPLETE (LOCAL) — READY FOR IMPLEMENTATION AUDIT
+FOUNDATION — PHASE 1.7 COMPLETE / CLOSED / LOCKED — READY FOR NEXT COLD-START AUDIT
 ```
 
 | Etap | Status |
 |------|--------|
 | 1.0–1.6 | **COMPLETE / CLOSED / LOCKED** on `origin/main` |
 | 1.7 Design Freeze | **APPROVED / LOCKED** (2026-09-26) |
-| 1.7 Implementation | **COMPLETE (local, uncommitted)** — Admin PLATFORM Content Ops Surface |
-| 1.7 Production close | **NOT DONE** (no commit / push / live ADMIN ops verify yet) |
+| 1.7 Implementation | **COMPLETE / CLOSED / LOCKED** @ `ed499ee` |
+| 1.7 Production | **GREEN / VERIFIED** |
 | 1.8+ | **NOT STARTED** |
 
-**Phase 1.7 delivered (local):** `/admin/beats`, `/admin/beats/new`, `/admin/beats/[id]`; PLATFORM create DRAFT; metadata edit; MASTER upload via existing `uploadPlatformBeatAudio`; UI Publish gate requires READY MASTER; lifecycle REUSE (`DRAFT → PUBLISHED`).
+**Phase 1.7 delivered:** `/admin/beats*` ADMIN PLATFORM content ops; create DRAFT; metadata; MASTER upload via existing `uploadPlatformBeatAudio`; UI Publish gate (READY MASTER); lifecycle REUSE (`DRAFT → PUBLISHED`).
 
 **Still PARTIAL:** Downloads (signed DOWNLOAD only; no UI / limits).
 **NOT STARTED:** Quick Take, payments, community.
-**GAP-PUBLISH-READY:** server hard READY rule NOT implemented (UI-only).
-**AUDIT GAP:** preserved (no audit system).
+
+**Known non-blocking gaps (frozen):**
+- **GAP-PUBLISH-READY** — UI blocks publish without READY MASTER; server soft-allow unchanged
+- **Audit infrastructure** — no full audit system in Phase 1.7
+- **Live Admin E2E** — NOT VERIFIED (`admin_count=0` / OD-20 operator provisioning)
+- **Published Content E2E** — NOT VERIFIED (`published_count=0`)
 
 **OD-04 … OD-18 remain OPEN.**
-**OD-20:** first ADMIN = operator-controlled (live `admin_count = 0` at verification time).
+**OD-20 CLOSED:** first ADMIN = operator-controlled only.
 
 ---
 
@@ -84,15 +90,18 @@ FOUNDATION — PHASE 1.7 IMPLEMENTATION COMPLETE (LOCAL) — READY FOR IMPLEMENT
 |-------|--------|
 | Public surface + Playback | **PASS** (locked @ `39be430`) |
 
-### Phase 1.7 (local)
+### Phase 1.7 (locked)
 
 | Layer | Status |
 |-------|--------|
-| Admin routes + AuthZ gate | **PASS** (unit/lint/typecheck/build) |
-| UI Publish gate (READY MASTER) | **PASS** (unit) |
-| REUSE create/upload/lifecycle/Access Gate | **PASS** |
-| Live ADMIN create→publish→playback | **NOT FULLY VERIFIED** (no provisioned ADMIN; no audio fixture; not deployed) |
-| Commit / push | **NOT DONE** (Owner Implementation Audit) |
+| Admin routes + AuthZ / security / regression | **PASS** (production) |
+| Public / auth / routing smoke | **PASS** |
+| UI Publish gate (READY MASTER) | **PASS** |
+| Commit / push / Vercel | **PASS** (`ed499ee`) |
+| Production | **GREEN / VERIFIED** |
+| Live Admin E2E | **NOT VERIFIED** — OD-20 / `admin_count=0` (non-blocking) |
+| Published Content E2E | **NOT VERIFIED** — `published_count=0` (non-blocking) |
+| Phase lock | **CLOSED / LOCKED** |
 
 ---
 
@@ -105,9 +114,9 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ## 7. Current Blockers
 
-1. Phase 1.7 Implementation Audit → commit / push (Owner GO)
-2. Operator must provision first ADMIN (OD-20) before live ops loop
-3. Live E2E with real audio fixture deferred until ADMIN exists
+1. Next phase requires Owner Cold-Start Audit + Design Freeze selection (do not start implementation without GO)
+2. Operator must provision first ADMIN (OD-20) before live PLATFORM content ops demo
+3. Empty published catalog until operator publishes first beat
 
 ---
 
@@ -119,7 +128,7 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 | Beats metadata domain | **COMPLETE / LOCKED** |
 | Private audio Storage + Access Gate | **COMPLETE / LOCKED** (`0ec0be0`) |
 | Published Beats Surface + Playback Shell | **COMPLETE / CLOSED / LOCKED** (`39be430`) |
-| Admin PLATFORM Content Ops Surface | **COMPLETE (local)** — Phase 1.7 |
+| Admin PLATFORM Content Ops Surface | **COMPLETE / CLOSED / LOCKED** (`ed499ee`) |
 | Downloads (limits / UI / audit) | **PARTIAL** (signed DOWNLOAD only) |
 | Quick Take / Payments | **NOT STARTED** |
 
@@ -129,15 +138,15 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.7 IMPLEMENTATION AUDIT → COMMIT / PUSH (Owner GO)
-Phase 1.7 is NOT production-closed until audit + commit + push + live verification with ADMIN.
+READY FOR COLD-START AUDIT (next Foundation candidate)
+Do not implement next phase until Design Freeze + Owner GO.
 ```
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.7 Implementation GO (2026-09-26)
+**Sesja:** Phase 1.7 Owner Closeout (2026-09-26)
 
-**Done:** Admin PLATFORM ops surface implemented locally per APPROVED freeze; tests/lint/typecheck/build PASS.
-**Not done:** commit, push, live ADMIN ops E2E, Phase 1.7 CLOSED.
+**Done:** Phase 1.7 CLOSED / LOCKED @ `ed499ee`; production GREEN; public/auth/routing/security/regression PASS.
+**Known gaps retained:** GAP-PUBLISH-READY; audit infrastructure; Live Admin / Published Content E2E NOT VERIFIED (OD-20 / empty catalog).

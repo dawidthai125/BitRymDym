@@ -6,19 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-09-26 — PHASE 1.7 — ADMIN PLATFORM CONTENT OPS (LOCAL IMPLEMENTATION)
+## 2026-09-26 — PHASE 1.7 — COMPLETE / CLOSED / LOCKED
 
-**Status:** IMPLEMENTED locally — Design Freeze APPROVED / LOCKED — **not committed** / **not CLOSED**
+**Status:** COMPLETE / COMMITTED / PUSHED — `ed499ee` on `main` / `origin/main`
 
-- Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) — APPROVED / LOCKED (2026-09-26)
+- Commit: `ed499ee` — `feat(admin): complete phase 1.7 platform content ops`
+- Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) — APPROVED / LOCKED
 - Routes: `/admin`, `/admin/beats`, `/admin/beats/new`, `/admin/beats/[id]`
-- REUSE: `createPlatformBeat`, `updateBeatMetadata`, `uploadPlatformBeatAudio`, lifecycle `DRAFT → PUBLISHED`, Access Gate PLAYBACK
-- UI Publish gate: blocked without active READY MASTER (GAP-PUBLISH-READY server hard rule NOT added)
-- AuthZ: ADMIN only; USER/MODERATOR/anonymous DENY for PLATFORM ops UI
-- No migration; audit GAP preserved; OD-04 … OD-18 remain OPEN
-- Unit 44/44; lint / typecheck / build PASS
-- Live E2E: **NOT FULLY VERIFIED** (no ADMIN provisioned; no audio fixture)
-- Next: Implementation Audit → commit / push
+- REUSE: createPlatformBeat, updateBeatMetadata, uploadPlatformBeatAudio, lifecycle `DRAFT → PUBLISHED`, Access Gate PLAYBACK
+- UI Publish gate: READY MASTER required; GAP-PUBLISH-READY server hard rule preserved
+- Production: **GREEN / VERIFIED** (Vercel PASS)
+- Production smoke: public/auth/routing/security/regression **PASS**
+- Live Admin E2E: **NOT VERIFIED** — OD-20 / `admin_count=0` (non-blocking)
+- Published Content E2E: **NOT VERIFIED** — `published_count=0` (non-blocking)
+- Audit infrastructure GAP preserved; OD-04 … OD-18 remain OPEN
+- Next: Cold-Start Audit for next Foundation candidate
 
 ---
 

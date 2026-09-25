@@ -45,6 +45,7 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2–1.6 LOCKED** on `main` (1.6 @ `39be430`; docs closeout @ `d5b4e91`).
-**Phase 1.7** Design Freeze APPROVED / LOCKED — Admin PLATFORM Content Ops Surface **implementation complete** (awaiting push / production verification — **not CLOSED**).
+**Phase 1.2–1.7 LOCKED** on `main` (1.7 @ `ed499ee`; production GREEN).
+**Phase 1.7** Design Freeze APPROVED / LOCKED — Admin PLATFORM Content Ops Surface **COMPLETE / CLOSED / LOCKED**.
+Known non-blocking: GAP-PUBLISH-READY; audit GAP; Live Admin / Published Content E2E NOT VERIFIED (OD-20 / empty catalog).
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md).

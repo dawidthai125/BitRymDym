@@ -327,21 +327,27 @@ Prevents privilege escalation and accidental admin grant on first registration.
 
 ---
 
-### Phase 1.7 — Admin PLATFORM Content Ops Surface (implementation note — local)
+### Phase 1.7 — Admin PLATFORM Content Ops Surface (closeout)
 
 | Pole | Wartość |
 |------|---------|
 | Title | Phase 1.7 Admin PLATFORM Content Ops Surface |
-| Status | Design Freeze APPROVED / LOCKED; implementation COMPLETE (local, uncommitted) — **not CLOSED** |
+| Status | **COMPLETE / CLOSED / LOCKED** |
 | Date | 2026-09-26 |
 | Design Freeze | [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md) — APPROVED / LOCKED |
-| Baseline | `origin/main` @ `d5b4e91` |
+| Implementation commit | `ed499ee` — `feat(admin): complete phase 1.7 platform content ops` |
+| Baseline before impl | `origin/main` @ `d5b4e91` |
+| Production | **GREEN / VERIFIED** |
 
-**Frozen scope delivered locally:**
+**Frozen scope delivered:**
 
 - `/admin/beats*` ADMIN-only ops surface
 - PLATFORM create/edit + MASTER upload via existing services
 - UI Publish gate requires READY MASTER; server hard READY rule remains GAP-PUBLISH-READY
 - Audit infrastructure GAP preserved
+
+**Production verification:** public/auth/routing/security/regression **PASS**.
+**Live Admin E2E:** NOT VERIFIED — OD-20 / `admin_count=0` (non-blocking).
+**Published Content E2E:** NOT VERIFIED — `published_count=0` (non-blocking).
 
 **OD-04 … OD-18 remain OPEN.** No new OD. OD-20 CLOSED (operator ADMIN).
