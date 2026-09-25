@@ -158,6 +158,21 @@ Poziomy konta będą związane przede wszystkim z przyszłymi funkcjami Premium 
 
 NIE WOLNO traktować poziomu konta jako zamiennika roli systemowej.
 
+**Signup default (OD-19 CLOSED / ACCEPTED, 2026-09-25):**
+
+```text
+role = USER
+account_level = BEGINNER_RAPPER
+```
+
+`BEGINNER_RAPPER` jest **zatwierdzonym** defaultem nowego użytkownika.  
+Nie jest mechanizmem Premium i nie przyznaje płatnych funkcji.
+
+**First ADMIN (OD-20 CLOSED / ACCEPTED, 2026-09-25):**
+
+Pierwszy ADMIN jest tworzony wyłącznie przez **manual / operator-controlled bootstrap** poza normalnym signup flow aplikacji.  
+Zakazane: first-user admin, signup admin, hidden email admin, public bootstrap endpoint, client-side escalation.
+
 ---
 
 # 5. AUTORYZACJA

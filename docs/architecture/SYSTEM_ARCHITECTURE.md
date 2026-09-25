@@ -125,16 +125,17 @@ MODERATOR
 USER
 ```
 
-### Account Level (robocze — OD-09 OPEN)
+### Account Level (OD-09 OPEN for final labels; OD-19 CLOSED for signup default)
 
 ```text
-BEGINNER_RAPPER
+BEGINNER_RAPPER   ← approved signup default (OD-19)
 PRO_RAPPER
 LEGEND_RAPPER
 ```
 
 **ROLE ≠ ACCOUNT LEVEL.**  
-Nie wolno traktować poziomu konta jako zamiennika roli (SSOT §4).
+Signup: `USER` + `BEGINNER_RAPPER`.  
+First ADMIN: manual / operator-controlled only (**OD-20 CLOSED**) — no automatic first-user admin.
 
 ---
 
@@ -368,13 +369,26 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.2 — APPLICATION SCAFFOLD LOCKED
+PHASE 1.3 — IDENTITY & ACCESS (PENDING OWNER REVIEW)
 ```
 
-- OD-01 / OD-02 / OD-03 zamknięte i udokumentowane.
-- Aplikacja: **SCAFFOLDED** — [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md).
-- **Auth / Users / Roles / Permissions / Profiles / Beats / Player / Quick Take / Payments: NOT STARTED**
-- Brak schematu DB, RLS, Storage buckets, audio pipeline w kodzie.
+### IMPLEMENTED
+- Next.js scaffold (Phase 1.2 LOCKED on main)
+- Auth / profiles / roles / permissions / account levels (code + SQL migration)
+- RLS policies + escalation guards (SQL)
+- Minimal auth UI (`/sign-in`, `/sign-up`, `/account`)
+
+### PLANNED (not started)
+- Beats, player, Quick Take, downloads, tracks, payments
+
+### OPEN
+- OD-04 … OD-18 (as listed in OPEN_DECISIONS)
+- Live Supabase Auth/RLS verification: **PASS** (2026-09-25) on project `rzzxrgcdogkybkiidqgw` — Phase 1.3 **OWNER REVIEW COMPLETE / READY TO COMMIT** (not locked; commit/push pending)
+- Next.js middleware → proxy migration (NON-BLOCKING TECHNICAL NOTE)
+
+### CLOSED (Phase 1.3 identity decisions)
+- OD-19 — signup default `BEGINNER_RAPPER`
+- OD-20 — manual/operator-controlled ADMIN bootstrap (no auto-admin)
 
 ---
 

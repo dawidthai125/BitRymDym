@@ -1,0 +1,88 @@
+# Authorization — Phase 1.3
+
+**Status:** OWNER REVIEW COMPLETE — READY TO COMMIT — OD-19 / OD-20 CLOSED; live Auth/RLS **PASS**  
+**Runtime verification:** LIVE SUPABASE VERIFIED (2026-09-25) — project `rzzxrgcdogkybkiidqgw`  
+ 
+**SSOT:** §3–5, §36, §39  
+**Architecture:** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)
+
+## Model
+
+```text
+Supabase Auth → Profile → Role → Permissions → Account Level
+```
+
+**ROLE ≠ ACCOUNT LEVEL**
+
+| Concept | Values |
+|---------|--------|
+| Role | `ADMIN` / `MODERATOR` / `USER` |
+| Account level | `BEGINNER_RAPPER` / `PRO_RAPPER` / `LEGEND_RAPPER` (display names may still change via OD-09) |
+
+---
+
+## USER SIGNUP (normal flow)
+
+```text
+SIGNUP
+ ↓
+SUPABASE AUTH
+ ↓
+PROFILE
+ ↓
+role = USER
+account_level = BEGINNER_RAPPER   ← OD-19 APPROVED DEFAULT
+```
+
+- No paid features implied by `BEGINNER_RAPPER`.
+- No self-service role or account-level escalation.
+
+---
+
+## ADMIN BOOTSTRAP (operator-controlled)
+
+```text
+EXISTING AUTH USER
+ ↓
+MANUAL / OPERATOR-CONTROLLED ADMIN BOOTSTRAP
+(outside normal signup UI)
+ ↓
+profiles.role = ADMIN
+```
+
+**OD-20 CLOSED:** aplikacja **nie** zawiera:
+
+- first-user auto-admin
+- signup admin
+- email-based hidden admin
+- public `/admin/bootstrap` endpoint
+- client-side admin escalation
+- magic admin token
+
+Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL only.  
+Do not document secrets.
+
+---
+
+## Implemented
+
+- Auth sign-up / sign-in / sign-out (minimal UI)
+- `profiles` + trigger on Auth user create
+- Permission catalog from SSOT §36 examples
+- Role → permission mapping (ADMIN all examples; MODERATOR moderation subset)
+- Server helpers: `requireUser` / `requireRole` / `requirePermission`
+- RLS + privilege-escalation trigger (role / account_level)
+
+## Verification layers
+
+| Layer | Status |
+|-------|--------|
+| STATIC SECURITY AUDIT | PASS |
+| UNIT TESTS | PASS (authorization helpers) |
+| LIVE POSTGRES / SUPABASE VERIFICATION | **PASS** (2026-09-25) |
+
+Static audit ≠ proof of live RLS on a production database.
+
+## Next.js note
+
+`middleware` → `proxy` deprecation in Next.js 16: **NON-BLOCKING TECHNICAL NOTE** (no migration in Phase 1.3).

@@ -6,7 +6,7 @@
 export const SYSTEM_ROLES = ["ADMIN", "MODERATOR", "USER"] as const;
 export type SystemRole = (typeof SYSTEM_ROLES)[number];
 
-/** Working names — OD-09 OPEN for final labels. */
+/** Account levels — OD-09 OPEN for final labels; OD-19 CLOSED: signup default BEGINNER_RAPPER. */
 export const ACCOUNT_LEVELS = [
   "BEGINNER_RAPPER",
   "PRO_RAPPER",

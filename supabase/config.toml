@@ -1,0 +1,8 @@
+# BitRymDym Supabase — local/project config placeholder
+# Apply SQL migrations from supabase/migrations via Supabase CLI or Dashboard SQL editor.
+# Do not store secrets here.
+
+project_id = "rzzxrgcdogkybkiidqgw"
+
+[api]
+enabled = true

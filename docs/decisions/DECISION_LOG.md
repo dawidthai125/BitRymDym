@@ -145,3 +145,99 @@ Zatwierdzony kierunek Ownera: Supabase jako infrastruktura; Next.js jako applica
 - [SYSTEM_ARCHITECTURE.md](../architecture/SYSTEM_ARCHITECTURE.md)
 - [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §4, §5, §9, §36
 - [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)
+
+---
+
+### OD-19 — Default account level on signup
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-19 |
+| Title | Default account level on signup |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-25 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+New users receive `BEGINNER_RAPPER` as default account level.
+
+Role remains `USER`.
+
+```text
+SIGNUP → role = USER + account_level = BEGINNER_RAPPER
+```
+
+This is **not** a Premium mechanism and does not grant paid features.
+
+**ROLE ≠ ACCOUNT LEVEL** remains in force.
+
+**Scope**
+
+Profile creation defaults (DB column default + Auth signup trigger).
+
+**Rationale**
+
+Owner-approved signup default after Phase 1.3 security audit; matches existing implementation.
+
+**Consequences**
+
+- `BEGINNER_RAPPER` is the **approved default**, not provisional.
+- Final display names of account levels may still change via OD-09 without changing this default enum value unless Owner revisits.
+
+**Related documentation**
+
+- [AUTHORIZATION.md](../architecture/AUTHORIZATION.md)
+- [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §4
+
+---
+
+### OD-20 — First ADMIN bootstrap
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-20 |
+| Title | First ADMIN bootstrap |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-25 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+No automatic first-admin mechanism exists in application signup flow.
+
+First ADMIN is provisioned manually through a controlled operator/admin mechanism outside normal user signup.
+
+Forbidden:
+
+- first-user becomes ADMIN
+- signup admin
+- email-based hidden admin
+- public admin bootstrap endpoint
+- client-side admin escalation
+- magic admin token
+
+**MANUAL / OPERATOR-CONTROLLED ADMIN BOOTSTRAP**
+
+Operator sets `profiles.role = 'ADMIN'` for an existing Auth user via Supabase Dashboard SQL / service-role tooling — never via normal USER signup UI.
+
+Do not store secrets in documentation.
+
+**Scope**
+
+Production admin provisioning security model.
+
+**Rationale**
+
+Prevents privilege escalation and accidental admin grant on first registration.
+
+**Consequences**
+
+- App signup always creates `USER`.
+- No Phase 1.3 bootstrap endpoint.
+- Production requires operator-controlled ADMIN assignment before admin features are usable.
+
+**Related documentation**
+
+- [AUTHORIZATION.md](../architecture/AUTHORIZATION.md)
+- [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §3, §36

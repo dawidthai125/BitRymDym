@@ -37,6 +37,8 @@
 | OD-16 | Finalny język marki (copy) | §2, §41 | Teksty UI / marketing | OPEN |
 | OD-17 | Zasady liczenia powtórnych pobrań | §17 | Download stats | OPEN |
 | OD-18 | Zasady liczenia udostępnień | §34 | Beat sharing stats | OPEN |
+| OD-19 | Domyślny account level przy rejestracji | §4 | Profile creation default | **CLOSED / ACCEPTED** — 2026-09-25 |
+| OD-20 | Bezpieczny bootstrap pierwszego ADMIN | §3, §36 | Production admin access | **CLOSED / ACCEPTED** — 2026-09-25 |
 
 ---
 
@@ -49,6 +51,8 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-01 | Next.js + TypeScript + Tailwind + shadcn/ui (baza) + własny Design System + App Router | 2026-09-25 |
 | OD-02 | Next.js jako application server (Server Actions / Route Handlers); bez osobnego Express/Nest/Fastify na start | 2026-09-25 |
 | OD-03 | Supabase: PostgreSQL, Auth, RLS, Storage; Edge Functions gdy potrzebne; Role ≠ Account Level | 2026-09-25 |
+| OD-19 | Signup default account level = `BEGINNER_RAPPER` (role remains `USER`) | 2026-09-25 |
+| OD-20 | No automatic first-admin; manual/operator-controlled ADMIN bootstrap outside signup | 2026-09-25 |
 
 ---
 
@@ -79,6 +83,8 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 - Limity pobrań muszą być **konfigurowalne** (`anonymous_daily_download_limit`, `user_daily_download_limit`, `premium_daily_download_limit`) — nie hardcodowane (§13). Wartości startowe: OD-05 / OD-06.
 - Feature flags płatności startują jako **wyłączone** (§14–15).
 - **Supabase Auth jest zatwierdzone** (OD-03 CLOSED) — nie traktować już jako „preferencji roboczej”.
+- Signup default: `role = USER`, `account_level = BEGINNER_RAPPER` (**OD-19 CLOSED**).
+- First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).
 - Retencja nagrania Premium (`premium_take_retention_days = 10`) jest przykładem konfiguracji z SSOT — nie mnożyć magicznych liczb w kodzie (§23).
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED.
 
