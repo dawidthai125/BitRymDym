@@ -45,5 +45,5 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**SCAFFOLDED** (Phase 1.2). Auth / domain modules: **NOT STARTED**.  
-See [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md).
+**Phase 1.2** scaffold LOCKED. **Phase 1.3** Auth LOCKED. **Phase 1.4** beats metadata IMPLEMENTED / LIVE VERIFIED (Owner Review).  
+See [APPLICATION_SCAFFOLD.md](./APPLICATION_SCAFFOLD.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [BEATS.md](./BEATS.md).

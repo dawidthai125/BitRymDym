@@ -23,3 +23,27 @@ export const BEAT_STATUSES = [
   "ARCHIVED",
 ] as const;
 export type BeatStatus = (typeof BEAT_STATUSES)[number];
+
+export const BEAT_OWNERSHIP_TYPES = ["PLATFORM", "USER"] as const;
+export type BeatOwnershipType = (typeof BEAT_OWNERSHIP_TYPES)[number];
+
+/** Phase 1.4 beat domain metadata (no audio asset fields). */
+export type Beat = {
+  id: string;
+  ownerId: string | null;
+  ownershipType: BeatOwnershipType;
+  title: string;
+  producer: string | null;
+  description: string | null;
+  genre: string | null;
+  style: string | null;
+  bpm: number;
+  key: string | null;
+  scale: string | null;
+  durationSeconds: number;
+  tags: string[];
+  coverRef: string | null;
+  status: BeatStatus;
+  createdAt: string;
+  updatedAt: string;
+};

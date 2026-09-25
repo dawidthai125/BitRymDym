@@ -90,3 +90,22 @@ Static audit ≠ proof of live RLS on a production database. Live suite confirme
 ## Next.js note
 
 `middleware` → `proxy` deprecation in Next.js 16: **NON-BLOCKING TECHNICAL NOTE** (no migration in Phase 1.3).
+
+---
+
+## Phase 1.4 — Beats AuthZ extension
+
+Feature doc: [BEATS.md](./BEATS.md).
+
+Permissions reused (no new `beats.publish` / `beats.view`):
+
+| Role | Beats capability |
+|------|------------------|
+| ADMIN | create / edit / delete / approve / reject + status management |
+| MODERATOR | approve / reject + non-public moderation visibility; **no** full metadata edit |
+| USER | no `beats.create` in Phase 1.4; no publish / ownership / status escalation |
+
+SQL helpers: `is_moderator()`, `is_staff()` (plus existing `is_admin()`).  
+**AccountLevel does not affect beat authorization.**
+
+Live beats RLS verification on `rzzxrgcdogkybkiidqgw`: **PASS** (2026-09-25).

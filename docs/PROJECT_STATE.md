@@ -24,29 +24,29 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| HEAD | `efe3f71` |
-| Remote | `origin/main` = `efe3f71` |
-| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist; excluded from Phase 1.3) |
+| HEAD (committed) | `68486dd` |
+| Remote | `origin/main` = `68486dd` |
+| Working tree | **DIRTY** — Phase 1.4 implementation present, **uncommitted** (Owner Review) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-Feature branch history: `cursor/phase-1-3-auth` @ `efe3f71` (same commit as main after promotion).
+Phase 1.3 lock commit: `efe3f71`. Docs lock: `68486dd`.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — READY FOR PHASE 1.4 PLANNING
+FOUNDATION — PHASE 1.4 BEATS DOMAIN — READY FOR OWNER REVIEW
 ```
 
 | Etap | Status |
 |------|--------|
 | 1.0–1.2 | **LOCKED** on main |
-| 1.3 | **COMPLETE / LOCKED** on main (`efe3f71`) |
-| 1.4 | **NOT STARTED** — planning only |
+| 1.3 | **COMPLETE / LOCKED** on main (`efe3f71` / docs `68486dd`) |
+| 1.4 | **IMPLEMENTED / LIVE VERIFIED** — awaiting Owner Review; **no commit/push** |
+| 1.5+ | NOT STARTED |
 
-**PHASE 1.3 is COMPLETE / LOCKED** on canonical main.  
-**Ready for Phase 1.4 planning** (no Phase 1.4 implementation until Owner GO).
+**Do not start Phase 1.5.** OD-12 remains OPEN.
 
 ---
 
@@ -61,29 +61,29 @@ FOUNDATION — READY FOR PHASE 1.4 PLANNING
 
 ## 5. Verification status
 
+### Phase 1.3 (locked)
+
 | Layer | Status |
 |-------|--------|
-| Implementation | COMPLETE |
-| Static security audit | **PASS** |
-| Unit tests | **PASS** (6/6) |
-| Live Supabase Auth/RLS | **PASS** (2026-09-25) |
-| Final pre-commit audit | **PASS** |
-| Commit / push / main promotion | **PASS** (`efe3f71` on `main` / `origin/main`) |
-| Phase lock | **LOCKED** |
+| Auth / RLS live | **PASS** (locked) |
+| Commit / main | **PASS** |
 
-**Live verification notes (historical):**
-- Migration `phase_1_3_identity` applied via Supabase MCP (`apply_migration`)
-- Auth user → `handle_new_user` → profile (`USER` + `BEGINNER_RAPPER`) PASS
-- RLS own/cross-user, display_name update, role/account-level escalation DENY PASS
-- Permission catalog read PASS; INSERT/UPDATE/DELETE DENY PASS
-- Public `signUp` additional probe hit email rate limit; same trigger already verified via Auth Admin createUser
-- Test users cleaned up after suite
+### Phase 1.4 (this session)
+
+| Layer | Status |
+|-------|--------|
+| Migration applied (live) | **PASS** — `phase_1_4_beats` on `rzzxrgcdogkybkiidqgw` |
+| Unit tests | **PASS** (21/21) |
+| Live RLS suite | **PASS** |
+| Lint / typecheck / build | **PASS** |
+| Security audit | **PASS** |
+| Commit / push | **NOT DONE** |
 
 ---
 
 ## 6. Open Decisions
 
-Still OPEN: **OD-04 … OD-18** (and OD-09 for final account-level *labels*).  
+Still OPEN: **OD-04 … OD-18** (OD-12 encoding remains OPEN).  
 See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
@@ -92,7 +92,7 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 
 ## 7. Current Blockers
 
-1. Phase 1.4 scope / Owner GO (planning not started as implementation)
+1. Owner Review of Phase 1.4 (then commit/push)
 2. Operator must manually provision first ADMIN when admin features are required (OD-20)
 
 ---
@@ -102,10 +102,8 @@ CLOSED (relevant): OD-01, OD-02, OD-03, OD-19, OD-20.
 | Obszar | Status |
 |--------|--------|
 | Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** + LIVE VERIFIED |
-| RLS + escalation guards (SQL) | **COMPLETE / LOCKED** + LIVE VERIFIED |
-| Beats / Player / Quick Take / Payments | NOT STARTED |
-
-Signup result: `USER` + `BEGINNER_RAPPER` (approved).
+| Beats metadata / ownership / status / RLS / validation | **IMPLEMENTED / LIVE VERIFIED** — Owner Review |
+| Audio Storage / Player / Downloads / Quick Take / Payments | NOT STARTED |
 
 ---
 
@@ -113,16 +111,14 @@ Signup result: `USER` + `BEGINNER_RAPPER` (approved).
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.4 PLANNING (Owner / Architect GO required before implementation)
+OWNER REVIEW OF PHASE 1.4 → COMMIT/PUSH (if approved) → PHASE 1.5 PLANNING (separate GO)
 ```
-
-Do not implement Phase 1.4 until an explicit Owner/Architect planning + GO prompt.
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.3 Documentation Lock Closeout (2026-09-25)
+**Sesja:** Phase 1.4 Beats Domain Foundation — Implementation GO (2026-09-25)
 
-**Done:** Docs aligned to canonical `main` @ `efe3f71`; Phase 1.3 marked COMPLETE / LOCKED.  
-**Not done:** documentation commit/push for this closeout (Owner Review first); Phase 1.4.
+**Done:** `public.beats` + enums + RLS + domain/validation/service/actions + unit + live RLS + docs (`BEATS.md` + continuity).  
+**Not done:** commit/push; Phase 1.5.

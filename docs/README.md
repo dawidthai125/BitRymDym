@@ -54,7 +54,8 @@ Nie duplikować całych treści — stosować linki.
 | [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu / handoff |
 | [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) | Konstytucja produktu (v0.1) |
 | [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) | Baseline architektury (OD-01–03) |
-| [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) | Phase 1.3 AuthZ |
+| [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) | Phase 1.3 AuthZ (+ 1.4 beats AuthZ notes) |
+| [architecture/BEATS.md](./architecture/BEATS.md) | Phase 1.4 beats domain |
 | [architecture/APPLICATION_SCAFFOLD.md](./architecture/APPLICATION_SCAFFOLD.md) | Phase 1.2 scaffold notes |
 | [architecture/README.md](./architecture/README.md) | Status architektury (skrót) |
 | [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) | Decyzje OPEN / CLOSED |
@@ -69,7 +70,7 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** SCAFFOLDED (Phase 1.2) + Auth foundation (Phase 1.3).  
+**APPLICATION:** SCAFFOLDED (1.2) + Auth (1.3 LOCKED) + Beats metadata (1.4 LIVE VERIFIED, Owner Review).  
 **Foundation Documentation Baseline:** LOCKED (2026-09-25).  
-**Foundation / Auth (through Phase 1.3):** COMPLETE / LOCKED on `main` @ `efe3f71`.  
-**Product modules** (beats, player, Quick Take, downloads, payments, community): **NOT STARTED**.
+**Committed baseline:** `main` @ `68486dd`.  
+**Audio modules** (Storage, player, Quick Take, downloads, payments, community): **NOT STARTED**.

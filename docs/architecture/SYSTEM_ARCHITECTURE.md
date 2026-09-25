@@ -213,9 +213,14 @@ Zasady wspólne:
 
 ## 10. Beat Lifecycle
 
-Zgodnie z SSOT §6–§8, §29–§30:
+Zgodnie z SSOT §6–§8, §29–§30. Feature doc: [BEATS.md](./BEATS.md).
 
-**Własność:** platforma BitRymDym **lub** zarejestrowany użytkownik / producent.
+**Własność:**
+
+| Type | Rule |
+|------|------|
+| `PLATFORM` | `owner_id = NULL` |
+| `USER` | `owner_id = profiles.id` |
 
 **Statusy:**
 
@@ -228,21 +233,30 @@ REJECTED
 ARCHIVED
 ```
 
-**User upload flow:**
+**Phase 1.4 active ADMIN workflow (platform):**
+
+```text
+DRAFT → PUBLISHED → ARCHIVED → DRAFT
+```
+
+`PUBLISHED → DRAFT` forbidden. ADMIN may publish platform DRAFT without `PENDING_REVIEW`.
+
+**User upload flow (schema-ready; not active in 1.4):**
 
 ```text
 UPLOAD → VALIDATION → PENDING_REVIEW → MODERATION → APPROVED → PUBLISHED
 ```
 
-Po zatwierdzeniu bitu użytkownika (domyślnie):
+Po zatwierdzeniu bitu użytkownika (domyślnie, przyszłość):
 
 - playback: **YES**
 - download: **NO** → prośba o udostępnienie / kontakt z właścicielem
 
-Max duration opublikowanego bitu: **180 s** — walidacja serwerowa.
+Max duration opublikowanego bitu: **180 s** — walidacja serwerowa + DB check.  
+BPM: wartość **liczbowa** (1–300).
 
-BPM: wartość **liczbowa**.
-
+Phase 1.4 implemented: table `public.beats`, RLS, ownership integrity, central validator, beat service/actions.  
+**Not** in 1.4: audio Storage, player, downloads, community upload.
 ---
 
 ## 11. Track Lifecycle
@@ -369,29 +383,35 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.3 — IDENTITY & ACCESS — COMPLETE / LOCKED
-Canonical: main @ efe3f71
-Next: PHASE 1.4 PLANNING (not started)
+PHASE 1.4 — BEATS DOMAIN FOUNDATION — IMPLEMENTED / LIVE VERIFIED
+Committed baseline: main @ 68486dd (Phase 1.3 docs lock)
+Next: OWNER REVIEW → commit/push → PHASE 1.5 PLANNING (separate GO)
 ```
 
 ### IMPLEMENTED / LOCKED
 - Next.js scaffold (Phase 1.2 LOCKED on main)
-- Auth / profiles / roles / permissions / account levels (code + SQL migration)
-- RLS policies + escalation guards (SQL) — **live verified**
+- Auth / profiles / roles / permissions / account levels (Phase 1.3 LOCKED)
+- RLS policies + escalation guards — **live verified**
 - Minimal auth UI (`/sign-in`, `/sign-up`, `/account`)
 
+### IMPLEMENTED / LIVE VERIFIED (Phase 1.4 — uncommitted)
+- `public.beats` + `beat_status` / `beat_ownership_type`
+- Ownership integrity + status transition guards
+- Beat validation / service / server actions
+- Beats RLS (published public read; admin write; moderator review path)
+- See [BEATS.md](./BEATS.md)
+
 ### PLANNED (not started)
-- Beats, player, Quick Take, downloads, tracks, payments
+- Audio Storage, player, Quick Take, downloads, tracks, payments
 
 ### OPEN
-- OD-04 … OD-18 (as listed in OPEN_DECISIONS)
+- OD-04 … OD-18 (as listed in OPEN_DECISIONS) — **OD-12 remains OPEN**
 - Next.js middleware → proxy migration (NON-BLOCKING TECHNICAL NOTE)
 
 ### CLOSED (Phase 1.3 identity decisions)
 - OD-19 — signup default `BEGINNER_RAPPER`
 - OD-20 — manual/operator-controlled ADMIN bootstrap (no auto-admin)
 - Live Supabase Auth/RLS verification: **PASS** (2026-09-25) — project `rzzxrgcdogkybkiidqgw`
-
 ---
 
 ## 19. Open Architecture Decisions
@@ -429,3 +449,5 @@ Nie zamrażać samodzielnie m.in.:
 - [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md)
 - [DOCUMENTATION_CONTINUITY.md](../DOCUMENTATION_CONTINUITY.md)
 - [PHASE_1_FOUNDATION.md](../phases/PHASE_1_FOUNDATION.md)
+- [BEATS.md](./BEATS.md)
+- [AUTHORIZATION.md](./AUTHORIZATION.md)

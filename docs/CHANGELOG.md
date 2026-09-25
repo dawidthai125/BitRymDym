@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-25 — PHASE 1.4 — BEATS DOMAIN FOUNDATION (IMPLEMENTATION)
+
+**Status:** READY FOR OWNER REVIEW (no commit/push)
+
+- Migration `20260925130000_phase_1_4_beats.sql` applied live on `rzzxrgcdogkybkiidqgw` (additive; no `db reset`)
+- `beat_status` / `beat_ownership_type` enums; `public.beats` metadata table (no audio columns)
+- Ownership integrity (PLATFORM⇒null owner; USER⇒required owner); status transition guards; prefer ARCHIVE
+- RLS: published public read; admin write; moderator review path; ownership/status protected
+- Domain: `Beat` / `BeatStatus` / `BeatOwnershipType`; central validator + transitions; `src/lib/beats/*`
+- Unit 21/21 PASS; live RLS PASS; lint / typecheck / build PASS
+- Docs: `BEATS.md` + PROJECT_STATE / PHASE_1 / SYSTEM_ARCHITECTURE / AUTHORIZATION / README
+- Out of scope: Storage, player, downloads, Quick Take, community upload, payments
+- OD-04…OD-18 remain OPEN (OD-12 OPEN)
+
+---
+
 ## 2026-09-25 — PHASE 1.3 — DOCUMENTATION LOCK CLOSEOUT
 
 - Docs aligned to canonical `main` @ `efe3f71`
