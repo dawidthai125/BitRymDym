@@ -88,6 +88,11 @@ export function SignUpForm() {
           {state.error}
         </p>
       ) : null}
+      {state.message && !state.error ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {state.message}
+        </p>
+      ) : null}
       <Button type="submit" disabled={pending}>
         {pending ? "Tworzenie konta…" : "Załóż konto"}
       </Button>

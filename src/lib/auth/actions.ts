@@ -5,12 +5,15 @@ import { redirect } from "next/navigation";
 
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { interpretSignUpResult } from "@/lib/auth/signup-result";
+import { getAuthEmailRedirectTo } from "@/lib/site-url";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthActionState = {
   error: string | null;
   success: boolean;
+  message?: string | null;
 };
 
 function requireConfiguredSupabase() {
@@ -32,6 +35,7 @@ export async function signUpAction(
     return {
       error: error instanceof Error ? error.message : "Supabase not configured.",
       success: false,
+      message: null,
     };
   }
 
@@ -40,26 +44,46 @@ export async function signUpAction(
   const displayName = String(formData.get("displayName") ?? "").trim();
 
   if (!email || !password) {
-    return { error: "Email i hasło są wymagane.", success: false };
+    return {
+      error: "Email i hasło są wymagane.",
+      success: false,
+      message: null,
+    };
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: getAuthEmailRedirectTo(),
       data: {
         display_name: displayName || undefined,
       },
     },
   });
 
-  if (error) {
-    return { error: error.message, success: false };
+  const outcome = interpretSignUpResult({
+    error,
+    session: data.session,
+    identities: data.user?.identities ?? null,
+  });
+
+  if (outcome.kind === "error") {
+    return { error: outcome.error, success: false, message: null };
   }
 
-  revalidatePath("/");
-  redirect("/account");
+  if (outcome.kind === "session") {
+    revalidatePath("/");
+    redirect("/account");
+  }
+
+  // pending_confirmation — no account redirect (anti-enumeration + confirm email UX)
+  return {
+    error: null,
+    success: true,
+    message: outcome.message,
+  };
 }
 
 export async function signInAction(
