@@ -70,11 +70,13 @@ describe("interpretSignUpResult", () => {
 });
 
 describe("signup emailRedirectTo contract", () => {
-  it("keeps canonical production redirect to /account", () => {
+  it("keeps canonical production redirect via getAuthEmailRedirectTo (/auth/callback)", () => {
     const prev = process.env.NEXT_PUBLIC_SITE_URL;
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     try {
-      expect(getAuthEmailRedirectTo()).toBe("https://bitrymdym.pl/account");
+      expect(getAuthEmailRedirectTo()).toBe(
+        "https://bitrymdym.pl/auth/callback",
+      );
       expect(getAuthEmailRedirectTo()).not.toContain("vercel.app");
     } finally {
       if (prev === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;

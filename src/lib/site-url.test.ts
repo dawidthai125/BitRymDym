@@ -65,9 +65,11 @@ describe("getSiteUrl", () => {
     expect(getSiteUrl()).toBe("http://localhost:3000");
   });
 
-  it("builds auth email redirect to /account", () => {
+  it("builds auth email redirect to /auth/callback", () => {
     clearEnv();
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
-    expect(getAuthEmailRedirectTo()).toBe("https://bitrymdym.pl/account");
+    expect(getAuthEmailRedirectTo()).toBe(
+      "https://bitrymdym.pl/auth/callback",
+    );
   });
 });

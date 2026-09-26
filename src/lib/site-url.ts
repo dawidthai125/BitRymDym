@@ -43,9 +43,12 @@ export function getSiteUrl(): string {
   return "http://localhost:3000";
 }
 
-/** Absolute URL for post-email-confirmation redirect (must be on Supabase allow-list). */
+/**
+ * Absolute URL for Auth emailRedirectTo (must be on Supabase allow-list).
+ * Lands on the PKCE/OTP callback, which then routes to /auth/confirmed.
+ */
 export function getAuthEmailRedirectTo(): string {
-  return `${getSiteUrl()}/account`;
+  return `${getSiteUrl()}/auth/callback`;
 }
 
 export const SITE_URL_CANONICAL_PRODUCTION = CANONICAL_PRODUCTION_ORIGIN;
