@@ -174,11 +174,11 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 - ADMIN PLATFORM upload only; USER community audio DENY
 - Migration: `20260925220000_phase_1_5_audio_storage.sql` (live: `phase_1_5_audio_storage`)
 
-**Still deferred (post–content-ops):**
+**Still deferred (post–1.8A):**
 
-- Download limit counters (OD-05/06/17)
 - Codec finalization (**OD-12 remains OPEN**)
-- Quick Take, community upload, watermark
+- Watermark (**OD-13 OPEN**; OUT of 1.8A)
+- Quick Take, community upload, payments
 
 ### Phase 1.6 public surface (COMPLETE / CLOSED / LOCKED @ `39be430`)
 
@@ -186,19 +186,25 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 - PUBLISHED-only catalog + detail
 - `PlaybackShell` — custom UI; `HTMLAudioElement` engine; no `<audio controls>` product UI
 - Playback via existing `requestBeatAudioAccess` (`PLAYBACK` only)
-- Hard OUT: DOWNLOAD CTA / limits / counters / audit; Quick Take; waveform engine
-- Downloads remain **PARTIAL**; Quick Take **NOT STARTED**
 - Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md)
 - Production: **GREEN / VERIFIED**
 
-### Phase 1.7 admin PLATFORM ops (IMPLEMENTED locally)
+### Phase 1.7 admin PLATFORM ops (COMPLETE / CLOSED / LOCKED @ `ed499ee`)
 
-- Routes: `/admin/beats`, `/admin/beats/new`, `/admin/beats/[id]`
-- ADMIN-only; PLATFORM `owner_id=NULL`
-- REUSE create / metadata / `uploadPlatformBeatAudio` / `DRAFT→PUBLISHED`
-- UI Publish requires active READY MASTER; server hard rule = GAP-PUBLISH-READY
+- Routes: `/admin/beats*`
+- ADMIN-only; PLATFORM create/edit/upload; UI Publish READY MASTER gate
 - Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md)
-- Not CLOSED / not deployed yet
+
+### Phase 1.8A Download Productization (IMPLEMENTATION COMPLETE — not CLOSED)
+
+- Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED
+- Access Gate REUSE (`DOWNLOAD`); TTL 300s unchanged
+- Limits: anon **2** / user **4** per UTC day (`src/config/downloads.ts`)
+- Identity: httpOnly opaque cookie → SHA-256 hash only in DB
+- Table: `beat_download_events`; claim RPC + advisory lock
+- UI: Download CTA on `/beat/[id]`; Moje pobrane `/account/downloads`
+- OD-05 / OD-06 / OD-17 CLOSED interim
+- Live E2E: **NOT VERIFIED**
 
 ## 9. Verification
 
@@ -208,4 +214,5 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 | Phase 1.5 Design Freeze | **LOCKED** @ `0e5c491` |
 | Phase 1.5 Storage / Access Gate | **LOCKED** @ `0ec0be0` — live **PASS** |
 | Phase 1.6 surface + Playback Shell | **CLOSED / LOCKED** @ `39be430` — production **GREEN** |
-| Phase 1.7 admin PLATFORM ops | **IMPLEMENTED (local)** — unit/lint/typecheck/build **PASS**; live E2E **NOT FULLY VERIFIED** |
+| Phase 1.7 admin PLATFORM ops | **CLOSED / LOCKED** @ `ed499ee` |
+| Phase 1.8A downloads | **IMPLEMENTATION COMPLETE** (local) — Live E2E **NOT VERIFIED** |

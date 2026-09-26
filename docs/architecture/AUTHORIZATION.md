@@ -139,7 +139,7 @@ Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](../phases/PHASE_1_6_DESIGN_FREEZE.md
 | Anonymous | ALLOW for PUBLISHED |
 | Authenticated USER | ALLOW for PUBLISHED |
 | Non-published on public routes | DENY (`notFound`) |
-| DOWNLOAD from UI | HARD OUT |
+| DOWNLOAD from UI | HARD OUT (lifted in Phase 1.8A Download CTA only) |
 
 No new permission keys. AccountLevel unused for playback.
 
@@ -157,6 +157,25 @@ Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md
 | Ownership | `PLATFORM` + `owner_id = NULL` |
 | Publish UI | Blocked without active READY MASTER |
 | Server publish READY hard rule | **GAP-PUBLISH-READY** (not implemented) |
-| AccountLevel | Unused for admin AuthZ |
 
-No new permission keys. No admin bootstrap endpoint. OD-20 CLOSED (operator ADMIN).
+---
+
+## Phase 1.8A — Download Productization
+
+Design Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md).
+
+| Surface | Rule |
+|---------|------|
+| Download CTA `/beat/[id]` | Access Gate `DOWNLOAD` REUSE; TTL 300s |
+| Anonymous limit | 2 / UTC day; httpOnly opaque token → server hash |
+| Authenticated USER limit | 4 / UTC day; `user_id`; global |
+| ADMIN | DOWNLOAD ALLOW; daily limit exempt; event still recorded |
+| MODERATOR | DOWNLOAD DENY (unchanged) |
+| DOWNLOAD_EVENT | After AuthZ + limit allow + successful signed URL |
+| `beat_download_events` | RLS: authenticated SELECT own only; INSERT via service_role |
+| Moje pobrane `/account/downloads` | Authenticated only |
+| Client | Cannot set identity / limits / create events |
+
+No new permission keys. AccountLevel unused for download AuthZ/limits.
+
+Phase 1.7 note: AccountLevel unused for admin AuthZ. No admin bootstrap endpoint. OD-20 CLOSED (operator ADMIN).

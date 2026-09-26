@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DownloadButton } from "@/components/beats/download-button";
 import { PlaybackShell } from "@/components/player/playback-shell";
 import { SiteHeader } from "@/components/site/site-header";
+import { getCurrentProfile } from "@/lib/auth/session";
 import {
   formatDurationSeconds,
   toPublicBeatDetail,
@@ -35,6 +37,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
 
   const detail = toPublicBeatDetail(beat);
   const audioInfo = await getBeatAudioPublicInfo(beat.id);
+  const session = await getCurrentProfile();
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
@@ -99,11 +102,18 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
         </header>
 
         {audioInfo.hasAudio ? (
-          <PlaybackShell
-            beatId={detail.id}
-            title={detail.title}
-            durationSeconds={detail.durationSeconds}
-          />
+          <div className="space-y-4">
+            <PlaybackShell
+              beatId={detail.id}
+              title={detail.title}
+              durationSeconds={detail.durationSeconds}
+            />
+            <DownloadButton
+              beatId={detail.id}
+              title={detail.title}
+              isAuthenticated={Boolean(session)}
+            />
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground" role="status">
             Ten bit nie ma jeszcze dostępnego audio do odsłuchu.

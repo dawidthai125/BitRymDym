@@ -6,6 +6,52 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-26 — PHASE 1.8A — DOCUMENTATION CLOSEOUT COMPLETE
+
+**Status:** IMPLEMENTATION AUDIT PASS · DOCUMENTATION CLOSEOUT COMPLETE · **READY FOR OWNER REVIEW** (not CLOSED)
+
+- Design Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](./phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED
+- OD-05 = 2 / UTC day · OD-06 = 4 / UTC day · OD-17 = signed URL SUCCESS → finalize event
+- Flow: AUTH → AUTHZ → READY → RESERVATION (TTL 120s, not an event) → signed URL → FINALIZE → `beat_download_events`
+- Audit: OD-17 / reservation / crash safety / concurrency / grants / RLS / security PASS; tests **84/84**
+- Known non-blocking: no live RLS/concurrency integration tests; Live E2E NOT VERIFIED (`published_count=0`, `admin_count=0`)
+- Homepage stale “Download OUT” copy corrected
+- Phase **NOT CLOSED**; not committed / not pushed
+- Next: OWNER REVIEW → COMMIT → PUSH → PRODUCTION VERIFY
+
+---
+
+## 2026-09-26 — PHASE 1.8A — IMPLEMENTATION FIX (OD-17 reservation)
+
+**Status:** IMPLEMENTATION COMPLETE (fix) — uncommitted — **READY FOR IMPLEMENTATION AUDIT**
+
+- Root cause addressed: provisional event-before-URL rejected
+- Model: `beat_download_reservations` (ephemeral) ≠ `beat_download_events` (final OD-17)
+- Flow: AuthZ → reserve → signed URL SUCCESS → finalize event
+- Least-privilege: revoked anon/authenticated DML on events; reservations client-denied
+- Dropped `claim_beat_download_slot`; RPCs service_role only
+- Migration: `phase_1_8a_download_reservation` applied remote
+- Phase **NOT CLOSED**
+
+---
+
+## 2026-09-26 — PHASE 1.8A — IMPLEMENTATION COMPLETE (not CLOSED)
+
+**Status:** IMPLEMENTATION COMPLETE — local / uncommitted — **READY FOR IMPLEMENTATION AUDIT**
+
+- Design Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](./phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED
+- Migrations: `phase_1_8a_download_events`, `phase_1_8a_claim_rpc_grants` (applied remote)
+- Table: `beat_download_events` + RLS (own SELECT); claim RPC service_role only
+- Config SSOT: `src/config/downloads.ts` (anon=2, user=4, UTC day)
+- Access Gate REUSE: DOWNLOAD branch + atomic limit claim + event
+- UI: Download CTA on `/beat/[id]`; Moje pobrane `/account/downloads`
+- OD-05 / OD-06 / OD-17 CLOSED interim; OD-13 / OD-04 OUT
+- Tests 59/59; lint / typecheck / build PASS
+- Live Download E2E: **NOT VERIFIED** (empty catalog / no ADMIN)
+- Phase **NOT CLOSED**; not committed / not pushed
+
+---
+
 ## 2026-09-26 — PHASE 1.7 — COMPLETE / CLOSED / LOCKED
 
 **Status:** COMPLETE / COMMITTED / PUSHED — `ed499ee` on `main` / `origin/main`

@@ -350,4 +350,197 @@ Prevents privilege escalation and accidental admin grant on first registration.
 **Live Admin E2E:** NOT VERIFIED — OD-20 / `admin_count=0` (non-blocking).
 **Published Content E2E:** NOT VERIFIED — `published_count=0` (non-blocking).
 
-**OD-04 … OD-18 remain OPEN.** No new OD. OD-20 CLOSED (operator ADMIN).
+**OD-04, OD-07…OD-16, OD-18 remain OPEN.** OD-20 CLOSED (operator ADMIN).
+**Post–1.7 note:** OD-05 / OD-06 / OD-17 CLOSED 2026-09-26 as Phase 1.8A interim (see below).
+
+---
+
+### OD-05 — Anonymous download limit (Phase 1.8A interim)
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-05 |
+| Title | Limit pobrań — użytkownik anonimowy |
+| Status | CLOSED / ACCEPTED (Phase 1.8A interim model) |
+| Date | 2026-09-26 |
+| Decydent | Owner (Prezes Dawid) |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED |
+
+**Decision**
+
+```text
+anonymous_daily_download_limit = 2
+window = UTC calendar day
+identity = httpOnly opaque anonymous token
+server stores only token hash
+scope = global (all beats)
+```
+
+Config SSOT: `src/config/downloads.ts` (no magic numbers).
+Known limitation: clearing cookies / private mode resets the soft identity.
+
+**Scope**
+
+Phase 1.8A Download Productization only. Does not close Premium / payment limits.
+
+**Related documentation**
+
+- [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md)
+- [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §13
+- [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)
+
+---
+
+### OD-06 — Authenticated user download limit (Phase 1.8A interim)
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-06 |
+| Title | Limit pobrań — użytkownik zalogowany |
+| Status | CLOSED / ACCEPTED (Phase 1.8A interim model) |
+| Date | 2026-09-26 |
+| Decydent | Owner (Prezes Dawid) |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED |
+
+**Decision**
+
+```text
+user_daily_download_limit = 4
+window = UTC calendar day
+identity = authenticated user_id
+scope = global per user
+```
+
+AccountLevel unused for download limits in Phase 1.8A.
+Config SSOT: `src/config/downloads.ts`.
+
+**Scope**
+
+Phase 1.8A Download Productization. Premium boost / per-beat purchase OUT.
+
+**Related documentation**
+
+- [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md)
+- [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §13
+- [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)
+
+---
+
+### OD-17 — Repeat download counting (Phase 1.8A interim)
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-17 |
+| Title | Zasady liczenia powtórnych pobrań |
+| Status | CLOSED / ACCEPTED (Phase 1.8A interim model) |
+| Date | 2026-09-26 |
+| Decydent | Owner (Prezes Dawid) |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED |
+
+**Decision**
+
+```text
+DOWNLOAD_EVENT = successful DOWNLOAD signed-URL issuance
+after:
+  AUTH / IDENTITY
+  → SERVER AUTHORIZATION
+  → READY asset
+  → RESERVATION (ephemeral; NOT an event)
+  → SIGNED DOWNLOAD URL SUCCESS
+  → FINALIZE
+  → EVENT (beat_download_events)
+```
+
+Each successful DOWNLOAD URL issuance counts **1** toward the daily limit.
+File-transfer success is not required / not reliably observable.
+Persistence: `beat_download_events` only after finalize (reservation TTL default 120s).
+Reservation is never a DOWNLOAD_EVENT; expired reservations are not counted.
+
+**Scope**
+
+Phase 1.8A Download Productization counting + limits + Moje pobrane derivation.
+
+**Related documentation**
+
+- [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md)
+- [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §17
+- [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)
+
+---
+
+### Phase 1.8A — Download Productization (Design Freeze lock)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.8A Download Productization — Design Freeze |
+| Status | **APPROVED / LOCKED** — READY FOR IMPLEMENTATION |
+| Date | 2026-09-26 |
+| Decydent | Owner (Prezes Dawid) |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) |
+| Implementation | **NOT STARTED** (awaiting Owner Implementation GO) |
+
+**Frozen:**
+
+- Access Gate DOWNLOAD **REUSE** (TTL 300s); no duplicate AuthZ engine
+- OD-05 / OD-06 / OD-17 interim rules CLOSED (above)
+- Moje pobrane = **IN** (minimal authenticated)
+- `beat_download_events` required
+- Config = `src/config/downloads.ts`
+- OD-13 watermark **OUT**; OD-04 payments **OUT**
+- Quick Take / Tracks / Community **OUT**
+
+**Not applied at freeze:** code, migrations, commit, push.
+
+---
+
+### Phase 1.8A — Download Productization (implementation note)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.8A Download Productization — Implementation |
+| Status | **IMPLEMENTATION COMPLETE** (not CLOSED) |
+| Date | 2026-09-26 |
+| Decydent | Owner Implementation GO |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) |
+| Migrations | `phase_1_8a_download_events`, `phase_1_8a_claim_rpc_grants`, `phase_1_8a_download_reservation` |
+| Commit | **uncommitted** |
+
+**Delivered:** Access Gate REUSE; limits 2/4 UTC; reservation → signed URL → finalize; `beat_download_events`; Moje pobrane; Download CTA; config SSOT.
+
+**Concurrency:** `reserve_beat_download_slot` uses `pg_advisory_xact_lock`; provisional **reservation** (not event) until signed URL succeeds, then `finalize_beat_download` inserts final OD-17 event. URL failure → `release_beat_download_reservation` (no event). Expired reservations free the slot (TTL 120s).
+
+---
+
+### Phase 1.8A — Implementation Audit PASS + Documentation Closeout
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.8A Download Productization — Implementation Audit PASS |
+| Status | **IMPLEMENTATION AUDIT PASS** · **DOCUMENTATION CLOSEOUT COMPLETE** · **READY FOR OWNER REVIEW** (not CLOSED) |
+| Date | 2026-09-26 |
+| Decydent | Owner Implementation Audit GO → Documentation Closeout GO |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED |
+
+**Audit results:**
+
+| Area | Result |
+|------|--------|
+| OD-17 | PASS |
+| Reservation model | PASS |
+| Crash safety | PASS |
+| Concurrency | PASS |
+| Table grants | PASS |
+| RLS | PASS |
+| Security | PASS |
+| Tests | **84/84** |
+| Lint / typecheck / build | PASS |
+| Live DB | PASS |
+| Scope | PASS |
+
+**Known non-blocking gaps (retained):**
+
+- No live RLS/concurrency integration tests (unit/source-contract coverage)
+- Live product E2E **NOT VERIFIED** (`published_count=0`, `admin_count=0` / OD-20)
+- Phase **not CLOSED** until Owner Review → commit → push → production verify
+
+**Next:** OWNER REVIEW → COMMIT → PUSH → PRODUCTION VERIFY

@@ -78,14 +78,16 @@ describe("PlaybackShell hard-outs", () => {
     "utf8",
   );
 
-  it("does not expose DOWNLOAD purpose or download CTA", () => {
+  it("does not expose DOWNLOAD purpose or download CTA on PlaybackShell / catalog", () => {
     expect(shellSource).toContain("PUBLIC_PLAYBACK_PURPOSE");
     expect(shellSource).not.toMatch(/purpose:\s*["']DOWNLOAD["']/);
     expect(shellSource).not.toMatch(/<audio[^>]*\scontrols/i);
     expect(shellSource).toContain("<audio");
-    expect(detailSource.toLowerCase()).not.toContain("pobierz");
-    expect(detailSource.toLowerCase()).not.toContain("download");
+    expect(shellSource.toLowerCase()).not.toContain("pobierz");
     expect(catalogSource.toLowerCase()).not.toContain("download");
+    expect(catalogSource.toLowerCase()).not.toContain("pobierz");
+    // Phase 1.8A: beat detail may expose Download CTA (separate from PlaybackShell).
+    expect(detailSource).toContain("DownloadButton");
   });
 
   it("does not include Quick Take or waveform engine hooks", () => {

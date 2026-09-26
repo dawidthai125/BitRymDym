@@ -59,6 +59,13 @@ export default async function AccountPage() {
         initialDisplayName={context.profile.displayName ?? ""}
       />
 
+      <Link
+        href="/account/downloads"
+        className="text-sm underline underline-offset-4"
+      >
+        Moje pobrane
+      </Link>
+
       <form action={signOutAction}>
         <Button type="submit" variant="outline">
           Wyloguj

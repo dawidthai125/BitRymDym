@@ -97,6 +97,54 @@ export function toSafePlaybackErrorMessage(
   return "Nie udało się odtworzyć audio.";
 }
 
-/** Phase 1.6 hard-out: UI must never request DOWNLOAD purpose. */
+/** Safe user-facing download errors — no permissions / SQL / Storage leakage. */
+export function toSafeDownloadErrorMessage(
+  raw: string | null | undefined,
+): string {
+  if (!raw) {
+    return "Nie udało się pobrać pliku.";
+  }
+  const lower = raw.toLowerCase();
+  if (lower.includes("daily download limit") || lower.includes("limit reached")) {
+    return "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.";
+  }
+  if (
+    lower.includes("forbidden") ||
+    lower.includes("denied") ||
+    lower.includes("unauthorized")
+  ) {
+    return "Brak dostępu do pobrania.";
+  }
+  if (
+    lower.includes("not found") ||
+    lower.includes("no ready") ||
+    lower.includes("missing")
+  ) {
+    return "Audio niedostępne dla tego bitu.";
+  }
+  if (
+    lower.includes("network") ||
+    lower.includes("fetch") ||
+    lower.includes("failed to fetch")
+  ) {
+    return "Błąd sieci. Spróbuj ponownie.";
+  }
+  if (
+    lower.includes("signed") ||
+    lower.includes("url") ||
+    lower.includes("expired")
+  ) {
+    return "Link do pobrania wygasł. Spróbuj ponownie.";
+  }
+  return "Nie udało się pobrać pliku.";
+}
+
+/** PlaybackShell / catalog must use PLAYBACK only. */
 export const PUBLIC_PLAYBACK_PURPOSE = "PLAYBACK" as const;
+/** Dedicated Download CTA on beat detail (Phase 1.8A). */
+export const PUBLIC_DOWNLOAD_PURPOSE = "DOWNLOAD" as const;
+/**
+ * Surfaces that must not issue DOWNLOAD (PlaybackShell, catalog).
+ * Beat detail Download CTA is the sole public DOWNLOAD entry.
+ */
 export const PUBLIC_UI_FORBIDDEN_PURPOSES = ["DOWNLOAD"] as const;

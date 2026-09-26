@@ -19,6 +19,7 @@ export type AudioActionState = {
   assetId?: string;
   url?: string;
   expiresAt?: string;
+  remainingToday?: number;
 };
 
 function catchAudio(error: unknown): AudioActionState {
@@ -49,6 +50,7 @@ export async function requestBeatAudioAccessAction(params: {
       url: result.url,
       expiresAt: result.expiresAt,
       assetId: result.assetId,
+      remainingToday: result.remainingToday,
     };
   } catch (error) {
     return catchAudio(error);

@@ -43,6 +43,12 @@ export async function SiteHeader({
                 </Link>
               ) : null}
               <Link
+                href="/account/downloads"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Pobrane
+              </Link>
+              <Link
                 href="/account"
                 className="underline-offset-4 hover:text-foreground hover:underline"
               >

@@ -6,7 +6,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 /**
- * Application home — Phase 1.6 points to published beats surface.
+ * Application home — Phase 1.8A: published beats, playback, and download.
  */
 export default async function HomePage() {
   const supabase = getSupabasePublicEnv();
@@ -17,14 +17,15 @@ export default async function HomePage() {
       <SiteHeader />
       <main className="mx-auto flex max-w-2xl flex-col justify-center gap-6 px-6 py-16">
         <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
-          Phase 1.6 · Published Beats + Playback Shell
+          Phase 1.8A · Published Beats + Download
         </p>
         <h1 className="text-4xl font-semibold tracking-tight text-balance">
           {siteConfig.name}
         </h1>
         <p className="text-base leading-relaxed text-muted-foreground text-pretty">
-          Publiczny katalog opublikowanych bitów i odsłuch przez Access Gate
-          (PLAYBACK). Download, Quick Take i waveform pozostają poza tym etapem.
+          Publiczny katalog opublikowanych bitów, odsłuch (PLAYBACK) i pobieranie
+          (DOWNLOAD) przez Access Gate z limitami dnia. Quick Take i waveform
+          pozostają poza tym etapem.
         </p>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li>

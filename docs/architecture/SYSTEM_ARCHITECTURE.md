@@ -338,8 +338,9 @@ Krytyczne reguły zawsze serwerowo m.in.: download limits, beat ownership/access
 REQUEST → AUTH → ROLE/ACCOUNT ACCESS → LIMIT → ANTI-ABUSE → RECORD → SIGNED URL → DOWNLOAD
 ```
 
-Wartości limitów: **OD-05 / OD-06 OPEN** (mechanizm konfigurowalny — CONFIRMED).
-Liczenie powtórzeń: **OD-17 OPEN**.
+Wartości limitów Phase 1.8A interim: **OD-05 = 2**, **OD-06 = 4** (CLOSED); config `src/config/downloads.ts`.
+Liczenie: **OD-17 CLOSED** — DOWNLOAD_EVENT = successful DOWNLOAD signed-URL issuance.
+Table: `beat_download_events`. Watermark / payments remain OUT.
 
 ---
 
@@ -406,27 +407,30 @@ Next: IMPLEMENTATION AUDIT → commit / push (not CLOSED)
   - `/beat/[id]` PUBLISHED-only detail
   - Custom Playback Shell (no native `<audio controls>` UI)
   - PLAYBACK only via existing Access Gate
-  - DOWNLOAD UI / limits / Quick Take / waveform hard OUT
-  - Downloads capability remains **PARTIAL**; Quick Take **NOT STARTED**
+  - DOWNLOAD UI / limits / Quick Take / waveform hard OUT of 1.6
 - Phase 1.7 Design Freeze — APPROVED / LOCKED
-- Phase 1.7 Admin PLATFORM Content Ops (**local, uncommitted**)
+- Phase 1.7 Admin PLATFORM Content Ops (**CLOSED / LOCKED** @ `ed499ee`)
   - `/admin/beats*` ADMIN-only ops surface
   - REUSE create / metadata / uploadPlatformBeatAudio / lifecycle
   - UI Publish blocked without READY MASTER (GAP-PUBLISH-READY preserved)
-  - No new migration / no audit system / no download UI
+- Phase 1.8A Design Freeze — APPROVED / LOCKED
+- Phase 1.8A Download Productization (**IMPLEMENTATION COMPLETE**, not CLOSED)
+  - Download CTA; limits 2/4 UTC; `beat_download_events`; Moje pobrane
+  - Access Gate REUSE; config `src/config/downloads.ts`
+  - OD-05/06/17 CLOSED interim; OD-13/04 OUT
 
 ### PLANNED (not started)
-- Download limits / UI / audit (later), Quick Take, tracks, payments
+- Quick Take, tracks, payments, watermark, Premium limits
 
 ### OPEN
-- OD-04 … OD-18 — **OD-12 remains OPEN**
+- OD-04, OD-07…OD-16, OD-18 — **OD-12 remains OPEN**
 - Next.js middleware → proxy migration (NON-BLOCKING)
 
 ## 19. Open Architecture Decisions
 
 Pełna lista: [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md).
 
-Nadal OPEN m.in.: OD-04 … OD-18.
+Nadal OPEN m.in.: OD-04, OD-07…OD-16, OD-18 (OD-05/06/17 CLOSED interim 1.8A).
 
 ---
 
@@ -437,7 +441,7 @@ Nie zamrażać samodzielnie m.in.:
 - codec / bitrate / audio processing (OD-12)
 - watermark (OD-13)
 - payment provider (OD-04)
-- exact download limits (OD-05, OD-06)
+- Premium download limits (later)
 - exact Quick Take anonymous TTL implementation detail
 - export / mix (OD-14)
 - DM moderation mechanism
@@ -446,7 +450,6 @@ Nie zamrażać samodzielnie m.in.:
 - comment moderation mechanism (OD-11)
 - visual identity freeze (OD-15)
 - brand copy freeze (OD-16)
-- repeat download counting (OD-17)
 - share counting (OD-18)
 
 ---

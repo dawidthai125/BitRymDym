@@ -19,6 +19,14 @@ import {
   type AudioAccessActor,
   type AudioAccessPurpose,
 } from "@/lib/beats/audio-validation";
+import { ensureAnonymousDownloadIdentity } from "@/lib/downloads/anonymous-identity";
+import {
+  finalizeDownload,
+  insertAdminDownloadEvent,
+  releaseDownloadReservation,
+  reserveDownloadSlot,
+  throwLimitReached,
+} from "@/lib/downloads/slots";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -28,6 +36,7 @@ export type BeatAudioAccessResult = {
   purpose: AudioAccessPurpose;
   beatId: string;
   assetId: string;
+  remainingToday?: number;
 };
 
 function actorFromRole(role: SystemRole | null): AudioAccessActor {
@@ -79,9 +88,11 @@ async function resolveActiveAsset(params: {
 }
 
 /**
- * Single Phase 1.5 Access Gate.
- * Anonymous branch: no requireUser.
- * Authenticated branch: requireUser (and staff rules via actor).
+ * Single Phase 1.5 Access Gate (REUSE) + Phase 1.8A DOWNLOAD limits/events.
+ *
+ * DOWNLOAD OD-17 order:
+ * AuthZ → reserve slot → signed URL SUCCESS → finalize DOWNLOAD_EVENT
+ * Reservation is never a DOWNLOAD_EVENT.
  */
 export async function requestBeatAudioAccess(params: {
   beatId: string;
@@ -94,8 +105,6 @@ export async function requestBeatAudioAccess(params: {
   const profileContext = await getCurrentProfile();
   const actor = actorFromRole(profileContext?.profile.role ?? null);
 
-  // Authenticated path uses requireUser only when a session is expected to be
-  // validated; anonymous callers proceed without requireUser.
   if (profileContext) {
     await requireUser();
   }
@@ -107,8 +116,6 @@ export async function requestBeatAudioAccess(params: {
     .eq("id", params.beatId)
     .maybeSingle();
 
-  // Staff may need non-published beats not visible via published RLS —
-  // fall back to admin client for staff visibility check only.
   let beatStatus: BeatStatus | null = (beat?.status as BeatStatus) ?? null;
   if (!beat && (actor === "ADMIN" || actor === "MODERATOR")) {
     const admin = createSupabaseAdminClient();
@@ -148,6 +155,43 @@ export async function requestBeatAudioAccess(params: {
     throw new AuthError("FORBIDDEN", "Asset/beat relation mismatch.");
   }
 
+  let reservationId: string | null = null;
+  let remainingToday: number | undefined;
+
+  if (params.purpose === "DOWNLOAD") {
+    if (actor === "ADMIN") {
+      // Limit-exempt; final event after signed URL only.
+    } else if (actor === "ANON") {
+      const { tokenHash } = await ensureAnonymousDownloadIdentity();
+      const reserve = await reserveDownloadSlot({
+        beatId: params.beatId,
+        assetId: asset.id,
+        actorType: "ANON",
+        userId: null,
+        anonymousTokenHash: tokenHash,
+      });
+      if (!reserve.allowed) {
+        throwLimitReached();
+      }
+      reservationId = reserve.reservationId;
+      remainingToday = reserve.remaining;
+    } else if (actor === "USER") {
+      const userId = profileContext!.profile.id;
+      const reserve = await reserveDownloadSlot({
+        beatId: params.beatId,
+        assetId: asset.id,
+        actorType: "USER",
+        userId,
+        anonymousTokenHash: null,
+      });
+      if (!reserve.allowed) {
+        throwLimitReached();
+      }
+      reservationId = reserve.reservationId;
+      remainingToday = reserve.remaining;
+    }
+  }
+
   const ttl = signedUrlTtlSeconds(params.purpose);
   const admin = createSupabaseAdminClient();
   const { data: signed, error: signedError } = await admin.storage
@@ -155,12 +199,38 @@ export async function requestBeatAudioAccess(params: {
     .createSignedUrl(asset.object_key, ttl);
 
   if (signedError || !signed?.signedUrl) {
+    if (reservationId) {
+      await releaseDownloadReservation(reservationId);
+    }
     throw new Error(signedError?.message ?? "Failed to create signed URL.");
   }
 
-  const expiresAt = new Date(Date.now() + ttl * 1000).toISOString();
+  if (params.purpose === "DOWNLOAD") {
+    if (reservationId) {
+      try {
+        // OD-17: final DOWNLOAD_EVENT only after signed URL success.
+        await finalizeDownload({
+          reservationId,
+          beatId: params.beatId,
+          assetId: asset.id,
+        });
+      } catch (finalizeError) {
+        // No DOWNLOAD_EVENT. Release hold so the slot is not stuck until TTL.
+        await releaseDownloadReservation(reservationId);
+        throw finalizeError instanceof Error
+          ? finalizeError
+          : new Error("Download finalize failed.");
+      }
+    } else if (actor === "ADMIN" && profileContext) {
+      await insertAdminDownloadEvent({
+        beatId: params.beatId,
+        assetId: asset.id,
+        userId: profileContext.profile.id,
+      });
+    }
+  }
 
-  // Touch mapped asset for type safety / future logging.
+  const expiresAt = new Date(Date.now() + ttl * 1000).toISOString();
   mapBeatAudioAssetRow(asset);
 
   return {
@@ -169,5 +239,6 @@ export async function requestBeatAudioAccess(params: {
     purpose: params.purpose,
     beatId: params.beatId,
     assetId: asset.id,
+    remainingToday,
   };
 }

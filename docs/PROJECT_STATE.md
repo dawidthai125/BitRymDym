@@ -24,99 +24,99 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| Canonical implementation | `ed499ee93182146317ad18da932615d1dfa1a6b8` |
-| Remote (production) | `origin/main` = `ed499ee93182146317ad18da932615d1dfa1a6b8` |
-| Local | docs closeout commit ahead of origin (push pending) |
-| Working tree (tracked) | **CLEAN** (local untracked tooling artifacts may exist) |
+| Canonical implementation (origin) | `ed499ee93182146317ad18da932615d1dfa1a6b8` |
+| Remote (production) | `origin/main` = `ed499ee` (Phase 1.7) |
+| Local | Phase 1.8A **uncommitted** (impl + docs closeout) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | **GREEN / VERIFIED** @ `ed499ee` |
+| Production app | **GREEN** @ `ed499ee` (1.8A not deployed yet) |
 
-Phase 1.4 lock: `6cb1e9a` / docs `ec32b97`.
-Phase 1.5 Design Freeze: `0e5c491`.
-Phase 1.5 implementation: `0ec0be0`.
-Phase 1.5 documentation closeout: `7de20a3`.
-Phase 1.6 Design Freeze: [PHASE_1_6_DESIGN_FREEZE.md](./phases/PHASE_1_6_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
-Phase 1.6 implementation: `39be430`.
-Phase 1.6 docs reconciliation: `d5b4e91`.
-Phase 1.7 Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
-Phase 1.7 implementation: `ed499ee` — `feat(admin): complete phase 1.7 platform content ops`.
+Phase 1.8A Design Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](./phases/PHASE_1_8A_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.7 COMPLETE / CLOSED / LOCKED — READY FOR NEXT COLD-START AUDIT
+FOUNDATION — PHASE 1.8A DOCUMENTATION CLOSEOUT COMPLETE — READY FOR OWNER REVIEW
 ```
 
 | Etap | Status |
 |------|--------|
-| 1.0–1.6 | **COMPLETE / CLOSED / LOCKED** on `origin/main` |
-| 1.7 Design Freeze | **APPROVED / LOCKED** (2026-09-26) |
-| 1.7 Implementation | **COMPLETE / CLOSED / LOCKED** @ `ed499ee` |
-| 1.7 Production | **GREEN / VERIFIED** |
-| 1.8+ | **NOT STARTED** |
+| 1.0–1.7 | **COMPLETE / CLOSED / LOCKED** on `origin/main` @ `ed499ee` |
+| 1.8A Design Freeze | **APPROVED / LOCKED** |
+| 1.8A Implementation | **COMPLETE** |
+| 1.8A Implementation Audit | **PASS** |
+| 1.8A Documentation Closeout | **COMPLETE** |
+| 1.8A Owner Review | **PENDING** |
+| 1.8A Phase CLOSED | **NO** (awaiting Owner Review → commit → push → production verify) |
 
-**Phase 1.7 delivered:** `/admin/beats*` ADMIN PLATFORM content ops; create DRAFT; metadata; MASTER upload via existing `uploadPlatformBeatAudio`; UI Publish gate (READY MASTER); lifecycle REUSE (`DRAFT → PUBLISHED`).
+**Download model (OD-17):**
 
-**Still PARTIAL:** Downloads (signed DOWNLOAD only; no UI / limits).
-**NOT STARTED:** Quick Take, payments, community.
+```text
+AUTH / IDENTITY → AUTHORIZATION → READY asset
+→ RESERVATION (ephemeral, TTL 120s, NOT an event)
+→ signed URL SUCCESS
+→ FINALIZE → beat_download_events
+```
 
-**Known non-blocking gaps (frozen):**
-- **GAP-PUBLISH-READY** — UI blocks publish without READY MASTER; server soft-allow unchanged
-- **Audit infrastructure** — no full audit system in Phase 1.7
-- **Live Admin E2E** — NOT VERIFIED (`admin_count=0` / OD-20 operator provisioning)
-- **Published Content E2E** — NOT VERIFIED (`published_count=0`)
+**Limits:** OD-05 anon = 2 / UTC day · OD-06 user = 4 / UTC day · config `src/config/downloads.ts`.
 
-**OD-04 … OD-18 remain OPEN.**
-**OD-20 CLOSED:** first ADMIN = operator-controlled only.
+**OUT preserved:** watermark, payments, Quick Take, Tracks, Community, premium.
+
+**Known non-blocking gaps:**
+- No live RLS/concurrency integration tests (unit/source-contract coverage)
+- Live product E2E **NOT VERIFIED** (`published_count=0`, `admin_count=0` / OD-20)
+- GAP-PUBLISH-READY / audit infrastructure from 1.7 unchanged
+
+**OD-05 / OD-06 / OD-17:** CLOSED / ACCEPTED (interim).
+**Still OPEN:** OD-04, OD-07 through OD-16, OD-18.
 
 ---
 
-## 4. Owner decisions (Phase 1.3)
+## 4. Owner decisions (relevant)
 
 | ID | Status | Summary |
 |----|--------|---------|
-| OD-19 | **CLOSED / ACCEPTED** | Signup default `account_level = BEGINNER_RAPPER`; `role = USER` |
-| OD-20 | **CLOSED / ACCEPTED** | No automatic first-admin; manual/operator-controlled bootstrap only |
+| OD-05 | **CLOSED / ACCEPTED** (1.8A interim) | Anon = 2 / UTC day; httpOnly opaque token; server hash only |
+| OD-06 | **CLOSED / ACCEPTED** (1.8A interim) | User = 4 / UTC day; `user_id`; global |
+| OD-17 | **CLOSED / ACCEPTED** (1.8A interim) | DOWNLOAD_EVENT = successful signed URL issuance after reserve → finalize |
+| OD-19 | **CLOSED / ACCEPTED** | Signup default `BEGINNER_RAPPER` |
+| OD-20 | **CLOSED / ACCEPTED** | Manual ADMIN bootstrap only |
 
 ---
 
 ## 5. Verification status
 
-### Phase 1.6 (locked)
+### Phase 1.8A
 
 | Layer | Status |
 |-------|--------|
-| Public surface + Playback | **PASS** (locked @ `39be430`) |
-
-### Phase 1.7 (locked)
-
-| Layer | Status |
-|-------|--------|
-| Admin routes + AuthZ / security / regression | **PASS** (production) |
-| Public / auth / routing smoke | **PASS** |
-| UI Publish gate (READY MASTER) | **PASS** |
-| Commit / push / Vercel | **PASS** (`ed499ee`) |
-| Production | **GREEN / VERIFIED** |
-| Live Admin E2E | **NOT VERIFIED** — OD-20 / `admin_count=0` (non-blocking) |
-| Published Content E2E | **NOT VERIFIED** — `published_count=0` (non-blocking) |
-| Phase lock | **CLOSED / LOCKED** |
+| Design Freeze | **APPROVED / LOCKED** |
+| Implementation | **COMPLETE** |
+| Implementation Audit | **PASS** |
+| Documentation Closeout | **COMPLETE** |
+| Migrations (events + reservation) | **APPLIED** (remote) |
+| Tests | **84/84 PASS** |
+| Lint / typecheck / build | **PASS** |
+| Live Download E2E | **NOT VERIFIED** (non-blocking) |
+| Phase CLOSED | **NO** |
+| Owner Review | **PENDING** |
 
 ---
 
 ## 6. Open Decisions
 
-Still OPEN: **OD-04 … OD-18**.
+Still OPEN: **OD-04, OD-07 through OD-16, OD-18**.
+CLOSED interim for downloads: **OD-05, OD-06, OD-17**.
 See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ---
 
 ## 7. Current Blockers
 
-1. Next phase requires Owner Cold-Start Audit + Design Freeze selection (do not start implementation without GO)
-2. Operator must provision first ADMIN (OD-20) before live PLATFORM content ops demo
-3. Empty published catalog until operator publishes first beat
+1. Owner Review → commit → push → production verify for Phase 1.8A
+2. Live download E2E needs ADMIN + PUBLISHED READY beat (OD-20 ops; non-blocking for closeout)
+3. Do not mark phase CLOSED until Owner Review completes
 
 ---
 
@@ -126,10 +126,10 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 |--------|--------|
 | Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** |
 | Beats metadata domain | **COMPLETE / LOCKED** |
-| Private audio Storage + Access Gate | **COMPLETE / LOCKED** (`0ec0be0`) |
-| Published Beats Surface + Playback Shell | **COMPLETE / CLOSED / LOCKED** (`39be430`) |
-| Admin PLATFORM Content Ops Surface | **COMPLETE / CLOSED / LOCKED** (`ed499ee`) |
-| Downloads (limits / UI / audit) | **PARTIAL** (signed DOWNLOAD only) |
+| Private audio Storage + Access Gate | **COMPLETE / LOCKED** |
+| Published Beats Surface + Playback Shell | **COMPLETE / LOCKED** |
+| Admin PLATFORM Content Ops | **COMPLETE / LOCKED** @ `ed499ee` |
+| Downloads (limits / UI / events / Moje pobrane) | **IMPLEMENTATION COMPLETE** · Audit PASS · Docs closeout COMPLETE (not CLOSED) |
 | Quick Take / Payments | **NOT STARTED** |
 
 ---
@@ -138,15 +138,19 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ```text
 NEXT SESSION ENTRY:
-READY FOR COLD-START AUDIT (next Foundation candidate)
-Do not implement next phase until Design Freeze + Owner GO.
+PHASE 1.8A DOCUMENTATION CLOSEOUT COMPLETE
+READY FOR OWNER REVIEW
+Next: OWNER REVIEW → COMMIT → PUSH → PRODUCTION VERIFY
+Do not mark CLOSED until Owner Review.
+Do not commit / push without Owner GO.
 ```
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.7 Owner Closeout (2026-09-26)
+**Sesja:** Phase 1.8A Documentation Closeout (2026-09-26)
 
-**Done:** Phase 1.7 CLOSED / LOCKED @ `ed499ee`; production GREEN; public/auth/routing/security/regression PASS.
-**Known gaps retained:** GAP-PUBLISH-READY; audit infrastructure; Live Admin / Published Content E2E NOT VERIFIED (OD-20 / empty catalog).
+**Done:** Implementation Audit PASS documented; PROJECT_STATE / freeze / DECISION_LOG / CHANGELOG updated; trailing whitespace cleared; homepage stale Download OUT copy corrected.
+**Not done:** commit, push, phase CLOSED, live E2E.
+**Next:** Owner Review.

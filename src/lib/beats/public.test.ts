@@ -8,6 +8,7 @@ import {
   PUBLIC_UI_FORBIDDEN_PURPOSES,
   toPublicBeatDetail,
   toPublicCatalogItem,
+  toSafeDownloadErrorMessage,
   toSafePlaybackErrorMessage,
 } from "@/lib/beats/public";
 import type { Beat } from "@/types/domain";
@@ -75,7 +76,7 @@ describe("Phase 1.6 public beats surface", () => {
     expect(formatDurationSeconds(0)).toBe("0:00");
   });
 
-  it("locks public playback purpose to PLAYBACK and forbids DOWNLOAD in UI contract", () => {
+  it("locks public playback purpose to PLAYBACK; DOWNLOAD reserved for dedicated CTA", () => {
     expect(PUBLIC_PLAYBACK_PURPOSE).toBe("PLAYBACK");
     expect(PUBLIC_UI_FORBIDDEN_PURPOSES).toContain("DOWNLOAD");
     expect(PUBLIC_UI_FORBIDDEN_PURPOSES).not.toContain("PLAYBACK");
@@ -93,6 +94,18 @@ describe("Phase 1.6 public beats surface", () => {
     );
     expect(toSafePlaybackErrorMessage("Failed to create signed URL.")).toBe(
       "Sesja odtwarzania wygasła. Spróbuj ponownie.",
+    );
+  });
+
+  it("maps download limit and access errors safely", () => {
+    expect(toSafeDownloadErrorMessage("Daily download limit reached.")).toBe(
+      "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.",
+    );
+    expect(toSafeDownloadErrorMessage("Audio access denied.")).toBe(
+      "Brak dostępu do pobrania.",
+    );
+    expect(toSafeDownloadErrorMessage("No READY audio asset for this beat.")).toBe(
+      "Audio niedostępne dla tego bitu.",
     );
   });
 });
