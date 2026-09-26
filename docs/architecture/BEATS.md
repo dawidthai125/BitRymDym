@@ -195,16 +195,16 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 - ADMIN-only; PLATFORM create/edit/upload; UI Publish READY MASTER gate
 - Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md)
 
-### Phase 1.8A Download Productization (IMPLEMENTATION COMPLETE — not CLOSED)
+### Phase 1.8A Download Productization (COMPLETE / CLOSED / LOCKED @ `fd87f23`)
 
 - Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED
 - Access Gate REUSE (`DOWNLOAD`); TTL 300s unchanged
 - Limits: anon **2** / user **4** per UTC day (`src/config/downloads.ts`)
 - Identity: httpOnly opaque cookie → SHA-256 hash only in DB
-- Table: `beat_download_events`; claim RPC + advisory lock
+- Flow: reserve → signed URL → finalize; tables `beat_download_events` + `beat_download_reservations`
 - UI: Download CTA on `/beat/[id]`; Moje pobrane `/account/downloads`
 - OD-05 / OD-06 / OD-17 CLOSED interim
-- Live E2E: **NOT VERIFIED**
+- Production: **GREEN / VERIFIED** @ `fd87f23` (Live E2E **NOT VERIFIED** — empty catalog)
 
 ## 9. Verification
 
@@ -215,4 +215,4 @@ Phase 1.5 delivered private Storage + Access Gate. Canonical freeze: [PHASE_1_5_
 | Phase 1.5 Storage / Access Gate | **LOCKED** @ `0ec0be0` — live **PASS** |
 | Phase 1.6 surface + Playback Shell | **CLOSED / LOCKED** @ `39be430` — production **GREEN** |
 | Phase 1.7 admin PLATFORM ops | **CLOSED / LOCKED** @ `ed499ee` |
-| Phase 1.8A downloads | **IMPLEMENTATION COMPLETE** (local) — Live E2E **NOT VERIFIED** |
+| Phase 1.8A downloads | **CLOSED / LOCKED** @ `fd87f23` — production **GREEN**; Live E2E **NOT VERIFIED** |

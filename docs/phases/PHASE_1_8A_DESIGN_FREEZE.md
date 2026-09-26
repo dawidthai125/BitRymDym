@@ -2,13 +2,13 @@
 
 **Title:** Download Productization
 **Candidate ID:** Phase 1.8A
-**Baseline (authoring):** local `main` @ `8d59610` (docs closeout); production `origin/main` @ `ed499ee`
+**Baseline (closed):** `origin/main` @ `fd87f23`
 **Depends on:** Phase 1.5 Access Gate LOCKED · Phase 1.6 Public Surface LOCKED · Phase 1.7 Admin Ops LOCKED
 **Supabase project:** `rzzxrgcdogkybkiidqgw`
 **SSOT:** §5, §9, §12–§13, §16–§17, §36, §39
 **Document status:** DESIGN FREEZE — **APPROVED / LOCKED** (2026-09-26)
 **Owner GO:** APPROVED — Download Productization (interim OD-05 / OD-06 / OD-17)
-**Implementation status:** **IMPLEMENTATION COMPLETE** · **IMPLEMENTATION AUDIT PASS** · **DOCUMENTATION CLOSEOUT COMPLETE** · **READY FOR OWNER REVIEW** (not CLOSED)
+**Implementation status:** **COMPLETE / CLOSED / LOCKED** @ `fd87f23` — Audit **PASS** · Docs **COMPLETE** · Push **COMPLETE** · Production Verify **PASS**
 
 ### Implementation model (technical — frozen OD-17 unchanged)
 
@@ -553,9 +553,11 @@ PHASE 1.8A DESIGN FREEZE = APPROVED / LOCKED
 CANDIDATE = Download Productization
 IMPLEMENTATION = COMPLETE
 IMPLEMENTATION AUDIT = PASS
-DOCUMENTATION CLOSEOUT = COMPLETE
-OWNER REVIEW = PENDING
-PHASE CLOSED = NO
+DOCUMENTATION = COMPLETE
+COMMIT = fd87f23
+PUSH = COMPLETE (origin/main)
+PRODUCTION VERIFY = PASS
+PHASE CLOSED = YES — CLOSED / LOCKED
 DATABASE = beat_download_events + beat_download_reservations applied
 OD-05 / OD-06 / OD-17 = CLOSED / ACCEPTED (Phase 1.8A interim model)
 OD-13 / OD-04 = OUT of 1.8A
@@ -567,12 +569,13 @@ CONCURRENCY = reserve_beat_download_slot + pg_advisory_xact_lock
 LIVE E2E = NOT VERIFIED (published_count=0 / admin_count=0; non-blocking)
 ```
 
-**PHASE 1.8A**
+**PHASE 1.8A = COMPLETE / CLOSED / LOCKED** @ `fd87f23`
+
 **DESIGN FREEZE = APPROVED / LOCKED**
 **IMPLEMENTATION = COMPLETE**
 **IMPLEMENTATION AUDIT = PASS**
-**DOCUMENTATION CLOSEOUT = COMPLETE**
-**READY FOR OWNER REVIEW**
-**PHASE STATUS = NOT CLOSED**
+**DOCUMENTATION = COMPLETE**
+**COMMIT / PUSH = COMPLETE**
+**PRODUCTION VERIFY = PASS**
 
-Next: OWNER REVIEW → COMMIT → PUSH → PRODUCTION VERIFY.
+Next: **COLD-START AUDIT (next Foundation candidate)** — no implementation without Owner GO.

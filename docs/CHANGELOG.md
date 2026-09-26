@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-26 — PHASE 1.8A — CLOSED / LOCKED (production verified)
+
+**Status:** **COMPLETE / CLOSED / LOCKED** @ `fd87f23` on `main` / `origin/main`
+
+- Commit: `fd87f23` — `feat(downloads): complete phase 1.8a download productization`
+- Push: COMPLETE → `origin/main`
+- Production deploy: Vercel **success**; live marker Phase 1.8A on bitrymdym.pl / www / vercel.app
+- Production Verify: **PASS** (homepage, sign-in/up, `/account/downloads` anon → sign-in gate, security smoke)
+- Live Download E2E: **NOT VERIFIED** (`published_count=0`, `admin_count=0` / OD-20) — non-blocking
+- Next: **COLD-START AUDIT (next Foundation candidate)**
+
+---
+
 ## 2026-09-26 — PHASE 1.8A — DOCUMENTATION CLOSEOUT COMPLETE
 
 **Status:** IMPLEMENTATION AUDIT PASS · DOCUMENTATION CLOSEOUT COMPLETE · **READY FOR OWNER REVIEW** (not CLOSED)

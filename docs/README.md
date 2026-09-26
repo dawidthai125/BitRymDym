@@ -73,6 +73,6 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Access Gate (1.5 LOCKED) + Published Beats Surface / Playback Shell (1.6 LOCKED) + Admin PLATFORM Content Ops (1.7 COMPLETE / CLOSED / LOCKED @ `ed499ee`).
-**Canonical pushed baseline:** `main` @ `ed499ee`.
+**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Access Gate (1.5 LOCKED) + Published Beats Surface / Playback Shell (1.6 LOCKED) + Admin PLATFORM Content Ops (1.7 LOCKED) + Download Productization (1.8A COMPLETE / CLOSED / LOCKED @ `fd87f23`).
+**Canonical pushed baseline:** `main` @ `fd87f23`.
 **Next:** Cold-Start Audit for next Foundation candidate (no implementation without Owner GO).

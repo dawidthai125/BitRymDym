@@ -384,9 +384,8 @@ Szczegóły CI/CD środowisk (preview/prod) — poza baseline tej sesji; nie wym
 ## 18. Current Scope
 
 ```text
-PHASE 1.7 — ADMIN PLATFORM CONTENT OPS SURFACE — IMPLEMENTED (LOCAL)
-Baseline: d5b4e91 · Freeze APPROVED / LOCKED 2026-09-26
-Next: IMPLEMENTATION AUDIT → commit / push (not CLOSED)
+PHASE 1.8A — DOWNLOAD PRODUCTIZATION — COMPLETE / CLOSED / LOCKED @ fd87f23
+NEXT = COLD-START AUDIT (next Foundation candidate)
 ```
 
 ### IMPLEMENTED / LOCKED
@@ -414,10 +413,12 @@ Next: IMPLEMENTATION AUDIT → commit / push (not CLOSED)
   - REUSE create / metadata / uploadPlatformBeatAudio / lifecycle
   - UI Publish blocked without READY MASTER (GAP-PUBLISH-READY preserved)
 - Phase 1.8A Design Freeze — APPROVED / LOCKED
-- Phase 1.8A Download Productization (**IMPLEMENTATION COMPLETE**, not CLOSED)
-  - Download CTA; limits 2/4 UTC; `beat_download_events`; Moje pobrane
+- Phase 1.8A Download Productization (**COMPLETE / CLOSED / LOCKED** @ `fd87f23`)
+  - Download CTA; limits 2/4 UTC; reservation → signed URL → finalize
+  - `beat_download_events` + `beat_download_reservations`; Moje pobrane
   - Access Gate REUSE; config `src/config/downloads.ts`
   - OD-05/06/17 CLOSED interim; OD-13/04 OUT
+  - Production GREEN; Live E2E NOT VERIFIED (empty catalog / no ADMIN)
 
 ### PLANNED (not started)
 - Quick Take, tracks, payments, watermark, Premium limits

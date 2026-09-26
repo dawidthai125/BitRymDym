@@ -498,12 +498,12 @@ Phase 1.8A Download Productization counting + limits + Moje pobrane derivation.
 | Pole | Wartość |
 |------|---------|
 | Title | Phase 1.8A Download Productization — Implementation |
-| Status | **IMPLEMENTATION COMPLETE** (not CLOSED) |
+| Status | **COMPLETE / CLOSED / LOCKED** |
 | Date | 2026-09-26 |
 | Decydent | Owner Implementation GO |
 | Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) |
 | Migrations | `phase_1_8a_download_events`, `phase_1_8a_claim_rpc_grants`, `phase_1_8a_download_reservation` |
-| Commit | **uncommitted** |
+| Commit | `fd87f23` — `feat(downloads): complete phase 1.8a download productization` |
 
 **Delivered:** Access Gate REUSE; limits 2/4 UTC; reservation → signed URL → finalize; `beat_download_events`; Moje pobrane; Download CTA; config SSOT.
 
@@ -516,7 +516,7 @@ Phase 1.8A Download Productization counting + limits + Moje pobrane derivation.
 | Pole | Wartość |
 |------|---------|
 | Title | Phase 1.8A Download Productization — Implementation Audit PASS |
-| Status | **IMPLEMENTATION AUDIT PASS** · **DOCUMENTATION CLOSEOUT COMPLETE** · **READY FOR OWNER REVIEW** (not CLOSED) |
+| Status | **IMPLEMENTATION AUDIT PASS** · **DOCUMENTATION COMPLETE** · superseded by closeout below |
 | Date | 2026-09-26 |
 | Decydent | Owner Implementation Audit GO → Documentation Closeout GO |
 | Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED |
@@ -541,6 +541,32 @@ Phase 1.8A Download Productization counting + limits + Moje pobrane derivation.
 
 - No live RLS/concurrency integration tests (unit/source-contract coverage)
 - Live product E2E **NOT VERIFIED** (`published_count=0`, `admin_count=0` / OD-20)
-- Phase **not CLOSED** until Owner Review → commit → push → production verify
 
-**Next:** OWNER REVIEW → COMMIT → PUSH → PRODUCTION VERIFY
+---
+
+### Phase 1.8A — CLOSED / LOCKED (production verified)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.8A Download Productization — Final Closeout |
+| Status | **COMPLETE / CLOSED / LOCKED** |
+| Date | 2026-09-26 |
+| Decydent | Owner GO — COMMIT → PUSH → PRODUCTION VERIFY → CLOSEOUT |
+| Design Freeze | [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.md) — APPROVED / LOCKED |
+| Implementation commit | `fd87f23` — `feat(downloads): complete phase 1.8a download productization` |
+| Push | COMPLETE → `origin/main` |
+| Production Verify | **PASS** (code smoke); Live E2E **NOT VERIFIED** (empty catalog / no ADMIN) |
+
+**Closed as:**
+
+```text
+IMPLEMENTATION = COMPLETE
+IMPLEMENTATION AUDIT = PASS
+DOCUMENTATION = COMPLETE
+COMMIT = fd87f23
+PUSH = COMPLETE
+PRODUCTION VERIFY = PASS
+PHASE 1.8A = CLOSED / LOCKED
+```
+
+**Next:** Cold-Start Audit for next Foundation candidate (no implementation without Owner GO).
