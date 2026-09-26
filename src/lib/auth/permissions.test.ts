@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertNoPrivilegeEscalationInPayload,
+  canAccessAdminNav,
   hasAnyPermission,
   hasPermission,
   hasRole,
@@ -28,6 +29,14 @@ describe("authorization helpers", () => {
   it("checks roles without conflating account levels", () => {
     expect(hasRole("USER", ["USER", "ADMIN"])).toBe(true);
     expect(hasRole("USER", ["ADMIN"])).toBe(false);
+  });
+
+  it("shows admin nav only for ADMIN (UI helper, not AuthZ)", () => {
+    expect(canAccessAdminNav("ADMIN")).toBe(true);
+    expect(canAccessAdminNav("USER")).toBe(false);
+    expect(canAccessAdminNav("MODERATOR")).toBe(false);
+    expect(canAccessAdminNav(null)).toBe(false);
+    expect(canAccessAdminNav(undefined)).toBe(false);
   });
 
   it("blocks privilege fields in self-update payload", () => {

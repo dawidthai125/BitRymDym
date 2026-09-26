@@ -65,6 +65,39 @@ export function validateObjectKey(objectKey: string): string | null {
   return null;
 }
 
+/**
+ * Resolve interim MIME from File.type or filename extension.
+ * Client hint only — server still validates against allow-list.
+ */
+export function resolveAudioContentType(params: {
+  fileType?: string | null;
+  filename?: string | null;
+}): string | null {
+  const typed = (params.fileType ?? "").trim().toLowerCase();
+  if (
+    (BEAT_AUDIO_INTERIM_MIME_ALLOWLIST as readonly string[]).includes(typed)
+  ) {
+    return typed;
+  }
+
+  const name = (params.filename ?? "").trim().toLowerCase();
+  const ext = name.includes(".") ? name.replace(/^.*\./, "") : "";
+  switch (ext) {
+    case "mp3":
+      return "audio/mpeg";
+    case "wav":
+      return "audio/wav";
+    case "flac":
+      return "audio/flac";
+    case "m4a":
+      return "audio/mp4";
+    case "aac":
+      return "audio/aac";
+    default:
+      return typed || null;
+  }
+}
+
 export function validateAudioUploadMeta(params: {
   contentType: string;
   byteSize: number;

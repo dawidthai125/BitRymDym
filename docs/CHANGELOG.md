@@ -6,6 +6,62 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-26 — SCOPE A — AUDIO-FIRST PLATFORM BEAT UPLOAD (LOCAL)
+
+**Status:** Scope A **IMPLEMENTED locally** · BPM auto (**Scope B**) **DEFERRED** · Phase 1.9 **NOT CLOSED** · **NO COMMIT / NO PUSH**
+
+- `/admin/beats/new`: audio-first UX — select file → server `music-metadata` duration → title suggestion → manual BPM/metadata → CREATE DRAFT + existing MASTER upload pipeline
+- `duration_seconds`: server source of truth (`Math.round` float → int); range 1–180; no hardcoded 120; manual duration input removed
+- Title: pure `suggestTitleFromFilename` (editable); BPM: manual only, no default 140, no detector
+- Dependency: `music-metadata` (server-only / `serverExternalPackages`); no Access Gate / RLS / AuthZ / GAP-PUBLISH-READY changes
+- Scope B (BPM auto-detection): **DEFERRED — Owner GO required**
+- Next: Owner uses audio-first create → READY → UI publish → agent live E2E
+
+---
+
+## 2026-09-26 — PHASE 1.9 — FIRST PLATFORM BEAT (BLOCKED ON OPERATOR UI)
+
+**Status:** Cold-start **PASS** · ADMIN **PASS** · First beat **BLOCKED** (no ADMIN browser session for agent) · Phase **NOT CLOSED**
+
+- Live: ADMIN=1 · beats=0 · PUBLISHED=0 · READY=0 · events=0 · `beat-audio` private
+- No new architecture; REUSE Phase 1.7 admin UI + 1.5 Access Gate + 1.8A downloads
+- Agent cannot complete create/upload/publish without Owner ADMIN login + MASTER file via UI
+- Fixture (outside git): `../bitrymdym-fixtures/phase19-master-tone.wav` (5s tone WAV)
+- Local uncommitted: admin nav „Panel administratora”; Phase 1.9 docs drift updates
+- Next: Owner creates + publishes first PLATFORM beat → agent resumes live E2E
+
+---
+
+## 2026-09-26 — AUTH PRODUCTION CANONICAL URL FIX (IN PROGRESS)
+
+**Status:** Code + Vercel env updated · **Supabase Auth Site URL = HUMAN OPERATOR REQUIRED** · Phase 1.9 still PARTIAL
+
+- Canonical production origin: `https://bitrymdym.pl`
+- Code: `getSiteUrl()` / `getAuthEmailRedirectTo()`; `signUp` passes `emailRedirectTo` → `/account`
+- Production guard: `VERCEL_ENV=production` never falls back to `*.vercel.app`
+- Vercel Production env: `NEXT_PUBLIC_SITE_URL=https://bitrymdym.pl` set
+- Custom SMTP / branded sender: **OUT** (future Owner GO)
+- Supabase Dashboard still required:
+  - Site URL → `https://bitrymdym.pl`
+  - Redirect allow-list: `https://bitrymdym.pl/**`, `https://www.bitrymdym.pl/**`, localhost, preview wildcards
+- Deploy of this commit required before production signup sends BitRymDym redirects from app `emailRedirectTo`
+
+---
+
+## 2026-09-26 — PHASE 1.9 — DESIGN FREEZE APPROVED / IMPLEMENTATION IN PROGRESS
+
+**Status:** DESIGN FREEZE **APPROVED / LOCKED** · IMPLEMENTATION **IN PROGRESS** · PRODUCTION BOOTSTRAP **PENDING** (not CLOSED)
+
+- Candidate: Operator Production Enablement (OD-20 manual ADMIN + first PLATFORM beat + live E2E)
+- Freeze: [PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md)
+- Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md)
+- No app/DB/bootstrap code; no migration; OD-20 unchanged
+- Live baseline pre-bootstrap: ADMIN/PUBLISHED/READY/users/beats = 0
+- Next: Human operator executes runbook → production verify → closeout
+- FOLLOW-UP: stale drift in `PHASE_1_FOUNDATION.md` + root `README.md` (not fixed in this phase unless Owner expands docs GO)
+
+---
+
 ## 2026-09-26 — PHASE 1.8A — CLOSED / LOCKED (production verified)
 
 **Status:** **COMPLETE / CLOSED / LOCKED** @ `fd87f23` on `main` / `origin/main`

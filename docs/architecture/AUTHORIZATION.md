@@ -37,6 +37,19 @@ account_level = BEGINNER_RAPPER   ← OD-19 APPROVED DEFAULT
 - No paid features implied by `BEGINNER_RAPPER`.
 - No self-service role or account-level escalation.
 
+### Production Auth URL (canonical)
+
+```text
+Site URL (Supabase Auth)     = https://bitrymdym.pl
+App emailRedirectTo          = https://bitrymdym.pl/account  (via getAuthEmailRedirectTo)
+Vercel NEXT_PUBLIC_SITE_URL  = https://bitrymdym.pl
+```
+
+- Production Auth must **not** use `*.vercel.app` deployment URLs as Site URL / canonical redirect.
+- Preview/local may use Vercel preview URL or localhost (allow-listed separately).
+- Helper: `src/lib/site-url.ts` — production never falls back to `VERCEL_URL`.
+- Custom SMTP / branded sender: deferred (default Supabase sender OK until Owner GO).
+
 ---
 
 ## ADMIN BOOTSTRAP (operator-controlled)

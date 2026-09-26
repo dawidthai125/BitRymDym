@@ -28,6 +28,17 @@ export function hasRole(
   return allowed.includes(current);
 }
 
+/**
+ * UI-only: whether to show the admin panel nav link.
+ * Not a security boundary — /admin still uses requireRole(["ADMIN"]).
+ */
+export function canAccessAdminNav(
+  role: SystemRole | null | undefined,
+): boolean {
+  if (!role) return false;
+  return hasRole(role, ["ADMIN"]);
+}
+
 export function filterPermissionKeys(values: readonly string[]): PermissionKey[] {
   return values.filter(isPermissionKey);
 }

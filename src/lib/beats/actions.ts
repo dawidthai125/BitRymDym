@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { AuthError } from "@/lib/auth/session";
 import {
   archiveBeat,
-  createPlatformBeat,
   deleteBeat,
   listPublishedBeats,
   transitionBeatStatus,
@@ -51,30 +50,21 @@ function parseTags(formData: FormData): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Legacy FormData create (client duration) — DISABLED (Scope A).
+ * duration_seconds must come from server audio probe via
+ * createPlatformBeatWithMasterAction. Do not re-enable FormData duration.
+ */
 export async function createPlatformBeatAction(
   _prev: BeatActionState,
-  formData: FormData,
+  _formData: FormData,
 ): Promise<BeatActionState> {
-  try {
-    const beat = await createPlatformBeat({
-      title: String(formData.get("title") ?? ""),
-      producer: optionalFormText(formData, "producer"),
-      description: optionalFormText(formData, "description"),
-      genre: optionalFormText(formData, "genre"),
-      style: optionalFormText(formData, "style"),
-      bpm: Number(formData.get("bpm")),
-      key: optionalFormText(formData, "key"),
-      scale: optionalFormText(formData, "scale"),
-      durationSeconds: Number(formData.get("durationSeconds")),
-      tags: parseTags(formData),
-      coverRef: optionalFormText(formData, "coverRef"),
-      status: "DRAFT",
-    });
-    revalidateBeatSurfaces(beat.id);
-    return { error: null, success: true, beatId: beat.id };
-  } catch (error) {
-    return catchAction(error);
-  }
+  void _formData;
+  return {
+    error:
+      "Utwórz beat przez audio-first flow (plik MASTER wymagany; duration z serwera).",
+    success: false,
+  };
 }
 
 export async function publishBeatAction(beatId: string): Promise<BeatActionState> {
@@ -137,7 +127,7 @@ export async function updateBeatMetadataAction(
       bpm: Number(formData.get("bpm")),
       key: optionalFormText(formData, "key"),
       scale: optionalFormText(formData, "scale"),
-      durationSeconds: Number(formData.get("durationSeconds")),
+      // Duration is server-probed from MASTER audio (Scope A) — not editable here.
       tags: parseTags(formData),
       coverRef: optionalFormText(formData, "coverRef"),
     });

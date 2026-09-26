@@ -570,3 +570,30 @@ PHASE 1.8A = CLOSED / LOCKED
 ```
 
 **Next:** Cold-Start Audit for next Foundation candidate (no implementation without Owner GO).
+
+---
+
+### Phase 1.9 — Operator Production Enablement (Design Freeze)
+
+| Pole | Wartość |
+|------|---------|
+| Title | Phase 1.9 Operator Production Enablement — Design Freeze |
+| Status | **APPROVED / LOCKED** · IMPLEMENTATION **IN PROGRESS** · PRODUCTION BOOTSTRAP **PENDING** (not CLOSED) |
+| Date | 2026-09-26 |
+| Decydent | Owner (Prezes Dawid) — Candidate A APPROVED |
+| Design Freeze | [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md) |
+| Runbook | [PRODUCTION_BOOTSTRAP.md](../runbooks/PRODUCTION_BOOTSTRAP.md) |
+| Baseline | `70eb501` · Phase 1.8A CLOSED @ `fd87f23` |
+
+**Frozen scope**
+
+- Manual OD-20 ADMIN promotion (SQL/service-role tooling; no app bootstrap)
+- First PLATFORM beat via existing `/admin/beats*` UI only
+- READY MASTER + PUBLISHED via UI publish gate (no SQL READY/PUBLISHED bypass)
+- Production E2E: playback → download → My Downloads; OD-17 verify; limits smoke
+- Evidence package (private); no full Audit Log product
+- **NO** database migration; **NO** AuthZ/RLS/Storage/download architecture changes
+
+**Explicitly OUT:** auto-admin, bootstrap endpoint, Quick Take, Tracks, Community, Payments, Full Audit Log, watermark, mix/export.
+
+**Related:** OD-20 CLOSED / unchanged · OD-19 CLOSED · OD-05/06/17 interim CLOSED (1.8A).

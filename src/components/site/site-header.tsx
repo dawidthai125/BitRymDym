@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { siteConfig } from "@/config/site";
+import { canAccessAdminNav } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ export async function SiteHeader({
   className?: string;
 }) {
   const session = await getCurrentProfile();
+  const showAdminNav = canAccessAdminNav(session?.profile.role);
 
   return (
     <header
@@ -34,12 +36,12 @@ export async function SiteHeader({
           </Link>
           {session ? (
             <>
-              {session.profile.role === "ADMIN" ? (
+              {showAdminNav ? (
                 <Link
-                  href="/admin/beats"
+                  href="/admin"
                   className="underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  Admin
+                  Panel administratora
                 </Link>
               ) : null}
               <Link

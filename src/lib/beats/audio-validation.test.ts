@@ -9,7 +9,34 @@ import {
   signedUrlTtlSeconds,
   validateAudioUploadMeta,
   validateObjectKey,
+  resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
+
+describe("resolveAudioContentType", () => {
+  it("prefers valid File.type", () => {
+    expect(
+      resolveAudioContentType({
+        fileType: "audio/wav",
+        filename: "x.mp3",
+      }),
+    ).toBe("audio/wav");
+  });
+
+  it("falls back to extension when type empty", () => {
+    expect(
+      resolveAudioContentType({ fileType: "", filename: "loop.flac" }),
+    ).toBe("audio/flac");
+    expect(
+      resolveAudioContentType({ fileType: null, filename: "a.wav" }),
+    ).toBe("audio/wav");
+  });
+
+  it("returns null for unknown type/extension", () => {
+    expect(
+      resolveAudioContentType({ fileType: "", filename: "x.txt" }),
+    ).toBeNull();
+  });
+});
 
 describe("beat audio validation (Phase 1.5)", () => {
   it("builds opaque .bin object keys only", () => {

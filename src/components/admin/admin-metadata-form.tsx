@@ -104,18 +104,15 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
           />
         </label>
       </div>
-      <label className="flex flex-col gap-1 text-sm">
-        Czas (sekundy) *
-        <input
-          name="durationSeconds"
-          type="number"
-          required
-          min={1}
-          max={180}
-          defaultValue={beat.durationSeconds}
-          className={fieldClass}
-        />
-      </label>
+      <p className="text-sm">
+        Czas trwania (z audio){" "}
+        <span className="font-medium text-foreground">
+          {beat.durationSeconds} s
+        </span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          Tylko do odczytu — pochodzi z analizy pliku MASTER.
+        </span>
+      </p>
       <label className="flex flex-col gap-1 text-sm">
         Tagi (oddzielone przecinkami)
         <input

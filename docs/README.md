@@ -64,6 +64,9 @@ Nie duplikować całych treści — stosować linki.
 | [phases/PHASE_1_5_DESIGN_FREEZE.md](./phases/PHASE_1_5_DESIGN_FREEZE.md) | Phase 1.5 Design Freeze (LOCKED) |
 | [phases/PHASE_1_6_DESIGN_FREEZE.md](./phases/PHASE_1_6_DESIGN_FREEZE.md) | Phase 1.6 Design Freeze (APPROVED / LOCKED) |
 | [phases/PHASE_1_7_DESIGN_FREEZE.md](./phases/PHASE_1_7_DESIGN_FREEZE.md) | Phase 1.7 Design Freeze (APPROVED / LOCKED) |
+| [phases/PHASE_1_8A_DESIGN_FREEZE.md](./phases/PHASE_1_8A_DESIGN_FREEZE.md) | Phase 1.8A Design Freeze (APPROVED / LOCKED) |
+| [phases/PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md) | Phase 1.9 Design Freeze (APPROVED / LOCKED) |
+| [runbooks/PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) | Phase 1.9 operator production bootstrap |
 | [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) | Stała zasada ciągłości docs |
 | [CHANGELOG.md](./CHANGELOG.md) | Historia zmian dokumentacji |
 
@@ -73,6 +76,6 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Access Gate (1.5 LOCKED) + Published Beats Surface / Playback Shell (1.6 LOCKED) + Admin PLATFORM Content Ops (1.7 LOCKED) + Download Productization (1.8A COMPLETE / CLOSED / LOCKED @ `fd87f23`).
-**Canonical pushed baseline:** `main` @ `fd87f23`.
-**Next:** Cold-Start Audit for next Foundation candidate (no implementation without Owner GO).
+**APPLICATION:** Auth (1.3) + Beats metadata (1.4) + Private audio Access Gate (1.5 LOCKED) + Published Beats Surface / Playback Shell (1.6 LOCKED) + Admin PLATFORM Content Ops (1.7 LOCKED) + Download Productization (1.8A COMPLETE / CLOSED / LOCKED @ `fd87f23`) + Operator Production Enablement (1.9 Design Freeze APPROVED — bootstrap PENDING).
+**Canonical pushed baseline:** `main` @ `70eb501`.
+**Next:** Human operator executes [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md); do not mark 1.9 CLOSED until E2E PASS.

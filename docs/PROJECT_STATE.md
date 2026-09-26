@@ -24,55 +24,59 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| Canonical implementation (origin) | `fd87f238967ed010cdd11bc223eeef15772564f6` |
-| Remote (production) | `origin/main` = `fd87f23` (Phase 1.8A) |
-| Local | in sync with `origin/main` (docs closeout commit may follow) |
+| Canonical origin tip | `5d6b846` (`fix(auth): use otp confirmation flow for cross-browser signup`) |
+| Phase 1.8A implementation | `fd87f23` |
+| Remote | `origin/main` @ `5d6b846` |
+| Local | **DIRTY** — Scope A audio-first upload + admin nav UX + Phase 1.9 docs; tooling untracked |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production app | **GREEN** @ `fd87f23` (Phase 1.8A) |
+| Production app | **GREEN** @ `5d6b846` (Scope A **not deployed**) |
 
-Phase 1.8A Design Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](./phases/PHASE_1_8A_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
-Phase 1.8A: **COMPLETE / CLOSED / LOCKED**.
+Phase 1.8A: **COMPLETE / CLOSED / LOCKED** @ `fd87f23`.
+Phase 1.9 Design Freeze: [PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
+Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md).
+
+**Scope A (audio-first create):** implemented locally — duration via `music-metadata`, title suggestion, file metadata auto, **BPM manual**. **Scope B (BPM auto):** DEFERRED.
 
 ---
 
 ## 3. Current Phase
 
 ```text
-FOUNDATION — PHASE 1.8A COMPLETE / CLOSED / LOCKED
-NEXT = COLD-START AUDIT (next Foundation candidate)
+FOUNDATION — PHASE 1.9 OPERATOR PRODUCTION ENABLEMENT
+DESIGN FREEZE = APPROVED / LOCKED
+IMPLEMENTATION = IN PROGRESS
+PRODUCTION BOOTSTRAP = PARTIAL
+PHASE CLOSED = NO
 ```
 
 | Etap | Status |
 |------|--------|
-| 1.0–1.7 | **COMPLETE / CLOSED / LOCKED** |
-| 1.8A Design Freeze | **APPROVED / LOCKED** |
-| 1.8A Implementation | **COMPLETE** @ `fd87f23` |
-| 1.8A Implementation Audit | **PASS** |
-| 1.8A Documentation | **COMPLETE** |
-| 1.8A Commit / Push | **COMPLETE** @ `fd87f23` → `origin/main` |
-| 1.8A Production Verify | **PASS** (code smoke) |
-| 1.8A Phase CLOSED | **YES — CLOSED / LOCKED** |
+| 1.0–1.8A | **COMPLETE / CLOSED / LOCKED** |
+| 1.9 Design Freeze | **APPROVED / LOCKED** |
+| Auth signup UX + OTP confirm + Brevo | **PASS** (production) |
+| 1.9 Operator ADMIN bootstrap (OD-20) | **PASS** (`dawid.thai@int.pl` → ADMIN; account_level unchanged) |
+| Admin nav „Panel administratora” | **IMPLEMENTED locally** — **NOT COMMITTED / NOT DEPLOYED** |
+| Scope A audio-first `/admin/beats/new` | **IMPLEMENTED locally** — duration auto + title suggestion + BPM manual; **NOT COMMITTED / NOT DEPLOYED** |
+| Scope B BPM auto-detection | **DEFERRED** — Owner GO required |
+| 1.9 First PLATFORM beat + E2E | **BLOCKED** — requires ADMIN browser session + MASTER via UI (prefer Scope A flow after deploy) |
+| 1.9 Phase CLOSED | **NO** |
 
-**Download model (OD-17):**
+**Live counts (2026-09-26):** ADMIN **1** · PUBLISHED **0** · READY **0** · profiles **5** · beats **0** · download_events **0**. Bucket `beat-audio` **private**.
 
-```text
-AUTH / IDENTITY → AUTHORIZATION → READY asset
-→ RESERVATION (ephemeral, TTL 120s, NOT an event)
-→ signed URL SUCCESS
-→ FINALIZE → beat_download_events
-```
+**Auth (production):** Confirm signup PL + `token_hash` OTP callback **PASS**; sender Brevo `noreply@bitrymdym.pl` **PASS**.
 
-**Limits:** OD-05 anon = 2 / UTC day · OD-06 user = 4 / UTC day · config `src/config/downloads.ts`.
+**OD-20 unchanged:** no auto-admin; no bootstrap endpoint; promotion only via service_role-capable SQL.
 
-**OUT preserved:** watermark, payments, Quick Take, Tracks, Community, premium.
-
-**Known non-blocking gaps:**
-- No live RLS/concurrency integration tests (unit/source-contract coverage)
-- Live product E2E **NOT VERIFIED** (`published_count=0`, `admin_count=0` / OD-20)
-- GAP-PUBLISH-READY / audit infrastructure from 1.7 unchanged
-
-**OD-05 / OD-06 / OD-17:** CLOSED / ACCEPTED (interim).
 **Still OPEN:** OD-04, OD-07 through OD-16, OD-18.
+**CLOSED interim downloads:** OD-05, OD-06, OD-17.
+
+### HUMAN OPERATOR — next for first PLATFORM beat
+
+1. Sign in as ADMIN (`dawid.thai@int.pl`) on https://www.bitrymdym.pl (after Scope A deploy, or local)
+2. `/admin/beats` → `/admin/beats/new` → **select audio first** → wait for analysis (duration auto)
+3. Confirm/edit title suggestion; enter **BPM manually**; fill optional metadata → CREATE DRAFT + MASTER
+4. Publish via UI gate only when READY (no SQL status bypass)
+5. Reply **BEAT PUBLISHED PASS** + beat id — then agent continues anon/auth E2E
 
 ---
 
@@ -80,47 +84,52 @@ AUTH / IDENTITY → AUTHORIZATION → READY asset
 
 | ID | Status | Summary |
 |----|--------|---------|
-| OD-05 | **CLOSED / ACCEPTED** (1.8A interim) | Anon = 2 / UTC day; httpOnly opaque token; server hash only |
-| OD-06 | **CLOSED / ACCEPTED** (1.8A interim) | User = 4 / UTC day; `user_id`; global |
-| OD-17 | **CLOSED / ACCEPTED** (1.8A interim) | DOWNLOAD_EVENT = successful signed URL issuance after reserve → finalize |
-| OD-19 | **CLOSED / ACCEPTED** | Signup default `BEGINNER_RAPPER` |
-| OD-20 | **CLOSED / ACCEPTED** | Manual ADMIN bootstrap only |
+| OD-05 / OD-06 / OD-17 | CLOSED interim (1.8A) | Limits 2/4; event after signed URL |
+| OD-19 | CLOSED | Signup `BEGINNER_RAPPER` |
+| OD-20 | CLOSED | Manual ADMIN bootstrap only |
 
 ---
 
 ## 5. Verification status
 
-### Phase 1.8A
+### Phase 1.9
 
 | Layer | Status |
 |-------|--------|
 | Design Freeze | **APPROVED / LOCKED** |
-| Implementation | **COMPLETE** |
-| Implementation Audit | **PASS** |
-| Documentation | **COMPLETE** |
-| Commit | `fd87f23` — `feat(downloads): complete phase 1.8a download productization` |
-| Push | **COMPLETE** → `origin/main` |
-| Production Verify | **PASS** (homepage / auth / account downloads gate / security smoke) |
-| Migrations (events + reservation) | **APPLIED** (remote) |
-| Tests | **84/84 PASS** |
-| Lint / typecheck / build | **PASS** |
-| Live Download E2E | **NOT VERIFIED** (non-blocking; empty catalog / no ADMIN) |
-| Phase CLOSED | **YES — CLOSED / LOCKED** |
+| Implementation | **IN PROGRESS** (docs; no app/DB code) |
+| Production Bootstrap | **PENDING** |
+| Production Verify | **PENDING** |
+| Phase CLOSED | **NO** |
+
+### Phase 1.8A (locked)
+
+| Layer | Status |
+|-------|--------|
+| Implementation | **COMPLETE** @ `fd87f23` |
+| Live product E2E | **NOT VERIFIED** until 1.9 bootstrap |
 
 ---
 
 ## 6. Open Decisions
 
 Still OPEN: **OD-04, OD-07 through OD-16, OD-18**.
-CLOSED interim for downloads: **OD-05, OD-06, OD-17**.
 See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ---
 
 ## 7. Current Blockers
 
-1. Live download E2E needs ADMIN + PUBLISHED READY beat (OD-20 ops; non-blocking for 1.8A close)
-2. No implementation of next Foundation candidate without Owner GO after Cold-Start Audit
+1. **HUMAN OPERATOR — Supabase Auth URL Configuration**
+   Dashboard → Authentication → URL Configuration:
+   - Site URL = `https://bitrymdym.pl`
+   - Redirect URLs include `https://bitrymdym.pl/**`, `https://www.bitrymdym.pl/**`, `http://localhost:3000/**`, and optional Vercel preview wildcard
+   Do **not** set Site URL to `*.vercel.app`.
+2. **HUMAN OPERATOR — Phase 1.9 bootstrap** — OD-20 signup + SQL ADMIN promotion + first beat (see runbook)
+3. Deploy + retest email confirmation redirect to `https://bitrymdym.pl/...` (not `*.vercel.app`)
+4. Do not mark Phase 1.9 CLOSED until production E2E PASS
+
+**FOLLOW-UP (docs drift):** `PHASE_1_FOUNDATION.md` + root `README.md` stale vs 1.7/1.8A.
 
 ---
 
@@ -128,12 +137,8 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 | Obszar | Status |
 |--------|--------|
-| Auth / Profiles / Roles / Permissions / Account levels | **COMPLETE / LOCKED** |
-| Beats metadata domain | **COMPLETE / LOCKED** |
-| Private audio Storage + Access Gate | **COMPLETE / LOCKED** |
-| Published Beats Surface + Playback Shell | **COMPLETE / LOCKED** |
-| Admin PLATFORM Content Ops | **COMPLETE / LOCKED** @ `ed499ee` |
-| Downloads (limits / UI / events / Moje pobrane) | **COMPLETE / CLOSED / LOCKED** @ `fd87f23` |
+| Auth / Beats / Access Gate / Playback / Admin PLATFORM / Downloads | **LOCKED** (1.3–1.8A) |
+| Phase 1.9 operator enablement | **IN PROGRESS** (docs) |
 | Quick Take / Payments | **NOT STARTED** |
 
 ---
@@ -142,18 +147,22 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.8A = COMPLETE / CLOSED / LOCKED @ fd87f23
-NEXT = COLD-START AUDIT (next Foundation candidate)
-No implementation without Owner GO.
-Do not invent ADMIN / fixtures for E2E (OD-20).
+PHASE 1.9 DESIGN FREEZE APPROVED
+IMPLEMENTATION IN PROGRESS — docs ready
+PRODUCTION BOOTSTRAP = PENDING
+Execute docs/runbooks/PRODUCTION_BOOTSTRAP.md (human operator)
+Do NOT auto-admin / bootstrap endpoint / SQL publish bypass
+Do NOT commit secrets
+Do NOT mark CLOSED until E2E PASS
+FOLLOW-UP (docs drift): PHASE_1_FOUNDATION.md + root README.md stale vs 1.7/1.8A
 ```
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.8A Owner GO — COMMIT → PUSH → PRODUCTION VERIFY → CLOSEOUT (2026-09-26)
+**Sesja:** Phase 1.9 Implementation GO — documentation + pre-flight (2026-09-26)
 
-**Done:** Commit `fd87f23` pushed to `origin/main`; production deploy success; production code smoke PASS; docs marked CLOSED / LOCKED.
-**Not done:** Live download product E2E (empty catalog / no ADMIN — non-blocking).
-**Next:** Cold-Start Audit for next Foundation candidate.
+**Done:** Design Freeze file; Production Bootstrap runbook; PROJECT_STATE / CHANGELOG / DECISION_LOG set to IN PROGRESS / PENDING.
+**Not done:** Human ADMIN promotion, first beat, live E2E, commit/push, phase CLOSED.
+**Next:** Human operator executes runbook → agent resumes verification / closeout.

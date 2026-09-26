@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DisplayNameForm } from "@/components/auth/display-name-form";
-import { signOutAction } from "@/lib/auth/actions";
-import { getCurrentProfile } from "@/lib/auth/session";
+import { SiteHeader } from "@/components/site/site-header";
 import { Button } from "@/components/ui/button";
+import { signOutAction } from "@/lib/auth/actions";
+import { canAccessAdminNav } from "@/lib/auth/permissions";
+import { getCurrentProfile } from "@/lib/auth/session";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export default async function AccountPage() {
@@ -29,52 +31,66 @@ export default async function AccountPage() {
     redirect("/sign-in");
   }
 
+  const showAdminNav = canAccessAdminNav(context.profile.role);
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Konto</h1>
-      <dl className="space-y-2 text-sm">
-        <div>
-          <dt className="text-muted-foreground">Email</dt>
-          <dd>{context.email ?? "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Rola</dt>
-          <dd>{context.profile.role}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Poziom konta</dt>
-          <dd>{context.profile.accountLevel}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Uprawnienia (z roli)</dt>
-          <dd className="break-all">
-            {context.permissions.length > 0
-              ? context.permissions.join(", ")
-              : "(brak — standardowy USER)"}
-          </dd>
-        </div>
-      </dl>
+    <div className="min-h-dvh bg-background">
+      <SiteHeader />
+      <main className="mx-auto flex max-w-lg flex-col gap-6 px-6 py-16">
+        <h1 className="text-2xl font-semibold tracking-tight">Konto</h1>
+        <dl className="space-y-2 text-sm">
+          <div>
+            <dt className="text-muted-foreground">Email</dt>
+            <dd>{context.email ?? "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Rola</dt>
+            <dd>{context.profile.role}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Poziom konta</dt>
+            <dd>{context.profile.accountLevel}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Uprawnienia (z roli)</dt>
+            <dd className="break-all">
+              {context.permissions.length > 0
+                ? context.permissions.join(", ")
+                : "(brak — standardowy USER)"}
+            </dd>
+          </div>
+        </dl>
 
-      <DisplayNameForm
-        initialDisplayName={context.profile.displayName ?? ""}
-      />
+        <DisplayNameForm
+          initialDisplayName={context.profile.displayName ?? ""}
+        />
 
-      <Link
-        href="/account/downloads"
-        className="text-sm underline underline-offset-4"
-      >
-        Moje pobrane
-      </Link>
+        {showAdminNav ? (
+          <Link
+            href="/admin"
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            Panel administratora
+          </Link>
+        ) : null}
 
-      <form action={signOutAction}>
-        <Button type="submit" variant="outline">
-          Wyloguj
-        </Button>
-      </form>
+        <Link
+          href="/account/downloads"
+          className="text-sm underline underline-offset-4"
+        >
+          Moje pobrane
+        </Link>
 
-      <Link href="/" className="text-sm underline underline-offset-4">
-        Strona główna
-      </Link>
-    </main>
+        <form action={signOutAction}>
+          <Button type="submit" variant="outline">
+            Wyloguj
+          </Button>
+        </form>
+
+        <Link href="/" className="text-sm underline underline-offset-4">
+          Strona główna
+        </Link>
+      </main>
+    </div>
   );
 }
