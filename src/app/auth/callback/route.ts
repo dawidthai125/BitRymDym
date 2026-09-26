@@ -14,7 +14,7 @@ function redirectToConfirmed(
   status: "success" | "invalid" | "error",
 ) {
   const path = confirmationResultPath(status);
-  // Prefer canonical app origin (never leak tokens into this URL).
+  // Prefer canonical app origin (never put token_hash / code into this URL).
   try {
     return NextResponse.redirect(new URL(path, getSiteUrl()));
   } catch {
@@ -23,9 +23,11 @@ function redirectToConfirmed(
 }
 
 /**
- * Supabase Auth email confirmation / PKCE callback.
- * Supports ?code= (PKCE) and ?token_hash=&type= (OTP verify).
- * Does not log tokens or codes.
+ * Auth callback for email confirmation and other Auth redirects.
+ *
+ * Prefer token_hash + type → verifyOtp (cross-browser safe; no PKCE verifier).
+ * Keep PKCE code → exchangeCodeForSession for flows that still use ?code=.
+ * Never log token_hash, codes, or session secrets.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -42,17 +44,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
 
-    if (classified.kind === "pkce") {
-      const { error } = await supabase.auth.exchangeCodeForSession(
-        classified.code,
-      );
-      if (error) {
-        return redirectToConfirmed(
-          request,
-          confirmationStatusFromAuthError(error.message),
-        );
-      }
-    } else {
+    if (classified.kind === "otp") {
       const { error } = await supabase.auth.verifyOtp({
         type: classified.type as EmailOtpType,
         token_hash: classified.tokenHash,
@@ -63,10 +55,21 @@ export async function GET(request: NextRequest) {
           confirmationStatusFromAuthError(error.message),
         );
       }
+    } else {
+      // PKCE: only when token_hash path is absent (e.g. other Auth redirects).
+      const { error } = await supabase.auth.exchangeCodeForSession(
+        classified.code,
+      );
+      if (error) {
+        return redirectToConfirmed(
+          request,
+          confirmationStatusFromAuthError(error.message),
+        );
+      }
     }
 
-    // Confirmation succeeded. Sign out so UX matches "zaloguj się" CTA
-    // (role remains USER / BEGINNER_RAPPER — no privilege change).
+    // Do not leave the user signed in — confirmation UX ends at "Zaloguj się".
+    // Role remains USER / BEGINNER_RAPPER (OD-19); no ADMIN escalation.
     await supabase.auth.signOut();
 
     return redirectToConfirmed(request, "success");

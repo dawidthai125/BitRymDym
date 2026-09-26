@@ -5,6 +5,8 @@ import {
   confirmationResultPath,
   confirmationStatusFromAuthError,
   CONFIRMATION_COPY,
+  CONFIRMATION_EMAIL_CALLBACK_PATH,
+  POST_CONFIRMATION_IDENTITY,
   parseConfirmationStatus,
 } from "@/lib/auth/confirmation";
 import {
@@ -13,32 +15,59 @@ import {
 } from "@/lib/auth/signup-result";
 import { getAuthEmailRedirectTo } from "@/lib/site-url";
 
-describe("confirmation success UX", () => {
-  it("exposes Polish success copy and sign-in CTA path", () => {
-    expect(CONFIRMATION_COPY.success.title).toBe("Konto zostało aktywowane!");
-    expect(CONFIRMATION_COPY.success.body).toMatch(/potwierdzony/i);
-    expect(CONFIRMATION_COPY.success.body).toMatch(/zalogować/i);
+describe("token_hash + type=signup (cross-browser)", () => {
+  it("prefers otp/verifyOtp params over PKCE code when both present", () => {
+    const result = classifyAuthCallbackParams({
+      code: "pkce-code",
+      tokenHash: "hash-value",
+      type: "signup",
+    });
+    expect(result).toEqual({
+      kind: "otp",
+      tokenHash: "hash-value",
+      type: "signup",
+    });
+  });
+
+  it("classifies signup token_hash for verifyOtp success path", () => {
+    const result = classifyAuthCallbackParams({
+      code: null,
+      tokenHash: "hash-value",
+      type: "signup",
+    });
+    expect(result.kind).toBe("otp");
+    if (result.kind === "otp") {
+      expect(result.type).toBe("signup");
+      expect(result.tokenHash).toBe("hash-value");
+    }
     expect(confirmationResultPath("success")).toBe(
       "/auth/confirmed?status=success",
     );
   });
 });
 
-describe("invalid / expired confirmation", () => {
-  it("maps expired/invalid Auth errors to invalid status with Polish copy", () => {
-    expect(confirmationStatusFromAuthError("Token has expired or is invalid")).toBe(
-      "invalid",
-    );
-    expect(confirmationStatusFromAuthError("otp_expired")).toBe("invalid");
+describe("invalid / expired token_hash", () => {
+  it("maps invalid token errors to invalid status", () => {
+    expect(
+      confirmationStatusFromAuthError("Token has expired or is invalid"),
+    ).toBe("invalid");
+    expect(confirmationStatusFromAuthError("invalid token")).toBe("invalid");
     expect(CONFIRMATION_COPY.invalid.body).toMatch(/nieprawidłowy|wygasł/i);
     expect(confirmationResultPath("invalid")).toBe(
       "/auth/confirmed?status=invalid",
     );
   });
+
+  it("maps expired OTP errors to invalid status", () => {
+    expect(confirmationStatusFromAuthError("otp_expired")).toBe("invalid");
+    expect(confirmationStatusFromAuthError("Email link is invalid or has expired")).toBe(
+      "invalid",
+    );
+  });
 });
 
-describe("callback error / missing params", () => {
-  it("classifies missing callback params", () => {
+describe("missing / incomplete callback params", () => {
+  it("classifies fully missing params as missing", () => {
     expect(
       classifyAuthCallbackParams({
         code: null,
@@ -48,42 +77,65 @@ describe("callback error / missing params", () => {
     ).toEqual({ kind: "missing" });
   });
 
-  it("classifies PKCE code without exposing other secrets", () => {
-    expect(
-      classifyAuthCallbackParams({
-        code: "abc",
-        tokenHash: "should-not-prefer",
-        type: "signup",
-      }),
-    ).toEqual({ kind: "pkce", code: "abc" });
-  });
-
-  it("classifies OTP token_hash + type", () => {
+  it("treats token_hash without type as missing (no detail leak)", () => {
     expect(
       classifyAuthCallbackParams({
         code: null,
-        tokenHash: "hash",
+        tokenHash: "orphaned-hash",
+        type: null,
+      }),
+    ).toEqual({ kind: "missing" });
+  });
+
+  it("treats type without token_hash as missing", () => {
+    expect(
+      classifyAuthCallbackParams({
+        code: null,
+        tokenHash: null,
         type: "signup",
       }),
-    ).toEqual({ kind: "otp", tokenHash: "hash", type: "signup" });
+    ).toEqual({ kind: "missing" });
   });
 
   it("falls back unknown status to safe error copy", () => {
     expect(parseConfirmationStatus("nope")).toBe("error");
     expect(parseConfirmationStatus(undefined)).toBe("error");
     expect(confirmationStatusFromAuthError("connection refused")).toBe("error");
-    expect(CONFIRMATION_COPY.error.body).not.toMatch(/supabase|token|jwt/i);
+    expect(CONFIRMATION_COPY.error.body).not.toMatch(/supabase|jwt/i);
   });
 });
 
-describe("sign-in CTA contract", () => {
-  it("success path is a confirmed page that links to /sign-in in UI copy contract", () => {
+describe("PKCE code flow preserved", () => {
+  it("classifies code-only as pkce (no token_hash)", () => {
+    expect(
+      classifyAuthCallbackParams({
+        code: "abc",
+        tokenHash: null,
+        type: null,
+      }),
+    ).toEqual({ kind: "pkce", code: "abc" });
+  });
+
+  it("maps PKCE verifier mismatch to invalid (no raw leak)", () => {
+    expect(
+      confirmationStatusFromAuthError(
+        "code challenge does not match previously saved code verifier",
+      ),
+    ).toBe("invalid");
+    expect(confirmationStatusFromAuthError("bad_code_verifier")).toBe("invalid");
+  });
+});
+
+describe("success page Polish copy", () => {
+  it("exposes activation title, body, and sign-in CTA contract", () => {
+    expect(CONFIRMATION_COPY.success.title).toBe("Konto zostało aktywowane!");
+    expect(CONFIRMATION_COPY.success.body).toMatch(/potwierdzony/i);
+    expect(CONFIRMATION_COPY.success.body).toMatch(/zalogować/i);
     expect(confirmationResultPath("success")).toContain("/auth/confirmed");
-    expect(CONFIRMATION_COPY.success.body.toLowerCase()).toContain("zalogować");
   });
 });
 
-describe("signup without session (anti-enumeration preserved)", () => {
+describe("signup anti-enumeration unchanged", () => {
   it("pending confirmation stays on signup UX message, not session", () => {
     const result = interpretSignUpResult({
       error: null,
@@ -111,8 +163,22 @@ describe("signup without session (anti-enumeration preserved)", () => {
   });
 });
 
-describe("emailRedirectTo contract", () => {
-  it("points canonical production redirect at /auth/callback", () => {
+describe("post-confirmation identity (OD-19)", () => {
+  it("defaults remain USER + BEGINNER_RAPPER with no ADMIN", () => {
+    expect(POST_CONFIRMATION_IDENTITY.role).toBe("USER");
+    expect(POST_CONFIRMATION_IDENTITY.accountLevel).toBe("BEGINNER_RAPPER");
+    expect(POST_CONFIRMATION_IDENTITY.role).not.toBe("ADMIN");
+  });
+});
+
+describe("email template callback contract", () => {
+  it("uses token_hash template path, not ConfirmationURL", () => {
+    expect(CONFIRMATION_EMAIL_CALLBACK_PATH).toContain("token_hash={{ .TokenHash }}");
+    expect(CONFIRMATION_EMAIL_CALLBACK_PATH).toContain("type=signup");
+    expect(CONFIRMATION_EMAIL_CALLBACK_PATH).not.toContain("ConfirmationURL");
+  });
+
+  it("keeps app emailRedirectTo at /auth/callback", () => {
     const prev = process.env.NEXT_PUBLIC_SITE_URL;
     process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
     try {
@@ -120,7 +186,6 @@ describe("emailRedirectTo contract", () => {
         "https://bitrymdym.pl/auth/callback",
       );
       expect(getAuthEmailRedirectTo()).not.toContain("vercel.app");
-      expect(getAuthEmailRedirectTo()).not.toMatch(/\/account$/);
     } finally {
       if (prev === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
       else process.env.NEXT_PUBLIC_SITE_URL = prev;

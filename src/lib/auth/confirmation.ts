@@ -1,9 +1,15 @@
 /**
  * Email-confirmation UX helpers (pure).
  * Tokens/codes must never be logged or passed to the confirmed page.
+ *
+ * Cross-browser confirm uses token_hash + verifyOtp (not ConfirmationURL/PKCE).
  */
 
 export type ConfirmationStatus = "success" | "invalid" | "error";
+
+/** Path pattern for Supabase Confirm signup template (SiteURL + this). */
+export const CONFIRMATION_EMAIL_CALLBACK_PATH =
+  "/auth/callback?token_hash={{ .TokenHash }}&type=signup";
 
 export const CONFIRMATION_COPY = {
   success: {
@@ -21,27 +27,33 @@ export const CONFIRMATION_COPY = {
 } as const;
 
 export type AuthCallbackKind =
-  | { kind: "pkce"; code: string }
   | { kind: "otp"; tokenHash: string; type: string }
+  | { kind: "pkce"; code: string }
   | { kind: "missing" };
 
 /**
  * Classify callback query params without exposing secrets in return paths.
+ * Prefer token_hash + type (cross-browser email confirm) over PKCE code.
  */
 export function classifyAuthCallbackParams(input: {
   code: string | null;
   tokenHash: string | null;
   type: string | null;
 }): AuthCallbackKind {
-  const code = input.code?.trim() || null;
-  if (code) {
-    return { kind: "pkce", code };
-  }
-
   const tokenHash = input.tokenHash?.trim() || null;
   const type = input.type?.trim() || null;
   if (tokenHash && type) {
     return { kind: "otp", tokenHash, type };
+  }
+
+  // Incomplete OTP params (hash without type, or type without hash) → missing
+  if (tokenHash || type) {
+    return { kind: "missing" };
+  }
+
+  const code = input.code?.trim() || null;
+  if (code) {
+    return { kind: "pkce", code };
   }
 
   return { kind: "missing" };
@@ -73,9 +85,17 @@ export function confirmationStatusFromAuthError(
     m.includes("otp_expired") ||
     m.includes("token has expired") ||
     m.includes("token not found") ||
-    m.includes("flow_state")
+    m.includes("flow_state") ||
+    m.includes("bad_code_verifier") ||
+    m.includes("code challenge")
   ) {
     return "invalid";
   }
   return "error";
 }
+
+/** Post-confirm role defaults (OD-19) — confirmation never escalates privilege. */
+export const POST_CONFIRMATION_IDENTITY = {
+  role: "USER",
+  accountLevel: "BEGINNER_RAPPER",
+} as const;
