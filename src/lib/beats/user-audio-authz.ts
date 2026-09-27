@@ -16,7 +16,8 @@ export class UserAudioAuthzError extends Error {
 }
 
 /**
- * Pure AuthZ: USER may only transport audio for own USER DRAFT beats.
+ * Pure AuthZ: USER may only transport audio for own USER DRAFT / REJECTED beats.
+ * Wave 3: REJECTED rework may replace MASTER before return-to-DRAFT + resubmit.
  */
 export function assertUserDraftTransportAccess(params: {
   context: AuthContext;
@@ -43,9 +44,9 @@ export function assertUserDraftTransportAccess(params: {
   if (params.beat.ownerId !== params.context.userId) {
     throw new UserAudioAuthzError("Not beat owner.");
   }
-  if (params.beat.status !== "DRAFT") {
+  if (params.beat.status !== "DRAFT" && params.beat.status !== "REJECTED") {
     throw new UserAudioAuthzError(
-      "USER audio upload allowed only while beat is DRAFT.",
+      "USER audio upload allowed only while beat is DRAFT or REJECTED.",
     );
   }
 }

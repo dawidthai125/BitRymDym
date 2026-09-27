@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { siteConfig } from "@/config/site";
-import { canAccessAdminNav } from "@/lib/auth/permissions";
+import {
+  canAccessAdminNav,
+  canAccessModerationNav,
+} from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +14,10 @@ export async function SiteHeader({
   className?: string;
 }) {
   const session = await getCurrentProfile();
-  const showAdminNav = canAccessAdminNav(session?.profile.role);
+  const role = session?.profile.role;
+  const showAdminNav = canAccessAdminNav(role);
+  const showModerationNav = canAccessModerationNav(role);
+  const showMyBeats = role === "USER";
 
   return (
     <header
@@ -36,6 +42,22 @@ export async function SiteHeader({
           </Link>
           {session ? (
             <>
+              {showMyBeats ? (
+                <Link
+                  href="/account/beats"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Moje bity
+                </Link>
+              ) : null}
+              {showModerationNav && !showAdminNav ? (
+                <Link
+                  href="/admin/moderation"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Moderacja
+                </Link>
+              ) : null}
               {showAdminNav ? (
                 <Link
                   href="/admin"

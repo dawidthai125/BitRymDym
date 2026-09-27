@@ -85,10 +85,13 @@ async function assertActiveMasterReadyForPublish(beat: Beat): Promise<void> {
 }
 
 /**
- * Wave 1 contract: submit requires active MASTER READY (same truth as publish).
- * Wave 2 transport will create the READY asset before submit is usable end-to-end.
+ * Wave 3: revalidate active MASTER READY on submit and approve.
+ * Do not trust READY from upload time — deny if asset was replaced/invalidated.
  */
-async function assertActiveMasterReadyForSubmit(beat: Beat): Promise<void> {
+async function assertActiveMasterReadyForCommunityTransition(
+  beat: Beat,
+  actionLabel: string,
+): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beat_audio_assets")
@@ -110,7 +113,7 @@ async function assertActiveMasterReadyForSubmit(beat: Beat): Promise<void> {
   if (!ready) {
     throw new AuthError(
       "FORBIDDEN",
-      "Submit requires an active MASTER READY audio asset.",
+      `${actionLabel} requires an active MASTER READY audio asset.`,
     );
   }
 }
@@ -246,7 +249,7 @@ export async function patchUserDraftMetadataAfterAuthz(params: {
   if (
     beat.ownershipType !== "USER" ||
     beat.ownerId !== params.ownerId ||
-    beat.status !== "DRAFT"
+    (beat.status !== "DRAFT" && beat.status !== "REJECTED")
   ) {
     throw new AuthError("FORBIDDEN", "USER draft metadata patch denied.");
   }
@@ -270,7 +273,7 @@ export async function patchUserDraftMetadataAfterAuthz(params: {
     tags: params.patch.tags ?? beat.tags,
     coverRef:
       params.patch.coverRef !== undefined ? params.patch.coverRef : beat.coverRef,
-    status: "DRAFT",
+    status: beat.status,
   };
 
   const validated = validateBeatInput(nextInput);
@@ -285,13 +288,14 @@ export async function patchUserDraftMetadataAfterAuthz(params: {
         ...validated.value,
         ownershipType: "USER",
         ownerId: params.ownerId,
-        status: "DRAFT",
+        status: beat.status,
+        rejectionReason: beat.rejectionReason,
       }),
     )
     .eq("id", params.beatId)
     .eq("owner_id", params.ownerId)
     .eq("ownership_type", "USER")
-    .eq("status", "DRAFT");
+    .in("status", ["DRAFT", "REJECTED"]);
 
   if (error) {
     throw new Error(error.message);
@@ -299,7 +303,7 @@ export async function patchUserDraftMetadataAfterAuthz(params: {
 }
 
 /**
- * Community Wave 2: owner may update metadata on own USER DRAFT only.
+ * Community Wave 2/3: owner may update metadata on own USER DRAFT or REJECTED.
  */
 export async function updateOwnUserDraftMetadata(
   beatId: string,
@@ -469,20 +473,24 @@ export async function transitionBeatStatus(
   return mapBeatRow(data as BeatRow);
 }
 
-/** Community: DRAFT → PENDING_REVIEW (own + MASTER READY). */
+/** Community Wave 3: DRAFT → PENDING_REVIEW (own + MASTER READY revalidated). */
 export async function submitUserBeat(beatId: string): Promise<Beat> {
   const context = await requireUser();
+  await requirePermission("beats.create");
   const current = await loadBeat(beatId);
-  if (
-    current.ownershipType !== "USER" ||
-    current.ownerId !== context.userId
-  ) {
+  if (current.ownershipType !== "USER") {
+    throw new AuthError("FORBIDDEN", "submitUserBeat is for USER beats.");
+  }
+  if (current.ownerId !== context.userId) {
     throw new AuthError("FORBIDDEN", "Not beat owner.");
   }
-  if (current.status === "PENDING_REVIEW") {
-    throw new AuthError("FORBIDDEN", "Beat is already pending review.");
+  if (current.status !== "DRAFT") {
+    throw new AuthError(
+      "FORBIDDEN",
+      `Submit requires DRAFT (current: ${current.status}).`,
+    );
   }
-  await assertActiveMasterReadyForSubmit(current);
+  await assertActiveMasterReadyForCommunityTransition(current, "Submit");
   return transitionBeatStatus(beatId, "PENDING_REVIEW");
 }
 
@@ -492,7 +500,21 @@ export async function approveUserBeat(beatId: string): Promise<Beat> {
   if (current.ownershipType !== "USER") {
     throw new AuthError("FORBIDDEN", "approveUserBeat is for USER beats.");
   }
-  return transitionBeatStatus(beatId, "APPROVED");
+  if (!current.ownerId) {
+    throw new AuthError("FORBIDDEN", "USER beat must have an owner.");
+  }
+  if (current.status !== "PENDING_REVIEW") {
+    throw new AuthError(
+      "FORBIDDEN",
+      `Approve requires PENDING_REVIEW (current: ${current.status}).`,
+    );
+  }
+  await assertActiveMasterReadyForCommunityTransition(current, "Approve");
+  const approved = await transitionBeatStatus(beatId, "APPROVED");
+  if (approved.ownerId !== current.ownerId) {
+    throw new AuthError("FORBIDDEN", "Owner changed during approve.");
+  }
+  return approved;
 }
 
 export async function rejectUserBeat(
@@ -503,6 +525,12 @@ export async function rejectUserBeat(
   const current = await loadBeat(beatId);
   if (current.ownershipType !== "USER") {
     throw new AuthError("FORBIDDEN", "rejectUserBeat is for USER beats.");
+  }
+  if (current.status !== "PENDING_REVIEW") {
+    throw new AuthError(
+      "FORBIDDEN",
+      `Reject requires PENDING_REVIEW (current: ${current.status}).`,
+    );
   }
   return transitionBeatStatus(beatId, "REJECTED", { rejectionReason });
 }
@@ -654,4 +682,111 @@ export async function getPlatformBeatForAdmin(beatId: string): Promise<Beat> {
     );
   }
   return beat;
+}
+
+export type OwnUserBeatListItem = Beat & {
+  activeMasterReady: boolean;
+};
+
+export type ModerationQueueItem = Beat & {
+  activeMasterReady: boolean;
+};
+
+async function attachActiveMasterReady(
+  beats: Beat[],
+): Promise<Array<Beat & { activeMasterReady: boolean }>> {
+  if (beats.length === 0) return [];
+  const supabase = await createSupabaseServerClient();
+  const ids = beats.map((b) => b.id);
+  const { data: assets, error: assetError } = await supabase
+    .from("beat_audio_assets")
+    .select("beat_id, purpose, status, is_active")
+    .in("beat_id", ids)
+    .eq("purpose", "MASTER")
+    .eq("is_active", true)
+    .eq("status", "READY");
+
+  if (assetError) {
+    throw new Error(assetError.message);
+  }
+
+  const ready = new Set((assets ?? []).map((row) => row.beat_id as string));
+  return beats.map((beat) => ({
+    ...beat,
+    activeMasterReady: ready.has(beat.id),
+  }));
+}
+
+/** Community Wave 3: owner list of own USER beats (all statuses). */
+export async function listOwnUserBeats(): Promise<OwnUserBeatListItem[]> {
+  const context = await requireUser();
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .select(BEAT_SELECT_FULL)
+    .eq("ownership_type", "USER")
+    .eq("owner_id", context.userId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const beats = (data as BeatRow[] | null)?.map((row) => mapBeatRow(row)) ?? [];
+  return attachActiveMasterReady(beats);
+}
+
+export async function getOwnUserBeat(beatId: string): Promise<OwnUserBeatListItem> {
+  const context = await requireUser();
+  const beat = await loadBeat(beatId);
+  if (
+    beat.ownershipType !== "USER" ||
+    beat.ownerId !== context.userId
+  ) {
+    throw new AuthError("FORBIDDEN", "Not beat owner.");
+  }
+  const [withReady] = await attachActiveMasterReady([beat]);
+  return withReady!;
+}
+
+/**
+ * Community Wave 3: PENDING_REVIEW queue for ADMIN + MODERATOR.
+ * Does not include APPROVED / PUBLISHED / DRAFT.
+ */
+export async function listPendingReviewForModeration(): Promise<
+  ModerationQueueItem[]
+> {
+  await requireRole(["ADMIN", "MODERATOR"]);
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .select(BEAT_SELECT_FULL)
+    .eq("status", "PENDING_REVIEW")
+    .eq("ownership_type", "USER")
+    .order("updated_at", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const beats = (data as BeatRow[] | null)?.map((row) => mapBeatRow(row)) ?? [];
+  return attachActiveMasterReady(beats);
+}
+
+export async function getPendingReviewBeatForModeration(
+  beatId: string,
+): Promise<ModerationQueueItem> {
+  await requireRole(["ADMIN", "MODERATOR"]);
+  const beat = await loadBeat(beatId);
+  if (beat.ownershipType !== "USER") {
+    throw new AuthError("FORBIDDEN", "Moderation is for USER beats.");
+  }
+  if (beat.status !== "PENDING_REVIEW") {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Moderation detail is only for PENDING_REVIEW.",
+    );
+  }
+  const [withReady] = await attachActiveMasterReady([beat]);
+  return withReady!;
 }

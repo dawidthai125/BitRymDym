@@ -74,6 +74,15 @@ export default async function AccountPage() {
           </Link>
         ) : null}
 
+        {context.profile.role === "USER" ? (
+          <Link
+            href="/account/beats"
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            Moje bity
+          </Link>
+        ) : null}
+
         <Link
           href="/account/downloads"
           className="text-sm underline underline-offset-4"

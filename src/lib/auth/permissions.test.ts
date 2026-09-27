@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertNoPrivilegeEscalationInPayload,
   canAccessAdminNav,
+  canAccessModerationNav,
   hasAnyPermission,
   hasPermission,
   hasRole,
@@ -37,6 +38,13 @@ describe("authorization helpers", () => {
     expect(canAccessAdminNav("MODERATOR")).toBe(false);
     expect(canAccessAdminNav(null)).toBe(false);
     expect(canAccessAdminNav(undefined)).toBe(false);
+  });
+
+  it("shows moderation nav for ADMIN and MODERATOR", () => {
+    expect(canAccessModerationNav("ADMIN")).toBe(true);
+    expect(canAccessModerationNav("MODERATOR")).toBe(true);
+    expect(canAccessModerationNav("USER")).toBe(false);
+    expect(canAccessModerationNav(null)).toBe(false);
   });
 
   it("blocks privilege fields in self-update payload", () => {

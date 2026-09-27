@@ -21,9 +21,10 @@
 |------|---------|
 | Canonical branch | `main` |
 | Community Wave 1 | **COMPLETE** @ `609a05e` |
-| Community Wave 2 | **IMPLEMENTED** (USER signed audio transport) |
+| Community Wave 2 | **COMPLETE** @ `9cfb3cf` |
+| Community Wave 3 | **IMPLEMENTED** (submit + moderation; deploy pending this session) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN (Wave 2 deploy this session) |
+| Production | GREEN (Wave 2); Wave 3 pending deploy verify |
 
 Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
 
@@ -32,38 +33,38 @@ Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNIT
 ## 3. Current Phase
 
 ```text
-COMMUNITY WAVE 1 = COMPLETE (DB/RLS/AuthZ)
-COMMUNITY WAVE 2 = IMPLEMENTED (USER signed upload → READY)
-COMMUNITY WAVE 3+ = NOT STARTED (submit / moderation UI / publish UI)
+COMMUNITY WAVE 1 = COMPLETE (DB/RLS/AuthZ) @ 609a05e
+COMMUNITY WAVE 2 = COMPLETE (USER signed upload → READY) @ 9cfb3cf
+COMMUNITY WAVE 3 = IMPLEMENTED (submit + moderation; APPROVED ≠ PUBLISHED)
+COMMUNITY WAVE 4 = NOT STARTED (APPROVED → PUBLISHED)
 ```
 
-### Wave 2 flow (frozen)
+### Wave 3 flow (frozen)
 
 ```text
-USER → createUserBeat (DRAFT)
-  → POST /api/beats/audio/session
-  → signed PUT → private beat-audio
-  → object key user/{ownerId}/{beatId}/{assetId}/master.bin
-  → POST /api/beats/audio/analyze
-  → finalizeUserBeatWithMasterAction
-  → MASTER READY · beat remains DRAFT
+USER DRAFT + MASTER READY → submit → PENDING_REVIEW
+MODERATOR → APPROVE → APPROVED (not public)
+         → REJECT + reason → REJECTED → USER → DRAFT → rework → resubmit
 ```
+
+Routes: `/beats/upload` · `/account/beats` · `/admin/moderation`
 
 ---
 
 ## 4. Next Session Entry
 
 ```text
-NEXT: COMMUNITY WAVE 3 — submit + moderation queue
-Do NOT open Storage INSERT for authenticated clients
-Reuse READY gate + Wave 1 transitions
+NEXT: COMMUNITY WAVE 4 — APPROVED → PUBLISHED
+Do NOT let USER publish
+Reuse publishApprovedUserBeat + READY gate
+Public catalog + playback only after PUBLISHED
 ```
 
 ---
 
 ## 5. Last Session Closeout
 
-**Sesja:** Community Wave 2 — USER signed audio transport (2026-09-27)
+**Sesja:** Community Wave 3 — submit + moderation (2026-09-27)
 
-**Done:** user session/analyze/finalize; object key user/; asset trigger USER support; live E2E bpm-120-steady; docs.
-**Out:** submit UI, moderation UI, publish UI.
+**Done:** submit/approve/reject READY revalidation; USER edit freeze; upload + my-beats UI; moderation queue + PlaybackShell; live RLS/E2E; docs.
+**Out:** publish USER beat (Wave 4); public catalog for APPROVED.

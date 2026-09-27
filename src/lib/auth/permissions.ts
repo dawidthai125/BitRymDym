@@ -29,14 +29,25 @@ export function hasRole(
 }
 
 /**
- * UI-only: whether to show the admin panel nav link.
- * Not a security boundary — /admin still uses requireRole(["ADMIN"]).
+ * UI-only: whether to show the PLATFORM admin panel nav link.
+ * Not a security boundary — /admin/beats still uses requireRole(["ADMIN"]).
  */
 export function canAccessAdminNav(
   role: SystemRole | null | undefined,
 ): boolean {
   if (!role) return false;
   return hasRole(role, ["ADMIN"]);
+}
+
+/**
+ * UI-only: moderation queue link (ADMIN + MODERATOR).
+ * Not a security boundary — /admin/moderation uses requireRole.
+ */
+export function canAccessModerationNav(
+  role: SystemRole | null | undefined,
+): boolean {
+  if (!role) return false;
+  return hasRole(role, ["ADMIN", "MODERATOR"]);
 }
 
 export function filterPermissionKeys(values: readonly string[]): PermissionKey[] {

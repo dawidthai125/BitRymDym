@@ -119,7 +119,7 @@ describe("Community Wave 2 — USER audio AuthZ / IDOR", () => {
           status: "PUBLISHED",
         },
       }),
-    ).toThrow(/DRAFT/);
+    ).toThrow(/DRAFT or REJECTED/);
   });
 
   it("J: USER PENDING_REVIEW beat = DENY", () => {
@@ -133,7 +133,21 @@ describe("Community Wave 2 — USER audio AuthZ / IDOR", () => {
           status: "PENDING_REVIEW",
         },
       }),
-    ).toThrow(/DRAFT/);
+    ).toThrow(/DRAFT or REJECTED/);
+  });
+
+  it("Wave 3: USER REJECTED beat transport = PASS (rework)", () => {
+    expect(() =>
+      assertUserDraftTransportAccess({
+        context: userContext(),
+        beat: {
+          id: BEAT,
+          ownershipType: "USER",
+          ownerId: OWNER,
+          status: "REJECTED",
+        },
+      }),
+    ).not.toThrow();
   });
 
   it("E/G: foreign assetId or manipulated object key = DENY", () => {

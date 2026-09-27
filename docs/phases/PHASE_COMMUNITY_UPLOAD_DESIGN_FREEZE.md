@@ -7,13 +7,14 @@
 **Supabase project:** `rzzxrgcdogkybkiidqgw`  
 **SSOT:** §3–§4, §6–§9, §12–§13, §36, §39  
 **Document status:** DESIGN FREEZE — **READY / OWNER GO** (2026-09-27)  
-**Implementation status:** **WAVE 1 COMPLETE** · **WAVE 2 IMPLEMENTED / VERIFIED** · Wave 3+ **NONE**
+**Implementation status:** **WAVE 1 COMPLETE** · **WAVE 2 COMPLETE** · **WAVE 3 IMPLEMENTED** · Wave 4 **PENDING** (APPROVED→PUBLISHED)
 
 ```text
 COMMUNITY LOOP = USER → UPLOAD → MODERATION → APPROVED → PUBLISHED
-WAVE 1 = DB/RLS/TRIGGER/AUTHZ FOUNDATION — COMPLETE
-WAVE 2 = USER SIGNED AUDIO TRANSPORT — IMPLEMENTED / VERIFIED
-WAVE 3+ = NOT STARTED
+WAVE 1 = DB/RLS/TRIGGER/AUTHZ FOUNDATION — COMPLETE @ 609a05e
+WAVE 2 = USER SIGNED AUDIO TRANSPORT — COMPLETE @ 9cfb3cf
+WAVE 3 = SUBMIT + MODERATION — IMPLEMENTED (APPROVED ≠ PUBLISHED)
+WAVE 4 = APPROVED → PUBLISHED — PENDING
 USER PUBLISH = DENY
 APPROVED ≠ AUTO PUBLISHED
 BUCKET = beat-audio (reuse)
@@ -410,10 +411,12 @@ Related product ODs (unchanged): OD-09, OD-10, OD-11, OD-12, OD-13, OD-14, OD-18
 
 ```text
 COMMUNITY UPLOAD DESIGN FREEZE = READY / OWNER GO
-WAVE 1 = COMPLETE (DB / RLS / Trigger / AuthZ)
-WAVE 2 = IMPLEMENTED / VERIFIED (USER signed upload → MASTER READY; beat stays DRAFT)
-WAVE 3+ = NONE (submit / moderation UI / publish UI)
-Migrations = community_wave1_ownership · community_wave2_user_audio
+WAVE 1 = COMPLETE (DB / RLS / Trigger / AuthZ) @ 609a05e
+WAVE 2 = COMPLETE (USER signed upload → MASTER READY) @ 9cfb3cf
+WAVE 3 = IMPLEMENTED (submit + moderation; APPROVED not public)
+WAVE 4 = PENDING (APPROVED → PUBLISHED)
+Migrations = community_wave1_ownership · community_wave2_user_audio · community_wave3_user_edit_freeze
+Routes = /beats/upload · /account/beats · /admin/moderation
 ```
 
 ---
@@ -430,6 +433,23 @@ createUserBeat / existing USER DRAFT
 ```
 
 Replacement reuses `activateAssetReady` (previous MASTER → REPLACED). Storage INSERT remains DENY.
+
+---
+
+## Wave 3 implementation note (2026-09-27)
+
+```text
+USER: DRAFT + MASTER READY → submitUserBeat → PENDING_REVIEW
+MOD:  PENDING_REVIEW → approveUserBeat → APPROVED (not public)
+MOD:  PENDING_REVIEW → rejectUserBeat(+reason) → REJECTED
+USER: REJECTED → DRAFT (clears rejection_reason) → rework → resubmit
+```
+
+- Routes: `/beats/upload` · `/account/beats` · `/admin/moderation` · `/admin/moderation/[id]`
+- READY revalidated on submit and approve
+- USER metadata freeze except DRAFT/REJECTED (`community_wave3_user_edit_freeze`)
+- Moderator playback via PlaybackShell + staff Access Gate
+- APPROVED ≠ PUBLISHED (Wave 4)
 
 ---
 
@@ -471,4 +491,4 @@ Delivered without UI:
 
 **Blockers:** none.
 
-**Remaining risks (non-blocking):** careful trigger/RLS rewrite for USER + MOD publish; clear `rejection_reason` on rework UX; resubmit rate-limit deferred.
+**Remaining risks (Wave 4):** APPROVED→PUBLISHED surface + public catalog; MOD publish UI without metadata edit; resubmit rate-limit deferred.

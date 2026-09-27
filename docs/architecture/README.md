@@ -55,6 +55,6 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | Audio Transport V1 | **CLOSED / PRODUCTION VERIFIED** @ `73e213c` |
 | Phase 1.9 Operator enablement | **CLOSED / LOCKED** @ `47643c2` |
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
-| Community Upload + Moderation | **DESIGN FREEZE READY** · **WAVE 1 COMPLETE** · **WAVE 2 IMPLEMENTED** · Wave 3+ **NONE** |
+| Community Upload + Moderation | **WAVE 1–3 IMPLEMENTED** · Wave 4 (publish APPROVED) **PENDING** |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).

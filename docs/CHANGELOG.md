@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — COMMUNITY WAVE 3: SUBMIT + MODERATION
+
+**Status:** **IMPLEMENTED / VERIFIED** · APPROVED ≠ PUBLISHED · Wave 4 publish still pending
+
+- Submit: `submitUserBeat` DRAFT→PENDING_REVIEW (own USER + active MASTER READY revalidated)
+- Moderation: `approveUserBeat` / `rejectUserBeat` (+ required `rejection_reason`); queue `/admin/moderation`
+- USER UI: `/beats/upload`, `/account/beats`; Polish status labels; resubmit after REJECTED→DRAFT
+- MOD playback via existing PlaybackShell + Access Gate (staff non-public PLAYBACK)
+- Migration `community_wave3_user_edit_freeze`: USER metadata edits only DRAFT/REJECTED
+- Tests: community-wave3 unit + live RLS/E2E; APPROVED not in public catalog
+- Wave 4 remaining: APPROVED→PUBLISHED UI/flow (service already exists)
+
+---
+
 ## 2026-09-27 — COMMUNITY WAVE 2: USER SIGNED AUDIO TRANSPORT
 
 **Status:** **IMPLEMENTED / VERIFIED** · Storage INSERT still **DENY** · beat stays **DRAFT**
