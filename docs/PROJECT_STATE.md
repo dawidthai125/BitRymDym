@@ -24,9 +24,9 @@
 | Recording Design Freeze | **LOCKED** |
 | **Recording Wave 1** | **CLOSED** @ `dd2ffd7` |
 | **Recording Wave 2** | **CLOSED** @ `2ab3e3e` (production GREEN) |
-| **Recording Wave 3** | **DEPLOYED / NOT CLOSED** @ `507f78f` — production finalize BLOCKED |
+| **Recording Wave 3** | **DEPLOYED / NOT CLOSED** @ `507f78f` — blocker hotfix prepared (uncommitted) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | Deployed Wave 3 @ `507f78f`; catalog/auth/playback GREEN; take finalize DURATION_PROBE_FAILED on real MediaRecorder WebM/Opus |
+| Production | Deployed Wave 3 @ `507f78f`; finalize DURATION_PROBE_FAILED on Chromium WebM/Opus — RCA + minimal fix in working tree (no commit) |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 Wave 3 readiness: [RECORDING_WAVE3_READINESS_AUDIT.md](./audits/RECORDING_WAVE3_READINESS_AUDIT.md)  
@@ -46,10 +46,9 @@ BLOCKER = MediaRecorder WebM/Opus duration probe fail-closed on finalize
 ## 4. Next Session Entry
 
 ```text
-NEXT: OWNER DECISION on Wave 3 production blocker
-BLOCKER: music-metadata cannot read duration from Chromium MediaRecorder WebM/Opus
-→ finalize fail-closed (DURATION_PROBE_FAILED); READY_TAKE / take preview not reached on prod
-Do NOT hotfix without Owner GO
+NEXT: OWNER REVIEW of W3 duration-probe hotfix → commit/push/deploy only with Owner GO
+BLOCKER RCA: docs/audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md
+Do NOT trust client duration; server decode fallback for timesliced WebM/Opus
 Do NOT implement Anonymous Quick Take / shared grants without Owner GO
 ```
 

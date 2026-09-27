@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — RECORDING WAVE 3: PRODUCTION BLOCKER RCA + HOTFIX (UNCOMMITTED)
+
+**Status:** **NOT CLOSED** · fix in working tree · no commit/push/deploy
+
+- RCA: [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md)
+- Cause: timesliced Chromium MediaRecorder WebM omits Info.Duration; music-metadata ignores Clusters
+- Fix: server-side `audio-decode` PCM fallback when EBML/WebM lacks metadata duration (client duration still untrusted)
+- Fixture: `src/lib/beats/fixtures/chromium-mediarecorder-opus.webm`
+
+---
+
 ## 2026-09-27 — RECORDING WAVE 3: PLAYER INTEGRATION + TAKE PREVIEW
 
 **Status:** **DEPLOYED** @ `507f78fb03347683c847d5b0a0d76a3fffe1827d` · **PRODUCTION VERIFY NOT CLOSED**

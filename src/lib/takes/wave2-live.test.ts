@@ -499,4 +499,67 @@ describe.runIf(live)("Recording Wave 2 live transport + security", () => {
     },
     90_000,
   );
+
+  it(
+    "WEBM_OPUS_CHROMIUM: MediaRecorder webm finalize → READY (duration via decode fallback)",
+    async () => {
+      const admin = createClient(url!, serviceKey!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const beatBytes = readFileSync(fixturePath);
+      const webmPath = resolve(
+        process.cwd(),
+        "src/lib/beats/fixtures/chromium-mediarecorder-opus.webm",
+      );
+      expect(existsSync(webmPath)).toBe(true);
+      const webmBytes = readFileSync(webmPath);
+      expect(webmBytes.byteLength).toBeGreaterThan(1000);
+
+      const user = await makeUser(admin, "webm");
+      const seeded = await seedPublishedBeatWithMaster(
+        admin,
+        user.userId,
+        beatBytes,
+      );
+
+      const session = await createTakeRecordingSessionFor(user.context, {
+        beatId: seeded.beatId,
+        contentType: "audio/webm",
+        byteSize: webmBytes.byteLength,
+      });
+
+      const { error: putErr } = await user.client.storage
+        .from(TAKE_AUDIO_BUCKET)
+        .uploadToSignedUrl(session.path, session.token, webmBytes, {
+          contentType: "audio/webm",
+          upsert: false,
+        });
+      expect(putErr).toBeNull();
+
+      const ready = await finalizeTakeRecordingFor(user.context, {
+        takeId: session.takeId,
+      });
+      expect(ready.status).toBe("READY");
+      expect(ready.contentType).toBe("audio/webm");
+      expect(ready.durationSeconds).toBeGreaterThanOrEqual(3);
+      expect(ready.durationSeconds).toBeLessThanOrEqual(4);
+
+      await admin.storage
+        .from(TAKE_AUDIO_BUCKET)
+        .remove([session.objectKey])
+        .catch(() => undefined);
+      await admin.storage
+        .from(BEAT_AUDIO_BUCKET)
+        .remove([seeded.objectKey])
+        .catch(() => undefined);
+      await admin.from("takes").delete().eq("id", session.takeId);
+      await admin
+        .from("beat_audio_assets")
+        .delete()
+        .eq("id", seeded.assetId);
+      await admin.from("beats").delete().eq("id", seeded.beatId);
+      await admin.auth.admin.deleteUser(user.userId);
+    },
+    90_000,
+  );
 });

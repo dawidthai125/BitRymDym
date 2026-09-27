@@ -13,6 +13,10 @@ import {
   BEAT_DURATION_MAX,
   BEAT_DURATION_MIN,
 } from "@/lib/beats/validation";
+import {
+  isLikelyEbmlWebmContainer,
+  probeDurationSecondsViaAudioDecode,
+} from "@/lib/beats/webm-duration-fallback";
 
 /**
  * Rounding rule for music-metadata float seconds → integer duration_seconds:
@@ -30,9 +34,45 @@ export type AudioDurationProbeResult =
     }
   | { ok: false; error: string };
 
+function finalizeDurationProbe(
+  raw: number,
+): AudioDurationProbeResult {
+  if (!Number.isFinite(raw) || raw <= 0) {
+    return {
+      ok: false,
+      error: "Nie udało się odczytać czasu trwania z pliku audio.",
+    };
+  }
+
+  const durationSeconds = roundDurationSeconds(raw);
+  if (durationSeconds < BEAT_DURATION_MIN) {
+    return {
+      ok: false,
+      error: `Czas trwania musi wynosić co najmniej ${BEAT_DURATION_MIN} s.`,
+    };
+  }
+  if (durationSeconds > BEAT_DURATION_MAX) {
+    return {
+      ok: false,
+      error: `Czas trwania nie może przekraczać ${BEAT_DURATION_MAX} s (wykryto ${durationSeconds} s).`,
+    };
+  }
+
+  return {
+    ok: true,
+    durationSeconds,
+    durationRawSeconds: raw,
+  };
+}
+
 /**
  * Probe audio bytes for duration (server source of truth).
  * Does not trust client-supplied duration.
+ *
+ * Chromium MediaRecorder WebM/Opus (esp. timesliced) often omits
+ * Segment Info.Duration; music-metadata then returns no format.duration
+ * because it ignores Cluster elements. Fallback: decode PCM via the
+ * existing `audio-decode` dependency and use sampleCount/sampleRate.
  */
 export async function probeAudioDurationFromBytes(params: {
   bytes: Uint8Array;
@@ -51,7 +91,21 @@ export async function probeAudioDurationFromBytes(params: {
       { duration: true },
     );
 
-    const raw = metadata.format.duration;
+    let raw = metadata.format.duration;
+    if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
+      if (
+        isLikelyEbmlWebmContainer({
+          bytes: params.bytes,
+          contentTypeHint: params.contentTypeHint,
+        })
+      ) {
+        const decoded = await probeDurationSecondsViaAudioDecode(params.bytes);
+        if (decoded != null) {
+          raw = decoded;
+        }
+      }
+    }
+
     if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
       return {
         ok: false,
@@ -59,26 +113,20 @@ export async function probeAudioDurationFromBytes(params: {
       };
     }
 
-    const durationSeconds = roundDurationSeconds(raw);
-    if (durationSeconds < BEAT_DURATION_MIN) {
-      return {
-        ok: false,
-        error: `Czas trwania musi wynosić co najmniej ${BEAT_DURATION_MIN} s.`,
-      };
-    }
-    if (durationSeconds > BEAT_DURATION_MAX) {
-      return {
-        ok: false,
-        error: `Czas trwania nie może przekraczać ${BEAT_DURATION_MAX} s (wykryto ${durationSeconds} s).`,
-      };
-    }
-
-    return {
-      ok: true,
-      durationSeconds,
-      durationRawSeconds: raw,
-    };
+    return finalizeDurationProbe(raw);
   } catch {
+    // Container parse hard-fail: still try WebM decode fallback when likely EBML.
+    if (
+      isLikelyEbmlWebmContainer({
+        bytes: params.bytes,
+        contentTypeHint: params.contentTypeHint,
+      })
+    ) {
+      const decoded = await probeDurationSecondsViaAudioDecode(params.bytes);
+      if (decoded != null) {
+        return finalizeDurationProbe(decoded);
+      }
+    }
     return {
       ok: false,
       error: "Nie udało się przeanalizować pliku audio.",
