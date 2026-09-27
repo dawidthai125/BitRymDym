@@ -58,6 +58,8 @@ export type Beat = {
   status: BeatStatus;
   /** Own / staff only — never expose on public catalog APIs. */
   rejectionReason: string | null;
+  /** Wave 5: server-managed submit cooldown cursor (null after REJECTED→DRAFT). */
+  lastSubmittedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };

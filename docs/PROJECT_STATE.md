@@ -23,9 +23,11 @@
 | Community Wave 1 | **COMPLETE** @ `609a05e` |
 | Community Wave 2 | **COMPLETE** @ `9cfb3cf` |
 | Community Wave 3 | **COMPLETE** @ `f5f6b4f` |
-| Community Wave 4 | **IMPLEMENTED** (staff publish APPROVED→PUBLISHED; deploy this session) |
+| Community Wave 4 | **COMPLETE** @ `b47767b` |
+| Community Wave 5 | **IMPLEMENTED** (hardening + closeout; deploy this session) |
+| **Community Upload + Moderation EPIC** | **COMPLETE / LOCKED** (pending final SHA after deploy) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN (Wave 3); Wave 4 pending deploy verify |
+| Production | GREEN |
 
 Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
 
@@ -34,39 +36,36 @@ Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNIT
 ## 3. Current Phase
 
 ```text
-COMMUNITY WAVE 1 = COMPLETE @ 609a05e
-COMMUNITY WAVE 2 = COMPLETE @ 9cfb3cf
-COMMUNITY WAVE 3 = COMPLETE @ f5f6b4f
-COMMUNITY WAVE 4 = IMPLEMENTED (ADMIN|MOD publish APPROVED USER → PUBLISHED)
-COMMUNITY WAVE 5 = NOT STARTED (hardening / polish / rate-limit if any)
+COMMUNITY UPLOAD + MODERATION EPIC = COMPLETE / LOCKED
+WAVE 1 = ownership / RLS / AuthZ @ 609a05e
+WAVE 2 = USER signed audio transport @ 9cfb3cf
+WAVE 3 = submit + moderation @ f5f6b4f
+WAVE 4 = staff publish APPROVED→PUBLISHED @ b47767b
+WAVE 5 = hardening (submit cooldown) + security closeout
 ```
 
-### Wave 4 flow
+### Final lifecycle
 
 ```text
-USER APPROVED beat
-  → staff (ADMIN|MODERATOR) + beats.publish
-  → READY hard gate (active MASTER + user/ object key)
-  → PUBLISHED
-  → /beats · /beat/[id] · PlaybackShell · download (existing)
+USER: DRAFT → (READY) → PENDING_REVIEW → [REJECTED → DRAFT]* → APPROVED
+STAFF: APPROVED → PUBLISHED
+Public: only PUBLISHED · Access Gate · download limits unchanged
 ```
-
-USER publish = DENY · MOD metadata edit = DENY
 
 ---
 
 ## 4. Next Session Entry
 
 ```text
-NEXT: COMMUNITY WAVE 5 (if planned) — security polish / rate-limit / ops
-Community loop end-to-end is LIVE after Wave 4 deploy verify
+NEXT: outside Community epic (QT / Tracks / etc. only with new Owner GO)
+Do NOT reopen community publish/moderation without Owner GO
 ```
 
 ---
 
 ## 5. Last Session Closeout
 
-**Sesja:** Community Wave 4 — staff publish APPROVED USER beats (2026-09-27)
+**Sesja:** Community Wave 5 — hardening + epic closeout (2026-09-27)
 
-**Done:** publishApprovedUserBeat gate-first; moderation APPROVED queue + Opublikuj; public catalog reuse; live E2E; docs.
-**Out:** new lifecycle features; Premium/account-level publish bypass.
+**Done:** 60s per-beat submit cooldown (column + trigger + service); security regression suite; full live loop E2E; docs LOCKED.
+**Deferred:** full lifecycle audit telemetry framework; global per-user submit flood across many beats; resubmit rate beyond 60s per beat.

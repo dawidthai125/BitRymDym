@@ -13,6 +13,7 @@
 5. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
 6. [phases/PHASE_1_FOUNDATION.md](./phases/PHASE_1_FOUNDATION.md) — zakres Fazy 1
 7. Dokumentacja konkretnego feature’a — jeżeli agent wykonuje feature
+8. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community Upload + Moderation **EPIC COMPLETE / LOCKED**
 
 **Nie zaczynaj implementacji** przed sprawdzeniem: PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS.
 

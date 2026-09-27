@@ -15,6 +15,9 @@ import {
   assertUserBeatObjectKeyBinding,
 } from "@/lib/beats/audio-validation";
 import {
+  assertSubmitCooldown,
+} from "@/lib/beats/submit-cooldown";
+import {
   canTransitionStatus,
   validateBeatInput,
   validateRejectionReason,
@@ -510,7 +513,7 @@ export async function transitionBeatStatus(
   return mapBeatRow(data as BeatRow);
 }
 
-/** Community Wave 3: DRAFT → PENDING_REVIEW (own + MASTER READY revalidated). */
+/** Community Wave 3/5: DRAFT → PENDING_REVIEW (own + MASTER READY + submit cooldown). */
 export async function submitUserBeat(beatId: string): Promise<Beat> {
   const context = await requireUser();
   await requirePermission("beats.create");
@@ -526,6 +529,12 @@ export async function submitUserBeat(beatId: string): Promise<Beat> {
       "FORBIDDEN",
       `Submit requires DRAFT (current: ${current.status}).`,
     );
+  }
+  const cooldown = assertSubmitCooldown({
+    lastSubmittedAt: current.lastSubmittedAt,
+  });
+  if (!cooldown.ok) {
+    throw new AuthError("FORBIDDEN", cooldown.error);
   }
   await assertActiveMasterReadyForCommunityTransition(current, "Submit");
   return transitionBeatStatus(beatId, "PENDING_REVIEW");

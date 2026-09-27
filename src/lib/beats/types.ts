@@ -17,16 +17,17 @@ export type BeatRow = {
   cover_ref: string | null;
   status: BeatStatus;
   rejection_reason?: string | null;
+  last_submitted_at?: string | null;
   created_at: string;
   updated_at: string;
 };
 
-/** Public catalog / detail — never select or map rejection_reason. */
+/** Public catalog / detail — never select rejection_reason or last_submitted_at. */
 export const BEAT_SELECT_PUBLIC =
   "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at";
 
-/** Owner / staff — includes rejection_reason. */
-export const BEAT_SELECT_FULL = `${BEAT_SELECT_PUBLIC}, rejection_reason`;
+/** Owner / staff — includes rejection_reason + submit cooldown cursor. */
+export const BEAT_SELECT_FULL = `${BEAT_SELECT_PUBLIC}, rejection_reason, last_submitted_at`;
 
 /** @deprecated Prefer BEAT_SELECT_PUBLIC or BEAT_SELECT_FULL. */
 export const BEAT_SELECT = BEAT_SELECT_FULL;
@@ -53,6 +54,7 @@ export function mapBeatRow(
     coverRef: row.cover_ref,
     status: row.status,
     rejectionReason: include ? (row.rejection_reason ?? null) : null,
+    lastSubmittedAt: include ? (row.last_submitted_at ?? null) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

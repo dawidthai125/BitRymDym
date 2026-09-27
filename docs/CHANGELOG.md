@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — COMMUNITY WAVE 5: HARDENING + EPIC CLOSEOUT
+
+**Status:** **IMPLEMENTED / VERIFIED** · EPIC **COMPLETE / LOCKED**
+
+- Submit cooldown: `beats.last_submitted_at` + trigger (60s) + service `assertSubmitCooldown`
+- Cleared on `REJECTED → DRAFT` (legitimate rework allowed)
+- Security regression suite (AuthZ/IDOR/READY/Storage/public visibility)
+- Live E2E: cooldown DENY · reject/rework · approve · publish · public · PLATFORM regression
+- Audit/telemetry: DOWNLOAD_EVENT remains SSOT for downloads; beat lifecycle audit **deferred** (invariants enforced without new framework)
+- Migration: `community_wave5_submit_cooldown`
+
+---
+
 ## 2026-09-27 — COMMUNITY WAVE 4: STAFF PUBLISH APPROVED USER BEATS
 
 **Status:** **IMPLEMENTED / VERIFIED** · ADMIN + MODERATOR · USER DENY · READY hard gate first
