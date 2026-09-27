@@ -6,6 +6,27 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — BPM PRODUCTION IMPLEMENTATION V1
+
+**Status:** **IMPLEMENTED** on `main` · **ACCURACY NOT CERTIFIED** · Phase 1.9 **NOT CLOSED**
+
+- Platform Beat create: A=`tempo()` + B=`combTempo()` → C_NEAR → RULE B → AUTO_SUGGEST | MANUAL_REQUIRED
+- Server re-probe + `resolveCreateBpm`; client BPM untrusted; user override allowed (1–300)
+- DB unchanged (`beats.bpm` only); no telemetry / confidence columns
+- Docs: [PHASE_BPM_DESIGN_FREEZE.md](./phases/PHASE_BPM_DESIGN_FREEZE.md) · [BPM_AUTO_DETECTION.md](./architecture/BPM_AUTO_DETECTION.md)
+
+---
+
+## 2026-09-26 — SCOPE B — BPM AUTO-DETECTION (RESEARCH → V1)
+
+**Status:** Research + Design Freeze completed; production wiring shipped as V1 above · **NOT accuracy-certified**
+
+- Detector: `@audio/beat` signal analysis (not ID3); decode WAV/MP3 via `audio-decode`; FLAC/AAC/M4A → manual BPM
+- Experiments V2–V5 + Design Freeze precede production resolver (C_NEAR + RULE B)
+- Benchmark fixtures remain outside git; accuracy Owner-gated
+
+---
+
 ## 2026-09-26 — SCOPE A — AUDIO-FIRST PLATFORM BEAT UPLOAD (LOCAL)
 
 **Status:** Scope A **IMPLEMENTED locally** · BPM auto (**Scope B**) **DEFERRED** · Phase 1.9 **NOT CLOSED** · **NO COMMIT / NO PUSH**

@@ -2,6 +2,11 @@ import "server-only";
 
 import { parseBuffer } from "music-metadata";
 
+import {
+  analyzeBeatBpm,
+  type BpmProbeResult,
+} from "@/lib/beats/audio-bpm";
+import type { BeatBpmAnalysis } from "@/lib/beats/bpm-ensemble";
 import { validateAudioUploadMeta } from "@/lib/beats/audio-validation";
 import { suggestTitleFromFilename } from "@/lib/beats/filename-title";
 import {
@@ -81,6 +86,26 @@ export async function probeAudioDurationFromBytes(params: {
   }
 }
 
+export type AnalyzedBeatBpm =
+  | {
+      status: "auto_suggest";
+      bpm: number;
+      reason: string;
+      analysis: BeatBpmAnalysis;
+    }
+  | {
+      status: "manual_required";
+      message: string;
+      reason: string;
+      analysis: BeatBpmAnalysis;
+    }
+  | {
+      status: "unavailable";
+      message: string;
+      reason?: string;
+      analysis?: BeatBpmAnalysis;
+    };
+
 export type AnalyzedBeatAudio =
   | {
       ok: true;
@@ -88,11 +113,38 @@ export type AnalyzedBeatAudio =
       byteSize: number;
       contentType: string;
       titleSuggestion: string;
+      bpm: AnalyzedBeatBpm;
+      bpmProbe: BpmProbeResult;
     }
   | { ok: false; error: string };
 
+function mapBpmProbe(probe: BpmProbeResult): AnalyzedBeatBpm {
+  if (probe.status === "auto_suggest") {
+    return {
+      status: "auto_suggest",
+      bpm: probe.bpm,
+      reason: probe.reason,
+      analysis: probe.analysis,
+    };
+  }
+  if (probe.status === "manual_required") {
+    return {
+      status: "manual_required",
+      message: probe.message,
+      reason: probe.reason,
+      analysis: probe.analysis,
+    };
+  }
+  return {
+    status: "unavailable",
+    message: probe.message,
+    reason: probe.reason,
+    analysis: probe.analysis,
+  };
+}
+
 /**
- * Full server-side audio gate for create-with-master: MIME/size + duration.
+ * Full server-side audio gate: MIME/size + duration + BPM ensemble probe.
  */
 export async function analyzeBeatAudioBytes(params: {
   bytes: Uint8Array;
@@ -115,11 +167,18 @@ export async function analyzeBeatAudioBytes(params: {
     return { ok: false, error: probe.error };
   }
 
+  const bpmProbe = await analyzeBeatBpm({
+    bytes: params.bytes,
+    contentType: params.contentType,
+  });
+
   return {
     ok: true,
     durationSeconds: probe.durationSeconds,
     byteSize: params.bytes.byteLength,
     contentType: params.contentType,
     titleSuggestion: suggestTitleFromFilename(params.originalFilename),
+    bpm: mapBpmProbe(bpmProbe),
+    bpmProbe,
   };
 }

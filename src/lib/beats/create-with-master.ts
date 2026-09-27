@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { AuthError, requirePermission } from "@/lib/auth/session";
+import { resolveCreateBpm } from "@/lib/beats/audio-bpm-rank";
 import { analyzeBeatAudioBytes } from "@/lib/beats/audio-duration";
 import { uploadPlatformBeatAudio } from "@/lib/beats/audio-service";
 import { createPlatformBeat } from "@/lib/beats/service";
+import type { BeatBpmAnalysis } from "@/lib/beats/bpm-ensemble";
 
 export type CreateWithMasterActionState = {
   error: string | null;
@@ -40,10 +42,18 @@ export type AnalyzeBeatAudioResult = {
   byteSize?: number;
   contentType?: string;
   titleSuggestion?: string;
+  /** Present when AUTO_SUGGEST. */
+  bpm?: number;
+  bpmDecision?: "AUTO_SUGGEST" | "MANUAL_REQUIRED";
+  bpmReason?: string;
+  bpmUnavailable?: boolean;
+  bpmMessage?: string;
+  /** Internal diagnostics — not shown as accuracy claims. */
+  bpmAnalysis?: BeatBpmAnalysis;
 };
 
 /**
- * ADMIN-only: probe uploaded bytes for duration + title suggestion.
+ * ADMIN-only: probe uploaded bytes for duration + BPM ensemble + title suggestion.
  * Does not create a beat or write storage.
  */
 export async function analyzeAdminBeatAudioAction(params: {
@@ -62,13 +72,45 @@ export async function analyzeAdminBeatAudioAction(params: {
     if (!analyzed.ok) {
       return { error: analyzed.error, success: false };
     }
-    return {
+
+    const base: AnalyzeBeatAudioResult = {
       error: null,
       success: true,
       durationSeconds: analyzed.durationSeconds,
       byteSize: analyzed.byteSize,
       contentType: analyzed.contentType,
       titleSuggestion: analyzed.titleSuggestion,
+    };
+
+    if (analyzed.bpm.status === "auto_suggest") {
+      return {
+        ...base,
+        bpm: analyzed.bpm.bpm,
+        bpmDecision: "AUTO_SUGGEST",
+        bpmReason: analyzed.bpm.reason,
+        bpmUnavailable: false,
+        bpmAnalysis: analyzed.bpm.analysis,
+      };
+    }
+
+    if (analyzed.bpm.status === "manual_required") {
+      return {
+        ...base,
+        bpmDecision: "MANUAL_REQUIRED",
+        bpmReason: analyzed.bpm.reason,
+        bpmUnavailable: true,
+        bpmMessage: analyzed.bpm.message,
+        bpmAnalysis: analyzed.bpm.analysis,
+      };
+    }
+
+    return {
+      ...base,
+      bpmDecision: "MANUAL_REQUIRED",
+      bpmReason: analyzed.bpm.reason,
+      bpmUnavailable: true,
+      bpmMessage: analyzed.bpm.message,
+      bpmAnalysis: analyzed.bpm.analysis,
     };
   } catch (error) {
     if (error instanceof AuthError) {
@@ -85,8 +127,7 @@ export async function analyzeAdminBeatAudioAction(params: {
 }
 
 /**
- * Scope A: create PLATFORM DRAFT using server-probed duration, then upload MASTER
- * via existing uploadPlatformBeatAudio (single storage write).
+ * Create PLATFORM DRAFT with server duration + BPM ensemble policy, then MASTER upload.
  */
 export async function createPlatformBeatWithMasterAction(params: {
   base64: string;
@@ -98,6 +139,8 @@ export async function createPlatformBeatWithMasterAction(params: {
   genre?: string | null;
   style?: string | null;
   bpm: number;
+  /** Operator explicitly changed BPM from auto suggestion (or filled manual). */
+  bpmManualOverride?: boolean;
   key?: string | null;
   scale?: string | null;
   tags?: string[];
@@ -116,13 +159,21 @@ export async function createPlatformBeatWithMasterAction(params: {
       return { error: analyzed.error, success: false };
     }
 
-    // BPM: required integer 1–300 — validated again inside createPlatformBeat.
-    if (
-      typeof params.bpm !== "number" ||
-      !Number.isInteger(params.bpm) ||
-      Number.isNaN(params.bpm)
-    ) {
-      return { error: "BPM jest wymagane (1–300).", success: false };
+    const suggestedBpm =
+      analyzed.bpm.status === "auto_suggest" ? analyzed.bpm.bpm : null;
+    // Decode ran for WAV/MP3 even when MANUAL_REQUIRED (ensemble abstained).
+    const decodeAvailable =
+      analyzed.bpm.status === "auto_suggest" ||
+      analyzed.bpm.status === "manual_required";
+
+    const bpmResolved = resolveCreateBpm({
+      clientBpm: params.bpm,
+      bpmManualOverride: Boolean(params.bpmManualOverride),
+      suggestedBpm,
+      decodeAvailable,
+    });
+    if (!bpmResolved.ok) {
+      return { error: bpmResolved.error, success: false };
     }
 
     const beat = await createPlatformBeat({
@@ -131,7 +182,7 @@ export async function createPlatformBeatWithMasterAction(params: {
       description: params.description ?? null,
       genre: params.genre ?? null,
       style: params.style ?? null,
-      bpm: params.bpm,
+      bpm: bpmResolved.bpm,
       key: params.key ?? null,
       scale: params.scale ?? null,
       durationSeconds: analyzed.durationSeconds,

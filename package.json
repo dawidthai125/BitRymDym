@@ -9,12 +9,20 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "benchmark:bpm": "tsx scripts/run-bpm-benchmark.ts",
+    "experiment:bpm-v2": "tsx scripts/run-bpm-experiment-v2.ts",
+    "experiment:bpm-v3": "tsx scripts/run-bpm-experiment-v3.ts",
+    "experiment:bpm-v4": "tsx scripts/run-bpm-experiment-v4.ts",
+    "experiment:bpm-v5": "tsx scripts/run-bpm-experiment-v5.ts",
+    "generate:bpm-fixtures": "tsx scripts/generate-bpm-fixtures.ts"
   },
   "dependencies": {
+    "@audio/beat": "^2.1.3",
     "@base-ui/react": "^1.8.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
+    "audio-decode": "^3.12.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "lucide-react": "^1.48.0",
@@ -34,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^2.1.9"
   }

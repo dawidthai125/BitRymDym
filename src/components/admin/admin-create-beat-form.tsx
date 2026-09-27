@@ -23,6 +23,15 @@ import { suggestTitleFromFilename } from "@/lib/beats/filename-title";
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
+type BpmUiState =
+  | { mode: "idle" }
+  | {
+      mode: "auto";
+      suggested: number;
+      overridden: boolean;
+    }
+  | { mode: "manual_required"; message: string; overridden: boolean };
+
 type AnalysisState =
   | { status: "idle" }
   | { status: "analyzing" }
@@ -73,6 +82,7 @@ export function AdminCreateBeatForm() {
   const [analysis, setAnalysis] = useState<AnalysisState>({ status: "idle" });
   const [title, setTitle] = useState("");
   const [bpm, setBpm] = useState("");
+  const [bpmUi, setBpmUi] = useState<BpmUiState>({ mode: "idle" });
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const analyzeGeneration = useRef(0);
@@ -83,6 +93,7 @@ export function AdminCreateBeatForm() {
     setFile(next);
     setTitle("");
     setBpm("");
+    setBpmUi({ mode: "idle" });
     setFormError(null);
     setSuccess(false);
 
@@ -147,6 +158,28 @@ export function AdminCreateBeatForm() {
           titleSuggestion: suggestion,
           filename: next.name,
         });
+
+        if (
+          result.bpmDecision === "AUTO_SUGGEST" &&
+          typeof result.bpm === "number" &&
+          Number.isInteger(result.bpm)
+        ) {
+          setBpm(String(result.bpm));
+          setBpmUi({
+            mode: "auto",
+            suggested: result.bpm,
+            overridden: false,
+          });
+        } else {
+          setBpm("");
+          setBpmUi({
+            mode: "manual_required",
+            message:
+              result.bpmMessage ??
+              "BPM nie udało się wiarygodnie określić.",
+            overridden: false,
+          });
+        }
       } catch {
         if (analyzeGeneration.current === generation) {
           setAnalysis({
@@ -155,6 +188,24 @@ export function AdminCreateBeatForm() {
           });
         }
       }
+    });
+  }
+
+  function onBpmChange(value: string) {
+    setBpm(value);
+    setBpmUi((prev) => {
+      if (prev.mode === "auto") {
+        const n = Number(value);
+        const overridden =
+          !value.trim() ||
+          !Number.isInteger(n) ||
+          n !== prev.suggested;
+        return { ...prev, overridden };
+      }
+      if (prev.mode === "manual_required") {
+        return { ...prev, overridden: Boolean(value.trim()) };
+      }
+      return prev;
     });
   }
 
@@ -178,9 +229,16 @@ export function AdminCreateBeatForm() {
 
     const bpmValue = Number(bpm);
     if (!bpm.trim() || !Number.isInteger(bpmValue)) {
-      setFormError("BPM — wpisz ręcznie liczbę całkowitą (1–300).");
+      setFormError("BPM — wpisz liczbę całkowitą (1–300).");
       return;
     }
+
+    const bpmManualOverride =
+      bpmUi.mode === "auto"
+        ? bpmUi.overridden
+        : bpmUi.mode === "manual_required"
+          ? true
+          : true;
 
     const form = event.currentTarget;
     const producer = String(
@@ -227,6 +285,7 @@ export function AdminCreateBeatForm() {
           genre: genre || null,
           style: style || null,
           bpm: bpmValue,
+          bpmManualOverride,
           key: key || null,
           scale: scale || null,
           tags: tagsRaw
@@ -255,6 +314,17 @@ export function AdminCreateBeatForm() {
     !analyzing &&
     Boolean(title.trim()) &&
     Boolean(bpm.trim());
+
+  let bpmHint: string | null = null;
+  if (bpmUi.mode === "auto") {
+    if (bpmUi.overridden) {
+      bpmHint = "BPM zmieniony ręcznie.";
+    } else {
+      bpmHint = "Automatycznie wykryto";
+    }
+  } else if (bpmUi.mode === "manual_required") {
+    bpmHint = bpmUi.message;
+  }
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-8">
@@ -379,7 +449,7 @@ export function AdminCreateBeatForm() {
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="flex flex-col gap-1 text-sm">
-            BPM — wpisz ręcznie *
+            BPM *
             <input
               name="bpm"
               type="number"
@@ -387,14 +457,32 @@ export function AdminCreateBeatForm() {
               min={1}
               max={300}
               value={bpm}
-              onChange={(e) => setBpm(e.target.value)}
+              onChange={(e) => onBpmChange(e.target.value)}
               disabled={!analysisReady || pending}
-              placeholder="np. 140"
+              placeholder={
+                bpmUi.mode === "manual_required" ? "wpisz BPM" : undefined
+              }
               className={fieldClass}
             />
-            <span className="text-xs text-muted-foreground">
-              Automatyczne wykrywanie BPM będzie dostępne w późniejszej wersji.
-            </span>
+            {bpmHint ? (
+              <span className="text-xs text-muted-foreground">{bpmHint}</span>
+            ) : null}
+            {bpmUi.mode === "auto" && !bpmUi.overridden ? (
+              <button
+                type="button"
+                className="self-start text-xs text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() => {
+                  setBpm("");
+                  setBpmUi((prev) =>
+                    prev.mode === "auto"
+                      ? { ...prev, overridden: true }
+                      : prev,
+                  );
+                }}
+              >
+                Zmień BPM
+              </button>
+            ) : null}
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Tonacja

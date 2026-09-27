@@ -44,6 +44,16 @@ describe("beat validation", () => {
     ).toMatchObject({ ok: false });
   });
 
+  it("rejects NaN and ±Infinity BPM (cannot reach beats.bpm)", () => {
+    expect(validateBeatInput({ ...base, bpm: Number.NaN }).ok).toBe(false);
+    expect(
+      validateBeatInput({ ...base, bpm: Number.POSITIVE_INFINITY }).ok,
+    ).toBe(false);
+    expect(
+      validateBeatInput({ ...base, bpm: Number.NEGATIVE_INFINITY }).ok,
+    ).toBe(false);
+  });
+
   it("rejects string-like BPM values at type boundary", () => {
     const result = validateBeatInput({
       ...base,

@@ -35,7 +35,9 @@ Phase 1.8A: **COMPLETE / CLOSED / LOCKED** @ `fd87f23`.
 Phase 1.9 Design Freeze: [PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
 Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md).
 
-**Scope A (audio-first create):** implemented locally — duration via `music-metadata`, title suggestion, file metadata auto, **BPM manual**. **Scope B (BPM auto):** DEFERRED.
+**Scope A (audio-first create):** on `main` @ `3bbde92` — duration via `music-metadata`, title suggestion.
+
+**Scope B (BPM auto):** **BPM Production Implementation V1** — A+B → C_NEAR → RULE B · **ACCURACY NOT CERTIFIED**. Docs: [BPM_AUTO_DETECTION.md](./architecture/BPM_AUTO_DETECTION.md) · [PHASE_BPM_DESIGN_FREEZE.md](./phases/PHASE_BPM_DESIGN_FREEZE.md).
 
 ---
 
@@ -56,8 +58,9 @@ PHASE CLOSED = NO
 | Auth signup UX + OTP confirm + Brevo | **PASS** (production) |
 | 1.9 Operator ADMIN bootstrap (OD-20) | **PASS** (`dawid.thai@int.pl` → ADMIN; account_level unchanged) |
 | Admin nav „Panel administratora” | **IMPLEMENTED locally** — **NOT COMMITTED / NOT DEPLOYED** |
-| Scope A audio-first `/admin/beats/new` | **IMPLEMENTED locally** — duration auto + title suggestion + BPM manual; **NOT COMMITTED / NOT DEPLOYED** |
-| Scope B BPM auto-detection | **DEFERRED** — Owner GO required |
+| Scope A audio-first `/admin/beats/new` | **ON PRODUCTION** @ `3bbde92` |
+| Scope B BPM auto-detection | **V1 ON MAIN** — C_NEAR + RULE B; **ACCURACY NOT CERTIFIED** |
+| Scope B community moderation | **NOT STARTED** (audit only) |
 | 1.9 First PLATFORM beat + E2E | **BLOCKED** — requires ADMIN browser session + MASTER via UI (prefer Scope A flow after deploy) |
 | 1.9 Phase CLOSED | **NO** |
 
