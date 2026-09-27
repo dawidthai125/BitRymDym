@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — AUDIO TRANSPORT V1 (SIGNED BINARY UPLOAD)
+
+**Status:** Design Freeze **APPROVED** · Implementation **COMMITTED** · Deploy **PENDING VERCEL**
+
+- Gap: base64 Server Action vs Next.js 1 MB body limit blocked >1 MB WAV E2E
+- Decision: **signed binary upload** to private `beat-audio` (not bodySizeLimit-as-fix; not RH multipart as sole path)
+- DRAFT-beat-first · BPM V1 unchanged (`471dd5b`)
+- Live E2E localhost: `bpm-120-steady.wav` ~2.52 MiB → session → signed upload → analyze → finalize · no HTTP 413 · BPM 120 AUTO_SUGGEST
+- Docs: [PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md](./phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md) · [AUDIO_TRANSPORT.md](./architecture/AUDIO_TRANSPORT.md)
+
+---
+
 ## 2026-09-27 — BPM PRODUCTION IMPLEMENTATION V1
 
 **Status:** **IMPLEMENTED** on `main` · **ACCURACY NOT CERTIFIED** · Phase 1.9 **NOT CLOSED**

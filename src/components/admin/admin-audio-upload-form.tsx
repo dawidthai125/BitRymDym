@@ -4,25 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
-import { uploadPlatformBeatAudioAction } from "@/lib/beats/audio-actions";
-import { BEAT_AUDIO_MAX_BYTES } from "@/lib/beats/audio-validation";
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Nie udało się odczytać pliku."));
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== "string") {
-        reject(new Error("Nie udało się odczytać pliku."));
-        return;
-      }
-      const comma = result.indexOf(",");
-      resolve(comma >= 0 ? result.slice(comma + 1) : result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
+import {
+  BEAT_AUDIO_MAX_BYTES,
+  resolveAudioContentType,
+} from "@/lib/beats/audio-validation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function AdminAudioUploadForm({
   beatId,
@@ -35,11 +21,13 @@ export function AdminAudioUploadForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setSuccess(null);
+    setProgress(null);
 
     const form = event.currentTarget;
     const input = form.elements.namedItem("audio") as HTMLInputElement | null;
@@ -53,48 +41,113 @@ export function AdminAudioUploadForm({
       return;
     }
 
+    const contentType =
+      resolveAudioContentType({
+        fileType: file.type,
+        filename: file.name,
+      }) ?? file.type;
+    if (!contentType) {
+      setError("Nieobsługiwany format audio.");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        const base64 = await fileToBase64(file);
-        const result = await uploadPlatformBeatAudioAction({
-          beatId,
-          purpose: "MASTER",
-          base64,
-          contentType: file.type || "audio/mpeg",
-          originalFilename: file.name,
+        setProgress("Przygotowanie uploadu…");
+        const sessionRes = await fetch(`/api/admin/beats/${beatId}/master`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "session",
+            contentType,
+            byteSize: file.size,
+            originalFilename: file.name,
+          }),
         });
-        if (!result.success) {
-          setError(result.error ?? "Upload nie powiódł się.");
+        const sessionJson = (await sessionRes.json()) as {
+          success?: boolean;
+          error?: string;
+          path?: string;
+          token?: string;
+          assetId?: string;
+        };
+        if (
+          !sessionRes.ok ||
+          !sessionJson.success ||
+          !sessionJson.path ||
+          !sessionJson.token ||
+          !sessionJson.assetId
+        ) {
+          setError(sessionJson.error ?? "Upload session failed.");
+          setProgress(null);
           return;
         }
+
+        setProgress("Upload audio…");
+        const supabase = createSupabaseBrowserClient();
+        const { error: uploadError } = await supabase.storage
+          .from("beat-audio")
+          .uploadToSignedUrl(sessionJson.path, sessionJson.token, file, {
+            contentType,
+            upsert: false,
+          });
+        if (uploadError) {
+          setError(uploadError.message || "Upload failed.");
+          setProgress(null);
+          return;
+        }
+
+        setProgress("Finalizacja…");
+        const completeRes = await fetch(`/api/admin/beats/${beatId}/master`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "complete",
+            assetId: sessionJson.assetId,
+          }),
+        });
+        const completeJson = (await completeRes.json()) as {
+          success?: boolean;
+          error?: string;
+        };
+        if (!completeRes.ok || !completeJson.success) {
+          setError(completeJson.error ?? "Upload nie powiódł się.");
+          setProgress(null);
+          return;
+        }
+
         setSuccess("MASTER audio READY.");
+        setProgress(null);
         form.reset();
         router.refresh();
       } catch {
         setError("Błąd sieci / serwera podczas uploadu.");
+        setProgress(null);
       }
     });
   }
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-3">
+      <h2 className="text-sm font-semibold tracking-wide">MASTER audio</h2>
       <p className="text-sm text-muted-foreground">
-        Status MASTER:{" "}
-        <span className="font-medium text-foreground">
-          {activeMasterReady ? "READY" : "brak aktywnego READY"}
-        </span>
+        {activeMasterReady
+          ? "Aktywny MASTER READY — upload zastąpi poprzedni plik."
+          : "Brak aktywnego MASTER READY — wgraj plik, aby odblokować publikację."}
       </p>
-      <label className="flex flex-col gap-1 text-sm">
-        Plik audio (MASTER)
-        <input
-          name="audio"
-          type="file"
-          accept="audio/mpeg,audio/wav,audio/x-wav,audio/flac,audio/mp4,audio/aac,.mp3,.wav,.flac,.m4a,.aac"
-          required
-          disabled={pending}
-          className="text-sm"
-        />
-      </label>
+      <input
+        name="audio"
+        type="file"
+        accept="audio/mpeg,audio/wav,audio/x-wav,audio/flac,audio/mp4,audio/aac,.mp3,.wav,.flac,.m4a,.aac"
+        required
+        disabled={pending}
+        className="text-sm"
+      />
+      {progress ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {progress}
+        </p>
+      ) : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
@@ -106,11 +159,7 @@ export function AdminAudioUploadForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending
-          ? "Wgrywanie…"
-          : activeMasterReady
-            ? "Zastąp MASTER"
-            : "Wgraj MASTER"}
+        {pending ? "Upload…" : "Upload MASTER"}
       </Button>
     </form>
   );

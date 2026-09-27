@@ -10,15 +10,12 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  analyzeAdminBeatAudioAction,
-  createPlatformBeatWithMasterAction,
-} from "@/lib/beats/create-with-master";
+import { finalizePlatformBeatWithMasterAction } from "@/lib/beats/create-with-master";
 import {
   BEAT_AUDIO_MAX_BYTES,
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
-import { suggestTitleFromFilename } from "@/lib/beats/filename-title";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
@@ -34,9 +31,12 @@ type BpmUiState =
 
 type AnalysisState =
   | { status: "idle" }
+  | { status: "uploading" }
   | { status: "analyzing" }
   | {
       status: "ready";
+      beatId: string;
+      assetId: string;
       durationSeconds: number;
       byteSize: number;
       contentType: string;
@@ -44,23 +44,6 @@ type AnalysisState =
       filename: string;
     }
   | { status: "error"; message: string };
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Nie udało się odczytać pliku."));
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== "string") {
-        reject(new Error("Nie udało się odczytać pliku."));
-        return;
-      }
-      const comma = result.indexOf(",");
-      resolve(comma >= 0 ? result.slice(comma + 1) : result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -102,7 +85,7 @@ export function AdminCreateBeatForm() {
       return;
     }
 
-    setAnalysis({ status: "analyzing" });
+    setAnalysis({ status: "uploading" });
 
     startAnalyze(async () => {
       try {
@@ -130,44 +113,127 @@ export function AdminCreateBeatForm() {
           return;
         }
 
-        const base64 = await fileToBase64(next);
-        const result = await analyzeAdminBeatAudioAction({
-          base64,
-          contentType,
-          originalFilename: next.name,
+        const sessionRes = await fetch("/api/admin/beats/audio/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contentType,
+            byteSize: next.size,
+            originalFilename: next.name,
+          }),
         });
+        const sessionJson = (await sessionRes.json()) as {
+          success?: boolean;
+          error?: string;
+          beatId?: string;
+          assetId?: string;
+          path?: string;
+          token?: string;
+          titleSuggestion?: string;
+          contentType?: string;
+        };
+        if (
+          !sessionRes.ok ||
+          !sessionJson.success ||
+          !sessionJson.beatId ||
+          !sessionJson.assetId ||
+          !sessionJson.path ||
+          !sessionJson.token
+        ) {
+          if (analyzeGeneration.current === generation) {
+            setAnalysis({
+              status: "error",
+              message: sessionJson.error ?? "Upload session failed.",
+            });
+          }
+          return;
+        }
+
+        if (analyzeGeneration.current === generation) {
+          setAnalysis({ status: "uploading" });
+        }
+
+        const supabase = createSupabaseBrowserClient();
+        const { error: uploadError } = await supabase.storage
+          .from("beat-audio")
+          .uploadToSignedUrl(sessionJson.path, sessionJson.token, next, {
+            contentType,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          if (analyzeGeneration.current === generation) {
+            setAnalysis({
+              status: "error",
+              message: uploadError.message || "Upload failed.",
+            });
+          }
+          return;
+        }
+
+        if (analyzeGeneration.current === generation) {
+          setAnalysis({ status: "analyzing" });
+        }
+
+        const analyzeRes = await fetch("/api/admin/beats/audio/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            beatId: sessionJson.beatId,
+            assetId: sessionJson.assetId,
+          }),
+        });
+        const analyzeJson = (await analyzeRes.json()) as {
+          success?: boolean;
+          error?: string;
+          durationSeconds?: number;
+          byteSize?: number;
+          contentType?: string;
+          titleSuggestion?: string;
+          bpmDecision?: "AUTO_SUGGEST" | "MANUAL_REQUIRED";
+          bpm?: number | null;
+          bpmMessage?: string;
+        };
 
         if (analyzeGeneration.current !== generation) return;
 
-        if (!result.success || result.durationSeconds == null) {
+        if (
+          !analyzeRes.ok ||
+          !analyzeJson.success ||
+          analyzeJson.durationSeconds == null
+        ) {
           setAnalysis({
             status: "error",
-            message: result.error ?? "Analiza audio nie powiodła się.",
+            message: analyzeJson.error ?? "Analiza audio nie powiodła się.",
           });
           return;
         }
 
         const suggestion =
-          result.titleSuggestion || suggestTitleFromFilename(next.name);
+          analyzeJson.titleSuggestion ||
+          sessionJson.titleSuggestion ||
+          next.name;
         setTitle(suggestion);
         setAnalysis({
           status: "ready",
-          durationSeconds: result.durationSeconds,
-          byteSize: result.byteSize ?? next.size,
-          contentType: result.contentType ?? contentType,
+          beatId: sessionJson.beatId,
+          assetId: sessionJson.assetId,
+          durationSeconds: analyzeJson.durationSeconds,
+          byteSize: analyzeJson.byteSize ?? next.size,
+          contentType: analyzeJson.contentType ?? contentType,
           titleSuggestion: suggestion,
           filename: next.name,
         });
 
         if (
-          result.bpmDecision === "AUTO_SUGGEST" &&
-          typeof result.bpm === "number" &&
-          Number.isInteger(result.bpm)
+          analyzeJson.bpmDecision === "AUTO_SUGGEST" &&
+          typeof analyzeJson.bpm === "number" &&
+          Number.isInteger(analyzeJson.bpm)
         ) {
-          setBpm(String(result.bpm));
+          setBpm(String(analyzeJson.bpm));
           setBpmUi({
             mode: "auto",
-            suggested: result.bpm,
+            suggested: analyzeJson.bpm,
             overridden: false,
           });
         } else {
@@ -175,7 +241,7 @@ export function AdminCreateBeatForm() {
           setBpmUi({
             mode: "manual_required",
             message:
-              result.bpmMessage ??
+              analyzeJson.bpmMessage ??
               "BPM nie udało się wiarygodnie określić.",
             overridden: false,
           });
@@ -184,7 +250,7 @@ export function AdminCreateBeatForm() {
         if (analyzeGeneration.current === generation) {
           setAnalysis({
             status: "error",
-            message: "Błąd sieci / serwera podczas analizy.",
+            message: "Błąd sieci / serwera podczas uploadu lub analizy.",
           });
         }
       }
@@ -197,9 +263,7 @@ export function AdminCreateBeatForm() {
       if (prev.mode === "auto") {
         const n = Number(value);
         const overridden =
-          !value.trim() ||
-          !Number.isInteger(n) ||
-          n !== prev.suggested;
+          !value.trim() || !Number.isInteger(n) || n !== prev.suggested;
         return { ...prev, overridden };
       }
       if (prev.mode === "manual_required") {
@@ -214,15 +278,11 @@ export function AdminCreateBeatForm() {
     setFormError(null);
     setSuccess(false);
 
-    if (!file) {
-      setFormError("Wybierz plik audio.");
-      return;
-    }
-    if (analysis.status !== "ready") {
+    if (!file || analysis.status !== "ready") {
       setFormError(
         analysis.status === "error"
           ? analysis.message
-          : "Poczekaj na zakończenie analizy audio.",
+          : "Poczekaj na zakończenie uploadu i analizy.",
       );
       return;
     }
@@ -267,18 +327,13 @@ export function AdminCreateBeatForm() {
       (form.elements.namedItem("coverRef") as HTMLInputElement)?.value ?? "",
     ).trim();
 
+    const { beatId, assetId } = analysis;
+
     startTransition(async () => {
       try {
-        const contentType =
-          resolveAudioContentType({
-            fileType: file.type,
-            filename: file.name,
-          }) ?? analysis.contentType;
-        const base64 = await fileToBase64(file);
-        const result = await createPlatformBeatWithMasterAction({
-          base64,
-          contentType,
-          originalFilename: file.name,
+        const result = await finalizePlatformBeatWithMasterAction({
+          beatId,
+          assetId,
           title,
           producer: producer || null,
           description: description || null,
@@ -317,13 +372,19 @@ export function AdminCreateBeatForm() {
 
   let bpmHint: string | null = null;
   if (bpmUi.mode === "auto") {
-    if (bpmUi.overridden) {
-      bpmHint = "BPM zmieniony ręcznie.";
-    } else {
-      bpmHint = "Automatycznie wykryto";
-    }
+    bpmHint = bpmUi.overridden
+      ? "BPM zmieniony ręcznie."
+      : "Automatycznie wykryto";
   } else if (bpmUi.mode === "manual_required") {
     bpmHint = bpmUi.message;
+  }
+
+  let statusLine: string | null = null;
+  if (analysis.status === "uploading" || analyzing) {
+    statusLine =
+      analysis.status === "analyzing"
+        ? "Analizowanie…"
+        : "Upload audio…";
   }
 
   return (
@@ -345,9 +406,9 @@ export function AdminCreateBeatForm() {
           />
         </label>
 
-        {analysis.status === "analyzing" || analyzing ? (
+        {statusLine ? (
           <p className="text-sm text-muted-foreground" role="status">
-            Analizowanie…
+            {statusLine}
           </p>
         ) : null}
 
@@ -531,8 +592,7 @@ export function AdminCreateBeatForm() {
           PLATFORM · owner_id = NULL · status = DRAFT
         </p>
         <p className="text-xs text-muted-foreground">
-          Po utworzeniu DRAFT system wgrywa MASTER przez istniejący pipeline
-          audio (bez drugiego modelu uploadu).
+          Binary upload → private Storage → analiza BPM → finalize READY.
         </p>
       </section>
 

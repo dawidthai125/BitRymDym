@@ -24,12 +24,13 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| Canonical origin tip | `5d6b846` (`fix(auth): use otp confirmation flow for cross-browser signup`) |
+| Canonical origin tip | Audio Transport V1 on `main` (see CHANGELOG 2026-09-27) |
 | Phase 1.8A implementation | `fd87f23` |
-| Remote | `origin/main` @ `5d6b846` |
-| Local | **DIRTY** — Scope A audio-first upload + admin nav UX + Phase 1.9 docs; tooling untracked |
+| BPM Production V1 | `471dd5b` (unchanged by transport) |
+| Remote | `origin/main` — Audio Transport V1 |
+| Local | clean for transport scope; tooling (`.agents/`, `.cursor/`, `skills-lock.json`) untracked |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production app | **GREEN** @ `5d6b846` (Scope A **not deployed**) |
+| Production app | Audio Transport V1 **PENDING VERCEL** after push |
 
 Phase 1.8A: **COMPLETE / CLOSED / LOCKED** @ `fd87f23`.
 Phase 1.9 Design Freeze: [PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
@@ -37,7 +38,9 @@ Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md).
 
 **Scope A (audio-first create):** on `main` @ `3bbde92` — duration via `music-metadata`, title suggestion.
 
-**Scope B (BPM auto):** **BPM Production Implementation V1** — A+B → C_NEAR → RULE B · **ACCURACY NOT CERTIFIED**. Docs: [BPM_AUTO_DETECTION.md](./architecture/BPM_AUTO_DETECTION.md) · [PHASE_BPM_DESIGN_FREEZE.md](./phases/PHASE_BPM_DESIGN_FREEZE.md).
+**Scope B (BPM auto):** **BPM Production Implementation V1** @ `471dd5b` — A+B → C_NEAR → RULE B · **ACCURACY NOT CERTIFIED**.
+
+**Audio transport:** Design Freeze **APPROVED** — signed binary upload (no base64 Server Action). Docs: [PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md](./phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md) · [AUDIO_TRANSPORT.md](./architecture/AUDIO_TRANSPORT.md). Implementation **COMMITTED** · Deploy **PENDING VERCEL**.
 
 ---
 
@@ -59,7 +62,8 @@ PHASE CLOSED = NO
 | 1.9 Operator ADMIN bootstrap (OD-20) | **PASS** (`dawid.thai@int.pl` → ADMIN; account_level unchanged) |
 | Admin nav „Panel administratora” | **IMPLEMENTED locally** — **NOT COMMITTED / NOT DEPLOYED** |
 | Scope A audio-first `/admin/beats/new` | **ON PRODUCTION** @ `3bbde92` |
-| Scope B BPM auto-detection | **V1 ON MAIN** — C_NEAR + RULE B; **ACCURACY NOT CERTIFIED** |
+| Scope B BPM auto-detection | **V1 ON MAIN** @ `471dd5b` — C_NEAR + RULE B; **ACCURACY NOT CERTIFIED** |
+| Audio transport (anti-1MB) | **DESIGN FREEZE APPROVED** · signed upload V1 **COMMITTED** · **PENDING VERCEL** |
 | Scope B community moderation | **NOT STARTED** (audit only) |
 | 1.9 First PLATFORM beat + E2E | **BLOCKED** — requires ADMIN browser session + MASTER via UI (prefer Scope A flow after deploy) |
 | 1.9 Phase CLOSED | **NO** |

@@ -5,7 +5,6 @@ import { requestBeatAudioAccess } from "@/lib/beats/audio-access";
 import {
   archivePlatformBeatAudio,
   getBeatAudioPublicInfo,
-  uploadPlatformBeatAudio,
 } from "@/lib/beats/audio-service";
 import {
   isAudioAccessPurpose,
@@ -64,19 +63,12 @@ export async function uploadPlatformBeatAudioAction(params: {
   contentType: string;
   originalFilename?: string | null;
 }): Promise<AudioActionState> {
-  try {
-    const bytes = Uint8Array.from(Buffer.from(params.base64, "base64"));
-    const asset = await uploadPlatformBeatAudio({
-      beatId: params.beatId,
-      purpose: params.purpose,
-      bytes,
-      contentType: params.contentType,
-      originalFilename: params.originalFilename,
-    });
-    return { error: null, success: true, assetId: asset.id };
-  } catch (error) {
-    return catchAudio(error);
-  }
+  void params;
+  return {
+    error:
+      "Użyj binary upload (signed Storage). Base64 Server Action jest wyłączone.",
+    success: false,
+  };
 }
 
 export async function archivePlatformBeatAudioAction(
