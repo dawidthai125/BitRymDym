@@ -64,6 +64,43 @@ export type Beat = {
   updatedAt: string;
 };
 
+/** Recording Wave 1 — take lifecycle (MIC TAKE, not beat asset). */
+export const TAKE_STATUSES = [
+  "PENDING_UPLOAD",
+  "READY",
+  "FAILED",
+  "EXPIRED",
+  "DELETED",
+] as const;
+export type TakeStatus = (typeof TAKE_STATUSES)[number];
+
+export const TAKE_RECORDING_MODES = ["QUICK", "FULL"] as const;
+export type TakeRecordingMode = (typeof TAKE_RECORDING_MODES)[number];
+
+/** Recording Wave 1 take row (bytes in private take-audio Storage). */
+export type Take = {
+  id: string;
+  ownerId: string | null;
+  anonymousTokenHash: string | null;
+  beatId: string;
+  status: TakeStatus;
+  recordingMode: TakeRecordingMode;
+  durationSeconds: number | null;
+  byteSize: number | null;
+  contentType: string | null;
+  storageBucket: string;
+  objectKey: string;
+  beatDurationSecondsSnapshot: number;
+  recordingMaxSecondsSnapshot: number;
+  beatBpmSnapshot: number | null;
+  audioOffsetMs: number;
+  expiresAt: string;
+  deletedAt: string | null;
+  failureReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 /** Phase 1.5 audio asset metadata (bytes live in private Storage). */
 export type BeatAudioAsset = {
   id: string;

@@ -44,6 +44,14 @@
 | OD-COMMUNITY-03 | Permission / ownership dla USER create + submit | §8, §36 | Community upload AuthZ | **CLOSED / ACCEPTED** — 2026-09-27 |
 | OD-COMMUNITY-04 | Account levels a upload V1 | §4 | Community upload eligibility | **CLOSED / ACCEPTED** — 2026-09-27 |
 | OD-COMMUNITY-05 | USER archive własnego PUBLISHED | §8 | Community lifecycle | **CLOSED / ACCEPTED** — 2026-09-27 |
+| OD-REC-01 | RECORD capability vs PLAYBACK/DOWNLOAD | §18–§24 | Recording Access | **CLOSED / ACCEPTED** — 2026-09-27 (D01=A) |
+| OD-REC-02 | Anonymous Quick Take in V1 | §20 | Recording scope | **CLOSED / ACCEPTED** — 2026-09-27 (D02=B) |
+| OD-REC-03 | Shared grants + RECORD in Recording EPIC | §16, §18 | Shared recording | **CLOSED / ACCEPTED** — 2026-09-27 (D03=B) |
+| OD-REC-04 | Account Level + future Premium hybrid entitlements | §4, §22–§23 | Recording entitlements | **CLOSED / ACCEPTED** — 2026-09-27 (D04=HYBRID) |
+| OD-REC-05 | LEGEND take retention = 30 days | §21–§23 | Retention | **CLOSED / ACCEPTED** — 2026-09-27 (D05) |
+| OD-REC-06 | Own MIC TAKE preview/download/delete; Track publish OUT | §19, §25 | Take ownership UX | **CLOSED / ACCEPTED** — 2026-09-27 (D06) |
+| OD-REC-07 | Anti-abuse active + daily session caps | §39 | Recording abuse | **CLOSED / ACCEPTED** — 2026-09-27 (D07) |
+| OD-REC-08 | Own MIC TAKE download for BEGINNER/PRO/LEGEND; anon no durable DL | §19–§21 | Take download | **CLOSED / ACCEPTED** — 2026-09-27 (D08) |
 
 ---
 
@@ -66,6 +74,16 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-COMMUNITY-03 | USER gets `beats.create`; ownership via service+RLS+trigger; submit own+READY | 2026-09-27 |
 | OD-COMMUNITY-04 | All account levels may upload V1; no Premium bypass | 2026-09-27 |
 | OD-COMMUNITY-05 | USER may archive own PUBLISHED (and DRAFT/REJECTED) | 2026-09-27 |
+| OD-REC-01 | RECORD ≠ PLAYBACK ≠ DOWNLOAD; one Access layer, three capabilities | 2026-09-27 |
+| OD-REC-02 | Anonymous QT IN V1 (30s, short TTL, signed upload, CTA login) | 2026-09-27 |
+| OD-REC-03 | Shared grants + RECORD IN Recording EPIC; least privilege flags | 2026-09-27 |
+| OD-REC-04 | Hybrid: Account Level base + future Premium overlay; no payments in V1 | 2026-09-27 |
+| OD-REC-05 | Retention BEGINNER 24h / PRO 10d / LEGEND 30d | 2026-09-27 |
+| OD-REC-06 | Own take preview/download/delete; Track publish OUT of Recording EPIC | 2026-09-27 |
+| OD-REC-07 | Anti-abuse caps (anon/BEGINNER/PRO/LEGEND active + daily sessions) | 2026-09-27 |
+| OD-REC-08 | Own take download YES for logged-in tiers; anon no durable take DL | 2026-09-27 |
+
+Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 
 ---
 
@@ -95,9 +113,11 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 - **Supabase Auth jest zatwierdzone** (OD-03 CLOSED) — nie traktować już jako „preferencji roboczej”.
 - Signup default: `role = USER`, `account_level = BEGINNER_RAPPER` (**OD-19 CLOSED**).
 - First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).
-- Community upload: Design Freeze **READY / OWNER GO** — OD-COMMUNITY-01…05 **CLOSED**; implementation awaits separate Owner GO. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
-- Retencja nagrania Premium (`premium_take_retention_days = 10`) jest przykładem konfiguracji z SSOT — nie mnożyć magicznych liczb w kodzie (§23).
-- Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED.
+- Community upload: EPIC **COMPLETE / LOCKED** @ `c5e1f17` — OD-COMMUNITY-01…05 **CLOSED**. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
+- Recording / Quick Take: Design Freeze **LOCKED** — OD-REC-01…08 **CLOSED**. Implementation awaits separate Wave 1 Owner GO. See [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
+- Recording retention V1: BEGINNER 24h · PRO 10d · LEGEND 30d (config, not scattered magic numbers). Future Premium overlay (OD-04/07/08) may boost — hybrid D04.
+- Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
+- OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.
 
 ---
 

@@ -30,9 +30,9 @@
 | Storage audio | private; playback/download; signed URLs | §9 |
 | Player | autorski; bez `<audio controls>` jako UI | §10 |
 | Pobieranie | signed URL + limity + audit | §12–13 |
-| Quick Take | max 30 s; retencja 24 h (zalogowany) | §18–21 |
-| Premium Full Take | ≤ długość bitu ≤ 180 s; retencja 10 dni (konfig) | §22–23 |
-| Feature flags płatności | wyłączone na start | §14–15 |
+| Quick Take | max 30 s; retencja 24 h (BEGINNER); anon IN V1 | §18–21 · **FREEZE LOCKED** |
+| Full Take (PRO/LEGEND V1) | ≤ długość bitu ≤ 180 s; PRO 10 dni · LEGEND 30 dni | §22–23 · OD-REC-04/05 |
+| Feature flags płatności | wyłączone na start; Premium = future overlay | §14–15 · D04 hybrid |
 | Bezpieczeństwo | krytyczne reguły tylko po stronie serwera | §39 |
 
 ---
@@ -55,6 +55,7 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | Audio Transport V1 | **CLOSED / PRODUCTION VERIFIED** @ `73e213c` |
 | Phase 1.9 Operator enablement | **CLOSED / LOCKED** @ `47643c2` |
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
-| Community Upload + Moderation | **EPIC COMPLETE / LOCKED** (Waves 1–5) |
+| Community Upload + Moderation | **EPIC COMPLETE / LOCKED** (Waves 1–5) @ `c5e1f17` |
+| Recording / Quick Take | **DESIGN FREEZE LOCKED** · **Wave 1 foundation IMPLEMENTED** — [RECORDING.md](./RECORDING.md) |
 
-See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
+See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).

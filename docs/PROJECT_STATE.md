@@ -20,36 +20,22 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| Community Wave 1 | **COMPLETE** @ `609a05e` |
-| Community Wave 2 | **COMPLETE** @ `9cfb3cf` |
-| Community Wave 3 | **COMPLETE** @ `f5f6b4f` |
-| Community Wave 4 | **COMPLETE** @ `b47767b` |
-| Community Wave 5 | **IMPLEMENTED** (hardening + closeout; deploy this session) |
-| **Community Upload + Moderation EPIC** | **COMPLETE / LOCKED** (pending final SHA after deploy) |
+| Community Upload + Moderation EPIC | **COMPLETE / LOCKED** @ `c5e1f17` |
+| Recording Design Freeze | **LOCKED** |
+| **Recording Wave 1** | **IMPLEMENTED** (await Owner commit/review) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN |
+| Production | GREEN (Wave 1 migration applied remote; app deploy pending Owner commit) |
 
-Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
+Wave 1 audit: [RECORDING_WAVE1_IMPLEMENTATION_AUDIT.md](./audits/RECORDING_WAVE1_IMPLEMENTATION_AUDIT.md)
 
 ---
 
 ## 3. Current Phase
 
 ```text
-COMMUNITY UPLOAD + MODERATION EPIC = COMPLETE / LOCKED
-WAVE 1 = ownership / RLS / AuthZ @ 609a05e
-WAVE 2 = USER signed audio transport @ 9cfb3cf
-WAVE 3 = submit + moderation @ f5f6b4f
-WAVE 4 = staff publish APPROVED→PUBLISHED @ b47767b
-WAVE 5 = hardening (submit cooldown) + security closeout
-```
-
-### Final lifecycle
-
-```text
-USER: DRAFT → (READY) → PENDING_REVIEW → [REJECTED → DRAFT]* → APPROVED
-STAFF: APPROVED → PUBLISHED
-Public: only PUBLISHED · Access Gate · download limits unchanged
+RECORDING WAVE 1 = TAKE DOMAIN + DB + RLS + take-audio FOUNDATION
+MediaRecorder / player Record / upload transport = NOT STARTED (Wave 2+)
 ```
 
 ---
@@ -57,15 +43,16 @@ Public: only PUBLISHED · Access Gate · download limits unchanged
 ## 4. Next Session Entry
 
 ```text
-NEXT: outside Community epic (QT / Tracks / etc. only with new Owner GO)
-Do NOT reopen community publish/moderation without Owner GO
+NEXT: OWNER REVIEW of Wave 1 → then Recording Wave 2 (transport / MediaRecorder) only with Owner GO
+Do NOT implement MediaRecorder / Record UI without Wave 2 GO
+Do NOT reopen Community epic without Owner GO
 ```
 
 ---
 
 ## 5. Last Session Closeout
 
-**Sesja:** Community Wave 5 — hardening + epic closeout (2026-09-27)
+**Sesja:** Recording Wave 1 implementation (2026-09-27)
 
-**Done:** 60s per-beat submit cooldown (column + trigger + service); security regression suite; full live loop E2E; docs LOCKED.
-**Deferred:** full lifecycle audit telemetry framework; global per-user submit flood across many beats; resubmit rate beyond 60s per beat.
+**Done:** `takes` table + RLS owner SELECT · private `take-audio` bucket · object-key helpers · config constants · unit/live foundation tests · remote migration applied.
+**Out of scope (correct):** MediaRecorder, player Record, upload session API, shared grants, janitor cron.

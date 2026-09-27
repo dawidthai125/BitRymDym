@@ -6,6 +6,33 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — RECORDING WAVE 1: TAKE FOUNDATION
+
+**Status:** **IMPLEMENTED** (Owner review / commit pending)
+
+- New domain table `takes` (not extending `beat_audio_assets`)
+- Enums: `take_status`, `take_recording_mode`
+- RLS: owner SELECT own non-deleted; client mutations DENY (service_role only)
+- Private bucket `take-audio` (client Storage INSERT/SELECT DENY)
+- Object key helpers + `src/config/recording.ts` retention/anti-abuse constants
+- Tests: wave1-foundation unit + live RLS/storage
+- Migration: `20260927180000_recording_wave1_take_foundation.sql` (applied remote)
+- OUT: MediaRecorder, Record UI, upload transport API, shared grants, janitor
+
+---
+
+## 2026-09-27 — RECORDING / QUICK TAKE DESIGN FREEZE v1.0 LOCKED
+
+**Status:** **DESIGN FREEZE LOCKED** · Owner D01–D08 / OD-REC-01…08 **CLOSED** · **IMPLEMENTATION NONE**
+
+- Canonical: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)
+- RECORD ≠ PLAYBACK ≠ DOWNLOAD; anon QT IN V1; shared grants IN EPIC; hybrid Account Level + future Premium
+- Retention: BEGINNER 24h · PRO 10d · LEGEND 30d; anti-abuse caps locked; own take download YES (anon no durable DL)
+- MIC TAKE ≠ mix; MIX/EXPORT OUT (OD-14); `MIN(beat, entitlement, 180)` server-enforced
+- Next: Wave 1 Implementation AUDIT/PLAN only after separate Owner GO
+
+---
+
 ## 2026-09-27 — COMMUNITY WAVE 5: HARDENING + EPIC CLOSEOUT
 
 **Status:** **IMPLEMENTED / VERIFIED** · EPIC **COMPLETE / LOCKED**

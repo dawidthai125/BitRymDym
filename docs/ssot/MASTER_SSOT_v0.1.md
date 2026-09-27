@@ -569,6 +569,8 @@ DECISION REQUIRED
 
 # 18. QUICK TAKE — TYMCZASOWE NAGRANIE
 
+> **Implementation policy (2026-09-27):** Recording / Quick Take Design Freeze v1.0 is **LOCKED** — see [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md). Owner decisions OD-REC-01…08 CLOSED. Runtime implementation awaits Wave 1 Owner GO. V1 stores **MIC TAKE** only (not permanent beat+vocal mix). Account Level supplies base entitlements; future Premium is an overlay (payments still OFF). SSOT §22–§23 “Premium Full Take” language remains product truth for paid tier; V1 maps Full Take to `PRO_RAPPER` / `LEGEND_RAPPER` base entitlements per freeze D04/D05 until Premium plans (OD-08) ship.
+
 BitRymDym posiada własny system nagrywania zintegrowany z autorskim playerem.
 
 Cel:

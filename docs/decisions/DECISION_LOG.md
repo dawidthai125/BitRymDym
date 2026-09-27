@@ -10,6 +10,51 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-REC-01…08 — Recording / Quick Take Design Freeze v1.0
+
+| Pole | Wartość |
+|------|---------|
+| Decision IDs | OD-REC-01 … OD-REC-08 (Owner D01–D08) |
+| Title | Recording / Quick Take Design Freeze v1.0 |
+| Status | CLOSED / ACCEPTED · **DESIGN FREEZE LOCKED** |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) + Chief Product / Technical Architect |
+| Baseline | `c5e1f17` · Community EPIC CLOSED |
+
+**Decision (summary)**
+
+| ID | Locked choice |
+|----|----------------|
+| OD-REC-01 / D01 | RECORD ≠ PLAYBACK ≠ DOWNLOAD; one Access/AuthZ layer; independent capabilities; shared grant flags independent |
+| OD-REC-02 / D02 | Anonymous Quick Take **IN V1** (30s, temporary, short TTL, signed upload, token identity, caps, janitor, CTA login/signup) |
+| OD-REC-03 / D03 | Shared grants + RECORD **IN Recording EPIC**; least privilege (RECORD only if grant.record) |
+| OD-REC-04 / D04 | **Hybrid** entitlements: Account Level base + future Premium overlay → effective policy; no payments in V1; no new identity system |
+| OD-REC-05 / D05 | Retention: BEGINNER 24h · PRO 10d · LEGEND 30d |
+| OD-REC-06 / D06 | Own MIC TAKE: preview, download, delete; Track/publish **OUT** of Recording EPIC |
+| OD-REC-07 / D07 | Anti-abuse: anon 1/3 · BEGINNER 3/10 · PRO 10/30 · LEGEND 20/60 (active / sessions per UTC day); concurrent 1 |
+| OD-REC-08 / D08 | Own take download YES for BEGINNER/PRO/LEGEND; anon no durable take download |
+
+Also locked (architecture-resolvable / SSOT):  
+`recording_max_seconds = MIN(beat.duration, entitlement.max, 180)` server-enforced; MIC TAKE ≠ mixed song; MIX/EXPORT separate EPIC (OD-14 remains OPEN).
+
+**Scope**
+
+Recording / Quick Take EPIC design only. Implementation requires separate Wave 1 Owner GO.
+
+**Consequences**
+
+- Freeze doc: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)
+- Do not implement until Wave GO
+- OD-04/07/08 remain OPEN for payments/Premium catalog; hybrid overlay no-op in V1
+- Beat download OD-05/06/17 unchanged
+
+**Related documentation**
+
+- Cold-start audit + Design Freeze proposal + Final Owner Decision Review under `docs/audits/`
+- [AUTHORIZATION.md](../architecture/AUTHORIZATION.md) · [AUDIO_TRANSPORT.md](../architecture/AUDIO_TRANSPORT.md) · SSOT §18–§24
+
+---
+
 ### OD-01 — Frontend stack
 
 | Pole | Wartość |

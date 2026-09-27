@@ -193,21 +193,26 @@ Implementacja: **nie w tej sesji dokumentacyjnej**.
 
 ## 9. Quick Take
 
-Baseline produktowy (SSOT §18–§24):
+Baseline produktowy (SSOT §18–§24).
 
-| Typ | Reguła |
-|-----|--------|
-| Anonymous | tymczasowy take; bez bezterminowego zachowania; krótki serwerowy TTL |
-| Standard logged-in | max **30 s**; „Moje próbki”; retencja **24 h**; auto-delete |
-| Premium Full Take | długość bitu, max beat **3:00 (180 s)**; retencja **10 dni** (konfig); odtwórz / pobierz / usuń / opublikuj osobno |
+**Design Freeze v1.0:** **LOCKED** — [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md) · OD-REC-01…08 CLOSED · **implementation NONE**.
+
+| Typ | Reguła (V1 freeze) |
+|-----|---------------------|
+| Anonymous | QT max **30 s**; temporary; short server TTL; IN V1 |
+| BEGINNER | QT max **30 s**; retention **24 h** |
+| PRO | Full Take `MIN(beat, 180)`; retention **10 dni** |
+| LEGEND | Full Take+ `MIN(beat, 180)`; retention **30 dni** |
 
 Zasady wspólne:
 
-- Quick Take **nie** publikuje się automatycznie.
+- Capabilities: **PLAYBACK ≠ DOWNLOAD ≠ RECORD** (one Access layer).
+- Quick Take **nie** publikuje się automatycznie; Track publish OUT of Recording EPIC.
 - Głównie przechowywane jest nagranie **mikrofonu**.
 - Bit **nie** jest automatycznie trwale miksowany z nagraniem.
-- Export / mix: **OD-14 OPEN**.
-- Retencje docelowo **konfigurowalne** (nie hardcode w wielu miejscach).
+- Export / mix: **OD-14 OPEN** (osobny EPIC).
+- Shared grants + RECORD: **IN** Recording EPIC (least privilege flags).
+- Retencje / limity: konfigurowalne; liczby LOCKED w freeze (nie hardcode w wielu miejscach).
 
 ---
 
