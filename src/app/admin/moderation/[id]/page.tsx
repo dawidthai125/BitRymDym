@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ModerationDecisionControls } from "@/components/beats/moderation-decision-controls";
 import { PlaybackShell } from "@/components/player/playback-shell";
 import { AuthError } from "@/lib/auth/session";
-import { getPendingReviewBeatForModeration } from "@/lib/beats/service";
+import { getStaffCommunityBeatForModeration } from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
 
 type PageProps = {
@@ -16,13 +16,15 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
 
   let beat;
   try {
-    beat = await getPendingReviewBeatForModeration(id);
+    beat = await getStaffCommunityBeatForModeration(id);
   } catch (error) {
     if (error instanceof AuthError) {
       notFound();
     }
     throw error;
   }
+
+  const isApproved = beat.status === "APPROVED";
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 pb-16">
@@ -42,6 +44,10 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           {beat.durationSeconds}s
           {beat.activeMasterReady ? " · MASTER READY" : " · MASTER BRAK"}
         </p>
+        <p className="text-xs text-muted-foreground">
+          Owner{" "}
+          <span className="font-mono">{beat.ownerId?.slice(0, 8)}…</span>
+        </p>
       </header>
 
       <section className="space-y-3">
@@ -54,18 +60,27 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           />
         ) : (
           <p className="text-sm text-destructive">
-            Brak aktywnego MASTER READY — nie zatwierdzaj.
+            Brak aktywnego MASTER READY —{" "}
+            {isApproved ? "nie publikuj." : "nie zatwierdzaj."}
           </p>
         )}
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Decyzja</h2>
-        <p className="text-sm text-muted-foreground">
-          Zatwierdzenie ustawia status Zaakceptowany. Publikacja (katalog
-          publiczny) jest poza Wave 3.
-        </p>
-        <ModerationDecisionControls beatId={beat.id} />
+        <h2 className="text-lg font-medium tracking-tight">
+          {isApproved ? "Publikacja" : "Decyzja"}
+        </h2>
+        {!isApproved ? (
+          <p className="text-sm text-muted-foreground">
+            Zatwierdzenie ustawia status Zaakceptowany. Opublikowanie jest
+            osobnym krokiem.
+          </p>
+        ) : null}
+        <ModerationDecisionControls
+          beatId={beat.id}
+          status={beat.status}
+          activeMasterReady={beat.activeMasterReady}
+        />
       </section>
     </main>
   );

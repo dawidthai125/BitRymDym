@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — COMMUNITY WAVE 4: STAFF PUBLISH APPROVED USER BEATS
+
+**Status:** **IMPLEMENTED / VERIFIED** · ADMIN + MODERATOR · USER DENY · READY hard gate first
+
+- `publishApprovedUserBeat`: `beats.publish` → APPROVED USER only → READY+object-key gate → `PUBLISHED`
+- Moderation UI: tabs W moderacji / Zaakceptowane · `Opublikuj` (no metadata edit)
+- Public reuse: `/beats` · `/beat/[id]` · PlaybackShell · Access Gate · download / My Downloads
+- USER: status Opublikowany · CTA `Zobacz bit`
+- Tests: community-wave4 unit A–R + live E2E; PLATFORM regression PASS
+- No new migration (Wave 1 MOD publish RLS reused)
+
+---
+
 ## 2026-09-27 — COMMUNITY WAVE 3: SUBMIT + MODERATION
 
 **Status:** **IMPLEMENTED / VERIFIED** · APPROVED ≠ PUBLISHED · Wave 4 publish still pending

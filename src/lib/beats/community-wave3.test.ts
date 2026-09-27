@@ -193,15 +193,15 @@ describe("Community Wave 3 — submit / moderation contracts", () => {
     ).toBe(false);
   });
 
-  it("O: Wave 3 moderation actions surface has no publish", () => {
+  it("O: Wave 3 moderation actions include approve/reject; Wave 4 adds publish", () => {
     const src = readFileSync(
       resolve(process.cwd(), "src/lib/beats/community-actions.ts"),
       "utf8",
     );
-    expect(src).not.toContain("publishApprovedUserBeat");
     expect(src).toContain("approveUserBeat");
     expect(src).toContain("rejectUserBeat");
     expect(src).toContain("submitUserBeat");
+    expect(src).toContain("publishApprovedUserBeat");
   });
 
   it("P: USER cannot approve", () => {

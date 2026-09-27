@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   archiveOwnUserBeatAction,
   returnRejectedToDraftAction,
   submitUserBeatAction,
 } from "@/lib/beats/community-actions";
+import { cn } from "@/lib/utils";
 
 export function UserBeatActions({
   beatId,
@@ -74,6 +76,14 @@ export function UserBeatActions({
         >
           Popraw i wyślij ponownie
         </Button>
+      ) : null}
+      {status === "PUBLISHED" ? (
+        <Link
+          href={`/beat/${beatId}`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Zobacz bit
+        </Link>
       ) : null}
       {(status === "DRAFT" ||
         status === "REJECTED" ||

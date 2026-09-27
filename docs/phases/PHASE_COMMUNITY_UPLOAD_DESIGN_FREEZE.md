@@ -7,14 +7,15 @@
 **Supabase project:** `rzzxrgcdogkybkiidqgw`  
 **SSOT:** §3–§4, §6–§9, §12–§13, §36, §39  
 **Document status:** DESIGN FREEZE — **READY / OWNER GO** (2026-09-27)  
-**Implementation status:** **WAVE 1 COMPLETE** · **WAVE 2 COMPLETE** · **WAVE 3 IMPLEMENTED** · Wave 4 **PENDING** (APPROVED→PUBLISHED)
+**Implementation status:** **WAVE 1–4 IMPLEMENTED** · Wave 5 **PENDING** (optional hardening)
 
 ```text
 COMMUNITY LOOP = USER → UPLOAD → MODERATION → APPROVED → PUBLISHED
 WAVE 1 = DB/RLS/TRIGGER/AUTHZ FOUNDATION — COMPLETE @ 609a05e
 WAVE 2 = USER SIGNED AUDIO TRANSPORT — COMPLETE @ 9cfb3cf
-WAVE 3 = SUBMIT + MODERATION — IMPLEMENTED (APPROVED ≠ PUBLISHED)
-WAVE 4 = APPROVED → PUBLISHED — PENDING
+WAVE 3 = SUBMIT + MODERATION — COMPLETE @ f5f6b4f
+WAVE 4 = STAFF PUBLISH APPROVED → PUBLISHED — IMPLEMENTED
+WAVE 5 = PENDING (optional)
 USER PUBLISH = DENY
 APPROVED ≠ AUTO PUBLISHED
 BUCKET = beat-audio (reuse)
@@ -411,12 +412,13 @@ Related product ODs (unchanged): OD-09, OD-10, OD-11, OD-12, OD-13, OD-14, OD-18
 
 ```text
 COMMUNITY UPLOAD DESIGN FREEZE = READY / OWNER GO
-WAVE 1 = COMPLETE (DB / RLS / Trigger / AuthZ) @ 609a05e
-WAVE 2 = COMPLETE (USER signed upload → MASTER READY) @ 9cfb3cf
-WAVE 3 = IMPLEMENTED (submit + moderation; APPROVED not public)
-WAVE 4 = PENDING (APPROVED → PUBLISHED)
+WAVE 1 = COMPLETE @ 609a05e
+WAVE 2 = COMPLETE @ 9cfb3cf
+WAVE 3 = COMPLETE @ f5f6b4f
+WAVE 4 = IMPLEMENTED (ADMIN|MODERATOR APPROVED→PUBLISHED; USER DENY; READY gate)
+WAVE 5 = PENDING
 Migrations = community_wave1_ownership · community_wave2_user_audio · community_wave3_user_edit_freeze
-Routes = /beats/upload · /account/beats · /admin/moderation
+Routes = /beats/upload · /account/beats · /admin/moderation · public /beats · /beat/[id]
 ```
 
 ---
@@ -449,7 +451,23 @@ USER: REJECTED → DRAFT (clears rejection_reason) → rework → resubmit
 - READY revalidated on submit and approve
 - USER metadata freeze except DRAFT/REJECTED (`community_wave3_user_edit_freeze`)
 - Moderator playback via PlaybackShell + staff Access Gate
-- APPROVED ≠ PUBLISHED (Wave 4)
+- APPROVED ≠ auto-PUBLISHED (staff publish = Wave 4)
+
+---
+
+## Wave 4 implementation note (2026-09-27)
+
+```text
+APPROVED USER beat
+  → requirePermission(beats.publish)  // ADMIN | MODERATOR
+  → assertPublishHardGate (status APPROVED + active MASTER READY)
+  → USER object key binding check
+  → transitionBeatStatus → PUBLISHED
+  → appears in /beats + /beat/[id] (existing public queries)
+```
+
+- UI: `/admin/moderation` sections W moderacji + Zaakceptowane · `Opublikuj`
+- No metadata patch on publish · USER publish DENY · PLATFORM DRAFT→PUBLISHED unchanged
 
 ---
 
@@ -491,4 +509,4 @@ Delivered without UI:
 
 **Blockers:** none.
 
-**Remaining risks (Wave 4):** APPROVED→PUBLISHED surface + public catalog; MOD publish UI without metadata edit; resubmit rate-limit deferred.
+**Remaining risks (Wave 5):** resubmit rate-limit; ops polish; optional publish audit telemetry.

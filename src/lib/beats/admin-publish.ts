@@ -22,6 +22,46 @@ export const PUBLISH_USER_FROM_DRAFT_DENIED =
   "USER beats cannot publish from DRAFT.";
 
 /**
+ * Wave 4 UI gate — USER APPROVED + active MASTER READY (no metadata edit).
+ */
+export function getCommunityPublishGate(params: {
+  status: BeatStatus;
+  ownershipType: BeatOwnershipType;
+  activeMasterReady: boolean;
+}): { enabled: boolean; blockedReason: string | null } {
+  if (params.ownershipType !== "USER") {
+    return {
+      enabled: false,
+      blockedReason: PUBLISH_REQUIRES_PLATFORM,
+    };
+  }
+  if (params.status !== "APPROVED") {
+    return {
+      enabled: false,
+      blockedReason:
+        params.status === "PUBLISHED"
+          ? "Bit jest już opublikowany."
+          : PUBLISH_REQUIRES_APPROVED,
+    };
+  }
+  if (!params.activeMasterReady) {
+    return {
+      enabled: false,
+      blockedReason: PUBLISH_REQUIRES_READY_MASTER,
+    };
+  }
+  return { enabled: true, blockedReason: null };
+}
+
+export function canCommunityPublishFromUi(params: {
+  status: BeatStatus;
+  ownershipType: BeatOwnershipType;
+  activeMasterReady: boolean;
+}): boolean {
+  return getCommunityPublishGate(params).enabled;
+}
+
+/**
  * Phase 1.7 UI publish gate — PLATFORM DRAFT path (preserved).
  * Server hard gate: {@link assertPublishHardGate}.
  */

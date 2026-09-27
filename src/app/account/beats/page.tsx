@@ -86,7 +86,12 @@ export default async function AccountBeatsPage() {
                   ) : null}
                   {beat.status === "APPROVED" ? (
                     <p className="text-xs text-muted-foreground">
-                      Zaakceptowany — jeszcze nieopublikowany (Wave 4).
+                      Zaakceptowany — oczekuje na publikację przez staff.
+                    </p>
+                  ) : null}
+                  {beat.status === "PUBLISHED" ? (
+                    <p className="text-xs text-muted-foreground">
+                      Widoczny w publicznym katalogu.
                     </p>
                   ) : null}
                 </div>

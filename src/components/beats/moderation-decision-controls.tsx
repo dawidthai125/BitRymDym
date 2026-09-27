@@ -6,13 +6,22 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   approveUserBeatAction,
+  publishApprovedUserBeatAction,
   rejectUserBeatAction,
 } from "@/lib/beats/community-actions";
 
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
-export function ModerationDecisionControls({ beatId }: { beatId: string }) {
+export function ModerationDecisionControls({
+  beatId,
+  status,
+  activeMasterReady,
+}: {
+  beatId: string;
+  status: string;
+  activeMasterReady: boolean;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [reason, setReason] = useState("");
@@ -48,6 +57,51 @@ export function ModerationDecisionControls({ beatId }: { beatId: string }) {
       router.push("/admin/moderation");
       router.refresh();
     });
+  }
+
+  function onPublish() {
+    setError(null);
+    if (!activeMasterReady) {
+      setError("Publikacja wymaga aktywnego MASTER READY.");
+      return;
+    }
+    startTransition(async () => {
+      const result = await publishApprovedUserBeatAction(beatId);
+      if (!result.success) {
+        setError(result.error ?? "Publikacja nie powiodła się.");
+        return;
+      }
+      router.push("/admin/moderation");
+      router.refresh();
+    });
+  }
+
+  if (status === "APPROVED") {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">
+          Publikacja ustawia status Opublikowany i udostępnia bit w katalogu
+          publicznym. Nie zmienia metadanych.
+        </p>
+        <Button
+          type="button"
+          disabled={pending || !activeMasterReady}
+          onClick={onPublish}
+        >
+          Opublikuj
+        </Button>
+        {!activeMasterReady ? (
+          <p className="text-sm text-destructive">
+            Brak aktywnego MASTER READY — publikacja zablokowana.
+          </p>
+        ) : null}
+        {error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
   }
 
   return (

@@ -22,9 +22,10 @@
 | Canonical branch | `main` |
 | Community Wave 1 | **COMPLETE** @ `609a05e` |
 | Community Wave 2 | **COMPLETE** @ `9cfb3cf` |
-| Community Wave 3 | **IMPLEMENTED** (submit + moderation; deploy pending this session) |
+| Community Wave 3 | **COMPLETE** @ `f5f6b4f` |
+| Community Wave 4 | **IMPLEMENTED** (staff publish APPROVED→PUBLISHED; deploy this session) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN (Wave 2); Wave 3 pending deploy verify |
+| Production | GREEN (Wave 3); Wave 4 pending deploy verify |
 
 Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
 
@@ -33,38 +34,39 @@ Design Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNIT
 ## 3. Current Phase
 
 ```text
-COMMUNITY WAVE 1 = COMPLETE (DB/RLS/AuthZ) @ 609a05e
-COMMUNITY WAVE 2 = COMPLETE (USER signed upload → READY) @ 9cfb3cf
-COMMUNITY WAVE 3 = IMPLEMENTED (submit + moderation; APPROVED ≠ PUBLISHED)
-COMMUNITY WAVE 4 = NOT STARTED (APPROVED → PUBLISHED)
+COMMUNITY WAVE 1 = COMPLETE @ 609a05e
+COMMUNITY WAVE 2 = COMPLETE @ 9cfb3cf
+COMMUNITY WAVE 3 = COMPLETE @ f5f6b4f
+COMMUNITY WAVE 4 = IMPLEMENTED (ADMIN|MOD publish APPROVED USER → PUBLISHED)
+COMMUNITY WAVE 5 = NOT STARTED (hardening / polish / rate-limit if any)
 ```
 
-### Wave 3 flow (frozen)
+### Wave 4 flow
 
 ```text
-USER DRAFT + MASTER READY → submit → PENDING_REVIEW
-MODERATOR → APPROVE → APPROVED (not public)
-         → REJECT + reason → REJECTED → USER → DRAFT → rework → resubmit
+USER APPROVED beat
+  → staff (ADMIN|MODERATOR) + beats.publish
+  → READY hard gate (active MASTER + user/ object key)
+  → PUBLISHED
+  → /beats · /beat/[id] · PlaybackShell · download (existing)
 ```
 
-Routes: `/beats/upload` · `/account/beats` · `/admin/moderation`
+USER publish = DENY · MOD metadata edit = DENY
 
 ---
 
 ## 4. Next Session Entry
 
 ```text
-NEXT: COMMUNITY WAVE 4 — APPROVED → PUBLISHED
-Do NOT let USER publish
-Reuse publishApprovedUserBeat + READY gate
-Public catalog + playback only after PUBLISHED
+NEXT: COMMUNITY WAVE 5 (if planned) — security polish / rate-limit / ops
+Community loop end-to-end is LIVE after Wave 4 deploy verify
 ```
 
 ---
 
 ## 5. Last Session Closeout
 
-**Sesja:** Community Wave 3 — submit + moderation (2026-09-27)
+**Sesja:** Community Wave 4 — staff publish APPROVED USER beats (2026-09-27)
 
-**Done:** submit/approve/reject READY revalidation; USER edit freeze; upload + my-beats UI; moderation queue + PlaybackShell; live RLS/E2E; docs.
-**Out:** publish USER beat (Wave 4); public catalog for APPROVED.
+**Done:** publishApprovedUserBeat gate-first; moderation APPROVED queue + Opublikuj; public catalog reuse; live E2E; docs.
+**Out:** new lifecycle features; Premium/account-level publish bypass.

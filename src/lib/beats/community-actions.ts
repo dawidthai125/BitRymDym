@@ -11,6 +11,7 @@ import {
   approveUserBeat,
   archiveOwnUserBeat,
   createUserBeat,
+  publishApprovedUserBeat,
   rejectUserBeat,
   returnRejectedUserBeatToDraft,
   submitUserBeat,
@@ -151,6 +152,18 @@ export async function rejectUserBeatAction(
 ): Promise<CommunityActionState> {
   try {
     const beat = await rejectUserBeat(beatId, rejectionReason);
+    revalidateCommunitySurfaces(beat.id);
+    return { error: null, success: true, beatId: beat.id };
+  } catch (error) {
+    return catchAction(error);
+  }
+}
+
+export async function publishApprovedUserBeatAction(
+  beatId: string,
+): Promise<CommunityActionState> {
+  try {
+    const beat = await publishApprovedUserBeat(beatId);
     revalidateCommunitySurfaces(beat.id);
     return { error: null, success: true, beatId: beat.id };
   } catch (error) {

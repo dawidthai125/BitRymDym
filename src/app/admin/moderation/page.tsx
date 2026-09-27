@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-import { listPendingReviewForModeration } from "@/lib/beats/service";
+import {
+  listApprovedForModeration,
+  listPendingReviewForModeration,
+} from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
 
 export const metadata = {
@@ -13,27 +16,25 @@ function formatDuration(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export default async function AdminModerationQueuePage() {
-  const queue = await listPendingReviewForModeration();
-
+function QueueSection({
+  title,
+  empty,
+  items,
+  actionLabel,
+}: {
+  title: string;
+  empty: string;
+  items: Awaited<ReturnType<typeof listPendingReviewForModeration>>;
+  actionLabel: string;
+}) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 pb-16">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Moderacja bitów
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Kolejka PENDING_REVIEW. Zatwierdzenie nie publikuje beatu (Wave 4).
-        </p>
-      </header>
-
-      {queue.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Brak bitów oczekujących na moderację.
-        </p>
+    <section className="space-y-4">
+      <h2 className="text-lg font-medium tracking-tight">{title}</h2>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{empty}</p>
       ) : (
         <ul className="divide-y divide-border border-y border-border">
-          {queue.map((beat) => (
+          {items.map((beat) => (
             <li
               key={beat.id}
               className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between"
@@ -59,12 +60,47 @@ export default async function AdminModerationQueuePage() {
                 href={`/admin/moderation/${beat.id}`}
                 className="text-sm font-medium underline underline-offset-4"
               >
-                Odtwórz / decyzja
+                {actionLabel}
               </Link>
             </li>
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+export default async function AdminModerationQueuePage() {
+  const [pending, approved] = await Promise.all([
+    listPendingReviewForModeration(),
+    listApprovedForModeration(),
+  ]);
+
+  return (
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 pb-16">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Moderacja bitów
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          W moderacji → zatwierdź lub odrzuć. Zaakceptowane → opublikuj do
+          katalogu publicznego.
+        </p>
+      </header>
+
+      <QueueSection
+        title="W moderacji"
+        empty="Brak bitów oczekujących na moderację."
+        items={pending}
+        actionLabel="Odtwórz / decyzja"
+      />
+
+      <QueueSection
+        title="Zaakceptowane"
+        empty="Brak zaakceptowanych bitów do publikacji."
+        items={approved}
+        actionLabel="Opublikuj"
+      />
     </main>
   );
 }
