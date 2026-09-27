@@ -80,8 +80,7 @@ export function AdminLifecycleControls({
             disabled={pending || !gate.enabled}
             title={gate.blockedReason ?? undefined}
             onClick={() => {
-              // Re-check UI gate before invoking Server Action (stale/disabled bypass guard).
-              // Server READY hard rule remains GAP-PUBLISH-READY (intentionally not enforced).
+              // UI gate first; server hard gate in transitionBeatStatus is authoritative.
               const latest = getAdminPublishGate({ status, activeMasterReady });
               if (!latest.enabled) {
                 setError(latest.blockedReason ?? "Publikacja zablokowana.");

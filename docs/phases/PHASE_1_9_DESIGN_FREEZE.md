@@ -8,17 +8,19 @@
 **SSOT:** §3, §5, §9, §12–§13, §16–§17, §36, §39
 **Document status:** DESIGN FREEZE — **APPROVED / LOCKED** (2026-09-26)
 **Owner GO:** APPROVED — Candidate A (Operator Production Enablement)
-**Implementation status:** **IN PROGRESS** · Production Bootstrap **PARTIAL** (Auth + ADMIN PASS; first beat **BLOCKED**) · Phase **NOT CLOSED**
+**Implementation status:** **COMPLETE** · Production **VERIFIED GREEN** @ `73e213c` · Phase **CLOSED / LOCKED** (2026-09-27)
 
 ### Purpose
 
 Unlock real production verification of locked foundation phases **1.5–1.8A** via operator-controlled bootstrap:
 
 1. First ADMIN per **OD-20** (manual / outside app) — **DONE**
-2. First PLATFORM beat via existing admin UI — **PENDING OPERATOR**
-3. READY MASTER audio — **PENDING**
-4. PUBLISHED beat — **PENDING**
-5. Live E2E: playback → download → My Downloads — **PENDING**
+2. First PLATFORM beat via existing admin UI — **DONE** (`phase19-master-tone`)
+3. READY MASTER audio — **DONE**
+4. PUBLISHED beat — **DONE**
+5. Live E2E: playback → download → My Downloads — **PASS**
+6. Audio-first upload + BPM V1 + Audio Transport V1 — **DONE / PRODUCTION VERIFIED**
+7. GAP-PUBLISH-READY — **CLOSED** (server hard gate: active MASTER READY)
 
 Phase 1.9 is **operability + verification**, not a new product architecture.
 
@@ -32,18 +34,18 @@ Phase 1.9 is **operability + verification**, not a new product architecture.
 | USERS / profiles | 0 |
 | BEATS | 0 |
 
-### Live progress (2026-09-26)
+### Live closeout (2026-09-27)
 
 | Metric | Count |
 |--------|------:|
 | ADMIN | 1 |
-| PUBLISHED | 0 |
-| READY AUDIO | 0 |
+| USER | 4 |
+| PUBLISHED | 1 |
+| DRAFT | 2 (transport E2E leftovers) |
+| READY assets | 3 |
 | profiles | 5 |
-| BEATS | 0 |
-| download_events | 0 |
 
-Production: **GREEN** @ `5d6b846`. Schema: **READY** — **NO MIGRATION**.
+Production: **GREEN** @ `73e213c`. Schema: **READY** — **NO MIGRATION** for Phase 1.9.
 
 Legend:
 
@@ -81,7 +83,7 @@ No Server Action / env “first admin email” / client escalation.
 /admin/beats → /admin/beats/new
 → select audio → server duration probe (music-metadata) + title suggestion
 → manual BPM + metadata → CREATE DRAFT + MASTER upload (existing pipeline)
-→ READY → Publish via UI gate only (DRAFT + active READY MASTER)
+→ READY → Publish via UI gate **and** server hard gate (DRAFT + active READY MASTER)
 ```
 
 **Scope A (Owner GO — audio-first upload UX):**
@@ -94,7 +96,7 @@ No Server Action / env “first admin email” / client escalation.
 | BPM | **MANUAL ONLY** — no default 140 |
 | BPM auto-detection | **OUT of Scope A** |
 
-**Scope B (BPM auto-detection):** **DEFERRED / OWNER GO REQUIRED** — not closed; no detector in stack.
+**Scope B (BPM auto-detection):** **SHIPPED** as Production V1 @ `471dd5b` (ACCURACY NOT CERTIFIED).
 
 **FROZEN invariants:**
 
@@ -102,7 +104,7 @@ No Server Action / env “first admin email” / client escalation.
 |-------|--------|
 | `ownership_type` | `PLATFORM` |
 | `owner_id` | `NULL` |
-| Publish | UI only — **no** SQL READY/PUBLISHED bypass |
+| Publish | UI gate + **server hard gate** (active MASTER READY); **no** SQL READY/PUBLISHED bypass |
 | Bucket | `beat-audio` private |
 | Access Gate | REUSE (`PLAYBACK` 120s / `DOWNLOAD` 300s) |
 
@@ -116,10 +118,9 @@ No Server Action / env “first admin email” / client escalation.
 | DOWNLOAD signed URL TTL | 300s |
 | OD-17 | reserve → signed URL SUCCESS → finalize → `beat_download_events` |
 
-### GAP-PUBLISH-READY (carried)
+### GAP-PUBLISH-READY — **CLOSED** (2026-09-27 / EPIC-A)
 
-Server lifecycle may soft-allow publish without READY MASTER.
-**Phase 1.9 procedure forbids** SQL/status bypass — operator **must** use UI publish gate only.
+Server `transitionBeatStatus(…, "PUBLISHED")` requires PLATFORM + DRAFT + **active MASTER READY** for the same `beat_id` (DB check; never trust client). UI gate preserved. Create path no longer allows insert as PUBLISHED.
 
 ---
 
@@ -195,22 +196,24 @@ If schema cannot support bootstrap safely → **BLOCKER** (stop; do not silent-m
 ```text
 PHASE 1.9 DESIGN FREEZE = APPROVED / LOCKED
 CANDIDATE = Operator Production Enablement
-IMPLEMENTATION = IN PROGRESS
-PRODUCTION BOOTSTRAP = PARTIAL
+IMPLEMENTATION = COMPLETE
+PRODUCTION BOOTSTRAP = COMPLETE
   AUTH E2E = PASS
   OD-20 ADMIN = PASS (1 ADMIN)
-  SCOPE A AUDIO-FIRST CREATE = IMPLEMENTED LOCALLY (not deployed)
-  SCOPE B BPM AUTO = DEFERRED / OWNER GO REQUIRED
-  FIRST PLATFORM BEAT = BLOCKED (operator UI session required)
-PRODUCTION VERIFY = PENDING (no PUBLISHED beat yet)
-PHASE CLOSED = NO
+  SCOPE A AUDIO-FIRST CREATE = ON PRODUCTION
+  SCOPE B BPM AUTO = SHIPPED V1 @ 471dd5b (ACCURACY NOT CERTIFIED)
+  AUDIO TRANSPORT V1 = CLOSED / PRODUCTION VERIFIED @ 73e213c
+  FIRST PLATFORM BEAT = PASS (phase19-master-tone PUBLISHED)
+PRODUCTION VERIFY = PASS (BEAT → LISTEN → DOWNLOAD GREEN)
+GAP-PUBLISH-READY = CLOSED (server hard gate)
+PHASE CLOSED = YES / LOCKED
 DATABASE MIGRATION = NONE
 OD-20 = CLOSED / UNCHANGED
-REUSE = Admin UI + Access Gate + Downloads 1.8A
+REUSE = Admin UI + Access Gate + Downloads 1.8A + Transport + BPM V1
 ```
 
-**Live (2026-09-26):** ADMIN=1 · beats=0 · PUBLISHED=0 · READY=0 · events=0.
+**Live (2026-09-27):** ADMIN=1 · USER=4 · PUBLISHED=1 · DRAFT=2 · READY assets=3.
 
-**Next:** Deploy Scope A (Owner GO) → Owner create→publish first PLATFORM beat → agent live E2E.
-Do not mark CLOSED until production verification checklist PASS.
+**Next:** Owner commits EPIC-A publish hard gate → production verify publish reject/allow cases.
+Do not open community / Quick Take without Owner GO.
 

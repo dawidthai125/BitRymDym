@@ -10,10 +10,11 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 |---------|---------|
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
-| Faza | 1 — Fundament (**Phase 1.5 COMPLETE / LOCKED** @ `0ec0be0`) |
+| Faza | 1 — Fundament (**Phase 1.9 CLOSED / LOCKED**) |
+| Canonical tip | `73e213c` — Audio Transport V1 · production **VERIFIED GREEN** |
 | Płatności / Premium | wyłączone |
-| Application | Auth + Profiles + Roles + Permissions + Beats metadata + private `beat-audio` Access Gate |
-| Next | Phase 1.6 Cold-Start Audit — **NOT STARTED** |
+| Application | Auth · Profiles · Roles · Permissions · Beats · private `beat-audio` · Access Gate · custom Playback · Downloads (1.8A) · Admin PLATFORM · BPM V1 · signed audio transport |
+| Next | Owner-selected next epic (community / Quick Take / ops) — see PROJECT_STATE |
 
 ## Nowy agent — start tutaj
 
@@ -26,6 +27,8 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 - [System Architecture](./docs/architecture/SYSTEM_ARCHITECTURE.md) — baseline techniczny (OD-01–03)
 - [Authorization](./docs/architecture/AUTHORIZATION.md) — Phase 1.3 AuthZ
 - [Beats](./docs/architecture/BEATS.md) — Phase 1.4 beats domain
+- [Audio Transport](./docs/architecture/AUDIO_TRANSPORT.md) — signed upload V1
+- [BPM Auto Detection](./docs/architecture/BPM_AUTO_DETECTION.md) — Production V1
 - [Otwarte decyzje](./docs/decisions/OPEN_DECISIONS.md)
 - [Decision Log](./docs/decisions/DECISION_LOG.md)
 - [Faza 1](./docs/phases/PHASE_1_FOUNDATION.md)
@@ -53,8 +56,8 @@ npm run build
 
 Skopiuj `.env.example` → `.env.local` (placeholdery). Nie commituj sekretów.
 
-**Zaimplementowane:** Auth, Profiles, Roles, Permissions, Account levels, Beats metadata, private `beat-audio` Storage + Access Gate.
-**Nie zaimplementowane:** Custom player, download limits, Quick Take, payments, community upload.
+**Zaimplementowane:** Auth, Profiles, Roles, Permissions, Account levels, Beats (PLATFORM admin), private `beat-audio` + Access Gate, custom Playback Shell, Downloads (limits + My Downloads), BPM V1, signed Audio Transport V1.
+**Nie zaimplementowane:** Quick Take, community upload, Tracks, payments, messaging, voting, comments.
 
 ## Zasady rozwoju
 

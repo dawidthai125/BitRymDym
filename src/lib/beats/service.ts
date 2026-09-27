@@ -8,6 +8,10 @@ import {
   requireUser,
 } from "@/lib/auth/session";
 import {
+  assertPlatformPublishHardGate,
+  type PublishGateAssetSnapshot,
+} from "@/lib/beats/admin-publish";
+import {
   canTransitionStatus,
   validateBeatInput,
   type BeatInput,
@@ -67,17 +71,17 @@ export async function createPlatformBeat(
     throw new Error(validated.errors.join("; "));
   }
 
-  if (
-    validated.value.status !== "DRAFT" &&
-    validated.value.status !== "PUBLISHED"
-  ) {
-    throw new Error("New platform beats must start as DRAFT or PUBLISHED");
+  // Publish requires READY MASTER (server hard gate). Create always starts DRAFT.
+  if (validated.value.status !== "DRAFT") {
+    throw new Error(
+      "New platform beats must start as DRAFT. Publish only after active MASTER READY.",
+    );
   }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .insert(toBeatInsertPayload(validated.value))
+    .insert(toBeatInsertPayload({ ...validated.value, status: "DRAFT" }))
     .select(BEAT_SELECT)
     .single();
 
@@ -171,6 +175,10 @@ export async function transitionBeatStatus(
     throw new AuthError("FORBIDDEN", "Insufficient role.");
   }
 
+  if (to === "PUBLISHED") {
+    await assertActiveMasterReadyForPublish(current);
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -184,6 +192,42 @@ export async function transitionBeatStatus(
   }
 
   return mapBeatRow(data as BeatRow);
+}
+
+/**
+ * Server hard gate (GAP-PUBLISH-READY CLOSED):
+ * DRAFT → PUBLISHED only with PLATFORM + active MASTER READY for this beat.
+ * Never trust client `ready` flags.
+ */
+async function assertActiveMasterReadyForPublish(beat: Beat): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beat_audio_assets")
+    .select("id, beat_id, purpose, status, is_active")
+    .eq("beat_id", beat.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const assetsForBeat: PublishGateAssetSnapshot[] = (data ?? []).map((row) => ({
+    id: row.id as string,
+    beatId: row.beat_id as string,
+    purpose: row.purpose as PublishGateAssetSnapshot["purpose"],
+    status: row.status as PublishGateAssetSnapshot["status"],
+    isActive: Boolean(row.is_active),
+  }));
+
+  const gate = assertPlatformPublishHardGate({
+    beatId: beat.id,
+    ownershipType: beat.ownershipType,
+    status: beat.status,
+    assetsForBeat,
+  });
+
+  if (!gate.ok) {
+    throw new AuthError("FORBIDDEN", gate.reason);
+  }
 }
 
 export async function archiveBeat(beatId: string): Promise<Beat> {

@@ -45,7 +45,15 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2–1.7 LOCKED** on `main` (1.7 @ `ed499ee`; production GREEN).
-**Phase 1.7** Design Freeze APPROVED / LOCKED — Admin PLATFORM Content Ops Surface **COMPLETE / CLOSED / LOCKED**.
-Known non-blocking: GAP-PUBLISH-READY; audit GAP; Live Admin / Published Content E2E NOT VERIFIED (OD-20 / empty catalog).
-See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md).
+**Phase 1.2–1.9 LOCKED** on `main` (production **VERIFIED GREEN** @ `73e213c`).
+
+| Phase / capability | Status |
+|--------------------|--------|
+| 1.2–1.7 Admin PLATFORM ops | **CLOSED / LOCKED** @ `ed499ee` |
+| 1.8A Downloads | **CLOSED / LOCKED** @ `fd87f23` |
+| BPM Production V1 | **SHIPPED** @ `471dd5b` (accuracy not certified) |
+| Audio Transport V1 | **CLOSED / PRODUCTION VERIFIED** @ `73e213c` |
+| Phase 1.9 Operator enablement | **CLOSED / LOCKED** |
+| GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
+
+See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md).

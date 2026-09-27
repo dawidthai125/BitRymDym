@@ -1,15 +1,15 @@
-# Audio Transport V1 — Design Freeze
+# Audio Transport V1 â€” Design Freeze
 
-**Status:** **APPROVED / OWNER GO** · Implementation **COMMITTED** · Deploy **PENDING VERCEL**  
-**Date:** 2026-09-27  
-**Depends on:** Phase 1.5 Storage · Phase 1.7 admin ops · BPM Production V1 (`471dd5b`)
+**Status:** **APPROVED / OWNER GO** Â· Implementation **CLOSED / PRODUCTION VERIFIED** @ `73e213c`
+**Date:** 2026-09-27
+**Depends on:** Phase 1.5 Storage Â· Phase 1.7 admin ops Â· BPM Production V1 (`471dd5b`)
 
 ```text
-TRANSPORT = SIGNED BINARY UPLOAD → PRIVATE beat-audio
+TRANSPORT = SIGNED BINARY UPLOAD â†’ PRIVATE beat-audio
 NOT = base64 Server Action JSON
 NOT = serverActions.bodySizeLimit as the fix
 BPM V1 = UNCHANGED (C_NEAR + RULE B)
-MODEL = DRAFT-beat-first (Beat → Asset → Storage)
+MODEL = DRAFT-beat-first (Beat â†’ Asset â†’ Storage)
 NO NEW TABLES / BUCKET / CRON IN V1
 ```
 
@@ -17,11 +17,11 @@ NO NEW TABLES / BUCKET / CRON IN V1
 
 ## 1. Problem
 
-Admin audio-first UI encoded files with `FileReader.readAsDataURL` → base64 → Server Action JSON.
+Admin audio-first UI encoded files with `FileReader.readAsDataURL` â†’ base64 â†’ Server Action JSON.
 
 Next.js default **Server Action body limit = 1 MB**.
 
-Live E2E: `bpm-120-steady.wav` (~2.6 MB) → **413 Body exceeded 1 MB limit** before analyze/create.
+Live E2E: `bpm-120-steady.wav` (~2.6 MB) â†’ **413 Body exceeded 1 MB limit** before analyze/create.
 
 Domain contract `BEAT_AUDIO_MAX_BYTES = 50 MiB` was unreachable via UI.
 
@@ -41,15 +41,15 @@ Affected:
 | Route Handler multipart as sole path | **NOT selected** for V1 (Vercel serverless body limits conflict with 50 MiB) |
 | **Signed upload to private Storage (C)** | **SELECTED** |
 
-**Why signed upload:** Client sends binary to Supabase Storage with a **server-issued, short-lived** signed upload URL. Next.js never receives multi‑MB audio bodies. Meets Phase 1.5 50 MiB + private bucket. Phase 1.5 already allowed “carefully scoped signed upload URL + AuthZ”.
+**Why signed upload:** Client sends binary to Supabase Storage with a **server-issued, short-lived** signed upload URL. Next.js never receives multiâ€‘MB audio bodies. Meets Phase 1.5 50 MiB + private bucket. Phase 1.5 already allowed â€ścarefully scoped signed upload URL + AuthZâ€ť.
 
 Server still:
 
-- AuthZ before issuing URL  
-- Chooses final `object_key` (`platform/{beatId}/{assetId}/master.bin`)  
-- Validates MIME/size  
-- Runs BPM analysis from Storage bytes  
-- Finalizes READY only after business rules  
+- AuthZ before issuing URL
+- Chooses final `object_key` (`platform/{beatId}/{assetId}/master.bin`)
+- Validates MIME/size
+- Runs BPM analysis from Storage bytes
+- Finalizes READY only after business rules
 
 ---
 
@@ -57,18 +57,18 @@ Server still:
 
 ```text
 CLIENT FILE
-  → AUTH + ADMIN AUTHZ
-  → POST session (JSON: declared size/MIME/filename)
-  → create PLATFORM DRAFT (provisional bpm/duration)
-  → create asset PENDING_UPLOAD + signed upload URL
-  → CLIENT binary uploadToSignedUrl (private bucket)
-  → POST analyze (JSON: beatId, assetId)
-  → server download bytes → duration + BPM V1
-  → UI AUTO_SUGGEST | MANUAL_REQUIRED
-  → finalize Server Action (JSON metadata + bpm + override)
-  → re-download → re-analyze → resolveCreateBpm
-  → update beats.bpm (+ metadata) · asset → READY
-  → Beat remains DRAFT (no auto-publish)
+  â†’ AUTH + ADMIN AUTHZ
+  â†’ POST session (JSON: declared size/MIME/filename)
+  â†’ create PLATFORM DRAFT (provisional bpm/duration)
+  â†’ create asset PENDING_UPLOAD + signed upload URL
+  â†’ CLIENT binary uploadToSignedUrl (private bucket)
+  â†’ POST analyze (JSON: beatId, assetId)
+  â†’ server download bytes â†’ duration + BPM V1
+  â†’ UI AUTO_SUGGEST | MANUAL_REQUIRED
+  â†’ finalize Server Action (JSON metadata + bpm + override)
+  â†’ re-download â†’ re-analyze â†’ resolveCreateBpm
+  â†’ update beats.bpm (+ metadata) Â· asset â†’ READY
+  â†’ Beat remains DRAFT (no auto-publish)
 ```
 
 ---
@@ -77,54 +77,54 @@ CLIENT FILE
 
 Reuse existing model only:
 
-- `beats` · `beat_audio_assets` · bucket `beat-audio`
-- Lifecycle: `PENDING_UPLOAD` → `READY` | `FAILED` (also `REPLACED` / `ARCHIVED` as today)
+- `beats` Â· `beat_audio_assets` Â· bucket `beat-audio`
+- Lifecycle: `PENDING_UPLOAD` â†’ `READY` | `FAILED` (also `REPLACED` / `ARCHIVED` as today)
 - Object key SSOT: `platform/{beatId}/{assetId}/{purpose}.bin`
 
-**No** staging prefix product model · **no** new tables · **no** TTL cron · **no** new bucket.
+**No** staging prefix product model Â· **no** new tables Â· **no** TTL cron Â· **no** new bucket.
 
 **Provisional draft fields:** `bpm = 1`, `duration_seconds = 1` until analyze/finalize overwrite. Provisional BPM is **not** a detector result and must never remain after successful finalize. Asset must **not** be READY until finalize succeeds.
 
 ---
 
-## 5. BPM V1 (frozen — do not change)
+## 5. BPM V1 (frozen â€” do not change)
 
 Canonical commit: **`471dd5b`**
 
 ```text
-A = tempo() · B = combTempo()
-→ C_NEAR → RULE B
-→ AUTO_SUGGEST | MANUAL_REQUIRED
-→ resolveCreateBpm (override / match / manual)
-→ beats.bpm ∈ [1, 300] integer
+A = tempo() Â· B = combTempo()
+â†’ C_NEAR â†’ RULE B
+â†’ AUTO_SUGGEST | MANUAL_REQUIRED
+â†’ resolveCreateBpm (override / match / manual)
+â†’ beats.bpm â [1, 300] integer
 ```
 
 Transport supplies **bytes only**. No detector / RULE B / confidence UX changes.
 
-Formats: WAV/MP3 auto · FLAC/AAC/M4A manual fallback.
+Formats: WAV/MP3 auto Â· FLAC/AAC/M4A manual fallback.
 
 ---
 
 ## 6. Security gates
 
 ```text
-REQUEST → AUTH → AUTHZ (ADMIN + beats.create/edit)
-→ VALIDATION (MIME + ≤50 MiB)
-→ PRIVATE STORAGE (signed upload TTL; no public permanent URL)
-→ SERVER ANALYSIS
-→ BUSINESS RULE (resolveCreateBpm)
-→ DB + READY
+REQUEST â†’ AUTH â†’ AUTHZ (ADMIN + beats.create/edit)
+â†’ VALIDATION (MIME + â‰¤50 MiB)
+â†’ PRIVATE STORAGE (signed upload TTL; no public permanent URL)
+â†’ SERVER ANALYSIS
+â†’ BUSINESS RULE (resolveCreateBpm)
+â†’ DB + READY
 ```
 
 **Forbidden:**
 
-- service-role in browser  
-- permanent public audio URL  
-- client-chosen final object key  
-- unauthorized Storage write  
-- analysis failed → READY  
-- invalid audio → READY  
-- BPM mismatch without override → accept as auto  
+- service-role in browser
+- permanent public audio URL
+- client-chosen final object key
+- unauthorized Storage write
+- analysis failed â†’ READY
+- invalid audio â†’ READY
+- BPM mismatch without override â†’ accept as auto
 
 ---
 
@@ -144,32 +144,32 @@ REQUEST → AUTH → AUTHZ (ADMIN + beats.create/edit)
 
 ## 8. MASTER replace
 
-Existing beat MASTER replace uses the same signed binary transport (session → upload → server complete → READY). No base64 Server Action. Access Gate unchanged.
+Existing beat MASTER replace uses the same signed binary transport (session â†’ upload â†’ server complete â†’ READY). No base64 Server Action. Access Gate unchanged.
 
 ---
 
 ## 9. Limits
 
-- Domain SSOT: `BEAT_AUDIO_MAX_BYTES = 50 MiB` (server)  
-- Client check = UX only  
-- Do **not** treat SA `bodySizeLimit` as the audio transport solution  
+- Domain SSOT: `BEAT_AUDIO_MAX_BYTES = 50 MiB` (server)
+- Client check = UX only
+- Do **not** treat SA `bodySizeLimit` as the audio transport solution
 
 ---
 
 ## 10. UX (minimal)
 
-SELECT → UPLOAD PROGRESS → ANALYZING → BPM AUTO/MANUAL → CREATE  
-Errors: upload failed · unsupported format · too large · analysis failed · manual BPM required · create failed  
+SELECT â†’ UPLOAD PROGRESS â†’ ANALYZING â†’ BPM AUTO/MANUAL â†’ CREATE
+Errors: upload failed Â· unsupported format Â· too large Â· analysis failed Â· manual BPM required Â· create failed
 
-Forbidden copy: confidence · AI · 100% · candidates  
+Forbidden copy: confidence Â· AI Â· 100% Â· candidates
 
 ---
 
 ## 11. Scope
 
-**IN:** admin create/analyze/MASTER binary transport · BPM wire-up · tests · docs  
+**IN:** admin create/analyze/MASTER binary transport Â· BPM wire-up Â· tests Â· docs
 
-**OUT:** community upload · Quick Take · tracks · payments · waveform · Access Gate redesign · DB redesign · new bucket · new BPM detector · accuracy certification  
+**OUT:** community upload Â· Quick Take Â· tracks Â· payments Â· waveform Â· Access Gate redesign Â· DB redesign Â· new bucket Â· new BPM detector Â· accuracy certification
 
 ---
 

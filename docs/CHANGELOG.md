@@ -6,14 +6,24 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — EPIC-A: PHASE 1.9 CLOSEOUT + PUBLISH HARD GATE
+
+**Status:** Implementation **local** (Owner review) · Phase 1.9 **CLOSED / LOCKED** in docs
+
+- Server: `transitionBeatStatus(…, PUBLISHED)` requires PLATFORM + active MASTER READY (same `beat_id`); create no longer inserts as PUBLISHED
+- UI publish gate preserved; GAP-PUBLISH-READY **CLOSED**
+- Docs reconciled to production GREEN @ `73e213c` (transport + BPM + live counts)
+
+---
+
 ## 2026-09-27 — AUDIO TRANSPORT V1 (SIGNED BINARY UPLOAD)
 
-**Status:** Design Freeze **APPROVED** · Implementation **COMMITTED** · Deploy **PENDING VERCEL**
+**Status:** Design Freeze **APPROVED** · Implementation **CLOSED / PRODUCTION VERIFIED** @ `73e213c`
 
 - Gap: base64 Server Action vs Next.js 1 MB body limit blocked >1 MB WAV E2E
 - Decision: **signed binary upload** to private `beat-audio` (not bodySizeLimit-as-fix; not RH multipart as sole path)
 - DRAFT-beat-first · BPM V1 unchanged (`471dd5b`)
-- Live E2E localhost: `bpm-120-steady.wav` ~2.52 MiB → session → signed upload → analyze → finalize · no HTTP 413 · BPM 120 AUTO_SUGGEST
+- Live E2E localhost + production: `bpm-120-steady.wav` ~2.52 MiB → session → signed upload → analyze → finalize · no HTTP 413 · BPM 120 AUTO_SUGGEST
 - Docs: [PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md](./phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md) · [AUDIO_TRANSPORT.md](./architecture/AUDIO_TRANSPORT.md)
 
 ---

@@ -24,23 +24,24 @@
 | Repo | https://github.com/dawidthai125/BitRymDym |
 | Local workspace | `C:\Users\dawid\Desktop\BitRymDym\bitrymdym` |
 | Canonical branch | `main` |
-| Canonical origin tip | Audio Transport V1 on `main` (see CHANGELOG 2026-09-27) |
-| Phase 1.8A implementation | `fd87f23` |
-| BPM Production V1 | `471dd5b` (unchanged by transport) |
-| Remote | `origin/main` — Audio Transport V1 |
-| Local | clean for transport scope; tooling (`.agents/`, `.cursor/`, `skills-lock.json`) untracked |
+| Canonical HEAD (origin/main tip at Transport close) | `73e213cb73d4834e2de655507a52f3aae85cdcc0` |
+| Phase 1.8A | `fd87f23` — **CLOSED / LOCKED** |
+| BPM Production V1 | `471dd5b` — **SHIPPED** · **ACCURACY NOT CERTIFIED** |
+| Audio Transport V1 | `73e213c` — **CLOSED / PRODUCTION VERIFIED** |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production app | Audio Transport V1 **PENDING VERCEL** after push |
+| Production app | **VERIFIED GREEN** @ `73e213c` |
+| Working tree note | EPIC-A (publish hard gate + Phase 1.9 closeout) may be local uncommitted |
 
-Phase 1.8A: **COMPLETE / CLOSED / LOCKED** @ `fd87f23`.
-Phase 1.9 Design Freeze: [PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md) — **APPROVED / LOCKED**.
-Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md).
+Phase 1.9 Design Freeze: [PHASE_1_9_DESIGN_FREEZE.md](./phases/PHASE_1_9_DESIGN_FREEZE.md) — **CLOSED / LOCKED**.
+Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) (historical).
 
-**Scope A (audio-first create):** on `main` @ `3bbde92` — duration via `music-metadata`, title suggestion.
+**Scope A (audio-first create):** on `main` @ `3bbde92`+.
 
-**Scope B (BPM auto):** **BPM Production Implementation V1** @ `471dd5b` — A+B → C_NEAR → RULE B · **ACCURACY NOT CERTIFIED**.
+**Scope B (BPM auto):** Production V1 @ `471dd5b` — A+B → C_NEAR → RULE B.
 
-**Audio transport:** Design Freeze **APPROVED** — signed binary upload (no base64 Server Action). Docs: [PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md](./phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md) · [AUDIO_TRANSPORT.md](./architecture/AUDIO_TRANSPORT.md). Implementation **COMMITTED** · Deploy **PENDING VERCEL**.
+**Audio transport:** signed binary upload to private `beat-audio`. Docs: [PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md](./phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md) · [AUDIO_TRANSPORT.md](./architecture/AUDIO_TRANSPORT.md).
+
+**GAP-PUBLISH-READY:** **CLOSED** — server hard gate in `transitionBeatStatus` (active MASTER READY required).
 
 ---
 
@@ -49,9 +50,9 @@ Runbook: [PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md).
 ```text
 FOUNDATION — PHASE 1.9 OPERATOR PRODUCTION ENABLEMENT
 DESIGN FREEZE = APPROVED / LOCKED
-IMPLEMENTATION = IN PROGRESS
-PRODUCTION BOOTSTRAP = PARTIAL
-PHASE CLOSED = NO
+IMPLEMENTATION = COMPLETE
+PRODUCTION = VERIFIED GREEN @ 73e213c
+PHASE CLOSED = YES / LOCKED
 ```
 
 | Etap | Status |
@@ -59,16 +60,26 @@ PHASE CLOSED = NO
 | 1.0–1.8A | **COMPLETE / CLOSED / LOCKED** |
 | 1.9 Design Freeze | **APPROVED / LOCKED** |
 | Auth signup UX + OTP confirm + Brevo | **PASS** (production) |
-| 1.9 Operator ADMIN bootstrap (OD-20) | **PASS** (`dawid.thai@int.pl` → ADMIN; account_level unchanged) |
-| Admin nav „Panel administratora” | **IMPLEMENTED locally** — **NOT COMMITTED / NOT DEPLOYED** |
-| Scope A audio-first `/admin/beats/new` | **ON PRODUCTION** @ `3bbde92` |
-| Scope B BPM auto-detection | **V1 ON MAIN** @ `471dd5b` — C_NEAR + RULE B; **ACCURACY NOT CERTIFIED** |
-| Audio transport (anti-1MB) | **DESIGN FREEZE APPROVED** · signed upload V1 **COMMITTED** · **PENDING VERCEL** |
-| Scope B community moderation | **NOT STARTED** (audit only) |
-| 1.9 First PLATFORM beat + E2E | **BLOCKED** — requires ADMIN browser session + MASTER via UI (prefer Scope A flow after deploy) |
-| 1.9 Phase CLOSED | **NO** |
+| 1.9 Operator ADMIN bootstrap (OD-20) | **PASS** |
+| Admin nav „Panel administratora” | **ON PRODUCTION** |
+| Scope A audio-first `/admin/beats/new` | **ON PRODUCTION** |
+| Scope B BPM auto-detection | **V1 ON PRODUCTION** @ `471dd5b` |
+| Audio transport (anti-1MB) | **CLOSED / PRODUCTION VERIFIED** @ `73e213c` |
+| Publish hard gate (READY MASTER) | **IMPLEMENTED** (EPIC-A — deploy with next commit) |
+| Scope B community moderation | **NOT STARTED** |
+| Product loop BEAT → LISTEN → DOWNLOAD | **GREEN** (production E2E) |
+| 1.9 Phase CLOSED | **YES / LOCKED** |
 
-**Live counts (2026-09-26):** ADMIN **1** · PUBLISHED **0** · READY **0** · profiles **5** · beats **0** · download_events **0**. Bucket `beat-audio` **private**.
+### Live counts (2026-09-27, production)
+
+| Metric | Count |
+|--------|------:|
+| ADMIN | 1 |
+| USER | 4 |
+| PUBLISHED | 1 (`phase19-master-tone`) |
+| DRAFT | 2 (transport E2E leftovers — leave until Owner GO cleanup) |
+| READY assets | 3 |
+| Bucket `beat-audio` | **private** |
 
 **Auth (production):** Confirm signup PL + `token_hash` OTP callback **PASS**; sender Brevo `noreply@bitrymdym.pl` **PASS**.
 
@@ -76,14 +87,6 @@ PHASE CLOSED = NO
 
 **Still OPEN:** OD-04, OD-07 through OD-16, OD-18.
 **CLOSED interim downloads:** OD-05, OD-06, OD-17.
-
-### HUMAN OPERATOR — next for first PLATFORM beat
-
-1. Sign in as ADMIN (`dawid.thai@int.pl`) on https://www.bitrymdym.pl (after Scope A deploy, or local)
-2. `/admin/beats` → `/admin/beats/new` → **select audio first** → wait for analysis (duration auto)
-3. Confirm/edit title suggestion; enter **BPM manually**; fill optional metadata → CREATE DRAFT + MASTER
-4. Publish via UI gate only when READY (no SQL status bypass)
-5. Reply **BEAT PUBLISHED PASS** + beat id — then agent continues anon/auth E2E
 
 ---
 
@@ -104,17 +107,17 @@ PHASE CLOSED = NO
 | Layer | Status |
 |-------|--------|
 | Design Freeze | **APPROVED / LOCKED** |
-| Implementation | **IN PROGRESS** (docs; no app/DB code) |
-| Production Bootstrap | **PENDING** |
-| Production Verify | **PENDING** |
-| Phase CLOSED | **NO** |
+| Implementation | **COMPLETE** |
+| Production Bootstrap | **COMPLETE** |
+| Production Verify | **PASS** (catalog / playback / download / admin transport) |
+| Phase CLOSED | **YES / LOCKED** |
 
 ### Phase 1.8A (locked)
 
 | Layer | Status |
 |-------|--------|
 | Implementation | **COMPLETE** @ `fd87f23` |
-| Live product E2E | **NOT VERIFIED** until 1.9 bootstrap |
+| Live product E2E | **PASS** (with published beat) |
 
 ---
 
@@ -127,16 +130,11 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ## 7. Current Blockers
 
-1. **HUMAN OPERATOR — Supabase Auth URL Configuration**
-   Dashboard → Authentication → URL Configuration:
-   - Site URL = `https://bitrymdym.pl`
-   - Redirect URLs include `https://bitrymdym.pl/**`, `https://www.bitrymdym.pl/**`, `http://localhost:3000/**`, and optional Vercel preview wildcard
-   Do **not** set Site URL to `*.vercel.app`.
-2. **HUMAN OPERATOR — Phase 1.9 bootstrap** — OD-20 signup + SQL ADMIN promotion + first beat (see runbook)
-3. Deploy + retest email confirmation redirect to `https://bitrymdym.pl/...` (not `*.vercel.app`)
-4. Do not mark Phase 1.9 CLOSED until production E2E PASS
+None for foundation loop.
 
-**FOLLOW-UP (docs drift):** `PHASE_1_FOUNDATION.md` + root `README.md` stale vs 1.7/1.8A.
+**Deferred (documented, not blockers):** orphan DRAFT/PENDING janitor; community upload; Quick Take; Tracks.
+
+**FOLLOW-UP:** keep docs in sync after EPIC-A commit/push.
 
 ---
 
@@ -145,8 +143,11 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 | Obszar | Status |
 |--------|--------|
 | Auth / Beats / Access Gate / Playback / Admin PLATFORM / Downloads | **LOCKED** (1.3–1.8A) |
-| Phase 1.9 operator enablement | **IN PROGRESS** (docs) |
-| Quick Take / Payments | **NOT STARTED** |
+| BPM Production V1 | **SHIPPED** |
+| Audio Transport V1 | **CLOSED / PRODUCTION VERIFIED** |
+| Publish READY hard gate | **IMPLEMENTED** (EPIC-A) |
+| Phase 1.9 operator enablement | **CLOSED / LOCKED** |
+| Quick Take / Payments / Community upload | **NOT STARTED** |
 
 ---
 
@@ -154,22 +155,20 @@ See [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md).
 
 ```text
 NEXT SESSION ENTRY:
-PHASE 1.9 DESIGN FREEZE APPROVED
-IMPLEMENTATION IN PROGRESS — docs ready
-PRODUCTION BOOTSTRAP = PENDING
-Execute docs/runbooks/PRODUCTION_BOOTSTRAP.md (human operator)
-Do NOT auto-admin / bootstrap endpoint / SQL publish bypass
-Do NOT commit secrets
-Do NOT mark CLOSED until E2E PASS
-FOLLOW-UP (docs drift): PHASE_1_FOUNDATION.md + root README.md stale vs 1.7/1.8A
+PHASE 1.9 = CLOSED / LOCKED
+PRODUCTION = GREEN @ 73e213c
+EPIC-A publish hard gate = local (commit/push when Owner GO)
+Foundation loop BEAT → LISTEN → DOWNLOAD = GREEN
+Next product epic = Owner choice (community / QT / ops orphans)
+Do NOT implement community/QT/tracks without Owner GO
 ```
 
 ---
 
 ## 10. Last Session Closeout
 
-**Sesja:** Phase 1.9 Implementation GO — documentation + pre-flight (2026-09-26)
+**Sesja:** EPIC-A — Phase 1.9 closeout + publish gate hardening (2026-09-27)
 
-**Done:** Design Freeze file; Production Bootstrap runbook; PROJECT_STATE / CHANGELOG / DECISION_LOG set to IN PROGRESS / PENDING.
-**Not done:** Human ADMIN promotion, first beat, live E2E, commit/push, phase CLOSED.
-**Next:** Human operator executes runbook → agent resumes verification / closeout.
+**Done:** Server hard gate DRAFT→PUBLISHED requires active MASTER READY; docs reconciled; tests for gate.
+**Not done (until Owner GO):** commit / push / deploy of EPIC-A.
+**Next:** Owner review → commit/push → production verify publish cases.
