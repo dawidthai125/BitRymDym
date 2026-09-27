@@ -2,35 +2,37 @@ import "server-only";
 
 import {
   TAKE_AUDIO_BUCKET,
-  TAKE_AUDIO_PREVIEW_TTL_SECONDS,
+  TAKE_AUDIO_DOWNLOAD_TTL_SECONDS,
 } from "@/config/recording";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import { assertOwnReadyTakeAccess } from "@/lib/takes/take-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export type TakePreviewResult = {
+export type TakeDownloadResult = {
   takeId: string;
   beatId: string;
   url: string;
   expiresAt: string;
   durationSeconds: number;
   contentType: string;
+  byteSize: number;
 };
 
 /**
- * Owner-only short-lived signed READ for READY take (Wave 3/4).
+ * Owner-only short-lived signed GET for READY take download (Wave 4).
+ * Never returns a permanent or public URL.
  */
-export async function createOwnTakePreviewSignedUrlFor(
+export async function createOwnTakeDownloadSignedUrlFor(
   context: AuthContext,
   params: { takeId: string },
-): Promise<TakePreviewResult> {
+): Promise<TakeDownloadResult> {
   const admin = createSupabaseAdminClient();
 
   const { data: take, error } = await admin
     .from("takes")
     .select(
-      "id, owner_id, beat_id, status, object_key, storage_bucket, content_type, duration_seconds, expires_at, deleted_at",
+      "id, owner_id, beat_id, status, object_key, storage_bucket, content_type, duration_seconds, byte_size, expires_at, deleted_at",
     )
     .eq("id", params.takeId)
     .maybeSingle();
@@ -48,27 +50,32 @@ export async function createOwnTakePreviewSignedUrlFor(
       storage_bucket: take.storage_bucket as string,
       content_type: take.content_type as string | null,
       duration_seconds: take.duration_seconds as number | null,
-      byte_size: null,
+      byte_size: take.byte_size as number | null,
       expires_at: take.expires_at as string,
       deleted_at: take.deleted_at as string | null,
     },
     userId: context.userId,
-    purpose: "preview",
+    purpose: "download",
   });
 
   const { data: signed, error: signError } = await admin.storage
     .from(TAKE_AUDIO_BUCKET)
     .createSignedUrl(
       take.object_key as string,
-      TAKE_AUDIO_PREVIEW_TTL_SECONDS,
+      TAKE_AUDIO_DOWNLOAD_TTL_SECONDS,
+      {
+        download: true,
+      },
     );
 
   if (signError || !signed?.signedUrl) {
-    throw new Error(signError?.message ?? "Failed to create take preview URL.");
+    throw new Error(
+      signError?.message ?? "Failed to create take download URL.",
+    );
   }
 
   const expiresAt = new Date(
-    Date.now() + TAKE_AUDIO_PREVIEW_TTL_SECONDS * 1000,
+    Date.now() + TAKE_AUDIO_DOWNLOAD_TTL_SECONDS * 1000,
   ).toISOString();
 
   return {
@@ -78,12 +85,13 @@ export async function createOwnTakePreviewSignedUrlFor(
     expiresAt,
     durationSeconds: (take.duration_seconds as number) ?? 0,
     contentType: (take.content_type as string) ?? "audio/webm",
+    byteSize: (take.byte_size as number) ?? 0,
   };
 }
 
-export async function createOwnTakePreviewSignedUrl(params: {
+export async function createOwnTakeDownloadSignedUrl(params: {
   takeId: string;
-}): Promise<TakePreviewResult> {
+}): Promise<TakeDownloadResult> {
   const context = await requireUser();
-  return createOwnTakePreviewSignedUrlFor(context, params);
+  return createOwnTakeDownloadSignedUrlFor(context, params);
 }

@@ -13,6 +13,8 @@ type BeatRecordingSurfaceProps = {
   beatId: string;
   title: string;
   durationSeconds: number;
+  /** Server-resolved max recording seconds (entitlement). Display-only on client. */
+  maxRecordingSeconds: number;
   beatStatus: string;
   isAuthenticated: boolean;
 };
@@ -24,6 +26,7 @@ export function BeatRecordingSurface({
   beatId,
   title,
   durationSeconds,
+  maxRecordingSeconds,
   beatStatus,
   isAuthenticated,
 }: BeatRecordingSurfaceProps) {
@@ -40,6 +43,7 @@ export function BeatRecordingSurface({
       <RecordingPanel
         beatId={beatId}
         beatDurationSeconds={durationSeconds}
+        maxRecordingSeconds={maxRecordingSeconds}
         beatStatus={beatStatus}
         isAuthenticated={isAuthenticated}
         playbackRef={playbackRef}

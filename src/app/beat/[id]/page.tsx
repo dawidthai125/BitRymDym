@@ -10,6 +10,7 @@ import {
 } from "@/lib/beats/public";
 import { getPublishedBeat } from "@/lib/beats/service";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
+import { computeRecordingMaxSeconds } from "@/lib/takes/entitlement";
 
 type BeatDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -37,6 +38,15 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const detail = toPublicBeatDetail(beat);
   const audioInfo = await getBeatAudioPublicInfo(beat.id);
   const session = await getCurrentProfile();
+  const maxRecordingSeconds = session
+    ? computeRecordingMaxSeconds({
+        accountLevel: session.profile.accountLevel,
+        beatDurationSeconds: detail.durationSeconds,
+      })
+    : computeRecordingMaxSeconds({
+        accountLevel: "BEGINNER_RAPPER",
+        beatDurationSeconds: detail.durationSeconds,
+      });
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
@@ -105,6 +115,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
             beatId={detail.id}
             title={detail.title}
             durationSeconds={detail.durationSeconds}
+            maxRecordingSeconds={maxRecordingSeconds}
             beatStatus="PUBLISHED"
             isAuthenticated={Boolean(session)}
           />

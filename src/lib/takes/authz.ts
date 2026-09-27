@@ -1,14 +1,10 @@
 /**
- * Recording Wave 2 — interim AuthZ for take recording.
- * No new permission keys. Logged-in + PUBLISHED beat only (OD-W2-02/03).
+ * Recording Wave 4 — take AuthZ (record access + owner boundary helpers).
+ * Entitlement / retention / anti-abuse caps live in entitlement.ts (SSOT).
  */
 
 import type { AuthContext } from "@/lib/auth/types";
-import {
-  RECORDING_GLOBAL_MAX_SECONDS,
-  RECORDING_RETENTION_SECONDS,
-} from "@/config/recording";
-import type { AccountLevel } from "@/types/domain";
+import { computeRecordingMaxSeconds } from "@/lib/takes/entitlement";
 
 export class TakeAuthzError extends Error {
   readonly code: "FORBIDDEN" | "NOT_FOUND" | "UNAUTHENTICATED" = "FORBIDDEN";
@@ -22,39 +18,24 @@ export class TakeAuthzError extends Error {
   }
 }
 
-/** Interim W2: no separate entitlement engine — cap is global 180 only. */
+/** @deprecated Use computeRecordingMaxSeconds from entitlement.ts */
 export function computeInterimRecordingMaxSeconds(
   beatDurationSeconds: number,
 ): number {
-  if (
-    typeof beatDurationSeconds !== "number" ||
-    !Number.isFinite(beatDurationSeconds) ||
-    beatDurationSeconds <= 0
-  ) {
-    throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");
-  }
-  return Math.min(
-    Math.floor(beatDurationSeconds),
-    RECORDING_GLOBAL_MAX_SECONDS,
-  );
+  return computeRecordingMaxSeconds({
+    accountLevel: "PRO_RAPPER",
+    beatDurationSeconds,
+  });
 }
 
-export function retentionSecondsForAccountLevel(
-  level: AccountLevel | string,
-): number {
-  if (level === "PRO_RAPPER") return RECORDING_RETENTION_SECONDS.PRO_RAPPER;
-  if (level === "LEGEND_RAPPER") return RECORDING_RETENTION_SECONDS.LEGEND_RAPPER;
-  return RECORDING_RETENTION_SECONDS.BEGINNER_RAPPER;
-}
-
-export function recordingModeForMaxSeconds(
-  maxSeconds: number,
-): "QUICK" | "FULL" {
-  return maxSeconds <= 30 ? "QUICK" : "FULL";
-}
+export {
+  recordingModeForMaxSeconds,
+  retentionSecondsForAccountLevel,
+} from "@/lib/takes/entitlement";
 
 /**
- * Wave 2 RECORD contract: authenticated profile may record on PUBLISHED beats only.
+ * Wave 4 RECORD contract: authenticated profile may record on PUBLISHED beats.
+ * Max seconds from account level + beat duration (server SSOT).
  * Anonymous DENY. Shared grants OUT.
  */
 export function assertTakeRecordAccess(params: {
@@ -74,10 +55,15 @@ export function assertTakeRecordAccess(params: {
       "FORBIDDEN",
     );
   }
-  const maxRecordingSeconds = computeInterimRecordingMaxSeconds(
-    params.beat.durationSeconds,
-  );
-  return { maxRecordingSeconds };
+  try {
+    const maxRecordingSeconds = computeRecordingMaxSeconds({
+      accountLevel: params.context.profile.accountLevel,
+      beatDurationSeconds: params.beat.durationSeconds,
+    });
+    return { maxRecordingSeconds };
+  } catch {
+    throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");
+  }
 }
 
 /** Client must never choose storage identity fields. */

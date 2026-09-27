@@ -50,6 +50,14 @@ export async function SiteHeader({
                   Moje bity
                 </Link>
               ) : null}
+              {session ? (
+                <Link
+                  href="/account/takes"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Moje próbki
+                </Link>
+              ) : null}
               {showModerationNav && !showAdminNav ? (
                 <Link
                   href="/admin/moderation"

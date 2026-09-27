@@ -11,11 +11,14 @@ import type { AuthContext } from "@/lib/auth/types";
 import { probeAudioDurationFromBytes } from "@/lib/beats/audio-duration";
 import {
   assertTakeRecordAccess,
-  recordingModeForMaxSeconds,
   rejectClientChosenTakeStorageParams,
-  retentionSecondsForAccountLevel,
   TakeAuthzError,
 } from "@/lib/takes/authz";
+import {
+  antiAbuseCapsForAccountLevel,
+  recordingModeForMaxSeconds,
+  retentionSecondsForAccountLevel,
+} from "@/lib/takes/entitlement";
 import {
   buildUserTakeObjectKey,
   expectedUserTakeObjectKey,
@@ -56,6 +59,28 @@ function mapTakeAuthz(error: unknown): never {
     );
   }
   throw error;
+}
+
+function mapClaimRpcError(message: string): never {
+  if (message.includes("ACTIVE_READY_CAP")) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Active READY take limit reached for your account level.",
+    );
+  }
+  if (message.includes("SESSION_DAY_CAP")) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Daily recording session limit reached for your account level.",
+    );
+  }
+  if (message.includes("CONCURRENT_SESSION")) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Another recording session is already in progress.",
+    );
+  }
+  throw new Error(message);
 }
 
 async function assertPublishedBeatHasReadyMaster(beatId: string) {
@@ -106,7 +131,7 @@ async function loadTakeOwnedOrThrow(params: {
   if (data.owner_id !== params.userId) {
     throw new AuthError("FORBIDDEN", "Not take owner.");
   }
-  if (data.deleted_at) {
+  if (data.deleted_at || data.status === "DELETED") {
     throw new AuthError("FORBIDDEN", "Take was deleted.");
   }
   return data;
@@ -123,7 +148,7 @@ type SessionParams = {
 };
 
 /**
- * Create PENDING_UPLOAD take + signed upload URL (testable with AuthContext).
+ * Create PENDING_UPLOAD take + signed upload URL (race-safe claim RPC).
  */
 export async function createTakeRecordingSessionFor(
   context: AuthContext,
@@ -173,27 +198,30 @@ export async function createTakeRecordingSessionFor(
     Date.now() + retentionSeconds * 1000,
   ).toISOString();
   const recordingMode = recordingModeForMaxSeconds(maxRecordingSeconds!);
+  const caps = antiAbuseCapsForAccountLevel(context.profile.accountLevel);
 
   const admin = createSupabaseAdminClient();
-  const { error: insertError } = await admin.from("takes").insert({
-    id: takeId,
-    owner_id: context.userId,
-    beat_id: params.beatId,
-    status: "PENDING_UPLOAD",
-    recording_mode: recordingMode,
-    storage_bucket: TAKE_AUDIO_BUCKET,
-    object_key: objectKey,
-    content_type: meta.contentType,
-    byte_size: params.byteSize,
-    beat_duration_seconds_snapshot: beat.duration_seconds,
-    recording_max_seconds_snapshot: maxRecordingSeconds!,
-    beat_bpm_snapshot: beat.bpm ?? null,
-    audio_offset_ms: 0,
-    expires_at: expiresAt,
-  });
+  const { error: claimError } = await admin.rpc(
+    "claim_take_recording_session",
+    {
+      p_owner_id: context.userId,
+      p_beat_id: params.beatId,
+      p_take_id: takeId,
+      p_object_key: objectKey,
+      p_content_type: meta.contentType,
+      p_byte_size: params.byteSize,
+      p_recording_mode: recordingMode,
+      p_beat_duration_seconds: beat.duration_seconds,
+      p_recording_max_seconds: maxRecordingSeconds!,
+      p_beat_bpm: beat.bpm ?? null,
+      p_expires_at: expiresAt,
+      p_max_active_ready: caps.maxActiveReady,
+      p_max_sessions_utc_day: caps.maxSessionsPerUtcDay,
+    },
+  );
 
-  if (insertError) {
-    throw new Error(insertError.message);
+  if (claimError) {
+    mapClaimRpcError(claimError.message);
   }
 
   const { data: signed, error: signError } = await admin.storage
@@ -236,6 +264,7 @@ export async function createTakeRecordingSession(
 
 /**
  * Finalize after client binary upload. Duration probe is fail-closed (OD-W2-04).
+ * Entitlement re-checked against session snapshot (never client-supplied max).
  */
 export async function finalizeTakeRecordingFor(
   context: AuthContext,
@@ -269,7 +298,8 @@ export async function finalizeTakeRecordingFor(
     await admin
       .from("takes")
       .update({ status: "EXPIRED", failure_reason: "EXPIRED" })
-      .eq("id", take.id);
+      .eq("id", take.id)
+      .eq("status", "PENDING_UPLOAD");
     throw new AuthError("FORBIDDEN", "Take session expired.");
   }
 
@@ -379,7 +409,8 @@ export async function finalizeTakeRecordingFor(
       failure_reason: null,
     })
     .eq("id", take.id)
-    .eq("status", "PENDING_UPLOAD");
+    .eq("status", "PENDING_UPLOAD")
+    .is("deleted_at", null);
 
   if (updateError) {
     throw new Error(updateError.message);

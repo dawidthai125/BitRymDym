@@ -1,11 +1,10 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–3 **CLOSED** @ `9f6f006` · production GREEN (real Chromium WebM/Opus E2E PASS)
+**Status:** Design Freeze **LOCKED** · Wave 1–3 **CLOSED** @ `9f6f006` · Wave 4 **IMPLEMENTED / Owner Review** (not deployed)
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
-**Wave 2 closeout:** [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)  
-**Wave 3 readiness:** [RECORDING_WAVE3_READINESS_AUDIT.md](../audits/RECORDING_WAVE3_READINESS_AUDIT.md)  
-**Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)
+**Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
+**Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)
 
 ## Wave 1 delivered
 
@@ -37,6 +36,23 @@
 
 **OD-W3 (CLOSED):** beat plays from 0 during capture · anon OUT · sibling panel (not merged reducer) · take-only preview (no dual-play).
 
-**Not in Wave 3:** Anonymous QT · shared grants · entitlement engine · janitor · own take download · MIX/EXPORT.
+## Wave 4 delivered (Owner Review — not CLOSED)
 
-**Reuse:** Wave 2 transport + MediaRecorder; beat PLAYBACK Access Gate unchanged; take-audio remains private.
+| Piece | Location |
+|-------|----------|
+| Entitlement / retention / anti-abuse SSOT | `src/lib/takes/entitlement.ts` |
+| Race-safe session claim | `claim_take_recording_session` + `take-transport.ts` |
+| Shared owner AuthZ gate | `src/lib/takes/take-access.ts` |
+| Own download | `take-download.ts` · `POST /api/takes/download` |
+| Soft-delete | `take-delete.ts` · `POST /api/takes/delete` |
+| Janitor | `takes-janitor.ts` · `GET /api/cron/takes-janitor` · `vercel.json` |
+| Moje próbki | `/account/takes` · `list-own-takes.ts` |
+
+**Entitlement:** BEGINNER `MIN(beat,30)` · PRO/LEGEND `MIN(beat,180)` — server only.  
+**Retention:** BEGINNER 24h · PRO 10d · LEGEND 30d via `expires_at`.  
+**Anti-abuse:** active READY caps + UTC day sessions + max 1 `PENDING_UPLOAD` (advisory lock).  
+**Janitor:** Vercel Cron hourly + `CRON_SECRET` (not pg_cron).
+
+**Not in Wave 4:** Anonymous QT · shared grants · MIX/EXPORT · Track publish · payments/Premium · dual-play.
+
+**Reuse:** Wave 2/3 transport + MediaRecorder + preview; Chromium WebM duration fallback (`9f6f006`) unchanged.

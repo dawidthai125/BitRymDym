@@ -84,6 +84,13 @@ export default async function AccountPage() {
         ) : null}
 
         <Link
+          href="/account/takes"
+          className="text-sm font-medium underline underline-offset-4"
+        >
+          Moje próbki
+        </Link>
+
+        <Link
           href="/account/downloads"
           className="text-sm underline underline-offset-4"
         >

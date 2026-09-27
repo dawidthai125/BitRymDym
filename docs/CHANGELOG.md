@@ -6,6 +6,24 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — RECORDING WAVE 4: ENTITLEMENT / RETENTION / JANITOR / ANTI-ABUSE / DOWNLOAD / MOJE PRÓBKI
+
+**Status:** **IMPLEMENTED / READY_FOR_OWNER_REVIEW** — COMMIT / PUSH / DEPLOY = NOT PERFORMED · production still @ `9f6f006`
+
+- Entitlement SSOT: BEGINNER 30s · PRO/LEGEND `MIN(beat,180)` (`entitlement.ts` + session/finalize)
+- Retention: account-level `expires_at`; AuthZ DENY when expired
+- Anti-abuse race-safe: `claim_take_recording_session` (advisory_xact_lock) + unique PENDING per owner
+- Janitor: Vercel Cron → `GET /api/cron/takes-janitor` (`CRON_SECRET`) — take-audio only
+- Own take download: `POST /api/takes/download` signed GET TTL 300s
+- Soft-delete: `POST /api/takes/delete` → DELETED + deleted_at
+- UI: `/account/takes` Moje próbki (preview / download / delete)
+- Migration: `20260927220000_recording_wave4_session_claim.sql` (applied remote)
+- Tests: wave4-unit + wave4-live; full `src/lib/takes` regression PASS
+- Report: [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](./audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)
+- OUT: anon QT · grants · MIX/EXPORT · publish · payments
+
+---
+
 ## 2026-09-27 — RECORDING WAVE 3: DURATION HOTFIX PRODUCTION VERIFIED / CLOSED
 
 **Status:** **CLOSED / PRODUCTION VERIFIED** @ `9f6f006c4dbb3354260ca2f5479c18952f8a713a`

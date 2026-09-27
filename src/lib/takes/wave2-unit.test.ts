@@ -45,12 +45,13 @@ describe("Recording Wave 2 — AuthZ interim", () => {
   });
 
   it("allows PUBLISHED only", () => {
+    // BEGINNER entitlement: MIN(beat, 30)
     expect(
       assertTakeRecordAccess({
         context: ctx(),
         beat: { id: "b", status: "PUBLISHED", durationSeconds: 60 },
       }).maxRecordingSeconds,
-    ).toBe(60);
+    ).toBe(30);
 
     for (const status of ["DRAFT", "REJECTED", "ARCHIVED", "PENDING_REVIEW"]) {
       expect(() =>

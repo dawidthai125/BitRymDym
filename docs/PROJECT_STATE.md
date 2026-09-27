@@ -25,13 +25,13 @@
 | **Recording Wave 1** | **CLOSED** @ `dd2ffd7` |
 | **Recording Wave 2** | **CLOSED** @ `2ab3e3e` (production GREEN) |
 | **Recording Wave 3** | **CLOSED** @ `9f6f006` (production GREEN · real Chromium WebM/Opus E2E PASS) |
+| **Recording Wave 4** | **IMPLEMENTED / READY_FOR_OWNER_REVIEW** (not committed · not deployed) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN @ Wave 3 hotfix `9f6f006` |
+| Production | GREEN @ Wave 3 hotfix `9f6f006` (Wave 4 remote migration applied; app not deployed) |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
-Wave 3 readiness: [RECORDING_WAVE3_READINESS_AUDIT.md](./audits/RECORDING_WAVE3_READINESS_AUDIT.md)  
 Wave 3 closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
-Blocker RCA: [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md)
+Wave 4 report: [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](./audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)
 
 ---
 
@@ -39,7 +39,8 @@ Blocker RCA: [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./audits/RECORDING_WAVE
 
 ```text
 RECORDING WAVE 3 = CLOSED / PRODUCTION VERIFIED @ 9f6f006
-Anonymous QT / entitlements / grants = NOT STARTED (later waves)
+RECORDING WAVE 4 = IMPLEMENTED — READY_FOR_OWNER_REVIEW (no commit/push/deploy yet)
+Anonymous QT / shared grants = Wave 5+ (OUT of W4)
 ```
 
 ---
@@ -47,13 +48,14 @@ Anonymous QT / entitlements / grants = NOT STARTED (later waves)
 ## 4. Next Session Entry
 
 ```text
-NEXT: Owner GO for next Recording wave (Anonymous QT / grants / entitlements) — only with explicit GO
+NEXT: Owner Review of Wave 4 → explicit GO for COMMIT / PUSH / DEPLOY
+Set CRON_SECRET on Vercel before relying on janitor schedule
 Do NOT reopen Wave 3 duration probe without evidence of regression
-Do NOT reopen Community epic without Owner GO
+Do NOT implement Anonymous QT / shared grants without Owner GO (W5+)
 ```
 
 ---
 
 ## 5. Out of scope reminders
 
-**Out of Wave 3 (correct):** anonymous QT · shared grants · Access Gate RECORD productization · entitlement engine · janitor · anti-abuse · own take download · dual-play preview · MIX/EXPORT.
+**Out of Wave 4 (correct):** anonymous QT · shared grants · Access Gate RECORD for grants · MIX/EXPORT · Track publish · payments/Premium · dual-play preview.

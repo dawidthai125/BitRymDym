@@ -25,6 +25,8 @@ import {
 type RecordingPanelProps = {
   beatId: string;
   beatDurationSeconds: number;
+  /** Server SSOT max — client timer must not exceed this. */
+  maxRecordingSeconds: number;
   isAuthenticated: boolean;
   beatStatus: string;
   playbackRef: RefObject<PlaybackShellHandle | null>;
@@ -51,12 +53,18 @@ async function fetchTakePreviewUrl(takeId: string): Promise<string> {
 export function RecordingPanel({
   beatId,
   beatDurationSeconds,
+  maxRecordingSeconds,
   isAuthenticated,
   beatStatus,
   playbackRef,
   className,
 }: RecordingPanelProps) {
-  const maxSeconds = displayMaxRecordingSeconds(beatDurationSeconds);
+  const maxSeconds =
+    typeof maxRecordingSeconds === "number" &&
+    Number.isFinite(maxRecordingSeconds) &&
+    maxRecordingSeconds > 0
+      ? Math.floor(maxRecordingSeconds)
+      : displayMaxRecordingSeconds(beatDurationSeconds);
   const [state, dispatch] = useReducer(
     reduceRecordingUi,
     undefined,
