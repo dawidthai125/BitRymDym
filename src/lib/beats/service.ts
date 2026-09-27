@@ -8,23 +8,24 @@ import {
   requireUser,
 } from "@/lib/auth/session";
 import {
-  assertPlatformPublishHardGate,
+  assertPublishHardGate,
   type PublishGateAssetSnapshot,
 } from "@/lib/beats/admin-publish";
 import {
   canTransitionStatus,
   validateBeatInput,
+  validateRejectionReason,
   type BeatInput,
 } from "@/lib/beats/validation";
 import {
+  BEAT_SELECT_FULL,
+  BEAT_SELECT_PUBLIC,
   mapBeatRow,
+  mapPublicBeatRow,
   toBeatInsertPayload,
   type BeatRow,
 } from "@/lib/beats/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const BEAT_SELECT =
-  "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at";
 
 export type PlatformBeatAdminListItem = Beat & {
   activeMasterReady: boolean;
@@ -34,7 +35,7 @@ async function loadBeat(beatId: string): Promise<Beat> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .select(BEAT_SELECT)
+    .select(BEAT_SELECT_FULL)
     .eq("id", beatId)
     .maybeSingle();
 
@@ -51,9 +52,70 @@ async function requireAdminPlatformOps(): Promise<void> {
   await requireRole(["ADMIN"]);
 }
 
+async function assertActiveMasterReadyForPublish(beat: Beat): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beat_audio_assets")
+    .select("id, beat_id, purpose, status, is_active")
+    .eq("beat_id", beat.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const assetsForBeat: PublishGateAssetSnapshot[] = (data ?? []).map((row) => ({
+    id: row.id as string,
+    beatId: row.beat_id as string,
+    purpose: row.purpose as PublishGateAssetSnapshot["purpose"],
+    status: row.status as PublishGateAssetSnapshot["status"],
+    isActive: Boolean(row.is_active),
+  }));
+
+  const gate = assertPublishHardGate({
+    beatId: beat.id,
+    ownershipType: beat.ownershipType,
+    status: beat.status,
+    assetsForBeat,
+  });
+
+  if (!gate.ok) {
+    throw new AuthError("FORBIDDEN", gate.reason);
+  }
+}
+
 /**
- * Phase 1.4: ADMIN creates PLATFORM beats only.
- * USER community create is OUT OF SCOPE.
+ * Wave 1 contract: submit requires active MASTER READY (same truth as publish).
+ * Wave 2 transport will create the READY asset before submit is usable end-to-end.
+ */
+async function assertActiveMasterReadyForSubmit(beat: Beat): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beat_audio_assets")
+    .select("id, beat_id, purpose, status, is_active")
+    .eq("beat_id", beat.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const ready = (data ?? []).some(
+    (row) =>
+      row.beat_id === beat.id &&
+      row.purpose === "MASTER" &&
+      row.is_active === true &&
+      row.status === "READY",
+  );
+
+  if (!ready) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Submit requires an active MASTER READY audio asset.",
+    );
+  }
+}
+
+/**
+ * Phase 1.4/1.7: ADMIN creates PLATFORM beats only.
  */
 export async function createPlatformBeat(
   input: Omit<BeatInput, "ownershipType" | "ownerId">,
@@ -71,7 +133,6 @@ export async function createPlatformBeat(
     throw new Error(validated.errors.join("; "));
   }
 
-  // Publish requires READY MASTER (server hard gate). Create always starts DRAFT.
   if (validated.value.status !== "DRAFT") {
     throw new Error(
       "New platform beats must start as DRAFT. Publish only after active MASTER READY.",
@@ -81,8 +142,66 @@ export async function createPlatformBeat(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .insert(toBeatInsertPayload({ ...validated.value, status: "DRAFT" }))
-    .select(BEAT_SELECT)
+    .insert(
+      toBeatInsertPayload({
+        ...validated.value,
+        status: "DRAFT",
+        rejectionReason: null,
+      }),
+    )
+    .select(BEAT_SELECT_FULL)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapBeatRow(data as BeatRow);
+}
+
+/**
+ * Community Wave 1: authenticated USER creates own USER DRAFT.
+ * Forces ownership — never trusts client ownerId / ownershipType / status.
+ */
+export async function createUserBeat(
+  input: Omit<BeatInput, "ownershipType" | "ownerId" | "status">,
+): Promise<Beat> {
+  const context = await requireUser();
+  if (context.profile.role !== "USER") {
+    // Staff creating personal community beats is out of Wave 1; use PLATFORM path.
+    if (context.profile.role === "ADMIN" || context.profile.role === "MODERATOR") {
+      throw new AuthError(
+        "FORBIDDEN",
+        "createUserBeat is for USER role only. Use PLATFORM admin create for staff.",
+      );
+    }
+  }
+  await requirePermission("beats.create");
+
+  const ownerId = context.userId;
+  const validated = validateBeatInput({
+    ...input,
+    ownershipType: "USER",
+    ownerId,
+    status: "DRAFT",
+  });
+  if (!validated.ok) {
+    throw new Error(validated.errors.join("; "));
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .insert(
+      toBeatInsertPayload({
+        ...validated.value,
+        ownershipType: "USER",
+        ownerId,
+        status: "DRAFT",
+        rejectionReason: null,
+      }),
+    )
+    .select(BEAT_SELECT_FULL)
     .single();
 
   if (error) {
@@ -108,7 +227,6 @@ export async function updateBeatMetadata(
     );
   }
 
-  // Ownership is immutable via metadata edit (PLATFORM + owner_id NULL).
   const nextInput: BeatInput = {
     ownershipType: "PLATFORM",
     ownerId: null,
@@ -137,7 +255,7 @@ export async function updateBeatMetadata(
     .from("beats")
     .update(toBeatInsertPayload(validated.value))
     .eq("id", beatId)
-    .select(BEAT_SELECT)
+    .select(BEAT_SELECT_FULL)
     .single();
 
   if (error) {
@@ -150,6 +268,7 @@ export async function updateBeatMetadata(
 export async function transitionBeatStatus(
   beatId: string,
   to: BeatStatus,
+  options?: { rejectionReason?: string | null },
 ): Promise<Beat> {
   const context = await requireUser();
   const current = await loadBeat(beatId);
@@ -160,7 +279,19 @@ export async function transitionBeatStatus(
         ? "MODERATOR"
         : "USER";
 
-  if (!canTransitionStatus({ from: current.status, to, actor })) {
+  const isOwner =
+    current.ownershipType === "USER" &&
+    current.ownerId === context.userId;
+
+  if (
+    !canTransitionStatus({
+      from: current.status,
+      to,
+      actor,
+      ownershipType: current.ownershipType,
+      isOwner,
+    })
+  ) {
     throw new AuthError(
       "FORBIDDEN",
       `Status transition ${current.status} → ${to} is not allowed`,
@@ -168,23 +299,64 @@ export async function transitionBeatStatus(
   }
 
   if (actor === "ADMIN") {
-    await requirePermission("beats.edit");
+    if (to === "PUBLISHED") {
+      await requirePermission("beats.publish");
+    } else {
+      await requirePermission("beats.edit");
+    }
   } else if (actor === "MODERATOR") {
-    await requirePermission(to === "APPROVED" ? "beats.approve" : "beats.reject");
+    if (to === "APPROVED") {
+      await requirePermission("beats.approve");
+    } else if (to === "REJECTED") {
+      await requirePermission("beats.reject");
+    } else if (to === "PUBLISHED") {
+      await requirePermission("beats.publish");
+      if (current.ownershipType !== "USER") {
+        throw new AuthError(
+          "FORBIDDEN",
+          "MODERATOR may only publish USER-owned beats.",
+        );
+      }
+    } else {
+      throw new AuthError("FORBIDDEN", "Insufficient role.");
+    }
   } else {
-    throw new AuthError("FORBIDDEN", "Insufficient role.");
+    // USER — own beat only (already gated by canTransitionStatus + isOwner)
+    if (!isOwner) {
+      throw new AuthError("FORBIDDEN", "Not beat owner.");
+    }
+    if (to === "PUBLISHED" || to === "APPROVED") {
+      throw new AuthError("FORBIDDEN", "USER cannot approve or publish.");
+    }
   }
 
   if (to === "PUBLISHED") {
     await assertActiveMasterReadyForPublish(current);
   }
 
+  const patch: Record<string, unknown> = { status: to };
+
+  if (to === "REJECTED") {
+    const reason = validateRejectionReason(options?.rejectionReason);
+    if (!reason.ok) {
+      throw new AuthError("FORBIDDEN", reason.error);
+    }
+    patch.rejection_reason = reason.value;
+  } else if (
+    to === "DRAFT" ||
+    to === "APPROVED" ||
+    to === "PUBLISHED" ||
+    to === "PENDING_REVIEW"
+  ) {
+    patch.rejection_reason = null;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .update({ status: to })
+    .update(patch)
     .eq("id", beatId)
-    .select(BEAT_SELECT)
+    .select(BEAT_SELECT_FULL)
     .single();
 
   if (error) {
@@ -194,40 +366,87 @@ export async function transitionBeatStatus(
   return mapBeatRow(data as BeatRow);
 }
 
-/**
- * Server hard gate (GAP-PUBLISH-READY CLOSED):
- * DRAFT → PUBLISHED only with PLATFORM + active MASTER READY for this beat.
- * Never trust client `ready` flags.
- */
-async function assertActiveMasterReadyForPublish(beat: Beat): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("beat_audio_assets")
-    .select("id, beat_id, purpose, status, is_active")
-    .eq("beat_id", beat.id);
-
-  if (error) {
-    throw new Error(error.message);
+/** Community: DRAFT → PENDING_REVIEW (own + MASTER READY). */
+export async function submitUserBeat(beatId: string): Promise<Beat> {
+  const context = await requireUser();
+  const current = await loadBeat(beatId);
+  if (
+    current.ownershipType !== "USER" ||
+    current.ownerId !== context.userId
+  ) {
+    throw new AuthError("FORBIDDEN", "Not beat owner.");
   }
-
-  const assetsForBeat: PublishGateAssetSnapshot[] = (data ?? []).map((row) => ({
-    id: row.id as string,
-    beatId: row.beat_id as string,
-    purpose: row.purpose as PublishGateAssetSnapshot["purpose"],
-    status: row.status as PublishGateAssetSnapshot["status"],
-    isActive: Boolean(row.is_active),
-  }));
-
-  const gate = assertPlatformPublishHardGate({
-    beatId: beat.id,
-    ownershipType: beat.ownershipType,
-    status: beat.status,
-    assetsForBeat,
-  });
-
-  if (!gate.ok) {
-    throw new AuthError("FORBIDDEN", gate.reason);
+  if (current.status === "PENDING_REVIEW") {
+    throw new AuthError("FORBIDDEN", "Beat is already pending review.");
   }
+  await assertActiveMasterReadyForSubmit(current);
+  return transitionBeatStatus(beatId, "PENDING_REVIEW");
+}
+
+export async function approveUserBeat(beatId: string): Promise<Beat> {
+  await requirePermission("beats.approve");
+  const current = await loadBeat(beatId);
+  if (current.ownershipType !== "USER") {
+    throw new AuthError("FORBIDDEN", "approveUserBeat is for USER beats.");
+  }
+  return transitionBeatStatus(beatId, "APPROVED");
+}
+
+export async function rejectUserBeat(
+  beatId: string,
+  rejectionReason: string,
+): Promise<Beat> {
+  await requirePermission("beats.reject");
+  const current = await loadBeat(beatId);
+  if (current.ownershipType !== "USER") {
+    throw new AuthError("FORBIDDEN", "rejectUserBeat is for USER beats.");
+  }
+  return transitionBeatStatus(beatId, "REJECTED", { rejectionReason });
+}
+
+export async function publishApprovedUserBeat(beatId: string): Promise<Beat> {
+  await requirePermission("beats.publish");
+  const current = await loadBeat(beatId);
+  if (current.ownershipType !== "USER") {
+    throw new AuthError(
+      "FORBIDDEN",
+      "publishApprovedUserBeat is for USER beats.",
+    );
+  }
+  if (current.status !== "APPROVED") {
+    throw new AuthError("FORBIDDEN", "Beat must be APPROVED before publish.");
+  }
+  return transitionBeatStatus(beatId, "PUBLISHED");
+}
+
+export async function archiveOwnUserBeat(beatId: string): Promise<Beat> {
+  const context = await requireUser();
+  const current = await loadBeat(beatId);
+  if (
+    current.ownershipType !== "USER" ||
+    current.ownerId !== context.userId
+  ) {
+    throw new AuthError("FORBIDDEN", "Not beat owner.");
+  }
+  return transitionBeatStatus(beatId, "ARCHIVED");
+}
+
+/** Return USER beat to DRAFT after REJECTED (clears rejection_reason). */
+export async function returnRejectedUserBeatToDraft(
+  beatId: string,
+): Promise<Beat> {
+  const context = await requireUser();
+  const current = await loadBeat(beatId);
+  if (
+    current.ownershipType !== "USER" ||
+    current.ownerId !== context.userId
+  ) {
+    throw new AuthError("FORBIDDEN", "Not beat owner.");
+  }
+  if (current.status !== "REJECTED") {
+    throw new AuthError("FORBIDDEN", "Beat must be REJECTED to return to DRAFT.");
+  }
+  return transitionBeatStatus(beatId, "DRAFT");
 }
 
 export async function archiveBeat(beatId: string): Promise<Beat> {
@@ -248,7 +467,7 @@ export async function listPublishedBeats(): Promise<Beat[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .select(BEAT_SELECT)
+    .select(BEAT_SELECT_PUBLIC)
     .eq("status", "PUBLISHED")
     .order("created_at", { ascending: false });
 
@@ -256,18 +475,14 @@ export async function listPublishedBeats(): Promise<Beat[]> {
     throw new Error(error.message);
   }
 
-  return (data as BeatRow[] | null)?.map(mapBeatRow) ?? [];
+  return (data as BeatRow[] | null)?.map(mapPublicBeatRow) ?? [];
 }
 
-/**
- * Public surface only — PUBLISHED beats.
- * Staff RLS may expose non-published rows; this gate keeps /beat/[id] public-only.
- */
 export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .select(BEAT_SELECT)
+    .select(BEAT_SELECT_PUBLIC)
     .eq("id", beatId)
     .eq("status", "PUBLISHED")
     .maybeSingle();
@@ -278,10 +493,9 @@ export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
   if (!data) {
     return null;
   }
-  return mapBeatRow(data as BeatRow);
+  return mapPublicBeatRow(data as BeatRow);
 }
 
-/** Phase 1.7 — ADMIN PLATFORM ops list (staff RLS + ADMIN gate). */
 export async function listPlatformBeatsForAdmin(): Promise<
   PlatformBeatAdminListItem[]
 > {
@@ -291,7 +505,7 @@ export async function listPlatformBeatsForAdmin(): Promise<
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .select(BEAT_SELECT)
+    .select(BEAT_SELECT_FULL)
     .eq("ownership_type", "PLATFORM")
     .order("updated_at", { ascending: false });
 
@@ -299,7 +513,7 @@ export async function listPlatformBeatsForAdmin(): Promise<
     throw new Error(error.message);
   }
 
-  const beats = (data as BeatRow[] | null)?.map(mapBeatRow) ?? [];
+  const beats = (data as BeatRow[] | null)?.map((row) => mapBeatRow(row)) ?? [];
   if (beats.length === 0) {
     return [];
   }
@@ -325,7 +539,6 @@ export async function listPlatformBeatsForAdmin(): Promise<
   }));
 }
 
-/** Phase 1.7 — ADMIN PLATFORM beat detail. */
 export async function getPlatformBeatForAdmin(beatId: string): Promise<Beat> {
   await requireAdminPlatformOps();
   await requirePermission("beats.edit");

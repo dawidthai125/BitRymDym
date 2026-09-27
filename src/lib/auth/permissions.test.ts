@@ -51,9 +51,11 @@ describe("authorization helpers", () => {
     ).not.toThrow();
   });
 
-  it("keeps permission catalog aligned with SSOT §36 examples", () => {
+  it("keeps permission catalog aligned with SSOT §36 examples + community publish", () => {
     expect(SSOT_PERMISSION_KEYS).toContain("users.view");
     expect(SSOT_PERMISSION_KEYS).toContain("audit_log.view");
+    expect(SSOT_PERMISSION_KEYS).toContain("beats.publish");
     expect(SSOT_PERMISSION_KEYS).not.toContain("superuser.all");
+    expect(SSOT_PERMISSION_KEYS).not.toContain("beats.create_own");
   });
 });

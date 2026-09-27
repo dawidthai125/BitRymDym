@@ -56,6 +56,8 @@ export type Beat = {
   tags: string[];
   coverRef: string | null;
   status: BeatStatus;
+  /** Own / staff only — never expose on public catalog APIs. */
+  rejectionReason: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -45,7 +45,7 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 
 ## Application implementation
 
-**Phase 1.2–1.9 LOCKED** on `main` (production **VERIFIED GREEN** @ `73e213c`).
+**Phase 1.2–1.9 LOCKED** on `main` (production **VERIFIED GREEN** @ `47643c2`).
 
 | Phase / capability | Status |
 |--------------------|--------|
@@ -53,7 +53,8 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | 1.8A Downloads | **CLOSED / LOCKED** @ `fd87f23` |
 | BPM Production V1 | **SHIPPED** @ `471dd5b` (accuracy not certified) |
 | Audio Transport V1 | **CLOSED / PRODUCTION VERIFIED** @ `73e213c` |
-| Phase 1.9 Operator enablement | **CLOSED / LOCKED** |
+| Phase 1.9 Operator enablement | **CLOSED / LOCKED** @ `47643c2` |
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
+| Community Upload + Moderation | **DESIGN FREEZE READY / OWNER GO** · **WAVE 1 IMPLEMENTED** (DB/RLS/AuthZ) · Wave 2+ **NONE** |
 
-See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md).
+See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).

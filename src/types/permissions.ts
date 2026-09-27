@@ -12,6 +12,7 @@ export const SSOT_PERMISSION_KEYS = [
   "beats.delete",
   "beats.approve",
   "beats.reject",
+  "beats.publish",
   "tracks.view",
   "tracks.moderate",
   "tracks.remove",

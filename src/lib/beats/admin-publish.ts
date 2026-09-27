@@ -15,9 +15,15 @@ export const PUBLISH_REQUIRES_PLATFORM =
 export const PUBLISH_REQUIRES_DRAFT =
   "Publikacja dostępna tylko ze statusu DRAFT.";
 
+export const PUBLISH_REQUIRES_APPROVED =
+  "Publikacja community wymaga statusu APPROVED.";
+
+export const PUBLISH_USER_FROM_DRAFT_DENIED =
+  "USER beats cannot publish from DRAFT.";
+
 /**
- * Phase 1.7 UI publish gate — preserved.
- * Server hard gate: {@link assertPlatformPublishHardGate} (GAP-PUBLISH-READY CLOSED).
+ * Phase 1.7 UI publish gate — PLATFORM DRAFT path (preserved).
+ * Server hard gate: {@link assertPublishHardGate}.
  */
 export function getAdminPublishGate(params: {
   status: BeatStatus;
@@ -59,7 +65,7 @@ export type PublishGateAssetSnapshot = {
   isActive: boolean;
 };
 
-export type PlatformPublishHardGateInput = {
+export type PublishHardGateInput = {
   beatId: string;
   ownershipType: BeatOwnershipType;
   status: BeatStatus;
@@ -67,25 +73,18 @@ export type PlatformPublishHardGateInput = {
   assetsForBeat: readonly PublishGateAssetSnapshot[];
 };
 
-export type PlatformPublishHardGateResult =
+export type PublishHardGateResult =
   | { ok: true; readyMasterAssetId: string }
   | { ok: false; reason: string };
 
-/**
- * Server SSOT: PLATFORM DRAFT → PUBLISHED requires an active MASTER READY
- * whose beat_id matches the beat being published.
- */
-export function assertPlatformPublishHardGate(
-  params: PlatformPublishHardGateInput,
-): PlatformPublishHardGateResult {
-  if (params.ownershipType !== "PLATFORM") {
-    return { ok: false, reason: PUBLISH_REQUIRES_PLATFORM };
-  }
+/** @deprecated Use PublishHardGateInput */
+export type PlatformPublishHardGateInput = PublishHardGateInput;
+/** @deprecated Use PublishHardGateResult */
+export type PlatformPublishHardGateResult = PublishHardGateResult;
 
-  if (params.status !== "DRAFT") {
-    return { ok: false, reason: PUBLISH_REQUIRES_DRAFT };
-  }
-
+function findActiveMasterReady(
+  params: PublishHardGateInput,
+): string | null {
   const readyMasters = params.assetsForBeat.filter(
     (asset) =>
       asset.beatId === params.beatId &&
@@ -93,12 +92,49 @@ export function assertPlatformPublishHardGate(
       asset.isActive &&
       asset.status === "READY",
   );
+  return readyMasters[0]?.id ?? null;
+}
 
-  if (readyMasters.length === 0) {
+/**
+ * Ownership-aware publish hard gate (Community Wave 1).
+ *
+ * PLATFORM: DRAFT → PUBLISHED requires active MASTER READY
+ * USER: APPROVED → PUBLISHED requires active MASTER READY
+ * USER from DRAFT / PENDING_REVIEW / REJECTED → DENY
+ */
+export function assertPublishHardGate(
+  params: PublishHardGateInput,
+): PublishHardGateResult {
+  if (params.ownershipType === "PLATFORM") {
+    if (params.status !== "DRAFT") {
+      return { ok: false, reason: PUBLISH_REQUIRES_DRAFT };
+    }
+  } else if (params.ownershipType === "USER") {
+    if (params.status === "DRAFT") {
+      return { ok: false, reason: PUBLISH_USER_FROM_DRAFT_DENIED };
+    }
+    if (params.status !== "APPROVED") {
+      return { ok: false, reason: PUBLISH_REQUIRES_APPROVED };
+    }
+  } else {
+    return { ok: false, reason: PUBLISH_REQUIRES_PLATFORM };
+  }
+
+  const readyId = findActiveMasterReady(params);
+  if (!readyId) {
     return { ok: false, reason: PUBLISH_REQUIRES_READY_MASTER };
   }
 
-  return { ok: true, readyMasterAssetId: readyMasters[0]!.id };
+  return { ok: true, readyMasterAssetId: readyId };
+}
+
+/**
+ * @deprecated Prefer {@link assertPublishHardGate}. Kept for PLATFORM-call-site compatibility.
+ */
+export function assertPlatformPublishHardGate(
+  params: PublishHardGateInput,
+): PublishHardGateResult {
+  return assertPublishHardGate(params);
 }
 
 /** Whether an asset row qualifies as active MASTER READY for a beat. */

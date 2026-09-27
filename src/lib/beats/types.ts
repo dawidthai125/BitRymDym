@@ -16,11 +16,26 @@ export type BeatRow = {
   tags: string[] | null;
   cover_ref: string | null;
   status: BeatStatus;
+  rejection_reason?: string | null;
   created_at: string;
   updated_at: string;
 };
 
-export function mapBeatRow(row: BeatRow): Beat {
+/** Public catalog / detail — never select or map rejection_reason. */
+export const BEAT_SELECT_PUBLIC =
+  "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at";
+
+/** Owner / staff — includes rejection_reason. */
+export const BEAT_SELECT_FULL = `${BEAT_SELECT_PUBLIC}, rejection_reason`;
+
+/** @deprecated Prefer BEAT_SELECT_PUBLIC or BEAT_SELECT_FULL. */
+export const BEAT_SELECT = BEAT_SELECT_FULL;
+
+export function mapBeatRow(
+  row: BeatRow,
+  options?: { includeRejectionReason?: boolean },
+): Beat {
+  const include = options?.includeRejectionReason ?? true;
   return {
     id: row.id,
     ownerId: row.owner_id,
@@ -37,9 +52,14 @@ export function mapBeatRow(row: BeatRow): Beat {
     tags: row.tags ?? [],
     coverRef: row.cover_ref,
     status: row.status,
+    rejectionReason: include ? (row.rejection_reason ?? null) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+export function mapPublicBeatRow(row: BeatRow): Beat {
+  return mapBeatRow(row, { includeRejectionReason: false });
 }
 
 export function toBeatInsertPayload(value: {
@@ -57,6 +77,7 @@ export function toBeatInsertPayload(value: {
   tags: string[];
   coverRef: string | null;
   status: BeatStatus;
+  rejectionReason?: string | null;
 }) {
   return {
     ownership_type: value.ownershipType,
@@ -73,5 +94,8 @@ export function toBeatInsertPayload(value: {
     tags: value.tags,
     cover_ref: value.coverRef,
     status: value.status,
+    ...(value.rejectionReason !== undefined
+      ? { rejection_reason: value.rejectionReason }
+      : {}),
   };
 }

@@ -131,7 +131,7 @@ describe("beat status transitions (Phase 1.4)", () => {
     ).toBe(false);
   });
 
-  it("allows MODERATOR only PENDING_REVIEW → APPROVED/REJECTED", () => {
+  it("allows MODERATOR PENDING_REVIEW → APPROVED/REJECTED and USER APPROVED→PUBLISHED", () => {
     expect(
       canTransitionStatus({
         from: "PENDING_REVIEW",
@@ -153,9 +153,26 @@ describe("beat status transitions (Phase 1.4)", () => {
         actor: "MODERATOR",
       }),
     ).toBe(false);
+    expect(
+      canTransitionStatus({
+        from: "APPROVED",
+        to: "PUBLISHED",
+        actor: "MODERATOR",
+        ownershipType: "USER",
+      }),
+    ).toBe(true);
   });
 
-  it("denies USER status escalation", () => {
+  it("allows USER own DRAFT→PENDING_REVIEW; denies USER publish", () => {
+    expect(
+      canTransitionStatus({
+        from: "DRAFT",
+        to: "PENDING_REVIEW",
+        actor: "USER",
+        ownershipType: "USER",
+        isOwner: true,
+      }),
+    ).toBe(true);
     expect(
       canTransitionStatus({ from: "DRAFT", to: "PUBLISHED", actor: "USER" }),
     ).toBe(false);
@@ -169,9 +186,14 @@ describe("beat authorization matrix (permissions catalog)", () => {
     "beats.delete",
     "beats.approve",
     "beats.reject",
+    "beats.publish",
   ] as const;
-  const moderatorPerms = ["beats.approve", "beats.reject"] as const;
-  const userPerms: string[] = [];
+  const moderatorPerms = [
+    "beats.approve",
+    "beats.reject",
+    "beats.publish",
+  ] as const;
+  const userPerms = ["beats.create"] as const;
 
   it("ADMIN has full beats.*", () => {
     for (const key of adminPerms) {
@@ -180,20 +202,22 @@ describe("beat authorization matrix (permissions catalog)", () => {
     expect(hasRole("ADMIN", ["ADMIN"])).toBe(true);
   });
 
-  it("MODERATOR has approve/reject but not edit/create/delete", () => {
+  it("MODERATOR has approve/reject/publish but not edit/create/delete", () => {
     expect(hasPermission(moderatorPerms, "beats.approve")).toBe(true);
     expect(hasPermission(moderatorPerms, "beats.reject")).toBe(true);
+    expect(hasPermission(moderatorPerms, "beats.publish")).toBe(true);
     expect(hasPermission(moderatorPerms, "beats.edit")).toBe(false);
     expect(hasPermission(moderatorPerms, "beats.create")).toBe(false);
     expect(hasPermission(moderatorPerms, "beats.delete")).toBe(false);
   });
 
-  it("USER lacks beats.create", () => {
-    expect(hasPermission(userPerms, "beats.create")).toBe(false);
+  it("USER has beats.create only among beats.*", () => {
+    expect(hasPermission(userPerms, "beats.create")).toBe(true);
+    expect(hasPermission(userPerms, "beats.edit")).toBe(false);
+    expect(hasPermission(userPerms, "beats.publish")).toBe(false);
   });
 
   it("does not conflate account level with role permissions", () => {
-    // Account level is not a permission source.
     expect(hasRole("USER", ["ADMIN"])).toBe(false);
     expect(hasPermission(["beats.create"], "beats.create")).toBe(true);
   });

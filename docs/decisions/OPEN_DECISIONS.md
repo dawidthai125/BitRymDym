@@ -39,6 +39,11 @@
 | OD-18 | Zasady liczenia udostępnień | §34 | Beat sharing stats | OPEN |
 | OD-19 | Domyślny account level przy rejestracji | §4 | Profile creation default | **CLOSED / ACCEPTED** — 2026-09-25 |
 | OD-20 | Bezpieczny bootstrap pierwszego ADMIN | §3, §36 | Production admin access | **CLOSED / ACCEPTED** — 2026-09-25 |
+| OD-COMMUNITY-01 | Kto publikuje APPROVED→PUBLISHED (community) | §8 | Community publish AuthZ | **CLOSED / ACCEPTED** — 2026-09-27 |
+| OD-COMMUNITY-02 | rejection_reason przy REJECTED | §8 | Community moderation | **CLOSED / ACCEPTED** — 2026-09-27 |
+| OD-COMMUNITY-03 | Permission / ownership dla USER create + submit | §8, §36 | Community upload AuthZ | **CLOSED / ACCEPTED** — 2026-09-27 |
+| OD-COMMUNITY-04 | Account levels a upload V1 | §4 | Community upload eligibility | **CLOSED / ACCEPTED** — 2026-09-27 |
+| OD-COMMUNITY-05 | USER archive własnego PUBLISHED | §8 | Community lifecycle | **CLOSED / ACCEPTED** — 2026-09-27 |
 
 ---
 
@@ -56,6 +61,11 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-17 | DOWNLOAD_EVENT = successful DOWNLOAD signed-URL issuance after AuthZ + limit allow (Phase 1.8A interim) | 2026-09-26 |
 | OD-19 | Signup default account level = `BEGINNER_RAPPER` (role remains `USER`) | 2026-09-25 |
 | OD-20 | No automatic first-admin; manual/operator-controlled ADMIN bootstrap outside signup | 2026-09-25 |
+| OD-COMMUNITY-01 | APPROVED→PUBLISHED: ADMIN + MODERATOR; USER never; READY required | 2026-09-27 |
+| OD-COMMUNITY-02 | `rejection_reason text`; required on reject; USER can read; no threads | 2026-09-27 |
+| OD-COMMUNITY-03 | USER gets `beats.create`; ownership via service+RLS+trigger; submit own+READY | 2026-09-27 |
+| OD-COMMUNITY-04 | All account levels may upload V1; no Premium bypass | 2026-09-27 |
+| OD-COMMUNITY-05 | USER may archive own PUBLISHED (and DRAFT/REJECTED) | 2026-09-27 |
 
 ---
 
@@ -85,6 +95,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 - **Supabase Auth jest zatwierdzone** (OD-03 CLOSED) — nie traktować już jako „preferencji roboczej”.
 - Signup default: `role = USER`, `account_level = BEGINNER_RAPPER` (**OD-19 CLOSED**).
 - First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).
+- Community upload: Design Freeze **READY / OWNER GO** — OD-COMMUNITY-01…05 **CLOSED**; implementation awaits separate Owner GO. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
 - Retencja nagrania Premium (`premium_take_retention_days = 10`) jest przykładem konfiguracji z SSOT — nie mnożyć magicznych liczb w kodzie (§23).
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED.
 

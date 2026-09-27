@@ -55,14 +55,105 @@ export function buildBeatAudioObjectKey(params: {
   return `platform/${params.beatId}/${params.assetId}/${purposeLower}.bin`;
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function assertUuidSegment(value: string, label: string): string | null {
+  if (!UUID_RE.test(value)) {
+    return `${label} must be a uuid`;
+  }
+  return null;
+}
+
+/**
+ * Community Wave 1 prep — server-chosen USER object key.
+ * Client must never supply ownerId/beatId/assetId path segments.
+ */
+export function buildUserBeatAudioObjectKey(params: {
+  ownerId: string;
+  beatId: string;
+  assetId: string;
+  purpose: BeatAudioPurpose;
+}): string {
+  const purposeLower = params.purpose.toLowerCase();
+  return `user/${params.ownerId}/${params.beatId}/${params.assetId}/${purposeLower}.bin`;
+}
+
+/**
+ * Validate object key shape. Accepts platform/ and user/ prefixes.
+ * Returns error message or null if ok.
+ */
 export function validateObjectKey(objectKey: string): string | null {
+  if (!objectKey || typeof objectKey !== "string") {
+    return "object key is required";
+  }
+  if (objectKey.includes("..") || objectKey.includes("//")) {
+    return "object key must not contain path traversal";
+  }
   if (!objectKey.endsWith(".bin")) {
     return "object key must end with .bin";
   }
-  if (!objectKey.startsWith("platform/")) {
-    return "object key must start with platform/";
+  if (objectKey.startsWith("platform/")) {
+    const parts = objectKey.split("/");
+    // platform / beatId / assetId / purpose.bin
+    if (parts.length !== 4) {
+      return "platform object key must be platform/{beatId}/{assetId}/{purpose}.bin";
+    }
+    const beatErr = assertUuidSegment(parts[1]!, "beatId");
+    if (beatErr) return beatErr;
+    const assetErr = assertUuidSegment(parts[2]!, "assetId");
+    if (assetErr) return assetErr;
+    return null;
   }
-  return null;
+  if (objectKey.startsWith("user/")) {
+    const parts = objectKey.split("/");
+    // user / ownerId / beatId / assetId / purpose.bin
+    if (parts.length !== 5) {
+      return "user object key must be user/{ownerId}/{beatId}/{assetId}/{purpose}.bin";
+    }
+    const ownerErr = assertUuidSegment(parts[1]!, "ownerId");
+    if (ownerErr) return ownerErr;
+    const beatErr = assertUuidSegment(parts[2]!, "beatId");
+    if (beatErr) return beatErr;
+    const assetErr = assertUuidSegment(parts[3]!, "assetId");
+    if (assetErr) return assetErr;
+    return null;
+  }
+  return "object key must start with platform/ or user/";
+}
+
+/**
+ * Bind a user/ key to expected owner + beat + asset (IDOR defense for Wave 2).
+ */
+export function assertUserBeatObjectKeyBinding(params: {
+  objectKey: string;
+  ownerId: string;
+  beatId: string;
+  assetId: string;
+}): { ok: true } | { ok: false; error: string } {
+  const shape = validateObjectKey(params.objectKey);
+  if (shape) {
+    return { ok: false, error: shape };
+  }
+  if (!params.objectKey.startsWith("user/")) {
+    return { ok: false, error: "expected user/ object key prefix" };
+  }
+  const expected = buildUserBeatAudioObjectKey({
+    ownerId: params.ownerId,
+    beatId: params.beatId,
+    assetId: params.assetId,
+    purpose: "MASTER",
+  });
+  // Allow any purpose suffix matching purpose.bin — rebuild for MASTER only above;
+  // compare path prefix through assetId.
+  const prefix = `user/${params.ownerId}/${params.beatId}/${params.assetId}/`;
+  if (!params.objectKey.startsWith(prefix)) {
+    return { ok: false, error: "object key does not match owner/beat/asset binding" };
+  }
+  if (params.objectKey !== expected && !params.objectKey.startsWith(prefix)) {
+    return { ok: false, error: "object key binding mismatch" };
+  }
+  return { ok: true };
 }
 
 /**

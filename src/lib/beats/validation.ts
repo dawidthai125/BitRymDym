@@ -15,6 +15,7 @@ export const BEAT_TAG_MAX_LENGTH = 40;
 export const BEAT_COVER_REF_MAX = 500;
 export const BEAT_TEXT_FIELD_MAX = 500;
 export const BEAT_DESCRIPTION_MAX = 4000;
+export const BEAT_REJECTION_REASON_MAX = 2000;
 
 export type BeatInput = {
   ownershipType: BeatOwnershipType;
@@ -92,13 +93,13 @@ export function isBeatOwnershipType(value: unknown): value is BeatOwnershipType 
 }
 
 /**
- * Phase 1.4 active ADMIN platform transitions.
+ * ADMIN platform + community lifecycle transitions.
  * PUBLISHED → DRAFT is forbidden.
  */
-export const PHASE_1_4_ADMIN_TRANSITIONS: Readonly<
+export const ADMIN_BEAT_TRANSITIONS: Readonly<
   Record<BeatStatus, readonly BeatStatus[]>
 > = {
-  DRAFT: ["PUBLISHED", "ARCHIVED"],
+  DRAFT: ["PUBLISHED", "ARCHIVED", "PENDING_REVIEW"],
   PUBLISHED: ["ARCHIVED"],
   ARCHIVED: ["DRAFT"],
   PENDING_REVIEW: ["APPROVED", "REJECTED"],
@@ -106,12 +107,30 @@ export const PHASE_1_4_ADMIN_TRANSITIONS: Readonly<
   REJECTED: ["DRAFT", "ARCHIVED"],
 };
 
+/** @deprecated Use ADMIN_BEAT_TRANSITIONS */
+export const PHASE_1_4_ADMIN_TRANSITIONS = ADMIN_BEAT_TRANSITIONS;
+
+export const USER_BEAT_TRANSITIONS: Readonly<
+  Record<BeatStatus, readonly BeatStatus[]>
+> = {
+  DRAFT: ["PENDING_REVIEW", "ARCHIVED"],
+  PENDING_REVIEW: [],
+  APPROVED: [],
+  PUBLISHED: ["ARCHIVED"],
+  REJECTED: ["DRAFT", "ARCHIVED"],
+  ARCHIVED: [],
+};
+
+export type TransitionActor = "ADMIN" | "MODERATOR" | "USER";
+
 export function canTransitionStatus(params: {
   from: BeatStatus;
   to: BeatStatus;
-  actor: "ADMIN" | "MODERATOR" | "USER";
+  actor: TransitionActor;
+  ownershipType?: BeatOwnershipType;
+  isOwner?: boolean;
 }): boolean {
-  const { from, to, actor } = params;
+  const { from, to, actor, ownershipType, isOwner } = params;
   if (from === to) {
     return true;
   }
@@ -120,15 +139,55 @@ export function canTransitionStatus(params: {
   }
 
   if (actor === "ADMIN") {
-    // Phase 1.4 operational path + schema-ready moderation edges for admin.
-    return PHASE_1_4_ADMIN_TRANSITIONS[from].includes(to);
+    return ADMIN_BEAT_TRANSITIONS[from].includes(to);
   }
 
   if (actor === "MODERATOR") {
-    return from === "PENDING_REVIEW" && (to === "APPROVED" || to === "REJECTED");
+    if (from === "PENDING_REVIEW" && (to === "APPROVED" || to === "REJECTED")) {
+      return true;
+    }
+    // OD-COMMUNITY-01: MODERATOR may publish USER APPROVED → PUBLISHED only
+    if (
+      from === "APPROVED" &&
+      to === "PUBLISHED" &&
+      ownershipType === "USER"
+    ) {
+      return true;
+    }
+    return false;
   }
 
-  return false;
+  // USER: own USER-owned beats only
+  if (ownershipType !== undefined && ownershipType !== "USER") {
+    return false;
+  }
+  if (isOwner === false) {
+    return false;
+  }
+  return USER_BEAT_TRANSITIONS[from].includes(to);
+}
+
+export type RejectionReasonResult =
+  | { ok: true; value: string }
+  | { ok: false; error: string };
+
+export function validateRejectionReason(
+  reason: unknown,
+): RejectionReasonResult {
+  if (typeof reason !== "string") {
+    return { ok: false, error: "rejection_reason must be a string" };
+  }
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    return { ok: false, error: "rejection_reason is required" };
+  }
+  if (trimmed.length > BEAT_REJECTION_REASON_MAX) {
+    return {
+      ok: false,
+      error: `rejection_reason must be at most ${BEAT_REJECTION_REASON_MAX} characters`,
+    };
+  }
+  return { ok: true, value: trimmed };
 }
 
 export function validateBeatInput(input: BeatInput): BeatValidationResult {
@@ -238,10 +297,9 @@ export function validateBeatInput(input: BeatInput): BeatValidationResult {
     errors.push("status is invalid");
   }
 
-  // Phase 1.4: active create path is PLATFORM only via ADMIN.
-  if (ownershipType === "USER") {
-    // Schema-ready; not an active Phase 1.4 create workflow.
-    // Still validate integrity if provided.
+  // Community create: USER beats always start as DRAFT
+  if (ownershipType === "USER" && isBeatStatus(status) && status !== "DRAFT") {
+    errors.push("USER beats must be created as DRAFT");
   }
 
   if (errors.length > 0) {

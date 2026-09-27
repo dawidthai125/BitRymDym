@@ -597,3 +597,142 @@ PHASE 1.8A = CLOSED / LOCKED
 **Explicitly OUT:** auto-admin, bootstrap endpoint, Quick Take, Tracks, Community, Payments, Full Audit Log, watermark, mix/export.
 
 **Related:** OD-20 CLOSED / unchanged · OD-19 CLOSED · OD-05/06/17 interim CLOSED (1.8A).
+
+---
+
+### OD-COMMUNITY-01 — Staff publish for community beats
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-COMMUNITY-01 |
+| Title | Who may publish APPROVED → PUBLISHED (community) |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+`APPROVED → PUBLISHED` for USER-owned beats may be performed by **ADMIN** and **MODERATOR**. **USER never publishes.** Every publish still requires an active MASTER READY asset for that beat.
+
+**Rationale**
+
+Separates content acceptance (approve) from public release (publish) while allowing moderators to complete the community loop without ADMIN bottleneck. READY hard gate remains universal.
+
+**Consequences**
+
+- Extend transition matrix + trigger/RLS for MODERATOR USER publish path.
+- Do **not** grant MODERATOR `beats.edit` solely for publish (avoid PLATFORM metadata write).
+- Generalize publish hard gate beyond PLATFORM+DRAFT-only.
+
+**Related:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+
+---
+
+### OD-COMMUNITY-02 — Rejection reason
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-COMMUNITY-02 |
+| Title | rejection_reason on REJECTED |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+Add nullable column `beats.rejection_reason text`. On `PENDING_REVIEW → REJECTED` the reason is **required**. USER may read the reason on their own beat. No comment/thread system.
+
+**Related:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+
+---
+
+### OD-COMMUNITY-03 — USER create permission + ownership AuthZ
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-COMMUNITY-03 |
+| Title | USER beats.create + ownership enforcement |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+USER receives permission `beats.create`. Do **not** invent `beats.create_own` unless the existing model proves unsafe. Ownership is **not** derived from permission alone: service + RLS + trigger must force `ownership_type=USER`, `owner_id=auth.uid()`, initial `status=DRAFT`. USER cannot change ownership fields. Submit = controlled transition `DRAFT → PENDING_REVIEW` for own USER beat with active MASTER READY only.
+
+**Consequences**
+
+- PLATFORM create/transport must retain explicit ADMIN role checks (already present).
+- Trigger INSERT must stop being ADMIN-only.
+
+**Related:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+
+---
+
+### OD-COMMUNITY-04 — Account levels and upload eligibility
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-COMMUNITY-04 |
+| Title | All account levels may upload in V1 |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+`BEGINNER_RAPPER`, `PRO_RAPPER`, and `LEGEND_RAPPER` may upload in V1. Account Level does **not** bypass moderation. No Premium bypass. Role ≠ Account Level unchanged.
+
+**Related:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+
+---
+
+### OD-COMMUNITY-05 — USER archive own PUBLISHED
+
+| Pole | Wartość |
+|------|---------|
+| Decision ID | OD-COMMUNITY-05 |
+| Title | USER may archive own PUBLISHED beat |
+| Status | CLOSED / ACCEPTED |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) |
+
+**Decision**
+
+USER may transition own `DRAFT` / `REJECTED` / `PUBLISHED` → `ARCHIVED`. That path must not change ownership, set APPROVED, or re-publish.
+
+**Related:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+
+---
+
+### Community Beat Upload + Moderation — Design Freeze
+
+| Pole | Wartość |
+|------|---------|
+| Title | Community Beat Upload + Moderation — Design Freeze |
+| Status | **READY / OWNER GO** · Implementation **NONE** |
+| Date | 2026-09-27 |
+| Decydent | Owner (Prezes Dawid) — Design Freeze GO |
+| Design Freeze | [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) |
+| Baseline | `47643c2` · Phase 1.9 CLOSED · Production GREEN |
+
+**Frozen:** USER ownership lifecycle; signed upload to `beat-audio` with `user/…` keys; moderation approve/reject; staff publish with READY gate; UX routes; security invariants; waves 1–5 planning only.
+
+**Explicitly OUT:** new bucket, new audio/BPM stack, comments, voting, QT, tracks, payments, watermark, orphan cron, USER publish, auto-publish on APPROVE.
+
+---
+
+### Community Wave 1 — DB / RLS / Trigger / AuthZ
+
+| Pole | Wartość |
+|------|---------|
+| Title | Community Beat Upload — Wave 1 foundation |
+| Status | **IMPLEMENTED** |
+| Date | 2026-09-27 |
+| Decydent | Owner Wave 1 GO |
+| Design Freeze | [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) |
+| Migration | `community_wave1_ownership` |
+
+**Delivered:** rejection_reason; USER `beats.create`; `beats.publish` for ADMIN+MODERATOR; RLS/trigger; ownership-aware publish gate; community service contracts; object key `user/` validator; unit + live RLS.
+
+**Explicitly OUT of Wave 1:** upload UI, user transport, moderation UI, publish UI, Storage INSERT policies.

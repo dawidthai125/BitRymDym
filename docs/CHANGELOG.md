@@ -6,13 +6,36 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — COMMUNITY WAVE 1: OWNERSHIP / RLS / AUTHZ FOUNDATION
+
+**Status:** **IMPLEMENTED** · Design Freeze honored · UI/transport **OUT**
+
+- Migration `community_wave1_ownership`: `rejection_reason`, USER `beats.create`, `beats.publish` (ADMIN+MODERATOR), RLS insert/update, trigger rewrite
+- App: ownership-aware `assertPublishHardGate`; USER/MOD transition matrix; community service contracts; `user/` object key validator
+- Tests: community-wave1 contracts A–T + IDOR; total suite GREEN
+- Live RLS: USER own insert/select; foreign/PLATFORM/PUBLISHED insert DENY; MOD reject+reason / approve; ADMIN PLATFORM insert regression
+- Storage INSERT remains default deny
+
+---
+
+## 2026-09-27 — COMMUNITY BEAT UPLOAD + MODERATION — DESIGN FREEZE
+
+**Status:** Design Freeze **READY / OWNER GO** · Implementation **NONE** · Migration **NONE**
+
+- Owner GO closed OD-COMMUNITY-01…05 (staff publish; rejection_reason; USER `beats.create`; all account levels upload; USER archive own PUBLISHED)
+- Frozen: USER ownership + lifecycle DRAFT→PENDING_REVIEW→APPROVED→PUBLISHED; USER never publishes; reuse `beat-audio` + signed upload; object key `user/{ownerId}/{beatId}/{assetId}/master.bin`
+- Docs: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md)
+- Baseline: `47643c2` · Production GREEN · Phase 1.9 CLOSED
+
+---
+
 ## 2026-09-27 — EPIC-A: PHASE 1.9 CLOSEOUT + PUBLISH HARD GATE
 
-**Status:** Implementation **local** (Owner review) · Phase 1.9 **CLOSED / LOCKED** in docs
+**Status:** Implementation **COMPLETE** on `main` @ `47643c2` · Phase 1.9 **CLOSED / LOCKED** · Production **VERIFIED GREEN**
 
 - Server: `transitionBeatStatus(…, PUBLISHED)` requires PLATFORM + active MASTER READY (same `beat_id`); create no longer inserts as PUBLISHED
 - UI publish gate preserved; GAP-PUBLISH-READY **CLOSED**
-- Docs reconciled to production GREEN @ `73e213c` (transport + BPM + live counts)
+- Docs reconciled; production verify GREEN @ `47643c2`
 
 ---
 

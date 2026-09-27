@@ -144,17 +144,27 @@ describe("server publish hard gate (GAP-PUBLISH-READY CLOSED)", () => {
     ).toBe(false);
   });
 
-  it("rejects USER ownership even with READY MASTER", () => {
-    const gate = assertPlatformPublishHardGate({
-      beatId: BEAT_A,
-      ownershipType: "USER",
-      status: "DRAFT",
-      assetsForBeat: [asset({ id: ASSET_A, beatId: BEAT_A })],
-    });
-    expect(gate.ok).toBe(false);
+  it("rejects USER DRAFT even with READY MASTER; allows USER APPROVED + READY", () => {
+    expect(
+      assertPlatformPublishHardGate({
+        beatId: BEAT_A,
+        ownershipType: "USER",
+        status: "DRAFT",
+        assetsForBeat: [asset({ id: ASSET_A, beatId: BEAT_A })],
+      }).ok,
+    ).toBe(false);
+
+    expect(
+      assertPlatformPublishHardGate({
+        beatId: BEAT_A,
+        ownershipType: "USER",
+        status: "APPROVED",
+        assetsForBeat: [asset({ id: ASSET_A, beatId: BEAT_A })],
+      }),
+    ).toEqual({ ok: true, readyMasterAssetId: ASSET_A });
   });
 
-  it("rejects non-DRAFT status at hard gate", () => {
+  it("rejects non-DRAFT PLATFORM status at hard gate", () => {
     const gate = assertPlatformPublishHardGate({
       beatId: BEAT_A,
       ownershipType: "PLATFORM",
@@ -172,10 +182,13 @@ describe("server publish hard gate (GAP-PUBLISH-READY CLOSED)", () => {
         status: "DRAFT",
         assetsForBeat: [
           asset({ id: ASSET_A, beatId: BEAT_A, status: "FAILED", isActive: false }),
-          asset({ id: "asset-ready", beatId: BEAT_A }),
+          asset({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", beatId: BEAT_A }),
         ],
       }),
-    ).toEqual({ ok: true, readyMasterAssetId: "asset-ready" });
+    ).toEqual({
+      ok: true,
+      readyMasterAssetId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
   });
 });
 
@@ -205,7 +218,7 @@ describe("Phase 1.7 PLATFORM ownership + AuthZ matrix (pure)", () => {
     expect(bad.ok).toBe(false);
   });
 
-  it("G: USER lacks publish transition; H: missing beats.edit permission", () => {
+  it("G: USER lacks publish; MODERATOR has approve/reject/publish keys pattern", () => {
     expect(hasPermission([], "beats.edit")).toBe(false);
     expect(hasPermission(["beats.approve", "beats.reject"], "beats.edit")).toBe(
       false,
@@ -223,6 +236,14 @@ describe("Phase 1.7 PLATFORM ownership + AuthZ matrix (pure)", () => {
         actor: "MODERATOR",
       }),
     ).toBe(false);
+    expect(
+      canTransitionStatus({
+        from: "APPROVED",
+        to: "PUBLISHED",
+        actor: "MODERATOR",
+        ownershipType: "USER",
+      }),
+    ).toBe(true);
   });
 
   it("ADMIN lifecycle allows DRAFT→PUBLISHED; USER cannot publish", () => {
