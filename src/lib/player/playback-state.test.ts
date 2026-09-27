@@ -86,15 +86,18 @@ describe("PlaybackShell hard-outs", () => {
     expect(shellSource.toLowerCase()).not.toContain("pobierz");
     expect(catalogSource.toLowerCase()).not.toContain("download");
     expect(catalogSource.toLowerCase()).not.toContain("pobierz");
-    // Phase 1.8A: beat detail may expose Download CTA (separate from PlaybackShell).
-    expect(detailSource).toContain("DownloadButton");
+    // Phase 1.8A + Wave 3: beat detail composes Download via BeatRecordingSurface.
+    expect(detailSource).toContain("BeatRecordingSurface");
   });
 
-  it("does not include Quick Take or waveform engine hooks", () => {
-    const combined = `${shellSource}\n${detailSource}\n${catalogSource}`;
-    expect(combined.toLowerCase()).not.toContain("mediarecorder");
-    expect(combined.toLowerCase()).not.toContain("quick take");
-    expect(combined.toLowerCase()).not.toContain("waveform");
-    expect(combined.toLowerCase()).not.toContain("microphone");
+  it("does not include Quick Take or waveform engine hooks in PlaybackShell / catalog", () => {
+    expect(shellSource.toLowerCase()).not.toContain("mediarecorder");
+    expect(shellSource.toLowerCase()).not.toContain("quick take");
+    expect(shellSource.toLowerCase()).not.toContain("waveform");
+    expect(shellSource.toLowerCase()).not.toContain("microphone");
+    expect(catalogSource.toLowerCase()).not.toContain("mediarecorder");
+    expect(catalogSource.toLowerCase()).not.toContain("quick take");
+    // Wave 3: beat detail hosts RecordingPanel sibling (MediaRecorder OK outside shell).
+    expect(detailSource).toContain("BeatRecordingSurface");
   });
 });

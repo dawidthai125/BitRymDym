@@ -12,6 +12,9 @@ export const RECORDING_GLOBAL_MAX_SECONDS = 180;
 /** Interim take object size cap (20 MiB). */
 export const TAKE_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 
+/** Short-lived signed GET for owner take preview (Wave 3). */
+export const TAKE_AUDIO_PREVIEW_TTL_SECONDS = 120;
+
 /** Anonymous short TTL (seconds) — architecture interim until janitor Wave 2+. */
 export const ANON_TAKE_TTL_SECONDS = 2 * 60 * 60;
 

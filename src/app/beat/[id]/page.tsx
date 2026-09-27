@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { DownloadButton } from "@/components/beats/download-button";
-import { PlaybackShell } from "@/components/player/playback-shell";
+import { BeatRecordingSurface } from "@/components/takes/beat-recording-surface";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentProfile } from "@/lib/auth/session";
 import {
@@ -102,18 +101,13 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
         </header>
 
         {audioInfo.hasAudio ? (
-          <div className="space-y-4">
-            <PlaybackShell
-              beatId={detail.id}
-              title={detail.title}
-              durationSeconds={detail.durationSeconds}
-            />
-            <DownloadButton
-              beatId={detail.id}
-              title={detail.title}
-              isAuthenticated={Boolean(session)}
-            />
-          </div>
+          <BeatRecordingSurface
+            beatId={detail.id}
+            title={detail.title}
+            durationSeconds={detail.durationSeconds}
+            beatStatus="PUBLISHED"
+            isAuthenticated={Boolean(session)}
+          />
         ) : (
           <p className="text-sm text-muted-foreground" role="status">
             Ten bit nie ma jeszcze dostępnego audio do odsłuchu.

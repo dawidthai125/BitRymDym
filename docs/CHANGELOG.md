@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — RECORDING WAVE 3: PLAYER INTEGRATION + TAKE PREVIEW
+
+**Status:** **IMPLEMENTED** (Owner review / commit pending)
+
+- Sibling `RecordingPanel` + `BeatRecordingSurface` on beat detail
+- Pure `recording-ui-state` machine (separate from `reducePlayback`)
+- Thin PlaybackShell sync: playFromStart(0) + stop + controls lock (OD-W3-01)
+- Take-only preview via `POST /api/takes/preview` owner signed GET (OD-W3-04)
+- Anonymous QT OUT (OD-W3-02); interim AuthZ unchanged (auth + PUBLISHED)
+- Tests: wave3-unit + wave3-live preview AuthZ
+- Closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)
+- OUT: dual-play, anon, grants, entitlements, download, MIX/EXPORT
+
+---
+
 ## 2026-09-27 — RECORDING WAVE 2: TRANSPORT + MEDIARECORDER
 
 **Status:** **IMPLEMENTED** (Owner review / commit pending)

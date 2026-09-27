@@ -1,36 +1,42 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1 foundation **IMPLEMENTED** · Wave 2 transport/MediaRecorder **IMPLEMENTED** (Owner Review)
+**Status:** Design Freeze **LOCKED** · Wave 1–2 **CLOSED** · Wave 3 player integration **IMPLEMENTED** (Owner Review)
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
-**Wave 1 closeout:** [RECORDING_WAVE1_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE1_IMPLEMENTATION_CLOSEOUT.md)  
-**Wave 2 readiness:** [RECORDING_WAVE2_READINESS_AUDIT.md](../audits/RECORDING_WAVE2_READINESS_AUDIT.md)  
-**Wave 2 closeout:** [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)
+**Wave 2 closeout:** [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)  
+**Wave 3 readiness:** [RECORDING_WAVE3_READINESS_AUDIT.md](../audits/RECORDING_WAVE3_READINESS_AUDIT.md)  
+**Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)
 
 ## Wave 1 delivered
 
 | Piece | Location |
 |-------|----------|
 | Table `takes` + enums + RLS | `supabase/migrations/20260927180000_recording_wave1_take_foundation.sql` |
-| Private bucket `take-audio` | same migration (client INSERT/SELECT DENY) |
-| Object keys | `src/lib/takes/object-key.ts` → `user/{ownerId}/takes/{takeId}/mic.bin` |
-| Config (retention/caps constants) | `src/config/recording.ts` |
-| Domain types | `src/types/domain.ts` (`Take`, statuses) |
+| Private bucket `take-audio` | same migration |
+| Object keys | `src/lib/takes/object-key.ts` |
+| Config | `src/config/recording.ts` |
 
 ## Wave 2 delivered
 
 | Piece | Location |
 |-------|----------|
-| Interim AuthZ (auth + PUBLISHED) | `src/lib/takes/authz.ts` |
-| Session + finalize transport | `src/lib/takes/take-transport.ts` |
-| API | `POST /api/takes/session` · `POST /api/takes/finalize` |
+| Interim AuthZ | `src/lib/takes/authz.ts` |
+| Session + finalize | `src/lib/takes/take-transport.ts` · `/api/takes/session` · `/api/takes/finalize` |
 | MediaRecorder module | `src/lib/takes/media-recorder.ts` |
 | Client upload helper | `src/lib/takes/client-upload.ts` |
 
-**Session model:** existing `takes` row (`PENDING_UPLOAD` → `READY` / `FAILED` / `EXPIRED`). No `recording_sessions` table.
+## Wave 3 delivered
 
-**Duration:** server probe via `probeAudioDurationFromBytes`; fail-closed if unprobeable (OD-W2-04). Interim max = `MIN(beat.duration_seconds, 180)`.
+| Piece | Location |
+|-------|----------|
+| Recording UI state machine | `src/lib/takes/recording-ui-state.ts` |
+| RecordingPanel | `src/components/takes/recording-panel.tsx` |
+| Beat detail composition | `src/components/takes/beat-recording-surface.tsx` |
+| PlaybackShell sync handle | `playFromStart` / `stopPlayback` / `setControlsLocked` |
+| Take-only preview signed GET | `src/lib/takes/take-preview.ts` · `POST /api/takes/preview` |
 
-**Not in Wave 2:** PlaybackShell Record button · Quick Take product UI · anon recording · entitlement engine · janitor · Access Gate RECORD capability · shared grants.
+**OD-W3 (CLOSED):** beat plays from 0 during capture · anon OUT · sibling panel (not merged reducer) · take-only preview (no dual-play).
 
-**Reuse:** [AUTHORIZATION.md](./AUTHORIZATION.md) · [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md) patterns — **never** `beat-audio` or `/api/beats/audio/*` for takes.
+**Not in Wave 3:** Anonymous QT · shared grants · entitlement engine · janitor · own take download · MIX/EXPORT.
+
+**Reuse:** Wave 2 transport + MediaRecorder; beat PLAYBACK Access Gate unchanged; take-audio remains private.
