@@ -83,5 +83,5 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Design Freeze **LOCKED** · Wave 1–2 **CLOSED** @ `2ab3e3e` · Wave 3 **IMPLEMENTED** (Owner Review).
-**Next:** Owner Review of Wave 3 → commit/push/deploy only with Owner GO. See [PROJECT_STATE.md](./PROJECT_STATE.md).
+**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Design Freeze **LOCKED** · Wave 1–2 **CLOSED** @ `2ab3e3e` · Wave 3 **DEPLOYED** @ `507f78f` · **PRODUCTION VERIFY NOT CLOSED** (duration probe blocker).
+**Next:** Owner decision on MediaRecorder WebM/Opus duration probe hotfix. See [PROJECT_STATE.md](./PROJECT_STATE.md).

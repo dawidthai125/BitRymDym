@@ -24,9 +24,9 @@
 | Recording Design Freeze | **LOCKED** |
 | **Recording Wave 1** | **CLOSED** @ `dd2ffd7` |
 | **Recording Wave 2** | **CLOSED** @ `2ab3e3e` (production GREEN) |
-| **Recording Wave 3** | **IMPLEMENTED** (Owner Review — no commit yet) |
+| **Recording Wave 3** | **DEPLOYED / NOT CLOSED** @ `507f78f` — production finalize BLOCKED |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN @ Wave 2; Wave 3 not deployed |
+| Production | Deployed Wave 3 @ `507f78f`; catalog/auth/playback GREEN; take finalize DURATION_PROBE_FAILED on real MediaRecorder WebM/Opus |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 Wave 3 readiness: [RECORDING_WAVE3_READINESS_AUDIT.md](./audits/RECORDING_WAVE3_READINESS_AUDIT.md)  
@@ -37,8 +37,8 @@ Wave 3 closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING
 ## 3. Current Phase
 
 ```text
-RECORDING WAVE 3 = PlaybackShell sync + RecordingPanel + take-only preview
-Anonymous QT / entitlements / grants = NOT STARTED (later waves)
+RECORDING WAVE 3 = DEPLOYED @ 507f78f · NOT CLOSED
+BLOCKER = MediaRecorder WebM/Opus duration probe fail-closed on finalize
 ```
 
 ---
@@ -46,9 +46,11 @@ Anonymous QT / entitlements / grants = NOT STARTED (later waves)
 ## 4. Next Session Entry
 
 ```text
-NEXT: OWNER REVIEW of Wave 3 → commit/push/deploy only with Owner GO
+NEXT: OWNER DECISION on Wave 3 production blocker
+BLOCKER: music-metadata cannot read duration from Chromium MediaRecorder WebM/Opus
+→ finalize fail-closed (DURATION_PROBE_FAILED); READY_TAKE / take preview not reached on prod
+Do NOT hotfix without Owner GO
 Do NOT implement Anonymous Quick Take / shared grants without Owner GO
-Do NOT reopen Community epic without Owner GO
 ```
 
 ---

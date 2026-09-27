@@ -8,7 +8,7 @@ Format: data, zakres, skrót.
 
 ## 2026-09-27 — RECORDING WAVE 3: PLAYER INTEGRATION + TAKE PREVIEW
 
-**Status:** **IMPLEMENTED** (Owner review / commit pending)
+**Status:** **DEPLOYED** @ `507f78fb03347683c847d5b0a0d76a3fffe1827d` · **PRODUCTION VERIFY NOT CLOSED**
 
 - Sibling `RecordingPanel` + `BeatRecordingSurface` on beat detail
 - Pure `recording-ui-state` machine (separate from `reducePlayback`)
@@ -18,6 +18,7 @@ Format: data, zakres, skrót.
 - Tests: wave3-unit + wave3-live preview AuthZ
 - Closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)
 - OUT: dual-play, anon, grants, entitlements, download, MIX/EXPORT
+- **Prod verify:** UI START/STOP/CANCEL + upload PASS; finalize **FAIL** — `DURATION_PROBE_FAILED` on real Chromium MediaRecorder `audio/webm; Opus` (music-metadata returns no `format.duration`). READY_TAKE / take preview not reached. Blocker — no hotfix without Owner GO.
 
 ---
 

@@ -1,6 +1,6 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–2 **CLOSED** · Wave 3 player integration **IMPLEMENTED** (Owner Review)
+**Status:** Design Freeze **LOCKED** · Wave 1–2 **CLOSED** · Wave 3 **DEPLOYED** @ `507f78f` · **PRODUCTION VERIFY NOT CLOSED** (duration probe blocker)
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 **Wave 2 closeout:** [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)  

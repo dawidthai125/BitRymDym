@@ -86,11 +86,24 @@ beat/[id]
 
 - Medium: `audio/ogg` picker vs interim allow-list (Wave 2; fail-closed at session)
 - Design Freeze §19 still historically lists Anon QT in W3 — implementation follows OD-W3-02 OUT
+- **BLOCKER (prod):** Chromium MediaRecorder WebM/Opus uploads finalize with `DURATION_PROBE_FAILED` — `music-metadata` parses container/codec but returns no `format.duration`. Fixture WAV path in live tests still PASS. No hotfix without Owner GO.
 
 ---
 
-## 7. Next
+## 7. Production verify (2026-09-27)
 
 ```text
-OWNER REVIEW → commit/push/deploy only with Owner GO
+DEPLOYED_SHA = 507f78fb03347683c847d5b0a0d76a3fffe1827d
+BASIC_SMOKE / AUTH UI / RECORDING_PANEL / START / STOP / UPLOAD / CANCEL / MOBILE = PASS
+FINALIZE / TAKE_PREVIEW = FAIL (DURATION_PROBE_FAILED)
+RECORDING_WAVE3 = NOT CLOSED
+```
+
+---
+
+## 8. Next
+
+```text
+OWNER DECISION → hotfix duration probe for MediaRecorder WebM/Opus OR accept alternate strategy
+Do NOT expand Wave 3 scope (anon / grants / download / MIX)
 ```
