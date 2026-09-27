@@ -6,9 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-09-27 — RECORDING WAVE 3: PRODUCTION BLOCKER RCA + HOTFIX (UNCOMMITTED)
+## 2026-09-27 — RECORDING WAVE 3: DURATION HOTFIX PRODUCTION VERIFIED / CLOSED
 
-**Status:** **NOT CLOSED** · fix in working tree · no commit/push/deploy
+**Status:** **CLOSED / PRODUCTION VERIFIED** @ `9f6f006c4dbb3354260ca2f5479c18952f8a713a`
+
+- Blocker discovered on `507f78f`: Chromium timesliced WebM/Opus → music-metadata `format.duration` missing → finalize `DURATION_PROBE_FAILED`
+- Hotfix: `fix(recording): support chromium webm duration fallback` @ `9f6f006`
+- RCA: [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md)
+- Production E2E: real MediaRecorder `audio/webm;codecs=opus` + timeslice 250 → upload → decode fallback duration → READY_TAKE → signed take-only preview PASS
+
+---
+
+## 2026-09-27 — RECORDING WAVE 3: PRODUCTION BLOCKER RCA + HOTFIX
+
+**Status:** superseded by production verify CLOSED @ `9f6f006`
 
 - RCA: [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md)
 - Cause: timesliced Chromium MediaRecorder WebM omits Info.Duration; music-metadata ignores Clusters

@@ -1,8 +1,10 @@
 # Recording Wave 3 — Production Blocker RCA
 
 **Date:** 2026-09-27  
-**Baseline commit:** `507f78fb03347683c847d5b0a0d76a3fffe1827d`  
-**Status:** RCA + minimal fix prepared · **RECORDING_WAVE3 = NOT CLOSED** · **COMMIT/PUSH/DEPLOY = NONE**
+**Baseline (blocker discovered):** `507f78fb03347683c847d5b0a0d76a3fffe1827d`  
+**Hotfix commit:** `9f6f006c4dbb3354260ca2f5479c18952f8a713a`  
+**Production deploy SHA:** `9f6f006c4dbb3354260ca2f5479c18952f8a713a`  
+**Status:** **RECORDING_WAVE3 = CLOSED** · real Chromium WebM/Opus production E2E **PASS**
 
 ---
 
@@ -129,11 +131,13 @@ Fixture generator (dev only): `scripts/generate-chromium-webm-fixture.mjs`
 
 ---
 
-## 8. Wave status
+## 8. Production verify (2026-09-27)
 
 ```text
-RECORDING_WAVE3 = NOT CLOSED
-BLOCKER = RESOLVED in working tree (awaiting Owner Review → commit/push/deploy)
+HOTFIX_DEPLOYED_SHA = 9f6f006c4dbb3354260ca2f5479c18952f8a713a
+CHROMIUM_MEDIARECORDER = audio/webm;codecs=opus · timeslice=250
+DURATION_METADATA = music-metadata format.duration = null (as expected)
+DURATION_FALLBACK = audio-decode samples/sampleRate → 27s = DB duration_seconds
+FINALIZE / READY_TAKE / TAKE_PREVIEW (signed, private) = PASS
+RECORDING_WAVE3 = CLOSED
 ```
-
-Do **not** mark CLOSED until Owner GO + production re-verify.

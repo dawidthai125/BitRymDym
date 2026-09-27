@@ -24,21 +24,22 @@
 | Recording Design Freeze | **LOCKED** |
 | **Recording Wave 1** | **CLOSED** @ `dd2ffd7` |
 | **Recording Wave 2** | **CLOSED** @ `2ab3e3e` (production GREEN) |
-| **Recording Wave 3** | **DEPLOYED / NOT CLOSED** @ `507f78f` — blocker hotfix prepared (uncommitted) |
+| **Recording Wave 3** | **CLOSED** @ `9f6f006` (production GREEN · real Chromium WebM/Opus E2E PASS) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | Deployed Wave 3 @ `507f78f`; finalize DURATION_PROBE_FAILED on Chromium WebM/Opus — RCA + minimal fix in working tree (no commit) |
+| Production | GREEN @ Wave 3 hotfix `9f6f006` |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 Wave 3 readiness: [RECORDING_WAVE3_READINESS_AUDIT.md](./audits/RECORDING_WAVE3_READINESS_AUDIT.md)  
-Wave 3 closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)
+Wave 3 closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
+Blocker RCA: [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md)
 
 ---
 
 ## 3. Current Phase
 
 ```text
-RECORDING WAVE 3 = DEPLOYED @ 507f78f · NOT CLOSED
-BLOCKER = MediaRecorder WebM/Opus duration probe fail-closed on finalize
+RECORDING WAVE 3 = CLOSED / PRODUCTION VERIFIED @ 9f6f006
+Anonymous QT / entitlements / grants = NOT STARTED (later waves)
 ```
 
 ---
@@ -46,10 +47,9 @@ BLOCKER = MediaRecorder WebM/Opus duration probe fail-closed on finalize
 ## 4. Next Session Entry
 
 ```text
-NEXT: OWNER REVIEW of W3 duration-probe hotfix → commit/push/deploy only with Owner GO
-BLOCKER RCA: docs/audits/RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md
-Do NOT trust client duration; server decode fallback for timesliced WebM/Opus
-Do NOT implement Anonymous Quick Take / shared grants without Owner GO
+NEXT: Owner GO for next Recording wave (Anonymous QT / grants / entitlements) — only with explicit GO
+Do NOT reopen Wave 3 duration probe without evidence of regression
+Do NOT reopen Community epic without Owner GO
 ```
 
 ---

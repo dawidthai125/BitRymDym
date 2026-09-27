@@ -86,17 +86,19 @@ beat/[id]
 
 - Medium: `audio/ogg` picker vs interim allow-list (Wave 2; fail-closed at session)
 - Design Freeze §19 still historically lists Anon QT in W3 — implementation follows OD-W3-02 OUT
-- **BLOCKER (prod):** Chromium MediaRecorder WebM/Opus uploads finalize with `DURATION_PROBE_FAILED` — `music-metadata` parses container/codec but returns no `format.duration`. Fixture WAV path in live tests still PASS. No hotfix without Owner GO.
+- Medium (historical): Chromium MediaRecorder WebM/Opus duration — **FIXED** @ `9f6f006` (audio-decode fallback). See [RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md](./RECORDING_WAVE3_PRODUCTION_BLOCKER_RCA.md).
 
 ---
 
 ## 7. Production verify (2026-09-27)
 
 ```text
-DEPLOYED_SHA = 507f78fb03347683c847d5b0a0d76a3fffe1827d
-BASIC_SMOKE / AUTH UI / RECORDING_PANEL / START / STOP / UPLOAD / CANCEL / MOBILE = PASS
-FINALIZE / TAKE_PREVIEW = FAIL (DURATION_PROBE_FAILED)
-RECORDING_WAVE3 = NOT CLOSED
+FEATURE_DEPLOY = 507f78fb03347683c847d5b0a0d76a3fffe1827d
+HOTFIX_DEPLOY  = 9f6f006c4dbb3354260ca2f5479c18952f8a713a
+CHROMIUM_MEDIARECORDER = audio/webm;codecs=opus · timeslice 250
+DURATION_FALLBACK = PASS (music-metadata duration null → decode 27s → READY)
+TAKE_PREVIEW / SECURITY / CANCEL / MOBILE / SMOKE = PASS
+RECORDING_WAVE3 = CLOSED
 ```
 
 ---
@@ -104,6 +106,5 @@ RECORDING_WAVE3 = NOT CLOSED
 ## 8. Next
 
 ```text
-OWNER DECISION → hotfix duration probe for MediaRecorder WebM/Opus OR accept alternate strategy
-Do NOT expand Wave 3 scope (anon / grants / download / MIX)
+Wave 3 CLOSED — later waves only with Owner GO (anon QT / grants / entitlements)
 ```
