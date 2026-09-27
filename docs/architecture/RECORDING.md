@@ -1,10 +1,11 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1 foundation **IMPLEMENTED** (no MediaRecorder yet)
+**Status:** Design Freeze **LOCKED** · Wave 1 foundation **IMPLEMENTED** · Wave 2 transport/MediaRecorder **IMPLEMENTED** (Owner Review)
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
-**Wave 1 audit:** [RECORDING_WAVE1_IMPLEMENTATION_AUDIT.md](../audits/RECORDING_WAVE1_IMPLEMENTATION_AUDIT.md)  
-**Wave 1 closeout:** [RECORDING_WAVE1_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE1_IMPLEMENTATION_CLOSEOUT.md)
+**Wave 1 closeout:** [RECORDING_WAVE1_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE1_IMPLEMENTATION_CLOSEOUT.md)  
+**Wave 2 readiness:** [RECORDING_WAVE2_READINESS_AUDIT.md](../audits/RECORDING_WAVE2_READINESS_AUDIT.md)  
+**Wave 2 closeout:** [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)
 
 ## Wave 1 delivered
 
@@ -16,6 +17,20 @@
 | Config (retention/caps constants) | `src/config/recording.ts` |
 | Domain types | `src/types/domain.ts` (`Take`, statuses) |
 
-**Not in Wave 1:** Access Gate RECORD capability, signed upload product API, PlaybackShell Record, shared grants, janitor.
+## Wave 2 delivered
 
-**Reuse:** [AUTHORIZATION.md](./AUTHORIZATION.md) · [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md) patterns for Wave 2+.
+| Piece | Location |
+|-------|----------|
+| Interim AuthZ (auth + PUBLISHED) | `src/lib/takes/authz.ts` |
+| Session + finalize transport | `src/lib/takes/take-transport.ts` |
+| API | `POST /api/takes/session` · `POST /api/takes/finalize` |
+| MediaRecorder module | `src/lib/takes/media-recorder.ts` |
+| Client upload helper | `src/lib/takes/client-upload.ts` |
+
+**Session model:** existing `takes` row (`PENDING_UPLOAD` → `READY` / `FAILED` / `EXPIRED`). No `recording_sessions` table.
+
+**Duration:** server probe via `probeAudioDurationFromBytes`; fail-closed if unprobeable (OD-W2-04). Interim max = `MIN(beat.duration_seconds, 180)`.
+
+**Not in Wave 2:** PlaybackShell Record button · Quick Take product UI · anon recording · entitlement engine · janitor · Access Gate RECORD capability · shared grants.
+
+**Reuse:** [AUTHORIZATION.md](./AUTHORIZATION.md) · [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md) patterns — **never** `beat-audio` or `/api/beats/audio/*` for takes.

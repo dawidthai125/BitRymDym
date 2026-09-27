@@ -22,20 +22,21 @@
 | Canonical branch | `main` |
 | Community Upload + Moderation EPIC | **COMPLETE / LOCKED** @ `c5e1f17` |
 | Recording Design Freeze | **LOCKED** |
-| **Recording Wave 1** | **IMPLEMENTED** (await Owner commit/review) |
+| **Recording Wave 1** | **CLOSED** @ `dd2ffd7` (production GREEN) |
+| **Recording Wave 2** | **IMPLEMENTED** (Owner Review — no commit yet) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN (Wave 1 migration applied remote; app deploy pending Owner commit) |
+| Production | GREEN @ Wave 1; Wave 2 not deployed |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
-Wave 1 audit: [RECORDING_WAVE1_IMPLEMENTATION_AUDIT.md](./audits/RECORDING_WAVE1_IMPLEMENTATION_AUDIT.md)
+Wave 2 closeout: [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)
 
 ---
 
 ## 3. Current Phase
 
 ```text
-RECORDING WAVE 1 = TAKE DOMAIN + DB + RLS + take-audio FOUNDATION
-MediaRecorder / player Record / upload transport = NOT STARTED (Wave 2+)
+RECORDING WAVE 2 = TAKE SESSION + MediaRecorder + signed upload + finalize → READY
+Product QT / PlaybackShell Record = NOT STARTED (Wave 3)
 ```
 
 ---
@@ -43,16 +44,13 @@ MediaRecorder / player Record / upload transport = NOT STARTED (Wave 2+)
 ## 4. Next Session Entry
 
 ```text
-NEXT: OWNER REVIEW of Wave 1 → then Recording Wave 2 (transport / MediaRecorder) only with Owner GO
-Do NOT implement MediaRecorder / Record UI without Wave 2 GO
+NEXT: OWNER REVIEW of Wave 2 → commit/push/deploy only with Owner GO
+Wave 3 = PlaybackShell Record / product Quick Take UX
 Do NOT reopen Community epic without Owner GO
 ```
 
 ---
 
-## 5. Last Session Closeout
+## 5. Out of scope reminders
 
-**Sesja:** Recording Wave 1 implementation (2026-09-27)
-
-**Done:** `takes` table + RLS owner SELECT · private `take-audio` bucket · object-key helpers · config constants · unit/live foundation tests · remote migration applied.
-**Out of scope (correct):** MediaRecorder, player Record, upload session API, shared grants, janitor cron.
+**Out of Wave 2 (correct):** sticky player · QT product UI · anon recording · entitlement engine · retention janitor · shared grants · Access Gate RECORD · MIX/EXPORT.

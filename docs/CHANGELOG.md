@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — RECORDING WAVE 2: TRANSPORT + MEDIARECORDER
+
+**Status:** **IMPLEMENTED** (Owner review / commit pending)
+
+- Take session = existing `takes` row (`PENDING_UPLOAD` → `READY`)
+- MediaRecorder / getUserMedia module (`src/lib/takes/media-recorder.ts`)
+- Signed upload + finalize for private `take-audio` (`/api/takes/session`, `/api/takes/finalize`)
+- Interim AuthZ: authenticated + PUBLISHED beat; max = `MIN(beat, 180)`
+- Duration probe fail-closed (OD-W2-04); no client duration trust
+- Tests: wave2-unit + wave2-live security matrix
+- Closeout: [RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE2_IMPLEMENTATION_CLOSEOUT.md)
+- OUT: PlaybackShell Record, QT product UI, anon, entitlements, janitor
+
+---
+
 ## 2026-09-27 — RECORDING WAVE 1: TAKE FOUNDATION
 
 **Status:** **IMPLEMENTED** (Owner review / commit pending)

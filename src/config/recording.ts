@@ -1,6 +1,6 @@
 /**
  * Recording Wave 1 — retention / anti-abuse config constants only.
- * Entitlement enforcement and MediaRecorder are later waves.
+ * Entitlement enforcement is later waves. MediaRecorder capture lands in Wave 2.
  * Source: PHASE_RECORDING_DESIGN_FREEZE.md (D05, D07).
  */
 
