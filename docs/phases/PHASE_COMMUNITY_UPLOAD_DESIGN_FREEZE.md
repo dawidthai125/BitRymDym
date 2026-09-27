@@ -7,12 +7,13 @@
 **Supabase project:** `rzzxrgcdogkybkiidqgw`  
 **SSOT:** §3–§4, §6–§9, §12–§13, §36, §39  
 **Document status:** DESIGN FREEZE — **READY / OWNER GO** (2026-09-27)  
-**Implementation status:** **WAVE 1 IMPLEMENTED** (DB / RLS / Trigger / AuthZ) · Wave 2+ **NONE**
+**Implementation status:** **WAVE 1 COMPLETE** · **WAVE 2 IMPLEMENTED / VERIFIED** · Wave 3+ **NONE**
 
 ```text
 COMMUNITY LOOP = USER → UPLOAD → MODERATION → APPROVED → PUBLISHED
-WAVE 1 = DB/RLS/TRIGGER/AUTHZ FOUNDATION
-WAVE 2+ = NOT STARTED
+WAVE 1 = DB/RLS/TRIGGER/AUTHZ FOUNDATION — COMPLETE
+WAVE 2 = USER SIGNED AUDIO TRANSPORT — IMPLEMENTED / VERIFIED
+WAVE 3+ = NOT STARTED
 USER PUBLISH = DENY
 APPROVED ≠ AUTO PUBLISHED
 BUCKET = beat-audio (reuse)
@@ -409,10 +410,26 @@ Related product ODs (unchanged): OD-09, OD-10, OD-11, OD-12, OD-13, OD-14, OD-18
 
 ```text
 COMMUNITY UPLOAD DESIGN FREEZE = READY / OWNER GO
-WAVE 1 = IMPLEMENTED (DB / RLS / Trigger / AuthZ)
-WAVE 2+ = NONE (upload UI / transport / moderation UI / publish UI)
-Migration Wave 1 = community_wave1_ownership (applied)
+WAVE 1 = COMPLETE (DB / RLS / Trigger / AuthZ)
+WAVE 2 = IMPLEMENTED / VERIFIED (USER signed upload → MASTER READY; beat stays DRAFT)
+WAVE 3+ = NONE (submit / moderation UI / publish UI)
+Migrations = community_wave1_ownership · community_wave2_user_audio
 ```
+
+---
+
+## Wave 2 implementation note (2026-09-27)
+
+```text
+createUserBeat / existing USER DRAFT
+  → POST /api/beats/audio/session
+  → signed PUT private beat-audio (user/{ownerId}/{beatId}/{assetId}/master.bin)
+  → POST /api/beats/audio/analyze (duration + BPM V1)
+  → finalizeUserBeatWithMasterAction → MASTER READY
+  → status remains DRAFT (no auto-submit)
+```
+
+Replacement reuses `activateAssetReady` (previous MASTER → REPLACED). Storage INSERT remains DENY.
 
 ---
 

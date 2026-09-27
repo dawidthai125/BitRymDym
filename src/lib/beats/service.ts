@@ -25,6 +25,7 @@ import {
   toBeatInsertPayload,
   type BeatRow,
 } from "@/lib/beats/types";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PlatformBeatAdminListItem = Beat & {
@@ -209,6 +210,108 @@ export async function createUserBeat(
   }
 
   return mapBeatRow(data as BeatRow);
+}
+
+/**
+ * Community Wave 2: patch own USER DRAFT metadata via admin client after AuthZ.
+ * Call only after assertUserDraftTransportAccess.
+ */
+export async function patchUserDraftMetadataAfterAuthz(params: {
+  beatId: string;
+  ownerId: string;
+  patch: {
+    title?: string;
+    producer?: string | null;
+    description?: string | null;
+    genre?: string | null;
+    style?: string | null;
+    bpm?: number;
+    key?: string | null;
+    scale?: string | null;
+    durationSeconds?: number;
+    tags?: string[];
+    coverRef?: string | null;
+  };
+}): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const { data: current, error: loadError } = await admin
+    .from("beats")
+    .select(BEAT_SELECT_FULL)
+    .eq("id", params.beatId)
+    .maybeSingle();
+  if (loadError) throw new Error(loadError.message);
+  if (!current) throw new AuthError("NOT_FOUND", "Beat not found.");
+
+  const beat = mapBeatRow(current as BeatRow);
+  if (
+    beat.ownershipType !== "USER" ||
+    beat.ownerId !== params.ownerId ||
+    beat.status !== "DRAFT"
+  ) {
+    throw new AuthError("FORBIDDEN", "USER draft metadata patch denied.");
+  }
+
+  const nextInput: BeatInput = {
+    ownershipType: "USER",
+    ownerId: params.ownerId,
+    title: params.patch.title ?? beat.title,
+    producer:
+      params.patch.producer !== undefined ? params.patch.producer : beat.producer,
+    description:
+      params.patch.description !== undefined
+        ? params.patch.description
+        : beat.description,
+    genre: params.patch.genre !== undefined ? params.patch.genre : beat.genre,
+    style: params.patch.style !== undefined ? params.patch.style : beat.style,
+    bpm: params.patch.bpm ?? beat.bpm,
+    key: params.patch.key !== undefined ? params.patch.key : beat.key,
+    scale: params.patch.scale !== undefined ? params.patch.scale : beat.scale,
+    durationSeconds: params.patch.durationSeconds ?? beat.durationSeconds,
+    tags: params.patch.tags ?? beat.tags,
+    coverRef:
+      params.patch.coverRef !== undefined ? params.patch.coverRef : beat.coverRef,
+    status: "DRAFT",
+  };
+
+  const validated = validateBeatInput(nextInput);
+  if (!validated.ok) {
+    throw new Error(validated.errors.join("; "));
+  }
+
+  const { error } = await admin
+    .from("beats")
+    .update(
+      toBeatInsertPayload({
+        ...validated.value,
+        ownershipType: "USER",
+        ownerId: params.ownerId,
+        status: "DRAFT",
+      }),
+    )
+    .eq("id", params.beatId)
+    .eq("owner_id", params.ownerId)
+    .eq("ownership_type", "USER")
+    .eq("status", "DRAFT");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Community Wave 2: owner may update metadata on own USER DRAFT only.
+ */
+export async function updateOwnUserDraftMetadata(
+  beatId: string,
+  patch: Partial<Omit<BeatInput, "status" | "ownershipType" | "ownerId">>,
+): Promise<Beat> {
+  const context = await requireUser();
+  await patchUserDraftMetadataAfterAuthz({
+    beatId,
+    ownerId: context.userId,
+    patch,
+  });
+  return loadBeat(beatId);
 }
 
 /** ADMIN metadata edit (not for MODERATOR full edit). */

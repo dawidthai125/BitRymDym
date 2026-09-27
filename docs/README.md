@@ -78,6 +78,5 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community Design Freeze **READY / OWNER GO** · **COMMUNITY WAVE 1 = IMPLEMENTED** (DB/RLS/Trigger/AuthZ only) · Wave 2+ upload/UI **NOT STARTED**.
-**Canonical pushed baseline:** `main` @ `47643c2` (+ Wave 1 commit this session).
-**Next:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Wave 2 user signed upload.
+**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community Wave 1 **COMPLETE** · **COMMUNITY WAVE 2 = IMPLEMENTED / VERIFIED** (USER signed transport) · Wave 3+ submit/moderation UI **NOT STARTED**.
+**Next:** [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Wave 3 submit + moderation.

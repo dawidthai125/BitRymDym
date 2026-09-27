@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-27 — COMMUNITY WAVE 2: USER SIGNED AUDIO TRANSPORT
+
+**Status:** **IMPLEMENTED / VERIFIED** · Storage INSERT still **DENY** · beat stays **DRAFT**
+
+- Reuse Audio Transport V1: signed upload → analyze → finalize → MASTER READY
+- Routes: `POST /api/beats/audio/session`, `POST /api/beats/audio/analyze`, `finalizeUserBeatWithMasterAction`
+- Object key: `user/{ownerId}/{beatId}/{assetId}/master.bin` (server-chosen)
+- Migration `community_wave2_user_audio`: asset trigger allows USER beats with `user/{ownerId}/` prefix
+- Replacement: new PENDING → READY activates; previous MASTER → REPLACED
+- Live E2E: `bpm-120-steady.wav` → duration 30 · BPM 120 · no 413 · DRAFT retained
+- IDOR / AuthZ unit tests + PLATFORM transport regression preserved
+
+---
+
 ## 2026-09-27 — COMMUNITY WAVE 1: OWNERSHIP / RLS / AUTHZ FOUNDATION
 
 **Status:** **IMPLEMENTED** · Design Freeze honored · UI/transport **OUT**
