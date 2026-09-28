@@ -119,3 +119,33 @@ export type BeatAudioAsset = {
   createdAt: string;
   updatedAt: string;
 };
+
+/** E3.1 — Mix session lifecycle (params only; no product Mix UI yet). */
+export const MIX_SESSION_STATUSES = [
+  "DRAFT",
+  "READY_TO_RENDER",
+  "SOURCE_UNAVAILABLE",
+] as const;
+export type MixSessionStatus = (typeof MIX_SESSION_STATUSES)[number];
+
+/** E3.1 — Render job lifecycle (IP-03 timeout from RUNNING). */
+export const RENDER_JOB_STATUSES = [
+  "QUEUED",
+  "RUNNING",
+  "SUCCEEDED",
+  "FAILED",
+  "CANCELLED",
+  "TIMEOUT",
+] as const;
+export type RenderJobStatus = (typeof RENDER_JOB_STATUSES)[number];
+
+export const RENDER_JOB_TIERS = ["BASIC_MP3", "HQ_MP3", "WAV"] as const;
+export type RenderJobTier = (typeof RENDER_JOB_TIERS)[number];
+
+export const AUDIO_ARTIFACT_STATUSES = [
+  "READY",
+  "FAILED",
+  "EXPIRED",
+  "DELETED",
+] as const;
+export type AudioArtifactStatus = (typeof AUDIO_ARTIFACT_STATUSES)[number];
