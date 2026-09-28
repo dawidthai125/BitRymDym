@@ -65,7 +65,8 @@ export const AUDIO_CODEC = {
 } as const;
 
 /**
- * Capability keys (frozen list). Resolver / AuthZ helpers = E3.2+.
+ * Capability keys (frozen list).
+ * Effective resolution: lib/audio/effective-entitlement.ts (E3.2).
  * STEMS intentionally absent.
  */
 export const AUDIO_CAPABILITY_KEYS = [
