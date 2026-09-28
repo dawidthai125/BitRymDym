@@ -356,7 +356,7 @@ OD-14 remains **OPEN** and **out of scope** here.
 | **W1** | Take domain · DB · RLS deny-by-default · private take bucket foundation · entitlement config module (no MediaRecorder UI) | Owner Wave 1 Implementation GO |
 | **W2** | Recording transport · signed upload/finalize · MIME/size/duration validation · janitor skeleton | After W1 |
 | **W3** | PlaybackShell Record · MediaRecorder · countdown/timer · preview · Anonymous + BEGINNER Quick Take E2E | After W2 |
-| **W4** | Full entitlement matrix · retention per tier · anti-abuse caps · own take download · Moje próbki list/delete | **IMPLEMENTED / Owner Review** (not CLOSED / not deployed) — see [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md) |
+| **W4** | Full entitlement matrix · retention per tier · anti-abuse caps · own take download · Moje próbki list/delete | **CLOSED** @ `99c4815` (production GREEN · Hobby daily cron) — [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md) |
 | **W5** | Shared grants domain · RECORD capability on grants · shared E2E · unauthorized DENY | After W3+ (may parallel W4) |
 | **W6** | Security regression · IDOR · fake duration · mobile certification · observability · docs closeout | After W3–W5 |
 

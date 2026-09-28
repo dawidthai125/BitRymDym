@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — RECORDING WAVE 4: PRODUCTION VERIFIED / CLOSED
+
+**Status:** **CLOSED / PRODUCTION GREEN** @ `99c4815e26b224cb66e221831687b0688bf20476`
+
+- Production deploy Ready · aliased https://www.bitrymdym.pl
+- Smoke + live W4 E2E (BEGINNER record→download→delete, caps, IDOR) PASS
+- PRO/LEGEND entitlement snapshots PASS; Chromium WebM/Opus regression PASS
+- Janitor: Hobby daily `0 0 * * *`; unauthorized cron 401 PASS; scheduled run PENDING_SCHEDULE
+- Closeout: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)
+- OUT remains: anon QT · grants · MIX/EXPORT · payments
+
+---
+
 ## 2026-09-28 — RECORDING WAVE 4: HOBBY-COMPATIBLE DAILY JANITOR CRON
 
 **Status:** hotfix (Wave 4 still OPEN — not CLOSED)

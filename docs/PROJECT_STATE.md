@@ -25,12 +25,12 @@
 | **Recording Wave 1** | **CLOSED** @ `dd2ffd7` |
 | **Recording Wave 2** | **CLOSED** @ `2ab3e3e` (production GREEN) |
 | **Recording Wave 3** | **CLOSED** @ `9f6f006` (production GREEN · real Chromium WebM/Opus E2E PASS) |
-| **Recording Wave 4** | **IMPLEMENTED / READY_FOR_OWNER_REVIEW** (not committed · not deployed) |
+| **Recording Wave 4** | **CLOSED** @ `99c4815` (production GREEN · Hobby daily janitor) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
-| Production | GREEN @ Wave 3 hotfix `9f6f006` (Wave 4 remote migration applied; app not deployed) |
+| Production | GREEN @ Wave 4 `99c4815` · https://www.bitrymdym.pl |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
-Wave 3 closeout: [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](./audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
+Wave 4 closeout: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)  
 Wave 4 report: [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](./audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)
 
 ---
@@ -38,8 +38,7 @@ Wave 4 report: [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](./audits/RECORDING_WAV
 ## 3. Current Phase
 
 ```text
-RECORDING WAVE 3 = CLOSED / PRODUCTION VERIFIED @ 9f6f006
-RECORDING WAVE 4 = IMPLEMENTED — READY_FOR_OWNER_REVIEW (no commit/push/deploy yet)
+RECORDING WAVE 4 = CLOSED / PRODUCTION VERIFIED @ 99c4815
 Anonymous QT / shared grants = Wave 5+ (OUT of W4)
 ```
 
@@ -48,10 +47,10 @@ Anonymous QT / shared grants = Wave 5+ (OUT of W4)
 ## 4. Next Session Entry
 
 ```text
-NEXT: Owner Review of Wave 4 → explicit GO for COMMIT / PUSH / DEPLOY
-Set CRON_SECRET on Vercel; janitor schedule is Hobby-compatible daily `0 0 * * *` (00:00 UTC)
-Do NOT reopen Wave 3 duration probe without evidence of regression
-Do NOT implement Anonymous QT / shared grants without Owner GO (W5+)
+NEXT: Owner GO for Recording Wave 5 (shared grants / RECORD capability) — only with explicit GO
+Do NOT reopen Wave 4 janitor schedule without evidence / plan change
+Do NOT implement Anonymous QT without Owner GO
+Hobby cron is daily `0 0 * * *` — expiry AuthZ remains immediate
 ```
 
 ---

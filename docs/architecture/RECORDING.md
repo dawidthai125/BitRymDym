@@ -1,9 +1,10 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–3 **CLOSED** @ `9f6f006` · Wave 4 **IMPLEMENTED / Owner Review** (not deployed)
+**Status:** Design Freeze **LOCKED** · Wave 1–4 **CLOSED** @ `99c4815` · production GREEN
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 **Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
+**Wave 4 closeout:** [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)  
 **Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)
 
 ## Wave 1 delivered
@@ -36,7 +37,7 @@
 
 **OD-W3 (CLOSED):** beat plays from 0 during capture · anon OUT · sibling panel (not merged reducer) · take-only preview (no dual-play).
 
-## Wave 4 delivered (Owner Review — not CLOSED)
+## Wave 4 delivered (CLOSED @ `99c4815`)
 
 | Piece | Location |
 |-------|----------|

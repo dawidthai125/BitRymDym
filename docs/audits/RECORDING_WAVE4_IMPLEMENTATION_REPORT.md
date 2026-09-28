@@ -1,14 +1,16 @@
-# RECORDING WAVE 4 — IMPLEMENTATION (Owner Review)
+# RECORDING WAVE 4 — IMPLEMENTATION REPORT
 
-**Type:** Implementation report (not CLOSED)  
-**Date:** 2026-09-27  
-**Production baseline (unchanged):** `9f6f006c4dbb3354260ca2f5479c18952f8a713a`  
-**Status:** READY_FOR_OWNER_REVIEW — COMMIT / PUSH / DEPLOY = NOT PERFORMED
+**Type:** Implementation + production closeout reference  
+**Date:** 2026-09-28  
+**Production SHA:** `99c4815e26b224cb66e221831687b0688bf20476`  
+**Status:** **CLOSED / PRODUCTION VERIFIED**
 
 ```text
-RECORDING_WAVE4_IMPLEMENTATION = COMPLETE
-READY_FOR_OWNER_REVIEW = YES
+RECORDING_WAVE4 = CLOSED
+PRODUCTION = GREEN
 ```
+
+See: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)
 
 ---
 
@@ -18,7 +20,7 @@ READY_FOR_OWNER_REVIEW = YES
 |------|--------|
 | Account-level recording entitlement (BEGINNER 30 / PRO·LEGEND MIN(beat,180)) | DONE |
 | Retention via server `expires_at` | DONE |
-| Janitor (Vercel Cron → `/api/cron/takes-janitor`) | DONE |
+| Janitor (Vercel Cron → `/api/cron/takes-janitor`) | DONE (Hobby daily `0 0 * * *`) |
 | Anti-abuse race-safe (advisory lock + unique PENDING) | DONE |
 | Own TAKE signed download | DONE |
 | `/account/takes` Moje próbki | DONE |
@@ -53,7 +55,7 @@ Janitor: Vercel Hobby daily cron `0 0 * * *` (00:00 UTC) + `CRON_SECRET` Bearer 
 |----------------|---------|
 | `20260927220000_recording_wave4_session_claim.sql` | unique PENDING per owner · indexes · claim RPC |
 | `20260927220100_recording_wave4_claim_rpc_revoke.sql` | REVOKE EXECUTE from anon/authenticated |
-| Applied to remote | YES (`recording_wave4_session_claim` + `recording_wave4_claim_rpc_revoke`) |
+| Applied to remote | YES |
 
 ---
 
@@ -61,7 +63,7 @@ Janitor: Vercel Hobby daily cron `0 0 * * *` (00:00 UTC) + `CRON_SECRET` Bearer 
 
 | Route | Purpose |
 |-------|---------|
-| `POST /api/takes/session` | unchanged path; now race-safe claim + entitlement |
+| `POST /api/takes/session` | race-safe claim + entitlement |
 | `POST /api/takes/finalize` | snapshot max; deleted/expired DENY |
 | `POST /api/takes/preview` | shared AuthZ gate |
 | `POST /api/takes/download` | owner signed GET (TTL 300s) |
@@ -71,15 +73,6 @@ Janitor: Vercel Hobby daily cron `0 0 * * *` (00:00 UTC) + `CRON_SECRET` Bearer 
 
 ---
 
-## 5. Tests
+## 5. Production
 
-- Unit: `wave4-unit.test.ts` (entitlement, retention, caps, download AuthZ)
-- Live: `wave4-live.test.ts` (BEGINNER flow, caps, concurrent, IDOR, janitor, PRO/LEGEND)
-- Regression: all `src/lib/takes/*` — 45 PASS
-
----
-
-## 6. Production
-
-**NOT DEPLOYED.** Requires Owner GO for commit → push → deploy.  
-Cron needs `CRON_SECRET` in Vercel env after deploy.
+**DEPLOYED + VERIFIED** @ `99c4815` · https://www.bitrymdym.pl
