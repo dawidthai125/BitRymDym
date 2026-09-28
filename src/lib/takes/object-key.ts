@@ -49,6 +49,18 @@ export function expectedUserTakeObjectKey(params: {
   }
 }
 
+export function expectedAnonTakeObjectKey(params: {
+  tokenHashPrefix: string;
+  takeId: string;
+  objectKey: string;
+}): boolean {
+  try {
+    return params.objectKey === buildAnonTakeObjectKey(params);
+  } catch {
+    return false;
+  }
+}
+
 export function isTakeAudioBucket(bucket: string): boolean {
   return bucket === TAKE_AUDIO_BUCKET;
 }

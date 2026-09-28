@@ -12,7 +12,7 @@ import {
   TakeRecorderError,
   detectMediaRecorderSupport,
 } from "@/lib/takes/media-recorder";
-import { uploadTakeRecordingBlob } from "@/lib/takes/client-upload";
+import { uploadAnonTakeRecordingBlob, uploadTakeRecordingBlob } from "@/lib/takes/client-upload";
 import {
   canStartNewRecording,
   createInitialRecordingUiSnapshot,
@@ -33,12 +33,18 @@ type RecordingPanelProps = {
   className?: string;
 };
 
-async function fetchTakePreviewUrl(takeId: string): Promise<string> {
-  const res = await fetch("/api/takes/preview", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ takeId }),
-  });
+async function fetchTakePreviewUrl(
+  takeId: string,
+  anonymous: boolean,
+): Promise<string> {
+  const res = await fetch(
+    anonymous ? "/api/takes/anon/preview" : "/api/takes/preview",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ takeId }),
+    },
+  );
   const json = (await res.json()) as {
     success?: boolean;
     url?: string;
@@ -77,6 +83,7 @@ export function RecordingPanel({
   const submittingRef = useRef(false);
   const beatIdRef = useRef(beatId);
   const maxSecondsRef = useRef(maxSeconds);
+  const isAuthenticatedRef = useRef(isAuthenticated);
   const [previewBusy, setPreviewBusy] = useState(false);
 
   useEffect(() => {
@@ -86,7 +93,8 @@ export function RecordingPanel({
   useEffect(() => {
     beatIdRef.current = beatId;
     maxSecondsRef.current = maxSeconds;
-  }, [beatId, maxSeconds]);
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [beatId, maxSeconds, isAuthenticated]);
 
   useEffect(() => {
     const playback = playbackRef.current;
@@ -105,14 +113,31 @@ export function RecordingPanel({
   }, [playbackRef]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      dispatch({ type: "REQUIRE_AUTH" });
-      return;
-    }
+    // D02: anonymous Quick Take is allowed on PUBLISHED — no AUTH_REQUIRED blocker.
     if (beatStatus !== "PUBLISHED") {
       dispatch({ type: "BEAT_INELIGIBLE" });
     }
-  }, [isAuthenticated, beatStatus]);
+  }, [beatStatus]);
+
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState !== "hidden") return;
+      if (phaseRef.current !== "RECORDING") return;
+      void stopAndUpload();
+    }
+    function onPageHide() {
+      if (phaseRef.current !== "RECORDING") return;
+      void stopAndUpload();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+    // stopAndUpload reads phaseRef / submittingRef — stable enough for mount listener.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function clearTick() {
     if (tickRef.current) {
@@ -122,10 +147,6 @@ export function RecordingPanel({
   }
 
   async function armMicrophone() {
-    if (!isAuthenticated) {
-      dispatch({ type: "REQUIRE_AUTH" });
-      return;
-    }
     if (beatStatus !== "PUBLISHED") {
       dispatch({ type: "BEAT_INELIGIBLE" });
       return;
@@ -201,15 +222,24 @@ export function RecordingPanel({
       const result = await recorder.stop();
       dispatch({ type: "UPLOAD_START" });
       try {
-        const uploaded = await uploadTakeRecordingBlob({
-          beatId: beatIdRef.current,
-          blob: result.blob,
-          contentType: result.mimeType,
-        });
+        const uploaded = isAuthenticatedRef.current
+          ? await uploadTakeRecordingBlob({
+              beatId: beatIdRef.current,
+              blob: result.blob,
+              contentType: result.mimeType,
+            })
+          : await uploadAnonTakeRecordingBlob({
+              beatId: beatIdRef.current,
+              blob: result.blob,
+              contentType: result.mimeType,
+            });
         dispatch({ type: "FINALIZE_START" });
         let previewUrl: string | null = null;
         try {
-          previewUrl = await fetchTakePreviewUrl(uploaded.takeId);
+          previewUrl = await fetchTakePreviewUrl(
+            uploaded.takeId,
+            !isAuthenticatedRef.current,
+          );
         } catch {
           previewUrl = null;
         }
@@ -325,7 +355,10 @@ export function RecordingPanel({
     if (!state.takeId) return;
     setPreviewBusy(true);
     try {
-      const url = await fetchTakePreviewUrl(state.takeId);
+      const url = await fetchTakePreviewUrl(
+        state.takeId,
+        !isAuthenticatedRef.current,
+      );
       dispatch({ type: "PREVIEW_URL", previewUrl: url });
     } catch (error) {
       dispatch({
@@ -356,14 +389,15 @@ export function RecordingPanel({
           Nagraj próbę
         </p>
         <p className="text-xs text-muted-foreground">
-          Limit: {formatDurationSeconds(maxSeconds)} · tylko zalogowany · beat
+          Limit: {formatDurationSeconds(maxSeconds)}
+          {isAuthenticated ? " · konto" : " · gość (Quick Take)"} · beat
           PUBLISHED
         </p>
       </div>
 
       {state.phase === "AUTH_REQUIRED" ? (
         <p className="text-sm text-muted-foreground" role="status">
-          Aby nagrywać,{" "}
+          Aby nagrywać dłużej,{" "}
           <Link
             href="/sign-in"
             className="underline underline-offset-4 hover:text-foreground"
@@ -451,6 +485,25 @@ export function RecordingPanel({
               {previewBusy ? "Ładowanie podglądu…" : "Odtwórz podgląd"}
             </Button>
           )}
+          {!isAuthenticated ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              Zapisz na dłużej —{" "}
+              <Link
+                href="/sign-up"
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                załóż konto
+              </Link>{" "}
+              lub{" "}
+              <Link
+                href="/sign-in"
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                zaloguj się
+              </Link>
+              . Gościnne nagranie wygasa po 2h (bez transferu na konto w V1).
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -471,7 +524,6 @@ export function RecordingPanel({
           state.phase === "FINALIZE_ERROR" ||
           state.phase === "EXPIRED" ||
           state.phase === "READY_TAKE") &&
-        isAuthenticated &&
         beatStatus === "PUBLISHED" ? (
           <Button
             type="button"

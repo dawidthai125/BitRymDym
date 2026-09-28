@@ -1,6 +1,7 @@
 /**
  * Client helper: session → signed PUT → finalize for take-audio.
  * Technical Wave 2 transport surface (not product QT UI).
+ * D02: anonymous path uses /api/takes/anon/* (cookie identity server-side).
  */
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -15,10 +16,12 @@ export type TakeUploadTransportResult = {
   contentType: string;
 };
 
-export async function uploadTakeRecordingBlob(params: {
+async function runTakeUploadTransport(params: {
   beatId: string;
   blob: Blob;
   contentType?: string;
+  sessionPath: string;
+  finalizePath: string;
 }): Promise<TakeUploadTransportResult> {
   const contentType =
     params.contentType ??
@@ -26,7 +29,7 @@ export async function uploadTakeRecordingBlob(params: {
       ? params.blob.type
       : "audio/webm");
 
-  const sessionRes = await fetch("/api/takes/session", {
+  const sessionRes = await fetch(params.sessionPath, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -65,7 +68,7 @@ export async function uploadTakeRecordingBlob(params: {
     throw new Error(uploadError.message || "Take binary upload failed.");
   }
 
-  const finalizeRes = await fetch("/api/takes/finalize", {
+  const finalizeRes = await fetch(params.finalizePath, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ takeId: sessionJson.takeId }),
@@ -86,4 +89,28 @@ export async function uploadTakeRecordingBlob(params: {
     byteSize: finalizeJson.byteSize,
     contentType: finalizeJson.contentType,
   };
+}
+
+export async function uploadTakeRecordingBlob(params: {
+  beatId: string;
+  blob: Blob;
+  contentType?: string;
+}): Promise<TakeUploadTransportResult> {
+  return runTakeUploadTransport({
+    ...params,
+    sessionPath: "/api/takes/session",
+    finalizePath: "/api/takes/finalize",
+  });
+}
+
+export async function uploadAnonTakeRecordingBlob(params: {
+  beatId: string;
+  blob: Blob;
+  contentType?: string;
+}): Promise<TakeUploadTransportResult> {
+  return runTakeUploadTransport({
+    ...params,
+    sessionPath: "/api/takes/anon/session",
+    finalizePath: "/api/takes/anon/finalize",
+  });
 }

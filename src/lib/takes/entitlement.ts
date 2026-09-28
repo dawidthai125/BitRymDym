@@ -20,7 +20,7 @@ export type RecordingAbuseCaps = {
 
 /**
  * Canonical max recording length for an authenticated account level.
- * Anonymous OUT of Wave 4.
+ * Anonymous uses computeAnonymousRecordingMaxSeconds (D02) — not this path.
  */
 export function computeRecordingMaxSeconds(params: {
   accountLevel: AccountLevel | string;
@@ -38,6 +38,28 @@ export function computeRecordingMaxSeconds(params: {
       : BEGINNER_RECORDING_MAX_SECONDS;
 
   return Math.min(beat, levelCap);
+}
+
+/**
+ * D02 anonymous Quick Take: MIN(beat.duration, 30).
+ * Server SSOT — client timers are UX only.
+ */
+export function computeAnonymousRecordingMaxSeconds(
+  beatDurationSeconds: number,
+): number {
+  const beat = Math.floor(beatDurationSeconds);
+  if (!Number.isFinite(beat) || beat <= 0) {
+    throw new Error("Invalid beat duration.");
+  }
+  return Math.min(beat, BEGINNER_RECORDING_MAX_SECONDS);
+}
+
+export function antiAbuseCapsForAnonymous(): RecordingAbuseCaps {
+  return { ...RECORDING_ANTI_ABUSE.ANONYMOUS };
+}
+
+export function retentionSecondsForAnonymous(): number {
+  return RECORDING_RETENTION_SECONDS.ANONYMOUS;
 }
 
 export function retentionSecondsForAccountLevel(

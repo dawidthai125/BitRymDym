@@ -6,7 +6,10 @@
 
 import type { AuthContext } from "@/lib/auth/types";
 import type { BeatRecordAccessSource } from "@/config/beat-access-grants";
-import { computeRecordingMaxSeconds } from "@/lib/takes/entitlement";
+import {
+  computeAnonymousRecordingMaxSeconds,
+  computeRecordingMaxSeconds,
+} from "@/lib/takes/entitlement";
 
 export class TakeAuthzError extends Error {
   readonly code: "FORBIDDEN" | "NOT_FOUND" | "UNAUTHENTICATED" = "FORBIDDEN";
@@ -83,6 +86,41 @@ export function assertTakeRecordAccess(params: {
     return {
       maxRecordingSeconds,
       accessSource: grantRecord ? "GRANT_RECORD" : "PUBLIC_PUBLISHED",
+    };
+  } catch {
+    throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");
+  }
+}
+
+/**
+ * D02 anonymous RECORD AuthZ (separate from authenticated assertTakeRecordAccess):
+ * - cookie → hash supplied by caller (never client anonymous=true)
+ * - beat.status === PUBLISHED
+ * - max = MIN(beat.duration, 30)
+ * - grants are never consulted / never unlock
+ */
+export function assertAnonTakeRecordAccess(params: {
+  tokenHash: string;
+  beat: {
+    id: string;
+    status: string;
+    durationSeconds: number;
+  };
+}): { maxRecordingSeconds: number } {
+  if (!params.tokenHash || params.tokenHash.length < 32) {
+    throw new TakeAuthzError("Anonymous take identity required.", "UNAUTHENTICATED");
+  }
+  if (params.beat.status !== "PUBLISHED") {
+    throw new TakeAuthzError(
+      "Recording is only allowed on PUBLISHED beats.",
+      "FORBIDDEN",
+    );
+  }
+  try {
+    return {
+      maxRecordingSeconds: computeAnonymousRecordingMaxSeconds(
+        params.beat.durationSeconds,
+      ),
     };
   } catch {
     throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");

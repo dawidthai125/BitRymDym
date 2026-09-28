@@ -18,8 +18,16 @@ export const TAKE_AUDIO_PREVIEW_TTL_SECONDS = 120;
 /** Short-lived signed GET for owner take download (Wave 4). */
 export const TAKE_AUDIO_DOWNLOAD_TTL_SECONDS = 300;
 
-/** Anonymous short TTL (seconds) — architecture interim until janitor Wave 2+. */
+/**
+ * Anonymous take retention TTL (seconds) — D02 Design Freeze.
+ * AuthZ DENY after expires_at; janitor cleans independently.
+ */
 export const ANON_TAKE_TTL_SECONDS = 2 * 60 * 60;
+
+/** httpOnly opaque anonymous Take identity cookie (≠ brd_dl_aid). */
+export const ANON_TAKE_COOKIE_NAME = "brd_tk_aid";
+
+export const ANON_TAKE_COOKIE_MAX_AGE_SECONDS = ANON_TAKE_TTL_SECONDS;
 
 export const RECORDING_RETENTION_SECONDS = {
   ANONYMOUS: ANON_TAKE_TTL_SECONDS,
