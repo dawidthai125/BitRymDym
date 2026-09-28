@@ -51,7 +51,7 @@
 **Entitlement:** BEGINNER `MIN(beat,30)` · PRO/LEGEND `MIN(beat,180)` — server only.  
 **Retention:** BEGINNER 24h · PRO 10d · LEGEND 30d via `expires_at`.  
 **Anti-abuse:** active READY caps + UTC day sessions + max 1 `PENDING_UPLOAD` (advisory lock).  
-**Janitor:** Vercel Cron hourly + `CRON_SECRET` (not pg_cron).
+**Janitor:** Vercel Hobby daily cron `0 0 * * *` (00:00 UTC) + `CRON_SECRET` (not pg_cron). Expiry AuthZ remains immediate/server-side; janitor is cleanup only.
 
 **Not in Wave 4:** Anonymous QT · shared grants · MIX/EXPORT · Track publish · payments/Premium · dual-play.
 

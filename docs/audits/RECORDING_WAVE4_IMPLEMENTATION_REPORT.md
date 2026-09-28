@@ -43,7 +43,7 @@ REQUEST
 
 Canonical entitlement: `src/lib/takes/entitlement.ts`  
 Session claim RPC: `claim_take_recording_session`  
-Janitor: hourly Vercel Cron + `CRON_SECRET` Bearer (no pg_cron)
+Janitor: Vercel Hobby daily cron `0 0 * * *` (00:00 UTC) + `CRON_SECRET` Bearer (not pg_cron). Expiry AuthZ is immediate; janitor cleans Storage/lifecycle.
 
 ---
 

@@ -49,7 +49,7 @@ Anonymous QT / shared grants = Wave 5+ (OUT of W4)
 
 ```text
 NEXT: Owner Review of Wave 4 → explicit GO for COMMIT / PUSH / DEPLOY
-Set CRON_SECRET on Vercel before relying on janitor schedule
+Set CRON_SECRET on Vercel; janitor schedule is Hobby-compatible daily `0 0 * * *` (00:00 UTC)
 Do NOT reopen Wave 3 duration probe without evidence of regression
 Do NOT implement Anonymous QT / shared grants without Owner GO (W5+)
 ```

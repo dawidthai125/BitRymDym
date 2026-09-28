@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — RECORDING WAVE 4: HOBBY-COMPATIBLE DAILY JANITOR CRON
+
+**Status:** hotfix (Wave 4 still OPEN — not CLOSED)
+
+- Vercel Hobby rejects hourly cron; schedule changed to `0 0 * * *` (00:00 UTC daily)
+- Expiry AuthZ unchanged (immediate DENY); janitor remains cleanup/lifecycle only
+- No business-logic / schema / AuthZ / entitlement changes
+
+---
+
 ## 2026-09-27 — RECORDING WAVE 4: ENTITLEMENT / RETENTION / JANITOR / ANTI-ABUSE / DOWNLOAD / MOJE PRÓBKI
 
 **Status:** **IMPLEMENTED / READY_FOR_OWNER_REVIEW** — COMMIT / PUSH / DEPLOY = NOT PERFORMED · production still @ `9f6f006`
@@ -13,7 +23,7 @@ Format: data, zakres, skrót.
 - Entitlement SSOT: BEGINNER 30s · PRO/LEGEND `MIN(beat,180)` (`entitlement.ts` + session/finalize)
 - Retention: account-level `expires_at`; AuthZ DENY when expired
 - Anti-abuse race-safe: `claim_take_recording_session` (advisory_xact_lock) + unique PENDING per owner
-- Janitor: Vercel Cron → `GET /api/cron/takes-janitor` (`CRON_SECRET`) — take-audio only
+- Janitor: Vercel Hobby daily cron `0 0 * * *` → `GET /api/cron/takes-janitor` (`CRON_SECRET`) — take-audio only; expiry AuthZ remains immediate
 - Own take download: `POST /api/takes/download` signed GET TTL 300s
 - Soft-delete: `POST /api/takes/delete` → DELETED + deleted_at
 - UI: `/account/takes` Moje próbki (preview / download / delete)

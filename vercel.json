@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/takes-janitor",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
