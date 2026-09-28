@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — DOCUMENTATION CONTINUITY RECONCILIATION
+
+**Status:** documentation only (Owner GO: docs continuity) · **no app / DB / env / deploy**
+
+- Added canonical cold-start entry [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)
+- Entry points: MASTER_HANDOFF → PROJECT_STATE → SSOT / architecture / audits
+- Clarified production app `99c4815` ≠ git docs tip (prior tip `406ff5b`; do not auto-align)
+- Next = **OWNER DIRECTION / COLD START AUDIT** (Wave 5 = **no** automatic GO)
+- Decision ≠ delivery: D02/D03 decisions unchanged; delivery NOT SHIPPED; no Implementation GO
+- Continuity rule: documentation ≠ proof of shipped implementation; code/schema = evidence
+- Deferred (not done here): freeze / SYSTEM_ARCHITECTURE §9 / SSOT §18 / OPEN_DECISIONS D02–D03 wording sync — awaits Owner clarification
+
+---
+
 ## 2026-09-28 — RECORDING WAVE 4: PRODUCTION VERIFIED / CLOSED
 
 **Status:** **CLOSED / PRODUCTION GREEN** @ `99c4815e26b224cb66e221831687b0688bf20476`

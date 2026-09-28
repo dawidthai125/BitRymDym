@@ -2,23 +2,26 @@
 
 ## NEW AGENT ENTRY POINT
 
-**Zacznij tutaj:** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Zacznij tutaj:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · potem [PROJECT_STATE.md](./PROJECT_STATE.md)
 
 ### Kolejność czytania
 
-1. [PROJECT_STATE.md](./PROJECT_STATE.md) — gdzie jesteśmy teraz
-2. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) — prawda produktowa
-3. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) — architektura techniczna
-4. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN
-5. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
-6. [phases/PHASE_1_FOUNDATION.md](./phases/PHASE_1_FOUNDATION.md) — zakres Fazy 1
-7. Dokumentacja konkretnego feature’a — jeżeli agent wykonuje feature
-8. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community Upload + Moderation **EPIC COMPLETE / LOCKED**
-9. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording / Quick Take **DESIGN FREEZE LOCKED** (implementation awaits Wave 1 GO)
+1. [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) — cold-start continuity (prod SHA vs git tip)
+2. [PROJECT_STATE.md](./PROJECT_STATE.md) — gdzie jesteśmy teraz
+3. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) — prawda produktowa
+4. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) — architektura techniczna
+5. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN
+6. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
+7. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community EPIC **CLOSED**
+8. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–4 **CLOSED**
+9. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
 
-**Nie zaczynaj implementacji** przed sprawdzeniem: PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS.
+**Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
+**Next:** **OWNER DIRECTION / COLD START AUDIT** (nie wybierać automatycznie Wave 5 ani żadnego product EPIC).
+
+Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).  
+**MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
 
 ---
 
@@ -26,6 +29,7 @@ Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
 | Dokument | Rola |
 |----------|------|
+| MASTER HANDOFF | COLD-START CONTINUITY (canonical entry) |
 | MASTER SSOT | WHAT / PRODUCT TRUTH |
 | SYSTEM ARCHITECTURE | HOW / TECHNICAL ARCHITECTURE |
 | DECISION LOG | WHY / DECISION HISTORY |
@@ -41,11 +45,24 @@ Nie duplikować całych treści — stosować linki.
 
 ## Hierarchia źródła prawdy
 
-1. Najnowszy zatwierdzony SSOT
-2. Dokumentacja architektury
-3. Zatwierdzona specyfikacja funkcji
-4. Zatwierdzony kod
-5. Rozmowy i pomysły robocze
+**Product / design intent** (SSOT hierarchy — unchanged constitution):
+
+1. Najnowszy zatwierdzony SSOT  
+2. Dokumentacja architektury  
+3. Zatwierdzona specyfikacja funkcji  
+4. Zatwierdzony kod  
+5. Rozmowy i pomysły robocze  
+
+**Implementation / shipped evidence (agents):**
+
+- Code + remote schema = evidence of what is implemented  
+- Documentation alone ≠ proof a feature is shipped  
+- Decision CLOSED ≠ delivery SHIPPED  
+- Production verification = separate stage  
+
+See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
+
+**Next:** **OWNER DIRECTION / COLD START AUDIT** (Wave 5 = no automatic GO).
 
 ---
 
@@ -53,7 +70,8 @@ Nie duplikować całych treści — stosować linki.
 
 | Dokument | Opis |
 |----------|------|
-| [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu / handoff |
+| [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu |
+| [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) | Cold-start handoff (GPT + Cursor) |
 | [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) | Konstytucja produktu (v0.1) |
 | [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) | Baseline architektury (OD-01–03) |
 | [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) | Phase 1.3 AuthZ (+ 1.4 beats AuthZ notes) |
@@ -83,5 +101,5 @@ Nie duplikować całych treści — stosować linki.
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Design Freeze **LOCKED** · Wave 1–3 **CLOSED** @ `9f6f006` (Wave 3 production GREEN · Chromium WebM/Opus E2E PASS).
-**Next:** Owner GO for later Recording waves (Anonymous QT / grants). See [PROJECT_STATE.md](./PROJECT_STATE.md).
+**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–4 **CLOSED** · production app `99c4815` · git tip may be docs-only (≠ prod).  
+**Next:** **OWNER DIRECTION / COLD START AUDIT** — see [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).

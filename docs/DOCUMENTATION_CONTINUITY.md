@@ -30,6 +30,20 @@ Dokumentacja jest częścią ukończenia zadania.
 
 ---
 
+## Evidence vs documentation
+
+| Warstwa | Rola |
+|---------|------|
+| Dokumentacja | Opisuje intended / product / design / continuity state |
+| Kod + remote schema | **Evidence** implementation state |
+| Production verification | Osobny etap (deploy + verify) — nie mylić z samym wpisem docs |
+
+**Decision CLOSED ≠ feature SHIPPED.**  
+Dokumentacja sama w sobie **nie** jest dowodem, że feature jest shipped.  
+Implementację potwierdza code/schema (+ production verify, gdy dotyczy).
+
+---
+
 ## Minimalny proces
 
 ```text
@@ -51,6 +65,7 @@ IMPLEMENTATION
 
 | Dokument | Odpowiedzialność |
 |----------|------------------|
+| MASTER HANDOFF | COLD-START CONTINUITY (new GPT + Cursor) — **canonical entry** |
 | MASTER SSOT | WHAT / PRODUCT TRUTH |
 | SYSTEM ARCHITECTURE | HOW / TECHNICAL ARCHITECTURE |
 | DECISION LOG | WHY / DECISION HISTORY |
@@ -72,13 +87,13 @@ Nowy Cursor Agent lub nowy ChatGPT musi móc z dokumentacji ustalić:
 - aktualny stan,
 - architektura,
 - decyzje zamknięte / otwarte,
-- co zaimplementowano,
-- co następne,
+- co zaimplementowano (weryfikując code/schema),
+- co następne (**Owner direction** — bez auto-epic),
 - blokery,
 - gdzie jest SSOT,
-- aktualna wersja / branch / HEAD,
+- aktualna wersja / branch / HEAD vs production SHA,
 - co zrobiono w ostatnim etapie.
 
 **Nie wolno** wymagać czytania całej historii rozmów.
 
-Entry point: [PROJECT_STATE.md](./PROJECT_STATE.md) → kolejność w [README.md](./README.md).
+**Canonical entry:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → [PROJECT_STATE.md](./PROJECT_STATE.md) → kolejność w [README.md](./README.md).
