@@ -91,6 +91,13 @@ export default async function AccountPage() {
         </Link>
 
         <Link
+          href="/account/shared"
+          className="text-sm font-medium underline underline-offset-4"
+        >
+          Bity udostępnione
+        </Link>
+
+        <Link
           href="/account/downloads"
           className="text-sm underline underline-offset-4"
         >

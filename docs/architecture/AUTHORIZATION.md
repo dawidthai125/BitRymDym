@@ -194,3 +194,25 @@ Design Freeze: [PHASE_1_8A_DESIGN_FREEZE.md](../phases/PHASE_1_8A_DESIGN_FREEZE.
 No new permission keys. AccountLevel unused for download AuthZ/limits.
 
 Phase 1.7 note: AccountLevel unused for admin AuthZ. No admin bootstrap endpoint. OD-20 CLOSED (operator ADMIN).
+
+---
+
+## Recording Wave 5 — Shared Grants → RECORD
+
+Design Freeze Addendum + Architecture Review (Owner Implementation GO).
+
+| Path | AuthZ |
+|------|-------|
+| RECORD (unchanged W4) | Authenticated + PUBLISHED + entitlement; public catalog path |
+| RECORD + grant | Same; optional ACTIVE `can_record` grant labels `GRANT_RECORD` (does not unlock non-PUBLISHED) |
+| Create grant | Beat `owner_id` only · USER ownership · PUBLISHED · not self · max 20 ACTIVE · service_role RPC |
+| List/revoke grant | Beat owner only |
+| Grantee list | Own ACTIVE grants only (`/api/account/grants`, `/account/shared`) |
+| Take preview/download/delete | **Unchanged** — take owner only; grant ≠ take ACL |
+| PLAYBACK / DOWNLOAD via grant | **OUT** |
+
+`AudioAccessPurpose` remains `PLAYBACK` \| `DOWNLOAD` only. RECORD stays in `assertTakeRecordAccess`.
+
+Table `beat_access_grants`: RLS ON, no authenticated write policies; mutations via service_role + `create_beat_access_grant` (advisory lock class `87245103`).
+
+**Status:** Implemented locally · remote migration applied · **not** Production Verified until Owner Verification + deploy GO.

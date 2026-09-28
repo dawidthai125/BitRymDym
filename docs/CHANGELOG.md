@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — RECORDING WAVE 5 IMPLEMENTATION (LOCAL · PRE-COMMIT)
+
+**Status:** Implementation complete locally · remote DB migration applied · **COMMIT/PUSH/DEPLOY = NONE** · production app remains `99c4815`
+
+- Scope: Shared Grants → RECORD only (`beat_access_grants`)
+- D03 decision unchanged CLOSED / IN EPIC; delivery implemented pending Owner Verification
+- OUT unchanged: PLAYBACK/DOWNLOAD via grant · Anon QT · MIX/EXPORT · Payments · take sharing
+- AuthZ: `assertTakeRecordAccess` + grant domain; PUBLISHED RECORD without grant preserved (W4)
+- APIs: `/api/beats/[id]/grants` · revoke · `/api/account/grants`
+- UI: Moje bity grant panel · `/account/shared`
+- Next: **OWNER VERIFICATION** → then commit GO
+
+---
+
 ## 2026-09-28 — P1 SECURITY HARDENING CLOSEOUT (DOCS)
 
 **Status:** documentation continuity after P1-B/P1-C · **no app deploy** · production app remains `99c4815`

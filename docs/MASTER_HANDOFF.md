@@ -124,7 +124,7 @@ REQUEST
 | Security overall | **GREEN WITH WARNINGS** · CRITICAL=0 · HIGH=0 · MEDIUM residual = HIBP disabled |
 | Remote DB | Contains P1-B + P1-C hardening (applied before git commit) |
 | Migration drift | **P2 OPS** — local filename `20260928120000_*` vs remote version `20260928070727_*` (not a P1 blocker) |
-| Wave 5 | **NOT IMPLEMENTED** · **NO IMPLEMENTATION GO** — P1 does **not** start Wave 5 |
+| Wave 5 | **IMPLEMENTED locally** (Shared Grants → RECORD) · Owner Implementation GO executed · **awaiting Owner Verification** · **not** on prod app `99c4815` · COMMIT/PUSH/DEPLOY = NONE |
 
 **P1-B grant posture (do not “fix” by revoking authenticated on RLS helpers):**
 
@@ -170,7 +170,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | Recording Wave 3 UI + take preview + Chromium WebM fallback | CLOSED | GREEN @ `9f6f006` | OK | |
 | Recording Wave 4 entitlement/retention/janitor/abuse/download/Moje próbki/delete | CLOSED | GREEN @ `99c4815` | OK | Hobby daily cron |
 | Anonymous Quick Take | **Delivery:** NOT SHIPPED / DEFERRED | — | Decision D02 CLOSED = IN V1 (unchanged) | **No Implementation GO** |
-| Shared grants / RECORD on grants | **Delivery:** NOT SHIPPED | — | Decision D03 CLOSED = IN Recording EPIC · Wave 5 designed | **No Implementation GO** · not auto-next · no `beat_access_grants` table |
+| Shared grants / RECORD on grants | **Delivery:** IMPLEMENTED locally · **NOT Production Verified** | — | Decision D03 CLOSED = IN Recording EPIC | Awaiting Owner Verification → commit/push/deploy GO · table `beat_access_grants` exists remote |
 | MIX (mic+beat mix) | NOT IMPLEMENTED | — | OD-14 OPEN | |
 | EXPORT finished track | NOT IMPLEMENTED | — | Designed only | |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |

@@ -57,3 +57,18 @@
 **Not in Wave 4:** Anonymous QT · shared grants · MIX/EXPORT · Track publish · payments/Premium · dual-play.
 
 **Reuse:** Wave 2/3 transport + MediaRecorder + preview; Chromium WebM duration fallback (`9f6f006`) unchanged.
+
+## Wave 5 implemented (local — awaiting Owner Verification / Production GO)
+
+| Piece | Location |
+|-------|----------|
+| Table `beat_access_grants` + create RPC (advisory lock) | `supabase/migrations/20260928140000_recording_wave5_beat_access_grants.sql` |
+| ACTIVE predicate + max 20 | `src/config/beat-access-grants.ts` |
+| Grant domain (service_role) | `src/lib/grants/beat-access-grants.ts` |
+| RECORD AuthZ source label | `assertTakeRecordAccess` (+ optional `activeRecordGrant`) |
+| Owner/grantee APIs | `/api/beats/[id]/grants` · revoke · `/api/account/grants` |
+| UI | `BeatGrantsPanel` on Moje bity · `/account/shared` |
+
+**Contract:** Shared Grants → RECORD only. No PLAYBACK/DOWNLOAD via grant. PUBLISHED RECORD without grant unchanged (W4). Non-PUBLISHED + grant = DENY. Grant ≠ take ACL. Revoke blocks new sessions only.
+
+**Status:** Implementation complete locally · remote migration applied · **not** Production Verified · **COMMIT/PUSH/DEPLOY = NONE** until Owner Verification.

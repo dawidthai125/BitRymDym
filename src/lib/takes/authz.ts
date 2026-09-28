@@ -1,9 +1,11 @@
 /**
- * Recording Wave 4 — take AuthZ (record access + owner boundary helpers).
+ * Recording Wave 4/5 — take AuthZ (record access + owner boundary helpers).
  * Entitlement / retention / anti-abuse caps live in entitlement.ts (SSOT).
+ * Wave 5: GRANT_RECORD is an access source; V1 PUBLISHED path remains W4-compatible.
  */
 
 import type { AuthContext } from "@/lib/auth/types";
+import type { BeatRecordAccessSource } from "@/config/beat-access-grants";
 import { computeRecordingMaxSeconds } from "@/lib/takes/entitlement";
 
 export class TakeAuthzError extends Error {
@@ -34,9 +36,15 @@ export {
 } from "@/lib/takes/entitlement";
 
 /**
- * Wave 4 RECORD contract: authenticated profile may record on PUBLISHED beats.
- * Max seconds from account level + beat duration (server SSOT).
- * Anonymous DENY. Shared grants OUT.
+ * RECORD contract (W4 + W5):
+ * - authenticated
+ * - beat.status === PUBLISHED (non-PUBLISHED DENY even with grant)
+ * - entitlement (account level) — grant never raises limits
+ * - beat access: PUBLIC_PUBLISHED (V1 default for PUBLISHED) OR GRANT_RECORD
+ *
+ * V1: every PUBLISHED beat is PUBLIC_PUBLISHED for entitled users (W4 parity).
+ * activeRecordGrant labels GRANT_RECORD when an ACTIVE grant exists; it is not
+ * required for ALLOW on PUBLISHED and never unlocks non-PUBLISHED.
  */
 export function assertTakeRecordAccess(params: {
   context: AuthContext;
@@ -45,7 +53,12 @@ export function assertTakeRecordAccess(params: {
     status: string;
     durationSeconds: number;
   };
-}): { maxRecordingSeconds: number } {
+  /** Pre-resolved ACTIVE grant.can_record for this actor+beat (Wave 5). */
+  activeRecordGrant?: boolean;
+}): {
+  maxRecordingSeconds: number;
+  accessSource: BeatRecordAccessSource;
+} {
   if (!params.context.userId) {
     throw new TakeAuthzError("Authentication required.", "UNAUTHENTICATED");
   }
@@ -55,12 +68,22 @@ export function assertTakeRecordAccess(params: {
       "FORBIDDEN",
     );
   }
+
+  const publicPublished = true;
+  const grantRecord = params.activeRecordGrant === true;
+  if (!publicPublished && !grantRecord) {
+    throw new TakeAuthzError("Recording is not allowed for this beat.", "FORBIDDEN");
+  }
+
   try {
     const maxRecordingSeconds = computeRecordingMaxSeconds({
       accountLevel: params.context.profile.accountLevel,
       beatDurationSeconds: params.beat.durationSeconds,
     });
-    return { maxRecordingSeconds };
+    return {
+      maxRecordingSeconds,
+      accessSource: grantRecord ? "GRANT_RECORD" : "PUBLIC_PUBLISHED",
+    };
   } catch {
     throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");
   }

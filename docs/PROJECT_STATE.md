@@ -25,6 +25,7 @@
 | Community Upload + Moderation EPIC | **COMPLETE / LOCKED** @ `c5e1f17` |
 | Recording Design Freeze | **LOCKED** |
 | **Recording Wave 1–4** | **CLOSED** / **PRODUCTION VERIFIED** (prod app `99c4815`) |
+| **Recording Wave 5** | **IMPLEMENTED locally** (Shared Grants → RECORD) · awaiting Owner Verification · **not** on prod app |
 | **P1-B** DEFINER grants hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
 | **P1-C** `set_updated_at` hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
 | **P1-A** HIBP | **BLOCKED** — Owner Dashboard action required |
@@ -46,8 +47,8 @@ RECORDING WAVE 4 = CLOSED / PRODUCTION VERIFIED @ 99c4815
 COMMUNITY UPLOAD = CLOSED / LOCKED @ c5e1f17
 P1-B / P1-C SECURITY = CLOSED @ b4199ef
 P1-A HIBP = BLOCKED (Owner Dashboard)
-NEXT = OWNER DIRECTION
-WAVE 5 = NOT IMPLEMENTED / NO IMPLEMENTATION GO
+WAVE 5 = IMPLEMENTED LOCALLY / AWAITING OWNER VERIFICATION
+NEXT = OWNER VERIFICATION (Wave 5) → then COMMIT GO
 ```
 
 ---
@@ -55,17 +56,15 @@ WAVE 5 = NOT IMPLEMENTED / NO IMPLEMENTATION GO
 ## 4. Next Session Entry
 
 ```text
-NEXT = OWNER DIRECTION
+NEXT = OWNER VERIFICATION (Wave 5)
 
-New GPT:  AUDIT → CURRENT STATE → OPEN SURFACE → OPTIONS → DESIGN FREEZE → OWNER GO
-New Cursor: AUDIT FIRST → REPORT → WAIT FOR OWNER GO
+New GPT:  VERIFY → OPTIONS → OWNER GO (commit/push/deploy separate)
+New Cursor: OWNER VERIFICATION package · NO COMMIT until Owner GO
 
-Do NOT auto-start Wave 5 / Shared Grants / Anonymous QT / MIX / Payments
-Do NOT treat documentation alone as proof a feature is shipped
-Do NOT reopen closed Recording W1–W4 without evidence
-Do NOT treat P1 security closeout as Wave 5 GO
-Product EPIC selection = Owner only
-HIBP enable = Owner Dashboard only (until enabled)
+Do NOT commit/push/deploy Wave 5 without Owner Verification
+Do NOT treat local Wave 5 as Production Verified (prod app remains 99c4815)
+Do NOT open Anon QT / MIX / EXPORT / Payments without separate GO
+HIBP enable = Owner Dashboard only (orthogonal)
 ```
 
 ---
@@ -75,7 +74,7 @@ HIBP enable = Owner Dashboard only (until enabled)
 | ID | Decision | Delivery | Implementation GO |
 |----|----------|----------|-------------------|
 | D02 Anonymous QT | CLOSED / IN V1 (unchanged) | NOT SHIPPED / DEFERRED | NONE |
-| D03 Shared grants | CLOSED / IN Recording EPIC · Wave 5 designed | NOT SHIPPED | NONE · not auto-next |
+| D03 Shared grants | CLOSED / IN Recording EPIC | IMPLEMENTED locally · NOT Production Verified | Owner Verification required |
 
 ---
 

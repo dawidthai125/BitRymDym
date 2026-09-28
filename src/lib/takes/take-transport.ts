@@ -9,6 +9,7 @@ import {
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import { probeAudioDurationFromBytes } from "@/lib/beats/audio-duration";
+import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 import {
   assertTakeRecordAccess,
   rejectClientChosenTakeStorageParams,
@@ -170,6 +171,11 @@ export async function createTakeRecordingSessionFor(
 
   const beat = await loadBeatOrThrow(params.beatId);
 
+  const activeRecordGrant = await hasActiveRecordGrant({
+    beatId: params.beatId,
+    granteeUserId: context.userId,
+  });
+
   let maxRecordingSeconds: number;
   try {
     ({ maxRecordingSeconds } = assertTakeRecordAccess({
@@ -179,6 +185,7 @@ export async function createTakeRecordingSessionFor(
         status: beat.status as string,
         durationSeconds: beat.duration_seconds as number,
       },
+      activeRecordGrant,
     }));
   } catch (e) {
     mapTakeAuthz(e);

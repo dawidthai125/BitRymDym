@@ -2,10 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { UserBeatActions } from "@/components/beats/user-beat-actions";
+import { BeatGrantsPanel } from "@/components/grants/beat-grants-panel";
 import { SiteHeader } from "@/components/site/site-header";
 import { AuthError, requireRole, requireUser } from "@/lib/auth/session";
 import { listOwnUserBeats } from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
+import { listOwnerBeatAccessGrantsFor } from "@/lib/grants/beat-access-grants";
 
 export const metadata = {
   title: "Moje bity · BitRymDym",
@@ -18,8 +20,9 @@ function formatDuration(seconds: number): string {
 }
 
 export default async function AccountBeatsPage() {
+  let context;
   try {
-    await requireUser();
+    context = await requireUser();
     await requireRole(["USER"]);
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
@@ -29,6 +32,17 @@ export default async function AccountBeatsPage() {
   }
 
   const beats = await listOwnUserBeats();
+  const grantsByBeatId = new Map<
+    string,
+    Awaited<ReturnType<typeof listOwnerBeatAccessGrantsFor>>
+  >();
+  for (const beat of beats) {
+    if (beat.status !== "PUBLISHED") continue;
+    grantsByBeatId.set(
+      beat.id,
+      await listOwnerBeatAccessGrantsFor(context, beat.id),
+    );
+  }
 
   return (
     <div className="min-h-dvh bg-background">
@@ -95,11 +109,19 @@ export default async function AccountBeatsPage() {
                     </p>
                   ) : null}
                 </div>
-                <UserBeatActions
-                  beatId={beat.id}
-                  status={beat.status}
-                  activeMasterReady={beat.activeMasterReady}
-                />
+                <div className="flex w-full flex-col gap-3 sm:max-w-sm">
+                  <UserBeatActions
+                    beatId={beat.id}
+                    status={beat.status}
+                    activeMasterReady={beat.activeMasterReady}
+                  />
+                  {beat.status === "PUBLISHED" ? (
+                    <BeatGrantsPanel
+                      beatId={beat.id}
+                      initialGrants={grantsByBeatId.get(beat.id) ?? []}
+                    />
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

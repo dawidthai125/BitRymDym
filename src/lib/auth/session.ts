@@ -13,7 +13,7 @@ import type { SystemRole } from "@/types/domain";
 import type { PermissionKey } from "@/types/permissions";
 
 export class AuthError extends Error {
-  readonly code: "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND";
+  readonly code: "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT";
 
   constructor(code: AuthError["code"], message: string) {
     super(message);
