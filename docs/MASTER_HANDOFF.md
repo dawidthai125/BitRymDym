@@ -27,11 +27,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 
 | SHA | Meaning |
 |-----|---------|
-| `99c4815` | **Production application** (Wave 4 code + Hobby cron) — unchanged by docs-only commits |
-| `406ff5b` | **Prior git tip** — W4 docs closeout after prod verify |
-| tip of `main` after continuity | **Docs-only continuity tip** (this reconciliation) — may differ from production |
+| `99c4815` | **Production application** (Wave 4 code + Hobby cron) — **unchanged** by P1 security / docs commits |
+| `b4199ef` | **Git / origin/main** — P1 security migration commit (`security: harden definer grants and updated_at search path`) |
+| `7001895` | Prior tip — docs continuity reconciliation |
+| `406ff5b` | Prior tip — W4 docs closeout after prod verify |
 
-Production app is **not** required to equal `origin/main` when tip is docs-only. Do **not** redeploy solely to equalize SHAs.
+Production app is **not** required to equal `origin/main` when tip is docs/security migration only. Do **not** redeploy solely to equalize SHAs.
 
 ---
 
@@ -41,9 +42,8 @@ Production app is **not** required to equal `origin/main` when tip is docs-only.
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| Prior tip (pre-continuity) | `406ff5b` (`docs(recording): close wave 4 after production verify`) |
-| **HEAD / origin/main** | docs continuity tip (`docs: reconcile cold-start continuity`) — ≠ production `99c4815` |
-| Production app | `99c4815` |
+| **HEAD / origin/main** | `b4199ef` (`security: harden definer grants and updated_at search path`) |
+| Production app | `99c4815` (≠ git tip — intentional) |
 | Typical untracked (ignore) | `.agents/` · `.cursor/` · `skills-lock.json` |
 
 Do **not** stage agent tooling folders as product scope.
@@ -111,6 +111,26 @@ REQUEST
 | Entitlement / retention / anti-abuse | Server SSOT only — never trust client timers/levels |
 | Claim RPC | `claim_take_recording_session` — `service_role` only |
 | Cron | Bearer `CRON_SECRET`; missing/invalid → 401 |
+| P1 DEFINER grants | Selective REVOKE — see §5.1 |
+| P1 `set_updated_at` | `search_path=public` + `pg_catalog.now()` — see §5.1 |
+
+### 5.1 P1 Security hardening (2026-09-28)
+
+| Item | Status |
+|------|--------|
+| **P1-B** selective DEFINER EXECUTE REVOKE | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
+| **P1-C** `set_updated_at` search_path hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
+| **P1-A** HIBP / leaked-password protection | **BLOCKED** — Owner Dashboard action required (**not** implemented) |
+| Security overall | **GREEN WITH WARNINGS** · CRITICAL=0 · HIGH=0 · MEDIUM residual = HIBP disabled |
+| Remote DB | Contains P1-B + P1-C hardening (applied before git commit) |
+| Migration drift | **P2 OPS** — local filename `20260928120000_*` vs remote version `20260928070727_*` (not a P1 blocker) |
+| Wave 5 | **NOT IMPLEMENTED** · **NO IMPLEMENTATION GO** — P1 does **not** start Wave 5 |
+
+**P1-B grant posture (do not “fix” by revoking authenticated on RLS helpers):**
+
+- `is_admin` / `is_moderator` / `is_staff` → EXECUTE for **authenticated** (+ postgres/service_role); **not** PUBLIC/anon  
+- trigger-only DEFINER + `current_user_role` + `set_updated_at` → **no** client EXECUTE  
+- claim / download RPCs → still **service_role/postgres only** (unchanged)
 | Staff | No blanket override of owner take boundary without an explicit future rule |
 
 ---
@@ -333,11 +353,12 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-NEXT = OWNER DIRECTION / COLD START AUDIT
+NEXT = OWNER DIRECTION
 ```
 
 **Do not** auto-select the next product feature (including Wave 5).  
-Wave 5 has **no** Implementation GO from this continuity work.
+Wave 5 has **no** Implementation GO. P1 security closeout does **not** start Wave 5.  
+P1-A HIBP remains **BLOCKED** until Owner enables it in the Dashboard.
 
 New GPT:
 
@@ -368,7 +389,8 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Git tip ≠ production app SHA | Docs tip (continuity) vs app `99c4815` — intentional; do not auto-align |
+| Git tip ≠ production app SHA | `b4199ef` vs app `99c4815` — intentional; do not auto-align / redeploy only to match |
+| HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
 | Hobby daily janitor | Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Stuck PENDING without janitor (historical) | Mitigated by W4 app + daily cron; unique PENDING index remains |
 | Stale freeze / SSOT / OPEN_DECISIONS wording on D02/D03 delivery | Decision unchanged; delivery clarified here; deeper doc sync awaits Owner |
@@ -377,10 +399,10 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
+| **P2 OPS / MIGRATION DRIFT** | Local vs remote migration version names (incl. P1 `20260928120000` vs remote `20260928070727`) — ops reconciliation later |
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
-| Local vs remote migration version name drift | W4 migrations applied under MCP timestamps |
 | Beat-audio orphan janitor | Historical known gap |
 | OD-12 interim MIME allow-list | Codec SSOT still OPEN |
 | Root/docs historical SHAs in older audits | Historical snapshots — do not “fix” by rewriting history |
@@ -406,6 +428,9 @@ Anonymous QT (**delivery** deferred; D02 decision unchanged) · shared grants (*
 | Claim RPC security | PASS |
 | Chromium WebM regression | PASS |
 | Community epic | CLOSED (prior production verify) |
+| P1-B DEFINER grants | CLOSED / VERIFIED @ `b4199ef` |
+| P1-C `set_updated_at` | CLOSED / VERIFIED @ `b4199ef` |
+| P1-A HIBP | **BLOCKED** (Owner Dashboard) |
 
 ---
 
@@ -413,11 +438,14 @@ Anonymous QT (**delivery** deferred; D02 decision unchanged) · shared grants (*
 
 ```text
 MASTER HANDOFF READY
-NEXT = OWNER DIRECTION / COLD START AUDIT
+P1-B / P1-C = CLOSED
+P1-A HIBP = BLOCKED (Owner Dashboard)
+NEXT = OWNER DIRECTION
+WAVE 5 = NOT STARTED / NO IMPLEMENTATION GO
 ```
 
 **Do not start the next product EPIC from this document.**  
-Wave 5 = **no GO**. Wait for Owner direction.
+Wave 5 = **NOT IMPLEMENTED** · **no GO**. Wait for Owner direction.
 
 ---
 

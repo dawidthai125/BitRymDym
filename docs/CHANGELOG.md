@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — P1 SECURITY HARDENING CLOSEOUT (DOCS)
+
+**Status:** documentation continuity after P1-B/P1-C · **no app deploy** · production app remains `99c4815`
+
+- Git / origin/main = `b4199ef` (`security: harden definer grants and updated_at search path`)
+- **P1-B** selective DEFINER EXECUTE REVOKE = **CLOSED** / VERIFIED / committed+pushed
+- **P1-C** `set_updated_at` (`search_path` + `pg_catalog.now()`) = **CLOSED** / VERIFIED / committed+pushed
+- Remote DB contains P1-B + P1-C hardening
+- **P1-A HIBP** = **BLOCKED** — Owner Dashboard action required (not enabled)
+- Security = **GREEN WITH WARNINGS** · CRITICAL=0 · HIGH=0 · MEDIUM residual = HIBP disabled
+- Migration timestamp drift local↔remote = **P2 OPS** (not P1 blocker)
+- Wave 5 = **NOT IMPLEMENTED** / **NO IMPLEMENTATION GO**
+
+---
+
 ## 2026-09-28 — DOCUMENTATION CONTINUITY RECONCILIATION
 
 **Status:** documentation only (Owner GO: docs continuity) · **no app / DB / env / deploy**

@@ -121,6 +121,8 @@ Permissions reused (no new `beats.publish` / `beats.view`):
 SQL helpers: `is_moderator()`, `is_staff()` (plus existing `is_admin()`).
 **AccountLevel does not affect beat authorization.**
 
+**P1 security grants (2026-09-28 @ `b4199ef`):** `is_admin` / `is_moderator` / `is_staff` retain `EXECUTE` for **authenticated** (required by RLS). PUBLIC/anon EXECUTE revoked. Trigger-only DEFINER helpers and `current_user_role` have no client EXECUTE. Claim/download RPCs remain service_role-only. See [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) §5.1.
+
 Live beats RLS verification on `rzzxrgcdogkybkiidqgw`: **PASS** (2026-09-25).
 
 ---
