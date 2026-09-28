@@ -1,11 +1,14 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–4 **CLOSED** @ `99c4815` · production GREEN
+**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · production GREEN
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
+**D02 CURRENT CONTRACT:** [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](../phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md) (Design Freeze COMPLETE · **SHIPPED** @ `e98ba52`)  
+**D02 closeout:** [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)  
 **Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
 **Wave 4 closeout:** [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)  
-**Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)
+**Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)  
+**Wave 5 closeout:** [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
 
 ## Wave 1 delivered
 
@@ -35,7 +38,7 @@
 | PlaybackShell sync handle | `playFromStart` / `stopPlayback` / `setControlsLocked` |
 | Take-only preview signed GET | `src/lib/takes/take-preview.ts` · `POST /api/takes/preview` |
 
-**OD-W3 (CLOSED):** beat plays from 0 during capture · anon OUT · sibling panel (not merged reducer) · take-only preview (no dual-play).
+**OD-W3 (CLOSED):** beat plays from 0 during capture · anon OUT of W3 wave · sibling panel (not merged reducer) · take-only preview (no dual-play).
 
 ## Wave 4 delivered (CLOSED @ `99c4815`)
 
@@ -72,3 +75,21 @@
 **Contract:** Shared Grants → RECORD only. No PLAYBACK/DOWNLOAD via grant. PUBLISHED RECORD without grant unchanged (W4). Non-PUBLISHED + grant = DENY. Grant ≠ take ACL. Revoke blocks new sessions only.
 
 **Status:** **CLOSED / PRODUCTION VERIFIED** @ `37892a6` · https://www.bitrymdym.pl · [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
+
+## D02 — Anonymous Quick Take (CLOSED / IN V1 · SHIPPED / PRODUCTION VERIFIED @ `e98ba52`)
+
+| Piece | Location |
+|-------|----------|
+| Claim RPC + PENDING unique + advisory lock `87245104` | `supabase/migrations/20260928160000_recording_d02_anon_take_claim.sql` |
+| Identity cookie `brd_tk_aid` | `src/lib/takes/anonymous-identity.ts` · `src/config/recording.ts` |
+| Token hash | `src/lib/takes/token-hash.ts` |
+| Anon AuthZ / entitlement | `assertAnonTakeRecordAccess` · `computeAnonymousRecordingMaxSeconds` |
+| Transport + preview | `anon-take-transport.ts` · `anon-take-preview.ts` |
+| APIs | `/api/takes/anon/session` · `finalize` · `preview` |
+| UI | `RecordingPanel` anonymous path · beat detail max SSOT |
+
+**Contract:** TTL 7200s · max 30s · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · anon→account claim NO · dual-play OUT · no grant APIs.
+
+**W4/W5:** authenticated `claim_take_recording_session` and Shared Grants unchanged.
+
+**Status:** **CLOSED / IN V1** · **SHIPPED** · **PRODUCTION VERIFIED** @ `e98ba52` · [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)

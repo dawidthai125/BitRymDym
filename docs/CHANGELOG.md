@@ -6,6 +6,35 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — D02 ANONYMOUS QUICK TAKE — POST-RELEASE CLOSEOUT (DOCS)
+
+**Status:** **D02 CLOSED / IN V1** · **SHIPPED** · **PRODUCTION VERIFIED** @ `e98ba52` · docs reconciliation · **no app/DB/deploy**
+
+- Application / Production = `e98ba52c610b4c6dee8f69aa76f734b6cbe898ab` (`feat: add d02 anonymous quick take`)
+- Production Verify = GREEN · Closeout: [RECORDING_D02_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)
+- Contract addendum reconciled: [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](./phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md)
+- Preserve NOT EXECUTED: post-expiry live · 3/day · missing READY-master case · W4/W5 full interactive · mobile 390/412
+- POST-RELEASE FINDING: anonymous verify artifacts TTL-bound (MEDIUM=1) — no delete feature in closeout
+- OUT unchanged: anon→account claim · durable anon download · MIX/EXPORT/TRACK/PAYMENTS/PREMIUM/SOCIAL/DUAL-PLAY · grant PLAYBACK|DOWNLOAD
+- Wave 5 @ `37892a6` unchanged · W4 ownership path unchanged
+- Docs-only tip may advance after Owner docs-commit GO — **do not** redeploy docs as application
+- Next = **OWNER DIRECTION / READY FOR NEXT AUDIT**
+
+---
+
+## 2026-09-28 — D02 ANONYMOUS QUICK TAKE — DESIGN FREEZE ADDENDUM
+
+**Status (freeze gate — historical):** **DESIGN FREEZE COMPLETE** · Implementation GO was **NONE** at freeze time · Architecture Review was next gate · **no app/DB/config change in that docs step**
+
+- Canonical: [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](./phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md)
+- At freeze: D02 CLOSED / IN V1 · delivery still NOT SHIPPED
+- Frozen: TTL 7200s · max 30s · caps 1/3/concurrent 1 · dedicated take identity ≠ `brd_dl_aid`
+- Preview YES (short-lived signed) · durable download NO · anon→account claim NO · PUBLISHED only · dual-play OUT
+- Wave 5 / MIX / EXPORT / Track / Payments / grant PLAYBACK|DOWNLOAD = OUT
+- **Later:** Implementation + Production Verify completed @ `e98ba52` — see Post-Release Closeout entry above
+
+---
+
 ## 2026-09-28 — RECORDING WAVE 5: PRODUCTION VERIFIED / CLOSED
 
 **Status:** **CLOSED / PRODUCTION GREEN** @ `37892a6adca1ac3b4bf68a06af248ca38bbcc177`
@@ -14,13 +43,13 @@ Format: data, zakres, skrót.
 - OWNER VERIFICATION = PASS · PRODUCTION VERIFY = PASS
 - Production URL: https://www.bitrymdym.pl
 - D03 decision unchanged CLOSED / IN Recording EPIC · delivery = SHIPPED / PRODUCTION VERIFIED
-- D02 Anonymous QT unchanged CLOSED / IN V1 · delivery NOT SHIPPED / DEFERRED
+- D02 Anonymous QT at Wave 5 closeout: CLOSED / IN V1 · delivery then NOT SHIPPED / DEFERRED *(later shipped @ `e98ba52`)*
 - Security continuity: P1-B/P1-C CLOSED · P1-A HIBP BLOCKED · Wave 5 AuthZ/IDOR/RLS PASS · Take ACL unchanged
 - Closeout: [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
 - Known INFO: React hydration warning on `/beat/[id]` (non-blocker)
 - Migration timestamp drift = P2 OPS (deferred)
 - Docs-only tip may advance after this closeout — **do not** redeploy docs without Owner Production GO
-- Next = **OWNER DIRECTION / READY FOR NEXT AUDIT** (no auto EPIC)
+- Next at Wave 5 closeout = **OWNER DIRECTION / READY FOR NEXT AUDIT** (no auto EPIC)
 
 ---
 

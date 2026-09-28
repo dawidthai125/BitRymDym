@@ -450,13 +450,28 @@ Design Freeze **LOCKED** when all true:
 
 | Doc | Role |
 |-----|------|
+| [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](./PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md) | **D02 CURRENT CONTRACT** (2026-09-28) — Anonymous QT · **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` |
 | [AUTHORIZATION.md](../architecture/AUTHORIZATION.md) | Extend with RECORD + grants at impl |
 | [AUDIO_TRANSPORT.md](../architecture/AUDIO_TRANSPORT.md) | Reuse signed upload pattern for takes |
 | [SYSTEM_ARCHITECTURE.md](../architecture/SYSTEM_ARCHITECTURE.md) §9 | Product baseline; status → freeze LOCKED |
 | [MASTER_SSOT_v0.1.md](../ssot/MASTER_SSOT_v0.1.md) §18–§24 | Product truth; Recording freeze is HOW+LOCKED policy overlay for V1 |
 | [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md) | OD-REC-* CLOSED |
 | [DECISION_LOG.md](../decisions/DECISION_LOG.md) | Full decision entries |
+| [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md) | D02 production verify + post-release closeout |
 
+---
+
+## Addendum — D02 Anonymous Quick Take (2026-09-28)
+
+**D02 CURRENT CONTRACT** (product rules) is locked in:
+
+[PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](./PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md)
+
+**Delivery status (reconciled):** **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · closeout [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md).
+
+Summary: TTL **7200 s** · max **30 s** · caps **1 / 3 / concurrent 1** · dedicated take identity (≠ `brd_dl_aid`) · preview YES (short-lived signed) · durable download NO · anon→account claim NO · PUBLISHED only · dual-play OUT.
+
+**Freeze-era note:** At Design Freeze Addendum time, Implementation GO was **NONE** and delivery was NOT SHIPPED — correct for that gate; superseded by Implementation GO → commit `e98ba52` → Production Verify GREEN.
 ---
 
 ```text
