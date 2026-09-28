@@ -215,4 +215,4 @@ Design Freeze Addendum + Architecture Review (Owner Implementation GO).
 
 Table `beat_access_grants`: RLS ON, no authenticated write policies; mutations via service_role + `create_beat_access_grant` (advisory lock class `87245103`).
 
-**Status:** Implemented locally · remote migration applied · **not** Production Verified until Owner Verification + deploy GO.
+**Status:** **CLOSED / PRODUCTION VERIFIED** @ `37892a6` · Shared Grants → RECORD only.

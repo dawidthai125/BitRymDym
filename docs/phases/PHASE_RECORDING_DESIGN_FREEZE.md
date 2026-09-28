@@ -357,7 +357,7 @@ OD-14 remains **OPEN** and **out of scope** here.
 | **W2** | Recording transport · signed upload/finalize · MIME/size/duration validation · janitor skeleton | After W1 |
 | **W3** | PlaybackShell Record · MediaRecorder · countdown/timer · preview · Anonymous + BEGINNER Quick Take E2E | After W2 |
 | **W4** | Full entitlement matrix · retention per tier · anti-abuse caps · own take download · Moje próbki list/delete | **CLOSED** @ `99c4815` (production GREEN · Hobby daily cron) — [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md) |
-| **W5** | Shared grants domain · RECORD capability on grants · shared E2E · unauthorized DENY | **IMPLEMENTED locally** (Owner GO) — awaiting Owner Verification / Production GO · not shipped on prod app `99c4815` |
+| **W5** | Shared grants domain · RECORD capability on grants · shared E2E · unauthorized DENY | **CLOSED / PRODUCTION VERIFIED** @ `37892a6` — [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md) |
 | **W6** | Security regression · IDOR · fake duration · mobile certification · observability · docs closeout | After W3–W5 |
 
 ```text

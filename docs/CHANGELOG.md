@@ -6,6 +6,24 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-28 — RECORDING WAVE 5: PRODUCTION VERIFIED / CLOSED
+
+**Status:** **CLOSED / PRODUCTION GREEN** @ `37892a6adca1ac3b4bf68a06af248ca38bbcc177`
+
+- Scope: Shared Grants → RECORD only (`beat_access_grants`)
+- OWNER VERIFICATION = PASS · PRODUCTION VERIFY = PASS
+- Production URL: https://www.bitrymdym.pl
+- D03 decision unchanged CLOSED / IN Recording EPIC · delivery = SHIPPED / PRODUCTION VERIFIED
+- D02 Anonymous QT unchanged CLOSED / IN V1 · delivery NOT SHIPPED / DEFERRED
+- Security continuity: P1-B/P1-C CLOSED · P1-A HIBP BLOCKED · Wave 5 AuthZ/IDOR/RLS PASS · Take ACL unchanged
+- Closeout: [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
+- Known INFO: React hydration warning on `/beat/[id]` (non-blocker)
+- Migration timestamp drift = P2 OPS (deferred)
+- Docs-only tip may advance after this closeout — **do not** redeploy docs without Owner Production GO
+- Next = **OWNER DIRECTION / READY FOR NEXT AUDIT** (no auto EPIC)
+
+---
+
 ## 2026-09-28 — RECORDING WAVE 5 IMPLEMENTATION (LOCAL · PRE-COMMIT)
 
 **Status:** Implementation complete locally · remote DB migration applied · **COMMIT/PUSH/DEPLOY = NONE** · production app remains `99c4815`

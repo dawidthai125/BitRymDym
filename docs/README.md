@@ -13,14 +13,14 @@
 5. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN
 6. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
 7. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community EPIC **CLOSED**
-8. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–4 **CLOSED**
+8. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–5 **CLOSED / PRODUCTION VERIFIED**
 9. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
 
 **Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **OWNER DIRECTION / COLD START AUDIT** (nie wybierać automatycznie Wave 5 ani żadnego product EPIC).
+**Next:** **OWNER DIRECTION / READY FOR NEXT AUDIT** (nie wybierać automatycznie żadnego product EPIC).
 
-Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).  
+Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
 
 ---
@@ -47,22 +47,22 @@ Nie duplikować całych treści — stosować linki.
 
 **Product / design intent** (SSOT hierarchy — unchanged constitution):
 
-1. Najnowszy zatwierdzony SSOT  
-2. Dokumentacja architektury  
-3. Zatwierdzona specyfikacja funkcji  
-4. Zatwierdzony kod  
-5. Rozmowy i pomysły robocze  
+1. Najnowszy zatwierdzony SSOT
+2. Dokumentacja architektury
+3. Zatwierdzona specyfikacja funkcji
+4. Zatwierdzony kod
+5. Rozmowy i pomysły robocze
 
 **Implementation / shipped evidence (agents):**
 
-- Code + remote schema = evidence of what is implemented  
-- Documentation alone ≠ proof a feature is shipped  
-- Decision CLOSED ≠ delivery SHIPPED  
-- Production verification = separate stage  
+- Code + remote schema = evidence of what is implemented
+- Documentation alone ≠ proof a feature is shipped
+- Decision CLOSED ≠ delivery SHIPPED
+- Production verification = separate stage
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **OWNER DIRECTION / COLD START AUDIT** (Wave 5 = no automatic GO).
+**Next:** **OWNER DIRECTION / READY FOR NEXT AUDIT** (no automatic product EPIC).
 
 ---
 
@@ -91,6 +91,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) | Recording / Quick Take Design Freeze v1.0 (**LOCKED**) |
 | [phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md](./phases/PHASE_AUDIO_TRANSPORT_DESIGN_FREEZE.md) | Audio Transport V1 Design Freeze (CLOSED) |
 | [audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md](./audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md) | Recording cold-start audit |
+| [audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md) | Recording Wave 5 production closeout |
 | [runbooks/PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) | Phase 1.9 operator production bootstrap (historical) |
 | [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) | Stała zasada ciągłości docs |
 | [CHANGELOG.md](./CHANGELOG.md) | Historia zmian dokumentacji |
@@ -101,5 +102,5 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–4 **CLOSED** · production app `99c4815` · git tip may be docs-only (≠ prod).  
-**Next:** **OWNER DIRECTION / COLD START AUDIT** — see [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
+**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–5 **CLOSED / PRODUCTION VERIFIED** · production app `37892a6` · docs tip may advance without redeploy.
+**Next:** **OWNER DIRECTION / READY FOR NEXT AUDIT** — see [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).

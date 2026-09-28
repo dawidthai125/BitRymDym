@@ -1,10 +1,10 @@
 # BitRymDym — Master Handoff
 
-**Purpose:** Cold-start entry for a new GPT + Cursor Agent after session close.  
-**Updated:** 2026-09-28  
-**Owner:** Prezes Dawid  
+**Purpose:** Cold-start entry for a new GPT + Cursor Agent after session close.
+**Updated:** 2026-09-28
+**Owner:** Prezes Dawid
 
-**This document is continuity** (cold-start entry).  
+**This document is continuity** (cold-start entry).
 Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technical HOW remains [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md). Live “where we are now” remains [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 **Evidence rule:** code + remote schema prove implementation state. Documentation alone is **not** proof that a feature is shipped. Production verification is a separate stage from “docs say CLOSED”.
@@ -16,9 +16,10 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `99c4815e26b224cb66e221831687b0688bf20476` (`99c4815`) |
+| **Application SHA** | `37892a6adca1ac3b4bf68a06af248ca38bbcc177` (`37892a6`) |
 | Status | **GREEN** / **PRODUCTION VERIFIED** |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
+| Recording Wave 5 | **CLOSED / PRODUCTION VERIFIED** · Shared Grants → RECORD |
 | Cron | `0 0 * * *` (Vercel Hobby daily 00:00 UTC) → `/api/cron/takes-janitor` |
 | `CRON_SECRET` | Configured in Vercel Production (**never print / never commit**) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
@@ -27,12 +28,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 
 | SHA | Meaning |
 |-----|---------|
-| `99c4815` | **Production application** (Wave 4 code + Hobby cron) — **unchanged** by P1 security / docs commits |
-| `b4199ef` | **Git / origin/main** — P1 security migration commit (`security: harden definer grants and updated_at search path`) |
-| `7001895` | Prior tip — docs continuity reconciliation |
-| `406ff5b` | Prior tip — W4 docs closeout after prod verify |
+| `37892a6` | **Production application** (Wave 5 Shared Grants → RECORD) — Owner Production GO verified |
+| Docs tip (after closeout) | May advance on `origin/main` via docs-only commits — **do not** redeploy docs-only without Owner Production GO |
+| `99c4815` | Prior production baseline (Wave 4) — historical |
+| `b4199ef` | Prior tip — P1 security migration |
 
-Production app is **not** required to equal `origin/main` when tip is docs/security migration only. Do **not** redeploy solely to equalize SHAs.
+Production app is **not** required to equal `origin/main` when tip is docs-only. Do **not** redeploy solely to equalize SHAs.
 
 ---
 
@@ -42,8 +43,7 @@ Production app is **not** required to equal `origin/main` when tip is docs/secur
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **HEAD / origin/main** | `b4199ef` (`security: harden definer grants and updated_at search path`) |
-| Production app | `99c4815` (≠ git tip — intentional) |
+| **Wave 5 product commit** | `37892a6` (`feat: add wave 5 shared recording grants`) = production app |
 | Typical untracked (ignore) | `.agents/` · `.cursor/` · `skills-lock.json` |
 
 Do **not** stage agent tooling folders as product scope.
@@ -56,7 +56,7 @@ BitRymDym is a music platform focused on rap / hip-hop / beat culture:
 
 discover beats → listen → download → test vocals (takes) → (future) finish tracks → community / collaboration.
 
-**Brand:** own musical identity — not generic AI SaaS UI.  
+**Brand:** own musical identity — not generic AI SaaS UI.
 **Product constitution:** [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) (status DRAFT FOUNDATION — still binding for closed decisions).
 
 ---
@@ -124,12 +124,13 @@ REQUEST
 | Security overall | **GREEN WITH WARNINGS** · CRITICAL=0 · HIGH=0 · MEDIUM residual = HIBP disabled |
 | Remote DB | Contains P1-B + P1-C hardening (applied before git commit) |
 | Migration drift | **P2 OPS** — local filename `20260928120000_*` vs remote version `20260928070727_*` (not a P1 blocker) |
-| Wave 5 | **IMPLEMENTED locally** (Shared Grants → RECORD) · Owner Implementation GO executed · **awaiting Owner Verification** · **not** on prod app `99c4815` · COMMIT/PUSH/DEPLOY = NONE |
+| Wave 5 security outcome | Shared Grant AuthZ = PASS · HTTP IDOR = PASS · RLS = PASS · Take ACL = UNCHANGED · private audio = UNCHANGED |
+| Wave 5 | **CLOSED / PRODUCTION VERIFIED** @ `37892a6` · Shared Grants → RECORD |
 
 **P1-B grant posture (do not “fix” by revoking authenticated on RLS helpers):**
 
-- `is_admin` / `is_moderator` / `is_staff` → EXECUTE for **authenticated** (+ postgres/service_role); **not** PUBLIC/anon  
-- trigger-only DEFINER + `current_user_role` + `set_updated_at` → **no** client EXECUTE  
+- `is_admin` / `is_moderator` / `is_staff` → EXECUTE for **authenticated** (+ postgres/service_role); **not** PUBLIC/anon
+- trigger-only DEFINER + `current_user_role` + `set_updated_at` → **no** client EXECUTE
 - claim / download RPCs → still **service_role/postgres only** (unchanged)
 | Staff | No blanket override of owner take boundary without an explicit future rule |
 
@@ -147,7 +148,7 @@ REQUEST
 | PRO_RAPPER | `MIN(beat, 180)` | 10d | 10 | 30 |
 | LEGEND_RAPPER | `MIN(beat, 180)` | 30d | 20 | 60 |
 
-Concurrent recording sessions: **max 1** `PENDING_UPLOAD` per owner.  
+Concurrent recording sessions: **max 1** `PENDING_UPLOAD` per owner.
 Signup default account level: closed decision (BEGINNER path) — see Decision Log OD-19.
 
 ---
@@ -170,7 +171,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | Recording Wave 3 UI + take preview + Chromium WebM fallback | CLOSED | GREEN @ `9f6f006` | OK | |
 | Recording Wave 4 entitlement/retention/janitor/abuse/download/Moje próbki/delete | CLOSED | GREEN @ `99c4815` | OK | Hobby daily cron |
 | Anonymous Quick Take | **Delivery:** NOT SHIPPED / DEFERRED | — | Decision D02 CLOSED = IN V1 (unchanged) | **No Implementation GO** |
-| Shared grants / RECORD on grants | **Delivery:** IMPLEMENTED locally · **NOT Production Verified** | — | Decision D03 CLOSED = IN Recording EPIC | Awaiting Owner Verification → commit/push/deploy GO · table `beat_access_grants` exists remote |
+| Shared grants / RECORD on grants | **Delivery:** SHIPPED / PRODUCTION VERIFIED @ `37892a6` | GREEN | Decision D03 CLOSED = IN Recording EPIC | Wave 5 CLOSED · RECORD only · no PLAYBACK/DOWNLOAD via grant |
 | MIX (mic+beat mix) | NOT IMPLEMENTED | — | OD-14 OPEN | |
 | EXPORT finished track | NOT IMPLEMENTED | — | Designed only | |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
@@ -189,7 +190,8 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | BPM Production V1 | CLOSED | |
 | Community Upload + Moderation | **CLOSED / LOCKED** | `c5e1f17` |
 | Recording Design Freeze | **LOCKED** | [PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) |
-| Recording Waves 1–4 | **CLOSED** | Prod app `99c4815` |
+| Recording Waves 1–4 | **CLOSED** | Prior prod `99c4815` |
+| Recording Wave 5 (Shared Grants → RECORD) | **CLOSED / PRODUCTION VERIFIED** | `37892a6` |
 
 ---
 
@@ -200,27 +202,30 @@ RECORDING WAVE 1 = CLOSED
 RECORDING WAVE 2 = CLOSED
 RECORDING WAVE 3 = CLOSED
 RECORDING WAVE 4 = CLOSED
+RECORDING WAVE 5 = CLOSED / PRODUCTION VERIFIED
 ```
 
 | Item | Value |
 |------|--------|
-| Production app | `99c4815` |
-| W4 verification | GREEN |
+| Production app | `37892a6` |
+| W4 verification | GREEN (prior) |
+| W5 verification | GREEN · Shared Grants → RECORD |
 | Cron | `0 0 * * *` |
 | `CRON_SECRET` | configured (secret) |
 | Retention | BEGINNER 24h · PRO 10d · LEGEND 30d |
 | Max seconds | BEGINNER 30 · PRO/LEGEND `MIN(beat,180)` |
 | Anti-abuse | as §6 table · concurrent = 1 |
 | Take statuses | PENDING_UPLOAD · READY · FAILED · EXPIRED · DELETED |
-| Surfaces | Beat recording UI · `/account/takes` · preview/download/delete APIs |
+| Surfaces | Beat recording UI · `/account/takes` · preview/download/delete APIs · Moje bity grants · `/account/shared` |
 | Chromium WebM/Opus | music-metadata → audio-decode fallback preserved (`9f6f006`) |
 | Anonymous QT | **Delivery** NOT SHIPPED / DEFERRED (D02 decision remains CLOSED / IN V1 — **no Implementation GO**) |
-| Shared grants | **Delivery** NOT SHIPPED (D03 decision remains CLOSED / IN EPIC · Wave 5 designed — **no Implementation GO** · not auto-next) |
+| Shared grants | **Delivery** SHIPPED / PRODUCTION VERIFIED @ `37892a6` (D03 decision remains CLOSED / IN EPIC · RECORD only) |
 | MIX / EXPORT / track publish / payments / Premium | NOT IMPLEMENTED / OUT |
 
 **Expiry AuthZ is immediate** (preview/download DENY when `expires_at` past). Janitor cleans Storage/lifecycle on daily schedule (Hobby).
 
-Closeout: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)
+Closeout W5: [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
+Closeout W4: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)
 
 ---
 
@@ -248,9 +253,9 @@ Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOA
 | ID | Decision status (unchanged) | Delivery status (shipped product) | Implementation GO |
 |----|----------------------------|-----------------------------------|-------------------|
 | **D02 / OD-REC-02** Anonymous QT | **CLOSED** = **IN V1** | **NOT SHIPPED** / **DEFERRED** | **NONE** |
-| **D03 / OD-REC-03** Shared grants + RECORD | **CLOSED** = **IN Recording EPIC** (Wave 5 designed) | **NOT SHIPPED** | **NONE** · Wave 5 is **not** automatic NEXT |
+| **D03 / OD-REC-03** Shared grants + RECORD | **CLOSED** = **IN Recording EPIC** | **SHIPPED / PRODUCTION VERIFIED** @ `37892a6` (RECORD only) | Wave 5 COMPLETE |
 
-Further freeze/SSOT/OPEN_DECISIONS wording cleanup awaits separate Owner clarification — not silently rewritten here.
+Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clarification — not silently rewritten beyond delivery status.
 
 ---
 
@@ -258,8 +263,8 @@ Further freeze/SSOT/OPEN_DECISIONS wording cleanup awaits separate Owner clarifi
 
 | Item | Classification |
 |------|----------------|
-| Recording Wave 5 shared grants | DEFERRED delivery · designed in freeze · **no auto GO** |
 | Anonymous QT | DEFERRED delivery (decision D02 remains IN V1) · **no Implementation GO** |
+| Grant PLAYBACK / DOWNLOAD | OUT of Wave 5 · separate Owner GO if ever needed |
 | MIX / EXPORT / OD-14 | DEFERRED · OPEN decision |
 | Watermark / final codec (OD-12/13) | OPEN |
 | Payments / Premium | DEFERRED · OPEN OD-04/07/08 |
@@ -272,11 +277,11 @@ Further freeze/SSOT/OPEN_DECISIONS wording cleanup awaits separate Owner clarifi
 
 Do **not** start these without explicit Owner GO (product epic selection is Owner-only):
 
-- Shared grants + Access Gate RECORD capability (Wave 5 designed — **not** automatic next)  
-- Anonymous Quick Take  
-- MIX / EXPORT / finished-track publish  
-- Payments / Premium  
-- Social: comments, voting, messaging  
+- Anonymous Quick Take
+- Grant PLAYBACK / DOWNLOAD (beyond Wave 5 RECORD)
+- MIX / EXPORT / finished-track publish
+- Payments / Premium
+- Social: comments, voting, messaging
 - Orphan beat-audio janitor (documented gap historically)
 
 ---
@@ -297,7 +302,7 @@ Do **not** start these without explicit Owner GO (product epic selection is Owne
 | `docs/phases/*` | Scope freezes |
 | `docs/audits/*` | Audits / closeouts |
 
-**For agents establishing implementation / shipped state:** code + remote schema are evidence first; then PROJECT_STATE → this handoff → SSOT / architecture / feature docs / CHANGELOG.  
+**For agents establishing implementation / shipped state:** code + remote schema are evidence first; then PROJECT_STATE → this handoff → SSOT / architecture / feature docs / CHANGELOG.
 Documentation describes product/design/continuity intent; it is **not** standalone proof of shipped implementation.
 
 ---
@@ -327,37 +332,37 @@ No commit/push/deploy without explicit Owner GO for that step.
 
 ## 16. Rules for Cursor Agent
 
-- No product decisions; no scope expansion; no reopening closed decisions.  
-- No implementation without Owner GO.  
-- Audit → report → wait.  
-- Secrets: never commit, never print, never expose.  
-- Do not stage `.agents/` / `.cursor/` / `skills-lock.json` as product.  
-- After implementation: full workflow through production verify + docs.  
-- Prefer Polish Owner prompts; keep technical identifiers in English.  
+- No product decisions; no scope expansion; no reopening closed decisions.
+- No implementation without Owner GO.
+- Audit → report → wait.
+- Secrets: never commit, never print, never expose.
+- Do not stage `.agents/` / `.cursor/` / `skills-lock.json` as product.
+- After implementation: full workflow through production verify + docs.
+- Prefer Polish Owner prompts; keep technical identifiers in English.
 - Decision CLOSED ≠ feature SHIPPED (see §11).
 
 ---
 
 ## 17. Rules for New GPT
 
-- Act as Architecture / Product / RCA Lead.  
-- Read this handoff + PROJECT_STATE + SSOT before proposing epics.  
-- Do not guess repo state — require Cursor audit.  
-- Give Cursor ready Polish prompts with hard scope boundaries.  
-- Gate Owner GO at freeze / implement / commit / push / deploy.  
-- Treat documentation as continuity layer; fix drift in docs, not by rewriting closed product truth silently.  
-- Do **not** auto-pick Wave 5 or any product EPIC.
+- Act as Architecture / Product / RCA Lead.
+- Read this handoff + PROJECT_STATE + SSOT before proposing epics.
+- Do not guess repo state — require Cursor audit.
+- Give Cursor ready Polish prompts with hard scope boundaries.
+- Gate Owner GO at freeze / implement / commit / push / deploy.
+- Treat documentation as continuity layer; fix drift in docs, not by rewriting closed product truth silently.
+- Do **not** auto-pick the next product EPIC.
 
 ---
 
 ## 18. Next Session Entry Point
 
 ```text
-NEXT = OWNER DIRECTION
+NEXT = OWNER DIRECTION / READY FOR NEXT AUDIT
 ```
 
-**Do not** auto-select the next product feature (including Wave 5).  
-Wave 5 has **no** Implementation GO. P1 security closeout does **not** start Wave 5.  
+**Do not** auto-select the next product feature.
+Recording Wave 5 = **CLOSED / PRODUCTION VERIFIED**.
 P1-A HIBP remains **BLOCKED** until Owner enables it in the Dashboard.
 
 New GPT:
@@ -374,12 +379,12 @@ AUDIT FIRST → REPORT → WAIT FOR OWNER GO
 
 Start reading order:
 
-1. This file (`MASTER_HANDOFF.md`) — cold-start continuity  
-2. [PROJECT_STATE.md](./PROJECT_STATE.md)  
-3. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)  
-4. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)  
-5. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)  
-6. Relevant audits / phase freeze **after** Owner picks an epic  
+1. This file (`MASTER_HANDOFF.md`) — cold-start continuity
+2. [PROJECT_STATE.md](./PROJECT_STATE.md)
+3. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+4. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+5. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
+6. Relevant audits / phase freeze **after** Owner picks an epic
 
 ---
 
@@ -389,17 +394,17 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Git tip ≠ production app SHA | `b4199ef` vs app `99c4815` — intentional; do not auto-align / redeploy only to match |
+| Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` while app stays on `37892a6` — intentional; do not auto-align / redeploy only to match |
 | HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
 | Hobby daily janitor | Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Stuck PENDING without janitor (historical) | Mitigated by W4 app + daily cron; unique PENDING index remains |
-| Stale freeze / SSOT / OPEN_DECISIONS wording on D02/D03 delivery | Decision unchanged; delivery clarified here; deeper doc sync awaits Owner |
+| React hydration warning on `/beat/[id]` | **INFO** · **BLOCKER = NO** · observed in `next dev`; do not hotfix without Owner GO |
 
 ### DEFERRED / TECHNICAL DEBT
 
 | Item | Notes |
 |------|--------|
-| **P2 OPS / MIGRATION DRIFT** | Local vs remote migration version names (incl. P1 `20260928120000` vs remote `20260928070727`) — ops reconciliation later |
+| **P2 OPS / MIGRATION DRIFT** | Local vs remote migration version names (incl. P1 `20260928120000` vs remote `20260928070727`; Wave 5 local `20260928140000` vs remote apply timestamp drift) — ops reconciliation later |
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
@@ -409,7 +414,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT SHIPPED (current delivery)
 
-Anonymous QT (**delivery** deferred; D02 decision unchanged) · shared grants (**delivery** not shipped; D03 unchanged) · MIX/EXPORT · payments/Premium · comments/voting/messaging product UIs.
+Anonymous QT (**delivery** deferred; D02 decision unchanged) · grant PLAYBACK/DOWNLOAD · MIX/EXPORT · payments/Premium · comments/voting/messaging product UIs.
 
 ---
 
@@ -417,9 +422,13 @@ Anonymous QT (**delivery** deferred; D02 decision unchanged) · shared grants (*
 
 | Area | State |
 |------|--------|
-| Production deploy Wave 4 | SUCCESS · READY |
+| Production deploy Wave 5 | SUCCESS · READY @ `37892a6` |
+| Production deploy Wave 4 | SUCCESS · READY (prior baseline `99c4815`) |
 | Public smoke | PASS |
-| Recording W4 live E2E | PASS |
+| Recording W5 Shared Grants owner/grantee | PASS |
+| Recording W5 HTTP IDOR / AuthZ | PASS |
+| Recording W5 PUBLISHED regression | PASS |
+| Recording W4 live E2E | PASS (prior) |
 | Entitlement | PASS |
 | Retention | PARTIAL (logic + AuthZ; natural full expiry not forced) |
 | Janitor auth | PASS (401 unauth) |
@@ -438,14 +447,15 @@ Anonymous QT (**delivery** deferred; D02 decision unchanged) · shared grants (*
 
 ```text
 MASTER HANDOFF READY
+WAVE 5 = CLOSED / PRODUCTION VERIFIED @ 37892a6
+SCOPE = Shared Grants → RECORD
 P1-B / P1-C = CLOSED
 P1-A HIBP = BLOCKED (Owner Dashboard)
-NEXT = OWNER DIRECTION
-WAVE 5 = NOT STARTED / NO IMPLEMENTATION GO
+NEXT = OWNER DIRECTION / READY FOR NEXT AUDIT
 ```
 
-**Do not start the next product EPIC from this document.**  
-Wave 5 = **NOT IMPLEMENTED** · **no GO**. Wait for Owner direction.
+**Do not start the next product EPIC from this document.**
+Wait for Owner direction.
 
 ---
 

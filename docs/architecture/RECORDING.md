@@ -58,7 +58,7 @@
 
 **Reuse:** Wave 2/3 transport + MediaRecorder + preview; Chromium WebM duration fallback (`9f6f006`) unchanged.
 
-## Wave 5 implemented (local — awaiting Owner Verification / Production GO)
+## Wave 5 — Shared Grants → RECORD (CLOSED / PRODUCTION VERIFIED @ `37892a6`)
 
 | Piece | Location |
 |-------|----------|
@@ -71,4 +71,4 @@
 
 **Contract:** Shared Grants → RECORD only. No PLAYBACK/DOWNLOAD via grant. PUBLISHED RECORD without grant unchanged (W4). Non-PUBLISHED + grant = DENY. Grant ≠ take ACL. Revoke blocks new sessions only.
 
-**Status:** Implementation complete locally · remote migration applied · **not** Production Verified · **COMMIT/PUSH/DEPLOY = NONE** until Owner Verification.
+**Status:** **CLOSED / PRODUCTION VERIFIED** @ `37892a6` · https://www.bitrymdym.pl · [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
