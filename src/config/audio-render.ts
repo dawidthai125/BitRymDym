@@ -96,6 +96,27 @@ export const E3_PUBLIC_AUDIO = parseBoolEnv(
  */
 export const E3_MIX_ENABLED = parseBoolEnv(process.env.E3_MIX_ENABLED, false);
 
+/**
+ * E3.5 — durable Render Jobs runtime gate (OD-E35-02).
+ * Default OFF. Independent of E3_MIX_ENABLED / E3_PUBLIC_AUDIO.
+ * Never authorizes public Free Audio by itself.
+ */
+export const E3_RENDER_JOBS_ENABLED = parseBoolEnv(
+  process.env.E3_RENDER_JOBS_ENABLED,
+  false,
+);
+
+/**
+ * Worker-facing auth for CLAIM / complete (OD-E35-03).
+ * Server-only secret — never expose to client. Distinct from feature flags.
+ */
+export function getRenderWorkerSecret(): string | null {
+  const raw = process.env.E3_RENDER_WORKER_SECRET;
+  if (raw === undefined || raw === "") return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 /** Convenience: public release requires public flag (W6/Prod GO are process gates). */
 export function isE3PublicAudioAuthorized(): boolean {
   return E3_PUBLIC_AUDIO === true;

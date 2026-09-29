@@ -22,6 +22,7 @@ import {
   AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY,
   E3_MIX_ENABLED,
   E3_PUBLIC_AUDIO,
+  E3_RENDER_JOBS_ENABLED,
 } from "@/config/audio-render";
 import {
   buildAudioArtifactObjectKey,
@@ -60,9 +61,10 @@ describe("E3.1 — audio foundation (unit)", () => {
     expect(AUDIO_CODEC.CHANNELS).toBe(2);
   });
 
-  it("defaults public audio OFF and does not treat mix flag as public", () => {
+  it("defaults public audio OFF and does not treat mix/jobs flags as public", () => {
     expect(E3_PUBLIC_AUDIO).toBe(false);
     expect(E3_MIX_ENABLED).toBe(false);
+    expect(E3_RENDER_JOBS_ENABLED).toBe(false);
   });
 
   it("exposes frozen capability keys without STEMS", () => {

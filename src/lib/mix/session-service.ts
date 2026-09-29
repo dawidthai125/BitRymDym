@@ -31,6 +31,7 @@ import type { MixSessionStatus } from "@/types/domain";
 import { requestBeatAudioAccess } from "@/lib/beats/audio-access";
 import { createOwnTakePreviewSignedUrlFor } from "@/lib/takes/take-preview";
 import { PUBLIC_PLAYBACK_PURPOSE } from "@/lib/beats/public";
+import { sessionHasActiveRenderJob } from "@/lib/audio/render-job-service";
 
 export type MixSessionRecord = {
   id: string;
@@ -236,6 +237,14 @@ export async function updateMixSessionParametersFor(
   const flags = entitlementFlags(entitlement);
 
   const existing = await getMixSessionFor(context, sessionId);
+
+  if (await sessionHasActiveRenderJob(existing.id)) {
+    throw new MixAuthzError(
+      "Cannot patch Mix parameters while an active render job exists.",
+      "FORBIDDEN",
+    );
+  }
+
   const parameters = parseMixParameters(parametersRaw, {
     allowPro: flags.mixPro,
     allowMaster: flags.allowMaster,
