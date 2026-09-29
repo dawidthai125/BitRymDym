@@ -14,7 +14,11 @@ import {
   assertAudioCapability,
 } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
-import { RenderJobDomainError } from "@/lib/audio/render-job-core";
+import {
+  capabilityForRenderTier,
+  RenderJobDomainError,
+  isRenderJobTier,
+} from "@/lib/audio/render-job-core";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -42,7 +46,6 @@ export async function createOwnArtifactDownloadSignedUrlFor(
   }
 
   const entitlement = await resolveAudioEntitlementForAuthContext(context);
-  assertAudioCapability(entitlement, "EXPORT_BASIC_MP3");
 
   const admin = createSupabaseAdminClient();
   const { data: artifact, error } = await admin
@@ -72,6 +75,13 @@ export async function createOwnArtifactDownloadSignedUrlFor(
   if ((artifact.storage_bucket as string) !== AUDIO_ARTIFACTS_BUCKET) {
     throw new AuthError("FORBIDDEN", "Invalid artifact storage bucket.");
   }
+
+  // E3.7-F — download capability MUST match trusted DB quality_tier (never BASIC-only for HQ/WAV).
+  const qualityTier = artifact.quality_tier as string;
+  if (!isRenderJobTier(qualityTier)) {
+    throw new AuthError("FORBIDDEN", "Invalid artifact quality_tier.");
+  }
+  assertAudioCapability(entitlement, capabilityForRenderTier(qualityTier));
 
   // FINDING-03 — READY alone is insufficient; owning job must be SUCCEEDED.
   const { data: job, error: jobError } = await admin

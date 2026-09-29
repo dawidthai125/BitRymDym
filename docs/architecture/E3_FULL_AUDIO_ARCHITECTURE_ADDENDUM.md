@@ -7,10 +7,11 @@
 **Architecture:** `C — HYBRID`
 **Prior gate:** Architecture Review = COMPLETE · Readiness was **B — READY AFTER OWNER DECISIONS**
 **Post-lock:** OAD-01…07 **CLOSED** by Owner (2026-09-28) — see Final Architecture Lock
-**Delivery reconcile (2026-09-29):** E3.1 → E3.6 **CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **OD-E36-04 = C** · E3 = **DARK**
+**Delivery reconcile (2026-09-29):** E3.1 → E3.6 **CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · E3.7 **IMPLEMENTED** (local · Owner Verify PASS WITH FINDINGS · COMMIT NONE) · **OD-E36-04 = C** · E3 = **DARK**
 
 ```text
-PRODUCTION (current)    = 183b2a4 · https://www.bitrymdym.pl
+PRODUCTION APPLICATION  = 183b2a4 · https://www.bitrymdym.pl
+E3.7                    = IMPLEMENTED locally · NOT ON PRODUCTION
 E3 FLAGS                = DARK
 OD-E36-04               = OPTION C (native/system FFmpeg + libmp3lame on EXTERNAL worker; not app npm dep)
 ```

@@ -26,11 +26,12 @@ export type ServerBasicBakeResult = {
   durationMs: number;
 };
 
-function dbToGain(gainDb: number): number {
+/** Shared by server-basic-v1 / server-pro-v1 (E3.7 reuse). */
+export function dbToGain(gainDb: number): number {
   return Math.pow(10, gainDb / 20);
 }
 
-function clampSample(x: number): number {
+export function clampSample(x: number): number {
   if (x > 1) return 1;
   if (x < -1) return -1;
   return x;
@@ -64,7 +65,7 @@ export function resampleStereoInterleaved(
   };
 }
 
-function applyGainPan(
+export function applyGainPan(
   interleaved: Float32Array,
   frames: number,
   gainDb: number,
@@ -83,7 +84,7 @@ function applyGainPan(
 }
 
 /** Very small 3-band shelf/peak approximation (per-sample IIR, stereo). */
-function applyBasicEq(
+export function applyBasicEq(
   interleaved: Float32Array,
   frames: number,
   sampleRate: number,
@@ -117,7 +118,7 @@ function applyBasicEq(
   }
 }
 
-function applySimpleCompressor(
+export function applySimpleCompressor(
   interleaved: Float32Array,
   frames: number,
   sampleRate: number,
@@ -144,7 +145,7 @@ function applySimpleCompressor(
   }
 }
 
-function applyLimiterCeiling(
+export function applyLimiterCeiling(
   interleaved: Float32Array,
   frames: number,
   thresholdDb: number,
@@ -169,7 +170,7 @@ function applyLimiterCeiling(
   }
 }
 
-function applyDelay(
+export function applyDelay(
   interleaved: Float32Array,
   frames: number,
   sampleRate: number,
@@ -196,7 +197,7 @@ function applyDelay(
 }
 
 /** Lightweight feedback echo stand-in for Basic reverb mix/decay. */
-function applyReverbApprox(
+export function applyReverbApprox(
   interleaved: Float32Array,
   frames: number,
   sampleRate: number,
@@ -216,7 +217,7 @@ function applyReverbApprox(
   });
 }
 
-function mixBuses(
+export function mixBuses(
   take: Float32Array,
   beat: Float32Array,
   frames: number,
@@ -229,7 +230,7 @@ function mixBuses(
   return out;
 }
 
-function padOrTrim(interleaved: Float32Array, frames: number): Float32Array {
+export function padOrTrim(interleaved: Float32Array, frames: number): Float32Array {
   const need = frames * 2;
   if (interleaved.length === need) return interleaved;
   const out = new Float32Array(need);
@@ -237,7 +238,7 @@ function padOrTrim(interleaved: Float32Array, frames: number): Float32Array {
   return out;
 }
 
-function measureRmsDb(interleaved: Float32Array): number {
+export function measureRmsDb(interleaved: Float32Array): number {
   let sum = 0;
   for (let i = 0; i < interleaved.length; i++) {
     const s = interleaved[i] ?? 0;
@@ -248,7 +249,8 @@ function measureRmsDb(interleaved: Float32Array): number {
   return 20 * Math.log10(rms);
 }
 
-function applyMaster(
+/** Plan A master stage — reused by server-pro-v1 (E3.7-B). */
+export function applyMaster(
   interleaved: Float32Array,
   frames: number,
   master: MixParameters["master"],

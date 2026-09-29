@@ -1,7 +1,7 @@
 /**
- * E3.6-C/D — EXTERNAL worker Basic MP3 pipeline (OD-E36-04 = C).
- * Encode runs via native FFmpeg on worker host — not Next.js Route Handler bake/encode.
- * Uploads to private audio-artifacts then completes job via secure complete().
+ * E3.6 / E3.7 — EXTERNAL worker render pipeline (OD-E36-04 = C).
+ * Encode runs via native FFmpeg / PCM WAV on worker host — not Vercel RH.
+ * READY only after encode + QC + upload + DB insert (FINDING-02/03).
  */
 
 import "server-only";
@@ -11,7 +11,10 @@ import {
   AUDIO_CODEC,
 } from "@/config/audio-render";
 import { buildAudioArtifactObjectKey } from "@/lib/audio/artifact-object-key";
-import { encodeBasicMp3FromBake } from "@/lib/audio/mp3-encode";
+import {
+  encodeBasicMp3FromBake,
+  encodeHqMp3FromBake,
+} from "@/lib/audio/mp3-encode";
 import {
   canCompleteRenderJobSuccess,
   parseRenderJobEntitlementSnapshot,
@@ -28,18 +31,26 @@ import {
 } from "@/lib/audio/render-decode";
 import { resolveAuthorizedRenderSourcesForJob } from "@/lib/audio/render-source-resolution";
 import { bakeServerBasicV1 } from "@/lib/audio/server-basic-bake";
+import { bakeServerProV1 } from "@/lib/audio/server-pro-bake";
+import { encodeWavFromBake } from "@/lib/audio/wav-encode";
+import type { RenderJobTier } from "@/types/domain";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export type RealBasicMp3PipelineResult = {
+export type RealWorkerPipelineResult = {
   job: RenderJobRecord;
   artifactId: string;
   objectKey: string;
   byteSize: number;
   checksumSha256: string;
-  bitrateKbps: number;
+  bitrateKbps: number | null;
   durationMs: number;
   encoder: string;
+  qualityTier: RenderJobTier;
+  contentType: string;
 };
+
+/** @deprecated alias — Basic path result shape. */
+export type RealBasicMp3PipelineResult = RealWorkerPipelineResult;
 
 async function downloadSourceBytes(params: {
   bucket: string;
@@ -77,31 +88,75 @@ async function failRunningJob(
     .eq("status", "RUNNING");
 }
 
+async function ensureFailedIfStillRunning(
+  jobId: string,
+  error: unknown,
+): Promise<void> {
+  if (!(error instanceof RenderJobDomainError)) return;
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("render_jobs")
+    .select("status")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (data?.status === "RUNNING") {
+    await failRunningJob(
+      jobId,
+      error.code === "DISABLED" ? "ENCODER_UNAVAILABLE" : "ENCODE_FAILED",
+      error.message,
+    );
+  }
+}
+
 /**
- * Full EXTERNAL worker path for one job:
- * claim (+ FINDING-01) → fetch sources → bake → ffmpeg MP3 → QC → upload → READY → SUCCEEDED
+ * Dispatcher — EXTERNAL worker entry for Basic / HQ / WAV.
  */
+export async function runRealRenderWorkerJob(
+  jobId: string,
+): Promise<RealWorkerPipelineResult> {
+  const { job } = await claimRenderJobAsWorker(jobId);
+  if (job.requestedTier === "BASIC_MP3") {
+    return runClaimedBasicMp3WorkerJob(job);
+  }
+  if (job.requestedTier === "HQ_MP3" || job.requestedTier === "WAV") {
+    return runClaimedPremiumWorkerJob(job);
+  }
+  await failRunningJob(
+    jobId,
+    "TIER_UNSUPPORTED",
+    `Unsupported render tier: ${job.requestedTier}`,
+  );
+  throw new RenderJobDomainError(
+    `Unsupported render tier: ${job.requestedTier}`,
+    "INVALID",
+  );
+}
+
+/** E3.6 Basic MP3 worker entry (claim + bake + encode). */
 export async function runRealBasicMp3WorkerJob(
   jobId: string,
-): Promise<RealBasicMp3PipelineResult> {
+): Promise<RealWorkerPipelineResult> {
   const { job } = await claimRenderJobAsWorker(jobId);
-
   if (job.requestedTier !== "BASIC_MP3") {
     await failRunningJob(
       jobId,
       "TIER_UNSUPPORTED",
-      "E3.6 worker supports BASIC_MP3 only.",
+      "runRealBasicMp3WorkerJob supports BASIC_MP3 only.",
     );
     throw new RenderJobDomainError(
-      "E3.6 worker supports BASIC_MP3 only.",
+      "runRealBasicMp3WorkerJob supports BASIC_MP3 only.",
       "INVALID",
     );
   }
+  return runClaimedBasicMp3WorkerJob(job);
+}
 
+async function runClaimedBasicMp3WorkerJob(
+  job: RenderJobRecord,
+): Promise<RealWorkerPipelineResult> {
+  const jobId = job.id;
   try {
-    // Re-resolve at bake start (FINDING-01) — claim already validated; refresh while RUNNING.
     const fresh = await resolveAuthorizedRenderSourcesForJob(jobId);
-
     const takeBytes = await downloadSourceBytes({
       bucket: fresh.take.storageBucket,
       objectKey: fresh.take.objectKey,
@@ -136,9 +191,7 @@ export async function runRealBasicMp3WorkerJob(
       beat: beatPcm,
       parameters: fresh.entitlementSnapshot.parameters,
     });
-
     const encoded = await encodeBasicMp3FromBake(bake);
-
     const objectKey = buildAudioArtifactObjectKey({
       ownerId: job.ownerId,
       mixSessionId: job.mixSessionId,
@@ -146,10 +199,12 @@ export async function runRealBasicMp3WorkerJob(
       tier: "BASIC_MP3",
     });
 
-    return completeRealBasicMp3AfterEncode({
+    return completeRealArtifactAfterEncode({
       jobId: job.id,
+      qualityTier: "BASIC_MP3",
       objectKey,
       encodedBytes: encoded.bytes,
+      contentType: "audio/mpeg",
       checksumSha256: encoded.checksumSha256,
       byteSize: encoded.byteSize,
       durationMs: encoded.durationMs,
@@ -158,46 +213,130 @@ export async function runRealBasicMp3WorkerJob(
       encoder: encoded.encoder,
     });
   } catch (error) {
-    if (
-      error instanceof RenderJobDomainError &&
-      (error.code === "DISABLED" ||
-        error.message.includes("SOURCE_DECODE") ||
-        error.code === "INVALID")
-    ) {
-      // failRunningJob may already have run
-      const admin = createSupabaseAdminClient();
-      const { data } = await admin
-        .from("render_jobs")
-        .select("status")
-        .eq("id", jobId)
-        .maybeSingle();
-      if (data?.status === "RUNNING") {
-        await failRunningJob(
-          jobId,
-          error.code === "DISABLED" ? "ENCODER_UNAVAILABLE" : "ENCODE_FAILED",
-          error.message,
-        );
-      }
+    await ensureFailedIfStillRunning(jobId, error);
+    throw error;
+  }
+}
+
+/** E3.7 Premium: server-pro-v1 → HQ MP3 or WAV. */
+async function runClaimedPremiumWorkerJob(
+  job: RenderJobRecord,
+): Promise<RealWorkerPipelineResult> {
+  const jobId = job.id;
+  const tier = job.requestedTier;
+  if (tier !== "HQ_MP3" && tier !== "WAV") {
+    throw new RenderJobDomainError("Not a Premium tier.", "INVALID");
+  }
+
+  try {
+    const fresh = await resolveAuthorizedRenderSourcesForJob(jobId);
+    if (!fresh.entitlementSnapshot.parameters.pro) {
+      await failRunningJob(
+        jobId,
+        "INVALID",
+        "Premium render requires frozen parameters.pro.",
+      );
+      throw new RenderJobDomainError(
+        "Premium render requires frozen parameters.pro.",
+        "INVALID",
+      );
     }
+
+    const takeBytes = await downloadSourceBytes({
+      bucket: fresh.take.storageBucket,
+      objectKey: fresh.take.objectKey,
+    });
+    const beatBytes = await downloadSourceBytes({
+      bucket: fresh.beat.storageBucket,
+      objectKey: fresh.beat.objectKey,
+    });
+
+    let takePcm;
+    let beatPcm;
+    try {
+      takePcm = await decodeRenderSourceToStereoPcm({
+        bytes: takeBytes,
+        contentType: fresh.take.contentType,
+        label: "take",
+      });
+      beatPcm = await decodeRenderSourceToStereoPcm({
+        bytes: beatBytes,
+        contentType: fresh.beat.contentType,
+        label: "beat",
+      });
+    } catch (e) {
+      const code = renderDecodeErrorCode(e);
+      const message = e instanceof Error ? e.message : "SOURCE_DECODE";
+      await failRunningJob(jobId, code, message);
+      throw e;
+    }
+
+    const bake = bakeServerProV1({
+      take: takePcm,
+      beat: beatPcm,
+      parameters: fresh.entitlementSnapshot.parameters,
+    });
+
+    const objectKey = buildAudioArtifactObjectKey({
+      ownerId: job.ownerId,
+      mixSessionId: job.mixSessionId,
+      jobId: job.id,
+      tier,
+    });
+
+    if (tier === "HQ_MP3") {
+      const encoded = await encodeHqMp3FromBake(bake);
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "HQ_MP3",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/mpeg",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: encoded.bitrateKbps,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+      });
+    }
+
+    const encoded = await encodeWavFromBake(bake);
+    return completeRealArtifactAfterEncode({
+      jobId: job.id,
+      qualityTier: "WAV",
+      objectKey,
+      encodedBytes: encoded.bytes,
+      contentType: "audio/wav",
+      checksumSha256: encoded.checksumSha256,
+      byteSize: encoded.byteSize,
+      durationMs: encoded.durationMs,
+      bitrateKbps: null,
+      sampleRate: encoded.sampleRate,
+      encoder: encoded.encoder,
+    });
+  } catch (error) {
+    await ensureFailedIfStillRunning(jobId, error);
     throw error;
   }
 }
 
 /**
- * Upload real MP3 + insert READY + SUCCEEDED (FINDING-02/03).
- * Worker already produced QC'd bytes (or call after external encode).
+ * Upload QC'd bytes + insert READY + SUCCEEDED (FINDING-02/03).
  */
-export async function completeRealBasicMp3AfterEncode(params: {
+export async function completeRealArtifactAfterEncode(params: {
   jobId: string;
+  qualityTier: RenderJobTier;
   objectKey: string;
   encodedBytes: Buffer;
+  contentType: string;
   checksumSha256: string;
   byteSize: number;
   durationMs: number;
-  bitrateKbps: number;
+  bitrateKbps: number | null;
   sampleRate: number;
   encoder: string;
-}): Promise<RealBasicMp3PipelineResult> {
+}): Promise<RealWorkerPipelineResult> {
   const admin = createSupabaseAdminClient();
   const { data: row, error } = await admin
     .from("render_jobs")
@@ -216,11 +355,19 @@ export async function completeRealBasicMp3AfterEncode(params: {
     );
   }
 
+  const jobTier = row.requested_tier as RenderJobTier;
+  if (jobTier !== params.qualityTier) {
+    throw new RenderJobDomainError(
+      "quality_tier mismatch vs job.requested_tier.",
+      "INVALID",
+    );
+  }
+
   const expectedKey = buildAudioArtifactObjectKey({
     ownerId: row.owner_id as string,
     mixSessionId: row.mix_session_id as string,
     jobId: row.id as string,
-    tier: "BASIC_MP3",
+    tier: params.qualityTier,
   });
   if (params.objectKey !== expectedKey) {
     throw new RenderJobDomainError(
@@ -242,19 +389,14 @@ export async function completeRealBasicMp3AfterEncode(params: {
   const { error: uploadError } = await admin.storage
     .from(AUDIO_ARTIFACTS_BUCKET)
     .upload(params.objectKey, params.encodedBytes, {
-      contentType: "audio/mpeg",
+      contentType: params.contentType,
       upsert: false,
     });
   if (uploadError) {
-    await failRunningJob(
-      params.jobId,
-      "UPLOAD_FAILED",
-      uploadError.message,
-    );
+    await failRunningJob(params.jobId, "UPLOAD_FAILED", uploadError.message);
     throw new RenderJobDomainError(uploadError.message, "INVALID");
   }
 
-  // Cancel race before DB insert
   const { data: fresh, error: freshError } = await admin
     .from("render_jobs")
     .select("status")
@@ -275,8 +417,8 @@ export async function completeRealBasicMp3AfterEncode(params: {
       owner_id: row.owner_id,
       mix_session_id: row.mix_session_id,
       render_job_id: row.id,
-      format: "audio/mpeg",
-      quality_tier: "BASIC_MP3",
+      format: params.contentType,
+      quality_tier: params.qualityTier,
       storage_bucket: AUDIO_ARTIFACTS_BUCKET,
       object_key: params.objectKey,
       byte_size: params.byteSize,
@@ -291,7 +433,6 @@ export async function completeRealBasicMp3AfterEncode(params: {
     .single();
 
   if (artError || !artifact) {
-    // FINDING-02 — best-effort orphan cleanup
     await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove([params.objectKey]);
     await failRunningJob(
       params.jobId,
@@ -322,7 +463,6 @@ export async function completeRealBasicMp3AfterEncode(params: {
 
   if (succError) throw new Error(succError.message);
   if (!succeeded) {
-    // FINDING-03 — READY without SUCCEEDED must not remain
     await admin.from("audio_artifacts").delete().eq("id", artifact.id);
     await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove([params.objectKey]);
     throw new RenderJobDomainError(
@@ -332,7 +472,6 @@ export async function completeRealBasicMp3AfterEncode(params: {
   }
 
   const jobRecord = await getJobRecord(params.jobId);
-
   return {
     job: jobRecord,
     artifactId: artifact.id as string,
@@ -342,7 +481,28 @@ export async function completeRealBasicMp3AfterEncode(params: {
     bitrateKbps: params.bitrateKbps,
     durationMs: params.durationMs,
     encoder: params.encoder,
+    qualityTier: params.qualityTier,
+    contentType: params.contentType,
   };
+}
+
+/** @deprecated Prefer completeRealArtifactAfterEncode — kept for E3.6 call sites. */
+export async function completeRealBasicMp3AfterEncode(params: {
+  jobId: string;
+  objectKey: string;
+  encodedBytes: Buffer;
+  checksumSha256: string;
+  byteSize: number;
+  durationMs: number;
+  bitrateKbps: number;
+  sampleRate: number;
+  encoder: string;
+}): Promise<RealWorkerPipelineResult> {
+  return completeRealArtifactAfterEncode({
+    ...params,
+    qualityTier: "BASIC_MP3",
+    contentType: "audio/mpeg",
+  });
 }
 
 async function getJobRecord(jobId: string): Promise<RenderJobRecord> {

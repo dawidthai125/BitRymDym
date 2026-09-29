@@ -6,6 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-29 — E3.7 PREMIUM RENDER — IMPLEMENTATION CLOSEOUT (DOCS)
+
+**Status:** **E3.7 IMPLEMENTED** · Owner Verification **PASS WITH FINDINGS** · docs reconciliation · **COMMIT/PUSH/DEPLOY = NONE** · Production app remains `183b2a4` · **E3 = DARK**
+
+- Production application (unchanged) = `183b2a4` · deployment `dpl_D5EfHdSSahouFftf5HK35wKSHmts` · Documentation tip = `f944747`
+- **E3.7 waves A–H:** `server-pro-v1` Pro Mix (`MixProParams`) · Master **Plan A** (OD-E37-01) · HQ MP3 **320** · WAV **44.1/16/stereo** · EXTERNAL worker dispatcher · tier-aware download AuthZ · thin Premium Export UX (HQ+WAV+Basic) · tests **100/100** · typecheck/build/security/regression **PASS**
+- **Premium Final Truth:** Pro Mix → Master Plan A → HQ/WAV encode → QC → private `audio-artifacts` → READY · **not** `server-basic-v1`
+- **Basic path:** `server-basic-v1` → Basic MP3 128 unchanged
+- **Download:** `quality_tier` → `EXPORT_BASIC_MP3` / `EXPORT_HQ_MP3` / `EXPORT_WAV`
+- **Production safety:** flags UNSET · worker secret UNSET · Production Render **NOT EXECUTED** · no Production E3.7 deploy
+- **OUT:** STEMS · `artifact_kind` · payments · public Free Audio · W6 matrix · Production enablement · `MasterProParams` / True Peak / BS.1770 · bake↔encode ±5% QC (OD-E37-03 OUT)
+- INFO: G5 soft RMS approximation · E3.7 code uncommitted until Owner Commit GO
+- Closeout: [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
+- Next = **OWNER COMMIT GO** (then Push / Production Verify gates) — do **not** invent further EPIC scope
+
+---
+
 ## 2026-09-29 — E3.6 BASIC MP3 EXPORT — POST-RELEASE CLOSEOUT (DOCS)
 
 **Status:** **E3.1 → E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **E3 = DARK** · docs reconciliation · **no app/DB/env/deploy in this closeout**

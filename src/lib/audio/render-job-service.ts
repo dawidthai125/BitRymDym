@@ -426,6 +426,12 @@ export async function createRenderJobFor(
     allowPro,
     allowMaster,
   });
+  if ((tier === "HQ_MP3" || tier === "WAV") && !parameters.pro) {
+    throw new RenderJobDomainError(
+      "Premium HQ/WAV render requires Mix Pro parameters (parameters.pro).",
+      "INVALID",
+    );
+  }
   const snapshot = buildRenderJobEntitlementSnapshot({
     entitlement,
     parameters: serializeMixParameters(parameters),

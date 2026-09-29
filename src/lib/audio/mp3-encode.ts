@@ -1,6 +1,6 @@
 /**
- * E3.6-C — Basic MP3 encode (128 kbps stereo) via native FFmpeg libmp3lame.
- * OD-E36-04 = C · OAD-06. Fake/placeholder bytes MUST FAIL QC.
+ * E3.6-C / E3.7-C — MP3 encode via native FFmpeg libmp3lame (OD-E36-04 = C).
+ * Basic = 128 kbps · HQ = 320 kbps. Fake/placeholder bytes MUST FAIL QC.
  */
 
 import { createHash } from "node:crypto";
@@ -17,14 +17,24 @@ import {
   runFfmpegFile,
 } from "@/lib/audio/native-ffmpeg";
 import { RenderJobDomainError } from "@/lib/audio/render-job-core";
-import type { ServerBasicBakeResult } from "@/lib/audio/server-basic-bake";
 import { decodeRenderSourceToStereoPcm } from "@/lib/audio/render-decode";
 
 export const BASIC_MP3_TARGET_BITRATE_KBPS =
   AUDIO_CODEC.BASIC_MP3_BITRATE_KBPS; // 128
 
-/** LAME CBR may report ~±8% around target depending on build. */
+export const HQ_MP3_TARGET_BITRATE_KBPS = AUDIO_CODEC.HQ_MP3_BITRATE_KBPS; // 320
+
+/** LAME CBR may report ~±8–12% around target depending on build. REUSE for HQ. */
 export const BASIC_MP3_BITRATE_TOLERANCE_RATIO = 0.12;
+export const HQ_MP3_BITRATE_TOLERANCE_RATIO = BASIC_MP3_BITRATE_TOLERANCE_RATIO;
+
+export type BakePcmInput = {
+  interleaved: Float32Array;
+  sampleRate: number;
+  channels: 2;
+  frames: number;
+  durationMs: number;
+};
 
 export type Mp3EncodeResult = {
   bytes: Buffer;
@@ -49,7 +59,7 @@ export type Mp3QcResult = {
   sampleRate: number | null;
 };
 
-function float32InterleavedToWavPcm16(params: {
+export function float32InterleavedToWavPcm16(params: {
   interleaved: Float32Array;
   sampleRate: number;
   channels: number;
@@ -88,9 +98,8 @@ function looksLikeFakePlaceholder(bytes: Buffer): boolean {
 }
 
 function hasMpegSync(bytes: Buffer): boolean {
-  // MP3 frame sync 0xFFEx or ID3 tag
   if (bytes.length >= 3 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
-    return true; // ID3
+    return true;
   }
   for (let i = 0; i < Math.min(bytes.length - 1, 4096); i++) {
     if (bytes[i] === 0xff && (bytes[i + 1]! & 0xe0) === 0xe0) return true;
@@ -146,9 +155,13 @@ export async function probeMp3File(filePath: string): Promise<{
 }
 
 /**
- * QC Basic MP3 bytes. Fake placeholders MUST fail.
+ * QC MP3 bytes against a target bitrate (Basic 128 or HQ 320). Fake placeholders MUST fail.
  */
-export async function qcBasicMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
+export async function qcMp3Bytes(
+  bytes: Buffer,
+  targetBitrateKbps: number,
+  toleranceRatio: number = BASIC_MP3_BITRATE_TOLERANCE_RATIO,
+): Promise<Mp3QcResult> {
   if (!bytes.byteLength) {
     throw new RenderJobDomainError("MP3 QC: empty file.", "INVALID");
   }
@@ -159,7 +172,7 @@ export async function qcBasicMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
     );
   }
 
-  const dir = await mkdtemp(join(tmpdir(), "e36-mp3-qc-"));
+  const dir = await mkdtemp(join(tmpdir(), "e3-mp3-qc-"));
   const filePath = join(dir, "probe.mp3");
   try {
     await writeFile(filePath, bytes);
@@ -183,11 +196,10 @@ export async function qcBasicMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
     if (!Number.isFinite(bitrate)) {
       throw new RenderJobDomainError("MP3 QC: missing bitrate.", "INVALID");
     }
-    const target = BASIC_MP3_TARGET_BITRATE_KBPS;
-    const tol = target * BASIC_MP3_BITRATE_TOLERANCE_RATIO;
-    if (Math.abs(bitrate - target) > tol) {
+    const tol = targetBitrateKbps * toleranceRatio;
+    if (Math.abs(bitrate - targetBitrateKbps) > tol) {
       throw new RenderJobDomainError(
-        `MP3 QC: bitrate=${bitrate} kbps, expected ~${target}.`,
+        `MP3 QC: bitrate=${bitrate} kbps, expected ~${targetBitrateKbps}.`,
         "INVALID",
       );
     }
@@ -199,7 +211,6 @@ export async function qcBasicMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
       throw new RenderJobDomainError("MP3 QC: invalid duration.", "INVALID");
     }
 
-    // Re-decode smoke (must be decodable)
     await decodeRenderSourceToStereoPcm({
       bytes: new Uint8Array(bytes),
       contentType: "audio/mpeg",
@@ -220,11 +231,23 @@ export async function qcBasicMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
   }
 }
 
-/**
- * Encode server-basic-v1 PCM → MP3 128 kbps stereo via native FFmpeg.
- */
-export async function encodeBasicMp3FromBake(
-  bake: ServerBasicBakeResult,
+/** QC Basic MP3 (128 kbps). */
+export async function qcBasicMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
+  return qcMp3Bytes(bytes, BASIC_MP3_TARGET_BITRATE_KBPS);
+}
+
+/** QC HQ MP3 (320 kbps) — E3.7-C. */
+export async function qcHqMp3Bytes(bytes: Buffer): Promise<Mp3QcResult> {
+  return qcMp3Bytes(
+    bytes,
+    HQ_MP3_TARGET_BITRATE_KBPS,
+    HQ_MP3_BITRATE_TOLERANCE_RATIO,
+  );
+}
+
+async function encodeMp3FromBakePcm(
+  bake: BakePcmInput,
+  targetBitrateKbps: number,
 ): Promise<Mp3EncodeResult> {
   const { versionLine } = await assertNativeFfmpegAvailable();
   const wav = float32InterleavedToWavPcm16({
@@ -233,7 +256,7 @@ export async function encodeBasicMp3FromBake(
     channels: bake.channels,
   });
 
-  const dir = await mkdtemp(join(tmpdir(), "e36-mp3-enc-"));
+  const dir = await mkdtemp(join(tmpdir(), "e3-mp3-enc-"));
   const wavPath = join(dir, "bake.wav");
   const mp3Path = join(dir, "out.mp3");
   try {
@@ -249,7 +272,7 @@ export async function encodeBasicMp3FromBake(
       "-codec:a",
       "libmp3lame",
       "-b:a",
-      `${BASIC_MP3_TARGET_BITRATE_KBPS}k`,
+      `${targetBitrateKbps}k`,
       "-ac",
       "2",
       "-ar",
@@ -257,7 +280,7 @@ export async function encodeBasicMp3FromBake(
       mp3Path,
     ]);
     const bytes = await readFile(mp3Path);
-    const qc = await qcBasicMp3Bytes(bytes);
+    const qc = await qcMp3Bytes(bytes, targetBitrateKbps);
     const checksumSha256 = createHash("sha256").update(bytes).digest("hex");
     return {
       bytes,
@@ -274,4 +297,18 @@ export async function encodeBasicMp3FromBake(
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+/** Encode PCM bake → MP3 128 kbps stereo (E3.6 Basic). */
+export async function encodeBasicMp3FromBake(
+  bake: BakePcmInput,
+): Promise<Mp3EncodeResult> {
+  return encodeMp3FromBakePcm(bake, BASIC_MP3_TARGET_BITRATE_KBPS);
+}
+
+/** Encode PCM bake → MP3 320 kbps stereo (E3.7 HQ). */
+export async function encodeHqMp3FromBake(
+  bake: BakePcmInput,
+): Promise<Mp3EncodeResult> {
+  return encodeMp3FromBakePcm(bake, HQ_MP3_TARGET_BITRATE_KBPS);
 }

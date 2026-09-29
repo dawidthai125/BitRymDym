@@ -21,6 +21,7 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Status | **GREEN** / **PRODUCTION VERIFIED** |
 | Previous Production | `fbece37` (E3.5) — rollback available |
 | **E3.6** | **PRODUCTION VERIFIED** · **DARK** (not Production-enabled render service) |
+| **E3.7** | **IMPLEMENTED** locally · Owner Verification **PASS WITH FINDINGS** · **COMMIT/PUSH/DEPLOY = NONE** · **not** on Production |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
 | Recording Wave 5 | **CLOSED / PRODUCTION VERIFIED** · Shared Grants → RECORD @ `37892a6` |
 | D02 Anonymous QT | **CLOSED / IN V1** · **SHIPPED** @ `e98ba52` |
@@ -43,8 +44,9 @@ E3 FLAGS = DARK
 | SHA | Meaning |
 |-----|---------|
 | `183b2a4` | **Production application** (E3.6 Basic MP3 export — DARK) — Owner Production Verify PASS |
+| `f944747` | Documentation tip (E3.6 docs closeout) — Production app **not** required to equal tip |
 | `fbece37` | Prior Production (E3.5 Render Jobs) |
-| Docs tip (after closeout) | May advance on `origin/main` via docs-only commits — **do not** redeploy docs-only without Owner Production GO |
+| E3.7 app SHA | **NONE YET** — implementation uncommitted until Owner Commit GO |
 | `e98ba52` | D02 Anonymous QT |
 | `37892a6` | Wave 5 Shared Grants → RECORD |
 | `99c4815` | Wave 4 historical baseline |
@@ -59,7 +61,9 @@ Production app is **not** required to equal `origin/main` when tip is docs-only.
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **E3.6 product commit** | `183b2a4` (`feat(audio): implement E3.6 basic mp3 export`) = production app |
+| **E3.6 product commit** | `183b2a4` (`feat(audio): implement E3.6 basic mp3 export`) = **production app** |
+| **Documentation tip** | `f944747` |
+| **E3.7** | Implemented in worktree · **uncommitted** · await Owner Commit GO |
 | Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` |
 
 Do **not** stage agent tooling folders as product scope.
@@ -207,8 +211,9 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | **E3.4 Master Basic** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** | OK | |
 | **E3.5 Render Jobs + Worker Adapter** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** @ `fbece37` | OK | fake-complete = CI/domain |
 | **E3.6 Basic MP3 export** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** @ `183b2a4` | OK | real 128 kbps · OD-E36-04 C · EXTERNAL worker |
+| **E3.7 Premium Render** | **IMPLEMENTED** · Owner Verify **PASS WITH FINDINGS** | **not deployed** · **DARK** | OK | `server-pro-v1` · HQ 320 · WAV · commit pending |
 | E3 public Free Audio / Production render enablement | **NOT ENABLED** | DARK | — | separate Owner Production Enablement GO |
-| Later E3 waves (e.g. Pro/Premium path, W6 public) | **NOT SELECTED** | — | Plan exists historically | **Do not auto-start** |
+| Later E3 waves (e.g. W6 public) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
 | Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07/08 OPEN | Overlay table exists for E3 |
 | Messaging / voting / comments product | NOT IMPLEMENTED | — | SSOT future; OD-10/11 OPEN | Permission rows may exist |
@@ -229,6 +234,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | Recording Wave 5 (Shared Grants → RECORD) | **CLOSED / PRODUCTION VERIFIED** | `37892a6` |
 | D02 Anonymous QT | **CLOSED / IN V1 · SHIPPED** | `e98ba52` |
 | E3.1 → E3.6 Full Audio (through Basic MP3) | **CLOSED / PRODUCTION VERIFIED · DARK** | `183b2a4` |
+| E3.7 Premium Render | **IMPLEMENTED / OWNER VERIFIED · not Production-deployed** | worktree · [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 
 ---
 
@@ -266,7 +272,7 @@ Closeout W4: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_P
 
 ---
 
-## 9b. E3 Full Audio Final State (through E3.6)
+## 9b. E3 Full Audio Final State (through E3.7 local)
 
 ```text
 E3.1 = CLOSED / PRODUCTION VERIFIED
@@ -275,6 +281,7 @@ E3.3 = CLOSED / PRODUCTION VERIFIED
 E3.4 = CLOSED / PRODUCTION VERIFIED
 E3.5 = CLOSED / PRODUCTION VERIFIED @ fbece37
 E3.6 = CLOSED / PRODUCTION VERIFIED @ 183b2a4
+E3.7 = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) · COMMIT NONE · NOT ON PRODUCTION
 E3 FLAGS = DARK
 PRODUCTION RENDER = NOT ENABLED
 ```
@@ -283,14 +290,19 @@ PRODUCTION RENDER = NOT ENABLED
 |------|--------|
 | Architecture | C — HYBRID LOCKED |
 | OD-E36-04 | **OPTION C** — native/system FFmpeg + libmp3lame on EXTERNAL worker · **not** npm app dependency |
-| Codec (Basic) | MP3 128 kbps stereo |
+| Codec (Basic) | MP3 128 kbps stereo · `server-basic-v1` |
+| Codec (Premium) | HQ MP3 **320** · WAV **44.1/16/stereo** · `server-pro-v1` Final Truth |
+| Master Pro | **Plan A** (`MasterParameters`) after Pro Mix · OD-E37-01 · no `MasterProParams` |
+| Preview vs Final | `webaudio-pro-v1` ≈ preview · `server-pro-v1` = Final Truth |
+| Download AuthZ | `quality_tier` → `EXPORT_*` |
 | Worker | EXTERNAL · script-driven · requires secret when enabled |
 | Fake-complete | Domain/CI only · **not** Final Truth |
 | Artifacts | Private `audio-artifacts` · signed download |
-| Production | Code deployed · feature dark |
-| Closeout | [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) |
+| Production | E3.6 code deployed · E3.7 **not** deployed · feature dark |
+| Closeout E3.6 | [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) |
+| Closeout E3.7 | [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 
-**INFO (non-blockers):** Live Full E2E not executed · Free Export needs running EXTERNAL worker · G5 soft RMS (not full BS.1770) · Fake-complete ≠ Final Truth · native FFmpeg per OD-E36-04.
+**INFO (non-blockers):** G5 soft RMS (not BS.1770) · E3.7 uncommitted until Owner Commit GO · Live Full E2E / Production Verify for E3.7 **NOT YET**.
 
 ---
 
@@ -320,6 +332,7 @@ Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOA
 | **D02 / OD-REC-02** Anonymous QT | **CLOSED** = **IN V1** | **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` | COMPLETE |
 | **D03 / OD-REC-03** Shared grants + RECORD | **CLOSED** = **IN Recording EPIC** | **SHIPPED / PRODUCTION VERIFIED** @ `37892a6` (RECORD only) | Wave 5 COMPLETE |
 | **E3.1–E3.6** | Hybrid C + OAD LOCKED · OD-E36-04 = C | **SHIPPED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** | E3.1–E3.6 COMPLETE · enablement = separate GO |
+| **E3.7** | OD-E37-01/02/03 LOCKED | **IMPLEMENTED** · Owner Verify PASS WITH FINDINGS · **not** Production-deployed | Waves A–H COMPLETE locally · Commit GO pending |
 
 Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clarification — not silently rewritten beyond delivery status.
 
@@ -330,7 +343,7 @@ Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clar
 | Item | Classification |
 |------|----------------|
 | E3 Production enablement (flags + worker secret + real render) | DEFERRED · separate Owner Production Enablement GO |
-| Later E3 waves (Pro/Premium encode path, W6 public Free Audio, etc.) | **NOT SELECTED** — Owner only · do not invent scope |
+| Later E3 waves (W6 public Free Audio, Production enablement, etc.) | **NOT SELECTED** — Owner only · do not invent scope |
 | Grant PLAYBACK / DOWNLOAD | OUT of Wave 5 · separate Owner GO if ever needed |
 | Track publish from recording | DEFERRED |
 | Watermark / global codec registry (OD-12/13) | OPEN (E3 Basic 128 locked via OAD-06) |
@@ -431,16 +444,17 @@ No commit/push/deploy without explicit Owner GO for that step.
 
 ```text
 CURRENT PRODUCTION = 183b2a4
-E3.6 = PRODUCTION VERIFIED
+DOCUMENTATION tip = f944747
+E3.6 = PRODUCTION VERIFIED / DARK
+E3.7 = IMPLEMENTED / OWNER VERIFIED · COMMIT NONE · NOT ON PRODUCTION
 PRODUCTION = GREEN
 E3 = DARK
-NEXT SESSION = AUDIT
-NEXT FEATURE = DO NOT AUTO-SELECT
-NEXT = OWNER DIRECTION / READY FOR NEXT AUDIT
+NEXT = OWNER COMMIT GO (E3.7)
+NEXT FEATURE = DO NOT AUTO-SELECT beyond release gates
 ```
 
-**Do not** auto-select the next product feature or E3.7+.
-E3.6 = **CLOSED / PRODUCTION VERIFIED** · **DARK**.
+**Do not** auto-select a new product EPIC.
+E3.7 release path: Commit → Push → Deploy observe → Production Verify (separate GOs).
 P1-A HIBP remains **BLOCKED** until Owner enables it in the Dashboard.
 
 New GPT:
@@ -459,11 +473,11 @@ Start reading order:
 
 1. This file (`MASTER_HANDOFF.md`) — cold-start continuity
 2. [PROJECT_STATE.md](./PROJECT_STATE.md)
-3. [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) (if continuing E3 context)
-4. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
-5. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
-6. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
-7. Relevant audits / phase freeze **after** Owner picks an epic
+3. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) (E3.7 context)
+4. [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md)
+5. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+6. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+7. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
 
 ---
 
@@ -493,7 +507,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-E3 Production enablement · public Free Audio · later E3 waves · grant PLAYBACK/DOWNLOAD · track publish · payments/Premium catalog product · comments/voting/messaging product UIs · STEMS.
+E3 Production enablement · Production Render · public Free Audio (W6) · STEMS · artifact_kind · payments/Premium catalog · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion.
 
 ---
 
@@ -502,12 +516,14 @@ E3 Production enablement · public Free Audio · later E3 waves · grant PLAYBAC
 | Area | State |
 |------|--------|
 | Production deploy E3.6 | SUCCESS · READY @ `183b2a4` · `dpl_D5EfHdSSahouFftf5HK35wKSHmts` |
-| E3 Production Verify | **PASS** · DARK · no Production jobs/artifacts created |
-| Public smoke `/` · `/beats` | PASS |
-| E3 anon job API | 401 |
-| E3 worker API (no secret) | 403 |
-| `audio-artifacts` | private · empty |
-| D02 / W1–W5 | Remain PASS (smoke + data intact; full interactive re-run not required for this closeout) |
+| E3.6 Production Verify | **PASS** · DARK · no Production jobs/artifacts created |
+| E3.7 Owner Verification | **PASS WITH FINDINGS** · local · G5 soft RMS INFO · docs reconciled this closeout · **COMMIT/DEPLOY NONE** |
+| E3.7 Production Verify | **NOT YET** |
+| Public smoke `/` · `/beats` | PASS (prior E3.6) |
+| E3 anon job API | 401 (prior) |
+| E3 worker API (no secret) | 403 (prior) |
+| `audio-artifacts` | private · empty on Production |
+| D02 / W1–W5 | Remain PASS |
 | Recording W5 Shared Grants | PASS (prior) |
 | Recording W4 live E2E | PASS (prior) |
 | Community epic | CLOSED (prior production verify) |
@@ -522,17 +538,18 @@ E3 Production enablement · public Free Audio · later E3 waves · grant PLAYBAC
 ```text
 MASTER HANDOFF READY
 CURRENT PRODUCTION = 183b2a4
-E3.6 = PRODUCTION VERIFIED
+DOCUMENTATION tip = f944747
+E3.6 = PRODUCTION VERIFIED / DARK
+E3.7 = IMPLEMENTED / OWNER VERIFIED · COMMIT NONE · NOT ON PRODUCTION
 PRODUCTION = GREEN
 E3 = DARK
 WORKER SECRET = UNSET
-NEXT SESSION = AUDIT
-NEXT FEATURE = DO NOT AUTO-SELECT
-NEXT = OWNER DIRECTION / READY FOR NEXT AUDIT
+NEXT = OWNER COMMIT GO (E3.7)
+NEXT FEATURE = DO NOT AUTO-SELECT beyond release gates
 ```
 
-**Do not start the next product EPIC from this document.**
-Wait for Owner direction.
+**Do not deploy or Production-enable E3.7 from this document.**
+Wait for Owner Commit GO, then separate Push / Deploy / Production Verify GOs.
 
 ---
 

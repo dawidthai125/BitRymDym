@@ -234,19 +234,37 @@ export function MixPanel({
     disposeGraph();
   }
 
-  async function startBasicMp3Export() {
+  async function startExport(requestedTier: "BASIC_MP3" | "HQ_MP3" | "WAV") {
     setExportBusy(true);
     setError(null);
     setExportStatus("creating");
     setExportArtifactId(null);
     try {
+      if (
+        (requestedTier === "HQ_MP3" || requestedTier === "WAV") &&
+        !mixPro
+      ) {
+        throw new Error("Premium required for HQ MP3 / WAV export.");
+      }
       const s = await ensureSession();
-      const idempotencyKey = `basic-mp3:${s.id}:${Date.now()}`;
+      // Premium path requires frozen pro params on the session.
+      if (
+        (requestedTier === "HQ_MP3" || requestedTier === "WAV") &&
+        !s.parameters.pro
+      ) {
+        const withPro = {
+          ...s.parameters,
+          pro: s.parameters.pro ?? defaultMixProParams(),
+        };
+        await persistParams(withPro);
+        setParams(withPro);
+      }
+      const idempotencyKey = `${requestedTier}:${s.id}:${Date.now()}`;
       const createRes = await fetch(`/api/mix/session/${s.id}/jobs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          requestedTier: "BASIC_MP3",
+          requestedTier,
           idempotencyKey,
         }),
       });
@@ -348,7 +366,7 @@ export function MixPanel({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold tracking-tight">Mix + Master</h2>
         <p className="text-xs text-muted-foreground">
-          Preview realtime · Export Basic MP3 (flag-gated)
+          Preview realtime · Export flag-gated (Basic / Premium HQ·WAV)
         </p>
       </div>
 
@@ -600,7 +618,7 @@ export function MixPanel({
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              Metering UX (client peak) · Pro bake w kolejnych falach
+              Metering UX (client peak) · Final Truth = server-pro-v1 Master Plan A
             </p>
             <div
               className="h-2 w-full overflow-hidden rounded-sm bg-muted"
@@ -623,8 +641,8 @@ export function MixPanel({
         )}
         {masterProLockedHint && !masterPro ? (
           <p className="text-xs text-muted-foreground" role="status">
-            Pro Master wymaga aktywnego Premium (MASTER_PRO). Pełny DSP bake
-            poza zakresem E3.4.
+            Pro Master wymaga aktywnego Premium (MASTER_PRO). Final Truth używa
+            Plan A master po Pro Mix (server-pro-v1).
           </p>
         ) : null}
       </fieldset>
@@ -650,17 +668,51 @@ export function MixPanel({
 
       <div className="space-y-2 border-t border-border/50 pt-3">
         <p className="text-xs font-medium tracking-wide uppercase text-muted-foreground">
-          Export Basic MP3
+          Export
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             className="rounded-md border border-border px-3 py-2 text-sm"
             disabled={busy || exportBusy || !takeId}
-            onClick={() => void startBasicMp3Export()}
+            onClick={() => void startExport("BASIC_MP3")}
           >
-            {exportBusy ? "Exporting…" : "Export Basic MP3"}
+            {exportBusy ? "Exporting…" : "Basic MP3"}
           </button>
+          {mixPro ? (
+            <>
+              <button
+                type="button"
+                className="rounded-md border border-border px-3 py-2 text-sm"
+                disabled={busy || exportBusy || !takeId}
+                onClick={() => void startExport("HQ_MP3")}
+              >
+                HQ MP3 320
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-border px-3 py-2 text-sm"
+                disabled={busy || exportBusy || !takeId}
+                onClick={() => void startExport("WAV")}
+              >
+                WAV 44.1/16
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
+              disabled={busy}
+              onClick={() => {
+                onProControlIntent();
+                setError(
+                  "HQ MP3 / WAV wymaga aktywnego Premium (EXPORT_HQ_MP3 / EXPORT_WAV).",
+                );
+              }}
+            >
+              HQ / WAV 🔒
+            </button>
+          )}
           {exportArtifactId ? (
             <button
               type="button"
@@ -674,6 +726,11 @@ export function MixPanel({
         </div>
         {exportStatus ? (
           <p className="text-xs text-muted-foreground">Status: {exportStatus}</p>
+        ) : null}
+        {mixPro ? (
+          <p className="text-xs text-muted-foreground">
+            Premium Final Truth: preview może różnić się od exportu (server-pro-v1).
+          </p>
         ) : null}
       </div>
 
