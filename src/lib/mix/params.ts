@@ -1,6 +1,7 @@
 /**
- * E3.3 — Mix parameter contract (serializable, versioned, capability-aware).
- * STEMS / Master / Render / Export out of scope.
+ * E3.3 / E3.4 — Mix (+ Basic Master) parameter contract.
+ * STEMS / Render / Export / full Pro Master DSP out of scope.
+ * E3.4: parameters.master = Plan A Basic Master only.
  */
 
 import type { AudioCapabilityKey } from "@/config/audio-render";
@@ -13,6 +14,24 @@ export const MIX_PREVIEW_ENGINE_PRO = "webaudio-pro-v1" as const;
 export type MixPreviewEngineId =
   | typeof MIX_PREVIEW_ENGINE_BASIC
   | typeof MIX_PREVIEW_ENGINE_PRO;
+
+/** E3.4 Plan A — FREE BASIC MASTER (Impl Plan §8). */
+export type MasterBasicLimiter = {
+  thresholdDb: number;
+  ceilingDb: number;
+};
+
+export type MasterBasicLoudness = {
+  /** Preview loudness target (LUFS). Server bake / LUFS worker = later waves. */
+  targetLufs: number;
+};
+
+export type MasterParameters = {
+  gainDb: number;
+  clipProtect: boolean;
+  basicLimiter: MasterBasicLimiter;
+  basicLoudness: MasterBasicLoudness;
+};
 
 export type MixSourceGainPan = {
   gainDb: number;
@@ -81,7 +100,7 @@ export type MixProParams = {
   fxChain: MixProFxNode[];
 };
 
-/** Full persisted Mix parameters document. */
+/** Full persisted Mix parameters document (+ optional Basic Master). */
 export type MixParameters = {
   take: MixSourceGainPan;
   beat: MixSourceGainPan;
@@ -92,6 +111,11 @@ export type MixParameters = {
   delay: MixBasicDelay;
   /** Present only when MIX_PRO authorized; otherwise null/omitted. */
   pro: MixProParams | null;
+  /**
+   * E3.4 Basic Master (OD-E34-01 Plan A).
+   * Always present after parse when MASTER_BASIC allowed; defaults applied if absent.
+   */
+  master: MasterParameters;
 };
 
 export class MixParamsError extends Error {
@@ -134,6 +158,17 @@ export function defaultMixParameters(): MixParameters {
     reverb: { mix: 0, decaySeconds: 1.2 },
     delay: { mix: 0, timeMs: 250, feedback: 0.25 },
     pro: null,
+    master: defaultMasterParameters(),
+  };
+}
+
+/** E3.4 Plan A defaults — gain / clip protect / basic limiter / basic loudness. */
+export function defaultMasterParameters(): MasterParameters {
+  return {
+    gainDb: 0,
+    clipProtect: true,
+    basicLimiter: { thresholdDb: -1, ceilingDb: -0.1 },
+    basicLoudness: { targetLufs: -14 },
   };
 }
 
@@ -284,15 +319,77 @@ function parsePro(raw: unknown): MixProParams {
   };
 }
 
+function parseMaster(raw: unknown): MasterParameters {
+  const o = requireObject(raw, "master");
+  const allowed = new Set([
+    "gainDb",
+    "clipProtect",
+    "basicLimiter",
+    "basicLoudness",
+  ]);
+  for (const key of Object.keys(o)) {
+    if (!allowed.has(key)) {
+      throw new MixParamsError(`Unknown master parameter key: ${key}`);
+    }
+  }
+
+  const defaults = defaultMasterParameters();
+  const clipProtect =
+    o.clipProtect === undefined ? defaults.clipProtect : o.clipProtect;
+  if (typeof clipProtect !== "boolean") {
+    throw new MixParamsError("master.clipProtect must be a boolean.");
+  }
+
+  const limiterRaw = o.basicLimiter ?? defaults.basicLimiter;
+  const limiter = requireObject(limiterRaw, "master.basicLimiter");
+  const loudnessRaw = o.basicLoudness ?? defaults.basicLoudness;
+  const loudness = requireObject(loudnessRaw, "master.basicLoudness");
+
+  return {
+    gainDb: clampNum(
+      o.gainDb ?? defaults.gainDb,
+      -24,
+      12,
+      "master.gainDb",
+    ),
+    clipProtect,
+    basicLimiter: {
+      thresholdDb: clampNum(
+        limiter.thresholdDb,
+        -24,
+        0,
+        "master.basicLimiter.thresholdDb",
+      ),
+      ceilingDb: clampNum(
+        limiter.ceilingDb,
+        -6,
+        0,
+        "master.basicLimiter.ceilingDb",
+      ),
+    },
+    basicLoudness: {
+      targetLufs: clampNum(
+        loudness.targetLufs,
+        -24,
+        -6,
+        "master.basicLoudness.targetLufs",
+      ),
+    },
+  };
+}
+
 /**
  * Validate and normalize Mix parameters.
  * Unknown top-level keys are rejected (deterministic contract).
  * Without MIX_PRO, `pro` must be null/absent — otherwise FORBIDDEN-class MixParamsError.
+ * Without MASTER_BASIC, `master` must be absent — otherwise MixParamsError.
+ * E3.4: `master` is the only new allowed top-level key (OD-E34-03).
  */
 export function parseMixParameters(
   raw: unknown,
-  options: { allowPro: boolean },
+  options: { allowPro: boolean; allowMaster?: boolean },
 ): MixParameters {
+  const allowMaster = options.allowMaster !== false;
   const o = requireObject(raw, "parameters");
   const allowed = new Set([
     "take",
@@ -303,6 +400,7 @@ export function parseMixParameters(
     "reverb",
     "delay",
     "pro",
+    "master",
   ]);
   for (const key of Object.keys(o)) {
     if (!allowed.has(key)) {
@@ -321,6 +419,7 @@ export function parseMixParameters(
     reverb: parseReverb(o.reverb ?? defaultMixParameters().reverb),
     delay: parseDelay(o.delay ?? defaultMixParameters().delay),
     pro: null,
+    master: defaultMasterParameters(),
   };
 
   if (o.pro != null) {
@@ -330,6 +429,17 @@ export function parseMixParameters(
       );
     }
     base.pro = parsePro(o.pro);
+  }
+
+  if (o.master != null) {
+    if (!allowMaster) {
+      throw new MixParamsError(
+        "Master parameters require MASTER_BASIC capability.",
+      );
+    }
+    base.master = parseMaster(o.master);
+  } else if (allowMaster) {
+    base.master = defaultMasterParameters();
   }
 
   return base;
@@ -346,7 +456,7 @@ export function previewEngineForCapabilities(
   return MIX_PREVIEW_ENGINE_BASIC;
 }
 
-/** Deterministic graph stage list for Basic (+ optional Pro) — used by tests & UI docs. */
+/** Deterministic graph stage list for Basic Mix + Basic Master (+ optional Pro Mix). */
 export function describeMixGraphStages(params: MixParameters): string[] {
   const stages = [
     "beat:source→gain→pan→masterBus",
@@ -357,7 +467,7 @@ export function describeMixGraphStages(params: MixParameters): string[] {
   }
   stages.push(
     "take:eq→compressor→delay→reverb→masterBus",
-    "masterBus→limiter→destination",
+    "masterBus→mixLimiter→basicMaster:gain→clipProtect→basicLimiter→basicLoudness→destination",
   );
   return stages;
 }

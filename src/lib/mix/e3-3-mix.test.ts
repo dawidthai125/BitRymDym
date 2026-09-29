@@ -172,7 +172,7 @@ describe("E3.3 — Mix params + AuthZ + graph plan (unit)", () => {
   it("graph stages are deterministic Basic then Pro extension", () => {
     const basic = describeMixGraphStages(defaultMixParameters());
     expect(basic.join("|")).toContain("beat:source→gain→pan");
-    expect(basic.join("|")).toContain("limiter→destination");
+    expect(basic.join("|")).toContain("basicMaster:gain→clipProtect");
     expect(basic.join("|")).not.toContain("proEq");
 
     const withPro = describeMixGraphStages({
@@ -180,6 +180,14 @@ describe("E3.3 — Mix params + AuthZ + graph plan (unit)", () => {
       pro: defaultMixProParams(),
     });
     expect(withPro.join("|")).toContain("proEq");
+  });
+
+  it("defaults include Basic Master (E3.4 nest)", () => {
+    const p = defaultMixParameters();
+    expect(p.master.gainDb).toBe(0);
+    expect(p.master.clipProtect).toBe(true);
+    const parsed = parseMixParameters(p, { allowPro: false });
+    expect(parsed.master.basicLoudness.targetLufs).toBe(-14);
   });
 
   it("keeps public Free Audio and Mix flags OFF by default", () => {

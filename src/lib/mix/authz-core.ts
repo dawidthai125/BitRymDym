@@ -56,6 +56,19 @@ export function mixProAllowed(entitlement: EffectiveAudioEntitlement): boolean {
   return hasAudioCapability(entitlement, "MIX_PRO");
 }
 
+export function masterBasicAllowed(
+  entitlement: EffectiveAudioEntitlement,
+): boolean {
+  return hasAudioCapability(entitlement, "MASTER_BASIC");
+}
+
+/** MASTER_PRO recognition only in E3.4 (metering / locked CTA — no Pro DSP params). */
+export function masterProAllowed(
+  entitlement: EffectiveAudioEntitlement,
+): boolean {
+  return hasAudioCapability(entitlement, "MASTER_PRO");
+}
+
 /** Reject client spoof fields before any Mix write. */
 export function sanitizeMixClientClaims(body: Record<string, unknown>): void {
   rejectClientChosenPremiumClaims(body);

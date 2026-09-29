@@ -1,15 +1,20 @@
 /**
- * E3.3 — Client-side realtime Mix preview graph (Web Audio).
- * Durable artifacts / Master / Render are out of scope.
+ * E3.3 / E3.4 — Client-side realtime Mix + Basic Master preview graph (Web Audio).
+ * Durable artifacts / Pro Master DSP / Render are out of scope.
+ * Pipeline: Mix bus → Mix limiter → Basic Master → destination (+ optional analyser).
  */
 
 import {
   describeMixGraphStages,
+  type MasterParameters,
   type MixParameters,
   type MixProParams,
 } from "@/lib/mix/params";
 
 export { describeMixGraphStages };
+
+/** Reference LUFS for Basic Master loudness makeup preview (Impl Plan streaming class). */
+const MASTER_LOUDNESS_REFERENCE_LUFS = -14;
 
 function dbToGain(gainDb: number): number {
   return Math.pow(10, gainDb / 20);
@@ -57,7 +62,7 @@ function buildCompressor(
 
 function buildLimiter(
   ctx: AudioContext,
-  l: MixParameters["limiter"],
+  l: { thresholdDb: number; ceilingDb: number },
 ): DynamicsCompressorNode {
   const node = ctx.createDynamicsCompressor();
   node.threshold.value = l.thresholdDb;
@@ -65,6 +70,7 @@ function buildLimiter(
   node.attack.value = 0.001;
   node.release.value = 0.05;
   node.knee.value = 0;
+  void l.ceilingDb;
   return node;
 }
 
@@ -132,6 +138,21 @@ function buildReverb(
       convolver.disconnect();
     },
   };
+}
+
+function buildClipProtectCurve(enabled: boolean): Float32Array<ArrayBuffer> {
+  const n = 1024;
+  const curve = new Float32Array(new ArrayBuffer(n * 4));
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / (n - 1) - 1;
+    if (!enabled) {
+      curve[i] = x;
+      continue;
+    }
+    // Soft clip / protect: tanh-ish saturation near ceiling.
+    curve[i] = Math.tanh(x * 1.5) / Math.tanh(1.5);
+  }
+  return curve;
 }
 
 function buildProTakeChain(
@@ -244,19 +265,31 @@ function buildProTakeChain(
   };
 }
 
+export type MixMeterReading = {
+  /** Peak level 0..1 from AnalyserNode (informational; not server LUFS). */
+  peak: number;
+  /** Approximate dBFS from peak. */
+  peakDb: number;
+};
+
 export type MixGraphHandles = {
   ctx: AudioContext;
   beatEl: HTMLAudioElement;
   takeEl: HTMLAudioElement;
   applyParameters: (params: MixParameters) => void;
+  getMeterReading: () => MixMeterReading;
   play: () => Promise<void>;
   stop: () => void;
   dispose: () => void;
   stages: string[];
 };
 
+function loudnessMakeupDb(master: MasterParameters): number {
+  return master.basicLoudness.targetLufs - MASTER_LOUDNESS_REFERENCE_LUFS;
+}
+
 /**
- * Build a Mix preview graph from two media elements (signed URLs already set).
+ * Build a Mix + Basic Master preview graph from two media elements (signed URLs already set).
  * Call only from browser after a user gesture when starting AudioContext.
  */
 export function createMixPreviewGraph(params: {
@@ -322,9 +355,28 @@ export function createMixPreviewGraph(params: {
     void chain;
   }
 
-  const limiter = buildLimiter(ctx, params.parameters.limiter);
-  masterBus.connect(limiter);
-  limiter.connect(ctx.destination);
+  // Mix limiter → Basic Master → analyser → destination
+  const mixLimiter = buildLimiter(ctx, params.parameters.limiter);
+  const masterGain = ctx.createGain();
+  const clipProtect = ctx.createWaveShaper();
+  clipProtect.curve = buildClipProtectCurve(
+    params.parameters.master.clipProtect,
+  );
+  clipProtect.oversample = "2x";
+  const masterLimiter = buildLimiter(ctx, params.parameters.master.basicLimiter);
+  const loudnessGain = ctx.createGain();
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.8;
+  const meterBuffer = new Float32Array(analyser.fftSize);
+
+  masterBus.connect(mixLimiter);
+  mixLimiter.connect(masterGain);
+  masterGain.connect(clipProtect);
+  clipProtect.connect(masterLimiter);
+  masterLimiter.connect(loudnessGain);
+  loudnessGain.connect(analyser);
+  analyser.connect(ctx.destination);
 
   beatSource.connect(beatGain);
   beatGain.connect(beatPan);
@@ -338,7 +390,13 @@ export function createMixPreviewGraph(params: {
     beatPan.pan.value = p.beat.pan;
     takeGain.gain.value = dbToGain(p.take.gainDb);
     takePan.pan.value = p.take.pan;
-    limiter.threshold.value = p.limiter.thresholdDb;
+    mixLimiter.threshold.value = p.limiter.thresholdDb;
+
+    masterGain.gain.value = dbToGain(p.master.gainDb);
+    clipProtect.curve = buildClipProtectCurve(p.master.clipProtect);
+    masterLimiter.threshold.value = p.master.basicLimiter.thresholdDb;
+    loudnessGain.gain.value = dbToGain(loudnessMakeupDb(p.master));
+
     rebuildTakeFx(p);
   }
 
@@ -352,6 +410,16 @@ export function createMixPreviewGraph(params: {
     takeEl: params.takeEl,
     stages,
     applyParameters,
+    getMeterReading() {
+      analyser.getFloatTimeDomainData(meterBuffer);
+      let peak = 0;
+      for (let i = 0; i < meterBuffer.length; i++) {
+        const v = Math.abs(meterBuffer[i]!);
+        if (v > peak) peak = v;
+      }
+      const peakDb = peak > 0 ? 20 * Math.log10(peak) : -100;
+      return { peak, peakDb };
+    },
     async play() {
       if (disposed) return;
       if (ctx.state === "suspended") await ctx.resume();

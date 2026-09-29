@@ -54,10 +54,12 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     durationSeconds: number | null;
   }> = [];
   let mixPro = false;
+  let masterPro = false;
   if (session) {
     try {
       const entitlement = await resolveAudioEntitlementForAuthContext(session);
       mixPro = hasAudioCapability(entitlement, "MIX_PRO");
+      masterPro = hasAudioCapability(entitlement, "MASTER_PRO");
       const own = await listOwnTakesFor(session);
       mixTakes = own
         .filter((t) => t.beatId === detail.id && t.canPreview)
@@ -69,6 +71,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     } catch {
       mixTakes = [];
       mixPro = false;
+      masterPro = false;
     }
   }
 
@@ -144,6 +147,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
             isAuthenticated={Boolean(session)}
             mixTakes={mixTakes}
             mixPro={mixPro}
+            masterPro={masterPro}
           />
         ) : (
           <p className="text-sm text-muted-foreground" role="status">

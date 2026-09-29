@@ -6,6 +6,7 @@ import { E3_MIX_ENABLED } from "@/config/audio-render";
 import {
   createMixPreviewGraph,
   type MixGraphHandles,
+  type MixMeterReading,
 } from "@/lib/mix/mix-graph";
 import {
   defaultMixParameters,
@@ -25,24 +26,28 @@ type MixPanelProps = {
   isAuthenticated: boolean;
   /** Server-resolved MIX_PRO (never trust client). */
   mixPro: boolean;
+  /** Server-resolved MASTER_PRO — metering / locked CTA only (E3.4). */
+  masterPro: boolean;
 };
 
 type SessionDto = {
   id: string;
   parameters: MixParameters;
   mixPro: boolean;
+  masterPro?: boolean;
   previewEngineId: string | null;
 };
 
 /**
- * E3.3 Mix surface — gated by E3_MIX_ENABLED (default OFF).
- * Realtime preview only; no durable artifact / render.
+ * E3.3/E3.4 Mix + Basic Master surface — gated by E3_MIX_ENABLED (default OFF).
+ * Realtime preview only; no durable artifact / render / Pro Master DSP.
  */
 export function MixPanel({
   beatId,
   takes,
   isAuthenticated,
   mixPro,
+  masterPro,
 }: MixPanelProps) {
   const [takeId, setTakeId] = useState(takes[0]?.id ?? "");
   const [session, setSession] = useState<SessionDto | null>(null);
@@ -51,6 +56,8 @@ export function MixPanel({
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [proLockedHint, setProLockedHint] = useState(false);
+  const [masterProLockedHint, setMasterProLockedHint] = useState(false);
+  const [meter, setMeter] = useState<MixMeterReading | null>(null);
 
   const [mediaKey, setMediaKey] = useState(0);
   const beatAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -61,6 +68,7 @@ export function MixPanel({
     graphRef.current?.dispose();
     graphRef.current = null;
     setPlaying(false);
+    setMeter(null);
   });
 
   useEffect(() => {
@@ -68,6 +76,18 @@ export function MixPanel({
       disposeGraph();
     };
   }, [disposeGraph]);
+
+  useEffect(() => {
+    if (!playing || !masterPro) return;
+    let raf = 0;
+    const tick = () => {
+      const reading = graphRef.current?.getMeterReading();
+      if (reading) setMeter(reading);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, masterPro]);
 
   if (!E3_MIX_ENABLED) {
     return null;
@@ -226,6 +246,11 @@ export function MixPanel({
     setProLockedHint(true);
   }
 
+  function onMasterProIntent() {
+    if (masterPro) return;
+    setMasterProLockedHint(true);
+  }
+
   function enableProDefaults() {
     if (!mixPro) {
       onProControlIntent();
@@ -237,7 +262,7 @@ export function MixPanel({
   return (
     <section className="space-y-4 border-t border-border/60 pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold tracking-tight">Mix</h2>
+        <h2 className="text-sm font-semibold tracking-tight">Mix + Master</h2>
         <p className="text-xs text-muted-foreground">
           Preview realtime · bez zapisu artefaktu
         </p>
@@ -357,6 +382,74 @@ export function MixPanel({
 
       <fieldset className="space-y-2">
         <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Basic Master
+        </legend>
+        <Slider
+          label="Master gain (dB)"
+          min={-24}
+          max={12}
+          step={0.5}
+          value={params.master.gainDb}
+          disabled={busy}
+          onChange={(v) =>
+            updateBasic((p) => ({
+              ...p,
+              master: { ...p.master, gainDb: v },
+            }))
+          }
+        />
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={params.master.clipProtect}
+            disabled={busy}
+            onChange={(e) =>
+              updateBasic((p) => ({
+                ...p,
+                master: { ...p.master, clipProtect: e.target.checked },
+              }))
+            }
+          />
+          Clip protect
+        </label>
+        <Slider
+          label="Master limiter threshold"
+          min={-24}
+          max={0}
+          step={0.5}
+          value={params.master.basicLimiter.thresholdDb}
+          disabled={busy}
+          onChange={(v) =>
+            updateBasic((p) => ({
+              ...p,
+              master: {
+                ...p.master,
+                basicLimiter: { ...p.master.basicLimiter, thresholdDb: v },
+              },
+            }))
+          }
+        />
+        <Slider
+          label="Master loudness target (LUFS)"
+          min={-24}
+          max={-6}
+          step={0.5}
+          value={params.master.basicLoudness.targetLufs}
+          disabled={busy}
+          onChange={(v) =>
+            updateBasic((p) => ({
+              ...p,
+              master: {
+                ...p.master,
+                basicLoudness: { ...p.master.basicLoudness, targetLufs: v },
+              },
+            }))
+          }
+        />
+      </fieldset>
+
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Pro Mix {mixPro ? "" : "🔒"}
         </legend>
         {!mixPro ? (
@@ -380,7 +473,7 @@ export function MixPanel({
         {proLockedHint && !mixPro ? (
           <p className="text-xs text-muted-foreground" role="status">
             Pro Mix wymaga aktywnego Premium (server SSOT). Płatności poza
-            zakresem E3.3.
+            zakresem E3.4.
           </p>
         ) : null}
         {mixPro && params.pro ? (
@@ -405,6 +498,50 @@ export function MixPanel({
               )
             }
           />
+        ) : null}
+      </fieldset>
+
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Pro Master {masterPro ? "" : "🔒"}
+        </legend>
+        {!masterPro ? (
+          <button
+            type="button"
+            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            onClick={onMasterProIntent}
+          >
+            Metering / Pro Master bake — Premium
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Metering UX (client peak) · Pro bake w kolejnych falach
+            </p>
+            <div
+              className="h-2 w-full overflow-hidden rounded-sm bg-muted"
+              aria-label="Master peak meter"
+            >
+              <div
+                className="h-full bg-foreground/70 transition-[width] duration-75"
+                style={{
+                  width: `${Math.min(100, (meter?.peak ?? 0) * 100)}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs tabular-nums text-muted-foreground">
+              Peak{" "}
+              {meter
+                ? `${meter.peakDb.toFixed(1)} dBFS`
+                : "— (uruchom preview)"}
+            </p>
+          </div>
+        )}
+        {masterProLockedHint && !masterPro ? (
+          <p className="text-xs text-muted-foreground" role="status">
+            Pro Master wymaga aktywnego Premium (MASTER_PRO). Pełny DSP bake
+            poza zakresem E3.4.
+          </p>
         ) : null}
       </fieldset>
 

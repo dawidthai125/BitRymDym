@@ -11,6 +11,8 @@ import {
   assertMixRuntimeEnabled,
   assertMixTakeAccess,
   assertOwnMixSession,
+  masterBasicAllowed,
+  masterProAllowed,
   mixProAllowed,
   resolveMixEntitlement,
   sanitizeMixClientClaims,
@@ -42,6 +44,8 @@ export type MixSessionRecord = {
   createdAt: string;
   updatedAt: string;
   mixPro: boolean;
+  /** E3.4 — MASTER_PRO recognition (metering / CTA); not Pro DSP. */
+  masterPro: boolean;
 };
 
 type MixSessionRow = {
@@ -59,27 +63,44 @@ type MixSessionRow = {
 
 function mapRow(
   row: MixSessionRow,
-  mixPro: boolean,
+  opts: { mixPro: boolean; masterPro: boolean; allowMaster: boolean },
 ): MixSessionRecord {
   const raw =
     row.parameters && typeof row.parameters === "object"
       ? { ...(row.parameters as Record<string, unknown>) }
       : {};
-  if (!mixPro) {
+  if (!opts.mixPro) {
     delete raw.pro;
+  }
+  if (!opts.allowMaster) {
+    delete raw.master;
   }
   return {
     id: row.id,
     ownerId: row.owner_id,
     sourceTakeId: row.source_take_id,
     beatId: row.beat_id,
-    parameters: parseMixParameters(raw, { allowPro: mixPro }),
+    parameters: parseMixParameters(raw, {
+      allowPro: opts.mixPro,
+      allowMaster: opts.allowMaster,
+    }),
     paramsVersion: row.params_version,
     previewEngineId: row.preview_engine_id,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    mixPro,
+    mixPro: opts.mixPro,
+    masterPro: opts.masterPro,
+  };
+}
+
+function entitlementFlags(entitlement: Awaited<
+  ReturnType<typeof resolveMixEntitlement>
+>) {
+  return {
+    mixPro: mixProAllowed(entitlement),
+    masterPro: masterProAllowed(entitlement),
+    allowMaster: masterBasicAllowed(entitlement),
   };
 }
 
@@ -119,7 +140,7 @@ export async function createMixSessionFor(
 ): Promise<MixSessionRecord> {
   assertMixRuntimeEnabled();
   const entitlement = await resolveMixEntitlement(context);
-  const allowPro = mixProAllowed(entitlement);
+  const flags = entitlementFlags(entitlement);
 
   const take = await loadTakeOrThrow(input.takeId);
   assertMixTakeAccess({
@@ -148,7 +169,7 @@ export async function createMixSessionFor(
 
   const parameters = parseMixParameters(
     input.parameters ?? defaultMixParameters(),
-    { allowPro },
+    { allowPro: flags.mixPro, allowMaster: flags.allowMaster },
   );
   const previewEngineId = previewEngineForCapabilities(
     entitlement.capabilities,
@@ -174,7 +195,7 @@ export async function createMixSessionFor(
   if (error || !data) {
     throw new Error(error?.message ?? "Failed to create mix session.");
   }
-  return mapRow(data as MixSessionRow, allowPro);
+  return mapRow(data as MixSessionRow, flags);
 }
 
 export async function getMixSessionFor(
@@ -183,7 +204,7 @@ export async function getMixSessionFor(
 ): Promise<MixSessionRecord> {
   assertMixRuntimeEnabled();
   const entitlement = await resolveMixEntitlement(context);
-  const allowPro = mixProAllowed(entitlement);
+  const flags = entitlementFlags(entitlement);
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -202,7 +223,7 @@ export async function getMixSessionFor(
     userId: context.userId,
   });
 
-  return mapRow(data as MixSessionRow, allowPro);
+  return mapRow(data as MixSessionRow, flags);
 }
 
 export async function updateMixSessionParametersFor(
@@ -212,10 +233,13 @@ export async function updateMixSessionParametersFor(
 ): Promise<MixSessionRecord> {
   assertMixRuntimeEnabled();
   const entitlement = await resolveMixEntitlement(context);
-  const allowPro = mixProAllowed(entitlement);
+  const flags = entitlementFlags(entitlement);
 
   const existing = await getMixSessionFor(context, sessionId);
-  const parameters = parseMixParameters(parametersRaw, { allowPro });
+  const parameters = parseMixParameters(parametersRaw, {
+    allowPro: flags.mixPro,
+    allowMaster: flags.allowMaster,
+  });
   const previewEngineId = previewEngineForCapabilities(
     entitlement.capabilities,
   );
@@ -238,7 +262,7 @@ export async function updateMixSessionParametersFor(
   if (error || !data) {
     throw new Error(error?.message ?? "Failed to update mix session.");
   }
-  return mapRow(data as MixSessionRow, allowPro);
+  return mapRow(data as MixSessionRow, flags);
 }
 
 export async function listOwnMixSessionsForBeat(
@@ -247,7 +271,7 @@ export async function listOwnMixSessionsForBeat(
 ): Promise<MixSessionRecord[]> {
   assertMixRuntimeEnabled();
   const entitlement = await resolveMixEntitlement(context);
-  const allowPro = mixProAllowed(entitlement);
+  const flags = entitlementFlags(entitlement);
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -262,7 +286,7 @@ export async function listOwnMixSessionsForBeat(
 
   if (error) throw new Error(error.message);
   return (data as MixSessionRow[] | null)?.map((row) =>
-    mapRow(row, allowPro),
+    mapRow(row, flags),
   ) ?? [];
 }
 
@@ -272,6 +296,7 @@ export type MixPreviewSources = {
   beat: { url: string; expiresAt: string };
   parameters: MixParameters;
   mixPro: boolean;
+  masterPro: boolean;
   previewEngineId: string | null;
 };
 
@@ -307,6 +332,7 @@ export async function createMixPreviewSourcesFor(
     },
     parameters: session.parameters,
     mixPro: session.mixPro,
+    masterPro: session.masterPro,
     previewEngineId: session.previewEngineId,
   };
 }
