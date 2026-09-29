@@ -6,20 +6,48 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-09-29 — E3.7 PREMIUM RENDER — IMPLEMENTATION CLOSEOUT (DOCS)
+## 2026-09-29 — E3.7 PREMIUM RENDER — PRODUCTION VERIFIED (POST-DEPLOY)
 
-**Status:** **E3.7 IMPLEMENTED** · Owner Verification **PASS WITH FINDINGS** · docs reconciliation · **COMMIT/PUSH/DEPLOY = NONE** · Production app remains `183b2a4` · **E3 = DARK**
+**Status:** **E3.7 PRODUCTION VERIFIED** @ `17c4d530` · Owner Verification **PASS WITH FINDINGS** · **E3 = DARK** · real render **NOT EXECUTED** · artifact **NONE**
 
-- Production application (unchanged) = `183b2a4` · deployment `dpl_D5EfHdSSahouFftf5HK35wKSHmts` · Documentation tip = `f944747`
+- Production application = `17c4d530c2ecc7c0c8e68cf6266e73b330f09be1` (`feat(audio): implement E3.7 premium export`)
+- Production deployment = `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` · URL https://www.bitrymdym.pl
+- Previous Production = `183b2a4` (E3.6)
+- **Verify:** public smoke `/` `/beats` `/sign-in` `/sign-up` `/account` · apex→www **PASS** · regression **PASS** · worker/claim **403** (secret UNSET) · E3 flags **UNSET**
+- **E3.7 on Production (DARK):** `server-pro-v1` · Master Plan A · HQ MP3 **320** · WAV **44.1/16/stereo** · tier download AuthZ · private `audio-artifacts`
+- **NOT enabled:** Production render · worker secret · public Free Audio · E3 epic COMPLETE
+- INFO: G5 soft RMS ≠ full ITU-R BS.1770 (non-blocking)
+- Closeout: [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
+- Next = **OWNER DECISION** (do **not** auto-enable E3)
+
+---
+
+## 2026-09-29 — E3.7 PREMIUM RENDER — COMMITTED + PUSHED (POST-COMMIT DOCS)
+
+**Status (historical):** **E3.7 IMPLEMENTED** · Owner Verification **PASS WITH FINDINGS** · **COMMITTED + PUSHED** @ `17c4d530` · Production then still `183b2a4` · **E3 = DARK**
+
+- Repository / `origin/main` = `17c4d530c2ecc7c0c8e68cf6266e73b330f09be1` (`feat(audio): implement E3.7 premium export`)
+- Production application (then unchanged) = `183b2a4` · deployment `dpl_D5EfHdSSahouFftf5HK35wKSHmts`
+- **E3.7 waves A–H on main:** `server-pro-v1` Pro Mix · Master **Plan A** · HQ MP3 **320** · WAV **44.1/16/stereo** · EXTERNAL worker dispatcher · tier-aware download AuthZ · Premium Export UX · tests **100/100**
+- **Later:** Production Deploy + Verify completed @ `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` — see Production Verified entry above
+- Closeout: [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
+
+---
+
+## 2026-09-29 — E3.7 PREMIUM RENDER — IMPLEMENTATION CLOSEOUT (DOCS · PRE-COMMIT)
+
+**Status (historical at authorship):** **E3.7 IMPLEMENTED** · Owner Verification **PASS WITH FINDINGS** · docs reconciliation · **COMMIT/PUSH/DEPLOY = NONE** at that moment · Production app remains `183b2a4` · **E3 = DARK**
+
+- Production application (unchanged) = `183b2a4` · deployment `dpl_D5EfHdSSahouFftf5HK35wKSHmts` · Documentation tip then = `f944747`
 - **E3.7 waves A–H:** `server-pro-v1` Pro Mix (`MixProParams`) · Master **Plan A** (OD-E37-01) · HQ MP3 **320** · WAV **44.1/16/stereo** · EXTERNAL worker dispatcher · tier-aware download AuthZ · thin Premium Export UX (HQ+WAV+Basic) · tests **100/100** · typecheck/build/security/regression **PASS**
 - **Premium Final Truth:** Pro Mix → Master Plan A → HQ/WAV encode → QC → private `audio-artifacts` → READY · **not** `server-basic-v1`
 - **Basic path:** `server-basic-v1` → Basic MP3 128 unchanged
 - **Download:** `quality_tier` → `EXPORT_BASIC_MP3` / `EXPORT_HQ_MP3` / `EXPORT_WAV`
 - **Production safety:** flags UNSET · worker secret UNSET · Production Render **NOT EXECUTED** · no Production E3.7 deploy
 - **OUT:** STEMS · `artifact_kind` · payments · public Free Audio · W6 matrix · Production enablement · `MasterProParams` / True Peak / BS.1770 · bake↔encode ±5% QC (OD-E37-03 OUT)
-- INFO: G5 soft RMS approximation · E3.7 code uncommitted until Owner Commit GO
+- INFO: G5 soft RMS approximation · *(then)* E3.7 code uncommitted until Owner Commit GO — **later committed** @ `17c4d530`
 - Closeout: [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
-- Next = **OWNER COMMIT GO** (then Push / Production Verify gates) — do **not** invent further EPIC scope
+- Next at authorship = **OWNER COMMIT GO** — superseded by Commit+Push @ `17c4d530`
 
 ---
 

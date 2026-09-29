@@ -20,12 +20,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **Production application** | `183b2a4` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED** (E3.6 Basic MP3 · **DARK**) |
-| **Production deployment** | `dpl_D5EfHdSSahouFftf5HK35wKSHmts` |
-| **Documentation tip** | `f944747` (E3.6 docs closeout) — docs tip may advance without redeploy |
-| **E3.7 Premium Render** | **IMPLEMENTED** · **OWNER VERIFICATION = PASS WITH FINDINGS** · **docs reconciled** · **COMMIT/PUSH/DEPLOY = NONE** · **not** on Production |
-| Previous Production | `fbece37` (E3.5 Render Jobs) |
-| **E3 FULL AUDIO** | **E3.1 → E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **E3.7 IMPLEMENTED locally** · **E3 = DARK** |
+| **Repository HEAD / origin/main** | `17c4d530` (`feat(audio): implement E3.7 premium export`) |
+| **Production application** | `17c4d530` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED** (E3.7 Premium Render · **DARK**) |
+| **Production deployment** | `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
+| **E3.7 Premium Render** | **IMPLEMENTED** · Owner Verify **PASS WITH FINDINGS** · **COMMITTED + PUSHED** · **PRODUCTION DEPLOYED = YES** · **PRODUCTION VERIFIED = YES** @ `17c4d530` · **E3 enablement = NO** · **DARK** |
+| Previous Production | `183b2a4` (E3.6 Basic MP3) |
+| **E3 FULL AUDIO** | **E3.1 → E3.6 CLOSED** · **E3.7 PRODUCTION VERIFIED** @ `17c4d530` · **E3 = DARK** (not COMPLETE / not render-enabled) |
 | Community Upload + Moderation EPIC | **COMPLETE / LOCKED** @ `c5e1f17` |
 | Recording Design Freeze | **LOCKED** |
 | **Recording Wave 1–4** | **CLOSED** / **PRODUCTION VERIFIED** |
@@ -50,15 +50,18 @@ W5 closeout: [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_P
 ## 3. Current Phase
 
 ```text
-E3.7 = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) / DOCS RECONCILED
-E3.7 COMMIT / PUSH / PRODUCTION DEPLOY / PRODUCTION VERIFY = NONE / NOT YET
-E3.1 → E3.6 = CLOSED / PRODUCTION VERIFIED @ 183b2a4
+E3.7 = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) / COMMITTED+PUSHED / PRODUCTION DEPLOYED+VERIFIED @ 17c4d530
+E3.7 PRODUCTION ENABLEMENT = NO
+E3.1 → E3.6 = CLOSED (prior) · superseded as live app by E3.7
+REPOSITORY = 17c4d530
+PRODUCTION APPLICATION = 17c4d530
 E3 FLAGS = DARK (E3_RENDER_JOBS_ENABLED / E3_MIX_ENABLED / E3_PUBLIC_AUDIO = UNSET)
 E3_RENDER_WORKER_SECRET = UNSET
 PRODUCTION RENDER = NOT EXECUTED
+ARTIFACT = NONE
 RECORDING WAVE 1–5 = CLOSED / PRODUCTION VERIFIED
 D02 = CLOSED / IN V1 · SHIPPED @ e98ba52
-NEXT = OWNER COMMIT GO (E3.7) — then PUSH / Production Verify gates
+NEXT = OWNER DECISION (do not auto-enable E3 / do not invent E3.8+)
 ```
 
 ---
@@ -66,15 +69,15 @@ NEXT = OWNER COMMIT GO (E3.7) — then PUSH / Production Verify gates
 ## 4. Next Session Entry
 
 ```text
-NEXT = OWNER COMMIT GO (E3.7 implementation)
-NEXT FEATURE = DO NOT AUTO-SELECT beyond Owner-opened E3.7 release gates
+NEXT = OWNER DECISION
+NEXT FEATURE = DO NOT AUTO-SELECT (no E3.8+ / no auto E3 enablement)
 
-APPLICATION (Production) = 183b2a4
-DOCUMENTATION tip = f944747
-E3.7 = IMPLEMENTED locally · NOT Production-deployed · DARK
+REPOSITORY (main / origin/main) = 17c4d530
+APPLICATION (Production) = 17c4d530 · dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe
+E3.7 = PRODUCTION VERIFIED · DARK · real render NOT EXECUTED
 
 Do NOT enable E3 flags or set E3_RENDER_WORKER_SECRET without separate Owner Production Enablement GO
-Do NOT treat docs-only tip SHA as a new application deploy unless Owner Production GO
+Do NOT mark E3 Full Audio epic COMPLETE
 HIBP enable = Owner Dashboard only (orthogonal)
 ```
 
@@ -89,7 +92,7 @@ E3.7 closeout: [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CL
 | D02 Anonymous QT | CLOSED / IN V1 | **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` | COMPLETE |
 | D03 Shared grants | CLOSED / IN Recording EPIC | **SHIPPED / PRODUCTION VERIFIED** @ `37892a6` (RECORD only) | Wave 5 COMPLETE |
 | E3.1–E3.6 Full Audio | Architecture Hybrid C LOCKED · OD-E36-04 = C | **SHIPPED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** | COMPLETE |
-| E3.7 Premium Render | OD-E37-01/02/03 LOCKED · Design Freeze PASS WITH FINDINGS | **IMPLEMENTED** · Owner Verify **PASS WITH FINDINGS** · **not** Production-deployed | Waves A–H COMPLETE locally |
+| E3.7 Premium Render | OD-E37-01/02/03 LOCKED · Design Freeze PASS WITH FINDINGS | **SHIPPED / PRODUCTION VERIFIED** @ `17c4d530` · **DARK** (not render-enabled) | Waves A–H COMPLETE |
 
 ---
 
@@ -106,9 +109,9 @@ E3_PUBLIC_AUDIO = UNSET
 E3_RENDER_WORKER_SECRET = UNSET
 ```
 
-Production app remains E3.6 @ `183b2a4` (DARK). E3.7 exists in local worktree until Owner Commit/Push/Deploy — **do not** describe E3.7 as Production-enabled.
+Production app = E3.7 @ `17c4d530` (**DARK** — flags UNSET · worker secret UNSET · real render **NOT EXECUTED**). **Do not** describe E3 as Production-enabled or epic COMPLETE.
 
-**E3.7 INFO findings (non-blockers):** G5 soft RMS ≠ BS.1770 · E3.7 uncommitted until Owner GO · no Production Verify yet.
+**E3.7 INFO findings (non-blockers):** G5 soft RMS ≠ BS.1770.
 
 **D02 POST-RELEASE FINDING (MEDIUM=1):** TTL-bound anonymous verify artifacts — not escalated to P0/P1.
 

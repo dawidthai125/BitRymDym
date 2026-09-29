@@ -6,19 +6,18 @@
 **Epic:** `E3 — FULL AUDIO`
 **Architecture:** `C — HYBRID`
 
-### Delivery status (reconciled 2026-09-29 — E3.7 docs closeout · does not rewrite freeze-era history below)
+### Delivery status (reconciled 2026-09-29 — E3.7 Production Verify · does not rewrite freeze-era history below)
 
 ```text
-PRODUCTION APPLICATION  = 183b2a4a7ea3cc8be7f0ac337e75e915ffdae0b9
-DOCUMENTATION tip       = f944747
+PRODUCTION APPLICATION  = 17c4d530c2ecc7c0c8e68cf6266e73b330f09be1
+REPOSITORY / origin/main = 17c4d530c2ecc7c0c8e68cf6266e73b330f09be1
 PRODUCTION URL          = https://www.bitrymdym.pl
-E3.1 → E3.6             = CLOSED / PRODUCTION VERIFIED
-E3.7                    = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) · COMMIT NONE · NOT ON PRODUCTION
+DEPLOYMENT              = dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe
+E3.7                    = PRODUCTION VERIFIED / DARK @ 17c4d530
 E3 FLAGS                = DARK (UNSET)
 E3_RENDER_WORKER_SECRET = UNSET
 OD-E36-04               = OPTION C (native/system FFmpeg + libmp3lame on EXTERNAL worker)
 OD-E37-01/02/03         = LOCKED (Master Plan A · UX HQ+WAV · bake↔encode ±5% OUT)
-CLOSEOUT E3.6           = docs/audits/E3_6_PRODUCTION_CLOSEOUT.md
 CLOSEOUT E3.7           = docs/audits/E3_7_IMPLEMENTATION_CLOSEOUT.md
 ```
 
@@ -195,7 +194,7 @@ Runtime enforcement = Implementation; architecture contract = **CLOSED**.
 | Security Model | **CLOSED** |
 | Implementation Plan | **ACTIVE SSOT for waves** (IP-01…07 CLOSED) — [E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md) |
 | Implementation through E3.6 | **COMPLETE / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** |
-| Implementation E3.7 | **IMPLEMENTED** locally · Owner Verify **PASS WITH FINDINGS** · **COMMIT NONE** · **not** Production-deployed · [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
+| Implementation E3.7 | **COMPLETE / PRODUCTION VERIFIED** @ `17c4d530` · **DARK** · [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | Production enablement | **NOT ENABLED** — separate Owner GO |
 
 ---
@@ -204,14 +203,13 @@ Runtime enforcement = Implementation; architecture contract = **CLOSED**.
 
 ```text
 ARCHITECTURAL BLOCKER = NONE
-E3.1 → E3.6 = CLOSED / PRODUCTION VERIFIED @ 183b2a4
-E3.7 = IMPLEMENTED / OWNER VERIFIED · COMMIT NONE · NOT ON PRODUCTION
+E3.7 = PRODUCTION VERIFIED / DARK @ 17c4d530
 E3 = DARK
-NEXT = OWNER COMMIT GO (E3.7)
-NEXT FEATURE = DO NOT AUTO-SELECT beyond E3.7 release gates
+NEXT = OWNER DECISION
+NEXT FEATURE = DO NOT AUTO-SELECT
 ```
 
-Public Free Audio / Production render enablement remain separate Owner gates (OAD-05 / flags). Do **not** invent E3.8+ from this lock.
+Public Free Audio / Production render enablement remain separate Owner gates (OAD-05 / flags). Do **not** invent E3.8+ from this lock. Do **not** auto-enable.
 
 Historical Architecture Lock gate required Implementation Plan before code — that gate is **closed** in history. Current continuity: see [PROJECT_STATE.md](../PROJECT_STATE.md) · [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md).
 
@@ -239,11 +237,10 @@ OD-E36-04 = OPTION C
 STEMS = DEFERRED
 
 DELIVERY (2026-09-29) =
-  E3.1 → E3.6 CLOSED / PRODUCTION VERIFIED @ 183b2a4
-  E3.7 IMPLEMENTED / OWNER VERIFIED · COMMIT NONE · NOT ON PRODUCTION
+  E3.7 PRODUCTION VERIFIED / DARK @ 17c4d530
   E3 FLAGS = DARK
   WORKER SECRET = UNSET
   PRODUCTION RENDER = NOT ENABLED
 
-NEXT = OWNER COMMIT GO (E3.7)
+NEXT = OWNER DECISION
 ```

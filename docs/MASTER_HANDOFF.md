@@ -16,12 +16,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `183b2a4a7ea3cc8be7f0ac337e75e915ffdae0b9` (`183b2a4`) |
-| Deployment | `dpl_D5EfHdSSahouFftf5HK35wKSHmts` |
+| **Application SHA** | `17c4d530c2ecc7c0c8e68cf6266e73b330f09be1` (`17c4d530`) |
+| Deployment | `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
 | Status | **GREEN** / **PRODUCTION VERIFIED** |
-| Previous Production | `fbece37` (E3.5) — rollback available |
-| **E3.6** | **PRODUCTION VERIFIED** · **DARK** (not Production-enabled render service) |
-| **E3.7** | **IMPLEMENTED** locally · Owner Verification **PASS WITH FINDINGS** · **COMMIT/PUSH/DEPLOY = NONE** · **not** on Production |
+| Previous Production | `183b2a4` (E3.6) — rollback available |
+| **E3.6** | **PRODUCTION VERIFIED** (prior) · superseded as live app by E3.7 |
+| **E3.7** | **PRODUCTION VERIFIED** @ `17c4d530` · Owner Verification **PASS WITH FINDINGS** · **DARK** (not Production-enabled render) |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
 | Recording Wave 5 | **CLOSED / PRODUCTION VERIFIED** · Shared Grants → RECORD @ `37892a6` |
 | D02 Anonymous QT | **CLOSED / IN V1** · **SHIPPED** @ `e98ba52` |
@@ -43,15 +43,15 @@ E3 FLAGS = DARK
 
 | SHA | Meaning |
 |-----|---------|
-| `183b2a4` | **Production application** (E3.6 Basic MP3 export — DARK) — Owner Production Verify PASS |
-| `f944747` | Documentation tip (E3.6 docs closeout) — Production app **not** required to equal tip |
+| `17c4d530` | **Production application** + repository HEAD — E3.7 Premium Render · **DARK** · Production Verify PASS |
+| `183b2a4` | Previous Production (E3.6 Basic MP3) — rollback available |
+| `f944747` | Prior documentation tip (E3.6 docs closeout) |
 | `fbece37` | Prior Production (E3.5 Render Jobs) |
-| E3.7 app SHA | **NONE YET** — implementation uncommitted until Owner Commit GO |
 | `e98ba52` | D02 Anonymous QT |
 | `37892a6` | Wave 5 Shared Grants → RECORD |
 | `99c4815` | Wave 4 historical baseline |
 
-Production app is **not** required to equal `origin/main` when tip is docs-only. Do **not** redeploy solely to equalize SHAs.
+Production app equals repository tip at `17c4d530`. E3 flags remain **DARK** — do **not** auto-enable render.
 
 ---
 
@@ -61,9 +61,8 @@ Production app is **not** required to equal `origin/main` when tip is docs-only.
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **E3.6 product commit** | `183b2a4` (`feat(audio): implement E3.6 basic mp3 export`) = **production app** |
-| **Documentation tip** | `f944747` |
-| **E3.7** | Implemented in worktree · **uncommitted** · await Owner Commit GO |
+| **HEAD / origin/main / Production** | `17c4d530` (`feat(audio): implement E3.7 premium export`) |
+| **E3.7** | **PRODUCTION VERIFIED** · **DARK** · deploy `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
 | Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` |
 
 Do **not** stage agent tooling folders as product scope.
@@ -211,7 +210,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | **E3.4 Master Basic** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** | OK | |
 | **E3.5 Render Jobs + Worker Adapter** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** @ `fbece37` | OK | fake-complete = CI/domain |
 | **E3.6 Basic MP3 export** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** @ `183b2a4` | OK | real 128 kbps · OD-E36-04 C · EXTERNAL worker |
-| **E3.7 Premium Render** | **IMPLEMENTED** · Owner Verify **PASS WITH FINDINGS** | **not deployed** · **DARK** | OK | `server-pro-v1` · HQ 320 · WAV · commit pending |
+| **E3.7 Premium Render** | **SHIPPED / PRODUCTION VERIFIED** | GREEN · **DARK** @ `17c4d530` | OK | `server-pro-v1` · HQ 320 · WAV · enablement OFF |
 | E3 public Free Audio / Production render enablement | **NOT ENABLED** | DARK | — | separate Owner Production Enablement GO |
 | Later E3 waves (e.g. W6 public) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
@@ -234,7 +233,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | Recording Wave 5 (Shared Grants → RECORD) | **CLOSED / PRODUCTION VERIFIED** | `37892a6` |
 | D02 Anonymous QT | **CLOSED / IN V1 · SHIPPED** | `e98ba52` |
 | E3.1 → E3.6 Full Audio (through Basic MP3) | **CLOSED / PRODUCTION VERIFIED · DARK** | `183b2a4` |
-| E3.7 Premium Render | **IMPLEMENTED / OWNER VERIFIED · not Production-deployed** | worktree · [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
+| E3.7 Premium Render | **CLOSED / PRODUCTION VERIFIED · DARK** @ `17c4d530` | [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 
 ---
 
@@ -281,7 +280,7 @@ E3.3 = CLOSED / PRODUCTION VERIFIED
 E3.4 = CLOSED / PRODUCTION VERIFIED
 E3.5 = CLOSED / PRODUCTION VERIFIED @ fbece37
 E3.6 = CLOSED / PRODUCTION VERIFIED @ 183b2a4
-E3.7 = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) · COMMIT NONE · NOT ON PRODUCTION
+E3.7 = CLOSED / PRODUCTION VERIFIED @ 17c4d530 · DARK (not render-enabled)
 E3 FLAGS = DARK
 PRODUCTION RENDER = NOT ENABLED
 ```
@@ -298,11 +297,11 @@ PRODUCTION RENDER = NOT ENABLED
 | Worker | EXTERNAL · script-driven · requires secret when enabled |
 | Fake-complete | Domain/CI only · **not** Final Truth |
 | Artifacts | Private `audio-artifacts` · signed download |
-| Production | E3.6 code deployed · E3.7 **not** deployed · feature dark |
+| Repository / Production | `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` · feature dark |
 | Closeout E3.6 | [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | Closeout E3.7 | [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 
-**INFO (non-blockers):** G5 soft RMS (not BS.1770) · E3.7 uncommitted until Owner Commit GO · Live Full E2E / Production Verify for E3.7 **NOT YET**.
+**INFO (non-blockers):** G5 soft RMS (not BS.1770) · Live Full E2E / real Production render **NOT EXECUTED** (DARK).
 
 ---
 
@@ -332,7 +331,7 @@ Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOA
 | **D02 / OD-REC-02** Anonymous QT | **CLOSED** = **IN V1** | **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` | COMPLETE |
 | **D03 / OD-REC-03** Shared grants + RECORD | **CLOSED** = **IN Recording EPIC** | **SHIPPED / PRODUCTION VERIFIED** @ `37892a6` (RECORD only) | Wave 5 COMPLETE |
 | **E3.1–E3.6** | Hybrid C + OAD LOCKED · OD-E36-04 = C | **SHIPPED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** | E3.1–E3.6 COMPLETE · enablement = separate GO |
-| **E3.7** | OD-E37-01/02/03 LOCKED | **IMPLEMENTED** · Owner Verify PASS WITH FINDINGS · **not** Production-deployed | Waves A–H COMPLETE locally · Commit GO pending |
+| **E3.7** | OD-E37-01/02/03 LOCKED | **SHIPPED / PRODUCTION VERIFIED** @ `17c4d530` · **DARK** | Waves A–H COMPLETE · enablement = separate Owner GO |
 
 Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clarification — not silently rewritten beyond delivery status.
 
@@ -443,18 +442,19 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION = 183b2a4
-DOCUMENTATION tip = f944747
-E3.6 = PRODUCTION VERIFIED / DARK
-E3.7 = IMPLEMENTED / OWNER VERIFIED · COMMIT NONE · NOT ON PRODUCTION
+CURRENT PRODUCTION = 17c4d530
+REPOSITORY / origin/main = 17c4d530
+E3.6 = prior PRODUCTION VERIFIED (superseded as live app)
+E3.7 = PRODUCTION VERIFIED / DARK @ 17c4d530
 PRODUCTION = GREEN
 E3 = DARK
-NEXT = OWNER COMMIT GO (E3.7)
-NEXT FEATURE = DO NOT AUTO-SELECT beyond release gates
+NEXT = OWNER DECISION
+NEXT FEATURE = DO NOT AUTO-SELECT
 ```
 
 **Do not** auto-select a new product EPIC.
-E3.7 release path: Commit → Push → Deploy observe → Production Verify (separate GOs).
+**Do not** auto-enable E3 flags or set `E3_RENDER_WORKER_SECRET`.
+E3.7 code is Production-verified · render pipeline remains **DARK**.
 P1-A HIBP remains **BLOCKED** until Owner enables it in the Dashboard.
 
 New GPT:
@@ -515,10 +515,10 @@ E3 Production enablement · Production Render · public Free Audio (W6) · STEMS
 
 | Area | State |
 |------|--------|
-| Production deploy E3.6 | SUCCESS · READY @ `183b2a4` · `dpl_D5EfHdSSahouFftf5HK35wKSHmts` |
-| E3.6 Production Verify | **PASS** · DARK · no Production jobs/artifacts created |
-| E3.7 Owner Verification | **PASS WITH FINDINGS** · local · G5 soft RMS INFO · docs reconciled this closeout · **COMMIT/DEPLOY NONE** |
-| E3.7 Production Verify | **NOT YET** |
+| Production deploy E3.7 | SUCCESS · READY @ `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
+| E3.7 Production Verify | **PASS** · DARK · real render **NOT EXECUTED** · no Production artifacts |
+| E3.7 Owner Verification | **PASS WITH FINDINGS** · G5 soft RMS INFO · COMMIT+PUSH+DEPLOY DONE @ `17c4d530` |
+| Production deploy E3.6 (prior) | SUCCESS @ `183b2a4` · `dpl_D5EfHdSSahouFftf5HK35wKSHmts` |
 | Public smoke `/` · `/beats` | PASS (prior E3.6) |
 | E3 anon job API | 401 (prior) |
 | E3 worker API (no secret) | 403 (prior) |
@@ -537,19 +537,18 @@ E3 Production enablement · Production Render · public Free Audio (W6) · STEMS
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION = 183b2a4
-DOCUMENTATION tip = f944747
-E3.6 = PRODUCTION VERIFIED / DARK
-E3.7 = IMPLEMENTED / OWNER VERIFIED · COMMIT NONE · NOT ON PRODUCTION
+CURRENT PRODUCTION = 17c4d530
+REPOSITORY / origin/main = 17c4d530
+E3.7 = PRODUCTION VERIFIED / DARK
 PRODUCTION = GREEN
 E3 = DARK
 WORKER SECRET = UNSET
-NEXT = OWNER COMMIT GO (E3.7)
-NEXT FEATURE = DO NOT AUTO-SELECT beyond release gates
+NEXT = OWNER DECISION
+NEXT FEATURE = DO NOT AUTO-SELECT
 ```
 
-**Do not deploy or Production-enable E3.7 from this document.**
-Wait for Owner Commit GO, then separate Push / Deploy / Production Verify GOs.
+**Do not enable E3 render or invent E3.8+ from this document.**
+Wait for Owner direction.
 
 ---
 

@@ -1,25 +1,25 @@
 # E3 FULL AUDIO — IMPLEMENTATION PLAN
 
-**Status:** E3.1 → E3.6 **CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · E3.7 **IMPLEMENTED** (local · Owner Verify PASS WITH FINDINGS · **COMMIT NONE**) · E3 = **DARK** · W6/public enablement **NOT SELECTED**
-**Date:** 2026-09-28 (plan) · **Delivery reconcile:** 2026-09-29 (E3.7 docs closeout)
+**Status:** E3.1 → E3.6 **CLOSED** · E3.7 **PRODUCTION VERIFIED** @ `17c4d530` · E3 = **DARK** · W6/public enablement **NOT SELECTED**
+**Date:** 2026-09-28 (plan) · **Delivery reconcile:** 2026-09-29 (E3.7 Production Verify)
 **Epic:** `E3 — FULL AUDIO`
 **Architecture:** `C — HYBRID` (LOCKED)
 **OD-E36-04:** **OPTION C** — native/system FFmpeg + libmp3lame on EXTERNAL worker · FFmpeg is **not** an npm dependency of the app
 
-### Delivery status (reconciled 2026-09-29 — E3.7)
+### Delivery status (reconciled 2026-09-29 — E3.7 Production Verify)
 
 ```text
-PRODUCTION APPLICATION  = 183b2a4a7ea3cc8be7f0ac337e75e915ffdae0b9
-DOCUMENTATION tip       = f944747 (pre E3.7 docs/app commit)
+PRODUCTION APPLICATION  = 17c4d530c2ecc7c0c8e68cf6266e73b330f09be1
+REPOSITORY / origin/main = 17c4d530c2ecc7c0c8e68cf6266e73b330f09be1
 PRODUCTION URL          = https://www.bitrymdym.pl
-E3.1 → E3.6             = CLOSED / PRODUCTION VERIFIED
-E3.7                    = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) · COMMIT NONE · NOT ON PRODUCTION
+DEPLOYMENT              = dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe
+E3.1 → E3.6             = CLOSED (prior)
+E3.7                    = PRODUCTION VERIFIED / DARK @ 17c4d530
 E3 FLAGS                = DARK (UNSET)
 E3_RENDER_WORKER_SECRET = UNSET
 PRODUCTION RENDER       = NOT ENABLED / NOT EXECUTED
-CLOSEOUT E3.6           = docs/audits/E3_6_PRODUCTION_CLOSEOUT.md
 CLOSEOUT E3.7           = docs/audits/E3_7_IMPLEMENTATION_CLOSEOUT.md
-NEXT                    = OWNER COMMIT GO (E3.7)
+NEXT                    = OWNER DECISION
 ```
 
 ### Plan-era header (historical — true when plan awaited Implementation GO)
@@ -96,10 +96,10 @@ Worker vendor delay · Premium preview≠final UX · mobile thermal · encode/DS
 
 ### Implementation order (waves summary)
 
-`E3.1 Foundation` → `E3.2 Premium overlay` → `E3.3 Mix Session + Basic client` → `E3.4 Master Basic` → `E3.5 Jobs + Worker Adapter (stub/fake)` → `E3.6 Basic MP3 end-to-end` → `E3.7 Premium Render` (**IMPLEMENTED** locally · not Production-deployed) → *(later: W6 / public Free Audio — **not selected**)*
+`E3.1 Foundation` → `E3.2 Premium overlay` → `E3.3 Mix Session + Basic client` → `E3.4 Master Basic` → `E3.5 Jobs + Worker Adapter (stub/fake)` → `E3.6 Basic MP3 end-to-end` → `E3.7 Premium Render` (**PRODUCTION VERIFIED** @ `17c4d530` · **DARK**) → *(later: W6 / public Free Audio — **not selected**)*
 Public enablement only after W6 PASS + Owner Production Enablement GO.
-**E3.6 Production:** code verified · flags **DARK** · real Production render **not** enabled.
-**E3.7:** Premium Final Truth `server-pro-v1` · HQ 320 · WAV · **OD-E37-01/02/03** · Migration **NONE** · Production app still `183b2a4`.
+**E3.6 Production:** prior verified · flags **DARK**.
+**E3.7:** Premium Final Truth `server-pro-v1` · HQ 320 · WAV · **OD-E37-01/02/03** · Migration **NONE** · Production @ `17c4d530` · **DARK** · real render **NOT EXECUTED**.
 
 ---
 
@@ -537,7 +537,7 @@ Overall **Owner Implementation GO** required before E3.1 code.
 | **E3.4** | E3.3 exit | Basic Master preview · params versioning | preview chain | **CLOSED** @ `69dc9d1` · DARK |
 | **E3.5** | E3.4 exit | Job API · Adapter · fake worker · anti-abuse · timeout from CLAIM | Queued→Claim→Running→Succeeded/Timeout/Cancel | **CLOSED** @ `fbece37` · DARK · fake-complete = CI/domain |
 | **E3.6** | E3.5 exit + **OD-E36-04 = C** | Real Basic bake + **128 kbps stereo** MP3 via native FFmpeg on EXTERNAL worker · signed download · Free export UX · QC | encoder + tests · Production Verify | **CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** (not public / not enabled) |
-| **E3.7** | E3.6 exit + Owner Impl GO · **OD-E37-01/02/03** | `server-pro-v1` Pro Mix + Master Plan A · HQ MP3 **320** · WAV **44.1/16/stereo** · tier download AuthZ · Premium Export UX · **Migration NONE** | 100/100 · Owner Verify | **IMPLEMENTED** · Owner Verify **PASS WITH FINDINGS** · **COMMIT NONE** · **not** on Production · [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
+| **E3.7** | E3.6 exit + Owner Impl GO · **OD-E37-01/02/03** | `server-pro-v1` Pro Mix + Master Plan A · HQ MP3 **320** · WAV **44.1/16/stereo** · tier download AuthZ · Premium Export UX · **Migration NONE** | 100/100 · Owner Verify · Production Verify | **CLOSED / PRODUCTION VERIFIED** @ `17c4d530` · **DARK** · [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | Later waves (plan draft) | E3.7 release + **separate Owner GO** | W6 / public Free Audio / Production enablement / further product — **NOT SELECTED** | — | **DO NOT AUTO-START** |
 
 **Public Free Audio:** `E3_PUBLIC_AUDIO` + W6 PASS + Owner Production Enablement GO. **W6 does not block E3.7 Premium implementation.**
@@ -702,13 +702,12 @@ NEXT GATE = OWNER IMPLEMENTATION GO
 ABSOLUTE STOP
 ```
 
-### Delivery footer (reconciled 2026-09-29 — E3.7)
+### Delivery footer (reconciled 2026-09-29 — E3.7 Production Verify)
 
 ```text
-E3.1 → E3.6 = CLOSED / PRODUCTION VERIFIED @ 183b2a4
-E3.7 = IMPLEMENTED / OWNER VERIFIED (PASS WITH FINDINGS) · COMMIT NONE · NOT ON PRODUCTION
+E3.7 = PRODUCTION VERIFIED / DARK @ 17c4d530
 E3 = DARK
 PRODUCTION RENDER = NOT EXECUTED
-NEXT = OWNER COMMIT GO (E3.7)
+NEXT = OWNER DECISION
 CLOSEOUT = docs/audits/E3_7_IMPLEMENTATION_CLOSEOUT.md
 ```

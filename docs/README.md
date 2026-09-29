@@ -18,7 +18,7 @@
 
 **Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **OWNER COMMIT GO (E3.7)** — Production app = `183b2a4` · E3 = **DARK** · E3.7 implemented locally · not Production-deployed.
+**Next:** **OWNER DECISION** — Production = `17c4d530` · E3.7 **PRODUCTION VERIFIED** · E3 = **DARK** · real render **NOT EXECUTED**.
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -62,7 +62,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **OWNER COMMIT GO (E3.7)** (no automatic product EPIC beyond release gates).
+**Next:** **OWNER DECISION** (no automatic product EPIC / no auto E3 enablement).
 
 ---
 
@@ -78,7 +78,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [architecture/BEATS.md](./architecture/BEATS.md) | Phase 1.4 beats domain |
 | [architecture/RECORDING.md](./architecture/RECORDING.md) | Recording / Quick Take architecture index (freeze LOCKED) |
 | [architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) | E3 Full Audio architecture lock (Hybrid C · OAD · OD-E36-04) |
-| [architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md) | E3 waves · E3.1→E3.6 Production · E3.7 local IMPLEMENTED |
+| [architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md) | E3 waves · E3.1→E3.6 Production · E3.7 @ `17c4d530` (not Production) |
 | [architecture/APPLICATION_SCAFFOLD.md](./architecture/APPLICATION_SCAFFOLD.md) | Phase 1.2 scaffold notes |
 | [architecture/README.md](./architecture/README.md) | Status architektury (skrót) |
 | [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) | Decyzje OPEN / CLOSED |

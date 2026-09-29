@@ -1,26 +1,38 @@
 # E3.7 — PREMIUM RENDER — IMPLEMENTATION CLOSEOUT
 
-**Type:** Implementation / documentation closeout (docs only — **not** Production Verify)
+**Type:** Implementation + Production Verify closeout — **E3 remains DARK** (not Production-enabled render)
 **Date:** 2026-09-29
 **Owner Verification:** **PASS WITH FINDINGS**
-**Production application (unchanged):** `183b2a4a7ea3cc8be7f0ac337e75e915ffdae0b9`
-**Documentation baseline (pre-docs-commit):** `f9447479fec8203ac0ca456da2557b7ef65c21d5`
-**E3.7 application commit:** **NONE YET** (implementation in worktree · await Owner Commit GO)
+**E3.7 application / repository / Production commit:** `17c4d530c2ecc7c0c8e68cf6266e73b330f09be1` (`feat(audio): implement E3.7 premium export`)
+**Production deployment:** `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` · https://www.bitrymdym.pl
+
+### Post-Production-Verify canonical state
 
 ```text
 E3.7 IMPLEMENTATION       = DONE (waves A–H)
 OWNER VERIFICATION        = PASS WITH FINDINGS
-DOCUMENTATION             = RECONCILED (this closeout)
-COMMIT                    = NONE
-PUSH                      = NONE
-PRODUCTION DEPLOYMENT     = NONE (app remains 183b2a4)
-PRODUCTION VERIFY         = NOT YET
+COMMIT                    = DONE @ 17c4d530
+PUSH                      = DONE (origin/main = 17c4d530)
+PRODUCTION DEPLOYMENT     = DONE @ 17c4d530 · dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe
+PRODUCTION VERIFY         = PASS (post-deploy audit)
+DOCUMENTATION             = RECONCILED (post-verify)
 E3 FLAGS                  = DARK (UNSET)
 E3_RENDER_WORKER_SECRET   = UNSET
 PRODUCTION RENDER         = NOT EXECUTED
+ARTIFACT                  = NONE
 MIGRATION                 = NONE
 STORAGE                   = UNCHANGED (audio-artifacts private)
+E3 PRODUCTION ENABLEMENT  = NO
+NEXT                      = OWNER DECISION
 ```
+
+### Audit trail (historical stages)
+
+| Stage | State (then) |
+|-------|----------------|
+| Implementation closeout (pre-commit) | worktree · baseline `f944747` · `COMMIT/PUSH = NONE` · `NEXT = OWNER COMMIT GO` |
+| Post-commit reconciliation | `COMMIT+PUSH @ 17c4d530` · Production still `183b2a4` · `NEXT = OWNER PRODUCTION DEPLOY GO` |
+| **Current** | Production = `17c4d530` · Production Verify **PASS** · E3 **DARK** |
 
 ---
 
@@ -28,14 +40,15 @@ STORAGE                   = UNCHANGED (audio-artifacts private)
 
 | Layer | SHA / note |
 |-------|------------|
-| **Production application** | `183b2a4` · `dpl_D5EfHdSSahouFftf5HK35wKSHmts` · E3.6 Basic MP3 · **DARK** |
-| **Documentation tip** | `f944747` (E3.6 docs closeout) until Owner docs/app commit GO |
-| **E3.6** | CLOSED / PRODUCTION VERIFIED · DARK |
-| Prior E3 chain | E3.1→E3.5 shipped through `fbece37` |
+| **Repository HEAD / origin/main** | `17c4d530` |
+| **Production application** | `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` · E3.7 Premium Render · **DARK** |
+| **Previous Production** | `183b2a4` (E3.6 Basic MP3) — rollback available |
+| **E3.6** | CLOSED / PRODUCTION VERIFIED · superseded as live app SHA by E3.7 deploy |
+| Prior E3 chain | E3.1→E3.5 through `fbece37` |
 
 ---
 
-## Scope shipped (code — uncommitted until Owner GO)
+## Scope shipped (code — Production @ `17c4d530`)
 
 | Wave | Delivery |
 |------|----------|
@@ -94,16 +107,17 @@ Snapshot at job create = processing SSOT. Live entitlement = download AuthZ.
 
 ---
 
-## Verification evidence (Owner Verification)
+## Verification evidence
 
 | Gate | Result |
 |------|--------|
-| Tests `src/lib/audio` + `src/lib/mix` | **100/100 PASS** |
-| Typecheck | **PASS** |
-| Build | **PASS** |
-| Security | **PASS** |
-| Regression (Basic 128 / E3.5 / E3.6) | **PASS** |
+| Tests `src/lib/audio` + `src/lib/mix` (Owner Verification) | **100/100 PASS** |
+| Typecheck / Build / Security / Regression (Owner Verification) | **PASS** |
 | Owner Verification | **PASS WITH FINDINGS** |
+| Production Deploy | **SUCCESS** @ `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
+| Production public smoke `/` `/beats` `/sign-in` `/sign-up` `/account` · apex→www | **PASS** |
+| Production worker/claim (no secret) | **403** expected |
+| Production Verify (this closeout) | **PASS** · E3 **DARK** · real render **NOT EXECUTED** |
 
 ---
 
@@ -112,8 +126,8 @@ Snapshot at job create = processing SSOT. Live entitlement = download AuthZ.
 | ID | Note |
 |----|------|
 | INFO-01 | G5 soft RMS = approximation · **not** full ITU-R BS.1770 (accepted OD-E37-01) |
-| INFO-02 | E3.7 implementation uncommitted at docs closeout — await Owner Commit GO |
-| INFO-03 | Production app still E3.6 @ `183b2a4` · E3.7 **not** Production-deployed · **not** Production-Verified |
+| INFO-02 | *(historical)* uncommitted at first docs closeout — resolved @ `17c4d530` |
+| INFO-03 | E3.7 code is Production-deployed + verified · **E3 flags remain DARK** · render pipeline **not** enabled · no Production artifacts |
 
 ---
 
@@ -145,21 +159,20 @@ E3_PUBLIC_AUDIO = UNSET
 E3_RENDER_WORKER_SECRET = UNSET
 E3 = DARK
 PRODUCTION RENDER = NOT EXECUTED
+ARTIFACT = NONE
 ```
 
-Do **not** describe E3.7 as Production-enabled until separate Owner Production Verify / Enablement GO after commit+push+deploy.
+E3.7 **code** is on Production. E3 **render enablement** is **not**. Do **not** treat E3 / Full Audio epic as COMPLETE.
 
 ---
 
-## Remaining release gates
+## Remaining gates (Owner decision)
 
 ```text
-OWNER COMMIT GO
-→ PUSH GO
-→ (auto) deploy observe
-→ PRODUCTION VERIFY (if/when deployed)
-→ POST-RELEASE docs tip sync (if needed)
-→ CLOSE
+OWNER PRODUCTION ENABLEMENT GO (optional — flags / worker secret)
+→ real Production render verify (only if enabled)
+→ W6 / public Free Audio (separate)
+→ E3 CLOSEOUT (only after Owner)
 ```
 
 ---
@@ -176,6 +189,8 @@ OWNER COMMIT GO
 | [E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](../architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md) | Wave plan |
 
 ```text
-E3.7 IMPLEMENTATION CLOSEOUT = COMPLETE (docs)
-NEXT = OWNER COMMIT GO
+E3.7 IMPLEMENTATION CLOSEOUT = COMPLETE
+PRODUCTION DEPLOY + VERIFY = PASS @ 17c4d530
+E3 = DARK
+NEXT = OWNER DECISION
 ```
