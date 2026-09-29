@@ -42,6 +42,13 @@ import {
   type RenderJobEntitlementSnapshot,
 } from "@/lib/audio/render-job-core";
 import { getRenderWorkerAdapter } from "@/lib/audio/worker-adapter";
+import {
+  rejectClientRenderSourceClaims,
+} from "@/lib/audio/render-source-core";
+import {
+  resolveAuthorizedRenderSourcesForJob,
+  type AuthorizedRenderSources,
+} from "@/lib/audio/render-source-resolution";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -58,6 +65,8 @@ import {
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
 import { timingSafeEqual } from "crypto";
+
+export type { AuthorizedRenderSources };
 
 export type RenderJobRecord = {
   id: string;
@@ -486,7 +495,7 @@ export async function createRenderJobFor(
 export async function getRenderJobFor(
   context: AuthContext,
   jobId: string,
-): Promise<RenderJobRecord> {
+): Promise<RenderJobRecord & { artifactId: string | null }> {
   assertRenderJobsRuntimeEnabled();
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -499,7 +508,20 @@ export async function getRenderJobFor(
   if ((data as RenderJobRow).owner_id !== context.userId) {
     throw new RenderJobDomainError("Not render job owner.", "FORBIDDEN");
   }
-  return mapJob(await applyTimeoutIfNeeded(data as RenderJobRow));
+  const job = mapJob(await applyTimeoutIfNeeded(data as RenderJobRow));
+  let artifactId: string | null = null;
+  if (job.status === "SUCCEEDED") {
+    const { data: art } = await admin
+      .from("audio_artifacts")
+      .select("id")
+      .eq("render_job_id", job.id)
+      .eq("owner_id", context.userId)
+      .eq("status", "READY")
+      .is("deleted_at", null)
+      .maybeSingle();
+    artifactId = (art?.id as string | undefined) ?? null;
+  }
+  return { ...job, artifactId };
 }
 
 export async function listRenderJobsForSession(
@@ -573,8 +595,13 @@ export async function cancelRenderJobFor(
   return mapJob(data as RenderJobRow);
 }
 
-/** Worker CLAIM: QUEUED → RUNNING; starts timeout clock. */
-export async function claimRenderJobAsWorker(jobId: string): Promise<RenderJobRecord> {
+/**
+ * Worker CLAIM: FINDING-01 source re-validation → QUEUED → RUNNING.
+ * Sources resolve server-side from jobId only (no client keys/URLs).
+ */
+export async function claimRenderJobAsWorker(
+  jobId: string,
+): Promise<{ job: RenderJobRecord; sources: AuthorizedRenderSources }> {
   assertRenderJobsRuntimeEnabled();
   const admin = createSupabaseAdminClient();
   const { data: row, error } = await admin
@@ -591,6 +618,36 @@ export async function claimRenderJobAsWorker(jobId: string): Promise<RenderJobRe
       `Cannot claim job in status ${current.status}.`,
       "CONFLICT",
     );
+  }
+
+  // FINDING-01 — re-validate take/beat before entering RUNNING.
+  let sources: AuthorizedRenderSources;
+  try {
+    sources = await resolveAuthorizedRenderSourcesForJob(jobId);
+  } catch (sourceError) {
+    const message =
+      sourceError instanceof Error
+        ? sourceError.message
+        : "Source resolution failed.";
+    const code =
+      sourceError instanceof RenderJobDomainError
+        ? sourceError.code === "LIMIT"
+          ? "SOURCE_LIMIT"
+          : sourceError.code === "NOT_FOUND"
+            ? "SOURCE_UNAVAILABLE"
+            : "SOURCE_FORBIDDEN"
+        : "SOURCE_UNAVAILABLE";
+    await admin
+      .from("render_jobs")
+      .update({
+        status: "FAILED",
+        finished_at: new Date().toISOString(),
+        error_code: code,
+        error_message: message,
+      })
+      .eq("id", jobId)
+      .eq("status", "QUEUED");
+    throw sourceError;
   }
 
   const claimAt = new Date();
@@ -616,7 +673,7 @@ export async function claimRenderJobAsWorker(jobId: string): Promise<RenderJobRe
   if (!updated) {
     throw new RenderJobDomainError("Claim race lost.", "CONFLICT");
   }
-  return mapJob(updated as RenderJobRow);
+  return { job: mapJob(updated as RenderJobRow), sources };
 }
 
 /**
@@ -776,7 +833,10 @@ export async function createRenderJob(input: {
   idempotencyKey: unknown;
   body?: Record<string, unknown>;
 }): Promise<RenderJobRecord> {
-  if (input.body) sanitizeMixClientClaims(input.body);
+  if (input.body) {
+    sanitizeMixClientClaims(input.body);
+    rejectClientRenderSourceClaims(input.body);
+  }
   const context = await requireUser();
   return createRenderJobFor(context, input);
 }

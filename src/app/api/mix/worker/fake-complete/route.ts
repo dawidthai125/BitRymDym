@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { RenderJobDomainError } from "@/lib/audio/render-job-core";
+import { rejectClientRenderSourceClaims } from "@/lib/audio/render-source-core";
 import {
   assertWorkerSecret,
   completeFakeRenderJobAsWorker,
@@ -13,13 +14,15 @@ export const runtime = "nodejs";
 /**
  * POST /api/mix/worker/fake-complete
  * Worker-secret only. Body: { jobId, mode?: "complete" | "drive" }
+ * Client must not supply source object keys / URLs.
  * - complete: RUNNING → fake SUCCESS (+ placeholder artifact)
- * - drive: QUEUED → CLAIM → fake SUCCESS (Fake driver, EXTERNAL class)
+ * - drive: QUEUED → CLAIM (incl. FINDING-01 source resolve) → fake SUCCESS
  */
 export async function POST(request: Request) {
   try {
     assertWorkerSecret(request.headers.get("authorization"));
     const body = (await request.json()) as Record<string, unknown>;
+    rejectClientRenderSourceClaims(body);
     if (typeof body.jobId !== "string" || !body.jobId) {
       return NextResponse.json({ error: "jobId is required." }, { status: 400 });
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { RenderJobDomainError } from "@/lib/audio/render-job-core";
+import { rejectClientRenderSourceClaims } from "@/lib/audio/render-source-core";
 import {
   assertWorkerSecret,
   claimRenderJobAsWorker,
@@ -11,18 +12,20 @@ export const runtime = "nodejs";
 
 /**
  * POST /api/mix/worker/claim
- * Worker-secret only. Body: { jobId }
- * CLAIM starts 180s timeout clock (IP-03).
+ * Worker-secret only. Body: { jobId } — no client source keys/URLs.
+ * CLAIM: FINDING-01 source re-validation → RUNNING + 180s timeout.
+ * Returns server-minted signed source URLs for EXTERNAL worker fetch.
  */
 export async function POST(request: Request) {
   try {
     assertWorkerSecret(request.headers.get("authorization"));
     const body = (await request.json()) as Record<string, unknown>;
+    rejectClientRenderSourceClaims(body);
     if (typeof body.jobId !== "string" || !body.jobId) {
       return NextResponse.json({ error: "jobId is required." }, { status: 400 });
     }
-    const job = await claimRenderJobAsWorker(body.jobId);
-    return NextResponse.json({ success: true, job });
+    const { job, sources } = await claimRenderJobAsWorker(body.jobId);
+    return NextResponse.json({ success: true, job, sources });
   } catch (error) {
     if (error instanceof RenderJobDomainError) {
       return NextResponse.json(

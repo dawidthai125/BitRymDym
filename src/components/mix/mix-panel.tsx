@@ -54,6 +54,9 @@ export function MixPanel({
   const [params, setParams] = useState<MixParameters>(defaultMixParameters());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [exportArtifactId, setExportArtifactId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [proLockedHint, setProLockedHint] = useState(false);
   const [masterProLockedHint, setMasterProLockedHint] = useState(false);
@@ -231,6 +234,87 @@ export function MixPanel({
     disposeGraph();
   }
 
+  async function startBasicMp3Export() {
+    setExportBusy(true);
+    setError(null);
+    setExportStatus("creating");
+    setExportArtifactId(null);
+    try {
+      const s = await ensureSession();
+      const idempotencyKey = `basic-mp3:${s.id}:${Date.now()}`;
+      const createRes = await fetch(`/api/mix/session/${s.id}/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestedTier: "BASIC_MP3",
+          idempotencyKey,
+        }),
+      });
+      const createJson = (await createRes.json()) as {
+        error?: string;
+        job?: { id: string; status: string };
+      };
+      if (!createRes.ok || !createJson.job) {
+        throw new Error(createJson.error ?? "Nie udało się utworzyć joba.");
+      }
+      let jobId = createJson.job.id;
+      setExportStatus(createJson.job.status);
+
+      for (let i = 0; i < 90; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const poll = await fetch(`/api/mix/jobs/${jobId}`);
+        const pollJson = (await poll.json()) as {
+          error?: string;
+          job?: { id: string; status: string; artifactId?: string | null };
+        };
+        if (!poll.ok || !pollJson.job) {
+          throw new Error(pollJson.error ?? "Status joba niedostępny.");
+        }
+        jobId = pollJson.job.id;
+        setExportStatus(pollJson.job.status);
+        if (pollJson.job.status === "SUCCEEDED") {
+          if (pollJson.job.artifactId) {
+            setExportArtifactId(pollJson.job.artifactId);
+          }
+          return;
+        }
+        if (
+          pollJson.job.status === "FAILED" ||
+          pollJson.job.status === "CANCELLED" ||
+          pollJson.job.status === "TIMEOUT"
+        ) {
+          throw new Error(`Export ${pollJson.job.status}.`);
+        }
+      }
+      throw new Error("Export timeout (czekaj na EXTERNAL worker).");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export failed.");
+      setExportStatus("error");
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function downloadExport() {
+    if (!exportArtifactId) return;
+    setExportBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/mix/artifacts/${exportArtifactId}/download`,
+      );
+      const json = (await res.json()) as { error?: string; url?: string };
+      if (!res.ok || !json.url) {
+        throw new Error(json.error ?? "Download niedostępny.");
+      }
+      window.location.assign(json.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Download failed.");
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
   function updateBasic(
     patch: (p: MixParameters) => MixParameters,
   ) {
@@ -264,7 +348,7 @@ export function MixPanel({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold tracking-tight">Mix + Master</h2>
         <p className="text-xs text-muted-foreground">
-          Preview realtime · bez zapisu artefaktu
+          Preview realtime · Export Basic MP3 (flag-gated)
         </p>
       </div>
 
@@ -562,6 +646,35 @@ export function MixPanel({
         >
           Stop
         </button>
+      </div>
+
+      <div className="space-y-2 border-t border-border/50 pt-3">
+        <p className="text-xs font-medium tracking-wide uppercase text-muted-foreground">
+          Export Basic MP3
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded-md border border-border px-3 py-2 text-sm"
+            disabled={busy || exportBusy || !takeId}
+            onClick={() => void startBasicMp3Export()}
+          >
+            {exportBusy ? "Exporting…" : "Export Basic MP3"}
+          </button>
+          {exportArtifactId ? (
+            <button
+              type="button"
+              className="rounded-md border border-border px-3 py-2 text-sm"
+              disabled={exportBusy}
+              onClick={() => void downloadExport()}
+            >
+              Download
+            </button>
+          ) : null}
+        </div>
+        {exportStatus ? (
+          <p className="text-xs text-muted-foreground">Status: {exportStatus}</p>
+        ) : null}
       </div>
 
       {error ? (
