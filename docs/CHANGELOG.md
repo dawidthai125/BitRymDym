@@ -6,6 +6,25 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-29 — E3.6 BASIC MP3 EXPORT — POST-RELEASE CLOSEOUT (DOCS)
+
+**Status:** **E3.1 → E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **E3 = DARK** · docs reconciliation · **no app/DB/env/deploy in this closeout**
+
+- Application / Production = `183b2a4a7ea3cc8be7f0ac337e75e915ffdae0b9` (`feat(audio): implement E3.6 basic mp3 export`)
+- Production deployment = `dpl_D5EfHdSSahouFftf5HK35wKSHmts` · URL https://www.bitrymdym.pl · Production Verify = **PASS**
+- Previous Production = `fbece37` (E3.5 Render Jobs)
+- **E3.6 shipped:** source authorization/resolution · `server-basic-v1` bake · real Basic MP3 **128 kbps stereo** · **OD-E36-04 = C** native/system FFmpeg + libmp3lame on **EXTERNAL worker** (FFmpeg **not** an app npm dependency) · QC · signed download · thin Free Export UX · Final Truth READY artifact path · tests
+- **Production safety (unchanged / DARK):** `E3_RENDER_JOBS_ENABLED` / `E3_MIX_ENABLED` / `E3_PUBLIC_AUDIO` = **UNSET** · `E3_RENDER_WORKER_SECRET` = **UNSET** · Production real render **NOT ENABLED / NOT EXECUTED**
+- History preserved: E3.1 @ `35e1eaa` → E3.2 @ `24e50ac` → E3.3 @ `8283bd0` → E3.4 @ `69dc9d1` → E3.5 @ `fbece37` → E3.6 @ `183b2a4`
+- Closeout: [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md)
+- Architecture continuity: [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md)
+- INFO (non-blockers): Live Full E2E not executed · Free Export needs EXTERNAL worker process · G5 soft RMS (not full BS.1770) · Fake-complete ≠ Final Truth · native FFmpeg per OD-E36-04
+- D02 @ `e98ba52` · W1–W5 @ prior SHAs — unchanged
+- Docs-only tip may advance after Owner docs-commit GO — **do not** redeploy docs as application
+- Next = **OWNER DIRECTION / READY FOR NEXT AUDIT** (do **not** auto-select E3.7+)
+
+---
+
 ## 2026-09-28 — D02 ANONYMOUS QUICK TAKE — POST-RELEASE CLOSEOUT (DOCS)
 
 **Status:** **D02 CLOSED / IN V1** · **SHIPPED** · **PRODUCTION VERIFIED** @ `e98ba52` · docs reconciliation · **no app/DB/deploy**

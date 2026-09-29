@@ -56,8 +56,9 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | Phase 1.9 Operator enablement | **CLOSED / LOCKED** @ `47643c2` |
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
 | Community Upload + Moderation | **EPIC COMPLETE / LOCKED** (Waves 1–5) @ `c5e1f17` |
-| Recording / Quick Take | **Waves 1–4 CLOSED** · prod app `99c4815` — [RECORDING.md](./RECORDING.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) |
+| Recording / Quick Take | **Waves 1–5 CLOSED** · D02 **SHIPPED** @ `e98ba52` — [RECORDING.md](./RECORDING.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) |
+| E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 
-**Note:** Rows above for Phase 1.x list historical closeout SHAs. Canonical live baseline is production app `99c4815` / git tip per [PROJECT_STATE.md](../PROJECT_STATE.md).
+**Note:** Rows above for Phase 1.x list historical closeout SHAs. Canonical live baseline is production app `183b2a4` / git tip per [PROJECT_STATE.md](../PROJECT_STATE.md).
