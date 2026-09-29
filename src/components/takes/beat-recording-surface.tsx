@@ -3,6 +3,7 @@
 import { useRef } from "react";
 
 import { DownloadButton } from "@/components/beats/download-button";
+import { MixPanel, type MixTakeOption } from "@/components/mix/mix-panel";
 import {
   PlaybackShell,
   type PlaybackShellHandle,
@@ -17,10 +18,15 @@ type BeatRecordingSurfaceProps = {
   maxRecordingSeconds: number;
   beatStatus: string;
   isAuthenticated: boolean;
+  /** READY own takes for this beat (server-filtered). */
+  mixTakes?: MixTakeOption[];
+  /** Server-resolved MIX_PRO from E3.2 entitlement. */
+  mixPro?: boolean;
 };
 
 /**
  * Wave 3 composition: PlaybackShell + RecordingPanel siblings sharing a thin sync ref.
+ * E3.3: MixPanel sibling (gated by E3_MIX_ENABLED).
  */
 export function BeatRecordingSurface({
   beatId,
@@ -29,6 +35,8 @@ export function BeatRecordingSurface({
   maxRecordingSeconds,
   beatStatus,
   isAuthenticated,
+  mixTakes = [],
+  mixPro = false,
 }: BeatRecordingSurfaceProps) {
   const playbackRef = useRef<PlaybackShellHandle | null>(null);
 
@@ -52,6 +60,12 @@ export function BeatRecordingSurface({
         beatId={beatId}
         title={title}
         isAuthenticated={isAuthenticated}
+      />
+      <MixPanel
+        beatId={beatId}
+        takes={mixTakes}
+        isAuthenticated={isAuthenticated}
+        mixPro={mixPro}
       />
     </div>
   );

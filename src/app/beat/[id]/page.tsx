@@ -10,7 +10,10 @@ import {
 } from "@/lib/beats/public";
 import { getPublishedBeat } from "@/lib/beats/service";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
+import { hasAudioCapability } from "@/lib/audio/effective-entitlement";
+import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { computeAnonymousRecordingMaxSeconds, computeRecordingMaxSeconds } from "@/lib/takes/entitlement";
+import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 
 type BeatDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -44,6 +47,30 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
         beatDurationSeconds: detail.durationSeconds,
       })
     : computeAnonymousRecordingMaxSeconds(detail.durationSeconds);
+
+  let mixTakes: Array<{
+    id: string;
+    label: string;
+    durationSeconds: number | null;
+  }> = [];
+  let mixPro = false;
+  if (session) {
+    try {
+      const entitlement = await resolveAudioEntitlementForAuthContext(session);
+      mixPro = hasAudioCapability(entitlement, "MIX_PRO");
+      const own = await listOwnTakesFor(session);
+      mixTakes = own
+        .filter((t) => t.beatId === detail.id && t.canPreview)
+        .map((t) => ({
+          id: t.id,
+          label: `${t.recordingMode} · ${t.durationSeconds ?? "?"}s · ${t.id.slice(0, 8)}`,
+          durationSeconds: t.durationSeconds,
+        }));
+    } catch {
+      mixTakes = [];
+      mixPro = false;
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
@@ -115,6 +142,8 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
             maxRecordingSeconds={maxRecordingSeconds}
             beatStatus="PUBLISHED"
             isAuthenticated={Boolean(session)}
+            mixTakes={mixTakes}
+            mixPro={mixPro}
           />
         ) : (
           <p className="text-sm text-muted-foreground" role="status">
