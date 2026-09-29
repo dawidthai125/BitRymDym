@@ -1,0 +1,1706 @@
+{
+  "mode": "EMULATED",
+  "base": "http://127.0.0.1:3010",
+  "beatId": "38026c91-e738-47b9-9bfc-deba5bceeadb",
+  "generatedAt": "2026-09-29T18:21:57.950Z",
+  "formalNote": "Chromium viewport + Android UA emulation only. NOT formal iOS Safari or physical Android Chrome.",
+  "cells": [
+    {
+      "viewport": "360x800",
+      "surface": "home",
+      "url": "http://127.0.0.1:3010/",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": true,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_home.png"
+    },
+    {
+      "viewport": "360x800",
+      "surface": "beats",
+      "url": "http://127.0.0.1:3010/beats",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": true,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "Bity · BitRymDym",
+        "url": "http://127.0.0.1:3010/beats"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_beats.png"
+    },
+    {
+      "viewport": "360x800",
+      "surface": "beat",
+      "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Przewiń utwór",
+          "w": 278,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Głośność",
+          "w": 278,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": true,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": true,
+        "title": "D02 recording target · BitRymDym",
+        "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb"
+      },
+      "playback": {
+        "attempted": true,
+        "playClicked": true,
+        "muted": false,
+        "error": null
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_beat.png"
+    },
+    {
+      "viewport": "360x800",
+      "surface": "sign-in",
+      "url": "http://127.0.0.1:3010/sign-in",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_sign-in.png"
+    },
+    {
+      "viewport": "360x800",
+      "surface": "sign-up",
+      "url": "http://127.0.0.1:3010/sign-up",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-up"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_sign-up.png"
+    },
+    {
+      "viewport": "360x800",
+      "surface": "auth-confirmed",
+      "url": "http://127.0.0.1:3010/auth/confirmed",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/auth/confirmed"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_auth-confirmed.png"
+    },
+    {
+      "viewport": "360x800",
+      "surface": "account",
+      "url": "http://127.0.0.1:3010/account",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 360,
+        "innerWidth": 360,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "360x800_account.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "home",
+      "url": "http://127.0.0.1:3010/",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": true,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_home.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "beats",
+      "url": "http://127.0.0.1:3010/beats",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": true,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "Bity · BitRymDym",
+        "url": "http://127.0.0.1:3010/beats"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_beats.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "beat",
+      "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Przewiń utwór",
+          "w": 308,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Głośność",
+          "w": 308,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": true,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": true,
+        "title": "D02 recording target · BitRymDym",
+        "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb"
+      },
+      "playback": {
+        "attempted": true,
+        "playClicked": true,
+        "muted": false,
+        "error": null
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_beat.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "sign-in",
+      "url": "http://127.0.0.1:3010/sign-in",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_sign-in.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "sign-up",
+      "url": "http://127.0.0.1:3010/sign-up",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-up"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_sign-up.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "auth-confirmed",
+      "url": "http://127.0.0.1:3010/auth/confirmed",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/auth/confirmed"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_auth-confirmed.png"
+    },
+    {
+      "viewport": "390x844",
+      "surface": "account",
+      "url": "http://127.0.0.1:3010/account",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "390x844_account.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "home",
+      "url": "http://127.0.0.1:3010/",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": true,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_home.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "beats",
+      "url": "http://127.0.0.1:3010/beats",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": true,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "Bity · BitRymDym",
+        "url": "http://127.0.0.1:3010/beats"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_beats.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "beat",
+      "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Przewiń utwór",
+          "w": 330,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Głośność",
+          "w": 330,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": true,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": true,
+        "title": "D02 recording target · BitRymDym",
+        "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb"
+      },
+      "playback": {
+        "attempted": true,
+        "playClicked": true,
+        "muted": false,
+        "error": null
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_beat.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "sign-in",
+      "url": "http://127.0.0.1:3010/sign-in",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_sign-in.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "sign-up",
+      "url": "http://127.0.0.1:3010/sign-up",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-up"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_sign-up.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "auth-confirmed",
+      "url": "http://127.0.0.1:3010/auth/confirmed",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/auth/confirmed"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_auth-confirmed.png"
+    },
+    {
+      "viewport": "412x915",
+      "surface": "account",
+      "url": "http://127.0.0.1:3010/account",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "412x915_account.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "home",
+      "url": "http://127.0.0.1:3010/",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": true,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_home.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "beats",
+      "url": "http://127.0.0.1:3010/beats",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": true,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "Bity · BitRymDym",
+        "url": "http://127.0.0.1:3010/beats"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_beats.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "beat",
+      "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Przewiń utwór",
+          "w": 686,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Głośność",
+          "w": 686,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": true,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": true,
+        "title": "D02 recording target · BitRymDym",
+        "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb"
+      },
+      "playback": {
+        "attempted": true,
+        "playClicked": true,
+        "muted": false,
+        "error": null
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_beat.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "sign-in",
+      "url": "http://127.0.0.1:3010/sign-in",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_sign-in.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "sign-up",
+      "url": "http://127.0.0.1:3010/sign-up",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-up"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_sign-up.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "auth-confirmed",
+      "url": "http://127.0.0.1:3010/auth/confirmed",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/auth/confirmed"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_auth-confirmed.png"
+    },
+    {
+      "viewport": "768x1024",
+      "surface": "account",
+      "url": "http://127.0.0.1:3010/account",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "AndroidChromeUA_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "768x1024_account.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "home",
+      "url": "http://127.0.0.1:3010/",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": true,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_home.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "beats",
+      "url": "http://127.0.0.1:3010/beats",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": true,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": true,
+        "hasJobsOff": false,
+        "title": "Bity · BitRymDym",
+        "url": "http://127.0.0.1:3010/beats"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_beats.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "beat",
+      "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "BitRymDym",
+          "w": 75,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Bity",
+          "w": 45,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "header a",
+          "tag": "a",
+          "text": "Zaloguj",
+          "w": 67,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Przewiń utwór",
+          "w": 686,
+          "h": 44,
+          "pass44": true
+        },
+        {
+          "sel": "input[type=\"range\"]",
+          "tag": "input",
+          "text": "Głośność",
+          "w": 686,
+          "h": 44,
+          "pass44": true
+        }
+      ],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": true,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": true,
+        "hasRecord": true,
+        "hasJobsOff": true,
+        "title": "D02 recording target · BitRymDym",
+        "url": "http://127.0.0.1:3010/beat/38026c91-e738-47b9-9bfc-deba5bceeadb"
+      },
+      "playback": {
+        "attempted": true,
+        "playClicked": true,
+        "muted": false,
+        "error": null
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_beat.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "sign-in",
+      "url": "http://127.0.0.1:3010/sign-in",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_sign-in.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "sign-up",
+      "url": "http://127.0.0.1:3010/sign-up",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-up"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_sign-up.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "auth-confirmed",
+      "url": "http://127.0.0.1:3010/auth/confirmed",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/auth/confirmed"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_auth-confirmed.png"
+    },
+    {
+      "viewport": "1280x800",
+      "surface": "account",
+      "url": "http://127.0.0.1:3010/account",
+      "mode": "EMULATED",
+      "browser": "Chromium",
+      "platformLabel": "DesktopChrome_emulated",
+      "navStatus": 200,
+      "result": "PASS",
+      "overflow": {
+        "scrollWidth": 1280,
+        "innerWidth": 1280,
+        "ok": true,
+        "delta": 0,
+        "offenders": []
+      },
+      "targets": [],
+      "failingTargets": [],
+      "signals": {
+        "hasMix": false,
+        "hasMaster": false,
+        "hasExport": false,
+        "hasDownload": false,
+        "hasRecord": false,
+        "hasJobsOff": false,
+        "title": "BitRymDym",
+        "url": "http://127.0.0.1:3010/sign-in"
+      },
+      "playback": {
+        "attempted": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "evidence": "1280x800_account.png"
+    }
+  ],
+  "overflowFails": [],
+  "targetFindings": []
+}

@@ -332,6 +332,7 @@ Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOA
 | **D03 / OD-REC-03** Shared grants + RECORD | **CLOSED** = **IN Recording EPIC** | **SHIPPED / PRODUCTION VERIFIED** @ `37892a6` (RECORD only) | Wave 5 COMPLETE |
 | **E3.1–E3.6** | Hybrid C + OAD LOCKED · OD-E36-04 = C | **SHIPPED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** | E3.1–E3.6 COMPLETE · enablement = separate GO |
 | **E3.7** | OD-E37-01/02/03 LOCKED | **SHIPPED / PRODUCTION VERIFIED** @ `17c4d530` · **DARK** | Waves A–H COMPLETE · enablement = separate Owner GO |
+| **E3.8 W6** | OD-W6-01/02 LOCKED · **OD-W6-03 CLOSED / OWNER ACCEPTED** (emulated substitute) · Design Freeze COMPLETE · Arch **PASS WITH FINDINGS** · AR-W6-01/02/03 LOCKED | **CERT CLOSED / PASS** · Production remains `17c4d530` **DARK** · enablement **NOT EXECUTED** | [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) · [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md) |
 
 Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clarification — not silently rewritten beyond delivery status.
 
@@ -377,7 +378,9 @@ Do **not** start these without explicit Owner GO (product epic selection is Owne
 | [architecture/RECORDING.md](./architecture/RECORDING.md) | Recording index |
 | [architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) | E3 architecture lock |
 | [architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md) | E3 waves |
-| [audits/E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) | E3.6 production closeout |
+| [audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) | E3.8 W6 closeout · CLOSED / PASS |
+| [audits/E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md) | E3.8 W6 Design Freeze |
+| [audits/E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md) | E3.8 W6 certification checklist |
 | [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) | WHY closed |
 | [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) | Still OPEN |
 | [CHANGELOG.md](./CHANGELOG.md) | What changed |
@@ -443,18 +446,27 @@ No commit/push/deploy without explicit Owner GO for that step.
 
 ```text
 CURRENT PRODUCTION = 17c4d530
-REPOSITORY / origin/main = 17c4d530
-E3.6 = prior PRODUCTION VERIFIED (superseded as live app)
 E3.7 = PRODUCTION VERIFIED / DARK @ 17c4d530
-PRODUCTION = GREEN
-E3 = DARK
-NEXT = OWNER DECISION
-NEXT FEATURE = DO NOT AUTO-SELECT
+E3.8 W6 = CLOSED / PASS
+CERTIFICATION MODE = OWNER-ACCEPTED EMULATED
+OD-W6-03 = CLOSED / OWNER ACCEPTED
+Mobile certification prerequisite = SATISFIED
+PRODUCTION ENABLEMENT = NOT EXECUTED
+E3_PUBLIC_AUDIO = UNSET
+E3_RENDER_JOBS_ENABLED = UNSET
+E3_MIX_ENABLED = UNSET
+E3_RENDER_WORKER_SECRET = UNSET
+Production remains DARK
+NEXT SESSION ENTRY = OWNER DECISION / NEXT RELEASE STAGE
 ```
 
-**Do not** auto-select a new product EPIC.
-**Do not** auto-enable E3 flags or set `E3_RENDER_WORKER_SECRET`.
+**Do not** auto-open the next product feature / E3.9.
+**Do not** auto-enable E3 flags, render jobs, or set `E3_RENDER_WORKER_SECRET`.
+**Do not** treat W6 PASS as public Free Audio enablement.
 E3.7 code is Production-verified · render pipeline remains **DARK**.
+W6 closeout: [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
+W6 Design Freeze: [E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md)
+W6 Cert Checklist: [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md)
 P1-A HIBP remains **BLOCKED** until Owner enables it in the Dashboard.
 
 New GPT:
@@ -473,11 +485,14 @@ Start reading order:
 
 1. This file (`MASTER_HANDOFF.md`) — cold-start continuity
 2. [PROJECT_STATE.md](./PROJECT_STATE.md)
-3. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) (E3.7 context)
-4. [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md)
-5. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
-6. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
-7. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
+3. [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
+4. [E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md)
+5. [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md)
+6. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
+7. [E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md)
+8. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+9. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+10. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
 
 ---
 
@@ -538,17 +553,21 @@ E3 Production enablement · Production Render · public Free Audio (W6) · STEMS
 ```text
 MASTER HANDOFF READY
 CURRENT PRODUCTION = 17c4d530
-REPOSITORY / origin/main = 17c4d530
 E3.7 = PRODUCTION VERIFIED / DARK
+E3.8 W6 = CLOSED / PASS
+CERTIFICATION MODE = OWNER-ACCEPTED EMULATED
+OD-W6-03 = CLOSED / OWNER ACCEPTED
+Mobile certification prerequisite = SATISFIED
 PRODUCTION = GREEN
 E3 = DARK
 WORKER SECRET = UNSET
-NEXT = OWNER DECISION
-NEXT FEATURE = DO NOT AUTO-SELECT
+PRODUCTION ENABLEMENT = NOT EXECUTED
+PUBLIC FREE AUDIO = GATED
+NEXT SESSION ENTRY = OWNER DECISION / NEXT RELEASE STAGE
 ```
 
-**Do not enable E3 render or invent E3.8+ from this document.**
-Wait for Owner direction.
+**Do not** auto-enable E3 flags or invent the next feature from this document.
+Wait for Owner Decision / next release stage.
 
 ---
 

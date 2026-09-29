@@ -1,0 +1,277 @@
+{
+  "mode": "EMULATED",
+  "cells": [
+    {
+      "mode": "EMULATED",
+      "engine": "Playwright-WebKit",
+      "formal": false,
+      "note": "Not physical iOS Safari",
+      "viewport": "360x800",
+      "result": "PASS",
+      "metrics": {
+        "iw": 360,
+        "sw": 360,
+        "overflowOk": true,
+        "mix": true,
+        "loginGate": true,
+        "btns": [
+          {
+            "t": "BitRymDym",
+            "w": 75,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Bity",
+            "w": 45,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Zaloguj",
+            "w": 67,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Odtwórz",
+            "w": 90,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Dźwięk",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Nagraj",
+            "w": 112,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Pobierz",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          }
+        ],
+        "failBtns": []
+      },
+      "playback": {
+        "play": true,
+        "pause": true,
+        "mute": true,
+        "err": null
+      },
+      "consoleErrors": [],
+      "evidence": "webkit_360x800_beat.png"
+    },
+    {
+      "mode": "EMULATED",
+      "engine": "Playwright-WebKit",
+      "formal": false,
+      "note": "Not physical iOS Safari",
+      "viewport": "390x844",
+      "result": "PASS",
+      "metrics": {
+        "iw": 390,
+        "sw": 390,
+        "overflowOk": true,
+        "mix": true,
+        "loginGate": true,
+        "btns": [
+          {
+            "t": "BitRymDym",
+            "w": 75,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Bity",
+            "w": 45,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Zaloguj",
+            "w": 67,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Odtwórz",
+            "w": 90,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Dźwięk",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Nagraj",
+            "w": 112,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Pobierz",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          }
+        ],
+        "failBtns": []
+      },
+      "playback": {
+        "play": true,
+        "pause": false,
+        "mute": true,
+        "err": null
+      },
+      "consoleErrors": [],
+      "evidence": "webkit_390x844_beat.png"
+    },
+    {
+      "mode": "EMULATED",
+      "engine": "Playwright-WebKit",
+      "formal": false,
+      "note": "Not physical iOS Safari",
+      "viewport": "412x915",
+      "result": "PASS",
+      "metrics": {
+        "iw": 412,
+        "sw": 412,
+        "overflowOk": true,
+        "mix": true,
+        "loginGate": true,
+        "btns": [
+          {
+            "t": "BitRymDym",
+            "w": 75,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Bity",
+            "w": 45,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Zaloguj",
+            "w": 67,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Odtwórz",
+            "w": 90,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Dźwięk",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Nagraj",
+            "w": 112,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Pobierz",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          }
+        ],
+        "failBtns": []
+      },
+      "playback": {
+        "play": true,
+        "pause": false,
+        "mute": true,
+        "err": null
+      },
+      "consoleErrors": [],
+      "evidence": "webkit_412x915_beat.png"
+    },
+    {
+      "mode": "EMULATED",
+      "engine": "Playwright-WebKit",
+      "formal": false,
+      "note": "Not physical iOS Safari",
+      "viewport": "768x1024",
+      "result": "PASS",
+      "metrics": {
+        "iw": 768,
+        "sw": 768,
+        "overflowOk": true,
+        "mix": true,
+        "loginGate": true,
+        "btns": [
+          {
+            "t": "BitRymDym",
+            "w": 75,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Bity",
+            "w": 45,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Zaloguj",
+            "w": 67,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Odtwórz",
+            "w": 90,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Dźwięk",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Nagraj",
+            "w": 112,
+            "h": 44,
+            "pass": true
+          },
+          {
+            "t": "Pobierz",
+            "w": 83,
+            "h": 44,
+            "pass": true
+          }
+        ],
+        "failBtns": []
+      },
+      "playback": {
+        "play": true,
+        "pause": true,
+        "mute": true,
+        "err": null
+      },
+      "consoleErrors": [],
+      "evidence": "webkit_768x1024_beat.png"
+    }
+  ]
+}

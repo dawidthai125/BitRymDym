@@ -6,6 +6,86 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-29 — E3.8 W6.5 — FINAL CLOSEOUT (OWNER-ACCEPTED EMULATED CERT)
+
+**Status:** **W6 = CLOSED / PASS** · **CERTIFICATION MODE = OWNER-ACCEPTED EMULATED** · Production `17c4d530` **UNCHANGED** · **E3 = DARK** · **no Production enablement** · **no live render / artifacts / worker**
+
+- **OD-W6-03 CLOSED / OWNER ACCEPTED:** Owner accepts emulated Playwright Chromium/WebKit + Android UA evidence as the certification substitute (physical iOS Safari / Android Chrome unavailable in agent environment)
+- Explicit limitation recorded: **no physical-device execution** — do not describe as physical iOS/Android PASS
+- W6.4 = **PASS** · Owner-accepted emulated · Desktop ≥1024 = **REAL PASS** (Production DARK regression)
+- Mobile certification prerequisite = **SATISFIED**
+- Closeout: [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
+- Checklist: [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md)
+- Evidence retained: `docs/audits/_w64_evidence/`
+- **W6 PASS ≠** `E3_PUBLIC_AUDIO` ON · **≠** Production render enablement · **≠** E3 epic COMPLETE
+- Next = **OWNER DECISION / NEXT RELEASE STAGE** (do not auto-open next feature / do not enable Production flags)
+
+---
+
+## 2026-09-29 — E3.8 W6.4 — DEVICE CERTIFICATION (EMULATED EVIDENCE)
+
+**Status:** Evidence executed · later **Owner-accepted as PASS** in W6.5 · Production `17c4d530` **UNCHANGED** · **E3 = DARK** · **no live render / artifacts**
+
+- Emulated matrix: Playwright Chromium (35 cells) + WebKit (4 beat viewports) · overflow PASS · CTA ≥44 · playback smoke PASS
+- Preview Mix ON (`mixEnabled=true`) verified via official `vercel curl` · jobs OFF
+- Production Dark = **PASS** (Mix absent · E3 flags UNSET)
+- Desktop Chrome ≥1024 Production = **PASS** (DARK regression)
+- Physical iOS/Android = **not executed** (documented limitation)
+- Checklist: [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md)
+
+---
+
+## 2026-09-29 — E3.8 W6.3 — MIX / MASTER / EXPORT MOBILE PRESENTATION (CODE · PRE-COMMIT)
+
+
+**Status:** **W6.3 IMPLEMENTED** · Owner Verification pending · Production app remains `17c4d530` · **E3 = DARK** · **COMMIT/PUSH/DEPLOY = NONE** · **no live render**
+
+- **AR-W6-01:** RSC `E3_MIX_ENABLED` → `mixEnabled` prop → MixPanel (client no longer imports env flag)
+- Mix/Master: native `<details>` progressive disclosure · touch CTAs `min-h-11` · sliders `h-11` · `min-w-0` overflow hygiene
+- Export: Basic / HQ / WAV / Premium lock / status / error / disabled Download presentation · jobs-OFF error copy for W6 cert
+- **NOT done:** `E3_RENDER_JOBS_ENABLED` · worker · FFmpeg · artifacts · Production env · Mix/Master DSP/AuthZ
+- Next = **OWNER W6.3 VERIFICATION GO** → then W6.4 only
+
+---
+
+## 2026-09-29 — E3.8 W6.2 — SHARED MOBILE PRESENTATION (CODE · PRE-COMMIT)
+
+**Status:** **W6.2 IMPLEMENTED** · Owner Verification pending · Production app remains `17c4d530` · **E3 = DARK** · **COMMIT/PUSH/DEPLOY = NONE**
+
+- Surface-local touch targets (`min-h-11`) on SiteHeader nav · PlaybackShell Play/Mute · Download · Auth submit/CTAs · home/sign-in/sign-up/confirmed links · beats list rows
+- Safe-area: `viewportFit: cover` · header insets · body bottom inset
+- Global Button default `h-8` **unchanged** (no desktop density regression via global default)
+- Recording CTAs already `min-h-11` — reused / not redesigned
+- **OUT:** Mix/Master/Export presentation (W6.3) · hamburger · AuthZ/DSP · E3 flags · live render
+- Next = **OWNER W6.2 VERIFICATION GO** → then W6.3 only
+
+---
+
+## 2026-09-29 — E3.8 W6.1 — CERTIFICATION FOUNDATION (DOCS)
+
+**Status:** **W6.1 COMPLETE** (docs) · Owner Verification pending · Design Freeze COMPLETE · Arch Review **PASS WITH FINDINGS** · Owner Implement GO **GRANTED** · Production `17c4d530` · **E3 = DARK**
+
+- Deliverable: fillable cert checklist [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md) (REUSE freeze §§5–7 as criteria SSOT — no duplicate acceptance prose)
+- Locked Implement decisions: **AR-W6-01** RSC `mixEnabled` prop · **AR-W6-02** Preview Mix-only · **AR-W6-03** Export presentation/status/error only (no live render)
+- Recording historical W6 security = **OUT** (OD-W6-01)
+- **CODE / CONFIG / COMMIT / PUSH / DEPLOY = NONE**
+- Next = **OWNER W6.1 VERIFICATION GO** → then W6.2 only
+
+---
+
+## 2026-09-29 — E3.8 W6 MOBILE CERT — DESIGN FREEZE
+
+**Status:** **DESIGN FREEZE COMPLETE** · Arch Review later **PASS WITH FINDINGS** · Implement GO later **GRANTED** · Production remains `17c4d530` · **E3 = DARK**
+
+- Owner Decisions: **OD-W6-01 = A** (OAD-05 mobile cert only · Recording W6 security OUT) · **OD-W6-02 = A** (Preview Mix cert · Production flags UNSET) · **OD-W6-03** device matrix frozen (iOS Safari + Android Chrome · 360/390/412/768 + desktop ≥1024)
+- Waves frozen: W6.1 checklist → W6.2 shared presentation → W6.3 Mix/Master/Export presentation → W6.4 device matrix → W6.5 closeout
+- Acceptance frozen: CTA ≥44×44 · overflow-x · playback · Basic Mix on Preview · Export presentation/status/error · Premium UX readable · no Production enablement
+- **OUT:** redesign · native apps · DSP/AuthZ/business logic · Production render · public Free Audio ON
+- Canonical: [E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md)
+- Checklist: [E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md)
+
+---
+
 ## 2026-09-29 — E3.7 PREMIUM RENDER — PRODUCTION VERIFIED (POST-DEPLOY)
 
 **Status:** **E3.7 PRODUCTION VERIFIED** @ `17c4d530` · Owner Verification **PASS WITH FINDINGS** · **E3 = DARK** · real render **NOT EXECUTED** · artifact **NONE**

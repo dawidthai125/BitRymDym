@@ -18,7 +18,7 @@
 
 **Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **OWNER DECISION** — Production = `17c4d530` · E3.7 **PRODUCTION VERIFIED** · E3 = **DARK** · real render **NOT EXECUTED**.
+**Next:** **OWNER DECISION / NEXT RELEASE STAGE** — W6 = **CLOSED / PASS** (Owner-accepted emulated certification) · Production = `17c4d530` · E3 = **DARK** · public Free Audio still gated · Closeout: [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -62,7 +62,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **OWNER DECISION** (no automatic product EPIC / no auto E3 enablement).
+**Next:** **OWNER W6.1 VERIFICATION GO** → then W6.2 (no automatic enablement / no Production E3 flags).
 
 ---
 
@@ -96,6 +96,9 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md) | Recording Wave 5 production closeout |
 | [audits/E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) | E3.6 Basic MP3 production closeout (DARK) |
 | [audits/E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) | E3.7 Premium Render implementation closeout (not Production) |
+| [audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) | E3.8 W6 closeout · CLOSED / PASS · Owner-accepted emulated |
+| [audits/E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md) | E3.8 W6 Mobile Certification Design Freeze |
+| [audits/E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md) | E3.8 W6 certification checklist (Owner-accepted emulated) |
 | [runbooks/PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) | Phase 1.9 operator production bootstrap (historical) |
 | [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) | Stała zasada ciągłości docs |
 | [CHANGELOG.md](./CHANGELOG.md) | Historia zmian dokumentacji |
