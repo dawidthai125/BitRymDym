@@ -21,6 +21,10 @@ import {
   type EffectiveAudioEntitlement,
 } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import {
+  PublicAudioGateError,
+  assertPublicFreeAudioReleased,
+} from "@/lib/audio/public-audio-gate";
 import { buildAudioArtifactObjectKey } from "@/lib/audio/artifact-object-key";
 import {
   assertUnderConcurrentCap,
@@ -325,6 +329,15 @@ export async function createRenderJobFor(
   const tier = input.requestedTier;
   const required = capabilityForRenderTier(tier);
   assertAudioCapability(entitlement, required);
+  // AC-PE-12 — Free public export create requires PUBLIC_AUDIO release (Premium skip).
+  try {
+    assertPublicFreeAudioReleased(entitlement);
+  } catch (error) {
+    if (error instanceof PublicAudioGateError) {
+      throw new RenderJobDomainError(error.message, "DISABLED");
+    }
+    throw error;
+  }
 
   if (typeof input.idempotencyKey !== "string" || !input.idempotencyKey.trim()) {
     throw new RenderJobDomainError("idempotencyKey is required.", "INVALID");

@@ -62,6 +62,25 @@ describe("E3.1 — audio foundation (unit)", () => {
   });
 
   it("defaults public audio OFF and does not treat mix/jobs flags as public", () => {
+    const envOverridesPresent = [
+      process.env.E3_RENDER_JOBS_ENABLED,
+      process.env.E3_MIX_ENABLED,
+      process.env.E3_PUBLIC_AUDIO,
+    ].some((v) => v !== undefined && v.trim() !== "");
+
+    if (envOverridesPresent) {
+      // Local PE env may set Mix/Jobs ON; PUBLIC_AUDIO must still default fail-closed when unset.
+      if (
+        process.env.E3_PUBLIC_AUDIO === undefined ||
+        process.env.E3_PUBLIC_AUDIO.trim() === ""
+      ) {
+        expect(E3_PUBLIC_AUDIO).toBe(false);
+      }
+      expect(typeof E3_MIX_ENABLED).toBe("boolean");
+      expect(typeof E3_RENDER_JOBS_ENABLED).toBe("boolean");
+      return;
+    }
+
     expect(E3_PUBLIC_AUDIO).toBe(false);
     expect(E3_MIX_ENABLED).toBe(false);
     expect(E3_RENDER_JOBS_ENABLED).toBe(false);

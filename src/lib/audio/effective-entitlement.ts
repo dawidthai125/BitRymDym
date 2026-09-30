@@ -163,6 +163,10 @@ export function rejectClientChosenPremiumClaims(payload: {
   audioCapabilities?: unknown;
   tier?: unknown;
   qualityTier?: unknown;
+  publicAudio?: unknown;
+  e3PublicAudio?: unknown;
+  isPublicAudio?: unknown;
+  E3_PUBLIC_AUDIO?: unknown;
 }): void {
   const forbidden = [
     "premium",
@@ -172,6 +176,10 @@ export function rejectClientChosenPremiumClaims(payload: {
     "audioCapabilities",
     "tier",
     "qualityTier",
+    "publicAudio",
+    "e3PublicAudio",
+    "isPublicAudio",
+    "E3_PUBLIC_AUDIO",
   ] as const;
   for (const key of forbidden) {
     if (Object.prototype.hasOwnProperty.call(payload, key)) {

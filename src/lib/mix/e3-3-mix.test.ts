@@ -191,6 +191,22 @@ describe("E3.3 — Mix params + AuthZ + graph plan (unit)", () => {
   });
 
   it("keeps public Free Audio and Mix flags OFF by default", () => {
+    const envOverridesPresent = [
+      process.env.E3_MIX_ENABLED,
+      process.env.E3_PUBLIC_AUDIO,
+    ].some((v) => v !== undefined && v.trim() !== "");
+
+    if (envOverridesPresent) {
+      if (
+        process.env.E3_PUBLIC_AUDIO === undefined ||
+        process.env.E3_PUBLIC_AUDIO.trim() === ""
+      ) {
+        expect(E3_PUBLIC_AUDIO).toBe(false);
+      }
+      expect(typeof E3_MIX_ENABLED).toBe("boolean");
+      return;
+    }
+
     expect(E3_PUBLIC_AUDIO).toBe(false);
     expect(E3_MIX_ENABLED).toBe(false);
   });

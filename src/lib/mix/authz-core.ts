@@ -82,6 +82,10 @@ export function sanitizeMixClientClaims(body: Record<string, unknown>): void {
     "audioCapabilities",
     "tier",
     "qualityTier",
+    "publicAudio",
+    "e3PublicAudio",
+    "isPublicAudio",
+    "E3_PUBLIC_AUDIO",
   ] as const) {
     if (Object.prototype.hasOwnProperty.call(body, key)) {
       throw new MixAuthzError(

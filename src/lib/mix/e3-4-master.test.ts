@@ -242,6 +242,22 @@ describe("E3.4 — Master AuthZ + params + pipeline (unit)", () => {
   });
 
   it("runtime flags remain OFF (Master reuses E3_MIX_ENABLED)", () => {
+    const envOverridesPresent = [
+      process.env.E3_MIX_ENABLED,
+      process.env.E3_PUBLIC_AUDIO,
+    ].some((v) => v !== undefined && v.trim() !== "");
+
+    if (envOverridesPresent) {
+      if (
+        process.env.E3_PUBLIC_AUDIO === undefined ||
+        process.env.E3_PUBLIC_AUDIO.trim() === ""
+      ) {
+        expect(E3_PUBLIC_AUDIO).toBe(false);
+      }
+      expect(typeof E3_MIX_ENABLED).toBe("boolean");
+      return;
+    }
+
     expect(E3_MIX_ENABLED).toBe(false);
     expect(E3_PUBLIC_AUDIO).toBe(false);
   });

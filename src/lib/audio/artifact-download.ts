@@ -15,6 +15,10 @@ import {
 } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import {
+  PublicAudioGateError,
+  assertPublicFreeAudioReleased,
+} from "@/lib/audio/public-audio-gate";
+import {
   capabilityForRenderTier,
   RenderJobDomainError,
   isRenderJobTier,
@@ -46,6 +50,16 @@ export async function createOwnArtifactDownloadSignedUrlFor(
   }
 
   const entitlement = await resolveAudioEntitlementForAuthContext(context);
+  // AC-PE-12 — Free public download requires PUBLIC_AUDIO release (Premium skip).
+  // Remaining ownership / READY / SUCCEEDED / tier checks stay mandatory below.
+  try {
+    assertPublicFreeAudioReleased(entitlement);
+  } catch (error) {
+    if (error instanceof PublicAudioGateError) {
+      throw new RenderJobDomainError(error.message, "DISABLED");
+    }
+    throw error;
+  }
 
   const admin = createSupabaseAdminClient();
   const { data: artifact, error } = await admin

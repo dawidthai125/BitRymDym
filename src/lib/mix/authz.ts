@@ -12,6 +12,10 @@ import {
 } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import {
+  PublicAudioGateError,
+  assertPublicFreeAudioReleased,
+} from "@/lib/audio/public-audio-gate";
+import {
   MixAuthzError,
   assertMixBeatPlaybackAccess,
   assertOwnMixSession,
@@ -51,6 +55,15 @@ export async function resolveMixEntitlement(
 ): Promise<EffectiveAudioEntitlement> {
   const entitlement = await resolveAudioEntitlementForAuthContext(context);
   assertAudioCapability(entitlement, "MIX_BASIC");
+  // AC-PE-12 — Free public Mix release kill switch (AR-PA-02: create/read/patch/preview).
+  try {
+    assertPublicFreeAudioReleased(entitlement);
+  } catch (error) {
+    if (error instanceof PublicAudioGateError) {
+      throw new MixAuthzError(error.message, "DISABLED");
+    }
+    throw error;
+  }
   return entitlement;
 }
 
