@@ -18,7 +18,7 @@
 
 **Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **OWNER DECISION / NEXT RELEASE STAGE** — W6 = **CLOSED / PASS** (Owner-accepted emulated certification) · Production = `17c4d530` · E3 = **DARK** · public Free Audio still gated · Closeout: [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md).
+**Next:** **OWNER GO #2 — WORKER INFRASTRUCTURE** — W6.2/W6.3 UX = **PRODUCTION VERIFIED** @ `9026fa9` · E3 Enablement Design Freeze COMPLETE · E3 = **DARK** · do not auto-start GO #2.
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -96,6 +96,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md) | Recording Wave 5 production closeout |
 | [audits/E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) | E3.6 Basic MP3 production closeout (DARK) |
 | [audits/E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) | E3.7 Premium Render implementation closeout (not Production) |
+| [audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) | E3 Production Enablement Design Freeze |
 | [audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) | E3.8 W6 closeout · CLOSED / PASS · Owner-accepted emulated |
 | [audits/E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md) | E3.8 W6 Mobile Certification Design Freeze |
 | [audits/E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md) | E3.8 W6 certification checklist (Owner-accepted emulated) |

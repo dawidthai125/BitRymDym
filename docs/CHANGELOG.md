@@ -6,7 +6,32 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-09-30 — W6.2/W6.3 UX RELEASE — PRODUCTION VERIFIED
+
+**Status:** **W6.2/W6.3 UX = CLOSED / PRODUCTION VERIFIED** @ `9026fa9` · deploy `dpl_2aZabB1AtXCUNGEERmjwupXTVP9S` · **E3 = DARK** · **NOT** Production Enablement
+
+- Shipped presentation only: touch ≥44 · SiteHeader/safe-area · PlaybackShell · Download/Auth CTAs · MixPanel RSC `mixEnabled` · progressive disclosure · jobs-OFF Export error UX
+- Production Verify: `/` `/beats` `/beat/[id]` `/sign-in` `/sign-up` `/account` · 200 · `min-h-11` · `viewport-fit=cover` · Mix UI **absent** (flags UNSET) · worker claim **403** · overflow OK @360
+- **E3 flags remain UNSET** · no worker · no render · no artifacts
+- Next = **OWNER GO #2 — WORKER INFRASTRUCTURE** (do not auto-start)
+
+---
+
+## 2026-09-30 — E3 PRODUCTION ENABLEMENT — DESIGN FREEZE
+
+
+**Status:** **DESIGN FREEZE COMPLETE** · Architecture Review **PASS WITH FINDINGS** · Implementation **NONE** · Production `17c4d530` **DARK** · **NO COMMIT/PUSH/DEPLOY/ENV/WORKER/RENDER**
+
+- Owner decisions locked: **OD-E3-PE-01=B** (Mix+Jobs+worker+secret+controlled render) · **PE-02=PROVISION NOW** · **PE-03=REQUIRE PUBLIC_AUDIO RUNTIME GATE** (design now / implement later) · **PE-04=SHIP W6.2/W6.3 BEFORE ENABLEMENT** · **PE-05=YES** controlled real Production render (later GO)
+- Staged flag strategy: W6 UX → worker infra → Mix → Jobs → secret → controlled render → verify → optional Public Free Audio
+- `E3_PUBLIC_AUDIO` remains **OFF** for first enablement; public Free Audio = separate Owner GO #5 after runtime gate exists
+- Canonical: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
+- Next = **ARCHITECTURE REVIEW / OWNER GO** (GO #1 = W6 UX ship)
+
+---
+
 ## 2026-09-29 — E3.8 W6.5 — FINAL CLOSEOUT (OWNER-ACCEPTED EMULATED CERT)
+
 
 **Status:** **W6 = CLOSED / PASS** · **CERTIFICATION MODE = OWNER-ACCEPTED EMULATED** · Production `17c4d530` **UNCHANGED** · **E3 = DARK** · **no Production enablement** · **no live render / artifacts / worker**
 
