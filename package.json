@@ -15,7 +15,8 @@
     "experiment:bpm-v3": "tsx scripts/run-bpm-experiment-v3.ts",
     "experiment:bpm-v4": "tsx scripts/run-bpm-experiment-v4.ts",
     "experiment:bpm-v5": "tsx scripts/run-bpm-experiment-v5.ts",
-    "generate:bpm-fixtures": "tsx scripts/generate-bpm-fixtures.ts"
+    "generate:bpm-fixtures": "tsx scripts/generate-bpm-fixtures.ts",
+    "e3:worker:once": "tsx --import ./scripts/register-server-only-stub.mjs scripts/e3-render-worker-once.ts"
   },
   "dependencies": {
     "@audio/beat": "^2.1.3",
