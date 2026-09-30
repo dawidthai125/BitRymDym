@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { BeatRecordingSurface } from "@/components/takes/beat-recording-surface";
 import { SiteHeader } from "@/components/site/site-header";
+import { E3_MIX_ENABLED } from "@/config/audio-render";
 import { getCurrentProfile } from "@/lib/auth/session";
 import {
   formatDurationSeconds,
@@ -78,10 +79,10 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
       <SiteHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
+      <main className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-8 px-6 py-10 pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]">
         <Link
           href="/beats"
-          className="w-fit text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          className="inline-flex min-h-11 w-fit items-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           ← Wszystkie bity
         </Link>
@@ -146,6 +147,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
             beatStatus="PUBLISHED"
             isAuthenticated={Boolean(session)}
             mixTakes={mixTakes}
+            mixEnabled={E3_MIX_ENABLED === true}
             mixPro={mixPro}
             masterPro={masterPro}
           />

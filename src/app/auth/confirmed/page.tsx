@@ -27,20 +27,20 @@ export default async function AuthConfirmedPage({
       <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
       <p className="text-sm text-muted-foreground">{copy.body}</p>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Link href="/sign-in" className={cn(buttonVariants())}>
+        <Link href="/sign-in" className={cn(buttonVariants(), "min-h-11")}>
           Zaloguj się
         </Link>
         {isSuccess ? (
           <Link
             href="/"
-            className={cn(buttonVariants({ variant: "outline" }))}
+            className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}
           >
             Przejdź do strony głównej
           </Link>
         ) : (
           <Link
             href="/sign-up"
-            className={cn(buttonVariants({ variant: "outline" }))}
+            className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}
           >
             Załóż konto ponownie
           </Link>

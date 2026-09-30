@@ -8,6 +8,10 @@ import {
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
+/** W6.2: ≥44×44 CSS px hit area without hamburger/sheet redesign. */
+const navLinkClass =
+  "inline-flex min-h-11 min-w-11 items-center px-2.5 py-2 underline-offset-4 hover:text-foreground hover:underline";
+
 export async function SiteHeader({
   className,
 }: {
@@ -26,72 +30,52 @@ export async function SiteHeader({
         className,
       )}
     >
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-6 py-4">
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-3xl items-center justify-between gap-3 py-3",
+          "pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
+          "pt-[max(0.75rem,env(safe-area-inset-top))]",
+        )}
+      >
         <Link
           href="/"
-          className="text-sm font-semibold tracking-tight text-foreground"
+          className="inline-flex min-h-11 items-center text-sm font-semibold tracking-tight text-foreground"
         >
           {siteConfig.name}
         </Link>
-        <nav className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <Link
-            href="/beats"
-            className="underline-offset-4 hover:text-foreground hover:underline"
-          >
+        <nav className="flex flex-wrap items-center gap-x-1 gap-y-0 text-sm text-muted-foreground">
+          <Link href="/beats" className={navLinkClass}>
             Bity
           </Link>
           {session ? (
             <>
               {showMyBeats ? (
-                <Link
-                  href="/account/beats"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
+                <Link href="/account/beats" className={navLinkClass}>
                   Moje bity
                 </Link>
               ) : null}
-              {session ? (
-                <Link
-                  href="/account/takes"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  Moje próbki
-                </Link>
-              ) : null}
+              <Link href="/account/takes" className={navLinkClass}>
+                Moje próbki
+              </Link>
               {showModerationNav && !showAdminNav ? (
-                <Link
-                  href="/admin/moderation"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
+                <Link href="/admin/moderation" className={navLinkClass}>
                   Moderacja
                 </Link>
               ) : null}
               {showAdminNav ? (
-                <Link
-                  href="/admin"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
+                <Link href="/admin" className={navLinkClass}>
                   Panel administratora
                 </Link>
               ) : null}
-              <Link
-                href="/account/downloads"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
+              <Link href="/account/downloads" className={navLinkClass}>
                 Pobrane
               </Link>
-              <Link
-                href="/account"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
+              <Link href="/account" className={navLinkClass}>
                 Konto
               </Link>
             </>
           ) : (
-            <Link
-              href="/sign-in"
-              className="underline-offset-4 hover:text-foreground hover:underline"
-            >
+            <Link href="/sign-in" className={navLinkClass}>
               Zaloguj
             </Link>
           )}

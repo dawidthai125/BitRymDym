@@ -41,7 +41,7 @@ export function SignInForm() {
           {state.error}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="min-h-11 w-full">
         {pending ? "Logowanie…" : "Zaloguj się"}
       </Button>
     </form>
@@ -93,7 +93,7 @@ export function SignUpForm() {
           {state.message}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="min-h-11 w-full">
         {pending ? "Tworzenie konta…" : "Załóż konto"}
       </Button>
     </form>

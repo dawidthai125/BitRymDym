@@ -17,6 +17,13 @@ const geist = Geist({
 
 export const metadata: Metadata = siteMetadata;
 
+/** W6.2: enable env(safe-area-inset-*) on notched devices. */
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl" className={cn("font-sans", geist.variable)}>
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh pb-[env(safe-area-inset-bottom)] antialiased">
+        {children}
+      </body>
     </html>
   );
 }

@@ -39,20 +39,32 @@ export default async function HomePage() {
               : "anonymous"}
           </li>
         </ul>
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Link href="/beats" className="underline underline-offset-4">
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm">
+          <Link
+            href="/beats"
+            className="inline-flex min-h-11 items-center underline underline-offset-4"
+          >
             Przeglądaj bity
           </Link>
           {session ? (
-            <Link href="/account" className="underline underline-offset-4">
+            <Link
+              href="/account"
+              className="inline-flex min-h-11 items-center underline underline-offset-4"
+            >
               Konto
             </Link>
           ) : (
             <>
-              <Link href="/sign-in" className="underline underline-offset-4">
+              <Link
+                href="/sign-in"
+                className="inline-flex min-h-11 items-center underline underline-offset-4"
+              >
                 Zaloguj się
               </Link>
-              <Link href="/sign-up" className="underline underline-offset-4">
+              <Link
+                href="/sign-up"
+                className="inline-flex min-h-11 items-center underline underline-offset-4"
+              >
                 Załóż konto
               </Link>
             </>

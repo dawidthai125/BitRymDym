@@ -313,6 +313,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             disabled={playDisabled}
             aria-pressed={state.phase === "playing"}
             aria-label={isPlayLabel(state.phase) ? "Odtwórz" : "Pauza"}
+            className="min-h-11 min-w-11 px-4"
           >
             {loading
               ? "Ładowanie…"
@@ -328,6 +329,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             aria-pressed={state.muted}
             aria-label={state.muted ? "Włącz dźwięk" : "Wycisz"}
             disabled={controlsLocked}
+            className="min-h-11 min-w-11 px-4"
           >
             {state.muted ? "Wyciszony" : "Dźwięk"}
           </Button>
@@ -344,7 +346,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             disabled={seekDisabled}
             onChange={(event) => handleSeek(Number(event.target.value))}
             aria-label="Przewiń utwór"
-            className="w-full accent-foreground"
+            className="h-11 w-full accent-foreground"
           />
         </label>
 
@@ -361,7 +363,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
               dispatch({ type: "VOLUME", volume: Number(event.target.value) })
             }
             aria-label="Głośność"
-            className="w-full accent-foreground"
+            className="h-11 w-full accent-foreground"
           />
         </label>
 

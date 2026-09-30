@@ -73,6 +73,7 @@ export function DownloadButton({
         disabled={busy || ui.phase === "limit"}
         onClick={onDownload}
         aria-busy={busy}
+        className="min-h-11 min-w-11 px-4"
       >
         {busy ? "Pobieranie…" : "Pobierz"}
       </Button>
@@ -85,7 +86,7 @@ export function DownloadButton({
               {" "}
               <Link
                 href="/sign-in"
-                className="underline underline-offset-4 hover:text-foreground"
+                className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground"
               >
                 Zaloguj się
               </Link>{" "}

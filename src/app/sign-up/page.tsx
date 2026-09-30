@@ -20,7 +20,10 @@ export default async function SignUpPage() {
       <SignUpForm />
       <p className="text-sm text-muted-foreground">
         Masz już konto?{" "}
-        <Link href="/sign-in" className="underline underline-offset-4">
+        <Link
+          href="/sign-in"
+          className="inline-flex min-h-11 items-center underline underline-offset-4"
+        >
           Zaloguj się
         </Link>
       </p>

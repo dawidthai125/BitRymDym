@@ -20,6 +20,11 @@ type BeatRecordingSurfaceProps = {
   isAuthenticated: boolean;
   /** READY own takes for this beat (server-filtered). */
   mixTakes?: MixTakeOption[];
+  /**
+   * Server-resolved Mix presentation gate (AR-W6-01).
+   * Do not read E3_MIX_ENABLED on the client.
+   */
+  mixEnabled?: boolean;
   /** Server-resolved MIX_PRO from E3.2 entitlement. */
   mixPro?: boolean;
   /** Server-resolved MASTER_PRO (E3.4 metering / locked CTA only). */
@@ -28,7 +33,7 @@ type BeatRecordingSurfaceProps = {
 
 /**
  * Wave 3 composition: PlaybackShell + RecordingPanel siblings sharing a thin sync ref.
- * E3.3/E3.4: MixPanel sibling (gated by E3_MIX_ENABLED) — Mix + Basic Master preview.
+ * E3.3/E3.4: MixPanel sibling gated by server-resolved `mixEnabled` (AR-W6-01).
  */
 export function BeatRecordingSurface({
   beatId,
@@ -38,13 +43,14 @@ export function BeatRecordingSurface({
   beatStatus,
   isAuthenticated,
   mixTakes = [],
+  mixEnabled = false,
   mixPro = false,
   masterPro = false,
 }: BeatRecordingSurfaceProps) {
   const playbackRef = useRef<PlaybackShellHandle | null>(null);
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <PlaybackShell
         ref={playbackRef}
         beatId={beatId}
@@ -68,6 +74,7 @@ export function BeatRecordingSurface({
         beatId={beatId}
         takes={mixTakes}
         isAuthenticated={isAuthenticated}
+        mixEnabled={mixEnabled}
         mixPro={mixPro}
         masterPro={masterPro}
       />

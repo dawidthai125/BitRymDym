@@ -42,7 +42,7 @@ export default async function BeatsCatalogPage() {
               <li key={beat.id}>
                 <Link
                   href={`/beat/${beat.id}`}
-                  className="flex flex-col gap-1 py-4 outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
+                  className="flex min-h-11 flex-col gap-1 py-4 outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
                 >
                   <div className="min-w-0 space-y-1">
                     <p className="truncate text-base font-medium tracking-tight text-foreground">

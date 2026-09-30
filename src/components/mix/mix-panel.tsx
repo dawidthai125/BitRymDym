@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useEffectEvent } from "react";
 
-import { E3_MIX_ENABLED } from "@/config/audio-render";
 import {
   createMixPreviewGraph,
   type MixGraphHandles,
@@ -24,6 +23,11 @@ type MixPanelProps = {
   beatId: string;
   takes: MixTakeOption[];
   isAuthenticated: boolean;
+  /**
+   * Server-resolved Mix presentation gate (AR-W6-01).
+   * RSC reads E3_MIX_ENABLED — client must not read process.env directly.
+   */
+  mixEnabled: boolean;
   /** Server-resolved MIX_PRO (never trust client). */
   mixPro: boolean;
   /** Server-resolved MASTER_PRO — metering / locked CTA only (E3.4). */
@@ -38,14 +42,19 @@ type SessionDto = {
   previewEngineId: string | null;
 };
 
+const touchBtn =
+  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-4 text-sm disabled:pointer-events-none disabled:opacity-50";
+
 /**
- * E3.3/E3.4 Mix + Basic Master surface — gated by E3_MIX_ENABLED (default OFF).
+ * E3.3/E3.4 Mix + Basic Master surface — gated by server-resolved `mixEnabled`.
  * Realtime preview only; no durable artifact / render / Pro Master DSP.
+ * W6.3: mobile presentation (touch · disclosure · overflow) — no DSP/AuthZ changes.
  */
 export function MixPanel({
   beatId,
   takes,
   isAuthenticated,
+  mixEnabled,
   mixPro,
   masterPro,
 }: MixPanelProps) {
@@ -92,13 +101,13 @@ export function MixPanel({
     return () => cancelAnimationFrame(raf);
   }, [playing, masterPro]);
 
-  if (!E3_MIX_ENABLED) {
+  if (!mixEnabled) {
     return null;
   }
 
   if (!isAuthenticated) {
     return (
-      <section className="space-y-2 border-t border-border/60 pt-4">
+      <section className="min-w-0 space-y-2 border-t border-border/60 pt-4">
         <h2 className="text-sm font-semibold tracking-tight">Mix</h2>
         <p className="text-sm text-muted-foreground">
           Zaloguj się, aby użyć Basic Mix (anonimowy Mix jest niedostępny).
@@ -109,7 +118,7 @@ export function MixPanel({
 
   if (takes.length === 0) {
     return (
-      <section className="space-y-2 border-t border-border/60 pt-4">
+      <section className="min-w-0 space-y-2 border-t border-border/60 pt-4">
         <h2 className="text-sm font-semibold tracking-tight">Mix</h2>
         <p className="text-sm text-muted-foreground">
           Nagraj READY take na tym bicie, aby otworzyć Mix Session.
@@ -191,7 +200,6 @@ export function MixPanel({
 
       disposeGraph();
       setMediaKey((k) => k + 1);
-      // Allow remount of <audio> before createMediaElementSource
       await new Promise((r) => setTimeout(r, 0));
 
       const beatEl = beatAudioRef.current;
@@ -247,7 +255,6 @@ export function MixPanel({
         throw new Error("Premium required for HQ MP3 / WAV export.");
       }
       const s = await ensureSession();
-      // Premium path requires frozen pro params on the session.
       if (
         (requestedTier === "HQ_MP3" || requestedTier === "WAV") &&
         !s.parameters.pro
@@ -306,7 +313,8 @@ export function MixPanel({
       }
       throw new Error("Export timeout (czekaj na EXTERNAL worker).");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed.");
+      const message = e instanceof Error ? e.message : "Export failed.";
+      setError(formatExportError(message));
       setExportStatus("error");
     } finally {
       setExportBusy(false);
@@ -333,9 +341,7 @@ export function MixPanel({
     }
   }
 
-  function updateBasic(
-    patch: (p: MixParameters) => MixParameters,
-  ) {
+  function updateBasic(patch: (p: MixParameters) => MixParameters) {
     const next = patch(params);
     setParams(next);
     void persistParams(next).catch((e) =>
@@ -362,18 +368,18 @@ export function MixPanel({
   }
 
   return (
-    <section className="space-y-4 border-t border-border/60 pt-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <section className="min-w-0 max-w-full space-y-4 border-t border-border/60 pt-4">
+      <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-2">
         <h2 className="text-sm font-semibold tracking-tight">Mix + Master</h2>
-        <p className="text-xs text-muted-foreground">
-          Preview realtime · Export flag-gated (Basic / Premium HQ·WAV)
+        <p className="text-xs text-muted-foreground text-pretty">
+          Preview realtime · Export presentation (jobs flag-gated)
         </p>
       </div>
 
-      <label className="block space-y-1 text-sm">
+      <label className="block min-w-0 space-y-1 text-sm">
         <span className="text-muted-foreground">Własny take</span>
         <select
-          className="w-full rounded-md border border-border bg-background px-3 py-2"
+          className="min-h-11 w-full max-w-full rounded-md border border-border bg-background px-3 py-2"
           value={takeId}
           disabled={busy || Boolean(session)}
           onChange={(e) => setTakeId(e.target.value)}
@@ -386,7 +392,7 @@ export function MixPanel({
         </select>
       </label>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         <GainPanControl
           label="Take"
           gainDb={params.take.gainDb}
@@ -407,250 +413,260 @@ export function MixPanel({
         />
       </div>
 
-      <fieldset className="space-y-2">
-        <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <details className="min-w-0 rounded-md border border-border/70 open:pb-3">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
           Basic EQ / Dynamics / FX
-        </legend>
-        <Slider
-          label="EQ Low"
-          min={-12}
-          max={12}
-          step={0.5}
-          value={params.eq.lowGainDb}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({ ...p, eq: { ...p.eq, lowGainDb: v } }))
-          }
-        />
-        <Slider
-          label="EQ Mid"
-          min={-12}
-          max={12}
-          step={0.5}
-          value={params.eq.midGainDb}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({ ...p, eq: { ...p.eq, midGainDb: v } }))
-          }
-        />
-        <Slider
-          label="EQ High"
-          min={-12}
-          max={12}
-          step={0.5}
-          value={params.eq.highGainDb}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({ ...p, eq: { ...p.eq, highGainDb: v } }))
-          }
-        />
-        <Slider
-          label="Comp threshold"
-          min={-60}
-          max={0}
-          step={1}
-          value={params.compressor.thresholdDb}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({
-              ...p,
-              compressor: { ...p.compressor, thresholdDb: v },
-            }))
-          }
-        />
-        <Slider
-          label="Reverb mix"
-          min={0}
-          max={1}
-          step={0.01}
-          value={params.reverb.mix}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({ ...p, reverb: { ...p.reverb, mix: v } }))
-          }
-        />
-        <Slider
-          label="Delay mix"
-          min={0}
-          max={1}
-          step={0.01}
-          value={params.delay.mix}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({ ...p, delay: { ...p.delay, mix: v } }))
-          }
-        />
-      </fieldset>
-
-      <fieldset className="space-y-2">
-        <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Basic Master
-        </legend>
-        <Slider
-          label="Master gain (dB)"
-          min={-24}
-          max={12}
-          step={0.5}
-          value={params.master.gainDb}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({
-              ...p,
-              master: { ...p.master, gainDb: v },
-            }))
-          }
-        />
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={params.master.clipProtect}
+        </summary>
+        <div className="space-y-2 px-3 pt-1">
+          <Slider
+            label="EQ Low"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={params.eq.lowGainDb}
             disabled={busy}
-            onChange={(e) =>
+            onChange={(v) =>
+              updateBasic((p) => ({ ...p, eq: { ...p.eq, lowGainDb: v } }))
+            }
+          />
+          <Slider
+            label="EQ Mid"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={params.eq.midGainDb}
+            disabled={busy}
+            onChange={(v) =>
+              updateBasic((p) => ({ ...p, eq: { ...p.eq, midGainDb: v } }))
+            }
+          />
+          <Slider
+            label="EQ High"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={params.eq.highGainDb}
+            disabled={busy}
+            onChange={(v) =>
+              updateBasic((p) => ({ ...p, eq: { ...p.eq, highGainDb: v } }))
+            }
+          />
+          <Slider
+            label="Comp threshold"
+            min={-60}
+            max={0}
+            step={1}
+            value={params.compressor.thresholdDb}
+            disabled={busy}
+            onChange={(v) =>
               updateBasic((p) => ({
                 ...p,
-                master: { ...p.master, clipProtect: e.target.checked },
+                compressor: { ...p.compressor, thresholdDb: v },
               }))
             }
           />
-          Clip protect
-        </label>
-        <Slider
-          label="Master limiter threshold"
-          min={-24}
-          max={0}
-          step={0.5}
-          value={params.master.basicLimiter.thresholdDb}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({
-              ...p,
-              master: {
-                ...p.master,
-                basicLimiter: { ...p.master.basicLimiter, thresholdDb: v },
-              },
-            }))
-          }
-        />
-        <Slider
-          label="Master loudness target (LUFS)"
-          min={-24}
-          max={-6}
-          step={0.5}
-          value={params.master.basicLoudness.targetLufs}
-          disabled={busy}
-          onChange={(v) =>
-            updateBasic((p) => ({
-              ...p,
-              master: {
-                ...p.master,
-                basicLoudness: { ...p.master.basicLoudness, targetLufs: v },
-              },
-            }))
-          }
-        />
-      </fieldset>
-
-      <fieldset className="space-y-2">
-        <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Pro Mix {mixPro ? "" : "🔒"}
-        </legend>
-        {!mixPro ? (
-          <button
-            type="button"
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-            onClick={onProControlIntent}
-          >
-            Pro EQ / multiband / de-esser — Premium
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="text-sm underline-offset-4 hover:underline"
-            disabled={busy}
-            onClick={enableProDefaults}
-          >
-            {params.pro ? "Pro łańcuch aktywny" : "Włącz Pro FX chain"}
-          </button>
-        )}
-        {proLockedHint && !mixPro ? (
-          <p className="text-xs text-muted-foreground" role="status">
-            Pro Mix wymaga aktywnego Premium (server SSOT). Płatności poza
-            zakresem E3.4.
-          </p>
-        ) : null}
-        {mixPro && params.pro ? (
           <Slider
-            label="De-esser range"
+            label="Reverb mix"
             min={0}
-            max={24}
-            step={1}
-            value={params.pro.deEsser.rangeDb}
+            max={1}
+            step={0.01}
+            value={params.reverb.mix}
             disabled={busy}
             onChange={(v) =>
-              updateBasic((p) =>
-                p.pro
-                  ? {
-                      ...p,
-                      pro: {
-                        ...p.pro,
-                        deEsser: { ...p.pro.deEsser, rangeDb: v },
-                      },
-                    }
-                  : p,
-              )
+              updateBasic((p) => ({ ...p, reverb: { ...p.reverb, mix: v } }))
             }
           />
-        ) : null}
-      </fieldset>
+          <Slider
+            label="Delay mix"
+            min={0}
+            max={1}
+            step={0.01}
+            value={params.delay.mix}
+            disabled={busy}
+            onChange={(v) =>
+              updateBasic((p) => ({ ...p, delay: { ...p.delay, mix: v } }))
+            }
+          />
+        </div>
+      </details>
 
-      <fieldset className="space-y-2">
-        <legend className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Pro Master {masterPro ? "" : "🔒"}
-        </legend>
-        {!masterPro ? (
-          <button
-            type="button"
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-            onClick={onMasterProIntent}
-          >
-            Metering / Pro Master bake — Premium
-          </button>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Metering UX (client peak) · Final Truth = server-pro-v1 Master Plan A
-            </p>
-            <div
-              className="h-2 w-full overflow-hidden rounded-sm bg-muted"
-              aria-label="Master peak meter"
+      <details className="min-w-0 rounded-md border border-border/70 open:pb-3" open>
+        <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
+          Basic Master
+        </summary>
+        <div className="space-y-2 px-3 pt-1">
+          <Slider
+            label="Master gain (dB)"
+            min={-24}
+            max={12}
+            step={0.5}
+            value={params.master.gainDb}
+            disabled={busy}
+            onChange={(v) =>
+              updateBasic((p) => ({
+                ...p,
+                master: { ...p.master, gainDb: v },
+              }))
+            }
+          />
+          <label className="flex min-h-11 items-center gap-3 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              className="size-5 shrink-0"
+              checked={params.master.clipProtect}
+              disabled={busy}
+              onChange={(e) =>
+                updateBasic((p) => ({
+                  ...p,
+                  master: { ...p.master, clipProtect: e.target.checked },
+                }))
+              }
+            />
+            Clip protect
+          </label>
+          <Slider
+            label="Master limiter threshold"
+            min={-24}
+            max={0}
+            step={0.5}
+            value={params.master.basicLimiter.thresholdDb}
+            disabled={busy}
+            onChange={(v) =>
+              updateBasic((p) => ({
+                ...p,
+                master: {
+                  ...p.master,
+                  basicLimiter: { ...p.master.basicLimiter, thresholdDb: v },
+                },
+              }))
+            }
+          />
+          <Slider
+            label="Master loudness target (LUFS)"
+            min={-24}
+            max={-6}
+            step={0.5}
+            value={params.master.basicLoudness.targetLufs}
+            disabled={busy}
+            onChange={(v) =>
+              updateBasic((p) => ({
+                ...p,
+                master: {
+                  ...p.master,
+                  basicLoudness: { ...p.master.basicLoudness, targetLufs: v },
+                },
+              }))
+            }
+          />
+        </div>
+      </details>
+
+      <details className="min-w-0 rounded-md border border-border/70 open:pb-3">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
+          Pro Mix {mixPro ? "" : "· locked"}
+        </summary>
+        <div className="space-y-2 px-3 pt-1">
+          {!mixPro ? (
+            <button
+              type="button"
+              className={`${touchBtn} w-full text-muted-foreground sm:w-auto`}
+              onClick={onProControlIntent}
             >
-              <div
-                className="h-full bg-foreground/70 transition-[width] duration-75"
-                style={{
-                  width: `${Math.min(100, (meter?.peak ?? 0) * 100)}%`,
-                }}
-              />
-            </div>
-            <p className="text-xs tabular-nums text-muted-foreground">
-              Peak{" "}
-              {meter
-                ? `${meter.peakDb.toFixed(1)} dBFS`
-                : "— (uruchom preview)"}
+              Pro EQ / multiband / de-esser — Premium
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`${touchBtn} w-full sm:w-auto`}
+              disabled={busy}
+              onClick={enableProDefaults}
+            >
+              {params.pro ? "Pro łańcuch aktywny" : "Włącz Pro FX chain"}
+            </button>
+          )}
+          {proLockedHint && !mixPro ? (
+            <p className="text-xs text-muted-foreground text-pretty" role="status">
+              Pro Mix wymaga aktywnego Premium (server SSOT). Płatności poza
+              zakresem E3.4.
             </p>
-          </div>
-        )}
-        {masterProLockedHint && !masterPro ? (
-          <p className="text-xs text-muted-foreground" role="status">
-            Pro Master wymaga aktywnego Premium (MASTER_PRO). Final Truth używa
-            Plan A master po Pro Mix (server-pro-v1).
-          </p>
-        ) : null}
-      </fieldset>
+          ) : null}
+          {mixPro && params.pro ? (
+            <Slider
+              label="De-esser range"
+              min={0}
+              max={24}
+              step={1}
+              value={params.pro.deEsser.rangeDb}
+              disabled={busy}
+              onChange={(v) =>
+                updateBasic((p) =>
+                  p.pro
+                    ? {
+                        ...p,
+                        pro: {
+                          ...p.pro,
+                          deEsser: { ...p.pro.deEsser, rangeDb: v },
+                        },
+                      }
+                    : p,
+                )
+              }
+            />
+          ) : null}
+        </div>
+      </details>
 
-      <div className="flex flex-wrap gap-3">
+      <details className="min-w-0 rounded-md border border-border/70 open:pb-3">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
+          Pro Master {masterPro ? "" : "· locked"}
+        </summary>
+        <div className="space-y-2 px-3 pt-1">
+          {!masterPro ? (
+            <button
+              type="button"
+              className={`${touchBtn} w-full text-muted-foreground sm:w-auto`}
+              onClick={onMasterProIntent}
+            >
+              Metering / Pro Master bake — Premium
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground text-pretty">
+                Metering UX (client peak) · Final Truth = server-pro-v1 Master
+                Plan A
+              </p>
+              <div
+                className="h-3 w-full max-w-full overflow-hidden rounded-sm bg-muted"
+                aria-label="Master peak meter"
+              >
+                <div
+                  className="h-full bg-foreground/70 transition-[width] duration-75"
+                  style={{
+                    width: `${Math.min(100, (meter?.peak ?? 0) * 100)}%`,
+                  }}
+                />
+              </div>
+              <p className="text-xs tabular-nums text-muted-foreground">
+                Peak{" "}
+                {meter
+                  ? `${meter.peakDb.toFixed(1)} dBFS`
+                  : "— (uruchom preview)"}
+              </p>
+            </div>
+          )}
+          {masterProLockedHint && !masterPro ? (
+            <p className="text-xs text-muted-foreground text-pretty" role="status">
+              Pro Master wymaga aktywnego Premium (MASTER_PRO). Final Truth
+              używa Plan A master po Pro Mix (server-pro-v1).
+            </p>
+          ) : null}
+        </div>
+      </details>
+
+      <div className="flex min-w-0 flex-wrap gap-2">
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-2 text-sm"
+          className={touchBtn}
           disabled={busy || !takeId}
           onClick={() => void startPreview()}
         >
@@ -658,7 +674,7 @@ export function MixPanel({
         </button>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-2 text-sm"
+          className={touchBtn}
           disabled={!playing && !graphRef.current}
           onClick={stopPreview}
         >
@@ -666,24 +682,31 @@ export function MixPanel({
         </button>
       </div>
 
-      <div className="space-y-2 border-t border-border/50 pt-3">
+      <div className="min-w-0 space-y-3 border-t border-border/50 pt-3">
         <p className="text-xs font-medium tracking-wide uppercase text-muted-foreground">
           Export
         </p>
-        <div className="flex flex-wrap gap-2">
+        <p className="text-xs text-muted-foreground text-pretty">
+          Basic · HQ 320 · WAV — presentation / status / error. Live encode
+          requires separate enablement (jobs OFF = expected error UX).
+        </p>
+        <div className="flex min-w-0 flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-md border border-border px-3 py-2 text-sm"
+            className={touchBtn}
             disabled={busy || exportBusy || !takeId}
+            aria-busy={exportBusy}
             onClick={() => void startExport("BASIC_MP3")}
           >
-            {exportBusy ? "Exporting…" : "Basic MP3"}
+            {exportBusy && exportStatus !== "error"
+              ? "Exporting…"
+              : "Basic MP3"}
           </button>
           {mixPro ? (
             <>
               <button
                 type="button"
-                className="rounded-md border border-border px-3 py-2 text-sm"
+                className={touchBtn}
                 disabled={busy || exportBusy || !takeId}
                 onClick={() => void startExport("HQ_MP3")}
               >
@@ -691,7 +714,7 @@ export function MixPanel({
               </button>
               <button
                 type="button"
-                className="rounded-md border border-border px-3 py-2 text-sm"
+                className={touchBtn}
                 disabled={busy || exportBusy || !takeId}
                 onClick={() => void startExport("WAV")}
               >
@@ -701,49 +724,98 @@ export function MixPanel({
           ) : (
             <button
               type="button"
-              className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
-              disabled={busy}
+              className={`${touchBtn} text-muted-foreground`}
+              disabled={busy || exportBusy}
               onClick={() => {
                 onProControlIntent();
+                setExportStatus("locked");
                 setError(
                   "HQ MP3 / WAV wymaga aktywnego Premium (EXPORT_HQ_MP3 / EXPORT_WAV).",
                 );
               }}
             >
-              HQ / WAV 🔒
+              HQ / WAV · Premium
             </button>
           )}
           {exportArtifactId ? (
             <button
               type="button"
-              className="rounded-md border border-border px-3 py-2 text-sm"
+              className={touchBtn}
               disabled={exportBusy}
               onClick={() => void downloadExport()}
             >
               Download
             </button>
-          ) : null}
+          ) : (
+            <button
+              type="button"
+              className={`${touchBtn} text-muted-foreground`}
+              disabled
+              aria-disabled="true"
+              title="Download dostępny po udanym export (artifact)"
+            >
+              Download
+            </button>
+          )}
         </div>
         {exportStatus ? (
-          <p className="text-xs text-muted-foreground">Status: {exportStatus}</p>
+          <p
+            className="text-xs text-muted-foreground text-pretty"
+            role="status"
+            aria-live="polite"
+          >
+            Status: {formatExportStatus(exportStatus)}
+            {exportBusy ? " · czekaj…" : null}
+          </p>
         ) : null}
         {mixPro ? (
-          <p className="text-xs text-muted-foreground">
-            Premium Final Truth: preview może różnić się od exportu (server-pro-v1).
+          <p className="text-xs text-muted-foreground text-pretty">
+            Premium Final Truth: preview może różnić się od exportu
+            (server-pro-v1).
           </p>
         ) : null}
       </div>
 
       {error ? (
-        <p className="text-sm text-red-700" role="alert">
+        <p className="text-sm text-destructive text-pretty" role="alert">
           {error}
         </p>
       ) : null}
 
-      <audio key={`beat-${mediaKey}`} ref={beatAudioRef} preload="none" className="hidden" />
-      <audio key={`take-${mediaKey}`} ref={takeAudioRef} preload="none" className="hidden" />
+      <audio
+        key={`beat-${mediaKey}`}
+        ref={beatAudioRef}
+        preload="none"
+        className="hidden"
+      />
+      <audio
+        key={`take-${mediaKey}`}
+        ref={takeAudioRef}
+        preload="none"
+        className="hidden"
+      />
     </section>
   );
+}
+
+function formatExportStatus(status: string): string {
+  switch (status) {
+    case "creating":
+      return "creating job";
+    case "locked":
+      return "premium lock";
+    case "error":
+      return "error";
+    default:
+      return status;
+  }
+}
+
+function formatExportError(message: string): string {
+  if (/render jobs are not enabled/i.test(message) || /E3_RENDER_JOBS/i.test(message)) {
+    return "Export jobs są wyłączone (E3_RENDER_JOBS_ENABLED=OFF). To oczekiwany stan W6 — presentation / error UX only.";
+  }
+  return message;
 }
 
 function GainPanControl(props: {
@@ -754,7 +826,7 @@ function GainPanControl(props: {
   onChange: (gainDb: number, pan: number) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-md border border-border/70 p-3">
+    <div className="min-w-0 space-y-2 rounded-md border border-border/70 p-3">
       <p className="text-xs font-medium tracking-wide uppercase">{props.label}</p>
       <Slider
         label="Gain (dB)"
@@ -788,10 +860,10 @@ function Slider(props: {
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs">
-      <span className="flex justify-between text-muted-foreground">
-        <span>{props.label}</span>
-        <span>{props.value}</span>
+    <label className="flex min-w-0 flex-col gap-1 text-xs">
+      <span className="flex justify-between gap-2 text-muted-foreground">
+        <span className="min-w-0 truncate">{props.label}</span>
+        <span className="shrink-0 tabular-nums">{props.value}</span>
       </span>
       <input
         type="range"
@@ -801,6 +873,7 @@ function Slider(props: {
         value={props.value}
         disabled={props.disabled}
         onChange={(e) => props.onChange(Number(e.target.value))}
+        className="h-11 w-full max-w-full accent-foreground"
       />
     </label>
   );
