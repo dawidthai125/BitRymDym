@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-01 — STORAGE-ARCH-01 — DESIGN FREEZE LOCKED + LIVING SSOT RECONCILIATION
+
+**Status:** **STORAGE-ARCH-01 = LOCKED** · Final Architecture Review **PASS WITH FINDINGS** · Owner Review **PASS** · Implementation **NOT STARTED** · STORAGE-ARCH-02 **NOT STARTED** · Production app `6dfd201` **UNCHANGED** · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` **UNCHANGED**
+
+- Audit + Design Freeze + Final Architecture Review complete (docs layer)
+- OD-SA-01…10 LOCKED (3 private buckets · dual-read→staged migration · MASTER+fallback · artwork deferred · janitor/backup/orphans = future waves)
+- Living SSOT reconciled: PROJECT_STATE · MASTER_HANDOFF · docs README · architecture README
+- FAR-02 closed (living handoff links to Storage freeze/audit)
+- FAR-01 / FAR-03 / FAR-04 remain deferred (Wave 02 dual-read · Wave 07 scale threshold · observability)
+- Contabo remains ephemeral compute only · Supabase Storage remains durable media SSOT
+- No code/DB/Storage/env/worker/deploy mutations
+- Canonical: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
+
+---
+
 ## 2026-10-01 — E3 PRODUCTION ENABLEMENT — FINAL GREEN + DOCS RECONCILIATION
 
 **Status:** **E3 = PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · app `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON**

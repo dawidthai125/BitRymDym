@@ -18,7 +18,7 @@
 
 **Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **E3 = PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · app `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** · next = **POST-RELEASE / DOCUMENTATION RECONCILIATION** then deferred backlog (Premium E2E · janitor · dashboard · STEMS/payments OUT).
+**Next:** **E3 = PRODUCTION VERIFIED — GREEN** · app `6dfd201` · docs tip `a8e9356` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **NOT STARTED** · next = Owner docs commit GO (optional) then deferred backlog / Wave 02 only after Implementation GO.
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -62,7 +62,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **OWNER W6.1 VERIFICATION GO** → then W6.2 (no automatic enablement / no Production E3 flags).
+**Next:** STORAGE-ARCH-01 **LOCKED** · do **not** start STORAGE-ARCH-02 without Implementation GO — see [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 
@@ -97,7 +97,9 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [audits/E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) | E3.6 Basic MP3 production closeout (DARK) |
 | [audits/E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) | E3.7 Premium Render implementation closeout (not Production) |
 | [audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) | E3 Production Enablement Design Freeze |
-| [audits/E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) | OWNER GO #2 Worker Infrastructure — **BLOCKED** |
+| [audits/STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) | Storage Architecture V1 Design Freeze — **LOCKED** |
+| [audits/STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) | STORAGE-ARCH-01 audit · PASS WITH FINDINGS |
+| [audits/E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) | OWNER GO #2 Worker Infrastructure — **CLOSED / SUPERSEDED** (Contabo) |
 | [audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) | E3.8 W6 closeout · CLOSED / PASS · Owner-accepted emulated |
 | [audits/E3_8_W6_MOBILE_CERT_PLAN.md](./audits/E3_8_W6_MOBILE_CERT_PLAN.md) | E3.8 W6 Mobile Certification Design Freeze |
 | [audits/E3_8_W6_CERT_CHECKLIST.md](./audits/E3_8_W6_CERT_CHECKLIST.md) | E3.8 W6 certification checklist (Owner-accepted emulated) |
@@ -111,5 +113,5 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–5 **CLOSED** · D02 **SHIPPED** @ `e98ba52` · **E3 = PRODUCTION VERIFIED — GREEN** @ `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON**.
-**Next:** **POST-RELEASE / DOCUMENTATION RECONCILIATION** then deferred backlog — see [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
+**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–5 **CLOSED** · D02 **SHIPPED** @ `e98ba52` · **E3 = PRODUCTION VERIFIED — GREEN** @ `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED**.
+**Next:** STORAGE-ARCH-02 **NOT STARTED** (requires Implementation GO) · see [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).

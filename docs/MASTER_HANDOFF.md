@@ -26,6 +26,7 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
 | **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
+| **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Owner **PASS** · Implementation **NOT STARTED** · STORAGE-ARCH-02 **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
 | **OWNER GO #2 Worker Infra** | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
 | **Worker** | Contabo · bootstrap `92496d4` · **STOPPED / DISABLED** |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
@@ -52,6 +53,7 @@ WORKER                   = STOPPED / DISABLED
 | SHA | Meaning |
 |-----|---------|
 | `6dfd201` | **Current Production application** — AC-PE-12 + PE enablement tip |
+| `a8e9356` | **Docs tip at last docs commit** (post-release E3 docs) · STORAGE-ARCH-01 living docs may be uncommitted until Owner commit GO |
 | `92496d4` | **Worker bootstrap** (Contabo EXTERNAL encode host) |
 | `9026fa9` | **W6.2/W6.3 UX ship** (historical) · E3 was still DARK at that ship |
 | `17c4d530` | Prior Production (E3.7 Premium Render · DARK at closeout) |
@@ -66,9 +68,11 @@ WORKER                   = STOPPED / DISABLED
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **HEAD / origin/main / Production** | `6dfd201` (`feat(audio): enforce E3 public audio release gate`) |
+| **HEAD / origin/main** | `a8e9356` (`docs: reconcile post-release E3 production state`) · may advance on further docs-only commits |
+| **Production application** | `6dfd201` (≠ docs tip after docs-only commits — intentional) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
-| Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` |
+| **STORAGE-ARCH-01** | **LOCKED** · see §4.1 · Implementation **NOT STARTED** |
+| Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` · host/Oracle audits · `infra/` · STORAGE-ARCH-01 docs until commit GO |
 
 Do **not** stage agent tooling folders as product scope.
 
@@ -96,10 +100,44 @@ discover beats → listen → download → test vocals (takes) → (future) fini
 | Audio | Private buckets · short-lived signed URLs · no permanent public master URLs |
 | Player | Custom `PlaybackShell` (not stock HTML-only player as product UX) |
 | E3 Full Audio | Architecture **C — HYBRID** LOCKED · client preview · server Final Truth · EXTERNAL worker |
+| Storage Architecture V1 | **STORAGE-ARCH-01 = LOCKED** · Hybrid C · durable = Supabase Storage only · Contabo ephemeral |
 
 Principles: **SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC · SERVER AUTHORIZATION · PRIVATE AUDIO · DOCUMENTATION CONTINUITY**.
 
 E3 index: [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md)
+
+Storage V1: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
+
+### 4.1 STORAGE-ARCH-01 — LOCKED (living)
+
+```text
+STORAGE-ARCH-01              = LOCKED
+Architecture                 = Hybrid C
+Durable media                = Supabase Storage
+Metadata SSOT                = Supabase PostgreSQL
+Application / AuthZ / API    = Vercel / Next.js
+Render / compute             = Contabo (ephemeral · NOT durable media · NOT audio library SSOT)
+Buckets V1                   = beat-audio · take-audio · audio-artifacts (PRIVATE)
+Final Architecture Review    = PASS WITH FINDINGS
+Owner Review                 = PASS
+OD-SA-01…10                  = LOCKED
+Implementation               = NOT STARTED
+STORAGE-ARCH-02              = NOT STARTED
+Production mutations         = NONE
+```
+
+| Topic | Locked value |
+|-------|----------------|
+| Buckets | Reuse 3 existing only (OD-SA-01) |
+| Legacy keys | dual-read → staged migration (OD-SA-02) · FAR-01 → Wave 02 · **no Implementation GO** |
+| Beat library | MASTER + fallback (OD-SA-03) |
+| Artwork | DEFERRED (OD-SA-04) |
+| Artifacts janitor | REQUIRED · future wave (OD-SA-05 / STORAGE-ARCH-03) |
+| Backup source MASTER | REQUIRED BEFORE SCALE (OD-SA-06) · threshold at Wave 07 |
+| Mix artifact backup | regenerable · no default backup (OD-SA-07) |
+| Orphans | inventory → dry-run → Owner GO (OD-SA-08) |
+
+**Do not** start STORAGE-ARCH-02 dual-read / janitor / orphan delete / key migration / backup without a separate Owner Implementation GO.
 
 ---
 
@@ -130,13 +168,14 @@ REQUEST
   → TAKE
 ```
 
-### E3 render chain (DARK on Production)
+### E3 render chain (living Production — GREEN after PE)
 
 ```text
 AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
   → render_jobs → EXTERNAL WORKER → private audio-artifacts → signed download
 ```
 
+> Historical note: chain was DARK at E3.6/E3.7 wave closeouts; living enablement is GREEN (`E3_PUBLIC_AUDIO=ON` · AC-PE-12). Do not rewrite those closeouts.
 | Rule | Notes |
 |------|--------|
 | IDOR | Owner boundary on takes / mix / jobs / artifacts |
@@ -215,9 +254,12 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | **E3.4 Master Basic** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** | OK | |
 | **E3.5 Render Jobs + Worker Adapter** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** @ `fbece37` | OK | fake-complete = CI/domain |
 | **E3.6 Basic MP3 export** | SHIPPED / PRODUCTION VERIFIED | GREEN · **DARK** @ `183b2a4` | OK | real 128 kbps · OD-E36-04 C · EXTERNAL worker |
-| **E3.7 Premium Render** | **SHIPPED / PRODUCTION VERIFIED** | GREEN · **DARK** @ `17c4d530` | OK | `server-pro-v1` · HQ 320 · WAV · enablement OFF |
-| E3 public Free Audio / Production render enablement | **NOT ENABLED** | DARK | — | separate Owner Production Enablement GO |
-| Later E3 waves (e.g. W6 public) | **NOT SELECTED** | — | — | **Do not auto-start** |
+| **E3.7 Premium Render** | **SHIPPED / PRODUCTION VERIFIED** | GREEN · historically **DARK** at `17c4d530` closeout · living PE **ON** | OK | `server-pro-v1` · HQ 320 · WAV · Premium E2E **NOT TESTED** |
+| E3 public Free Audio / Production render enablement | **ENABLED** (PE COMPLETE) | GREEN @ `6dfd201` · GO #5 **PASS** | OK | Free Basic only · private bucket · AC-PE-12 |
+| **STORAGE-ARCH-01** | **LOCKED** (architecture) | N/A · Production mutations **NONE** | OK | Hybrid C Storage V1 · [freeze](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
+| **STORAGE-ARCH-02** dual-read | **NOT STARTED** | — | — | FAR-01 · **no Implementation GO** |
+| Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
+| Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
 | Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07/08 OPEN | Overlay table exists for E3 |
 | Messaging / voting / comments product | NOT IMPLEMENTED | — | SSOT future; OD-10/11 OPEN | Permission rows may exist |
@@ -239,6 +281,8 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | D02 Anonymous QT | **CLOSED / IN V1 · SHIPPED** | `e98ba52` |
 | E3.1 → E3.6 Full Audio (through Basic MP3) | **CLOSED / PRODUCTION VERIFIED · DARK** | `183b2a4` |
 | E3.7 Premium Render | **CLOSED / PRODUCTION VERIFIED · DARK** @ `17c4d530` | [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
+| E3 Production Enablement | **COMPLETE / GREEN** @ `6dfd201` | [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
+| STORAGE-ARCH-01 | **LOCKED** (architecture · no implementation) | [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
 
 ---
 
@@ -459,6 +503,7 @@ No commit/push/deploy without explicit Owner GO for that step.
 ```text
 CURRENT PRODUCTION = 6dfd201
 DEPLOYMENT = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+DOCS TIP = a8e9356 (+ STORAGE-ARCH-01 living docs until Owner commit GO)
 W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT = CLOSED / PASS (Owner-accepted emulated)
 E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
@@ -469,10 +514,17 @@ WORKER = STOPPED / DISABLED (bootstrap 92496d4)
 E3_MIX_ENABLED = ON
 E3_RENDER_JOBS_ENABLED = ON
 E3_PUBLIC_AUDIO = ON
-NEXT SESSION ENTRY = POST-RELEASE DOCS RECONCILIATION → deferred backlog
+STORAGE-ARCH-01 = LOCKED
+STORAGE-ARCH-02 = NOT STARTED
+NEXT SESSION ENTRY = OWNER REVIEW STORAGE-ARCH-01 docs reconciliation
+                   → optional docs COMMIT + PUSH GO
+                   → STORAGE-ARCH-02 only after separate Implementation GO
 ```
 
-**Do not** reopen closed E3.6/E3.7/W6 closeouts or rewrite historical Design Freeze OD locks.
+**Do not** reopen closed E3.6/E3.7/W6 closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
+**Do not** implement dual-read / janitor / orphan delete / key migration / backup without wave Implementation GO.
+
+Storage freeze: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · audit: [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
 GO #2 record: [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md)
 Enablement freeze: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
 
@@ -492,12 +544,13 @@ Start reading order:
 
 1. This file (`MASTER_HANDOFF.md`)
 2. [PROJECT_STATE.md](./PROJECT_STATE.md)
-3. [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
-4. [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
-5. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
-6. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
-7. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
-8. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
+3. [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
+4. [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
+5. [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
+6. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
+7. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+8. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+9. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
 
 ---
 
@@ -509,8 +562,10 @@ Start reading order:
 |------|--------|
 | Dual SHA (app vs worker) | Production app `6dfd201` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
 | Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
+| FAR-01 legacy USER beat keys | LIVE majority legacy shape · code validators canonical-only today · **STORAGE-ARCH-02** dual-read · **no Implementation GO** |
 | HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
-| Hobby daily janitor | Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
+| Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
+| Artifacts janitor missing | F-PE-04 / OD-SA-05 · **STORAGE-ARCH-03** future wave |
 | React hydration warning on `/beat/[id]` | **INFO** · **BLOCKER = NO** · observed in `next dev`; do not hotfix without Owner GO |
 
 ### DEFERRED / TECHNICAL DEBT
@@ -521,13 +576,14 @@ Start reading order:
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
-| Beat-audio orphan janitor | Historical known gap |
+| Beat-audio orphan janitor | Historical known gap · OD-SA-08 · STORAGE-ARCH-04/05 (inventory → dry-run → Owner GO) |
+| Source MASTER backup before scale | OD-SA-06 · STORAGE-ARCH-07 · threshold defined at Wave 07 |
 | OD-12 interim MIME allow-list | Codec SSOT still OPEN outside E3 OAD-06 |
 | Root/docs historical SHAs in older audits | Historical snapshots — do not “fix” by rewriting history |
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion.
+STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02+ without Implementation GO.
 
 ---
 
@@ -535,14 +591,17 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Prem
 
 | Area | State |
 |------|--------|
-| Production deploy E3.7 | SUCCESS · READY @ `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
-| E3.7 Production Verify | **PASS** · DARK · real render **NOT EXECUTED** · no Production artifacts |
-| E3.7 Owner Verification | **PASS WITH FINDINGS** · G5 soft RMS INFO · COMMIT+PUSH+DEPLOY DONE @ `17c4d530` |
+| Production app / PE tip | **GREEN** @ `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** |
+| AC-PE-12 / GO #5 | **PASS** |
+| STORAGE-ARCH-01 | **LOCKED** · Final Arch Review **PASS WITH FINDINGS** · Implementation **NOT STARTED** · Production mutations **NONE** |
+| Production deploy E3.7 (historical) | SUCCESS · READY @ `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
+| E3.7 Production Verify (historical closeout) | **PASS** · DARK at that time · real render **NOT EXECUTED** then |
+| E3.7 Owner Verification (historical) | **PASS WITH FINDINGS** · G5 soft RMS INFO · COMMIT+PUSH+DEPLOY DONE @ `17c4d530` |
 | Production deploy E3.6 (prior) | SUCCESS @ `183b2a4` · `dpl_D5EfHdSSahouFftf5HK35wKSHmts` |
 | Public smoke `/` · `/beats` | PASS (prior E3.6) |
 | E3 anon job API | 401 (prior) |
-| E3 worker API (no secret) | 403 (prior) |
-| `audio-artifacts` | private · empty on Production |
+| E3 worker API (no/wrong secret) | 401/403 class (verified in PE) |
+| `audio-artifacts` | private · PE artifacts exist (not a public bucket) · janitor still deferred |
 | D02 / W1–W5 | Remain PASS |
 | Recording W5 Shared Grants | PASS (prior) |
 | Recording W4 live E2E | PASS (prior) |
@@ -559,6 +618,7 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Prem
 MASTER HANDOFF READY
 CURRENT PRODUCTION = 6dfd201
 DEPLOYMENT = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+DOCS TIP = a8e9356 (+ STORAGE-ARCH-01 living docs until Owner commit GO)
 W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 = CLOSED / PASS
 E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
@@ -566,7 +626,11 @@ AC-PE-12 = PASS · GO #5 = PASS
 OWNER GO #2 = CLOSED / SUPERSEDED (Contabo)
 E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
 WORKER = STOPPED / DISABLED (bootstrap 92496d4)
-NEXT SESSION ENTRY = POST-RELEASE DOCS RECONCILIATION → deferred backlog
+STORAGE-ARCH-01 = LOCKED
+STORAGE-ARCH-02 = NOT STARTED
+NEXT SESSION ENTRY = OWNER REVIEW STORAGE-ARCH-01 docs reconciliation
+                   → optional docs COMMIT + PUSH GO
+                   → no STORAGE-ARCH-02 without Implementation GO
 ```
 
 **Do not** rewrite historical closeouts or freeze OD locks from this document alone.

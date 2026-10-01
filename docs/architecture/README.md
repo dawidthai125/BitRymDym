@@ -63,8 +63,9 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | W6.2/W6.3 UX ship | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA) |
 | E3 Production Enablement | **COMPLETE** · **PRODUCTION VERIFIED — GREEN** · AC-PE-12 **PASS** · GO #5 **PASS** · PUBLIC_AUDIO **ON** — [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
 | OWNER GO #2 Worker Infra | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](../audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
-| Current Production tip | `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · worker **STOPPED** |
+| **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Implementation **NOT STARTED** · STORAGE-ARCH-02 **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](../audits/STORAGE_ARCH_01_AUDIT.md) |
+| Current Production tip | `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · worker **STOPPED** · docs tip `a8e9356` |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 
-**Note:** Phase 1.x rows list historical closeout SHAs. Canonical live baseline is production app `6dfd201` / git tip per [PROJECT_STATE.md](../PROJECT_STATE.md). E3.7 code ship occurred while E3 was still DARK; current living enablement is GREEN after PE + GO #5.
+**Note:** Phase 1.x rows list historical closeout SHAs. Canonical live baseline is production app `6dfd201` / docs tip per [PROJECT_STATE.md](../PROJECT_STATE.md). E3.7 code ship occurred while E3 was still DARK; current living enablement is GREEN after PE + GO #5. Storage Architecture V1 is **LOCKED** (architecture only — no STORAGE-ARCH-02 Implementation GO).
