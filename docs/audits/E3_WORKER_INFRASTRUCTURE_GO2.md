@@ -3,22 +3,31 @@
 **Type:** Ops / readiness record  
 **Date:** 2026-09-30  
 **Owner GO:** #2 — EXTERNAL WORKER INFRASTRUCTURE  
-**Application baseline:** `9026fa9`  
-**Documentation tip:** `65e791f` (+ this continuity update)
+**Application baseline (at GO #2 authorship):** `9026fa9`  
+**Documentation tip (at authorship):** `65e791f` (+ this continuity update)
 
 ```text
-GO #2 STATUS                         = BLOCKED (partial progress)
-WORKER INFRASTRUCTURE                = NOT READY FOR PRODUCTION CLAIM
-FFMPEG (agent/candidate machine)     = READY (verified)
-FFMPEG (approved Production host)    = N/A — host not Owner-approved
-E3_RENDER_WORKER_SECRET              = CONFIGURED (Vercel Production project env)
-SECRET LIVE ON CURRENT DEPLOYMENT    = PENDING REDEPLOY (GO #2 forbids Next.js app redeploy)
-E3_MIX_ENABLED                       = UNSET
-E3_RENDER_JOBS_ENABLED               = UNSET
-E3_PUBLIC_AUDIO                      = UNSET
-PRODUCTION JOB CLAIMED               = NO
-PRODUCTION RENDER                    = NOT EXECUTED
-ARTIFACTS CREATED                    = NONE
+GO #2 LIVING STATUS                  = CLOSED / SUPERSEDED
+REASON                               = Oracle A1 capacity blocker was superseded by Contabo E3 worker infrastructure
+CONTABO WORKER                       = PROVISIONED · STOPPED / DISABLED after controlled renders
+WORKER BOOTSTRAP COMMIT              = 92496d4
+```
+
+> **History below is preserved as the GO #2 point-in-time record** (including original BLOCKED state and Oracle findings). Do not rewrite the historical body as if Oracle succeeded.
+
+```text
+GO #2 STATUS (historical at authorship) = BLOCKED (partial progress)
+WORKER INFRASTRUCTURE (historical)      = NOT READY FOR PRODUCTION CLAIM
+FFMPEG (agent/candidate machine)        = READY (verified)
+FFMPEG (approved Production host)       = N/A — host not Owner-approved (at authorship)
+E3_RENDER_WORKER_SECRET                 = CONFIGURED (Vercel Production project env)
+SECRET LIVE ON CURRENT DEPLOYMENT       = PENDING REDEPLOY (GO #2 forbids Next.js app redeploy)
+E3_MIX_ENABLED                          = UNSET
+E3_RENDER_JOBS_ENABLED                  = UNSET
+E3_PUBLIC_AUDIO                         = UNSET
+PRODUCTION JOB CLAIMED                  = NO
+PRODUCTION RENDER                       = NOT EXECUTED
+ARTIFACTS CREATED                       = NONE
 ```
 
 ---

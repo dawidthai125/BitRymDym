@@ -6,6 +6,32 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-01 — E3 PRODUCTION ENABLEMENT — FINAL GREEN + DOCS RECONCILIATION
+
+**Status:** **E3 = PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · app `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON**
+
+- E3 Production Enablement **COMPLETE** (GO #2 Contabo · GO #3 flags · GO #4 Basic Free Final Truth · GO #5 Public Free Audio)
+- AC-PE-12 / F-PE-02 implemented @ `6dfd201` (`assertPublicFreeAudioReleased` · Mix/job/download wires)
+- GO #5 **PASS**: Free Basic Mix → BASIC_MP3 render → READY artifact → signed download
+- Private `audio-artifacts` preserved · public object inaccessible · Free HQ/WAV **DENY** · worker 401/403 verified
+- Worker Contabo bootstrap `92496d4` · final state **STOPPED / DISABLED**
+- FINAL E3 STATUS: **PRODUCTION VERIFIED — GREEN**
+- Deferred remain deferred: Premium Production E2E · artifacts janitor · ops dashboard · live rollback drill · STEMS · payments · public Free HQ/WAV
+- Living docs reconciled (PROJECT_STATE · MASTER_HANDOFF · README · architecture README · PE freeze ops continuity · GO #2 CLOSED/SUPERSEDED stamp) — historical closeouts untouched
+
+---
+
+## 2026-09-30 — OWNER GO #2 — WORKER INFRASTRUCTURE — BLOCKED
+
+**Status:** **GO #2 = BLOCKED** (partial progress) · Application `9026fa9` **UNCHANGED** · **E3 = DARK** · Mix/Jobs/Public **UNSET** · **no Production claim/render/artifact**
+
+- FFmpeg 9.0.2 + libmp3lame + pcm_s16le verified on **candidate** agent machine (≠ approved Production host)
+- `E3_RENDER_WORKER_SECRET` = **CONFIGURED** in Vercel Production project env (Encrypted) · live deploy **PENDING REDEPLOY** (GO #2 forbids Next.js redeploy)
+- Claim/fake-complete auth smoke: **403** without/wrong Bearer · no Production job claimed
+- **BLOCKERS:** approved EXTERNAL worker host **Owner decision required** · `scripts/e3-render-worker-once.ts` fails under plain `tsx` (`server-only`) — needs Owner GO for bootstrap fix
+- Record: [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md)
+- Next = **WORKER INFRASTRUCTURE BLOCKER REVIEW** (do not auto-start GO #3)
+
 ## 2026-09-30 — W6.2/W6.3 UX RELEASE — PRODUCTION VERIFIED
 
 **Status:** **W6.2/W6.3 UX = CLOSED / PRODUCTION VERIFIED** @ `9026fa9` · deploy `dpl_2aZabB1AtXCUNGEERmjwupXTVP9S` · **E3 = DARK** · **NOT** Production Enablement

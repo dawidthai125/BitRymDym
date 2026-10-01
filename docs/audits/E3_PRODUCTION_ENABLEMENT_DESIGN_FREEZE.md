@@ -23,6 +23,34 @@ E3_PUBLIC_AUDIO                  = REMAINS OFF for first enablement release
 
 **This document does not:** implement code · change env · provision worker · run render · ship W6 UX · enable public Free Audio · grant Implementation GO without Owner gates.
 
+**Execution status (post-freeze — ops continuity, not a freeze rewrite):**
+
+```text
+GO #1 W6.2/W6.3 UX     = DONE / PRODUCTION VERIFIED @ 9026fa9
+GO #2 Worker Infra     = DONE / CLOSED / SUPERSEDED (Contabo) — see E3_WORKER_INFRASTRUCTURE_GO2.md
+GO #3 Env enablement   = DONE (Mix ON · Jobs ON · secret live)
+GO #4 Controlled render = DONE (Basic Free Final Truth)
+AC-PE-12 / F-PE-02     = PASS @ 6dfd201 (RESOLVED)
+GO #5 Public Free Audio = PASS
+E3_MIX_ENABLED         = ON
+E3_RENDER_JOBS_ENABLED = ON
+E3_PUBLIC_AUDIO        = ON
+Production             = VERIFIED GREEN @ 6dfd201 · dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+Worker                 = STOPPED / DISABLED (bootstrap 92496d4)
+```
+
+**F-PE-02:** RESOLVED @ `6dfd201` (historical finding narrative in §11 remains as freeze-time evidence).
+
+### Execution Outcomes (living — do not rewrite §17 gate definitions)
+
+| Gate | Outcome |
+|------|---------|
+| GO #1 | **DONE** @ `9026fa9` |
+| GO #2 | **DONE** — Contabo EXTERNAL worker (Oracle path superseded) |
+| GO #3 | **DONE** — Mix + Jobs + secret on Production |
+| GO #4 | **DONE** — controlled Basic Free render |
+| AC-PE-12 | **PASS** @ `6dfd201` |
+| GO #5 | **PASS** — `E3_PUBLIC_AUDIO=ON` · Free Basic Mix→Render→Download · private bucket |
 **SSOT precedents (read-only):**
 
 | Document | Role |
@@ -413,9 +441,9 @@ Flags-off does **not** auto-delete artifacts.
 
 | Gate | What | Next after PASS |
 |------|------|-----------------|
-| **OWNER GO #1** | W6.2/W6.3 UX release (commit/push/deploy/verify) | Stage 2 |
-| **OWNER GO #2** | Worker infrastructure provisioning | Stage 3+ |
-| **OWNER GO #3** | Production env enablement (Mix / Jobs / secret per §4) | Stage 6 |
+| **OWNER GO #1** | W6.2/W6.3 UX release (commit/push/deploy/verify) | **DONE** @ `9026fa9` |
+| **OWNER GO #2** | Worker infrastructure provisioning | **BLOCKED** — [E3_WORKER_INFRASTRUCTURE_GO2.md](./E3_WORKER_INFRASTRUCTURE_GO2.md) |
+| **OWNER GO #3** | Production env enablement (Mix / Jobs / secret per §4) | **NOT STARTED** — blocked on GO #2 READY |
 | **OWNER GO #4** | Controlled real Production render | Stage 7 evidence |
 | **OWNER GO #5** | Public Free Audio (`E3_PUBLIC_AUDIO`) — requires AC-PE-12 | Optional later |
 

@@ -57,12 +57,14 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
 | Community Upload + Moderation | **EPIC COMPLETE / LOCKED** (Waves 1–5) @ `c5e1f17` |
 | Recording / Quick Take | **Waves 1–5 CLOSED** · D02 **SHIPPED** @ `e98ba52` — [RECORDING.md](./RECORDING.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) |
-| E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
-| E3.7 Premium Render | **Code on Production** · **DARK** (enablement NOT EXECUTED) — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
+| E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
+| E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | E3.8 W6 Mobile Cert | **CLOSED / PASS** · **OWNER-ACCEPTED EMULATED** — [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) |
-| W6.2/W6.3 UX | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` · deploy `dpl_2aZabB1AtXCUNGEERmjwupXTVP9S` |
-| E3 Production Enablement | **DESIGN FREEZE COMPLETE** · Arch **PASS WITH FINDINGS** · **NOT EXECUTED** — [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
+| W6.2/W6.3 UX ship | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA) |
+| E3 Production Enablement | **COMPLETE** · **PRODUCTION VERIFIED — GREEN** · AC-PE-12 **PASS** · GO #5 **PASS** · PUBLIC_AUDIO **ON** — [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
+| OWNER GO #2 Worker Infra | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](../audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
+| Current Production tip | `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · worker **STOPPED** |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 
-**Note:** Rows above for Phase 1.x list historical closeout SHAs. Canonical live baseline is production app `183b2a4` / git tip per [PROJECT_STATE.md](../PROJECT_STATE.md).
+**Note:** Phase 1.x rows list historical closeout SHAs. Canonical live baseline is production app `6dfd201` / git tip per [PROJECT_STATE.md](../PROJECT_STATE.md). E3.7 code ship occurred while E3 was still DARK; current living enablement is GREEN after PE + GO #5.

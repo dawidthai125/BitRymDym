@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Cold-start entry for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-09-29
+**Updated:** 2026-10-01
 **Owner:** Prezes Dawid
 
 **This document is continuity** (cold-start entry).
@@ -16,13 +16,18 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `9026fa97f44bb49421d0316bdce48ad3280f42c6` (`9026fa9`) |
-| Deployment | `dpl_2aZabB1AtXCUNGEERmjwupXTVP9S` |
+| **Application SHA** | `6dfd201984af66179c505a3e123474e285d33d42` (`6dfd201`) |
+| Deployment | `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` |
 | Status | **GREEN** / **PRODUCTION VERIFIED** |
-| Previous Production | `17c4d530` (E3.7 DARK · pre–W6 UX) — rollback available |
-| **W6.2/W6.3 UX** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` |
-| **E3.7** | Code present · **DARK** (not Production-enabled render) |
-| **E3 Production Enablement** | Design Freeze COMPLETE · **NOT EXECUTED** |
+| **E3 status** | **PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) |
+| **AC-PE-12** | **PASS** @ `6dfd201` |
+| **GO #5** | **PASS** (`E3_PUBLIC_AUDIO=ON` · controlled Free Basic verify) |
+| Previous Production | `9026fa9` (W6 UX) · `17c4d530` (E3.7 DARK baseline) — rollback lineage |
+| **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
+| **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
+| **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
+| **OWNER GO #2 Worker Infra** | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
+| **Worker** | Contabo · bootstrap `92496d4` · **STOPPED / DISABLED** |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
 | Recording Wave 5 | **CLOSED / PRODUCTION VERIFIED** · Shared Grants → RECORD @ `37892a6` |
 | D02 Anonymous QT | **CLOSED / IN V1** · **SHIPPED** @ `e98ba52` |
@@ -30,24 +35,28 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | `CRON_SECRET` | Configured in Vercel Production (**never print / never commit**) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-**E3 Production safety (mandatory — do not enable without separate Owner GO):**
+**E3 Production flags (current living state):**
 
 ```text
-E3_RENDER_JOBS_ENABLED = UNSET
-E3_MIX_ENABLED = UNSET
-E3_PUBLIC_AUDIO = UNSET
-E3_RENDER_WORKER_SECRET = UNSET
-E3 FLAGS = DARK
+E3_MIX_ENABLED           = ON
+E3_RENDER_JOBS_ENABLED   = ON
+E3_PUBLIC_AUDIO          = ON
+E3_RENDER_WORKER_SECRET  = CONFIGURED (server-only · never commit)
+WORKER                   = STOPPED / DISABLED
 ```
+
+**Canonical rollback (Owner GO only):** unset/off `E3_PUBLIC_AUDIO` → Free public Mix/job/download DENY (AC-PE-12).
 
 **Do not confuse SHAs — do not auto-align them:**
 
 | SHA | Meaning |
 |-----|---------|
-| `9026fa9` | **Production application** — W6.2/W6.3 UX presentation · E3 **DARK** |
-| `17c4d530` | Prior Production (E3.7 Premium Render · DARK) — rollback available |
-| `183b2a4` | Prior Production (E3.6 Basic MP3) |
-| `fb661db` | Docs tip (W6 closeout) prior to UX ship |
+| `6dfd201` | **Current Production application** — AC-PE-12 + PE enablement tip |
+| `92496d4` | **Worker bootstrap** (Contabo EXTERNAL encode host) |
+| `9026fa9` | **W6.2/W6.3 UX ship** (historical) · E3 was still DARK at that ship |
+| `17c4d530` | Prior Production (E3.7 Premium Render · DARK at closeout) |
+| `183b2a4` | Prior Production (E3.6 Basic MP3 · DARK at closeout) |
+| docs tip | May advance on docs-only commits without redeploy |
 
 ---
 
@@ -57,8 +66,8 @@ E3 FLAGS = DARK
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **HEAD / origin/main / Production** | `9026fa9` (`feat(mobile): ship W6.2 W6.3 presentation`) |
-| **E3** | **DARK** · flags UNSET · enablement **NOT EXECUTED** |
+| **HEAD / origin/main / Production** | `6dfd201` (`feat(audio): enforce E3 public audio release gate`) |
+| **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
 | Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` |
 
 Do **not** stage agent tooling folders as product scope.
@@ -136,7 +145,7 @@ AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
 | Entitlement / retention / anti-abuse | Server SSOT only — never trust client timers/levels |
 | Claim RPC | `claim_take_recording_session` — `service_role` only |
 | Cron | Bearer `CRON_SECRET`; missing/invalid → 401 |
-| E3 worker | Requires `E3_RENDER_WORKER_SECRET` when enabled — **UNSET on Production** → worker APIs **403** |
+| E3 worker | Bearer `E3_RENDER_WORKER_SECRET` · no-auth **401** · wrong secret **403** · Contabo EXTERNAL one-shot · unit **STOPPED / DISABLED** after verify |
 | P1 DEFINER grants | Selective REVOKE — see §5.1 |
 | P1 `set_updated_at` | `search_path=public` + `pg_catalog.now()` — see §5.1 |
 
@@ -269,6 +278,8 @@ Closeout W4: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_P
 
 ## 9b. E3 Full Audio Final State (through E3.7 local)
 
+> **Historical snapshot** at E3.7 wave closeout (DARK). Living Production after PE + GO #5 is in §1 / §2 / §18 (`6dfd201` · flags ON · GREEN).
+
 ```text
 E3.1 = CLOSED / PRODUCTION VERIFIED
 E3.2 = CLOSED / PRODUCTION VERIFIED
@@ -330,7 +341,7 @@ Freeze: [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOA
 | **E3.1–E3.6** | Hybrid C + OAD LOCKED · OD-E36-04 = C | **SHIPPED / PRODUCTION VERIFIED** @ `183b2a4` · **DARK** | E3.1–E3.6 COMPLETE · enablement = separate GO |
 | **E3.7** | OD-E37-01/02/03 LOCKED | **SHIPPED / PRODUCTION VERIFIED** @ `17c4d530` · **DARK** | Waves A–H COMPLETE · enablement = separate Owner GO |
 | **E3.8 W6** | OD-W6-03 CLOSED / OWNER ACCEPTED emulated | **CERT CLOSED / PASS** · W6.2/W6.3 UX **PRODUCTION VERIFIED** @ `9026fa9` | [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) |
-| **E3 Production Enablement** | **OD-E3-PE-01=B · PE-02=PROVISION NOW · PE-03=RUNTIME GATE · PE-04=W6 UX FIRST · PE-05=CONTROLLED RENDER** | **NOT EXECUTED** · Design Freeze COMPLETE · Arch **PASS WITH FINDINGS** · GO #1 **DONE** | [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
+| **E3 Production Enablement** | **OD-E3-PE-01=B · PE-02=PROVISION NOW · PE-03=RUNTIME GATE · PE-04=W6 UX FIRST · PE-05=CONTROLLED RENDER** | **COMPLETE** · AC-PE-12 **PASS** @ `6dfd201` · GO #5 **PASS** · Prod `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` | [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) · [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
 
 Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clarification — not silently rewritten beyond delivery status.
 
@@ -340,8 +351,9 @@ Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clar
 
 | Item | Classification |
 |------|----------------|
-| E3 Production enablement (flags + worker secret + real render) | DEFERRED · separate Owner Production Enablement GO |
-| Later E3 waves (W6 public Free Audio, Production enablement, etc.) | **NOT SELECTED** — Owner only · do not invent scope |
+| Premium Production E2E / Premium fixture | DEFERRED · no fixture seeded for closeout |
+| Artifacts janitor / ops dashboard / live rollback drill | DEFERRED (accepted for first enablement) |
+| Later E3 product expansions (STEMS, public Free HQ/WAV, etc.) | **NOT SELECTED** — Owner only · do not invent scope |
 | Grant PLAYBACK / DOWNLOAD | OUT of Wave 5 · separate Owner GO if ever needed |
 | Track publish from recording | DEFERRED |
 | Watermark / global codec registry (OD-12/13) | OPEN (E3 Basic 128 locked via OAD-06) |
@@ -356,12 +368,13 @@ Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clar
 
 Do **not** start these without explicit Owner GO (product epic selection is Owner-only):
 
-- E3 Production Enablement / public Free Audio
-- Any next E3 wave beyond E3.6 (do not auto-name/scope)
+- Premium Production E2E / payments / Premium catalog product
+- Public Free HQ/WAV (OUT of Free public release)
+- STEMS / artifact_kind expansions
 - Grant PLAYBACK / DOWNLOAD (beyond Wave 5 RECORD)
-- Track publish / payments / Premium catalog product
+- Track publish
 - Social: comments, voting, messaging
-- Orphan beat-audio janitor (documented gap historically)
+- Artifacts janitor / ops dashboard (deferred ops)
 
 ---
 
@@ -444,17 +457,23 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION = 9026fa9
-DEPLOYMENT = dpl_2aZabB1AtXCUNGEERmjwupXTVP9S
-W6.2/W6.3 UX = CLOSED / PRODUCTION VERIFIED
+CURRENT PRODUCTION = 6dfd201
+DEPLOYMENT = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT = CLOSED / PASS (Owner-accepted emulated)
-E3 PRODUCTION ENABLEMENT = DESIGN FREEZE COMPLETE · NOT EXECUTED
-E3 FLAGS = DARK / UNSET
-NEXT SESSION ENTRY = OWNER GO #2 — WORKER INFRASTRUCTURE
+E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
+AC-PE-12 = PASS @ 6dfd201
+GO #5 = PASS
+OWNER GO #2 = CLOSED / SUPERSEDED (Contabo)
+WORKER = STOPPED / DISABLED (bootstrap 92496d4)
+E3_MIX_ENABLED = ON
+E3_RENDER_JOBS_ENABLED = ON
+E3_PUBLIC_AUDIO = ON
+NEXT SESSION ENTRY = POST-RELEASE DOCS RECONCILIATION → deferred backlog
 ```
 
-**Do not** auto-start GO #2.
-**Do not** set E3 flags / worker secret / run render.
+**Do not** reopen closed E3.6/E3.7/W6 closeouts or rewrite historical Design Freeze OD locks.
+GO #2 record: [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md)
 Enablement freeze: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
 
 New GPT:
@@ -488,8 +507,8 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| E3 dark on Production | Code present · flags/secret UNSET · do not describe as live render service |
-| Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` while app stays on `183b2a4` — intentional; do not auto-align / redeploy only to match |
+| Dual SHA (app vs worker) | Production app `6dfd201` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
+| Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
 | HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
 | Hobby daily janitor | Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | React hydration warning on `/beat/[id]` | **INFO** · **BLOCKER = NO** · observed in `next dev`; do not hotfix without Owner GO |
@@ -508,7 +527,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-E3 Production enablement · Production Render · public Free Audio (W6) · STEMS · artifact_kind · payments/Premium catalog · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion.
+STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion.
 
 ---
 
@@ -538,17 +557,19 @@ E3 Production enablement · Production Render · public Free Audio (W6) · STEMS
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION = 9026fa9
-DEPLOYMENT = dpl_2aZabB1AtXCUNGEERmjwupXTVP9S
-W6.2/W6.3 UX = CLOSED / PRODUCTION VERIFIED
+CURRENT PRODUCTION = 6dfd201
+DEPLOYMENT = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 = CLOSED / PASS
-E3 PRODUCTION ENABLEMENT = DESIGN FREEZE COMPLETE · NOT EXECUTED
-E3 = DARK
-WORKER SECRET = UNSET
-NEXT SESSION ENTRY = OWNER GO #2 — WORKER INFRASTRUCTURE
+E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
+AC-PE-12 = PASS · GO #5 = PASS
+OWNER GO #2 = CLOSED / SUPERSEDED (Contabo)
+E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
+WORKER = STOPPED / DISABLED (bootstrap 92496d4)
+NEXT SESSION ENTRY = POST-RELEASE DOCS RECONCILIATION → deferred backlog
 ```
 
-**Do not** start GO #2 or set Production E3 flags from this document alone.
+**Do not** rewrite historical closeouts or freeze OD locks from this document alone.
 
 ---
 
