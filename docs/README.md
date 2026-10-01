@@ -2,23 +2,24 @@
 
 ## NEW AGENT ENTRY POINT
 
-**Zacznij tutaj:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · potem [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Zacznij tutaj:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · potem [PROJECT_STATE.md](./PROJECT_STATE.md)
 
 ### Kolejność czytania
 
-1. [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) — cold-start continuity (prod SHA vs git tip)
-2. [PROJECT_STATE.md](./PROJECT_STATE.md) — gdzie jesteśmy teraz
-3. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) — prawda produktowa
-4. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) — architektura techniczna
-5. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN
-6. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
-7. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community EPIC **CLOSED**
-8. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–5 **CLOSED / PRODUCTION VERIFIED**
-9. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
+1. [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) — ultra cold-start (nowy GPT + Cursor)
+2. [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) — full continuity
+3. [PROJECT_STATE.md](./PROJECT_STATE.md) — gdzie jesteśmy teraz
+4. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) — prawda produktowa
+5. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) — architektura techniczna
+6. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) — co nadal OPEN
+7. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
+8. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community EPIC **CLOSED**
+9. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–5 **CLOSED / PRODUCTION VERIFIED**
+10. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
 
-**Nie zaczynaj implementacji** przed: MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
+**Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **E3 = PRODUCTION VERIFIED — GREEN** · app `6dfd201` · docs tip `a8e9356` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **NOT STARTED** · next = Owner docs commit GO (optional) then deferred backlog / Wave 02 only after Implementation GO.
+**Next:** **E3 = PRODUCTION VERIFIED — GREEN** · app `6dfd201` · docs tip `82e0194` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **NOT STARTED** · next = Owner GO for STORAGE-ARCH-02 AUDIT (or other backlog).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -70,6 +71,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 
 | Dokument | Opis |
 |----------|------|
+| [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) |
 | [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu |
 | [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) | Cold-start handoff (GPT + Cursor) |
 | [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) | Konstytucja produktu (v0.1) |
@@ -114,4 +116,4 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
 **APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–5 **CLOSED** · D02 **SHIPPED** @ `e98ba52` · **E3 = PRODUCTION VERIFIED — GREEN** @ `6dfd201` · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED**.
-**Next:** STORAGE-ARCH-02 **NOT STARTED** (requires Implementation GO) · see [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** STORAGE-ARCH-02 **NOT STARTED** (requires Owner GO) · start from [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).

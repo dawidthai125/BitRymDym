@@ -1,10 +1,12 @@
 # BitRymDym — Master Handoff
 
-**Purpose:** Cold-start entry for a new GPT + Cursor Agent after session close.
+**Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
 **Updated:** 2026-10-01
 **Owner:** Prezes Dawid
 
-**This document is continuity** (cold-start entry).
+**Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+
+**This document is continuity** (detailed cold-start).
 Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technical HOW remains [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md). Live “where we are now” remains [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 **Evidence rule:** code + remote schema prove implementation state. Documentation alone is **not** proof that a feature is shipped. Production verification is a separate stage from “docs say CLOSED”.
@@ -53,7 +55,8 @@ WORKER                   = STOPPED / DISABLED
 | SHA | Meaning |
 |-----|---------|
 | `6dfd201` | **Current Production application** — AC-PE-12 + PE enablement tip |
-| `a8e9356` | **Docs tip at last docs commit** (post-release E3 docs) · STORAGE-ARCH-01 living docs may be uncommitted until Owner commit GO |
+| `82e0194` | **Current repository / docs tip** — Storage Architecture V1 living SSOT |
+| `a8e9356` | **Historical** docs tip (post-release E3 docs) — superseded by `82e0194` |
 | `92496d4` | **Worker bootstrap** (Contabo EXTERNAL encode host) |
 | `9026fa9` | **W6.2/W6.3 UX ship** (historical) · E3 was still DARK at that ship |
 | `17c4d530` | Prior Production (E3.7 Premium Render · DARK at closeout) |
@@ -68,11 +71,11 @@ WORKER                   = STOPPED / DISABLED
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **HEAD / origin/main** | `a8e9356` (`docs: reconcile post-release E3 production state`) · may advance on further docs-only commits |
+| **HEAD / origin/main** | `82e0194` (`docs: reconcile storage architecture v1`) · may advance on further docs-only commits |
 | **Production application** | `6dfd201` (≠ docs tip after docs-only commits — intentional) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
 | **STORAGE-ARCH-01** | **LOCKED** · see §4.1 · Implementation **NOT STARTED** |
-| Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` · host/Oracle audits · `infra/` · STORAGE-ARCH-01 docs until commit GO |
+| Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` · host/Oracle audits · `infra/` |
 
 Do **not** stage agent tooling folders as product scope.
 
@@ -503,7 +506,7 @@ No commit/push/deploy without explicit Owner GO for that step.
 ```text
 CURRENT PRODUCTION = 6dfd201
 DEPLOYMENT = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
-DOCS TIP = a8e9356 (+ STORAGE-ARCH-01 living docs until Owner commit GO)
+DOCS TIP = 82e0194
 W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT = CLOSED / PASS (Owner-accepted emulated)
 E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
@@ -516,14 +519,14 @@ E3_RENDER_JOBS_ENABLED = ON
 E3_PUBLIC_AUDIO = ON
 STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = NOT STARTED
-NEXT SESSION ENTRY = OWNER REVIEW STORAGE-ARCH-01 docs reconciliation
-                   → optional docs COMMIT + PUSH GO
-                   → STORAGE-ARCH-02 only after separate Implementation GO
+NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
+                   → STORAGE-ARCH-02 AUDIT only after separate Owner GO
 ```
 
 **Do not** reopen closed E3.6/E3.7/W6 closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
 **Do not** implement dual-read / janitor / orphan delete / key migration / backup without wave Implementation GO.
 
+Cold start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
 Storage freeze: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · audit: [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
 GO #2 record: [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md)
 Enablement freeze: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
@@ -542,15 +545,16 @@ AUDIT FIRST → REPORT → WAIT FOR OWNER GO
 
 Start reading order:
 
-1. This file (`MASTER_HANDOFF.md`)
-2. [PROJECT_STATE.md](./PROJECT_STATE.md)
-3. [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
-4. [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
-5. [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
-6. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
-7. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
-8. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
-9. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
+1. [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+2. This file (`MASTER_HANDOFF.md`)
+3. [PROJECT_STATE.md](./PROJECT_STATE.md)
+4. [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
+5. [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
+6. [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md)
+7. [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md)
+8. [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+9. [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+10. [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
 
 ---
 
@@ -618,7 +622,7 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Prem
 MASTER HANDOFF READY
 CURRENT PRODUCTION = 6dfd201
 DEPLOYMENT = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
-DOCS TIP = a8e9356 (+ STORAGE-ARCH-01 living docs until Owner commit GO)
+DOCS TIP = 82e0194
 W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 = CLOSED / PASS
 E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
@@ -628,9 +632,8 @@ E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
 WORKER = STOPPED / DISABLED (bootstrap 92496d4)
 STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = NOT STARTED
-NEXT SESSION ENTRY = OWNER REVIEW STORAGE-ARCH-01 docs reconciliation
-                   → optional docs COMMIT + PUSH GO
-                   → no STORAGE-ARCH-02 without Implementation GO
+NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
+                   → STORAGE-ARCH-02 only after Owner GO
 ```
 
 **Do not** rewrite historical closeouts or freeze OD locks from this document alone.

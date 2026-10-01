@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-01 — FINAL COLD START HANDOFF PACK (DOCS-ONLY)
+
+**Status:** Cold-start pack **READY** · docs tip baseline `82e0194` · Production app `6dfd201` **UNCHANGED** · STORAGE-ARCH-02 **NOT STARTED**
+
+- New entry: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+- Living SSOT entry points updated (PROJECT_STATE · MASTER_HANDOFF · docs README · architecture README)
+- Docs tip corrected to `82e0194` (`a8e9356` kept as historical reference)
+- Documented known DOCUMENTATION/IMPLEMENTATION DRIFT notes for new agents
+- No code/DB/Storage/env/worker/deploy mutations
+
+---
+
 ## 2026-10-01 — STORAGE-ARCH-01 — DESIGN FREEZE LOCKED + LIVING SSOT RECONCILIATION
 
 **Status:** **STORAGE-ARCH-01 = LOCKED** · Final Architecture Review **PASS WITH FINDINGS** · Owner Review **PASS** · Implementation **NOT STARTED** · STORAGE-ARCH-02 **NOT STARTED** · Production app `6dfd201` **UNCHANGED** · deploy `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` **UNCHANGED**
