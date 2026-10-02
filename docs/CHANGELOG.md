@@ -6,6 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-02 — WAVE A — ACCOUNT / BEATS VISUAL CLOSURE (CLOSED / PRODUCTION VERIFIED)
+
+**Status:** **CLOSED** · **PRODUCTION VERIFIED — GREEN** · app `2c4200b` · deployment `6810556404` · Vercel `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE`
+
+- `/account/beats`: AppShell studio · PageFrame · SectionLabel · BRD tokens · PL copy · mobile-first
+- Access: `requireRole(["USER"])` removed → `requireUser()` (ADMIN ALLOW · own beats only)
+- Label: `MASTER READY` → `audio gotowe`
+- Keep: `listOwnUserBeats` · `UserBeatActions` · `BeatGrantsPanel` · owner_id scoping
+- Exact file: `src/app/account/beats/page.tsx`
+- Verify PASS: Production SHA · Anonymous · ADMIN route · ADMIN owner scoping · Mobile 390 · Desktop 1440 · `/account` · `/account/takes` · runtime
+- Explicit NOT VERIFIED: USER authenticated path · live cross-owner isolation (second account unavailable)
+- Security / Auth architecture / RLS / DB / Storage / audio / Recording / E3 **unchanged**
+- Prior Wave B Mix presentation @ `812a9d4` remains PRODUCTION VERIFIED (parent tip)
+- Closeout: [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md)
+
+---
+
 ## 2026-10-02 — FALA 1B — ACCOUNT + PANEL ADMINISTRACYJNY (CLOSED / PRODUCTION VERIFIED)
 
 **Status:** **CLOSED** · **PRODUCTION VERIFIED — GREEN** · app `42369c0` · deployment `6802739724` · Vercel `dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X`

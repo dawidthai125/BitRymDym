@@ -18,15 +18,17 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `42369c0d4569e2df1a9e900ee8d68b3fec8c2b41` (`42369c0`) |
-| Deployment | `6802739724` · Vercel `dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X` |
+| **Application SHA** | `2c4200b24e108431ceaad5447b6a9c8dbd168121` (`2c4200b`) |
+| Deployment | `6810556404` · Vercel `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE` |
 | Status | **GREEN** / **PRODUCTION VERIFIED** |
-| **Fala 1B** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** — Account + Panel Administracyjny (Pulpit) — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
+| **Wave A** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** — `/account/beats` visual closure + ADMIN `requireUser` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
+| **Wave B** | **CLOSED** / **PRODUCTION VERIFIED** @ `812a9d4` — Mix Panel BRD presentation |
+| **Fala 1B** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) — Account + Panel Administracyjny — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
 | **Fala 1A** | **CLOSED** / **PRODUCTION VERIFIED** @ `fdf74f9` — Public Visual Foundation |
 | **E3 status** | **PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · flags remain ON |
 | **AC-PE-12** | **PASS** (historical PE tip `6dfd201`) |
 | **GO #5** | **PASS** (`E3_PUBLIC_AUDIO=ON` · controlled Free Basic verify) |
-| Previous Production | `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) · `17c4d530` (E3.7 DARK) — rollback lineage |
+| Previous Production | `812a9d4` (Wave B) · `42369c0` (Fala 1B) · `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) — rollback lineage |
 | **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
 | **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
@@ -57,9 +59,11 @@ WORKER                   = STOPPED / DISABLED
 
 | SHA | Meaning |
 |-----|---------|
-| `42369c0` | **Current Production application** — Fala 1B Account + Admin visual foundation |
-| `fdf74f9` | **Fala 1A** Public Visual Foundation (parent of 1B) |
-| `6dfd201` | Historical E3 PE / AC-PE-12 tip (superseded as Prod tip by visual foundation) |
+| `2c4200b` | **Current Production application** — Wave A Account / Beats visual closure |
+| `812a9d4` | **Wave B** Mix Panel BRD presentation (parent of Wave A) |
+| `42369c0` | Historical Fala 1B Account + Admin visual foundation |
+| `fdf74f9` | **Fala 1A** Public Visual Foundation |
+| `6dfd201` | Historical E3 PE / AC-PE-12 tip (superseded as Prod tip by later ships) |
 | docs tip | Advances on docs-only commits without redeploy |
 | `92496d4` | **Worker bootstrap** (Contabo EXTERNAL encode host) |
 | `9026fa9` | **W6.2/W6.3 UX ship** (historical) |
@@ -74,7 +78,7 @@ WORKER                   = STOPPED / DISABLED
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **Production application** | `42369c0` |
+| **Production application** | `2c4200b` |
 | **HEAD / origin/main** | May advance on docs-only closeout commits (≠ Prod app SHA — intentional) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
 | **STORAGE-ARCH-01** | **LOCKED** · see §4.1 · Implementation **NOT STARTED** |
@@ -511,9 +515,11 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION = 42369c0
-DEPLOYMENT = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
-FALA 1B = CLOSED / PRODUCTION VERIFIED — GREEN
+CURRENT PRODUCTION = 2c4200b
+DEPLOYMENT = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
+WAVE A = CLOSED / PRODUCTION VERIFIED — GREEN
+WAVE B = CLOSED / PRODUCTION VERIFIED @ 812a9d4
+FALA 1B = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 FALA 1A = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT = CLOSED / PASS (Owner-accepted emulated)
@@ -529,10 +535,10 @@ STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
 STORAGE-ARCH-02-KEY = NOT STARTED
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
-                   → next wave only after separate Owner GO
+                   → EXISTING BACKLOG / OWNER DECISION (do not auto-start)
 ```
 
-**Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
+**Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B/Wave A/B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
 **Do not** implement external Object Storage / dual-read KEY / janitor / orphan delete / key migration / backup without wave Implementation GO.
 **Do not** auto-start Fala 1C.
 
@@ -575,7 +581,7 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Dual SHA (app vs worker) | Production app `42369c0` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
+| Dual SHA (app vs worker) | Production app `2c4200b` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
 | Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
 | FAR-01 legacy USER beat keys | LIVE majority legacy shape · code validators canonical-only today · **STORAGE-ARCH-02-KEY** dual-read · **no Implementation GO** |
 | HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
@@ -606,7 +612,7 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Prem
 
 | Area | State |
 |------|--------|
-| Production app | **GREEN** @ `42369c0` · deploy `6802739724` / `dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X` · Fala 1B **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** |
+| Production app | **GREEN** @ `2c4200b` · deploy `6810556404` / `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE` · Wave A **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** |
 | AC-PE-12 / GO #5 | **PASS** |
 | STORAGE-ARCH-01 | **LOCKED** · Final Arch Review **PASS WITH FINDINGS** · Implementation **NOT STARTED** · Production mutations **NONE** |
 | Production deploy E3.7 (historical) | SUCCESS · READY @ `17c4d530` · `dpl_BsdUUMvwsgg3xGJthfSYXE52rQCe` |
@@ -631,9 +637,11 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Prem
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION = 42369c0
-DEPLOYMENT = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
-FALA 1B = CLOSED / PRODUCTION VERIFIED — GREEN
+CURRENT PRODUCTION = 2c4200b
+DEPLOYMENT = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
+WAVE A = CLOSED / PRODUCTION VERIFIED — GREEN
+WAVE B = CLOSED / PRODUCTION VERIFIED @ 812a9d4
+FALA 1B = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 FALA 1A = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 = CLOSED / PASS
@@ -646,7 +654,7 @@ STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
 STORAGE-ARCH-02-KEY = NOT STARTED
 NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
-                   → next wave only after Owner GO
+                   → EXISTING BACKLOG / OWNER DECISION
 ```
 
 **Do not** rewrite historical closeouts or freeze OD locks from this document alone.

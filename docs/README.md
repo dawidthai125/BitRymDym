@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **Fala 1B = CLOSED / PRODUCTION VERIFIED — GREEN** @ `42369c0` · deploy `6802739724` / `dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **NOT STARTED** · next = Owner GO only (do not auto-start Fala 1C).
+**Next:** **Wave A = CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` · deploy `6810556404` / `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE` · Wave B @ `812a9d4` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **FUTURE DOCS PREPARED / NOT IMPLEMENTED** · next = EXISTING BACKLOG / OWNER DECISION.
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -97,7 +97,8 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md](./audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md) | Recording cold-start audit |
 | [audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md) | Recording Wave 5 production closeout |
 | [audits/E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) | E3.6 Basic MP3 production closeout (DARK) |
-| [audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) | Fala 1B Account + Panel Administracyjny — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `42369c0` |
+| [audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) | Wave A Account / Beats — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` |
+| [audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) | Fala 1B Account + Panel Administracyjny — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) |
 | [audits/E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) | E3.7 Premium Render implementation closeout (not Production) |
 | [audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) | E3 Production Enablement Design Freeze |
 | [audits/STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) | Storage Architecture V1 Design Freeze — **LOCKED** |
@@ -116,5 +117,5 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 
 Patrz SSOT §51–§52. Instrukcje po polsku; nazwy techniczne po angielsku, gdy wymaga tego standard.
 
-**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–5 **CLOSED** · D02 **SHIPPED** @ `e98ba52` · **Fala 1B = CLOSED / PRODUCTION VERIFIED — GREEN** @ `42369c0` · deploy `6802739724` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED**.
-**Next:** Owner GO only · do not auto-start Fala 1C · start from [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
+**APPLICATION:** Foundation 1.3–1.9 **LOCKED** · Community EPIC **COMPLETE / LOCKED** @ `c5e1f17` · Recording Waves 1–5 **CLOSED** · D02 **SHIPPED** @ `e98ba52` · **Wave A = CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` · deploy `6810556404` · Wave B @ `812a9d4` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED**.
+**Next:** EXISTING BACKLOG / OWNER DECISION · do not auto-start next wave · start from [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).

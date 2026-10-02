@@ -26,23 +26,28 @@ BitRymDym to platforma muzyczna (rap / hip-hop / bity): odkrywanie bitów → od
 **Obecny chat NIE jest wymagany.** Cała ciągłość ma być w repozytorium docs.
 
 ```text
-CURRENT PRODUCTION APP     = 42369c0
+CURRENT PRODUCTION APP     = 2c4200b
 PRODUCTION URL             = https://www.bitrymdym.pl
-PRODUCTION DEPLOYMENT      = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
-FALA 1B                    = CLOSED / PRODUCTION VERIFIED — GREEN
+PRODUCTION DEPLOYMENT      = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
+WAVE A ACCOUNT/BEATS       = CLOSED / PRODUCTION VERIFIED — GREEN
+WAVE B MIX PRESENTATION    = CLOSED / PRODUCTION VERIFIED @ 812a9d4
+FALA 1B                    = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 FALA 1A                    = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 WORKER BOOTSTRAP           = 92496d4
 WORKER                     = Contabo · STOPPED / DISABLED
 SUPABASE PROJECT           = rzzxrgcdogkybkiidqgw
 BRANCH                     = main
 DOCS TIP                   = advances on docs-only commits (≠ Prod app SHA)
+NEXT WAVE                  = EXISTING BACKLOG / OWNER DECISION
 ```
 
 **SHA map (nie mylić · nie auto-align):**
 
 | SHA | Meaning |
 |-----|---------|
-| `42369c0` | **Current Production application** — Fala 1B Account + Admin visual foundation |
+| `2c4200b` | **Current Production application** — Wave A Account / Beats |
+| `812a9d4` | Wave B Mix Panel BRD presentation |
+| `42369c0` | Historical Fala 1B Account + Admin visual foundation |
 | `fdf74f9` | Fala 1A Public Visual Foundation |
 | `6dfd201` | Historical E3 PE / AC-PE-12 tip |
 | `92496d4` | **Worker bootstrap** on Contabo (EXTERNAL encode) |
@@ -53,8 +58,9 @@ DOCS TIP                   = advances on docs-only commits (≠ Prod app SHA)
 
 **Primary continuity (full detail):** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)  
 **Living “where now”:** [PROJECT_STATE.md](./PROJECT_STATE.md)  
-**Fala 1B closeout:** [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)  
-**Product constitution:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)  
+**Wave A closeout:** [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md)
+**Fala 1B closeout:** [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
+**Product constitution:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
 **Technical HOW:** [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
 
 ---
@@ -96,10 +102,12 @@ Repo root note: [AGENTS.md](../AGENTS.md) — Next.js in this repo may differ fr
 
 ```text
 URL                      = https://www.bitrymdym.pl
-APP SHA                  = 42369c0
-DEPLOYMENT               = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
+APP SHA                  = 2c4200b
+DEPLOYMENT               = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
 STATUS                   = GREEN / PRODUCTION VERIFIED
-FALA 1B                  = CLOSED / PRODUCTION VERIFIED — GREEN
+WAVE A                   = CLOSED / PRODUCTION VERIFIED — GREEN
+WAVE B                   = CLOSED / PRODUCTION VERIFIED @ 812a9d4
+FALA 1B                  = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 FALA 1A                  = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 E3                       = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
 E3_MIX_ENABLED           = ON
@@ -110,7 +118,8 @@ GO #5                    = PASS
 WORKER                   = STOPPED / DISABLED (Contabo · 92496d4)
 W6                       = CLOSED / PASS (Owner-accepted emulated cert)
 STORAGE-ARCH-01          = LOCKED
-STORAGE-ARCH-02          = NOT STARTED
+STORAGE-ARCH-02          = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED)
+NEXT WAVE                = EXISTING BACKLOG / OWNER DECISION
 ```
 
 **Canonical Free rollback (Owner GO only):** unset/off `E3_PUBLIC_AUDIO` → Free public Mix/job/download DENY (AC-PE-12 fail-closed). Premium does **not** depend on `E3_PUBLIC_AUDIO`.
@@ -356,10 +365,10 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 
 ```text
 [ ] git fetch && git rev-parse HEAD   → expect tip on main (docs may advance; Prod app may differ)
-[ ] Confirm Production app tip = 42369c0 unless Owner says otherwise
-[ ] Read this file + MASTER_HANDOFF + PROJECT_STATE + Fala 1B closeout if touching Account/Admin UI
-[ ] Do NOT start next wave / STORAGE-ARCH-02 without Owner GO
-[ ] Do NOT stage untracked agent/infra/host audits · local Mix · account/beats dirt
+[ ] Confirm Production app tip = 2c4200b unless Owner says otherwise
+[ ] Read this file + MASTER_HANDOFF + PROJECT_STATE + Wave A closeout if touching Account/Beats
+[ ] Do NOT start next wave without Owner GO (EXISTING BACKLOG / OWNER DECISION)
+[ ] Do NOT stage untracked agent/infra/host audits without exact allowlist
 [ ] AUDIT FIRST on any task → report → wait for Owner GO
 [ ] Polish communication to Owner; keep technical identifiers English
 ```
@@ -370,18 +379,21 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 
 ```text
 FINAL COLD START HANDOFF     = READY
-CURRENT PRODUCTION APP       = 42369c0
-PRODUCTION DEPLOYMENT        = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
-FALA 1B                      = CLOSED / PRODUCTION VERIFIED — GREEN
+CURRENT PRODUCTION APP       = 2c4200b
+PRODUCTION DEPLOYMENT        = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
+WAVE A                       = CLOSED / PRODUCTION VERIFIED — GREEN
+WAVE B                       = CLOSED / PRODUCTION VERIFIED @ 812a9d4
+FALA 1B                      = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 WORKER                       = STOPPED / DISABLED (92496d4)
 E3                           = GREEN (PE COMPLETE)
 STORAGE-ARCH-01              = LOCKED
-STORAGE-ARCH-02              = NOT STARTED
+STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED)
 IMPLEMENTATION FROM THIS DOC = NONE
 PRIOR CHAT REQUIRED          = NO
+NEXT WAVE                    = EXISTING BACKLOG / OWNER DECISION
 ```
 
-**Next default:** Owner GO only — do not auto-start Fala 1C.
+**Next default:** Owner GO only — do not auto-start next wave.
 ---
 
 *End of FINAL COLD START HANDOFF.*
