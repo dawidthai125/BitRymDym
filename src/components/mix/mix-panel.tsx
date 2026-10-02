@@ -43,7 +43,7 @@ type SessionDto = {
 };
 
 const touchBtn =
-  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-4 text-sm disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-[var(--brd-r-cta)] border border-[var(--brd-line)] px-4 text-sm disabled:pointer-events-none disabled:opacity-50";
 
 /**
  * E3.3/E3.4 Mix + Basic Master surface — gated by server-resolved `mixEnabled`.
@@ -107,10 +107,12 @@ export function MixPanel({
 
   if (!isAuthenticated) {
     return (
-      <section className="min-w-0 space-y-2 border-t border-border/60 pt-4">
-        <h2 className="text-sm font-semibold tracking-tight">Mix</h2>
-        <p className="text-sm text-muted-foreground">
-          Zaloguj się, aby użyć Basic Mix (anonimowy Mix jest niedostępny).
+      <section className="min-w-0 max-w-full space-y-2 border border-[var(--brd-line)] p-4 sm:p-5">
+        <h2 className="brd-display text-lg font-semibold tracking-tight">
+          Miks i master
+        </h2>
+        <p className="text-sm text-[var(--brd-mute)] text-pretty">
+          Zaloguj się, aby użyć miksu. Miks anonimowy jest niedostępny.
         </p>
       </section>
     );
@@ -118,10 +120,12 @@ export function MixPanel({
 
   if (takes.length === 0) {
     return (
-      <section className="min-w-0 space-y-2 border-t border-border/60 pt-4">
-        <h2 className="text-sm font-semibold tracking-tight">Mix</h2>
-        <p className="text-sm text-muted-foreground">
-          Nagraj READY take na tym bicie, aby otworzyć Mix Session.
+      <section className="min-w-0 max-w-full space-y-2 border border-[var(--brd-line)] p-4 sm:p-5">
+        <h2 className="brd-display text-lg font-semibold tracking-tight">
+          Miks i master
+        </h2>
+        <p className="text-sm text-[var(--brd-mute)] text-pretty">
+          Nagraj gotowy take na tym bicie, aby otworzyć miks.
         </p>
       </section>
     );
@@ -368,18 +372,20 @@ export function MixPanel({
   }
 
   return (
-    <section className="min-w-0 max-w-full space-y-4 border-t border-border/60 pt-4">
+    <section className="min-w-0 max-w-full space-y-4 border border-[var(--brd-line)] p-4 sm:p-5">
       <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-2">
-        <h2 className="text-sm font-semibold tracking-tight">Mix + Master</h2>
-        <p className="text-xs text-muted-foreground text-pretty">
-          Preview realtime · Export presentation (jobs flag-gated)
+        <h2 className="brd-display text-lg font-semibold tracking-tight">
+          Miks i master
+        </h2>
+        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          Podgląd na żywo · eksport
         </p>
       </div>
 
       <label className="block min-w-0 space-y-1 text-sm">
         <span className="text-muted-foreground">Własny take</span>
         <select
-          className="min-h-11 w-full max-w-full rounded-md border border-border bg-background px-3 py-2"
+          className="min-h-11 w-full max-w-full rounded-[var(--brd-r-sm)] border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 py-2"
           value={takeId}
           disabled={busy || Boolean(session)}
           onChange={(e) => setTakeId(e.target.value)}
@@ -413,7 +419,7 @@ export function MixPanel({
         />
       </div>
 
-      <details className="min-w-0 rounded-md border border-border/70 open:pb-3">
+      <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
           Basic EQ / Dynamics / FX
         </summary>
@@ -490,7 +496,7 @@ export function MixPanel({
         </div>
       </details>
 
-      <details className="min-w-0 rounded-md border border-border/70 open:pb-3" open>
+      <details className="min-w-0 border border-[var(--brd-line)] open:pb-3" open>
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
           Basic Master
         </summary>
@@ -561,7 +567,7 @@ export function MixPanel({
         </div>
       </details>
 
-      <details className="min-w-0 rounded-md border border-border/70 open:pb-3">
+      <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
           Pro Mix {mixPro ? "" : "· locked"}
         </summary>
@@ -586,8 +592,7 @@ export function MixPanel({
           )}
           {proLockedHint && !mixPro ? (
             <p className="text-xs text-muted-foreground text-pretty" role="status">
-              Pro Mix wymaga aktywnego Premium (server SSOT). Płatności poza
-              zakresem E3.4.
+              Pro Mix wymaga aktywnego Premium.
             </p>
           ) : null}
           {mixPro && params.pro ? (
@@ -616,7 +621,7 @@ export function MixPanel({
         </div>
       </details>
 
-      <details className="min-w-0 rounded-md border border-border/70 open:pb-3">
+      <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
           Pro Master {masterPro ? "" : "· locked"}
         </summary>
@@ -632,7 +637,7 @@ export function MixPanel({
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground text-pretty">
-                Metering UX (client peak) · Final Truth = server-pro-v1 Master
+                Podgląd mastera · ostateczny plik powstaje przy eksporcie
                 Plan A
               </p>
               <div
@@ -656,8 +661,7 @@ export function MixPanel({
           )}
           {masterProLockedHint && !masterPro ? (
             <p className="text-xs text-muted-foreground text-pretty" role="status">
-              Pro Master wymaga aktywnego Premium (MASTER_PRO). Final Truth
-              używa Plan A master po Pro Mix (server-pro-v1).
+              Master Pro wymaga aktywnego Premium.
             </p>
           ) : null}
         </div>
@@ -670,7 +674,7 @@ export function MixPanel({
           disabled={busy || !takeId}
           onClick={() => void startPreview()}
         >
-          {playing ? "Restart preview" : "Play Mixed Preview"}
+          {playing ? "Odśwież podgląd" : "Odtwórz miks"}
         </button>
         <button
           type="button"
@@ -682,13 +686,12 @@ export function MixPanel({
         </button>
       </div>
 
-      <div className="min-w-0 space-y-3 border-t border-border/50 pt-3">
-        <p className="text-xs font-medium tracking-wide uppercase text-muted-foreground">
-          Export
+      <div className="min-w-0 space-y-3 border-t border-[var(--brd-line)] pt-3">
+        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          Eksport
         </p>
-        <p className="text-xs text-muted-foreground text-pretty">
-          Basic · HQ 320 · WAV — presentation / status / error. Live encode
-          requires separate enablement (jobs OFF = expected error UX).
+        <p className="text-xs text-[var(--brd-mute)] text-pretty">
+          Podstawowy MP3 jest dostępny od razu. HQ MP3 i WAV wymagają Premium.
         </p>
         <div className="flex min-w-0 flex-wrap gap-2">
           <button
@@ -699,8 +702,8 @@ export function MixPanel({
             onClick={() => void startExport("BASIC_MP3")}
           >
             {exportBusy && exportStatus !== "error"
-              ? "Exporting…"
-              : "Basic MP3"}
+              ? "Eksportuję…"
+              : "MP3"}
           </button>
           {mixPro ? (
             <>
@@ -710,7 +713,7 @@ export function MixPanel({
                 disabled={busy || exportBusy || !takeId}
                 onClick={() => void startExport("HQ_MP3")}
               >
-                HQ MP3 320
+                HQ MP3
               </button>
               <button
                 type="button"
@@ -718,7 +721,7 @@ export function MixPanel({
                 disabled={busy || exportBusy || !takeId}
                 onClick={() => void startExport("WAV")}
               >
-                WAV 44.1/16
+                WAV
               </button>
             </>
           ) : (
@@ -730,7 +733,7 @@ export function MixPanel({
                 onProControlIntent();
                 setExportStatus("locked");
                 setError(
-                  "HQ MP3 / WAV wymaga aktywnego Premium (EXPORT_HQ_MP3 / EXPORT_WAV).",
+                  "HQ MP3 i WAV są dostępne w Premium.",
                 );
               }}
             >
@@ -770,7 +773,7 @@ export function MixPanel({
         ) : null}
         {mixPro ? (
           <p className="text-xs text-muted-foreground text-pretty">
-            Premium Final Truth: preview może różnić się od exportu
+            Podgląd Premium może różnić się od finalnego eksportu
             (server-pro-v1).
           </p>
         ) : null}
@@ -801,11 +804,17 @@ export function MixPanel({
 function formatExportStatus(status: string): string {
   switch (status) {
     case "creating":
-      return "creating job";
+      return "przygotowuję plik";
     case "locked":
-      return "premium lock";
+      return "wymaga Premium";
     case "error":
-      return "error";
+      return "błąd";
+    case "SUCCEEDED":
+    case "READY":
+      return "gotowe";
+    case "RUNNING":
+    case "QUEUED":
+      return "w trakcie";
     default:
       return status;
   }
@@ -813,9 +822,15 @@ function formatExportStatus(status: string): string {
 
 function formatExportError(message: string): string {
   if (/render jobs are not enabled/i.test(message) || /E3_RENDER_JOBS/i.test(message)) {
-    return "Export jobs są wyłączone (E3_RENDER_JOBS_ENABLED=OFF). To oczekiwany stan W6 — presentation / error UX only.";
+    return "Eksport jest chwilowo niedostępny. Spróbuj później.";
   }
-  return message;
+  if (/Premium required/i.test(message)) {
+    return "Ten format wymaga Premium.";
+  }
+  if (/timeout/i.test(message)) {
+    return "Eksport trwa zbyt długo. Spróbuj ponownie.";
+  }
+  return "Nie udało się wyeksportować. Spróbuj ponownie.";
 }
 
 function GainPanControl(props: {
@@ -826,7 +841,7 @@ function GainPanControl(props: {
   onChange: (gainDb: number, pan: number) => void;
 }) {
   return (
-    <div className="min-w-0 space-y-2 rounded-md border border-border/70 p-3">
+    <div className="min-w-0 space-y-2 border border-[var(--brd-line)] p-3">
       <p className="text-xs font-medium tracking-wide uppercase">{props.label}</p>
       <Slider
         label="Gain (dB)"
