@@ -50,7 +50,7 @@ function QueueSection({
                   {formatDuration(beat.durationSeconds)} · {beat.bpm} BPM
                   {" · "}
                   {beatStatusLabelPl(beat.status)}
-                  {beat.activeMasterReady ? " · MASTER READY" : " · MASTER BRAK"}
+                  {beat.activeMasterReady ? " · audio gotowe" : " · brak audio"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Zaktualizowano {new Date(beat.updatedAt).toLocaleString("pl-PL")}

@@ -17,7 +17,7 @@ function statusLabelPl(status: OwnTakeListItem["displayStatus"]): string {
     case "DELETED":
       return "Usunięta";
     case "PENDING_UPLOAD":
-      return "W trakcie uploadu";
+      return "W trakcie";
     case "FAILED":
       return "Błąd";
     default:

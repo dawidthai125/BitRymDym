@@ -7,8 +7,8 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
 
 export const metadata = {
-  title: "Admin · BitRymDym",
-  description: "Staff panel",
+  title: "Panel Administracyjny · BitRymDym",
+  description: "Panel Administracyjny BitRymDym",
 };
 
 export default async function AdminLayout({
@@ -23,12 +23,15 @@ export default async function AdminLayout({
       redirect("/sign-in");
     }
     return (
-      <div className="min-h-dvh bg-background">
-        <SiteHeader />
+      <div className="min-h-dvh">
+        <SiteHeader tone="admin" />
         <main className="mx-auto max-w-3xl px-6 py-16">
-          <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Panel staff jest dostępny dla ról ADMIN i MODERATOR.
+          <h1 className="brd-display text-2xl font-semibold tracking-tight">
+            Brak dostępu
+          </h1>
+          <p className="mt-2 text-sm text-[var(--brd-mute)]">
+            Panel Administracyjny jest dostępny dla ról administratora i
+            moderatora.
           </p>
           <Link
             href="/"
@@ -47,39 +50,50 @@ export default async function AdminLayout({
   const showModeration = canAccessModerationNav(role);
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
-      <SiteHeader />
-      <div className="mx-auto w-full max-w-3xl px-6 py-4">
-        <nav className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          {showModeration ? (
+    <div className="brd-ops min-h-dvh">
+      <SiteHeader tone="admin" />
+      <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] py-3">
+        <nav
+          className="flex flex-wrap gap-1 overflow-x-auto text-sm text-[var(--brd-ink-soft)]"
+          aria-label="Panel Administracyjny"
+        >
+          {showPlatform ? (
             <Link
-              href="/admin/moderation"
-              className="underline-offset-4 hover:text-foreground hover:underline"
+              href="/admin"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Moderacja bitów
+              Pulpit
             </Link>
           ) : null}
           {showPlatform ? (
-            <>
-              <Link
-                href="/admin/beats"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
-                PLATFORM beats
-              </Link>
-              <Link
-                href="/admin/beats/new"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Nowy beat
-              </Link>
-            </>
+            <Link
+              href="/admin/beats"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              Bity
+            </Link>
+          ) : null}
+          {showModeration ? (
+            <Link
+              href="/admin/moderation"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              Moderacja
+            </Link>
+          ) : null}
+          {showPlatform ? (
+            <Link
+              href="/admin/beats/new"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              Nowy bit
+            </Link>
           ) : null}
           <Link
             href="/beats"
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
           >
-            Publiczny katalog
+            Katalog
           </Link>
         </nav>
       </div>

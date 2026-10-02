@@ -42,7 +42,7 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           {beatStatusLabelPl(beat.status)} · USER ·{" "}
           {beat.producer ?? "bez producenta"} · {beat.bpm} BPM ·{" "}
           {beat.durationSeconds}s
-          {beat.activeMasterReady ? " · MASTER READY" : " · MASTER BRAK"}
+          {beat.activeMasterReady ? " · audio gotowe" : " · brak audio"}
         </p>
         <p className="text-xs text-muted-foreground">
           Owner{" "}
@@ -60,7 +60,7 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           />
         ) : (
           <p className="text-sm text-destructive">
-            Brak aktywnego MASTER READY —{" "}
+            Brak gotowego audio —{" "}
             {isApproved ? "nie publikuj." : "nie zatwierdzaj."}
           </p>
         )}
