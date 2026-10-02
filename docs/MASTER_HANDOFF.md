@@ -30,7 +30,8 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
 | **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
-| **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Owner **PASS** · Implementation **NOT STARTED** · STORAGE-ARCH-02 **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
+| **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Owner **PASS** · Implementation **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
+| **STORAGE-ARCH-02** | **FUTURE SCALABILITY DOCS PREPARED** · external Object Storage **NOT IMPLEMENTED** · **NO CURRENT INVESTMENT** — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
 | **OWNER GO #2 Worker Infra** | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
 | **Worker** | Contabo · bootstrap `92496d4` · **STOPPED / DISABLED** |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
@@ -111,7 +112,7 @@ Principles: **SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC · SERVER AUTHOR
 
 E3 index: [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md)
 
-Storage V1: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
+Storage V1: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) · Future scale: [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md)
 
 ### 4.1 STORAGE-ARCH-01 — LOCKED (living)
 
@@ -127,14 +128,16 @@ Final Architecture Review    = PASS WITH FINDINGS
 Owner Review                 = PASS
 OD-SA-01…10                  = LOCKED
 Implementation               = NOT STARTED
-STORAGE-ARCH-02              = NOT STARTED
+STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED · NOT IMPLEMENTED · NO CURRENT INVESTMENT
+STORAGE-ARCH-02-KEY          = NOT STARTED (OD-SA-02 / FAR-01)
 Production mutations         = NONE
 ```
 
 | Topic | Locked value |
 |-------|----------------|
 | Buckets | Reuse 3 existing only (OD-SA-01) |
-| Legacy keys | dual-read → staged migration (OD-SA-02) · FAR-01 → Wave 02 · **no Implementation GO** |
+| Legacy keys | dual-read → staged migration (OD-SA-02) · FAR-01 → STORAGE-ARCH-02-KEY · **no Implementation GO** |
+| Future external Object Storage | OPTIONAL · FUTURE · provider NOT chosen · [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
 | Beat library | MASTER + fallback (OD-SA-03) |
 | Artwork | DEFERRED (OD-SA-04) |
 | Artifacts janitor | REQUIRED · future wave (OD-SA-05 / STORAGE-ARCH-03) |
@@ -142,7 +145,7 @@ Production mutations         = NONE
 | Mix artifact backup | regenerable · no default backup (OD-SA-07) |
 | Orphans | inventory → dry-run → Owner GO (OD-SA-08) |
 
-**Do not** start STORAGE-ARCH-02 dual-read / janitor / orphan delete / key migration / backup without a separate Owner Implementation GO.
+**Do not** start external Object Storage / dual-read KEY / janitor / orphan delete / key migration / backup without a separate Owner Implementation GO.
 
 ---
 
@@ -262,7 +265,8 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | **E3.7 Premium Render** | **SHIPPED / PRODUCTION VERIFIED** | GREEN · historically **DARK** at `17c4d530` closeout · living PE **ON** | OK | `server-pro-v1` · HQ 320 · WAV · Premium E2E **NOT TESTED** |
 | E3 public Free Audio / Production render enablement | **ENABLED** (PE COMPLETE) | GREEN @ `6dfd201` · GO #5 **PASS** | OK | Free Basic only · private bucket · AC-PE-12 |
 | **STORAGE-ARCH-01** | **LOCKED** (architecture) | N/A · Production mutations **NONE** | OK | Hybrid C Storage V1 · [freeze](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
-| **STORAGE-ARCH-02** dual-read | **NOT STARTED** | — | — | FAR-01 · **no Implementation GO** |
+| **STORAGE-ARCH-02** future scale | **DOCS PREPARED** · **NOT IMPLEMENTED** | N/A · no external storage | OK | [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
+| **STORAGE-ARCH-02-KEY** dual-read | **NOT STARTED** | — | — | FAR-01 / OD-SA-02 · **no Implementation GO** |
 | Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
@@ -522,13 +526,14 @@ E3_MIX_ENABLED = ON
 E3_RENDER_JOBS_ENABLED = ON
 E3_PUBLIC_AUDIO = ON
 STORAGE-ARCH-01 = LOCKED
-STORAGE-ARCH-02 = NOT STARTED
+STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
+STORAGE-ARCH-02-KEY = NOT STARTED
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                    → next wave only after separate Owner GO
 ```
 
 **Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
-**Do not** implement dual-read / janitor / orphan delete / key migration / backup without wave Implementation GO.
+**Do not** implement external Object Storage / dual-read KEY / janitor / orphan delete / key migration / backup without wave Implementation GO.
 **Do not** auto-start Fala 1C.
 
 Cold start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -572,7 +577,7 @@ Start reading order:
 |------|--------|
 | Dual SHA (app vs worker) | Production app `42369c0` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
 | Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
-| FAR-01 legacy USER beat keys | LIVE majority legacy shape · code validators canonical-only today · **STORAGE-ARCH-02** dual-read · **no Implementation GO** |
+| FAR-01 legacy USER beat keys | LIVE majority legacy shape · code validators canonical-only today · **STORAGE-ARCH-02-KEY** dual-read · **no Implementation GO** |
 | HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Artifacts janitor missing | F-PE-04 / OD-SA-05 · **STORAGE-ARCH-03** future wave |
@@ -593,7 +598,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02+ without Implementation GO.
+STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO.
 
 ---
 
@@ -638,7 +643,8 @@ OWNER GO #2 = CLOSED / SUPERSEDED (Contabo)
 E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
 WORKER = STOPPED / DISABLED (bootstrap 92496d4)
 STORAGE-ARCH-01 = LOCKED
-STORAGE-ARCH-02 = NOT STARTED
+STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
+STORAGE-ARCH-02-KEY = NOT STARTED
 NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
                    → next wave only after Owner GO
 ```

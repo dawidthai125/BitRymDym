@@ -13,7 +13,8 @@ OWNER REVIEW                     = PASS
 OWNER DECISIONS OD-SA-01…10      = LOCKED (below)
 ARCHITECTURE                     = C — HYBRID (Storage layer)
 IMPLEMENTATION                   = NONE / NOT AUTHORIZED
-STORAGE-ARCH-02                  = NOT STARTED
+STORAGE-ARCH-02                  = FUTURE SCALABILITY DOCS (see architecture doc · NOT IMPLEMENTED)
+STORAGE-ARCH-02 key dual-read    = NOT STARTED (OD-SA-02 / FAR-01 · separate impl wave)
 COMMIT / PUSH / DEPLOY           = NONE (under freeze gate; living SSOT may reconcile separately)
 CODE / DB / STORAGE / RLS / ENV  = UNCHANGED
 WORKER                           = UNCHANGED (STOPPED)
@@ -499,7 +500,8 @@ STORAGE-ARCH-01 Design Freeze **COMPLETE** when:
 | Wave | Name | Intent | Depends on |
 |------|------|--------|------------|
 | STORAGE-ARCH-01 | AUDIT + FREEZE | **DONE** (this pair of docs) | — |
-| STORAGE-ARCH-02 | KEY FOUNDATION | Dual-read validators / binding harden | OD-SA-02 |
+| STORAGE-ARCH-02 | FUTURE SCALABILITY | Optional external Object Storage strategy · **DOCS ONLY** · **NOT IMPLEMENTED** · **NO CURRENT INVESTMENT** — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](../architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) | Owner docs GO (done) · provider/impl GO **NOT** granted |
+| STORAGE-ARCH-02-KEY | KEY FOUNDATION | Dual-read validators / binding harden **inside** Supabase (OD-SA-02 / FAR-01) · **NOT STARTED** | OD-SA-02 + separate Implementation GO |
 | STORAGE-ARCH-03 | ARTIFACTS JANITOR | Implement F-PE-04 class GC | OD-SA-05 + Owner GO |
 | STORAGE-ARCH-04 | ORPHAN INVENTORY | Classify beat-audio orphans + dry-run | OD-SA-08 |
 | STORAGE-ARCH-05 | ORPHAN DELETE | Delete only after dry-run + Owner GO | OD-SA-08 |
@@ -554,4 +556,4 @@ DEPLOY                     = NO
 | Companion audit | `docs/audits/STORAGE_ARCH_01_AUDIT.md` |
 | Language | Polish (Owner-facing) / technical identifiers English |
 | Supersedes | — (new layer; does not supersede E3 architecture lock) |
-| Next gate | Living SSOT reconciliation (FAR-02) · optional docs commit GO · STORAGE-ARCH-02 only after Implementation GO |
+| Next gate | Living SSOT · STORAGE-ARCH-02 future scalability **docs** = [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](../architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) · dual-read KEY / janitor / orphan / migration only after separate Implementation GO |
