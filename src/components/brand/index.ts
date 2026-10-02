@@ -27,3 +27,10 @@ export { VisualScene } from "./visual-scene";
 export { Waveform, peaksFromSeed, type WaveformDensity } from "./waveform";
 export { BrdButton, BrdLink } from "./brd-button";
 export { BrdLogo, BrdLogoHomeLink, BRD_LOGO_SRC } from "./brd-logo";
+export {
+  BrdSymbol,
+  BRD_SYMBOL_SRC,
+  BRD_SYMBOL_INVERSE_SRC,
+  BRD_SYMBOL_INTRINSIC,
+  type BrdSymbolVariant,
+} from "./brd-symbol";
