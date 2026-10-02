@@ -69,8 +69,12 @@ describe("PlaybackShell hard-outs", () => {
     join(process.cwd(), "src/components/player/playback-shell.tsx"),
     "utf8",
   );
-  const detailSource = readFileSync(
-    join(process.cwd(), "src/app/beat/[id]/page.tsx"),
+  const detailClientSource = readFileSync(
+    join(process.cwd(), "src/app/beat/[id]/beat-detail-client.tsx"),
+    "utf8",
+  );
+  const recordingSurfaceSource = readFileSync(
+    join(process.cwd(), "src/components/takes/beat-recording-surface.tsx"),
     "utf8",
   );
   const catalogSource = readFileSync(
@@ -86,18 +90,21 @@ describe("PlaybackShell hard-outs", () => {
     expect(shellSource.toLowerCase()).not.toContain("pobierz");
     expect(catalogSource.toLowerCase()).not.toContain("download");
     expect(catalogSource.toLowerCase()).not.toContain("pobierz");
-    // Phase 1.8A + Wave 3: beat detail composes Download via BeatRecordingSurface.
-    expect(detailSource).toContain("BeatRecordingSurface");
+    // Fala 4: single Download placement in Beat Detail hero; REC surface has no duplicate.
+    expect(detailClientSource).toContain("DownloadButton");
+    expect(detailClientSource).toContain("BeatRecordingSurface");
+    expect(recordingSurfaceSource).not.toContain("DownloadButton");
   });
 
-  it("does not include Quick Take or waveform engine hooks in PlaybackShell / catalog", () => {
+  it("does not include Quick Take or recorder hooks in PlaybackShell / catalog", () => {
     expect(shellSource.toLowerCase()).not.toContain("mediarecorder");
     expect(shellSource.toLowerCase()).not.toContain("quick take");
-    expect(shellSource.toLowerCase()).not.toContain("waveform");
     expect(shellSource.toLowerCase()).not.toContain("microphone");
+    expect(shellSource.toLowerCase()).not.toContain("usemicanalyser");
     expect(catalogSource.toLowerCase()).not.toContain("mediarecorder");
     expect(catalogSource.toLowerCase()).not.toContain("quick take");
-    // Wave 3: beat detail hosts RecordingPanel sibling (MediaRecorder OK outside shell).
-    expect(detailSource).toContain("BeatRecordingSurface");
+    // Beat detail hosts RecordingPanel via BeatRecordingSurface (outside shell).
+    expect(detailClientSource).toContain("BeatRecordingSurface");
+    expect(recordingSurfaceSource).toContain("RecordingPanel");
   });
 });

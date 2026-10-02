@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { BeatRecordingSurface } from "@/components/takes/beat-recording-surface";
-import { SiteHeader } from "@/components/site/site-header";
+import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
+import { PageFrame } from "@/components/brand/chrome";
+import { AppShell } from "@/components/site/app-shell";
 import { E3_MIX_ENABLED } from "@/config/audio-render";
 import { getCurrentProfile } from "@/lib/auth/session";
-import {
-  formatDurationSeconds,
-  toPublicBeatDetail,
-} from "@/lib/beats/public";
-import { getPublishedBeat } from "@/lib/beats/service";
+import { toPublicBeatDetail, toPublicCatalogItem } from "@/lib/beats/public";
+import { getPublishedBeat, listPublishedBeats } from "@/lib/beats/service";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
 import { hasAudioCapability } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
-import { computeAnonymousRecordingMaxSeconds, computeRecordingMaxSeconds } from "@/lib/takes/entitlement";
+import {
+  computeAnonymousRecordingMaxSeconds,
+  computeRecordingMaxSeconds,
+} from "@/lib/takes/entitlement";
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
+import { presentBeat, presentBeats, isTechnicalTitle } from "@/lib/ui/demo-beats";
 
 type BeatDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -23,23 +25,21 @@ type BeatDetailPageProps = {
 export async function generateMetadata({ params }: BeatDetailPageProps) {
   const { id } = await params;
   const beat = await getPublishedBeat(id);
-  if (!beat) {
-    return { title: "Bit niedostępny" };
-  }
+  if (!beat) return { title: "Bit niedostępny" };
+  const presented = presentBeat(toPublicBeatDetail(beat));
   return {
-    title: beat.title,
-    description: beat.description ?? `Odsłuch: ${beat.title}`,
+    title: presented.title,
+    description: beat.description ?? `Odsłuch: ${presented.title}`,
   };
 }
 
 export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const { id } = await params;
   const beat = await getPublishedBeat(id);
-  if (!beat) {
-    notFound();
-  }
+  if (!beat) notFound();
 
   const detail = toPublicBeatDetail(beat);
+  const presented = presentBeat(detail);
   const audioInfo = await getBeatAudioPublicInfo(beat.id);
   const session = await getCurrentProfile();
   const maxRecordingSeconds = session
@@ -66,97 +66,52 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
         .filter((t) => t.beatId === detail.id && t.canPreview)
         .map((t) => ({
           id: t.id,
-          label: `${t.recordingMode} · ${t.durationSeconds ?? "?"}s · ${t.id.slice(0, 8)}`,
+          label: `Próba · ${t.durationSeconds ?? "?"}s`,
           durationSeconds: t.durationSeconds,
         }));
     } catch {
       mixTakes = [];
-      mixPro = false;
-      masterPro = false;
     }
   }
 
+  const related = presentBeats(
+    (await listPublishedBeats())
+      .map(toPublicCatalogItem)
+      .filter((b) => b.id !== detail.id)
+      .slice(0, 6),
+  );
+
+  const safeDescription =
+    detail.description && !isTechnicalTitle(detail.description)
+      ? detail.description
+      : null;
+
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
-      <SiteHeader />
-      <main className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-8 px-6 py-10 pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]">
-        <Link
-          href="/beats"
-          className="inline-flex min-h-11 w-fit items-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          ← Wszystkie bity
-        </Link>
-
-        <header className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
-              PUBLISHED
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {detail.title}
-            </h1>
-            {detail.producer ? (
-              <p className="text-base text-muted-foreground">{detail.producer}</p>
-            ) : null}
+    <AppShell tone="public">
+      <main>
+        <PageFrame className="py-6 sm:py-8">
+          <Link
+            href="/beats"
+            className="inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
+          >
+            ← Katalog
+          </Link>
+          <div className="mt-4">
+            <BeatDetailClient
+              beat={presented}
+              description={safeDescription}
+              hasAudio={audioInfo.hasAudio}
+              isAuthenticated={Boolean(session)}
+              maxRecordingSeconds={maxRecordingSeconds}
+              mixTakes={mixTakes}
+              mixEnabled={E3_MIX_ENABLED === true}
+              mixPro={mixPro}
+              masterPro={masterPro}
+              related={related}
+            />
           </div>
-
-          {detail.coverRef ? (
-            <p className="text-xs text-muted-foreground">
-              Okładka: {detail.coverRef}
-            </p>
-          ) : null}
-
-          {detail.description ? (
-            <p className="max-w-prose text-sm leading-relaxed text-foreground/90 text-pretty">
-              {detail.description}
-            </p>
-          ) : null}
-
-          <dl className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            <div>
-              <dt className="sr-only">BPM</dt>
-              <dd>{detail.bpm} BPM</dd>
-            </div>
-            {(detail.key || detail.scale) && (
-              <div>
-                <dt className="sr-only">Tonacja</dt>
-                <dd>{[detail.key, detail.scale].filter(Boolean).join(" ")}</dd>
-              </div>
-            )}
-            {(detail.genre || detail.style) && (
-              <div>
-                <dt className="sr-only">Styl</dt>
-                <dd>
-                  {[detail.genre, detail.style].filter(Boolean).join(" · ")}
-                </dd>
-              </div>
-            )}
-            <div>
-              <dt className="sr-only">Czas</dt>
-              <dd>{formatDurationSeconds(detail.durationSeconds)}</dd>
-            </div>
-          </dl>
-        </header>
-
-        {audioInfo.hasAudio ? (
-          <BeatRecordingSurface
-            beatId={detail.id}
-            title={detail.title}
-            durationSeconds={detail.durationSeconds}
-            maxRecordingSeconds={maxRecordingSeconds}
-            beatStatus="PUBLISHED"
-            isAuthenticated={Boolean(session)}
-            mixTakes={mixTakes}
-            mixEnabled={E3_MIX_ENABLED === true}
-            mixPro={mixPro}
-            masterPro={masterPro}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground" role="status">
-            Ten bit nie ma jeszcze dostępnego audio do odsłuchu.
-          </p>
-        )}
+        </PageFrame>
       </main>
-    </div>
+    </AppShell>
   );
 }

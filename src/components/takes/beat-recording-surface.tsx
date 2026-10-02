@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 
-import { DownloadButton } from "@/components/beats/download-button";
 import { MixPanel, type MixTakeOption } from "@/components/mix/mix-panel";
 import {
   PlaybackShell,
@@ -34,6 +33,7 @@ type BeatRecordingSurfaceProps = {
 /**
  * Wave 3 composition: PlaybackShell + RecordingPanel siblings sharing a thin sync ref.
  * E3.3/E3.4: MixPanel sibling gated by server-resolved `mixEnabled` (AR-W6-01).
+ * Fala 4: Download CTA lives once in Beat Detail hero (no duplicate mount here).
  */
 export function BeatRecordingSurface({
   beatId,
@@ -65,11 +65,6 @@ export function BeatRecordingSurface({
         beatStatus={beatStatus}
         isAuthenticated={isAuthenticated}
         playbackRef={playbackRef}
-      />
-      <DownloadButton
-        beatId={beatId}
-        title={title}
-        isAuthenticated={isAuthenticated}
       />
       <MixPanel
         beatId={beatId}
