@@ -9,6 +9,10 @@
  *
  * Does not connect to Production Storage/DB.
  * Prints a sample dry-run against in-memory fixtures to prove wiring.
+ *
+ * OD-DRYRUN-01 permits production dry-run capability after B-04 loader wiring,
+ * but this script still refuses production inventory execution.
+ * OD-BF-08 Backfill GO = NO · canary not executed here.
  */
 
 import {

@@ -1,3 +1,9 @@
+import {
+  assertLiveGrantAuthorized,
+  isFar01VerifiedLiveGrant,
+  type Far01VerifiedLiveGrant,
+} from "./attestation";
+import { Far01BackfillAuthorizationError } from "./errors";
 import type {
   Far01BackfillAuthorization,
   Far01ExecutionMode,
@@ -7,40 +13,38 @@ import type {
 } from "./types";
 import { FAR01_DEFAULT_AUTHORIZATION } from "./types";
 
-export class Far01BackfillAuthorizationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "Far01BackfillAuthorizationError";
-  }
-}
+export { Far01BackfillAuthorizationError } from "./errors";
 
 /**
  * DEFAULT = NO EXECUTION.
- * LIVE mutations require OD-BF-08 backfillGo + OD-BF-06 operatorApproval.
+ * LIVE requires OD-ATT-01 A2 verified grant + OD-BF-06 operatorApproval.
+ * Plain backfillGo boolean is NOT sufficient (C-IMPL-01).
  */
 export function assertLiveExecutionAuthorized(
   auth: Far01BackfillAuthorization = FAR01_DEFAULT_AUTHORIZATION,
+  verifiedGrant?: Far01VerifiedLiveGrant | null,
 ): void {
-  if (!auth.backfillGo) {
-    throw new Far01BackfillAuthorizationError(
-      "LIVE backfill blocked: OD-BF-08 BACKFILL GO = NO",
-    );
-  }
-  if (!auth.operatorApproval) {
-    throw new Far01BackfillAuthorizationError(
-      "LIVE backfill blocked: operator approval required (OD-BF-06)",
-    );
-  }
+  assertLiveGrantAuthorized({
+    verifiedGrant,
+    operatorApproval: auth.operatorApproval,
+    legacyBackfillGoBoolean: auth.backfillGo,
+  });
 }
 
 export function resolveExecutionMode(params: {
   requested: Far01ExecutionMode;
   authorization: Far01BackfillAuthorization;
+  verifiedGrant?: Far01VerifiedLiveGrant | null;
 }): Far01ExecutionMode {
   if (params.requested === "DRY_RUN") {
     return "DRY_RUN";
   }
-  assertLiveExecutionAuthorized(params.authorization);
+  assertLiveExecutionAuthorized(params.authorization, params.verifiedGrant);
+  if (!isFar01VerifiedLiveGrant(params.verifiedGrant)) {
+    throw new Far01BackfillAuthorizationError(
+      "LIVE denied: verified signed GO grant required (OD-ATT-01 A2)",
+    );
+  }
   return "LIVE";
 }
 

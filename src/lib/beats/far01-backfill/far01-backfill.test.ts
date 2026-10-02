@@ -333,7 +333,7 @@ describe("FAR-01 backfill implementation contracts", () => {
         requested: "LIVE",
         authorization: FAR01_DEFAULT_AUTHORIZATION,
       }),
-    ).toThrow(/BACKFILL GO/);
+    ).toThrow(/verified signed GO|BACKFILL GO|boolean is not sufficient/);
   });
 
   it("dry-run mutates nothing and emits required telemetry", async () => {
@@ -459,7 +459,7 @@ describe("FAR-01 backfill implementation contracts", () => {
     expect(plan.source_must_exist).toBe(true);
   });
 
-  it("LIVE without mutators fails closed", async () => {
+  it("LIVE without verified grant fails closed (boolean insufficient)", async () => {
     await expect(
       runFar01BackfillBatch([candidate()], {
         mode: "LIVE",
@@ -468,8 +468,9 @@ describe("FAR-01 backfill implementation contracts", () => {
           operatorApproval: true,
           operatorId: "op-test",
         },
+        canaryLimit: 1,
       }),
-    ).rejects.toThrow(/storageMutator and dbMutator/);
+    ).rejects.toThrow(/boolean is not sufficient|verified signed GO/);
   });
 
   it("retry_count is recorded in telemetry", async () => {

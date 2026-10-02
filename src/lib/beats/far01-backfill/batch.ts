@@ -1,11 +1,25 @@
-import { evaluatePostCopyIntegrity } from "./integrity";
+import type { Far01VerifiedLiveGrant } from "./attestation";
 import {
-  assertLiveExecutionAuthorized,
-  evaluateDbUpdateGate,
-  Far01BackfillAuthorizationError,
-  resolveExecutionMode,
-} from "./gates";
+  assertFleetPhaseAllowed,
+  assertNoImplicitUnlimited,
+  assertPipelinePhaseOrder,
+  type Far01PipelinePhase,
+  type Far01VerifiedCanaryResult,
+  validateCanaryLimit,
+} from "./canary";
+import { Far01BackfillAuthorizationError } from "./errors";
+import { evaluatePostCopyIntegrity } from "./integrity";
+import { evaluateDbUpdateGate, resolveExecutionMode } from "./gates";
 import { mapFar01BackfillAsset } from "./mapping";
+import {
+  denyDbMutator,
+  denyStorageMutator,
+  postCopyReHeadVerify,
+  preMutationHeadCheck,
+  type Far01DbMutator,
+  type Far01StorageInspector,
+  type Far01StorageMutator,
+} from "./mutators";
 import { runFar01Preflight } from "./preflight";
 import {
   buildAssetTelemetry,
@@ -14,82 +28,48 @@ import {
   summarizeBatch,
 } from "./telemetry";
 import type {
-  Far01AssetSnapshot,
   Far01BackfillAuthorization,
+  Far01BackfillCandidate,
   Far01BatchSummary,
-  Far01BeatSnapshot,
   Far01ExecutionMode,
-  Far01StorageObjectMeta,
 } from "./types";
 import { FAR01_DEFAULT_AUTHORIZATION } from "./types";
 
-export type Far01BackfillCandidate = {
-  asset: Far01AssetSnapshot & { created_at?: string };
-  beat: Far01BeatSnapshot;
-  sourceMeta: Far01StorageObjectMeta;
-  destinationMeta: Far01StorageObjectMeta;
-  destinationClaimedByOtherAssetId: string | null;
-  retryCount?: number;
-};
-
-/**
- * Injected adapters — Production adapters must never be wired without Backfill GO.
- * Default implementation of this session uses in-memory / no-op only in tests.
- */
-export type Far01StorageMutator = {
-  copyObject: (params: {
-    bucket: string;
-    sourceKey: string;
-    destinationKey: string;
-  }) => Promise<void>;
-};
-
-export type Far01DbMutator = {
-  updateObjectKeyOptimistic: (params: {
-    assetId: string;
-    sourceKey: string;
-    destinationKey: string;
-  }) => Promise<{ rowsAffected: number }>;
-};
+export type { Far01BackfillCandidate } from "./types";
+export type {
+  Far01DbMutator,
+  Far01StorageInspector,
+  Far01StorageMutator,
+} from "./mutators";
 
 export type Far01BatchRunOptions = {
   mode: Far01ExecutionMode;
+  /**
+   * Required for LIVE — opaque grant from verifyFar01SignedGoArtifact.
+   * Plain authorization.backfillGo is NOT sufficient (OD-ATT-01 A2).
+   */
+  verifiedGrant?: Far01VerifiedLiveGrant | null;
   authorization?: Far01BackfillAuthorization;
-  /** OD-BF-07 — Owner-defined; if set, only first N MIGRATE-eligible after sort */
+  /**
+   * Required for LIVE (and when applying canary truncation).
+   * null/undefined DENY on LIVE (OD-CANARY-N).
+   * DRY_RUN may omit for full-inventory report (OD-DRYRUN-01).
+   */
   canaryLimit?: number | null;
+  /** Pipeline phase — FLEET requires verified canary. */
+  pipelinePhase?: Far01PipelinePhase;
+  verifiedCanary?: Far01VerifiedCanaryResult | null;
   batchId?: string;
   storageMutator?: Far01StorageMutator;
+  storageInspector?: Far01StorageInspector;
   dbMutator?: Far01DbMutator;
-  /** Abort if true between assets */
   shouldAbort?: () => boolean;
 };
-
-function denyMutatingAdapters(): {
-  storage: Far01StorageMutator;
-  db: Far01DbMutator;
-} {
-  return {
-    storage: {
-      async copyObject() {
-        throw new Far01BackfillAuthorizationError(
-          "Storage COPY denied: no mutator authorized (Backfill GO required)",
-        );
-      },
-    },
-    db: {
-      async updateObjectKeyOptimistic() {
-        throw new Far01BackfillAuthorizationError(
-          "DB UPDATE denied: no mutator authorized (Backfill GO required)",
-        );
-      },
-    },
-  };
-}
 
 /**
  * Run FAR-01 backfill batch.
  * DRY_RUN: preflight + telemetry only (zero mutations).
- * LIVE: requires OD-BF-08 + operator approval + injected mutators.
+ * LIVE: verified signed grant + operator approval + mutators + inspector re-HEAD.
  */
 export async function runFar01BackfillBatch(
   candidates: Far01BackfillCandidate[],
@@ -97,9 +77,25 @@ export async function runFar01BackfillBatch(
 ): Promise<Far01BatchSummary> {
   const authorization =
     options.authorization ?? FAR01_DEFAULT_AUTHORIZATION;
+  const phase: Far01PipelinePhase =
+    options.pipelinePhase ??
+    (options.mode === "DRY_RUN" ? "DRY_RUN" : "CANARY");
+
+  assertPipelinePhaseOrder({
+    phase,
+    verifiedCanary: options.verifiedCanary,
+  });
+  if (phase === "FLEET") {
+    assertFleetPhaseAllowed({
+      phase,
+      verifiedCanary: options.verifiedCanary,
+    });
+  }
+
   const mode = resolveExecutionMode({
     requested: options.mode,
     authorization,
+    verifiedGrant: options.verifiedGrant,
   });
 
   const startedAt = new Date().toISOString();
@@ -108,22 +104,74 @@ export async function runFar01BackfillBatch(
     (asset) => candidates.find((c) => c.asset.id === asset.id)!,
   );
 
-  const denied = denyMutatingAdapters();
-  const storage =
-    mode === "LIVE" && options.storageMutator
-      ? options.storageMutator
-      : denied.storage;
-  const db =
-    mode === "LIVE" && options.dbMutator ? options.dbMutator : denied.db;
+  // Preflight pass for canary eligibility counting (pure — no mutation).
+  const preflightByAssetId = new Map<
+    string,
+    ReturnType<typeof runFar01Preflight>
+  >();
+  for (const candidate of sorted) {
+    const mapped = mapFar01BackfillAsset({
+      asset: candidate.asset,
+      beat: candidate.beat,
+    });
+    preflightByAssetId.set(
+      candidate.asset.id,
+      runFar01Preflight({
+        mapped,
+        sourceMeta: candidate.sourceMeta,
+        destinationMeta: candidate.destinationMeta,
+        destinationClaimedByOtherAssetId:
+          candidate.destinationClaimedByOtherAssetId,
+      }),
+    );
+  }
 
+  const eligibleMigrateCount = [...preflightByAssetId.values()].filter(
+    (p) => p.action === "MIGRATE",
+  ).length;
+
+  let effectiveCanaryLimit: number | null = null;
   if (mode === "LIVE") {
-    assertLiveExecutionAuthorized(authorization);
+    assertNoImplicitUnlimited(options.canaryLimit);
+    effectiveCanaryLimit = validateCanaryLimit(
+      options.canaryLimit,
+      eligibleMigrateCount,
+    );
+    if (
+      options.verifiedGrant &&
+      options.verifiedGrant.canaryN !== effectiveCanaryLimit
+    ) {
+      throw new Far01BackfillAuthorizationError(
+        `LIVE denied: canaryLimit (${effectiveCanaryLimit}) !== grant.canary_n (${options.verifiedGrant.canaryN})`,
+      );
+    }
     if (!options.storageMutator || !options.dbMutator) {
       throw new Far01BackfillAuthorizationError(
         "LIVE mode requires explicit storageMutator and dbMutator",
       );
     }
+    if (!options.storageInspector) {
+      throw new Far01BackfillAuthorizationError(
+        "LIVE mode requires storageInspector for mandatory re-HEAD (C-IMPL-03)",
+      );
+    }
+  } else if (options.canaryLimit != null) {
+    // Optional canary preview on DRY_RUN — still validate shape if provided.
+    effectiveCanaryLimit = validateCanaryLimit(
+      options.canaryLimit,
+      eligibleMigrateCount,
+    );
   }
+
+  const storage =
+    mode === "LIVE" && options.storageMutator
+      ? options.storageMutator
+      : denyStorageMutator();
+  const db =
+    mode === "LIVE" && options.dbMutator
+      ? options.dbMutator
+      : denyDbMutator();
+  const inspector = options.storageInspector;
 
   const assetsTelemetry = [];
   let liveMutationsAttempted = 0;
@@ -139,15 +187,8 @@ export async function runFar01BackfillBatch(
       asset: candidate.asset,
       beat: candidate.beat,
     });
-    const preflight = runFar01Preflight({
-      mapped,
-      sourceMeta: candidate.sourceMeta,
-      destinationMeta: candidate.destinationMeta,
-      destinationClaimedByOtherAssetId:
-        candidate.destinationClaimedByOtherAssetId,
-    });
+    const preflight = preflightByAssetId.get(candidate.asset.id)!;
 
-    // Canary: only process Owner-defined N migrate-eligible rows as MIGRATE
     let action = preflight.action;
     let reason = preflight.reason;
     let status = preflight.classification;
@@ -162,9 +203,9 @@ export async function runFar01BackfillBatch(
       : null;
     let sizeMatch: boolean | null = null;
 
-    if (action === "MIGRATE" && options.canaryLimit != null) {
+    if (action === "MIGRATE" && effectiveCanaryLimit != null) {
       migrateEligibleSeen += 1;
-      if (migrateEligibleSeen > options.canaryLimit) {
+      if (migrateEligibleSeen > effectiveCanaryLimit) {
         action = "SKIP";
         reason = "beyond_canary_limit";
         status = "PASS";
@@ -173,7 +214,6 @@ export async function runFar01BackfillBatch(
 
     if (mode === "DRY_RUN") {
       dbUpdateStatus = "NOT_ATTEMPTED";
-      // Simulate successful copy verification without mutating Storage/DB.
       if (action === "MIGRATE") {
         const integrity = evaluatePostCopyIntegrity({
           sourceExists: candidate.sourceMeta.exists,
@@ -193,31 +233,57 @@ export async function runFar01BackfillBatch(
           postCopyAllowDbUpdate: integrity.allowDbUpdate,
           postCopyReason: integrity.reason,
         });
-        // Dry-run never writes — mark planned outcome as SKIPPED/BLOCKED.
         dbUpdateStatus = gate.allow ? "SKIPPED" : "BLOCKED";
         reason = `dry_run:${reason}:${gate.reason}`;
       }
     } else if (action === "MIGRATE") {
-      // LIVE path — only reachable with Backfill GO + mutators
+      // LIVE — verified grant + mutators + mandatory re-HEAD
       liveMutationsAttempted += 1;
       try {
-        await storage.copyObject({
+        if (!inspector) {
+          throw new Far01BackfillAuthorizationError(
+            "LIVE missing storageInspector",
+          );
+        }
+
+        const preHead = await preMutationHeadCheck({
+          inspector,
           bucket: mapped.asset.storage_bucket,
           sourceKey: mapped.sourceKey,
           destinationKey: mapped.destinationKey,
+          expectedSourceSize: candidate.sourceMeta.size,
         });
+
+        if (!preHead.skipCopySizeMatch) {
+          await storage.copyObject({
+            bucket: mapped.asset.storage_bucket,
+            sourceKey: mapped.sourceKey,
+            destinationKey: mapped.destinationKey,
+            upsert: false,
+          });
+        }
+
+        const reHead = await postCopyReHeadVerify({
+          inspector,
+          bucket: mapped.asset.storage_bucket,
+          sourceKey: mapped.sourceKey,
+          destinationKey: mapped.destinationKey,
+          expectedSize: preHead.source.size,
+        });
+
         const integrity = evaluatePostCopyIntegrity({
-          sourceExists: true,
-          destinationExists: true,
-          sourceSize: candidate.sourceMeta.size,
-          destinationSize: candidate.sourceMeta.size,
+          sourceExists: reHead.source.exists,
+          destinationExists: reHead.destination.exists,
+          sourceSize: reHead.source.size,
+          destinationSize: reHead.destination.size,
           sourceChecksum: candidate.asset.checksum_sha256,
           destinationChecksum: candidate.asset.checksum_sha256,
           identityMismatch: false,
         });
         sizeMatch = integrity.sizeMatch;
-        destSize = candidate.sourceMeta.size;
+        destSize = reHead.destination.size;
         status = integrity.status;
+
         const gate = evaluateDbUpdateGate({
           mapped,
           preflight,

@@ -146,3 +146,12 @@ export type Far01RollbackPlan = {
   current_object_key: string;
   source_must_exist: true;
 };
+
+export type Far01BackfillCandidate = {
+  asset: Far01AssetSnapshot & { created_at?: string };
+  beat: Far01BeatSnapshot;
+  sourceMeta: Far01StorageObjectMeta;
+  destinationMeta: Far01StorageObjectMeta;
+  destinationClaimedByOtherAssetId: string | null;
+  retryCount?: number;
+};
