@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-02 — POLISH UX — MIX / MASTER / RECORDING / PLAYBACK (CLOSED / PRODUCTION VERIFIED)
+
+**Status:** **CLOSED** · **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** · app `0afa29b` · deployment `6815846706` · Vercel `dpl_9EDrc78ompk8B2QZk6tDwQurntus`
+
+- Polish UX: Mix · Master · Recording · Playback · export/status labels · a11y strings · take→nagranie (in-scope)
+- KEEP: MIX · MASTER · Premium · Pro · EQ · LUFS · dB · dBFS · MP3 · WAV · REC
+- Exact product commit: `feat(ux): localize mix master recording ui` (9 files)
+- Verify PASS: Production SHA · Mix · Master · Recording · Playback · 390px · 1440px · runtime smoke · no observed functional regression
+- Evidence limitations: REC Stop during REC · EN `json.error` passthrough · Premium metering — **NOT VERIFIED**
+- Residual (OUT OF SCOPE): F-UX-01…03 `próba` copy outside 9-file release · F-UX-04 hardening candidate
+- Security / Auth / RLS / DB / Storage / audio engine / API / ENV / Infrastructure **unchanged**
+- Prior Wave A Account / Beats @ `2c4200b` remains CLOSED (parent Prod tip)
+- Closeout: [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md)
+
+---
+
 ## 2026-10-02 — WAVE A — ACCOUNT / BEATS VISUAL CLOSURE (CLOSED / PRODUCTION VERIFIED)
 
 **Status:** **CLOSED** · **PRODUCTION VERIFIED — GREEN** · app `2c4200b` · deployment `6810556404` · Vercel `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE`

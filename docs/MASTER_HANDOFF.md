@@ -18,17 +18,18 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `2c4200b24e108431ceaad5447b6a9c8dbd168121` (`2c4200b`) |
-| Deployment | `6810556404` · Vercel `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE` |
-| Status | **GREEN** / **PRODUCTION VERIFIED** |
-| **Wave A** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** — `/account/beats` visual closure + ADMIN `requireUser` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
+| **Application SHA** | `0afa29bff9c492fa36fc5b9dd416a09fe1c5d093` (`0afa29b`) |
+| Deployment | `6815846706` · Vercel `dpl_9EDrc78ompk8B2QZk6tDwQurntus` |
+| Status | **GREEN** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** |
+| **Polish UX** | **CLOSED** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** — Mix / Master / Recording / Playback — [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) |
+| **Wave A** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `2c4200b` — `/account/beats` visual closure + ADMIN `requireUser` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
 | **Wave B** | **CLOSED** / **PRODUCTION VERIFIED** @ `812a9d4` — Mix Panel BRD presentation |
 | **Fala 1B** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) — Account + Panel Administracyjny — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
 | **Fala 1A** | **CLOSED** / **PRODUCTION VERIFIED** @ `fdf74f9` — Public Visual Foundation |
 | **E3 status** | **PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · flags remain ON |
 | **AC-PE-12** | **PASS** (historical PE tip `6dfd201`) |
 | **GO #5** | **PASS** (`E3_PUBLIC_AUDIO=ON` · controlled Free Basic verify) |
-| Previous Production | `812a9d4` (Wave B) · `42369c0` (Fala 1B) · `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) — rollback lineage |
+| Previous Production | `2c4200b` (Wave A) · `812a9d4` (Wave B) · `42369c0` (Fala 1B) · `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) — rollback lineage |
 | **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
 | **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
@@ -59,7 +60,8 @@ WORKER                   = STOPPED / DISABLED
 
 | SHA | Meaning |
 |-----|---------|
-| `2c4200b` | **Current Production application** — Wave A Account / Beats visual closure |
+| `0afa29b` | **Current Production application** — Polish UX Mix / Master / Recording / Playback |
+| `2c4200b` | **Wave A** Account / Beats visual closure (parent of Polish UX) |
 | `812a9d4` | **Wave B** Mix Panel BRD presentation (parent of Wave A) |
 | `42369c0` | Historical Fala 1B Account + Admin visual foundation |
 | `fdf74f9` | **Fala 1A** Public Visual Foundation |
@@ -78,7 +80,7 @@ WORKER                   = STOPPED / DISABLED
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **Production application** | `2c4200b` |
+| **Production application** | `0afa29b` |
 | **HEAD / origin/main** | May advance on docs-only closeout commits (≠ Prod app SHA — intentional) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
 | **STORAGE-ARCH-01** | **LOCKED** · see §4.1 · Implementation **NOT STARTED** |

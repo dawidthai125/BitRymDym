@@ -1,9 +1,9 @@
 # BitRymDym — FINAL COLD START HANDOFF
 
-**Purpose:** Jedyny wymagany entry point po zamknięciu poprzedniej sesji ChatGPT + Cursor.  
-**Audience:** nowy ChatGPT + nowy Cursor Agent  
-**Owner / Product Owner:** Prezes Dawid  
-**Updated:** 2026-10-02  
+**Purpose:** Jedyny wymagany entry point po zamknięciu poprzedniej sesji ChatGPT + Cursor.
+**Audience:** nowy ChatGPT + nowy Cursor Agent
+**Owner / Product Owner:** Prezes Dawid
+**Updated:** 2026-10-02
 **Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
 
 **Evidence rule (bezwzględna):**
@@ -26,10 +26,11 @@ BitRymDym to platforma muzyczna (rap / hip-hop / bity): odkrywanie bitów → od
 **Obecny chat NIE jest wymagany.** Cała ciągłość ma być w repozytorium docs.
 
 ```text
-CURRENT PRODUCTION APP     = 2c4200b
+CURRENT PRODUCTION APP     = 0afa29b
 PRODUCTION URL             = https://www.bitrymdym.pl
-PRODUCTION DEPLOYMENT      = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
-WAVE A ACCOUNT/BEATS       = CLOSED / PRODUCTION VERIFIED — GREEN
+PRODUCTION DEPLOYMENT      = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
+POLISH UX LANGUAGE         = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
+WAVE A ACCOUNT/BEATS       = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B MIX PRESENTATION    = CLOSED / PRODUCTION VERIFIED @ 812a9d4
 FALA 1B                    = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 FALA 1A                    = CLOSED / PRODUCTION VERIFIED @ fdf74f9
@@ -45,7 +46,8 @@ NEXT WAVE                  = EXISTING BACKLOG / OWNER DECISION
 
 | SHA | Meaning |
 |-----|---------|
-| `2c4200b` | **Current Production application** — Wave A Account / Beats |
+| `0afa29b` | **Current Production application** — Polish UX Mix / Master / Recording / Playback |
+| `2c4200b` | Wave A Account / Beats |
 | `812a9d4` | Wave B Mix Panel BRD presentation |
 | `42369c0` | Historical Fala 1B Account + Admin visual foundation |
 | `fdf74f9` | Fala 1A Public Visual Foundation |
@@ -56,8 +58,9 @@ NEXT WAVE                  = EXISTING BACKLOG / OWNER DECISION
 | `183b2a4` | Historical E3.6 Basic MP3 DARK closeout |
 | docs tip | May advance on docs-only commits without redeploy |
 
-**Primary continuity (full detail):** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)  
-**Living “where now”:** [PROJECT_STATE.md](./PROJECT_STATE.md)  
+**Primary continuity (full detail):** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)
+**Living “where now”:** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Polish UX closeout:** [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md)
 **Wave A closeout:** [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md)
 **Fala 1B closeout:** [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
 **Product constitution:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
@@ -102,10 +105,11 @@ Repo root note: [AGENTS.md](../AGENTS.md) — Next.js in this repo may differ fr
 
 ```text
 URL                      = https://www.bitrymdym.pl
-APP SHA                  = 2c4200b
-DEPLOYMENT               = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
-STATUS                   = GREEN / PRODUCTION VERIFIED
-WAVE A                   = CLOSED / PRODUCTION VERIFIED — GREEN
+APP SHA                  = 0afa29b
+DEPLOYMENT               = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
+STATUS                   = GREEN / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS
+POLISH UX                = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
+WAVE A                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B                   = CLOSED / PRODUCTION VERIFIED @ 812a9d4
 FALA 1B                  = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 FALA 1A                  = CLOSED / PRODUCTION VERIFIED @ fdf74f9
@@ -231,12 +235,12 @@ Index: [architecture/RECORDING.md](./architecture/RECORDING.md)
 REQUEST → AUTH → SERVER AUTHZ → PERMISSION / ENTITLEMENT → BUSINESS RULE → RLS → DB/STORAGE
 ```
 
-- Fail-closed defaults  
-- Private Storage · no permanent public master URLs  
-- Signed URLs only after server AuthZ  
-- Client never chooses bucket / object_key / spoof paths  
-- Worker: Bearer `E3_RENDER_WORKER_SECRET` (server-only · never commit)  
-- `E3_PUBLIC_AUDIO` ≠ public bucket  
+- Fail-closed defaults
+- Private Storage · no permanent public master URLs
+- Signed URLs only after server AuthZ
+- Client never chooses bucket / object_key / spoof paths
+- Worker: Bearer `E3_RENDER_WORKER_SECRET` (server-only · never commit)
+- `E3_PUBLIC_AUDIO` ≠ public bucket
 
 Security overall: **GREEN WITH WARNINGS** (HIBP disabled = MEDIUM residual).
 
@@ -295,15 +299,15 @@ Deferred product backlog (orthogonal): Premium E2E · ops dashboard · live roll
 
 Nowy agent **NIE WOLNO** bez jawnego Owner GO:
 
-- deploy Production / change Vercel Production env  
-- start Contabo worker / change systemd / mutate VPS  
-- change Supabase schema / RLS / Storage buckets / objects  
-- implement STORAGE-ARCH-02+ (dual-read, janitor, orphan delete, key migrate, backup)  
-- enable/disable E3 flags or mutate `E3_PUBLIC_AUDIO`  
-- rewrite historical closeouts / OD locks  
-- stage `.agents/` · `.cursor/` · `skills-lock.json` · untracked Oracle/host audits · `infra/` as product  
-- invent OPEN decisions  
-- treat Contabo as durable media library  
+- deploy Production / change Vercel Production env
+- start Contabo worker / change systemd / mutate VPS
+- change Supabase schema / RLS / Storage buckets / objects
+- implement STORAGE-ARCH-02+ (dual-read, janitor, orphan delete, key migrate, backup)
+- enable/disable E3 flags or mutate `E3_PUBLIC_AUDIO`
+- rewrite historical closeouts / OD locks
+- stage `.agents/` · `.cursor/` · `skills-lock.json` · untracked Oracle/host audits · `infra/` as product
+- invent OPEN decisions
+- treat Contabo as durable media library
 
 Workflow:
 
@@ -329,7 +333,7 @@ AUDIT → RCA → PLAN → DESIGN FREEZE → ARCH REVIEW → OWNER GO
 | Continuity rule | `DOCUMENTATION_CONTINUITY.md` |
 | Changelog | `CHANGELOG.md` |
 
-**Note:** folder `docs/operations/` — **does not exist**; use `runbooks/` + audits worker/host docs.  
+**Note:** folder `docs/operations/` — **does not exist**; use `runbooks/` + audits worker/host docs.
 Several `docs/audits/E3_*HOST* / ORACLE*` files may be **untracked** — treat as local research until Owner stages.
 
 ---
@@ -379,9 +383,10 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 
 ```text
 FINAL COLD START HANDOFF     = READY
-CURRENT PRODUCTION APP       = 2c4200b
-PRODUCTION DEPLOYMENT        = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
-WAVE A                       = CLOSED / PRODUCTION VERIFIED — GREEN
+CURRENT PRODUCTION APP       = 0afa29b
+PRODUCTION DEPLOYMENT        = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
+POLISH UX                    = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
+WAVE A                       = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B                       = CLOSED / PRODUCTION VERIFIED @ 812a9d4
 FALA 1B                      = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
 WORKER                       = STOPPED / DISABLED (92496d4)

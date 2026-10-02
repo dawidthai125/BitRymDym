@@ -21,8 +21,9 @@
 |------|---------|
 | Canonical branch | `main` |
 | **Repository HEAD / origin/main** | Advances on docs-only commits · **≠** Production app SHA after closeout docs |
-| **Production application** | `2c4200b` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED** |
-| **Production deployment** | `6810556404` · Vercel `dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE` |
+| **Production application** | `0afa29b` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** |
+| **Production deployment** | `6815846706` · Vercel `dpl_9EDrc78ompk8B2QZk6tDwQurntus` |
+| **Polish UX Mix / Master / Recording / Playback** | **CLOSED** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` — [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) |
 | **Wave A Account / Beats** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `2c4200b` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
 | **Wave B Mix Panel presentation** | **CLOSED** / **PRODUCTION VERIFIED** @ `812a9d4` (parent of Wave A) |
 | **Fala 1B Account + Admin Visual Foundation** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
@@ -65,12 +66,13 @@ E3 architecture: [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FU
 ## 3. Current Phase
 
 ```text
+POLISH UX LANGUAGE       = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
 WAVE A ACCOUNT/BEATS     = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B MIX PRESENTATION  = CLOSED / PRODUCTION VERIFIED @ 812a9d4
 FALA 1A PUBLIC VISUAL    = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 FALA 1B ACCOUNT+ADMIN    = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
-PRODUCTION APPLICATION   = 2c4200b
-PRODUCTION DEPLOYMENT    = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
+PRODUCTION APPLICATION   = 0afa29b
+PRODUCTION DEPLOYMENT    = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
 W6.2/W6.3 UX SHIP        = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT             = CLOSED / PASS (Owner-accepted emulated)
 E3 PRODUCTION ENABLEMENT = COMPLETE
@@ -89,10 +91,12 @@ STORAGE-ARCH-01          = LOCKED (Hybrid C · Final Arch Review PASS WITH FINDI
 STORAGE-ARCH-02          = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
 STORAGE-ARCH-02-KEY      = NOT STARTED (OD-SA-02 / FAR-01 dual-read keys · no Implementation GO)
 FALA 3.5.1 RECORDING UX  = CLOSED (Owner preliminary PASS · NOT DEPLOYED)
+POLISH UX                = CLOSED
 WAVE A                   = CLOSED
 NEXT                     = EXISTING BACKLOG / OWNER DECISION (do not auto-start next wave)
 ```
 
+Closeout Polish UX: [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md)
 Closeout Wave A: [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md)
 Closeout Fala 1B: [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
 Closeout Fala 3.5.1: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)
