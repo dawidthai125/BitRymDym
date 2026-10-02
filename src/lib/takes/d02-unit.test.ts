@@ -321,6 +321,6 @@ describe("Recording D02 — mobile Gate M (UI contract)", () => {
     expect(panel).toMatch(/visibilitychange/);
     expect(panel).toMatch(/min-h-11/);
     expect(panel).toMatch(/załóż konto/);
-    expect(panel).toMatch(/gość \(Quick Take\)/);
+    expect(panel).toMatch(/Gościnne nagranie/);
   });
 });

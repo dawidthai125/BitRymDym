@@ -299,7 +299,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
               {title}
             </p>
             <p className="brd-meta mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
-              Recording audio
+              Nagrywanie
             </p>
           </div>
           <BrdAudioTime
@@ -324,7 +324,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             showPlayhead={hasSource}
             interactive={!seekDisabled}
             onSeekRatio={(ratio) => handleSeek(ratio * progressMax)}
-            aria-label="Waveform — przewiń utwór"
+            aria-label="Przebieg — przewiń utwór"
           />
         </div>
 

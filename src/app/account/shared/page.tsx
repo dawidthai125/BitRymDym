@@ -32,7 +32,7 @@ export default async function AccountSharedBeatsPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Aktywne granty RECORD od właścicieli bitów. Wejdź w bit, aby nagrać
-            próbkę. Grant nie daje dostępu do cudzych nagrań.
+            nagranie. Grant nie daje dostępu do cudzych nagrań.
           </p>
         </header>
 

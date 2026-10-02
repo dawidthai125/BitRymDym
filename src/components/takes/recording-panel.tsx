@@ -18,7 +18,11 @@ import {
   TakeRecorderError,
   detectMediaRecorderSupport,
 } from "@/lib/takes/media-recorder";
-import { uploadAnonTakeRecordingBlob, uploadTakeRecordingBlob } from "@/lib/takes/client-upload";
+import {
+  toUserFacingTakeUploadError,
+  uploadAnonTakeRecordingBlob,
+  uploadTakeRecordingBlob,
+} from "@/lib/takes/client-upload";
 import {
   canStartNewRecording,
   createInitialRecordingUiSnapshot,
@@ -223,10 +227,11 @@ export function RecordingPanel({
       }
       dispatch({
         type: "RECORDING_FAILED",
-        message:
+        message: toUserFacingTakeUploadError(
           error instanceof Error
             ? error.message
             : "Nie udało się uruchomić mikrofonu.",
+        ),
       });
     }
   }
@@ -284,13 +289,16 @@ export function RecordingPanel({
           takeDurationSeconds: uploaded.durationSeconds,
         });
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Upload/finalize failed.";
-        if (/expired/i.test(message)) {
+        const raw =
+          error instanceof Error
+            ? error.message
+            : "Upload/finalize failed.";
+        const message = toUserFacingTakeUploadError(raw);
+        if (/expired|wygas/i.test(raw) || /wygas/i.test(message)) {
           dispatch({ type: "EXPIRED", message });
         } else if (
-          /finaliz|duration|fail-closed|Duration|READY|MIME|missing/i.test(
-            message,
+          /finaliz|duration|fail-closed|Duration|READY|MIME|missing|sfinaliz/i.test(
+            raw,
           )
         ) {
           dispatch({ type: "FINALIZE_FAILED", message });
@@ -304,10 +312,11 @@ export function RecordingPanel({
       } else {
         dispatch({
           type: "RECORDING_FAILED",
-          message:
+          message: toUserFacingTakeUploadError(
             error instanceof Error
               ? error.message
               : "Błąd zatrzymania nagrania.",
+          ),
         });
       }
     } finally {
@@ -358,14 +367,18 @@ export function RecordingPanel({
         error instanceof TakeRecorderError &&
         error.code === "UNSUPPORTED"
       ) {
-        dispatch({ type: "UNSUPPORTED", message: error.message });
+        dispatch({
+          type: "UNSUPPORTED",
+          message: toUserFacingTakeUploadError(error.message),
+        });
       } else {
         dispatch({
           type: "RECORDING_FAILED",
-          message:
+          message: toUserFacingTakeUploadError(
             error instanceof Error
               ? error.message
               : "Nie udało się zacząć nagrania.",
+          ),
         });
       }
     } finally {
@@ -401,8 +414,9 @@ export function RecordingPanel({
     } catch (error) {
       dispatch({
         type: "FINALIZE_FAILED",
-        message:
+        message: toUserFacingTakeUploadError(
           error instanceof Error ? error.message : "Podgląd niedostępny.",
+        ),
       });
     } finally {
       setPreviewBusy(false);
@@ -419,12 +433,12 @@ export function RecordingPanel({
         className,
       )}
       role="region"
-      aria-label="Nagrywanie próby"
+      aria-label="Nagrywanie"
       data-recording-phase={state.phase}
     >
       <div className="space-y-1">
         <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
-          Nagraj próbę
+          Nagraj nagranie
         </p>
         <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           Limit {formatDurationSeconds(maxSeconds)}
@@ -604,7 +618,7 @@ export function RecordingPanel({
               disabled={busy}
               className="min-h-11 min-w-[7rem]"
             >
-              Start
+              Rozpocznij
             </Button>
             <Button
               type="button"
@@ -624,7 +638,7 @@ export function RecordingPanel({
               onClick={() => void stopAndUpload()}
               className="min-h-11 min-w-[7rem]"
             >
-              Stop
+              Zatrzymaj
             </Button>
             <Button
               type="button"

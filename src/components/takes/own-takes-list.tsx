@@ -7,23 +7,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { OwnTakeListItem } from "@/lib/takes/list-own-takes";
 import { formatDurationSeconds } from "@/lib/beats/public";
-
-function statusLabelPl(status: OwnTakeListItem["displayStatus"]): string {
-  switch (status) {
-    case "READY":
-      return "Gotowa";
-    case "EXPIRED":
-      return "Wygasła";
-    case "DELETED":
-      return "Usunięta";
-    case "PENDING_UPLOAD":
-      return "W trakcie";
-    case "FAILED":
-      return "Błąd";
-    default:
-      return status;
-  }
-}
+import { toUserFacingTakeUploadError } from "@/lib/takes/client-upload";
+import { labelRecordingMode, labelTakeStatus } from "@/lib/ui/labels";
 
 function formatWhen(iso: string): string {
   try {
@@ -68,7 +53,11 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
       const url = await fetchSignedUrl("/api/takes/preview", take.id);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Podgląd niedostępny.");
+      setError(
+        toUserFacingTakeUploadError(
+          e instanceof Error ? e.message : "Podgląd niedostępny.",
+        ),
+      );
     } finally {
       setBusyId(null);
     }
@@ -81,14 +70,18 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
       const url = await fetchSignedUrl("/api/takes/download", take.id);
       window.location.assign(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Pobieranie niedostępne.");
+      setError(
+        toUserFacingTakeUploadError(
+          e instanceof Error ? e.message : "Pobieranie niedostępne.",
+        ),
+      );
     } finally {
       setBusyId(null);
     }
   }
 
   async function onDelete(take: OwnTakeListItem) {
-    if (!window.confirm("Usunąć tę próbkę? Tej operacji nie cofniesz.")) {
+    if (!window.confirm("Usunąć to nagranie? Tej operacji nie cofniesz.")) {
       return;
     }
     setError(null);
@@ -108,7 +101,11 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
       }
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Usuwanie nie powiodło się.");
+      setError(
+        toUserFacingTakeUploadError(
+          e instanceof Error ? e.message : "Usuwanie nie powiodło się.",
+        ),
+      );
     } finally {
       setBusyId(null);
     }
@@ -117,7 +114,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
   if (items.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Nie masz jeszcze próbek. Nagraj na stronie bitu.
+        Nie masz jeszcze nagrań. Nagraj na stronie bitu.
       </p>
     );
   }
@@ -151,9 +148,9 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {statusLabelPl(take.displayStatus)}
+                  {labelTakeStatus(take.displayStatus)}
                   {" · "}
-                  {take.recordingMode}
+                  {labelRecordingMode(take.recordingMode)}
                   {take.durationSeconds != null
                     ? ` · ${formatDurationSeconds(take.durationSeconds)}`
                     : ""}

@@ -208,7 +208,7 @@ export function BeatDetailClient({
                       if (!isCurrent || total <= 0) return;
                       seek(ratio * total);
                     }}
-                    aria-label="Waveform — przewiń utwór"
+                    aria-label="Przebieg — przewiń utwór"
                   />
                 </div>
                 <BrdAudioTime

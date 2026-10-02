@@ -7,6 +7,55 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 
+/** Map transport/API errors to Polish before they reach user-facing UI. */
+export function toUserFacingTakeUploadError(message: string): string {
+  if (/Take upload session failed/i.test(message)) {
+    return "Nie udało się rozpocząć przesyłania nagrania.";
+  }
+  if (/Take binary upload failed/i.test(message)) {
+    return "Nie udało się przesłać nagrania.";
+  }
+  if (/Take finalize failed/i.test(message) || /Anonymous take finalize failed/i.test(message)) {
+    return "Nie udało się sfinalizować nagrania.";
+  }
+  if (/Upload\/finalize failed/i.test(message)) {
+    return "Nie udało się przesłać ani sfinalizować nagrania.";
+  }
+  if (/Anonymous take session failed/i.test(message) || /Take session failed/i.test(message)) {
+    return "Nie udało się utworzyć sesji nagrania.";
+  }
+  if (/Take preview failed|Anonymous take preview failed/i.test(message)) {
+    return "Nie udało się otworzyć podglądu nagrania.";
+  }
+  if (/Take download failed/i.test(message)) {
+    return "Nie udało się pobrać nagrania.";
+  }
+  if (/Take delete failed/i.test(message)) {
+    return "Nie udało się usunąć nagrania.";
+  }
+  if (/MediaRecorder unavailable/i.test(message)) {
+    return "Nagrywanie nie jest dostępne w tej przeglądarce.";
+  }
+  if (/getUserMedia failed/i.test(message)) {
+    return "Nie udało się uzyskać dostępu do mikrofonu.";
+  }
+  if (/stop failed/i.test(message)) {
+    return "Nie udało się zatrzymać nagrania.";
+  }
+  if (/expired/i.test(message)) {
+    return "Sesja nagrania wygasła.";
+  }
+  // Already Polish (contains diacritics or known PL words) — pass through.
+  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(message) || /\b(nagrania|nagranie|mikrofon|sesji|podgląd)\b/i.test(message)) {
+    return message;
+  }
+  // Generic English/technical fallback — never show raw EN to the user.
+  if (/\b(failed|error|unavailable|denied|timeout)\b/i.test(message)) {
+    return "Nie udało się przesłać nagrania. Spróbuj ponownie.";
+  }
+  return message;
+}
+
 export type TakeUploadTransportResult = {
   takeId: string;
   beatId: string;
@@ -53,7 +102,11 @@ async function runTakeUploadTransport(params: {
     !sessionJson.path ||
     !sessionJson.token
   ) {
-    throw new Error(sessionJson.error ?? "Take upload session failed.");
+    throw new Error(
+      toUserFacingTakeUploadError(
+        sessionJson.error ?? "Take upload session failed.",
+      ),
+    );
   }
 
   const supabase = createSupabaseBrowserClient();
@@ -65,7 +118,11 @@ async function runTakeUploadTransport(params: {
     });
 
   if (uploadError) {
-    throw new Error(uploadError.message || "Take binary upload failed.");
+    throw new Error(
+      toUserFacingTakeUploadError(
+        uploadError.message || "Take binary upload failed.",
+      ),
+    );
   }
 
   const finalizeRes = await fetch(params.finalizePath, {
@@ -78,7 +135,11 @@ async function runTakeUploadTransport(params: {
     error?: string;
   };
   if (!finalizeRes.ok || !finalizeJson.success) {
-    throw new Error(finalizeJson.error ?? "Take finalize failed.");
+    throw new Error(
+      toUserFacingTakeUploadError(
+        finalizeJson.error ?? "Take finalize failed.",
+      ),
+    );
   }
 
   return {

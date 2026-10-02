@@ -125,7 +125,7 @@ export function MixPanel({
           Miks i master
         </h2>
         <p className="text-sm text-[var(--brd-mute)] text-pretty">
-          Nagraj gotowy take na tym bicie, aby otworzyć miks.
+          Nagraj gotowe nagranie na tym bicie, aby otworzyć miks.
         </p>
       </section>
     );
@@ -146,7 +146,7 @@ export function MixPanel({
         session?: SessionDto;
       };
       if (!res.ok || !json.session) {
-        throw new Error(json.error ?? "Nie udało się utworzyć sesji Mix.");
+        throw new Error(json.error ?? "Nie udało się utworzyć sesji miksu.");
       }
       setSession(json.session);
       setParams(json.session.parameters);
@@ -199,7 +199,7 @@ export function MixPanel({
         parameters?: MixParameters;
       };
       if (!res.ok || !json.take || !json.beat) {
-        throw new Error(json.error ?? "Brak źródeł preview.");
+        throw new Error(json.error ?? "Brak źródeł podglądu.");
       }
 
       disposeGraph();
@@ -209,19 +209,21 @@ export function MixPanel({
       const beatEl = beatAudioRef.current;
       const takeEl = takeAudioRef.current;
       if (!beatEl || !takeEl) {
-        throw new Error("Audio elements unavailable.");
+        throw new Error("Odtwarzacz niedostępny.");
       }
       beatEl.src = json.beat.url;
       takeEl.src = json.take.url;
       await Promise.all([
         new Promise<void>((resolve, reject) => {
           beatEl.onloadeddata = () => resolve();
-          beatEl.onerror = () => reject(new Error("Beat load failed"));
+          beatEl.onerror = () =>
+            reject(new Error("Nie udało się wczytać bitu."));
           beatEl.load();
         }),
         new Promise<void>((resolve, reject) => {
           takeEl.onloadeddata = () => resolve();
-          takeEl.onerror = () => reject(new Error("Take load failed"));
+          takeEl.onerror = () =>
+            reject(new Error("Nie udało się wczytać nagrania."));
           takeEl.load();
         }),
       ]);
@@ -235,7 +237,11 @@ export function MixPanel({
       await graph.play();
       setPlaying(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Preview failed.");
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Nie udało się przygotować podglądu.",
+      );
       disposeGraph();
     } finally {
       setBusy(false);
@@ -284,7 +290,7 @@ export function MixPanel({
         job?: { id: string; status: string };
       };
       if (!createRes.ok || !createJson.job) {
-        throw new Error(createJson.error ?? "Nie udało się utworzyć joba.");
+        throw new Error(createJson.error ?? "Nie udało się utworzyć eksportu.");
       }
       let jobId = createJson.job.id;
       setExportStatus(createJson.job.status);
@@ -297,7 +303,7 @@ export function MixPanel({
           job?: { id: string; status: string; artifactId?: string | null };
         };
         if (!poll.ok || !pollJson.job) {
-          throw new Error(pollJson.error ?? "Status joba niedostępny.");
+          throw new Error(pollJson.error ?? "Status eksportu niedostępny.");
         }
         jobId = pollJson.job.id;
         setExportStatus(pollJson.job.status);
@@ -335,11 +341,13 @@ export function MixPanel({
       );
       const json = (await res.json()) as { error?: string; url?: string };
       if (!res.ok || !json.url) {
-        throw new Error(json.error ?? "Download niedostępny.");
+        throw new Error(json.error ?? "Pobieranie niedostępne.");
       }
       window.location.assign(json.url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Download failed.");
+      setError(
+        e instanceof Error ? e.message : "Nie udało się pobrać pliku.",
+      );
     } finally {
       setExportBusy(false);
     }
@@ -349,7 +357,9 @@ export function MixPanel({
     const next = patch(params);
     setParams(next);
     void persistParams(next).catch((e) =>
-      setError(e instanceof Error ? e.message : "Save failed."),
+      setError(
+        e instanceof Error ? e.message : "Nie udało się zapisać parametrów.",
+      ),
     );
   }
 
@@ -383,7 +393,7 @@ export function MixPanel({
       </div>
 
       <label className="block min-w-0 space-y-1 text-sm">
-        <span className="text-muted-foreground">Własny take</span>
+        <span className="text-muted-foreground">Własne nagranie</span>
         <select
           className="min-h-11 w-full max-w-full rounded-[var(--brd-r-sm)] border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 py-2"
           value={takeId}
@@ -400,7 +410,7 @@ export function MixPanel({
 
       <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         <GainPanControl
-          label="Take"
+          label="Nagranie"
           gainDb={params.take.gainDb}
           pan={params.take.pan}
           disabled={busy}
@@ -409,7 +419,7 @@ export function MixPanel({
           }
         />
         <GainPanControl
-          label="Beat"
+          label="Bit"
           gainDb={params.beat.gainDb}
           pan={params.beat.pan}
           disabled={busy}
@@ -421,11 +431,11 @@ export function MixPanel({
 
       <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
-          Basic EQ / Dynamics / FX
+          EQ / dynamika / efekty
         </summary>
         <div className="space-y-2 px-3 pt-1">
           <Slider
-            label="EQ Low"
+            label="EQ: bas"
             min={-12}
             max={12}
             step={0.5}
@@ -436,7 +446,7 @@ export function MixPanel({
             }
           />
           <Slider
-            label="EQ Mid"
+            label="EQ: środek"
             min={-12}
             max={12}
             step={0.5}
@@ -447,7 +457,7 @@ export function MixPanel({
             }
           />
           <Slider
-            label="EQ High"
+            label="EQ: góra"
             min={-12}
             max={12}
             step={0.5}
@@ -458,7 +468,7 @@ export function MixPanel({
             }
           />
           <Slider
-            label="Comp threshold"
+            label="Próg kompresora"
             min={-60}
             max={0}
             step={1}
@@ -472,7 +482,7 @@ export function MixPanel({
             }
           />
           <Slider
-            label="Reverb mix"
+            label="Poziom reverbu"
             min={0}
             max={1}
             step={0.01}
@@ -483,7 +493,7 @@ export function MixPanel({
             }
           />
           <Slider
-            label="Delay mix"
+            label="Poziom delay"
             min={0}
             max={1}
             step={0.01}
@@ -498,11 +508,11 @@ export function MixPanel({
 
       <details className="min-w-0 border border-[var(--brd-line)] open:pb-3" open>
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
-          Basic Master
+          Master podstawowy
         </summary>
         <div className="space-y-2 px-3 pt-1">
           <Slider
-            label="Master gain (dB)"
+            label="Głośność mastera (dB)"
             min={-24}
             max={12}
             step={0.5}
@@ -528,10 +538,10 @@ export function MixPanel({
                 }))
               }
             />
-            Clip protect
+            Ochrona przed przesterem
           </label>
           <Slider
-            label="Master limiter threshold"
+            label="Próg limitera"
             min={-24}
             max={0}
             step={0.5}
@@ -548,7 +558,7 @@ export function MixPanel({
             }
           />
           <Slider
-            label="Master loudness target (LUFS)"
+            label="Cel głośności (LUFS)"
             min={-24}
             max={-6}
             step={0.5}
@@ -569,7 +579,7 @@ export function MixPanel({
 
       <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
-          Pro Mix {mixPro ? "" : "· locked"}
+          Pro Mix {mixPro ? "" : "· zablokowane"}
         </summary>
         <div className="space-y-2 px-3 pt-1">
           {!mixPro ? (
@@ -578,7 +588,7 @@ export function MixPanel({
               className={`${touchBtn} w-full text-muted-foreground sm:w-auto`}
               onClick={onProControlIntent}
             >
-              Pro EQ / multiband / de-esser — Premium
+              Pro EQ, multiband i de-esser — Premium
             </button>
           ) : (
             <button
@@ -587,7 +597,7 @@ export function MixPanel({
               disabled={busy}
               onClick={enableProDefaults}
             >
-              {params.pro ? "Pro łańcuch aktywny" : "Włącz Pro FX chain"}
+              {params.pro ? "Pro łańcuch aktywny" : "Włącz łańcuch efektów Pro"}
             </button>
           )}
           {proLockedHint && !mixPro ? (
@@ -597,7 +607,7 @@ export function MixPanel({
           ) : null}
           {mixPro && params.pro ? (
             <Slider
-              label="De-esser range"
+              label="Zakres de-essera"
               min={0}
               max={24}
               step={1}
@@ -623,7 +633,7 @@ export function MixPanel({
 
       <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
-          Pro Master {masterPro ? "" : "· locked"}
+          Pro Master {masterPro ? "" : "· zablokowane"}
         </summary>
         <div className="space-y-2 px-3 pt-1">
           {!masterPro ? (
@@ -632,17 +642,16 @@ export function MixPanel({
               className={`${touchBtn} w-full text-muted-foreground sm:w-auto`}
               onClick={onMasterProIntent}
             >
-              Metering / Pro Master bake — Premium
+              Pomiar i Pro Master — Premium
             </button>
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground text-pretty">
                 Podgląd mastera · ostateczny plik powstaje przy eksporcie
-                Plan A
               </p>
               <div
                 className="h-3 w-full max-w-full overflow-hidden rounded-sm bg-muted"
-                aria-label="Master peak meter"
+                aria-label="Miernik szczytu mastera"
               >
                 <div
                   className="h-full bg-foreground/70 transition-[width] duration-75"
@@ -652,16 +661,16 @@ export function MixPanel({
                 />
               </div>
               <p className="text-xs tabular-nums text-muted-foreground">
-                Peak{" "}
+                Szczyt{" "}
                 {meter
                   ? `${meter.peakDb.toFixed(1)} dBFS`
-                  : "— (uruchom preview)"}
+                  : "— (włącz podgląd)"}
               </p>
             </div>
           )}
           {masterProLockedHint && !masterPro ? (
             <p className="text-xs text-muted-foreground text-pretty" role="status">
-              Master Pro wymaga aktywnego Premium.
+              Pro Master wymaga aktywnego Premium.
             </p>
           ) : null}
         </div>
@@ -682,7 +691,7 @@ export function MixPanel({
           disabled={!playing && !graphRef.current}
           onClick={stopPreview}
         >
-          Stop
+          Zatrzymaj
         </button>
       </div>
 
@@ -747,7 +756,7 @@ export function MixPanel({
               disabled={exportBusy}
               onClick={() => void downloadExport()}
             >
-              Download
+              Pobierz
             </button>
           ) : (
             <button
@@ -755,9 +764,9 @@ export function MixPanel({
               className={`${touchBtn} text-muted-foreground`}
               disabled
               aria-disabled="true"
-              title="Download dostępny po udanym export (artifact)"
+              title="Pobieranie dostępne po udanym eksporcie"
             >
-              Download
+              Pobierz
             </button>
           )}
         </div>
@@ -773,8 +782,7 @@ export function MixPanel({
         ) : null}
         {mixPro ? (
           <p className="text-xs text-muted-foreground text-pretty">
-            Podgląd Premium może różnić się od finalnego eksportu
-            (server-pro-v1).
+            Podgląd Premium może różnić się od finalnego eksportu.
           </p>
         ) : null}
       </div>
@@ -815,8 +823,14 @@ function formatExportStatus(status: string): string {
     case "RUNNING":
     case "QUEUED":
       return "w trakcie";
+    case "FAILED":
+      return "nieudane";
+    case "CANCELLED":
+      return "anulowane";
+    case "TIMEOUT":
+      return "przekroczono czas";
     default:
-      return status;
+      return "nieznany status eksportu";
   }
 }
 
@@ -829,6 +843,12 @@ function formatExportError(message: string): string {
   }
   if (/timeout/i.test(message)) {
     return "Eksport trwa zbyt długo. Spróbuj ponownie.";
+  }
+  if (/CANCELLED/i.test(message)) {
+    return "Eksport został anulowany.";
+  }
+  if (/FAILED/i.test(message)) {
+    return "Eksport nie powiódł się. Spróbuj ponownie.";
   }
   return "Nie udało się wyeksportować. Spróbuj ponownie.";
 }
@@ -844,7 +864,7 @@ function GainPanControl(props: {
     <div className="min-w-0 space-y-2 border border-[var(--brd-line)] p-3">
       <p className="text-xs font-medium tracking-wide uppercase">{props.label}</p>
       <Slider
-        label="Gain (dB)"
+        label="Wzmocnienie (dB)"
         min={-24}
         max={24}
         step={0.5}
@@ -853,7 +873,7 @@ function GainPanControl(props: {
         onChange={(gainDb) => props.onChange(gainDb, props.pan)}
       />
       <Slider
-        label="Pan"
+        label="Panorama"
         min={-1}
         max={1}
         step={0.01}

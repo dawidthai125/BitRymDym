@@ -59,7 +59,7 @@ export function labelAudioReady(ready: boolean): string {
 export function labelRecordingMode(mode: string): string {
   switch (mode) {
     case "QUICK_TAKE":
-      return "Szybka próba";
+      return "Szybkie nagranie";
     case "FULL_TAKE":
       return "Pełne nagranie";
     default:
