@@ -102,6 +102,11 @@ export class TakeMediaRecorder {
     return this.recorder != null && this.recorder.state !== "inactive";
   }
 
+  /** Active mic stream while recording — for AnalyserNode UI only. Do not stop tracks. */
+  getStream(): MediaStream | null {
+    return this.stream;
+  }
+
   async start(): Promise<{ mimeType: string }> {
     if (this.isRecording) {
       throw new TakeRecorderError(

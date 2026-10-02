@@ -1,10 +1,11 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · production GREEN
+**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · **Fala 3.5.1 Recording Experience CLOSED** (Owner preliminary PASS · **NOT DEPLOYED**) · production app GREEN (prior baselines)
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 **D02 CURRENT CONTRACT:** [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](../phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md) (Design Freeze COMPLETE · **SHIPPED** @ `e98ba52`)  
 **D02 closeout:** [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)  
+**Fala 3.5.1 closeout:** [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)  
 **Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
 **Wave 4 closeout:** [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)  
 **Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)  
@@ -93,3 +94,17 @@
 **W4/W5:** authenticated `claim_take_recording_session` and Shared Grants unchanged.
 
 **Status:** **CLOSED / IN V1** · **SHIPPED** · **PRODUCTION VERIFIED** @ `e98ba52` · [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)
+
+## Fala 3.5.1 — Recording Experience + Dual Audio Timeline (CLOSED · NOT DEPLOYED)
+
+| Piece | Location |
+|-------|----------|
+| Live mic peaks / level | `useMicAnalyser` · `TakeMediaRecorder.getStream()` |
+| Live MIC rail + Input Monitor | `brd-live-mic-waveform.tsx` · `brd-input-monitor.tsx` |
+| BIT rail during REC | `PlaybackShell` Waveform + REC-panel Bit Waveform |
+| READY_TAKE dual preview | `brd-take-preview-rail.tsx` · `take-preview-graph.ts` · `peaks-from-buffer.ts` |
+| Waveform peaks / tone | `waveform.tsx` (`peaks?` · `tone: "take"` · `peaksFromSeed` retained) |
+
+**Contract:** PlaybackShell remains BIT playback SSOT · no second audio engine · no native take `<audio controls>` · D02 / Storage / AuthZ unchanged.
+
+**Status:** **CLOSED** · Owner verification **PRELIMINARY PASS** · Production **NOT DEPLOYED** — [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)

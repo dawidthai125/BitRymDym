@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { useEffect, useReducer, useRef, useState, type RefObject } from "react";
 
+import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
+import { BrdLiveMicWaveform } from "@/components/brand/brd-live-mic-waveform";
+import { BrdTakePreviewRail } from "@/components/brand/brd-take-preview-rail";
+import { Waveform } from "@/components/brand/waveform";
 import { Button } from "@/components/ui/button";
 import type { PlaybackShellHandle } from "@/components/player/playback-shell";
+import { usePlayerOptional } from "@/components/player/player-provider";
+import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +30,7 @@ import {
 
 type RecordingPanelProps = {
   beatId: string;
+  beatTitle?: string;
   beatDurationSeconds: number;
   /** Server SSOT max — client timer must not exceed this. */
   maxRecordingSeconds: number;
@@ -58,6 +65,7 @@ async function fetchTakePreviewUrl(
 
 export function RecordingPanel({
   beatId,
+  beatTitle = "Bit",
   beatDurationSeconds,
   maxRecordingSeconds,
   isAuthenticated,
@@ -85,10 +93,32 @@ export function RecordingPanel({
   const maxSecondsRef = useRef(maxSeconds);
   const isAuthenticatedRef = useRef(isAuthenticated);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
+  const [takeBlob, setTakeBlob] = useState<Blob | null>(null);
+  const mic = useMicAnalyser(micStream, { barCount: 48, hz: 15 });
+  const recProgress =
+    maxSeconds > 0 ? Math.min(1, state.elapsedMs / (maxSeconds * 1000)) : 0;
+
+  function clearMicMonitor() {
+    setMicStream(null);
+  }
 
   useEffect(() => {
     phaseRef.current = state.phase;
   }, [state.phase]);
+
+  const globalPlayer = usePlayerOptional();
+  useEffect(() => {
+    const busy =
+      state.phase === "REQUESTING_MIC" ||
+      state.phase === "READY" ||
+      state.phase === "RECORDING" ||
+      state.phase === "STOPPING" ||
+      state.phase === "UPLOADING" ||
+      state.phase === "PROCESSING";
+    globalPlayer?.setSuppressed(busy);
+    return () => globalPlayer?.setSuppressed(false);
+  }, [state.phase, globalPlayer]);
 
   useEffect(() => {
     beatIdRef.current = beatId;
@@ -103,6 +133,7 @@ export function RecordingPanel({
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
+      clearMicMonitor();
       try {
         recorderRef.current?.cancel();
       } catch {
@@ -165,6 +196,7 @@ export function RecordingPanel({
     }
 
     dispatch({ type: "REQUEST_MIC" });
+    setTakeBlob(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -204,6 +236,7 @@ export function RecordingPanel({
     if (phaseRef.current !== "RECORDING") return;
     submittingRef.current = true;
     clearTick();
+    clearMicMonitor();
     dispatch({ type: "STOP" });
     playbackRef.current?.stopPlayback();
 
@@ -220,6 +253,7 @@ export function RecordingPanel({
 
     try {
       const result = await recorder.stop();
+      setTakeBlob(result.blob);
       dispatch({ type: "UPLOAD_START" });
       try {
         const uploaded = isAuthenticatedRef.current
@@ -293,6 +327,7 @@ export function RecordingPanel({
 
     try {
       await recorder.start();
+      setMicStream(recorder.getStream());
       await playbackRef.current?.playFromStart();
       dispatch({ type: "START_RECORDING" });
       startedAtRef.current = Date.now();
@@ -306,6 +341,7 @@ export function RecordingPanel({
       }, 200);
     } catch (error) {
       clearTick();
+      clearMicMonitor();
       playbackRef.current?.stopPlayback();
       playbackRef.current?.setControlsLocked(false);
       try {
@@ -339,6 +375,8 @@ export function RecordingPanel({
 
   function cancelAll() {
     clearTick();
+    clearMicMonitor();
+    setTakeBlob(null);
     try {
       recorderRef.current?.cancel();
     } catch {
@@ -377,7 +415,7 @@ export function RecordingPanel({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-xl border border-border bg-background/80 p-4",
+        "flex flex-col gap-4 border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 sm:p-5",
         className,
       )}
       role="region"
@@ -385,13 +423,12 @@ export function RecordingPanel({
       data-recording-phase={state.phase}
     >
       <div className="space-y-1">
-        <p className="text-sm font-medium tracking-tight text-foreground">
+        <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
           Nagraj próbę
         </p>
-        <p className="text-xs text-muted-foreground">
-          Limit: {formatDurationSeconds(maxSeconds)}
-          {isAuthenticated ? " · konto" : " · gość (Quick Take)"} · beat
-          PUBLISHED
+        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          Limit {formatDurationSeconds(maxSeconds)}
+          {isAuthenticated ? " · konto" : " · gość"} 
         </p>
       </div>
 
@@ -434,15 +471,39 @@ export function RecordingPanel({
       ) : null}
 
       {state.phase === "RECORDING" ? (
-        <div className="flex items-center gap-3" role="status">
-          <span
-            className="inline-block size-2.5 animate-pulse rounded-full bg-destructive"
-            aria-hidden
-          />
-          <span className="text-sm font-medium tabular-nums text-foreground">
-            REC {formatDurationSeconds(elapsedSec)} /{" "}
-            {formatDurationSeconds(maxSeconds)}
-          </span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3" role="status">
+            <span
+              className="inline-block size-2.5 bg-[var(--brd-rec)] motion-reduce:animate-none"
+              aria-hidden
+            />
+            <span className="brd-meta text-sm font-medium text-[var(--brd-rec)]">
+              REC {formatDurationSeconds(elapsedSec)} /{" "}
+              {formatDurationSeconds(maxSeconds)}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+              Bit
+            </p>
+            <Waveform
+              seed={beatId}
+              progress={recProgress}
+              density="studio"
+              showPlayhead
+              aria-label="Przebieg bitu podczas nagrywania"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+              Nagranie · mikrofon
+            </p>
+            <BrdLiveMicWaveform bars={mic.bars} progress={recProgress} />
+          </div>
+
+          <BrdInputMonitor level={mic.level} peak={mic.peak} />
         </div>
       ) : null}
 
@@ -467,12 +528,12 @@ export function RecordingPanel({
               : ""}
           </p>
           {state.previewUrl ? (
-            <audio
-              controls
-              preload="metadata"
-              src={state.previewUrl}
-              className="w-full"
-              aria-label="Podgląd własnego nagrania"
+            <BrdTakePreviewRail
+              beatId={beatId}
+              beatTitle={beatTitle}
+              takePreviewUrl={state.previewUrl}
+              takeBlob={takeBlob}
+              takeDurationSeconds={state.takeDurationSeconds}
             />
           ) : (
             <Button
@@ -482,7 +543,7 @@ export function RecordingPanel({
               onClick={() => void refreshPreview()}
               className="min-h-11"
             >
-              {previewBusy ? "Ładowanie podglądu…" : "Odtwórz podgląd"}
+              {previewBusy ? "Ładowanie podglądu…" : "Załaduj podgląd"}
             </Button>
           )}
           {!isAuthenticated ? (

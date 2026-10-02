@@ -37,6 +37,7 @@
 | **Recording Wave 1–4** | **CLOSED** / **PRODUCTION VERIFIED** |
 | **Recording Wave 5** | **CLOSED** / **PRODUCTION VERIFIED** @ `37892a6` · Shared Grants → RECORD |
 | **D02 Anonymous Quick Take** | **CLOSED / IN V1** · **SHIPPED** / **PRODUCTION VERIFIED** @ `e98ba52` |
+| **Fala 3.5.1 Recording Experience** | **CLOSED** · Owner verification **PRELIMINARY PASS** · **NOT DEPLOYED** — [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) |
 | **P1-B** DEFINER grants hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
 | **P1-C** `set_updated_at` hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
 | **P1-A** HIBP | **BLOCKED** — Owner Dashboard action required |
@@ -78,8 +79,11 @@ E3 STATUS                = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
 PUBLIC FREE AUDIO        = RELEASED (Free Basic only · private bucket · signed URL)
 STORAGE-ARCH-01          = LOCKED (Hybrid C · Final Arch Review PASS WITH FINDINGS)
 STORAGE-ARCH-02          = NOT STARTED
-NEXT                     = FINAL COLD START pack → Owner GO for STORAGE-ARCH-02 AUDIT (or other backlog)
+FALA 3.5.1 RECORDING UX  = CLOSED (Owner preliminary PASS · NOT DEPLOYED)
+NEXT                     = Owner GO for Production deploy+verify of Fala 3.5.1 · or STORAGE-ARCH-02 AUDIT / other backlog
 ```
+
+Closeout Fala 3.5.1: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)
 
 ### 3.1 STORAGE-ARCH-01 — LOCKED (living)
 

@@ -1,27 +1,104 @@
 /*
-  BitRymDym Design Tokens (foundation)
-
-  Placeholders for future BitRymDym Design System (OD-15 OPEN).
-
-  Do NOT treat current shadcn/neutral theme as final brand identity.
-  Final colors, typography, and visual language remain OPEN.
-
-  Structural hooks only — no invented brand palette.
+  BitRymDym Master Visual Redesign v2 — design tokens (WORKING).
+  Expand existing system; do not fork a second brand language.
 */
 
 :root {
-  /* Reserved for BitRymDym brand tokens (OD-15). */
+  /* Surfaces */
+  --brd-paper: #f2ebe0;
+  --brd-paper-deep: #e4dccf;
+  --brd-paper-ink: #1b3c32;
+  --brd-ink: #101412;
+  --brd-ink-soft: #353b37;
+  --brd-mute: #6a716b;
+  --brd-warm-gray: #8a8478;
+  --brd-line: #c8bfb0;
+  --brd-line-strong: #a89f90;
+
+  /* Brand green */
+  --brd-green: #1a3a30;
+  --brd-green-soft: #2c5346;
+  --brd-green-muted: #4a6b5e;
+  --brd-green-wash: #d5e2db;
+  --brd-green-mist: color-mix(in srgb, var(--brd-green-wash) 55%, var(--brd-paper));
+  --brd-green-deep: #0f241e;
+
+  /* Graphite / dark product surfaces */
+  --brd-graphite: #1c1f1d;
+  --brd-graphite-soft: #2a2e2b;
+
+  /* Signal */
+  --brd-rec: #9a2f2f;
+  --brd-ok: #2f5a4a;
+  --brd-warn: #8a6a2f;
+  --brd-danger: #9a2f2f;
+
+  /* BRD Audio Language — Fala 3.5 */
+  --brd-audio-play: var(--brd-green);
+  --brd-audio-play-hover: var(--brd-green-soft);
+  --brd-audio-wave-played: var(--brd-green);
+  /* Solid rgba — NOT color-mix. Inline style + color-mix fails in Safari/WebKit
+     and paints transparent rest bars (BIT rail looks “empty”). */
+  --brd-audio-wave-rest: rgba(16, 20, 18, 0.38);
+  --brd-audio-playhead: var(--brd-ink);
+  --brd-audio-rec: var(--brd-rec);
+  --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 96%, transparent);
+  --brd-audio-line: var(--brd-line);
+
+  /* Shape — sharp by default */
+  --brd-r-none: 0;
+  --brd-r-xs: 2px;
+  --brd-r-sm: 3px;
+  --brd-r-cta: 4px;
+
+  /* Space — denser product rhythm */
   --brd-space-1: 0.25rem;
   --brd-space-2: 0.5rem;
   --brd-space-3: 0.75rem;
   --brd-space-4: 1rem;
+  --brd-space-5: 1.25rem;
   --brd-space-6: 1.5rem;
   --brd-space-8: 2rem;
+  --brd-space-10: 2.5rem;
+  --brd-space-12: 3rem;
+  --brd-space-16: 4rem;
+  --brd-space-20: 5rem;
+  --brd-space-24: 6rem;
 
-  /* Semantic aliases — map to theme until brand tokens exist */
-  --brd-surface: var(--background);
-  --brd-ink: var(--foreground);
-  --brd-muted: var(--muted-foreground);
-  --brd-border: var(--border);
-  --brd-focus: var(--ring);
+  /* Layout — wider product canvas */
+  --brd-max-public: 80rem;
+  --brd-max-wide: 92rem;
+  --brd-max-reading: 42rem;
+  --brd-max-ops: 88rem;
+  --brd-gutter: clamp(1rem, 3vw, 2rem);
+  --brd-col-gap: clamp(0.75rem, 1.5vw, 1.5rem);
+
+  /* Map into shadcn semantic slots */
+  --background: var(--brd-paper);
+  --foreground: var(--brd-ink);
+  --card: var(--brd-paper);
+  --card-foreground: var(--brd-ink);
+  --popover: var(--brd-paper);
+  --popover-foreground: var(--brd-ink);
+  --primary: var(--brd-green);
+  --primary-foreground: var(--brd-paper);
+  --secondary: var(--brd-paper-deep);
+  --secondary-foreground: var(--brd-ink);
+  --muted: var(--brd-paper-deep);
+  --muted-foreground: var(--brd-mute);
+  --accent: var(--brd-green-mist);
+  --accent-foreground: var(--brd-ink);
+  --destructive: var(--brd-danger);
+  --border: var(--brd-line);
+  --input: var(--brd-line);
+  --ring: var(--brd-green-soft);
+  --radius: 0.2rem;
+
+  --brd-surface: var(--brd-paper);
+  --brd-focus: var(--brd-green-soft);
+}
+
+.dark {
+  --background: var(--brd-paper);
+  --foreground: var(--brd-ink);
 }

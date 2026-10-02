@@ -59,6 +59,7 @@ export function BeatRecordingSurface({
       />
       <RecordingPanel
         beatId={beatId}
+        beatTitle={title}
         beatDurationSeconds={durationSeconds}
         maxRecordingSeconds={maxRecordingSeconds}
         beatStatus={beatStatus}

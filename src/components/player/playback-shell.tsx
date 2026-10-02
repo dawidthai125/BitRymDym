@@ -12,7 +12,9 @@ import {
   type KeyboardEvent,
 } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Waveform } from "@/components/brand/waveform";
+import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
+import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import {
   formatDurationSeconds,
@@ -273,10 +275,13 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
     const playDisabled = loading || controlsLocked;
     const seekDisabled = !hasSource || controlsLocked;
 
+    const progressRatio =
+      progressMax > 0 ? Math.min(state.currentTime, progressMax) / progressMax : 0;
+
     return (
       <div
         className={cn(
-          "flex flex-col gap-4 rounded-xl border border-border bg-background/80 p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "flex flex-col gap-4 border border-[var(--brd-audio-line)] bg-[var(--brd-paper)] p-4 outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)] sm:gap-5 sm:p-5",
           className,
         )}
         role="region"
@@ -286,57 +291,88 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
         data-controls-locked={controlsLocked ? "true" : "false"}
       >
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p
               id={labelId}
-              className="text-sm font-medium tracking-tight text-foreground"
+              className="brd-display truncate text-lg font-semibold tracking-tight text-[var(--brd-ink)]"
             >
-              Odtwarzacz · {title}
+              {title}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              BitRymDym Playback Shell · PLAYBACK only
+            <p className="brd-meta mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
+              Recording audio
             </p>
           </div>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {formatDurationSeconds(state.currentTime)} /{" "}
-            {formatDurationSeconds(displayDuration)}
-          </span>
+          <BrdAudioTime
+            current={state.currentTime}
+            total={displayDuration}
+            format={formatDurationSeconds}
+            className="text-xs"
+          />
         </div>
 
         {/* Engine only — never product UI */}
-        <audio ref={audioRef} preload="none" />
+        <audio ref={audioRef} preload="none" className="hidden" />
+
+        <div className="space-y-2">
+          <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            Bit
+          </p>
+          <Waveform
+            seed={beatId}
+            progress={hasSource ? progressRatio : 0.12}
+            density="studio"
+            showPlayhead={hasSource}
+            interactive={!seekDisabled}
+            onSeekRatio={(ratio) => handleSeek(ratio * progressMax)}
+            aria-label="Waveform — przewiń utwór"
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            onClick={() => void handlePlayPause()}
+          <BrdAudioPlayButton
+            playing={state.phase === "playing"}
+            loading={loading}
             disabled={playDisabled}
-            aria-pressed={state.phase === "playing"}
+            size="md"
+            title={title}
+            onClick={() => void handlePlayPause()}
             aria-label={isPlayLabel(state.phase) ? "Odtwórz" : "Pauza"}
-            className="min-h-11 min-w-11 px-4"
-          >
-            {loading
-              ? "Ładowanie…"
-              : isPlayLabel(state.phase)
-                ? "Odtwórz"
-                : "Pauza"}
-          </Button>
+          />
 
-          <Button
+          <button
             type="button"
-            variant="outline"
             onClick={() => dispatch({ type: "MUTE", muted: !state.muted })}
             aria-pressed={state.muted}
             aria-label={state.muted ? "Włącz dźwięk" : "Wycisz"}
             disabled={controlsLocked}
-            className="min-h-11 min-w-11 px-4"
+            className="inline-flex min-h-11 items-center border border-[var(--brd-audio-line)] px-3 text-sm text-[var(--brd-ink-soft)] outline-none hover:border-[var(--brd-ink)] hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)] disabled:opacity-45"
           >
             {state.muted ? "Wyciszony" : "Dźwięk"}
-          </Button>
+          </button>
+
+          <label className="ml-auto flex min-w-[8rem] max-w-[12rem] flex-1 flex-col gap-2 text-[var(--brd-mute)]">
+            <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">
+              Głośność
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={state.volume}
+              disabled={controlsLocked}
+              onChange={(event) =>
+                dispatch({ type: "VOLUME", volume: Number(event.target.value) })
+              }
+              aria-label="Głośność"
+              className="brd-scrub h-11"
+            />
+          </label>
         </div>
 
-        <label className="flex flex-col gap-2 text-xs text-muted-foreground">
-          <span>Postęp</span>
+        {/* Accessible seek fallback */}
+        <label className="sr-only">
+          Postęp
           <input
             type="range"
             min={0}
@@ -345,30 +381,11 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             value={Math.min(state.currentTime, progressMax)}
             disabled={seekDisabled}
             onChange={(event) => handleSeek(Number(event.target.value))}
-            aria-label="Przewiń utwór"
-            className="h-11 w-full accent-foreground"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2 text-xs text-muted-foreground">
-          <span>Głośność</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={state.volume}
-            disabled={controlsLocked}
-            onChange={(event) =>
-              dispatch({ type: "VOLUME", volume: Number(event.target.value) })
-            }
-            aria-label="Głośność"
-            className="h-11 w-full accent-foreground"
           />
         </label>
 
         {state.error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-sm text-[var(--brd-danger)]" role="alert">
             {state.error}
           </p>
         ) : null}

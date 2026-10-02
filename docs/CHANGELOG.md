@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-02 — FALA 3.5.1 — RECORDING EXPERIENCE + DUAL AUDIO TIMELINE (CLOSED)
+
+**Status:** **CLOSED** · Owner verification **PRELIMINARY PASS** · Production **NOT DEPLOYED**
+
+- Live mic waveform + Input Monitor · BIT waveform during REC · shared REC playhead
+- BRD Take Preview (BIT + TAKE dual rail · play/pause/seek) · no native `<audio controls>` in take UI
+- Regression fix: BIT rail visibility (`rgba` rest bars · studio height)
+- Closeout: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)
+- Note: Owner QA wstępny; pełne production verification = osobny krok po deployu
+- Fala 4 **NOT STARTED**
+
+---
+
 ## 2026-10-01 — FINAL COLD START HANDOFF PACK (DOCS-ONLY)
 
 **Status:** Cold-start pack **READY** · docs tip baseline `82e0194` · Production app `6dfd201` **UNCHANGED** · STORAGE-ARCH-02 **NOT STARTED**
