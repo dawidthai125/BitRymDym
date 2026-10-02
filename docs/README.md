@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **Polish UX = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` · deploy `6815846706` / `dpl_9EDrc78ompk8B2QZk6tDwQurntus` · Wave A @ `2c4200b` · Wave B @ `812a9d4` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **FUTURE DOCS PREPARED / NOT IMPLEMENTED** · next = EXISTING BACKLOG / OWNER DECISION.
+**Next:** **FAR-01 Phase 1 DR-A = SHIPPED / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** @ `f514a51` · deploy `6817346937` / `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h` · Polish UX @ `0afa29b` · Wave A @ `2c4200b` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **FUTURE DOCS PREPARED / NOT IMPLEMENTED** · next = **PHASE 0 SOAK / BACKFILL READINESS AUDIT** (no auto-backfill).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.

@@ -21,8 +21,9 @@
 |------|---------|
 | Canonical branch | `main` |
 | **Repository HEAD / origin/main** | Advances on docs-only commits · **≠** Production app SHA after closeout docs |
-| **Production application** | `0afa29b` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** |
-| **Production deployment** | `6815846706` · Vercel `dpl_9EDrc78ompk8B2QZk6tDwQurntus` |
+| **Production application** | `f514a51` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** |
+| **Production deployment** | `6817346937` · Vercel `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h` |
+| **FAR-01 / STORAGE-ARCH-02-KEY Phase 1 DR-A** | **SHIPPED** / **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** @ `f514a51` — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
 | **Polish UX Mix / Master / Recording / Playback** | **CLOSED** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` — [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) |
 | **Wave A Account / Beats** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `2c4200b` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
 | **Wave B Mix Panel presentation** | **CLOSED** / **PRODUCTION VERIFIED** @ `812a9d4` (parent of Wave A) |
@@ -30,6 +31,7 @@
 | **Fala 1A Public Visual Foundation** | **CLOSED** / **PRODUCTION VERIFIED** @ `fdf74f9` (parent of 1B) |
 | **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Architecture Review **PASS WITH FINDINGS** · Owner Review **PASS** · Implementation **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
 | **STORAGE-ARCH-02** | **FUTURE SCALABILITY DOCS PREPARED** · external Object Storage **OPTIONAL / NOT IMPLEMENTED / NO CURRENT INVESTMENT** · current durable = **Supabase** — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
+| **STORAGE-ARCH-02-KEY / FAR-01** | **Phase 1 DR-A SHIPPED** @ `f514a51` · backfill/retirement **NOT STARTED** · DR-B **DEFERRED** — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
 | **E3 FULL AUDIO** | **E3.1 → E3.7 code** · **E3 = PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · W6 **SATISFIED** · Free Basic public path **ON** under AC-PE-12 |
 | **E3.7 Premium Render** | Code on Production · architecture LOCKED · **Premium Production E2E = NOT TESTED** (no fixture) |
 | **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (historical ship SHA · not current Prod tip) |
@@ -66,13 +68,14 @@ E3 architecture: [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FU
 ## 3. Current Phase
 
 ```text
+FAR-01 PHASE 1 DR-A      = SHIPPED / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS @ f514a51
 POLISH UX LANGUAGE       = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
 WAVE A ACCOUNT/BEATS     = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B MIX PRESENTATION  = CLOSED / PRODUCTION VERIFIED @ 812a9d4
 FALA 1A PUBLIC VISUAL    = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 FALA 1B ACCOUNT+ADMIN    = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
-PRODUCTION APPLICATION   = 0afa29b
-PRODUCTION DEPLOYMENT    = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
+PRODUCTION APPLICATION   = f514a51
+PRODUCTION DEPLOYMENT    = 6817346937 / dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h
 W6.2/W6.3 UX SHIP        = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT             = CLOSED / PASS (Owner-accepted emulated)
 E3 PRODUCTION ENABLEMENT = COMPLETE
@@ -89,13 +92,14 @@ E3 STATUS                = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
 PUBLIC FREE AUDIO        = RELEASED (Free Basic only · private bucket · signed URL)
 STORAGE-ARCH-01          = LOCKED (Hybrid C · Final Arch Review PASS WITH FINDINGS)
 STORAGE-ARCH-02          = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-STORAGE-ARCH-02-KEY      = NOT STARTED (OD-SA-02 / FAR-01 dual-read keys · no Implementation GO)
+STORAGE-ARCH-02-KEY      = PHASE 1 DR-A SHIPPED @ f514a51 · BACKFILL NOT STARTED · RETIREMENT NOT STARTED · DR-B DEFERRED
 FALA 3.5.1 RECORDING UX  = CLOSED (Owner preliminary PASS · NOT DEPLOYED)
 POLISH UX                = CLOSED
 WAVE A                   = CLOSED
-NEXT                     = EXISTING BACKLOG / OWNER DECISION (do not auto-start next wave)
+NEXT                     = PHASE 0 SOAK / BACKFILL READINESS AUDIT (separate Owner GO · do not auto-start backfill)
 ```
 
+Closeout FAR-01 Phase 1: [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
 Closeout Polish UX: [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md)
 Closeout Wave A: [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md)
 Closeout Fala 1B: [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
@@ -116,13 +120,13 @@ Owner Review                 = PASS
 OD-SA-01…10                  = LOCKED
 Implementation               = NOT STARTED
 STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED · external Object Storage OPTIONAL · NOT IMPLEMENTED · NO CURRENT INVESTMENT
-STORAGE-ARCH-02-KEY          = NOT STARTED (OD-SA-02 / FAR-01 dual-read keys · no Implementation GO)
-Production mutations         = NONE (from Storage review / this docs reconciliation)
+STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · BACKFILL NOT STARTED · RETIREMENT NOT STARTED · DR-B DEFERRED
+Production mutations         = NONE for backfill/retirement (Phase 1 = dual-accept code only)
 ```
 
-SSOT: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) · Future scale: [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md)
+SSOT: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) · Future scale: [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) · FAR-01 Phase 1: [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
 
-Future waves (no Implementation GO): 02-KEY dual-read · 03 artifacts janitor · 04/05 orphan inventory/dry-run/cleanup · 06 staged key migration · 07 backup source MASTER (REQUIRED BEFORE SCALE · threshold at Wave 07) · 08 worker hardening · 09/10 only after separate OD · external Object Storage only after separate provider/impl GO.
+Future waves (separate Owner GO): Phase 0 soak / backfill readiness · 02-KEY backfill · 03 artifacts janitor · 04/05 orphan inventory/dry-run/cleanup · 06 staged key migration · 07 backup source MASTER (REQUIRED BEFORE SCALE · threshold at Wave 07) · 08 worker hardening · 09/10 only after separate OD · external Object Storage only after separate provider/impl GO.
 
 ---
 
@@ -130,16 +134,20 @@ Future waves (no Implementation GO): 02-KEY dual-read · 03 artifacts janitor ·
 
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
+                 → FAR-01 Phase 1 DR-A = SHIPPED @ f514a51 (GREEN WITH EVIDENCE LIMITATIONS)
+                 → NEXT = PHASE 0 SOAK / BACKFILL READINESS AUDIT
+                 → do NOT start backfill / retirement / DR-B without separate Owner GO
                  → STORAGE-ARCH-02 = future scalability docs prepared (NOT IMPLEMENTED)
                  → do NOT provision R2/S3/external storage without separate Owner GO
-                 → dual-read KEY / janitor / orphan / migration only after separate Implementation GO
+                 → janitor / orphan / staged migration only after separate Implementation GO
                  → deferred backlog otherwise
 
 STORAGE-ARCH-01 = LOCKED · STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS (NOT IMPLEMENTED)
+STORAGE-ARCH-02-KEY Phase 1 = SHIPPED · Backfill/Retirement = NOT STARTED
 E3 = PRODUCTION VERIFIED — GREEN
 Do NOT reopen closed E3.6 / E3.7 / W6 closeouts
 Do NOT rewrite historical Design Freeze OD locks / OD-SA locks
-Do NOT implement dual-read / janitor / orphan delete / key migration / backup / external storage without wave GO
+Do NOT implement backfill / janitor / orphan delete / key migration / backup / external storage without wave GO
 Deferred remain deferred: Premium Production E2E · artifacts janitor · dashboard · live rollback drill · STEMS · payments
 Rollback (if Owner GO): unset/off E3_PUBLIC_AUDIO → Free public paths DENY
 HIBP enable = Owner Dashboard only (orthogonal)
@@ -148,6 +156,7 @@ HIBP enable = Owner Dashboard only (orthogonal)
 Cold start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
 Storage freeze: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md)
 Future storage scale: [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md)
+FAR-01 Phase 1 closeout: [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
 GO #2 record: [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md)
 Enablement freeze: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
 
@@ -167,13 +176,13 @@ Enablement freeze: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODU
 | E3 Production Enablement | OD-E3-PE-01…05 LOCKED · Design Freeze COMPLETE | **COMPLETE** · GO #5 **PASS** · AC-PE-12 **PASS** @ `6dfd201` | COMPLETE |
 | STORAGE-ARCH-01 | OD-SA-01…10 LOCKED · Design Freeze COMPLETE | **LOCKED** · Final Arch Review **PASS WITH FINDINGS** · Production mutations **NONE** | **NOT STARTED** (architecture only) |
 | STORAGE-ARCH-02 | Future external Object Storage scalability | **DOCS PREPARED** · **NOT IMPLEMENTED** · **NO CURRENT INVESTMENT** | **NO Implementation GO** |
-| STORAGE-ARCH-02-KEY | Dual-read / key validation (FAR-01 / OD-SA-02) | **NOT STARTED** | **NO Implementation GO** |
+| STORAGE-ARCH-02-KEY / FAR-01 | Dual-read / key validation (OD-SA-02) | **Phase 1 DR-A SHIPPED** @ `f514a51` · **GREEN WITH EVIDENCE LIMITATIONS** · backfill/retirement **NOT STARTED** | Phase 1 COMPLETE · later phases need separate GO |
 
 ---
 
 ## 6. Out of scope / deferred (current delivery)
 
-STEMS · payments / Premium catalog · Recording historical W6 security rewrite · audio-artifacts janitor (F-PE-04 / STORAGE-ARCH-03) · orphan beat-audio GC (STORAGE-ARCH-04/05) · staged legacy key migration (STORAGE-ARCH-06) · source MASTER backup before scale (STORAGE-ARCH-07) · dual-read key implementation (STORAGE-ARCH-02-KEY) · external Object Storage provisioning (STORAGE-ARCH-02 impl) · ops dashboard · Premium Production E2E (no fixture) · live rollback drill · public Free HQ/WAV · artwork bucket (OD-SA-04 DEFERRED).
+STEMS · payments / Premium catalog · Recording historical W6 security rewrite · audio-artifacts janitor (F-PE-04 / STORAGE-ARCH-03) · orphan beat-audio GC (STORAGE-ARCH-04/05) · staged legacy key migration (STORAGE-ARCH-06) · source MASTER backup before scale (STORAGE-ARCH-07) · FAR-01 backfill / retirement / DR-B (after Phase 1 soak · separate Owner GO) · external Object Storage provisioning (STORAGE-ARCH-02 impl) · ops dashboard · Premium Production E2E (no fixture) · live rollback drill · public Free HQ/WAV · artwork bucket (OD-SA-04 DEFERRED).
 
 **E3 Production flags (current living state):**
 

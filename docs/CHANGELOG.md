@@ -6,6 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-02 — FAR-01 / STORAGE-ARCH-02-KEY — PHASE 1 DR-A (SHIPPED / PRODUCTION VERIFIED)
+
+**Status:** **SHIPPED** · **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** · app `f514a51` · deployment `6817346937` · Vercel `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h`
+
+- Phase 1 DR-A: controlled dual-accept (canonical MASTER **or** deterministic legacy twin from authorized DB identities)
+- Shared helper: `isAuthorizedUserBeatObjectKeyRepresentation` · wired through `assertUserBeatObjectKeyBinding` / `assertUserAssetBinding`
+- Canonical WRITE SSOT unchanged (`buildUserBeatAudioObjectKey`) · dual-write **NO** · DR-B **DEFERRED**
+- Live test fixtures stop seeding new legacy USER beat keys (OD-KEY-06)
+- Exact product commit: `feat(storage): add FAR-01 DR-A dual-read` (8 files)
+- Verify PASS: Production SHA · Access Gate signed URL for existing legacy PUBLISHED MASTER · platform canonical playback · no dual-write · no backfill · orphans untouched (30) · regression
+- Evidence limitations: DR-A binding/publish ACCEPT live · USER canonical playback · cross-owner live · arbitrary legacy live — **NOT VERIFIED** / **PARTIAL** (safe mutation required); unit contract **14/14 PASS**
+- Inventory unchanged: **68** legacy PUBLISHED USER · **2** canonical USER DRAFT · **3** platform — **not migrated**
+- **Backfill / retirement = NOT STARTED** · next gate = PHASE 0 SOAK / BACKFILL READINESS AUDIT (separate Owner GO)
+- Closeout: [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
+
+---
+
 ## 2026-10-02 — POLISH UX — MIX / MASTER / RECORDING / PLAYBACK (CLOSED / PRODUCTION VERIFIED)
 
 **Status:** **CLOSED** · **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** · app `0afa29b` · deployment `6815846706` · Vercel `dpl_9EDrc78ompk8B2QZk6tDwQurntus`

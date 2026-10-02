@@ -26,9 +26,10 @@ BitRymDym to platforma muzyczna (rap / hip-hop / bity): odkrywanie bitów → od
 **Obecny chat NIE jest wymagany.** Cała ciągłość ma być w repozytorium docs.
 
 ```text
-CURRENT PRODUCTION APP     = 0afa29b
+CURRENT PRODUCTION APP     = f514a51
 PRODUCTION URL             = https://www.bitrymdym.pl
-PRODUCTION DEPLOYMENT      = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
+PRODUCTION DEPLOYMENT      = 6817346937 / dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h
+FAR-01 PHASE 1 DR-A        = SHIPPED / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS @ f514a51
 POLISH UX LANGUAGE         = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
 WAVE A ACCOUNT/BEATS       = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B MIX PRESENTATION    = CLOSED / PRODUCTION VERIFIED @ 812a9d4
@@ -39,14 +40,15 @@ WORKER                     = Contabo · STOPPED / DISABLED
 SUPABASE PROJECT           = rzzxrgcdogkybkiidqgw
 BRANCH                     = main
 DOCS TIP                   = advances on docs-only commits (≠ Prod app SHA)
-NEXT WAVE                  = EXISTING BACKLOG / OWNER DECISION
+NEXT WAVE                  = PHASE 0 SOAK / BACKFILL READINESS AUDIT (separate Owner GO · no auto-backfill)
 ```
 
 **SHA map (nie mylić · nie auto-align):**
 
 | SHA | Meaning |
 |-----|---------|
-| `0afa29b` | **Current Production application** — Polish UX Mix / Master / Recording / Playback |
+| `f514a51` | **Current Production application** — FAR-01 Phase 1 DR-A |
+| `0afa29b` | Polish UX Mix / Master / Recording / Playback |
 | `2c4200b` | Wave A Account / Beats |
 | `812a9d4` | Wave B Mix Panel BRD presentation |
 | `42369c0` | Historical Fala 1B Account + Admin visual foundation |
@@ -60,6 +62,7 @@ NEXT WAVE                  = EXISTING BACKLOG / OWNER DECISION
 
 **Primary continuity (full detail):** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)
 **Living “where now”:** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**FAR-01 Phase 1 closeout:** [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
 **Polish UX closeout:** [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md)
 **Wave A closeout:** [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md)
 **Fala 1B closeout:** [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
@@ -105,9 +108,10 @@ Repo root note: [AGENTS.md](../AGENTS.md) — Next.js in this repo may differ fr
 
 ```text
 URL                      = https://www.bitrymdym.pl
-APP SHA                  = 0afa29b
-DEPLOYMENT               = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
-STATUS                   = GREEN / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS
+APP SHA                  = f514a51
+DEPLOYMENT               = 6817346937 / dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h
+STATUS                   = GREEN / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS
+FAR-01 PHASE 1 DR-A      = SHIPPED / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS @ f514a51
 POLISH UX                = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
 WAVE A                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B                   = CLOSED / PRODUCTION VERIFIED @ 812a9d4
@@ -123,7 +127,8 @@ WORKER                   = STOPPED / DISABLED (Contabo · 92496d4)
 W6                       = CLOSED / PASS (Owner-accepted emulated cert)
 STORAGE-ARCH-01          = LOCKED
 STORAGE-ARCH-02          = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED)
-NEXT WAVE                = EXISTING BACKLOG / OWNER DECISION
+STORAGE-ARCH-02-KEY      = PHASE 1 DR-A SHIPPED @ f514a51 · BACKFILL NOT STARTED · RETIREMENT NOT STARTED · DR-B DEFERRED
+NEXT WAVE                = PHASE 0 SOAK / BACKFILL READINESS AUDIT (separate Owner GO)
 ```
 
 **Canonical Free rollback (Owner GO only):** unset/off `E3_PUBLIC_AUDIO` → Free public Mix/job/download DENY (AC-PE-12 fail-closed). Premium does **not** depend on `E3_PUBLIC_AUDIO`.
@@ -172,7 +177,7 @@ Full Storage V1 lock: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_0
 | E3 Production Enablement + Free Basic public path | COMPLETE / GREEN | @ `6dfd201` · GO #5 |
 | E3 Premium Production E2E | **NOT TESTED** | no Premium fixture |
 | STORAGE-ARCH-01 architecture | **LOCKED** | docs @ `82e0194` · no code change |
-| STORAGE-ARCH-02 dual-read | **NOT STARTED** | FAR-01 · no Implementation GO |
+| STORAGE-ARCH-02-KEY Phase 1 DR-A | **SHIPPED** @ `f514a51` · GREEN WITH EVIDENCE LIMITATIONS | Backfill/retirement **NOT STARTED** · DR-B **DEFERRED** |
 | STEMS / payments / Premium catalog product | OUT / NOT STARTED | OD-04/07/08 OPEN |
 | Track publish from take | NOT IMPLEMENTED | — |
 | Artwork Storage bucket | DEFERRED | OD-SA-04 |
@@ -192,7 +197,7 @@ Full Storage V1 lock: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_0
 
 **E3 quality tiers are export artifacts only** — not mandatory physical catalog derivatives (OD-SA-03).
 
-**Legacy USER beat keys (FAR-01):** LIVE majority `user/{owner}/{beatId}/master/{assetId}.bin` vs canonical `user/{owner}/{beatId}/{assetId}/master.bin`. Policy: dual-read → staged migration (OD-SA-02). **Do not implement without STORAGE-ARCH-02 Owner GO.**
+**Legacy USER beat keys (FAR-01):** LIVE inventory unchanged — **68** legacy PUBLISHED · **2** canonical USER DRAFT · **3** platform · **30** orphans. Phase 1 DR-A dual-accept **SHIPPED** @ `f514a51`. Backfill/retirement **NOT STARTED**. **Do not start backfill without separate Owner GO** after soak / readiness audit. Closeout: [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md).
 
 ---
 
@@ -267,7 +272,7 @@ Full registry: [OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) · [DECISION_L
 
 | ID / topic | Meaning | Next |
 |------------|---------|------|
-| **FAR-01** | Legacy beat keys vs canonical validators | STORAGE-ARCH-02 (dual-read) after Owner GO |
+| **FAR-01** | Legacy beat keys · Phase 1 DR-A SHIPPED @ `f514a51` · inventory not migrated | Next = soak / backfill readiness · separate Owner GO |
 | **FAR-03** | “REQUIRED BEFORE SCALE” has no numeric threshold | Define at Wave 07 |
 | **FAR-04** | Observability underspecified | Future wave design |
 | F-PE-04 | audio-artifacts janitor deferred | STORAGE-ARCH-03 |
@@ -345,7 +350,7 @@ Several `docs/audits/E3_*HOST* / ORACLE*` files may be **untracked** — treat a
 | Docs tip vs older living prose | Before this pack, some living lines still cited `a8e9356` as tip while `origin/main` = `82e0194` | Prefer `git rev-parse HEAD` · treat `a8e9356` as historical |
 | Feature matrix historical DARK cells | MASTER_HANDOFF §7 has wave-era DARK notes alongside living PE GREEN | Prefer §1 living Production + PROJECT_STATE |
 | `audio-artifacts` “empty” historical verify rows | Older verify tables; PE GO #5 created artifacts | Prefer living PE evidence |
-| Code validators vs LIVE keys | FAR-01 — known · not silently “fixed” | STORAGE-ARCH-02 only after GO |
+| Code validators vs LIVE keys | FAR-01 Phase 1 dual-accept SHIPPED · inventory still majority legacy | Prefer FAR-01 Phase 1 closeout · do not claim migrated |
 
 If you find new contradiction: **STOP** · report DOCUMENTATION / IMPLEMENTATION DRIFT · do not auto-rewrite history.
 
@@ -369,9 +374,9 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 
 ```text
 [ ] git fetch && git rev-parse HEAD   → expect tip on main (docs may advance; Prod app may differ)
-[ ] Confirm Production app tip = 2c4200b unless Owner says otherwise
-[ ] Read this file + MASTER_HANDOFF + PROJECT_STATE + Wave A closeout if touching Account/Beats
-[ ] Do NOT start next wave without Owner GO (EXISTING BACKLOG / OWNER DECISION)
+[ ] Confirm Production app tip = f514a51 unless Owner says otherwise
+[ ] Read this file + MASTER_HANDOFF + PROJECT_STATE + FAR-01 Phase 1 closeout if touching storage keys
+[ ] Do NOT start backfill / retirement / DR-B without Owner GO
 [ ] Do NOT stage untracked agent/infra/host audits without exact allowlist
 [ ] AUDIT FIRST on any task → report → wait for Owner GO
 [ ] Polish communication to Owner; keep technical identifiers English
@@ -383,8 +388,9 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 
 ```text
 FINAL COLD START HANDOFF     = READY
-CURRENT PRODUCTION APP       = 0afa29b
-PRODUCTION DEPLOYMENT        = 6815846706 / dpl_9EDrc78ompk8B2QZk6tDwQurntus
+CURRENT PRODUCTION APP       = f514a51
+PRODUCTION DEPLOYMENT        = 6817346937 / dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h
+FAR-01 PHASE 1 DR-A          = SHIPPED / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS @ f514a51
 POLISH UX                    = CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS @ 0afa29b
 WAVE A                       = CLOSED / PRODUCTION VERIFIED — GREEN @ 2c4200b
 WAVE B                       = CLOSED / PRODUCTION VERIFIED @ 812a9d4
@@ -393,12 +399,13 @@ WORKER                       = STOPPED / DISABLED (92496d4)
 E3                           = GREEN (PE COMPLETE)
 STORAGE-ARCH-01              = LOCKED
 STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED)
+STORAGE-ARCH-02-KEY          = PHASE 1 SHIPPED · BACKFILL NOT STARTED · RETIREMENT NOT STARTED
 IMPLEMENTATION FROM THIS DOC = NONE
 PRIOR CHAT REQUIRED          = NO
-NEXT WAVE                    = EXISTING BACKLOG / OWNER DECISION
+NEXT WAVE                    = PHASE 0 SOAK / BACKFILL READINESS AUDIT (Owner GO)
 ```
 
-**Next default:** Owner GO only — do not auto-start next wave.
+**Next default:** PHASE 0 SOAK / BACKFILL READINESS AUDIT — do not auto-start backfill.
 ---
 
 *End of FINAL COLD START HANDOFF.*

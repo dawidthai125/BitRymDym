@@ -18,10 +18,11 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `0afa29bff9c492fa36fc5b9dd416a09fe1c5d093` (`0afa29b`) |
-| Deployment | `6815846706` · Vercel `dpl_9EDrc78ompk8B2QZk6tDwQurntus` |
-| Status | **GREEN** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** |
-| **Polish UX** | **CLOSED** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** — Mix / Master / Recording / Playback — [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) |
+| **Application SHA** | `f514a516f2ac0a978b2fe5a3fb05dc300c6ab40e` (`f514a51`) |
+| Deployment | `6817346937` · Vercel `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h` |
+| Status | **GREEN** / **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** |
+| **FAR-01 Phase 1 DR-A** | **SHIPPED** / **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
+| **Polish UX** | **CLOSED** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` — Mix / Master / Recording / Playback — [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) |
 | **Wave A** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `2c4200b` — `/account/beats` visual closure + ADMIN `requireUser` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
 | **Wave B** | **CLOSED** / **PRODUCTION VERIFIED** @ `812a9d4` — Mix Panel BRD presentation |
 | **Fala 1B** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) — Account + Panel Administracyjny — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
@@ -29,12 +30,13 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | **E3 status** | **PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · flags remain ON |
 | **AC-PE-12** | **PASS** (historical PE tip `6dfd201`) |
 | **GO #5** | **PASS** (`E3_PUBLIC_AUDIO=ON` · controlled Free Basic verify) |
-| Previous Production | `2c4200b` (Wave A) · `812a9d4` (Wave B) · `42369c0` (Fala 1B) · `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) — rollback lineage |
+| Previous Production | `0afa29b` (Polish UX) · `2c4200b` (Wave A) · `812a9d4` (Wave B) · `42369c0` (Fala 1B) · `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) — rollback lineage |
 | **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
 | **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
 | **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Owner **PASS** · Implementation **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
 | **STORAGE-ARCH-02** | **FUTURE SCALABILITY DOCS PREPARED** · external Object Storage **NOT IMPLEMENTED** · **NO CURRENT INVESTMENT** — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
+| **STORAGE-ARCH-02-KEY / FAR-01** | **Phase 1 DR-A SHIPPED** @ `f514a51` · backfill/retirement **NOT STARTED** · DR-B **DEFERRED** — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
 | **OWNER GO #2 Worker Infra** | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
 | **Worker** | Contabo · bootstrap `92496d4` · **STOPPED / DISABLED** |
 | Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
@@ -60,7 +62,8 @@ WORKER                   = STOPPED / DISABLED
 
 | SHA | Meaning |
 |-----|---------|
-| `0afa29b` | **Current Production application** — Polish UX Mix / Master / Recording / Playback |
+| `f514a51` | **Current Production application** — FAR-01 Phase 1 DR-A dual-accept |
+| `0afa29b` | Polish UX Mix / Master / Recording / Playback (parent of FAR-01 Phase 1) |
 | `2c4200b` | **Wave A** Account / Beats visual closure (parent of Polish UX) |
 | `812a9d4` | **Wave B** Mix Panel BRD presentation (parent of Wave A) |
 | `42369c0` | Historical Fala 1B Account + Admin visual foundation |
@@ -80,7 +83,7 @@ WORKER                   = STOPPED / DISABLED
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **Production application** | `0afa29b` |
+| **Production application** | `f514a51` |
 | **HEAD / origin/main** | May advance on docs-only closeout commits (≠ Prod app SHA — intentional) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
 | **STORAGE-ARCH-01** | **LOCKED** · see §4.1 · Implementation **NOT STARTED** |
@@ -135,14 +138,14 @@ Owner Review                 = PASS
 OD-SA-01…10                  = LOCKED
 Implementation               = NOT STARTED
 STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED · NOT IMPLEMENTED · NO CURRENT INVESTMENT
-STORAGE-ARCH-02-KEY          = NOT STARTED (OD-SA-02 / FAR-01)
-Production mutations         = NONE
+STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · BACKFILL NOT STARTED · RETIREMENT NOT STARTED · DR-B DEFERRED
+Production mutations         = NONE for backfill/retirement (Phase 1 = dual-accept only)
 ```
 
 | Topic | Locked value |
 |-------|----------------|
 | Buckets | Reuse 3 existing only (OD-SA-01) |
-| Legacy keys | dual-read → staged migration (OD-SA-02) · FAR-01 → STORAGE-ARCH-02-KEY · **no Implementation GO** |
+| Legacy keys | Phase 1 DR-A dual-accept **SHIPPED** @ `f514a51` · backfill/retirement **NOT STARTED** (OD-SA-02 / FAR-01) |
 | Future external Object Storage | OPTIONAL · FUTURE · provider NOT chosen · [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
 | Beat library | MASTER + fallback (OD-SA-03) |
 | Artwork | DEFERRED (OD-SA-04) |
@@ -272,7 +275,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | E3 public Free Audio / Production render enablement | **ENABLED** (PE COMPLETE) | GREEN @ `6dfd201` · GO #5 **PASS** | OK | Free Basic only · private bucket · AC-PE-12 |
 | **STORAGE-ARCH-01** | **LOCKED** (architecture) | N/A · Production mutations **NONE** | OK | Hybrid C Storage V1 · [freeze](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
 | **STORAGE-ARCH-02** future scale | **DOCS PREPARED** · **NOT IMPLEMENTED** | N/A · no external storage | OK | [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
-| **STORAGE-ARCH-02-KEY** dual-read | **NOT STARTED** | — | — | FAR-01 / OD-SA-02 · **no Implementation GO** |
+| **STORAGE-ARCH-02-KEY** Phase 1 DR-A | **SHIPPED** / **PRODUCTION VERIFIED** | GREEN WITH EVIDENCE LIMITATIONS @ `f514a51` | OK | Backfill/retirement **NOT STARTED** · DR-B **DEFERRED** · [closeout](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
 | Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
@@ -583,9 +586,9 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Dual SHA (app vs worker) | Production app `2c4200b` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
+| Dual SHA (app vs worker) | Production app `f514a51` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
 | Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
-| FAR-01 legacy USER beat keys | LIVE majority legacy shape · code validators canonical-only today · **STORAGE-ARCH-02-KEY** dual-read · **no Implementation GO** |
+| FAR-01 legacy USER beat keys | LIVE inventory unchanged: **68** legacy PUBLISHED · **2** canonical DRAFT · **3** platform · **30** orphans · Phase 1 DR-A **SHIPPED** @ `f514a51` · backfill **NOT STARTED** |
 | HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Artifacts janitor missing | F-PE-04 / OD-SA-05 · **STORAGE-ARCH-03** future wave |
