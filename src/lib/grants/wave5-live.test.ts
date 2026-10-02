@@ -11,7 +11,10 @@ import { describe, expect, it } from "vitest";
 import { MAX_ACTIVE_BEAT_ACCESS_GRANTS } from "@/config/beat-access-grants";
 import { AuthError } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
-import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
+import {
+  BEAT_AUDIO_BUCKET,
+  buildUserBeatAudioObjectKey,
+} from "@/lib/beats/audio-validation";
 import {
   createBeatAccessGrantFor,
   hasActiveRecordGrant,
@@ -106,7 +109,14 @@ async function makePublishedUserBeat(
   });
   expect(beatErr).toBeNull();
 
-  const objectKey = `user/${ownerId}/${beatId}/master/${randomUUID()}.bin`;
+  // OD-KEY-06: seed canonical USER keys only (no new legacy writers).
+  const assetId = randomUUID();
+  const objectKey = buildUserBeatAudioObjectKey({
+    ownerId,
+    beatId,
+    assetId,
+    purpose: "MASTER",
+  });
   const { error: upErr } = await admin.storage
     .from(BEAT_AUDIO_BUCKET)
     .upload(objectKey, bytes, {
@@ -116,6 +126,7 @@ async function makePublishedUserBeat(
   expect(upErr).toBeNull();
 
   const { error: assetErr } = await admin.from("beat_audio_assets").insert({
+    id: assetId,
     beat_id: beatId,
     purpose: "MASTER",
     status: "READY",

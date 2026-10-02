@@ -1,9 +1,6 @@
 import type { Beat, BeatStatus } from "@/types/domain";
 import type { AuthContext } from "@/lib/auth/types";
-import {
-  assertUserBeatObjectKeyBinding,
-  buildUserBeatAudioObjectKey,
-} from "@/lib/beats/audio-validation";
+import { assertUserBeatObjectKeyBinding } from "@/lib/beats/audio-validation";
 import type { BeatAudioAssetRow } from "@/lib/beats/audio-types";
 
 export class UserAudioAuthzError extends Error {
@@ -74,7 +71,13 @@ export function assertUserAssetBinding(params: {
     throw new UserAudioAuthzError("Invalid storage bucket.");
   }
 
+  // AuthZ identities from beat/asset context (DB), never from parsing object_key.
   const ownerId = params.beat.ownerId ?? params.context.userId;
+  if (!ownerId) {
+    throw new UserAudioAuthzError("USER beat must have an owner.");
+  }
+
+  // FAR-01 DR-A: shared dual-accept (canonical OR deterministic legacy twin).
   const keyCheck = assertUserBeatObjectKeyBinding({
     objectKey: params.asset.object_key,
     ownerId,
@@ -83,18 +86,6 @@ export function assertUserAssetBinding(params: {
   });
   if (!keyCheck.ok) {
     throw new UserAudioAuthzError(keyCheck.error);
-  }
-
-  const expected = buildUserBeatAudioObjectKey({
-    ownerId,
-    beatId: params.beatId,
-    assetId: params.assetId,
-    purpose: "MASTER",
-  });
-  if (params.asset.object_key !== expected) {
-    throw new UserAudioAuthzError(
-      "Object key does not match server binding.",
-    );
   }
 }
 

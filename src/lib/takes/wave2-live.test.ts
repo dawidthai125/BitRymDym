@@ -12,7 +12,10 @@ import { describe, expect, it } from "vitest";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
-import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
+import {
+  BEAT_AUDIO_BUCKET,
+  buildUserBeatAudioObjectKey,
+} from "@/lib/beats/audio-validation";
 import { buildUserTakeObjectKey } from "@/lib/takes/object-key";
 import {
   createTakeRecordingSessionFor,
@@ -101,7 +104,13 @@ async function seedPublishedBeatWithMaster(
 ) {
   const beatId = randomUUID();
   const assetId = randomUUID();
-  const objectKey = `user/${ownerId}/${beatId}/master/${assetId}.bin`;
+  // OD-KEY-06: seed canonical USER keys only (no new legacy writers).
+  const objectKey = buildUserBeatAudioObjectKey({
+    ownerId,
+    beatId,
+    assetId,
+    purpose: "MASTER",
+  });
   expect(
     (
       await admin.from("beats").insert({

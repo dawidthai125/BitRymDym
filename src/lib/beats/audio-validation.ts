@@ -66,7 +66,7 @@ function assertUuidSegment(value: string, label: string): string | null {
 }
 
 /**
- * Community Wave 1 prep — server-chosen USER object key.
+ * Community Wave 1 prep — server-chosen USER object key (WRITE SSOT).
  * Client must never supply ownerId/beatId/assetId path segments.
  */
 export function buildUserBeatAudioObjectKey(params: {
@@ -80,7 +80,66 @@ export function buildUserBeatAudioObjectKey(params: {
 }
 
 /**
+ * FAR-01 deterministic legacy MASTER twin (READ compatibility only).
+ * FORBIDDEN for new Storage writes / dual-write / seeding (OD-KEY-04 / OD-KEY-06).
+ * Built only from authorized DB/context identities — never from a client path.
+ */
+export function buildLegacyUserBeatMasterObjectKey(params: {
+  ownerId: string;
+  beatId: string;
+  assetId: string;
+}): string {
+  return `user/${params.ownerId}/${params.beatId}/master/${params.assetId}.bin`;
+}
+
+/**
+ * FAR-01 DR-A: whether `objectKey` is an authorized representation of this asset.
+ *
+ * Identities MUST come from authorized DB/context (owner, beat, asset) — never from
+ * parsing `objectKey` to establish ownership. PATH ≠ AUTHORIZATION.
+ *
+ * Accepts only:
+ * 1. canonical WRITE key for MASTER, or
+ * 2. deterministic legacy MASTER twin for the same identities.
+ */
+export function isAuthorizedUserBeatObjectKeyRepresentation(params: {
+  objectKey: string;
+  ownerId: string;
+  beatId: string;
+  assetId: string;
+}): boolean {
+  if (!params.objectKey || typeof params.objectKey !== "string") {
+    return false;
+  }
+  if (params.objectKey.includes("..") || params.objectKey.includes("//")) {
+    return false;
+  }
+  if (!params.objectKey.startsWith("user/")) {
+    return false;
+  }
+
+  const canonical = buildUserBeatAudioObjectKey({
+    ownerId: params.ownerId,
+    beatId: params.beatId,
+    assetId: params.assetId,
+    purpose: "MASTER",
+  });
+  if (params.objectKey === canonical) {
+    return true;
+  }
+
+  const legacyTwin = buildLegacyUserBeatMasterObjectKey({
+    ownerId: params.ownerId,
+    beatId: params.beatId,
+    assetId: params.assetId,
+  });
+  return params.objectKey === legacyTwin;
+}
+
+/**
  * Validate object key shape. Accepts platform/ and user/ prefixes.
+ * USER accepts canonical `.../{assetId}/{purpose}.bin` and FAR-01 legacy
+ * `.../master/{assetId}.bin` as structural shapes only — NOT authorization.
  * Returns error message or null if ok.
  */
 export function validateObjectKey(objectKey: string): string | null {
@@ -107,14 +166,27 @@ export function validateObjectKey(objectKey: string): string | null {
   }
   if (objectKey.startsWith("user/")) {
     const parts = objectKey.split("/");
-    // user / ownerId / beatId / assetId / purpose.bin
     if (parts.length !== 5) {
-      return "user object key must be user/{ownerId}/{beatId}/{assetId}/{purpose}.bin";
+      return "user object key must be user/{ownerId}/{beatId}/{assetId}/{purpose}.bin or legacy user/{ownerId}/{beatId}/master/{assetId}.bin";
     }
     const ownerErr = assertUuidSegment(parts[1]!, "ownerId");
     if (ownerErr) return ownerErr;
     const beatErr = assertUuidSegment(parts[2]!, "beatId");
     if (beatErr) return beatErr;
+
+    // FAR-01 legacy MASTER shape (structural only): user/{owner}/{beat}/master/{asset}.bin
+    if (parts[3] === "master") {
+      const file = parts[4]!;
+      if (!file.endsWith(".bin")) {
+        return "legacy user object key must end with {assetId}.bin";
+      }
+      const assetId = file.slice(0, -".bin".length);
+      const assetErr = assertUuidSegment(assetId, "assetId");
+      if (assetErr) return assetErr;
+      return null;
+    }
+
+    // Canonical: user / ownerId / beatId / assetId / purpose.bin
     const assetErr = assertUuidSegment(parts[3]!, "assetId");
     if (assetErr) return assetErr;
     return null;
@@ -123,7 +195,9 @@ export function validateObjectKey(objectKey: string): string | null {
 }
 
 /**
- * Bind a user/ key to expected owner + beat + asset (IDOR defense for Wave 2).
+ * Bind a user/ key to expected owner + beat + asset (IDOR defense).
+ * FAR-01 DR-A: accepts canonical MASTER key or deterministic legacy twin only.
+ * Shape validation is not sufficient — representation must match authorized identities.
  */
 export function assertUserBeatObjectKeyBinding(params: {
   objectKey: string;
@@ -138,20 +212,18 @@ export function assertUserBeatObjectKeyBinding(params: {
   if (!params.objectKey.startsWith("user/")) {
     return { ok: false, error: "expected user/ object key prefix" };
   }
-  const expected = buildUserBeatAudioObjectKey({
-    ownerId: params.ownerId,
-    beatId: params.beatId,
-    assetId: params.assetId,
-    purpose: "MASTER",
-  });
-  // Allow any purpose suffix matching purpose.bin — rebuild for MASTER only above;
-  // compare path prefix through assetId.
-  const prefix = `user/${params.ownerId}/${params.beatId}/${params.assetId}/`;
-  if (!params.objectKey.startsWith(prefix)) {
-    return { ok: false, error: "object key does not match owner/beat/asset binding" };
-  }
-  if (params.objectKey !== expected && !params.objectKey.startsWith(prefix)) {
-    return { ok: false, error: "object key binding mismatch" };
+  if (
+    !isAuthorizedUserBeatObjectKeyRepresentation({
+      objectKey: params.objectKey,
+      ownerId: params.ownerId,
+      beatId: params.beatId,
+      assetId: params.assetId,
+    })
+  ) {
+    return {
+      ok: false,
+      error: "object key does not match owner/beat/asset binding",
+    };
   }
   return { ok: true };
 }
