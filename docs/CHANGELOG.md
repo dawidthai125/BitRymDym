@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-02 — FALA 1B — ACCOUNT + PANEL ADMINISTRACYJNY (CLOSED / PRODUCTION VERIFIED)
+
+**Status:** **CLOSED** · **PRODUCTION VERIFIED — GREEN** · app `42369c0` · deployment `6802739724` · Vercel `dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X`
+
+- Account: `/account` BRD studio „Twoje studio” · debug dump email/role/permissions removed from UI · decorative Waveform · `listOwnTakes` read-only
+- Account Takes: `/account/takes` BRD shell · OwnTakesList behavior unchanged
+- Admin: `/admin` → **Panel Administracyjny** → **Pulpit** (no redirect hub) · chrome + nav (Pulpit / Bity / Moderacja / Nowy bit / Katalog)
+- Admin polish: `/admin/beats` · `/admin/moderation` presentation / PL labels
+- Shared: `src/lib/ui/labels.ts` (presentation-only)
+- Security / Auth / RLS / audio / Recording / D02 **unchanged**
+- Prior Fala 1A public visual foundation @ `fdf74f9` remains PRODUCTION VERIFIED (parent baseline)
+- Deferred: full `/account/beats` redesign · Mix Panel · dead BeatListRow/BrdSymbol · Geist fonts · deep admin expansion
+- Closeout: [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
+
+---
+
 ## 2026-10-02 — FALA 3.5.1 — RECORDING EXPERIENCE + DUAL AUDIO TIMELINE (CLOSED)
 
 **Status:** **CLOSED** · Owner verification **PRELIMINARY PASS** · Production **NOT DEPLOYED**

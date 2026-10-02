@@ -3,7 +3,7 @@
 **Purpose:** Jedyny wymagany entry point po zamknięciu poprzedniej sesji ChatGPT + Cursor.  
 **Audience:** nowy ChatGPT + nowy Cursor Agent  
 **Owner / Product Owner:** Prezes Dawid  
-**Updated:** 2026-10-01  
+**Updated:** 2026-10-02  
 **Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
 
 **Evidence rule (bezwzględna):**
@@ -26,31 +26,34 @@ BitRymDym to platforma muzyczna (rap / hip-hop / bity): odkrywanie bitów → od
 **Obecny chat NIE jest wymagany.** Cała ciągłość ma być w repozytorium docs.
 
 ```text
-CURRENT REPOSITORY TIP     = 82e0194
-  (docs: reconcile storage architecture v1)
-CURRENT PRODUCTION APP     = 6dfd201
+CURRENT PRODUCTION APP     = 42369c0
 PRODUCTION URL             = https://www.bitrymdym.pl
-PRODUCTION DEPLOYMENT      = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+PRODUCTION DEPLOYMENT      = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
+FALA 1B                    = CLOSED / PRODUCTION VERIFIED — GREEN
+FALA 1A                    = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 WORKER BOOTSTRAP           = 92496d4
 WORKER                     = Contabo · STOPPED / DISABLED
 SUPABASE PROJECT           = rzzxrgcdogkybkiidqgw
 BRANCH                     = main
+DOCS TIP                   = advances on docs-only commits (≠ Prod app SHA)
 ```
 
 **SHA map (nie mylić · nie auto-align):**
 
 | SHA | Meaning |
 |-----|---------|
-| `82e0194` | **Current repository / docs tip** (`origin/main`) |
-| `6dfd201` | **Current Production application** (AC-PE-12 · PE tip) |
+| `42369c0` | **Current Production application** — Fala 1B Account + Admin visual foundation |
+| `fdf74f9` | Fala 1A Public Visual Foundation |
+| `6dfd201` | Historical E3 PE / AC-PE-12 tip |
 | `92496d4` | **Worker bootstrap** on Contabo (EXTERNAL encode) |
-| `a8e9356` | **Historical** docs tip (post-release E3 docs) — superseded by `82e0194` |
 | `9026fa9` | Historical W6.2/W6.3 UX ship |
 | `17c4d530` | Historical E3.7 DARK Production baseline |
 | `183b2a4` | Historical E3.6 Basic MP3 DARK closeout |
+| docs tip | May advance on docs-only commits without redeploy |
 
 **Primary continuity (full detail):** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)  
 **Living “where now”:** [PROJECT_STATE.md](./PROJECT_STATE.md)  
+**Fala 1B closeout:** [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)  
 **Product constitution:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)  
 **Technical HOW:** [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
 
@@ -93,9 +96,11 @@ Repo root note: [AGENTS.md](../AGENTS.md) — Next.js in this repo may differ fr
 
 ```text
 URL                      = https://www.bitrymdym.pl
-APP SHA                  = 6dfd201
-DEPLOYMENT               = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+APP SHA                  = 42369c0
+DEPLOYMENT               = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
 STATUS                   = GREEN / PRODUCTION VERIFIED
+FALA 1B                  = CLOSED / PRODUCTION VERIFIED — GREEN
+FALA 1A                  = CLOSED / PRODUCTION VERIFIED @ fdf74f9
 E3                       = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
 E3_MIX_ENABLED           = ON
 E3_RENDER_JOBS_ENABLED   = ON
@@ -350,11 +355,11 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 ## 17. Cold-start checklist (new Cursor)
 
 ```text
-[ ] git fetch && git rev-parse HEAD   → expect 82e0194 (or newer docs tip after later docs commits)
-[ ] Confirm Production app tip still 6dfd201 unless Owner says otherwise
-[ ] Read this file + MASTER_HANDOFF + PROJECT_STATE
-[ ] Do NOT start STORAGE-ARCH-02 without Owner GO
-[ ] Do NOT stage untracked agent/infra/host audits
+[ ] git fetch && git rev-parse HEAD   → expect tip on main (docs may advance; Prod app may differ)
+[ ] Confirm Production app tip = 42369c0 unless Owner says otherwise
+[ ] Read this file + MASTER_HANDOFF + PROJECT_STATE + Fala 1B closeout if touching Account/Admin UI
+[ ] Do NOT start next wave / STORAGE-ARCH-02 without Owner GO
+[ ] Do NOT stage untracked agent/infra/host audits · local Mix · account/beats dirt
 [ ] AUDIT FIRST on any task → report → wait for Owner GO
 [ ] Polish communication to Owner; keep technical identifiers English
 ```
@@ -365,9 +370,9 @@ Use env stores only. Docs may say CONFIGURED — never paste values.
 
 ```text
 FINAL COLD START HANDOFF     = READY
-CURRENT REPOSITORY TIP       = 82e0194
-CURRENT PRODUCTION APP       = 6dfd201
-PRODUCTION DEPLOYMENT        = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
+CURRENT PRODUCTION APP       = 42369c0
+PRODUCTION DEPLOYMENT        = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
+FALA 1B                      = CLOSED / PRODUCTION VERIFIED — GREEN
 WORKER                       = STOPPED / DISABLED (92496d4)
 E3                           = GREEN (PE COMPLETE)
 STORAGE-ARCH-01              = LOCKED
@@ -376,8 +381,7 @@ IMPLEMENTATION FROM THIS DOC = NONE
 PRIOR CHAT REQUIRED          = NO
 ```
 
-**Next default Owner decision surface:** STORAGE-ARCH-02 — AUDIT (separate Owner GO) · or other backlog item Owner selects.
-
+**Next default:** Owner GO only — do not auto-start Fala 1C.
 ---
 
 *End of FINAL COLD START HANDOFF.*

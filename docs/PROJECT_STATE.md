@@ -20,9 +20,11 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **Repository HEAD / origin/main** | `82e0194` (`docs: reconcile storage architecture v1`) · docs tip may advance on further docs-only commits · **≠** Production app SHA |
-| **Production application** | `6dfd201` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED** |
-| **Production deployment** | `dpl_3H57UgU2TfqkYawzamsVJ13qnMsG` |
+| **Repository HEAD / origin/main** | Advances on docs-only commits · **≠** Production app SHA after closeout docs |
+| **Production application** | `42369c0` · https://www.bitrymdym.pl · **GREEN** / **PRODUCTION VERIFIED** |
+| **Production deployment** | `6802739724` · Vercel `dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X` |
+| **Fala 1B Account + Admin Visual Foundation** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `42369c0` — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
+| **Fala 1A Public Visual Foundation** | **CLOSED** / **PRODUCTION VERIFIED** @ `fdf74f9` (parent of 1B) |
 | **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Architecture Review **PASS WITH FINDINGS** · Owner Review **PASS** · Implementation **NOT STARTED** · STORAGE-ARCH-02 **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
 | **E3 FULL AUDIO** | **E3.1 → E3.7 code** · **E3 = PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · W6 **SATISFIED** · Free Basic public path **ON** under AC-PE-12 |
 | **E3.7 Premium Render** | Code on Production · architecture LOCKED · **Premium Production E2E = NOT TESTED** (no fixture) |
@@ -60,17 +62,18 @@ E3 architecture: [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FU
 ## 3. Current Phase
 
 ```text
+FALA 1A PUBLIC VISUAL    = CLOSED / PRODUCTION VERIFIED @ fdf74f9
+FALA 1B ACCOUNT+ADMIN    = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0
+PRODUCTION APPLICATION   = 42369c0
+PRODUCTION DEPLOYMENT    = 6802739724 / dpl_7hbfYd1wD6QGAbV6vLqLCXusjx7X
 W6.2/W6.3 UX SHIP        = CLOSED / PRODUCTION VERIFIED @ 9026fa9
 E3.8 W6 CERT             = CLOSED / PASS (Owner-accepted emulated)
 E3 PRODUCTION ENABLEMENT = COMPLETE
-AC-PE-12 / F-PE-02       = PASS @ 6dfd201
+AC-PE-12 / F-PE-02       = PASS @ 6dfd201 (historical PE tip · superseded as Prod tip by visual foundation chain)
 GO #2 Worker Infra       = CLOSED / SUPERSEDED (Contabo)
 GO #3 Env enablement     = DONE
 GO #4 Controlled render  = DONE
 GO #5 Public Free Audio  = PASS
-PRODUCTION APPLICATION   = 6dfd201
-PRODUCTION DEPLOYMENT    = dpl_3H57UgU2TfqkYawzamsVJ13qnMsG
-DOCS TIP / origin/main   = 82e0194
 E3_MIX_ENABLED           = ON
 E3_RENDER_JOBS_ENABLED   = ON
 E3_PUBLIC_AUDIO          = ON
@@ -80,9 +83,10 @@ PUBLIC FREE AUDIO        = RELEASED (Free Basic only · private bucket · signed
 STORAGE-ARCH-01          = LOCKED (Hybrid C · Final Arch Review PASS WITH FINDINGS)
 STORAGE-ARCH-02          = NOT STARTED
 FALA 3.5.1 RECORDING UX  = CLOSED (Owner preliminary PASS · NOT DEPLOYED)
-NEXT                     = Owner GO for Production deploy+verify of Fala 3.5.1 · or STORAGE-ARCH-02 AUDIT / other backlog
+NEXT                     = Owner GO for next wave only (do not auto-start Fala 1C)
 ```
 
+Closeout Fala 1B: [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)  
 Closeout Fala 3.5.1: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)
 
 ### 3.1 STORAGE-ARCH-01 — LOCKED (living)
@@ -166,4 +170,4 @@ WORKER                   = STOPPED / DISABLED after controlled verify
 
 **Canonical rollback (Owner GO only):** unset/off `E3_PUBLIC_AUDIO` → Free public Mix/job/download DENY (AC-PE-12 fail-closed).
 
-**Do not confuse:** W6.2/W6.3 UX ship SHA (`9026fa9`) ≠ current Production tip (`6dfd201`) ≠ worker bootstrap (`92496d4`).
+**Do not confuse:** W6.2/W6.3 UX ship SHA (`9026fa9`) ≠ current Production tip (`42369c0`) ≠ worker bootstrap (`92496d4`) ≠ docs tip (may advance on docs-only commits).
