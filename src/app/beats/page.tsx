@@ -1,83 +1,57 @@
-import Link from "next/link";
-
-import { SiteHeader } from "@/components/site/site-header";
-import {
-  formatDurationSeconds,
-  toPublicCatalogItem,
-} from "@/lib/beats/public";
+import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
+import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { AppShell } from "@/components/site/app-shell";
+import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
+import { presentBeats } from "@/lib/ui/demo-beats";
 
 export const metadata = {
   title: "Bity",
-  description: "Publiczny katalog opublikowanych bitów BitRymDym.",
+  description: "Katalog bitów BitRymDym — odsłuchaj, wybierz i nagraj.",
 };
 
-export default async function BeatsCatalogPage() {
-  const beats = (await listPublishedBeats()).map(toPublicCatalogItem);
+type BeatsPageProps = {
+  searchParams?: Promise<{ q?: string }>;
+};
+
+/**
+ * Fala 3.1 — marketplace catalog polish. Home remains frozen.
+ */
+export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const raw = (await listPublishedBeats()).map(toPublicCatalogItem);
+  const beats = presentBeats(raw);
+  const initialQuery =
+    typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
-      <SiteHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
-        <header className="space-y-2">
-          <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
-            Phase 1.6 · Published surface
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-balance">
-            Bity
-          </h1>
-          <p className="max-w-prose text-sm leading-relaxed text-muted-foreground text-pretty">
-            Publiczna lista wyłącznie opublikowanych bitów. Odsłuch bez
-            logowania — przez Access Gate (PLAYBACK).
-          </p>
-        </header>
+    <AppShell tone="public">
+      <main>
+        <PageFrame width="wide" className="py-5 sm:py-6">
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-[var(--brd-line)] pb-3">
+            <div className="min-w-0 space-y-1">
+              <SectionLabel>Bity</SectionLabel>
+              <h1 className="brd-display text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
+                Znajdź swój bit.
+              </h1>
+            </div>
+            <p className="max-w-xs pb-0.5 text-sm text-[var(--brd-mute)]">
+              Odsłuchaj. Wybierz. Nagraj.
+            </p>
+          </header>
 
-        {beats.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Brak opublikowanych bitów.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border border-y border-border">
-            {beats.map((beat) => (
-              <li key={beat.id}>
-                <Link
-                  href={`/beat/${beat.id}`}
-                  className="flex min-h-11 flex-col gap-1 py-4 outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
-                >
-                  <div className="min-w-0 space-y-1">
-                    <p className="truncate text-base font-medium tracking-tight text-foreground">
-                      {beat.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {[beat.producer, beat.genre, beat.style]
-                        .filter(Boolean)
-                        .join(" · ") || "—"}
-                    </p>
-                  </div>
-                  <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground tabular-nums">
-                    <div>
-                      <dt className="sr-only">BPM</dt>
-                      <dd>{beat.bpm} BPM</dd>
-                    </div>
-                    {(beat.key || beat.scale) && (
-                      <div>
-                        <dt className="sr-only">Tonacja</dt>
-                        <dd>
-                          {[beat.key, beat.scale].filter(Boolean).join(" ")}
-                        </dd>
-                      </div>
-                    )}
-                    <div>
-                      <dt className="sr-only">Czas</dt>
-                      <dd>{formatDurationSeconds(beat.durationSeconds)}</dd>
-                    </div>
-                  </dl>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+          {beats.length === 0 ? (
+            <div className="border border-[var(--brd-line)] px-5 py-12 text-center">
+              <p className="brd-display text-xl font-semibold">Cicho.</p>
+              <p className="mt-2 text-sm text-[var(--brd-mute)]">
+                Nie ma jeszcze opublikowanych bitów.
+              </p>
+            </div>
+          ) : (
+            <BeatsCatalogClient beats={beats} initialQuery={initialQuery} />
+          )}
+        </PageFrame>
       </main>
-    </div>
+    </AppShell>
   );
 }

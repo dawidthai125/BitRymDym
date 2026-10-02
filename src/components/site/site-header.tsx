@@ -1,86 +1,100 @@
 import Link from "next/link";
 
-import { siteConfig } from "@/config/site";
-import {
-  canAccessAdminNav,
-  canAccessModerationNav,
-} from "@/lib/auth/permissions";
+import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
+import { PageFrame } from "@/components/brand/chrome";
+import { HeaderSearch } from "@/components/site/header-search";
+import { UserMenu } from "@/components/site/user-menu";
+import { canAccessAdminNav } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
-/** W6.2: ≥44×44 CSS px hit area without hamburger/sheet redesign. */
 const navLinkClass =
-  "inline-flex min-h-11 min-w-11 items-center px-2.5 py-2 underline-offset-4 hover:text-foreground hover:underline";
+  "inline-flex min-h-11 items-center px-2.5 text-sm text-[var(--brd-ink-soft)] transition-colors hover:text-[var(--brd-ink)]";
 
 export async function SiteHeader({
   className,
+  tone = "public",
 }: {
   className?: string;
+  tone?: "public" | "studio" | "admin";
 }) {
   const session = await getCurrentProfile();
   const role = session?.profile.role;
-  const showAdminNav = canAccessAdminNav(role);
-  const showModerationNav = canAccessModerationNav(role);
-  const showMyBeats = role === "USER";
+  const showAdmin = canAccessAdminNav(role);
+  const showUpload = role === "USER" || showAdmin;
+  const rawName =
+    session?.profile.displayName?.trim() ||
+    session?.email?.split("@")[0] ||
+    "Konto";
+  const displayName = /grantee|fixture|mock|test|uuid|[0-9a-f]{8}/i.test(
+    rawName,
+  )
+    ? "Konto"
+    : rawName;
 
   return (
     <header
       className={cn(
-        "border-b border-border/80 bg-background/90 backdrop-blur-sm",
+        "sticky top-0 z-40 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_94%,transparent)] backdrop-blur-[2px]",
         className,
       )}
     >
-      <div
+      <PageFrame
+        width={tone === "admin" ? "ops" : "wide"}
         className={cn(
-          "mx-auto flex w-full max-w-3xl items-center justify-between gap-3 py-3",
-          "pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
-          "pt-[max(0.75rem,env(safe-area-inset-top))]",
+          "flex items-center justify-between gap-3 py-2.5",
+          "pt-[max(0.65rem,env(safe-area-inset-top))]",
         )}
       >
-        <Link
-          href="/"
-          className="inline-flex min-h-11 items-center text-sm font-semibold tracking-tight text-foreground"
-        >
-          {siteConfig.name}
-        </Link>
-        <nav className="flex flex-wrap items-center gap-x-1 gap-y-0 text-sm text-muted-foreground">
-          <Link href="/beats" className={navLinkClass}>
-            Bity
-          </Link>
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          <BrdLogoHomeLink />
+
+          <nav
+            className="hidden items-center lg:flex"
+            aria-label="Główne menu"
+          >
+            <Link href="/beats" className={navLinkClass}>
+              Bity
+            </Link>
+            <Link href="/about" className={navLinkClass}>
+              Społeczność
+            </Link>
+            <Link href="/about" className={navLinkClass}>
+              O nas
+            </Link>
+            <Link href="/studio" className={navLinkClass}>
+              Studio
+            </Link>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <HeaderSearch className="hidden sm:block" compact />
           {session ? (
+            <UserMenu
+              displayName={displayName}
+              email={session.email}
+              showAdmin={showAdmin}
+              showUpload={showUpload}
+            />
+          ) : (
             <>
-              {showMyBeats ? (
-                <Link href="/account/beats" className={navLinkClass}>
-                  Moje bity
-                </Link>
-              ) : null}
-              <Link href="/account/takes" className={navLinkClass}>
-                Moje próbki
+              <Link
+                href="/sign-in"
+                className={cn(navLinkClass, "hidden sm:inline-flex")}
+              >
+                Zaloguj
               </Link>
-              {showModerationNav && !showAdminNav ? (
-                <Link href="/admin/moderation" className={navLinkClass}>
-                  Moderacja
-                </Link>
-              ) : null}
-              {showAdminNav ? (
-                <Link href="/admin" className={navLinkClass}>
-                  Panel administratora
-                </Link>
-              ) : null}
-              <Link href="/account/downloads" className={navLinkClass}>
-                Pobrane
-              </Link>
-              <Link href="/account" className={navLinkClass}>
-                Konto
+              <Link
+                href="/sign-up"
+                className="inline-flex min-h-11 items-center border border-[var(--brd-green)] bg-[var(--brd-green)] px-3.5 text-sm text-[var(--brd-paper)]"
+              >
+                Dołącz
               </Link>
             </>
-          ) : (
-            <Link href="/sign-in" className={navLinkClass}>
-              Zaloguj
-            </Link>
           )}
-        </nav>
-      </div>
+        </div>
+      </PageFrame>
     </header>
   );
 }
