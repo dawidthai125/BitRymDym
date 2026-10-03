@@ -1,12 +1,19 @@
-# Creator Progress W2-A — Implementation Audit (DRAFT)
+# Creator Progress W2-A — Implementation Audit
 
-**Status:** READY FOR OWNER VERIFICATION
-**Gate:** IMPLEMENT → BUILD → TEST → AUDIT → OWNER VERIFICATION
-**Date:** 2026-10-03
+**Status:** CODE CANONICAL · COMMIT/PUSH COMPLETE · NOT PRODUCTION VERIFIED
+**Gate completed:** IMPLEMENT → BUILD → TEST → AUDIT → OWNER VERIFICATION → COMMIT/PUSH
+**Date:** 2026-10-04
 **Owner:** Dawid Thai
-**Base HEAD:** `6cc7efe7324e2095117e1ffa143290ae9969a88b`
 
-**Commit / push / production DB apply / deploy:** NOT EXECUTED under this gate.
+| Plane | Value |
+|-------|--------|
+| Canonical implementation SHA | `6ee3255cf1de434b724d2167eea66cf5253957a4` |
+| Message | `feat(premium): implement W2-A tier foundation` |
+| Base before W2-A | `6cc7efe7324e2095117e1ffa143290ae9969a88b` |
+| Owner Verification | PASS WITH FINDINGS (P0/P1 none · P2 open) |
+| Production DB | **NOT APPLIED** |
+| Production deploy | **NOT EXECUTED** |
+| Production Verification | **NOT YET COMPLETE** |
 
 ---
 
@@ -14,7 +21,7 @@
 
 | Item | Status |
 |------|--------|
-| A. Premium tier foundation (`premium_tier` + `tier` column) | DONE (migration file) |
+| A. Premium tier foundation (`premium_tier` + `tier` column) | DONE (migration file in repo) |
 | B. Central product entitlement resolver | DONE |
 | C. Capability / limits matrix | DONE |
 | D. Security REVOKE DML + client claim rejection | DONE |
@@ -22,7 +29,7 @@
 | F. Render entitlement snapshot (tier + caps + limits) | DONE |
 | G. Tests A–T | DONE |
 
-## 2. Explicitly deferred
+## 2. Explicitly deferred (still out of scope)
 
 - Billing / checkout / Stripe / subscriptions / webhooks
 - `/premium`, `/ranks`, Premium UI, topbar
@@ -33,8 +40,9 @@
 - Priority queue
 - Production DB migration apply
 - Production deploy
+- Production Verification
 
-## 3. Schema (migration file only)
+## 3. Schema (repo migration file — not applied to production)
 
 File: `supabase/migrations/20261003230000_w2a_premium_tier_foundation.sql`
 
@@ -44,40 +52,45 @@ File: `supabase/migrations/20261003230000_w2a_premium_tier_foundation.sql`
 - `REVOKE INSERT, UPDATE, DELETE` from `anon` / `authenticated`
 - SELECT own-row RLS unchanged (E3.1)
 
-**Production DB:** NOT MUTATED.
+**Production DB:** tip still W1 (`20261003210121` → `20261003210322`) · **no `tier` column** · **NOT MUTATED** by W2-A.
 
-## 4. Resolver SSOT
+## 4. Resolver / product model (code @ `6ee3255`)
 
-- `resolveProductEntitlement` — central SSOT (`src/lib/entitlements/product-entitlement.ts`)
-- `resolveEffectiveAudioEntitlement` — thin compatibility wrapper
-- `resolveProductEntitlementForAuthContext` / `resolveAudioEntitlementForAuthContext` — server loaders
+- `resolveProductEntitlement` — central SSOT
+- `resolveEffectiveAudioEntitlement` — thin compatibility wrapper (delegates)
+- Capability matrix: FREE Basic · BRONZE HQ · SILVER Mix/Master Pro · GOLD WAV
+- Render snapshot freezes tier + capabilities + limits; worker/completion use snapshot
+- Legacy binary snapshot `premiumActive=true` → normalize **SILVER** (never GOLD)
+- Axes: ROLE ≠ ACCOUNT_LEVEL ≠ CREATOR_RANK ≠ PREMIUM
+- Recording hybrid overlay: **not implemented**
+- Downloads tier cutover: **not implemented**
+- Gold 90d: **DESIGN ONLY** (runtime retention 30d)
+- Billing / Premium UI: **not implemented**
 
-Axes remain orthogonal: ROLE ≠ ACCOUNT_LEVEL ≠ CREATOR_RANK ≠ PREMIUM.
-
-## 5. Gates run (local)
+## 5. Gates (Owner Verification evidence)
 
 | Gate | Result |
 |------|--------|
-| Targeted W2-A + E3 + Mix + W1 + downloads + account-profile | 134/134 PASS |
+| Targeted W2-A + E3 + Mix + W1 + downloads + account-profile | 125/125 PASS |
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
-| `npm run lint` | Pre-existing UI/eslint issues remain (beat-detail, mix-panel, brd-take-preview-rail, public-audio-gate prefer-as-const). No new W2-A scope lint blockers introduced beyond touched prefer-const fix. |
+| `npm run lint` | Pre-existing FAIL (UI/eslint; not W2-A blockers) |
+| Owner Verification | PASS WITH FINDINGS |
+| Commit / push | COMPLETE @ `6ee3255` |
 
-## 6. Next Owner gates
+## 6. P2 findings (OPEN — non-blocking)
 
-1. Owner Verification of this implementation
-2. Separate GO for commit/push
-3. Separate GO for production DB apply
-4. Separate GO for production deploy
+1. Stale binary `AUDIO_RENDER_PREMIUM_* = 30` in `audio-render.ts` vs SILVER matrix `renders_daily = 20` (create path uses tier matrix)
+2. RLS/IDOR covered by SQL contract / unit checks — **not** a live DB exercise
+3. Migration `CREATE TYPE` is not manually re-runnable (Supabase once-run history OK)
+
+## 7. Next Owner gates
+
+1. **PRODUCTION DB APPLY** (separate explicit GO) — migration `20261003230000_w2a_premium_tier_foundation.sql`
+2. Separate GO for production deploy (must not precede DB apply — app selects `tier`)
+3. Production Verification (separate gate)
+4. Later: download cutover · recording overlay · artifact janitor / Gold 90d · billing · Premium UI
 
 ---
 
-## MASTER_HANDOFF / PROJECT_STATE (draft delta — not applied)
-
-Suggested continuity bullets after Owner accept + commit:
-
-- W2-A Premium Foundation: IMPLEMENTED locally / awaiting Owner Verification
-- Production: migration file present; DB apply NOT authorized
-- OD-08 CLOSED remains; download cutover / recording overlay / Gold 90d / billing remain deferred
-
-Do not update `MASTER_HANDOFF.md` / `PROJECT_STATE.md` until Owner approves docs allowlist.
+**Do not claim:** Production Verified · Production Ready · Gold 90d live · tiered downloads live · recording overlay live · billing live.

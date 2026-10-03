@@ -120,19 +120,26 @@ W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
 - OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.
 
-### Creator Progress / Premium (continuity note — 2026-10-03)
+### Creator Progress / Premium (continuity note — 2026-10-04)
 
 Design Freeze: [CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md](./CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md).
 W1 delivery closeout: [CREATOR_PROGRESS_W1_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W1_CLOSEOUT.md).
 W2 Design Contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
+W2-A implementation audit: [CREATOR_PROGRESS_W2A_IMPLEMENTATION.md](../audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md).
 
 - **OD-08 CLOSED / ACCEPTED** — Premium tiers = FREE / BRONZE / SILVER / GOLD. Premium tier ≠ Rank ≠ Account Level ≠ Role.
-- Legacy binary Premium (`active` + valid `expires_at`) maps to **SILVER** (not GOLD) under future W2-A migration — Design Contract only; **not applied**.
+- **W2-A** = **CODE CANONICAL** @ `6ee3255` (`feat(premium): implement W2-A tier foundation`) · Owner Verification PASS WITH FINDINGS · **NOT PRODUCTION VERIFIED**.
+- Production DB: W2-A migration **NOT APPLIED** (prod tip still W1 `20261003210322`; no `tier` column).
+- Production deploy: **NOT EXECUTED** (production app still `76a4757`).
+- Legacy binary Premium (`active` + valid `expires_at`) → **SILVER** (not GOLD) in migration SQL + resolver; apply awaits Production DB GO.
 - **Creator Rank labels** remain separate from Account Level display names (**OD-09 OPEN**).
-- **OD-04** (payment operator) and **OD-07** (Premium prices) remain **OPEN**. Billing / checkout out of W2-A.
-- **Recording Premium overlay numbers** remain **OPEN / DEFERRED**; OD-REC-04 hybrid stays CLOSED; numbers unlocked.
-- **Gold 90d** artifact retention = **DESIGN ONLY** — PRODUCTION claim blocked until artifact janitor (OD-SA-05) verified.
-- **W2-A Implementation GO** = **NOT AUTHORIZED**. Design Contract READY only.
+- **OD-04** (payment operator) and **OD-07** (Premium prices) remain **OPEN**. Billing / checkout not in W2-A.
+- **Recording Premium overlay numbers** remain **OPEN / DEFERRED**; OD-REC-04 hybrid stays CLOSED; numbers unlocked; overlay **not implemented**.
+- **Gold 90d** artifact retention = **DESIGN ONLY** — PRODUCTION claim blocked until artifact janitor (OD-SA-05) verified; runtime retention 30d.
+- Download tier cutover = **NOT IMPLEMENTED** (runtime ANON=2 / USER=4).
+- `/premium` / `/ranks` / Premium UI = **NOT IMPLEMENTED**.
+- **NEXT GATE** = Production DB APPLY (separate Owner GO) · then deploy · then Production Verification.
+- W2-A P2 OPEN: stale `AUDIO_RENDER_PREMIUM_*=30` · RLS live exercise · manual migration idempotency.
 
 ---
 
