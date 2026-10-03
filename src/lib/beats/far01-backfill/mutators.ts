@@ -69,7 +69,10 @@ export function denyStorageInspector(): Far01StorageInspector {
   };
 }
 
-/** Pre-mutation source/dest checks using inspector (read-only). */
+/**
+ * Pre-mutation source/dest checks using inspector (read-only).
+ * Destination present → HARD STOP (no overwrite, no skip-copy success).
+ */
 export async function preMutationHeadCheck(params: {
   inspector: Far01StorageInspector;
   bucket: string;
@@ -79,7 +82,6 @@ export async function preMutationHeadCheck(params: {
 }): Promise<{
   source: Far01StorageObjectMeta;
   destination: Far01StorageObjectMeta;
-  skipCopySizeMatch: boolean;
 }> {
   const source = await params.inspector.headObject({
     bucket: params.bucket,
@@ -106,19 +108,12 @@ export async function preMutationHeadCheck(params: {
   });
 
   if (destination.exists) {
-    if (
-      destination.size != null &&
-      source.size != null &&
-      destination.size === source.size
-    ) {
-      return { source, destination, skipCopySizeMatch: true };
-    }
     throw new Far01MutationGateError(
-      "pre-mutation HEAD: destination exists with conflict — no overwrite (upsert:false)",
+      "pre-mutation HEAD: DESTINATION_PRESENT — hard stop, no overwrite (upsert:false) — OWNER_REVIEW / CONFLICT",
     );
   }
 
-  return { source, destination, skipCopySizeMatch: false };
+  return { source, destination };
 }
 
 /** Mandatory post-copy re-HEAD. Failure → no DB update. */

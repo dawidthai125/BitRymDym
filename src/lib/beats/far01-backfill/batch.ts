@@ -14,12 +14,11 @@ import { mapFar01BackfillAsset } from "./mapping";
 import {
   denyDbMutator,
   denyStorageMutator,
-  postCopyReHeadVerify,
-  preMutationHeadCheck,
   type Far01DbMutator,
   type Far01StorageInspector,
   type Far01StorageMutator,
 } from "./mutators";
+import { executeFar01LiveAssetMutation } from "./live-mutation";
 import { runFar01Preflight } from "./preflight";
 import {
   buildAssetTelemetry,
@@ -237,7 +236,7 @@ export async function runFar01BackfillBatch(
         reason = `dry_run:${reason}:${gate.reason}`;
       }
     } else if (action === "MIGRATE") {
-      // LIVE — verified grant + mutators + mandatory re-HEAD
+      // LIVE — gated mutation (re-HEAD → COPY → verify → DB UPDATE → verify)
       liveMutationsAttempted += 1;
       try {
         if (!inspector) {
@@ -246,64 +245,24 @@ export async function runFar01BackfillBatch(
           );
         }
 
-        const preHead = await preMutationHeadCheck({
-          inspector,
-          bucket: mapped.asset.storage_bucket,
-          sourceKey: mapped.sourceKey,
-          destinationKey: mapped.destinationKey,
-          expectedSourceSize: candidate.sourceMeta.size,
-        });
-
-        if (!preHead.skipCopySizeMatch) {
-          await storage.copyObject({
-            bucket: mapped.asset.storage_bucket,
-            sourceKey: mapped.sourceKey,
-            destinationKey: mapped.destinationKey,
-            upsert: false,
-          });
-        }
-
-        const reHead = await postCopyReHeadVerify({
-          inspector,
-          bucket: mapped.asset.storage_bucket,
-          sourceKey: mapped.sourceKey,
-          destinationKey: mapped.destinationKey,
-          expectedSize: preHead.source.size,
-        });
-
-        const integrity = evaluatePostCopyIntegrity({
-          sourceExists: reHead.source.exists,
-          destinationExists: reHead.destination.exists,
-          sourceSize: reHead.source.size,
-          destinationSize: reHead.destination.size,
-          sourceChecksum: candidate.asset.checksum_sha256,
-          destinationChecksum: candidate.asset.checksum_sha256,
-          identityMismatch: false,
-        });
-        sizeMatch = integrity.sizeMatch;
-        destSize = reHead.destination.size;
-        status = integrity.status;
-
-        const gate = evaluateDbUpdateGate({
+        const live = await executeFar01LiveAssetMutation({
+          mode,
+          verifiedGrant: options.verifiedGrant,
+          authorization,
           mapped,
           preflight,
-          postCopyAllowDbUpdate: integrity.allowDbUpdate,
-          postCopyReason: integrity.reason,
+          expectedSourceSize: candidate.sourceMeta.size,
+          storageMutator: storage,
+          storageInspector: inspector,
+          dbMutator: db,
         });
-        if (!gate.allow) {
-          dbUpdateStatus = "BLOCKED";
-          reason = gate.reason;
-        } else {
-          const upd = await db.updateObjectKeyOptimistic({
-            assetId: mapped.assetId,
-            sourceKey: gate.optimisticLockSourceKey,
-            destinationKey: gate.optimisticLockDestKey,
-          });
-          dbUpdateStatus = upd.rowsAffected === 1 ? "SUCCESS" : "FAIL";
-          if (upd.rowsAffected !== 1) {
-            status = "FAIL";
-            reason = "optimistic_lock_failed";
-          }
+        sizeMatch = live.sizeMatch;
+        destSize = live.destinationSize;
+        status = live.status;
+        dbUpdateStatus = live.dbUpdateStatus;
+        reason = live.reason;
+        if (live.dbUpdateStatus === "FAIL") {
+          action = "FAIL";
         }
       } catch (err) {
         status = "FAIL";

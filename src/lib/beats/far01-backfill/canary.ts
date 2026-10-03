@@ -78,20 +78,47 @@ export function assertNoImplicitUnlimited(canaryLimit: unknown): void {
   }
 }
 
+/** Row shape for deterministic canary selection (OD-CANARY-N). */
+export type Far01CanarySelectionRow = {
+  id: string;
+  created_at?: string;
+  action: Far01Action;
+  /** Explicit exclusions — any true removes the row from the eligible pool. */
+  is_quarantine?: boolean;
+  is_canonical?: boolean;
+  is_platform?: boolean;
+  destination_conflict?: boolean;
+  identity_anomaly?: boolean;
+  incomplete_evidence?: boolean;
+};
+
 /**
- * Select first N MIGRATE-eligible asset ids after deterministic sort.
- * Quarantine / FAIL / OWNER_REVIEW / SKIP never enter the canary set.
+ * Eligible canary pool: MIGRATE only, minus quarantine / canonical / platform /
+ * destination conflict / identity anomaly / incomplete evidence.
+ */
+export function isFar01CanaryEligible(row: Far01CanarySelectionRow): boolean {
+  if (row.action !== "MIGRATE") return false;
+  if (row.is_quarantine === true) return false;
+  if (row.is_canonical === true) return false;
+  if (row.is_platform === true) return false;
+  if (row.destination_conflict === true) return false;
+  if (row.identity_anomaly === true) return false;
+  if (row.incomplete_evidence === true) return false;
+  return true;
+}
+
+/**
+ * Select first N eligible asset ids after deterministic sort
+ * (`created_at` ASC, then `id` ASC). Same inventory → same N ids.
+ * Quarantine / FAIL / OWNER_REVIEW / SKIP / flagged exclusions never enter.
  */
 export function selectCanaryAssetIds(params: {
-  rows: Array<{ id: string; created_at?: string; action: Far01Action }>;
+  rows: Far01CanarySelectionRow[];
   canaryLimit: number;
 }): string[] {
-  const limit = validateCanaryLimit(
-    params.canaryLimit,
-    params.rows.filter((r) => r.action === "MIGRATE").length,
-  );
-  const migrateOnly = params.rows.filter((r) => r.action === "MIGRATE");
-  const sorted = sortAssetsForBatch(migrateOnly);
+  const eligible = params.rows.filter(isFar01CanaryEligible);
+  const limit = validateCanaryLimit(params.canaryLimit, eligible.length);
+  const sorted = sortAssetsForBatch(eligible);
   return sorted.slice(0, limit).map((r) => r.id);
 }
 
@@ -111,6 +138,48 @@ export function buildCanaryResult(params: {
     failures,
     verification_result: params.verificationResult ?? "PENDING",
     approved: params.approved ?? false,
+  };
+}
+
+/**
+ * Formal VERIFY artifact for Fleet Pre-GO.
+ * Sets verification_result=VERIFIED but approved=false (Approval ≠ Owner GO).
+ */
+export function buildFar01FleetVerifyCanaryResult(params: {
+  canaryBatchId: string;
+  selectedAssetIds: string[];
+  failures?: string[];
+}): Far01VerifiedCanaryResult {
+  return buildCanaryResult({
+    batchId: params.canaryBatchId,
+    selectedAssetIds: params.selectedAssetIds,
+    failures: params.failures,
+    verificationResult: "VERIFIED",
+    approved: false,
+  });
+}
+
+/**
+ * Formal APPROVAL placeholder — remains DENY for FLEET until Owner GO
+ * flips approved=true on a separate authorization step.
+ */
+export function buildFar01FleetApprovalPendingResult(params: {
+  verify: Far01VerifiedCanaryResult;
+}): Far01VerifiedCanaryResult {
+  if (params.verify.verification_result !== "VERIFIED") {
+    throw new Far01CanaryGateError(
+      "APPROVAL DENY: VERIFY required before APPROVAL placeholder",
+    );
+  }
+  if (params.verify.status !== "PASS") {
+    throw new Far01CanaryGateError(
+      "APPROVAL DENY: canary status is not PASS",
+    );
+  }
+  return {
+    ...params.verify,
+    verification_result: "VERIFIED",
+    approved: false,
   };
 }
 
