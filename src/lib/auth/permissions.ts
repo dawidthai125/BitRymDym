@@ -57,7 +57,12 @@ export function filterPermissionKeys(values: readonly string[]): PermissionKey[]
 /**
  * Fields that must never be writable by a normal user self-update payload.
  */
-export const PROTECTED_PROFILE_FIELDS = ["role", "account_level", "id"] as const;
+export const PROTECTED_PROFILE_FIELDS = [
+  "role",
+  "account_level",
+  "id",
+  "user_number",
+] as const;
 
 export function assertNoPrivilegeEscalationInPayload(
   payload: Record<string, unknown>,

@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { ModerationDecisionControls } from "@/components/beats/moderation-decision-controls";
 import { PlaybackShell } from "@/components/player/playback-shell";
-import { AuthError } from "@/lib/auth/session";
+import { AuthError, getCurrentProfile } from "@/lib/auth/session";
+import { formatProfileWithUserNumber } from "@/lib/auth/types";
+import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
 import { getStaffCommunityBeatForModeration } from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
 
@@ -25,6 +27,19 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
   }
 
   const isApproved = beat.status === "APPROVED";
+  const context = await getCurrentProfile();
+  const isAdmin = context?.profile.role === "ADMIN";
+  let ownerLabel = beat.ownerId ? `${beat.ownerId.slice(0, 8)}…` : "—";
+  if (isAdmin && beat.ownerId) {
+    const identities = await loadAdminProfileIdentities([beat.ownerId]);
+    const identity = identities.get(beat.ownerId);
+    if (identity) {
+      ownerLabel = formatProfileWithUserNumber(
+        identity.displayName,
+        identity.userNumber,
+      );
+    }
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 pb-16">
@@ -46,7 +61,7 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
         </p>
         <p className="text-xs text-muted-foreground">
           Owner{" "}
-          <span className="font-mono">{beat.ownerId?.slice(0, 8)}…</span>
+          <span className={isAdmin ? undefined : "font-mono"}>{ownerLabel}</span>
         </p>
       </header>
 

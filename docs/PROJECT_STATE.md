@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-03
+**Updated:** 2026-10-03 (USER-CLEANUP-01 + USER-ID-01 implemented; Owner verification pending commit/deploy)
 
 ---
 
@@ -21,11 +21,13 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `e03f3be` — `feat(far01): add production backfill operator tooling` (**operator tooling**, not UI release) |
-| **PRODUCTION APP SHA** | `e03f3be` |
-| **PRODUCTION DEPLOYMENT** | `6823806375` (Vercel · success) |
+| **REPOSITORY HEAD / origin/main** | `4e33e8d` — `fix(player): align waveform progress with playback state` |
+| **PRODUCTION APP SHA** | `4e33e8d` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
-| **PRODUCTION DB tip** | `20261003051539` / `def01_e3_definer_execute_revoke` |
+| **PRODUCTION DB tip** | `20261003110802` / `user_id_01_stable_user_number` (NULL→value hardening migration **pending apply**: `20261003123000`) |
+| **Prior DB tip** | `20261003051539` / `def01_e3_definer_execute_revoke` |
+| **USER-CLEANUP-01** | **EXECUTED** — auth/profiles = 2 (Dawid + Tajski); 93 fixtures deleted; orphan-31 untouched · [evidence](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md) |
+| **USER-ID-01** | **DB APPLIED** — Dawid=`1`, Tajski=`NULL`, next=`2` · app/hardening uncommitted · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) · [evidence](./audits/USER_ID_01_EVIDENCE.md) |
 | **PRODUCTION DB FAR-01 roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Prior security tip | `fbc696f` — DEF-01 |
 | Prior storage tip | `f9500b3` — FAR-01 execution harden |
@@ -56,8 +58,8 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY / PRODUCTION APP  = e03f3be (FAR-01 operator tooling)
-PRODUCTION DEPLOYMENT        = 6823806375
+REPOSITORY / PRODUCTION APP  = 4e33e8d (waveform progress/seek)
+PRODUCTION DB tip            = 20261003110802 (USER-ID-01; null-hardening 20261003123000 pending apply)
 FAR-01 DR-A                  = SHIPPED / PRODUCTION VERIFIED (historical @ f514a51)
 FAR-01 CAMPAIGN              = IN PROGRESS / SOAK ACTIVE
   inventory                  = legacy1 · canonical77 · platform3 · retained67 · orphans30 · orphanStorage97 · quarantine1 · MIGRATE=0

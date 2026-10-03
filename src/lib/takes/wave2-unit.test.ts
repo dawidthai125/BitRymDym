@@ -28,6 +28,7 @@ function ctx(overrides?: Partial<AuthContext>): AuthContext {
     profile: {
       id: userId,
       displayName: "A",
+      userNumber: null,
       role: "USER",
       accountLevel: "BEGINNER_RAPPER",
       createdAt: new Date().toISOString(),

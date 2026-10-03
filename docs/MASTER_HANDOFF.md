@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-03
+**Updated:** 2026-10-03 (USER-CLEANUP-01 + USER-ID-01 DB applied; Owner verification before commit)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,10 +21,11 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `e03f3be` — FAR-01 **operator tooling** (not a user-facing UI release) |
-| **Production application SHA** | `e03f3be` |
-| **Production deployment** | `6823806375` |
-| **Production DB tip** | `20261003051539` / `def01_e3_definer_execute_revoke` |
+| **Repository HEAD** | `4e33e8d` — waveform progress/seek (app tip) |
+| **Production application SHA** | `4e33e8d` |
+| **Production DB tip** | `20261003110802` / `user_id_01_stable_user_number` |
+| **USER-CLEANUP-01** | **EXECUTED** — 2 users remain (Dawid + Tajski) |
+| **USER-ID-01** | **DB APPLIED** · app uncommitted · Dawid=1 · Tajski=NULL · next=2 |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Status | **GREEN** · FAR-01 campaign **SOAK ACTIVE** (not closed) |
 | **FAR-01 DR-A (Phase 1)** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
@@ -61,7 +62,8 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
-| `e03f3be` | **Current repo + Production app tip** — FAR-01 operator tooling |
+| `4e33e8d` | **Current repo + Production app tip** — waveform progress/seek |
+| `e03f3be` | Historical FAR-01 operator tooling tip |
 | `fbc696f` | DEF-01 security harden (parent of e03f3be) |
 | `f9500b3` | FAR-01 execution harden |
 | `f514a51` | Historical FAR-01 Phase 1 DR-A dual-accept |
@@ -76,8 +78,8 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `e03f3be` (docs tip may advance after this reconciliation) |
-| **Production application** | `e03f3be` |
+| **HEAD / origin/main** | `4e33e8d` |
+| **Production application** | `4e33e8d` |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **NEXT GATE** | SOAK END → FINAL SOAK AUDIT → Owner Review |
@@ -537,7 +539,7 @@ STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
 FAR-01 = IN PROGRESS / SOAK ACTIVE (see FAR_01_CURRENT_STATE.md)
 DEF-01 = CLOSED / PRODUCTION VERIFIED @ fbc696f
-REPO / PROD APP = e03f3be (operator tooling)
+REPO / PROD APP = 4e33e8d (waveform)
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                    → WAIT FOR SOAK END → FINAL SOAK AUDIT → Owner Review
 ```
@@ -658,7 +660,7 @@ STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
 FAR-01 = IN PROGRESS / SOAK ACTIVE
 DEF-01 = CLOSED / PRODUCTION VERIFIED
-REPO / PROD APP = e03f3be
+REPO / PROD APP = 4e33e8d
 NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
                    → SOAK END → FINAL SOAK AUDIT → Owner Review
 ```

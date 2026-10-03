@@ -88,6 +88,7 @@ function userContext(userId: string, email: string): AuthContext {
     profile: {
       id: userId,
       displayName: "Wave3",
+      userNumber: null,
       role: "USER",
       accountLevel: "BEGINNER_RAPPER",
       createdAt: new Date().toISOString(),

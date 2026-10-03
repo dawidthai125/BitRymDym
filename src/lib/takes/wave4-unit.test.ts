@@ -26,6 +26,7 @@ function ctx(
     profile: {
       id: userId,
       displayName: "A",
+      userNumber: null,
       role: "USER",
       accountLevel: level,
       createdAt: new Date().toISOString(),

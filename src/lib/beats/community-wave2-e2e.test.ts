@@ -86,6 +86,7 @@ describe.runIf(live)("Community Wave 2 live E2E transport", () => {
         profile: {
           id: userId,
           displayName: "Wave2 E2E",
+          userNumber: null,
           role: "USER",
           accountLevel: "BEGINNER_RAPPER",
           createdAt: new Date().toISOString(),

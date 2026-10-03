@@ -46,6 +46,7 @@ function ownerCtx(level: string): AuthContext {
     profile: {
       id: "11111111-1111-4111-8111-111111111111",
       displayName: "Owner",
+      userNumber: null,
       role: "USER",
       accountLevel: level as AuthContext["profile"]["accountLevel"],
       createdAt: new Date().toISOString(),

@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { getCurrentProfile } from "@/lib/auth/session";
+import { formatProfileWithUserNumber } from "@/lib/auth/types";
+import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
 import {
   listApprovedForModeration,
   listPendingReviewForModeration,
@@ -16,16 +19,36 @@ function formatDuration(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function ownerLabel(
+  ownerId: string | null,
+  identities: Map<string, { displayName: string | null; userNumber: number | null }>,
+  isAdmin: boolean,
+): string {
+  if (!ownerId) return "—";
+  if (!isAdmin) {
+    return `${ownerId.slice(0, 8)}…`;
+  }
+  const identity = identities.get(ownerId);
+  if (!identity) {
+    return `${ownerId.slice(0, 8)}…`;
+  }
+  return formatProfileWithUserNumber(identity.displayName, identity.userNumber);
+}
+
 function QueueSection({
   title,
   empty,
   items,
   actionLabel,
+  identities,
+  isAdmin,
 }: {
   title: string;
   empty: string;
   items: Awaited<ReturnType<typeof listPendingReviewForModeration>>;
   actionLabel: string;
+  identities: Map<string, { displayName: string | null; userNumber: number | null }>;
+  isAdmin: boolean;
 }) {
   return (
     <section className="space-y-4">
@@ -43,8 +66,8 @@ function QueueSection({
                 <p className="font-medium tracking-tight">{beat.title}</p>
                 <p className="text-sm text-muted-foreground">
                   {beat.producer ?? "—"} · owner{" "}
-                  <span className="font-mono text-xs">
-                    {beat.ownerId?.slice(0, 8)}…
+                  <span className={isAdmin ? undefined : "font-mono text-xs"}>
+                    {ownerLabel(beat.ownerId, identities, isAdmin)}
                   </span>
                   {" · "}
                   {formatDuration(beat.durationSeconds)} · {beat.bpm} BPM
@@ -71,10 +94,19 @@ function QueueSection({
 }
 
 export default async function AdminModerationQueuePage() {
-  const [pending, approved] = await Promise.all([
+  const [pending, approved, context] = await Promise.all([
     listPendingReviewForModeration(),
     listApprovedForModeration(),
+    getCurrentProfile(),
   ]);
+
+  const isAdmin = context?.profile.role === "ADMIN";
+  const ownerIds = [...pending, ...approved]
+    .map((b) => b.ownerId)
+    .filter((id): id is string => Boolean(id));
+  const identities = isAdmin
+    ? await loadAdminProfileIdentities(ownerIds)
+    : new Map();
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 pb-16">
@@ -93,6 +125,8 @@ export default async function AdminModerationQueuePage() {
         empty="Brak bitów oczekujących na moderację."
         items={pending}
         actionLabel="Odtwórz / decyzja"
+        identities={identities}
+        isAdmin={Boolean(isAdmin)}
       />
 
       <QueueSection
@@ -100,6 +134,8 @@ export default async function AdminModerationQueuePage() {
         empty="Brak zaakceptowanych bitów do publikacji."
         items={approved}
         actionLabel="Opublikuj"
+        identities={identities}
+        isAdmin={Boolean(isAdmin)}
       />
     </main>
   );

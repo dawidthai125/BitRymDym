@@ -399,6 +399,7 @@ NEXT = COLD-START AUDIT (next Foundation candidate)
 ### IMPLEMENTED / LOCKED
 - Next.js scaffold (Phase 1.2)
 - Auth / profiles / roles / permissions / account levels (Phase 1.3)
+- USER-CLEANUP-01 (fixture purge) + USER-ID-01 nullable stable `profiles.user_number` (Dawid=1; Tajski NULL; sequence next=2) — see [AUTHORIZATION.md](./AUTHORIZATION.md#user-id-01--stable-user-number)
 - Beats metadata domain (Phase 1.4 @ `6cb1e9a`)
 - Phase 1.5 Design Freeze (@ `0e5c491`)
 - Private Storage + Access Gate (Phase 1.5 @ `0ec0be0`)

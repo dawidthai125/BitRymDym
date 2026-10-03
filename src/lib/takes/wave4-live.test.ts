@@ -69,6 +69,7 @@ function userContext(
     profile: {
       id: userId,
       displayName: "Wave4",
+      userNumber: null,
       role: "USER",
       accountLevel,
       createdAt: new Date().toISOString(),

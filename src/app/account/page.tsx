@@ -13,6 +13,7 @@ import { AppShell } from "@/components/site/app-shell";
 import { signOutAction } from "@/lib/auth/actions";
 import { canAccessAdminNav } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { listOwnTakes } from "@/lib/takes/list-own-takes";
 import { formatDurationSeconds } from "@/lib/beats/public";
@@ -180,7 +181,10 @@ export default async function AccountPage() {
                 <SectionLabel>Profil</SectionLabel>
                 <div>
                   <p className="brd-display text-2xl font-semibold">
-                    {displayName}
+                    {formatProfileWithUserNumber(
+                      displayName,
+                      context.profile.userNumber,
+                    )}
                   </p>
                   <p className="mt-1 text-sm text-[var(--brd-mute)]">
                     {labelAccountLevel(context.profile.accountLevel)}

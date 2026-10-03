@@ -38,6 +38,7 @@ function userCtx(overrides?: Partial<AuthContext>): AuthContext {
     profile: {
       id: OWNER,
       displayName: "A",
+      userNumber: null,
       role: "USER",
       accountLevel: "BEGINNER_RAPPER",
       createdAt: "2026-01-01T00:00:00.000Z",

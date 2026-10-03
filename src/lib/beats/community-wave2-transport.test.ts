@@ -29,6 +29,7 @@ function userContext(overrides?: Partial<AuthContext>): AuthContext {
     profile: {
       id: OWNER,
       displayName: "User",
+      userNumber: null,
       role: "USER",
       accountLevel: "BEGINNER_RAPPER",
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -262,6 +263,7 @@ describe("Community Wave 2 — USER audio AuthZ / IDOR", () => {
           profile: {
             id: OWNER,
             displayName: "Admin",
+            userNumber: null,
             role: "ADMIN",
             accountLevel: "BEGINNER_RAPPER",
             createdAt: "2026-01-01T00:00:00.000Z",

@@ -85,6 +85,49 @@ Do not document secrets.
 - Role → permission mapping (ADMIN all examples; MODERATOR moderation subset)
 - Server helpers: `requireUser` / `requireRole` / `requirePermission`
 - RLS + privilege-escalation trigger (role / account_level)
+- **USER-ID-01** — nullable stable `profiles.user_number` (see below)
+
+---
+
+## USER-ID-01 — Stable User Number
+
+**Status:** IMPLEMENTED (pending Owner commit/deploy verify)  
+**Cleanup prerequisite:** USER-CLEANUP-01 (93 fixture users removed; KEEP Dawid + Tajski)  
+**Migration:** `20261003110802_user_id_01_stable_user_number.sql`  
+**Hardening:** `20261003123000_user_id_01_user_number_null_hardening.sql` (CREATE OR REPLACE trigger fn)  
+**Remote tip (pre-hardening apply):** `20261003110802` / `user_id_01_stable_user_number`
+
+| Rule | Value |
+|------|--------|
+| Relational FK | Auth UUID / `profiles.id` (unchanged) |
+| Operational ID | `profiles.user_number` BIGINT NULL |
+| Sequence | `public.user_number_seq` START 1 · DEFAULT `nextval` on insert |
+| Unique | Partial UNIQUE where `user_number IS NOT NULL` |
+| Dawid | `user_number = 1` (UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23`) |
+| Tajski | `user_number = NULL` (KEEP; never auto-filled) |
+| Next signup | `2` (`setval(..., 1, true)`) |
+| Immutability | Trigger `prevent_user_number_mutation` — authenticated DENY any UPDATE change including NULL→value; INSERT DEFAULT nextval OK; `service_role` only for documented operator recovery |
+| App guard | `PROTECTED_PROFILE_FIELDS` includes `user_number` |
+| Allocation | DB sequence only — never COUNT/MAX/frontend |
+| Messages | Future `messages.*_user_id` remain UUID FKs; `user_number` is display/lookup only |
+
+### Visibility / RLS (unchanged policy base)
+
+`profiles_select_own_or_admin` remains the SELECT policy (**own OR `is_admin()`**).
+
+| Actor | Own `user_number` | Foreign `user_number` |
+|-------|-------------------|------------------------|
+| USER | YES | NO |
+| ADMIN | YES | YES |
+| MODERATOR | YES (own) | NO — do not add `is_moderator()` to profiles SELECT |
+| ANON / PUBLIC | NO | NO |
+
+### DTO / UI
+
+- Session/account: whitelist columns include `user_number` for the authenticated own profile → UI `Name (ID: N)`.
+- Public catalog / detail / home: **never** expose `user_number` (producer stays string).
+- Admin moderation: show foreign ID **only when viewer role is ADMIN**.
+- Public beat `owner_id` UUID leak: **out of scope** (separate hardening follow-up).
 
 ## Verification layers
 

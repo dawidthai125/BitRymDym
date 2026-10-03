@@ -6,6 +6,28 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-03 — USER-CLEANUP-01 + USER-ID-01 (IMPLEMENTED · OWNER VERIFICATION PENDING)
+
+**Status:** Production DB mutated · app/docs in working tree · **NOT committed / NOT pushed / NOT app-deployed**
+
+### USER-CLEANUP-01
+
+- Deleted exactly **93** allowlisted fixture users; KEEP Dawid + Tajski
+- `auth.users` / `profiles` = **2**; platform beats = **3**; Dawid baseline intact; anon take-audio = 12; orphan-31 untouched
+- Evidence: [USER_CLEANUP_01_PREDELETE_SNAPSHOT.md](./audits/USER_CLEANUP_01_PREDELETE_SNAPSHOT.md) · [USER_CLEANUP_01_POSTDELETE_EVIDENCE.md](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md)
+
+### USER-ID-01
+
+- Remote migration tip: `20261003110802` / `user_id_01_stable_user_number`
+- Hardening migration (repo, **pending apply**): `20261003123000` — authenticated DENY any `user_number` UPDATE incl. NULL→value
+- App: `PROTECTED_PROFILE_FIELDS` includes `user_number`
+- `profiles.user_number` BIGINT NULL + `user_number_seq` + immutability trigger
+- Dawid = **1** · Tajski = **NULL** · next signup = **2**
+- Session/account expose own number; public DTOs never; ADMIN can see foreign numbers; MODERATOR cannot
+- SSOT: [AUTHORIZATION.md](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) · [USER_ID_01_EVIDENCE.md](./audits/USER_ID_01_EVIDENCE.md)
+
+---
+
 ## 2026-10-03 — FAR-01 OPERATOR TOOLING + DEF-01 + SOAK ACTIVE (DOCS RECONCILIATION)
 
 **Status:** Repository / Production app tip `e03f3be` · deployment `6823806375` · FAR-01 campaign **SOAK ACTIVE** · FAR-01 **NOT CLOSED**

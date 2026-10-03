@@ -7,6 +7,7 @@ import {
   hasAnyPermission,
   hasPermission,
   hasRole,
+  PROTECTED_PROFILE_FIELDS,
 } from "@/lib/auth/permissions";
 import { SSOT_PERMISSION_KEYS } from "@/types/permissions";
 
@@ -55,8 +56,22 @@ describe("authorization helpers", () => {
       assertNoPrivilegeEscalationInPayload({ account_level: "LEGEND_RAPPER" }),
     ).toThrow(/Forbidden field/);
     expect(() =>
+      assertNoPrivilegeEscalationInPayload({ user_number: 2 }),
+    ).toThrow(/Forbidden field/);
+    expect(() =>
       assertNoPrivilegeEscalationInPayload({ display_name: "Rapper" }),
     ).not.toThrow();
+  });
+
+  it("rejects authenticated self-assign of user_number (NULL → value app path)", () => {
+    // Profile with user_number = NULL must not set a number via app update payload.
+    expect(PROTECTED_PROFILE_FIELDS).toContain("user_number");
+    expect(() =>
+      assertNoPrivilegeEscalationInPayload({
+        display_name: "Tajski",
+        user_number: 99,
+      }),
+    ).toThrow(/Forbidden field.*user_number/);
   });
 
   it("keeps permission catalog aligned with SSOT §36 examples + community publish", () => {

@@ -7,7 +7,12 @@ import {
   hasPermission,
   hasRole,
 } from "@/lib/auth/permissions";
-import { mapProfileRow, type AuthContext, type ProfileRow } from "@/lib/auth/types";
+import {
+  mapProfileRow,
+  PROFILE_SELECT_OWN,
+  type AuthContext,
+  type ProfileRow,
+} from "@/lib/auth/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SystemRole } from "@/types/domain";
 import type { PermissionKey } from "@/types/permissions";
@@ -72,7 +77,7 @@ export async function getCurrentProfile(): Promise<AuthContext | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, role, account_level, created_at, updated_at")
+    .select(PROFILE_SELECT_OWN)
     .eq("id", user.id)
     .maybeSingle();
 
