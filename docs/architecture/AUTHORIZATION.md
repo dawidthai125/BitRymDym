@@ -91,11 +91,13 @@ Do not document secrets.
 
 ## USER-ID-01 — Stable User Number
 
-**Status:** IMPLEMENTED (pending Owner commit/deploy verify)  
-**Cleanup prerequisite:** USER-CLEANUP-01 (93 fixture users removed; KEEP Dawid + Tajski)  
-**Migration:** `20261003110802_user_id_01_stable_user_number.sql`  
-**Hardening:** `20261003123000_user_id_01_user_number_null_hardening.sql` (CREATE OR REPLACE trigger fn)  
-**Remote tip (pre-hardening apply):** `20261003110802` / `user_id_01_stable_user_number`
+**Status:** PRODUCTION VERIFIED — GREEN
+
+**Cleanup prerequisite:** USER-CLEANUP-01 (93 fixtures removed; KEEP was Dawid + Tajski)
+
+**Migration:** `20261003110802_user_id_01_stable_user_number.sql`
+
+**Hardening:** `20261003123000_user_id_01_user_number_null_hardening.sql`
 
 | Rule | Value |
 |------|--------|
@@ -104,7 +106,7 @@ Do not document secrets.
 | Sequence | `public.user_number_seq` START 1 · DEFAULT `nextval` on insert |
 | Unique | Partial UNIQUE where `user_number IS NOT NULL` |
 | Dawid | `user_number = 1` (UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23`) |
-| Tajski | `user_number = NULL` (KEEP; never auto-filled) |
+| Tajski | Was `NULL` (never auto-filled) · Auth/profile **deleted** in ACCOUNT Delete Account E2E · **no** renumber/reuse |
 | Next signup | `2` (`setval(..., 1, true)`) |
 | Immutability | Trigger `prevent_user_number_mutation` — authenticated DENY any UPDATE change including NULL→value; INSERT DEFAULT nextval OK; `service_role` only for documented operator recovery |
 | App guard | `PROTECTED_PROFILE_FIELDS` includes `user_number` |
@@ -133,9 +135,13 @@ Do not document secrets.
 
 ## ACCOUNT / PROFILE-01 — Account lifecycle + public ksywka
 
-**Status:** IMPLEMENTED in repo · **NOT** production-DB-applied · **NOT** committed  
-**Design Freeze:** [ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md](../audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) — OWNER APPROVED  
-**Migration (repo only):** `20261003160000_account_profile_01.sql`
+**Status:** FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN @ `89a8d51`
+
+**Design Freeze:** [ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md](../audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) — OWNER APPROVED
+
+**Migration:** repo `20261003160000_account_profile_01.sql` · production history `20261003173213`
+
+**E2E:** Fresh Recovery **PASS** · Delete Account (Tajski) **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED**
 
 ### Identity (public)
 
@@ -153,9 +159,12 @@ Do not document secrets.
 - Forgot password:
   - `resetPasswordForEmail` → `getAuthPasswordResetRedirectTo()` (`/auth/callback?flow=recovery`)
   - OTP template contract: `RECOVERY_EMAIL_CALLBACK_PATH` (`token_hash` + `type=recovery`)
-  - PKCE `?code=&flow=recovery` **and** OTP recovery keep session → `/auth/reset-password` (no premature signOut)
+  - PKCE `?code=&flow=recovery` **and** OTP recovery keep session → `/auth/reset-password` (`signOut: false` on success)
+  - Failed recovery (`!exchangeOk`) → `/forgot-password` with `signOut: false` (Phase 1 — do not wipe a prior recovery session on OTP replay)
+  - `flow=recovery` alone is **not** proof → confirmed error (not reset-password)
   - Signup confirm still signs out → `/auth/confirmed`
   - Anti-enumeration success copy
+  - UX note (non-blocking): after password update the action signs out; page may land on `/forgot-password` instead of an in-page success CTA
 - Delete account: session `auth.uid()` only · password reauth · single orchestrator `deleteOwnAccount` · deny foreign UUID/`user_number`/email claims
 - Public author RPC: `public_author_display_names(uuid[])` SECURITY DEFINER returns **only** `(id, display_name)`
 

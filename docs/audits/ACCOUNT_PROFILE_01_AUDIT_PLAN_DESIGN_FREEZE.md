@@ -1,12 +1,20 @@
 # ACCOUNT / PROFILE-01 — AUDIT + RCA + PLAN + DESIGN FREEZE
 
-**Status:** BLOCKER FIX CYCLE COMPLETE (repo) — awaiting OWNER RE-REVIEW  
-**Owner GO DESIGN FREEZE:** 2026-10-03 · Prezes Dawid  
-**Owner GO IMPLEMENT:** 2026-10-03 · Prezes Dawid  
-**Baseline:** repo/app `0ca0115` · USER-ID-01 PRODUCTION VERIFIED — GREEN  
-**Production DB apply / commit / push / deploy:** **NOT RUN**
+**Status:** FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN
 
-Prior audit content (current-state facts) remains valid below the OWNER APPROVED contracts. Implementation must not start without a separate Owner GO.
+**Owner GO DESIGN FREEZE:** 2026-10-03 · Prezes Dawid
+
+**Owner GO IMPLEMENT:** 2026-10-03 · Prezes Dawid
+
+**Production tip:** repo/app `89a8d51` · deploy `dpl_7FPLmX87USMN5myC4mRvKbmUgsdU` · Ready
+
+**Production DB:** ACCOUNT/PROFILE-01 applied as history `20261003173213`
+
+**Evidence:** Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** (Tajski) · P0/P1/P2 **NONE**
+
+**Known limitation:** PUBLISHED USER beat retain → `owner_id` NULL → anonymized identity is **CODE/CONTRACT VERIFIED** · **NOT LIVE-DATA VERIFIED** (Tajski had 0 owned beats/assets at delete)
+
+Prior OWNER APPROVED contracts below remain the freeze SSOT. Live identity snapshot at freeze approval is historical.
 
 ---
 
@@ -27,14 +35,11 @@ Prior audit content (current-state facts) remains valid below the OWNER APPROVED
 | **OD-ACCOUNT-11** | Empty ksywka | **NO** · active normal users must have valid ksywka · no `""` / whitespace / NULL |
 | **OD-ACCOUNT-12** | Tajski / NULL | **Do not** assign `user_number` · Tajski stays NULL · USER-ID-01 inviolable |
 
-### Live identity snapshot (READ-ONLY at freeze approval)
+### Live identity snapshot
 
-| User | display_name | user_number | Notes |
-|------|--------------|-------------|--------|
-| Dawid | `Dawid` | `1` | Valid ksywka under OD-02 |
-| Tajski | `Tajski` | `NULL` | Valid ksywka (≥3) · **no** user_number conflict for OD-11 · numbering untouched |
+**At freeze approval (historical):** Dawid=`1` · Tajski=`NULL` (valid ksywka) · USER beats=`0`.
 
-`USER` beats currently: **0** (simplifies near-term public-retain cases; architecture must still support future public USER beats).
+**After ACCOUNT/PROFILE-01 production verify + Delete Account E2E (2026-10-03):** Dawid only (`user_number=1`) · Tajski Auth/profile **deleted** · auth/profiles=`1` · platform beats=`3` retained · USER-ID-01 no renumber/reuse.
 
 ---
 

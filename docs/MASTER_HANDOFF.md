@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 implemented in repo; awaiting OWNER GO REVIEW)
+**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 — FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED · tip `89a8d51`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,12 +21,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `0ca0115` — USER-ID-01 production verified tip |
-| **Production application SHA** | `0ca0115` |
-| **Production DB tip** | USER-ID-01 hardening ACTIVE · ACCOUNT-01 `20261003160000` **NOT applied** |
-| **USER-CLEANUP-01** | **EXECUTED** — 2 users remain (Dawid + Tajski) |
-| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · Tajski=NULL · next=2 |
-| **ACCOUNT / PROFILE-01** | **BLOCKER FIX CYCLE COMPLETE (repo)** · recovery PKCE+OTP · created_by nullify · await OWNER RE-REVIEW |
+| **Repository HEAD** | `89a8d51` — ACCOUNT/PROFILE-01 tip |
+| **Production application SHA** | `89a8d51` · deploy `dpl_7FPLmX87USMN5myC4mRvKbmUgsdU` · Ready |
+| **Production DB tip** | ACCOUNT/PROFILE-01 applied (`20261003173213`) · USER-ID-01 hardening ACTIVE |
+| **USER-CLEANUP-01** | **EXECUTED** (fixtures) · orphan-31 untouched |
+| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
+| **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Status | **GREEN** · FAR-01 campaign **SOAK ACTIVE** (not closed) |
 | **FAR-01 DR-A (Phase 1)** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
@@ -63,7 +63,9 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
-| `0ca0115` | **Current repo + Production app tip** — USER-ID-01 verified baseline |
+| `89a8d51` | **Current repo + Production app tip** — ACCOUNT/PROFILE-01 Phase 1 + verified closeout baseline |
+| `3c7f492` | Historical ACCOUNT/PROFILE-01 feature commit (pre Phase 1 recovery harden) |
+| `0ca0115` | Historical USER-ID-01 verified tip |
 | `4e33e8d` | Historical waveform progress/seek tip |
 | `e03f3be` | Historical FAR-01 operator tooling tip |
 | `fbc696f` | DEF-01 security harden (parent of e03f3be) |
@@ -80,11 +82,11 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `4e33e8d` |
-| **Production application** | `4e33e8d` |
+| **HEAD / origin/main** | `89a8d51` |
+| **Production application** | `89a8d51` |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
-| **NEXT GATE** | SOAK END → FINAL SOAK AUDIT → Owner Review |
+| **NEXT GATE** | ACCOUNT/PROFILE-01 docs closeout commit (Owner GO) · FAR-01 soak end → FINAL SOAK AUDIT |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.

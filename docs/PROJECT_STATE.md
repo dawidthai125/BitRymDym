@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 implemented in repo; awaiting OWNER GO REVIEW — no commit/DB apply)
+**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 — FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED · tip `89a8d51`)
 
 ---
 
@@ -21,13 +21,13 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `0ca0115` — USER-ID-01 production verified tip |
-| **PRODUCTION APP SHA** | `0ca0115` |
+| **REPOSITORY HEAD / origin/main** | `89a8d51` — ACCOUNT/PROFILE-01 Phase 1 tip (`fix(auth): harden failed recovery session handling`) |
+| **PRODUCTION APP SHA** | `89a8d51` · deploy `dpl_7FPLmX87USMN5myC4mRvKbmUgsdU` · Ready |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
-| **PRODUCTION DB tip** | USER-ID-01 hardening tip `20261003123000` (ACTIVE) · ACCOUNT-01 migration **NOT applied** (`20261003160000` repo only) |
-| **USER-CLEANUP-01** | **EXECUTED** — auth/profiles = 2 (Dawid + Tajski); 93 fixtures deleted; orphan-31 untouched · [evidence](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md) |
-| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1`, Tajski=`NULL`, next=`2` · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) |
-| **ACCOUNT / PROFILE-01** | **BLOCKER FIX CYCLE COMPLETE (repo)** · awaiting OWNER RE-REVIEW · [freeze](./audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#account--profile-01--account-lifecycle--public-ksywka) |
+| **PRODUCTION DB tip** | ACCOUNT/PROFILE-01 applied as history `20261003173213` · USER-ID-01 hardening tip still active |
+| **USER-CLEANUP-01** | **EXECUTED** — fixtures removed earlier · orphan-31 untouched · [evidence](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md) |
+| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1` · next=`2` · Tajski test account **deleted** (no renumber/reuse) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) |
+| **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · [freeze](./audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#account--profile-01--account-lifecycle--public-ksywka) |
 | **PRODUCTION DB FAR-01 roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Prior security tip | `fbc696f` — DEF-01 |
 | Prior storage tip | `f9500b3` — FAR-01 execution harden |
@@ -58,17 +58,22 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY / PRODUCTION APP  = 0ca0115 (USER-ID-01 verified tip)
-WORKING TREE                 = ACCOUNT/PROFILE-01 implemented (uncommitted)
-PRODUCTION DB tip            = USER-ID-01 hardening ACTIVE · ACCOUNT-01 20261003160000 NOT applied
-ACCOUNT/PROFILE-01           = IMPLEMENTED IN REPO · await OWNER GO REVIEW
-USER-ID-01                   = PRODUCTION VERIFIED — GREEN (unchanged)
+REPOSITORY / PRODUCTION APP  = 89a8d51 (ACCOUNT/PROFILE-01 tip · Ready)
+PRODUCTION DB                = ACCOUNT/PROFILE-01 applied (20261003173213) · USER-ID-01 ACTIVE
+PRODUCTION STORAGE           = unchanged by ACCOUNT wave (platform3 · anon12 · Dawid1)
+ACCOUNT/PROFILE-01           = FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN
+  Recovery E2E               = PASS (fresh OTP → reset → login)
+  Delete Account E2E         = PASS (Tajski Auth+profile deleted · Dawid isolated)
+  Limitation                 = PUBLISHED USER retain/anonymize = CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED
+  (Tajski had 0 owned content at delete)
+USER-ID-01                   = PRODUCTION VERIFIED — GREEN · Dawid=1 · no renumber after Tajski delete
 FAR-01 DR-A                  = SHIPPED / PRODUCTION VERIFIED (historical @ f514a51)
 FAR-01 CAMPAIGN              = IN PROGRESS / SOAK ACTIVE
 DEF-01                       = CLOSED / PRODUCTION VERIFIED @ fbc696f
 E3                           = PRODUCTION VERIFIED — GREEN
 WORKER                       = STOPPED / DISABLED (EXTERNAL COMPUTE · Contabo · 92496d4)
-NEXT GATE                    = OWNER GO REVIEW (ACCOUNT/PROFILE-01) → commit/apply/deploy
+ACTIVE P0 / P1 / P2          = NONE (ACCOUNT wave)
+NEXT GATE                    = OWNER GO COMMIT/PUSH documentation closeout (if docs staged) · FAR-01 soak end
 ```
 
 ### 3.1 Architecture living lock
