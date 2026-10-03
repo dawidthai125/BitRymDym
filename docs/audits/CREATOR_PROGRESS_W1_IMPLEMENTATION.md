@@ -1,22 +1,35 @@
 # Creator Progress W1 — Implementation Note
 
-**Status:** IMPLEMENTED (pending Owner Commit GO)
+**Status:** PRODUCTION VERIFIED WITH OPEN ITEMS
 **Design Freeze:** `docs/decisions/CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md` @ `1e66cae`
 **Wave:** W1 only — Experience ledger + Rank derivation + trusted awards
-**Production DB:** migrations applied via Supabase MCP (W1 schema live); app commit/push pending Owner GO
+**Commit:** `76a47572f6e9342e0afe48e9a29108815089412a` (short `76a4757`)
+**Production app:** `76a4757` — DEPLOYED / VERIFIED
+**Closeout:** [CREATOR_PROGRESS_W1_CLOSEOUT.md](./CREATOR_PROGRESS_W1_CLOSEOUT.md)
 
-### Migrations (repo)
+### Production DB migrations
 
-1. `20261003210121_creator_progress_w1_experience.sql` — ledger, `experience_total`, RPC, RLS
-2. `20261003210130_creator_progress_w1_award_rpc_fix.sql` — RPC hardening
-3. `20261003210309_creator_progress_w1_award_role_guard.sql` — service_role + postgres maintainer guard
-4. `20261003210322_creator_progress_w1_profile_experience_guard.sql` — profiles trigger allows award path
+1. `20261003210121` — `creator_progress_w1_experience`
+2. `20261003210130` — `creator_progress_w1_award_rpc_fix`
+3. `20261003210309` — `creator_progress_w1_award_role_guard`
+4. `20261003210322` — `creator_progress_w1_profile_experience_guard`
 
-### DB smoke (live)
+Repo filenames match production versions (reconciled before commit).
+
+### Tests (pre-commit / verify)
+
+- W1 contract: 6/6
+- Focused creator-progress (`award-config` + `rank` + `w1-contract`): 15/15
+- Typecheck: PASS
+- Build: PASS
+
+### DB smoke (live, historical)
 
 - First `ADMIN_CORRECTION` award → `awarded: true`
 - Duplicate idempotency key → `IDEMPOTENT`, total unchanged
 - Compensating cleanup → total back to prior
+
+Live product award rows are still limited (see OPEN-03). Do not claim full live product-path coverage.
 
 ## In scope (W1)
 
@@ -33,7 +46,7 @@
 - Premium tiers / `premium_entitlements.tier`
 - `resolveProductEntitlement` product facade
 - Capability matrix / downloads / Mix Pro / render premium limits
-- Recording hybrid / overlay
+- Recording hybrid / overlay numbers
 - `/ranks` `/premium` UI
 - Billing / checkout
 - Artifact janitor / Gold 90d PRODUCTION
@@ -42,13 +55,22 @@
 ## Delete account
 
 W1 uses `ON DELETE CASCADE` from `profiles` → ledger so existing delete orchestrator continues without modification (ACCOUNT/PROFILE-01 CLOSED).
-Future GO may add explicit delete (premium-style RESTRICT) for audit ordering.
+**Live Delete Account + ledger CASCADE E2E = OPEN / NOT LIVE VERIFIED** (OPEN-02).
 
-## OPEN decisions (unchanged)
+## OPEN items (preserved)
 
-- OD-04, OD-07 OPEN; OD-08 candidate CLOSE; OD-09 OPEN (not Rank labels)
-- Recording overlay numbers OPEN
+| ID | Item | Status |
+|----|------|--------|
+| OPEN-01 | Defense-in-depth `REVOKE INSERT/UPDATE/DELETE` on `creator_experience_events` for anon/authenticated | OPEN / NON-BLOCKING |
+| OPEN-02 | ACCOUNT-01 live Delete Account + ledger CASCADE E2E | OPEN / NOT LIVE VERIFIED |
+| OPEN-03 | Live product award coverage (ledger currently compensated ADMIN_CORRECTION smoke only) | LIMITED / NON-BLOCKING |
+
+## OPEN decisions (unchanged by W1)
+
+- OD-04, OD-07 OPEN; OD-08 candidate CLOSE; OD-09 OPEN (Account Level display names — **not** Creator Rank labels)
+- Recording Premium overlay numbers OPEN
 - OD-SA-05 unchanged
+- W1 does **not** authorize Premium implementation (W2 requires separate Owner GO)
 
 ## Anti-abuse summary
 

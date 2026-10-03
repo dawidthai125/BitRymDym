@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 — FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED · tip `89a8d51`)
+**Updated:** 2026-10-03 (CREATOR PROGRESS W1 — PRODUCTION VERIFIED WITH OPEN ITEMS · tip `76a4757`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,12 +21,13 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `89a8d51` — ACCOUNT/PROFILE-01 tip |
-| **Production application SHA** | `89a8d51` · deploy `dpl_7FPLmX87USMN5myC4mRvKbmUgsdU` · Ready |
-| **Production DB tip** | ACCOUNT/PROFILE-01 applied (`20261003173213`) · USER-ID-01 hardening ACTIVE |
+| **Repository HEAD** | `76a4757` — Creator Progress W1 tip |
+| **Production application SHA** | `76a4757` · deploy `dpl_5WFmJckV5zjDopXHbjqy8rrF2kiD` · Ready |
+| **Production DB tip** | Creator Progress W1 applied (`20261003210121` → `20261003210322`) · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
+| **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **USER-CLEANUP-01** | **EXECUTED** (fixtures) · orphan-31 untouched |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
-| **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** |
+| **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Status | **GREEN** · FAR-01 campaign **SOAK ACTIVE** (not closed) |
 | **FAR-01 DR-A (Phase 1)** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
@@ -63,7 +64,9 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
-| `89a8d51` | **Current repo + Production app tip** — ACCOUNT/PROFILE-01 Phase 1 + verified closeout baseline |
+| `76a4757` | **Current repo + Production app tip** — Creator Progress W1 (Experience + Rank foundation) |
+| `1e66cae` | Creator Progress + Premium Design Freeze V1 (docs) |
+| `89a8d51` | Historical ACCOUNT/PROFILE-01 Phase 1 + verified closeout baseline |
 | `3c7f492` | Historical ACCOUNT/PROFILE-01 feature commit (pre Phase 1 recovery harden) |
 | `0ca0115` | Historical USER-ID-01 verified tip |
 | `4e33e8d` | Historical waveform progress/seek tip |
@@ -82,11 +85,12 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `89a8d51` |
-| **Production application** | `89a8d51` |
+| **HEAD / origin/main** | `76a4757` |
+| **Production application** | `76a4757` |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
-| **NEXT GATE** | ACCOUNT/PROFILE-01 docs closeout commit (Owner GO) · FAR-01 soak end → FINAL SOAK AUDIT |
+| **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
+| **NEXT GATE** | Owner docs continuity commit for W1 closeout (if staged) · FAR-01 soak end → FINAL SOAK AUDIT · **W2 Premium Foundation NOT AUTHORIZED** (separate AUDIT→RCA→PLAN→REVIEW→GO) |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
@@ -279,10 +283,11 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | **STORAGE-ARCH-02-KEY** Phase 1 DR-A | **SHIPPED** / **PRODUCTION VERIFIED** | GREEN WITH EVIDENCE LIMITATIONS @ `f514a51` | OK | Historical Phase 1 |
 | **FAR-01 campaign (canary+fleet+soak)** | **IN PROGRESS / SOAK ACTIVE** | canary N=5 · fleet N=62 · soak end `2026-10-04T04:40:56.645Z` | OK | **NOT CLOSED** · retirement/cleanup **NOT EXECUTED** · [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
 | **DEF-01** | **CLOSED / PRODUCTION VERIFIED** | @ `fbc696f` · remote `20261003051539` | OK | HIBP remains **ACCEPTED RISK** |
+| **CREATOR PROGRESS W1** (Experience + Rank) | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** | GREEN WITH OPEN ITEMS @ `76a4757` | OK | Ledger + `experience_total` + CreatorRank · migrations `210121`→`210322` · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) · Premium **not** in W1 |
 | Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
-| Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07/08 OPEN | Overlay table exists for E3 |
+| Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07/08 OPEN | E3 binary overlay exists · Creator Progress Premium wave (W2) **NOT AUTHORIZED** |
 | Messaging / voting / comments product | NOT IMPLEMENTED | — | SSOT future; OD-10/11 OPEN | Permission rows may exist |
 | Dual-play mix preview | NOT IMPLEMENTED | — | W3 OUT | |
 
@@ -304,6 +309,7 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | E3.7 Premium Render | **CLOSED / PRODUCTION VERIFIED · DARK** @ `17c4d530` | [E3_7_IMPLEMENTATION_CLOSEOUT.md](./audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | E3 Production Enablement | **COMPLETE / GREEN** @ `6dfd201` | [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
 | STORAGE-ARCH-01 | **LOCKED** (architecture · no implementation) | [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
+| Creator Progress W1 (Experience + Rank) | **PRODUCTION VERIFIED WITH OPEN ITEMS** | `76a4757` · [CREATOR_PROGRESS_W1_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 
 ---
 
@@ -603,7 +609,10 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| **P2 OPS / MIGRATION DRIFT** | Local vs remote migration version names — ops reconciliation later |
+| **P2 OPS / MIGRATION DRIFT** | Local vs remote migration version names — ops reconciliation later (W1 versions reconciled to prod `210121`→`210322`) |
+| **W1 OPEN-01 DML REVOKE** | Defense-in-depth: REVOKE INSERT/UPDATE/DELETE on `creator_experience_events` for anon/authenticated — NON-BLOCKING |
+| **W1 OPEN-02 Account Delete + ledger CASCADE** | Live E2E with W1 ledger — NOT LIVE VERIFIED · schema CASCADE compatible |
+| **W1 OPEN-03 Live product awards** | LIMITED coverage (compensated ADMIN_CORRECTION smoke only) |
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
@@ -614,7 +623,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO.
+STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product · Creator Progress W2 Premium Foundation (**NOT AUTHORIZED** — separate GO) · Premium Production E2E · artifacts janitor / ops dashboard · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO.
 
 ---
 

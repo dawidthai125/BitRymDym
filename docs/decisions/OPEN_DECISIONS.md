@@ -119,6 +119,15 @@ Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREE
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
 - OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.
 
+### Creator Progress / Premium (continuity note — 2026-10-03)
+
+Design Freeze: [CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md](./CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md). W1 delivery closeout: [CREATOR_PROGRESS_W1_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W1_CLOSEOUT.md).
+
+- **Creator Rank labels** are a separate axis from Account Level display names (**OD-09**). Closing or renaming Rank copy does **not** close OD-09.
+- **W1** (Experience + Rank foundation @ `76a4757`) does **not** resolve Premium billing/pricing (**OD-04**, **OD-07**) or Premium tier catalog finalization (**OD-08**). Those remain OPEN.
+- **Recording Premium overlay numbers** remain an OPEN Owner decision (freeze residual); OD-REC-04 hybrid decision stays CLOSED, numeric overlay still unlocked.
+- **W1 does not authorize Premium implementation** (W2). Premium product wave requires separate Owner GO (AUDIT → RCA → PLAN → DESIGN/ARCH REVIEW → GO).
+
 ---
 
 ## Szablon decyzji (do użycia w `DECISION_LOG.md`)
