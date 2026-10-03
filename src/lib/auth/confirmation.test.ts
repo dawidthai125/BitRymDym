@@ -224,13 +224,63 @@ describe("password recovery callback contract", () => {
     });
   });
 
-  it("failed recovery signs out and routes to forgot_password", () => {
+  it("failed recovery routes to forgot_password without signOut", () => {
     const decision = decideAuthCallbackRoute({
       classified: { kind: "pkce", code: "c", recovery: true },
       exchangeOk: false,
       exchangeErrorMessage: "Token has expired or is invalid",
     });
-    expect(decision).toEqual({ kind: "forgot_password", signOut: true });
+    expect(decision).toEqual({ kind: "forgot_password", signOut: false });
+  });
+
+  it("expired/reused OTP recovery → forgot_password without signOut", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: {
+        kind: "otp",
+        tokenHash: "used-once",
+        type: "recovery",
+      },
+      exchangeOk: false,
+      exchangeErrorMessage: "otp_expired",
+    });
+    expect(decision).toEqual({ kind: "forgot_password", signOut: false });
+  });
+
+  it("flow=recovery alone (missing proof) is not reset_password", () => {
+    const classified = classifyAuthCallbackParams({
+      code: null,
+      tokenHash: null,
+      type: null,
+      flow: RECOVERY_CALLBACK_FLOW,
+    });
+    expect(classified).toEqual({ kind: "missing" });
+    const decision = decideAuthCallbackRoute({
+      classified,
+      exchangeOk: false,
+    });
+    expect(decision).toEqual({
+      kind: "confirmed",
+      status: "error",
+      signOut: false,
+    });
+    expect(decision.kind).not.toBe("reset_password");
+  });
+
+  it("non-recovery exchange failure stays confirmed invalid (unchanged)", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: {
+        kind: "otp",
+        tokenHash: "h",
+        type: "signup",
+      },
+      exchangeOk: false,
+      exchangeErrorMessage: "otp_expired",
+    });
+    expect(decision).toEqual({
+      kind: "confirmed",
+      status: "invalid",
+      signOut: false,
+    });
   });
 
   it("documents recovery email template + reset redirectTo contracts", () => {

@@ -92,7 +92,7 @@ export function isRecoveryCallback(classified: AuthCallbackKind): boolean {
  */
 export type AuthCallbackRouteDecision =
   | { kind: "reset_password"; signOut: false }
-  | { kind: "forgot_password"; signOut: true }
+  | { kind: "forgot_password"; signOut: false }
   | {
       kind: "confirmed";
       status: ConfirmationStatus;
@@ -113,7 +113,7 @@ export function decideAuthCallbackRoute(params: {
 
   if (!exchangeOk) {
     if (recovery) {
-      return { kind: "forgot_password", signOut: true };
+      return { kind: "forgot_password", signOut: false };
     }
     return {
       kind: "confirmed",
