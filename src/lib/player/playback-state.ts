@@ -82,7 +82,8 @@ export function reducePlayback(
       return {
         ...state,
         phase: "paused",
-        currentTime: 0,
+        // Keep visual/progress at 100% until the next Play restarts from 0.
+        currentTime: state.duration > 0 ? state.duration : state.currentTime,
       };
     case "ENGINE_ERROR":
       return {

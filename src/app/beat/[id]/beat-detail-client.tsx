@@ -11,6 +11,7 @@ import { DownloadButton } from "@/components/beats/download-button";
 import { usePlayer } from "@/components/player/player-provider";
 import { BeatRecordingSurface } from "@/components/takes/beat-recording-surface";
 import { formatDurationSeconds } from "@/lib/beats/public";
+import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import { cn } from "@/lib/utils";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
 
@@ -54,6 +55,7 @@ export function BeatDetailClient({
     playTrack,
     toggle,
     seek,
+    activateTrack,
     setSuppressed,
   } = usePlayer();
   const heroPlayerRef = useRef<HTMLElement | null>(null);
@@ -67,8 +69,15 @@ export function BeatDetailClient({
   const loading = isCurrent && phase === "loading";
   const total =
     isCurrent && duration > 0 ? duration : beat.durationSeconds;
-  const progress =
-    isCurrent && total > 0 ? Math.min(1, currentTime / total) : 0.08;
+  const progress = playbackProgressRatio(currentTime, total, isCurrent);
+
+  const playerTrack = {
+    beatId: beat.id,
+    title: beat.title,
+    producer: beat.producer,
+    durationSeconds: beat.durationSeconds,
+    artworkVariant: beat.artworkVariant,
+  };
 
   useEffect(() => {
     const el = heroPlayerRef.current;
@@ -149,13 +158,17 @@ export function BeatDetailClient({
       toggle();
       return;
     }
-    await playTrack({
-      beatId: beat.id,
-      title: beat.title,
-      producer: beat.producer,
-      durationSeconds: beat.durationSeconds,
-      artworkVariant: beat.artworkVariant,
-    });
+    await playTrack(playerTrack);
+  }
+
+  async function onSeekRatio(ratio: number) {
+    if (!hasAudio) return;
+    const max = total > 0 ? total : beat.durationSeconds;
+    if (!(max > 0)) return;
+    if (!isCurrent) {
+      await activateTrack(playerTrack, { autoplay: false });
+    }
+    seek(ratio * max);
   }
 
   return (
@@ -203,11 +216,8 @@ export function BeatDetailClient({
                     progress={progress}
                     density="detail"
                     showPlayhead={isCurrent}
-                    interactive={isCurrent}
-                    onSeekRatio={(ratio) => {
-                      if (!isCurrent || total <= 0) return;
-                      seek(ratio * total);
-                    }}
+                    interactive
+                    onSeekRatio={(ratio) => void onSeekRatio(ratio)}
                     aria-label="Przebieg — przewiń utwór"
                   />
                 </div>

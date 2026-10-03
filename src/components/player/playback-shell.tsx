@@ -22,6 +22,7 @@ import {
   toSafePlaybackErrorMessage,
 } from "@/lib/beats/public";
 import { cn } from "@/lib/utils";
+import { shouldRestartFromStart } from "@/lib/player/playback-progress";
 import {
   canTogglePlay,
   createInitialPlaybackSnapshot,
@@ -209,6 +210,17 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
       try {
         await ensureSignedUrl();
         dispatch({ type: "URL_READY" });
+        const max = Number.isFinite(audio.duration)
+          ? audio.duration
+          : durationSeconds;
+        if (shouldRestartFromStart(audio.currentTime, max, audio.ended)) {
+          audio.currentTime = 0;
+          dispatch({
+            type: "TIME",
+            currentTime: 0,
+            duration: max,
+          });
+        }
         await audio.play();
       } catch (error) {
         dispatch({
@@ -223,7 +235,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
     function handleSeek(next: number) {
       if (controlsLocked) return;
       const audio = audioRef.current;
-      if (!audio || !hasSource) return;
+      if (!audio || !audio.src) return;
       const max = Number.isFinite(audio.duration)
         ? audio.duration
         : durationSeconds;
@@ -233,6 +245,28 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
         currentTime: audio.currentTime,
         duration: max,
       });
+    }
+
+    /** Load source if needed, seek, stay paused — never autoplay. */
+    async function handleSeekRatio(ratio: number) {
+      if (controlsLocked) return;
+      const audio = audioRef.current;
+      if (!audio) return;
+      const progressMax =
+        (Number.isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : durationSeconds) || 1;
+      try {
+        await ensureSignedUrl();
+        handleSeek(ratio * progressMax);
+      } catch (error) {
+        dispatch({
+          type: "URL_FAILED",
+          message: toSafePlaybackErrorMessage(
+            error instanceof Error ? error.message : null,
+          ),
+        });
+      }
     }
 
     function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -273,10 +307,12 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
     const progressMax = displayDuration > 0 ? displayDuration : 1;
     const loading = state.phase === "loading";
     const playDisabled = loading || controlsLocked;
-    const seekDisabled = !hasSource || controlsLocked;
+    const seekDisabled = controlsLocked;
 
     const progressRatio =
-      progressMax > 0 ? Math.min(state.currentTime, progressMax) / progressMax : 0;
+      progressMax > 0
+        ? Math.min(1, Math.max(0, state.currentTime / progressMax))
+        : 0;
 
     return (
       <div
@@ -319,11 +355,11 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
           </p>
           <Waveform
             seed={beatId}
-            progress={hasSource ? progressRatio : 0.12}
+            progress={progressRatio}
             density="studio"
-            showPlayhead={hasSource}
+            showPlayhead={hasSource || progressRatio > 0}
             interactive={!seekDisabled}
-            onSeekRatio={(ratio) => handleSeek(ratio * progressMax)}
+            onSeekRatio={(ratio) => void handleSeekRatio(ratio)}
             aria-label="Przebieg — przewiń utwór"
           />
         </div>

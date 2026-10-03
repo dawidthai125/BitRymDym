@@ -9,6 +9,7 @@ import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
+import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,7 +35,7 @@ export function StickyMiniPlayer() {
   }
 
   const total = duration > 0 ? duration : track.durationSeconds;
-  const progress = total > 0 ? Math.min(1, currentTime / total) : 0;
+  const progress = playbackProgressRatio(currentTime, total, true);
   const playing = phase === "playing";
   const loading = phase === "loading";
 

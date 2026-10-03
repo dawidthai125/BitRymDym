@@ -62,6 +62,18 @@ describe("playback state machine", () => {
     expect(isPlayLabel("idle")).toBe(true);
     expect(isPlayLabel("playing")).toBe(false);
   });
+
+  it("ENDED keeps currentTime at duration (100% progress)", () => {
+    let state = createInitialPlaybackSnapshot();
+    state = reducePlayback(state, {
+      type: "TIME",
+      currentTime: 50,
+      duration: 120,
+    });
+    state = reducePlayback(state, { type: "ENDED" });
+    expect(state.phase).toBe("paused");
+    expect(state.currentTime).toBe(120);
+  });
 });
 
 describe("PlaybackShell hard-outs", () => {

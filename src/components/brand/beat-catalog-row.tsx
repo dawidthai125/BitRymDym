@@ -7,6 +7,7 @@ import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioMeta } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
 import { usePlayer } from "@/components/player/player-provider";
+import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +26,29 @@ export function BeatCatalogRow({
   featured = false,
   className,
 }: BeatCatalogRowProps) {
-  const { track, phase, currentTime, duration, playTrack, toggle, seek } =
-    usePlayer();
+  const {
+    track,
+    phase,
+    currentTime,
+    duration,
+    playTrack,
+    toggle,
+    seek,
+    activateTrack,
+  } = usePlayer();
   const isCurrent = track?.beatId === beat.id;
   const playing = isCurrent && phase === "playing";
   const loading = isCurrent && phase === "loading";
   const total = duration > 0 && isCurrent ? duration : beat.durationSeconds;
-  const progress =
-    isCurrent && total > 0 ? Math.min(1, currentTime / total) : featured ? 0.1 : 0.06;
+  const progress = playbackProgressRatio(currentTime, total, isCurrent);
+
+  const playerTrack = {
+    beatId: beat.id,
+    title: beat.title,
+    producer: beat.producer,
+    durationSeconds: beat.durationSeconds,
+    artworkVariant: beat.artworkVariant,
+  };
 
   async function onPlay(e: React.MouseEvent) {
     e.preventDefault();
@@ -41,13 +57,16 @@ export function BeatCatalogRow({
       toggle();
       return;
     }
-    await playTrack({
-      beatId: beat.id,
-      title: beat.title,
-      producer: beat.producer,
-      durationSeconds: beat.durationSeconds,
-      artworkVariant: beat.artworkVariant,
-    });
+    await playTrack(playerTrack);
+  }
+
+  async function onSeekRatio(ratio: number) {
+    const max = total > 0 ? total : beat.durationSeconds;
+    if (!(max > 0)) return;
+    if (!isCurrent) {
+      await activateTrack(playerTrack, { autoplay: false });
+    }
+    seek(ratio * max);
   }
 
   function onFavorite(e: React.MouseEvent) {
@@ -119,10 +138,8 @@ export function BeatCatalogRow({
             bars={featured ? 52 : 44}
             heightClassName={featured ? "h-8" : "h-7"}
             showPlayhead={isCurrent}
-            interactive={isCurrent}
-            onSeekRatio={
-              isCurrent ? (ratio) => seek(ratio * total) : undefined
-            }
+            interactive
+            onSeekRatio={(ratio) => void onSeekRatio(ratio)}
             aria-label={`Przebieg: ${beat.title}`}
           />
         </div>
@@ -199,10 +216,8 @@ export function BeatCatalogRow({
               bars={36}
               heightClassName="h-6"
               showPlayhead={isCurrent}
-              interactive={isCurrent}
-              onSeekRatio={
-                isCurrent ? (ratio) => seek(ratio * total) : undefined
-              }
+              interactive
+              onSeekRatio={(ratio) => void onSeekRatio(ratio)}
               aria-label={`Przebieg: ${beat.title}`}
             />
           </div>

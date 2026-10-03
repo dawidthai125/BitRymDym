@@ -6,6 +6,7 @@ import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { HomePlayButton } from "@/components/brand/home-play-button";
 import { Waveform } from "@/components/brand/waveform";
 import { usePlayer } from "@/components/player/player-provider";
+import { playbackProgressRatio } from "@/lib/player/playback-progress";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +38,27 @@ function HomeBeatRow({
   beat: PresentedBeat;
   featured?: boolean;
 }) {
-  const { track, phase } = usePlayer();
-  const playing = track?.beatId === beat.id && phase === "playing";
+  const { track, currentTime, duration, seek, activateTrack } = usePlayer();
+  const isCurrent = track?.beatId === beat.id;
+  const total = duration > 0 && isCurrent ? duration : beat.durationSeconds;
+  const progress = playbackProgressRatio(currentTime, total, isCurrent);
+
+  const playerTrack = {
+    beatId: beat.id,
+    title: beat.title,
+    producer: beat.producer,
+    durationSeconds: beat.durationSeconds,
+    artworkVariant: beat.artworkVariant,
+  };
+
+  async function onSeekRatio(ratio: number) {
+    const max = total > 0 ? total : beat.durationSeconds;
+    if (!(max > 0)) return;
+    if (!isCurrent) {
+      await activateTrack(playerTrack, { autoplay: false });
+    }
+    seek(ratio * max);
+  }
 
   return (
     <li
@@ -94,9 +114,13 @@ function HomeBeatRow({
         <div className="hidden min-w-0 sm:block">
           <Waveform
             seed={beat.id}
-            progress={playing ? 0.48 : featured ? 0.28 : 0.16}
+            progress={progress}
             bars={featured ? 64 : 48}
             heightClassName={featured ? "h-10" : "h-7"}
+            showPlayhead={isCurrent}
+            interactive
+            onSeekRatio={(ratio) => void onSeekRatio(ratio)}
+            aria-label={`Przebieg: ${beat.title}`}
           />
         </div>
 
@@ -111,9 +135,13 @@ function HomeBeatRow({
       >
         <Waveform
           seed={beat.id}
-          progress={playing ? 0.48 : featured ? 0.28 : 0.16}
+          progress={progress}
           bars={featured ? 44 : 34}
           heightClassName={featured ? "h-7" : "h-5"}
+          showPlayhead={isCurrent}
+          interactive
+          onSeekRatio={(ratio) => void onSeekRatio(ratio)}
+          aria-label={`Przebieg: ${beat.title}`}
         />
       </div>
     </li>

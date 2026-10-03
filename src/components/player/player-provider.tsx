@@ -13,6 +13,7 @@ import {
 
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import { PUBLIC_PLAYBACK_PURPOSE } from "@/lib/beats/public";
+import { shouldRestartFromStart } from "@/lib/player/playback-progress";
 
 export type PlayerTrack = {
   beatId: string;
@@ -24,6 +25,11 @@ export type PlayerTrack = {
 
 type PlayerPhase = "idle" | "loading" | "playing" | "paused" | "error";
 
+export type ActivateTrackOptions = {
+  /** When false, load source and stay paused (seek-before-play). Default true. */
+  autoplay?: boolean;
+};
+
 type PlayerContextValue = {
   track: PlayerTrack | null;
   phase: PlayerPhase;
@@ -31,6 +37,10 @@ type PlayerContextValue = {
   duration: number;
   error: string | null;
   suppressed: boolean;
+  activateTrack: (
+    track: PlayerTrack,
+    options?: ActivateTrackOptions,
+  ) => Promise<void>;
   playTrack: (track: PlayerTrack) => Promise<void>;
   toggle: () => void;
   seek: (time: number) => void;
@@ -55,12 +65,18 @@ export function usePlayerOptional(): PlayerContextValue | null {
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
+  const durationRef = useRef(0);
   const [track, setTrack] = useState<PlayerTrack | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("idle");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [suppressed, setSuppressed] = useState(false);
+
+  // Keep ended/restart fallback in sync without writing refs during render.
+  useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
 
   useEffect(() => {
     const audio = new Audio();
@@ -77,7 +93,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     const onEnded = () => {
       setPhase("paused");
-      setCurrentTime(0);
+      const end =
+        Number.isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : durationRef.current;
+      setCurrentTime(end > 0 ? end : 0);
     };
     const onErr = () => {
       setPhase("error");
@@ -130,25 +150,49 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return result.url;
   }, []);
 
-  const playTrack = useCallback(
-    async (next: PlayerTrack) => {
+  const restartFromStartIfNeeded = useCallback((audio: HTMLAudioElement) => {
+    const d =
+      Number.isFinite(audio.duration) && audio.duration > 0
+        ? audio.duration
+        : durationRef.current;
+    if (shouldRestartFromStart(audio.currentTime, d, audio.ended)) {
+      audio.currentTime = 0;
+      setCurrentTime(0);
+    }
+  }, []);
+
+  const activateTrack = useCallback(
+    async (next: PlayerTrack, options?: ActivateTrackOptions) => {
+      const autoplay = options?.autoplay ?? true;
       const audio = audioRef.current;
       if (!audio) return;
 
       setError(null);
       setTrack(next);
       setDuration(next.durationSeconds);
-      setPhase("loading");
       setSuppressed(false);
+      setPhase("loading");
 
       try {
         if (audio.dataset.beatId !== next.beatId) {
           audio.pause();
           setCurrentTime(0);
         }
+
         await ensureUrl(next.beatId);
-        await audio.play();
-        setPhase("playing");
+
+        if (autoplay) {
+          restartFromStartIfNeeded(audio);
+          await audio.play();
+          setPhase("playing");
+          return;
+        }
+
+        if (!audio.paused) {
+          audio.pause();
+        }
+        setPhase("paused");
+        setCurrentTime(audio.currentTime);
       } catch (e) {
         setPhase("error");
         setError(
@@ -156,7 +200,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    [ensureUrl],
+    [ensureUrl, restartFromStartIfNeeded],
+  );
+
+  const playTrack = useCallback(
+    async (next: PlayerTrack) => {
+      await activateTrack(next, { autoplay: true });
+    },
+    [activateTrack],
   );
 
   const toggle = useCallback(() => {
@@ -167,6 +218,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         try {
           setPhase("loading");
           await ensureUrl(track.beatId);
+          restartFromStartIfNeeded(audio);
           await audio.play();
         } catch (e) {
           setPhase("error");
@@ -178,8 +230,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } else {
       audio.pause();
     }
-  }, [ensureUrl, track]);
+  }, [ensureUrl, restartFromStartIfNeeded, track]);
 
+  /** Seek only — never starts playback. */
   const seek = useCallback((time: number) => {
     const audio = audioRef.current;
     if (!audio || !Number.isFinite(time)) return;
@@ -211,6 +264,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       duration,
       error,
       suppressed,
+      activateTrack,
       playTrack,
       toggle,
       seek,
@@ -224,6 +278,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       duration,
       error,
       suppressed,
+      activateTrack,
       playTrack,
       toggle,
       seek,

@@ -1,3 +1,8 @@
+"use client";
+
+import { useRef, type PointerEvent as ReactPointerEvent } from "react";
+
+import { seekRatioFromClientX } from "@/lib/player/playback-progress";
 import { cn } from "@/lib/utils";
 
 /** Deterministic peak heights from a string seed — visual identity, not DSP. */
@@ -58,6 +63,7 @@ type WaveformProps = {
 /**
  * BitRymDym Waveform v2 — BRD Audio Language.
  * Optional `peaks` for real audio; otherwise peaksFromSeed(seed).
+ * Progress is presentation-only; seek never starts playback.
  */
 export function Waveform({
   seed,
@@ -83,6 +89,7 @@ export function Waveform({
   const clamped = Math.max(0, Math.min(1, progress));
   const playheadVisible =
     showPlayhead ?? (interactive || clamped > 0.02);
+  const draggingRef = useRef(false);
 
   /* Prefer solid/rgba for inline backgroundColor — color-mix in CSS vars can
      resolve to transparent in WebKit when set via style={{}}, wiping the BIT rail. */
@@ -103,6 +110,43 @@ export function Waveform({
       ? "rgba(242, 235, 224, 0.92)"
       : "var(--brd-audio-playhead)";
 
+  function ratioFromPointer(
+    event: ReactPointerEvent<HTMLDivElement>,
+  ): number {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return seekRatioFromClientX(event.clientX, rect.left, rect.width);
+  }
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!interactive || !onSeekRatio) return;
+    event.preventDefault();
+    draggingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    onSeekRatio(ratioFromPointer(event));
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!interactive || !onSeekRatio || !draggingRef.current) return;
+    onSeekRatio(ratioFromPointer(event));
+  }
+
+  function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!interactive || !onSeekRatio || !draggingRef.current) return;
+    draggingRef.current = false;
+    onSeekRatio(ratioFromPointer(event));
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function handlePointerCancel(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   return (
     <div
       className={cn("relative w-full select-none", height, className)}
@@ -111,14 +155,12 @@ export function Waveform({
       aria-valuemin={interactive ? 0 : undefined}
       aria-valuemax={interactive ? 100 : undefined}
       aria-valuenow={interactive ? Math.round(clamped * 100) : undefined}
-      onClick={
-        interactive && onSeekRatio
-          ? (event) => {
-              const rect = event.currentTarget.getBoundingClientRect();
-              const ratio = (event.clientX - rect.left) / rect.width;
-              onSeekRatio(Math.max(0, Math.min(1, ratio)));
-            }
-          : undefined
+      style={interactive ? { touchAction: "none" } : undefined}
+      onPointerDown={interactive && onSeekRatio ? handlePointerDown : undefined}
+      onPointerMove={interactive && onSeekRatio ? handlePointerMove : undefined}
+      onPointerUp={interactive && onSeekRatio ? handlePointerUp : undefined}
+      onPointerCancel={
+        interactive && onSeekRatio ? handlePointerCancel : undefined
       }
       onKeyDown={
         interactive && onSeekRatio
