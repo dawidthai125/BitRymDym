@@ -337,8 +337,8 @@ Krytyczne reguły zawsze serwerowo m.in.: download limits, beat ownership/access
 
 - Dane stałe vs tymczasowe (SSOT §38) — tymczasowe z auto-czyszczeniem.
 - Dostęp do audio: **temporary signed URLs** po przejściu gate’ów.
-- **Durable media (current):** Supabase Storage only (`beat-audio` · `take-audio` · `audio-artifacts`) — Storage V1 Hybrid C **LOCKED** ([STORAGE_ARCH_01_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_01_DESIGN_FREEZE.md)).
-- **Compute:** Contabo E3 Worker = ephemeral processing only — **not** a durable music library.
+- **Durable media (current):** Supabase Storage = **DURABLE MEDIA SSOT** only (`beat-audio` · `take-audio` · `audio-artifacts`) — Storage V1 Hybrid C **LOCKED** ([STORAGE_ARCH_01_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_01_DESIGN_FREEZE.md)).
+- **EXTERNAL COMPUTE:** Contabo VPS = FFmpeg / ephemeral processing only — **NOT** durable media · **NOT** audio library · **NOT** backup · **NOT** audio SSOT. Worker runtime may be **STOPPED / DISABLED** without removing this architecture role.
 - **Future (NOT IMPLEMENTED / NO CURRENT INVESTMENT):** optional external Object Storage may be attached later without big-bang migration — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./STORAGE_ARCH_02_FUTURE_SCALABILITY.md). Do **not** treat R2/S3/abstraction/dual-read as live infrastructure.
 - Download flow (SSOT §12):
 

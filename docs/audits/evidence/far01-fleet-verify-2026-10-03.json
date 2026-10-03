@@ -1,0 +1,95 @@
+{
+  "schema": "far01-fleet-verify/v1",
+  "artifact_type": "VERIFY",
+  "verification_result": "VERIFIED",
+  "status": "PASS",
+  "approved": false,
+  "note": "VERIFY is evidence readiness only — not Fleet approval and not Owner GO",
+  "created_at": "2026-10-03T04:12:27.509Z",
+  "od_bf_08": false,
+  "pipeline": {
+    "current_phase": "VERIFY",
+    "fleet_execution": "DENY_UNTIL_OWNER_GO",
+    "backfill": "DENY"
+  },
+  "canary_evidence": {
+    "batch_id": "far01-bf-2026-10-03T04-06-42-045Z",
+    "classification": "CANARY_EXECUTION_PASS",
+    "success": 5,
+    "fail": 0,
+    "retry": 0,
+    "remnant": 0,
+    "role": "EVIDENCE_NOT_APPROVAL"
+  },
+  "formal_canary_result": {
+    "batch_id": "far01-bf-2026-10-03T04-06-42-045Z",
+    "selected_asset_ids": [
+      "06f0226f-86e4-48fd-98ce-05bf333959d2",
+      "5810a1a7-d494-461e-b994-a060c27f68d4",
+      "2a24d6f5-f330-4d7b-93d3-05dc5a304bfa",
+      "6170c8ee-cbe3-4b62-9ecc-459224869673",
+      "10b7d85a-4aef-4d03-9626-e4c546f81215"
+    ],
+    "count": 5,
+    "status": "PASS",
+    "failures": [],
+    "verification_result": "VERIFIED",
+    "approved": false
+  },
+  "a2_evidence_binding": {
+    "id": "FAR01_FLEET_EVIDENCE_BINDING_V1",
+    "status": "PASS",
+    "supersedes": "FAR01_GATE_C_EVIDENCE_BINDING_V1",
+    "phase_wire": "CANARY",
+    "canary_n_wave": 5,
+    "eligible_candidate_count": 62,
+    "quarantine_count": 1,
+    "inventory_legacy": 63,
+    "inventory_canonical": 7,
+    "inventory_platform": 3,
+    "inventory_orphan": 33,
+    "evidence_dry_run_id": "far01-bf-2026-10-02T23-37-58-039Z",
+    "evidence_checksum_campaign_id": "far01-checksum-campaign-2026-10-03",
+    "requirements": {
+      "not_boolean_only": true,
+      "not_approved_flag_alone": true,
+      "not_live_jwt_alone": true,
+      "not_stale_gate_c_binding": true,
+      "binds_inventory_and_eligible_scope": true,
+      "binds_od_bf_08_false": true,
+      "credential_class_expected": "live_mutator",
+      "credential_role_expected": "far01_live_mutator",
+      "operation_type": "FLEET_LIVE_BATCH_AFTER_CANARY"
+    }
+  },
+  "inventory_live": {
+    "loaded_at": "2026-10-03T04:12:27.509Z",
+    "legacy_user": 63,
+    "canonical_user": 7,
+    "platform": 3,
+    "orphan_storage": 33,
+    "migrate_remaining": 62,
+    "quarantine_asset_id": "000d406d-265e-4e49-bd3f-a542d5dd0b41"
+  },
+  "gates": {
+    "remaining_candidates_62": "PASS",
+    "quarantine_excluded": "PASS",
+    "live_credential": "PASS",
+    "mutation_gates": "PASS",
+    "a2_evidence_binding": "PASS",
+    "deterministic_batching": "PASS",
+    "destination_hard_stop": "PASS",
+    "identity_gate": "PASS",
+    "integrity_gate": "PASS",
+    "db_optimistic_locking": "PASS",
+    "db_object_key_only": "PASS",
+    "post_update_verification": "PASS",
+    "source_retention": "PASS",
+    "telemetry": "PASS",
+    "stop_conditions": "PASS",
+    "rollback_path": "PASS"
+  },
+  "unsigned_a2_payload_builder": "buildFar01FleetGoPayload",
+  "mutations_during_verify": { "db": 0, "storage": 0 },
+  "service_role": false
+}

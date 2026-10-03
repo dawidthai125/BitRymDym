@@ -1,0 +1,164 @@
+{
+  "schema": "far01-canary-execution/v1",
+  "classification": "CANARY_EXECUTION_PASS",
+  "owner_go": true,
+  "canary_n": 5,
+  "batch_id": "far01-bf-2026-10-03T04-06-42-045Z",
+  "mode": "LIVE",
+  "pipeline_phase": "CANARY",
+  "od_bf_08": false,
+  "a2": {
+    "status": "PASS",
+    "key_source": "SESSION_EPHEMERAL",
+    "note": "Signed under Owner Canary GO; private key not persisted",
+    "od_bf_08": false
+  },
+  "service_role": false,
+  "execution_runtime": {
+    "asset_1_to_5": "PASS",
+    "storage_copy": "SUCCESS x5",
+    "db_update": "SUCCESS x5",
+    "note": "Runtime COMPLETE log failed only on dry-run archive helper misuse; mutations already succeeded — this file is post-verify evidence"
+  },
+  "selected": [
+    {
+      "asset_id": "06f0226f-86e4-48fd-98ce-05bf333959d2",
+      "source_key": "user/15e52402-6b39-4bd5-a9e8-4943fe5e7fa8/6b1cfa21-4a46-49ee-8f4a-2cfe27f5ed7b/master/06f0226f-86e4-48fd-98ce-05bf333959d2.bin",
+      "destination_key": "user/15e52402-6b39-4bd5-a9e8-4943fe5e7fa8/6b1cfa21-4a46-49ee-8f4a-2cfe27f5ed7b/06f0226f-86e4-48fd-98ce-05bf333959d2/master.bin"
+    },
+    {
+      "asset_id": "5810a1a7-d494-461e-b994-a060c27f68d4",
+      "source_key": "user/213b9dd8-6ce7-4d58-9179-421c6c68ac3e/13f2bc6d-7d4e-487e-92f3-40d080dadb5a/master/5810a1a7-d494-461e-b994-a060c27f68d4.bin",
+      "destination_key": "user/213b9dd8-6ce7-4d58-9179-421c6c68ac3e/13f2bc6d-7d4e-487e-92f3-40d080dadb5a/5810a1a7-d494-461e-b994-a060c27f68d4/master.bin"
+    },
+    {
+      "asset_id": "2a24d6f5-f330-4d7b-93d3-05dc5a304bfa",
+      "source_key": "user/a3594334-d502-4e29-9875-3b7d1dd63540/2329671f-6059-43cf-8df6-da58a7c75bbb/master/2a24d6f5-f330-4d7b-93d3-05dc5a304bfa.bin",
+      "destination_key": "user/a3594334-d502-4e29-9875-3b7d1dd63540/2329671f-6059-43cf-8df6-da58a7c75bbb/2a24d6f5-f330-4d7b-93d3-05dc5a304bfa/master.bin"
+    },
+    {
+      "asset_id": "6170c8ee-cbe3-4b62-9ecc-459224869673",
+      "source_key": "user/33d14137-708e-483a-b3a7-26433aebc73f/b9f2b442-3cbe-4bb8-93a9-649329d76947/master/6170c8ee-cbe3-4b62-9ecc-459224869673.bin",
+      "destination_key": "user/33d14137-708e-483a-b3a7-26433aebc73f/b9f2b442-3cbe-4bb8-93a9-649329d76947/6170c8ee-cbe3-4b62-9ecc-459224869673/master.bin"
+    },
+    {
+      "asset_id": "10b7d85a-4aef-4d03-9626-e4c546f81215",
+      "source_key": "user/c0e2e60e-faa1-42dc-ab6d-37b321112fda/b7a136de-787b-406b-b6bb-98057d2fb7ac/master/10b7d85a-4aef-4d03-9626-e4c546f81215.bin",
+      "destination_key": "user/c0e2e60e-faa1-42dc-ab6d-37b321112fda/b7a136de-787b-406b-b6bb-98057d2fb7ac/10b7d85a-4aef-4d03-9626-e4c546f81215/master.bin"
+    }
+  ],
+  "post_verify": [
+    {
+      "asset_id": "06f0226f-86e4-48fd-98ce-05bf333959d2",
+      "source_key": "user/15e52402-6b39-4bd5-a9e8-4943fe5e7fa8/6b1cfa21-4a46-49ee-8f4a-2cfe27f5ed7b/master/06f0226f-86e4-48fd-98ce-05bf333959d2.bin",
+      "destination_key": "user/15e52402-6b39-4bd5-a9e8-4943fe5e7fa8/6b1cfa21-4a46-49ee-8f4a-2cfe27f5ed7b/06f0226f-86e4-48fd-98ce-05bf333959d2/master.bin",
+      "dest_size": 2646044,
+      "source_size": 2646044,
+      "db_object_key": "user/15e52402-6b39-4bd5-a9e8-4943fe5e7fa8/6b1cfa21-4a46-49ee-8f4a-2cfe27f5ed7b/06f0226f-86e4-48fd-98ce-05bf333959d2/master.bin",
+      "db_status": "READY",
+      "db_beat_id": "6b1cfa21-4a46-49ee-8f4a-2cfe27f5ed7b",
+      "checks": {
+        "destination_exists": true,
+        "source_retained": true,
+        "size_match": true,
+        "db_object_key_canonical": true,
+        "db_checksum_still_null_or_unchanged_policy": true,
+        "db_read_ok": true,
+        "not_quarantine": true
+      },
+      "ok": true
+    },
+    {
+      "asset_id": "5810a1a7-d494-461e-b994-a060c27f68d4",
+      "source_key": "user/213b9dd8-6ce7-4d58-9179-421c6c68ac3e/13f2bc6d-7d4e-487e-92f3-40d080dadb5a/master/5810a1a7-d494-461e-b994-a060c27f68d4.bin",
+      "destination_key": "user/213b9dd8-6ce7-4d58-9179-421c6c68ac3e/13f2bc6d-7d4e-487e-92f3-40d080dadb5a/5810a1a7-d494-461e-b994-a060c27f68d4/master.bin",
+      "dest_size": 2646044,
+      "source_size": 2646044,
+      "db_object_key": "user/213b9dd8-6ce7-4d58-9179-421c6c68ac3e/13f2bc6d-7d4e-487e-92f3-40d080dadb5a/5810a1a7-d494-461e-b994-a060c27f68d4/master.bin",
+      "db_status": "READY",
+      "db_beat_id": "13f2bc6d-7d4e-487e-92f3-40d080dadb5a",
+      "checks": {
+        "destination_exists": true,
+        "source_retained": true,
+        "size_match": true,
+        "db_object_key_canonical": true,
+        "db_checksum_still_null_or_unchanged_policy": true,
+        "db_read_ok": true,
+        "not_quarantine": true
+      },
+      "ok": true
+    },
+    {
+      "asset_id": "2a24d6f5-f330-4d7b-93d3-05dc5a304bfa",
+      "source_key": "user/a3594334-d502-4e29-9875-3b7d1dd63540/2329671f-6059-43cf-8df6-da58a7c75bbb/master/2a24d6f5-f330-4d7b-93d3-05dc5a304bfa.bin",
+      "destination_key": "user/a3594334-d502-4e29-9875-3b7d1dd63540/2329671f-6059-43cf-8df6-da58a7c75bbb/2a24d6f5-f330-4d7b-93d3-05dc5a304bfa/master.bin",
+      "dest_size": 2646044,
+      "source_size": 2646044,
+      "db_object_key": "user/a3594334-d502-4e29-9875-3b7d1dd63540/2329671f-6059-43cf-8df6-da58a7c75bbb/2a24d6f5-f330-4d7b-93d3-05dc5a304bfa/master.bin",
+      "db_status": "READY",
+      "db_beat_id": "2329671f-6059-43cf-8df6-da58a7c75bbb",
+      "checks": {
+        "destination_exists": true,
+        "source_retained": true,
+        "size_match": true,
+        "db_object_key_canonical": true,
+        "db_checksum_still_null_or_unchanged_policy": true,
+        "db_read_ok": true,
+        "not_quarantine": true
+      },
+      "ok": true
+    },
+    {
+      "asset_id": "6170c8ee-cbe3-4b62-9ecc-459224869673",
+      "source_key": "user/33d14137-708e-483a-b3a7-26433aebc73f/b9f2b442-3cbe-4bb8-93a9-649329d76947/master/6170c8ee-cbe3-4b62-9ecc-459224869673.bin",
+      "destination_key": "user/33d14137-708e-483a-b3a7-26433aebc73f/b9f2b442-3cbe-4bb8-93a9-649329d76947/6170c8ee-cbe3-4b62-9ecc-459224869673/master.bin",
+      "dest_size": 2646044,
+      "source_size": 2646044,
+      "db_object_key": "user/33d14137-708e-483a-b3a7-26433aebc73f/b9f2b442-3cbe-4bb8-93a9-649329d76947/6170c8ee-cbe3-4b62-9ecc-459224869673/master.bin",
+      "db_status": "READY",
+      "db_beat_id": "b9f2b442-3cbe-4bb8-93a9-649329d76947",
+      "checks": {
+        "destination_exists": true,
+        "source_retained": true,
+        "size_match": true,
+        "db_object_key_canonical": true,
+        "db_checksum_still_null_or_unchanged_policy": true,
+        "db_read_ok": true,
+        "not_quarantine": true
+      },
+      "ok": true
+    },
+    {
+      "asset_id": "10b7d85a-4aef-4d03-9626-e4c546f81215",
+      "source_key": "user/c0e2e60e-faa1-42dc-ab6d-37b321112fda/b7a136de-787b-406b-b6bb-98057d2fb7ac/master/10b7d85a-4aef-4d03-9626-e4c546f81215.bin",
+      "destination_key": "user/c0e2e60e-faa1-42dc-ab6d-37b321112fda/b7a136de-787b-406b-b6bb-98057d2fb7ac/10b7d85a-4aef-4d03-9626-e4c546f81215/master.bin",
+      "dest_size": 2646044,
+      "source_size": 2646044,
+      "db_object_key": "user/c0e2e60e-faa1-42dc-ab6d-37b321112fda/b7a136de-787b-406b-b6bb-98057d2fb7ac/10b7d85a-4aef-4d03-9626-e4c546f81215/master.bin",
+      "db_status": "READY",
+      "db_beat_id": "b7a136de-787b-406b-b6bb-98057d2fb7ac",
+      "checks": {
+        "destination_exists": true,
+        "source_retained": true,
+        "size_match": true,
+        "db_object_key_canonical": true,
+        "db_checksum_still_null_or_unchanged_policy": true,
+        "db_read_ok": true,
+        "not_quarantine": true
+      },
+      "ok": true
+    }
+  ],
+  "mutations": {
+    "db": 5,
+    "storage": 5
+  },
+  "failures": [],
+  "retries": [],
+  "remnants": [],
+  "rollback": "NOT_REQUIRED",
+  "fleet": "NOT_EXECUTED",
+  "backfill": "NOT_EXECUTED",
+  "retirement": "NOT_EXECUTED",
+  "verified_at": "2026-10-03T04:07:13.906Z"
+}

@@ -1,15 +1,18 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-02
+**Updated:** 2026-10-03
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+**FAR-01 living ops:** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
 
 **This document is continuity** (detailed cold-start).
 Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technical HOW remains [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md). Live “where we are now” remains [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 **Evidence rule:** code + remote schema prove implementation state. Documentation alone is **not** proof that a feature is shipped. Production verification is a separate stage from “docs say CLOSED”.
+
+**Planes:** REPOSITORY · PRODUCTION APP · PRODUCTION DB · PRODUCTION STORAGE · SESSION/OPERATOR — never merge.
 
 ---
 
@@ -18,62 +21,52 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Application SHA** | `f514a516f2ac0a978b2fe5a3fb05dc300c6ab40e` (`f514a51`) |
-| Deployment | `6817346937` · Vercel `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h` |
-| Status | **GREEN** / **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** |
-| **FAR-01 Phase 1 DR-A** | **SHIPPED** / **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
-| **Polish UX** | **CLOSED** / **PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` — Mix / Master / Recording / Playback — [POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) |
-| **Wave A** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `2c4200b` — `/account/beats` visual closure + ADMIN `requireUser` — [A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) |
-| **Wave B** | **CLOSED** / **PRODUCTION VERIFIED** @ `812a9d4` — Mix Panel BRD presentation |
-| **Fala 1B** | **CLOSED** / **PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) — Account + Panel Administracyjny — [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) |
-| **Fala 1A** | **CLOSED** / **PRODUCTION VERIFIED** @ `fdf74f9` — Public Visual Foundation |
-| **E3 status** | **PRODUCTION VERIFIED — GREEN** (PASS WITH FINDINGS) · flags remain ON |
-| **AC-PE-12** | **PASS** (historical PE tip `6dfd201`) |
-| **GO #5** | **PASS** (`E3_PUBLIC_AUDIO=ON` · controlled Free Basic verify) |
-| Previous Production | `0afa29b` (Polish UX) · `2c4200b` (Wave A) · `812a9d4` (Wave B) · `42369c0` (Fala 1B) · `fdf74f9` (Fala 1A) · `6dfd201` (E3 PE tip) · `9026fa9` (W6 UX) — rollback lineage |
-| **W6.2/W6.3 UX ship** | **CLOSED / PRODUCTION VERIFIED** @ `9026fa9` (ship SHA · not current tip) |
+| **Repository HEAD** | `e03f3be` — FAR-01 **operator tooling** (not a user-facing UI release) |
+| **Production application SHA** | `e03f3be` |
+| **Production deployment** | `6823806375` |
+| **Production DB tip** | `20261003051539` / `def01_e3_definer_execute_revoke` |
+| **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
+| Status | **GREEN** · FAR-01 campaign **SOAK ACTIVE** (not closed) |
+| **FAR-01 DR-A (Phase 1)** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
+| **FAR-01 campaign** | **IN PROGRESS / SOAK ACTIVE** — canary N=5 PASS · fleet N=62 PASS · soak end `2026-10-04T04:40:56.645Z` — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **FAR-01 CLOSED / retirement / cleanup** | **NO / NOT EXECUTED / NOT EXECUTED** |
+| **DEF-01** | **CLOSED / PRODUCTION VERIFIED** @ `fbc696f` |
+| **ACTIVE P0 / P1** | **NONE VERIFIED** |
+| **HIBP** | **DEFERRED / ACCEPTED RISK** (not solved) |
+| **Polish UX** | **CLOSED** / **PRODUCTION VERIFIED** @ `0afa29b` |
+| **Wave A / B / Fala 1A/1B** | CLOSED / PRODUCTION VERIFIED (historical SHAs unchanged) |
+| **E3 status** | **PRODUCTION VERIFIED — GREEN** · flags ON |
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
-| **E3 Production Enablement** | **COMPLETE** · Design Freeze LOCKED · GO #2–#5 executed |
-| **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Owner **PASS** · Implementation **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md) |
-| **STORAGE-ARCH-02** | **FUTURE SCALABILITY DOCS PREPARED** · external Object Storage **NOT IMPLEMENTED** · **NO CURRENT INVESTMENT** — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
-| **STORAGE-ARCH-02-KEY / FAR-01** | **Phase 1 DR-A SHIPPED** @ `f514a51` · backfill/retirement **NOT STARTED** · DR-B **DEFERRED** — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
-| **OWNER GO #2 Worker Infra** | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
-| **Worker** | Contabo · bootstrap `92496d4` · **STOPPED / DISABLED** |
-| Recording Wave 4 | **CLOSED / PRODUCTION VERIFIED** |
-| Recording Wave 5 | **CLOSED / PRODUCTION VERIFIED** · Shared Grants → RECORD @ `37892a6` |
-| D02 Anonymous QT | **CLOSED / IN V1** · **SHIPPED** @ `e98ba52` |
-| Cron | `0 0 * * *` (Vercel Hobby daily 00:00 UTC) → `/api/cron/takes-janitor` |
-| `CRON_SECRET` | Configured in Vercel Production (**never print / never commit**) |
+| **STORAGE-ARCH-01** | **LOCKED** · Hybrid C |
+| **STORAGE-ARCH-02** | FUTURE DOCS · external Object Storage **NOT IMPLEMENTED** |
+| **Worker** | Contabo **EXTERNAL COMPUTE** · bootstrap `92496d4` · **STOPPED / DISABLED** |
+| Recording Wave 4–5 / D02 | CLOSED / PRODUCTION VERIFIED |
+| Cron | `0 0 * * *` → `/api/cron/takes-janitor` |
+| `CRON_SECRET` | CONFIGURED (**never print / never commit**) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-**E3 Production flags (current living state):**
+**E3 Production flags:**
 
 ```text
 E3_MIX_ENABLED           = ON
 E3_RENDER_JOBS_ENABLED   = ON
 E3_PUBLIC_AUDIO          = ON
 E3_RENDER_WORKER_SECRET  = CONFIGURED (server-only · never commit)
-WORKER                   = STOPPED / DISABLED
+WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 ```
 
-**Canonical rollback (Owner GO only):** unset/off `E3_PUBLIC_AUDIO` → Free public Mix/job/download DENY (AC-PE-12).
+**FAR-01 soak inventory (living):** legacy1 · canonical77 · platform3 · retained legacy67 · orphans30 · orphan Storage97 · quarantine1 · MIGRATE=0
 
-**Do not confuse SHAs — do not auto-align them:**
+**Do not confuse SHAs:**
 
 | SHA | Meaning |
 |-----|---------|
-| `f514a51` | **Current Production application** — FAR-01 Phase 1 DR-A dual-accept |
-| `0afa29b` | Polish UX Mix / Master / Recording / Playback (parent of FAR-01 Phase 1) |
-| `2c4200b` | **Wave A** Account / Beats visual closure (parent of Polish UX) |
-| `812a9d4` | **Wave B** Mix Panel BRD presentation (parent of Wave A) |
-| `42369c0` | Historical Fala 1B Account + Admin visual foundation |
-| `fdf74f9` | **Fala 1A** Public Visual Foundation |
-| `6dfd201` | Historical E3 PE / AC-PE-12 tip (superseded as Prod tip by later ships) |
-| docs tip | Advances on docs-only commits without redeploy |
-| `92496d4` | **Worker bootstrap** (Contabo EXTERNAL encode host) |
-| `9026fa9` | **W6.2/W6.3 UX ship** (historical) |
-| `17c4d530` | Prior Production (E3.7 Premium Render · DARK at closeout) |
-| `183b2a4` | Prior Production (E3.6 Basic MP3 · DARK at closeout) |
+| `e03f3be` | **Current repo + Production app tip** — FAR-01 operator tooling |
+| `fbc696f` | DEF-01 security harden (parent of e03f3be) |
+| `f9500b3` | FAR-01 execution harden |
+| `f514a51` | Historical FAR-01 Phase 1 DR-A dual-accept |
+| `92496d4` | Worker bootstrap (Contabo EXTERNAL encode) |
+| older UX/E3 tips | Historical closeouts — see CHANGELOG |
 
 ---
 
@@ -82,14 +75,15 @@ WORKER                   = STOPPED / DISABLED
 | Field | Value |
 |-------|--------|
 | Branch | `main` |
-| Remote | `origin` → `https://github.com/dawidthai125/bitrymdym` |
-| **Production application** | `f514a51` |
-| **HEAD / origin/main** | May advance on docs-only closeout commits (≠ Prod app SHA — intentional) |
-| **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · AC-PE-12 **PASS** · GO #5 **PASS** |
-| **STORAGE-ARCH-01** | **LOCKED** · see §4.1 · Implementation **NOT STARTED** |
-| Typical untracked (ignore until Owner stages) | `.agents/` · `.cursor/` · `skills-lock.json` · host/Oracle audits · `infra/` · local Mix/`account/beats` dirt |
+| Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
+| **HEAD / origin/main** | `e03f3be` (docs tip may advance after this reconciliation) |
+| **Production application** | `e03f3be` |
+| **E3** | **PRODUCTION VERIFIED — GREEN** |
+| **STORAGE-ARCH-01** | **LOCKED** |
+| **NEXT GATE** | SOAK END → FINAL SOAK AUDIT → Owner Review |
+| Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
-Do **not** stage agent tooling folders as product scope.
+Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
 
 ---
 
@@ -138,7 +132,7 @@ Owner Review                 = PASS
 OD-SA-01…10                  = LOCKED
 Implementation               = NOT STARTED
 STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED · NOT IMPLEMENTED · NO CURRENT INVESTMENT
-STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · BACKFILL NOT STARTED · RETIREMENT NOT STARTED · DR-B DEFERRED
+STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · CAMPAIGN SOAK ACTIVE · RETIREMENT NOT EXECUTED · see FAR_01_CURRENT_STATE.md
 Production mutations         = NONE for backfill/retirement (Phase 1 = dual-accept only)
 ```
 
@@ -211,8 +205,9 @@ AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
 |------|--------|
 | **P1-B** selective DEFINER EXECUTE REVOKE | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
 | **P1-C** `set_updated_at` search_path hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
-| **P1-A** HIBP / leaked-password protection | **BLOCKED** — Owner Dashboard action required (**not** implemented) |
-| Security overall | **GREEN WITH WARNINGS** · CRITICAL=0 · HIGH=0 · MEDIUM residual = HIBP disabled |
+| **P1-A** HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** (Owner · Free plan) — Advisor WARN may remain · **not solved** |
+| **DEF-01** E3 DEFINER EXECUTE | **CLOSED / PRODUCTION VERIFIED** @ `fbc696f` |
+| Security overall | **GREEN WITH WARNINGS** · ACTIVE P0/P1 **NONE** · residual = HIBP ACCEPTED RISK + intentional DEF-02 WARN |
 | Remote DB | Contains P1-B + P1-C hardening (applied before git commit) |
 | Migration drift | **P2 OPS** — local filename vs remote version drift (not a P1 blocker) |
 | Wave 5 security outcome | Shared Grant AuthZ = PASS · HTTP IDOR = PASS · RLS = PASS · Take ACL = UNCHANGED · private audio = UNCHANGED |
@@ -275,7 +270,9 @@ Signup default account level: closed decision (BEGINNER path) — see Decision L
 | E3 public Free Audio / Production render enablement | **ENABLED** (PE COMPLETE) | GREEN @ `6dfd201` · GO #5 **PASS** | OK | Free Basic only · private bucket · AC-PE-12 |
 | **STORAGE-ARCH-01** | **LOCKED** (architecture) | N/A · Production mutations **NONE** | OK | Hybrid C Storage V1 · [freeze](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
 | **STORAGE-ARCH-02** future scale | **DOCS PREPARED** · **NOT IMPLEMENTED** | N/A · no external storage | OK | [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
-| **STORAGE-ARCH-02-KEY** Phase 1 DR-A | **SHIPPED** / **PRODUCTION VERIFIED** | GREEN WITH EVIDENCE LIMITATIONS @ `f514a51` | OK | Backfill/retirement **NOT STARTED** · DR-B **DEFERRED** · [closeout](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
+| **STORAGE-ARCH-02-KEY** Phase 1 DR-A | **SHIPPED** / **PRODUCTION VERIFIED** | GREEN WITH EVIDENCE LIMITATIONS @ `f514a51` | OK | Historical Phase 1 |
+| **FAR-01 campaign (canary+fleet+soak)** | **IN PROGRESS / SOAK ACTIVE** | canary N=5 · fleet N=62 · soak end `2026-10-04T04:40:56.645Z` | OK | **NOT CLOSED** · retirement/cleanup **NOT EXECUTED** · [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **DEF-01** | **CLOSED / PRODUCTION VERIFIED** | @ `fbc696f` · remote `20261003051539` | OK | HIBP remains **ACCEPTED RISK** |
 | Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
@@ -538,9 +535,11 @@ E3_RENDER_JOBS_ENABLED = ON
 E3_PUBLIC_AUDIO = ON
 STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-STORAGE-ARCH-02-KEY = NOT STARTED
+FAR-01 = IN PROGRESS / SOAK ACTIVE (see FAR_01_CURRENT_STATE.md)
+DEF-01 = CLOSED / PRODUCTION VERIFIED @ fbc696f
+REPO / PROD APP = e03f3be (operator tooling)
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
-                   → EXISTING BACKLOG / OWNER DECISION (do not auto-start)
+                   → WAIT FOR SOAK END → FINAL SOAK AUDIT → Owner Review
 ```
 
 **Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B/Wave A/B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
@@ -588,8 +587,8 @@ Start reading order:
 |------|--------|
 | Dual SHA (app vs worker) | Production app `f514a51` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
 | Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
-| FAR-01 legacy USER beat keys | LIVE inventory unchanged: **68** legacy PUBLISHED · **2** canonical DRAFT · **3** platform · **30** orphans · Phase 1 DR-A **SHIPPED** @ `f514a51` · backfill **NOT STARTED** |
-| HIBP / leaked-password protection | **P1-A BLOCKED** — Owner Dashboard; Advisor WARN until enabled |
+| FAR-01 legacy USER beat keys | Living soak: legacy1 · canonical77 · platform3 · retained67 · orphans30 · orphanStorage97 · quarantine1 · MIGRATE=0 · SOAK ACTIVE · NOT CLOSED |
+| HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** — not solved |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Artifacts janitor missing | F-PE-04 / OD-SA-05 · **STORAGE-ARCH-03** future wave |
 | React hydration warning on `/beat/[id]` | **INFO** · **BLOCKER = NO** · observed in `next dev`; do not hotfix without Owner GO |
@@ -634,7 +633,7 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog · Prem
 | Community epic | CLOSED (prior production verify) |
 | P1-B DEFINER grants | CLOSED / VERIFIED @ `b4199ef` |
 | P1-C `set_updated_at` | CLOSED / VERIFIED @ `b4199ef` |
-| P1-A HIBP | **BLOCKED** (Owner Dashboard) |
+| P1-A HIBP | **DEFERRED / ACCEPTED RISK** |
 
 ---
 
@@ -657,9 +656,11 @@ E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
 WORKER = STOPPED / DISABLED (bootstrap 92496d4)
 STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-STORAGE-ARCH-02-KEY = NOT STARTED
+FAR-01 = IN PROGRESS / SOAK ACTIVE
+DEF-01 = CLOSED / PRODUCTION VERIFIED
+REPO / PROD APP = e03f3be
 NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
-                   → EXISTING BACKLOG / OWNER DECISION
+                   → SOAK END → FINAL SOAK AUDIT → Owner Review
 ```
 
 **Do not** rewrite historical closeouts or freeze OD locks from this document alone.

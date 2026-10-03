@@ -1,0 +1,102 @@
+{
+  "schema": "far01-checksum-investigation/v1",
+  "investigation_id": "far01-checksum-inv-2026-10-03",
+  "timestamp": "2026-10-02T23:51:14.881Z",
+  "operator_id": "owner-gate-a-checksum-investigation",
+  "source_scope": {
+    "population": "USER MASTER READY beat-audio",
+    "legacy_checksum_null": 68,
+    "canonical_checksum_present": 2,
+    "dry_run_unknown_migrate": 67,
+    "note": "Sample only; full fleet hash campaign NOT executed"
+  },
+  "sample_size": 3,
+  "sample_asset_ids": [
+    "02c18fb2-80ce-4b1d-b73b-8995d2612bb5",
+    "05d4a7d7-167e-4b79-b7c9-a556aaa1018b",
+    "4e68c869-892d-4b79-a4b1-1e80db22b47f"
+  ],
+  "read_capability": {
+    "r1_content_download": "YES",
+    "storage_read_method": "supabase.storage.from(bucket).download(object_key)",
+    "credential_class": "readonly",
+    "role": "far01_dryrun_readonly",
+    "used_service_role": false,
+    "head_only_model_violation": "YES — content download exercised for Gate A sample only",
+    "c_r1_01": "OPEN / empirically confirmed download works under current R1 SELECT policies"
+  },
+  "samples": [
+    {
+      "asset_id": "02c18fb2-80ce-4b1d-b73b-8995d2612bb5",
+      "object_key": "user/ddd26eb4-c889-4abe-bdfb-ff0390b6fd48/5332b7b6-bcf6-4813-b279-27963fc2b875/master/02c18fb2-80ce-4b1d-b73b-8995d2612bb5.bin",
+      "classification_note": "legacy UNKNOWN sample",
+      "checksum_db_value": null,
+      "checksum_observed_value": "90ee033a87843110a16869da4b2ac414c1c36061b54cc7bb3770ede3c4c12261",
+      "checksum_match": null,
+      "source_size_head": 2646044,
+      "source_size_download": 2646044,
+      "size_equality": {
+        "head_vs_expected_db_byte_size": true,
+        "head_vs_download_bytes": true,
+        "note": "size equality is NOT checksum PASS (OD-BF-02 / C-03)"
+      },
+      "download_ok": true,
+      "download_error": null
+    },
+    {
+      "asset_id": "05d4a7d7-167e-4b79-b7c9-a556aaa1018b",
+      "object_key": "user/87712e71-faa0-4dca-9e46-54ab22981f5d/7305f48c-a836-4df5-9684-f43207b19b40/master/05d4a7d7-167e-4b79-b7c9-a556aaa1018b.bin",
+      "classification_note": "legacy UNKNOWN sample",
+      "checksum_db_value": null,
+      "checksum_observed_value": "90ee033a87843110a16869da4b2ac414c1c36061b54cc7bb3770ede3c4c12261",
+      "checksum_match": null,
+      "source_size_head": 2646044,
+      "source_size_download": 2646044,
+      "size_equality": {
+        "head_vs_expected_db_byte_size": true,
+        "head_vs_download_bytes": true,
+        "note": "size equality is NOT checksum PASS (OD-BF-02 / C-03)"
+      },
+      "download_ok": true,
+      "download_error": null
+    },
+    {
+      "asset_id": "4e68c869-892d-4b79-a4b1-1e80db22b47f",
+      "object_key": "user/2f915c63-778d-4279-b9a0-a0afa858c085/d627300a-7f72-406f-94f4-a1bcc6765ade/4e68c869-892d-4b79-a4b1-1e80db22b47f/master.bin",
+      "classification_note": "canonical PASS control with DB checksum PRESENT",
+      "checksum_db_value": "90ee033a87843110a16869da4b2ac414c1c36061b54cc7bb3770ede3c4c12261",
+      "checksum_observed_value": "90ee033a87843110a16869da4b2ac414c1c36061b54cc7bb3770ede3c4c12261",
+      "checksum_match": true,
+      "source_size_head": 2646044,
+      "source_size_download": 2646044,
+      "size_equality": {
+        "head_vs_expected_db_byte_size": true,
+        "head_vs_download_bytes": true,
+        "note": "size equality is NOT checksum PASS (OD-BF-02 / C-03)"
+      },
+      "download_ok": true,
+      "download_error": null
+    }
+  ],
+  "aggregate_observation": {
+    "distinct_observed_sha256_in_sample": 1,
+    "observed_sha256_hex": "90ee033a87843110a16869da4b2ac414c1c36061b54cc7bb3770ede3c4c12261",
+    "matches_canonical_db_checksum": true,
+    "all_user_master_ready_byte_size": 2646044,
+    "inference": "Sampled objects share identical bytes; likely shared fixture/content. Not proof entire fleet is identical without full campaign."
+  },
+  "limitations": [
+    "Sample size 3 of 70 — not full fleet",
+    "Legacy DB checksum NULL — cannot match observed to DB for legacy rows",
+    "OD-BF-02 unchanged — observed hash not persisted",
+    "R1 download capability expands beyond HEAD-only dry-run contract (C-R1-01)"
+  ],
+  "classification": {
+    "sample_legacy_rows": "UNKNOWN checksum in DB; observed hash computed out-of-band",
+    "od_bf_02": "NULL remains UNKNOWN ≠ PASS",
+    "size_equality_field": "SEPARATE evidence only"
+  },
+  "mutation_attempted": 0,
+  "db_checksum_persisted": false,
+  "backfill_go": "NO"
+}

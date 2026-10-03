@@ -1,0 +1,93 @@
+{
+  "soak": {
+    "duration_hours": 24,
+    "started_at": "2026-10-03T04:40:56.645Z",
+    "target_end": "2026-10-04T04:40:56.645Z",
+    "elapsed_at_audit_hours": 0.027252,
+    "elapsed_at_audit_ms": 98106,
+    "completed": false
+  },
+  "inventory": {
+    "legacy_user": 1,
+    "canonical_user": 77,
+    "platform": 3,
+    "orphan_storage": 97
+  },
+  "migrate_candidates": 0,
+  "retained_legacy": 67,
+  "retained_in_orphan_set": 67,
+  "true_orphans": {
+    "total": 30,
+    "legacy_shaped": 28,
+    "canonical_shaped": 2,
+    "other": 0
+  },
+  "canonical_reconciliation": {
+    "PASS": 77,
+    "MISMATCH": 0,
+    "MISSING": 0,
+    "UNKNOWN": 0
+  },
+  "retained_legacy_reconciliation": {
+    "PASS": 67,
+    "MISMATCH": 0,
+    "MISSING": 0,
+    "UNKNOWN": 0
+  },
+  "quarantine": {
+    "id": "000d406d-265e-4e49-bd3f-a542d5dd0b41",
+    "locked": true,
+    "action": "QUARANTINE",
+    "identity_anomaly": true,
+    "legacy_db_ref": true,
+    "auto_migrate_forbidden": true,
+    "untouched": true
+  },
+  "tracked_canonical_orphans": [
+    {
+      "key": "user/384dc32d-c4af-4673-bb4e-0a5e2bc189e4/832ab70f-3b1c-4034-88fe-cdef95038669/d27a8bda-a7d0-4518-8bd2-133c99d6e4e6/master.bin",
+      "exists": true,
+      "size": 2646044,
+      "in_orphan_set": true,
+      "in_db": false,
+      "real_orphan": true
+    },
+    {
+      "key": "user/b91ad2fd-739f-41ec-b8b4-ef6e7e91626f/1a61cd77-6ccc-4ebe-91fe-ff5974982580/32892c5c-5f09-4f28-9f21-ab7d4e8ac64f/master.bin",
+      "exists": true,
+      "size": 2646044,
+      "in_orphan_set": true,
+      "in_db": false,
+      "real_orphan": true
+    }
+  ],
+  "additional_canonical_orphans": 0,
+  "new_orphan_delta_vs_prior_soak": 0,
+  "playback": {
+    "sample": 15,
+    "head_ok": 15,
+    "binding_ok": 15,
+    "signed_url_ok": 15,
+    "evidence": "LIMITED",
+    "limitation": "Readonly plane signed URL + HEAD + binding; not full product Access Gate / service-role path."
+  },
+  "backup_evidence": "NOT_VERIFIED",
+  "baseline_matches_expected": true,
+  "expected": {
+    "legacy_user": 1,
+    "canonical_user": 77,
+    "platform": 3,
+    "retained_legacy": 67,
+    "true_orphans": 30,
+    "orphan_storage": 97,
+    "quarantine": 1,
+    "migrate": 0,
+    "canon_pass": 77,
+    "legacy_pass": 67
+  },
+  "mutations": {
+    "db": 0,
+    "storage": 0
+  },
+  "service_role": false
+}

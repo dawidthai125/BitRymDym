@@ -6,6 +6,35 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-03 — FAR-01 OPERATOR TOOLING + DEF-01 + SOAK ACTIVE (DOCS RECONCILIATION)
+
+**Status:** Repository / Production app tip `e03f3be` · deployment `6823806375` · FAR-01 campaign **SOAK ACTIVE** · FAR-01 **NOT CLOSED**
+
+### FAR-01 operator tooling (Commit 1 — not a UI release)
+
+- Commit: `e03f3be` — `feat(far01): add production backfill operator tooling`
+- R1 role `far01_dryrun_readonly` · LIVE role `far01_live_mutator` (prod applied; repo filenames production-aligned)
+- Production dry-run · credential gates · canary **N=5 PASS** · fleet **N=62 PASS**
+- Soak **ACTIVE**: start `2026-10-03T04:40:56.645Z` · end `2026-10-04T04:40:56.645Z` · interim **PASS** · no drift
+- Inventory (living): legacy1 · canonical77 · platform3 · retained67 · orphans30 · orphan Storage97 · quarantine1 · MIGRATE=0
+- Retirement / cleanup / orphan deletion: **NOT EXECUTED**
+- Living status: [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
+
+### DEF-01
+
+- **CLOSED / PRODUCTION VERIFIED** @ `fbc696f`
+- Remote migration `20261003051539` / `def01_e3_definer_execute_revoke`
+- Four E3 DEFINER trigger functions: anon/authenticated EXECUTE revoked
+- ACTIVE P0 / P1: **NONE VERIFIED**
+- HIBP: **DEFERRED / ACCEPTED RISK** (not solved)
+
+### Documentation
+
+- Living SSOT reconciled: FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · architecture index · this CHANGELOG
+- Contabo documented as **EXTERNAL COMPUTE** (STOPPED/DISABLED) · Supabase Storage = durable media SSOT
+
+---
+
 ## 2026-10-02 — FAR-01 / STORAGE-ARCH-02-KEY — PHASE 1 DR-A (SHIPPED / PRODUCTION VERIFIED)
 
 **Status:** **SHIPPED** · **PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** · app `f514a51` · deployment `6817346937` · Vercel `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h`

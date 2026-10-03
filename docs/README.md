@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Next:** **FAR-01 Phase 1 DR-A = SHIPPED / PRODUCTION VERIFIED — GREEN WITH EVIDENCE LIMITATIONS** @ `f514a51` · deploy `6817346937` / `dpl_HuRoZ9MQ7VM5jYmeJ19YJsoasM7h` · Polish UX @ `0afa29b` · Wave A @ `2c4200b` · **E3 = PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** · **STORAGE-ARCH-01 = LOCKED** · STORAGE-ARCH-02 **FUTURE DOCS PREPARED / NOT IMPLEMENTED** · next = **PHASE 0 SOAK / BACKFILL READINESS AUDIT** (no auto-backfill).
+**Now:** Repo / Production app `e03f3be` (FAR-01 **operator tooling**, not UI release) · deploy `6823806375` · **FAR-01 = IN PROGRESS / SOAK ACTIVE** (end `2026-10-04T04:40:56.645Z`) · **DEF-01 CLOSED** @ `fbc696f` · HIBP **ACCEPTED RISK** · **E3 GREEN** · Contabo **EXTERNAL COMPUTE STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · next gate = **SOAK END → FINAL SOAK AUDIT**. Living FAR-01: [audits/FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** STORAGE-ARCH-01 **LOCKED** · do **not** start STORAGE-ARCH-02 without Implementation GO — see [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** FAR-01 soak-end gate first · STORAGE-ARCH-01 **LOCKED** · do **not** start STORAGE-ARCH-02 / retirement / orphan cleanup without Owner GO — see [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 
