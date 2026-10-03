@@ -18,7 +18,7 @@ import {
 import {
   canCompleteRenderJobSuccess,
   parseRenderJobEntitlementSnapshot,
-  retentionSecondsForPremium,
+  retentionSecondsForTier,
   RenderJobDomainError,
 } from "@/lib/audio/render-job-core";
 import {
@@ -380,9 +380,9 @@ export async function completeRealArtifactAfterEncode(params: {
   }
 
   const snapshot = parseRenderJobEntitlementSnapshot(row.entitlement_snapshot);
-  const retentionSec = retentionSecondsForPremium(
-    snapshot.entitlement.premiumActive,
-  );
+  const retentionSec =
+    snapshot.entitlement.limits?.artifactRetentionSeconds ??
+    retentionSecondsForTier(snapshot.entitlement.premiumTier ?? "FREE");
   const expiresAt = new Date(Date.now() + retentionSec * 1000).toISOString();
   const finishedAt = new Date().toISOString();
 

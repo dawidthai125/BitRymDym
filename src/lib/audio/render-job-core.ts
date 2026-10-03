@@ -5,19 +5,13 @@
 
 import type { AudioCapabilityKey } from "@/config/audio-render";
 import {
-  AUDIO_ARTIFACT_QUOTA_FREE_BYTES,
-  AUDIO_ARTIFACT_QUOTA_PREMIUM_BYTES,
-  AUDIO_ARTIFACT_RETENTION_FREE_SECONDS,
-  AUDIO_ARTIFACT_RETENTION_PREMIUM_SECONDS,
-  AUDIO_RENDER_CONCURRENT_FREE,
-  AUDIO_RENDER_CONCURRENT_PREMIUM,
-  AUDIO_RENDER_FREE_RENDERS_PER_UTC_DAY,
   AUDIO_RENDER_JOB_TIMEOUT_SECONDS,
   AUDIO_RENDER_MAX_ATTEMPTS,
-  AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY,
 } from "@/config/audio-render";
+import { limitsForPremiumTier } from "@/config/premium-tiers";
 import type { EffectiveAudioEntitlement } from "@/lib/audio/effective-entitlement";
 import type { MixParameters } from "@/lib/mix/params";
+import type { PremiumTier } from "@/types/premium";
 import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
 import { RENDER_JOB_TIERS } from "@/types/domain";
 import { utcDayWindowStart } from "@/lib/downloads/limits";
@@ -39,9 +33,19 @@ export type RenderJobEntitlementSnapshot = {
     userId: string | null;
     accountLevel: EffectiveAudioEntitlement["accountLevel"];
     premiumActive: boolean;
+    premiumTier: PremiumTier;
     premiumSource: string | null;
     premiumExpiresAt: string | null;
     capabilities: readonly AudioCapabilityKey[];
+    limits: {
+      rendersDaily: number;
+      rendersConcurrent: number;
+      artifactRetentionSeconds: number;
+      artifactQuotaBytes: number;
+      /** Design-catalog Gold 90d — not production-enabled in W2-A. */
+      artifactRetentionDesignSeconds: number;
+      goldRetentionDesignOnly: boolean;
+    };
   };
   parameters: MixParameters;
   paramsVersion: number;
@@ -94,14 +98,25 @@ export function buildRenderJobEntitlementSnapshot(params: {
   parameters: MixParameters;
   paramsVersion: number;
 }): RenderJobEntitlementSnapshot {
+  const tier = params.entitlement.premiumTier ?? "FREE";
+  const limits = limitsForPremiumTier(tier);
   return {
     entitlement: {
       userId: params.entitlement.userId,
       accountLevel: params.entitlement.accountLevel,
       premiumActive: params.entitlement.premiumActive,
+      premiumTier: tier,
       premiumSource: params.entitlement.premiumSource,
       premiumExpiresAt: params.entitlement.premiumExpiresAt,
       capabilities: [...params.entitlement.capabilities],
+      limits: {
+        rendersDaily: limits.rendersDaily,
+        rendersConcurrent: limits.rendersConcurrent,
+        artifactRetentionSeconds: limits.artifactRetentionSeconds,
+        artifactQuotaBytes: limits.artifactQuotaBytes,
+        artifactRetentionDesignSeconds: limits.artifactRetentionDesignSeconds,
+        goldRetentionDesignOnly: limits.goldRetentionDesignOnly,
+      },
     },
     parameters: params.parameters,
     paramsVersion: params.paramsVersion,
@@ -124,7 +139,33 @@ export function parseRenderJobEntitlementSnapshot(
       "INVALID",
     );
   }
-  return raw as RenderJobEntitlementSnapshot;
+  const snap = raw as RenderJobEntitlementSnapshot;
+  const ent = snap.entitlement as RenderJobEntitlementSnapshot["entitlement"] & {
+    premiumTier?: PremiumTier;
+    limits?: RenderJobEntitlementSnapshot["entitlement"]["limits"];
+  };
+  // E3 binary snapshots: derive tier/limits for worker completion compatibility.
+  if (!ent.premiumTier || !ent.limits) {
+    const tier: PremiumTier =
+      ent.premiumTier ?? (ent.premiumActive ? "SILVER" : "FREE");
+    const limits = limitsForPremiumTier(tier);
+    return {
+      ...snap,
+      entitlement: {
+        ...ent,
+        premiumTier: tier,
+        limits: ent.limits ?? {
+          rendersDaily: limits.rendersDaily,
+          rendersConcurrent: limits.rendersConcurrent,
+          artifactRetentionSeconds: limits.artifactRetentionSeconds,
+          artifactQuotaBytes: limits.artifactQuotaBytes,
+          artifactRetentionDesignSeconds: limits.artifactRetentionDesignSeconds,
+          goldRetentionDesignOnly: limits.goldRetentionDesignOnly,
+        },
+      },
+    };
+  }
+  return snap;
 }
 
 /** CLAIM starts the 180s wall clock (IP-03). Queue wait excluded. */
@@ -146,23 +187,31 @@ export function isRunningJobTimedOut(params: {
   return new Date(params.timeoutAt).getTime() <= now;
 }
 
+export function dailyRenderLimitForTier(tier: PremiumTier): number {
+  return limitsForPremiumTier(tier).rendersDaily;
+}
+
+export function concurrentRenderLimitForTier(tier: PremiumTier): number {
+  return limitsForPremiumTier(tier).rendersConcurrent;
+}
+
+/** Compatibility: premiumActive → SILVER limits (legacy binary class), else FREE. */
 export function dailyRenderLimit(premiumActive: boolean): number {
-  return premiumActive
-    ? AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY
-    : AUDIO_RENDER_FREE_RENDERS_PER_UTC_DAY;
+  return dailyRenderLimitForTier(premiumActive ? "SILVER" : "FREE");
 }
 
 export function concurrentRenderLimit(premiumActive: boolean): number {
-  return premiumActive
-    ? AUDIO_RENDER_CONCURRENT_PREMIUM
-    : AUDIO_RENDER_CONCURRENT_FREE;
+  return concurrentRenderLimitForTier(premiumActive ? "SILVER" : "FREE");
 }
 
 export function assertUnderDailyCap(params: {
   jobsCreatedToday: number;
-  premiumActive: boolean;
+  premiumActive?: boolean;
+  premiumTier?: PremiumTier;
 }): void {
-  const limit = dailyRenderLimit(params.premiumActive);
+  const tier =
+    params.premiumTier ?? (params.premiumActive ? "SILVER" : "FREE");
+  const limit = dailyRenderLimitForTier(tier);
   if (params.jobsCreatedToday >= limit) {
     throw new RenderJobDomainError(
       `Daily render limit reached (${limit}).`,
@@ -173,9 +222,12 @@ export function assertUnderDailyCap(params: {
 
 export function assertUnderConcurrentCap(params: {
   activeJobs: number;
-  premiumActive: boolean;
+  premiumActive?: boolean;
+  premiumTier?: PremiumTier;
 }): void {
-  const limit = concurrentRenderLimit(params.premiumActive);
+  const tier =
+    params.premiumTier ?? (params.premiumActive ? "SILVER" : "FREE");
+  const limit = concurrentRenderLimitForTier(tier);
   if (params.activeJobs >= limit) {
     throw new RenderJobDomainError(
       `Concurrent render limit reached (${limit}).`,
@@ -230,14 +282,19 @@ export function utcDayStartIso(now: Date = new Date()): string {
   return utcDayWindowStart(now).toISOString();
 }
 
+export function retentionSecondsForTier(tier: PremiumTier): number {
+  return limitsForPremiumTier(tier).artifactRetentionSeconds;
+}
+
+export function quotaBytesForTier(tier: PremiumTier): number {
+  return limitsForPremiumTier(tier).artifactQuotaBytes;
+}
+
+/** Compatibility: premiumActive → SILVER retention/quota class. */
 export function retentionSecondsForPremium(premiumActive: boolean): number {
-  return premiumActive
-    ? AUDIO_ARTIFACT_RETENTION_PREMIUM_SECONDS
-    : AUDIO_ARTIFACT_RETENTION_FREE_SECONDS;
+  return retentionSecondsForTier(premiumActive ? "SILVER" : "FREE");
 }
 
 export function quotaBytesForPremium(premiumActive: boolean): number {
-  return premiumActive
-    ? AUDIO_ARTIFACT_QUOTA_PREMIUM_BYTES
-    : AUDIO_ARTIFACT_QUOTA_FREE_BYTES;
+  return quotaBytesForTier(premiumActive ? "SILVER" : "FREE");
 }

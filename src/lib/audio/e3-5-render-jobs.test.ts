@@ -77,7 +77,7 @@ describe("E3.5 — Render Jobs domain (unit)", () => {
     expect(isRenderJobTier("PRO_MASTER_BAKE")).toBe(false);
   });
 
-  it("Free has EXPORT_BASIC_MP3; Premium has HQ/WAV; anon none", () => {
+  it("Free has EXPORT_BASIC_MP3; legacy Premium=SILVER has HQ not WAV; anon none", () => {
     const free = resolveEffectiveAudioEntitlement({
       userId: USER,
       accountLevel: "BEGINNER_RAPPER",
@@ -97,9 +97,23 @@ describe("E3.5 — Render Jobs domain (unit)", () => {
         expiresAt: null,
       },
     });
+    expect(premium.premiumTier).toBe("SILVER");
     expect(hasAudioCapability(premium, "EXPORT_HQ_MP3")).toBe(true);
-    expect(hasAudioCapability(premium, "EXPORT_WAV")).toBe(true);
+    expect(hasAudioCapability(premium, "EXPORT_WAV")).toBe(false);
     expect(PREMIUM_AUDIO_CAPABILITIES).toContain("EXPORT_WAV");
+
+    const gold = resolveEffectiveAudioEntitlement({
+      userId: USER,
+      accountLevel: "BEGINNER_RAPPER",
+      premium: {
+        userId: USER,
+        active: true,
+        source: "manual_admin",
+        expiresAt: null,
+        tier: "GOLD",
+      },
+    });
+    expect(hasAudioCapability(gold, "EXPORT_WAV")).toBe(true);
 
     const anon = resolveEffectiveAudioEntitlement({
       userId: null,
@@ -138,6 +152,9 @@ describe("E3.5 — Render Jobs domain (unit)", () => {
     });
     expect(snap.parameters.master.gainDb).toBe(0);
     expect(snap.entitlement.premiumActive).toBe(false);
+    expect(snap.entitlement.premiumTier).toBe("FREE");
+    expect(snap.entitlement.limits.rendersDaily).toBe(5);
+    expect(snap.entitlement.limits.goldRetentionDesignOnly).toBe(false);
     const parsed = parseRenderJobEntitlementSnapshot(snap);
     expect(parsed.paramsVersion).toBe(1);
     expect(() => parseRenderJobEntitlementSnapshot({})).toThrow(

@@ -58,23 +58,35 @@ describe("E3.2 — effective audio entitlement (unit)", () => {
     }
   });
 
-  it("Premium active grants Basic + Premium capabilities", () => {
+  it("legacy active Premium maps to SILVER (HQ + Mix/Master Pro, not WAV)", () => {
     const e = resolveEffectiveAudioEntitlement({
       userId: USER,
       accountLevel: "BEGINNER_RAPPER",
       premium: premium({ expiresAt: null }),
     });
     expect(e.premiumActive).toBe(true);
+    expect(e.premiumTier).toBe("SILVER");
     expect(e.premiumSource).toBe("manual_admin");
     for (const key of FREE_AUDIO_CAPABILITIES) {
       expect(hasAudioCapability(e, key)).toBe(true);
     }
+    expect(hasAudioCapability(e, "EXPORT_HQ_MP3")).toBe(true);
+    expect(hasAudioCapability(e, "MIX_PRO")).toBe(true);
+    expect(hasAudioCapability(e, "MASTER_PRO")).toBe(true);
+    expect(hasAudioCapability(e, "EXPORT_WAV")).toBe(false);
+    expect(PREMIUM_AUDIO_CAPABILITIES).toContain("EXPORT_WAV");
+  });
+
+  it("GOLD tier grants EXPORT_WAV", () => {
+    const e = resolveEffectiveAudioEntitlement({
+      userId: USER,
+      accountLevel: "BEGINNER_RAPPER",
+      premium: premium({ expiresAt: null, tier: "GOLD" }),
+    });
+    expect(e.premiumTier).toBe("GOLD");
     for (const key of PREMIUM_AUDIO_CAPABILITIES) {
       expect(hasAudioCapability(e, key)).toBe(true);
     }
-    expect(e.capabilities).toHaveLength(
-      FREE_AUDIO_CAPABILITIES.length + PREMIUM_AUDIO_CAPABILITIES.length,
-    );
   });
 
   it("Premium expired at exact expires_at boundary is inactive", () => {
@@ -145,16 +157,22 @@ describe("E3.2 — effective audio entitlement (unit)", () => {
     expect(() => assertAudioCapability(free, "MIX_BASIC")).not.toThrow();
   });
 
-  it("rejects client-chosen premium / capability claims", () => {
+  it("rejects client-chosen premium / capability / limit claims", () => {
     expect(() =>
       rejectClientChosenPremiumClaims({ premiumActive: true }),
     ).toThrow(/must not supply premiumActive/);
+    expect(() =>
+      rejectClientChosenPremiumClaims({ premiumTier: "GOLD" }),
+    ).toThrow(/must not supply premiumTier/);
     expect(() =>
       rejectClientChosenPremiumClaims({ capabilities: ["MIX_PRO"] }),
     ).toThrow(/must not supply capabilities/);
     expect(() =>
       rejectClientChosenPremiumClaims({ tier: "WAV" }),
     ).toThrow(/must not supply tier/);
+    expect(() =>
+      rejectClientChosenPremiumClaims({ limits: { rendersDaily: 999 } }),
+    ).toThrow(/must not supply limits/);
     expect(() => rejectClientChosenPremiumClaims({})).not.toThrow();
   });
 

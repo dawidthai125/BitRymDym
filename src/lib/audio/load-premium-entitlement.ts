@@ -1,5 +1,5 @@
 /**
- * E3.2 — Server load of premium_entitlements → effective audio entitlement.
+ * E3.2 / W2-A — Server load of premium_entitlements → effective audio entitlement.
  * Uses service-role read so AuthZ paths do not depend on caller RLS alone.
  * Mutations remain service_role-only (E3.1 triggers) — this module is READ-ONLY.
  */
@@ -12,13 +12,17 @@ import {
   type EffectiveAudioEntitlement,
   type PremiumEntitlementSnapshot,
 } from "@/lib/audio/effective-entitlement";
+import { resolveProductEntitlement } from "@/lib/entitlements/product-entitlement";
+import type { ProductEntitlement } from "@/lib/entitlements/product-entitlement";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isPremiumTier } from "@/types/premium";
 
 type PremiumEntitlementRow = {
   user_id: string;
   active: boolean;
   source: string;
   expires_at: string | null;
+  tier: string | null;
 };
 
 function mapPremiumRow(row: PremiumEntitlementRow): PremiumEntitlementSnapshot {
@@ -27,6 +31,7 @@ function mapPremiumRow(row: PremiumEntitlementRow): PremiumEntitlementSnapshot {
     active: row.active,
     source: row.source,
     expiresAt: row.expires_at,
+    tier: isPremiumTier(row.tier) ? row.tier : null,
   };
 }
 
@@ -41,7 +46,7 @@ export async function loadPremiumEntitlementSnapshot(
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("premium_entitlements")
-    .select("user_id, active, source, expires_at")
+    .select("user_id, active, source, expires_at, tier")
     .eq("user_id", userId)
     .eq("active", true)
     .maybeSingle();
@@ -62,6 +67,22 @@ export async function resolveAudioEntitlementForAuthContext(
   return resolveEffectiveAudioEntitlement({
     userId: context.userId,
     accountLevel: context.profile.accountLevel,
+    experienceTotal: context.profile.experienceTotal ?? 0,
+    premium,
+    nowMs,
+  });
+}
+
+/** Full product entitlement (rank + experience + premium + limits). */
+export async function resolveProductEntitlementForAuthContext(
+  context: AuthContext,
+  nowMs?: number,
+): Promise<ProductEntitlement> {
+  const premium = await loadPremiumEntitlementSnapshot(context.userId);
+  return resolveProductEntitlement({
+    userId: context.userId,
+    accountLevel: context.profile.accountLevel,
+    experienceTotal: context.profile.experienceTotal ?? 0,
     premium,
     nowMs,
   });

@@ -39,8 +39,8 @@ import {
   isRenderJobTier,
   isRunningJobTimedOut,
   parseRenderJobEntitlementSnapshot,
-  quotaBytesForPremium,
-  retentionSecondsForPremium,
+  quotaBytesForTier,
+  retentionSecondsForTier,
   utcDayStartIso,
   RenderJobDomainError,
   type RenderJobEntitlementSnapshot,
@@ -422,15 +422,15 @@ export async function createRenderJobFor(
   const now = new Date();
   assertUnderDailyCap({
     jobsCreatedToday: await countJobsCreatedToday(context.userId, now),
-    premiumActive: entitlement.premiumActive,
+    premiumTier: entitlement.premiumTier,
   });
   assertUnderConcurrentCap({
     activeJobs: await countActiveJobs(context.userId),
-    premiumActive: entitlement.premiumActive,
+    premiumTier: entitlement.premiumTier,
   });
   assertUnderQuota({
     usedBytes: await sumActiveArtifactBytes(context.userId),
-    quotaBytes: quotaBytesForPremium(entitlement.premiumActive),
+    quotaBytes: quotaBytesForTier(entitlement.premiumTier),
   });
 
   const allowPro = hasAudioCapability(entitlement, "MIX_PRO");
@@ -713,7 +713,7 @@ export async function completeFakeRenderJobAsWorker(
   if (error) throw new Error(error.message);
   if (!row) throw new RenderJobDomainError("Render job not found.", "NOT_FOUND");
 
-  let current = await applyTimeoutIfNeeded(row as RenderJobRow);
+  const current = await applyTimeoutIfNeeded(row as RenderJobRow);
 
   if (!canCompleteRenderJobSuccess(current.status)) {
     throw new RenderJobDomainError(
@@ -762,9 +762,9 @@ export async function completeFakeRenderJobAsWorker(
     );
   }
 
-  const retentionSec = retentionSecondsForPremium(
-    snapshot.entitlement.premiumActive,
-  );
+  const retentionSec =
+    snapshot.entitlement.limits?.artifactRetentionSeconds ??
+    retentionSecondsForTier(snapshot.entitlement.premiumTier ?? "FREE");
   const expiresAt = new Date(Date.now() + retentionSec * 1000).toISOString();
   const finishedAt = new Date().toISOString();
 

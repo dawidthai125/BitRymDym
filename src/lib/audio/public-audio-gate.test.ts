@@ -150,6 +150,7 @@ describe("AC-PE-12 — Public Free Audio gate", () => {
 
   it("14/15/16 Premium Mix / HQ/WAV / download ignore PUBLIC_AUDIO OFF", () => {
     const premium = premiumEntitlement();
+    expect(premium.premiumTier).toBe("SILVER");
     expect(isPublicFreeAudioReleasedFor(premium, false)).toBe(true);
     expect(isPublicFreeAudioReleasedFor(premium, true)).toBe(true);
     expect(() => assertAudioCapability(premium, "MIX_BASIC")).not.toThrow();
@@ -157,9 +158,25 @@ describe("AC-PE-12 — Public Free Audio gate", () => {
     expect(() =>
       assertAudioCapability(premium, capabilityForRenderTier("HQ_MP3")),
     ).not.toThrow();
+    // Legacy Premium → SILVER: WAV is GOLD-only under W2-A matrix.
     expect(() =>
       assertAudioCapability(premium, capabilityForRenderTier("WAV")),
+    ).toThrow(/EXPORT_WAV/);
+    const gold = resolveEffectiveAudioEntitlement({
+      userId: USER,
+      accountLevel: "BEGINNER_RAPPER",
+      premium: {
+        userId: USER,
+        active: true,
+        source: "manual_admin",
+        expiresAt: null,
+        tier: "GOLD",
+      },
+    });
+    expect(() =>
+      assertAudioCapability(gold, capabilityForRenderTier("WAV")),
     ).not.toThrow();
+    expect(isPublicFreeAudioReleasedFor(gold, false)).toBe(true);
     expect(() =>
       assertAudioCapability(premium, capabilityForRenderTier("BASIC_MP3")),
     ).not.toThrow();
