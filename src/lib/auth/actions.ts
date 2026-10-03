@@ -92,6 +92,13 @@ export async function signUpAction(
     return { error: outcome.error, success: false, message: null };
   }
 
+  if (data.user?.id) {
+    const { hookProfileCompleted } = await import(
+      "@/lib/creator-progress/award-hooks"
+    );
+    await hookProfileCompleted(data.user.id);
+  }
+
   if (outcome.kind === "session") {
     revalidatePath("/");
     redirect("/account");
@@ -168,6 +175,11 @@ export async function updateDisplayNameAction(
     if (error) {
       return { error: error.message, success: false };
     }
+
+    const { hookProfileCompleted } = await import(
+      "@/lib/creator-progress/award-hooks"
+    );
+    await hookProfileCompleted(context.userId);
 
     revalidatePath("/account");
     return { error: null, success: true };

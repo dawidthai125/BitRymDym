@@ -23,10 +23,13 @@ describe("USER-ID-01 stable user number (unit)", () => {
       user_number: 1,
       role: "ADMIN",
       account_level: "BEGINNER_RAPPER",
+      experience_total: 0,
       created_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-01T00:00:00.000Z",
     };
     expect(mapProfileRow(row).userNumber).toBe(1);
+    expect(mapProfileRow(row).experienceTotal).toBe(0);
+    expect(PROFILE_SELECT_OWN).toContain("experience_total");
   });
 
   it("formats account/admin label; null number stays bare name (Tajski)", () => {

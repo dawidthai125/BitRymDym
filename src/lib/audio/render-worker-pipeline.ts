@@ -471,6 +471,15 @@ export async function completeRealArtifactAfterEncode(params: {
     );
   }
 
+  const { hookRenderJobSucceeded } = await import(
+    "@/lib/creator-progress/award-hooks"
+  );
+  await hookRenderJobSucceeded({
+    ownerUserId: succeeded.owner_id as string,
+    mixSessionId: succeeded.mix_session_id as string,
+    renderJobId: succeeded.id as string,
+  });
+
   const jobRecord = await getJobRecord(params.jobId);
   return {
     job: jobRecord,

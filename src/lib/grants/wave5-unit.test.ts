@@ -25,6 +25,7 @@ function ctx(
       userNumber: null,
       role: "USER",
       accountLevel: level,
+      experienceTotal: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

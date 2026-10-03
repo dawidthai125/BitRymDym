@@ -561,6 +561,13 @@ export async function approveUserBeat(beatId: string): Promise<Beat> {
   if (approved.ownerId !== current.ownerId) {
     throw new AuthError("FORBIDDEN", "Owner changed during approve.");
   }
+  const { hookBeatApproved } = await import(
+    "@/lib/creator-progress/award-hooks"
+  );
+  await hookBeatApproved({
+    ownerUserId: approved.ownerId,
+    beatId: approved.id,
+  });
   return approved;
 }
 
@@ -623,6 +630,13 @@ export async function publishApprovedUserBeat(beatId: string): Promise<Beat> {
   if (published.ownershipType !== "USER") {
     throw new AuthError("FORBIDDEN", "Ownership type changed during publish.");
   }
+  const { hookBeatFirstPublished } = await import(
+    "@/lib/creator-progress/award-hooks"
+  );
+  await hookBeatFirstPublished({
+    ownerUserId: published.ownerId,
+    beatId: published.id,
+  });
   return published;
 }
 

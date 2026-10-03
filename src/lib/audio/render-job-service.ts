@@ -831,6 +831,15 @@ export async function completeFakeRenderJobAsWorker(
     );
   }
 
+  const { hookRenderJobSucceeded } = await import(
+    "@/lib/creator-progress/award-hooks"
+  );
+  await hookRenderJobSucceeded({
+    ownerUserId: succeeded.owner_id as string,
+    mixSessionId: succeeded.mix_session_id as string,
+    renderJobId: succeeded.id as string,
+  });
+
   return {
     job: mapJob(succeeded as RenderJobRow),
     artifactId: artifact.id as string,

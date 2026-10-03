@@ -49,6 +49,7 @@ function ownerCtx(level: string): AuthContext {
       userNumber: null,
       role: "USER",
       accountLevel: level as AuthContext["profile"]["accountLevel"],
+      experienceTotal: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

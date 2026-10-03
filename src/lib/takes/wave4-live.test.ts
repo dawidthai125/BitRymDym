@@ -72,6 +72,7 @@ function userContext(
       userNumber: null,
       role: "USER",
       accountLevel,
+      experienceTotal: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

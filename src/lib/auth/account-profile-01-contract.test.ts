@@ -24,9 +24,15 @@ describe("ACCOUNT/PROFILE-01 contract (static)", () => {
     expect(sql).not.toMatch(/user_number_seq/i);
   });
 
-  it("protected fields include id role account_level user_number", () => {
+  it("protected fields include id role account_level user_number experience_total", () => {
     expect(PROTECTED_PROFILE_FIELDS).toEqual(
-      expect.arrayContaining(["id", "role", "account_level", "user_number"]),
+      expect.arrayContaining([
+        "id",
+        "role",
+        "account_level",
+        "user_number",
+        "experience_total",
+      ]),
     );
   });
 

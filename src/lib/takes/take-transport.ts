@@ -283,6 +283,13 @@ export async function finalizeTakeRecordingFor(
   });
 
   if (take.status === "READY") {
+    const { hookTakeReadyAuth } = await import(
+      "@/lib/creator-progress/award-hooks"
+    );
+    await hookTakeReadyAuth({
+      ownerUserId: context.userId,
+      takeId: take.id as string,
+    });
     return {
       takeId: take.id as string,
       beatId: take.beat_id as string,
@@ -432,6 +439,14 @@ export async function finalizeTakeRecordingFor(
   if (!ready || ready.status !== "READY") {
     throw new AuthError("FORBIDDEN", "Finalize did not reach READY.");
   }
+
+  const { hookTakeReadyAuth } = await import(
+    "@/lib/creator-progress/award-hooks"
+  );
+  await hookTakeReadyAuth({
+    ownerUserId: context.userId,
+    takeId: ready.id as string,
+  });
 
   return {
     takeId: ready.id as string,

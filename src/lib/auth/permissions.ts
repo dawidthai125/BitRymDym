@@ -62,6 +62,7 @@ export const PROTECTED_PROFILE_FIELDS = [
   "account_level",
   "id",
   "user_number",
+  "experience_total",
 ] as const;
 
 export function assertNoPrivilegeEscalationInPayload(

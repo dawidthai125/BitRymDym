@@ -32,6 +32,7 @@ function userContext(userId = OWNER): AuthContext {
       displayName: "T",
       userNumber: null,
       accountLevel: "BEGINNER_RAPPER",
+      experienceTotal: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

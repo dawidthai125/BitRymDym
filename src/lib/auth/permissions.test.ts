@@ -59,6 +59,9 @@ describe("authorization helpers", () => {
       assertNoPrivilegeEscalationInPayload({ user_number: 2 }),
     ).toThrow(/Forbidden field/);
     expect(() =>
+      assertNoPrivilegeEscalationInPayload({ experience_total: 999 }),
+    ).toThrow(/Forbidden field/);
+    expect(() =>
       assertNoPrivilegeEscalationInPayload({ display_name: "Rapper" }),
     ).not.toThrow();
   });

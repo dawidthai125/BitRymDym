@@ -31,6 +31,7 @@ function ctx(overrides?: Partial<AuthContext>): AuthContext {
       userNumber: null,
       role: "USER",
       accountLevel: "BEGINNER_RAPPER",
+      experienceTotal: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

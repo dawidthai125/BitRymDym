@@ -8,6 +8,8 @@ export type AppProfile = {
   userNumber: number | null;
   role: SystemRole;
   accountLevel: AccountLevel;
+  /** Creator Progress W1 — derived experience cache. Not Account Level. */
+  experienceTotal: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -25,13 +27,14 @@ export type ProfileRow = {
   user_number: number | null;
   role: SystemRole;
   account_level: AccountLevel;
+  experience_total: number;
   created_at: string;
   updated_at: string;
 };
 
 /** Whitelisted profile columns — never select('*') (user_number leakage risk). */
 export const PROFILE_SELECT_OWN =
-  "id, display_name, user_number, role, account_level, created_at, updated_at" as const;
+  "id, display_name, user_number, role, account_level, experience_total, created_at, updated_at" as const;
 
 /** Admin lookup of another profile's display + number (RLS: own OR is_admin). */
 export const PROFILE_SELECT_ADMIN_IDENTITY =
@@ -47,6 +50,11 @@ export function mapProfileRow(row: ProfileRow): AppProfile {
         : Number(row.user_number),
     role: row.role,
     accountLevel: row.account_level,
+    experienceTotal:
+      typeof row.experience_total === "number" &&
+      Number.isFinite(row.experience_total)
+        ? Math.max(0, Math.floor(row.experience_total))
+        : 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
