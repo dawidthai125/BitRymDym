@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-03 (USER-CLEANUP-01 + USER-ID-01 implemented; Owner verification pending commit/deploy)
+**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 implemented in repo; awaiting OWNER GO REVIEW — no commit/DB apply)
 
 ---
 
@@ -21,13 +21,13 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `4e33e8d` — `fix(player): align waveform progress with playback state` |
-| **PRODUCTION APP SHA** | `4e33e8d` |
+| **REPOSITORY HEAD / origin/main** | `0ca0115` — USER-ID-01 production verified tip |
+| **PRODUCTION APP SHA** | `0ca0115` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
-| **PRODUCTION DB tip** | `20261003110802` / `user_id_01_stable_user_number` (NULL→value hardening migration **pending apply**: `20261003123000`) |
-| **Prior DB tip** | `20261003051539` / `def01_e3_definer_execute_revoke` |
+| **PRODUCTION DB tip** | USER-ID-01 hardening tip `20261003123000` (ACTIVE) · ACCOUNT-01 migration **NOT applied** (`20261003160000` repo only) |
 | **USER-CLEANUP-01** | **EXECUTED** — auth/profiles = 2 (Dawid + Tajski); 93 fixtures deleted; orphan-31 untouched · [evidence](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md) |
-| **USER-ID-01** | **DB APPLIED** — Dawid=`1`, Tajski=`NULL`, next=`2` · app/hardening uncommitted · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) · [evidence](./audits/USER_ID_01_EVIDENCE.md) |
+| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1`, Tajski=`NULL`, next=`2` · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) |
+| **ACCOUNT / PROFILE-01** | **BLOCKER FIX CYCLE COMPLETE (repo)** · awaiting OWNER RE-REVIEW · [freeze](./audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#account--profile-01--account-lifecycle--public-ksywka) |
 | **PRODUCTION DB FAR-01 roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Prior security tip | `fbc696f` — DEF-01 |
 | Prior storage tip | `f9500b3` — FAR-01 execution harden |
@@ -58,20 +58,17 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY / PRODUCTION APP  = 4e33e8d (waveform progress/seek)
-PRODUCTION DB tip            = 20261003110802 (USER-ID-01; null-hardening 20261003123000 pending apply)
+REPOSITORY / PRODUCTION APP  = 0ca0115 (USER-ID-01 verified tip)
+WORKING TREE                 = ACCOUNT/PROFILE-01 implemented (uncommitted)
+PRODUCTION DB tip            = USER-ID-01 hardening ACTIVE · ACCOUNT-01 20261003160000 NOT applied
+ACCOUNT/PROFILE-01           = IMPLEMENTED IN REPO · await OWNER GO REVIEW
+USER-ID-01                   = PRODUCTION VERIFIED — GREEN (unchanged)
 FAR-01 DR-A                  = SHIPPED / PRODUCTION VERIFIED (historical @ f514a51)
 FAR-01 CAMPAIGN              = IN PROGRESS / SOAK ACTIVE
-  inventory                  = legacy1 · canonical77 · platform3 · retained67 · orphans30 · orphanStorage97 · quarantine1 · MIGRATE=0
-  soak end                   = 2026-10-04T04:40:56.645Z
-  retirement / cleanup       = NOT EXECUTED
 DEF-01                       = CLOSED / PRODUCTION VERIFIED @ fbc696f
-HIBP                         = DEFERRED / ACCEPTED RISK
 E3                           = PRODUCTION VERIFIED — GREEN
 WORKER                       = STOPPED / DISABLED (EXTERNAL COMPUTE · Contabo · 92496d4)
-STORAGE-ARCH-01              = LOCKED
-STORAGE-ARCH-02              = NOT IMPLEMENTED (docs only)
-NEXT GATE                    = SOAK END → FINAL SOAK AUDIT → Owner Review
+NEXT GATE                    = OWNER GO REVIEW (ACCOUNT/PROFILE-01) → commit/apply/deploy
 ```
 
 ### 3.1 Architecture living lock

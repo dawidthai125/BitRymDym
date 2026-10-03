@@ -8,6 +8,10 @@ import {
   StatusPill,
 } from "@/components/brand/chrome";
 import { Waveform } from "@/components/brand/waveform";
+import {
+  ChangePasswordForm,
+  DeleteAccountForm,
+} from "@/components/auth/auth-forms";
 import { DisplayNameForm } from "@/components/auth/display-name-form";
 import { AppShell } from "@/components/site/app-shell";
 import { signOutAction } from "@/lib/auth/actions";
@@ -57,9 +61,11 @@ export default async function AccountPage() {
   const recentTakes = takes.slice(0, 5);
   const readyCount = takes.filter((t) => t.displayStatus === "READY").length;
   const displayName =
-    context.profile.displayName?.trim() ||
-    context.email?.split("@")[0] ||
-    "Twórca";
+    context.profile.displayName?.trim() || "Twórca";
+  const userNumberLabel =
+    context.profile.userNumber != null
+      ? String(context.profile.userNumber)
+      : "—";
 
   return (
     <AppShell tone="studio">
@@ -191,7 +197,30 @@ export default async function AccountPage() {
                   </p>
                 </div>
 
-                <dl className="grid grid-cols-2 gap-3 border-y border-[var(--brd-line)] py-4 text-sm">
+                <dl className="space-y-3 border-y border-[var(--brd-line)] py-4 text-sm">
+                  <div>
+                    <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                      Ksywka
+                    </dt>
+                    <dd className="mt-1 text-[var(--brd-ink)]">{displayName}</dd>
+                  </div>
+                  <div>
+                    <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                      ID użytkownika
+                    </dt>
+                    <dd className="mt-1 text-[var(--brd-ink)]">{userNumberLabel}</dd>
+                  </div>
+                  <div>
+                    <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                      Email
+                    </dt>
+                    <dd className="mt-1 break-all text-[var(--brd-ink)]">
+                      {context.email ?? "—"}
+                    </dd>
+                  </div>
+                </dl>
+
+                <dl className="grid grid-cols-2 gap-3 text-sm">
                   <Stat label="Nagrania" value={String(takes.length)} />
                   <Stat label="Gotowe" value={String(readyCount)} />
                 </dl>
@@ -222,6 +251,31 @@ export default async function AccountPage() {
                     Wyloguj
                   </BrdButton>
                 </form>
+              </section>
+
+              <section
+                id="security"
+                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
+              >
+                <SectionLabel>Security</SectionLabel>
+                <ChangePasswordForm />
+                <p className="text-sm text-[var(--brd-mute)]">
+                  Nie pamiętasz hasła?{" "}
+                  <Link
+                    href="/forgot-password"
+                    className="text-[var(--brd-green)] underline-offset-4 hover:underline"
+                  >
+                    Reset przez e-mail
+                  </Link>
+                </p>
+              </section>
+
+              <section
+                id="danger"
+                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
+              >
+                <SectionLabel>Danger Zone</SectionLabel>
+                <DeleteAccountForm />
               </section>
             </aside>
           </div>

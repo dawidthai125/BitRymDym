@@ -4,16 +4,23 @@ import {
   classifyAuthCallbackParams,
   confirmationResultPath,
   confirmationStatusFromAuthError,
+  decideAuthCallbackRoute,
+  isRecoveryCallback,
   CONFIRMATION_COPY,
   CONFIRMATION_EMAIL_CALLBACK_PATH,
   POST_CONFIRMATION_IDENTITY,
+  RECOVERY_CALLBACK_FLOW,
+  RECOVERY_EMAIL_CALLBACK_PATH,
   parseConfirmationStatus,
 } from "@/lib/auth/confirmation";
 import {
   interpretSignUpResult,
   SIGNUP_PENDING_NEUTRAL_MESSAGE,
 } from "@/lib/auth/signup-result";
-import { getAuthEmailRedirectTo } from "@/lib/site-url";
+import {
+  getAuthEmailRedirectTo,
+  getAuthPasswordResetRedirectTo,
+} from "@/lib/site-url";
 
 describe("token_hash + type=signup (cross-browser)", () => {
   it("prefers otp/verifyOtp params over PKCE code when both present", () => {
@@ -106,14 +113,14 @@ describe("missing / incomplete callback params", () => {
 });
 
 describe("PKCE code flow preserved", () => {
-  it("classifies code-only as pkce (no token_hash)", () => {
+  it("classifies code-only as pkce non-recovery (no token_hash)", () => {
     expect(
       classifyAuthCallbackParams({
         code: "abc",
         tokenHash: null,
         type: null,
       }),
-    ).toEqual({ kind: "pkce", code: "abc" });
+    ).toEqual({ kind: "pkce", code: "abc", recovery: false });
   });
 
   it("maps PKCE verifier mismatch to invalid (no raw leak)", () => {
@@ -123,6 +130,128 @@ describe("PKCE code flow preserved", () => {
       ),
     ).toBe("invalid");
     expect(confirmationStatusFromAuthError("bad_code_verifier")).toBe("invalid");
+  });
+});
+
+describe("password recovery callback contract", () => {
+  it("classifies OTP recovery (token_hash + type=recovery)", () => {
+    const result = classifyAuthCallbackParams({
+      code: null,
+      tokenHash: "rec-hash",
+      type: "recovery",
+    });
+    expect(result).toEqual({
+      kind: "otp",
+      tokenHash: "rec-hash",
+      type: "recovery",
+    });
+    expect(isRecoveryCallback(result)).toBe(true);
+  });
+
+  it("classifies PKCE recovery via flow=recovery", () => {
+    const result = classifyAuthCallbackParams({
+      code: "pkce-code",
+      tokenHash: null,
+      type: null,
+      flow: RECOVERY_CALLBACK_FLOW,
+    });
+    expect(result).toEqual({
+      kind: "pkce",
+      code: "pkce-code",
+      recovery: true,
+    });
+    expect(isRecoveryCallback(result)).toBe(true);
+  });
+
+  it("classifies PKCE recovery via type=recovery with code (no token_hash)", () => {
+    const result = classifyAuthCallbackParams({
+      code: "pkce-code",
+      tokenHash: null,
+      type: "recovery",
+    });
+    expect(result).toEqual({
+      kind: "pkce",
+      code: "pkce-code",
+      recovery: true,
+    });
+  });
+
+  it("OTP recovery success → reset_password without signOut", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: {
+        kind: "otp",
+        tokenHash: "h",
+        type: "recovery",
+      },
+      exchangeOk: true,
+    });
+    expect(decision).toEqual({ kind: "reset_password", signOut: false });
+  });
+
+  it("PKCE recovery success → reset_password without signOut", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: { kind: "pkce", code: "c", recovery: true },
+      exchangeOk: true,
+    });
+    expect(decision).toEqual({ kind: "reset_password", signOut: false });
+  });
+
+  it("signup confirmation success still signs out → confirmed", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: {
+        kind: "otp",
+        tokenHash: "h",
+        type: "signup",
+      },
+      exchangeOk: true,
+    });
+    expect(decision).toEqual({
+      kind: "confirmed",
+      status: "success",
+      signOut: true,
+    });
+  });
+
+  it("non-recovery PKCE success still signs out → confirmed", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: { kind: "pkce", code: "c", recovery: false },
+      exchangeOk: true,
+    });
+    expect(decision).toEqual({
+      kind: "confirmed",
+      status: "success",
+      signOut: true,
+    });
+  });
+
+  it("failed recovery signs out and routes to forgot_password", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: { kind: "pkce", code: "c", recovery: true },
+      exchangeOk: false,
+      exchangeErrorMessage: "Token has expired or is invalid",
+    });
+    expect(decision).toEqual({ kind: "forgot_password", signOut: true });
+  });
+
+  it("documents recovery email template + reset redirectTo contracts", () => {
+    expect(RECOVERY_EMAIL_CALLBACK_PATH).toContain("token_hash={{ .TokenHash }}");
+    expect(RECOVERY_EMAIL_CALLBACK_PATH).toContain("type=recovery");
+    expect(RECOVERY_EMAIL_CALLBACK_PATH).not.toContain("ConfirmationURL");
+
+    const prev = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://bitrymdym.pl";
+    try {
+      expect(getAuthPasswordResetRedirectTo()).toBe(
+        "https://bitrymdym.pl/auth/callback?flow=recovery",
+      );
+      expect(getAuthEmailRedirectTo()).toBe(
+        "https://bitrymdym.pl/auth/callback",
+      );
+      expect(getAuthEmailRedirectTo()).not.toContain("flow=recovery");
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = prev;
+    }
   });
 });
 

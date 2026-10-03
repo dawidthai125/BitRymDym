@@ -23,11 +23,15 @@ export function DisplayNameForm({
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Nazwa wyświetlana
+        Ksywka
         <input
           name="displayName"
           type="text"
+          required
+          minLength={3}
+          maxLength={30}
           defaultValue={initialDisplayName}
+          autoComplete="nickname"
           className="rounded-lg border border-border bg-background px-3 py-2"
         />
       </label>
@@ -39,8 +43,8 @@ export function DisplayNameForm({
       {state.success ? (
         <p className="text-sm text-muted-foreground">Zapisano.</p>
       ) : null}
-      <Button type="submit" disabled={pending}>
-        {pending ? "Zapisywanie…" : "Zapisz"}
+      <Button type="submit" disabled={pending} className="min-h-11">
+        {pending ? "Zapisywanie…" : "Zapisz ksywkę"}
       </Button>
     </form>
   );

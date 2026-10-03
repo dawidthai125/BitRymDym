@@ -51,4 +51,13 @@ export function getAuthEmailRedirectTo(): string {
   return `${getSiteUrl()}/auth/callback`;
 }
 
+/**
+ * Absolute URL for password-reset redirectTo (must be on Supabase allow-list).
+ * Includes flow=recovery so PKCE ?code= landings keep session → /auth/reset-password.
+ * Also allow-list this exact URL in Supabase Auth redirect URLs.
+ */
+export function getAuthPasswordResetRedirectTo(): string {
+  return `${getSiteUrl()}/auth/callback?flow=recovery`;
+}
+
 export const SITE_URL_CANONICAL_PRODUCTION = CANONICAL_PRODUCTION_ORIGIN;

@@ -108,7 +108,7 @@ RESPONSE
 ```text
 Supabase Auth
     ↓
-Profile
+Profile (display_name = public ksywka · user_number = operational ID)
     ↓
 Role
     ↓
@@ -116,6 +116,16 @@ Permissions
     ↓
 Account Level
 ```
+
+| Surface | Public author |
+|---------|----------------|
+| PUBLIC catalog/detail | `profiles.display_name` for USER beats (read-path); PLATFORM uses `beats.producer` |
+| After account delete | Retained PUBLISHED USER beats keep content; author → anonymized string; `owner_id` NULL |
+| Never public | email · UUID-as-name · `user_number` |
+
+Signup (ACCOUNT/PROFILE-01): email · password · confirm · **mandatory ksywka** (3–30, PL/letters/digits/space/`_`/`-`).  
+Account: profile edit · change password (+reauth) · forgot password · delete account (orchestrated).  
+See [AUTHORIZATION.md](./AUTHORIZATION.md#account--profile-01--account-lifecycle--public-ksywka).
 
 ### Role (systemowe)
 

@@ -6,6 +6,24 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-03 — ACCOUNT / PROFILE-01 (BLOCKER FIX CYCLE · AWAITING OWNER RE-REVIEW)
+
+**Status:** Blocker fixes in working tree · **NOT committed / NOT pushed / NOT production-DB-applied / NOT deployed**  
+**Baseline:** `0ca0115` · USER-ID-01 PRODUCTION VERIFIED — GREEN
+
+### Blocker fixes
+
+- **Recovery:** PKCE (`flow=recovery`) + OTP (`type=recovery`) keep session → `/auth/reset-password`; signup confirm still signs out
+- **Delete/audio:** orchestrator nullifies `created_by` before anonymize/Auth delete; migration updates audio trigger for controlled retained/nullify states without opening USER privilege
+
+### Prior implement scope (still in tree)
+
+- Mandatory ksywka · profile edit · change password · forgot/reset · delete orchestrator
+- OTD-01 C / OTD-02 A / OTD-03 A / OTD-04 · USER-ID-01 untouched
+
+---
+
+
 ## 2026-10-03 — USER-CLEANUP-01 + USER-ID-01 (IMPLEMENTED · OWNER VERIFICATION PENDING)
 
 **Status:** Production DB mutated · app/docs in working tree · **NOT committed / NOT pushed / NOT app-deployed**

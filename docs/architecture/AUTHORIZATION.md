@@ -129,6 +129,61 @@ Do not document secrets.
 - Admin moderation: show foreign ID **only when viewer role is ADMIN**.
 - Public beat `owner_id` UUID leak: **out of scope** (separate hardening follow-up).
 
+---
+
+## ACCOUNT / PROFILE-01 — Account lifecycle + public ksywka
+
+**Status:** IMPLEMENTED in repo · **NOT** production-DB-applied · **NOT** committed  
+**Design Freeze:** [ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md](../audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) — OWNER APPROVED  
+**Migration (repo only):** `20261003160000_account_profile_01.sql`
+
+### Identity (public)
+
+| Concept | Role |
+|---------|------|
+| `profiles.display_name` | Public ksywka (SSOT for USER author identity on read-path) |
+| `profiles.user_number` | Own/admin operational ID only (USER-ID-01 unchanged) |
+| email | Login only — never public author |
+| `beats.producer` | Legacy/historical + PLATFORM label; USER read-path prefers `display_name` |
+
+### Security boundaries
+
+- Profile self-update: `display_name` only · `PROTECTED_PROFILE_FIELDS` blocks `id` / `role` / `account_level` / `user_number`
+- Password change: session + reauth (`signInWithPassword`) + Auth `updateUser` — never via profiles UPDATE
+- Forgot password:
+  - `resetPasswordForEmail` → `getAuthPasswordResetRedirectTo()` (`/auth/callback?flow=recovery`)
+  - OTP template contract: `RECOVERY_EMAIL_CALLBACK_PATH` (`token_hash` + `type=recovery`)
+  - PKCE `?code=&flow=recovery` **and** OTP recovery keep session → `/auth/reset-password` (no premature signOut)
+  - Signup confirm still signs out → `/auth/confirmed`
+  - Anti-enumeration success copy
+- Delete account: session `auth.uid()` only · password reauth · single orchestrator `deleteOwnAccount` · deny foreign UUID/`user_number`/email claims
+- Public author RPC: `public_author_display_names(uuid[])` SECURITY DEFINER returns **only** `(id, display_name)`
+
+### Delete orchestration (contract)
+
+1. Authenticate + reauth  
+2. Classify owned USER beats: PUBLISHED → retain+anonymize; else delete · collect retainedKeys  
+3. DELETE download events/reservations for user (OTD-04 — CHECK blocks SET NULL)  
+4. Delete grants / private takes / mix / render / artifacts / premium  
+5. Delete non-published USER beats + assets  
+6. **Nullify `beat_audio_assets.created_by` for user (service_role) while owner still set**  
+7. Anonymize retained public beats (`producer` = `Usunięty użytkownik`, `owner_id` NULL)  
+8. Selective Storage cleanup under `user/{uuid}/` excluding keys referenced by retained public assets  
+9. Auth `deleteUser` (profiles CASCADE; `created_by` already NULL → no trigger conflict) · sign out  
+
+**Audio trigger invariant:** ordinary USER cannot mutate assets; INSERT USER still requires living `owner_id`; service_role/admin may nullify `created_by` only; retained USER+NULL owner allows historical `user/` keys for service_role/admin UPDATE only.
+
+**Never:** blind prefix delete · `platform/*` · `anon/*` · orphan-31 · other users · release `user_number`.
+
+### OTD resolutions (implementation)
+
+| OTD | Resolution |
+|-----|------------|
+| OTD-ACCOUNT-01 | **C** — SET NULL FKs + CHECK USER+NULL · orchestrator nullifies `created_by` before Auth delete · trigger allows that controlled transition |
+| OTD-ACCOUNT-02 | **A** — read-path `display_name` via RPC; no bulk producer backfill |
+| OTD-ACCOUNT-03 | **A** — reference-aware Storage delete |
+| OTD-ACCOUNT-04 | DELETE download rows before Auth delete |
+
 ## Verification layers
 
 | Layer | Status |

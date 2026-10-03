@@ -23,6 +23,7 @@ import {
   validateRejectionReason,
   type BeatInput,
 } from "@/lib/beats/validation";
+import { withPublicAuthors } from "@/lib/beats/public-author";
 import {
   BEAT_SELECT_FULL,
   BEAT_SELECT_PUBLIC,
@@ -681,7 +682,8 @@ export async function listPublishedBeats(): Promise<Beat[]> {
     throw new Error(error.message);
   }
 
-  return (data as BeatRow[] | null)?.map(mapPublicBeatRow) ?? [];
+  const beats = (data as BeatRow[] | null)?.map(mapPublicBeatRow) ?? [];
+  return withPublicAuthors(beats);
 }
 
 export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
@@ -699,7 +701,9 @@ export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
   if (!data) {
     return null;
   }
-  return mapPublicBeatRow(data as BeatRow);
+  const beat = mapPublicBeatRow(data as BeatRow);
+  const [enriched] = await withPublicAuthors([beat]);
+  return enriched ?? beat;
 }
 
 export async function listPlatformBeatsForAdmin(): Promise<

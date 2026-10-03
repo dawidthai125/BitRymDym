@@ -1,8 +1,11 @@
 /**
- * Email-confirmation UX helpers (pure).
+ * Email-confirmation + password-recovery UX helpers (pure).
  * Tokens/codes must never be logged or passed to the confirmed page.
  *
  * Cross-browser confirm uses token_hash + verifyOtp (not ConfirmationURL/PKCE).
+ * Recovery supports:
+ *   - OTP: token_hash + type=recovery
+ *   - PKCE: code + flow=recovery (server redirectTo marker)
  */
 
 export type ConfirmationStatus = "success" | "invalid" | "error";
@@ -10,6 +13,16 @@ export type ConfirmationStatus = "success" | "invalid" | "error";
 /** Path pattern for Supabase Confirm signup template (SiteURL + this). */
 export const CONFIRMATION_EMAIL_CALLBACK_PATH =
   "/auth/callback?token_hash={{ .TokenHash }}&type=signup";
+
+/**
+ * Path pattern for Supabase Recovery email template (OTP / TokenHash).
+ * Prefer this over ConfirmationURL for cross-browser recovery.
+ */
+export const RECOVERY_EMAIL_CALLBACK_PATH =
+  "/auth/callback?token_hash={{ .TokenHash }}&type=recovery";
+
+/** Query marker on resetPasswordForEmail redirectTo (PKCE landing). */
+export const RECOVERY_CALLBACK_FLOW = "recovery";
 
 export const CONFIRMATION_COPY = {
   success: {
@@ -28,35 +41,93 @@ export const CONFIRMATION_COPY = {
 
 export type AuthCallbackKind =
   | { kind: "otp"; tokenHash: string; type: string }
-  | { kind: "pkce"; code: string }
+  | { kind: "pkce"; code: string; recovery: boolean }
   | { kind: "missing" };
 
 /**
  * Classify callback query params without exposing secrets in return paths.
- * Prefer token_hash + type (cross-browser email confirm) over PKCE code.
+ * Prefer token_hash + type (OTP) over PKCE code.
+ *
+ * Recovery markers:
+ * - OTP: type=recovery (+ token_hash)
+ * - PKCE: flow=recovery on redirectTo (preferred) or type=recovery with code
  */
 export function classifyAuthCallbackParams(input: {
   code: string | null;
   tokenHash: string | null;
   type: string | null;
+  flow?: string | null;
 }): AuthCallbackKind {
   const tokenHash = input.tokenHash?.trim() || null;
   const type = input.type?.trim() || null;
+  const code = input.code?.trim() || null;
+  const flow = input.flow?.trim() || null;
+
   if (tokenHash && type) {
     return { kind: "otp", tokenHash, type };
   }
 
-  // Incomplete OTP params (hash without type, or type without hash) → missing
-  if (tokenHash || type) {
+  // PKCE code may carry recovery intent via flow= or type= (no token_hash).
+  if (code && !tokenHash) {
+    const recovery = flow === RECOVERY_CALLBACK_FLOW || type === "recovery";
+    return { kind: "pkce", code, recovery };
+  }
+
+  // Incomplete OTP params (hash without type, or type without hash/code) → missing
+  if (tokenHash || type || flow) {
     return { kind: "missing" };
   }
 
-  const code = input.code?.trim() || null;
-  if (code) {
-    return { kind: "pkce", code };
+  return { kind: "missing" };
+}
+
+export function isRecoveryCallback(classified: AuthCallbackKind): boolean {
+  if (classified.kind === "otp") return classified.type === "recovery";
+  if (classified.kind === "pkce") return classified.recovery;
+  return false;
+}
+
+/**
+ * Pure post-exchange routing decision (testable without Next / Supabase I/O).
+ */
+export type AuthCallbackRouteDecision =
+  | { kind: "reset_password"; signOut: false }
+  | { kind: "forgot_password"; signOut: true }
+  | {
+      kind: "confirmed";
+      status: ConfirmationStatus;
+      signOut: boolean;
+    };
+
+export function decideAuthCallbackRoute(params: {
+  classified: AuthCallbackKind;
+  exchangeOk: boolean;
+  exchangeErrorMessage?: string | null;
+}): AuthCallbackRouteDecision {
+  const { classified, exchangeOk } = params;
+  const recovery = isRecoveryCallback(classified);
+
+  if (classified.kind === "missing") {
+    return { kind: "confirmed", status: "error", signOut: false };
   }
 
-  return { kind: "missing" };
+  if (!exchangeOk) {
+    if (recovery) {
+      return { kind: "forgot_password", signOut: true };
+    }
+    return {
+      kind: "confirmed",
+      status: confirmationStatusFromAuthError(params.exchangeErrorMessage),
+      signOut: false,
+    };
+  }
+
+  if (recovery) {
+    return { kind: "reset_password", signOut: false };
+  }
+
+  // Signup / other confirms: end signed-out at confirmed success.
+  return { kind: "confirmed", status: "success", signOut: true };
 }
 
 export function parseConfirmationStatus(

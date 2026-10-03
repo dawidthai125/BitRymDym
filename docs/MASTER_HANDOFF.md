@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-03 (USER-CLEANUP-01 + USER-ID-01 DB applied; Owner verification before commit)
+**Updated:** 2026-10-03 (ACCOUNT/PROFILE-01 implemented in repo; awaiting OWNER GO REVIEW)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,11 +21,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `4e33e8d` — waveform progress/seek (app tip) |
-| **Production application SHA** | `4e33e8d` |
-| **Production DB tip** | `20261003110802` / `user_id_01_stable_user_number` |
+| **Repository HEAD** | `0ca0115` — USER-ID-01 production verified tip |
+| **Production application SHA** | `0ca0115` |
+| **Production DB tip** | USER-ID-01 hardening ACTIVE · ACCOUNT-01 `20261003160000` **NOT applied** |
 | **USER-CLEANUP-01** | **EXECUTED** — 2 users remain (Dawid + Tajski) |
-| **USER-ID-01** | **DB APPLIED** · app uncommitted · Dawid=1 · Tajski=NULL · next=2 |
+| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · Tajski=NULL · next=2 |
+| **ACCOUNT / PROFILE-01** | **BLOCKER FIX CYCLE COMPLETE (repo)** · recovery PKCE+OTP · created_by nullify · await OWNER RE-REVIEW |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Status | **GREEN** · FAR-01 campaign **SOAK ACTIVE** (not closed) |
 | **FAR-01 DR-A (Phase 1)** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
@@ -62,7 +63,8 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
-| `4e33e8d` | **Current repo + Production app tip** — waveform progress/seek |
+| `0ca0115` | **Current repo + Production app tip** — USER-ID-01 verified baseline |
+| `4e33e8d` | Historical waveform progress/seek tip |
 | `e03f3be` | Historical FAR-01 operator tooling tip |
 | `fbc696f` | DEF-01 security harden (parent of e03f3be) |
 | `f9500b3` | FAR-01 execution harden |
