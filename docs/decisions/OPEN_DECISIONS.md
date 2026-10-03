@@ -26,7 +26,7 @@
 | OD-05 | Limit pobrań — użytkownik anonimowy | §13 | Download limits | **CLOSED / ACCEPTED** — 2026-09-26 (Phase 1.8A interim) |
 | OD-06 | Limit pobrań — użytkownik zalogowany | §13 | Download limits | **CLOSED / ACCEPTED** — 2026-09-26 (Phase 1.8A interim) |
 | OD-07 | Ceny Premium | §15, §48 | Faza 4 | OPEN |
-| OD-08 | Dokładne poziomy Premium | §4, §22–23 | Faza 4 | OPEN |
+| OD-08 | Dokładne poziomy Premium | §4, §22–23 | Faza 4 / Creator Progress W2 | **CLOSED / ACCEPTED** — 2026-10-03 · FREE / BRONZE / SILVER / GOLD · [W2 Design Contract](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | OD-09 | Ostateczne nazwy poziomów konta | §4 (nazwy robocze) | Profile, billing | OPEN |
 | OD-10 | Finalne nazwy głosowania | §27 | Faza 2 — Voting | OPEN |
 | OD-11 | Mechanizm moderacji komentarzy | §28 | Faza 2 — Comments | OPEN |
@@ -82,8 +82,10 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-REC-06 | Own take preview/download/delete; Track publish OUT of Recording EPIC | 2026-09-27 |
 | OD-REC-07 | Anti-abuse caps (anon/BEGINNER/PRO/LEGEND active + daily sessions) | 2026-09-27 |
 | OD-REC-08 | Own take download YES for logged-in tiers; anon no durable take DL | 2026-09-27 |
+| OD-08 | Premium tiers = FREE / BRONZE / SILVER / GOLD · ≠ Rank · ≠ Account Level · ≠ Role · legacy active Premium → SILVER | 2026-10-03 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
+W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 
 ---
 
@@ -93,7 +95,6 @@ Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREE
 |----|--------|---------|
 | OD-04 | Operator płatności | Faza 4 |
 | OD-07 | Ceny Premium | Faza 4 |
-| OD-08 | Poziomy Premium | Faza 4 |
 | OD-09 | Nazwy poziomów konta | Profile / billing labels |
 | OD-10 | Nazwy głosowania | Faza 2 |
 | OD-11 | Moderacja komentarzy | Faza 2 |
@@ -115,18 +116,23 @@ Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREE
 - First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).
 - Community upload: EPIC **COMPLETE / LOCKED** @ `c5e1f17` — OD-COMMUNITY-01…05 **CLOSED**. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
 - Recording / Quick Take: Design Freeze **LOCKED** — OD-REC-01…08 **CLOSED**. Implementation awaits separate Wave 1 Owner GO. See [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
-- Recording retention V1: BEGINNER 24h · PRO 10d · LEGEND 30d (config, not scattered magic numbers). Future Premium overlay (OD-04/07/08) may boost — hybrid D04.
+- Recording retention V1: BEGINNER 24h · PRO 10d · LEGEND 30d (config, not scattered magic numbers). Future Premium overlay may boost — hybrid D04; **overlay numbers OPEN / DEFERRED** (OD-08 closed tiers only).
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
 - OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.
 
 ### Creator Progress / Premium (continuity note — 2026-10-03)
 
-Design Freeze: [CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md](./CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md). W1 delivery closeout: [CREATOR_PROGRESS_W1_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W1_CLOSEOUT.md).
+Design Freeze: [CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md](./CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md).
+W1 delivery closeout: [CREATOR_PROGRESS_W1_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W1_CLOSEOUT.md).
+W2 Design Contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 
-- **Creator Rank labels** are a separate axis from Account Level display names (**OD-09**). Closing or renaming Rank copy does **not** close OD-09.
-- **W1** (Experience + Rank foundation @ `76a4757`) does **not** resolve Premium billing/pricing (**OD-04**, **OD-07**) or Premium tier catalog finalization (**OD-08**). Those remain OPEN.
-- **Recording Premium overlay numbers** remain an OPEN Owner decision (freeze residual); OD-REC-04 hybrid decision stays CLOSED, numeric overlay still unlocked.
-- **W1 does not authorize Premium implementation** (W2). Premium product wave requires separate Owner GO (AUDIT → RCA → PLAN → DESIGN/ARCH REVIEW → GO).
+- **OD-08 CLOSED / ACCEPTED** — Premium tiers = FREE / BRONZE / SILVER / GOLD. Premium tier ≠ Rank ≠ Account Level ≠ Role.
+- Legacy binary Premium (`active` + valid `expires_at`) maps to **SILVER** (not GOLD) under future W2-A migration — Design Contract only; **not applied**.
+- **Creator Rank labels** remain separate from Account Level display names (**OD-09 OPEN**).
+- **OD-04** (payment operator) and **OD-07** (Premium prices) remain **OPEN**. Billing / checkout out of W2-A.
+- **Recording Premium overlay numbers** remain **OPEN / DEFERRED**; OD-REC-04 hybrid stays CLOSED; numbers unlocked.
+- **Gold 90d** artifact retention = **DESIGN ONLY** — PRODUCTION claim blocked until artifact janitor (OD-SA-05) verified.
+- **W2-A Implementation GO** = **NOT AUTHORIZED**. Design Contract READY only.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-03 (CREATOR PROGRESS W1 — PRODUCTION VERIFIED WITH OPEN ITEMS · tip `76a4757`)
+**Updated:** 2026-10-03 (W2 Premium Design Contract READY · OD-08 CLOSED · tip `c5ed0d5` · app W1 `76a4757`)
 
 ---
 
@@ -21,11 +21,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `76a4757` — Creator Progress W1 (`feat(creator): implement experience and rank foundation`) |
-| **PRODUCTION APP SHA** | `76a4757` · deploy `dpl_5WFmJckV5zjDopXHbjqy8rrF2kiD` · Ready |
+| **REPOSITORY HEAD / origin/main** | `c5ed0d5` — W1 documentation closeout (`docs(creator): close out W1 production verification`) · W2 Design Contract docs pending commit |
+| **PRODUCTION APP SHA** | `76a4757` — Creator Progress W1 app · deploy Ready (W2 not in app) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
 | **PRODUCTION DB tip** | Creator Progress W1 applied (`20261003210121` → `20261003210322`) · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
 | **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W1_IMPLEMENTATION.md) |
+| **CREATOR PROGRESS W2** | **DESIGN CONTRACT READY** · Implementation **NOT AUTHORIZED** · OD-08 CLOSED (FREE/BRONZE/SILVER/GOLD) · legacy Premium → SILVER · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **USER-CLEANUP-01** | **EXECUTED** — fixtures removed earlier · orphan-31 untouched · [evidence](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md) |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1` · next=`2` · Tajski test account **deleted** (no renumber/reuse) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** · [freeze](./audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#account--profile-01--account-lifecycle--public-ksywka) |
@@ -83,10 +84,15 @@ FAR-01 CAMPAIGN              = IN PROGRESS / SOAK ACTIVE
 DEF-01                       = CLOSED / PRODUCTION VERIFIED @ fbc696f
 E3                           = PRODUCTION VERIFIED — GREEN
 WORKER                       = STOPPED / DISABLED (EXTERNAL COMPUTE · Contabo · 92496d4)
-PREMIUM PRODUCT (W2)         = DEFERRED / NOT IMPLEMENTED IN W1 · NOT AUTHORIZED
-ACTIVE P0 / P1               = NONE (W1 closeout)
-NEXT GATE                    = Owner GO commit/push W1 docs continuity · FAR-01 soak end
-                             · W2 Premium Foundation requires separate AUDIT→RCA→PLAN→REVIEW→GO
+PREMIUM PRODUCT (W2)         = DESIGN CONTRACT READY · W2-A Implementation NOT AUTHORIZED
+  OD-08                      = CLOSED / ACCEPTED · FREE / BRONZE / SILVER / GOLD
+  Legacy Premium mapping     = active → SILVER (design only · not migrated)
+  Gold 90d                   = DESIGN ONLY · blocked until artifact janitor
+  Billing OD-04/OD-07        = OPEN · out of W2-A
+  Recording overlay numbers  = OPEN / DEFERRED
+ACTIVE P0 / P1               = NONE
+NEXT GATE                    = Owner GO commit/push W2 Design Contract docs · FAR-01 soak end
+                             · W2-A requires separate explicit Implementation GO
 ```
 
 ### 3.1 Architecture living lock
@@ -113,7 +119,8 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → WAIT FOR SOAK END (2026-10-04T04:40:56.645Z)
                  → FINAL SOAK AUDIT (read-only)
                  → Owner Review → FAR-01 closeout only if evidence supports
-                 → do NOT start W2 Premium without separate Owner GO sequence
+                 → do NOT start W2-A without explicit OWNER GO — W2-A IMPLEMENTATION
+                 → W2 Design Contract READY · OD-08 CLOSED · billing/recording overlay still deferred
                  → do NOT retirement / orphan delete / new backfill without Owner GO
                  → do NOT treat Contabo as durable media
                  → HIBP remains ACCEPTED RISK (not solved)
@@ -132,7 +139,8 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | FAR-01 DR-A | CLOSED Phase 1 | SHIPPED @ `f514a51` |
 | FAR-01 campaign | Owner GO sequence through fleet | **SOAK ACTIVE** · **NOT CLOSED** |
 | DEF-01 | Owner GO | CLOSED / PRODUCTION VERIFIED @ `fbc696f` |
-| Creator Progress Design Freeze V1 | Docs freeze @ `1e66cae` | W1 Experience+Rank **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` · Premium wave **NOT STARTED** |
+| Creator Progress Design Freeze V1 | Docs freeze @ `1e66cae` | W1 Experience+Rank **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
+| OD-08 Premium tiers | **CLOSED / ACCEPTED** 2026-10-03 | FREE/BRONZE/SILVER/GOLD · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) · W2-A **NOT AUTHORIZED** |
 
 ---
 
@@ -142,7 +150,7 @@ STEMS · payments / Premium catalog product · Creator Progress W2 Premium Found
 
 **E3 flags:** Mix ON · Jobs ON · PUBLIC_AUDIO ON · worker STOPPED/DISABLED · `E3_RENDER_WORKER_SECRET` CONFIGURED (never commit).
 
-**Premium:** DEFERRED / NOT IMPLEMENTED IN W1. E3 binary `premium_entitlements` overlay for render remains as before; Creator Progress Premium capability product is a separate next wave.
+**Premium:** E3 binary `premium_entitlements` overlay remains live. OD-08 tiers CLOSED (design). W2 Design Contract READY; **W2-A Implementation NOT AUTHORIZED**. Billing (OD-04/07) OPEN. Gold 90d DESIGN ONLY.
 
 ---
 
