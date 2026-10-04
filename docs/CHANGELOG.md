@@ -6,10 +6,27 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — USER-FACING POLISH LOCALIZATION (CLOSED / PRODUCTION VERIFIED GREEN)
+
+**Status:** **CLOSED** · **PRODUCTION VERIFIED GREEN**  
+**Final app SHA:** `ffe723b` · deployment `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`  
+**Closeout SSOT:** [USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md)  
+**Email templates:** [USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md)
+
+### Delivery
+
+- App localization @ `4ebd1d3` · P2 chrome cleanup @ `ffe723b`
+- Production UX verification **PASS** · P0/P1/P2 = **0**
+- P2 CLOSED: `Workspace` → `Studio` · `Raw` → `Surowy`
+- DB / Storage unchanged · Auth templates unchanged on final deploy gate
+- Supabase Auth email inbox E2E = **BLOCKED — NO INBOX ACCESS** (evidence limitation)
+
+---
+
 ## 2026-10-04 — P2 POLISH CHROME CLEANUP (Workspace · Raw)
 
-**Status:** App change committed · **NOT production-deployed**  
-**Baseline:** `4ebd1d3` · USER-FACING POLISH LOCALIZATION production deploy
+**Status:** **SHIPPED** · production @ `ffe723b` / `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`  
+**Baseline:** `4ebd1d3` · USER-FACING POLISH LOCALIZATION
 
 ### Changes
 

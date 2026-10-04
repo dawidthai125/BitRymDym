@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-04 (W2-B PRODUCTION VERIFIED WITH NON-BLOCKING FINDING · tip/app `d86b4df` · deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG`)
+**Updated:** 2026-10-04 (USER-FACING POLISH LOCALIZATION CLOSED / PRODUCTION VERIFIED GREEN · tip/app `ffe723b` · deploy `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`)
 
 ---
 
@@ -21,13 +21,14 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `d86b4df` — W2-B Premium Enforcement application |
-| **PRODUCTION APP SHA** | `d86b4df` — Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · **W2-B PRODUCTION VERIFIED** |
+| **REPOSITORY HEAD / origin/main** | `ffe723b` — USER-FACING POLISH LOCALIZATION (docs tip may advance after closeout commit) |
+| **PRODUCTION APP SHA** | `ffe723b` — Ready · `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM` · **POLISH LOCALIZATION VERIFIED GREEN** |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
-| **PRODUCTION DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 (post fixture cleanup) · **no W2-B migration** |
+| **PRODUCTION DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 (post fixture cleanup) · **no W2-B migration** · localization epic **DB UNCHANGED** |
+| **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` — [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · email templates [doc](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) · inbox E2E **BLOCKED — NO INBOX ACCESS** |
 | **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` — [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
-| **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` — [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
+| **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) — [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
 | **USER-CLEANUP-01** | **EXECUTED** — fixtures removed earlier · orphan-31 untouched |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1` · next=`2` |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** |
@@ -52,11 +53,15 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY HEAD / origin/main = d86b4df
-PRODUCTION APP                = d86b4df · dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG
+REPOSITORY HEAD / origin/main = ffe723b (+ docs closeout commit after push)
+PRODUCTION APP                = ffe723b · dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM
 PRODUCTION DB                 = 20261003221811 / w2a_premium_tier_foundation · no W2-B migration
+USER-FACING POLISH LOCALIZATION = CLOSED / PRODUCTION VERIFIED GREEN @ ffe723b
+  P0 / P1 / P2                = 0
+  Email inbox E2E             = BLOCKED — NO INBOX ACCESS (evidence limitation)
+  Auth templates (final deploy) = UNCHANGED
 CREATOR PROGRESS W2-A         = CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ 6ee3255
-CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
+CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df (in tree)
   Gate name                   = PREMIUM ENFORCEMENT
   Download cutover (live)     = ANON 2 · FREE 4 · BRONZE 10 · SILVER 25 · GOLD 50
   Functional E2E              = ANON/FREE/BRONZE/SILVER/GOLD PASS (N success + N+1 blocked)
@@ -75,8 +80,9 @@ CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ 
 OD-08                         = CLOSED
 OD-04 / OD-07                 = OPEN
 Recording overlay             = OPEN / DEFERRED
-NEXT GATE                     = W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH
+NEXT GATE                     = Owner direction only
                               · FAR-01 soak end → FINAL SOAK AUDIT
+                              · optional Auth email inbox E2E when mailbox available
 ```
 
 ### 3.1 Architecture living lock
@@ -100,13 +106,13 @@ Beat download USER SSOT      = entitlement.limits.downloadsDaily (live)
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → CREATOR_PROGRESS_W2B_IMPLEMENTATION.md
-                 → NEXT GATE = W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH
-                 → W2-B download enforcement = PRODUCTION VERIFIED
-                 → Mix/Render live = DEFERRED (not W2-B blocker)
-                 → P2-1 VERIFIED RESOLVED · P2-2/3/4 OPEN
-                 → OD-08 CLOSED · OD-04/OD-07 OPEN · overlay OPEN/DEFERRED
-                 → Gold 90d DESIGN ONLY · artifact janitor DEFERRED
+                 → USER-FACING POLISH LOCALIZATION = CLOSED @ ffe723b
+                 → CREATOR_PROGRESS_W2B_IMPLEMENTATION.md (still relevant)
+                 → NEXT GATE = Owner direction only
+                 → W2-B download enforcement = PRODUCTION VERIFIED (in tree)
+                 → Mix/Render live = DEFERRED
+                 → optional Auth email inbox E2E (BLOCKED — NO INBOX ACCESS)
+                 → FAR-01 soak / FINAL SOAK AUDIT when Owner GO
 ```
 
 ---
@@ -118,6 +124,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | OD-08 Premium tiers | **CLOSED / ACCEPTED** | W2-A CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ `6ee3255` |
 | W2-A Premium foundation | Production verified with findings | App `6ee3255` · DB `20261003221811` |
 | W2-B Premium Enforcement | Owner scope locked | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) |
+| USER-FACING POLISH LOCALIZATION | Owner GO sequence | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
 | FAR-01 campaign | Owner GO sequence | **SOAK ACTIVE** · **NOT CLOSED** |
 | DEF-01 | Owner GO | CLOSED / PRODUCTION VERIFIED @ `fbc696f` |
 
