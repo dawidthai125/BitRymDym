@@ -59,7 +59,7 @@
 | OD-ADMIN-05 | ADMIN sees user email | §35, privacy | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES /admin/users only) |
 | OD-ADMIN-06 | Audit role/Premium mutations | §35, §37 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
 | OD-ADMIN-07 | History UI for role/Premium | §35 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES / W3) |
-| OD-ADMIN-DELETE-01 | ADMIN may delete other accounts | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) · delivery **NOT PRODUCTION VERIFIED** |
+| OD-ADMIN-DELETE-01 | ADMIN may delete other accounts | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) · delivery **PRODUCTION VERIFIED WITH FINDINGS** |
 | OD-ADMIN-DELETE-02 | ADMIN may delete own account via panel | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
 | OD-ADMIN-DELETE-03 | May delete last ADMIN | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
 | OD-ADMIN-DELETE-04 | Deletion reason required | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
@@ -112,7 +112,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).  
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).  
-W4 Admin Delete (pending GO): [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md).
+W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**PRODUCTION VERIFIED WITH FINDINGS**).
 
 ---
 
@@ -143,7 +143,7 @@ W4 Admin Delete (pending GO): [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_
 - First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).
 - Community upload: EPIC **COMPLETE / LOCKED** @ `c5e1f17` — OD-COMMUNITY-01…05 **CLOSED**. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
 - Recording / Quick Take: Design Freeze **LOCKED** — OD-REC-01…08 **CLOSED**. Implementation awaits separate Wave 1 Owner GO. See [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
-- Admin User Management: **W0 LOCKED** · W1 COMPLETE · W2 **PRODUCTION VERIFIED WITH FINDINGS** · W3 **CLOSED / PRODUCTION VERIFIED** @ `237a86f`. OD-ADMIN-01…07 **CLOSED**. W4 **NOT STARTED**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md).
+- Admin User Management: **W0 LOCKED** · W1 COMPLETE · W2 **PRODUCTION VERIFIED WITH FINDINGS** · W3 **CLOSED / PRODUCTION VERIFIED** @ `237a86f`. OD-ADMIN-01…07 **CLOSED**. W4 **PRODUCTION VERIFIED WITH FINDINGS** @ `ddcee65` (EMAIL E2E BLOCKED — Resend env missing). See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W4 freeze](./ADMIN_USER_DELETE_DESIGN_FREEZE.md).
 - Recording retention V1: BEGINNER 24h · PRO 10d · LEGEND 30d (config, not scattered magic numbers). Future Premium overlay may boost — hybrid D04; **overlay numbers OPEN / DEFERRED** (OD-08 closed tiers only).
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
 - OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.

@@ -6,15 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-10-04 — ADMIN USER DELETE W4 (IMPLEMENTATION READY — NOT PRODUCTION VERIFIED)
+## 2026-10-04 — ADMIN USER DELETE W4 (PRODUCTION VERIFIED WITH FINDINGS)
 
-**Status:** **OWNER APPROVED · IMPLEMENTATION READY — NOT PRODUCTION VERIFIED**  
+**Status:** **PRODUCTION VERIFIED WITH FINDINGS**  
 **SSOT:** [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)  
-**Repo HEAD (committed baseline):** `3229f55` · **Production app:** `237a86f` · **DB:** `20261004144223` (**W4 migration NOT APPLIED**)
+**Implementation / production app:** `ddcee65` · `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` · READY / PROMOTED  
+**DB:** `20261004174202` / `admin_user_management_w4_delete` (local file `20261004190900` — timestamp drift)
 
-- Shared `executeAccountProfile01Deletion` + admin `adminDeleteUserAction`
-- Audit `USER_ACCOUNT_DELETE` · Resend notification · last-admin lock `4242026, 2002`
-- Next gate: **W4 DB APPLY + APP DEPLOY** (separate Owner GO)
+- Shared `executeAccountProfile01Deletion` + admin `adminDeleteUserAction` + audit `USER_ACCOUNT_DELETE`
+- Disposable fixture USER #85 deleted via `/admin/users`; Auth/profile gone; W3 49-row audit intact + 1 delete event
+- **EMAIL E2E BLOCKED — RESEND ENV NOT PROVISIONED** (`RESEND_API_KEY` / `RESEND_FROM_EMAIL` missing)
+- Findings retained: last-admin TOCTOU; no durable idempotency; live last-admin concurrency NOT VERIFIED; published-beat retain not live-data exercised
 
 ---
 
