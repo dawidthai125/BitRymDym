@@ -1,7 +1,7 @@
 # Otwarte decyzje (DECISION REQUIRED)
 
-**Źródło:** [MASTER SSOT v0.1](../ssot/MASTER_SSOT_v0.1.md) §44  
-**Zasada:** Cursor Agent NIE może samodzielnie wymyślać ani zamrażać elementów oznaczonych jako OPEN.  
+**Źródło:** [MASTER SSOT v0.1](../ssot/MASTER_SSOT_v0.1.md) §44
+**Zasada:** Cursor Agent NIE może samodzielnie wymyślać ani zamrażać elementów oznaczonych jako OPEN.
 **Zamknięte decyzje:** pełne wpisy w [DECISION_LOG.md](./DECISION_LOG.md).
 
 ---
@@ -125,21 +125,23 @@ W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_
 Design Freeze: [CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md](./CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md).
 W1 delivery closeout: [CREATOR_PROGRESS_W1_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W1_CLOSEOUT.md).
 W2 Design Contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
+W2-A closeout: [CREATOR_PROGRESS_W2A_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md).
 W2-A implementation audit: [CREATOR_PROGRESS_W2A_IMPLEMENTATION.md](../audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md).
 
 - **OD-08 CLOSED / ACCEPTED** — Premium tiers = FREE / BRONZE / SILVER / GOLD. Premium tier ≠ Rank ≠ Account Level ≠ Role.
-- **W2-A** = **CODE CANONICAL** @ `6ee3255` (`feat(premium): implement W2-A tier foundation`) · Owner Verification PASS WITH FINDINGS · **NOT PRODUCTION VERIFIED**.
-- Production DB: W2-A migration **NOT APPLIED** (prod tip still W1 `20261003210322`; no `tier` column).
-- Production deploy: **NOT EXECUTED** (production app still `76a4757`).
-- Legacy binary Premium (`active` + valid `expires_at`) → **SILVER** (not GOLD) in migration SQL + resolver; apply awaits Production DB GO.
+- **W2-A** = **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` (`feat(premium): implement W2-A tier foundation`).
+- Production app: `6ee3255` · deploy `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` Ready.
+- Production DB: remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · enum + `tier` present · `premium_entitlements` = 0 rows.
+- Legacy binary Premium (`active` + valid `expires_at`) → **SILVER** (not GOLD) in migration SQL + resolver — logic present/applied; **live-data mapping not verified** (0 rows).
+- BRONZE / SILVER / GOLD = CODE/CONTRACT VERIFIED · **LIVE DATA NOT VERIFIED**.
 - **Creator Rank labels** remain separate from Account Level display names (**OD-09 OPEN**).
 - **OD-04** (payment operator) and **OD-07** (Premium prices) remain **OPEN**. Billing / checkout not in W2-A.
 - **Recording Premium overlay numbers** remain **OPEN / DEFERRED**; OD-REC-04 hybrid stays CLOSED; numbers unlocked; overlay **not implemented**.
 - **Gold 90d** artifact retention = **DESIGN ONLY** — PRODUCTION claim blocked until artifact janitor (OD-SA-05) verified; runtime retention 30d.
-- Download tier cutover = **NOT IMPLEMENTED** (runtime ANON=2 / USER=4).
+- Download tier cutover = **DEFERRED** (runtime ANON=2 / USER=4). Capability matrix defines target tiered downloads; runtime cutover not switched.
 - `/premium` / `/ranks` / Premium UI = **NOT IMPLEMENTED**.
-- **NEXT GATE** = Production DB APPLY (separate Owner GO) · then deploy · then Production Verification.
-- W2-A P2 OPEN: stale `AUDIO_RENDER_PREMIUM_*=30` · RLS live exercise · manual migration idempotency.
+- **P2 OPEN:** P2-1 stale `AUDIO_RENDER_PREMIUM_*=30` · P2-2 RLS live exercise · P2-3 manual migration idempotency · P2-4 ops version drift (`20261003221811` ≠ `20261003230000`, MCP apply-time, not schema failure).
+- **NEXT GATE** = W2-A DOCUMENTATION COMMIT/PUSH (closeout docs) · then later product GOs.
 
 ---
 

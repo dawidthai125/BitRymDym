@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-04 (W2-A code canonical @ `6ee3255` · Production DB NOT APPLIED · deploy NOT EXECUTED · tip `6ee3255` · app still W1 `76a4757`)
+**Updated:** 2026-10-04 (W2-A CLOSED / PRODUCTION VERIFIED WITH FINDINGS · app `6ee3255` · DB `20261003221811` · docs tip `ff61ac3` pending closeout commit)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,11 +21,11 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `6ee3255` — W2-A Premium tier foundation (`feat(premium): implement W2-A tier foundation`) |
-| **Production application SHA** | `76a4757` — Creator Progress W1 app · deploy Ready · **W2-A not deployed** |
-| **Production DB tip** | Creator Progress W1 applied (`20261003210121` → `20261003210322`) · **W2-A migration NOT APPLIED** (no `tier` column) · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
+| **Repository HEAD** | `ff61ac3` — W2-A docs continuity (pre-closeout tip) · code SHA `6ee3255` · closeout docs pending commit GO |
+| **Production application SHA** | `6ee3255` — W2-A Premium tier foundation · deploy Ready · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
+| **Production DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · enum FREE/BRONZE/SILVER/GOLD · `tier` NOT NULL DEFAULT FREE · `premium_entitlements` = 0 rows · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
-| **CREATOR PROGRESS W2-A** | **CODE CANONICAL** @ `6ee3255` · **NOT PRODUCTION VERIFIED** · Production DB **NOT APPLIED** · deploy **NOT EXECUTED** · OD-08 CLOSED · [implementation audit](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
+| **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **USER-CLEANUP-01** | **EXECUTED** (fixtures) · orphan-31 untouched |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** |
@@ -65,10 +65,11 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
-| `6ee3255` | **Current repo tip (committed)** — W2-A Premium tier foundation (code) · Production DB/deploy **not** this SHA |
+| `ff61ac3` | **Current repo tip (committed, pre-closeout docs)** — W2-A documentation continuity |
+| `6ee3255` | **Production app SHA** — W2-A Premium tier foundation (code) · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
 | `6cc7efe` | W2 Premium Design Contract docs + OD-08 reconcile (docs) |
 | `c5ed0d5` | Historical — W1 documentation closeout |
-| `76a4757` | **Production app tip** — Creator Progress W1 (Experience + Rank foundation) |
+| `76a4757` | Historical — Creator Progress W1 (Experience + Rank foundation) |
 | `1e66cae` | Creator Progress + Premium Design Freeze V1 (docs) |
 | `89a8d51` | Historical ACCOUNT/PROFILE-01 Phase 1 + verified closeout baseline |
 | `3c7f492` | Historical ACCOUNT/PROFILE-01 feature commit (pre Phase 1 recovery harden) |
@@ -89,13 +90,13 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `6ee3255` |
-| **Production application** | `76a4757` (W2-A code on `main` · **not** deployed) |
+| **HEAD / origin/main** | `ff61ac3` (pre-closeout docs tip; closeout docs uncommitted until Owner GO) |
+| **Production application** | `6ee3255` — Ready · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
-| **CREATOR PROGRESS W2-A** | **CODE CANONICAL** @ `6ee3255` · Production DB **NOT APPLIED** · deploy **NOT EXECUTED** |
-| **NEXT GATE** | **PRODUCTION DB APPLY** (W2-A migration · separate Owner GO) · then deploy GO · FAR-01 soak end → FINAL SOAK AUDIT |
+| **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
+| **NEXT GATE** | **W2-A DOCUMENTATION COMMIT/PUSH** (this closeout) · then later product GOs (download cutover / overlay / janitor / billing / UI) · FAR-01 soak end → FINAL SOAK AUDIT |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
@@ -253,7 +254,7 @@ Concurrent recording sessions: **max 1** `PENDING_UPLOAD` per owner.
 Signup default account level: closed decision (BEGINNER path) — see Decision Log OD-19.
 
 **Premium (E3 / W2-A overlay):** `premium_entitlements` — **≠** Account Level · **≠** Creator Rank · **≠** Role · no `PremiumAudioRole`.
-Repo @ `6ee3255` adds `tier` (FREE/BRONZE/SILVER/GOLD) + `resolveProductEntitlement` SSOT. **Production DB still binary** until W2-A migration apply.
+Repo + production @ `6ee3255` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/GOLD) + `resolveProductEntitlement` SSOT. Inventory `premium_entitlements` = 0 (live Bronze/Silver/Gold / legacy mapping **not** live-data verified).
 
 ---
 
@@ -294,7 +295,7 @@ Repo @ `6ee3255` adds `tier` (FREE/BRONZE/SILVER/GOLD) + `resolveProductEntitlem
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
 | Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07 OPEN · **OD-08 CLOSED** | Billing deferred · no checkout/UI |
-| **CREATOR PROGRESS W2-A** Premium foundation | **CODE CANONICAL** @ `6ee3255` · **NOT PRODUCTION VERIFIED** | Prod DB **NOT APPLIED** · deploy **NOT EXECUTED** | OK | [CREATOR_PROGRESS_W2A_IMPLEMENTATION.md](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · tiers FREE/BRONZE/SILVER/GOLD · legacy → SILVER · Gold 90d DESIGN ONLY · download cutover deferred |
+| **CREATOR PROGRESS W2-A** Premium foundation | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` | Prod DB `20261003221811` · deploy Ready | OK | [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · tiers FREE/BRONZE/SILVER/GOLD · live tiers NOT VERIFIED (0 rows) · Gold 90d DESIGN ONLY · download cutover deferred · P2 OPEN |
 | Messaging / voting / comments product | NOT IMPLEMENTED | — | SSOT future; OD-10/11 OPEN | Permission rows may exist |
 | Dual-play mix preview | NOT IMPLEMENTED | — | W3 OUT | |
 
@@ -317,7 +318,7 @@ Repo @ `6ee3255` adds `tier` (FREE/BRONZE/SILVER/GOLD) + `resolveProductEntitlem
 | E3 Production Enablement | **COMPLETE / GREEN** @ `6dfd201` | [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) |
 | STORAGE-ARCH-01 | **LOCKED** (architecture · no implementation) | [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
 | Creator Progress W1 (Experience + Rank) | **PRODUCTION VERIFIED WITH OPEN ITEMS** | `76a4757` · [CREATOR_PROGRESS_W1_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
-| Creator Progress W2-A (Premium tier foundation) | **CODE CANONICAL · NOT PRODUCTION VERIFIED** | `6ee3255` · [CREATOR_PROGRESS_W2A_IMPLEMENTATION.md](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) |
+| Creator Progress W2-A (Premium tier foundation) | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** | `6ee3255` · [CREATOR_PROGRESS_W2A_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
 
 ---
 
@@ -438,7 +439,7 @@ Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clar
 | Track publish from recording | DEFERRED |
 | Watermark / global codec registry (OD-12/13) | OPEN (E3 Basic 128 locked via OAD-06) |
 | Payments / Premium catalog product | DEFERRED · OPEN OD-04/07 · OD-08 CLOSED (tiers only; no billing) |
-| W2-A Premium tier foundation | **CODE CANONICAL** @ `6ee3255` · Production DB **NOT APPLIED** · deploy **NOT EXECUTED** · **NOT PRODUCTION VERIFIED** |
+| W2-A Premium tier foundation | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · DB `20261003221811` · deploy `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` · live tiers NOT VERIFIED (0 rows) · P2 OPEN |
 | Comments / voting / messaging | DEFERRED · product future |
 | Visual brand / copy final (OD-15/16) | OPEN |
 | STEMS | DEFERRED (OAD-04) |
@@ -632,7 +633,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product · W2-A **production DB apply / deploy / verification** (separate GOs) · download tier cutover · recording Premium overlay · Gold 90d PRODUCTION · Premium Production E2E · artifacts janitor / ops dashboard · `/premium` / `/ranks` UI · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO.
+STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product · download tier cutover · recording Premium overlay · Gold 90d PRODUCTION · Premium Production E2E · artifacts janitor / ops dashboard · `/premium` / `/ranks` UI · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO.
 
 ---
 
