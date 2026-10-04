@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 import { AdminUsersFilters } from "@/components/admin/admin-users-filters";
+import { AdminUsersManageDialog } from "@/components/admin/admin-users-manage-dialog";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { listAdminUsers } from "@/lib/admin/users-list";
 import { parseAdminUsersQuery } from "@/lib/admin/users-query";
-import { AuthError } from "@/lib/auth/session";
+import { AuthError, getCurrentProfile } from "@/lib/auth/session";
 import {
   labelCreatorRank,
   labelPremiumTier,
@@ -27,6 +28,7 @@ export default async function AdminUsersPage({
 }) {
   const raw = await searchParams;
   const query = parseAdminUsersQuery(raw);
+  const viewer = await getCurrentProfile();
 
   let result: Awaited<ReturnType<typeof listAdminUsers>> | null = null;
   let loadFailed = false;
@@ -51,7 +53,7 @@ export default async function AdminUsersPage({
             Użytkownicy
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Podgląd kont, ról i Premium. Zmiana uprawnień będzie dostępna w
+            Podgląd i zmiana ról oraz Premium. Historia zmian pojawi się w
             kolejnej wersji.
           </p>
         </header>
@@ -117,12 +119,16 @@ export default async function AdminUsersPage({
                       </td>
                       <td className="px-3 py-3">{labelSystemRole(row.role)}</td>
                       <td className="px-3 py-3">
-                        <span
-                          className="text-sm text-[var(--brd-mute)]"
-                          title="Zarządzanie uprawnieniami będzie dostępne w kolejnej wersji"
-                        >
-                          Zarządzaj
-                        </span>
+                        <AdminUsersManageDialog
+                          userId={row.id}
+                          displayName={row.displayName}
+                          email={row.email}
+                          userNumber={row.userNumber}
+                          role={row.role}
+                          premiumTier={row.premiumTier}
+                          premiumExpiresAt={row.premiumExpiresAt}
+                          isSelf={viewer?.userId === row.id}
+                        />
                       </td>
                     </tr>
                   ))}

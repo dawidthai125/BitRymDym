@@ -2,7 +2,7 @@
 
 **Epic:** ADMIN USER MANAGEMENT  
 **Wave:** **W0 = CLOSED** (Owner Decision Lock)  
-**Status:** OWNER DECISIONS LOCKED · **W1 READ-ONLY IMPLEMENTED** · W2+ **NOT IMPLEMENTED**  
+**Status:** OWNER DECISIONS LOCKED · **W1 READ-ONLY IMPLEMENTED** · **W2 MUTATIONS IMPLEMENTED** · **PRODUCTION NOT DEPLOYED** · W3 **NOT STARTED**  
 **Date:** 2026-10-04  
 **Owner:** Prezes Dawid  
 **Canonical ODs:** OD-ADMIN-01 … OD-ADMIN-07  
@@ -124,24 +124,23 @@ W2 mutations **must** write audit events once the table exists; W1 is read-only 
 |------|--------|--------|
 | **W0** | Owner Decision Lock | **CLOSED** |
 | **W1** | Read-only user list + filters (`/admin/users`) | **IMPLEMENTED** · **NOT production-deployed** |
-| **W2** | Role + Premium mutations + security guards + audit **write** | NOT STARTED |
-| **W3** | Audit log + history UI | NOT STARTED |
+| **W2** | Role + Premium mutations + security guards + audit **write** | **IMPLEMENTED** (repo) · **PRODUCTION NOT DEPLOYED** · migration **not applied** to production DB |
+| **W3** | Audit log + history UI | **NOT STARTED** |
 | **W4** | Full production verification | NOT STARTED |
 
-W1 is **read-only**. No Premium/Role mutations, no `admin_audit_events` migration, no history UI.
-
-Email on list/detail is ADMIN-only `/admin/users` (OD-ADMIN-05). Not public author/profile.
+W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Email on list/detail remains ADMIN-only `/admin/users` (OD-ADMIN-05).
 
 ---
 
 ## Current evidence
 
 - W1 route: `/admin/users` (ADMIN + `users.view`/`users.edit`)
-- Live mutations of role/Premium still **absent** (W2)
-- Dashboard **Użytkownicy** now links to the read-only list (after W1 commit)
+- W2: `admin_apply_user_management` + `admin_audit_events` **in repo migration** `20261004180000_admin_user_management_w2_mutations.sql`
+- Production app/DB: **UNCHANGED** (W2 not deployed, migration not applied remotely)
+- W3 history UI: **NOT STARTED**
 
 ---
 
-## Explicit non-changes (W1)
+## Explicit non-changes (W2)
 
-No DB migration · no Storage · no Auth templates · no Premium matrix rewrite · no Rank rewrite · no role/Premium data mutation · no production deploy.
+No production deploy · no production DB migrate · no Storage · no Auth templates · no Premium matrix rewrite · no Rank rewrite · no W3 history SELECT UI.

@@ -75,7 +75,7 @@ profiles.role = ADMIN
 Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL only.
 Do not document secrets.
 
-**Admin User Management (OD-ADMIN-01…07 CLOSED):** **W1 READ-ONLY** `/admin/users` is implemented (ADMIN + `users.view`/`users.edit`, server-side). **W2 mutations** (grant/revoke ADMIN, role, Premium) are **not** started. Self-demotion **NO**. Last-ADMIN demotion **NO**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md). Until W2 ships, production role/Premium writes remain operator/`service_role` SQL.
+**Admin User Management (OD-ADMIN-01…07 CLOSED):** **W2 IMPLEMENTED in repo** — `/admin/users` mutations via `admin_apply_user_management` (service_role RPC) + `admin_audit_events`. **PRODUCTION NOT DEPLOYED**; production DB still without this migration. Self-demotion **NO**. Last-ADMIN demotion **NO**. W3 history UI **NOT STARTED**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 
 ---
 
@@ -88,7 +88,8 @@ Do not document secrets.
 - Server helpers: `requireUser` / `requireRole` / `requirePermission`
 - RLS + privilege-escalation trigger (role / account_level)
 - **USER-ID-01** — nullable stable `profiles.user_number` (see below)
-- **W1 Admin users list** — `/admin/users` read-only (no mutations)
+- **W1 Admin users list** — `/admin/users` read
+- **W2 Admin users mutations** — server action + RPC; no client DML; audit write (no history UI)
 
 ---
 
@@ -277,7 +278,7 @@ Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md
 | Surface | Rule |
 |---------|------|
 | `/admin/beats*` | ADMIN role required (layout gate) |
-| `/admin/users` | ADMIN + `users.view` or `users.edit` (`canListAdminUsers`); MODERATOR DENY |
+| `/admin/users` | List: ADMIN + `users.view`/`users.edit`. Mutations: ADMIN + `users.edit` + RPC `admin_apply_user_management`. MODERATOR DENY |
 | Create / edit / upload / publish | `beats.create` / `beats.edit` + ADMIN |
 | USER / MODERATOR / anonymous | DENY PLATFORM write ops |
 | Ownership | `PLATFORM` + `owner_id = NULL` |

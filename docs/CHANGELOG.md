@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — ADMIN USER MANAGEMENT W2 (MUTATIONS + AUDIT WRITE)
+
+**Status:** **IMPLEMENTED** (repository) · **PRODUCTION NOT DEPLOYED** · production DB **UNCHANGED**  
+**SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md)
+
+- `/admin/users` Zarządzaj → server action → `admin_apply_user_management`
+- `admin_audit_events` (ON DELETE SET NULL) · atomic mutation+audit
+- Self-demotion DENY · last-admin advisory lock · Premium `manual_admin`
+- W3 history UI **NOT STARTED** · migration **not applied** to production
+
+---
+
 ## 2026-10-04 — ADMIN USER MANAGEMENT W1 (READ-ONLY LIST)
 
 **Status:** **IMPLEMENTED** · **NOT production-deployed**  

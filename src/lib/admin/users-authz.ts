@@ -1,6 +1,5 @@
 /**
- * W1 Admin users list AuthZ (pure). Not a substitute for requireUser on the route.
- * MODERATOR may have users.view in the catalog — W0 still DENY user management.
+ * W2 Admin user mutations — AuthZ (pure). Not a substitute for requireUser.
  */
 
 import { hasPermission, hasRole } from "@/lib/auth/permissions";
@@ -16,4 +15,12 @@ export function canListAdminUsers(
     hasPermission(permissions, "users.view") ||
     hasPermission(permissions, "users.edit")
   );
+}
+
+export function canMutateAdminUsers(
+  role: SystemRole | null | undefined,
+  permissions: readonly string[] | readonly PermissionKey[],
+): boolean {
+  if (!role || !hasRole(role, ["ADMIN"])) return false;
+  return hasPermission(permissions, "users.edit");
 }

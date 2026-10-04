@@ -16,7 +16,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 |------|---------|
 | Decision IDs | OD-ADMIN-01 … OD-ADMIN-07 |
 | Title | Admin User Management — W0 Owner Decision Lock |
-| Status | CLOSED / ACCEPTED · **W0 LOCKED** · **W1 READ-ONLY IMPLEMENTED** · W2 **NOT STARTED** · **NOT production-deployed** |
+| Status | CLOSED / ACCEPTED · **W0 LOCKED** · **W1+W2 IMPLEMENTED (repo)** · W3 **NOT STARTED** · **PRODUCTION NOT DEPLOYED** |
 | Date | 2026-10-04 |
 | Decydent | Owner (Prezes Dawid) |
 | Freeze | [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) |
@@ -35,7 +35,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 **Architectural lock:** RANK ≠ PREMIUM ≠ ROLE ≠ ACCOUNT_LEVEL. Role = `profiles.role`. Premium = `premium_entitlements` + existing resolver/matrix.
 
-**Waves:** W0 CLOSED · **W1 READ-ONLY IMPLEMENTED** (`/admin/users`, not deployed) · W2 mutations + guards + audit write **NOT STARTED** · W3 history UI · W4 production verify.
+**Waves:** W0 CLOSED · W1 READ-ONLY · **W2 MUTATIONS + AUDIT WRITE IMPLEMENTED** (repo; production app/DB unchanged) · W3 history UI **NOT STARTED** · W4 production verify.
 
 **Consequences**
 
