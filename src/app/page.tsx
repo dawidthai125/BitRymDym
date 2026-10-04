@@ -207,7 +207,7 @@ export default async function HomePage() {
                 />
                 <div className="absolute inset-x-0 bottom-0 space-y-2 bg-[linear-gradient(180deg,transparent,rgba(10,14,12,0.9))] p-4 text-[var(--brd-paper)] sm:p-5">
                   <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-paper)_55%,transparent)]">
-                    Workspace
+                    Studio
                   </p>
                   <Waveform
                     seed="home-studio-main"

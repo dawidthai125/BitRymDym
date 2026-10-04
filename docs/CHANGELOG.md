@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — P2 POLISH CHROME CLEANUP (Workspace · Raw)
+
+**Status:** App change committed · **NOT production-deployed**  
+**Baseline:** `4ebd1d3` · USER-FACING POLISH LOCALIZATION production deploy
+
+### Changes
+
+- `/` home studio card chrome: `Workspace` → `Studio` (reuse existing section label)
+- `/beats` catalog mood filter: remove English `Raw`; reuse existing Polish mood `Surowy` in UI presentation taxonomy (`demo-beats` only — no DB/API contract change)
+
+---
+
 ## 2026-10-03 — ACCOUNT / PROFILE-01 (BLOCKER FIX CYCLE · AWAITING OWNER RE-REVIEW)
 
 **Status:** Blocker fixes in working tree · **NOT committed / NOT pushed / NOT production-DB-applied / NOT deployed**  

@@ -171,4 +171,16 @@ describe("global error / not-found / auth pages copy", () => {
     expect(src).toMatch(/Bezpieczeństwo/);
     expect(src).toMatch(/Usuwanie konta/);
   });
+
+  it("home chrome has no Workspace English label", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/page.tsx"), "utf8");
+    expect(src).not.toMatch(/>\s*Workspace\s*</);
+    expect(src).toMatch(/Studio/);
+  });
+
+  it("catalog moods have no Raw English label", async () => {
+    const { CATALOG_MOODS } = await import("./demo-beats");
+    expect(CATALOG_MOODS).not.toContain("Raw");
+    expect(CATALOG_MOODS).toContain("Surowy");
+  });
 });
