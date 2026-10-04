@@ -132,21 +132,22 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 
 - **OD-08 CLOSED / ACCEPTED** — Premium tiers = FREE / BRONZE / SILVER / GOLD. Premium tier ≠ Rank ≠ Account Level ≠ Role.
 - **W2-A** = **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255`.
-- Production app: `6ee3255` · deploy `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` Ready.
-- Production DB: remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 rows.
-- **W2-B** = **PREMIUM ENFORCEMENT** · **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · commit/deploy/fixtures **NOT DONE** · [implementation](../audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md).
-- W2-B code: download tier cutover (ANON=2 · FREE=4 · BRONZE=10 · SILVER=25 · GOLD=50) · P2-1 cleanup · Mix/Render/download regression lock · fixture contract (non-mutating).
-- Download runtime SSOT (after deploy): ANON = `PREMIUM_ANON_DOWNLOADS_DAILY`; USER = `entitlement.limits.downloadsDaily`. Legacy `DOWNLOAD_LIMIT_ANON_DAILY` / `USER_DAILY_DOWNLOAD_LIMIT` = unused / FREE mirror (not reserve authority). MODERATOR uses USER download limits (**intentional**).
-- Production still pre-deploy flat ANON=2 / USER=4 until commit + deploy GO.
+- Production app: `d86b4df` · deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` Ready (**W2-B**).
+- Production DB: remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 rows (post W2-B fixture cleanup) · **no W2-B migration**.
+- **W2-B** = **PREMIUM ENFORCEMENT** · **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · [implementation](../audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md).
+- W2-B live download cutover: ANON=2 · FREE=4 · BRONZE=10 · SILVER=25 · GOLD=50 · functional E2E PASS (N success + N+1 blocked) · OD-17 PASS · fixture cleanup PASS · remaining `W2B_FIXTURE` = 0.
+- Download runtime SSOT (live): ANON = `PREMIUM_ANON_DOWNLOADS_DAILY`; USER = `entitlement.limits.downloadsDaily`. Legacy `DOWNLOAD_LIMIT_ANON_DAILY` / `USER_DAILY_DOWNLOAD_LIMIT` = unused / FREE mirror (not reserve authority). MODERATOR uses USER download limits (**intentional**).
+- **NON-BLOCKING FINDING:** Production E2E verified server/RPC/signed-URL path; full browser/UI Server Action journey was not exercised.
+- Mix / Render live jobs = **DEFERRED — SEPARATE VERIFICATION** (not W2-B download blocker).
 - **OD-04** / **OD-07** remain **OPEN**. Billing deferred.
 - **Recording Premium overlay numbers** remain **OPEN / DEFERRED**.
-- **Gold 90d** = **DESIGN ONLY**.
+- **Gold 90d** = **DESIGN ONLY / DEFERRED**. Artifact janitor = **DEFERRED**.
 - **P2-1** = **VERIFIED RESOLVED** (Owner Implementation Review).
 - **P2-2** = **OPEN** (live RLS/IDOR exercise not performed).
 - **P2-3** = **OPEN** (manual migration idempotency not verified).
 - **P2-4** = **OPEN** (known MCP production migration version drift).
 - Historical foundation-contract “W2-D downloads” naming is not rewritten; current Owner gate name = **W2-B PREMIUM ENFORCEMENT**.
-- **NEXT GATE** = W2-B DOCUMENTATION COMMIT/PUSH · then deploy · Fixture GO.
+- **NEXT GATE** = W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH.
 
 ---
 

@@ -1,10 +1,10 @@
 # W2-B Premium Enforcement — Design Contract
 
-**Status:** DESIGN CONTRACT READY · Implementation COMPLETE · Owner Review PASS WITH FINDINGS
-**Implementation:** COMPLETE · NOT PRODUCTION VERIFIED · commit/deploy/fixtures NOT DONE
+**Status:** DESIGN CONTRACT READY · Implementation COMPLETE · **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING**
+**Implementation:** COMPLETE @ `d86b4df` · Production deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · Functional download E2E PASS
 **Date:** 2026-10-04
 **Owner:** Prezes Dawid
-**Gate:** W2-B DOCUMENTATION RECONCILE (post Owner Implementation Review)
+**Gate:** W2-B CLOSEOUT / DOCUMENTATION RECONCILE
 **Evidence:** [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](../audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md)
 
 **Baseline:**
@@ -12,11 +12,11 @@
 | Plane | Value |
 |-------|--------|
 | W2-A code | `6ee3255` — CLOSED / PRODUCTION VERIFIED WITH FINDINGS |
-| W2-A docs closeout | `3cd4fcf` |
-| W2-B audit | [CREATOR_PROGRESS_W2B_AUDIT.md](../audits/CREATOR_PROGRESS_W2B_AUDIT.md) — PASS · READY FOR OWNER REVIEW |
-| Production app | `6ee3255` |
-| Production DB | `20261003221811` / `w2a_premium_tier_foundation` |
-| Mutation under this gate | **NONE** |
+| W2-B application | `d86b4df` — feat(premium): implement W2-B enforcement |
+| W2-B docs reconcile | `e1788a7` |
+| W2-B audit | [CREATOR_PROGRESS_W2B_AUDIT.md](../audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
+| Production app | `d86b4df` · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` |
+| Production DB | `20261003221811` / `w2a_premium_tier_foundation` · no W2-B migration · `premium_entitlements` = 0 post cleanup |
 
 **Related SSOT (do not supersede without Owner GO):**
 
@@ -34,11 +34,12 @@
 | W2-B Audit | PASS |
 | This Design Contract | **READY** (scope frozen) |
 | W2-B Implementation | **COMPLETE** · Owner Review **PASS WITH FINDINGS** · [implementation audit](../audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) |
+| Production verification | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** |
 | P2-1 | **VERIFIED RESOLVED** |
 | P2-2 / P2-3 / P2-4 | **OPEN** |
-| Commit / push / deploy | **NOT DONE** (separate GOs) |
-| Production fixture mutation | **NOT AUTHORIZED** (separate Fixture GO) |
-| Production DB / Storage | **UNCHANGED** |
+| Commit / push / deploy | **DONE** @ `d86b4df` / `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` |
+| Production fixture mutation | **EXECUTED then CLEANED** (Fixture GO) · remaining `W2B_FIXTURE` = 0 |
+| Production DB schema / Storage | **UNCHANGED** (no migration; no Storage object create/delete) |
 
 ### Gate naming (Owner unification)
 
@@ -457,8 +458,12 @@ W2-B implementation may proceed ONLY after a separate, explicit:
 
 STATUS: **DESIGN CONTRACT READY** (scope frozen)
 IMPLEMENTATION: **COMPLETE** · OWNER REVIEW **PASS WITH FINDINGS**
+PRODUCTION: **VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df`
 P2-1: **VERIFIED RESOLVED**
-FIXTURES: **NOT CREATED**
-GOLD 90D: **DESIGN ONLY**
+FIXTURES: **CREATED → E2E → CLEANED** · remaining = 0
+GOLD 90D: **DESIGN ONLY / DEFERRED**
+ARTIFACT JANITOR: **DEFERRED**
+MIX / RENDER LIVE: **DEFERRED — SEPARATE VERIFICATION**
+BROWSER/UI SERVER ACTION: **NON-BLOCKING FINDING**
 P2-2 / P2-3 / P2-4: **OPEN**
-NEXT GATE: **W2-B DOCUMENTATION COMMIT/PUSH**
+NEXT GATE: **W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH**

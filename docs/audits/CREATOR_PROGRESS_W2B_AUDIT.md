@@ -1,21 +1,21 @@
 # W2-B AUDIT — Premium Capability Enforcement
 
-**Status:** AUDIT COMPLETE · OWNER DECISIONS RECONCILED · IMPLEMENTATION COMPLETE (see implementation audit)
+**Status:** AUDIT COMPLETE (historical) · **W2-B PRODUCTION VERIFIED WITH NON-BLOCKING FINDING**
 **Date:** 2026-10-04
 **Owner:** Dawid Thai
-**Gate:** W2-B AUDIT (historical) → Design Contract → Implementation → Owner Implementation Review PASS WITH FINDINGS
+**Gate:** W2-B AUDIT (historical) → Design Contract → Implementation → Deploy → Fixture E2E → Closeout
 **Readiness:** Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](../decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · Implementation: [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](./CREATOR_PROGRESS_W2B_IMPLEMENTATION.md)
 
 | Plane | Value |
 |-------|--------|
-| Repo HEAD / origin/main | `3cd4fcf36f83960150c3ee1969383c24f2612e19` |
+| Repo HEAD / origin/main (closeout) | `d86b4df25d61397c77fdc10cfc83ccae7b299089` |
 | W2-A code SHA | `6ee3255cf1de434b724d2167eea66cf5253957a4` |
 | W2-A docs closeout | `3cd4fcf` — CLOSED / PRODUCTION VERIFIED WITH FINDINGS |
-| Production app | `6ee3255` · Ready |
-| Production DB | remote `20261003221811` / `w2a_premium_tier_foundation` |
+| Production app (closeout) | `d86b4df` · Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` |
+| Production DB | remote `20261003221811` / `w2a_premium_tier_foundation` · no W2-B migration |
 | Local migration file | `20261003230000_w2a_premium_tier_foundation.sql` |
-| `premium_entitlements` rows (live SELECT) | **0** |
-| Mutation under this gate | **NONE** |
+| `premium_entitlements` rows (post cleanup) | **0** |
+| Audit-gate mutation | **NONE** (historical audit was read-only) |
 
 **Related SSOT (read-only):**
 
@@ -489,16 +489,18 @@ Owner Direction accepted for Design Contract (2026-10-04). Full contract: [W2B_P
 
 Audit-time rationale retained: scope clear; implementation was not yet authorized at audit writing.
 
-**Post-implementation continuity (2026-10-04):** Implementation COMPLETE · Owner Implementation Review **PASS WITH FINDINGS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · production deploy **NOT DONE**. See [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](./CREATOR_PROGRESS_W2B_IMPLEMENTATION.md).
+**Post-implementation continuity (2026-10-04):** Implementation COMPLETE · Owner Implementation Review **PASS WITH FINDINGS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN**.
+
+**Post-production continuity (2026-10-04):** **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · ANON/FREE/BRONZE/SILVER/GOLD download E2E PASS · OD-17 PASS · fixture cleanup PASS · Mix/Render DEFERRED · browser/UI Server Action = NON-BLOCKING FINDING. See [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](./CREATOR_PROGRESS_W2B_IMPLEMENTATION.md).
 
 ---
 
 ## Next Gate
 
 ```text
-W2-B DOCUMENTATION COMMIT/PUSH
-  → PRODUCTION DEPLOY GO
-  → PRODUCTION VERIFICATION / FIXTURE GO
+W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH
 ```
 
-**Do not claim:** Production Verified · Gold 90d live · tiered downloads live in production · billing live · P2-2/3/4 closed.
+**May claim:** Production Verified (download enforcement) WITH NON-BLOCKING FINDING.
+
+**Do not claim:** browser/UI Server Action E2E · Mix/Render live verified · Gold 90d live · billing live · P2-2/3/4 closed.

@@ -1,21 +1,22 @@
 # Creator Progress W2-B — Implementation Audit
 
-**Status:** IMPLEMENTATION COMPLETE · OWNER REVIEW PASS WITH FINDINGS · NOT PRODUCTION VERIFIED · NOT DEPLOYED
-**Gate completed:** IMPLEMENT → OWNER IMPLEMENTATION REVIEW → DOCUMENTATION RECONCILE
+**Status:** PRODUCTION VERIFIED WITH NON-BLOCKING FINDING
+**Gate completed:** IMPLEMENT → OWNER REVIEW → DOCS → COMMIT/PUSH → DEPLOY → FIXTURE E2E → CLOSEOUT RECONCILE
 **Date:** 2026-10-04
 **Owner:** Dawid Thai
 
 | Plane | Value |
 |-------|--------|
-| Baseline docs tip | `3cd4fcf` |
+| W2-B application SHA | `d86b4df25d61397c77fdc10cfc83ccae7b299089` |
+| W2-B docs reconcile | `e1788a7` |
 | W2-A code | `6ee3255` |
 | Design Contract | [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](../decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) |
 | Audit | [CREATOR_PROGRESS_W2B_AUDIT.md](./CREATOR_PROGRESS_W2B_AUDIT.md) |
 | Owner Implementation Review | **PASS WITH FINDINGS** |
-| Production app | still `6ee3255` — **W2-B NOT DEPLOYED** |
-| Production DB | **UNCHANGED** |
-| Fixtures | **NOT CREATED** |
-| Commit / push | **NOT DONE** |
+| Production app | `d86b4df` · Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` |
+| Production DB tip | `20261003221811` / `w2a_premium_tier_foundation` · **no W2-B migration** |
+| Fixtures | **CREATED → E2E → CLEANED** · remaining `W2B_FIXTURE` = **0** |
+| Storage | **UNCHANGED** |
 
 ---
 
@@ -23,17 +24,18 @@
 
 | Item | Result |
 |------|--------|
-| W2-B.1 Download tier runtime enforcement | **PASS** |
+| W2-B.1 Download tier runtime enforcement | **PASS** · **PRODUCTION FUNCTIONALLY VERIFIED** |
 | W2-B.2 P2-1 stale render constant cleanup | **PASS** · **P2-1 VERIFIED RESOLVED** |
-| W2-B.3 Mix regression lock | **PASS** |
-| W2-B.4 Render / entitlement regression | **PASS** |
-| Fixture strategy (non-mutating) | **PASS** |
-| Security (structural) | **PASS** · P2-2 live RLS **OPEN** |
+| W2-B.3 Mix regression lock | **PASS** (local/structural) · live Mix jobs **DEFERRED** |
+| W2-B.4 Render / entitlement regression | **PASS** (local/structural) · live Render jobs **DEFERRED** |
+| Fixture strategy | **PASS** · live Fixture GO executed + cleaned |
+| Security (structural + client spoof) | **PASS** · P2-2 live RLS **OPEN** |
 | Owner Implementation Review | **PASS WITH FINDINGS** (F1–F4) |
+| Production Verification | **PASS WITH FINDINGS** (non-blocking browser/UI path) |
 
 ---
 
-## 2. Exact files (implementation)
+## 2. Exact files (implementation @ `d86b4df`)
 
 ### Runtime / config
 
@@ -43,7 +45,7 @@
 - `src/config/premium-tiers.ts` — matrix SSOT (downloads + render caps)
 - `src/config/downloads.ts` — legacy/mirror notes for flat constants
 - `src/config/audio-render.ts` — binary Premium=30 constants removed
-- `src/lib/entitlements/w2b-fixture-contract.ts` — design-only markers
+- `src/lib/entitlements/w2b-fixture-contract.ts` — design markers (`W2B_FIXTURE`)
 
 ### Tests
 
@@ -54,17 +56,17 @@
 
 ---
 
-## 3. Download enforcement — PASS
+## 3. Download enforcement — PASS (live)
 
-| Actor / tier | Daily | Runtime authority |
-|--------------|-------|-------------------|
-| ANON | 2 | **`PREMIUM_ANON_DOWNLOADS_DAILY`** |
-| FREE | 4 | `entitlement.limits.downloadsDaily` |
-| BRONZE | 10 | same |
-| SILVER | 25 | same |
-| GOLD | 50 | same |
+| Actor / tier | Daily | Runtime authority | Production E2E |
+|--------------|-------|-------------------|----------------|
+| ANON | 2 | **`PREMIUM_ANON_DOWNLOADS_DAILY`** | 2 success · #3 blocked |
+| FREE | 4 | `entitlement.limits.downloadsDaily` | 4 success · #5 blocked |
+| BRONZE | 10 | same | 10 success · #11 blocked |
+| SILVER | 25 | same | 25 success · #26 blocked |
+| GOLD | 50 | same | 50 success · #51 blocked |
 
-Flow: AuthZ → resolve server dailyLimit → atomic `reserve_beat_download_slot` → signed URL → finalize / release (OD-17 preserved).
+Flow verified live: AuthZ → resolve server dailyLimit → atomic `reserve_beat_download_slot` → signed URL → finalize (OD-17).
 
 **ANON ≠ FREE.** No feature-local `if (tier === …)`.
 
@@ -73,71 +75,95 @@ Flow: AuthZ → resolve server dailyLimit → atomic `reserve_beat_download_slot
 | Symbol / env | Role |
 |--------------|------|
 | `PREMIUM_ANON_DOWNLOADS_DAILY` | **RUNTIME SSOT** for ANON reserve |
-| `DOWNLOAD_LIMIT_ANON_DAILY` / `ANONYMOUS_DAILY_DOWNLOAD_LIMIT` | **LEGACY / UNUSED** by reserve path (mirror default 2 only) |
+| `DOWNLOAD_LIMIT_ANON_DAILY` / `ANONYMOUS_DAILY_DOWNLOAD_LIMIT` | **LEGACY / UNUSED** by reserve path |
 | `entitlement.limits.downloadsDaily` | **RUNTIME SSOT** for authenticated USER/MODERATOR |
-| `USER_DAILY_DOWNLOAD_LIMIT` / `DOWNLOAD_LIMIT_USER_DAILY` | **LEGACY / FREE MIRROR** — not reserve-path authority |
+| `USER_DAILY_DOWNLOAD_LIMIT` / `DOWNLOAD_LIMIT_USER_DAILY` | **LEGACY / FREE MIRROR** |
 
 ### MODERATOR (Owner Review F4) — INTENTIONAL
 
-MODERATOR follows authenticated USER download entitlement limits on the download reservation path. Not a regression; not an auth-model change.
+MODERATOR follows authenticated USER download entitlement limits on the download reservation path.
 
 ---
 
-## 4. P2-1 — VERIFIED RESOLVED
+## 4. Production verification evidence
+
+| Item | Result |
+|------|--------|
+| Application SHA | `d86b4df` |
+| Deployment | `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` Ready |
+| Aliases | `www.bitrymdym.pl` · `bitrymdym.pl` |
+| Health `/` · `/about` | HTTP 200 |
+| Beat used | `0a3a2ca4-7b0d-4ae4-92a9-a5ab132c9c32` (existing PUBLISHED) |
+| Fixture users | 4 dedicated `W2B_FIXTURE_*` USER accounts (deleted after E2E) |
+| Fixture entitlements | BRONZE/SILVER/GOLD `source=W2B_FIXTURE` (deleted after E2E) |
+| OD-17 | **PASS** |
+| Client tier/limit spoof | **BLOCKED** |
+| Fixture cleanup | **PASS** · remaining W2B_FIXTURE = **0** |
+| Real data integrity | **PASS** — ADMIN Dawid preserved · sole pre-existing download event preserved |
+| Storage | **PASS** — no object create/delete |
+| Schema | **PASS** — tip unchanged `20261003221811` |
+
+### Post-cleanup production snapshot
+
+| Metric | Value |
+|--------|-------|
+| auth.users | 1 |
+| profiles | 1 (ADMIN) |
+| premium_entitlements | 0 |
+| reservations | 0 |
+| download_events | 1 (ADMIN pre-existing) |
+| published beats | 2 |
+
+---
+
+## 5. Non-blocking finding (P2 / SCOPE)
+
+Production E2E exercised the **server/RPC/Storage signed-URL path** (`reserve_beat_download_slot` → signed URL → `finalize_beat_download`), matching the production download stack used by `reserveDownloadSlot` / `finalizeDownload`.
+
+Full **browser/UI Server Action** journey was **not** exercised.
+
+**Classification:** NON-BLOCKING / SCOPE FINDING — does **not** fail W2-B server-side enforcement.
+
+---
+
+## 6. P2-1 — VERIFIED RESOLVED
 
 Removed active binary Premium render SSOT (`AUDIO_RENDER_PREMIUM_* = 30` and sibling Premium retention/quota constants).
 
 **Authoritative SSOT:** `PREMIUM_TIER_MATRIX` / `limitsForPremiumTier`
 FREE 5 / BRONZE 10 / SILVER 20 / GOLD 40 · concurrent 1 / 1 / 2 / 3
 
-Legacy `premiumActive` helpers normalize to SILVER class (20), never 30. Owner Implementation Review confirmed no active runtime Premium=30 path.
+Legacy `premiumActive` helpers normalize to SILVER class (20), never 30.
 
 ---
 
-## 5. Regression locks — PASS
+## 7. Regression locks
 
-Mix: FREE Basic · BRONZE HQ · SILVER Pro · GOLD WAV · client spoof reject
-Render: tier matrix daily/concurrent · snapshot path unchanged
-Entitlement: missing/expired/inactive → FREE · cross-user ignored · Rank/account_level ≠ Premium
-Recording: no Premium coupling
+| Area | Status |
+|------|--------|
+| Mix (local/structural) | **PASS** · live Mix jobs **DEFERRED — SEPARATE VERIFICATION** |
+| Render (local/structural) | **PASS** · live Render jobs **DEFERRED — SEPARATE VERIFICATION** |
+| Entitlement | missing/expired/inactive → FREE · Rank/account_level ≠ Premium |
+| Recording | no Premium coupling |
 
 ---
 
-## 6. Tests / gates
+## 8. Tests / gates (implementation-time)
 
 | Gate | Result |
 |------|--------|
-| Targeted W2-B + W1/E3/downloads | **134/134 PASS** (reproduced at Owner Review) |
+| Targeted W2-B + W1/E3/downloads | **134/134 PASS** (Owner Review) |
 | Typecheck | **PASS** |
 | Build | **PASS** |
 | Lint (W2-B touched files) | **0 NEW** |
-| Lint (repo-wide) | **FAIL** — pre-existing UI (`beat-detail-client`, `mix-panel`, …) |
+| Lint (repo-wide) | **FAIL** — pre-existing UI |
 
 ---
 
-## 7. Security
+## 9. Security
 
-Structural PASS. Client cannot supply tier/limits. Atomic download RPC + advisory lock retained.
-**P2-2** live RLS/IDOR exercise = **OPEN** (not performed).
-
----
-
-## 8. Fixture strategy
-
-`w2b-fixture-contract.ts` — markers only (`W2B_FIXTURE`). **No production mutation.**
-Live create/cleanup requires **W2-B PRODUCTION VERIFICATION / FIXTURE GO**.
-
----
-
-## 9. DB / deploy / fixtures
-
-| Plane | State |
-|-------|--------|
-| DB migration required | **NONE** |
-| Production DB | **UNCHANGED** |
-| Production app | **NOT DEPLOYED** |
-| Storage | **UNCHANGED** |
-| Fixtures | **NOT CREATED** |
+Structural + client spoof PASS. Client cannot supply tier/limits. Atomic download RPC + advisory lock retained.
+**P2-2** live RLS/IDOR exercise = **OPEN** (not performed in W2-B).
 
 ---
 
@@ -145,9 +171,9 @@ Live create/cleanup requires **W2-B PRODUCTION VERIFICATION / FIXTURE GO**.
 
 | ID | Finding | Disposition |
 |----|---------|-------------|
-| F1 | MASTER_HANDOFF current-state drift (stale “NOT AUTHORIZED”) | **RESOLVED** this docs reconcile |
-| F2 | Anon env no longer reserve authority | **DOCUMENTED** (legacy unused) |
-| F3 | USER flat constants not reserve authority | **DOCUMENTED** (legacy / FREE mirror) |
+| F1 | MASTER_HANDOFF current-state drift | **RESOLVED** (docs) |
+| F2 | Anon env no longer reserve authority | **DOCUMENTED** |
+| F3 | USER flat constants not reserve authority | **DOCUMENTED** |
 | F4 | MODERATOR uses USER download limits | **DOCUMENTED** (intentional) |
 
 ---
@@ -165,16 +191,16 @@ Live create/cleanup requires **W2-B PRODUCTION VERIFICATION / FIXTURE GO**.
 
 ## 12. Out of scope (unchanged)
 
-Gold 90d · artifact janitor · storage expansion · priority · recording overlay · billing · Premium/Ranks UI · public Premium · STEMS/social
+Gold 90d · artifact janitor · storage expansion · priority · recording overlay · billing · Premium/Ranks UI · public Premium · STEMS/social · Mix/Render live jobs
 
 ---
 
 ## Next gate
 
 ```text
-W2-B DOCUMENTATION COMMIT/PUSH
-  → PRODUCTION DEPLOY GO
-  → PRODUCTION VERIFICATION / FIXTURE GO
+W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH
 ```
 
-**Do not claim:** Production Verified · tiered downloads live in production · Gold 90d live · P2-2/3/4 closed · billing live.
+**May claim:** Production Verified (download enforcement) WITH NON-BLOCKING FINDING · tiered downloads live-verified via RPC path.
+
+**Do not claim:** browser/UI Server Action E2E · Mix/Render live verified · Gold 90d live · P2-2/3/4 closed · billing live.

@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-04 (W2-A CLOSED · W2-B IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS · tip `3cd4fcf` · app `6ee3255` · DB `20261003221811` · W2-B commit/deploy pending)
+**Updated:** 2026-10-04 (W2-B PRODUCTION VERIFIED WITH NON-BLOCKING FINDING · tip `d86b4df` · app `d86b4df` · deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · DB `20261003221811`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,12 +21,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `3cd4fcf` — W2-A closeout docs · W2-B implementation + docs local (uncommitted) · production app still `6ee3255` |
-| **Production application SHA** | `6ee3255` — W2-A Premium tier foundation · deploy Ready · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
-| **Production DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · enum FREE/BRONZE/SILVER/GOLD · `tier` NOT NULL DEFAULT FREE · `premium_entitlements` = 0 rows · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
+| **Repository HEAD** | `d86b4df` — W2-B Premium Enforcement application · docs tip may trail until closeout docs commit |
+| **Production application SHA** | `d86b4df` — W2-B Premium Enforcement · Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` |
+| **Production DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · enum FREE/BRONZE/SILVER/GOLD · `tier` NOT NULL DEFAULT FREE · `premium_entitlements` = 0 rows (post fixture cleanup) · **no W2-B migration** · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
-| **CREATOR PROGRESS W2-B** | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · PREMIUM ENFORCEMENT · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · commit/deploy/fixtures **NOT DONE** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
+| **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · ANON/FREE/BRONZE/SILVER/GOLD download E2E **PASS** · OD-17 **PASS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · Mix/Render **DEFERRED** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
 | **USER-CLEANUP-01** | **EXECUTED** (fixtures) · orphan-31 untouched |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** |
@@ -66,9 +66,11 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
-| `3cd4fcf` | **Current repo tip (committed)** — W2-A closeout documentation |
+| `d86b4df` | **Current repo tip / production app SHA** — W2-B Premium Enforcement · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` |
+| `e1788a7` | W2-B documentation reconcile (pre-application commit) |
+| `3cd4fcf` | Historical — W2-A closeout documentation |
 | `ff61ac3` | Historical — W2-A documentation continuity (pre-closeout) |
-| `6ee3255` | **Production app SHA** — W2-A Premium tier foundation (code) · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
+| `6ee3255` | Historical — W2-A Premium tier foundation (code) · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
 | `6cc7efe` | W2 Premium Design Contract docs + OD-08 reconcile (docs) |
 | `c5ed0d5` | Historical — W1 documentation closeout |
 | `76a4757` | Historical — Creator Progress W1 (Experience + Rank foundation) |
@@ -92,14 +94,14 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `3cd4fcf` (W2-B implementation + docs local · uncommitted) |
-| **Production application** | `6ee3255` — Ready · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` · **W2-B NOT DEPLOYED** |
+| **HEAD / origin/main** | `d86b4df` (W2-B application; closeout docs pending separate commit) |
+| **Production application** | `d86b4df` — Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · **W2-B PRODUCTION VERIFIED** |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
-| **CREATOR PROGRESS W2-B** | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · commit/deploy **NOT DONE** |
-| **NEXT GATE** | **W2-B DOCUMENTATION COMMIT/PUSH** · then deploy GO · Fixture GO · FAR-01 soak end → FINAL SOAK AUDIT |
+| **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` |
+| **NEXT GATE** | **W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH** · FAR-01 soak end → FINAL SOAK AUDIT |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
@@ -257,9 +259,9 @@ Concurrent recording sessions: **max 1** `PENDING_UPLOAD` per owner.
 Signup default account level: closed decision (BEGINNER path) — see Decision Log OD-19.
 
 **Premium (E3 / W2-A overlay):** `premium_entitlements` — **≠** Account Level · **≠** Creator Rank · **≠** Role · no `PremiumAudioRole`.
-Repo + production @ `6ee3255` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/GOLD) + `resolveProductEntitlement` SSOT. Inventory `premium_entitlements` = 0 (live Bronze/Silver/Gold / legacy mapping **not** live-data verified).
+Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/GOLD) + `resolveProductEntitlement` SSOT. Inventory `premium_entitlements` = 0 after W2-B fixture cleanup (paid-tier rows were temporary fixtures only).
 
-**W2-B (local, not deployed):** beat-download daily limits from product entitlement matrix (ANON runtime SSOT = `PREMIUM_ANON_DOWNLOADS_DAILY` = 2 · USER = `limits.downloadsDaily`). Legacy flat `USER_DAILY_DOWNLOAD_LIMIT` / env `DOWNLOAD_LIMIT_*` are **not** reserve-path authority. MODERATOR follows authenticated USER download entitlement limits (intentional). P2-1 binary Premium=30 render constants **VERIFIED RESOLVED**.
+**W2-B (PRODUCTION VERIFIED WITH NON-BLOCKING FINDING):** beat-download daily limits from product entitlement matrix live (ANON = `PREMIUM_ANON_DOWNLOADS_DAILY` = 2 · USER = `limits.downloadsDaily` FREE4/BRONZE10/SILVER25/GOLD50). Functional E2E PASS via production RPC/signed-URL/finalize path. Legacy flat `USER_DAILY_DOWNLOAD_LIMIT` / env `DOWNLOAD_LIMIT_*` are **not** reserve-path authority. MODERATOR follows authenticated USER download entitlement limits (intentional). P2-1 binary Premium=30 render constants **VERIFIED RESOLVED**. Browser/UI Server Action journey = **NON-BLOCKING FINDING**. Mix/Render live jobs **DEFERRED**.
 
 ---
 
@@ -301,7 +303,7 @@ Repo + production @ `6ee3255` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
 | Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07 OPEN · **OD-08 CLOSED** | Billing deferred · no checkout/UI |
 | **CREATOR PROGRESS W2-A** Premium foundation | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` | Prod DB `20261003221811` · deploy Ready | OK | [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · tiers FREE/BRONZE/SILVER/GOLD · live tiers NOT VERIFIED (0 rows) · Gold 90d DESIGN ONLY · P2 OPEN |
-| **CREATOR PROGRESS W2-B** Premium Enforcement | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** | Prod deploy **NOT DONE** | OK | [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · download cutover + P2-1 **VERIFIED RESOLVED** · P2-2/3/4 OPEN · Gold 90d / janitor / billing / UI / overlay out |
+| **CREATOR PROGRESS W2-B** Premium Enforcement | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` | Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` | OK | [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · ANON/FREE/BRONZE/SILVER/GOLD E2E PASS · OD-17 PASS · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 OPEN · Mix/Render DEFERRED · Gold 90d / janitor / billing / UI / overlay out |
 | Messaging / voting / comments product | NOT IMPLEMENTED | — | SSOT future; OD-10/11 OPEN | Permission rows may exist |
 | Dual-play mix preview | NOT IMPLEMENTED | — | W3 OUT | |
 
@@ -325,7 +327,7 @@ Repo + production @ `6ee3255` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 | STORAGE-ARCH-01 | **LOCKED** (architecture · no implementation) | [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
 | Creator Progress W1 (Experience + Rank) | **PRODUCTION VERIFIED WITH OPEN ITEMS** | `76a4757` · [CREATOR_PROGRESS_W1_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | Creator Progress W2-A (Premium tier foundation) | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** | `6ee3255` · [CREATOR_PROGRESS_W2A_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
-| Creator Progress W2-B (Premium Enforcement) | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** | [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) |
+| Creator Progress W2-B (Premium Enforcement) | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** | `d86b4df` · [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) |
 
 ---
 
@@ -447,7 +449,7 @@ Further freeze/SSOT/OPEN_DECISIONS deep wording sync remains optional Owner clar
 | Watermark / global codec registry (OD-12/13) | OPEN (E3 Basic 128 locked via OAD-06) |
 | Payments / Premium catalog product | DEFERRED · OPEN OD-04/07 · OD-08 CLOSED (tiers only; no billing) |
 | W2-A Premium tier foundation | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · DB `20261003221811` · deploy `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` · live tiers NOT VERIFIED (0 rows) · P2 OPEN |
-| W2-B Premium Enforcement | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · code local · deploy **NOT DONE** · P2-1 **VERIFIED RESOLVED** · Gold 90d / janitor / billing / UI / overlay out |
+| W2-B Premium Enforcement | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · deploy `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` · download E2E PASS · P2-1 **VERIFIED RESOLVED** · Mix/Render DEFERRED · Gold 90d / janitor / billing / UI / overlay out · browser/UI Server Action = NON-BLOCKING FINDING |
 | Comments / voting / messaging | DEFERRED · product future |
 | Visual brand / copy final (OD-15/16) | OPEN |
 | STEMS | DEFERRED (OAD-04) |
@@ -641,7 +643,7 @@ Start reading order:
 
 ### OUT OF SCOPE / NOT ENABLED (current delivery)
 
-STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product · recording Premium overlay · Gold 90d PRODUCTION · Premium Production E2E · artifacts janitor / ops dashboard · `/premium` / `/ranks` UI · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO · W2-B production deploy/verification (code complete locally · not live).
+STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product · recording Premium overlay · Gold 90d PRODUCTION · artifacts janitor / ops dashboard · `/premium` / `/ranks` UI · grant PLAYBACK/DOWNLOAD · track publish · comments/voting/messaging product UIs · FFmpeg as npm app dependency · MasterProParams / True Peak / BS.1770 product expansion · artwork bucket (OD-SA-04) · STORAGE-ARCH-02 external Object Storage provisioning · STORAGE-ARCH-02-KEY+ without Implementation GO · W2-B Mix/Render live jobs · W2-B browser/UI Server Action journey (NON-BLOCKING FINDING).
 
 ---
 
