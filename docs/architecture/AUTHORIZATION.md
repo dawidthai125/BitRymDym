@@ -75,7 +75,7 @@ profiles.role = ADMIN
 Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL only.
 Do not document secrets.
 
-**Admin User Management (OD-ADMIN-01…07 CLOSED):** W1 list + W2 mutations + **W3 history UI IMPLEMENTED in repo**. Read path: `ADMIN` ∧ `audit_log.view` → `createSupabaseAdminClient()` SELECT `admin_audit_events` (no read RPC, no authenticated SELECT policy). **W3 PRODUCTION NOT VERIFIED**. Self-demotion **NO**. Last-ADMIN demotion **NO**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
+**Admin User Management (OD-ADMIN-01…07 CLOSED):** W1 list + W2 mutations + **W3 history UI CLOSED / PRODUCTION VERIFIED** @ `237a86f`. Read path: `ADMIN` ∧ `audit_log.view` → `createSupabaseAdminClient()` SELECT `admin_audit_events` (no read RPC, no authenticated SELECT policy, no new permission keys). Self-demotion **NO**. Last-ADMIN demotion **NO** (live concurrency path still a W2 finding). See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md).
 
 ---
 
@@ -89,7 +89,8 @@ Do not document secrets.
 - RLS + privilege-escalation trigger (role / account_level)
 - **USER-ID-01** — nullable stable `profiles.user_number` (see below)
 - **W1 Admin users list** — `/admin/users` read
-- **W2 Admin users mutations** — server action + RPC; no client DML; audit write (no history UI)
+- **W2 Admin users mutations** — server action + RPC; no client DML; audit write
+- **W3 Admin users audit history** — `/admin/users` Historia zmian; `ADMIN` ∧ `audit_log.view`; service_role SELECT only
 
 ---
 

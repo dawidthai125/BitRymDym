@@ -2,14 +2,15 @@
 
 **Epic:** ADMIN USER MANAGEMENT  
 **Wave:** **W0 = CLOSED** (Owner Decision Lock)  
-**Status:** OWNER DECISIONS LOCKED · **W1 READ-ONLY IMPLEMENTED** · **W2 MUTATIONS IMPLEMENTED** · **W3 HISTORY UI IMPLEMENTED (repo)** · **W3 PRODUCTION NOT VERIFIED**  
+**Status:** OWNER DECISIONS LOCKED · **W1 READ-ONLY COMPLETE** · **W2 MUTATIONS PRODUCTION VERIFIED WITH FINDINGS** · **W3 HISTORY UI CLOSED / PRODUCTION VERIFIED** @ `237a86f`  
 **Date:** 2026-10-04  
 **Owner:** Prezes Dawid  
 **Canonical ODs:** OD-ADMIN-01 … OD-ADMIN-07  
-**Registry:** [DECISION_LOG.md](./DECISION_LOG.md) · [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)
+**Registry:** [DECISION_LOG.md](./DECISION_LOG.md) · [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)  
+**W3 closeout:** [ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md)
 
 This document is the **SSOT** for locked Admin User Management product/security decisions.  
-It does **not** ship the feature. Implementation requires a separate Wave GO (W1+).
+Wave delivery status is tracked below; decisions remain CLOSED regardless of wave progress.
 
 ---
 
@@ -35,8 +36,8 @@ OD-ADMIN-07 = YES / W3
 | OD-ADMIN-03 | Można zdegradować ostatniego ADMIN | **NO** — must keep ≥ 1 active `ADMIN`; **server-side guard** (UI-only is insufficient) |
 | OD-ADMIN-04 | Premium duration | **BEZTERMINOWE + OPCJONALNE `expires_at`** |
 | OD-ADMIN-05 | ADMIN widzi email | **YES** — `/admin/users` only; not public profile |
-| OD-ADMIN-06 | Audit każdej mutacji roli/Premium | **YES** — target table `admin_audit_events` (not created in W0) |
-| OD-ADMIN-07 | Historia zmian w UI | **YES / NOT MVP** — W3 |
+| OD-ADMIN-06 | Audit każdej mutacji roli/Premium | **YES** — table `admin_audit_events` (created with W2) |
+| OD-ADMIN-07 | Historia zmian w UI | **YES / W3** — decision CLOSED; delivery **PRODUCTION VERIFIED** |
 
 ---
 
@@ -71,21 +72,19 @@ REMOVE PREMIUM = set `tier` to `FREE` (still the SSOT). Reuse existing expiry ev
 Frontend is **not** an authorization source.
 
 ```text
-Admin UI
-  → server action
-  → requireRole(["ADMIN"])
-  → requirePermission("users.edit")
-  → validate target
-  → self-protection
-  → service_role mutation
-  → audit event
-  → revalidate
+Mutations (W2):
+Admin UI → server action → requireRole(["ADMIN"]) → requirePermission("users.edit")
+  → validate target → self-protection → service_role RPC → audit write → revalidate
+
+History (W3):
+Admin UI → server list → requireRole(["ADMIN"]) → requirePermission("audit_log.view")
+  → createSupabaseAdminClient() SELECT admin_audit_events → present labels → UI
 ```
 
 | Actor | MVP |
 |-------|-----|
-| USER | no `/admin/users` access; cannot change own role/Premium |
-| MODERATOR | **no** Premium/Role mutations |
+| USER | no `/admin/users` access; cannot change own role/Premium; no audit history |
+| MODERATOR | **no** Premium/Role mutations; **no** audit history |
 | ADMIN | full scope per OD-ADMIN-01…07 |
 
 Self-protection (locked with ODs):
@@ -95,16 +94,16 @@ Self-protection (locked with ODs):
 - Grant/revoke ADMIN to **another** user allowed (OD-ADMIN-01) with confirmation + audit
 - Client must never `UPDATE` `profiles.role` or `premium_entitlements`
 
-### Audit model (OD-ADMIN-06) — design only, not migrated
+### Audit model (OD-ADMIN-06) — delivered with W2
 
 Required events include: role change; premium tier; premium expiration; grant/revoke ADMIN; grant/revoke MODERATOR.
-
-Proposed table (W3; **do not create in W0/W1**):
 
 ```text
 admin_audit_events
   actor_user_id
   target_user_id
+  actor_user_number
+  target_user_number
   action
   old_value
   new_value
@@ -112,9 +111,7 @@ admin_audit_events
   metadata
 ```
 
-W2 mutations **must** write audit events once the table exists; W1 is read-only so audit writes start with W2 (table GO with W2 or W3 — Owner Wave GO decides sequencing; **OD-ADMIN-06 requires audit on every mutation**, so the table must exist **before or with W2**, not after W2 ships live mutations).
-
-**Sequencing lock:** W2 must not ship live role/Premium mutations without `admin_audit_events` write path. History UI remains W3 (OD-ADMIN-07).
+**Sequencing lock (historical):** W2 shipped live mutations with audit **write**. History UI is W3 (OD-ADMIN-07).
 
 ---
 
@@ -123,23 +120,23 @@ W2 mutations **must** write audit events once the table exists; W1 is read-only 
 | Wave | Scope | Status |
 |------|--------|--------|
 | **W0** | Owner Decision Lock | **CLOSED** |
-| **W1** | Read-only user list + filters (`/admin/users`) | **IMPLEMENTED** |
-| **W2** | Role + Premium mutations + security guards + audit **write** | **IMPLEMENTED** (repo + prior production DB/app gates) · last-admin live path remains a W2 finding |
-| **W3** | Audit log + history UI | **IMPLEMENTED (repo)** · **PRODUCTION NOT VERIFIED** (history UI not deployed / not UI-verified) |
-| **W4** | Full production verification | NOT STARTED |
+| **W1** | Read-only user list + filters (`/admin/users`) | **COMPLETE** (in production tree) |
+| **W2** | Role + Premium mutations + security guards + audit **write** | **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` · DB `20261004144223` |
+| **W3** | Audit log + history UI | **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · deploy `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · DB **unchanged** |
+| **W4** | Full production verification (epic wrap) | **NOT STARTED** |
 
-W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Email on list/detail remains ADMIN-only `/admin/users` (OD-ADMIN-05).
+W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Email on list/detail remains ADMIN-only `/admin/users` (OD-ADMIN-05). History AuthZ is `ADMIN` ∧ `audit_log.view` (not `users.view` alone).
 
 ---
 
 ## Current evidence
 
 - W1 route: `/admin/users` (ADMIN + `users.view`/`users.edit`)
-- W2: `admin_apply_user_management` + `admin_audit_events` (repo + production table present; 49 historical rows, all `target_user_id` NULL with `target_user_number` snapshot)
-- W3 history UI: **IMPLEMENTED (repo)** — `/admin/users` Historia zmian · SELECT via `createSupabaseAdminClient()` after `ADMIN` ∧ `audit_log.view` · **PRODUCTION NOT VERIFIED** (production app still serves pre-W3 UI)
+- W2: `admin_apply_user_management` + `admin_audit_events` · remote migration `20261004144223` · **PRODUCTION VERIFIED WITH FINDINGS** (last-admin concurrency not live-verified; migration timestamp drift; `user_number` holes; retained audit rows after SET NULL)
+- W3 history UI: **PRODUCTION VERIFIED** @ `237a86f` / `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` — 49 audit rows · snapshots for deleted targets · filters/pagination PASS · closeout [ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md)
 
 ---
 
-## Explicit non-changes (W3)
+## Explicit non-changes (post-W3)
 
-No production deploy until a separate Owner GO · no DB migration · no read RPC · no authenticated SELECT policy · no W2 write-path change · no grouping of audit rows · no W4.
+No W4 without Owner GO · no DB migration for W3 · no read RPC · no authenticated SELECT policy · no W2 write-path rewrite · no grouping of audit rows · no retention/purge/CSV/undo.

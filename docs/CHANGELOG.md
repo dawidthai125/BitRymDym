@@ -6,16 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-10-04 — ADMIN USER MANAGEMENT W3 (AUDIT HISTORY UI)
+## 2026-10-04 — ADMIN USER MANAGEMENT W3 (AUDIT HISTORY UI) — CLOSED / PRODUCTION VERIFIED
 
-**Status:** **IMPLEMENTED (repository)** · **W3 PRODUCTION NOT VERIFIED** · not deployed  
-**SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md)
+**Status:** **CLOSED / PRODUCTION VERIFIED**  
+**App SHA:** `237a86f` · deployment `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · READY / PROMOTED  
+**DB tip:** `20261004144223` · **W3 migration NONE** · DB **UNCHANGED** by W3  
+**SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](./audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md)
 
 - `/admin/users` — read-only Historia zmian
 - AuthZ: ADMIN ∧ `audit_log.view` (MODERATOR/USER DENY)
-- SELECT `admin_audit_events` via `createSupabaseAdminClient()` — no read RPC, no new migration, no authenticated SELECT policy
+- SELECT `admin_audit_events` via `createSupabaseAdminClient()` — no read RPC, no authenticated SELECT policy
 - Filters: `auditAction` + `auditUser` · page size 25 · `created_at DESC, id DESC`
-- Snapshot labels for deleted targets (`Użytkownik · #N`) — 49 production rows with `target_user_id` NULL remain readable after deploy
+- Production: 49 audit rows · deleted-target snapshots · pagination/filters verified · P0/P1 = 0
+- W2 findings preserved (last-admin concurrency, migration timestamp drift, `user_number` holes, retained audits)
 - W4 **not started**
 
 ---

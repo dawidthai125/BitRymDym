@@ -16,10 +16,11 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 |------|---------|
 | Decision IDs | OD-ADMIN-01 … OD-ADMIN-07 |
 | Title | Admin User Management — W0 Owner Decision Lock |
-| Status | CLOSED / ACCEPTED · **W0 LOCKED** · **W1+W2 IMPLEMENTED (repo)** · W3 **NOT STARTED** · **PRODUCTION NOT DEPLOYED** |
+| Status | CLOSED / ACCEPTED · **W0 LOCKED** · W1 COMPLETE · W2 **PRODUCTION VERIFIED WITH FINDINGS** · W3 **CLOSED / PRODUCTION VERIFIED** @ `237a86f` |
 | Date | 2026-10-04 |
 | Decydent | Owner (Prezes Dawid) |
 | Freeze | [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) |
+| W3 closeout | [ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md) |
 
 **Decision (lock)**
 
@@ -30,12 +31,12 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 | OD-ADMIN-03 | **NO** — cannot demote last `ADMIN`; ≥1 active ADMIN; **server-side** guard |
 | OD-ADMIN-04 | **OPTIONAL EXPIRATION** — `expires_at` NULL = perpetual; future timestamp = until date; no new `premium_active`; `premium_entitlements` remains SSOT |
 | OD-ADMIN-05 | **YES** — ADMIN may see email **only** on `/admin/users`; not public profile |
-| OD-ADMIN-06 | **YES** — every admin mutation of role / premium tier / expiration / grant-revoke ADMIN or MODERATOR must be audited (`admin_audit_events` designed; **not migrated in W0**) |
-| OD-ADMIN-07 | **YES / W3** — history UI not MVP; backend audit obligatory with mutations (OD-ADMIN-06) |
+| OD-ADMIN-06 | **YES** — every admin mutation of role / premium tier / expiration / grant-revoke ADMIN or MODERATOR must be audited (`admin_audit_events`; table delivered with W2) |
+| OD-ADMIN-07 | **YES / W3** — history UI; decision CLOSED; delivery **PRODUCTION VERIFIED** @ `237a86f` |
 
 **Architectural lock:** RANK ≠ PREMIUM ≠ ROLE ≠ ACCOUNT_LEVEL. Role = `profiles.role`. Premium = `premium_entitlements` + existing resolver/matrix.
 
-**Waves:** W0 CLOSED · W1 READ-ONLY · **W2 MUTATIONS + AUDIT WRITE IMPLEMENTED** (repo; production app/DB unchanged) · W3 history UI **NOT STARTED** · W4 production verify.
+**Waves:** W0 CLOSED · W1 READ-ONLY COMPLETE · W2 MUTATIONS + AUDIT WRITE **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` · W3 history UI **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · deploy `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · W4 **NOT STARTED**.
 
 **Consequences**
 
