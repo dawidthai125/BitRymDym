@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-04 (USER-FACING POLISH LOCALIZATION CLOSED / PRODUCTION VERIFIED GREEN · tip/app `ffe723b` · deploy `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`)
+**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT W1 READ-ONLY · production app still `ffe723b`)
 
 ---
 
@@ -26,6 +26,7 @@
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
 | **PRODUCTION DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 (post fixture cleanup) · **no W2-B migration** · localization epic **DB UNCHANGED** |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` — [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · email templates [doc](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) · inbox E2E **BLOCKED — NO INBOX ACCESS** |
+| **ADMIN USER MANAGEMENT** | **W1 IMPLEMENTED (read-only)** · W0 locked · W2 NOT STARTED · **NOT deployed** — [freeze](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) |
 | **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` — [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) — [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
@@ -57,9 +58,8 @@ REPOSITORY HEAD / origin/main = ffe723b (+ docs closeout commit after push)
 PRODUCTION APP                = ffe723b · dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM
 PRODUCTION DB                 = 20261003221811 / w2a_premium_tier_foundation · no W2-B migration
 USER-FACING POLISH LOCALIZATION = CLOSED / PRODUCTION VERIFIED GREEN @ ffe723b
-  P0 / P1 / P2                = 0
-  Email inbox E2E             = BLOCKED — NO INBOX ACCESS (evidence limitation)
-  Auth templates (final deploy) = UNCHANGED
+ADMIN USER MANAGEMENT         = W1 READ-ONLY /admin/users IMPLEMENTED · NOT DEPLOYED
+NEXT GATE                     = W2 mutations (Owner GO) · not started
 CREATOR PROGRESS W2-A         = CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ 6ee3255
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df (in tree)
   Gate name                   = PREMIUM ENFORCEMENT
@@ -80,9 +80,6 @@ CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ 
 OD-08                         = CLOSED
 OD-04 / OD-07                 = OPEN
 Recording overlay             = OPEN / DEFERRED
-NEXT GATE                     = Owner direction only
-                              · FAR-01 soak end → FINAL SOAK AUDIT
-                              · optional Auth email inbox E2E when mailbox available
 ```
 
 ### 3.1 Architecture living lock
@@ -108,7 +105,8 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
                  → USER-FACING POLISH LOCALIZATION = CLOSED @ ffe723b
                  → CREATOR_PROGRESS_W2B_IMPLEMENTATION.md (still relevant)
-                 → NEXT GATE = Owner direction only
+                 → ADMIN USER MANAGEMENT W1 = READ-ONLY /admin/users (not deployed)
+                 → NEXT GATE = W2 mutations (Owner GO) — do not start without GO
                  → W2-B download enforcement = PRODUCTION VERIFIED (in tree)
                  → Mix/Render live = DEFERRED
                  → optional Auth email inbox E2E (BLOCKED — NO INBOX ACCESS)
@@ -125,6 +123,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | W2-A Premium foundation | Production verified with findings | App `6ee3255` · DB `20261003221811` |
 | W2-B Premium Enforcement | Owner scope locked | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) |
 | USER-FACING POLISH LOCALIZATION | Owner GO sequence | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
+| ADMIN USER MANAGEMENT | Owner W0 lock | **W1 READ-ONLY IMPLEMENTED** · W2 not started · [freeze](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) |
 | FAR-01 campaign | Owner GO sequence | **SOAK ACTIVE** · **NOT CLOSED** |
 | DEF-01 | Owner GO | CLOSED / PRODUCTION VERIFIED @ `fbc696f` |
 

@@ -52,6 +52,53 @@ export function labelBeatStatus(status: string): string {
   }
 }
 
+export function labelSystemRole(role: string): string {
+  switch (role) {
+    case "ADMIN":
+      return "Administrator";
+    case "MODERATOR":
+      return "Moderator";
+    case "USER":
+      return "Użytkownik";
+    default:
+      return "Użytkownik";
+  }
+}
+
+export function labelCreatorRank(rank: string): string {
+  switch (rank) {
+    case "BEGINNER_RAPPER":
+      return "Początkujący";
+    case "ROOKIE_RAPPER":
+      return "Nowicjusz";
+    case "RISING_RAPPER":
+      return "Wschodzący";
+    case "PRO_RAPPER":
+      return "Pro";
+    case "ELITE_RAPPER":
+      return "Elita";
+    case "LEGEND_RAPPER":
+      return "Legenda";
+    default:
+      return "Początkujący";
+  }
+}
+
+export function labelPremiumTier(tier: string): string {
+  switch (tier) {
+    case "FREE":
+      return "Free";
+    case "BRONZE":
+      return "Bronze";
+    case "SILVER":
+      return "Silver";
+    case "GOLD":
+      return "Gold";
+    default:
+      return "Free";
+  }
+}
+
 export function labelAudioReady(ready: boolean): string {
   return ready ? "Gotowy" : "Brak audio";
 }

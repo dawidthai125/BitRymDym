@@ -6,6 +6,37 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — ADMIN USER MANAGEMENT W1 (READ-ONLY LIST)
+
+**Status:** **IMPLEMENTED** · **NOT production-deployed**  
+**SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md)
+
+- `/admin/users` — ADMIN + `users.view`/`users.edit`
+- Search: ksywka / e-mail / `user_number`
+- Filters: Premium · role · rank (resolver SSOT)
+- No mutations · no `admin_audit_events` migration · W2 not started
+
+---
+
+## 2026-10-04 — ADMIN USER MANAGEMENT W0 (OWNER DECISIONS LOCKED)
+
+**Status:** **W0 CLOSED** · feature **NOT IMPLEMENTED** · **NOT committed / NOT pushed / NOT deployed**  
+**SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [DECISION_LOG.md](./decisions/DECISION_LOG.md)
+
+```text
+OD-ADMIN-01 = YES
+OD-ADMIN-02 = NO
+OD-ADMIN-03 = NO
+OD-ADMIN-04 = OPTIONAL EXPIRATION
+OD-ADMIN-05 = YES
+OD-ADMIN-06 = YES
+OD-ADMIN-07 = YES / W3
+```
+
+Next: W1 read-only `/admin/users` requires separate Owner GO.
+
+---
+
 ## 2026-10-04 — USER-FACING POLISH LOCALIZATION (CLOSED / PRODUCTION VERIFIED GREEN)
 
 **Status:** **CLOSED** · **PRODUCTION VERIFIED GREEN**  

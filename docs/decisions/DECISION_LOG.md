@@ -10,6 +10,42 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-ADMIN-01…07 — Admin User Management Owner Decision Lock
+
+| Pole | Wartość |
+|------|---------|
+| Decision IDs | OD-ADMIN-01 … OD-ADMIN-07 |
+| Title | Admin User Management — W0 Owner Decision Lock |
+| Status | CLOSED / ACCEPTED · **W0 LOCKED** · **W1 READ-ONLY IMPLEMENTED** · W2 **NOT STARTED** · **NOT production-deployed** |
+| Date | 2026-10-04 |
+| Decydent | Owner (Prezes Dawid) |
+| Freeze | [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) |
+
+**Decision (lock)**
+
+| ID | Locked choice |
+|----|----------------|
+| OD-ADMIN-01 | **YES** — ADMIN may grant/revoke `ADMIN` to **another** user; server-side; `ADMIN` + `users.edit`; confirmation; audited |
+| OD-ADMIN-02 | **NO** — ADMIN cannot change own role / no self-demotion via panel |
+| OD-ADMIN-03 | **NO** — cannot demote last `ADMIN`; ≥1 active ADMIN; **server-side** guard |
+| OD-ADMIN-04 | **OPTIONAL EXPIRATION** — `expires_at` NULL = perpetual; future timestamp = until date; no new `premium_active`; `premium_entitlements` remains SSOT |
+| OD-ADMIN-05 | **YES** — ADMIN may see email **only** on `/admin/users`; not public profile |
+| OD-ADMIN-06 | **YES** — every admin mutation of role / premium tier / expiration / grant-revoke ADMIN or MODERATOR must be audited (`admin_audit_events` designed; **not migrated in W0**) |
+| OD-ADMIN-07 | **YES / W3** — history UI not MVP; backend audit obligatory with mutations (OD-ADMIN-06) |
+
+**Architectural lock:** RANK ≠ PREMIUM ≠ ROLE ≠ ACCOUNT_LEVEL. Role = `profiles.role`. Premium = `premium_entitlements` + existing resolver/matrix.
+
+**Waves:** W0 CLOSED · **W1 READ-ONLY IMPLEMENTED** (`/admin/users`, not deployed) · W2 mutations + guards + audit write **NOT STARTED** · W3 history UI · W4 production verify.
+
+**Consequences**
+
+- Do not implement until Wave GO
+- Enum stays `ADMIN` (UI label „Administrator” allowed)
+- MODERATOR: no Premium/Role mutations in MVP
+- Client never updates `profiles.role` / `premium_entitlements`
+
+---
+
 ### OD-REC-01…08 — Recording / Quick Take Design Freeze v1.0
 
 | Pole | Wartość |

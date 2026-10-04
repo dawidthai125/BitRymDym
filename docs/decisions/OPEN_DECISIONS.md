@@ -52,6 +52,13 @@
 | OD-REC-06 | Own MIC TAKE preview/download/delete; Track publish OUT | §19, §25 | Take ownership UX | **CLOSED / ACCEPTED** — 2026-09-27 (D06) |
 | OD-REC-07 | Anti-abuse active + daily session caps | §39 | Recording abuse | **CLOSED / ACCEPTED** — 2026-09-27 (D07) |
 | OD-REC-08 | Own MIC TAKE download for BEGINNER/PRO/LEGEND; anon no durable DL | §19–§21 | Take download | **CLOSED / ACCEPTED** — 2026-09-27 (D08) |
+| OD-ADMIN-01 | ADMIN grant/revoke ADMIN to another user | §35–§36 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
+| OD-ADMIN-02 | ADMIN change own role | §35–§36 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
+| OD-ADMIN-03 | Demote last ADMIN | §35–§36 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
+| OD-ADMIN-04 | Premium perpetual vs expires_at | §4, §22–23 | Admin Premium | **CLOSED / ACCEPTED** — 2026-10-04 (OPTIONAL EXPIRATION) |
+| OD-ADMIN-05 | ADMIN sees user email | §35, privacy | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES /admin/users only) |
+| OD-ADMIN-06 | Audit role/Premium mutations | §35, §37 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
+| OD-ADMIN-07 | History UI for role/Premium | §35 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES / W3) |
 
 ---
 
@@ -83,9 +90,17 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-REC-07 | Anti-abuse caps (anon/BEGINNER/PRO/LEGEND active + daily sessions) | 2026-09-27 |
 | OD-REC-08 | Own take download YES for logged-in tiers; anon no durable take DL | 2026-09-27 |
 | OD-08 | Premium tiers = FREE / BRONZE / SILVER / GOLD · ≠ Rank · ≠ Account Level · ≠ Role · legacy active Premium → SILVER | 2026-10-03 |
+| OD-ADMIN-01 | YES — grant/revoke ADMIN to another user (server + users.edit + confirm + audit) | 2026-10-04 |
+| OD-ADMIN-02 | NO — no ADMIN self-role change / self-demotion | 2026-10-04 |
+| OD-ADMIN-03 | NO — cannot drop below 1 ADMIN (server-side) | 2026-10-04 |
+| OD-ADMIN-04 | OPTIONAL EXPIRATION — NULL perpetual / future timestamp until date | 2026-10-04 |
+| OD-ADMIN-05 | YES — email visible only on `/admin/users` | 2026-10-04 |
+| OD-ADMIN-06 | YES — audit all role/Premium admin mutations | 2026-10-04 |
+| OD-ADMIN-07 | YES / W3 — history UI not MVP | 2026-10-04 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
-W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
+W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).  
+Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 
 ---
 
@@ -116,6 +131,7 @@ W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_
 - First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).
 - Community upload: EPIC **COMPLETE / LOCKED** @ `c5e1f17` — OD-COMMUNITY-01…05 **CLOSED**. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
 - Recording / Quick Take: Design Freeze **LOCKED** — OD-REC-01…08 **CLOSED**. Implementation awaits separate Wave 1 Owner GO. See [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
+- Admin User Management: **W0 LOCKED** · **W1 READ-ONLY IMPLEMENTED** (`/admin/users`) · **NOT production-deployed** · W2 mutations **NOT STARTED**. OD-ADMIN-01…07 **CLOSED**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 - Recording retention V1: BEGINNER 24h · PRO 10d · LEGEND 30d (config, not scattered magic numbers). Future Premium overlay may boost — hybrid D04; **overlay numbers OPEN / DEFERRED** (OD-08 closed tiers only).
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
 - OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.

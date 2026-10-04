@@ -83,6 +83,14 @@ export default async function AdminLayout({
           ) : null}
           {showPlatform ? (
             <Link
+              href="/admin/users"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              Użytkownicy
+            </Link>
+          ) : null}
+          {showPlatform ? (
+            <Link
               href="/admin/beats/new"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >

@@ -18,6 +18,29 @@ export function deriveCreatorRank(experienceTotal: number): CreatorRank {
   return "BEGINNER_RAPPER";
 }
 
+/**
+ * Inclusive experience window for a rank, derived from the same threshold table
+ * as `deriveCreatorRank` — not a second ladder.
+ */
+export function experienceBoundsForRank(rank: CreatorRank): {
+  minInclusive: number;
+  maxExclusive: number | null;
+} {
+  const ascending = [...CREATOR_RANK_THRESHOLDS].sort(
+    (a, b) => a.minExperience - b.minExperience,
+  );
+  const index = ascending.findIndex((row) => row.rank === rank);
+  if (index < 0) {
+    return { minInclusive: 0, maxExclusive: 0 };
+  }
+  const minInclusive = ascending[index].minExperience;
+  const next = ascending[index + 1];
+  return {
+    minInclusive,
+    maxExclusive: next ? next.minExperience : null,
+  };
+}
+
 /** Next threshold above current total, or null at Legend. */
 export function nextCreatorRankThreshold(
   experienceTotal: number,

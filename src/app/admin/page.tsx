@@ -142,10 +142,9 @@ export default async function AdminIndexPage() {
                   meta="Kolejka społeczności"
                 />
                 <AdminLink
-                  href="/admin"
+                  href="/admin/users"
                   title="Użytkownicy"
-                  meta="Wkrótce"
-                  soon
+                  meta="Lista, wyszukiwanie, filtry"
                 />
                 <AdminLink
                   href="/admin"

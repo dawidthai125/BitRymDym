@@ -4,6 +4,7 @@ import { CREATOR_EXPERIENCE_AMOUNTS } from "@/config/creator-experience";
 import {
   assertCreatorRankNotAccountLevelAxis,
   deriveCreatorRank,
+  experienceBoundsForRank,
   nextCreatorRankThreshold,
 } from "@/lib/creator-progress/rank";
 import type { AccountLevel } from "@/types/domain";
@@ -32,6 +33,14 @@ describe("Creator Rank derivation (W1)", () => {
   it("clamps invalid totals to Beginner", () => {
     expect(deriveCreatorRank(-10)).toBe("BEGINNER_RAPPER");
     expect(deriveCreatorRank(Number.NaN)).toBe("BEGINNER_RAPPER");
+  });
+
+  it("experienceBoundsForRank uses the same threshold table", () => {
+    expect(experienceBoundsForRank("ROOKIE_RAPPER")).toEqual({
+      minInclusive: 200,
+      maxExclusive: 800,
+    });
+    expect(experienceBoundsForRank("LEGEND_RAPPER").maxExclusive).toBeNull();
   });
 
   it("exposes next threshold until Legend", () => {
