@@ -20,6 +20,7 @@ import {
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { toUserFacingUploadError } from "@/lib/ui/user-errors";
 
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
@@ -144,7 +145,9 @@ export function UserUploadBeatForm({
             if (analyzeGeneration.current === generation) {
               setAnalysis({
                 status: "error",
-                message: created.error ?? "Nie udało się utworzyć szkicu.",
+                message: toUserFacingUploadError(
+                  created.error ?? "Nie udało się utworzyć szkicu.",
+                ),
               });
             }
             return;
@@ -183,7 +186,9 @@ export function UserUploadBeatForm({
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: sessionJson.error ?? "Upload session failed.",
+              message: toUserFacingUploadError(
+                sessionJson.error ?? "Upload session failed.",
+              ),
             });
           }
           return;
@@ -205,7 +210,9 @@ export function UserUploadBeatForm({
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: uploadError.message || "Upload failed.",
+              message: toUserFacingUploadError(
+                uploadError.message || "Upload failed.",
+              ),
             });
           }
           return;
@@ -244,7 +251,9 @@ export function UserUploadBeatForm({
         ) {
           setAnalysis({
             status: "error",
-            message: analyzeJson.error ?? "Analiza audio nie powiodła się.",
+            message: toUserFacingUploadError(
+              analyzeJson.error ?? "Analiza audio nie powiodła się.",
+            ),
           });
           return;
         }
@@ -402,7 +411,7 @@ export function UserUploadBeatForm({
     const beatId =
       (analysis.status === "ready" ? analysis.beatId : null) ?? savedBeatId;
     if (!beatId || !savedDraft) {
-      setFormError("Najpierw zapisz szkic z gotowym MASTER READY.");
+      setFormError("Najpierw zapisz szkic z gotowym audio.");
       return;
     }
 
@@ -440,7 +449,7 @@ export function UserUploadBeatForm({
   let statusLine: string | null = null;
   if (analysis.status === "uploading" || analyzing) {
     statusLine =
-      analysis.status === "analyzing" ? "Analizowanie…" : "Upload audio…";
+      analysis.status === "analyzing" ? "Analizowanie…" : "Przesyłanie audio…";
   }
 
   return (
@@ -483,8 +492,8 @@ export function UserUploadBeatForm({
         ) : null}
         {masterAlreadyReady && analysis.status === "idle" ? (
           <p className="text-sm text-muted-foreground">
-            MASTER READY już istnieje. Możesz wgrać nowe audio, żeby zastąpić
-            plik, albo uzupełnić metadane i wysłać do moderacji.
+            Audio jest już gotowe. Możesz wgrać nowy plik, żeby je zastąpić,
+            albo uzupełnić metadane i wysłać do moderacji.
           </p>
         ) : null}
       </section>
@@ -566,7 +575,7 @@ export function UserUploadBeatForm({
 
       {savedDraft ? (
         <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-          Szkic zapisany · MASTER READY. Po wysłaniu do moderacji edycja będzie
+          Szkic zapisany · audio gotowe. Po wysłaniu do moderacji edycja będzie
           zablokowana do czasu decyzji moderatora.
         </p>
       ) : null}

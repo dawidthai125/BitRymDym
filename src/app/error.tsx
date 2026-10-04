@@ -1,7 +1,6 @@
 "use client";
 
 export default function Error({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -11,7 +10,7 @@ export default function Error({
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-4 px-6">
       <h1 className="text-2xl font-semibold tracking-tight">Wystąpił błąd</h1>
       <p className="text-sm text-muted-foreground">
-        {error.message || "Nieoczekiwany błąd aplikacji."}
+        Wystąpił nieoczekiwany błąd. Spróbuj ponownie.
       </p>
       <button
         type="button"

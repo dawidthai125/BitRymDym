@@ -16,6 +16,7 @@ import {
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { toUserFacingUploadError } from "@/lib/ui/user-errors";
 
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
@@ -143,7 +144,9 @@ export function AdminCreateBeatForm() {
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: sessionJson.error ?? "Upload session failed.",
+              message: toUserFacingUploadError(
+                sessionJson.error ?? "Upload session failed.",
+              ),
             });
           }
           return;
@@ -165,7 +168,9 @@ export function AdminCreateBeatForm() {
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: uploadError.message || "Upload failed.",
+              message: toUserFacingUploadError(
+                uploadError.message || "Upload failed.",
+              ),
             });
           }
           return;
@@ -204,7 +209,9 @@ export function AdminCreateBeatForm() {
         ) {
           setAnalysis({
             status: "error",
-            message: analyzeJson.error ?? "Analiza audio nie powiodła się.",
+            message: toUserFacingUploadError(
+              analyzeJson.error ?? "Analiza audio nie powiodła się.",
+            ),
           });
           return;
         }
@@ -384,7 +391,7 @@ export function AdminCreateBeatForm() {
     statusLine =
       analysis.status === "analyzing"
         ? "Analizowanie…"
-        : "Upload audio…";
+        : "Przesyłanie audio…";
   }
 
   return (
@@ -589,10 +596,10 @@ export function AdminCreateBeatForm() {
           System
         </h2>
         <p className="text-sm text-muted-foreground">
-          PLATFORM · owner_id = NULL · status = DRAFT
+          Bit platformowy · szkic · bez właściciela użytkownika
         </p>
         <p className="text-xs text-muted-foreground">
-          Binary upload → private Storage → analiza BPM → finalize READY.
+          Przesłanie pliku → prywatne Storage → analiza BPM → finalizacja.
         </p>
       </section>
 
@@ -603,12 +610,12 @@ export function AdminCreateBeatForm() {
       ) : null}
       {success ? (
         <p className="text-sm text-foreground" role="status">
-          Utworzono DRAFT + MASTER — przekierowanie…
+          Utworzono szkic z audio MASTER — przekierowanie…
         </p>
       ) : null}
 
       <Button type="submit" disabled={!canSubmit}>
-        {pending ? "Tworzenie…" : "Utwórz DRAFT + MASTER"}
+        {pending ? "Tworzenie…" : "Utwórz szkic + MASTER"}
       </Button>
     </form>
   );

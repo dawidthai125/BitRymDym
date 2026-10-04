@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { toUserFacingGrantError } from "@/lib/ui/user-errors";
 
 export type BeatGrantRow = {
   id: string;
@@ -37,7 +38,11 @@ export function BeatGrantsPanel({
       error?: string;
     };
     if (!res.ok) {
-      setError(json.error ?? "Nie udało się wczytać grantów.");
+      setError(
+        toUserFacingGrantError(
+          json.error ?? "Nie udało się wczytać uprawnień dostępu.",
+        ),
+      );
       return;
     }
     setGrants(json.grants ?? []);
@@ -59,7 +64,11 @@ export function BeatGrantsPanel({
       });
       const json = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(json.error ?? "Nie udało się utworzyć grantu.");
+        setError(
+          toUserFacingGrantError(
+            json.error ?? "Nie udało się utworzyć uprawnienia dostępu.",
+          ),
+        );
         return;
       }
       setGrantee("");
@@ -78,7 +87,11 @@ export function BeatGrantsPanel({
       );
       const json = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(json.error ?? "Nie udało się odwołać grantu.");
+        setError(
+          toUserFacingGrantError(
+            json.error ?? "Nie udało się odwołać uprawnienia dostępu.",
+          ),
+        );
         return;
       }
       await refreshGrants();
@@ -92,23 +105,23 @@ export function BeatGrantsPanel({
     <section className="space-y-3 rounded-md border border-border p-4">
       <header className="space-y-1">
         <h2 className="text-sm font-semibold tracking-tight">
-          Udostępnij RECORD
+          Udostępnij nagrywanie
         </h2>
         <p className="text-xs text-muted-foreground">
-          Grant pozwala oznaczyć użytkownika do nagrywania. Publiczny PUBLISHED
-          RECORD działa bez grantu. Grant nie daje dostępu do próbek ani
-          pobierania.
+          Możesz zaprosić innego użytkownika do nagrywania na tym bicie.
+          Publiczne bity z włączonym nagrywaniem nie wymagają zaproszenia.
+          Zaproszenie nie daje dostępu do próbek ani pobierania.
         </p>
       </header>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <label className="flex flex-1 flex-col gap-1 text-xs">
-          Użytkownik (UUID lub dokładna nazwa)
+          Użytkownik (ID lub dokładna ksywka)
           <input
             className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             value={grantee}
             onChange={(e) => setGrantee(e.target.value)}
-            placeholder="uuid lub display name"
+            placeholder="ID lub ksywka"
             autoComplete="off"
             disabled={pending}
           />
@@ -129,14 +142,16 @@ export function BeatGrantsPanel({
           disabled={pending || !grantee.trim()}
           onClick={createGrant}
         >
-          Nadaj grant
+          Nadaj dostęp
         </Button>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {active.length === 0 ? (
-        <p className="text-xs text-muted-foreground">Brak aktywnych grantów.</p>
+        <p className="text-xs text-muted-foreground">
+          Brak aktywnych uprawnień dostępu.
+        </p>
       ) : (
         <ul className="divide-y divide-border border-y border-border">
           {active.map((g) => (
@@ -149,7 +164,7 @@ export function BeatGrantsPanel({
                   {g.granteeDisplayName ?? g.granteeUserId.slice(0, 8)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  RECORD
+                  Nagrywanie
                   {g.expiresAt
                     ? ` · wygasa ${new Date(g.expiresAt).toLocaleString()}`
                     : " · bezterminowy"}

@@ -212,7 +212,7 @@ export default async function AccountPage() {
                   </div>
                   <div>
                     <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-                      Email
+                      E-mail
                     </dt>
                     <dd className="mt-1 break-all text-[var(--brd-ink)]">
                       {context.email ?? "—"}
@@ -257,7 +257,7 @@ export default async function AccountPage() {
                 id="security"
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
-                <SectionLabel>Security</SectionLabel>
+                <SectionLabel>Bezpieczeństwo</SectionLabel>
                 <ChangePasswordForm />
                 <p className="text-sm text-[var(--brd-mute)]">
                   Nie pamiętasz hasła?{" "}
@@ -274,7 +274,7 @@ export default async function AccountPage() {
                 id="danger"
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
-                <SectionLabel>Danger Zone</SectionLabel>
+                <SectionLabel>Usuwanie konta</SectionLabel>
                 <DeleteAccountForm />
               </section>
             </aside>

@@ -1,4 +1,5 @@
 import type { Beat, BeatStatus } from "@/types/domain";
+import { toUserFacingError } from "@/lib/ui/user-errors";
 
 /** Public catalog / detail visibility — PUBLISHED only. */
 export function isPubliclyVisibleBeatStatus(status: BeatStatus): boolean {
@@ -61,40 +62,7 @@ export function formatDurationSeconds(totalSeconds: number): string {
 export function toSafePlaybackErrorMessage(
   raw: string | null | undefined,
 ): string {
-  if (!raw) {
-    return "Nie udało się odtworzyć audio.";
-  }
-  const lower = raw.toLowerCase();
-  if (
-    lower.includes("forbidden") ||
-    lower.includes("denied") ||
-    lower.includes("unauthorized") ||
-    lower.includes("unauthenticated")
-  ) {
-    return "Brak dostępu do odsłuchu.";
-  }
-  if (
-    lower.includes("not found") ||
-    lower.includes("no ready") ||
-    lower.includes("missing")
-  ) {
-    return "Audio niedostępne dla tego bitu.";
-  }
-  if (
-    lower.includes("network") ||
-    lower.includes("fetch") ||
-    lower.includes("failed to fetch")
-  ) {
-    return "Błąd sieci. Spróbuj ponownie.";
-  }
-  if (
-    lower.includes("signed") ||
-    lower.includes("url") ||
-    lower.includes("expired")
-  ) {
-    return "Sesja odtwarzania wygasła. Spróbuj ponownie.";
-  }
-  return "Nie udało się odtworzyć audio.";
+  return toUserFacingError(raw, "playback");
 }
 
 /** Safe user-facing download errors — no permissions / SQL / Storage leakage. */
@@ -102,41 +70,14 @@ export function toSafeDownloadErrorMessage(
   raw: string | null | undefined,
 ): string {
   if (!raw) {
-    return "Nie udało się pobrać pliku.";
+    return toUserFacingError(raw, "download");
   }
-  const lower = raw.toLowerCase();
-  if (lower.includes("daily download limit") || lower.includes("limit reached")) {
+  const lower = String(raw).toLowerCase();
+  // Preserve prior download-domain breadth for bare "limit reached".
+  if (lower.includes("limit reached") && !lower.includes("render")) {
     return "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.";
   }
-  if (
-    lower.includes("forbidden") ||
-    lower.includes("denied") ||
-    lower.includes("unauthorized")
-  ) {
-    return "Brak dostępu do pobrania.";
-  }
-  if (
-    lower.includes("not found") ||
-    lower.includes("no ready") ||
-    lower.includes("missing")
-  ) {
-    return "Audio niedostępne dla tego bitu.";
-  }
-  if (
-    lower.includes("network") ||
-    lower.includes("fetch") ||
-    lower.includes("failed to fetch")
-  ) {
-    return "Błąd sieci. Spróbuj ponownie.";
-  }
-  if (
-    lower.includes("signed") ||
-    lower.includes("url") ||
-    lower.includes("expired")
-  ) {
-    return "Link do pobrania wygasł. Spróbuj ponownie.";
-  }
-  return "Nie udało się pobrać pliku.";
+  return toUserFacingError(raw, "download");
 }
 
 /** PlaybackShell / catalog must use PLAYBACK only. */

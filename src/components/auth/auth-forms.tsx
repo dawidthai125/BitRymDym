@@ -22,7 +22,7 @@ export function SignInForm() {
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Email
+        E-mail
         <input
           name="email"
           type="email"
@@ -79,7 +79,7 @@ export function SignUpForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Email
+        E-mail
         <input
           name="email"
           type="email"
@@ -193,7 +193,7 @@ export function ForgotPasswordForm() {
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Email
+        E-mail
         <input
           name="email"
           type="email"

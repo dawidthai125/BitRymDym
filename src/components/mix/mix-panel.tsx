@@ -12,6 +12,7 @@ import {
   defaultMixProParams,
   type MixParameters,
 } from "@/lib/mix/params";
+import { toUserFacingMixError } from "@/lib/ui/user-errors";
 
 export type MixTakeOption = {
   id: string;
@@ -238,9 +239,11 @@ export function MixPanel({
       setPlaying(true);
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Nie udało się przygotować podglądu.",
+        toUserFacingMixError(
+          e instanceof Error
+            ? e.message
+            : "Nie udało się przygotować podglądu.",
+        ),
       );
       disposeGraph();
     } finally {
@@ -324,7 +327,7 @@ export function MixPanel({
       throw new Error("Export timeout (czekaj na EXTERNAL worker).");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Export failed.";
-      setError(formatExportError(message));
+      setError(toUserFacingMixError(message));
       setExportStatus("error");
     } finally {
       setExportBusy(false);
@@ -346,7 +349,9 @@ export function MixPanel({
       window.location.assign(json.url);
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Nie udało się pobrać pliku.",
+        toUserFacingMixError(
+          e instanceof Error ? e.message : "Nie udało się pobrać pliku.",
+        ),
       );
     } finally {
       setExportBusy(false);
@@ -358,7 +363,9 @@ export function MixPanel({
     setParams(next);
     void persistParams(next).catch((e) =>
       setError(
-        e instanceof Error ? e.message : "Nie udało się zapisać parametrów.",
+        toUserFacingMixError(
+          e instanceof Error ? e.message : "Nie udało się zapisać parametrów.",
+        ),
       ),
     );
   }
@@ -832,25 +839,6 @@ function formatExportStatus(status: string): string {
     default:
       return "nieznany status eksportu";
   }
-}
-
-function formatExportError(message: string): string {
-  if (/render jobs are not enabled/i.test(message) || /E3_RENDER_JOBS/i.test(message)) {
-    return "Eksport jest chwilowo niedostępny. Spróbuj później.";
-  }
-  if (/Premium required/i.test(message)) {
-    return "Ten format wymaga Premium.";
-  }
-  if (/timeout/i.test(message)) {
-    return "Eksport trwa zbyt długo. Spróbuj ponownie.";
-  }
-  if (/CANCELLED/i.test(message)) {
-    return "Eksport został anulowany.";
-  }
-  if (/FAILED/i.test(message)) {
-    return "Eksport nie powiódł się. Spróbuj ponownie.";
-  }
-  return "Nie udało się wyeksportować. Spróbuj ponownie.";
 }
 
 function GainPanControl(props: {

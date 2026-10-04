@@ -12,11 +12,9 @@ export default function AdminNewBeatPage() {
         >
           ← Lista
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">Nowy PLATFORM beat</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Nowy bit platformowy</h1>
         <p className="text-sm text-muted-foreground">
-          Tworzy DRAFT z{" "}
-          <code className="text-xs">ownership_type=PLATFORM</code>,{" "}
-          <code className="text-xs">owner_id=NULL</code>.
+          Tworzy szkic bitu platformowego z gotowym audio MASTER.
         </p>
       </header>
       <AdminCreateBeatForm />

@@ -10,6 +10,10 @@ import {
   isAudioAccessPurpose,
   type AudioAccessPurpose,
 } from "@/lib/beats/audio-validation";
+import {
+  toSafeDownloadErrorMessage,
+  toSafePlaybackErrorMessage,
+} from "@/lib/beats/public";
 import type { BeatAudioPurpose } from "@/types/domain";
 
 export type AudioActionState = {
@@ -21,14 +25,19 @@ export type AudioActionState = {
   remainingToday?: number;
 };
 
-function catchAudio(error: unknown): AudioActionState {
-  if (error instanceof AuthError) {
-    return { error: error.message, success: false };
-  }
-  return {
-    error: error instanceof Error ? error.message : "Audio action failed.",
-    success: false,
-  };
+function catchAudio(
+  error: unknown,
+  purpose?: string,
+): AudioActionState {
+  const raw =
+    error instanceof AuthError || error instanceof Error
+      ? error.message
+      : "Audio action failed.";
+  const mapped =
+    purpose === "DOWNLOAD"
+      ? toSafeDownloadErrorMessage(raw)
+      : toSafePlaybackErrorMessage(raw);
+  return { error: mapped, success: false };
 }
 
 export async function requestBeatAudioAccessAction(params: {
@@ -37,7 +46,10 @@ export async function requestBeatAudioAccessAction(params: {
 }): Promise<AudioActionState> {
   try {
     if (!isAudioAccessPurpose(params.purpose)) {
-      return { error: "Invalid purpose.", success: false };
+      return {
+        error: toSafePlaybackErrorMessage("Invalid purpose."),
+        success: false,
+      };
     }
     const result = await requestBeatAudioAccess({
       beatId: params.beatId,
@@ -52,7 +64,7 @@ export async function requestBeatAudioAccessAction(params: {
       remainingToday: result.remainingToday,
     };
   } catch (error) {
-    return catchAudio(error);
+    return catchAudio(error, params.purpose);
   }
 }
 

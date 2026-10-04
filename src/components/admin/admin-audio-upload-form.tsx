@@ -9,6 +9,7 @@ import {
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { toUserFacingUploadError } from "@/lib/ui/user-errors";
 
 export function AdminAudioUploadForm({
   beatId,
@@ -53,7 +54,7 @@ export function AdminAudioUploadForm({
 
     startTransition(async () => {
       try {
-        setProgress("Przygotowanie uploadu…");
+        setProgress("Przygotowanie przesyłania…");
         const sessionRes = await fetch(`/api/admin/beats/${beatId}/master`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -78,12 +79,16 @@ export function AdminAudioUploadForm({
           !sessionJson.token ||
           !sessionJson.assetId
         ) {
-          setError(sessionJson.error ?? "Upload session failed.");
+          setError(
+            toUserFacingUploadError(
+              sessionJson.error ?? "Upload session failed.",
+            ),
+          );
           setProgress(null);
           return;
         }
 
-        setProgress("Upload audio…");
+        setProgress("Przesyłanie audio…");
         const supabase = createSupabaseBrowserClient();
         const { error: uploadError } = await supabase.storage
           .from("beat-audio")
@@ -92,7 +97,9 @@ export function AdminAudioUploadForm({
             upsert: false,
           });
         if (uploadError) {
-          setError(uploadError.message || "Upload failed.");
+          setError(
+            toUserFacingUploadError(uploadError.message || "Upload failed."),
+          );
           setProgress(null);
           return;
         }
@@ -111,17 +118,21 @@ export function AdminAudioUploadForm({
           error?: string;
         };
         if (!completeRes.ok || !completeJson.success) {
-          setError(completeJson.error ?? "Upload nie powiódł się.");
+          setError(
+            toUserFacingUploadError(
+              completeJson.error ?? "Upload nie powiódł się.",
+            ),
+          );
           setProgress(null);
           return;
         }
 
-        setSuccess("MASTER audio READY.");
+        setSuccess("Audio MASTER jest gotowe.");
         setProgress(null);
         form.reset();
         router.refresh();
       } catch {
-        setError("Błąd sieci / serwera podczas uploadu.");
+        setError("Błąd sieci / serwera podczas przesyłania.");
         setProgress(null);
       }
     });
@@ -132,8 +143,8 @@ export function AdminAudioUploadForm({
       <h2 className="text-sm font-semibold tracking-wide">MASTER audio</h2>
       <p className="text-sm text-muted-foreground">
         {activeMasterReady
-          ? "Aktywny MASTER READY — upload zastąpi poprzedni plik."
-          : "Brak aktywnego MASTER READY — wgraj plik, aby odblokować publikację."}
+          ? "Aktywne audio MASTER jest gotowe — nowe przesłanie zastąpi poprzedni plik."
+          : "Brak gotowego audio MASTER — wgraj plik, aby odblokować publikację."}
       </p>
       <input
         name="audio"
@@ -159,7 +170,7 @@ export function AdminAudioUploadForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Upload…" : "Upload MASTER"}
+        {pending ? "Przesyłanie…" : "Prześlij MASTER"}
       </Button>
     </form>
   );

@@ -17,6 +17,11 @@ import {
 } from "@/lib/site-url";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  mapSupabaseAuthError,
+  toUserFacingAuthError,
+  toUserFacingError,
+} from "@/lib/ui/user-errors";
 
 export type AuthActionState = {
   error: string | null;
@@ -33,18 +38,22 @@ function requireConfiguredSupabase() {
   }
 }
 
+function authConfigUnavailableError(): AuthActionState {
+  return {
+    error: "Logowanie jest chwilowo niedostępne.",
+    success: false,
+    message: null,
+  };
+}
+
 export async function signUpAction(
   _prev: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
   try {
     requireConfiguredSupabase();
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Supabase not configured.",
-      success: false,
-      message: null,
-    };
+  } catch {
+    return authConfigUnavailableError();
   }
 
   const email = String(formData.get("email") ?? "").trim();
@@ -54,7 +63,7 @@ export async function signUpAction(
 
   if (!email) {
     return {
-      error: "Email i hasło są wymagane.",
+      error: "E-mail i hasło są wymagane.",
       success: false,
       message: null,
     };
@@ -117,9 +126,9 @@ export async function signInAction(
 ): Promise<AuthActionState> {
   try {
     requireConfiguredSupabase();
-  } catch (error) {
+  } catch {
     return {
-      error: error instanceof Error ? error.message : "Supabase not configured.",
+      error: "Logowanie jest chwilowo niedostępne.",
       success: false,
     };
   }
@@ -128,7 +137,7 @@ export async function signInAction(
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
-    return { error: "Email i hasło są wymagane.", success: false };
+    return { error: "E-mail i hasło są wymagane.", success: false };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -138,7 +147,7 @@ export async function signInAction(
   });
 
   if (error) {
-    return { error: error.message, success: false };
+    return { error: mapSupabaseAuthError(error.message), success: false };
   }
 
   revalidatePath("/");
@@ -173,7 +182,7 @@ export async function updateDisplayNameAction(
       .eq("id", context.userId);
 
     if (error) {
-      return { error: error.message, success: false };
+      return { error: toUserFacingError(error.message, "generic"), success: false };
     }
 
     const { hookProfileCompleted } = await import(
@@ -185,12 +194,20 @@ export async function updateDisplayNameAction(
     return { error: null, success: true };
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: error.message, success: false };
+      return { error: toUserFacingAuthError(error), success: false };
     }
-    const message =
-      error instanceof Error ? error.message : "Aktualizacja nie powiodła się.";
-    return { error: message, success: false };
+    return {
+      error: toUserFacingUnknownSafe(error),
+      success: false,
+    };
   }
+}
+
+function toUserFacingUnknownSafe(error: unknown): string {
+  if (error instanceof Error) {
+    return toUserFacingError(error.message, "generic");
+  }
+  return "Aktualizacja nie powiodła się.";
 }
 
 export async function changePasswordAction(
@@ -202,10 +219,10 @@ export async function changePasswordAction(
     await requireUser();
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: error.message, success: false };
+      return { error: toUserFacingAuthError(error), success: false };
     }
     return {
-      error: error instanceof Error ? error.message : "Supabase not configured.",
+      error: "Logowanie jest chwilowo niedostępne.",
       success: false,
     };
   }
@@ -246,9 +263,9 @@ export async function requestPasswordResetAction(
 ): Promise<AuthActionState> {
   try {
     requireConfiguredSupabase();
-  } catch (error) {
+  } catch {
     return {
-      error: error instanceof Error ? error.message : "Supabase not configured.",
+      error: "Reset hasła jest chwilowo niedostępny.",
       success: false,
     };
   }
@@ -281,9 +298,9 @@ export async function updatePasswordAfterResetAction(
 ): Promise<AuthActionState> {
   try {
     requireConfiguredSupabase();
-  } catch (error) {
+  } catch {
     return {
-      error: error instanceof Error ? error.message : "Supabase not configured.",
+      error: "Reset hasła jest chwilowo niedostępny.",
       success: false,
     };
   }
@@ -334,25 +351,32 @@ export async function deleteAccountAction(
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: error.message, success: false };
+      return { error: toUserFacingAuthError(error), success: false };
     }
-    const message =
-      error instanceof Error ? error.message : "Usunięcie nie powiodło się.";
-    return { error: message, success: false };
+    return {
+      error: toUserFacingError(
+        error instanceof Error ? error.message : null,
+        "generic",
+      ),
+      success: false,
+    };
   }
 
   const currentPassword = String(formData.get("currentPassword") ?? "");
   const confirmText = String(formData.get("confirmText") ?? "").trim();
   if (confirmText !== "USUŃ") {
     return {
-      error: 'Aby potwierdzić, wpisz USUŃ.',
+      error: "Aby potwierdzić, wpisz USUŃ.",
       success: false,
     };
   }
 
   const result = await deleteOwnAccount({ currentPassword });
   if (!result.ok) {
-    return { error: result.error, success: false };
+    return {
+      error: toUserFacingError(result.error, "auth"),
+      success: false,
+    };
   }
 
   revalidatePath("/");

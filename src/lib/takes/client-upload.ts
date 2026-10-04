@@ -6,6 +6,7 @@
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
+import { toUserFacingError } from "@/lib/ui/user-errors";
 
 /** Map transport/API errors to Polish before they reach user-facing UI. */
 export function toUserFacingTakeUploadError(message: string): string {
@@ -42,18 +43,8 @@ export function toUserFacingTakeUploadError(message: string): string {
   if (/stop failed/i.test(message)) {
     return "Nie udało się zatrzymać nagrania.";
   }
-  if (/expired/i.test(message)) {
-    return "Sesja nagrania wygasła.";
-  }
-  // Already Polish (contains diacritics or known PL words) — pass through.
-  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(message) || /\b(nagrania|nagranie|mikrofon|sesji|podgląd)\b/i.test(message)) {
-    return message;
-  }
-  // Generic English/technical fallback — never show raw EN to the user.
-  if (/\b(failed|error|unavailable|denied|timeout)\b/i.test(message)) {
-    return "Nie udało się przesłać nagrania. Spróbuj ponownie.";
-  }
-  return message;
+  // Central mapper — never return raw English backend text.
+  return toUserFacingError(message, "recording");
 }
 
 export type TakeUploadTransportResult = {

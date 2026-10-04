@@ -12,7 +12,10 @@ import {
 } from "react";
 
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
-import { PUBLIC_PLAYBACK_PURPOSE } from "@/lib/beats/public";
+import {
+  PUBLIC_PLAYBACK_PURPOSE,
+  toSafePlaybackErrorMessage,
+} from "@/lib/beats/public";
 import { shouldRestartFromStart } from "@/lib/player/playback-progress";
 
 export type PlayerTrack = {
@@ -141,7 +144,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       purpose: PUBLIC_PLAYBACK_PURPOSE,
     });
     if (!result.success || !result.url) {
-      throw new Error(result.error || "Brak dostępu do odsłuchu.");
+      throw new Error(
+        toSafePlaybackErrorMessage(result.error || "Brak dostępu do odsłuchu."),
+      );
     }
     expiresAtRef.current = result.expiresAt ?? null;
     audio.dataset.beatId = beatId;
@@ -196,7 +201,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         setPhase("error");
         setError(
-          e instanceof Error ? e.message : "Nie udało się odtworzyć audio.",
+          toSafePlaybackErrorMessage(
+            e instanceof Error ? e.message : "Nie udało się odtworzyć audio.",
+          ),
         );
       }
     },
@@ -223,7 +230,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           setPhase("error");
           setError(
-            e instanceof Error ? e.message : "Nie udało się odtworzyć audio.",
+            toSafePlaybackErrorMessage(
+              e instanceof Error ? e.message : "Nie udało się odtworzyć audio.",
+            ),
           );
         }
       })();

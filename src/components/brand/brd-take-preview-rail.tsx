@@ -11,6 +11,7 @@ import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import {
   formatDurationSeconds,
   PUBLIC_PLAYBACK_PURPOSE,
+  toSafePlaybackErrorMessage,
 } from "@/lib/beats/public";
 import { cn } from "@/lib/utils";
 
@@ -107,7 +108,11 @@ export function BrdTakePreviewRail({
       } catch (e) {
         if (!cancelled) {
           setError(
-            e instanceof Error ? e.message : "Nie udało się przygotować podglądu.",
+            toSafePlaybackErrorMessage(
+              e instanceof Error
+                ? e.message
+                : "Nie udało się przygotować podglądu.",
+            ),
           );
           setReady(false);
         }

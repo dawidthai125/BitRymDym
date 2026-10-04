@@ -31,8 +31,8 @@ export default async function AccountSharedBeatsPage() {
             Bity udostępnione
           </h1>
           <p className="text-sm text-muted-foreground">
-            Aktywne granty RECORD od właścicieli bitów. Wejdź w bit, aby nagrać
-            nagranie. Grant nie daje dostępu do cudzych nagrań.
+            Bity, na których właściciele umożliwili Ci nagrywanie. Wejdź w bit,
+            aby nagrać. Udostępnienie nie daje dostępu do cudzych nagrań.
           </p>
         </header>
 
@@ -50,7 +50,7 @@ export default async function AccountSharedBeatsPage() {
                 <div className="space-y-1">
                   <p className="font-medium tracking-tight">{g.beatTitle}</p>
                   <p className="text-xs text-muted-foreground">
-                    RECORD
+                    Nagrywanie
                     {g.expiresAt
                       ? ` · wygasa ${new Date(g.expiresAt).toLocaleString()}`
                       : " · bezterminowy"}

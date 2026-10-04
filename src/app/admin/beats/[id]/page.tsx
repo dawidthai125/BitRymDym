@@ -7,6 +7,7 @@ import { AdminMetadataForm } from "@/components/admin/admin-metadata-form";
 import { AuthError } from "@/lib/auth/session";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
 import { getPlatformBeatForAdmin } from "@/lib/beats/service";
+import { labelBeatStatus } from "@/lib/ui/labels";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -40,7 +41,8 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
           {beat.title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {beat.status} · PLATFORM · owner_id={beat.ownerId ?? "null"}
+          {labelBeatStatus(beat.status)} · bit platformowy
+          {audio.activeMasterReady ? " · audio gotowe" : " · brak audio"}
         </p>
         {beat.status === "PUBLISHED" ? (
           <Link
@@ -53,7 +55,7 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Lifecycle</h2>
+        <h2 className="text-lg font-medium tracking-tight">Status publikacji</h2>
         <AdminLifecycleControls
           beatId={beat.id}
           status={beat.status}
@@ -70,7 +72,7 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Metadata</h2>
+        <h2 className="text-lg font-medium tracking-tight">Metadane</h2>
         <AdminMetadataForm beat={beat} />
       </section>
     </main>

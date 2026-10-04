@@ -7,13 +7,17 @@ import {
 import { getAuthEmailRedirectTo } from "@/lib/site-url";
 
 describe("interpretSignUpResult", () => {
-  it("returns error state when signUp fails", () => {
+  it("returns error state when signUp fails (Polish, no raw English)", () => {
     const result = interpretSignUpResult({
       error: { message: "Signup failed" },
       session: null,
       identities: [],
     });
-    expect(result).toEqual({ kind: "error", error: "Signup failed" });
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.error.toLowerCase()).not.toContain("signup failed");
+      expect(result.error).toMatch(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]|Spróbuj|udało/i);
+    }
   });
 
   it("redirects only when a real session exists", () => {

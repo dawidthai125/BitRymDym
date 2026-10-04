@@ -62,7 +62,7 @@ export function ModerationDecisionControls({
   function onPublish() {
     setError(null);
     if (!activeMasterReady) {
-      setError("Publikacja wymaga aktywnego MASTER READY.");
+      setError("Publikacja wymaga gotowego audio MASTER.");
       return;
     }
     startTransition(async () => {
@@ -92,7 +92,7 @@ export function ModerationDecisionControls({
         </Button>
         {!activeMasterReady ? (
           <p className="text-sm text-destructive">
-            Brak aktywnego MASTER READY — publikacja zablokowana.
+            Brak gotowego audio MASTER — publikacja zablokowana.
           </p>
         ) : null}
         {error ? (

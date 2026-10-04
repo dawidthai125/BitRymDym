@@ -14,8 +14,7 @@ export default async function SignUpPage() {
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight">Załóż konto</h1>
       <p className="text-sm text-muted-foreground">
-        Nowe konto: rola USER + poziom BEGINNER_RAPPER (OD-19). Pierwszy ADMIN
-        tylko przez manual / operator-controlled bootstrap poza signup (OD-20).
+        Zakładasz konto twórcy. Po rejestracji potwierdź swój adres e-mail.
       </p>
       <SignUpForm />
       <p className="text-sm text-muted-foreground">

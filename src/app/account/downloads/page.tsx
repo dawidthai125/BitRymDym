@@ -23,7 +23,7 @@ export default async function MyDownloadsPage() {
       <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6">
         <h1 className="text-2xl font-semibold">Moje pobrane</h1>
         <p className="text-sm text-muted-foreground">
-          Supabase nie jest skonfigurowane lokalnie.
+          Usługa jest chwilowo niedostępna.
         </p>
         <Link href="/" className="text-sm underline underline-offset-4">
           Strona główna

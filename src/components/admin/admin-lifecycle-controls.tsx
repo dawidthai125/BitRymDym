@@ -114,11 +114,11 @@ export function AdminLifecycleControls({
             onClick={() =>
               run(
                 () => restoreArchivedBeatAction(beatId),
-                "Przywrócono do DRAFT.",
+                "Przywrócono do szkicu.",
               )
             }
           >
-            Przywróć do DRAFT
+            Przywróć do szkicu
           </Button>
         ) : null}
       </div>

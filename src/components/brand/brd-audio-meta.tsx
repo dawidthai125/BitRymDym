@@ -111,13 +111,13 @@ type BrdAudioStateProps = {
 export function BrdAudioStateLabel({ state, className }: BrdAudioStateProps) {
   const label =
     state === "playing"
-      ? "Playing"
+      ? "Odtwarzanie"
       : state === "paused"
-        ? "Paused"
+        ? "Pauza"
         : state === "loading"
-          ? "Loading"
+          ? "Ładowanie"
           : state === "error"
-            ? "Error"
+            ? "Błąd"
             : state === "recording"
               ? "Rec"
               : null;

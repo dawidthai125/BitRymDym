@@ -14,7 +14,7 @@ export default async function SignInPage() {
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight">Zaloguj się</h1>
       <p className="text-sm text-muted-foreground">
-        Minimalny flow techniczny Phase 1.3 — nie jest to finalny UX marki.
+        Zaloguj się, aby korzystać ze studia i swoich nagrań.
       </p>
       <SignInForm />
       <p className="text-sm text-muted-foreground">
