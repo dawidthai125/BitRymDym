@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65`; W3 remains **PRODUCTION VERIFIED** @ `237a86f`)
+**Updated:** 2026-10-04 (FAR-01 final soak docs reconciliation · ADMIN W4 remains **CLOSED / PRODUCTION VERIFIED** @ `ddcee65`; W3 remains **PRODUCTION VERIFIED** @ `237a86f`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,22 +21,24 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | W4 app `ddcee65` · docs tip may advance after closeout |
-| **Production application SHA** | `ddcee65` — Ready · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · **ADMIN USER MANAGEMENT W4 CLOSED / PRODUCTION VERIFIED** |
+| **Repository HEAD** | Docs tip advances independently of production app · see `git rev-parse HEAD` |
+| **Production application SHA** | `ddcee65` — Ready · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` · **ADMIN USER MANAGEMENT W4 CLOSED / PRODUCTION VERIFIED** |
 | **Production DB tip** | `20261004174202` / `admin_user_management_w4_delete` · prior W2 `20261004144223` in chain · **W3 migration NONE** · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · P0/P1/P2 = 0 · inbox E2E **BLOCKED — NO INBOX ACCESS** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · [email templates](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) |
 | **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65` · EMAIL E2E **PASS** · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) · ANON/FREE/BRONZE/SILVER/GOLD download E2E **PASS** · OD-17 **PASS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · Mix/Render **DEFERRED** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
-| **USER-CLEANUP-01** | **EXECUTED** (fixtures) · orphan-31 untouched |
+| **USER-CLEANUP-01** | **EXECUTED** (fixtures) · removed FAR-01 retain-set **outside** FAR-01 retirement · historical orphans preserved (living **32**) |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
-| Status | **GREEN** · FAR-01 campaign **SOAK ACTIVE** (not closed) |
+| Status | **GREEN** · FAR-01 **SOAK COMPLETE / CONTAMINATED** · retirement **NOT EXECUTED** |
 | **FAR-01 DR-A (Phase 1)** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) — [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md) |
-| **FAR-01 campaign** | **IN PROGRESS / SOAK ACTIVE** — canary N=5 PASS · fleet N=62 PASS · soak end `2026-10-04T04:40:56.645Z` — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
-| **FAR-01 CLOSED / retirement / cleanup** | **NO / NOT EXECUTED / NOT EXECUTED** |
+| **FAR-01 campaign** | **SOAK COMPLETE / CONTAMINATED** — canary N=5 PASS · fleet N=62 PASS · soak clock elapsed · integrity **FAILED** — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **FAR-01 CLOSED** | **NO** |
+| **FAR-01 RETIREMENT** | **NOT EXECUTED** · original retain-set **0** (gone via USER-CLEANUP-01 collateral — **not** FAR-01 retirement) |
+| **ARCH-04/05 orphan GC** | **SEPARATE FUTURE GATE** — **32** candidates · **not** approved for deletion |
 | **DEF-01** | **CLOSED / PRODUCTION VERIFIED** @ `fbc696f` |
 | **ACTIVE P0 / P1** | **NONE VERIFIED** |
 | **HIBP** | **DEFERRED / ACCEPTED RISK** (not solved) |
@@ -62,14 +64,16 @@ E3_RENDER_WORKER_SECRET  = CONFIGURED (server-only · never commit)
 WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 ```
 
-**FAR-01 soak inventory (living):** legacy1 · canonical77 · platform3 · retained legacy67 · orphans30 · orphan Storage97 · quarantine1 · MIGRATE=0
+**FAR-01 living inventory (FINAL SOAK AUDIT):** living USER masters **8** · platform **3** · orphan/historical/delete-residue **32** · beat-audio total **43** · retained FAR-01 sources **0** · quarantine **0** · MIGRATE **0** · DB keys missing Storage **0**.
+Superseded soak baseline (do not reuse as living): 77 / 97 / 67 / 1.
 
-**Do not confuse SHAs:**
+**Do not confuse SHAs / planes:**
 
-| SHA | Meaning |
-|-----|---------|
-| `3229f55` | **Current repository HEAD** — W3 closeout documentation (`docs(admin): close W3 audit history`) |
-| `237a86f` | **Current production app SHA** — ADMIN USER MANAGEMENT W3 audit history · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` |
+| SHA / ID | Meaning |
+|----------|---------|
+| `git rev-parse HEAD` | **Repository tip** — may be docs-only (not production app) |
+| `ddcee65` | **Production application SHA** — ADMIN W4 · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` |
+| `237a86f` | Historical — ADMIN USER MANAGEMENT W3 audit history · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` |
 | `8c40824` | Historical — ADMIN USER MANAGEMENT W2 mutations · PRODUCTION VERIFIED WITH FINDINGS |
 | `ffe723b` | Historical — USER-FACING POLISH LOCALIZATION final · `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM` |
 | `4ebd1d3` | Historical — primary Polish localization feature commit |
@@ -101,8 +105,8 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | W4 app `ddcee65` + docs closeout tip |
-| **Production application** | `ddcee65` — Ready · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · **ADMIN W4 CLOSED / PRODUCTION VERIFIED** |
+| **HEAD / origin/main** | Docs tip (advances independently of production app) |
+| **Production application** | `ddcee65` — Ready · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` · **ADMIN W4 CLOSED / PRODUCTION VERIFIED** |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` |
@@ -110,7 +114,8 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 | **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (in tree) |
-| **NEXT GATE** | FAR-01 soak · optional Auth email inbox E2E |
+| **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** |
+| **NEXT GATE** | Separate ARCH-04/05 orphan-GC audit · optional Auth email inbox E2E |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
@@ -162,21 +167,21 @@ Owner Review                 = PASS
 OD-SA-01…10                  = LOCKED
 Implementation               = NOT STARTED
 STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED · NOT IMPLEMENTED · NO CURRENT INVESTMENT
-STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · CAMPAIGN SOAK ACTIVE · RETIREMENT NOT EXECUTED · see FAR_01_CURRENT_STATE.md
-Production mutations         = NONE for backfill/retirement (Phase 1 = dual-accept only)
+STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · FAR-01 SOAK COMPLETE/CONTAMINATED · RETIREMENT NOT EXECUTED · see FAR_01_CURRENT_STATE.md
+Production mutations         = NONE for FAR-01 retirement (retain-set removed outside FAR-01 retirement flow)
 ```
 
 | Topic | Locked value |
 |-------|----------------|
 | Buckets | Reuse 3 existing only (OD-SA-01) |
-| Legacy keys | Phase 1 DR-A dual-accept **SHIPPED** @ `f514a51` · backfill/retirement **NOT STARTED** (OD-SA-02 / FAR-01) |
+| Legacy keys | Phase 1 DR-A dual-accept **SHIPPED** @ `f514a51` · FAR-01 backfill executed · **FAR-01 RETIREMENT NOT EXECUTED** |
 | Future external Object Storage | OPTIONAL · FUTURE · provider NOT chosen · [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
 | Beat library | MASTER + fallback (OD-SA-03) |
 | Artwork | DEFERRED (OD-SA-04) |
 | Artifacts janitor | REQUIRED · future wave (OD-SA-05 / STORAGE-ARCH-03) |
 | Backup source MASTER | REQUIRED BEFORE SCALE (OD-SA-06) · threshold at Wave 07 |
 | Mix artifact backup | regenerable · no default backup (OD-SA-07) |
-| Orphans | inventory → dry-run → Owner GO (OD-SA-08) |
+| Orphans | **32** living candidates → separate ARCH-04/05 inventory/dry-run → Owner GO (OD-SA-08) · **not** approved for deletion · **not** FAR-01 retirement |
 
 **Do not** start external Object Storage / dual-read KEY / janitor / orphan delete / key migration / backup without a separate Owner Implementation GO.
 
@@ -304,7 +309,7 @@ Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 | **STORAGE-ARCH-01** | **LOCKED** (architecture) | N/A · Production mutations **NONE** | OK | Hybrid C Storage V1 · [freeze](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
 | **STORAGE-ARCH-02** future scale | **DOCS PREPARED** · **NOT IMPLEMENTED** | N/A · no external storage | OK | [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./architecture/STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
 | **STORAGE-ARCH-02-KEY** Phase 1 DR-A | **SHIPPED** / **PRODUCTION VERIFIED** | GREEN WITH EVIDENCE LIMITATIONS @ `f514a51` | OK | Historical Phase 1 |
-| **FAR-01 campaign (canary+fleet+soak)** | **IN PROGRESS / SOAK ACTIVE** | canary N=5 · fleet N=62 · soak end `2026-10-04T04:40:56.645Z` | OK | **NOT CLOSED** · retirement/cleanup **NOT EXECUTED** · [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **FAR-01 campaign (canary+fleet+soak)** | **SOAK COMPLETE / CONTAMINATED** | canary N=5 · fleet N=62 · soak clock elapsed · integrity **FAILED** | OK | **NOT CLOSED** · **FAR-01 RETIREMENT NOT EXECUTED** · retain-set **0** (USER-CLEANUP-01 collateral) · [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
 | **DEF-01** | **CLOSED / PRODUCTION VERIFIED** | @ `fbc696f` · remote `20261003051539` | OK | HIBP remains **ACCEPTED RISK** |
 | **CREATOR PROGRESS W1** (Experience + Rank) | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** | GREEN WITH OPEN ITEMS @ `76a4757` | OK | Ledger + `experience_total` + CreatorRank · migrations `210121`→`210322` · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) · Premium **not** in W1 |
 | Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
@@ -576,11 +581,11 @@ E3_RENDER_JOBS_ENABLED = ON
 E3_PUBLIC_AUDIO = ON
 STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-FAR-01 = IN PROGRESS / SOAK ACTIVE (see FAR_01_CURRENT_STATE.md)
+FAR-01 = SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED (see FAR_01_CURRENT_STATE.md)
 DEF-01 = CLOSED / PRODUCTION VERIFIED @ fbc696f
-REPO / PROD APP = 4e33e8d (waveform)
+PRODUCTION APP = ddcee65 (docs tip may differ)
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
-                   → WAIT FOR SOAK END → FINAL SOAK AUDIT → Owner Review
+                   → ARCH-04/05 orphan-GC audit (separate · 32 candidates · not approved)
 ```
 
 **Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B/Wave A/B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
@@ -628,7 +633,7 @@ Start reading order:
 |------|--------|
 | Dual SHA (app vs worker) | Production app `f514a51` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
 | Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
-| FAR-01 legacy USER beat keys | Living soak: legacy1 · canonical77 · platform3 · retained67 · orphans30 · orphanStorage97 · quarantine1 · MIGRATE=0 · SOAK ACTIVE · NOT CLOSED |
+| FAR-01 campaign / Storage orphans | SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED · living: USER8 · platform3 · orphans32 · retained0 · quarantine0 · MIGRATE=0 · NOT CLOSED |
 | HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** — not solved |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Artifacts janitor missing | F-PE-04 / OD-SA-05 · **STORAGE-ARCH-03** future wave |
@@ -645,7 +650,7 @@ Start reading order:
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
-| Beat-audio orphan janitor | Historical known gap · OD-SA-08 · STORAGE-ARCH-04/05 (inventory → dry-run → Owner GO) |
+| Beat-audio orphan janitor | **32** current orphan/historical/delete-residue objects = **candidate scope** for separate ARCH-04/05 orphan-GC audit · **not** approved for deletion · OD-SA-08 |
 | Source MASTER backup before scale | OD-SA-06 · STORAGE-ARCH-07 · threshold defined at Wave 07 |
 | OD-12 interim MIME allow-list | Codec SSOT still OPEN outside E3 OAD-06 |
 | Root/docs historical SHAs in older audits | Historical snapshots — do not “fix” by rewriting history |
@@ -700,11 +705,11 @@ E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
 WORKER = STOPPED / DISABLED (bootstrap 92496d4)
 STORAGE-ARCH-01 = LOCKED
 STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-FAR-01 = IN PROGRESS / SOAK ACTIVE
+FAR-01 = SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED
 DEF-01 = CLOSED / PRODUCTION VERIFIED
-REPO / PROD APP = 4e33e8d
+PRODUCTION APP = ddcee65 (docs tip may differ)
 NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
-                   → SOAK END → FINAL SOAK AUDIT → Owner Review
+                   → ARCH-04/05 orphan-GC audit (separate · 32 candidates · not approved)
 ```
 
 **Do not** rewrite historical closeouts or freeze OD locks from this document alone.

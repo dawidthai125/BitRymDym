@@ -1,17 +1,19 @@
 # FAR-01 — CURRENT STATE (LIVING)
 
-**Updated:** 2026-10-03
+**Updated:** 2026-10-04
 **Type:** Living operational status · not a historical closeout
-**Rule:** Prefer this file + LIVE evidence over stale Phase 1 inventory numbers in older handoffs.
+**Rule:** Prefer this file + LIVE evidence over stale soak-baseline inventory (77 / 97 / 67 / 1) in older handoffs.
 
 ```text
 FAR-01 DR-A (Phase 1)     = SHIPPED / PRODUCTION VERIFIED
-FAR-01 CAMPAIGN           = IN PROGRESS / SOAK ACTIVE
+FAR-01 CAMPAIGN           = SOAK COMPLETE / CONTAMINATED
 FAR-01 CLOSED             = NO
-RETIREMENT                = NOT EXECUTED
-CLEANUP                   = NOT EXECUTED
+FAR-01 RETIREMENT         = NOT EXECUTED
 MIGRATE candidates        = 0
+ARCH-04/05 orphan GC      = SEPARATE FUTURE GATE (not approved)
 ```
+
+**Forbidden claims:** FAR-01 CLOSED · formal FAR-01 retirement completed · 67 retained sources “retired by FAR-01” · SOAK ACTIVE · living inventory 77/97/67/1.
 
 ---
 
@@ -19,11 +21,12 @@ MIGRATE candidates        = 0
 
 | Plane | Value |
 |-------|--------|
-| Repository tooling tip | `e03f3be` — `feat(far01): add production backfill operator tooling` |
-| Production app SHA | `e03f3be` (operator tooling; not a UI feature release) |
-| Production deployment | `6823806375` |
-| DB roles | `far01_dryrun_readonly` · `far01_live_mutator` |
-| DB migrations | `20261002231150` · `20261003012453` (also in repo HEAD) |
+| Repository tip (docs) | `0784309` family — docs may advance after this reconciliation |
+| Production app SHA | `ddcee65` (W4 app; docs tip ≠ app SHA) |
+| Production deployment | `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` |
+| Production DB tip | `20261004174202` |
+| DB FAR-01 roles | `far01_dryrun_readonly` · `far01_live_mutator` |
+| FAR-01 role migrations | `20261002231150` · `20261003012453` |
 
 ---
 
@@ -37,22 +40,26 @@ MIGRATE candidates        = 0
 | Checksum / identity | RESOLVED for campaign gates (evidence) |
 | Canary N=5 | **PASS** |
 | Fleet N=62 | **PASS** |
-| Soak | **ACTIVE** |
 | Soak start | `2026-10-03T04:40:56.645Z` |
 | Soak end (target) | `2026-10-04T04:40:56.645Z` |
-| Interim soak | **PASS** · no inventory drift |
-| Final soak / closeout | **PENDING** |
+| Soak clock | **ELAPSED** |
+| Interim soak | **PASS** (at start window; no drift then) |
+| Final soak audit | **COMPLETE** (read-only) |
+| Soak integrity | **FAILED / CONTAMINATED** |
+| FAR-01 RETIREMENT | **NOT EXECUTED** |
 
 **Correct summary sentence:**
-FAR-01 backfill campaign executed through canary + fleet; soak ACTIVE; final closeout pending.
-
-**Forbidden claims:** FAR-01 CLOSED · backfill fully completed · retirement completed · cleanup completed.
+FAR-01 backfill ran canary + fleet; 24h soak clock elapsed; final soak audit found inventory contaminated; formal FAR-01 retirement was never executed; original retain-set is already absent outside the FAR-01 retirement flow.
 
 ---
 
-## 3. Inventory (soak baseline / interim — no drift)
+## 3. Inventory
 
-| Class | Count |
+### 3.1 Superseded soak baseline (historical only)
+
+Do **not** use as living truth:
+
+| Class | Count (soak start / interim) |
 |-------|------:|
 | legacy USER | 1 |
 | canonical USER | 77 |
@@ -61,35 +68,94 @@ FAR-01 backfill campaign executed through canary + fleet; soak ACTIVE; final clo
 | true/historical orphans | 30 |
 | total orphan Storage | 97 |
 | quarantine | 1 |
-| MIGRATE candidates | 0 |
+| MIGRATE | 0 |
 
-Evidence anchors (session):
+Evidence of that baseline (historical):
+`AUDIT_FAR_01_SOAK_START.md` · `AUDIT_FAR_01_INTERIM_SOAK.md` · `evidence/far01-soak-start-baseline.json` · `evidence/far01-interim-soak.json`.
 
-- `docs/audits/AUDIT_FAR_01_SOAK_START.md`
-- `docs/audits/AUDIT_FAR_01_INTERIM_SOAK.md`
-- `docs/audits/evidence/far01-soak-start-baseline.json`
-- `docs/audits/evidence/far01-interim-soak.json`
-- `docs/audits/evidence/far01-canary-n5-*.json`
-- `docs/audits/evidence/far01-fleet-62-*.json`
+### 3.2 Living inventory (FINAL SOAK AUDIT — 2026-10-04)
+
+| Class | Count |
+|-------|------:|
+| living USER masters (DB-linked) | **8** |
+| platform masters | **3** |
+| beat-audio total objects | **43** |
+| DB keys missing Storage | **0** |
+| retained FAR-01 sources | **0** |
+| quarantine | **0** |
+| MIGRATE candidates | **0** |
+| historical / orphan / delete-residue objects | **32** |
+
+Shape of the **32** (classification only — **not** deletion approval):
+
+| Shape | Count |
+|-------|------:|
+| pre-FAR-01 `user/…/master/{id}.bin` | 28 |
+| canonical_v2 orphans (incl. 2 soak-tracked + 2 post-soak) | 4 |
 
 ---
 
-## 4. Next gate
+## 4. Retain-set disposition (critical)
+
+| Claim | Truth |
+|-------|--------|
+| Original FAR-01 retained sources | **67** at soak baseline |
+| Present now | **0** |
+| FAR-01 RETIREMENT GO | **NEVER ISSUED** |
+| FAR-01 RETIREMENT executed | **NO** |
+| How retain-set disappeared | Removed **outside** FAR-01 retirement flow — attributed to **USER-CLEANUP-01** fixture Storage/user deletion (collateral), **not** formal FAR-01 retirement |
+
+**Do not** document the absence of the 67 as “FAR-01 retired successfully”.
+
+Quarantine asset `000d406d-…`: **gone** · disposition unresolved as a FAR-01 control (object no longer present).
+
+---
+
+## 5. Findings (FAR-01 plane — non-blocking unless Owner elevates)
+
+| Finding | Status |
+|---------|--------|
+| Soak integrity broken / contaminated | OPEN |
+| +2 post-soak orphan objects | OPEN |
+| Quarantine disposition unresolved (object absent) | OPEN |
+| Backup evidence | **NOT VERIFIED** |
+| Continuous soak telemetry | **NOT VERIFIED** |
+| FAR-01 R1 credentials missing in local operator env | OPEN |
+
+P0 = 0 · P1 = 0 (no severity change without new evidence).
+
+---
+
+## 6. ARCH-04 / ARCH-05
+
+The current **32** orphan / historical / delete-residue objects are:
 
 ```text
-WAIT FOR SOAK END
-  → FINAL SOAK AUDIT (read-only)
-  → RECONCILIATION / Owner Review
-  → FAR-01 CLOSEOUT only if evidence supports
-  → only then Owner Decision for retirement / next epic
+CANDIDATE SCOPE for a separate ARCH-04/05 orphan-GC audit
+≠ approved for deletion
+≠ automatic FAR-01 retirement candidates
 ```
 
-Do **not** auto-start: orphan cleanup · key retirement · STORAGE-ARCH-02 external storage · new backfill.
+STORAGE-ARCH-04 = inventory / dry-run · STORAGE-ARCH-05 = delete only after dry-run + **separate Owner GO**.
 
 ---
 
-## 5. Historical note
+## 7. Next gate
+
+```text
+Owner docs reconciliation (this file)
+  → separate ARCH-04/05 orphan-GC audit (read-only first)
+  → only then Owner GO for any orphan delete allowlist
+```
+
+Do **not** auto-start: orphan cleanup · FAR-01 key retirement · STORAGE-ARCH-02 external storage · new backfill.
+Do **not** treat next gate as “FAR-01 RETIREMENT” — original retain-set is gone and formal retirement was never executed.
+
+---
+
+## 8. Historical note
 
 Phase 1 DR-A dual-accept closeout remains valid history:
 [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
-Its pre-campaign inventory numbers (**68** legacy etc.) are **historical**, superseded for living ops by §3 above.
+
+Pre-campaign Phase 1 numbers and soak-baseline **77/97/67/1** are **historical**, superseded for living ops by §3.2.

@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65`)
+**Updated:** 2026-10-04 (FAR-01 final soak docs reconciliation · ADMIN W4 remains **CLOSED / PRODUCTION VERIFIED** @ `ddcee65`)
 
 ---
 
@@ -21,8 +21,8 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | W4 app `ddcee65`; docs tip may advance after closeout |
-| **PRODUCTION APP SHA** | `ddcee65` — Ready · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · **ADMIN W4 CLOSED / PRODUCTION VERIFIED** |
+| **REPOSITORY HEAD / origin/main** | Docs tip advances independently · production app remains `ddcee65` until redeploy |
+| **PRODUCTION APP SHA** | `ddcee65` — Ready · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` · **ADMIN W4 CLOSED / PRODUCTION VERIFIED** |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
 | **PRODUCTION DB tip** | `20261004174202` / `admin_user_management_w4_delete` · prior W2 `20261004144223` in chain · **W3 migration NONE** |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` — [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · email templates [doc](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) · inbox E2E **BLOCKED — NO INBOX ACCESS** |
@@ -30,15 +30,17 @@
 | **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` — [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) — [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
-| **USER-CLEANUP-01** | **EXECUTED** — fixtures removed earlier · orphan-31 untouched |
+| **USER-CLEANUP-01** | **EXECUTED** — fixtures removed · removed FAR-01 retain-set **outside** FAR-01 retirement flow · historical orphan class preserved (now **32** living orphans) |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1` · next=`2` |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** |
 | **PRODUCTION DB FAR-01 roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 
 | Pole | Wartość |
 |------|---------|
-| **FAR-01 campaign** | **IN PROGRESS / SOAK ACTIVE** — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **FAR-01 campaign** | **SOAK COMPLETE / CONTAMINATED** — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **FAR-01 RETIREMENT** | **NOT EXECUTED** · original retain-set **0** (gone outside FAR-01 retirement) |
 | **FAR-01 CLOSED** | **NO** |
+| **ARCH-04/05 orphan GC** | **SEPARATE FUTURE GATE** — **32** candidates · **not** approved for deletion |
 | **DEF-01** | **CLOSED** / **PRODUCTION VERIFIED** @ `fbc696f` |
 | **ACTIVE P0 / P1** | **NONE VERIFIED** |
 | **HIBP** | **DEFERRED / ACCEPTED RISK** |
@@ -54,14 +56,16 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY HEAD / origin/main = W4 app ddcee65 + docs closeout tip
-PRODUCTION APP                = ddcee65 · dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38
+REPOSITORY HEAD / origin/main = docs tip (may advance) · app SHA separate
+PRODUCTION APP                = ddcee65 · dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram
 PRODUCTION DB                 = 20261004174202 / admin_user_management_w4_delete · W3 migration NONE
 USER-FACING POLISH LOCALIZATION = CLOSED / PRODUCTION VERIFIED GREEN @ ffe723b
 ADMIN USER MANAGEMENT         = W3 CLOSED / PRODUCTION VERIFIED @ 237a86f
                               · W4 CLOSED / PRODUCTION VERIFIED @ ddcee65
                               · EMAIL E2E PASS (Resend · bitrymdym.pl)
-NEXT GATE                     = FAR-01 soak · optional Auth email inbox E2E
+FAR-01                        = SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED
+                              · retain-set 0 (removed outside FAR-01 retirement)
+NEXT GATE                     = ARCH-04/05 orphan-GC audit (separate) · optional Auth email inbox E2E
 CREATOR PROGRESS W2-A         = CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ 6ee3255
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df (in tree)
   Gate name                   = PREMIUM ENFORCEMENT
@@ -112,11 +116,11 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → W4 Admin Delete = CLOSED / PRODUCTION VERIFIED @ ddcee65
                    EMAIL E2E PASS
                    (docs/decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)
-                 → NEXT GATE = FAR-01 soak · optional Auth email inbox E2E
+                 → FAR-01 = SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED
+                 → NEXT GATE = separate ARCH-04/05 orphan-GC audit (32 candidates · not approved)
                  → W2-B download enforcement = PRODUCTION VERIFIED (in tree)
                  → Mix/Render live = DEFERRED
                  → optional Auth email inbox E2E (BLOCKED — NO INBOX ACCESS)
-                 → FAR-01 soak / FINAL SOAK AUDIT when Owner GO
 ```
 
 ---
@@ -131,7 +135,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | USER-FACING POLISH LOCALIZATION | Owner GO sequence | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
 | ADMIN USER MANAGEMENT | Owner W0 lock · OD-ADMIN-01…07 **CLOSED** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W2 **PRODUCTION VERIFIED WITH FINDINGS** · [freeze](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](./audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md) |
 | OD-ADMIN-DELETE-01…10 | **CLOSED / ACCEPTED** | **CLOSED / PRODUCTION VERIFIED** @ `ddcee65` · EMAIL E2E PASS · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
-| FAR-01 campaign | Owner GO sequence | **SOAK ACTIVE** · **NOT CLOSED** |
+| FAR-01 campaign | Owner GO sequence | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
 | DEF-01 | Owner GO | CLOSED / PRODUCTION VERIFIED @ `fbc696f` |
 
 ---

@@ -6,11 +6,26 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — FAR-01 FINAL SOAK AUDIT (DOCS RECONCILIATION)
+
+**Status:** Final soak audit **COMPLETE** · docs living SSOT reconciled · **no Storage/DB/Auth/app mutation**
+**SSOT:** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
+
+- Soak clock **elapsed**; soak integrity **FAILED / CONTAMINATED**
+- Original FAR-01 retain-set (**67**) **already gone outside FAR-01 retirement flow** (USER-CLEANUP-01 collateral) — **not** formal FAR-01 retirement
+- **FAR-01 RETIREMENT = NOT EXECUTED**
+- Living Storage: USER masters **8** · platform **3** · orphan/historical/delete-residue **32** · retained **0** · quarantine **0** · MIGRATE **0** · beat-audio total **43**
+- Current **32** orphans = candidate scope for separate **ARCH-04/05** orphan-GC audit — **not** approved for deletion · **not** automatic FAR-01 retirement candidates
+- Backup evidence **NOT VERIFIED** · continuous soak telemetry **NOT VERIFIED**
+- Production app remains `ddcee65` (docs tip may advance independently)
+
+---
+
 ## 2026-10-04 — ADMIN USER DELETE W4 (CLOSED / PRODUCTION VERIFIED)
 
-**Status:** **CLOSED / PRODUCTION VERIFIED**  
-**SSOT:** [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)  
-**Implementation / production app:** `ddcee65` · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · READY / PROMOTED  
+**Status:** **CLOSED / PRODUCTION VERIFIED**
+**SSOT:** [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)
+**Implementation / production app:** `ddcee65` · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · READY / PROMOTED
 **DB:** `20261004174202` / `admin_user_management_w4_delete` (local file `20261004190900` — timestamp drift)
 
 - Shared `executeAccountProfile01Deletion` + admin `adminDeleteUserAction` + audit `USER_ACCOUNT_DELETE`
@@ -22,9 +37,9 @@ Format: data, zakres, skrót.
 
 ## 2026-10-04 — ADMIN USER MANAGEMENT W3 (AUDIT HISTORY UI) — CLOSED / PRODUCTION VERIFIED
 
-**Status:** **CLOSED / PRODUCTION VERIFIED**  
-**App SHA:** `237a86f` · deployment `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · READY / PROMOTED  
-**DB tip:** `20261004144223` · **W3 migration NONE** · DB **UNCHANGED** by W3  
+**Status:** **CLOSED / PRODUCTION VERIFIED**
+**App SHA:** `237a86f` · deployment `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · READY / PROMOTED
+**DB tip:** `20261004144223` · **W3 migration NONE** · DB **UNCHANGED** by W3
 **SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](./audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md)
 
 - `/admin/users` — read-only Historia zmian
@@ -39,7 +54,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-04 — ADMIN USER MANAGEMENT W2 (MUTATIONS + AUDIT WRITE)
 
-**Status:** **IMPLEMENTED** (repository) · **PRODUCTION NOT DEPLOYED** · production DB **UNCHANGED**  
+**Status:** **IMPLEMENTED** (repository) · **PRODUCTION NOT DEPLOYED** · production DB **UNCHANGED**
 **SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md)
 
 - `/admin/users` Zarządzaj → server action → `admin_apply_user_management`
@@ -51,7 +66,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-04 — ADMIN USER MANAGEMENT W1 (READ-ONLY LIST)
 
-**Status:** **IMPLEMENTED** · **NOT production-deployed**  
+**Status:** **IMPLEMENTED** · **NOT production-deployed**
 **SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md)
 
 - `/admin/users` — ADMIN + `users.view`/`users.edit`
@@ -63,7 +78,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-04 — ADMIN USER MANAGEMENT W0 (OWNER DECISIONS LOCKED)
 
-**Status:** **W0 CLOSED** · feature **NOT IMPLEMENTED** · **NOT committed / NOT pushed / NOT deployed**  
+**Status:** **W0 CLOSED** · feature **NOT IMPLEMENTED** · **NOT committed / NOT pushed / NOT deployed**
 **SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [DECISION_LOG.md](./decisions/DECISION_LOG.md)
 
 ```text
@@ -82,9 +97,9 @@ Next: W1 read-only `/admin/users` requires separate Owner GO.
 
 ## 2026-10-04 — USER-FACING POLISH LOCALIZATION (CLOSED / PRODUCTION VERIFIED GREEN)
 
-**Status:** **CLOSED** · **PRODUCTION VERIFIED GREEN**  
-**Final app SHA:** `ffe723b` · deployment `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`  
-**Closeout SSOT:** [USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md)  
+**Status:** **CLOSED** · **PRODUCTION VERIFIED GREEN**
+**Final app SHA:** `ffe723b` · deployment `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`
+**Closeout SSOT:** [USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md)
 **Email templates:** [USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md)
 
 ### Delivery
@@ -99,7 +114,7 @@ Next: W1 read-only `/admin/users` requires separate Owner GO.
 
 ## 2026-10-04 — P2 POLISH CHROME CLEANUP (Workspace · Raw)
 
-**Status:** **SHIPPED** · production @ `ffe723b` / `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`  
+**Status:** **SHIPPED** · production @ `ffe723b` / `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM`
 **Baseline:** `4ebd1d3` · USER-FACING POLISH LOCALIZATION
 
 ### Changes
@@ -111,7 +126,7 @@ Next: W1 read-only `/admin/users` requires separate Owner GO.
 
 ## 2026-10-03 — ACCOUNT / PROFILE-01 (BLOCKER FIX CYCLE · AWAITING OWNER RE-REVIEW)
 
-**Status:** Blocker fixes in working tree · **NOT committed / NOT pushed / NOT production-DB-applied / NOT deployed**  
+**Status:** Blocker fixes in working tree · **NOT committed / NOT pushed / NOT production-DB-applied / NOT deployed**
 **Baseline:** `0ca0115` · USER-ID-01 PRODUCTION VERIFIED — GREEN
 
 ### Blocker fixes
