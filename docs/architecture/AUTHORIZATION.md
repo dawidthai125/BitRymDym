@@ -75,7 +75,7 @@ profiles.role = ADMIN
 Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL only.
 Do not document secrets.
 
-**Admin User Management (OD-ADMIN-01…07 CLOSED):** **W2 IMPLEMENTED in repo** — `/admin/users` mutations via `admin_apply_user_management` (service_role RPC) + `admin_audit_events`. **PRODUCTION NOT DEPLOYED**; production DB still without this migration. Self-demotion **NO**. Last-ADMIN demotion **NO**. W3 history UI **NOT STARTED**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
+**Admin User Management (OD-ADMIN-01…07 CLOSED):** W1 list + W2 mutations + **W3 history UI IMPLEMENTED in repo**. Read path: `ADMIN` ∧ `audit_log.view` → `createSupabaseAdminClient()` SELECT `admin_audit_events` (no read RPC, no authenticated SELECT policy). **W3 PRODUCTION NOT VERIFIED**. Self-demotion **NO**. Last-ADMIN demotion **NO**. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 
 ---
 
@@ -278,7 +278,7 @@ Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md
 | Surface | Rule |
 |---------|------|
 | `/admin/beats*` | ADMIN role required (layout gate) |
-| `/admin/users` | List: ADMIN + `users.view`/`users.edit`. Mutations: ADMIN + `users.edit` + RPC `admin_apply_user_management`. MODERATOR DENY |
+| `/admin/users` | List: ADMIN + `users.view`/`users.edit`. Mutations: ADMIN + `users.edit` + RPC `admin_apply_user_management`. History: ADMIN + `audit_log.view` + service_role SELECT. MODERATOR DENY |
 | Create / edit / upload / publish | `beats.create` / `beats.edit` + ADMIN |
 | USER / MODERATOR / anonymous | DENY PLATFORM write ops |
 | Ownership | `PLATFORM` + `owner_id = NULL` |

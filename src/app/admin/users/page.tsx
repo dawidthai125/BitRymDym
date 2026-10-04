@@ -1,8 +1,11 @@
 import Link from "next/link";
 
+import { AdminUsersAuditFilters } from "@/components/admin/admin-users-audit-filters";
 import { AdminUsersFilters } from "@/components/admin/admin-users-filters";
 import { AdminUsersManageDialog } from "@/components/admin/admin-users-manage-dialog";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { listAdminUserAuditEvents } from "@/lib/admin/users-audit-list";
+import { parseAdminUsersAuditQuery } from "@/lib/admin/users-audit-query";
 import { listAdminUsers } from "@/lib/admin/users-list";
 import { parseAdminUsersQuery } from "@/lib/admin/users-query";
 import { AuthError, getCurrentProfile } from "@/lib/auth/session";
@@ -21,6 +24,31 @@ function formatExpiresAt(iso: string | null): string {
   }).format(date);
 }
 
+function adminUsersHref(opts: {
+  q?: string;
+  role?: string | null;
+  premium?: string | null;
+  rank?: string | null;
+  page?: number;
+  auditAction?: string | null;
+  auditUser?: string;
+  auditPage?: number;
+}): string {
+  const params = new URLSearchParams();
+  if (opts.q) params.set("q", opts.q);
+  if (opts.role) params.set("role", opts.role);
+  if (opts.premium) params.set("premium", opts.premium);
+  if (opts.rank) params.set("rank", opts.rank);
+  if (opts.page && opts.page > 1) params.set("page", String(opts.page));
+  if (opts.auditAction) params.set("auditAction", opts.auditAction);
+  if (opts.auditUser) params.set("auditUser", opts.auditUser);
+  if (opts.auditPage && opts.auditPage > 1) {
+    params.set("auditPage", String(opts.auditPage));
+  }
+  const qs = params.toString();
+  return qs ? `/admin/users?${qs}` : "/admin/users";
+}
+
 export default async function AdminUsersPage({
   searchParams,
 }: {
@@ -28,7 +56,14 @@ export default async function AdminUsersPage({
 }) {
   const raw = await searchParams;
   const query = parseAdminUsersQuery(raw);
+  const auditQuery = parseAdminUsersAuditQuery(raw);
   const viewer = await getCurrentProfile();
+  const auditUserParam =
+    auditQuery.rejectTarget
+      ? String(Array.isArray(raw.auditUser) ? raw.auditUser[0] : raw.auditUser ?? "")
+      : auditQuery.targetUserNumber != null
+        ? String(auditQuery.targetUserNumber)
+        : "";
 
   let result: Awaited<ReturnType<typeof listAdminUsers>> | null = null;
   let loadFailed = false;
@@ -39,10 +74,43 @@ export default async function AdminUsersPage({
     loadFailed = true;
   }
 
+  let auditResult: Awaited<ReturnType<typeof listAdminUserAuditEvents>> | null =
+    null;
+  let auditLoadFailed = false;
+  let auditForbidden = false;
+  try {
+    auditResult = await listAdminUserAuditEvents(auditQuery);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      auditForbidden = true;
+    } else {
+      auditLoadFailed = true;
+    }
+  }
+
   const hasFilters = Boolean(query.q || query.role || query.premium || query.rank);
   const emptyMessage = hasFilters
     ? "Nie znaleziono użytkowników dla podanych filtrów."
     : "Brak użytkowników.";
+
+  const hasAuditFilters = Boolean(
+    auditQuery.action ||
+      auditQuery.targetUserNumber != null ||
+      auditQuery.rejectTarget,
+  );
+  const auditEmptyMessage = hasAuditFilters
+    ? "Nie znaleziono zmian dla podanych filtrów."
+    : "Brak zapisanych zmian.";
+
+  const sharedQuery = {
+    q: query.q,
+    role: query.role,
+    premium: query.premium,
+    rank: query.rank,
+    page: query.page,
+    auditAction: auditQuery.action,
+    auditUser: auditUserParam,
+  };
 
   return (
     <main className="pb-16">
@@ -53,8 +121,8 @@ export default async function AdminUsersPage({
             Użytkownicy
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Podgląd i zmiana ról oraz Premium. Historia zmian pojawi się w
-            kolejnej wersji.
+            Podgląd i zmiana ról oraz Premium. Historia zmian jest tylko do
+            odczytu.
           </p>
         </header>
 
@@ -63,6 +131,8 @@ export default async function AdminUsersPage({
           role={query.role ?? ""}
           premium={query.premium ?? ""}
           rank={query.rank ?? ""}
+          auditAction={auditQuery.action ?? ""}
+          auditUser={auditUserParam}
         />
 
         {loadFailed ? (
@@ -142,13 +212,10 @@ export default async function AdminUsersPage({
               >
                 {Array.from({ length: result.pageCount }, (_, i) => i + 1).map(
                   (page) => {
-                    const params = new URLSearchParams();
-                    if (query.q) params.set("q", query.q);
-                    if (query.role) params.set("role", query.role);
-                    if (query.premium) params.set("premium", query.premium);
-                    if (query.rank) params.set("rank", query.rank);
-                    params.set("page", String(page));
-                    const href = `/admin/users?${params.toString()}`;
+                    const href = adminUsersHref({
+                      ...sharedQuery,
+                      page,
+                    });
                     const current = page === result.page;
                     return current ? (
                       <span
@@ -172,6 +239,110 @@ export default async function AdminUsersPage({
             ) : null}
           </div>
         )}
+
+        <section className="mt-12 border-t border-[var(--brd-line)] pt-8">
+          <h2 className="brd-display text-2xl font-semibold tracking-tight">
+            Historia zmian
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-[var(--brd-ink-soft)]">
+            Każdy zapisany wpis jest osobnym wierszem. Usunięci użytkownicy
+            pozostają widoczni po numerze ID.
+          </p>
+
+          <div className="mt-6">
+            <AdminUsersAuditFilters
+              action={auditQuery.action ?? ""}
+              auditUser={auditUserParam}
+              q={query.q}
+              role={query.role ?? ""}
+              premium={query.premium ?? ""}
+              rank={query.rank ?? ""}
+              page={query.page > 1 ? String(query.page) : ""}
+            />
+          </div>
+
+          {auditForbidden ? (
+            <p className="mt-8 text-sm text-[var(--brd-mute)]" role="alert">
+              Brak dostępu do historii zmian.
+            </p>
+          ) : auditLoadFailed ? (
+            <p className="mt-8 text-sm text-[var(--brd-mute)]" role="alert">
+              Nie udało się pobrać historii zmian.
+            </p>
+          ) : !auditResult || auditResult.total === 0 ? (
+            <p className="mt-8 text-sm text-[var(--brd-mute)]">
+              {auditEmptyMessage}
+            </p>
+          ) : (
+            <div className="mt-8">
+              <p className="mb-3 text-sm text-[var(--brd-mute)]">
+                {auditResult.total}{" "}
+                {auditResult.total === 1 ? "zmiana" : "zmian"}
+              </p>
+              <div className="overflow-x-auto border border-[var(--brd-line)]">
+                <table className="w-full min-w-[48rem] text-left text-sm">
+                  <thead className="bg-[var(--brd-paper-deep)]/40 text-[var(--brd-mute)]">
+                    <tr>
+                      <th className="px-3 py-3 font-medium">Data</th>
+                      <th className="px-3 py-3 font-medium">Kto</th>
+                      <th className="px-3 py-3 font-medium">Kogo</th>
+                      <th className="px-3 py-3 font-medium">Operacja</th>
+                      <th className="px-3 py-3 font-medium">Zmiana</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--brd-line)]">
+                    {auditResult.rows.map((row) => (
+                      <tr key={row.id}>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {row.createdAt}
+                        </td>
+                        <td className="px-3 py-3">{row.actorLabel}</td>
+                        <td className="px-3 py-3">{row.targetLabel}</td>
+                        <td className="px-3 py-3">{row.action}</td>
+                        <td className="px-3 py-3">
+                          {row.oldLabel} → {row.newLabel}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {auditResult.pageCount > 1 ? (
+                <nav
+                  className="mt-4 flex flex-wrap gap-2 text-sm"
+                  aria-label="Strony historii zmian"
+                >
+                  {Array.from(
+                    { length: auditResult.pageCount },
+                    (_, i) => i + 1,
+                  ).map((auditPage) => {
+                    const href = adminUsersHref({
+                      ...sharedQuery,
+                      auditPage,
+                    });
+                    const current = auditPage === auditResult.page;
+                    return current ? (
+                      <span
+                        key={auditPage}
+                        className="inline-flex min-h-11 items-center px-3 font-medium"
+                      >
+                        {auditPage}
+                      </span>
+                    ) : (
+                      <Link
+                        key={auditPage}
+                        href={href}
+                        className="inline-flex min-h-11 items-center px-3 underline underline-offset-4"
+                      >
+                        {auditPage}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              ) : null}
+            </div>
+          )}
+        </section>
       </PageFrame>
     </main>
   );

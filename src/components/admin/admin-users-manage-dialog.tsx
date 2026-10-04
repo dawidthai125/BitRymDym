@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState, useTransition } from "react";
 
@@ -142,6 +143,16 @@ export function AdminUsersManageDialog({
                 <dd className="tabular-nums">{userNumber ?? "—"}</dd>
               </div>
             </dl>
+            {userNumber != null ? (
+              <p className="mt-3 text-sm">
+                <Link
+                  href={`/admin/users?auditUser=${userNumber}`}
+                  className="underline underline-offset-4"
+                >
+                  Historia tego ID
+                </Link>
+              </p>
+            ) : null}
 
             {confirming ? (
               <div className="mt-6 space-y-2 text-sm">

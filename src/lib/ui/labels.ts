@@ -84,6 +84,27 @@ export function labelCreatorRank(rank: string): string {
   }
 }
 
+export function labelAdminAuditAction(action: string): string {
+  switch (action) {
+    case "ROLE_CHANGE":
+      return "Zmiana roli";
+    case "ADMIN_GRANT":
+      return "Nadanie roli administratora";
+    case "ADMIN_REVOKE":
+      return "Odebranie roli administratora";
+    case "MODERATOR_GRANT":
+      return "Nadanie roli moderatora";
+    case "MODERATOR_REVOKE":
+      return "Odebranie roli moderatora";
+    case "PREMIUM_TIER_CHANGE":
+      return "Zmiana Premium";
+    case "PREMIUM_EXPIRATION_CHANGE":
+      return "Zmiana daty wygaśnięcia";
+    default:
+      return "—";
+  }
+}
+
 export function labelPremiumTier(tier: string): string {
   switch (tier) {
     case "FREE":

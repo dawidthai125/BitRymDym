@@ -2,7 +2,7 @@
 
 **Epic:** ADMIN USER MANAGEMENT  
 **Wave:** **W0 = CLOSED** (Owner Decision Lock)  
-**Status:** OWNER DECISIONS LOCKED · **W1 READ-ONLY IMPLEMENTED** · **W2 MUTATIONS IMPLEMENTED** · **PRODUCTION NOT DEPLOYED** · W3 **NOT STARTED**  
+**Status:** OWNER DECISIONS LOCKED · **W1 READ-ONLY IMPLEMENTED** · **W2 MUTATIONS IMPLEMENTED** · **W3 HISTORY UI IMPLEMENTED (repo)** · **W3 PRODUCTION NOT VERIFIED**  
 **Date:** 2026-10-04  
 **Owner:** Prezes Dawid  
 **Canonical ODs:** OD-ADMIN-01 … OD-ADMIN-07  
@@ -123,9 +123,9 @@ W2 mutations **must** write audit events once the table exists; W1 is read-only 
 | Wave | Scope | Status |
 |------|--------|--------|
 | **W0** | Owner Decision Lock | **CLOSED** |
-| **W1** | Read-only user list + filters (`/admin/users`) | **IMPLEMENTED** · **NOT production-deployed** |
-| **W2** | Role + Premium mutations + security guards + audit **write** | **IMPLEMENTED** (repo) · **PRODUCTION NOT DEPLOYED** · migration **not applied** to production DB |
-| **W3** | Audit log + history UI | **NOT STARTED** |
+| **W1** | Read-only user list + filters (`/admin/users`) | **IMPLEMENTED** |
+| **W2** | Role + Premium mutations + security guards + audit **write** | **IMPLEMENTED** (repo + prior production DB/app gates) · last-admin live path remains a W2 finding |
+| **W3** | Audit log + history UI | **IMPLEMENTED (repo)** · **PRODUCTION NOT VERIFIED** (history UI not deployed / not UI-verified) |
 | **W4** | Full production verification | NOT STARTED |
 
 W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Email on list/detail remains ADMIN-only `/admin/users` (OD-ADMIN-05).
@@ -135,12 +135,11 @@ W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Emai
 ## Current evidence
 
 - W1 route: `/admin/users` (ADMIN + `users.view`/`users.edit`)
-- W2: `admin_apply_user_management` + `admin_audit_events` **in repo migration** `20261004180000_admin_user_management_w2_mutations.sql`
-- Production app/DB: **UNCHANGED** (W2 not deployed, migration not applied remotely)
-- W3 history UI: **NOT STARTED**
+- W2: `admin_apply_user_management` + `admin_audit_events` (repo + production table present; 49 historical rows, all `target_user_id` NULL with `target_user_number` snapshot)
+- W3 history UI: **IMPLEMENTED (repo)** — `/admin/users` Historia zmian · SELECT via `createSupabaseAdminClient()` after `ADMIN` ∧ `audit_log.view` · **PRODUCTION NOT VERIFIED** (production app still serves pre-W3 UI)
 
 ---
 
-## Explicit non-changes (W2)
+## Explicit non-changes (W3)
 
-No production deploy · no production DB migrate · no Storage · no Auth templates · no Premium matrix rewrite · no Rank rewrite · no W3 history SELECT UI.
+No production deploy until a separate Owner GO · no DB migration · no read RPC · no authenticated SELECT policy · no W2 write-path change · no grouping of audit rows · no W4.

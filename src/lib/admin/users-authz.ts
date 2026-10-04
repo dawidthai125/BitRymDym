@@ -24,3 +24,11 @@ export function canMutateAdminUsers(
   if (!role || !hasRole(role, ["ADMIN"])) return false;
   return hasPermission(permissions, "users.edit");
 }
+
+export function canReadAdminUsersAudit(
+  role: SystemRole | null | undefined,
+  permissions: readonly string[] | readonly PermissionKey[],
+): boolean {
+  if (!role || !hasRole(role, ["ADMIN"])) return false;
+  return hasPermission(permissions, "audit_log.view");
+}

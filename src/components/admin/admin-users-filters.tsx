@@ -20,11 +20,15 @@ export function AdminUsersFilters({
   role,
   premium,
   rank,
+  auditAction,
+  auditUser,
 }: {
   q: string;
   role: string;
   premium: string;
   rank: string;
+  auditAction?: string;
+  auditUser?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -50,6 +54,12 @@ export function AdminUsersFilters({
         });
       }}
     >
+      {auditAction ? (
+        <input type="hidden" name="auditAction" value={auditAction} />
+      ) : null}
+      {auditUser ? (
+        <input type="hidden" name="auditUser" value={auditUser} />
+      ) : null}
       <label className="min-w-[16rem] flex-1 space-y-1 text-sm">
         <span className="text-[var(--brd-mute)]">Szukaj</span>
         <input

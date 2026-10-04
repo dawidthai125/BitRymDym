@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — ADMIN USER MANAGEMENT W3 (AUDIT HISTORY UI)
+
+**Status:** **IMPLEMENTED (repository)** · **W3 PRODUCTION NOT VERIFIED** · not deployed  
+**SSOT:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md)
+
+- `/admin/users` — read-only Historia zmian
+- AuthZ: ADMIN ∧ `audit_log.view` (MODERATOR/USER DENY)
+- SELECT `admin_audit_events` via `createSupabaseAdminClient()` — no read RPC, no new migration, no authenticated SELECT policy
+- Filters: `auditAction` + `auditUser` · page size 25 · `created_at DESC, id DESC`
+- Snapshot labels for deleted targets (`Użytkownik · #N`) — 49 production rows with `target_user_id` NULL remain readable after deploy
+- W4 **not started**
+
+---
+
 ## 2026-10-04 — ADMIN USER MANAGEMENT W2 (MUTATIONS + AUDIT WRITE)
 
 **Status:** **IMPLEMENTED** (repository) · **PRODUCTION NOT DEPLOYED** · production DB **UNCHANGED**  
