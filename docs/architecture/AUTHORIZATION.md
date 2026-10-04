@@ -48,7 +48,7 @@ Vercel NEXT_PUBLIC_SITE_URL  = https://bitrymdym.pl
 - Production Auth must **not** use `*.vercel.app` deployment URLs as Site URL / canonical redirect.
 - Preview/local may use Vercel preview URL or localhost (allow-listed separately).
 - Helper: `src/lib/site-url.ts` — production never falls back to `VERCEL_URL`.
-- Custom SMTP / branded sender: deferred (default Supabase sender OK until Owner GO).
+- Custom SMTP / branded sender: Auth templates remain for signup/reset. **W4 product mail = Resend** (admin deletion) — env `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (operator). Not production-verified until W4 deploy GO.
 
 ---
 
@@ -76,6 +76,8 @@ Operator may assign ADMIN via controlled Supabase Dashboard / service-role SQL o
 Do not document secrets.
 
 **Admin User Management (OD-ADMIN-01…07 CLOSED):** W1 list + W2 mutations + **W3 history UI CLOSED / PRODUCTION VERIFIED** @ `237a86f`. Read path: `ADMIN` ∧ `audit_log.view` → `createSupabaseAdminClient()` SELECT `admin_audit_events` (no read RPC, no authenticated SELECT policy, no new permission keys). Self-demotion **NO**. Last-ADMIN demotion **NO** (live concurrency path still a W2 finding). See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md).
+
+**W4 Admin Delete (OD-ADMIN-DELETE-01…10 APPROVED):** implementation in repository — **NOT PRODUCTION VERIFIED**. AuthZ = `requireUser` + `requireRole(["ADMIN"])` + `users.edit`. Mailer = Resend (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`, server-only). See [ADMIN_USER_DELETE_DESIGN_FREEZE.md](../decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md).
 
 ---
 

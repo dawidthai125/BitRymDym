@@ -165,6 +165,35 @@ describe("admin users W3 presenter", () => {
     expect(text).not.toMatch(/leak@example\.com/i);
   });
 
+  it("USER_ACCOUNT_DELETE shows escaped reason, never email or JSON", () => {
+    const row = presentAdminAuditEvent({
+      ...base,
+      action: "USER_ACCOUNT_DELETE",
+      targetUserId: null,
+      oldValue: { role: "USER", premiumActive: false, email: "leak@example.com" },
+      newValue: { deleted: true },
+      metadata: { panel: "admin_users", reason: "Naruszenie regulaminu" },
+    });
+    expect(row.action).toBe("Usunięcie konta");
+    expect(row.newLabel).toBe("Powód: Naruszenie regulaminu");
+    expect(row.oldLabel).toBe("Użytkownik");
+    const text = labelsOf(row);
+    expect(text).not.toMatch(/leak@example\.com/i);
+    expect(text).not.toContain("{");
+    expect(text).not.toContain("premiumActive");
+  });
+
+  it("USER_ACCOUNT_DELETE missing reason is Powód niedostępny", () => {
+    const row = presentAdminAuditEvent({
+      ...base,
+      action: "USER_ACCOUNT_DELETE",
+      oldValue: { role: "USER" },
+      newValue: { deleted: true },
+      metadata: { panel: "admin_users" },
+    });
+    expect(row.newLabel).toBe("Powód niedostępny");
+  });
+
   it("does not expose email or stringify payloads", () => {
     const row = presentAdminAuditEvent({
       ...base,

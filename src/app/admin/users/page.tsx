@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AdminUsersAuditFilters } from "@/components/admin/admin-users-audit-filters";
+import { AdminUsersDeleteDialog } from "@/components/admin/admin-users-delete-dialog";
 import { AdminUsersFilters } from "@/components/admin/admin-users-filters";
 import { AdminUsersManageDialog } from "@/components/admin/admin-users-manage-dialog";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
@@ -121,8 +122,8 @@ export default async function AdminUsersPage({
             Użytkownicy
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Podgląd i zmiana ról oraz Premium. Historia zmian jest tylko do
-            odczytu.
+            Podgląd i zmiana ról oraz Premium. Usunięcie konta wymaga powodu.
+            Historia zmian jest tylko do odczytu.
           </p>
         </header>
 
@@ -189,16 +190,25 @@ export default async function AdminUsersPage({
                       </td>
                       <td className="px-3 py-3">{labelSystemRole(row.role)}</td>
                       <td className="px-3 py-3">
-                        <AdminUsersManageDialog
-                          userId={row.id}
-                          displayName={row.displayName}
-                          email={row.email}
-                          userNumber={row.userNumber}
-                          role={row.role}
-                          premiumTier={row.premiumTier}
-                          premiumExpiresAt={row.premiumExpiresAt}
-                          isSelf={viewer?.userId === row.id}
-                        />
+                        <div className="flex flex-col items-start gap-2">
+                          <AdminUsersManageDialog
+                            userId={row.id}
+                            displayName={row.displayName}
+                            email={row.email}
+                            userNumber={row.userNumber}
+                            role={row.role}
+                            premiumTier={row.premiumTier}
+                            premiumExpiresAt={row.premiumExpiresAt}
+                            isSelf={viewer?.userId === row.id}
+                          />
+                          <AdminUsersDeleteDialog
+                            userId={row.id}
+                            displayName={row.displayName}
+                            email={row.email}
+                            userNumber={row.userNumber}
+                            isSelf={viewer?.userId === row.id}
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}

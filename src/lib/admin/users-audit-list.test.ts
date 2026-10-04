@@ -17,6 +17,7 @@ describe("admin users W3 read-layer contract", () => {
     expect(src).toMatch(/created_at/);
     expect(src).toMatch(/requireAdminUsersAuditAccess/);
     expect(src).toMatch(/audit_log\.view/);
+    expect(src).toMatch(/metadata/);
     expect(src).not.toMatch(/\.insert\(/);
     expect(src).not.toMatch(/\.update\(/);
     expect(src).not.toMatch(/\.upsert\(/);
@@ -52,8 +53,7 @@ describe("admin users W3 UI contract", () => {
       "utf8",
     );
     expect(present).not.toMatch(/JSON\.stringify/);
-    expect(present).not.toMatch(/email/);
-    expect(present).not.toMatch(/metadata/);
+    expect(present).not.toMatch(/\bemail\b/);
   });
 
   it("optional manage-dialog history link filters by user_number", () => {

@@ -51,12 +51,21 @@ describe("ACCOUNT/PROFILE-01 contract (static)", () => {
   it("delete orchestrator is session-bound and selective on Storage", () => {
     const del = read("src/lib/auth/delete-account.ts");
     expect(del).toContain("reauthenticateWithPassword");
+    expect(del).toContain("executeAccountProfile01Deletion");
     expect(del).toContain("ANONYMIZED_PUBLIC_AUTHOR");
     expect(del).toContain("selectiveUserStorageCleanup");
     expect(del).toContain("admin.auth.admin.deleteUser");
     expect(del).toContain("beat_download_events");
     expect(del).toContain("USER_PREFIX");
-    // Cleanup walks only user/{uuid}/ — never storage.from("platform")
+    const own = del.indexOf("export async function deleteOwnAccount");
+    expect(own).toBeGreaterThan(-1);
+    expect(del.indexOf("reauthenticateWithPassword", own)).toBeGreaterThan(own);
+    expect(del.indexOf("executeAccountProfile01Deletion", own)).toBeGreaterThan(
+      del.indexOf("reauthenticateWithPassword", own),
+    );
+    expect(del.indexOf("signOut()", own)).toBeGreaterThan(
+      del.indexOf("executeAccountProfile01Deletion", own),
+    );
     expect(del).not.toMatch(/storage\.from\(\s*["']platform["']/);
   });
 

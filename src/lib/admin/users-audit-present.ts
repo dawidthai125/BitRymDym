@@ -14,6 +14,7 @@ export type AdminAuditEventInput = {
   targetUserNumber: number | null;
   oldValue: unknown;
   newValue: unknown;
+  metadata?: unknown;
   targetDisplayName?: string | null;
 };
 
@@ -70,11 +71,33 @@ function formatExpiresValue(value: unknown): string {
   return formatAdminAuditExpiresAt(value);
 }
 
+function formatDeleteReason(metadata: unknown): string {
+  const record = asRecord(metadata);
+  const reason = record?.reason;
+  if (typeof reason !== "string" || !reason.trim()) {
+    return "Powód niedostępny";
+  }
+  const trimmed = reason.trim();
+  if (trimmed.length > 500) {
+    return `Powód: ${trimmed.slice(0, 500)}`;
+  }
+  return `Powód: ${trimmed}`;
+}
+
 function mapChangeLabels(
   action: string,
   oldValue: unknown,
   newValue: unknown,
+  metadata: unknown,
 ): { oldLabel: string; newLabel: string } {
+  if (action === "USER_ACCOUNT_DELETE") {
+    const oldRecord = asRecord(oldValue);
+    return {
+      oldLabel: formatRoleValue(oldRecord?.role),
+      newLabel: formatDeleteReason(metadata),
+    };
+  }
+
   const oldRecord = asRecord(oldValue);
   const newRecord = asRecord(newValue);
   if (!oldRecord && !newRecord) {
@@ -145,7 +168,12 @@ export function targetAuditLabel(input: {
 }
 
 export function presentAdminAuditEvent(input: AdminAuditEventInput): AdminAuditRow {
-  const change = mapChangeLabels(input.action, input.oldValue, input.newValue);
+  const change = mapChangeLabels(
+    input.action,
+    input.oldValue,
+    input.newValue,
+    input.metadata,
+  );
   return {
     id: input.id,
     createdAt: formatAuditDateTime(input.createdAt),

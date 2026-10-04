@@ -100,6 +100,8 @@ export function labelAdminAuditAction(action: string): string {
       return "Zmiana Premium";
     case "PREMIUM_EXPIRATION_CHANGE":
       return "Zmiana daty wygaśnięcia";
+    case "USER_ACCOUNT_DELETE":
+      return "Usunięcie konta";
     default:
       return "—";
   }

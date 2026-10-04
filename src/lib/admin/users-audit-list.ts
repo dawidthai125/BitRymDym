@@ -18,7 +18,7 @@ import { AuthError, requirePermission, requireRole } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const AUDIT_SELECT =
-  "id, actor_user_id, target_user_id, actor_user_number, target_user_number, action, old_value, new_value, created_at" as const;
+  "id, actor_user_id, target_user_id, actor_user_number, target_user_number, action, old_value, new_value, metadata, created_at" as const;
 
 export type AdminUsersAuditListResult = {
   rows: AdminAuditRow[];
@@ -36,6 +36,7 @@ type AuditDbRow = {
   action: string;
   old_value: unknown;
   new_value: unknown;
+  metadata: unknown;
   created_at: string;
 };
 
@@ -148,6 +149,7 @@ export async function listAdminUserAuditEvents(
       targetUserNumber: toNumber(row.target_user_number),
       oldValue: row.old_value,
       newValue: row.new_value,
+      metadata: row.metadata,
       targetDisplayName: row.target_user_id
         ? (names.get(row.target_user_id) ?? null)
         : null,

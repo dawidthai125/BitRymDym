@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f`)
+**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W4 IMPLEMENTATION READY — NOT PRODUCTION VERIFIED**; W3 remains **PRODUCTION VERIFIED** @ `237a86f`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,11 +21,11 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | `237a86f` — ADMIN USER MANAGEMENT W3 · docs tip may advance after W3 closeout docs commit |
+| **Repository HEAD** | `3229f55` — W3 closeout docs · W4 freeze may be uncommitted |
 | **Production application SHA** | `237a86f` — Ready · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · **ADMIN USER MANAGEMENT W3 PRODUCTION VERIFIED** |
-| **Production DB tip** | `20261004144223` / `admin_user_management_w2_mutations` · prior W2-A `20261003221811` / `w2a_premium_tier_foundation` in chain · enum FREE/BRONZE/SILVER/GOLD · **W3 migration NONE** · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
+| **Production DB tip** | `20261004144223` / `admin_user_management_w2_mutations` · prior W2-A `20261003221811` / `w2a_premium_tier_foundation` in chain · enum FREE/BRONZE/SILVER/GOLD · **W3 migration NONE** · **W4 migration NOT CREATED** · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · P0/P1/P2 = 0 · inbox E2E **BLOCKED — NO INBOX ACCESS** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · [email templates](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) |
-| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W2 **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` · [freeze](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](./audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md) |
+| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 IMPLEMENTATION READY — NOT PRODUCTION VERIFIED** · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) · ANON/FREE/BRONZE/SILVER/GOLD download E2E **PASS** · OD-17 **PASS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · Mix/Render **DEFERRED** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
@@ -68,6 +68,7 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 
 | SHA | Meaning |
 |-----|---------|
+| `3229f55` | **Current repository HEAD** — W3 closeout documentation (`docs(admin): close W3 audit history`) |
 | `237a86f` | **Current production app SHA** — ADMIN USER MANAGEMENT W3 audit history · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` |
 | `8c40824` | Historical — ADMIN USER MANAGEMENT W2 mutations · PRODUCTION VERIFIED WITH FINDINGS |
 | `ffe723b` | Historical — USER-FACING POLISH LOCALIZATION final · `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM` |
@@ -100,16 +101,16 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `237a86f` (+ docs closeout commit after this push) |
+| **HEAD / origin/main** | `3229f55` (W4 freeze docs uncommitted until Owner commit GO) |
 | **Production application** | `237a86f` — Ready · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · **ADMIN W3 PRODUCTION VERIFIED** (docs-only tip must not redeploy app) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` |
-| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W2 findings preserved |
+| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 IMPLEMENTATION READY — NOT PRODUCTION VERIFIED** |
 | **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (in tree) |
-| **NEXT GATE** | Owner-directed · **W4 NOT STARTED** · FAR-01 soak · optional Auth email inbox E2E |
+| **NEXT GATE** | Owner GO **W4 DB APPLY + APP DEPLOY** · FAR-01 soak · optional Auth email inbox E2E |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.

@@ -59,6 +59,16 @@
 | OD-ADMIN-05 | ADMIN sees user email | §35, privacy | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES /admin/users only) |
 | OD-ADMIN-06 | Audit role/Premium mutations | §35, §37 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
 | OD-ADMIN-07 | History UI for role/Premium | §35 | Admin users | **CLOSED / ACCEPTED** — 2026-10-04 (YES / W3) |
+| OD-ADMIN-DELETE-01 | ADMIN may delete other accounts | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) · delivery **NOT PRODUCTION VERIFIED** |
+| OD-ADMIN-DELETE-02 | ADMIN may delete own account via panel | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
+| OD-ADMIN-DELETE-03 | May delete last ADMIN | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
+| OD-ADMIN-DELETE-04 | Deletion reason required | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
+| OD-ADMIN-DELETE-05 | Reason in email to deleted user | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
+| OD-ADMIN-DELETE-06 | Email failure rolls back delete | §35 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (NO) |
+| OD-ADMIN-DELETE-07 | Reuse ACCOUNT/PROFILE-01 lifecycle | ACCOUNT/PROFILE-01 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (YES) |
+| OD-ADMIN-DELETE-08 | Permission for admin delete | §36 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (ADMIN + `users.edit`) |
+| OD-ADMIN-DELETE-09 | Transactional email provider | Auth email | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (RESEND) |
+| OD-ADMIN-DELETE-10 | Audit action name | `admin_audit_events` | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (`USER_ACCOUNT_DELETE`) |
 
 ---
 
@@ -97,10 +107,12 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-ADMIN-05 | YES — email visible only on `/admin/users` | 2026-10-04 |
 | OD-ADMIN-06 | YES — audit all role/Premium admin mutations | 2026-10-04 |
 | OD-ADMIN-07 | YES / W3 — history UI not MVP | 2026-10-04 |
+| OD-ADMIN-DELETE-01…10 | Admin delete other accounts YES; self NO; last ADMIN NO; reason YES; Resend; `USER_ACCOUNT_DELETE`; ADMIN+`users.edit` | 2026-10-04 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).  
-Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
+Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).  
+W4 Admin Delete (pending GO): [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md).
 
 ---
 

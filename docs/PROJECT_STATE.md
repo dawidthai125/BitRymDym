@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f`)
+**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W4 IMPLEMENTATION READY — NOT PRODUCTION VERIFIED**)
 
 ---
 
@@ -21,12 +21,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `237a86f` — ADMIN USER MANAGEMENT W3 (docs tip may advance after closeout commit) |
+| **REPOSITORY HEAD / origin/main** | `3229f55` — W3 closeout docs; W4 freeze may be uncommitted docs |
 | **PRODUCTION APP SHA** | `237a86f` — Ready · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · **ADMIN W3 PRODUCTION VERIFIED** |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
-| **PRODUCTION DB tip** | `20261004144223` / `admin_user_management_w2_mutations` · prior W2-A `20261003221811` in chain · **W3 migration NONE** |
+| **PRODUCTION DB tip** | `20261004144223` / `admin_user_management_w2_mutations` · prior W2-A `20261003221811` in chain · **W3 migration NONE** · **W4 migration NOT CREATED** |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` — [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · email templates [doc](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) · inbox E2E **BLOCKED — NO INBOX ACCESS** |
-| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W2 **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` — [freeze](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](./audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md) |
+| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W2 **PRODUCTION VERIFIED WITH FINDINGS** · **W4 IMPLEMENTATION READY — NOT PRODUCTION VERIFIED** — [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 | **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` — [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) — [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
@@ -54,13 +54,13 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY HEAD / origin/main = 237a86f (+ docs closeout commit after push)
+REPOSITORY HEAD / origin/main = 3229f55 (W3 closeout docs; W4 freeze docs uncommitted until Owner commit GO)
 PRODUCTION APP                = 237a86f · dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR
-PRODUCTION DB                 = 20261004144223 / admin_user_management_w2_mutations · W3 migration NONE
+PRODUCTION DB                 = 20261004144223 / admin_user_management_w2_mutations · W3 migration NONE · W4 migration NOT CREATED
 USER-FACING POLISH LOCALIZATION = CLOSED / PRODUCTION VERIFIED GREEN @ ffe723b
 ADMIN USER MANAGEMENT         = W3 CLOSED / PRODUCTION VERIFIED @ 237a86f
-                              · W2 PRODUCTION VERIFIED WITH FINDINGS @ 8c40824
-NEXT GATE                     = Owner-directed · W4 NOT STARTED · FAR-01 soak
+                              · W4 IMPLEMENTATION READY — NOT PRODUCTION VERIFIED
+NEXT GATE                     = Owner GO W4 DB APPLY + APP DEPLOY · FAR-01 soak
 CREATOR PROGRESS W2-A         = CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ 6ee3255
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df (in tree)
   Gate name                   = PREMIUM ENFORCEMENT
@@ -108,8 +108,9 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → USER-FACING POLISH LOCALIZATION = CLOSED @ ffe723b
                  → CREATOR_PROGRESS_W2B_IMPLEMENTATION.md (still relevant)
                  → ADMIN USER MANAGEMENT W3 = CLOSED / PRODUCTION VERIFIED @ 237a86f
-                 → W2 findings preserved (last-admin concurrency, migration timestamp drift, user_number holes, retained audits)
-                 → NEXT GATE = Owner-directed · W4 NOT STARTED · FAR-01 soak
+                 → W4 Admin Delete = IMPLEMENTATION READY — NOT PRODUCTION VERIFIED
+                   (docs/decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)
+                 → NEXT GATE = Owner GO W4 DB APPLY + APP DEPLOY · FAR-01 soak
                  → W2-B download enforcement = PRODUCTION VERIFIED (in tree)
                  → Mix/Render live = DEFERRED
                  → optional Auth email inbox E2E (BLOCKED — NO INBOX ACCESS)
@@ -127,6 +128,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | W2-B Premium Enforcement | Owner scope locked | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) |
 | USER-FACING POLISH LOCALIZATION | Owner GO sequence | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
 | ADMIN USER MANAGEMENT | Owner W0 lock · OD-ADMIN-01…07 **CLOSED** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W2 **PRODUCTION VERIFIED WITH FINDINGS** · [freeze](./decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](./audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md) |
+| OD-ADMIN-DELETE-01…10 | **CLOSED / ACCEPTED** | Implementation **READY — NOT PRODUCTION VERIFIED** · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 | FAR-01 campaign | Owner GO sequence | **SOAK ACTIVE** · **NOT CLOSED** |
 | DEF-01 | Owner GO | CLOSED / PRODUCTION VERIFIED @ `fbc696f` |
 
@@ -134,7 +136,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 
 ## 6. Out of scope / deferred
 
-STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · storage quota expansion · priority · `/ranks` / `/premium` UI · billing · W2-B Mix/Render live jobs · W2-B browser/UI Server Action journey (NON-BLOCKING FINDING) · Admin User Management **W4**.
+STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · storage quota expansion · priority · `/ranks` / `/premium` UI · billing · W2-B Mix/Render live jobs · W2-B browser/UI Server Action journey (NON-BLOCKING FINDING) · Admin User Management **W4 implementation** (freeze pending Owner GO).
 
 **Premium:** W2-B **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df`. Download tier cutover live-verified. P2-1 **VERIFIED RESOLVED**. P2-2…P2-4 **OPEN**. OD-04/07 OPEN. Gold 90d DESIGN ONLY.
 

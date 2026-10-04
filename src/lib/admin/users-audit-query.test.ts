@@ -46,7 +46,10 @@ describe("admin users W3 audit query", () => {
     expect(q.page).toBe(2);
   });
 
-  it("ignores unknown action as all", () => {
+  it("parses USER_ACCOUNT_DELETE and ignores unknown action as all", () => {
+    expect(parseAdminAuditAction("USER_ACCOUNT_DELETE")).toBe(
+      "USER_ACCOUNT_DELETE",
+    );
     expect(parseAdminAuditAction("DELETE_USER")).toBeNull();
     expect(parseAdminAuditAction("all")).toBeNull();
     expect(parseAdminUsersAuditQuery({ auditAction: "DROP_TABLE" }).action).toBeNull();

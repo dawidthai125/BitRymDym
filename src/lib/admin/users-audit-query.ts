@@ -14,6 +14,7 @@ export const ADMIN_AUDIT_ACTIONS = [
   "MODERATOR_REVOKE",
   "PREMIUM_TIER_CHANGE",
   "PREMIUM_EXPIRATION_CHANGE",
+  "USER_ACCOUNT_DELETE",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];

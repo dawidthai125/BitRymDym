@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-04 — ADMIN USER DELETE W4 (IMPLEMENTATION READY — NOT PRODUCTION VERIFIED)
+
+**Status:** **OWNER APPROVED · IMPLEMENTATION READY — NOT PRODUCTION VERIFIED**  
+**SSOT:** [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)  
+**Repo HEAD (committed baseline):** `3229f55` · **Production app:** `237a86f` · **DB:** `20261004144223` (**W4 migration NOT APPLIED**)
+
+- Shared `executeAccountProfile01Deletion` + admin `adminDeleteUserAction`
+- Audit `USER_ACCOUNT_DELETE` · Resend notification · last-admin lock `4242026, 2002`
+- Next gate: **W4 DB APPLY + APP DEPLOY** (separate Owner GO)
+
+---
+
 ## 2026-10-04 — ADMIN USER MANAGEMENT W3 (AUDIT HISTORY UI) — CLOSED / PRODUCTION VERIFIED
 
 **Status:** **CLOSED / PRODUCTION VERIFIED**  
@@ -19,7 +31,7 @@ Format: data, zakres, skrót.
 - Filters: `auditAction` + `auditUser` · page size 25 · `created_at DESC, id DESC`
 - Production: 49 audit rows · deleted-target snapshots · pagination/filters verified · P0/P1 = 0
 - W2 findings preserved (last-admin concurrency, migration timestamp drift, `user_number` holes, retained audits)
-- W4 **not started**
+- W4 Admin Delete: see [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**PENDING OWNER GO**)
 
 ---
 

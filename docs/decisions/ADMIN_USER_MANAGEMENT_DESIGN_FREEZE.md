@@ -7,7 +7,8 @@
 **Owner:** Prezes Dawid  
 **Canonical ODs:** OD-ADMIN-01 … OD-ADMIN-07  
 **Registry:** [DECISION_LOG.md](./DECISION_LOG.md) · [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)  
-**W3 closeout:** [ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md)
+**W3 closeout:** [ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md)  
+**W4 (Admin Delete):** [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) — **OWNER APPROVED · IMPLEMENTATION READY — NOT PRODUCTION VERIFIED**
 
 This document is the **SSOT** for locked Admin User Management product/security decisions.  
 Wave delivery status is tracked below; decisions remain CLOSED regardless of wave progress.
@@ -123,7 +124,7 @@ admin_audit_events
 | **W1** | Read-only user list + filters (`/admin/users`) | **COMPLETE** (in production tree) |
 | **W2** | Role + Premium mutations + security guards + audit **write** | **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` · DB `20261004144223` |
 | **W3** | Audit log + history UI | **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · deploy `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · DB **unchanged** |
-| **W4** | Full production verification (epic wrap) | **NOT STARTED** |
+| **W4** | Admin user delete + reason + email | **OWNER APPROVED · IMPLEMENTATION READY — NOT PRODUCTION VERIFIED** — [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 
 W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Email on list/detail remains ADMIN-only `/admin/users` (OD-ADMIN-05). History AuthZ is `ADMIN` ∧ `audit_log.view` (not `users.view` alone).
 
@@ -139,4 +140,4 @@ W1 is **read-only**. W2 adds mutations + audit **write**. W3 is history UI. Emai
 
 ## Explicit non-changes (post-W3)
 
-No W4 without Owner GO · no DB migration for W3 · no read RPC · no authenticated SELECT policy · no W2 write-path rewrite · no grouping of audit rows · no retention/purge/CSV/undo.
+No W4 **implementation** without Owner GO on [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) · no DB migration for W3 · no read RPC · no authenticated SELECT policy · no W2 write-path rewrite · no grouping of audit rows · no retention/purge/CSV/undo.

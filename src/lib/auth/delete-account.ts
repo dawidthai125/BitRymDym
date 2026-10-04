@@ -33,24 +33,16 @@ type AssetRow = {
 };
 
 /**
- * ACCOUNT/PROFILE-01 — single server-side delete orchestrator.
- * Identity: session auth.uid() only. Requires password reauth.
- * Public PUBLISHED USER beats: RETAIN + anonymize. Private: DELETE.
- * Storage: selective — retain keys referenced by retained public assets.
+ * ACCOUNT/PROFILE-01 — canonical deletion core.
+ * No password reauth, no session identity, no signOut.
+ * Callers must authorize. Auth delete is LAST.
  */
-export async function deleteOwnAccount(params: {
-  currentPassword: string;
-}): Promise<DeleteAccountResult> {
-  const reauth = await reauthenticateWithPassword(params.currentPassword);
-  if (!reauth.ok) {
-    return { ok: false, error: reauth.error, step: "reauth" };
-  }
-
-  const userId = reauth.user.id;
+export async function executeAccountProfile01Deletion(
+  userId: string,
+): Promise<DeleteAccountResult> {
   const admin = createSupabaseAdminClient();
 
   try {
-    // --- classify owned beats ---
     const { data: ownedBeats, error: beatsErr } = await admin
       .from("beats")
       .select("id, status, ownership_type, owner_id")
@@ -71,7 +63,6 @@ export async function deleteOwnAccount(params: {
         })),
       );
 
-    // --- collect retained public asset keys (must not Storage-delete) ---
     const retainedKeys = new Set<string>();
     if (retainBeatIds.length > 0) {
       const { data: retainAssets, error: raErr } = await admin
@@ -89,7 +80,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- OTD-04: delete download rows for this user (CHECK blocks SET NULL) ---
     {
       const { error } = await admin
         .from("beat_download_reservations")
@@ -109,7 +99,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // Clear download rows pointing at beats we will hard-delete (beat_id RESTRICT).
     if (deleteBeatIds.length > 0) {
       const { error: r1 } = await admin
         .from("beat_download_reservations")
@@ -127,7 +116,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- grants: granted_by RESTRICT; grantee CASCADE on profile delete ---
     {
       const { error } = await admin
         .from("beat_access_grants")
@@ -147,10 +135,8 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- private audio pipeline (RESTRICT owner_id) ---
     await deleteOwnedAudioPipeline(admin, userId);
 
-    // --- hard-delete private takes (RESTRICT; soft-delete alone blocks Auth delete) ---
     {
       const { data: takes, error: tErr } = await admin
         .from("takes")
@@ -181,7 +167,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- premium entitlements ---
     {
       const { error } = await admin
         .from("premium_entitlements")
@@ -192,7 +177,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- delete non-published USER beats + assets ---
     if (deleteBeatIds.length > 0) {
       const { data: delAssets } = await admin
         .from("beat_audio_assets")
@@ -232,9 +216,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- Blocker #2: nullify created_by WHILE owner_id still set (service_role).
-    // Must run before anonymize/Auth delete so FK SET NULL on Auth cascade is a no-op
-    // and never trips prevent_beat_audio_privilege_escalation mid-delete.
     {
       const { error } = await admin
         .from("beat_audio_assets")
@@ -249,7 +230,6 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- retain + anonymize published USER beats (OTD-01 C) ---
     if (retainBeatIds.length > 0) {
       const { error } = await admin
         .from("beats")
@@ -265,10 +245,8 @@ export async function deleteOwnAccount(params: {
       }
     }
 
-    // --- selective Storage cleanup under user/{uuid}/ (OTD-03) ---
     await selectiveUserStorageCleanup(admin, userId, retainedKeys);
 
-    // --- Auth delete (cascades profiles; created_by already NULL on retained assets) ---
     const { error: authDel } = await admin.auth.admin.deleteUser(userId);
     if (authDel) {
       return {
@@ -277,10 +255,6 @@ export async function deleteOwnAccount(params: {
         step: "auth_delete",
       };
     }
-
-    // --- sign out local session ---
-    const supabase = await createSupabaseServerClient();
-    await supabase.auth.signOut();
 
     return { ok: true };
   } catch {
@@ -292,11 +266,31 @@ export async function deleteOwnAccount(params: {
   }
 }
 
+/**
+ * ACCOUNT/PROFILE-01 — self-delete. Session + password reauth, then canonical core, then signOut.
+ */
+export async function deleteOwnAccount(params: {
+  currentPassword: string;
+}): Promise<DeleteAccountResult> {
+  const reauth = await reauthenticateWithPassword(params.currentPassword);
+  if (!reauth.ok) {
+    return { ok: false, error: reauth.error, step: "reauth" };
+  }
+
+  const deleted = await executeAccountProfile01Deletion(reauth.user.id);
+  if (!deleted.ok) {
+    return deleted;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
+  return { ok: true };
+}
+
 async function deleteOwnedAudioPipeline(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   userId: string,
 ): Promise<void> {
-  // render_jobs / audio_artifacts reference mix_sessions — delete leaves first.
   const { data: jobs } = await admin
     .from("render_jobs")
     .select("id")
@@ -331,10 +325,6 @@ async function deleteOwnedAudioPipeline(
   await admin.from("mix_sessions").delete().eq("owner_id", userId);
 }
 
-/**
- * List + remove objects under user/{uuid}/ that are NOT in retainedKeys.
- * Never touches platform/* · anon/* · other users.
- */
 async function selectiveUserStorageCleanup(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   userId: string,
@@ -350,7 +340,6 @@ async function selectiveUserStorageCleanup(
       candidateKeys: keys,
       retainedKeys,
     });
-    // Chunk removes (Supabase limit ~1000).
     for (let i = 0; i < toDelete.length; i += 100) {
       const chunk = toDelete.slice(i, i + 100);
       if (chunk.length > 0) {

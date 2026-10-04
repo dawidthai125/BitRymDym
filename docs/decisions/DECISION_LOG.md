@@ -10,6 +10,36 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-ADMIN-DELETE-01…10 — Admin User Delete (W4) — PROPOSED / PENDING OWNER GO
+
+| Pole | Wartość |
+|------|---------|
+| Decision IDs | OD-ADMIN-DELETE-01 … OD-ADMIN-DELETE-10 |
+| Title | Admin User Delete + reason + email |
+| Status | **OWNER APPROVED** · **IMPLEMENTATION READY — NOT PRODUCTION VERIFIED** |
+| Date | 2026-10-04 |
+| Decydent | Owner (Prezes Dawid) — GO recorded in session 2026-10-04 |
+| Freeze | [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
+
+**Approved lock:**
+
+| ID | Proposed choice |
+|----|-----------------|
+| OD-ADMIN-DELETE-01 | YES — ADMIN may delete **other** accounts |
+| OD-ADMIN-DELETE-02 | NO — ADMIN cannot delete own account via panel |
+| OD-ADMIN-DELETE-03 | NO — cannot delete last ADMIN |
+| OD-ADMIN-DELETE-04 | YES — deletion reason required |
+| OD-ADMIN-DELETE-05 | YES — reason in email to target |
+| OD-ADMIN-DELETE-06 | NO — email failure does not rollback delete |
+| OD-ADMIN-DELETE-07 | YES — reuse ACCOUNT/PROFILE-01 lifecycle |
+| OD-ADMIN-DELETE-08 | ADMIN + `users.edit` (not `users.suspend`; no new key) |
+| OD-ADMIN-DELETE-09 | RESEND |
+| OD-ADMIN-DELETE-10 | Audit action `USER_ACCOUNT_DELETE` |
+
+Do **not** apply production DB or deploy until separate Owner GO (W4 DB APPLY + APP DEPLOY).
+
+---
+
 ### OD-ADMIN-01…07 — Admin User Management Owner Decision Lock
 
 | Pole | Wartość |
@@ -36,7 +66,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 **Architectural lock:** RANK ≠ PREMIUM ≠ ROLE ≠ ACCOUNT_LEVEL. Role = `profiles.role`. Premium = `premium_entitlements` + existing resolver/matrix.
 
-**Waves:** W0 CLOSED · W1 READ-ONLY COMPLETE · W2 MUTATIONS + AUDIT WRITE **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` · W3 history UI **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · deploy `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · W4 **NOT STARTED**.
+**Waves:** W0 CLOSED · W1 READ-ONLY COMPLETE · W2 MUTATIONS + AUDIT WRITE **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` · W3 history UI **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · deploy `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` · W4 Admin Delete **OWNER APPROVED · IMPLEMENTATION READY — NOT PRODUCTION VERIFIED**.
 
 **Consequences**
 

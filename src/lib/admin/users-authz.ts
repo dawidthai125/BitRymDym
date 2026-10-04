@@ -25,6 +25,13 @@ export function canMutateAdminUsers(
   return hasPermission(permissions, "users.edit");
 }
 
+export function canDeleteAdminUsers(
+  role: SystemRole | null | undefined,
+  permissions: readonly string[] | readonly PermissionKey[],
+): boolean {
+  return canMutateAdminUsers(role, permissions);
+}
+
 export function canReadAdminUsersAudit(
   role: SystemRole | null | undefined,
   permissions: readonly string[] | readonly PermissionKey[],
