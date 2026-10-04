@@ -10,13 +10,13 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
-### OD-ADMIN-DELETE-01…10 — Admin User Delete (W4) — PRODUCTION VERIFIED WITH FINDINGS
+### OD-ADMIN-DELETE-01…10 — Admin User Delete (W4) — CLOSED / PRODUCTION VERIFIED
 
 | Pole | Wartość |
 |------|---------|
 | Decision IDs | OD-ADMIN-DELETE-01 … OD-ADMIN-DELETE-10 |
 | Title | Admin User Delete + reason + email |
-| Status | **OWNER APPROVED** · **PRODUCTION VERIFIED WITH FINDINGS** |
+| Status | **OWNER APPROVED** · **CLOSED / PRODUCTION VERIFIED** |
 | Date | 2026-10-04 |
 | Decydent | Owner (Prezes Dawid) — GO recorded in session 2026-10-04 |
 | Freeze | [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
@@ -36,7 +36,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 | OD-ADMIN-DELETE-09 | RESEND |
 | OD-ADMIN-DELETE-10 | Audit action `USER_ACCOUNT_DELETE` |
 
-Production apply (2026-10-04): app `ddcee65` · deploy `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` · DB `20261004174202` / `admin_user_management_w4_delete`. **EMAIL E2E BLOCKED — RESEND ENV NOT PROVISIONED.** Last-admin TOCTOU finding remains. Live last-admin concurrency **NOT VERIFIED**.
+Production apply (2026-10-04): app `ddcee65` · deploy `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` (redeploy after Resend env; prior `dpl_4qr3…`) · DB `20261004174202` / `admin_user_management_w4_delete`. **EMAIL E2E PASS** (disposable fixture USER #86 · Resend · `bitrymdym.pl`). Remaining P2: last-admin TOCTOU; no durable idempotency; live last-admin concurrency NOT VERIFIED; published USER beat retain NOT LIVE-DATA VERIFIED; migration timestamp drift.
 
 ---
 
@@ -66,7 +66,7 @@ Production apply (2026-10-04): app `ddcee65` · deploy `dpl_4qr3Bt5Z7oVitimvxWyA
 
 **Architectural lock:** RANK ≠ PREMIUM ≠ ROLE ≠ ACCOUNT_LEVEL. Role = `profiles.role`. Premium = `premium_entitlements` + existing resolver/matrix.
 
-**Waves:** W0 CLOSED · W1 READ-ONLY COMPLETE · W2 MUTATIONS + AUDIT WRITE **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` · W3 history UI **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W4 Admin Delete **PRODUCTION VERIFIED WITH FINDINGS** @ `ddcee65` · deploy `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` · DB `20261004174202`.
+**Waves:** W0 CLOSED · W1 READ-ONLY COMPLETE · W2 MUTATIONS + AUDIT WRITE **PRODUCTION VERIFIED WITH FINDINGS** @ `8c40824` / DB `20261004144223` · W3 history UI **CLOSED / PRODUCTION VERIFIED** @ `237a86f` · W4 Admin Delete **CLOSED / PRODUCTION VERIFIED** @ `ddcee65` · deploy `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · DB `20261004174202`.
 
 **Consequences**
 

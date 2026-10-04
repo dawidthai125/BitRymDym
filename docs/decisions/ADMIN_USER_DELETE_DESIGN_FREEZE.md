@@ -2,29 +2,29 @@
 
 **Epic:** ADMIN USER MANAGEMENT  
 **Wave:** W4 — ADMIN USER DELETE + DELETION REASON + EMAIL NOTIFICATION  
-**Status:** **PRODUCTION VERIFIED WITH FINDINGS**  
-**Not:** CLOSED / PRODUCTION VERIFIED (email E2E blocked)  
+**Status:** **CLOSED / PRODUCTION VERIFIED**  
 **Date:** 2026-10-04  
 **Owner:** Prezes Dawid  
-**Canonical ODs:** OD-ADMIN-DELETE-01 … OD-ADMIN-DELETE-10 (**OWNER APPROVED** · delivery verified with findings)  
-**Audit source:** W4 ADMIN DELETE — production apply + deploy + disposable-fixture E2E  
+**Canonical ODs:** OD-ADMIN-DELETE-01 … OD-ADMIN-DELETE-10 (**OWNER APPROVED** · delivery PRODUCTION VERIFIED)  
+**Audit source:** W4 ADMIN DELETE — production apply + deploy + disposable-fixture delete E2E + real Resend email E2E  
 **Parent epic freeze:** [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) (OD-ADMIN-01…07 remain CLOSED)  
 **Registry:** [DECISION_LOG.md](./DECISION_LOG.md) · [OPEN_DECISIONS.md](./OPEN_DECISIONS.md)
 
-This document is the **SSOT** for W4. Full **CLOSED / PRODUCTION VERIFIED** is forbidden while Resend production env is unprovisioned.
+This document is the **SSOT** for W4. Approved W4 scope is production verified. Remaining P2 findings stay listed and are **not** silently closed.
 
 ---
 
 ## 1. Status
 
 ```text
-W4                         = PRODUCTION VERIFIED WITH FINDINGS
+W4                         = CLOSED / PRODUCTION VERIFIED
 Implementation             = IN PRODUCTION APP @ ddcee65
 Migration                  = APPLIED · remote version 20261004174202 / admin_user_management_w4_delete
                              (local file 20261004190900 — timestamp drift, same as W2 pattern)
-Production app             = ddcee65 · dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK · READY / PROMOTED
+Production app             = ddcee65 · dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38 · READY / PROMOTED
+                             (redeploy of ddcee65 after Resend env provision; prior dpl_4qr3…)
 Owner Decisions            = APPROVED
-EMAIL E2E                  = BLOCKED — RESEND ENV NOT PROVISIONED
+EMAIL E2E                  = PASS (real disposable inbox · Resend · bitrymdym.pl)
 LIVE CONCURRENCY           = NOT VERIFIED
 P0 / P1                    = 0
 ```
@@ -34,8 +34,8 @@ P0 / P1                    = 0
 | Layer | Meaning |
 |-------|---------|
 | **PROPOSED** | Text in this freeze + Owner-requested values below. Binding for *planning* only. |
-| **OWNER APPROVED** | Requires explicit Owner GO after this freeze. **Not granted in this document.** |
-| **PRODUCTION VERIFIED WITH FINDINGS** | W4 production apply + fixture E2E completed; email E2E blocked. |
+| **OWNER APPROVED** | Requires explicit Owner GO after this freeze. |
+| **CLOSED / PRODUCTION VERIFIED** | Approved W4 scope verified in production, including real email E2E. P2 findings may remain. |
 
 ---
 
@@ -46,12 +46,12 @@ P0 / P1                    = 0
 | Repository | https://github.com/dawidthai125/BitRymDym · `main` |
 | **W4 implementation commit** | `ddcee65ef6090667577add5ecb2a649c2fe1969b` (`ddcee65`) — `feat(admin): add account deletion workflow` |
 | **Production application SHA** | `ddcee65` — must equal implementation commit (docs closeout may advance repo later) |
-| **Production deployment** | `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` — READY / PROMOTED · `www.bitrymdym.pl` · `bitrymdym.pl` |
-| **Previous production app** | `237a86f` · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` |
+| **Production deployment** | `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` — READY / PROMOTED · `www.bitrymdym.pl` · `bitrymdym.pl` (commit `ddcee65`) |
+| **Previous production app** | `237a86f` · then W4 first ship `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` |
 | **Production DB tip** | `20261004174202` / `admin_user_management_w4_delete` (prior `20261004144223` / W2 mutations still in chain) |
 | **W3 DB migration** | NONE |
 | **W3** | CLOSED / PRODUCTION VERIFIED |
-| **W4 (this wave)** | **PRODUCTION VERIFIED WITH FINDINGS** |
+| **W4 (this wave)** | **CLOSED / PRODUCTION VERIFIED** |
 
 Do not merge planes: repo docs tip ≠ production app SHA.
 
@@ -580,11 +580,11 @@ After implementation GO (not now):
 | Resend account + API key + From domain (operator) | W4-E |
 | No product mailer today | W4-E until GO |
 | W2 last-admin live concurrency finding | Must not regress; W4 lock reuse |
-| EMAIL E2E BLOCKED — `RESEND_API_KEY` / `RESEND_FROM_EMAIL` missing in production | Inbox verification |
 | Last-admin advisory lock is transaction-scoped (TOCTOU vs Auth/Storage delete) | Live last-admin concurrency |
 | No durable idempotency store | Retry semantics |
 | LIVE CONCURRENCY NOT VERIFIED (sole production ADMIN = user_number 1, protected) | Last-admin live race |
 | Published USER beat retain | Not live-data exercised (empty USER fixture) |
+| Migration timestamp/version drift (`20261004190900` file vs `20261004174202` applied) | History only |
 
 ---
 

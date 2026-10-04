@@ -6,17 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-10-04 — ADMIN USER DELETE W4 (PRODUCTION VERIFIED WITH FINDINGS)
+## 2026-10-04 — ADMIN USER DELETE W4 (CLOSED / PRODUCTION VERIFIED)
 
-**Status:** **PRODUCTION VERIFIED WITH FINDINGS**  
+**Status:** **CLOSED / PRODUCTION VERIFIED**  
 **SSOT:** [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md)  
-**Implementation / production app:** `ddcee65` · `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` · READY / PROMOTED  
+**Implementation / production app:** `ddcee65` · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · READY / PROMOTED  
 **DB:** `20261004174202` / `admin_user_management_w4_delete` (local file `20261004190900` — timestamp drift)
 
 - Shared `executeAccountProfile01Deletion` + admin `adminDeleteUserAction` + audit `USER_ACCOUNT_DELETE`
-- Disposable fixture USER #85 deleted via `/admin/users`; Auth/profile gone; W3 49-row audit intact + 1 delete event
-- **EMAIL E2E BLOCKED — RESEND ENV NOT PROVISIONED** (`RESEND_API_KEY` / `RESEND_FROM_EMAIL` missing)
-- Findings retained: last-admin TOCTOU; no durable idempotency; live last-admin concurrency NOT VERIFIED; published-beat retain not live-data exercised
+- Delete E2E: disposable USER fixtures (#85 lifecycle / #86 email) via `/admin/users`
+- **EMAIL E2E PASS** — Resend production env · sender domain `bitrymdym.pl` · real disposable inbox · subject/reason/Polish body verified · no UUID/user_number/secrets
+- Remaining P2 (documented, non-blocking): last-admin TOCTOU; no durable idempotency; live last-admin concurrency NOT VERIFIED; published USER beat retain NOT LIVE-DATA VERIFIED; migration timestamp drift
 
 ---
 

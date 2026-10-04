@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W4 PRODUCTION VERIFIED WITH FINDINGS** @ `ddcee65`; W3 remains **PRODUCTION VERIFIED** @ `237a86f`)
+**Updated:** 2026-10-04 (ADMIN USER MANAGEMENT **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65`; W3 remains **PRODUCTION VERIFIED** @ `237a86f`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -21,11 +21,11 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | W4 implementation `ddcee65` · docs closeout may sit on top |
-| **Production application SHA** | `ddcee65` — Ready · `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` · **ADMIN USER MANAGEMENT W4 PRODUCTION VERIFIED WITH FINDINGS** |
+| **Repository HEAD** | W4 app `ddcee65` · docs tip may advance after closeout |
+| **Production application SHA** | `ddcee65` — Ready · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · **ADMIN USER MANAGEMENT W4 CLOSED / PRODUCTION VERIFIED** |
 | **Production DB tip** | `20261004174202` / `admin_user_management_w4_delete` · prior W2 `20261004144223` in chain · **W3 migration NONE** · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · P0/P1/P2 = 0 · inbox E2E **BLOCKED — NO INBOX ACCESS** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · [email templates](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) |
-| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 PRODUCTION VERIFIED WITH FINDINGS** @ `ddcee65` · EMAIL E2E **BLOCKED** · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
+| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65` · EMAIL E2E **PASS** · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) · ANON/FREE/BRONZE/SILVER/GOLD download E2E **PASS** · OD-17 **PASS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · Mix/Render **DEFERRED** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
@@ -101,16 +101,16 @@ WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | W4 implementation `ddcee65` + docs closeout |
-| **Production application** | `ddcee65` — Ready · `dpl_4qr3Bt5Z7oVitimvxWyAhjFo9kbK` · **ADMIN W4 PRODUCTION VERIFIED WITH FINDINGS** |
+| **HEAD / origin/main** | W4 app `ddcee65` + docs closeout tip |
+| **Production application** | `ddcee65` — Ready · `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38` · **ADMIN W4 CLOSED / PRODUCTION VERIFIED** |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` |
-| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 PRODUCTION VERIFIED WITH FINDINGS** @ `ddcee65` |
+| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65` |
 | **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (in tree) |
-| **NEXT GATE** | Provision Resend env + optional W4 email E2E · FAR-01 soak · optional Auth email inbox E2E |
+| **NEXT GATE** | FAR-01 soak · optional Auth email inbox E2E |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.

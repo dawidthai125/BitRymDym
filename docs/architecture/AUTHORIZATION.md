@@ -48,7 +48,7 @@ Vercel NEXT_PUBLIC_SITE_URL  = https://bitrymdym.pl
 - Production Auth must **not** use `*.vercel.app` deployment URLs as Site URL / canonical redirect.
 - Preview/local may use Vercel preview URL or localhost (allow-listed separately).
 - Helper: `src/lib/site-url.ts` — production never falls back to `VERCEL_URL`.
-- Custom SMTP / branded sender: Auth templates remain for signup/reset. **W4 product mail = Resend** (admin deletion) — env `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (operator). Production keys **MISSING**; EMAIL E2E **BLOCKED**. Delete still succeeds without rollback (OD-ADMIN-DELETE-06).
+- Custom SMTP / branded sender: Auth templates remain for signup/reset. **W4 product mail = Resend** (admin deletion) — env `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (operator, server-only). Production provisioned; domain `bitrymdym.pl` verified; EMAIL E2E **PASS**. Delete still succeeds without rollback if send fails (OD-ADMIN-DELETE-06).
 
 ---
 
@@ -77,7 +77,7 @@ Do not document secrets.
 
 **Admin User Management (OD-ADMIN-01…07 CLOSED):** W1 list + W2 mutations + **W3 history UI CLOSED / PRODUCTION VERIFIED** @ `237a86f`. Read path: `ADMIN` ∧ `audit_log.view` → `createSupabaseAdminClient()` SELECT `admin_audit_events` (no read RPC, no authenticated SELECT policy, no new permission keys). Self-demotion **NO**. Last-ADMIN demotion **NO** (live concurrency path still a W2 finding). See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](../decisions/ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W3 closeout](../audits/ADMIN_USER_MANAGEMENT_W3_CLOSEOUT.md).
 
-**W4 Admin Delete (OD-ADMIN-DELETE-01…10 APPROVED):** **PRODUCTION VERIFIED WITH FINDINGS** @ `ddcee65` · DB `20261004174202`. AuthZ = `requireUser` + `requireRole(["ADMIN"])` + `users.edit`. Self-delete via panel **DENY**. Last-admin **DENY** (lock `4242026, 2002`; TOCTOU vs Auth delete remains; live concurrency **NOT VERIFIED**). Mailer = Resend server-only — production env **not provisioned**. See [ADMIN_USER_DELETE_DESIGN_FREEZE.md](../decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md).
+**W4 Admin Delete (OD-ADMIN-DELETE-01…10 APPROVED):** **CLOSED / PRODUCTION VERIFIED** @ `ddcee65` · DB `20261004174202` · deploy `dpl_C1y6toEPYacQmsxv5Jsa8Dj5KM38`. AuthZ = `requireUser` + `requireRole(["ADMIN"])` + `users.edit`. Self-delete via panel **DENY**. Last-admin **DENY** (lock `4242026, 2002`; TOCTOU vs Auth delete remains; live concurrency **NOT VERIFIED**). Mailer = Resend server-only · EMAIL E2E **PASS**. See [ADMIN_USER_DELETE_DESIGN_FREEZE.md](../decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md).
 
 ---
 
