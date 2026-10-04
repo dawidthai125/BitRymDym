@@ -1,10 +1,6 @@
 import "server-only";
 
-import {
-  ANONYMOUS_DAILY_DOWNLOAD_LIMIT,
-  DOWNLOAD_RESERVATION_TTL_SECONDS,
-  USER_DAILY_DOWNLOAD_LIMIT,
-} from "@/config/downloads";
+import { DOWNLOAD_RESERVATION_TTL_SECONDS } from "@/config/downloads";
 import { AuthError } from "@/lib/auth/session";
 import { utcDayWindowStart } from "@/lib/downloads/limits";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -40,6 +36,9 @@ type FinalizeRpcRow = {
 /**
  * Atomically reserves a download slot (not a DOWNLOAD_EVENT).
  * Limit = final events + unexpired reservations in UTC day.
+ *
+ * W2-B: `dailyLimit` is server-resolved (ANON constant or product entitlement
+ * limits.downloadsDaily). Callers must never pass client-supplied limits.
  */
 export async function reserveDownloadSlot(params: {
   beatId: string;
@@ -47,11 +46,16 @@ export async function reserveDownloadSlot(params: {
   actorType: "ANON" | "USER";
   userId: string | null;
   anonymousTokenHash: string | null;
+  /** Server-authoritative daily limit (from dailyDownloadLimitForActor). */
+  dailyLimit: number;
 }): Promise<ReserveDownloadSlotResult> {
-  const dailyLimit =
-    params.actorType === "ANON"
-      ? ANONYMOUS_DAILY_DOWNLOAD_LIMIT
-      : USER_DAILY_DOWNLOAD_LIMIT;
+  if (
+    !Number.isFinite(params.dailyLimit) ||
+    params.dailyLimit < 0 ||
+    !Number.isInteger(params.dailyLimit)
+  ) {
+    throw new Error("Invalid server dailyLimit for download reservation.");
+  }
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("reserve_beat_download_slot", {
@@ -60,7 +64,7 @@ export async function reserveDownloadSlot(params: {
     p_actor_type: params.actorType,
     p_user_id: params.userId,
     p_anonymous_token_hash: params.anonymousTokenHash,
-    p_daily_limit: dailyLimit,
+    p_daily_limit: params.dailyLimit,
     p_window_start: utcDayWindowStart().toISOString(),
     p_ttl_seconds: DOWNLOAD_RESERVATION_TTL_SECONDS,
   });

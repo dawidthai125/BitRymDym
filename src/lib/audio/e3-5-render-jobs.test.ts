@@ -207,19 +207,23 @@ describe("E3.5 — Render Jobs domain (unit)", () => {
     expect(AUDIO_RENDER_MAX_ATTEMPTS).toBe(3);
   });
 
-  it("enforces daily / concurrent / quota caps from config SSOT", () => {
+  it("enforces daily / concurrent / quota caps from premium tier matrix SSOT", () => {
     expect(() =>
-      assertUnderDailyCap({ jobsCreatedToday: 5, premiumActive: false }),
+      assertUnderDailyCap({ jobsCreatedToday: 5, premiumTier: "FREE" }),
     ).toThrow(/Daily render limit/);
     expect(() =>
-      assertUnderDailyCap({ jobsCreatedToday: 4, premiumActive: false }),
+      assertUnderDailyCap({ jobsCreatedToday: 4, premiumTier: "FREE" }),
     ).not.toThrow();
     expect(() =>
-      assertUnderConcurrentCap({ activeJobs: 1, premiumActive: false }),
+      assertUnderConcurrentCap({ activeJobs: 1, premiumTier: "FREE" }),
     ).toThrow(/Concurrent/);
+    // Binary premiumActive → SILVER concurrent=2
     expect(() =>
       assertUnderConcurrentCap({ activeJobs: 2, premiumActive: true }),
     ).toThrow(/Concurrent/);
+    expect(() =>
+      assertUnderDailyCap({ jobsCreatedToday: 20, premiumTier: "SILVER" }),
+    ).toThrow(/Daily render limit/);
     expect(() =>
       assertUnderQuota({
         usedBytes: quotaBytesForPremium(false),

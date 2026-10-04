@@ -7,18 +7,35 @@ import {
   USER_DAILY_DOWNLOAD_LIMIT,
   ANON_DOWNLOAD_COOKIE_NAME,
 } from "@/config/downloads";
+import { PREMIUM_ANON_DOWNLOADS_DAILY, PREMIUM_TIER_MATRIX } from "@/config/premium-tiers";
 import { hashAnonymousDownloadToken } from "@/lib/downloads/token-hash";
 import {
+  dailyDownloadLimitForActor,
   evaluateDailyLimit,
   isWithinUtcDay,
   utcDayWindowStart,
 } from "@/lib/downloads/limits";
 
 describe("download config SSOT", () => {
-  it("locks anon=2 and user=4 defaults", () => {
+  it("locks anon=2; FREE baseline mirror=4; cookie name", () => {
     expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(2);
     expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(4);
     expect(ANON_DOWNLOAD_COOKIE_NAME).toBe("brd_dl_aid");
+  });
+
+  it("W2-B actor limits: ANON≠FREE; USER from entitlement downloadsDaily", () => {
+    expect(dailyDownloadLimitForActor({ actorType: "ANON" })).toBe(
+      PREMIUM_ANON_DOWNLOADS_DAILY,
+    );
+    expect(
+      dailyDownloadLimitForActor({
+        actorType: "USER",
+        downloadsDaily: PREMIUM_TIER_MATRIX.GOLD.downloadsDaily,
+      }),
+    ).toBe(50);
+    expect(() =>
+      dailyDownloadLimitForActor({ actorType: "USER" }),
+    ).toThrow(/downloadsDaily/);
   });
 });
 

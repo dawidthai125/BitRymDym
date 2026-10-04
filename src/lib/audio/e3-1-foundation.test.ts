@@ -5,25 +5,18 @@ import { describe, expect, it } from "vitest";
 
 import {
   AUDIO_ARTIFACTS_BUCKET,
-  AUDIO_ARTIFACT_QUOTA_FREE_BYTES,
-  AUDIO_ARTIFACT_QUOTA_PREMIUM_BYTES,
-  AUDIO_ARTIFACT_RETENTION_FREE_SECONDS,
-  AUDIO_ARTIFACT_RETENTION_PREMIUM_SECONDS,
   AUDIO_CAPABILITY_KEYS,
   AUDIO_CODEC,
-  AUDIO_RENDER_CONCURRENT_FREE,
-  AUDIO_RENDER_CONCURRENT_PREMIUM,
-  AUDIO_RENDER_FREE_RENDERS_PER_UTC_DAY,
   AUDIO_RENDER_JOB_TIMEOUT_SECONDS,
   AUDIO_RENDER_MAX_ATTEMPTS,
   AUDIO_RENDER_MAX_BEAT_BYTES,
   AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS,
   AUDIO_RENDER_MAX_TAKE_BYTES,
-  AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY,
   E3_MIX_ENABLED,
   E3_PUBLIC_AUDIO,
   E3_RENDER_JOBS_ENABLED,
 } from "@/config/audio-render";
+import { PREMIUM_TIER_MATRIX } from "@/config/premium-tiers";
 import {
   buildAudioArtifactObjectKey,
   expectedAudioArtifactObjectKey,
@@ -37,20 +30,50 @@ import {
 } from "@/types/domain";
 
 describe("E3.1 — audio foundation (unit)", () => {
-  it("locks STANDARD anti-abuse caps from Final Architecture Lock", () => {
+  it("locks source size / timeout / attempts from OAD; render caps from premium matrix SSOT", () => {
     expect(AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS).toBe(180);
     expect(AUDIO_RENDER_MAX_TAKE_BYTES).toBe(20 * 1024 * 1024);
     expect(AUDIO_RENDER_MAX_BEAT_BYTES).toBe(50 * 1024 * 1024);
-    expect(AUDIO_RENDER_FREE_RENDERS_PER_UTC_DAY).toBe(5);
-    expect(AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY).toBe(30);
-    expect(AUDIO_RENDER_CONCURRENT_FREE).toBe(1);
-    expect(AUDIO_RENDER_CONCURRENT_PREMIUM).toBe(2);
     expect(AUDIO_RENDER_JOB_TIMEOUT_SECONDS).toBe(180);
     expect(AUDIO_RENDER_MAX_ATTEMPTS).toBe(3);
-    expect(AUDIO_ARTIFACT_RETENTION_FREE_SECONDS).toBe(48 * 60 * 60);
-    expect(AUDIO_ARTIFACT_RETENTION_PREMIUM_SECONDS).toBe(30 * 24 * 60 * 60);
-    expect(AUDIO_ARTIFACT_QUOTA_FREE_BYTES).toBe(250 * 1024 * 1024);
-    expect(AUDIO_ARTIFACT_QUOTA_PREMIUM_BYTES).toBe(2 * 1024 * 1024 * 1024);
+
+    // W2-B / P2-1: ONE authoritative render limits SSOT = PREMIUM_TIER_MATRIX
+    expect(PREMIUM_TIER_MATRIX.FREE.rendersDaily).toBe(5);
+    expect(PREMIUM_TIER_MATRIX.BRONZE.rendersDaily).toBe(10);
+    expect(PREMIUM_TIER_MATRIX.SILVER.rendersDaily).toBe(20);
+    expect(PREMIUM_TIER_MATRIX.GOLD.rendersDaily).toBe(40);
+    expect(PREMIUM_TIER_MATRIX.FREE.rendersConcurrent).toBe(1);
+    expect(PREMIUM_TIER_MATRIX.BRONZE.rendersConcurrent).toBe(1);
+    expect(PREMIUM_TIER_MATRIX.SILVER.rendersConcurrent).toBe(2);
+    expect(PREMIUM_TIER_MATRIX.GOLD.rendersConcurrent).toBe(3);
+    expect(PREMIUM_TIER_MATRIX.FREE.artifactRetentionSeconds).toBe(48 * 60 * 60);
+    expect(PREMIUM_TIER_MATRIX.SILVER.artifactRetentionSeconds).toBe(
+      30 * 24 * 60 * 60,
+    );
+    expect(PREMIUM_TIER_MATRIX.FREE.artifactQuotaBytes).toBe(250 * 1024 * 1024);
+    expect(PREMIUM_TIER_MATRIX.SILVER.artifactQuotaBytes).toBe(2 * 1024 * 1024 * 1024);
+  });
+
+  it("does not export stale binary AUDIO_RENDER_PREMIUM_* = 30 SSOT", async () => {
+    const mod = await import("@/config/audio-render");
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        mod,
+        "AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY",
+      ),
+    ).toBe(false);
+    expect(
+      Object.prototype.hasOwnProperty.call(mod, "AUDIO_RENDER_CONCURRENT_PREMIUM"),
+    ).toBe(false);
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        mod,
+        "AUDIO_ARTIFACT_RETENTION_PREMIUM_SECONDS",
+      ),
+    ).toBe(false);
+    expect(
+      Object.prototype.hasOwnProperty.call(mod, "AUDIO_ARTIFACT_QUOTA_PREMIUM_BYTES"),
+    ).toBe(false);
   });
 
   it("locks OAD-06 codec baseline (stereo MP3 + WAV)", () => {

@@ -20,6 +20,7 @@ import {
   type AudioAccessPurpose,
 } from "@/lib/beats/audio-validation";
 import { ensureAnonymousDownloadIdentity } from "@/lib/downloads/anonymous-identity";
+import { dailyDownloadLimitForActor } from "@/lib/downloads/limits";
 import {
   finalizeDownload,
   insertAdminDownloadEvent,
@@ -27,6 +28,7 @@ import {
   reserveDownloadSlot,
   throwLimitReached,
 } from "@/lib/downloads/slots";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -162,27 +164,40 @@ export async function requestBeatAudioAccess(params: {
     if (actor === "ADMIN") {
       // Limit-exempt; final event after signed URL only.
     } else if (actor === "ANON") {
+      // ANON ≠ FREE — never resolve product FREE=4 for anonymous.
       const { tokenHash } = await ensureAnonymousDownloadIdentity();
+      const dailyLimit = dailyDownloadLimitForActor({ actorType: "ANON" });
       const reserve = await reserveDownloadSlot({
         beatId: params.beatId,
         assetId: asset.id,
         actorType: "ANON",
         userId: null,
         anonymousTokenHash: tokenHash,
+        dailyLimit,
       });
       if (!reserve.allowed) {
         throwLimitReached();
       }
       reservationId = reserve.reservationId;
       remainingToday = reserve.remaining;
-    } else if (actor === "USER") {
-      const userId = profileContext!.profile.id;
+    } else if (actor === "USER" || actor === "MODERATOR") {
+      // Authenticated non-admin: limit from Product Entitlement SSOT.
+      if (!profileContext) {
+        throw new AuthError("UNAUTHENTICATED", "Sign in required.");
+      }
+      const entitlement =
+        await resolveProductEntitlementForAuthContext(profileContext);
+      const dailyLimit = dailyDownloadLimitForActor({
+        actorType: "USER",
+        downloadsDaily: entitlement.limits.downloadsDaily,
+      });
       const reserve = await reserveDownloadSlot({
         beatId: params.beatId,
         assetId: asset.id,
         actorType: "USER",
-        userId,
+        userId: profileContext.userId,
         anonymousTokenHash: null,
+        dailyLimit,
       });
       if (!reserve.allowed) {
         throwLimitReached();

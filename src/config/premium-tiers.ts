@@ -1,6 +1,8 @@
 /**
- * W2-A Premium capability / limits matrix (Design Contract SSOT).
- * Download tier cutover deferred — values recorded for resolver only.
+ * Premium capability / limits matrix (Design Contract SSOT).
+ * W2-B: beat-download daily limits enforced at runtime via
+ * `limits.downloadsDaily` + `PREMIUM_ANON_DOWNLOADS_DAILY` (ANON ≠ FREE).
+ * Render daily/concurrent/quota/retention: ONE authoritative source (this matrix).
  * Gold 90d retention = DESIGN ONLY until artifact janitor GO.
  */
 

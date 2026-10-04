@@ -280,11 +280,14 @@ describe("W2-A — Premium tier foundation (unit/contract)", () => {
     expect(award).not.toContain("BRONZE");
   });
 
-  it("download runtime cutover deferred (ANON=2 / USER=4 unchanged)", () => {
+  it("download matrix SSOT (W2-B enforces at runtime via entitlement limits)", () => {
     expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(2);
-    expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(4);
+    expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(4); // FREE baseline mirror only
     expect(PREMIUM_ANON_DOWNLOADS_DAILY).toBe(2);
     expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(4);
+    expect(PREMIUM_TIER_MATRIX.BRONZE.downloadsDaily).toBe(10);
+    expect(PREMIUM_TIER_MATRIX.SILVER.downloadsDaily).toBe(25);
+    expect(PREMIUM_TIER_MATRIX.GOLD.downloadsDaily).toBe(50);
   });
 
   it("legacy binary render snapshot normalizes to SILVER limits", () => {

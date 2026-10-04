@@ -20,7 +20,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 describe("download config SSOT (fix)", () => {
-  it("locks anon=2, user=4, reservation TTL", () => {
+  it("locks anon=2, FREE mirror=4, reservation TTL", () => {
     expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(2);
     expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(4);
     expect(DOWNLOAD_RESERVATION_TTL_SECONDS).toBe(120);

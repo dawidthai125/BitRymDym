@@ -24,16 +24,6 @@ export const AUDIO_RENDER_MAX_TAKE_BYTES = 20 * 1024 * 1024;
 /** Align beat asset size cap. */
 export const AUDIO_RENDER_MAX_BEAT_BYTES = 50 * 1024 * 1024;
 
-/** OAD-03 STANDARD — Free renders per UTC day. */
-export const AUDIO_RENDER_FREE_RENDERS_PER_UTC_DAY = 5;
-
-/** OAD-03 STANDARD — Premium renders per UTC day. */
-export const AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY = 30;
-
-/** OAD-03 STANDARD — concurrent jobs. */
-export const AUDIO_RENDER_CONCURRENT_FREE = 1;
-export const AUDIO_RENDER_CONCURRENT_PREMIUM = 2;
-
 /**
  * OAD-03 / IP-03 — wall seconds from CLAIM/RUNNING only (queue wait excluded).
  */
@@ -42,15 +32,15 @@ export const AUDIO_RENDER_JOB_TIMEOUT_SECONDS = 180;
 /** OAD-03 STANDARD — max attempts including first. */
 export const AUDIO_RENDER_MAX_ATTEMPTS = 3;
 
-/** OAD-03 STANDARD — Free Basic MP3 artifact retention. */
-export const AUDIO_ARTIFACT_RETENTION_FREE_SECONDS = 48 * 60 * 60;
-
-/** OAD-03 STANDARD — Premium artifact retention. */
-export const AUDIO_ARTIFACT_RETENTION_PREMIUM_SECONDS = 30 * 24 * 60 * 60;
-
-/** OAD-03 STANDARD — active storage quotas. */
-export const AUDIO_ARTIFACT_QUOTA_FREE_BYTES = 250 * 1024 * 1024;
-export const AUDIO_ARTIFACT_QUOTA_PREMIUM_BYTES = 2 * 1024 * 1024 * 1024;
+/**
+ * W2-B / P2-1: Daily / concurrent / retention / quota for renders are NOT
+ * defined here. Authoritative SSOT = `PREMIUM_TIER_MATRIX` /
+ * `limitsForPremiumTier` in `@/config/premium-tiers`.
+ *
+ * Removed stale binary Premium constants (e.g. former
+ * AUDIO_RENDER_PREMIUM_RENDERS_PER_UTC_DAY = 30) — they are not create-path
+ * authority and must not reappear as a second SSOT.
+ */
 
 /** Signed GET TTL class (reuse download pattern). */
 export const AUDIO_ARTIFACT_DOWNLOAD_TTL_SECONDS = 300;
