@@ -124,24 +124,29 @@ W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_
 
 Design Freeze: [CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md](./CREATOR_PROGRESS_PREMIUM_DESIGN_FREEZE_V1.md).
 W1 delivery closeout: [CREATOR_PROGRESS_W1_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W1_CLOSEOUT.md).
-W2 Design Contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
+W2 Design Contract (foundation / historical gates): [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 W2-A closeout: [CREATOR_PROGRESS_W2A_CLOSEOUT.md](../audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md).
 W2-A implementation audit: [CREATOR_PROGRESS_W2A_IMPLEMENTATION.md](../audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md).
+W2-B audit: [CREATOR_PROGRESS_W2B_AUDIT.md](../audits/CREATOR_PROGRESS_W2B_AUDIT.md).
+W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md).
 
 - **OD-08 CLOSED / ACCEPTED** — Premium tiers = FREE / BRONZE / SILVER / GOLD. Premium tier ≠ Rank ≠ Account Level ≠ Role.
-- **W2-A** = **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` (`feat(premium): implement W2-A tier foundation`).
+- **W2-A** = **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255`.
 - Production app: `6ee3255` · deploy `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` Ready.
-- Production DB: remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · enum + `tier` present · `premium_entitlements` = 0 rows.
-- Legacy binary Premium (`active` + valid `expires_at`) → **SILVER** (not GOLD) in migration SQL + resolver — logic present/applied; **live-data mapping not verified** (0 rows).
-- BRONZE / SILVER / GOLD = CODE/CONTRACT VERIFIED · **LIVE DATA NOT VERIFIED**.
-- **Creator Rank labels** remain separate from Account Level display names (**OD-09 OPEN**).
-- **OD-04** (payment operator) and **OD-07** (Premium prices) remain **OPEN**. Billing / checkout not in W2-A.
-- **Recording Premium overlay numbers** remain **OPEN / DEFERRED**; OD-REC-04 hybrid stays CLOSED; numbers unlocked; overlay **not implemented**.
-- **Gold 90d** artifact retention = **DESIGN ONLY** — PRODUCTION claim blocked until artifact janitor (OD-SA-05) verified; runtime retention 30d.
-- Download tier cutover = **DEFERRED** (runtime ANON=2 / USER=4). Capability matrix defines target tiered downloads; runtime cutover not switched.
-- `/premium` / `/ranks` / Premium UI = **NOT IMPLEMENTED**.
-- **P2 OPEN:** P2-1 stale `AUDIO_RENDER_PREMIUM_*=30` · P2-2 RLS live exercise · P2-3 manual migration idempotency · P2-4 ops version drift (`20261003221811` ≠ `20261003230000`, MCP apply-time, not schema failure).
-- **NEXT GATE** = W2-A DOCUMENTATION COMMIT/PUSH (closeout docs) · then later product GOs.
+- Production DB: remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 rows.
+- **W2-B** = **PREMIUM ENFORCEMENT** · **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · commit/deploy/fixtures **NOT DONE** · [implementation](../audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md).
+- W2-B code: download tier cutover (ANON=2 · FREE=4 · BRONZE=10 · SILVER=25 · GOLD=50) · P2-1 cleanup · Mix/Render/download regression lock · fixture contract (non-mutating).
+- Download runtime SSOT (after deploy): ANON = `PREMIUM_ANON_DOWNLOADS_DAILY`; USER = `entitlement.limits.downloadsDaily`. Legacy `DOWNLOAD_LIMIT_ANON_DAILY` / `USER_DAILY_DOWNLOAD_LIMIT` = unused / FREE mirror (not reserve authority). MODERATOR uses USER download limits (**intentional**).
+- Production still pre-deploy flat ANON=2 / USER=4 until commit + deploy GO.
+- **OD-04** / **OD-07** remain **OPEN**. Billing deferred.
+- **Recording Premium overlay numbers** remain **OPEN / DEFERRED**.
+- **Gold 90d** = **DESIGN ONLY**.
+- **P2-1** = **VERIFIED RESOLVED** (Owner Implementation Review).
+- **P2-2** = **OPEN** (live RLS/IDOR exercise not performed).
+- **P2-3** = **OPEN** (manual migration idempotency not verified).
+- **P2-4** = **OPEN** (known MCP production migration version drift).
+- Historical foundation-contract “W2-D downloads” naming is not rewritten; current Owner gate name = **W2-B PREMIUM ENFORCEMENT**.
+- **NEXT GATE** = W2-B DOCUMENTATION COMMIT/PUSH · then deploy · Fixture GO.
 
 ---
 

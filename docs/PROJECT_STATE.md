@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point dla nowego agenta:** najpierw [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md), potem [MASTER_HANDOFF.md](./MASTER_HANDOFF.md), potem ten plik.
-**Updated:** 2026-10-04 (W2-A CLOSED / PRODUCTION VERIFIED WITH FINDINGS · app `6ee3255` · DB `20261003221811` · docs tip `ff61ac3` pending closeout commit)
+**Updated:** 2026-10-04 (W2-A CLOSED · W2-B IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS · tip `3cd4fcf` · app `6ee3255` · W2-B commit/deploy pending)
 
 ---
 
@@ -21,38 +21,28 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `ff61ac3` — W2-A docs continuity (pre-closeout tip) · code SHA `6ee3255` · closeout docs pending commit GO |
-| **PRODUCTION APP SHA** | `6ee3255` — W2-A Premium tier foundation · deploy Ready · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
+| **REPOSITORY HEAD / origin/main** | `3cd4fcf` — W2-A closeout · W2-B implementation + docs **local uncommitted** |
+| **PRODUCTION APP SHA** | `6ee3255` — Ready · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` · **W2-B NOT DEPLOYED** |
 | **PRODUCTION URL** | https://www.bitrymdym.pl |
-| **PRODUCTION DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · enum FREE/BRONZE/SILVER/GOLD · `tier` NOT NULL DEFAULT FREE · `premium_entitlements` = 0 · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
-| **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W1_IMPLEMENTATION.md) |
-| **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` — [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
-| **USER-CLEANUP-01** | **EXECUTED** — fixtures removed earlier · orphan-31 untouched · [evidence](./audits/USER_CLEANUP_01_POSTDELETE_EVIDENCE.md) |
-| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1` · next=`2` · Tajski test account **deleted** (no renumber/reuse) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#user-id-01--stable-user-number) |
-| **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** · [freeze](./audits/ACCOUNT_PROFILE_01_AUDIT_PLAN_DESIGN_FREEZE.md) · [AUTHORIZATION](./architecture/AUTHORIZATION.md#account--profile-01--account-lifecycle--public-ksywka) |
+| **PRODUCTION DB tip** | W2-A applied — remote `20261003221811` / `w2a_premium_tier_foundation` · local file `20261003230000_…` · `premium_entitlements` = 0 · **UNCHANGED by W2-B** |
+| **CREATOR PROGRESS W1** | **LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
+| **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` — [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
+| **CREATOR PROGRESS W2-B** | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · PREMIUM ENFORCEMENT · commit/deploy/fixtures **NOT DONE** — [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
+| **USER-CLEANUP-01** | **EXECUTED** — fixtures removed earlier · orphan-31 untouched |
+| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** — Dawid=`1` · next=`2` |
+| **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** |
 | **PRODUCTION DB FAR-01 roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
-| Prior tip (Account wave) | `89a8d51` — ACCOUNT/PROFILE-01 |
-| Prior design freeze tip | `1e66cae` — Creator Progress + Premium Design Freeze V1 |
-| Prior security tip | `fbc696f` — DEF-01 |
-| Prior storage tip | `f9500b3` — FAR-01 execution harden |
-| Historical Phase 1 DR-A tip | `f514a51` — dual-accept (still valid history) |
 
 | Pole | Wartość |
 |------|---------|
-| **FAR-01 DR-A** | **SHIPPED** / **PRODUCTION VERIFIED** @ `f514a51` (historical) |
-| **FAR-01 campaign** | **IN PROGRESS / SOAK ACTIVE** — living: [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
+| **FAR-01 campaign** | **IN PROGRESS / SOAK ACTIVE** — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
 | **FAR-01 CLOSED** | **NO** |
-| Canary / Fleet | N=5 **PASS** · N=62 **PASS** |
-| Soak | start `2026-10-03T04:40:56.645Z` · end `2026-10-04T04:40:56.645Z` · interim **PASS** |
-| Retirement / cleanup | **NOT EXECUTED** |
 | **DEF-01** | **CLOSED** / **PRODUCTION VERIFIED** @ `fbc696f` |
 | **ACTIVE P0 / P1** | **NONE VERIFIED** |
-| **HIBP** | **DEFERRED / ACCEPTED RISK** (not solved) |
+| **HIBP** | **DEFERRED / ACCEPTED RISK** |
 | **STORAGE-ARCH-01** | **LOCKED** · Hybrid C |
-| **STORAGE-ARCH-02** | FUTURE DOCS · external Object Storage **NOT IMPLEMENTED** |
-| **E3** | **PRODUCTION VERIFIED — GREEN** · Mix/Jobs/PUBLIC_AUDIO **ON** |
-| **Worker** | Contabo **EXTERNAL COMPUTE** · **STOPPED / DISABLED** · bootstrap `92496d4` |
-| **Fala 3.5.1** | CLOSED · PRELIMINARY PASS · **NOT DEPLOYED** |
+| **E3** | **PRODUCTION VERIFIED — GREEN** |
+| **Worker** | Contabo **EXTERNAL COMPUTE** · **STOPPED / DISABLED** · `92496d4` |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
 Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)
@@ -62,47 +52,27 @@ Handoff: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER
 ## 3. Current Phase
 
 ```text
-REPOSITORY HEAD / origin/main = ff61ac3 (W2-A docs continuity · closeout docs pending commit GO)
-PRODUCTION APP                = 6ee3255 (Ready · dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a)
-PRODUCTION DB                 = W2-A remote 20261003221811 / w2a_premium_tier_foundation
-                              · local file 20261003230000_w2a_premium_tier_foundation.sql
-                              · P2-4 version drift = known MCP apply-time (not schema failure)
-PRODUCTION STORAGE            = unchanged by W2-A
-CREATOR PROGRESS W1           = LIVE / PRODUCTION VERIFIED WITH OPEN ITEMS @ 76a4757
-  Rank                        = derived CreatorRank from experience_total (≠ account_level · ≠ Premium · ≠ role)
-  Ledger                      = creator_experience_events SSOT
-  OPEN-01…03                  = unchanged (see W1 closeout)
+REPOSITORY HEAD / origin/main = 3cd4fcf (W2-B code+docs local uncommitted)
+PRODUCTION APP                = 6ee3255 (W2-B NOT DEPLOYED)
+PRODUCTION DB                 = 20261003221811 / w2a_premium_tier_foundation · UNCHANGED by W2-B
 CREATOR PROGRESS W2-A         = CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ 6ee3255
-  premium_tier enum           = FREE / BRONZE / SILVER / GOLD (production)
-  premium_entitlements.tier   = NOT NULL DEFAULT FREE (production)
-  premium_entitlements rows   = 0
-  Legacy mapping              = present/applied · LIVE DATA NOT VERIFIED (0 rows)
-  Resolver SSOT               = resolveProductEntitlement · audio wrapper delegates
-  Capability matrix           = Free Basic · Bronze HQ · Silver Pro · Gold WAV
-  BRONZE/SILVER/GOLD live     = CODE/CONTRACT VERIFIED · LIVE DATA NOT VERIFIED
-  Render snapshot             = PASS TEST VERIFIED · LIVE JOB NOT VERIFIED
-  account_level / Rank        = unchanged · orthogonal
-  Recording overlay           = NOT IMPLEMENTED / OPEN/DEFERRED
-  Downloads tier cutover      = DEFERRED (ANON=2 / USER=4 runtime)
-  Artifact janitor / Gold 90d = NOT IMPLEMENTED / DESIGN ONLY (runtime retention 30d)
-  Billing / Premium UI        = NOT IMPLEMENTED
-  P2 OPEN                     = P2-1 stale AUDIO_RENDER_PREMIUM_*=30
-                              · P2-2 RLS live exercise
-                              · P2-3 manual migration idempotency
-                              · P2-4 ops migration version drift
-ACCOUNT/PROFILE-01            = FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN
-USER-ID-01                    = PRODUCTION VERIFIED — GREEN · Dawid=1
-FAR-01 DR-A                   = SHIPPED / PRODUCTION VERIFIED (historical @ f514a51)
-FAR-01 CAMPAIGN               = IN PROGRESS / SOAK ACTIVE
-DEF-01                        = CLOSED / PRODUCTION VERIFIED @ fbc696f
-E3                            = PRODUCTION VERIFIED — GREEN
-WORKER                        = STOPPED / DISABLED (EXTERNAL COMPUTE · Contabo · 92496d4)
-OD-08                         = CLOSED / ACCEPTED · FREE / BRONZE / SILVER / GOLD
-OD-04 / OD-07                 = OPEN (billing / prices)
-Recording overlay numbers     = OPEN / DEFERRED
-ACTIVE P0 / P1                = NONE
-NEXT GATE                     = W2-A DOCUMENTATION COMMIT/PUSH (closeout docs)
-                              · then later product GOs (download cutover / overlay / janitor / billing / UI)
+CREATOR PROGRESS W2-B         = IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS
+  Gate name                   = PREMIUM ENFORCEMENT
+  Download cutover (code)     = ANON 2 · FREE 4 · BRONZE 10 · SILVER 25 · GOLD 50
+  ANON runtime SSOT           = PREMIUM_ANON_DOWNLOADS_DAILY
+  USER runtime SSOT           = entitlement.limits.downloadsDaily
+  Legacy DOWNLOAD_LIMIT_*     = unused / FREE mirror (not reserve authority)
+  MODERATOR downloads         = USER entitlement limits (INTENTIONAL)
+  Production download runtime = still flat ANON=2 / USER=4 until deploy
+  P2-1                        = VERIFIED RESOLVED
+  P2-2 / P2-3 / P2-4          = OPEN
+  Fixtures                    = NOT CREATED
+  Gold 90d                    = DESIGN ONLY
+OD-08                         = CLOSED
+OD-04 / OD-07                 = OPEN
+Recording overlay             = OPEN / DEFERRED
+NEXT GATE                     = W2-B DOCUMENTATION COMMIT/PUSH
+                              · then PRODUCTION DEPLOY GO · Fixture GO
 ```
 
 ### 3.1 Architecture living lock
@@ -111,10 +81,11 @@ NEXT GATE                     = W2-A DOCUMENTATION COMMIT/PUSH (closeout docs)
 Durable media                = Supabase Storage (beat-audio · take-audio · audio-artifacts)
 Metadata SSOT                = Supabase PostgreSQL
 Application                  = Vercel / Next.js
-EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral · NOT durable · NOT library · NOT backup · NOT audio SSOT)
+EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral)
 Worker runtime               = STOPPED / DISABLED
-Creator experience SSOT      = creator_experience_events (+ profiles.experience_total cache)
-Creator Rank                 = derived in app code · not stored as account_level
+Creator Rank                 = derived · ≠ Premium · ≠ account_level
+Premium SSOT                 = resolveProductEntitlement + PREMIUM_TIER_MATRIX
+Beat download ANON SSOT      = PREMIUM_ANON_DOWNLOADS_DAILY (after W2-B deploy)
 ```
 
 ---
@@ -124,19 +95,13 @@ Creator Rank                 = derived in app code · not stored as account_leve
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → CREATOR_PROGRESS_W2A_CLOSEOUT.md (CLOSED / PRODUCTION VERIFIED WITH FINDINGS)
-                 → CREATOR_PROGRESS_W1_CLOSEOUT.md (W1 closed with OPEN items)
-                 → FAR_01_CURRENT_STATE.md
-                 → NEXT GATE = W2-A DOCUMENTATION COMMIT/PUSH (if closeout docs still uncommitted)
-                 → do NOT claim Production Verified GREEN / no-findings
-                 → do NOT claim live Bronze/Silver/Gold data verification (premium_entitlements=0)
-                 → do NOT claim Gold 90d live / tiered downloads live / billing live / overlay live
-                 → OD-08 CLOSED · OD-04/OD-07 OPEN · recording overlay OPEN/DEFERRED
-                 → P2-1…P2-4 remain OPEN
-                 → WAIT FOR SOAK END (2026-10-04T04:40:56.645Z) → FINAL SOAK AUDIT (read-only)
-                 → do NOT retirement / orphan delete / new backfill without Owner GO
-                 → do NOT treat Contabo as durable media
-                 → HIBP remains ACCEPTED RISK (not solved)
+                 → CREATOR_PROGRESS_W2B_IMPLEMENTATION.md
+                 → NEXT GATE = W2-B DOCUMENTATION COMMIT/PUSH
+                 → do NOT deploy without Owner Deploy GO
+                 → do NOT create Premium fixtures without Fixture GO
+                 → P2-1 VERIFIED RESOLVED · P2-2/3/4 OPEN
+                 → OD-08 CLOSED · OD-04/OD-07 OPEN · overlay OPEN/DEFERRED
+                 → Gold 90d DESIGN ONLY
 ```
 
 ---
@@ -145,30 +110,23 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 
 | ID | Decision | Delivery |
 |----|----------|----------|
-| D02 Anonymous QT | CLOSED / IN V1 | SHIPPED / PRODUCTION VERIFIED @ `e98ba52` |
-| D03 Shared grants | CLOSED | SHIPPED / PRODUCTION VERIFIED @ `37892a6` (RECORD only) |
-| E3 PE | LOCKED | PRODUCTION VERIFIED — GREEN |
-| STORAGE-ARCH-01 | LOCKED | Architecture only · Implementation NOT STARTED as product wave |
-| FAR-01 DR-A | CLOSED Phase 1 | SHIPPED @ `f514a51` |
-| FAR-01 campaign | Owner GO sequence through fleet | **SOAK ACTIVE** · **NOT CLOSED** |
+| OD-08 Premium tiers | **CLOSED / ACCEPTED** | W2-A CLOSED / PRODUCTION VERIFIED WITH FINDINGS @ `6ee3255` |
+| W2-A Premium foundation | Production verified with findings | App `6ee3255` · DB `20261003221811` |
+| W2-B Premium Enforcement | Owner scope locked | **IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS** · deploy pending · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) |
+| FAR-01 campaign | Owner GO sequence | **SOAK ACTIVE** · **NOT CLOSED** |
 | DEF-01 | Owner GO | CLOSED / PRODUCTION VERIFIED @ `fbc696f` |
-| Creator Progress Design Freeze V1 | Docs freeze @ `1e66cae` | W1 Experience+Rank **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
-| OD-08 Premium tiers | **CLOSED / ACCEPTED** 2026-10-03 | FREE/BRONZE/SILVER/GOLD · W2-A **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
-| W2-A Premium foundation | Production verified with findings | App `6ee3255` · DB `20261003221811` · live tiers NOT VERIFIED (0 rows) · P2 OPEN |
 
 ---
 
 ## 6. Out of scope / deferred
 
-STEMS · payments / Premium catalog product · download tier cutover · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · orphan GC · staged key retirement · source MASTER backup · external Object Storage · Premium Production E2E · comments/voting/messaging · Fala 3.5.1 deploy · `/ranks` / `/premium` UI · billing / subscriptions.
+STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · storage quota expansion · priority · `/ranks` / `/premium` UI · billing · W2-B production deploy/verification (code complete locally).
 
-**E3 flags:** Mix ON · Jobs ON · PUBLIC_AUDIO ON · worker STOPPED/DISABLED · `E3_RENDER_WORKER_SECRET` CONFIGURED (never commit).
-
-**Premium:** W2-A **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` / DB `20261003221811`. Live Bronze/Silver/Gold **not** verified (`premium_entitlements`=0). OD-08 CLOSED. Billing (OD-04/07) OPEN. Gold 90d DESIGN ONLY. Download cutover deferred. Recording overlay OPEN/DEFERRED. P2-1…P2-4 OPEN.
+**Premium:** W2-B IMPLEMENTATION COMPLETE / OWNER REVIEW PASS WITH FINDINGS. Production still on `6ee3255` (pre-W2-B download flat limits). P2-1 **VERIFIED RESOLVED**. P2-2…P2-4 **OPEN**. OD-04/07 OPEN. Gold 90d DESIGN ONLY.
 
 ---
 
 ## 7. Local worktree note
 
-After docs reconciliation commits, residual untracked may remain (`.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated audit stubs).
-These are **local tooling / research residue**, not production app code changes. **Do not** `git add .`.
+Residual untracked may remain (`.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated audit stubs).
+**Do not** `git add .`. Exact allowlist only at commit GO.
