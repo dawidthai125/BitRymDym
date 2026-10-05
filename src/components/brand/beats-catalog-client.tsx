@@ -4,9 +4,8 @@ import { useMemo, useState } from "react";
 
 import { BeatCatalogRow } from "@/components/brand/beat-catalog-row";
 import {
-  CATALOG_GENRES,
-  CATALOG_KEYS,
-  CATALOG_MOODS,
+  catalogGenresFromBeats,
+  catalogKeysFromBeats,
   type PresentedBeat,
 } from "@/lib/ui/demo-beats";
 import { cn } from "@/lib/utils";
@@ -19,8 +18,8 @@ type BeatsCatalogClientProps = {
 };
 
 /**
- * Marketplace catalog client — filters/search/sort are UI-only on presented data.
- * Fala 3.1: music-catalog filter character (not admin form).
+ * Marketplace catalog client — filters/search/sort on canonical presented data.
+ * Genre/key chips are derived from real catalog values (no fixture lists).
  */
 export function BeatsCatalogClient({
   beats,
@@ -29,26 +28,32 @@ export function BeatsCatalogClient({
   const [query, setQuery] = useState(initialQuery);
   const [genres, setGenres] = useState<string[]>([]);
   const [keys, setKeys] = useState<string[]>([]);
-  const [moods, setMoods] = useState<string[]>([]);
+  const [bpmFilterActive, setBpmFilterActive] = useState(false);
   const [bpmMin, setBpmMin] = useState(70);
   const [bpmMax, setBpmMax] = useState(160);
   const [sort, setSort] = useState<SortId>("newest");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const genreOptions = useMemo(() => catalogGenresFromBeats(beats), [beats]);
+  const keyOptions = useMemo(() => catalogKeysFromBeats(beats), [beats]);
+  const bpmBounds = useMemo(() => {
+    const bpms = beats.map((b) => b.bpm).filter((n) => Number.isFinite(n));
+    if (bpms.length === 0) return { min: 70, max: 160 };
+    return { min: Math.min(...bpms), max: Math.max(...bpms) };
+  }, [beats]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = beats.filter((b) => {
-      if (genres.length && !genres.includes(b.genre)) return false;
-      if (keys.length && !keys.includes(b.key)) return false;
-      if (moods.length && !moods.includes(b.mood)) return false;
-      if (b.bpm < bpmMin || b.bpm > bpmMax) return false;
+      if (genres.length && (!b.genre || !genres.includes(b.genre))) return false;
+      if (keys.length && (!b.key || !keys.includes(b.key))) return false;
+      if (bpmFilterActive && (b.bpm < bpmMin || b.bpm > bpmMax)) return false;
       if (!q) return true;
       return (
         b.title.toLowerCase().includes(q) ||
         b.producer.toLowerCase().includes(q) ||
-        b.genre.toLowerCase().includes(q) ||
-        b.mood.toLowerCase().includes(q) ||
-        b.key.toLowerCase().includes(q)
+        (b.genre?.toLowerCase().includes(q) ?? false) ||
+        (b.key?.toLowerCase().includes(q) ?? false)
       );
     });
 
@@ -60,20 +65,17 @@ export function BeatsCatalogClient({
       );
     }
     return list;
-  }, [beats, query, genres, keys, moods, bpmMin, bpmMax, sort]);
+  }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
 
   const activeFilterCount =
-    genres.length +
-    keys.length +
-    moods.length +
-    (bpmMin > 70 || bpmMax < 160 ? 1 : 0);
+    genres.length + keys.length + (bpmFilterActive ? 1 : 0);
 
   function clearFilters() {
     setGenres([]);
     setKeys([]);
-    setMoods([]);
-    setBpmMin(70);
-    setBpmMax(160);
+    setBpmFilterActive(false);
+    setBpmMin(bpmBounds.min);
+    setBpmMax(bpmBounds.max);
   }
 
   function toggleIn(
@@ -88,16 +90,24 @@ export function BeatsCatalogClient({
 
   const filterPanel = (
     <FilterPanel
+      genreOptions={genreOptions}
+      keyOptions={keyOptions}
       genres={genres}
       keys={keys}
-      moods={moods}
-      bpmMin={bpmMin}
-      bpmMax={bpmMax}
+      bpmMin={bpmFilterActive ? bpmMin : bpmBounds.min}
+      bpmMax={bpmFilterActive ? bpmMax : bpmBounds.max}
+      bpmRangeMin={bpmBounds.min}
+      bpmRangeMax={Math.max(bpmBounds.max, bpmBounds.min)}
       onToggleGenre={(g) => toggleIn(g, genres, setGenres)}
       onToggleKey={(k) => toggleIn(k, keys, setKeys)}
-      onToggleMood={(m) => toggleIn(m, moods, setMoods)}
-      onBpmMin={setBpmMin}
-      onBpmMax={setBpmMax}
+      onBpmMin={(n) => {
+        setBpmFilterActive(true);
+        setBpmMin(n);
+      }}
+      onBpmMax={(n) => {
+        setBpmFilterActive(true);
+        setBpmMax(n);
+      }}
       onClear={clearFilters}
       activeCount={activeFilterCount}
     />
@@ -252,27 +262,31 @@ function SortSelect({
 }
 
 function FilterPanel({
+  genreOptions,
+  keyOptions,
   genres,
   keys,
-  moods,
   bpmMin,
   bpmMax,
+  bpmRangeMin,
+  bpmRangeMax,
   onToggleGenre,
   onToggleKey,
-  onToggleMood,
   onBpmMin,
   onBpmMax,
   onClear,
   activeCount,
 }: {
+  genreOptions: string[];
+  keyOptions: string[];
   genres: string[];
   keys: string[];
-  moods: string[];
   bpmMin: number;
   bpmMax: number;
+  bpmRangeMin: number;
+  bpmRangeMax: number;
   onToggleGenre: (g: string) => void;
   onToggleKey: (k: string) => void;
-  onToggleMood: (m: string) => void;
   onBpmMin: (n: number) => void;
   onBpmMax: (n: number) => void;
   onClear: () => void;
@@ -296,14 +310,20 @@ function FilterPanel({
       </div>
 
       <FilterGroup title="Gatunek">
-        {CATALOG_GENRES.map((g) => (
-          <CheckRow
-            key={g}
-            label={g}
-            checked={genres.includes(g)}
-            onChange={() => onToggleGenre(g)}
-          />
-        ))}
+        {genreOptions.length === 0 ? (
+          <p className="text-[12px] text-[var(--brd-mute)]">
+            Brak gatunków w katalogu.
+          </p>
+        ) : (
+          genreOptions.map((g) => (
+            <CheckRow
+              key={g}
+              label={g}
+              checked={genres.includes(g)}
+              onChange={() => onToggleGenre(g)}
+            />
+          ))
+        )}
       </FilterGroup>
 
       <FilterGroup title="BPM">
@@ -315,8 +335,8 @@ function FilterPanel({
             <span className="sr-only">BPM min</span>
             <input
               type="range"
-              min={70}
-              max={160}
+              min={bpmRangeMin}
+              max={bpmRangeMax}
               value={bpmMin}
               onChange={(e) =>
                 onBpmMin(Math.min(Number(e.target.value), bpmMax))
@@ -328,8 +348,8 @@ function FilterPanel({
             <span className="sr-only">BPM max</span>
             <input
               type="range"
-              min={70}
-              max={160}
+              min={bpmRangeMin}
+              max={bpmRangeMax}
               value={bpmMax}
               onChange={(e) =>
                 onBpmMax(Math.max(Number(e.target.value), bpmMin))
@@ -341,28 +361,23 @@ function FilterPanel({
       </FilterGroup>
 
       <FilterGroup title="Tonacja">
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-          {CATALOG_KEYS.map((k) => (
-            <CheckRow
-              key={k}
-              label={k}
-              checked={keys.includes(k)}
-              onChange={() => onToggleKey(k)}
-              compact
-            />
-          ))}
-        </div>
-      </FilterGroup>
-
-      <FilterGroup title="Nastrój">
-        {CATALOG_MOODS.map((m) => (
-          <CheckRow
-            key={m}
-            label={m}
-            checked={moods.includes(m)}
-            onChange={() => onToggleMood(m)}
-          />
-        ))}
+        {keyOptions.length === 0 ? (
+          <p className="text-[12px] text-[var(--brd-mute)]">
+            Brak tonacji w katalogu.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+            {keyOptions.map((k) => (
+              <CheckRow
+                key={k}
+                label={k}
+                checked={keys.includes(k)}
+                onChange={() => onToggleKey(k)}
+                compact
+              />
+            ))}
+          </div>
+        )}
       </FilterGroup>
     </div>
   );

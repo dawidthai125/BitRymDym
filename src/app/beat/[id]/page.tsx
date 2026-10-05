@@ -16,7 +16,7 @@ import {
   computeRecordingMaxSeconds,
 } from "@/lib/takes/entitlement";
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
-import { presentBeat, presentBeats, isTechnicalTitle } from "@/lib/ui/demo-beats";
+import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
 
 type BeatDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -81,11 +81,6 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
       .slice(0, 6),
   );
 
-  const safeDescription =
-    detail.description && !isTechnicalTitle(detail.description)
-      ? detail.description
-      : null;
-
   return (
     <AppShell tone="public">
       <main>
@@ -99,7 +94,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           <div className="mt-4">
             <BeatDetailClient
               beat={presented}
-              description={safeDescription}
+              description={detail.description}
               hasAudio={audioInfo.hasAudio}
               isAuthenticated={Boolean(session)}
               maxRecordingSeconds={maxRecordingSeconds}

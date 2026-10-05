@@ -244,21 +244,23 @@ export function BeatDetailClient({
           <p className="brd-meta flex flex-wrap gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
             <span>
               <span className="text-[var(--brd-mute)]">Tempo </span>
-              <span className="text-[var(--brd-ink)]">{beat.bpm}</span>
+              <span className="text-[var(--brd-ink)]">
+                {beat.bpm > 0 ? beat.bpm : "—"}
+              </span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
             </span>
             <span>
               <span className="text-[var(--brd-mute)]">Tonacja </span>
-              <span className="text-[var(--brd-ink)]">{beat.key}</span>
+              <span className="text-[var(--brd-ink)]">{beat.key ?? "—"}</span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
             </span>
             <span>
               <span className="text-[var(--brd-mute)]">Gatunek </span>
-              <span className="text-[var(--brd-ink)]">{beat.genre}</span>
+              <span className="text-[var(--brd-ink)]">{beat.genre ?? "—"}</span>
             </span>
           </p>
 

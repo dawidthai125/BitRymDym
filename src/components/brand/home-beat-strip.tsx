@@ -101,13 +101,13 @@ function HomeBeatRow({
             {beat.producer}
           </p>
           <p className="brd-meta truncate text-[10px] text-[var(--brd-mute)]">
-            <span className="text-[var(--brd-ink-soft)]">{beat.bpm} BPM</span>
-            {" · "}
-            {beat.key}
-            {" · "}
-            {beat.genre}
-            {" · "}
-            {beat.mood}
+            {[
+              beat.bpm > 0 ? `${beat.bpm} BPM` : null,
+              beat.key,
+              beat.genre,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </Link>
 

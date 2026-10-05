@@ -178,9 +178,11 @@ describe("global error / not-found / auth pages copy", () => {
     expect(src).toMatch(/Studio/);
   });
 
-  it("catalog moods have no Raw English label", async () => {
-    const { CATALOG_MOODS } = await import("./demo-beats");
-    expect(CATALOG_MOODS).not.toContain("Raw");
-    expect(CATALOG_MOODS).toContain("Surowy");
+  it("public catalog presentation has no fixture mood/title arrays", async () => {
+    const mod = await import("./demo-beats");
+    expect(mod).not.toHaveProperty("CATALOG_MOODS");
+    expect(mod).not.toHaveProperty("CATALOG_GENRES");
+    expect(mod).not.toHaveProperty("DEMO_BEAT_TEMPLATES");
+    expect(mod.presentBeats([])).toEqual([]);
   });
 });
