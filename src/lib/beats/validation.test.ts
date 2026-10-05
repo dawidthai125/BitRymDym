@@ -62,10 +62,12 @@ describe("beat validation", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("enforces duration 1–180 for all statuses", () => {
+  it("enforces duration 1–210 for all statuses", () => {
     expect(validateBeatInput({ ...base, durationSeconds: 1 }).ok).toBe(true);
     expect(validateBeatInput({ ...base, durationSeconds: 180 }).ok).toBe(true);
-    expect(validateBeatInput({ ...base, durationSeconds: 181 }).ok).toBe(false);
+    expect(validateBeatInput({ ...base, durationSeconds: 190 }).ok).toBe(true);
+    expect(validateBeatInput({ ...base, durationSeconds: 210 }).ok).toBe(true);
+    expect(validateBeatInput({ ...base, durationSeconds: 211 }).ok).toBe(false);
     expect(validateBeatInput({ ...base, durationSeconds: 0 }).ok).toBe(false);
   });
 

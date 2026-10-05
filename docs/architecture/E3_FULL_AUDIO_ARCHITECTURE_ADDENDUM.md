@@ -63,7 +63,7 @@ Anonymous = D02 only + login gate · Free = Basic Mix/Master + Mixed Preview + B
 |------|------|----------------|
 | Take max duration | ≤ 180 s | `RECORDING_GLOBAL_MAX_SECONDS` · `src/config/recording.ts` |
 | Take max bytes | 20 MiB | `TAKE_AUDIO_MAX_BYTES` · same |
-| Beat max duration | 180 s | `BEAT_DURATION_MAX` · `src/lib/beats/validation.ts` |
+| Beat max duration | 210 s | `BEAT_DURATION_MAX` · `src/lib/beats/validation.ts` |
 | Beat max bytes | 50 MiB interim | `BEAT_AUDIO_MAX_BYTES` · `src/lib/beats/audio-validation.ts` |
 | Beat download caps | anon 2 / user 4 per UTC day | `src/config/downloads.ts` · OD-05/06 |
 | Recording session caps | B 10 / P 30 / L 60 per UTC day | `RECORDING_ANTI_ABUSE` · `recording.ts` |

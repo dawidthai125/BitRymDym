@@ -440,7 +440,7 @@ describe.runIf(live)("Recording Wave 4 live", () => {
       });
       const bytes = readFileSync(fixturePath);
       const owner = await makeUser(admin, "legend", "LEGEND_RAPPER");
-      // beats_duration_range_chk caps beat at 180 — longer-than-180 covered in unit tests
+      // Take entitlement stays MIN(beat, 180); beat DB max is 210 — longer beats covered in unit tests
       const seeded = await seedPublishedBeat(admin, owner.userId, bytes, 180);
       let takeId: string | null = null;
       try {

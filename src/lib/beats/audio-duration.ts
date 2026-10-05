@@ -77,17 +77,30 @@ function finalizeDurationProbe(
 export async function probeAudioDurationFromBytes(params: {
   bytes: Uint8Array;
   contentTypeHint?: string | null;
+  /** Filename/path hint — required for some music-metadata v11 MP3 detections. */
+  originalFilename?: string | null;
 }): Promise<AudioDurationProbeResult> {
   if (!params.bytes.length) {
     return { ok: false, error: "Plik audio jest pusty." };
   }
 
   try {
+    const fileInfo =
+      params.contentTypeHint || params.originalFilename
+        ? {
+            ...(params.contentTypeHint
+              ? { mimeType: params.contentTypeHint }
+              : {}),
+            ...(params.originalFilename
+              ? { path: params.originalFilename }
+              : {}),
+            size: params.bytes.byteLength,
+          }
+        : { size: params.bytes.byteLength };
+
     const metadata = await parseBuffer(
       Buffer.from(params.bytes),
-      params.contentTypeHint
-        ? { mimeType: params.contentTypeHint }
-        : undefined,
+      fileInfo,
       { duration: true },
     );
 
@@ -210,6 +223,7 @@ export async function analyzeBeatAudioBytes(params: {
   const probe = await probeAudioDurationFromBytes({
     bytes: params.bytes,
     contentTypeHint: params.contentType,
+    originalFilename: params.originalFilename,
   });
   if (!probe.ok) {
     return { ok: false, error: probe.error };

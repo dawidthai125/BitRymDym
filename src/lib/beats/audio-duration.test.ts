@@ -59,6 +59,29 @@ describe("probeAudioDurationFromBytes", () => {
     }
   });
 
+  it("passes originalFilename as path hint for music-metadata (MP3)", async () => {
+    parseBufferMock.mockResolvedValueOnce({
+      format: { duration: 120 },
+    } as Awaited<ReturnType<typeof parseBuffer>>);
+
+    const bytes = pcmWavBytes(1);
+    await probeAudioDurationFromBytes({
+      bytes,
+      contentTypeHint: "audio/mpeg",
+      originalFilename: "Bitrymdym1.mp3",
+    });
+
+    expect(parseBufferMock).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      {
+        mimeType: "audio/mpeg",
+        path: "Bitrymdym1.mp3",
+        size: bytes.byteLength,
+      },
+      { duration: true },
+    );
+  });
+
   it("accepts boundary 1 second", async () => {
     parseBufferMock.mockResolvedValueOnce({
       format: { duration: 1 },
@@ -83,13 +106,41 @@ describe("probeAudioDurationFromBytes", () => {
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
+      expect(result.durationSeconds).toBe(180);
+    }
+  });
+
+  it("accepts 190 seconds (app max 210; DB CHECK may still block insert)", async () => {
+    parseBufferMock.mockResolvedValueOnce({
+      format: { duration: 190 },
+    } as Awaited<ReturnType<typeof parseBuffer>>);
+
+    const result = await probeAudioDurationFromBytes({
+      bytes: pcmWavBytes(1),
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.durationSeconds).toBe(190);
+    }
+  });
+
+  it("accepts boundary BEAT_DURATION_MAX seconds", async () => {
+    parseBufferMock.mockResolvedValueOnce({
+      format: { duration: BEAT_DURATION_MAX },
+    } as Awaited<ReturnType<typeof parseBuffer>>);
+
+    const result = await probeAudioDurationFromBytes({
+      bytes: pcmWavBytes(1),
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
       expect(result.durationSeconds).toBe(BEAT_DURATION_MAX);
     }
   });
 
-  it("rejects duration above 180", async () => {
+  it("rejects duration above BEAT_DURATION_MAX", async () => {
     parseBufferMock.mockResolvedValueOnce({
-      format: { duration: 181.2 },
+      format: { duration: BEAT_DURATION_MAX + 1.2 },
     } as Awaited<ReturnType<typeof parseBuffer>>);
 
     const result = await probeAudioDurationFromBytes({
@@ -97,7 +148,7 @@ describe("probeAudioDurationFromBytes", () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toMatch(/180/);
+      expect(result.error).toMatch(new RegExp(String(BEAT_DURATION_MAX)));
     }
   });
 

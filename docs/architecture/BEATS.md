@@ -38,7 +38,7 @@ Table: `public.beats`
 | `title` | trimmed, 1–200 chars |
 | `producer` / `description` / `genre` / `style` / `key` / `scale` | optional text |
 | `bpm` | integer 1–300 (numeric only — never `"142 BPM"`) |
-| `duration_seconds` | integer 1–180 (all statuses) |
+| `duration_seconds` | integer 1–210 (all statuses) |
 | `tags` | `text[]`, capped (≤30 items, ≤40 chars each in app validator) |
 | `cover_ref` | optional text reference (not an upload) |
 | `status` | `beat_status` enum |
@@ -103,7 +103,7 @@ MODERATOR may transition `PENDING_REVIEW → APPROVED|REJECTED` only (no full me
 |------|-------|
 | title | trim; 1–200 |
 | bpm | integer 1–300 |
-| duration_seconds | integer 1–180 |
+| duration_seconds | integer 1–210 |
 | tags | max count / length |
 | ownership | PLATFORM⇒null owner; USER⇒required owner |
 | status transitions | central `canTransitionStatus` |
