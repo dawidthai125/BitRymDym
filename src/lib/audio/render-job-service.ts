@@ -36,7 +36,7 @@ import {
   canCompleteRenderJobSuccess,
   capabilityForRenderTier,
   computeTimeoutAtFromClaim,
-  isRenderJobTier,
+  isMixRenderJobTier,
   isRunningJobTimedOut,
   parseRenderJobEntitlementSnapshot,
   quotaBytesForTier,
@@ -323,7 +323,8 @@ export async function createRenderJobFor(
   assertRenderJobsRuntimeEnabled();
   const entitlement = await resolveEntitlement(context);
 
-  if (!isRenderJobTier(input.requestedTier)) {
+  // MIX path rejects P4 take-only MP3_192.
+  if (!isMixRenderJobTier(input.requestedTier)) {
     throw new RenderJobDomainError("Unknown or invalid requested tier.", "INVALID");
   }
   const tier = input.requestedTier;
@@ -455,7 +456,9 @@ export async function createRenderJobFor(
     .from("render_jobs")
     .insert({
       owner_id: context.userId,
+      kind: "MIX",
       mix_session_id: session.id,
+      take_id: null,
       requested_tier: tier,
       idempotency_key: idempotencyKey,
       status: "QUEUED",

@@ -37,8 +37,10 @@ const BASIC_CAPS = [
   "EXPORT_BASIC_MP3",
 ] as const satisfies readonly AudioCapabilityKey[];
 
+/** BRONZE+: mid MP3 + mix HQ. Take-export 320 remains SILVER+ via canExportOwnTake. */
 const BRONZE_CAPS = [
   ...BASIC_CAPS,
+  "EXPORT_MP3_192",
   "EXPORT_HQ_MP3",
 ] as const satisfies readonly AudioCapabilityKey[];
 

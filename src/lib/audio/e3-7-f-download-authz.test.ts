@@ -42,7 +42,7 @@ describe("E3.7-F — download AuthZ by quality_tier", () => {
   });
 
   it("Premium can assert HQ/WAV download capabilities", () => {
-    const premium = resolveEffectiveAudioEntitlement({
+    const silver = resolveEffectiveAudioEntitlement({
       userId: "u1",
       accountLevel: "BEGINNER_RAPPER",
       premium: {
@@ -50,15 +50,27 @@ describe("E3.7-F — download AuthZ by quality_tier", () => {
         active: true,
         source: "manual",
         expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        tier: "SILVER",
+      },
+    });
+    const gold = resolveEffectiveAudioEntitlement({
+      userId: "u1",
+      accountLevel: "BEGINNER_RAPPER",
+      premium: {
+        userId: "u1",
+        active: true,
+        source: "manual",
+        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        tier: "GOLD",
       },
     });
     expect(PREMIUM_AUDIO_CAPABILITIES).toContain("EXPORT_HQ_MP3");
     expect(PREMIUM_AUDIO_CAPABILITIES).toContain("EXPORT_WAV");
     expect(() =>
-      assertAudioCapability(premium, capabilityForRenderTier("HQ_MP3")),
+      assertAudioCapability(silver, capabilityForRenderTier("HQ_MP3")),
     ).not.toThrow();
     expect(() =>
-      assertAudioCapability(premium, capabilityForRenderTier("WAV")),
+      assertAudioCapability(gold, capabilityForRenderTier("WAV")),
     ).not.toThrow();
   });
 

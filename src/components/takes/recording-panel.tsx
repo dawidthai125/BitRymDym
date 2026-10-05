@@ -206,8 +206,54 @@ export function RecordingPanel({
       return;
     }
 
+    // P4.1 — server eligibility BEFORE microphone permission / MediaRecorder.
     dispatch({ type: "REQUEST_MIC" });
     setTakeBlob(null);
+    setReplaceCandidates(null);
+    try {
+      const eligRes = await fetch("/api/takes/eligibility", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ beatId: beatIdRef.current }),
+      });
+      const elig = (await eligRes.json()) as {
+        success?: boolean;
+        allowed?: boolean;
+        message?: string;
+        upgradeHintMessage?: string | null;
+        upgradeHintTier?: string | null;
+        error?: string;
+      };
+      if (!eligRes.ok || !elig.success) {
+        dispatch({
+          type: "RECORDING_FAILED",
+          message: toUserFacingTakeUploadError(
+            elig.error ?? "Nie udało się sprawdzić limitu nagrań.",
+          ),
+        });
+        return;
+      }
+      if (!elig.allowed) {
+        const parts = [elig.message ?? "Nie możesz teraz nagrywać."];
+        if (elig.upgradeHintMessage) parts.push(elig.upgradeHintMessage);
+        dispatch({
+          type: "RECORDING_FAILED",
+          message: parts.join(" "),
+        });
+        return;
+      }
+    } catch (error) {
+      dispatch({
+        type: "RECORDING_FAILED",
+        message: toUserFacingTakeUploadError(
+          error instanceof Error
+            ? error.message
+            : "Nie udało się sprawdzić limitu nagrań.",
+        ),
+      });
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,

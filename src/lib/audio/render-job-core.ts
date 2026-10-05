@@ -13,7 +13,7 @@ import type { EffectiveAudioEntitlement } from "@/lib/audio/effective-entitlemen
 import type { MixParameters } from "@/lib/mix/params";
 import type { PremiumTier } from "@/types/premium";
 import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
-import { RENDER_JOB_TIERS } from "@/types/domain";
+import { MIX_RENDER_JOB_TIERS, RENDER_JOB_TIERS } from "@/types/domain";
 import { utcDayWindowStart } from "@/lib/downloads/limits";
 
 export const RENDER_JOB_ACTIVE_STATUSES = [
@@ -77,10 +77,19 @@ export function isRenderJobTier(value: unknown): value is RenderJobTier {
   );
 }
 
+/** E3 MIX create path — excludes P4 take-only MP3_192. */
+export function isMixRenderJobTier(value: unknown): value is RenderJobTier {
+  return (
+    typeof value === "string" &&
+    (MIX_RENDER_JOB_TIERS as readonly string[]).includes(value)
+  );
+}
+
 export function capabilityForRenderTier(
   tier: RenderJobTier,
 ): AudioCapabilityKey {
   if (tier === "BASIC_MP3") return "EXPORT_BASIC_MP3";
+  if (tier === "MP3_192") return "EXPORT_MP3_192";
   if (tier === "HQ_MP3") return "EXPORT_HQ_MP3";
   return "EXPORT_WAV";
 }

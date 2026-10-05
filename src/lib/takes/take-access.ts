@@ -32,7 +32,7 @@ export type TakeAccessRow = {
 export function assertOwnReadyTakeAccess(params: {
   take: TakeAccessRow;
   userId: string;
-  purpose: "preview" | "download";
+  purpose: "preview" | "download" | "export";
 }): void {
   const { take, userId, purpose } = params;
 
@@ -46,11 +46,15 @@ export function assertOwnReadyTakeAccess(params: {
     throw new AuthError("FORBIDDEN", "Take session expired.");
   }
   if (take.status !== "READY") {
+    const purposeLabel =
+      purpose === "download"
+        ? "download"
+        : purpose === "export"
+          ? "export"
+          : "preview";
     throw new AuthError(
       "FORBIDDEN",
-      purpose === "download"
-        ? "Take is not READY for download."
-        : "Take is not READY for preview.",
+      `Take is not READY for ${purposeLabel}.`,
     );
   }
   if (take.storage_bucket !== TAKE_AUDIO_BUCKET) {

@@ -147,7 +147,7 @@ export async function resolveAuthorizedRenderSourcesForJob(
   const { data: job, error: jobError } = await admin
     .from("render_jobs")
     .select(
-      "id, owner_id, mix_session_id, requested_tier, status, entitlement_snapshot",
+      "id, owner_id, mix_session_id, take_id, kind, requested_tier, status, entitlement_snapshot",
     )
     .eq("id", jobId)
     .maybeSingle();
@@ -156,12 +156,25 @@ export async function resolveAuthorizedRenderSourcesForJob(
     throw new RenderJobDomainError("Render job not found.", "NOT_FOUND");
   }
 
-  const jobRow = job as JobRow;
+  const jobRow = job as JobRow & {
+    kind?: string | null;
+    take_id?: string | null;
+  };
+  if (jobRow.kind === "TAKE_EXPORT") {
+    throw new RenderJobDomainError(
+      "TAKE_EXPORT uses take-only source resolution — MIX mix path is not applicable (worker infra BLOCKED until Contabo GO).",
+      "INVALID",
+    );
+  }
   if (jobRow.status !== "QUEUED" && jobRow.status !== "RUNNING") {
     throw new RenderJobDomainError(
       `Cannot resolve sources for job in status ${jobRow.status}.`,
       "CONFLICT",
     );
+  }
+
+  if (!jobRow.mix_session_id) {
+    throw new RenderJobDomainError("Mix session not found.", "NOT_FOUND");
   }
 
   const snapshot = parseRenderJobEntitlementSnapshot(

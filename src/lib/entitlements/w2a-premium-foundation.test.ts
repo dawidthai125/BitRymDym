@@ -136,6 +136,7 @@ describe("W2-A — Premium tier foundation (unit/contract)", () => {
     expect(PREMIUM_TIER_MATRIX.GOLD.rendersDaily).toBe(40);
     expect(PREMIUM_TIER_MATRIX.GOLD.rendersConcurrent).toBe(3);
     expect(capabilitiesForPremiumTier("FREE")).not.toContain("EXPORT_HQ_MP3");
+    expect(capabilitiesForPremiumTier("BRONZE")).toContain("EXPORT_MP3_192");
     expect(capabilitiesForPremiumTier("BRONZE")).toContain("EXPORT_HQ_MP3");
     expect(capabilitiesForPremiumTier("BRONZE")).not.toContain("MIX_PRO");
     expect(capabilitiesForPremiumTier("SILVER")).toContain("MIX_PRO");

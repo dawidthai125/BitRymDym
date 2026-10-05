@@ -6,7 +6,18 @@ import {
 } from "@/config/recording";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import {
+  getSamplePolicy,
+  sampleActorFromPremiumTier,
+} from "@/lib/takes/entitlement";
 import { assertOwnReadyTakeAccess } from "@/lib/takes/take-access";
+import { canDownloadOwnTakeRaw } from "@/lib/takes/take-export-capability";
+import {
+  assertUnderOwnTakeRawDailyCap,
+  countOwnTakeRawDownloadsToday,
+  recordOwnTakeRawDownloadEvent,
+} from "@/lib/takes/take-raw-download-ledger";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type TakeDownloadResult = {
@@ -20,8 +31,9 @@ export type TakeDownloadResult = {
 };
 
 /**
- * Owner-only short-lived signed GET for READY take download (Wave 4).
- * Never returns a permanent or public URL.
+ * P4.5 — Owner RAW take download (mic.bin).
+ * DOWNLOAD_OWN_TAKE_RAW ≡ canDownloadOwnTake (GOLD) + daily C + ledger.
+ * Client must never supply object_key / tier / capability.
  */
 export async function createOwnTakeDownloadSignedUrlFor(
   context: AuthContext,
@@ -58,6 +70,27 @@ export async function createOwnTakeDownloadSignedUrlFor(
     purpose: "download",
   });
 
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const actor = sampleActorFromPremiumTier(product.premiumTier);
+  // Duration unused for download capability — beat duration floor 1 for policy shape.
+  const policy = getSamplePolicy({
+    actor,
+    beatDurationSeconds: Math.max(
+      1,
+      Math.floor((take.duration_seconds as number | null) ?? 1),
+    ),
+  });
+
+  if (!canDownloadOwnTakeRaw({ canDownloadOwnTake: policy.canDownloadOwnTake })) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Pobieranie RAW wymaga planu GOLD.",
+    );
+  }
+
+  const usedToday = await countOwnTakeRawDownloadsToday(context.userId);
+  assertUnderOwnTakeRawDailyCap({ usedToday });
+
   const { data: signed, error: signError } = await admin.storage
     .from(TAKE_AUDIO_BUCKET)
     .createSignedUrl(
@@ -73,6 +106,12 @@ export async function createOwnTakeDownloadSignedUrlFor(
       signError?.message ?? "Failed to create take download URL.",
     );
   }
+
+  // Ledger after successful URL issuance (mirror OD-17 beat download order).
+  await recordOwnTakeRawDownloadEvent({
+    userId: context.userId,
+    takeId: take.id as string,
+  });
 
   const expiresAt = new Date(
     Date.now() + TAKE_AUDIO_DOWNLOAD_TTL_SECONDS * 1000,

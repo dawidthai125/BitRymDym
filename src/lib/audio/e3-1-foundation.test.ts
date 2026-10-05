@@ -116,6 +116,7 @@ describe("E3.1 — audio foundation (unit)", () => {
       "MASTER_BASIC",
       "MASTER_PRO",
       "EXPORT_BASIC_MP3",
+      "EXPORT_MP3_192",
       "EXPORT_HQ_MP3",
       "EXPORT_WAV",
     ]);
@@ -187,7 +188,12 @@ describe("E3.1 — audio foundation (unit)", () => {
       "CANCELLED",
       "TIMEOUT",
     ]);
-    expect(RENDER_JOB_TIERS).toEqual(["BASIC_MP3", "HQ_MP3", "WAV"]);
+    expect(RENDER_JOB_TIERS).toEqual([
+      "BASIC_MP3",
+      "MP3_192",
+      "HQ_MP3",
+      "WAV",
+    ]);
     expect(AUDIO_ARTIFACT_STATUSES).toEqual([
       "READY",
       "FAILED",

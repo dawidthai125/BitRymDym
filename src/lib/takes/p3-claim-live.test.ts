@@ -19,7 +19,6 @@ import {
   createTakeRecordingSessionFor,
   finalizeTakeRecordingFor,
 } from "@/lib/takes/take-transport";
-import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { buildUserTakeObjectKey } from "@/lib/takes/object-key";
 import { hashAnonymousTakeToken } from "@/lib/takes/token-hash";
 import { buildUserBeatAudioObjectKey } from "@/lib/beats/audio-validation";
@@ -261,8 +260,14 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
     expect(row?.object_key).toBe(destKey);
     expect(row?.status).toBe("READY");
 
-    const listed = await listOwnTakesFor(owner.context);
-    expect(listed.some((t) => t.id === session.takeId && t.displayStatus === "READY")).toBe(
+    // Ownership list (avoid P4 title column until migration applied on live DB).
+    const { data: ownedRows, error: ownedErr } = await admin
+      .from("takes")
+      .select("id, status, owner_id")
+      .eq("owner_id", owner.userId)
+      .eq("id", session.takeId);
+    expect(ownedErr).toBeNull();
+    expect(ownedRows?.some((t) => t.id === session.takeId && t.status === "READY")).toBe(
       true,
     );
 

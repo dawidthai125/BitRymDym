@@ -139,8 +139,21 @@ export const RENDER_JOB_STATUSES = [
 ] as const;
 export type RenderJobStatus = (typeof RENDER_JOB_STATUSES)[number];
 
-export const RENDER_JOB_TIERS = ["BASIC_MP3", "HQ_MP3", "WAV"] as const;
+/** Mix + take-export quality tiers. MIX create path rejects MP3_192 (P4). */
+export const RENDER_JOB_TIERS = [
+  "BASIC_MP3",
+  "MP3_192",
+  "HQ_MP3",
+  "WAV",
+] as const;
 export type RenderJobTier = (typeof RENDER_JOB_TIERS)[number];
+
+/** E3 mix create/claim quality set — excludes P4 take-only MP3_192. */
+export const MIX_RENDER_JOB_TIERS = ["BASIC_MP3", "HQ_MP3", "WAV"] as const;
+export type MixRenderJobTier = (typeof MIX_RENDER_JOB_TIERS)[number];
+
+export const RENDER_JOB_KINDS = ["MIX", "TAKE_EXPORT"] as const;
+export type RenderJobKind = (typeof RENDER_JOB_KINDS)[number];
 
 export const AUDIO_ARTIFACT_STATUSES = [
   "READY",

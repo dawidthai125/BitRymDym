@@ -219,7 +219,7 @@ async function cleanupTakeBundle(
 
 describe.runIf(live)("Recording Wave 4 live", () => {
   it(
-    "FREE Sample Policy record→download→delete; IDOR; expired DENY; concurrent + active/day caps",
+    "FREE Sample Policy record→preview→caps; RAW download DENY (P4 GOLD); IDOR; expired DENY",
     async () => {
       const admin = createClient(url!, serviceKey!, {
         auth: { persistSession: false, autoRefreshToken: false },
@@ -266,12 +266,14 @@ describe.runIf(live)("Recording Wave 4 live", () => {
         });
         expect(ready.status).toBe("READY");
 
-        const download = await createOwnTakeDownloadSignedUrlFor(
-          owner.context,
-          { takeId: session.takeId },
-        );
-        expect(download.url).toMatch(/^https?:\/\//);
-        expect(download.url).not.toMatch(/\/storage\/v1\/object\/public\//);
+        // P4.5 — FREE cannot RAW download (GOLD Sample Policy only).
+        await expect(
+          createOwnTakeDownloadSignedUrlFor(owner.context, {
+            takeId: session.takeId,
+          }),
+        ).rejects.toMatchObject({
+          message: expect.stringMatching(/GOLD/i),
+        });
 
         await expect(
           createOwnTakeDownloadSignedUrlFor(other.context, {
@@ -465,6 +467,26 @@ describe.runIf(live)("Recording Wave 4 live", () => {
         });
         takeId = session.takeId;
         expect(session.maxRecordingSeconds).toBe(180);
+
+        expect(
+          (
+            await owner.client.storage
+              .from(TAKE_AUDIO_BUCKET)
+              .uploadToSignedUrl(session.path, session.token, bytes, {
+                contentType: "audio/wav",
+                upsert: false,
+              })
+          ).error,
+        ).toBeNull();
+        await finalizeTakeRecordingFor(owner.context, { takeId: session.takeId });
+
+        // P4.5 — GOLD RAW download allowed (+ ledger when take_download_events exists).
+        const download = await createOwnTakeDownloadSignedUrlFor(owner.context, {
+          takeId: session.takeId,
+        });
+        expect(download.url).toMatch(/^https?:\/\//);
+        expect(download.url).not.toMatch(/\/storage\/v1\/object\/public\//);
+
         await admin
           .from("takes")
           .update({ status: "FAILED", failure_reason: "TEST_CLEANUP" })

@@ -195,12 +195,14 @@ describe("Recording Wave 4 — signed download AuthZ gate (unchanged P1)", () =>
     ).toThrow(AuthError);
   });
 
-  it("does not change take-download.ts for GOLD-only (P4 deferred)", () => {
+  it("P4 enforces GOLD canDownloadOwnTake + daily C on take-download", () => {
     const src = readFileSync(
       join(process.cwd(), "src/lib/takes/take-download.ts"),
       "utf8",
     );
-    expect(src).not.toMatch(/canDownloadOwnTake|premiumTier|GOLD/);
+    expect(src).toMatch(/canDownloadOwnTake/);
+    expect(src).toMatch(/GOLD|canDownloadOwnTakeRaw/);
+    expect(src).toMatch(/take_download_events|recordOwnTakeRawDownloadEvent/);
   });
 });
 

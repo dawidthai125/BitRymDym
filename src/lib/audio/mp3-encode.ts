@@ -312,3 +312,12 @@ export async function encodeHqMp3FromBake(
 ): Promise<Mp3EncodeResult> {
   return encodeMp3FromBakePcm(bake, HQ_MP3_TARGET_BITRATE_KBPS);
 }
+
+/** P4 — mid-bitrate take export (192 kbps). */
+export const MP3_192_TARGET_BITRATE_KBPS = AUDIO_CODEC.MP3_192_BITRATE_KBPS;
+
+export async function encodeMp3192FromBake(
+  bake: BakePcmInput,
+): Promise<Mp3EncodeResult> {
+  return encodeMp3FromBakePcm(bake, MP3_192_TARGET_BITRATE_KBPS);
+}

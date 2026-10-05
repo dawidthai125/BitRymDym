@@ -45,9 +45,10 @@ export const AUDIO_RENDER_MAX_ATTEMPTS = 3;
 /** Signed GET TTL class (reuse download pattern). */
 export const AUDIO_ARTIFACT_DOWNLOAD_TTL_SECONDS = 300;
 
-/** OAD-06 codec baseline (IP-05). */
+/** OAD-06 codec baseline (IP-05). P4 adds mid MP3 bitrate for take export. */
 export const AUDIO_CODEC = {
   BASIC_MP3_BITRATE_KBPS: 128,
+  MP3_192_BITRATE_KBPS: 192,
   HQ_MP3_BITRATE_KBPS: 320,
   WAV_SAMPLE_RATE: 44100,
   WAV_BIT_DEPTH: 16,
@@ -58,6 +59,7 @@ export const AUDIO_CODEC = {
  * Capability keys (frozen list).
  * Effective resolution: lib/audio/effective-entitlement.ts (E3.2).
  * STEMS intentionally absent.
+ * P4: EXPORT_MP3_192 for take-export ladder (BRONZE+); MIX path unchanged.
  */
 export const AUDIO_CAPABILITY_KEYS = [
   "MIX_BASIC",
@@ -65,6 +67,7 @@ export const AUDIO_CAPABILITY_KEYS = [
   "MASTER_BASIC",
   "MASTER_PRO",
   "EXPORT_BASIC_MP3",
+  "EXPORT_MP3_192",
   "EXPORT_HQ_MP3",
   "EXPORT_WAV",
 ] as const;

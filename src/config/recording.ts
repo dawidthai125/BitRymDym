@@ -18,6 +18,15 @@ export const TAKE_AUDIO_PREVIEW_TTL_SECONDS = 120;
 /** Short-lived signed GET for owner take download. */
 export const TAKE_AUDIO_DOWNLOAD_TTL_SECONDS = 300;
 
+/**
+ * P4 — RAW own-take download daily counter C (GOLD only).
+ * Distinct from beat-download daily limits and recording session caps.
+ */
+export const OWN_TAKE_RAW_DOWNLOADS_DAILY = 5;
+
+/** P4 — max length for takes.title (CHECK + app validate). */
+export const TAKE_TITLE_MAX_LENGTH = 120;
+
 /** Anonymous take retention TTL (seconds). */
 export const ANON_TAKE_TTL_SECONDS = 2 * 60 * 60;
 
