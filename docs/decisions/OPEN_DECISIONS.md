@@ -94,7 +94,7 @@
 | OD-PL-04 | PENDING_REVIEW label | POLISH-01 | UI status | **CLOSED / ACCEPTED** — 2026-10-05 · **W moderacji** |
 | OD-PL-05 | Studio brand | POLISH-01 | Nav / IA copy | **CLOSED / ACCEPTED** — 2026-10-05 · Studio **KEEP EN** |
 | OD-PL-06 | Master brand | POLISH-01 | Mix/Master UI | **CLOSED / ACCEPTED** — 2026-10-05 · Master **KEEP EN** Title Case |
-| EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / ACCEPTED** — 2026-10-05 · OD-P3-01…11 · **IMPLEMENTED / READY FOR REVIEW** · Premium Tier TTL/cap · deploy pending |
+| EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / IMPLEMENTED** — 2026-10-05 · OD-P3-01…11 · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · Premium Tier TTL/cap · follow-up `p_take_id` NON-BLOCKING |
 
 ---
 
@@ -212,20 +212,21 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 - **P2-3** = **OPEN** (manual migration idempotency not verified).
 - **P2-4** = **OPEN** (known MCP production migration version drift).
 - Historical foundation-contract “W2-D downloads” naming is not rewritten; current Owner gate name = **W2-B PREMIUM ENFORCEMENT**.
-- **Living production tip (2026-10-05):** `1c63080` · POLISH-01 / P0 / P1 / P2 **CLOSED / PRODUCTION VERIFIED**.
-- **EPIC-P3** Anonymous → Account Claim = **IMPLEMENTED / READY FOR REVIEW** (app deploy pending) · OD-P3-01…11 · Premium Tier TTL/cap.
+- **Living production tip (2026-10-05):** `dabbc936` · POLISH-01 / P0 / P1 / P2 / **P3** **CLOSED / PRODUCTION VERIFIED**.
+- **EPIC-P3** Anonymous → Account Claim = **CLOSED / IMPLEMENTED / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · OD-P3-01…11 · Premium Tier TTL/cap · cookie E2E CODE-VERIFIED / FULL E2E NOT EXECUTED · follow-up `p_take_id` **NON-BLOCKING**.
 - W2-B documentation closeout is **not** the current NEXT product gate.
 
 ---
 
 ## EPIC-P3 — Anonymous → Account Claim
 
-**Status:** **IMPLEMENTED / READY FOR REVIEW** · Design Freeze GO · Owner Implementation GO
+**Status:** **CLOSED / IMPLEMENTED** · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · deploy `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR`
 **Delivery:** RPC `claim_anon_take_to_account` · `src/lib/takes/anon-account-claim.ts` · auth hooks · `/account?claim=`
-**TTL/cap axis:** Premium Tier via `getSamplePolicy` (NOT Account Level)
-**App production verify:** PENDING (stop before deploy per Owner)
+**TTL/cap axis:** Premium Tier via `getSamplePolicy` (NOT Account Level / Rank / Role)
+**Cookie production:** CODE-VERIFIED · full disposable E2E NOT EXECUTED
+**Follow-up:** `p_take_id` hardening — **NON-BLOCKING** (do not implement without Owner GO)
 
-OD-P3-01…11 CLOSED / ACCEPTED (see DECISION_LOG).
+OD-P3-01…11 **CLOSED / IMPLEMENTED** (see DECISION_LOG).
 
 ---
 

@@ -6,25 +6,38 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-10-05 — P3 Anonymous → Account Claim IMPLEMENTED (pre-deploy)
+## 2026-10-05 — P3 SSOT RECONCILIATION (DOCS ONLY)
 
-**Status:** **IMPLEMENTED / READY FOR REVIEW** · app deploy **PENDING** · RPC applied on project DB
-**SSOT:** Design Freeze (chat) · OD-P3-01…11 · Premium Tier TTL/cap via `getSamplePolicy`
+**Status:** DOCS ONLY · tip / production **`dabbc936`** · P3 **COMPLETE / PRODUCTION VERIFIED — GREEN**
+**SSOT:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md) · [architecture/RECORDING.md](./architecture/RECORDING.md)
+
+- Living docs aligned to production SHA `dabbc936` · deploy `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR`
+- OD-P3-01…11 marked **CLOSED / IMPLEMENTED** · cookie E2E = CODE-VERIFIED / FULL E2E NOT EXECUTED
+- Follow-up: `p_take_id` hardening — **NON-BLOCKING**
+- Runtime / DB / Storage / migracje: **NONE**
+
+## 2026-10-05 — P3 Anonymous Take → Account Claim PRODUCTION VERIFIED — GREEN
+
+**Status:** **COMPLETE / PRODUCTION VERIFIED — GREEN**
+**Commit:** `dabbc936` · `feat(takes): claim anonymous READY take to account after login`
+**Deploy:** `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · https://www.bitrymdym.pl
+**SSOT:** OD-P3-01…11 · Premium Tier TTL/cap via `getSamplePolicy` · [RECORDING.md](./architecture/RECORDING.md)
 **Migration:** `20261005211153_p3_claim_anon_take_to_account.sql` · RPC `claim_anon_take_to_account`
 
-- Auto claim after sign-in / sign-up (session) · Storage COPY anon→user · DB ownership flip · cookie clear on success
-- Cap DENY (no auto-replace) · claim ≠ daily session · D02 15s anon duration truth unchanged
-- UI: `/account?claim=ok|cap|error` · recording panel copy updated (transfer IN)
+- Auto claim after successful sign-in / sign-up session · latest anonymous READY · Storage COPY anon→user · ownership transfer · source delete · cookie clear on `CLAIM_OK` / `CLAIM_IDEMPOTENT_REPLAY`
+- Cap DENY (no silent replace) · claim ≠ daily recording session · fail-open auth · idempotent replay
+- Production verify: deployment / migration / RPC security / Storage / ownership / idempotency / CAP / D02·P2 regression / runtime CLEAN / fixture cleanup PASS
+- Cookie clear: **CODE-VERIFIED** · full disposable production E2E **NOT EXECUTED** (no safe disposable recording + guaranteed cleanup)
+- Follow-up (non-blocking): optional `p_take_id` RPC binding
 
 ## 2026-10-05 — DOCUMENTATION CONTINUITY RECONCILIATION
 
-**Status:** DOCS ONLY · tip / production **`1c63080`** · NEXT = **P3 READ-ONLY AUDIT**
+**Status:** DOCS ONLY · historical tip / production **`1c63080`** at time of write · superseded living tip by P3 `dabbc936`
 **SSOT:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
 
-- Ujednolicono CURRENT baseline: HEAD = origin/main = Production = `1c63080` · deploy `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP`
-- POLISH-01 / P0 / P1 / P2 / BPM / ARCH-05 / ADMIN W0–W4 oznaczone jako CLOSED / VERIFIED w living docs
+- Ujednolicono baseline at `1c63080` · deploy `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` (historical)
+- POLISH-01 / P0 / P1 / P2 / BPM / ARCH-05 / ADMIN W0–W4 CLOSED / VERIFIED
 - Known waiver: `e3-7-f` / `EXPORT_WAV` · PRE-EXISTING / WAIVED
-- NEXT GATE = P3 Anonymous → Account Claim · NOT STARTED · audit first
 - Runtime / DB / Storage / migracje: **NONE**
 
 ## 2026-10-05 — POLISH-01 (+ residual hotfix) PRODUCTION VERIFIED

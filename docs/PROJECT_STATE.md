@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-05 — continuity reconcile · tip **`1c63080`** · POLISH-01 residual **GREEN WITH NOTES** · **NEXT = P3 READ-ONLY AUDIT**
+**Updated:** 2026-10-05 — P3 COMPLETE · tip / production **`dabbc936`** · **PRODUCTION VERIFIED — GREEN**
 
 ---
 
@@ -21,11 +21,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `1c630809f15e5814b75d133ed04b0ebc3cda4001` (`1c63080`) |
-| **PRODUCTION APP SHA** | `1c63080` — Ready · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` · GH Production `6866686435` |
+| **REPOSITORY HEAD / origin/main** | `dabbc93695c14609095db90b581e65ceaf221611` (`dabbc936`) |
+| **PRODUCTION APP SHA** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **LAST PRODUCTION VERIFY** | POLISH-01 residual hotfix · **GREEN WITH NOTES** |
+| **LAST PRODUCTION VERIFY** | **P3 Anonymous → Account Claim · PRODUCTION VERIFIED — GREEN** |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
+| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` · residual `1c63080` — [DF](./audits/POLISH-01_DESIGN_FREEZE.md) |
 | **P0 PLATFORM master download deny** | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` — [closeout](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md) |
 | **P1 Sample Policy** | **CLOSED / PRODUCTION VERIFIED** @ `5927e35` — [matrix](./audits/P1_SAMPLE_POLICY_MATRIX.md) |
@@ -51,11 +52,14 @@
 ## 3. Current Phase
 
 ```text
-REPOSITORY HEAD / origin/main = 1c63080
-PRODUCTION APP                = 1c63080 · dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP · READY
-LAST VERIFY                   = POLISH-01 residual · GREEN WITH NOTES
+REPOSITORY HEAD / origin/main = dabbc936
+PRODUCTION APP                = dabbc936 · dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR · READY
+LAST VERIFY                   = P3 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 
+P3                            = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936
+  Cookie clear                = CODE-VERIFIED · full disposable E2E NOT EXECUTED
+  Follow-up                   = p_take_id hardening · NON-BLOCKING
 POLISH-01                     = CLOSED / PRODUCTION VERIFIED
 P0 / P1 / P2 (recording security track) = CLOSED / PRODUCTION VERIFIED
 BPM                           = CLOSED / PRODUCTION VERIFIED
@@ -69,10 +73,8 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = P3 production deploy + verify
-P3 STATUS                     = IMPLEMENTED / READY FOR REVIEW
-P3 NEXT ACTION                = Owner review → commit → deploy → production verify
-                              (RPC claim_anon_take_to_account applied · app pending)
+NEXT GATE                     = Owner-selected next surface (backlog)
+                              · P3 follow-up p_take_id = NON-BLOCKING only
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
@@ -91,6 +93,7 @@ EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · Worker STOPPED 
 Role ≠ Account Level ≠ Creator Rank ≠ Premium Tier
 Premium SSOT                 = resolveProductEntitlement + PREMIUM_TIER_MATRIX
 Sample Policy SSOT           = getSamplePolicy + SAMPLE_POLICY_DEFAULTS + sample_policy_settings
+P3 claim TTL/cap             = Premium Tier via getSamplePolicy (NOT Account Level)
 UI labels SSOT               = src/lib/ui/labels.ts (+ status-labels re-export)
 ```
 
@@ -121,6 +124,7 @@ STORAGE DISASTER RECOVERY:
 
 ### CLOSED / PRODUCTION VERIFIED (selected)
 
+- **P3** Anonymous → Account Claim @ `dabbc936`
 - POLISH-01 (+ residual `1c63080`)
 - P0 PLATFORM master download deny
 - P1 Sample Policy
@@ -135,11 +139,11 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **P3** Anonymous → Account Claim (**IMPLEMENTED / READY FOR REVIEW** · app deploy pending)
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
 - OD-09 / OD-15 / OD-16 and other long-horizon OPEN decisions
+- **P3 follow-up:** `p_take_id` hardening — **NON-BLOCKING** (not a product gate)
 
 ### DEFERRED
 
@@ -161,11 +165,11 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm tip 1c63080 = production
-                 → POLISH-01 CLOSED · P0/P1/P2 CLOSED
-                 → NEXT GATE = P3 READ-ONLY AUDIT (prompt in FINAL_COLD_START)
-                 → Do NOT implement P3 without Owner GO after Design Freeze
-                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy without new evidence
+                 → Confirm tip dabbc936 = production
+                 → P3 COMPLETE / GREEN · P0/P1/P2/POLISH-01 CLOSED
+                 → NEXT GATE = Owner-selected next surface
+                 → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
+                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 without new evidence
                  → Do NOT fix EXPORT_WAV in product scope without separate Owner GO
                  → Do NOT clean dirty WIP without Owner GO
 ```
@@ -182,13 +186,13 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | P2 Explicit Replace | OD-P2-01…07 CLOSED | **CLOSED / PRODUCTION VERIFIED** @ `943d81e` |
 | ARCH-05 | Owner GO delete | **CLOSED / VERIFIED** |
 | OD-08 Premium tiers | CLOSED | W2-A/B in tree |
-| P3 | OD-P3-01…11 CLOSED | **IMPLEMENTED / READY FOR REVIEW** (deploy pending) |
+| P3 | OD-P3-01…11 CLOSED / IMPLEMENTED | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
 
 ---
 
 ## 7. Out of scope / deferred (living)
 
-STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · `/ranks` / `/premium` UI · billing · W2-B Mix/Render live · W4 remaining Admin P2 (last-admin TOCTOU · no durable idempotency · live last-admin concurrency · published USER beat retain · migration timestamp drift) · **P3 implementation** until Design Freeze + Owner GO.
+STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · `/ranks` / `/premium` UI · billing · W2-B Mix/Render live · W4 remaining Admin P2 (last-admin TOCTOU · no durable idempotency · live last-admin concurrency · published USER beat retain · migration timestamp drift) · **P3 `p_take_id` hardening** until separate Owner GO (NON-BLOCKING).
 
 ---
 

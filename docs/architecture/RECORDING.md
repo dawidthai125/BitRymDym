@@ -1,6 +1,6 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · **Fala 3.5.1 Recording Experience CLOSED** (Owner preliminary PASS · **NOT DEPLOYED**) · production app GREEN (prior baselines)
+**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · **P3 COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **Fala 3.5.1 Recording Experience CLOSED** (Owner preliminary PASS · **NOT DEPLOYED**) · production app GREEN
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 **D02 CURRENT CONTRACT:** [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](../phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md) (Design Freeze COMPLETE · **SHIPPED** @ `e98ba52`)  
@@ -13,15 +13,33 @@
 
 ## P3 — Anonymous → Account Claim
 
+**Status:** **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · deploy `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR`
+
 | Piece | Location |
 |-------|----------|
 | RPC `claim_anon_take_to_account` | `supabase/migrations/20261005211153_p3_claim_anon_take_to_account.sql` |
 | Orchestrator | `src/lib/takes/anon-account-claim.ts` |
-| Auth hooks | `src/lib/auth/actions.ts` (sign-in / sign-up session) |
+| Auth hooks | `src/lib/auth/actions.ts` (sign-in / sign-up session) · `tryClaimAnonTakeAfterAuth` |
 | Studio banner | `src/app/account/page.tsx` `?claim=` |
-| TTL/cap SSOT | Premium Tier → `getSamplePolicy` |
+| TTL/cap SSOT | **Premium Tier** → `getSamplePolicy` / `SAMPLE_POLICY_DEFAULTS` (**≠** Account Level / Rank / Role) |
 
-**Status:** IMPLEMENTED / READY FOR REVIEW · app production deploy pending
+```text
+Anonymous Take → READY → successful sign-in/sign-up session
+  → anonymous identity hash (brd_tk_aid) → latest eligible READY
+  → Premium Tier getSamplePolicy (cap/TTL)
+  → Storage COPY anon/{hashPrefix}/takes/{takeId}/mic.bin
+  → claim_anon_take_to_account(...)  (SECURITY DEFINER · search_path=public · service_role-only
+       · advisory locks anonymous→owner · READY/not deleted/not expired)
+  → ownership transfer → user/{ownerId}/takes/{takeId}/mic.bin
+  → DELETE anonymous source → clear brd_tk_aid (CLAIM_OK / IDEMPOTENT_REPLAY only)
+  → /account?claim=...
+```
+
+**Storage protocol:** COPY → DB transfer → DELETE source · `take-audio` **private**
+**Ownership XOR:** auth `owner_id NOT NULL` + `anonymous_token_hash NULL` · anon inverse
+**Scope:** READY only · latest · cookie/browser-bound · no cross-device · no daily session spend · cap DENY · no silent replace · fail-open (claim ≠ login failure) · not in middleware
+**Cookie production:** clear **CODE-VERIFIED** · full disposable E2E **NOT EXECUTED**
+**Follow-up (non-blocking):** optional `p_take_id` RPC binding
 
 ## Wave 1 delivered
 

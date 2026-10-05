@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-05 — continuity reconcile · tip / production **`1c63080`** · POLISH-01 residual **GREEN WITH NOTES** · **NEXT = P3 READ-ONLY AUDIT**
+**Updated:** 2026-10-05 — P3 COMPLETE · tip / production **`dabbc936`** · **PRODUCTION VERIFIED — GREEN**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,11 +23,12 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | `1c630809f15e5814b75d133ed04b0ebc3cda4001` (`1c63080`) |
-| **Production application SHA** | `1c63080` — Ready · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` · GH Production `6866686435` |
-| **Last Production Verify** | POLISH-01 residual hotfix · **GREEN WITH NOTES** |
+| **Repository HEAD / origin/main** | `dabbc93695c14609095db90b581e65ceaf221611` (`dabbc936`) |
+| **Production application SHA** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
+| **Last Production Verify** | **P3 Anonymous → Account Claim · PRODUCTION VERIFIED — GREEN** |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
-| **Production DB tip** | includes admin W4 + P1 `sample_policy_settings` · verify remote before DB work · ACCOUNT/PROFILE-01 + USER-ID-01 active |
+| **Production DB tip** | includes P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work · ACCOUNT/PROFILE-01 + USER-ID-01 active |
+| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · [RECORDING.md](./architecture/RECORDING.md) |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` · residual `1c63080` · [DF](./audits/POLISH-01_DESIGN_FREEZE.md) |
 | **P0 / P1 / P2 (recording security)** | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` / `5927e35` / `943d81e` |
 | **USER-FACING POLISH (historical)** | CLOSED @ `ffe723b` — **superseded living tip by POLISH-01** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
@@ -82,7 +83,8 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `1c63080` | **CURRENT** tip + production app · POLISH-01 residual hotfix · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` |
+| `dabbc936` | **CURRENT** tip + production app · P3 Anonymous → Account Claim · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
+| `1c63080` | Historical — POLISH-01 residual hotfix · prior tip |
 | `579acb3` | Historical — POLISH-01 localization feature |
 | `943d81e` / `fa7bfe3` | Historical — P2 Explicit Sample Replace (+ docs verify) |
 | `5927e35` / `c38e8d2` | Historical — P1 Sample Policy (+ docs verify) |
@@ -106,14 +108,15 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `1c63080` |
-| **Production application** | `1c63080` — Ready · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` |
+| **HEAD / origin/main** | `dabbc936` |
+| **Production application** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** |
 | **P0 / P1 / P2** | **CLOSED / PRODUCTION VERIFIED** |
+| **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
-| **NEXT GATE** | **P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST** |
+| **NEXT GATE** | **Owner-selected next surface** · P3 `p_take_id` = **NON-BLOCKING** |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only. **Nie czyść** dirty WIP bez Owner GO.
@@ -437,11 +440,14 @@ AWS                  = DEFERRED
 - Fixture users ≠ production Owner identity
 - Auth inbox E2E (user-facing templates): historycznie **BLOCKED — NO INBOX ACCESS** gdzie dotyczy
 
-### P3 — NEXT GATE (NOT STARTED)
+### P3 — COMPLETE / PRODUCTION VERIFIED — GREEN
 
-**Anonymous → Account Claim** — tylko **READ-ONLY AUDIT** first.
-Prompt: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §8.
-D02: anon→account claim był **OUT** — P3 ma to zbadać bezpiecznie. **Bez implementacji.**
+**Anonymous Take → Account Claim** @ `dabbc936` · deploy `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR`.
+
+- Auto claim after successful auth · latest READY · Premium Tier TTL/cap · Storage COPY→DB→DELETE · ownership XOR · fail-open · cap DENY
+- Cookie clear **CODE-VERIFIED** · full disposable production E2E **NOT EXECUTED**
+- Follow-up: `p_take_id` hardening — **NON-BLOCKING**
+- Detail: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §8 · [architecture/RECORDING.md](./architecture/RECORDING.md)
 
 ### Known waiver
 
@@ -459,6 +465,7 @@ RECORDING WAVE 3 = CLOSED
 RECORDING WAVE 4 = CLOSED
 RECORDING WAVE 5 = CLOSED / PRODUCTION VERIFIED
 D02 ANONYMOUS QT = CLOSED / IN V1 · SHIPPED / PRODUCTION VERIFIED @ e98ba52
+P3 ACCOUNT CLAIM = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936
 ```
 
 | Item | Value |
@@ -668,24 +675,24 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION = 1c63080
-DEPLOYMENT         = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP / GH 6866686435
-LAST VERIFY        = POLISH-01 residual · GREEN WITH NOTES
+CURRENT PRODUCTION = dabbc936
+DEPLOYMENT         = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
+LAST VERIFY        = P3 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER       = e3-7-f EXPORT_WAV · WAIVED
+P3                 = COMPLETE / PRODUCTION VERIFIED — GREEN
 POLISH-01          = CLOSED / PRODUCTION VERIFIED
 P0 / P1 / P2       = CLOSED / PRODUCTION VERIFIED
 ARCH-05            = CLOSED / VERIFIED
 WORKER             = STOPPED / DISABLED
 STORAGE-ARCH-01    = LOCKED
-NEXT GATE          = P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST
-P3 STATUS          = NOT STARTED
+NEXT GATE          = Owner-selected next surface (backlog)
+P3 FOLLOW-UP       = p_take_id hardening · NON-BLOCKING
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                    → MASTER_HANDOFF / PROJECT_STATE
-                   → P3 audit prompt (FINAL §8)
 ```
 
-**Do not** reopen closed P0/P1/P2/POLISH-01/ARCH-05/BPM without new evidence.
-**Do not** implement P3 / fix EXPORT_WAV / mutate Storage without Owner GO.
+**Do not** reopen closed P0/P1/P2/P3/POLISH-01/ARCH-05/BPM without new evidence.
+**Do not** implement `p_take_id` / fix EXPORT_WAV / mutate Storage without Owner GO.
 **Do not** stage dirty WIP (`.agents/` · `.cursor/` · `infra/` · `.env*` · secrets).
 
 Cold start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -725,8 +732,8 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Dual SHA (app vs worker) | Production app `1c63080` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
-| Docs tip vs app tip | Currently aligned at `1c63080`; future docs-only commits may diverge — intentional |
+| Dual SHA (app vs worker) | Production app `dabbc936` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
+| Docs tip vs app tip | Currently aligned at `dabbc936`; future docs-only commits may diverge — intentional |
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED · living orphans **0** (post ARCH-05) · **NOT CLOSED** |
 | HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** — not solved |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
@@ -785,10 +792,11 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION         = 1c63080
-DEPLOYMENT                 = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP / GH 6866686435
-LAST VERIFY                = POLISH-01 residual · GREEN WITH NOTES
+CURRENT PRODUCTION         = dabbc936
+DEPLOYMENT                 = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
+LAST VERIFY                = P3 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER               = e3-7-f EXPORT_WAV · WAIVED
+P3                         = COMPLETE / PRODUCTION VERIFIED — GREEN
 POLISH-01                  = CLOSED / PRODUCTION VERIFIED
 P0 / P1 / P2               = CLOSED / PRODUCTION VERIFIED
 ARCH-05                    = CLOSED / VERIFIED
@@ -796,8 +804,8 @@ ADMIN W0–W4                = CLOSED / PRODUCTION VERIFIED
 E3                         = PRODUCTION VERIFIED — GREEN
 WORKER                     = STOPPED / DISABLED
 STORAGE-ARCH-01            = LOCKED
-NEXT GATE                  = P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST
-P3 STATUS                  = NOT STARTED
+NEXT GATE                  = Owner-selected next surface (backlog)
+P3 FOLLOW-UP               = p_take_id · NON-BLOCKING
 NEXT SESSION ENTRY         = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
 ```
 

@@ -10,18 +10,21 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
-### OD-P3-01…11 — Anonymous → Account Claim — CLOSED / ACCEPTED
+### OD-P3-01…11 — Anonymous → Account Claim — CLOSED / IMPLEMENTED
 
 | Pole | Wartość |
 |------|---------|
-| Decision / gate | Owner/Architect GO — P3 Design Freeze + Implementation |
-| Status | **CLOSED / ACCEPTED** · **IMPLEMENTED / READY FOR REVIEW** |
+| Decision / gate | Owner/Architect GO — P3 Design Freeze + Implementation + Production Verify |
+| Status | **CLOSED / IMPLEMENTED** · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
 | Date | 2026-10-05 |
-| TTL/cap axis | **Premium Tier** via `getSamplePolicy` (NOT Account Level) |
-| RPC | `claim_anon_take_to_account` |
+| Deploy | `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · https://www.bitrymdym.pl |
+| TTL/cap axis | **Premium Tier** via `getSamplePolicy` (NOT Account Level / Rank / Role) |
+| RPC | `claim_anon_take_to_account` · SECURITY DEFINER · `search_path=public` · service_role-only |
 | Migration | `20261005211153_p3_claim_anon_take_to_account.sql` |
 
-**Locked:** CLAIM IN · auto after login/signup session · READY only · latest only · Storage COPY required · cap DENY · no daily session spend · cookie clear only on success/replay · browser/cookie-bound.
+**Locked:** CLAIM IN · auto after login/signup session · READY only · latest only · Storage COPY→DB→DELETE source · ownership XOR · cap DENY · no daily session spend · cookie clear only on `CLAIM_OK` / `CLAIM_IDEMPOTENT_REPLAY` · browser/cookie-bound · fail-open auth · not in middleware.
+
+**Production:** GREEN · cookie clear CODE-VERIFIED · full disposable E2E NOT EXECUTED · follow-up `p_take_id` NON-BLOCKING.
 
 ---
 

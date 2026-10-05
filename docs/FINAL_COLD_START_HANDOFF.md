@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-05
+**Updated:** 2026-10-05 — P3 COMPLETE · tip / production **`dabbc936`** · **PRODUCTION VERIFIED — GREEN**
 **Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
 
 **Evidence rule (bezwzględna):**
@@ -25,17 +25,16 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-REPOSITORY HEAD / origin/main = 1c630809f15e5814b75d133ed04b0ebc3cda4001
-  short                       = 1c63080
-  message                     = fix(ui): polish residual home/beat/admin copy
+REPOSITORY HEAD / origin/main = dabbc93695c14609095db90b581e65ceaf221611
+  short                       = dabbc936
+  message                     = feat(takes): claim anonymous READY take to account after login
 
-PRODUCTION APP SHA            = 1c63080
-PRODUCTION DEPLOYMENT         = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP
-GitHub Production             = 6866686435
+PRODUCTION APP SHA            = dabbc936
+PRODUCTION DEPLOYMENT         = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
 
-LAST PRODUCTION VERIFY        = POLISH-01 residual hotfix · GREEN WITH NOTES
+LAST PRODUCTION VERIFY        = P3 Anonymous → Account Claim · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV
                               = PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER
                               (NIE traktować jako nowy regres)
@@ -44,15 +43,16 @@ BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
 WORKER                        = Contabo · STOPPED / DISABLED · bootstrap 92496d4
 
-NEXT GATE                     = P3 production deploy + verify (implementation READY)
-P3 STATUS                     = IMPLEMENTED / READY FOR REVIEW
-P3 NEXT ACTION                = Owner review → commit/push → production app deploy → verify
+P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN
+P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
+NEXT GATE                     = Owner-selected next surface (backlog)
 ```
 
 ### CURRENT STATUS (closed / verified)
 
 | Track | Status |
 |-------|--------|
+| **P3** Anonymous → Account Claim | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
 | **POLISH-01** (+ residual hotfix) | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` → residual `1c63080` |
 | **P0** PLATFORM master download deny | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` |
 | **P1** Sample Policy Matrix | **CLOSED / PRODUCTION VERIFIED** @ `5927e35` |
@@ -65,15 +65,15 @@ P3 NEXT ACTION                = Owner review → commit/push → production app 
 | **E3 Full Audio** | **PRODUCTION VERIFIED — GREEN** (Premium HQ/WAV E2E: see waiver) |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · retirement **NOT EXECUTED** · **NOT CLOSED** (ops — nie NEXT product gate) |
 
-**Historyczne tipy** (`e03f3be`, `ddcee65`, `ffe723b`, `4e33e8d`, …) = **HISTORYCZNE RELEASE** — nie current baseline.
+**Historyczne tipy** (`1c63080`, `e03f3be`, `ddcee65`, `ffe723b`, `4e33e8d`, …) = **HISTORYCZNE RELEASE** — nie current baseline.
 
 **Planes (never merge):**
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository | `1c63080` |
-| Production app | `1c63080` |
-| Production DB | tip includes admin W4 + P1 sample_policy_settings · verify remote before DB work |
+| Repository | `dabbc936` |
+| Production app | `dabbc936` |
+| Production DB | includes P3 `claim_anon_take_to_account` + P1/P2 RPCs · verify remote before DB work |
 | Production Storage | live **11** (USER 8 · PLATFORM 3 · ORPHAN 0) · historical backup **43/43 RETAINED** |
 | Session / operator | dirty local WIP may exist — **nie czyścić bez Owner GO** |
 
@@ -154,7 +154,7 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFE
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · **NOT CLOSED** |
 | Messaging / comments / voting / payments / STEMS / Premium catalog | DEFERRED |
 | External Object Storage | NOT IMPLEMENTED / DEFERRED |
-| **P3 Anonymous → Account Claim** | **IMPLEMENTED / READY FOR REVIEW** · deploy pending |
+| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
 
 ---
 
@@ -208,56 +208,48 @@ Dirty worktree: **nie czyść** bez Owner GO.
 
 ---
 
-## 8. NEXT GATE — P3 (prompt dla Cursor)
+## 8. P3 COMPLETE — PRODUCTION VERIFIED GREEN (canonical handoff)
 
-**P3 — Anonymous → Account Claim**
-**Status:** NOT STARTED
-**Następna akcja:** **READ-ONLY AUDIT** (zero implementacji)
+**P3 — Anonymous Take → Account Claim**
+**Status:** **COMPLETE / PRODUCTION VERIFIED — GREEN**
+**SHA:** `dabbc93695c14609095db90b581e65ceaf221611`
+**Deploy:** `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · https://www.bitrymdym.pl
 
 ```text
-Zbadaj możliwość bezpiecznego:
-Anonymous recording → signup/login → claim własnego nagrania → przypisanie take do authenticated user.
+Architecture:
+  Anonymous READY → auth session → tryClaimAnonTakeAfterAuth
+  → Premium Tier getSamplePolicy (TTL/cap)
+  → Storage COPY anon/.../mic.bin → claim_anon_take_to_account
+  → ownership XOR transfer → user/.../mic.bin
+  → DELETE source → clear brd_tk_aid (CLAIM_OK / IDEMPOTENT_REPLAY only)
+  → /account?claim=...
 
-Audyt MUSI sprawdzić:
-1. anonymous_token_hash
-2. cookie/session
-3. ownership
-4. claim RPC
-5. RLS
-6. AuthZ
-7. IDOR
-8. replay
-9. token possession
-10. stale token
-11. expiry
-12. deleted take
-13. pending take
-14. concurrent claim
-15. cross-user claim
-16. cross-device behavior
-17. signup/login behavior
-18. storage
-19. quotas
-20. TTL
-21. replace interaction
-22. UX
-23. migration impact
-24. security threat model
+Security invariants:
+  Ownership XOR · take-audio private · RPC service_role-only
+  READY-only · latest · cookie-bound · cap DENY · fail-open auth
+  token/hash not logged
 
-Workflow:
-AUDIT → RCA → PLAN → DESIGN FREEZE → ARCH REVIEW → OWNER GO
+Verification:
+  Deployment/migration/RPC/Storage/ownership/idempotency/CAP/D02·P2/runtime = PASS
+  Fixture cleanup PASS (allowlisted IDs only)
 
-BEZ IMPLEMENTACJI. BEZ MIGRACJI. BEZ DEPLOY.
+Cookie production:
+  clear = CODE-VERIFIED
+  full disposable E2E = NOT EXECUTED
+  (no safe disposable production recording + guaranteed cleanup)
+
+Follow-up (NON-BLOCKING):
+  optional p_take_id RPC binding — do NOT implement without Owner GO
 ```
 
-Baza evidence: D02 closeout (anon→account claim = OUT) · sample download audit.
+Architecture detail: [architecture/RECORDING.md](./architecture/RECORDING.md) · decisions: OD-P3-01…11 in [DECISION_LOG.md](./decisions/DECISION_LOG.md).
 
 ---
 
 ## 9. Absolute prohibitions without Owner GO
 
 - Runtime / AuthZ / DB / Storage / migration mutate
-- P3 implementacja
+- P3 `p_take_id` hardening (non-blocking backlog — not auto-start)
 - EXPORT_WAV „fix”
 - Reopen zamkniętych epików bez nowego evidence
 - Traktowanie Contabo jako durable media / backup SSOT
@@ -269,12 +261,13 @@ Baza evidence: D02 closeout (anon→account claim = OUT) · sample download audi
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect 1c63080 (lub nowszy docs tip po tym pliku)
+[ ] git fetch && git rev-parse HEAD           → expect dabbc936
 [ ] git rev-parse origin/main                → match HEAD
-[ ] Confirm Production app SHA = 1c63080 (Deployments / aliases www + apex)
+[ ] Confirm Production app SHA = dabbc936 (Deployments / aliases www + apex)
 [ ] Read MASTER_HANDOFF + PROJECT_STATE
-[ ] NEXT GATE = P3 READ-ONLY AUDIT — nie implementuj
-[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM bez nowego evidence
+[ ] P3 = COMPLETE / GREEN — do not re-open without new evidence
+[ ] NEXT GATE = Owner-selected next surface · p_take_id = NON-BLOCKING only
+[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3 bez nowego evidence
 [ ] Nie czyść dirty WIP
 [ ] AUDIT FIRST → report → wait for Owner GO
 ```
@@ -284,13 +277,15 @@ Baza evidence: D02 closeout (anon→account claim = OUT) · sample download audi
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (continuity reconciled 2026-10-05)
-REPOSITORY HEAD              = 1c63080
-PRODUCTION APP SHA           = 1c63080
-PRODUCTION DEPLOYMENT        = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP
-LAST VERIFY                  = POLISH-01 residual · GREEN WITH NOTES
+FINAL COLD START HANDOFF     = READY (P3 SSOT reconciled 2026-10-05)
+REPOSITORY HEAD              = dabbc936
+PRODUCTION APP SHA           = dabbc936
+PRODUCTION DEPLOYMENT        = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
+LAST VERIFY                  = P3 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
-NEXT GATE                    = P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST
+P3 STATUS                    = COMPLETE / PRODUCTION VERIFIED — GREEN
+P3 FOLLOW-UP                 = p_take_id · NON-BLOCKING
+NEXT GATE                    = Owner-selected next surface (backlog)
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK
 SEARCH BEFORE CREATE         = TAK
