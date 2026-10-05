@@ -1,16 +1,18 @@
 # BitRymDym — Master Handoff
 
-**Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-05 (ARCH-05 **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** · historical backup **43/43 RETAINED** · AWS **DEFERRED** · ADMIN W4 remains **CLOSED / PRODUCTION VERIFIED** @ `ddcee65`)
+**Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
+**Updated:** 2026-10-05 — continuity reconcile · tip / production **`1c63080`** · POLISH-01 residual **GREEN WITH NOTES** · **NEXT = P3 READ-ONLY AUDIT**
 **Owner:** Prezes Dawid
 
-**Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
-**FAR-01 living ops:** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
+**Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+**Living state:** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**FAR-01 living ops (historyczny / nie NEXT):** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
 
-**This document is continuity** (detailed cold-start).
-Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technical HOW remains [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md). Live “where we are now” remains [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Ten dokument = continuity** (szczegółowy cold-start).
+Product WHAT: [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technical HOW: [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md).
 
-**Evidence rule:** code + remote schema prove implementation state. Documentation alone is **not** proof that a feature is shipped. Production verification is a separate stage from “docs say CLOSED”.
+**Evidence rule:** code + remote schema + production evidence > documentation prose.
+Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 
 **Planes:** REPOSITORY · PRODUCTION APP · PRODUCTION DB · PRODUCTION STORAGE · SESSION/OPERATOR — never merge.
 
@@ -20,11 +22,15 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 
 | Field | Value |
 |-------|--------|
-| URL | https://www.bitrymdym.pl |
-| **Repository HEAD** | Docs tip advances independently of production app · see `git rev-parse HEAD` |
-| **Production application SHA** | `ddcee65` — Ready · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` · **ADMIN USER MANAGEMENT W4 CLOSED / PRODUCTION VERIFIED** |
-| **Production DB tip** | `20261004174202` / `admin_user_management_w4_delete` · prior W2 `20261004144223` in chain · **W3 migration NONE** · ACCOUNT/PROFILE-01 + USER-ID-01 still active |
-| **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` · P0/P1/P2 = 0 · inbox E2E **BLOCKED — NO INBOX ACCESS** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) · [email templates](./audits/USER_FACING_POLISH_LOCALIZATION_EMAIL_TEMPLATES.md) |
+| URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
+| **Repository HEAD / origin/main** | `1c630809f15e5814b75d133ed04b0ebc3cda4001` (`1c63080`) |
+| **Production application SHA** | `1c63080` — Ready · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` · GH Production `6866686435` |
+| **Last Production Verify** | POLISH-01 residual hotfix · **GREEN WITH NOTES** |
+| **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
+| **Production DB tip** | includes admin W4 + P1 `sample_policy_settings` · verify remote before DB work · ACCOUNT/PROFILE-01 + USER-ID-01 active |
+| **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` · residual `1c63080` · [DF](./audits/POLISH-01_DESIGN_FREEZE.md) |
+| **P0 / P1 / P2 (recording security)** | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` / `5927e35` / `943d81e` |
+| **USER-FACING POLISH (historical)** | CLOSED @ `ffe723b` — **superseded living tip by POLISH-01** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
 | **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65` · EMAIL E2E **PASS** · [W4 freeze](./decisions/ADMIN_USER_DELETE_DESIGN_FREEZE.md) |
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
@@ -76,29 +82,19 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `git rev-parse HEAD` | **Repository tip** — may be docs-only (not production app) |
-| `ddcee65` | **Production application SHA** — ADMIN W4 · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` |
-| `237a86f` | Historical — ADMIN USER MANAGEMENT W3 audit history · `dpl_DjmSXuv7UbB2jYpfidAuXKLWWaQR` |
-| `8c40824` | Historical — ADMIN USER MANAGEMENT W2 mutations · PRODUCTION VERIFIED WITH FINDINGS |
-| `ffe723b` | Historical — USER-FACING POLISH LOCALIZATION final · `dpl_FkuQKRm6JE6gNqZkCopE4UmvUviM` |
-| `4ebd1d3` | Historical — primary Polish localization feature commit |
-| `d86b4df` | Historical — W2-B Premium Enforcement application (still in tree) |
-| `e1788a7` | W2-B documentation reconcile (pre-application commit) |
-| `3cd4fcf` | Historical — W2-A closeout documentation |
-| `ff61ac3` | Historical — W2-A documentation continuity (pre-closeout) |
-| `6ee3255` | Historical — W2-A Premium tier foundation (code) · `dpl_AdF29uH9eJ9xUNhuqD6rYKTZZg9a` |
-| `6cc7efe` | W2 Premium Design Contract docs + OD-08 reconcile (docs) |
-| `c5ed0d5` | Historical — W1 documentation closeout |
-| `76a4757` | Historical — Creator Progress W1 (Experience + Rank foundation) |
-| `1e66cae` | Creator Progress + Premium Design Freeze V1 (docs) |
-| `89a8d51` | Historical ACCOUNT/PROFILE-01 Phase 1 + verified closeout baseline |
-| `3c7f492` | Historical ACCOUNT/PROFILE-01 feature commit (pre Phase 1 recovery harden) |
-| `0ca0115` | Historical USER-ID-01 verified tip |
-| `4e33e8d` | Historical waveform progress/seek tip |
-| `e03f3be` | Historical FAR-01 operator tooling tip |
-| `fbc696f` | DEF-01 security harden (parent of e03f3be) |
-| `f9500b3` | FAR-01 execution harden |
-| `f514a51` | Historical FAR-01 Phase 1 DR-A dual-accept |
+| `1c63080` | **CURRENT** tip + production app · POLISH-01 residual hotfix · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` |
+| `579acb3` | Historical — POLISH-01 localization feature |
+| `943d81e` / `fa7bfe3` | Historical — P2 Explicit Sample Replace (+ docs verify) |
+| `5927e35` / `c38e8d2` | Historical — P1 Sample Policy (+ docs verify) |
+| `fdfff71` / `23577a3` | Historical — P0 PLATFORM master download deny (+ docs verify) |
+| `ddcee65` | Historical — ADMIN W4 · prior production tip |
+| `237a86f` | Historical — ADMIN USER MANAGEMENT W3 |
+| `ffe723b` | Historical — USER-FACING POLISH LOCALIZATION (pre POLISH-01) |
+| `d86b4df` | Historical — W2-B Premium Enforcement |
+| `6ee3255` | Historical — W2-A Premium tier foundation |
+| `76a4757` | Historical — Creator Progress W1 |
+| `e03f3be` | Historical — FAR-01 operator tooling tip |
+| `fbc696f` | DEF-01 security harden |
 | `92496d4` | Worker bootstrap (Contabo EXTERNAL encode) |
 | older UX/E3 tips | Historical closeouts — see CHANGELOG |
 
@@ -110,20 +106,17 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | Docs tip (advances independently of production app) |
-| **Production application** | `ddcee65` — Ready · `dpl_6PjSxhA8SVW7ufnBDjSAguPb5ram` · **ADMIN W4 CLOSED / PRODUCTION VERIFIED** |
+| **HEAD / origin/main** | `1c63080` |
+| **Production application** | `1c63080` — Ready · `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
-| **USER-FACING POLISH LOCALIZATION** | **CLOSED / PRODUCTION VERIFIED GREEN** @ `ffe723b` |
-| **ADMIN USER MANAGEMENT** | **W3 CLOSED / PRODUCTION VERIFIED** @ `237a86f` · **W4 CLOSED / PRODUCTION VERIFIED** @ `ddcee65` |
-| **CREATOR PROGRESS W1** | **PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` |
-| **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
-| **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (in tree) |
-| **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** |
-| **NEXT GATE** | Owner Review (ARCH-05 closed — no further GC) · optional AWS DR / Auth email inbox E2E |
-| Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
+| **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** |
+| **P0 / P1 / P2** | **CLOSED / PRODUCTION VERIFIED** |
+| **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
+| **NEXT GATE** | **P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST** |
+| Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
 
-Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
+Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only. **Nie czyść** dirty WIP bez Owner GO.
 
 ---
 
@@ -197,7 +190,7 @@ Production mutations         = NONE for FAR-01 retirement (retain-set removed ou
 | Backup source MASTER | REQUIRED BEFORE SCALE (OD-SA-06) · VPS **43/43** · Local Layer-2 **43/43 RESTORE VERIFIED** · AWS **DEFERRED** — [restore](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) |
 | Historical DB recovery | Local PostgreSQL CUSTOM dump **FOUND** · LIKELY PRODUCTION / MEDIUM · **≠ Storage object bytes** — [audit](./audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) |
 | Mix artifact backup | regenerable · no default backup (**OD-SA-07**) — unchanged; ≠ OD-SA-07-01…16 |
-| Orphans | **32/32 SAFE** · allowlist ready · OWNER APPROVED **NO** · DELETED **0** · **not** FAR-01 retirement — [readiness](./audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) |
+| Orphans | ARCH-05 **CLOSED / VERIFIED** · DELETE **32/32** historical · live orphans **0** · backup **43/43 RETAINED** — [reconciliation](./audits/ARCH_05_POST_DELETE_RECONCILIATION.md) |
 
 **Wording:** BitRymDym has VPS Layer-1 and Local Layer-2 Storage bytes retained (43/43 evidence); production Storage after ARCH-05 is **11**. AWS immutable DR deferred. Historical ladder still holds for future GC: BACKED UP + RESTORE VERIFIED ≠ SAFE ≠ OWNER APPROVED ≠ DELETED.
 
@@ -364,6 +357,96 @@ Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 | Creator Progress W1 (Experience + Rank) | **PRODUCTION VERIFIED WITH OPEN ITEMS** | `76a4757` · [CREATOR_PROGRESS_W1_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | Creator Progress W2-A (Premium tier foundation) | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** | `6ee3255` · [CREATOR_PROGRESS_W2A_CLOSEOUT.md](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) |
 | Creator Progress W2-B (Premium Enforcement) | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** | `d86b4df` · [CREATOR_PROGRESS_W2B_IMPLEMENTATION.md](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) |
+| P0 PLATFORM master download deny | **CLOSED / PRODUCTION VERIFIED** | `fdfff71` · [P0_PLATFORM_MASTER_DOWNLOAD_DENY.md](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md) |
+| P1 Sample Policy Matrix | **CLOSED / PRODUCTION VERIFIED** | `5927e35` · [P1_SAMPLE_POLICY_MATRIX.md](./audits/P1_SAMPLE_POLICY_MATRIX.md) |
+| P2 Explicit Sample Replace | **CLOSED / PRODUCTION VERIFIED** | `943d81e` · [P2_REPLACE_SAMPLE_IMPLEMENTATION.md](./audits/P2_REPLACE_SAMPLE_IMPLEMENTATION.md) |
+| POLISH-01 (+ residual hotfix) | **CLOSED / PRODUCTION VERIFIED** | `579acb3` → `1c63080` · [POLISH-01_DESIGN_FREEZE.md](./audits/POLISH-01_DESIGN_FREEZE.md) |
+| ARCH-05 orphan GC | **CLOSED / VERIFIED** | live **11 / 8 / 3 / 0 / 0** |
+| ADMIN W0–W4 | **CLOSED / PRODUCTION VERIFIED** | tip historical `ddcee65` (W4) |
+
+---
+
+## 8b. Recording security + Sample Policy + Replace + POLISH-01 (living)
+
+### P0 — PLATFORM master download deny
+
+- User-facing DOWNLOAD of `ownership_type = PLATFORM` = **DENY**
+- PLAYBACK / recording source = **ALLOW** (unchanged)
+- ADMIN/OPS privileged export = **ALLOW** (zamrożony zakres — nie `DownloadButton`)
+- Helper: `canDownloadOriginalBeatMaster` — **nie** generic `canDownload`
+- Evidence: [P0_PLATFORM_MASTER_DOWNLOAD_DENY.md](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md)
+
+### P1 — Sample Policy
+
+- SSOT: `getSamplePolicy` · `SAMPLE_POLICY_DEFAULTS` · `sample_policy_settings` · audit `SAMPLE_POLICY_UPDATE`
+- Premium Tier = źródło limitu (Anonymous ≠ Free)
+- BEGINNER bez entitlement → runtime mapuje do FREE policy
+- Defaults: Bronze 60 · Silver 120 · Gold 180 · global technical max **180 s**
+- Admin-only mutation · UI: **Polityka nagrań**
+- Representative limits: ANON 15s/2h · FREE 30s/12h · Bronze/Silver/Gold configurable duration + day/active caps
+- Evidence: [P1_SAMPLE_POLICY_MATRIX.md](./audits/P1_SAMPLE_POLICY_MATRIX.md)
+
+### P2 — Explicit Sample Replace (Variant C)
+
+- Claim rezerwuje `replaces_take_id` · finalize: NEW→READY · OLD→DELETED
+- RPC: `claim_take_recording_session` / `claim_anon_take_recording_session` / `finalize_take_ready_swap`
+- Advisory lock · one pending · unique replace target · idempotent swap
+- Cross-beat replace **YES** · anonymous own replace **YES** · no `REPLACED` enum
+- Abandoned PENDING preserves old READY · IDOR denied
+- Storage: DB-first commit → cleanup → janitor safety net
+- Evidence: [P2_REPLACE_SAMPLE_IMPLEMENTATION.md](./audits/P2_REPLACE_SAMPLE_IMPLEMENTATION.md)
+
+### POLISH-01
+
+| OD | Decision |
+|----|----------|
+| OD-PL-01 | **C** — „nagranie” = obiekt użytkownika · „próbka” = funkcja/polityka |
+| OD-PL-02 | **Polityka nagrań** |
+| OD-PL-03 | Free / Bronze / Silver / Gold **KEEP EN** |
+| OD-PL-04 | **W moderacji** |
+| OD-PL-05 | Studio **KEEP EN** |
+| OD-PL-06 | Master **KEEP EN** Title Case |
+
+KEEP EN (m.in.): Studio · Mix · Master · Premium · REC · BPM · MP3 · WAV · HQ · Free/Bronze/Silver/Gold
+PL (m.in.): Gość · Administrator · Panel Administracyjny · Wersja robocza · Zatwierdzone · Gotowe · Nagrywanie
+
+Impl `579acb3` · residual `1c63080` · verify **GREEN WITH NOTES**.
+
+### BPM (living)
+
+- 17 realnych MP3 · import **17/17**
+- Korekty: 138→92 · 125→88 · 120→89 · 161→92 · 116→95
+- **CLOSED / PRODUCTION VERIFIED** — nie reopen bez nowego evidence
+
+### Backup / DR (living IDs)
+
+```text
+Path                 = C:\BitRymDym-Backup\
+Full backup          = local-layer2-full-20261005T040146Z-42d6212b · 43/43
+Restore drill        = local-restore-20261005T040831Z-76ca3678 · 43/43
+SHA / size / WAV / ffprobe / manifests = PASS
+VPS Layer-1          = 43/43 BACKED UP · Contabo ≠ Storage SSOT ≠ backup product
+AWS                  = DEFERRED
+```
+
+### Email / test fixtures (continuity)
+
+- Prod transactional: Resend (W4 delete email E2E **PASS**)
+- Test signup / OTP / confirmation: mail.tm + SMTP/OTP fixtures (lokalne / operator)
+- Real email fixture konta testowe — **rozróżniać od Ownera**; nie publikować pełnych adresów w docs
+- Fixture users ≠ production Owner identity
+- Auth inbox E2E (user-facing templates): historycznie **BLOCKED — NO INBOX ACCESS** gdzie dotyczy
+
+### P3 — NEXT GATE (NOT STARTED)
+
+**Anonymous → Account Claim** — tylko **READ-ONLY AUDIT** first.
+Prompt: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §8.
+D02: anon→account claim był **OUT** — P3 ma to zbadać bezpiecznie. **Bez implementacji.**
+
+### Known waiver
+
+`src/lib/audio/e3-7-f-download-authz.test.ts` · Premium HQ/WAV · `AudioEntitlementError: Missing audio capability: EXPORT_WAV`
+= **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** (nie nowy regres POLISH-01).
 
 ---
 
@@ -585,40 +668,29 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION = 2c4200b
-DEPLOYMENT = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
-WAVE A = CLOSED / PRODUCTION VERIFIED — GREEN
-WAVE B = CLOSED / PRODUCTION VERIFIED @ 812a9d4
-FALA 1B = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
-FALA 1A = CLOSED / PRODUCTION VERIFIED @ fdf74f9
-W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
-E3.8 W6 CERT = CLOSED / PASS (Owner-accepted emulated)
-E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
-AC-PE-12 = PASS (historical @ 6dfd201)
-GO #5 = PASS
-OWNER GO #2 = CLOSED / SUPERSEDED (Contabo)
-WORKER = STOPPED / DISABLED (bootstrap 92496d4)
-E3_MIX_ENABLED = ON
-E3_RENDER_JOBS_ENABLED = ON
-E3_PUBLIC_AUDIO = ON
-STORAGE-ARCH-01 = LOCKED
-STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-FAR-01 = SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED (see FAR_01_CURRENT_STATE.md)
-DEF-01 = CLOSED / PRODUCTION VERIFIED @ fbc696f
-PRODUCTION APP = ddcee65 (docs tip may differ)
+CURRENT PRODUCTION = 1c63080
+DEPLOYMENT         = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP / GH 6866686435
+LAST VERIFY        = POLISH-01 residual · GREEN WITH NOTES
+KNOWN WAIVER       = e3-7-f EXPORT_WAV · WAIVED
+POLISH-01          = CLOSED / PRODUCTION VERIFIED
+P0 / P1 / P2       = CLOSED / PRODUCTION VERIFIED
+ARCH-05            = CLOSED / VERIFIED
+WORKER             = STOPPED / DISABLED
+STORAGE-ARCH-01    = LOCKED
+NEXT GATE          = P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST
+P3 STATUS          = NOT STARTED
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
-                   → ARCH-04/05 orphan-GC audit (separate · 32 candidates · not approved)
+                   → MASTER_HANDOFF / PROJECT_STATE
+                   → P3 audit prompt (FINAL §8)
 ```
 
-**Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B/Wave A/B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
-**Do not** implement external Object Storage (ARCH-02 primary) / dual-read KEY / janitor / orphan delete / key migration / STORAGE-ARCH-07 backup **implementation** without wave Implementation GO. Design freeze alone is not Implementation GO.
-**Do not** auto-start Fala 1C.
+**Do not** reopen closed P0/P1/P2/POLISH-01/ARCH-05/BPM without new evidence.
+**Do not** implement P3 / fix EXPORT_WAV / mutate Storage without Owner GO.
+**Do not** stage dirty WIP (`.agents/` · `.cursor/` · `infra/` · `.env*` · secrets).
 
 Cold start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
-Fala 1B closeout: [FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md)
-Storage freeze: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · audit: [STORAGE_ARCH_01_AUDIT.md](./audits/STORAGE_ARCH_01_AUDIT.md)
-GO #2 record: [E3_WORKER_INFRASTRUCTURE_GO2.md](./audits/E3_WORKER_INFRASTRUCTURE_GO2.md)
-Enablement freeze: [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
+P0/P1/P2/POLISH: §8b powyżej.
+Storage freeze: [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md)
 
 New GPT:
 
@@ -653,13 +725,14 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Dual SHA (app vs worker) | Production app `f514a51` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
-| Docs tip ≠ production app SHA (after docs closeout) | Docs-only commits may advance `origin/main` without redeploy — intentional |
-| FAR-01 campaign / Storage orphans | SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED · living: USER8 · platform3 · orphans32 · retained0 · quarantine0 · MIGRATE=0 · NOT CLOSED |
+| Dual SHA (app vs worker) | Production app `1c63080` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
+| Docs tip vs app tip | Currently aligned at `1c63080`; future docs-only commits may diverge — intentional |
+| FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED · living orphans **0** (post ARCH-05) · **NOT CLOSED** |
 | HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** — not solved |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
 | Artifacts janitor missing | F-PE-04 / OD-SA-05 · **STORAGE-ARCH-03** future wave |
 | React hydration warning on `/beat/[id]` | **INFO** · **BLOCKER = NO** · observed in `next dev`; do not hotfix without Owner GO |
+| `e3-7-f` / `EXPORT_WAV` | **KNOWN WAIVER** · PRE-EXISTING / WAIVED BY OWNER |
 
 ### DEFERRED / TECHNICAL DEBT
 
@@ -672,7 +745,7 @@ Start reading order:
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
-| Beat-audio orphan janitor | **32/32 SAFE** · allowlist ready · OWNER DELETE GO **NOT ISSUED** · OD-SA-08 — [readiness](./audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) |
+| Beat-audio orphan janitor | ARCH-05 **CLOSED** · live orphans **0** · do not re-open without new Owner GO |
 | Source MASTER backup before scale | OD-SA-06 · VPS **43/43 RETAINED** · Local **43/43 RETAINED** · AWS **DEFERRED** · ARCH-05 **CLOSED** (prod Storage 11) |
 | OD-12 interim MIME allow-list | Codec SSOT still OPEN outside E3 OAD-06 |
 | Root/docs historical SHAs in older audits | Historical snapshots — do not “fix” by rewriting history |
@@ -712,29 +785,24 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION = 2c4200b
-DEPLOYMENT = 6810556404 / dpl_9FdJrwvxGdwafGUTbzpKDzeds9PE
-WAVE A = CLOSED / PRODUCTION VERIFIED — GREEN
-WAVE B = CLOSED / PRODUCTION VERIFIED @ 812a9d4
-FALA 1B = CLOSED / PRODUCTION VERIFIED — GREEN @ 42369c0 (historical)
-FALA 1A = CLOSED / PRODUCTION VERIFIED @ fdf74f9
-W6.2/W6.3 UX SHIP = CLOSED / PRODUCTION VERIFIED @ 9026fa9
-E3.8 W6 = CLOSED / PASS
-E3 = PRODUCTION VERIFIED — GREEN (PASS WITH FINDINGS)
-AC-PE-12 = PASS · GO #5 = PASS
-OWNER GO #2 = CLOSED / SUPERSEDED (Contabo)
-E3 FLAGS = Mix ON · Jobs ON · PUBLIC_AUDIO ON
-WORKER = STOPPED / DISABLED (bootstrap 92496d4)
-STORAGE-ARCH-01 = LOCKED
-STORAGE-ARCH-02 = FUTURE SCALABILITY DOCS PREPARED (NOT IMPLEMENTED · NO CURRENT INVESTMENT)
-FAR-01 = SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED
-DEF-01 = CLOSED / PRODUCTION VERIFIED
-PRODUCTION APP = ddcee65 (docs tip may differ)
-NEXT SESSION ENTRY = FINAL_COLD_START_HANDOFF.md
-                   → ARCH-04/05 orphan-GC audit (separate · 32 candidates · not approved)
+CURRENT PRODUCTION         = 1c63080
+DEPLOYMENT                 = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP / GH 6866686435
+LAST VERIFY                = POLISH-01 residual · GREEN WITH NOTES
+KNOWN WAIVER               = e3-7-f EXPORT_WAV · WAIVED
+POLISH-01                  = CLOSED / PRODUCTION VERIFIED
+P0 / P1 / P2               = CLOSED / PRODUCTION VERIFIED
+ARCH-05                    = CLOSED / VERIFIED
+ADMIN W0–W4                = CLOSED / PRODUCTION VERIFIED
+E3                         = PRODUCTION VERIFIED — GREEN
+WORKER                     = STOPPED / DISABLED
+STORAGE-ARCH-01            = LOCKED
+NEXT GATE                  = P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST
+P3 STATUS                  = NOT STARTED
+NEXT SESSION ENTRY         = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
 ```
 
 **Do not** rewrite historical closeouts or freeze OD locks from this document alone.
+**NIE BUDUJ OD NOWA.** SEARCH BEFORE CREATE · REUSE BEFORE DUPLICATE · SSOT FIRST.
 
 ---
 

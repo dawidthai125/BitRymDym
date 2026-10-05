@@ -1,0 +1,297 @@
+{
+  "track": "POLISH-01_DESIGN_FREEZE",
+  "mode": "CLOSED_PRODUCTION_VERIFIED",
+  "status": "CLOSED_PRODUCTION_VERIFIED",
+  "date": "2026-10-05",
+  "mutations_performed": false,
+  "implementation_performed": true,
+  "implementation_commit": "579acb350cfc5f84c6756d412abfa3eec6778ff8",
+  "residual_hotfix_commit": "1c630809f15e5814b75d133ed04b0ebc3cda4001",
+  "production_deployment": "dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP",
+  "production_verify": "GREEN_WITH_NOTES",
+  "known_waiver": "e3-7-f-download-authz / EXPORT_WAV — PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER",
+  "commit_performed": true,
+  "push_performed": true,
+  "deploy_performed": true,
+  "depends_on": "POLISH-01_LOCALIZATION_AUDIT",
+  "owner_decisions_locked": {
+    "OD-PL-01": "C — nagranie=user object; próbka=policy/function",
+    "OD-PL-02": "Polityka nagrań",
+    "OD-PL-03": "Free/Bronze/Silver/Gold KEEP EN",
+    "OD-PL-04": "W moderacji",
+    "OD-PL-05": "Studio KEEP EN",
+    "OD-PL-06": "Master KEEP EN Title Case"
+  },
+  "principles": [
+    "SSOT_FIRST",
+    "REUSE_FIRST",
+    "ZERO_DUPLICATE_LOGIC",
+    "NO_I18N_FRAMEWORK",
+    "TECH_ENUM_EN_UI_LABEL_MAPPED",
+    "ACCOUNT_LEVEL_NE_PREMIUM_TIER_NE_RANK_NE_ROLE"
+  ],
+  "current_ssot": {
+    "labels": "src/lib/ui/labels.ts",
+    "user_errors": "src/lib/ui/user-errors.ts",
+    "beat_status_duplicate": "src/lib/beats/status-labels.ts",
+    "take_upload_mapper": "src/lib/takes/client-upload.ts#toUserFacingTakeUploadError",
+    "prior_docs": [
+      "docs/audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md",
+      "docs/audits/POLISH_UX_PRODUCTION_CLOSEOUT.md",
+      "docs/decisions/OPEN_DECISIONS.md#OD-08"
+    ]
+  },
+  "helpers_inventory": {
+    "labelAccountLevel": {
+      "BEGINNER_RAPPER": "Początkujący raper",
+      "PRO_RAPPER": "Pro raper",
+      "LEGEND_RAPPER": "Legenda"
+    },
+    "labelPremiumTier": {
+      "FREE": "Free",
+      "BRONZE": "Bronze",
+      "SILVER": "Silver",
+      "GOLD": "Gold"
+    },
+    "labelTakeStatus": {
+      "READY": "Gotowe",
+      "PENDING_UPLOAD": "W trakcie",
+      "FAILED": "Nieudane",
+      "EXPIRED": "Wygasło",
+      "DELETED": "Usunięte"
+    },
+    "labelBeatStatus_PENDING_REVIEW": "Do moderacji",
+    "beatStatusLabelPl_PENDING_REVIEW": "W moderacji",
+    "labelRecordingMode": {
+      "QUICK_TAKE": "Szybkie nagranie",
+      "FULL_TAKE": "Pełne nagranie"
+    },
+    "labelSystemRole": {
+      "ADMIN": "Administrator",
+      "MODERATOR": "Moderator",
+      "USER": "Użytkownik"
+    }
+  },
+  "duplicate_ssot": {
+    "beat_status": {
+      "files": ["src/lib/ui/labels.ts#labelBeatStatus", "src/lib/beats/status-labels.ts#beatStatusLabelPl"],
+      "conflict": {
+        "PENDING_REVIEW": ["Do moderacji", "W moderacji"]
+      },
+      "usages": {
+        "labelBeatStatus": ["/admin", "/admin/beats/[id]"],
+        "beatStatusLabelPl": ["/account/beats", "/admin/moderation", "/admin/moderation/[id]"]
+      },
+      "merge_plan_after_go": "single_switch_in_labels_ts_status_labels_reexport_keep_canUserEditBeatStatus",
+      "merge_risk": "medium"
+    }
+  },
+  "ia_model_proposed": {
+    "Studio": {
+      "routes": ["/account", "/studio→/account"],
+      "meaning": "hub twórczy",
+      "nav_label": "Studio",
+      "decision": "KEEP_EN"
+    },
+    "Profil": {
+      "routes": ["/profile→/account#profil"],
+      "meaning": "sekcja w Studio",
+      "decision": "PROPOSED"
+    },
+    "Konto": {
+      "routes": ["/settings", "account security blocks"],
+      "meaning": "ustawienia / tożsamość",
+      "decision": "PROPOSED"
+    },
+    "Biblioteka": {
+      "routes": ["/library"],
+      "meaning": "zbiory skrótów",
+      "decision": "PROPOSED",
+      "note": "overlap with Studio library section — copy-only DF, no IA rebuild"
+    }
+  },
+  "owner_decisions_required": {
+    "P0": [
+      {
+        "id": "OD-PL-01",
+        "topic": "nagranie_vs_probka",
+        "options": ["A_always_nagranie", "B_always_probka", "C_nagranie_user_probka_policy"],
+        "analyst_preference": "A_or_C",
+        "blocks": ["Wave_C", "Wave_E", "admin_policy_naming"]
+      },
+      {
+        "id": "OD-PL-02",
+        "topic": "admin_sample_policy_page_title",
+        "options": ["Polityka próbek", "Polityka nagrań"],
+        "depends_on": "OD-PL-01",
+        "blocks": ["Wave_A"]
+      },
+      {
+        "id": "OD-PL-03",
+        "topic": "premium_tier_display",
+        "options": ["A_Free_Bronze_Silver_Gold", "B_Darmowy_Brazowy_Srebrny_Zloty"],
+        "analyst_preference": "A",
+        "blocks": ["Wave_D_premium_labels"]
+      },
+      {
+        "id": "OD-PL-04",
+        "topic": "PENDING_REVIEW_label",
+        "options": ["W moderacji", "Do moderacji"],
+        "analyst_preference": "W moderacji",
+        "blocks": ["Wave_B_status_ssot_merge"]
+      },
+      {
+        "id": "OD-PL-05",
+        "topic": "Studio_KEEP_EN",
+        "options": ["KEEP_EN", "rename_to_Konto"],
+        "analyst_preference": "KEEP_EN",
+        "blocks": []
+      },
+      {
+        "id": "OD-PL-06",
+        "topic": "Master_KEEP_EN",
+        "options": ["KEEP_EN_TitleCase", "translate"],
+        "analyst_preference": "KEEP_EN_TitleCase",
+        "blocks": []
+      }
+    ],
+    "P1": [
+      "OD-PL-07_moje_utwory_vs_moje_bity",
+      "OD-PL-08_confirm_IA_copy_model",
+      "OD-PL-09_Pro_Mix_Pro_Master_KEEP_EN",
+      "OD-PL-10_REC_KEEP_EN",
+      "OD-PL-11_merge_status_labels_helper"
+    ],
+    "P2": [
+      "Nagraj_nagranie_wording",
+      "remove_V1_from_guest_copy",
+      "TTL_wording",
+      "aria_utwor_to_bit"
+    ]
+  },
+  "glossary": [
+    {"technical": "beat", "official_pl": "bit", "decision": "PROPOSED", "notes": "dominant catalog noun"},
+    {"technical": "user_upload_list", "official_pl": "moje bity", "decision": "NEEDS_OWNER_DECISION", "notes": "current: Moje utwory"},
+    {"technical": "take/sample_user_noun", "official_pl": "nagranie", "decision": "NEEDS_OWNER_DECISION", "notes": "conflict with próbka; UX closeout favors nagranie"},
+    {"technical": "sample_policy_name", "official_pl": "Polityka próbek|Polityka nagrań", "decision": "NEEDS_OWNER_DECISION", "notes": "depends OD-PL-01"},
+    {"technical": "QUICK_TAKE", "official_pl": "Szybkie nagranie", "decision": "PROPOSED", "notes": "labelRecordingMode"},
+    {"technical": "FULL_TAKE", "official_pl": "Pełne nagranie", "decision": "PROPOSED"},
+    {"technical": "Studio", "official_pl": "Studio", "decision": "KEEP_EN", "notes": "brand IA Workspace→Studio"},
+    {"technical": "Mix", "official_pl": "Mix", "decision": "KEEP_EN", "notes": "sentence form: miks"},
+    {"technical": "Master", "official_pl": "Master", "decision": "KEEP_EN", "notes": "Title Case not SCREAMING"},
+    {"technical": "Pro Mix", "official_pl": "Pro Mix", "decision": "KEEP_EN"},
+    {"technical": "Pro Master", "official_pl": "Pro Master", "decision": "KEEP_EN"},
+    {"technical": "REC", "official_pl": "REC", "decision": "KEEP_EN"},
+    {"technical": "Premium", "official_pl": "Premium", "decision": "KEEP_EN"},
+    {"technical": "FREE", "official_pl": "Free|Darmowy", "decision": "NEEDS_OWNER_DECISION", "notes": "current labelPremiumTier=Free"},
+    {"technical": "BRONZE", "official_pl": "Bronze|Brązowy", "decision": "NEEDS_OWNER_DECISION"},
+    {"technical": "SILVER", "official_pl": "Silver|Srebrny", "decision": "NEEDS_OWNER_DECISION"},
+    {"technical": "GOLD", "official_pl": "Gold|Złoty", "decision": "NEEDS_OWNER_DECISION"},
+    {"technical": "Account Level axis", "official_pl": "Poziom konta", "decision": "PROPOSED"},
+    {"technical": "Premium Tier axis", "official_pl": "Plan Premium", "decision": "PROPOSED"},
+    {"technical": "ANONYMOUS", "official_pl": "Gość", "decision": "PROPOSED"},
+    {"technical": "ADMIN role", "official_pl": "Administrator", "decision": "PROPOSED"},
+    {"technical": "ADMIN chrome", "official_pl": "Panel Administracyjny", "decision": "PROPOSED"},
+    {"technical": "PENDING_REVIEW", "official_pl": "W moderacji|Do moderacji", "decision": "NEEDS_OWNER_DECISION"},
+    {"technical": "READY", "official_pl": "Gotowe", "decision": "PROPOSED"},
+    {"technical": "DRAFT", "official_pl": "Szkic", "decision": "PROPOSED"},
+    {"technical": "PLATFORM", "official_pl": "bit platformowy", "decision": "PROPOSED"},
+    {"technical": "USER ownership", "official_pl": "bit użytkownika", "decision": "PROPOSED"},
+    {"technical": "MP3/WAV/HQ/BPM", "official_pl": "(unchanged)", "decision": "KEEP_EN"},
+    {"technical": "podkład", "official_pl": null, "decision": "TECHNICAL_ONLY", "notes": "insufficient UI evidence"},
+    {"technical": "ACTIVE generic", "official_pl": null, "decision": "TECHNICAL_ONLY"},
+    {"technical": "RPC/OWNER_ID/raw enums", "official_pl": null, "decision": "TECHNICAL_ONLY"}
+  ],
+  "keep_en": [
+    "Studio",
+    "Mix",
+    "Master",
+    "Pro Mix",
+    "Pro Master",
+    "Premium",
+    "REC",
+    "MP3",
+    "WAV",
+    "HQ",
+    "BPM",
+    "Moderator"
+  ],
+  "technical_only": [
+    "take (code/DB)",
+    "sample (code/DB)",
+    "QUICK_TAKE enum",
+    "FULL_TAKE enum",
+    "OWNER_ID",
+    "SAMPLE_POLICY_UPDATE (code action — needs UI label)",
+    "ACTIVE generic",
+    "podkład (do not promote)",
+    "RPC names",
+    "raw SCREAMING enums in UI"
+  ],
+  "needs_owner_decision": [
+    "OD-PL-01",
+    "OD-PL-02",
+    "OD-PL-03",
+    "OD-PL-04",
+    "OD-PL-05",
+    "OD-PL-06",
+    "OD-PL-07",
+    "OD-PL-08"
+  ],
+  "terminology_conflicts": [
+    {
+      "cluster": "nagranie_probka_proba",
+      "variants": ["nagranie", "próbka", "próba", "take", "sample"],
+      "evidence": ["recording-panel", "user-errors", "account Studio", "library meta", "POLISH_UX closeout"]
+    },
+    {
+      "cluster": "bit_utwor_Beat",
+      "variants": ["bit", "utwór", "Beat", "Moje utwory"],
+      "evidence": ["catalog", "account chips", "player aria", "recording fallback"]
+    },
+    {
+      "cluster": "studio_konto_profil_biblioteka",
+      "variants": ["Studio", "Konto", "Profil", "Biblioteka"],
+      "evidence": ["mobile-bottom-nav", "account page", "library page", "settings"]
+    },
+    {
+      "cluster": "pending_review_labels",
+      "variants": ["Do moderacji", "W moderacji"],
+      "evidence": ["labels.ts", "status-labels.ts"]
+    },
+    {
+      "cluster": "premium_vs_account_level",
+      "variants": ["Free/Bronze/Silver/Gold", "Początkujący raper/Pro raper/Legenda"],
+      "evidence": ["labelPremiumTier", "labelAccountLevel", "OD-08"]
+    }
+  ],
+  "label_migration_risks": [
+    {"change": "premium_tier_to_polish", "risk": "high"},
+    {"change": "nagranie_probka_global_rename", "risk": "high"},
+    {"change": "PENDING_REVIEW_unify", "risk": "medium"},
+    {"change": "Studio_nav_rename", "risk": "very_high", "recommendation": "do_not_in_POLISH-01"},
+    {"change": "sample_policy_copy_only", "risk": "low"}
+  ],
+  "implementation_order_after_go": [
+    "Owner_approve_OD-PL-01_to_06",
+    "Wave_A_admin_sample_policy_copy",
+    "Wave_B_publish_gates_status_ownership_labels",
+    "Wave_C_recording_residuals",
+    "Wave_D_labelPremiumTier_audit_action_status_ssot_merge",
+    "Wave_E_terminology_and_IA_copy"
+  ],
+  "wave_a_ready_after_go": {
+    "can_start": true,
+    "minimum_decisions": ["OD-PL-02", "OD-PL-01_direction"],
+    "not_required_for_wave_a": ["OD-PL-03", "OD-PL-07", "full_IA_rebuild"]
+  },
+  "blockers_for_full_polish01_implementation": [
+    "OD-PL-01",
+    "OD-PL-02",
+    "OD-PL-03",
+    "OD-PL-04",
+    "OD-PL-05",
+    "OD-PL-06"
+  ],
+  "closing": "POLISH-01 DESIGN FREEZE — CLOSED / PRODUCTION VERIFIED @ 579acb3 + residual 1c63080. GREEN WITH NOTES. EXPORT_WAV WAIVED."
+}

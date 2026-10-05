@@ -6,6 +6,48 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-05 — DOCUMENTATION CONTINUITY RECONCILIATION
+
+**Status:** DOCS ONLY · tip / production **`1c63080`** · NEXT = **P3 READ-ONLY AUDIT**
+**SSOT:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
+
+- Ujednolicono CURRENT baseline: HEAD = origin/main = Production = `1c63080` · deploy `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP`
+- POLISH-01 / P0 / P1 / P2 / BPM / ARCH-05 / ADMIN W0–W4 oznaczone jako CLOSED / VERIFIED w living docs
+- Known waiver: `e3-7-f` / `EXPORT_WAV` · PRE-EXISTING / WAIVED
+- NEXT GATE = P3 Anonymous → Account Claim · NOT STARTED · audit first
+- Runtime / DB / Storage / migracje: **NONE**
+
+## 2026-10-05 — POLISH-01 (+ residual hotfix) PRODUCTION VERIFIED
+
+**Status:** **CLOSED / PRODUCTION VERIFIED** · verify **GREEN WITH NOTES**
+**Feature:** `579acb3` · **Residual:** `1c63080` · Deploy: `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP`
+**SSOT:** [POLISH-01_DESIGN_FREEZE.md](./audits/POLISH-01_DESIGN_FREEZE.md)
+
+- OD-PL-01…06 LOCKED · UI PL + KEEP EN (Studio/Mix/Master/Premium/tiers/BPM/…)
+- Residual: home `miejscu` · beat `nagrania` / `nagraj nagranie` · moderation `· Administrator`
+- Waiver suite: `e3-7-f` EXPORT_WAV — not a POLISH regression
+
+## 2026-10-05 — P2 Explicit Sample Replace PRODUCTION VERIFIED
+
+**Status:** **CLOSED / PRODUCTION VERIFIED — GREEN** @ `943d81e`
+**SSOT:** [P2_REPLACE_SAMPLE_IMPLEMENTATION.md](./audits/P2_REPLACE_SAMPLE_IMPLEMENTATION.md) · docs verify `fa7bfe3`
+
+- Variant C · `replaces_take_id` · finalize swap · advisory lock · cross-beat + anonymous own replace
+
+## 2026-10-05 — P1 Sample Policy Matrix PRODUCTION VERIFIED
+
+**Status:** **CLOSED / PRODUCTION VERIFIED — GREEN** @ `5927e35`
+**SSOT:** [P1_SAMPLE_POLICY_MATRIX.md](./audits/P1_SAMPLE_POLICY_MATRIX.md) · docs verify `c38e8d2`
+
+- `getSamplePolicy` · `sample_policy_settings` · Bronze/Silver/Gold defaults · Anonymous ≠ Free
+
+## 2026-10-05 — P0 PLATFORM master download deny PRODUCTION VERIFIED
+
+**Status:** **CLOSED / PRODUCTION VERIFIED — GREEN** @ `fdfff71`
+**SSOT:** [P0_PLATFORM_MASTER_DOWNLOAD_DENY.md](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md) · docs verify `23577a3`
+
+- User-facing PLATFORM DOWNLOAD DENY · PLAYBACK ALLOW · ADMIN/OPS export separate · no generic `canDownload`
+
 ## 2026-10-05 — ARCH-05 POST-DELETE RECONCILIATION (CLOSED / VERIFIED)
 
 **Status:** CLOSEOUT **PASS** · live Storage **11 / 8 / 3 / 0 / 0** · historical backup **43/43 RETAINED**
@@ -30,7 +72,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — ARCH-05 FINAL SAFE-TO-DELETE READINESS (READY FOR OWNER DELETE GO)
 
-**Status:** AUDIT **PASS** · SAFE **32/32** · DELETE **0** · OWNER DELETE GO **NOT ISSUED**  
+**Status:** AUDIT **PASS** · SAFE **32/32** · DELETE **0** · OWNER DELETE GO **NOT ISSUED**
 **SSOT:** [ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md](./audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) · [allowlist](./audits/ARCH_05_DELETE_ALLOWLIST.json)
 
 - Fresh inventory **43 / 8 / 3 / 32 / 0** · no drift
@@ -41,7 +83,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — LOCAL WINDOWS BACKUP RESTORE DRILL (PASS)
 
-**Status:** PHASE LOCAL-BACKUP-RESTORE-DRILL **PASS**  
+**Status:** PHASE LOCAL-BACKUP-RESTORE-DRILL **PASS**
 **SSOT:** [STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) · [evidence](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL_EVIDENCE.json)
 
 - LOCAL → LOCAL ISOLATED restore · run `local-restore-20261005T040831Z-76ca3678`
@@ -52,7 +94,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — LOCAL WINDOWS BACKUP IMPLEMENTATION (PASS)
 
-**Status:** PHASE LOCAL-BACKUP-IMPLEMENTATION **PASS**  
+**Status:** PHASE LOCAL-BACKUP-IMPLEMENTATION **PASS**
 **SSOT:** [STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION_EVIDENCE.json)
 
 - Windows PULL from VPS Layer-1 → `C:\BitRymDym-Backup\` · run `local-layer2-full-20261005T040146Z-42d6212b`
@@ -63,7 +105,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — LOCAL WINDOWS BACKUP PLANE DESIGN FREEZE (COMPLETE)
 
-**Status:** OD-VPS-LOCAL-01…12 **CLOSED / APPROVED** · Design Freeze **COMPLETE** · Implementation **NOT STARTED**  
+**Status:** OD-VPS-LOCAL-01…12 **CLOSED / APPROVED** · Design Freeze **COMPLETE** · Implementation **NOT STARTED**
 **SSOT:** [STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md) · [audit](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_AUDIT.md)
 
 - Local Windows = Layer-2 independent copy · VPS remains Layer-1 · PULL-only · append/retain · no delete propagation
@@ -74,7 +116,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — VPS BACKUP PLANE PHASE 6 FULL VPS BACKUP (PASS)
 
-**Status:** Owner GO **APPROVED** · Phase 6 **PASS** · **VPS Layer-1 43/43 BACKED UP** · restore still **3/43** · Phase 7 **NOT STARTED**  
+**Status:** Owner GO **APPROVED** · Phase 6 **PASS** · **VPS Layer-1 43/43 BACKED UP** · restore still **3/43** · Phase 7 **NOT STARTED**
 **SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_PHASE6_FULL_BACKUP_EVIDENCE.json)
 
 - Fresh inventory unchanged: 43 / USER 8 / PLATFORM 3 / ORPHAN 32 · canary 3/3 immutable
@@ -85,7 +127,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — VPS BACKUP PLANE PHASE 5 CANARY RESTORE DRILL (PASS)
 
-**Status:** Owner GO **APPROVED** · Phase 5 **PASS / CANARY RESTORE VERIFIED** · Phase 6 later **PASS** (see above)  
+**Status:** Owner GO **APPROVED** · Phase 5 **PASS / CANARY RESTORE VERIFIED** · Phase 6 later **PASS** (see above)
 **SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_PHASE5_RESTORE_EVIDENCE.json)
 
 - Restore source = VPS Layer-1 backup only (Supabase **not** used as restore source)
@@ -96,7 +138,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — VPS BACKUP PLANE PHASE 4 CONTROLLED CANARY (PASS)
 
-**Status:** Owner GO **APPROVED** · Phase 4 **PASS / CANARY BACKED UP** · Phase 5 later **PASS** (see above)  
+**Status:** Owner GO **APPROVED** · Phase 4 **PASS / CANARY BACKED UP** · Phase 5 later **PASS** (see above)
 **SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_PHASE4_CANARY_EVIDENCE.json)
 
 - Exact allowlist COPY: 1 USER + 1 PLATFORM + 1 ORPHAN · SHA+size VERIFIED ×3
@@ -106,7 +148,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-05 — VPS BACKUP PLANE PHASE 3 TRANSFER DESIGN + DRY-RUN (PASS)
 
-**Status:** Owner GO **APPROVED** · Phase 3 **PASS / DRY-RUN VERIFIED** · Phase 4 later **PASS** (see above)  
+**Status:** Owner GO **APPROVED** · Phase 3 **PASS / DRY-RUN VERIFIED** · Phase 4 later **PASS** (see above)
 **SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [VPS freeze](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md)
 
 - Fresh `beat-audio` inventory: TOTAL 43 · USER 8 · PLATFORM 3 · ORPHAN 32 · UNKNOWN 0

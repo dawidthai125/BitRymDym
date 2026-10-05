@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Repo / Production app `e03f3be` (FAR-01 **operator tooling**, not UI release) · deploy `6823806375` · **FAR-01 = IN PROGRESS / SOAK ACTIVE** (end `2026-10-04T04:40:56.645Z`) · **DEF-01 CLOSED** @ `fbc696f` · HIBP **ACCEPTED RISK** · **E3 GREEN** · Contabo **EXTERNAL COMPUTE STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · next gate = **SOAK END → FINAL SOAK AUDIT**. Living FAR-01: [audits/FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md).
+**Now:** Repo / Production app **`1c63080`** · deploy `dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP` · POLISH-01 / P0 / P1 / P2 **CLOSED / PRODUCTION VERIFIED** · ARCH-05 **CLOSED / VERIFIED** · Contabo **EXTERNAL COMPUTE STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · known waiver `EXPORT_WAV` · **NEXT GATE = P3 Anonymous → Account Claim (READ-ONLY AUDIT FIRST)**. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** FAR-01 soak-end gate first · STORAGE-ARCH-01 **LOCKED** · do **not** start STORAGE-ARCH-02 / retirement / orphan cleanup without Owner GO — see [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **P3 — Anonymous → Account Claim** · READ-ONLY AUDIT FIRST · do **not** implement without Design Freeze + Owner GO — see [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §8.
 
 ---
 

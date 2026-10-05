@@ -1,9 +1,8 @@
 # BitRymDym — FINAL COLD START HANDOFF
 
-**Purpose:** Jedyny wymagany entry point po zamknięciu sesji ChatGPT + Cursor (2026-10-03).
-**Audience:** nowy ChatGPT Architect + nowy Cursor Agent
+**Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-03
+**Updated:** 2026-10-05
 **Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
 
 **Evidence rule (bezwzględna):**
@@ -18,59 +17,67 @@ REPOSITORY STATE ≠ PRODUCTION APP STATE ≠ PRODUCTION DB STATE ≠ STORAGE ST
 
 ---
 
-## 0. READ THIS FIRST
+## 0. READ THIS FIRST — CURRENT STATUS
 
-BitRymDym to platforma muzyczna skoncentrowana na: **rapie · hip-hopie · bitach · odsłuchu · pobieraniu · nagrywaniu Quick Take · przyszłych utworach · społeczności · współpracy producentów i raperów**.
+BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobieranie · Quick Take · społeczność · współpraca**.
 
-**Owner** podejmuje decyzje. Agent **nie** podejmuje ich samodzielnie.
-
-**Obecny chat NIE jest wymagany.** Ciągłość ma być w repozytorium docs + evidence.
+**Owner** decyduje. Agent **nie** decyduje samodzielnie.
+**Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-REPOSITORY HEAD / origin/main = e03f3be
-  message                     = feat(far01): add production backfill operator tooling
-  meaning                     = FAR-01 OPERATOR TOOLING (not a user-facing UI release)
+REPOSITORY HEAD / origin/main = 1c630809f15e5814b75d133ed04b0ebc3cda4001
+  short                       = 1c63080
+  message                     = fix(ui): polish residual home/beat/admin copy
 
-PRODUCTION APP SHA            = e03f3be
-PRODUCTION DEPLOYMENT         = 6823806375 (Vercel bot · success)
-PRODUCTION URL                = https://www.bitrymdym.pl
+PRODUCTION APP SHA            = 1c63080
+PRODUCTION DEPLOYMENT         = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP
+GitHub Production             = 6866686435
+PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
+DEPLOYMENT STATE              = READY / SUCCESS
 
-PRODUCTION DB (tip)           = 20261003051539 / def01_e3_definer_execute_revoke
-  also applied                = 20261002231150 / far01_r1_dryrun_readonly_role
-                              = 20261003012453 / far01_live_mutator_role
+LAST PRODUCTION VERIFY        = POLISH-01 residual hotfix · GREEN WITH NOTES
+KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV
+                              = PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER
+                              (NIE traktować jako nowy regres)
 
-FAR-01 DR-A                   = SHIPPED / PRODUCTION VERIFIED (historical Phase 1)
-FAR-01 CAMPAIGN               = IN PROGRESS / SOAK ACTIVE
-  canary N=5                  = PASS
-  fleet N=62                  = PASS
-  soak start                  = 2026-10-03T04:40:56.645Z
-  soak end                    = 2026-10-04T04:40:56.645Z
-  interim soak                = PASS · no drift
-  retirement / cleanup        = NOT EXECUTED
-  FAR-01 CLOSED?              = NO
-
-DEF-01                        = CLOSED / PRODUCTION VERIFIED @ fbc696f
-ACTIVE P0 / P1                = NONE VERIFIED
-HIBP                          = DEFERRED / ACCEPTED RISK (not solved)
-
-WORKER                        = Contabo · STOPPED / DISABLED · bootstrap 92496d4
-SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
 BRANCH                        = main
+SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
+WORKER                        = Contabo · STOPPED / DISABLED · bootstrap 92496d4
 
-NEXT GATE                     = WAIT FOR SOAK END → FINAL SOAK AUDIT → Owner Review → FAR-01 closeout (only if evidence supports)
+NEXT GATE                     = P3 — Anonymous → Account Claim
+P3 STATUS                     = NOT STARTED
+P3 NEXT ACTION                = READ-ONLY AUDIT FIRST
 ```
+
+### CURRENT STATUS (closed / verified)
+
+| Track | Status |
+|-------|--------|
+| **POLISH-01** (+ residual hotfix) | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` → residual `1c63080` |
+| **P0** PLATFORM master download deny | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` |
+| **P1** Sample Policy Matrix | **CLOSED / PRODUCTION VERIFIED** @ `5927e35` |
+| **P2** Explicit Sample Replace | **CLOSED / PRODUCTION VERIFIED** @ `943d81e` |
+| **BPM** (+ real beats / corrections) | **CLOSED / PRODUCTION VERIFIED** |
+| **ARCH-05** orphan GC | **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** |
+| **USER-ID-01** | **CLOSED / PRODUCTION VERIFIED** |
+| **ADMIN W0–W4** | **CLOSED / PRODUCTION VERIFIED** |
+| **Recording Waves 1–5 / D02** | **CLOSED / PRODUCTION VERIFIED** |
+| **E3 Full Audio** | **PRODUCTION VERIFIED — GREEN** (Premium HQ/WAV E2E: see waiver) |
+| **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · retirement **NOT EXECUTED** · **NOT CLOSED** (ops — nie NEXT product gate) |
+
+**Historyczne tipy** (`e03f3be`, `ddcee65`, `ffe723b`, `4e33e8d`, …) = **HISTORYCZNE RELEASE** — nie current baseline.
 
 **Planes (never merge):**
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository | `e03f3be` |
-| Production app | `e03f3be` (operator tooling deploy) |
-| Production DB | DEF-01 + FAR-01 R1/LIVE roles applied |
-| Production Storage | post-fleet inventory under soak (see §6) |
-| Session / operator | soak ACTIVE · dirty local docs worktree may exist |
+| Repository | `1c63080` |
+| Production app | `1c63080` |
+| Production DB | tip includes admin W4 + P1 sample_policy_settings · verify remote before DB work |
+| Production Storage | live **11** (USER 8 · PLATFORM 3 · ORPHAN 0) · historical backup **43/43 RETAINED** |
+| Session / operator | dirty local WIP may exist — **nie czyścić bez Owner GO** |
 
-**Primary continuity:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md) · [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
+**Primary continuity:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
 
 ---
 
@@ -79,32 +86,31 @@ NEXT GATE                     = WAIT FOR SOAK END → FINAL SOAK AUDIT → Owner
 1. **This file**
 2. [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)
 3. [PROJECT_STATE.md](./PROJECT_STATE.md)
-4. [audits/FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
-5. [STORAGE_ARCH_01_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_01_DESIGN_FREEZE.md)
-6. [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](./audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md)
-7. [architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./architecture/E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md)
-8. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
-9. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
-10. [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) · [architecture/RECORDING.md](./architecture/RECORDING.md)
-11. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
-12. [CHANGELOG.md](./CHANGELOG.md)
-13. Relevant audit/closeout **only** when Owner selects that surface
+4. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+5. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+6. [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) · [architecture/RECORDING.md](./architecture/RECORDING.md)
+7. [audits/POLISH-01_DESIGN_FREEZE.md](./audits/POLISH-01_DESIGN_FREEZE.md)
+8. [audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md) · [P1_SAMPLE_POLICY_MATRIX.md](./audits/P1_SAMPLE_POLICY_MATRIX.md) · [P2_REPLACE_SAMPLE_IMPLEMENTATION.md](./audits/P2_REPLACE_SAMPLE_IMPLEMENTATION.md)
+9. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
+10. [CHANGELOG.md](./CHANGELOG.md)
+11. Relevant audit/closeout **only** when Owner selects that surface
 
 **Before any implementation:** AUDIT → REPORT → wait for **Owner GO**.
 
-Repo root: [AGENTS.md](../AGENTS.md) — Next.js in this repo may differ from training data.
+Repo root: [AGENTS.md](../AGENTS.md) — Next.js w tym repo może różnić się od training data.
 
 ---
 
-## 2. What BitRymDym is
+## 2. Czym jest BitRymDym
 
 | Item | Value |
 |------|--------|
-| Product | Music platform for beat culture (listen, download, record takes, community upload) |
-| Brand rule | Own musical identity — **not** generic AI SaaS UI (SSOT §2) |
+| Produkt | Platforma muzyczna (odsłuch, pobieranie, nagrania Quick Take, community upload) |
+| Brand | Własna tożsamość muzyczna — **nie** generyczny AI SaaS UI (SSOT §2) |
 | Stack | Next.js (App Router) · TypeScript · Tailwind · shadcn base · Supabase · Vercel · Contabo EXTERNAL compute |
-| Auth | Supabase Auth · roles USER / MODERATOR / ADMINISTRATOR |
-| Account levels | BEGINNER_RAPPER · PRO_RAPPER · LEGEND_RAPPER (≠ Premium) |
+| Auth roles (enum) | `USER` · `MODERATOR` · `ADMIN` (UI: Administrator) |
+| Account levels | `BEGINNER_RAPPER` · `PRO_RAPPER` · `LEGEND_RAPPER` (**≠** Premium) |
+| Premium tiers | Free · Bronze · Silver · Gold (**KEEP EN** · **≠** Role / Account Level / Rank) |
 
 ---
 
@@ -117,21 +123,14 @@ BROWSER
   → Supabase PostgreSQL
        metadata SSOT · RLS · entitlements · jobs · artifacts rows
   → Supabase Storage = DURABLE MEDIA SSOT (ONLY durable media V1)
-       beat-audio · take-audio · audio-artifacts  (all PRIVATE)
+       beat-audio · take-audio · audio-artifacts  (PRIVATE)
   → Contabo VPS = EXTERNAL COMPUTE
        FFmpeg / ephemeral processing
        NOT library · NOT durable media · NOT backup · NOT audio SSOT
-       worker unit currently STOPPED / DISABLED (bootstrap 92496d4)
+       worker unit STOPPED / DISABLED (bootstrap 92496d4)
 ```
 
-| Layer | Role | Durable audio? |
-|-------|------|----------------|
-| Vercel | App / AuthZ / orchestration | NO |
-| Supabase DB | Metadata SSOT | metadata only |
-| Supabase Storage | Durable media SSOT | YES |
-| Contabo VPS | EXTERNAL COMPUTE | NO |
-
-STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED**.
+STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFERRED**.
 
 ---
 
@@ -139,124 +138,144 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED**.
 
 | Capability | Status |
 |------------|--------|
-| Public beats / catalog / detail / playback / signed playback | PRODUCTION VERIFIED |
-| Downloads / download limits | PRODUCTION VERIFIED |
+| Public catalog / beat detail / playback / signed playback | PRODUCTION VERIFIED |
 | Account / takes / beats / upload / moderation / admin | PRODUCTION VERIFIED |
 | Recording Waves 1–5 / Quick Take / anonymous QT | PRODUCTION VERIFIED |
 | Shared grants → RECORD only | PRODUCTION VERIFIED |
-| E3 Mix / Master / Render / Export / Free Basic / PUBLIC_AUDIO | PRODUCTION VERIFIED — GREEN |
-| Premium HQ/WAV entitlement layer | SHIPPED on Prod · Premium E2E **NOT TESTED** |
-| audio-artifacts | SHIPPED · janitor **DEFERRED** |
-| FAR-01 DR-A dual-accept | SHIPPED / PRODUCTION VERIFIED |
-| FAR-01 backfill campaign (canary+fleet) | **EXECUTED** · **SOAK ACTIVE** · **NOT CLOSED** |
-| FAR-01 retirement / orphan cleanup | **NOT EXECUTED** |
-| Fala 3.5.1 Recording UX | CLOSED · PRELIMINARY PASS · **NOT DEPLOYED** |
-| Messaging / comments / voting / payments / STEMS / track publish | NOT STARTED / DEFERRED |
-| External Object Storage | NOT IMPLEMENTED |
+| E3 Mix / Master / Render / Export / Basic MP3 / PUBLIC_AUDIO | PRODUCTION VERIFIED — GREEN |
+| P0 PLATFORM master download deny | **CLOSED / PRODUCTION VERIFIED** |
+| P1 Sample Policy | **CLOSED / PRODUCTION VERIFIED** |
+| P2 Explicit Sample Replace | **CLOSED / PRODUCTION VERIFIED** |
+| POLISH-01 (+ residual) | **CLOSED / PRODUCTION VERIFIED** |
+| BPM / real beats import + corrections | **CLOSED / PRODUCTION VERIFIED** |
+| USER-ID-01 / ACCOUNT-PROFILE-01 | PRODUCTION VERIFIED |
+| ADMIN W0–W4 | PRODUCTION VERIFIED |
+| Premium HQ/WAV export capability assert | **KNOWN WAIVER** (`EXPORT_WAV`) — PRE-EXISTING / WAIVED |
+| FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · **NOT CLOSED** |
+| Messaging / comments / voting / payments / STEMS / Premium catalog | DEFERRED |
+| External Object Storage | NOT IMPLEMENTED / DEFERRED |
+| **P3 Anonymous → Account Claim** | **NOT STARTED** · NEXT GATE |
 
 ---
 
-## 5. Session closeout (2026-10-03)
+## 5. Backup / DR (krótko)
 
-What this session completed (evidence in `docs/audits/` + `docs/audits/evidence/`):
+```text
+Local Layer-2 path     = C:\BitRymDym-Backup\
+Full backup            = local-layer2-full-20261005T040146Z-42d6212b
+Inventory              = 43/43 (USER 8 · PLATFORM 3 · ORPHAN 32 historical)
+Restore drill          = local-restore-20261005T040831Z-76ca3678
+Restore                = 43/43 · SHA/size/WAV/ffprobe/manifests PASS
+VPS Layer-1            = 43/43 BACKED UP (staging · Contabo ≠ durable SSOT)
+Live production Storage after ARCH-05 = 11 / 8 / 3 / 0 / 0
+Backup ≠ Storage SSOT ≠ VPS
+```
 
-1. FAR-01 audit / RCA / design freeze
-2. R1 role `far01_dryrun_readonly` + LIVE role `far01_live_mutator` (prod applied + repo reconciled @ `e03f3be`)
-3. Production dry-run · checksum · identity · quarantine gates
-4. Canary **N=5 PASS** · Fleet **N=62 PASS**
-5. Soak **STARTED** · interim **PASS** · clock **ACTIVE** until `2026-10-04T04:40:56.645Z`
-6. DEF-01 E3 DEFINER EXECUTE revoke · **PRODUCTION VERIFIED** @ `fbc696f`
-7. Post-DEF-01 P0/P1 audit · **CLEAN** · HIBP **ACCEPTED RISK**
-8. Commit 1 `e03f3be` · push · Production deploy `6823806375` (operator tooling)
-
-**Do not mark FAR-01 CLOSED. Do not delete legacy/orphans. Do not start retirement.**
-
----
-
-## 6. FAR-01 current inventory (soak)
-
-| Class | Count |
-|-------|------:|
-| legacy USER | 1 |
-| canonical USER | 77 |
-| platform | 3 |
-| retained legacy sources | 67 |
-| true/historical orphans | 30 |
-| total orphan Storage | 97 |
-| quarantine | 1 |
-| MIGRATE candidates | 0 |
-
-Living status: [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
-Historical Phase 1 closeout (DR-A only): [FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md](./audits/FAR_01_PHASE1_DRA_PRODUCTION_CLOSEOUT.md)
+Szczegóły: [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md) · STORAGE_ARCH_07 audits.
 
 ---
 
-## 7. Security
+## 6. Security / known waiver
 
 | Item | Status |
 |------|--------|
 | DEF-01 | CLOSED / PRODUCTION VERIFIED |
-| DEF-02 `is_admin` / `is_moderator` / `is_staff` | Intentional RLS helpers · Advisor WARN only |
-| ACTIVE P0 | NONE VERIFIED |
-| ACTIVE P1 | NONE VERIFIED |
-| HIBP | DEFERRED / ACCEPTED RISK — **not solved** |
+| ACTIVE product P0/P1 (security) | NONE VERIFIED as open blockers |
+| HIBP | DEFERRED / ACCEPTED RISK |
+| `e3-7-f` / `EXPORT_WAV` | **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 
-Operator secrets (`.env.far01.local`, JWT secret, service role): **CONFIGURED locally / NOT in git / NEVER print**.
+Secrets: **NIGDY** commit / print / stage.
 
 ---
 
-## 8. Cursor / Agent operating rules
+## 7. Cursor / Agent operating rules
 
-Principles: **SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC · SERVER AUTHORIZATION · PRIVATE AUDIO · DOCUMENTATION CONTINUITY**
-
-Workflow:
+**SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC · SERVER AUTHORIZATION · PRIVATE AUDIO · DOCUMENTATION CONTINUITY**
 
 ```text
 AUDIT → RCA → PLAN → DESIGN FREEZE → ARCH REVIEW → OWNER GO
 → IMPLEMENT → BUILD → TEST → OWNER VERIFY → COMMIT → PUSH
-→ PRODUCTION VERIFY → POST RELEASE → CLOSE
+→ PRODUCTION DEPLOY → PRODUCTION VERIFY → POST RELEASE → CLOSE
 ```
 
-Git hygiene:
+Git:
 
-- **Never** `git add .` / `git add -A` / `git add -u`
+- **Nigdy** `git add .` / `git add -A` / `git add -u`
 - Exact allowlist only
-- **Do not commit:** `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env` · `.env.local` · `.env.far01.local` · secrets
+- **Nie stage'uj:** `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · niezamierzone WIP
 
-Local dirty worktree (may remain after docs commits):
+Dirty worktree: **nie czyść** bez Owner GO.
+
+---
+
+## 8. NEXT GATE — P3 (prompt dla Cursor)
+
+**P3 — Anonymous → Account Claim**
+**Status:** NOT STARTED
+**Następna akcja:** **READ-ONLY AUDIT** (zero implementacji)
 
 ```text
-LOCAL WORKTREE DIRTY (non-product)
-  staged = 0 (when clean after docs commit)
-  modified tracked = 0 (typical)
-  untracked leaves ≈ 130 before docs commit
-  git status ≈ 80 ?? (collapsed)
-  Cursor ≈ 78 (often hides .agents/.cursor)
-  Mass = docs/evidence + agent tooling + infra residue — NOT 80 product code changes
+Zbadaj możliwość bezpiecznego:
+Anonymous recording → signup/login → claim własnego nagrania → przypisanie take do authenticated user.
+
+Audyt MUSI sprawdzić:
+1. anonymous_token_hash
+2. cookie/session
+3. ownership
+4. claim RPC
+5. RLS
+6. AuthZ
+7. IDOR
+8. replay
+9. token possession
+10. stale token
+11. expiry
+12. deleted take
+13. pending take
+14. concurrent claim
+15. cross-user claim
+16. cross-device behavior
+17. signup/login behavior
+18. storage
+19. quotas
+20. TTL
+21. replace interaction
+22. UX
+23. migration impact
+24. security threat model
+
+Workflow:
+AUDIT → RCA → PLAN → DESIGN FREEZE → ARCH REVIEW → OWNER GO
+
+BEZ IMPLEMENTACJI. BEZ MIGRACJI. BEZ DEPLOY.
 ```
+
+Baza evidence: D02 closeout (anon→account claim = OUT) · sample download audit.
 
 ---
 
 ## 9. Absolute prohibitions without Owner GO
 
-- Production deploy / Vercel env changes
-- Contabo worker start / systemd / VPS mutate
-- Supabase schema / RLS / Storage object delete / retirement
-- FAR-01 LIVE mutator / backfill / cleanup / orphan GC
-- Treat Contabo as durable media
-- Rewrite historical closeouts to fake current tip
-- Stage agent/infra secrets residue
+- Runtime / AuthZ / DB / Storage / migration mutate
+- P3 implementacja
+- EXPORT_WAV „fix”
+- Reopen zamkniętych epików bez nowego evidence
+- Traktowanie Contabo jako durable media / backup SSOT
+- Stage agent/infra/secrets residue
+- `git add .` / `-A` / `-u`
 
 ---
 
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect e03f3be (or later docs tip)
-[ ] Confirm Production app tip via Deployments (may equal repo tip)
-[ ] Read FAR_01_CURRENT_STATE — soak ACTIVE until 2026-10-04T04:40:56.645Z
-[ ] Do NOT mark FAR-01 CLOSED / retirement / cleanup complete
-[ ] Do NOT start next epic without Owner GO
+[ ] git fetch && git rev-parse HEAD           → expect 1c63080 (lub nowszy docs tip po tym pliku)
+[ ] git rev-parse origin/main                → match HEAD
+[ ] Confirm Production app SHA = 1c63080 (Deployments / aliases www + apex)
+[ ] Read MASTER_HANDOFF + PROJECT_STATE
+[ ] NEXT GATE = P3 READ-ONLY AUDIT — nie implementuj
+[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM bez nowego evidence
+[ ] Nie czyść dirty WIP
 [ ] AUDIT FIRST → report → wait for Owner GO
 ```
 
@@ -265,16 +284,16 @@ LOCAL WORKTREE DIRTY (non-product)
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (after this docs reconciliation commit)
-REPOSITORY HEAD              = e03f3be
-PRODUCTION APP SHA           = e03f3be (operator tooling)
-PRODUCTION DEPLOYMENT        = 6823806375
-FAR-01                       = IN PROGRESS / SOAK ACTIVE
-DEF-01                       = CLOSED / PRODUCTION VERIFIED
-HIBP                         = DEFERRED / ACCEPTED RISK
-WORKER                       = STOPPED / DISABLED (EXTERNAL COMPUTE)
-NEXT GATE                    = SOAK END → FINAL SOAK AUDIT
+FINAL COLD START HANDOFF     = READY (continuity reconciled 2026-10-05)
+REPOSITORY HEAD              = 1c63080
+PRODUCTION APP SHA           = 1c63080
+PRODUCTION DEPLOYMENT        = dpl_2YVDSYPXsmrmx9hxQiF9X6AgVRQP
+LAST VERIFY                  = POLISH-01 residual · GREEN WITH NOTES
+KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
+NEXT GATE                    = P3 — Anonymous → Account Claim · READ-ONLY AUDIT FIRST
 PRIOR CHAT REQUIRED          = NO
+NIE BUDUJ OD NOWA            = TAK
+SEARCH BEFORE CREATE         = TAK
 ```
 
 *End of FINAL COLD START HANDOFF.*

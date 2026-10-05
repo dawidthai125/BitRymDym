@@ -8,30 +8,33 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 
 | Element | Wartość |
 |---------|---------|
+| Cold start | [docs/FINAL_COLD_START_HANDOFF.md](./docs/FINAL_COLD_START_HANDOFF.md) |
 | Master Handoff | [docs/MASTER_HANDOFF.md](./docs/MASTER_HANDOFF.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
-| **Production application** | `99c4815` · https://www.bitrymdym.pl · **GREEN** |
-| **Git tip (origin/main)** | docs continuity tip (successor of `406ff5b`; may differ from prod app — do not auto-align) |
-| Recording Waves 1–4 | **CLOSED** / **PRODUCTION VERIFIED** |
+| **Production application** | `1c63080` · https://www.bitrymdym.pl · **READY** |
+| **Git tip (origin/main)** | `1c63080` (docs continuity may advance after this tip) |
+| POLISH-01 / P0 / P1 / P2 | **CLOSED / PRODUCTION VERIFIED** |
+| Recording Waves 1–5 | **CLOSED** / **PRODUCTION VERIFIED** |
 | Community Upload | **CLOSED / LOCKED** @ `c5e1f17` |
-| Płatności / Premium | wyłączone / NOT IMPLEMENTED |
-| Next | **OWNER DIRECTION / COLD START AUDIT** — see MASTER_HANDOFF |
+| Płatności / Premium catalog | wyłączone / NOT IMPLEMENTED |
+| Next | **P3 — Anonymous → Account Claim (READ-ONLY AUDIT)** — see FINAL_COLD_START |
 
 ## Nowy agent — start tutaj
 
-1. [docs/MASTER_HANDOFF.md](./docs/MASTER_HANDOFF.md)  
-2. [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md)  
-3. Pełna kolejność: [docs/README.md](./docs/README.md)
+1. [docs/FINAL_COLD_START_HANDOFF.md](./docs/FINAL_COLD_START_HANDOFF.md)
+2. [docs/MASTER_HANDOFF.md](./docs/MASTER_HANDOFF.md)
+3. [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md)
+4. Pełna kolejność: [docs/README.md](./docs/README.md)
 
 ## Dokumentacja
 
-- [Master Handoff](./docs/MASTER_HANDOFF.md) — cold-start continuity  
-- [Master SSOT v0.1](./docs/ssot/MASTER_SSOT_v0.1.md) — prawda produktowa  
-- [System Architecture](./docs/architecture/SYSTEM_ARCHITECTURE.md) — baseline techniczny  
-- [Recording](./docs/architecture/RECORDING.md) — Waves 1–4 CLOSED  
-- [Otwarte decyzje](./docs/decisions/OPEN_DECISIONS.md)  
-- [Decision Log](./docs/decisions/DECISION_LOG.md)  
+- [Master Handoff](./docs/MASTER_HANDOFF.md) — cold-start continuity
+- [Master SSOT v0.1](./docs/ssot/MASTER_SSOT_v0.1.md) — prawda produktowa
+- [System Architecture](./docs/architecture/SYSTEM_ARCHITECTURE.md) — baseline techniczny
+- [Recording](./docs/architecture/RECORDING.md) — Waves 1–4 CLOSED
+- [Otwarte decyzje](./docs/decisions/OPEN_DECISIONS.md)
+- [Decision Log](./docs/decisions/DECISION_LOG.md)
 - [Documentation Continuity](./docs/DOCUMENTATION_CONTINUITY.md)
 
 ## Stack (zatwierdzony)
@@ -60,10 +63,10 @@ Skopiuj `.env.example` → `.env.local`. Nie commituj sekretów. Nie commituj `.
 
 ## Zasady rozwoju
 
-1. Nie zmieniać założeń produktu poza procesem aktualizacji SSOT.  
-2. Nie implementować elementów OPEN w OPEN_DECISIONS bez Owner GO.  
-3. Krytyczne reguły — zawsze po stronie serwera.  
-4. Małe etapy + testy + Documentation Continuity.  
-5. Start: MASTER_HANDOFF → PROJECT_STATE → SSOT → architecture → OPEN_DECISIONS.  
-6. Next = **OWNER DIRECTION / COLD START AUDIT**, nie auto-epic (Wave 5 = no automatic GO).  
+1. Nie zmieniać założeń produktu poza procesem aktualizacji SSOT.
+2. Nie implementować elementów OPEN w OPEN_DECISIONS bez Owner GO.
+3. Krytyczne reguły — zawsze po stronie serwera.
+4. Małe etapy + testy + Documentation Continuity.
+5. Start: MASTER_HANDOFF → PROJECT_STATE → SSOT → architecture → OPEN_DECISIONS.
+6. Next = **OWNER DIRECTION / COLD START AUDIT**, nie auto-epic (Wave 5 = no automatic GO).
 7. Documentation ≠ proof of shipped implementation; code/schema = evidence.

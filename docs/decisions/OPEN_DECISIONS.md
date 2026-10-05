@@ -88,6 +88,13 @@
 | OD-SA-07-14a | Contabo Layer-1 exception | OD-SA-07-14 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-05 · Contabo WORKING/STAGING Layer-1 only · sole/final DR forbidden · compute unchanged |
 | OD-SA-07-15 | Backup encryption | OD-SA-06 | Storage backup plane | **DESIGN CLOSED** — 2026-10-04 |
 | OD-SA-07-16 | Manifest storage | OD-SA-06 | Storage backup plane | **DESIGN CLOSED** — 2026-10-04 · DB primary + backup JSON secondary |
+| OD-PL-01 | nagranie vs próbka (UI) | POLISH-01 | UI terminology | **CLOSED / ACCEPTED** — 2026-10-05 · **C** · nagranie=obiekt użytkownika · próbka=funkcja/polityka |
+| OD-PL-02 | Nazwa admin policy | POLISH-01 | Admin UI | **CLOSED / ACCEPTED** — 2026-10-05 · **Polityka nagrań** |
+| OD-PL-03 | Premium tier display | POLISH-01 / OD-08 | UI | **CLOSED / ACCEPTED** — 2026-10-05 · Free/Bronze/Silver/Gold **KEEP EN** |
+| OD-PL-04 | PENDING_REVIEW label | POLISH-01 | UI status | **CLOSED / ACCEPTED** — 2026-10-05 · **W moderacji** |
+| OD-PL-05 | Studio brand | POLISH-01 | Nav / IA copy | **CLOSED / ACCEPTED** — 2026-10-05 · Studio **KEEP EN** |
+| OD-PL-06 | Master brand | POLISH-01 | Mix/Master UI | **CLOSED / ACCEPTED** — 2026-10-05 · Master **KEEP EN** Title Case |
+| EPIC-P3 | Anonymous → Account Claim | Recording / D02 OUT | Take ownership after signup/login | **OPEN** — **NEXT GATE** · **READ-ONLY AUDIT REQUIRED** · Design Freeze **NOT STARTED** · Implementation **FORBIDDEN** until Owner GO |
 
 ---
 
@@ -131,8 +138,8 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-VPS-LOCAL-01…12 | Local Windows Layer-2 · **43/43 RESTORE VERIFIED** · path `C:\BitRymDym-Backup\` | 2026-10-05 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
-W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).  
-Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).  
+W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
+Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
 STORAGE-ARCH-07: [STORAGE_ARCH_07_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) (**DESIGN FREEZE COMPLETE** · AWS **DEFERRED** · VPS **43/43**).
 VPS BACKUP PLANE: [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) (**CLOSED** · Phase 1–6 **PASS** · restore **3/43**).
@@ -205,7 +212,19 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 - **P2-3** = **OPEN** (manual migration idempotency not verified).
 - **P2-4** = **OPEN** (known MCP production migration version drift).
 - Historical foundation-contract “W2-D downloads” naming is not rewritten; current Owner gate name = **W2-B PREMIUM ENFORCEMENT**.
-- **NEXT GATE** = W2-B CLOSEOUT DOCUMENTATION COMMIT/PUSH.
+- **Living production tip (2026-10-05):** `1c63080` · POLISH-01 / P0 / P1 / P2 **CLOSED / PRODUCTION VERIFIED**.
+- **NEXT GATE (product)** = **EPIC-P3** Anonymous → Account Claim · **READ-ONLY AUDIT FIRST** · no Design Freeze · no Implementation GO.
+- W2-B documentation closeout is **not** the current NEXT product gate.
+
+---
+
+## EPIC-P3 — Anonymous → Account Claim (OPEN)
+
+**Status:** OPEN · NOT STARTED · NEXT GATE
+**Action:** READ-ONLY AUDIT only
+**Forbidden now:** implementacja · migracje · Design Freeze bez audytu · Owner Implementation GO
+
+Prompt kanoniczny: [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md) §8.
 
 ---
 
