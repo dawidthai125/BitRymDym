@@ -4,6 +4,17 @@
   "od_rs_r1": "KEEP_ADMIN_OPS_EXPORT_ALLOW",
   "scope": "P0_ONLY",
   "invariant": "ownership_type=PLATFORM + user_facing_download = DENY",
+  "commit": "fdfff71e3b23b41ff53f61746bc9b47dee5c9e94",
+  "deploy": {
+    "vercel_deployment_id": "dpl_7yxpB9hawcBoWGrp8YNX1pRxhhQ3",
+    "vercel_url": "https://bitrymdym-hxlz3bk4n-dawidthai125s-projects.vercel.app",
+    "aliases": [
+      "https://www.bitrymdym.pl",
+      "https://bitrymdym.pl",
+      "https://bitrymdym.vercel.app"
+    ],
+    "readyState": "READY"
+  },
   "rca": {
     "prior_bug": "Access Gate allowed DOWNLOAD without PLATFORM ownership deny; ADMIN DOWNLOAD always true",
     "fix": "canDownloadOriginalBeatMaster + ownership_type load before signed URL; OPS export separate"
@@ -17,8 +28,7 @@
     "AdminPlatformOpsExportButton",
     "mix session PLAYBACK",
     "api/admin/beats/[id]/master (upload only)",
-    "take download (out of scope)",
-    "src/app/api (no user-facing beat-audio download routes)"
+    "take download (out of scope)"
   ],
   "authorization_gate": {
     "helper": "canDownloadOriginalBeatMaster",
@@ -43,22 +53,35 @@
     "hide_download_button_for_platform": true,
     "message_pl": "Pobieranie oryginalnego bitu jest niedostępne."
   },
-  "test_matrix": {
-    "platform_anon_download": "DENY",
-    "platform_free_bronze_silver_gold_download": "DENY",
-    "platform_admin_user_facing_download": "DENY",
-    "platform_ops_export": "ALLOW",
-    "user_owned_download": "UNCHANGED",
-    "platform_playback": "ALLOW",
-    "platform_recording_source": "ALLOW",
-    "bypass_server_enforcement": "DENY",
-    "forged_idor_fail_closed": "DENY"
-  },
   "verification_local": {
     "targeted_tests": "PASS 137/137 (9 files)",
-    "typecheck": "PASS (after local-only untracked script noise fixed; not staged)",
-    "lint_p0_files": "PASS except pre-existing react-hooks/refs on beat-detail-client:70",
+    "typecheck": "PASS",
+    "lint_note": "pre-existing react-hooks/refs on beat-detail-client:70",
     "build": "PASS"
+  },
+  "production_verify": {
+    "status": "GREEN",
+    "verdict": "PRODUCTION VERIFIED — GREEN",
+    "beat_id": "ee65a815-449a-49a4-92f4-0e3bad3d6831",
+    "beat_title": "Bit By DTT",
+    "checks": {
+      "platform_playback": "PASS",
+      "platform_recording_source": "PASS",
+      "platform_master_download_ui": "DENY_MESSAGE",
+      "platform_master_download_server_action": "DENY",
+      "signed_playback_head": "PASS_200_audio_mpeg",
+      "ops_export_admin": "PASS",
+      "forged_beat_id_download": "DENY_NOT_FOUND",
+      "data_mutation": "NONE"
+    },
+    "server_action_download_error": "Pobieranie oryginalnego bitu jest niedostępne.",
+    "post_deploy_counts": {
+      "beats_total": 17,
+      "beats_published": 17,
+      "beats_platform": 17,
+      "assets_ready": 17,
+      "takes_total": 1
+    }
   },
   "data_safety": {
     "beats": "unchanged",
@@ -68,9 +91,5 @@
     "mix_render": "unchanged",
     "profiles_auth": "unchanged"
   },
-  "out_of_scope": ["P1", "P2", "P3", "P4", "P5", "P6", "BPM_V2", "D02_except_download_vs_playback"],
-  "production_verify": {
-    "status": "PENDING_DEPLOY",
-    "verdict": null
-  }
+  "out_of_scope": ["P1", "P2", "P3", "P4", "P5", "P6", "BPM_V2", "D02_except_download_vs_playback"]
 }
