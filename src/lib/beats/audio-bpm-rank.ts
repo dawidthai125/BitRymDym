@@ -112,46 +112,10 @@ export function rankBpmCandidates(
   };
 }
 
-/**
- * Server create policy: resolve final BPM from ensemble suggest + client submission.
- * Client BPM is never silent SSOT. Explicit override is allowed.
- * Design Freeze: exact match to AUTO_SUGGEST, or override, or manual path.
- */
-export function resolveCreateBpm(params: {
-  clientBpm: number;
-  bpmManualOverride: boolean;
-  /** Suggested BPM when status was AUTO_SUGGEST; null when MANUAL / unavailable. */
-  suggestedBpm: number | null;
-  decodeAvailable: boolean;
-}): { ok: true; bpm: number } | { ok: false; error: string } {
-  const { clientBpm, bpmManualOverride, suggestedBpm, decodeAvailable } =
-    params;
-
-  if (
-    typeof clientBpm !== "number" ||
-    !Number.isInteger(clientBpm) ||
-    clientBpm < BEAT_BPM_MIN ||
-    clientBpm > BEAT_BPM_MAX
-  ) {
-    return { ok: false, error: "BPM musi być liczbą całkowitą 1–300." };
-  }
-
-  if (bpmManualOverride) {
-    return { ok: true, bpm: clientBpm };
-  }
-
-  // No auto suggest (unsupported format / MANUAL_REQUIRED / failed analysis).
-  if (!decodeAvailable || suggestedBpm == null) {
-    return { ok: true, bpm: clientBpm };
-  }
-
-  if (clientBpm === suggestedBpm) {
-    return { ok: true, bpm: suggestedBpm };
-  }
-
-  return {
-    ok: false,
-    error:
-      "BPM niezgodny z automatyczną sugestią. Przywróć wykrytą wartość lub oznacz zmianę jako ręczną.",
-  };
-}
+/** Re-export create policy (defined in bpm-uncertainty — allowlist enforced). */
+export { resolveCreateBpm } from "@/lib/beats/bpm-uncertainty";
+export type {
+  BpmSelectionMode,
+  BpmUncertaintyEnvelope,
+  ResolveCreateBpmResult,
+} from "@/lib/beats/bpm-uncertainty";

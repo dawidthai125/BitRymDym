@@ -13,7 +13,12 @@ import {
   analyzeBeatAudioBytes,
   type AnalyzedBeatBpm,
 } from "@/lib/beats/audio-duration";
-import { resolveCreateBpm } from "@/lib/beats/audio-bpm-rank";
+import {
+  buildBpmUncertaintyEnvelopeFromProbe,
+  resolveCreateBpm,
+  type BpmSelectionMode,
+  type BpmUncertaintyEnvelope,
+} from "@/lib/beats/bpm-uncertainty";
 import {
   BEAT_AUDIO_ASSET_SELECT,
   mapBeatAudioAssetRow,
@@ -69,6 +74,8 @@ export type TransportAnalyzeResult = {
   bpm: number | null;
   bpmReason?: string;
   bpmMessage?: string;
+  /** Server uncertainty envelope — candidates / hypotheses / allowlist. */
+  bpmEnvelope: BpmUncertaintyEnvelope;
 };
 
 async function requireAdminCreate() {
@@ -188,17 +195,22 @@ async function activateAssetReady(params: {
   return mapBeatAudioAssetRow(ready as BeatAudioAssetRow);
 }
 
-function mapBpmForClient(bpm: AnalyzedBeatBpm): {
+function mapBpmForClient(
+  bpm: AnalyzedBeatBpm,
+  envelope: BpmUncertaintyEnvelope,
+): {
   bpmDecision: "AUTO_SUGGEST" | "MANUAL_REQUIRED";
   bpm: number | null;
   bpmReason?: string;
   bpmMessage?: string;
+  bpmEnvelope: BpmUncertaintyEnvelope;
 } {
   if (bpm.status === "auto_suggest") {
     return {
       bpmDecision: "AUTO_SUGGEST",
       bpm: bpm.bpm,
       bpmReason: bpm.reason,
+      bpmEnvelope: envelope,
     };
   }
   if (bpm.status === "manual_required") {
@@ -207,6 +219,7 @@ function mapBpmForClient(bpm: AnalyzedBeatBpm): {
       bpm: null,
       bpmReason: bpm.reason,
       bpmMessage: bpm.message,
+      bpmEnvelope: envelope,
     };
   }
   return {
@@ -214,6 +227,7 @@ function mapBpmForClient(bpm: AnalyzedBeatBpm): {
     bpm: null,
     bpmReason: bpm.reason,
     bpmMessage: bpm.message,
+    bpmEnvelope: envelope,
   };
 }
 
@@ -382,7 +396,8 @@ export async function analyzePlatformBeatPendingUpload(params: {
     title: analyzed.titleSuggestion || undefined,
   });
 
-  const bpmMapped = mapBpmForClient(analyzed.bpm);
+  const bpmEnvelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
+  const bpmMapped = mapBpmForClient(analyzed.bpm, bpmEnvelope);
 
   return {
     beatId: params.beatId,
@@ -408,12 +423,14 @@ export async function finalizePlatformBeatAfterUpload(params: {
   genre?: string | null;
   style?: string | null;
   bpm: number;
+  /** Legacy — never grants free 1–300; allowlist still enforced. */
   bpmManualOverride?: boolean;
+  bpmSelectionMode?: BpmSelectionMode;
   key?: string | null;
   scale?: string | null;
   tags?: string[];
   coverRef?: string | null;
-}): Promise<{ beatId: string }> {
+}): Promise<{ beatId: string; bpmSource?: string }> {
   await requireAdminCreate();
   await loadPlatformBeatOrThrow(params.beatId);
   const asset = await loadAssetOrThrow(params.assetId);
@@ -439,17 +456,13 @@ export async function finalizePlatformBeatAfterUpload(params: {
     throw new Error(analyzed.error);
   }
 
-  const suggestedBpm =
-    analyzed.bpm.status === "auto_suggest" ? analyzed.bpm.bpm : null;
-  const decodeAvailable =
-    analyzed.bpm.status === "auto_suggest" ||
-    analyzed.bpm.status === "manual_required";
-
+  // Security boundary: rebuild envelope from bytes — never trust client candidates.
+  const envelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
   const bpmResolved = resolveCreateBpm({
     clientBpm: params.bpm,
+    envelope,
+    selectionMode: params.bpmSelectionMode,
     bpmManualOverride: Boolean(params.bpmManualOverride),
-    suggestedBpm,
-    decodeAvailable,
   });
   if (!bpmResolved.ok) {
     throw new Error(bpmResolved.error);
@@ -479,7 +492,7 @@ export async function finalizePlatformBeatAfterUpload(params: {
     checksum,
   });
 
-  return { beatId: params.beatId };
+  return { beatId: params.beatId, bpmSource: bpmResolved.bpmSource };
 }
 
 /**
@@ -859,7 +872,8 @@ export async function analyzeUserBeatPendingUploadFor(
     },
   });
 
-  const bpmMapped = mapBpmForClient(analyzed.bpm);
+  const bpmEnvelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
+  const bpmMapped = mapBpmForClient(analyzed.bpm, bpmEnvelope);
 
   return {
     beatId: params.beatId,
@@ -891,13 +905,15 @@ export async function finalizeUserBeatAfterUploadFor(
     genre?: string | null;
     style?: string | null;
     bpm: number;
+    /** Legacy — never grants free 1–300; allowlist still enforced. */
     bpmManualOverride?: boolean;
+    bpmSelectionMode?: BpmSelectionMode;
     key?: string | null;
     scale?: string | null;
     tags?: string[];
     coverRef?: string | null;
   },
-): Promise<{ beatId: string }> {
+): Promise<{ beatId: string; bpmSource?: string }> {
   const beat = await loadUserOwnedDraftOrThrow(context, params.beatId);
   const asset = await loadAssetOrThrow(params.assetId);
   try {
@@ -935,17 +951,12 @@ export async function finalizeUserBeatAfterUploadFor(
     throw new Error(analyzed.error);
   }
 
-  const suggestedBpm =
-    analyzed.bpm.status === "auto_suggest" ? analyzed.bpm.bpm : null;
-  const decodeAvailable =
-    analyzed.bpm.status === "auto_suggest" ||
-    analyzed.bpm.status === "manual_required";
-
+  const envelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
   const bpmResolved = resolveCreateBpm({
     clientBpm: params.bpm,
+    envelope,
+    selectionMode: params.bpmSelectionMode,
     bpmManualOverride: Boolean(params.bpmManualOverride),
-    suggestedBpm,
-    decodeAvailable,
   });
   if (!bpmResolved.ok) {
     throw new Error(bpmResolved.error);
@@ -980,7 +991,7 @@ export async function finalizeUserBeatAfterUploadFor(
   });
 
   // Invariant: beat remains DRAFT (Wave 2 — no submit)
-  return { beatId: params.beatId };
+  return { beatId: params.beatId, bpmSource: bpmResolved.bpmSource };
 }
 
 export async function finalizeUserBeatAfterUpload(params: {
@@ -993,6 +1004,7 @@ export async function finalizeUserBeatAfterUpload(params: {
   style?: string | null;
   bpm: number;
   bpmManualOverride?: boolean;
+  bpmSelectionMode?: BpmSelectionMode;
   key?: string | null;
   scale?: string | null;
   tags?: string[];

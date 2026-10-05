@@ -5,7 +5,7 @@ import {
   resolveCreateBpmFromEnsemble,
   resolveEnsembleSuggestion,
 } from "@/lib/beats/bpm-ensemble";
-import { resolveCreateBpm } from "@/lib/beats/audio-bpm-rank";
+import { resolveCreateBpm } from "@/lib/beats/bpm-uncertainty";
 
 describe("C_NEAR + RULE B ensemble (production Design Freeze)", () => {
   it("AGREEMENT → AUTO when mid-band (no octave trap)", () => {
@@ -44,7 +44,7 @@ describe("C_NEAR + RULE B ensemble (production Design Freeze)", () => {
     expect(r.reason).toBe("CONFLICT");
   });
 
-  it("critical 142→71: A=B=71 → OCTAVE_AMBIGUITY MANUAL (never auto ×2)", () => {
+  it("low-side octave trap resolves from detector evidence (not always ×2)", () => {
     const r = resolveEnsembleSuggestion({
       aBpm: 71,
       bBpm: 71,
@@ -57,40 +57,60 @@ describe("C_NEAR + RULE B ensemble (production Design Freeze)", () => {
         { bpm: 95, confidence: 0.6 },
       ],
     });
-    expect(r.status).toBe("MANUAL_REQUIRED");
-    expect(r.reason).toBe("OCTAVE_AMBIGUITY");
-    expect(r.bpm).toBeNull();
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect(r.bpm).toBe(71);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
   });
 
-  it("critical 80→161 near: OCTAVE_AMBIGUITY MANUAL", () => {
+  it("high-side near agreement resolves to evidence-backed BPM", () => {
     const r = resolveEnsembleSuggestion({
       aBpm: 161,
       bBpm: 160,
       candidatesA: [{ bpm: 161, confidence: 1 }],
       candidatesB: [{ bpm: 160, confidence: 1 }],
     });
-    expect(r.status).toBe("MANUAL_REQUIRED");
-    expect(r.reason).toBe("OCTAVE_AMBIGUITY");
+    expect(r.status).toBe("AUTO_SUGGEST");
+    // C_NEAR mean rounds to 161; half/double pair scored from detector evidence.
+    expect(r.bpm).toBe(161);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
   });
 
-  it("critical 166→84 near: OCTAVE_AMBIGUITY MANUAL", () => {
+  it("83/84 near resolves via half/double evidence", () => {
     const r = resolveEnsembleSuggestion({
       aBpm: 83,
       bBpm: 84,
       candidatesA: [{ bpm: 83, confidence: 1 }],
       candidatesB: [{ bpm: 84, confidence: 1 }],
     });
-    expect(r.status).toBe("MANUAL_REQUIRED");
-    expect(r.reason).toBe("OCTAVE_AMBIGUITY");
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect(r.bpm).toBe(84);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
   });
 
-  it("research conflict shapes stay MANUAL (C_NEAR conflict)", () => {
+  it("92 vs 184 conflict → HALF_DOUBLE_RESOLVED (not MANUAL)", () => {
+    const r = resolveEnsembleSuggestion({
+      aBpm: 92,
+      bBpm: 184,
+      candidatesA: [
+        { bpm: 92, confidence: 0.85 },
+        { bpm: 184, confidence: 0.7 },
+      ],
+      candidatesB: [
+        { bpm: 184, confidence: 0.8 },
+        { bpm: 92, confidence: 0.6 },
+      ],
+    });
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect([92, 184]).toContain(r.bpm);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
+  });
+
+  it("research non-harmonic conflicts stay MANUAL when no cross-support", () => {
     const cases = [
-      { a: 120, b: 90 }, // 90→120
-      { a: 112, b: 70 }, // 140→112
-      { a: 94, b: 140 }, // 140→94
-      { a: 172, b: 175 }, // 87→172 (near but |Δ|=3 → conflict)
-      { a: 170, b: 88 }, // 88→170
+      { a: 120, b: 90 }, // not half/double, each list only has its top
+      { a: 112, b: 70 },
+      { a: 94, b: 140 },
+      { a: 172, b: 175 }, // |Δ|=3 → conflict
     ];
     for (const c of cases) {
       const r = resolveEnsembleSuggestion({
@@ -100,23 +120,56 @@ describe("C_NEAR + RULE B ensemble (production Design Freeze)", () => {
         candidatesB: [{ bpm: c.b, confidence: 1 }],
       });
       expect(r.status).toBe("MANUAL_REQUIRED");
-      expect(["CONFLICT", "OCTAVE_AMBIGUITY"]).toContain(r.reason);
+      expect(r.reason).toBe("CONFLICT");
     }
   });
 
-  it("100→99 near may AUTO only if RULE B allows (≤100 is low-side trap)", () => {
+  it("cross-support: B top present strongly in A candidates → AUTO", () => {
+    const r = resolveEnsembleSuggestion({
+      aBpm: 120,
+      bBpm: 89,
+      candidatesA: [
+        { bpm: 120, confidence: 1 },
+        { bpm: 89, confidence: 0.96 },
+      ],
+      candidatesB: [{ bpm: 89, confidence: 1 }],
+    });
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect(r.bpm).toBe(89);
+    expect(r.reason).toBe("NEAR_AGREEMENT");
+  });
+
+  it("half/double twin of top in candidate pool → AUTO", () => {
+    const r = resolveEnsembleSuggestion({
+      aBpm: 92,
+      bBpm: 161,
+      candidatesA: [
+        { bpm: 92, confidence: 1 },
+        { bpm: 176, confidence: 0.5 },
+      ],
+      candidatesB: [
+        { bpm: 161, confidence: 1 },
+        { bpm: 183, confidence: 0.9 },
+      ],
+    });
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect(r.bpm).toBe(92);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
+  });
+
+  it("99/100 near resolves half/double trap from evidence", () => {
     const r = resolveEnsembleSuggestion({
       aBpm: 99,
       bBpm: 100,
       candidatesA: [{ bpm: 99, confidence: 1 }],
       candidatesB: [{ bpm: 100, confidence: 1 }],
     });
-    // mean 100 → low-side octave trap → MANUAL
-    expect(r.status).toBe("MANUAL_REQUIRED");
-    expect(r.reason).toBe("OCTAVE_AMBIGUITY");
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect(r.bpm).toBe(100);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
   });
 
-  it("never auto-picks ×2 for octave twin in candidates", () => {
+  it("hasOctaveAmbiguity still detects octave twin in candidates", () => {
     expect(
       hasOctaveAmbiguity({
         suggestedBpm: 71,
@@ -128,17 +181,35 @@ describe("C_NEAR + RULE B ensemble (production Design Freeze)", () => {
       }),
     ).toBe(true);
   });
+
+  it("half/double with stronger double-time evidence picks higher BPM", () => {
+    const r = resolveEnsembleSuggestion({
+      aBpm: 70,
+      bBpm: 140,
+      candidatesA: [
+        { bpm: 140, confidence: 0.95 },
+        { bpm: 70, confidence: 0.2 },
+      ],
+      candidatesB: [
+        { bpm: 140, confidence: 0.9 },
+        { bpm: 70, confidence: 0.15 },
+      ],
+    });
+    expect(r.status).toBe("AUTO_SUGGEST");
+    expect(r.bpm).toBe(140);
+    expect(r.reason).toBe("HALF_DOUBLE_RESOLVED");
+  });
 });
 
-describe("resolveCreateBpm (ensemble create policy)", () => {
-  it("accepts explicit override when suggestion differs", () => {
+describe("resolveCreateBpm (ensemble create policy / allowlist)", () => {
+  it("rejects explicit override outside suggest allowlist", () => {
     const r = resolveCreateBpm({
       clientBpm: 142,
       bpmManualOverride: true,
       suggestedBpm: 120,
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 142 });
+    expect(r.ok).toBe(false);
   });
 
   it("rejects out of range", () => {
@@ -193,20 +264,21 @@ describe("resolveCreateBpm (ensemble create policy)", () => {
       suggestedBpm: 120,
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 120 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.bpm).toBe(120);
   });
 
-  it("accepts manual fill when MANUAL_REQUIRED / no suggest", () => {
+  it("rejects free manual fill when MANUAL_REQUIRED / no suggest", () => {
     const r = resolveCreateBpm({
       clientBpm: 142,
       bpmManualOverride: false,
       suggestedBpm: null,
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 142 });
+    expect(r.ok).toBe(false);
   });
 
-  it("resolveCreateBpmFromEnsemble mirrors override accept", () => {
+  it("resolveCreateBpmFromEnsemble rejects override outside estimator allowlist", () => {
     const r = resolveCreateBpmFromEnsemble({
       clientBpm: 140,
       bpmManualOverride: true,
@@ -217,6 +289,22 @@ describe("resolveCreateBpm (ensemble create policy)", () => {
       },
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 140 });
+    expect(r.ok).toBe(false);
+  });
+
+  it("resolveCreateBpmFromEnsemble accepts allowlisted estimator top", () => {
+    const r = resolveCreateBpmFromEnsemble({
+      clientBpm: 120,
+      bpmManualOverride: true,
+      analysis: {
+        status: "AUTO_SUGGEST",
+        bpm: 120,
+        reason: "AGREEMENT",
+        estimatorA: { bpm: 120, confidence: 0.9, candidates: [] },
+        estimatorB: { bpm: 140, confidence: 0.8, candidates: [] },
+      },
+      decodeAvailable: true,
+    });
+    expect(r).toEqual({ ok: true, bpm: 120 });
   });
 });

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { createPlatformBeatAction } from "@/lib/beats/actions";
-import { resolveCreateBpm } from "@/lib/beats/audio-bpm-rank";
+import { resolveCreateBpm } from "@/lib/beats/bpm-uncertainty";
 import { validateBeatInput } from "@/lib/beats/validation";
 
 const beatsDir = dirname(fileURLToPath(import.meta.url));

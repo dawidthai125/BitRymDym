@@ -77,6 +77,8 @@ export async function finalizePlatformBeatWithMasterAction(params: {
   style?: string | null;
   bpm: number;
   bpmManualOverride?: boolean;
+  /** Typed selection mode for uncertainty allowlist policy. */
+  bpmSelectionMode?: "AUTO" | "CANDIDATE" | "RANGE";
   key?: string | null;
   scale?: string | null;
   tags?: string[];
@@ -94,6 +96,7 @@ export async function finalizePlatformBeatWithMasterAction(params: {
       style: params.style,
       bpm: params.bpm,
       bpmManualOverride: params.bpmManualOverride,
+      bpmSelectionMode: params.bpmSelectionMode,
       key: params.key,
       scale: params.scale,
       tags: params.tags,

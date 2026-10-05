@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   isHalfOrDouble,
   rankBpmCandidates,
-  resolveCreateBpm,
   roundBpm,
 } from "@/lib/beats/audio-bpm-rank";
+import { resolveCreateBpm } from "@/lib/beats/bpm-uncertainty";
 
 describe("roundBpm", () => {
   it("rounds and enforces 1–300", () => {
@@ -52,15 +52,15 @@ describe("rankBpmCandidates", () => {
   });
 });
 
-describe("resolveCreateBpm", () => {
-  it("accepts manual override", () => {
+describe("resolveCreateBpm (allowlist policy)", () => {
+  it("rejects override outside singleton suggest allowlist", () => {
     const r = resolveCreateBpm({
       clientBpm: 142,
       bpmManualOverride: true,
       suggestedBpm: 120,
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 142 });
+    expect(r.ok).toBe(false);
   });
 
   it("rejects client BPM outside 1–300", () => {
@@ -82,7 +82,7 @@ describe("resolveCreateBpm", () => {
     ).toBe(false);
   });
 
-  it("rejects tampered BPM when not override and not matching suggest", () => {
+  it("rejects tampered BPM when not matching suggest", () => {
     const r = resolveCreateBpm({
       clientBpm: 90,
       bpmManualOverride: false,
@@ -99,16 +99,20 @@ describe("resolveCreateBpm", () => {
       suggestedBpm: 120,
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 120 });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.bpm).toBe(120);
+      expect(r.bpmSource).toBe("AUTO_DETECTED");
+    }
   });
 
-  it("allows manual fill when no suggest", () => {
+  it("blocks free manual fill when no suggest / unavailable", () => {
     const r = resolveCreateBpm({
       clientBpm: 128,
       bpmManualOverride: false,
       suggestedBpm: null,
       decodeAvailable: false,
     });
-    expect(r).toEqual({ ok: true, bpm: 128 });
+    expect(r.ok).toBe(false);
   });
 });

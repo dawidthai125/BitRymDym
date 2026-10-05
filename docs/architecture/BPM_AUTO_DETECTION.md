@@ -1,58 +1,98 @@
 # Scope B — BPM auto-detection (signal analysis)
 
-**Status:** **PRODUCTION V1 IMPLEMENTED** (Platform Beat create) · **ACCURACY NOT CERTIFIED** · Phase 1.9 **NOT CLOSED**
+**Status:** **PRODUCTION V1.1 MULTI-SIGNAL** (Platform Beat create) · **ACCURACY NOT CERTIFIED** · Phase 1.9 **NOT CLOSED**
 
 ## Decision
 
 | Item | Choice |
 |------|--------|
 | Detector | `@audio/beat@2.1.3` — **A** `tempo()` + **B** `combTempo()` (same PCM) |
-| Resolver | **C_NEAR** then **RULE B** (`bpm-ensemble.ts`) → AUTO_SUGGEST \| MANUAL_REQUIRED |
-| Rationale | V1–V5 evidence; RULE B = safety gate (not accuracy proof) |
-| Not used | ID3/`music-metadata` BPM tags; confidence-as-correctness; auto ×2 |
-| Decode | `audio-decode` — WAV + MP3 |
+| Evidence | onset–grid alignment · IBI regularity · segment consistency (`bpm-evidence.ts`) |
+| Resolver | ensemble candidates → **`resolveCanonicalBpm`** multi-signal gate → AUTO_SUGGEST \| MANUAL_REQUIRED |
+| AUTO rule | multi-signal agreement **and** sufficient confidence margin — never sole `@audio/beat` confidence |
+| Not used | ID3/`music-metadata` BPM tags; raw `beatTrack.confidence` as sole winner; filename BPM; always-min/always-max |
+| Decode | `audio-decode` — WAV + MP3 (**single** PCM decode per probe) |
 | Unsupported auto-BPM | FLAC / AAC / M4A → MANUAL_REQUIRED (upload still allowed) |
 | ffmpeg / native | **NO** |
 | DB | unchanged — only `beats.bpm`; **no** `bpm_source` / `bpm_confidence` columns |
+| App + DB duration SSOT | `BEAT_DURATION_MAX = 210` (`validation.ts`) · `beats_duration_range_chk` 1–210 · takes remain `RECORDING_GLOBAL_MAX_SECONDS = 180` |
 
 ## Pipeline
 
 ```text
 bytes → validate MIME/size → duration (music-metadata)
-      → decode PCM (WAV/MP3) → tempo() + combTempo()
-      → C_NEAR → RULE B → AUTO_SUGGEST | MANUAL_REQUIRED
-      → UI suggestion / manual entry (no confidence-as-truth)
+      → decode PCM once (WAV/MP3)
+      → tempo() + combTempo() → candidate generation
+      → half/double normalize + cross-support (ensemble helpers)
+      → gather evidence (onset alignment, IBI regularity, segments)
+      → resolveCanonicalBpm (composite + margin + ≥2 dimensions)
+      → AUTO_SUGGEST | MANUAL_REQUIRED
+      → UI suggestion / manual entry
       → create: server re-probe + resolveCreateBpm
       → beats.bpm
 ```
 
+## Composite scoring (explicit weights)
+
+| Signal | Weight | Notes |
+|--------|--------|-------|
+| Estimator support | 0.30 | tempo + combTempo candidate confidences (normalized) |
+| Onset–grid alignment | 0.30 | independent of denser-grid trackConf |
+| IBI regularity | 0.20 | `1 − CV` of beat intervals from `beatTrack({bpm})` |
+| Segment consistency | 0.20 | mean alignment + stability + win-rate across PCM windows |
+
+**Not weighted:** raw `beatTrack.confidence` (known denser-grid bias).
+
+## AUTO gate
+
+AUTO_SUGGEST only when **all** hold:
+
+1. Winner composite ≥ `BPM_AUTO_MIN_COMPOSITE` (0.32)
+2. Margin (top − runner-up) ≥ `BPM_AUTO_MARGIN_MIN` (0.08)
+   — or ≥ `BPM_HARD_CONFLICT_MARGIN_MIN` (0.15) when estimator tops hard-disagree
+3. Winner leads on ≥ `BPM_AUTO_MIN_DIMENSIONS` (2) independent dimensions
+   — or ≥ `BPM_HARD_CONFLICT_MIN_DIMENSIONS` (3) under hard estimator conflict
+4. Near-tempo clustering (`BPM_NEAR_TEMPO_TOL = 1`) then half/double collapse before compare
+5. Segment signal does not clearly contradict the winner
+
+**Hard estimator conflict:** `|aTop − bTop| > BPM_HARD_ESTIMATOR_DELTA` (10) and not half/double / near.
+Then AUTO requires the strengthened margin + dimension gate (`ESTIMATOR_HARD_CONFLICT` if not met).
+
+**Near-tempo clustering:** `|Δbpm| ≤ 1` (e.g. 91/92, 115/116) merges to one cluster before the margin gate — representative by estimatorSupport → onset → lower BPM; fields use `max()` (no sum boost).
+
+Otherwise: **MANUAL_REQUIRED** (correct fail-safe — not a bug).
+
 ## Confidence
 
-- Estimator `confidence` may still exist internally from `@audio/beat` — **not** shown as UX truth in Production V1.
-- Semantics remain max-normalized ACF strength — **not** calibrated P(correct).
-- **Do not** use “higher confidence wins.”
+- Estimator / evidence scores are **internal** — not UX truth, not DB columns.
+- **Do not** use “higher `@audio/beat` confidence wins.”
 - **ACCURACY NOT CERTIFIED.**
 
 ## Status (accuracy)
 
 ```text
-PRODUCTION V1 IMPLEMENTED (Platform Beat create)
+PRODUCTION V1.1 MULTI-SIGNAL IMPLEMENTED (Platform Beat create)
 ACCURACY NOT CERTIFIED
 ```
 
 ## Half / double
 
-- Production resolver **never** auto ×2 / ÷2 (RULE B abstains on octave traps).
-- Legacy `rankBpmCandidates` half/double expand remains available for research/benchmark tooling only — **not** the create-path suggestion.
+- Half/double pairs are **normalized** before multi-signal compare (same pulse family).
+- Resolution uses estimator + evidence scoring — **never** blind always-lower / always-higher / denser-grid preference.
+- Legacy `rankBpmCandidates` remains research/benchmark tooling only.
 
 ## Create policy (server)
 
-| Client | Probe | Result |
-|--------|-------|--------|
-| override=true + BPM 1–300 | any | accept client BPM |
-| override=false + client === AUTO_SUGGEST bpm | auto_suggest | accept suggest |
-| override=false + mismatch vs suggest | auto_suggest | **reject** |
-| override=false + MANUAL / unavailable | no suggest | accept client BPM (manual entry) |
+**Uncertainty envelope (V1.2):** finalize **re-probes** audio, rebuilds `BpmUncertaintyEnvelope`, then requires `clientBpm ∈ allowlist`.  
+`bpmManualOverride` **never** grants free 1–300 entry. See `docs/architecture/BPM_UNCERTAINTY_UX_DESIGN.md`.
+
+| Client | Server envelope | Result |
+|--------|-----------------|--------|
+| selection AUTO + client === detectedBpm | HIGH / AUTO_SUGGEST | accept · `AUTO_DETECTED` |
+| selection CANDIDATE + client ∈ allowlist | MANUAL or HIGH secondary | accept · `USER_SELECTED_CANDIDATE` |
+| selection RANGE + client ∈ range | narrow contiguous range only | accept · `USER_SELECTED_WITHIN_SYSTEM_RANGE` |
+| any + client ∉ allowlist (incl. override) | any | **reject** |
+| any | UNAVAILABLE / empty allowlist | **reject** (no free entry) |
 | BPM 0 / 999 / non-int | any | **reject** |
 
 ## Synthetic fixture generator (tooling only)

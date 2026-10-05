@@ -25,6 +25,7 @@ export async function finalizeUserBeatWithMasterAction(params: {
   style?: string | null;
   bpm: number;
   bpmManualOverride?: boolean;
+  bpmSelectionMode?: "AUTO" | "CANDIDATE" | "RANGE";
   key?: string | null;
   scale?: string | null;
   tags?: string[];

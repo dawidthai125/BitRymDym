@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveCreateBpm } from "@/lib/beats/audio-bpm-rank";
+import { resolveCreateBpm } from "@/lib/beats/bpm-uncertainty";
 import {
   BEAT_AUDIO_MAX_BYTES,
   validateAudioUploadMeta,
@@ -62,13 +62,13 @@ describe("audio transport contracts (V1)", () => {
     expect(r.ok).toBe(false);
   });
 
-  it("create policy accepts override after transport finalize", () => {
+  it("create policy rejects override outside server allowlist", () => {
     const r = resolveCreateBpm({
       clientBpm: 128,
       bpmManualOverride: true,
       suggestedBpm: 120,
       decodeAvailable: true,
     });
-    expect(r).toEqual({ ok: true, bpm: 128 });
+    expect(r.ok).toBe(false);
   });
 });

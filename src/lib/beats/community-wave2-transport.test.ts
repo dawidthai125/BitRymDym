@@ -13,7 +13,7 @@ import {
   validateAudioUploadMeta,
   validateObjectKey,
 } from "@/lib/beats/audio-validation";
-import { resolveCreateBpm } from "@/lib/beats/audio-bpm-rank";
+import { resolveCreateBpm } from "@/lib/beats/bpm-uncertainty";
 import type { BeatAudioAssetRow } from "@/lib/beats/audio-types";
 
 const OWNER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";

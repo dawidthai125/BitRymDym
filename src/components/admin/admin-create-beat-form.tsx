@@ -9,26 +9,25 @@ import {
   type FormEvent,
 } from "react";
 
+import { BpmUncertaintyField } from "@/components/beats/bpm-uncertainty-field";
 import { Button } from "@/components/ui/button";
 import { finalizePlatformBeatWithMasterAction } from "@/lib/beats/create-with-master";
 import {
   BEAT_AUDIO_MAX_BYTES,
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
+import type { BpmUncertaintyEnvelope } from "@/lib/beats/bpm-uncertainty";
+import {
+  buildBpmUxModel,
+  canProceedWithBpmSelection,
+  mapFinalizeBpmError,
+  resolveBpmSelectionMode,
+} from "@/lib/beats/bpm-uncertainty-ui";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toUserFacingUploadError } from "@/lib/ui/user-errors";
 
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
-
-type BpmUiState =
-  | { mode: "idle" }
-  | {
-      mode: "auto";
-      suggested: number;
-      overridden: boolean;
-    }
-  | { mode: "manual_required"; message: string; overridden: boolean };
 
 type AnalysisState =
   | { status: "idle" }
@@ -65,8 +64,11 @@ export function AdminCreateBeatForm() {
   const [file, setFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisState>({ status: "idle" });
   const [title, setTitle] = useState("");
-  const [bpm, setBpm] = useState("");
-  const [bpmUi, setBpmUi] = useState<BpmUiState>({ mode: "idle" });
+  const [bpmEnvelope, setBpmEnvelope] = useState<BpmUncertaintyEnvelope | null>(
+    null,
+  );
+  const [selectedBpm, setSelectedBpm] = useState<number | null>(null);
+  const [bpmStatusMessage, setBpmStatusMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const analyzeGeneration = useRef(0);
@@ -76,8 +78,9 @@ export function AdminCreateBeatForm() {
     const generation = ++analyzeGeneration.current;
     setFile(next);
     setTitle("");
-    setBpm("");
-    setBpmUi({ mode: "idle" });
+    setBpmEnvelope(null);
+    setSelectedBpm(null);
+    setBpmStatusMessage(null);
     setFormError(null);
     setSuccess(false);
 
@@ -198,6 +201,7 @@ export function AdminCreateBeatForm() {
           bpmDecision?: "AUTO_SUGGEST" | "MANUAL_REQUIRED";
           bpm?: number | null;
           bpmMessage?: string;
+          bpmEnvelope?: BpmUncertaintyEnvelope;
         };
 
         if (analyzeGeneration.current !== generation) return;
@@ -232,26 +236,25 @@ export function AdminCreateBeatForm() {
           filename: next.name,
         });
 
-        if (
-          analyzeJson.bpmDecision === "AUTO_SUGGEST" &&
-          typeof analyzeJson.bpm === "number" &&
-          Number.isInteger(analyzeJson.bpm)
-        ) {
-          setBpm(String(analyzeJson.bpm));
-          setBpmUi({
-            mode: "auto",
-            suggested: analyzeJson.bpm,
-            overridden: false,
-          });
+        const envelope = analyzeJson.bpmEnvelope ?? null;
+        setBpmEnvelope(envelope);
+        setBpmStatusMessage(null);
+        if (envelope) {
+          const model = buildBpmUxModel(envelope);
+          if (model.phase === "AUTO_DETECTED" && model.recommendedBpm != null) {
+            setSelectedBpm(model.recommendedBpm);
+          } else if (
+            model.phase === "NEEDS_SELECTION" &&
+            model.recommendedBpm != null &&
+            model.confidenceClass === "MEDIUM"
+          ) {
+            // Preselect recommendation; still requires explicit confirm via submit.
+            setSelectedBpm(model.recommendedBpm);
+          } else {
+            setSelectedBpm(null);
+          }
         } else {
-          setBpm("");
-          setBpmUi({
-            mode: "manual_required",
-            message:
-              analyzeJson.bpmMessage ??
-              "BPM nie udało się wiarygodnie określić.",
-            overridden: false,
-          });
+          setSelectedBpm(null);
         }
       } catch {
         if (analyzeGeneration.current === generation) {
@@ -264,25 +267,10 @@ export function AdminCreateBeatForm() {
     });
   }
 
-  function onBpmChange(value: string) {
-    setBpm(value);
-    setBpmUi((prev) => {
-      if (prev.mode === "auto") {
-        const n = Number(value);
-        const overridden =
-          !value.trim() || !Number.isInteger(n) || n !== prev.suggested;
-        return { ...prev, overridden };
-      }
-      if (prev.mode === "manual_required") {
-        return { ...prev, overridden: Boolean(value.trim()) };
-      }
-      return prev;
-    });
-  }
-
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+    setBpmStatusMessage(null);
     setSuccess(false);
 
     if (!file || analysis.status !== "ready") {
@@ -294,18 +282,29 @@ export function AdminCreateBeatForm() {
       return;
     }
 
-    const bpmValue = Number(bpm);
-    if (!bpm.trim() || !Number.isInteger(bpmValue)) {
-      setFormError("BPM — wpisz liczbę całkowitą (1–300).");
+    if (
+      !bpmEnvelope ||
+      !canProceedWithBpmSelection({
+        envelope: bpmEnvelope,
+        selectedBpm,
+      }) ||
+      selectedBpm == null
+    ) {
+      const model = bpmEnvelope ? buildBpmUxModel(bpmEnvelope) : null;
+      setFormError(
+        model?.phase === "UNAVAILABLE"
+          ? model.headline
+          : "Wybierz BPM spośród wartości zaproponowanych przez system.",
+      );
       return;
     }
 
-    const bpmManualOverride =
-      bpmUi.mode === "auto"
-        ? bpmUi.overridden
-        : bpmUi.mode === "manual_required"
-          ? true
-          : true;
+    const bpmValue = selectedBpm;
+    const selectionMode = resolveBpmSelectionMode({
+      envelope: bpmEnvelope,
+      selectedBpm: bpmValue,
+    });
+    const bpmManualOverride = selectionMode !== "AUTO";
 
     const form = event.currentTarget;
     const producer = String(
@@ -348,6 +347,7 @@ export function AdminCreateBeatForm() {
           style: style || null,
           bpm: bpmValue,
           bpmManualOverride,
+          bpmSelectionMode: selectionMode,
           key: key || null,
           scale: scale || null,
           tags: tagsRaw
@@ -358,7 +358,15 @@ export function AdminCreateBeatForm() {
         });
 
         if (!result.success || !result.beatId) {
-          setFormError(result.error ?? "Nie udało się utworzyć beatu.");
+          const mapped = mapFinalizeBpmError(result.error);
+          setBpmStatusMessage(mapped.message);
+          setFormError(mapped.message);
+          if (
+            mapped.phase === "STALE_ANALYSIS" ||
+            mapped.phase === "INVALID_BPM_SELECTION"
+          ) {
+            setSelectedBpm(null);
+          }
           return;
         }
         setSuccess(true);
@@ -375,16 +383,10 @@ export function AdminCreateBeatForm() {
     !pending &&
     !analyzing &&
     Boolean(title.trim()) &&
-    Boolean(bpm.trim());
-
-  let bpmHint: string | null = null;
-  if (bpmUi.mode === "auto") {
-    bpmHint = bpmUi.overridden
-      ? "BPM zmieniony ręcznie."
-      : "Automatycznie wykryto";
-  } else if (bpmUi.mode === "manual_required") {
-    bpmHint = bpmUi.message;
-  }
+    canProceedWithBpmSelection({
+      envelope: bpmEnvelope,
+      selectedBpm,
+    });
 
   let statusLine: string | null = null;
   if (analysis.status === "uploading" || analyzing) {
@@ -515,43 +517,25 @@ export function AdminCreateBeatForm() {
             />
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-1 text-sm">
-            BPM *
-            <input
-              name="bpm"
-              type="number"
-              required
-              min={1}
-              max={300}
-              value={bpm}
-              onChange={(e) => onBpmChange(e.target.value)}
-              disabled={!analysisReady || pending}
-              placeholder={
-                bpmUi.mode === "manual_required" ? "wpisz BPM" : undefined
-              }
-              className={fieldClass}
-            />
-            {bpmHint ? (
-              <span className="text-xs text-muted-foreground">{bpmHint}</span>
-            ) : null}
-            {bpmUi.mode === "auto" && !bpmUi.overridden ? (
-              <button
-                type="button"
-                className="self-start text-xs text-muted-foreground underline-offset-2 hover:underline"
-                onClick={() => {
-                  setBpm("");
-                  setBpmUi((prev) =>
-                    prev.mode === "auto"
-                      ? { ...prev, overridden: true }
-                      : prev,
-                  );
-                }}
-              >
-                Zmień BPM
-              </button>
-            ) : null}
-          </label>
+        <div className="flex flex-col gap-3">
+          <BpmUncertaintyField
+            envelope={bpmEnvelope}
+            selectedBpm={selectedBpm}
+            onSelect={(bpm) => {
+              setSelectedBpm(bpm);
+              setBpmStatusMessage(null);
+              setFormError(null);
+            }}
+            disabled={!analysisReady || pending}
+            statusMessage={
+              analyzing
+                ? "Analizowanie BPM…"
+                : bpmStatusMessage
+            }
+            idPrefix="admin-create-bpm"
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
             Tonacja
             <input
