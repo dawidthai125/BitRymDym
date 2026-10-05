@@ -1,6 +1,8 @@
 # P2 — Explicit Sample Replace — IMPLEMENTATION
 
-**Status:** PRODUCTION VERIFIED — pending final gate after deploy  
+**Status:** PRODUCTION VERIFIED — GREEN  
+**Commit:** `943d81e`  
+**Deploy:** `dpl_Cc71ApTt9xsru8on6csS8mqodfzQ` → `www.bitrymdym.pl`  
 **Design Freeze:** `docs/audits/P2_REPLACE_SAMPLE_AUDIT.md` APPROVED  
 **Owner GO:** TAK (OD-P2-01…07 closed as specified)
 

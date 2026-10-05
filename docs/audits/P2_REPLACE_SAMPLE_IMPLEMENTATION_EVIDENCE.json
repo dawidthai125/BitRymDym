@@ -1,5 +1,10 @@
 {
   "track": "P2_EXPLICIT_SAMPLE_REPLACE",
+  "commit": "943d81e",
+  "deploy": {
+    "vercel_deployment_id": "dpl_Cc71ApTt9xsru8on6csS8mqodfzQ",
+    "aliases": ["https://www.bitrymdym.pl"]
+  },
   "design_freeze": "docs/audits/P2_REPLACE_SAMPLE_AUDIT.md",
   "owner_go": true,
   "owner_decisions": {
@@ -18,14 +23,11 @@
       "claim_take_recording_session(... p_replace_take_id)",
       "claim_anon_take_recording_session(... p_replace_take_id)",
       "finalize_take_ready_swap"
-    ],
-    "indexes": [
-      "takes_one_pending_replace_target_uidx",
-      "takes_replaces_take_id_idx"
     ]
   },
   "verification_local": {
     "typecheck": "PASS",
+    "build": "PASS",
     "unit_p2": "PASS",
     "live_p2": "PASS 3/3",
     "live_d02": "PASS 8/8",
@@ -33,8 +35,28 @@
     "p0_regression": "PASS"
   },
   "production_verify": {
-    "status": "PENDING_DEPLOY",
-    "note": "Filled after push/deploy"
+    "status": "GREEN",
+    "verdict": "PRODUCTION VERIFIED — GREEN",
+    "post_deploy_live_p2": "PASS 3/3",
+    "post_deploy_d02": "PASS 8/8",
+    "post_deploy_p0": "PASS 18/18",
+    "checks": {
+      "below_cap_normal_recording": "PASS",
+      "at_cap_REPLACE_REQUIRED": "PASS",
+      "valid_own_replace": "PASS",
+      "cross_beat_replace": "PASS",
+      "old_DELETED_new_READY": "PASS",
+      "idempotent_finalize_replay": "PASS",
+      "anon_own_replace": "PASS",
+      "anon_foreign_DENY": "PASS",
+      "abandon_keeps_old_READY": "PASS",
+      "forged_replaceTakeId_DENY": "PASS",
+      "P0_platform_download_DENY": "PASS"
+    },
+    "snapshot": {
+      "has_replaces_take_id": true,
+      "note": "Live suite cleaned test users/beats/takes after run"
+    }
   },
   "data_safety": {
     "user_migration": false,
