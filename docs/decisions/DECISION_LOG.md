@@ -10,6 +10,21 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-P3-01…11 — Anonymous → Account Claim — CLOSED / ACCEPTED
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner/Architect GO — P3 Design Freeze + Implementation |
+| Status | **CLOSED / ACCEPTED** · **IMPLEMENTED / READY FOR REVIEW** |
+| Date | 2026-10-05 |
+| TTL/cap axis | **Premium Tier** via `getSamplePolicy` (NOT Account Level) |
+| RPC | `claim_anon_take_to_account` |
+| Migration | `20261005211153_p3_claim_anon_take_to_account.sql` |
+
+**Locked:** CLAIM IN · auto after login/signup session · READY only · latest only · Storage COPY required · cap DENY · no daily session spend · cookie clear only on success/replay · browser/cookie-bound.
+
+---
+
 ### ARCH-05 — POST-DELETE RECONCILIATION — CLOSED / VERIFIED
 
 | Pole | Wartość |

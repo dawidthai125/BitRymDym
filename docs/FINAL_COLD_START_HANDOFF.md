@@ -44,9 +44,9 @@ BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
 WORKER                        = Contabo · STOPPED / DISABLED · bootstrap 92496d4
 
-NEXT GATE                     = P3 — Anonymous → Account Claim
-P3 STATUS                     = NOT STARTED
-P3 NEXT ACTION                = READ-ONLY AUDIT FIRST
+NEXT GATE                     = P3 production deploy + verify (implementation READY)
+P3 STATUS                     = IMPLEMENTED / READY FOR REVIEW
+P3 NEXT ACTION                = Owner review → commit/push → production app deploy → verify
 ```
 
 ### CURRENT STATUS (closed / verified)
@@ -154,7 +154,7 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFE
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · **NOT CLOSED** |
 | Messaging / comments / voting / payments / STEMS / Premium catalog | DEFERRED |
 | External Object Storage | NOT IMPLEMENTED / DEFERRED |
-| **P3 Anonymous → Account Claim** | **NOT STARTED** · NEXT GATE |
+| **P3 Anonymous → Account Claim** | **IMPLEMENTED / READY FOR REVIEW** · deploy pending |
 
 ---
 

@@ -654,8 +654,8 @@ export function RecordingPanel({
               >
                 zaloguj się
               </Link>
-              . Gościnne nagranie wygasa po 2h (bez transferu na konto w tej
-              wersji).
+              . Gościnne nagranie wygasa po 2h. Po zalogowaniu gotowe nagranie
+              może zostać zapisane na Twoim koncie.
             </p>
           ) : null}
         </div>

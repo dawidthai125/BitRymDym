@@ -69,10 +69,10 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = P3 — Anonymous → Account Claim
-P3 STATUS                     = NOT STARTED
-P3 NEXT ACTION                = READ-ONLY AUDIT FIRST
-                              (no Design Freeze yet · no Implementation GO)
+NEXT GATE                     = P3 production deploy + verify
+P3 STATUS                     = IMPLEMENTED / READY FOR REVIEW
+P3 NEXT ACTION                = Owner review → commit → deploy → production verify
+                              (RPC claim_anon_take_to_account applied · app pending)
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
@@ -135,7 +135,7 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **P3** Anonymous → Account Claim (**NEXT** · audit only)
+- **P3** Anonymous → Account Claim (**IMPLEMENTED / READY FOR REVIEW** · app deploy pending)
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
@@ -182,7 +182,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | P2 Explicit Replace | OD-P2-01…07 CLOSED | **CLOSED / PRODUCTION VERIFIED** @ `943d81e` |
 | ARCH-05 | Owner GO delete | **CLOSED / VERIFIED** |
 | OD-08 Premium tiers | CLOSED | W2-A/B in tree |
-| P3 | **OPEN** · audit required | **NOT STARTED** |
+| P3 | OD-P3-01…11 CLOSED | **IMPLEMENTED / READY FOR REVIEW** (deploy pending) |
 
 ---
 

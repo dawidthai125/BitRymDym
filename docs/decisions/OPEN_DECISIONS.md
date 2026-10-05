@@ -94,7 +94,7 @@
 | OD-PL-04 | PENDING_REVIEW label | POLISH-01 | UI status | **CLOSED / ACCEPTED** — 2026-10-05 · **W moderacji** |
 | OD-PL-05 | Studio brand | POLISH-01 | Nav / IA copy | **CLOSED / ACCEPTED** — 2026-10-05 · Studio **KEEP EN** |
 | OD-PL-06 | Master brand | POLISH-01 | Mix/Master UI | **CLOSED / ACCEPTED** — 2026-10-05 · Master **KEEP EN** Title Case |
-| EPIC-P3 | Anonymous → Account Claim | Recording / D02 OUT | Take ownership after signup/login | **OPEN** — **NEXT GATE** · **READ-ONLY AUDIT REQUIRED** · Design Freeze **NOT STARTED** · Implementation **FORBIDDEN** until Owner GO |
+| EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / ACCEPTED** — 2026-10-05 · OD-P3-01…11 · **IMPLEMENTED / READY FOR REVIEW** · Premium Tier TTL/cap · deploy pending |
 
 ---
 
@@ -213,18 +213,19 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 - **P2-4** = **OPEN** (known MCP production migration version drift).
 - Historical foundation-contract “W2-D downloads” naming is not rewritten; current Owner gate name = **W2-B PREMIUM ENFORCEMENT**.
 - **Living production tip (2026-10-05):** `1c63080` · POLISH-01 / P0 / P1 / P2 **CLOSED / PRODUCTION VERIFIED**.
-- **NEXT GATE (product)** = **EPIC-P3** Anonymous → Account Claim · **READ-ONLY AUDIT FIRST** · no Design Freeze · no Implementation GO.
+- **EPIC-P3** Anonymous → Account Claim = **IMPLEMENTED / READY FOR REVIEW** (app deploy pending) · OD-P3-01…11 · Premium Tier TTL/cap.
 - W2-B documentation closeout is **not** the current NEXT product gate.
 
 ---
 
-## EPIC-P3 — Anonymous → Account Claim (OPEN)
+## EPIC-P3 — Anonymous → Account Claim
 
-**Status:** OPEN · NOT STARTED · NEXT GATE
-**Action:** READ-ONLY AUDIT only
-**Forbidden now:** implementacja · migracje · Design Freeze bez audytu · Owner Implementation GO
+**Status:** **IMPLEMENTED / READY FOR REVIEW** · Design Freeze GO · Owner Implementation GO
+**Delivery:** RPC `claim_anon_take_to_account` · `src/lib/takes/anon-account-claim.ts` · auth hooks · `/account?claim=`
+**TTL/cap axis:** Premium Tier via `getSamplePolicy` (NOT Account Level)
+**App production verify:** PENDING (stop before deploy per Owner)
 
-Prompt kanoniczny: [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md) §8.
+OD-P3-01…11 CLOSED / ACCEPTED (see DECISION_LOG).
 
 ---
 

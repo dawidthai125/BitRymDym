@@ -11,6 +11,18 @@
 **Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)  
 **Wave 5 closeout:** [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
 
+## P3 — Anonymous → Account Claim
+
+| Piece | Location |
+|-------|----------|
+| RPC `claim_anon_take_to_account` | `supabase/migrations/20261005211153_p3_claim_anon_take_to_account.sql` |
+| Orchestrator | `src/lib/takes/anon-account-claim.ts` |
+| Auth hooks | `src/lib/auth/actions.ts` (sign-in / sign-up session) |
+| Studio banner | `src/app/account/page.tsx` `?claim=` |
+| TTL/cap SSOT | Premium Tier → `getSamplePolicy` |
+
+**Status:** IMPLEMENTED / READY FOR REVIEW · app production deploy pending
+
 ## Wave 1 delivered
 
 | Piece | Location |
@@ -89,7 +101,7 @@
 | APIs | `/api/takes/anon/session` · `finalize` · `preview` |
 | UI | `RecordingPanel` anonymous path · beat detail max SSOT |
 
-**Contract:** TTL 7200s · max 30s · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · anon→account claim NO · dual-play OUT · no grant APIs.
+**Contract:** TTL 7200s · max **15s** (P1 SAMPLE_POLICY) · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · **anon→account claim = P3 IN** (auto after login/signup · Storage move · Premium Tier TTL/cap) · dual-play OUT · no grant APIs.
 
 **W4/W5:** authenticated `claim_take_recording_session` and Shared Grants unchanged.
 

@@ -35,3 +35,36 @@ export async function ensureAnonymousTakeIdentity(): Promise<{
 
   return { tokenHash: hashAnonymousTakeToken(token) };
 }
+
+/**
+ * Read existing anonymous Take cookie without creating/rotating one.
+ * Returns null when missing or too short.
+ */
+export async function readAnonymousTakeIdentity(): Promise<{
+  tokenHash: string;
+  rawTokenPresent: true;
+} | null> {
+  const jar = await cookies();
+  const existing = jar.get(ANON_TAKE_COOKIE_NAME)?.value;
+  if (!existing || existing.length < 32) {
+    return null;
+  }
+  return {
+    tokenHash: hashAnonymousTakeToken(existing),
+    rawTokenPresent: true,
+  };
+}
+
+/**
+ * Clear anonymous Take cookie. Call only after successful claim / idempotent replay.
+ */
+export async function clearAnonymousTakeIdentity(): Promise<void> {
+  const jar = await cookies();
+  jar.set(ANON_TAKE_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+}

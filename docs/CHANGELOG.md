@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-05 — P3 Anonymous → Account Claim IMPLEMENTED (pre-deploy)
+
+**Status:** **IMPLEMENTED / READY FOR REVIEW** · app deploy **PENDING** · RPC applied on project DB
+**SSOT:** Design Freeze (chat) · OD-P3-01…11 · Premium Tier TTL/cap via `getSamplePolicy`
+**Migration:** `20261005211153_p3_claim_anon_take_to_account.sql` · RPC `claim_anon_take_to_account`
+
+- Auto claim after sign-in / sign-up (session) · Storage COPY anon→user · DB ownership flip · cookie clear on success
+- Cap DENY (no auto-replace) · claim ≠ daily session · D02 15s anon duration truth unchanged
+- UI: `/account?claim=ok|cap|error` · recording panel copy updated (transfer IN)
+
 ## 2026-10-05 — DOCUMENTATION CONTINUITY RECONCILIATION
 
 **Status:** DOCS ONLY · tip / production **`1c63080`** · NEXT = **P3 READ-ONLY AUDIT**

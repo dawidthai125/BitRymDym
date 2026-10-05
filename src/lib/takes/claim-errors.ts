@@ -14,6 +14,14 @@ export const TAKE_CLAIM_CODES = [
   "REPLACE_IDEMPOTENCY_REPLAY",
   "SESSION_DAY_CAP",
   "CONCURRENT_SESSION",
+  // P3 anonymous → account claim
+  "CLAIM_OK",
+  "CLAIM_NO_ELIGIBLE",
+  "CLAIM_CAP_REACHED",
+  "CLAIM_CONFLICT",
+  "CLAIM_STORAGE_FAILED",
+  "CLAIM_IDEMPOTENT_REPLAY",
+  "CLAIM_INVALID",
 ] as const;
 
 export type TakeClaimCode = (typeof TAKE_CLAIM_CODES)[number];
@@ -39,7 +47,9 @@ export class TakeClaimError extends AuthError {
     super(
       claimCode === "REPLACE_CONFLICT" ||
         claimCode === "CONCURRENT_SESSION" ||
-        claimCode === "REPLACE_IDEMPOTENCY_REPLAY"
+        claimCode === "REPLACE_IDEMPOTENCY_REPLAY" ||
+        claimCode === "CLAIM_CONFLICT" ||
+        claimCode === "CLAIM_IDEMPOTENT_REPLAY"
         ? "CONFLICT"
         : "FORBIDDEN",
       message,
@@ -80,6 +90,20 @@ export function messageForTakeClaimCode(code: TakeClaimCode): string {
       return "SESSION_DAY_CAP: Daily recording session limit reached for your sample policy.";
     case "CONCURRENT_SESSION":
       return "CONCURRENT_SESSION: Another recording session is already in progress.";
+    case "CLAIM_OK":
+      return "CLAIM_OK: Anonymous take claimed to account.";
+    case "CLAIM_NO_ELIGIBLE":
+      return "CLAIM_NO_ELIGIBLE: No eligible anonymous READY take to claim.";
+    case "CLAIM_CAP_REACHED":
+      return "CLAIM_CAP_REACHED: Active READY take limit reached — free a slot, then retry.";
+    case "CLAIM_CONFLICT":
+      return "CLAIM_CONFLICT: Anonymous take changed during claim.";
+    case "CLAIM_STORAGE_FAILED":
+      return "CLAIM_STORAGE_FAILED: Could not copy take audio to account path.";
+    case "CLAIM_IDEMPOTENT_REPLAY":
+      return "CLAIM_IDEMPOTENT_REPLAY: Anonymous take already claimed to this account.";
+    case "CLAIM_INVALID":
+      return "CLAIM_INVALID: Claim request failed validation.";
     default:
       return `${code}: Take claim denied.`;
   }

@@ -30,7 +30,11 @@ import {
 /**
  * Artist Studio — action space, not a developer debug panel.
  */
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ claim?: string }>;
+}) {
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
     return (
@@ -50,6 +54,13 @@ export default async function AccountPage() {
   if (!context) {
     redirect("/sign-in");
   }
+
+  const params = await searchParams;
+  const claimParam = params.claim;
+  const claimBanner =
+    claimParam === "ok" || claimParam === "cap" || claimParam === "error"
+      ? claimParam
+      : null;
 
   const showAdminNav = canAccessAdminNav(context.profile.role);
   let takes: Awaited<ReturnType<typeof listOwnTakes>> = [];
@@ -88,6 +99,39 @@ export default async function AccountPage() {
               </BrdLink>
             </div>
           </header>
+
+          {claimBanner === "ok" ? (
+            <div
+              className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
+              role="status"
+            >
+              Nagranie zostało zapisane na Twoim koncie.{" "}
+              <Link
+                href="/account/takes"
+                className="underline underline-offset-4 hover:text-[var(--brd-green)]"
+              >
+                Moje nagrania
+              </Link>
+            </div>
+          ) : null}
+          {claimBanner === "cap" ? (
+            <div
+              className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
+              role="status"
+            >
+              Nie udało się zapisać gościnnego nagrania — masz pełny limit. Usuń
+              lub zastąp nagranie w Studio, potem odśwież stronę.
+            </div>
+          ) : null}
+          {claimBanner === "error" ? (
+            <div
+              className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
+              role="alert"
+            >
+              Nie udało się przenieść gościnnego nagrania. Spróbuj odświeżyć
+              Studio.
+            </div>
+          ) : null}
 
           <div className="mb-10 flex flex-wrap gap-2">
             <StudioChip href="/account/takes" label="Moje nagrania" />

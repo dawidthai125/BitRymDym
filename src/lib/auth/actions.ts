@@ -9,7 +9,7 @@ import { validateDisplayName } from "@/lib/auth/display-name";
 import { validateNewPassword } from "@/lib/auth/password-policy";
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
-import { AuthError, requireUser } from "@/lib/auth/session";
+import { AuthError, getCurrentProfile, requireUser } from "@/lib/auth/session";
 import { interpretSignUpResult } from "@/lib/auth/signup-result";
 import {
   getAuthEmailRedirectTo,
@@ -17,6 +17,10 @@ import {
 } from "@/lib/site-url";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  accountClaimRedirectPath,
+  tryClaimAnonTakeAfterAuth,
+} from "@/lib/takes/anon-account-claim";
 import {
   mapSupabaseAuthError,
   toUserFacingAuthError,
@@ -110,6 +114,11 @@ export async function signUpAction(
 
   if (outcome.kind === "session") {
     revalidatePath("/");
+    const context = await getCurrentProfile();
+    if (context) {
+      const claim = await tryClaimAnonTakeAfterAuth(context);
+      redirect(accountClaimRedirectPath(claim));
+    }
     redirect("/account");
   }
 
@@ -151,6 +160,11 @@ export async function signInAction(
   }
 
   revalidatePath("/");
+  const context = await getCurrentProfile();
+  if (context) {
+    const claim = await tryClaimAnonTakeAfterAuth(context);
+    redirect(accountClaimRedirectPath(claim));
+  }
   redirect("/account");
 }
 
