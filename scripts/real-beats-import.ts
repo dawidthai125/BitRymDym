@@ -50,7 +50,6 @@ const OUT_DIR = join(process.cwd(), "docs", "audits");
 const INVENTORY_PATH = join(OUT_DIR, "REAL_BEATS_IMPORT_INVENTORY.json");
 const READY_PATH = join(OUT_DIR, "REAL_BEATS_IMPORT_READY_EVIDENCE.json");
 const PUBLISH_PATH = join(OUT_DIR, "REAL_BEATS_IMPORT_PUBLISH_EVIDENCE.json");
-const EXECUTION_PATH = join(OUT_DIR, "REAL_BEATS_IMPORT_EXECUTION_REPORT.md");
 
 const FFPROBE =
   process.env.FFPROBE_PATH ||
