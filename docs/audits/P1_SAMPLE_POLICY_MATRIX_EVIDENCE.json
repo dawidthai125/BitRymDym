@@ -1,5 +1,10 @@
 {
   "track": "P1_SAMPLE_POLICY_MATRIX",
+  "commit": "5927e35",
+  "deploy": {
+    "vercel_deployment_id": "dpl_E1qLSLheGiVGnwYaAAoC7GYFziVu",
+    "aliases": ["https://www.bitrymdym.pl"]
+  },
   "owner_decisions": {
     "B1_premium_tier_axis": true,
     "B2_canDownloadOwnTake_capability_only": true,
@@ -22,11 +27,6 @@
   "p0_untouched": true,
   "take_download_ts_unchanged": true,
   "migration_applied_production": true,
-  "pre_deploy_settings": {
-    "bronze": 60,
-    "silver": 120,
-    "gold": 180
-  },
   "verification_local": {
     "typecheck": "PASS",
     "build": "PASS",
@@ -36,7 +36,13 @@
     "p0_regression": "PASS"
   },
   "production_verify": {
-    "status": "PENDING_DEPLOY",
-    "verdict": null
+    "status": "GREEN",
+    "verdict": "PRODUCTION VERIFIED — GREEN",
+    "anon_session_maxRecordingSeconds": 15,
+    "gold_auth_session_maxRecordingSeconds": 174,
+    "admin_bronze_override_60_to_90_to_60": "PASS",
+    "audit_sample_policy_update_events": 2,
+    "p0_platform_download_deny_ui": "PASS",
+    "settings_restored_defaults": true
   }
 }

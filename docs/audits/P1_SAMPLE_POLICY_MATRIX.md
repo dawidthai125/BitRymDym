@@ -1,103 +1,61 @@
 # P1 — Sample Policy Matrix (Premium Tier)
 
-**Status:** IMPLEMENTATION COMPLETE (production verify after deploy)  
-**Owner GO:** B1/B2/B3/B4 TAK  
-**Commit message target:** `feat(recording): add tiered sample policy matrix`
+**Status:** PRODUCTION VERIFIED — GREEN  
+**Commit:** `5927e35`  
+**Deploy:** `dpl_E1qLSLheGiVGnwYaAAoC7GYFziVu` → `www.bitrymdym.pl`  
+**Owner GO:** B1/B2/B3/B4 TAK
 
 ---
 
 ## 1. Scope
 
-Central Sample Policy for recording samples:
-- max recording duration
-- TTL
-- daily sessions
-- active READY cap
-- `canDownloadOwnTake` capability (P4 enforcement deferred)
-
-Axis: **Premium Tier** (`ANONYMOUS | FREE | BRONZE | SILVER | GOLD`), not Account Level.
+Central Sample Policy for recording samples (duration, TTL, daily sessions, active READY, `canDownloadOwnTake` capability). Axis: Premium Tier / ANONYMOUS.
 
 ## 2. Owner decisions
 
 | ID | Decision |
 |----|----------|
 | B1 | Sample Policy ← Premium Tier |
-| B2 | `canDownloadOwnTake` capability only — no take-download.ts change |
-| B3 | Admin DB overrides for BRONZE/SILVER/GOLD duration |
+| B2 | `canDownloadOwnTake` capability only — take-download.ts unchanged |
+| B3 | Admin DB overrides BRONZE/SILVER/GOLD |
 | B4 | ANONYMOUS = 15 s |
 
-## 3. Before state
+## 3–4. Before → Target
 
-- SSOT: Account Level (`BEGINNER/PRO/LEGEND`) via `entitlement.ts`
-- ANON max 30 s; BEGINNER 30 s / 24 h / 3 ready / 10 day
-- No Admin duration settings table
+Account Level limits replaced by Premium matrix (see evidence JSON). Global max 180 unchanged.
 
-## 4. Target state
+## 5–10. Architecture
 
-| Actor | Duration | TTL | Active | Day | canDownloadOwnTake |
-|-------|----------|-----|--------|-----|--------------------|
-| ANONYMOUS | 15 | 2 h | 1 | 3 | false |
-| FREE | 30 | 12 h | 3 | 3 | false |
-| BRONZE | 60* | 36 h | 5 | 5 | false |
-| SILVER | 120* | 60 h | 7 | 7 | false |
-| GOLD | 180* | 84 h | 10 | 10 | true |
+- `getSamplePolicy` SSOT (`entitlement.ts` + `SAMPLE_POLICY_DEFAULTS`)
+- Tier: `resolveProductEntitlementForAuthContext`
+- Admin: `sample_policy_settings` + `/admin/sample-policy`
+- Audit: `SAMPLE_POLICY_UPDATE`
+- Wire: take/anon transport + beat detail UI
+- Finalize: snapshot duration probe (unchanged pattern)
+- ACTIVE_READY still DENY (no replace)
 
-\* Admin-overridable (1..180). Global max = 180.
+## 11–14. Tests
 
-## 5. Premium Tier resolution
+Local: typecheck/build PASS; P1 unit + d02 live 8/8 + wave4 live 3/3 + P0 PASS.
 
-- Auth: `resolveProductEntitlementForAuthContext` → `premiumTier`
-- Missing/expired/inactive → FREE
-- ANONYMOUS ≠ FREE (separate cookie identity path)
-- Account Level unused for sample limits
+## 15. Production verification
 
-## 6–7. Architecture / Admin overrides
+| Check | Result |
+|-------|--------|
+| ANON session maxRecordingSeconds | **15** PASS |
+| GOLD/auth session max (MIN beat,180) | **174** PASS |
+| Admin UI defaults + ANON/FREE fixed labels | PASS |
+| Bronze override 60→90→60 | PASS |
+| Audit SAMPLE_POLICY_UPDATE | PASS (2 events) |
+| P0 PLATFORM download DENY message | PASS |
+| Playback / recording surface present | PASS |
+| Verify PENDING takes cleaned FAILED | PASS |
 
-- Pure resolver: `getSamplePolicy(...)` in `src/lib/takes/entitlement.ts`
-- Defaults: `src/config/recording.ts` → `SAMPLE_POLICY_DEFAULTS`
-- DB SSOT: `sample_policy_settings` (singleton)
-- Load: `loadSamplePolicyDurationOverrides()`
-- Mutate: `updateSamplePolicySettings` + `requireRole(["ADMIN"])`
-- UI: `/admin/sample-policy`
+FREE/BRONZE/SILVER exact session denials covered by unit + live suites against production DB; production UI shows GOLD for Owner admin account.
 
-## 8. DB SSOT
+## 16–19. Deferred / limitations
 
-Migration: `20261005180000_p1_sample_policy_settings.sql`
-- Table + RLS deny anon/authenticated
-- Audit action `SAMPLE_POLICY_UPDATE` on `admin_audit_events`
+P2–P6 deferred. Existing takes keep old `expires_at`. Live-test fixture beats may remain in catalog (pre-existing live test pattern) — out of P1 cleanup scope without Owner GO.
 
-## 9–10. Security / server enforcement
-
-- Client cannot supply tier or max seconds
-- Session create resolves entitlement + overrides → policy → RPC caps / `expires_at` / snapshot
-- Finalize probes duration vs `recording_max_seconds_snapshot` (session-time policy)
-- USER/MODERATOR cannot mutate settings
-
-## 11–13. TTL / daily / active READY
-
-- TTL via `policy.ttlSeconds` → `expires_at` (existing janitor reused)
-- Daily: `SESSION_DAY_CAP` with new numbers
-- Active READY: `ACTIVE_READY_CAP` DENY (no replace / P2)
-
-## 14. Tests
-
-- `p1-sample-policy.test.ts` — full matrix + admin validation + forged tier/duration
-- `p1-sample-policy-settings.test.ts` — migration + ADMIN gate
-- Updated wave1/2/4/d02/wave5/w2b unit + live tests
-- P0 regression suite kept green
-
-## 15–16. Production verification / data safety
-
-Filled after deploy.
-
-## 17–18. Deferred
-
-- P2 replace
-- P4 GOLD own-take download + 5/day
-- P3 claim, P5 plays, P6 ratings
-
-## 19. Known limitations
-
-- Existing READY takes keep prior `expires_at` (no take migration)
-- New sessions only get new TTL/caps
-- `canDownloadOwnTake` not enforced until P4
+### P1 SAMPLE POLICY MATRIX:
+**PRODUCTION VERIFIED — GREEN**
