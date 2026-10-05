@@ -6,6 +6,37 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-05 — FALA 3.5.1 SSOT RECONCILIATION (DOCS ONLY)
+
+**Status:** DOCS ONLY · verify baseline **`75bd80f`** · feature **`c690831`** · Fala 3.5.1 **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN**
+**SSOT:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md) · [architecture/RECORDING.md](./architecture/RECORDING.md)
+
+- Living labels updated: CLOSED · SHIPPED · PRODUCTION VERIFIED (supersedes living **NOT DEPLOYED**)
+- Historical plan baseline `42369c0` retained · actual production verification baseline **`75bd80f`**
+- D-V matrix **PASS** · no blockers · no required micro-patches
+- Findings: F351-V-01 **LOW** (first automated REC error · retry succeeded) · F351-V-02 **FALSE POSITIVE / NOT REPRODUCED** (sticky-nav)
+- P1 / P2 / P3 **UNCHANGED** · no Security / Storage / Auth / RLS / code changes
+- Production app redeploy: **NOT DONE** (docs-only · Fala already in production tree)
+
+## 2026-10-05 — FALA 3.5.1 PRODUCTION VERIFIED — GREEN
+
+**Status:** **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN**
+**Feature:** `c690831` · `feat(audio): close recording experience 3.5.1`
+**Verify baseline:** `75bd80f` · https://www.bitrymdym.pl
+**Plan:** [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](./audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md) (historical plan SHA `42369c0` · rebaselined for execute)
+
+```text
+DESIGN FREEZE           = GO
+IMPLEMENTATION          = ALREADY SHIPPED
+PRODUCTION VERIFICATION = PASS
+PRODUCTION              = GREEN
+STATUS                  = CLOSED
+```
+
+- D-V-01…42 critical path **PASS** (dedicated production verify)
+- No P1/P2/P3 regression · no security blocker · no Storage/Auth/RLS changes
+- F351-V-01 LOW · F351-V-02 FALSE POSITIVE — no micro-patch required
+
 ## 2026-10-05 — P3 SSOT RECONCILIATION (DOCS ONLY)
 
 **Status:** DOCS ONLY · tip / production **`dabbc936`** · P3 **COMPLETE / PRODUCTION VERIFIED — GREEN**
@@ -516,13 +547,14 @@ Next: W1 read-only `/admin/users` requires separate Owner GO.
 
 ## 2026-10-02 — FALA 3.5.1 — RECORDING EXPERIENCE + DUAL AUDIO TIMELINE (CLOSED)
 
-**Status:** **CLOSED** · Owner verification **PRELIMINARY PASS** · Production **NOT DEPLOYED**
+**Status (historical at closeout):** **CLOSED** · Owner verification **PRELIMINARY PASS** · Production **NOT DEPLOYED**
+**Living status (2026-10-05):** **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** — see changelog entry above
 
 - Live mic waveform + Input Monitor · BIT waveform during REC · shared REC playhead
 - BRD Take Preview (BIT + TAKE dual rail · play/pause/seek) · no native `<audio controls>` in take UI
 - Regression fix: BIT rail visibility (`rgba` rest bars · studio height)
 - Closeout: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)
-- Note: Owner QA wstępny; pełne production verification = osobny krok po deployu
+- Note (historical): Owner QA wstępny; pełne production verification = osobny krok po deployu — **executed 2026-10-05** (PASS)
 - Fala 4 **NOT STARTED**
 
 ---

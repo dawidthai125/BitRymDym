@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-05 — P3 COMPLETE · tip / production **`dabbc936`** · **PRODUCTION VERIFIED — GREEN**
+**Updated:** 2026-10-05 — Fala 3.5.1 **PRODUCTION VERIFIED — GREEN** · verify **`75bd80f`** · production app **`dabbc936`** (no redeploy) · P3 **CLOSED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,12 +23,13 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | `dabbc93695c14609095db90b581e65ceaf221611` (`dabbc936`) |
-| **Production application SHA** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
-| **Last Production Verify** | **P3 Anonymous → Account Claim · PRODUCTION VERIFIED — GREEN** |
+| **Repository HEAD / origin/main** | `75bd80fca132fe0a5bd1a31cd33a1eba5f491295` (`75bd80f`) — Fala 3.5.1 verify baseline · docs tip advances with SSOT reconcile |
+| **Production application SHA** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · **UNCHANGED** this wave (docs-only · no redeploy) |
+| **Last Production Verify** | **Fala 3.5.1 Recording Experience · PRODUCTION VERIFIED — GREEN** |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work · ACCOUNT/PROFILE-01 + USER-ID-01 active |
-| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · [RECORDING.md](./architecture/RECORDING.md) |
+| **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` · [RECORDING.md](./architecture/RECORDING.md) |
+| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** · [RECORDING.md](./architecture/RECORDING.md) |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` · residual `1c63080` · [DF](./audits/POLISH-01_DESIGN_FREEZE.md) |
 | **P0 / P1 / P2 (recording security)** | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` / `5927e35` / `943d81e` |
 | **USER-FACING POLISH (historical)** | CLOSED @ `ffe723b` — **superseded living tip by POLISH-01** · [closeout](./audits/USER_FACING_POLISH_LOCALIZATION_IMPLEMENTATION.md) |
@@ -83,7 +84,9 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `dabbc936` | **CURRENT** tip + production app · P3 Anonymous → Account Claim · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
+| `75bd80f` | **VERIFY BASELINE** · Fala 3.5.1 production verification · docs tip at verify (P3 SSOT parent) · docs tip advances with this reconcile |
+| `dabbc936` | **PRODUCTION APP** · P3 Anonymous → Account Claim · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · Fala UX already in ancestry |
+| `c690831` | Fala 3.5.1 feature · `feat(audio): close recording experience 3.5.1` |
 | `1c63080` | Historical — POLISH-01 residual hotfix · prior tip |
 | `579acb3` | Historical — POLISH-01 localization feature |
 | `943d81e` / `fa7bfe3` | Historical — P2 Explicit Sample Replace (+ docs verify) |
@@ -108,13 +111,14 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | `dabbc936` |
-| **Production application** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
+| **HEAD / origin/main** | `75bd80f` (verify baseline · docs tip advances with this SSOT reconcile) |
+| **Production application** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · **UNCHANGED** (no redeploy) |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
 | **STORAGE-ARCH-01** | **LOCKED** |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** |
-| **P0 / P1 / P2** | **CLOSED / PRODUCTION VERIFIED** |
-| **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** |
+| **P0 / P1 / P2** | **CLOSED / PRODUCTION VERIFIED** · **UNCHANGED** |
+| **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** · **UNCHANGED** |
+| **Fala 3.5.1** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
 | **NEXT GATE** | **Owner-selected next surface** · P3 `p_take_id` = **NON-BLOCKING** |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
@@ -486,7 +490,7 @@ P3 ACCOUNT CLAIM = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936
 **Expiry AuthZ is immediate** (preview/download DENY when `expires_at` past). Janitor cleans Storage/lifecycle on daily schedule (Hobby).
 
 Closeout D02: [RECORDING_D02_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)
-Closeout Fala 3.5.1: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) · **CLOSED** · Owner **PRELIMINARY PASS** · **NOT DEPLOYED**
+Closeout Fala 3.5.1: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](./audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) · **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` · plan [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](./audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md) (historical plan SHA `42369c0` superseded for execute)
 Closeout W5: [RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md)
 Closeout W4: [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)
 
@@ -675,13 +679,15 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION = dabbc936
+CURRENT PRODUCTION = dabbc936 (app · UNCHANGED this wave · no redeploy)
+VERIFY BASELINE    = 75bd80f
 DEPLOYMENT         = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
-LAST VERIFY        = P3 · PRODUCTION VERIFIED — GREEN
+LAST VERIFY        = Fala 3.5.1 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER       = e3-7-f EXPORT_WAV · WAIVED
-P3                 = COMPLETE / PRODUCTION VERIFIED — GREEN
+FALA 3.5.1         = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
+P3                 = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
 POLISH-01          = CLOSED / PRODUCTION VERIFIED
-P0 / P1 / P2       = CLOSED / PRODUCTION VERIFIED
+P0 / P1 / P2       = CLOSED / PRODUCTION VERIFIED · UNCHANGED
 ARCH-05            = CLOSED / VERIFIED
 WORKER             = STOPPED / DISABLED
 STORAGE-ARCH-01    = LOCKED
@@ -691,7 +697,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                    → MASTER_HANDOFF / PROJECT_STATE
 ```
 
-**Do not** reopen closed P0/P1/P2/P3/POLISH-01/ARCH-05/BPM without new evidence.
+**Do not** reopen closed P0/P1/P2/P3/Fala 3.5.1/POLISH-01/ARCH-05/BPM without new evidence.
 **Do not** implement `p_take_id` / fix EXPORT_WAV / mutate Storage without Owner GO.
 **Do not** stage dirty WIP (`.agents/` · `.cursor/` · `infra/` · `.env*` · secrets).
 
@@ -733,7 +739,7 @@ Start reading order:
 | Item | Notes |
 |------|--------|
 | Dual SHA (app vs worker) | Production app `dabbc936` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
-| Docs tip vs app tip | Currently aligned at `dabbc936`; future docs-only commits may diverge — intentional |
+| Docs tip vs app tip | Verify baseline / docs tip `75bd80f` (+ this SSOT tip) · production app `dabbc936` — intentional docs-only divergence · no Fala redeploy |
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED · living orphans **0** (post ARCH-05) · **NOT CLOSED** |
 | HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** — not solved |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
@@ -792,13 +798,15 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION         = dabbc936
+CURRENT PRODUCTION APP     = dabbc936 · UNCHANGED (no redeploy)
+VERIFY BASELINE            = 75bd80f
 DEPLOYMENT                 = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
-LAST VERIFY                = P3 · PRODUCTION VERIFIED — GREEN
+LAST VERIFY                = Fala 3.5.1 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER               = e3-7-f EXPORT_WAV · WAIVED
-P3                         = COMPLETE / PRODUCTION VERIFIED — GREEN
+FALA 3.5.1                 = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
+P3                         = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
 POLISH-01                  = CLOSED / PRODUCTION VERIFIED
-P0 / P1 / P2               = CLOSED / PRODUCTION VERIFIED
+P0 / P1 / P2               = CLOSED / PRODUCTION VERIFIED · UNCHANGED
 ARCH-05                    = CLOSED / VERIFIED
 ADMIN W0–W4                = CLOSED / PRODUCTION VERIFIED
 E3                         = PRODUCTION VERIFIED — GREEN

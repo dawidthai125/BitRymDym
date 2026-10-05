@@ -10,6 +10,27 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Fala 3.5.1 — Recording Experience Production Verification — CLOSED / GREEN
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Architect GO — Design Freeze Production Verification & Ship · docs SSOT reconcile |
+| Status | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** |
+| Date | 2026-10-05 |
+| Feature | `c690831` · `feat(audio): close recording experience 3.5.1` |
+| Historical plan baseline | `42369c0` |
+| Actual verify baseline | `75bd80f` |
+| Production URL | https://www.bitrymdym.pl |
+| Production app | `dabbc936` · **no redeploy** (Fala already in ancestry) |
+
+**Locked:** client UX only · REUSE `TakeMediaRecorder` · no second engine · D02/P1/P2/P3 untouched · no RLS/Storage/Auth/RPC changes.
+
+**Verify:** D-V matrix PASS · no blockers · no required micro-patches · F351-V-01 LOW · F351-V-02 FALSE POSITIVE.
+
+**SSOT:** [architecture/RECORDING.md](../architecture/RECORDING.md) · plan [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](../audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md)
+
+---
+
 ### OD-P3-01…11 — Anonymous → Account Claim — CLOSED / IMPLEMENTED
 
 | Pole | Wartość |

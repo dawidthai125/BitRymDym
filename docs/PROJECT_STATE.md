@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-05 — P3 COMPLETE · tip / production **`dabbc936`** · **PRODUCTION VERIFIED — GREEN**
+**Updated:** 2026-10-05 — Fala 3.5.1 **PRODUCTION VERIFIED — GREEN** · verify baseline **`75bd80f`** · production app **`dabbc936`** (no redeploy) · P3 **CLOSED**
 
 ---
 
@@ -21,11 +21,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `dabbc93695c14609095db90b581e65ceaf221611` (`dabbc936`) |
-| **PRODUCTION APP SHA** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
+| **REPOSITORY HEAD / origin/main** | `75bd80fca132fe0a5bd1a31cd33a1eba5f491295` (`75bd80f`) — Fala 3.5.1 verify baseline · docs tip advances with this SSOT reconcile |
+| **PRODUCTION APP SHA** | `dabbc936` — Ready · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · **UNCHANGED** this wave (docs-only · no redeploy) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **LAST PRODUCTION VERIFY** | **P3 Anonymous → Account Claim · PRODUCTION VERIFIED — GREEN** |
+| **LAST PRODUCTION VERIFY** | **Fala 3.5.1 Recording Experience · PRODUCTION VERIFIED — GREEN** (baseline `75bd80f`) |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
+| **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` · residual `1c63080` — [DF](./audits/POLISH-01_DESIGN_FREEZE.md) |
 | **P0 PLATFORM master download deny** | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` — [closeout](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md) |
@@ -52,16 +53,20 @@
 ## 3. Current Phase
 
 ```text
-REPOSITORY HEAD / origin/main = dabbc936
-PRODUCTION APP                = dabbc936 · dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR · READY
-LAST VERIFY                   = P3 · PRODUCTION VERIFIED — GREEN
+REPOSITORY HEAD / origin/main = 75bd80f (Fala 3.5.1 verify baseline · docs tip advances with SSOT reconcile)
+PRODUCTION APP                = dabbc936 · dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR · READY · UNCHANGED (no redeploy)
+LAST VERIFY                   = Fala 3.5.1 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 
-P3                            = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936
+FALA 3.5.1                    = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
+  Historical plan baseline    = 42369c0
+  Actual verify baseline      = 75bd80f
+  Findings                    = F351-V-01 LOW · F351-V-02 FALSE POSITIVE · no micro-patch
+P3                            = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
   Cookie clear                = CODE-VERIFIED · full disposable E2E NOT EXECUTED
   Follow-up                   = p_take_id hardening · NON-BLOCKING
 POLISH-01                     = CLOSED / PRODUCTION VERIFIED
-P0 / P1 / P2 (recording security track) = CLOSED / PRODUCTION VERIFIED
+P0 / P1 / P2 (recording security track) = CLOSED / PRODUCTION VERIFIED · UNCHANGED
 BPM                           = CLOSED / PRODUCTION VERIFIED
 ARCH-05                       = CLOSED / VERIFIED · live 11/8/3/0/0
 ADMIN W0–W4                   = CLOSED / PRODUCTION VERIFIED

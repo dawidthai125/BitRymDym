@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-05 — P3 COMPLETE · tip / production **`dabbc936`** · **PRODUCTION VERIFIED — GREEN**
+**Updated:** 2026-10-05 — Fala 3.5.1 **PRODUCTION VERIFIED — GREEN** · verify **`75bd80f`** · production app **`dabbc936`** (no redeploy) · P3 **CLOSED**
 **Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
 
 **Evidence rule (bezwzględna):**
@@ -25,16 +25,17 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-REPOSITORY HEAD / origin/main = dabbc93695c14609095db90b581e65ceaf221611
-  short                       = dabbc936
-  message                     = feat(takes): claim anonymous READY take to account after login
+REPOSITORY HEAD / origin/main = 75bd80fca132fe0a5bd1a31cd33a1eba5f491295
+  short                       = 75bd80f
+  note                        = Fala 3.5.1 production verify baseline · docs tip advances with this SSOT reconcile
 
 PRODUCTION APP SHA            = dabbc936
 PRODUCTION DEPLOYMENT         = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
+  this wave                   = NO REDEPLOY (docs-only · Fala already in production tree)
 
-LAST PRODUCTION VERIFY        = P3 Anonymous → Account Claim · PRODUCTION VERIFIED — GREEN
+LAST PRODUCTION VERIFY        = Fala 3.5.1 Recording Experience · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV
                               = PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER
                               (NIE traktować jako nowy regres)
@@ -43,7 +44,8 @@ BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
 WORKER                        = Contabo · STOPPED / DISABLED · bootstrap 92496d4
 
-P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN
+FALA 3.5.1 STATUS             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
+P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
 P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 NEXT GATE                     = Owner-selected next surface (backlog)
 ```
@@ -52,7 +54,8 @@ NEXT GATE                     = Owner-selected next surface (backlog)
 
 | Track | Status |
 |-------|--------|
-| **P3** Anonymous → Account Claim | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
+| **Fala 3.5.1** Recording Experience | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` |
+| **P3** Anonymous → Account Claim | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** |
 | **POLISH-01** (+ residual hotfix) | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` → residual `1c63080` |
 | **P0** PLATFORM master download deny | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` |
 | **P1** Sample Policy Matrix | **CLOSED / PRODUCTION VERIFIED** @ `5927e35` |
@@ -65,14 +68,14 @@ NEXT GATE                     = Owner-selected next surface (backlog)
 | **E3 Full Audio** | **PRODUCTION VERIFIED — GREEN** (Premium HQ/WAV E2E: see waiver) |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · retirement **NOT EXECUTED** · **NOT CLOSED** (ops — nie NEXT product gate) |
 
-**Historyczne tipy** (`1c63080`, `e03f3be`, `ddcee65`, `ffe723b`, `4e33e8d`, …) = **HISTORYCZNE RELEASE** — nie current baseline.
+**Historyczne tipy** (`dabbc936` as feature tip, `1c63080`, `e03f3be`, `ddcee65`, `ffe723b`, `4e33e8d`, …) = **HISTORYCZNE / FEATURE RELEASE** — nie mylić z verify baseline `75bd80f`.
 
 **Planes (never merge):**
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository | `dabbc936` |
-| Production app | `dabbc936` |
+| Repository | `75bd80f` (+ docs tip advances with this SSOT reconcile) |
+| Production app | `dabbc936` · **UNCHANGED** this wave (no redeploy) |
 | Production DB | includes P3 `claim_anon_take_to_account` + P1/P2 RPCs · verify remote before DB work |
 | Production Storage | live **11** (USER 8 · PLATFORM 3 · ORPHAN 0) · historical backup **43/43 RETAINED** |
 | Session / operator | dirty local WIP may exist — **nie czyścić bez Owner GO** |
@@ -154,7 +157,8 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFE
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · **NOT CLOSED** |
 | Messaging / comments / voting / payments / STEMS / Premium catalog | DEFERRED |
 | External Object Storage | NOT IMPLEMENTED / DEFERRED |
-| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
+| **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** |
+| **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` |
 
 ---
 
@@ -246,12 +250,49 @@ Architecture detail: [architecture/RECORDING.md](./architecture/RECORDING.md) ·
 
 ---
 
+## 8b. Fala 3.5.1 — PRODUCTION VERIFIED GREEN (canonical)
+
+**Fala 3.5.1 — Recording Experience + Dual Audio Timeline**
+**Status:** **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN**
+**Feature:** `c690831`
+**Verify baseline:** `75bd80f` · https://www.bitrymdym.pl
+**Production app:** `dabbc936` · **no redeploy** this wave (already in ancestry)
+
+```text
+DESIGN FREEZE           = GO
+IMPLEMENTATION          = ALREADY SHIPPED
+PRODUCTION VERIFICATION = PASS (D-V matrix)
+PRODUCTION              = GREEN
+STATUS                  = CLOSED
+
+Historical Plan Baseline:
+  42369c0
+
+Actual Production Verification Baseline:
+  75bd80f
+
+Reason:
+  production/repository tip advanced after subsequent docs-only reconciliation/deploy lineage.
+
+Findings (non-blocking):
+  F351-V-01 LOW — first automated REC generic error · retry succeeded · no micro-patch
+  F351-V-02 FALSE POSITIVE / NOT REPRODUCED — sticky-nav intercept = tooling artifact
+
+Regression:
+  P1 UNCHANGED · P2 UNCHANGED · P3 UNCHANGED
+  No security blocker · No Storage/Auth/RLS changes
+```
+
+Plan: [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](./audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md) · Architecture: [architecture/RECORDING.md](./architecture/RECORDING.md)
+
+---
+
 ## 9. Absolute prohibitions without Owner GO
 
 - Runtime / AuthZ / DB / Storage / migration mutate
 - P3 `p_take_id` hardening (non-blocking backlog — not auto-start)
 - EXPORT_WAV „fix”
-- Reopen zamkniętych epików bez nowego evidence
+- Reopen zamkniętych epików bez nowego evidence (incl. Fala 3.5.1 / P3)
 - Traktowanie Contabo jako durable media / backup SSOT
 - Stage agent/infra/secrets residue
 - `git add .` / `-A` / `-u`
@@ -261,13 +302,14 @@ Architecture detail: [architecture/RECORDING.md](./architecture/RECORDING.md) ·
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect dabbc936
+[ ] git fetch && git rev-parse HEAD           → expect docs tip ≥ 75bd80f (Fala SSOT reconcile)
 [ ] git rev-parse origin/main                → match HEAD
-[ ] Confirm Production app SHA = dabbc936 (Deployments / aliases www + apex)
+[ ] Confirm Production app SHA = dabbc936 (Deployments / aliases www + apex) · no Fala redeploy required
 [ ] Read MASTER_HANDOFF + PROJECT_STATE
-[ ] P3 = COMPLETE / GREEN — do not re-open without new evidence
+[ ] Fala 3.5.1 = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN — do not re-open without new evidence
+[ ] P3 = COMPLETE / GREEN — do not re-open without new evidence · cookie E2E NOT EXECUTED unchanged
 [ ] NEXT GATE = Owner-selected next surface · p_take_id = NON-BLOCKING only
-[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3 bez nowego evidence
+[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3/Fala 3.5.1 bez nowego evidence
 [ ] Nie czyść dirty WIP
 [ ] AUDIT FIRST → report → wait for Owner GO
 ```
@@ -277,13 +319,14 @@ Architecture detail: [architecture/RECORDING.md](./architecture/RECORDING.md) ·
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (P3 SSOT reconciled 2026-10-05)
-REPOSITORY HEAD              = dabbc936
-PRODUCTION APP SHA           = dabbc936
+FINAL COLD START HANDOFF     = READY (Fala 3.5.1 SSOT reconciled 2026-10-05)
+REPOSITORY VERIFY BASELINE   = 75bd80f
+PRODUCTION APP SHA           = dabbc936 · UNCHANGED (no redeploy)
 PRODUCTION DEPLOYMENT        = dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR
-LAST VERIFY                  = P3 · PRODUCTION VERIFIED — GREEN
+LAST VERIFY                  = Fala 3.5.1 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
-P3 STATUS                    = COMPLETE / PRODUCTION VERIFIED — GREEN
+FALA 3.5.1                   = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
+P3 STATUS                    = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
 P3 FOLLOW-UP                 = p_take_id · NON-BLOCKING
 NEXT GATE                    = Owner-selected next surface (backlog)
 PRIOR CHAT REQUIRED          = NO

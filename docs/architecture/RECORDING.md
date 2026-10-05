@@ -1,11 +1,12 @@
 # Recording / Quick Take — architecture index
 
-**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · **P3 COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **Fala 3.5.1 Recording Experience CLOSED** (Owner preliminary PASS · **NOT DEPLOYED**) · production app GREEN
+**Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · **P3 COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **Fala 3.5.1 CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` (verify baseline `75bd80f`) · production app GREEN
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  
 **D02 CURRENT CONTRACT:** [PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md](../phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md) (Design Freeze COMPLETE · **SHIPPED** @ `e98ba52`)  
 **D02 closeout:** [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)  
-**Fala 3.5.1 closeout:** [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)  
+**Fala 3.5.1 closeout (implementation):** [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) (historical pre-deploy label **NOT DEPLOYED** — superseded)  
+**Fala 3.5.1 production verify plan:** [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](../audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md)  
 **Wave 3 closeout:** [RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md](../audits/RECORDING_WAVE3_IMPLEMENTATION_CLOSEOUT.md)  
 **Wave 4 closeout:** [RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_WAVE4_PRODUCTION_CLOSEOUT.md)  
 **Wave 4 report:** [RECORDING_WAVE4_IMPLEMENTATION_REPORT.md](../audits/RECORDING_WAVE4_IMPLEMENTATION_REPORT.md)  
@@ -125,7 +126,7 @@ Anonymous Take → READY → successful sign-in/sign-up session
 
 **Status:** **CLOSED / IN V1** · **SHIPPED** · **PRODUCTION VERIFIED** @ `e98ba52` · [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)
 
-## Fala 3.5.1 — Recording Experience + Dual Audio Timeline (CLOSED · NOT DEPLOYED)
+## Fala 3.5.1 — Recording Experience + Dual Audio Timeline (CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN)
 
 | Piece | Location |
 |-------|----------|
@@ -135,6 +136,21 @@ Anonymous Take → READY → successful sign-in/sign-up session
 | READY_TAKE dual preview | `brd-take-preview-rail.tsx` · `take-preview-graph.ts` · `peaks-from-buffer.ts` |
 | Waveform peaks / tone | `waveform.tsx` (`peaks?` · `tone: "take"` · `peaksFromSeed` retained) |
 
-**Contract:** PlaybackShell remains BIT playback SSOT · no second audio engine · no native take `<audio controls>` · D02 / Storage / AuthZ unchanged.
+**Contract:** PlaybackShell remains BIT playback SSOT · no second audio engine · no native take `<audio controls>` · D02 / Storage / AuthZ / P1 / P2 / P3 unchanged.
 
-**Status:** **CLOSED** · Owner verification **PRELIMINARY PASS** · Production **NOT DEPLOYED** — [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md)
+```text
+DESIGN FREEZE              = GO (Production Verification & Ship)
+IMPLEMENTATION             = ALREADY SHIPPED @ c690831
+PRODUCTION VERIFICATION    = PASS (D-V matrix)
+PRODUCTION                 = GREEN
+STATUS                     = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN
+
+Feature commit             = c690831
+Historical plan baseline   = 42369c0
+Actual verify baseline     = 75bd80f
+Reason                     = production/repository tip advanced after subsequent docs-only reconciliation/deploy lineage
+```
+
+**Verify findings (non-blocking):** F351-V-01 LOW (first automated REC generic error · retry succeeded · no micro-patch) · F351-V-02 FALSE POSITIVE / NOT REPRODUCED (sticky-nav intercept = tooling artifact).
+
+**Historical:** Implementation closeout (2026-10-02) recorded Owner **PRELIMINARY PASS** · Production **NOT DEPLOYED** — that label is **superseded** by dedicated production verify (2026-10-05). Closeout: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) · Plan: [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](../audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md)
