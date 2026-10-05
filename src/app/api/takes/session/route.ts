@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 
 import { AuthError } from "@/lib/auth/session";
 import { createTakeRecordingSession } from "@/lib/takes/take-transport";
+import { takeApiErrorResponse } from "@/lib/takes/api-error";
 
 export const runtime = "nodejs";
 
 /**
- * Recording Wave 2 — take signed upload session.
- * POST JSON { beatId, contentType, byteSize }
+ * Recording Wave 2 / P2 — take signed upload session.
+ * POST JSON { beatId, contentType, byteSize, replaceTakeId? }
  * Client must NOT send objectKey / ownerId / bucket / takeId.
  */
 export async function POST(request: Request) {
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
       beatId?: string;
       contentType?: string;
       byteSize?: number;
+      replaceTakeId?: string | null;
       objectKey?: string | null;
       ownerId?: string | null;
       bucket?: string | null;
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
       beatId: body.beatId,
       contentType: body.contentType,
       byteSize: body.byteSize,
+      replaceTakeId: body.replaceTakeId,
       objectKey: body.objectKey,
       ownerId: body.ownerId,
       bucket: body.bucket,
@@ -46,21 +49,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, ...session });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status =
-        error.code === "UNAUTHENTICATED"
-          ? 401
-          : error.code === "NOT_FOUND"
-            ? 404
-            : 403;
-      return NextResponse.json({ error: error.message }, { status });
+    if (error instanceof AuthError || error instanceof Error) {
+      return takeApiErrorResponse(error);
     }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Take session failed.",
-      },
-      { status: 400 },
-    );
+    return takeApiErrorResponse(error);
   }
 }

@@ -211,9 +211,11 @@ export function toUserFacingError(
   }
   if (
     lower.includes("active ready take limit") ||
-    lower.includes("ready take limit")
+    lower.includes("ready take limit") ||
+    lower.includes("replace_required") ||
+    lower.includes("pełny limit próbek")
   ) {
-    return "Osiągnięto limit gotowych nagrań.";
+    return "Masz pełny limit próbek — wybierz próbkę do zastąpienia.";
   }
   if (
     lower.includes("another recording session") ||

@@ -2,11 +2,13 @@
  * Client helper: session → signed PUT → finalize for take-audio.
  * Technical Wave 2 transport surface (not product QT UI).
  * D02: anonymous path uses /api/takes/anon/* (cookie identity server-side).
+ * P2: optional replaceTakeId for explicit sample replacement.
  */
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { toUserFacingError } from "@/lib/ui/user-errors";
+import type { ReplaceableTakeSummary } from "@/lib/takes/claim-errors";
 
 /** Map transport/API errors to Polish before they reach user-facing UI. */
 export function toUserFacingTakeUploadError(message: string): string {
@@ -43,6 +45,18 @@ export function toUserFacingTakeUploadError(message: string): string {
   if (/stop failed/i.test(message)) {
     return "Nie udało się zatrzymać nagrania.";
   }
+  if (/REPLACE_REQUIRED/i.test(message)) {
+    return "Masz pełny limit próbek — wybierz próbkę do zastąpienia.";
+  }
+  if (/REPLACE_OWNERSHIP_DENIED/i.test(message)) {
+    return "Nie możesz zastąpić cudzej próbki.";
+  }
+  if (/REPLACE_EXPIRED/i.test(message)) {
+    return "Wybrana próbka wygasła.";
+  }
+  if (/REPLACE_NOT_READY|REPLACE_INVALID|REPLACE_CONFLICT/i.test(message)) {
+    return "Wybrana próbka nie nadaje się do zastąpienia.";
+  }
   // Central mapper — never return raw English backend text.
   return toUserFacingError(message, "recording");
 }
@@ -56,10 +70,25 @@ export type TakeUploadTransportResult = {
   contentType: string;
 };
 
+export class TakeReplaceRequiredError extends Error {
+  readonly code = "REPLACE_REQUIRED" as const;
+  readonly replaceableTakes: ReplaceableTakeSummary[];
+
+  constructor(replaceableTakes: ReplaceableTakeSummary[], message?: string) {
+    super(
+      message ??
+        "REPLACE_REQUIRED: Active READY take limit reached — choose a sample to replace.",
+    );
+    this.name = "TakeReplaceRequiredError";
+    this.replaceableTakes = replaceableTakes;
+  }
+}
+
 async function runTakeUploadTransport(params: {
   beatId: string;
   blob: Blob;
   contentType?: string;
+  replaceTakeId?: string | null;
   sessionPath: string;
   finalizePath: string;
 }): Promise<TakeUploadTransportResult> {
@@ -76,11 +105,14 @@ async function runTakeUploadTransport(params: {
       beatId: params.beatId,
       contentType,
       byteSize: params.blob.size,
+      replaceTakeId: params.replaceTakeId ?? null,
     }),
   });
   const sessionJson = (await sessionRes.json()) as {
     success?: boolean;
     error?: string;
+    code?: string;
+    replaceableTakes?: ReplaceableTakeSummary[];
     takeId?: string;
     path?: string;
     token?: string;
@@ -93,6 +125,15 @@ async function runTakeUploadTransport(params: {
     !sessionJson.path ||
     !sessionJson.token
   ) {
+    if (
+      sessionJson.code === "REPLACE_REQUIRED" ||
+      /REPLACE_REQUIRED/i.test(sessionJson.error ?? "")
+    ) {
+      throw new TakeReplaceRequiredError(
+        sessionJson.replaceableTakes ?? [],
+        sessionJson.error,
+      );
+    }
     throw new Error(
       toUserFacingTakeUploadError(
         sessionJson.error ?? "Take upload session failed.",
@@ -147,6 +188,7 @@ export async function uploadTakeRecordingBlob(params: {
   beatId: string;
   blob: Blob;
   contentType?: string;
+  replaceTakeId?: string | null;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
     ...params,
@@ -159,6 +201,7 @@ export async function uploadAnonTakeRecordingBlob(params: {
   beatId: string;
   blob: Blob;
   contentType?: string;
+  replaceTakeId?: string | null;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
     ...params,

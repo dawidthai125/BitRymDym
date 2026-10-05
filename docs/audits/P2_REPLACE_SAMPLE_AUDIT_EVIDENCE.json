@@ -1,0 +1,136 @@
+{
+  "track": "P2_REPLACE_SAMPLE_AUDIT",
+  "mode": "READ_ONLY",
+  "status": "COMPLETE_DESIGN_FREEZE_READY",
+  "mutations_performed": false,
+  "commit_performed": false,
+  "push_performed": false,
+  "deploy_performed": false,
+  "depends_on": {
+    "P0": "PRODUCTION_VERIFIED_GREEN",
+    "P1": {
+      "commit": "5927e35",
+      "evidence_commit": "c38e8d2",
+      "ssot": "getSamplePolicy"
+    }
+  },
+  "active_ready_cap": {
+    "definition": "status=READY AND deleted_at IS NULL AND expires_at > now()",
+    "enforcement_points": [
+      {
+        "rpc": "claim_take_recording_session",
+        "migration": "supabase/migrations/20260927220000_recording_wave4_session_claim.sql",
+        "lock": "pg_advisory_xact_lock(hashtextextended(owner_id))"
+      },
+      {
+        "rpc": "claim_anon_take_recording_session",
+        "migration": "supabase/migrations/20260928160000_recording_d02_anon_take_claim.sql",
+        "lock": "pg_advisory_xact_lock(87245104, hashtext(anonymous_token_hash))"
+      }
+    ],
+    "app_mappers": [
+      "src/lib/takes/take-transport.ts#mapClaimRpcError",
+      "src/lib/takes/anon-take-transport.ts#mapClaimRpcError"
+    ],
+    "not_enforced_at": ["upload", "finalize", "preview", "download"],
+    "replaceTakeId_in_code": false,
+    "soft_delete_escape_hatch_auth_only": true,
+    "soft_delete_module": "src/lib/takes/take-delete.ts",
+    "soft_delete_route": "POST /api/takes/delete"
+  },
+  "take_status_enum_production": [
+    "PENDING_UPLOAD",
+    "READY",
+    "FAILED",
+    "EXPIRED",
+    "DELETED"
+  ],
+  "take_status_replaced_exists": false,
+  "takes_columns_include_version_id": false,
+  "takes_columns_include_replaces_take_id": false,
+  "object_key_patterns": {
+    "auth": "user/{ownerId}/takes/{takeId}/mic.bin",
+    "anon": "anon/{tokenHashPrefix}/takes/{takeId}/mic.bin",
+    "builders": [
+      "src/lib/takes/object-key.ts#buildUserTakeObjectKey",
+      "src/lib/takes/object-key.ts#buildAnonTakeObjectKey"
+    ]
+  },
+  "rls": {
+    "takes_select_own": "authenticated SELECT owner_id=auth.uid() AND deleted_at IS NULL",
+    "client_writes": "DENY"
+  },
+  "unique_guards": [
+    "takes_one_pending_per_owner_uidx",
+    "takes_one_pending_per_anon_hash_uidx",
+    "takes_bucket_object_key_uidx"
+  ],
+  "production_snapshot_read_only": {
+    "takes_by_status": {
+      "EXPIRED": 9,
+      "FAILED": 20,
+      "PENDING_UPLOAD": 2,
+      "READY": 10
+    },
+    "takes_rows_total": 41,
+    "active_ready_approx": 9,
+    "auth_takes": 6,
+    "anon_takes": 35,
+    "take_audio_objects": 24,
+    "takes_with_live_object": 23,
+    "takes_missing_object": 18,
+    "storage_unmapped_to_takes": 1
+  },
+  "finalize_idempotent_when_ready": true,
+  "session_claim_client_idempotency_key": false,
+  "soft_delete_storage_order": "storage_remove_then_db_update",
+  "janitor": {
+    "module": "src/lib/takes/takes-janitor.ts",
+    "route": "/api/cron/takes-janitor",
+    "sweeps_deleted_storage_leftovers": true
+  },
+  "variants": {
+    "A_delete_first": "REJECTED_as_primary_abandon_loss",
+    "B_finalize_first_without_reservation": "INCOMPLETE_cap_overshoot",
+    "C_reserve_at_claim_retire_at_finalize": "RECOMMENDED"
+  },
+  "recommended_architecture": "Variant C — claim optional p_replace_take_id under advisory lock; retire old to DELETED only in same DB txn as new READY; Storage remove after DB commit; janitor sweep",
+  "open_decisions": [
+    "OD-P2-01_cross_beat",
+    "OD-P2-02_deleted_vs_replaced_enum",
+    "OD-P2-03_storage_delete_timing",
+    "OD-P2-04_idempotency_key",
+    "OD-P2-05_anonymous_in_p2",
+    "OD-P2-06_retire_at_finalize_vs_claim",
+    "OD-P2-07_structured_cap_error_payload"
+  ],
+  "explicit_non_goals": [
+    "P3_anon_claim",
+    "P4_gold_download",
+    "storage_arch_change",
+    "bpm_catalog",
+    "P0_reopen",
+    "auto_evict_oldest"
+  ],
+  "files_audited": [
+    "supabase/migrations/20260927180000_recording_wave1_take_foundation.sql",
+    "supabase/migrations/20260927220000_recording_wave4_session_claim.sql",
+    "supabase/migrations/20260928160000_recording_d02_anon_take_claim.sql",
+    "src/lib/takes/take-transport.ts",
+    "src/lib/takes/anon-take-transport.ts",
+    "src/lib/takes/take-delete.ts",
+    "src/lib/takes/takes-janitor.ts",
+    "src/lib/takes/object-key.ts",
+    "src/lib/takes/entitlement.ts",
+    "src/lib/takes/authz.ts",
+    "src/lib/takes/list-own-takes.ts",
+    "src/lib/takes/take-access.ts",
+    "src/lib/takes/take-download.ts",
+    "src/app/api/takes/session/route.ts",
+    "src/app/api/takes/delete/route.ts",
+    "src/config/recording.ts",
+    "docs/decisions/RECORDING_SAMPLE_DOWNLOAD_DESIGN_FREEZE.md",
+    "docs/audits/RECORDING_SAMPLE_DOWNLOAD_ARCHITECT_REVIEW.md"
+  ],
+  "audit_doc": "docs/audits/P2_REPLACE_SAMPLE_AUDIT.md"
+}

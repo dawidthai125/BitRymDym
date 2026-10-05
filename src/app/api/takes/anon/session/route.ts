@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { AuthError } from "@/lib/auth/session";
 import { createAnonTakeRecordingSession } from "@/lib/takes/anon-take-transport";
+import { takeApiErrorResponse } from "@/lib/takes/api-error";
 
 export const runtime = "nodejs";
 
 /**
- * D02 anonymous take upload session.
- * POST JSON { beatId, contentType, byteSize }
- * Cookie → hash is authority; client anonymous flag is ignored.
+ * D02 / P2 anonymous take upload session.
+ * POST JSON { beatId, contentType, byteSize, replaceTakeId? }
  */
 export async function POST(request: Request) {
   try {
@@ -16,6 +15,7 @@ export async function POST(request: Request) {
       beatId?: string;
       contentType?: string;
       byteSize?: number;
+      replaceTakeId?: string | null;
       objectKey?: string | null;
       ownerId?: string | null;
       bucket?: string | null;
@@ -42,13 +42,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Client anonymous=true / storage identity are never AuthZ authority.
     void body.anonymous;
 
     const result = await createAnonTakeRecordingSession({
       beatId: body.beatId,
       contentType: body.contentType,
       byteSize: body.byteSize,
+      replaceTakeId: body.replaceTakeId,
       objectKey: body.objectKey,
       ownerId: body.ownerId,
       bucket: body.bucket,
@@ -67,23 +67,6 @@ export async function POST(request: Request) {
       expiresAt: result.expiresAt,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status =
-        error.code === "UNAUTHENTICATED"
-          ? 401
-          : error.code === "NOT_FOUND"
-            ? 404
-            : 403;
-      return NextResponse.json({ error: error.message }, { status });
-    }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Anonymous take session failed.",
-      },
-      { status: 400 },
-    );
+    return takeApiErrorResponse(error);
   }
 }

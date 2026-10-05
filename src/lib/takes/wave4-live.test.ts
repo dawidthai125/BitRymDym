@@ -307,7 +307,9 @@ describe.runIf(live)("Recording Wave 4 live", () => {
             byteSize: bytes.byteLength,
           }),
         ).rejects.toMatchObject({
-          message: expect.stringMatching(/Active READY take limit/i),
+          message: expect.stringMatching(
+            /REPLACE_REQUIRED|Active READY take limit/i,
+          ),
         });
 
         const deleted = await softDeleteOwnTakeFor(owner.context, {

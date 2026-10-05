@@ -1,0 +1,46 @@
+{
+  "track": "P2_EXPLICIT_SAMPLE_REPLACE",
+  "design_freeze": "docs/audits/P2_REPLACE_SAMPLE_AUDIT.md",
+  "owner_go": true,
+  "owner_decisions": {
+    "OD-P2-01_cross_beat": "ALLOWED",
+    "OD-P2-02_terminal": "DELETED",
+    "OD-P2-03_storage": "DB_COMMIT_THEN_CLEANUP",
+    "OD-P2-04_idempotency": "finalize_take_ready_swap_takeId",
+    "OD-P2-05_anonymous": true,
+    "OD-P2-06_retire_at_finalize": true,
+    "OD-P2-07_structured_errors": true
+  },
+  "migration": "20261005190000_p2_explicit_sample_replace.sql",
+  "db_objects": {
+    "column": "takes.replaces_take_id",
+    "rpcs": [
+      "claim_take_recording_session(... p_replace_take_id)",
+      "claim_anon_take_recording_session(... p_replace_take_id)",
+      "finalize_take_ready_swap"
+    ],
+    "indexes": [
+      "takes_one_pending_replace_target_uidx",
+      "takes_replaces_take_id_idx"
+    ]
+  },
+  "verification_local": {
+    "typecheck": "PASS",
+    "unit_p2": "PASS",
+    "live_p2": "PASS 3/3",
+    "live_d02": "PASS 8/8",
+    "live_wave4": "PASS 3/3",
+    "p0_regression": "PASS"
+  },
+  "production_verify": {
+    "status": "PENDING_DEPLOY",
+    "note": "Filled after push/deploy"
+  },
+  "data_safety": {
+    "user_migration": false,
+    "beat_bpm_mutation": false,
+    "take_bulk_mutation": false,
+    "storage_arch_change": false
+  },
+  "deferred": ["P3", "P4", "P5", "P6"]
+}

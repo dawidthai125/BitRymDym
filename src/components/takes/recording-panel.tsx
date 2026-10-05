@@ -19,10 +19,12 @@ import {
   detectMediaRecorderSupport,
 } from "@/lib/takes/media-recorder";
 import {
+  TakeReplaceRequiredError,
   toUserFacingTakeUploadError,
   uploadAnonTakeRecordingBlob,
   uploadTakeRecordingBlob,
 } from "@/lib/takes/client-upload";
+import type { ReplaceableTakeSummary } from "@/lib/takes/claim-errors";
 import {
   canStartNewRecording,
   createInitialRecordingUiSnapshot,
@@ -99,6 +101,11 @@ export function RecordingPanel({
   const [previewBusy, setPreviewBusy] = useState(false);
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [takeBlob, setTakeBlob] = useState<Blob | null>(null);
+  const [takeMime, setTakeMime] = useState<string | null>(null);
+  const [replaceCandidates, setReplaceCandidates] = useState<
+    ReplaceableTakeSummary[] | null
+  >(null);
+  const [replaceBusy, setReplaceBusy] = useState(false);
   const mic = useMicAnalyser(micStream, { barCount: 48, hz: 15 });
   const recProgress =
     maxSeconds > 0 ? Math.min(1, state.elapsedMs / (maxSeconds * 1000)) : 0;
@@ -259,6 +266,7 @@ export function RecordingPanel({
     try {
       const result = await recorder.stop();
       setTakeBlob(result.blob);
+      setTakeMime(result.mimeType);
       dispatch({ type: "UPLOAD_START" });
       try {
         const uploaded = isAuthenticatedRef.current
@@ -272,6 +280,7 @@ export function RecordingPanel({
               blob: result.blob,
               contentType: result.mimeType,
             });
+        setReplaceCandidates(null);
         dispatch({ type: "FINALIZE_START" });
         let previewUrl: string | null = null;
         try {
@@ -289,21 +298,29 @@ export function RecordingPanel({
           takeDurationSeconds: uploaded.durationSeconds,
         });
       } catch (error) {
-        const raw =
-          error instanceof Error
-            ? error.message
-            : "Upload/finalize failed.";
-        const message = toUserFacingTakeUploadError(raw);
-        if (/expired|wygas/i.test(raw) || /wygas/i.test(message)) {
-          dispatch({ type: "EXPIRED", message });
-        } else if (
-          /finaliz|duration|fail-closed|Duration|READY|MIME|missing|sfinaliz/i.test(
-            raw,
-          )
-        ) {
-          dispatch({ type: "FINALIZE_FAILED", message });
+        if (error instanceof TakeReplaceRequiredError) {
+          setReplaceCandidates(error.replaceableTakes);
+          dispatch({
+            type: "UPLOAD_FAILED",
+            message: toUserFacingTakeUploadError(error.message),
+          });
         } else {
-          dispatch({ type: "UPLOAD_FAILED", message });
+          const raw =
+            error instanceof Error
+              ? error.message
+              : "Upload/finalize failed.";
+          const message = toUserFacingTakeUploadError(raw);
+          if (/expired|wygas/i.test(raw) || /wygas/i.test(message)) {
+            dispatch({ type: "EXPIRED", message });
+          } else if (
+            /finaliz|duration|fail-closed|Duration|READY|MIME|missing|sfinaliz/i.test(
+              raw,
+            )
+          ) {
+            dispatch({ type: "FINALIZE_FAILED", message });
+          } else {
+            dispatch({ type: "UPLOAD_FAILED", message });
+          }
         }
       }
     } catch (error) {
@@ -390,6 +407,8 @@ export function RecordingPanel({
     clearTick();
     clearMicMonitor();
     setTakeBlob(null);
+    setTakeMime(null);
+    setReplaceCandidates(null);
     try {
       recorderRef.current?.cancel();
     } catch {
@@ -400,6 +419,63 @@ export function RecordingPanel({
     playbackRef.current?.setControlsLocked(false);
     submittingRef.current = false;
     dispatch({ type: "RETRY_IDLE" });
+  }
+
+  async function confirmReplace(replaceTakeId: string) {
+    if (!takeBlob || replaceBusy || submittingRef.current) return;
+    setReplaceBusy(true);
+    submittingRef.current = true;
+    dispatch({ type: "UPLOAD_START" });
+    try {
+      const uploaded = isAuthenticatedRef.current
+        ? await uploadTakeRecordingBlob({
+            beatId: beatIdRef.current,
+            blob: takeBlob,
+            contentType: takeMime ?? takeBlob.type ?? "audio/webm",
+            replaceTakeId,
+          })
+        : await uploadAnonTakeRecordingBlob({
+            beatId: beatIdRef.current,
+            blob: takeBlob,
+            contentType: takeMime ?? takeBlob.type ?? "audio/webm",
+            replaceTakeId,
+          });
+      setReplaceCandidates(null);
+      dispatch({ type: "FINALIZE_START" });
+      let previewUrl: string | null = null;
+      try {
+        previewUrl = await fetchTakePreviewUrl(
+          uploaded.takeId,
+          !isAuthenticatedRef.current,
+        );
+      } catch {
+        previewUrl = null;
+      }
+      dispatch({
+        type: "TAKE_READY",
+        takeId: uploaded.takeId,
+        previewUrl,
+        takeDurationSeconds: uploaded.durationSeconds,
+      });
+    } catch (error) {
+      if (error instanceof TakeReplaceRequiredError) {
+        setReplaceCandidates(error.replaceableTakes);
+        dispatch({
+          type: "UPLOAD_FAILED",
+          message: toUserFacingTakeUploadError(error.message),
+        });
+      } else {
+        dispatch({
+          type: "UPLOAD_FAILED",
+          message: toUserFacingTakeUploadError(
+            error instanceof Error ? error.message : "Replace failed.",
+          ),
+        });
+      }
+    } finally {
+      setReplaceBusy(false);
+      submittingRef.current = false;
+    }
   }
 
   async function refreshPreview() {
@@ -587,6 +663,45 @@ export function RecordingPanel({
       state.phase !== "BEAT_NOT_ELIGIBLE" ? (
         <p className="text-sm text-destructive" role="alert">
           {state.error}
+        </p>
+      ) : null}
+
+      {replaceCandidates && replaceCandidates.length > 0 && takeBlob ? (
+        <div
+          className="space-y-2 rounded border border-[var(--brd-line)] p-3"
+          role="group"
+          aria-label="Zastąp istniejącą próbkę"
+        >
+          <p className="text-sm text-[var(--brd-ink)]">
+            Masz pełny limit zapisanych próbek. Wybierz, którą zastąpić nowym
+            nagraniem:
+          </p>
+          <ul className="space-y-2">
+            {replaceCandidates.map((t) => (
+              <li
+                key={t.id}
+                className="flex flex-wrap items-center justify-between gap-2"
+              >
+                <span className="text-sm text-[var(--brd-mute)]">
+                  {t.beatTitle ?? "Beat"} · {t.durationSeconds ?? "?"}s
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={replaceBusy || busy}
+                  onClick={() => void confirmReplace(t.id)}
+                  className="min-h-10"
+                >
+                  Zastąp
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : replaceCandidates && replaceCandidates.length === 0 ? (
+        <p className="text-sm text-[var(--brd-mute)]" role="status">
+          Brak własnych próbek READY do zastąpienia. Usuń próbkę w koncie albo
+          poczekaj na wygaśnięcie.
         </p>
       ) : null}
 

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { AuthError } from "@/lib/auth/session";
 import { finalizeAnonTakeRecording } from "@/lib/takes/anon-take-transport";
+import { takeApiErrorResponse } from "@/lib/takes/api-error";
 
 export const runtime = "nodejs";
 
 /**
- * D02 anonymous take finalize after signed binary upload.
- * Hash ↔ take.anonymous_token_hash; takeId alone is not authority.
+ * D02 / P2 anonymous take finalize after signed binary upload.
  */
 export async function POST(request: Request) {
   try {
@@ -34,23 +33,6 @@ export async function POST(request: Request) {
     const result = await finalizeAnonTakeRecording({ takeId: body.takeId });
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status =
-        error.code === "UNAUTHENTICATED"
-          ? 401
-          : error.code === "NOT_FOUND"
-            ? 404
-            : 403;
-      return NextResponse.json({ error: error.message }, { status });
-    }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Anonymous take finalize failed.",
-      },
-      { status: 400 },
-    );
+    return takeApiErrorResponse(error);
   }
 }

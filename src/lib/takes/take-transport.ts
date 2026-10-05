@@ -17,10 +17,16 @@ import {
   TakeAuthzError,
 } from "@/lib/takes/authz";
 import {
+  mapClaimRpcMessageToError,
+  TakeClaimError,
+} from "@/lib/takes/claim-errors";
+import {
   antiAbuseCapsFromPolicy,
   recordingModeForMaxSeconds,
   type SamplePolicy,
 } from "@/lib/takes/entitlement";
+import { invokeFinalizeTakeReadySwap } from "@/lib/takes/finalize-swap";
+import { listReplaceableTakesFor } from "@/lib/takes/list-replaceable-takes";
 import { loadSamplePolicyDurationOverrides } from "@/lib/takes/sample-policy-settings";
 import {
   buildUserTakeObjectKey,
@@ -64,26 +70,19 @@ function mapTakeAuthz(error: unknown): never {
   throw error;
 }
 
-function mapClaimRpcError(message: string): never {
-  if (message.includes("ACTIVE_READY_CAP")) {
-    throw new AuthError(
-      "FORBIDDEN",
-      "Active READY take limit reached for your sample policy.",
-    );
+async function mapClaimRpcErrorForUser(
+  context: AuthContext,
+  message: string,
+): Promise<never> {
+  const code = message.toUpperCase();
+  if (
+    code.includes("REPLACE_REQUIRED") ||
+    code.includes("ACTIVE_READY_CAP")
+  ) {
+    const replaceableTakes = await listReplaceableTakesFor(context);
+    mapClaimRpcMessageToError(message, { replaceableTakes });
   }
-  if (message.includes("SESSION_DAY_CAP")) {
-    throw new AuthError(
-      "FORBIDDEN",
-      "Daily recording session limit reached for your sample policy.",
-    );
-  }
-  if (message.includes("CONCURRENT_SESSION")) {
-    throw new AuthError(
-      "FORBIDDEN",
-      "Another recording session is already in progress.",
-    );
-  }
-  throw new Error(message);
+  mapClaimRpcMessageToError(message);
 }
 
 async function assertPublishedBeatHasReadyMaster(beatId: string) {
@@ -144,6 +143,8 @@ type SessionParams = {
   beatId: string;
   contentType: string;
   byteSize: number;
+  /** Explicit replace target (own READY take). Cross-beat allowed. */
+  replaceTakeId?: string | null;
   objectKey?: string | null;
   ownerId?: string | null;
   bucket?: string | null;
@@ -212,6 +213,11 @@ export async function createTakeRecordingSessionFor(
   const recordingMode = recordingModeForMaxSeconds(maxRecordingSeconds!);
   const caps = antiAbuseCapsFromPolicy(policy!);
 
+  const replaceTakeId =
+    typeof params.replaceTakeId === "string" && params.replaceTakeId.length > 0
+      ? params.replaceTakeId
+      : null;
+
   const admin = createSupabaseAdminClient();
   const { error: claimError } = await admin.rpc(
     "claim_take_recording_session",
@@ -229,11 +235,12 @@ export async function createTakeRecordingSessionFor(
       p_expires_at: expiresAt,
       p_max_active_ready: caps.maxActiveReady,
       p_max_sessions_utc_day: caps.maxSessionsPerUtcDay,
+      p_replace_take_id: replaceTakeId,
     },
   );
 
   if (claimError) {
-    mapClaimRpcError(claimError.message);
+    await mapClaimRpcErrorForUser(context, claimError.message);
   }
 
   const { data: signed, error: signError } = await admin.storage
@@ -288,20 +295,28 @@ export async function finalizeTakeRecordingFor(
   });
 
   if (take.status === "READY") {
+    const swap = await invokeFinalizeTakeReadySwap({
+      takeId: take.id as string,
+      actorOwnerId: context.userId,
+      actorAnonHash: null,
+      durationSeconds: take.duration_seconds as number,
+      byteSize: take.byte_size as number,
+      contentType: take.content_type as string,
+    });
     const { hookTakeReadyAuth } = await import(
       "@/lib/creator-progress/award-hooks"
     );
     await hookTakeReadyAuth({
       ownerUserId: context.userId,
-      takeId: take.id as string,
+      takeId: swap.takeId,
     });
     return {
-      takeId: take.id as string,
-      beatId: take.beat_id as string,
+      takeId: swap.takeId,
+      beatId: swap.beatId,
       status: "READY",
-      durationSeconds: take.duration_seconds as number,
-      byteSize: take.byte_size as number,
-      contentType: take.content_type as string,
+      durationSeconds: swap.durationSeconds,
+      byteSize: swap.byteSize,
+      contentType: swap.contentType,
     };
   }
 
@@ -418,31 +433,19 @@ export async function finalizeTakeRecordingFor(
     );
   }
 
-  const { error: updateError } = await admin
-    .from("takes")
-    .update({
-      status: "READY",
-      duration_seconds: probe.durationSeconds,
-      byte_size: bytes.byteLength,
-      content_type: meta.contentType,
-      failure_reason: null,
-    })
-    .eq("id", take.id)
-    .eq("status", "PENDING_UPLOAD")
-    .is("deleted_at", null);
-
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
-
-  const { data: ready } = await admin
-    .from("takes")
-    .select("id, beat_id, duration_seconds, byte_size, content_type, status")
-    .eq("id", take.id)
-    .single();
-
-  if (!ready || ready.status !== "READY") {
-    throw new AuthError("FORBIDDEN", "Finalize did not reach READY.");
+  let swap;
+  try {
+    swap = await invokeFinalizeTakeReadySwap({
+      takeId: take.id as string,
+      actorOwnerId: context.userId,
+      actorAnonHash: null,
+      durationSeconds: probe.durationSeconds,
+      byteSize: bytes.byteLength,
+      contentType: meta.contentType,
+    });
+  } catch (e) {
+    if (e instanceof TakeClaimError || e instanceof AuthError) throw e;
+    throw e;
   }
 
   const { hookTakeReadyAuth } = await import(
@@ -450,16 +453,16 @@ export async function finalizeTakeRecordingFor(
   );
   await hookTakeReadyAuth({
     ownerUserId: context.userId,
-    takeId: ready.id as string,
+    takeId: swap.takeId,
   });
 
   return {
-    takeId: ready.id as string,
-    beatId: ready.beat_id as string,
+    takeId: swap.takeId,
+    beatId: swap.beatId,
     status: "READY",
-    durationSeconds: ready.duration_seconds as number,
-    byteSize: ready.byte_size as number,
-    contentType: ready.content_type as string,
+    durationSeconds: swap.durationSeconds,
+    byteSize: swap.byteSize,
+    contentType: swap.contentType,
   };
 }
 
