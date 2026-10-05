@@ -76,13 +76,25 @@
     "lint_warning": "scripts/real-beats-import.ts EXECUTION_PATH unused (pre-existing)"
   },
   "production_deploy": {
-    "sha": null,
-    "deployment_id": null,
-    "status": "PENDING"
+    "feature_sha": "18cf6dcd47d9ed856f87e1640e342e926a7c6a8f",
+    "hotfix_sha": "4e2939fc46465bd883f8c76fc9a8ffcd0054865b",
+    "deployment_id": "dpl_8rw3bCFRToLRHcyb1eFGxLG2M3Se",
+    "github_deployment_id": 6857327830,
+    "status": "Ready",
+    "aliases": ["https://bitrymdym.pl", "https://www.bitrymdym.pl"],
+    "first_deploy_18cf6dc": "failure_typecheck_unused_EXECUTION_PATH",
+    "hotfix": "4e2939f removed unused const"
   },
   "post_deploy_verify": {
-    "bpm_unchanged": null,
-    "safety": null
+    "bpm_unchanged": true,
+    "safety": {
+      "beats": 17,
+      "published": 17,
+      "assets": 17,
+      "beat_audio": 17,
+      "orphans": 0,
+      "take_audio_unmapped": 1
+    }
   },
-  "final_verdict": "PENDING_DEPLOY"
+  "final_verdict": "BPM QUALITY V2: PRODUCTION VERIFIED — GREEN"
 }

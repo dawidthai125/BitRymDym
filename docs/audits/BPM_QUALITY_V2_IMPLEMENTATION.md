@@ -96,16 +96,25 @@ Lint on changed files: 0 errors (1 pre-existing warning in import script unused 
 
 ## 6. Production deploy / verify
 
-*(filled after deploy)*
+| Item | Value |
+|------|-------|
+| Feature SHA | `18cf6dc` |
+| Hotfix SHA (typecheck) | `4e2939f` |
+| Deployment ID | `dpl_8rw3bCFRToLRHcyb1eFGxLG2M3Se` / GitHub `6857327830` |
+| Status | **Ready** |
+| Aliases | `bitrymdym.pl`, `www.bitrymdym.pl` |
+| First deploy `18cf6dc` | Failed typecheck (unused `EXECUTION_PATH` in newly tracked import script) — fixed by `4e2939f` |
+
+Post-deploy safety (read-only): beats=17, PUBLISHED=17, assets=17, beat-audio=17, orphans=0, take-audio unmapped=1.
 
 ---
 
 ## 7. Existing 17 BPM
 
-**Unchanged by this release** — code-only policy for new analyze/finalize/import paths.
+**Unchanged** — identical to pre-deploy snapshot (Bit By DTT=138 … Sucha KlawiszBTS=92). No backfill.
 
 ---
 
 ## 8. Final verdict
 
-*(filled after production verify)*
+# BPM QUALITY V2: PRODUCTION VERIFIED — GREEN
