@@ -10,6 +10,7 @@ import {
   restoreArchivedBeatAction,
 } from "@/lib/beats/actions";
 import { getAdminPublishGate } from "@/lib/beats/admin-publish";
+import { labelBeatStatus } from "@/lib/ui/labels";
 import type { BeatStatus } from "@/types/domain";
 
 export function AdminLifecycleControls({
@@ -53,7 +54,8 @@ export function AdminLifecycleControls({
     <div className="flex max-w-xl flex-col gap-3">
       <div className="space-y-1">
         <p className="text-sm">
-          Status: <span className="font-medium">{status}</span>
+          Status:{" "}
+          <span className="font-medium">{labelBeatStatus(status)}</span>
         </p>
         {!gate.enabled && gate.blockedReason ? (
           <p className="text-sm text-muted-foreground" role="status">
@@ -114,11 +116,11 @@ export function AdminLifecycleControls({
             onClick={() =>
               run(
                 () => restoreArchivedBeatAction(beatId),
-                "Przywrócono do szkicu.",
+                "Przywrócono do wersji roboczej.",
               )
             }
           >
-            Przywróć do szkicu
+            Przywróć do wersji roboczej
           </Button>
         ) : null}
       </div>

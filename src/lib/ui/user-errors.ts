@@ -213,9 +213,10 @@ export function toUserFacingError(
     lower.includes("active ready take limit") ||
     lower.includes("ready take limit") ||
     lower.includes("replace_required") ||
-    lower.includes("pełny limit próbek")
+    lower.includes("pełny limit próbek") ||
+    lower.includes("pełny limit nagrań")
   ) {
-    return "Masz pełny limit próbek — wybierz próbkę do zastąpienia.";
+    return "Masz pełny limit nagrań — wybierz nagranie do zastąpienia.";
   }
   if (
     lower.includes("another recording session") ||

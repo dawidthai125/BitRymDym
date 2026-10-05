@@ -110,7 +110,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
           {beat.durationSeconds} s
         </span>
         <span className="mt-0.5 block text-xs text-muted-foreground">
-          Tylko do odczytu — pochodzi z analizy pliku MASTER.
+          Tylko do odczytu — pochodzi z analizy pliku Master.
         </span>
       </p>
       <label className="flex flex-col gap-1 text-sm">
@@ -143,7 +143,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
       ) : null}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Zapisywanie…" : "Zapisz metadata"}
+        {pending ? "Zapisywanie…" : "Zapisz metadane"}
       </Button>
     </form>
   );

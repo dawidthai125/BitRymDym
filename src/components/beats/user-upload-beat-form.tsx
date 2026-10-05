@@ -149,7 +149,7 @@ export function UserUploadBeatForm({
               setAnalysis({
                 status: "error",
                 message: toUserFacingUploadError(
-                  created.error ?? "Nie udało się utworzyć szkicu.",
+                  created.error ?? "Nie udało się utworzyć wersji roboczej.",
                 ),
               });
             }
@@ -317,7 +317,7 @@ export function UserUploadBeatForm({
       setFormError(
         analysis.status === "error"
           ? analysis.message
-          : "Wybierz audio i poczekaj na analizę przed zapisem szkicu.",
+          : "Wybierz audio i poczekaj na analizę przed zapisem wersji roboczej.",
       );
       return;
     }
@@ -418,7 +418,7 @@ export function UserUploadBeatForm({
     const beatId =
       (analysis.status === "ready" ? analysis.beatId : null) ?? savedBeatId;
     if (!beatId || !savedDraft) {
-      setFormError("Najpierw zapisz szkic z gotowym audio.");
+      setFormError("Najpierw zapisz wersję roboczą z gotowym audio.");
       return;
     }
 
@@ -574,14 +574,14 @@ export function UserUploadBeatForm({
 
       {savedDraft ? (
         <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-          Szkic zapisany · audio gotowe. Po wysłaniu do moderacji edycja będzie
+          Wersja robocza zapisana · audio gotowe. Po wysłaniu do moderacji edycja będzie
           zablokowana do czasu decyzji moderatora.
         </p>
       ) : null}
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={!canSaveDraft}>
-          {pending ? "Zapisywanie…" : "Zapisz szkic"}
+          {pending ? "Zapisywanie…" : "Zapisz wersję roboczą"}
         </Button>
         <Button
           type="button"
@@ -595,7 +595,7 @@ export function UserUploadBeatForm({
 
       {!file && !masterAlreadyReady ? (
         <p className="text-xs text-muted-foreground">
-          Wybierz audio, żeby utworzyć szkic i uruchomić analizę BPM / czasu.
+          Wybierz audio, żeby utworzyć wersję roboczą i uruchomić analizę BPM / czasu.
         </p>
       ) : null}
     </form>

@@ -69,7 +69,7 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
             {existing ? "Edytuj bit" : "Dodaj bit"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Wgraj audio, sprawdź BPM i czas, zapisz szkic, potem wyślij do
+            Wgraj audio, sprawdź BPM i czas, zapisz wersję roboczą, potem wyślij do
             moderacji. Publikacja jest tylko po decyzji moderatora (Wave 4).
           </p>
         </header>

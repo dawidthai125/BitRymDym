@@ -91,7 +91,7 @@ export default async function AccountPage() {
 
           <div className="mb-10 flex flex-wrap gap-2">
             <StudioChip href="/account/takes" label="Moje nagrania" />
-            <StudioChip href="/account/beats" label="Moje utwory" />
+            <StudioChip href="/account/beats" label="Moje bity" />
             <StudioChip href="/account/downloads" label="Eksporty i pobrania" />
             <StudioChip href="/account/shared" label="Udostępnione" />
           </div>
@@ -114,7 +114,7 @@ export default async function AccountPage() {
                     Jeszcze cicho.
                   </p>
                   <p className="mt-2 text-sm text-[var(--brd-mute)]">
-                    Wybierz bit i nagraj pierwszą próbę.
+                    Wybierz bit i nagraj pierwsze nagranie.
                   </p>
                   <div className="mt-6">
                     <BrdLink href="/beats">Idź do katalogu</BrdLink>

@@ -221,7 +221,7 @@ export function BeatDetailClient({
                     showPlayhead={isCurrent}
                     interactive
                     onSeekRatio={(ratio) => void onSeekRatio(ratio)}
-                    aria-label="Przebieg — przewiń utwór"
+                    aria-label="Przebieg — przewiń bit"
                   />
                 </div>
                 <BrdAudioTime

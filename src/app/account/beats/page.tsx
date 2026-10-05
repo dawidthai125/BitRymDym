@@ -56,8 +56,8 @@ export default async function AccountBeatsPage() {
                 Moje bity
               </h1>
               <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-                Szkice, moderacja i decyzje — bez publicznej publikacji z tego
-                panelu.
+                Wersje robocze, moderacja i decyzje — bez publicznej publikacji
+                z tego panelu.
               </p>
             </div>
             <BrdLink href="/beats/upload">Dodaj bit</BrdLink>
@@ -104,7 +104,7 @@ export default async function AccountBeatsPage() {
                     ) : null}
                     {beat.status === "APPROVED" ? (
                       <p className="text-xs text-[var(--brd-mute)]">
-                        Zaakceptowany — oczekuje na publikację przez staff.
+                        Zatwierdzone — oczekuje na publikację przez zespół.
                       </p>
                     ) : null}
                     {beat.status === "PUBLISHED" ? (

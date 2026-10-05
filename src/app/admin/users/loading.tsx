@@ -4,7 +4,7 @@ export default function AdminUsersLoading() {
   return (
     <main className="pb-16">
       <PageFrame width="ops" className="py-8 sm:py-10">
-        <SectionLabel>ADMIN</SectionLabel>
+        <SectionLabel>Panel Administracyjny</SectionLabel>
         <h1 className="brd-display mt-2 text-3xl font-semibold tracking-tight">
           Użytkownicy
         </h1>

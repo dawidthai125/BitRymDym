@@ -360,7 +360,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             showPlayhead={hasSource || progressRatio > 0}
             interactive={!seekDisabled}
             onSeekRatio={(ratio) => void handleSeekRatio(ratio)}
-            aria-label="Przebieg — przewiń utwór"
+            aria-label="Przebieg — przewiń bit"
           />
         </div>
 

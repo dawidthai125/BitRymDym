@@ -115,7 +115,7 @@ export default async function AdminModerationQueuePage() {
           Moderacja bitów
         </h1>
         <p className="text-sm text-muted-foreground">
-          W moderacji → zatwierdź lub odrzuć. Zaakceptowane → opublikuj do
+          W moderacji → zatwierdź lub odrzuć. Zatwierdzone → opublikuj do
           katalogu publicznego.
         </p>
       </header>
@@ -130,8 +130,8 @@ export default async function AdminModerationQueuePage() {
       />
 
       <QueueSection
-        title="Zaakceptowane"
-        empty="Brak zaakceptowanych bitów do publikacji."
+        title="Zatwierdzone"
+        empty="Brak zatwierdzonych bitów do publikacji."
         items={approved}
         actionLabel="Opublikuj"
         identities={identities}

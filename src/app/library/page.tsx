@@ -20,7 +20,7 @@ export default async function LibraryPage() {
             Twoja biblioteka
           </h1>
           <ul className="mt-8 divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
-            <LibLink href="/studio/recordings" title="Nagrania" meta="Twoje próby" />
+            <LibLink href="/studio/recordings" title="Nagrania" meta="Twoje nagrania" />
             <LibLink href="/library/downloads" title="Pobrane" meta="Pobrane bity" />
             <LibLink
               href="/library/favorites"

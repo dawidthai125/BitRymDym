@@ -4,22 +4,23 @@ import type {
   BeatOwnershipType,
   BeatStatus,
 } from "@/types/domain";
+import { labelBeatStatus } from "@/lib/ui/labels";
 
-/** Shared publish-blocked copy (UI + server). */
+/** Shared publish-blocked copy (UI + server) — Polish presentation (POLISH-01). */
 export const PUBLISH_REQUIRES_READY_MASTER =
-  "Publikacja zablokowana: wymagany aktywny MASTER w statusie READY.";
+  "Publikacja zablokowana: wymagany aktywny Master w statusie Gotowe.";
 
 export const PUBLISH_REQUIRES_PLATFORM =
-  "Publikacja dostępna tylko dla PLATFORM beats.";
+  "Publikacja dostępna tylko dla bitów platformy.";
 
 export const PUBLISH_REQUIRES_DRAFT =
-  "Publikacja dostępna tylko ze statusu DRAFT.";
+  "Publikacja dostępna tylko ze statusu Wersja robocza.";
 
 export const PUBLISH_REQUIRES_APPROVED =
-  "Publikacja community wymaga statusu APPROVED.";
+  "Publikacja społeczności wymaga statusu Zatwierdzone.";
 
 export const PUBLISH_USER_FROM_DRAFT_DENIED =
-  "USER beats cannot publish from DRAFT.";
+  "Bity użytkownika nie mogą być publikowane z wersji roboczej.";
 
 /**
  * Wave 4 UI gate — USER APPROVED + active MASTER READY (no metadata edit).
@@ -75,7 +76,7 @@ export function getAdminPublishGate(params: {
       blockedReason:
         params.status === "PUBLISHED"
           ? "Bit jest już opublikowany."
-          : `Publikacja niedostępna w statusie ${params.status}.`,
+          : `Publikacja niedostępna w statusie ${labelBeatStatus(params.status)}.`,
     };
   }
 

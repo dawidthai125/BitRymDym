@@ -10,6 +10,7 @@ import {
   transitionBeatStatus,
   updateBeatMetadata,
 } from "@/lib/beats/service";
+import { toUserFacingError } from "@/lib/ui/user-errors";
 import type { BeatStatus } from "@/types/domain";
 
 export type BeatActionState = {
@@ -20,10 +21,16 @@ export type BeatActionState = {
 
 function catchAction(error: unknown): BeatActionState {
   if (error instanceof AuthError) {
-    return { error: error.message, success: false };
+    return {
+      error: toUserFacingError(error.message, "generic"),
+      success: false,
+    };
   }
   return {
-    error: error instanceof Error ? error.message : "Beat action failed.",
+    error: toUserFacingError(
+      error instanceof Error ? error.message : null,
+      "generic",
+    ),
     success: false,
   };
 }
@@ -62,7 +69,7 @@ export async function createPlatformBeatAction(
   void _formData;
   return {
     error:
-      "Utwórz beat przez audio-first flow (plik MASTER wymagany; duration z serwera).",
+      "Utwórz bit przez przepływ audio-first (plik Master wymagany; czas z serwera).",
     success: false,
   };
 }

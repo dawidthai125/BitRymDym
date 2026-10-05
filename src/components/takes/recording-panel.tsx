@@ -308,7 +308,7 @@ export function RecordingPanel({
           const raw =
             error instanceof Error
               ? error.message
-              : "Upload/finalize failed.";
+              : "Nie udało się przesłać ani sfinalizować nagrania.";
           const message = toUserFacingTakeUploadError(raw);
           if (/expired|wygas/i.test(raw) || /wygas/i.test(message)) {
             dispatch({ type: "EXPIRED", message });
@@ -468,7 +468,9 @@ export function RecordingPanel({
         dispatch({
           type: "UPLOAD_FAILED",
           message: toUserFacingTakeUploadError(
-            error instanceof Error ? error.message : "Replace failed.",
+            error instanceof Error
+              ? error.message
+              : "Nie udało się zastąpić nagrania.",
           ),
         });
       }
@@ -514,7 +516,7 @@ export function RecordingPanel({
     >
       <div className="space-y-1">
         <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
-          Nagraj nagranie
+          Nagraj
         </p>
         <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           Limit {formatDurationSeconds(maxSeconds)}
@@ -652,7 +654,8 @@ export function RecordingPanel({
               >
                 zaloguj się
               </Link>
-              . Gościnne nagranie wygasa po 2h (bez transferu na konto w V1).
+              . Gościnne nagranie wygasa po 2h (bez transferu na konto w tej
+              wersji).
             </p>
           ) : null}
         </div>
@@ -670,10 +673,10 @@ export function RecordingPanel({
         <div
           className="space-y-2 rounded border border-[var(--brd-line)] p-3"
           role="group"
-          aria-label="Zastąp istniejącą próbkę"
+          aria-label="Zastąp istniejące nagranie"
         >
           <p className="text-sm text-[var(--brd-ink)]">
-            Masz pełny limit zapisanych próbek. Wybierz, którą zastąpić nowym
+            Masz pełny limit zapisanych nagrań. Wybierz, które zastąpić nowym
             nagraniem:
           </p>
           <ul className="space-y-2">
@@ -683,7 +686,7 @@ export function RecordingPanel({
                 className="flex flex-wrap items-center justify-between gap-2"
               >
                 <span className="text-sm text-[var(--brd-mute)]">
-                  {t.beatTitle ?? "Beat"} · {t.durationSeconds ?? "?"}s
+                  {t.beatTitle ?? "Bit"} · {t.durationSeconds ?? "?"}s
                 </span>
                 <Button
                   type="button"
@@ -700,8 +703,8 @@ export function RecordingPanel({
         </div>
       ) : replaceCandidates && replaceCandidates.length === 0 ? (
         <p className="text-sm text-[var(--brd-mute)]" role="status">
-          Brak własnych próbek READY do zastąpienia. Usuń próbkę w koncie albo
-          poczekaj na wygaśnięcie.
+          Brak własnych nagrań gotowych do zastąpienia. Usuń nagranie w Studio
+          albo poczekaj na wygaśnięcie.
         </p>
       ) : null}
 

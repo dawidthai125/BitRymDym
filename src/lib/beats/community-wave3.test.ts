@@ -321,9 +321,9 @@ describe("Community Wave 3 — submit / moderation contracts", () => {
   });
 
   it("Polish status labels", () => {
-    expect(beatStatusLabelPl("DRAFT")).toBe("Szkic");
+    expect(beatStatusLabelPl("DRAFT")).toBe("Wersja robocza");
     expect(beatStatusLabelPl("PENDING_REVIEW")).toBe("W moderacji");
-    expect(beatStatusLabelPl("APPROVED")).toBe("Zaakceptowany");
+    expect(beatStatusLabelPl("APPROVED")).toBe("Zatwierdzone");
     expect(beatStatusLabelPl("REJECTED")).toBe("Odrzucony");
     expect(beatStatusLabelPl("PUBLISHED")).toBe("Opublikowany");
     expect(beatStatusLabelPl("ARCHIVED")).toBe("Zarchiwizowany");

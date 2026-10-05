@@ -45,17 +45,20 @@ export function toUserFacingTakeUploadError(message: string): string {
   if (/stop failed/i.test(message)) {
     return "Nie udało się zatrzymać nagrania.";
   }
+  if (/Replace failed/i.test(message)) {
+    return "Nie udało się zastąpić nagrania.";
+  }
   if (/REPLACE_REQUIRED/i.test(message)) {
-    return "Masz pełny limit próbek — wybierz próbkę do zastąpienia.";
+    return "Masz pełny limit nagrań — wybierz nagranie do zastąpienia.";
   }
   if (/REPLACE_OWNERSHIP_DENIED/i.test(message)) {
-    return "Nie możesz zastąpić cudzej próbki.";
+    return "Nie możesz zastąpić cudzego nagrania.";
   }
   if (/REPLACE_EXPIRED/i.test(message)) {
-    return "Wybrana próbka wygasła.";
+    return "Wybrane nagranie wygasło.";
   }
   if (/REPLACE_NOT_READY|REPLACE_INVALID|REPLACE_CONFLICT/i.test(message)) {
-    return "Wybrana próbka nie nadaje się do zastąpienia.";
+    return "Wybrane nagranie nie nadaje się do zastąpienia.";
   }
   // Central mapper — never return raw English backend text.
   return toUserFacingError(message, "recording");

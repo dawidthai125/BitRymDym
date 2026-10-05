@@ -1,6 +1,13 @@
 /**
- * Human-facing Polish labels for UI.
+ * Human-facing Polish labels for UI (POLISH-01 SSOT).
  * Internal enums stay English in code/DB — only presentation maps here.
+ *
+ * OD-PL locked:
+ * - OD-PL-03 Premium tiers: Free / Bronze / Silver / Gold (KEEP EN product language)
+ * - OD-PL-04 PENDING_REVIEW → "W moderacji"
+ * - OD-PL-05 Studio KEEP EN (nav/brand — not labeled here)
+ * - OD-PL-06 Master KEEP EN Title Case
+ * - Beat DRAFT → "Wersja robocza" · APPROVED → "Zatwierdzone" (Owner GO Wave B)
  */
 
 export function labelAccountLevel(level: string): string {
@@ -33,22 +40,23 @@ export function labelTakeStatus(status: string): string {
   }
 }
 
+/** Canonical beat lifecycle status labels (POLISH-01). */
 export function labelBeatStatus(status: string): string {
   switch (status) {
     case "PUBLISHED":
       return "Opublikowany";
     case "DRAFT":
-      return "Szkic";
+      return "Wersja robocza";
     case "PENDING_REVIEW":
-      return "Do moderacji";
+      return "W moderacji";
     case "APPROVED":
-      return "Zaakceptowany";
+      return "Zatwierdzone";
     case "REJECTED":
       return "Odrzucony";
     case "ARCHIVED":
       return "Zarchiwizowany";
     default:
-      return status;
+      return "—";
   }
 }
 
@@ -102,11 +110,14 @@ export function labelAdminAuditAction(action: string): string {
       return "Zmiana daty wygaśnięcia";
     case "USER_ACCOUNT_DELETE":
       return "Usunięcie konta";
+    case "SAMPLE_POLICY_UPDATE":
+      return "Aktualizacja polityki nagrań";
     default:
       return "—";
   }
 }
 
+/** OD-PL-03 — Premium product language stays English Title Case. */
 export function labelPremiumTier(tier: string): string {
   switch (tier) {
     case "FREE":
@@ -135,4 +146,25 @@ export function labelRecordingMode(mode: string): string {
     default:
       return "Nagranie";
   }
+}
+
+/** Beat ownership_type presentation (PLATFORM / USER). */
+export function labelBeatOwnership(ownership: string): string {
+  switch (ownership) {
+    case "PLATFORM":
+      return "bit platformowy";
+    case "USER":
+      return "bit użytkownika";
+    default:
+      return "—";
+  }
+}
+
+/**
+ * Sample-policy actor presentation (OD-PL-01 C / OD-PL-02).
+ * ANONYMOUS → Gość; Premium tiers via labelPremiumTier.
+ */
+export function labelSamplePolicyActor(actor: string): string {
+  if (actor === "ANONYMOUS") return "Gość";
+  return labelPremiumTier(actor);
 }

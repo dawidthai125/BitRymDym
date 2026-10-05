@@ -22,7 +22,7 @@ export default async function AdminPlatformBeatsLayout({
       <div className="mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Operacje PLATFORM są dostępne wyłącznie dla ADMIN.
+          Operacje bitów platformy są dostępne wyłącznie dla administratora.
         </p>
         <Link
           href="/admin/moderation"

@@ -65,7 +65,7 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Audio MASTER</h2>
+        <h2 className="text-lg font-medium tracking-tight">Audio Master</h2>
         <AdminAudioUploadForm
           beatId={beat.id}
           activeMasterReady={audio.activeMasterReady}

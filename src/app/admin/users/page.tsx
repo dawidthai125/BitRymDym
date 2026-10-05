@@ -117,7 +117,7 @@ export default async function AdminUsersPage({
     <main className="pb-16">
       <PageFrame width="ops" className="py-8 sm:py-10">
         <header className="mb-8 space-y-2 border-b border-[var(--brd-line)] pb-6">
-          <SectionLabel>ADMIN</SectionLabel>
+          <SectionLabel>Panel Administracyjny</SectionLabel>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
             Użytkownicy
           </h1>

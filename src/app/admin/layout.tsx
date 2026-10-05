@@ -94,7 +94,7 @@ export default async function AdminLayout({
               href="/admin/sample-policy"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Sample Policy
+              Polityka nagrań
             </Link>
           ) : null}
           {showPlatform ? (

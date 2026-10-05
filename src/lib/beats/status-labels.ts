@@ -1,20 +1,23 @@
 import type { BeatStatus } from "@/types/domain";
+import { labelBeatStatus } from "@/lib/ui/labels";
 
-/** Polish UI labels for beat lifecycle statuses (Wave 3). */
+/**
+ * Compatibility surface for beat status PL labels.
+ * Canonical SSOT: {@link labelBeatStatus} in `src/lib/ui/labels.ts` (POLISH-01).
+ * AuthZ helper {@link canUserEditBeatStatus} stays here — not a label concern.
+ */
+
 export const BEAT_STATUS_LABEL_PL: Record<BeatStatus, string> = {
-  DRAFT: "Szkic",
-  PENDING_REVIEW: "W moderacji",
-  APPROVED: "Zaakceptowany",
-  REJECTED: "Odrzucony",
-  PUBLISHED: "Opublikowany",
-  ARCHIVED: "Zarchiwizowany",
+  DRAFT: labelBeatStatus("DRAFT"),
+  PENDING_REVIEW: labelBeatStatus("PENDING_REVIEW"),
+  APPROVED: labelBeatStatus("APPROVED"),
+  REJECTED: labelBeatStatus("REJECTED"),
+  PUBLISHED: labelBeatStatus("PUBLISHED"),
+  ARCHIVED: labelBeatStatus("ARCHIVED"),
 };
 
 export function beatStatusLabelPl(status: BeatStatus | string): string {
-  if (status in BEAT_STATUS_LABEL_PL) {
-    return BEAT_STATUS_LABEL_PL[status as BeatStatus];
-  }
-  return status;
+  return labelBeatStatus(status);
 }
 
 export function canUserEditBeatStatus(status: BeatStatus | string): boolean {

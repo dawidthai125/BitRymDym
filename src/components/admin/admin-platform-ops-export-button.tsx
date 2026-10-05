@@ -52,10 +52,10 @@ export function AdminPlatformOpsExportButton({
         aria-busy={isPending}
         className="min-h-11"
       >
-        {isPending ? "Eksport OPS…" : "OPS — eksport MASTER"}
+        {isPending ? "Eksport operacyjny…" : "Eksport operacyjny Master"}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Privilegowany eksport PLATFORM (nie user-facing download).
+        Privilegowany eksport bitu platformy (nie jest to pobieranie użytkownika).
       </p>
       {error ? (
         <p className="text-sm text-destructive" role="alert">

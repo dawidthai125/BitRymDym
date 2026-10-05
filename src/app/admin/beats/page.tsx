@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { listPlatformBeatsForAdmin } from "@/lib/beats/service";
+import { labelBeatStatus } from "@/lib/ui/labels";
 import { cn } from "@/lib/utils";
 
 export default async function AdminBeatsListPage() {
@@ -42,12 +43,7 @@ export default async function AdminBeatsListPage() {
                     {beat.title}
                   </p>
                   <p className="text-xs text-[var(--brd-mute)]">
-                    {beat.status === "PUBLISHED"
-                      ? "Opublikowany"
-                      : beat.status === "DRAFT"
-                        ? "Szkic"
-                        : beat.status}{" "}
-                    · audio{" "}
+                    {labelBeatStatus(beat.status)} · audio{" "}
                     {beat.activeMasterReady ? "gotowe" : "brak"}
                   </p>
                 </div>

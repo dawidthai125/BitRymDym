@@ -7,9 +7,10 @@ import { RECORDING_GLOBAL_MAX_SECONDS } from "@/config/recording";
 import { SAMPLE_POLICY_DEFAULTS } from "@/config/recording";
 import { AuthError, requireRole } from "@/lib/auth/session";
 import { loadSamplePolicySettings } from "@/lib/takes/sample-policy-settings";
+import { labelSamplePolicyActor } from "@/lib/ui/labels";
 
 export const metadata = {
-  title: "Sample Recording Policy · Admin",
+  title: "Polityka nagrań · Panel Administracyjny",
 };
 
 export default async function AdminSamplePolicyPage() {
@@ -36,34 +37,38 @@ export default async function AdminSamplePolicyPage() {
           </Link>
           <SectionLabel>Panel Administracyjny</SectionLabel>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
-            Sample Recording Policy
+            Polityka nagrań
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Konfiguracja limitu długości nagrania dla BRONZE / SILVER / GOLD.
-            Globalny limit techniczny: {RECORDING_GLOBAL_MAX_SECONDS} s.
+            Konfiguracja limitu długości nagrania dla{" "}
+            {labelSamplePolicyActor("BRONZE")} /{" "}
+            {labelSamplePolicyActor("SILVER")} /{" "}
+            {labelSamplePolicyActor("GOLD")}. Globalny limit techniczny:{" "}
+            {RECORDING_GLOBAL_MAX_SECONDS} s.
           </p>
         </header>
 
         <section className="mb-10 space-y-3 border border-[var(--brd-line)] p-4">
           <h2 className="text-sm font-medium uppercase tracking-wide text-[var(--brd-mute)]">
-            Stałe systemowe (bez zmian Admin)
+            Stałe systemowe (bez zmian administratora)
           </h2>
           <ul className="grid gap-2 text-sm sm:grid-cols-2">
             <li>
-              ANONYMOUS: {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds}{" "}
-              s · TTL{" "}
-              {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.ttlSeconds / 3600} h
+              {labelSamplePolicyActor("ANONYMOUS")}:{" "}
+              {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds} s · czas
+              życia {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.ttlSeconds / 3600} godz.
             </li>
             <li>
-              FREE: {SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds} s · TTL{" "}
-              {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600} h
+              {labelSamplePolicyActor("FREE")}:{" "}
+              {SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds} s · czas życia{" "}
+              {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600} godz.
             </li>
           </ul>
         </section>
 
         <section className="space-y-4">
           <h2 className="text-lg font-medium tracking-tight">
-            Admin overrides (max duration)
+            Nadpisania administratora (maksymalny czas trwania)
           </h2>
           <AdminSamplePolicyForm initial={settings} />
         </section>

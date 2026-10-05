@@ -14,7 +14,7 @@ export default function AdminNewBeatPage() {
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Nowy bit platformowy</h1>
         <p className="text-sm text-muted-foreground">
-          Tworzy szkic bitu platformowego z gotowym audio MASTER.
+          Tworzy wersję roboczą bitu platformowego z gotowym audio Master.
         </p>
       </header>
       <AdminCreateBeatForm />

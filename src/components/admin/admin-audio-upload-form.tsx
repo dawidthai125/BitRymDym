@@ -127,7 +127,7 @@ export function AdminAudioUploadForm({
           return;
         }
 
-        setSuccess("Audio MASTER jest gotowe.");
+        setSuccess("Audio Master jest gotowe.");
         setProgress(null);
         form.reset();
         router.refresh();
@@ -140,11 +140,11 @@ export function AdminAudioUploadForm({
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-3">
-      <h2 className="text-sm font-semibold tracking-wide">MASTER audio</h2>
+      <h2 className="text-sm font-semibold tracking-wide">Audio Master</h2>
       <p className="text-sm text-muted-foreground">
         {activeMasterReady
-          ? "Aktywne audio MASTER jest gotowe — nowe przesłanie zastąpi poprzedni plik."
-          : "Brak gotowego audio MASTER — wgraj plik, aby odblokować publikację."}
+          ? "Aktywne audio Master jest gotowe — nowe przesłanie zastąpi poprzedni plik."
+          : "Brak gotowego audio Master — wgraj plik, aby odblokować publikację."}
       </p>
       <input
         name="audio"
@@ -170,7 +170,7 @@ export function AdminAudioUploadForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Przesyłanie…" : "Prześlij MASTER"}
+        {pending ? "Przesyłanie…" : "Prześlij Master"}
       </Button>
     </form>
   );

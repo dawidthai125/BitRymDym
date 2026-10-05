@@ -81,7 +81,7 @@ export function StickyMiniPlayer() {
             showPlayhead
             interactive
             onSeekRatio={(ratio) => seek(ratio * total)}
-            aria-label="Przebieg — przewiń utwór"
+            aria-label="Przebieg — przewiń bit"
           />
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <p className="truncate text-[11px] text-[var(--brd-mute)]">

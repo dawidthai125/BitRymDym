@@ -8,6 +8,7 @@ import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
 import { getStaffCommunityBeatForModeration } from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
+import { labelBeatOwnership } from "@/lib/ui/labels";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -54,13 +55,13 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           {beat.title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {beatStatusLabelPl(beat.status)} · USER ·{" "}
+          {beatStatusLabelPl(beat.status)} · {labelBeatOwnership("USER")} ·{" "}
           {beat.producer ?? "bez producenta"} · {beat.bpm} BPM ·{" "}
           {beat.durationSeconds}s
           {beat.activeMasterReady ? " · audio gotowe" : " · brak audio"}
         </p>
         <p className="text-xs text-muted-foreground">
-          Owner{" "}
+          Właściciel{" "}
           <span className={isAdmin ? undefined : "font-mono"}>{ownerLabel}</span>
         </p>
       </header>
@@ -87,7 +88,7 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
         </h2>
         {!isApproved ? (
           <p className="text-sm text-muted-foreground">
-            Zatwierdzenie ustawia status Zaakceptowany. Opublikowanie jest
+            Zatwierdzenie ustawia status Zatwierdzone. Opublikowanie jest
             osobnym krokiem.
           </p>
         ) : null}

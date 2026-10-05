@@ -580,7 +580,7 @@ export function AdminCreateBeatForm() {
           System
         </h2>
         <p className="text-sm text-muted-foreground">
-          Bit platformowy · szkic · bez właściciela użytkownika
+          Bit platformowy · wersja robocza · bez właściciela użytkownika
         </p>
         <p className="text-xs text-muted-foreground">
           Przesłanie pliku → prywatne Storage → analiza BPM → finalizacja.
@@ -594,12 +594,12 @@ export function AdminCreateBeatForm() {
       ) : null}
       {success ? (
         <p className="text-sm text-foreground" role="status">
-          Utworzono szkic z audio MASTER — przekierowanie…
+          Utworzono wersję roboczą z audio Master — przekierowanie…
         </p>
       ) : null}
 
       <Button type="submit" disabled={!canSubmit}>
-        {pending ? "Tworzenie…" : "Utwórz szkic + MASTER"}
+        {pending ? "Tworzenie…" : "Utwórz wersję roboczą + Master"}
       </Button>
     </form>
   );

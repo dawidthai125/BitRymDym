@@ -265,7 +265,7 @@ export function MixPanel({
         (requestedTier === "HQ_MP3" || requestedTier === "WAV") &&
         !mixPro
       ) {
-        throw new Error("Premium required for HQ MP3 / WAV export.");
+        throw new Error("HQ MP3 i WAV wymagają Premium.");
       }
       const s = await ensureSession();
       if (

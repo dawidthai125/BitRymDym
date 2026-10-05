@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RECORDING_GLOBAL_MAX_SECONDS } from "@/config/recording";
 import { updateSamplePolicySettingsAction } from "@/lib/takes/sample-policy-actions";
 import type { SamplePolicySettingsRow } from "@/lib/takes/sample-policy-settings";
+import { labelPremiumTier, labelSamplePolicyActor } from "@/lib/ui/labels";
 
 type AdminSamplePolicyFormProps = {
   initial: SamplePolicySettingsRow;
@@ -38,7 +39,7 @@ export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
         setSilver(result.settings.silverMaxRecordingSeconds);
         setGold(result.settings.goldMaxRecordingSeconds);
       }
-      setSuccess("Zapisano ustawienia Sample Policy.");
+      setSuccess("Zapisano ustawienia polityki nagrań.");
     });
   }
 
@@ -46,29 +47,31 @@ export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
     <form onSubmit={onSubmit} className="space-y-6">
       <p className="text-sm text-[var(--brd-ink-soft)]">
         Globalny limit techniczny:{" "}
-        <strong>{RECORDING_GLOBAL_MAX_SECONDS} s</strong>. ANONYMOUS (15 s) i
-        FREE (30 s) są stałe systemowo — Admin może zmieniać tylko BRONZE /
-        SILVER / GOLD.
+        <strong>{RECORDING_GLOBAL_MAX_SECONDS} s</strong>.{" "}
+        {labelSamplePolicyActor("ANONYMOUS")} (15 s) i{" "}
+        {labelSamplePolicyActor("FREE")} (30 s) są stałe systemowo —
+        administrator może zmieniać tylko {labelPremiumTier("BRONZE")} /{" "}
+        {labelPremiumTier("SILVER")} / {labelPremiumTier("GOLD")}.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <DurationField
           id="bronze-max"
-          label="BRONZE — max duration (s)"
+          label={`${labelPremiumTier("BRONZE")} — maksymalny czas trwania (s)`}
           value={bronze}
           onChange={setBronze}
           disabled={isPending}
         />
         <DurationField
           id="silver-max"
-          label="SILVER — max duration (s)"
+          label={`${labelPremiumTier("SILVER")} — maksymalny czas trwania (s)`}
           value={silver}
           onChange={setSilver}
           disabled={isPending}
         />
         <DurationField
           id="gold-max"
-          label="GOLD — max duration (s)"
+          label={`${labelPremiumTier("GOLD")} — maksymalny czas trwania (s)`}
           value={gold}
           onChange={setGold}
           disabled={isPending}
