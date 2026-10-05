@@ -310,14 +310,14 @@ export function BeatDetailClient({
         <h2 className="brd-display text-xl font-semibold">O bicie</h2>
         <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">
           {description ??
-            "Bit gotowy do odsłuchu i nagrania próby. Sprawdź tempo, tonację i nagraj swój wokal na tym podkładzie."}
+            "Bit gotowy do odsłuchu i nagrania. Sprawdź tempo, tonację i nagraj swój wokal na tym podkładzie."}
         </p>
       </section>
 
       <section className="space-y-2 border-t border-[var(--brd-line)] pt-6">
         <h2 className="brd-display text-xl font-semibold">Licencja</h2>
         <p className="max-w-prose text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-          Odsłuchaj, nagraj próbę i korzystaj z bitu zgodnie z zasadami konta.
+          Odsłuchaj, nagraj nagranie i korzystaj z bitu zgodnie z zasadami konta.
           Eksport miksu znajdziesz w studio.
         </p>
       </section>

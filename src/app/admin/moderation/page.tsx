@@ -10,7 +10,7 @@ import {
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
 
 export const metadata = {
-  title: "Moderacja bitów · Admin",
+  title: "Moderacja bitów · Administrator",
 };
 
 function formatDuration(seconds: number): string {

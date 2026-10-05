@@ -192,7 +192,7 @@ export default async function HomePage() {
                 Twoje studio. Twój numer.
               </h2>
               <p className="mt-2 text-sm text-[var(--brd-ink-soft)]">
-                Nagrania, miksy i eksporty w jednym workspace.
+                Nagrania, miksy i eksporty w jednym miejscu.
               </p>
             </div>
 
