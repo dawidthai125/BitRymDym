@@ -148,8 +148,9 @@ export function buildBpmUxModel(
     return {
       phase: "CONFLICT",
       confidenceClass: "CONFLICT",
-      headline: "Wykryto kilka możliwych temp",
-      description: "Wybierz wartość używaną dla tego beatu.",
+      headline: "System nie może jednoznacznie określić BPM.",
+      description:
+        "Wybierz jedną z systemowych hipotez. Ranking nie jest automatyczną decyzją.",
       detectedBpm: envelope.detectedBpm,
       recommendedBpm: null,
       options,
@@ -182,10 +183,13 @@ export function buildBpmUxModel(
     }
   }
 
+  // MEDIUM: soft recommend. LOW: no preferred default (force explicit pick).
   const recommended =
-    envelope.detectedBpm != null && allowlist.includes(envelope.detectedBpm)
+    envelope.confidenceClass === "MEDIUM" &&
+    envelope.detectedBpm != null &&
+    allowlist.includes(envelope.detectedBpm)
       ? envelope.detectedBpm
-      : (optionBpms[0] ?? null);
+      : null;
 
   const options: BpmUxOption[] = optionBpms.map((bpm, idx) => ({
     bpm,
@@ -193,19 +197,24 @@ export function buildBpmUxModel(
     hint:
       recommended != null && bpm === recommended
         ? "rekomendacja systemu"
-        : idx === 1
-          ? "alternatywa"
-          : "kandydat systemu",
+        : idx === 0
+          ? "kandydat systemu"
+          : idx === 1
+            ? "alternatywa"
+            : "kandydat systemu",
   }));
 
   return {
     phase: "NEEDS_SELECTION",
     confidenceClass: envelope.confidenceClass,
-    headline: "Wykryte BPM",
+    headline:
+      envelope.confidenceClass === "LOW"
+        ? "System nie ma pełnej pewności"
+        : "System sugeruje tempo",
     description:
       envelope.confidenceClass === "LOW"
-        ? "System nie ma pełnej pewności. Wybierz najlepszą wartość spośród wykrytych."
-        : "System proponuje tempo — możesz wybrać inną wartość spośród kandydatów.",
+        ? "Wybierz najlepszą wartość spośród wykrytych kandydatów systemowych."
+        : "System proponuje tempo — wybierz rekomendację lub inną wartość spośród kandydatów.",
     detectedBpm: envelope.detectedBpm,
     recommendedBpm: recommended,
     options,
@@ -281,6 +290,16 @@ export function mapFinalizeBpmError(error: string | null | undefined): {
       phase: "UNAVAILABLE",
       message:
         "Nie udało się bezpiecznie określić BPM tego pliku. Nie można zakończyć uploadu.",
+    };
+  }
+  if (
+    lower.includes("blocked_bpm_selection_required") ||
+    lower.includes("selection_required")
+  ) {
+    return {
+      phase: "INVALID_BPM_SELECTION",
+      message:
+        "System nie może jednoznacznie określić BPM. Wybierz jedną z wartości systemowych.",
     };
   }
   if (lower.includes("musi być liczbą") || lower.includes("1–300")) {

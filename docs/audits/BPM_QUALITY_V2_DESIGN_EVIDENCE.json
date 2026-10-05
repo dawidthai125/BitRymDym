@@ -1,0 +1,233 @@
+{
+  "title": "BPM Quality V2 — Design Freeze Evidence",
+  "status": "READY_FOR_ARCHITECT_REVIEW",
+  "designed_at": "2026-10-05T10:53:00.000Z",
+  "scope": "DESIGN_ONLY",
+  "mutations": 0,
+  "implementation": false,
+  "commit": false,
+  "deploy": false,
+  "production_sha_context": "91de4c7b478db3859a40f871678c442de4f8db82",
+  "inputs": [
+    "docs/audits/BPM_QUALITY_REVIEW.md",
+    "docs/audits/BPM_QUALITY_REVIEW_EVIDENCE.json",
+    "docs/audits/_probe_bpm_all.json",
+    "docs/architecture/BPM_AUTO_DETECTION.md",
+    "docs/architecture/BPM_UNCERTAINTY_UX_DESIGN.md",
+    "src/lib/beats/bpm-resolve.ts",
+    "src/lib/beats/bpm-uncertainty.ts",
+    "src/lib/beats/bpm-uncertainty-ui.ts",
+    "scripts/real-beats-import.ts"
+  ],
+  "deliverable": "docs/architecture/BPM_QUALITY_V2_DESIGN.md",
+  "problem_statement": {
+    "auto_gate": "SOUND",
+    "probe_split": { "AUTO": 4, "MANUAL": 13 },
+    "downstream_hole": "CONFLICT_OR_LOW_SILENT_COMPOSITE_TOP",
+    "observed": "17/17 production BPM equals probe composite top",
+    "material_vs_external_fixture": 5,
+    "external_reference_role": "FIXTURE_ONLY_NOT_SSOT"
+  },
+  "design_goals": [
+    "HIGH_AUTO_REMAINS",
+    "MEDIUM_LOW_CONTROLLED_SELECTION",
+    "CONFLICT_NO_SILENT_TOP",
+    "NO_ARBITRARY_BPM_WITHOUT_EVIDENCE",
+    "ALLOWLIST_ONLY",
+    "FINALIZE_REPROBE",
+    "NO_CLIENT_BYPASS"
+  ],
+  "decision_contract": {
+    "scoring_vs_decision": "SEPARATED",
+    "conflict_means": "INSUFFICIENT_EVIDENCE_FOR_AUTO",
+    "detectedBpm_under_conflict": "RANKING_METADATA_ONLY",
+    "recommendedBpm_under_conflict": null,
+    "import_under_conflict": "BLOCKED_BPM_SELECTION_REQUIRED",
+    "ready_under_conflict": "ONLY_AFTER_EXPLICIT_ALLOWLISTED_SELECTION",
+    "bpm_source_explicit_pick": "USER_SELECTED_CANDIDATE",
+    "bpm_source_high_auto": "AUTO_DETECTED"
+  },
+  "dims_disagree_veto": {
+    "rule": "(runner.dimsLeading - winner.dimsLeading) >= 2 AND margin < BPM_AUTO_MARGIN_MIN",
+    "BPM_AUTO_MARGIN_MIN": 0.08,
+    "dims_delta_min": 2,
+    "justification_case": {
+      "filename": "Gryź się z mnąBTSremix.mp3",
+      "winner_bpm": 116,
+      "winner_dimsLeading": 1,
+      "runner_bpm": 95,
+      "runner_dimsLeading": 3,
+      "margin": 0.008788164721967973,
+      "source": "docs/audits/_probe_bpm_all.json"
+    },
+    "effect": "REQUIRE_SELECTION",
+    "composite_still_used_for": ["ranking", "labels", "allowlist_order"],
+    "calibration_status": "PROVISIONAL_PENDING_GOLDEN"
+  },
+  "ratio_1_5_class": {
+    "name": "RATIO_1_5",
+    "auto_collapse": false,
+    "provisional_rel_tol": 0.03,
+    "provisional_abs_fallback": "|hi - round(lo*1.5)| <= 2",
+    "example": {
+      "filename": "Bit By DTT.mp3",
+      "pair": [92, 138],
+      "ratio": 1.5,
+      "source": "docs/audits/BPM_QUALITY_REVIEW_EVIDENCE.json"
+    },
+    "design_open_questions": [
+      "Finalize R15_REL_TOL after golden sweep",
+      "Whether to surface in ensemble octave traps",
+      "Bar-periodicity resolver deferred beyond MVP"
+    ]
+  },
+  "candidate_model": {
+    "max_candidates": 6,
+    "discrete_only": true,
+    "no_invented_continuum": true,
+    "roles": ["TOP", "RUNNER", "SUPPORTING", "HALF_DOUBLE_ALT", "RATIO_1_5_ALT"],
+    "includes": [
+      "top",
+      "runner_up",
+      "hard_conflict_tops",
+      "half_double_alts",
+      "ratio_1_5_alts"
+    ]
+  },
+  "decision_matrix_summary": {
+    "AUTO_SUGGEST_only_when": "soft_or_hard_AUTO_gates_pass_AND_no_veto_AND_no_ratio15_ambiguity_AND_no_segment_contradiction",
+    "REQUIRE_SELECTION_when": [
+      "ESTIMATOR_HARD_CONFLICT",
+      "NEAR_TIE",
+      "DIMS_DISAGREE",
+      "RATIO_1_5_AMBIGUITY",
+      "SEGMENT_CONTRADICTION",
+      "LOW_MEDIUM_without_explicit_accept_for_batch"
+    ],
+    "UNAVAILABLE_when": ["decode_fail", "empty_allowlist", "no_candidates"]
+  },
+  "material_cases_expected_v2": [
+    {
+      "filename": "Bit By DTT.mp3",
+      "must": "REQUIRE_SELECTION",
+      "allowlist_must_include": [92, 138],
+      "silent_top_forbidden": true,
+      "external_fixture": 91,
+      "external_is_ssot": false
+    },
+    {
+      "filename": "Bit komitywa2 by DTT.mp3",
+      "must": "REQUIRE_SELECTION",
+      "allowlist_must_include": [88, 117, 125],
+      "silent_top_forbidden": true,
+      "external_fixture": 88,
+      "external_is_ssot": false
+    },
+    {
+      "filename": "Bit new komitywa 2 by DTremix.mp3",
+      "must": "REQUIRE_SELECTION",
+      "allowlist_must_include": [89, 120],
+      "silent_top_forbidden": true,
+      "external_fixture": 89,
+      "external_is_ssot": false
+    },
+    {
+      "filename": "Bitrymdym1.mp3",
+      "must": "REQUIRE_SELECTION",
+      "allowlist_must_include": [92, 161],
+      "silent_top_forbidden": true,
+      "external_fixture": 93,
+      "external_is_ssot": false
+    },
+    {
+      "filename": "Gryź się z mnąBTSremix.mp3",
+      "must": "REQUIRE_SELECTION",
+      "allowlist_must_include": [95, 116],
+      "silent_top_forbidden": true,
+      "dims_disagree_expected": true,
+      "external_fixture": 95,
+      "external_is_ssot": false
+    }
+  ],
+  "regression_ids": [
+    "R01_HIGH_AUTO",
+    "R02_HALF_DOUBLE",
+    "R03_NEAR_TEMPO",
+    "R04_DISCRETE_92_95",
+    "R05_HYPOTHESES_92_138",
+    "R06_STALE_ANALYZE",
+    "R07_ARBITRARY_150",
+    "R08_EMPTY_ALLOWLIST",
+    "R09_CLIENT_BYPASS",
+    "R10_SOFT_AUTO_GATES",
+    "R11_CONFLICT_UX_NULL_RECOMMEND"
+  ],
+  "security_invariants": [
+    "NO_FREE_BPM",
+    "SERVER_ALLOWLIST",
+    "FINALIZE_REPROBE",
+    "NO_CLIENT_BYPASS",
+    "STALE_ENVELOPE_REJECT",
+    "NO_EXTERNAL_TOOL_AS_CANDIDATE_SOURCE"
+  ],
+  "data_model": {
+    "db_bpm_column_only_today": true,
+    "mvp_requires_migration": false,
+    "optional_future_columns": [
+      "bpm_source",
+      "bpm_confidence_class",
+      "bpm_decision_reason",
+      "bpm_evidence_version"
+    ],
+    "existing_production_bpm_auto_rewrite": false
+  },
+  "import_policy_v2": {
+    "HIGH_AUTO": "persist_detectedBpm_allowed",
+    "CONFLICT_LOW_UNAVAILABLE": "BLOCKED_BPM_SELECTION_REQUIRED_unless_explicit_map",
+    "MEDIUM_batch_default": "require_explicit_map_or_block"
+  },
+  "ux_contract": {
+    "HIGH": "System wykrył BPM X",
+    "MEDIUM_LOW": "suggestion_plus_controlled_alternatives",
+    "CONFLICT": "System nie może jednoznacznie określić BPM + 2-3 hypotheses",
+    "UNAVAILABLE": "No reliable BPM + no free entry"
+  },
+  "rollout": {
+    "flag": "BPM_QUALITY_V2",
+    "existing_17_beats": "UNCHANGED_UNTIL_SEPARATE_OWNER_GO",
+    "phases": [
+      "architect_owner_review",
+      "implement_behind_flag",
+      "golden_tests",
+      "deploy_code_behavior_for_new_uploads",
+      "optional_owner_correction_go"
+    ]
+  },
+  "rollback": {
+    "code": "feature_flag_off_or_revert_PR",
+    "data": "none_if_no_rewrite",
+    "production_17": "remain_as_is"
+  },
+  "success_criteria": [
+    "CONFLICT_no_silent_composite_top",
+    "AUTO_only_with_sufficient_evidence",
+    "controlled_candidate_selection",
+    "RATIO_1_5_explicit",
+    "score_cannot_bypass_decision",
+    "security_server_side",
+    "HIGH_AUTO_regression_pass",
+    "false_AUTO_risk_down",
+    "no_auto_rewrite_existing_production_bpm"
+  ],
+  "safety_context_unchanged": {
+    "beats": 17,
+    "published": 17,
+    "assets": 17,
+    "beat_audio": 17,
+    "orphans": 0,
+    "take_audio_unmapped": 1,
+    "note": "Design-only phase; not re-queried as mutation check beyond audit baseline"
+  },
+  "final_verdict": "BPM QUALITY V2 DESIGN: READY FOR ARCHITECT REVIEW",
+  "next_gate": "Architect Review / Owner GO — do not implement yet"
+}

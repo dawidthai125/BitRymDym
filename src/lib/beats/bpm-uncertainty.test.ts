@@ -195,12 +195,24 @@ describe("BPM uncertainty envelope (T01–T18)", () => {
     expect(envelope.hypotheses.length).toBe(1);
     expect(envelope.range).toEqual({ min: 91, max: 92 });
     expect(envelope.allowlist).toEqual([91, 92]);
+    expect(envelope.requiresExplicitSelection).toBe(true);
     expect(
-      resolveCreateBpmWithEnvelope({ clientBpm: 91, envelope }).ok,
+      resolveCreateBpmWithEnvelope({
+        clientBpm: 91,
+        envelope,
+        selectionMode: "CANDIDATE",
+      }).ok,
+    ).toBe(true);
+    expect(
+      resolveCreateBpmWithEnvelope({
+        clientBpm: 92,
+        envelope,
+        selectionMode: "CANDIDATE",
+      }).ok,
     ).toBe(true);
     expect(
       resolveCreateBpmWithEnvelope({ clientBpm: 92, envelope }).ok,
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("T08 92/95 → discrete candidates, reject 93", () => {
@@ -408,17 +420,27 @@ describe("BPM uncertainty envelope (T01–T18)", () => {
     });
     expect(envelope.allowlist).toEqual([70, 140]);
     expect(envelope.range).toBeNull();
+    expect(envelope.requiresExplicitSelection).toBe(true);
     expect(
-      resolveCreateBpmWithEnvelope({ clientBpm: 70, envelope }).ok,
+      resolveCreateBpmWithEnvelope({
+        clientBpm: 70,
+        envelope,
+        selectionMode: "CANDIDATE",
+      }).ok,
     ).toBe(true);
     expect(
-      resolveCreateBpmWithEnvelope({ clientBpm: 140, envelope }).ok,
+      resolveCreateBpmWithEnvelope({
+        clientBpm: 140,
+        envelope,
+        selectionMode: "CANDIDATE",
+      }).ok,
     ).toBe(true);
     expect(
       resolveCreateBpmWithEnvelope({
         clientBpm: 105,
         envelope,
         bpmManualOverride: true,
+        selectionMode: "CANDIDATE",
       }).ok,
     ).toBe(false);
   });

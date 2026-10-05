@@ -468,6 +468,44 @@ export const BPM_HARD_CONFLICT_MARGIN_MIN = 0.15;
 /** Stricter dimension agreement under hard estimator conflict. */
 export const BPM_HARD_CONFLICT_MIN_DIMENSIONS = 3;
 
+/**
+ * Provisional relative tolerance for ~1.5× tempo relation (BPM Quality V2).
+ * Classification / ambiguity only — never auto-collapse.
+ * DESIGN OPEN: recalibrate only with golden evidence.
+ */
+export const BPM_RATIO_1_5_REL_TOL = 0.03;
+
+/** Runner must lead by at least this many independent dimensions for DIMS_DISAGREE. */
+export const BPM_DIMS_DISAGREE_MIN = 2;
+
+/**
+ * True when a and b are approximately in a 1.5× tempo relation.
+ * Does NOT imply either value is correct — metadata / veto only.
+ */
+export function isRatioOnePointFive(a: number, b: number): boolean {
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  if (!(lo > 0) || !Number.isFinite(lo) || !Number.isFinite(hi)) return false;
+  if (Math.abs(hi / lo - 1.5) <= BPM_RATIO_1_5_REL_TOL) return true;
+  return Math.abs(hi - Math.round(lo * 1.5)) <= 2;
+}
+
+/**
+ * DIMS_DISAGREE veto (BPM Quality V2):
+ * runner leads by ≥2 independent dimensions AND margin < soft AUTO margin.
+ */
+export function isDimsDisagree(params: {
+  winnerDimsLeading: number;
+  runnerDimsLeading: number;
+  margin: number;
+}): boolean {
+  return (
+    params.runnerDimsLeading - params.winnerDimsLeading >=
+      BPM_DIMS_DISAGREE_MIN &&
+    params.margin < BPM_AUTO_MARGIN_MIN
+  );
+}
+
 export type MultiSignalScores = {
   bpm: number;
   estimatorNorm: number;
@@ -497,6 +535,8 @@ export type CanonicalBpmResolution =
         | "SIGNAL_DISAGREEMENT"
         | "SEGMENT_CONTRADICTION"
         | "ESTIMATOR_HARD_CONFLICT"
+        | "DIMS_DISAGREE"
+        | "RATIO_1_5_AMBIGUITY"
         | "TRUE_CONFLICT"
         | "NO_CANDIDATES"
         | "UNRESOLVED_PAIR";
@@ -833,6 +873,41 @@ export function resolveCanonicalBpm(params: {
       status: "MANUAL_REQUIRED",
       bpm: null,
       reason: "INSUFFICIENT_MARGIN",
+      confidence: "NONE",
+      scores,
+      margin,
+      runnerUpBpm: runner.bpm,
+      estimatorHardConflict: hardConflict,
+    };
+  }
+
+  // BPM Quality V2 — decision policy (SCORING ≠ DECISION):
+  // dims-disagree and 1.5× ambiguity force REQUIRE_SELECTION even when
+  // composite ranking has a top. Composite remains for ranking only.
+  if (
+    isDimsDisagree({
+      winnerDimsLeading: top.dimensionsLeading,
+      runnerDimsLeading: runner.dimensionsLeading,
+      margin,
+    })
+  ) {
+    return {
+      status: "MANUAL_REQUIRED",
+      bpm: null,
+      reason: "DIMS_DISAGREE",
+      confidence: "NONE",
+      scores,
+      margin,
+      runnerUpBpm: runner.bpm,
+      estimatorHardConflict: hardConflict,
+    };
+  }
+
+  if (isRatioOnePointFive(top.bpm, runner.bpm)) {
+    return {
+      status: "MANUAL_REQUIRED",
+      bpm: null,
+      reason: "RATIO_1_5_AMBIGUITY",
       confidence: "NONE",
       scores,
       margin,

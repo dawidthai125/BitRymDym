@@ -8,6 +8,7 @@
 import {
   BPM_NEAR_TEMPO_TOL,
   isEstimatorHardConflict,
+  isRatioOnePointFive,
   type CanonicalBpmResolution,
   type MultiSignalScores,
 } from "@/lib/beats/bpm-resolve";
@@ -49,7 +50,12 @@ export type BpmUncertaintyCandidate = {
   rank: number;
   score: number;
   clusterId: string;
-  role: "TOP" | "RUNNER" | "SUPPORTING" | "HALF_DOUBLE_ALT";
+  role:
+    | "TOP"
+    | "RUNNER"
+    | "SUPPORTING"
+    | "HALF_DOUBLE_ALT"
+    | "RATIO_1_5_ALT";
 };
 
 export type BpmHypothesis = {
@@ -63,12 +69,21 @@ export type BpmUncertaintyEnvelope = {
   decision: "AUTO_SUGGEST" | "MANUAL_REQUIRED" | "UNAVAILABLE";
   confidenceClass: BpmConfidenceClass;
   reason: string;
+  /**
+   * Ranking hint (composite top) — NOT an implicit persist decision.
+   * Under CONFLICT/LOW/MEDIUM, persistence requires explicit selection.
+   */
   detectedBpm: number | null;
   candidates: BpmUncertaintyCandidate[];
   hypotheses: BpmHypothesis[];
   range: { min: number; max: number } | null;
   allowlist: number[];
   message: string;
+  /**
+   * BPM Quality V2: when true, finalize/import must receive an explicit
+   * selectionMode (CANDIDATE|RANGE). Silent composite-top persist is forbidden.
+   */
+  requiresExplicitSelection: boolean;
 };
 
 export type ResolveCreateBpmResult =
@@ -89,6 +104,8 @@ const REJECT_UNAVAILABLE =
   "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać arbitralnego BPM.";
 const REJECT_EMPTY =
   "Brak wiarygodnych kandydatów BPM — nie można zapisać arbitralnego BPM.";
+/** BPM Quality V2 — CONFLICT/LOW/MEDIUM without explicit selectionMode. */
+export const REJECT_SELECTION_REQUIRED = "BLOCKED_BPM_SELECTION_REQUIRED";
 
 function uniqSorted(values: readonly number[]): number[] {
   return [...new Set(values)].sort((a, b) => a - b);
@@ -160,7 +177,9 @@ function mapConfidenceClass(params: {
     params.reason === "TRUE_CONFLICT" ||
     params.reason === "UNRESOLVED_PAIR" ||
     params.reason === "CONFLICT" ||
-    params.reason === "OCTAVE_AMBIGUITY"
+    params.reason === "OCTAVE_AMBIGUITY" ||
+    params.reason === "DIMS_DISAGREE" ||
+    params.reason === "RATIO_1_5_AMBIGUITY"
   ) {
     return "CONFLICT";
   }
@@ -319,6 +338,17 @@ function buildCandidates(params: {
     }
   }
 
+  // RATIO_1_5 alts — only when both sides already evidenced (no invent).
+  const ratio15Alts = new Set<number>();
+  for (const b of ordered) {
+    for (const other of params.raw) {
+      if (other !== b && isRatioOnePointFive(b, other)) {
+        push(other);
+        ratio15Alts.add(other);
+      }
+    }
+  }
+
   const capped = ordered.slice(0, BPM_UNCERTAINTY_MAX_CANDIDATES);
   return capped.map((bpm, idx) => {
     let role: BpmUncertaintyCandidate["role"] = "SUPPORTING";
@@ -333,6 +363,8 @@ function buildCandidates(params: {
       role = "RUNNER";
     } else if (halfDoubleAlts.has(bpm)) {
       role = "HALF_DOUBLE_ALT";
+    } else if (ratio15Alts.has(bpm)) {
+      role = "RATIO_1_5_ALT";
     } else if (idx === 0) {
       role = "TOP";
     } else if (idx === 1) {
@@ -371,6 +403,7 @@ export function buildBpmUncertaintyEnvelope(params: {
       range: null,
       allowlist: [],
       message: params.message,
+      requiresExplicitSelection: true,
     };
   }
 
@@ -433,6 +466,9 @@ export function buildBpmUncertaintyEnvelope(params: {
     estimatorHardConflict: hardConflict,
   });
 
+  // HIGH AUTO is the only path that may persist without an explicit pick.
+  const requiresExplicitSelection = confidenceClass !== "HIGH";
+
   return {
     decision: params.decision,
     confidenceClass,
@@ -443,6 +479,7 @@ export function buildBpmUncertaintyEnvelope(params: {
     range: confidenceClass === "CONFLICT" ? null : range,
     allowlist,
     message: params.message,
+    requiresExplicitSelection,
   };
 }
 
@@ -605,15 +642,27 @@ export function resolveCreateBpmWithEnvelope(params: {
     return { ok: false, error: REJECT_OUTSIDE };
   }
 
+  // BPM Quality V2: CONFLICT/LOW/MEDIUM cannot silently persist via inferred mode.
+  // Explicit selectionMode (CANDIDATE|RANGE) is mandatory when required.
+  if (envelope.requiresExplicitSelection) {
+    if (
+      params.selectionMode == null ||
+      params.selectionMode === "AUTO"
+    ) {
+      return { ok: false, error: REJECT_SELECTION_REQUIRED };
+    }
+  }
+
   const mode = inferSelectionMode(params);
 
   if (mode === "AUTO") {
     if (
       envelope.confidenceClass !== "HIGH" ||
+      envelope.requiresExplicitSelection ||
       envelope.detectedBpm == null ||
       clientBpm !== envelope.detectedBpm
     ) {
-      return { ok: false, error: REJECT_OUTSIDE };
+      return { ok: false, error: REJECT_SELECTION_REQUIRED };
     }
     return {
       ok: true,

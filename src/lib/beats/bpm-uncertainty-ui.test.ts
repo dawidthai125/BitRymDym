@@ -12,9 +12,10 @@ function envelope(
   partial: Partial<BpmUncertaintyEnvelope> &
     Pick<BpmUncertaintyEnvelope, "confidenceClass" | "allowlist">,
 ): BpmUncertaintyEnvelope {
+  const confidenceClass = partial.confidenceClass;
   return {
     decision: partial.decision ?? "MANUAL_REQUIRED",
-    confidenceClass: partial.confidenceClass,
+    confidenceClass,
     reason: partial.reason ?? "TEST",
     detectedBpm: partial.detectedBpm ?? null,
     candidates: partial.candidates ?? [],
@@ -22,6 +23,8 @@ function envelope(
     range: partial.range ?? null,
     allowlist: partial.allowlist,
     message: partial.message ?? "test",
+    requiresExplicitSelection:
+      partial.requiresExplicitSelection ?? confidenceClass !== "HIGH",
   };
 }
 
@@ -85,6 +88,7 @@ describe("BPM uncertainty UX model", () => {
     expect(model.phase).toBe("NEEDS_SELECTION");
     expect(model.confidenceClass).toBe("LOW");
     expect(model.options.length).toBe(2);
+    expect(model.recommendedBpm).toBeNull();
   });
 
   it("4. CONFLICT → hypotheses / discrete options, no continuum", () => {
@@ -117,6 +121,8 @@ describe("BPM uncertainty UX model", () => {
     );
     expect(model.phase).toBe("CONFLICT");
     expect(model.range).toBeNull();
+    expect(model.recommendedBpm).toBeNull();
+    expect(model.headline).toContain("nie może jednoznacznie określić BPM");
     expect(model.options.map((o) => o.bpm)).toEqual([92, 138]);
     expect(model.options.some((o) => o.hint?.includes("hipoteza"))).toBe(true);
   });

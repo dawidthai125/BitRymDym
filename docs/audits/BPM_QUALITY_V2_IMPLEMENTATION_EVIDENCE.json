@@ -1,0 +1,88 @@
+{
+  "title": "BPM Quality V2 — Implementation Evidence",
+  "implemented_at": "2026-10-05T11:01:00.000Z",
+  "commit_message": "feat(bpm): separate decision policy from scoring",
+  "design": "docs/architecture/BPM_QUALITY_V2_DESIGN.md",
+  "mutations_existing_17": 0,
+  "db_migration": false,
+  "storage_mutation": false,
+  "vocalremover_runtime": false,
+  "pre_deploy_bpm_snapshot": [
+    { "title": "Bit By DTT", "bpm": 138 },
+    { "title": "Bit By DTTremix", "bpm": 92 },
+    { "title": "Bit komitywa2 by DTT", "bpm": 125 },
+    { "title": "Bit komitywa2 by DTT (1)", "bpm": 89 },
+    { "title": "Bit new komitywa 2 by DTremix", "bpm": 120 },
+    { "title": "Bit new komitywa 2 by DTT", "bpm": 89 },
+    { "title": "Bit new komitywa 2 byBRD", "bpm": 88 },
+    { "title": "Bit new komitywa 2 byBRDremix", "bpm": 88 },
+    { "title": "Bitrymdym1", "bpm": 161 },
+    { "title": "bitrymdym1remix", "bpm": 92 },
+    { "title": "Cinny StreetBRD", "bpm": 92 },
+    { "title": "Cinny StreetBRDremix", "bpm": 92 },
+    { "title": "Gryź się z mnąBTS1", "bpm": 95 },
+    { "title": "Gryź się z mnąBTSremix", "bpm": 116 },
+    { "title": "Nikt nie zatrzyma nasBRS", "bpm": 92 },
+    { "title": "Nikt nie zatrzyma nasBRSremix", "bpm": 92 },
+    { "title": "Sucha KlawiszBTS", "bpm": 92 }
+  ],
+  "pre_deploy_safety": {
+    "beats": 17,
+    "published": 17,
+    "assets": 17,
+    "beat_audio": 17,
+    "orphans": 0,
+    "take_audio_unmapped": 1
+  },
+  "changed_files": [
+    "src/lib/beats/bpm-resolve.ts",
+    "src/lib/beats/bpm-ensemble.ts",
+    "src/lib/beats/audio-bpm.ts",
+    "src/lib/beats/bpm-uncertainty.ts",
+    "src/lib/beats/bpm-uncertainty-ui.ts",
+    "scripts/real-beats-import.ts",
+    "src/lib/beats/bpm-quality-v2.test.ts",
+    "src/lib/beats/bpm-resolve.test.ts",
+    "src/lib/beats/bpm-uncertainty.test.ts",
+    "src/lib/beats/bpm-uncertainty-ui.test.ts",
+    "docs/audits/BPM_QUALITY_V2_IMPLEMENTATION.md",
+    "docs/audits/BPM_QUALITY_V2_IMPLEMENTATION_EVIDENCE.json"
+  ],
+  "key_behaviors": {
+    "dims_disagree": "(runner.dimsLeading - winner.dimsLeading) >= 2 && margin < 0.08 → MANUAL DIMS_DISAGREE",
+    "ratio_1_5": "isRatioOnePointFive(top, runner) → MANUAL RATIO_1_5_AMBIGUITY (no collapse)",
+    "requiresExplicitSelection": "confidenceClass !== HIGH",
+    "reject_code": "BLOCKED_BPM_SELECTION_REQUIRED",
+    "import_non_high": "BLOCKED_BPM_SELECTION_REQUIRED"
+  },
+  "tests": {
+    "related_total": 141,
+    "related_pass": 141,
+    "related_fail": 0,
+    "suites": [
+      "bpm-quality-v2.test.ts",
+      "bpm-uncertainty.test.ts",
+      "bpm-uncertainty-ui.test.ts",
+      "bpm-resolve.test.ts",
+      "bpm-ensemble.test.ts",
+      "audio-bpm.test.ts",
+      "bpm-audit-contracts.test.ts",
+      "audio-transport.test.ts",
+      "user-errors.test.ts"
+    ]
+  },
+  "pre_existing_unrelated": {
+    "typecheck_scripts": "scripts/_audit-13-manual-cases.ts and other audit scripts TS errors (pre-existing)",
+    "lint_warning": "scripts/real-beats-import.ts EXECUTION_PATH unused (pre-existing)"
+  },
+  "production_deploy": {
+    "sha": null,
+    "deployment_id": null,
+    "status": "PENDING"
+  },
+  "post_deploy_verify": {
+    "bpm_unchanged": null,
+    "safety": null
+  },
+  "final_verdict": "PENDING_DEPLOY"
+}

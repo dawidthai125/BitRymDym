@@ -455,7 +455,8 @@ describe("estimator hard-conflict guard", () => {
     expect(r.status).toBe("MANUAL_REQUIRED");
   });
 
-  it("strong multi-signal under hard conflict can still AUTO", () => {
+  it("strong multi-signal but RATIO_1_5 pair → MANUAL (V2)", () => {
+    // 92 vs 138 is ~1.5× — V2 never AUTO-collapses this relation.
     const r = resolveCanonicalBpm({
       aBpm: 92,
       bBpm: 138,
@@ -471,6 +472,37 @@ describe("estimator hard-conflict guard", () => {
         }),
         ev({
           bpm: 138,
+          estimatorSupport: 0.5,
+          onsetAlignment: 0.25,
+          ibiRegularity: 0.7,
+          segmentMean: 0.2,
+          segmentConsistency: 0.4,
+          segmentWinRate: 0,
+        }),
+      ],
+    });
+    expect(r.status).toBe("MANUAL_REQUIRED");
+    if (r.status === "MANUAL_REQUIRED") {
+      expect(r.reason).toBe("RATIO_1_5_AMBIGUITY");
+    }
+  });
+
+  it("strong multi-signal under hard conflict (non-1.5) can still AUTO", () => {
+    const r = resolveCanonicalBpm({
+      aBpm: 92,
+      bBpm: 123,
+      evidences: [
+        ev({
+          bpm: 92,
+          estimatorSupport: 2,
+          onsetAlignment: 0.85,
+          ibiRegularity: 0.99,
+          segmentMean: 0.85,
+          segmentConsistency: 0.95,
+          segmentWinRate: 1,
+        }),
+        ev({
+          bpm: 123,
           estimatorSupport: 0.5,
           onsetAlignment: 0.25,
           ibiRegularity: 0.7,

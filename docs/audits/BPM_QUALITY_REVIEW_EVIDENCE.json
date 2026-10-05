@@ -1,0 +1,541 @@
+{
+  "title": "BPM Quality Review — Evidence Pack",
+  "audited_at": "2026-10-05T10:45:00.000Z",
+  "production_sha": "91de4c7b478db3859a40f871678c442de4f8db82",
+  "mutations": 0,
+  "scope": "AUDIT_RCA_DESIGN_ONLY",
+  "external_reference_role": "EXTERNAL REFERENCE ONLY — not SSOT / not ground truth",
+  "evidence_sources": [
+    "production DB read-only (beats.title, bpm, duration_seconds)",
+    "docs/audits/_probe_bpm_all.json",
+    "docs/audits/_probe_hard_conflicts.json",
+    "docs/audits/_probe_hard_conflicts_extended.json",
+    "docs/audits/BPM_EXTERNAL_REFERENCE_DATASET.json",
+    "docs/audits/BPM_OWNER_APPROVAL_MATRIX.json",
+    "docs/audits/key_bpm.vocalremover.owner.csv",
+    "docs/audits/REAL_BEATS_IMPORT_READY_EVIDENCE.json",
+    "src/lib/beats/{audio-bpm,bpm-ensemble,bpm-evidence,bpm-resolve,bpm-uncertainty,audio-transport}.ts",
+    "scripts/real-beats-import.ts"
+  ],
+  "safety_after_audit": {
+    "beats": 17,
+    "published": 17,
+    "assets": 17,
+    "beat_audio": 17,
+    "orphans": 0,
+    "take_audio_unmapped": 1
+  },
+  "production_bpm_confirmed": [
+    { "title": "Bit By DTT", "bpm": 138, "duration_seconds": 174 },
+    { "title": "Bit By DTTremix", "bpm": 92, "duration_seconds": 190 },
+    { "title": "Bit komitywa2 by DTT", "bpm": 125, "duration_seconds": 122 },
+    { "title": "Bit komitywa2 by DTT (1)", "bpm": 89, "duration_seconds": 123 },
+    { "title": "Bit new komitywa 2 by DTremix", "bpm": 120, "duration_seconds": 141 },
+    { "title": "Bit new komitywa 2 by DTT", "bpm": 89, "duration_seconds": 134 },
+    { "title": "Bit new komitywa 2 byBRD", "bpm": 88, "duration_seconds": 120 },
+    { "title": "Bit new komitywa 2 byBRDremix", "bpm": 88, "duration_seconds": 123 },
+    { "title": "Bitrymdym1", "bpm": 161, "duration_seconds": 150 },
+    { "title": "bitrymdym1remix", "bpm": 92, "duration_seconds": 150 },
+    { "title": "Cinny StreetBRD", "bpm": 92, "duration_seconds": 139 },
+    { "title": "Cinny StreetBRDremix", "bpm": 92, "duration_seconds": 153 },
+    { "title": "Gryź się z mnąBTS1", "bpm": 95, "duration_seconds": 150 },
+    { "title": "Gryź się z mnąBTSremix", "bpm": 116, "duration_seconds": 150 },
+    { "title": "Nikt nie zatrzyma nasBRS", "bpm": 92, "duration_seconds": 107 },
+    { "title": "Nikt nie zatrzyma nasBRSremix", "bpm": 92, "duration_seconds": 107 },
+    { "title": "Sucha KlawiszBTS", "bpm": 92, "duration_seconds": 116 }
+  ],
+  "classification_summary": {
+    "EXACT": 5,
+    "NEAR": 7,
+    "MATERIAL": 5,
+    "AUTO_DETECTED_import": 4,
+    "USER_SELECTED_CANDIDATE_import": 13,
+    "production_equals_composite_top": 17
+  },
+  "comparison_rows": [
+    {
+      "filename": "Bit By DTT.mp3",
+      "production_bpm": 138,
+      "external_reference_bpm": 91,
+      "abs_delta": 47,
+      "class": "MATERIAL",
+      "octave_half_double_possibility": true,
+      "octave_note": "91≈92 runner; 138 ≈ 1.5×92 (session/double-time feel). Not clean 2× of 91 (182).",
+      "probe_reason": "ESTIMATOR_HARD_CONFLICT",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [62, 92, 97, 138]
+    },
+    {
+      "filename": "Bit By DTTremix.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "octave_half_double_possibility": false,
+      "probe_reason": "ESTIMATOR_HARD_CONFLICT",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [62, 92, 94, 97, 123]
+    },
+    {
+      "filename": "Bit komitywa2 by DTT (1).mp3",
+      "production_bpm": 89,
+      "external_reference_bpm": 89,
+      "abs_delta": 0,
+      "class": "EXACT",
+      "octave_half_double_possibility": false,
+      "probe_reason": "ESTIMATOR_HARD_CONFLICT",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [89, 95, 101, 120]
+    },
+    {
+      "filename": "Bit komitywa2 by DTT.mp3",
+      "production_bpm": 125,
+      "external_reference_bpm": 88,
+      "abs_delta": 37,
+      "class": "MATERIAL",
+      "octave_half_double_possibility": false,
+      "octave_note": "88 is in estimator A candidates (conf 0.82) and allowlist, but lost composite to 125/117 near-tie.",
+      "probe_reason": "INSUFFICIENT_MARGIN",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [88, 104, 117, 118, 125, 177]
+    },
+    {
+      "filename": "Bit new komitywa 2 by DTremix.mp3",
+      "production_bpm": 120,
+      "external_reference_bpm": 89,
+      "abs_delta": 31,
+      "class": "MATERIAL",
+      "octave_half_double_possibility": false,
+      "probe_reason": "ESTIMATOR_HARD_CONFLICT",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [89, 95, 99, 119, 120]
+    },
+    {
+      "filename": "Bit new komitywa 2 by DTT.mp3",
+      "production_bpm": 89,
+      "external_reference_bpm": 89,
+      "abs_delta": 0,
+      "class": "EXACT",
+      "octave_half_double_possibility": false,
+      "probe_reason": "INSUFFICIENT_MARGIN",
+      "import_source": "USER_SELECTED_CANDIDATE"
+    },
+    {
+      "filename": "Bit new komitywa 2 byBRD.mp3",
+      "production_bpm": 88,
+      "external_reference_bpm": 88,
+      "abs_delta": 0,
+      "class": "EXACT",
+      "octave_half_double_possibility": false,
+      "probe_reason": "MULTI_SIGNAL_AGREED",
+      "import_source": "AUTO_DETECTED"
+    },
+    {
+      "filename": "Bit new komitywa 2 byBRDremix.mp3",
+      "production_bpm": 88,
+      "external_reference_bpm": 88,
+      "abs_delta": 0,
+      "class": "EXACT",
+      "octave_half_double_possibility": false,
+      "probe_reason": "MULTI_SIGNAL_AGREED",
+      "import_source": "AUTO_DETECTED"
+    },
+    {
+      "filename": "Bitrymdym1.mp3",
+      "production_bpm": 161,
+      "external_reference_bpm": 93,
+      "abs_delta": 68,
+      "class": "MATERIAL",
+      "octave_half_double_possibility": true,
+      "octave_note": "Runner 92 ≈ external 93; 161 is combTempo top, not clean 2× of 93 (186).",
+      "probe_reason": "ESTIMATOR_HARD_CONFLICT",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [61, 92, 102, 123, 161, 183]
+    },
+    {
+      "filename": "bitrymdym1remix.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "octave_half_double_possibility": false,
+      "import_source": "USER_SELECTED_CANDIDATE"
+    },
+    {
+      "filename": "Cinny StreetBRD.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "import_source": "AUTO_DETECTED"
+    },
+    {
+      "filename": "Cinny StreetBRDremix.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "import_source": "USER_SELECTED_CANDIDATE"
+    },
+    {
+      "filename": "Gryź się z mnąBTS1.mp3",
+      "production_bpm": 95,
+      "external_reference_bpm": 95,
+      "abs_delta": 0,
+      "class": "EXACT",
+      "import_source": "AUTO_DETECTED"
+    },
+    {
+      "filename": "Gryź się z mnąBTSremix.mp3",
+      "production_bpm": 116,
+      "external_reference_bpm": 95,
+      "abs_delta": 21,
+      "class": "MATERIAL",
+      "octave_half_double_possibility": false,
+      "probe_reason": "ESTIMATOR_HARD_CONFLICT",
+      "import_source": "USER_SELECTED_CANDIDATE",
+      "allowlist": [92, 95, 98, 116, 117]
+    },
+    {
+      "filename": "Nikt nie zatrzyma nasBRS.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "import_source": "USER_SELECTED_CANDIDATE"
+    },
+    {
+      "filename": "Nikt nie zatrzyma nasBRSremix.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "import_source": "USER_SELECTED_CANDIDATE"
+    },
+    {
+      "filename": "Sucha KlawiszBTS.mp3",
+      "production_bpm": 92,
+      "external_reference_bpm": 91,
+      "abs_delta": 1,
+      "class": "NEAR",
+      "import_source": "USER_SELECTED_CANDIDATE"
+    }
+  ],
+  "far_cases_deep_dive": {
+    "Bit By DTT.mp3": {
+      "production": 138,
+      "external_reference": 91,
+      "estimator_a_top": 92,
+      "estimator_b_top": 138,
+      "candidatesA_top5": [
+        { "bpm": 92, "confidence": 1 },
+        { "bpm": 176, "confidence": 0.71 },
+        { "bpm": 97, "confidence": 0.64 },
+        { "bpm": 165, "confidence": 0.55 },
+        { "bpm": 110, "confidence": 0.5 }
+      ],
+      "candidatesB_top5": [
+        { "bpm": 138, "confidence": 1 },
+        { "bpm": 161, "confidence": 0.94 },
+        { "bpm": 115, "confidence": 0.88 },
+        { "bpm": 121, "confidence": 0.83 },
+        { "bpm": 129, "confidence": 0.82 }
+      ],
+      "multi_signal_top2": [
+        {
+          "bpm": 138,
+          "composite": 0.798,
+          "estimator": 1,
+          "onset": 0.506,
+          "regularity": 0.983,
+          "segment": 0.75,
+          "dimsLeading": 3
+        },
+        {
+          "bpm": 92,
+          "composite": 0.709,
+          "estimator": 1,
+          "onset": 0.406,
+          "regularity": 0.995,
+          "segment": 0.44,
+          "dimsLeading": 2
+        }
+      ],
+      "winning_candidate_composite": 138,
+      "runner_up": 92,
+      "score_margin": 0.0895,
+      "dims_supporting_winner": 3,
+      "hard_conflict": true,
+      "half_double_collapsed": false,
+      "canonical_status": "MANUAL_REQUIRED",
+      "canonical_reason": "ESTIMATOR_HARD_CONFLICT",
+      "uncertainty_class": "CONFLICT",
+      "final_allowlist": [62, 92, 97, 138],
+      "final_selected_bpm": 138,
+      "selection_path": "import prefers envelope.detectedBpm (=composite top) when allowlisted, even under CONFLICT",
+      "hypothesis_91_vs_138": {
+        "91_in_allowlist": false,
+        "92_near_91_in_allowlist": true,
+        "can_system_prove_138_better": false,
+        "can_system_prove_91_or_92_better": false,
+        "verdict": "INCONCLUSIVE — MANUAL/USER_CONTROLLED is correct gate; AUTO correctly refused"
+      },
+      "primary_rca": ["B", "C", "F", "H"],
+      "rca_labels": {
+        "B": "half/double-time / 1.5× ambiguity vs ~92 family",
+        "C": "onset+segment favor denser 138 grid",
+        "F": "weights let onset/segment outweigh IBI preference for 92",
+        "H": "hard-conflict correctly blocks AUTO but import still writes top"
+      }
+    },
+    "Bit komitywa2 by DTT.mp3": {
+      "production": 125,
+      "external_reference": 88,
+      "estimator_a_top": 117,
+      "estimator_b_top": 125,
+      "multi_signal_top3": [
+        {
+          "bpm": 125,
+          "composite": 0.6963,
+          "estimator": 0.909,
+          "onset": 0.353,
+          "regularity": 0.975,
+          "segment": 0.614,
+          "dimsLeading": 2
+        },
+        {
+          "bpm": 117,
+          "composite": 0.6958,
+          "estimator": 1,
+          "onset": 0.341,
+          "regularity": 0.985,
+          "segment": 0.482,
+          "dimsLeading": 2
+        },
+        {
+          "bpm": 88,
+          "composite": 0.471,
+          "estimator": 0.4,
+          "onset": 0.258,
+          "regularity": 0.982,
+          "segment": 0.385,
+          "dimsLeading": 0
+        }
+      ],
+      "winning_candidate_composite": 125,
+      "runner_up": 117,
+      "score_margin": 0.00046,
+      "dims_supporting_winner": 2,
+      "hard_conflict": false,
+      "canonical_status": "MANUAL_REQUIRED",
+      "canonical_reason": "INSUFFICIENT_MARGIN",
+      "uncertainty_class": "LOW",
+      "final_allowlist": [88, 104, 117, 118, 125, 177],
+      "final_selected_bpm": 125,
+      "hypothesis_88_vs_125": {
+        "88_in_allowlist": true,
+        "88_composite_rank": 4,
+        "can_system_prove_125_better": false,
+        "can_system_prove_88_better": false,
+        "verdict": "INCONCLUSIVE — margin ~0; 88 survives as candidate but loses score"
+      },
+      "primary_rca": ["A", "F", "G", "I"],
+      "rca_labels": {
+        "A": "tempo/combTempo tops cluster at 117/125; 88 only mid-candidate on A",
+        "F": "scoring does not promote external-aligned mid candidates",
+        "G": "margin essentially zero (0.00046 < 0.08)",
+        "I": "two near-tied families, no decisive independent signal for 88"
+      }
+    },
+    "Bit new komitywa 2 by DTremix.mp3": {
+      "production": 120,
+      "external_reference": 89,
+      "estimator_a_top": 120,
+      "estimator_b_top": 89,
+      "multi_signal_top2": [
+        {
+          "bpm": 120,
+          "composite": 0.689,
+          "estimator": 0.862,
+          "onset": 0.331,
+          "regularity": 0.988,
+          "segment": 0.666,
+          "dimsLeading": 2
+        },
+        {
+          "bpm": 89,
+          "composite": 0.663,
+          "estimator": 1,
+          "onset": 0.291,
+          "regularity": 0.991,
+          "segment": 0.385,
+          "dimsLeading": 2
+        }
+      ],
+      "winning_candidate_composite": 120,
+      "runner_up": 89,
+      "score_margin": 0.026,
+      "dims_supporting_winner": 2,
+      "hard_conflict": true,
+      "canonical_status": "MANUAL_REQUIRED",
+      "canonical_reason": "ESTIMATOR_HARD_CONFLICT",
+      "uncertainty_class": "CONFLICT",
+      "final_allowlist": [89, 95, 99, 119, 120],
+      "final_selected_bpm": 120,
+      "owner_matrix_proposed": 89,
+      "hypothesis_89_vs_120": {
+        "89_in_allowlist": true,
+        "can_system_prove_120_better": false,
+        "can_system_prove_89_better": false,
+        "verdict": "INCONCLUSIVE — hard conflict; margin 0.026 << hard gate 0.15; Owner matrix preferred runner 89"
+      },
+      "primary_rca": ["A", "C", "H"],
+      "rca_labels": {
+        "A": "estimators split 120 vs 89",
+        "C": "onset+segment favor 120",
+        "H": "hard-conflict MANUAL correct; import still selected 120"
+      }
+    },
+    "Bitrymdym1.mp3": {
+      "production": 161,
+      "external_reference": 93,
+      "estimator_a_top": 92,
+      "estimator_b_top": 161,
+      "multi_signal_top2": [
+        {
+          "bpm": 161,
+          "composite": 0.776,
+          "estimator": 1,
+          "onset": 0.451,
+          "regularity": 0.975,
+          "segment": 0.73,
+          "dimsLeading": 3
+        },
+        {
+          "bpm": 92,
+          "composite": 0.676,
+          "estimator": 1,
+          "onset": 0.312,
+          "regularity": 0.989,
+          "segment": 0.423,
+          "dimsLeading": 2
+        }
+      ],
+      "winning_candidate_composite": 161,
+      "runner_up": 92,
+      "score_margin": 0.1,
+      "dims_supporting_winner": 3,
+      "hard_conflict": true,
+      "canonical_status": "MANUAL_REQUIRED",
+      "canonical_reason": "ESTIMATOR_HARD_CONFLICT",
+      "uncertainty_class": "CONFLICT",
+      "final_allowlist": [61, 92, 102, 123, 161, 183],
+      "final_selected_bpm": 161,
+      "owner_matrix_proposed": 92,
+      "hypothesis_93_vs_161": {
+        "93_in_allowlist": false,
+        "92_near_93_in_allowlist": true,
+        "can_system_prove_161_better": false,
+        "can_system_prove_92_better": false,
+        "verdict": "INCONCLUSIVE — margin 0.10 < hard gate 0.15; AUTO correctly refused"
+      },
+      "primary_rca": ["A", "B", "C", "H"],
+      "rca_labels": {
+        "A": "combTempo locks 161; tempo locks 92",
+        "B": "possible double-time / dense-grid ambiguity vs ~92 family",
+        "C": "onset+segment favor 161",
+        "H": "hard-conflict MANUAL; import wrote top 161"
+      }
+    },
+    "Gryź się z mnąBTSremix.mp3": {
+      "production": 116,
+      "external_reference": 95,
+      "estimator_a_top": 95,
+      "estimator_b_top": 116,
+      "multi_signal_top2": [
+        {
+          "bpm": 116,
+          "composite": 0.676,
+          "estimator": 1,
+          "onset": 0.323,
+          "regularity": 0.982,
+          "segment": 0.414,
+          "dimsLeading": 1
+        },
+        {
+          "bpm": 95,
+          "composite": 0.667,
+          "estimator": 0.664,
+          "onset": 0.435,
+          "regularity": 0.993,
+          "segment": 0.696,
+          "dimsLeading": 3
+        }
+      ],
+      "extended_beat_track": {
+        "source": "_probe_hard_conflicts_extended.json",
+        "95_ibiCv": 0.007,
+        "116_ibiCv": 0.018,
+        "95_trackConfidence": 0.093,
+        "116_trackConfidence": 0.042
+      },
+      "winning_candidate_composite": 116,
+      "runner_up": 95,
+      "score_margin": 0.0088,
+      "dims_supporting_winner": 1,
+      "hard_conflict": true,
+      "canonical_status": "MANUAL_REQUIRED",
+      "canonical_reason": "ESTIMATOR_HARD_CONFLICT",
+      "uncertainty_class": "CONFLICT",
+      "final_allowlist": [92, 95, 98, 116, 117],
+      "final_selected_bpm": 116,
+      "owner_matrix_proposed": 95,
+      "hypothesis_95_vs_116": {
+        "95_in_allowlist": true,
+        "95_leads_onset_ibi_segment_dims": true,
+        "116_wins_only_via_estimator_norm_composite": true,
+        "can_system_prove_116_better": false,
+        "can_system_prove_95_better": false,
+        "note": "95 has dimsLeading=3 and better onset/IBI/segment; composite still slightly favors 116 via estimatorNorm",
+        "verdict": "INCONCLUSIVE — strongest internal counter-example that composite ranking ≠ multi-dimension agreement"
+      },
+      "primary_rca": ["F", "A", "H", "I"],
+      "rca_labels": {
+        "F": "estimatorNorm weight dominates despite worse onset/segment/dims",
+        "A": "estimators disagree 95 vs 116",
+        "H": "hard-conflict MANUAL correct",
+        "I": "dimsLeading favors 95 but not used as primary sort key"
+      }
+    }
+  },
+  "scoring_model": {
+    "BPM_SCORE_WEIGHTS": {
+      "estimator": 0.3,
+      "onset": 0.3,
+      "regularity": 0.2,
+      "segment": 0.2
+    },
+    "segment_blend": {
+      "mean": 0.5,
+      "consistency": 0.25,
+      "winRate": 0.25
+    },
+    "BPM_AUTO_MARGIN_MIN": 0.08,
+    "BPM_AUTO_MIN_DIMENSIONS": 2,
+    "BPM_AUTO_MIN_COMPOSITE": 0.32,
+    "BPM_NEAR_TEMPO_TOL": 1,
+    "BPM_HARD_ESTIMATOR_DELTA": 10,
+    "BPM_HARD_CONFLICT_MARGIN_MIN": 0.15,
+    "BPM_HARD_CONFLICT_MIN_DIMENSIONS": 3,
+    "TEMPO_OPTS": { "minBpm": 60, "maxBpm": 200, "candidates": 8 },
+    "MAX_EVIDENCE_CANDIDATES": 6
+  },
+  "import_selection_heuristic": {
+    "file": "scripts/real-beats-import.ts",
+    "rule": "HIGH+detected → AUTO; else if detectedBpm allowlisted → CANDIDATE; else allowlist[0]",
+    "effect": "Under CONFLICT/LOW, production BPM = composite top whenever it remains on allowlist",
+    "observed": "17/17 production BPM === probe composite top"
+  },
+  "final_decision": "B",
+  "final_decision_label": "CURRENT BPM RESOLVER NEEDS IMPROVEMENT — DESIGN REQUIRED"
+}

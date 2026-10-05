@@ -70,6 +70,8 @@ function manualMessage(reason: BpmReasonCode): string {
     case "SIGNAL_DISAGREEMENT":
     case "SEGMENT_CONTRADICTION":
     case "ESTIMATOR_HARD_CONFLICT":
+    case "DIMS_DISAGREE":
+    case "RATIO_1_5_AMBIGUITY":
     case "OUT_OF_RANGE":
       return "BPM nie udało się wiarygodnie określić.";
     default:
@@ -104,6 +106,8 @@ function mapCanonicalReason(
   if (canonical.reason === "SIGNAL_DISAGREEMENT") return "SIGNAL_DISAGREEMENT";
   if (canonical.reason === "SEGMENT_CONTRADICTION") return "SEGMENT_CONTRADICTION";
   if (canonical.reason === "ESTIMATOR_HARD_CONFLICT") return "ESTIMATOR_HARD_CONFLICT";
+  if (canonical.reason === "DIMS_DISAGREE") return "DIMS_DISAGREE";
+  if (canonical.reason === "RATIO_1_5_AMBIGUITY") return "RATIO_1_5_AMBIGUITY";
   if (canonical.reason === "NO_CANDIDATES") return "MISSING_ESTIMATE";
   return "CONFLICT";
 }
