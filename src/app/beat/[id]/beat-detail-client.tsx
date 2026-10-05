@@ -22,6 +22,8 @@ type BeatDetailClientProps = {
   description: string | null;
   hasAudio: boolean;
   isAuthenticated: boolean;
+  /** P0 — false for PLATFORM masters (server-computed). */
+  originalMasterDownloadAllowed: boolean;
   maxRecordingSeconds: number;
   mixTakes: Array<{
     id: string;
@@ -39,6 +41,7 @@ export function BeatDetailClient({
   description,
   hasAudio,
   isAuthenticated,
+  originalMasterDownloadAllowed,
   maxRecordingSeconds,
   mixTakes,
   mixEnabled,
@@ -285,12 +288,19 @@ export function BeatDetailClient({
                 Nagraj
               </a>
             ) : null}
-            {hasAudio ? (
+            {hasAudio && originalMasterDownloadAllowed ? (
               <DownloadButton
                 beatId={beat.id}
                 title={beat.title}
                 isAuthenticated={isAuthenticated}
               />
+            ) : hasAudio ? (
+              <p
+                className="text-sm text-[var(--brd-mute)]"
+                role="status"
+              >
+                Pobieranie oryginalnego bitu jest niedostępne.
+              </p>
             ) : null}
           </div>
         </div>
@@ -307,8 +317,8 @@ export function BeatDetailClient({
       <section className="space-y-2 border-t border-[var(--brd-line)] pt-6">
         <h2 className="brd-display text-xl font-semibold">Licencja</h2>
         <p className="max-w-prose text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-          Odsłuchaj, nagraj próbę i — jeśli masz dostęp — pobierz plik zgodnie z
-          zasadami konta. Eksport miksu znajdziesz w studio.
+          Odsłuchaj, nagraj próbę i korzystaj z bitu zgodnie z zasadami konta.
+          Eksport miksu znajdziesz w studio.
         </p>
       </section>
 

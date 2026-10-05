@@ -1,0 +1,76 @@
+{
+  "track": "P0_PLATFORM_MASTER_DOWNLOAD_DENY",
+  "owner_go": true,
+  "od_rs_r1": "KEEP_ADMIN_OPS_EXPORT_ALLOW",
+  "scope": "P0_ONLY",
+  "invariant": "ownership_type=PLATFORM + user_facing_download = DENY",
+  "rca": {
+    "prior_bug": "Access Gate allowed DOWNLOAD without PLATFORM ownership deny; ADMIN DOWNLOAD always true",
+    "fix": "canDownloadOriginalBeatMaster + ownership_type load before signed URL; OPS export separate"
+  },
+  "paths_audited": [
+    "requestBeatAudioAccess DOWNLOAD",
+    "requestBeatAudioAccess PLAYBACK",
+    "requestBeatAudioAccessAction",
+    "DownloadButton",
+    "requestPlatformBeatOpsExport",
+    "AdminPlatformOpsExportButton",
+    "mix session PLAYBACK",
+    "api/admin/beats/[id]/master (upload only)",
+    "take download (out of scope)",
+    "src/app/api (no user-facing beat-audio download routes)"
+  ],
+  "authorization_gate": {
+    "helper": "canDownloadOriginalBeatMaster",
+    "user_facing": "canRequestBeatAudioAccess purpose=DOWNLOAD",
+    "platform_deny": true,
+    "fail_closed_missing_ownership": true,
+    "tiers_used": false
+  },
+  "admin_ops": {
+    "function": "requestPlatformBeatOpsExport",
+    "role": "ADMIN",
+    "ownership": "PLATFORM_ONLY",
+    "download_disposition": true,
+    "wired_to_download_button": false
+  },
+  "playback_separation": {
+    "platform_playback_allow": true,
+    "recording_source_via_playback": true,
+    "signed_playback_is_not_product_download": true
+  },
+  "ui": {
+    "hide_download_button_for_platform": true,
+    "message_pl": "Pobieranie oryginalnego bitu jest niedostępne."
+  },
+  "test_matrix": {
+    "platform_anon_download": "DENY",
+    "platform_free_bronze_silver_gold_download": "DENY",
+    "platform_admin_user_facing_download": "DENY",
+    "platform_ops_export": "ALLOW",
+    "user_owned_download": "UNCHANGED",
+    "platform_playback": "ALLOW",
+    "platform_recording_source": "ALLOW",
+    "bypass_server_enforcement": "DENY",
+    "forged_idor_fail_closed": "DENY"
+  },
+  "verification_local": {
+    "targeted_tests": "PASS 137/137 (9 files)",
+    "typecheck": "PASS (after local-only untracked script noise fixed; not staged)",
+    "lint_p0_files": "PASS except pre-existing react-hooks/refs on beat-detail-client:70",
+    "build": "PASS"
+  },
+  "data_safety": {
+    "beats": "unchanged",
+    "bpm": "unchanged",
+    "storage": "unchanged",
+    "takes": "unchanged",
+    "mix_render": "unchanged",
+    "profiles_auth": "unchanged"
+  },
+  "out_of_scope": ["P1", "P2", "P3", "P4", "P5", "P6", "BPM_V2", "D02_except_download_vs_playback"],
+  "production_verify": {
+    "status": "PENDING_DEPLOY",
+    "verdict": null
+  }
+}

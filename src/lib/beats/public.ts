@@ -73,6 +73,13 @@ export function toSafeDownloadErrorMessage(
     return toUserFacingError(raw, "download");
   }
   const lower = String(raw).toLowerCase();
+  // P0 — PLATFORM original master never downloadable (not a transient failure).
+  if (
+    lower.includes("original platform beat download") ||
+    lower.includes("platform beat download is not available")
+  ) {
+    return "Pobieranie oryginalnego bitu jest niedostępne.";
+  }
   // Preserve prior download-domain breadth for bare "limit reached".
   if (lower.includes("limit reached") && !lower.includes("render")) {
     return "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.";

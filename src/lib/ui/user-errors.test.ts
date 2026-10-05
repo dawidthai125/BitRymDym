@@ -101,6 +101,14 @@ describe("playback / download mappers", () => {
       "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.",
     );
   });
+
+  it("maps PLATFORM master download deny to product message (not outage)", () => {
+    expect(
+      toSafeDownloadErrorMessage(
+        "Original platform beat download is not available.",
+      ),
+    ).toBe("Pobieranie oryginalnego bitu jest niedostępne.");
+  });
 });
 
 describe("mix / render user-facing errors", () => {

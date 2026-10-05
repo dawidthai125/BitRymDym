@@ -1,9 +1,10 @@
 import "server-only";
 
-import type { BeatStatus, SystemRole } from "@/types/domain";
+import type { BeatOwnershipType, BeatStatus, SystemRole } from "@/types/domain";
 import {
   AuthError,
   getCurrentProfile,
+  requireRole,
   requireUser,
 } from "@/lib/auth/session";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/lib/beats/audio-types";
 import {
   BEAT_AUDIO_BUCKET,
+  BEAT_AUDIO_DOWNLOAD_TTL_SECONDS,
   canRequestBeatAudioAccess,
   isAudioAccessPurpose,
   signedUrlTtlSeconds,
@@ -39,6 +41,15 @@ export type BeatAudioAccessResult = {
   beatId: string;
   assetId: string;
   remainingToday?: number;
+};
+
+export type PlatformBeatOpsExportResult = {
+  url: string;
+  expiresAt: string;
+  beatId: string;
+  assetId: string;
+  ownershipType: "PLATFORM";
+  purpose: "OPS_EXPORT";
 };
 
 function actorFromRole(role: SystemRole | null): AudioAccessActor {
@@ -89,12 +100,61 @@ async function resolveActiveAsset(params: {
   return master as BeatAudioAssetRow;
 }
 
+type BeatAccessRow = {
+  status: BeatStatus;
+  ownershipType: BeatOwnershipType;
+};
+
+async function loadBeatForAccess(params: {
+  beatId: string;
+  actor: AudioAccessActor;
+}): Promise<BeatAccessRow> {
+  const supabase = await createSupabaseServerClient();
+  const { data: beat, error: beatError } = await supabase
+    .from("beats")
+    .select("id, status, ownership_type")
+    .eq("id", params.beatId)
+    .maybeSingle();
+
+  if (beat) {
+    return {
+      status: beat.status as BeatStatus,
+      ownershipType: beat.ownership_type as BeatOwnershipType,
+    };
+  }
+
+  if (params.actor === "ADMIN" || params.actor === "MODERATOR") {
+    const admin = createSupabaseAdminClient();
+    const { data: staffBeat, error: staffError } = await admin
+      .from("beats")
+      .select("id, status, ownership_type")
+      .eq("id", params.beatId)
+      .maybeSingle();
+    if (staffError) {
+      throw new Error(staffError.message);
+    }
+    if (staffBeat) {
+      return {
+        status: staffBeat.status as BeatStatus,
+        ownershipType: staffBeat.ownership_type as BeatOwnershipType,
+      };
+    }
+  } else if (beatError) {
+    throw new Error(beatError.message);
+  }
+
+  throw new AuthError("NOT_FOUND", "Beat not found.");
+}
+
 /**
- * Single Phase 1.5 Access Gate (REUSE) + Phase 1.8A DOWNLOAD limits/events.
+ * Single Phase 1.5 Access Gate (REUSE) + Phase 1.8A DOWNLOAD limits/events
+ * + P0 PLATFORM original master DOWNLOAD deny (user-facing).
  *
  * DOWNLOAD OD-17 order:
- * AuthZ → reserve slot → signed URL SUCCESS → finalize DOWNLOAD_EVENT
+ * AuthZ (incl. ownership) → reserve slot → signed URL SUCCESS → finalize DOWNLOAD_EVENT
  * Reservation is never a DOWNLOAD_EVENT.
+ *
+ * PLAYBACK ≠ product DOWNLOAD. Signed PLAYBACK GET remains allowed for PLATFORM.
  */
 export async function requestBeatAudioAccess(params: {
   beatId: string;
@@ -111,40 +171,25 @@ export async function requestBeatAudioAccess(params: {
     await requireUser();
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: beat, error: beatError } = await supabase
-    .from("beats")
-    .select("id, status")
-    .eq("id", params.beatId)
-    .maybeSingle();
-
-  let beatStatus: BeatStatus | null = (beat?.status as BeatStatus) ?? null;
-  if (!beat && (actor === "ADMIN" || actor === "MODERATOR")) {
-    const admin = createSupabaseAdminClient();
-    const { data: staffBeat, error: staffError } = await admin
-      .from("beats")
-      .select("id, status")
-      .eq("id", params.beatId)
-      .maybeSingle();
-    if (staffError) {
-      throw new Error(staffError.message);
-    }
-    beatStatus = (staffBeat?.status as BeatStatus) ?? null;
-  } else if (beatError) {
-    throw new Error(beatError.message);
-  }
-
-  if (!beatStatus) {
-    throw new AuthError("NOT_FOUND", "Beat not found.");
-  }
+  const beat = await loadBeatForAccess({ beatId: params.beatId, actor });
 
   if (
     !canRequestBeatAudioAccess({
       actor,
-      beatStatus,
+      beatStatus: beat.status,
       purpose: params.purpose,
+      ownershipType: beat.ownershipType,
     })
   ) {
+    if (
+      params.purpose === "DOWNLOAD" &&
+      beat.ownershipType === "PLATFORM"
+    ) {
+      throw new AuthError(
+        "FORBIDDEN",
+        "Original platform beat download is not available.",
+      );
+    }
     throw new AuthError("FORBIDDEN", "Audio access denied.");
   }
 
@@ -162,7 +207,7 @@ export async function requestBeatAudioAccess(params: {
 
   if (params.purpose === "DOWNLOAD") {
     if (actor === "ADMIN") {
-      // Limit-exempt; final event after signed URL only.
+      // Limit-exempt for USER-owned masters only (PLATFORM denied above).
     } else if (actor === "ANON") {
       // ANON ≠ FREE — never resolve product FREE=4 for anonymous.
       const { tokenHash } = await ensureAnonymousDownloadIdentity();
@@ -255,5 +300,73 @@ export async function requestBeatAudioAccess(params: {
     beatId: params.beatId,
     assetId: asset.id,
     remainingToday,
+  };
+}
+
+/**
+ * P0 privileged ADMIN/OPS export for PLATFORM masters.
+ * Independent of user-facing DOWNLOAD purpose — never callable via DownloadButton.
+ * OD-RS-R1: ALLOW for ADMIN only.
+ */
+export async function requestPlatformBeatOpsExport(params: {
+  beatId: string;
+}): Promise<PlatformBeatOpsExportResult> {
+  const context = await requireRole(["ADMIN"]);
+
+  const admin = createSupabaseAdminClient();
+  const { data: beat, error: beatError } = await admin
+    .from("beats")
+    .select("id, status, ownership_type")
+    .eq("id", params.beatId)
+    .maybeSingle();
+
+  if (beatError) {
+    throw new Error(beatError.message);
+  }
+  if (!beat) {
+    throw new AuthError("NOT_FOUND", "Beat not found.");
+  }
+  if (beat.ownership_type !== "PLATFORM") {
+    throw new AuthError(
+      "FORBIDDEN",
+      "OPS export is only for PLATFORM beats.",
+    );
+  }
+
+  const asset = await resolveActiveAsset({
+    beatId: params.beatId,
+    purpose: "DOWNLOAD",
+  });
+  if (asset.beat_id !== params.beatId) {
+    throw new AuthError("FORBIDDEN", "Asset/beat relation mismatch.");
+  }
+
+  const { data: signed, error: signedError } = await admin.storage
+    .from(BEAT_AUDIO_BUCKET)
+    .createSignedUrl(asset.object_key, BEAT_AUDIO_DOWNLOAD_TTL_SECONDS, {
+      download: true,
+    });
+
+  if (signedError || !signed?.signedUrl) {
+    throw new Error(signedError?.message ?? "Failed to create signed URL.");
+  }
+
+  await insertAdminDownloadEvent({
+    beatId: params.beatId,
+    assetId: asset.id,
+    userId: context.profile.id,
+  });
+
+  const expiresAt = new Date(
+    Date.now() + BEAT_AUDIO_DOWNLOAD_TTL_SECONDS * 1000,
+  ).toISOString();
+
+  return {
+    url: signed.signedUrl,
+    expiresAt,
+    beatId: params.beatId,
+    assetId: asset.id,
+    ownershipType: "PLATFORM",
+    purpose: "OPS_EXPORT",
   };
 }

@@ -97,6 +97,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               description={detail.description}
               hasAudio={audioInfo.hasAudio}
               isAuthenticated={Boolean(session)}
+              originalMasterDownloadAllowed={beat.ownershipType === "USER"}
               maxRecordingSeconds={maxRecordingSeconds}
               mixTakes={mixTakes}
               mixEnabled={E3_MIX_ENABLED === true}

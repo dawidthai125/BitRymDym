@@ -1,7 +1,10 @@
 "use server";
 
 import { AuthError } from "@/lib/auth/session";
-import { requestBeatAudioAccess } from "@/lib/beats/audio-access";
+import {
+  requestBeatAudioAccess,
+  requestPlatformBeatOpsExport,
+} from "@/lib/beats/audio-access";
 import {
   archivePlatformBeatAudio,
   getBeatAudioPublicInfo,
@@ -96,4 +99,33 @@ export async function archivePlatformBeatAudioAction(
 
 export async function getBeatAudioPublicInfoAction(beatId: string) {
   return getBeatAudioPublicInfo(beatId);
+}
+
+/**
+ * P0 ADMIN/OPS privileged PLATFORM master export.
+ * Not the user-facing DOWNLOAD purpose — admin console only.
+ */
+export async function requestPlatformBeatOpsExportAction(params: {
+  beatId: string;
+}): Promise<AudioActionState> {
+  try {
+    if (!params.beatId) {
+      return {
+        error: toSafeDownloadErrorMessage("Missing beat id."),
+        success: false,
+      };
+    }
+    const result = await requestPlatformBeatOpsExport({
+      beatId: params.beatId,
+    });
+    return {
+      error: null,
+      success: true,
+      url: result.url,
+      expiresAt: result.expiresAt,
+      assetId: result.assetId,
+    };
+  } catch (error) {
+    return catchAudio(error, "DOWNLOAD");
+  }
 }

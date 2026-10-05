@@ -272,8 +272,17 @@ describe("Community Wave 4 — staff publish APPROVED USER beats", () => {
         actor: "ANON",
         beatStatus: "PUBLISHED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(true);
+    expect(
+      canRequestBeatAudioAccess({
+        actor: "ANON",
+        beatStatus: "PUBLISHED",
+        purpose: "DOWNLOAD",
+        ownershipType: "PLATFORM",
+      }),
+    ).toBe(false);
   });
 
   it("account level does not appear in publish AuthZ surface", () => {

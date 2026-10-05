@@ -5,6 +5,7 @@ import {
   BEAT_AUDIO_MAX_BYTES,
   BEAT_AUDIO_PLAYBACK_TTL_SECONDS,
   buildBeatAudioObjectKey,
+  canDownloadOriginalBeatMaster,
   canRequestBeatAudioAccess,
   signedUrlTtlSeconds,
   validateAudioUploadMeta,
@@ -85,7 +86,7 @@ describe("beat audio validation (Phase 1.5)", () => {
 });
 
 describe("beat audio access gate rules", () => {
-  it("allows anon PLAYBACK/DOWNLOAD only for PUBLISHED", () => {
+  it("allows anon PLAYBACK for PUBLISHED; DOWNLOAD only for USER-owned", () => {
     expect(
       canRequestBeatAudioAccess({
         actor: "ANON",
@@ -98,8 +99,17 @@ describe("beat audio access gate rules", () => {
         actor: "ANON",
         beatStatus: "PUBLISHED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(true);
+    expect(
+      canRequestBeatAudioAccess({
+        actor: "ANON",
+        beatStatus: "PUBLISHED",
+        purpose: "DOWNLOAD",
+        ownershipType: "PLATFORM",
+      }),
+    ).toBe(false);
     expect(
       canRequestBeatAudioAccess({
         actor: "ANON",
@@ -109,14 +119,23 @@ describe("beat audio access gate rules", () => {
     ).toBe(false);
   });
 
-  it("allows USER published paths and denies non-published", () => {
+  it("allows USER published USER-owned download; denies PLATFORM", () => {
     expect(
       canRequestBeatAudioAccess({
         actor: "USER",
         beatStatus: "PUBLISHED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(true);
+    expect(
+      canRequestBeatAudioAccess({
+        actor: "USER",
+        beatStatus: "PUBLISHED",
+        purpose: "DOWNLOAD",
+        ownershipType: "PLATFORM",
+      }),
+    ).toBe(false);
     expect(
       canRequestBeatAudioAccess({
         actor: "USER",
@@ -139,17 +158,26 @@ describe("beat audio access gate rules", () => {
         actor: "MODERATOR",
         beatStatus: "PUBLISHED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(false);
   });
 
-  it("allows ADMIN download on any status", () => {
+  it("ADMIN user-facing DOWNLOAD: USER-owned ALLOW, PLATFORM DENY", () => {
     expect(
       canRequestBeatAudioAccess({
         actor: "ADMIN",
         beatStatus: "DRAFT",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(true);
+    expect(
+      canDownloadOriginalBeatMaster({
+        actor: "ADMIN",
+        beatStatus: "PUBLISHED",
+        ownershipType: "PLATFORM",
+      }),
+    ).toBe(false);
   });
 });

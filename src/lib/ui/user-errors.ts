@@ -263,6 +263,12 @@ export function toUserFacingError(
 
   // Downloads
   if (
+    lower.includes("original platform beat download") ||
+    lower.includes("platform beat download is not available")
+  ) {
+    return "Pobieranie oryginalnego bitu jest niedostępne.";
+  }
+  if (
     lower.includes("daily download limit") ||
     (lower.includes("download") && lower.includes("limit reached"))
   ) {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminAudioUploadForm } from "@/components/admin/admin-audio-upload-form";
 import { AdminLifecycleControls } from "@/components/admin/admin-lifecycle-controls";
 import { AdminMetadataForm } from "@/components/admin/admin-metadata-form";
+import { AdminPlatformOpsExportButton } from "@/components/admin/admin-platform-ops-export-button";
 import { AuthError } from "@/lib/auth/session";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
 import { getPlatformBeatForAdmin } from "@/lib/beats/service";
@@ -67,6 +68,11 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
         <h2 className="text-lg font-medium tracking-tight">Audio MASTER</h2>
         <AdminAudioUploadForm
           beatId={beat.id}
+          activeMasterReady={audio.activeMasterReady}
+        />
+        <AdminPlatformOpsExportButton
+          beatId={beat.id}
+          title={beat.title}
           activeMasterReady={audio.activeMasterReady}
         />
       </section>

@@ -1,6 +1,7 @@
 import type {
   BeatAudioAssetStatus,
   BeatAudioPurpose,
+  BeatOwnershipType,
 } from "@/types/domain";
 import {
   BEAT_AUDIO_ASSET_STATUSES,
@@ -291,13 +292,45 @@ export function validateAudioUploadMeta(params: {
 export type AudioAccessActor = "ANON" | "USER" | "MODERATOR" | "ADMIN";
 
 /**
- * Phase 1.5 frozen Access Gate business rules.
- * AccountLevel is intentionally unused.
+ * P0 — user-facing original beat master DOWNLOAD.
+ * PLATFORM masters are NEVER downloadable via product DOWNLOAD purpose
+ * (including ADMIN using the user-facing Access Gate).
+ * Privileged OPS export is a separate path — see requestPlatformBeatOpsExport.
+ *
+ * AccountLevel / Premium tier intentionally unused here.
+ */
+export function canDownloadOriginalBeatMaster(params: {
+  actor: AudioAccessActor;
+  beatStatus: string;
+  ownershipType: BeatOwnershipType | string | null | undefined;
+}): boolean {
+  if (params.ownershipType === "PLATFORM") {
+    return false;
+  }
+  if (params.ownershipType !== "USER") {
+    // Fail closed when ownership is missing/unknown on DOWNLOAD.
+    return false;
+  }
+  if (params.actor === "ADMIN") {
+    return true;
+  }
+  if (params.actor === "MODERATOR") {
+    return false;
+  }
+  return params.beatStatus === "PUBLISHED";
+}
+
+/**
+ * Phase 1.5 Access Gate + P0 PLATFORM master DOWNLOAD deny.
+ * PLAYBACK ignores ownership (PUBLISHED for all; staff non-published).
+ * DOWNLOAD requires ownershipType and never allows PLATFORM masters.
  */
 export function canRequestBeatAudioAccess(params: {
   actor: AudioAccessActor;
   beatStatus: string;
   purpose: AudioAccessPurpose;
+  /** Required for DOWNLOAD — omit/unknown → DENY. Unused for PLAYBACK. */
+  ownershipType?: BeatOwnershipType | string | null;
 }): boolean {
   const { actor, beatStatus, purpose } = params;
 
@@ -308,15 +341,12 @@ export function canRequestBeatAudioAccess(params: {
     return actor === "ADMIN" || actor === "MODERATOR";
   }
 
-  // DOWNLOAD
-  if (actor === "ADMIN") {
-    return true;
-  }
-  // FROZEN: MODERATOR download DENY (including PUBLISHED).
-  if (actor === "MODERATOR") {
-    return false;
-  }
-  return beatStatus === "PUBLISHED";
+  // DOWNLOAD — user-facing product path only (≠ OPS export, ≠ PLAYBACK).
+  return canDownloadOriginalBeatMaster({
+    actor,
+    beatStatus,
+    ownershipType: params.ownershipType,
+  });
 }
 
 export function signedUrlTtlSeconds(purpose: AudioAccessPurpose): number {

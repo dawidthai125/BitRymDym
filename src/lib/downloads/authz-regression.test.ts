@@ -8,12 +8,13 @@ describe("Phase 1.8A download AuthZ regression", () => {
     expect(BEAT_AUDIO_DOWNLOAD_TTL_SECONDS).toBe(300);
   });
 
-  it("allows ANON/USER DOWNLOAD only for PUBLISHED", () => {
+  it("allows ANON/USER DOWNLOAD only for PUBLISHED USER-owned", () => {
     expect(
       canRequestBeatAudioAccess({
         actor: "ANON",
         beatStatus: "PUBLISHED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(true);
     expect(
@@ -21,16 +22,18 @@ describe("Phase 1.8A download AuthZ regression", () => {
         actor: "USER",
         beatStatus: "DRAFT",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(false);
   });
 
-  it("denies MODERATOR DOWNLOAD; allows ADMIN", () => {
+  it("denies MODERATOR DOWNLOAD; ADMIN user-facing only for USER-owned", () => {
     expect(
       canRequestBeatAudioAccess({
         actor: "MODERATOR",
         beatStatus: "PUBLISHED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(false);
     expect(
@@ -38,7 +41,16 @@ describe("Phase 1.8A download AuthZ regression", () => {
         actor: "ADMIN",
         beatStatus: "DRAFT",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(true);
+    expect(
+      canRequestBeatAudioAccess({
+        actor: "ADMIN",
+        beatStatus: "PUBLISHED",
+        purpose: "DOWNLOAD",
+        ownershipType: "PLATFORM",
+      }),
+    ).toBe(false);
   });
 });

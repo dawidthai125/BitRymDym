@@ -237,7 +237,9 @@ describe("Access Gate DOWNLOAD path source contract", () => {
 
   it("runtime call order: reserve then URL then finalize", () => {
     // Strip import block — only assert call sites in the function body.
-    const body = access.slice(access.indexOf("export async function requestBeatAudioAccess"));
+    const start = access.indexOf("export async function requestBeatAudioAccess");
+    const end = access.indexOf("export async function requestPlatformBeatOpsExport");
+    const body = access.slice(start, end > start ? end : undefined);
     const reserveCall = body.indexOf("await reserveDownloadSlot");
     const urlCall = body.indexOf("createSignedUrl");
     const finalizeCall = body.indexOf("await finalizeDownload");

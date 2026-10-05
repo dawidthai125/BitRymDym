@@ -11,6 +11,7 @@ describe("authorization / beat-state regression for downloads", () => {
         actor: "USER",
         beatStatus: "DRAFT",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(false);
     expect(
@@ -18,6 +19,7 @@ describe("authorization / beat-state regression for downloads", () => {
         actor: "ANON",
         beatStatus: "ARCHIVED",
         purpose: "DOWNLOAD",
+        ownershipType: "USER",
       }),
     ).toBe(false);
   });
