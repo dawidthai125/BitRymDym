@@ -9,6 +9,7 @@ import {
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import { probeAudioDurationFromBytes } from "@/lib/beats/audio-duration";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 import {
   assertTakeRecordAccess,
@@ -16,10 +17,11 @@ import {
   TakeAuthzError,
 } from "@/lib/takes/authz";
 import {
-  antiAbuseCapsForAccountLevel,
+  antiAbuseCapsFromPolicy,
   recordingModeForMaxSeconds,
-  retentionSecondsForAccountLevel,
+  type SamplePolicy,
 } from "@/lib/takes/entitlement";
+import { loadSamplePolicyDurationOverrides } from "@/lib/takes/sample-policy-settings";
 import {
   buildUserTakeObjectKey,
   expectedUserTakeObjectKey,
@@ -66,13 +68,13 @@ function mapClaimRpcError(message: string): never {
   if (message.includes("ACTIVE_READY_CAP")) {
     throw new AuthError(
       "FORBIDDEN",
-      "Active READY take limit reached for your account level.",
+      "Active READY take limit reached for your sample policy.",
     );
   }
   if (message.includes("SESSION_DAY_CAP")) {
     throw new AuthError(
       "FORBIDDEN",
-      "Daily recording session limit reached for your account level.",
+      "Daily recording session limit reached for your sample policy.",
     );
   }
   if (message.includes("CONCURRENT_SESSION")) {
@@ -176,15 +178,21 @@ export async function createTakeRecordingSessionFor(
     granteeUserId: context.userId,
   });
 
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const overrides = await loadSamplePolicyDurationOverrides();
+
   let maxRecordingSeconds: number;
+  let policy: SamplePolicy;
   try {
-    ({ maxRecordingSeconds } = assertTakeRecordAccess({
+    ({ maxRecordingSeconds, policy } = assertTakeRecordAccess({
       context,
       beat: {
         id: beat.id as string,
         status: beat.status as string,
         durationSeconds: beat.duration_seconds as number,
       },
+      premiumTier: product.premiumTier,
+      overrides,
       activeRecordGrant,
     }));
   } catch (e) {
@@ -198,14 +206,11 @@ export async function createTakeRecordingSessionFor(
     ownerId: context.userId,
     takeId,
   });
-  const retentionSeconds = retentionSecondsForAccountLevel(
-    context.profile.accountLevel,
-  );
   const expiresAt = new Date(
-    Date.now() + retentionSeconds * 1000,
+    Date.now() + policy!.ttlSeconds * 1000,
   ).toISOString();
   const recordingMode = recordingModeForMaxSeconds(maxRecordingSeconds!);
-  const caps = antiAbuseCapsForAccountLevel(context.profile.accountLevel);
+  const caps = antiAbuseCapsFromPolicy(policy!);
 
   const admin = createSupabaseAdminClient();
   const { error: claimError } = await admin.rpc(

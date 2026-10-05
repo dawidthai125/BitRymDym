@@ -1,14 +1,16 @@
 /**
- * Recording Wave 4/5 — take AuthZ (record access + owner boundary helpers).
- * Entitlement / retention / anti-abuse caps live in entitlement.ts (SSOT).
- * Wave 5: GRANT_RECORD is an access source; V1 PUBLISHED path remains W4-compatible.
+ * Recording take AuthZ (record access + owner boundary helpers).
+ * Sample limits SSOT: getSamplePolicy (Premium Tier / ANONYMOUS) — P1.
  */
 
 import type { AuthContext } from "@/lib/auth/types";
 import type { BeatRecordAccessSource } from "@/config/beat-access-grants";
+import type { PremiumTier } from "@/types/premium";
 import {
-  computeAnonymousRecordingMaxSeconds,
-  computeRecordingMaxSeconds,
+  getSamplePolicy,
+  sampleActorFromPremiumTier,
+  type SamplePolicy,
+  type SamplePolicyDurationOverrides,
 } from "@/lib/takes/entitlement";
 
 export class TakeAuthzError extends Error {
@@ -23,31 +25,27 @@ export class TakeAuthzError extends Error {
   }
 }
 
-/** @deprecated Use computeRecordingMaxSeconds from entitlement.ts */
+/** @deprecated Prefer getSamplePolicy — global max via GOLD defaults. */
 export function computeInterimRecordingMaxSeconds(
   beatDurationSeconds: number,
 ): number {
-  return computeRecordingMaxSeconds({
-    accountLevel: "PRO_RAPPER",
+  return getSamplePolicy({
+    actor: "GOLD",
     beatDurationSeconds,
-  });
+  }).maxRecordingSeconds;
 }
 
 export {
   recordingModeForMaxSeconds,
-  retentionSecondsForAccountLevel,
+  getSamplePolicy,
 } from "@/lib/takes/entitlement";
 
 /**
- * RECORD contract (W4 + W5):
+ * RECORD contract:
  * - authenticated
- * - beat.status === PUBLISHED (non-PUBLISHED DENY even with grant)
- * - entitlement (account level) — grant never raises limits
- * - beat access: PUBLIC_PUBLISHED (V1 default for PUBLISHED) OR GRANT_RECORD
- *
- * V1: every PUBLISHED beat is PUBLIC_PUBLISHED for entitled users (W4 parity).
- * activeRecordGrant labels GRANT_RECORD when an ACTIVE grant exists; it is not
- * required for ALLOW on PUBLISHED and never unlocks non-PUBLISHED.
+ * - beat.status === PUBLISHED
+ * - Sample Policy from Premium Tier (grant never raises limits)
+ * - access: PUBLIC_PUBLISHED OR GRANT_RECORD
  */
 export function assertTakeRecordAccess(params: {
   context: AuthContext;
@@ -56,11 +54,15 @@ export function assertTakeRecordAccess(params: {
     status: string;
     durationSeconds: number;
   };
-  /** Pre-resolved ACTIVE grant.can_record for this actor+beat (Wave 5). */
+  /** Effective Premium Tier from Product Entitlement SSOT (never client). */
+  premiumTier: PremiumTier;
+  overrides?: SamplePolicyDurationOverrides | null;
+  /** Pre-resolved ACTIVE grant.can_record for this actor+beat. */
   activeRecordGrant?: boolean;
 }): {
   maxRecordingSeconds: number;
   accessSource: BeatRecordAccessSource;
+  policy: SamplePolicy;
 } {
   if (!params.context.userId) {
     throw new TakeAuthzError("Authentication required.", "UNAUTHENTICATED");
@@ -72,20 +74,19 @@ export function assertTakeRecordAccess(params: {
     );
   }
 
-  const publicPublished = true;
   const grantRecord = params.activeRecordGrant === true;
-  if (!publicPublished && !grantRecord) {
-    throw new TakeAuthzError("Recording is not allowed for this beat.", "FORBIDDEN");
-  }
 
   try {
-    const maxRecordingSeconds = computeRecordingMaxSeconds({
-      accountLevel: params.context.profile.accountLevel,
+    const actor = sampleActorFromPremiumTier(params.premiumTier);
+    const policy = getSamplePolicy({
+      actor,
       beatDurationSeconds: params.beat.durationSeconds,
+      overrides: params.overrides,
     });
     return {
-      maxRecordingSeconds,
+      maxRecordingSeconds: policy.maxRecordingSeconds,
       accessSource: grantRecord ? "GRANT_RECORD" : "PUBLIC_PUBLISHED",
+      policy,
     };
   } catch {
     throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");
@@ -93,11 +94,11 @@ export function assertTakeRecordAccess(params: {
 }
 
 /**
- * D02 anonymous RECORD AuthZ (separate from authenticated assertTakeRecordAccess):
- * - cookie → hash supplied by caller (never client anonymous=true)
+ * Anonymous RECORD AuthZ:
+ * - cookie → hash supplied by caller
  * - beat.status === PUBLISHED
- * - max = MIN(beat.duration, 30)
- * - grants are never consulted / never unlock
+ * - Sample Policy ANONYMOUS (15s default)
+ * - grants never consulted
  */
 export function assertAnonTakeRecordAccess(params: {
   tokenHash: string;
@@ -106,7 +107,10 @@ export function assertAnonTakeRecordAccess(params: {
     status: string;
     durationSeconds: number;
   };
-}): { maxRecordingSeconds: number } {
+}): {
+  maxRecordingSeconds: number;
+  policy: SamplePolicy;
+} {
   if (!params.tokenHash || params.tokenHash.length < 32) {
     throw new TakeAuthzError("Anonymous take identity required.", "UNAUTHENTICATED");
   }
@@ -117,10 +121,13 @@ export function assertAnonTakeRecordAccess(params: {
     );
   }
   try {
+    const policy = getSamplePolicy({
+      actor: "ANONYMOUS",
+      beatDurationSeconds: params.beat.durationSeconds,
+    });
     return {
-      maxRecordingSeconds: computeAnonymousRecordingMaxSeconds(
-        params.beat.durationSeconds,
-      ),
+      maxRecordingSeconds: policy.maxRecordingSeconds,
+      policy,
     };
   } catch {
     throw new TakeAuthzError("Invalid beat duration.", "FORBIDDEN");

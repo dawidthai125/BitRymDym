@@ -91,6 +91,14 @@ export default async function AdminLayout({
           ) : null}
           {showPlatform ? (
             <Link
+              href="/admin/sample-policy"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              Sample Policy
+            </Link>
+          ) : null}
+          {showPlatform ? (
+            <Link
               href="/admin/beats/new"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >

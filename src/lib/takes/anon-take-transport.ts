@@ -16,9 +16,9 @@ import {
   TakeAuthzError,
 } from "@/lib/takes/authz";
 import {
-  antiAbuseCapsForAnonymous,
+  antiAbuseCapsFromPolicy,
   recordingModeForMaxSeconds,
-  retentionSecondsForAnonymous,
+  type SamplePolicy,
 } from "@/lib/takes/entitlement";
 import {
   buildAnonTakeObjectKey,
@@ -164,8 +164,9 @@ export async function createAnonTakeRecordingSessionFor(
   const beat = await loadBeatOrThrow(params.beatId);
 
   let maxRecordingSeconds: number;
+  let policy: SamplePolicy;
   try {
-    ({ maxRecordingSeconds } = assertAnonTakeRecordAccess({
+    ({ maxRecordingSeconds, policy } = assertAnonTakeRecordAccess({
       tokenHash,
       beat: {
         id: beat.id as string,
@@ -184,12 +185,11 @@ export async function createAnonTakeRecordingSessionFor(
     tokenHashPrefix: anonymousTakeTokenHashPrefix(tokenHash),
     takeId,
   });
-  const retentionSeconds = retentionSecondsForAnonymous();
   const expiresAt = new Date(
-    Date.now() + retentionSeconds * 1000,
+    Date.now() + policy!.ttlSeconds * 1000,
   ).toISOString();
   const recordingMode = recordingModeForMaxSeconds(maxRecordingSeconds!);
-  const caps = antiAbuseCapsForAnonymous();
+  const caps = antiAbuseCapsFromPolicy(policy!);
 
   const admin = createSupabaseAdminClient();
   const { error: claimError } = await admin.rpc(

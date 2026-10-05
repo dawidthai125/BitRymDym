@@ -75,19 +75,21 @@ describe("Wave 5 — ACTIVE grant predicate", () => {
 });
 
 describe("Wave 5 — RECORD AuthZ (assertTakeRecordAccess)", () => {
-  it("ALLOW: PUBLISHED + entitlement without grant (W4 path)", () => {
+  it("ALLOW: PUBLISHED + FREE entitlement without grant (W4 path)", () => {
     const result = assertTakeRecordAccess({
       context: ctx("BEGINNER_RAPPER"),
       beat: { id: "b", status: "PUBLISHED", durationSeconds: 90 },
+      premiumTier: "FREE",
     });
     expect(result.maxRecordingSeconds).toBe(30);
     expect(result.accessSource).toBe("PUBLIC_PUBLISHED");
   });
 
-  it("ALLOW: PUBLISHED + active grant labels GRANT_RECORD", () => {
+  it("ALLOW: PUBLISHED + SILVER + active grant labels GRANT_RECORD", () => {
     const result = assertTakeRecordAccess({
       context: ctx("PRO_RAPPER"),
       beat: { id: "b", status: "PUBLISHED", durationSeconds: 60 },
+      premiumTier: "SILVER",
       activeRecordGrant: true,
     });
     expect(result.maxRecordingSeconds).toBe(60);
@@ -99,15 +101,17 @@ describe("Wave 5 — RECORD AuthZ (assertTakeRecordAccess)", () => {
       assertTakeRecordAccess({
         context: ctx(),
         beat: { id: "b", status: "DRAFT", durationSeconds: 60 },
+        premiumTier: "FREE",
         activeRecordGrant: true,
       }),
     ).toThrow(TakeAuthzError);
   });
 
-  it("grant does not raise BEGINNER max seconds", () => {
+  it("grant does not raise FREE max seconds", () => {
     const result = assertTakeRecordAccess({
       context: ctx("BEGINNER_RAPPER"),
       beat: { id: "b", status: "PUBLISHED", durationSeconds: 180 },
+      premiumTier: "FREE",
       activeRecordGrant: true,
     });
     expect(result.maxRecordingSeconds).toBe(30);
@@ -120,6 +124,7 @@ describe("Wave 5 — RECORD AuthZ (assertTakeRecordAccess)", () => {
       assertTakeRecordAccess({
         context: bare,
         beat: { id: "b", status: "PUBLISHED", durationSeconds: 30 },
+        premiumTier: "FREE",
       }),
     ).toThrow(TakeAuthzError);
   });

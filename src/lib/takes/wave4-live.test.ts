@@ -84,6 +84,7 @@ async function makeUser(
   admin: SupabaseClient,
   label: string,
   accountLevel: AccountLevel = "BEGINNER_RAPPER",
+  premiumTier: "FREE" | "BRONZE" | "SILVER" | "GOLD" = "FREE",
 ) {
   const email = `wave4-rec-${label}-${randomUUID().slice(0, 8)}@bitrymdym.test`;
   const password = `Wave4Rec-${randomUUID()}`;
@@ -100,6 +101,19 @@ async function makeUser(
     account_level: accountLevel,
     display_name: label,
   });
+  if (premiumTier !== "FREE") {
+    expect(
+      (
+        await admin.from("premium_entitlements").upsert({
+          user_id: userId,
+          active: true,
+          source: "manual_admin",
+          tier: premiumTier,
+          expires_at: null,
+        })
+      ).error,
+    ).toBeNull();
+  }
   const client = createClient(url!, anonKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -205,14 +219,14 @@ async function cleanupTakeBundle(
 
 describe.runIf(live)("Recording Wave 4 live", () => {
   it(
-    "BEGINNER record→download→delete; IDOR; expired DENY; concurrent + active cap",
+    "FREE Sample Policy record→download→delete; IDOR; expired DENY; concurrent + active/day caps",
     async () => {
       const admin = createClient(url!, serviceKey!, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const bytes = readFileSync(fixturePath);
-      const owner = await makeUser(admin, "owner", "BEGINNER_RAPPER");
-      const other = await makeUser(admin, "other", "BEGINNER_RAPPER");
+      const owner = await makeUser(admin, "owner", "BEGINNER_RAPPER", "FREE");
+      const other = await makeUser(admin, "other", "BEGINNER_RAPPER", "FREE");
       const seeded = await seedPublishedBeat(admin, owner.userId, bytes, 30);
       const takeIds: string[] = [];
 
@@ -265,7 +279,7 @@ describe.runIf(live)("Recording Wave 4 live", () => {
           }),
         ).rejects.toBeInstanceOf(AuthError);
 
-        // Fill active READY to cap (BEGINNER=3): already 1 READY
+        // Fill active READY to cap (FREE Sample Policy = 3): already 1 READY
         for (let i = 0; i < 2; i++) {
           const s = await createTakeRecordingSessionFor(owner.context, {
             beatId: seeded.beatId,
@@ -312,18 +326,16 @@ describe.runIf(live)("Recording Wave 4 live", () => {
           }),
         ).rejects.toMatchObject({ message: expect.stringMatching(/deleted/i) });
 
-        // Cap frees after delete — new session allowed
-        const afterDelete = await createTakeRecordingSessionFor(owner.context, {
-          beatId: seeded.beatId,
-          contentType: "audio/wav",
-          byteSize: bytes.byteLength,
+        // Soft-delete frees ACTIVE_READY but not UTC-day session count (FREE=3/day).
+        await expect(
+          createTakeRecordingSessionFor(owner.context, {
+            beatId: seeded.beatId,
+            contentType: "audio/wav",
+            byteSize: bytes.byteLength,
+          }),
+        ).rejects.toMatchObject({
+          message: expect.stringMatching(/Daily recording session limit/i),
         });
-        takeIds.push(afterDelete.takeId);
-        // Mark FAILED so concurrent unique clears without upload
-        await admin
-          .from("takes")
-          .update({ status: "FAILED", failure_reason: "TEST_CLEANUP" })
-          .eq("id", afterDelete.takeId);
 
         // Expire a READY take + janitor (respect takes_expires_after_created_chk)
         const expireTarget = takeIds[1]!;
@@ -391,13 +403,13 @@ describe.runIf(live)("Recording Wave 4 live", () => {
   );
 
   it(
-    "PRO entitlement uses MIN(beat, 180) on session snapshot",
+    "SILVER Sample Policy uses MIN(beat, 120) on session snapshot",
     async () => {
       const admin = createClient(url!, serviceKey!, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const bytes = readFileSync(fixturePath);
-      const owner = await makeUser(admin, "pro", "PRO_RAPPER");
+      const owner = await makeUser(admin, "silver", "PRO_RAPPER", "SILVER");
       const seeded = await seedPublishedBeat(admin, owner.userId, bytes, 90);
       let takeId: string | null = null;
       try {
@@ -433,13 +445,13 @@ describe.runIf(live)("Recording Wave 4 live", () => {
   );
 
   it(
-    "LEGEND entitlement is MIN(beat, 180) on max-duration beat",
+    "GOLD Sample Policy is MIN(beat, 180) on max-duration beat",
     async () => {
       const admin = createClient(url!, serviceKey!, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const bytes = readFileSync(fixturePath);
-      const owner = await makeUser(admin, "legend", "LEGEND_RAPPER");
+      const owner = await makeUser(admin, "gold", "LEGEND_RAPPER", "GOLD");
       // Take entitlement stays MIN(beat, 180); beat DB max is 210 — longer beats covered in unit tests
       const seeded = await seedPublishedBeat(admin, owner.userId, bytes, 180);
       let takeId: string | null = null;

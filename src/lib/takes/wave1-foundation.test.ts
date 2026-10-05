@@ -25,14 +25,16 @@ describe("Recording Wave 1 — take foundation (unit)", () => {
     expect(isTakeAudioBucket("beat-audio")).toBe(false);
   });
 
-  it("locks global max and retention / anti-abuse constants from freeze", () => {
+  it("locks global max and Sample Policy defaults (P1 Premium Tier axis)", () => {
     expect(RECORDING_GLOBAL_MAX_SECONDS).toBe(180);
-    expect(RECORDING_RETENTION_SECONDS.BEGINNER_RAPPER).toBe(24 * 60 * 60);
-    expect(RECORDING_RETENTION_SECONDS.PRO_RAPPER).toBe(10 * 24 * 60 * 60);
-    expect(RECORDING_RETENTION_SECONDS.LEGEND_RAPPER).toBe(30 * 24 * 60 * 60);
+    // Deprecated Account Level aliases mirror FREE / SILVER / GOLD TTLs for legacy imports.
+    expect(RECORDING_RETENTION_SECONDS.BEGINNER_RAPPER).toBe(12 * 60 * 60);
+    expect(RECORDING_RETENTION_SECONDS.PRO_RAPPER).toBe(60 * 60 * 60);
+    expect(RECORDING_RETENTION_SECONDS.LEGEND_RAPPER).toBe(84 * 60 * 60);
     expect(ANON_TAKE_TTL_SECONDS).toBe(2 * 60 * 60);
     expect(RECORDING_ANTI_ABUSE.BEGINNER_RAPPER.maxActiveReady).toBe(3);
-    expect(RECORDING_ANTI_ABUSE.LEGEND_RAPPER.maxSessionsPerUtcDay).toBe(60);
+    expect(RECORDING_ANTI_ABUSE.BEGINNER_RAPPER.maxSessionsPerUtcDay).toBe(3);
+    expect(RECORDING_ANTI_ABUSE.LEGEND_RAPPER.maxSessionsPerUtcDay).toBe(10);
   });
 
   it("builds canonical user take object key", () => {

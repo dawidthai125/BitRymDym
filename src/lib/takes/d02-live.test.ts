@@ -67,6 +67,27 @@ function freshHash() {
   return hashAnonymousTakeToken(randomBytes(32).toString("hex"));
 }
 
+/** ~1s mono PCM WAV — under ANONYMOUS 15s Sample Policy max. */
+function makeShortSilentWav(durationSeconds = 1, sampleRate = 8000): Buffer {
+  const numSamples = Math.floor(sampleRate * durationSeconds);
+  const dataSize = numSamples * 2;
+  const buf = Buffer.alloc(44 + dataSize);
+  buf.write("RIFF", 0);
+  buf.writeUInt32LE(36 + dataSize, 4);
+  buf.write("WAVE", 8);
+  buf.write("fmt ", 12);
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20);
+  buf.writeUInt16LE(1, 22);
+  buf.writeUInt32LE(sampleRate, 24);
+  buf.writeUInt32LE(sampleRate * 2, 28);
+  buf.writeUInt16LE(2, 32);
+  buf.writeUInt16LE(16, 34);
+  buf.write("data", 36);
+  buf.writeUInt32LE(dataSize, 40);
+  return buf;
+}
+
 function userContext(userId: string, email: string): AuthContext {
   return {
     userId,
@@ -181,14 +202,12 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   const admin = createClient(url!, serviceKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const bytes = readFileSync(fixturePath);
+  // Short WAV under ANONYMOUS 15s max (fixture steady wav is ~30s).
+  const bytes = makeShortSilentWav(1);
 
   it("happy path session → upload → finalize → preview; replay finalize idempotent", async () => {
     const owner = await makeUser(admin, "seed");
-    const { beatId } = await seedPublishedBeatWithMaster(
-      admin,
-      owner.userId,
-      bytes,
+    const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
     const tokenHash = freshHash();
 
@@ -198,7 +217,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
       byteSize: bytes.byteLength,
     });
     expect(session.objectKey.startsWith("anon/")).toBe(true);
-    expect(session.maxRecordingSeconds).toBe(30);
+    expect(session.maxRecordingSeconds).toBe(15);
     expect(new Date(session.expiresAt).getTime()).toBeGreaterThan(Date.now());
 
     await uploadSessionBlob(admin, session, bytes, "audio/wav");
@@ -221,10 +240,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("IDOR: token mismatch / cross-take / owner preview DENY; no download module", async () => {
     const owner = await makeUser(admin, "idor");
-    const { beatId } = await seedPublishedBeatWithMaster(
-      admin,
-      owner.userId,
-      bytes,
+    const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
     const hashA = freshHash();
     const hashB = freshHash();
@@ -280,10 +296,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("finalize after expiry DENY; preview after expiry DENY", async () => {
     const owner = await makeUser(admin, "exp");
-    const { beatId } = await seedPublishedBeatWithMaster(
-      admin,
-      owner.userId,
-      bytes,
+    const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
     const tokenHash = freshHash();
     const session = await createAnonTakeRecordingSessionFor(tokenHash, {
@@ -334,10 +347,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("concurrent PENDING race → one ALLOW one CONCURRENT_SESSION", async () => {
     const owner = await makeUser(admin, "race");
-    const { beatId } = await seedPublishedBeatWithMaster(
-      admin,
-      owner.userId,
-      bytes,
+    const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
     const tokenHash = freshHash();
 
@@ -373,10 +383,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("READY cap race (maxActiveReady=1) and 3/day cap", async () => {
     const owner = await makeUser(admin, "caps");
-    const { beatId } = await seedPublishedBeatWithMaster(
-      admin,
-      owner.userId,
-      bytes,
+    const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
     const tokenHash = freshHash();
 
@@ -436,10 +443,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("authenticated RECORD regression still works (W4 path untouched)", async () => {
     const owner = await makeUser(admin, "authreg");
-    const { beatId } = await seedPublishedBeatWithMaster(
-      admin,
-      owner.userId,
-      bytes,
+    const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
     const session = await createTakeRecordingSessionFor(owner.context, {
       beatId,
@@ -456,8 +460,12 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("client-chosen storage params rejected; cross-beat hash cannot steal other take", async () => {
     const owner = await makeUser(admin, "steal");
-    const a = await seedPublishedBeatWithMaster(admin, owner.userId, bytes);
-    const b = await seedPublishedBeatWithMaster(admin, owner.userId, bytes);
+    const a = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, {
+      durationSeconds: 15,
+    });
+    const b = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, {
+      durationSeconds: 15,
+    });
     const hash = freshHash();
 
     await expect(

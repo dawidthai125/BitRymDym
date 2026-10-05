@@ -11,10 +11,12 @@ import { getPublishedBeat, listPublishedBeats } from "@/lib/beats/service";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
 import { hasAudioCapability } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import {
-  computeAnonymousRecordingMaxSeconds,
-  computeRecordingMaxSeconds,
+  getSamplePolicy,
+  sampleActorFromPremiumTier,
 } from "@/lib/takes/entitlement";
+import { loadSamplePolicyDurationOverrides } from "@/lib/takes/sample-policy-settings";
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
 
@@ -42,12 +44,21 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const presented = presentBeat(detail);
   const audioInfo = await getBeatAudioPublicInfo(beat.id);
   const session = await getCurrentProfile();
-  const maxRecordingSeconds = session
-    ? computeRecordingMaxSeconds({
-        accountLevel: session.profile.accountLevel,
-        beatDurationSeconds: detail.durationSeconds,
-      })
-    : computeAnonymousRecordingMaxSeconds(detail.durationSeconds);
+  const overrides = await loadSamplePolicyDurationOverrides();
+  let maxRecordingSeconds: number;
+  if (session) {
+    const product = await resolveProductEntitlementForAuthContext(session);
+    maxRecordingSeconds = getSamplePolicy({
+      actor: sampleActorFromPremiumTier(product.premiumTier),
+      beatDurationSeconds: detail.durationSeconds,
+      overrides,
+    }).maxRecordingSeconds;
+  } else {
+    maxRecordingSeconds = getSamplePolicy({
+      actor: "ANONYMOUS",
+      beatDurationSeconds: detail.durationSeconds,
+    }).maxRecordingSeconds;
+  }
 
   let mixTakes: Array<{
     id: string;

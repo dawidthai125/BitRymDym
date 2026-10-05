@@ -147,6 +147,11 @@ export default async function AdminIndexPage() {
                   meta="Lista, wyszukiwanie, filtry"
                 />
                 <AdminLink
+                  href="/admin/sample-policy"
+                  title="Sample Policy"
+                  meta="Limity nagrania BRONZE / SILVER / GOLD"
+                />
+                <AdminLink
                   href="/admin"
                   title="Nagrania"
                   meta="Wkrótce"

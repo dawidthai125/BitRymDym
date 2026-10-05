@@ -1,0 +1,42 @@
+{
+  "track": "P1_SAMPLE_POLICY_MATRIX",
+  "owner_decisions": {
+    "B1_premium_tier_axis": true,
+    "B2_canDownloadOwnTake_capability_only": true,
+    "B3_admin_overrides": true,
+    "B4_anonymous_15s": true
+  },
+  "resolver": "getSamplePolicy",
+  "premium_ssot": "resolveProductEntitlementForAuthContext + premium_entitlements",
+  "admin_ssot": "sample_policy_settings",
+  "audit_action": "SAMPLE_POLICY_UPDATE",
+  "matrix_defaults": {
+    "ANONYMOUS": { "duration": 15, "ttlHours": 2, "active": 1, "day": 3, "canDownloadOwnTake": false },
+    "FREE": { "duration": 30, "ttlHours": 12, "active": 3, "day": 3, "canDownloadOwnTake": false },
+    "BRONZE": { "duration": 60, "ttlHours": 36, "active": 5, "day": 5, "canDownloadOwnTake": false },
+    "SILVER": { "duration": 120, "ttlHours": 60, "active": 7, "day": 7, "canDownloadOwnTake": false },
+    "GOLD": { "duration": 180, "ttlHours": 84, "active": 10, "day": 10, "canDownloadOwnTake": true }
+  },
+  "global_max_seconds": 180,
+  "deferred": ["P2_replace", "P3_claim", "P4_gold_download", "P5_plays", "P6_ratings"],
+  "p0_untouched": true,
+  "take_download_ts_unchanged": true,
+  "migration_applied_production": true,
+  "pre_deploy_settings": {
+    "bronze": 60,
+    "silver": 120,
+    "gold": 180
+  },
+  "verification_local": {
+    "typecheck": "PASS",
+    "build": "PASS",
+    "unit_p1": "PASS",
+    "live_d02": "PASS 8/8",
+    "live_wave4": "PASS 3/3",
+    "p0_regression": "PASS"
+  },
+  "production_verify": {
+    "status": "PENDING_DEPLOY",
+    "verdict": null
+  }
+}

@@ -300,15 +300,16 @@ describe("W2-B — entitlement / axes regression", () => {
     expect(legend.premiumActive).toBe(false);
   });
 
-  it("recording entitlement module stays account_level-only (no Premium coupling)", () => {
+  it("recording Sample Policy uses Premium Tier axis (P1); Account Level is not SSOT", () => {
     const takes = readFileSync(
       resolve(process.cwd(), "src/lib/takes/entitlement.ts"),
       "utf8",
     );
-    expect(takes).toContain("accountLevel");
-    expect(takes).not.toContain("premiumTier");
+    expect(takes).toContain("getSamplePolicy");
+    expect(takes).toContain("BRONZE");
+    expect(takes).toContain("sampleActorFromPremiumTier");
+    // Transport resolves Product Entitlement — pure entitlement module stays free of server loaders.
     expect(takes).not.toContain("resolveProductEntitlement");
-    expect(takes).not.toContain("BRONZE");
   });
 
   it("fixture contract is design-only markers", () => {

@@ -115,8 +115,8 @@ describe("Recording D02 — anonymous identity / config", () => {
 });
 
 describe("Recording D02 — entitlement + AuthZ", () => {
-  it("anonymous max is MIN(beat, 30)", () => {
-    expect(computeAnonymousRecordingMaxSeconds(90)).toBe(30);
+  it("anonymous max is MIN(beat, 15)", () => {
+    expect(computeAnonymousRecordingMaxSeconds(90)).toBe(15);
     expect(computeAnonymousRecordingMaxSeconds(12)).toBe(12);
   });
 
@@ -126,7 +126,7 @@ describe("Recording D02 — entitlement + AuthZ", () => {
         tokenHash: HASH_A,
         beat: { id: BEAT_ID, status: "PUBLISHED", durationSeconds: 60 },
       }).maxRecordingSeconds,
-    ).toBe(30);
+    ).toBe(15);
 
     expect(() =>
       assertAnonTakeRecordAccess({
@@ -154,17 +154,18 @@ describe("Recording D02 — entitlement + AuthZ", () => {
       assertTakeRecordAccess({
         context: { ...ownerCtx("BEGINNER_RAPPER"), userId: "" as unknown as string },
         beat: { id: BEAT_ID, status: "PUBLISHED", durationSeconds: 30 },
+        premiumTier: "FREE",
       }),
     ).toThrow(TakeAuthzError);
   });
 
-  it("authenticated RECORD entitlement unchanged for PRO", () => {
+  it("legacy computeRecordingMaxSeconds fail-closed to FREE (30)", () => {
     expect(
       computeRecordingMaxSeconds({
         accountLevel: "PRO_RAPPER",
         beatDurationSeconds: 120,
       }),
-    ).toBe(120);
+    ).toBe(30);
   });
 });
 

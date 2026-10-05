@@ -6,9 +6,9 @@ import {
   computeInterimRecordingMaxSeconds,
   recordingModeForMaxSeconds,
   rejectClientChosenTakeStorageParams,
-  retentionSecondsForAccountLevel,
   TakeAuthzError,
 } from "@/lib/takes/authz";
+import { retentionSecondsForAccountLevel } from "@/lib/takes/entitlement";
 import {
   detectMediaRecorderSupport,
   TakeMediaRecorder,
@@ -46,12 +46,12 @@ describe("Recording Wave 2 — AuthZ interim", () => {
     expect(computeInterimRecordingMaxSeconds(240)).toBe(180);
   });
 
-  it("allows PUBLISHED only", () => {
-    // BEGINNER entitlement: MIN(beat, 30)
+  it("allows PUBLISHED only (FREE Sample Policy)", () => {
     expect(
       assertTakeRecordAccess({
         context: ctx(),
         beat: { id: "b", status: "PUBLISHED", durationSeconds: 60 },
+        premiumTier: "FREE",
       }).maxRecordingSeconds,
     ).toBe(30);
 
@@ -60,6 +60,7 @@ describe("Recording Wave 2 — AuthZ interim", () => {
         assertTakeRecordAccess({
           context: ctx(),
           beat: { id: "b", status, durationSeconds: 60 },
+          premiumTier: "FREE",
         }),
       ).toThrow(TakeAuthzError);
     }
@@ -77,9 +78,9 @@ describe("Recording Wave 2 — AuthZ interim", () => {
     ).not.toThrow();
   });
 
-  it("maps retention and recording mode", () => {
+  it("maps retention and recording mode (Sample Policy FREE TTL)", () => {
     expect(retentionSecondsForAccountLevel("BEGINNER_RAPPER")).toBe(
-      24 * 60 * 60,
+      12 * 60 * 60,
     );
     expect(recordingModeForMaxSeconds(30)).toBe("QUICK");
     expect(recordingModeForMaxSeconds(31)).toBe("FULL");
