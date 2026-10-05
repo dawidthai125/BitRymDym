@@ -6,6 +6,196 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-05 — ARCH-05 POST-DELETE RECONCILIATION (CLOSED / VERIFIED)
+
+**Status:** CLOSEOUT **PASS** · live Storage **11 / 8 / 3 / 0 / 0** · historical backup **43/43 RETAINED**
+**SSOT:** [ARCH_05_POST_DELETE_RECONCILIATION.md](./audits/ARCH_05_POST_DELETE_RECONCILIATION.md)
+
+- Read-only re-inventory: USER **8** · PLATFORM **3** · ORPHAN **0** · UNKNOWN **0** · total **11**
+- VPS Layer-1 **43/43** · Local Layer-2 SHA/manifest/restore **43/43** · no delete sync
+- ARCH-05 remains **CLOSED / VERIFIED** · no new Storage mutation · no deploy
+- Next: Owner Review · do not re-open ARCH-05 without new Owner GO
+
+## 2026-10-05 — ARCH-05 DELETE EXECUTED (CLOSED / VERIFIED)
+
+**Status:** DELETE **PASS** · **32/32** · Storage **43 → 11** · unexpected deletes **0**
+**SSOT:** [ARCH_05_DELETE_EXECUTION.md](./audits/ARCH_05_DELETE_EXECUTION.md) · [evidence](./audits/ARCH_05_DELETE_EXECUTION_EVIDENCE.json)
+
+- Owner GO issued for exact allowlist only · version-bound `remove([{path, versionId}])`
+- Pre: **43 / 8 / 3 / 32 / 0** · revalidation **32/32 PASS** · Local/VPS **43/43**
+- Post: **11 / 8 / 3 / 0 / 0** · DB-linked **11** · Auth/Profiles **UNCHANGED**
+- Local backup + VPS Layer-1: **43/43 RETAINED** (no delete propagation)
+- Ladder: SAFE → OWNER APPROVED → DELETE EXECUTED → POST-DELETE VERIFIED
+- Commit/push/deploy: **NO**
+
+## 2026-10-05 — ARCH-05 FINAL SAFE-TO-DELETE READINESS (READY FOR OWNER DELETE GO)
+
+**Status:** AUDIT **PASS** · SAFE **32/32** · DELETE **0** · OWNER DELETE GO **NOT ISSUED**  
+**SSOT:** [ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md](./audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) · [allowlist](./audits/ARCH_05_DELETE_ALLOWLIST.json)
+
+- Fresh inventory **43 / 8 / 3 / 32 / 0** · no drift
+- Each orphan: auth/profile absent · DB/take/artifact refs 0 · not platform · no quarantine/MIGRATE · FAR-01 retain **NO**
+- Local backup + restore evidence **32/32** · `version_id` bound in allowlist
+- Ladder: **SAFE** · not OWNER APPROVED · not DELETED
+- Next: Owner REVIEW → optional **OWNER GO — ARCH-05 DELETE**
+
+## 2026-10-05 — LOCAL WINDOWS BACKUP RESTORE DRILL (PASS)
+
+**Status:** PHASE LOCAL-BACKUP-RESTORE-DRILL **PASS**  
+**SSOT:** [STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) · [evidence](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL_EVIDENCE.json)
+
+- LOCAL → LOCAL ISOLATED restore · run `local-restore-20261005T040831Z-76ca3678`
+- Source backup `local-layer2-full-20261005T040146Z-42d6212b` · **43/43** SHA+SIZE+WAV+ffprobe **PASS**
+- Source `objects/` integrity **PASS** · Supabase/VPS/AWS **NO MUTATION**
+- Ladder: **RESTORE VERIFIED** · ARCH-05 **NOT READY** · orphans **NOT SAFE FOR DELETE**
+- Next: Owner REVIEW (no ARCH-05 without separate GO)
+
+## 2026-10-05 — LOCAL WINDOWS BACKUP IMPLEMENTATION (PASS)
+
+**Status:** PHASE LOCAL-BACKUP-IMPLEMENTATION **PASS**  
+**SSOT:** [STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION_EVIDENCE.json)
+
+- Windows PULL from VPS Layer-1 → `C:\BitRymDym-Backup\` · run `local-layer2-full-20261005T040146Z-42d6212b`
+- **43/43** COPIED · SHA VERIFIED · MANIFEST VERIFIED · bytes **111574892**
+- Restore drill **not** executed (**0/43**) · ARCH-05 **NOT READY** · BitLocker remains **SECURITY FINDING**
+- Supabase/VPS: no mutation · no delete propagation
+- Next: Owner REVIEW → **PHASE LOCAL-BACKUP-RESTORE-DRILL**
+
+## 2026-10-05 — LOCAL WINDOWS BACKUP PLANE DESIGN FREEZE (COMPLETE)
+
+**Status:** OD-VPS-LOCAL-01…12 **CLOSED / APPROVED** · Design Freeze **COMPLETE** · Implementation **NOT STARTED**  
+**SSOT:** [STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md) · [audit](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_AUDIT.md)
+
+- Local Windows = Layer-2 independent copy · VPS remains Layer-1 · PULL-only · append/retain · no delete propagation
+- Path freeze: `C:\BitRymDym-Backup\` (collision check ABSENT · directory **not** created)
+- SHA-256 + manifest + isolated restore drill mandatory · AWS **DEFERRED** · ARCH-05 **NOT READY**
+- BitLocker remains **SECURITY FINDING** until elevated verification
+- Next gate: Owner GO — **PHASE LOCAL-BACKUP-IMPLEMENTATION** (no auto-start)
+
+## 2026-10-05 — VPS BACKUP PLANE PHASE 6 FULL VPS BACKUP (PASS)
+
+**Status:** Owner GO **APPROVED** · Phase 6 **PASS** · **VPS Layer-1 43/43 BACKED UP** · restore still **3/43** · Phase 7 **NOT STARTED**  
+**SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_PHASE6_FULL_BACKUP_EVIDENCE.json)
+
+- Fresh inventory unchanged: 43 / USER 8 / PLATFORM 3 / ORPHAN 32 · canary 3/3 immutable
+- New exact allowlist COPY: **40** (USER 7 + PLATFORM 2 + ORPHAN 31) · SHA+size VERIFIED ×40
+- VPS objects **43** · manifests **43** · SHA reconcile **43/43** · production Storage **43** · deletes **0**
+- Restore verified remains **3/43** · AWS **NOT CONFIGURED** · ARCH-05 **NOT READY**
+- Next gate: Owner GO for **PHASE 7 — RESTORE VERIFICATION EXPANSION** or **AWS IMMUTABLE DR**
+
+## 2026-10-05 — VPS BACKUP PLANE PHASE 5 CANARY RESTORE DRILL (PASS)
+
+**Status:** Owner GO **APPROVED** · Phase 5 **PASS / CANARY RESTORE VERIFIED** · Phase 6 later **PASS** (see above)  
+**SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_PHASE5_RESTORE_EVIDENCE.json)
+
+- Restore source = VPS Layer-1 backup only (Supabase **not** used as restore source)
+- USER / PLATFORM / ORPHAN: SHA+size+WAV header+ffprobe **PASS** ×3
+- Isolated dest: `/srv/bitrymdym-backup/restore-drills/sa07-phase5-restore-20261005T033401Z-5560b4f7/`
+- Backup objects unchanged · production Storage still **43** · deletes **0** · AWS **0**
+- Does **not** mean ARCH-05 SAFE / orphan delete / full DR
+
+## 2026-10-05 — VPS BACKUP PLANE PHASE 4 CONTROLLED CANARY (PASS)
+
+**Status:** Owner GO **APPROVED** · Phase 4 **PASS / CANARY BACKED UP** · Phase 5 later **PASS** (see above)  
+**SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [evidence](./audits/STORAGE_ARCH_07_PHASE4_CANARY_EVIDENCE.json)
+
+- Exact allowlist COPY: 1 USER + 1 PLATFORM + 1 ORPHAN · SHA+size VERIFIED ×3
+- VPS `/srv/bitrymdym-backup/objects` = **3** files · owner `bitrymdym-backup` · mode 0600
+- Production `beat-audio` still **43** · Storage deletes **0** · DB/Auth/AWS **0**
+- Orphan status: **BACKED UP / NOT SAFE FOR DELETE** · ARCH-05 still **NOT READY**
+
+## 2026-10-05 — VPS BACKUP PLANE PHASE 3 TRANSFER DESIGN + DRY-RUN (PASS)
+
+**Status:** Owner GO **APPROVED** · Phase 3 **PASS / DRY-RUN VERIFIED** · Phase 4 later **PASS** (see above)  
+**SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md) · [VPS freeze](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md)
+
+- Fresh `beat-audio` inventory: TOTAL 43 · USER 8 · PLATFORM 3 · ORPHAN 32 · UNKNOWN 0
+- Reused `backup-manifest` helpers: SHA-256 · path fail-closed · idempotency · atomic write · dry-run planner
+- Fixture SHA match + mismatch + manifest schema tests **PASS** (`backup-manifest.test.ts`)
+- Metadata dry-run: COPY 43 · SKIP 0 · UPDATE 0 · BLOCKED 0 (at time of Phase 3 · VPS objects were 0)
+- No Storage/DB/AWS mutations · no secrets logged · ARCH-05 still **NOT READY**
+
+## 2026-10-05 — VPS BACKUP PLANE PHASE 2 PRINCIPAL + DIRECTORY (PASS)
+
+**Status:** Owner GO **APPROVED** · Phase 2 **PASS** · Phase 3 later **PASS** (see above)
+**SSOT:** [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md)
+
+- User `bitrymdym-backup` (uid 997) · nologin · locked · no sudo · no SSH · group-only self
+- `/srv/bitrymdym-backup/{objects,manifests,restore-drills,logs}` · owner backup · **0700** · **0 files**
+- Isolation PASS: `bitrymdym-e3` DENIED · `ubuntu` (no sudo) DENIED · backup user R/W/D PASS
+- E3 worker unchanged · no Storage pull · no backup tools installed · no AWS · no Phase 3
+
+---
+
+## 2026-10-05 — VPS BACKUP PLANE PHASE 1 SECURITY HARDENING (PASS)
+
+**Status:** Owner GO **APPROVED** · Phase 1 **PASS** · Phase 2 later **PASS** (see above)
+**SSOT:** [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md)
+
+- OD-VPS-01…20 **CLOSED / APPROVED** · OD-SA-07-14a **CLOSED / APPROVED**
+- Contabo `161.97.72.197`: SSH key-only · PasswordAuthentication **no** · PermitRootLogin **no** (admin = `ubuntu` + sudo)
+- UFW **active** · deny in / allow out · inbound **22/tcp only**
+- fail2ban **active** · jail **sshd** (only package installed this phase)
+- E3 worker unchanged: inactive/disabled · `DEPLOYED_COMMIT=92496d4…`
+
+---
+
+## 2026-10-05 — VPS BACKUP PLANE DESIGN FREEZE (DRAFT / PROPOSED)
+
+**Status:** Design draft **COMPLETE** · OD-VPS-01…20 later **APPROVED** (see Phase 1 entry) · historical draft note
+**SSOT:** [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md)
+
+- Contabo feasibility audit result **B — YES WITH CONDITIONS** recorded as design input only
+- Contabo EXTERNAL COMPUTE role **unchanged** · Contabo ≠ sole/final DR · AWS Object Lock remains required immutable DR
+- Proposed Layer-1 path: Supabase → VPS (`/srv/bitrymdym-backup`) → SHA-256/manifest/restore drill → later AWS
+- OD-SA-07-14 Contabo Layer-1 exception later approved as **OD-SA-07-14a**
+- ARCH-05 remains **NOT READY** · Storage COPY **0/43**
+
+---
+
+## 2026-10-05 — HISTORICAL LOCAL DB BACKUP RECONCILIATION (DOCS-ONLY)
+
+**Status:** Docs SSOT reconciled · **no** AWS / Storage / DB / restore / commit / push
+**SSOT:** [HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md](./audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md)
+
+- Historical local PostgreSQL CUSTOM dump **FOUND** at `C:\BitRymDym-recovery\bitrymdym-production-pre-account-profile-01.dump`
+- Size **532829** B · TOC **835** · pg_dump **17.11** ← PostgreSQL **17.6** · archive **2026-10-03 19:28:34**
+- Provenance **LIKELY PRODUCTION / MEDIUM** · project_ref **NOT PROVEN** from PGDMP
+- Dump includes DB/Auth + `storage.*` **metadata** · **excludes** Storage object bytes
+- Restore **NOT VERIFIED** · **do not** assign `bdpygdvfgbggermvqtys` to this dump
+- Canonical wording: BitRymDym has a historical local DB recovery artifact, but no independently verified Supabase Storage object backup
+- STORAGE-ARCH-07 Phase A remains **BLOCKED** · Storage COPY **0/43** · ARCH-05 remains **NOT READY** · 32 orphans unchanged (ZERO DELETE)
+
+---
+
+## 2026-10-04 — STORAGE-ARCH-07 IMPLEMENTATION GO (PHASE A STOP)
+
+**Status:** Implementation GO **ISSUED** · AWS S3 `eu-central-1` selected · **PHASE A STOP / BLOCKED**
+**SSOT:** [STORAGE_ARCH_07_IMPLEMENTATION.md](./audits/STORAGE_ARCH_07_IMPLEMENTATION.md)
+
+- Tooling + manifest migration **authored locally** (not applied to production DB)
+- Unit tests PASS (13) · fixture restore drill PASS · Phase A AWS lock proof **FAIL / STOP**
+- aws CLI missing · AWS credentials unset · dedicated backup account **not provisioned**
+- Production Storage COPY **NOT EXECUTED** · ARCH-05 **NOT READY / BLOCKED** · 32 orphans **not deleted**
+- Commit/push deferred: production verification cannot PASS without Object Lock evidence
+- Note (2026-10-05): historical local **DB** dump later found — still **≠** Storage object backup
+
+---
+
+## 2026-10-04 — STORAGE-ARCH-07 DESIGN FREEZE (OWNER DECISIONS CLOSED)
+
+**Status:** **DESIGN FREEZE COMPLETE** · Owner Decisions **OD-SA-07-01…16 CLOSED** · **IMPLEMENTATION NOT STARTED**
+**SSOT:** [STORAGE_ARCH_07_DESIGN_FREEZE.md](./audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) · [DECISION_LOG.md](./decisions/DECISION_LOG.md)
+
+- PRIMARY remains Supabase Storage · BACKUP plane design = external S3-compatible + Versioning + Object Lock/WORM (Compliance preferred) + separate account + SHA-256 + required manifest
+- Contabo / DB PITR / W4 JSON ≠ Storage backup (unchanged SSOT)
+- GC ladder + SAFE FOR GC contract frozen · ARCH-05 remains **BLOCKED**
+- Living orphans **32** = NOT SAFE / NOT BACKED UP / NOT RESTORE VERIFIED / NOT OWNER APPROVED / NOT DELETED
+- Naming adjacency documented: **OD-SA-07** (Mix no-backup default) ≠ **OD-SA-07-01…16**
+- No Storage/DB mutation · no Implementation GO · no commit/push required by this freeze session unless separately authorized
+
+---
+
 ## 2026-10-04 — FAR-01 FINAL SOAK AUDIT (DOCS RECONCILIATION)
 
 **Status:** Final soak audit **COMPLETE** · docs living SSOT reconciled · **no Storage/DB/Auth/app mutation**

@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Full cold-start continuity for a new GPT + Cursor Agent after session close.
-**Updated:** 2026-10-04 (FAR-01 final soak docs reconciliation · ADMIN W4 remains **CLOSED / PRODUCTION VERIFIED** @ `ddcee65`; W3 remains **PRODUCTION VERIFIED** @ `237a86f`)
+**Updated:** 2026-10-05 (ARCH-05 **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** · historical backup **43/43 RETAINED** · AWS **DEFERRED** · ADMIN W4 remains **CLOSED / PRODUCTION VERIFIED** @ `ddcee65`)
 **Owner:** Prezes Dawid
 
 **Ultra entry (read first):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -29,7 +29,7 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) · ANON/FREE/BRONZE/SILVER/GOLD download E2E **PASS** · OD-17 **PASS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · Mix/Render **DEFERRED** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
-| **USER-CLEANUP-01** | **EXECUTED** (fixtures) · removed FAR-01 retain-set **outside** FAR-01 retirement · historical orphans preserved (living **32**) |
+| **USER-CLEANUP-01** | **EXECUTED** (fixtures) · removed FAR-01 retain-set **outside** FAR-01 retirement · orphans **32** at cleanup time · later **ARCH-05** deleted those 32 from production (living orphans **0**) |
 | **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
@@ -38,7 +38,7 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | **FAR-01 campaign** | **SOAK COMPLETE / CONTAMINATED** — canary N=5 PASS · fleet N=62 PASS · soak clock elapsed · integrity **FAILED** — [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
 | **FAR-01 CLOSED** | **NO** |
 | **FAR-01 RETIREMENT** | **NOT EXECUTED** · original retain-set **0** (gone via USER-CLEANUP-01 collateral — **not** FAR-01 retirement) |
-| **ARCH-04/05 orphan GC** | **SEPARATE FUTURE GATE** — **32** candidates · **not** approved for deletion |
+| **ARCH-04/05 orphan GC** | **CLOSED / VERIFIED** · live **11 / 8 / 3 / 0 / 0** · DELETE **32/32** historical — [reconciliation](./audits/ARCH_05_POST_DELETE_RECONCILIATION.md) · [execution](./audits/ARCH_05_DELETE_EXECUTION.md) |
 | **DEF-01** | **CLOSED / PRODUCTION VERIFIED** @ `fbc696f` |
 | **ACTIVE P0 / P1** | **NONE VERIFIED** |
 | **HIBP** | **DEFERRED / ACCEPTED RISK** (not solved) |
@@ -48,7 +48,12 @@ Product truth remains [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technic
 | **E3.7** | Code present · Premium Production E2E **NOT TESTED** |
 | **STORAGE-ARCH-01** | **LOCKED** · Hybrid C |
 | **STORAGE-ARCH-02** | FUTURE DOCS · external Object Storage **NOT IMPLEMENTED** |
-| **Worker** | Contabo **EXTERNAL COMPUTE** · bootstrap `92496d4` · **STOPPED / DISABLED** |
+| **STORAGE-ARCH-07** | **DESIGN FREEZE COMPLETE** · VPS COPY **43/43** · Local Layer-2 freeze **COMPLETE** · AWS **DEFERRED** — [freeze](./audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) · [local freeze](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md) |
+| **VPS BACKUP PLANE** | OD-VPS-01…20 **CLOSED** · Phase 1–6 **PASS** · **43/43 BACKED UP** · restore **3/43** — [freeze](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) |
+| **LOCAL WINDOWS Layer-2** | OD-VPS-LOCAL-01…12 **CLOSED** · **43/43 RESTORE VERIFIED** — [restore](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) · [impl](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md) |
+| **Historical local DB backup** | **FOUND** · PostgreSQL CUSTOM dump · **≠ Storage object backup** — [audit](./audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) |
+| **Supabase Storage object backup** | VPS **43/43** · Local Windows **43/43 RESTORE VERIFIED** · AWS **DEFERRED** |
+| **Worker** | Contabo **EXTERNAL COMPUTE** · bootstrap `92496d4` · **STOPPED / DISABLED** · Contabo ≠ durable library (unchanged) |
 | Recording Wave 4–5 / D02 | CLOSED / PRODUCTION VERIFIED |
 | Cron | `0 0 * * *` → `/api/cron/takes-janitor` |
 | `CRON_SECRET` | CONFIGURED (**never print / never commit**) |
@@ -64,8 +69,8 @@ E3_RENDER_WORKER_SECRET  = CONFIGURED (server-only · never commit)
 WORKER                   = STOPPED / DISABLED  (EXTERNAL COMPUTE · Contabo)
 ```
 
-**FAR-01 living inventory (FINAL SOAK AUDIT):** living USER masters **8** · platform **3** · orphan/historical/delete-residue **32** · beat-audio total **43** · retained FAR-01 sources **0** · quarantine **0** · MIGRATE **0** · DB keys missing Storage **0**.
-Superseded soak baseline (do not reuse as living): 77 / 97 / 67 / 1.
+**FAR-01 living inventory (post ARCH-05 DELETE):** living USER masters **8** · platform **3** · orphan/historical/delete-residue **0** · beat-audio total **11** · retained FAR-01 sources **0** · quarantine **0** · MIGRATE **0** · DB keys missing Storage **0**.
+Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 / TOTAL 43. Superseded soak baseline: 77 / 97 / 67 / 1.
 
 **Do not confuse SHAs / planes:**
 
@@ -115,7 +120,7 @@ Superseded soak baseline (do not reuse as living): 77 / 97 / 67 / 1.
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (in tree) |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** |
-| **NEXT GATE** | Separate ARCH-04/05 orphan-GC audit · optional Auth email inbox E2E |
+| **NEXT GATE** | Owner Review (ARCH-05 closed — no further GC) · optional AWS DR / Auth email inbox E2E |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · unrelated host audits |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only.
@@ -168,6 +173,16 @@ OD-SA-01…10                  = LOCKED
 Implementation               = NOT STARTED
 STORAGE-ARCH-02              = FUTURE SCALABILITY DOCS PREPARED · NOT IMPLEMENTED · NO CURRENT INVESTMENT
 STORAGE-ARCH-02-KEY          = PHASE 1 DR-A SHIPPED @ f514a51 · FAR-01 SOAK COMPLETE/CONTAMINATED · RETIREMENT NOT EXECUTED · see FAR_01_CURRENT_STATE.md
+STORAGE-ARCH-07              = DESIGN FREEZE COMPLETE · OD-SA-07-01…16 CLOSED
+                             · VPS COPY 43/43 · Local Layer-2 freeze COMPLETE · AWS DEFERRED
+VPS BACKUP PLANE             = OD-VPS-01…20 CLOSED · Phase 1–6 PASS · VPS 43/43 BACKED UP · restore 3/43
+                             · bitrymdym-backup + /srv/bitrymdym-backup · docs/audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md
+LOCAL WINDOWS Layer-2        = OD-VPS-LOCAL-01…12 CLOSED · 43/43 RESTORE VERIFIED
+                             · docs/audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md
+AWS                          = DEFERRED
+DB RECOVERY ARTIFACT         = FOUND (local historical pg_dump CUSTOM) · restore NOT VERIFIED
+                             · docs/audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md
+STORAGE OBJECT BYTES BACKUP  = VPS 43/43 · LOCAL 43/43 RESTORE VERIFIED · AWS 0
 Production mutations         = NONE for FAR-01 retirement (retain-set removed outside FAR-01 retirement flow)
 ```
 
@@ -179,11 +194,14 @@ Production mutations         = NONE for FAR-01 retirement (retain-set removed ou
 | Beat library | MASTER + fallback (OD-SA-03) |
 | Artwork | DEFERRED (OD-SA-04) |
 | Artifacts janitor | REQUIRED · future wave (OD-SA-05 / STORAGE-ARCH-03) |
-| Backup source MASTER | REQUIRED BEFORE SCALE (OD-SA-06) · threshold at Wave 07 |
-| Mix artifact backup | regenerable · no default backup (OD-SA-07) |
-| Orphans | **32** living candidates → separate ARCH-04/05 inventory/dry-run → Owner GO (OD-SA-08) · **not** approved for deletion · **not** FAR-01 retirement |
+| Backup source MASTER | REQUIRED BEFORE SCALE (OD-SA-06) · VPS **43/43** · Local Layer-2 **43/43 RESTORE VERIFIED** · AWS **DEFERRED** — [restore](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) |
+| Historical DB recovery | Local PostgreSQL CUSTOM dump **FOUND** · LIKELY PRODUCTION / MEDIUM · **≠ Storage object bytes** — [audit](./audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) |
+| Mix artifact backup | regenerable · no default backup (**OD-SA-07**) — unchanged; ≠ OD-SA-07-01…16 |
+| Orphans | **32/32 SAFE** · allowlist ready · OWNER APPROVED **NO** · DELETED **0** · **not** FAR-01 retirement — [readiness](./audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) |
 
-**Do not** start external Object Storage / dual-read KEY / janitor / orphan delete / key migration / backup without a separate Owner Implementation GO.
+**Wording:** BitRymDym has VPS Layer-1 and Local Layer-2 Storage bytes retained (43/43 evidence); production Storage after ARCH-05 is **11**. AWS immutable DR deferred. Historical ladder still holds for future GC: BACKED UP + RESTORE VERIFIED ≠ SAFE ≠ OWNER APPROVED ≠ DELETED.
+
+**Do not** start further orphan/prefix cleanup or AWS Object Lock without a new Owner GO. ARCH-05 allowlist DELETE is **CLOSED**.
 
 ---
 
@@ -312,7 +330,11 @@ Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 | **FAR-01 campaign (canary+fleet+soak)** | **SOAK COMPLETE / CONTAMINATED** | canary N=5 · fleet N=62 · soak clock elapsed · integrity **FAILED** | OK | **NOT CLOSED** · **FAR-01 RETIREMENT NOT EXECUTED** · retain-set **0** (USER-CLEANUP-01 collateral) · [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md) |
 | **DEF-01** | **CLOSED / PRODUCTION VERIFIED** | @ `fbc696f` · remote `20261003051539` | OK | HIBP remains **ACCEPTED RISK** |
 | **CREATOR PROGRESS W1** (Experience + Rank) | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** | GREEN WITH OPEN ITEMS @ `76a4757` | OK | Ledger + `experience_total` + CreatorRank · migrations `210121`→`210322` · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) · Premium **not** in W1 |
-| Later Storage waves (03–11) | **NOT STARTED** | — | — | janitor · orphans · migration · backup · optional |
+| STORAGE-ARCH-07 backup design | **DESIGN FREEZE COMPLETE** · AWS **DEFERRED** | OD-SA-07-01…16 CLOSED · VPS 43/43 · Local 43/43 RESTORE VERIFIED | [freeze](./audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) · [restore](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) | ARCH-05 CLOSED · prod Storage 11 |
+| VPS BACKUP PLANE | **APPROVED** · Phase 1–6 **PASS** | Contabo Layer-1 · VPS 43/43 · restore 3/43 | [VPS freeze](./audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) | AWS deferred |
+| LOCAL WINDOWS Layer-2 | **RESTORE VERIFIED 43/43** | Pull-only · SHA+WAV/ffprobe PASS | [restore](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) | ARCH-05 readiness complete |
+| ARCH-05 orphan GC | **CLOSED / VERIFIED** | live **11 / 8 / 3 / 0 / 0** · backup **43/43 RETAINED** | [reconciliation](./audits/ARCH_05_POST_DELETE_RECONCILIATION.md) | do not re-open without new Owner GO |
+| Later Storage waves (03–06, 08–11) | **NOT STARTED** | — | — | janitor · orphan delete · migration · optional |
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
 | Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07 OPEN · **OD-08 CLOSED** | Billing deferred · no checkout/UI |
@@ -589,7 +611,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 ```
 
 **Do not** reopen closed E3.6/E3.7/W6/Fala 1A/1B/Wave A/B closeouts or rewrite historical Design Freeze OD locks / OD-SA locks.
-**Do not** implement external Object Storage / dual-read KEY / janitor / orphan delete / key migration / backup without wave Implementation GO.
+**Do not** implement external Object Storage (ARCH-02 primary) / dual-read KEY / janitor / orphan delete / key migration / STORAGE-ARCH-07 backup **implementation** without wave Implementation GO. Design freeze alone is not Implementation GO.
 **Do not** auto-start Fala 1C.
 
 Cold start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -650,8 +672,8 @@ Start reading order:
 | Delete Storage-before-DB order | Documented MEDIUM residual from W4 audit — not hotfix without GO |
 | Janitor leftover `object_key` re-scan | Ops efficiency debt |
 | `computeInterimRecordingMaxSeconds` deprecated helper | Cleanup debt |
-| Beat-audio orphan janitor | **32** current orphan/historical/delete-residue objects = **candidate scope** for separate ARCH-04/05 orphan-GC audit · **not** approved for deletion · OD-SA-08 |
-| Source MASTER backup before scale | OD-SA-06 · STORAGE-ARCH-07 · threshold defined at Wave 07 |
+| Beat-audio orphan janitor | **32/32 SAFE** · allowlist ready · OWNER DELETE GO **NOT ISSUED** · OD-SA-08 — [readiness](./audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) |
+| Source MASTER backup before scale | OD-SA-06 · VPS **43/43 RETAINED** · Local **43/43 RETAINED** · AWS **DEFERRED** · ARCH-05 **CLOSED** (prod Storage 11) |
 | OD-12 interim MIME allow-list | Codec SSOT still OPEN outside E3 OAD-06 |
 | Root/docs historical SHAs in older audits | Historical snapshots — do not “fix” by rewriting history |
 

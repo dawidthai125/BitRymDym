@@ -10,6 +10,152 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### ARCH-05 — POST-DELETE RECONCILIATION — CLOSED / VERIFIED
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — docs closeout + commit + push (no Storage mutation) |
+| Status | **CLOSED / VERIFIED** |
+| Date | 2026-10-05 |
+| Closeout | [ARCH_05_POST_DELETE_RECONCILIATION.md](../audits/ARCH_05_POST_DELETE_RECONCILIATION.md) |
+| Parent | ARCH-05 DELETE EXECUTED |
+
+**Confirmed (read-only):** production Storage **11 / 8 / 3 / 0 / 0** · VPS/Local **43/43 RETAINED** · AWS **DEFERRED**. Does **not** authorize further GC or deploy.
+
+---
+
+### ARCH-05 — DELETE EXECUTED — CLOSED / VERIFIED
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | OWNER GO — ARCH-05 DELETE (allowlist-only) |
+| Status | **CLOSED / DELETE EXECUTED / VERIFIED** |
+| Date | 2026-10-05 |
+| Execution | [ARCH_05_DELETE_EXECUTION.md](../audits/ARCH_05_DELETE_EXECUTION.md) |
+| Evidence | [ARCH_05_DELETE_EXECUTION_EVIDENCE.json](../audits/ARCH_05_DELETE_EXECUTION_EVIDENCE.json) |
+| Allowlist | [ARCH_05_DELETE_ALLOWLIST.json](../audits/ARCH_05_DELETE_ALLOWLIST.json) |
+| Parent | ARCH-05 readiness · OD-SA-07-12…13 · Local Layer-2 restore verified |
+
+**Executed:** 32 version-bound Storage deletes on `beat-audio` only. Production inventory **43 → 11** (USER 8 · PLATFORM 3 · ORPHAN 0). Local + VPS backups **43/43 RETAINED**. DB/Auth/Profiles/AWS **NO MUTATION**.
+
+**Ladder:** SAFE → OWNER APPROVED → DELETE EXECUTED → POST-DELETE VERIFIED.
+
+**Does not authorize:** further discovery/prefix GC · VPS/local prune · AWS · commit/push/deploy without separate GO.
+
+---
+
+### ARCH-05 — FINAL SAFE-TO-DELETE READINESS — AUDIT COMPLETE
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | ARCH-05 readiness audit (not delete GO) |
+| Status | **READY FOR OWNER DELETE GO** · SAFE **32/32** · OWNER APPROVED **NO** · DELETED **0** |
+| Date | 2026-10-05 |
+| Readiness | [ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md](../audits/ARCH_05_FINAL_SAFE_TO_DELETE_READINESS.md) |
+| Allowlist | [ARCH_05_DELETE_ALLOWLIST.json](../audits/ARCH_05_DELETE_ALLOWLIST.json) |
+| Parent | OD-SA-08 · OD-SA-07-12…13 · Local Layer-2 restore verified |
+
+**Audit only.** Does **not** authorize Storage DELETE. Next: separate **OWNER GO — ARCH-05 DELETE** against version-bound allowlist.
+
+---
+
+### OD-VPS-LOCAL-01…12 — LOCAL WINDOWS BACKUP PLANE — CLOSED / APPROVED
+
+| Pole | Wartość |
+|------|---------|
+| Decision IDs | **OD-VPS-LOCAL-01** … **OD-VPS-LOCAL-12** |
+| Title | Local Windows PC as Layer-2 independent Storage copy (pull from VPS) |
+| Status | **OWNER APPROVED** · Design Freeze **COMPLETE** · Implementation **PASS** · Restore drill **PASS** |
+| Date | 2026-10-05 |
+| Freeze | [STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_DESIGN_FREEZE.md) |
+| Implementation | [STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md) |
+| Restore drill | [STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) |
+| Audit | [STORAGE_ARCH_07_LOCAL_BACKUP_AUDIT.md](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_AUDIT.md) |
+| Parent | OD-SA-06 · OD-SA-07-01…16 · OD-VPS-01…20 / OD-SA-07-14a |
+
+**Approved:** Local Windows = Layer-2 independent copy (not Object Lock); VPS remains Layer-1; Windows **PULL** from VPS only; no delete propagation; append/retain; SHA-256 + manifest + isolated restore drill mandatory; path `C:\BitRymDym-Backup\`; scope `beat-audio` USER/PLATFORM/ORPHAN; AWS **DEFERRED**; BitLocker evidence remains **FINDING** until elevated verify.
+
+**Executed:** Implementation `local-layer2-full-20261005T040146Z-42d6212b` · Restore `local-restore-20261005T040831Z-76ca3678` · **43/43 RESTORE VERIFIED**.
+
+**Still does not authorize (at freeze time):** AWS · ARCH-05 delete · commit/push/deploy without further GO.
+
+**Superseded next gate:** ARCH-05 DELETE later **CLOSED / VERIFIED** (see entry above).
+
+---
+
+### OD-VPS-01…20 / OD-SA-07-14a — VPS BACKUP PLANE — CLOSED / APPROVED
+
+| Pole | Wartość |
+|------|---------|
+| Decision IDs | OD-VPS-01 … OD-VPS-20 · **OD-SA-07-14a** |
+| Title | Contabo VPS as Layer-1 WORKING/STAGING Storage backup plane |
+| Status | **OWNER APPROVED** · Design Freeze **COMPLETE** · Phase 1–6 **PASS** · Phase 7+ **NOT STARTED** |
+| Date | 2026-10-05 |
+| Freeze | [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) |
+| Parent | OD-SA-06 · OD-SA-07-01…16 (CLOSED) · STORAGE-ARCH-01 Contabo = EXTERNAL COMPUTE |
+
+**Approved:** Contabo may hold an *additional* VPS BACKUP PLANE (Layer-1 staging) while EXTERNAL COMPUTE is unchanged; Contabo is **not** sole/final DR; AWS Object Lock remains mandatory; dedicated `bitrymdym-backup` + `/srv/bitrymdym-backup` (Phase 2+); E3 worker NO access to backup tree; SHA-256 + manifest + atomic write + restore drill required.
+
+**OD-SA-07-14a:** Contabo allowed **only** as WORKING/STAGING Layer-1 backup *target* · sole/final DR forbidden · compute role unchanged.
+
+**Phase 1 executed:** SSH key-only · root SSH off · UFW on · fail2ban sshd · admin path `ubuntu`+sudo.  
+**Phase 2 executed:** user `bitrymdym-backup` · `/srv/bitrymdym-backup/{objects,manifests,restore-drills,logs}` · 0700 · empty · E3/ubuntu isolation PASS.  
+**Phase 3 executed:** transfer/manifest/SHA design + fixture tests + metadata dry-run **PASS**.  
+**Phase 4 executed:** controlled canary COPY **3/43** · SHA+size VERIFIED · claim = **CANARY BACKED UP**.  
+**Phase 5 executed:** isolated restore drill from VPS backup · SHA+size+WAV/ffprobe **PASS** ×3 · claim = **CANARY RESTORE VERIFIED**.  
+**Phase 6 executed:** full VPS Layer-1 expansion · **40** new COPY + canary **3** = **43/43 BACKED UP** · SHA reconcile **43/43** · restore still **3/43** · orphans **BACKED UP / NOT SAFE FOR DELETE** · ARCH-05 **NOT READY**.
+
+**Still does not authorize (without further GO):** VPS Phase 7 restore expansion · AWS immutable DR · ARCH-05 delete.  
+**Related:** Local Layer-2 Design Freeze **CLOSED** (OD-VPS-LOCAL-01…12) — implementation still requires separate GO; AWS **DEFERRED** for current variant (not cancelled).
+
+---
+
+### OD-SA-07-01…16 — STORAGE-ARCH-07 Backup Design Freeze — CLOSED
+
+| Pole | Wartość |
+|------|---------|
+| Decision IDs | OD-SA-07-01 … OD-SA-07-16 |
+| Title | Storage source MASTER backup architecture (BACKUP plane) |
+| Status | **OWNER APPROVED** · **DESIGN FREEZE COMPLETE** · Phase A **BLOCKED** (AWS not provisioned) |
+| Date | 2026-10-04 |
+| Decydent | Owner (Prezes Dawid) — GO recorded in session 2026-10-04 |
+| Freeze | [STORAGE_ARCH_07_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) |
+| Parent | OD-SA-06 (source MASTER backup required before scale) · [STORAGE_ARCH_01_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) |
+
+**Naming adjacency:** **OD-SA-07** (Mix artifact backup = NIE by default) remains LOCKED and unchanged. OD-SA-07-01…16 are STORAGE-ARCH-07 design decisions only.
+
+**Approved lock:**
+
+| ID | Closed choice |
+|----|----------------|
+| OD-SA-07-01 | EXTERNAL S3-COMPATIBLE OBJECT STORAGE (vendor/SKU deferred to Implementation Phase) |
+| OD-SA-07-02 | SEPARATE CLOUD ACCOUNT/PROJECT · DEDICATED BACKUP BUCKET · separated from prod Supabase |
+| OD-SA-07-03 | Versioning ON |
+| OD-SA-07-04 | Object Lock / WORM ON · preferred COMPLIANCE MODE · incompatible provider → stop Implementation |
+| OD-SA-07-05 | Retention ≥ 90 days for GC-candidate backups · living MASTER ≥ backup lifecycle · no silent retention shorten |
+| OD-SA-07-06 | SHA-256 primary · source hash == backup hash · size + content-type + exact key · eTag advisory |
+| OD-SA-07-07 | Manifest REQUIRED (full minimum field set in freeze §5) |
+| OD-SA-07-08 | Prod `service_role` NO backup-delete/admin · dedicated writer/reader · break-glass admin · prefer no long-lived backup creds in Vercel |
+| OD-SA-07-09 | RPO target ≤ 24h new MASTER · pre-GC backup+verify mandatory |
+| OD-SA-07-10 | RTO target ≤ 1h single-object · ≤ 72h bucket/set (ops targets ≠ SLA) |
+| OD-SA-07-11 | Restore drill mandatory before first ARCH-05 DELETE + periodic · isolated restore only |
+| OD-SA-07-12 | Ladder: PROPOSED ≠ BACKED UP ≠ RESTORE VERIFIED ≠ SAFE ≠ OWNER APPROVED ≠ DELETED |
+| OD-SA-07-13 | SAFE FOR GC = all 11 conditions · any FAIL ⇒ NOT SAFE |
+| OD-SA-07-14 | Scope YES: USER/platform/orphan MASTER · NO default: audio-artifacts / take-audio / Contabo |
+| OD-SA-07-15 | Encryption at rest provider-managed min · TLS in transit · SSE variant at Implementation without lowering model |
+| OD-SA-07-16 | Manifest PRIMARY = DB records · SECONDARY = signed/hashed JSON in backup plane |
+
+**Consequences**
+
+- Does **not** authorize Implementation, Storage COPY/DELETE, restore drill execution, or ARCH-05 delete
+- Does **not** select STORAGE-ARCH-02 primary external durable provider
+- Does **not** create a fourth Supabase V1 bucket (backup lives in separate account)
+- ARCH-05 remains **NOT READY / BLOCKED** until **Storage** BACKED UP + RESTORE VERIFIED + SAFE + OWNER APPROVED
+- Living orphans (32) remain NOT SAFE / NOT BACKED UP / NOT RESTORE VERIFIED / NOT OWNER APPROVED / NOT DELETED
+- Living note 2026-10-05: historical local DB dump **FOUND** · still **≠** Storage object backup — [HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md](../audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) · OD-SA-07-01…16 **not reopened**
+
+---
+
 ### OD-ADMIN-DELETE-01…10 — Admin User Delete (W4) — CLOSED / PRODUCTION VERIFIED
 
 | Pole | Wartość |

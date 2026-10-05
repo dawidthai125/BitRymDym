@@ -69,6 +69,25 @@
 | OD-ADMIN-DELETE-08 | Permission for admin delete | §36 | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (ADMIN + `users.edit`) |
 | OD-ADMIN-DELETE-09 | Transactional email provider | Auth email | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (RESEND) |
 | OD-ADMIN-DELETE-10 | Audit action name | `admin_audit_events` | Admin delete W4 | **CLOSED / ACCEPTED** — 2026-10-04 (`USER_ACCOUNT_DELETE`) |
+| OD-SA-07-01 | Backup provider (STORAGE-ARCH-07) | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · EXTERNAL S3-COMPATIBLE · Phase A **BLOCKED** (AWS not provisioned) |
+| OD-SA-07-02 | Backup location | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · separate account + dedicated bucket |
+| OD-SA-07-03 | Backup versioning | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · ON |
+| OD-SA-07-04 | Backup immutability | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · Object Lock / WORM · Compliance preferred |
+| OD-SA-07-05 | Backup retention | OD-SA-06 | Storage backup / ARCH-05 | **CLOSED / ACCEPTED** — 2026-10-04 · ≥90d GC candidates |
+| OD-SA-07-06 | Backup integrity | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · SHA-256 primary |
+| OD-SA-07-07 | Backup manifest | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · REQUIRED |
+| OD-SA-07-08 | Backup credentials | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · separated principals |
+| OD-SA-07-09 | Backup RPO | OD-SA-06 | Storage backup / ARCH-05 | **CLOSED / ACCEPTED** — 2026-10-04 · ≤24h + pre-GC verify |
+| OD-SA-07-10 | Backup RTO | OD-SA-06 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · ≤1h / ≤72h targets |
+| OD-SA-07-11 | Restore drill | OD-SA-06 | ARCH-05 gate | **CLOSED / ACCEPTED** — 2026-10-04 · mandatory before first delete |
+| OD-SA-07-12 | GC safety ladder | OD-SA-08 | ARCH-05 | **CLOSED / ACCEPTED** — 2026-10-04 |
+| OD-SA-07-13 | SAFE FOR GC contract | OD-SA-08 | ARCH-05 | **CLOSED / ACCEPTED** — 2026-10-04 |
+| OD-SA-07-14 | Backup scope V1 | OD-SA-06 / OD-SA-07 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-04 · MASTER yes · artifacts/takes/Contabo no · amended by **OD-SA-07-14a** |
+| OD-VPS-01…20 | VPS BACKUP PLANE (Contabo Layer-1) | OD-SA-06 / OD-SA-07 | Storage backup staging | **CLOSED / ACCEPTED** — 2026-10-05 · Phase 1–6 **PASS** — [freeze](../audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) |
+| OD-VPS-LOCAL-01…12 | LOCAL WINDOWS Layer-2 independent copy | OD-VPS / OD-SA-07 | Storage DR Layer-2 | **CLOSED / ACCEPTED** — 2026-10-05 · **43/43 RESTORE VERIFIED** — [restore](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) |
+| OD-SA-07-14a | Contabo Layer-1 exception | OD-SA-07-14 | Storage backup plane | **CLOSED / ACCEPTED** — 2026-10-05 · Contabo WORKING/STAGING Layer-1 only · sole/final DR forbidden · compute unchanged |
+| OD-SA-07-15 | Backup encryption | OD-SA-06 | Storage backup plane | **DESIGN CLOSED** — 2026-10-04 |
+| OD-SA-07-16 | Manifest storage | OD-SA-06 | Storage backup plane | **DESIGN CLOSED** — 2026-10-04 · DB primary + backup JSON secondary |
 
 ---
 
@@ -108,11 +127,18 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-ADMIN-06 | YES — audit all role/Premium admin mutations | 2026-10-04 |
 | OD-ADMIN-07 | YES / W3 — history UI not MVP | 2026-10-04 |
 | OD-ADMIN-DELETE-01…10 | Admin delete other accounts YES; self NO; last ADMIN NO; reason YES; Resend; `USER_ACCOUNT_DELETE`; ADMIN+`users.edit` | 2026-10-04 |
+| OD-SA-07-01…16 | STORAGE-ARCH-07 backup design freeze · external S3-compatible BACKUP plane · SHA-256 · Object Lock · GC ladder · Phase A **BLOCKED** · VPS COPY **43/43** · AWS **DEFERRED** | 2026-10-04 |
+| OD-VPS-LOCAL-01…12 | Local Windows Layer-2 · **43/43 RESTORE VERIFIED** · path `C:\BitRymDym-Backup\` | 2026-10-05 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).  
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).  
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
+STORAGE-ARCH-07: [STORAGE_ARCH_07_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) (**DESIGN FREEZE COMPLETE** · AWS **DEFERRED** · VPS **43/43**).
+VPS BACKUP PLANE: [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) (**CLOSED** · Phase 1–6 **PASS** · restore **3/43**).
+LOCAL WINDOWS Layer-2: [STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) (**43/43 RESTORE VERIFIED**).
+Historical local DB dump: [HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md](../audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) (**FOUND** · ≠ Storage object backup).
+Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ **OD-VPS-01…20** (VPS Layer-1) ≠ **OD-VPS-LOCAL-01…12** (Local Layer-2).
 
 ---
 
@@ -144,6 +170,10 @@ W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN
 - Community upload: EPIC **COMPLETE / LOCKED** @ `c5e1f17` — OD-COMMUNITY-01…05 **CLOSED**. See [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
 - Recording / Quick Take: Design Freeze **LOCKED** — OD-REC-01…08 **CLOSED**. Implementation awaits separate Wave 1 Owner GO. See [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 - Admin User Management: **W0 LOCKED** · W1 COMPLETE · W2 **PRODUCTION VERIFIED WITH FINDINGS** · W3 **CLOSED / PRODUCTION VERIFIED** @ `237a86f`. OD-ADMIN-01…07 **CLOSED**. W4 **CLOSED / PRODUCTION VERIFIED** @ `ddcee65` (EMAIL E2E PASS). Remaining P2: last-admin TOCTOU · no durable idempotency · live last-admin concurrency NOT VERIFIED · published USER beat retain NOT LIVE-DATA VERIFIED · migration timestamp drift. See [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md) · [W4 freeze](./ADMIN_USER_DELETE_DESIGN_FREEZE.md).
+- STORAGE-ARCH-07: **DESIGN FREEZE COMPLETE** · OD-SA-07-01…16 **CLOSED** · Phase A **BLOCKED** · VPS COPY **43/43 RETAINED** · AWS **DEFERRED** · live prod Storage **11**. See [STORAGE_ARCH_07_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_DESIGN_FREEZE.md).
+- VPS BACKUP PLANE: OD-VPS-01…20 **CLOSED** · Phase 1–6 **PASS** · restore **3/43** · objects **43/43 RETAINED** after ARCH-05. See [STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md).
+- LOCAL WINDOWS Layer-2: OD-VPS-LOCAL-01…12 **CLOSED** · **43/43 RETAINED** (restore evidence kept). See [STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md).
+- ARCH-05: **CLOSED / VERIFIED** · live **11 / 8 / 3 / 0 / 0** · historical backup **43/43 RETAINED**. See [ARCH_05_POST_DELETE_RECONCILIATION.md](../audits/ARCH_05_POST_DELETE_RECONCILIATION.md).
 - Recording retention V1: BEGINNER 24h · PRO 10d · LEGEND 30d (config, not scattered magic numbers). Future Premium overlay may boost — hybrid D04; **overlay numbers OPEN / DEFERRED** (OD-08 closed tiers only).
 - Codec, bitrate, watermark, export/mix: OD-12–OD-14 — OPEN / DEFERRED (MIX/EXPORT out of Recording EPIC).
 - OD-REC-OWN-DRAFT (RECORD on own non-PUBLISHED beat): **not** closed in Owner GO; V1 default OUT — see freeze §21.

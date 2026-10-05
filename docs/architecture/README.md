@@ -65,10 +65,15 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | OWNER GO #2 Worker Infra | **CLOSED / SUPERSEDED** (Contabo) — [E3_WORKER_INFRASTRUCTURE_GO2.md](../audits/E3_WORKER_INFRASTRUCTURE_GO2.md) |
 | **STORAGE-ARCH-01** | **LOCKED** · Hybrid C · Final Arch Review **PASS WITH FINDINGS** · Implementation **NOT STARTED** — [STORAGE_ARCH_01_DESIGN_FREEZE.md](../audits/STORAGE_ARCH_01_DESIGN_FREEZE.md) · [STORAGE_ARCH_01_AUDIT.md](../audits/STORAGE_ARCH_01_AUDIT.md) |
 | **STORAGE-ARCH-02** | **FUTURE SCALABILITY DOCS PREPARED** · external Object Storage **OPTIONAL / NOT IMPLEMENTED / NO CURRENT INVESTMENT** · current durable = **Supabase only** — [STORAGE_ARCH_02_FUTURE_SCALABILITY.md](./STORAGE_ARCH_02_FUTURE_SCALABILITY.md) |
-| Contabo VPS | **EXTERNAL COMPUTE** (FFmpeg ephemeral) · **NOT** durable media · **NOT** audio SSOT · worker **STOPPED / DISABLED** @ `92496d4` |
-| FAR-01 | Phase 1 DR-A historical SHIPPED · campaign **SOAK ACTIVE** — [FAR_01_CURRENT_STATE.md](../audits/FAR_01_CURRENT_STATE.md) |
-| Current Production / repo tip | `e03f3be` · deploy `6823806375` · Mix/Jobs/PUBLIC_AUDIO **ON** · DEF-01 **CLOSED** · FAR-01 soak **ACTIVE** |
+| **STORAGE-ARCH-07** | **DESIGN FREEZE COMPLETE** · OD-SA-07-01…16 **CLOSED** · VPS COPY **43/43** · AWS **DEFERRED** — [freeze](../audits/STORAGE_ARCH_07_DESIGN_FREEZE.md) · [evidence](../audits/STORAGE_ARCH_07_IMPLEMENTATION.md) |
+| **VPS BACKUP PLANE** | OD-VPS-01…20 **CLOSED** · Phase 1–6 **PASS** · Layer-1 **43/43** · restore **3/43** — [freeze](../audits/STORAGE_ARCH_07_VPS_BACKUP_DESIGN_FREEZE.md) |
+| **LOCAL WINDOWS Layer-2** | OD-VPS-LOCAL-01…12 **CLOSED** · **43/43 RESTORE VERIFIED** — [restore](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) · [impl](../audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md) |
+| Historical local DB backup | **FOUND** · PostgreSQL CUSTOM dump · **≠ Storage object bytes** — [audit](../audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) |
+| Contabo VPS | **EXTERNAL COMPUTE** (FFmpeg ephemeral) · **NOT** durable media SSOT · VPS Layer-1 staging **43/43** · **NOT** sole/final DR · worker **STOPPED / DISABLED** @ `92496d4` |
+| FAR-01 | Phase 1 DR-A historical SHIPPED · campaign **SOAK COMPLETE / CONTAMINATED** · RETIREMENT **NOT EXECUTED** — [FAR_01_CURRENT_STATE.md](../audits/FAR_01_CURRENT_STATE.md) |
+| ARCH-05 orphan GC | **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** · DELETE **32/32** historical — [reconciliation](../audits/ARCH_05_POST_DELETE_RECONCILIATION.md) |
+| Current Production / repo tip | Live planes: [PROJECT_STATE.md](../PROJECT_STATE.md) · app `ddcee65` |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 
-**Note:** Phase 1.x rows list historical closeout SHAs. Canonical live baseline is [PROJECT_STATE.md](../PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md). Supabase Storage = durable media SSOT. Contabo = EXTERNAL COMPUTE only. STORAGE-ARCH-01 **LOCKED**. STORAGE-ARCH-02 external Object Storage **NOT IMPLEMENTED**.
+**Note:** Canonical live baseline is [PROJECT_STATE.md](../PROJECT_STATE.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md). Supabase Storage = durable media SSOT (live **11 / 8 / 3 / 0 / 0** after ARCH-05). Contabo = EXTERNAL COMPUTE + VPS Layer-1 evidence (**43/43 RETAINED**). Local Windows Layer-2 **43/43 RETAINED**. AWS Object Lock **DEFERRED**. STORAGE-ARCH-01 **LOCKED**. ARCH-05 **CLOSED / VERIFIED**.

@@ -1,6 +1,6 @@
 # FAR-01 — CURRENT STATE (LIVING)
 
-**Updated:** 2026-10-04
+**Updated:** 2026-10-05
 **Type:** Living operational status · not a historical closeout
 **Rule:** Prefer this file + LIVE evidence over stale soak-baseline inventory (77 / 97 / 67 / 1) in older handoffs.
 
@@ -10,7 +10,7 @@ FAR-01 CAMPAIGN           = SOAK COMPLETE / CONTAMINATED
 FAR-01 CLOSED             = NO
 FAR-01 RETIREMENT         = NOT EXECUTED
 MIGRATE candidates        = 0
-ARCH-04/05 orphan GC      = SEPARATE FUTURE GATE (not approved)
+ARCH-04/05 orphan GC      = READY FOR OWNER DELETE GO · SAFE 32/32 · DELETE 0
 ```
 
 **Forbidden claims:** FAR-01 CLOSED · formal FAR-01 retirement completed · 67 retained sources “retired by FAR-01” · SOAK ACTIVE · living inventory 77/97/67/1.
@@ -79,14 +79,14 @@ Evidence of that baseline (historical):
 |-------|------:|
 | living USER masters (DB-linked) | **8** |
 | platform masters | **3** |
-| beat-audio total objects | **43** |
+| beat-audio total objects | **11** (post ARCH-05 DELETE) |
 | DB keys missing Storage | **0** |
 | retained FAR-01 sources | **0** |
 | quarantine | **0** |
 | MIGRATE candidates | **0** |
-| historical / orphan / delete-residue objects | **32** |
+| historical / orphan / delete-residue objects | **0** (ARCH-05 deleted **32/32**) |
 
-Shape of the **32** (classification only — **not** deletion approval):
+Pre-ARCH-05 shape of the **32** (historical — deleted 2026-10-05):
 
 | Shape | Count |
 |-------|------:|
@@ -118,7 +118,8 @@ Quarantine asset `000d406d-…`: **gone** · disposition unresolved as a FAR-01 
 | Soak integrity broken / contaminated | OPEN |
 | +2 post-soak orphan objects | OPEN |
 | Quarantine disposition unresolved (object absent) | OPEN |
-| Backup evidence | **NOT VERIFIED** |
+| Storage object backup evidence | **PRESENT** · Local/VPS **43/43 RETAINED** · ARCH-05 **CLOSED** (DELETE **32/32**) |
+| Historical local DB dump | **FOUND** · ≠ Storage object bytes — [HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md](./HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) |
 | Continuous soak telemetry | **NOT VERIFIED** |
 | FAR-01 R1 credentials missing in local operator env | OPEN |
 
@@ -128,28 +129,33 @@ P0 = 0 · P1 = 0 (no severity change without new evidence).
 
 ## 6. ARCH-04 / ARCH-05
 
-The current **32** orphan / historical / delete-residue objects are:
+The former **32** orphan / historical / delete-residue objects are:
 
 ```text
-CANDIDATE SCOPE for a separate ARCH-04/05 orphan-GC audit
-≠ approved for deletion
-≠ automatic FAR-01 retirement candidates
+ARCH-05 = CLOSED / VERIFIED
+SAFE → OWNER APPROVED → DELETE EXECUTED → POST-DELETE VERIFIED
+Production Storage orphans = 0 · live inventory 11/8/3/0/0
+Local/VPS evidence of the 32 = RETAINED (43/43)
+≠ automatic FAR-01 retirement
+SSOT: ARCH_05_POST_DELETE_RECONCILIATION.md (execution: ARCH_05_DELETE_EXECUTION.md)
 ```
 
-STORAGE-ARCH-04 = inventory / dry-run · STORAGE-ARCH-05 = delete only after dry-run + **separate Owner GO**.
+These keys were **not** FAR-01 retained sources (living retain-set = **0**). FAR-01 campaign CONTAMINATED/NOT CLOSED remains a campaign fact and was not the delete authority — ARCH-05 Owner GO + allowlist was.
+
+**Separation:** historical local PostgreSQL dump **EXISTS** (DB/Auth recovery artifact). Storage object-byte DR evidence retained on VPS + Local (including deleted orphans).
 
 ---
 
 ## 7. Next gate
 
 ```text
-Owner docs reconciliation (this file)
-  → separate ARCH-04/05 orphan-GC audit (read-only first)
-  → only then Owner GO for any orphan delete allowlist
+Owner Review (ARCH-05 closed — no further Storage GC)
+  · optional AWS immutable DR
+  · FAR-01 campaign remains CONTAMINATED / NOT CLOSED (separate plane)
 ```
 
-Do **not** auto-start: orphan cleanup · FAR-01 key retirement · STORAGE-ARCH-02 external storage · new backfill.
-Do **not** treat next gate as “FAR-01 RETIREMENT” — original retain-set is gone and formal retirement was never executed.
+Do **not** auto-start: further orphan cleanup · FAR-01 key retirement · STORAGE-ARCH-02 external storage · VPS/local prune of retained orphan evidence.
+Do **not** treat ARCH-05 closeout as “FAR-01 RETIREMENT” — original retain-set is gone and formal retirement was never executed.
 
 ---
 
