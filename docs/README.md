@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`350303e`** (P6.3 GREEN) · RPC hotfix **`57ef69e`** · dpl `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho` · P5.1–P5.6 **GREEN** · P5.7/P5.9 audits **GO WITH CONDITIONS** · P5.8/P5.10 **GREEN** · **P6.1 COMPLETE** · **P6.2 GREEN** · **P6.3 PRODUCTION VERIFIED — GREEN** · **NEXT = P6.4 FX UI / Studio Mix UX** · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6 freeze](./decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md).
+**Now:** Production app **`320907a`** (P6.4.2 GREEN) · RPC hotfix **`57ef69e`** · dpl `dpl_HrDh4nwTpQEK4MDPUT3h77gBae1k` · P5.1–P5.6 **GREEN** · P5.7/P5.9 audits **GO WITH CONDITIONS** · P5.8/P5.10 **GREEN** · **P6.1 COMPLETE** · **P6.2/P6.3/P6.4.1/P6.4.2 PRODUCTION VERIFIED — GREEN** · **NEXT = P6.4.3 Track FX UI** · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.

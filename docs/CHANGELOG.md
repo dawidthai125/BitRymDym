@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.4.2 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
+
+**Status:** DOCS ONLY · **P6.4.2 PRODUCTION VERIFIED — GREEN**
+**Application:** 320907a · **RPC hotfix:** 57ef69e (unchanged) · **Deployment:** dpl_HrDh4nwTpQEK4MDPUT3h77gBae1k
+**GitHub SHA == Vercel == served:** 320907af8b1088c69d607647df76ae1e038bd0af
+**Served Studio chunk:** /_next/static/immutable/chunks/3aj31lbra-fb7.js (`StudioFx` · `STUDIO_FX_UI_META` labels · `StudioAudioEngine` · Włączony/Wyłączony · no PlayerProvider/mix-graph/StudioMixEngine)
+**Contract:** Shared `StudioFxChainEditor` role=track|master · registry-driven `STUDIO_FX_UI_META` from `studio-fx-chain` SSOT · CAS `expectedDocumentVersion` · pointerUp param commit · ↑/↓ reorder · Master Gain/Pan reuse P6.4.1
+**Gate API (19/19):** chunk markers · unauth 401 · cross-user 403 · Track add/enable/reorder/param/remove · Master add · limiter-last 400 · stale CAS 409 · recovery · Master Gain/Pan + Track controls regression · Track→FX CAS · reload persistence
+**UI smoke:** Studio load · Master FX sheet · Track FX sheet · Włączony aria-pressed · first ↑ / last ↓ disabled · params expand · transport visible · mobile ~390 no horizontal overflow (bottom-nav click intercept known non-blocking)
+**Tests:** P6.4.2 14 · P6.1 29 · P6.2 14 · P6.3 17 · P6.4.1 21 · Studio 228 · typecheck · scoped eslint · build PASS
+**Next:** **P6.4.3 — Track FX UI** (do not start in this wave; shared editor already shipped in P6.4.2)
+**Known limitations:** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE · mobile bottom-nav may intercept lower Track / Master FX controls
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.4.1 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
 
 **Status:** DOCS ONLY · **P6.4.1 PRODUCTION VERIFIED — GREEN**
