@@ -49,7 +49,7 @@ type StudioTransportApi = {
 
 const StudioTransportContext = createContext<StudioTransportApi | null>(null);
 
-type BeatClipTiming = {
+export type BeatClipTiming = {
   timelineStartMs: number;
   sourceOffsetMs: number;
   durationMs: number;
@@ -57,6 +57,25 @@ type BeatClipTiming = {
 
 const PLAYBACK_ERROR_PL =
   "Nie udało się odtworzyć bitu. Sprawdź połączenie lub spróbuj ponownie.";
+
+function pickBeatClip(
+  clips: BeatClipTiming[],
+  playheadMs: number,
+  timelineLengthMs: number,
+): BeatClipTiming {
+  const hit = clips.find(
+    (c) =>
+      playheadMs >= c.timelineStartMs &&
+      playheadMs < c.timelineStartMs + c.durationMs,
+  );
+  if (hit) return hit;
+  if (clips[0]) return clips[0];
+  return {
+    timelineStartMs: 0,
+    sourceOffsetMs: 0,
+    durationMs: timelineLengthMs,
+  };
+}
 
 /**
  * Project timeline transport with optional BEAT_REF audio.
@@ -70,6 +89,7 @@ export function StudioTransportProvider({
   beatId,
   beatGainDb = 0,
   beatMuted = false,
+  beatClips,
   beatClip,
   children,
 }: {
@@ -77,6 +97,9 @@ export function StudioTransportProvider({
   beatId: string | null;
   beatGainDb?: number;
   beatMuted?: boolean;
+  /** All BEAT_REF segments (after split). Preferred over beatClip. */
+  beatClips?: BeatClipTiming[];
+  /** @deprecated Prefer beatClips — kept for single-clip callers. */
   beatClip?: BeatClipTiming | null;
   children: ReactNode;
 }) {
@@ -84,6 +107,7 @@ export function StudioTransportProvider({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
   const urlReadyRef = useRef(false);
+  const activeClipRef = useRef<BeatClipTiming | null>(null);
 
   const [phase, setPhase] = useState<StudioTransportPhase>("stopped");
   const [playheadMs, setPlayheadMs] = useState(0);
@@ -92,11 +116,17 @@ export function StudioTransportProvider({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const clip: BeatClipTiming = beatClip ?? {
-    timelineStartMs: 0,
-    sourceOffsetMs: 0,
-    durationMs: timelineLengthMs,
-  };
+  const clips: BeatClipTiming[] =
+    beatClips && beatClips.length > 0
+      ? beatClips
+      : beatClip
+        ? [beatClip]
+        : [];
+
+  const earliestStart =
+    clips.length > 0
+      ? Math.min(...clips.map((c) => c.timelineStartMs))
+      : 0;
 
   useEffect(() => {
     catalogPlayer?.setSuppressed(true);
@@ -115,11 +145,22 @@ export function StudioTransportProvider({
   const syncFromAudio = useEffectEvent(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    const clip =
+      activeClipRef.current ??
+      pickBeatClip(clips, playheadMs, timelineLengthMs);
     const next = sourceSecondsToProjectPlayheadMs({
       sourceSeconds: audio.currentTime,
       clipTimelineStartMs: clip.timelineStartMs,
       clipSourceOffsetMs: clip.sourceOffsetMs,
     });
+    const end = clip.timelineStartMs + clip.durationMs;
+    if (next >= end) {
+      audio.pause();
+      setPhase("paused");
+      setAudioState("ready");
+      setPlayheadMs(clampPlayheadMs(end, timelineLengthMs));
+      return;
+    }
     setPlayheadMs(clampPlayheadMs(next, timelineLengthMs));
   });
 
@@ -134,6 +175,9 @@ export function StudioTransportProvider({
   });
 
   const onEnded = useEffectEvent(() => {
+    const clip =
+      activeClipRef.current ??
+      pickBeatClip(clips, playheadMs, timelineLengthMs);
     setPhase("stopped");
     setAudioState("ready");
     setPlayheadMs(
@@ -216,6 +260,8 @@ export function StudioTransportProvider({
       if (!ok) return;
       const audio = audioRef.current;
       if (!audio) return;
+      const clip = pickBeatClip(clips, headAtClick, timelineLengthMs);
+      activeClipRef.current = clip;
       const sourceSec = projectPlayheadToSourceSeconds({
         playheadMs: headAtClick,
         clipTimelineStartMs: clip.timelineStartMs,
@@ -241,6 +287,12 @@ export function StudioTransportProvider({
 
   const stop = () => {
     const audio = audioRef.current;
+    const clip = clips[0] ?? {
+      timelineStartMs: earliestStart,
+      sourceOffsetMs: 0,
+      durationMs: timelineLengthMs,
+    };
+    activeClipRef.current = clip;
     if (audio) {
       audio.pause();
       audio.currentTime = msToSeconds(clip.sourceOffsetMs);
@@ -257,6 +309,8 @@ export function StudioTransportProvider({
     setPlayheadMs(clamped);
     const audio = audioRef.current;
     if (!audio || !urlReadyRef.current) return;
+    const clip = pickBeatClip(clips, clamped, timelineLengthMs);
+    activeClipRef.current = clip;
     const sourceSec = projectPlayheadToSourceSeconds({
       playheadMs: clamped,
       clipTimelineStartMs: clip.timelineStartMs,

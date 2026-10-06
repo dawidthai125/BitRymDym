@@ -10,7 +10,17 @@ import {
 } from "@/config/studio";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
-import { assertValidClipSource, assertClipPlacement } from "@/lib/studio/studio-clip-ops";
+import {
+  assertValidClipSource,
+  assertClipPlacement,
+  moveClipGeometry,
+  splitClipGeometry,
+  trimClipLeft,
+  trimClipLeftToPlayhead,
+  trimClipRight,
+  trimClipRightToPlayhead,
+  type StudioClipGeometry,
+} from "@/lib/studio/studio-clip-ops";
 import {
   applySortOrders,
   defaultTrackName,
@@ -542,4 +552,215 @@ export async function addStudioClip(
   input: Parameters<typeof addStudioClipFor>[1],
 ): Promise<StudioClipDto> {
   return addStudioClipFor(await requireUser(), input);
+}
+
+async function loadOwnedClip(
+  context: AuthContext,
+  projectId: string,
+  clipId: string,
+): Promise<{ project: ProjectRow; clip: ClipRow }> {
+  const project = await assertOwnsProject(context, projectId);
+  const admin = createSupabaseAdminClient();
+  const { data: clip, error: clipError } = await admin
+    .from("studio_clips")
+    .select("*")
+    .eq("id", clipId)
+    .maybeSingle();
+  if (clipError) throw new Error(clipError.message);
+  if (!clip) {
+    throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+  }
+  const row = clip as ClipRow;
+  const { data: track, error: trackError } = await admin
+    .from("studio_tracks")
+    .select("id, project_id")
+    .eq("id", row.track_id)
+    .maybeSingle();
+  if (trackError) throw new Error(trackError.message);
+  if (!track || track.project_id !== projectId) {
+    throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+  }
+  return { project, clip: row };
+}
+
+export type StudioClipGeometryPatch =
+  | { op: "move"; timelineStartMs: number }
+  | { op: "trim_left"; trimMs: number }
+  | { op: "trim_right"; trimMs: number }
+  | { op: "trim_left_to_playhead"; playheadMs: number }
+  | { op: "trim_right_to_playhead"; playheadMs: number }
+  | {
+      op: "set_geometry";
+      timelineStartMs: number;
+      durationMs: number;
+      sourceOffsetMs: number;
+    };
+
+export async function updateStudioClipGeometryFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    patch: StudioClipGeometryPatch;
+  },
+): Promise<StudioClipDto> {
+  const { project, clip } = await loadOwnedClip(
+    context,
+    input.projectId,
+    input.clipId,
+  );
+  const current: StudioClipGeometry = {
+    timelineStartMs: clip.timeline_start_ms,
+    durationMs: clip.duration_ms,
+    sourceOffsetMs: clip.source_offset_ms,
+  };
+  const length = project.timeline_length_ms;
+
+  let next: StudioClipGeometry;
+  switch (input.patch.op) {
+    case "move":
+      next = moveClipGeometry({
+        clip: current,
+        timelineStartMs: input.patch.timelineStartMs,
+        timelineLengthMs: length,
+      });
+      break;
+    case "trim_left":
+      next = trimClipLeft({
+        clip: current,
+        trimMs: input.patch.trimMs,
+        timelineLengthMs: length,
+      });
+      break;
+    case "trim_right":
+      next = trimClipRight({
+        clip: current,
+        trimMs: input.patch.trimMs,
+        timelineLengthMs: length,
+      });
+      break;
+    case "trim_left_to_playhead":
+      next = trimClipLeftToPlayhead({
+        clip: current,
+        playheadMs: input.patch.playheadMs,
+        timelineLengthMs: length,
+      });
+      break;
+    case "trim_right_to_playhead":
+      next = trimClipRightToPlayhead({
+        clip: current,
+        playheadMs: input.patch.playheadMs,
+        timelineLengthMs: length,
+      });
+      break;
+    case "set_geometry":
+      next = {
+        timelineStartMs: input.patch.timelineStartMs,
+        durationMs: input.patch.durationMs,
+        sourceOffsetMs: input.patch.sourceOffsetMs,
+      };
+      assertClipPlacement({ ...next, timelineLengthMs: length });
+      break;
+    default:
+      throw new Error("Nieznana operacja edycji klipu.");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_clips")
+    .update({
+      timeline_start_ms: next.timelineStartMs,
+      duration_ms: next.durationMs,
+      source_offset_ms: next.sourceOffsetMs,
+    })
+    .eq("id", input.clipId)
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return mapClip(data as ClipRow);
+}
+
+export async function updateStudioClipGeometry(
+  input: Parameters<typeof updateStudioClipGeometryFor>[1],
+): Promise<StudioClipDto> {
+  return updateStudioClipGeometryFor(await requireUser(), input);
+}
+
+export async function splitStudioClipFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    atTimelineMs: number;
+  },
+): Promise<{ left: StudioClipDto; right: StudioClipDto }> {
+  const { project, clip } = await loadOwnedClip(
+    context,
+    input.projectId,
+    input.clipId,
+  );
+  const { left, right } = splitClipGeometry({
+    clip: {
+      timelineStartMs: clip.timeline_start_ms,
+      durationMs: clip.duration_ms,
+      sourceOffsetMs: clip.source_offset_ms,
+    },
+    atTimelineMs: input.atTimelineMs,
+    timelineLengthMs: project.timeline_length_ms,
+  });
+
+  const admin = createSupabaseAdminClient();
+  const { data: leftRow, error: leftError } = await admin
+    .from("studio_clips")
+    .update({
+      timeline_start_ms: left.timelineStartMs,
+      duration_ms: left.durationMs,
+      source_offset_ms: left.sourceOffsetMs,
+    })
+    .eq("id", input.clipId)
+    .select("*")
+    .single();
+  if (leftError) throw new Error(leftError.message);
+
+  const { data: rightRow, error: rightError } = await admin
+    .from("studio_clips")
+    .insert({
+      track_id: clip.track_id,
+      source_kind: clip.source_kind,
+      source_take_id: clip.source_take_id,
+      source_beat_id: clip.source_beat_id,
+      source_artifact_id: clip.source_artifact_id,
+      timeline_start_ms: right.timelineStartMs,
+      duration_ms: right.durationMs,
+      source_offset_ms: right.sourceOffsetMs,
+      gain_db: clip.gain_db,
+      muted: clip.muted,
+      fade_in_ms: 0,
+      fade_out_ms: clip.fade_out_ms,
+    })
+    .select("*")
+    .single();
+  if (rightError) {
+    // Best-effort restore left geometry if right insert fails.
+    await admin
+      .from("studio_clips")
+      .update({
+        timeline_start_ms: clip.timeline_start_ms,
+        duration_ms: clip.duration_ms,
+        source_offset_ms: clip.source_offset_ms,
+      })
+      .eq("id", input.clipId);
+    throw new Error(rightError.message);
+  }
+
+  return {
+    left: mapClip(leftRow as ClipRow),
+    right: mapClip(rightRow as ClipRow),
+  };
+}
+
+export async function splitStudioClip(
+  input: Parameters<typeof splitStudioClipFor>[1],
+): Promise<{ left: StudioClipDto; right: StudioClipDto }> {
+  return splitStudioClipFor(await requireUser(), input);
 }

@@ -167,4 +167,26 @@ P5.2 StudioTransport audio for BEAT clips → P5.3 clip edit ops → … per aud
 
 ---
 
+## 14. P5.3 scope (Clip edit operations)
+
+**Status:** implemented in repo (separate Production Verification gate).
+
+**IN**
+
+- MOVE · TRIM · SPLIT on `studio_clips` geometry only
+- Fields: `timeline_start_ms` · `duration_ms` · `source_offset_ms` (integer ms)
+- Source Take / Beat / Artifact references immutable (no new storage objects)
+- Ownership via existing `assertOwnsProject` + service_role mutations
+- Polish UI: Przesuń / Przytnij / Podziel · seek vs edit mode (mobile-safe)
+- StudioTransport respects post-edit BEAT_REF segments (multi-clip pick)
+
+**OUT of P5.3**
+
+- Full undo/redo stack · advanced snap/grid · waveform editor
+- Punch-in/out · vocal recording · metronome · FX · mix/master
+
+**No DB migration** — existing clip columns are sufficient.
+
+---
+
 *Freeze locked. Implementation must not contradict this document without a new Owner decision.*

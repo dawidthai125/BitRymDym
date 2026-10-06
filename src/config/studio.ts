@@ -11,6 +11,12 @@ export const STUDIO_TRACK_NAME_MAX_LENGTH = 80;
 /** Default new project timeline length (ms). */
 export const STUDIO_DEFAULT_TIMELINE_LENGTH_MS = 60_000;
 
+/**
+ * Minimum Clip duration (integer ms) — mirrors DB check
+ * `studio_clips_duration_chk` (duration_ms >= 1).
+ */
+export const STUDIO_CLIP_MIN_DURATION_MS = 1;
+
 /** Default Project tempo. */
 export const STUDIO_DEFAULT_TEMPO_BPM = 120;
 

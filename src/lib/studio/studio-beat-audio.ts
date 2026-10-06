@@ -10,15 +10,43 @@ export type PrimaryBeatRef = {
   track: StudioTrackDto;
 };
 
+/** All BEAT_REF clips sorted by timeline start. */
+export function listBeatRefClips(clips: StudioClipDto[]): StudioClipDto[] {
+  return clips
+    .filter((c) => c.sourceKind === "BEAT_REF" && c.sourceBeatId)
+    .sort((a, b) => a.timelineStartMs - b.timelineStartMs);
+}
+
 /** Find primary BEAT_REF on a BEAT track (first by timeline start). */
 export function resolvePrimaryBeatRef(params: {
   tracks: StudioTrackDto[];
   clips: StudioClipDto[];
   projectBeatId?: string | null;
+  /** When set, prefer the BEAT_REF containing this playhead (P5.3). */
+  playheadMs?: number;
 }): PrimaryBeatRef | null {
-  const beatClips = params.clips
-    .filter((c) => c.sourceKind === "BEAT_REF" && c.sourceBeatId)
-    .sort((a, b) => a.timelineStartMs - b.timelineStartMs);
+  const beatClips = listBeatRefClips(params.clips);
+
+  if (
+    typeof params.playheadMs === "number" &&
+    Number.isFinite(params.playheadMs)
+  ) {
+    const containing = beatClips.find(
+      (c) =>
+        params.playheadMs! >= c.timelineStartMs &&
+        params.playheadMs! < c.timelineStartMs + c.durationMs,
+    );
+    if (containing) {
+      const track = params.tracks.find((t) => t.id === containing.trackId);
+      if (track) {
+        return {
+          beatId: containing.sourceBeatId!,
+          clip: containing,
+          track,
+        };
+      }
+    }
+  }
 
   for (const clip of beatClips) {
     const track = params.tracks.find((t) => t.id === clip.trackId);

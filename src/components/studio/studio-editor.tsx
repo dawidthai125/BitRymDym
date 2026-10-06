@@ -13,7 +13,10 @@ import {
   StudioTransportProvider,
   useStudioTransport,
 } from "@/components/studio/studio-transport-provider";
-import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
+import {
+  listBeatRefClips,
+  resolvePrimaryBeatRef,
+} from "@/lib/studio/studio-beat-audio";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -22,6 +25,8 @@ import type {
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { labelStudioTrackType } from "@/lib/ui/labels";
+
+type TimelineMode = "seek" | "edit";
 
 export function StudioEditor({
   initialDocument,
@@ -40,6 +45,16 @@ export function StudioEditor({
     [doc.tracks, doc.clips, doc.project.beatId],
   );
 
+  const beatClips = useMemo(
+    () =>
+      listBeatRefClips(doc.clips).map((c) => ({
+        timelineStartMs: c.timelineStartMs,
+        sourceOffsetMs: c.sourceOffsetMs,
+        durationMs: c.durationMs || doc.project.timelineLengthMs,
+      })),
+    [doc.clips, doc.project.timelineLengthMs],
+  );
+
   const beatAudible = beatRef
     ? isTrackAudible({
         muted: beatRef.track.muted,
@@ -55,16 +70,7 @@ export function StudioEditor({
       beatId={beatRef?.beatId ?? null}
       beatGainDb={beatRef?.track.gainDb ?? 0}
       beatMuted={!beatAudible}
-      beatClip={
-        beatRef
-          ? {
-              timelineStartMs: beatRef.clip.timelineStartMs,
-              sourceOffsetMs: beatRef.clip.sourceOffsetMs,
-              durationMs:
-                beatRef.clip.durationMs || doc.project.timelineLengthMs,
-            }
-          : null
-      }
+      beatClips={beatClips}
     >
       <StudioEditorInner doc={doc} setDoc={setDoc} />
     </StudioTransportProvider>
@@ -79,10 +85,15 @@ function StudioEditorInner({
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [mode, setMode] = useState<TimelineMode>("seek");
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const transport = useStudioTransport();
   const anySolo = doc.tracks.some((t) => t.solo);
   const length = doc.project.timelineLengthMs;
+  const selectedClip =
+    doc.clips.find((c) => c.id === selectedClipId) ?? null;
 
   async function patchTrack(
     trackId: string,
@@ -132,6 +143,65 @@ function StudioEditorInner({
     setDoc((prev) => ({ ...prev, tracks: json.tracks! }));
   }
 
+  async function patchClip(body: Record<string, unknown>) {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      clip?: StudioClipDto;
+      error?: string;
+    };
+    if (!res.ok || !json.clip) {
+      throw new Error(json.error ?? "Nie udało się zapisać klipu.");
+    }
+    setDoc((prev) => ({
+      ...prev,
+      clips: prev.clips.map((c) => (c.id === json.clip!.id ? json.clip! : c)),
+    }));
+    setStatus("Zapisano");
+  }
+
+  async function splitSelectedAtPlayhead() {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}/split`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atTimelineMs: transport.state.playheadMs }),
+      },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      left?: StudioClipDto;
+      right?: StudioClipDto;
+      error?: string;
+    };
+    if (!res.ok || !json.left || !json.right) {
+      throw new Error(json.error ?? "Nie udało się podzielić klipu.");
+    }
+    setDoc((prev) => ({
+      ...prev,
+      clips: [
+        ...prev.clips.map((c) => (c.id === json.left!.id ? json.left! : c)),
+        json.right!,
+      ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
+    }));
+    setSelectedClipId(json.left.id);
+    setStatus("Zapisano");
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <header className="space-y-1 border-b border-[var(--brd-line)] pb-4">
@@ -154,6 +224,85 @@ function StudioEditorInner({
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
+      ) : null}
+      {status && !error ? (
+        <p className="text-sm text-[var(--brd-mute)]" role="status">
+          {status}
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === "seek" ? "default" : "outline"}
+          onClick={() => setMode("seek")}
+        >
+          Przewijanie
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === "edit" ? "default" : "outline"}
+          onClick={() => setMode("edit")}
+        >
+          Edycja klipu
+        </Button>
+      </div>
+
+      {mode === "edit" ? (
+        <ClipEditPanel
+          clip={selectedClip}
+          playheadMs={transport.state.playheadMs}
+          timelineLengthMs={length}
+          pending={pending}
+          onMove={(timelineStartMs) =>
+            startTransition(async () => {
+              try {
+                await patchClip({ op: "move", timelineStartMs });
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd przesunięcia.");
+                setStatus(null);
+              }
+            })
+          }
+          onTrimLeftToPlayhead={() =>
+            startTransition(async () => {
+              try {
+                await patchClip({
+                  op: "trim_left_to_playhead",
+                  playheadMs: transport.state.playheadMs,
+                });
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd przycięcia.");
+                setStatus(null);
+              }
+            })
+          }
+          onTrimRightToPlayhead={() =>
+            startTransition(async () => {
+              try {
+                await patchClip({
+                  op: "trim_right_to_playhead",
+                  playheadMs: transport.state.playheadMs,
+                });
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd przycięcia.");
+                setStatus(null);
+              }
+            })
+          }
+          onSplit={() =>
+            startTransition(async () => {
+              try {
+                await splitSelectedAtPlayhead();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd podziału.");
+                setStatus(null);
+              }
+            })
+          }
+        />
       ) : null}
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-4">
@@ -199,7 +348,9 @@ function StudioEditorInner({
                             await reorder(track.id, "up");
                           } catch (e) {
                             setError(
-                              e instanceof Error ? e.message : "Błąd kolejności.",
+                              e instanceof Error
+                                ? e.message
+                                : "Błąd kolejności.",
                             );
                           }
                         })
@@ -220,7 +371,9 @@ function StudioEditorInner({
                             await reorder(track.id, "down");
                           } catch (e) {
                             setError(
-                              e instanceof Error ? e.message : "Błąd kolejności.",
+                              e instanceof Error
+                                ? e.message
+                                : "Błąd kolejności.",
                             );
                           }
                         })
@@ -230,12 +383,11 @@ function StudioEditorInner({
                     </Button>
                   </div>
                 </div>
-
                 <div className="flex flex-wrap gap-2">
                   <ToggleChip
                     active={track.recordArmed}
-                    title="Nagrywanie — uzbrój ścieżkę"
                     label="REC"
+                    title="Uzbrojenie nagrywania"
                     onClick={() =>
                       startTransition(async () => {
                         try {
@@ -252,15 +404,15 @@ function StudioEditorInner({
                   />
                   <ToggleChip
                     active={track.solo}
-                    title="Odsłuch tylko tej ścieżki"
                     label="Odsłuch"
+                    title="Solo"
                     onClick={() =>
                       startTransition(async () => {
                         try {
                           await patchTrack(track.id, { solo: !track.solo });
                         } catch (e) {
                           setError(
-                            e instanceof Error ? e.message : "Błąd odsłuchu.",
+                            e instanceof Error ? e.message : "Błąd solo.",
                           );
                         }
                       })
@@ -268,8 +420,8 @@ function StudioEditorInner({
                   />
                   <ToggleChip
                     active={track.muted}
-                    title="Wycisz tę ścieżkę bez usuwania nagrania"
                     label="Wycisz"
+                    title="Wycisz"
                     onClick={() =>
                       startTransition(async () => {
                         try {
@@ -283,7 +435,6 @@ function StudioEditorInner({
                     }
                   />
                 </div>
-
                 <label className="mt-3 block text-xs text-[var(--brd-mute)]">
                   Głośność ({track.gainDb.toFixed(1)} dB)
                   <input
@@ -321,7 +472,6 @@ function StudioEditorInner({
                     }}
                   />
                 </label>
-
                 <label className="mt-2 block text-xs text-[var(--brd-mute)]">
                   Panorama L/R ({track.pan.toFixed(2)})
                   <input
@@ -332,7 +482,6 @@ function StudioEditorInner({
                     value={track.pan}
                     className="mt-1 w-full"
                     aria-label="Panorama L/R"
-                    title="Ustawia położenie dźwięku między lewą i prawą stroną."
                     onChange={(e) => {
                       const pan = Number(e.target.value);
                       setDoc((prev) => ({
@@ -368,14 +517,158 @@ function StudioEditorInner({
           clips={doc.clips}
           timelineLengthMs={length}
           playheadMs={transport.state.playheadMs}
+          mode={mode}
+          selectedClipId={selectedClipId}
           onSeek={transport.seek}
+          onSelectClip={(id) => {
+            setSelectedClipId(id);
+            setMode("edit");
+          }}
+          onMoveClip={(clipId, timelineStartMs) => {
+            setSelectedClipId(clipId);
+            startTransition(async () => {
+              try {
+                setError(null);
+                setStatus("Zapisywanie…");
+                const res = await fetch(
+                  `/api/studio/projects/${doc.project.id}/clips/${clipId}`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ op: "move", timelineStartMs }),
+                  },
+                );
+                const json = (await res.json()) as {
+                  clip?: StudioClipDto;
+                  error?: string;
+                };
+                if (!res.ok || !json.clip) {
+                  throw new Error(json.error ?? "Nie udało się przesunąć.");
+                }
+                setDoc((prev) => ({
+                  ...prev,
+                  clips: prev.clips.map((c) =>
+                    c.id === json.clip!.id ? json.clip! : c,
+                  ),
+                }));
+                setStatus("Zapisano");
+              } catch (e) {
+                setError(
+                  e instanceof Error ? e.message : "Błąd przesunięcia.",
+                );
+                setStatus(null);
+              }
+            });
+          }}
         />
       </div>
 
       <p className="text-xs text-[var(--brd-mute)]">
-        P5.2 — odsłuch bitu w StudioTransport. Punch, metronom i nagranie wokalu
-        w kolejnych etapach. Szybkie nagranie anonimowe nadal na stronie bitu.
+        P5.3 — przesuwanie, przycinanie i dzielenie klipów. Źródło nagrania /
+        bitu pozostaje niezmienione. Punch i nagranie wokalu w kolejnych
+        etapach.
       </p>
+    </div>
+  );
+}
+
+function ClipEditPanel({
+  clip,
+  playheadMs,
+  timelineLengthMs,
+  pending,
+  onMove,
+  onTrimLeftToPlayhead,
+  onTrimRightToPlayhead,
+  onSplit,
+}: {
+  clip: StudioClipDto | null;
+  playheadMs: number;
+  timelineLengthMs: number;
+  pending: boolean;
+  onMove: (timelineStartMs: number) => void;
+  onTrimLeftToPlayhead: () => void;
+  onTrimRightToPlayhead: () => void;
+  onSplit: () => void;
+}) {
+  const [draftStart, setDraftStart] = useState<number | null>(null);
+  const maxStart = clip
+    ? Math.max(0, timelineLengthMs - clip.durationMs)
+    : 0;
+  const startValue = clip
+    ? (draftStart ?? Math.min(clip.timelineStartMs, maxStart))
+    : 0;
+
+  if (!clip) {
+    return (
+      <div className="rounded border border-dashed border-[var(--brd-line)] p-3 text-sm text-[var(--brd-mute)]">
+        Wybierz klip na osi czasu, aby go przesunąć, przyciąć lub podzielić.
+        Ustaw playhead w odpowiednim miejscu przed przycięciem / podziałem.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
+      <p className="text-sm font-medium text-[var(--brd-ink)]">
+        Klip · start {formatStudioTimeMs(startValue)} · długość{" "}
+        {formatStudioTimeMs(clip.durationMs)}
+      </p>
+      <p className="text-xs text-[var(--brd-mute)]">
+        Playhead: {formatStudioTimeMs(playheadMs)} · offset źródła{" "}
+        {formatStudioTimeMs(clip.sourceOffsetMs)}
+      </p>
+      <label className="block text-xs text-[var(--brd-mute)]">
+        Przesuń (pozycja startu)
+        <input
+          type="range"
+          min={0}
+          max={maxStart}
+          step={1}
+          value={startValue}
+          className="mt-1 w-full"
+          aria-label="Przesuń klip"
+          disabled={pending}
+          onChange={(e) => setDraftStart(Number(e.target.value))}
+          onPointerUp={(e) => {
+            const next = Number((e.target as HTMLInputElement).value);
+            setDraftStart(null);
+            if (next !== clip.timelineStartMs) onMove(next);
+          }}
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={onTrimLeftToPlayhead}
+          title="Przytnij początek do playhead"
+        >
+          Przytnij początek
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={onTrimRightToPlayhead}
+          title="Przytnij koniec do playhead"
+        >
+          Przytnij koniec
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={onSplit}
+          title="Podziel w playhead"
+        >
+          Podziel
+        </Button>
+      </div>
     </div>
   );
 }
@@ -452,23 +745,38 @@ function StudioTimeline({
   clips,
   timelineLengthMs,
   playheadMs,
+  mode,
+  selectedClipId,
   onSeek,
+  onSelectClip,
+  onMoveClip,
 }: {
   tracks: StudioTrackDto[];
   clips: StudioClipDto[];
   timelineLengthMs: number;
   playheadMs: number;
+  mode: TimelineMode;
+  selectedClipId: string | null;
   onSeek: (ms: number) => void;
+  onSelectClip: (clipId: string) => void;
+  onMoveClip: (clipId: string, timelineStartMs: number) => void;
 }) {
   const playheadPct = Math.min(
     100,
     Math.max(0, (playheadMs / timelineLengthMs) * 100),
   );
+  const [dragState, setDragState] = useState<{
+    clipId: string;
+    originX: number;
+    originStart: number;
+    widthPx: number;
+  } | null>(null);
 
   function seekFromPointer(event: {
     currentTarget: HTMLDivElement;
     clientX: number;
   }) {
+    if (mode === "edit") return;
     const rect = event.currentTarget.getBoundingClientRect();
     const ratio = Math.min(
       1,
@@ -488,10 +796,16 @@ function StudioTimeline({
         <span>{formatStudioTimeMs(timelineLengthMs)}</span>
       </div>
       <div
-        className="relative min-w-[28rem] cursor-pointer touch-pan-y space-y-2 p-2"
+        className={`relative min-w-[28rem] space-y-2 p-2 ${
+          mode === "seek" ? "cursor-pointer touch-pan-y" : "touch-none"
+        }`}
         onClick={seekFromPointer}
         role="slider"
-        aria-label="Oś czasu — kliknij, aby przewinąć"
+        aria-label={
+          mode === "seek"
+            ? "Oś czasu — kliknij, aby przewinąć"
+            : "Oś czasu — tryb edycji klipu"
+        }
         aria-valuemin={0}
         aria-valuemax={timelineLengthMs}
         aria-valuenow={playheadMs}
@@ -509,15 +823,93 @@ function StudioTimeline({
               {trackClips.map((clip) => {
                 const left = (clip.timelineStartMs / timelineLengthMs) * 100;
                 const width = (clip.durationMs / timelineLengthMs) * 100;
+                const selected = clip.id === selectedClipId;
                 return (
                   <div
                     key={clip.id}
-                    className="pointer-events-none absolute bottom-1 top-5 rounded bg-[var(--brd-ink)]/15 px-1 text-[10px] text-[var(--brd-ink)]"
+                    className={`absolute bottom-1 top-5 rounded px-1 text-[10px] text-[var(--brd-ink)] ${
+                      selected
+                        ? "bg-[var(--brd-ink)]/30 ring-1 ring-[var(--brd-ink)]"
+                        : "bg-[var(--brd-ink)]/15"
+                    } ${mode === "edit" ? "pointer-events-auto cursor-grab touch-none" : "pointer-events-none"}`}
                     style={{
                       left: `${left}%`,
                       width: `${Math.max(width, 1.5)}%`,
                     }}
                     title={`${clip.sourceKind} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
+                    onPointerDown={
+                      mode === "edit"
+                        ? (e) => {
+                            e.stopPropagation();
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                            const lane = e.currentTarget.parentElement;
+                            const laneWidth =
+                              lane?.getBoundingClientRect().width ?? 1;
+                            setDragState({
+                              clipId: clip.id,
+                              originX: e.clientX,
+                              originStart: clip.timelineStartMs,
+                              widthPx: laneWidth,
+                            });
+                            onSelectClip(clip.id);
+                          }
+                        : undefined
+                    }
+                    onPointerMove={
+                      mode === "edit"
+                        ? (e) => {
+                            if (!dragState || dragState.clipId !== clip.id)
+                              return;
+                            e.stopPropagation();
+                            const deltaPx = e.clientX - dragState.originX;
+                            const deltaMs = Math.round(
+                              (deltaPx / dragState.widthPx) * timelineLengthMs,
+                            );
+                            const maxStart = Math.max(
+                              0,
+                              timelineLengthMs - clip.durationMs,
+                            );
+                            const next = Math.min(
+                              maxStart,
+                              Math.max(0, dragState.originStart + deltaMs),
+                            );
+                            // Visual-only preview via CSS left would need local state;
+                            // persist on pointer up for SSOT.
+                            e.currentTarget.style.left = `${(next / timelineLengthMs) * 100}%`;
+                            (
+                              e.currentTarget as HTMLElement & {
+                                dataset: DOMStringMap & { previewStart?: string };
+                              }
+                            ).dataset.previewStart = String(next);
+                          }
+                        : undefined
+                    }
+                    onPointerUp={
+                      mode === "edit"
+                        ? (e) => {
+                            e.stopPropagation();
+                            const preview = Number(
+                              (e.currentTarget as HTMLElement).dataset
+                                .previewStart,
+                            );
+                            setDragState(null);
+                            if (
+                              Number.isFinite(preview) &&
+                              preview !== clip.timelineStartMs
+                            ) {
+                              onMoveClip(clip.id, preview);
+                            }
+                          }
+                        : undefined
+                    }
+                    onClick={
+                      mode === "edit"
+                        ? (e) => {
+                            e.stopPropagation();
+                            onSelectClip(clip.id);
+                          }
+                        : undefined
+                    }
                   >
                     {clip.sourceKind === "TAKE"
                       ? "Nagranie"

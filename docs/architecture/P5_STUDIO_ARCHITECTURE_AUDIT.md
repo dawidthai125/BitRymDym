@@ -747,10 +747,11 @@ Resolved by Architect in this audit (no Owner needed):
 
 ### P5.3 — Clip editing ops
 
-- **Scope:** move/trim/split/delete/duplicate · snap · undo/redo session  
+- **Scope:** move/trim/split (delete/duplicate/undo deferred)  
 - **Deps:** P5.2  
-- **Tests:** ms math · undo stack  
+- **Tests:** ms math · source immutability · ownership  
 - **AC:** edit without destroying Takes  
+- **Repo status:** implemented (MOVE/TRIM/SPLIT; Production Verification = separate gate)
 
 ### P5.4 — Track controls + mixer basics
 
