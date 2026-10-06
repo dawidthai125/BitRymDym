@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`f261ea8`** (P6.4.3 GREEN) · RPC hotfix **`57ef69e`** · dpl `dpl_5ZBCGED4nQBuWQx81aa9959YeKCM` · P5.1–P5.6 **GREEN** · P5.7/P5.9 audits **GO WITH CONDITIONS** · P5.8/P5.10 **GREEN** · **P6.1 COMPLETE** · **P6.2–P6.4.3 PRODUCTION VERIFIED — GREEN** · **NEXT = P6.4.4 Master FX UI polish** · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md).
+**Now:** Production app **`2258bdb`** (**P6.5 IMPLEMENTATION COMPLETE · DEPLOYED · RUNTIME GATE INCONCLUSIVE** — not GREEN) · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · chunk `29qtmv8kgtz1f.js` · RPC hotfix **`57ef69e`** · P5.1–P5.6 **GREEN** · P5.8/P5.10 **GREEN** · **P6.1 COMPLETE** · **P6.2–P6.4.3 PRODUCTION VERIFIED — GREEN** · **P6.6 NOT AUTHORIZED** · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6.5 freeze](./decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.

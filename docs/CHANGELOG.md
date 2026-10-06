@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.5 SSOT RECONCILE (IMPLEMENTATION COMPLETE · RUNTIME GATE INCONCLUSIVE)
+
+**Status:** DOCS ONLY · **P6.5 IMPLEMENTATION COMPLETE** · **PRODUCTION DEPLOYED** · **PRODUCTION RUNTIME GATE — INCONCLUSIVE**
+**Not GREEN:** do **not** treat as `PRODUCTION VERIFIED — GREEN`
+**Application tip:** `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`) · fix `fix(studio): start P6.5 meter reader before voice sync`
+**Implementation:** `345e8e57d6ef32fc841e7623dc97ad970190e0e2` · Design Freeze `57f4216` · Architecture Audit `fe4eb0d`
+**Deployment:** `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · www · served Studio chunk `29qtmv8kgtz1f.js`
+**Contract:** Master-only realtime Peak + clipping latch · `MasterPan → Analyser → Destination` · fftSize 256 · ≤10–15 Hz · visibility pause/resume · UI Gain→Pan→Meter→FX · no DB/API · no PlayerProvider/E3
+**Automated tests:** P6.5 18 · P6.4.3 14 · P6.4.2 14 · P6.4.1 21 · P6.3 17 · P6.2 14 · P6.1 29 · **127/127 PASS** · typecheck · build · scoped lint PASS
+**Production smoke:** unauth Studio API 401 · `/studio` 200 · chunk YES `StudioAudioEngine`/`createAnalyser`/`subscribeMeter`/`Miernik Master` · NO `PlayerProvider`/`mix-graph`/`StudioMixEngine`/`MeteringEngine` · Master Meter UI observed · Mobile ~390 PASS · Mix/transport smoke PASS · security surface unchanged (P6.4.3 401/200/403 baseline)
+**Runtime gate INCONCLUSIVE reason:** no deterministic production browser evidence for (1) Play → real audio signal → Peak response (2) visibility hidden → reader pause → visible → resume. Observed Play UI `Odtwarzanie` with Peak `-100 dB` / playhead `00:00.000` is **not** PASS and **not** interpreted as P6.5 FAIL. Unit lifecycle tests ≠ production browser proof.
+**Follow-up (not a code bug):** production runtime evidence for Play→Peak and visibility lifecycle — Owner/Architect decision required before any GREEN claim
+**P6.6:** **NOT AUTHORIZED** by this reconciliation
+**Known limitations (unchanged):** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.4.3 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
 
 **Status:** DOCS ONLY · **P6.4.3 PRODUCTION VERIFIED — GREEN**

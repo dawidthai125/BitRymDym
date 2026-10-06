@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-06 — **P6.4.3 PRODUCTION VERIFIED — GREEN** · app **`f261ea8`** · RPC **`57ef69e`** · dpl `dpl_5ZBCGED4nQBuWQx81aa9959YeKCM`
-**Type:** Documentation continuity · P6.4.3 Gate GREEN (app `f261ea8` · DB RPC `57ef69e`)
+**Updated:** 2026-10-06 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC **`57ef69e`**
+**Type:** Documentation continuity · P6.5 deployed (runtime gate **INCONCLUSIVE** · not GREEN)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,27 +25,34 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = f261ea8a622ee3b3038e81ff89be6277535821ae
-  short                       = f261ea8
-  note                        = P6.4.3 Mix UX polish & integration · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_5ZBCGED4nQBuWQx81aa9959YeKCM
+PRODUCTION APP SHA            = 2258bdbbf5099189bf88e9ed65f41faf43afe226
+  short                       = 2258bdb
+  note                        = P6.5 Studio Audio Quality Metering
+                              · IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED
+                              · PRODUCTION RUNTIME GATE — INCONCLUSIVE (NOT GREEN)
+  impl                        = 345e8e5 · fix = 2258bdb
+PRODUCTION DEPLOYMENT         = dpl_54uwtNdFbSG4apwikSioTyevdYcr
 P6.1 RPC HOTFIX               = 57ef69e (qualify document_version in studio_cas_apply_fx_chain)
   migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
 P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
 P6.4.1 APPLICATION            = 9f93606 · PRODUCTION VERIFIED — GREEN
 P6.4.2 APPLICATION            = 320907a · PRODUCTION VERIFIED — GREEN
-P6.4.3 APPLICATION            = f261ea8
-P6.4.3 PRODUCTION             = GREEN
+P6.4.3 APPLICATION            = f261ea8 · PRODUCTION VERIFIED — GREEN
+P6.5 APPLICATION              = 2258bdb
+P6.5 PRODUCTION RUNTIME       = INCONCLUSIVE
+  missing                     = Play→real signal→Peak · visibility reader pause/resume
 
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-  served bundle               = /_next/static/immutable/chunks/0kfptvapkfp-m.js
+  served Studio chunk         = /_next/static/immutable/chunks/29qtmv8kgtz1f.js
 
-STUDIO BASELINE               = P6.4.3 PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P6.4.3 PRODUCTION VERIFIED — GREEN
-NEXT GATE                     = P6.4.4 — Master FX UI polish
+STUDIO BASELINE               = P6.5 DEPLOYED · RUNTIME GATE INCONCLUSIVE
+LAST STUDIO VERIFY            = P6.5 RUNTIME GATE INCONCLUSIVE
+                              · automated 127/127 PASS ≠ production GREEN
+NEXT GATE                     = production runtime evidence Play→Peak + visibility
+P6.6                          = NOT AUTHORIZED
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
@@ -70,6 +77,7 @@ P6.3 STATUS                   = PRODUCTION VERIFIED — GREEN @ 350303e
 P6.4.1 STATUS                 = PRODUCTION VERIFIED — GREEN @ 9f93606
 P6.4.2 STATUS                 = PRODUCTION VERIFIED — GREEN @ 320907a
 P6.4.3 STATUS                 = PRODUCTION VERIFIED — GREEN @ f261ea8
+P6.5 STATUS                   = IMPLEMENTATION COMPLETE · DEPLOYED · RUNTIME GATE INCONCLUSIVE
 FALA 3.5.1 STATUS             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
 P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
@@ -79,6 +87,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
+| **P6.5** Studio Audio Quality Metering | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · dpl `dpl_54uwtNd…` · **RUNTIME GATE INCONCLUSIVE** (not GREEN) |
 | **P6.4.3** Mix UX polish & integration | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` |
 | **P6.4.2** Shared FX UI Foundation | **PRODUCTION VERIFIED — GREEN** @ `320907a` · dpl `dpl_HrDh4nw…` |
 | **P6.4.1** Master Gain/Pan + Track documentVersion | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · dpl `dpl_EHkvay…` |

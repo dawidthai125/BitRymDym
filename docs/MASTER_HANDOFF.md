@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-06 — **P6.4.3 PRODUCTION VERIFIED — GREEN** · app **`f261ea8`** · RPC **`57ef69e`** · dpl `dpl_5ZBCGED4nQBuWQx81aa9959YeKCM` · P6.4.2 GREEN @ `320907a`
+**Updated:** 2026-10-06 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC **`57ef69e`**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,12 +23,12 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `f261ea8` · RPC `57ef69e`) |
-| **Production application SHA** | `f261ea8a622ee3b3038e81ff89be6277535821ae` (`f261ea8`) — **P6.4.3 Mix UX polish & integration** |
-| **Production deployment** | `dpl_5ZBCGED4nQBuWQx81aa9959YeKCM` |
-| **Studio baseline** | **P6.4.3 PRODUCTION VERIFIED — GREEN** |
-| **Last Studio Production Verify** | P6.4.3 Gate **GREEN** · P6.4.2 @ `320907a` · P6.4.1 @ `9f93606` |
-| **NEXT UNIT** | **P6.4.4 — Master FX UI polish** per P6.4 freeze |
+| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `2258bdb` · RPC `57ef69e`) |
+| **Production application SHA** | `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`) — **P6.5 Studio Audio Quality Metering** |
+| **Production deployment** | `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · served Studio chunk `29qtmv8kgtz1f.js` |
+| **Studio baseline** | **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** (not GREEN) |
+| **Last Studio Production Verify** | P6.5 runtime gate **INCONCLUSIVE** · automated **127/127 PASS** · prior P6.4.3 GREEN @ `f261ea8` |
+| **NEXT UNIT** | **P6.6 NOT AUTHORIZED** · follow-up = production runtime evidence for Play→Peak and visibility lifecycle |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -96,13 +96,16 @@ P5.8 devices    = enumerateDevices · permission UNKNOWN|REQUESTING|GRANTED|DENI
                 · UNCHANGED in P5.10
 Recording       = P5.5/P5.6/P5.8 SSOT · engine may consume READY Take · does not own
                 session / eligibility / finalize / upload / claim / getUserMedia / devices / meter
-P6 product FX   = NOT STARTED · needs Architecture Audit + Design Freeze
+P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
+                · P6.5 Master metering IMPLEMENTED + DEPLOYED @ 2258bdb
+                · P6.5 PRODUCTION RUNTIME GATE = INCONCLUSIVE (NOT GREEN)
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
+                · P6.6 NOT AUTHORIZED
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · NOT frozen autosave contract (condition before autosave)
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)
-P6 = product FX / routing / buses / automation / mix / master
+P6 = product FX / Mix / Master metering (P6.5) · routing / buses / automation later
 P7 = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-drop
      · track enum reserved READY WITH REFACTOR · instrument engines NOT READY
 ```

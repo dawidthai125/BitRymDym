@@ -66,11 +66,12 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | **P6.4.1 Master Gain/Pan + Track documentVersion** | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · dpl `dpl_EHkvay…` — [P6.4 freeze](../decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.4.2 Shared FX UI Foundation** | **PRODUCTION VERIFIED — GREEN** @ `320907a` · dpl `dpl_HrDh4nw…` — [P6.4 freeze](../decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.4.3 Mix UX polish & integration** | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` · served `0kfptvapkfp-m.js` — [P6.4 freeze](../decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
+| **P6.5 Studio Audio Quality Metering** | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · dpl `dpl_54uwtNd…` · served `29qtmv8kgtz1f.js` · **RUNTIME GATE INCONCLUSIVE** (not GREEN) — [freeze](../decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md) · [audit](./P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md) |
 | **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **GO WITH CONDITIONS** — [P5_9_STUDIO_ARCHITECTURE_AUDIT.md](./P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **Next Studio step** | **P6.4 — FX UI / Studio Mix UX** per P6 freeze — do **not** auto-start without Owner GO |
-| Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track FX · Master FX on sum · Mix UX · Master Gain/Pan CAS · overlap = MIX · P6.4.3 GREEN |
+| **Next Studio step** | **P6.6 NOT AUTHORIZED** · follow-up = production runtime evidence Play→Peak + visibility — Owner/Architect |
+| Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track FX · Master FX · Master metering (P6.5) · Mix UX · overlap = MIX · P6.5 runtime gate INCONCLUSIVE |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | E3.8 W6 Mobile Cert | **CLOSED / PASS** · **OWNER-ACCEPTED EMULATED** — [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) |
