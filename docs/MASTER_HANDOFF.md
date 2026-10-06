@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-06 — P5.10 **PRODUCTION VERIFIED — GREEN** @ **`9c2a958`** · dpl `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · P5.9 **GO WITH CONDITIONS** · D02 **CLOSED** · **NEXT = Architecture Audit** · docs-only reconcile
+**Updated:** 2026-10-06 — P6.1 RPC hotfix · app **`23d3be8`** · dpl `dpl_GZbap8mjpdFtdssB9dxd4zSyudwL` · **P6.2 PRODUCTION GATE — BLOCKED** (ready to rerun) · P5.10 historical GREEN @ `9c2a958`
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,15 +23,12 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | Advances with this SSOT reconcile (app tip `9c2a958` + docs) |
-| **Production application SHA** | `9c2a958cf94aca07679ed338cc23e21bb600fd4c` (`9c2a958`) — **P5.10 Studio Audio Engine** · **UNCHANGED** this docs wave |
-| **Production deployment** | `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` (GitHub `9c2a958` · no-cache rebuild) |
-| **Studio baseline** | **P5.10 · PRODUCTION VERIFIED — GREEN** @ `9c2a958` |
-| **Last Studio Production Verify** | **P5.10 · PRODUCTION VERIFIED — GREEN** @ `9c2a958` |
-| **D02 live harness** | **CLOSED** @ `44dc22c` — **TEST ONLY** |
-| **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** · [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** · [P5_9_STUDIO_ARCHITECTURE_AUDIT.md](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **NEXT UNIT** | **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** (do **not** auto-start P6 / FX) |
+| **Repository HEAD / origin/main** | Advances with P6.1 RPC hotfix tip (app tip `23d3be8`) |
+| **Production application SHA** | `23d3be8399afc3db39359ae316d3c95bb965e0bf` (`23d3be8`) — **P6.2 Track FX** · **UNCHANGED** by RPC hotfix |
+| **Production deployment** | `dpl_GZbap8mjpdFtdssB9dxd4zSyudwL` |
+| **Studio baseline** | **P6.2 app shipped** · **P6.2 PRODUCTION GATE — BLOCKED** (RPC persist fixed; Gate must rerun) |
+| **Last Studio Production Verify** | P6.2 Gate **BLOCKED** pre-hotfix; P5.10 GREEN @ historical `9c2a958` |
+| **NEXT UNIT** | **P6.2 Production Gate RERUN** · then P6.3 Master FX per P6 freeze |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |

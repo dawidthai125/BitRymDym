@@ -462,6 +462,29 @@ describe("P6.1 isolation / engine untouched", () => {
     expect(sql).not.toMatch(/CREATE TABLE/);
   });
 
+  it("hotfix qualifies document_version against RETURNS TABLE ambiguity", () => {
+    const sql = readFileSync(
+      join(
+        process.cwd(),
+        "supabase/migrations/20261006190900_p6_1_fx_cas_document_version_qualify.sql",
+      ),
+      "utf8",
+    );
+    expect(sql).toMatch(/CREATE OR REPLACE FUNCTION public\.studio_cas_apply_fx_chain/);
+    expect(sql).toMatch(/RETURNS TABLE \(document_version integer, chain jsonb\)/);
+    expect(sql).toMatch(
+      /document_version = studio_projects\.document_version \+ 1/,
+    );
+    expect(sql).toMatch(
+      /AND studio_projects\.document_version = p_expected/,
+    );
+    expect(sql).not.toMatch(/SET[\s\S]*document_version = document_version \+ 1/);
+    expect(sql).toMatch(/GRANT EXECUTE[\s\S]*TO service_role/);
+    expect(sql).toMatch(/REVOKE ALL[\s\S]*FROM PUBLIC/);
+    expect(sql).not.toMatch(/CREATE TABLE/);
+    expect(sql).not.toMatch(/ALTER TABLE/);
+  });
+
   it("P5.1 jsonb stubs still exist (no column migration)", () => {
     const sql = readFileSync(
       join(

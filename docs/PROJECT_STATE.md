@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-06 — P5.10 **PRODUCTION VERIFIED — GREEN** · SSOT reconcile · production app **`9c2a958`** · deploy `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · **docs-only** (no app redeploy this wave)
+**Updated:** 2026-10-06 — P6.1 RPC hotfix applied · app still **`23d3be8`** (P6.2 Track FX) · dpl `dpl_GZbap8mjpdFtdssB9dxd4zSyudwL` · **P6.2 PRODUCTION GATE — BLOCKED** (was RPC ambiguity; fix ready to rerun Gate)
 
 ---
 
@@ -21,17 +21,19 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | Advances with this SSOT reconcile (app tip = `9c2a958` P5.10) |
-| **PRODUCTION APP SHA** | `9c2a958cf94aca07679ed338cc23e21bb600fd4c` (`9c2a958`) — **P5.10 Studio Audio Engine** · **UNCHANGED** this docs wave |
-| **PRODUCTION DEPLOYMENT** | `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` (GitHub `9c2a958` · no-cache rebuild) |
+| **REPOSITORY HEAD / origin/main** | Advances with P6.1 RPC hotfix tip (app tip = `23d3be8` P6.2) |
+| **PRODUCTION APP SHA** | `23d3be8399afc3db39359ae316d3c95bb965e0bf` (`23d3be8`) — **P6.2 Track FX graph** · **UNCHANGED** by RPC hotfix |
+| **PRODUCTION DEPLOYMENT** | `dpl_GZbap8mjpdFtdssB9dxd4zSyudwL` (GitHub `23d3be8`) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **P5.10** · **PRODUCTION VERIFIED — GREEN** @ `9c2a958` |
-| **LAST STUDIO VERIFY** | **P5.10 PRODUCTION VERIFIED — GREEN** @ `9c2a958` |
+| **STUDIO BASELINE** | **P6.2 on app** · **P6.2 PRODUCTION GATE — BLOCKED** (persist RPC fixed; Gate must rerun) |
+| **LAST STUDIO VERIFY** | P6.2 Gate **BLOCKED** on pre-hotfix RPC; P5.10 still GREEN @ historical `9c2a958` |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.10 Studio Audio Engine** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` — [freeze](./decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md) |
-| **NEXT UNIT** | **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** (do **not** auto-start P6 / FX) |
+| **P6.1 FX persist / validation** | **RPC HOTFIX COMPLETE** — qualify `studio_projects.document_version` in `studio_cas_apply_fx_chain` |
+| **P6.2 Track FX graph** | **IMPLEMENTED** @ `23d3be8` · served `1bfh8g1yqvhyi.js` · **Gate NOT GREEN** |
+| **NEXT UNIT** | **P6.2 Production Gate RERUN** (after P6.1 RPC hotfix) — then P6.3 Master FX per [P6 freeze](./decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -60,10 +62,13 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = 9c2a958 · P5.10 Studio Audio Engine · READY
-PRODUCTION DEPLOYMENT         = dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
-REPOSITORY HEAD / origin/main = advances with this SSOT reconcile (app tip 9c2a958)
-LAST STUDIO VERIFY            = P5.10 · PRODUCTION VERIFIED — GREEN
+PRODUCTION APP                = 23d3be8 · P6.2 Track FX graph · READY (app)
+PRODUCTION DEPLOYMENT         = dpl_GZbap8mjpdFtdssB9dxd4zSyudwL
+REPOSITORY HEAD / origin/main = advances with P6.1 RPC hotfix
+LAST STUDIO VERIFY            = P6.2 PRODUCTION GATE — BLOCKED (RPC fixed; Gate rerun pending)
+P6.1 RPC HOTFIX               = COMPLETE · migration 20261006190900_p6_1_fx_cas_document_version_qualify
+  defect                      = RETURNS TABLE(document_version) + unqualified SET/WHERE → 400 ambiguous
+  fix                         = qualify studio_projects.document_version
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 
 STUDIO P5 (canonical table):
@@ -101,9 +106,9 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
-                              · do NOT auto-start P6 / FX / Mix / Master / punch / samples
-                              · P3 follow-up p_take_id = NON-BLOCKING only
+NEXT GATE                     = P6.2 Production Gate RERUN
+                              · do NOT mark P6.2 GREEN until Gate completes
+                              · P6.3 Master FX follows P6 freeze after P6.2 GREEN
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN

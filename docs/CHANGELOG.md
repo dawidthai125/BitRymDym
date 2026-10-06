@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.1 RPC HOTFIX (`document_version` ambiguity)
+
+**Status:** RPC / migration · production app **unchanged** at **`23d3be8`** · dpl **`dpl_GZbap8mjpdFtdssB9dxd4zSyudwL`**
+**Migration:** `20261006190900_p6_1_fx_cas_document_version_qualify.sql`
+**Defect:** `studio_cas_apply_fx_chain` `RETURNS TABLE (document_version …)` made unqualified `document_version` ambiguous in UPDATE SET/WHERE → owner FX PATCH HTTP 400
+**Fix:** qualify `studio_projects.document_version` (CAS / AuthZ / JSONB / Track FX graph unchanged)
+**P6.2:** still **PRODUCTION GATE — BLOCKED** until Gate rerun (app already served)
+
 ## 2026-10-06 — P5.10 SSOT RECONCILIATION (DOCS ONLY)
 
 **Status:** DOCS ONLY · production app **`9c2a958`** · dpl **`dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC`** · P5.10 **PRODUCTION VERIFIED — GREEN**

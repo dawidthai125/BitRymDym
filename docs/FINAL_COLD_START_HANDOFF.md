@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-06 — P5.10 **PRODUCTION VERIFIED — GREEN** @ **`9c2a958`** · dpl `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · P5.9 **GO WITH CONDITIONS** · D02 **CLOSED** · **NEXT = Architecture Audit** · docs-only reconcile
-**Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
+**Updated:** 2026-10-06 — P6.1 RPC hotfix · app **`23d3be8`** · dpl `dpl_GZbap8mjpdFtdssB9dxd4zSyudwL` · **P6.2 PRODUCTION GATE — BLOCKED** (ready to rerun)
+**Type:** Documentation continuity · **DOCS + RPC migration** (app bundle for P6.2 already at `23d3be8`)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,19 +25,21 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 9c2a958cf94aca07679ed338cc23e21bb600fd4c
-  short                       = 9c2a958
-  note                        = P5.10 Studio Audio Engine / Multi-Source Playback · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
-  note                        = GitHub 9c2a958 · Skipping build cache (P5.8 stale-cache protection)
+PRODUCTION APP SHA            = 23d3be8399afc3db39359ae316d3c95bb965e0bf
+  short                       = 23d3be8
+  note                        = P6.2 Track FX graph · app shipped · Gate NOT GREEN
+PRODUCTION DEPLOYMENT         = dpl_GZbap8mjpdFtdssB9dxd4zSyudwL
+P6.1 RPC HOTFIX               = COMPLETE (qualify document_version in studio_cas_apply_fx_chain)
+  migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 
-REPOSITORY HEAD / origin/main = advances with SSOT reconcile (app tip 9c2a958)
+REPOSITORY HEAD / origin/main = advances with P6.1 RPC hotfix tip
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
-DEPLOYMENT STATE              = READY / SUCCESS
-  this docs wave              = NO APP REDEPLOY (documentation-only reconciliation)
+DEPLOYMENT STATE              = READY / SUCCESS (app)
+  this hotfix wave            = DB migration only · NO app redeploy required
 
-STUDIO BASELINE               = P5.10 · PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P5.10 · PRODUCTION VERIFIED — GREEN
+STUDIO BASELINE               = P6.2 on app · P6.2 PRODUCTION GATE — BLOCKED
+LAST STUDIO VERIFY            = P6.2 Gate BLOCKED pre-hotfix · ready to RERUN
+NEXT GATE                     = P6.2 Production Gate RERUN
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
