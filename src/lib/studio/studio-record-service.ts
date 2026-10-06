@@ -2,17 +2,28 @@ import "server-only";
 
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
-import { geometryForStudioRecording } from "@/lib/studio/studio-record-ops";
+import {
+  findIdenticalTakeClipPlacement,
+  geometryForStudioRecording,
+} from "@/lib/studio/studio-record-ops";
 import {
   addStudioClipFor,
   getStudioProjectDocumentFor,
 } from "@/lib/studio/studio-service";
-import type { StudioClipDto } from "@/lib/studio/studio-types";
+import type {
+  StudioClipDto,
+  StudioPlaceableTakeDto,
+} from "@/lib/studio/studio-types";
+import { isTakeExpired } from "@/lib/takes/entitlement";
+import { displayTakeTitle } from "@/lib/takes/take-title";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+export type { StudioPlaceableTakeDto };
 
 /**
  * Place an already-READY owned Take onto a Studio Track at the captured playhead.
  * Does not mutate Take / Beat / storage. Reuses addStudioClipFor ownership + TAKE checks.
+ * Idempotent for Keep retry: same track + take + timelineStart returns existing Clip.
  */
 export async function placeReadyTakeAsStudioClipFor(
   context: AuthContext,
@@ -23,7 +34,12 @@ export async function placeReadyTakeAsStudioClipFor(
     /** Playhead at record start — integer ms from Studio transport SSOT. */
     timelineStartMs: number;
   },
-): Promise<{ clip: StudioClipDto; takeId: string; durationMs: number }> {
+): Promise<{
+  clip: StudioClipDto;
+  takeId: string;
+  durationMs: number;
+  reusedExisting: boolean;
+}> {
   if (!input.projectId || !input.trackId || !input.takeId) {
     throw new Error("projectId, trackId i takeId są wymagane.");
   }
@@ -61,6 +77,21 @@ export async function placeReadyTakeAsStudioClipFor(
     timelineLengthMs: document.project.timelineLengthMs,
   });
 
+  // Keep / network retry: do not create a second identical Clip.
+  const existing = findIdenticalTakeClipPlacement(document.clips, {
+    trackId: input.trackId,
+    takeId: input.takeId,
+    timelineStartMs: geometry.timelineStartMs,
+  });
+  if (existing) {
+    return {
+      clip: existing,
+      takeId: input.takeId,
+      durationMs: existing.durationMs,
+      reusedExisting: true,
+    };
+  }
+
   const clip = await addStudioClipFor(context, {
     projectId: input.projectId,
     trackId: input.trackId,
@@ -75,13 +106,89 @@ export async function placeReadyTakeAsStudioClipFor(
     clip,
     takeId: input.takeId,
     durationMs: geometry.durationMs,
+    reusedExisting: false,
   };
 }
 
 export async function placeReadyTakeAsStudioClip(
   input: Parameters<typeof placeReadyTakeAsStudioClipFor>[1],
-): Promise<{ clip: StudioClipDto; takeId: string; durationMs: number }> {
+): Promise<{
+  clip: StudioClipDto;
+  takeId: string;
+  durationMs: number;
+  reusedExisting: boolean;
+}> {
   return placeReadyTakeAsStudioClipFor(await requireUser(), input);
+}
+
+/**
+ * Compact READY Take picker for Studio place-from-library (P5.6).
+ * Prefers project's beat; may include other owned READY Takes (sameBeat=false).
+ */
+export async function listReadyTakesForStudioPlaceFor(
+  context: AuthContext,
+  projectId: string,
+): Promise<{ beatId: string | null; takes: StudioPlaceableTakeDto[] }> {
+  const document = await getStudioProjectDocumentFor(context, projectId);
+  const projectBeatId = document.project.beatId;
+  const admin = createSupabaseAdminClient();
+
+  const { data: rows, error } = await admin
+    .from("takes")
+    .select(
+      "id, title, beat_id, status, deleted_at, expires_at, duration_seconds, created_at",
+    )
+    .eq("owner_id", context.userId)
+    .eq("status", "READY")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  if (error) throw new Error(error.message);
+
+  const beatIds = [
+    ...new Set((rows ?? []).map((r) => r.beat_id as string).filter(Boolean)),
+  ];
+  const titleByBeat = new Map<string, string>();
+  if (beatIds.length > 0) {
+    const { data: beats } = await admin
+      .from("beats")
+      .select("id, title")
+      .in("id", beatIds);
+    for (const b of beats ?? []) {
+      titleByBeat.set(b.id as string, b.title as string);
+    }
+  }
+
+  const takes: StudioPlaceableTakeDto[] = [];
+  for (const row of rows ?? []) {
+    if (isTakeExpired({ expiresAt: row.expires_at as string })) continue;
+    const beatId = row.beat_id as string;
+    takes.push({
+      id: row.id as string,
+      displayTitle: displayTakeTitle({
+        title: (row.title as string | null) ?? null,
+        beatTitle: titleByBeat.get(beatId) ?? null,
+      }),
+      beatId,
+      durationSeconds:
+        typeof row.duration_seconds === "number" ? row.duration_seconds : null,
+      createdAt: row.created_at as string,
+      sameBeat: Boolean(projectBeatId && beatId === projectBeatId),
+    });
+  }
+
+  takes.sort((a, b) => {
+    if (a.sameBeat !== b.sameBeat) return a.sameBeat ? -1 : 1;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+
+  return { beatId: projectBeatId, takes };
+}
+
+export async function listReadyTakesForStudioPlace(
+  projectId: string,
+): Promise<{ beatId: string | null; takes: StudioPlaceableTakeDto[] }> {
+  return listReadyTakesForStudioPlaceFor(await requireUser(), projectId);
 }
 
 /**

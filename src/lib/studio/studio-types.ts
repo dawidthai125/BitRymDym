@@ -58,3 +58,14 @@ export type StudioProjectDocument = {
   tracks: StudioTrackDto[];
   clips: StudioClipDto[];
 };
+
+/** Compact READY Take row for Studio place-from-library (P5.6). */
+export type StudioPlaceableTakeDto = {
+  id: string;
+  displayTitle: string;
+  beatId: string;
+  durationSeconds: number | null;
+  createdAt: string;
+  /** True when Take belongs to the project's beat (preferred in picker). */
+  sameBeat: boolean;
+};

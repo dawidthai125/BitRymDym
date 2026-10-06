@@ -56,8 +56,9 @@ export async function POST(request: Request, context: RouteContext) {
         clip: result.clip,
         takeId: result.takeId,
         durationMs: result.durationMs,
+        reusedExisting: result.reusedExisting,
       },
-      { status: 201 },
+      { status: result.reusedExisting ? 200 : 201 },
     );
   } catch (error) {
     return studioApiErrorResponse(error);

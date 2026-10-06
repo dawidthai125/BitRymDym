@@ -45,10 +45,18 @@ type StudioTransportApi = {
   timeLabel: string;
   error: string | null;
   hasBeat: boolean;
+  /** True while a post-record / library Take is solo-previewed (not timeline layer). */
+  takePreviewActive: boolean;
   play: () => void;
   pause: () => void;
   stop: () => void;
   seek: (playheadMs: number) => void;
+  /**
+   * Preview a READY Take via /api/takes/preview on the Studio take audio layer.
+   * Does not use PlayerProvider. Pauses beat transport while solo-previewing.
+   */
+  previewTake: (takeId: string) => Promise<void>;
+  stopTakePreview: () => void;
 };
 
 const StudioTransportContext = createContext<StudioTransportApi | null>(null);
@@ -128,6 +136,9 @@ export function StudioTransportProvider({
   const syncTakeRef = useRef<(headMs: number, shouldPlay: boolean) => void>(
     () => undefined,
   );
+  /** When set, takeAudio plays a solo workflow preview (not timeline sync). */
+  const soloTakePreviewIdRef = useRef<string | null>(null);
+  const [takePreviewActive, setTakePreviewActive] = useState(false);
 
   useEffect(() => {
     takeClipsRef.current = takeClips;
@@ -320,6 +331,8 @@ export function StudioTransportProvider({
   ): Promise<void> {
     const takeAudio = takeAudioRef.current;
     if (!takeAudio) return;
+    // Solo Take Workflow preview owns the take layer until stopped.
+    if (soloTakePreviewIdRef.current) return;
     const hit = pickTakeClipAtPlayhead(takeClipsRef.current, headMs);
     if (!hit || hit.muted) {
       takeAudio.pause();
@@ -402,12 +415,77 @@ export function StudioTransportProvider({
     })();
   };
 
+  const stopTakePreview = () => {
+    soloTakePreviewIdRef.current = null;
+    setTakePreviewActive(false);
+    const takeAudio = takeAudioRef.current;
+    if (takeAudio) {
+      takeAudio.pause();
+      takeAudio.removeAttribute("src");
+      takeAudio.load();
+    }
+    activeTakeIdRef.current = null;
+  };
+
+  const previewTake = async (takeId: string): Promise<void> => {
+    if (!takeId) {
+      setError(TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(TAKE_PLAYBACK_ERROR_PL);
+    }
+    const takeAudio = takeAudioRef.current;
+    if (!takeAudio) {
+      setError(TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(TAKE_PLAYBACK_ERROR_PL);
+    }
+
+    // Pause beat clock so preview is clearly the Studio Take Workflow action.
+    audioRef.current?.pause();
+    setPhase("paused");
+
+    const url = await ensureTakeUrl(takeId);
+    if (!url) {
+      setError(TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(TAKE_PLAYBACK_ERROR_PL);
+    }
+
+    soloTakePreviewIdRef.current = takeId;
+    setTakePreviewActive(true);
+    setError(null);
+    takeAudio.src = url;
+    activeTakeIdRef.current = takeId;
+    takeAudio.load();
+    takeAudio.volume = 1;
+    takeAudio.muted = false;
+    takeAudio.currentTime = 0;
+    try {
+      await takeAudio.play();
+    } catch {
+      soloTakePreviewIdRef.current = null;
+      setTakePreviewActive(false);
+      setError(TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(TAKE_PLAYBACK_ERROR_PL);
+    }
+
+    const onEndedSolo = () => {
+      if (soloTakePreviewIdRef.current === takeId) {
+        stopTakePreview();
+      }
+      takeAudio.removeEventListener("ended", onEndedSolo);
+    };
+    takeAudio.addEventListener("ended", onEndedSolo);
+  };
+
   const pause = () => {
     audioRef.current?.pause();
+    if (soloTakePreviewIdRef.current) {
+      stopTakePreview();
+      return;
+    }
     takeAudioRef.current?.pause();
   };
 
   const stop = () => {
+    stopTakePreview();
     const audio = audioRef.current;
     const takeAudio = takeAudioRef.current;
     const clip = clips[0] ?? {
@@ -467,10 +545,13 @@ export function StudioTransportProvider({
     timeLabel: formatStudioTimeMs(clampPlayheadMs(playheadMs, timelineLengthMs)),
     error,
     hasBeat: Boolean(beatId),
+    takePreviewActive,
     play,
     pause,
     stop,
     seek,
+    previewTake,
+    stopTakePreview,
   };
 
   return (

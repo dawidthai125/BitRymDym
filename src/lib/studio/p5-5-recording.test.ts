@@ -234,6 +234,16 @@ describe("P5.5 reuse / isolation guards", () => {
     expect(panel).not.toMatch(/uploadAnonTakeRecordingBlob/);
   });
 
+  it("P5.5 foundation still places via place route; P5.6 moves place off finalize path", () => {
+    const panel = readFileSync(
+      join(process.cwd(), "src/components/studio/studio-recording-panel.tsx"),
+      "utf8",
+    );
+    expect(panel).toMatch(/record\/place/);
+    expect(panel).toMatch(/Zachowaj/);
+    expect(panel).toMatch(/TAKE_READY/);
+  });
+
   it("StudioTransport remains distinct from PlayerProvider and layers TAKE audio", () => {
     const transport = readFileSync(
       join(process.cwd(), "src/components/studio/studio-transport-provider.tsx"),
@@ -242,6 +252,7 @@ describe("P5.5 reuse / isolation guards", () => {
     expect(transport).toMatch(/takeAudioRef/);
     expect(transport).toMatch(/\/api\/takes\/preview/);
     expect(transport).toMatch(/setSuppressed\(true\)/);
+    expect(transport).toMatch(/previewTake/);
     expect(transport).not.toMatch(/PlayerProvider\s*\(/);
   });
 

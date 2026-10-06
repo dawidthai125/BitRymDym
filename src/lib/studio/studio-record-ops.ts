@@ -64,3 +64,27 @@ export function listTakeClips<
     .slice()
     .sort((a, b) => a.timelineStartMs - b.timelineStartMs);
 }
+
+/**
+ * P5.6 Keep idempotency: same track + take + timeline start → reuse Clip.
+ * Overlapping different placements of the same Take are still allowed.
+ */
+export function findIdenticalTakeClipPlacement<
+  T extends {
+    trackId: string;
+    sourceKind: string;
+    sourceTakeId: string | null;
+    timelineStartMs: number;
+  },
+>(
+  clips: readonly T[],
+  params: { trackId: string; takeId: string; timelineStartMs: number },
+): T | undefined {
+  return clips.find(
+    (c) =>
+      c.trackId === params.trackId &&
+      c.sourceKind === "TAKE" &&
+      c.sourceTakeId === params.takeId &&
+      c.timelineStartMs === params.timelineStartMs,
+  );
+}
