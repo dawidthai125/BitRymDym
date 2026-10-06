@@ -393,9 +393,10 @@ export class StudioAudioEngine {
     });
     this.setLifecycle("playing");
     this.listener.onPlayhead(playheadMs);
+    // Start meter reader immediately on Play (≤12 Hz), before async voice sync.
+    this.startMetering();
     await this.syncVoices(playheadMs, true);
     this.startClock();
-    this.startMetering();
   }
 
   pause(): void {
@@ -420,13 +421,15 @@ export class StudioAudioEngine {
       playheadMs,
     });
     this.listener.onPlayhead(playheadMs);
-    await this.syncVoices(playheadMs, shouldPlay);
     if (shouldPlay) {
       this.setLifecycle("playing");
-      this.startClock();
       this.startMetering();
     } else {
       this.stopMetering({ reset: false });
+    }
+    await this.syncVoices(playheadMs, shouldPlay);
+    if (shouldPlay) {
+      this.startClock();
     }
   }
 
