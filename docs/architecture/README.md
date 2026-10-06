@@ -60,11 +60,13 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** — foundation → Take Workflow · `finalize ≠ place` |
 | **P5.8 Studio Devices / Input** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · dpl `dpl_2RhUDg…` — [freeze](../decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md) |
 | **P5.10 Studio Audio Engine** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · dpl `dpl_L7pB5A8…` — [freeze](../decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md) |
+| **P6.1 FX persist / CAS** | **COMPLETE** · RPC hotfix `57ef69e` — [P6 freeze](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
+| **P6.2 Track FX graph** | **PRODUCTION VERIFIED — GREEN** @ `23d3be8` · dpl `dpl_3Donum…` — [P6 freeze](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
 | **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **GO WITH CONDITIONS** — [P5_9_STUDIO_ARCHITECTURE_AUDIT.md](./P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **Next Studio step** | Architecture Audit / formal next unit definition — do **not** auto-start P6 / FX / Mix / Master |
-| Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · overlap = MIX · engine **SHIPPED** (P5.10 GREEN) |
+| **Next Studio step** | **P6.3 — Master FX Graph** per P6 freeze — do **not** auto-start without Owner GO |
+| Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track FX after Clip Gain · overlap = MIX · P6.2 GREEN |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | E3.8 W6 Mobile Cert | **CLOSED / PASS** · **OWNER-ACCEPTED EMULATED** — [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) |

@@ -6,13 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.2 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
+
+**Status:** DOCS ONLY · **P6.2 PRODUCTION VERIFIED — GREEN**
+**Application:** `23d3be8` · **RPC hotfix:** `57ef69e` · **Deployment:** `dpl_3DonumGaeZvVqPXGb5ch8No28VpS`
+**Served:** `/_next/static/immutable/chunks/1bfh8g1yqvhyi.js` (StudioAudioEngine · syncTrackFx · FX registry · no first-wins transport)
+**Gate:** Track/Master FX persist · bypass · param · reorder · remove · CAS 409 · limiter-last · runtime adapters · multi-source · transport · track controls · mobile 390 · unauth 401 · cross-user 403 · tests PASS
+**Next:** **P6.3 — Master FX Graph** (do not start in this wave)
+**Known limitations:** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.1 RPC HOTFIX (`document_version` ambiguity)
 
 **Status:** RPC / migration · production app **unchanged** at **`23d3be8`** · dpl **`dpl_GZbap8mjpdFtdssB9dxd4zSyudwL`**
 **Migration:** `20261006190900_p6_1_fx_cas_document_version_qualify.sql`
 **Defect:** `studio_cas_apply_fx_chain` `RETURNS TABLE (document_version …)` made unqualified `document_version` ambiguous in UPDATE SET/WHERE → owner FX PATCH HTTP 400
 **Fix:** qualify `studio_projects.document_version` (CAS / AuthZ / JSONB / Track FX graph unchanged)
-**P6.2:** still **PRODUCTION GATE — BLOCKED** until Gate rerun (app already served)
+**P6.2:** **PRODUCTION VERIFIED — GREEN** (Gate rerun after this hotfix)
 
 ## 2026-10-06 — P5.10 SSOT RECONCILIATION (DOCS ONLY)
 
