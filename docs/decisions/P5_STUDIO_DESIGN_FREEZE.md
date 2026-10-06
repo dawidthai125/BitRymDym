@@ -8,6 +8,28 @@
 
 ---
 
+## Numbering reconciliation (2026-10-06)
+
+Living unit numbers after P5.6 ship + P5.7 audit:
+
+```text
+P5.7 = Studio Architecture Audit (GO WITH CONDITIONS) — NOT punch
+P5.8 = Studio Devices / Input & Device Foundation — NEXT implementation unit
+```
+
+Historical “punch as P5.7” language in older audit §37 is superseded. See [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md).
+
+Audio boundary (living):
+
+```text
+StudioTransport != PlayerProvider
+P6 requires dedicated StudioAudioEngine / audio graph
+(do not bolt FX onto HTMLAudioElement / simple StudioTransport)
+```
+
+
+---
+
 ## 1. Verdict
 
 ```text

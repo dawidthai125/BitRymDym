@@ -57,6 +57,12 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
 | Community Upload + Moderation | **EPIC COMPLETE / LOCKED** (Waves 1–5) @ `c5e1f17` |
 | Recording / Quick Take | **Waves 1–5 CLOSED** · D02 **SHIPPED** @ `e98ba52` — [RECORDING.md](./RECORDING.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) |
+| **Studio P5.1–P5.5** | **COMPLETE** — foundation / transport / clip edit / timeline / recording |
+| **P5.6 Studio Take Workflow** | **PRODUCTION VERIFIED — GREEN** @ `7f80143` · `finalize ≠ place` — [freeze](../decisions/P5_6_STUDIO_TAKE_WORKFLOW_DESIGN_FREEZE.md) |
+| **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
+| **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
+| **P5.8 (NEXT)** | Studio Devices / Input & Device Foundation — Design Freeze pending |
+| Studio audio rule | `StudioTransport != PlayerProvider` · P6 requires **StudioAudioEngine** (not HTMLAudio FX) |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | E3.8 W6 Mobile Cert | **CLOSED / PASS** · **OWNER-ACCEPTED EMULATED** — [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) |
@@ -72,7 +78,7 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | Contabo VPS | **EXTERNAL COMPUTE** (FFmpeg ephemeral) · **NOT** durable media SSOT · VPS Layer-1 staging **43/43** · **NOT** sole/final DR · worker **STOPPED / DISABLED** @ `92496d4` |
 | FAR-01 | Phase 1 DR-A historical SHIPPED · campaign **SOAK COMPLETE / CONTAMINATED** · RETIREMENT **NOT EXECUTED** — [FAR_01_CURRENT_STATE.md](../audits/FAR_01_CURRENT_STATE.md) |
 | ARCH-05 orphan GC | **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** · DELETE **32/32** historical — [reconciliation](../audits/ARCH_05_POST_DELETE_RECONCILIATION.md) |
-| Current Production / repo tip | Live planes: [PROJECT_STATE.md](../PROJECT_STATE.md) · app `ddcee65` |
+| Current Production / repo tip | Live planes: [PROJECT_STATE.md](../PROJECT_STATE.md) · production app `7f80143` · repo may be ahead (docs / `44dc22c` test-only) |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 

@@ -760,12 +760,27 @@ Resolved by Architect in this audit (no Owner needed):
 - **Tests:** solo exclusivity rules · persistence  
 - **AC:** Polish controls; mobile Basic layout  
 
+> **§37 RECONCILIATION (2026-10-06) — numbering superseded for units after P5.4.**  
+> Historical plan below is **preserved as originally written**. Living SSOT numbering is:
+>
+> | Living unit | Name | Status |
+> |-------------|------|--------|
+> | P5.1–P5.4 | Foundation → timeline UX | **COMPLETE** (as shipped; names match plan) |
+> | P5.5 | Recording foundation | **COMPLETE** (was labeled “Devices…” in this §37 — **superseded**) |
+> | P6 Take Workflow scope | shipped as **P5.6 Studio Take Workflow** | **PRODUCTION VERIFIED — GREEN** @ `7f80143` |
+> | **P5.7** | **Studio Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
+> | **P5.8** | **Studio Devices / Input & Device Foundation** | **NEXT** implementation unit (Design Freeze pending) |
+>
+> Do **not** treat historical “P5.7 — Punch / pre-roll” below as the living P5.7. Punch remains a **later** P5 unit (name TBD after P5.8).  
+> D02 live harness debt: **CLOSED** @ `44dc22c` (test-only).
+
 ### P5.5 — Devices + monitoring + metronome + BPM
 
 - **Scope:** device picker · input level · metronome · tap tempo · count-in  
 - **Deps:** P5.4  
 - **Tests:** permission deny paths · devicechange  
 - **AC:** Assistant checklist green path  
+- **Historical note:** Living shipped **P5.5 = Recording foundation** (not this scope). Devices scope → living **P5.8**.
 
 ### P5.6 — Project recording + Take→Clip
 
@@ -773,6 +788,7 @@ Resolved by Architect in this audit (no Owner needed):
 - **Deps:** P5.5 · P4.1  
 - **Tests:** P3 untouched · P4 eligibility · new Take + Clip  
 - **AC:** record into Project without breaking beat Quick Record  
+- **Historical note:** Living **P5.6 = Studio Take Workflow** (`finalize ≠ place`); recording foundation closed as P5.5.
 
 ### P5.7 — Punch / pre-roll
 
@@ -780,6 +796,7 @@ Resolved by Architect in this audit (no Owner needed):
 - **Deps:** P5.6  
 - **Tests:** timing accuracy tolerances · latency compensation hook  
 - **AC:** record `01:32.500`–`01:38.200` window  
+- **SUPERSEDED NAME:** Living **P5.7 = Studio Architecture Audit** (not punch). Punch is deferred past P5.8.
 
 ### P5.8 — Import library Takes + My Recordings bridge
 
@@ -787,6 +804,7 @@ Resolved by Architect in this audit (no Owner needed):
 - **Deps:** P5.3 · P4 list  
 - **Tests:** expired deny  
 - **AC:** import without re-upload  
+- **SUPERSEDED NAME:** Living **P5.8 = Studio Devices / Input & Device Foundation**. Library place partially shipped inside P5.6.
 
 ### P5.9 — Autosave / recovery / Assistant polish
 
@@ -794,6 +812,7 @@ Resolved by Architect in this audit (no Owner needed):
 - **Deps:** P5.1–P5.8  
 - **Tests:** refresh retention · conflict toast  
 - **AC:** no lost Take on refresh  
+- **Living condition (P5.7 H2):** freeze `document_version` contract before any autosave/recovery unit.
 
 ### P5.10 — Bounce contract (optional ship) + hardening
 

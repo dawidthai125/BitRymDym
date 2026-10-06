@@ -470,7 +470,7 @@ P5.6 ARCHITECTURE: GO
 |------|------------|
 | `d02-live` 2 failed (READY-cap race → `REPLACE_REQUIRED` vs daily-cap string) | **Env / assertion pollution** under shared anon caps |
 | Impact on P5.6 | **None** on Studio auth recording path |
-| Action | **Separate backlog debt item** — do not fix inside P5.6 audit or implementation unless Owner prioritizes |
+| Action | **CLOSED** @ `44dc22c` (**TEST ONLY**) — see P5.7 / PROJECT_STATE |
 
 ---
 
@@ -491,3 +491,21 @@ P5.6 ARCHITECTURE: GO
 ---
 
 *End of P5.6 Studio Architecture Audit. Implementation must not start without Design Freeze + Owner GO.*
+
+---
+
+## Appendix C — Numbering + D02 reconciliation (2026-10-06)
+
+```text
+Living SSOT (authoritative):
+  P5.5 = Recording foundation (shipped)
+  P5.6 = Studio Take Workflow · PRODUCTION VERIFIED — GREEN @ 7f80143
+  P5.7 = Studio Architecture Audit · GO WITH CONDITIONS
+  P5.8 = Studio Devices / Input & Device Foundation · NEXT
+
+D02 live harness = CLOSED @ 44dc22c (TEST ONLY)
+Do not reuse P5.7 for punch.
+```
+
+See [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) and living [PROJECT_STATE.md](../PROJECT_STATE.md).
+
