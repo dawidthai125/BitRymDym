@@ -10,11 +10,19 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  StudioFxChainEditor,
+  StudioFxSheet,
+} from "@/components/studio/studio-fx-chain-editor";
+import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
+import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import {
   StudioTransportProvider,
   useStudioTransport,
 } from "@/components/studio/studio-transport-provider";
+import { FX_CHAIN_CONFLICT_UI_PL } from "@/lib/studio/studio-fx-chain";
+import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
 import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
 import type {
@@ -44,6 +52,9 @@ import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 
 type TimelineMode = "seek" | "edit";
+type FxPanelTarget =
+  | { role: "master" }
+  | { role: "track"; trackId: string };
 
 export function StudioEditor({
   initialDocument,
@@ -123,6 +134,7 @@ function StudioEditorInner({
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [recordingLocked, setRecordingLocked] = useState(false);
+  const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
   const transport = useStudioTransport();
   const anySolo = doc.tracks.some((t) => t.solo);
   const length = doc.project.timelineLengthMs;
@@ -176,6 +188,51 @@ function StudioEditorInner({
       },
       tracks: prev.tracks.map((t) => (t.id === trackId ? json.track! : t)),
     }));
+  }
+
+  async function patchMasterMix(body: {
+    masterGainDb?: number;
+    masterPan?: number;
+  }): Promise<void> {
+    setError(null);
+    setStatus("Zapisywanie…");
+    const res = await fetch(`/api/studio/projects/${doc.project.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expectedDocumentVersion: doc.project.documentVersion,
+        ...body,
+      }),
+    });
+    const json = (await res.json()) as {
+      success?: boolean;
+      documentVersion?: number;
+      masterGainDb?: number;
+      masterPan?: number;
+      error?: string;
+      code?: string;
+    };
+    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+    }
+    if (
+      !res.ok ||
+      typeof json.documentVersion !== "number" ||
+      typeof json.masterGainDb !== "number" ||
+      typeof json.masterPan !== "number"
+    ) {
+      throw new Error(json.error ?? "Nie udało się zapisać Master.");
+    }
+    setDoc((prev) => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        documentVersion: json.documentVersion!,
+        masterGainDb: json.masterGainDb!,
+        masterPan: json.masterPan!,
+      },
+    }));
+    setStatus("Zapisano");
   }
 
   async function reorder(trackId: string, direction: "up" | "down") {
@@ -504,6 +561,87 @@ function StudioEditorInner({
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-4">
         <ul className="space-y-3">
+          <li className="rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium text-[var(--brd-ink)]">
+                  Master
+                </p>
+                <p className="text-xs text-[var(--brd-mute)]">
+                  Głośność wyjścia · efekty sumy
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                className="min-h-11"
+                aria-label="Efekty Master"
+                onClick={() => setFxPanel({ role: "master" })}
+              >
+                Efekty
+                {doc.project.masterFxChain.effects.length > 0
+                  ? ` (${doc.project.masterFxChain.effects.length})`
+                  : ""}
+              </Button>
+            </div>
+            <StudioMixControl
+              label="Głośność"
+              ariaLabel="Głośność Master"
+              value={doc.project.masterGainDb}
+              display={`${doc.project.masterGainDb.toFixed(1)} dB`}
+              min={-24}
+              max={12}
+              step={0.5}
+              disabled={pending}
+              onLocalChange={(masterGainDb) =>
+                setDoc((prev) => ({
+                  ...prev,
+                  project: { ...prev.project, masterGainDb },
+                }))
+              }
+              onCommit={(masterGainDb) =>
+                startTransition(async () => {
+                  try {
+                    await patchMasterMix({ masterGainDb });
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : "Błąd Master głośności.",
+                    );
+                    setStatus(null);
+                  }
+                })
+              }
+            />
+            <StudioMixControl
+              label="Panorama L/R"
+              ariaLabel="Panorama Master"
+              value={doc.project.masterPan}
+              display={doc.project.masterPan.toFixed(2)}
+              min={-1}
+              max={1}
+              step={0.01}
+              disabled={pending}
+              onLocalChange={(masterPan) =>
+                setDoc((prev) => ({
+                  ...prev,
+                  project: { ...prev.project, masterPan },
+                }))
+              }
+              onCommit={(masterPan) =>
+                startTransition(async () => {
+                  try {
+                    await patchMasterMix({ masterPan });
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : "Błąd Master panoramy.",
+                    );
+                    setStatus(null);
+                  }
+                })
+              }
+            />
+          </li>
           {doc.tracks.map((track, index) => {
             const audible = isTrackAudible({
               muted: track.muted,
@@ -581,7 +719,7 @@ function StudioEditorInner({
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <ToggleChip
+                  <StudioToggleChip
                     active={track.recordArmed}
                     label="REC"
                     title="Uzbrojenie nagrywania"
@@ -599,7 +737,7 @@ function StudioEditorInner({
                       })
                     }
                   />
-                  <ToggleChip
+                  <StudioToggleChip
                     active={track.solo}
                     label="Odsłuch"
                     title="Solo"
@@ -615,7 +753,7 @@ function StudioEditorInner({
                       })
                     }
                   />
-                  <ToggleChip
+                  <StudioToggleChip
                     active={track.muted}
                     label="Wycisz"
                     title="Wycisz"
@@ -631,6 +769,21 @@ function StudioEditorInner({
                       })
                     }
                   />
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    className="min-h-11"
+                    aria-label={`Efekty ścieżki ${track.name}`}
+                    onClick={() =>
+                      setFxPanel({ role: "track", trackId: track.id })
+                    }
+                  >
+                    Efekty
+                    {track.effectsChain.effects.length > 0
+                      ? ` (${track.effectsChain.effects.length})`
+                      : ""}
+                  </Button>
                 </div>
                 <label className="mt-3 block text-xs text-[var(--brd-mute)]">
                   Głośność ({track.gainDb.toFixed(1)} dB)
@@ -780,6 +933,66 @@ function StudioEditorInner({
         P5.4 — zoom, snap i zaznaczenie na osi czasu. Usunięcie klipu nie
         usuwa źródła. Punch i nagranie wokalu w kolejnych etapach.
       </p>
+
+      <StudioFxSheet
+        open={fxPanel !== null}
+        onClose={() => setFxPanel(null)}
+      >
+        {fxPanel?.role === "master" ? (
+          <StudioFxChainEditor
+            role="master"
+            projectId={doc.project.id}
+            chain={doc.project.masterFxChain}
+            documentVersion={doc.project.documentVersion}
+            title="Master · Efekty"
+            onClose={() => setFxPanel(null)}
+            onDocumentVersionChange={(documentVersion) =>
+              setDoc((prev) => ({
+                ...prev,
+                project: { ...prev.project, documentVersion },
+              }))
+            }
+            onChainChange={(masterFxChain: StudioFxChainV1) =>
+              setDoc((prev) => ({
+                ...prev,
+                project: { ...prev.project, masterFxChain },
+              }))
+            }
+          />
+        ) : null}
+        {fxPanel?.role === "track" ? (
+          <StudioFxChainEditor
+            role="track"
+            projectId={doc.project.id}
+            trackId={fxPanel.trackId}
+            chain={
+              doc.tracks.find((t) => t.id === fxPanel.trackId)?.effectsChain ?? {
+                schemaVersion: 1,
+                effects: [],
+              }
+            }
+            documentVersion={doc.project.documentVersion}
+            title={`Efekty · ${
+              doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? "Ścieżka"
+            }`}
+            onClose={() => setFxPanel(null)}
+            onDocumentVersionChange={(documentVersion) =>
+              setDoc((prev) => ({
+                ...prev,
+                project: { ...prev.project, documentVersion },
+              }))
+            }
+            onChainChange={(effectsChain: StudioFxChainV1) =>
+              setDoc((prev) => ({
+                ...prev,
+                tracks: prev.tracks.map((t) =>
+                  t.id === fxPanel.trackId ? { ...t, effectsChain } : t,
+                ),
+              }))
+            }
+          />
+        ) : null}
+      </StudioFxSheet>
     </div>
   );
 }
@@ -1245,30 +1458,5 @@ function StudioTimeline({
         />
       </label>
     </div>
-  );
-}
-
-function ToggleChip({
-  active,
-  label,
-  title,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  title: string;
-  onClick: () => void;
-}) {
-  return (
-    <Button
-      type="button"
-      size="xs"
-      variant={active ? "default" : "outline"}
-      title={title}
-      aria-pressed={active}
-      onClick={onClick}
-    >
-      {label}
-    </Button>
   );
 }

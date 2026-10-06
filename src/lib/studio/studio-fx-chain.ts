@@ -560,3 +560,262 @@ export function studioFxPlaybackFingerprint(plan: StudioFxPlaybackPlan): string 
     }),
   );
 }
+
+/** P6.4.2 — UI metadata derived from the same ranges as parsers (render only). */
+export type StudioFxUiParamMeta = {
+  path: string;
+  labelPl: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  kind: "slider";
+};
+
+export type StudioFxUiTypeMeta = {
+  labelPl: string;
+  params: StudioFxUiParamMeta[];
+};
+
+function slider(
+  path: string,
+  labelPl: string,
+  min: number,
+  max: number,
+  step: number,
+  unit: string,
+): StudioFxUiParamMeta {
+  return { path, labelPl, min, max, step, unit, kind: "slider" };
+}
+
+export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
+  eq: {
+    labelPl: "EQ",
+    params: [
+      slider("low.frequencyHz", "Bass · częstotliwość", 20, 500, 1, "Hz"),
+      slider("low.gainDb", "Bass · głośność", -12, 12, 0.1, "dB"),
+      slider("low.q", "Bass · Q", 0.1, 12, 0.1, "Q"),
+      slider("mid.frequencyHz", "Środek · częstotliwość", 200, 5000, 1, "Hz"),
+      slider("mid.gainDb", "Środek · głośność", -12, 12, 0.1, "dB"),
+      slider("mid.q", "Środek · Q", 0.1, 18, 0.1, "Q"),
+      slider("high.frequencyHz", "Góra · częstotliwość", 2000, 20000, 1, "Hz"),
+      slider("high.gainDb", "Góra · głośność", -12, 12, 0.1, "dB"),
+      slider("high.q", "Góra · Q", 0.1, 12, 0.1, "Q"),
+    ],
+  },
+  compressor: {
+    labelPl: "Kompresor",
+    params: [
+      slider("thresholdDb", "Próg", -60, 0, 0.5, "dB"),
+      slider("ratio", "Stopień kompresji", 1, 20, 0.1, ":1"),
+      slider("attackMs", "Atak", 0, 200, 1, "ms"),
+      slider("releaseMs", "Zwolnienie", 10, 2000, 1, "ms"),
+      slider("makeupDb", "Wyrównanie", -12, 12, 0.1, "dB"),
+    ],
+  },
+  limiter: {
+    labelPl: "Limiter",
+    params: [
+      slider("thresholdDb", "Próg", -24, 0, 0.1, "dB"),
+      slider("ceilingDb", "Sufit", -6, 0, 0.1, "dB"),
+    ],
+  },
+  reverb: {
+    labelPl: "Pogłos",
+    params: [
+      slider("mix", "Poziom efektu", 0, 1, 0.01, ""),
+      slider("decaySeconds", "Zanikanie", 0.1, 6, 0.1, "s"),
+    ],
+  },
+  delay: {
+    labelPl: "Delay",
+    params: [
+      slider("mix", "Poziom efektu", 0, 1, 0.01, ""),
+      slider("timeMs", "Czas", 1, 2000, 1, "ms"),
+      slider("feedback", "Sprzężenie", 0, 0.95, 0.01, ""),
+    ],
+  },
+};
+
+export const FX_CHAIN_CONFLICT_UI_PL =
+  "Projekt został zmieniony w innej sesji. Odśwież dane i spróbuj ponownie.";
+
+export function studioFxLabelPl(type: StudioFxType): string {
+  return STUDIO_FX_UI_META[type].labelPl;
+}
+
+export function getStudioFxParamValue(
+  params: StudioFxInstance["params"],
+  path: string,
+): number {
+  const parts = path.split(".");
+  let cur: unknown = params;
+  for (const part of parts) {
+    if (!cur || typeof cur !== "object") return 0;
+    cur = (cur as Record<string, unknown>)[part];
+  }
+  return typeof cur === "number" && Number.isFinite(cur) ? cur : 0;
+}
+
+export function setStudioFxParamValue(
+  params: StudioFxInstance["params"],
+  path: string,
+  value: number,
+): StudioFxInstance["params"] {
+  const parts = path.split(".");
+  const root = structuredClone(params) as Record<string, unknown>;
+  let cur: Record<string, unknown> = root;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const key = parts[i]!;
+    const next = cur[key];
+    if (!next || typeof next !== "object") {
+      cur[key] = {};
+    }
+    cur = cur[key] as Record<string, unknown>;
+  }
+  cur[parts[parts.length - 1]!] = value;
+  return root as StudioFxInstance["params"];
+}
+
+export function createStudioFxInstance(
+  type: StudioFxType,
+  createId: () => string = () => crypto.randomUUID(),
+): StudioFxInstance {
+  const id = createId();
+  switch (type) {
+    case "eq":
+      return { id, type, enabled: true, params: defaultStudioFxParams("eq") };
+    case "compressor":
+      return {
+        id,
+        type,
+        enabled: true,
+        params: defaultStudioFxParams("compressor"),
+      };
+    case "limiter":
+      return {
+        id,
+        type,
+        enabled: true,
+        params: defaultStudioFxParams("limiter"),
+      };
+    case "reverb":
+      return {
+        id,
+        type,
+        enabled: true,
+        params: defaultStudioFxParams("reverb"),
+      };
+    case "delay":
+      return {
+        id,
+        type,
+        enabled: true,
+        params: defaultStudioFxParams("delay"),
+      };
+  }
+}
+
+/** Master: enabled limiter must remain last among enabled effects. */
+export function canMoveStudioFx(
+  chain: StudioFxChainV1,
+  index: number,
+  direction: "up" | "down",
+  role: StudioFxChainRole,
+): boolean {
+  const effects = chain.effects;
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || index >= effects.length) return false;
+  if (swapWith < 0 || swapWith >= effects.length) return false;
+  if (role !== "master") return true;
+  const next = [...effects];
+  const tmp = next[index]!;
+  next[index] = next[swapWith]!;
+  next[swapWith] = tmp;
+  try {
+    assertMasterLimiterLast(next);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function moveStudioFx(
+  chain: StudioFxChainV1,
+  index: number,
+  direction: "up" | "down",
+  role: StudioFxChainRole,
+): StudioFxChainV1 {
+  if (!canMoveStudioFx(chain, index, direction, role)) {
+    return chain;
+  }
+  const effects = [...chain.effects];
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  const tmp = effects[index]!;
+  effects[index] = effects[swapWith]!;
+  effects[swapWith] = tmp;
+  return { schemaVersion: 1, effects };
+}
+
+export function addStudioFxToChain(
+  chain: StudioFxChainV1,
+  type: StudioFxType,
+  role: StudioFxChainRole,
+  createId: () => string = () => crypto.randomUUID(),
+): StudioFxChainV1 {
+  if (chain.effects.length >= STUDIO_FX_CHAIN_MAX_EFFECTS) {
+    throw new StudioFxChainError("FX_CHAIN_INVALID", "Maksymalnie 8 efektów.");
+  }
+  const effect = createStudioFxInstance(type, createId);
+  const effects = [...chain.effects];
+  if (role === "master") {
+    if (type === "limiter") {
+      effects.push(effect);
+    } else {
+      const last = effects[effects.length - 1];
+      if (last?.type === "limiter" && last.enabled) {
+        effects.splice(effects.length - 1, 0, effect);
+      } else {
+        effects.push(effect);
+      }
+    }
+    assertMasterLimiterLast(effects);
+  } else {
+    effects.push(effect);
+  }
+  return { schemaVersion: 1, effects };
+}
+
+export function removeStudioFxFromChain(
+  chain: StudioFxChainV1,
+  effectId: string,
+): StudioFxChainV1 {
+  return {
+    schemaVersion: 1,
+    effects: chain.effects.filter((e) => e.id !== effectId),
+  };
+}
+
+export function setStudioFxEnabled(
+  chain: StudioFxChainV1,
+  effectId: string,
+  enabled: boolean,
+  role: StudioFxChainRole,
+): StudioFxChainV1 {
+  const effects = chain.effects.map((e) =>
+    e.id === effectId ? { ...e, enabled } : e,
+  ) as StudioFxInstance[];
+  if (role === "master") assertMasterLimiterLast(effects);
+  return { schemaVersion: 1, effects };
+}
+
+export function setStudioFxParams(
+  chain: StudioFxChainV1,
+  effectId: string,
+  params: StudioFxInstance["params"],
+): StudioFxChainV1 {
+  const effects = chain.effects.map((e) =>
+    e.id === effectId ? ({ ...e, params } as StudioFxInstance) : e,
+  );
+  return { schemaVersion: 1, effects };
+}
