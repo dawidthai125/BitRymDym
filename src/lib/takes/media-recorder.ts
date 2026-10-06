@@ -132,8 +132,9 @@ export class TakeMediaRecorder {
     }
 
     try {
+      // P5.8: prefer ideal (not exact) so stale deviceId can soft-fail browser-side.
       const audio: MediaTrackConstraints | boolean = options?.audioDeviceId
-        ? { deviceId: { exact: options.audioDeviceId } }
+        ? { deviceId: { ideal: options.audioDeviceId } }
         : true;
       this.stream = await getUserMedia({
         audio,

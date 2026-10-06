@@ -6,12 +6,14 @@ import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
+import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
 import type {
   StudioClipDto,
   StudioPlaceableTakeDto,
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
+import { studioDeviceErrorMessagePl } from "@/lib/studio/studio-input-devices";
 import {
   toUserFacingTakeUploadError,
   uploadTakeRecordingBlob,
@@ -28,8 +30,6 @@ import {
   reduceRecordingUi,
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
-
-type AudioInputOption = { deviceId: string; label: string };
 
 type WorkflowActionBusy = "preview" | "keep" | "discard" | "place" | null;
 
@@ -56,8 +56,6 @@ export function StudioRecordingPanel({
   const [beatId, setBeatId] = useState<string | null>(null);
   const [maxSeconds, setMaxSeconds] = useState(180);
   const [contextError, setContextError] = useState<string | null>(null);
-  const [audioInputs, setAudioInputs] = useState<AudioInputOption[]>([]);
-  const [audioDeviceId, setAudioDeviceId] = useState<string>("");
   const [recordStartMs, setRecordStartMs] = useState<number | null>(null);
   const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [workflowBusy, setWorkflowBusy] = useState<WorkflowActionBusy>(null);
@@ -87,9 +85,18 @@ export function StudioRecordingPanel({
   const trackIdRef = useRef(trackId);
   const captureTrackIdRef = useRef<string>("");
   const recordStartMsRef = useRef<number | null>(null);
-  const audioDeviceIdRef = useRef(audioDeviceId);
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const mic = useMicAnalyser(micStream, { barCount: 32, hz: 15 });
+
+  const captureActive =
+    state.phase === "RECORDING" ||
+    state.phase === "STOPPING" ||
+    state.phase === "UPLOADING" ||
+    state.phase === "PROCESSING";
+
+  const inputDevices = useStudioInputDevices({
+    recordingActive: captureActive,
+  });
 
   useEffect(() => {
     phaseRef.current = state.phase;
@@ -100,8 +107,7 @@ export function StudioRecordingPanel({
     maxSecondsRef.current = maxSeconds;
     trackIdRef.current = trackId;
     recordStartMsRef.current = recordStartMs;
-    audioDeviceIdRef.current = audioDeviceId;
-  }, [beatId, maxSeconds, trackId, recordStartMs, audioDeviceId]);
+  }, [beatId, maxSeconds, trackId, recordStartMs]);
 
   const busy =
     isRecordingBusy(state.phase) ||
@@ -110,13 +116,35 @@ export function StudioRecordingPanel({
   useEffect(() => {
     // Lock timeline only while capture / finalize is in flight — playhead may still
     // be adjusted in READY before ● Nagraj. READY_TAKE is decision UI (not locked).
-    onRecordingActiveChange?.(
-      state.phase === "RECORDING" ||
-        state.phase === "STOPPING" ||
-        state.phase === "UPLOADING" ||
-        state.phase === "PROCESSING",
-    );
-  }, [state.phase, onRecordingActiveChange]);
+    onRecordingActiveChange?.(captureActive);
+  }, [captureActive, onRecordingActiveChange]);
+
+  // Active track ended mid-capture → stable device error; do not delete READY Takes.
+  useEffect(() => {
+    if (state.phase !== "RECORDING" || !micStream) return;
+    const track = micStream.getAudioTracks()[0];
+    if (!track) return;
+    const onEnded = () => {
+      if (phaseRef.current !== "RECORDING") return;
+      clearTick();
+      clearMic();
+      try {
+        recorderRef.current?.cancel();
+      } catch {
+        // ignore
+      }
+      recorderRef.current = null;
+      clearCapturePlacement();
+      dispatch({
+        type: "RECORDING_FAILED",
+        message: studioDeviceErrorMessagePl("DEVICE_DISCONNECTED"),
+      });
+    };
+    track.addEventListener("ended", onEnded);
+    return () => {
+      track.removeEventListener("ended", onEnded);
+    };
+  }, [state.phase, micStream]);
 
   useEffect(() => {
     return () => {
@@ -146,24 +174,6 @@ export function StudioRecordingPanel({
     setRecordStartMs(null);
     recordStartMsRef.current = null;
     captureTrackIdRef.current = "";
-  }
-
-  async function refreshAudioInputs() {
-    if (!navigator.mediaDevices?.enumerateDevices) {
-      setAudioInputs([]);
-      return;
-    }
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const inputs = devices
-      .filter((d) => d.kind === "audioinput")
-      .map((d, i) => ({
-        deviceId: d.deviceId,
-        label: d.label || `Mikrofon ${i + 1}`,
-      }));
-    setAudioInputs(inputs);
-    if (!audioDeviceId && inputs[0]) {
-      setAudioDeviceId(inputs[0].deviceId);
-    }
   }
 
   async function loadContext() {
@@ -247,40 +257,28 @@ export function StudioRecordingPanel({
         setMaxSeconds(Math.floor(elig.maxRecordingSeconds));
       }
 
-      const probe = await navigator.mediaDevices.getUserMedia({
-        audio: audioDeviceIdRef.current
-          ? { deviceId: { exact: audioDeviceIdRef.current } }
-          : true,
-        video: false,
-      });
-      for (const t of probe.getTracks()) t.stop();
-      await refreshAudioInputs();
+      const probe = await inputDevices.probeMicrophone();
+      if (!probe.ok) {
+        if (
+          probe.code === "DEVICE_PERMISSION_DENIED" ||
+          probe.code === "DEVICE_PERMISSION_BLOCKED"
+        ) {
+          dispatch({
+            type: "MIC_DENIED",
+            message: probe.message,
+          });
+          return;
+        }
+        dispatch({
+          type: "RECORDING_FAILED",
+          message: probe.message,
+        });
+        return;
+      }
       recorderRef.current = new TakeMediaRecorder();
       dispatch({ type: "MIC_READY" });
     } catch (error) {
       recorderRef.current = null;
-      const name =
-        error && typeof error === "object" && "name" in error
-          ? String((error as { name: string }).name)
-          : "";
-      if (
-        name === "NotAllowedError" ||
-        name === "PermissionDeniedError" ||
-        name === "SecurityError"
-      ) {
-        dispatch({
-          type: "MIC_DENIED",
-          message: "Nie przyznano dostępu do mikrofonu.",
-        });
-        return;
-      }
-      if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-        dispatch({
-          type: "RECORDING_FAILED",
-          message: "Nie znaleziono mikrofonu.",
-        });
-        return;
-      }
       dispatch({
         type: "RECORDING_FAILED",
         message: toUserFacingTakeUploadError(
@@ -313,9 +311,23 @@ export function StudioRecordingPanel({
     recorderRef.current = recorder;
 
     try {
-      await recorder.start({
-        audioDeviceId: audioDeviceIdRef.current || undefined,
-      });
+      try {
+        await recorder.start({
+          audioDeviceId:
+            inputDevices.audioDeviceIdForRecorder || undefined,
+        });
+      } catch (firstStartError) {
+        // Stale preference: one retry with system default (P5.8 AC-07).
+        if (
+          inputDevices.audioDeviceIdForRecorder &&
+          firstStartError instanceof TakeRecorderError &&
+          firstStartError.code === "RECORDING_ERROR"
+        ) {
+          await recorder.start({});
+        } else {
+          throw firstStartError;
+        }
+      }
       setMicStream(recorder.getStream());
       // Keep beat playing under the new take when possible.
       transport.play();
@@ -345,7 +357,7 @@ export function StudioRecordingPanel({
       ) {
         dispatch({
           type: "MIC_DENIED",
-          message: "Nie przyznano dostępu do mikrofonu.",
+          message: studioDeviceErrorMessagePl("DEVICE_PERMISSION_DENIED"),
         });
       } else if (
         error instanceof TakeRecorderError &&
@@ -744,27 +756,49 @@ export function StudioRecordingPanel({
         </select>
       </label>
 
-      {audioInputs.length > 0 ? (
-        <label className="block text-xs text-[var(--brd-mute)]">
+      {inputDevices.inputs.length > 0 ? (
+        <label className="block w-full text-xs text-[var(--brd-mute)]">
           Mikrofon
           <select
-            className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
-            value={audioDeviceId}
-            disabled={state.phase === "RECORDING" || state.phase === "READY_TAKE"}
-            onChange={(e) => setAudioDeviceId(e.target.value)}
+            className="mt-1 w-full max-w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
+            value={inputDevices.selectedDeviceId ?? ""}
+            disabled={
+              state.phase === "RECORDING" ||
+              state.phase === "READY_TAKE" ||
+              state.phase === "REQUESTING_MIC"
+            }
+            onChange={(e) => {
+              inputDevices.setSelectedDeviceId(e.target.value);
+              inputDevices.clearSoftNotice();
+            }}
             aria-label="Wybierz mikrofon"
           >
-            {audioInputs.map((d) => (
+            {inputDevices.inputs.map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
                 {d.label}
               </option>
             ))}
           </select>
         </label>
+      ) : inputDevices.permission === "UNAVAILABLE" ||
+        inputDevices.lastErrorCode === "NO_INPUT_DEVICE" ? (
+        <p className="text-xs text-[var(--brd-mute)]" role="status">
+          Brak wykrytego mikrofonu. Połącz urządzenie lub przyznaj dostęp.
+        </p>
+      ) : (
+        <p className="text-xs text-[var(--brd-mute)]" role="status">
+          Lista mikrofonów pojawi się po przyznaniu dostępu.
+        </p>
+      )}
+
+      {inputDevices.softNotice ? (
+        <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
+          {inputDevices.softNotice}
+        </p>
       ) : null}
 
       {(state.phase === "READY" || state.phase === "RECORDING") && micStream ? (
-        <div className="space-y-1">
+        <div className="w-full space-y-1">
           <p className="text-xs text-[var(--brd-mute)]">Poziom wejścia</p>
           <BrdInputMonitor level={mic.level} peak={mic.peak} />
           {mic.level === "clip" || mic.level === "hot" ? (

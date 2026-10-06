@@ -242,6 +242,7 @@ describe("P5.6 mobile / recording lock contract", () => {
 describe("P5.6 reuse / regression guards", () => {
   it("still reuses TakeMediaRecorder + reduceRecordingUi + uploadTakeRecordingBlob", () => {
     const panel = readFileSync(panelPath, "utf8");
+    expect(panel).toMatch(/useStudioInputDevices/);
     expect(panel).toMatch(/TakeMediaRecorder/);
     expect(panel).toMatch(/reduceRecordingUi/);
     expect(panel).toMatch(/uploadTakeRecordingBlob/);

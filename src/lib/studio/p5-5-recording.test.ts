@@ -227,6 +227,8 @@ describe("P5.5 reuse / isolation guards", () => {
     expect(panel).toMatch(/TakeMediaRecorder/);
     expect(panel).toMatch(/reduceRecordingUi/);
     expect(panel).toMatch(/uploadTakeRecordingBlob/);
+    expect(panel).toMatch(/useStudioInputDevices/);
+    expect(panel).toMatch(/useMicAnalyser/);
     expect(panel).toMatch(/\/api\/takes\/eligibility/);
     expect(panel).toMatch(/timelineStartMs/);
     expect(panel).toMatch(/playheadMs/);
