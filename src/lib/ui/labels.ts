@@ -168,3 +168,29 @@ export function labelSamplePolicyActor(actor: string): string {
   if (actor === "ANONYMOUS") return "Gość";
   return labelPremiumTier(actor);
 }
+
+/** P5 Studio track_type presentation (controls PL; enums stay EN). */
+export function labelStudioTrackType(trackType: string): string {
+  switch (trackType) {
+    case "VOCAL":
+      return "Wokal";
+    case "BEAT":
+      return "Bit";
+    case "SAMPLE":
+      return "Sample";
+    case "SCRATCH":
+      return "Scratch";
+    case "INSTRUMENT":
+      return "Instrument";
+    case "GUITAR":
+      return "Gitara";
+    case "FX":
+      return "Efekty";
+    case "BUS":
+      return "Szyna";
+    case "OTHER":
+      return "Inna";
+    default:
+      return "Ścieżka";
+  }
+}

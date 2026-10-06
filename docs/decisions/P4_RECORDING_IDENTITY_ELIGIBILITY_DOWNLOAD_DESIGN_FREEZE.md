@@ -498,13 +498,15 @@ Time: ms in DB · samples in editor.
 
 ## 23. P5 / P6 / P7 boundaries
 
-| Wave | Boundary |
+| Wave | Boundary (historical at P4 freeze) |
 |------|----------|
 | **P5** | Project / Track / Clip / timeline / lyrics / play events |
 | **P6** | Samples/effects / ratings / advanced editing caps |
 | **P7** | Publication · creator catalog · Mix/Master productization (OD-14) · social surfaces |
 
 P4 must not implement any of the above.
+
+> **Superseded for P5+ naming (OD-P5-01 CLOSED 2026-10-06):** see [P5_STUDIO_DESIGN_FREEZE.md](./P5_STUDIO_DESIGN_FREEZE.md) — P5 = Extensible Studio Foundation; P6 = Effects/Mix/Master; P7 = Creative audio. Lyrics/play events deferred (OD-P5-02).
 
 ---
 
