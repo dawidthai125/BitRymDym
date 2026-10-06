@@ -10,22 +10,25 @@
 
 ## Numbering reconciliation (2026-10-06)
 
-Living unit numbers after P5.8 production verify:
+Living unit numbers after P5.10 production verify:
 
 ```text
-P5.7 = Studio Architecture Audit (GO WITH CONDITIONS) — NOT punch
-P5.8 = Studio Devices / Input & Device Foundation — PRODUCTION VERIFIED — GREEN @ 95e04ff
-NEXT = Architecture Audit / formal next Studio unit definition (do not auto-start P6)
+P5.7  = Studio Architecture Audit (GO WITH CONDITIONS) — NOT punch
+P5.8  = Studio Devices / Input & Device Foundation — PRODUCTION VERIFIED — GREEN @ 95e04ff
+P5.9  = Studio Architecture Audit (GO WITH CONDITIONS)
+P5.10 = Studio Audio Engine / Multi-Source Playback — PRODUCTION VERIFIED — GREEN @ 9c2a958
+NEXT  = Architecture Audit / formal next Studio unit definition (do not auto-start P6 / FX / Mix / Master)
 ```
 
-Historical “punch as P5.7” language in older audit §37 is superseded. See [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) · [P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md](./P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md).
+Historical “punch as P5.7” language in older audit §37 is superseded. See [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) · [P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md](./P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md) · [P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md](./P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md).
 
 Audio boundary (living):
 
 ```text
 StudioTransport != PlayerProvider
-P6 requires dedicated StudioAudioEngine / audio graph
-(do not bolt FX onto HTMLAudioElement / simple StudioTransport)
+StudioAudioEngine != PlayerProvider != E3 Mix
+P5.10 playback = StudioAudioEngine · overlap = MIX · first-wins removed from transport
+P6 product FX still needs Architecture Audit + Design Freeze (engine foundation SHIPPED)
 ```
 
 

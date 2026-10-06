@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P5.10 SSOT RECONCILIATION (DOCS ONLY)
+
+**Status:** DOCS ONLY · production app **`9c2a958`** · dpl **`dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC`** · P5.10 **PRODUCTION VERIFIED — GREEN**
+**SSOT:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md) · [P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md](./decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md)
+
+- Studio baseline closed as **P5.10 GREEN** (P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · P5.8 GREEN · P5.9 GO WITH CONDITIONS · D02 CLOSED)
+- Documented StudioAudioEngine · multi-source `planVoicesAtPlayhead` · overlap = MIX · shared AudioContext clock · Track/Master graph
+- PlayerProvider + E3 Mix isolated · recording architecture unchanged · Live IDOR not rerun in P5.10 gate
+- Known verification limitation: one production TAKE fixture failed preview; live A+B overlap not heard on that fixture (unit coverage of mix)
+- Next gate = **Architecture Audit / formal next Studio unit** (do not auto-start P6 / FX / Mix / Master)
+- Application / DB / RPC / API / Storage / tests: **UNCHANGED** this docs wave · production remains `9c2a958`
+
 ## 2026-10-06 — P5.8 SSOT RECONCILIATION (DOCS ONLY)
 
 **Status:** DOCS ONLY · production app **`95e04ff`** · dpl **`dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`** · P5.8 **PRODUCTION VERIFIED — GREEN**

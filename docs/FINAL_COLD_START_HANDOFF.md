@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-06 — P5.8 **PRODUCTION VERIFIED — GREEN** @ **`95e04ff`** · dpl `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` · P5.7 **GO WITH CONDITIONS** · D02 **CLOSED** · **NEXT = Architecture Audit** · docs-only reconcile
+**Updated:** 2026-10-06 — P5.10 **PRODUCTION VERIFIED — GREEN** @ **`9c2a958`** · dpl `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · P5.9 **GO WITH CONDITIONS** · D02 **CLOSED** · **NEXT = Architecture Audit** · docs-only reconcile
 **Type:** Documentation continuity · **DOCS ONLY** (ten plik nie jest Evidence of shipped code)
 
 **Evidence rule (bezwzględna):**
@@ -25,22 +25,24 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 95e04ff534d58de3476e3a2dc620a13fbcacb7ba
-  short                       = 95e04ff
-  note                        = P5.8 Studio Devices / Input Foundation · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
-  note                        = no-cache redeploy after Vercel build-cache incident
+PRODUCTION APP SHA            = 9c2a958cf94aca07679ed338cc23e21bb600fd4c
+  short                       = 9c2a958
+  note                        = P5.10 Studio Audio Engine / Multi-Source Playback · PRODUCTION VERIFIED — GREEN
+PRODUCTION DEPLOYMENT         = dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
+  note                        = GitHub 9c2a958 · Skipping build cache (P5.8 stale-cache protection)
 
-REPOSITORY HEAD / origin/main = advances with SSOT reconcile (app tip 95e04ff)
+REPOSITORY HEAD / origin/main = advances with SSOT reconcile (app tip 9c2a958)
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
   this docs wave              = NO APP REDEPLOY (documentation-only reconciliation)
 
-STUDIO BASELINE               = P5.8 · PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P5.8 · PRODUCTION VERIFIED — GREEN
+STUDIO BASELINE               = P5.10 · PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY            = P5.10 · PRODUCTION VERIFIED — GREEN
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
+P5.9                          = Architecture Audit · GO WITH CONDITIONS
+P5.10                         = PRODUCTION VERIFIED — GREEN @ 9c2a958
 KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV
                               = PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER
 
@@ -50,6 +52,7 @@ WORKER                        = Contabo · STOPPED / DISABLED · bootstrap 92496
 
 STUDIO P5.1–P5.6              = PRODUCTION VERIFIED — GREEN
 P5.8 STATUS                   = PRODUCTION VERIFIED — GREEN @ 95e04ff · finalize ≠ place preserved
+P5.10 STATUS                  = PRODUCTION VERIFIED — GREEN @ 9c2a958 · StudioAudioEngine shipped
 FALA 3.5.1 STATUS             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
 P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
@@ -60,9 +63,11 @@ NEXT GATE                     = NEXT ARCHITECTURE AUDIT / formal next Studio uni
 
 | Track | Status |
 |-------|--------|
+| **P5.10** Studio Audio Engine / Multi-Source | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · dpl `dpl_L7pB5A8…` |
 | **P5.8** Studio Devices / Input Foundation | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · dpl `dpl_2RhUDg…` |
 | **P5.1–P5.6** Studio units | **PRODUCTION VERIFIED — GREEN** |
 | **D02** live harness | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
+| **P5.9** Architecture Audit | **COMPLETE — GO WITH CONDITIONS** |
 | **P5.7** Architecture Audit | **COMPLETE — GO WITH CONDITIONS** |
 | **Fala 3.5.1** Recording Experience | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` |
 | **P3** Anonymous → Account Claim | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** |
@@ -84,9 +89,9 @@ NEXT GATE                     = NEXT ARCHITECTURE AUDIT / formal next Studio uni
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository | advances with SSOT reconcile (app tip `95e04ff` + docs) |
-| Production app | `95e04ff` · P5.8 GREEN · **UNCHANGED** this docs wave |
-| Production deployment | `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` |
+| Repository | advances with SSOT reconcile (app tip `9c2a958` + docs) |
+| Production app | `9c2a958` · P5.10 GREEN · **UNCHANGED** this docs wave |
+| Production deployment | `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` |
 | Production DB | includes P3 `claim_anon_take_to_account` + P1/P2 RPCs · verify remote before DB work |
 | Production Storage | live **11** (USER 8 · PLATFORM 3 · ORPHAN 0) · historical backup **43/43 RETAINED** |
 | Session / operator | dirty local WIP may exist — **nie czyścić bez Owner GO** |
@@ -170,7 +175,8 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFE
 | External Object Storage | NOT IMPLEMENTED / DEFERRED |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` |
-| **Studio P5.1–P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · foundation/editor/recording/devices · **not a full DAW** |
+| **Studio P5.1–P5.6 / P5.8 / P5.10** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · engine + devices + take workflow · **not a full DAW** |
+| **P5.7 / P5.9** Architecture Audits | **GO WITH CONDITIONS** (audit · not impl) |
 
 ---
 
@@ -333,12 +339,102 @@ Deployment incident (release note):
   Recovery = redeploy without build cache → dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
   Lesson = verify served artifact for critical UI changes
 
-P6 readiness:
-  FX / mix / master = READY WITH REFACTOR (needs StudioAudioEngine)
+P6 readiness (as of P5.8 closeout — superseded living by P5.10 §8d):
+  FX / mix / master = READY WITH REFACTOR (needed StudioAudioEngine)
   Automation / Autotune = NOT READY
 P7 readiness:
   track enum reserved = READY WITH REFACTOR
   instrument engines = NOT READY
+```
+
+---
+
+## 8d. P5.10 — PRODUCTION VERIFIED GREEN (canonical)
+
+**P5.10 — Studio Audio Engine / Multi-Source Playback Foundation**
+**Status:** **PRODUCTION VERIFIED — GREEN**
+**Application SHA:** `9c2a958cf94aca07679ed338cc23e21bb600fd4c`
+**Final deployment:** `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · https://www.bitrymdym.pl
+**Freeze:** [P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md](./decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md) @ `e191f5c`
+**Implementation:** same SHA as production (`9c2a958`)
+
+```text
+DESIGN FREEZE           = GO WITH CONDITIONS
+IMPLEMENTATION          = COMPLETE
+PRODUCTION VERIFICATION = PASS
+PRODUCTION              = GREEN
+OPEN DECISIONS          = NONE (next unit = Architecture Audit)
+
+StudioAudioEngine:
+  one engine per Studio editor
+  AudioContext · Track graph · Master graph · scheduling · source lifecycle
+
+Multi-source:
+  production scheduler = planVoicesAtPlayhead (all audible Clips)
+  Beat + Take · Take + Take · Beat + many Takes
+
+Overlap:
+  MIX (not first-wins)
+  pickTakeClipAtPlayhead is NOT the Studio transport path
+
+Clock:
+  persist/UI = integer ms
+  runtime    = AudioContext.currentTime + epoch
+  PLAY/SEEK  = shared clock
+  STOP       = playhead 0 (existing FSM)
+
+Track graph (canonical):
+  Voice → Clip gain → Track gain/pan → Master gain/pan → destination
+  gain / mute / solo / pan consumed by Web Audio graph
+  solo = isTrackAudible · gain = gainDbToLinearVolume · pan = normalizePan
+  HTMLAudioElement.volume ≠ Studio mix SSOT
+
+PlayerProvider:
+  separate system · Studio timeline audio does not use it
+  Studio still applies PlayerProvider suppression
+  production served JS does not contain PlayerProvider on Studio playback path
+
+E3 Mix:
+  untouched · StudioAudioEngine does not import MixPanel
+  no E3 Mix migration
+  two Web Audio product surfaces OK (not two Studio engines)
+
+Recording:
+  P5.10 did NOT take over session / eligibility / finalize / upload / claim /
+  getUserMedia / device selection / input meter
+  P5.5 / P5.6 / P5.8 remain recording SSOT
+  engine may consume READY Take as playback source
+
+Security:
+  no ownerId / objectKey in engine
+  beat access = requestBeatAudioAccessAction
+  Take preview = POST /api/takes/preview
+  existing ownership/security boundaries remain SSOT
+  Live IDOR was not rerun in this gate (inherited limitation)
+
+Served-JS / cache:
+  chunk 0p8mql3sjqfx_.js
+  YES = StudioAudioEngine · AUDIO_SYNC_FAILED · createMediaElementSource · createStereoPanner
+  NO  = pickTakeClipAtPlayhead · takeAudioRef
+  HTML = no-store / MISS
+  Skipping build cache
+  GitHub commit = deployment = served bundle
+  (protection against repeating the P5.8 stale-build incident)
+
+Tests:
+  187 unit · P5.10 = 19 · typecheck PASS · P5.10 lint PASS · build PASS
+  repo-wide lint has pre-existing errors outside P5.10 (mix-panel · beat-detail · scripts/WIP)
+  those are NOT P5.10 regressions
+
+KNOWN VERIFICATION LIMITATION:
+  Production Beat PLAY/PAUSE/STOP worked · playhead moved · STOP → 00:00.000
+  One parallel TAKE fixture returned "Nie udało się odtworzyć nagrania"
+  Beat continued · live overlap of two healthy Takes A+B was not executed on that fixture
+  Multi-source scheduling / overlap mixing / engine behavior covered by unit/integration tests
+  Not a P5.10 blocker — Production Gate formally GREEN
+
+DB / API / RPC / Storage / recording architecture = UNCHANGED
+WIP preserved
 ```
 
 ---
@@ -358,15 +454,15 @@ P7 readiness:
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect tip ≥ 95e04ff + P5.8 SSOT reconcile
+[ ] git fetch && git rev-parse HEAD           → expect tip ≥ 9c2a958 + P5.10 SSOT reconcile
 [ ] git rev-parse origin/main                → match HEAD
-[ ] Confirm Production app SHA = 95e04ff (P5.8) · dpl dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
-[ ] Read MASTER_HANDOFF + PROJECT_STATE + P5_8 freeze + P5_7 audit
-[ ] P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · P5.8 GREEN · D02 CLOSED
+[ ] Confirm Production app SHA = 9c2a958 (P5.10) · dpl dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
+[ ] Read MASTER_HANDOFF + PROJECT_STATE + P5_10 freeze + P5_9 / P5_7 audits
+[ ] P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · P5.8 GREEN · P5.9 GO WITH CONDITIONS · P5.10 GREEN · D02 CLOSED
 [ ] NEXT GATE = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
-[ ] Do not call punch “P5.7” · do not auto-start P6 / FX / samples
-[ ] Fala 3.5.1 / P3 / P5.8 = CLOSED / GREEN — do not re-open without new evidence
-[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3/P5.6/P5.8/Fala 3.5.1 bez nowego evidence
+[ ] Do not auto-start P6 / FX / Mix / Master / punch / samples
+[ ] Fala 3.5.1 / P3 / P5.8 / P5.10 = CLOSED / GREEN — do not re-open without new evidence
+[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3/P5.6/P5.8/P5.10/Fala 3.5.1 bez nowego evidence
 [ ] Nie czyść dirty WIP
 [ ] AUDIT FIRST → report → wait for Owner GO
 ```
@@ -376,13 +472,15 @@ P7 readiness:
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (P5.8 SSOT reconciled 2026-10-06)
-PRODUCTION APP SHA           = 95e04ff · P5.8 · UNCHANGED (docs-only this wave)
-PRODUCTION DEPLOYMENT        = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
+FINAL COLD START HANDOFF     = READY (P5.10 SSOT reconciled 2026-10-06)
+PRODUCTION APP SHA           = 9c2a958 · P5.10 · UNCHANGED (docs-only this wave)
+PRODUCTION DEPLOYMENT        = dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
 D02 HARNESS                  = CLOSED @ 44dc22c · TEST ONLY
 P5.7                         = Architecture Audit · GO WITH CONDITIONS
 P5.8                         = PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY           = P5.8 · PRODUCTION VERIFIED — GREEN
+P5.9                         = Architecture Audit · GO WITH CONDITIONS
+P5.10                        = PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY           = P5.10 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1                   = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                    = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED

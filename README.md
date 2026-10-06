@@ -12,13 +12,15 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 | Master Handoff | [docs/MASTER_HANDOFF.md](./docs/MASTER_HANDOFF.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
-| **Production application** | `1c63080` · https://www.bitrymdym.pl · **READY** |
-| **Git tip (origin/main)** | `1c63080` (docs continuity may advance after this tip) |
+| **Production application** | `9c2a958` · https://www.bitrymdym.pl · **READY** (P5.10 GREEN) |
+| **Git tip (origin/main)** | advances with docs continuity (app tip `9c2a958`) |
 | POLISH-01 / P0 / P1 / P2 | **CLOSED / PRODUCTION VERIFIED** |
 | Recording Waves 1–5 | **CLOSED** / **PRODUCTION VERIFIED** |
+| Studio P5.1–P5.6 / P5.8 / P5.10 | **PRODUCTION VERIFIED — GREEN** |
+| P5.7 / P5.9 | Architecture Audit **GO WITH CONDITIONS** |
 | Community Upload | **CLOSED / LOCKED** @ `c5e1f17` |
 | Płatności / Premium catalog | wyłączone / NOT IMPLEMENTED |
-| Next | **P3 — Anonymous → Account Claim (READ-ONLY AUDIT)** — see FINAL_COLD_START |
+| Next | **Architecture Audit / formal next Studio unit** — see FINAL_COLD_START |
 
 ## Nowy agent — start tutaj
 
