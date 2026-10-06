@@ -23,12 +23,37 @@ import {
   createAnonTakeRecordingSessionFor,
   finalizeAnonTakeRecordingFor,
 } from "@/lib/takes/anon-take-transport";
+import { TakeClaimError } from "@/lib/takes/claim-errors";
 import {
   createTakeRecordingSessionFor,
   finalizeTakeRecordingFor,
 } from "@/lib/takes/take-transport";
 import { createOwnTakePreviewSignedUrlFor } from "@/lib/takes/take-preview";
 import { hashAnonymousTakeToken } from "@/lib/takes/token-hash";
+
+/**
+ * Force a take past TTL for live tests.
+ * Must keep expires_at > created_at (takes_expires_after_created_chk)
+ * while expires_at < now() so ACTIVE_READY count frees the slot.
+ * Same pattern as wave4-live / D02 finalize-after-expiry test.
+ */
+async function forceExpireTakeForLiveTest(
+  admin: SupabaseClient,
+  takeId: string,
+): Promise<void> {
+  const createdPast = new Date(Date.now() - 3_600_000).toISOString();
+  const expiresPast = new Date(Date.now() - 1_800_000).toISOString();
+  const { error, data } = await admin
+    .from("takes")
+    .update({ created_at: createdPast, expires_at: expiresPast })
+    .eq("id", takeId)
+    .select("id, expires_at, status");
+  expect(error).toBeNull();
+  expect(data).toHaveLength(1);
+  expect(new Date(data![0]!.expires_at as string).getTime()).toBeLessThan(
+    Date.now(),
+  );
+}
 
 function readEnvLocal(): Record<string, string> {
   const path = resolve(process.cwd(), ".env.local");
@@ -368,9 +393,9 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
     const fail = results.filter((r) => r.status === "rejected");
     expect(ok.length).toBe(1);
     expect(fail.length).toBe(1);
-    expect(String((fail[0] as PromiseRejectedResult).reason)).toMatch(
-      /already in progress|CONCURRENT/i,
-    );
+    const reason = (fail[0] as PromiseRejectedResult).reason;
+    expect(reason).toBeInstanceOf(TakeClaimError);
+    expect((reason as TakeClaimError).claimCode).toBe("CONCURRENT_SESSION");
 
     // cleanup pending so later caps tests aren't polluted for same hash — new hash used below
     const takeId = (ok[0] as PromiseFulfilledResult<{ takeId: string }>).value
@@ -400,23 +425,18 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
     await makeReady();
 
     await expect(makeReady()).rejects.toMatchObject({
-      message: expect.stringMatching(/READY|Active/i),
+      claimCode: "REPLACE_REQUIRED",
     });
 
-    // Expire the READY so day-cap can continue counting sessions
+    // Expire READY (respect takes_expires_after_created_chk) so day-cap burn can continue
     const { data: readyRows } = await admin
       .from("takes")
       .select("id")
       .eq("anonymous_token_hash", tokenHash)
       .eq("status", "READY");
+    expect(readyRows?.length).toBeGreaterThan(0);
     for (const row of readyRows ?? []) {
-      await admin
-        .from("takes")
-        .update({
-          status: "EXPIRED",
-          expires_at: new Date(Date.now() - 1000).toISOString(),
-        })
-        .eq("id", row.id);
+      await forceExpireTakeForLiveTest(admin, row.id as string);
     }
 
     // Sessions today already include failed/expired claims — burn remaining until day cap
@@ -428,12 +448,14 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
           contentType: "audio/wav",
           byteSize: bytes.byteLength,
         });
-        await admin
+        const { error: burnErr } = await admin
           .from("takes")
           .update({ status: "FAILED", failure_reason: "TEST_BURN" })
           .eq("id", s.takeId);
+        expect(burnErr).toBeNull();
       } catch (e) {
-        expect(String(e)).toMatch(/Daily|SESSION_DAY|session limit/i);
+        expect(e).toBeInstanceOf(TakeClaimError);
+        expect((e as TakeClaimError).claimCode).toBe("SESSION_DAY_CAP");
         dayCapHit = true;
         break;
       }
@@ -485,14 +507,8 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
     await uploadSessionBlob(admin, s1, bytes, "audio/wav");
     await finalizeAnonTakeRecordingFor(hash, { takeId: s1.takeId });
 
-    // Expire READY to free cap, then create on beat B — preview of beat A take still hash-bound
-    await admin
-      .from("takes")
-      .update({
-        status: "EXPIRED",
-        expires_at: new Date(Date.now() - 1000).toISOString(),
-      })
-      .eq("id", s1.takeId);
+    // Expire READY to free cap (respect takes_expires_after_created_chk), then create on beat B
+    await forceExpireTakeForLiveTest(admin, s1.takeId);
 
     const s2 = await createAnonTakeRecordingSessionFor(hash, {
       beatId: b.beatId,
