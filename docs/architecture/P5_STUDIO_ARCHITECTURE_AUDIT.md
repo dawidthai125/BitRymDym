@@ -743,6 +743,7 @@ Resolved by Architect in this audit (no Owner needed):
 - **Tests:** play/pause/seek; PlayerProvider undisturbed  
 - **AC:** play Project with BEAT track; sticky mini-player suppressed when appropriate  
 - **Risk:** engine merge — forbid  
+- **Repo status:** implemented (StudioTransport + BEAT_REF HTMLAudio; Production Verification = separate gate)
 
 ### P5.3 — Clip editing ops
 

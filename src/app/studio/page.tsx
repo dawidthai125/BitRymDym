@@ -11,8 +11,12 @@ export const metadata = {
   title: "Studio · BitRymDym",
 };
 
+type PageProps = {
+  searchParams?: Promise<{ beatId?: string }>;
+};
+
 /** OD-P5-03 — Studio hub = project list (Quick Record remains on beat detail). */
-export default async function StudioProjectsPage() {
+export default async function StudioProjectsPage({ searchParams }: PageProps) {
   try {
     await requireUser();
   } catch (error) {
@@ -23,6 +27,11 @@ export default async function StudioProjectsPage() {
   }
 
   const projects = await listStudioProjects();
+  const params = searchParams ? await searchParams : {};
+  const seedBeatId =
+    typeof params.beatId === "string" && params.beatId.length > 0
+      ? params.beatId
+      : null;
 
   return (
     <AppShell tone="studio">
@@ -34,12 +43,15 @@ export default async function StudioProjectsPage() {
               Twoje projekty
             </h1>
             <p className="text-sm text-[var(--brd-ink-soft)]">
-              Fundament timeline — ścieżki, clipy i transport. Szybkie nagranie
-              nadal znajdziesz na stronie bitu.
+              Odsłuchaj bit na timeline Studio. Szybkie nagranie nadal znajdziesz
+              na stronie bitu.
             </p>
           </header>
 
-          <StudioProjectList initialProjects={projects} />
+          <StudioProjectList
+            initialProjects={projects}
+            seedBeatId={seedBeatId}
+          />
 
           <div className="flex flex-wrap gap-4 text-sm">
             <Link

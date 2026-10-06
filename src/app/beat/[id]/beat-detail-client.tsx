@@ -268,6 +268,19 @@ export function BeatDetailClient({
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
+            {hasAudio && isAuthenticated ? (
+              <Link
+                href={`/studio?beatId=${encodeURIComponent(beat.id)}`}
+                className={cn(
+                  "inline-flex min-h-11 items-center justify-center border px-4 text-sm font-medium outline-none",
+                  "rounded-[var(--brd-r-cta)] border-[var(--brd-ink)] bg-[var(--brd-ink)] text-[var(--brd-paper)]",
+                  "hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)]",
+                  "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brd-paper)]",
+                )}
+              >
+                Otwórz w Studio
+              </Link>
+            ) : null}
             {hasAudio ? (
               <a
                 href="#nagranie"

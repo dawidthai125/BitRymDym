@@ -145,4 +145,26 @@ P5.2 StudioTransport audio for BEAT clips → P5.3 clip edit ops → … per aud
 
 ---
 
+## 13. P5.2 scope (StudioTransport / BEAT_REF playback)
+
+**Status:** implemented in repo (separate Production Verification gate).
+
+**IN**
+
+- `StudioTransport` drives project playhead + local `HTMLAudioElement` for BEAT_REF
+- Project → Track(type=BEAT) → Clip(source=BEAT_REF) remains the only beat pointer
+- Play / Pause / Stop / Seek · timeline playhead sync · integer ms SSOT
+- Beat lane distinguished in UI · track mute/solo/volume affect beat audibility
+- Polish loading / error states (no technical asset leak)
+- Entry: `/studio?beatId=` and beat detail „Otwórz w Studio”
+- Catalog `PlayerProvider` suppressed in Studio (not merged)
+
+**OUT of P5.2**
+
+- Punch-in/out · vocal recording · metronome · tap tempo
+- FX / EQ / compressor / reverb / delay / autotune
+- Samples · scratch · instruments · full mix · bounce · mastering
+
+---
+
 *Freeze locked. Implementation must not contradict this document without a new Owner decision.*

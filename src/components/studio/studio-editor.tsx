@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import {
+  useMemo,
+  useState,
+  useTransition,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import {
   StudioTransportProvider,
   useStudioTransport,
 } from "@/components/studio/studio-transport-provider";
+import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -21,21 +28,56 @@ export function StudioEditor({
 }: {
   initialDocument: StudioProjectDocument;
 }) {
+  const [doc, setDoc] = useState(initialDocument);
+  const anySolo = doc.tracks.some((t) => t.solo);
+  const beatRef = useMemo(
+    () =>
+      resolvePrimaryBeatRef({
+        tracks: doc.tracks,
+        clips: doc.clips,
+        projectBeatId: doc.project.beatId,
+      }),
+    [doc.tracks, doc.clips, doc.project.beatId],
+  );
+
+  const beatAudible = beatRef
+    ? isTrackAudible({
+        muted: beatRef.track.muted,
+        solo: beatRef.track.solo,
+        anySolo,
+      })
+    : false;
+
   return (
     <StudioTransportProvider
-      timelineLengthMs={initialDocument.project.timelineLengthMs}
+      key={beatRef?.beatId ?? "no-beat"}
+      timelineLengthMs={doc.project.timelineLengthMs}
+      beatId={beatRef?.beatId ?? null}
+      beatGainDb={beatRef?.track.gainDb ?? 0}
+      beatMuted={!beatAudible}
+      beatClip={
+        beatRef
+          ? {
+              timelineStartMs: beatRef.clip.timelineStartMs,
+              sourceOffsetMs: beatRef.clip.sourceOffsetMs,
+              durationMs:
+                beatRef.clip.durationMs || doc.project.timelineLengthMs,
+            }
+          : null
+      }
     >
-      <StudioEditorInner initialDocument={initialDocument} />
+      <StudioEditorInner doc={doc} setDoc={setDoc} />
     </StudioTransportProvider>
   );
 }
 
 function StudioEditorInner({
-  initialDocument,
+  doc,
+  setDoc,
 }: {
-  initialDocument: StudioProjectDocument;
+  doc: StudioProjectDocument;
+  setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
 }) {
-  const [doc, setDoc] = useState(initialDocument);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const transport = useStudioTransport();
@@ -122,6 +164,7 @@ function StudioEditorInner({
               solo: track.solo,
               anySolo,
             });
+            const isBeat = track.trackType === "BEAT";
             return (
               <li
                 key={track.id}
@@ -131,6 +174,11 @@ function StudioEditorInner({
                   <div>
                     <p className="text-sm font-medium text-[var(--brd-ink)]">
                       {track.name}
+                      {isBeat ? (
+                        <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--brd-mute)]">
+                          Bit projektu
+                        </span>
+                      ) : null}
                     </p>
                     <p className="text-xs text-[var(--brd-mute)]">
                       {labelStudioTrackType(track.trackType)}
@@ -325,46 +373,76 @@ function StudioEditorInner({
       </div>
 
       <p className="text-xs text-[var(--brd-mute)]">
-        Fundament Studio (P5.1). Nagrywanie punch, metronom i efekty pojawią się
-        w kolejnych etapach. Szybkie nagranie anonimowe nadal działa na stronie
-        bitu.
+        P5.2 — odsłuch bitu w StudioTransport. Punch, metronom i nagranie wokalu
+        w kolejnych etapach. Szybkie nagranie anonimowe nadal na stronie bitu.
       </p>
     </div>
   );
 }
 
 function StudioTransportBar() {
-  const { state, timeLabel, play, pause, stop } = useStudioTransport();
+  const { state, timeLabel, play, pause, stop, audioState, error, hasBeat } =
+    useStudioTransport();
+  const busy = audioState === "loading";
+  const statusLabel =
+    audioState === "loading"
+      ? "Ładowanie bitu…"
+      : audioState === "idle"
+        ? "Bit oczekuje na załadowanie"
+        : audioState === "no_beat"
+          ? "Brak bitu w projekcie"
+          : audioState === "error"
+            ? "Błąd odtwarzania"
+            : audioState === "playing"
+              ? "Odtwarzanie"
+              : audioState === "paused"
+                ? "Pauza"
+                : audioState === "ready"
+                  ? "Gotowy"
+                  : hasBeat
+                    ? "Bit oczekuje na załadowanie"
+                    : "Brak bitu";
+
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded border border-[var(--brd-line)] p-3">
-      <Button
-        type="button"
-        size="sm"
-        onClick={play}
-        disabled={state.phase === "playing"}
-        title="Odtwórz"
-      >
-        Odtwórz
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={pause}
-        disabled={state.phase !== "playing"}
-        title="Pauza"
-      >
-        Pauza
-      </Button>
-      <Button type="button" size="sm" variant="outline" onClick={stop} title="Stop">
-        Stop
-      </Button>
-      <span
-        className="ml-auto font-mono text-sm tabular-nums text-[var(--brd-ink)]"
-        aria-live="polite"
-      >
-        {timeLabel}
-      </span>
+    <div className="sticky top-14 z-10 space-y-2 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 shadow-sm sm:top-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          onClick={play}
+          disabled={busy || state.phase === "playing"}
+          title="Odtwórz"
+        >
+          {busy ? "Ładowanie…" : "Odtwórz"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={pause}
+          disabled={state.phase !== "playing"}
+          title="Pauza"
+        >
+          Pauza
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={stop} title="Stop">
+          Stop
+        </Button>
+        <span
+          className="ml-auto font-mono text-sm tabular-nums text-[var(--brd-ink)]"
+          aria-live="polite"
+        >
+          {timeLabel}
+        </span>
+      </div>
+      <p className="text-xs text-[var(--brd-mute)]" role="status">
+        {statusLabel}
+      </p>
+      {error ? (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -387,6 +465,18 @@ function StudioTimeline({
     Math.max(0, (playheadMs / timelineLengthMs) * 100),
   );
 
+  function seekFromPointer(event: {
+    currentTarget: HTMLDivElement;
+    clientX: number;
+  }) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(
+      1,
+      Math.max(0, (event.clientX - rect.left) / rect.width),
+    );
+    onSeek(Math.round(ratio * timelineLengthMs));
+  }
+
   return (
     <div
       className="relative min-h-[16rem] overflow-x-auto rounded border border-[var(--brd-line)] bg-[color-mix(in_oklch,var(--brd-bg),var(--brd-ink)_2%)]"
@@ -397,11 +487,22 @@ function StudioTimeline({
         <span>0:00</span>
         <span>{formatStudioTimeMs(timelineLengthMs)}</span>
       </div>
-      <div className="relative min-w-[28rem] space-y-2 p-2">
+      <div
+        className="relative min-w-[28rem] cursor-pointer touch-pan-y space-y-2 p-2"
+        onClick={seekFromPointer}
+        role="slider"
+        aria-label="Oś czasu — kliknij, aby przewinąć"
+        aria-valuemin={0}
+        aria-valuemax={timelineLengthMs}
+        aria-valuenow={playheadMs}
+      >
         {tracks.map((track) => {
           const trackClips = clips.filter((c) => c.trackId === track.id);
           return (
-            <div key={track.id} className="relative h-12 rounded bg-[var(--brd-bg)]">
+            <div
+              key={track.id}
+              className="relative h-12 rounded bg-[var(--brd-bg)]"
+            >
               <span className="pointer-events-none absolute left-2 top-1 text-[10px] text-[var(--brd-mute)]">
                 {track.name}
               </span>
@@ -411,8 +512,11 @@ function StudioTimeline({
                 return (
                   <div
                     key={clip.id}
-                    className="absolute bottom-1 top-5 rounded bg-[var(--brd-ink)]/15 px-1 text-[10px] text-[var(--brd-ink)]"
-                    style={{ left: `${left}%`, width: `${Math.max(width, 1.5)}%` }}
+                    className="pointer-events-none absolute bottom-1 top-5 rounded bg-[var(--brd-ink)]/15 px-1 text-[10px] text-[var(--brd-ink)]"
+                    style={{
+                      left: `${left}%`,
+                      width: `${Math.max(width, 1.5)}%`,
+                    }}
                     title={`${clip.sourceKind} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
                   >
                     {clip.sourceKind === "TAKE"
