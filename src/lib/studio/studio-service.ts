@@ -764,3 +764,26 @@ export async function splitStudioClip(
 ): Promise<{ left: StudioClipDto; right: StudioClipDto }> {
   return splitStudioClipFor(await requireUser(), input);
 }
+
+/**
+ * Delete Clip row only. Source Take / Beat / Artifact / storage are untouched.
+ */
+export async function deleteStudioClipFor(
+  context: AuthContext,
+  input: { projectId: string; clipId: string },
+): Promise<{ deletedClipId: string }> {
+  await loadOwnedClip(context, input.projectId, input.clipId);
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("studio_clips")
+    .delete()
+    .eq("id", input.clipId);
+  if (error) throw new Error(error.message);
+  return { deletedClipId: input.clipId };
+}
+
+export async function deleteStudioClip(
+  input: Parameters<typeof deleteStudioClipFor>[1],
+): Promise<{ deletedClipId: string }> {
+  return deleteStudioClipFor(await requireUser(), input);
+}

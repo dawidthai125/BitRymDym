@@ -189,4 +189,27 @@ P5.2 StudioTransport audio for BEAT clips → P5.3 clip edit ops → … per aud
 
 ---
 
+## 15. P5.4 scope (Timeline UX & editing foundation)
+
+**Status:** implementation in progress (separate Production Verification gate).
+
+**IN**
+
+- Timeline navigation: horizontal scroll · time ruler · shared playhead · time display
+- View-only zoom (in / out / fit) — does not mutate Clip geometry
+- Minimal snap (`off` | `grid`) via presentation resolver → persisted integer ms
+- Clip selection (`selectedClipId` UI/runtime only; not persisted)
+- Context actions reusing P5.3 MOVE / TRIM / SPLIT
+- Delete Clip only (source Take / Beat / storage immutable) + ownership + confirm UX
+
+**OUT of P5.4**
+
+- Recording · punch · metronome · BPM editor · Tap Tempo
+- Full undo/redo · multi-select · professional grid engine
+- FX · samples · instruments · automation · mix/master
+
+**No DB migration** — zoom/snap/selection are presentation/runtime only.
+
+---
+
 *Freeze locked. Implementation must not contradict this document without a new Owner decision.*

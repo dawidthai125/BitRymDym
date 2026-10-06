@@ -2,6 +2,7 @@
 
 import {
   useMemo,
+  useRef,
   useState,
   useTransition,
   type Dispatch,
@@ -23,6 +24,23 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
+import {
+  buildTimelineRulerTicks,
+  clearClipSelection,
+  clampPxPerMs,
+  contentWidthPx,
+  createDefaultSnapConfig,
+  fitPxPerMs,
+  msToPx,
+  pxToMs,
+  resolveSelectedClipId,
+  selectClipId,
+  snapTimelineMs,
+  STUDIO_TIMELINE_DEFAULT_PX_PER_MS,
+  zoomInPxPerMs,
+  zoomOutPxPerMs,
+  type StudioSnapConfig,
+} from "@/lib/studio/studio-timeline-view";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 
@@ -89,11 +107,28 @@ function StudioEditorInner({
   const [pending, startTransition] = useTransition();
   const [mode, setMode] = useState<TimelineMode>("seek");
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [pxPerMs, setPxPerMs] = useState(STUDIO_TIMELINE_DEFAULT_PX_PER_MS);
+  const [snapConfig, setSnapConfig] = useState<StudioSnapConfig>(() =>
+    createDefaultSnapConfig(),
+  );
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const transport = useStudioTransport();
   const anySolo = doc.tracks.some((t) => t.solo);
   const length = doc.project.timelineLengthMs;
+  const activeSelectedId = resolveSelectedClipId(
+    selectedClipId,
+    doc.clips.map((c) => c.id),
+  );
   const selectedClip =
-    doc.clips.find((c) => c.id === selectedClipId) ?? null;
+    doc.clips.find((c) => c.id === activeSelectedId) ?? null;
+
+  function applySnap(ms: number, bounds?: { minMs?: number; maxMs?: number }) {
+    return snapTimelineMs(ms, snapConfig, bounds);
+  }
+
+  function seekSnapped(ms: number) {
+    transport.seek(applySnap(ms, { minMs: 0, maxMs: length }));
+  }
 
   async function patchTrack(
     trackId: string,
@@ -198,7 +233,32 @@ function StudioEditorInner({
         json.right!,
       ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
     }));
-    setSelectedClipId(json.left.id);
+    setSelectedClipId(selectClipId(activeSelectedId, json.left.id));
+    setStatus("Zapisano");
+  }
+
+  async function deleteSelectedClip() {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
+      { method: "DELETE" },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      deletedClipId?: string;
+      error?: string;
+    };
+    if (!res.ok || !json.deletedClipId) {
+      throw new Error(json.error ?? "Nie udało się usunąć klipu.");
+    }
+    setDoc((prev) => ({
+      ...prev,
+      clips: prev.clips.filter((c) => c.id !== json.deletedClipId),
+    }));
+    setSelectedClipId(clearClipSelection());
+    setConfirmDelete(false);
     setStatus("Zapisano");
   }
 
@@ -248,6 +308,63 @@ function StudioEditorInner({
         >
           Edycja klipu
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={snapConfig.mode === "grid" ? "default" : "outline"}
+          aria-pressed={snapConfig.mode === "grid"}
+          title="Przyciągaj do siatki 1 s"
+          onClick={() =>
+            setSnapConfig((prev) =>
+              createDefaultSnapConfig({
+                ...prev,
+                mode: prev.mode === "grid" ? "off" : "grid",
+              }),
+            )
+          }
+        >
+          {snapConfig.mode === "grid" ? "Snap: włączony" : "Snap: wyłączony"}
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          title="Pomniejsz oś czasu"
+          onClick={() => setPxPerMs((z) => zoomOutPxPerMs(z))}
+        >
+          Pomniejsz
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          title="Powiększ oś czasu"
+          onClick={() => setPxPerMs((z) => zoomInPxPerMs(z))}
+        >
+          Powiększ
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          title="Dopasuj oś czasu do szerokości"
+          onClick={() => {
+            const viewport = document
+              .querySelector('[aria-label="Oś czasu projektu"]')
+              ?.clientWidth;
+            setPxPerMs(
+              fitPxPerMs(
+                length,
+                typeof viewport === "number" ? viewport : 360,
+              ),
+            );
+          }}
+        >
+          Dopasuj
+        </Button>
       </div>
 
       {mode === "edit" ? (
@@ -256,10 +373,25 @@ function StudioEditorInner({
           playheadMs={transport.state.playheadMs}
           timelineLengthMs={length}
           pending={pending}
+          confirmDelete={confirmDelete}
+          onConfirmDeleteChange={setConfirmDelete}
+          onClearSelection={() => {
+            setSelectedClipId(clearClipSelection());
+            setConfirmDelete(false);
+          }}
           onMove={(timelineStartMs) =>
             startTransition(async () => {
               try {
-                await patchClip({ op: "move", timelineStartMs });
+                const maxStart = selectedClip
+                  ? Math.max(0, length - selectedClip.durationMs)
+                  : 0;
+                await patchClip({
+                  op: "move",
+                  timelineStartMs: applySnap(timelineStartMs, {
+                    minMs: 0,
+                    maxMs: maxStart,
+                  }),
+                });
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd przesunięcia.");
                 setStatus(null);
@@ -298,6 +430,16 @@ function StudioEditorInner({
                 await splitSelectedAtPlayhead();
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd podziału.");
+                setStatus(null);
+              }
+            })
+          }
+          onDelete={() =>
+            startTransition(async () => {
+              try {
+                await deleteSelectedClip();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd usuwania.");
                 setStatus(null);
               }
             })
@@ -517,15 +659,25 @@ function StudioEditorInner({
           clips={doc.clips}
           timelineLengthMs={length}
           playheadMs={transport.state.playheadMs}
+          pxPerMs={pxPerMs}
           mode={mode}
-          selectedClipId={selectedClipId}
-          onSeek={transport.seek}
+          selectedClipId={activeSelectedId}
+          onSeek={seekSnapped}
           onSelectClip={(id) => {
-            setSelectedClipId(id);
+            setSelectedClipId(selectClipId(activeSelectedId, id));
             setMode("edit");
+            setConfirmDelete(false);
           }}
           onMoveClip={(clipId, timelineStartMs) => {
-            setSelectedClipId(clipId);
+            setSelectedClipId(selectClipId(activeSelectedId, clipId));
+            const clip = doc.clips.find((c) => c.id === clipId);
+            const maxStart = clip
+              ? Math.max(0, length - clip.durationMs)
+              : 0;
+            const snapped = applySnap(timelineStartMs, {
+              minMs: 0,
+              maxMs: maxStart,
+            });
             startTransition(async () => {
               try {
                 setError(null);
@@ -535,7 +687,10 @@ function StudioEditorInner({
                   {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ op: "move", timelineStartMs }),
+                    body: JSON.stringify({
+                      op: "move",
+                      timelineStartMs: snapped,
+                    }),
                   },
                 );
                 const json = (await res.json()) as {
@@ -564,9 +719,8 @@ function StudioEditorInner({
       </div>
 
       <p className="text-xs text-[var(--brd-mute)]">
-        P5.3 — przesuwanie, przycinanie i dzielenie klipów. Źródło nagrania /
-        bitu pozostaje niezmienione. Punch i nagranie wokalu w kolejnych
-        etapach.
+        P5.4 — zoom, snap i zaznaczenie na osi czasu. Usunięcie klipu nie
+        usuwa źródła. Punch i nagranie wokalu w kolejnych etapach.
       </p>
     </div>
   );
@@ -577,19 +731,27 @@ function ClipEditPanel({
   playheadMs,
   timelineLengthMs,
   pending,
+  confirmDelete,
+  onConfirmDeleteChange,
+  onClearSelection,
   onMove,
   onTrimLeftToPlayhead,
   onTrimRightToPlayhead,
   onSplit,
+  onDelete,
 }: {
   clip: StudioClipDto | null;
   playheadMs: number;
   timelineLengthMs: number;
   pending: boolean;
+  confirmDelete: boolean;
+  onConfirmDeleteChange: (next: boolean) => void;
+  onClearSelection: () => void;
   onMove: (timelineStartMs: number) => void;
   onTrimLeftToPlayhead: () => void;
   onTrimRightToPlayhead: () => void;
   onSplit: () => void;
+  onDelete: () => void;
 }) {
   const [draftStart, setDraftStart] = useState<number | null>(null);
   const maxStart = clip
@@ -602,22 +764,35 @@ function ClipEditPanel({
   if (!clip) {
     return (
       <div className="rounded border border-dashed border-[var(--brd-line)] p-3 text-sm text-[var(--brd-mute)]">
-        Wybierz klip na osi czasu, aby go przesunąć, przyciąć lub podzielić.
-        Ustaw playhead w odpowiednim miejscu przed przycięciem / podziałem.
+        Wybierz klip na osi czasu, aby go przesunąć, przyciąć, podzielić lub
+        usunąć. Ustaw playhead przed przycięciem / podziałem.
       </div>
     );
   }
 
   return (
     <div className="space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
-      <p className="text-sm font-medium text-[var(--brd-ink)]">
-        Klip · start {formatStudioTimeMs(startValue)} · długość{" "}
-        {formatStudioTimeMs(clip.durationMs)}
-      </p>
-      <p className="text-xs text-[var(--brd-mute)]">
-        Playhead: {formatStudioTimeMs(playheadMs)} · offset źródła{" "}
-        {formatStudioTimeMs(clip.sourceOffsetMs)}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium text-[var(--brd-ink)]">
+            Zaznaczony klip · start {formatStudioTimeMs(startValue)} · długość{" "}
+            {formatStudioTimeMs(clip.durationMs)}
+          </p>
+          <p className="text-xs text-[var(--brd-mute)]">
+            Playhead: {formatStudioTimeMs(playheadMs)} · offset źródła{" "}
+            {formatStudioTimeMs(clip.sourceOffsetMs)}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={pending}
+          onClick={onClearSelection}
+        >
+          Odznacz
+        </Button>
+      </div>
       <label className="block text-xs text-[var(--brd-mute)]">
         Przesuń (pozycja startu)
         <input
@@ -668,7 +843,47 @@ function ClipEditPanel({
         >
           Podziel
         </Button>
+        {!confirmDelete ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pending}
+            onClick={() => onConfirmDeleteChange(true)}
+            title="Usuń klip z osi czasu"
+          >
+            Usuń
+          </Button>
+        ) : (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              disabled={pending}
+              onClick={onDelete}
+              title="Potwierdź usunięcie klipu"
+            >
+              Potwierdź usunięcie
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={pending}
+              onClick={() => onConfirmDeleteChange(false)}
+            >
+              Anuluj
+            </Button>
+          </>
+        )}
       </div>
+      {confirmDelete ? (
+        <p className="text-xs text-destructive" role="status">
+          Usunięcie dotyczy tylko klipu na osi czasu. Źródło (nagranie / bit)
+          pozostaje nietknięte.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -745,6 +960,7 @@ function StudioTimeline({
   clips,
   timelineLengthMs,
   playheadMs,
+  pxPerMs,
   mode,
   selectedClipId,
   onSeek,
@@ -755,21 +971,25 @@ function StudioTimeline({
   clips: StudioClipDto[];
   timelineLengthMs: number;
   playheadMs: number;
+  pxPerMs: number;
   mode: TimelineMode;
   selectedClipId: string | null;
   onSeek: (ms: number) => void;
   onSelectClip: (clipId: string) => void;
   onMoveClip: (clipId: string, timelineStartMs: number) => void;
 }) {
-  const playheadPct = Math.min(
-    100,
-    Math.max(0, (playheadMs / timelineLengthMs) * 100),
-  );
+  const density = clampPxPerMs(pxPerMs);
+  const widthPx = contentWidthPx(timelineLengthMs, density);
+  const playheadX = msToPx(playheadMs, density);
+  const ticks = buildTimelineRulerTicks({
+    timelineLengthMs,
+    pxPerMs: density,
+  });
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const [dragState, setDragState] = useState<{
     clipId: string;
     originX: number;
     originStart: number;
-    widthPx: number;
   } | null>(null);
 
   function seekFromPointer(event: {
@@ -777,159 +997,172 @@ function StudioTimeline({
     clientX: number;
   }) {
     if (mode === "edit") return;
+    // Content node rect already shifts with scroll — do not add scrollLeft again.
     const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = Math.min(
-      1,
-      Math.max(0, (event.clientX - rect.left) / rect.width),
+    const localX = Math.min(
+      widthPx,
+      Math.max(0, event.clientX - rect.left),
     );
-    onSeek(Math.round(ratio * timelineLengthMs));
+    onSeek(pxToMs(localX, density));
   }
 
   return (
     <div
-      className="relative min-h-[16rem] overflow-x-auto rounded border border-[var(--brd-line)] bg-[color-mix(in_oklch,var(--brd-bg),var(--brd-ink)_2%)]"
+      className="relative min-h-[16rem] rounded border border-[var(--brd-line)] bg-[color-mix(in_oklch,var(--brd-bg),var(--brd-ink)_2%)]"
       role="region"
       aria-label="Oś czasu projektu"
     >
-      <div className="sticky top-0 z-10 flex justify-between border-b border-[var(--brd-line)] bg-[var(--brd-bg)] px-2 py-1 text-[10px] text-[var(--brd-mute)]">
-        <span>0:00</span>
-        <span>{formatStudioTimeMs(timelineLengthMs)}</span>
-      </div>
       <div
-        className={`relative min-w-[28rem] space-y-2 p-2 ${
-          mode === "seek" ? "cursor-pointer touch-pan-y" : "touch-none"
-        }`}
-        onClick={seekFromPointer}
-        role="slider"
-        aria-label={
-          mode === "seek"
-            ? "Oś czasu — kliknij, aby przewinąć"
-            : "Oś czasu — tryb edycji klipu"
-        }
-        aria-valuemin={0}
-        aria-valuemax={timelineLengthMs}
-        aria-valuenow={playheadMs}
+        ref={scrollRef}
+        className="overflow-x-auto touch-pan-x"
       >
-        {tracks.map((track) => {
-          const trackClips = clips.filter((c) => c.trackId === track.id);
-          return (
-            <div
-              key={track.id}
-              className="relative h-12 rounded bg-[var(--brd-bg)]"
-            >
-              <span className="pointer-events-none absolute left-2 top-1 text-[10px] text-[var(--brd-mute)]">
-                {track.name}
-              </span>
-              {trackClips.map((clip) => {
-                const left = (clip.timelineStartMs / timelineLengthMs) * 100;
-                const width = (clip.durationMs / timelineLengthMs) * 100;
-                const selected = clip.id === selectedClipId;
-                return (
-                  <div
-                    key={clip.id}
-                    className={`absolute bottom-1 top-5 rounded px-1 text-[10px] text-[var(--brd-ink)] ${
-                      selected
-                        ? "bg-[var(--brd-ink)]/30 ring-1 ring-[var(--brd-ink)]"
-                        : "bg-[var(--brd-ink)]/15"
-                    } ${mode === "edit" ? "pointer-events-auto cursor-grab touch-none" : "pointer-events-none"}`}
-                    style={{
-                      left: `${left}%`,
-                      width: `${Math.max(width, 1.5)}%`,
-                    }}
-                    title={`${clip.sourceKind} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
-                    onPointerDown={
-                      mode === "edit"
-                        ? (e) => {
-                            e.stopPropagation();
-                            e.currentTarget.setPointerCapture(e.pointerId);
-                            const lane = e.currentTarget.parentElement;
-                            const laneWidth =
-                              lane?.getBoundingClientRect().width ?? 1;
-                            setDragState({
-                              clipId: clip.id,
-                              originX: e.clientX,
-                              originStart: clip.timelineStartMs,
-                              widthPx: laneWidth,
-                            });
-                            onSelectClip(clip.id);
-                          }
-                        : undefined
-                    }
-                    onPointerMove={
-                      mode === "edit"
-                        ? (e) => {
-                            if (!dragState || dragState.clipId !== clip.id)
-                              return;
-                            e.stopPropagation();
-                            const deltaPx = e.clientX - dragState.originX;
-                            const deltaMs = Math.round(
-                              (deltaPx / dragState.widthPx) * timelineLengthMs,
-                            );
-                            const maxStart = Math.max(
-                              0,
-                              timelineLengthMs - clip.durationMs,
-                            );
-                            const next = Math.min(
-                              maxStart,
-                              Math.max(0, dragState.originStart + deltaMs),
-                            );
-                            // Visual-only preview via CSS left would need local state;
-                            // persist on pointer up for SSOT.
-                            e.currentTarget.style.left = `${(next / timelineLengthMs) * 100}%`;
-                            (
-                              e.currentTarget as HTMLElement & {
-                                dataset: DOMStringMap & { previewStart?: string };
-                              }
-                            ).dataset.previewStart = String(next);
-                          }
-                        : undefined
-                    }
-                    onPointerUp={
-                      mode === "edit"
-                        ? (e) => {
-                            e.stopPropagation();
-                            const preview = Number(
-                              (e.currentTarget as HTMLElement).dataset
-                                .previewStart,
-                            );
-                            setDragState(null);
-                            if (
-                              Number.isFinite(preview) &&
-                              preview !== clip.timelineStartMs
-                            ) {
-                              onMoveClip(clip.id, preview);
-                            }
-                          }
-                        : undefined
-                    }
-                    onClick={
-                      mode === "edit"
-                        ? (e) => {
-                            e.stopPropagation();
-                            onSelectClip(clip.id);
-                          }
-                        : undefined
-                    }
-                  >
-                    {clip.sourceKind === "TAKE"
-                      ? "Nagranie"
-                      : clip.sourceKind === "BEAT_REF"
-                        ? "Bit"
-                        : "Artefakt"}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
         <div
-          className="pointer-events-none absolute bottom-2 top-8 w-0.5 bg-[var(--brd-ink)]"
-          style={{ left: `calc(${playheadPct}% + 0.5rem)` }}
-          aria-hidden
-        />
+          className={`relative space-y-2 p-2 ${
+            mode === "seek" ? "cursor-pointer" : "touch-none"
+          }`}
+          style={{ width: widthPx, minWidth: "100%" }}
+          onClick={seekFromPointer}
+          role="slider"
+          aria-label={
+            mode === "seek"
+              ? "Oś czasu — kliknij, aby przewinąć"
+              : "Oś czasu — tryb edycji klipu"
+          }
+          aria-valuemin={0}
+          aria-valuemax={timelineLengthMs}
+          aria-valuenow={playheadMs}
+        >
+          <div className="relative h-6 border-b border-[var(--brd-line)]">
+            {ticks.map((tick) => (
+              <span
+                key={tick.ms}
+                className={`absolute top-0 -translate-x-1/2 text-[10px] ${
+                  tick.major
+                    ? "text-[var(--brd-ink)]"
+                    : "text-[var(--brd-mute)]"
+                }`}
+                style={{ left: msToPx(tick.ms, density) }}
+              >
+                {tick.major ? formatStudioTimeMs(tick.ms) : "·"}
+              </span>
+            ))}
+          </div>
+          {tracks.map((track) => {
+            const trackClips = clips.filter((c) => c.trackId === track.id);
+            return (
+              <div
+                key={track.id}
+                className="relative h-12 rounded bg-[var(--brd-bg)]"
+                style={{ width: widthPx }}
+              >
+                <span className="pointer-events-none absolute left-2 top-1 z-[1] text-[10px] text-[var(--brd-mute)]">
+                  {track.name}
+                </span>
+                {trackClips.map((clip) => {
+                  const left = msToPx(clip.timelineStartMs, density);
+                  const width = Math.max(8, msToPx(clip.durationMs, density));
+                  const selected = clip.id === selectedClipId;
+                  return (
+                    <div
+                      key={clip.id}
+                      className={`absolute bottom-1 top-5 rounded px-1 text-[10px] text-[var(--brd-ink)] ${
+                        selected
+                          ? "z-[2] bg-[var(--brd-ink)]/30 ring-2 ring-[var(--brd-ink)]"
+                          : "bg-[var(--brd-ink)]/15"
+                      } ${mode === "edit" ? "pointer-events-auto cursor-grab touch-none" : "pointer-events-none"}`}
+                      style={{ left, width }}
+                      title={`${clip.sourceKind} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
+                      aria-selected={selected}
+                      onPointerDown={
+                        mode === "edit"
+                          ? (e) => {
+                              e.stopPropagation();
+                              e.currentTarget.setPointerCapture(e.pointerId);
+                              setDragState({
+                                clipId: clip.id,
+                                originX: e.clientX,
+                                originStart: clip.timelineStartMs,
+                              });
+                              onSelectClip(clip.id);
+                            }
+                          : undefined
+                      }
+                      onPointerMove={
+                        mode === "edit"
+                          ? (e) => {
+                              if (!dragState || dragState.clipId !== clip.id)
+                                return;
+                              e.stopPropagation();
+                              const deltaMs = pxToMs(
+                                e.clientX - dragState.originX,
+                                density,
+                              );
+                              const maxStart = Math.max(
+                                0,
+                                timelineLengthMs - clip.durationMs,
+                              );
+                              const next = Math.min(
+                                maxStart,
+                                Math.max(0, dragState.originStart + deltaMs),
+                              );
+                              e.currentTarget.style.left = `${msToPx(next, density)}px`;
+                              (
+                                e.currentTarget as HTMLElement & {
+                                  dataset: DOMStringMap & {
+                                    previewStart?: string;
+                                  };
+                                }
+                              ).dataset.previewStart = String(next);
+                            }
+                          : undefined
+                      }
+                      onPointerUp={
+                        mode === "edit"
+                          ? (e) => {
+                              e.stopPropagation();
+                              const preview = Number(
+                                (e.currentTarget as HTMLElement).dataset
+                                  .previewStart,
+                              );
+                              setDragState(null);
+                              if (
+                                Number.isFinite(preview) &&
+                                preview !== clip.timelineStartMs
+                              ) {
+                                onMoveClip(clip.id, preview);
+                              }
+                            }
+                          : undefined
+                      }
+                      onClick={
+                        mode === "edit"
+                          ? (e) => {
+                              e.stopPropagation();
+                              onSelectClip(clip.id);
+                            }
+                          : undefined
+                      }
+                    >
+                      {clip.sourceKind === "TAKE"
+                        ? "Nagranie"
+                        : clip.sourceKind === "BEAT_REF"
+                          ? "Bit"
+                          : "Artefakt"}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+          <div
+            className="pointer-events-none absolute bottom-2 top-8 w-0.5 bg-[var(--brd-ink)]"
+            style={{ left: playheadX }}
+            aria-hidden
+          />
+        </div>
       </div>
       <label className="block border-t border-[var(--brd-line)] px-2 py-2 text-xs text-[var(--brd-mute)]">
-        Playhead
+        Playhead · {formatStudioTimeMs(playheadMs)}
         <input
           type="range"
           min={0}

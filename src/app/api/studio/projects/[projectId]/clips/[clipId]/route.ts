@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import {
+  deleteStudioClip,
   updateStudioClipGeometry,
   type StudioClipGeometryPatch,
 } from "@/lib/studio/studio-service";
@@ -115,6 +116,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       patch,
     });
     return NextResponse.json({ success: true, clip });
+  } catch (error) {
+    return studioApiErrorResponse(error);
+  }
+}
+
+/**
+ * DELETE — remove Clip only. Source Take / Beat / storage remain intact.
+ */
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    const { projectId, clipId } = await context.params;
+    const result = await deleteStudioClip({ projectId, clipId });
+    return NextResponse.json({ success: true, ...result });
   } catch (error) {
     return studioApiErrorResponse(error);
   }
