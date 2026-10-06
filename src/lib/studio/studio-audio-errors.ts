@@ -10,6 +10,10 @@ export const STUDIO_AUDIO_ERROR_CODES = [
   "AUDIO_PLAYBACK_FAILED",
   "AUDIO_SYNC_FAILED",
   "AUDIO_OUTPUT_ERROR",
+  "AUDIO_FX_UNKNOWN_TYPE",
+  "AUDIO_FX_INVALID_PARAMS",
+  "AUDIO_FX_CHAIN_UNSUPPORTED",
+  "AUDIO_FX_NODE_FAILED",
 ] as const;
 
 export type StudioAudioErrorCode = (typeof STUDIO_AUDIO_ERROR_CODES)[number];
@@ -27,6 +31,14 @@ const USER_FACING_PL: Record<StudioAudioErrorCode, string> = {
     "Odtwarzanie straciło synchronizację. Spróbuj ponownie.",
   AUDIO_OUTPUT_ERROR:
     "Nie udało się odtworzyć audio. Sprawdź połączenie lub spróbuj ponownie.",
+  AUDIO_FX_UNKNOWN_TYPE:
+    "Pominięto nieobsługiwany efekt. Pozostałe ścieżki grają dalej.",
+  AUDIO_FX_INVALID_PARAMS:
+    "Pominięto efekt z niepoprawnymi parametrami. Pozostałe ścieżki grają dalej.",
+  AUDIO_FX_CHAIN_UNSUPPORTED:
+    "Łańcuch efektów nie jest obsługiwany. Ścieżka gra bez efektów.",
+  AUDIO_FX_NODE_FAILED:
+    "Nie udało się wstawić efektu. Ścieżka gra dalej.",
 };
 
 /** Beat-specific copy kept from P5.2. */

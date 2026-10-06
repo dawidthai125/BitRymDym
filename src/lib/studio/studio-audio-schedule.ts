@@ -14,6 +14,7 @@ export type StudioEngineTrack = {
   pan: number;
   muted: boolean;
   solo: boolean;
+  effectsChain?: unknown;
 };
 
 export type StudioEngineClip = {

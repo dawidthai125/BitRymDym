@@ -72,6 +72,7 @@ export function StudioEditor({
         pan: t.pan,
         muted: t.muted,
         solo: t.solo,
+        effectsChain: t.effectsChain,
       })),
       clips: doc.clips.map((c) => ({
         id: c.id,

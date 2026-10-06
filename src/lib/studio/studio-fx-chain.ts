@@ -471,3 +471,92 @@ export function applyStudioFxCasToState<T extends { documentVersion: number }>(
   mutate(next);
   return next;
 }
+
+export type StudioFxPlaybackSkipCode =
+  | "AUDIO_FX_UNKNOWN_TYPE"
+  | "AUDIO_FX_INVALID_PARAMS";
+
+export type StudioFxPlaybackSlot =
+  | { status: "ready"; effect: StudioFxInstance }
+  | { status: "bypass"; effect: StudioFxInstance }
+  | { status: "skip"; code: StudioFxPlaybackSkipCode };
+
+export type StudioFxPlaybackPlan =
+  | { kind: "unsupported"; code: "AUDIO_FX_CHAIN_UNSUPPORTED"; slots: [] }
+  | { kind: "chain"; slots: StudioFxPlaybackSlot[] };
+
+export function tryParseStudioFxInstance(
+  raw: unknown,
+  index: number,
+):
+  | { ok: true; effect: StudioFxInstance }
+  | { ok: false; reason: "unknown_type" | "invalid" } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ok: false, reason: "invalid" };
+  }
+  const type = (raw as { type?: unknown }).type;
+  if (typeof type !== "string" || !isFxType(type)) {
+    return { ok: false, reason: "unknown_type" };
+  }
+  try {
+    return {
+      ok: true,
+      effect: parseEffect(raw, index, () => crypto.randomUUID()),
+    };
+  } catch {
+    return { ok: false, reason: "invalid" };
+  }
+}
+
+/** Runtime read path: never throws. Fail-closed per slot. Does not mutate persistence. */
+export function interpretStudioFxChainForPlayback(
+  raw: unknown,
+): StudioFxPlaybackPlan {
+  if (raw == null) {
+    return { kind: "chain", slots: [] };
+  }
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    return { kind: "unsupported", code: "AUDIO_FX_CHAIN_UNSUPPORTED", slots: [] };
+  }
+  const o = raw as Record<string, unknown>;
+  if (o.schemaVersion !== STUDIO_FX_CHAIN_SCHEMA_VERSION || !Array.isArray(o.effects)) {
+    return { kind: "unsupported", code: "AUDIO_FX_CHAIN_UNSUPPORTED", slots: [] };
+  }
+  const items = o.effects.slice(0, STUDIO_FX_CHAIN_MAX_EFFECTS);
+  const slots: StudioFxPlaybackSlot[] = [];
+  for (let i = 0; i < items.length; i += 1) {
+    const parsed = tryParseStudioFxInstance(items[i], i);
+    if (!parsed.ok) {
+      slots.push({
+        status: "skip",
+        code:
+          parsed.reason === "unknown_type"
+            ? "AUDIO_FX_UNKNOWN_TYPE"
+            : "AUDIO_FX_INVALID_PARAMS",
+      });
+      continue;
+    }
+    if (!parsed.effect.enabled) {
+      slots.push({ status: "bypass", effect: parsed.effect });
+      continue;
+    }
+    slots.push({ status: "ready", effect: parsed.effect });
+  }
+  return { kind: "chain", slots };
+}
+
+export function studioFxPlaybackFingerprint(plan: StudioFxPlaybackPlan): string {
+  if (plan.kind === "unsupported") return "unsupported";
+  return JSON.stringify(
+    plan.slots.map((slot) => {
+      if (slot.status === "skip") return { status: "skip", code: slot.code };
+      return {
+        status: slot.status,
+        id: slot.effect.id,
+        type: slot.effect.type,
+        enabled: slot.effect.enabled,
+        params: slot.effect.params,
+      };
+    }),
+  );
+}

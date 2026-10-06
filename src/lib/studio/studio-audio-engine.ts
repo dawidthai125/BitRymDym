@@ -23,6 +23,16 @@ import type {
   StudioResolvedSource,
   StudioSourceAdapterRegistry,
 } from "@/lib/studio/studio-audio-source-adapter";
+import {
+  interpretStudioFxChainForPlayback,
+  studioFxPlaybackFingerprint,
+} from "@/lib/studio/studio-fx-chain";
+import {
+  buildStudioTrackFxChain,
+  type StudioFxGraphContext,
+  type StudioFxSlotInspect,
+  type StudioTrackFxHandle,
+} from "@/lib/studio/studio-fx-graph";
 
 export type StudioAudioEngineLifecycle =
   | "created"
@@ -56,13 +66,12 @@ export type StudioMediaElement = {
   load(): void;
 };
 
-export type StudioAudioContextLike = {
+export type StudioAudioContextLike = StudioFxGraphContext & {
   currentTime: number;
   state: string;
   destination: Connectable;
   resume(): Promise<void>;
   close(): Promise<void>;
-  createGain(): GainLike;
   createStereoPanner(): PannerLike;
   createMediaElementSource(el: StudioMediaElement): Connectable;
 };
@@ -90,6 +99,8 @@ type TrackGraph = {
   input: GainLike;
   gain: GainLike;
   pan: PannerLike;
+  fx: StudioTrackFxHandle | null;
+  fingerprint: string;
 };
 
 type Voice = {
@@ -181,6 +192,31 @@ export class StudioAudioEngine {
       if (!voice.disposed && !voice.element.paused) n += 1;
     }
     return n;
+  }
+
+  /** P6.2 diagnostic — Track insert between summing input and track fader. */
+  inspectTrackFx(trackId: string): {
+    insert: "dry" | "fx";
+    fingerprint: string;
+    slots: StudioFxSlotInspect[];
+    summingInput: GainLike;
+    trackGain: GainLike;
+    trackPan: PannerLike;
+  } | null {
+    const graph = this.tracks.get(trackId);
+    if (!graph) return null;
+    return {
+      insert: graph.fx ? "fx" : "dry",
+      fingerprint: graph.fingerprint,
+      slots: graph.fx?.inspect() ?? [],
+      summingInput: graph.input,
+      trackGain: graph.gain,
+      trackPan: graph.pan,
+    };
+  }
+
+  inspectVoiceClipGain(clipId: string): GainLike | null {
+    return this.voices.get(clipId)?.clipGain ?? null;
   }
 
   initialize(): boolean {
@@ -361,6 +397,7 @@ export class StudioAudioEngine {
     this.voices.clear();
     for (const graph of this.tracks.values()) {
       try {
+        graph.fx?.dispose();
         graph.input.disconnect();
         graph.gain.disconnect();
         graph.pan.disconnect();
@@ -464,10 +501,12 @@ export class StudioAudioEngine {
       const params = trackGraphParams(track, anySolo);
       graph.gain.gain.value = params.gain;
       graph.pan.pan.value = params.pan;
+      this.syncTrackFx(track.id, track.effectsChain);
     }
     for (const [id, graph] of this.tracks) {
       if (seen.has(id)) continue;
       try {
+        graph.fx?.dispose();
         graph.input.disconnect();
         graph.gain.disconnect();
         graph.pan.disconnect();
@@ -490,9 +529,65 @@ export class StudioAudioEngine {
     input.connect(gain);
     gain.connect(pan);
     pan.connect(this.masterGain);
-    const graph = { input, gain, pan };
+    const graph: TrackGraph = {
+      input,
+      gain,
+      pan,
+      fx: null,
+      fingerprint: "",
+    };
     this.tracks.set(trackId, graph);
     return graph;
+  }
+
+  private syncTrackFx(trackId: string, rawChain: unknown): void {
+    if (!this.ctx) return;
+    const graph = this.tracks.get(trackId);
+    if (!graph) return;
+    const plan = interpretStudioFxChainForPlayback(rawChain);
+    const fingerprint = studioFxPlaybackFingerprint(plan);
+    if (graph.fingerprint === fingerprint) return;
+    if (graph.fx && graph.fx.applyPlan(plan)) {
+      graph.fingerprint = fingerprint;
+      return;
+    }
+    try {
+      graph.input.disconnect();
+    } catch {
+      /* ignore */
+    }
+    graph.fx?.dispose();
+    graph.fx = null;
+    if (plan.kind === "unsupported") {
+      this.listener.onError({ code: "AUDIO_FX_CHAIN_UNSUPPORTED", clipId: trackId });
+      graph.input.connect(graph.gain);
+      graph.fingerprint = fingerprint;
+      return;
+    }
+    if (plan.slots.length === 0) {
+      graph.input.connect(graph.gain);
+      graph.fingerprint = fingerprint;
+      return;
+    }
+    try {
+      const handle = buildStudioTrackFxChain(this.ctx, rawChain, (code) => {
+        this.listener.onError({ code, clipId: trackId });
+      });
+      if (!handle) {
+        graph.input.connect(graph.gain);
+        graph.fingerprint = fingerprint;
+        return;
+      }
+      graph.fx = handle;
+      graph.input.connect(handle.input);
+      handle.output.connect(graph.gain);
+      graph.fingerprint = handle.fingerprint;
+    } catch {
+      this.listener.onError({ code: "AUDIO_FX_NODE_FAILED", clipId: trackId });
+      graph.fx = null;
+      graph.input.connect(graph.gain);
+      graph.fingerprint = fingerprint;
+    }
   }
 
   private async syncVoices(

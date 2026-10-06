@@ -212,6 +212,7 @@ export function StudioTransportProvider({
           clipId?: string;
         }) {
           if (params.code === "AUDIO_SYNC_FAILED") return;
+          if (params.code.startsWith("AUDIO_FX_")) return;
           if (params.sourceKind === "ARTIFACT") return;
           setError(
             userFacingPlaybackError({
