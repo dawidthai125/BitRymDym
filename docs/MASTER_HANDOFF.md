@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-06 — P5.7 Architecture Audit **GO WITH CONDITIONS** · production app **`7f80143`** (P5.6 GREEN) · D02 **CLOSED** @ `44dc22c` (test-only) · **NEXT = P5.8** · docs-only reconcile · **no redeploy**
+**Updated:** 2026-10-06 — P5.8 **PRODUCTION VERIFIED — GREEN** @ **`95e04ff`** · dpl `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` · P5.7 **GO WITH CONDITIONS** · D02 **CLOSED** · **NEXT = Architecture Audit** · docs-only reconcile
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,16 +23,18 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | Advances with this SSOT reconcile (includes `44dc22c` D02 test-only + docs) |
-| **Production application SHA** | `7f801430d6680c32e7af5a4e6f5b6818541014d8` (`7f80143`) — **P5.6 Studio Take Workflow** · **UNCHANGED** this docs wave (no redeploy) |
-| **Last Studio Production Verify** | **P5.6 · PRODUCTION VERIFIED — GREEN** @ `7f80143` |
+| **Repository HEAD / origin/main** | Advances with this SSOT reconcile (app tip `95e04ff` + docs) |
+| **Production application SHA** | `95e04ff534d58de3476e3a2dc620a13fbcacb7ba` (`95e04ff`) — **P5.8 Studio Devices / Input Foundation** · **UNCHANGED** this docs wave |
+| **Production deployment** | `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` (no-cache redeploy after build-cache incident) |
+| **Studio baseline** | **P5.8 · PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
+| **Last Studio Production Verify** | **P5.8 · PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **D02 live harness** | **CLOSED** @ `44dc22c` — **TEST ONLY** |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** · [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **NEXT UNIT** | **P5.8 — Studio Devices / Input & Device Foundation** (Design Freeze pending) |
+| **NEXT UNIT** | **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** (do **not** auto-start P6) |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
-| **Studio P5.1–P5.5** | **COMPLETE** (foundation → recording) |
-| **P5.6 Studio Take Workflow** | **PRODUCTION VERIFIED — GREEN** @ `7f80143` · `finalize ≠ place` · [freeze](./decisions/P5_6_STUDIO_TAKE_WORKFLOW_DESIGN_FREEZE.md) |
+| **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
+| **P5.8 Studio Devices / Input** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · [freeze](./decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md) |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** · [RECORDING.md](./architecture/RECORDING.md) |
 | **POLISH-01** | **CLOSED / PRODUCTION VERIFIED** @ `579acb3` · residual `1c63080` · [DF](./audits/POLISH-01_DESIGN_FREEZE.md) |
@@ -73,21 +75,31 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | `CRON_SECRET` | CONFIGURED (**never print / never commit**) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-**Studio living rules (P5.7 reconcile):**
+**Studio living rules (P5.8 reconcile):**
 
 ```text
 StudioTransport != PlayerProvider
-P5 playback     = StudioTransport + HTMLAudioElement (beat + first-wins TAKE)
-P6 DSP          = dedicated StudioAudioEngine / audio graph REQUIRED
-                · do NOT bolt FX/routing/mix/master onto HTMLAudioElement
 finalize ≠ place (P5.6 frozen)
+P5 playback     = StudioTransport + HTMLAudioElement (beat + first-wins TAKE)
+                · NOT target engine for full Studio DSP
+P5.8 devices    = enumerateDevices · permission UNKNOWN|REQUESTING|GRANTED|DENIED|BLOCKED|UNAVAILABLE
+                · selectedDeviceId (null/default · stale → fallback)
+                · localStorage bitrymdym.studio.selectedAudioInputDeviceId (not Profile/Project/DB)
+                · devicechange recording-safe · useMicAnalyser → BrdInputMonitor
+P6 DSP          = dedicated StudioAudioEngine / audio graph REQUIRED
+                · FX/mix/master = READY WITH REFACTOR
+                · Automation / Autotune = NOT READY
+                · do NOT bolt FX/routing/mix/master onto HTMLAudioElement
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · NOT frozen autosave contract (condition before autosave)
 Overlap playback (P5)     = first-wins (known limit)
-ARTIFACT in StudioTransport = not fully playable yet (non-blocking for P5.8)
+ARTIFACT in StudioTransport = not fully playable yet (non-blocking backlog)
 P6 = FX / routing / buses / automation / mix / master (+ StudioAudioEngine)
 P7 = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-drop
+     · track enum reserved READY WITH REFACTOR · instrument engines NOT READY
 ```
+
+**P5.8 deployment incident (release note):** initial deploy claimed `95e04ff` but served pre-P5.8 Studio device JS due to **stale Vercel build cache**; recovered with no-cache redeploy → `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`. Production Gate must verify **served artifact**, not only SHA/Ready.
 
 **E3 Production flags:**
 
@@ -106,7 +118,9 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `7f80143` | **PRODUCTION APP** · P5.6 Studio Take Workflow · **current production baseline** |
+| `95e04ff` | **PRODUCTION APP** · P5.8 Studio Devices / Input · **current production baseline** |
+| `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` | **PRODUCTION DEPLOYMENT** (no-cache recovery) — does **not** replace SHA as app baseline |
+| `7f80143` | Historical — P5.6 Studio Take Workflow (pre-P5.8 production tip) |
 | `44dc22c` | **TEST ONLY** · D02 live harness fix · not a production deploy |
 | `75bd80f` | Historical — Fala 3.5.1 production verification baseline |
 | `dabbc936` | Historical — P3 Anonymous → Account Claim production tip · `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` |
@@ -135,10 +149,11 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | Advances with this SSOT reconcile (parent included `44dc22c`) |
-| **Production application** | `7f80143` — P5.6 · **UNCHANGED** this docs wave (no redeploy) |
-| **P5.1–P5.5** | **COMPLETE** |
-| **P5.6** | **PRODUCTION VERIFIED — GREEN** @ `7f80143` |
+| **HEAD / origin/main** | Advances with this SSOT reconcile (app tip `95e04ff`) |
+| **Production application** | `95e04ff` — P5.8 · **UNCHANGED** this docs wave |
+| **Production deployment** | `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` |
+| **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
+| **P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **D02 harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7** | **Architecture Audit · GO WITH CONDITIONS** |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
@@ -148,7 +163,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** · **UNCHANGED** |
 | **Fala 3.5.1** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
-| **NEXT GATE** | **P5.8 Design Freeze** (Studio Devices / Input & Device Foundation) · P3 `p_take_id` = **NON-BLOCKING** |
+| **NEXT GATE** | **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** · P3 `p_take_id` = **NON-BLOCKING** |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only. **Nie czyść** dirty WIP bez Owner GO.
@@ -707,12 +722,13 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION APP = 7f80143 (P5.6 · UNCHANGED this docs wave · no redeploy)
-REPO TIP               = advances with SSOT reconcile (includes 44dc22c D02 test-only)
-LAST STUDIO VERIFY     = P5.6 · PRODUCTION VERIFIED — GREEN
+CURRENT PRODUCTION APP = 95e04ff (P5.8 · UNCHANGED this docs wave)
+PRODUCTION DEPLOYMENT  = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
+REPO TIP               = advances with SSOT reconcile (app tip 95e04ff)
+LAST STUDIO VERIFY     = P5.8 · PRODUCTION VERIFIED — GREEN
 D02 HARNESS            = CLOSED @ 44dc22c · TEST ONLY
 P5.7                   = Architecture Audit · GO WITH CONDITIONS
-P5.8                   = NEXT — Studio Devices / Input & Device Foundation (Design Freeze pending)
+P5.8                   = PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER           = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3                     = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
@@ -721,14 +737,15 @@ P0 / P1 / P2           = CLOSED / PRODUCTION VERIFIED · UNCHANGED
 ARCH-05                = CLOSED / VERIFIED
 WORKER                 = STOPPED / DISABLED
 STORAGE-ARCH-01        = LOCKED
-NEXT GATE              = P5.8 Design Freeze
+NEXT GATE              = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
 P3 FOLLOW-UP           = p_take_id hardening · NON-BLOCKING
 NEXT SESSION ENTRY     = Read FINAL_COLD_START_HANDOFF.md
                        → MASTER_HANDOFF / PROJECT_STATE
 ```
 
-**Do not** reopen closed P0/P1/P2/P3/P5.6/Fala 3.5.1/POLISH-01/ARCH-05/BPM without new evidence.
-**Do not** call punch “P5.7” — P5.7 is Architecture Audit; next impl unit is P5.8.
+**Do not** reopen closed P0/P1/P2/P3/P5.6/P5.8/Fala 3.5.1/POLISH-01/ARCH-05/BPM without new evidence.
+**Do not** call punch “P5.7” — P5.7 is Architecture Audit.
+**Do not** auto-start P6 / FX / samples / StudioAudioEngine without a fresh Architecture Audit + Design Freeze + Owner GO.
 **Do not** implement `p_take_id` / fix EXPORT_WAV / mutate Storage without Owner GO.
 **Do not** stage dirty WIP (`.agents/` · `.cursor/` · `infra/` · `.env*` · secrets).
 
@@ -769,8 +786,8 @@ Start reading order:
 
 | Item | Notes |
 |------|--------|
-| Dual SHA (app vs worker) | Production app `7f80143` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
-| Docs / test tip vs app tip | Repo may include `44dc22c` (D02 test-only) + docs ahead of production app `7f80143` — intentional · no redeploy for docs reconcile |
+| Dual SHA (app vs worker) | Production app `95e04ff` · Contabo worker bootstrap `92496d4` — intentional; do not auto-align without Owner GO |
+| Docs tip vs app tip | Docs reconcile may advance HEAD after `95e04ff` — production **application** remains `95e04ff` until next app deploy |
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · RETIREMENT NOT EXECUTED · living orphans **0** (post ARCH-05) · **NOT CLOSED** |
 | HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** — not solved |
 | Hobby daily janitor | Takes janitor only · Storage cleanup lag ≤ ~24h; AuthZ expiry is still immediate |
@@ -829,11 +846,12 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION APP     = 7f80143 · P5.6 · UNCHANGED (docs-only · no redeploy)
+CURRENT PRODUCTION APP     = 95e04ff · P5.8 · UNCHANGED (docs-only this wave)
+PRODUCTION DEPLOYMENT      = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
 D02 HARNESS                = CLOSED @ 44dc22c · TEST ONLY
 P5.7                       = Architecture Audit · GO WITH CONDITIONS
-P5.8                       = NEXT — Studio Devices / Input & Device Foundation
-LAST STUDIO VERIFY         = P5.6 · PRODUCTION VERIFIED — GREEN
+P5.8                       = PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY         = P5.8 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER               = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1                 = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3                         = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
@@ -844,7 +862,7 @@ ADMIN W0–W4                = CLOSED / PRODUCTION VERIFIED
 E3                         = PRODUCTION VERIFIED — GREEN
 WORKER                     = STOPPED / DISABLED
 STORAGE-ARCH-01            = LOCKED
-NEXT GATE                  = P5.8 Design Freeze
+NEXT GATE                  = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
 P3 FOLLOW-UP               = p_take_id · NON-BLOCKING
 NEXT SESSION ENTRY         = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
 ```

@@ -43,7 +43,9 @@ P5.7 ARCHITECTURE: GO WITH CONDITIONS
 | Deploy for this audit | NOT REQUIRED |
 | WIP | Present and **untouched** (`.env.example`, STORAGE_ARCH, eligibility WIP, audits, scripts, etc.) |
 
-**SSOT reconcile (2026-10-06):** Living docs (`PROJECT_STATE`, `MASTER_HANDOFF`, `FINAL_COLD_START`, `docs/README`, architecture README) updated to list P5.1–P5.6, D02 CLOSED, P5.7 GO WITH CONDITIONS, and **P5.8** as next unit. Finding **M5** treated as **RECONCILED** by that docs wave.
+**SSOT reconcile (2026-10-06):** Living docs updated to list P5.1–P5.6, D02 CLOSED, P5.7 GO WITH CONDITIONS, and **P5.8** as next unit. Finding **M5** treated as **RECONCILED** by that docs wave.
+
+**Post-P5.8 closeout (2026-10-06):** P5.8 **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · dpl `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`. Living SSOT now points **NEXT** to a fresh Architecture Audit / formal next Studio unit definition (do **not** auto-start P6). This audit artifact remains historical for P5.7 conditions (H1–H4 still tracked).
 
 ### Shipped P5 units (code evidence)
 

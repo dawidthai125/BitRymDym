@@ -10,14 +10,15 @@
 
 ## Numbering reconciliation (2026-10-06)
 
-Living unit numbers after P5.6 ship + P5.7 audit:
+Living unit numbers after P5.8 production verify:
 
 ```text
 P5.7 = Studio Architecture Audit (GO WITH CONDITIONS) — NOT punch
-P5.8 = Studio Devices / Input & Device Foundation — NEXT implementation unit
+P5.8 = Studio Devices / Input & Device Foundation — PRODUCTION VERIFIED — GREEN @ 95e04ff
+NEXT = Architecture Audit / formal next Studio unit definition (do not auto-start P6)
 ```
 
-Historical “punch as P5.7” language in older audit §37 is superseded. See [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md).
+Historical “punch as P5.7” language in older audit §37 is superseded. See [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) · [P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md](./P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md).
 
 Audio boundary (living):
 

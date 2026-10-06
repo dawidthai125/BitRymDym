@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`7f80143`** (P5.6 GREEN) · repo tip may include `44dc22c` (D02 test-only) + docs · P5.1–P5.5 **COMPLETE** · P5.6 **PRODUCTION VERIFIED — GREEN** · D02 **CLOSED** · P5.7 Architecture Audit **GO WITH CONDITIONS** · **NEXT = P5.8 Design Freeze** (Studio Devices / Input & Device Foundation) · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md).
+**Now:** Production app **`95e04ff`** (P5.8 GREEN) · dpl `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` · P5.1–P5.6 **PRODUCTION VERIFIED — GREEN** · P5.7 Architecture Audit **GO WITH CONDITIONS** · P5.8 **PRODUCTION VERIFIED — GREEN** · D02 **CLOSED** · **NEXT = Architecture Audit / formal next Studio unit** · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md](./decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **P5.8 — Studio Devices / Input & Device Foundation** · Design Freeze first · do **not** implement without freeze + Owner GO · do **not** call punch “P5.7” — see [PROJECT_STATE.md](./PROJECT_STATE.md) · [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md).
+**Next:** **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** · do **not** auto-start P6 · do **not** call punch “P5.7” — see [PROJECT_STATE.md](./PROJECT_STATE.md) · [P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md](./decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md).
 
 ---
 

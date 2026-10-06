@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P5.8 SSOT RECONCILIATION (DOCS ONLY)
+
+**Status:** DOCS ONLY · production app **`95e04ff`** · dpl **`dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`** · P5.8 **PRODUCTION VERIFIED — GREEN**
+**SSOT:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md) · [P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md](./decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md)
+
+- Studio baseline closed as **P5.8 GREEN** (P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · D02 CLOSED)
+- Documented Vercel **build-cache incident** + no-cache recovery deployment
+- Next gate = **Architecture Audit / formal next Studio unit** (do not auto-start P6)
+- Application / DB / RPC / API / tests: **UNCHANGED** this docs wave
+
 ## 2026-10-05 — FALA 3.5.1 SSOT RECONCILIATION (DOCS ONLY)
 
 **Status:** DOCS ONLY · verify baseline **`75bd80f`** · feature **`c690831`** · Fala 3.5.1 **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN**

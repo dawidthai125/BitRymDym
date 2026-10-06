@@ -1,18 +1,20 @@
 # P5.8 Studio Devices / Input Foundation — Design Freeze
 
-**Status:** DESIGN FREEZE — GO  
+**Status:** DESIGN FREEZE — GO · **IMPLEMENTATION COMPLETE** · **PRODUCTION VERIFIED — GREEN**  
 **Date:** 2026-10-06  
 **Product name:** Studio Devices / Input & Device Foundation  
-**Type:** DESIGN FREEZE ONLY — **NO IMPLEMENTATION IN THIS STEP**  
+**Type:** DESIGN FREEZE (historical authoring) + living closeout status  
 **Architecture audit:** [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md)  
 **Parent freezes:** [P5_STUDIO_DESIGN_FREEZE.md](./P5_STUDIO_DESIGN_FREEZE.md) · [P5_6_STUDIO_TAKE_WORKFLOW_DESIGN_FREEZE.md](./P5_6_STUDIO_TAKE_WORKFLOW_DESIGN_FREEZE.md)  
-**Production baseline:** P5.6 PRODUCTION VERIFIED — GREEN @ `7f801430d6680c32e7af5a4e6f5b6818541014d8`  
-**Repo tip (docs):** `67f4b4eb042e5c76edd407293db52f73a8583dfa`  
+**Production application SHA:** `95e04ff534d58de3476e3a2dc620a13fbcacb7ba`  
+**Production deployment:** `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`  
 **Production URL:** https://www.bitrymdym.pl
 
 ```text
 P5.8 DESIGN FREEZE STATUS: GO
-IMPLEMENTATION: AUTHORIZED BY THIS FREEZE (Owner Implementation GO assumed for ship)
+IMPLEMENTATION: COMPLETE
+PRODUCTION VERIFIED: GREEN
+OPEN DECISIONS: NONE
 ```
 
 ---
@@ -21,12 +23,12 @@ IMPLEMENTATION: AUTHORIZED BY THIS FREEZE (Owner Implementation GO assumed for s
 
 | Gate | State |
 |------|--------|
-| P5.6 | PRODUCTION VERIFIED — GREEN @ `7f80143` |
+| P5.6 | PRODUCTION VERIFIED — GREEN |
 | D02 | CLOSED @ `44dc22c` (TEST ONLY) |
 | P5.7 Architecture Audit | GO WITH CONDITIONS |
 | Design Freeze | **THIS DOCUMENT — GO** |
-| Owner Implementation GO | PENDING |
-| Code / migration / deploy | **FORBIDDEN until Owner GO** |
+| Implementation | **COMPLETE** @ `95e04ff` |
+| Production Verify | **GREEN** · dpl `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` |
 
 **Unit numbering SSOT (living):**
 
@@ -43,12 +45,14 @@ Do **not** call punch “P5.7”. Punch / metronome remain later P5 units.
 
 | Item | Value |
 |------|--------|
-| Production app | `7f80143` — P5.6 Take Workflow |
-| Repo HEAD at freeze authoring | `67f4b4e` — SSOT reconcile after P5.7 |
+| Freeze authoring production app | `7f80143` — P5.6 Take Workflow (historical at freeze time) |
+| Freeze authoring repo tip | `67f4b4e` — SSOT reconcile after P5.7 |
+| **Living production app** | `95e04ff` — P5.8 **PRODUCTION VERIFIED — GREEN** |
+| **Living production deployment** | `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` |
 | `finalize ≠ place` | FROZEN (P5.6) — unchanged by P5.8 |
 | Recording pipeline | eligibility → session → `TakeMediaRecorder` → finalize → READY → explicit place |
-| Existing Studio device UX | Partial: `enumerateDevices` + select + `exact` deviceId in `studio-recording-panel.tsx` |
-| Gaps vs this freeze | No `devicechange`, no local persistence, no separate Device State, hard `exact` fail, permission/device errors collapsed into recording UI messages |
+| Pre-P5.8 Studio device UX (historical) | Partial: `enumerateDevices` + select + `exact` deviceId |
+| P5.8 closed gaps | `devicechange` · local persistence · Device State · `ideal` + stale fallback · stable device error codes |
 
 **Evidence anchors:**
 

@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-06 — P5.7 Architecture Audit **GO WITH CONDITIONS** · SSOT reconcile · production app **`7f80143`** (P5.6) · repo tip advances with docs · **no redeploy**
+**Updated:** 2026-10-06 — P5.8 **PRODUCTION VERIFIED — GREEN** · SSOT reconcile · production app **`95e04ff`** · final deploy `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` · **docs-only** (no app redeploy this wave)
 
 ---
 
@@ -21,13 +21,15 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | Advances with this SSOT reconcile (parent tip included `44dc22c` D02 test-only · then docs commit) |
-| **PRODUCTION APP SHA** | `7f801430d6680c32e7af5a4e6f5b6818541014d8` (`7f80143`) — **P5.6 Studio Take Workflow** · **UNCHANGED** this docs wave (no redeploy) |
+| **REPOSITORY HEAD / origin/main** | Advances with this SSOT reconcile (parent tip = `95e04ff` P5.8 feature) |
+| **PRODUCTION APP SHA** | `95e04ff534d58de3476e3a2dc620a13fbcacb7ba` (`95e04ff`) — **P5.8 Studio Devices / Input Foundation** · **UNCHANGED** this docs wave |
+| **PRODUCTION DEPLOYMENT** | `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S` (no-cache redeploy after build-cache incident) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **LAST STUDIO VERIFY** | **P5.6 PRODUCTION VERIFIED — GREEN** @ `7f80143` |
+| **STUDIO BASELINE** | **P5.8** · **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
+| **LAST STUDIO VERIFY** | **P5.8 PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **NEXT UNIT** | **P5.8 — Studio Devices / Input & Device Foundation** (Design Freeze pending · no impl without freeze) |
+| **NEXT UNIT** | **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** (do **not** auto-start P6) |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -56,23 +58,25 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = 7f80143 · P5.6 Studio Take Workflow · READY · UNCHANGED (docs-only · no redeploy)
-REPOSITORY HEAD / origin/main = advances with this SSOT reconcile (includes 44dc22c D02 test-only)
-LAST STUDIO VERIFY            = P5.6 · PRODUCTION VERIFIED — GREEN
+PRODUCTION APP                = 95e04ff · P5.8 Studio Devices / Input Foundation · READY
+PRODUCTION DEPLOYMENT         = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
+REPOSITORY HEAD / origin/main = advances with this SSOT reconcile (app tip 95e04ff)
+LAST STUDIO VERIFY            = P5.8 · PRODUCTION VERIFIED — GREEN
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 
-STUDIO P5:
-  P5.1 Project/Track/Clip foundation     = COMPLETE
-  P5.2 Transport / BEAT_REF playback     = COMPLETE
-  P5.3 Clip edit (MOVE/TRIM/SPLIT)       = COMPLETE
-  P5.4 Timeline UX                       = COMPLETE
-  P5.5 Recording foundation              = COMPLETE
-  P5.6 Studio Take Workflow              = PRODUCTION VERIFIED — GREEN @ 7f80143
+STUDIO P5 (canonical table):
+  P5.1 Studio foundation                 = PRODUCTION VERIFIED — GREEN
+  P5.2 Transport                         = PRODUCTION VERIFIED — GREEN
+  P5.3 Clip Edit Operations              = PRODUCTION VERIFIED — GREEN
+  P5.4 Timeline UX & Editing Foundation  = PRODUCTION VERIFIED — GREEN
+  P5.5 Recording Foundation              = PRODUCTION VERIFIED — GREEN
+  P5.6 Studio Take Workflow              = PRODUCTION VERIFIED — GREEN
        finalize ≠ place                  = FROZEN
-  D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
-  P5.7 Architecture Audit                = COMPLETE · GO WITH CONDITIONS
+  P5.7 Architecture Audit                = GO WITH CONDITIONS (audit · not impl)
        audit                             = docs/architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md
-  P5.8 Devices / Input & Device Foundation = NEXT (Design Freeze pending)
+  P5.8 Studio Devices / Input Foundation = PRODUCTION VERIFIED — GREEN @ 95e04ff
+       freeze                            = docs/decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md
+  D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
 
 FALA 3.5.1                    = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3                            = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
@@ -90,8 +94,8 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = P5.8 Design Freeze (Studio Devices / Input & Device Foundation)
-                              · no P5.8 implementation without Design Freeze + Owner GO
+NEXT GATE                     = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
+                              · do NOT auto-start P6 / FX / punch / samples
                               · P3 follow-up p_take_id = NON-BLOCKING only
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
@@ -116,12 +120,49 @@ UI labels SSOT               = src/lib/ui/labels.ts (+ status-labels re-export)
 
 Studio audio boundary        = StudioTransport != PlayerProvider
 P5 Studio playback           = StudioTransport + HTMLAudioElement (beat + TAKE pick)
+                             · NOT the target engine for full Studio DSP
+P5.8 Device / Input          = enumerateDevices · permission states · selectedDeviceId
+                             · localStorage bitrymdym.studio.selectedAudioInputDeviceId
+                             · devicechange recording-safe · ideal deviceId + stale fallback
+                             · useMicAnalyser → BrdInputMonitor (no second analyser)
+                             · Device state ≠ recording state
 P6 Studio DSP                = requires dedicated StudioAudioEngine / audio graph
+                             · FX/mix/master = READY WITH REFACTOR (needs engine)
+                             · Automation / Autotune = NOT READY
                              · do NOT bolt FX/routing/mix/master onto HTMLAudioElement
+P7 creative tracks           = track enum reserved READY WITH REFACTOR
+                             · capabilities + additive source kinds before expansion
+                             · instrument engines = NOT READY
 E3 Mix graph                 = beat Mix/Master product path — not Studio P5 engine
 Studio overlap (P5)          = first-wins TAKE under playhead (known limit)
 Studio document_version      = column exists · NOT a frozen autosave contract yet (P5.7 H2)
 Track capabilities           = future Track Type + Capabilities (P5.7 H1) · not implemented
+```
+
+### 3.1b P5.8 production gate (final)
+
+```text
+Device discovery / Permissions / Default / Explicit selection = PASS
+localStorage / Stale fallback / devicechange                  = PASS
+Recording + device change / Input monitor                     = PASS
+P5.5 recording regression / finalize ≠ place                  = PASS
+Security / Privacy / Mobile 390×844 / PlayerProvider          = PASS
+P3 / P4 / P5.1–P5.6 / D02 / automated regression              = PASS
+
+Physical permission Deny/Blocked = NOT TESTABLE IN CURRENT ENVIRONMENT (not FAIL)
+Physical hot-plug                = NOT TESTABLE IN CURRENT ENVIRONMENT (not FAIL)
+```
+
+### 3.1c P5.8 deployment / build-cache incident (release note)
+
+```text
+Initial deploy claimed SHA 95e04ff but served pre-P5.8 Studio device JS
+Root cause = stale Vercel build cache (from docs-only 67f4b4e)
+Recovery   = redeploy without build cache
+Final dpl  = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
+Lesson     = Production Gate must verify served artifact for critical UI changes
+             (not only deployment SHA / Ready status)
+Type       = deployment/build-cache incident · NOT an application source bug
 ```
 
 ### 3.2 Backup / recovery separation (living)
@@ -151,10 +192,10 @@ STORAGE DISASTER RECOVERY:
 
 ### CLOSED / PRODUCTION VERIFIED (selected)
 
-- **P5.6** Studio Take Workflow @ `7f80143` — **PRODUCTION VERIFIED — GREEN**
-- **P5.1–P5.5** Studio foundation / transport / clip edit / timeline / recording — **COMPLETE**
+- **P5.8** Studio Devices / Input Foundation @ `95e04ff` — **PRODUCTION VERIFIED — GREEN** · dpl `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`
+- **P5.1–P5.6** Studio foundation → Take Workflow — **PRODUCTION VERIFIED — GREEN**
 - **D02** live harness — **CLOSED** @ `44dc22c` (**TEST ONLY**)
-- **P5.7** Architecture Audit — **COMPLETE · GO WITH CONDITIONS** (docs artifact)
+- **P5.7** Architecture Audit — **COMPLETE · GO WITH CONDITIONS** (audit · not impl)
 - **P3** Anonymous → Account Claim @ `dabbc936`
 - POLISH-01 (+ residual `1c63080`)
 - P0 PLATFORM master download deny
@@ -170,13 +211,13 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **P5.8** Design Freeze + implementation (Devices / Input & Device Foundation) — **NEXT**
+- **Next Studio Architecture Audit** / formal next unit definition (do **not** auto-start P6)
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
 - OD-09 / OD-15 / OD-16 and other long-horizon OPEN decisions
 - **P3 follow-up:** `p_take_id` hardening — **NON-BLOCKING** (not a product gate)
-- P5.7 conditions (tracked, not blocking P5.8 freeze start): H1 capabilities before P7 track expansion · H2 `document_version` before autosave · H4 StudioAudioEngine before P6 FX
+- P5.7 conditions (still tracked): H1 capabilities before P7 track expansion · H2 `document_version` before autosave · H4 StudioAudioEngine before P6 FX
 
 ### DEFERRED
 
@@ -198,13 +239,14 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm PRODUCTION APP = 7f80143 (P5.6) · repo tip may be ahead (docs / test-only)
-                 → P5.6 GREEN · D02 CLOSED · P5.7 GO WITH CONDITIONS
-                 → NEXT GATE = P5.8 Design Freeze (Devices / Input & Device Foundation)
-                 → Do NOT implement P5.8 / punch / FX / samples without Design Freeze + Owner GO
+                 → Confirm PRODUCTION APP = 95e04ff (P5.8 GREEN)
+                 → Confirm PRODUCTION DEPLOYMENT = dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S
+                 → P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · P5.8 GREEN · D02 CLOSED
+                 → NEXT GATE = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
+                 → Do NOT auto-start P6 / FX / punch / samples / StudioAudioEngine
                  → Do NOT call punch “P5.7” (P5.7 = Architecture Audit)
                  → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
-                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 / P5.6 without new evidence
+                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 / P5.6 / P5.8 without new evidence
                  → Do NOT fix EXPORT_WAV in product scope without separate Owner GO
                  → Do NOT clean dirty WIP without Owner GO
 ```
@@ -222,7 +264,8 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 | ARCH-05 | Owner GO delete | **CLOSED / VERIFIED** |
 | OD-08 Premium tiers | CLOSED | W2-A/B in tree |
 | P3 | OD-P3-01…11 CLOSED / IMPLEMENTED | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
-| P5.6 Take Workflow | Design Freeze GO | **PRODUCTION VERIFIED — GREEN** @ `7f80143` |
+| P5.6 Take Workflow | Design Freeze GO | **PRODUCTION VERIFIED — GREEN** |
+| P5.8 Devices / Input | Design Freeze GO | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · dpl `dpl_2RhUDg…` |
 | P5.7 Architecture Audit | GO WITH CONDITIONS | Audit artifact only — [P5_7…](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | D02 harness | CLOSED | **TEST ONLY** @ `44dc22c` |
 
@@ -230,7 +273,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 
 ## 7. Out of scope / deferred (living)
 
-STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · `/ranks` / `/premium` UI · billing · W2-B Mix/Render live · W4 remaining Admin P2 (last-admin TOCTOU · no durable idempotency · live last-admin concurrency · published USER beat retain · migration timestamp drift) · **P3 `p_take_id` hardening** until separate Owner GO (NON-BLOCKING) · **P6** StudioAudioEngine/FX/routing/buses/automation/mix/master · **P7** samples/scratch/instruments/pitch/stretch/reverse/loop · Studio punch/metronome (after P5.8) · autosave until `document_version` contract frozen · capability system (document-only until freeze).
+STEMS · payments / Premium catalog · recording Premium overlay · Gold 90d PRODUCTION · audio-artifacts janitor · `/ranks` / `/premium` UI · billing · W2-B Mix/Render live · W4 remaining Admin P2 (last-admin TOCTOU · no durable idempotency · live last-admin concurrency · published USER beat retain · migration timestamp drift) · **P3 `p_take_id` hardening** until separate Owner GO (NON-BLOCKING) · **P6** StudioAudioEngine/FX/routing/buses/automation/mix/master · **P7** samples/scratch/instruments/pitch/stretch/reverse/loop · Studio punch/pre-roll/count-in/metronome/BPM/quantization · autosave until `document_version` contract frozen · capability system (document-only until freeze) · DB device preferences (P5.8 = localStorage only).
 
 ---
 

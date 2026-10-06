@@ -57,11 +57,11 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | GAP-PUBLISH-READY | **CLOSED** (server hard gate: active MASTER READY) |
 | Community Upload + Moderation | **EPIC COMPLETE / LOCKED** (Waves 1–5) @ `c5e1f17` |
 | Recording / Quick Take | **Waves 1–5 CLOSED** · D02 **SHIPPED** @ `e98ba52` — [RECORDING.md](./RECORDING.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) |
-| **Studio P5.1–P5.5** | **COMPLETE** — foundation / transport / clip edit / timeline / recording |
-| **P5.6 Studio Take Workflow** | **PRODUCTION VERIFIED — GREEN** @ `7f80143` · `finalize ≠ place` — [freeze](../decisions/P5_6_STUDIO_TAKE_WORKFLOW_DESIGN_FREEZE.md) |
+| **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** — foundation → Take Workflow · `finalize ≠ place` |
+| **P5.8 Studio Devices / Input** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · dpl `dpl_2RhUDg…` — [freeze](../decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md) |
 | **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **P5.8 (NEXT)** | Studio Devices / Input & Device Foundation — Design Freeze pending |
+| **Next Studio step** | Architecture Audit / formal next unit definition — do **not** auto-start P6 |
 | Studio audio rule | `StudioTransport != PlayerProvider` · P6 requires **StudioAudioEngine** (not HTMLAudio FX) |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
