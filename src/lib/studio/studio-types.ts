@@ -3,6 +3,7 @@ import type {
   StudioProjectStatus,
   StudioTrackType,
 } from "@/config/studio";
+import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 
 export type StudioProjectSummary = {
   id: string;
@@ -28,6 +29,7 @@ export type StudioTrackDto = {
   recordArmed: boolean;
   inputDeviceHint: string | null;
   outputRoute: string;
+  effectsChain: StudioFxChainV1;
 };
 
 export type StudioClipDto = {
@@ -52,6 +54,7 @@ export type StudioProjectDocument = {
     timeSignatureDen: number;
     masterGainDb: number;
     masterPan: number;
+    masterFxChain: StudioFxChainV1;
     documentVersion: number;
     schemaVersion: number;
   };

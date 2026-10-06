@@ -33,6 +33,13 @@ import type {
   StudioProjectSummary,
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
+import {
+  parseExpectedDocumentVersion,
+  parseStudioFxChainForWrite,
+  readStudioFxChain,
+  StudioFxCasConflictError,
+  type StudioFxChainV1,
+} from "@/lib/studio/studio-fx-chain";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ProjectRow = {
@@ -49,6 +56,7 @@ type ProjectRow = {
   master_pan: number | string;
   schema_version: number;
   document_version: number;
+  master_fx_chain?: unknown | null;
   created_at: string;
   updated_at: string;
 };
@@ -66,6 +74,7 @@ type TrackRow = {
   record_armed: boolean;
   input_device_hint: string | null;
   output_route: string;
+  effects_chain?: unknown | null;
 };
 
 type ClipRow = {
@@ -115,6 +124,7 @@ function mapTrack(row: TrackRow): StudioTrackDto {
     recordArmed: row.record_armed,
     inputDeviceHint: row.input_device_hint,
     outputRoute: row.output_route,
+    effectsChain: readStudioFxChain(row.effects_chain, "track"),
   };
 }
 
@@ -296,6 +306,7 @@ export async function createStudioProjectFor(
       timeSignatureDen: projectRow.time_signature_den,
       masterGainDb: num(projectRow.master_gain_db),
       masterPan: num(projectRow.master_pan),
+      masterFxChain: readStudioFxChain(projectRow.master_fx_chain, "master"),
       documentVersion: projectRow.document_version,
       schemaVersion: projectRow.schema_version,
     },
@@ -345,6 +356,7 @@ export async function getStudioProjectDocumentFor(
       timeSignatureDen: projectRow.time_signature_den,
       masterGainDb: num(projectRow.master_gain_db),
       masterPan: num(projectRow.master_pan),
+      masterFxChain: readStudioFxChain(projectRow.master_fx_chain, "master"),
       documentVersion: projectRow.document_version,
       schemaVersion: projectRow.schema_version,
     },
@@ -786,4 +798,114 @@ export async function deleteStudioClip(
   input: Parameters<typeof deleteStudioClipFor>[1],
 ): Promise<{ deletedClipId: string }> {
   return deleteStudioClipFor(await requireUser(), input);
+}
+
+type FxCasRow = {
+  document_version: number;
+  chain: StudioFxChainV1;
+};
+
+async function applyStudioFxChainCas(params: {
+  ownerId: string;
+  projectId: string;
+  expectedDocumentVersion: number;
+  chain: StudioFxChainV1;
+  trackId: string | null;
+}): Promise<FxCasRow> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_fx_chain", {
+    p_project_id: params.projectId,
+    p_owner_id: params.ownerId,
+    p_expected: params.expectedDocumentVersion,
+    p_chain: params.chain,
+    p_track_id: params.trackId,
+  });
+  if (error) {
+    if (/TRACK_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    }
+    throw new Error(error.message);
+  }
+  const rows = (data as FxCasRow[] | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+  return row;
+}
+
+export async function updateStudioTrackEffectsChainFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    trackId: string;
+    expectedDocumentVersion: unknown;
+    chain: unknown;
+  },
+): Promise<{
+  documentVersion: number;
+  effectsChain: StudioFxChainV1;
+}> {
+  await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const chain = parseStudioFxChainForWrite(input.chain, { role: "track" });
+  const admin = createSupabaseAdminClient();
+  const { data: track, error } = await admin
+    .from("studio_tracks")
+    .select("id")
+    .eq("id", input.trackId)
+    .eq("project_id", input.projectId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!track) {
+    throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+  }
+  const applied = await applyStudioFxChainCas({
+    ownerId: context.userId,
+    projectId: input.projectId,
+    expectedDocumentVersion: expected,
+    chain,
+    trackId: input.trackId,
+  });
+  return {
+    documentVersion: applied.document_version,
+    effectsChain: readStudioFxChain(applied.chain, "track"),
+  };
+}
+
+export async function updateStudioTrackEffectsChain(
+  input: Parameters<typeof updateStudioTrackEffectsChainFor>[1],
+): Promise<{ documentVersion: number; effectsChain: StudioFxChainV1 }> {
+  return updateStudioTrackEffectsChainFor(await requireUser(), input);
+}
+
+export async function updateStudioMasterFxChainFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    expectedDocumentVersion: unknown;
+    chain: unknown;
+  },
+): Promise<{
+  documentVersion: number;
+  masterFxChain: StudioFxChainV1;
+}> {
+  await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const chain = parseStudioFxChainForWrite(input.chain, { role: "master" });
+  const applied = await applyStudioFxChainCas({
+    ownerId: context.userId,
+    projectId: input.projectId,
+    expectedDocumentVersion: expected,
+    chain,
+    trackId: null,
+  });
+  return {
+    documentVersion: applied.document_version,
+    masterFxChain: readStudioFxChain(applied.chain, "master"),
+  };
+}
+
+export async function updateStudioMasterFxChain(
+  input: Parameters<typeof updateStudioMasterFxChainFor>[1],
+): Promise<{ documentVersion: number; masterFxChain: StudioFxChainV1 }> {
+  return updateStudioMasterFxChainFor(await requireUser(), input);
 }

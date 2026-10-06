@@ -37,6 +37,7 @@ function beatTrack(overrides: Partial<StudioTrackDto> = {}): StudioTrackDto {
     recordArmed: false,
     inputDeviceHint: null,
     outputRoute: "master",
+    effectsChain: { schemaVersion: 1, effects: [] },
     ...overrides,
   };
 }
