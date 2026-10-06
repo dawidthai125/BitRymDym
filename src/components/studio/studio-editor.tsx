@@ -66,6 +66,7 @@ export function StudioEditor({
       timelineLengthMs: doc.project.timelineLengthMs,
       masterGainDb: doc.project.masterGainDb,
       masterPan: doc.project.masterPan,
+      masterFxChain: doc.project.masterFxChain,
       tracks: doc.tracks.map((t) => ({
         id: t.id,
         gainDb: t.gainDb,

@@ -1,6 +1,6 @@
 /**
- * P6.2 — Track FX Web Audio inserts.
- * Consumes P6.1 registry/contract. Not E3 Mix. Not a second engine.
+ * P6.2 / P6.3 — Track & Master FX Web Audio inserts.
+ * Same registry/adapters for both roles. Not E3 Mix. Not a second engine.
  */
 
 import type { StudioAudioErrorCode } from "@/lib/studio/studio-audio-errors";
@@ -440,6 +440,10 @@ function structureKey(plan: StudioFxPlaybackPlan): string {
     .join("|");
 }
 
+/**
+ * Builds a series FX insert (Track or Master). Same adapters for both roles.
+ * Empty / unsupported → null (caller wires dry: input → next node).
+ */
 export function buildStudioTrackFxChain(
   ctx: StudioFxGraphContext,
   rawChain: unknown,
@@ -510,3 +514,6 @@ export function buildStudioTrackFxChain(
   };
   return handle;
 }
+
+/** P6.3 — Master FX uses the same factory as Track FX (REUSE FIRST). */
+export const buildStudioMasterFxChain = buildStudioTrackFxChain;

@@ -28,6 +28,7 @@ import {
   studioFxPlaybackFingerprint,
 } from "@/lib/studio/studio-fx-chain";
 import {
+  buildStudioMasterFxChain,
   buildStudioTrackFxChain,
   type StudioFxGraphContext,
   type StudioFxSlotInspect,
@@ -161,6 +162,10 @@ export class StudioAudioEngine {
   private registry: StudioSourceAdapterRegistry;
   private listener: StudioAudioEngineListener;
   private ctx: StudioAudioContextLike | null = null;
+  /** Sum of track pans — feeds Master FX (or Master Gain when dry). */
+  private masterInput: GainLike | null = null;
+  private masterFx: StudioTrackFxHandle | null = null;
+  private masterFxFingerprint = "";
   private masterGain: GainLike | null = null;
   private masterPan: PannerLike | null = null;
   private tracks = new Map<string, TrackGraph>();
@@ -215,6 +220,26 @@ export class StudioAudioEngine {
     };
   }
 
+  /** P6.3 diagnostic — Master insert between track-sum and Master Gain/Pan. */
+  inspectMasterFx(): {
+    insert: "dry" | "fx";
+    fingerprint: string;
+    slots: StudioFxSlotInspect[];
+    masterInput: GainLike;
+    masterGain: GainLike;
+    masterPan: PannerLike;
+  } | null {
+    if (!this.masterInput || !this.masterGain || !this.masterPan) return null;
+    return {
+      insert: this.masterFx ? "fx" : "dry",
+      fingerprint: this.masterFxFingerprint,
+      slots: this.masterFx?.inspect() ?? [],
+      masterInput: this.masterInput,
+      masterGain: this.masterGain,
+      masterPan: this.masterPan,
+    };
+  }
+
   inspectVoiceClipGain(clipId: string): GainLike | null {
     return this.voices.get(clipId)?.clipGain ?? null;
   }
@@ -227,8 +252,10 @@ export class StudioAudioEngine {
     }
     try {
       this.ctx = this.host.createContext();
+      this.masterInput = this.ctx.createGain();
       this.masterGain = this.ctx.createGain();
       this.masterPan = this.ctx.createStereoPanner();
+      this.masterInput.connect(this.masterGain);
       this.masterGain.connect(this.masterPan);
       this.masterPan.connect(this.ctx.destination);
       this.setLifecycle("initialized");
@@ -360,6 +387,7 @@ export class StudioAudioEngine {
     const clipGain = this.ctx.createGain();
     clipGain.gain.value = 1;
     mediaSource.connect(clipGain);
+    // P6 freeze: Take preview stays dry of Track FX and Master FX → Master Gain.
     clipGain.connect(this.masterGain);
 
     this.voices.set(PREVIEW_VOICE_ID, {
@@ -407,11 +435,16 @@ export class StudioAudioEngine {
     }
     this.tracks.clear();
     try {
+      this.masterFx?.dispose();
+      this.masterInput?.disconnect();
       this.masterGain?.disconnect();
       this.masterPan?.disconnect();
     } catch {
       /* already disconnected */
     }
+    this.masterFx = null;
+    this.masterFxFingerprint = "";
+    this.masterInput = null;
     this.masterGain = null;
     this.masterPan = null;
     const ctx = this.ctx;
@@ -486,12 +519,19 @@ export class StudioAudioEngine {
   }
 
   private syncGraphParams(): void {
-    if (!this.ctx || !this.masterGain || !this.masterPan || !this.document) {
+    if (
+      !this.ctx ||
+      !this.masterInput ||
+      !this.masterGain ||
+      !this.masterPan ||
+      !this.document
+    ) {
       return;
     }
     const master = masterGraphParams(this.document);
     this.masterGain.gain.value = master.gain;
     this.masterPan.pan.value = master.pan;
+    this.syncMasterFx(this.document.masterFxChain);
 
     const anySolo = this.document.tracks.some((t) => t.solo);
     const seen = new Set<string>();
@@ -520,7 +560,7 @@ export class StudioAudioEngine {
   private ensureTrackGraph(trackId: string): TrackGraph {
     const existing = this.tracks.get(trackId);
     if (existing) return existing;
-    if (!this.ctx || !this.masterGain) {
+    if (!this.ctx || !this.masterInput) {
       throw new Error("AUDIO_OUTPUT_ERROR");
     }
     const input = this.ctx.createGain();
@@ -528,7 +568,7 @@ export class StudioAudioEngine {
     const pan = this.ctx.createStereoPanner();
     input.connect(gain);
     gain.connect(pan);
-    pan.connect(this.masterGain);
+    pan.connect(this.masterInput);
     const graph: TrackGraph = {
       input,
       gain,
@@ -538,6 +578,58 @@ export class StudioAudioEngine {
     };
     this.tracks.set(trackId, graph);
     return graph;
+  }
+
+  /**
+   * P6.3 — Master FX between Σ track pans (masterInput) and Master Gain/Pan.
+   * Preview Take stays connected to masterGain (dry of Master FX).
+   */
+  private syncMasterFx(rawChain: unknown): void {
+    if (!this.ctx || !this.masterInput || !this.masterGain) return;
+    const plan = interpretStudioFxChainForPlayback(rawChain);
+    const fingerprint = studioFxPlaybackFingerprint(plan);
+    if (this.masterFxFingerprint === fingerprint) return;
+    if (this.masterFx && this.masterFx.applyPlan(plan)) {
+      this.masterFxFingerprint = fingerprint;
+      return;
+    }
+    try {
+      this.masterInput.disconnect();
+    } catch {
+      /* ignore */
+    }
+    this.masterFx?.dispose();
+    this.masterFx = null;
+    if (plan.kind === "unsupported") {
+      this.listener.onError({ code: "AUDIO_FX_CHAIN_UNSUPPORTED" });
+      this.masterInput.connect(this.masterGain);
+      this.masterFxFingerprint = fingerprint;
+      return;
+    }
+    if (plan.slots.length === 0) {
+      this.masterInput.connect(this.masterGain);
+      this.masterFxFingerprint = fingerprint;
+      return;
+    }
+    try {
+      const handle = buildStudioMasterFxChain(this.ctx, rawChain, (code) => {
+        this.listener.onError({ code });
+      });
+      if (!handle) {
+        this.masterInput.connect(this.masterGain);
+        this.masterFxFingerprint = fingerprint;
+        return;
+      }
+      this.masterFx = handle;
+      this.masterInput.connect(handle.input);
+      handle.output.connect(this.masterGain);
+      this.masterFxFingerprint = handle.fingerprint;
+    } catch {
+      this.listener.onError({ code: "AUDIO_FX_NODE_FAILED" });
+      this.masterFx = null;
+      this.masterInput.connect(this.masterGain);
+      this.masterFxFingerprint = fingerprint;
+    }
   }
 
   private syncTrackFx(trackId: string, rawChain: unknown): void {

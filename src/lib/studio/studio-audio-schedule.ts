@@ -36,6 +36,8 @@ export type StudioEngineDocument = {
   timelineLengthMs: number;
   masterGainDb: number;
   masterPan: number;
+  /** P6.3 — Master FX chain (pre–Master Gain/Pan). Optional for P5.10 callers. */
+  masterFxChain?: unknown;
   tracks: readonly StudioEngineTrack[];
   clips: readonly StudioEngineClip[];
   isTrackPlayable?: (trackId: string) => boolean;
