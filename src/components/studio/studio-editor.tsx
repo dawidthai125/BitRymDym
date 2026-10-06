@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import {
   StudioTransportProvider,
   useStudioTransport,
@@ -18,6 +19,7 @@ import {
   listBeatRefClips,
   resolvePrimaryBeatRef,
 } from "@/lib/studio/studio-beat-audio";
+import { listTakeClipTimings } from "@/lib/studio/studio-take-audio";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -73,6 +75,26 @@ export function StudioEditor({
     [doc.clips, doc.project.timelineLengthMs],
   );
 
+  const takeClips = useMemo(() => {
+    const timings = listTakeClipTimings(doc.clips);
+    return timings.map((t) => {
+      const clip = doc.clips.find(
+        (c) => c.sourceTakeId === t.takeId && c.timelineStartMs === t.timelineStartMs,
+      );
+      const track = clip
+        ? doc.tracks.find((tr) => tr.id === clip.trackId)
+        : undefined;
+      const audible = track
+        ? isTrackAudible({
+            muted: track.muted || Boolean(clip?.muted),
+            solo: track.solo,
+            anySolo,
+          })
+        : true;
+      return { ...t, muted: !audible };
+    });
+  }, [doc.clips, doc.tracks, anySolo]);
+
   const beatAudible = beatRef
     ? isTrackAudible({
         muted: beatRef.track.muted,
@@ -89,6 +111,7 @@ export function StudioEditor({
       beatGainDb={beatRef?.track.gainDb ?? 0}
       beatMuted={!beatAudible}
       beatClips={beatClips}
+      takeClips={takeClips}
     >
       <StudioEditorInner doc={doc} setDoc={setDoc} />
     </StudioTransportProvider>
@@ -112,9 +135,11 @@ function StudioEditorInner({
     createDefaultSnapConfig(),
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [recordingLocked, setRecordingLocked] = useState(false);
   const transport = useStudioTransport();
   const anySolo = doc.tracks.some((t) => t.solo);
   const length = doc.project.timelineLengthMs;
+  const timelineMode: TimelineMode = recordingLocked ? "seek" : mode;
   const activeSelectedId = resolveSelectedClipId(
     selectedClipId,
     doc.clips.map((c) => c.id),
@@ -127,6 +152,7 @@ function StudioEditorInner({
   }
 
   function seekSnapped(ms: number) {
+    if (recordingLocked) return;
     transport.seek(applySnap(ms, { minMs: 0, maxMs: length }));
   }
 
@@ -280,6 +306,38 @@ function StudioEditorInner({
 
       <StudioTransportBar />
 
+      <StudioRecordingPanel
+        projectId={doc.project.id}
+        tracks={doc.tracks}
+        onRecordingActiveChange={(active) => {
+          setRecordingLocked(active);
+          if (active) {
+            setMode("seek");
+            setSelectedClipId(clearClipSelection());
+            setConfirmDelete(false);
+          }
+        }}
+        onClipCreated={(clip) => {
+          setDoc((prev) => ({
+            ...prev,
+            clips: [...prev.clips, clip].sort(
+              (a, b) => a.timelineStartMs - b.timelineStartMs,
+            ),
+          }));
+          setSelectedClipId(selectClipId(null, clip.id));
+          setStatus("Nagranie dodane na oś czasu.");
+        }}
+      />
+
+      {recordingLocked ? (
+        <p
+          className="rounded border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+          role="status"
+        >
+          TRYB NAGRYWANIA — edycja klipów i przewijanie są zablokowane.
+        </p>
+      ) : null}
+
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
@@ -295,7 +353,8 @@ function StudioEditorInner({
         <Button
           type="button"
           size="sm"
-          variant={mode === "seek" ? "default" : "outline"}
+          variant={timelineMode === "seek" ? "default" : "outline"}
+          disabled={recordingLocked}
           onClick={() => setMode("seek")}
         >
           Przewijanie
@@ -303,7 +362,8 @@ function StudioEditorInner({
         <Button
           type="button"
           size="sm"
-          variant={mode === "edit" ? "default" : "outline"}
+          variant={timelineMode === "edit" ? "default" : "outline"}
+          disabled={recordingLocked}
           onClick={() => setMode("edit")}
         >
           Edycja klipu
@@ -367,7 +427,7 @@ function StudioEditorInner({
         </Button>
       </div>
 
-      {mode === "edit" ? (
+      {timelineMode === "edit" && !recordingLocked ? (
         <ClipEditPanel
           clip={selectedClip}
           playheadMs={transport.state.playheadMs}
@@ -660,15 +720,18 @@ function StudioEditorInner({
           timelineLengthMs={length}
           playheadMs={transport.state.playheadMs}
           pxPerMs={pxPerMs}
-          mode={mode}
+          mode={timelineMode}
+          interactionLocked={recordingLocked}
           selectedClipId={activeSelectedId}
           onSeek={seekSnapped}
           onSelectClip={(id) => {
+            if (recordingLocked) return;
             setSelectedClipId(selectClipId(activeSelectedId, id));
             setMode("edit");
             setConfirmDelete(false);
           }}
           onMoveClip={(clipId, timelineStartMs) => {
+            if (recordingLocked) return;
             setSelectedClipId(selectClipId(activeSelectedId, clipId));
             const clip = doc.clips.find((c) => c.id === clipId);
             const maxStart = clip
@@ -962,6 +1025,7 @@ function StudioTimeline({
   playheadMs,
   pxPerMs,
   mode,
+  interactionLocked = false,
   selectedClipId,
   onSeek,
   onSelectClip,
@@ -973,11 +1037,14 @@ function StudioTimeline({
   playheadMs: number;
   pxPerMs: number;
   mode: TimelineMode;
+  interactionLocked?: boolean;
   selectedClipId: string | null;
   onSeek: (ms: number) => void;
   onSelectClip: (clipId: string) => void;
   onMoveClip: (clipId: string, timelineStartMs: number) => void;
 }) {
+  const editEnabled = mode === "edit" && !interactionLocked;
+  const seekEnabled = mode === "seek" && !interactionLocked;
   const density = clampPxPerMs(pxPerMs);
   const widthPx = contentWidthPx(timelineLengthMs, density);
   const playheadX = msToPx(playheadMs, density);
@@ -996,7 +1063,7 @@ function StudioTimeline({
     currentTarget: HTMLDivElement;
     clientX: number;
   }) {
-    if (mode === "edit") return;
+    if (!seekEnabled) return;
     // Content node rect already shifts with scroll — do not add scrollLeft again.
     const rect = event.currentTarget.getBoundingClientRect();
     const localX = Math.min(
@@ -1018,19 +1085,26 @@ function StudioTimeline({
       >
         <div
           className={`relative space-y-2 p-2 ${
-            mode === "seek" ? "cursor-pointer" : "touch-none"
+            seekEnabled
+              ? "cursor-pointer"
+              : interactionLocked
+                ? "touch-pan-x"
+                : "touch-none"
           }`}
           style={{ width: widthPx, minWidth: "100%" }}
           onClick={seekFromPointer}
           role="slider"
           aria-label={
-            mode === "seek"
-              ? "Oś czasu — kliknij, aby przewinąć"
-              : "Oś czasu — tryb edycji klipu"
+            interactionLocked
+              ? "Oś czasu — tryb nagrywania"
+              : seekEnabled
+                ? "Oś czasu — kliknij, aby przewinąć"
+                : "Oś czasu — tryb edycji klipu"
           }
           aria-valuemin={0}
           aria-valuemax={timelineLengthMs}
           aria-valuenow={playheadMs}
+          aria-disabled={interactionLocked || undefined}
         >
           <div className="relative h-6 border-b border-[var(--brd-line)]">
             {ticks.map((tick) => (
@@ -1069,12 +1143,12 @@ function StudioTimeline({
                         selected
                           ? "z-[2] bg-[var(--brd-ink)]/30 ring-2 ring-[var(--brd-ink)]"
                           : "bg-[var(--brd-ink)]/15"
-                      } ${mode === "edit" ? "pointer-events-auto cursor-grab touch-none" : "pointer-events-none"}`}
+                      } ${editEnabled ? "pointer-events-auto cursor-grab touch-none" : "pointer-events-none"}`}
                       style={{ left, width }}
                       title={`${clip.sourceKind} · ${formatStudioTimeMs(clip.timelineStartMs)}`}
                       aria-selected={selected}
                       onPointerDown={
-                        mode === "edit"
+                        editEnabled
                           ? (e) => {
                               e.stopPropagation();
                               e.currentTarget.setPointerCapture(e.pointerId);
@@ -1088,7 +1162,7 @@ function StudioTimeline({
                           : undefined
                       }
                       onPointerMove={
-                        mode === "edit"
+                        editEnabled
                           ? (e) => {
                               if (!dragState || dragState.clipId !== clip.id)
                                 return;
@@ -1117,7 +1191,7 @@ function StudioTimeline({
                           : undefined
                       }
                       onPointerUp={
-                        mode === "edit"
+                        editEnabled
                           ? (e) => {
                               e.stopPropagation();
                               const preview = Number(
@@ -1135,7 +1209,7 @@ function StudioTimeline({
                           : undefined
                       }
                       onClick={
-                        mode === "edit"
+                        editEnabled
                           ? (e) => {
                               e.stopPropagation();
                               onSelectClip(clip.id);
@@ -1169,6 +1243,7 @@ function StudioTimeline({
           max={timelineLengthMs}
           step={1}
           value={playheadMs}
+          disabled={interactionLocked}
           className="mt-1 w-full"
           aria-label="Pozycja playhead"
           onChange={(e) => onSeek(Number(e.target.value))}

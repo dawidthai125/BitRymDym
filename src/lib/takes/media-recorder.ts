@@ -107,7 +107,7 @@ export class TakeMediaRecorder {
     return this.stream;
   }
 
-  async start(): Promise<{ mimeType: string }> {
+  async start(options?: { audioDeviceId?: string }): Promise<{ mimeType: string }> {
     if (this.isRecording) {
       throw new TakeRecorderError(
         "ALREADY_RECORDING",
@@ -132,8 +132,11 @@ export class TakeMediaRecorder {
     }
 
     try {
+      const audio: MediaTrackConstraints | boolean = options?.audioDeviceId
+        ? { deviceId: { exact: options.audioDeviceId } }
+        : true;
       this.stream = await getUserMedia({
-        audio: true,
+        audio,
         video: false,
       });
     } catch (error) {

@@ -212,4 +212,33 @@ P5.2 StudioTransport audio for BEAT clips → P5.3 clip edit ops → … per aud
 
 ---
 
+## 16. P5.5 scope (Recording foundation)
+
+**Status:** implementation in progress (separate Production Verification gate).  
+**Baseline:** P5.4 PRODUCTION VERIFIED GREEN @ `41161e15f2b14d6dbbc552294d4bd75a86fec5cd`
+
+**IN**
+
+- Studio UI → existing P3/P4 Take pipeline (eligibility · session · MediaRecorder · upload · finalize)
+- Auth-only Studio recording (no new anonymous path)
+- Playhead-captured `timeline_start_ms` → Clip after Take READY
+- Track picker (extensible Track types; prefer non-BEAT)
+- Mic permission + optional input device (`enumerateDevices` / `audioDeviceId`)
+- Reuse `reduceRecordingUi` state machine · timer · input level meter
+- Cancel / stop / finalize · place Clip via ownership-checked Studio API
+- StudioTransport TAKE layer via `/api/takes/preview` (≠ PlayerProvider)
+- Recording lock mode (no MOVE / TRIM / SPLIT / DELETE / accidental seek)
+- Coexists with BEAT_REF clips; source Take immutable under timeline ops
+
+**OUT of P5.5**
+
+- Punch-in/out · pre-roll · count-in · metronome · BPM / Tap Tempo
+- Latency calibration · full monitoring mix · FX · samples · instruments
+- Second recording backend · client-chosen storage keys / owner ids
+- DB migration (existing takes + studio_clips sufficient)
+
+**No DB migration** — Take → Clip uses existing contracts.
+
+---
+
 *Freeze locked. Implementation must not contradict this document without a new Owner decision.*

@@ -19,6 +19,10 @@ import {
   projectPlayheadToSourceSeconds,
   sourceSecondsToProjectPlayheadMs,
 } from "@/lib/studio/studio-beat-audio";
+import {
+  pickTakeClipAtPlayhead,
+  type TakeClipTiming,
+} from "@/lib/studio/studio-take-audio";
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
 
@@ -55,8 +59,12 @@ export type BeatClipTiming = {
   durationMs: number;
 };
 
+export type { TakeClipTiming };
+
 const PLAYBACK_ERROR_PL =
   "Nie udało się odtworzyć bitu. Sprawdź połączenie lub spróbuj ponownie.";
+const TAKE_PLAYBACK_ERROR_PL =
+  "Nie udało się odtworzyć nagrania. Sprawdź połączenie lub spróbuj ponownie.";
 
 function pickBeatClip(
   clips: BeatClipTiming[],
@@ -91,6 +99,7 @@ export function StudioTransportProvider({
   beatMuted = false,
   beatClips,
   beatClip,
+  takeClips = [],
   children,
 }: {
   timelineLengthMs: number;
@@ -101,13 +110,28 @@ export function StudioTransportProvider({
   beatClips?: BeatClipTiming[];
   /** @deprecated Prefer beatClips — kept for single-clip callers. */
   beatClip?: BeatClipTiming | null;
+  /** TAKE clips for layered Studio playback (signed via /api/takes/preview). */
+  takeClips?: TakeClipTiming[];
   children: ReactNode;
 }) {
   const catalogPlayer = usePlayerOptional();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const takeAudioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
   const urlReadyRef = useRef(false);
   const activeClipRef = useRef<BeatClipTiming | null>(null);
+  const takeUrlCacheRef = useRef<
+    Map<string, { url: string; expiresAt: number }>
+  >(new Map());
+  const activeTakeIdRef = useRef<string | null>(null);
+  const takeClipsRef = useRef(takeClips);
+  const syncTakeRef = useRef<(headMs: number, shouldPlay: boolean) => void>(
+    () => undefined,
+  );
+
+  useEffect(() => {
+    takeClipsRef.current = takeClips;
+  }, [takeClips]);
 
   const [phase, setPhase] = useState<StudioTransportPhase>("stopped");
   const [playheadMs, setPlayheadMs] = useState(0);
@@ -156,12 +180,15 @@ export function StudioTransportProvider({
     const end = clip.timelineStartMs + clip.durationMs;
     if (next >= end) {
       audio.pause();
+      takeAudioRef.current?.pause();
       setPhase("paused");
       setAudioState("ready");
       setPlayheadMs(clampPlayheadMs(end, timelineLengthMs));
       return;
     }
-    setPlayheadMs(clampPlayheadMs(next, timelineLengthMs));
+    const clamped = clampPlayheadMs(next, timelineLengthMs);
+    setPlayheadMs(clamped);
+    syncTakeRef.current(clamped, !audio.paused);
   });
 
   const onPlay = useEffectEvent(() => {
@@ -178,6 +205,8 @@ export function StudioTransportProvider({
     const clip =
       activeClipRef.current ??
       pickBeatClip(clips, playheadMs, timelineLengthMs);
+    takeAudioRef.current?.pause();
+    activeTakeIdRef.current = null;
     setPhase("stopped");
     setAudioState("ready");
     setPlayheadMs(
@@ -189,9 +218,15 @@ export function StudioTransportProvider({
   });
 
   const onErr = useEffectEvent(() => {
+    takeAudioRef.current?.pause();
     setPhase("paused");
     setAudioState("error");
     setError(PLAYBACK_ERROR_PL);
+  });
+
+  const onPauseWithTake = useEffectEvent(() => {
+    takeAudioRef.current?.pause();
+    onPause();
   });
 
   useEffect(() => {
@@ -200,13 +235,13 @@ export function StudioTransportProvider({
     const onTime = () => syncFromAudio();
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("play", onPlay);
-    audio.addEventListener("pause", onPause);
+    audio.addEventListener("pause", onPauseWithTake);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("error", onErr);
     return () => {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("play", onPlay);
-      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("pause", onPauseWithTake);
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onErr);
     };
@@ -253,6 +288,91 @@ export function StudioTransportProvider({
     return true;
   }
 
+  async function ensureTakeUrl(takeId: string): Promise<string | null> {
+    const cached = takeUrlCacheRef.current.get(takeId);
+    if (cached && cached.expiresAt - Date.now() > 15_000) {
+      return cached.url;
+    }
+    const res = await fetch("/api/takes/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ takeId }),
+    });
+    const json = (await res.json()) as {
+      success?: boolean;
+      url?: string;
+      expiresAt?: string;
+      error?: string;
+    };
+    if (!res.ok || !json.success || !json.url) {
+      return null;
+    }
+    const expiresAt = json.expiresAt
+      ? Date.parse(json.expiresAt)
+      : Date.now() + 60_000;
+    takeUrlCacheRef.current.set(takeId, { url: json.url, expiresAt });
+    return json.url;
+  }
+
+  async function syncTakeAtPlayhead(
+    headMs: number,
+    shouldPlay: boolean,
+  ): Promise<void> {
+    const takeAudio = takeAudioRef.current;
+    if (!takeAudio) return;
+    const hit = pickTakeClipAtPlayhead(takeClipsRef.current, headMs);
+    if (!hit || hit.muted) {
+      takeAudio.pause();
+      activeTakeIdRef.current = null;
+      return;
+    }
+    const sourceSec = projectPlayheadToSourceSeconds({
+      playheadMs: headMs,
+      clipTimelineStartMs: hit.timelineStartMs,
+      clipSourceOffsetMs: hit.sourceOffsetMs,
+      clipDurationMs: hit.durationMs,
+    });
+    if (sourceSec == null) {
+      takeAudio.pause();
+      activeTakeIdRef.current = null;
+      return;
+    }
+
+    if (activeTakeIdRef.current !== hit.takeId || !takeAudio.src) {
+      const url = await ensureTakeUrl(hit.takeId);
+      if (!url) {
+        takeAudio.pause();
+        activeTakeIdRef.current = null;
+        setError(TAKE_PLAYBACK_ERROR_PL);
+        return;
+      }
+      takeAudio.src = url;
+      activeTakeIdRef.current = hit.takeId;
+      takeAudio.load();
+    }
+
+    takeAudio.volume = gainDbToLinearVolume(hit.gainDb ?? 0);
+    takeAudio.muted = Boolean(hit.muted);
+    if (Math.abs(takeAudio.currentTime - sourceSec) > 0.08) {
+      takeAudio.currentTime = sourceSec;
+    }
+    if (shouldPlay) {
+      try {
+        await takeAudio.play();
+      } catch {
+        // Beat remains primary clock; take layer is best-effort.
+      }
+    } else {
+      takeAudio.pause();
+    }
+  }
+
+  useEffect(() => {
+    syncTakeRef.current = (headMs, shouldPlay) => {
+      void syncTakeAtPlayhead(headMs, shouldPlay);
+    };
+  });
+
   const play = () => {
     const headAtClick = playheadMs;
     void (async () => {
@@ -274,6 +394,7 @@ export function StudioTransportProvider({
       }
       try {
         await audio.play();
+        await syncTakeAtPlayhead(headAtClick, true);
       } catch {
         setAudioState("error");
         setError(PLAYBACK_ERROR_PL);
@@ -283,10 +404,12 @@ export function StudioTransportProvider({
 
   const pause = () => {
     audioRef.current?.pause();
+    takeAudioRef.current?.pause();
   };
 
   const stop = () => {
     const audio = audioRef.current;
+    const takeAudio = takeAudioRef.current;
     const clip = clips[0] ?? {
       timelineStartMs: earliestStart,
       sourceOffsetMs: 0,
@@ -296,6 +419,10 @@ export function StudioTransportProvider({
     if (audio) {
       audio.pause();
       audio.currentTime = msToSeconds(clip.sourceOffsetMs);
+    }
+    if (takeAudio) {
+      takeAudio.pause();
+      activeTakeIdRef.current = null;
     }
     setPhase("stopped");
     setPlayheadMs(clip.timelineStartMs);
@@ -308,7 +435,10 @@ export function StudioTransportProvider({
     const clamped = clampPlayheadMs(ms, timelineLengthMs);
     setPlayheadMs(clamped);
     const audio = audioRef.current;
-    if (!audio || !urlReadyRef.current) return;
+    if (!audio || !urlReadyRef.current) {
+      void syncTakeAtPlayhead(clamped, false);
+      return;
+    }
     const clip = pickBeatClip(clips, clamped, timelineLengthMs);
     activeClipRef.current = clip;
     const sourceSec = projectPlayheadToSourceSeconds({
@@ -319,10 +449,12 @@ export function StudioTransportProvider({
     });
     if (sourceSec == null) {
       audio.pause();
+      takeAudioRef.current?.pause();
       setPhase("paused");
       return;
     }
     audio.currentTime = sourceSec;
+    void syncTakeAtPlayhead(clamped, !audio.paused);
   };
 
   const api: StudioTransportApi = {
@@ -344,6 +476,7 @@ export function StudioTransportProvider({
   return (
     <StudioTransportContext.Provider value={api}>
       <audio ref={audioRef} preload="metadata" className="hidden" />
+      <audio ref={takeAudioRef} preload="metadata" className="hidden" />
       {children}
     </StudioTransportContext.Provider>
   );
