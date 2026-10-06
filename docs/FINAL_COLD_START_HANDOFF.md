@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-06 — **P6.4.2 PRODUCTION VERIFIED — GREEN** · app **`320907a`** · RPC **`57ef69e`** · dpl `dpl_HrDh4nwTpQEK4MDPUT3h77gBae1k`
-**Type:** Documentation continuity · P6.4.2 Gate GREEN (app `320907a` · DB RPC `57ef69e`)
+**Updated:** 2026-10-06 — **P6.4.3 PRODUCTION VERIFIED — GREEN** · app **`f261ea8`** · RPC **`57ef69e`** · dpl `dpl_5ZBCGED4nQBuWQx81aa9959YeKCM`
+**Type:** Documentation continuity · P6.4.3 Gate GREEN (app `f261ea8` · DB RPC `57ef69e`)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,26 +25,27 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 320907af8b1088c69d607647df76ae1e038bd0af
-  short                       = 320907a
-  note                        = P6.4.2 Shared FX UI Foundation · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_HrDh4nwTpQEK4MDPUT3h77gBae1k
+PRODUCTION APP SHA            = f261ea8a622ee3b3038e81ff89be6277535821ae
+  short                       = f261ea8
+  note                        = P6.4.3 Mix UX polish & integration · PRODUCTION VERIFIED — GREEN
+PRODUCTION DEPLOYMENT         = dpl_5ZBCGED4nQBuWQx81aa9959YeKCM
 P6.1 RPC HOTFIX               = 57ef69e (qualify document_version in studio_cas_apply_fx_chain)
   migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
 P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
 P6.4.1 APPLICATION            = 9f93606 · PRODUCTION VERIFIED — GREEN
-P6.4.2 APPLICATION            = 320907a
-P6.4.2 PRODUCTION             = GREEN
+P6.4.2 APPLICATION            = 320907a · PRODUCTION VERIFIED — GREEN
+P6.4.3 APPLICATION            = f261ea8
+P6.4.3 PRODUCTION             = GREEN
 
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-  served bundle               = /_next/static/immutable/chunks/3aj31lbra-fb7.js
+  served bundle               = /_next/static/immutable/chunks/0kfptvapkfp-m.js
 
-STUDIO BASELINE               = P6.4.2 PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P6.4.2 PRODUCTION VERIFIED — GREEN
-NEXT GATE                     = P6.4.3 — Track FX UI
+STUDIO BASELINE               = P6.4.3 PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY            = P6.4.3 PRODUCTION VERIFIED — GREEN
+NEXT GATE                     = P6.4.4 — Master FX UI polish
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
@@ -55,7 +56,6 @@ KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV
 KNOWN LIMITATION              = limiter IMPLEMENTATION LIMITATION · reverb synthetic IR
                               · delay no BPM sync · P5.10 TAKE preview may fail
                               · wave4-live READY vs EXPIRED = PRE-EXISTING / OUT-OF-SCOPE
-                              · mobile bottom-nav may intercept lower Track / Master FX controls
 
 BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
@@ -69,6 +69,7 @@ P6.2 STATUS                   = PRODUCTION VERIFIED — GREEN @ 23d3be8
 P6.3 STATUS                   = PRODUCTION VERIFIED — GREEN @ 350303e
 P6.4.1 STATUS                 = PRODUCTION VERIFIED — GREEN @ 9f93606
 P6.4.2 STATUS                 = PRODUCTION VERIFIED — GREEN @ 320907a
+P6.4.3 STATUS                 = PRODUCTION VERIFIED — GREEN @ f261ea8
 FALA 3.5.1 STATUS             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
 P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
@@ -78,6 +79,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
+| **P6.4.3** Mix UX polish & integration | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` |
 | **P6.4.2** Shared FX UI Foundation | **PRODUCTION VERIFIED — GREEN** @ `320907a` · dpl `dpl_HrDh4nw…` |
 | **P6.4.1** Master Gain/Pan + Track documentVersion | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · dpl `dpl_EHkvay…` |
 | **P6.3** Master FX graph | **PRODUCTION VERIFIED — GREEN** @ `350303e` |

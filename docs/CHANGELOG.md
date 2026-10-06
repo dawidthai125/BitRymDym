@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.4.3 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
+
+**Status:** DOCS ONLY · **P6.4.3 PRODUCTION VERIFIED — GREEN**
+**Application:** f261ea8 · **RPC hotfix:** 57ef69e (unchanged) · **Deployment:** dpl_5ZBCGED4nQBuWQx81aa9959YeKCM
+**GitHub SHA == Vercel == served:** f261ea8a622ee3b3038e81ff89be6277535821ae
+**Served Studio chunk:** /_next/static/immutable/chunks/0kfptvapkfp-m.js (Transport Studio · Mix · FX entry · z-50 sheet · StudioAudioEngine · no PlayerProvider/mix-graph/StudioMixEngine)
+**Contract:** Mix UX integration — Track Mute/Solo → Gain/Pan → FX · Master Gain/Pan → FX · sticky transport · FX sheet above bottom-nav · scroll-padding / safe-area · conflict Odśwież
+**Gate API (12/12):** chunk markers · unauth 401 · cross-user 403 · Track mix controls · Track FX add/reorder · stale CAS 409 · recovery · Master Gain/Pan · Master FX · reload
+**UI smoke:** Mix region · Master distinguished · FX (n) / bypass hint · Master/Track sheets · sheet z-50 > nav z-40 · transport sticky · mobile ~390 no horizontal overflow · 44px targets
+**Tests:** P6.4.3 14 · P6.4.2 14 · P6.1 29 · P6.2 14 · P6.3 17 · P6.4.1 21 · Studio 242 · typecheck · scoped eslint · build PASS
+**Next:** **P6.4.4 — Master FX UI polish** (do not start in this wave)
+**Known limitations:** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.4.2 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
 
 **Status:** DOCS ONLY · **P6.4.2 PRODUCTION VERIFIED — GREEN**
