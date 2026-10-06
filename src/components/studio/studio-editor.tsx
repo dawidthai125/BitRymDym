@@ -21,8 +21,11 @@ import {
   StudioTransportProvider,
   useStudioTransport,
 } from "@/components/studio/studio-transport-provider";
-import { FX_CHAIN_CONFLICT_UI_PL } from "@/lib/studio/studio-fx-chain";
-import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
+import {
+  FX_CHAIN_CONFLICT_UI_PL,
+  studioFxEntryLabel,
+  type StudioFxChainV1,
+} from "@/lib/studio/studio-fx-chain";
 import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
 import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
 import type {
@@ -340,8 +343,12 @@ function StudioEditorInner({
     setStatus("Zapisano");
   }
 
+  const conflictActive =
+    Boolean(error) &&
+    (error!.includes("zmieniony") || error === FX_CHAIN_CONFLICT_UI_PL);
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex scroll-pb-[calc(4.75rem+env(safe-area-inset-bottom))] flex-col gap-6">
       <header className="space-y-1 border-b border-[var(--brd-line)] pb-4">
         <p className="text-xs uppercase tracking-[0.16em] text-[var(--brd-mute)]">
           Studio
@@ -393,6 +400,18 @@ function StudioEditorInner({
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
+          {conflictActive ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="min-h-11 underline"
+                onClick={() => window.location.reload()}
+              >
+                Odśwież
+              </button>
+            </>
+          ) : null}
         </p>
       ) : null}
       {status && !error ? (
@@ -559,31 +578,23 @@ function StudioEditorInner({
         />
       ) : null}
 
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-4">
-        <ul className="space-y-3">
-          <li className="rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-medium text-[var(--brd-ink)]">
-                  Master
-                </p>
-                <p className="text-xs text-[var(--brd-mute)]">
-                  Głośność wyjścia · efekty sumy
-                </p>
-              </div>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className="min-h-11"
-                aria-label="Efekty Master"
-                onClick={() => setFxPanel({ role: "master" })}
-              >
-                Efekty
-                {doc.project.masterFxChain.effects.length > 0
-                  ? ` (${doc.project.masterFxChain.effects.length})`
-                  : ""}
-              </Button>
+      <div className="flex flex-col gap-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-4">
+        <section
+          aria-label="Mix"
+          className="space-y-3"
+        >
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            Mix
+          </p>
+          <ul className="space-y-3">
+          <li className="rounded-md border-2 border-[var(--brd-green)]/35 bg-[color-mix(in_srgb,var(--brd-bg)_88%,var(--brd-green)_12%)] p-3">
+            <div className="mb-2">
+              <p className="text-sm font-semibold text-[var(--brd-ink)]">
+                Master
+              </p>
+              <p className="text-xs text-[var(--brd-mute)]">
+                Głośność wyjścia · efekty sumy
+              </p>
             </div>
             <StudioMixControl
               label="Głośność"
@@ -641,6 +652,18 @@ function StudioEditorInner({
                 })
               }
             />
+            <div className="mt-3">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                className="min-h-11 w-full sm:w-auto"
+                aria-label="Efekty Master"
+                onClick={() => setFxPanel({ role: "master" })}
+              >
+                {studioFxEntryLabel(doc.project.masterFxChain)}
+              </Button>
+            </div>
           </li>
           {doc.tracks.map((track, index) => {
             const audible = isTrackAudible({
@@ -649,6 +672,7 @@ function StudioEditorInner({
               anySolo,
             });
             const isBeat = track.trackType === "BEAT";
+            const fxLabel = studioFxEntryLabel(track.effectsChain);
             return (
               <li
                 key={track.id}
@@ -674,6 +698,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
+                      className="min-h-11 min-w-11"
                       disabled={pending || index === 0}
                       title="Przenieś w górę"
                       aria-label="Przenieś ścieżkę w górę"
@@ -697,6 +722,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
+                      className="min-h-11 min-w-11"
                       disabled={pending || index === doc.tracks.length - 1}
                       title="Przenieś w dół"
                       aria-label="Przenieś ścieżkę w dół"
@@ -720,18 +746,16 @@ function StudioEditorInner({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StudioToggleChip
-                    active={track.recordArmed}
-                    label="REC"
-                    title="Uzbrojenie nagrywania"
+                    active={track.muted}
+                    label="Wycisz"
+                    title="Wycisz"
                     onClick={() =>
                       startTransition(async () => {
                         try {
-                          await patchTrack(track.id, {
-                            recordArmed: !track.recordArmed,
-                          });
+                          await patchTrack(track.id, { muted: !track.muted });
                         } catch (e) {
                           setError(
-                            e instanceof Error ? e.message : "Błąd REC.",
+                            e instanceof Error ? e.message : "Błąd wyciszenia.",
                           );
                         }
                       })
@@ -754,113 +778,103 @@ function StudioEditorInner({
                     }
                   />
                   <StudioToggleChip
-                    active={track.muted}
-                    label="Wycisz"
-                    title="Wycisz"
+                    active={track.recordArmed}
+                    label="REC"
+                    title="Uzbrojenie nagrywania"
                     onClick={() =>
                       startTransition(async () => {
                         try {
-                          await patchTrack(track.id, { muted: !track.muted });
+                          await patchTrack(track.id, {
+                            recordArmed: !track.recordArmed,
+                          });
                         } catch (e) {
                           setError(
-                            e instanceof Error ? e.message : "Błąd wyciszenia.",
+                            e instanceof Error ? e.message : "Błąd REC.",
                           );
                         }
                       })
                     }
                   />
+                </div>
+                <StudioMixControl
+                  label="Głośność"
+                  ariaLabel={`Głośność ścieżki ${track.name}`}
+                  value={track.gainDb}
+                  display={`${track.gainDb.toFixed(1)} dB`}
+                  min={-24}
+                  max={12}
+                  step={0.5}
+                  disabled={pending}
+                  onLocalChange={(gainDb) =>
+                    setDoc((prev) => ({
+                      ...prev,
+                      tracks: prev.tracks.map((t) =>
+                        t.id === track.id ? { ...t, gainDb } : t,
+                      ),
+                    }))
+                  }
+                  onCommit={(gainDb) =>
+                    startTransition(async () => {
+                      try {
+                        await patchTrack(track.id, { gainDb });
+                      } catch (err) {
+                        setError(
+                          err instanceof Error
+                            ? err.message
+                            : "Błąd głośności.",
+                        );
+                      }
+                    })
+                  }
+                />
+                <StudioMixControl
+                  label="Panorama L/R"
+                  ariaLabel={`Panorama ścieżki ${track.name}`}
+                  value={track.pan}
+                  display={track.pan.toFixed(2)}
+                  min={-1}
+                  max={1}
+                  step={0.01}
+                  disabled={pending}
+                  onLocalChange={(pan) =>
+                    setDoc((prev) => ({
+                      ...prev,
+                      tracks: prev.tracks.map((t) =>
+                        t.id === track.id ? { ...t, pan } : t,
+                      ),
+                    }))
+                  }
+                  onCommit={(pan) =>
+                    startTransition(async () => {
+                      try {
+                        await patchTrack(track.id, { pan });
+                      } catch (err) {
+                        setError(
+                          err instanceof Error ? err.message : "Błąd panoramy.",
+                        );
+                      }
+                    })
+                  }
+                />
+                <div className="mt-3">
                   <Button
                     type="button"
                     size="xs"
                     variant="outline"
-                    className="min-h-11"
+                    className="min-h-11 w-full sm:w-auto"
                     aria-label={`Efekty ścieżki ${track.name}`}
                     onClick={() =>
                       setFxPanel({ role: "track", trackId: track.id })
                     }
                   >
-                    Efekty
-                    {track.effectsChain.effects.length > 0
-                      ? ` (${track.effectsChain.effects.length})`
-                      : ""}
+                    {fxLabel}
                   </Button>
                 </div>
-                <label className="mt-3 block text-xs text-[var(--brd-mute)]">
-                  Głośność ({track.gainDb.toFixed(1)} dB)
-                  <input
-                    type="range"
-                    min={-24}
-                    max={12}
-                    step={0.5}
-                    value={track.gainDb}
-                    className="mt-1 w-full"
-                    aria-label="Głośność ścieżki"
-                    onChange={(e) => {
-                      const gainDb = Number(e.target.value);
-                      setDoc((prev) => ({
-                        ...prev,
-                        tracks: prev.tracks.map((t) =>
-                          t.id === track.id ? { ...t, gainDb } : t,
-                        ),
-                      }));
-                    }}
-                    onPointerUp={(e) => {
-                      const gainDb = Number(
-                        (e.target as HTMLInputElement).value,
-                      );
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, { gainDb });
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : "Błąd głośności.",
-                          );
-                        }
-                      });
-                    }}
-                  />
-                </label>
-                <label className="mt-2 block text-xs text-[var(--brd-mute)]">
-                  Panorama L/R ({track.pan.toFixed(2)})
-                  <input
-                    type="range"
-                    min={-1}
-                    max={1}
-                    step={0.01}
-                    value={track.pan}
-                    className="mt-1 w-full"
-                    aria-label="Panorama L/R"
-                    onChange={(e) => {
-                      const pan = Number(e.target.value);
-                      setDoc((prev) => ({
-                        ...prev,
-                        tracks: prev.tracks.map((t) =>
-                          t.id === track.id ? { ...t, pan } : t,
-                        ),
-                      }));
-                    }}
-                    onPointerUp={(e) => {
-                      const pan = Number((e.target as HTMLInputElement).value);
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, { pan });
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : "Błąd panoramy.",
-                          );
-                        }
-                      });
-                    }}
-                  />
-                </label>
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </section>
 
         <StudioTimeline
           tracks={doc.tracks}
@@ -1183,14 +1197,20 @@ function StudioTransportBar() {
                     : "Brak bitu";
 
   return (
-    <div className="sticky top-14 z-10 space-y-2 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 shadow-sm sm:top-2">
+    <div
+      className="sticky top-14 z-20 space-y-2 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-sm sm:top-2"
+      role="region"
+      aria-label="Transport Studio"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
           size="sm"
+          className="min-h-11"
           onClick={play}
           disabled={busy || state.phase === "playing"}
           title="Odtwórz"
+          aria-label="Odtwórz"
         >
           {busy ? "Ładowanie…" : "Odtwórz"}
         </Button>
@@ -1198,13 +1218,23 @@ function StudioTransportBar() {
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           onClick={pause}
           disabled={state.phase !== "playing"}
           title="Pauza"
+          aria-label="Pauza"
         >
           Pauza
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={stop} title="Stop">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11"
+          onClick={stop}
+          title="Stop"
+          aria-label="Stop"
+        >
           Stop
         </Button>
         <span

@@ -644,6 +644,19 @@ export function studioFxLabelPl(type: StudioFxType): string {
   return STUDIO_FX_UI_META[type].labelPl;
 }
 
+/** Compact Mix entry label: count + optional bypass hint (P6.4.3). */
+export function studioFxEntryLabel(chain: StudioFxChainV1): string {
+  const count = chain.effects.length;
+  if (count === 0) return "FX";
+  const bypassed = chain.effects.filter((e) => !e.enabled).length;
+  if (bypassed === 0) return `FX (${count})`;
+  return `FX (${count}, ${bypassed} wył.)`;
+}
+
+export function studioFxBypassedCount(chain: StudioFxChainV1): number {
+  return chain.effects.filter((e) => !e.enabled).length;
+}
+
 export function getStudioFxParamValue(
   params: StudioFxInstance["params"],
   path: string,

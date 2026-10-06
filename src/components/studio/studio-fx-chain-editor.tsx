@@ -262,7 +262,7 @@ export function StudioFxChainEditor({
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         {message ? (
           <p
             role="status"
@@ -441,7 +441,10 @@ export function StudioFxChainEditor({
   );
 }
 
-/** Bottom sheet host for mobile/desktop FX editor. */
+/**
+ * Bottom sheet host for FX editor.
+ * z-50 sits above mobile bottom-nav (z-40) so controls are not intercepted.
+ */
 export function StudioFxSheet({
   open,
   onClose,
@@ -457,20 +460,25 @@ export function StudioFxSheet({
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
         aria-label="Zamknij panel efektów"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg px-0 sm:px-4">
+      <div className="relative z-10 w-full max-w-lg pb-[env(safe-area-inset-bottom)] sm:px-4">
         {children}
       </div>
     </div>
