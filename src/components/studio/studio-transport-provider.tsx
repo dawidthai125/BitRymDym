@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
   type ReactNode,
@@ -13,16 +12,18 @@ import {
 import { usePlayerOptional } from "@/components/player/player-provider";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import { PUBLIC_PLAYBACK_PURPOSE } from "@/lib/beats/public";
+import { StudioAudioEngine } from "@/lib/studio/studio-audio-engine";
 import {
-  gainDbToLinearVolume,
-  msToSeconds,
-  projectPlayheadToSourceSeconds,
-  sourceSecondsToProjectPlayheadMs,
-} from "@/lib/studio/studio-beat-audio";
+  STUDIO_TAKE_PLAYBACK_ERROR_PL,
+  userFacingPlaybackError,
+  type StudioAudioErrorCode,
+} from "@/lib/studio/studio-audio-errors";
+import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
 import {
-  pickTakeClipAtPlayhead,
-  type TakeClipTiming,
-} from "@/lib/studio/studio-take-audio";
+  createDefaultStudioSourceAdapters,
+  createStudioSourceAdapterRegistry,
+  type StudioResolvedSource,
+} from "@/lib/studio/studio-audio-source-adapter";
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
 
@@ -52,8 +53,8 @@ type StudioTransportApi = {
   stop: () => void;
   seek: (playheadMs: number) => void;
   /**
-   * Preview a READY Take via /api/takes/preview on the Studio take audio layer.
-   * Does not use PlayerProvider. Pauses beat transport while solo-previewing.
+   * Preview a READY Take via /api/takes/preview on the Studio engine preview voice.
+   * Does not use PlayerProvider. Pauses timeline while solo-previewing.
    */
   previewTake: (takeId: string) => Promise<void>;
   stopTakePreview: () => void;
@@ -67,443 +68,213 @@ export type BeatClipTiming = {
   durationMs: number;
 };
 
-export type { TakeClipTiming };
+export type TakeClipTiming = {
+  takeId: string;
+  timelineStartMs: number;
+  sourceOffsetMs: number;
+  durationMs: number;
+  gainDb?: number;
+  muted?: boolean;
+};
 
-const PLAYBACK_ERROR_PL =
-  "Nie udało się odtworzyć bitu. Sprawdź połączenie lub spróbuj ponownie.";
-const TAKE_PLAYBACK_ERROR_PL =
-  "Nie udało się odtworzyć nagrania. Sprawdź połączenie lub spróbuj ponownie.";
-
-function pickBeatClip(
-  clips: BeatClipTiming[],
-  playheadMs: number,
-  timelineLengthMs: number,
-): BeatClipTiming {
-  const hit = clips.find(
-    (c) =>
-      playheadMs >= c.timelineStartMs &&
-      playheadMs < c.timelineStartMs + c.durationMs,
-  );
-  if (hit) return hit;
-  if (clips[0]) return clips[0];
-  return {
-    timelineStartMs: 0,
-    sourceOffsetMs: 0,
-    durationMs: timelineLengthMs,
-  };
-}
+const URL_REFRESH_MS = 15_000;
 
 /**
- * Project timeline transport with optional BEAT_REF audio.
- * Distinct from PlayerProvider — uses a local HTMLAudioElement only.
- *
- * Remount when `beatId` changes (parent should set `key={beatId}`) so load
- * state resets without setState-in-effect.
+ * Project timeline transport. Distinct from PlayerProvider.
+ * Audible realization is StudioAudioEngine (Web Audio graph), not HTMLAudio mix SSOT.
  */
 export function StudioTransportProvider({
   timelineLengthMs,
   beatId,
-  beatGainDb = 0,
-  beatMuted = false,
-  beatClips,
-  beatClip,
-  takeClips = [],
+  engineDocument,
   children,
 }: {
   timelineLengthMs: number;
   beatId: string | null;
-  beatGainDb?: number;
-  beatMuted?: boolean;
-  /** All BEAT_REF segments (after split). Preferred over beatClip. */
-  beatClips?: BeatClipTiming[];
-  /** @deprecated Prefer beatClips — kept for single-clip callers. */
-  beatClip?: BeatClipTiming | null;
-  /** TAKE clips for layered Studio playback (signed via /api/takes/preview). */
-  takeClips?: TakeClipTiming[];
+  engineDocument: StudioEngineDocument;
   children: ReactNode;
 }) {
   const catalogPlayer = usePlayerOptional();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const takeAudioRef = useRef<HTMLAudioElement | null>(null);
-  const expiresAtRef = useRef<string | null>(null);
-  const urlReadyRef = useRef(false);
-  const activeClipRef = useRef<BeatClipTiming | null>(null);
-  const takeUrlCacheRef = useRef<
-    Map<string, { url: string; expiresAt: number }>
-  >(new Map());
-  const activeTakeIdRef = useRef<string | null>(null);
-  const takeClipsRef = useRef(takeClips);
-  const syncTakeRef = useRef<(headMs: number, shouldPlay: boolean) => void>(
-    () => undefined,
-  );
-  /** When set, takeAudio plays a solo workflow preview (not timeline sync). */
-  const soloTakePreviewIdRef = useRef<string | null>(null);
-  const [takePreviewActive, setTakePreviewActive] = useState(false);
-
-  useEffect(() => {
-    takeClipsRef.current = takeClips;
-  }, [takeClips]);
+  const engineRef = useRef<StudioAudioEngine | null>(null);
+  const engineDocumentRef = useRef(engineDocument);
+  const phaseRef = useRef<StudioTransportPhase>("stopped");
+  const beatCacheRef = useRef<Map<string, StudioResolvedSource>>(new Map());
+  const takeCacheRef = useRef<Map<string, StudioResolvedSource>>(new Map());
 
   const [phase, setPhase] = useState<StudioTransportPhase>("stopped");
   const [playheadMs, setPlayheadMs] = useState(0);
   const [audioState, setAudioState] = useState<StudioAudioLoadState>(
-    beatId ? "idle" : "no_beat",
+    beatId || engineDocument.clips.some((c) => c.sourceKind === "TAKE")
+      ? "idle"
+      : "no_beat",
   );
   const [error, setError] = useState<string | null>(null);
+  const [takePreviewActive, setTakePreviewActive] = useState(false);
 
-  const clips: BeatClipTiming[] =
-    beatClips && beatClips.length > 0
-      ? beatClips
-      : beatClip
-        ? [beatClip]
-        : [];
+  const hasTimelineAudio =
+    Boolean(beatId) || engineDocument.clips.some((c) => c.sourceKind === "TAKE");
 
-  const earliestStart =
-    clips.length > 0
-      ? Math.min(...clips.map((c) => c.timelineStartMs))
-      : 0;
-
-  useEffect(() => {
-    catalogPlayer?.setSuppressed(true);
-    return () => {
-      catalogPlayer?.setSuppressed(false);
-    };
-  }, [catalogPlayer]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.muted = beatMuted;
-    audio.volume = beatMuted ? 0 : gainDbToLinearVolume(beatGainDb);
-  }, [beatGainDb, beatMuted]);
-
-  const syncFromAudio = useEffectEvent(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const clip =
-      activeClipRef.current ??
-      pickBeatClip(clips, playheadMs, timelineLengthMs);
-    const next = sourceSecondsToProjectPlayheadMs({
-      sourceSeconds: audio.currentTime,
-      clipTimelineStartMs: clip.timelineStartMs,
-      clipSourceOffsetMs: clip.sourceOffsetMs,
-    });
-    const end = clip.timelineStartMs + clip.durationMs;
-    if (next >= end) {
-      audio.pause();
-      takeAudioRef.current?.pause();
-      setPhase("paused");
-      setAudioState("ready");
-      setPlayheadMs(clampPlayheadMs(end, timelineLengthMs));
-      return;
+  async function resolveBeatUrl(id: string): Promise<StudioResolvedSource | null> {
+    const cached = beatCacheRef.current.get(id);
+    if (cached && cached.expiresAt - Date.now() > URL_REFRESH_MS) {
+      return cached;
     }
-    const clamped = clampPlayheadMs(next, timelineLengthMs);
-    setPlayheadMs(clamped);
-    syncTakeRef.current(clamped, !audio.paused);
-  });
-
-  const onPlay = useEffectEvent(() => {
-    setPhase("playing");
-    setAudioState("playing");
-  });
-
-  const onPause = useEffectEvent(() => {
-    setPhase((p) => (p === "stopped" ? p : "paused"));
-    setAudioState((s) => (s === "error" || s === "no_beat" ? s : "paused"));
-  });
-
-  const onEnded = useEffectEvent(() => {
-    const clip =
-      activeClipRef.current ??
-      pickBeatClip(clips, playheadMs, timelineLengthMs);
-    takeAudioRef.current?.pause();
-    activeTakeIdRef.current = null;
-    setPhase("stopped");
-    setAudioState("ready");
-    setPlayheadMs(
-      clampPlayheadMs(
-        clip.timelineStartMs + clip.durationMs,
-        timelineLengthMs,
-      ),
-    );
-  });
-
-  const onErr = useEffectEvent(() => {
-    takeAudioRef.current?.pause();
-    setPhase("paused");
-    setAudioState("error");
-    setError(PLAYBACK_ERROR_PL);
-  });
-
-  const onPauseWithTake = useEffectEvent(() => {
-    takeAudioRef.current?.pause();
-    onPause();
-  });
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onTime = () => syncFromAudio();
-    audio.addEventListener("timeupdate", onTime);
-    audio.addEventListener("play", onPlay);
-    audio.addEventListener("pause", onPauseWithTake);
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onErr);
-    return () => {
-      audio.removeEventListener("timeupdate", onTime);
-      audio.removeEventListener("play", onPlay);
-      audio.removeEventListener("pause", onPauseWithTake);
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onErr);
-    };
-  }, []);
-
-  async function ensureSource(): Promise<boolean> {
-    if (!beatId) {
-      setAudioState("no_beat");
-      setError("Brak bitu w projekcie. Dodaj bit, aby odsłuchać.");
-      return false;
-    }
-    const audio = audioRef.current;
-    if (!audio) return false;
-
-    const expiresAt = expiresAtRef.current
-      ? Date.parse(expiresAtRef.current)
-      : 0;
-    const stillValid =
-      urlReadyRef.current &&
-      Number.isFinite(expiresAt) &&
-      expiresAt - Date.now() > 15_000;
-
-    if (stillValid && audio.src) {
-      setAudioState((s) => (s === "error" ? "ready" : s));
-      return true;
-    }
-
-    setAudioState("loading");
-    setError(null);
     const result = await requestBeatAudioAccessAction({
-      beatId,
+      beatId: id,
       purpose: PUBLIC_PLAYBACK_PURPOSE,
     });
-    if (!result.success || !result.url) {
-      setAudioState("error");
-      setError(PLAYBACK_ERROR_PL);
-      return false;
-    }
-    audio.src = result.url;
-    expiresAtRef.current = result.expiresAt ?? null;
-    urlReadyRef.current = true;
-    audio.load();
-    setAudioState("ready");
-    return true;
+    if (!result.success || !result.url) return null;
+    const source: StudioResolvedSource = {
+      url: result.url,
+      expiresAt: result.expiresAt
+        ? Date.parse(result.expiresAt)
+        : Date.now() + 60_000,
+    };
+    beatCacheRef.current.set(id, source);
+    return source;
   }
 
-  async function ensureTakeUrl(takeId: string): Promise<string | null> {
-    const cached = takeUrlCacheRef.current.get(takeId);
-    if (cached && cached.expiresAt - Date.now() > 15_000) {
-      return cached.url;
+  async function resolveTakeUrl(id: string): Promise<StudioResolvedSource | null> {
+    const cached = takeCacheRef.current.get(id);
+    if (cached && cached.expiresAt - Date.now() > URL_REFRESH_MS) {
+      return cached;
     }
     const res = await fetch("/api/takes/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ takeId }),
+      body: JSON.stringify({ takeId: id }),
     });
     const json = (await res.json()) as {
       success?: boolean;
       url?: string;
       expiresAt?: string;
-      error?: string;
     };
-    if (!res.ok || !json.success || !json.url) {
-      return null;
-    }
-    const expiresAt = json.expiresAt
-      ? Date.parse(json.expiresAt)
-      : Date.now() + 60_000;
-    takeUrlCacheRef.current.set(takeId, { url: json.url, expiresAt });
-    return json.url;
-  }
-
-  async function syncTakeAtPlayhead(
-    headMs: number,
-    shouldPlay: boolean,
-  ): Promise<void> {
-    const takeAudio = takeAudioRef.current;
-    if (!takeAudio) return;
-    // Solo Take Workflow preview owns the take layer until stopped.
-    if (soloTakePreviewIdRef.current) return;
-    const hit = pickTakeClipAtPlayhead(takeClipsRef.current, headMs);
-    if (!hit || hit.muted) {
-      takeAudio.pause();
-      activeTakeIdRef.current = null;
-      return;
-    }
-    const sourceSec = projectPlayheadToSourceSeconds({
-      playheadMs: headMs,
-      clipTimelineStartMs: hit.timelineStartMs,
-      clipSourceOffsetMs: hit.sourceOffsetMs,
-      clipDurationMs: hit.durationMs,
-    });
-    if (sourceSec == null) {
-      takeAudio.pause();
-      activeTakeIdRef.current = null;
-      return;
-    }
-
-    if (activeTakeIdRef.current !== hit.takeId || !takeAudio.src) {
-      const url = await ensureTakeUrl(hit.takeId);
-      if (!url) {
-        takeAudio.pause();
-        activeTakeIdRef.current = null;
-        setError(TAKE_PLAYBACK_ERROR_PL);
-        return;
-      }
-      takeAudio.src = url;
-      activeTakeIdRef.current = hit.takeId;
-      takeAudio.load();
-    }
-
-    takeAudio.volume = gainDbToLinearVolume(hit.gainDb ?? 0);
-    takeAudio.muted = Boolean(hit.muted);
-    if (Math.abs(takeAudio.currentTime - sourceSec) > 0.08) {
-      takeAudio.currentTime = sourceSec;
-    }
-    if (shouldPlay) {
-      try {
-        await takeAudio.play();
-      } catch {
-        // Beat remains primary clock; take layer is best-effort.
-      }
-    } else {
-      takeAudio.pause();
-    }
+    if (!res.ok || !json.success || !json.url) return null;
+    const source: StudioResolvedSource = {
+      url: json.url,
+      expiresAt: json.expiresAt ? Date.parse(json.expiresAt) : Date.now() + 60_000,
+    };
+    takeCacheRef.current.set(id, source);
+    return source;
   }
 
   useEffect(() => {
-    syncTakeRef.current = (headMs, shouldPlay) => {
-      void syncTakeAtPlayhead(headMs, shouldPlay);
+    catalogPlayer?.setSuppressed(true);
+    const engine = new StudioAudioEngine({
+      registry: createStudioSourceAdapterRegistry(
+        createDefaultStudioSourceAdapters({
+          resolveBeatUrl,
+          resolveTakeUrl,
+        }),
+      ),
+      listener: {
+        onPlayhead(next) {
+          const clamped = clampPlayheadMs(
+            next,
+            engineDocumentRef.current.timelineLengthMs,
+          );
+          setPlayheadMs(clamped);
+        },
+        onLifecycle(lifecycle) {
+          if (lifecycle === "playing") {
+            phaseRef.current = "playing";
+            setPhase("playing");
+            setAudioState("playing");
+            return;
+          }
+          if (lifecycle === "paused") {
+            if (phaseRef.current !== "stopped") {
+              phaseRef.current = "paused";
+            }
+            setPhase((p) => (p === "stopped" ? p : "paused"));
+            setAudioState((s) =>
+              s === "error" || s === "no_beat" ? s : "paused",
+            );
+            return;
+          }
+          if (lifecycle === "stopped") {
+            phaseRef.current = "stopped";
+            setPhase("stopped");
+            setAudioState((s) =>
+              s === "error" || s === "no_beat" || s === "idle" ? s : "ready",
+            );
+            return;
+          }
+          if (lifecycle === "ready" || lifecycle === "initialized") {
+            setAudioState((s) =>
+              s === "error" || s === "playing" || s === "no_beat" ? s : "ready",
+            );
+          }
+        },
+        onError(params: {
+          code: StudioAudioErrorCode;
+          sourceKind?: string;
+          clipId?: string;
+        }) {
+          if (params.code === "AUDIO_SYNC_FAILED") return;
+          if (params.sourceKind === "ARTIFACT") return;
+          setError(
+            userFacingPlaybackError({
+              code: params.code,
+              sourceKind: params.sourceKind,
+            }),
+          );
+          if (phaseRef.current !== "playing") {
+            setAudioState("error");
+          }
+        },
+        onTimelineEnded() {
+          setPhase("stopped");
+          setPlayheadMs(engineDocumentRef.current.timelineLengthMs);
+          setAudioState((s) => (s === "error" || s === "no_beat" ? s : "ready"));
+        },
+      },
+    });
+    engineRef.current = engine;
+    engine.setDocument(engineDocument);
+    return () => {
+      engine.dispose();
+      engineRef.current = null;
+      catalogPlayer?.setSuppressed(false);
     };
-  });
+    // One engine per editor mount. Document updates go through setDocument.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount/dispose only
+  }, [catalogPlayer]);
+
+  useEffect(() => {
+    engineDocumentRef.current = engineDocument;
+    engineRef.current?.setDocument(engineDocument);
+  }, [engineDocument]);
 
   const play = () => {
-    const headAtClick = playheadMs;
-    void (async () => {
-      const ok = await ensureSource();
-      if (!ok) return;
-      const audio = audioRef.current;
-      if (!audio) return;
-      const clip = pickBeatClip(clips, headAtClick, timelineLengthMs);
-      activeClipRef.current = clip;
-      const sourceSec = projectPlayheadToSourceSeconds({
-        playheadMs: headAtClick,
-        clipTimelineStartMs: clip.timelineStartMs,
-        clipSourceOffsetMs: clip.sourceOffsetMs,
-        clipDurationMs: clip.durationMs || timelineLengthMs,
-      });
-      const target = sourceSec ?? msToSeconds(clip.sourceOffsetMs);
-      if (Math.abs(audio.currentTime - target) > 0.05) {
-        audio.currentTime = target;
-      }
-      try {
-        await audio.play();
-        await syncTakeAtPlayhead(headAtClick, true);
-      } catch {
-        setAudioState("error");
-        setError(PLAYBACK_ERROR_PL);
-      }
-    })();
-  };
-
-  const stopTakePreview = () => {
-    soloTakePreviewIdRef.current = null;
+    const engine = engineRef.current;
+    if (!engine) return;
+    if (!hasTimelineAudio) {
+      setAudioState("no_beat");
+      setError("Brak bitu w projekcie. Dodaj bit, aby odsłuchać.");
+      return;
+    }
     setTakePreviewActive(false);
-    const takeAudio = takeAudioRef.current;
-    if (takeAudio) {
-      takeAudio.pause();
-      takeAudio.removeAttribute("src");
-      takeAudio.load();
-    }
-    activeTakeIdRef.current = null;
-  };
-
-  const previewTake = async (takeId: string): Promise<void> => {
-    if (!takeId) {
-      setError(TAKE_PLAYBACK_ERROR_PL);
-      throw new Error(TAKE_PLAYBACK_ERROR_PL);
-    }
-    const takeAudio = takeAudioRef.current;
-    if (!takeAudio) {
-      setError(TAKE_PLAYBACK_ERROR_PL);
-      throw new Error(TAKE_PLAYBACK_ERROR_PL);
-    }
-
-    // Pause beat clock so preview is clearly the Studio Take Workflow action.
-    audioRef.current?.pause();
-    setPhase("paused");
-
-    const url = await ensureTakeUrl(takeId);
-    if (!url) {
-      setError(TAKE_PLAYBACK_ERROR_PL);
-      throw new Error(TAKE_PLAYBACK_ERROR_PL);
-    }
-
-    soloTakePreviewIdRef.current = takeId;
-    setTakePreviewActive(true);
     setError(null);
-    takeAudio.src = url;
-    activeTakeIdRef.current = takeId;
-    takeAudio.load();
-    takeAudio.volume = 1;
-    takeAudio.muted = false;
-    takeAudio.currentTime = 0;
-    try {
-      await takeAudio.play();
-    } catch {
-      soloTakePreviewIdRef.current = null;
-      setTakePreviewActive(false);
-      setError(TAKE_PLAYBACK_ERROR_PL);
-      throw new Error(TAKE_PLAYBACK_ERROR_PL);
-    }
-
-    const onEndedSolo = () => {
-      if (soloTakePreviewIdRef.current === takeId) {
-        stopTakePreview();
-      }
-      takeAudio.removeEventListener("ended", onEndedSolo);
-    };
-    takeAudio.addEventListener("ended", onEndedSolo);
+    setAudioState("loading");
+    void engine.play(playheadMs);
   };
 
   const pause = () => {
-    audioRef.current?.pause();
-    if (soloTakePreviewIdRef.current) {
-      stopTakePreview();
-      return;
+    if (takePreviewActive) {
+      engineRef.current?.stopPreview();
+      setTakePreviewActive(false);
     }
-    takeAudioRef.current?.pause();
+    engineRef.current?.pause();
   };
 
   const stop = () => {
-    stopTakePreview();
-    const audio = audioRef.current;
-    const takeAudio = takeAudioRef.current;
-    const clip = clips[0] ?? {
-      timelineStartMs: earliestStart,
-      sourceOffsetMs: 0,
-      durationMs: timelineLengthMs,
-    };
-    activeClipRef.current = clip;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = msToSeconds(clip.sourceOffsetMs);
-    }
-    if (takeAudio) {
-      takeAudio.pause();
-      activeTakeIdRef.current = null;
-    }
+    engineRef.current?.stopPreview();
+    setTakePreviewActive(false);
+    engineRef.current?.stop();
+    phaseRef.current = "stopped";
     setPhase("stopped");
-    setPlayheadMs(clip.timelineStartMs);
+    setPlayheadMs(0);
     setAudioState((s) =>
       s === "error" || s === "no_beat" || s === "idle" ? s : "ready",
     );
@@ -512,27 +283,42 @@ export function StudioTransportProvider({
   const seek = (ms: number) => {
     const clamped = clampPlayheadMs(ms, timelineLengthMs);
     setPlayheadMs(clamped);
-    const audio = audioRef.current;
-    if (!audio || !urlReadyRef.current) {
-      void syncTakeAtPlayhead(clamped, false);
-      return;
+    const playing = phase === "playing";
+    void engineRef.current?.seek(clamped, playing);
+  };
+
+  const stopTakePreview = () => {
+    engineRef.current?.stopPreview();
+    setTakePreviewActive(false);
+  };
+
+  const previewTake = async (takeId: string): Promise<void> => {
+    if (!takeId) {
+      setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
     }
-    const clip = pickBeatClip(clips, clamped, timelineLengthMs);
-    activeClipRef.current = clip;
-    const sourceSec = projectPlayheadToSourceSeconds({
-      playheadMs: clamped,
-      clipTimelineStartMs: clip.timelineStartMs,
-      clipSourceOffsetMs: clip.sourceOffsetMs,
-      clipDurationMs: clip.durationMs || timelineLengthMs,
-    });
-    if (sourceSec == null) {
-      audio.pause();
-      takeAudioRef.current?.pause();
-      setPhase("paused");
-      return;
+    const engine = engineRef.current;
+    if (!engine) {
+      setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
     }
-    audio.currentTime = sourceSec;
-    void syncTakeAtPlayhead(clamped, !audio.paused);
+    engine.pause();
+    phaseRef.current = "paused";
+    setPhase("paused");
+    const source = await resolveTakeUrl(takeId);
+    if (!source) {
+      setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+    }
+    setError(null);
+    setTakePreviewActive(true);
+    try {
+      await engine.previewTake(takeId, source.url);
+    } catch {
+      setTakePreviewActive(false);
+      setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+      throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
+    }
   };
 
   const api: StudioTransportApi = {
@@ -556,8 +342,6 @@ export function StudioTransportProvider({
 
   return (
     <StudioTransportContext.Provider value={api}>
-      <audio ref={audioRef} preload="metadata" className="hidden" />
-      <audio ref={takeAudioRef} preload="metadata" className="hidden" />
       {children}
     </StudioTransportContext.Provider>
   );

@@ -15,11 +15,8 @@ import {
   StudioTransportProvider,
   useStudioTransport,
 } from "@/components/studio/studio-transport-provider";
-import {
-  listBeatRefClips,
-  resolvePrimaryBeatRef,
-} from "@/lib/studio/studio-beat-audio";
-import { listTakeClipTimings } from "@/lib/studio/studio-take-audio";
+import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
+import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -54,7 +51,6 @@ export function StudioEditor({
   initialDocument: StudioProjectDocument;
 }) {
   const [doc, setDoc] = useState(initialDocument);
-  const anySolo = doc.tracks.some((t) => t.solo);
   const beatRef = useMemo(
     () =>
       resolvePrimaryBeatRef({
@@ -65,53 +61,42 @@ export function StudioEditor({
     [doc.tracks, doc.clips, doc.project.beatId],
   );
 
-  const beatClips = useMemo(
-    () =>
-      listBeatRefClips(doc.clips).map((c) => ({
-        timelineStartMs: c.timelineStartMs,
-        sourceOffsetMs: c.sourceOffsetMs,
-        durationMs: c.durationMs || doc.project.timelineLengthMs,
+  const engineDocument: StudioEngineDocument = useMemo(
+    () => ({
+      timelineLengthMs: doc.project.timelineLengthMs,
+      masterGainDb: doc.project.masterGainDb,
+      masterPan: doc.project.masterPan,
+      tracks: doc.tracks.map((t) => ({
+        id: t.id,
+        gainDb: t.gainDb,
+        pan: t.pan,
+        muted: t.muted,
+        solo: t.solo,
       })),
-    [doc.clips, doc.project.timelineLengthMs],
+      clips: doc.clips.map((c) => ({
+        id: c.id,
+        trackId: c.trackId,
+        sourceKind: c.sourceKind,
+        sourceTakeId: c.sourceTakeId,
+        sourceBeatId: c.sourceBeatId,
+        sourceOffsetMs: c.sourceOffsetMs,
+        timelineStartMs: c.timelineStartMs,
+        durationMs: c.durationMs || doc.project.timelineLengthMs,
+        gainDb: c.gainDb,
+        muted: c.muted,
+        fadeInMs: c.fadeInMs,
+        fadeOutMs: c.fadeOutMs,
+      })),
+    }),
+    [doc],
   );
-
-  const takeClips = useMemo(() => {
-    const timings = listTakeClipTimings(doc.clips);
-    return timings.map((t) => {
-      const clip = doc.clips.find(
-        (c) => c.sourceTakeId === t.takeId && c.timelineStartMs === t.timelineStartMs,
-      );
-      const track = clip
-        ? doc.tracks.find((tr) => tr.id === clip.trackId)
-        : undefined;
-      const audible = track
-        ? isTrackAudible({
-            muted: track.muted || Boolean(clip?.muted),
-            solo: track.solo,
-            anySolo,
-          })
-        : true;
-      return { ...t, muted: !audible };
-    });
-  }, [doc.clips, doc.tracks, anySolo]);
-
-  const beatAudible = beatRef
-    ? isTrackAudible({
-        muted: beatRef.track.muted,
-        solo: beatRef.track.solo,
-        anySolo,
-      })
-    : false;
 
   return (
     <StudioTransportProvider
-      key={beatRef?.beatId ?? "no-beat"}
+      key={doc.project.id}
       timelineLengthMs={doc.project.timelineLengthMs}
       beatId={beatRef?.beatId ?? null}
-      beatGainDb={beatRef?.track.gainDb ?? 0}
-      beatMuted={!beatAudible}
-      beatClips={beatClips}
-      takeClips={takeClips}
+      engineDocument={engineDocument}
     >
       <StudioEditorInner doc={doc} setDoc={setDoc} />
     </StudioTransportProvider>

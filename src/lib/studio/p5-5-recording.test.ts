@@ -251,11 +251,12 @@ describe("P5.5 reuse / isolation guards", () => {
       join(process.cwd(), "src/components/studio/studio-transport-provider.tsx"),
       "utf8",
     );
-    expect(transport).toMatch(/takeAudioRef/);
+    expect(transport).toMatch(/StudioAudioEngine/);
     expect(transport).toMatch(/\/api\/takes\/preview/);
     expect(transport).toMatch(/setSuppressed\(true\)/);
     expect(transport).toMatch(/previewTake/);
     expect(transport).not.toMatch(/PlayerProvider\s*\(/);
+    expect(transport).not.toMatch(/pickTakeClipAtPlayhead/);
   });
 
   it("place route rejects client storage/ownership fields", () => {

@@ -208,16 +208,21 @@ describe("P5.2 authorization / unavailable asset / PlayerProvider isolation", ()
     "utf8",
   );
 
-  it("StudioTransportProvider uses local HTMLAudioElement, not PlayerProvider engine", () => {
-    expect(providerSrc).toMatch(/HTMLAudioElement/);
+  it("StudioTransportProvider uses StudioAudioEngine, not PlayerProvider engine", () => {
+    expect(providerSrc).toMatch(/StudioAudioEngine/);
     expect(providerSrc).toMatch(/Distinct from PlayerProvider/);
     expect(providerSrc).toMatch(/setSuppressed\(true\)/);
     expect(providerSrc).not.toMatch(/reducePlayback/);
     expect(providerSrc).toMatch(/requestBeatAudioAccessAction/);
+    expect(providerSrc).not.toMatch(/pickTakeClipAtPlayhead/);
   });
 
   it("surfaces Polish error without technical leak on unavailable asset", () => {
-    expect(providerSrc).toMatch(
+    const errorsSrc = readFileSync(
+      join(process.cwd(), "src/lib/studio/studio-audio-errors.ts"),
+      "utf8",
+    );
+    expect(errorsSrc).toMatch(
       /Nie udało się odtworzyć bitu\. Sprawdź połączenie lub spróbuj ponownie\./,
     );
     expect(providerSrc).not.toMatch(/stack/i);
@@ -236,7 +241,7 @@ describe("P5.2 authorization / unavailable asset / PlayerProvider isolation", ()
   it("editor wires BEAT_REF into StudioTransportProvider", () => {
     expect(editorSrc).toMatch(/resolvePrimaryBeatRef/);
     expect(editorSrc).toMatch(/StudioTransportProvider/);
-    expect(editorSrc).toMatch(/beatGainDb/);
+    expect(editorSrc).toMatch(/engineDocument/);
     expect(editorSrc).toMatch(/Bit projektu/);
   });
 
