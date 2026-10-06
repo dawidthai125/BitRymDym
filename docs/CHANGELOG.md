@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.3 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
+
+**Status:** DOCS ONLY · **P6.3 PRODUCTION VERIFIED — GREEN**
+**Application:** `350303e` · **RPC hotfix:** `57ef69e` · **Deployment:** `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho`
+**Served:** `/_next/static/immutable/chunks/040z15suoi1r8.js` (`masterInput` · `syncMasterFx` · `masterFxChain` · StudioAudioEngine · no first-wins)
+**Topology:** Σ Track pans → Master FX[] → Master Gain/Pan → Destination · Take preview stays dry of Master FX
+**Gate:** Master empty/EQ/comp/reverb/delay/limiter · full chain · limiter-last 400 · bypass · params · reorder · remove · reload · CAS 409 · recovery · runtime multi-source · transport STOP→0 · mobile 390 · unauth 401 · cross-user 403 · P6.1/2/3 + Studio PASS
+**Next:** **P6.4 — FX UI / Studio Mix UX** (do not start in this wave)
+**Known limitations:** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.2 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
 
 **Status:** DOCS ONLY · **P6.2 PRODUCTION VERIFIED — GREEN**

@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-06 — **P6.2 PRODUCTION VERIFIED — GREEN** · app **`23d3be8`** · RPC hotfix **`57ef69e`** · dpl `dpl_3DonumGaeZvVqPXGb5ch8No28VpS`
+**Updated:** 2026-10-06 — **P6.3 PRODUCTION VERIFIED — GREEN** · app **`350303e`** · RPC hotfix **`57ef69e`** · dpl `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho`
 
 ---
 
@@ -21,19 +21,20 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | Advances with docs tip after Gate (app tip = `23d3be8` P6.2 · RPC = `57ef69e`) |
-| **PRODUCTION APP SHA** | `23d3be8399afc3db39359ae316d3c95bb965e0bf` (`23d3be8`) — **P6.2 Track FX graph** |
-| **PRODUCTION DEPLOYMENT** | `dpl_3DonumGaeZvVqPXGb5ch8No28VpS` (alias www · tip includes RPC `57ef69e`; served P6.2 chunk `1bfh8g1yqvhyi.js`) |
+| **REPOSITORY HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip = `350303e` P6.3 · RPC = `57ef69e`) |
+| **PRODUCTION APP SHA** | `350303e9506d8300b03dae7e1530f06756971736` (`350303e`) — **P6.3 Master FX graph** |
+| **PRODUCTION DEPLOYMENT** | `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho` (alias www · served P6.3 chunk `040z15suoi1r8.js`) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **P6.2 PRODUCTION VERIFIED — GREEN** |
-| **LAST STUDIO VERIFY** | P6.2 Gate **GREEN** (persist + runtime + CAS + security) · P5.10 historical GREEN @ `9c2a958` |
+| **STUDIO BASELINE** | **P6.3 PRODUCTION VERIFIED — GREEN** |
+| **LAST STUDIO VERIFY** | P6.3 Gate **GREEN** (Master FX persist + runtime + CAS + security) · P6.2 GREEN @ `23d3be8` · P5.10 @ `9c2a958` |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.10 Studio Audio Engine** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` — [freeze](./decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md) |
 | **P6.1 FX persist / validation** | **COMPLETE** · RPC hotfix **`57ef69e`** — qualify `studio_projects.document_version` |
-| **P6.2 Track FX graph** | **PRODUCTION VERIFIED — GREEN** @ `23d3be8` · served `1bfh8g1yqvhyi.js` |
-| **NEXT UNIT** | **P6.3 — Master FX Graph** per [P6 freeze](./decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
+| **P6.2 Track FX graph** | **PRODUCTION VERIFIED — GREEN** @ `23d3be8` |
+| **P6.3 Master FX graph** | **PRODUCTION VERIFIED — GREEN** @ `350303e` · served `040z15suoi1r8.js` |
+| **NEXT UNIT** | **P6.4 — FX UI / Studio Mix UX** per [P6 freeze](./decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -62,13 +63,14 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = 23d3be8 · P6.2 Track FX graph · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_3DonumGaeZvVqPXGb5ch8No28VpS
+PRODUCTION APP                = 350303e · P6.3 Master FX graph · PRODUCTION VERIFIED — GREEN
+PRODUCTION DEPLOYMENT         = dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
-LAST STUDIO VERIFY            = P6.2 PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY            = P6.3 PRODUCTION VERIFIED — GREEN
 P6.1 RPC HOTFIX               = 57ef69e · migration 20261006190900_p6_1_fx_cas_document_version_qualify
-P6.2 APPLICATION              = 23d3be8
-P6.2 PRODUCTION               = GREEN
+P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
+P6.3 APPLICATION              = 350303e
+P6.3 PRODUCTION               = GREEN
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 KNOWN LIMITATION              = limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync
                               · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
@@ -92,6 +94,7 @@ STUDIO P5 (canonical table):
        freeze                            = docs/decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md
   P6.1 FX persist / validation / CAS     = COMPLETE · RPC hotfix 57ef69e
   P6.2 Track FX graph                    = PRODUCTION VERIFIED — GREEN @ 23d3be8
+  P6.3 Master FX graph                    = PRODUCTION VERIFIED — GREEN @ 350303e
   D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
 
 FALA 3.5.1                    = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
@@ -110,8 +113,8 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = P6.3 — Master FX Graph
-                              · do NOT start P6.3 without Owner GO / freeze obedience
+NEXT GATE                     = P6.4 — FX UI / Studio Mix UX
+                              · do NOT start P6.4 without Owner GO / freeze obedience
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
