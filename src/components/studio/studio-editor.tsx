@@ -159,6 +159,7 @@ function StudioEditorInner({
     const json = (await res.json()) as {
       success?: boolean;
       track?: StudioTrackDto;
+      documentVersion?: number;
       error?: string;
     };
     if (!res.ok || !json.track) {
@@ -166,6 +167,13 @@ function StudioEditorInner({
     }
     setDoc((prev) => ({
       ...prev,
+      project: {
+        ...prev.project,
+        documentVersion:
+          typeof json.documentVersion === "number"
+            ? json.documentVersion
+            : prev.project.documentVersion,
+      },
       tracks: prev.tracks.map((t) => (t.id === trackId ? json.track! : t)),
     }));
   }

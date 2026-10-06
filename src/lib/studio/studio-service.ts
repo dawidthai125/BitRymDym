@@ -38,8 +38,13 @@ import {
   parseStudioFxChainForWrite,
   readStudioFxChain,
   StudioFxCasConflictError,
+  StudioFxChainError,
   type StudioFxChainV1,
 } from "@/lib/studio/studio-fx-chain";
+import {
+  parseStudioMasterGainDb,
+  parseStudioMasterPan,
+} from "@/lib/studio/studio-master-mix";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ProjectRow = {
@@ -383,7 +388,7 @@ export async function updateStudioTrackControlsFor(
     pan?: number;
     recordArmed?: boolean;
   },
-): Promise<StudioTrackDto> {
+): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   await assertOwnsProject(context, input.projectId);
   const admin = createSupabaseAdminClient();
   const { data: existing, error: loadError } = await admin
@@ -430,18 +435,98 @@ export async function updateStudioTrackControlsFor(
   if (error) throw new Error(error.message);
 
   const project = await assertOwnsProject(context, input.projectId);
-  await admin
+  const nextVersion = project.document_version + 1;
+  const { data: versionRow, error: versionError } = await admin
     .from("studio_projects")
-    .update({ document_version: project.document_version + 1 })
-    .eq("id", input.projectId);
+    .update({ document_version: nextVersion })
+    .eq("id", input.projectId)
+    .select("document_version")
+    .single();
+  if (versionError) throw new Error(versionError.message);
 
-  return mapTrack(data as TrackRow);
+  return {
+    track: mapTrack(data as TrackRow),
+    documentVersion: num(versionRow.document_version),
+  };
 }
 
 export async function updateStudioTrackControls(
   input: Parameters<typeof updateStudioTrackControlsFor>[1],
-): Promise<StudioTrackDto> {
+): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   return updateStudioTrackControlsFor(await requireUser(), input);
+}
+
+/**
+ * P6.4.1 — Master Gain/Pan on existing studio_projects columns + document_version CAS.
+ * No new table. No FX chain mutation.
+ */
+export async function updateStudioMasterMixFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    expectedDocumentVersion: unknown;
+    masterGainDb?: unknown;
+    masterPan?: unknown;
+  },
+): Promise<{
+  documentVersion: number;
+  masterGainDb: number;
+  masterPan: number;
+}> {
+  const project = await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+
+  const hasGain = input.masterGainDb !== undefined;
+  const hasPan = input.masterPan !== undefined;
+  if (!hasGain && !hasPan) {
+    throw new StudioFxChainError(
+      "FX_CHAIN_INVALID",
+      "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie. (empty patch)",
+    );
+  }
+
+  const nextGain = hasGain
+    ? parseStudioMasterGainDb(input.masterGainDb)
+    : num(project.master_gain_db);
+  const nextPan = hasPan
+    ? parseStudioMasterPan(input.masterPan)
+    : num(project.master_pan);
+
+  if (expected !== project.document_version) {
+    throw new StudioFxCasConflictError();
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_projects")
+    .update({
+      master_gain_db: nextGain,
+      master_pan: nextPan,
+      document_version: expected + 1,
+    })
+    .eq("id", input.projectId)
+    .eq("owner_id", context.userId)
+    .eq("document_version", expected)
+    .select("document_version, master_gain_db, master_pan")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new StudioFxCasConflictError();
+
+  return {
+    documentVersion: num(data.document_version),
+    masterGainDb: num(data.master_gain_db),
+    masterPan: num(data.master_pan),
+  };
+}
+
+export async function updateStudioMasterMix(
+  input: Parameters<typeof updateStudioMasterMixFor>[1],
+): Promise<{
+  documentVersion: number;
+  masterGainDb: number;
+  masterPan: number;
+}> {
+  return updateStudioMasterMixFor(await requireUser(), input);
 }
 
 export async function reorderStudioTrackFor(

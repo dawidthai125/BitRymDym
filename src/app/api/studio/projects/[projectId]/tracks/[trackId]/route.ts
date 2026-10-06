@@ -21,12 +21,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       pan?: number;
       recordArmed?: boolean;
     };
-    const track = await updateStudioTrackControls({
+    const result = await updateStudioTrackControls({
       projectId,
       trackId,
       ...body,
     });
-    return NextResponse.json({ success: true, track });
+    return NextResponse.json({
+      success: true,
+      track: result.track,
+      documentVersion: result.documentVersion,
+    });
   } catch (error) {
     return studioApiErrorResponse(error);
   }
