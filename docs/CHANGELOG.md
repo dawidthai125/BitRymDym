@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-06 — P6.4.1 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
+
+**Status:** DOCS ONLY · **P6.4.1 PRODUCTION VERIFIED — GREEN**
+**Application:** 9f93606 · **RPC hotfix:** 57ef69e (unchanged) · **Deployment:** dpl_EHkvay3T1siEm3oM7MEonN4BypkR
+**GitHub SHA == Vercel == served:** 9f93606d5f0152cd6dbe1a890892ece6190755bd
+**Served Studio chunk:** /_next/static/immutable/chunks/3llg0viqy_c95.js (masterGainDb · masterPan · documentVersion · StudioAudioEngine · no PlayerProvider/mix-graph/StudioMixEngine)
+**Contract:** Master Gain/Pan Option A on existing master_gain_db/master_pan + CAS · Track PATCH returns documentVersion · editor applies version
+**Gate API (17/17):** unauth 401 · cross-user 403 · Gain/Pan 200 +1 · invalid 400 no mutation · stale CAS 409 no mutation · recovery 200 · Track→FX CAS 200 · reverse FX→Track→FX · combo Master+Track+MasterFX +1s · reload persistence · P6.1 FX CAS 409
+**UI smoke:** / /beats /studio /studio/p/... · transport Play/Stop→00:00.000 · Track Mute/Solo/Gain/Pan present · mobile ~390 load OK (bottom-nav click intercept known non-blocking)
+**Tests:** P6.4.1 21 · P6.1 29 · P6.2 14 · P6.3 17 · Studio 214 · typecheck · P6.4.1 eslint clean · build PASS
+**Next:** **P6.4.2 — Shared FX UI Foundation** (do not start in this wave)
+**Known limitations:** Master Gain/Pan UI controls deferred to Mix UX (API/runtime ready) · limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE · mobile bottom-nav may intercept lower Track controls
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.3 PRODUCTION VERIFIED — GREEN (SSOT RECONCILE)
 
 **Status:** DOCS ONLY · **P6.3 PRODUCTION VERIFIED — GREEN**

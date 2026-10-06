@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-06 — **P6.3 PRODUCTION VERIFIED — GREEN** · app **`350303e`** · RPC **`57ef69e`** · dpl `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho`
-**Type:** Documentation continuity · P6.3 Gate GREEN (app `350303e` · DB RPC `57ef69e`)
+**Updated:** 2026-10-06 — **P6.4.1 PRODUCTION VERIFIED — GREEN** · app **`9f93606`** · RPC **`57ef69e`** · dpl `dpl_EHkvay3T1siEm3oM7MEonN4BypkR`
+**Type:** Documentation continuity · P6.4.1 Gate GREEN (app `9f93606` · DB RPC `57ef69e`)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,24 +25,25 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 350303e9506d8300b03dae7e1530f06756971736
-  short                       = 350303e
-  note                        = P6.3 Master FX graph · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho
+PRODUCTION APP SHA            = 9f93606d5f0152cd6dbe1a890892ece6190755bd
+  short                       = 9f93606
+  note                        = P6.4.1 Master Gain/Pan + Track documentVersion · PRODUCTION VERIFIED — GREEN
+PRODUCTION DEPLOYMENT         = dpl_EHkvay3T1siEm3oM7MEonN4BypkR
 P6.1 RPC HOTFIX               = 57ef69e (qualify document_version in studio_cas_apply_fx_chain)
   migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
-P6.3 APPLICATION              = 350303e
-P6.3 PRODUCTION               = GREEN
+P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
+P6.4.1 APPLICATION            = 9f93606
+P6.4.1 PRODUCTION             = GREEN
 
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-  served bundle               = /_next/static/immutable/chunks/040z15suoi1r8.js
+  served bundle               = /_next/static/immutable/chunks/3llg0viqy_c95.js
 
-STUDIO BASELINE               = P6.3 PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P6.3 PRODUCTION VERIFIED — GREEN
-NEXT GATE                     = P6.4 — FX UI / Studio Mix UX
+STUDIO BASELINE               = P6.4.1 PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY            = P6.4.1 PRODUCTION VERIFIED — GREEN
+NEXT GATE                     = P6.4.2 — Shared FX UI Foundation
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
@@ -64,6 +65,7 @@ P5.10 STATUS                  = PRODUCTION VERIFIED — GREEN @ 9c2a958 · Studi
 P6.1 STATUS                   = COMPLETE · RPC hotfix 57ef69e
 P6.2 STATUS                   = PRODUCTION VERIFIED — GREEN @ 23d3be8
 P6.3 STATUS                   = PRODUCTION VERIFIED — GREEN @ 350303e
+P6.4.1 STATUS                 = PRODUCTION VERIFIED — GREEN @ 9f93606
 FALA 3.5.1 STATUS             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
 P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
@@ -73,7 +75,8 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
-| **P6.3** Master FX graph | **PRODUCTION VERIFIED — GREEN** @ `350303e` · dpl `dpl_AdUhQz…` |
+| **P6.4.1** Master Gain/Pan + Track documentVersion | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · dpl `dpl_EHkvay…` |
+| **P6.3** Master FX graph | **PRODUCTION VERIFIED — GREEN** @ `350303e` |
 | **P6.2** Track FX graph | **PRODUCTION VERIFIED — GREEN** @ `23d3be8` |
 | **P6.1** FX persist / CAS | **COMPLETE** · RPC hotfix `57ef69e` |
 | **P5.10** Studio Audio Engine / Multi-Source | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · dpl `dpl_L7pB5A8…` |

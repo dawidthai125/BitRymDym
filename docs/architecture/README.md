@@ -62,12 +62,13 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | **P5.10 Studio Audio Engine** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · dpl `dpl_L7pB5A8…` — [freeze](../decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md) |
 | **P6.1 FX persist / CAS** | **COMPLETE** · RPC hotfix `57ef69e` — [P6 freeze](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
 | **P6.2 Track FX graph** | **PRODUCTION VERIFIED — GREEN** @ `23d3be8` — [P6 freeze](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
-| **P6.3 Master FX graph** | **PRODUCTION VERIFIED — GREEN** @ `350303e` · dpl `dpl_AdUhQz…` — [P6 freeze](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
+| **P6.3 Master FX graph** | **PRODUCTION VERIFIED — GREEN** @ `350303e` — [P6 freeze](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md) |
+| **P6.4.1 Master Gain/Pan + Track documentVersion** | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · dpl `dpl_EHkvay…` — [P6.4 freeze](../decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **GO WITH CONDITIONS** — [P5_9_STUDIO_ARCHITECTURE_AUDIT.md](./P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **Next Studio step** | **P6.4 — FX UI / Studio Mix UX** per P6 freeze — do **not** auto-start without Owner GO |
-| Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track FX · Master FX on sum · overlap = MIX · P6.3 GREEN |
+| Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track FX · Master FX on sum · Master Gain/Pan CAS · overlap = MIX · P6.4.1 GREEN |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
 | E3.8 W6 Mobile Cert | **CLOSED / PASS** · **OWNER-ACCEPTED EMULATED** — [E3_8_W6_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_8_W6_IMPLEMENTATION_CLOSEOUT.md) |

@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-06 — **P6.3 PRODUCTION VERIFIED — GREEN** · app **`350303e`** · RPC **`57ef69e`** · dpl `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho` · P6.2 GREEN @ `23d3be8`
+**Updated:** 2026-10-06 — **P6.4.1 PRODUCTION VERIFIED — GREEN** · app **`9f93606`** · RPC **`57ef69e`** · dpl `dpl_EHkvay3T1siEm3oM7MEonN4BypkR` · P6.3 GREEN @ `350303e`
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,12 +23,12 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `350303e` · RPC `57ef69e`) |
-| **Production application SHA** | `350303e9506d8300b03dae7e1530f06756971736` (`350303e`) — **P6.3 Master FX** |
-| **Production deployment** | `dpl_AdUhQzAFBNAFeJ8qTEaa4jTpbsho` |
-| **Studio baseline** | **P6.3 PRODUCTION VERIFIED — GREEN** |
-| **Last Studio Production Verify** | P6.3 Gate **GREEN** · P6.2 GREEN @ `23d3be8` · P5.10 @ `9c2a958` |
-| **NEXT UNIT** | **P6.4 — FX UI / Studio Mix UX** per P6 freeze |
+| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `9f93606` · RPC `57ef69e`) |
+| **Production application SHA** | `9f93606d5f0152cd6dbe1a890892ece6190755bd` (`9f93606`) — **P6.4.1 Master Gain/Pan + Track documentVersion** |
+| **Production deployment** | `dpl_EHkvay3T1siEm3oM7MEonN4BypkR` |
+| **Studio baseline** | **P6.4.1 PRODUCTION VERIFIED — GREEN** |
+| **Last Studio Production Verify** | P6.4.1 Gate **GREEN** · P6.3 GREEN @ `350303e` · P6.2 @ `23d3be8` |
+| **NEXT UNIT** | **P6.4.2 — Shared FX UI Foundation** per P6.4 freeze |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
