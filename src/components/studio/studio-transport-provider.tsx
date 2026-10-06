@@ -12,7 +12,10 @@ import {
 import { usePlayerOptional } from "@/components/player/player-provider";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import { PUBLIC_PLAYBACK_PURPOSE } from "@/lib/beats/public";
-import { StudioAudioEngine } from "@/lib/studio/studio-audio-engine";
+import {
+  StudioAudioEngine,
+  type StudioMeterSnapshot,
+} from "@/lib/studio/studio-audio-engine";
 import {
   STUDIO_TAKE_PLAYBACK_ERROR_PL,
   userFacingPlaybackError,
@@ -24,6 +27,7 @@ import {
   createStudioSourceAdapterRegistry,
   type StudioResolvedSource,
 } from "@/lib/studio/studio-audio-source-adapter";
+import { STUDIO_METER_NEUTRAL } from "@/lib/studio/studio-meter";
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
 
@@ -48,6 +52,8 @@ type StudioTransportApi = {
   hasBeat: boolean;
   /** True while a post-record / library Take is solo-previewed (not timeline layer). */
   takePreviewActive: boolean;
+  /** P6.5 Master meter snapshot (runtime-only). */
+  meter: StudioMeterSnapshot;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -110,6 +116,7 @@ export function StudioTransportProvider({
   );
   const [error, setError] = useState<string | null>(null);
   const [takePreviewActive, setTakePreviewActive] = useState(false);
+  const [meter, setMeter] = useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
 
   const hasTimelineAudio =
     Boolean(beatId) || engineDocument.clips.some((c) => c.sourceKind === "TAKE");
@@ -233,9 +240,25 @@ export function StudioTransportProvider({
     });
     engineRef.current = engine;
     engine.setDocument(engineDocument);
+    const unsubMeter = engine.subscribeMeter(setMeter);
+
+    const onVisibility = () => {
+      if (typeof document === "undefined") return;
+      engine.setMeterDocumentHidden(document.visibilityState === "hidden");
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+      onVisibility();
+    }
+
     return () => {
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+      unsubMeter();
       engine.dispose();
       engineRef.current = null;
+      setMeter(STUDIO_METER_NEUTRAL);
       catalogPlayer?.setSuppressed(false);
     };
     // One engine per editor mount. Document updates go through setDocument.
@@ -333,6 +356,7 @@ export function StudioTransportProvider({
     error,
     hasBeat: Boolean(beatId),
     takePreviewActive,
+    meter,
     play,
     pause,
     stop,

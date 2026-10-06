@@ -119,6 +119,22 @@ function createTrackingHost(played: string[] = []): {
       created.push(n);
       return n;
     },
+    createAnalyser: () => {
+      const n = fakeNode("analyser") as FakeNode & {
+        fftSize: number;
+        smoothingTimeConstant: number;
+        frequencyBinCount: number;
+        getFloatTimeDomainData: (array: Float32Array) => void;
+      };
+      n.fftSize = 256;
+      n.smoothingTimeConstant = 0;
+      n.frequencyBinCount = 128;
+      n.getFloatTimeDomainData = (array: Float32Array) => {
+        array.fill(0);
+      };
+      created.push(n);
+      return n;
+    },
     createBiquadFilter: () => {
       const n = fakeNode("biquad");
       created.push(n);

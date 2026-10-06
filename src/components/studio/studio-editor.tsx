@@ -14,6 +14,7 @@ import {
   StudioFxChainEditor,
   StudioFxSheet,
 } from "@/components/studio/studio-fx-chain-editor";
+import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -652,6 +653,7 @@ function StudioEditorInner({
                 })
               }
             />
+            <StudioMasterMeter snapshot={transport.meter} />
             <div className="mt-3">
               <Button
                 type="button"

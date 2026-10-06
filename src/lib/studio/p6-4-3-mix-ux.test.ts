@@ -96,12 +96,18 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(fxIdx).toBeGreaterThan(gainIdx);
   });
 
-  it("Master Mix: distinguished card + Gain/Pan + FX entry", () => {
+  it("Master Mix: distinguished card + Gain/Pan + Meter + FX entry", () => {
     expect(editor).toMatch(/border-\[var\(--brd-green\)\]/);
     expect(editor).toMatch(/Głośność Master/);
     expect(editor).toMatch(/Panorama Master/);
+    expect(editor).toMatch(/StudioMasterMeter/);
     expect(editor).toMatch(/Efekty Master/);
     expect(editor).toMatch(/studioFxEntryLabel\(doc\.project\.masterFxChain\)/);
+    const panIdx = editor.indexOf('ariaLabel="Panorama Master"');
+    const meterIdx = editor.indexOf("<StudioMasterMeter");
+    const fxIdx = editor.indexOf('aria-label="Efekty Master"');
+    expect(meterIdx).toBeGreaterThan(panIdx);
+    expect(fxIdx).toBeGreaterThan(meterIdx);
   });
 
   it("reuses StudioMixControl for Track Gain/Pan (no duplicate raw track ranges)", () => {

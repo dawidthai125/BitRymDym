@@ -392,6 +392,21 @@ function createFakeHost(played: string[]): StudioAudioEngineHost {
     async close() {},
     createGain: () => fakeNode(),
     createStereoPanner: () => fakeNode(),
+    createAnalyser: () => {
+      const node = fakeNode() as ReturnType<typeof fakeNode> & {
+        fftSize: number;
+        smoothingTimeConstant: number;
+        frequencyBinCount: number;
+        getFloatTimeDomainData: (array: Float32Array) => void;
+      };
+      node.fftSize = 256;
+      node.smoothingTimeConstant = 0;
+      node.frequencyBinCount = 128;
+      node.getFloatTimeDomainData = (array: Float32Array) => {
+        array.fill(0);
+      };
+      return node;
+    },
     createMediaElementSource: () => fakeNode(),
   } as unknown as StudioAudioContextLike;
   return {

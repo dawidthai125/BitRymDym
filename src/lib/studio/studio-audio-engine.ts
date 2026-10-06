@@ -34,6 +34,20 @@ import {
   type StudioFxSlotInspect,
   type StudioTrackFxHandle,
 } from "@/lib/studio/studio-fx-graph";
+import {
+  STUDIO_METER_FFT_SIZE,
+  STUDIO_METER_INTERVAL_MS,
+  STUDIO_METER_NEUTRAL,
+  buildMeterSnapshot,
+  clearClipLatch,
+  createClipLatchState,
+  samplePeakFromTimeDomain,
+  updateClipLatch,
+  type StudioClipLatchState,
+  type StudioMeterSnapshot,
+} from "@/lib/studio/studio-meter";
+
+export type { StudioMeterSnapshot } from "@/lib/studio/studio-meter";
 
 export type StudioAudioEngineLifecycle =
   | "created"
@@ -53,6 +67,14 @@ type Connectable = {
 
 type GainLike = Connectable & { gain: ParamValue };
 type PannerLike = Connectable & { pan: ParamValue };
+
+/** P6.5 — Master meter tap (serial after Master Pan). */
+export type AnalyserLike = Connectable & {
+  fftSize: number;
+  smoothingTimeConstant: number;
+  frequencyBinCount: number;
+  getFloatTimeDomainData(array: Float32Array): void;
+};
 
 export type StudioMediaElement = {
   src: string;
@@ -74,6 +96,7 @@ export type StudioAudioContextLike = StudioFxGraphContext & {
   resume(): Promise<void>;
   close(): Promise<void>;
   createStereoPanner(): PannerLike;
+  createAnalyser(): AnalyserLike;
   createMediaElementSource(el: StudioMediaElement): Connectable;
 };
 
@@ -168,6 +191,16 @@ export class StudioAudioEngine {
   private masterFxFingerprint = "";
   private masterGain: GainLike | null = null;
   private masterPan: PannerLike | null = null;
+  /** P6.5 — single Master analyser; created once per engine lifecycle. */
+  private masterAnalyser: AnalyserLike | null = null;
+  private meterTimeDomain: Float32Array | null = null;
+  private meterTickId: number | null = null;
+  private meterLastEmitMs = 0;
+  private meterActive = false;
+  private meterVisibilityPaused = false;
+  private clipLatch: StudioClipLatchState = createClipLatchState();
+  private lastMeterSnapshot: StudioMeterSnapshot = STUDIO_METER_NEUTRAL;
+  private meterListeners = new Set<(snapshot: StudioMeterSnapshot) => void>();
   private tracks = new Map<string, TrackGraph>();
   private voices = new Map<string, Voice>();
   private document: StudioEngineDocument | null = null;
@@ -240,6 +273,48 @@ export class StudioAudioEngine {
     };
   }
 
+  /** P6.5 diagnostic — Master Pan → Analyser → Destination series tap. */
+  inspectMasterMeter(): {
+    analyser: AnalyserLike;
+    masterPan: PannerLike;
+    destination: Connectable;
+    fftSize: number;
+  } | null {
+    if (!this.ctx || !this.masterPan || !this.masterAnalyser) return null;
+    return {
+      analyser: this.masterAnalyser,
+      masterPan: this.masterPan,
+      destination: this.ctx.destination,
+      fftSize: this.masterAnalyser.fftSize,
+    };
+  }
+
+  getMeterSnapshot(): StudioMeterSnapshot {
+    return this.lastMeterSnapshot;
+  }
+
+  /** Subscribe to throttled Master meter snapshots (≤12 Hz). */
+  subscribeMeter(listener: (snapshot: StudioMeterSnapshot) => void): () => void {
+    this.meterListeners.add(listener);
+    listener(this.lastMeterSnapshot);
+    return () => {
+      this.meterListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Visibility pause — stops reader without disposing analyser / AudioContext.
+   * Resume only resumes when play metering is active.
+   */
+  setMeterDocumentHidden(hidden: boolean): void {
+    this.meterVisibilityPaused = hidden;
+    if (hidden) {
+      this.stopMeterReader();
+      return;
+    }
+    this.ensureMeterReader();
+  }
+
   inspectVoiceClipGain(clipId: string): GainLike | null {
     return this.voices.get(clipId)?.clipGain ?? null;
   }
@@ -255,9 +330,15 @@ export class StudioAudioEngine {
       this.masterInput = this.ctx.createGain();
       this.masterGain = this.ctx.createGain();
       this.masterPan = this.ctx.createStereoPanner();
+      this.masterAnalyser = this.ctx.createAnalyser();
+      this.masterAnalyser.fftSize = STUDIO_METER_FFT_SIZE;
+      this.masterAnalyser.smoothingTimeConstant = 0;
+      this.meterTimeDomain = new Float32Array(this.masterAnalyser.fftSize);
       this.masterInput.connect(this.masterGain);
       this.masterGain.connect(this.masterPan);
-      this.masterPan.connect(this.ctx.destination);
+      // P6.5: MasterPan → Analyser → Destination (series; no parallel path)
+      this.masterPan.connect(this.masterAnalyser);
+      this.masterAnalyser.connect(this.ctx.destination);
       this.setLifecycle("initialized");
       this.setLifecycle("ready");
       return true;
@@ -314,12 +395,14 @@ export class StudioAudioEngine {
     this.listener.onPlayhead(playheadMs);
     await this.syncVoices(playheadMs, true);
     this.startClock();
+    this.startMetering();
   }
 
   pause(): void {
     this.stopPreviewInternal();
     this.stopClock();
     this.pauseAllTimelineVoices();
+    this.stopMetering({ reset: false });
     if (this.lifecycle !== "disposed" && this.lifecycle !== "stopped") {
       this.setLifecycle("paused");
     }
@@ -341,6 +424,9 @@ export class StudioAudioEngine {
     if (shouldPlay) {
       this.setLifecycle("playing");
       this.startClock();
+      this.startMetering();
+    } else {
+      this.stopMetering({ reset: false });
     }
   }
 
@@ -348,6 +434,7 @@ export class StudioAudioEngine {
     this.stopPreviewInternal();
     this.stopClock();
     this.pauseAllTimelineVoices();
+    this.stopMetering({ reset: true });
     this.epoch = null;
     this.setLifecycle("stopped");
     this.listener.onPlayhead(0);
@@ -363,6 +450,7 @@ export class StudioAudioEngine {
     }
     this.pauseAllTimelineVoices();
     this.stopClock();
+    this.stopMetering({ reset: false });
     if (this.lifecycle === "playing") this.setLifecycle("paused");
 
     this.disposeVoice(PREVIEW_VOICE_ID);
@@ -419,6 +507,8 @@ export class StudioAudioEngine {
 
   dispose(): void {
     this.stopClock();
+    this.stopMetering({ reset: true });
+    this.meterListeners.clear();
     for (const id of [...this.voices.keys()]) {
       this.disposeVoice(id);
     }
@@ -439,6 +529,7 @@ export class StudioAudioEngine {
       this.masterInput?.disconnect();
       this.masterGain?.disconnect();
       this.masterPan?.disconnect();
+      this.masterAnalyser?.disconnect();
     } catch {
       /* already disconnected */
     }
@@ -447,6 +538,8 @@ export class StudioAudioEngine {
     this.masterInput = null;
     this.masterGain = null;
     this.masterPan = null;
+    this.masterAnalyser = null;
+    this.meterTimeDomain = null;
     const ctx = this.ctx;
     this.ctx = null;
     this.epoch = null;
@@ -476,6 +569,7 @@ export class StudioAudioEngine {
       if (playhead >= this.document.timelineLengthMs) {
         this.pauseAllTimelineVoices();
         this.stopClock();
+        this.stopMetering({ reset: true });
         this.setLifecycle("stopped");
         this.listener.onTimelineEnded();
         return;
@@ -491,6 +585,70 @@ export class StudioAudioEngine {
     if (this.tickId != null) {
       this.host.cancelTick(this.tickId);
       this.tickId = null;
+    }
+  }
+
+  private startMetering(): void {
+    this.meterActive = true;
+    this.ensureMeterReader();
+  }
+
+  private stopMetering(opts: { reset: boolean }): void {
+    this.meterActive = false;
+    this.stopMeterReader();
+    if (opts.reset) {
+      clearClipLatch(this.clipLatch);
+      this.emitMeterSnapshot(
+        buildMeterSnapshot({
+          peak: 0,
+          clipping: false,
+          timestamp: this.host.nowMs(),
+        }),
+      );
+    }
+  }
+
+  private ensureMeterReader(): void {
+    if (!this.meterActive || this.meterVisibilityPaused) return;
+    if (this.meterTickId != null) return;
+    if (!this.masterAnalyser || !this.meterTimeDomain) return;
+
+    const tick = () => {
+      this.meterTickId = null;
+      if (
+        !this.meterActive ||
+        this.meterVisibilityPaused ||
+        !this.masterAnalyser ||
+        !this.meterTimeDomain
+      ) {
+        return;
+      }
+      const now = this.host.nowMs();
+      if (now - this.meterLastEmitMs >= STUDIO_METER_INTERVAL_MS) {
+        this.meterLastEmitMs = now;
+        this.masterAnalyser.getFloatTimeDomainData(this.meterTimeDomain);
+        const peak = samplePeakFromTimeDomain(this.meterTimeDomain);
+        const clipping = updateClipLatch(this.clipLatch, peak, now);
+        this.emitMeterSnapshot(
+          buildMeterSnapshot({ peak, clipping, timestamp: now }),
+        );
+      }
+      this.meterTickId = this.host.requestTick(tick);
+    };
+    this.meterTickId = this.host.requestTick(tick);
+  }
+
+  private stopMeterReader(): void {
+    if (this.meterTickId != null) {
+      this.host.cancelTick(this.meterTickId);
+      this.meterTickId = null;
+    }
+  }
+
+  private emitMeterSnapshot(snapshot: StudioMeterSnapshot): void {
+    this.lastMeterSnapshot = snapshot;
+    for (const listener of this.meterListeners) {
+      listener(snapshot);
     }
   }
 
