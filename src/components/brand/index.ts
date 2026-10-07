@@ -26,6 +26,7 @@ export { HomePlayButton } from "./home-play-button";
 export { VisualScene } from "./visual-scene";
 export { Waveform, peaksFromSeed, type WaveformDensity } from "./waveform";
 export { BrdButton, BrdLink } from "./brd-button";
+export { BrdCheckbox } from "./brd-checkbox";
 export { BrdLogo, BrdLogoHomeLink, BRD_LOGO_SRC } from "./brd-logo";
 export {
   BrdSymbol,

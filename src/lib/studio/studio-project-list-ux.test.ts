@@ -138,9 +138,22 @@ describe("Studio project list UX", () => {
     expect(list).toMatch(/Zaznacz wszystko na stronie/);
     expect(list).toMatch(/Odznacz/);
     expect(list).toMatch(/Usuń zaznaczone/);
-    expect(list).toMatch(/type="checkbox"/);
+    expect(list).toMatch(/BrdCheckbox/);
     expect(list).toMatch(/Następna/);
     expect(list).toMatch(/Poprzednia/);
     expect(list).toMatch(/deleteProjectRequest/);
+  });
+
+  it("uses branded BrdCheckbox (not native accent)", () => {
+    const checkbox = read("src/components/brand/brd-checkbox.tsx");
+    expect(checkbox).toMatch(/type="checkbox"/);
+    expect(checkbox).toMatch(/opacity-0/);
+    expect(checkbox).toMatch(/--brd-green/);
+    expect(checkbox).toMatch(/--brd-paper/);
+    expect(checkbox).toMatch(/indeterminate/);
+    expect(checkbox).toMatch(/peer-focus-visible:ring/);
+    expect(checkbox).toMatch(/size-11/);
+    expect(checkbox).toMatch(/size-\[1\.125rem\]/);
+    expect(list).not.toMatch(/accent-\[var\(--brd-green\)\]/);
   });
 });

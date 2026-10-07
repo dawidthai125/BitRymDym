@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
+import { BrdCheckbox } from "@/components/brand/brd-checkbox";
 import { STUDIO_PROJECT_LIST_PAGE_SIZE } from "@/config/studio";
 import type { StudioProjectSummary } from "@/lib/studio/studio-types";
 import { formatStudioListDurationMs } from "@/lib/studio/studio-time";
@@ -144,12 +145,10 @@ function ProjectRow({
 
   return (
     <li className="border-b border-[var(--brd-line)] last:border-b-0">
-      <div className="flex gap-3 py-5 sm:gap-4">
-        <div className="flex shrink-0 items-start pt-1">
-          <input
+      <div className="flex gap-1 py-5 sm:gap-2">
+        <div className="flex shrink-0 items-start">
+          <BrdCheckbox
             id={checkboxId}
-            type="checkbox"
-            className="size-5 accent-[var(--brd-green)]"
             checked={selected}
             disabled={pending}
             onChange={() => onToggle(project.id)}
@@ -157,8 +156,8 @@ function ProjectRow({
           />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-          <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:pt-2">
+          <div className="min-w-0 flex-1 space-y-2 pt-2 sm:pt-0">
             <label
               htmlFor={checkboxId}
               className="block cursor-pointer truncate text-lg font-semibold tracking-tight text-[var(--brd-ink)] sm:text-xl"
@@ -476,16 +475,12 @@ export function StudioProjectList({
             <div className="flex flex-wrap items-center gap-3">
               <label
                 htmlFor={selectAllId}
-                className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-[var(--brd-ink)]"
+                className="inline-flex min-h-11 cursor-pointer items-center gap-1 text-sm text-[var(--brd-ink)]"
               >
-                <input
+                <BrdCheckbox
                   id={selectAllId}
-                  type="checkbox"
-                  className="size-5 accent-[var(--brd-green)]"
                   checked={allOnPageSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = someOnPageSelected;
-                  }}
+                  indeterminate={someOnPageSelected}
                   disabled={pending || pageIds.length === 0}
                   onChange={toggleSelectAllOnPage}
                   aria-label="Zaznacz wszystkie projekty na tej stronie"
