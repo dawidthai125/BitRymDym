@@ -6,6 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — POST-RECORDING EDITING / VOCAL PRODUCTION V1
+
+**Status:** **IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED**
+**Scope:** Clip Gain · Clip Mute · Duplicate Clip · CAS Move/Delete · ClipEditPanel UX · architecture guards
+**Commits:** `1a62158` (PR-01/02) · `3216cf0` (PR-03/04/05) · docs/report tip (this entry)
+**Production app SHA:** **unchanged** `06c60b5` (P6.7) — **V1 UI/API not deployed**
+**DB migrations applied (production version):** `20261007080752` `pr_v1_studio_cas_clip_gain_mute` · `20261007080758` `pr_v1_studio_cas_clip_duplicate` · `20261007080800` `pr_v1_studio_cas_clip_delete`
+**Repo migration filenames:** `20261007150000_…` · `20261007151000_…` · `20261007152000_…` (filename ≠ applied version — documented mapping)
+**RPCs:** `studio_cas_apply_clip_gain_mute` · `studio_cas_apply_clip_duplicate` · `studio_cas_apply_clip_delete` (+ reuse `studio_cas_apply_clip_geometry_fades` for move)
+**LIVE ACL:** anon **FALSE** · authenticated **FALSE** · service_role **TRUE** (all three new RPCs)
+**API:** PATCH `set_gain` / `set_mute` · POST `…/duplicate` · DELETE + `expectedDocumentVersion`
+**Tests:** Studio suite **445 PASS** · `tsc --noEmit` PASS · P6.7 regression suites PASS
+**P6.7:** remains **CLOSED / GREEN** (not reopened)
+**Final report:** [POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md)
+**Next:** STOP — Owner decides **deploy + production gate** · do **not** start P6.8 / Automation / Autotune / E3 Studio Render / Undo / Autosave / P7
+**WIP:** untouched
+
 ## 2026-10-07 — P0 SECURITY FIX — studio_cas_* client EXECUTE revoke
 
 **Status:** **P0 CLOSED — PRODUCTION VERIFIED GREEN** (ACL-only · DB)

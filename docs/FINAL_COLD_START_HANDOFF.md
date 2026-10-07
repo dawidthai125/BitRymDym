@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **P0 SECURITY FIX CLOSED / GREEN** (studio_cas_* client EXECUTE revoke · DB `20261007073533`) · **P6.7 remains CLOSED / GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1525 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
-**Type:** Documentation continuity · P6.7 GREEN · P0 ACL hardening closed · next = Owner decides (no P6.8 auto-start)
+**Updated:** 2026-10-07 — **POST-RECORDING V1 IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · DB RPCs applied · **production app still `06c60b5` (P6.7 CLOSED/GREEN)** · P0 CLOSED · Studio **445 PASS** · **STOP** — Owner deploy/gate · **do not start P6.8**
+**Type:** Documentation continuity · V1 code ready · app not deployed · P6.7 GREEN · P0 closed · next = Owner deploy/gate (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
 
@@ -64,9 +64,15 @@ STUDIO BASELINE               = P6.7 PRODUCTION VERIFIED — GREEN
 LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
                               · Vitest 1519 PASS · 1 SKIP · 0 FAIL
                               · fades/CAS/trim/split/runtime · mobile ~390 · security
-NEXT GATE                     = STOP — do NOT start P6.8
+POST-RECORDING V1             = IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED
+  repo commits                = 1a62158 (gain/mute) · 3216cf0 (duplicate/CAS/UX)
+  DB applied                  = 20261007080752 gain_mute · 20261007080758 duplicate · 20261007080800 delete
+  production app              = still 06c60b5 (V1 UI/API NOT DEPLOYED)
+  report                      = docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md
+NEXT GATE                     = STOP — Owner decides V1 deploy + production gate
+                              · do NOT start P6.8
                               · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
-                              · Owner decides next unit
+                              · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7
 P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical)
 P6.7 DESIGN FREEZE            = GO (historical)
 P6.7 IMPLEMENTATION           = COMPLETE · PRODUCTION VERIFIED — GREEN

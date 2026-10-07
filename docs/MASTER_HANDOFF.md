@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-07 — **P0 SECURITY FIX CLOSED / GREEN** (studio_cas_* client EXECUTE revoke · DB `20261007073533`) · **P6.7 remains CLOSED / GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1525 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
+**Updated:** 2026-10-07 — **POST-RECORDING V1 IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · DB RPCs applied · **production app still `06c60b5` (P6.7 CLOSED/GREEN)** · P0 CLOSED · Studio **445 PASS** · **STOP** — Owner deploy/gate · **do not start P6.8**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -28,7 +28,8 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · served Studio chunk `0g5xoq_48-8xn.js` |
 | **Studio baseline** | **P6.7 PRODUCTION VERIFIED — GREEN** · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **Last Studio Production Verify** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime · mobile ~390 · security · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
-| **NEXT UNIT** | **STOP after P6.7** — do **not** start P6.8 · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 · Owner decides next |
+| **POST-RECORDING V1** | **IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · commits `1a62158` + `3216cf0` · DB `pr_v1_studio_cas_clip_*` applied · app still `06c60b5` · [report](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md) |
+| **NEXT UNIT** | **STOP** — Owner decides **V1 deploy + production gate** · do **not** start P6.8 · do **not** reopen P6.6 / P6.5 Scenario B · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |

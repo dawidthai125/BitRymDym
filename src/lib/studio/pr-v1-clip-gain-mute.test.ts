@@ -248,25 +248,32 @@ describe("PR-01/02 AuthZ / API contract (source)", () => {
   });
 
   it("interpret persist response maps conflict / auth / success", () => {
-    expect(
-      interpretStudioClipMixPersistResponse(409, {
-        code: "FX_CHAIN_VERSION_CONFLICT",
-        error: "Konflikt",
-      }).kind,
-    ).toBe("conflict");
-    expect(
-      interpretStudioClipMixPersistResponse(401, { error: "x" }).kind,
-    ).toBe("unauthorized");
-    expect(
-      interpretStudioClipMixPersistResponse(403, { error: "x" }).kind,
-    ).toBe("forbidden");
+    const conflict = interpretStudioClipMixPersistResponse(409, {
+      code: "FX_CHAIN_VERSION_CONFLICT",
+      error: "Konflikt",
+    });
+    expect(conflict.ok).toBe(false);
+    if (!conflict.ok) expect(conflict.kind).toBe("conflict");
+
+    const unauthorized = interpretStudioClipMixPersistResponse(401, {
+      error: "x",
+    });
+    expect(unauthorized.ok).toBe(false);
+    if (!unauthorized.ok) expect(unauthorized.kind).toBe("unauthorized");
+
+    const forbidden = interpretStudioClipMixPersistResponse(403, {
+      error: "x",
+    });
+    expect(forbidden.ok).toBe(false);
+    if (!forbidden.ok) expect(forbidden.kind).toBe("forbidden");
+
     const ok = interpretStudioClipMixPersistResponse(200, {
       success: true,
       documentVersion: 9,
       clip: {
         id: "c1",
         trackId: "t1",
-        sourceKind: "take",
+        sourceKind: "TAKE",
         sourceTakeId: "take-1",
         sourceBeatId: null,
         sourceArtifactId: null,
