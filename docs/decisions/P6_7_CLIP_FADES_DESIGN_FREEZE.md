@@ -1,25 +1,26 @@
 # P6.7 Studio Clip Fades — Design Freeze
 
-**Status:** DESIGN FREEZE — **GO**  
+> **LIVING STATUS (2026-10-07):** **P6.7 = PRODUCTION VERIFIED / GREEN · CLOSED** @ app `06c60b5` · docs tip `e136558` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp`.  
+> Do **not** reimplement. Historical freeze text below is preserved (authoring-time state).
+
+**Status (historical at freeze):** DESIGN FREEZE — **GO**  
 **Date:** 2026-10-07  
-**Type:** DESIGN FREEZE ONLY — **NO IMPLEMENTATION · NO DB MIGRATION · NO DEPLOY · NO CODE**  
+**Type (historical):** DESIGN FREEZE ONLY at authoring — implementation later COMPLETE  
 **Owner:** Prezes Dawid  
 **Architect:** ChatGPT  
-**Implementacja:** Cursor Agent (**only after** Owner/Architect confirmation)
+**Implementacja:** Cursor Agent (completed P6.7.1→P6.7.4)
 
 **Architecture audit:** [P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md](../architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · `edf8fac` · **GO WITH CONDITIONS** (closed by this freeze)  
-**Production application (baseline):** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`) — **P6.6 PRODUCTION VERIFIED — GREEN**  
-**Production deployment:** `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served Studio chunk `3_efrbzvmc1dc.js`  
+**Production application (at freeze authoring):** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`) — **P6.6**  
+**Living production application:** `06c60b5` — **P6.7 GREEN**  
 **SSOT tip at freeze authoring:** `edf8fac`  
 **Engine freeze:** [P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md](./P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md)  
 **Prior metering:** [P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md](./P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md) · GREEN  
 **Parent Mix/FX:** [P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md](./P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md)
 
 ```text
-P6.7 DESIGN FREEZE: GO
-IMPLEMENTATION: AUTHORIZED ONLY AFTER OWNER/ARCHITECT CONFIRMATION
-PRODUCTION APP: UNCHANGED (c825e42)
-NO CODE · NO DB · NO DEPLOY IN THIS STEP
+P6.7 DESIGN FREEZE: GO (historical)
+P6.7 LIVING: PRODUCTION VERIFIED — GREEN · CLOSED @ 06c60b5
 P6.6: PRODUCTION VERIFIED — GREEN (do not reopen)
 P6.5 SCENARIO B: BLOCKED / INCONCLUSIVE (do not reopen)
 ```

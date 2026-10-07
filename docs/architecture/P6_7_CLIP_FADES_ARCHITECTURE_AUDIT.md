@@ -1,14 +1,17 @@
 # P6.7 Studio Clip Fades — Architecture Audit
 
-**Status:** ARCHITECTURE AUDIT — **GO WITH CONDITIONS** · **CLOSED BY DESIGN FREEZE**  
+> **LIVING STATUS (2026-10-07):** **P6.7 = PRODUCTION VERIFIED / GREEN · CLOSED** @ app `06c60b5` · docs tip `e136558`.  
+> Do **not** re-audit as “next unit” or reimplement. Historical audit text below is preserved.
+
+**Status (historical):** ARCHITECTURE AUDIT — **GO WITH CONDITIONS** · **CLOSED BY DESIGN FREEZE + IMPLEMENTATION**  
 **Date:** 2026-10-07  
-**Freeze:** [P6_7_CLIP_FADES_DESIGN_FREEZE.md](../decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · **GO** · implementation still **NOT AUTHORIZED** until Owner GO  
-**Type (historical):** AUDIT ONLY at authoring — Design Freeze now exists; still **NO CODE** in audit step  
+**Freeze:** [P6_7_CLIP_FADES_DESIGN_FREEZE.md](../decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · **GO** · living impl **GREEN**  
+**Type (historical):** AUDIT ONLY at authoring  
 
 **Repository HEAD / origin/main (SSOT tip at audit):** `cb4f930e63f7b0caae0b24e963ffdae6a536e389` (`cb4f930`)  
-**Production application SHA:** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`)  
-**Production deployment:** `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served Studio chunk `3_efrbzvmc1dc.js`  
-**Baseline unit:** **P6.6 On-demand Track Peak Metering — PRODUCTION VERIFIED — GREEN**  
+**Production application SHA (at audit):** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`)  
+**Living production application SHA:** `06c60b5` — **P6.7 GREEN**  
+**Baseline unit (at audit):** **P6.6 On-demand Track Peak Metering — PRODUCTION VERIFIED — GREEN**  
 **Prior SSOT reconcile:** `cb4f930` — [CHANGELOG](../CHANGELOG.md)  
 **Prior metering freeze:** [P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md](../decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md)  
 **Prior metering audit:** [P6_6_STUDIO_ARCHITECTURE_AUDIT.md](./P6_6_STUDIO_ARCHITECTURE_AUDIT.md)  
@@ -18,9 +21,8 @@
 
 ```text
 P6.7 ARCHITECTURE: GO WITH CONDITIONS (historical)
-P6.7 DESIGN FREEZE: GO (living — closes this audit)
-IMPLEMENTATION: NOT AUTHORIZED until Owner GO
-PRODUCTION APP: UNCHANGED (c825e42)
+P6.7 DESIGN FREEZE: GO (historical)
+P6.7 LIVING: PRODUCTION VERIFIED — GREEN · CLOSED @ 06c60b5
 P6.6: PRODUCTION VERIFIED — GREEN (do not reopen)
 P6.5 SCENARIO B: BLOCKED / INCONCLUSIVE (do not reopen)
 ```

@@ -6,20 +6,60 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P6.7 FINAL SSOT RECONCILE (Px→P6.7)
+
+**Status:** DOCS ONLY · full continuity reconcile through **P6.7 CLOSED / GREEN**
+**Production app (unchanged):** `06c60b5` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp`
+**Repo/docs tip:** advances with this commit · must stay **≠** production app SHA
+**Purpose:** remove residual “P6.7 NOT AUTHORIZED / NEXT=Owner GO / app=c825e42” drift in mid/bottom SSOT · dual-plane SHA · P5–P6.7 discoverability · WIP untouched
+
 ## 2026-10-07 — P6.7 PRODUCTION GATE (P6.7.4) — GREEN
 
-**Status:** DOCS ONLY reconcile · **P6.7 = PRODUCTION VERIFIED — GREEN**
+**Status:** **P6.7 = PRODUCTION VERIFIED — GREEN · CLOSED**
 **Application tip:** `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`)
+**Repo/docs tip at first gate docs:** `e136558eceed0904b5045bd3a495d1e626e50e6e` (`e136558`) · **≠** app SHA
 **Deployment:** `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · www · GitHub deployment `6902986442` · served Studio editor chunk `0g5xoq_48-8xn.js`
-**Phases:** P6.7.1 runtime · P6.7.2 persistence/CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 production gate
-**DB migrations (production):** `20261007061035` `p6_7_2_studio_cas_apply_clip_fades` · `20261007061049` `p6_7_x_studio_cas_trim_split`
+**Phases:** P6.7.1 runtime `8750ab9` · P6.7.2 CAS `b21c6dc` · P6.7.3 UI `1305385` · P6.7.x Trim/Split `06c60b5` · P6.7.4 gate @ `06c60b5`
+**DB migrations (production applied version):** `20261007061035` `p6_7_2_studio_cas_apply_clip_fades` · `20261007061049` `p6_7_x_studio_cas_trim_split`
+**Repo migration filenames:** `20261007120000_p6_7_2_studio_cas_apply_clip_fades.sql` · `20261007130000_p6_7_x_studio_cas_trim_split.sql` — **filename timestamp ≠ production applied version** (documented mapping; same SQL content)
 **RPCs verified:** `studio_cas_apply_clip_fades` · `studio_cas_apply_clip_geometry_fades` · `studio_cas_apply_clip_split`
 **Tests:** Full Vitest **1519 PASS · 1 SKIP · 0 FAIL** · typecheck · build · scoped lint PASS
-**Production evidence:** set_fades 200 + documentVersion +1 · reload persistence · CAS stale 409 `FX_CHAIN_VERSION_CONFLICT` · Trim/Split live · proportional normalize · runtime fade envelope on Clip GainNode (seek/pause/resume/stop) · security 401/404/409 · mobile ~390 ≥44px · architecture guards (no FadeEngine / mix-graph / second engine)
+**Production evidence:**
+- Persistence: set_fades **200** · documentVersion **v47→48→49→55** · reload PASS · UI „Zapisano”
+- CAS: stale **409** `FX_CHAIN_VERSION_CONFLICT` · fades/version unchanged · fresh **200**
+- Trim: **10000→6000** · fade clamp · stale **409**
+- Split: left **Fi=1000 Fo=0** · right **Fi=0 Fo=2000** · no orphans · stale **409**
+- Runtime: Fade In ≈ **0.06→0.56→1** · Fade Out → **0** · seek position-based · pause/resume continues · stop **00:00.000** · overlap **3 voices** · **1 AudioContext**
+- Normalization: **5000+5000 @ D=6000 → 3000/3000** persisted
+- Security: unauth **401** · IDOR **404** · owner **200** · stale **409**
+- Mobile ~390: Fade In/Out/Save/Play **≥44px** · no overflow · nav clear
+- Guards: no FadeEngine / AutomationEngine / mix-graph / `/fade` · PlayerProvider not in Studio editor chunk
 **Next:** **STOP** — do **not** start P6.8 · do **not** reopen P6.6 / P6.5 Scenario B
-**Known limitations (unchanged):** P5.10 TAKE preview may fail · P6.5 Scenario B BLOCKED / INCONCLUSIVE · PlayerProvider shared shell only
-**WIP:** YES (unrelated local WIP preserved)
-**Deploy this reconcile:** docs-only after gate
+**Known limitations (unchanged):** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · P6.5 Scenario B BLOCKED / INCONCLUSIVE · PlayerProvider shared shell only
+**WIP:** YES (unrelated local WIP preserved — not staged)
+
+## 2026-10-07 — P6.7.x TRIM/SPLIT FADE SEMANTICS + CAS (COMPLETE)
+
+**Status:** CODE · **COMPLETE** · included in production app `06c60b5`
+**Commit:** `06c60b54234db5d27682a607f6a80dececc7257e`
+**Scope:** DF §14–§17.2 · `resolveFadesAfterTrim` / `resolveFadesAfterSplit` · RPCs `studio_cas_apply_clip_geometry_fades` + `studio_cas_apply_clip_split` · stale Trim/Split **409** · no partial orphans
+**Migration file:** `supabase/migrations/20261007130000_p6_7_x_studio_cas_trim_split.sql`
+
+## 2026-10-07 — P6.7.3 CLIP FADE UI (COMPLETE)
+
+**Status:** CODE · **COMPLETE** · commit `1305385`
+**Scope:** ClipEditPanel Fade In/Out · explicit „Zapisz fade” · local draft until save · CAS `expectedDocumentVersion` · mobile ≥44px · no autosave
+
+## 2026-10-07 — P6.7.2 CLIP FADE WRITE / CAS (COMPLETE)
+
+**Status:** CODE · **COMPLETE** · commit `b21c6dc`
+**Scope:** Clip PATCH `op: set_fades` · `studio_cas_apply_clip_fades` · normalize Fi+Fo>D · HTTP **409** `FX_CHAIN_VERSION_CONFLICT`
+**Migration file:** `supabase/migrations/20261007120000_p6_7_2_studio_cas_apply_clip_fades.sql`
+
+## 2026-10-07 — P6.7.1 CLIP FADE RUNTIME (COMPLETE)
+
+**Status:** CODE · **COMPLETE** · commit `8750ab9`
+**Scope:** `applyClipFadeGainParam` on existing Clip GainNode · `effectiveGain = baseClipGain × fadeEnvelope` · Play/Seek/Pause/Stop position-based · no FadeEngine / second AudioContext
 
 ## 2026-10-07 — P6.7 CLIP FADES DESIGN FREEZE (GO)
 

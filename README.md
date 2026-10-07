@@ -12,15 +12,18 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 | Master Handoff | [docs/MASTER_HANDOFF.md](./docs/MASTER_HANDOFF.md) |
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
-| **Production application** | `9c2a958` · https://www.bitrymdym.pl · **READY** (P5.10 GREEN) |
-| **Git tip (origin/main)** | advances with docs continuity (app tip `9c2a958`) |
+| **Production application** | `06c60b5` · https://www.bitrymdym.pl · **P6.7 GREEN · CLOSED** |
+| **Repo / docs tip (origin/main)** | `e136558` · **≠** production app SHA |
+| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` |
 | POLISH-01 / P0 / P1 / P2 | **CLOSED / PRODUCTION VERIFIED** |
 | Recording Waves 1–5 | **CLOSED** / **PRODUCTION VERIFIED** |
 | Studio P5.1–P5.6 / P5.8 / P5.10 | **PRODUCTION VERIFIED — GREEN** |
+| Studio P6.1–P6.4.3 / P6.6 / P6.7 | **PRODUCTION VERIFIED — GREEN** · P6.7 CLOSED |
+| P6.5 Scenario B | **BLOCKED / INCONCLUSIVE** (do not reopen) |
 | P5.7 / P5.9 | Architecture Audit **GO WITH CONDITIONS** |
 | Community Upload | **CLOSED / LOCKED** @ `c5e1f17` |
 | Płatności / Premium catalog | wyłączone / NOT IMPLEMENTED |
-| Next | **Architecture Audit / formal next Studio unit** — see FINAL_COLD_START |
+| Next | **STOP** — do not start P6.8 · Owner decides — see FINAL_COLD_START |
 
 ## Nowy agent — start tutaj
 

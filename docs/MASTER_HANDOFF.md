@@ -23,9 +23,9 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `06c60b5` P6.7) |
-| **Production application SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** |
-| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · served Studio chunk `0g5xoq_48-8xn.js` |
+| **Repository / docs HEAD** | `e136558eceed0904b5045bd3a495d1e626e50e6e` (`e136558`) — docs tip · **≠** production app SHA |
+| **Production application SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades · CLOSED** |
+| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · served Studio chunk `0g5xoq_48-8xn.js` |
 | **Studio baseline** | **P6.7 PRODUCTION VERIFIED — GREEN** · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **Last Studio Production Verify** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime · mobile ~390 · security · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
 | **NEXT UNIT** | **STOP after P6.7** — do **not** start P6.8 · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 · Owner decides next |
@@ -109,12 +109,41 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · NOT frozen autosave contract (condition before autosave)
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)
-P6 = product FX / Mix / Master + on-demand Track metering (P6.5/P6.6) · routing / buses / automation later
+P6 = product FX / Mix / Master + Track Peak (P6.5/P6.6) + Clip Fades (P6.7 GREEN) · routing / buses / automation later
 P7 = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-drop
      · track enum reserved READY WITH REFACTOR · instrument engines NOT READY
 ```
 
-**P5.10 served-JS / cache (release note):** GitHub `9c2a958` · `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · **Skipping build cache** · HTML `no-store`/`MISS` · chunk `0p8mql3sjqfx_.js` contains `StudioAudioEngine` (no `pickTakeClipAtPlayhead` / `takeAudioRef`). Production Gate must verify **served artifact** (P5.8 stale-cache lesson).
+### P6.7 final evidence (living)
+
+```text
+STATUS                 = PRODUCTION VERIFIED / GREEN · CLOSED
+PRODUCTION APP SHA     = 06c60b54234db5d27682a607f6a80dececc7257e (06c60b5)
+REPO / DOCS TIP        = e136558eceed0904b5045bd3a495d1e626e50e6e (e136558) · ≠ app SHA
+DEPLOYMENT             = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
+SERVED CHUNK           = 0g5xoq_48-8xn.js (Zapisz fade / set_fades)
+TESTS                  = 1519 PASS · 1 SKIP · 0 FAIL
+PHASES                 = P6.7.1 8750ab9 · P6.7.2 b21c6dc · P6.7.3 1305385 · P6.7.x/P6.7.4 06c60b5
+PROD MIGRATION IDs     = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
+                       · 20261007061049 p6_7_x_studio_cas_trim_split
+REPO MIGRATION FILES   = 20261007120000_… · 20261007130000_… (filename ≠ applied version)
+RPCs                   = studio_cas_apply_clip_fades
+                       · studio_cas_apply_clip_geometry_fades
+                       · studio_cas_apply_clip_split
+PERSISTENCE            = set_fades 200 · v47→48→49→55 · reload PASS · UI „Zapisano”
+CAS                    = stale 409 FX_CHAIN_VERSION_CONFLICT · no mutation · fresh 200
+TRIM                   = 10000→6000 · fade clamp · stale 409
+SPLIT                  = left Fi=1000 Fo=0 · right Fi=0 Fo=2000 · no orphans · stale 409
+RUNTIME                = Fade In ~0.06→0.56→1 · Fade Out→0 · seek position-based
+                       · pause/resume continues · stop 00:00.000 · overlap 3 voices · 1 AC
+NORMALIZATION          = 5000+5000 @ D=6000 → 3000/3000 persisted
+SECURITY               = unauth 401 · IDOR 404 · owner 200 · stale 409
+MOBILE ~390            = Fade In/Out/Save/Play ≥44px · no overflow · nav clear
+GUARDS                 = no FadeEngine · no AutomationEngine · no mix-graph · no /fade
+                       · PlayerProvider not in Studio editor chunk
+```
+
+**P5.10 served-JS / cache (historical release note):** GitHub `9c2a958` · `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` · **Skipping build cache** · HTML `no-store`/`MISS` · chunk `0p8mql3sjqfx_.js` contains `StudioAudioEngine`. Production Gate must verify **served artifact** (P5.8 stale-cache lesson).
 
 **P5.8 deployment incident (historical):** initial deploy claimed `95e04ff` but served pre-P5.8 Studio device JS due to **stale Vercel build cache**; recovered with no-cache redeploy → `dpl_2RhUDgWM9DX4twjJSFrGcJmgAp1S`.
 
@@ -135,8 +164,13 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `9c2a958` | **PRODUCTION APP** · P5.10 Studio Audio Engine · **current production baseline** |
-| `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` | **PRODUCTION DEPLOYMENT** (GitHub 9c2a958 · no-cache) |
+| `06c60b5` | **PRODUCTION APP** · P6.7 Clip Fades · **current production baseline · CLOSED** |
+| `e136558` | **REPO / DOCS TIP** · SSOT reconcile · **≠** production app SHA |
+| `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` | **PRODUCTION DEPLOYMENT** (GitHub `06c60b5` · GH deploy `6902986442`) |
+| `c825e42` | Historical — P6.6 Track Peak · prior production app |
+| `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` | Historical — P6.6 production deployment |
+| `9c2a958` | Historical — P5.10 Studio Audio Engine · prior production app |
+| `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` | Historical — P5.10 production deployment |
 | `e191f5c` | Historical — P5.10 Design Freeze (docs) |
 | `5cbed12` | Historical — P5.9 Architecture Audit (docs) |
 | `c4c7569` | Historical — P5.8 SSOT reconcile (docs) |
@@ -171,13 +205,15 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main** | Advances with this SSOT reconcile (app tip `9c2a958`) |
-| **Production application** | `9c2a958` — P5.10 · **UNCHANGED** this docs wave |
-| **Production deployment** | `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` |
+| **HEAD / origin/main (docs)** | `e136558` — docs tip · **≠** production app SHA |
+| **Production application** | `06c60b5` — **P6.7 PRODUCTION VERIFIED — GREEN · CLOSED** |
+| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · chunk `0g5xoq_48-8xn.js` |
 | **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
 | **P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **P5.9** | **Architecture Audit · GO WITH CONDITIONS** |
 | **P5.10** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` |
+| **P6.1–P6.4.3 / P6.6 / P6.7** | **PRODUCTION VERIFIED — GREEN** · P6.7 @ `06c60b5` |
+| **P6.5** | Master metering SHIPPED · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **D02 harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7** | **Architecture Audit · GO WITH CONDITIONS** |
 | **E3** | **PRODUCTION VERIFIED — GREEN** |
@@ -187,7 +223,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** · **UNCHANGED** |
 | **Fala 3.5.1** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
-| **NEXT GATE** | **P6.7 Owner GO → implementation** (freeze GO) · P3 `p_take_id` = **NON-BLOCKING** |
+| **NEXT GATE** | **STOP** — do **not** start P6.8 · Owner decides next Architecture Audit · P3 `p_take_id` = **NON-BLOCKING** |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only. **Nie czyść** dirty WIP bez Owner GO.
@@ -746,11 +782,11 @@ No commit/push/deploy without explicit Owner GO for that step.
 ## 18. Next Session Entry Point
 
 ```text
-CURRENT PRODUCTION APP = c825e42 (P6.6 · UNCHANGED this docs-only reconcile)
-PRODUCTION DEPLOYMENT  = dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
-REPO TIP               = advances with SSOT reconcile (app tip c825e42)
-LAST STUDIO VERIFY     = P6.6.3 · PRODUCTION VERIFIED — GREEN
-                       · Vitest 1410 PASS · 1 SKIP · 0 FAIL
+CURRENT PRODUCTION APP = 06c60b5 · P6.7 PRODUCTION VERIFIED — GREEN · CLOSED
+PRODUCTION DEPLOYMENT  = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
+REPO / DOCS TIP        = e136558 · origin/main (≠ production app SHA)
+LAST STUDIO VERIFY     = P6.7.4 · PRODUCTION VERIFIED — GREEN
+                       · Vitest 1519 PASS · 1 SKIP · 0 FAIL
 D02 HARNESS            = CLOSED @ 44dc22c · TEST ONLY
 P5.7                   = Architecture Audit · GO WITH CONDITIONS
 P5.8                   = PRODUCTION VERIFIED — GREEN
@@ -758,6 +794,7 @@ P5.9                   = Architecture Audit · GO WITH CONDITIONS
 P5.10                  = PRODUCTION VERIFIED — GREEN
 P6.5 Scenario B        = BLOCKED / INCONCLUSIVE · DO NOT REOPEN
 P6.6                   = PRODUCTION VERIFIED — GREEN
+P6.7                   = PRODUCTION VERIFIED — GREEN · CLOSED
 KNOWN WAIVER           = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3                     = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
@@ -766,14 +803,15 @@ P0 / P1 / P2           = CLOSED / PRODUCTION VERIFIED · UNCHANGED
 ARCH-05                = CLOSED / VERIFIED
 WORKER                 = STOPPED / DISABLED
 STORAGE-ARCH-01        = LOCKED
-NEXT GATE              = P6.7 Owner GO → implementation (freeze GO · no auto-start)
+NEXT GATE              = STOP — do NOT start P6.8 · Owner decides next Architecture Audit
 P3 FOLLOW-UP           = p_take_id hardening · NON-BLOCKING
 NEXT SESSION ENTRY     = Read FINAL_COLD_START_HANDOFF.md
                        → MASTER_HANDOFF / PROJECT_STATE
 ```
 
-**Do not** reopen closed P0/P1/P2/P3/P5.6/P5.8/P5.10/P6.6/Fala 3.5.1/POLISH-01/ARCH-05/BPM without new evidence.
-**Do not** reopen P6.5 Scenario B / P6.4.4 / P6.6.1–P6.6.3.
+**Do not** reopen closed P0/P1/P2/P3/P5.6/P5.8/P5.10/P6.6/P6.7/Fala 3.5.1/POLISH-01/ARCH-05/BPM without new evidence.
+**Do not** reopen P6.5 Scenario B / P6.4.4 / P6.6.1–P6.6.3 / P6.7.1–P6.7.4.
+**Do not** start P6.8 without Architecture Audit + Design Freeze + Owner GO.
 **Do not** call punch “P5.7” / “P5.9” / “P5.10” — those are audit/engine units.
 **Do not** auto-start P7 / FX expansion / samples without a fresh Architecture Audit + Design Freeze + Owner GO.
 **Do not** implement `p_take_id` / fix EXPORT_WAV / mutate Storage without Owner GO.
@@ -877,8 +915,9 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 
 ```text
 MASTER HANDOFF READY
-CURRENT PRODUCTION APP     = c825e42 · P6.6 · UNCHANGED (docs-only this reconcile)
-PRODUCTION DEPLOYMENT      = dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
+CURRENT PRODUCTION APP     = 06c60b5 · P6.7 PRODUCTION VERIFIED — GREEN · CLOSED
+PRODUCTION DEPLOYMENT      = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
+REPO / DOCS HEAD           = e136558 · origin/main (≠ app SHA)
 D02 HARNESS                = CLOSED @ 44dc22c · TEST ONLY
 P5.7                       = Architecture Audit · GO WITH CONDITIONS
 P5.8                       = PRODUCTION VERIFIED — GREEN
@@ -886,8 +925,9 @@ P5.9                       = Architecture Audit · GO WITH CONDITIONS
 P5.10                      = PRODUCTION VERIFIED — GREEN
 P6.5 Scenario B            = BLOCKED / INCONCLUSIVE · DO NOT REOPEN
 P6.6                       = PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY         = P6.6.3 · PRODUCTION VERIFIED — GREEN @ c825e42
-                           · Vitest 1410 PASS · 1 SKIP · 0 FAIL
+P6.7                       = PRODUCTION VERIFIED — GREEN · CLOSED
+LAST STUDIO VERIFY         = P6.7.4 · PRODUCTION VERIFIED — GREEN @ 06c60b5
+                           · Vitest 1519 PASS · 1 SKIP · 0 FAIL
 KNOWN WAIVER               = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1                 = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3                         = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
@@ -898,7 +938,7 @@ ADMIN W0–W4                = CLOSED / PRODUCTION VERIFIED
 E3                         = PRODUCTION VERIFIED — GREEN
 WORKER                     = STOPPED / DISABLED
 STORAGE-ARCH-01            = LOCKED
-NEXT GATE                  = P6.7 Owner GO → implementation (freeze GO · no auto-start)
+NEXT GATE                  = STOP — do NOT start P6.8 · Owner decides next
 P3 FOLLOW-UP               = p_take_id · NON-BLOCKING
 NEXT SESSION ENTRY         = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
 ```

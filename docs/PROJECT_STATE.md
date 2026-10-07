@@ -21,9 +21,9 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip = `06c60b5` P6.7) |
-| **PRODUCTION APP SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** |
-| **PRODUCTION DEPLOYMENT** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` (alias www · served Studio editor chunk `0g5xoq_48-8xn.js`) |
+| **REPOSITORY / DOCS HEAD** | `e136558eceed0904b5045bd3a495d1e626e50e6e` (`e136558`) — docs tip · **≠** production app SHA |
+| **PRODUCTION APP SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** (served app) |
+| **PRODUCTION DEPLOYMENT** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH deploy `6902986442` · served Studio editor chunk `0g5xoq_48-8xn.js` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
 | **STUDIO BASELINE** | **P6.7 PRODUCTION VERIFIED — GREEN** (Clip Fades) · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **LAST STUDIO VERIFY** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime/mobile · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
@@ -70,15 +70,21 @@
 
 ```text
 PRODUCTION APP                = 06c60b5 · P6.7 Clip Fades
-                                · PRODUCTION VERIFIED — GREEN
+                                · PRODUCTION VERIFIED — GREEN · CLOSED
 PRODUCTION DEPLOYMENT         = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
+  GitHub deployment           = 6902986442
   served Studio chunk         = 0g5xoq_48-8xn.js
-REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
+REPOSITORY / DOCS HEAD        = e136558 · origin/main (docs tip · ≠ app SHA)
 LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
                               · Vitest 1519 PASS · 1 SKIP · 0 FAIL
                               · fades/CAS/trim/split/runtime · mobile ~390 · security
-P6.7 DB MIGRATIONS            = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
+P6.7 DB MIGRATIONS (prod ID)  = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
                               · 20261007061049 p6_7_x_studio_cas_trim_split
+  repo filenames              = 20261007120000_… · 20261007130000_…
+                              · (Supabase applied version ≠ filename timestamp — documented mapping)
+P6.7 RPCs                     = studio_cas_apply_clip_fades
+                              · studio_cas_apply_clip_geometry_fades
+                              · studio_cas_apply_clip_split
 P6.1 RPC HOTFIX               = 57ef69e · migration 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
 P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
@@ -132,6 +138,14 @@ STUDIO P5 (canonical table):
                                          · dpl dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
        freeze                            = docs/decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md
        audit                             = docs/architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md
+  P6.7 Clip Fades                        = PRODUCTION VERIFIED — GREEN @ 06c60b5 · CLOSED
+       P6.7.1 runtime                    = COMPLETE @ 8750ab9
+       P6.7.2 persistence/CAS            = COMPLETE @ b21c6dc
+       P6.7.3 UI                         = COMPLETE @ 1305385
+       P6.7.x Trim/Split fades           = COMPLETE @ 06c60b5
+       P6.7.4 production gate            = COMPLETE · GREEN @ 06c60b5 · docs tip e136558
+       freeze                            = docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
+       audit                             = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
   D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
 
 FALA 3.5.1                    = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
@@ -150,14 +164,14 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = P6.7 Owner GO → implementation (freeze GO)
-                              · do NOT auto-start implementation
-                              · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
-P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS
-P6.7 DESIGN FREEZE            = GO
-                              · freeze = docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
-                              · audit = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
-                              · impl = NOT AUTHORIZED until Owner GO
+CURRENT                       = P6.7 CLOSED / PRODUCTION VERIFIED / GREEN
+NEXT GATE                     = STOP — no authorized next Studio unit
+                              · do NOT start P6.8
+                              · do NOT reopen P6.7 / P6.6 / P6.5 Scenario B / P6.4.4
+                              · Owner decides next Architecture Audit / unit
+P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical) · CLOSED BY FREEZE+IMPL
+P6.7 DESIGN FREEZE            = GO (historical) · living status GREEN
+P6.7 IMPLEMENTATION           = COMPLETE · PRODUCTION VERIFIED — GREEN
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
@@ -201,11 +215,12 @@ P6 product FX / Mix / Master = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                              · P6.5 Master metering SHIPPED @ 2258bdb
                              · P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE
                              · P6.6 On-demand Track Peak PRODUCTION VERIFIED — GREEN @ c825e42
+                             · P6.7 Clip Fades PRODUCTION VERIFIED — GREEN @ 06c60b5 · CLOSED
                              · topology: Track Pan → 0|1 Track Analyser → Σ → … → Master Analyser
                              · engine foundation EXISTS (P5.10 GREEN)
                              · Automation / Autotune = NOT READY
-                             · P6.7 Clip Fades freeze = GO (impl NOT AUTHORIZED until Owner GO)
-                             · next = Owner GO for P6.7.1→P6.7.4
+                             · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split inherit
+                             · next = STOP (do not start P6.8 · Owner decides)
 P7 creative tracks           = track enum reserved READY WITH REFACTOR
                              · capabilities + additive source kinds before expansion
                              · instrument engines = NOT READY
@@ -331,13 +346,13 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **P6.7 implementation** after Owner GO — [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) (do **not** auto-start)
+- **No authorized next Studio product unit** — P6.7 CLOSED · do **not** start P6.8 without Architecture Audit + Design Freeze + Owner GO
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
 - OD-09 / OD-15 / OD-16 and other long-horizon OPEN decisions
 - **P3 follow-up:** `p_take_id` hardening — **NON-BLOCKING** (not a product gate)
-- P5.7 conditions still tracked: H1 capabilities before P7 track expansion · H2 `document_version` before autosave · H4 product FX still needs freeze (engine foundation **SHIPPED** in P5.10)
+- P5.7 conditions still tracked: H1 capabilities before P7 track expansion · H2 `document_version` before autosave (H4 product FX foundation **SHIPPED** through P6.4–P6.7)
 
 ### DEFERRED
 
@@ -359,14 +374,16 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm PRODUCTION APP = 9c2a958 (P5.10 GREEN)
-                 → Confirm PRODUCTION DEPLOYMENT = dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
-                 → P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · P5.8 GREEN · P5.9 GO WITH CONDITIONS · P5.10 GREEN · D02 CLOSED
-                 → NEXT GATE = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
-                 → Do NOT auto-start P6 / FX / Mix / Master / punch / samples
+                 → Confirm PRODUCTION APP = 06c60b5 (P6.7 GREEN · CLOSED)
+                 → Confirm REPO/DOCS HEAD = e136558 (≠ app SHA)
+                 → Confirm PRODUCTION DEPLOYMENT = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
+                 → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN
+                 → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
+                 → NEXT GATE = STOP — no authorized P6.8 · Owner decides next Architecture Audit
+                 → Do NOT reimplement P6.7 / P6.6 / P6.5 Scenario B / closed P5 units
                  → Do NOT call punch “P5.7” / “P5.9” / “P5.10”
                  → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
-                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 / P5.6 / P5.8 / P5.10 without new evidence
+                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 / P5–P6.7 without new evidence
                  → Do NOT fix EXPORT_WAV in product scope without separate Owner GO
                  → Do NOT clean dirty WIP without Owner GO
 ```
