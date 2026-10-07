@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P6.6 SSOT RECONCILE (PRODUCTION VERIFIED — GREEN)
+
+**Status:** DOCS ONLY · **P6.6 PRODUCTION VERIFIED — GREEN**
+**Application tip:** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`)
+**Deployment:** `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · www · served Studio editor chunk `3_efrbzvmc1dc.js`
+**Phases:** P6.6.1 engine `a8a3337` · P6.6.2 UI `c825e42` · P6.6.3 production gate @ `c825e42`
+**Product:** On-demand Track Peak Metering — selected Track only · max 1 Track Analyser after Track Pan → Σ · Master Analyser unchanged · shared `studio-meter` + reader · Mix `selectedTrackId` → `setTrackMeterTarget` → `subscribeTrackMeter` → `StudioTrackMeter`
+**Tests:** Full Vitest **1410 PASS · 1 SKIP · 0 FAIL** · Studio 288 PASS · typecheck · build · scoped lint PASS
+**Production runtime:** Studio load · Track selection · Track Meter UI · live Track Peak · A→B · clear selection · Master Meter · Play/Stop · mobile ~390 · no overflow · ≥44px · safe-area · unauth Studio API 401 · owner access
+**P6.5 Scenario B:** **BLOCKED / INCONCLUSIVE** — **unchanged** (not reopened · not GREEN)
+**P6.5 living note:** Master metering remains shipped; Scenario A PROVEN · Scenario B BLOCKED · P6.5 gate was never reclassified as GREEN
+**Next:** **NEXT ARCHITECTURE AUDIT** (do not auto-start implementation) · do **not** reopen P6.6.1–P6.6.3 / P6.5 / P6.4.4
+**Known limitations (unchanged):** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE · LUFS/True Peak/spectrum/AudioWorklet OUT
+**WIP:** YES (unrelated local WIP preserved)
+**Deploy this reconcile:** **NOT DONE** (docs-only)
+
 ## 2026-10-07 — P6.5 SSOT RECONCILE (SCENARIO A PROVEN · B BLOCKED · GATE INCONCLUSIVE)
 
 **Status:** DOCS ONLY · **P6.5 IMPLEMENTATION COMPLETE** · **PRODUCTION DEPLOYED** · **SCENARIO A PROVEN** · **SCENARIO B BLOCKED BY BROWSER/CDP** · **PRODUCTION RUNTIME GATE — INCONCLUSIVE**

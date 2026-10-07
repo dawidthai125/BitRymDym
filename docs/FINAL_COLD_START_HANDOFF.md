@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC **`57ef69e`**
-**Type:** Documentation continuity · P6.5 deployed (Scenario A **PROVEN** · Scenario B **BLOCKED** · gate **INCONCLUSIVE** · not GREEN · not FAILED)
+**Updated:** 2026-10-07 — **P6.6 PRODUCTION VERIFIED — GREEN** · app **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · RPC **`57ef69e`** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** (unchanged)
+**Type:** Documentation continuity · P6.6 GREEN · P6.5 Scenario B remains BLOCKED / INCONCLUSIVE · next = Architecture Audit (no auto-start)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,14 +25,12 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 2258bdbbf5099189bf88e9ed65f41faf43afe226
-  short                       = 2258bdb
-  note                        = P6.5 Studio Audio Quality Metering
-                              · IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED
-                              · SCENARIO A PROVEN · SCENARIO B BLOCKED (browser/CDP)
-                              · PRODUCTION RUNTIME GATE — INCONCLUSIVE (NOT GREEN · NOT FAILED)
-  impl                        = 345e8e5 · fix = 2258bdb
-PRODUCTION DEPLOYMENT         = dpl_54uwtNdFbSG4apwikSioTyevdYcr
+PRODUCTION APP SHA            = c825e422111e69350abfb4bebbb38eb5d4707a8e
+  short                       = c825e42
+  note                        = P6.6 On-demand Track Peak Metering
+                              · PRODUCTION VERIFIED — GREEN
+  phases                      = P6.6.1 a8a3337 · P6.6.2/3 c825e42
+PRODUCTION DEPLOYMENT         = dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
 P6.1 RPC HOTFIX               = 57ef69e (qualify document_version in studio_cas_apply_fx_chain)
   migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
@@ -40,23 +38,26 @@ P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
 P6.4.1 APPLICATION            = 9f93606 · PRODUCTION VERIFIED — GREEN
 P6.4.2 APPLICATION            = 320907a · PRODUCTION VERIFIED — GREEN
 P6.4.3 APPLICATION            = f261ea8 · PRODUCTION VERIFIED — GREEN
-P6.5 APPLICATION              = 2258bdb
-P6.5 PRODUCTION RUNTIME       = INCONCLUSIVE
-  Scenario A                  = PASS (Live Peak on BEAT_REF timeline Play)
-  Scenario B                  = BLOCKED / INCONCLUSIVE (browser/CDP cannot force true hidden)
-  remaining open              = visibility reader pause/resume production proof
+P6.5 APPLICATION              = 2258bdb · Master metering SHIPPED
+P6.5 Scenario A               = PASS / PROVEN (Live Peak)
+P6.5 Scenario B               = BLOCKED / INCONCLUSIVE (browser/CDP) · DO NOT REOPEN
+P6.6.1                        = a8a3337 · Track analyser engine · COMPLETE
+P6.6.2                        = c825e42 · Selected Track Peak Meter UI · COMPLETE
+P6.6.3                        = c825e42 · Production gate · COMPLETE
+P6.6                          = PRODUCTION VERIFIED — GREEN
 
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-  served Studio chunk         = /_next/static/immutable/chunks/29qtmv8kgtz1f.js
+  served Studio chunk         = /_next/static/immutable/chunks/3_efrbzvmc1dc.js
 
-STUDIO BASELINE               = P6.5 DEPLOYED · A PROVEN · B BLOCKED · GATE INCONCLUSIVE
-LAST STUDIO VERIFY            = P6.5 RUNTIME GATE INCONCLUSIVE
-                              · Scenario A PASS · Scenario B BLOCKED
-                              · automated 127/127 PASS ≠ production GREEN
-NEXT GATE                     = production visibility lifecycle evidence (Scenario B)
-P6.6                          = NOT AUTHORIZED
+STUDIO BASELINE               = P6.6 PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY            = P6.6.3 PRODUCTION GATE GREEN @ c825e42
+                              · Vitest 1410 PASS · 1 SKIP · 0 FAIL
+                              · Track Peak live · A→B · mobile ~390 · security 401
+NEXT GATE                     = NEXT ARCHITECTURE AUDIT (Owner/Architect)
+                              · do NOT auto-start implementation
+                              · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
@@ -67,6 +68,7 @@ KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV
 KNOWN LIMITATION              = limiter IMPLEMENTATION LIMITATION · reverb synthetic IR
                               · delay no BPM sync · P5.10 TAKE preview may fail
                               · wave4-live READY vs EXPIRED = PRE-EXISTING / OUT-OF-SCOPE
+                              · LUFS / True Peak / spectrum / AudioWorklet OUT of P6.6
 
 BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
@@ -82,8 +84,9 @@ P6.4.1 STATUS                 = PRODUCTION VERIFIED — GREEN @ 9f93606
 P6.4.2 STATUS                 = PRODUCTION VERIFIED — GREEN @ 320907a
 P6.4.3 STATUS                 = PRODUCTION VERIFIED — GREEN @ f261ea8
 P6.5 STATUS                   = IMPLEMENTATION COMPLETE · DEPLOYED
-                              · SCENARIO A PROVEN · SCENARIO B BLOCKED
-                              · RUNTIME GATE INCONCLUSIVE (NOT GREEN · NOT FAILED)
+                              · SCENARIO A PROVEN · SCENARIO B BLOCKED / INCONCLUSIVE
+                              · DO NOT REOPEN Scenario B · not reclassified as GREEN
+P6.6 STATUS                   = PRODUCTION VERIFIED — GREEN @ c825e42
 FALA 3.5.1 STATUS             = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                     = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936 · UNCHANGED
 P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
@@ -93,7 +96,8 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
-| **P6.5** Studio Audio Quality Metering | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · dpl `dpl_54uwtNd…` · **Scenario A PROVEN** · **Scenario B BLOCKED** · **RUNTIME GATE INCONCLUSIVE** (not GREEN · not FAILED) |
+| **P6.6** On-demand Track Peak Metering | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · Vitest **1410 PASS · 1 SKIP** |
+| **P6.5** Studio Audio Quality Metering | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (not GREEN · **do not reopen**) |
 | **P6.4.3** Mix UX polish & integration | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` |
 | **P6.4.2** Shared FX UI Foundation | **PRODUCTION VERIFIED — GREEN** @ `320907a` · dpl `dpl_HrDh4nw…` |
 | **P6.4.1** Master Gain/Pan + Track documentVersion | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · dpl `dpl_EHkvay…` |
@@ -126,9 +130,9 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository | advances with SSOT reconcile (app tip `9c2a958` + docs) |
-| Production app | `9c2a958` · P5.10 GREEN · **UNCHANGED** this docs wave |
-| Production deployment | `dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC` |
+| Repository | advances with SSOT reconcile (app tip `c825e42` + docs) |
+| Production app | `c825e42` · P6.6 GREEN · **UNCHANGED** this docs-only reconcile |
+| Production deployment | `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` |
 | Production DB | includes P3 `claim_anon_take_to_account` + P1/P2 RPCs · verify remote before DB work |
 | Production Storage | live **11** (USER 8 · PLATFORM 3 · ORPHAN 0) · historical backup **43/43 RETAINED** |
 | Session / operator | dirty local WIP may exist — **nie czyścić bez Owner GO** |
@@ -213,6 +217,7 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFE
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **UNCHANGED** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` |
 | **Studio P5.1–P5.6 / P5.8 / P5.10** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · engine + devices + take workflow · **not a full DAW** |
+| **P6.1–P6.4.3 / P6.6** | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · FX / Mix / Master + on-demand Track Peak · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** |
 | **P5.7 / P5.9** Architecture Audits | **GO WITH CONDITIONS** (audit · not impl) |
 
 ---
@@ -491,15 +496,15 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect tip ≥ 9c2a958 + P5.10 SSOT reconcile
+[ ] git fetch && git rev-parse HEAD           → expect tip ≥ c825e42 + P6.6 SSOT reconcile
 [ ] git rev-parse origin/main                → match HEAD
-[ ] Confirm Production app SHA = 9c2a958 (P5.10) · dpl dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
-[ ] Read MASTER_HANDOFF + PROJECT_STATE + P5_10 freeze + P5_9 / P5_7 audits
-[ ] P5.1–P5.6 GREEN · P5.7 GO WITH CONDITIONS · P5.8 GREEN · P5.9 GO WITH CONDITIONS · P5.10 GREEN · D02 CLOSED
-[ ] NEXT GATE = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
-[ ] Do not auto-start P6 / FX / Mix / Master / punch / samples
-[ ] Fala 3.5.1 / P3 / P5.8 / P5.10 = CLOSED / GREEN — do not re-open without new evidence
-[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3/P5.6/P5.8/P5.10/Fala 3.5.1 bez nowego evidence
+[ ] Confirm Production app SHA = c825e42 (P6.6) · dpl dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
+[ ] Read MASTER_HANDOFF + PROJECT_STATE + P6_6 freeze + P6_6 audit
+[ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 GREEN · P6.6 GREEN · P6.5 Scenario B BLOCKED / INCONCLUSIVE
+[ ] NEXT GATE = NEXT ARCHITECTURE AUDIT (do not auto-start implementation)
+[ ] Do not reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 / P7
+[ ] Fala 3.5.1 / P3 / P5.8 / P5.10 / P6.6 = CLOSED / GREEN — do not re-open without new evidence
+[ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3/P5.6/P5.8/P5.10/P6.6/Fala 3.5.1 bez nowego evidence
 [ ] Nie czyść dirty WIP
 [ ] AUDIT FIRST → report → wait for Owner GO
 ```
@@ -509,20 +514,23 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (P5.10 SSOT reconciled 2026-10-06)
-PRODUCTION APP SHA           = 9c2a958 · P5.10 · UNCHANGED (docs-only this wave)
-PRODUCTION DEPLOYMENT        = dpl_L7pB5A8iuY8CKipxbLsGEVLESZTC
+FINAL COLD START HANDOFF     = READY (P6.6 SSOT reconciled 2026-10-07)
+PRODUCTION APP SHA           = c825e42 · P6.6 · UNCHANGED (docs-only this reconcile)
+PRODUCTION DEPLOYMENT        = dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
 D02 HARNESS                  = CLOSED @ 44dc22c · TEST ONLY
 P5.7                         = Architecture Audit · GO WITH CONDITIONS
 P5.8                         = PRODUCTION VERIFIED — GREEN
 P5.9                         = Architecture Audit · GO WITH CONDITIONS
 P5.10                        = PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY           = P5.10 · PRODUCTION VERIFIED — GREEN
+P6.5 Scenario B              = BLOCKED / INCONCLUSIVE · DO NOT REOPEN
+P6.6                         = PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY           = P6.6.3 · PRODUCTION VERIFIED — GREEN @ c825e42
+                              · Vitest 1410 PASS · 1 SKIP · 0 FAIL
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1                   = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                    = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
 P3 FOLLOW-UP                 = p_take_id · NON-BLOCKING
-NEXT GATE                    = NEXT ARCHITECTURE AUDIT / formal next Studio unit definition
+NEXT GATE                    = NEXT ARCHITECTURE AUDIT (do not auto-start)
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK
 SEARCH BEFORE CREATE         = TAK

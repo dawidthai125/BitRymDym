@@ -1,23 +1,28 @@
 # P6.6 Studio Architecture Audit
 
-**Status:** ARCHITECTURE AUDIT — **GO WITH CONDITIONS**  
+**Status:** ARCHITECTURE AUDIT — **GO WITH CONDITIONS** · **CLOSED BY DESIGN FREEZE + SHIP** · living unit **PRODUCTION VERIFIED — GREEN**  
 **Date:** 2026-10-07  
-**Type:** AUDIT ONLY — **NO IMPLEMENTATION · NO DESIGN FREEZE · NO MIGRATION · NO DEPLOY · NO CODE**  
+**Living result:** P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP**  
+**Freeze:** [P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md](../decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md)  
+
+> **HISTORICAL AUDIT:** Conditions were closed by Design Freeze then shipped. Do **not** reopen P6.6. P6.5 Scenario B remains **BLOCKED / INCONCLUSIVE**. Next = new Architecture Audit (not this unit).
+
 **Repository HEAD / origin/main (SSOT tip at audit):** `448a4b9d747f450800301606d1117f042be89c5a` (`448a4b9`)  
-**Production application SHA:** `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`)  
-**Production deployment:** `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · served Studio chunk `29qtmv8kgtz1f.js`  
-**Baseline unit:** **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE**  
+**Production application at audit (historical):** `2258bdb` · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr`  
+**Production application (living):** `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · chunk `3_efrbzvmc1dc.js`  
+**Baseline unit at audit:** **P6.5** Master metering shipped · Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE  
 **Parent product freeze:** [P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md)  
 **Prior metering freeze:** [P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md](../decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md)  
 **Prior metering audit:** [P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md](./P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md)  
 **Prior Mix UX freeze:** [P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md](../decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md)
 
 ```text
-P6.6 ARCHITECTURE: GO WITH CONDITIONS
-IMPLEMENTATION: NOT AUTHORIZED
-DESIGN FREEZE: NEXT (after Owner accepts this audit + conditions)
-PRODUCTION APP: UNCHANGED (2258bdb)
-NO CODE · NO DB · NO DEPLOY
+P6.6 ARCHITECTURE AUDIT: GO WITH CONDITIONS (historical)
+P6.6 LIVING: PRODUCTION VERIFIED — GREEN @ c825e42
+DEPLOYMENT: dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
+DO NOT REOPEN THIS UNIT
+P6.5 SCENARIO B: BLOCKED / INCONCLUSIVE (unchanged)
+NEXT: NEW ARCHITECTURE AUDIT (Owner/Architect)
 ```
 
 ---

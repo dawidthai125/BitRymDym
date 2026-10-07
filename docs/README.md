@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`2258bdb`** (**P6.5 IMPLEMENTATION COMPLETE · DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE** — not GREEN · not FAILED) · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · chunk `29qtmv8kgtz1f.js` · RPC hotfix **`57ef69e`** · P5.1–P5.6 **GREEN** · P5.8/P5.10 **GREEN** · **P6.1 COMPLETE** · **P6.2–P6.4.3 PRODUCTION VERIFIED — GREEN** · **P6.6 NOT AUTHORIZED** · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6.5 freeze](./decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md).
+**Now:** Production app **`c825e42`** (**P6.6 PRODUCTION VERIFIED — GREEN** · On-demand Track Peak Metering) · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · chunk `3_efrbzvmc1dc.js` · Vitest **1410 PASS · 1 SKIP** · RPC hotfix **`57ef69e`** · P5.1–P5.6 / P5.8 / P5.10 **GREEN** · **P6.1–P6.4.3 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** (not GREEN · not reopened) · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. **Next:** Architecture Audit (no auto-start). Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6.6 freeze](./decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.

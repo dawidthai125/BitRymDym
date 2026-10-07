@@ -1,25 +1,28 @@
 # P6.6 Studio Track Peak Metering — Design Freeze
 
-**Status:** DESIGN FREEZE — **GO**  
+**Status:** DESIGN FREEZE — **GO** · **IMPLEMENTATION SHIPPED** · **PRODUCTION VERIFIED — GREEN**  
 **Date:** 2026-10-07  
-**Type:** DOCS ONLY — **NO IMPLEMENTATION · NO DB MIGRATION · NO DEPLOY**  
+**Living result:** P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP**  
 **Owner:** Prezes Dawid  
 **Architect:** ChatGPT  
-**Implementacja:** Cursor Agent (**only after** Owner/Architect confirmation)
 
-**Baseline production application:** `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`)  
-**Production deployment:** `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · served Studio chunk `29qtmv8kgtz1f.js`  
+> **CLOSED UNIT:** Do **not** reopen P6.6.1 / P6.6.2 / P6.6.3. P6.5 Scenario B remains **BLOCKED / INCONCLUSIVE**. Next = Architecture Audit only.
+
+**Baseline at freeze (historical):** `2258bdb` · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr`  
+**Production application (living):** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`)  
+**Production deployment (living):** `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served Studio chunk `3_efrbzvmc1dc.js`  
 **SSOT tip at freeze:** `f8573d0db83ad9f761f6388365a6036c0b3f455e` (`f8573d0`)  
-**Architecture audit:** `f8573d0` → [P6_6_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md)  
+**Architecture audit:** [P6_6_STUDIO_ARCHITECTURE_AUDIT.md](../architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md)  
 **Prior metering freeze:** [P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md](./P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md)  
 **Prior Mix UX:** [P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md](./P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) · P6.4.3 GREEN @ `f261ea8`  
 **Parent product freeze:** [P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md](./P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md)
 
 ```text
-P6.6 DESIGN FREEZE: GO
-IMPLEMENTATION: AUTHORIZED ONLY AFTER OWNER/ARCHITECT CONFIRMATION
-PRODUCTION APP: UNCHANGED (2258bdb)
-NO CODE · NO DB · NO DEPLOY IN THIS STEP
+P6.6 DESIGN FREEZE: GO (historical authorization)
+P6.6 LIVING: PRODUCTION VERIFIED — GREEN @ c825e42
+DEPLOYMENT: dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
+DO NOT REOPEN P6.6.1–P6.6.3
+P6.5 SCENARIO B: BLOCKED / INCONCLUSIVE (unchanged)
 ```
 
 This freeze **closes** Architecture Audit `GO WITH CONDITIONS` by locking On-demand Track Peak Metering: at most one Track `AnalyserNode` after Track Pan (before Σ), selection-driven lifecycle, REUSE of `studio-meter.ts` + Master meter patterns, Master analyser unchanged, runtime-only (no DB/API/CAS), mobile ~390, and explicit Non-Goals (always-on Track meters, LUFS/spectrum, P6.5 visibility/CDP reopen, P6.4.4 residual reopen).
