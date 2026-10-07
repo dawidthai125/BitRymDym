@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { STUDIO_PROJECT_LIST_PAGE_SIZE } from "@/config/studio";
 import {
   formatStudioListDurationMs,
   formatStudioTimeMs,
@@ -129,5 +130,17 @@ describe("Studio project list UX", () => {
     expect(list).not.toMatch(/StudioAudioEngine/);
     expect(list).not.toMatch(/PlayerProvider/);
     expect(list).not.toMatch(/StudioTransport/);
+  });
+
+  it("supports multi-select, bulk delete, and pagination (~15)", () => {
+    expect(STUDIO_PROJECT_LIST_PAGE_SIZE).toBe(15);
+    expect(list).toMatch(/STUDIO_PROJECT_LIST_PAGE_SIZE/);
+    expect(list).toMatch(/Zaznacz wszystko na stronie/);
+    expect(list).toMatch(/Odznacz/);
+    expect(list).toMatch(/Usuń zaznaczone/);
+    expect(list).toMatch(/type="checkbox"/);
+    expect(list).toMatch(/Następna/);
+    expect(list).toMatch(/Poprzednia/);
+    expect(list).toMatch(/deleteProjectRequest/);
   });
 });

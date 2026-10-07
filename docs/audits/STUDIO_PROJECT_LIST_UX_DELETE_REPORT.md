@@ -109,10 +109,25 @@ Brak `window.confirm`. Potwierdzenie: „Usuń projekt?” + nazwa + informacja 
 
 | Suite | Result |
 |-------|--------|
-| `studio-project-list-ux.test.ts` | **12 PASS** |
-| `src/lib/studio` (full) | **457 PASS** |
+| `studio-project-list-ux.test.ts` | **13 PASS** (incl. multi-select / pagination) |
 | `tsc --noEmit` | **PASS** |
 | V1 / P6.7 architecture guards | **PASS** (unchanged) |
+
+---
+
+## 9a. Follow-up — multi-select + pagination
+
+Owner request after GREEN: select many projects when list is large.
+
+| Feature | Behavior |
+|---------|----------|
+| Checkbox per row | select / deselect |
+| **Zaznacz wszystko na stronie** | page-scoped; indeterminate when partial |
+| **Odznacz** | clears selection |
+| **Usuń zaznaczone** | confirmation dialog → sequential owned `DELETE` |
+| Pagination | **15** / page (`STUDIO_PROJECT_LIST_PAGE_SIZE`) · Poprzednia / Następna |
+
+Security: same per-project `assertOwnsProject` path. No new bulk RPC.
 
 ---
 
@@ -120,17 +135,16 @@ Brak `window.confirm`. Potwierdzenie: „Usuń projekt?” + nazwa + informacja 
 
 - Soft delete / kosz / undo — **out of scope**
 - Search / filters / folders — **out of scope**
-- Automatic cleanup of historical test projects — **not done** (Owner deletes manually via UI after deploy)
-- Production deploy — **not performed** (Owner decision)
-- Live browser E2E on production — **deferred** until deploy
+- Select-all across **all** pages — page-scoped only
+- Multi-select / pagination — **implemented locally · awaiting Owner deploy GO**
 
 ---
 
 ## Final
 
 ```text
-IMPLEMENTATION COMPLETE
-Production: NOT DEPLOYED
+LIST UX + DELETE = PRODUCTION VERIFIED GREEN @ 2c4b416
+MULTI-SELECT + PAGINATION = IMPLEMENTATION COMPLETE · NOT DEPLOYED
 V1 / P6.7: unchanged CLOSED / GREEN
-NEXT: WAITING FOR OWNER DECISION
+NEXT: WAITING FOR OWNER DECISION (deploy GO?)
 ```

@@ -5,6 +5,9 @@
 /** Soft max Studio projects per authenticated user. */
 export const STUDIO_MAX_PROJECTS_PER_USER = 25;
 
+/** Client-side page size for /studio project list. */
+export const STUDIO_PROJECT_LIST_PAGE_SIZE = 15;
+
 export const STUDIO_TITLE_MAX_LENGTH = 120;
 export const STUDIO_TRACK_NAME_MAX_LENGTH = 80;
 
