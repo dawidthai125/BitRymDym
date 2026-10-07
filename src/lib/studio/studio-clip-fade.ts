@@ -1,0 +1,281 @@
+/**
+ * P6.7.1 — Clip fade envelope helpers (pure, testable without AudioContext).
+ * SSOT: docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
+ *
+ * effectiveGain = baseClipGain × fadeEnvelope
+ * Fade is a clip runtime property — not automation lanes / not FX.
+ */
+
+import {
+  clipGraphGain,
+  type StudioEngineClip,
+} from "@/lib/studio/studio-audio-schedule";
+
+export type StudioNormalizedFades = {
+  fadeInMs: number;
+  fadeOutMs: number;
+};
+
+export type StudioFadeRampPoint = {
+  /** AudioContext time (seconds) relative to schedule origin + contextTime. */
+  atContextTime: number;
+  /** Absolute linear gain to reach (base × envelope). */
+  gain: number;
+  kind: "set" | "linearRamp";
+};
+
+function clampInt(n: number, min: number, max: number): number {
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(n)));
+}
+
+/**
+ * Design Freeze §9.2 — proportional integer-safe normalize.
+ * When Fi + Fo > D: Fi' + Fo' === D (preserving ratio).
+ */
+export function normalizeFades(
+  fadeInMs: number,
+  fadeOutMs: number,
+  durationMs: number,
+): StudioNormalizedFades {
+  const D = Number.isFinite(durationMs) ? Math.trunc(durationMs) : 0;
+  if (D <= 0) return { fadeInMs: 0, fadeOutMs: 0 };
+
+  const Fi = clampInt(fadeInMs, 0, D);
+  const Fo = clampInt(fadeOutMs, 0, D);
+  if (Fi + Fo <= D) return { fadeInMs: Fi, fadeOutMs: Fo };
+
+  const sum = Fi + Fo;
+  const Fi2 = Math.floor((Fi * D) / sum);
+  const Fo2 = D - Fi2;
+  return { fadeInMs: Fi2, fadeOutMs: Fo2 };
+}
+
+/**
+ * Design Freeze §8.2 — envelope at local clip time t.
+ * Active window is 0 ≤ t < D. Outside → 0. Result clamped to [0, 1].
+ */
+export function fadeEnvelopeAt(
+  localMs: number,
+  fadeInMs: number,
+  fadeOutMs: number,
+  durationMs: number,
+): number {
+  const D = Number.isFinite(durationMs) ? Math.trunc(durationMs) : 0;
+  if (D <= 0) return 0;
+
+  const t = Number.isFinite(localMs) ? localMs : NaN;
+  if (!Number.isFinite(t) || t < 0 || t >= D) return 0;
+
+  const { fadeInMs: Fi, fadeOutMs: Fo } = normalizeFades(
+    fadeInMs,
+    fadeOutMs,
+    D,
+  );
+
+  let env: number;
+  if (Fi > 0 && t < Fi) {
+    env = t / Fi;
+  } else if (Fo > 0 && t >= D - Fo) {
+    env = (D - t) / Fo;
+  } else {
+    env = 1;
+  }
+
+  if (!Number.isFinite(env)) return 0;
+  if (env < 0) return 0;
+  if (env > 1) return 1;
+  return env;
+}
+
+/** Local clip time from timeline playhead (integer ms SSOT). */
+export function clipLocalMs(
+  playheadMs: number,
+  timelineStartMs: number,
+): number {
+  if (!Number.isFinite(playheadMs) || !Number.isFinite(timelineStartMs)) {
+    return Number.NaN;
+  }
+  return playheadMs - timelineStartMs;
+}
+
+/**
+ * Base clip gain (persisted gainDb/muted) — independent of fade.
+ * REUSE clipGraphGain.
+ */
+export function baseClipGain(
+  clip: Pick<StudioEngineClip, "gainDb" | "muted">,
+): number {
+  return clipGraphGain(clip);
+}
+
+/** effectiveGain = baseClipGain × fadeEnvelope */
+export function effectiveClipGain(
+  clip: Pick<
+    StudioEngineClip,
+    "gainDb" | "muted" | "fadeInMs" | "fadeOutMs" | "durationMs" | "timelineStartMs"
+  >,
+  playheadMs: number,
+): number {
+  const base = baseClipGain(clip);
+  const t = clipLocalMs(playheadMs, clip.timelineStartMs);
+  const env = fadeEnvelopeAt(t, clip.fadeInMs, clip.fadeOutMs, clip.durationMs);
+  const g = base * env;
+  if (!Number.isFinite(g) || g < 0) return 0;
+  return g;
+}
+
+export type StudioFadeSchedulePlan = {
+  /** Immediate gain at schedule start. */
+  immediateGain: number;
+  /** Future automation points (absolute contextTime seconds). */
+  ramps: StudioFadeRampPoint[];
+};
+
+/**
+ * Plan cancel→set→linearRamp sequence for remaining envelope from playhead.
+ * Pure: no AudioParam mutation. Engine applies the plan.
+ */
+export function planClipFadeSchedule(params: {
+  clip: Pick<
+    StudioEngineClip,
+    | "gainDb"
+    | "muted"
+    | "fadeInMs"
+    | "fadeOutMs"
+    | "durationMs"
+    | "timelineStartMs"
+  >;
+  playheadMs: number;
+  contextTime: number;
+  /** When false (pause/seek-hold), only immediate gain — no forward ramps. */
+  scheduleForward: boolean;
+}): StudioFadeSchedulePlan {
+  const { clip, playheadMs, contextTime, scheduleForward } = params;
+  const immediateGain = effectiveClipGain(clip, playheadMs);
+  const ramps: StudioFadeRampPoint[] = [];
+
+  if (!scheduleForward) {
+    return { immediateGain, ramps };
+  }
+
+  const D = Number.isFinite(clip.durationMs) ? Math.trunc(clip.durationMs) : 0;
+  const t = clipLocalMs(playheadMs, clip.timelineStartMs);
+  if (D <= 0 || !Number.isFinite(t) || t < 0 || t >= D) {
+    return { immediateGain, ramps };
+  }
+
+  const base = baseClipGain(clip);
+  const { fadeInMs: Fi, fadeOutMs: Fo } = normalizeFades(
+    clip.fadeInMs,
+    clip.fadeOutMs,
+    D,
+  );
+  const fadeOutStart = D - Fo;
+
+  const at = (localTargetMs: number) =>
+    contextTime + Math.max(0, localTargetMs - t) / 1000;
+
+  if (Fi > 0 && t < Fi) {
+    // Ramp through remaining fade-in to plateau (base × 1).
+    ramps.push({
+      atContextTime: at(Fi),
+      gain: base,
+      kind: "linearRamp",
+    });
+    if (Fo > 0) {
+      // Hold plateau until fade-out start (set), then ramp to 0.
+      if (fadeOutStart > Fi) {
+        ramps.push({
+          atContextTime: at(fadeOutStart),
+          gain: base,
+          kind: "set",
+        });
+      }
+      ramps.push({
+        atContextTime: at(D),
+        gain: 0,
+        kind: "linearRamp",
+      });
+    }
+  } else if (Fo > 0 && t >= fadeOutStart) {
+    ramps.push({
+      atContextTime: at(D),
+      gain: 0,
+      kind: "linearRamp",
+    });
+  } else if (Fo > 0 && t < fadeOutStart) {
+    ramps.push({
+      atContextTime: at(fadeOutStart),
+      gain: base,
+      kind: "set",
+    });
+    ramps.push({
+      atContextTime: at(D),
+      gain: 0,
+      kind: "linearRamp",
+    });
+  }
+
+  return { immediateGain, ramps };
+}
+
+/** Minimal AudioParam-like surface used by the engine. */
+export type StudioFadeGainParam = {
+  value: number;
+  cancelScheduledValues?: (when: number) => void;
+  setValueAtTime?: (value: number, when: number) => void;
+  linearRampToValueAtTime?: (value: number, when: number) => void;
+};
+
+/**
+ * Apply planned fade to an AudioParam (or test fake).
+ * Cancels prior automation, sets immediate gain, optionally schedules ramps.
+ */
+export function applyClipFadeGainParam(
+  param: StudioFadeGainParam,
+  clip: Pick<
+    StudioEngineClip,
+    | "gainDb"
+    | "muted"
+    | "fadeInMs"
+    | "fadeOutMs"
+    | "durationMs"
+    | "timelineStartMs"
+  >,
+  playheadMs: number,
+  contextTime: number,
+  scheduleForward: boolean,
+): void {
+  const plan = planClipFadeSchedule({
+    clip,
+    playheadMs,
+    contextTime,
+    scheduleForward,
+  });
+
+  if (typeof param.cancelScheduledValues === "function") {
+    param.cancelScheduledValues(contextTime);
+  }
+
+  if (typeof param.setValueAtTime === "function") {
+    param.setValueAtTime(plan.immediateGain, contextTime);
+  } else {
+    param.value = plan.immediateGain;
+  }
+
+  if (!scheduleForward) return;
+
+  for (const point of plan.ramps) {
+    if (point.kind === "set") {
+      if (typeof param.setValueAtTime === "function") {
+        param.setValueAtTime(point.gain, point.atContextTime);
+      }
+    } else if (typeof param.linearRampToValueAtTime === "function") {
+      param.linearRampToValueAtTime(point.gain, point.atContextTime);
+    }
+  }
+
+  // Keep `.value` aligned for hosts/fakes that only read `.value`.
+  param.value = plan.immediateGain;
+}

@@ -12,13 +12,13 @@ import {
 } from "@/lib/studio/studio-audio-clock";
 import type { StudioAudioErrorCode } from "@/lib/studio/studio-audio-errors";
 import {
-  clipGraphGain,
   masterGraphParams,
   planVoicesAtPlayhead,
   trackGraphParams,
   type StudioEngineClip,
   type StudioEngineDocument,
 } from "@/lib/studio/studio-audio-schedule";
+import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
 import type {
   StudioResolvedSource,
   StudioSourceAdapterRegistry,
@@ -58,7 +58,13 @@ export type StudioAudioEngineLifecycle =
   | "stopped"
   | "disposed";
 
-type ParamValue = { value: number };
+/** Gain AudioParam-like — P6.7.1 may schedule cancel/set/linearRamp when present. */
+type ParamValue = {
+  value: number;
+  cancelScheduledValues?: (when: number) => void;
+  setValueAtTime?: (value: number, when: number) => void;
+  linearRampToValueAtTime?: (value: number, when: number) => void;
+};
 
 type Connectable = {
   connect(dest: Connectable): Connectable;
@@ -487,8 +493,18 @@ export class StudioAudioEngine {
 
   pause(): void {
     this.stopPreviewInternal();
+    let playheadMs = 0;
+    if (this.ctx && this.epoch && this.document) {
+      playheadMs = playheadMsFromContextClock({
+        epoch: this.epoch,
+        contextTime: this.ctx.currentTime,
+        timelineLengthMs: this.document.timelineLengthMs,
+      });
+    }
     this.stopClock();
     this.pauseAllTimelineVoices();
+    // Hold fade envelope at current position — cancel forward ramps (P6.7.1).
+    this.applyTimelineClipFades(playheadMs, false);
     this.stopMetering({ reset: false });
     if (this.lifecycle !== "disposed" && this.lifecycle !== "stopped") {
       this.setLifecycle("paused");
@@ -523,6 +539,8 @@ export class StudioAudioEngine {
     this.stopPreviewInternal();
     this.stopClock();
     this.pauseAllTimelineVoices();
+    // Neutral fade hold at playhead 0 (existing STOP → playhead 0).
+    this.applyTimelineClipFades(0, false);
     this.stopMetering({ reset: true });
     this.epoch = null;
     this.setLifecycle("stopped");
@@ -1130,7 +1148,7 @@ export class StudioAudioEngine {
       if (!clip) continue;
       const voice = await this.ensureTimelineVoice(clip);
       if (!voice) continue;
-      voice.clipGain.gain.value = clipGraphGain(clip);
+      this.applyClipFade(voice, clip, playheadMs, shouldPlay);
       if (Math.abs(voice.element.currentTime - plan.sourceOffsetSeconds) > 0.04) {
         voice.element.currentTime = plan.sourceOffsetSeconds;
       }
@@ -1149,6 +1167,36 @@ export class StudioAudioEngine {
           });
         }
       }
+    }
+  }
+
+  /** P6.7.1 — apply/hold/schedule fade on existing Clip GainNode only. */
+  private applyClipFade(
+    voice: Voice,
+    clip: StudioEngineClip,
+    playheadMs: number,
+    scheduleForward: boolean,
+  ): void {
+    const contextTime = this.ctx?.currentTime ?? 0;
+    applyClipFadeGainParam(
+      voice.clipGain.gain,
+      clip,
+      playheadMs,
+      contextTime,
+      scheduleForward,
+    );
+  }
+
+  private applyTimelineClipFades(
+    playheadMs: number,
+    scheduleForward: boolean,
+  ): void {
+    if (!this.document) return;
+    for (const voice of this.voices.values()) {
+      if (voice.role !== "timeline" || voice.disposed) continue;
+      const clip = this.document.clips.find((c) => c.id === voice.clipId);
+      if (!clip) continue;
+      this.applyClipFade(voice, clip, playheadMs, scheduleForward);
     }
   }
 
@@ -1210,7 +1258,14 @@ export class StudioAudioEngine {
     element.load();
     const mediaSource = this.ctx.createMediaElementSource(element);
     const clipGain = this.ctx.createGain();
-    clipGain.gain.value = clipGraphGain(clip);
+    // Initial hold; syncVoices applies position-correct fade schedule.
+    applyClipFadeGainParam(
+      clipGain.gain,
+      clip,
+      clip.timelineStartMs,
+      this.ctx.currentTime,
+      false,
+    );
     mediaSource.connect(clipGain);
     clipGain.connect(trackGraph.input);
     const voice: Voice = {
