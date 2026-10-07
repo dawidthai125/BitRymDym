@@ -13,7 +13,7 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 | Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
 | **Production application** | `06c60b5` · https://www.bitrymdym.pl · **P6.7 GREEN · CLOSED** |
-| **Repo / docs tip (origin/main)** | `e136558` · **≠** production app SHA |
+| **Repo / docs tip (origin/main)** | verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
 | **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` |
 | POLISH-01 / P0 / P1 / P2 | **CLOSED / PRODUCTION VERIFIED** |
 | Recording Waves 1–5 | **CLOSED** / **PRODUCTION VERIFIED** |

@@ -23,7 +23,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository / docs HEAD** | `e136558eceed0904b5045bd3a495d1e626e50e6e` (`e136558`) — docs tip · **≠** production app SHA |
+| **Repository / docs HEAD** | `origin/main` — verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
 | **Production application SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades · CLOSED** |
 | **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · served Studio chunk `0g5xoq_48-8xn.js` |
 | **Studio baseline** | **P6.7 PRODUCTION VERIFIED — GREEN** · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
@@ -119,7 +119,7 @@ P7 = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-d
 ```text
 STATUS                 = PRODUCTION VERIFIED / GREEN · CLOSED
 PRODUCTION APP SHA     = 06c60b54234db5d27682a607f6a80dececc7257e (06c60b5)
-REPO / DOCS TIP        = e136558eceed0904b5045bd3a495d1e626e50e6e (e136558) · ≠ app SHA
+REPO / DOCS TIP        = origin/main (verify git rev-parse HEAD) · ≠ app SHA 06c60b5
 DEPLOYMENT             = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
 SERVED CHUNK           = 0g5xoq_48-8xn.js (Zapisz fade / set_fades)
 TESTS                  = 1519 PASS · 1 SKIP · 0 FAIL
@@ -165,7 +165,9 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | SHA / ID | Meaning |
 |----------|---------|
 | `06c60b5` | **PRODUCTION APP** · P6.7 Clip Fades · **current production baseline · CLOSED** |
-| `e136558` | **REPO / DOCS TIP** · SSOT reconcile · **≠** production app SHA |
+| `origin/main` | **REPO / DOCS TIP** · verify `git rev-parse HEAD` · **≠** `06c60b5` |
+| `c767d12` | Historical — full Px→P6.7 SSOT reconcile docs commit |
+| `e136558` | Historical — first P6.7.4 gate docs tip |
 | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` | **PRODUCTION DEPLOYMENT** (GitHub `06c60b5` · GH deploy `6902986442`) |
 | `c825e42` | Historical — P6.6 Track Peak · prior production app |
 | `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` | Historical — P6.6 production deployment |
@@ -205,7 +207,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main (docs)** | `e136558` — docs tip · **≠** production app SHA |
+| **HEAD / origin/main (docs)** | verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
 | **Production application** | `06c60b5` — **P6.7 PRODUCTION VERIFIED — GREEN · CLOSED** |
 | **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · chunk `0g5xoq_48-8xn.js` |
 | **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
@@ -784,7 +786,7 @@ No commit/push/deploy without explicit Owner GO for that step.
 ```text
 CURRENT PRODUCTION APP = 06c60b5 · P6.7 PRODUCTION VERIFIED — GREEN · CLOSED
 PRODUCTION DEPLOYMENT  = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
-REPO / DOCS TIP        = e136558 · origin/main (≠ production app SHA)
+REPO / DOCS TIP        = origin/main (verify git rev-parse HEAD) · ≠ 06c60b5
 LAST STUDIO VERIFY     = P6.7.4 · PRODUCTION VERIFIED — GREEN
                        · Vitest 1519 PASS · 1 SKIP · 0 FAIL
 D02 HARNESS            = CLOSED @ 44dc22c · TEST ONLY
@@ -917,7 +919,7 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 MASTER HANDOFF READY
 CURRENT PRODUCTION APP     = 06c60b5 · P6.7 PRODUCTION VERIFIED — GREEN · CLOSED
 PRODUCTION DEPLOYMENT      = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
-REPO / DOCS HEAD           = e136558 · origin/main (≠ app SHA)
+REPO / DOCS HEAD           = origin/main (verify git rev-parse HEAD) · ≠ 06c60b5
 D02 HARNESS                = CLOSED @ 44dc22c · TEST ONLY
 P5.7                       = Architecture Audit · GO WITH CONDITIONS
 P5.8                       = PRODUCTION VERIFIED — GREEN

@@ -1,6 +1,6 @@
 # P6.7 Studio Clip Fades — Architecture Audit
 
-> **LIVING STATUS (2026-10-07):** **P6.7 = PRODUCTION VERIFIED / GREEN · CLOSED** @ app `06c60b5` · docs tip `e136558`.  
+> **LIVING STATUS (2026-10-07):** **P6.7 = PRODUCTION VERIFIED / GREEN · CLOSED** @ app `06c60b5` · docs on `origin/main`.  
 > Do **not** re-audit as “next unit” or reimplement. Historical audit text below is preserved.
 
 **Status (historical):** ARCHITECTURE AUDIT — **GO WITH CONDITIONS** · **CLOSED BY DESIGN FREEZE + IMPLEMENTATION**  

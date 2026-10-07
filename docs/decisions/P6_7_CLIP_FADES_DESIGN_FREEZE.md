@@ -1,6 +1,6 @@
 # P6.7 Studio Clip Fades — Design Freeze
 
-> **LIVING STATUS (2026-10-07):** **P6.7 = PRODUCTION VERIFIED / GREEN · CLOSED** @ app `06c60b5` · docs tip `e136558` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp`.  
+> **LIVING STATUS (2026-10-07):** **P6.7 = PRODUCTION VERIFIED / GREEN · CLOSED** @ app `06c60b5` · docs on `origin/main` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp`.  
 > Do **not** reimplement. Historical freeze text below is preserved (authoring-time state).
 
 **Status (historical at freeze):** DESIGN FREEZE — **GO**  

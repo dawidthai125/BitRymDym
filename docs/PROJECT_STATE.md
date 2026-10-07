@@ -21,7 +21,7 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY / DOCS HEAD** | `e136558eceed0904b5045bd3a495d1e626e50e6e` (`e136558`) — docs tip · **≠** production app SHA |
+| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
 | **PRODUCTION APP SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** (served app) |
 | **PRODUCTION DEPLOYMENT** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH deploy `6902986442` · served Studio editor chunk `0g5xoq_48-8xn.js` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
@@ -74,7 +74,7 @@ PRODUCTION APP                = 06c60b5 · P6.7 Clip Fades
 PRODUCTION DEPLOYMENT         = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
   GitHub deployment           = 6902986442
   served Studio chunk         = 0g5xoq_48-8xn.js
-REPOSITORY / DOCS HEAD        = e136558 · origin/main (docs tip · ≠ app SHA)
+REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD · ≠ 06c60b5)
 LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
                               · Vitest 1519 PASS · 1 SKIP · 0 FAIL
                               · fades/CAS/trim/split/runtime · mobile ~390 · security
@@ -143,7 +143,7 @@ STUDIO P5 (canonical table):
        P6.7.2 persistence/CAS            = COMPLETE @ b21c6dc
        P6.7.3 UI                         = COMPLETE @ 1305385
        P6.7.x Trim/Split fades           = COMPLETE @ 06c60b5
-       P6.7.4 production gate            = COMPLETE · GREEN @ 06c60b5 · docs tip e136558
+       P6.7.4 production gate            = COMPLETE · GREEN @ 06c60b5 · first docs tip e136558 · full reconcile c767d12+
        freeze                            = docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
        audit                             = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
   D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
@@ -375,7 +375,7 @@ STORAGE DISASTER RECOVERY:
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
                  → Confirm PRODUCTION APP = 06c60b5 (P6.7 GREEN · CLOSED)
-                 → Confirm REPO/DOCS HEAD = e136558 (≠ app SHA)
+                 → Confirm REPO/DOCS HEAD = origin/main (git rev-parse HEAD ≠ 06c60b5)
                  → Confirm PRODUCTION DEPLOYMENT = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)

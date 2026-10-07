@@ -54,7 +54,7 @@ P6.7.x                        = COMPLETE · Trim/Split fade inherit + CAS
 P6.7.4                        = COMPLETE · production gate
 P6.7                          = PRODUCTION VERIFIED — GREEN
 
-REPOSITORY / DOCS HEAD        = e136558 · origin/main (≠ production app SHA)
+REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD · ≠ 06c60b5)
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
   served Studio chunk         = /_next/static/immutable/chunks/0g5xoq_48-8xn.js
@@ -108,7 +108,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
-| **P6.7** Clip Fades | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `06c60b5` · docs tip `e136558` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.7.1–P6.7.4 + Trim/Split — [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) |
+| **P6.7** Clip Fades | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `06c60b5` · docs on `origin/main` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.7.1–P6.7.4 + Trim/Split — [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) |
 | **P6.6** On-demand Track Peak Metering | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · Vitest **1410 PASS · 1 SKIP** |
 | **P6.5** Studio Audio Quality Metering | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (not GREEN · **do not reopen**) |
 | **P6.4.3** Mix UX polish & integration | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` |
@@ -143,7 +143,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository / docs | `e136558` · origin/main (docs tip · **≠** production app SHA) |
+| Repository / docs | `origin/main` (verify `git rev-parse HEAD`) · **≠** production app `06c60b5` |
 | Production app | `06c60b5` · **P6.7 PRODUCTION VERIFIED — GREEN · CLOSED** |
 | Production deployment | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · chunk `0g5xoq_48-8xn.js` |
 | Production DB | includes P6.7 CAS RPCs (fades / geometry_fades / split) + P3 claim + P1/P2 · verify remote before DB work |
@@ -509,10 +509,10 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect docs tip e136558 (or later docs-only tip)
+[ ] git fetch && git rev-parse HEAD           → docs tip on origin/main · must ≠ 06c60b5
 [ ] git rev-parse origin/main                → match HEAD
 [ ] Confirm Production app SHA = 06c60b5 (P6.7 GREEN · CLOSED) · dpl dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
-[ ] Confirm REPO/DOCS SHA ≠ PRODUCTION APP SHA (e136558 vs 06c60b5)
+[ ] Confirm REPO/DOCS SHA ≠ PRODUCTION APP SHA (git rev-parse HEAD vs 06c60b5)
 [ ] Read MASTER_HANDOFF + PROJECT_STATE + P6_7 freeze + P6_7 audit
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · P6.5 Scenario B BLOCKED / INCONCLUSIVE
 [ ] NEXT GATE = STOP — do NOT start P6.8 · Owner decides next Architecture Audit
@@ -531,7 +531,7 @@ WIP preserved
 FINAL COLD START HANDOFF     = READY (P6.7 FINAL SSOT reconciled 2026-10-07)
 PRODUCTION APP SHA           = 06c60b5 · P6.7 PRODUCTION VERIFIED — GREEN · CLOSED
 PRODUCTION DEPLOYMENT        = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
-REPO / DOCS HEAD             = e136558 · origin/main (≠ app SHA)
+REPO / DOCS HEAD             = origin/main (verify git rev-parse HEAD · ≠ 06c60b5)
 D02 HARNESS                  = CLOSED @ 44dc22c · TEST ONLY
 P5.7                         = Architecture Audit · GO WITH CONDITIONS
 P5.8                         = PRODUCTION VERIFIED — GREEN

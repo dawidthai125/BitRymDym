@@ -10,7 +10,7 @@ Format: data, zakres, skrót.
 
 **Status:** DOCS ONLY · full continuity reconcile through **P6.7 CLOSED / GREEN**
 **Production app (unchanged):** `06c60b5` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp`
-**Repo/docs tip:** advances with this commit · must stay **≠** production app SHA
+**Repo/docs tip:** `origin/main` (verify `git rev-parse HEAD`) · must stay **≠** production app `06c60b5` · historical docs tips `e136558` (first gate) · `c767d12` (full reconcile)
 **Purpose:** remove residual “P6.7 NOT AUTHORIZED / NEXT=Owner GO / app=c825e42” drift in mid/bottom SSOT · dual-plane SHA · P5–P6.7 discoverability · WIP untouched
 
 ## 2026-10-07 — P6.7 PRODUCTION GATE (P6.7.4) — GREEN
