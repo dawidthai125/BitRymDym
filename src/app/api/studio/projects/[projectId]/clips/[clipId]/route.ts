@@ -129,12 +129,19 @@ export async function PATCH(request: Request, context: RouteContext) {
         );
     }
 
-    const clip = await updateStudioClipGeometry({
+    const result = await updateStudioClipGeometry({
       projectId,
       clipId,
       patch,
+      expectedDocumentVersion: body.expectedDocumentVersion,
     });
-    return NextResponse.json({ success: true, clip });
+    return NextResponse.json({
+      success: true,
+      clip: result.clip,
+      ...(typeof result.documentVersion === "number"
+        ? { documentVersion: result.documentVersion }
+        : {}),
+    });
   } catch (error) {
     return studioApiErrorResponse(error);
   }

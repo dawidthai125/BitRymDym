@@ -12,11 +12,15 @@ type RouteContext = {
 /**
  * POST — SPLIT Clip at absolute timeline position (integer ms).
  * Creates a second Clip sharing the same source reference.
+ * P6.7.x: fade inheritance + CAS expectedDocumentVersion (DF §15 / §17.2).
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { projectId, clipId } = await context.params;
-    const body = (await request.json()) as { atTimelineMs?: number };
+    const body = (await request.json()) as {
+      atTimelineMs?: number;
+      expectedDocumentVersion?: unknown;
+    };
     if (typeof body.atTimelineMs !== "number") {
       return NextResponse.json(
         { error: "atTimelineMs jest wymagane." },
@@ -27,9 +31,15 @@ export async function POST(request: Request, context: RouteContext) {
       projectId,
       clipId,
       atTimelineMs: body.atTimelineMs,
+      expectedDocumentVersion: body.expectedDocumentVersion,
     });
     return NextResponse.json(
-      { success: true, left: result.left, right: result.right },
+      {
+        success: true,
+        left: result.left,
+        right: result.right,
+        documentVersion: result.documentVersion,
+      },
       { status: 201 },
     );
   } catch (error) {

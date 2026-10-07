@@ -293,13 +293,25 @@ function StudioEditorInner({
     const json = (await res.json()) as {
       success?: boolean;
       clip?: StudioClipDto;
+      documentVersion?: number;
       error?: string;
+      code?: string;
     };
+    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+    }
     if (!res.ok || !json.clip) {
       throw new Error(json.error ?? "Nie udało się zapisać klipu.");
     }
     setDoc((prev) => ({
       ...prev,
+      project: {
+        ...prev.project,
+        documentVersion:
+          typeof json.documentVersion === "number"
+            ? json.documentVersion
+            : prev.project.documentVersion,
+      },
       clips: prev.clips.map((c) => (c.id === json.clip!.id ? json.clip! : c)),
     }));
     setStatus("Zapisano");
@@ -357,20 +369,35 @@ function StudioEditorInner({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ atTimelineMs: transport.state.playheadMs }),
+        body: JSON.stringify({
+          atTimelineMs: transport.state.playheadMs,
+          expectedDocumentVersion: doc.project.documentVersion,
+        }),
       },
     );
     const json = (await res.json()) as {
       success?: boolean;
       left?: StudioClipDto;
       right?: StudioClipDto;
+      documentVersion?: number;
       error?: string;
+      code?: string;
     };
+    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+    }
     if (!res.ok || !json.left || !json.right) {
       throw new Error(json.error ?? "Nie udało się podzielić klipu.");
     }
     setDoc((prev) => ({
       ...prev,
+      project: {
+        ...prev.project,
+        documentVersion:
+          typeof json.documentVersion === "number"
+            ? json.documentVersion
+            : prev.project.documentVersion,
+      },
       clips: [
         ...prev.clips.map((c) => (c.id === json.left!.id ? json.left! : c)),
         json.right!,
@@ -607,6 +634,7 @@ function StudioEditorInner({
                 await patchClip({
                   op: "trim_left_to_playhead",
                   playheadMs: transport.state.playheadMs,
+                  expectedDocumentVersion: doc.project.documentVersion,
                 });
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd przycięcia.");
@@ -620,6 +648,7 @@ function StudioEditorInner({
                 await patchClip({
                   op: "trim_right_to_playhead",
                   playheadMs: transport.state.playheadMs,
+                  expectedDocumentVersion: doc.project.documentVersion,
                 });
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd przycięcia.");

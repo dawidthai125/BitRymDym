@@ -11,6 +11,8 @@ import {
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
+  resolveFadesAfterSplit,
+  resolveFadesAfterTrim,
   resolveStudioClipFadesForWrite,
 } from "@/lib/studio/studio-clip-fade";
 import {
@@ -702,8 +704,9 @@ export async function updateStudioClipGeometryFor(
     projectId: string;
     clipId: string;
     patch: StudioClipGeometryPatch;
+    expectedDocumentVersion?: unknown;
   },
-): Promise<StudioClipDto> {
+): Promise<{ clip: StudioClipDto; documentVersion?: number }> {
   const { project, clip } = await loadOwnedClip(
     context,
     input.projectId,
@@ -766,23 +769,70 @@ export async function updateStudioClipGeometryFor(
   }
 
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+  const durationChanged = next.durationMs !== clip.duration_ms;
+
+  // Move-only / duration-unchanged: pre-P6.7 non-CAS path (DF §17.3).
+  if (!durationChanged) {
+    const { data, error } = await admin
+      .from("studio_clips")
+      .update({
+        timeline_start_ms: next.timelineStartMs,
+        duration_ms: next.durationMs,
+        source_offset_ms: next.sourceOffsetMs,
+      })
+      .eq("id", input.clipId)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return { clip: mapClip(data as ClipRow) };
+  }
+
+  // Duration-changing trim/geometry: clamp+normalize fades + atomic CAS (DF §14 / §17.2).
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const fades = resolveFadesAfterTrim({
+    fadeInMs: clip.fade_in_ms,
+    fadeOutMs: clip.fade_out_ms,
+    newDurationMs: next.durationMs,
+  });
+
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_geometry_fades", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+    p_timeline_start_ms: next.timelineStartMs,
+    p_duration_ms: next.durationMs,
+    p_source_offset_ms: next.sourceOffsetMs,
+    p_fade_in_ms: fades.fadeInMs,
+    p_fade_out_ms: fades.fadeOutMs,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{ document_version: number }> | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
+  const { data: refreshed, error: refreshError } = await admin
     .from("studio_clips")
-    .update({
-      timeline_start_ms: next.timelineStartMs,
-      duration_ms: next.durationMs,
-      source_offset_ms: next.sourceOffsetMs,
-    })
-    .eq("id", input.clipId)
     .select("*")
+    .eq("id", input.clipId)
     .single();
-  if (error) throw new Error(error.message);
-  return mapClip(data as ClipRow);
+  if (refreshError) throw new Error(refreshError.message);
+
+  return {
+    clip: mapClip(refreshed as ClipRow),
+    documentVersion: num(row.document_version),
+  };
 }
 
 export async function updateStudioClipGeometry(
   input: Parameters<typeof updateStudioClipGeometryFor>[1],
-): Promise<StudioClipDto> {
+): Promise<{ clip: StudioClipDto; documentVersion?: number }> {
   return updateStudioClipGeometryFor(await requireUser(), input);
 }
 
@@ -859,13 +909,19 @@ export async function splitStudioClipFor(
     projectId: string;
     clipId: string;
     atTimelineMs: number;
+    expectedDocumentVersion: unknown;
   },
-): Promise<{ left: StudioClipDto; right: StudioClipDto }> {
+): Promise<{
+  left: StudioClipDto;
+  right: StudioClipDto;
+  documentVersion: number;
+}> {
   const { project, clip } = await loadOwnedClip(
     context,
     input.projectId,
     input.clipId,
   );
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const { left, right } = splitClipGeometry({
     clip: {
       timelineStartMs: clip.timeline_start_ms,
@@ -875,60 +931,71 @@ export async function splitStudioClipFor(
     atTimelineMs: input.atTimelineMs,
     timelineLengthMs: project.timeline_length_ms,
   });
+  const splitLocalMs = left.durationMs;
+  const fades = resolveFadesAfterSplit({
+    fadeInMs: clip.fade_in_ms,
+    fadeOutMs: clip.fade_out_ms,
+    durationMs: clip.duration_ms,
+    splitLocalMs,
+  });
 
   const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_split", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+    p_left_timeline_start_ms: left.timelineStartMs,
+    p_left_duration_ms: left.durationMs,
+    p_left_source_offset_ms: left.sourceOffsetMs,
+    p_left_fade_in_ms: fades.left.fadeInMs,
+    p_left_fade_out_ms: fades.left.fadeOutMs,
+    p_right_timeline_start_ms: right.timelineStartMs,
+    p_right_duration_ms: right.durationMs,
+    p_right_source_offset_ms: right.sourceOffsetMs,
+    p_right_fade_in_ms: fades.right.fadeInMs,
+    p_right_fade_out_ms: fades.right.fadeOutMs,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{ document_version: number; right_clip_id: string }> | null) ??
+    [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
   const { data: leftRow, error: leftError } = await admin
     .from("studio_clips")
-    .update({
-      timeline_start_ms: left.timelineStartMs,
-      duration_ms: left.durationMs,
-      source_offset_ms: left.sourceOffsetMs,
-    })
-    .eq("id", input.clipId)
     .select("*")
+    .eq("id", input.clipId)
     .single();
   if (leftError) throw new Error(leftError.message);
 
   const { data: rightRow, error: rightError } = await admin
     .from("studio_clips")
-    .insert({
-      track_id: clip.track_id,
-      source_kind: clip.source_kind,
-      source_take_id: clip.source_take_id,
-      source_beat_id: clip.source_beat_id,
-      source_artifact_id: clip.source_artifact_id,
-      timeline_start_ms: right.timelineStartMs,
-      duration_ms: right.durationMs,
-      source_offset_ms: right.sourceOffsetMs,
-      gain_db: clip.gain_db,
-      muted: clip.muted,
-      fade_in_ms: 0,
-      fade_out_ms: clip.fade_out_ms,
-    })
     .select("*")
+    .eq("id", row.right_clip_id)
     .single();
-  if (rightError) {
-    // Best-effort restore left geometry if right insert fails.
-    await admin
-      .from("studio_clips")
-      .update({
-        timeline_start_ms: clip.timeline_start_ms,
-        duration_ms: clip.duration_ms,
-        source_offset_ms: clip.source_offset_ms,
-      })
-      .eq("id", input.clipId);
-    throw new Error(rightError.message);
-  }
+  if (rightError) throw new Error(rightError.message);
 
   return {
     left: mapClip(leftRow as ClipRow),
     right: mapClip(rightRow as ClipRow),
+    documentVersion: num(row.document_version),
   };
 }
 
 export async function splitStudioClip(
   input: Parameters<typeof splitStudioClipFor>[1],
-): Promise<{ left: StudioClipDto; right: StudioClipDto }> {
+): Promise<{
+  left: StudioClipDto;
+  right: StudioClipDto;
+  documentVersion: number;
+}> {
   return splitStudioClipFor(await requireUser(), input);
 }
 

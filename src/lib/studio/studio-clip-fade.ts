@@ -327,6 +327,69 @@ export function resolveStudioClipFadesForWrite(
   return normalizeFades(fi, fo, D);
 }
 
+/**
+ * Design Freeze §14 — fades after duration shrink/expand to D2.
+ * Fi2 = min(Fi, D2); Fo2 = min(Fo, D2); then normalizeFades.
+ */
+export function resolveFadesAfterTrim(params: {
+  fadeInMs: number;
+  fadeOutMs: number;
+  newDurationMs: number;
+}): StudioNormalizedFades {
+  const D2 = Number.isFinite(params.newDurationMs)
+    ? Math.trunc(params.newDurationMs)
+    : 0;
+  const Fi = Number.isFinite(params.fadeInMs) ? Math.trunc(params.fadeInMs) : 0;
+  const Fo = Number.isFinite(params.fadeOutMs) ? Math.trunc(params.fadeOutMs) : 0;
+  const bound = Math.max(0, D2);
+  const Fi2 = Math.min(Math.max(0, Fi), bound);
+  const Fo2 = Math.min(Math.max(0, Fo), bound);
+  return normalizeFades(Fi2, Fo2, D2);
+}
+
+export type StudioSplitFadesResult = {
+  left: StudioNormalizedFades;
+  right: StudioNormalizedFades;
+};
+
+/**
+ * Design Freeze §15 — fade inheritance at local split offset S (0 < S < D).
+ * Original fades are normalized against D first, then left/right rules apply.
+ */
+export function resolveFadesAfterSplit(params: {
+  fadeInMs: number;
+  fadeOutMs: number;
+  durationMs: number;
+  /** Local cut offset from clip start (equals left duration). */
+  splitLocalMs: number;
+}): StudioSplitFadesResult {
+  const D = Number.isFinite(params.durationMs)
+    ? Math.trunc(params.durationMs)
+    : 0;
+  const S = Number.isFinite(params.splitLocalMs)
+    ? Math.trunc(params.splitLocalMs)
+    : 0;
+  const { fadeInMs: Fi, fadeOutMs: Fo } = normalizeFades(
+    params.fadeInMs,
+    params.fadeOutMs,
+    D,
+  );
+  const Dr = D - S;
+
+  const fadeInL = Math.min(Fi, S);
+  let fadeOutL = 0;
+  if (S > D - Fo) {
+    fadeOutL = Math.min(S - (D - Fo), S);
+  }
+  const left = normalizeFades(fadeInL, fadeOutL, S);
+
+  const fadeInR = 0;
+  const fadeOutR = Math.min(Fo, Math.max(0, Dr));
+  const right = normalizeFades(fadeInR, fadeOutR, Dr);
+
+  return { left, right };
+}
+
 export type StudioClipFadesCasState = {
   documentVersion: number;
   fadeInMs: number;

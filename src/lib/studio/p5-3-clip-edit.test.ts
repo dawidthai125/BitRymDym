@@ -208,9 +208,19 @@ describe("P5.3 security / persistence surface", () => {
   });
 
   it("source Take / beat ids are not rewritten on split insert", () => {
-    expect(service).toMatch(/source_take_id: clip\.source_take_id/);
-    expect(service).toMatch(/source_beat_id: clip\.source_beat_id/);
-    expect(service).toMatch(/source_artifact_id: clip\.source_artifact_id/);
+    // P6.7.x: atomic split RPC copies source_* from the left clip row (not client-supplied).
+    const splitSql = readFileSync(
+      join(
+        process.cwd(),
+        "supabase/migrations/20261007130000_p6_7_x_studio_cas_trim_split.sql",
+      ),
+      "utf8",
+    );
+    expect(service).toMatch(/studio_cas_apply_clip_split/);
+    expect(splitSql).toMatch(/c\.source_take_id/);
+    expect(splitSql).toMatch(/c\.source_beat_id/);
+    expect(splitSql).toMatch(/c\.source_artifact_id/);
+    expect(splitSql).toMatch(/INSERT INTO public\.studio_clips/);
   });
 });
 
