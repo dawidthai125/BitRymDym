@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`c825e42`** (**P6.6 PRODUCTION VERIFIED — GREEN**) · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · **P6.7 Clip Fades Architecture Audit = GO WITH CONDITIONS** · Design Freeze next · **impl NOT AUTHORIZED** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [P6.7 audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md).
+**Now:** Production app **`c825e42`** (**P6.6 PRODUCTION VERIFIED — GREEN**) · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · **P6.7 Clip Fades Design Freeze = GO** · **impl NOT AUTHORIZED** until Owner GO · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [P6.7 freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **P6.7 Design Freeze** after Owner accepts [P6.7 audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · do **not** auto-start implementation · see [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **P6.7 Owner GO → implementation** — [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · do **not** auto-start · see [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 

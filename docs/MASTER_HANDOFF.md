@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-07 — **P6.7 Clip Fades Architecture Audit · GO WITH CONDITIONS** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · impl **NOT AUTHORIZED**
+**Updated:** 2026-10-07 — **P6.7 Clip Fades Design Freeze · GO** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · impl **NOT AUTHORIZED** until Owner GO
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -28,7 +28,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Production deployment** | `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served Studio chunk `3_efrbzvmc1dc.js` |
 | **Studio baseline** | **P6.6 PRODUCTION VERIFIED — GREEN** · prior **P6.4.3 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **Last Studio Production Verify** | P6.6.3 gate **GREEN** @ `c825e42` · Vitest **1410 PASS · 1 SKIP** · Track Peak live · A→B · mobile ~390 · security 401 · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
-| **NEXT UNIT** | **P6.7 Design Freeze** after Owner accepts [P6.7 audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) (**GO WITH CONDITIONS** · Clip Fades) · do **not** auto-start impl · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 |
+| **NEXT UNIT** | **P6.7 Owner GO → implementation** — [freeze GO](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · do **not** auto-start · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -103,8 +103,8 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · topology: Track Pan → 0|1 Track Analyser → Σ → … → Master Analyser
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
-                · P6.7 Clip Fades audit = GO WITH CONDITIONS (no impl)
-                · next = P6.7 Design Freeze only after Owner accept
+                · P6.7 Clip Fades freeze = GO (impl NOT AUTHORIZED until Owner GO)
+                · next = Owner GO for P6.7.1→P6.7.4
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · NOT frozen autosave contract (condition before autosave)
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)
@@ -186,7 +186,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** · **UNCHANGED** |
 | **Fala 3.5.1** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
-| **NEXT GATE** | **P6.7 Design Freeze** (audit GO WITH CONDITIONS) · P3 `p_take_id` = **NON-BLOCKING** |
+| **NEXT GATE** | **P6.7 Owner GO → implementation** (freeze GO) · P3 `p_take_id` = **NON-BLOCKING** |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only. **Nie czyść** dirty WIP bez Owner GO.
@@ -765,7 +765,7 @@ P0 / P1 / P2           = CLOSED / PRODUCTION VERIFIED · UNCHANGED
 ARCH-05                = CLOSED / VERIFIED
 WORKER                 = STOPPED / DISABLED
 STORAGE-ARCH-01        = LOCKED
-NEXT GATE              = P6.7 Design Freeze (audit GO WITH CONDITIONS · no auto-start impl)
+NEXT GATE              = P6.7 Owner GO → implementation (freeze GO · no auto-start)
 P3 FOLLOW-UP           = p_take_id hardening · NON-BLOCKING
 NEXT SESSION ENTRY     = Read FINAL_COLD_START_HANDOFF.md
                        → MASTER_HANDOFF / PROJECT_STATE
@@ -897,7 +897,7 @@ ADMIN W0–W4                = CLOSED / PRODUCTION VERIFIED
 E3                         = PRODUCTION VERIFIED — GREEN
 WORKER                     = STOPPED / DISABLED
 STORAGE-ARCH-01            = LOCKED
-NEXT GATE                  = P6.7 Design Freeze (audit GO WITH CONDITIONS · no auto-start impl)
+NEXT GATE                  = P6.7 Owner GO → implementation (freeze GO · no auto-start)
 P3 FOLLOW-UP               = p_take_id · NON-BLOCKING
 NEXT SESSION ENTRY         = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
 ```

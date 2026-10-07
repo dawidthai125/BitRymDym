@@ -1,8 +1,10 @@
 # P6.7 Studio Clip Fades — Architecture Audit
 
-**Status:** ARCHITECTURE AUDIT — **GO WITH CONDITIONS**  
+**Status:** ARCHITECTURE AUDIT — **GO WITH CONDITIONS** · **CLOSED BY DESIGN FREEZE**  
 **Date:** 2026-10-07  
-**Type:** AUDIT ONLY — **NO IMPLEMENTATION · NO DESIGN FREEZE · NO MIGRATION · NO DEPLOY · NO CODE**  
+**Freeze:** [P6_7_CLIP_FADES_DESIGN_FREEZE.md](../decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · **GO** · implementation still **NOT AUTHORIZED** until Owner GO  
+**Type (historical):** AUDIT ONLY at authoring — Design Freeze now exists; still **NO CODE** in audit step  
+
 **Repository HEAD / origin/main (SSOT tip at audit):** `cb4f930e63f7b0caae0b24e963ffdae6a536e389` (`cb4f930`)  
 **Production application SHA:** `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`)  
 **Production deployment:** `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served Studio chunk `3_efrbzvmc1dc.js`  
@@ -15,11 +17,10 @@
 **Parent Mix/FX freeze:** [P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md](../decisions/P6_MIX_TRACK_FX_MASTER_FX_DESIGN_FREEZE.md)
 
 ```text
-P6.7 ARCHITECTURE: GO WITH CONDITIONS
-IMPLEMENTATION: NOT AUTHORIZED
-DESIGN FREEZE: NEXT (after Owner accepts this audit + conditions)
+P6.7 ARCHITECTURE: GO WITH CONDITIONS (historical)
+P6.7 DESIGN FREEZE: GO (living — closes this audit)
+IMPLEMENTATION: NOT AUTHORIZED until Owner GO
 PRODUCTION APP: UNCHANGED (c825e42)
-NO CODE · NO DB · NO DEPLOY
 P6.6: PRODUCTION VERIFIED — GREEN (do not reopen)
 P6.5 SCENARIO B: BLOCKED / INCONCLUSIVE (do not reopen)
 ```

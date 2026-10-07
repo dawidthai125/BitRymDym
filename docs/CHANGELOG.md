@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P6.7 CLIP FADES DESIGN FREEZE (GO)
+
+**Status:** DOCS ONLY · **DESIGN FREEZE: GO**
+**SSOT tip at authoring:** `edf8fac` · production app **unchanged** `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9`
+**Closes:** [P6.7 Architecture Audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) GO WITH CONDITIONS
+**Frozen:** Clip runtime fades on existing Clip GainNode · `effectiveGain = baseClipGain × fadeEnvelope` · proportional overlap normalize · position-based Play/Seek/Pause/Stop · trim clamp · deterministic split inheritance · Clip PATCH `set_fades` + CAS · ClipEditPanel · mobile ~390 · meters unchanged
+**AC:** DF-01…DF-36 (36)
+**Implementation:** **NOT AUTHORIZED** until Owner GO · sequence P6.7.1→P6.7.4
+**Artifact:** [P6_7_CLIP_FADES_DESIGN_FREEZE.md](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md)
+**Deploy this freeze:** **NOT DONE** (docs-only)
+
 ## 2026-10-07 — P6.7 CLIP FADES ARCHITECTURE AUDIT (GO WITH CONDITIONS)
 
 **Status:** DOCS ONLY · **ARCHITECTURE AUDIT** · **GO WITH CONDITIONS**
