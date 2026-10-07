@@ -22,8 +22,8 @@
 |------|---------|
 | Canonical branch | `main` |
 | **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` (docs reconcile may tip after `56b629e`) |
-| **PRODUCTION APP SHA** | `2c4b4160474ee6ed25a228a9dd0a7b10559dad39` (`2c4b416`) — Studio Project List UX + Delete (includes V1 `56b629e`) |
-| **PRODUCTION DEPLOYMENT** | `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB` · GH deploy `6909838158` |
+| **PRODUCTION APP SHA** | `0f2169a9a5ea173e1c1f072714d007afea8ef931` (`0f2169a`) — Project List multi-select + pagination (includes `2c4b416`) |
+| **PRODUCTION DEPLOYMENT** | `dpl_EwamhoSBMLpGYNvmHrciL8ULQy1Y` · GH deploy `6910127623` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
 | **STUDIO BASELINE** | **V1 PRODUCTION VERIFIED — GREEN** · **P6.7 CLOSED / GREEN** · prior **P6.6 GREEN** · **P6.5** Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **LAST STUDIO VERIFY** | V1 production gate **GREEN** @ `56b629e` · Vitest **1567 PASS · 1 SKIP** · audible Gain/Mute meter A/B · API/security/ACL/Take/mobile |

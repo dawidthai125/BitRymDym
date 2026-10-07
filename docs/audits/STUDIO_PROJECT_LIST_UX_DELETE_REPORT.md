@@ -136,7 +136,7 @@ Security: same per-project `assertOwnsProject` path. No new bulk RPC.
 - Soft delete / kosz / undo — **out of scope**
 - Search / filters / folders — **out of scope**
 - Select-all across **all** pages — page-scoped only
-- Multi-select / pagination — **implemented locally · awaiting Owner deploy GO**
+- Select-all across **all** pages — page-scoped only
 
 ---
 
@@ -144,7 +144,8 @@ Security: same per-project `assertOwnsProject` path. No new bulk RPC.
 
 ```text
 LIST UX + DELETE = PRODUCTION VERIFIED GREEN @ 2c4b416
-MULTI-SELECT + PAGINATION = IMPLEMENTATION COMPLETE · NOT DEPLOYED
+MULTI-SELECT + PAGINATION = PRODUCTION DEPLOYED @ 0f2169a
+  dpl = dpl_EwamhoSBMLpGYNvmHrciL8ULQy1Y
 V1 / P6.7: unchanged CLOSED / GREEN
-NEXT: WAITING FOR OWNER DECISION (deploy GO?)
+NEXT: WAITING FOR OWNER DECISION
 ```
