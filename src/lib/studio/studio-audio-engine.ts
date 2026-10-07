@@ -201,6 +201,17 @@ export class StudioAudioEngine {
   private clipLatch: StudioClipLatchState = createClipLatchState();
   private lastMeterSnapshot: StudioMeterSnapshot = STUDIO_METER_NEUTRAL;
   private meterListeners = new Set<(snapshot: StudioMeterSnapshot) => void>();
+  /** P6.6.1 — at most one Track analyser (selected track only). */
+  private trackMeterTargetId: string | null = null;
+  /** Actively wired in graph (pan → analyser → Σ). */
+  private trackAnalyser: AnalyserLike | null = null;
+  /** Disconnected pool — reuse across A→B so we never allocate N analysers. */
+  private idleTrackAnalyser: AnalyserLike | null = null;
+  private trackClipLatch: StudioClipLatchState = createClipLatchState();
+  private lastTrackMeterSnapshot: StudioMeterSnapshot = STUDIO_METER_NEUTRAL;
+  private trackMeterListeners = new Set<
+    (snapshot: StudioMeterSnapshot) => void
+  >();
   private tracks = new Map<string, TrackGraph>();
   private voices = new Map<string, Voice>();
   private document: StudioEngineDocument | null = null;
@@ -305,6 +316,7 @@ export class StudioAudioEngine {
   /**
    * Visibility pause — stops reader without disposing analyser / AudioContext.
    * Resume only resumes when play metering is active.
+   * P6.6.1: same pause/resume gates Master + selected Track snapshots.
    */
   setMeterDocumentHidden(hidden: boolean): void {
     this.meterVisibilityPaused = hidden;
@@ -313,6 +325,73 @@ export class StudioAudioEngine {
       return;
     }
     this.ensureMeterReader();
+  }
+
+  /**
+   * P6.6.1 — select which Track (if any) receives the single on-demand analyser.
+   * Runtime-only; never persisted. Max one Track analyser at a time.
+   */
+  setTrackMeterTarget(trackId: string | null): void {
+    if (this.lifecycle === "disposed") return;
+    const next = trackId && trackId.length > 0 ? trackId : null;
+    if (next === this.trackMeterTargetId) {
+      if (next) this.ensureTrackMeterAttached();
+      return;
+    }
+    this.detachTrackMeter({ emitNeutral: true });
+    this.trackMeterTargetId = next;
+    if (!next) return;
+    if (!this.ctx) {
+      if (!this.initialize()) {
+        this.trackMeterTargetId = null;
+        return;
+      }
+    }
+    this.ensureTrackMeterAttached();
+    if (this.meterActive && !this.meterVisibilityPaused) {
+      this.ensureMeterReader();
+    }
+  }
+
+  getTrackMeterTargetId(): string | null {
+    return this.trackMeterTargetId;
+  }
+
+  getTrackMeterSnapshot(): StudioMeterSnapshot {
+    return this.lastTrackMeterSnapshot;
+  }
+
+  /** Subscribe to throttled selected-Track meter snapshots (≤12 Hz). */
+  subscribeTrackMeter(
+    listener: (snapshot: StudioMeterSnapshot) => void,
+  ): () => void {
+    this.trackMeterListeners.add(listener);
+    listener(this.lastTrackMeterSnapshot);
+    return () => {
+      this.trackMeterListeners.delete(listener);
+    };
+  }
+
+  /** P6.6.1 diagnostic — Track Pan → (0|1 Analyser) → Σ. */
+  inspectTrackMeter(): {
+    trackId: string | null;
+    analyser: AnalyserLike | null;
+    trackPan: PannerLike | null;
+    masterInput: GainLike | null;
+    trackAnalyserCount: 0 | 1;
+    fftSize: number | null;
+  } {
+    const graph = this.trackMeterTargetId
+      ? this.tracks.get(this.trackMeterTargetId)
+      : null;
+    return {
+      trackId: this.trackMeterTargetId,
+      analyser: this.trackAnalyser,
+      trackPan: graph?.pan ?? null,
+      masterInput: this.masterInput,
+      trackAnalyserCount: this.trackAnalyser ? 1 : 0,
+      fftSize: this.trackAnalyser?.fftSize ?? null,
+    };
   }
 
   inspectVoiceClipGain(clipId: string): GainLike | null {
@@ -358,6 +437,13 @@ export class StudioAudioEngine {
       if (voice.role === "timeline" && !clipIds.has(clipId)) {
         this.disposeVoice(clipId);
       }
+    }
+    if (
+      this.trackMeterTargetId &&
+      !document.tracks.some((t) => t.id === this.trackMeterTargetId)
+    ) {
+      this.detachTrackMeter({ emitNeutral: true });
+      this.trackMeterTargetId = null;
     }
     if (!this.ctx || !this.masterGain) return;
     this.syncGraphParams();
@@ -512,6 +598,16 @@ export class StudioAudioEngine {
     this.stopClock();
     this.stopMetering({ reset: true });
     this.meterListeners.clear();
+    this.trackMeterListeners.clear();
+    this.detachTrackMeter({ emitNeutral: false });
+    this.trackMeterTargetId = null;
+    try {
+      this.idleTrackAnalyser?.disconnect();
+    } catch {
+      /* already disconnected */
+    }
+    this.idleTrackAnalyser = null;
+    this.lastTrackMeterSnapshot = STUDIO_METER_NEUTRAL;
     for (const id of [...this.voices.keys()]) {
       this.disposeVoice(id);
     }
@@ -608,6 +704,14 @@ export class StudioAudioEngine {
           timestamp: this.host.nowMs(),
         }),
       );
+      clearClipLatch(this.trackClipLatch);
+      this.emitTrackMeterSnapshot(
+        buildMeterSnapshot({
+          peak: 0,
+          clipping: false,
+          timestamp: this.host.nowMs(),
+        }),
+      );
     }
   }
 
@@ -635,6 +739,23 @@ export class StudioAudioEngine {
         this.emitMeterSnapshot(
           buildMeterSnapshot({ peak, clipping, timestamp: now }),
         );
+        // P6.6.1 — same shared reader tick samples optional Track analyser.
+        if (this.trackAnalyser) {
+          this.trackAnalyser.getFloatTimeDomainData(this.meterTimeDomain);
+          const trackPeak = samplePeakFromTimeDomain(this.meterTimeDomain);
+          const trackClipping = updateClipLatch(
+            this.trackClipLatch,
+            trackPeak,
+            now,
+          );
+          this.emitTrackMeterSnapshot(
+            buildMeterSnapshot({
+              peak: trackPeak,
+              clipping: trackClipping,
+              timestamp: now,
+            }),
+          );
+        }
       }
       this.meterTickId = this.host.requestTick(tick);
     };
@@ -652,6 +773,143 @@ export class StudioAudioEngine {
     this.lastMeterSnapshot = snapshot;
     for (const listener of this.meterListeners) {
       listener(snapshot);
+    }
+  }
+
+  private emitTrackMeterSnapshot(snapshot: StudioMeterSnapshot): void {
+    this.lastTrackMeterSnapshot = snapshot;
+    for (const listener of this.trackMeterListeners) {
+      listener(snapshot);
+    }
+  }
+
+  /**
+   * P6.6.1 — wire pan → Track Analyser → Σ for the selected track.
+   * Isolated: createAnalyser failure restores dry pan→Σ and does not throw.
+   */
+  private ensureTrackMeterAttached(): void {
+    if (this.lifecycle === "disposed") return;
+    const trackId = this.trackMeterTargetId;
+    if (!trackId || !this.ctx || !this.masterInput) return;
+    if (
+      this.document &&
+      !this.document.tracks.some((t) => t.id === trackId)
+    ) {
+      this.detachTrackMeter({ emitNeutral: true });
+      this.trackMeterTargetId = null;
+      return;
+    }
+
+    let graph: TrackGraph;
+    try {
+      graph = this.ensureTrackGraph(trackId);
+    } catch {
+      this.detachTrackMeter({ emitNeutral: true });
+      this.trackMeterTargetId = null;
+      return;
+    }
+
+    if (!this.trackAnalyser) {
+      let analyser = this.idleTrackAnalyser;
+      if (!analyser) {
+        try {
+          analyser = this.ctx.createAnalyser();
+          analyser.fftSize = STUDIO_METER_FFT_SIZE;
+          analyser.smoothingTimeConstant = 0;
+        } catch {
+          // Isolate Track metering failure — Master graph stays intact.
+          try {
+            graph.pan.disconnect();
+          } catch {
+            /* ignore */
+          }
+          try {
+            graph.pan.connect(this.masterInput);
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+      }
+      this.idleTrackAnalyser = null;
+      this.trackAnalyser = analyser;
+    }
+
+    this.wireTrackMeter(graph);
+  }
+
+  private wireTrackMeter(graph: TrackGraph): void {
+    if (!this.trackAnalyser || !this.masterInput) return;
+    try {
+      graph.pan.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      this.trackAnalyser.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      graph.pan.connect(this.trackAnalyser);
+      this.trackAnalyser.connect(this.masterInput);
+    } catch {
+      // Restore dry path if wiring fails mid-way.
+      try {
+        graph.pan.disconnect();
+      } catch {
+        /* ignore */
+      }
+      try {
+        this.trackAnalyser.disconnect();
+      } catch {
+        /* ignore */
+      }
+      this.idleTrackAnalyser = this.trackAnalyser;
+      this.trackAnalyser = null;
+      try {
+        graph.pan.connect(this.masterInput);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  /** Disconnect Track analyser and restore pan → Σ. Target id unchanged. */
+  private detachTrackMeter(opts: { emitNeutral: boolean }): void {
+    const trackId = this.trackMeterTargetId;
+    const graph = trackId ? this.tracks.get(trackId) : null;
+    const analyser = this.trackAnalyser;
+    this.trackAnalyser = null;
+    if (analyser) {
+      try {
+        analyser.disconnect();
+      } catch {
+        /* ignore */
+      }
+      this.idleTrackAnalyser = analyser;
+    }
+    if (graph && this.masterInput) {
+      try {
+        graph.pan.disconnect();
+      } catch {
+        /* ignore */
+      }
+      try {
+        graph.pan.connect(this.masterInput);
+      } catch {
+        /* ignore */
+      }
+    }
+    clearClipLatch(this.trackClipLatch);
+    if (opts.emitNeutral) {
+      this.emitTrackMeterSnapshot(
+        buildMeterSnapshot({
+          peak: 0,
+          clipping: false,
+          timestamp: this.host.nowMs(),
+        }),
+      );
     }
   }
 
@@ -706,6 +964,10 @@ export class StudioAudioEngine {
     }
     for (const [id, graph] of this.tracks) {
       if (seen.has(id)) continue;
+      if (id === this.trackMeterTargetId) {
+        this.detachTrackMeter({ emitNeutral: true });
+        this.trackMeterTargetId = null;
+      }
       try {
         graph.fx?.dispose();
         graph.input.disconnect();
@@ -715,6 +977,9 @@ export class StudioAudioEngine {
         /* ignore */
       }
       this.tracks.delete(id);
+    }
+    if (this.trackMeterTargetId) {
+      this.ensureTrackMeterAttached();
     }
   }
 
