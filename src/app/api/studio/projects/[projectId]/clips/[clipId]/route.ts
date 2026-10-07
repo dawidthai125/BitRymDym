@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import {
   deleteStudioClip,
+  updateStudioClipFades,
   updateStudioClipGeometry,
   type StudioClipGeometryPatch,
 } from "@/lib/studio/studio-service";
@@ -14,20 +15,38 @@ type RouteContext = {
 };
 
 /**
- * PATCH — MOVE / TRIM Clip geometry (integer ms).
+ * PATCH — MOVE / TRIM Clip geometry, or set_fades (P6.7.2 CAS).
  * Source Take / Beat / Artifact references are immutable.
  */
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { projectId, clipId } = await context.params;
     const body = (await request.json()) as {
-      op?: StudioClipGeometryPatch["op"];
+      op?: StudioClipGeometryPatch["op"] | "set_fades";
       timelineStartMs?: number;
       durationMs?: number;
       sourceOffsetMs?: number;
       trimMs?: number;
       playheadMs?: number;
+      fadeInMs?: unknown;
+      fadeOutMs?: unknown;
+      expectedDocumentVersion?: unknown;
     };
+
+    if (body.op === "set_fades") {
+      const result = await updateStudioClipFades({
+        projectId,
+        clipId,
+        expectedDocumentVersion: body.expectedDocumentVersion,
+        fadeInMs: body.fadeInMs,
+        fadeOutMs: body.fadeOutMs,
+      });
+      return NextResponse.json({
+        success: true,
+        clip: result.clip,
+        documentVersion: result.documentVersion,
+      });
+    }
 
     let patch: StudioClipGeometryPatch;
     switch (body.op) {

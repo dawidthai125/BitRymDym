@@ -1,5 +1,5 @@
 /**
- * P6.7.1 — Clip fade envelope helpers (pure, testable without AudioContext).
+ * P6.7.1 / P6.7.2 — Clip fade envelope helpers + write-path validation/CAS.
  * SSOT: docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
  *
  * effectiveGain = baseClipGain × fadeEnvelope
@@ -10,6 +10,10 @@ import {
   clipGraphGain,
   type StudioEngineClip,
 } from "@/lib/studio/studio-audio-schedule";
+import {
+  applyStudioFxCasToState,
+  StudioFxChainError,
+} from "@/lib/studio/studio-fx-chain";
 
 export type StudioNormalizedFades = {
   fadeInMs: number;
@@ -278,4 +282,75 @@ export function applyClipFadeGainParam(
 
   // Keep `.value` aligned for hosts/fakes that only read `.value`.
   param.value = plan.immediateGain;
+}
+
+/* ─── P6.7.2 write-path validation + in-memory CAS ─── */
+
+const FADE_INVALID_PL =
+  "Nie udało się zapisać fade. Sprawdź wartości i spróbuj ponownie.";
+
+function fadeInvalid(detail?: string): never {
+  throw new StudioFxChainError(
+    "FX_CHAIN_INVALID",
+    detail ? `${FADE_INVALID_PL} (${detail})` : FADE_INVALID_PL,
+  );
+}
+
+/**
+ * Design Freeze §9.1 — integer ms, >= 0, <= durationMs (before normalize).
+ */
+export function parseStudioFadeMs(
+  raw: unknown,
+  field: "fadeInMs" | "fadeOutMs",
+  durationMs: number,
+): number {
+  if (typeof raw !== "number" || !Number.isInteger(raw) || !Number.isFinite(raw)) {
+    fadeInvalid(field);
+  }
+  const D = Number.isFinite(durationMs) ? Math.trunc(durationMs) : 0;
+  if (raw < 0) fadeInvalid(`${field} negative`);
+  if (raw > D) fadeInvalid(`${field} > durationMs`);
+  return raw;
+}
+
+/** Validate both sides then REUSE normalizeFades (§9.2). */
+export function resolveStudioClipFadesForWrite(
+  fadeInMs: unknown,
+  fadeOutMs: unknown,
+  durationMs: number,
+): StudioNormalizedFades {
+  const D = Number.isFinite(durationMs) ? Math.trunc(durationMs) : 0;
+  const fi = parseStudioFadeMs(fadeInMs, "fadeInMs", D);
+  const fo = parseStudioFadeMs(fadeOutMs, "fadeOutMs", D);
+  return normalizeFades(fi, fo, D);
+}
+
+export type StudioClipFadesCasState = {
+  documentVersion: number;
+  fadeInMs: number;
+  fadeOutMs: number;
+};
+
+/**
+ * In-memory Clip Fades CAS — SSOT algorithm for tests / planning.
+ * Reuses FX CAS conflict vocabulary (same document_version).
+ */
+export function applyStudioClipFadesCasToState(
+  state: StudioClipFadesCasState,
+  expectedDocumentVersion: number,
+  input: {
+    fadeInMs: unknown;
+    fadeOutMs: unknown;
+    durationMs: number;
+  },
+): StudioClipFadesCasState {
+  const normalized = resolveStudioClipFadesForWrite(
+    input.fadeInMs,
+    input.fadeOutMs,
+    input.durationMs,
+  );
+  return applyStudioFxCasToState(state, expectedDocumentVersion, (next) => {
+    next.fadeInMs = normalized.fadeInMs;
+    next.fadeOutMs = normalized.fadeOutMs;
+  });
 }

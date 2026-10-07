@@ -11,6 +11,9 @@ import {
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
+  resolveStudioClipFadesForWrite,
+} from "@/lib/studio/studio-clip-fade";
+import {
   assertValidClipSource,
   assertClipPlacement,
   moveClipGeometry,
@@ -781,6 +784,73 @@ export async function updateStudioClipGeometry(
   input: Parameters<typeof updateStudioClipGeometryFor>[1],
 ): Promise<StudioClipDto> {
   return updateStudioClipGeometryFor(await requireUser(), input);
+}
+
+type ClipFadesCasRow = {
+  document_version: number;
+  fade_in_ms: number;
+  fade_out_ms: number;
+};
+
+/**
+ * P6.7.2 — Clip fade write path with atomic document_version CAS.
+ * Persists existing fade_in_ms / fade_out_ms only. No new columns.
+ */
+export async function updateStudioClipFadesFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+    fadeInMs: unknown;
+    fadeOutMs: unknown;
+  },
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  const { clip } = await loadOwnedClip(
+    context,
+    input.projectId,
+    input.clipId,
+  );
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const normalized = resolveStudioClipFadesForWrite(
+    input.fadeInMs,
+    input.fadeOutMs,
+    clip.duration_ms,
+  );
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_fades", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+    p_fade_in_ms: normalized.fadeInMs,
+    p_fade_out_ms: normalized.fadeOutMs,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows = (data as ClipFadesCasRow[] | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
+  return {
+    clip: mapClip({
+      ...clip,
+      fade_in_ms: num(row.fade_in_ms),
+      fade_out_ms: num(row.fade_out_ms),
+    }),
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function updateStudioClipFades(
+  input: Parameters<typeof updateStudioClipFadesFor>[1],
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipFadesFor(await requireUser(), input);
 }
 
 export async function splitStudioClipFor(
