@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-06 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC **`57ef69e`**
+**Updated:** 2026-10-07 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC **`57ef69e`**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -26,9 +26,9 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `2258bdb` · RPC `57ef69e`) |
 | **Production application SHA** | `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`) — **P6.5 Studio Audio Quality Metering** |
 | **Production deployment** | `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · served Studio chunk `29qtmv8kgtz1f.js` |
-| **Studio baseline** | **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** (not GREEN) |
-| **Last Studio Production Verify** | P6.5 runtime gate **INCONCLUSIVE** · automated **127/127 PASS** · prior P6.4.3 GREEN @ `f261ea8` |
-| **NEXT UNIT** | **P6.6 NOT AUTHORIZED** · follow-up = production runtime evidence for Play→Peak and visibility lifecycle |
+| **Studio baseline** | **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE** (not GREEN · not FAILED) |
+| **Last Studio Production Verify** | P6.5 gate **INCONCLUSIVE** — Scenario A **PASS** (Live Peak) · Scenario B **BLOCKED** (browser/CDP) · automated **127/127 PASS** · prior P6.4.3 GREEN @ `f261ea8` |
+| **NEXT UNIT** | **P6.6 NOT AUTHORIZED** · remaining open = production visibility lifecycle evidence |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -98,7 +98,9 @@ Recording       = P5.5/P5.6/P5.8 SSOT · engine may consume READY Take · does n
                 session / eligibility / finalize / upload / claim / getUserMedia / devices / meter
 P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · P6.5 Master metering IMPLEMENTED + DEPLOYED @ 2258bdb
-                · P6.5 PRODUCTION RUNTIME GATE = INCONCLUSIVE (NOT GREEN)
+                · P6.5 Scenario A PROVEN (Live Peak on BEAT_REF Play)
+                · P6.5 Scenario B BLOCKED (browser/CDP visibility)
+                · P6.5 PRODUCTION RUNTIME GATE = INCONCLUSIVE (NOT GREEN · NOT FAILED)
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
                 · P6.6 NOT AUTHORIZED

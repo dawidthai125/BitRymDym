@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-06 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC hotfix **`57ef69e`** (unchanged)
+**Updated:** 2026-10-07 — **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE** · app **`2258bdb`** · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · RPC hotfix **`57ef69e`** (unchanged)
 
 ---
 
@@ -25,8 +25,8 @@
 | **PRODUCTION APP SHA** | `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`) — **P6.5 Studio Audio Quality Metering** (impl `345e8e5` + meter-start fix) |
 | **PRODUCTION DEPLOYMENT** | `dpl_54uwtNdFbSG4apwikSioTyevdYcr` (alias www · served Studio chunk `29qtmv8kgtz1f.js`) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · RUNTIME GATE INCONCLUSIVE** (prior Mix UX **P6.4.3 GREEN** @ `f261ea8` remains) |
-| **LAST STUDIO VERIFY** | P6.5 runtime gate **INCONCLUSIVE** (Play→Peak · visibility browser) · automated **127/127 PASS** · P6.4.3 GREEN @ `f261ea8` |
+| **STUDIO BASELINE** | **P6.5 IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED · SCENARIO A PROVEN · SCENARIO B BLOCKED · RUNTIME GATE INCONCLUSIVE** (not GREEN · not FAILED · prior Mix UX **P6.4.3 GREEN** @ `f261ea8` remains) |
+| **LAST STUDIO VERIFY** | P6.5 runtime gate **INCONCLUSIVE** — **Scenario A PASS** (Live Peak) · **Scenario B BLOCKED** (browser/CDP visibility) · automated **127/127 PASS** · P6.4.3 GREEN @ `f261ea8` |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
@@ -37,8 +37,8 @@
 | **P6.4.1 Master Gain/Pan + Track documentVersion** | **PRODUCTION VERIFIED — GREEN** @ `9f93606` · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.4.2 Shared FX UI Foundation** | **PRODUCTION VERIFIED — GREEN** @ `320907a` · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.4.3 Mix UX polish & integration** | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · served `0kfptvapkfp-m.js` · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
-| **P6.5 Studio Audio Quality Metering** | **IMPLEMENTATION COMPLETE** · **PRODUCTION DEPLOYED** @ `2258bdb` · dpl `dpl_54uwtNd…` · served `29qtmv8kgtz1f.js` · **PRODUCTION RUNTIME GATE — INCONCLUSIVE** (not GREEN) · [freeze](./decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md) |
-| **NEXT UNIT** | **Not authorized:** **P6.6 NOT AUTHORIZED**. Follow-up = production runtime evidence for Play→Peak and visibility lifecycle (Owner/Architect) — do **not** auto-start next Studio unit |
+| **P6.5 Studio Audio Quality Metering** | **IMPLEMENTATION COMPLETE** · **PRODUCTION DEPLOYED** @ `2258bdb` · dpl `dpl_54uwtNd…` · served `29qtmv8kgtz1f.js` · **Scenario A PROVEN** · **Scenario B BLOCKED (browser/CDP)** · **PRODUCTION RUNTIME GATE — INCONCLUSIVE** (not GREEN · not FAILED) · [freeze](./decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md) |
+| **NEXT UNIT** | **Not authorized:** **P6.6 NOT AUTHORIZED**. Remaining open = production visibility lifecycle evidence (Owner/Architect) — do **not** auto-start next Studio unit |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -69,11 +69,13 @@
 ```text
 PRODUCTION APP                = 2258bdb · P6.5 Studio Audio Quality Metering
                                 · IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED
-                                · PRODUCTION RUNTIME GATE — INCONCLUSIVE (NOT GREEN)
+                                · SCENARIO A PROVEN · SCENARIO B BLOCKED (browser/CDP)
+                                · PRODUCTION RUNTIME GATE — INCONCLUSIVE (NOT GREEN · NOT FAILED)
 PRODUCTION DEPLOYMENT         = dpl_54uwtNdFbSG4apwikSioTyevdYcr
   served Studio chunk         = 29qtmv8kgtz1f.js
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
 LAST STUDIO VERIFY            = P6.5 RUNTIME GATE INCONCLUSIVE
+                              · Scenario A PASS (Live Peak) · Scenario B BLOCKED
                               · automated P6.1–P6.5 127/127 PASS ≠ production GREEN
 P6.1 RPC HOTFIX               = 57ef69e · migration 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
@@ -83,7 +85,9 @@ P6.4.2 APPLICATION            = 320907a · PRODUCTION VERIFIED — GREEN
 P6.4.3 APPLICATION            = f261ea8 · PRODUCTION VERIFIED — GREEN
 P6.5 APPLICATION              = 2258bdb (impl 345e8e5 + fix)
 P6.5 PRODUCTION RUNTIME       = INCONCLUSIVE
-  missing evidence            = Play→real signal→Peak · visibility hidden/visible reader lifecycle
+  Scenario A                  = PASS (BEAT_REF → engine → Master Pan → Analyser → Live Peak)
+  Scenario B                  = BLOCKED / INCONCLUSIVE (browser/CDP cannot force true hidden)
+  remaining open              = visibility hidden→pause→visible→resume production proof
 P6.6                          = NOT AUTHORIZED
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 KNOWN LIMITATION              = limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync
@@ -114,7 +118,8 @@ STUDIO P5 (canonical table):
   P6.4.3 Mix UX polish & integration      = PRODUCTION VERIFIED — GREEN @ f261ea8
   P6.5 Studio Audio Quality Metering
                                          = IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED @ 2258bdb
-                                         · PRODUCTION RUNTIME GATE — INCONCLUSIVE (NOT GREEN)
+                                         · SCENARIO A PROVEN · SCENARIO B BLOCKED (browser/CDP)
+                                         · PRODUCTION RUNTIME GATE — INCONCLUSIVE (NOT GREEN · NOT FAILED)
        freeze                            = docs/decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md
        audit                             = docs/architecture/P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md
   D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
@@ -135,7 +140,8 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = production runtime evidence for Play→Peak and visibility lifecycle
+NEXT GATE                     = production visibility lifecycle evidence (Scenario B)
+                              · Play→Peak already PROVEN in production (Scenario A)
                               · P6.6 NOT AUTHORIZED · do NOT auto-start next Studio unit
                               · test suite PASS ≠ production runtime GREEN
 
@@ -179,11 +185,13 @@ P5.8 Device / Input          = enumerateDevices · permission states · selected
                              · Device state ≠ recording state · UNCHANGED in P5.10
 P6 product FX / Mix / Master = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                              · P6.5 Master metering IMPLEMENTED + DEPLOYED @ 2258bdb
-                             · P6.5 PRODUCTION RUNTIME GATE = INCONCLUSIVE (NOT GREEN)
+                             · P6.5 Scenario A PROVEN (Live Peak on BEAT_REF Play)
+                             · P6.5 Scenario B BLOCKED (browser/CDP visibility)
+                             · P6.5 PRODUCTION RUNTIME GATE = INCONCLUSIVE (NOT GREEN · NOT FAILED)
                              · engine foundation EXISTS (P5.10 GREEN)
                              · Automation / Autotune = NOT READY
                              · P6.6 NOT AUTHORIZED
-                             · follow-up = production runtime evidence Play→Peak + visibility
+                             · follow-up = production visibility lifecycle evidence only
 P7 creative tracks           = track enum reserved READY WITH REFACTOR
                              · capabilities + additive source kinds before expansion
                              · instrument engines = NOT READY

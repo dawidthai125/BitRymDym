@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P6.5 SSOT RECONCILE (SCENARIO A PROVEN · B BLOCKED · GATE INCONCLUSIVE)
+
+**Status:** DOCS ONLY · **P6.5 IMPLEMENTATION COMPLETE** · **PRODUCTION DEPLOYED** · **SCENARIO A PROVEN** · **SCENARIO B BLOCKED BY BROWSER/CDP** · **PRODUCTION RUNTIME GATE — INCONCLUSIVE**
+**Not GREEN / not FAILED:** do **not** treat as `PRODUCTION VERIFIED — GREEN` and do **not** treat as P6.5 FAIL
+**Application tip (unchanged):** `2258bdbbf5099189bf88e9ed65f41faf43afe226` (`2258bdb`) · dpl `dpl_54uwtNdFbSG4apwikSioTyevdYcr` · chunk `29qtmv8kgtz1f.js`
+**Fixture (read-only):** project `d2bdb431-4b40-4d7c-9bfc-d18d05cbad14` („P5.2 verify real beat“) · BEAT_REF `f69034e6-2c6d-43f5-93cd-2b6531051edb` PUBLISHED · timeline Play (not Take preview)
+**Scenario A — PASS:** G1 real transport (playhead advances) · G2 real beat-audio media (`beat-audio`…`/master.bin` HTTP 206) · G3 Live Peak (`-12.4 dB` / aria `24` → `-10.3 dB` / aria `31`; later `-9.7`/`33` → `-7.5`/`42`) · Stop → Peak `-100 dB` · transport Gotowy
+**Proven path:** BEAT_REF → StudioAudioEngine → Master Pan → Analyser → Master Meter (observable Live Peak during real playback)
+**Scenario B — INCONCLUSIVE / BLOCKED:** Live Peak confirmed before lifecycle · cannot force true `document.visibilityState === "hidden"` in current Cursor browser/CDP · `Page.setWebLifecycleState(frozen)` hangs CDP (do not reuse) · `Object.defineProperty(document,…)` Cannot redefine · prototype override left `visibilityState` as `visible` while Peak stayed live — **browser/CDP limitation**, not P6.5 FAIL
+**Remaining open acceptance:** visibility hidden → reader pause → visible → reader resume (production browser proof)
+**P6.6:** **NOT AUTHORIZED**
+**Known limitations (unchanged):** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
+**WIP:** YES (unrelated local WIP preserved)
+
 ## 2026-10-06 — P6.5 SSOT RECONCILE (IMPLEMENTATION COMPLETE · RUNTIME GATE INCONCLUSIVE)
 
 **Status:** DOCS ONLY · **P6.5 IMPLEMENTATION COMPLETE** · **PRODUCTION DEPLOYED** · **PRODUCTION RUNTIME GATE — INCONCLUSIVE**
@@ -16,7 +30,7 @@ Format: data, zakres, skrót.
 **Contract:** Master-only realtime Peak + clipping latch · `MasterPan → Analyser → Destination` · fftSize 256 · ≤10–15 Hz · visibility pause/resume · UI Gain→Pan→Meter→FX · no DB/API · no PlayerProvider/E3
 **Automated tests:** P6.5 18 · P6.4.3 14 · P6.4.2 14 · P6.4.1 21 · P6.3 17 · P6.2 14 · P6.1 29 · **127/127 PASS** · typecheck · build · scoped lint PASS
 **Production smoke:** unauth Studio API 401 · `/studio` 200 · chunk YES `StudioAudioEngine`/`createAnalyser`/`subscribeMeter`/`Miernik Master` · NO `PlayerProvider`/`mix-graph`/`StudioMixEngine`/`MeteringEngine` · Master Meter UI observed · Mobile ~390 PASS · Mix/transport smoke PASS · security surface unchanged (P6.4.3 401/200/403 baseline)
-**Runtime gate INCONCLUSIVE reason:** no deterministic production browser evidence for (1) Play → real audio signal → Peak response (2) visibility hidden → reader pause → visible → resume. Observed Play UI `Odtwarzanie` with Peak `-100 dB` / playhead `00:00.000` is **not** PASS and **not** interpreted as P6.5 FAIL. Unit lifecycle tests ≠ production browser proof.
+**Runtime gate INCONCLUSIVE reason (superseded 2026-10-07 for Play→Peak):** at reconcile time no deterministic production browser evidence for (1) Play → real audio signal → Peak response (2) visibility hidden → reader pause → visible → resume. Observed Play UI `Odtwarzanie` with Peak `-100 dB` / playhead `00:00.000` was **not** PASS and **not** interpreted as P6.5 FAIL. Unit lifecycle tests ≠ production browser proof.
 **Follow-up (not a code bug):** production runtime evidence for Play→Peak and visibility lifecycle — Owner/Architect decision required before any GREEN claim
 **P6.6:** **NOT AUTHORIZED** by this reconciliation
 **Known limitations (unchanged):** limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
