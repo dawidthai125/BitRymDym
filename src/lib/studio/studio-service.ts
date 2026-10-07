@@ -337,6 +337,40 @@ export async function createStudioProject(input?: {
   return createStudioProjectFor(await requireUser(), input);
 }
 
+/**
+ * Delete owned Studio project.
+ * Cascades to studio_tracks → studio_clips (schema ON DELETE CASCADE).
+ * Does NOT delete Takes, Beats, or audio artifacts — clip FKs use ON DELETE SET NULL.
+ */
+export async function deleteStudioProjectFor(
+  context: AuthContext,
+  projectId: string,
+): Promise<{ id: string }> {
+  if (!projectId || typeof projectId !== "string") {
+    throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+  }
+  await assertOwnsProject(context, projectId);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("owner_id", context.userId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) {
+    throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+  }
+  return { id: (data as { id: string }).id };
+}
+
+export async function deleteStudioProject(
+  projectId: string,
+): Promise<{ id: string }> {
+  return deleteStudioProjectFor(await requireUser(), projectId);
+}
+
 export async function getStudioProjectDocumentFor(
   context: AuthContext,
   projectId: string,

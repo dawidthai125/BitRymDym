@@ -43,8 +43,8 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
               Twoje projekty
             </h1>
             <p className="text-sm text-[var(--brd-ink-soft)]">
-              Odsłuchaj bit na timeline Studio. Szybkie nagranie nadal znajdziesz
-              na stronie bitu.
+              Otwórz projekt, wróć do edycji albo usuń stare projekty testowe.
+              Szybkie nagranie nadal znajdziesz na stronie bitu.
             </p>
           </header>
 

@@ -43,3 +43,17 @@ export function formatStudioTimeMs(ms: number): string {
   const millis = clamped % 1000;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
 }
+
+/** Compact duration for project list cards: mm:ss (or h:mm:ss when ≥ 1h). */
+export function formatStudioListDurationMs(ms: number): string {
+  assertIntegerMs(ms, "ms");
+  const clamped = Math.max(0, ms);
+  const totalSeconds = Math.floor(clamped / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}

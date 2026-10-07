@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import {
+  deleteStudioProject,
   getStudioProjectDocument,
   updateStudioMasterMix,
 } from "@/lib/studio/studio-service";
@@ -22,6 +23,26 @@ export async function GET(_request: Request, context: RouteContext) {
     }
     const document = await getStudioProjectDocument(projectId);
     return NextResponse.json({ success: true, document });
+  } catch (error) {
+    return studioApiErrorResponse(error);
+  }
+}
+
+/**
+ * DELETE — remove owned Studio project (tracks/clips cascade).
+ * Takes / Beats / artifacts are not deleted.
+ */
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    const { projectId } = await context.params;
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "projectId is required." },
+        { status: 400 },
+      );
+    }
+    const result = await deleteStudioProject(projectId);
+    return NextResponse.json({ success: true, id: result.id });
   } catch (error) {
     return studioApiErrorResponse(error);
   }
