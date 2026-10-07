@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **P6.7 PRODUCTION VERIFIED — GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.6 GREEN unchanged · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
-**Type:** Documentation continuity · P6.7 GREEN · next = Owner decides (no P6.8 auto-start)
+**Updated:** 2026-10-07 — **P0 SECURITY FIX CLOSED / GREEN** (studio_cas_* client EXECUTE revoke · DB `20261007073533`) · **P6.7 remains CLOSED / GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1525 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
+**Type:** Documentation continuity · P6.7 GREEN · P0 ACL hardening closed · next = Owner decides (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
 

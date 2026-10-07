@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-07 — **P6.7 PRODUCTION VERIFIED — GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.6 GREEN unchanged · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
+**Updated:** 2026-10-07 — **P0 SECURITY FIX CLOSED / GREEN** (studio_cas_* client EXECUTE revoke · DB `20261007073533`) · **P6.7 remains CLOSED / GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1525 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -54,7 +54,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **FAR-01 RETIREMENT** | **NOT EXECUTED** · original retain-set **0** (gone via USER-CLEANUP-01 collateral — **not** FAR-01 retirement) |
 | **ARCH-04/05 orphan GC** | **CLOSED / VERIFIED** · live **11 / 8 / 3 / 0 / 0** · DELETE **32/32** historical — [reconciliation](./audits/ARCH_05_POST_DELETE_RECONCILIATION.md) · [execution](./audits/ARCH_05_DELETE_EXECUTION.md) |
 | **DEF-01** | **CLOSED / PRODUCTION VERIFIED** @ `fbc696f` |
-| **ACTIVE P0 / P1** | **NONE VERIFIED** |
+| **ACTIVE P0 / P1** | **NONE VERIFIED** · P0 studio_cas_* EXECUTE **CLOSED / GREEN** @ DB `20261007073533` |
 | **HIBP** | **DEFERRED / ACCEPTED RISK** (not solved) |
 | **Polish UX (historical Wave)** | **CLOSED** / **PRODUCTION VERIFIED** @ `0afa29b` (superseded by USER-FACING POLISH LOCALIZATION @ `ffe723b`) |
 | **Wave A / B / Fala 1A/1B** | CLOSED / PRODUCTION VERIFIED (historical SHAs unchanged) |
@@ -365,7 +365,7 @@ AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
 | **P1-C** `set_updated_at` search_path hardening | **CLOSED** / VERIFIED / committed+pushed @ `b4199ef` |
 | **P1-A** HIBP / leaked-password protection | **DEFERRED / ACCEPTED RISK** (Owner · Free plan) — Advisor WARN may remain · **not solved** |
 | **DEF-01** E3 DEFINER EXECUTE | **CLOSED / PRODUCTION VERIFIED** @ `fbc696f` |
-| Security overall | **GREEN WITH WARNINGS** · ACTIVE P0/P1 **NONE** · residual = HIBP ACCEPTED RISK + intentional DEF-02 WARN |
+| Security overall | **GREEN WITH WARNINGS** · P0 studio_cas_* EXECUTE **CLOSED** · residual = HIBP ACCEPTED RISK + intentional DEF-02 WARN |
 | Remote DB | Contains P1-B + P1-C hardening (applied before git commit) |
 | Migration drift | **P2 OPS** — local filename vs remote version drift (not a P1 blocker) |
 | Wave 5 security outcome | Shared Grant AuthZ = PASS · HTTP IDOR = PASS · RLS = PASS · Take ACL = UNCHANGED · private audio = UNCHANGED |

@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P0 SECURITY FIX — studio_cas_* client EXECUTE revoke
+
+**Status:** **P0 CLOSED — PRODUCTION VERIFIED GREEN** (ACL-only · DB)
+**Scope:** revoke `EXECUTE` on four `studio_cas_*` RPCs from `anon` / `authenticated`; keep `service_role`
+**Root cause:** `ALTER DEFAULT PRIVILEGES` grants role-level EXECUTE; prior migrations only `REVOKE FROM PUBLIC`
+**Repo migration file:** `supabase/migrations/20261007140000_p0_studio_cas_client_execute_revoke.sql`
+**Production applied version:** `20261007073533` `p0_studio_cas_client_execute_revoke` (filename timestamp ≠ applied version — documented mapping)
+**RPCs:** `studio_cas_apply_fx_chain` · `studio_cas_apply_clip_fades` · `studio_cas_apply_clip_geometry_fades` · `studio_cas_apply_clip_split`
+**LIVE ACL AFTER:** anon **FALSE** · authenticated **FALSE** · service_role **TRUE** (all four)
+**SET ROLE:** anon/authenticated → `42501 permission denied` · service_role invoke ALLOWED (non-mutating fake UUIDs)
+**Security Advisor:** `studio_cas_*` removed from anon/authenticated DEFINER EXECUTE findings (residual pre-existing findingi OUT of P0)
+**Tests:** Vitest **1525 PASS · 1 SKIP** · Studio suite 403 PASS · P0 contract test PASS
+**Production app SHA:** **unchanged** `06c60b5` (no app code change · P6.7 remains **CLOSED / GREEN**)
+**Next:** STOP · do **not** start P6.8 · optional P1 = default privileges hardening (OUT of this P0)
+**WIP:** untouched
+
 ## 2026-10-07 — P6.7 FINAL SSOT RECONCILE (Px→P6.7)
 
 **Status:** DOCS ONLY · full continuity reconcile through **P6.7 CLOSED / GREEN**
