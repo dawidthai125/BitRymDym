@@ -88,12 +88,16 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(editor).toMatch(/aria-label=\"Mix\"/);
     const muteIdx = editor.indexOf('label="Wycisz"');
     const soloIdx = editor.indexOf('label="Odsłuch"');
-    const gainIdx = editor.indexOf('ariaLabel={`Głośność ścieżki');
+    const gainIdx = editor.indexOf("ariaLabel={`Głośność ścieżki");
+    const panIdx = editor.indexOf("ariaLabel={`Panorama ścieżki");
+    const meterIdx = editor.indexOf("<StudioTrackMeter");
     const fxIdx = editor.indexOf("Efekty ścieżki");
     expect(muteIdx).toBeGreaterThan(0);
     expect(soloIdx).toBeGreaterThan(muteIdx);
     expect(gainIdx).toBeGreaterThan(soloIdx);
-    expect(fxIdx).toBeGreaterThan(gainIdx);
+    expect(panIdx).toBeGreaterThan(gainIdx);
+    expect(meterIdx).toBeGreaterThan(panIdx);
+    expect(fxIdx).toBeGreaterThan(meterIdx);
   });
 
   it("Master Mix: distinguished card + Gain/Pan + Meter + FX entry", () => {

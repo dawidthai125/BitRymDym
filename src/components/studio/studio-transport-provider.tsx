@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -54,6 +55,10 @@ type StudioTransportApi = {
   takePreviewActive: boolean;
   /** P6.5 Master meter snapshot (runtime-only). */
   meter: StudioMeterSnapshot;
+  /** P6.6.1 selected-Track meter snapshot (runtime-only). */
+  trackMeter: StudioMeterSnapshot;
+  /** Bind Mix Track selection → engine Track analyser target (0|1). */
+  setTrackMeterTarget: (trackId: string | null) => void;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -117,6 +122,8 @@ export function StudioTransportProvider({
   const [error, setError] = useState<string | null>(null);
   const [takePreviewActive, setTakePreviewActive] = useState(false);
   const [meter, setMeter] = useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
+  const [trackMeter, setTrackMeter] =
+    useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
 
   const hasTimelineAudio =
     Boolean(beatId) || engineDocument.clips.some((c) => c.sourceKind === "TAKE");
@@ -241,6 +248,7 @@ export function StudioTransportProvider({
     engineRef.current = engine;
     engine.setDocument(engineDocument);
     const unsubMeter = engine.subscribeMeter(setMeter);
+    const unsubTrackMeter = engine.subscribeTrackMeter(setTrackMeter);
 
     const onVisibility = () => {
       if (typeof document === "undefined") return;
@@ -256,9 +264,12 @@ export function StudioTransportProvider({
         document.removeEventListener("visibilitychange", onVisibility);
       }
       unsubMeter();
+      unsubTrackMeter();
+      engine.setTrackMeterTarget(null);
       engine.dispose();
       engineRef.current = null;
       setMeter(STUDIO_METER_NEUTRAL);
+      setTrackMeter(STUDIO_METER_NEUTRAL);
       catalogPlayer?.setSuppressed(false);
     };
     // One engine per editor mount. Document updates go through setDocument.
@@ -316,6 +327,10 @@ export function StudioTransportProvider({
     setTakePreviewActive(false);
   };
 
+  const setTrackMeterTarget = useCallback((trackId: string | null) => {
+    engineRef.current?.setTrackMeterTarget(trackId);
+  }, []);
+
   const previewTake = async (takeId: string): Promise<void> => {
     if (!takeId) {
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
@@ -357,6 +372,8 @@ export function StudioTransportProvider({
     hasBeat: Boolean(beatId),
     takePreviewActive,
     meter,
+    trackMeter,
+    setTrackMeterTarget,
     play,
     pause,
     stop,

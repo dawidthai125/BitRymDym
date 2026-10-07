@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -18,6 +19,7 @@ import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
+import { StudioTrackMeter } from "@/components/studio/studio-track-meter";
 import {
   StudioTransportProvider,
   useStudioTransport,
@@ -139,7 +141,10 @@ function StudioEditorInner({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [recordingLocked, setRecordingLocked] = useState(false);
   const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
+  /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const transport = useStudioTransport();
+  const { setTrackMeterTarget } = transport;
   const anySolo = doc.tracks.some((t) => t.solo);
   const length = doc.project.timelineLengthMs;
   const timelineMode: TimelineMode = recordingLocked ? "seek" : mode;
@@ -149,6 +154,14 @@ function StudioEditorInner({
   );
   const selectedClip =
     doc.clips.find((c) => c.id === activeSelectedId) ?? null;
+  const activeSelectedTrackId =
+    selectedTrackId && doc.tracks.some((t) => t.id === selectedTrackId)
+      ? selectedTrackId
+      : null;
+
+  useEffect(() => {
+    setTrackMeterTarget(activeSelectedTrackId);
+  }, [activeSelectedTrackId, setTrackMeterTarget]);
 
   function applySnap(ms: number, bounds?: { minMs?: number; maxMs?: number }) {
     return snapTimelineMs(ms, snapConfig, bounds);
@@ -675,13 +688,34 @@ function StudioEditorInner({
             });
             const isBeat = track.trackType === "BEAT";
             const fxLabel = studioFxEntryLabel(track.effectsChain);
+            const isSelected = activeSelectedTrackId === track.id;
             return (
               <li
                 key={track.id}
-                className="rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+                data-testid="studio-mix-track"
+                data-track-id={track.id}
+                data-selected={isSelected ? "true" : "false"}
+                className={
+                  isSelected
+                    ? "rounded border border-[var(--brd-green)] bg-[var(--brd-bg)] p-3"
+                    : "rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+                }
               >
                 <div className="mb-2 flex items-start justify-between gap-2">
-                  <div>
+                  <button
+                    type="button"
+                    className="min-h-11 min-w-0 flex-1 rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                    aria-pressed={isSelected}
+                    aria-label={
+                      isSelected
+                        ? `Odznacz ścieżkę ${track.name}`
+                        : `Wybierz ścieżkę ${track.name}`
+                    }
+                    data-testid="studio-mix-track-select"
+                    onClick={() =>
+                      setSelectedTrackId(isSelected ? null : track.id)
+                    }
+                  >
                     <p className="text-sm font-medium text-[var(--brd-ink)]">
                       {track.name}
                       {isBeat ? (
@@ -693,8 +727,9 @@ function StudioEditorInner({
                     <p className="text-xs text-[var(--brd-mute)]">
                       {labelStudioTrackType(track.trackType)}
                       {!audible ? " · wyciszona w miksie" : ""}
+                      {isSelected ? " · miernik aktywny" : ""}
                     </p>
-                  </div>
+                  </button>
                   <div className="flex gap-1">
                     <Button
                       type="button"
@@ -858,6 +893,12 @@ function StudioEditorInner({
                     })
                   }
                 />
+                {isSelected ? (
+                  <StudioTrackMeter
+                    snapshot={transport.trackMeter}
+                    trackName={track.name}
+                  />
+                ) : null}
                 <div className="mt-3">
                   <Button
                     type="button"
@@ -865,9 +906,10 @@ function StudioEditorInner({
                     variant="outline"
                     className="min-h-11 w-full sm:w-auto"
                     aria-label={`Efekty ścieżki ${track.name}`}
-                    onClick={() =>
-                      setFxPanel({ role: "track", trackId: track.id })
-                    }
+                    onClick={() => {
+                      setSelectedTrackId(track.id);
+                      setFxPanel({ role: "track", trackId: track.id });
+                    }}
                   >
                     {fxLabel}
                   </Button>
@@ -891,6 +933,8 @@ function StudioEditorInner({
           onSelectClip={(id) => {
             if (recordingLocked) return;
             setSelectedClipId(selectClipId(activeSelectedId, id));
+            const clip = doc.clips.find((c) => c.id === id);
+            if (clip) setSelectedTrackId(clip.trackId);
             setMode("edit");
             setConfirmDelete(false);
           }}
@@ -898,6 +942,7 @@ function StudioEditorInner({
             if (recordingLocked) return;
             setSelectedClipId(selectClipId(activeSelectedId, clipId));
             const clip = doc.clips.find((c) => c.id === clipId);
+            if (clip) setSelectedTrackId(clip.trackId);
             const maxStart = clip
               ? Math.max(0, length - clip.durationMs)
               : 0;

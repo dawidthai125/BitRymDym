@@ -514,6 +514,10 @@ describe("P6.5 Master meter UI contracts", () => {
     join(process.cwd(), "src/components/studio/studio-master-meter.tsx"),
     "utf8",
   );
+  const peakUi = readFileSync(
+    join(process.cwd(), "src/components/studio/studio-peak-meter.tsx"),
+    "utf8",
+  );
   const editor = readFileSync(
     join(process.cwd(), "src/components/studio/studio-editor.tsx"),
     "utf8",
@@ -529,25 +533,28 @@ describe("P6.5 Master meter UI contracts", () => {
 
   it("Master meter renders in editor between Pan and FX", () => {
     expect(editor).toMatch(/StudioMasterMeter snapshot=\{transport\.meter\}/);
-    expect(meterUi).toMatch(/data-testid=\"studio-master-meter\"/);
-    expect(meterUi).toMatch(/data-testid=\"studio-master-meter-peak\"/);
-    expect(meterUi).toMatch(/data-testid=\"studio-master-meter-clip\"/);
+    expect(meterUi).toMatch(/StudioPeakMeter/);
+    expect(meterUi).toMatch(/testIdPrefix=\"studio-master-meter\"/);
+    expect(peakUi).toMatch(/data-testid=\{testIdPrefix\}/);
+    expect(peakUi).toMatch(/\$\{testIdPrefix\}-peak/);
+    expect(peakUi).toMatch(/\$\{testIdPrefix\}-clip/);
   });
 
   it("shows peak + accessible clipping (not color-only)", () => {
-    expect(meterUi).toMatch(/role=\"meter\"/);
-    expect(meterUi).toMatch(/aria-valuemin=\{0\}/);
-    expect(meterUi).toMatch(/aria-valuemax=\{100\}/);
-    expect(meterUi).toMatch(/aria-valuenow=\{peakPct\}/);
-    expect(meterUi).toMatch(/aria-live=\"polite\"/);
-    expect(meterUi).toMatch(/Clipping/);
-    expect(meterUi).toMatch(/sample peak/);
-    expect(meterUi).not.toMatch(/True Peak|LUFS|spectrum|WebGL|chart\.js/i);
+    expect(peakUi).toMatch(/role=\"meter\"/);
+    expect(peakUi).toMatch(/aria-valuemin=\{0\}/);
+    expect(peakUi).toMatch(/aria-valuemax=\{100\}/);
+    expect(peakUi).toMatch(/aria-valuenow=\{peakPct\}/);
+    expect(peakUi).toMatch(/aria-live=\"polite\"/);
+    expect(peakUi).toMatch(/Clipping/);
+    expect(peakUi).toMatch(/sample peak/);
+    expect(peakUi).not.toMatch(/True Peak|LUFS|spectrum|WebGL|chart\.js/i);
+    expect(meterUi).toMatch(/Miernik Master/);
   });
 
   it("mobile-safe layout (min-w-0, no new bottom-nav)", () => {
-    expect(meterUi).toMatch(/min-w-0/);
-    expect(meterUi).not.toMatch(/fixed bottom|bottom-nav|z-\[999\]/);
+    expect(peakUi).toMatch(/min-w-0/);
+    expect(peakUi).not.toMatch(/fixed bottom|bottom-nav|z-\[999\]/);
     expect(editor).toMatch(/StudioMasterMeter/);
   });
 
