@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-07 — **POST-RECORDING V1 IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · DB RPCs applied (`20261007080752` / `80758` / `80800`) · **production app still `06c60b5` (P6.7)** · P0 CLOSED · P6.7 CLOSED/GREEN · Studio tests **445 PASS** · **do not start P6.8** · await Owner deploy/gate
+**Updated:** 2026-10-07 — **Studio Project List UX DELETE PRODUCTION VERIFIED — GREEN** @ `2c4b416` · dpl `dpl_HuodywH…` · V1 CLOSED/GREEN · P6.7 CLOSED/GREEN · **STOP**
 
 ---
 
@@ -21,12 +21,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
-| **PRODUCTION APP SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** (served app) |
-| **PRODUCTION DEPLOYMENT** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH deploy `6902986442` · served Studio editor chunk `0g5xoq_48-8xn.js` |
+| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` (docs reconcile may tip after `56b629e`) |
+| **PRODUCTION APP SHA** | `2c4b4160474ee6ed25a228a9dd0a7b10559dad39` (`2c4b416`) — Studio Project List UX + Delete (includes V1 `56b629e`) |
+| **PRODUCTION DEPLOYMENT** | `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB` · GH deploy `6909838158` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **P6.7 PRODUCTION VERIFIED — GREEN** (Clip Fades) · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
-| **LAST STUDIO VERIFY** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime/mobile · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
+| **STUDIO BASELINE** | **V1 PRODUCTION VERIFIED — GREEN** · **P6.7 CLOSED / GREEN** · prior **P6.6 GREEN** · **P6.5** Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **LAST STUDIO VERIFY** | V1 production gate **GREEN** @ `56b629e` · Vitest **1567 PASS · 1 SKIP** · audible Gain/Mute meter A/B · API/security/ACL/Take/mobile |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
@@ -41,8 +41,9 @@
 | **P6.6 On-demand Track Peak Metering** | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · [freeze](./decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P6.7 Clip Fades** | **PRODUCTION VERIFIED — GREEN** @ `06c60b5` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · P6.7.1 runtime · P6.7.2 CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 gate · DB RPCs fades/geometry_fades/split · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) |
 | **P0 studio_cas_* EXECUTE** | **CLOSED / PRODUCTION VERIFIED GREEN** · migration `20261007073533` `p0_studio_cas_client_execute_revoke` · repo file `20261007140000_…` · anon/authenticated **DENIED** · service_role **ALLOWED** · P6.7 feature **unchanged CLOSED** · [CHANGELOG](./CHANGELOG.md) |
-| **POST-RECORDING / VOCAL PRODUCTION V1** | **IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · repo `1a62158` + `3216cf0` · DB RPCs gain_mute/duplicate/delete applied · app **not** on `06c60b5` · [final report](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md) |
-| **NEXT UNIT** | **STOP** — Owner decides **V1 deploy + production gate** · do **not** start P6.8 · do **not** reopen P6.6 / P6.5 Scenario B / P6.4.4 · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 |
+| **POST-RECORDING / VOCAL PRODUCTION V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `56b629e` · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
+| **STUDIO PROJECT LIST UX / DELETE** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `2c4b416` · dpl `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB` · [gate](./audits/STUDIO_PROJECT_LIST_UX_DELETE_PRODUCTION_GATE.md) |
+| **NEXT UNIT** | **STOP** — do **not** start P6.8 · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -71,22 +72,31 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = 06c60b5 · P6.7 Clip Fades
+PRODUCTION APP                = 56b629e · POST-RECORDING V1
                                 · PRODUCTION VERIFIED — GREEN · CLOSED
-PRODUCTION DEPLOYMENT         = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
-  GitHub deployment           = 6902986442
-  served Studio chunk         = 0g5xoq_48-8xn.js
-REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD · ≠ 06c60b5)
-LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
-                              · Vitest 1519 PASS · 1 SKIP · 0 FAIL
-                              · fades/CAS/trim/split/runtime · mobile ~390 · security
+                                · includes 1a62158 + 3216cf0 + 56b629e
+PRODUCTION DEPLOYMENT         = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei
+  GitHub deployment           = 6908396342
+  served Studio chunk         = 1rnqr79fxkwx9.js
+  prior P6.7 app              = 06c60b5 (superseded)
+REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD)
+LAST STUDIO VERIFY            = V1 PRODUCTION GATE GREEN @ 56b629e
+                              · Vitest 1567 PASS · 1 SKIP
+                              · audible Gain/Mute Master-meter A/B
+                              · API/security/ACL/Take/mobile PASS
 P6.7 DB MIGRATIONS (prod ID)  = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
                               · 20261007061049 p6_7_x_studio_cas_trim_split
-  repo filenames              = 20261007120000_… · 20261007130000_…
+V1 DB MIGRATIONS (prod ID)    = 20261007080752 pr_v1_studio_cas_clip_gain_mute
+                              · 20261007080758 pr_v1_studio_cas_clip_duplicate
+                              · 20261007080800 pr_v1_studio_cas_clip_delete
+  repo filenames              = 20261007120000_… · 20261007130000_… · 20261007150000_… / 51000 / 52000
                               · (Supabase applied version ≠ filename timestamp — documented mapping)
 P6.7 RPCs                     = studio_cas_apply_clip_fades
                               · studio_cas_apply_clip_geometry_fades
                               · studio_cas_apply_clip_split
+V1 RPCs                       = studio_cas_apply_clip_gain_mute
+                              · studio_cas_apply_clip_duplicate
+                              · studio_cas_apply_clip_delete
 P6.1 RPC HOTFIX               = 57ef69e · migration 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
 P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
@@ -148,6 +158,12 @@ STUDIO P5 (canonical table):
        P6.7.4 production gate            = COMPLETE · GREEN @ 06c60b5 · first docs tip e136558 · full reconcile c767d12+
        freeze                            = docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
        audit                             = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
+  POST-RECORDING V1                      = PRODUCTION VERIFIED — GREEN · CLOSED @ 56b629e
+       PR-01/02 gain/mute                = COMPLETE @ 1a62158
+       PR-03/04/05 dup/CAS/UX            = COMPLETE @ 3216cf0
+       PR-06 production gate             = COMPLETE · GREEN @ 56b629e
+       dpl                               = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei · GH 6908396342
+       gate                              = docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md
   D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
 
 FALA 3.5.1                    = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
@@ -166,14 +182,17 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-CURRENT                       = P6.7 CLOSED / PRODUCTION VERIFIED / GREEN
+CURRENT                       = POST-RECORDING V1 CLOSED / PRODUCTION VERIFIED / GREEN @ 56b629e
+                              · P6.7 remains CLOSED / GREEN
 NEXT GATE                     = STOP — no authorized next Studio unit
                               · do NOT start P6.8
-                              · do NOT reopen P6.7 / P6.6 / P6.5 Scenario B / P6.4.4
+                              · do NOT force-redeploy
+                              · do NOT reopen V1 / P6.7 / P6.6 / P6.5 Scenario B / P6.4.4
                               · Owner decides next Architecture Audit / unit
 P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical) · CLOSED BY FREEZE+IMPL
 P6.7 DESIGN FREEZE            = GO (historical) · living status GREEN
 P6.7 IMPLEMENTATION           = COMPLETE · PRODUCTION VERIFIED — GREEN
+V1 IMPLEMENTATION             = COMPLETE · PRODUCTION VERIFIED — GREEN · CLOSED
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
@@ -218,10 +237,12 @@ P6 product FX / Mix / Master = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                              · P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE
                              · P6.6 On-demand Track Peak PRODUCTION VERIFIED — GREEN @ c825e42
                              · P6.7 Clip Fades PRODUCTION VERIFIED — GREEN @ 06c60b5 · CLOSED
+                             · POST-RECORDING V1 PRODUCTION VERIFIED — GREEN @ 56b629e · CLOSED
                              · topology: Track Pan → 0|1 Track Analyser → Σ → … → Master Analyser
                              · engine foundation EXISTS (P5.10 GREEN)
                              · Automation / Autotune = NOT READY
                              · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split inherit
+                             · V1 = Clip Gain/Mute · Duplicate · CAS Move/Delete · ClipEditPanel
                              · next = STOP (do not start P6.8 · Owner decides)
 P7 creative tracks           = track enum reserved READY WITH REFACTOR
                              · capabilities + additive source kinds before expansion
@@ -348,7 +369,7 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **No authorized next Studio product unit** — P6.7 CLOSED · do **not** start P6.8 without Architecture Audit + Design Freeze + Owner GO
+- **No authorized next Studio product unit** — V1 CLOSED · P6.7 CLOSED · do **not** start P6.8 without Architecture Audit + Design Freeze + Owner GO
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
@@ -376,18 +397,20 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm PRODUCTION APP = 06c60b5 (P6.7 GREEN · CLOSED)
-                 → Confirm REPO/DOCS HEAD = origin/main (git rev-parse HEAD ≠ 06c60b5)
-                 → Confirm PRODUCTION DEPLOYMENT = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
-                 → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN
+                 → Confirm PRODUCTION APP = 56b629e (V1 · GREEN · CLOSED)
+                 → Confirm PRODUCTION DEPLOYMENT = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei · GH 6908396342
+                 → Read docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md
+                 → Confirm REPO/DOCS HEAD = origin/main (git rev-parse HEAD)
+                 → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
-                 → NEXT GATE = STOP — no authorized P6.8 · Owner decides next Architecture Audit
-                 → Do NOT reimplement P6.7 / P6.6 / P6.5 Scenario B / closed P5 units
+                 → NEXT GATE = STOP — no authorized P6.8 · Owner decides next unit
+                 → Do NOT reimplement V1 / P6.7 / P6.6 / P6.5 Scenario B / closed P5 units
                  → Do NOT call punch “P5.7” / “P5.9” / “P5.10”
                  → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
                  → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 / P5–P6.7 without new evidence
                  → Do NOT fix EXPORT_WAV in product scope without separate Owner GO
                  → Do NOT clean dirty WIP without Owner GO
+                 → Do NOT force-redeploy V1 without evidence SHA mismatch
 ```
 
 ---

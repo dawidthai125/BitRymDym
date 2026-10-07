@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **POST-RECORDING V1 IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · DB RPCs applied · **production app still `06c60b5` (P6.7 CLOSED/GREEN)** · P0 CLOSED · Studio **445 PASS** · **STOP** — Owner deploy/gate · **do not start P6.8**
-**Type:** Documentation continuity · V1 code ready · app not deployed · P6.7 GREEN · P0 closed · next = Owner deploy/gate (no P6.8 auto-start)
+**Updated:** 2026-10-07 — **Studio Project List UX DELETE GREEN** @ `2c4b416` · dpl `dpl_HuodywH…` · V1 CLOSED/GREEN · P6.7 CLOSED/GREEN · **STOP**
+**Type:** Documentation continuity · V1 production verified · P6.7 GREEN · P0 closed · next = Owner decision only (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,14 +25,21 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 06c60b54234db5d27682a607f6a80dececc7257e
-  short                       = 06c60b5
-  note                        = P6.7 Clip Fades
-                              · PRODUCTION VERIFIED — GREEN
-  phases                      = P6.7.1 runtime · P6.7.2 CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 gate
-PRODUCTION DEPLOYMENT         = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
+PRODUCTION APP SHA            = 56b629ec16dcd9df95d52b93f0aa6d1715ba7f4c
+  short                       = 56b629e
+  note                        = POST-RECORDING EDITING / VOCAL PRODUCTION V1
+                              · PRODUCTION VERIFIED — GREEN · CLOSED
+  includes                    = 1a62158 (gain/mute) · 3216cf0 (duplicate/CAS/UX) · 56b629e (docs tip)
+  prior P6.7 app              = 06c60b5 (superseded on production)
+PRODUCTION DEPLOYMENT         = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei
+  GitHub deployment           = 6908396342
+  served Studio chunk         = /_next/static/immutable/chunks/1rnqr79fxkwx9.js
+  timestamp                   = 2026-10-07T11:12:49Z
 P6.7 DB MIGRATIONS            = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
                               · 20261007061049 p6_7_x_studio_cas_trim_split
+V1 DB MIGRATIONS              = 20261007080752 pr_v1_studio_cas_clip_gain_mute
+                              · 20261007080758 pr_v1_studio_cas_clip_duplicate
+                              · 20261007080800 pr_v1_studio_cas_clip_delete
 P6.1 RPC HOTFIX               = 57ef69e (qualify document_version in studio_cas_apply_fx_chain)
   migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
@@ -52,27 +59,27 @@ P6.7.2                        = COMPLETE · set_fades CAS
 P6.7.3                        = COMPLETE · ClipEditPanel Fade UI
 P6.7.x                        = COMPLETE · Trim/Split fade inherit + CAS
 P6.7.4                        = COMPLETE · production gate
-P6.7                          = PRODUCTION VERIFIED — GREEN
+P6.7                          = PRODUCTION VERIFIED — GREEN · CLOSED (not reopened by V1)
 
-REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD · ≠ 06c60b5)
+REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD)
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-  served Studio chunk         = /_next/static/immutable/chunks/0g5xoq_48-8xn.js
-  GitHub deployment           = 6902986442
 
-STUDIO BASELINE               = P6.7 PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
-                              · Vitest 1519 PASS · 1 SKIP · 0 FAIL
-                              · fades/CAS/trim/split/runtime · mobile ~390 · security
-POST-RECORDING V1             = IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED
-  repo commits                = 1a62158 (gain/mute) · 3216cf0 (duplicate/CAS/UX)
+STUDIO BASELINE               = V1 PRODUCTION VERIFIED — GREEN · P6.7 CLOSED / GREEN
+LAST STUDIO VERIFY            = V1 PRODUCTION GATE GREEN @ 56b629e
+                              · Vitest 1567 PASS · 1 SKIP
+                              · audible Gain/Mute Master-meter A/B
+                              · API/security/ACL/Take/mobile PASS
+POST-RECORDING V1             = PRODUCTION VERIFIED — GREEN · CLOSED
+  repo commits                = 1a62158 · 3216cf0 · 56b629e
   DB applied                  = 20261007080752 gain_mute · 20261007080758 duplicate · 20261007080800 delete
-  production app              = still 06c60b5 (V1 UI/API NOT DEPLOYED)
-  report                      = docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md
-NEXT GATE                     = STOP — Owner decides V1 deploy + production gate
+  production app              = 56b629e
+  gate report                 = docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md
+NEXT GATE                     = STOP — await separate Owner decision
                               · do NOT start P6.8
+                              · do NOT force-redeploy
                               · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
-                              · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7
+                              · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo
 P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical)
 P6.7 DESIGN FREEZE            = GO (historical)
 P6.7 IMPLEMENTATION           = COMPLETE · PRODUCTION VERIFIED — GREEN

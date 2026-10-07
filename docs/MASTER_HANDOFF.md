@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-07 — **POST-RECORDING V1 IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · DB RPCs applied · **production app still `06c60b5` (P6.7 CLOSED/GREEN)** · P0 CLOSED · Studio **445 PASS** · **STOP** — Owner deploy/gate · **do not start P6.8**
+**Updated:** 2026-10-07 — **Studio Project List UX DELETE GREEN** @ `2c4b416` · dpl `dpl_HuodywH…` · V1 CLOSED/GREEN · P6.7 CLOSED/GREEN · **STOP**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,13 +23,13 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository / docs HEAD** | `origin/main` — verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
-| **Production application SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades · CLOSED** |
-| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · served Studio chunk `0g5xoq_48-8xn.js` |
-| **Studio baseline** | **P6.7 PRODUCTION VERIFIED — GREEN** · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
-| **Last Studio Production Verify** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime · mobile ~390 · security · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
-| **POST-RECORDING V1** | **IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED** · commits `1a62158` + `3216cf0` · DB `pr_v1_studio_cas_clip_*` applied · app still `06c60b5` · [report](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md) |
-| **NEXT UNIT** | **STOP** — Owner decides **V1 deploy + production gate** · do **not** start P6.8 · do **not** reopen P6.6 / P6.5 Scenario B · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 |
+| **Repository / docs HEAD** | `origin/main` — verify `git rev-parse HEAD` (docs reconcile may tip after `56b629e`) |
+| **Production application SHA** | `2c4b4160474ee6ed25a228a9dd0a7b10559dad39` (`2c4b416`) — Studio Project List UX + Delete · V1 remains CLOSED |
+| **Production deployment** | `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB` · GH `6909838158` |
+| **Studio baseline** | **V1 PRODUCTION VERIFIED — GREEN** · **P6.7 CLOSED / GREEN** · prior **P6.6 GREEN** · **P6.5** Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **Last Studio Production Verify** | V1 gate **GREEN** @ `56b629e` · Vitest **1567 PASS · 1 SKIP** · audible Gain/Mute meter A/B · API/security/ACL/Take/mobile · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
+| **POST-RECORDING V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** · commits `1a62158` + `3216cf0` + `56b629e` · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
+| **NEXT UNIT** | **STOP** — do **not** start P6.8 · do **not** force-redeploy · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |

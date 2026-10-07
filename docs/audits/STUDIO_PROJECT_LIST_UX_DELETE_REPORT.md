@@ -3,7 +3,8 @@
 **Date:** 2026-10-07  
 **Owner:** Prezes Dawid  
 **Executor:** Cursor Agent  
-**Status:** **IMPLEMENTATION COMPLETE** · **NOT DEPLOYED**
+**Status:** **PRODUCTION VERIFIED — GREEN · CLOSED** @ `2c4b416` · dpl `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB`  
+See [PRODUCTION_GATE.md](./STUDIO_PROJECT_LIST_UX_DELETE_PRODUCTION_GATE.md).
 
 ---
 
