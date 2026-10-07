@@ -16,6 +16,10 @@ import {
   resolveStudioClipFadesForWrite,
 } from "@/lib/studio/studio-clip-fade";
 import {
+  parseStudioClipGainDb,
+  parseStudioClipMuted,
+} from "@/lib/studio/studio-clip-mix";
+import {
   assertValidClipSource,
   assertClipPlacement,
   moveClipGeometry,
@@ -901,6 +905,120 @@ export async function updateStudioClipFades(
   input: Parameters<typeof updateStudioClipFadesFor>[1],
 ): Promise<{ clip: StudioClipDto; documentVersion: number }> {
   return updateStudioClipFadesFor(await requireUser(), input);
+}
+
+type ClipGainMuteCasRow = {
+  document_version: number;
+  gain_db: number | string;
+  muted: boolean;
+};
+
+/**
+ * POST-RECORDING V1 — Clip Gain / Mute CAS write path.
+ * Persists existing gain_db / muted only. No new columns. Take bytes untouched.
+ */
+export async function updateStudioClipGainMuteFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+    gainDb?: unknown;
+    muted?: unknown;
+  },
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  const { clip } = await loadOwnedClip(
+    context,
+    input.projectId,
+    input.clipId,
+  );
+  if (input.gainDb === undefined && input.muted === undefined) {
+    throw new StudioFxChainError(
+      "FX_CHAIN_INVALID",
+      "Nie udało się zapisać klipu. Sprawdź wartości i spróbuj ponownie.",
+    );
+  }
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const nextGainDb =
+    input.gainDb === undefined
+      ? num(clip.gain_db)
+      : parseStudioClipGainDb(input.gainDb);
+  const nextMuted =
+    input.muted === undefined ? clip.muted : parseStudioClipMuted(input.muted);
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_gain_mute", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+    p_gain_db: nextGainDb,
+    p_muted: nextMuted,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows = (data as ClipGainMuteCasRow[] | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
+  return {
+    clip: mapClip({
+      ...clip,
+      gain_db: num(row.gain_db),
+      muted: row.muted,
+    }),
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function updateStudioClipGainFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+    gainDb: unknown;
+  },
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipGainMuteFor(context, {
+    projectId: input.projectId,
+    clipId: input.clipId,
+    expectedDocumentVersion: input.expectedDocumentVersion,
+    gainDb: input.gainDb,
+  });
+}
+
+export async function updateStudioClipGain(
+  input: Parameters<typeof updateStudioClipGainFor>[1],
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipGainFor(await requireUser(), input);
+}
+
+export async function updateStudioClipMuteFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+    muted: unknown;
+  },
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipGainMuteFor(context, {
+    projectId: input.projectId,
+    clipId: input.clipId,
+    expectedDocumentVersion: input.expectedDocumentVersion,
+    muted: input.muted,
+  });
+}
+
+export async function updateStudioClipMute(
+  input: Parameters<typeof updateStudioClipMuteFor>[1],
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipMuteFor(await requireUser(), input);
 }
 
 export async function splitStudioClipFor(

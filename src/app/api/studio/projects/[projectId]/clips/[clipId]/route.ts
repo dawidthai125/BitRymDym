@@ -4,7 +4,9 @@ import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import {
   deleteStudioClip,
   updateStudioClipFades,
+  updateStudioClipGain,
   updateStudioClipGeometry,
+  updateStudioClipMute,
   type StudioClipGeometryPatch,
 } from "@/lib/studio/studio-service";
 
@@ -15,14 +17,18 @@ type RouteContext = {
 };
 
 /**
- * PATCH — MOVE / TRIM Clip geometry, or set_fades (P6.7.2 CAS).
+ * PATCH — MOVE / TRIM Clip geometry, set_fades (P6.7.2), set_gain / set_mute (V1 CAS).
  * Source Take / Beat / Artifact references are immutable.
  */
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { projectId, clipId } = await context.params;
     const body = (await request.json()) as {
-      op?: StudioClipGeometryPatch["op"] | "set_fades";
+      op?:
+        | StudioClipGeometryPatch["op"]
+        | "set_fades"
+        | "set_gain"
+        | "set_mute";
       timelineStartMs?: number;
       durationMs?: number;
       sourceOffsetMs?: number;
@@ -30,6 +36,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       playheadMs?: number;
       fadeInMs?: unknown;
       fadeOutMs?: unknown;
+      gainDb?: unknown;
+      muted?: unknown;
       expectedDocumentVersion?: unknown;
     };
 
@@ -40,6 +48,34 @@ export async function PATCH(request: Request, context: RouteContext) {
         expectedDocumentVersion: body.expectedDocumentVersion,
         fadeInMs: body.fadeInMs,
         fadeOutMs: body.fadeOutMs,
+      });
+      return NextResponse.json({
+        success: true,
+        clip: result.clip,
+        documentVersion: result.documentVersion,
+      });
+    }
+
+    if (body.op === "set_gain") {
+      const result = await updateStudioClipGain({
+        projectId,
+        clipId,
+        expectedDocumentVersion: body.expectedDocumentVersion,
+        gainDb: body.gainDb,
+      });
+      return NextResponse.json({
+        success: true,
+        clip: result.clip,
+        documentVersion: result.documentVersion,
+      });
+    }
+
+    if (body.op === "set_mute") {
+      const result = await updateStudioClipMute({
+        projectId,
+        clipId,
+        expectedDocumentVersion: body.expectedDocumentVersion,
+        muted: body.muted,
       });
       return NextResponse.json({
         success: true,

@@ -36,6 +36,13 @@ import {
   interpretStudioClipFadesPersistResponse,
   studioClipFadesOverlapHint,
 } from "@/lib/studio/studio-clip-fade";
+import {
+  buildStudioClipGainPatchBody,
+  buildStudioClipMutePatchBody,
+  interpretStudioClipMixPersistResponse,
+  STUDIO_CLIP_GAIN_DB_MAX,
+  STUDIO_CLIP_GAIN_DB_MIN,
+} from "@/lib/studio/studio-clip-mix";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -360,6 +367,88 @@ function StudioEditorInner({
     setStatus("Zapisano");
   }
 
+  /** V1 — Clip Gain CAS write path (explicit save). */
+  async function saveClipGain(gainDb: number) {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const body = buildStudioClipGainPatchBody({
+      gainDb,
+      expectedDocumentVersion: doc.project.documentVersion,
+    });
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      clip?: StudioClipDto;
+      documentVersion?: number;
+      error?: string;
+      code?: string;
+    };
+    const result = interpretStudioClipMixPersistResponse(res.status, json);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    setDoc((prev) => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        documentVersion: result.documentVersion,
+      },
+      clips: prev.clips.map((c) =>
+        c.id === result.clip.id ? result.clip : c,
+      ),
+    }));
+    setStatus("Zapisano");
+  }
+
+  /** V1 — Clip Mute CAS write path. */
+  async function saveClipMute(muted: boolean) {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const body = buildStudioClipMutePatchBody({
+      muted,
+      expectedDocumentVersion: doc.project.documentVersion,
+    });
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      clip?: StudioClipDto;
+      documentVersion?: number;
+      error?: string;
+      code?: string;
+    };
+    const result = interpretStudioClipMixPersistResponse(res.status, json);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    setDoc((prev) => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        documentVersion: result.documentVersion,
+      },
+      clips: prev.clips.map((c) =>
+        c.id === result.clip.id ? result.clip : c,
+      ),
+    }));
+    setStatus("Zapisano");
+  }
+
   async function splitSelectedAtPlayhead() {
     if (!selectedClip) return;
     setError(null);
@@ -605,6 +694,30 @@ function StudioEditorInner({
                 await saveClipFades(fadeInMs, fadeOutMs);
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd zapisu fade.");
+                setStatus(null);
+              }
+            })
+          }
+          onSaveGain={(gainDb) =>
+            startTransition(async () => {
+              try {
+                await saveClipGain(gainDb);
+              } catch (e) {
+                setError(
+                  e instanceof Error ? e.message : "Błąd głośności klipu.",
+                );
+                setStatus(null);
+              }
+            })
+          }
+          onSaveMute={(muted) =>
+            startTransition(async () => {
+              try {
+                await saveClipMute(muted);
+              } catch (e) {
+                setError(
+                  e instanceof Error ? e.message : "Błąd wyciszenia klipu.",
+                );
                 setStatus(null);
               }
             })
@@ -1154,6 +1267,8 @@ function ClipEditPanel({
   onConfirmDeleteChange,
   onClearSelection,
   onSaveFades,
+  onSaveGain,
+  onSaveMute,
   onMove,
   onTrimLeftToPlayhead,
   onTrimRightToPlayhead,
@@ -1168,6 +1283,8 @@ function ClipEditPanel({
   onConfirmDeleteChange: (next: boolean) => void;
   onClearSelection: () => void;
   onSaveFades: (fadeInMs: number, fadeOutMs: number) => void;
+  onSaveGain: (gainDb: number) => void;
+  onSaveMute: (muted: boolean) => void;
   onMove: (timelineStartMs: number) => void;
   onTrimLeftToPlayhead: () => void;
   onTrimRightToPlayhead: () => void;
@@ -1183,6 +1300,11 @@ function ClipEditPanel({
     fadeInMs: number;
     fadeOutMs: number;
   } | null>(null);
+  const gainBaselineKey = clip ? `${clip.id}:${clip.gainDb}` : "";
+  const [gainEdit, setGainEdit] = useState<{
+    baselineKey: string;
+    gainDb: number;
+  } | null>(null);
   const maxStart = clip
     ? Math.max(0, timelineLengthMs - clip.durationMs)
     : 0;
@@ -1193,6 +1315,9 @@ function ClipEditPanel({
     fadeEdit && fadeEdit.baselineKey === fadeBaselineKey ? fadeEdit : null;
   const draftFadeIn = activeFadeEdit?.fadeInMs ?? clip?.fadeInMs ?? 0;
   const draftFadeOut = activeFadeEdit?.fadeOutMs ?? clip?.fadeOutMs ?? 0;
+  const activeGainEdit =
+    gainEdit && gainEdit.baselineKey === gainBaselineKey ? gainEdit : null;
+  const draftGainDb = activeGainEdit?.gainDb ?? clip?.gainDb ?? 0;
 
   if (!clip) {
     return (
@@ -1206,6 +1331,7 @@ function ClipEditPanel({
   const fadeMax = Math.max(0, clip.durationMs);
   const fadeDirty =
     draftFadeIn !== clip.fadeInMs || draftFadeOut !== clip.fadeOutMs;
+  const gainDirty = draftGainDb !== clip.gainDb;
   const fadeOverlapHint = studioClipFadesOverlapHint(
     draftFadeIn,
     draftFadeOut,
@@ -1225,6 +1351,13 @@ function ClipEditPanel({
       baselineKey: fadeBaselineKey,
       fadeInMs: draftFadeIn,
       fadeOutMs: next,
+    });
+  }
+
+  function setDraftGainDb(next: number) {
+    setGainEdit({
+      baselineKey: gainBaselineKey,
+      gainDb: next,
     });
   }
 
@@ -1252,6 +1385,45 @@ function ClipEditPanel({
           Odznacz
         </Button>
       </div>
+
+      <div
+        className="min-w-0 space-y-2 border-b border-[var(--brd-line)] pb-3"
+        aria-label="Głośność i wyciszenie klipu"
+      >
+        <p className="text-xs font-medium text-[var(--brd-ink)]">
+          Głośność klipu
+        </p>
+        <StudioMixControl
+          label="Gain"
+          ariaLabel="Głośność klipu"
+          value={draftGainDb}
+          display={`${draftGainDb.toFixed(1)} dB`}
+          min={STUDIO_CLIP_GAIN_DB_MIN}
+          max={STUDIO_CLIP_GAIN_DB_MAX}
+          step={0.5}
+          disabled={pending}
+          onLocalChange={setDraftGainDb}
+          onCommit={setDraftGainDb}
+        />
+        <Button
+          type="button"
+          size="sm"
+          className="min-h-11 w-full min-w-0 sm:w-auto"
+          disabled={pending || !gainDirty}
+          onClick={() => onSaveGain(draftGainDb)}
+          aria-label="Zapisz głośność klipu"
+        >
+          Zapisz głośność
+        </Button>
+        <StudioToggleChip
+          active={clip.muted}
+          label="Wycisz klip"
+          title="Wycisz ten klip (Take pozostaje nietknięty)"
+          disabled={pending}
+          onClick={() => onSaveMute(!clip.muted)}
+        />
+      </div>
+
       <label className="block min-w-0 text-xs text-[var(--brd-mute)]">
         Przesuń (pozycja startu)
         <input
