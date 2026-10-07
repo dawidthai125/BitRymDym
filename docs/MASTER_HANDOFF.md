@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-07 — **P6.7 Clip Fades Design Freeze · GO** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · impl **NOT AUTHORIZED** until Owner GO
+**Updated:** 2026-10-07 — **P6.7 PRODUCTION VERIFIED — GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.6 GREEN unchanged · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,12 +23,12 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `c825e42` · RPC `57ef69e`) |
-| **Production application SHA** | `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`) — **P6.6 On-demand Track Peak Metering** |
-| **Production deployment** | `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served Studio chunk `3_efrbzvmc1dc.js` |
-| **Studio baseline** | **P6.6 PRODUCTION VERIFIED — GREEN** · prior **P6.4.3 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
-| **Last Studio Production Verify** | P6.6.3 gate **GREEN** @ `c825e42` · Vitest **1410 PASS · 1 SKIP** · Track Peak live · A→B · mobile ~390 · security 401 · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
-| **NEXT UNIT** | **P6.7 Owner GO → implementation** — [freeze GO](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · do **not** auto-start · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 |
+| **Repository HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip `06c60b5` P6.7) |
+| **Production application SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** |
+| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · served Studio chunk `0g5xoq_48-8xn.js` |
+| **Studio baseline** | **P6.7 PRODUCTION VERIFIED — GREEN** · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **Last Studio Production Verify** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime · mobile ~390 · security · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
+| **NEXT UNIT** | **STOP after P6.7** — do **not** start P6.8 · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 · Owner decides next |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -100,11 +100,12 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · P6.5 Master metering SHIPPED @ 2258bdb
                 · P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
                 · P6.6 On-demand Track Peak PRODUCTION VERIFIED — GREEN @ c825e42
+                · P6.7 Clip Fades PRODUCTION VERIFIED — GREEN @ 06c60b5
                 · topology: Track Pan → 0|1 Track Analyser → Σ → … → Master Analyser
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
-                · P6.7 Clip Fades freeze = GO (impl NOT AUTHORIZED until Owner GO)
-                · next = Owner GO for P6.7.1→P6.7.4
+                · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split fade inherit
+                · next = STOP (do not start P6.8)
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · NOT frozen autosave contract (condition before autosave)
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)

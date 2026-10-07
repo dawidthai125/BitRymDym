@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-07 — **P6.7 Clip Fades Design Freeze · GO** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · implementation **NOT AUTHORIZED** until Owner GO
+**Updated:** 2026-10-07 — **P6.7 PRODUCTION VERIFIED — GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.6 GREEN unchanged · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
 
 ---
 
@@ -21,12 +21,12 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip = `c825e42` P6.6 · RPC = `57ef69e`) |
-| **PRODUCTION APP SHA** | `c825e422111e69350abfb4bebbb38eb5d4707a8e` (`c825e42`) — **P6.6 On-demand Track Peak Metering** |
-| **PRODUCTION DEPLOYMENT** | `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` (alias www · served Studio editor chunk `3_efrbzvmc1dc.js`) |
+| **REPOSITORY HEAD / origin/main** | Advances with Gate SSOT docs tip (app tip = `06c60b5` P6.7) |
+| **PRODUCTION APP SHA** | `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`) — **P6.7 Clip Fades** |
+| **PRODUCTION DEPLOYMENT** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` (alias www · served Studio editor chunk `0g5xoq_48-8xn.js`) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **P6.6 PRODUCTION VERIFIED — GREEN** (Track on-demand Peak) · prior **P6.4.3 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
-| **LAST STUDIO VERIFY** | P6.6.3 gate **GREEN** @ `c825e42` · Vitest **1410 PASS · 1 SKIP** · production Track Peak + mobile ~390 · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
+| **STUDIO BASELINE** | **P6.7 PRODUCTION VERIFIED — GREEN** (Clip Fades) · prior **P6.6 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **LAST STUDIO VERIFY** | P6.7.4 gate **GREEN** @ `06c60b5` · Vitest **1519 PASS · 1 SKIP** · fades/CAS/trim/split/runtime/mobile · P6.5 Scenario B **unchanged BLOCKED / INCONCLUSIVE** |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
@@ -39,8 +39,8 @@
 | **P6.4.3 Mix UX polish & integration** | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · served `0kfptvapkfp-m.js` · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.5 Studio Audio Quality Metering** | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (browser/CDP · not GREEN · **do not reopen**) · [freeze](./decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md) |
 | **P6.6 On-demand Track Peak Metering** | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · [freeze](./decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **P6.7 Clip Fades** | Architecture Audit **GO WITH CONDITIONS** · Design Freeze **GO** · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · **implementation NOT AUTHORIZED** until Owner GO |
-| **NEXT UNIT** | **P6.7 Owner GO → implementation** (P6.7.1→P6.7.4) · do **not** auto-start · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 |
+| **P6.7 Clip Fades** | **PRODUCTION VERIFIED — GREEN** @ `06c60b5` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · P6.7.1 runtime · P6.7.2 CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 gate · DB RPCs fades/geometry_fades/split · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) |
+| **NEXT UNIT** | **STOP after P6.7** — do **not** start P6.8 · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 · Owner decides next unit |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -69,14 +69,16 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = c825e42 · P6.6 On-demand Track Peak Metering
+PRODUCTION APP                = 06c60b5 · P6.7 Clip Fades
                                 · PRODUCTION VERIFIED — GREEN
-PRODUCTION DEPLOYMENT         = dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
-  served Studio chunk         = 3_efrbzvmc1dc.js
+PRODUCTION DEPLOYMENT         = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
+  served Studio chunk         = 0g5xoq_48-8xn.js
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
-LAST STUDIO VERIFY            = P6.6.3 PRODUCTION GATE GREEN @ c825e42
-                              · Vitest 1410 PASS · 1 SKIP · 0 FAIL
-                              · Track Peak live · A→B · mobile ~390 · security 401
+LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
+                              · Vitest 1519 PASS · 1 SKIP · 0 FAIL
+                              · fades/CAS/trim/split/runtime · mobile ~390 · security
+P6.7 DB MIGRATIONS            = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
+                              · 20261007061049 p6_7_x_studio_cas_trim_split
 P6.1 RPC HOTFIX               = 57ef69e · migration 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
 P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN

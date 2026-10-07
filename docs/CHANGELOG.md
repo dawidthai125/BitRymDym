@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P6.7 PRODUCTION GATE (P6.7.4) — GREEN
+
+**Status:** DOCS ONLY reconcile · **P6.7 = PRODUCTION VERIFIED — GREEN**
+**Application tip:** `06c60b54234db5d27682a607f6a80dececc7257e` (`06c60b5`)
+**Deployment:** `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · www · GitHub deployment `6902986442` · served Studio editor chunk `0g5xoq_48-8xn.js`
+**Phases:** P6.7.1 runtime · P6.7.2 persistence/CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 production gate
+**DB migrations (production):** `20261007061035` `p6_7_2_studio_cas_apply_clip_fades` · `20261007061049` `p6_7_x_studio_cas_trim_split`
+**RPCs verified:** `studio_cas_apply_clip_fades` · `studio_cas_apply_clip_geometry_fades` · `studio_cas_apply_clip_split`
+**Tests:** Full Vitest **1519 PASS · 1 SKIP · 0 FAIL** · typecheck · build · scoped lint PASS
+**Production evidence:** set_fades 200 + documentVersion +1 · reload persistence · CAS stale 409 `FX_CHAIN_VERSION_CONFLICT` · Trim/Split live · proportional normalize · runtime fade envelope on Clip GainNode (seek/pause/resume/stop) · security 401/404/409 · mobile ~390 ≥44px · architecture guards (no FadeEngine / mix-graph / second engine)
+**Next:** **STOP** — do **not** start P6.8 · do **not** reopen P6.6 / P6.5 Scenario B
+**Known limitations (unchanged):** P5.10 TAKE preview may fail · P6.5 Scenario B BLOCKED / INCONCLUSIVE · PlayerProvider shared shell only
+**WIP:** YES (unrelated local WIP preserved)
+**Deploy this reconcile:** docs-only after gate
+
 ## 2026-10-07 — P6.7 CLIP FADES DESIGN FREEZE (GO)
 
 **Status:** DOCS ONLY · **DESIGN FREEZE: GO**

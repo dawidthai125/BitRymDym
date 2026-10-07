@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **P6.7 Clip Fades Design Freeze · GO** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · impl **NOT AUTHORIZED** until Owner GO
-**Type:** Documentation continuity · P6.6 GREEN · P6.7 freeze GO · next = Owner GO for implementation (no auto-start)
+**Updated:** 2026-10-07 — **P6.7 PRODUCTION VERIFIED — GREEN** @ **`06c60b5`** · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.6 GREEN unchanged · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · **do not start P6.8**
+**Type:** Documentation continuity · P6.7 GREEN · next = Owner decides (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,12 +25,14 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = c825e422111e69350abfb4bebbb38eb5d4707a8e
-  short                       = c825e42
-  note                        = P6.6 On-demand Track Peak Metering
+PRODUCTION APP SHA            = 06c60b54234db5d27682a607f6a80dececc7257e
+  short                       = 06c60b5
+  note                        = P6.7 Clip Fades
                               · PRODUCTION VERIFIED — GREEN
-  phases                      = P6.6.1 a8a3337 · P6.6.2/3 c825e42
-PRODUCTION DEPLOYMENT         = dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
+  phases                      = P6.7.1 runtime · P6.7.2 CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 gate
+PRODUCTION DEPLOYMENT         = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp
+P6.7 DB MIGRATIONS            = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
+                              · 20261007061049 p6_7_x_studio_cas_trim_split
 P6.1 RPC HOTFIX               = 57ef69e (qualify document_version in studio_cas_apply_fx_chain)
   migration                   = 20261006190900_p6_1_fx_cas_document_version_qualify
 P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
@@ -45,24 +47,28 @@ P6.6.1                        = a8a3337 · Track analyser engine · COMPLETE
 P6.6.2                        = c825e42 · Selected Track Peak Meter UI · COMPLETE
 P6.6.3                        = c825e42 · Production gate · COMPLETE
 P6.6                          = PRODUCTION VERIFIED — GREEN
+P6.7.1                        = COMPLETE · runtime Clip GainNode fades
+P6.7.2                        = COMPLETE · set_fades CAS
+P6.7.3                        = COMPLETE · ClipEditPanel Fade UI
+P6.7.x                        = COMPLETE · Trim/Split fade inherit + CAS
+P6.7.4                        = COMPLETE · production gate
+P6.7                          = PRODUCTION VERIFIED — GREEN
 
 REPOSITORY HEAD / origin/main = advances with Gate SSOT docs tip
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-  served Studio chunk         = /_next/static/immutable/chunks/3_efrbzvmc1dc.js
+  served Studio chunk         = /_next/static/immutable/chunks/0g5xoq_48-8xn.js
 
-STUDIO BASELINE               = P6.6 PRODUCTION VERIFIED — GREEN
-LAST STUDIO VERIFY            = P6.6.3 PRODUCTION GATE GREEN @ c825e42
-                              · Vitest 1410 PASS · 1 SKIP · 0 FAIL
-                              · Track Peak live · A→B · mobile ~390 · security 401
-NEXT GATE                     = P6.7 Owner GO → implementation (freeze GO)
-                              · freeze = docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
-                              · audit = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
-                              · do NOT auto-start implementation
+STUDIO BASELINE               = P6.7 PRODUCTION VERIFIED — GREEN
+LAST STUDIO VERIFY            = P6.7.4 PRODUCTION GATE GREEN @ 06c60b5
+                              · Vitest 1519 PASS · 1 SKIP · 0 FAIL
+                              · fades/CAS/trim/split/runtime · mobile ~390 · security
+NEXT GATE                     = STOP — do NOT start P6.8
                               · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
-P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS
-P6.7 DESIGN FREEZE            = GO
-P6.7 IMPLEMENTATION           = NOT AUTHORIZED until Owner GO
+                              · Owner decides next unit
+P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical)
+P6.7 DESIGN FREEZE            = GO (historical)
+P6.7 IMPLEMENTATION           = COMPLETE · PRODUCTION VERIFIED — GREEN
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff

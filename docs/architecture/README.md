@@ -68,11 +68,11 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | **P6.4.3 Mix UX polish & integration** | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` · served `0kfptvapkfp-m.js` — [P6.4 freeze](../decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.5 Studio Audio Quality Metering** | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (browser/CDP · not GREEN · not reopened) — [freeze](../decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md) · [audit](./P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md) |
 | **P6.6 On-demand Track Peak Metering** | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · served `3_efrbzvmc1dc.js` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · Vitest **1410 PASS · 1 SKIP** — [freeze](../decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md) · [audit](./P6_6_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **P6.7 Clip Fades** | Architecture Audit **GO WITH CONDITIONS** · Design Freeze **GO** · **implementation NOT AUTHORIZED** until Owner GO — [audit](./P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [freeze](../decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) |
+| **P6.7 Clip Fades** | **PRODUCTION VERIFIED — GREEN** @ `06c60b5` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · served `0g5xoq_48-8xn.js` · Vitest **1519 PASS · 1 SKIP** · P6.7.1–P6.7.4 + Trim/Split — [audit](./P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [freeze](../decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) |
 | **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **GO WITH CONDITIONS** — [P5_9_STUDIO_ARCHITECTURE_AUDIT.md](./P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **Next Studio step** | **P6.7 Owner GO → implementation** (freeze GO) · do **not** auto-start · do **not** reopen P6.6 / P6.5 Scenario B / P6.4.4 |
+| **Next Studio step** | **STOP after P6.7** — do **not** start P6.8 · do **not** reopen P6.6 / P6.5 Scenario B / P6.4.4 · Owner decides next |
 | Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track FX · Master FX · Master + on-demand Track metering (P6.5/P6.6) · Mix UX · overlap = MIX · P6.6 GREEN · P6.5 Scenario B remains BLOCKED / INCONCLUSIVE |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |
 | E3.7 Premium Render | **Code on Production** · historically shipped **DARK** · Premium Production E2E **NOT TESTED** — [E3_7_IMPLEMENTATION_CLOSEOUT.md](../audits/E3_7_IMPLEMENTATION_CLOSEOUT.md) |
@@ -89,7 +89,7 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | Contabo VPS | **EXTERNAL COMPUTE** (FFmpeg ephemeral) · **NOT** durable media SSOT · VPS Layer-1 staging **43/43** · **NOT** sole/final DR · worker **STOPPED / DISABLED** @ `92496d4` |
 | FAR-01 | Phase 1 DR-A historical SHIPPED · campaign **SOAK COMPLETE / CONTAMINATED** · RETIREMENT **NOT EXECUTED** — [FAR_01_CURRENT_STATE.md](../audits/FAR_01_CURRENT_STATE.md) |
 | ARCH-05 orphan GC | **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** · DELETE **32/32** historical — [reconciliation](../audits/ARCH_05_POST_DELETE_RECONCILIATION.md) |
-| Current Production / repo tip | Live planes: [PROJECT_STATE.md](../PROJECT_STATE.md) · production app `c825e42` · P6.6 GREEN · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` |
+| Current Production / repo tip | Live planes: [PROJECT_STATE.md](../PROJECT_STATE.md) · production app `06c60b5` · P6.7 GREEN · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` |
 
 See [BEATS.md](./BEATS.md), [AUTHORIZATION.md](./AUTHORIZATION.md), [AUDIO_TRANSPORT.md](./AUDIO_TRANSPORT.md), [BPM_AUTO_DETECTION.md](./BPM_AUTO_DETECTION.md), [RECORDING.md](./RECORDING.md), [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md), [PHASE_1_9_DESIGN_FREEZE.md](../phases/PHASE_1_9_DESIGN_FREEZE.md), [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md), [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 
