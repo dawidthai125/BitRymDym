@@ -31,6 +31,11 @@ import {
 } from "@/lib/studio/studio-fx-chain";
 import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
 import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
+import {
+  buildStudioClipFadesPatchBody,
+  interpretStudioClipFadesPersistResponse,
+  studioClipFadesOverlapHint,
+} from "@/lib/studio/studio-clip-fade";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -300,6 +305,49 @@ function StudioEditorInner({
     setStatus("Zapisano");
   }
 
+  /** P6.7.3 — explicit Fade In/Out save via set_fades + CAS. */
+  async function saveClipFades(fadeInMs: number, fadeOutMs: number) {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const body = buildStudioClipFadesPatchBody({
+      fadeInMs,
+      fadeOutMs,
+      expectedDocumentVersion: doc.project.documentVersion,
+    });
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      clip?: StudioClipDto;
+      documentVersion?: number;
+      error?: string;
+      code?: string;
+    };
+    const result = interpretStudioClipFadesPersistResponse(res.status, json);
+    if (!result.ok) {
+      // No blind retry. Conflict surfaces Odśwież via conflictActive.
+      throw new Error(result.message);
+    }
+    setDoc((prev) => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        documentVersion: result.documentVersion,
+      },
+      clips: prev.clips.map((c) =>
+        c.id === result.clip.id ? result.clip : c,
+      ),
+    }));
+    setStatus("Zapisano");
+  }
+
   async function splitSelectedAtPlayhead() {
     if (!selectedClip) return;
     setError(null);
@@ -524,6 +572,16 @@ function StudioEditorInner({
             setSelectedClipId(clearClipSelection());
             setConfirmDelete(false);
           }}
+          onSaveFades={(fadeInMs, fadeOutMs) =>
+            startTransition(async () => {
+              try {
+                await saveClipFades(fadeInMs, fadeOutMs);
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd zapisu fade.");
+                setStatus(null);
+              }
+            })
+          }
           onMove={(timelineStartMs) =>
             startTransition(async () => {
               try {
@@ -1066,6 +1124,7 @@ function ClipEditPanel({
   confirmDelete,
   onConfirmDeleteChange,
   onClearSelection,
+  onSaveFades,
   onMove,
   onTrimLeftToPlayhead,
   onTrimRightToPlayhead,
@@ -1079,6 +1138,7 @@ function ClipEditPanel({
   confirmDelete: boolean;
   onConfirmDeleteChange: (next: boolean) => void;
   onClearSelection: () => void;
+  onSaveFades: (fadeInMs: number, fadeOutMs: number) => void;
   onMove: (timelineStartMs: number) => void;
   onTrimLeftToPlayhead: () => void;
   onTrimRightToPlayhead: () => void;
@@ -1086,12 +1146,24 @@ function ClipEditPanel({
   onDelete: () => void;
 }) {
   const [draftStart, setDraftStart] = useState<number | null>(null);
+  const fadeBaselineKey = clip
+    ? `${clip.id}:${clip.fadeInMs}:${clip.fadeOutMs}`
+    : "";
+  const [fadeEdit, setFadeEdit] = useState<{
+    baselineKey: string;
+    fadeInMs: number;
+    fadeOutMs: number;
+  } | null>(null);
   const maxStart = clip
     ? Math.max(0, timelineLengthMs - clip.durationMs)
     : 0;
   const startValue = clip
     ? (draftStart ?? Math.min(clip.timelineStartMs, maxStart))
     : 0;
+  const activeFadeEdit =
+    fadeEdit && fadeEdit.baselineKey === fadeBaselineKey ? fadeEdit : null;
+  const draftFadeIn = activeFadeEdit?.fadeInMs ?? clip?.fadeInMs ?? 0;
+  const draftFadeOut = activeFadeEdit?.fadeOutMs ?? clip?.fadeOutMs ?? 0;
 
   if (!clip) {
     return (
@@ -1102,10 +1174,35 @@ function ClipEditPanel({
     );
   }
 
+  const fadeMax = Math.max(0, clip.durationMs);
+  const fadeDirty =
+    draftFadeIn !== clip.fadeInMs || draftFadeOut !== clip.fadeOutMs;
+  const fadeOverlapHint = studioClipFadesOverlapHint(
+    draftFadeIn,
+    draftFadeOut,
+    clip.durationMs,
+  );
+
+  function setDraftFadeIn(next: number) {
+    setFadeEdit({
+      baselineKey: fadeBaselineKey,
+      fadeInMs: next,
+      fadeOutMs: draftFadeOut,
+    });
+  }
+
+  function setDraftFadeOut(next: number) {
+    setFadeEdit({
+      baselineKey: fadeBaselineKey,
+      fadeInMs: draftFadeIn,
+      fadeOutMs: next,
+    });
+  }
+
   return (
-    <div className="space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
+    <div className="min-w-0 space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--brd-ink)]">
             Zaznaczony klip · start {formatStudioTimeMs(startValue)} · długość{" "}
             {formatStudioTimeMs(clip.durationMs)}
@@ -1119,13 +1216,14 @@ function ClipEditPanel({
           type="button"
           size="sm"
           variant="ghost"
+          className="min-h-11"
           disabled={pending}
           onClick={onClearSelection}
         >
           Odznacz
         </Button>
       </div>
-      <label className="block text-xs text-[var(--brd-mute)]">
+      <label className="block min-w-0 text-xs text-[var(--brd-mute)]">
         Przesuń (pozycja startu)
         <input
           type="range"
@@ -1133,7 +1231,7 @@ function ClipEditPanel({
           max={maxStart}
           step={1}
           value={startValue}
-          className="mt-1 w-full"
+          className="mt-1 h-11 w-full min-w-0"
           aria-label="Przesuń klip"
           disabled={pending}
           onChange={(e) => setDraftStart(Number(e.target.value))}
@@ -1144,11 +1242,12 @@ function ClipEditPanel({
           }}
         />
       </label>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex min-w-0 flex-wrap gap-2">
         <Button
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           disabled={pending}
           onClick={onTrimLeftToPlayhead}
           title="Przytnij początek do playhead"
@@ -1159,6 +1258,7 @@ function ClipEditPanel({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           disabled={pending}
           onClick={onTrimRightToPlayhead}
           title="Przytnij koniec do playhead"
@@ -1169,6 +1269,7 @@ function ClipEditPanel({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           disabled={pending}
           onClick={onSplit}
           title="Podziel w playhead"
@@ -1180,6 +1281,7 @@ function ClipEditPanel({
             type="button"
             size="sm"
             variant="outline"
+            className="min-h-11"
             disabled={pending}
             onClick={() => onConfirmDeleteChange(true)}
             title="Usuń klip z osi czasu"
@@ -1192,6 +1294,7 @@ function ClipEditPanel({
               type="button"
               size="sm"
               variant="destructive"
+              className="min-h-11"
               disabled={pending}
               onClick={onDelete}
               title="Potwierdź usunięcie klipu"
@@ -1202,6 +1305,7 @@ function ClipEditPanel({
               type="button"
               size="sm"
               variant="ghost"
+              className="min-h-11"
               disabled={pending}
               onClick={() => onConfirmDeleteChange(false)}
             >
@@ -1216,6 +1320,57 @@ function ClipEditPanel({
           pozostaje nietknięte.
         </p>
       ) : null}
+
+      <div
+        className="min-w-0 space-y-2 border-t border-[var(--brd-line)] pt-3"
+        aria-label="Fade klipu"
+      >
+        <p className="text-xs font-medium text-[var(--brd-ink)]">Fade</p>
+        <p className="text-xs text-[var(--brd-mute)]">
+          Aktualnie: Fade In {formatStudioTimeMs(clip.fadeInMs)} · Fade Out{" "}
+          {formatStudioTimeMs(clip.fadeOutMs)}
+        </p>
+        <StudioMixControl
+          label="Fade In"
+          ariaLabel="Fade In"
+          value={draftFadeIn}
+          display={formatStudioTimeMs(draftFadeIn)}
+          min={0}
+          max={fadeMax}
+          step={1}
+          disabled={pending}
+          onLocalChange={setDraftFadeIn}
+          onCommit={setDraftFadeIn}
+        />
+        <StudioMixControl
+          label="Fade Out"
+          ariaLabel="Fade Out"
+          value={draftFadeOut}
+          display={formatStudioTimeMs(draftFadeOut)}
+          min={0}
+          max={fadeMax}
+          step={1}
+          disabled={pending}
+          onLocalChange={setDraftFadeOut}
+          onCommit={setDraftFadeOut}
+        />
+        {fadeOverlapHint ? (
+          <p className="text-xs text-[var(--brd-mute)]" role="status">
+            Suma Fade In i Fade Out przekracza długość klipu — przy zapisie
+            wartości zostaną znormalizowane.
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          size="sm"
+          className="min-h-11 w-full min-w-0 sm:w-auto"
+          disabled={pending || !fadeDirty}
+          onClick={() => onSaveFades(draftFadeIn, draftFadeOut)}
+          aria-label="Zapisz fade"
+        >
+          Zapisz fade
+        </Button>
+      </div>
     </div>
   );
 }

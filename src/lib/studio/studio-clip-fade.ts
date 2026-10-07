@@ -12,8 +12,10 @@ import {
 } from "@/lib/studio/studio-audio-schedule";
 import {
   applyStudioFxCasToState,
+  FX_CHAIN_CONFLICT_UI_PL,
   StudioFxChainError,
 } from "@/lib/studio/studio-fx-chain";
+import type { StudioClipDto } from "@/lib/studio/studio-types";
 
 export type StudioNormalizedFades = {
   fadeInMs: number;
@@ -353,4 +355,116 @@ export function applyStudioClipFadesCasToState(
     next.fadeInMs = normalized.fadeInMs;
     next.fadeOutMs = normalized.fadeOutMs;
   });
+}
+
+/* ─── P6.7.3 UI persist contract (no second normalize; explicit save) ─── */
+
+export type StudioClipFadesPatchBody = {
+  op: "set_fades";
+  fadeInMs: number;
+  fadeOutMs: number;
+  expectedDocumentVersion: number;
+};
+
+export function buildStudioClipFadesPatchBody(params: {
+  fadeInMs: number;
+  fadeOutMs: number;
+  expectedDocumentVersion: number;
+}): StudioClipFadesPatchBody {
+  return {
+    op: "set_fades",
+    fadeInMs: params.fadeInMs,
+    fadeOutMs: params.fadeOutMs,
+    expectedDocumentVersion: params.expectedDocumentVersion,
+  };
+}
+
+export type StudioClipFadesPersistResult =
+  | { ok: true; documentVersion: number; clip: StudioClipDto }
+  | {
+      ok: false;
+      kind: "conflict" | "unauthorized" | "forbidden" | "validation" | "error";
+      status: number;
+      message: string;
+    };
+
+/**
+ * Map Clip PATCH set_fades HTTP response → UI result.
+ * Never retries. 409 never mutates local state (caller must not apply).
+ */
+export function interpretStudioClipFadesPersistResponse(
+  status: number,
+  json: {
+    success?: boolean;
+    clip?: StudioClipDto;
+    documentVersion?: number;
+    error?: string;
+    code?: string;
+  },
+): StudioClipFadesPersistResult {
+  if (status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+    return {
+      ok: false,
+      kind: "conflict",
+      status: status === 409 ? 409 : status,
+      message: json.error ?? FX_CHAIN_CONFLICT_UI_PL,
+    };
+  }
+  if (status === 401) {
+    return {
+      ok: false,
+      kind: "unauthorized",
+      status: 401,
+      message: json.error ?? "Zaloguj się, aby zapisać fade.",
+    };
+  }
+  if (status === 403) {
+    return {
+      ok: false,
+      kind: "forbidden",
+      status: 403,
+      message: json.error ?? "Brak uprawnień do zapisu fade.",
+    };
+  }
+  if (status === 400) {
+    return {
+      ok: false,
+      kind: "validation",
+      status: 400,
+      message:
+        json.error ??
+        "Nie udało się zapisać fade. Sprawdź wartości i spróbuj ponownie.",
+    };
+  }
+  if (
+    status < 200 ||
+    status >= 300 ||
+    !json.clip ||
+    typeof json.documentVersion !== "number"
+  ) {
+    return {
+      ok: false,
+      kind: "error",
+      status,
+      message: json.error ?? "Nie udało się zapisać fade.",
+    };
+  }
+  return {
+    ok: true,
+    documentVersion: json.documentVersion,
+    clip: json.clip,
+  };
+}
+
+/** UX hint only — backend normalizeFades remains SoT. */
+export function studioClipFadesOverlapHint(
+  fadeInMs: number,
+  fadeOutMs: number,
+  durationMs: number,
+): boolean {
+  const D = Number.isFinite(durationMs) ? Math.trunc(durationMs) : 0;
+  if (D <= 0) return false;
+  const fi = Number.isFinite(fadeInMs) ? Math.trunc(fadeInMs) : 0;
+  const fo = Number.isFinite(fadeOutMs) ? Math.trunc(fadeOutMs) : 0;
+  return fi + fo > D;
 }
