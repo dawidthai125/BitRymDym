@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-07 — **Studio Project List UX DELETE PRODUCTION VERIFIED — GREEN** @ `2c4b416` · dpl `dpl_HuodywH…` · V1 CLOSED/GREEN · P6.7 CLOSED/GREEN · **STOP**
+**Updated:** 2026-10-07 — **P4.6 TAKE_EXPORT CLOSED / GREEN** · production tip `836679a` · dpl `dpl_5J2cRHA2…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 
 ---
 
@@ -21,12 +21,16 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` (docs reconcile may tip after `56b629e`) |
-| **PRODUCTION APP SHA** | `0f2169a9a5ea173e1c1f072714d007afea8ef931` (`0f2169a`) — Project List multi-select + pagination (includes `2c4b416`) |
-| **PRODUCTION DEPLOYMENT** | `dpl_EwamhoSBMLpGYNvmHrciL8ULQy1Y` · GH deploy `6910127623` |
+| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` (tip **`836679a`** when clean) |
+| **PRODUCTION APP SHA** | `836679adc146de13c4833763fe2dec4769b64265` (**`836679a`**) — Checkbox UX · VERIFIED / READY |
+| **PRODUCTION DEPLOYMENT** | `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **V1 PRODUCTION VERIFIED — GREEN** · **P6.7 CLOSED / GREEN** · prior **P6.6 GREEN** · **P6.5** Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
-| **LAST STUDIO VERIFY** | V1 production gate **GREEN** @ `56b629e` · Vitest **1567 PASS · 1 SKIP** · audible Gain/Mute meter A/B · API/security/ACL/Take/mobile |
+| **STUDIO BASELINE** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **CATALOG** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
+| **STORAGE** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio **13** |
+| **SECURITY** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
+| **MOBILE** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** |
+| **LAST STUDIO VERIFY** | Checkbox gate **GREEN** @ `836679a` · prior V1 @ `56b629e` |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
@@ -41,9 +45,13 @@
 | **P6.6 On-demand Track Peak Metering** | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · [freeze](./decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P6.7 Clip Fades** | **PRODUCTION VERIFIED — GREEN** @ `06c60b5` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · P6.7.1 runtime · P6.7.2 CAS · P6.7.3 UI · P6.7.x Trim/Split · P6.7.4 gate · DB RPCs fades/geometry_fades/split · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) |
 | **P0 studio_cas_* EXECUTE** | **CLOSED / PRODUCTION VERIFIED GREEN** · migration `20261007073533` `p0_studio_cas_client_execute_revoke` · repo file `20261007140000_…` · anon/authenticated **DENIED** · service_role **ALLOWED** · P6.7 feature **unchanged CLOSED** · [CHANGELOG](./CHANGELOG.md) |
-| **POST-RECORDING / VOCAL PRODUCTION V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `56b629e` · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
-| **STUDIO PROJECT LIST UX / DELETE** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `2c4b416` · dpl `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB` · [gate](./audits/STUDIO_PROJECT_LIST_UX_DELETE_PRODUCTION_GATE.md) |
-| **NEXT UNIT** | **STOP** — do **not** start P6.8 · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
+| **POST-RECORDING / VOCAL PRODUCTION V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `56b629e` (ancestry) · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
+| **STUDIO PROJECT LIST UX / DELETE** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `2c4b416` (ancestry) · [gate](./audits/STUDIO_PROJECT_LIST_UX_DELETE_PRODUCTION_GATE.md) |
+| **STUDIO CUSTOM CHECKBOX UX** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `836679a` · [gate](./audits/STUDIO_PROJECT_CHECKBOX_UX_PRODUCTION_GATE.md) |
+| **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
+| **P4.6 TAKE_EXPORT** | **CLOSED / GREEN** · Phase 1 CODE GREEN · Phase 2 INFRA GREEN · Phase 3 LIVE VERIFIED (MP3_192 · take-only · FFmpeg/libmp3lame · signed download PASS · MIX regression PASS) · production app **unchanged** `836679a` / `dpl_5J2cRHA2…` — [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
+| **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
+| **NEXT UNIT** | **STOP** — **P6.8 NOT STARTED / OWNER DECISION** · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -64,7 +72,7 @@
 | **STORAGE-ARCH-01** | LOCKED · Hybrid C |
 | **STORAGE-ARCH-07 / Local Layer-2** | DESIGN FREEZE COMPLETE · **43/43 RESTORE VERIFIED** · AWS DEFERRED |
 | **E3** | PRODUCTION VERIFIED — GREEN |
-| **Worker** | Contabo EXTERNAL COMPUTE · **STOPPED / DISABLED** · `92496d4` |
+| **Worker** | Contabo EXTERNAL COMPUTE · **STOPPED / DISABLED** after P4.6 Phase 3 · live target `836679a+phase1` (historical bootstrap `92496d4`) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
 ---
@@ -72,44 +80,34 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = 2c4b416 · Studio Project List UX + Delete
-                                · PRODUCTION VERIFIED — GREEN · CLOSED
-                                · includes V1 56b629e + list UX 2c4b416
-PRODUCTION DEPLOYMENT         = dpl_HuodywHaeJAh7n4BvFnCFo89pCmB
-  GitHub deployment           = 6909838158
-  prior V1 app                = 56b629e / dpl_HcaXhP9… (superseded)
-  prior P6.7 app              = 06c60b5 (superseded)
+CURRENT PHASE                 = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ 836679a
+PRODUCTION APP                = 836679a · Checkbox UX · VERIFIED / READY
+PRODUCTION DEPLOYMENT         = dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT
+  prior tips (ancestry)       = 0f2169a (multi-select) · 2c4b416 (list delete)
+                              · 56b629e (V1) · 06c60b5 (P6.7)
 REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD)
-LAST STUDIO VERIFY            = Project List UX DELETE GREEN @ 2c4b416
-                              · Studio suite 457 PASS · tsc PASS
-                              · UI delete/cancel/reload PASS
-                              · API ownership 401/403/404 · Take unchanged
-P6.7 DB MIGRATIONS (prod ID)  = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
-                              · 20261007061049 p6_7_x_studio_cas_trim_split
-V1 DB MIGRATIONS (prod ID)    = 20261007080752 pr_v1_studio_cas_clip_gain_mute
-                              · 20261007080758 pr_v1_studio_cas_clip_duplicate
-                              · 20261007080800 pr_v1_studio_cas_clip_delete
-  repo filenames              = 20261007120000_… · 20261007130000_… · 20261007150000_… / 51000 / 52000
-                              · (Supabase applied version ≠ filename timestamp — documented mapping)
-P6.7 RPCs                     = studio_cas_apply_clip_fades
-                              · studio_cas_apply_clip_geometry_fades
-                              · studio_cas_apply_clip_split
-V1 RPCs                       = studio_cas_apply_clip_gain_mute
-                              · studio_cas_apply_clip_duplicate
-                              · studio_cas_apply_clip_delete
-P6.1 RPC HOTFIX               = 57ef69e · migration 20261006190900_p6_1_fx_cas_document_version_qualify
-P6.2 APPLICATION              = 23d3be8 · PRODUCTION VERIFIED — GREEN
-P6.3 APPLICATION              = 350303e · PRODUCTION VERIFIED — GREEN
-P6.4.1 APPLICATION            = 9f93606 · PRODUCTION VERIFIED — GREEN
-P6.4.2 APPLICATION            = 320907a · PRODUCTION VERIFIED — GREEN
-P6.4.3 APPLICATION            = f261ea8 · PRODUCTION VERIFIED — GREEN
-P6.5 APPLICATION              = 2258bdb (impl 345e8e5 + fix) · Master metering SHIPPED
+CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
+STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio 13
+SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
+MOBILE                        = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
+P0 / P1 / P2 / P3             = 0 / 0 / 2 / 5
+P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
+P4 CORE                       = SHIPPED @ bface6c ⊂ 836679a
+P4.6 TAKE_EXPORT              = CLOSED / GREEN
+                              · Phase 1 CODE · Phase 2 INFRA · Phase 3 LIVE VERIFIED
+                              · evidence: P4_6_PHASE1/2/3 reports under docs/audits/
+P4 LOCAL WIP                  = context? + p4-live-verify · NOT PRODUCTION · NOT BASELINE
+SA-07                         = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
+LAST STUDIO VERIFY            = Checkbox GREEN @ 836679a
+P6.7 DB MIGRATIONS (prod ID)  = 20261007061035 · 20261007061049 (historical)
+V1 DB MIGRATIONS (prod ID)    = 20261007080752 · 20261007080758 · 20261007080800 (historical)
+P6.7 RPCs                     = studio_cas_apply_clip_fades · geometry_fades · split
+V1 RPCs                       = studio_cas_apply_clip_gain_mute · duplicate · delete
 P6.5 Scenario A               = PASS / PROVEN (Live Peak)
-P6.5 Scenario B               = BLOCKED / INCONCLUSIVE (browser/CDP) · DO NOT REOPEN
-P6.6.1                        = a8a3337 · Track analyser engine · COMPLETE
-P6.6.2                        = c825e42 · Selected Track Peak Meter UI · COMPLETE
-P6.6.3                        = c825e42 · Production gate · COMPLETE
-P6.6                          = PRODUCTION VERIFIED — GREEN
+P6.5 Scenario B               = BLOCKED / INCONCLUSIVE · DO NOT REOPEN
+P6.6                          = PRODUCTION VERIFIED — GREEN @ c825e42 (ancestry)
+P6.7                          = PRODUCTION VERIFIED — GREEN · CLOSED @ 06c60b5 (ancestry)
+V1                            = PRODUCTION VERIFIED — GREEN · CLOSED @ 56b629e (ancestry)
 KNOWN WAIVER                  = e3-7-f EXPORT_WAV · PRE-EXISTING / WAIVED
 KNOWN LIMITATION              = limiter IMPLEMENTATION LIMITATION · reverb synthetic IR · delay no BPM sync
                               · P5.10 TAKE preview may fail · wave4-live PRE-EXISTING / OUT-OF-SCOPE
@@ -182,13 +180,13 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-CURRENT                       = Studio Project List UX DELETE CLOSED / GREEN @ 2c4b416
-                              · V1 CLOSED / GREEN · P6.7 CLOSED / GREEN
-NEXT GATE                     = STOP — no authorized next Studio unit
-                              · do NOT start P6.8
+CURRENT                       = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ 836679a
+                              · Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
+NEXT GATE                     = STOP — P6.8 NOT STARTED / OWNER DECISION
                               · do NOT force-redeploy
-                              · do NOT reopen V1 / P6.7 / list UX / P6.6 / P6.5 Scenario B
-                              · Owner decides next Architecture Audit / unit
+                              · do NOT reopen V1 / P6.7 / list UX / P6.6 / P6.5 Scenario B / P4.6
+                              · do NOT commit P4 local seam / SA-07 untracked without Owner GO
+                              · Owner decides next unit
 P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical) · CLOSED BY FREEZE+IMPL
 P6.7 DESIGN FREEZE            = GO (historical) · living status GREEN
 P6.7 IMPLEMENTATION           = COMPLETE · PRODUCTION VERIFIED — GREEN
@@ -207,7 +205,7 @@ FAR-01                        = NOT CLOSED (ops contaminated soak — not produc
 Durable media                = Supabase Storage (beat-audio · take-audio · audio-artifacts)
 Metadata SSOT                = Supabase PostgreSQL
 Application                  = Vercel / Next.js
-EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · Worker STOPPED / DISABLED
+EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · Worker STOPPED / DISABLED after P4.6 Phase 3
 Role ≠ Account Level ≠ Creator Rank ≠ Premium Tier
 Premium SSOT                 = resolveProductEntitlement + PREMIUM_TIER_MATRIX
 Sample Policy SSOT           = getSamplePolicy + SAMPLE_POLICY_DEFAULTS + sample_policy_settings
@@ -369,7 +367,7 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **No authorized next Studio product unit** — V1 CLOSED · P6.7 CLOSED · do **not** start P6.8 without Architecture Audit + Design Freeze + Owner GO
+- **No authorized next Studio product unit** — V1 CLOSED · P6.7 CLOSED · **P6.8 NOT STARTED / OWNER DECISION** (requires Architecture Audit + Design Freeze + Owner GO)
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
@@ -397,20 +395,22 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm PRODUCTION APP = 56b629e (V1 · GREEN · CLOSED)
-                 → Confirm PRODUCTION DEPLOYMENT = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei · GH 6908396342
-                 → Read docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md
-                 → Confirm REPO/DOCS HEAD = origin/main (git rev-parse HEAD)
+                 → Confirm PRODUCTION APP = 836679a · dpl dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT
+                 → Confirm Catalog 17 · Storage orphans 0 · Security GREEN
+                 → Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
+                 → Confirm P6.8 = NOT STARTED / OWNER DECISION
+                 → Confirm P4.6 TAKE_EXPORT = CLOSED / GREEN
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
-                 → NEXT GATE = STOP — no authorized P6.8 · Owner decides next unit
-                 → Do NOT reimplement V1 / P6.7 / P6.6 / P6.5 Scenario B / closed P5 units
+                 → NEXT GATE = STOP — Owner decides next unit
+                 → Do NOT reimplement V1 / P6.7 / P6.6 / P4.6 / closed P5 units
+                 → Do NOT commit P4 context? seam / SA-07 untracked without Owner GO
                  → Do NOT call punch “P5.7” / “P5.9” / “P5.10”
                  → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
-                 → Do NOT reopen ARCH-05 / BPM / replace / sample policy / P3 / P5–P6.7 without new evidence
+                 → Do NOT reopen closed epics without new evidence
                  → Do NOT fix EXPORT_WAV in product scope without separate Owner GO
                  → Do NOT clean dirty WIP without Owner GO
-                 → Do NOT force-redeploy V1 without evidence SHA mismatch
+                 → Do NOT force-redeploy without evidence SHA mismatch
 ```
 
 ---

@@ -6,21 +6,43 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-10-07 — POST-RECORDING EDITING / VOCAL PRODUCTION V1
+## 2026-10-07 — P4.6 TAKE_EXPORT FINAL CLOSE + SSOT RECONCILIATION
 
-**Status:** **IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED**
-**Scope:** Clip Gain · Clip Mute · Duplicate Clip · CAS Move/Delete · ClipEditPanel UX · architecture guards
-**Commits:** `1a62158` (PR-01/02) · `3216cf0` (PR-03/04/05) · docs/report tip (this entry)
-**Production app SHA:** **unchanged** `06c60b5` (P6.7) — **V1 UI/API not deployed**
-**DB migrations applied (production version):** `20261007080752` `pr_v1_studio_cas_clip_gain_mute` · `20261007080758` `pr_v1_studio_cas_clip_duplicate` · `20261007080800` `pr_v1_studio_cas_clip_delete`
-**Repo migration filenames:** `20261007150000_…` · `20261007151000_…` · `20261007152000_…` (filename ≠ applied version — documented mapping)
-**RPCs:** `studio_cas_apply_clip_gain_mute` · `studio_cas_apply_clip_duplicate` · `studio_cas_apply_clip_delete` (+ reuse `studio_cas_apply_clip_geometry_fades` for move)
-**LIVE ACL:** anon **FALSE** · authenticated **FALSE** · service_role **TRUE** (all three new RPCs)
-**API:** PATCH `set_gain` / `set_mute` · POST `…/duplicate` · DELETE + `expectedDocumentVersion`
-**Tests:** Studio suite **445 PASS** · `tsc --noEmit` PASS · P6.7 regression suites PASS
-**P6.7:** remains **CLOSED / GREEN** (not reopened)
-**Final report:** [POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_FINAL_REPORT.md)
-**Next:** STOP — Owner decides **deploy + production gate** · do **not** start P6.8 / Automation / Autotune / E3 Studio Render / Undo / Autosave / P7
+**Status:** **DOCS ONLY** · **P4.6 TAKE_EXPORT — CLOSED / GREEN**
+**Scope:** Living SSOT tip only (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · this entry)
+**Production tip (unchanged):** `836679a` · dpl `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY / VERIFIED
+**Closure path:** Phase 1 CODE GREEN → Phase 2 INFRA GREEN → Phase 3 LIVE VERIFIED
+**Live proof:** READY Take → TAKE_EXPORT MP3_192 → existing E3 Contabo worker claim → take-audio only → FFmpeg/libmp3lame → ~192000 bps → audio-artifacts → signed download PASS · non-owner DENIED · MIX regression PASS · worker STOPPED after verify
+**Evidence:** [P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [P4_6_PHASE3_LIVE_VERIFICATION.md](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md)
+**Not done here:** no app code · no DB/Storage mutation · no Contabo change · no deploy · no commit · no P6.8
+**P6.8:** NOT STARTED / OWNER DECISION
+**P4 local WIP (`context?` / p4-live-verify) / SA-07:** NOT PRODUCTION · NOT BASELINE · untouched
+**Next:** STOP · Owner decides next unit
+
+## 2026-10-07 — FINAL SSOT TIP RECONCILIATION @ 836679a
+
+**Status:** **DOCS ONLY** · living tip reconciled · **CURRENT PROJECT STATE → GREEN** (docs plane)
+**Scope:** FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README (+ this tip)
+**Production tip:** `836679a` · dpl `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY / VERIFIED
+**Ancestry (unchanged history):** V1 `56b629e` · List UX `2c4b416` · multi-select `0f2169a` · P6.7 `06c60b5`
+**Catalog / Storage:** 17 PLATFORM · beat-audio orphans 0 · take-audio 13
+**Security / Mobile:** GREEN · TECHNICALLY READY — DEVICE CERTIFICATION PENDING
+**P6.8:** NOT STARTED / OWNER DECISION
+**P4 / SA-07 local WIP:** NOT PRODUCTION · NOT BASELINE · untouched
+**Next:** STOP · Owner decides commit of docs tip · no deploy / no code
+**Note (living tip later):** superseded as **current** P4.6 status by **P4.6 TAKE_EXPORT FINAL CLOSE** entry above — this tip remains historical baseline reconcile @ `836679a`
+
+## 2026-10-07 — POST-RECORDING EDITING / VOCAL PRODUCTION V1 — PRODUCTION GATE GREEN
+
+**Status:** **PRODUCTION VERIFIED — GREEN · CLOSED** (historical gate @ `56b629e`; superseded as **living production tip** by `836679a`)
+**Scope:** Production Gate (no force redeploy · no new features)
+**Production (at gate):** `56b629e` · `dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei` · GH `6908396342` · chunk `1rnqr79fxkwx9.js`
+**Automated:** Vitest **1567 PASS · 0 FAIL · 1 SKIP** · Studio **445 PASS** · `tsc` PASS
+**Audible evidence:** Master meter Gain −18→+9 Δ≈+14.5 dB · Mute → −100 dB floor · unmute restores peak
+**API/security/ACL/Take/mobile/P6.7:** PASS
+**Gate report:** [POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md)
+**Next:** **STOP** — do **not** start P6.8 / Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo
+**Note:** interim RED (wrong meter sampling) superseded by this GREEN
 **WIP:** untouched
 
 ## 2026-10-07 — P0 SECURITY FIX — studio_cas_* client EXECUTE revoke

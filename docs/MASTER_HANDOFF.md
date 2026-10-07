@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-07 — **Studio Project List UX DELETE GREEN** @ `2c4b416` · dpl `dpl_HuodywH…` · V1 CLOSED/GREEN · P6.7 CLOSED/GREEN · **STOP**
+**Updated:** 2026-10-07 — **P4.6 TAKE_EXPORT CLOSED / GREEN** · production tip `836679a` · dpl `dpl_5J2cRHA2…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,13 +23,20 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository / docs HEAD** | `origin/main` — verify `git rev-parse HEAD` (docs reconcile may tip after `56b629e`) |
-| **Production application SHA** | `2c4b4160474ee6ed25a228a9dd0a7b10559dad39` (`2c4b416`) — Studio Project List UX + Delete · V1 remains CLOSED |
-| **Production deployment** | `dpl_HuodywHaeJAh7n4BvFnCFo89pCmB` · GH `6909838158` |
-| **Studio baseline** | **V1 PRODUCTION VERIFIED — GREEN** · **P6.7 CLOSED / GREEN** · prior **P6.6 GREEN** · **P6.5** Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
-| **Last Studio Production Verify** | V1 gate **GREEN** @ `56b629e` · Vitest **1567 PASS · 1 SKIP** · audible Gain/Mute meter A/B · API/security/ACL/Take/mobile · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
-| **POST-RECORDING V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** · commits `1a62158` + `3216cf0` + `56b629e` · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
-| **NEXT UNIT** | **STOP** — do **not** start P6.8 · do **not** force-redeploy · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
+| **Repository / docs HEAD** | `origin/main` — verify `git rev-parse HEAD` (tip **`836679a`** when clean) |
+| **Production application SHA** | `836679adc146de13c4833763fe2dec4769b64265` (**`836679a`**) — Checkbox UX tip · VERIFIED / READY |
+| **Production deployment** | `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY |
+| **Studio baseline** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **Catalog** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
+| **Storage** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio **13** |
+| **Security** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
+| **Mobile** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** (not Real Device Verified) · P0/P1 **0** · P2 **2** · P3 **5** |
+| **Last Studio Production Verify** | Checkbox gate **GREEN** @ `836679a` · prior V1 gate @ `56b629e` · [checkbox gate](./audits/STUDIO_PROJECT_CHECKBOX_UX_PRODUCTION_GATE.md) · [V1 gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
+| **POST-RECORDING V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** · ancestry `1a62158` + `3216cf0` + `56b629e` · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
+| **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
+| **P4.6 TAKE_EXPORT** | **CLOSED / GREEN** · Phase 1 CODE GREEN · Phase 2 INFRA GREEN · Phase 3 LIVE VERIFIED (MP3_192 · take-only · FFmpeg/libmp3lame · signed download PASS · MIX regression PASS) · production app **unchanged** `836679a` / `dpl_5J2cRHA2…` — [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
+| **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked lib/migration = **NOT PRODUCTION** |
+| **NEXT UNIT** | **STOP** — **P6.8 NOT STARTED / OWNER DECISION** · do **not** force-redeploy · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -68,7 +75,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **LOCAL WINDOWS Layer-2** | OD-VPS-LOCAL-01…12 **CLOSED** · **43/43 RESTORE VERIFIED** — [restore](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_RESTORE_DRILL.md) · [impl](./audits/STORAGE_ARCH_07_LOCAL_BACKUP_IMPLEMENTATION.md) |
 | **Historical local DB backup** | **FOUND** · PostgreSQL CUSTOM dump · **≠ Storage object backup** — [audit](./audits/HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) |
 | **Supabase Storage object backup** | VPS **43/43** · Local Windows **43/43 RESTORE VERIFIED** · AWS **DEFERRED** |
-| **Worker** | Contabo **EXTERNAL COMPUTE** · bootstrap `92496d4` · **STOPPED / DISABLED** · Contabo ≠ durable library (unchanged) |
+| **Worker** | Contabo **EXTERNAL COMPUTE** · **STOPPED / DISABLED** after P4.6 Phase 3 live verify · live target `836679a+phase1` (historical bootstrap `92496d4`) · Contabo ≠ durable library (unchanged) |
 | Recording Wave 4–5 / D02 (product) | CLOSED / PRODUCTION VERIFIED |
 | D02 live harness debt | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | Cron | `0 0 * * *` → `/api/cron/takes-janitor` |
@@ -106,7 +113,7 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
                 · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split fade inherit
-                · next = STOP (do not start P6.8)
+                · next = STOP (P6.8 NOT STARTED / OWNER DECISION)
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · NOT frozen autosave contract (condition before autosave)
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)
@@ -165,11 +172,16 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `06c60b5` | **PRODUCTION APP** · P6.7 Clip Fades · **current production baseline · CLOSED** |
-| `origin/main` | **REPO / DOCS TIP** · verify `git rev-parse HEAD` · **≠** `06c60b5` |
+| `836679a` | **CURRENT PRODUCTION APP** · Checkbox UX · **VERIFIED / READY** · dpl `dpl_5J2cRHA2…` |
+| `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` | **CURRENT PRODUCTION DEPLOYMENT** |
+| `0f2169a` | Historical — Project List multi-select + pagination (ancestry of tip) |
+| `2c4b416` | Historical — Project List UX + Delete (ancestry) |
+| `56b629e` | Historical — Post-Recording V1 tip (CLOSED / GREEN · ancestry) |
+| `06c60b5` | Historical — P6.7 Clip Fades production tip · **CLOSED / GREEN** |
+| `origin/main` | **REPO / DOCS TIP** · verify `git rev-parse HEAD` (expect `836679a` when clean) |
 | `c767d12` | Historical — full Px→P6.7 SSOT reconcile docs commit |
 | `e136558` | Historical — first P6.7.4 gate docs tip |
-| `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` | **PRODUCTION DEPLOYMENT** (GitHub `06c60b5` · GH deploy `6902986442`) |
+| `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` | Historical — P6.7 production deployment (`06c60b5`) |
 | `c825e42` | Historical — P6.6 Track Peak · prior production app |
 | `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` | Historical — P6.6 production deployment |
 | `9c2a958` | Historical — P5.10 Studio Audio Engine · prior production app |
@@ -208,9 +220,9 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main (docs)** | verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
-| **Production application** | `06c60b5` — **P6.7 PRODUCTION VERIFIED — GREEN · CLOSED** |
-| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · GH `6902986442` · chunk `0g5xoq_48-8xn.js` |
+| **HEAD / origin/main (docs)** | verify `git rev-parse HEAD` · tip **`836679a`** when clean |
+| **Production application** | **`836679a`** — **VERIFIED / READY** (Checkbox tip · includes V1 + P6.7 ancestry) |
+| **Production deployment** | **`dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT`** · READY |
 | **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
 | **P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **P5.9** | **Architecture Audit · GO WITH CONDITIONS** |
