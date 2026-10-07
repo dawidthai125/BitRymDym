@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-07 — **P6.6 PRODUCTION VERIFIED — GREEN** · app **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · RPC hotfix **`57ef69e`** (unchanged) · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** (unchanged)
+**Updated:** 2026-10-07 — **P6.7 Clip Fades Architecture Audit · GO WITH CONDITIONS** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** (unchanged) · implementation **NOT AUTHORIZED**
 
 ---
 
@@ -39,7 +39,8 @@
 | **P6.4.3 Mix UX polish & integration** | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · served `0kfptvapkfp-m.js` · [P6.4 freeze](./decisions/P6_4_STUDIO_FX_UI_MIX_UX_DESIGN_FREEZE.md) |
 | **P6.5 Studio Audio Quality Metering** | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (browser/CDP · not GREEN · **do not reopen**) · [freeze](./decisions/P6_5_STUDIO_AUDIO_QUALITY_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_5_STUDIO_AUDIO_QUALITY_METERING_ARCHITECTURE_AUDIT.md) |
 | **P6.6 On-demand Track Peak Metering** | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · [freeze](./decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md) · [audit](./architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md) |
-| **NEXT UNIT** | **NEXT ARCHITECTURE AUDIT** — Owner/Architect · do **not** auto-start implementation · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 |
+| **P6.7 Clip Fades Architecture Audit** | **GO WITH CONDITIONS** — candidate apply `fadeInMs`/`fadeOutMs` on clip GainNode · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · Design Freeze next · **implementation NOT AUTHORIZED** |
+| **NEXT UNIT** | **P6.7 Design Freeze** (after Owner accepts audit conditions) · do **not** auto-start implementation · do **not** reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -147,9 +148,12 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-NEXT GATE                     = NEXT ARCHITECTURE AUDIT (Owner/Architect)
+NEXT GATE                     = P6.7 Design Freeze (Owner accept audit GO WITH CONDITIONS)
                               · do NOT auto-start implementation
                               · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
+P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS
+                              · audit = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
+                              · candidate = Clip Fades (fadeInMs / fadeOutMs on clip GainNode)
 
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
@@ -196,7 +200,8 @@ P6 product FX / Mix / Master = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                              · topology: Track Pan → 0|1 Track Analyser → Σ → … → Master Analyser
                              · engine foundation EXISTS (P5.10 GREEN)
                              · Automation / Autotune = NOT READY
-                             · next = Architecture Audit only (no auto-start)
+                             · P6.7 Clip Fades audit = GO WITH CONDITIONS (no impl)
+                             · next = P6.7 Design Freeze only after Owner accept
 P7 creative tracks           = track enum reserved READY WITH REFACTOR
                              · capabilities + additive source kinds before expansion
                              · instrument engines = NOT READY
@@ -322,7 +327,7 @@ STORAGE DISASTER RECOVERY:
 
 ### OPEN
 
-- **Next Studio Architecture Audit** / formal next unit definition (do **not** auto-start P6 / FX / Mix / Master)
+- **P6.7 Design Freeze** after Owner accepts [P6.7 audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) (do **not** auto-start implementation)
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)

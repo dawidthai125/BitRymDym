@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`c825e42`** (**P6.6 PRODUCTION VERIFIED — GREEN** · On-demand Track Peak Metering) · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · chunk `3_efrbzvmc1dc.js` · Vitest **1410 PASS · 1 SKIP** · RPC hotfix **`57ef69e`** · P5.1–P5.6 / P5.8 / P5.10 **GREEN** · **P6.1–P6.4.3 GREEN** · **P6.5** Master metering shipped · Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** (not GREEN · not reopened) · Contabo **STOPPED/DISABLED** · **STORAGE-ARCH-01 LOCKED** · waiver `EXPORT_WAV`. **Next:** Architecture Audit (no auto-start). Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [P6.6 freeze](./decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md).
+**Now:** Production app **`c825e42`** (**P6.6 PRODUCTION VERIFIED — GREEN**) · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · **P6.7 Clip Fades Architecture Audit = GO WITH CONDITIONS** · Design Freeze next · **impl NOT AUTHORIZED** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [P6.7 audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **NEXT ARCHITECTURE AUDIT / formal next Studio unit definition** · do **not** auto-start P6 / FX / Mix / Master · see [PROJECT_STATE.md](./PROJECT_STATE.md) · [P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md](./decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md).
+**Next:** **P6.7 Design Freeze** after Owner accepts [P6.7 audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) · do **not** auto-start implementation · see [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 

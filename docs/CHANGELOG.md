@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-07 — P6.7 CLIP FADES ARCHITECTURE AUDIT (GO WITH CONDITIONS)
+
+**Status:** DOCS ONLY · **ARCHITECTURE AUDIT** · **GO WITH CONDITIONS**
+**SSOT tip:** `cb4f930` · production app **unchanged** `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9`
+**Candidate next unit:** **P6.7 Studio Clip Fades** — apply existing `fadeInMs` / `fadeOutMs` on clip voice `GainNode`
+**Why (SSOT):** P5.10 SHOULD · P5.11 known gap · P6.6 audit #1 Owner alternative after metering · schema/DTO exist · engine apply missing · UI/API write missing
+**Decision:** **GO WITH CONDITIONS** — Design Freeze next (Owner accept) · **implementation NOT AUTHORIZED**
+**Out:** automation lanes · P7 · buses · autosave · reopen P6.6 / P6.5 Scenario B / P6.4.4
+**P6.5 Scenario B:** **BLOCKED / INCONCLUSIVE** — unchanged
+**P6.6:** **PRODUCTION VERIFIED — GREEN** — unchanged
+**Artifact:** [P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md)
+**Deploy this audit:** **NOT DONE** (docs-only)
+
 ## 2026-10-07 — P6.6 SSOT RECONCILE (PRODUCTION VERIFIED — GREEN)
 
 **Status:** DOCS ONLY · **P6.6 PRODUCTION VERIFIED — GREEN**

@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **P6.6 PRODUCTION VERIFIED — GREEN** · app **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · RPC **`57ef69e`** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** (unchanged)
-**Type:** Documentation continuity · P6.6 GREEN · P6.5 Scenario B remains BLOCKED / INCONCLUSIVE · next = Architecture Audit (no auto-start)
+**Updated:** 2026-10-07 — **P6.7 Clip Fades Architecture Audit · GO WITH CONDITIONS** · P6.6 GREEN @ **`c825e42`** · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · Vitest **1410 PASS · 1 SKIP** · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** · impl **NOT AUTHORIZED**
+**Type:** Documentation continuity · P6.6 GREEN · P6.7 audit GO WITH CONDITIONS · next = Design Freeze only after Owner accept (no auto-start impl)
 
 **Evidence rule (bezwzględna):**
 
@@ -55,9 +55,12 @@ STUDIO BASELINE               = P6.6 PRODUCTION VERIFIED — GREEN
 LAST STUDIO VERIFY            = P6.6.3 PRODUCTION GATE GREEN @ c825e42
                               · Vitest 1410 PASS · 1 SKIP · 0 FAIL
                               · Track Peak live · A→B · mobile ~390 · security 401
-NEXT GATE                     = NEXT ARCHITECTURE AUDIT (Owner/Architect)
+NEXT GATE                     = P6.7 Design Freeze (Owner accept audit conditions)
+                              · audit = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
+                              · candidate = Clip Fades (fadeInMs / fadeOutMs)
                               · do NOT auto-start implementation
                               · do NOT reopen P6.6 / P6.5 Scenario B / P6.4.4
+P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS
 D02 HARNESS                   = CLOSED @ 44dc22c · TEST ONLY
 P5.7                          = Architecture Audit · GO WITH CONDITIONS
 P5.8                          = PRODUCTION VERIFIED — GREEN @ 95e04ff
@@ -96,6 +99,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
+| **P6.7** Clip Fades Architecture Audit | **GO WITH CONDITIONS** · candidate apply `fadeInMs`/`fadeOutMs` · Design Freeze next · **impl NOT AUTHORIZED** — [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) |
 | **P6.6** On-demand Track Peak Metering | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · Vitest **1410 PASS · 1 SKIP** |
 | **P6.5** Studio Audio Quality Metering | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (not GREEN · **do not reopen**) |
 | **P6.4.3** Mix UX polish & integration | **PRODUCTION VERIFIED — GREEN** @ `f261ea8` · dpl `dpl_5ZBCGED…` |
@@ -501,8 +505,8 @@ WIP preserved
 [ ] Confirm Production app SHA = c825e42 (P6.6) · dpl dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9
 [ ] Read MASTER_HANDOFF + PROJECT_STATE + P6_6 freeze + P6_6 audit
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 GREEN · P6.6 GREEN · P6.5 Scenario B BLOCKED / INCONCLUSIVE
-[ ] NEXT GATE = NEXT ARCHITECTURE AUDIT (do not auto-start implementation)
-[ ] Do not reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 / P7
+[ ] NEXT GATE = P6.7 Design Freeze after Owner accepts P6.7 audit (GO WITH CONDITIONS)
+[ ] Do not auto-start P6.7 implementation · do not reopen P6.6.1–P6.6.3 / P6.5 Scenario B / P6.4.4 / P7
 [ ] Fala 3.5.1 / P3 / P5.8 / P5.10 / P6.6 = CLOSED / GREEN — do not re-open without new evidence
 [ ] Nie reopen P0/P1/P2/POLISH-01/ARCH-05/BPM/P3/P5.6/P5.8/P5.10/P6.6/Fala 3.5.1 bez nowego evidence
 [ ] Nie czyść dirty WIP
@@ -530,7 +534,8 @@ KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 FALA 3.5.1                   = CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN @ c690831
 P3 STATUS                    = COMPLETE / PRODUCTION VERIFIED — GREEN · UNCHANGED
 P3 FOLLOW-UP                 = p_take_id · NON-BLOCKING
-NEXT GATE                    = NEXT ARCHITECTURE AUDIT (do not auto-start)
+NEXT GATE                    = P6.7 Design Freeze (audit GO WITH CONDITIONS · no auto-start impl)
+P6.7 ARCHITECTURE AUDIT      = GO WITH CONDITIONS · Clip Fades candidate
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK
 SEARCH BEFORE CREATE         = TAK
