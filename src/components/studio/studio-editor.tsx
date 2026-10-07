@@ -502,22 +502,89 @@ function StudioEditorInner({
     setStatus("Zapisywanie…");
     const res = await fetch(
       `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
-      { method: "DELETE" },
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedDocumentVersion: doc.project.documentVersion,
+        }),
+      },
     );
     const json = (await res.json()) as {
       success?: boolean;
       deletedClipId?: string;
+      documentVersion?: number;
       error?: string;
+      code?: string;
     };
+    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+    }
     if (!res.ok || !json.deletedClipId) {
       throw new Error(json.error ?? "Nie udało się usunąć klipu.");
     }
     setDoc((prev) => ({
       ...prev,
+      project: {
+        ...prev.project,
+        documentVersion:
+          typeof json.documentVersion === "number"
+            ? json.documentVersion
+            : prev.project.documentVersion,
+      },
       clips: prev.clips.filter((c) => c.id !== json.deletedClipId),
     }));
     setSelectedClipId(clearClipSelection());
     setConfirmDelete(false);
+    setStatus("Zapisano");
+  }
+
+  /** V1 — Duplicate Clip (same Take, independent Clip params). */
+  async function duplicateSelectedClip() {
+    if (!selectedClip) return;
+    setError(null);
+    setStatus("Zapisywanie…");
+    const res = await fetch(
+      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}/duplicate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedDocumentVersion: doc.project.documentVersion,
+        }),
+      },
+    );
+    const json = (await res.json()) as {
+      success?: boolean;
+      original?: StudioClipDto;
+      duplicate?: StudioClipDto;
+      documentVersion?: number;
+      error?: string;
+      code?: string;
+    };
+    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+    }
+    if (!res.ok || !json.original || !json.duplicate) {
+      throw new Error(json.error ?? "Nie udało się powielić klipu.");
+    }
+    setDoc((prev) => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        documentVersion:
+          typeof json.documentVersion === "number"
+            ? json.documentVersion
+            : prev.project.documentVersion,
+      },
+      clips: [
+        ...prev.clips.map((c) =>
+          c.id === json.original!.id ? json.original! : c,
+        ),
+        json.duplicate!,
+      ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
+    }));
+    setSelectedClipId(selectClipId(activeSelectedId, json.duplicate.id));
     setStatus("Zapisano");
   }
 
@@ -734,6 +801,7 @@ function StudioEditorInner({
                     minMs: 0,
                     maxMs: maxStart,
                   }),
+                  expectedDocumentVersion: doc.project.documentVersion,
                 });
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd przesunięcia.");
@@ -775,6 +843,16 @@ function StudioEditorInner({
                 await splitSelectedAtPlayhead();
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Błąd podziału.");
+                setStatus(null);
+              }
+            })
+          }
+          onDuplicate={() =>
+            startTransition(async () => {
+              try {
+                await duplicateSelectedClip();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Błąd powielania.");
                 setStatus(null);
               }
             })
@@ -1162,18 +1240,34 @@ function StudioEditorInner({
                     body: JSON.stringify({
                       op: "move",
                       timelineStartMs: snapped,
+                      expectedDocumentVersion: doc.project.documentVersion,
                     }),
                   },
                 );
                 const json = (await res.json()) as {
                   clip?: StudioClipDto;
+                  documentVersion?: number;
                   error?: string;
+                  code?: string;
                 };
+                if (
+                  res.status === 409 ||
+                  json.code === "FX_CHAIN_VERSION_CONFLICT"
+                ) {
+                  throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+                }
                 if (!res.ok || !json.clip) {
                   throw new Error(json.error ?? "Nie udało się przesunąć.");
                 }
                 setDoc((prev) => ({
                   ...prev,
+                  project: {
+                    ...prev.project,
+                    documentVersion:
+                      typeof json.documentVersion === "number"
+                        ? json.documentVersion
+                        : prev.project.documentVersion,
+                  },
                   clips: prev.clips.map((c) =>
                     c.id === json.clip!.id ? json.clip! : c,
                   ),
@@ -1273,6 +1367,7 @@ function ClipEditPanel({
   onTrimLeftToPlayhead,
   onTrimRightToPlayhead,
   onSplit,
+  onDuplicate,
   onDelete,
 }: {
   clip: StudioClipDto | null;
@@ -1289,6 +1384,7 @@ function ClipEditPanel({
   onTrimLeftToPlayhead: () => void;
   onTrimRightToPlayhead: () => void;
   onSplit: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const [draftStart, setDraftStart] = useState<number | null>(null);
@@ -1322,8 +1418,9 @@ function ClipEditPanel({
   if (!clip) {
     return (
       <div className="rounded border border-dashed border-[var(--brd-line)] p-3 text-sm text-[var(--brd-mute)]">
-        Wybierz klip na osi czasu, aby go przesunąć, przyciąć, podzielić lub
-        usunąć. Ustaw playhead przed przycięciem / podziałem.
+        Wybierz klip, aby edytować: głośność, wyciszenie, fade, przycięcie,
+        podział, powielenie lub usunięcie. Ustaw playhead przed przycięciem /
+        podziałem.
       </div>
     );
   }
@@ -1476,6 +1573,18 @@ function ClipEditPanel({
           title="Podziel w playhead"
         >
           Podziel
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11"
+          disabled={pending}
+          onClick={onDuplicate}
+          title="Powiel klip (to samo nagranie, bez kopiowania pliku)"
+          aria-label="Powiel klip"
+        >
+          Powiel
         </Button>
         {!confirmDelete ? (
           <Button

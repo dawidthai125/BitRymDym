@@ -69,9 +69,9 @@ describe("P6.7.3 ClipEditPanel fade controls (source)", () => {
 
   it("ClipEditPanel works without a selected clip (no fade section required)", () => {
     expect(editor).toMatch(
-      /Wybierz klip na osi czasu, aby go przesunąć, przyciąć, podzielić/,
+      /Wybierz klip, aby edytować: głośność, wyciszenie, fade/,
     );
-    const emptyIdx = editor.indexOf("Wybierz klip na osi czasu");
+    const emptyIdx = editor.indexOf("Wybierz klip, aby edytować");
     const fadeSectionIdx = editor.indexOf('aria-label="Fade klipu"');
     expect(emptyIdx).toBeGreaterThan(-1);
     expect(fadeSectionIdx).toBeGreaterThan(emptyIdx);
@@ -83,10 +83,14 @@ describe("P6.7.3 ClipEditPanel fade controls (source)", () => {
       "onTrimLeftToPlayhead",
       "onTrimRightToPlayhead",
       "onSplit",
+      "onDuplicate",
       "onDelete",
+      "onSaveGain",
+      "onSaveMute",
       "Przytnij początek",
       "Przytnij koniec",
       "Podziel",
+      "Powiel",
       "Usuń",
     ]) {
       expect(editor).toContain(op);

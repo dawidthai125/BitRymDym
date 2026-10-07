@@ -23,6 +23,7 @@ import {
   assertValidClipSource,
   assertClipPlacement,
   moveClipGeometry,
+  resolveDuplicateClipPlacement,
   splitClipGeometry,
   trimClipLeft,
   trimClipLeftToPlayhead,
@@ -773,25 +774,9 @@ export async function updateStudioClipGeometryFor(
   }
 
   const admin = createSupabaseAdminClient();
-  const durationChanged = next.durationMs !== clip.duration_ms;
 
-  // Move-only / duration-unchanged: pre-P6.7 non-CAS path (DF §17.3).
-  if (!durationChanged) {
-    const { data, error } = await admin
-      .from("studio_clips")
-      .update({
-        timeline_start_ms: next.timelineStartMs,
-        duration_ms: next.durationMs,
-        source_offset_ms: next.sourceOffsetMs,
-      })
-      .eq("id", input.clipId)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    return { clip: mapClip(data as ClipRow) };
-  }
-
-  // Duration-changing trim/geometry: clamp+normalize fades + atomic CAS (DF §14 / §17.2).
+  // V1 PR-04 — all geometry ops (including move) use atomic CAS + document_version.
+  // Duration-changing trim still clamp+normalize fades (P6.7); move keeps current fades.
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const fades = resolveFadesAfterTrim({
     fadeInMs: clip.fade_in_ms,
@@ -1118,25 +1103,130 @@ export async function splitStudioClip(
 }
 
 /**
- * Delete Clip row only. Source Take / Beat / Artifact / storage are untouched.
+ * POST-RECORDING V1 — Duplicate Clip (new Clip row, same Take/source refs).
+ * Atomic CAS insert. Does not copy Take bytes or Storage objects.
+ */
+export async function duplicateStudioClipFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+  },
+): Promise<{
+  original: StudioClipDto;
+  duplicate: StudioClipDto;
+  documentVersion: number;
+}> {
+  const { project, clip } = await loadOwnedClip(
+    context,
+    input.projectId,
+    input.clipId,
+  );
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const placement = resolveDuplicateClipPlacement({
+    clip: {
+      timelineStartMs: clip.timeline_start_ms,
+      durationMs: clip.duration_ms,
+      sourceOffsetMs: clip.source_offset_ms,
+    },
+    timelineLengthMs: project.timeline_length_ms,
+  });
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_duplicate", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+    p_timeline_start_ms: placement.timelineStartMs,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{ document_version: number; new_clip_id: string }> | null) ??
+    [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
+  const { data: originalRow, error: originalError } = await admin
+    .from("studio_clips")
+    .select("*")
+    .eq("id", input.clipId)
+    .single();
+  if (originalError) throw new Error(originalError.message);
+
+  const { data: dupRow, error: dupError } = await admin
+    .from("studio_clips")
+    .select("*")
+    .eq("id", row.new_clip_id)
+    .single();
+  if (dupError) throw new Error(dupError.message);
+
+  return {
+    original: mapClip(originalRow as ClipRow),
+    duplicate: mapClip(dupRow as ClipRow),
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function duplicateStudioClip(
+  input: Parameters<typeof duplicateStudioClipFor>[1],
+): Promise<{
+  original: StudioClipDto;
+  duplicate: StudioClipDto;
+  documentVersion: number;
+}> {
+  return duplicateStudioClipFor(await requireUser(), input);
+}
+
+/**
+ * Delete Clip row only (CAS). Source Take / Beat / Artifact / storage are untouched.
+ * V1 PR-04 — atomic delete + document_version bump.
  */
 export async function deleteStudioClipFor(
   context: AuthContext,
-  input: { projectId: string; clipId: string },
-): Promise<{ deletedClipId: string }> {
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+  },
+): Promise<{ deletedClipId: string; documentVersion: number }> {
   await loadOwnedClip(context, input.projectId, input.clipId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const admin = createSupabaseAdminClient();
-  const { error } = await admin
-    .from("studio_clips")
-    .delete()
-    .eq("id", input.clipId);
-  if (error) throw new Error(error.message);
-  return { deletedClipId: input.clipId };
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_delete", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{
+      document_version: number;
+      deleted_clip_id: string;
+    }> | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+  return {
+    deletedClipId: row.deleted_clip_id,
+    documentVersion: num(row.document_version),
+  };
 }
 
 export async function deleteStudioClip(
   input: Parameters<typeof deleteStudioClipFor>[1],
-): Promise<{ deletedClipId: string }> {
+): Promise<{ deletedClipId: string; documentVersion: number }> {
   return deleteStudioClipFor(await requireUser(), input);
 }
 

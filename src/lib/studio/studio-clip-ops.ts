@@ -46,6 +46,36 @@ export function assertValidClipSource(input: StudioClipSourceInput): void {
   throw new Error("Unknown clip sourceKind.");
 }
 
+/**
+ * V1 Duplicate placement — deterministic, no overlap editor.
+ * Prefer immediately after source clip; if that would exceed timeline,
+ * place at the same timelineStart (overlap = MIX, existing Studio semantics).
+ */
+export function resolveDuplicateClipPlacement(params: {
+  clip: StudioClipGeometry;
+  timelineLengthMs: number;
+}): { timelineStartMs: number } {
+  const afterStart = clipEndMs(params.clip);
+  const afterEnd = afterStart + params.clip.durationMs;
+  if (afterEnd <= params.timelineLengthMs) {
+    assertClipPlacement({
+      timelineStartMs: afterStart,
+      durationMs: params.clip.durationMs,
+      sourceOffsetMs: params.clip.sourceOffsetMs,
+      timelineLengthMs: params.timelineLengthMs,
+    });
+    return { timelineStartMs: afterStart };
+  }
+  // Same start as source — MIX overlap allowed by StudioAudioEngine.
+  assertClipPlacement({
+    timelineStartMs: params.clip.timelineStartMs,
+    durationMs: params.clip.durationMs,
+    sourceOffsetMs: params.clip.sourceOffsetMs,
+    timelineLengthMs: params.timelineLengthMs,
+  });
+  return { timelineStartMs: params.clip.timelineStartMs };
+}
+
 export function assertClipPlacement(params: {
   timelineStartMs: number;
   durationMs: number;

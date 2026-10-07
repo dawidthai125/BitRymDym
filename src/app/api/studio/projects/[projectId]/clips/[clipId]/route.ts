@@ -184,13 +184,31 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 /**
- * DELETE — remove Clip only. Source Take / Beat / storage remain intact.
+ * DELETE — remove Clip only (CAS). Source Take / Beat / storage remain intact.
+ * Body: { expectedDocumentVersion } — V1 PR-04 alignment.
  */
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const { projectId, clipId } = await context.params;
-    const result = await deleteStudioClip({ projectId, clipId });
-    return NextResponse.json({ success: true, ...result });
+    let expectedDocumentVersion: unknown;
+    try {
+      const body = (await request.json()) as {
+        expectedDocumentVersion?: unknown;
+      };
+      expectedDocumentVersion = body.expectedDocumentVersion;
+    } catch {
+      expectedDocumentVersion = undefined;
+    }
+    const result = await deleteStudioClip({
+      projectId,
+      clipId,
+      expectedDocumentVersion,
+    });
+    return NextResponse.json({
+      success: true,
+      deletedClipId: result.deletedClipId,
+      documentVersion: result.documentVersion,
+    });
   } catch (error) {
     return studioApiErrorResponse(error);
   }

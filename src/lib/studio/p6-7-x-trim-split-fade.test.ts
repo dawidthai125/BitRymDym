@@ -243,17 +243,14 @@ describe("P6.7.x resolveFadesAfterSplit (§15)", () => {
 });
 
 describe("P6.7.x Trim CAS / service contract", () => {
-  it("wires geometry+fades RPC for duration-changing ops", () => {
+  it("wires geometry+fades RPC for geometry ops (incl. move — V1 PR-04)", () => {
     expect(service).toMatch(/studio_cas_apply_clip_geometry_fades/);
     expect(service).toMatch(/resolveFadesAfterTrim/);
-    expect(service).toMatch(/durationChanged/);
     expect(service).toMatch(/parseExpectedDocumentVersion/);
     expect(service).toMatch(/StudioFxCasConflictError/);
-  });
-
-  it("move-only path stays non-CAS (DF §17.3)", () => {
-    expect(service).toMatch(/pre-P6\.7 non-CAS path/);
-    expect(service).toMatch(/if \(!durationChanged\)/);
+    // V1 PR-04: move also CAS (no pre-P6.7 non-CAS branch).
+    expect(service).not.toMatch(/pre-P6\.7 non-CAS path/);
+    expect(service).not.toMatch(/if \(!durationChanged\)/);
   });
 
   it("CAS SQL is atomic + service_role only", () => {

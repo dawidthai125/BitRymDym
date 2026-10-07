@@ -195,8 +195,8 @@ describe("P5.3 security / persistence surface", () => {
     expect(service).toMatch(/loadOwnedClip/);
     expect(service).toMatch(/updateStudioClipGeometryFor/);
     expect(service).toMatch(/splitStudioClipFor/);
-    // Geometry updates target studio_clips only (source Take rows are read, not updated).
-    expect(service).toMatch(/\.from\("studio_clips"\)\s*\n\s*\.update/);
+    // Geometry updates via CAS RPC target studio_clips only (Take rows are not updated).
+    expect(service).toMatch(/studio_cas_apply_clip_geometry_fades/);
     expect(service).not.toMatch(/\.from\("takes"\)\s*\n\s*\.update/);
   });
 

@@ -136,7 +136,8 @@ describe("P5.4 delete / security surface", () => {
   it("delete goes through ownership and only removes studio_clips", () => {
     expect(service).toMatch(/deleteStudioClipFor/);
     expect(service).toMatch(/loadOwnedClip/);
-    expect(service).toMatch(/\.from\("studio_clips"\)\s*\n\s*\.delete/);
+    // V1 PR-04: CAS RPC deletes clip row (Take untouched).
+    expect(service).toMatch(/studio_cas_apply_clip_delete/);
     expect(service).not.toMatch(/\.from\("takes"\)\s*\n\s*\.delete/);
   });
 
