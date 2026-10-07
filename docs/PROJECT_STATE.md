@@ -72,18 +72,18 @@
 ## 3. Current Phase
 
 ```text
-PRODUCTION APP                = 56b629e · POST-RECORDING V1
+PRODUCTION APP                = 2c4b416 · Studio Project List UX + Delete
                                 · PRODUCTION VERIFIED — GREEN · CLOSED
-                                · includes 1a62158 + 3216cf0 + 56b629e
-PRODUCTION DEPLOYMENT         = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei
-  GitHub deployment           = 6908396342
-  served Studio chunk         = 1rnqr79fxkwx9.js
+                                · includes V1 56b629e + list UX 2c4b416
+PRODUCTION DEPLOYMENT         = dpl_HuodywHaeJAh7n4BvFnCFo89pCmB
+  GitHub deployment           = 6909838158
+  prior V1 app                = 56b629e / dpl_HcaXhP9… (superseded)
   prior P6.7 app              = 06c60b5 (superseded)
 REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD)
-LAST STUDIO VERIFY            = V1 PRODUCTION GATE GREEN @ 56b629e
-                              · Vitest 1567 PASS · 1 SKIP
-                              · audible Gain/Mute Master-meter A/B
-                              · API/security/ACL/Take/mobile PASS
+LAST STUDIO VERIFY            = Project List UX DELETE GREEN @ 2c4b416
+                              · Studio suite 457 PASS · tsc PASS
+                              · UI delete/cancel/reload PASS
+                              · API ownership 401/403/404 · Take unchanged
 P6.7 DB MIGRATIONS (prod ID)  = 20261007061035 p6_7_2_studio_cas_apply_clip_fades
                               · 20261007061049 p6_7_x_studio_cas_trim_split
 V1 DB MIGRATIONS (prod ID)    = 20261007080752 pr_v1_studio_cas_clip_gain_mute
@@ -182,12 +182,12 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-CURRENT                       = POST-RECORDING V1 CLOSED / PRODUCTION VERIFIED / GREEN @ 56b629e
-                              · P6.7 remains CLOSED / GREEN
+CURRENT                       = Studio Project List UX DELETE CLOSED / GREEN @ 2c4b416
+                              · V1 CLOSED / GREEN · P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — no authorized next Studio unit
                               · do NOT start P6.8
                               · do NOT force-redeploy
-                              · do NOT reopen V1 / P6.7 / P6.6 / P6.5 Scenario B / P6.4.4
+                              · do NOT reopen V1 / P6.7 / list UX / P6.6 / P6.5 Scenario B
                               · Owner decides next Architecture Audit / unit
 P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical) · CLOSED BY FREEZE+IMPL
 P6.7 DESIGN FREEZE            = GO (historical) · living status GREEN
