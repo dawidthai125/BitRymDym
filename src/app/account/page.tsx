@@ -19,7 +19,10 @@ import { canAccessAdminNav } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
-import { listOwnTakes } from "@/lib/takes/list-own-takes";
+import {
+  listOwnTakes,
+  takeRecentNonDeletedTakes,
+} from "@/lib/takes/list-own-takes";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import {
   labelAccountLevel,
@@ -63,13 +66,15 @@ export default async function AccountPage({
       : null;
 
   const showAdminNav = canAccessAdminNav(context.profile.role);
+  // Profile surface: exclude soft-deleted at query (not slice-then-filter).
+  // /account/takes keeps includeDeleted default for lifecycle visibility.
   let takes: Awaited<ReturnType<typeof listOwnTakes>> = [];
   try {
-    takes = await listOwnTakes();
+    takes = await listOwnTakes({ includeDeleted: false });
   } catch {
     takes = [];
   }
-  const recentTakes = takes.slice(0, 5);
+  const recentTakes = takeRecentNonDeletedTakes(takes, 5);
   const readyCount = takes.filter((t) => t.displayStatus === "READY").length;
   const displayName =
     context.profile.displayName?.trim() || "Twórca";

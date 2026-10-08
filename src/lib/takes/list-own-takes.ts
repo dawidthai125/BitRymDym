@@ -40,12 +40,43 @@ export type OwnTakeListItem = {
   premiumTier: string;
 };
 
+export type ListOwnTakesOptions = {
+  /**
+   * Lifecycle lists (`/account/takes`) include soft-deleted rows.
+   * Profile "Ostatnie nagrania" must pass `false` so DELETED never crowd the recent slice.
+   * @default true
+   */
+  includeDeleted?: boolean;
+  /** Max rows after owner (+ optional deleted) filters. @default 100 */
+  limit?: number;
+};
+
+/** Soft-delete SSOT — same predicate as displayStatus DELETED. */
+export function isTakeSoftDeleted(row: {
+  status: string;
+  deleted_at: string | null;
+}): boolean {
+  return row.status === "DELETED" || row.deleted_at != null;
+}
+
+/**
+ * Profile recent list contract: exclude DELETED first, then limit.
+ * Prefer `includeDeleted: false` at query time; this encodes slice order for tests/callers.
+ */
+export function takeRecentNonDeletedTakes<
+  T extends { displayStatus: OwnTakeListItem["displayStatus"] },
+>(items: T[], limit = 5): T[] {
+  return items
+    .filter((t) => t.displayStatus !== "DELETED")
+    .slice(0, limit);
+}
+
 function resolveDisplayStatus(row: {
   status: string;
   deleted_at: string | null;
   expires_at: string;
 }): OwnTakeListItem["displayStatus"] {
-  if (row.status === "DELETED" || row.deleted_at) return "DELETED";
+  if (isTakeSoftDeleted(row)) return "DELETED";
   if (row.status === "EXPIRED" || isTakeExpired({ expiresAt: row.expires_at })) {
     return "EXPIRED";
   }
@@ -55,12 +86,15 @@ function resolveDisplayStatus(row: {
 }
 
 /**
- * Owner-only list for /account/takes. Includes expired/deleted for lifecycle UX.
+ * Owner-only list. Default includes expired/deleted for lifecycle UX (`/account/takes`).
  * Download flags from server entitlement SSOT only — never client-spoofable.
  */
 export async function listOwnTakesFor(
   context: AuthContext,
+  options: ListOwnTakesOptions = {},
 ): Promise<OwnTakeListItem[]> {
+  const includeDeleted = options.includeDeleted !== false;
+  const limit = options.limit ?? 100;
   const admin = createSupabaseAdminClient();
   const product = await resolveProductEntitlementForAuthContext(context);
   const actor = sampleActorFromPremiumTier(product.premiumTier);
@@ -81,14 +115,21 @@ export async function listOwnTakesFor(
   const authorDisplayName =
     (profile?.display_name as string | null | undefined) ?? null;
 
-  const { data: rows, error } = await admin
+  let query = admin
     .from("takes")
     .select(
       "id, title, beat_id, recording_mode, status, created_at, expires_at, deleted_at, duration_seconds",
     )
     .eq("owner_id", context.userId)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(limit);
+
+  if (!includeDeleted) {
+    // DB-side filter — do not pull DELETED rows only to drop them after slice.
+    query = query.neq("status", "DELETED").is("deleted_at", null);
+  }
+
+  const { data: rows, error } = await query;
 
   if (error) throw new Error(error.message);
 
@@ -147,7 +188,9 @@ export async function listOwnTakesFor(
   });
 }
 
-export async function listOwnTakes(): Promise<OwnTakeListItem[]> {
+export async function listOwnTakes(
+  options: ListOwnTakesOptions = {},
+): Promise<OwnTakeListItem[]> {
   const context = await requireUser();
-  return listOwnTakesFor(context);
+  return listOwnTakesFor(context, options);
 }
