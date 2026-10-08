@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`9abc1b6`** (**READY / GREEN**) · dpl `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` · URL https://www.bitrymdym.pl · REPO tip = verify `git rev-parse HEAD` (may ≠ app · no redeploy) · **Phase 7.1.4 Mixer Dock CLOSED / PRODUCTION GREEN** · prior tip `8f6eeca` (7.1.3) · P4.6 / V1 / P6.7 **CLOSED / GREEN** · Catalog **17** PLATFORM · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** · **Phase 7.1.5 / P6.8 NOT STARTED / OWNER DECISION** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [P7_1_4 closeout](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) · [P7_1_4 freeze](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md).
+**Now:** Production app **`3fccbf7`** (**READY / GREEN**) · dpl `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · URL https://www.bitrymdym.pl · REPO tip = verify `git rev-parse HEAD` (may ≠ app · no redeploy) · **Phase 7.1.5 Shell Polish + Stacked Escape CLOSED / PRODUCTION GREEN** · prior tip `9abc1b6` (7.1.4) · P4.6 / V1 / P6.7 **CLOSED / GREEN** · Catalog **17** PLATFORM · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** · **P6.8 NOT STARTED / OWNER DECISION** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [P7_1_5 closeout](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) · [P7_1_4 closeout](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **Phase 7.1.4 CLOSED / PRODUCTION GREEN** @ `9abc1b6` — **STOP** · do **not** start Phase 7.1.5 / P6.8 · Owner decides next unit · see [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **Phase 7.1.5 CLOSED / PRODUCTION GREEN** @ `3fccbf7` — **STOP** · do **not** start P6.8 · Owner decides next unit · see [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 
@@ -97,7 +97,8 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md](./audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md) | Recording cold-start audit |
 | [audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md](./audits/RECORDING_WAVE5_PRODUCTION_CLOSEOUT.md) | Recording Wave 5 production closeout |
 | [audits/E3_6_PRODUCTION_CLOSEOUT.md](./audits/E3_6_PRODUCTION_CLOSEOUT.md) | E3.6 Basic MP3 production closeout (DARK) |
-| [audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) | Phase 7.1.4 Mixer Dock production closeout · **CLOSED / GREEN** @ `9abc1b6` |
+| [audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) | Phase 7.1.5 Shell Polish + Stacked Escape production closeout · **CLOSED / GREEN** @ `3fccbf7` |
+| [audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) | Phase 7.1.4 Mixer Dock production closeout · **CLOSED / GREEN** @ `9abc1b6` (ancestry) |
 | [decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) | Phase 7.1.4 Mixer Dock design freeze · OD-P7.1.4-01…04 |
 | [audits/POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) | Polish UX Mix / Master / Recording / Playback — **CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` |
 | [audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) | Wave A Account / Beats — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` |

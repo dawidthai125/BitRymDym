@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-08 — PHASE 7.1.5 SHELL POLISH + STACKED ESCAPE FIX PRODUCTION GREEN + SSOT RECONCILIATION
+
+**Status:** **Phase 7.1.5 — CLOSED / IMPLEMENTATION GREEN · LAND GREEN · PRODUCTION VERIFIED — GREEN**
+**Scope:** Living SSOT tip (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · architecture index · closeout · DECISION_LOG · this entry)
+**Production release tip:** `3fccbf7` (`3fccbf7e9f93df519aa57475d79d045b8d2a636d`) · dpl `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · READY / GREEN · https://www.bitrymdym.pl
+**Feature LAND:** `f891bce` — `feat(studio): ship phase 7.1.5 shell polish`
+**Escape fix LAND:** `3fccbf7` — `fix(studio): prioritize FxSheet escape over overlays`
+**Previous production tip (HISTORY):** `9abc1b6` — Phase 7.1.4 Mixer Dock
+**Shipped:** transport/meter render isolation · FxSheet a11y · Space/Home/End · mobile „Więcej” · stacked Escape ownership (FxSheet capture + `stopImmediatePropagation`)
+**Architecture:** 1 StudioAudioEngine · 1 Studio AudioContext · no new Mixer/FxSheet audio architecture · PlayerProvider / E3 untouched
+**Security / DB:** no DB · no API · no RLS · no Auth · no Storage · no CAS · no Premium · no Contabo
+**Production verify:** routes `/` `/beats` `/account` `/studio` = 200 · pageErrors 0 · console 0 · AudioContext constructions 1 · tablet/mobile stacked Escape PASS · FxSheet dialog/aria-modal/trap/Escape/close PASS · Mixer/Inspector XOR preserved · real project `a8b42570-…` unchanged · Sacred WIP untouched
+**Evidence:** [P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md)
+**Repo tip after docs reconcile:** verify `git rev-parse HEAD` · may ≠ PRODUCTION APP `3fccbf7` · **NO REDEPLOY** of docs tip
+**Next:** STOP · do **not** start P6.8 / next Studio unit without Owner GO
+
 ## 2026-10-08 — PHASE 7.1.4 MIXER DOCK PRODUCTION GREEN + SSOT RECONCILIATION
 
 **Status:** **Phase 7.1.4 — CLOSED / IMPLEMENTATION GREEN · LAND GREEN · PRODUCTION VERIFIED — GREEN**

@@ -10,6 +10,24 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Phase 7.1.5 — Shell Polish + Stacked Escape Fix — CLOSED / PRODUCTION GREEN
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — Phase 7.1.5 Implementation + LAND + Stacked Escape fix + Production Verify |
+| Status | **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** |
+| Date | 2026-10-08 |
+| Feature LAND | `f891bceed773a9a6a1085962e3602b52e846e2e5` (`f891bce`) |
+| Escape fix / Production SHA | `3fccbf7e9f93df519aa57475d79d045b8d2a636d` (`3fccbf7`) |
+| Deploy | `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · https://www.bitrymdym.pl |
+| Previous tip (HISTORY) | `9abc1b6` — Phase 7.1.4 Mixer Dock |
+
+**Locked behavior:** FxSheet is top-most dialog (z-50) · Escape #1 closes FxSheet · Escape #2 closes underlying Mixer overlay · Mixer/Inspector XOR (7.1.4) preserved · 1 StudioAudioEngine · 1 Studio AudioContext · no DB/API/RLS/Auth/Storage/CAS/Premium/E3/PlayerProvider changes.
+
+**SSOT:** [P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md](../audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md)
+
+---
+
 ### OD-P7.1.4-01…04 — Mixer Dock / Chrome — CLOSED / PRODUCTION GREEN
 
 | Pole | Wartość |

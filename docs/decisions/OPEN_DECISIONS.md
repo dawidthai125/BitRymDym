@@ -232,9 +232,28 @@ OD-P3-01…11 **CLOSED / IMPLEMENTED** (see DECISION_LOG).
 
 ---
 
+## Phase 7.1.5 — Shell Polish + Stacked Escape Fix
+
+**Status:** **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** @ `3fccbf7` · dpl `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR`
+**Feature LAND (HISTORY):** `f891bce` — shell polish
+**Escape fix / production tip:** `3fccbf7`
+**Prior tip (HISTORY):** `9abc1b6` — Phase 7.1.4 Mixer Dock (CLOSED · do not reopen)
+
+| Track | Status |
+|-------|--------|
+| Transport / meter isolation | **CLOSED / GREEN** |
+| FxSheet a11y | **CLOSED / GREEN** |
+| Space / Home / End | **CLOSED / GREEN** |
+| Mobile toolbar overflow | **CLOSED / GREEN** |
+| Stacked Escape (FxSheet over Mixer) | **CLOSED / GREEN** — Escape #1 = FxSheet · Escape #2 = Mixer |
+
+**SSOT:** [closeout](../audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) · [DECISION_LOG](./DECISION_LOG.md)
+
+---
+
 ## Phase 7.1.4 — Mixer Dock / Chrome
 
-**Status:** **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** @ `9abc1b6` · dpl `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww`
+**Status:** **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** @ `9abc1b6` (ancestry · superseded as production tip by `3fccbf7`) · dpl `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` (historical)
 **Prior tip (HISTORY):** `8f6eeca` — Phase 7.1.3 Inspector IA (CLOSED · do not reopen)
 
 | ID | Temat | Status |
