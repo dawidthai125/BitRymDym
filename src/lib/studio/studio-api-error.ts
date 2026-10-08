@@ -5,12 +5,28 @@ import {
   StudioFxCasConflictError,
   StudioFxChainError,
 } from "@/lib/studio/studio-fx-chain";
+import {
+  StudioBeatTrackProtectedError,
+  StudioTrackCapacityError,
+} from "@/lib/studio/studio-track-capacity";
 
 export function studioApiErrorResponse(error: unknown): NextResponse {
   if (error instanceof StudioFxCasConflictError) {
     return NextResponse.json(
       { error: error.message, code: error.code },
       { status: 409 },
+    );
+  }
+  if (error instanceof StudioTrackCapacityError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code },
+      { status: 403 },
+    );
+  }
+  if (error instanceof StudioBeatTrackProtectedError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code },
+      { status: 403 },
     );
   }
   if (error instanceof StudioFxChainError) {

@@ -37,6 +37,15 @@ import {
   normalizePan,
   reorderTrackIds,
 } from "@/lib/studio/studio-track-ops";
+import {
+  assertTrackTypeDeletable,
+  assertTrackTypeDuplicable,
+  nextDuplicatedTrackName,
+  nextVocalTrackName,
+  STUDIO_ADD_TRACK_DEFAULT_TYPE,
+  StudioBeatTrackProtectedError,
+  StudioTrackCapacityError,
+} from "@/lib/studio/studio-track-capacity";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -55,6 +64,7 @@ import {
   parseStudioMasterGainDb,
   parseStudioMasterPan,
 } from "@/lib/studio/studio-master-mix";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ProjectRow = {
@@ -864,6 +874,266 @@ export async function updateStudioTrackControls(
   input: Parameters<typeof updateStudioTrackControlsFor>[1],
 ): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   return updateStudioTrackControlsFor(await requireUser(), input);
+}
+
+/**
+ * Phase 5 — Add VOCAL track with atomic capacity (Premium studioMaxTracks SSOT).
+ * RPC: advisory lock → CAS → COUNT → INSERT → version bump.
+ */
+export async function addStudioTrackFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    expectedDocumentVersion: unknown;
+  },
+): Promise<{ track: StudioTrackDto; documentVersion: number }> {
+  await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const maxTracks = product.limits.studioMaxTracks;
+  if (!Number.isInteger(maxTracks) || maxTracks < 1) {
+    throw new Error("Invalid studioMaxTracks entitlement.");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: existingTracks, error: listError } = await admin
+    .from("studio_tracks")
+    .select("name")
+    .eq("project_id", input.projectId);
+  if (listError) throw new Error(listError.message);
+  const name = nextVocalTrackName(
+    ((existingTracks as Array<{ name: string }> | null) ?? []).map((t) => t.name),
+  );
+
+  const { data, error } = await admin.rpc("studio_cas_add_track", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_expected: expected,
+    p_max_tracks: maxTracks,
+    p_name: name,
+    p_track_type: STUDIO_ADD_TRACK_DEFAULT_TYPE,
+  });
+  if (error) {
+    if (/TRACK_CAPACITY_REACHED/i.test(error.message)) {
+      throw new StudioTrackCapacityError();
+    }
+    if (/PROJECT_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+    }
+    if (/TRACK_NAME_INVALID|TRACK_TYPE_INVALID|TRACK_CAPACITY_INVALID/i.test(
+      error.message,
+    )) {
+      throw new AuthError("FORBIDDEN", "Nie udało się dodać ścieżki.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{
+      document_version: number;
+      track_id: string;
+      sort_order: number;
+    }> | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
+  const { data: trackRow, error: trackError } = await admin
+    .from("studio_tracks")
+    .select("*")
+    .eq("id", row.track_id)
+    .eq("project_id", input.projectId)
+    .single();
+  if (trackError) throw new Error(trackError.message);
+
+  return {
+    track: mapTrack(trackRow as TrackRow),
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function addStudioTrack(
+  input: Parameters<typeof addStudioTrackFor>[1],
+): Promise<{ track: StudioTrackDto; documentVersion: number }> {
+  return addStudioTrackFor(await requireUser(), input);
+}
+
+/**
+ * Phase 5 — Delete user track (not BEAT). Cascades clips; Takes preserved.
+ */
+export async function deleteStudioTrackFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    trackId: string;
+    expectedDocumentVersion: unknown;
+  },
+): Promise<{ deletedTrackId: string; documentVersion: number }> {
+  await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const admin = createSupabaseAdminClient();
+
+  const { data: existing, error: loadError } = await admin
+    .from("studio_tracks")
+    .select("id, track_type")
+    .eq("id", input.trackId)
+    .eq("project_id", input.projectId)
+    .maybeSingle();
+  if (loadError) throw new Error(loadError.message);
+  if (!existing) {
+    throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+  }
+  assertTrackTypeDeletable(existing.track_type as StudioTrackType);
+
+  const { data, error } = await admin.rpc("studio_cas_delete_track", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+  });
+  if (error) {
+    if (/BEAT_TRACK_PROTECTED/i.test(error.message)) {
+      throw new StudioBeatTrackProtectedError();
+    }
+    if (/TRACK_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    }
+    if (/PROJECT_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{
+      document_version: number;
+      deleted_track_id: string;
+    }> | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+  return {
+    deletedTrackId: row.deleted_track_id,
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function deleteStudioTrack(
+  input: Parameters<typeof deleteStudioTrackFor>[1],
+): Promise<{ deletedTrackId: string; documentVersion: number }> {
+  return deleteStudioTrackFor(await requireUser(), input);
+}
+
+/**
+ * Phase 6 — Duplicate user track + clips (atomic capacity).
+ * New track/clip ids; same Take/Beat/Artifact source refs. BEAT rejected.
+ */
+export async function duplicateStudioTrackFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    trackId: string;
+    expectedDocumentVersion: unknown;
+  },
+): Promise<{
+  track: StudioTrackDto;
+  clips: StudioClipDto[];
+  documentVersion: number;
+}> {
+  await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const maxTracks = product.limits.studioMaxTracks;
+  if (!Number.isInteger(maxTracks) || maxTracks < 1) {
+    throw new Error("Invalid studioMaxTracks entitlement.");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: source, error: sourceError } = await admin
+    .from("studio_tracks")
+    .select("id, name, track_type")
+    .eq("id", input.trackId)
+    .eq("project_id", input.projectId)
+    .maybeSingle();
+  if (sourceError) throw new Error(sourceError.message);
+  if (!source) {
+    throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+  }
+  assertTrackTypeDuplicable(source.track_type as StudioTrackType);
+
+  const { data: existingTracks, error: listError } = await admin
+    .from("studio_tracks")
+    .select("name")
+    .eq("project_id", input.projectId);
+  if (listError) throw new Error(listError.message);
+  const name = nextDuplicatedTrackName(
+    source.name,
+    ((existingTracks as Array<{ name: string }> | null) ?? []).map((t) => t.name),
+  );
+
+  const { data, error } = await admin.rpc("studio_cas_duplicate_track", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_source_track_id: input.trackId,
+    p_expected: expected,
+    p_max_tracks: maxTracks,
+    p_name: name,
+  });
+  if (error) {
+    if (/TRACK_CAPACITY_REACHED/i.test(error.message)) {
+      throw new StudioTrackCapacityError();
+    }
+    if (/BEAT_TRACK_PROTECTED/i.test(error.message)) {
+      throw new StudioBeatTrackProtectedError(
+        "Ścieżki Bit nie można zduplikować.",
+      );
+    }
+    if (/TRACK_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    }
+    if (/PROJECT_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+    }
+    if (/TRACK_NAME_INVALID|TRACK_CAPACITY_INVALID/i.test(error.message)) {
+      throw new AuthError("FORBIDDEN", "Nie udało się zduplikować ścieżki.");
+    }
+    throw new Error(error.message);
+  }
+  const rows =
+    (data as Array<{
+      document_version: number;
+      track_id: string;
+      sort_order: number;
+    }> | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+
+  const { data: trackRow, error: trackError } = await admin
+    .from("studio_tracks")
+    .select("*")
+    .eq("id", row.track_id)
+    .eq("project_id", input.projectId)
+    .single();
+  if (trackError) throw new Error(trackError.message);
+
+  const { data: clipRows, error: clipsError } = await admin
+    .from("studio_clips")
+    .select("*")
+    .eq("track_id", row.track_id)
+    .order("timeline_start_ms", { ascending: true });
+  if (clipsError) throw new Error(clipsError.message);
+
+  return {
+    track: mapTrack(trackRow as TrackRow),
+    clips: ((clipRows as ClipRow[] | null) ?? []).map(mapClip),
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function duplicateStudioTrack(
+  input: Parameters<typeof duplicateStudioTrackFor>[1],
+): Promise<{
+  track: StudioTrackDto;
+  clips: StudioClipDto[];
+  documentVersion: number;
+}> {
+  return duplicateStudioTrackFor(await requireUser(), input);
 }
 
 /**

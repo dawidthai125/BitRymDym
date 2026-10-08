@@ -22,6 +22,11 @@ export type PremiumTierLimits = {
   /** True when design retention must not be sold/enabled in production. */
   goldRetentionDesignOnly: boolean;
   artifactQuotaBytes: number;
+  /**
+   * Max studio_tracks rows per project (BEAT counts; Master does not).
+   * FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8 — Phase 5 Track CRUD SSOT.
+   */
+  studioMaxTracks: number;
   priority: PremiumPriority;
   capabilities: readonly AudioCapabilityKey[];
 };
@@ -68,6 +73,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     artifactRetentionDesignSeconds: 48 * HOUR,
     goldRetentionDesignOnly: false,
     artifactQuotaBytes: 250 * MIB,
+    studioMaxTracks: 2,
     priority: "normal",
     capabilities: BASIC_CAPS,
   },
@@ -79,6 +85,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     artifactRetentionDesignSeconds: 7 * DAY,
     goldRetentionDesignOnly: false,
     artifactQuotaBytes: 500 * MIB,
+    studioMaxTracks: 3,
     priority: "elevated",
     capabilities: BRONZE_CAPS,
   },
@@ -90,6 +97,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     artifactRetentionDesignSeconds: 30 * DAY,
     goldRetentionDesignOnly: false,
     artifactQuotaBytes: 2 * GIB,
+    studioMaxTracks: 5,
     priority: "elevated",
     capabilities: SILVER_CAPS,
   },
@@ -102,6 +110,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     artifactRetentionDesignSeconds: 90 * DAY,
     goldRetentionDesignOnly: true,
     artifactQuotaBytes: 5 * GIB,
+    studioMaxTracks: 8,
     priority: "highest",
     capabilities: GOLD_CAPS,
   },

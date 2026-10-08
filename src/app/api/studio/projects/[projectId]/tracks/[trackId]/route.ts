@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
-import { updateStudioTrackControls } from "@/lib/studio/studio-service";
+import {
+  deleteStudioTrack,
+  updateStudioTrackControls,
+} from "@/lib/studio/studio-service";
 
 export const runtime = "nodejs";
 
@@ -29,6 +32,28 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({
       success: true,
       track: result.track,
+      documentVersion: result.documentVersion,
+    });
+  } catch (error) {
+    return studioApiErrorResponse(error);
+  }
+}
+
+/** DELETE — remove user track (not BEAT). Cascades clips; Takes preserved. */
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const { projectId, trackId } = await context.params;
+    const body = (await request.json()) as {
+      expectedDocumentVersion?: unknown;
+    };
+    const result = await deleteStudioTrack({
+      projectId,
+      trackId,
+      expectedDocumentVersion: body.expectedDocumentVersion,
+    });
+    return NextResponse.json({
+      success: true,
+      deletedTrackId: result.deletedTrackId,
       documentVersion: result.documentVersion,
     });
   } catch (error) {
