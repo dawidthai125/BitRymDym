@@ -32,10 +32,8 @@ import {
   type StudioClipGeometry,
 } from "@/lib/studio/studio-clip-ops";
 import {
-  applySortOrders,
   defaultTrackName,
   normalizePan,
-  reorderTrackIds,
 } from "@/lib/studio/studio-track-ops";
 import {
   assertTrackTypeDeletable,
@@ -488,7 +486,11 @@ export async function runAttachBeatFailClosed(params: {
  */
 export async function attachBeatToStudioProjectFor(
   context: AuthContext,
-  input: { projectId: string; beatId: string },
+  input: {
+    projectId: string;
+    beatId: string;
+    expectedDocumentVersion: unknown;
+  },
 ): Promise<StudioProjectDocument> {
   const projectId = input.projectId?.trim();
   const beatId = input.beatId?.trim();
@@ -499,10 +501,15 @@ export async function attachBeatToStudioProjectFor(
     throw new AuthError("NOT_FOUND", "Wybierz bit.");
   }
 
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const projectRow = await assertOwnsProject(context, projectId);
+  if (projectRow.document_version !== expected) {
+    throw new StudioFxCasConflictError();
+  }
   const previousBeatId = projectRow.beat_id;
   const previousTempoBpm =
     Number(projectRow.tempo_bpm) || STUDIO_DEFAULT_TEMPO_BPM;
+  const previousDocumentVersion = projectRow.document_version;
   const admin = createSupabaseAdminClient();
 
   const { data: beat, error: beatError } = await admin
@@ -562,20 +569,23 @@ export async function attachBeatToStudioProjectFor(
 
   const ops: AttachBeatFailClosedOps = {
     async updateProjectBeat({ beatId: nextBeatId, tempoBpm: nextTempo }) {
+      // Phase 7.1.6 — CAS bump document_version with expected version gate.
       const { data, error } = await admin
         .from("studio_projects")
         .update({
           beat_id: nextBeatId,
           tempo_bpm: nextTempo,
+          document_version: expected + 1,
           updated_at: new Date().toISOString(),
         })
         .eq("id", projectId)
         .eq("owner_id", context.userId)
+        .eq("document_version", expected)
         .select("id")
         .maybeSingle();
       if (error) throw new Error(error.message);
       if (!data) {
-        throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+        throw new StudioFxCasConflictError();
       }
     },
     async deleteBeatRefIds(ids) {
@@ -629,6 +639,7 @@ export async function attachBeatToStudioProjectFor(
         .update({
           beat_id: priorBeatId,
           tempo_bpm: priorTempo,
+          document_version: previousDocumentVersion,
           updated_at: new Date().toISOString(),
         })
         .eq("id", projectId)
@@ -709,6 +720,7 @@ export async function attachBeatToStudioProjectFor(
 export async function attachBeatToStudioProject(input: {
   projectId: string;
   beatId: string;
+  expectedDocumentVersion: unknown;
 }): Promise<StudioProjectDocument> {
   return attachBeatToStudioProjectFor(await requireUser(), input);
 }
@@ -801,6 +813,7 @@ export async function updateStudioTrackControlsFor(
   input: {
     projectId: string;
     trackId: string;
+    expectedDocumentVersion: unknown;
     name?: string;
     muted?: boolean;
     solo?: boolean;
@@ -810,6 +823,7 @@ export async function updateStudioTrackControlsFor(
   },
 ): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const admin = createSupabaseAdminClient();
   const { data: existing, error: loadError } = await admin
     .from("studio_tracks")
@@ -822,51 +836,55 @@ export async function updateStudioTrackControlsFor(
     throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
   }
 
-  const patch: Record<string, unknown> = {};
+  const row = existing as TrackRow;
+  let nextName = row.name;
   if (typeof input.name === "string") {
     const name = input.name.trim().slice(0, STUDIO_TRACK_NAME_MAX_LENGTH);
     if (!name) throw new AuthError("FORBIDDEN", "Nazwa ścieżki jest wymagana.");
-    patch.name = name;
+    nextName = name;
   }
-  if (typeof input.muted === "boolean") patch.muted = input.muted;
-  if (typeof input.solo === "boolean") patch.solo = input.solo;
-  if (typeof input.gainDb === "number" && Number.isFinite(input.gainDb)) {
-    patch.gain_db = input.gainDb;
-  }
-  if (typeof input.pan === "number") patch.pan = normalizePan(input.pan);
-  if (typeof input.recordArmed === "boolean") {
-    patch.record_armed = input.recordArmed;
-    if (input.recordArmed) {
-      await admin
-        .from("studio_tracks")
-        .update({ record_armed: false })
-        .eq("project_id", input.projectId)
-        .neq("id", input.trackId);
-    }
-  }
+  const nextMuted =
+    typeof input.muted === "boolean" ? input.muted : row.muted;
+  const nextSolo = typeof input.solo === "boolean" ? input.solo : row.solo;
+  const nextGainDb =
+    typeof input.gainDb === "number" && Number.isFinite(input.gainDb)
+      ? input.gainDb
+      : num(row.gain_db);
+  const nextPan =
+    typeof input.pan === "number" ? normalizePan(input.pan) : num(row.pan);
+  const nextRecordArmed =
+    typeof input.recordArmed === "boolean"
+      ? input.recordArmed
+      : row.record_armed;
 
-  const { data, error } = await admin
+  const { data, error } = await admin.rpc("studio_cas_update_track_controls", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+    p_name: nextName,
+    p_muted: nextMuted,
+    p_solo: nextSolo,
+    p_gain_db: nextGainDb,
+    p_pan: nextPan,
+    p_record_armed: nextRecordArmed,
+  });
+  if (error) throw new Error(error.message);
+  const casRow =
+    (data as Array<{ document_version: number }> | null)?.[0] ?? null;
+  if (!casRow) throw new StudioFxCasConflictError();
+
+  const { data: refreshed, error: refreshError } = await admin
     .from("studio_tracks")
-    .update(patch)
+    .select("*")
     .eq("id", input.trackId)
     .eq("project_id", input.projectId)
-    .select("*")
     .single();
-  if (error) throw new Error(error.message);
-
-  const project = await assertOwnsProject(context, input.projectId);
-  const nextVersion = project.document_version + 1;
-  const { data: versionRow, error: versionError } = await admin
-    .from("studio_projects")
-    .update({ document_version: nextVersion })
-    .eq("id", input.projectId)
-    .select("document_version")
-    .single();
-  if (versionError) throw new Error(versionError.message);
+  if (refreshError) throw new Error(refreshError.message);
 
   return {
-    track: mapTrack(data as TrackRow),
-    documentVersion: num(versionRow.document_version),
+    track: mapTrack(refreshed as TrackRow),
+    documentVersion: num(casRow.document_version),
   };
 }
 
@@ -1211,31 +1229,32 @@ export async function updateStudioMasterMix(
 
 export async function reorderStudioTrackFor(
   context: AuthContext,
-  input: { projectId: string; trackId: string; direction: "up" | "down" },
-): Promise<StudioTrackDto[]> {
+  input: {
+    projectId: string;
+    trackId: string;
+    direction: "up" | "down";
+    expectedDocumentVersion: unknown;
+  },
+): Promise<{ tracks: StudioTrackDto[]; documentVersion: number }> {
   await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const admin = createSupabaseAdminClient();
-  const { data: tracks, error } = await admin
-    .from("studio_tracks")
-    .select("*")
-    .eq("project_id", input.projectId)
-    .order("sort_order", { ascending: true });
-  if (error) throw new Error(error.message);
-  const rows = (tracks as TrackRow[] | null) ?? [];
-  const ordered = reorderTrackIds({
-    orderedIds: rows.map((r) => r.id),
-    trackId: input.trackId,
-    direction: input.direction,
+  const { data, error } = await admin.rpc("studio_cas_reorder_track", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+    p_direction: input.direction,
   });
-  const updates = applySortOrders(ordered);
-  for (const u of updates) {
-    const { error: upError } = await admin
-      .from("studio_tracks")
-      .update({ sort_order: u.sortOrder })
-      .eq("id", u.id)
-      .eq("project_id", input.projectId);
-    if (upError) throw new Error(upError.message);
+  if (error) {
+    if (error.message.includes("TRACK_NOT_FOUND")) {
+      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    }
+    throw new Error(error.message);
   }
+  const casRow =
+    (data as Array<{ document_version: number }> | null)?.[0] ?? null;
+  if (!casRow) throw new StudioFxCasConflictError();
 
   const { data: refreshed, error: refreshError } = await admin
     .from("studio_tracks")
@@ -1243,12 +1262,15 @@ export async function reorderStudioTrackFor(
     .eq("project_id", input.projectId)
     .order("sort_order", { ascending: true });
   if (refreshError) throw new Error(refreshError.message);
-  return ((refreshed as TrackRow[] | null) ?? []).map(mapTrack);
+  return {
+    tracks: ((refreshed as TrackRow[] | null) ?? []).map(mapTrack),
+    documentVersion: num(casRow.document_version),
+  };
 }
 
 export async function reorderStudioTrack(
   input: Parameters<typeof reorderStudioTrackFor>[1],
-): Promise<StudioTrackDto[]> {
+): Promise<{ tracks: StudioTrackDto[]; documentVersion: number }> {
   return reorderStudioTrackFor(await requireUser(), input);
 }
 
@@ -1257,6 +1279,7 @@ export async function addStudioClipFor(
   input: {
     projectId: string;
     trackId: string;
+    expectedDocumentVersion: unknown;
     sourceKind: StudioClipDto["sourceKind"];
     sourceTakeId?: string | null;
     sourceBeatId?: string | null;
@@ -1265,8 +1288,9 @@ export async function addStudioClipFor(
     durationMs: number;
     sourceOffsetMs?: number;
   },
-): Promise<StudioClipDto> {
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
   const project = await assertOwnsProject(context, input.projectId);
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   assertValidClipSource(input);
   assertClipPlacement({
     timelineStartMs: input.timelineStartMs,
@@ -1307,27 +1331,47 @@ export async function addStudioClipFor(
     }
   }
 
-  const { data, error } = await admin
+  const { data, error } = await admin.rpc("studio_cas_add_clip", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+    p_source_kind: input.sourceKind,
+    p_source_take_id: input.sourceTakeId ?? null,
+    p_source_beat_id: input.sourceBeatId ?? null,
+    p_source_artifact_id: input.sourceArtifactId ?? null,
+    p_timeline_start_ms: input.timelineStartMs,
+    p_duration_ms: input.durationMs,
+    p_source_offset_ms: input.sourceOffsetMs ?? 0,
+  });
+  if (error) {
+    if (error.message.includes("TRACK_NOT_FOUND")) {
+      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    }
+    throw new Error(error.message);
+  }
+  const casRow =
+    (
+      data as Array<{ document_version: number; clip_id: string }> | null
+    )?.[0] ?? null;
+  if (!casRow) throw new StudioFxCasConflictError();
+
+  const { data: clipRow, error: clipError } = await admin
     .from("studio_clips")
-    .insert({
-      track_id: input.trackId,
-      source_kind: input.sourceKind,
-      source_take_id: input.sourceTakeId ?? null,
-      source_beat_id: input.sourceBeatId ?? null,
-      source_artifact_id: input.sourceArtifactId ?? null,
-      timeline_start_ms: input.timelineStartMs,
-      duration_ms: input.durationMs,
-      source_offset_ms: input.sourceOffsetMs ?? 0,
-    })
     .select("*")
+    .eq("id", casRow.clip_id)
     .single();
-  if (error) throw new Error(error.message);
-  return mapClip(data as ClipRow);
+  if (clipError) throw new Error(clipError.message);
+
+  return {
+    clip: mapClip(clipRow as ClipRow),
+    documentVersion: num(casRow.document_version),
+  };
 }
 
 export async function addStudioClip(
   input: Parameters<typeof addStudioClipFor>[1],
-): Promise<StudioClipDto> {
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
   return addStudioClipFor(await requireUser(), input);
 }
 

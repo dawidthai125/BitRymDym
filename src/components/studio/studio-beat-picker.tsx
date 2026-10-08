@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  classifyPersistHttpFailure,
+  classifyPersistNetworkFailure,
+  type StudioPersistExecutor,
+  type StudioPersistResult,
+} from "@/lib/studio/studio-persist-orchestrator";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
 
 type PickerTab = "catalog" | "mine" | "downloads";
@@ -21,17 +27,24 @@ const TABS: Array<{ id: PickerTab; label: string }> = [
 ];
 
 /**
- * AUD-01 — select beat for an existing Studio project (Katalog / Moje / Pobrane).
+ * AUD-01 / P7.1.6 — select beat for an existing Studio project (Katalog / Moje / Pobrane).
+ * Attach is a document mutation — serialised via StudioPersistOrchestrator + CAS.
  */
 export function StudioBeatPicker({
   projectId,
   open,
   onClose,
+  getExpectedDocumentVersion,
+  enqueuePersistAsync,
   onAttached,
 }: {
   projectId: string;
   open: boolean;
   onClose: () => void;
+  getExpectedDocumentVersion: () => number;
+  enqueuePersistAsync: (
+    executor: StudioPersistExecutor,
+  ) => Promise<StudioPersistResult>;
   onAttached: (document: StudioProjectDocument) => void;
 }) {
   const [tab, setTab] = useState<PickerTab>("catalog");
@@ -91,20 +104,51 @@ export function StudioBeatPicker({
     setAttachingId(beatId);
     setError(null);
     try {
-      const res = await fetch(`/api/studio/projects/${projectId}/beat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ beatId }),
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const res = await fetch(`/api/studio/projects/${projectId}/beat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              beatId,
+              expectedDocumentVersion: getExpectedDocumentVersion(),
+            }),
+          });
+          const json = (await res.json()) as {
+            success?: boolean;
+            document?: StudioProjectDocument;
+            documentVersion?: number;
+            error?: string;
+            code?: string;
+          };
+          if (
+            !res.ok ||
+            !json.success ||
+            !json.document ||
+            typeof json.document.project.documentVersion !== "number"
+          ) {
+            return classifyPersistHttpFailure({
+              status: res.status,
+              message: json.error ?? "Nie udało się powiązać bitu.",
+              code: json.code,
+            });
+          }
+          const document = json.document;
+          return {
+            ok: true as const,
+            documentVersion: document.project.documentVersion,
+            apply: () => {
+              onAttached(document);
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure();
+        }
       });
-      const json = (await res.json()) as {
-        success?: boolean;
-        document?: StudioProjectDocument;
-        error?: string;
-      };
-      if (!res.ok || !json.success || !json.document) {
-        throw new Error(json.error ?? "Nie udało się powiązać bitu.");
+      if (!result.ok) {
+        setError(result.message);
+        return;
       }
-      onAttached(json.document);
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Nie udało się powiązać bitu.");

@@ -25,6 +25,12 @@ import {
   type StudioFxInstance,
   type StudioFxType,
 } from "@/lib/studio/studio-fx-chain";
+import {
+  classifyPersistHttpFailure,
+  classifyPersistNetworkFailure,
+  type StudioPersistExecutor,
+  type StudioPersistResult,
+} from "@/lib/studio/studio-persist-orchestrator";
 
 export type StudioFxSavingState =
   | "idle"
@@ -38,72 +44,17 @@ type StudioFxChainEditorProps = {
   projectId: string;
   trackId?: string;
   chain: StudioFxChainV1;
-  documentVersion: number;
-  onDocumentVersionChange: (version: number) => void;
-  onChainChange: (chain: StudioFxChainV1) => void;
+  /** Read at executor start from editor docRef — not a stale React prop. */
+  getExpectedDocumentVersion: () => number;
+  /** Phase 7.1.6 — shared Studio persist boundary. */
+  enqueuePersistAsync: (
+    executor: StudioPersistExecutor,
+  ) => Promise<StudioPersistResult>;
+  /** Applied via orchestrator ACK (applyPersistedDoc in editor). */
+  onFxPersisted: (chain: StudioFxChainV1, documentVersion: number) => void;
   onClose?: () => void;
   title?: string;
 };
-
-type PersistResult =
-  | { ok: true; documentVersion: number; chain: StudioFxChainV1 }
-  | { ok: false; kind: "conflict" | "error"; message: string };
-
-async function persistFxChain(params: {
-  role: StudioFxChainRole;
-  projectId: string;
-  trackId?: string;
-  expectedDocumentVersion: number;
-  chain: StudioFxChainV1;
-}): Promise<PersistResult> {
-  const path =
-    params.role === "master"
-      ? `/api/studio/projects/${params.projectId}/master-fx`
-      : `/api/studio/projects/${params.projectId}/tracks/${params.trackId}/effects`;
-  const res = await fetch(path, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      expectedDocumentVersion: params.expectedDocumentVersion,
-      chain: params.chain,
-    }),
-  });
-  const json = (await res.json()) as {
-    documentVersion?: number;
-    effectsChain?: StudioFxChainV1;
-    masterFxChain?: StudioFxChainV1;
-    error?: string;
-    code?: string;
-  };
-  if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-    return {
-      ok: false,
-      kind: "conflict",
-      message: json.error ?? FX_CHAIN_CONFLICT_UI_PL,
-    };
-  }
-  if (!res.ok) {
-    return {
-      ok: false,
-      kind: "error",
-      message: json.error ?? "Nie udało się zapisać efektów.",
-    };
-  }
-  const nextChain =
-    params.role === "master" ? json.masterFxChain : json.effectsChain;
-  if (typeof json.documentVersion !== "number" || !nextChain) {
-    return {
-      ok: false,
-      kind: "error",
-      message: "Nie udało się zapisać efektów.",
-    };
-  }
-  return {
-    ok: true,
-    documentVersion: json.documentVersion,
-    chain: nextChain,
-  };
-}
 
 function formatParam(value: number, unit: string): string {
   const text =
@@ -118,9 +69,9 @@ export function StudioFxChainEditor({
   projectId,
   trackId,
   chain,
-  documentVersion,
-  onDocumentVersionChange,
-  onChainChange,
+  getExpectedDocumentVersion,
+  enqueuePersistAsync,
+  onFxPersisted,
   onClose,
   title,
 }: StudioFxChainEditorProps) {
@@ -139,20 +90,65 @@ export function StudioFxChainEditor({
   async function commit(nextChain: StudioFxChainV1): Promise<boolean> {
     setSaving("saving");
     setMessage("Zapisywanie…");
-    const result = await persistFxChain({
-      role,
-      projectId,
-      trackId,
-      expectedDocumentVersion: documentVersion,
-      chain: nextChain,
+    const result = await enqueuePersistAsync(async () => {
+      try {
+        const path =
+          role === "master"
+            ? `/api/studio/projects/${projectId}/master-fx`
+            : `/api/studio/projects/${projectId}/tracks/${trackId}/effects`;
+        const res = await fetch(path, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedDocumentVersion: getExpectedDocumentVersion(),
+            chain: nextChain,
+          }),
+        });
+        const json = (await res.json()) as {
+          documentVersion?: number;
+          effectsChain?: StudioFxChainV1;
+          masterFxChain?: StudioFxChainV1;
+          error?: string;
+          code?: string;
+        };
+        if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
+          return classifyPersistHttpFailure({
+            status: 409,
+            message: json.error ?? FX_CHAIN_CONFLICT_UI_PL,
+            code: json.code,
+          });
+        }
+        const persistedChain =
+          role === "master" ? json.masterFxChain : json.effectsChain;
+        if (
+          !res.ok ||
+          typeof json.documentVersion !== "number" ||
+          !persistedChain
+        ) {
+          return classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zapisać efektów.",
+            code: json.code,
+          });
+        }
+        const documentVersion = json.documentVersion;
+        const chainAck = persistedChain;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            onFxPersisted(chainAck, documentVersion);
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
     });
     if (!result.ok) {
       setSaving(result.kind === "conflict" ? "conflict" : "error");
       setMessage(result.message);
       return false;
     }
-    onDocumentVersionChange(result.documentVersion);
-    onChainChange(result.chain);
     setSaving("saved");
     setMessage("Zapisano");
     return true;

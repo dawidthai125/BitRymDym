@@ -8,7 +8,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useTransition,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
@@ -45,7 +44,6 @@ import {
 import {
   FX_CHAIN_CONFLICT_UI_PL,
   studioFxEntryLabel,
-  type StudioFxChainV1,
 } from "@/lib/studio/studio-fx-chain";
 import {
   beatRefMatchesProjectSsot,
@@ -94,6 +92,13 @@ import {
   zoomOutPxPerMs,
   type StudioSnapConfig,
 } from "@/lib/studio/studio-timeline-view";
+import {
+  classifyPersistHttpFailure,
+  classifyPersistNetworkFailure,
+  StudioPersistOrchestrator,
+  type StudioPersistResult,
+  type StudioPersistSnapshot,
+} from "@/lib/studio/studio-persist-orchestrator";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import {
   canAddStudioTrack,
@@ -210,7 +215,20 @@ function StudioEditorInner({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [persistSnap, setPersistSnap] = useState<StudioPersistSnapshot>({
+    status: "CLEAN",
+    generation: 0,
+    inFlight: false,
+    queued: false,
+    autoRetryCount: 0,
+    label: "Gotowe",
+    conflict: false,
+    lastError: null,
+  });
+  const persistRef = useRef<StudioPersistOrchestrator | null>(null);
+  const docRef = useRef(doc);
+  /** Disable conflicting controls while a persist is in-flight or queued. */
+  const pending = persistSnap.inFlight || persistSnap.queued;
   const [mode, setMode] = useState<TimelineMode>("seek");
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [pxPerMs, setPxPerMs] = useState(STUDIO_TIMELINE_DEFAULT_PX_PER_MS);
@@ -330,8 +348,93 @@ function StudioEditorInner({
   }, []);
 
   useEffect(() => {
+    docRef.current = doc;
+  }, [doc]);
+
+  useEffect(() => {
+    const orch = new StudioPersistOrchestrator({
+      onChange: (snap) => setPersistSnap(snap),
+    });
+    persistRef.current = orch;
+    const onOnline = () => orch.onOnline();
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      orch.dispose();
+      persistRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      const snap = persistRef.current?.getSnapshot();
+      if (
+        !snap ||
+        (snap.status !== "DIRTY" &&
+          snap.status !== "SAVING" &&
+          snap.status !== "SAVE_FAILED" &&
+          !snap.queued &&
+          !snap.inFlight)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
+  useEffect(() => {
     pxPerMsRef.current = pxPerMs;
   }, [pxPerMs]);
+
+  function enqueuePersist(executor: () => Promise<StudioPersistResult>) {
+    persistRef.current?.requestPersist(executor);
+  }
+
+  async function enqueuePersistAsync(
+    executor: () => Promise<StudioPersistResult>,
+  ): Promise<StudioPersistResult> {
+    const orch = persistRef.current;
+    if (!orch) {
+      return {
+        ok: false,
+        kind: "unknown",
+        message: "Persist niedostępny.",
+        retryable: false,
+      };
+    }
+    return orch.requestPersistAsync(executor);
+  }
+
+  async function flushPersist(
+    executor?: () => Promise<StudioPersistResult>,
+  ): Promise<void> {
+    await persistRef.current?.flush(executor);
+  }
+
+  /**
+   * Apply CAS ack into React state and sync docRef immediately so the next
+   * queued persist reads documentVersion N+1 (not a stale closure).
+   */
+  function applyPersistedDoc(
+    mutate: (prev: StudioProjectDocument) => StudioProjectDocument,
+  ): void {
+    setDoc((prev) => {
+      const next = mutate(prev);
+      docRef.current = next;
+      return next;
+    });
+  }
+
+  function expectedDocumentVersion(): number {
+    return docRef.current.project.documentVersion;
+  }
+
+  function projectId(): string {
+    return docRef.current.project.id;
+  }
 
   useLayoutEffect(() => {
     const nextLeft = pendingZoomScrollLeftRef.current;
@@ -382,11 +485,11 @@ function StudioEditorInner({
   }
 
   /** Persist clip move via existing PATCH/CAS — used by drag + keyboard nudge. */
-  async function persistClipMove(
+  function persistClipMove(
     clipId: string,
     timelineStartMs: number,
     options?: { applySnapGrid?: boolean },
-  ): Promise<void> {
+  ): void {
     const clip = doc.clips.find((c) => c.id === clipId);
     if (!clip) return;
     const maxStart = Math.max(0, length - clip.durationMs);
@@ -395,531 +498,793 @@ function StudioEditorInner({
       ? applySnap(timelineStartMs, { minMs: 0, maxMs: maxStart })
       : Math.min(maxStart, Math.max(0, Math.round(timelineStartMs)));
     if (target === clip.timelineStartMs) return;
-    await persistClipGeometryCommit(clipId, {
+    persistClipGeometryCommit(clipId, {
       kind: "move",
       timelineStartMs: target,
     });
   }
 
-  /** Phase 4 — commit MOVE / TRIM / set_geometry via existing CAS PATCH. */
-  async function persistClipGeometryCommit(
+  /** Phase 4 / 7.1.6 — MOVE / TRIM / set_geometry via CAS + serial orchestrator. */
+  function persistClipGeometryCommit(
     clipId: string,
     commit: Exclude<StudioClipEditCommit, { kind: "noop" }>,
-  ): Promise<void> {
+  ): void {
     setError(null);
-    setStatus("Zapisywanie…");
-    const body: Record<string, unknown> = {
-      expectedDocumentVersion: doc.project.documentVersion,
-    };
-    if (commit.kind === "move") {
-      body.op = "move";
-      body.timelineStartMs = commit.timelineStartMs;
-    } else if (commit.kind === "trim_left") {
-      body.op = "trim_left";
-      body.trimMs = commit.trimMs;
-    } else if (commit.kind === "trim_right") {
-      body.op = "trim_right";
-      body.trimMs = commit.trimMs;
-    } else {
-      body.op = "set_geometry";
-      body.timelineStartMs = commit.timelineStartMs;
-      body.durationMs = commit.durationMs;
-      body.sourceOffsetMs = commit.sourceOffsetMs;
-    }
+    enqueuePersist(async () => {
+      try {
+        const body: Record<string, unknown> = {
+          expectedDocumentVersion: docRef.current.project.documentVersion,
+        };
+        if (commit.kind === "move") {
+          body.op = "move";
+          body.timelineStartMs = commit.timelineStartMs;
+        } else if (commit.kind === "trim_left") {
+          body.op = "trim_left";
+          body.trimMs = commit.trimMs;
+        } else if (commit.kind === "trim_right") {
+          body.op = "trim_right";
+          body.trimMs = commit.trimMs;
+        } else {
+          body.op = "set_geometry";
+          body.timelineStartMs = commit.timelineStartMs;
+          body.durationMs = commit.durationMs;
+          body.sourceOffsetMs = commit.sourceOffsetMs;
+        }
 
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${clipId}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const json = (await res.json()) as {
-      clip?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (!res.ok || !json.clip) {
-      throw new Error(json.error ?? "Nie udało się zapisać geometrii klipu.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion:
-          typeof json.documentVersion === "number"
-            ? json.documentVersion
-            : prev.project.documentVersion,
-      },
-      clips: prev.clips.map((c) =>
-        c.id === json.clip!.id ? json.clip! : c,
-      ),
-    }));
-    setStatus("Zapisano");
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        const json = (await res.json()) as {
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          !json.clip ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zapisać geometrii klipu.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const clip = json.clip;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              clips: prev.clips.map((c) => (c.id === clip.id ? clip : c)),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
-  async function patchTrack(
-    trackId: string,
-    body: Record<string, unknown>,
-  ): Promise<void> {
+  function patchTrack(trackId: string, body: Record<string, unknown>): void {
     setError(null);
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/tracks/${trackId}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      track?: StudioTrackDto;
-      documentVersion?: number;
-      error?: string;
-    };
-    if (!res.ok || !json.track) {
-      throw new Error(json.error ?? "Nie udało się zaktualizować ścieżki.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion:
-          typeof json.documentVersion === "number"
-            ? json.documentVersion
-            : prev.project.documentVersion,
-      },
-      tracks: prev.tracks.map((t) => (t.id === trackId ? json.track! : t)),
-    }));
+    enqueuePersist(async () => {
+      try {
+        const expected = docRef.current.project.documentVersion;
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/tracks/${trackId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...body,
+              expectedDocumentVersion: expected,
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          track?: StudioTrackDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (!res.ok || !json.track || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zaktualizować ścieżki.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const track = json.track;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks: prev.tracks.map((t) =>
+                t.id === trackId ? track : t,
+              ),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
-  async function patchMasterMix(body: {
+  function patchMasterMix(body: {
     masterGainDb?: number;
     masterPan?: number;
-  }): Promise<void> {
+  }): void {
     setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(`/api/studio/projects/${doc.project.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        expectedDocumentVersion: doc.project.documentVersion,
-        ...body,
-      }),
+    enqueuePersist(async () => {
+      try {
+        const expected = docRef.current.project.documentVersion;
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: expected,
+              ...body,
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          documentVersion?: number;
+          masterGainDb?: number;
+          masterPan?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          typeof json.documentVersion !== "number" ||
+          typeof json.masterGainDb !== "number" ||
+          typeof json.masterPan !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zapisać Master.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const documentVersion = json.documentVersion;
+        const masterGainDb = json.masterGainDb;
+        const masterPan = json.masterPan;
+        return {
+          ok: true,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion,
+                masterGainDb,
+                masterPan,
+              },
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
     });
-    const json = (await res.json()) as {
-      success?: boolean;
-      documentVersion?: number;
-      masterGainDb?: number;
-      masterPan?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (
-      !res.ok ||
-      typeof json.documentVersion !== "number" ||
-      typeof json.masterGainDb !== "number" ||
-      typeof json.masterPan !== "number"
-    ) {
-      throw new Error(json.error ?? "Nie udało się zapisać Master.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: json.documentVersion!,
-        masterGainDb: json.masterGainDb!,
-        masterPan: json.masterPan!,
-      },
-    }));
-    setStatus("Zapisano");
   }
 
-  async function reorder(trackId: string, direction: "up" | "down") {
+  function reorder(trackId: string, direction: "up" | "down") {
     setError(null);
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/tracks/${trackId}/reorder`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      tracks?: StudioTrackDto[];
-      error?: string;
-    };
-    if (!res.ok || !json.tracks) {
-      throw new Error(json.error ?? "Nie udało się zmienić kolejności.");
-    }
-    setDoc((prev) => ({ ...prev, tracks: json.tracks! }));
+    enqueuePersist(async () => {
+      try {
+        const expected = docRef.current.project.documentVersion;
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/tracks/${trackId}/reorder`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              direction,
+              expectedDocumentVersion: expected,
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          tracks?: StudioTrackDto[];
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          !json.tracks ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zmienić kolejności.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const tracks = json.tracks;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks,
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
-  /** Phase 5 — add VOCAL track (server capacity + CAS). */
-  async function addTrack(): Promise<void> {
+  /** Phase 5 / 7.1.6 — add VOCAL track via CAS + serial orchestrator. */
+  function addTrack(): void {
     setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/tracks`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedDocumentVersion: doc.project.documentVersion,
-        }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      track?: StudioTrackDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (json.code === "TRACK_CAPACITY_REACHED") {
-      throw new Error(json.error ?? "Osiągnięto limit ścieżek.");
-    }
-    if (!res.ok || !json.track || typeof json.documentVersion !== "number") {
-      throw new Error(json.error ?? "Nie udało się dodać ścieżki.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: json.documentVersion!,
-      },
-      tracks: [...prev.tracks, json.track!].sort(
-        (a, b) => a.sortOrder - b.sortOrder,
-      ),
-    }));
-    setSelectedTrackId(json.track.id);
-    setStatus("Zapisano");
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(`/api/studio/projects/${projectId()}/tracks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedDocumentVersion: expectedDocumentVersion(),
+          }),
+        });
+        const json = (await res.json()) as {
+          success?: boolean;
+          track?: StudioTrackDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (json.code === "TRACK_CAPACITY_REACHED") {
+          setError(json.error ?? "Osiągnięto limit ścieżek.");
+          return classifyPersistHttpFailure({
+            status: 403,
+            message: json.error ?? "Osiągnięto limit ścieżek.",
+            code: json.code,
+          });
+        }
+        if (!res.ok || !json.track || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się dodać ścieżki.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const track = json.track;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks: [...prev.tracks, track].sort(
+                (a, b) => a.sortOrder - b.sortOrder,
+              ),
+            }));
+            setSelectedTrackId(track.id);
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
-  /** Phase 6 — duplicate user track + clips (atomic capacity). */
-  async function duplicateTrack(trackId: string): Promise<void> {
+  /** Phase 6 / 7.1.6 — duplicate track via CAS + serial orchestrator. */
+  function duplicateTrack(trackId: string): void {
     setError(null);
-    setStatus("Zapisywanie…");
     setTrackMenuId(null);
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/tracks/${trackId}/duplicate`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedDocumentVersion: doc.project.documentVersion,
-        }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      track?: StudioTrackDto;
-      clips?: StudioClipDto[];
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (json.code === "TRACK_CAPACITY_REACHED") {
-      throw new Error(json.error ?? "Osiągnięto limit ścieżek.");
-    }
-    if (json.code === "BEAT_TRACK_PROTECTED") {
-      throw new Error(json.error ?? "Ścieżki Bit nie można zduplikować.");
-    }
-    if (
-      !res.ok ||
-      !json.track ||
-      !Array.isArray(json.clips) ||
-      typeof json.documentVersion !== "number"
-    ) {
-      throw new Error(json.error ?? "Nie udało się zduplikować ścieżki.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: json.documentVersion!,
-      },
-      tracks: [...prev.tracks, json.track!].sort(
-        (a, b) => a.sortOrder - b.sortOrder,
-      ),
-      clips: [...prev.clips, ...json.clips!].sort(
-        (a, b) => a.timelineStartMs - b.timelineStartMs,
-      ),
-    }));
-    setSelectedTrackId(json.track.id);
-    setSelectedClipId(null);
-    setStatus("Zapisano");
-  }
-
-  /** Phase 5 — delete user track (cascades clips; Takes preserved). */
-  async function deleteTrack(trackId: string): Promise<void> {
-    setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/tracks/${trackId}`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedDocumentVersion: doc.project.documentVersion,
-        }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      deletedTrackId?: string;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (!res.ok || !json.deletedTrackId || typeof json.documentVersion !== "number") {
-      throw new Error(json.error ?? "Nie udało się usunąć ścieżki.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: json.documentVersion!,
-      },
-      tracks: prev.tracks.filter((t) => t.id !== json.deletedTrackId),
-      clips: prev.clips.filter((c) => c.trackId !== json.deletedTrackId),
-    }));
-    if (selectedTrackId === trackId) setSelectedTrackId(null);
-    if (selectedClip?.trackId === trackId) {
-      setSelectedClipId(null);
-      setConfirmDelete(false);
-    }
-    setConfirmDeleteTrackId(null);
-    setStatus("Zapisano");
-  }
-
-  async function patchClip(body: Record<string, unknown>) {
-    if (!selectedClip) return;
-    setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      clip?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (!res.ok || !json.clip) {
-      throw new Error(json.error ?? "Nie udało się zapisać klipu.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion:
-          typeof json.documentVersion === "number"
-            ? json.documentVersion
-            : prev.project.documentVersion,
-      },
-      clips: prev.clips.map((c) => (c.id === json.clip!.id ? json.clip! : c)),
-    }));
-    setStatus("Zapisano");
-  }
-
-  /** P6.7.3 — explicit Fade In/Out save via set_fades + CAS. */
-  async function saveClipFades(fadeInMs: number, fadeOutMs: number) {
-    if (!selectedClip) return;
-    setError(null);
-    setStatus("Zapisywanie…");
-    const body = buildStudioClipFadesPatchBody({
-      fadeInMs,
-      fadeOutMs,
-      expectedDocumentVersion: doc.project.documentVersion,
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${projectId()}/tracks/${trackId}/duplicate`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: expectedDocumentVersion(),
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          track?: StudioTrackDto;
+          clips?: StudioClipDto[];
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (json.code === "TRACK_CAPACITY_REACHED") {
+          setError(json.error ?? "Osiągnięto limit ścieżek.");
+          return classifyPersistHttpFailure({
+            status: 403,
+            message: json.error ?? "Osiągnięto limit ścieżek.",
+            code: json.code,
+          });
+        }
+        if (json.code === "BEAT_TRACK_PROTECTED") {
+          setError(json.error ?? "Ścieżki Bit nie można zduplikować.");
+          return classifyPersistHttpFailure({
+            status: 403,
+            message: json.error ?? "Ścieżki Bit nie można zduplikować.",
+            code: json.code,
+          });
+        }
+        if (
+          !res.ok ||
+          !json.track ||
+          !Array.isArray(json.clips) ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zduplikować ścieżki.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const track = json.track;
+        const clips = json.clips;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks: [...prev.tracks, track].sort(
+                (a, b) => a.sortOrder - b.sortOrder,
+              ),
+              clips: [...prev.clips, ...clips].sort(
+                (a, b) => a.timelineStartMs - b.timelineStartMs,
+              ),
+            }));
+            setSelectedTrackId(track.id);
+            setSelectedClipId(null);
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
     });
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      clip?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    const result = interpretStudioClipFadesPersistResponse(res.status, json);
-    if (!result.ok) {
-      // No blind retry. Conflict surfaces Odśwież via conflictActive.
-      throw new Error(result.message);
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: result.documentVersion,
-      },
-      clips: prev.clips.map((c) =>
-        c.id === result.clip.id ? result.clip : c,
-      ),
-    }));
-    setStatus("Zapisano");
   }
 
-  /** V1 — Clip Gain CAS write path (explicit save). */
-  async function saveClipGain(gainDb: number) {
-    if (!selectedClip) return;
+  /** Phase 5 / 7.1.6 — delete track via CAS + serial orchestrator. */
+  function deleteTrack(trackId: string): void {
     setError(null);
-    setStatus("Zapisywanie…");
-    const body = buildStudioClipGainPatchBody({
-      gainDb,
-      expectedDocumentVersion: doc.project.documentVersion,
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${projectId()}/tracks/${trackId}`,
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: expectedDocumentVersion(),
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          deletedTrackId?: string;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          !json.deletedTrackId ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się usunąć ścieżki.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const deletedTrackId = json.deletedTrackId;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks: prev.tracks.filter((t) => t.id !== deletedTrackId),
+              clips: prev.clips.filter((c) => c.trackId !== deletedTrackId),
+            }));
+            setSelectedTrackId((prev) =>
+              prev === trackId ? null : prev,
+            );
+            setSelectedClipId((prev) => {
+              const clip = docRef.current.clips.find((c) => c.id === prev);
+              if (clip?.trackId === trackId) {
+                setConfirmDelete(false);
+                return null;
+              }
+              return prev;
+            });
+            setConfirmDeleteTrackId(null);
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
     });
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      clip?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    const result = interpretStudioClipMixPersistResponse(res.status, json);
-    if (!result.ok) {
-      throw new Error(result.message);
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: result.documentVersion,
-      },
-      clips: prev.clips.map((c) =>
-        c.id === result.clip.id ? result.clip : c,
-      ),
-    }));
-    setStatus("Zapisano");
   }
 
-  /** V1 — Clip Mute CAS write path. */
-  async function saveClipMute(muted: boolean) {
-    if (!selectedClip) return;
+  /** Clip PATCH ops (move/trim/…) via CAS + serial orchestrator. */
+  function patchClip(body: Record<string, unknown>): void {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
     setError(null);
-    setStatus("Zapisywanie…");
-    const body = buildStudioClipMutePatchBody({
-      muted,
-      expectedDocumentVersion: doc.project.documentVersion,
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${projectId()}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...body,
+              expectedDocumentVersion: expectedDocumentVersion(),
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (!res.ok || !json.clip || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zapisać klipu.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const clip = json.clip;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              clips: prev.clips.map((c) => (c.id === clip.id ? clip : c)),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
     });
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      clip?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    const result = interpretStudioClipMixPersistResponse(res.status, json);
-    if (!result.ok) {
-      throw new Error(result.message);
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion: result.documentVersion,
-      },
-      clips: prev.clips.map((c) =>
-        c.id === result.clip.id ? result.clip : c,
-      ),
-    }));
-    setStatus("Zapisano");
   }
 
-  async function splitSelectedAtPlayhead() {
-    if (!selectedClip) return;
+  /** P6.7.3 / 7.1.6 — Fade In/Out auto-commit via set_fades + CAS + orchestrator. */
+  function saveClipFades(fadeInMs: number, fadeOutMs: number) {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
     setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}/split`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          atTimelineMs: getPlayheadMs(),
-          expectedDocumentVersion: doc.project.documentVersion,
-        }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      left?: StudioClipDto;
-      right?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (!res.ok || !json.left || !json.right) {
-      throw new Error(json.error ?? "Nie udało się podzielić klipu.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion:
-          typeof json.documentVersion === "number"
-            ? json.documentVersion
-            : prev.project.documentVersion,
-      },
-      clips: [
-        ...prev.clips.map((c) => (c.id === json.left!.id ? json.left! : c)),
-        json.right!,
-      ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
-    }));
-    setSelectedClipId(selectClipId(activeSelectedId, json.left.id));
-    setStatus("Zapisano");
+    enqueuePersist(async () => {
+      try {
+        const body = buildStudioClipFadesPatchBody({
+          fadeInMs,
+          fadeOutMs,
+          expectedDocumentVersion: docRef.current.project.documentVersion,
+        });
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        const result = interpretStudioClipFadesPersistResponse(res.status, json);
+        if (!result.ok) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: result.message,
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(result.message);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        return {
+          ok: true as const,
+          documentVersion: result.documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: result.documentVersion,
+              },
+              clips: prev.clips.map((c) =>
+                c.id === result.clip.id ? result.clip : c,
+              ),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  /** V1 / 7.1.6 — Clip Gain auto-commit via CAS + orchestrator. */
+  function saveClipGain(gainDb: number) {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
+    setError(null);
+    enqueuePersist(async () => {
+      try {
+        const body = buildStudioClipGainPatchBody({
+          gainDb,
+          expectedDocumentVersion: docRef.current.project.documentVersion,
+        });
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        const result = interpretStudioClipMixPersistResponse(res.status, json);
+        if (!result.ok) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: result.message,
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(result.message);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        return {
+          ok: true as const,
+          documentVersion: result.documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: result.documentVersion,
+              },
+              clips: prev.clips.map((c) =>
+                c.id === result.clip.id ? result.clip : c,
+              ),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  /** V1 / 7.1.6 — Clip Mute CAS via orchestrator. */
+  function saveClipMute(muted: boolean) {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
+    setError(null);
+    enqueuePersist(async () => {
+      try {
+        const body = buildStudioClipMutePatchBody({
+          muted,
+          expectedDocumentVersion: docRef.current.project.documentVersion,
+        });
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        const result = interpretStudioClipMixPersistResponse(res.status, json);
+        if (!result.ok) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: result.message,
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(result.message);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        return {
+          ok: true as const,
+          documentVersion: result.documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: result.documentVersion,
+              },
+              clips: prev.clips.map((c) =>
+                c.id === result.clip.id ? result.clip : c,
+              ),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  function splitSelectedAtPlayhead(): void {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
+    setError(null);
+    const atTimelineMs = getPlayheadMs();
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${projectId()}/clips/${clipId}/split`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              atTimelineMs,
+              expectedDocumentVersion: expectedDocumentVersion(),
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          left?: StudioClipDto;
+          right?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          !json.left ||
+          !json.right ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się podzielić klipu.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const left = json.left;
+        const right = json.right;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              clips: [
+                ...prev.clips.map((c) => (c.id === left.id ? left : c)),
+                right,
+              ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
+            }));
+            setSelectedClipId(selectClipId(null, left.id));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
   useEffect(() => {
@@ -968,18 +1333,9 @@ function StudioEditorInner({
           deltaMs: sign * step,
         });
         if (next === selectedClip.timelineStartMs) return;
-        startTransition(async () => {
-          try {
-            // Nudge bypasses snap — micro-timing (±1 / ±10 / ±20 ms).
-            await persistClipMove(selectedClip.id, next, {
-              applySnapGrid: false,
-            });
-          } catch (err) {
-            setError(
-              err instanceof Error ? err.message : "Błąd przesunięcia.",
-            );
-            setStatus(null);
-          }
+        // Nudge bypasses snap — micro-timing (±1 / ±10 / ±20 ms).
+        persistClipMove(selectedClip.id, next, {
+          applySnapGrid: false,
         });
         return;
       }
@@ -992,14 +1348,7 @@ function StudioEditorInner({
       ) {
         if (!selectedClip) return;
         event.preventDefault();
-        startTransition(async () => {
-          try {
-            await splitSelectedAtPlayhead();
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Błąd podziału.");
-            setStatus(null);
-          }
-        });
+        splitSelectedAtPlayhead();
         return;
       }
 
@@ -1022,196 +1371,200 @@ function StudioEditorInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Phase 2 keyboard precision + 7.1.5.3
   }, [recordingLocked, pending, selectedClip, length, transport]);
 
-  async function deleteSelectedClip() {
-    if (!selectedClip) return;
+  function deleteSelectedClip(): void {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
     setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedDocumentVersion: doc.project.documentVersion,
-        }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      deletedClipId?: string;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (!res.ok || !json.deletedClipId) {
-      throw new Error(json.error ?? "Nie udało się usunąć klipu.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion:
-          typeof json.documentVersion === "number"
-            ? json.documentVersion
-            : prev.project.documentVersion,
-      },
-      clips: prev.clips.filter((c) => c.id !== json.deletedClipId),
-    }));
-    setSelectedClipId(clearClipSelection());
-    setConfirmDelete(false);
-    setStatus("Zapisano");
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${projectId()}/clips/${clipId}`,
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: expectedDocumentVersion(),
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          deletedClipId?: string;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          !json.deletedClipId ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się usunąć klipu.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const deletedClipId = json.deletedClipId;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              clips: prev.clips.filter((c) => c.id !== deletedClipId),
+            }));
+            setSelectedClipId(clearClipSelection());
+            setConfirmDelete(false);
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
-  /** V1 — Duplicate Clip (same Take, independent Clip params). */
-  async function duplicateSelectedClip() {
-    if (!selectedClip) return;
+  /** V1 / 7.1.6 — Duplicate Clip via CAS + serial orchestrator. */
+  function duplicateSelectedClip(): void {
+    const clipId = selectedClip?.id;
+    if (!clipId) return;
     setError(null);
-    setStatus("Zapisywanie…");
-    const res = await fetch(
-      `/api/studio/projects/${doc.project.id}/clips/${selectedClip.id}/duplicate`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedDocumentVersion: doc.project.documentVersion,
-        }),
-      },
-    );
-    const json = (await res.json()) as {
-      success?: boolean;
-      original?: StudioClipDto;
-      duplicate?: StudioClipDto;
-      documentVersion?: number;
-      error?: string;
-      code?: string;
-    };
-    if (res.status === 409 || json.code === "FX_CHAIN_VERSION_CONFLICT") {
-      throw new Error(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
-    }
-    if (!res.ok || !json.original || !json.duplicate) {
-      throw new Error(json.error ?? "Nie udało się powielić klipu.");
-    }
-    setDoc((prev) => ({
-      ...prev,
-      project: {
-        ...prev.project,
-        documentVersion:
-          typeof json.documentVersion === "number"
-            ? json.documentVersion
-            : prev.project.documentVersion,
-      },
-      clips: [
-        ...prev.clips.map((c) =>
-          c.id === json.original!.id ? json.original! : c,
-        ),
-        json.duplicate!,
-      ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
-    }));
-    setSelectedClipId(selectClipId(activeSelectedId, json.duplicate.id));
-    setStatus("Zapisano");
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${projectId()}/clips/${clipId}/duplicate`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: expectedDocumentVersion(),
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          original?: StudioClipDto;
+          duplicate?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (
+          !res.ok ||
+          !json.original ||
+          !json.duplicate ||
+          typeof json.documentVersion !== "number"
+        ) {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się powielić klipu.",
+            code: json.code,
+          });
+          if (failure.kind === "conflict") {
+            setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          } else if (!failure.retryable) {
+            setError(failure.message);
+          }
+          return failure;
+        }
+        const original = json.original;
+        const duplicate = json.duplicate;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              clips: [
+                ...prev.clips.map((c) =>
+                  c.id === original.id ? original : c,
+                ),
+                duplicate,
+              ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
+            }));
+            setSelectedClipId(selectClipId(null, duplicate.id));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
   const conflictActive =
-    Boolean(error) &&
-    (error!.includes("zmieniony") || error === FX_CHAIN_CONFLICT_UI_PL);
+    persistSnap?.conflict === true ||
+    (Boolean(error) &&
+      (error!.includes("zmieniony") || error === FX_CHAIN_CONFLICT_UI_PL));
 
-  const saveStatusLabel = error
-    ? error
-    : pending
-      ? "Zapisywanie…"
-      : status
-        ? status
-        : "Gotowe";
+  const saveStatusLabel = conflictActive
+    ? (error ?? persistSnap?.lastError ?? FX_CHAIN_CONFLICT_UI_PL)
+    : persistSnap?.status === "SAVE_FAILED"
+      ? (persistSnap.lastError ?? "Nie zapisano")
+      : persistSnap
+        ? persistSnap.label
+        : pending
+          ? "Zapisywanie…"
+          : status
+            ? status
+            : "Gotowe";
 
   const clipEditHandlers = {
     onClearSelection: () => {
       setSelectedClipId(clearClipSelection());
       setConfirmDelete(false);
     },
-    onSaveFades: (fadeInMs: number, fadeOutMs: number) =>
-      startTransition(async () => {
-        try {
-          await saveClipFades(fadeInMs, fadeOutMs);
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd zapisu fade.");
-          setStatus(null);
-        }
-      }),
-    onSaveGain: (gainDb: number) =>
-      startTransition(async () => {
-        try {
-          await saveClipGain(gainDb);
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd głośności klipu.");
-          setStatus(null);
-        }
-      }),
-    onSaveMute: (muted: boolean) =>
-      startTransition(async () => {
-        try {
-          await saveClipMute(muted);
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd wyciszenia klipu.");
-          setStatus(null);
-        }
-      }),
-    onMove: (timelineStartMs: number) =>
-      startTransition(async () => {
-        try {
-          const maxStart = selectedClip
-            ? Math.max(0, length - selectedClip.durationMs)
-            : 0;
-          await patchClip({
-            op: "move",
-            timelineStartMs: applySnap(timelineStartMs, {
-              minMs: 0,
-              maxMs: maxStart,
-            }),
-            expectedDocumentVersion: doc.project.documentVersion,
-          });
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd przesunięcia.");
-          setStatus(null);
-        }
-      }),
-    onTrimLeftToPlayhead: () =>
-      startTransition(async () => {
-        try {
-          await patchClip({
-            op: "trim_left_to_playhead",
-            playheadMs: getPlayheadMs(),
-            expectedDocumentVersion: doc.project.documentVersion,
-          });
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd przycięcia.");
-          setStatus(null);
-        }
-      }),
-    onTrimRightToPlayhead: () =>
-      startTransition(async () => {
-        try {
-          await patchClip({
-            op: "trim_right_to_playhead",
-            playheadMs: getPlayheadMs(),
-            expectedDocumentVersion: doc.project.documentVersion,
-          });
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd przycięcia.");
-          setStatus(null);
-        }
-      }),
-    onSplit: () =>
-      startTransition(async () => {
-        try {
-          await splitSelectedAtPlayhead();
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Błąd podziału.");
-          setStatus(null);
-        }
-      }),
+    onSaveFades: (fadeInMs: number, fadeOutMs: number) => {
+      saveClipFades(fadeInMs, fadeOutMs);
+    },
+    onSaveGain: (gainDb: number) => {
+      saveClipGain(gainDb);
+    },
+    onFlushPersist: () => {
+      void flushPersist();
+    },
+    onMarkDirty: () => {
+      persistRef.current?.markDirty();
+    },
+    onSaveMute: (muted: boolean) => {
+      saveClipMute(muted);
+    },
+    onMove: (timelineStartMs: number) => {
+      const maxStart = selectedClip
+        ? Math.max(0, length - selectedClip.durationMs)
+        : 0;
+      patchClip({
+        op: "move",
+        timelineStartMs: applySnap(timelineStartMs, {
+          minMs: 0,
+          maxMs: maxStart,
+        }),
+      });
+    },
+    onTrimLeftToPlayhead: () => {
+      patchClip({
+        op: "trim_left_to_playhead",
+        playheadMs: getPlayheadMs(),
+      });
+    },
+    onTrimRightToPlayhead: () => {
+      patchClip({
+        op: "trim_right_to_playhead",
+        playheadMs: getPlayheadMs(),
+      });
+    },
+    onSplit: () => {
+      splitSelectedAtPlayhead();
+    },
   };
 
   const inspectorContent = (
@@ -1227,6 +1580,8 @@ function StudioEditorInner({
       {inspectorContext === "record" ? (
         <StudioRecordingPanel
           projectId={doc.project.id}
+          getExpectedDocumentVersion={expectedDocumentVersion}
+          enqueuePersistAsync={enqueuePersistAsync}
           tracks={doc.tracks}
           embedded
           preferredTrackId={activeSelectedTrackId}
@@ -1241,9 +1596,13 @@ function StudioEditorInner({
               setInspectorPreferRecord(false);
             }
           }}
-          onClipCreated={(clip) => {
-            setDoc((prev) => ({
+          onClipCreated={(clip, nextDocumentVersion) => {
+            applyPersistedDoc((prev) => ({
               ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: nextDocumentVersion,
+              },
               clips: [...prev.clips, clip].sort(
                 (a, b) => a.timelineStartMs - b.timelineStartMs,
               ),
@@ -1279,26 +1638,12 @@ function StudioEditorInner({
           confirmDelete={confirmDelete}
           onConfirmDeleteChange={setConfirmDelete}
           {...clipEditHandlers}
-          onDuplicate={() =>
-            startTransition(async () => {
-              try {
-                await duplicateSelectedClip();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd powielania.");
-                setStatus(null);
-              }
-            })
-          }
-          onDelete={() =>
-            startTransition(async () => {
-              try {
-                await deleteSelectedClip();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd usuwania.");
-                setStatus(null);
-              }
-            })
-          }
+          onDuplicate={() => {
+            duplicateSelectedClip();
+          }}
+          onDelete={() => {
+            deleteSelectedClip();
+          }}
         />
       ) : null}
 
@@ -1361,20 +1706,9 @@ function StudioEditorInner({
               project: { ...prev.project, masterGainDb },
             }))
           }
-          onCommit={(masterGainDb) =>
-            startTransition(async () => {
-              try {
-                await patchMasterMix({ masterGainDb });
-              } catch (e) {
-                setError(
-                  e instanceof Error
-                    ? e.message
-                    : "Błąd Master głośności.",
-                );
-                setStatus(null);
-              }
-            })
-          }
+          onCommit={(masterGainDb) => {
+            patchMasterMix({ masterGainDb });
+          }}
         />
         <StudioMixControl
           label="Panorama L/R"
@@ -1391,20 +1725,9 @@ function StudioEditorInner({
               project: { ...prev.project, masterPan },
             }))
           }
-          onCommit={(masterPan) =>
-            startTransition(async () => {
-              try {
-                await patchMasterMix({ masterPan });
-              } catch (e) {
-                setError(
-                  e instanceof Error
-                    ? e.message
-                    : "Błąd Master panoramy.",
-                );
-                setStatus(null);
-              }
-            })
-          }
+          onCommit={(masterPan) => {
+            patchMasterMix({ masterPan });
+          }}
         />
         <StudioMasterMeterLive />
         <div className="mt-3">
@@ -1486,19 +1809,9 @@ function StudioEditorInner({
                   ),
                 }))
               }
-              onCommit={(gainDb) =>
-                startTransition(async () => {
-                  try {
-                    await patchTrack(track.id, { gainDb });
-                  } catch (err) {
-                    setError(
-                      err instanceof Error
-                        ? err.message
-                        : "Błąd głośności.",
-                    );
-                  }
-                })
-              }
+              onCommit={(gainDb) => {
+                patchTrack(track.id, { gainDb });
+              }}
             />
             <StudioMixControl
               label="Panorama L/R"
@@ -1517,19 +1830,9 @@ function StudioEditorInner({
                   ),
                 }))
               }
-              onCommit={(pan) =>
-                startTransition(async () => {
-                  try {
-                    await patchTrack(track.id, { pan });
-                  } catch (err) {
-                    setError(
-                      err instanceof Error
-                        ? err.message
-                        : "Błąd panoramy.",
-                    );
-                  }
-                })
-              }
+              onCommit={(pan) => {
+                patchTrack(track.id, { pan });
+              }}
             />
             {isSelected ? (
               <StudioTrackMeterLive trackName={track.name} />
@@ -1603,8 +1906,10 @@ function StudioEditorInner({
         projectId={doc.project.id}
         open={beatPickerOpen}
         onClose={() => setBeatPickerOpen(false)}
+        getExpectedDocumentVersion={expectedDocumentVersion}
+        enqueuePersistAsync={enqueuePersistAsync}
         onAttached={(document) => {
-          setDoc(document);
+          applyPersistedDoc(() => document);
           setStatus("Bit powiązany z projektem.");
           setError(null);
         }}
@@ -1632,20 +1937,9 @@ function StudioEditorInner({
                 ? "Osiągnięto limit ścieżek"
                 : "Duplikuj ścieżkę"
             }
-            onClick={() =>
-              startTransition(async () => {
-                try {
-                  await duplicateTrack(trackMenuTrack.id);
-                } catch (e) {
-                  setError(
-                    e instanceof Error
-                      ? e.message
-                      : "Błąd duplikowania ścieżki.",
-                  );
-                  setStatus(null);
-                }
-              })
-            }
+            onClick={() => {
+              duplicateTrack(trackMenuTrack.id);
+            }}
           >
             Duplikuj
           </Button>
@@ -1712,20 +2006,9 @@ function StudioEditorInner({
               className="min-h-11"
               data-testid="studio-delete-track-confirm-btn"
               disabled={recordingLocked || pending}
-              onClick={() =>
-                startTransition(async () => {
-                  try {
-                    await deleteTrack(trackPendingDelete.id);
-                  } catch (e) {
-                    setError(
-                      e instanceof Error
-                        ? e.message
-                        : "Błąd usuwania ścieżki.",
-                    );
-                    setStatus(null);
-                  }
-                })
-              }
+              onClick={() => {
+                deleteTrack(trackPendingDelete.id);
+              }}
             >
               Usuń
             </Button>
@@ -1775,16 +2058,9 @@ function StudioEditorInner({
           className="min-h-11"
           disabled={recordingLocked || pending || !selectedClip}
           title="Podziel w playhead"
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                await splitSelectedAtPlayhead();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd podziału.");
-                setStatus(null);
-              }
-            })
-          }
+          onClick={() => {
+            splitSelectedAtPlayhead();
+          }}
         >
           Podziel
         </Button>
@@ -1815,18 +2091,9 @@ function StudioEditorInner({
               ? "Osiągnięto limit ścieżek"
               : "Dodaj ścieżkę wokalną"
           }
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                await addTrack();
-              } catch (e) {
-                setError(
-                  e instanceof Error ? e.message : "Błąd dodawania ścieżki.",
-                );
-                setStatus(null);
-              }
-            })
-          }
+          onClick={() => {
+            addTrack();
+          }}
         >
           + Dodaj ścieżkę
         </Button>
@@ -2013,55 +2280,29 @@ function StudioEditorInner({
                     label="M"
                     title="Wycisz"
                     className={STUDIO_DAW_CHIP_CLASS}
-                    onClick={() =>
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, { muted: !track.muted });
-                        } catch (e) {
-                          setError(
-                            e instanceof Error
-                              ? e.message
-                              : "Błąd wyciszenia.",
-                          );
-                        }
-                      })
-                    }
+                    onClick={() => {
+                      patchTrack(track.id, { muted: !track.muted });
+                    }}
                   />
                   <StudioToggleChip
                     active={track.solo}
                     label="S"
                     title="Solo"
                     className={STUDIO_DAW_CHIP_CLASS}
-                    onClick={() =>
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, { solo: !track.solo });
-                        } catch (e) {
-                          setError(
-                            e instanceof Error ? e.message : "Błąd solo.",
-                          );
-                        }
-                      })
-                    }
+                    onClick={() => {
+                      patchTrack(track.id, { solo: !track.solo });
+                    }}
                   />
                   <StudioToggleChip
                     active={track.recordArmed}
                     label="R"
                     title="Uzbrojenie nagrywania"
                     className={STUDIO_DAW_CHIP_CLASS}
-                    onClick={() =>
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, {
-                            recordArmed: !track.recordArmed,
-                          });
-                        } catch (e) {
-                          setError(
-                            e instanceof Error ? e.message : "Błąd REC.",
-                          );
-                        }
-                      })
-                    }
+                    onClick={() => {
+                      patchTrack(track.id, {
+                        recordArmed: !track.recordArmed,
+                      });
+                    }}
                   />
                   <Button
                     type="button"
@@ -2071,19 +2312,9 @@ function StudioEditorInner({
                     disabled={pending || index === 0}
                     title="Przenieś w górę"
                     aria-label="Przenieś ścieżkę w górę"
-                    onClick={() =>
-                      startTransition(async () => {
-                        try {
-                          await reorder(track.id, "up");
-                        } catch (e) {
-                          setError(
-                            e instanceof Error
-                              ? e.message
-                              : "Błąd kolejności.",
-                          );
-                        }
-                      })
-                    }
+                    onClick={() => {
+                      reorder(track.id, "up");
+                    }}
                   >
                     ↑
                   </Button>
@@ -2095,19 +2326,9 @@ function StudioEditorInner({
                     disabled={pending || index === doc.tracks.length - 1}
                     title="Przenieś w dół"
                     aria-label="Przenieś ścieżkę w dół"
-                    onClick={() =>
-                      startTransition(async () => {
-                        try {
-                          await reorder(track.id, "down");
-                        } catch (e) {
-                          setError(
-                            e instanceof Error
-                              ? e.message
-                              : "Błąd kolejności.",
-                          );
-                        }
-                      })
-                    }
+                    onClick={() => {
+                      reorder(track.id, "down");
+                    }}
                   >
                     ↓
                   </Button>
@@ -2154,16 +2375,7 @@ function StudioEditorInner({
               setSelectedClipId(selectClipId(activeSelectedId, clipId));
               const clip = doc.clips.find((c) => c.id === clipId);
               if (clip) setSelectedTrackId(clip.trackId);
-              startTransition(async () => {
-                try {
-                  await persistClipGeometryCommit(clipId, commit);
-                } catch (e) {
-                  setError(
-                    e instanceof Error ? e.message : "Błąd edycji klipu.",
-                  );
-                  setStatus(null);
-                }
-              });
+              persistClipGeometryCommit(clipId, commit);
             }}
           />
         </div>
@@ -2213,19 +2425,18 @@ function StudioEditorInner({
             role="master"
             projectId={doc.project.id}
             chain={doc.project.masterFxChain}
-            documentVersion={doc.project.documentVersion}
+            getExpectedDocumentVersion={expectedDocumentVersion}
+            enqueuePersistAsync={enqueuePersistAsync}
             title="Master · Efekty"
             onClose={() => setFxPanel(null)}
-            onDocumentVersionChange={(documentVersion) =>
-              setDoc((prev) => ({
+            onFxPersisted={(masterFxChain, documentVersion) =>
+              applyPersistedDoc((prev) => ({
                 ...prev,
-                project: { ...prev.project, documentVersion },
-              }))
-            }
-            onChainChange={(masterFxChain: StudioFxChainV1) =>
-              setDoc((prev) => ({
-                ...prev,
-                project: { ...prev.project, masterFxChain },
+                project: {
+                  ...prev.project,
+                  documentVersion,
+                  masterFxChain,
+                },
               }))
             }
           />
@@ -2241,20 +2452,16 @@ function StudioEditorInner({
                 effects: [],
               }
             }
-            documentVersion={doc.project.documentVersion}
+            getExpectedDocumentVersion={expectedDocumentVersion}
+            enqueuePersistAsync={enqueuePersistAsync}
             title={`Efekty · ${
               doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? "Ścieżka"
             }`}
             onClose={() => setFxPanel(null)}
-            onDocumentVersionChange={(documentVersion) =>
-              setDoc((prev) => ({
+            onFxPersisted={(effectsChain, documentVersion) =>
+              applyPersistedDoc((prev) => ({
                 ...prev,
                 project: { ...prev.project, documentVersion },
-              }))
-            }
-            onChainChange={(effectsChain: StudioFxChainV1) =>
-              setDoc((prev) => ({
-                ...prev,
                 tracks: prev.tracks.map((t) =>
                   t.id === fxPanel.trackId ? { ...t, effectsChain } : t,
                 ),
@@ -2346,6 +2553,8 @@ function ClipEditPanel({
   onClearSelection,
   onSaveFades,
   onSaveGain,
+  onFlushPersist,
+  onMarkDirty,
   onSaveMute,
   onMove,
   onTrimLeftToPlayhead,
@@ -2363,6 +2572,8 @@ function ClipEditPanel({
   onClearSelection: () => void;
   onSaveFades: (fadeInMs: number, fadeOutMs: number) => void;
   onSaveGain: (gainDb: number) => void;
+  onFlushPersist: () => void;
+  onMarkDirty: () => void;
   onSaveMute: (muted: boolean) => void;
   onMove: (timelineStartMs: number) => void;
   onTrimLeftToPlayhead: () => void;
@@ -2505,18 +2716,28 @@ function ClipEditPanel({
           max={STUDIO_CLIP_GAIN_DB_MAX}
           step={0.5}
           disabled={pending}
-          onLocalChange={setDraftGainDb}
-          onCommit={setDraftGainDb}
+          onLocalChange={(next) => {
+            setDraftGainDb(next);
+            onMarkDirty();
+          }}
+          onCommit={(next) => {
+            setDraftGainDb(next);
+            if (clip && next !== clip.gainDb) onSaveGain(next);
+          }}
         />
         <Button
           type="button"
           size="sm"
+          variant="outline"
           className="min-h-11 w-full min-w-0 sm:w-auto"
           disabled={pending || !gainDirty}
-          onClick={() => onSaveGain(draftGainDb)}
-          aria-label="Zapisz głośność klipu"
+          onClick={() => {
+            onSaveGain(draftGainDb);
+            onFlushPersist();
+          }}
+          aria-label="Zapisz teraz głośność klipu"
         >
-          Zapisz głośność
+          Zapisz teraz
         </Button>
         <StudioToggleChip
           active={clip.muted}
@@ -2655,8 +2876,16 @@ function ClipEditPanel({
           max={fadeMax}
           step={1}
           disabled={pending}
-          onLocalChange={setDraftFadeIn}
-          onCommit={setDraftFadeIn}
+          onLocalChange={(next) => {
+            setDraftFadeIn(next);
+            onMarkDirty();
+          }}
+          onCommit={(next) => {
+            setDraftFadeIn(next);
+            if (clip && (next !== clip.fadeInMs || draftFadeOut !== clip.fadeOutMs)) {
+              onSaveFades(next, draftFadeOut);
+            }
+          }}
         />
         <StudioMixControl
           label="Fade Out"
@@ -2667,8 +2896,16 @@ function ClipEditPanel({
           max={fadeMax}
           step={1}
           disabled={pending}
-          onLocalChange={setDraftFadeOut}
-          onCommit={setDraftFadeOut}
+          onLocalChange={(next) => {
+            setDraftFadeOut(next);
+            onMarkDirty();
+          }}
+          onCommit={(next) => {
+            setDraftFadeOut(next);
+            if (clip && (draftFadeIn !== clip.fadeInMs || next !== clip.fadeOutMs)) {
+              onSaveFades(draftFadeIn, next);
+            }
+          }}
         />
         {fadeOverlapHint ? (
           <p className="text-xs text-[var(--brd-mute)]" role="status">
@@ -2679,12 +2916,16 @@ function ClipEditPanel({
         <Button
           type="button"
           size="sm"
+          variant="outline"
           className="min-h-11 w-full min-w-0 sm:w-auto"
           disabled={pending || !fadeDirty}
-          onClick={() => onSaveFades(draftFadeIn, draftFadeOut)}
-          aria-label="Zapisz fade"
+          onClick={() => {
+            onSaveFades(draftFadeIn, draftFadeOut);
+            onFlushPersist();
+          }}
+          aria-label="Zapisz teraz fade"
         >
-          Zapisz fade
+          Zapisz teraz
         </Button>
       </div>
     </div>

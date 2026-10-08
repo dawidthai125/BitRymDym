@@ -35,11 +35,19 @@ import {
   reduceRecordingUi,
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
+import {
+  classifyPersistHttpFailure,
+  classifyPersistNetworkFailure,
+  type StudioPersistExecutor,
+  type StudioPersistResult,
+} from "@/lib/studio/studio-persist-orchestrator";
 
 type WorkflowActionBusy = "preview" | "keep" | "discard" | "place" | null;
 
 export function StudioRecordingPanel({
   projectId,
+  getExpectedDocumentVersion,
+  enqueuePersistAsync,
   tracks,
   onClipCreated,
   onRecordingActiveChange,
@@ -48,8 +56,14 @@ export function StudioRecordingPanel({
   preferredTrackId = null,
 }: {
   projectId: string;
+  /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
+  getExpectedDocumentVersion: () => number;
+  /** Phase 7.1.6 — shared Studio persist boundary. */
+  enqueuePersistAsync: (
+    executor: StudioPersistExecutor,
+  ) => Promise<StudioPersistResult>;
   tracks: StudioTrackDto[];
-  onClipCreated: (clip: StudioClipDto) => void;
+  onClipCreated: (clip: StudioClipDto, documentVersion: number) => void;
   onRecordingActiveChange?: (active: boolean) => void;
   /** Phase 1 — denser chrome when hosted inside Inspector. */
   embedded?: boolean;
@@ -649,39 +663,72 @@ export function StudioRecordingPanel({
     setWorkflowBusy("keep");
     setWorkflowError(null);
     try {
-      const placeRes = await fetch(
-        `/api/studio/projects/${projectId}/record/place`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trackId: placeTrackId,
-            takeId,
-            timelineStartMs: startMs,
-          }),
-        },
-      );
-      const placed = (await placeRes.json()) as {
-        success?: boolean;
-        clip?: StudioClipDto;
-        reusedExisting?: boolean;
-        error?: string;
-      };
-      if (!placeRes.ok || !placed.clip) {
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const placeRes = await fetch(
+            `/api/studio/projects/${projectId}/record/place`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                trackId: placeTrackId,
+                takeId,
+                timelineStartMs: startMs,
+                expectedDocumentVersion: getExpectedDocumentVersion(),
+              }),
+            },
+          );
+          const placed = (await placeRes.json()) as {
+            success?: boolean;
+            clip?: StudioClipDto;
+            reusedExisting?: boolean;
+            documentVersion?: number;
+            error?: string;
+            code?: string;
+          };
+          if (!placeRes.ok || !placed.clip) {
+            const message =
+              placeRes.status === 409 ||
+              placed.code === "FX_CHAIN_VERSION_CONFLICT"
+                ? placed.error ?? "Projekt został zmieniony. Odśwież stronę."
+                : placed.error?.includes("dostępne") ||
+                    placed.error?.includes("READY") ||
+                    placeRes.status === 403
+                  ? "Nagranie nie jest już dostępne."
+                  : placed.error ??
+                    "Nie udało się umieścić nagrania na osi czasu.";
+            return classifyPersistHttpFailure({
+              status: placeRes.status,
+              message,
+              code: placed.code,
+            });
+          }
+          const clip = placed.clip;
+          const nextVersion =
+            typeof placed.documentVersion === "number"
+              ? placed.documentVersion
+              : getExpectedDocumentVersion();
+          const reused = Boolean(placed.reusedExisting);
+          return {
+            ok: true as const,
+            documentVersion: nextVersion,
+            apply: () => {
+              placedTakeIdsRef.current.add(takeId);
+              if (!reused) {
+                onClipCreated(clip, nextVersion);
+              }
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure(
+            "Nie udało się umieścić nagrania na osi czasu.",
+          );
+        }
+      });
+      if (!result.ok) {
         // READY Take remains usable — do not clear take / placement refs.
-        setWorkflowError(
-          placed.error?.includes("dostępne") ||
-            placed.error?.includes("READY") ||
-            placeRes.status === 403
-            ? "Nagranie nie jest już dostępne."
-            : "Nie udało się umieścić nagrania na osi czasu.",
-        );
+        setWorkflowError(result.message);
         return;
-      }
-
-      placedTakeIdsRef.current.add(takeId);
-      if (!placed.reusedExisting) {
-        onClipCreated(placed.clip);
       }
       transport.stopTakePreview();
       clearCapturePlacement();
@@ -803,34 +850,70 @@ export function StudioRecordingPanel({
     setLibraryError(null);
     transport.stopTakePreview();
     try {
-      const placeRes = await fetch(
-        `/api/studio/projects/${projectId}/record/place`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trackId: trackIdRef.current,
-            takeId: take.id,
-            timelineStartMs: transport.state.playheadMs,
-          }),
-        },
-      );
-      const placed = (await placeRes.json()) as {
-        success?: boolean;
-        clip?: StudioClipDto;
-        reusedExisting?: boolean;
-        error?: string;
-      };
-      if (!placeRes.ok || !placed.clip) {
-        setLibraryError(
-          placed.error?.includes("dostępne") || placeRes.status === 403
-            ? "Nagranie nie jest już dostępne."
-            : "Nie udało się umieścić nagrania na osi czasu.",
-        );
+      const placeTrackId = trackIdRef.current;
+      const timelineStartMs = transport.state.playheadMs;
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const placeRes = await fetch(
+            `/api/studio/projects/${projectId}/record/place`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                trackId: placeTrackId,
+                takeId: take.id,
+                timelineStartMs,
+                expectedDocumentVersion: getExpectedDocumentVersion(),
+              }),
+            },
+          );
+          const placed = (await placeRes.json()) as {
+            success?: boolean;
+            clip?: StudioClipDto;
+            reusedExisting?: boolean;
+            documentVersion?: number;
+            error?: string;
+            code?: string;
+          };
+          if (!placeRes.ok || !placed.clip) {
+            const message =
+              placeRes.status === 409 ||
+              placed.code === "FX_CHAIN_VERSION_CONFLICT"
+                ? placed.error ?? "Projekt został zmieniony. Odśwież stronę."
+                : placed.error?.includes("dostępne") || placeRes.status === 403
+                  ? "Nagranie nie jest już dostępne."
+                  : placed.error ??
+                    "Nie udało się umieścić nagrania na osi czasu.";
+            return classifyPersistHttpFailure({
+              status: placeRes.status,
+              message,
+              code: placed.code,
+            });
+          }
+          const clip = placed.clip;
+          const nextVersion =
+            typeof placed.documentVersion === "number"
+              ? placed.documentVersion
+              : getExpectedDocumentVersion();
+          const reused = Boolean(placed.reusedExisting);
+          return {
+            ok: true as const,
+            documentVersion: nextVersion,
+            apply: () => {
+              if (!reused) {
+                onClipCreated(clip, nextVersion);
+              }
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure(
+            "Nie udało się umieścić nagrania na osi czasu.",
+          );
+        }
+      });
+      if (!result.ok) {
+        setLibraryError(result.message);
         return;
-      }
-      if (!placed.reusedExisting) {
-        onClipCreated(placed.clip);
       }
       setKeptMessage("Nagranie umieszczone na osi czasu.");
     } catch {
