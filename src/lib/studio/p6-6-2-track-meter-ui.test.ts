@@ -42,10 +42,11 @@ describe("P6.6.2 Track meter UI contracts", () => {
 
   it("no selection → no always-on Track Meter UI", () => {
     expect(editor).toMatch(/activeSelectedTrackId/);
-    expect(editor).toMatch(/isSelected \? \(\s*<StudioTrackMeter/);
+    // Phase 7.1.5 — leaf wrapper; still gated by isSelected in mixer row.
+    expect(editor).toMatch(/isSelected \? \(\s*<StudioTrackMeterLive/);
     expect(editor).toMatch(/\) : null\}/);
-    // Single Track meter mount site — gated by isSelected
-    const meterSites = editor.match(/<StudioTrackMeter/g) ?? [];
+    // Single Track meter mount site in Mix — gated by isSelected
+    const meterSites = editor.match(/<StudioTrackMeterLive\b/g) ?? [];
     expect(meterSites).toHaveLength(1);
     expect(editor).toMatch(/const isSelected = activeSelectedTrackId === track\.id/);
   });
@@ -101,7 +102,10 @@ describe("P6.6.2 Track meter UI contracts", () => {
   });
 
   it("Master Meter remains unchanged in Mix composition", () => {
-    expect(editor).toMatch(/StudioMasterMeter snapshot=\{transport\.meter\}/);
+    // Phase 7.1.5 — StudioMasterMeterLive → StudioMasterMeter via meters context.
+    expect(editor).toMatch(/StudioMasterMeterLive/);
+    expect(editor).toMatch(/useStudioTransportMeters/);
+    expect(editor).toMatch(/<StudioMasterMeter snapshot=\{meter\}/);
     expect(masterMeter).toMatch(/testIdPrefix=\"studio-master-meter\"/);
     expect(masterMeter).toMatch(/Miernik Master/);
     // Phase 1 — mixer drawer hosts Master strip (not vertical form Mix).
@@ -109,7 +113,7 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
     const panIdx = mixer.indexOf('ariaLabel="Panorama Master"');
-    const masterMeterIdx = mixer.indexOf("<StudioMasterMeter");
+    const masterMeterIdx = mixer.indexOf("<StudioMasterMeterLive");
     const masterFxIdx = mixer.indexOf('aria-label="Efekty Master"');
     expect(panIdx).toBeGreaterThanOrEqual(0);
     expect(masterMeterIdx).toBeGreaterThan(panIdx);
@@ -121,7 +125,7 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
     const panIdx = mixer.indexOf("ariaLabel={`Panorama ścieżki");
-    const meterIdx = mixer.indexOf("<StudioTrackMeter");
+    const meterIdx = mixer.indexOf("<StudioTrackMeterLive");
     const fxIdx = mixer.indexOf("Efekty ścieżki");
     expect(panIdx).toBeGreaterThanOrEqual(0);
     expect(meterIdx).toBeGreaterThan(panIdx);

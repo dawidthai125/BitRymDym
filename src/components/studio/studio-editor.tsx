@@ -38,7 +38,9 @@ import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { StudioTrackMeter } from "@/components/studio/studio-track-meter";
 import {
   StudioTransportProvider,
-  useStudioTransport,
+  useStudioTransportControls,
+  useStudioTransportMeters,
+  useStudioTransportPlayhead,
 } from "@/components/studio/studio-transport-provider";
 import {
   FX_CHAIN_CONFLICT_UI_PL,
@@ -229,6 +231,8 @@ function StudioEditorInner({
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   /** Phase 7.1.4 — desktop dock expanded / <xl overlay open (XOR with Inspector). */
   const [mixerOpen, setMixerOpen] = useState(false);
+  /** Phase 7.1.5.4 — mobile edit-toolbar overflow (local UI only). */
+  const [toolbarMoreOpen, setToolbarMoreOpen] = useState(false);
   /** Phase 7.1.3 — overlay open (tablet drawer / mobile sheet). Desktop dock always visible. */
   const [inspectorOverlayOpen, setInspectorOverlayOpen] = useState(false);
   /** Explicit Record context when user opens Nagraj without active capture. */
@@ -236,8 +240,10 @@ function StudioEditorInner({
   /** xl dock vs overlay — ensure Inspector content mounts once (no dual RecordingPanel). */
   const [inspectorDesktopRail, setInspectorDesktopRail] = useState(false);
   const mixerPanelId = useId();
-  const transport = useStudioTransport();
-  const { setTrackMeterTarget, resolveClipSourceUrl } = transport;
+  const inspectorPanelId = useId();
+  /** Phase 7.1.5 — controls only; playhead/meters via leaf hooks. */
+  const transport = useStudioTransportControls();
+  const { setTrackMeterTarget, resolveClipSourceUrl, getPlayheadMs } = transport;
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const pendingZoomScrollLeftRef = useRef<number | null>(null);
   const pxPerMsRef = useRef(pxPerMs);
@@ -879,7 +885,7 @@ function StudioEditorInner({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          atTimelineMs: transport.state.playheadMs,
+          atTimelineMs: getPlayheadMs(),
           expectedDocumentVersion: doc.project.documentVersion,
         }),
       },
@@ -928,6 +934,24 @@ function StudioEditorInner({
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
       if (recordingLocked || pending) return;
+
+      // Phase 7.1.5.3 — minimal transport shortcuts (Space required; Home/End if safe).
+      if (event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        if (transport.phase === "playing") transport.pause();
+        else transport.play();
+        return;
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        transport.seek(0);
+        return;
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        transport.seek(length);
+        return;
+      }
 
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         if (!selectedClip) return;
@@ -994,9 +1018,9 @@ function StudioEditorInner({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-    // Intentional: handlers close over latest selected clip / length / pending.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Phase 2 keyboard precision
-  }, [recordingLocked, pending, selectedClip, length]);
+    // Intentional: handlers close over latest selected clip / length / pending / transport.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Phase 2 keyboard precision + 7.1.5.3
+  }, [recordingLocked, pending, selectedClip, length, transport]);
 
   async function deleteSelectedClip() {
     if (!selectedClip) return;
@@ -1158,7 +1182,7 @@ function StudioEditorInner({
         try {
           await patchClip({
             op: "trim_left_to_playhead",
-            playheadMs: transport.state.playheadMs,
+            playheadMs: getPlayheadMs(),
             expectedDocumentVersion: doc.project.documentVersion,
           });
         } catch (e) {
@@ -1171,7 +1195,7 @@ function StudioEditorInner({
         try {
           await patchClip({
             op: "trim_right_to_playhead",
-            playheadMs: transport.state.playheadMs,
+            playheadMs: getPlayheadMs(),
             expectedDocumentVersion: doc.project.documentVersion,
           });
         } catch (e) {
@@ -1248,9 +1272,8 @@ function StudioEditorInner({
       ) : null}
 
       {inspectorContext === "clip" ? (
-        <ClipEditPanel
+        <ClipEditPanelPlayheadBound
           clip={selectedClip}
-          playheadMs={transport.state.playheadMs}
           timelineLengthMs={length}
           pending={pending}
           confirmDelete={confirmDelete}
@@ -1383,7 +1406,7 @@ function StudioEditorInner({
             })
           }
         />
-        <StudioMasterMeter snapshot={transport.meter} />
+        <StudioMasterMeterLive />
         <div className="mt-3">
           <Button
             type="button"
@@ -1509,10 +1532,7 @@ function StudioEditorInner({
               }
             />
             {isSelected ? (
-              <StudioTrackMeter
-                snapshot={transport.trackMeter}
-                trackName={track.name}
-              />
+              <StudioTrackMeterLive trackName={track.name} />
             ) : null}
             <div className="mt-3">
               <Button
@@ -1810,98 +1830,13 @@ function StudioEditorInner({
         >
           + Dodaj ścieżkę
         </Button>
-        <span
-          data-testid="studio-track-capacity"
-          data-track-count={trackCount}
-          data-max-tracks={maxTracks}
-          data-premium-tier={trackCapacity.premiumTier}
-          className="inline-flex min-h-11 items-center gap-1 px-1 font-mono text-xs text-[var(--brd-ink)]"
-          title={`Ścieżki ${formatStudioTrackCapacityLabel(trackCount, maxTracks)} (Bit liczony, Master nie)`}
-        >
-          <span className="hidden sm:inline">
-            {formatStudioTrackCapacityLabel(trackCount, maxTracks)}
-          </span>
-          <span className="sm:hidden">
-            {formatStudioTrackCapacityLabelCompact(trackCount, maxTracks)}
-          </span>
-        </span>
-        {showUpgradeCta ? (
-          <Link
-            href={STUDIO_TRACK_UPGRADE_HREF}
-            data-testid="studio-track-upgrade-cta"
-            className="inline-flex min-h-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 text-xs font-medium text-[var(--brd-green)] hover:bg-[var(--brd-bg)]"
-          >
-            Zmień pakiet
-          </Link>
-        ) : null}
-        {atTrackCapacity && trackCapacity.premiumTier === "GOLD" ? (
-          <span
-            data-testid="studio-track-capacity-max"
-            className="text-[10px] text-[var(--brd-mute)]"
-          >
-            Maksymalny limit ścieżek
-          </span>
-        ) : null}
-        <Button
-          type="button"
-          size="sm"
-          variant={snapPreset === "off" ? "outline" : "default"}
-          className="min-h-11"
-          aria-pressed={snapPreset !== "off"}
-          title={`Snap: ${studioSnapPresetLabel(snapPreset)} (kliknij aby zmienić: OFF / 20 / 100 / 1000 ms)`}
-          onClick={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
-        >
-          Snap {studioSnapPresetLabel(snapPreset)}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11"
-          title="Pomniejsz oś czasu"
-          onClick={() =>
-            zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current))
-          }
-        >
-          zoom−
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11"
-          title="Powiększ oś czasu"
-          onClick={() =>
-            zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current))
-          }
-        >
-          zoom+
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11"
-          title="Dopasuj oś czasu do szerokości"
-          onClick={() => {
-            const el = timelineScrollRef.current;
-            const viewport = el?.clientWidth;
-            zoomAtViewportCenter(
-              fitPxPerMs(
-                length,
-                typeof viewport === "number" ? viewport : 360,
-              ),
-            );
-          }}
-        >
-          Fit
-        </Button>
         <Button
           type="button"
           size="sm"
           variant="outline"
           className="min-h-11 xl:hidden"
           aria-expanded={inspectorOverlayOpen}
+          aria-controls={inspectorPanelId}
           onClick={() => {
             if (inspectorOverlayOpen) closeInspectorOverlay();
             else openInspectorOverlay();
@@ -1921,15 +1856,120 @@ function StudioEditorInner({
         >
           Mixer
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 md:hidden"
+          data-testid="studio-toolbar-more"
+          aria-expanded={toolbarMoreOpen}
+          aria-controls="studio-toolbar-overflow"
+          onClick={() => setToolbarMoreOpen((v) => !v)}
+        >
+          Więcej
+        </Button>
+        <div
+          id="studio-toolbar-overflow"
+          data-testid="studio-toolbar-overflow"
+          className={`flex flex-wrap items-center gap-2 ${
+            toolbarMoreOpen ? "flex w-full" : "hidden"
+          } md:contents`}
+        >
+          <span
+            data-testid="studio-track-capacity"
+            data-track-count={trackCount}
+            data-max-tracks={maxTracks}
+            data-premium-tier={trackCapacity.premiumTier}
+            className="inline-flex min-h-11 items-center gap-1 px-1 font-mono text-xs text-[var(--brd-ink)]"
+            title={`Ścieżki ${formatStudioTrackCapacityLabel(trackCount, maxTracks)} (Bit liczony, Master nie)`}
+          >
+            <span className="hidden sm:inline">
+              {formatStudioTrackCapacityLabel(trackCount, maxTracks)}
+            </span>
+            <span className="sm:hidden">
+              {formatStudioTrackCapacityLabelCompact(trackCount, maxTracks)}
+            </span>
+          </span>
+          {showUpgradeCta ? (
+            <Link
+              href={STUDIO_TRACK_UPGRADE_HREF}
+              data-testid="studio-track-upgrade-cta"
+              className="inline-flex min-h-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 text-xs font-medium text-[var(--brd-green)] hover:bg-[var(--brd-bg)]"
+            >
+              Zmień pakiet
+            </Link>
+          ) : null}
+          {atTrackCapacity && trackCapacity.premiumTier === "GOLD" ? (
+            <span
+              data-testid="studio-track-capacity-max"
+              className="text-[10px] text-[var(--brd-mute)]"
+            >
+              Maksymalny limit ścieżek
+            </span>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant={snapPreset === "off" ? "outline" : "default"}
+            className="min-h-11"
+            aria-pressed={snapPreset !== "off"}
+            title={`Snap: ${studioSnapPresetLabel(snapPreset)} (kliknij aby zmienić: OFF / 20 / 100 / 1000 ms)`}
+            onClick={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
+          >
+            Snap {studioSnapPresetLabel(snapPreset)}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            title="Pomniejsz oś czasu"
+            onClick={() =>
+              zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current))
+            }
+          >
+            zoom−
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            title="Powiększ oś czasu"
+            onClick={() =>
+              zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current))
+            }
+          >
+            zoom+
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            title="Dopasuj oś czasu do szerokości"
+            onClick={() => {
+              const el = timelineScrollRef.current;
+              const viewport = el?.clientWidth;
+              zoomAtViewportCenter(
+                fitPxPerMs(
+                  length,
+                  typeof viewport === "number" ? viewport : 360,
+                ),
+              );
+            }}
+          >
+            Fit
+          </Button>
+        </div>
       </div>
 
       <div className="flex min-h-0 flex-col gap-3 xl:flex-row xl:items-stretch">
         <div className="min-w-0 flex-1">
-          <StudioTimeline
+          <StudioTimelinePlayheadBound
             tracks={doc.tracks}
             clips={doc.clips}
             timelineLengthMs={length}
-            playheadMs={transport.state.playheadMs}
             pxPerMs={pxPerMs}
             mode={timelineMode}
             interactionLocked={recordingLocked}
@@ -2142,6 +2182,7 @@ function StudioEditorInner({
       <StudioInspectorOverlay
         open={inspectorOverlayOpen && !inspectorDesktopRail}
         context={inspectorContext}
+        panelId={inspectorPanelId}
         onClose={closeInspectorOverlay}
       >
         {inspectorContent}
@@ -2650,13 +2691,40 @@ function ClipEditPanel({
   );
 }
 
+/** Phase 7.1.5.1 — meter leaf (avoids Inner subscription to meter ticks). */
+function StudioMasterMeterLive() {
+  const { meter } = useStudioTransportMeters();
+  return <StudioMasterMeter snapshot={meter} />;
+}
+
+function StudioTrackMeterLive({ trackName }: { trackName: string }) {
+  const { trackMeter } = useStudioTransportMeters();
+  return <StudioTrackMeter snapshot={trackMeter} trackName={trackName} />;
+}
+
+/** Phase 7.1.5.1 — playhead leaf for timeline. */
+function StudioTimelinePlayheadBound(
+  props: Omit<Parameters<typeof StudioTimeline>[0], "playheadMs">,
+) {
+  const { playheadMs } = useStudioTransportPlayhead();
+  return <StudioTimeline {...props} playheadMs={playheadMs} />;
+}
+
+function ClipEditPanelPlayheadBound(
+  props: Omit<Parameters<typeof ClipEditPanel>[0], "playheadMs">,
+) {
+  const { playheadMs } = useStudioTransportPlayhead();
+  return <ClipEditPanel {...props} playheadMs={playheadMs} />;
+}
+
 function StudioTransportBar({
   onChooseBeat,
 }: {
   onChooseBeat: () => void;
 }) {
-  const { state, timeLabel, play, pause, stop, audioState, error, hasBeat } =
-    useStudioTransport();
+  const { phase, play, pause, stop, audioState, error, hasBeat } =
+    useStudioTransportControls();
+  const { timeLabel } = useStudioTransportPlayhead();
   const busy = audioState === "loading";
   const noBeat = audioState === "no_beat" || (!hasBeat && audioState !== "loading");
   const statusLabel =
@@ -2708,7 +2776,7 @@ function StudioTransportBar({
               size="sm"
               className="min-h-11"
               onClick={play}
-              disabled={busy || state.phase === "playing"}
+              disabled={busy || phase === "playing"}
               title="Odtwórz"
               aria-label="Odtwórz"
             >
@@ -2720,7 +2788,7 @@ function StudioTransportBar({
               variant="outline"
               className="min-h-11"
               onClick={pause}
-              disabled={state.phase !== "playing"}
+              disabled={phase !== "playing"}
               title="Pauza"
               aria-label="Pauza"
             >

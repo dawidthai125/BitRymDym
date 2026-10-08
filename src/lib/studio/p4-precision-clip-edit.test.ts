@@ -277,7 +277,7 @@ describe("Phase 4 wiring + architecture", () => {
     expect(editor).toMatch(/trim_right/);
     expect(editor).toMatch(/set_geometry/);
     expect(editor).toMatch(/splitSelectedAtPlayhead/);
-    expect(editor).toMatch(/atTimelineMs: transport\.state\.playheadMs/);
+    expect(editor).toMatch(/atTimelineMs: getPlayheadMs\(\)/);
     expect(route).toMatch(/case \"trim_left\"/);
     expect(route).toMatch(/case \"set_geometry\"/);
     expect(editor).not.toMatch(/\/api\/studio\/.*\/trim/);

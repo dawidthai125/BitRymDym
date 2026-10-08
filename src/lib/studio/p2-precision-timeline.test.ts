@@ -269,7 +269,7 @@ describe("Phase 2 editor wiring + architecture", () => {
   });
 
   it("split still uses exact playheadMs", () => {
-    expect(editor).toMatch(/atTimelineMs: transport\.state\.playheadMs/);
+    expect(editor).toMatch(/atTimelineMs: getPlayheadMs\(\)/);
     expect(editor).toMatch(/splitSelectedAtPlayhead/);
   });
 

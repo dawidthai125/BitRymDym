@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -41,28 +42,17 @@ export type StudioAudioLoadState =
   | "error"
   | "no_beat";
 
-type StudioTransportApi = {
-  state: {
-    phase: StudioTransportPhase;
-    playheadMs: number;
-    timelineLengthMs: number;
-  };
+/** Low-frequency transport controls — does not tick with playhead/meters. */
+export type StudioTransportControlsApi = {
+  phase: StudioTransportPhase;
+  timelineLengthMs: number;
   audioState: StudioAudioLoadState;
-  timeLabel: string;
   error: string | null;
   hasBeat: boolean;
-  /** True while a post-record / library Take is solo-previewed (not timeline layer). */
   takePreviewActive: boolean;
-  /** P6.5 Master meter snapshot (runtime-only). */
-  meter: StudioMeterSnapshot;
-  /** P6.6.1 selected-Track meter snapshot (runtime-only). */
-  trackMeter: StudioMeterSnapshot;
-  /** Bind Mix Track selection → engine Track analyser target (0|1). */
+  /** Imperative read of latest playhead without playhead-context subscription. */
+  getPlayheadMs: () => number;
   setTrackMeterTarget: (trackId: string | null) => void;
-  /**
-   * AUD-01 — AudioContext.setSinkId when supported.
-   * Returns applied=false on unsupported browsers (never fakes routing).
-   */
   setOutputSinkId: (
     sinkId: string | null,
   ) => Promise<{ applied: boolean; reason?: string }>;
@@ -70,16 +60,8 @@ type StudioTransportApi = {
   pause: () => void;
   stop: () => void;
   seek: (playheadMs: number) => void;
-  /**
-   * Preview a READY Take via /api/takes/preview on the Studio engine preview voice.
-   * Does not use PlayerProvider. Pauses timeline while solo-previewing.
-   */
   previewTake: (takeId: string) => Promise<void>;
   stopTakePreview: () => void;
-  /**
-   * Phase 3 — signed URL for waveform peaks (reuses beat/take URL caches).
-   * Does not create AudioContext / does not decode.
-   */
   resolveClipSourceUrl: (clip: {
     sourceKind: string;
     sourceTakeId: string | null;
@@ -88,7 +70,33 @@ type StudioTransportApi = {
   }) => Promise<string | null>;
 };
 
-const StudioTransportContext = createContext<StudioTransportApi | null>(null);
+export type StudioTransportPlayheadApi = {
+  playheadMs: number;
+  timeLabel: string;
+};
+
+export type StudioTransportMetersApi = {
+  meter: StudioMeterSnapshot;
+  trackMeter: StudioMeterSnapshot;
+};
+
+/** Combined API for leaves that intentionally subscribe to all bands. */
+export type StudioTransportApi = StudioTransportControlsApi &
+  StudioTransportPlayheadApi &
+  StudioTransportMetersApi & {
+    state: {
+      phase: StudioTransportPhase;
+      playheadMs: number;
+      timelineLengthMs: number;
+    };
+  };
+
+const StudioTransportControlsContext =
+  createContext<StudioTransportControlsApi | null>(null);
+const StudioTransportPlayheadContext =
+  createContext<StudioTransportPlayheadApi | null>(null);
+const StudioTransportMetersContext =
+  createContext<StudioTransportMetersApi | null>(null);
 
 export type BeatClipTiming = {
   timelineStartMs: number;
@@ -110,6 +118,12 @@ const URL_REFRESH_MS = 15_000;
 /**
  * Project timeline transport. Distinct from PlayerProvider.
  * Audible realization is StudioAudioEngine (Web Audio graph), not HTMLAudio mix SSOT.
+ *
+ * Phase 7.1.5 — split React contexts:
+ * - controls (low frequency)
+ * - playhead (high frequency)
+ * - meters (high frequency)
+ * One StudioAudioEngine / one AudioContext remains.
  */
 export function StudioTransportProvider({
   timelineLengthMs,
@@ -126,6 +140,7 @@ export function StudioTransportProvider({
   const engineRef = useRef<StudioAudioEngine | null>(null);
   const engineDocumentRef = useRef(engineDocument);
   const phaseRef = useRef<StudioTransportPhase>("stopped");
+  const playheadMsRef = useRef(0);
   const beatCacheRef = useRef<Map<string, StudioResolvedSource>>(new Map());
   const takeCacheRef = useRef<Map<string, StudioResolvedSource>>(new Map());
 
@@ -204,6 +219,7 @@ export function StudioTransportProvider({
             next,
             engineDocumentRef.current.timelineLengthMs,
           );
+          playheadMsRef.current = clamped;
           setPlayheadMs(clamped);
         },
         onLifecycle(lifecycle) {
@@ -257,7 +273,9 @@ export function StudioTransportProvider({
         },
         onTimelineEnded() {
           setPhase("stopped");
-          setPlayheadMs(engineDocumentRef.current.timelineLengthMs);
+          const end = engineDocumentRef.current.timelineLengthMs;
+          playheadMsRef.current = end;
+          setPlayheadMs(end);
           setAudioState((s) => (s === "error" || s === "no_beat" ? s : "ready"));
         },
       },
@@ -298,7 +316,12 @@ export function StudioTransportProvider({
     engineRef.current?.setDocument(engineDocument);
   }, [engineDocument]);
 
-  const play = () => {
+  const getPlayheadMs = useCallback(
+    () => clampPlayheadMs(playheadMsRef.current, timelineLengthMs),
+    [timelineLengthMs],
+  );
+
+  const play = useCallback(() => {
     const engine = engineRef.current;
     if (!engine) return;
     if (!hasTimelineAudio) {
@@ -309,40 +332,45 @@ export function StudioTransportProvider({
     setTakePreviewActive(false);
     setError(null);
     setAudioState("loading");
-    void engine.play(playheadMs);
-  };
+    void engine.play(playheadMsRef.current);
+  }, [hasTimelineAudio]);
 
-  const pause = () => {
+  const pause = useCallback(() => {
     if (takePreviewActive) {
       engineRef.current?.stopPreview();
       setTakePreviewActive(false);
     }
     engineRef.current?.pause();
-  };
+  }, [takePreviewActive]);
 
-  const stop = () => {
+  const stop = useCallback(() => {
     engineRef.current?.stopPreview();
     setTakePreviewActive(false);
     engineRef.current?.stop();
     phaseRef.current = "stopped";
     setPhase("stopped");
+    playheadMsRef.current = 0;
     setPlayheadMs(0);
     setAudioState((s) =>
       s === "error" || s === "no_beat" || s === "idle" ? s : "ready",
     );
-  };
+  }, []);
 
-  const seek = (ms: number) => {
-    const clamped = clampPlayheadMs(ms, timelineLengthMs);
-    setPlayheadMs(clamped);
-    const playing = phase === "playing";
-    void engineRef.current?.seek(clamped, playing);
-  };
+  const seek = useCallback(
+    (ms: number) => {
+      const clamped = clampPlayheadMs(ms, timelineLengthMs);
+      playheadMsRef.current = clamped;
+      setPlayheadMs(clamped);
+      const playing = phaseRef.current === "playing";
+      void engineRef.current?.seek(clamped, playing);
+    },
+    [timelineLengthMs],
+  );
 
-  const stopTakePreview = () => {
+  const stopTakePreview = useCallback(() => {
     engineRef.current?.stopPreview();
     setTakePreviewActive(false);
-  };
+  }, []);
 
   const setTrackMeterTarget = useCallback((trackId: string | null) => {
     engineRef.current?.setTrackMeterTarget(trackId);
@@ -380,7 +408,7 @@ export function StudioTransportProvider({
     [],
   );
 
-  const previewTake = async (takeId: string): Promise<void> => {
+  const previewTake = useCallback(async (takeId: string): Promise<void> => {
     if (!takeId) {
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
       throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
@@ -407,43 +435,151 @@ export function StudioTransportProvider({
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
       throw new Error(STUDIO_TAKE_PLAYBACK_ERROR_PL);
     }
-  };
+  }, []);
 
-  const api: StudioTransportApi = {
-    state: {
+  const controlsApi = useMemo<StudioTransportControlsApi>(
+    () => ({
       phase,
-      playheadMs: clampPlayheadMs(playheadMs, timelineLengthMs),
       timelineLengthMs,
-    },
-    audioState,
-    timeLabel: formatStudioTimeMs(clampPlayheadMs(playheadMs, timelineLengthMs)),
-    error,
-    hasBeat: Boolean(beatId),
-    takePreviewActive,
-    meter,
-    trackMeter,
-    setTrackMeterTarget,
-    setOutputSinkId,
-    play,
-    pause,
-    stop,
-    seek,
-    previewTake,
-    stopTakePreview,
-    resolveClipSourceUrl,
-  };
+      audioState,
+      error,
+      hasBeat: Boolean(beatId),
+      takePreviewActive,
+      getPlayheadMs,
+      setTrackMeterTarget,
+      setOutputSinkId,
+      play,
+      pause,
+      stop,
+      seek,
+      previewTake,
+      stopTakePreview,
+      resolveClipSourceUrl,
+    }),
+    [
+      phase,
+      timelineLengthMs,
+      audioState,
+      error,
+      beatId,
+      takePreviewActive,
+      getPlayheadMs,
+      setTrackMeterTarget,
+      setOutputSinkId,
+      play,
+      pause,
+      stop,
+      seek,
+      previewTake,
+      stopTakePreview,
+      resolveClipSourceUrl,
+    ],
+  );
+
+  const clampedPlayhead = clampPlayheadMs(playheadMs, timelineLengthMs);
+  const playheadApi = useMemo<StudioTransportPlayheadApi>(
+    () => ({
+      playheadMs: clampedPlayhead,
+      timeLabel: formatStudioTimeMs(clampedPlayhead),
+    }),
+    [clampedPlayhead],
+  );
+
+  const metersApi = useMemo<StudioTransportMetersApi>(
+    () => ({
+      meter,
+      trackMeter,
+    }),
+    [meter, trackMeter],
+  );
 
   return (
-    <StudioTransportContext.Provider value={api}>
-      {children}
-    </StudioTransportContext.Provider>
+    <StudioTransportControlsContext.Provider value={controlsApi}>
+      <StudioTransportPlayheadContext.Provider value={playheadApi}>
+        <StudioTransportMetersContext.Provider value={metersApi}>
+          {children}
+        </StudioTransportMetersContext.Provider>
+      </StudioTransportPlayheadContext.Provider>
+    </StudioTransportControlsContext.Provider>
   );
 }
 
-export function useStudioTransport(): StudioTransportApi {
-  const ctx = useContext(StudioTransportContext);
+export function useStudioTransportControls(): StudioTransportControlsApi {
+  const ctx = useContext(StudioTransportControlsContext);
   if (!ctx) {
-    throw new Error("useStudioTransport must be used within StudioTransportProvider");
+    throw new Error(
+      "useStudioTransportControls must be used within StudioTransportProvider",
+    );
   }
   return ctx;
+}
+
+export function useStudioTransportPlayhead(): StudioTransportPlayheadApi {
+  const ctx = useContext(StudioTransportPlayheadContext);
+  if (!ctx) {
+    throw new Error(
+      "useStudioTransportPlayhead must be used within StudioTransportProvider",
+    );
+  }
+  return ctx;
+}
+
+export function useStudioTransportMeters(): StudioTransportMetersApi {
+  const ctx = useContext(StudioTransportMetersContext);
+  if (!ctx) {
+    throw new Error(
+      "useStudioTransportMeters must be used within StudioTransportProvider",
+    );
+  }
+  return ctx;
+}
+
+/**
+ * Wide subscription — prefer split hooks in large shells.
+ * Leaves that need playhead + meters + controls may use this intentionally.
+ */
+export function useStudioTransport(): StudioTransportApi {
+  const controls = useStudioTransportControls();
+  const playhead = useStudioTransportPlayhead();
+  const meters = useStudioTransportMeters();
+  return {
+    ...controls,
+    ...playhead,
+    ...meters,
+    state: {
+      phase: controls.phase,
+      playheadMs: playhead.playheadMs,
+      timelineLengthMs: controls.timelineLengthMs,
+    },
+  };
+}
+
+/**
+ * Phase 7.1.5 — pure isolation contract model (test evidence).
+ * Mirrors the three-band notify split without React / AudioEngine.
+ */
+export function createStudioTransportIsolationBus() {
+  const renders = { controls: 0, playhead: 0, meters: 0 };
+  const listeners = {
+    controls: new Set<() => void>(),
+    playhead: new Set<() => void>(),
+    meters: new Set<() => void>(),
+  };
+  return {
+    subscribe(band: keyof typeof listeners, fn: () => void) {
+      listeners[band].add(fn);
+      return () => {
+        listeners[band].delete(fn);
+      };
+    },
+    notify(band: keyof typeof listeners) {
+      for (const fn of listeners[band]) {
+        renders[band] += 1;
+        fn();
+      }
+    },
+    getRenderCounts() {
+      return { ...renders };
+    },
+  };
 }

@@ -532,7 +532,9 @@ describe("P6.5 Master meter UI contracts", () => {
   );
 
   it("Master meter renders in editor between Pan and FX", () => {
-    expect(editor).toMatch(/StudioMasterMeter snapshot=\{transport\.meter\}/);
+    // Phase 7.1.5 — Master meter via StudioMasterMeterLive + meters context.
+    expect(editor).toMatch(/StudioMasterMeterLive/);
+    expect(editor).toMatch(/<StudioMasterMeter snapshot=\{meter\}/);
     expect(meterUi).toMatch(/StudioPeakMeter/);
     expect(meterUi).toMatch(/testIdPrefix=\"studio-master-meter\"/);
     expect(peakUi).toMatch(/data-testid=\{testIdPrefix\}/);

@@ -445,6 +445,19 @@ export function StudioFxChainEditor({
  * Bottom sheet host for FX editor.
  * z-50 sits above mobile bottom-nav (z-40) so controls are not intercepted.
  */
+function getFocusable(root: HTMLElement): HTMLElement[] {
+  const nodes = root.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  );
+  return Array.from(nodes).filter(
+    (el) => !el.hasAttribute("disabled") && el.offsetParent !== null,
+  );
+}
+
+/**
+ * Phase 7.1.5.2 — accessibility parity with Mixer/Inspector overlays.
+ * Escape + Tab trap + focus restore + dialog semantics. No FX/audio changes.
+ */
 export function StudioFxSheet({
   open,
   onClose,
@@ -454,31 +467,97 @@ export function StudioFxSheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const panel = panelRef.current;
+    const focusables = panel ? getFocusable(panel) : [];
+    const first = focusables[0] ?? panel;
+    first?.focus();
+
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const items = getFocusable(panelRef.current);
+      if (items.length === 0) {
+        event.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
+      const firstItem = items[0]!;
+      const lastItem = items[items.length - 1]!;
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === firstItem || active === panelRef.current) {
+          event.preventDefault();
+          lastItem.focus();
+        }
+      } else if (active === lastItem) {
+        event.preventDefault();
+        firstItem.focus();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
     return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocusedRef.current?.focus?.();
     };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      data-testid="studio-fx-sheet"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
         aria-label="Zamknij panel efektów"
+        data-testid="studio-fx-sheet-backdrop"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg pb-[env(safe-area-inset-bottom)] sm:px-4">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        data-testid="studio-fx-sheet-panel"
+        className="relative z-10 w-full max-w-lg outline-none pb-[env(safe-area-inset-bottom)] sm:px-4"
+      >
+        <span id={titleId} className="sr-only">
+          Efekty
+        </span>
+        <div className="mb-2 flex justify-end sm:mb-0">
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            className="min-h-11 min-w-11 bg-[var(--brd-bg)] sm:absolute sm:right-6 sm:top-2"
+            data-testid="studio-fx-sheet-close"
+            onClick={onClose}
+          >
+            Zamknij
+          </Button>
+        </div>
         {children}
       </div>
     </div>

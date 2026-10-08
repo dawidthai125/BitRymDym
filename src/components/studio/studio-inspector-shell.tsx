@@ -18,6 +18,8 @@ type StudioInspectorShellProps = {
   context: StudioInspectorContext;
   onClose: () => void;
   children: ReactNode;
+  /** Phase 7.1.5 — optional id for aria-controls from toolbar. */
+  panelId?: string;
 };
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
@@ -40,6 +42,7 @@ export function StudioInspectorOverlay({
   context,
   onClose,
   children,
+  panelId,
 }: StudioInspectorShellProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -109,6 +112,7 @@ export function StudioInspectorOverlay({
       />
       <div
         ref={panelRef}
+        id={panelId}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
