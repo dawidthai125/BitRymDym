@@ -6,6 +6,7 @@ import {
   findIdenticalTakeClipPlacement,
   geometryForStudioRecording,
 } from "@/lib/studio/studio-record-ops";
+import { parseExpectedDocumentVersion } from "@/lib/studio/studio-fx-chain";
 import {
   addStudioClipFor,
   getStudioProjectDocumentFor,
@@ -33,16 +34,20 @@ export async function placeReadyTakeAsStudioClipFor(
     takeId: string;
     /** Playhead at record start — integer ms from Studio transport SSOT. */
     timelineStartMs: number;
+    expectedDocumentVersion: unknown;
   },
 ): Promise<{
   clip: StudioClipDto;
   takeId: string;
   durationMs: number;
   reusedExisting: boolean;
+  documentVersion: number;
 }> {
   if (!input.projectId || !input.trackId || !input.takeId) {
     throw new Error("projectId, trackId i takeId są wymagane.");
   }
+  // Validate CAS handshake even on idempotent reuse (no blind missing-version path).
+  parseExpectedDocumentVersion(input.expectedDocumentVersion);
 
   const document = await getStudioProjectDocumentFor(context, input.projectId);
 
@@ -89,12 +94,14 @@ export async function placeReadyTakeAsStudioClipFor(
       takeId: input.takeId,
       durationMs: existing.durationMs,
       reusedExisting: true,
+      documentVersion: document.project.documentVersion,
     };
   }
 
-  const clip = await addStudioClipFor(context, {
+  const placed = await addStudioClipFor(context, {
     projectId: input.projectId,
     trackId: input.trackId,
+    expectedDocumentVersion: input.expectedDocumentVersion,
     sourceKind: "TAKE",
     sourceTakeId: input.takeId,
     timelineStartMs: geometry.timelineStartMs,
@@ -103,10 +110,11 @@ export async function placeReadyTakeAsStudioClipFor(
   });
 
   return {
-    clip,
+    clip: placed.clip,
     takeId: input.takeId,
     durationMs: geometry.durationMs,
     reusedExisting: false,
+    documentVersion: placed.documentVersion,
   };
 }
 
@@ -117,6 +125,7 @@ export async function placeReadyTakeAsStudioClip(
   takeId: string;
   durationMs: number;
   reusedExisting: boolean;
+  documentVersion: number;
 }> {
   return placeReadyTakeAsStudioClipFor(await requireUser(), input);
 }

@@ -12,11 +12,12 @@ type RouteContext = {
   params: Promise<{ projectId: string; trackId: string }>;
 };
 
-/** PATCH — update track controls (name, mute, solo, vol, pan, arm). */
+/** PATCH — update track controls (name, mute, solo, vol, pan, arm) with CAS. */
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { projectId, trackId } = await context.params;
     const body = (await request.json()) as {
+      expectedDocumentVersion?: unknown;
       name?: string;
       muted?: boolean;
       solo?: boolean;
@@ -27,7 +28,13 @@ export async function PATCH(request: Request, context: RouteContext) {
     const result = await updateStudioTrackControls({
       projectId,
       trackId,
-      ...body,
+      expectedDocumentVersion: body.expectedDocumentVersion,
+      name: body.name,
+      muted: body.muted,
+      solo: body.solo,
+      gainDb: body.gainDb,
+      pan: body.pan,
+      recordArmed: body.recordArmed,
     });
     return NextResponse.json({
       success: true,

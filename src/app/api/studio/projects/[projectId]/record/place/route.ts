@@ -10,6 +10,7 @@ type RouteContext = { params: Promise<{ projectId: string }> };
 /**
  * POST — place a READY Take as a Studio Clip at the captured playhead.
  * Auth + project ownership enforced in service. Client must not send storage keys.
+ * CAS: expectedDocumentVersion required (idempotent reuse returns current version).
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -18,6 +19,7 @@ export async function POST(request: Request, context: RouteContext) {
       trackId?: string;
       takeId?: string;
       timelineStartMs?: number;
+      expectedDocumentVersion?: unknown;
       ownerId?: string | null;
       objectKey?: string | null;
     };
@@ -48,6 +50,7 @@ export async function POST(request: Request, context: RouteContext) {
       trackId: body.trackId,
       takeId: body.takeId,
       timelineStartMs: body.timelineStartMs,
+      expectedDocumentVersion: body.expectedDocumentVersion,
     });
 
     return NextResponse.json(
@@ -57,6 +60,7 @@ export async function POST(request: Request, context: RouteContext) {
         takeId: result.takeId,
         durationMs: result.durationMs,
         reusedExisting: result.reusedExisting,
+        documentVersion: result.documentVersion,
       },
       { status: result.reusedExisting ? 200 : 201 },
     );

@@ -7,11 +7,12 @@ export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
-/** POST — add Clip onto a Track (Take / Beat / Artifact source). */
+/** POST — add Clip onto a Track (Take / Beat / Artifact source) with CAS. */
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { projectId } = await context.params;
     const body = (await request.json()) as {
+      expectedDocumentVersion?: unknown;
       trackId?: string;
       sourceKind?: "TAKE" | "BEAT_REF" | "ARTIFACT";
       sourceTakeId?: string | null;
@@ -36,9 +37,10 @@ export async function POST(request: Request, context: RouteContext) {
         { status: 400 },
       );
     }
-    const clip = await addStudioClip({
+    const result = await addStudioClip({
       projectId,
       trackId: body.trackId,
+      expectedDocumentVersion: body.expectedDocumentVersion,
       sourceKind: body.sourceKind,
       sourceTakeId: body.sourceTakeId,
       sourceBeatId: body.sourceBeatId,
@@ -47,7 +49,14 @@ export async function POST(request: Request, context: RouteContext) {
       durationMs: body.durationMs,
       sourceOffsetMs: body.sourceOffsetMs,
     });
-    return NextResponse.json({ success: true, clip }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        clip: result.clip,
+        documentVersion: result.documentVersion,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return studioApiErrorResponse(error);
   }
