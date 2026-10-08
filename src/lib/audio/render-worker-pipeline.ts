@@ -10,10 +10,16 @@ import {
   AUDIO_ARTIFACTS_BUCKET,
   AUDIO_CODEC,
 } from "@/config/audio-render";
-import { buildAudioArtifactObjectKey } from "@/lib/audio/artifact-object-key";
+import {
+  buildAudioArtifactObjectKey,
+  buildTakeExportArtifactObjectKey,
+  expectedTakeExportArtifactObjectKey,
+} from "@/lib/audio/artifact-object-key";
 import {
   encodeBasicMp3FromBake,
   encodeHqMp3FromBake,
+  encodeMp3192FromBake,
+  type BakePcmInput,
 } from "@/lib/audio/mp3-encode";
 import {
   canCompleteRenderJobSuccess,
@@ -28,13 +34,27 @@ import {
 import {
   decodeRenderSourceToStereoPcm,
   renderDecodeErrorCode,
+  type DecodedPcmStereo,
 } from "@/lib/audio/render-decode";
-import { resolveAuthorizedRenderSourcesForJob } from "@/lib/audio/render-source-resolution";
+import {
+  resolveAuthorizedRenderSourcesForJob,
+  resolveAuthorizedTakeExportSourcesForJob,
+} from "@/lib/audio/render-source-resolution";
 import { bakeServerBasicV1 } from "@/lib/audio/server-basic-bake";
 import { bakeServerProV1 } from "@/lib/audio/server-pro-bake";
 import { encodeWavFromBake } from "@/lib/audio/wav-encode";
 import type { RenderJobTier } from "@/types/domain";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+function decodedPcmToBakeInput(pcm: DecodedPcmStereo): BakePcmInput {
+  return {
+    interleaved: pcm.interleaved,
+    sampleRate: pcm.sampleRate,
+    channels: 2,
+    frames: pcm.frames,
+    durationMs: Math.max(1, Math.round((pcm.frames / pcm.sampleRate) * 1000)),
+  };
+}
 
 export type RealWorkerPipelineResult = {
   job: RenderJobRecord;
@@ -109,12 +129,15 @@ async function ensureFailedIfStillRunning(
 }
 
 /**
- * Dispatcher — EXTERNAL worker entry for Basic / HQ / WAV.
+ * Dispatcher — EXTERNAL worker entry for MIX (Basic/HQ/WAV) and TAKE_EXPORT.
  */
 export async function runRealRenderWorkerJob(
   jobId: string,
 ): Promise<RealWorkerPipelineResult> {
   const { job } = await claimRenderJobAsWorker(jobId);
+  if (job.kind === "TAKE_EXPORT") {
+    return runClaimedTakeExportWorkerJob(job);
+  }
   if (job.requestedTier === "BASIC_MP3") {
     return runClaimedBasicMp3WorkerJob(job);
   }
@@ -130,6 +153,143 @@ export async function runRealRenderWorkerJob(
     `Unsupported render tier: ${job.requestedTier}`,
     "INVALID",
   );
+}
+
+/**
+ * P4.6 — take-only encode (no beat · no MIX bake).
+ */
+async function runClaimedTakeExportWorkerJob(
+  job: RenderJobRecord,
+): Promise<RealWorkerPipelineResult> {
+  const jobId = job.id;
+  const takeId = job.takeId;
+  if (!takeId) {
+    await failRunningJob(jobId, "INVALID", "TAKE_EXPORT missing take_id.");
+    throw new RenderJobDomainError("TAKE_EXPORT missing take_id.", "INVALID");
+  }
+  const tier = job.requestedTier;
+  if (
+    tier !== "BASIC_MP3" &&
+    tier !== "MP3_192" &&
+    tier !== "HQ_MP3" &&
+    tier !== "WAV"
+  ) {
+    await failRunningJob(
+      jobId,
+      "TIER_UNSUPPORTED",
+      `Unsupported TAKE_EXPORT tier: ${tier}`,
+    );
+    throw new RenderJobDomainError(
+      `Unsupported TAKE_EXPORT tier: ${tier}`,
+      "INVALID",
+    );
+  }
+
+  try {
+    const fresh = await resolveAuthorizedTakeExportSourcesForJob(jobId);
+    const takeBytes = await downloadSourceBytes({
+      bucket: fresh.take.storageBucket,
+      objectKey: fresh.take.objectKey,
+    });
+
+    let takePcm: DecodedPcmStereo;
+    try {
+      takePcm = await decodeRenderSourceToStereoPcm({
+        bytes: takeBytes,
+        contentType: fresh.take.contentType,
+        label: "take",
+      });
+    } catch (e) {
+      const code = renderDecodeErrorCode(e);
+      const message = e instanceof Error ? e.message : "SOURCE_DECODE";
+      await failRunningJob(jobId, code, message);
+      throw e;
+    }
+
+    // Take-only: PCM → encode helpers. NEVER call bakeServerBasicV1 / bakeServerProV1.
+    const bake = decodedPcmToBakeInput(takePcm);
+    const objectKey = buildTakeExportArtifactObjectKey({
+      ownerId: job.ownerId,
+      takeId,
+      jobId: job.id,
+      tier,
+    });
+
+    if (tier === "BASIC_MP3") {
+      const encoded = await encodeBasicMp3FromBake(bake);
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "BASIC_MP3",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/mpeg",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: encoded.bitrateKbps,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+        artifactMode: "TAKE_EXPORT",
+        takeId,
+      });
+    }
+    if (tier === "MP3_192") {
+      const encoded = await encodeMp3192FromBake(bake);
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "MP3_192",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/mpeg",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: encoded.bitrateKbps,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+        artifactMode: "TAKE_EXPORT",
+        takeId,
+      });
+    }
+    if (tier === "HQ_MP3") {
+      const encoded = await encodeHqMp3FromBake(bake);
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "HQ_MP3",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/mpeg",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: encoded.bitrateKbps,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+        artifactMode: "TAKE_EXPORT",
+        takeId,
+      });
+    }
+
+    const encoded = await encodeWavFromBake(bake);
+    return completeRealArtifactAfterEncode({
+      jobId: job.id,
+      qualityTier: "WAV",
+      objectKey,
+      encodedBytes: encoded.bytes,
+      contentType: "audio/wav",
+      checksumSha256: encoded.checksumSha256,
+      byteSize: encoded.byteSize,
+      durationMs: encoded.durationMs,
+      bitrateKbps: null,
+      sampleRate: encoded.sampleRate,
+      encoder: encoded.encoder,
+      artifactMode: "TAKE_EXPORT",
+      takeId,
+    });
+  } catch (error) {
+    await ensureFailedIfStillRunning(jobId, error);
+    throw error;
+  }
 }
 
 /** E3.6 Basic MP3 worker entry (claim + bake + encode). */
@@ -191,6 +351,9 @@ async function runClaimedBasicMp3WorkerJob(
       beat: beatPcm,
       parameters: fresh.entitlementSnapshot.parameters,
     });
+    if (!job.mixSessionId) {
+      throw new RenderJobDomainError("MIX job missing mix_session_id.", "INVALID");
+    }
     const encoded = await encodeBasicMp3FromBake(bake);
     const objectKey = buildAudioArtifactObjectKey({
       ownerId: job.ownerId,
@@ -211,6 +374,7 @@ async function runClaimedBasicMp3WorkerJob(
       bitrateKbps: encoded.bitrateKbps,
       sampleRate: encoded.sampleRate,
       encoder: encoded.encoder,
+      artifactMode: "MIX",
     });
   } catch (error) {
     await ensureFailedIfStillRunning(jobId, error);
@@ -226,6 +390,9 @@ async function runClaimedPremiumWorkerJob(
   const tier = job.requestedTier;
   if (tier !== "HQ_MP3" && tier !== "WAV") {
     throw new RenderJobDomainError("Not a Premium tier.", "INVALID");
+  }
+  if (!job.mixSessionId) {
+    throw new RenderJobDomainError("MIX job missing mix_session_id.", "INVALID");
   }
 
   try {
@@ -298,6 +465,7 @@ async function runClaimedPremiumWorkerJob(
         bitrateKbps: encoded.bitrateKbps,
         sampleRate: encoded.sampleRate,
         encoder: encoded.encoder,
+        artifactMode: "MIX",
       });
     }
 
@@ -314,6 +482,7 @@ async function runClaimedPremiumWorkerJob(
       bitrateKbps: null,
       sampleRate: encoded.sampleRate,
       encoder: encoded.encoder,
+      artifactMode: "MIX",
     });
   } catch (error) {
     await ensureFailedIfStillRunning(jobId, error);
@@ -323,6 +492,7 @@ async function runClaimedPremiumWorkerJob(
 
 /**
  * Upload QC'd bytes + insert READY + SUCCEEDED (FINDING-02/03).
+ * MIX: mix_session_id + mix/ key. TAKE_EXPORT: take_id + take-export/ key.
  */
 export async function completeRealArtifactAfterEncode(params: {
   jobId: string;
@@ -336,12 +506,15 @@ export async function completeRealArtifactAfterEncode(params: {
   bitrateKbps: number | null;
   sampleRate: number;
   encoder: string;
+  artifactMode?: "MIX" | "TAKE_EXPORT";
+  takeId?: string | null;
 }): Promise<RealWorkerPipelineResult> {
+  const mode = params.artifactMode ?? "MIX";
   const admin = createSupabaseAdminClient();
   const { data: row, error } = await admin
     .from("render_jobs")
     .select(
-      "id, owner_id, mix_session_id, requested_tier, status, entitlement_snapshot, timeout_at",
+      "id, owner_id, mix_session_id, take_id, kind, requested_tier, status, entitlement_snapshot, timeout_at",
     )
     .eq("id", params.jobId)
     .maybeSingle();
@@ -363,17 +536,47 @@ export async function completeRealArtifactAfterEncode(params: {
     );
   }
 
-  const expectedKey = buildAudioArtifactObjectKey({
-    ownerId: row.owner_id as string,
-    mixSessionId: row.mix_session_id as string,
-    jobId: row.id as string,
-    tier: params.qualityTier,
-  });
-  if (params.objectKey !== expectedKey) {
-    throw new RenderJobDomainError(
-      "Client/arbitrary object_key rejected.",
-      "FORBIDDEN",
-    );
+  if (mode === "TAKE_EXPORT") {
+    const takeId = params.takeId ?? (row.take_id as string | null);
+    if (!takeId) {
+      throw new RenderJobDomainError(
+        "TAKE_EXPORT completion missing take_id.",
+        "INVALID",
+      );
+    }
+    if (
+      !expectedTakeExportArtifactObjectKey({
+        ownerId: row.owner_id as string,
+        takeId,
+        jobId: row.id as string,
+        tier: params.qualityTier,
+        objectKey: params.objectKey,
+      })
+    ) {
+      throw new RenderJobDomainError(
+        "Client/arbitrary object_key rejected.",
+        "FORBIDDEN",
+      );
+    }
+  } else {
+    if (!row.mix_session_id) {
+      throw new RenderJobDomainError(
+        "MIX completion missing mix_session_id.",
+        "INVALID",
+      );
+    }
+    const expectedKey = buildAudioArtifactObjectKey({
+      ownerId: row.owner_id as string,
+      mixSessionId: row.mix_session_id as string,
+      jobId: row.id as string,
+      tier: params.qualityTier,
+    });
+    if (params.objectKey !== expectedKey) {
+      throw new RenderJobDomainError(
+        "Client/arbitrary object_key rejected.",
+        "FORBIDDEN",
+      );
+    }
   }
   if (params.byteSize <= 0 || params.encodedBytes.byteLength !== params.byteSize) {
     throw new RenderJobDomainError("Invalid encoded byte size.", "INVALID");
@@ -411,11 +614,17 @@ export async function completeRealArtifactAfterEncode(params: {
     );
   }
 
+  const takeIdForInsert =
+    mode === "TAKE_EXPORT"
+      ? (params.takeId ?? (row.take_id as string))
+      : null;
+
   const { data: artifact, error: artError } = await admin
     .from("audio_artifacts")
     .insert({
       owner_id: row.owner_id,
-      mix_session_id: row.mix_session_id,
+      mix_session_id: mode === "TAKE_EXPORT" ? null : row.mix_session_id,
+      take_id: takeIdForInsert,
       render_job_id: row.id,
       format: params.contentType,
       quality_tier: params.qualityTier,
@@ -457,7 +666,7 @@ export async function completeRealArtifactAfterEncode(params: {
     .eq("id", params.jobId)
     .eq("status", "RUNNING")
     .select(
-      "id, owner_id, mix_session_id, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
+      "id, owner_id, mix_session_id, take_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
     )
     .maybeSingle();
 
@@ -471,14 +680,17 @@ export async function completeRealArtifactAfterEncode(params: {
     );
   }
 
-  const { hookRenderJobSucceeded } = await import(
-    "@/lib/creator-progress/award-hooks"
-  );
-  await hookRenderJobSucceeded({
-    ownerUserId: succeeded.owner_id as string,
-    mixSessionId: succeeded.mix_session_id as string,
-    renderJobId: succeeded.id as string,
-  });
+  // MIX awards require mix_session_id — skip for TAKE_EXPORT.
+  if (succeeded.mix_session_id) {
+    const { hookRenderJobSucceeded } = await import(
+      "@/lib/creator-progress/award-hooks"
+    );
+    await hookRenderJobSucceeded({
+      ownerUserId: succeeded.owner_id as string,
+      mixSessionId: succeeded.mix_session_id as string,
+      renderJobId: succeeded.id as string,
+    });
+  }
 
   const jobRecord = await getJobRecord(params.jobId);
   return {
@@ -519,16 +731,20 @@ async function getJobRecord(jobId: string): Promise<RenderJobRecord> {
   const { data, error } = await admin
     .from("render_jobs")
     .select(
-      "id, owner_id, mix_session_id, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
+      "id, owner_id, mix_session_id, take_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
     )
     .eq("id", jobId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "job missing");
   const snapshot = parseRenderJobEntitlementSnapshot(data.entitlement_snapshot);
+  const kind =
+    data.kind === "TAKE_EXPORT" ? ("TAKE_EXPORT" as const) : ("MIX" as const);
   return {
     id: data.id as string,
     ownerId: data.owner_id as string,
-    mixSessionId: data.mix_session_id as string,
+    mixSessionId: (data.mix_session_id as string | null) ?? null,
+    kind,
+    takeId: (data.take_id as string | null) ?? null,
     requestedTier: data.requested_tier as RenderJobRecord["requestedTier"],
     idempotencyKey: data.idempotency_key as string,
     status: data.status as RenderJobRecord["status"],

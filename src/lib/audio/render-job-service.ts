@@ -51,7 +51,9 @@ import {
 } from "@/lib/audio/render-source-core";
 import {
   resolveAuthorizedRenderSourcesForJob,
+  resolveAuthorizedTakeExportSourcesForJob,
   type AuthorizedRenderSources,
+  type AuthorizedTakeExportSources,
 } from "@/lib/audio/render-source-resolution";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
@@ -70,12 +72,14 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
 import { timingSafeEqual } from "crypto";
 
-export type { AuthorizedRenderSources };
+export type { AuthorizedRenderSources, AuthorizedTakeExportSources };
 
 export type RenderJobRecord = {
   id: string;
   ownerId: string;
-  mixSessionId: string;
+  mixSessionId: string | null;
+  kind?: "MIX" | "TAKE_EXPORT";
+  takeId?: string | null;
   requestedTier: RenderJobTier;
   idempotencyKey: string;
   status: RenderJobStatus;
@@ -96,7 +100,9 @@ export type RenderJobRecord = {
 type RenderJobRow = {
   id: string;
   owner_id: string;
-  mix_session_id: string;
+  mix_session_id: string | null;
+  kind?: string | null;
+  take_id?: string | null;
   requested_tier: RenderJobTier;
   idempotency_key: string;
   status: RenderJobStatus;
@@ -115,13 +121,17 @@ type RenderJobRow = {
 };
 
 const JOB_SELECT =
-  "id, owner_id, mix_session_id, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at";
+  "id, owner_id, mix_session_id, take_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at";
 
 function mapJob(row: RenderJobRow): RenderJobRecord {
+  const kind =
+    row.kind === "TAKE_EXPORT" ? "TAKE_EXPORT" : ("MIX" as const);
   return {
     id: row.id,
     ownerId: row.owner_id,
     mixSessionId: row.mix_session_id,
+    kind,
+    takeId: row.take_id ?? null,
     requestedTier: row.requested_tier,
     idempotencyKey: row.idempotency_key,
     status: row.status,
@@ -623,7 +633,10 @@ export async function cancelRenderJobFor(
  */
 export async function claimRenderJobAsWorker(
   jobId: string,
-): Promise<{ job: RenderJobRecord; sources: AuthorizedRenderSources }> {
+): Promise<{
+  job: RenderJobRecord;
+  sources: AuthorizedRenderSources | AuthorizedTakeExportSources;
+}> {
   assertRenderJobsRuntimeEnabled();
   const admin = createSupabaseAdminClient();
   const { data: row, error } = await admin
@@ -642,10 +655,13 @@ export async function claimRenderJobAsWorker(
     );
   }
 
-  // FINDING-01 — re-validate take/beat before entering RUNNING.
-  let sources: AuthorizedRenderSources;
+  // FINDING-01 — re-validate sources before entering RUNNING.
+  let sources: AuthorizedRenderSources | AuthorizedTakeExportSources;
   try {
-    sources = await resolveAuthorizedRenderSourcesForJob(jobId);
+    sources =
+      current.kind === "TAKE_EXPORT"
+        ? await resolveAuthorizedTakeExportSourcesForJob(jobId)
+        : await resolveAuthorizedRenderSourcesForJob(jobId);
   } catch (sourceError) {
     const message =
       sourceError instanceof Error
@@ -722,6 +738,13 @@ export async function completeFakeRenderJobAsWorker(
     throw new RenderJobDomainError(
       `Cannot complete job in status ${current.status}.`,
       "CONFLICT",
+    );
+  }
+
+  if (current.kind === "TAKE_EXPORT" || !current.mix_session_id) {
+    throw new RenderJobDomainError(
+      "Fake-complete supports MIX jobs only.",
+      "INVALID",
     );
   }
 

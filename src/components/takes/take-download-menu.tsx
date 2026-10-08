@@ -15,6 +15,7 @@ type TakeDownloadMenuProps = {
 
 /**
  * P4.4 — full quality ladder + RAW (GOLD). Never hide LOCKED rows.
+ * P4.6 — enqueue TAKE_EXPORT then poll job → existing artifact download.
  */
 export function TakeDownloadMenu({
   takeId,
@@ -57,6 +58,53 @@ export function TakeDownloadMenu({
     }
   }
 
+  async function downloadArtifact(artifactId: string) {
+    const res = await fetch(`/api/mix/artifacts/${artifactId}/download`);
+    const json = (await res.json()) as {
+      success?: boolean;
+      url?: string;
+      error?: string;
+    };
+    if (!res.ok || !json.url) {
+      throw new Error(json.error ?? "Pobieranie artefaktu niedostępne.");
+    }
+    window.location.assign(json.url);
+  }
+
+  async function pollExportUntilReady(jobId: string): Promise<string | null> {
+    const maxAttempts = 8;
+    for (let i = 0; i < maxAttempts; i++) {
+      const res = await fetch(
+        `/api/takes/export?jobId=${encodeURIComponent(jobId)}`,
+      );
+      const json = (await res.json()) as {
+        success?: boolean;
+        status?: string;
+        artifactId?: string | null;
+        error?: string;
+      };
+      if (!res.ok || !json.success) {
+        throw new Error(json.error ?? "Status eksportu niedostępny.");
+      }
+      if (json.status === "SUCCEEDED" && json.artifactId) {
+        return json.artifactId;
+      }
+      if (
+        json.status === "FAILED" ||
+        json.status === "CANCELLED" ||
+        json.status === "TIMEOUT"
+      ) {
+        throw new Error("Eksport nie powiódł się.");
+      }
+      // Contabo STOPPED: job stays QUEUED — exit early after short wait.
+      if (json.status === "QUEUED" && i >= 2) {
+        return null;
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    return null;
+  }
+
   async function onExport(item: TakeExportLadderItem) {
     if (!item.unlocked) return;
     setError(null);
@@ -74,18 +122,37 @@ export function TakeDownloadMenu({
       });
       const json = (await res.json()) as {
         success?: boolean;
+        jobId?: string;
         status?: string;
+        artifactId?: string | null;
         workerInfraStatus?: string;
         note?: string;
         error?: string;
       };
-      if (!res.ok || !json.success) {
+      if (!res.ok || !json.success || !json.jobId) {
         throw new Error(json.error ?? "Eksport niedostępny.");
       }
-      if (json.workerInfraStatus === "BLOCKED_INFRA" || json.note) {
+
+      if (json.status === "SUCCEEDED" && json.artifactId) {
+        await downloadArtifact(json.artifactId);
+        return;
+      }
+
+      const artifactId = await pollExportUntilReady(json.jobId);
+      if (artifactId) {
+        await downloadArtifact(artifactId);
+        return;
+      }
+
+      // Phase 1: code prepared; Contabo still STOPPED — expected.
+      if (
+        json.workerInfraStatus === "PREPARED_CODE" ||
+        json.workerInfraStatus === "BLOCKED_INFRA" ||
+        json.note
+      ) {
         setInfraNote(
           json.note ??
-            "Eksport ustawiony w kolejce, ale worker EXTERNAL jest obecnie STOPPED.",
+            "Eksport w kolejce — pipeline kodu gotowy; EXTERNAL worker jest obecnie STOPPED.",
         );
       } else {
         setInfraNote(`Status eksportu: ${json.status ?? "QUEUED"}`);
@@ -156,19 +223,19 @@ export function TakeDownloadMenu({
               >
                 <span className="font-medium">
                   {canDownloadRaw ? "" : "🔒 "}
-                  RAW — plik źródłowy
+                  RAW — oryginalne nagranie
                   {canDownloadRaw ? "" : " — LOCKED"}
                 </span>
                 <span className="text-xs text-[var(--brd-mute)]">
                   {canDownloadRaw
-                    ? "Oryginalne nagranie (plan GOLD)"
+                    ? "Plik źródłowy (mic)"
                     : "Dostępne w planie GOLD."}
                 </span>
               </button>
             </li>
           </ul>
           {error ? (
-            <p className="text-xs text-destructive" role="alert">
+            <p className="text-xs text-red-600" role="alert">
               {error}
             </p>
           ) : null}
@@ -177,15 +244,6 @@ export function TakeDownloadMenu({
               {infraNote}
             </p>
           ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="min-h-10 w-full"
-            onClick={() => setOpen(false)}
-          >
-            Zamknij
-          </Button>
         </div>
       ) : null}
     </div>

@@ -48,10 +48,13 @@ export type TakeExportJobRecord = {
   idempotencyKey: string;
   createdAt: string;
   /**
-   * Contabo / EXTERNAL worker is currently STOPPED in ops.
-   * Code path is prepared; production completion requires worker GO.
+   * PREPARED_CODE = TAKE_EXPORT worker pipeline exists in app code.
+   * Live EXTERNAL Contabo process remains STOPPED until Phase 2 Owner GO.
+   * Never claim live worker availability here.
    */
   workerInfraStatus: "PREPARED_CODE" | "BLOCKED_INFRA";
+  /** Present when status=SUCCEEDED and artifact READY. */
+  artifactId?: string | null;
 };
 
 const TAKE_EXPORT_JOB_SELECT =
@@ -256,6 +259,7 @@ export async function createTakeExportJobFor(
 function mapTakeExportJob(
   row: Record<string, unknown>,
   quality: TakeExportQuality,
+  artifactId?: string | null,
 ): TakeExportJobRecord {
   if (!isRenderJobTier(row.requested_tier)) {
     throw new RenderJobDomainError("Invalid requested_tier on job.", "INVALID");
@@ -270,8 +274,9 @@ function mapTakeExportJob(
     status: row.status as RenderJobStatus,
     idempotencyKey: row.idempotency_key as string,
     createdAt: row.created_at as string,
-    // Contabo worker STOPPED — do not claim production-ready.
-    workerInfraStatus: "BLOCKED_INFRA",
+    // Code pipeline READY; Contabo process still STOPPED (Phase 2).
+    workerInfraStatus: "PREPARED_CODE",
+    artifactId: artifactId ?? null,
   };
 }
 
@@ -307,5 +312,27 @@ export async function getOwnTakeExportJobFor(
         : tier === "HQ_MP3"
           ? "MP3_320"
           : "WAV";
-  return mapTakeExportJob(data, quality);
+
+  let artifactId: string | null = null;
+  if ((data.status as string) === "SUCCEEDED") {
+    const nowIso = new Date().toISOString();
+    const { data: art } = await admin
+      .from("audio_artifacts")
+      .select("id")
+      .eq("render_job_id", jobId)
+      .eq("owner_id", context.userId)
+      .eq("status", "READY")
+      .gt("expires_at", nowIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    artifactId = (art?.id as string | undefined) ?? null;
+  }
+
+  return mapTakeExportJob(data, quality, artifactId);
+}
+
+export async function getOwnTakeExportJob(jobId: string): Promise<TakeExportJobRecord> {
+  const context = await requireUser();
+  return getOwnTakeExportJobFor(context, jobId);
 }

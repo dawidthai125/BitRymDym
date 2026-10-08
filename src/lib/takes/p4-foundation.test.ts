@@ -231,15 +231,15 @@ describe("P4.6 TAKE_EXPORT foundation", () => {
       "utf8",
     );
     expect(src).toMatch(/TAKE_EXPORT/);
-    expect(src).toMatch(/BLOCKED_INFRA/);
+    expect(src).toMatch(/PREPARED_CODE/);
     // No process spawn / child_process / ffmpeg binary invocation in enqueue path.
     expect(src).not.toMatch(/child_process|spawn\(|execFile\(|runFfmpeg/);
   });
 
-  it("marks worker infra blocked (Contabo STOPPED)", () => {
-    // Infrastructure test intentionally marked BLOCKED — do not fake PASS.
-    const workerBlocked = true;
-    expect(workerBlocked).toBe(true);
+  it("marks Contabo live worker as not yet enabled (Phase 2)", () => {
+    // Code PREPARED_CODE; live Contabo process remains STOPPED until Phase 2 GO.
+    const contaboLiveEnabled = false;
+    expect(contaboLiveEnabled).toBe(false);
   });
 });
 
