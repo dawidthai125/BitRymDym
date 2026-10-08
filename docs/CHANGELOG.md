@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-08 — FULL DOCUMENTATION RECONCILIATION / COLD START READY
+
+**Status:** **DOCS ONLY** · FULL PROJECT continuity pack · **COLD START READY** · **NO DUPLICATION CONTRACT READY**
+**Scope:** FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · DOCUMENTATION_CONTINUITY · architecture README · new [REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · this entry
+**Production (unchanged):** `4fa658d` · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · READY / GREEN · https://www.bitrymdym.pl
+**Repo tip after this reconcile:** verify `git rev-parse HEAD` · may ≠ PRODUCTION APP · **NO REDEPLOY**
+**Shipped in docs:** HOW TO START WORK contract · Sacred WIP fingerprint · Domain→SSOT→Owner map · Existing Capability / Reuse map · DO NOT DUPLICATE · dual-plane clarity · compact Studio/audio phase index · security boundary summary · known limitations (incl. 7.1.6 NOT SAFELY MUTATED)
+**Not done:** no app code · no migration · no deploy · no Sacred WIP touch · no new product phase invented
+**Next:** STOP · new GPT/Cursor sessions may cold-start from FINAL_COLD_START · next product phase requires separate audit / design freeze
+
 ## 2026-10-08 — PHASE 7.1.6 AUTO SAVE + CAS COMPLETENESS PRODUCTION GREEN + SSOT RECONCILIATION
 
 **Status:** **Phase 7.1.6 — CLOSED / LAND GREEN · PRODUCTION VERIFIED — GREEN**

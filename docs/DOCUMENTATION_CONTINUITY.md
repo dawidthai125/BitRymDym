@@ -65,17 +65,20 @@ IMPLEMENTATION
 
 | Dokument | Odpowiedzialność |
 |----------|------------------|
-| MASTER HANDOFF | COLD-START CONTINUITY (new GPT + Cursor) — **canonical entry** |
+| FINAL COLD START HANDOFF | **START HERE** — new GPT + Cursor ultra entry · HOW TO START · Sacred WIP |
+| MASTER HANDOFF | Full continuity / architecture handoff (detail after cold start) |
 | MASTER SSOT | WHAT / PRODUCT TRUTH |
 | SYSTEM ARCHITECTURE | HOW / TECHNICAL ARCHITECTURE |
+| REUSE / SSOT MAP | Domain → SSOT → owner → location · **DO NOT DUPLICATE** |
 | DECISION LOG | WHY / DECISION HISTORY |
 | OPEN DECISIONS | WHAT IS STILL UNDECIDED |
-| PROJECT STATE | WHERE ARE WE NOW |
+| PROJECT STATE | WHERE ARE WE NOW (living tip / dual-plane) |
 | PHASE DOCUMENTS | WHAT PHASE / SCOPE |
-| FEATURE DOCUMENTATION | HOW A FEATURE WORKS |
+| FEATURE DOCUMENTATION / AUDITS | HOW A FEATURE WORKS · evidence |
 | CHANGELOG | WHAT CHANGED OVER TIME |
 
 Nie duplikować całych treści — stosować linki / referencje.
+Nie tworzyć drugiego „master” handoffu.
 
 ---
 

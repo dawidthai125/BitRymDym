@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-08 — **Phase 7.1.6 Auto Save + CAS Completeness CLOSED / PRODUCTION GREEN** @ `4fa658d` · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · prior `3fccbf7` (7.1.5) · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **FULL DOC RECONCILE / COLD START READY** · Production **`4fa658d`** GREEN · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · REPO tip verify `git rev-parse HEAD` · [REUSE_SSOT_MAP](./architecture/REUSE_SSOT_MAP.md) · **STOP**
 
 ---
 
@@ -21,7 +21,9 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after Phase 7.1.6 SSOT reconcile · may **≠** production app |
+| **REPOSITORY HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after full cold-start reconcile · may **≠** production app |
+| **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
+| **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
 | **PRODUCTION APP SHA** | `4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1` (**`4fa658d`**) — Phase 7.1.6 Auto Save + CAS Completeness · READY / GREEN |
 | **PRODUCTION DEPLOYMENT** | `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · READY |
 | **DUAL-PLANE NOTE** | REPOSITORY tip (docs-only) may ≠ PRODUCTION APP `4fa658d` · **NO REDEPLOY** of docs tip |
@@ -422,6 +424,8 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → Confirm PRODUCTION APP = 4fa658d · dpl dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy
                  → Confirm REPO tip may ≠ PRODUCTION APP 4fa658d · NO REDEPLOY
                  → Confirm Phase 7.1.6 Auto Save + CAS Completeness = CLOSED / PRODUCTION GREEN
+                 → Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+                 → Read architecture/REUSE_SSOT_MAP.md before any Studio/audio/persist change
                  → Confirm Phase 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (do not reopen)
                  → Confirm Catalog 17 · Storage orphans 0 · Security GREEN
                  → Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
@@ -430,8 +434,9 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
                  → NEXT GATE = STOP — Phase 7.1.6 CLOSED / GREEN
+                 → SEARCH EXISTING FIRST · DO NOT DUPLICATE engine/player/orchestrator/CAS/selection
                  → Do NOT reimplement Auto Save/CAS / 7.1.6 / Escape / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P4.6
-                 → Do NOT commit P4 context? seam / SA-07 untracked without Owner GO
+                 → Do NOT commit P4 context? seam / SA-07 untracked / Sacred WIP without Owner GO
                  → Do NOT call punch “P5.7” / “P5.9” / “P5.10”
                  → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
                  → Do NOT reopen closed epics without new evidence

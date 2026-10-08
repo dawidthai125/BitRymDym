@@ -77,6 +77,7 @@ Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN
 | **D02 live harness** | **CLOSED** @ `44dc22c` (**TEST ONLY**) |
 | **P5.7 Architecture Audit** | **GO WITH CONDITIONS** — [P5_7_STUDIO_ARCHITECTURE_AUDIT.md](./P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **GO WITH CONDITIONS** — [P5_9_STUDIO_ARCHITECTURE_AUDIT.md](./P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
+| **Reuse / DO NOT DUPLICATE** | Canonical inventory — [REUSE_SSOT_MAP.md](./REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **Next Studio step** | **STOP** — **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · next phase requires separate audit / design freeze · do **not** reopen 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B |
 | Studio audio rule | `StudioTransport != PlayerProvider` · `StudioAudioEngine != PlayerProvider != E3 Mix` · Track/Master FX · Master + Track Peak (P6.5/P6.6) · Clip Fades on Clip GainNode (P6.7 GREEN) · Mix UX · Mixer dock chrome reuses engine (7.1.4) · FxSheet Escape owns top layer (7.1.5) · Auto Save + CAS via Persist Orchestrator (7.1.6) · overlap = MIX · P6.5 Scenario B remains BLOCKED / INCONCLUSIVE |
 | E3 Full Audio (through E3.6) | **E3.1→E3.6 CLOSED / PRODUCTION VERIFIED** @ `183b2a4` · historically **DARK** at wave closeout — [E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md](./E3_FULL_AUDIO_FINAL_ARCHITECTURE_LOCK.md) · [E3_6_PRODUCTION_CLOSEOUT.md](../audits/E3_6_PRODUCTION_CLOSEOUT.md) |

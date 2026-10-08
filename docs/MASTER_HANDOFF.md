@@ -1,11 +1,12 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-08 — **Phase 7.1.6 Auto Save + CAS Completeness CLOSED / PRODUCTION GREEN** @ `4fa658d` · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · prior `3fccbf7` (7.1.5) · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **FULL DOCUMENTATION RECONCILIATION / COLD START READY** · Production **`4fa658d`** GREEN · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · REPO tip verify `git rev-parse HEAD` · Reuse/SSOT map · **STOP**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
 **Living state:** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Reuse / DO NOT DUPLICATE:** [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
 **FAR-01 living ops (historyczny / nie NEXT):** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
 
 **Ten dokument = continuity** (szczegółowy cold-start).
@@ -23,7 +24,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after Phase 7.1.6 SSOT reconcile · may **≠** production app |
+| **Repository HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after full cold-start reconcile · may **≠** production app |
 | **Production application SHA** | `4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1` (**`4fa658d`**) — Phase 7.1.6 Auto Save + CAS Completeness · READY / GREEN |
 | **Production deployment** | `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · READY |
 | **Dual-plane note** | REPOSITORY tip (docs-only) may ≠ PRODUCTION APP `4fa658d` · **NO REDEPLOY** of docs tip |
@@ -89,7 +90,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | `CRON_SECRET` | CONFIGURED (**never print / never commit**) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
-**Studio living rules (P5.10 reconcile):**
+**Studio living rules (P5.10 + P7.1.6 reconcile):**
 
 ```text
 StudioTransport != PlayerProvider
@@ -111,6 +112,7 @@ P5.8 devices    = enumerateDevices · permission UNKNOWN|REQUESTING|GRANTED|DENI
                 · UNCHANGED in P5.10
 Recording       = P5.5/P5.6/P5.8 SSOT · engine may consume READY Take · does not own
                 session / eligibility / finalize / upload / claim / getUserMedia / devices / meter
+                · eligibility Sacred WIP = recording-eligibility-service.ts (do not rewrite)
 P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · P6.5 Master metering SHIPPED @ 2258bdb
                 · P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
@@ -120,14 +122,36 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
                 · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split fade inherit
-                · next = STOP (Phase 7.1.6 CLOSED / GREEN · next phase = separate audit / freeze)
+Phase 7.1.x     = 7.1.3 Inspector · 7.1.4 Mixer Dock · 7.1.5 Shell+Escape · 7.1.6 Auto Save+CAS
+                · ALL CLOSED / GREEN · production tip 4fa658d
+Persistence     = StudioPersistOrchestrator ONLY (CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICT)
+                · retry 1s/3s/8s · 409 non-retryable · expectedDocumentVersion everywhere
+                · interactive prod mutations for 7.1.6 = NOT SAFELY MUTATED (safety gate)
 Track Type + Capabilities = future (document condition before P7 expansion)
 document_version          = exists · Phase 7.1.6 Auto Save + CAS Completeness CLOSED / GREEN @ 4fa658d
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)
 P6 = product FX / Mix / Master + Track Peak (P6.5/P6.6) + Clip Fades (P6.7 GREEN) · routing / buses / automation later
-P7 = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-drop
-     · track enum reserved READY WITH REFACTOR · instrument engines NOT READY
+P7 creative     = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-drop
+                · track enum reserved READY WITH REFACTOR · instrument engines NOT READY
+                · NOT the same as Phase 7.1.x Studio shell/autosave track
+REUSE MAP       = docs/architecture/REUSE_SSOT_MAP.md
 ```
+
+### Compact phase delivery index (Studio / audio — git-verified tips)
+
+| Phase | Status | Feature / tip SHA (canonical) | Notes |
+|-------|--------|-------------------------------|-------|
+| Recording Waves 1–5 / D02 | CLOSED / GREEN | Wave5 `37892a6` · D02 `e98ba52` | See RECORDING.md |
+| E3.1→E3.7 / enablement | GREEN (waiver HQ/WAV) | E3.6 `183b2a4` · E3.7 `17c4d53` | Contabo STOPPED after P4.6 |
+| P3 claim | GREEN | `dabbc936` | Unchanged |
+| Fala 3.5.1 | GREEN | `c690831` | Recording experience |
+| P4 CORE / P4.6 TAKE_EXPORT | GREEN | CORE ⊂ `bface6c` · P4.6 `a72fed9` | Contabo E2E then STOPPED |
+| P5.1–P5.6 / P5.8 / P5.10 | GREEN | Engine `9c2a958` · Devices `95e04ff` | finalize ≠ place |
+| P6.1–P6.4.3 / P6.5 / P6.6 / P6.7 | GREEN* | P6.7 `06c60b5` · P6.6 `c825e42` | *P6.5 Scenario B BLOCKED |
+| Post-Recording V1 / List UX / Checkbox | GREEN | V1 `56b629e` · List `2c4b416` · Checkbox `836679a` | Ancestry of tip |
+| Phase 7.1.3–7.1.5 | GREEN | `8f6eeca` · `9abc1b6` · `3fccbf7` | Shell / Mixer / Escape |
+| **Phase 7.1.6** | **GREEN** | **`4fa658d`** (feature `89ee919`) | Auto Save + CAS · dpl `dpl_6sai…` |
+| P6.8 / Phase 7.1.7 | NOT STARTED | — | Requires separate Owner GO · do not invent |
 
 ### P6.7 final evidence (living)
 
@@ -833,8 +857,10 @@ Contabo                       = STOPPED / DISABLED (capability GREEN · not alwa
 P6.8                          = NOT STARTED / OWNER DECISION
 NEXT GATE                     = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
 NOTE                          = REPOSITORY tip may ≠ PRODUCTION APP SHA 4fa658d · NO REDEPLOY
-NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md
-                              → MASTER_HANDOFF / PROJECT_STATE
+REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
+SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md (§0A HOW TO START)
+                              → MASTER_HANDOFF / PROJECT_STATE / REUSE_SSOT_MAP
 ```
 
 ### HISTORY — P6.7-era session stamp (ARCHIVED SNAPSHOT)
@@ -987,7 +1013,9 @@ WORKER                        = Contabo STOPPED / DISABLED
 P6.8                          = NOT STARTED / OWNER DECISION
 NEXT GATE                     = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
 NOTE                          = REPOSITORY tip may ≠ PRODUCTION APP SHA 4fa658d · NO REDEPLOY
-NEXT SESSION ENTRY            = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
+REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
+SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+NEXT SESSION ENTRY            = FINAL_COLD_START_HANDOFF.md (§0A) → this file → PROJECT_STATE.md → REUSE_SSOT_MAP.md
 ```
 
 ### HISTORY — P6.7-era session stamp (ARCHIVED SNAPSHOT)

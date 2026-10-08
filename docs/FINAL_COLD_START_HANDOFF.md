@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-08 — **Phase 7.1.6 Auto Save + CAS Completeness CLOSED / PRODUCTION GREEN** @ `4fa658d` · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · prior tip `3fccbf7` (7.1.5) · REPO tip may advance docs-only · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **FULL DOCUMENTATION RECONCILIATION / COLD START READY** · Production **`4fa658d`** GREEN · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · REPO tip = verify `git rev-parse HEAD` (docs-only · may ≠ app) · Reuse/SSOT map shipped · **STOP**
 **Type:** Documentation continuity · dual-plane tip (REPO tip may ≠ PRODUCTION) · next = Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
 
 **Evidence rule (bezwzględna):**
@@ -26,7 +26,7 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 
 ```text
 REPOSITORY HEAD / origin/main = verify `git rev-parse HEAD` / `git rev-parse origin/main`
-  note                        = docs tip after Phase 7.1.6 SSOT reconcile · may ≠ PRODUCTION APP · NO REDEPLOY
+  note                        = docs tip after full cold-start reconcile · may ≠ PRODUCTION APP · NO REDEPLOY
 PRODUCTION APP SHA            = 4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1
   short                       = 4fa658d
   note                        = Phase 7.1.6 Auto Save + CAS Completeness · CLOSED / PRODUCTION VERIFIED — GREEN
@@ -183,27 +183,84 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 | Production deployment | **`dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy`** · aliases www.bitrymdym.pl |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
-| Session / operator | dirty local WIP may exist (P4 seam / SA-07 untracked) — **nie czyścić / nie commitować bez Owner GO** |
+| Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
 
 **Primary continuity:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Reuse / DO NOT DUPLICATE:** [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
+
+---
+
+## 0A. HOW TO START WORK ON BITRYMDYM (Cold Start Contract)
+
+```text
+1.  READ this FINAL_COLD_START_HANDOFF
+2.  READ MASTER_HANDOFF.md
+3.  READ PROJECT_STATE.md
+4.  READ architecture/README.md + architecture/REUSE_SSOT_MAP.md
+5.  READ decisions/DECISION_LOG.md + decisions/OPEN_DECISIONS.md
+6.  READ CHANGELOG.md (recent tip) + relevant phase audit/closeout only if needed
+7.  CHECK: git rev-parse HEAD  AND  git rev-parse origin/main
+8.  CHECK: PRODUCTION APP = 4fa658d · dpl dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy
+         (REPO docs tip may differ — that is OK · NO REDEPLOY of docs tip)
+9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
+10. CHECK Sacred WIP fingerprint:
+         src/lib/takes/recording-eligibility-service.ts
+         SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+
+BEFORE ANY IMPLEMENTATION:
+  SEARCH EXISTING CODE FIRST
+  → identify SSOT / service / route / RPC / component / state owner / persistence path / tests
+  → REUSE
+  → AUDIT → REPORT → wait for Owner GO
+  → never invent second orchestrator / engine / player / CAS / selection store
+```
+
+---
+
+## 0B. DO NOT DUPLICATE (summary)
+
+Full map: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
+
+```text
+Studio audio SSOT     = StudioAudioEngine (transport provider only) · 1 AudioContext
+Catalog player        = PlayerProvider · NEVER inside Studio editor
+E3                    = separate Mix/Master/Render plane · Contabo EXTERNAL compute
+Studio selection      = studio-editor.tsx state (selectedTrackId / selectedClipId / docRef)
+Persistence           = StudioPersistOrchestrator ONLY
+CAS                   = document_version + studio_cas_* (service_role) + expectedDocumentVersion
+FX / Track / Clip     = studio-service + existing /api/studio/** routes via orchestrator
+Recording eligibility = recording-eligibility-service.ts (Sacred WIP — do not rewrite)
+Durable media         = Supabase Storage
+AuthZ                 = requireUser + server ownership · never client-trusted
+```
+
+---
+
+## 0C. Sacred WIP
+
+```text
+FILE     = src/lib/takes/recording-eligibility-service.ts
+SHA256   = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+STATUS   = LOCAL DIRTY WIP · not production tip · not cleanup target
+FORBIDDEN = git reset / restore / checkout -- / clean / stash of this WIP without Owner GO
+```
 
 ---
 
 ## 1. Mandatory reading order (new agent)
 
-1. **This file**
+1. **This file** (incl. §0A–0C)
 2. [MASTER_HANDOFF.md](./MASTER_HANDOFF.md)
 3. [PROJECT_STATE.md](./PROJECT_STATE.md)
-4. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
-5. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
-6. [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) · [architecture/RECORDING.md](./architecture/RECORDING.md)
-7. [audits/POLISH-01_DESIGN_FREEZE.md](./audits/POLISH-01_DESIGN_FREEZE.md)
-8. [audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md) · [P1_SAMPLE_POLICY_MATRIX.md](./audits/P1_SAMPLE_POLICY_MATRIX.md) · [P2_REPLACE_SAMPLE_IMPLEMENTATION.md](./audits/P2_REPLACE_SAMPLE_IMPLEMENTATION.md)
-9. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md)
-10. [CHANGELOG.md](./CHANGELOG.md)
-11. Relevant audit/closeout **only** when Owner selects that surface
+4. [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [architecture/README.md](./architecture/README.md)
+5. [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md)
+6. [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md)
+7. [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) · [architecture/RECORDING.md](./architecture/RECORDING.md)
+8. [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) · [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md)
+9. [CHANGELOG.md](./CHANGELOG.md)
+10. Relevant audit/closeout **only** when Owner selects that surface
 
-**Before any implementation:** AUDIT → REPORT → wait for **Owner GO**.
+**Before any implementation:** SEARCH EXISTING → AUDIT → REPORT → wait for **Owner GO**.
 
 Repo root: [AGENTS.md](../AGENTS.md) — Next.js w tym repo może różnić się od training data.
 
@@ -554,12 +611,14 @@ WIP preserved
 [ ] Confirm Contabo worker = STOPPED / DISABLED · P4.6 LIVE E2E VERIFIED
 [ ] Confirm Closed = Phase 7.1.6 Auto Save + CAS Completeness · CLOSED / PRODUCTION GREEN @ 4fa658d
 [ ] Confirm Phase 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (do not reopen)
-[ ] Read MASTER_HANDOFF + PROJECT_STATE + P7_1_6 closeout + relevant gates
+[ ] Read MASTER_HANDOFF + PROJECT_STATE + architecture/REUSE_SSOT_MAP + P7_1_6 closeout
+[ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
 [ ] NEXT GATE = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
-[ ] Do not reimplement Auto Save/CAS · do not reopen 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
+[ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
 [ ] Do not invent Phase 7.1.7 scope without Owner GO
-[ ] Do not commit P4 context? WIP / SA-07 untracked library without Owner GO
+[ ] Do not commit P4 context? WIP / SA-07 untracked library / Sacred WIP without Owner GO
+[ ] SEARCH EXISTING FIRST · REUSE · no second SSOT
 [ ] Nie reopen closed epics bez nowego evidence
 [ ] Nie czyść dirty WIP bez Owner GO
 [ ] AUDIT FIRST → report → wait for Owner GO (no auto-start)
@@ -570,7 +629,8 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (Phase 7.1.6 CLOSED / PRODUCTION GREEN · 2026-10-08)
+FINAL COLD START HANDOFF     = READY (FULL DOC RECONCILE · COLD START · Phase 7.1.6 GREEN · 2026-10-08)
+REUSE / DO NOT DUPLICATE     = architecture/REUSE_SSOT_MAP.md
 REPOSITORY HEAD / origin/main = verify git rev-parse HEAD (docs tip · may ≠ app)
 PRODUCTION APP SHA           = 4fa658d · READY / GREEN
 PRODUCTION DEPLOYMENT        = dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy

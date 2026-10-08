@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`4fa658d`** (**READY / GREEN**) · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · URL https://www.bitrymdym.pl · REPO tip = verify `git rev-parse HEAD` (may ≠ app · no redeploy) · **Phase 7.1.6 Auto Save + CAS Completeness CLOSED / PRODUCTION GREEN** · prior tip `3fccbf7` (7.1.5) · 7.1.4 / P4.6 / V1 / P6.7 **CLOSED / GREEN** · Catalog **17** PLATFORM · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [P7_1_6 closeout](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md) · [P7_1_5 closeout](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md).
+**Now:** Production app **`4fa658d`** (**READY / GREEN**) · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · URL https://www.bitrymdym.pl · REPO tip = verify `git rev-parse HEAD` (may ≠ app · no redeploy) · **Phase 7.1.6 CLOSED / GREEN** · **FULL DOC RECONCILE / COLD START READY** · Catalog **17** · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Reuse: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [P7_1_6 closeout](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` — **STOP** · next phase requires separate audit / design freeze · see [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` — **STOP** · next phase requires separate audit / design freeze · **SEARCH EXISTING FIRST** · see [REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 
@@ -83,6 +83,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md](./architecture/E3_FULL_AUDIO_IMPLEMENTATION_PLAN.md) | E3 waves · E3.1→E3.6 Production · E3.7 @ `17c4d530` (not Production) |
 | [architecture/APPLICATION_SCAFFOLD.md](./architecture/APPLICATION_SCAFFOLD.md) | Phase 1.2 scaffold notes |
 | [architecture/README.md](./architecture/README.md) | Status architektury (skrót) |
+| [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) | Reuse / SSOT / DO NOT DUPLICATE map (cold-start) |
 | [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) | Decyzje OPEN / CLOSED |
 | [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) | Historia zatwierdzonych decyzji |
 | [phases/PHASE_1_FOUNDATION.md](./phases/PHASE_1_FOUNDATION.md) | Faza 1 — Fundament |
