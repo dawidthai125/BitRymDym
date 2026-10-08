@@ -40,4 +40,27 @@ describe("community upload nav contract", () => {
     expect(src).toContain('redirect("/sign-in")');
     expect(src).not.toContain('requireRole(["USER"])');
   });
+
+  it("ADMIN /beats/upload → /admin/beats/new outside auth try/catch (NEXT_REDIRECT safe)", () => {
+    const src = readFileSync(
+      join(root, "src/app/beats/upload/page.tsx"),
+      "utf8",
+    );
+    // First try/catch is auth resolution only — must not host role redirects.
+    const authBlock = src.match(
+      /let context;\s*try\s*\{([\s\S]*?)\}\s*catch\s*\(error\)\s*\{([\s\S]*?)\}/,
+    );
+    expect(authBlock).toBeTruthy();
+    expect(authBlock![1]).toContain("requireUser()");
+    expect(authBlock![1]).not.toContain("redirect(");
+    expect(authBlock![2]).toContain('redirect("/sign-in")');
+    expect(authBlock![2]).not.toContain('redirect("/admin/beats/new")');
+
+    const afterAuth = src.slice(
+      (authBlock!.index ?? 0) + authBlock![0].length,
+    );
+    expect(afterAuth).toMatch(
+      /role !== "USER"[\s\S]*?role === "ADMIN"[\s\S]*?redirect\("\/admin\/beats\/new"\)/,
+    );
+  });
 });

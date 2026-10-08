@@ -20,17 +20,22 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
   // Community upload is USER-role only (see createUserBeat / audio-transport).
   // Authenticated non-USER (e.g. ADMIN) must not land on a silent /account bounce
   // when hitting this route via bookmark or stale link — send ADMIN to PLATFORM create.
+  //
+  // Auth resolution stays in try/catch. Role redirects MUST run outside it:
+  // Next.js redirect() throws NEXT_REDIRECT, which a catch would swallow into /account.
+  let context;
   try {
-    const context = await requireUser();
-    if (context.profile.role !== "USER") {
-      if (context.profile.role === "ADMIN") {
-        redirect("/admin/beats/new");
-      }
-      redirect("/account");
-    }
+    context = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect("/sign-in");
+    }
+    redirect("/account");
+  }
+
+  if (context.profile.role !== "USER") {
+    if (context.profile.role === "ADMIN") {
+      redirect("/admin/beats/new");
     }
     redirect("/account");
   }
