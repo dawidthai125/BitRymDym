@@ -44,6 +44,8 @@ export function StudioRecordingPanel({
   onClipCreated,
   onRecordingActiveChange,
   embedded = false,
+  /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
+  preferredTrackId = null,
 }: {
   projectId: string;
   tracks: StudioTrackDto[];
@@ -51,6 +53,7 @@ export function StudioRecordingPanel({
   onRecordingActiveChange?: (active: boolean) => void;
   /** Phase 1 — denser chrome when hosted inside Inspector. */
   embedded?: boolean;
+  preferredTrackId?: string | null;
 }) {
   const transport = useStudioTransport();
   const recordableTracks = tracks.filter((t) => t.trackType !== "BEAT");
@@ -58,9 +61,22 @@ export function StudioRecordingPanel({
     recordableTracks.length > 0 ? recordableTracks : tracks;
   const defaultTrack =
     trackChoices.find((t) => t.recordArmed) ?? trackChoices[0];
+  const preferredTrack =
+    preferredTrackId && trackChoices.some((t) => t.id === preferredTrackId)
+      ? preferredTrackId
+      : null;
 
-  const [trackIdOverride, setTrackIdOverride] = useState<string | null>(null);
-  const trackId = trackIdOverride ?? defaultTrack?.id ?? "";
+  /** Manual override is valid only for the preferredTrackId it was chosen against. */
+  const [manualTrackId, setManualTrackId] = useState<string | null>(null);
+  const [manualForPreferred, setManualForPreferred] = useState<string | null>(
+    null,
+  );
+  const trackIdOverride =
+    manualTrackId && manualForPreferred === (preferredTrackId ?? null)
+      ? manualTrackId
+      : null;
+  const trackId =
+    trackIdOverride ?? preferredTrack ?? defaultTrack?.id ?? "";
   const [beatId, setBeatId] = useState<string | null>(null);
   const [maxSeconds, setMaxSeconds] = useState(180);
   const [contextError, setContextError] = useState<string | null>(null);
@@ -878,7 +894,10 @@ export function StudioRecordingPanel({
           className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
           value={trackId}
           disabled={busy && state.phase !== "READY"}
-          onChange={(e) => setTrackIdOverride(e.target.value)}
+          onChange={(e) => {
+            setManualTrackId(e.target.value);
+            setManualForPreferred(preferredTrackId ?? null);
+          }}
           aria-label="Wybierz ścieżkę"
         >
           {trackChoices.map((t) => (

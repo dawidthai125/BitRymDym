@@ -22,6 +22,11 @@ import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
+import {
+  deriveStudioInspectorContext,
+  studioInspectorContextTitle,
+} from "@/components/studio/studio-inspector-context";
+import { StudioInspectorOverlay } from "@/components/studio/studio-inspector-shell";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -94,7 +99,6 @@ import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
 type TimelineMode = "seek" | "edit";
-type InspectorTab = "settings" | "effects" | "file";
 type FxPanelTarget =
   | { role: "master" }
   | { role: "track"; trackId: string };
@@ -219,8 +223,12 @@ function StudioEditorInner({
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [mixerOpen, setMixerOpen] = useState(false);
-  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("settings");
-  const [inspectorMobileOpen, setInspectorMobileOpen] = useState(false);
+  /** Phase 7.1.3 — overlay open (tablet drawer / mobile sheet). Desktop dock always visible. */
+  const [inspectorOverlayOpen, setInspectorOverlayOpen] = useState(false);
+  /** Explicit Record context when user opens Nagraj without active capture. */
+  const [inspectorPreferRecord, setInspectorPreferRecord] = useState(false);
+  /** xl dock vs overlay — ensure Inspector content mounts once (no dual RecordingPanel). */
+  const [inspectorDesktopRail, setInspectorDesktopRail] = useState(false);
   const transport = useStudioTransport();
   const { setTrackMeterTarget, resolveClipSourceUrl } = transport;
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -256,11 +264,48 @@ function StudioEditorInner({
     selectedTrackId && doc.tracks.some((t) => t.id === selectedTrackId)
       ? selectedTrackId
       : null;
+  const selectedTrack =
+    activeSelectedTrackId
+      ? (doc.tracks.find((t) => t.id === activeSelectedTrackId) ?? null)
+      : null;
   const snapPreset = snapPresetFromConfig(snapConfig);
+  const recordingContextActive = recordingLocked || inspectorPreferRecord;
+  const inspectorContext = deriveStudioInspectorContext({
+    recordingActive: recordingContextActive,
+    selectedClipId: activeSelectedId,
+    selectedTrackId: activeSelectedTrackId,
+  });
+
+  function openInspectorOverlay() {
+    setMixerOpen(false);
+    setInspectorOverlayOpen(true);
+  }
+
+  function closeInspectorOverlay() {
+    setInspectorOverlayOpen(false);
+  }
+
+  function openMixerSurface() {
+    setInspectorOverlayOpen(false);
+    setMixerOpen(true);
+  }
 
   useEffect(() => {
     setTrackMeterTarget(activeSelectedTrackId);
   }, [activeSelectedTrackId, setTrackMeterTarget]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1280px)");
+    const apply = () => {
+      const desktop = mq.matches;
+      setInspectorDesktopRail(desktop);
+      if (desktop) setInspectorOverlayOpen(false);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     pxPerMsRef.current = pxPerMs;
@@ -1041,43 +1086,119 @@ function StudioEditorInner({
         ? status
         : "Gotowe";
 
-  const inspectorTabs = (
-    <div className="flex flex-wrap gap-1 border-b border-[var(--brd-line)] pb-2">
-      {(
-        [
-          ["settings", "Ustawienia"],
-          ["effects", "Efekty"],
-          ["file", "Plik"],
-        ] as const
-      ).map(([tab, label]) => (
-        <Button
-          key={tab}
-          type="button"
-          size="xs"
-          variant={inspectorTab === tab ? "default" : "outline"}
-          className="min-h-11"
-          aria-pressed={inspectorTab === tab}
-          onClick={() => setInspectorTab(tab)}
-        >
-          {label}
-        </Button>
-      ))}
-    </div>
-  );
+  const clipEditHandlers = {
+    onClearSelection: () => {
+      setSelectedClipId(clearClipSelection());
+      setConfirmDelete(false);
+    },
+    onSaveFades: (fadeInMs: number, fadeOutMs: number) =>
+      startTransition(async () => {
+        try {
+          await saveClipFades(fadeInMs, fadeOutMs);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd zapisu fade.");
+          setStatus(null);
+        }
+      }),
+    onSaveGain: (gainDb: number) =>
+      startTransition(async () => {
+        try {
+          await saveClipGain(gainDb);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd głośności klipu.");
+          setStatus(null);
+        }
+      }),
+    onSaveMute: (muted: boolean) =>
+      startTransition(async () => {
+        try {
+          await saveClipMute(muted);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd wyciszenia klipu.");
+          setStatus(null);
+        }
+      }),
+    onMove: (timelineStartMs: number) =>
+      startTransition(async () => {
+        try {
+          const maxStart = selectedClip
+            ? Math.max(0, length - selectedClip.durationMs)
+            : 0;
+          await patchClip({
+            op: "move",
+            timelineStartMs: applySnap(timelineStartMs, {
+              minMs: 0,
+              maxMs: maxStart,
+            }),
+            expectedDocumentVersion: doc.project.documentVersion,
+          });
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd przesunięcia.");
+          setStatus(null);
+        }
+      }),
+    onTrimLeftToPlayhead: () =>
+      startTransition(async () => {
+        try {
+          await patchClip({
+            op: "trim_left_to_playhead",
+            playheadMs: transport.state.playheadMs,
+            expectedDocumentVersion: doc.project.documentVersion,
+          });
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd przycięcia.");
+          setStatus(null);
+        }
+      }),
+    onTrimRightToPlayhead: () =>
+      startTransition(async () => {
+        try {
+          await patchClip({
+            op: "trim_right_to_playhead",
+            playheadMs: transport.state.playheadMs,
+            expectedDocumentVersion: doc.project.documentVersion,
+          });
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd przycięcia.");
+          setStatus(null);
+        }
+      }),
+    onSplit: () =>
+      startTransition(async () => {
+        try {
+          await splitSelectedAtPlayhead();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Błąd podziału.");
+          setStatus(null);
+        }
+      }),
+  };
 
   const inspectorContent = (
-    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
-      {inspectorTab === "settings" ? (
+    <div
+      className="min-h-0 flex-1 space-y-3 overflow-y-auto"
+      data-testid="studio-inspector-content"
+      data-inspector-context={inspectorContext}
+    >
+      <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        {studioInspectorContextTitle(inspectorContext)}
+      </p>
+
+      {inspectorContext === "record" ? (
         <StudioRecordingPanel
           projectId={doc.project.id}
           tracks={doc.tracks}
           embedded
+          preferredTrackId={activeSelectedTrackId}
           onRecordingActiveChange={(active) => {
             setRecordingLocked(active);
             if (active) {
               setMode("seek");
               setSelectedClipId(clearClipSelection());
               setConfirmDelete(false);
+              setInspectorPreferRecord(true);
+            } else {
+              setInspectorPreferRecord(false);
             }
           }}
           onClipCreated={(clip) => {
@@ -1087,63 +1208,30 @@ function StudioEditorInner({
                 (a, b) => a.timelineStartMs - b.timelineStartMs,
               ),
             }));
+            setInspectorPreferRecord(false);
             setSelectedClipId(selectClipId(null, clip.id));
+            setSelectedTrackId(clip.trackId);
             setStatus("Nagranie dodane na oś czasu.");
-            setInspectorTab("file");
           }}
         />
       ) : null}
 
-      {inspectorTab === "effects" ? (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Master
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 w-full"
-              aria-label="Efekty Master"
-              onClick={() => setFxPanel({ role: "master" })}
-            >
-              {studioFxEntryLabel(doc.project.masterFxChain)}
-            </Button>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Ścieżki
-            </p>
-            <ul className="space-y-2">
-              {doc.tracks.map((track) => (
-                <li key={track.id}>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      activeSelectedTrackId === track.id ? "default" : "outline"
-                    }
-                    className="min-h-11 w-full justify-start"
-                    aria-label={`Efekty ścieżki ${track.name}`}
-                    onClick={() => {
-                      setSelectedTrackId(track.id);
-                      setFxPanel({ role: "track", trackId: track.id });
-                    }}
-                  >
-                    <span className="truncate">{track.name}</span>
-                    <span className="ml-auto pl-2 text-xs opacity-80">
-                      {studioFxEntryLabel(track.effectsChain)}
-                    </span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      {inspectorContext === "track" && selectedTrack ? (
+        <TrackInspectorPanel
+          track={selectedTrack}
+          trackCount={trackCount}
+          maxTracks={maxTracks}
+          onOpenEffects={() =>
+            setFxPanel({ role: "track", trackId: selectedTrack.id })
+          }
+          onOpenRecord={() => {
+            setInspectorPreferRecord(true);
+            openInspectorOverlay();
+          }}
+        />
       ) : null}
 
-      {inspectorTab === "file" ? (
+      {inspectorContext === "clip" ? (
         <ClipEditPanel
           clip={selectedClip}
           playheadMs={transport.state.playheadMs}
@@ -1151,102 +1239,7 @@ function StudioEditorInner({
           pending={pending}
           confirmDelete={confirmDelete}
           onConfirmDeleteChange={setConfirmDelete}
-          onClearSelection={() => {
-            setSelectedClipId(clearClipSelection());
-            setConfirmDelete(false);
-          }}
-          onSaveFades={(fadeInMs, fadeOutMs) =>
-            startTransition(async () => {
-              try {
-                await saveClipFades(fadeInMs, fadeOutMs);
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd zapisu fade.");
-                setStatus(null);
-              }
-            })
-          }
-          onSaveGain={(gainDb) =>
-            startTransition(async () => {
-              try {
-                await saveClipGain(gainDb);
-              } catch (e) {
-                setError(
-                  e instanceof Error ? e.message : "Błąd głośności klipu.",
-                );
-                setStatus(null);
-              }
-            })
-          }
-          onSaveMute={(muted) =>
-            startTransition(async () => {
-              try {
-                await saveClipMute(muted);
-              } catch (e) {
-                setError(
-                  e instanceof Error ? e.message : "Błąd wyciszenia klipu.",
-                );
-                setStatus(null);
-              }
-            })
-          }
-          onMove={(timelineStartMs) =>
-            startTransition(async () => {
-              try {
-                const maxStart = selectedClip
-                  ? Math.max(0, length - selectedClip.durationMs)
-                  : 0;
-                await patchClip({
-                  op: "move",
-                  timelineStartMs: applySnap(timelineStartMs, {
-                    minMs: 0,
-                    maxMs: maxStart,
-                  }),
-                  expectedDocumentVersion: doc.project.documentVersion,
-                });
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd przesunięcia.");
-                setStatus(null);
-              }
-            })
-          }
-          onTrimLeftToPlayhead={() =>
-            startTransition(async () => {
-              try {
-                await patchClip({
-                  op: "trim_left_to_playhead",
-                  playheadMs: transport.state.playheadMs,
-                  expectedDocumentVersion: doc.project.documentVersion,
-                });
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd przycięcia.");
-                setStatus(null);
-              }
-            })
-          }
-          onTrimRightToPlayhead={() =>
-            startTransition(async () => {
-              try {
-                await patchClip({
-                  op: "trim_right_to_playhead",
-                  playheadMs: transport.state.playheadMs,
-                  expectedDocumentVersion: doc.project.documentVersion,
-                });
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd przycięcia.");
-                setStatus(null);
-              }
-            })
-          }
-          onSplit={() =>
-            startTransition(async () => {
-              try {
-                await splitSelectedAtPlayhead();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Błąd podziału.");
-                setStatus(null);
-              }
-            })
-          }
+          {...clipEditHandlers}
           onDuplicate={() =>
             startTransition(async () => {
               try {
@@ -1268,6 +1261,30 @@ function StudioEditorInner({
             })
           }
         />
+      ) : null}
+
+      {inspectorContext === "empty" ? (
+        <div
+          className="space-y-3 rounded border border-dashed border-[var(--brd-line)] p-3"
+          data-testid="studio-inspector-empty"
+        >
+          <p className="text-sm text-[var(--brd-mute)]">
+            Wybierz ścieżkę lub klip, aby zobaczyć szczegóły.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 w-full"
+            disabled={recordingLocked}
+            onClick={() => {
+              setInspectorPreferRecord(true);
+              openInspectorOverlay();
+            }}
+          >
+            Nagraj
+          </Button>
+        </div>
       ) : null}
     </div>
   );
@@ -1513,9 +1530,9 @@ function StudioEditorInner({
           disabled={recordingLocked || !selectedClip}
           title="Usuń klip"
           onClick={() => {
-            setInspectorTab("file");
+            setInspectorPreferRecord(false);
             setConfirmDelete(true);
-            setInspectorMobileOpen(true);
+            openInspectorOverlay();
           }}
         >
           Usuń
@@ -1638,8 +1655,11 @@ function StudioEditorInner({
           size="sm"
           variant="outline"
           className="min-h-11 xl:hidden"
-          aria-expanded={inspectorMobileOpen}
-          onClick={() => setInspectorMobileOpen((open) => !open)}
+          aria-expanded={inspectorOverlayOpen}
+          onClick={() => {
+            if (inspectorOverlayOpen) closeInspectorOverlay();
+            else openInspectorOverlay();
+          }}
         >
           Inspector
         </Button>
@@ -1650,7 +1670,10 @@ function StudioEditorInner({
           className="min-h-11"
           aria-pressed={mixerOpen}
           aria-expanded={mixerOpen}
-          onClick={() => setMixerOpen((open) => !open)}
+          onClick={() => {
+            if (mixerOpen) setMixerOpen(false);
+            else openMixerSurface();
+          }}
         >
           Mixer
         </Button>
@@ -1831,11 +1854,11 @@ function StudioEditorInner({
             onSeek={seekSnapped}
             onSelectClip={(id) => {
               if (recordingLocked) return;
+              setInspectorPreferRecord(false);
               setSelectedClipId(selectClipId(activeSelectedId, id));
               const clip = doc.clips.find((c) => c.id === id);
               if (clip) setSelectedTrackId(clip.trackId);
               setMode("edit");
-              setInspectorTab("file");
               setConfirmDelete(false);
             }}
             scrollContainerRef={timelineScrollRef}
@@ -1864,42 +1887,21 @@ function StudioEditorInner({
         <aside
           data-testid="studio-inspector-desktop"
           data-studio-inspector="desktop"
+          data-inspector-context={inspectorContext}
           className="hidden w-[300px] shrink-0 flex-col gap-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 xl:flex"
-          aria-label="Inspector"
+          aria-label={studioInspectorContextTitle(inspectorContext)}
         >
-          {inspectorTabs}
-          {inspectorContent}
+          {inspectorDesktopRail ? inspectorContent : null}
         </aside>
       </div>
 
-      {inspectorMobileOpen ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 max-h-[70vh] overflow-hidden rounded-t-lg border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg xl:hidden"
-          role="dialog"
-          aria-label="Inspector"
-          data-testid="studio-inspector-mobile"
-          data-studio-inspector="mobile"
-        >
-          <div className="flex items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3 py-2">
-            <p className="text-sm font-medium text-[var(--brd-ink)]">
-              Inspector
-            </p>
-            <Button
-              type="button"
-              size="xs"
-              variant="ghost"
-              className="min-h-11"
-              onClick={() => setInspectorMobileOpen(false)}
-            >
-              Zamknij
-            </Button>
-          </div>
-          <div className="flex max-h-[calc(70vh-3rem)] flex-col gap-3 overflow-y-auto p-3">
-            {inspectorTabs}
-            {inspectorContent}
-          </div>
-        </div>
-      ) : null}
+      <StudioInspectorOverlay
+        open={inspectorOverlayOpen && !inspectorDesktopRail}
+        context={inspectorContext}
+        onClose={closeInspectorOverlay}
+      >
+        {inspectorContent}
+      </StudioInspectorOverlay>
 
       {mixerOpen ? (
         <section
@@ -2208,6 +2210,75 @@ function StudioEditorInner({
   );
 }
 
+function TrackInspectorPanel({
+  track,
+  trackCount,
+  maxTracks,
+  onOpenEffects,
+  onOpenRecord,
+}: {
+  track: StudioTrackDto;
+  trackCount: number;
+  maxTracks: number;
+  onOpenEffects: () => void;
+  onOpenRecord: () => void;
+}) {
+  const isBeat = track.trackType === "BEAT";
+  return (
+    <div className="space-y-3" data-testid="studio-inspector-track">
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-[var(--brd-ink)]">{track.name}</p>
+        <p className="text-xs text-[var(--brd-mute)]">
+          {labelStudioTrackType(track.trackType)}
+          {isBeat ? " · Bit projektu (chroniony)" : ""}
+        </p>
+        <p className="font-mono text-xs tabular-nums text-[var(--brd-mute)]">
+          {formatStudioTrackCapacityLabel(trackCount, maxTracks)}
+        </p>
+      </div>
+
+      <div
+        className="space-y-1 rounded border border-[var(--brd-line)] p-2 text-xs text-[var(--brd-mute)]"
+        aria-label="Stan ścieżki (skrót)"
+      >
+        <p>
+          M: {track.muted ? "wyciszona" : "otwarta"} · S:{" "}
+          {track.solo ? "solo" : "—"} · R:{" "}
+          {track.recordArmed ? "uzbrojona" : "—"}
+        </p>
+        <p className="font-mono tabular-nums">
+          Gain {track.gainDb.toFixed(1)} dB · Pan {track.pan.toFixed(2)}
+        </p>
+        <p>Sterowanie M/S/R: nagłówek ścieżki · Gain/Pan/Meter: Mixer</p>
+      </div>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="min-h-11 w-full"
+        aria-label={`Efekty ścieżki ${track.name}`}
+        data-testid="studio-inspector-track-fx"
+        onClick={onOpenEffects}
+      >
+        {studioFxEntryLabel(track.effectsChain)}
+      </Button>
+
+      {!isBeat ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 w-full"
+          onClick={onOpenRecord}
+        >
+          Nagraj na tej ścieżce
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 function ClipEditPanel({
   clip,
   playheadMs,
@@ -2315,7 +2386,10 @@ function ClipEditPanel({
   }
 
   return (
-    <div className="min-w-0 space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3">
+    <div
+      className="min-w-0 space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+      data-testid="studio-inspector-clip"
+    >
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--brd-ink)]">
@@ -2337,6 +2411,25 @@ function ClipEditPanel({
         >
           Odznacz
         </Button>
+      </div>
+
+      <div
+        className="space-y-1 rounded border border-dashed border-[var(--brd-line)] p-2 text-xs text-[var(--brd-mute)]"
+        data-testid="studio-inspector-clip-source"
+        aria-label="Źródło pliku (tylko odczyt)"
+      >
+        <p className="font-medium text-[var(--brd-ink)]">Źródło / plik</p>
+        <p>Rodzaj: {clip.sourceKind}</p>
+        {clip.sourceTakeId ? (
+          <p className="font-mono break-all">Take: {clip.sourceTakeId}</p>
+        ) : null}
+        {clip.sourceBeatId ? (
+          <p className="font-mono break-all">Bit: {clip.sourceBeatId}</p>
+        ) : null}
+        <p className="font-mono tabular-nums">
+          Offset źródła: {formatStudioTimeMs(clip.sourceOffsetMs)}
+        </p>
+        <p>Take/bit jest niemodyfikowalny — edytujesz tylko klip na osi.</p>
       </div>
 
       <div
