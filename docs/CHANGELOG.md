@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-08 — PHASE 7.1.4 MIXER DOCK PRODUCTION GREEN + SSOT RECONCILIATION
+
+**Status:** **Phase 7.1.4 — CLOSED / IMPLEMENTATION GREEN · LAND GREEN · PRODUCTION VERIFIED — GREEN**
+**Scope:** Living SSOT tip (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · architecture index · freeze · closeout · DECISION_LOG · this entry)
+**Production release tip:** `9abc1b6` (`9abc1b647a042201ad263466aaecd984033a9b2a`) · dpl `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` · READY / GREEN · https://www.bitrymdym.pl
+**Previous production tip (HISTORY):** `8f6eeca` — Phase 7.1.3 Inspector IA
+**LAND commit:** `feat(studio): land phase 7.1.4 mixer dock`
+**Decisions:** OD-P7.1.4-01…04 = **A** (desktop bottom dock · thin chrome + chevron · tablet/mobile sheet + XOR · Master sticky-first)
+**Architecture:** 1 StudioAudioEngine · 1 Studio AudioContext · reuses `doc` / `engineDocument` / `selectedTrackId` / `patchTrack` / `patchMasterMix` · Mixer does **not** own AC/engine/analyser/rAF/selection store
+**Security / DB:** no DB · no API · no RLS · no Auth · no Storage · no CAS · no Premium · no E3 · no PlayerProvider changes
+**Tests (LAND):** 7.1.4 **13/13** · focused P5+P6+7.1.1–7.1.4 **80/80** · Studio **627/627** · full **1785 PASS / 1 SKIP** · typecheck/build/scoped lint PASS · ambient lint baseline 40/223 (not a 7.1.4 regression) · flaky `p3-claim-live` PASS on retry (out of scope)
+**Production verify:** routes `/` `/beats` `/account` `/studio` = 200 · Desktop/Tablet/Mobile Mixer PASS · XOR PASS · Master sticky PASS · Gain/Pan persistence PASS · disposable cleaned · real project `a8b42570-…` unchanged (`document_version=1` · 2 tracks · 0 clips)
+**Evidence:** [P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) · [P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md)
+**Repo tip after docs reconcile:** verify `git rev-parse HEAD` · may ≠ PRODUCTION APP `9abc1b6` · **NO REDEPLOY** of docs tip
+**Next:** STOP · do **not** start Phase 7.1.5 without Owner GO
+
 ## 2026-10-08 — PHASE 3 PRODUCTION USER CLEANUP + USER-ID-01 DOC RECONCILIATION
 
 **Status:** **PHASE 3 GREEN** · **Phase 4 documentation reconciliation** (docs only)

@@ -232,6 +232,22 @@ OD-P3-01…11 **CLOSED / IMPLEMENTED** (see DECISION_LOG).
 
 ---
 
+## Phase 7.1.4 — Mixer Dock / Chrome
+
+**Status:** **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** @ `9abc1b6` · dpl `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww`
+**Prior tip (HISTORY):** `8f6eeca` — Phase 7.1.3 Inspector IA (CLOSED · do not reopen)
+
+| ID | Temat | Status |
+|----|--------|--------|
+| OD-P7.1.4-01 | Desktop Mixer placement | **CLOSED / ACCEPTED** — A · bottom collapsible dock |
+| OD-P7.1.4-02 | Collapsed chrome | **CLOSED / ACCEPTED** — A · thin bar + chevron |
+| OD-P7.1.4-03 | Tablet/mobile surface | **CLOSED / ACCEPTED** — A · bottom sheet/drawer + XOR |
+| OD-P7.1.4-04 | Master sticky | **CLOSED / ACCEPTED** — A · sticky-first |
+
+**SSOT:** [P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md](./P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) · [closeout](../audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) · [DECISION_LOG](./DECISION_LOG.md)
+
+---
+
 ## Szablon decyzji (do użycia w `DECISION_LOG.md`)
 
 ```text

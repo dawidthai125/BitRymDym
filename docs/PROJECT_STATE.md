@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-08 — **USER-ID-01 reconciled after PHASE 3 user cleanup (GREEN)** · production users=`1` · Dawid=`1`/ADMIN · next=`2` · P4.6 TAKE_EXPORT CLOSED/GREEN · PRODUCTION APP `a72fed9` · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **Phase 7.1.4 Mixer Dock CLOSED / PRODUCTION GREEN** @ `9abc1b6` · dpl `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` · prior `8f6eeca` (7.1.3) · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 
 ---
 
@@ -21,18 +21,20 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | **`65ebc46`** (`65ebc46e779f499a368a81627ae0ef71093336de`) — docs tip after P4.6 closeout · verify `git rev-parse HEAD` · **≠** production app |
-| **PRODUCTION APP SHA** | `a72fed9e85db71acc900df6fe88b4e7b0faa4765` (**`a72fed9`**) — P4.6 TAKE_EXPORT · READY / GREEN |
-| **PRODUCTION DEPLOYMENT** | `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · READY |
-| **DUAL-PLANE NOTE** | REPOSITORY TIP `65ebc46` ≠ PRODUCTION APP `a72fed9` · **NO REDEPLOY** of docs tip |
-| **PREVIOUS PRODUCTION TIP (HISTORY)** | `836679a` · `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` — Checkbox UX baseline |
+| **REPOSITORY HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after Phase 7.1.4 SSOT reconcile · may **≠** production app |
+| **PRODUCTION APP SHA** | `9abc1b647a042201ad263466aaecd984033a9b2a` (**`9abc1b6`**) — Phase 7.1.4 Mixer Dock · READY / GREEN |
+| **PRODUCTION DEPLOYMENT** | `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` · READY |
+| **DUAL-PLANE NOTE** | REPOSITORY tip (docs-only) may ≠ PRODUCTION APP `9abc1b6` · **NO REDEPLOY** of docs tip |
+| **PREVIOUS PRODUCTION TIP (HISTORY)** | `8f6eeca` — Phase 7.1.3 Inspector IA · older: `a72fed9` (P4.6) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **STUDIO BASELINE** | **Phase 7.1.4 Mixer Dock CLOSED / GREEN** @ `9abc1b6` · **7.1.3 Inspector CLOSED / GREEN** @ `8f6eeca` · **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **CATALOG** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
 | **STORAGE** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) |
 | **SECURITY** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
 | **MOBILE** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** |
-| **LAST STUDIO VERIFY** | Checkbox gate **GREEN** @ `836679a` · prior V1 @ `56b629e` |
+| **LAST STUDIO VERIFY** | Phase 7.1.4 Mixer Dock **GREEN** @ `9abc1b6` · prior 7.1.3 @ `8f6eeca` · Checkbox @ `836679a` · V1 @ `56b629e` |
+| **Phase 7.1.4 Mixer Dock** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `9abc1b6` · dpl `dpl_7nZZ…` · OD-P7.1.4-01…04=A · [freeze](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) · [closeout](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) |
+| **Phase 7.1.3 Inspector IA** | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (do not reopen) |
 | **D02 (anon claim live harness)** | **CLOSED** @ `44dc22c` — **TEST ONLY** (not a production app change) |
 | **P5.7 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_7_STUDIO_ARCHITECTURE_AUDIT.md) |
 | **P5.9 Architecture Audit** | **COMPLETE — GO WITH CONDITIONS** — [audit](./architecture/P5_9_STUDIO_ARCHITECTURE_AUDIT.md) |
@@ -51,9 +53,9 @@
 | **STUDIO PROJECT LIST UX / DELETE** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `2c4b416` (ancestry) · [gate](./audits/STUDIO_PROJECT_LIST_UX_DELETE_PRODUCTION_GATE.md) |
 | **STUDIO CUSTOM CHECKBOX UX** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `836679a` · [gate](./audits/STUDIO_PROJECT_CHECKBOX_UX_PRODUCTION_GATE.md) |
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
-| **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` / `dpl_8PDy…` · Phase 1–3 DONE · production LIVE E2E MP3_192 (take-only · FFmpeg/libmp3lame · 192000 bps · signed download PASS · non-owner DENIED) · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) · [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
+| **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **NEXT UNIT** | **STOP** — **P6.8 NOT STARTED / OWNER DECISION** · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
+| **NEXT UNIT** | **STOP** — **Phase 7.1.5 / P6.8 NOT STARTED / OWNER DECISION** · no Automation / Autotune / E3 Studio Render / Undo / Autosave / Contabo |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -83,24 +85,32 @@
 ## 3. Current Phase
 
 ```text
-CURRENT PHASE                 = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ a72fed9
-PRODUCTION APP                = a72fed9 · P4.6 TAKE_EXPORT · READY / GREEN
-PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
-  prior tips (HISTORY)        = 836679a (checkbox) · 0f2169a · 2c4b416 · 56b629e (V1) · 06c60b5 (P6.7)
-REPOSITORY HEAD / origin/main = 65ebc46 · ≠ PRODUCTION APP a72fed9 · NO REDEPLOY
+CURRENT PHASE                 = Phase 7.1.4 CLOSED / PRODUCTION GREEN · BASELINE @ 9abc1b6
+PRODUCTION APP                = 9abc1b6 · Phase 7.1.4 Mixer Dock · READY / GREEN
+PRODUCTION DEPLOYMENT         = dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww
+  prior tips (HISTORY)        = 8f6eeca (7.1.3) · a72fed9 (P4.6) · 836679a (checkbox) · 56b629e (V1) · 06c60b5 (P6.7)
+REPOSITORY HEAD / origin/main = verify git rev-parse HEAD · may ≠ PRODUCTION APP 9abc1b6 · NO REDEPLOY
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3)
 SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
 MOBILE                        = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
 P0 / P1 / P2 / P3             = 0 / 0 / 2 / 5
+PHASE 7.1.5                   = NOT STARTED · OWNER GO REQUIRED
 P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
 P4 CORE                       = SHIPPED @ bface6c ⊂ 836679a
-P4.6 TAKE_EXPORT              = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
-                              · Phase 1–3 DONE · deploy DONE · post-deploy DONE · LIVE E2E DONE
-                              · evidence: P4_6_PRODUCTION_CLOSEOUT.md + Phase 1/2/3 + E3 audit + LIVE_WORKER (HISTORY)
+P4.6 TAKE_EXPORT              = CLOSED / GREEN @ a72fed9 (ancestry)
 P4 LOCAL WIP                  = context? + p4-live-verify · NOT PRODUCTION · NOT BASELINE
 SA-07                         = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
-LAST STUDIO VERIFY            = Checkbox GREEN @ 836679a
+LAST STUDIO VERIFY            = Phase 7.1.4 Mixer Dock GREEN @ 9abc1b6
+PHASE 7.1.4 MIXER DOCK        = CLOSED / IMPLEMENTATION GREEN · LAND GREEN · PRODUCTION GREEN
+                              · OD-P7.1.4-01…04 = A
+                              · desktop bottom collapsible dock · collapsed thin bar + chevron
+                              · tablet/mobile bottom sheet · Inspector/Mixer XOR · Master sticky-first
+                              · 1 StudioAudioEngine · 1 AudioContext · no new Mixer audio architecture
+                              · no DB/API/RLS/Auth/Storage/CAS/Premium/E3/PlayerProvider changes
+                              · freeze: decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md
+                              · closeout: audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md
+PHASE 7.1.3 INSPECTOR IA      = CLOSED / PRODUCTION GREEN @ 8f6eeca · DO NOT REOPEN
 P6.7 DB MIGRATIONS (prod ID)  = 20261007061035 · 20261007061049 (historical)
 V1 DB MIGRATIONS (prod ID)    = 20261007080752 · 20261007080758 · 20261007080800 (historical)
 P6.7 RPCs                     = studio_cas_apply_clip_fades · geometry_fades · split
@@ -151,18 +161,13 @@ STUDIO P5 (canonical table):
        freeze                            = docs/decisions/P6_6_STUDIO_TRACK_METERING_DESIGN_FREEZE.md
        audit                             = docs/architecture/P6_6_STUDIO_ARCHITECTURE_AUDIT.md
   P6.7 Clip Fades                        = PRODUCTION VERIFIED — GREEN @ 06c60b5 · CLOSED
-       P6.7.1 runtime                    = COMPLETE @ 8750ab9
-       P6.7.2 persistence/CAS            = COMPLETE @ b21c6dc
-       P6.7.3 UI                         = COMPLETE @ 1305385
-       P6.7.x Trim/Split fades           = COMPLETE @ 06c60b5
-       P6.7.4 production gate            = COMPLETE · GREEN @ 06c60b5 · first docs tip e136558 · full reconcile c767d12+
        freeze                            = docs/decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md
        audit                             = docs/architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md
+  Phase 7.1.3 Inspector IA               = CLOSED / PRODUCTION GREEN @ 8f6eeca
+  Phase 7.1.4 Mixer Dock                 = CLOSED / PRODUCTION GREEN @ 9abc1b6
+       freeze                            = docs/decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md
+       closeout                          = docs/audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md
   POST-RECORDING V1                      = PRODUCTION VERIFIED — GREEN · CLOSED @ 56b629e
-       PR-01/02 gain/mute                = COMPLETE @ 1a62158
-       PR-03/04/05 dup/CAS/UX            = COMPLETE @ 3216cf0
-       PR-06 production gate             = COMPLETE · GREEN @ 56b629e
-       dpl                               = dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei · GH 6908396342
        gate                              = docs/audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md
   D02 live harness                       = CLOSED @ 44dc22c · TEST ONLY
 
@@ -186,11 +191,11 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-CURRENT                       = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ a72fed9
-                              · Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
-NEXT GATE                     = STOP — P6.8 NOT STARTED / OWNER DECISION
-                              · do NOT force-redeploy
-                              · do NOT reopen V1 / P6.7 / list UX / P6.6 / P6.5 Scenario B / P4.6
+CURRENT                       = Phase 7.1.4 CLOSED / PRODUCTION GREEN · BASELINE @ 9abc1b6
+                              · 7.1.3 / P4.6 / Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
+NEXT GATE                     = STOP — Phase 7.1.5 / P6.8 NOT STARTED / OWNER DECISION
+                              · do NOT force-redeploy / do NOT redeploy for docs tip
+                              · do NOT reopen 7.1.3 / 7.1.4 / V1 / P6.7 / P6.6 / P6.5 Scenario B / P4.6
                               · do NOT permanently enable Contabo without Owner GO
                               · do NOT commit P4 local seam / SA-07 untracked without Owner GO
                               · Owner decides next unit
@@ -402,18 +407,19 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm REPOSITORY HEAD / origin/main = 65ebc46
-                 → Confirm PRODUCTION APP = a72fed9 · dpl dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
-                 → Confirm REPO 65ebc46 ≠ PRODUCTION APP a72fed9 · NO REDEPLOY
+                 → Confirm REPOSITORY HEAD / origin/main = verify git rev-parse HEAD
+                 → Confirm PRODUCTION APP = 9abc1b6 · dpl dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww
+                 → Confirm REPO tip may ≠ PRODUCTION APP 9abc1b6 · NO REDEPLOY
+                 → Confirm Phase 7.1.4 Mixer Dock = CLOSED / PRODUCTION GREEN
+                 → Confirm Phase 7.1.3 Inspector IA = CLOSED @ 8f6eeca (do not reopen)
                  → Confirm Catalog 17 · Storage orphans 0 · Security GREEN
                  → Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
-                 → Confirm P6.8 = NOT STARTED / OWNER DECISION
-                 → Confirm P4.6 TAKE_EXPORT = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+                 → Confirm Phase 7.1.5 / P6.8 = NOT STARTED / OWNER DECISION
                  → Confirm Contabo worker = STOPPED / DISABLED
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
                  → NEXT GATE = STOP — Owner decides next unit
-                 → Do NOT reimplement V1 / P6.7 / P6.6 / P4.6 / closed P5 units
+                 → Do NOT reimplement Mixer audio architecture / 7.1.3 / V1 / P6.7 / P6.6 / P4.6
                  → Do NOT commit P4 context? seam / SA-07 untracked without Owner GO
                  → Do NOT call punch “P5.7” / “P5.9” / “P5.10”
                  → p_take_id = NON-BLOCKING follow-up only (do not auto-implement)
@@ -429,6 +435,8 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
 
 | ID / Track | Decision | Delivery |
 |------------|----------|----------|
+| OD-P7.1.4-01…04 | **CLOSED / ACCEPTED** (A/A/A/A) | Phase 7.1.4 Mixer Dock **CLOSED / PRODUCTION VERIFIED — GREEN** @ `9abc1b6` |
+| Phase 7.1.3 Inspector IA | CLOSED | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (do not reopen) |
 | OD-PL-01…06 | **CLOSED / ACCEPTED** | POLISH-01 **CLOSED / PRODUCTION VERIFIED** @ `579acb3` + residual `1c63080` |
 | P0 PLATFORM deny | Owner GO | **CLOSED / PRODUCTION VERIFIED** @ `fdfff71` |
 | P1 Sample Policy | Owner GO | **CLOSED / PRODUCTION VERIFIED** @ `5927e35` |

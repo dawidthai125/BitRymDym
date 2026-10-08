@@ -10,6 +10,25 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### OD-P7.1.4-01…04 — Mixer Dock / Chrome — CLOSED / PRODUCTION GREEN
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — Phase 7.1.4 Design Freeze + Implementation + LAND + Production Verify |
+| Status | **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** |
+| Date | 2026-10-08 |
+| LAND / Production SHA | `9abc1b647a042201ad263466aaecd984033a9b2a` (`9abc1b6`) |
+| Deploy | `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` · https://www.bitrymdym.pl |
+| Previous tip (HISTORY) | `8f6eeca` — Phase 7.1.3 Inspector IA |
+
+**Locked:** OD-01 Desktop placement **A** (bottom collapsible dock) · OD-02 Collapsed chrome **A** (thin bar + chevron) · OD-03 Tablet/mobile **A** (bottom sheet/drawer + Inspector/Mixer XOR) · OD-04 Master **A** (sticky-first).
+
+**Architecture:** 1 StudioAudioEngine · 1 Studio AudioContext · reuse `doc` / `engineDocument` / `selectedTrackId` / `patchTrack` / `patchMasterMix` · Mixer does not own AC/engine/analyser/rAF/selection store · no DB/API/RLS/Auth/Storage/CAS/Premium/E3/PlayerProvider changes.
+
+**SSOT:** [P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md](./P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) · [P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md](../audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md)
+
+---
+
 ### Fala 3.5.1 — Recording Experience Production Verification — CLOSED / GREEN
 
 | Pole | Wartość |
