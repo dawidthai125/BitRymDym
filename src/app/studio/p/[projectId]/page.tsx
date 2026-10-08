@@ -40,10 +40,10 @@ export default async function StudioProjectPage({ params }: PageProps) {
 
   return (
     <AppShell tone="studio">
-      <main className="pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4">
+      <main className="overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4">
         <PageFrame
           width="full"
-          className="flex min-h-[calc(100dvh-4.5rem)] flex-col gap-2 py-2 sm:py-3"
+          className="flex min-h-[calc(100dvh-4.5rem)] flex-col gap-2 overflow-x-hidden py-2 sm:py-3"
         >
           <div className="flex items-center justify-between gap-2">
             <Link

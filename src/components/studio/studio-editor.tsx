@@ -108,7 +108,8 @@ export type StudioTrackCapacityProps = {
 /** Phase 1 DAW — track header / timeline lane shared row height (px). */
 const STUDIO_DAW_LANE_HEIGHT_PX = 52;
 const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[240px] sm:w-[260px]";
-const STUDIO_DAW_CHIP_CLASS = "h-10 min-h-10 min-w-10 w-10 px-0";
+/** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
+const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
 
 export function StudioEditor({
   initialDocument,
@@ -1274,9 +1275,13 @@ function StudioEditorInner({
   return (
     <div
       data-testid="studio-daw-shell"
-      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-1.5"
+      data-studio-shell="true"
+      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-1.5 overflow-x-hidden"
     >
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--brd-line)] pb-2">
+      <header
+        data-testid="studio-header"
+        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--brd-line)] pb-2"
+      >
         <div className="min-w-0 space-y-0.5">
           <h1 className="brd-display truncate text-xl font-semibold tracking-tight sm:text-2xl">
             {doc.project.title}
@@ -1458,11 +1463,13 @@ function StudioEditorInner({
         className="flex flex-wrap items-center gap-2"
         role="toolbar"
         aria-label="Edycja osi czasu"
+        data-testid="studio-edit-toolbar"
       >
         <Button
           type="button"
           size="sm"
           variant={timelineMode === "seek" ? "default" : "outline"}
+          className="min-h-11"
           disabled={recordingLocked}
           onClick={() => setMode("seek")}
         >
@@ -1472,6 +1479,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant={timelineMode === "edit" ? "default" : "outline"}
+          className="min-h-11"
           disabled={recordingLocked}
           onClick={() => setMode("edit")}
         >
@@ -1481,6 +1489,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           disabled={recordingLocked || pending || !selectedClip}
           title="Podziel w playhead"
           onClick={() =>
@@ -1500,6 +1509,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           disabled={recordingLocked || !selectedClip}
           title="Usuń klip"
           onClick={() => {
@@ -1573,6 +1583,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant={snapPreset === "off" ? "outline" : "default"}
+          className="min-h-11"
           aria-pressed={snapPreset !== "off"}
           title={`Snap: ${studioSnapPresetLabel(snapPreset)} (kliknij aby zmienić: OFF / 20 / 100 / 1000 ms)`}
           onClick={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
@@ -1583,6 +1594,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           title="Pomniejsz oś czasu"
           onClick={() =>
             zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current))
@@ -1594,6 +1606,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           title="Powiększ oś czasu"
           onClick={() =>
             zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current))
@@ -1605,6 +1618,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
+          className="min-h-11"
           title="Dopasuj oś czasu do szerokości"
           onClick={() => {
             const el = timelineScrollRef.current;
@@ -1623,7 +1637,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
-          className="xl:hidden"
+          className="min-h-11 xl:hidden"
           aria-expanded={inspectorMobileOpen}
           onClick={() => setInspectorMobileOpen((open) => !open)}
         >
@@ -1633,6 +1647,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant={mixerOpen ? "default" : "outline"}
+          className="min-h-11"
           aria-pressed={mixerOpen}
           aria-expanded={mixerOpen}
           onClick={() => setMixerOpen((open) => !open)}
@@ -1657,7 +1672,7 @@ function StudioEditorInner({
               const isBeat = track.trackType === "BEAT";
               return (
                 <div
-                  data-testid="studio-mix-track"
+                  data-testid="studio-track-header"
                   data-track-id={track.id}
                   data-selected={isSelected ? "true" : "false"}
                   className={`flex items-center gap-1 border-b border-[var(--brd-line)] px-1 ${
@@ -1676,7 +1691,7 @@ function StudioEditorInner({
                         ? `Odznacz ścieżkę ${track.name}`
                         : `Wybierz ścieżkę ${track.name}`
                     }
-                    data-testid="studio-mix-track-select"
+                    data-testid="studio-track-header-select"
                     onClick={() =>
                       setSelectedTrackId(isSelected ? null : track.id)
                     }
@@ -1745,7 +1760,7 @@ function StudioEditorInner({
                     type="button"
                     size="xs"
                     variant="ghost"
-                    className="h-10 min-h-10 min-w-8 px-0"
+                    className="h-11 min-h-11 min-w-11 px-0"
                     disabled={pending || index === 0}
                     title="Przenieś w górę"
                     aria-label="Przenieś ścieżkę w górę"
@@ -1769,7 +1784,7 @@ function StudioEditorInner({
                     type="button"
                     size="xs"
                     variant="ghost"
-                    className="h-10 min-h-10 min-w-8 px-0"
+                    className="h-11 min-h-11 min-w-11 px-0"
                     disabled={pending || index === doc.tracks.length - 1}
                     title="Przenieś w dół"
                     aria-label="Przenieś ścieżkę w dół"
@@ -1848,6 +1863,7 @@ function StudioEditorInner({
 
         <aside
           data-testid="studio-inspector-desktop"
+          data-studio-inspector="desktop"
           className="hidden w-[300px] shrink-0 flex-col gap-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 xl:flex"
           aria-label="Inspector"
         >
@@ -1861,6 +1877,8 @@ function StudioEditorInner({
           className="fixed inset-x-0 bottom-0 z-40 max-h-[70vh] overflow-hidden rounded-t-lg border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg xl:hidden"
           role="dialog"
           aria-label="Inspector"
+          data-testid="studio-inspector-mobile"
+          data-studio-inspector="mobile"
         >
           <div className="flex items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3 py-2">
             <p className="text-sm font-medium text-[var(--brd-ink)]">
@@ -1886,6 +1904,7 @@ function StudioEditorInner({
       {mixerOpen ? (
         <section
           data-testid="studio-mixer-drawer"
+          data-studio-mixer="true"
           aria-label="Mix"
           className="space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
         >
@@ -2555,6 +2574,7 @@ function StudioTransportBar({
       className="sticky top-14 z-20 shrink-0 space-y-1 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1.5 sm:top-2"
       role="region"
       aria-label="Transport Studio"
+      data-testid="studio-transport"
     >
       {noBeat ? (
         <div className="space-y-2">
@@ -2758,11 +2778,13 @@ function StudioTimeline({
       className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_2%)]"
       role="region"
       aria-label="Oś czasu projektu"
+      data-testid="studio-timeline"
     >
       <div className="flex min-h-0 min-w-0 flex-1">
         {hasHeaders ? (
           <div
             className={`${STUDIO_DAW_HEADER_WIDTH_CLASS} flex shrink-0 flex-col border-r border-[var(--brd-line)]`}
+            data-testid="studio-track-list"
           >
             <div
               className="flex h-6 shrink-0 items-center border-b border-[var(--brd-line)] px-2 text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]"
@@ -2881,7 +2903,7 @@ function StudioTimeline({
           step={1}
           value={playheadMs}
           disabled={interactionLocked}
-          className="mt-1 w-full"
+          className="mt-1 h-11 w-full"
           aria-label="Pozycja playhead"
           onChange={(e) => onSeek(Math.round(Number(e.target.value)))}
         />
