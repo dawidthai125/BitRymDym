@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · REPO `65ebc46` · PRODUCTION APP `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **USER-ID-01 reconciled after PHASE 3 user cleanup (GREEN)** · production users=`1` · Dawid=`1`/ADMIN · next=`2` · P4.6 TAKE_EXPORT CLOSED/GREEN · PRODUCTION APP `a72fed9` · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 
 ---
 
@@ -29,7 +29,7 @@
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
 | **STUDIO BASELINE** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **CATALOG** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
-| **STORAGE** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio **13** |
+| **STORAGE** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) |
 | **SECURITY** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
 | **MOBILE** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** |
 | **LAST STUDIO VERIFY** | Checkbox gate **GREEN** @ `836679a` · prior V1 @ `56b629e` |
@@ -65,7 +65,8 @@
 | **USER-FACING POLISH (historical)** | CLOSED @ `ffe723b` — **superseded living tip by POLISH-01** |
 | **ADMIN USER MANAGEMENT** | W3 @ `237a86f` · W4 @ `ddcee65` · **CLOSED / PRODUCTION VERIFIED** |
 | **CREATOR PROGRESS W1 / W2-A / W2-B** | PRODUCTION VERIFIED (W2-B WITH NON-BLOCKING FINDING) — still in tree |
-| **USER-ID-01** | **CLOSED / PRODUCTION VERIFIED — GREEN** · Dawid=`1` · next=`2` |
+| **USER-ID-01** | **CLOSED / PRODUCTION VERIFIED — GREEN** · reconciled after PHASE 3 cleanup · Dawid=`1` / ADMIN · next=`2` · production users=`1` |
+| **PHASE 3 USER CLEANUP** | **COMPLETE / GREEN** (2026-10-08) · deleted **421** test accounts · KEEP Dawid · one-time sequence reset → next=`2` · **not** normal reuse |
 | **ACCOUNT / PROFILE-01** | **PRODUCTION VERIFIED — GREEN** |
 | **ARCH-04/05 orphan GC** | **CLOSED / VERIFIED** · live **11 / 8 / 3 / 0 / 0** |
 | **FAR-01** | SOAK COMPLETE / CONTAMINATED · retirement NOT EXECUTED · **NOT CLOSED** |
@@ -88,7 +89,7 @@ PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
   prior tips (HISTORY)        = 836679a (checkbox) · 0f2169a · 2c4b416 · 56b629e (V1) · 06c60b5 (P6.7)
 REPOSITORY HEAD / origin/main = 65ebc46 · ≠ PRODUCTION APP a72fed9 · NO REDEPLOY
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
-STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio 13
+STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3)
 SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
 MOBILE                        = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
 P0 / P1 / P2 / P3             = 0 / 0 / 2 / 5
@@ -173,7 +174,11 @@ P0 / P1 / P2 (recording security track) = CLOSED / PRODUCTION VERIFIED · UNCHAN
 BPM                           = CLOSED / PRODUCTION VERIFIED
 ARCH-05                       = CLOSED / VERIFIED · live 11/8/3/0/0
 ADMIN W0–W4                   = CLOSED / PRODUCTION VERIFIED
-USER-ID-01                    = CLOSED / PRODUCTION VERIFIED
+USER-ID-01                    = CLOSED / PRODUCTION VERIFIED — GREEN
+  production users / profiles = 1 / 1
+  Owner                       = Dawid · ADMIN · user_number 1 · UUID fdf04726-e971-42a7-9d46-8b9bdd099c23
+  next registration           = user_number 2 (seq last_value=1 / is_called=true)
+  PHASE 3 cleanup             = COMPLETE / GREEN · 421 deleted · one-time Owner setval · normal DELETE ≠ reuse
 
 LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
   full backup                 = local-layer2-full-20261005T040146Z-42d6212b · 43/43

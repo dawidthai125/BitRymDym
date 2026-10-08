@@ -39,7 +39,24 @@ Prior OWNER APPROVED contracts below remain the freeze SSOT. Live identity snaps
 
 **At freeze approval (historical):** Dawid=`1` · Tajski=`NULL` (valid ksywka) · USER beats=`0`.
 
-**After ACCOUNT/PROFILE-01 production verify + Delete Account E2E (2026-10-03):** Dawid only (`user_number=1`) · Tajski Auth/profile **deleted** · auth/profiles=`1` · platform beats=`3` retained · USER-ID-01 no renumber/reuse.
+**After ACCOUNT/PROFILE-01 production verify + Delete Account E2E (2026-10-03) — HISTORY:** Dawid only (`user_number=1`) · Tajski Auth/profile **deleted** · auth/profiles=`1` · platform beats=`3` retained · USER-ID-01 no renumber/reuse.
+
+### PHASE 3 — PRODUCTION USER CLEANUP closeout (2026-10-08) — CURRENT
+
+Owner-approved destructive cleanup of environmental/test accounts. **Not** normal product delete reuse.
+
+| Field | Value |
+|-------|--------|
+| PRE-CLEANUP users | **422** (`auth.users` = `profiles`) |
+| Deleted test users | **421** |
+| Retained production owner | **1** — Dawid · UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23` · `user_number=1` · `ADMIN` |
+| Post-cleanup users / profiles | **1** / **1** |
+| PRE-CLEANUP sequence (HISTORY) | `user_number_seq` `last_value=2038` / `is_called=true` |
+| Sequence reset | ONE-TIME OWNER-APPROVED · `setval(..., 1, true)` → next registration `user_number=2` |
+| Platform beats (`owner_id` NULL) | **17** preserved |
+| Normal DELETE contract | **UNCHANGED** — delete does **not** release/reuse `user_number` |
+
+Evidence plane: PHASE 3 — PRODUCTION CLEANUP (GREEN). Documentation reconciliation = Phase 4.
 
 ---
 
@@ -184,7 +201,9 @@ Sequence includes **created_by nullify (service_role) before anonymize/Auth dele
 PUBLIC: ksywka · ADMIN: ksywka + `user_number` · MODERATOR: no foreign number · never email/UUID/`user_number` as public author.
 
 ### USER-ID-01
-Unchanged: immutable · unique · no reuse · delete does not release number · Tajski stays NULL.
+Standing contract **unchanged:** immutable · unique · **normal delete does not release/reuse** number · sequence remains SSOT allocation.
+
+**Exception (documented, closed):** ONE-TIME OWNER-APPROVED cleanup + sequence reset after PHASE 3 (421 test accounts removed · Dawid kept as `1` · next signup `2`). Tajski numbering (OD-12) remains historical — Tajski already deleted; do not renumber. **Do not** repeat the reset.
 
 ---
 

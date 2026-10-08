@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · REPO `65ebc46` · PRODUCTION APP `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **USER-ID-01 reconciled after PHASE 3 production user cleanup (GREEN)** · production users=`1` · Dawid=`1`/ADMIN · next=`2` · P4.6 TAKE_EXPORT CLOSED/GREEN · REPO tip may advance docs-only · PRODUCTION APP `a72fed9` · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 **Type:** Documentation continuity · dual-plane tip (REPO ≠ PRODUCTION) · next = Owner decision only (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
@@ -49,7 +49,7 @@ P6.5 Scenario A               = PASS / PROVEN · Scenario B BLOCKED / INCONCLUSI
 
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE beat-audio            = GREEN · 17 platform · orphans 0
-STORAGE take-audio            = 13 objects
+STORAGE take-audio            = KEEP Dawid objects retained · test-user Storage cleaned in PHASE 3
 SECURITY                      = GREEN · GET /api/studio/projects → 401 unauth
                               · studio_cas_* anon/authenticated DENIED · service_role ALLOWED
 MOBILE                        = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
@@ -66,6 +66,18 @@ NEXT GATE                     = STOP — await separate Owner decision
                               · do NOT force-redeploy
                               · do NOT permanently enable Contabo without Owner GO
                               · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7
+
+CURRENT PRODUCTION USER STATE = PHASE 3 CLEANUP COMPLETE / GREEN
+  auth.users / profiles       = 1 / 1
+  Owner                       = Dawid · user_number 1 · ADMIN
+                              · UUID fdf04726-e971-42a7-9d46-8b9bdd099c23
+  next registration           = user_number 2
+                              · seq last_value=1 · is_called=true
+  HISTORY                     = 421 test accounts deleted (PRE-CLEANUP 422)
+                              · PRE-CLEANUP seq last_value=2038 (HISTORY only)
+  sequence reset              = ONE-TIME OWNER-APPROVED · DO NOT REPEAT
+  standing contract           = normal DELETE ≠ reuse user_number
+                              · DO NOT delete Dawid · DO NOT re-setval without new Owner GO
 
 P4 CORE (eligibility foundation) = SHIPPED @ bface6c ⊂ a72fed9 (via 836679a ancestry)
 P4.6 TAKE_EXPORT              = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
@@ -137,7 +149,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 | **P2** Explicit Sample Replace | **CLOSED / PRODUCTION VERIFIED** @ `943d81e` |
 | **BPM** (+ real beats / corrections) | **CLOSED / PRODUCTION VERIFIED** |
 | **ARCH-05** orphan GC | **CLOSED / VERIFIED** · live Storage **11 / 8 / 3 / 0 / 0** |
-| **USER-ID-01** | **CLOSED / PRODUCTION VERIFIED** |
+| **USER-ID-01** | **CLOSED / PRODUCTION VERIFIED** · post–PHASE 3 · users=`1` · Dawid=`1`/ADMIN · next=`2` · one-time seq reset documented · delete ≠ reuse |
 | **ADMIN W0–W4** | **CLOSED / PRODUCTION VERIFIED** |
 | **Recording Waves 1–5 / D02** | **CLOSED / PRODUCTION VERIFIED** |
 | **E3 Full Audio** | **PRODUCTION VERIFIED — GREEN** (Premium HQ/WAV E2E: see waiver) |
@@ -153,7 +165,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 | Production app | **`a72fed9`** · **READY / GREEN** · P4.6 TAKE_EXPORT tip (Checkbox/`836679a` + V1/P6.7 ancestry) |
 | Production deployment | **`dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY`** · aliases www.bitrymdym.pl |
 | Production DB | includes P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
-| Production Storage | beat-audio **17** platform · orphans **0** · take-audio **13** · historical VPS/Local backup evidence retained |
+| Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
 | Session / operator | dirty local WIP may exist (P4 seam / SA-07 untracked) — **nie czyścić / nie commitować bez Owner GO** |
 
 **Primary continuity:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
@@ -227,7 +239,7 @@ STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFE
 | P2 Explicit Sample Replace | **CLOSED / PRODUCTION VERIFIED** |
 | POLISH-01 (+ residual) | **CLOSED / PRODUCTION VERIFIED** |
 | BPM / real beats import + corrections | **CLOSED / PRODUCTION VERIFIED** |
-| USER-ID-01 / ACCOUNT-PROFILE-01 | PRODUCTION VERIFIED |
+| USER-ID-01 / ACCOUNT-PROFILE-01 | PRODUCTION VERIFIED · users=1 · Dawid=1/ADMIN · next=2 · PHASE 3 cleanup GREEN · delete ≠ reuse |
 | ADMIN W0–W4 | PRODUCTION VERIFIED |
 | Premium HQ/WAV export capability assert | **KNOWN WAIVER** (`EXPORT_WAV`) — PRE-EXISTING / WAIVED |
 | FAR-01 campaign | SOAK COMPLETE / CONTAMINATED · **NOT CLOSED** |
@@ -543,7 +555,7 @@ REPOSITORY HEAD / origin/main = 65ebc46
 PRODUCTION APP SHA           = a72fed9 · READY / GREEN
 PRODUCTION DEPLOYMENT        = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
 NOTE                         = REPO 65ebc46 ≠ PRODUCTION APP a72fed9 · NO REDEPLOY
-CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio 13
+CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio KEEP Dawid retained (PHASE 3 cleaned test-user Storage)
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
 P0 / P1 / P2 / P3            = 0 / 0 / 2 / 5

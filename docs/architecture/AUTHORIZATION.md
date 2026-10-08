@@ -98,9 +98,11 @@ Do not document secrets.
 
 ## USER-ID-01 — Stable User Number
 
-**Status:** PRODUCTION VERIFIED — GREEN
+**Status:** PRODUCTION VERIFIED — GREEN · reconciled after PHASE 3 production user cleanup (2026-10-08)
 
-**Cleanup prerequisite:** USER-CLEANUP-01 (93 fixtures removed; KEEP was Dawid + Tajski)
+**Cleanup prerequisite (HISTORY):** USER-CLEANUP-01 (93 fixtures removed; KEEP was Dawid + Tajski)
+
+**Current production identity plane:** exactly **1** Auth user / **1** profile — Owner Dawid only (see one-time cleanup below)
 
 **Migration:** `20261003110802_user_id_01_stable_user_number.sql`
 
@@ -110,15 +112,41 @@ Do not document secrets.
 |------|--------|
 | Relational FK | Auth UUID / `profiles.id` (unchanged) |
 | Operational ID | `profiles.user_number` BIGINT NULL |
-| Sequence | `public.user_number_seq` START 1 · DEFAULT `nextval` on insert |
+| Sequence | `public.user_number_seq` — SSOT allocation · DEFAULT `nextval` on insert |
 | Unique | Partial UNIQUE where `user_number IS NOT NULL` |
-| Dawid | `user_number = 1` (UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23`) |
-| Tajski | Was `NULL` (never auto-filled) · Auth/profile **deleted** in ACCOUNT Delete Account E2E · **no** renumber/reuse |
-| Next signup | `2` (`setval(..., 1, true)`) |
+| Dawid | `user_number = 1` · role `ADMIN` · UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23` · display_name `Dawid` |
+| Tajski (HISTORY) | Was `NULL` (never auto-filled) · Auth/profile **deleted** in ACCOUNT Delete Account E2E · **no** renumber/reuse |
+| Next signup | **2** (after Owner-approved one-time `setval('public.user_number_seq', 1, true)` — inferred from `last_value=1` + `is_called=true`; **do not** call `nextval()` to “check”) |
 | Immutability | Trigger `prevent_user_number_mutation` — authenticated DENY any UPDATE change including NULL→value; INSERT DEFAULT nextval OK; `service_role` only for documented operator recovery |
 | App guard | `PROTECTED_PROFILE_FIELDS` includes `user_number` |
-| Allocation | DB sequence only — never COUNT/MAX/frontend |
+| Allocation | DB sequence only — never COUNT/MAX/frontend · never client-side |
+| Normal delete | **Does not** release or reuse `user_number` · sequence continues monotonically |
 | Messages | Future `messages.*_user_id` remain UUID FKs; `user_number` is display/lookup only |
+
+### ONE-TIME OWNER-APPROVED CLEANUP / SEQUENCE RESET
+
+**Not** a product feature. **Not** normal reuse. Owner-approved production operation only.
+
+| Fact | Value |
+|------|--------|
+| Supabase project | `rzzxrgcdogkybkiidqgw` |
+| Operation | PHASE 3 — PRODUCTION USER CLEANUP (2026-10-08) · GREEN |
+| PRE-CLEANUP baseline | `auth.users` / `profiles` = **422** · `user_number_seq` `last_value=2038` / `is_called=true` |
+| Deleted | **421** test Auth accounts (allowlist = all `auth.users.id <> KEEP`) |
+| Retained | Dawid only — UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23` · `user_number=1` · `ADMIN` |
+| Premium | **50** non-Dawid `premium_entitlements` cleared (RESTRICT blocker) |
+| Storage | Approved user-scoped + orphan objects removed · KEEP Storage + platform catalog **preserved** |
+| Sequence reset | `SELECT setval('public.user_number_seq', 1, true)` → `last_value=1` / `is_called=true` → **next generated `user_number` = 2** |
+| Dawid data preserved | takes 10 · audio_artifacts 2 · render_jobs 4 · studio_projects 1 · mix_sessions 1 |
+| Platform catalog | `beats.owner_id IS NULL` = **17** |
+
+**Standing rules after this reset (unchanged):**
+
+- Numbers are allocated only by `public.user_number_seq`
+- `user_number` remains immutable + unique
+- Authenticated users cannot change their own number
+- Ordinary Auth/account DELETE **does not** free a number for reuse
+- **Do not** repeat this sequence reset without a new Owner GO
 
 ### Visibility / RLS (unchanged policy base)
 

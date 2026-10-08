@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-08 — PHASE 3 PRODUCTION USER CLEANUP + USER-ID-01 DOC RECONCILIATION
+
+**Status:** **PHASE 3 GREEN** · **Phase 4 documentation reconciliation** (docs only)
+**Scope:** Production Auth/Storage cleanup (already executed) + USER-ID-01 docs sync — **not** an application feature
+**Supabase project:** `rzzxrgcdogkybkiidqgw`
+**KEEP:** Dawid · UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23` · `user_number=1` · `ADMIN` · data preserved (takes 10 · audio_artifacts 2 · render_jobs 4 · studio_projects 1 · mix_sessions 1)
+**Deleted:** **421** test Auth accounts (PRE-CLEANUP **422** users/profiles)
+**Premium:** **50** non-Dawid `premium_entitlements` cleared
+**Storage:** approved user-scoped objects cleaned · approved orphan Storage cleaned · KEEP Storage + platform catalog (**17** `owner_id` NULL beats) preserved
+**Sequence:** ONE-TIME OWNER-APPROVED USER-ID-01 AMENDMENT — `setval('public.user_number_seq', 1, true)` → `last_value=1` / `is_called=true` → **next user_number = 2**
+**Standing contract:** normal DELETE still **does not** reuse `user_number` · do **not** repeat reset without new Owner GO
+**Production verification:** GREEN
+**App / deploy:** NONE (no code · no migration · no Vercel · no push required for cleanup itself)
+**Docs:** AUTHORIZATION · ACCOUNT_PROFILE_01 freeze · USER_ID_01_EVIDENCE · PROJECT_STATE · MASTER_HANDOFF · FINAL_COLD_START · this entry
+
 ## 2026-10-08 — P4.6 TAKE_EXPORT PRODUCTION RELEASE + CLOSEOUT
 
 **Status:** **P4.6 TAKE_EXPORT — CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN**

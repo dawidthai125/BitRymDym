@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · REPO `65ebc46` · PRODUCTION APP `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **USER-ID-01 reconciled after PHASE 3 user cleanup (GREEN)** · production users=`1` · Dawid=`1`/ADMIN · next=`2` · P4.6 TAKE_EXPORT CLOSED/GREEN · PRODUCTION APP `a72fed9` · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -30,7 +30,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Previous production tip (HISTORY)** | `836679a` · `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` — Checkbox UX |
 | **Studio baseline** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **Catalog** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
-| **Storage** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio **13** |
+| **Storage** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) |
 | **Security** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
 | **Mobile** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** (not Real Device Verified) · P0/P1 **0** · P2 **2** · P3 **5** |
 | **Last Studio Production Verify** | Checkbox gate **GREEN** @ `836679a` · prior V1 gate @ `56b629e` · [checkbox gate](./audits/STUDIO_PROJECT_CHECKBOX_UX_PRODUCTION_GATE.md) · [V1 gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
@@ -53,8 +53,9 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **CREATOR PROGRESS W1** | **IMPLEMENTED / PRODUCTION VERIFIED WITH OPEN ITEMS** @ `76a4757` — Experience + Rank foundation · [closeout](./audits/CREATOR_PROGRESS_W1_CLOSEOUT.md) |
 | **CREATOR PROGRESS W2-A** | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` · OD-08 CLOSED · [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · [implementation](./audits/CREATOR_PROGRESS_W2A_IMPLEMENTATION.md) · [W2 Design Contract](./decisions/W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md) |
 | **CREATOR PROGRESS W2-B** | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` (still in tree; tip advanced) · ANON/FREE/BRONZE/SILVER/GOLD download E2E **PASS** · OD-17 **PASS** · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 **OPEN** · Mix/Render **DEFERRED** · [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · [Design Contract](./decisions/W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md) · [audit](./audits/CREATOR_PROGRESS_W2B_AUDIT.md) |
-| **USER-CLEANUP-01** | **EXECUTED** (fixtures) · removed FAR-01 retain-set **outside** FAR-01 retirement · orphans **32** at cleanup time · later **ARCH-05** deleted those 32 from production (living orphans **0**) |
-| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · Dawid=1 · next=2 · Tajski test account **deleted** (no renumber) |
+| **USER-CLEANUP-01** | **EXECUTED** (fixtures · HISTORY) · removed FAR-01 retain-set **outside** FAR-01 retirement · orphans **32** at cleanup time · later **ARCH-05** deleted those 32 from production (living orphans **0**) |
+| **PHASE 3 USER CLEANUP** | **COMPLETE / GREEN** (2026-10-08) · deleted **421** test Auth accounts · KEEP Dawid only · premium non-Dawid cleared · approved user-scoped + orphan Storage cleaned · platform catalog preserved |
+| **USER-ID-01** | **PRODUCTION VERIFIED — GREEN** · reconciled after PHASE 3 · production has **exactly one user** · Dawid=`1` / ADMIN · UUID `fdf04726-e971-42a7-9d46-8b9bdd099c23` · next registration **must** receive `user_number=2` · Tajski (HISTORY) deleted · **no renumber** · ordinary DELETE **≠** reuse · **do not** re-run sequence reset · **do not** delete Dawid |
 | **ACCOUNT / PROFILE-01** | **FUNCTIONALLY VERIFIED / PRODUCTION VERIFIED — GREEN** · Fresh Recovery E2E **PASS** · Delete Account E2E **PASS** · published-USER retain branch **CODE/CONTRACT VERIFIED · NOT LIVE-DATA VERIFIED** · W1 ledger CASCADE **COMPATIBLE · LIVE DELETE+LEDGER E2E OPEN** |
 | **FAR-01 DB roles** | `20261002231150` / `far01_r1_dryrun_readonly_role` · `20261003012453` / `far01_live_mutator_role` |
 | Status | **GREEN** · FAR-01 **SOAK COMPLETE / CONTAMINATED** · retirement **NOT EXECUTED** |
