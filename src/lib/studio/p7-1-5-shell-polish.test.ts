@@ -111,6 +111,175 @@ describe("Phase 7.1.5.2 — StudioFxSheet a11y parity", () => {
     expect(sheet).toMatch(/min-h-11 min-w-11/);
     expect(sheet).toMatch(/studio-fx-sheet-close/);
   });
+
+  it("FxSheet Escape uses capture + stopImmediatePropagation (top-most over Mixer)", () => {
+    const sheetStart = fx.indexOf("export function StudioFxSheet");
+    const sheet = fx.slice(sheetStart);
+    expect(sheet).toMatch(/stopImmediatePropagation\(\)/);
+    expect(sheet).toMatch(
+      /addEventListener\("keydown", onKeyDown, true\)/,
+    );
+    expect(sheet).toMatch(
+      /removeEventListener\("keydown", onKeyDown, true\)/,
+    );
+    // Mixer/Inspector remain bubble-phase (no capture) — underlying Escape after Fx closes.
+    const mixer = readFileSync(
+      join(root, "src/components/studio/studio-mixer-shell.tsx"),
+      "utf8",
+    );
+    expect(mixer).toMatch(/addEventListener\("keydown", onKeyDown\)/);
+    expect(mixer).not.toMatch(
+      /addEventListener\("keydown", onKeyDown, true\)/,
+    );
+    expect(inspectorShell).toMatch(/addEventListener\("keydown", onKeyDown\)/);
+    expect(inspectorShell).not.toMatch(
+      /addEventListener\("keydown", onKeyDown, true\)/,
+    );
+  });
+});
+
+/**
+ * Node-safe capture/bubble keydown bus (mirrors window listener phases).
+ * BEFORE: both bubble → Mixer (registered first) owns Escape while stacked.
+ * AFTER: Fx capture + stopImmediatePropagation → Fx owns Escape; Mixer stays.
+ */
+type EscapeListener = (event: {
+  key: string;
+  preventDefault: () => void;
+  stopImmediatePropagation: () => void;
+}) => void;
+
+function createStackedKeydownBus() {
+  const capture: EscapeListener[] = [];
+  const bubble: EscapeListener[] = [];
+  return {
+    add(fn: EscapeListener, useCapture = false) {
+      (useCapture ? capture : bubble).push(fn);
+      return () => {
+        const list = useCapture ? capture : bubble;
+        const i = list.indexOf(fn);
+        if (i >= 0) list.splice(i, 1);
+      };
+    },
+    dispatchEscape() {
+      let stopped = false;
+      const event = {
+        key: "Escape",
+        preventDefault() {},
+        stopImmediatePropagation() {
+          stopped = true;
+        },
+      };
+      for (const fn of [...capture]) {
+        if (stopped) break;
+        fn(event);
+      }
+      for (const fn of [...bubble]) {
+        if (stopped) break;
+        fn(event);
+      }
+    },
+  };
+}
+
+describe("Phase 7.1.5 — stacked Escape regression (Mixer + FxSheet)", () => {
+  it("CASE A: Mixer OPEN + FxSheet OPEN → Escape closes Fx only", () => {
+    let mixerOpen = true;
+    let fxOpen = true;
+    const bus = createStackedKeydownBus();
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      mixerOpen = false;
+    });
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      fxOpen = false;
+    }, true);
+
+    bus.dispatchEscape();
+    expect(fxOpen).toBe(false);
+    expect(mixerOpen).toBe(true);
+  });
+
+  it("CASE B: Mixer OPEN + FxSheet CLOSED → Escape closes Mixer", () => {
+    let mixerOpen = true;
+    const bus = createStackedKeydownBus();
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      mixerOpen = false;
+    });
+    bus.dispatchEscape();
+    expect(mixerOpen).toBe(false);
+  });
+
+  it("CASE C/D/E: FxSheet OPEN alone (desktop/tablet/mobile) → Escape closes Fx", () => {
+    let fxOpen = true;
+    const bus = createStackedKeydownBus();
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      fxOpen = false;
+    }, true);
+    bus.dispatchEscape();
+    expect(fxOpen).toBe(false);
+  });
+
+  it("CASE A second Escape: after Fx closes, Mixer Escape still works", () => {
+    let mixerOpen = true;
+    let fxOpen = true;
+    const bus = createStackedKeydownBus();
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      mixerOpen = false;
+    });
+    const removeFx = bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      fxOpen = false;
+      removeFx();
+    }, true);
+
+    bus.dispatchEscape();
+    expect(fxOpen).toBe(false);
+    expect(mixerOpen).toBe(true);
+
+    bus.dispatchEscape();
+    expect(mixerOpen).toBe(false);
+  });
+
+  it("CASE F: Fx Escape still restores via previouslyFocusedRef contract in source", () => {
+    const sheetStart = fx.indexOf("export function StudioFxSheet");
+    const sheet = fx.slice(sheetStart);
+    expect(sheet).toMatch(/previouslyFocusedRef\.current\?\.focus/);
+    expect(sheet).toMatch(/stopImmediatePropagation\(\)/);
+  });
+
+  it("BEFORE: Fx capture WITHOUT stopImmediatePropagation still lets Mixer close", () => {
+    let mixerOpen = true;
+    let fxOpen = true;
+    const bus = createStackedKeydownBus();
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      mixerOpen = false;
+    });
+    bus.add((event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      // Missing stopImmediatePropagation → Mixer bubble still runs.
+      fxOpen = false;
+    }, true);
+    bus.dispatchEscape();
+    expect(fxOpen).toBe(false);
+    expect(mixerOpen).toBe(false);
+  });
 });
 
 describe("Phase 7.1.5.3 — minimal transport keyboard", () => {

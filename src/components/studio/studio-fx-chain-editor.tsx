@@ -487,7 +487,11 @@ export function StudioFxSheet({
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        // Phase 7.1.5 stacked-Escape fix: FxSheet is z-50 top dialog over Mixer/Inspector
+        // (z-40). Capture + stopImmediatePropagation so underlying overlay Escape
+        // listeners (bubble, registered earlier) do not close Mixer/Inspector first.
         event.preventDefault();
+        event.stopImmediatePropagation();
         onClose();
         return;
       }
@@ -512,9 +516,9 @@ export function StudioFxSheet({
       }
     }
 
-    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", onKeyDown, true);
       document.body.style.overflow = prevOverflow;
       previouslyFocusedRef.current?.focus?.();
     };
