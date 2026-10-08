@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`836679a`** (**VERIFIED / READY**) · dpl `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · URL https://www.bitrymdym.pl · **P4.6 TAKE_EXPORT CLOSED / GREEN** · V1 + P6.7 **CLOSED / GREEN** · Project List UX/Delete + Checkbox **PRODUCTION VERIFIED** · Catalog **17** PLATFORM · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** · **P6.8 NOT STARTED / OWNER DECISION** · Contabo **STOPPED/DISABLED** (after P4.6 Phase 3) · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md).
+**Now:** Production app **`a72fed9`** (**READY / GREEN**) · dpl `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · URL https://www.bitrymdym.pl · **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · V1 + P6.7 **CLOSED / GREEN** · Project List UX/Delete + Checkbox **PRODUCTION VERIFIED** · Catalog **17** PLATFORM · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** · **P6.8 NOT STARTED / OWNER DECISION** · Contabo **STOPPED/DISABLED** (after controlled P4.6 E2E) · waiver `EXPORT_WAV`. Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [P4_6_PRODUCTION_CLOSEOUT.md](./audits/P4_6_PRODUCTION_CLOSEOUT.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **P4.6 CLOSED / GREEN** · production tip `836679a` — **STOP** · do **not** start P6.8 · Owner decides next unit · see [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **P4.6 CLOSED / GREEN** · production tip `a72fed9` — **STOP** · do **not** start P6.8 · Owner decides next unit · see [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 

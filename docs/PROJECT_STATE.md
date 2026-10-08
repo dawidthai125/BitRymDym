@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-07 — **P4.6 TAKE_EXPORT CLOSED / GREEN** · production tip `836679a` · dpl `dpl_5J2cRHA2…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · production tip `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 
 ---
 
@@ -21,9 +21,10 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` (tip **`836679a`** when clean) |
-| **PRODUCTION APP SHA** | `836679adc146de13c4833763fe2dec4769b64265` (**`836679a`**) — Checkbox UX · VERIFIED / READY |
-| **PRODUCTION DEPLOYMENT** | `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY |
+| **REPOSITORY / DOCS HEAD** | `origin/main` — verify `git rev-parse HEAD` (tip **`a72fed9`** when clean; may be ahead after docs tip) |
+| **PRODUCTION APP SHA** | `a72fed9e85db71acc900df6fe88b4e7b0faa4765` (**`a72fed9`**) — P4.6 TAKE_EXPORT · READY / GREEN |
+| **PRODUCTION DEPLOYMENT** | `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · READY |
+| **PREVIOUS PRODUCTION TIP (HISTORY)** | `836679a` · `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` — Checkbox UX baseline |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
 | **STUDIO BASELINE** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **CATALOG** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
@@ -49,7 +50,7 @@
 | **STUDIO PROJECT LIST UX / DELETE** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `2c4b416` (ancestry) · [gate](./audits/STUDIO_PROJECT_LIST_UX_DELETE_PRODUCTION_GATE.md) |
 | **STUDIO CUSTOM CHECKBOX UX** | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `836679a` · [gate](./audits/STUDIO_PROJECT_CHECKBOX_UX_PRODUCTION_GATE.md) |
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
-| **P4.6 TAKE_EXPORT** | **CLOSED / GREEN** · Phase 1 CODE GREEN · Phase 2 INFRA GREEN · Phase 3 LIVE VERIFIED (MP3_192 · take-only · FFmpeg/libmp3lame · signed download PASS · MIX regression PASS) · production app **unchanged** `836679a` / `dpl_5J2cRHA2…` — [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
+| **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` / `dpl_8PDy…` · Phase 1–3 DONE · production LIVE E2E MP3_192 (take-only · FFmpeg/libmp3lame · 192000 bps · signed download PASS · non-owner DENIED) · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) · [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
 | **NEXT UNIT** | **STOP** — **P6.8 NOT STARTED / OWNER DECISION** · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
@@ -72,7 +73,7 @@
 | **STORAGE-ARCH-01** | LOCKED · Hybrid C |
 | **STORAGE-ARCH-07 / Local Layer-2** | DESIGN FREEZE COMPLETE · **43/43 RESTORE VERIFIED** · AWS DEFERRED |
 | **E3** | PRODUCTION VERIFIED — GREEN |
-| **Worker** | Contabo EXTERNAL COMPUTE · **STOPPED / DISABLED** after P4.6 Phase 3 · live target `836679a+phase1` (historical bootstrap `92496d4`) |
+| **Worker** | Contabo EXTERNAL COMPUTE · **STOPPED / DISABLED** after P4.6 production LIVE E2E · capability GREEN · not always-on · host tree historically `836679a+phase1` (bootstrap `92496d4`) |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
 ---
@@ -80,12 +81,11 @@
 ## 3. Current Phase
 
 ```text
-CURRENT PHASE                 = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ 836679a
-PRODUCTION APP                = 836679a · Checkbox UX · VERIFIED / READY
-PRODUCTION DEPLOYMENT         = dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT
-  prior tips (ancestry)       = 0f2169a (multi-select) · 2c4b416 (list delete)
-                              · 56b629e (V1) · 06c60b5 (P6.7)
-REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD)
+CURRENT PHASE                 = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ a72fed9
+PRODUCTION APP                = a72fed9 · P4.6 TAKE_EXPORT · READY / GREEN
+PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
+  prior tips (HISTORY)        = 836679a (checkbox) · 0f2169a · 2c4b416 · 56b629e (V1) · 06c60b5 (P6.7)
+REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD) · tip a72fed9 when clean
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio 13
 SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
@@ -93,9 +93,9 @@ MOBILE                        = TECHNICALLY READY — DEVICE CERTIFICATION PENDI
 P0 / P1 / P2 / P3             = 0 / 0 / 2 / 5
 P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
 P4 CORE                       = SHIPPED @ bface6c ⊂ 836679a
-P4.6 TAKE_EXPORT              = CLOSED / GREEN
-                              · Phase 1 CODE · Phase 2 INFRA · Phase 3 LIVE VERIFIED
-                              · evidence: P4_6_PHASE1/2/3 reports under docs/audits/
+P4.6 TAKE_EXPORT              = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+                              · Phase 1–3 DONE · deploy DONE · post-deploy DONE · LIVE E2E DONE
+                              · evidence: P4_6_PRODUCTION_CLOSEOUT.md + Phase 1/2/3 reports
 P4 LOCAL WIP                  = context? + p4-live-verify · NOT PRODUCTION · NOT BASELINE
 SA-07                         = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
 LAST STUDIO VERIFY            = Checkbox GREEN @ 836679a
@@ -180,11 +180,12 @@ LOCAL WINDOWS Layer-2         = C:\BitRymDym-Backup\
 VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
-CURRENT                       = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ 836679a
+CURRENT                       = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ a72fed9
                               · Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — P6.8 NOT STARTED / OWNER DECISION
                               · do NOT force-redeploy
                               · do NOT reopen V1 / P6.7 / list UX / P6.6 / P6.5 Scenario B / P4.6
+                              · do NOT permanently enable Contabo without Owner GO
                               · do NOT commit P4 local seam / SA-07 untracked without Owner GO
                               · Owner decides next unit
 P6.7 ARCHITECTURE AUDIT       = GO WITH CONDITIONS (historical) · CLOSED BY FREEZE+IMPL
@@ -205,7 +206,7 @@ FAR-01                        = NOT CLOSED (ops contaminated soak — not produc
 Durable media                = Supabase Storage (beat-audio · take-audio · audio-artifacts)
 Metadata SSOT                = Supabase PostgreSQL
 Application                  = Vercel / Next.js
-EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · Worker STOPPED / DISABLED after P4.6 Phase 3
+EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · Worker STOPPED / DISABLED after P4.6 LIVE E2E
 Role ≠ Account Level ≠ Creator Rank ≠ Premium Tier
 Premium SSOT                 = resolveProductEntitlement + PREMIUM_TIER_MATRIX
 Sample Policy SSOT           = getSamplePolicy + SAMPLE_POLICY_DEFAULTS + sample_policy_settings
@@ -395,11 +396,12 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm PRODUCTION APP = 836679a · dpl dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT
+                 → Confirm PRODUCTION APP = a72fed9 · dpl dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
                  → Confirm Catalog 17 · Storage orphans 0 · Security GREEN
                  → Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
                  → Confirm P6.8 = NOT STARTED / OWNER DECISION
-                 → Confirm P4.6 TAKE_EXPORT = CLOSED / GREEN
+                 → Confirm P4.6 TAKE_EXPORT = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+                 → Confirm Contabo worker = STOPPED / DISABLED
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
                  → NEXT GATE = STOP — Owner decides next unit

@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-07 — **P4.6 TAKE_EXPORT CLOSED / GREEN** · production tip `836679a` · dpl `dpl_5J2cRHA2…` · V1/P6.7 CLOSED/GREEN · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
-**Type:** Documentation continuity · production tip = `836679a` · next = Owner decision only (no P6.8 auto-start)
+**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · production tip `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Type:** Documentation continuity · production tip = `a72fed9` · next = Owner decision only (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,19 +25,20 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-PRODUCTION APP SHA            = 836679adc146de13c4833763fe2dec4769b64265
-  short                       = 836679a
-  note                        = Studio Custom Checkbox UX · PRODUCTION VERIFIED
-                              · includes List multi-select `0f2169a` · List UX/Delete `2c4b416`
-                              · V1 `56b629e` · P6.7 `06c60b5` (CLOSED / GREEN · ancestry)
-PRODUCTION DEPLOYMENT         = dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT · READY / VERIFIED
+PRODUCTION APP SHA            = a72fed9e85db71acc900df6fe88b4e7b0faa4765
+  short                       = a72fed9
+  note                        = P4.6 TAKE_EXPORT · PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+                              · ancestry includes Checkbox `836679a` · List multi-select `0f2169a`
+                              · List UX/Delete `2c4b416` · V1 `56b629e` · P6.7 `06c60b5`
+PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY · READY / GREEN
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD) · tip = 836679a when clean
+REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD) · tip = a72fed9 when clean
+PREVIOUS PRODUCTION TIP       = 836679a · dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT (HISTORY)
 
 STUDIO BASELINE               = V1 CLOSED / GREEN · P6.7 CLOSED / GREEN
                               · Project List UX/Delete PRODUCTION VERIFIED
-                              · Checkbox UX PRODUCTION VERIFIED @ 836679a
+                              · Checkbox UX PRODUCTION VERIFIED @ 836679a (ancestry)
 POST-RECORDING V1             = PRODUCTION VERIFIED — GREEN · CLOSED @ 56b629e (ancestry)
 P6.7                          = PRODUCTION VERIFIED — GREEN · CLOSED @ 06c60b5 (ancestry)
 P6.6                          = PRODUCTION VERIFIED — GREEN @ c825e42 (ancestry)
@@ -56,19 +57,22 @@ P0 / P1                       = 0 / 0
 P2                            = 2 (waveform sticky/catalog · Studio toolbar ~28px)
 P3                            = 5 (account inputs ~38px · Pełny katalog · landscape · playhead · metadata —)
 P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                 = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ 836679a
+CURRENT PHASE                 = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ a72fed9
 NEXT GATE                     = STOP — await separate Owner decision
                               · do NOT start P6.8 / P4 live-verify seam / SA-07 AWS
                               · do NOT force-redeploy
-                              · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7 / Contabo
+                              · do NOT permanently enable Contabo without Owner GO
+                              · no Automation / Autotune / E3 Studio Render / Undo / Autosave / P7
 
-P4 CORE (eligibility foundation) = SHIPPED @ bface6c ⊂ 836679a
-P4.6 TAKE_EXPORT              = CLOSED / GREEN
-                              · Phase 1 CODE GREEN · Phase 2 INFRA GREEN · Phase 3 LIVE VERIFIED
-                              · LIVE: TAKE_EXPORT MP3_192 via existing E3 worker · take-audio only
-                              · FFmpeg/libmp3lame · ~192000 bps · audio-artifacts · signed download PASS
-                              · MIX regression PASS · production app SHA unchanged 836679a
-                              · evidence: audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md
+P4 CORE (eligibility foundation) = SHIPPED @ bface6c ⊂ a72fed9 (via 836679a ancestry)
+P4.6 TAKE_EXPORT              = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+                              · Phase 1–3 DONE · push DONE · Vercel deploy DONE · post-deploy DONE
+                              · PRODUCTION LIVE E2E: TAKE_EXPORT MP3_192 · take-audio only
+                              · FFmpeg/libmp3lame · stream 192000 bps · audio-artifacts
+                              · job SUCCEEDED · owner download PASS · non-owner DENIED
+                              · Contabo single-job then STOPPED / DISABLED
+                              · evidence: audits/P4_6_PRODUCTION_CLOSEOUT.md
+                                · P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md
                                 · P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md
                                 · P4_6_PHASE3_LIVE_VERIFICATION.md
 P4 LOCAL WIP (context? + p4-live-verify) = LOCAL ONLY · NOT PRODUCTION · NOT BASELINE
@@ -80,8 +84,9 @@ V1 DB MIGRATIONS (historical applied)   = 20261007080752 · 20261007080758 · 20
 KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV · WAIVED BY OWNER
 BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
-WORKER                        = Contabo EXTERNAL · STOPPED / DISABLED after P4.6 Phase 3
-                              · live target 836679a+phase1 (historical bootstrap 92496d4)
+WORKER                        = Contabo EXTERNAL · STOPPED / DISABLED after P4.6 LIVE E2E
+                              · capability GREEN · not always-on
+                              · host tree historically 836679a+phase1 (bootstrap 92496d4)
 
 STUDIO P5.1–P5.6              = PRODUCTION VERIFIED — GREEN
 P5.8 STATUS                   = PRODUCTION VERIFIED — GREEN @ 95e04ff · finalize ≠ place preserved
@@ -105,7 +110,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Track | Status |
 |-------|--------|
-| **P4.6** TAKE_EXPORT | **CLOSED / GREEN** · Phase 1 CODE · Phase 2 INFRA · Phase 3 LIVE VERIFIED (MP3_192 · take-audio only · FFmpeg/libmp3lame · signed download PASS · MIX regression PASS) · production app **unchanged** `836679a` / `dpl_5J2cRHA2…` — [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
+| **P4.6** TAKE_EXPORT | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` / `dpl_8PDy…` · Phase 1–3 · deploy · post-deploy · production LIVE E2E MP3_192 (take-only · libmp3lame · 192000 · SUCCEEDED · download PASS) · Contabo STOPPED after E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) · [Phase 1](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [Phase 2](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [Phase 3](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md) |
 | **P6.7** Clip Fades | **PRODUCTION VERIFIED — GREEN · CLOSED** @ `06c60b5` · docs on `origin/main` · dpl `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` · Vitest **1519 PASS · 1 SKIP** · P6.7.1–P6.7.4 + Trim/Split — [freeze](./decisions/P6_7_CLIP_FADES_DESIGN_FREEZE.md) · [audit](./architecture/P6_7_CLIP_FADES_ARCHITECTURE_AUDIT.md) |
 | **P6.6** On-demand Track Peak Metering | **PRODUCTION VERIFIED — GREEN** @ `c825e42` · dpl `dpl_3s3fAnvrpNVSwJcdhV8J1SZtc9g9` · P6.6.1 `a8a3337` · P6.6.2/3 `c825e42` · Vitest **1410 PASS · 1 SKIP** |
 | **P6.5** Studio Audio Quality Metering | **IMPLEMENTATION COMPLETE · PRODUCTION DEPLOYED** @ `2258bdb` · **Scenario A PROVEN** · **Scenario B BLOCKED / INCONCLUSIVE** (not GREEN · **do not reopen**) |
@@ -141,9 +146,9 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository / docs | `origin/main` (verify `git rev-parse HEAD`) · tip **`836679a`** when clean |
-| Production app | **`836679a`** · **VERIFIED / READY** · Checkbox UX tip (includes V1 + P6.7 ancestry) |
-| Production deployment | **`dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT`** · aliases www.bitrymdym.pl |
+| Repository / docs | `origin/main` (verify `git rev-parse HEAD`) · tip **`a72fed9`** when clean |
+| Production app | **`a72fed9`** · **READY / GREEN** · P4.6 TAKE_EXPORT tip (Checkbox/`836679a` + V1/P6.7 ancestry) |
+| Production deployment | **`dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY`** · aliases www.bitrymdym.pl |
 | Production DB | includes P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio **13** · historical VPS/Local backup evidence retained |
 | Session / operator | dirty local WIP may exist (P4 seam / SA-07 untracked) — **nie czyścić / nie commitować bez Owner GO** |
@@ -198,7 +203,7 @@ BROWSER
   → Contabo VPS = EXTERNAL COMPUTE
        FFmpeg / ephemeral processing
        NOT library · NOT durable media · NOT backup · NOT audio SSOT
-       worker unit STOPPED / DISABLED after P4.6 Phase 3 (live target 836679a+phase1 · historical bootstrap 92496d4)
+       worker unit STOPPED / DISABLED after P4.6 LIVE E2E (capability GREEN · not always-on · host historically 836679a+phase1)
 ```
 
 STORAGE-ARCH-01 = **LOCKED**. External Object Storage = **NOT IMPLEMENTED / DEFERRED**.
@@ -507,15 +512,16 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect 836679a (when worktree tip clean)
-[ ] git rev-parse origin/main                → match HEAD
-[ ] Confirm Production app SHA = 836679a · dpl dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT · READY
+[ ] git fetch && git rev-parse HEAD           → expect a72fed9 (when worktree tip clean)
+[ ] git rev-parse origin/main                → match HEAD (a72fed9)
+[ ] Confirm Production app SHA = a72fed9 · dpl dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY · READY
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
 [ ] Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING (not Real Device Verified)
-[ ] Read MASTER_HANDOFF + PROJECT_STATE + relevant gates
+[ ] Confirm Contabo worker = STOPPED / DISABLED · P4.6 LIVE E2E VERIFIED
+[ ] Read MASTER_HANDOFF + PROJECT_STATE + P4_6_PRODUCTION_CLOSEOUT + relevant gates
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
 [ ] NEXT GATE = STOP — do NOT start P6.8 · Owner decides next unit
-[ ] Do not reimplement P6.7 / V1 · do not reopen P6.6 / P6.5 Scenario B / P7
+[ ] Do not reimplement P6.7 / V1 / P4.6 · do not reopen P6.6 / P6.5 Scenario B / P7
 [ ] Do not commit P4 context? WIP / SA-07 untracked library without Owner GO
 [ ] Nie reopen closed epics bez nowego evidence
 [ ] Nie czyść dirty WIP bez Owner GO
@@ -527,21 +533,22 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (P4.6 CLOSED / GREEN · tip 836679a · 2026-10-07)
-PRODUCTION APP SHA           = 836679a · VERIFIED / READY
-PRODUCTION DEPLOYMENT        = dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT
+FINAL COLD START HANDOFF     = READY (P4.6 CLOSED / GREEN · tip a72fed9 · 2026-10-08)
+PRODUCTION APP SHA           = a72fed9 · READY / GREEN
+PRODUCTION DEPLOYMENT        = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
 REPO / DOCS HEAD             = origin/main (verify git rev-parse HEAD)
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio 13
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
 P0 / P1 / P2 / P3            = 0 / 0 / 2 / 5
-P4.6 TAKE_EXPORT             = CLOSED / GREEN (Phase 1–3)
+P4.6 TAKE_EXPORT             = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ 836679a
-P4 CORE                      = SHIPPED @ bface6c ⊂ 836679a · local seam WIP NOT BASELINE
+CURRENT PHASE                = P4.6 CLOSED / GREEN · PRODUCTION BASELINE @ a72fed9
+P4 CORE                      = SHIPPED @ bface6c ⊂ a72fed9 · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
+WORKER                       = Contabo STOPPED / DISABLED after LIVE E2E
 NEXT GATE                    = STOP — do NOT start P6.8 · Owner decides next
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 PRIOR CHAT REQUIRED          = NO

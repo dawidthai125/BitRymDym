@@ -6,18 +6,33 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-08 — P4.6 TAKE_EXPORT PRODUCTION RELEASE + CLOSEOUT
+
+**Status:** **P4.6 TAKE_EXPORT — CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN**
+**Scope:** Living SSOT tip (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · closeout evidence · this entry)
+**Production tip:** `a72fed9` · dpl `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · READY / GREEN · https://www.bitrymdym.pl
+**Remote:** `origin/main` = `a72fed9`
+**Chain:** `836679a` → `0b0ca04` (docs) → `a72fed9` (Phase 1 TAKE_EXPORT code)
+**Closure path:** Phase 1 CODE → Phase 2 INFRA → Phase 3 (historical Contabo) → controlled push → Vercel deploy → post-deploy verify → **production LIVE E2E**
+**Production LIVE E2E:** Take `a9542a12-…` READY · job `a5b6e8e0-…` TAKE_EXPORT MP3_192 · `QUEUED`→`RUNNING`→`SUCCEEDED` · artifact `d7b05d44-…` · take-audio only · MIX used **NO** · `ffmpeg+libmp3lame` · stream bitrate **192000** · ~10.80s · 260850 bytes · owner download PASS · non-owner DENIED · Contabo single-job · worker **STOPPED / DISABLED** after test
+**Evidence:** [P4_6_PRODUCTION_CLOSEOUT.md](./audits/P4_6_PRODUCTION_CLOSEOUT.md) · Phase 1/2/3 reports under `docs/audits/`
+**Contabo permanent runtime:** STOPPED / DISABLED (capability GREEN ≠ always-on worker)
+**P6.8:** NOT STARTED / OWNER DECISION
+**P4 local WIP / SA-07:** NOT PRODUCTION · NOT BASELINE · untouched
+**Next:** STOP · Owner decides next unit
+
 ## 2026-10-07 — P4.6 TAKE_EXPORT FINAL CLOSE + SSOT RECONCILIATION
 
-**Status:** **DOCS ONLY** · **P4.6 TAKE_EXPORT — CLOSED / GREEN**
+**Status (historical docs tip):** **DOCS ONLY** · pre-deploy close · living tip later superseded by **2026-10-08 production release** above
 **Scope:** Living SSOT tip only (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · this entry)
-**Production tip (unchanged):** `836679a` · dpl `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY / VERIFIED
-**Closure path:** Phase 1 CODE GREEN → Phase 2 INFRA GREEN → Phase 3 LIVE VERIFIED
+**Production tip (at that time):** `836679a` · dpl `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` · READY / VERIFIED
+**Closure path:** Phase 1 CODE GREEN → Phase 2 INFRA GREEN → Phase 3 LIVE VERIFIED (Contabo; app tip then still `836679a`)
 **Live proof:** READY Take → TAKE_EXPORT MP3_192 → existing E3 Contabo worker claim → take-audio only → FFmpeg/libmp3lame → ~192000 bps → audio-artifacts → signed download PASS · non-owner DENIED · MIX regression PASS · worker STOPPED after verify
 **Evidence:** [P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md](./audits/P4_6_PHASE1_CODE_IMPLEMENTATION_REPORT.md) · [P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md](./audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md) · [P4_6_PHASE3_LIVE_VERIFICATION.md](./audits/P4_6_PHASE3_LIVE_VERIFICATION.md)
-**Not done here:** no app code · no DB/Storage mutation · no Contabo change · no deploy · no commit · no P6.8
+**Not done then:** production app still `836679a` · Phase 1 code not yet on Vercel tip
 **P6.8:** NOT STARTED / OWNER DECISION
 **P4 local WIP (`context?` / p4-live-verify) / SA-07:** NOT PRODUCTION · NOT BASELINE · untouched
-**Next:** STOP · Owner decides next unit
+**Next (historical):** STOP · Owner decides push/deploy of Phase 1
 
 ## 2026-10-07 — FINAL SSOT TIP RECONCILIATION @ 836679a
 
