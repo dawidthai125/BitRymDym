@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -27,6 +28,10 @@ import {
   studioInspectorContextTitle,
 } from "@/components/studio/studio-inspector-context";
 import { StudioInspectorOverlay } from "@/components/studio/studio-inspector-shell";
+import {
+  StudioMixerDockChrome,
+  StudioMixerOverlay,
+} from "@/components/studio/studio-mixer-shell";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -222,6 +227,7 @@ function StudioEditorInner({
   const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  /** Phase 7.1.4 — desktop dock expanded / <xl overlay open (XOR with Inspector). */
   const [mixerOpen, setMixerOpen] = useState(false);
   /** Phase 7.1.3 — overlay open (tablet drawer / mobile sheet). Desktop dock always visible. */
   const [inspectorOverlayOpen, setInspectorOverlayOpen] = useState(false);
@@ -229,6 +235,7 @@ function StudioEditorInner({
   const [inspectorPreferRecord, setInspectorPreferRecord] = useState(false);
   /** xl dock vs overlay — ensure Inspector content mounts once (no dual RecordingPanel). */
   const [inspectorDesktopRail, setInspectorDesktopRail] = useState(false);
+  const mixerPanelId = useId();
   const transport = useStudioTransport();
   const { setTrackMeterTarget, resolveClipSourceUrl } = transport;
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -288,6 +295,15 @@ function StudioEditorInner({
   function openMixerSurface() {
     setInspectorOverlayOpen(false);
     setMixerOpen(true);
+  }
+
+  function closeMixerSurface() {
+    setMixerOpen(false);
+  }
+
+  function toggleMixerSurface() {
+    if (mixerOpen) closeMixerSurface();
+    else openMixerSurface();
   }
 
   useEffect(() => {
@@ -1289,6 +1305,236 @@ function StudioEditorInner({
     </div>
   );
 
+  /** Phase 7.1.4 — shared Mixer strips (mounted once: desktop dock XOR <xl overlay). */
+  const mixerChannels = (
+    <ul
+      className="flex gap-3 overflow-x-auto pb-1"
+      data-testid="studio-mixer-drawer"
+      data-studio-mixer="channels"
+      aria-label="Mix"
+    >
+      <li
+        data-testid="studio-mix-master"
+        className="sticky left-0 z-[1] min-w-[11rem] shrink-0 rounded-md border-2 border-[var(--brd-green)]/35 bg-[color-mix(in_srgb,var(--brd-bg)_88%,var(--brd-green)_12%)] p-3 shadow-[4px_0_8px_-4px_color-mix(in_srgb,var(--brd-ink)_20%,transparent)]"
+      >
+        <div className="mb-2">
+          <p className="text-sm font-semibold text-[var(--brd-ink)]">Master</p>
+          <p className="text-xs text-[var(--brd-mute)]">
+            Głośność wyjścia · efekty sumy
+          </p>
+        </div>
+        <StudioMixControl
+          label="Głośność"
+          ariaLabel="Głośność Master"
+          value={doc.project.masterGainDb}
+          display={`${doc.project.masterGainDb.toFixed(1)} dB`}
+          min={-24}
+          max={12}
+          step={0.5}
+          disabled={pending}
+          onLocalChange={(masterGainDb) =>
+            setDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, masterGainDb },
+            }))
+          }
+          onCommit={(masterGainDb) =>
+            startTransition(async () => {
+              try {
+                await patchMasterMix({ masterGainDb });
+              } catch (e) {
+                setError(
+                  e instanceof Error
+                    ? e.message
+                    : "Błąd Master głośności.",
+                );
+                setStatus(null);
+              }
+            })
+          }
+        />
+        <StudioMixControl
+          label="Panorama L/R"
+          ariaLabel="Panorama Master"
+          value={doc.project.masterPan}
+          display={doc.project.masterPan.toFixed(2)}
+          min={-1}
+          max={1}
+          step={0.01}
+          disabled={pending}
+          onLocalChange={(masterPan) =>
+            setDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, masterPan },
+            }))
+          }
+          onCommit={(masterPan) =>
+            startTransition(async () => {
+              try {
+                await patchMasterMix({ masterPan });
+              } catch (e) {
+                setError(
+                  e instanceof Error
+                    ? e.message
+                    : "Błąd Master panoramy.",
+                );
+                setStatus(null);
+              }
+            })
+          }
+        />
+        <StudioMasterMeter snapshot={transport.meter} />
+        <div className="mt-3">
+          <Button
+            type="button"
+            size="xs"
+            variant="outline"
+            className="min-h-11 w-full"
+            aria-label="Efekty Master"
+            onClick={() => setFxPanel({ role: "master" })}
+          >
+            {studioFxEntryLabel(doc.project.masterFxChain)}
+          </Button>
+        </div>
+      </li>
+      {doc.tracks.map((track) => {
+        const audible = isTrackAudible({
+          muted: track.muted,
+          solo: track.solo,
+          anySolo,
+        });
+        const isBeat = track.trackType === "BEAT";
+        const fxLabel = studioFxEntryLabel(track.effectsChain);
+        const isSelected = activeSelectedTrackId === track.id;
+        return (
+          <li
+            key={track.id}
+            data-testid="studio-mix-track"
+            data-track-id={track.id}
+            data-selected={isSelected ? "true" : "false"}
+            className={
+              isSelected
+                ? "min-w-[11rem] shrink-0 rounded border border-[var(--brd-green)] bg-[var(--brd-bg)] p-3"
+                : "min-w-[11rem] shrink-0 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+            }
+          >
+            <button
+              type="button"
+              className="mb-2 min-h-11 w-full rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+              aria-pressed={isSelected}
+              aria-label={
+                isSelected
+                  ? `Odznacz ścieżkę ${track.name}`
+                  : `Wybierz ścieżkę ${track.name}`
+              }
+              data-testid="studio-mix-track-select"
+              onClick={() =>
+                setSelectedTrackId(isSelected ? null : track.id)
+              }
+            >
+              <p className="text-sm font-medium text-[var(--brd-ink)]">
+                {track.name}
+                {isBeat ? (
+                  <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--brd-mute)]">
+                    Bit projektu
+                  </span>
+                ) : null}
+              </p>
+              <p className="text-xs text-[var(--brd-mute)]">
+                {labelStudioTrackType(track.trackType)}
+                {!audible ? " · wyciszona w miksie" : ""}
+                {isSelected ? " · miernik aktywny" : ""}
+              </p>
+            </button>
+            <StudioMixControl
+              label="Głośność"
+              ariaLabel={`Głośność ścieżki ${track.name}`}
+              value={track.gainDb}
+              display={`${track.gainDb.toFixed(1)} dB`}
+              min={-24}
+              max={12}
+              step={0.5}
+              disabled={pending}
+              onLocalChange={(gainDb) =>
+                setDoc((prev) => ({
+                  ...prev,
+                  tracks: prev.tracks.map((t) =>
+                    t.id === track.id ? { ...t, gainDb } : t,
+                  ),
+                }))
+              }
+              onCommit={(gainDb) =>
+                startTransition(async () => {
+                  try {
+                    await patchTrack(track.id, { gainDb });
+                  } catch (err) {
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "Błąd głośności.",
+                    );
+                  }
+                })
+              }
+            />
+            <StudioMixControl
+              label="Panorama L/R"
+              ariaLabel={`Panorama ścieżki ${track.name}`}
+              value={track.pan}
+              display={track.pan.toFixed(2)}
+              min={-1}
+              max={1}
+              step={0.01}
+              disabled={pending}
+              onLocalChange={(pan) =>
+                setDoc((prev) => ({
+                  ...prev,
+                  tracks: prev.tracks.map((t) =>
+                    t.id === track.id ? { ...t, pan } : t,
+                  ),
+                }))
+              }
+              onCommit={(pan) =>
+                startTransition(async () => {
+                  try {
+                    await patchTrack(track.id, { pan });
+                  } catch (err) {
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "Błąd panoramy.",
+                    );
+                  }
+                })
+              }
+            />
+            {isSelected ? (
+              <StudioTrackMeter
+                snapshot={transport.trackMeter}
+                trackName={track.name}
+              />
+            ) : null}
+            <div className="mt-3">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                className="min-h-11 w-full"
+                aria-label={`Efekty ścieżki ${track.name}`}
+                onClick={() => {
+                  setSelectedTrackId(track.id);
+                  setFxPanel({ role: "track", trackId: track.id });
+                }}
+              >
+                {fxLabel}
+              </Button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <div
       data-testid="studio-daw-shell"
@@ -1670,10 +1916,8 @@ function StudioEditorInner({
           className="min-h-11"
           aria-pressed={mixerOpen}
           aria-expanded={mixerOpen}
-          onClick={() => {
-            if (mixerOpen) setMixerOpen(false);
-            else openMixerSurface();
-          }}
+          aria-controls={mixerPanelId}
+          onClick={toggleMixerSurface}
         >
           Mixer
         </Button>
@@ -1903,249 +2147,21 @@ function StudioEditorInner({
         {inspectorContent}
       </StudioInspectorOverlay>
 
-      {mixerOpen ? (
-        <section
-          data-testid="studio-mixer-drawer"
-          data-studio-mixer="true"
-          aria-label="Mix"
-          className="space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Mixer
-            </p>
-            <Button
-              type="button"
-              size="xs"
-              variant="ghost"
-              className="min-h-11"
-              onClick={() => setMixerOpen(false)}
-            >
-              Zamknij
-            </Button>
-          </div>
-          <ul className="flex gap-3 overflow-x-auto pb-1">
-            <li className="min-w-[11rem] shrink-0 rounded-md border-2 border-[var(--brd-green)]/35 bg-[color-mix(in_srgb,var(--brd-bg)_88%,var(--brd-green)_12%)] p-3">
-              <div className="mb-2">
-                <p className="text-sm font-semibold text-[var(--brd-ink)]">
-                  Master
-                </p>
-                <p className="text-xs text-[var(--brd-mute)]">
-                  Głośność wyjścia · efekty sumy
-                </p>
-              </div>
-              <StudioMixControl
-                label="Głośność"
-                ariaLabel="Głośność Master"
-                value={doc.project.masterGainDb}
-                display={`${doc.project.masterGainDb.toFixed(1)} dB`}
-                min={-24}
-                max={12}
-                step={0.5}
-                disabled={pending}
-                onLocalChange={(masterGainDb) =>
-                  setDoc((prev) => ({
-                    ...prev,
-                    project: { ...prev.project, masterGainDb },
-                  }))
-                }
-                onCommit={(masterGainDb) =>
-                  startTransition(async () => {
-                    try {
-                      await patchMasterMix({ masterGainDb });
-                    } catch (e) {
-                      setError(
-                        e instanceof Error
-                          ? e.message
-                          : "Błąd Master głośności.",
-                      );
-                      setStatus(null);
-                    }
-                  })
-                }
-              />
-              <StudioMixControl
-                label="Panorama L/R"
-                ariaLabel="Panorama Master"
-                value={doc.project.masterPan}
-                display={doc.project.masterPan.toFixed(2)}
-                min={-1}
-                max={1}
-                step={0.01}
-                disabled={pending}
-                onLocalChange={(masterPan) =>
-                  setDoc((prev) => ({
-                    ...prev,
-                    project: { ...prev.project, masterPan },
-                  }))
-                }
-                onCommit={(masterPan) =>
-                  startTransition(async () => {
-                    try {
-                      await patchMasterMix({ masterPan });
-                    } catch (e) {
-                      setError(
-                        e instanceof Error
-                          ? e.message
-                          : "Błąd Master panoramy.",
-                      );
-                      setStatus(null);
-                    }
-                  })
-                }
-              />
-              <StudioMasterMeter snapshot={transport.meter} />
-              <div className="mt-3">
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  className="min-h-11 w-full"
-                  aria-label="Efekty Master"
-                  onClick={() => setFxPanel({ role: "master" })}
-                >
-                  {studioFxEntryLabel(doc.project.masterFxChain)}
-                </Button>
-              </div>
-            </li>
-            {doc.tracks.map((track) => {
-              const audible = isTrackAudible({
-                muted: track.muted,
-                solo: track.solo,
-                anySolo,
-              });
-              const isBeat = track.trackType === "BEAT";
-              const fxLabel = studioFxEntryLabel(track.effectsChain);
-              const isSelected = activeSelectedTrackId === track.id;
-              return (
-                <li
-                  key={track.id}
-                  data-testid="studio-mix-track"
-                  data-track-id={track.id}
-                  data-selected={isSelected ? "true" : "false"}
-                  className={
-                    isSelected
-                      ? "min-w-[11rem] shrink-0 rounded border border-[var(--brd-green)] bg-[var(--brd-bg)] p-3"
-                      : "min-w-[11rem] shrink-0 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
-                  }
-                >
-                  <button
-                    type="button"
-                    className="mb-2 min-h-11 w-full rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                    aria-pressed={isSelected}
-                    aria-label={
-                      isSelected
-                        ? `Odznacz ścieżkę ${track.name}`
-                        : `Wybierz ścieżkę ${track.name}`
-                    }
-                    data-testid="studio-mix-track-select"
-                    onClick={() =>
-                      setSelectedTrackId(isSelected ? null : track.id)
-                    }
-                  >
-                    <p className="text-sm font-medium text-[var(--brd-ink)]">
-                      {track.name}
-                      {isBeat ? (
-                        <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--brd-mute)]">
-                          Bit projektu
-                        </span>
-                      ) : null}
-                    </p>
-                    <p className="text-xs text-[var(--brd-mute)]">
-                      {labelStudioTrackType(track.trackType)}
-                      {!audible ? " · wyciszona w miksie" : ""}
-                      {isSelected ? " · miernik aktywny" : ""}
-                    </p>
-                  </button>
-                  <StudioMixControl
-                    label="Głośność"
-                    ariaLabel={`Głośność ścieżki ${track.name}`}
-                    value={track.gainDb}
-                    display={`${track.gainDb.toFixed(1)} dB`}
-                    min={-24}
-                    max={12}
-                    step={0.5}
-                    disabled={pending}
-                    onLocalChange={(gainDb) =>
-                      setDoc((prev) => ({
-                        ...prev,
-                        tracks: prev.tracks.map((t) =>
-                          t.id === track.id ? { ...t, gainDb } : t,
-                        ),
-                      }))
-                    }
-                    onCommit={(gainDb) =>
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, { gainDb });
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : "Błąd głośności.",
-                          );
-                        }
-                      })
-                    }
-                  />
-                  <StudioMixControl
-                    label="Panorama L/R"
-                    ariaLabel={`Panorama ścieżki ${track.name}`}
-                    value={track.pan}
-                    display={track.pan.toFixed(2)}
-                    min={-1}
-                    max={1}
-                    step={0.01}
-                    disabled={pending}
-                    onLocalChange={(pan) =>
-                      setDoc((prev) => ({
-                        ...prev,
-                        tracks: prev.tracks.map((t) =>
-                          t.id === track.id ? { ...t, pan } : t,
-                        ),
-                      }))
-                    }
-                    onCommit={(pan) =>
-                      startTransition(async () => {
-                        try {
-                          await patchTrack(track.id, { pan });
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : "Błąd panoramy.",
-                          );
-                        }
-                      })
-                    }
-                  />
-                  {isSelected ? (
-                    <StudioTrackMeter
-                      snapshot={transport.trackMeter}
-                      trackName={track.name}
-                    />
-                  ) : null}
-                  <div className="mt-3">
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="outline"
-                      className="min-h-11 w-full"
-                      aria-label={`Efekty ścieżki ${track.name}`}
-                      onClick={() => {
-                        setSelectedTrackId(track.id);
-                        setFxPanel({ role: "track", trackId: track.id });
-                      }}
-                    >
-                      {fxLabel}
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
+      <StudioMixerDockChrome
+        expanded={Boolean(inspectorDesktopRail && mixerOpen)}
+        panelId={mixerPanelId}
+        onToggle={toggleMixerSurface}
+      >
+        {inspectorDesktopRail && mixerOpen ? mixerChannels : null}
+      </StudioMixerDockChrome>
+
+      <StudioMixerOverlay
+        open={mixerOpen && !inspectorDesktopRail}
+        onClose={closeMixerSurface}
+        panelId={mixerPanelId}
+      >
+        {mixerChannels}
+      </StudioMixerOverlay>
 
       <StudioFxSheet
         open={fxPanel !== null}
