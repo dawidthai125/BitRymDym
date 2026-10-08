@@ -43,11 +43,14 @@ export function StudioRecordingPanel({
   tracks,
   onClipCreated,
   onRecordingActiveChange,
+  embedded = false,
 }: {
   projectId: string;
   tracks: StudioTrackDto[];
   onClipCreated: (clip: StudioClipDto) => void;
   onRecordingActiveChange?: (active: boolean) => void;
+  /** Phase 1 — denser chrome when hosted inside Inspector. */
+  embedded?: boolean;
 }) {
   const transport = useStudioTransport();
   const recordableTracks = tracks.filter((t) => t.trackType !== "BEAT");
@@ -847,7 +850,11 @@ export function StudioRecordingPanel({
 
   return (
     <section
-      className="space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+      className={
+        embedded
+          ? "space-y-2 border-0 bg-transparent p-0"
+          : "space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+      }
       aria-label="Nagrywanie w Studio"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">

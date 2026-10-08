@@ -104,17 +104,26 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(editor).toMatch(/StudioMasterMeter snapshot=\{transport\.meter\}/);
     expect(masterMeter).toMatch(/testIdPrefix=\"studio-master-meter\"/);
     expect(masterMeter).toMatch(/Miernik Master/);
-    const panIdx = editor.indexOf('ariaLabel="Panorama Master"');
-    const masterMeterIdx = editor.indexOf("<StudioMasterMeter");
-    const masterFxIdx = editor.indexOf('aria-label="Efekty Master"');
+    // Phase 1 — mixer drawer hosts Master strip (not vertical form Mix).
+    const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
+    expect(mixerStart).toBeGreaterThan(0);
+    const mixer = editor.slice(mixerStart);
+    const panIdx = mixer.indexOf('ariaLabel="Panorama Master"');
+    const masterMeterIdx = mixer.indexOf("<StudioMasterMeter");
+    const masterFxIdx = mixer.indexOf('aria-label="Efekty Master"');
+    expect(panIdx).toBeGreaterThanOrEqual(0);
     expect(masterMeterIdx).toBeGreaterThan(panIdx);
     expect(masterFxIdx).toBeGreaterThan(masterMeterIdx);
   });
 
   it("desktop Mix: Track meter between Pan and FX on selected row", () => {
-    const panIdx = editor.indexOf("ariaLabel={`Panorama ścieżki");
-    const meterIdx = editor.indexOf("<StudioTrackMeter");
-    const fxIdx = editor.indexOf("Efekty ścieżki");
+    const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
+    expect(mixerStart).toBeGreaterThan(0);
+    const mixer = editor.slice(mixerStart);
+    const panIdx = mixer.indexOf("ariaLabel={`Panorama ścieżki");
+    const meterIdx = mixer.indexOf("<StudioTrackMeter");
+    const fxIdx = mixer.indexOf("Efekty ścieżki");
+    expect(panIdx).toBeGreaterThanOrEqual(0);
     expect(meterIdx).toBeGreaterThan(panIdx);
     expect(fxIdx).toBeGreaterThan(meterIdx);
   });
@@ -124,7 +133,9 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(peakMeter).toMatch(/w-full/);
     expect(editor).toMatch(/studio-mix-track-select/);
     expect(editor).toMatch(/min-h-11 min-w-0 flex-1/);
-    expect(editor).toMatch(/scroll-pb-\[calc\(4\.75rem\+env\(safe-area-inset-bottom\)\)\]/);
+    // Phase 1 DAW shell — page/frame owns safe-area pad; shell is viewport-flex.
+    expect(editor).toMatch(/studio-daw-shell/);
+    expect(editor).toMatch(/min-h-\[calc\(100dvh/);
     expect(trackMeter).not.toMatch(/fixed bottom|w-screen|min-w-\[4/);
     expect(peakMeter).not.toMatch(/overflow-x-scroll|w-\[4[0-9]{2,}/);
   });

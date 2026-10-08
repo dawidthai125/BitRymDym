@@ -1,5 +1,5 @@
 /**
- * P5.4 — Timeline presentation helpers (zoom / snap / selection / mapping).
+ * P5.4 / Phase 2 — Timeline presentation helpers (zoom / snap / selection / mapping).
  * Persistence SSOT remains integer ms on Clip geometry. Zoom is view-only.
  */
 
@@ -8,13 +8,32 @@ import { assertIntegerMs } from "@/lib/studio/studio-time";
 /** Default density when project fits ~a phone-width content lane. */
 export const STUDIO_TIMELINE_DEFAULT_PX_PER_MS = 0.01; // 10 px / second
 export const STUDIO_TIMELINE_MIN_PX_PER_MS = 0.002;
-export const STUDIO_TIMELINE_MAX_PX_PER_MS = 0.25;
+/** Phase 2 precision ceiling — ≥ 1.0 px/ms (1 px ≈ 1 ms). */
+export const STUDIO_TIMELINE_MAX_PX_PER_MS = 1;
 export const STUDIO_TIMELINE_ZOOM_STEP = 1.35;
 /** Minimum rendered timeline content width (px) before fit. */
 export const STUDIO_TIMELINE_MIN_CONTENT_WIDTH_PX = 320;
 
 /** Simple grid interval for P5.4 (extensible toward BPM later). */
 export const STUDIO_SNAP_DEFAULT_GRID_MS = 1000;
+
+/** Phase 2 snap grid presets (integer ms). */
+export const STUDIO_SNAP_INTERVALS_MS = [20, 100, 1000] as const;
+export type StudioSnapIntervalMs = (typeof STUDIO_SNAP_INTERVALS_MS)[number];
+
+export type StudioSnapPreset = "off" | "20" | "100" | "1000";
+
+export const STUDIO_SNAP_PRESET_ORDER: readonly StudioSnapPreset[] = [
+  "off",
+  "20",
+  "100",
+  "1000",
+] as const;
+
+/** Keyboard nudge deltas (integer ms). */
+export const STUDIO_NUDGE_FINE_MS = 1;
+export const STUDIO_NUDGE_MEDIUM_MS = 10;
+export const STUDIO_NUDGE_COARSE_MS = 20;
 
 export type StudioSnapMode = "off" | "grid";
 
@@ -42,6 +61,55 @@ export function createDefaultSnapConfig(
     gridIntervalMs: STUDIO_SNAP_DEFAULT_GRID_MS,
     ...overrides,
   };
+}
+
+export function snapConfigFromPreset(
+  preset: StudioSnapPreset,
+): StudioSnapConfig {
+  switch (preset) {
+    case "off":
+      return createDefaultSnapConfig({ mode: "off" });
+    case "20":
+      return createDefaultSnapConfig({ mode: "grid", gridIntervalMs: 20 });
+    case "100":
+      return createDefaultSnapConfig({ mode: "grid", gridIntervalMs: 100 });
+    case "1000":
+      return createDefaultSnapConfig({ mode: "grid", gridIntervalMs: 1000 });
+  }
+}
+
+export function snapPresetFromConfig(
+  config: StudioSnapConfig,
+): StudioSnapPreset {
+  if (config.mode === "off") return "off";
+  if (config.gridIntervalMs === 20) return "20";
+  if (config.gridIntervalMs === 100) return "100";
+  if (config.gridIntervalMs === 1000) return "1000";
+  return "off";
+}
+
+export function cycleStudioSnapConfig(
+  config: StudioSnapConfig,
+): StudioSnapConfig {
+  const current = snapPresetFromConfig(config);
+  const idx = STUDIO_SNAP_PRESET_ORDER.indexOf(current);
+  const next =
+    STUDIO_SNAP_PRESET_ORDER[(idx + 1) % STUDIO_SNAP_PRESET_ORDER.length] ??
+    "off";
+  return snapConfigFromPreset(next);
+}
+
+export function studioSnapPresetLabel(preset: StudioSnapPreset): string {
+  switch (preset) {
+    case "off":
+      return "OFF";
+    case "20":
+      return "20 ms";
+    case "100":
+      return "100 ms";
+    case "1000":
+      return "1 s";
+  }
 }
 
 export function clampPxPerMs(pxPerMs: number): number {
@@ -87,6 +155,41 @@ export function zoomOutPxPerMs(pxPerMs: number): number {
   return clampPxPerMs(clampPxPerMs(pxPerMs) / STUDIO_TIMELINE_ZOOM_STEP);
 }
 
+/**
+ * Zoom while keeping `anchorMs` under the same viewport X offset.
+ * Returns clamped density + scrollLeft so the cursor/time point stays put.
+ */
+export function zoomAroundAnchorMs(params: {
+  currentPxPerMs: number;
+  nextPxPerMs: number;
+  anchorMs: number;
+  viewportOffsetPx: number;
+}): { pxPerMs: number; scrollLeft: number; anchorMs: number } {
+  // currentPxPerMs validated for callers that mirror density before/after.
+  clampPxPerMs(params.currentPxPerMs);
+  const next = clampPxPerMs(params.nextPxPerMs);
+  const anchorMs = Math.round(params.anchorMs);
+  assertIntegerMs(anchorMs, "anchorMs");
+  if (!Number.isFinite(params.viewportOffsetPx)) {
+    throw new Error("viewportOffsetPx must be finite.");
+  }
+  const contentX = msToPx(anchorMs, next);
+  const scrollLeft = Math.max(0, contentX - params.viewportOffsetPx);
+  return { pxPerMs: next, scrollLeft, anchorMs };
+}
+
+/** Resolve timeline ms under a viewport X given current scroll + density. */
+export function timelineMsAtViewportX(params: {
+  scrollLeft: number;
+  viewportOffsetPx: number;
+  pxPerMs: number;
+}): number {
+  if (!Number.isFinite(params.scrollLeft) || !Number.isFinite(params.viewportOffsetPx)) {
+    throw new Error("scroll/viewport offsets must be finite.");
+  }
+  return pxToMs(params.scrollLeft + params.viewportOffsetPx, params.pxPerMs);
+}
+
 /** Fit project length into viewport width (with a small padding). */
 export function fitPxPerMs(
   timelineLengthMs: number,
@@ -130,6 +233,65 @@ export function snapTimelineMs(
   return Math.round(next);
 }
 
+/**
+ * Resolve nudge delta from modifier keys.
+ * Alt/Option → ±20 · Shift → ±10 · plain → ±1 (sign applied by caller).
+ */
+export function resolveNudgeStepMs(modifiers: {
+  shiftKey: boolean;
+  altKey: boolean;
+}): number {
+  if (modifiers.altKey) return STUDIO_NUDGE_COARSE_MS;
+  if (modifiers.shiftKey) return STUDIO_NUDGE_MEDIUM_MS;
+  return STUDIO_NUDGE_FINE_MS;
+}
+
+/**
+ * Compute next clip timelineStartMs after a keyboard nudge.
+ * Integer ms only; does NOT apply snap (precision micro-timing).
+ */
+export function nudgeClipTimelineStartMs(params: {
+  timelineStartMs: number;
+  durationMs: number;
+  timelineLengthMs: number;
+  deltaMs: number;
+}): number {
+  assertIntegerMs(params.timelineStartMs, "timelineStartMs");
+  assertIntegerMs(params.durationMs, "durationMs");
+  assertIntegerMs(params.timelineLengthMs, "timelineLengthMs");
+  assertIntegerMs(params.deltaMs, "deltaMs");
+  const maxStart = Math.max(0, params.timelineLengthMs - params.durationMs);
+  return Math.min(
+    maxStart,
+    Math.max(0, params.timelineStartMs + params.deltaMs),
+  );
+}
+
+/**
+ * Phase 3 prep — edge geometry already available for trim handles.
+ * No model change: left/right edges + sourceOffset + duration.
+ */
+export function clipEdgeGeometryMs(clip: {
+  timelineStartMs: number;
+  durationMs: number;
+  sourceOffsetMs: number;
+}): {
+  leftMs: number;
+  rightMs: number;
+  sourceOffsetMs: number;
+  durationMs: number;
+} {
+  assertIntegerMs(clip.timelineStartMs, "timelineStartMs");
+  assertIntegerMs(clip.durationMs, "durationMs");
+  assertIntegerMs(clip.sourceOffsetMs, "sourceOffsetMs");
+  return {
+    leftMs: clip.timelineStartMs,
+    rightMs: clip.timelineStartMs + clip.durationMs,
+    sourceOffsetMs: clip.sourceOffsetMs,
+    durationMs: clip.durationMs,
+  };
+}
+
 export function selectClipId(
   _current: string | null,
   clipId: string,
@@ -160,6 +322,7 @@ export type StudioRulerTick = {
 /**
  * Build ruler ticks targeting ~`targetTickPx` spacing.
  * Major ticks every 5 minor steps (or at 0 / end).
+ * Phase 2: includes sub-100 ms steps for high zoom (≥ 1 px/ms).
  */
 export function buildTimelineRulerTicks(params: {
   timelineLengthMs: number;
@@ -173,7 +336,8 @@ export function buildTimelineRulerTicks(params: {
   const rawStepMs = targetPx / density;
 
   const niceSteps = [
-    100, 200, 500, 1000, 2000, 5000, 10_000, 15_000, 30_000, 60_000, 120_000,
+    1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10_000, 15_000, 30_000,
+    60_000, 120_000,
   ];
   let stepMs = niceSteps[niceSteps.length - 1]!;
   for (const candidate of niceSteps) {

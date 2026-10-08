@@ -86,15 +86,19 @@ describe("P6.4.3 Mix UX integration contracts", () => {
   it("Track Mix: Mute/Solo then Gain/Pan then FX entry", () => {
     expect(editor).toMatch(/studioFxEntryLabel/);
     expect(editor).toMatch(/aria-label=\"Mix\"/);
-    const muteIdx = editor.indexOf('label="Wycisz"');
-    const soloIdx = editor.indexOf('label="Odsłuch"');
-    const gainIdx = editor.indexOf("ariaLabel={`Głośność ścieżki");
-    const panIdx = editor.indexOf("ariaLabel={`Panorama ścieżki");
-    const meterIdx = editor.indexOf("<StudioTrackMeter");
-    const fxIdx = editor.indexOf("Efekty ścieżki");
+    // Phase 1 DAW — Mute/Solo live on compact track headers; Gain/Pan/Meter/FX in mixer drawer.
+    const muteIdx = editor.indexOf('title="Wycisz"');
+    const soloIdx = editor.indexOf('title="Solo"');
+    const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
+    expect(mixerStart).toBeGreaterThan(0);
+    const mixer = editor.slice(mixerStart);
+    const gainIdx = mixer.indexOf("ariaLabel={`Głośność ścieżki");
+    const panIdx = mixer.indexOf("ariaLabel={`Panorama ścieżki");
+    const meterIdx = mixer.indexOf("<StudioTrackMeter");
+    const fxIdx = mixer.indexOf("Efekty ścieżki");
     expect(muteIdx).toBeGreaterThan(0);
     expect(soloIdx).toBeGreaterThan(muteIdx);
-    expect(gainIdx).toBeGreaterThan(soloIdx);
+    expect(gainIdx).toBeGreaterThanOrEqual(0);
     expect(panIdx).toBeGreaterThan(gainIdx);
     expect(meterIdx).toBeGreaterThan(panIdx);
     expect(fxIdx).toBeGreaterThan(meterIdx);
@@ -107,9 +111,12 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(editor).toMatch(/StudioMasterMeter/);
     expect(editor).toMatch(/Efekty Master/);
     expect(editor).toMatch(/studioFxEntryLabel\(doc\.project\.masterFxChain\)/);
-    const panIdx = editor.indexOf('ariaLabel="Panorama Master"');
-    const meterIdx = editor.indexOf("<StudioMasterMeter");
-    const fxIdx = editor.indexOf('aria-label="Efekty Master"');
+    const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
+    expect(mixerStart).toBeGreaterThan(0);
+    const mixer = editor.slice(mixerStart);
+    const panIdx = mixer.indexOf('ariaLabel="Panorama Master"');
+    const meterIdx = mixer.indexOf("<StudioMasterMeter");
+    const fxIdx = mixer.indexOf('aria-label="Efekty Master"');
     expect(meterIdx).toBeGreaterThan(panIdx);
     expect(fxIdx).toBeGreaterThan(meterIdx);
   });
@@ -137,8 +144,13 @@ describe("P6.4.3 Mix UX integration contracts", () => {
   });
 
   it("editor scroll-padding clears bottom-nav intercept zone", () => {
-    expect(editor).toMatch(/scroll-pb-\[calc\(4\.75rem\+env\(safe-area-inset-bottom\)\)\]/);
-    expect(editor).toMatch(/safe-area-inset-bottom/);
+    // Phase 1 — DAW shell + project page own safe-area / bottom-nav clearance.
+    expect(editor).toMatch(/studio-daw-shell/);
+    const page = readFileSync(
+      join(process.cwd(), "src/app/studio/p/[projectId]/page.tsx"),
+      "utf8",
+    );
+    expect(page).toMatch(/safe-area-inset-bottom/);
   });
 
   it("transport sticky + 44px targets + accessible labels", () => {

@@ -240,7 +240,13 @@ describe("P6.7.3 mobile + architecture guards", () => {
     expect(editor).toMatch(/min-w-0 space-y-3 rounded border/);
     expect(editor).toMatch(/aria-label="Zapisz fade"/);
     expect(editor).toMatch(/min-h-11 w-full min-w-0/);
-    expect(editor).toMatch(/scroll-pb-\[calc\(4\.75rem\+env\(safe-area-inset-bottom\)\)\]/);
+    // Phase 1 DAW — safe-area clearance moved to project page shell.
+    expect(editor).toMatch(/studio-daw-shell/);
+    const page = readFileSync(
+      join(process.cwd(), "src/app/studio/p/[projectId]/page.tsx"),
+      "utf8",
+    );
+    expect(page).toMatch(/safe-area-inset-bottom/);
     expect(mix).toMatch(/h-11 w-full/);
   });
 

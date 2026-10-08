@@ -33,10 +33,14 @@ describe("PR-04 Move CAS alignment", () => {
       join(process.cwd(), "src/components/studio/studio-editor.tsx"),
       "utf8",
     );
-    const moveBodies = editor.match(
-      /op:\s*"move"[\s\S]*?expectedDocumentVersion/g,
+    // Inspector panel still uses op:"move" + expectedDocumentVersion.
+    expect(editor).toMatch(/op:\s*"move"[\s\S]*?expectedDocumentVersion/);
+    // Timeline drag commits via persistClipGeometryCommit (CAS body).
+    expect(editor).toMatch(/persistClipGeometryCommit/);
+    expect(editor).toMatch(/body\.op = \"move\"/);
+    expect(editor).toMatch(
+      /expectedDocumentVersion: doc\.project\.documentVersion/,
     );
-    expect(moveBodies?.length).toBeGreaterThanOrEqual(2);
   });
 });
 

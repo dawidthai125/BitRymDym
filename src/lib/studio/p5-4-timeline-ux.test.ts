@@ -157,8 +157,9 @@ describe("P5.4 regression guards", () => {
     expect(editor).toMatch(/trim_left_to_playhead/);
     expect(editor).toMatch(/atTimelineMs/);
     expect(editor).toMatch(/method: "DELETE"/);
-    expect(editor).toMatch(/Snap: /);
-    expect(editor).toMatch(/Powiększ/);
+    // Phase 1–2 DAW toolbar — Snap cycle + zoom affordances (ops unchanged).
+    expect(editor).toMatch(/Snap \{studioSnapPresetLabel/);
+    expect(editor).toMatch(/title="Powiększ oś czasu"/);
   });
 
   it("StudioTransport remains distinct from PlayerProvider", () => {

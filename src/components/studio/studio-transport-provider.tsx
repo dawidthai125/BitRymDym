@@ -76,6 +76,16 @@ type StudioTransportApi = {
    */
   previewTake: (takeId: string) => Promise<void>;
   stopTakePreview: () => void;
+  /**
+   * Phase 3 — signed URL for waveform peaks (reuses beat/take URL caches).
+   * Does not create AudioContext / does not decode.
+   */
+  resolveClipSourceUrl: (clip: {
+    sourceKind: string;
+    sourceTakeId: string | null;
+    sourceBeatId: string | null;
+    sourceArtifactId: string | null;
+  }) => Promise<string | null>;
 };
 
 const StudioTransportContext = createContext<StudioTransportApi | null>(null);
@@ -349,6 +359,27 @@ export function StudioTransportProvider({
     [],
   );
 
+  const resolveClipSourceUrl = useCallback(
+    async (clip: {
+      sourceKind: string;
+      sourceTakeId: string | null;
+      sourceBeatId: string | null;
+      sourceArtifactId: string | null;
+    }): Promise<string | null> => {
+      if (clip.sourceKind === "TAKE" && clip.sourceTakeId) {
+        const source = await resolveTakeUrl(clip.sourceTakeId);
+        return source?.url ?? null;
+      }
+      if (clip.sourceKind === "BEAT_REF" && clip.sourceBeatId) {
+        const source = await resolveBeatUrl(clip.sourceBeatId);
+        return source?.url ?? null;
+      }
+      // ARTIFACT playback / peaks not shipped for Studio waveform v1.
+      return null;
+    },
+    [],
+  );
+
   const previewTake = async (takeId: string): Promise<void> => {
     if (!takeId) {
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
@@ -399,6 +430,7 @@ export function StudioTransportProvider({
     seek,
     previewTake,
     stopTakePreview,
+    resolveClipSourceUrl,
   };
 
   return (
