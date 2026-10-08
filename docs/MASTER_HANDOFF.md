@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · production tip `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · REPO `65ebc46` · PRODUCTION APP `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,9 +23,10 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository / docs HEAD** | `origin/main` — verify `git rev-parse HEAD` (tip **`a72fed9`** when clean) |
+| **Repository HEAD / origin/main** | **`65ebc46`** (`65ebc46e779f499a368a81627ae0ef71093336de`) — docs tip after P4.6 closeout · verify `git rev-parse HEAD` · **≠** production app |
 | **Production application SHA** | `a72fed9e85db71acc900df6fe88b4e7b0faa4765` (**`a72fed9`**) — P4.6 TAKE_EXPORT · READY / GREEN |
 | **Production deployment** | `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · READY |
+| **Dual-plane note** | REPOSITORY TIP `65ebc46` ≠ PRODUCTION APP `a72fed9` · **NO REDEPLOY** of docs tip |
 | **Previous production tip (HISTORY)** | `836679a` · `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT` — Checkbox UX |
 | **Studio baseline** | **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **Catalog** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
@@ -173,6 +174,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
+| `65ebc46` | **CURRENT REPOSITORY HEAD / origin/main** · docs tip after P4.6 closeout · **≠** production app |
 | `a72fed9` | **CURRENT PRODUCTION APP** · P4.6 TAKE_EXPORT · **READY / GREEN** · dpl `dpl_8PDy…` |
 | `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` | **CURRENT PRODUCTION DEPLOYMENT** |
 | `0b0ca04` | Historical — P4.6 docs checkpoint (ancestry of tip) |
@@ -182,7 +184,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | `2c4b416` | Historical — Project List UX + Delete (ancestry) |
 | `56b629e` | Historical — Post-Recording V1 tip (CLOSED / GREEN · ancestry) |
 | `06c60b5` | Historical — P6.7 Clip Fades production tip · **CLOSED / GREEN** |
-| `origin/main` | **REPO / DOCS TIP** · verify `git rev-parse HEAD` (expect `a72fed9` when clean) |
+| `origin/main` | **REPO / DOCS TIP** · verify `git rev-parse HEAD` (expect **`65ebc46`** when clean) |
 | `c767d12` | Historical — full Px→P6.7 SSOT reconcile docs commit |
 | `e136558` | Historical — first P6.7.4 gate docs tip |
 | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` | Historical — P6.7 production deployment (`06c60b5`) |
@@ -224,9 +226,10 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **HEAD / origin/main (docs)** | verify `git rev-parse HEAD` · tip **`a72fed9`** when clean |
+| **HEAD / origin/main (docs)** | verify `git rev-parse HEAD` · tip **`65ebc46`** when clean · **≠** production app |
 | **Production application** | **`a72fed9`** — **READY / GREEN** (P4.6 TAKE_EXPORT · Checkbox/`836679a` + V1/P6.7 ancestry) |
 | **Production deployment** | **`dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY`** · READY |
+| **Dual-plane** | REPOSITORY TIP `65ebc46` ≠ PRODUCTION APP `a72fed9` · **NO REDEPLOY** |
 | **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
 | **P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **P5.9** | **Architecture Audit · GO WITH CONDITIONS** |
@@ -800,6 +803,24 @@ No commit/push/deploy without explicit Owner GO for that step.
 
 ## 18. Next Session Entry Point
 
+### CANONICAL CURRENT (dual-plane)
+
+```text
+REPOSITORY HEAD / origin/main = 65ebc46
+PRODUCTION APP SHA            = a72fed9
+PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
+PRODUCTION URL                = https://www.bitrymdym.pl
+P4.6                          = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+Contabo                       = STOPPED / DISABLED (capability GREEN · not always-on)
+P6.8                          = NOT STARTED / OWNER DECISION
+NEXT GATE                     = STOP — Owner decides (do NOT start P6.8)
+NOTE                          = REPOSITORY TIP 65ebc46 ≠ PRODUCTION APP SHA a72fed9 · NO REDEPLOY
+NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md
+                              → MASTER_HANDOFF / PROJECT_STATE
+```
+
+### HISTORY — P6.7-era session stamp (ARCHIVED SNAPSHOT)
+
 ```text
 CURRENT PRODUCTION APP = 06c60b5 · P6.7 PRODUCTION VERIFIED — GREEN · CLOSED
 PRODUCTION DEPLOYMENT  = dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp · GH 6902986442
@@ -931,6 +952,23 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 ---
 
 ## 21. Handoff Closeout
+
+### CANONICAL CURRENT (dual-plane)
+
+```text
+MASTER HANDOFF READY
+REPOSITORY HEAD / origin/main = 65ebc46
+PRODUCTION APP SHA            = a72fed9 · READY / GREEN
+PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
+P4.6                          = CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
+WORKER                        = Contabo STOPPED / DISABLED
+P6.8                          = NOT STARTED / OWNER DECISION
+NEXT GATE                     = STOP — do NOT start P6.8 · Owner decides next
+NOTE                          = REPOSITORY TIP 65ebc46 ≠ PRODUCTION APP SHA a72fed9 · NO REDEPLOY
+NEXT SESSION ENTRY            = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
+```
+
+### HISTORY — P6.7-era session stamp (ARCHIVED SNAPSHOT)
 
 ```text
 MASTER HANDOFF READY

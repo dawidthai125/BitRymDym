@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · production tip `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
-**Type:** Documentation continuity · production tip = `a72fed9` · next = Owner decision only (no P6.8 auto-start)
+**Updated:** 2026-10-08 — **P4.6 TAKE_EXPORT CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** · REPO `65ebc46` · PRODUCTION APP `a72fed9` · dpl `dpl_8PDy…` · V1/P6.7 CLOSED/GREEN · Catalog/Storage GREEN · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Type:** Documentation continuity · dual-plane tip (REPO ≠ PRODUCTION) · next = Owner decision only (no P6.8 auto-start)
 
 **Evidence rule (bezwzględna):**
 
@@ -25,15 +25,18 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
+REPOSITORY HEAD / origin/main = 65ebc46e779f499a368a81627ae0ef71093336de
+  short                       = 65ebc46
+  note                        = docs tip after P4.6 closeout · NOT a production deploy
 PRODUCTION APP SHA            = a72fed9e85db71acc900df6fe88b4e7b0faa4765
   short                       = a72fed9
   note                        = P4.6 TAKE_EXPORT · PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN
                               · ancestry includes Checkbox `836679a` · List multi-select `0f2169a`
                               · List UX/Delete `2c4b416` · V1 `56b629e` · P6.7 `06c60b5`
+                              · REPOSITORY TIP 65ebc46 ≠ PRODUCTION APP SHA a72fed9 · NO REDEPLOY
 PRODUCTION DEPLOYMENT         = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY · READY / GREEN
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-REPOSITORY / DOCS HEAD        = origin/main (verify git rev-parse HEAD) · tip = a72fed9 when clean
 PREVIOUS PRODUCTION TIP       = 836679a · dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT (HISTORY)
 
 STUDIO BASELINE               = V1 CLOSED / GREEN · P6.7 CLOSED / GREEN
@@ -146,7 +149,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository / docs | `origin/main` (verify `git rev-parse HEAD`) · tip **`a72fed9`** when clean |
+| Repository / docs | `origin/main` · tip **`65ebc46`** (verify `git rev-parse HEAD`) · **≠** production app |
 | Production app | **`a72fed9`** · **READY / GREEN** · P4.6 TAKE_EXPORT tip (Checkbox/`836679a` + V1/P6.7 ancestry) |
 | Production deployment | **`dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY`** · aliases www.bitrymdym.pl |
 | Production DB | includes P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
@@ -512,12 +515,14 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → expect a72fed9 (when worktree tip clean)
-[ ] git rev-parse origin/main                → match HEAD (a72fed9)
+[ ] git fetch && git rev-parse HEAD           → expect 65ebc46 (REPO / docs tip when clean)
+[ ] git rev-parse origin/main                → match HEAD (65ebc46)
 [ ] Confirm Production app SHA = a72fed9 · dpl dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY · READY
+[ ] Confirm REPOSITORY TIP 65ebc46 ≠ PRODUCTION APP a72fed9 · NO REDEPLOY of docs tip
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
 [ ] Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING (not Real Device Verified)
 [ ] Confirm Contabo worker = STOPPED / DISABLED · P4.6 LIVE E2E VERIFIED
+[ ] Confirm Closed EPIC = P4.6 TAKE_EXPORT · CLOSED / GREEN
 [ ] Read MASTER_HANDOFF + PROJECT_STATE + P4_6_PRODUCTION_CLOSEOUT + relevant gates
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
 [ ] NEXT GATE = STOP — do NOT start P6.8 · Owner decides next unit
@@ -533,10 +538,11 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (P4.6 CLOSED / GREEN · tip a72fed9 · 2026-10-08)
+FINAL COLD START HANDOFF     = READY (P4.6 CLOSED / GREEN · 2026-10-08)
+REPOSITORY HEAD / origin/main = 65ebc46
 PRODUCTION APP SHA           = a72fed9 · READY / GREEN
 PRODUCTION DEPLOYMENT        = dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY
-REPO / DOCS HEAD             = origin/main (verify git rev-parse HEAD)
+NOTE                         = REPO 65ebc46 ≠ PRODUCTION APP a72fed9 · NO REDEPLOY
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio 13
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING

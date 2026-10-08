@@ -13,8 +13,10 @@
 | Production SHA | `a72fed9e85db71acc900df6fe88b4e7b0faa4765` (**`a72fed9`**) |
 | Deployment | `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · **READY** |
 | URL | https://www.bitrymdym.pl |
-| Remote | `origin/main` = `a72fed9` |
-| Chain | `836679a` → `0b0ca04` (docs) → `a72fed9` (Phase 1 code) |
+| Repository HEAD / origin/main | **`65ebc46`** (docs tip after closeout) |
+| Chain | `836679a` → `0b0ca04` (docs) → `a72fed9` (Phase 1 code) → `65ebc46` (docs dual-plane closeout) |
+
+**Dual-plane:** REPOSITORY TIP `65ebc46` ≠ PRODUCTION APP SHA `a72fed9` · **NO REDEPLOY REQUIRED**.
 
 **Previous production tip (HISTORY):** `836679a` · `dpl_5J2cRHA2XRg7SKCZuyFvVZhBpJpT`
 

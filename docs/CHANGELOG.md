@@ -10,9 +10,10 @@ Format: data, zakres, skrót.
 
 **Status:** **P4.6 TAKE_EXPORT — CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN**
 **Scope:** Living SSOT tip (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · closeout evidence · this entry)
-**Production tip:** `a72fed9` · dpl `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · READY / GREEN · https://www.bitrymdym.pl
-**Remote:** `origin/main` = `a72fed9`
-**Chain:** `836679a` → `0b0ca04` (docs) → `a72fed9` (Phase 1 TAKE_EXPORT code)
+**Production release tip:** `a72fed9` · dpl `dpl_8PDyhXVZDMyBm8fgiWNgj9ZPwnJY` · READY / GREEN · https://www.bitrymdym.pl
+**Docs/repository tip after closeout:** `65ebc46`
+**origin/main after closeout:** `65ebc46` (REPO ≠ PRODUCTION · no redeploy of docs tip)
+**Chain:** `836679a` → `0b0ca04` (docs) → `a72fed9` (Phase 1 TAKE_EXPORT code) → `65ebc46` (docs dual-plane closeout)
 **Closure path:** Phase 1 CODE → Phase 2 INFRA → Phase 3 (historical Contabo) → controlled push → Vercel deploy → post-deploy verify → **production LIVE E2E**
 **Production LIVE E2E:** Take `a9542a12-…` READY · job `a5b6e8e0-…` TAKE_EXPORT MP3_192 · `QUEUED`→`RUNNING`→`SUCCEEDED` · artifact `d7b05d44-…` · take-audio only · MIX used **NO** · `ffmpeg+libmp3lame` · stream bitrate **192000** · ~10.80s · 260850 bytes · owner download PASS · non-owner DENIED · Contabo single-job · worker **STOPPED / DISABLED** after test
 **Evidence:** [P4_6_PRODUCTION_CLOSEOUT.md](./audits/P4_6_PRODUCTION_CLOSEOUT.md) · Phase 1/2/3 reports under `docs/audits/`
