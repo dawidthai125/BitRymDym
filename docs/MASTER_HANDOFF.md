@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-08 — **Phase 7.1.5 Shell Polish + Stacked Escape CLOSED / PRODUCTION GREEN** @ `3fccbf7` · dpl `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · prior `9abc1b6` (7.1.4) · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
+**Updated:** 2026-10-08 — **Phase 7.1.6 Auto Save + CAS Completeness CLOSED / PRODUCTION GREEN** @ `4fa658d` · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · prior `3fccbf7` (7.1.5) · Mobile TECHNICALLY READY — DEVICE CERTIFICATION PENDING · **STOP**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -23,25 +23,26 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **Repository HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after Phase 7.1.5 SSOT reconcile · may **≠** production app |
-| **Production application SHA** | `3fccbf7e9f93df519aa57475d79d045b8d2a636d` (**`3fccbf7`**) — Phase 7.1.5 Shell Polish + Stacked Escape · READY / GREEN |
-| **Production deployment** | `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · READY |
-| **Dual-plane note** | REPOSITORY tip (docs-only) may ≠ PRODUCTION APP `3fccbf7` · **NO REDEPLOY** of docs tip |
-| **Previous production tip (HISTORY)** | `9abc1b6` — Phase 7.1.4 Mixer Dock · older: `8f6eeca` (7.1.3) · `a72fed9` (P4.6) |
-| **Studio baseline** | **Phase 7.1.5 CLOSED / GREEN** @ `3fccbf7` · **7.1.4 Mixer Dock CLOSED / GREEN** @ `9abc1b6` · **7.1.3 Inspector CLOSED / GREEN** @ `8f6eeca` · **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **Repository HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after Phase 7.1.6 SSOT reconcile · may **≠** production app |
+| **Production application SHA** | `4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1` (**`4fa658d`**) — Phase 7.1.6 Auto Save + CAS Completeness · READY / GREEN |
+| **Production deployment** | `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · READY |
+| **Dual-plane note** | REPOSITORY tip (docs-only) may ≠ PRODUCTION APP `4fa658d` · **NO REDEPLOY** of docs tip |
+| **Previous production tip (HISTORY)** | `3fccbf7` — Phase 7.1.5 Shell Polish + Stacked Escape · older: `9abc1b6` (7.1.4) · `8f6eeca` (7.1.3) |
+| **Studio baseline** | **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · **7.1.5 Shell Polish CLOSED / GREEN** @ `3fccbf7` · **7.1.4 Mixer Dock CLOSED / GREEN** @ `9abc1b6` · **7.1.3 Inspector CLOSED / GREEN** @ `8f6eeca` · **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **Catalog** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
 | **Storage** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) |
 | **Security** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
 | **Mobile** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** (not Real Device Verified) · P0/P1 **0** · P2 **2** · P3 **5** |
-| **Last Studio Production Verify** | Phase 7.1.5 **GREEN** @ `3fccbf7` · prior 7.1.4 @ `9abc1b6` · Checkbox @ `836679a` · V1 @ `56b629e` · [7.1.5 closeout](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) |
+| **Last Studio Production Verify** | Phase 7.1.6 **GREEN** @ `4fa658d` · prior 7.1.5 @ `3fccbf7` · 7.1.4 @ `9abc1b6` · Checkbox @ `836679a` · V1 @ `56b629e` · [7.1.6 closeout](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md) |
 | **POST-RECORDING V1** | **PRODUCTION VERIFIED — GREEN · CLOSED** · ancestry `1a62158` + `3216cf0` + `56b629e` · [gate](./audits/POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md) |
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
-| **Phase 7.1.5 Shell Polish** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `3fccbf7` / `dpl_2E7J…` · feature `f891bce` · Escape fix `3fccbf7` · stacked Escape PASS · [closeout](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) |
+| **Phase 7.1.6 Auto Save + CAS** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `4fa658d` / `dpl_6sai…` · feature `89ee919` · correction `4fa658d` · migration `20261008192141` · [closeout](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md) |
+| **Phase 7.1.5 Shell Polish** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `3fccbf7` (ancestry) / `dpl_2E7J…` · feature `f891bce` · Escape fix `3fccbf7` · stacked Escape PASS · [closeout](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) |
 | **Phase 7.1.4 Mixer Dock** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `9abc1b6` (ancestry) · OD-P7.1.4-01…04=A · [freeze](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) · [closeout](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) |
 | **Phase 7.1.3 Inspector IA** | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (ancestry · do not reopen) |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked lib/migration = **NOT PRODUCTION** |
-| **NEXT UNIT** | **STOP** — **Phase 7.1.5 CLOSED / GREEN** @ `3fccbf7` · **P6.8 NOT STARTED / OWNER DECISION** · do **not** force-redeploy · no Automation / Autotune / E3 Studio Render / Undo / Autosave / Contabo |
+| **NEXT UNIT** | **STOP** — **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · next phase requires separate audit / design freeze · do **not** force-redeploy · no Automation / Autotune / E3 Studio Render / Contabo |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -119,9 +120,9 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · engine foundation SHIPPED (P5.10 GREEN)
                 · Automation / Autotune = NOT READY
                 · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split fade inherit
-                · next = STOP (P6.8 NOT STARTED / OWNER DECISION)
+                · next = STOP (Phase 7.1.6 CLOSED / GREEN · next phase = separate audit / freeze)
 Track Type + Capabilities = future (document condition before P7 expansion)
-document_version          = exists · NOT frozen autosave contract (condition before autosave)
+document_version          = exists · Phase 7.1.6 Auto Save + CAS Completeness CLOSED / GREEN @ 4fa658d
 ARTIFACT playback         = adapter stub / unavailable (non-blocking)
 P6 = product FX / Mix / Master + Track Peak (P6.5/P6.6) + Clip Fades (P6.7 GREEN) · routing / buses / automation later
 P7 = samples / scratch / instruments / pitch / stretch / reverse / loop / drag-drop
@@ -179,8 +180,11 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | SHA / ID | Meaning |
 |----------|---------|
 | `origin/main` / HEAD | **REPO / DOCS TIP** · verify `git rev-parse HEAD` · may ≠ production app after docs-only tip |
-| `3fccbf7` | **CURRENT PRODUCTION APP** · Phase 7.1.5 Shell Polish + Stacked Escape · **READY / GREEN** · dpl `dpl_2E7J…` |
-| `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` | **CURRENT PRODUCTION DEPLOYMENT** |
+| `4fa658d` | **CURRENT PRODUCTION APP** · Phase 7.1.6 Auto Save + CAS Completeness · **READY / GREEN** · dpl `dpl_6sai…` |
+| `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` | **CURRENT PRODUCTION DEPLOYMENT** |
+| `89ee919` | Historical — Phase 7.1.6 feature LAND (ancestry of tip `4fa658d`) |
+| `3fccbf7` | Historical — Phase 7.1.5 Shell Polish + Stacked Escape prior production tip · dpl `dpl_2E7J…` |
+| `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` | Historical — Phase 7.1.5 production deployment |
 | `f891bce` | Historical — Phase 7.1.5 feature LAND (ancestry of tip `3fccbf7`) |
 | `9abc1b6` | Historical — Phase 7.1.4 Mixer Dock prior production tip · dpl `dpl_7nZZ…` |
 | `dpl_7nZZXRBBZS3hJMzSfw4F8FXkRoww` | Historical — Phase 7.1.4 production deployment |
@@ -237,9 +241,9 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
 | **HEAD / origin/main (docs)** | verify `git rev-parse HEAD` · may ≠ production app after docs-only tip |
-| **Production application** | **`3fccbf7`** — **READY / GREEN** (Phase 7.1.5 · ancestry `f891bce` / `9abc1b6` / `8f6eeca` / V1/P6.7) |
-| **Production deployment** | **`dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR`** · READY |
-| **Dual-plane** | REPOSITORY tip may ≠ PRODUCTION APP `3fccbf7` · **NO REDEPLOY** |
+| **Production application** | **`4fa658d`** — **READY / GREEN** (Phase 7.1.6 · ancestry `89ee919` / `3fccbf7` / `9abc1b6` / `8f6eeca` / V1/P6.7) |
+| **Production deployment** | **`dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy`** · READY |
+| **Dual-plane** | REPOSITORY tip may ≠ PRODUCTION APP `4fa658d` · **NO REDEPLOY** |
 | **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
 | **P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **P5.9** | **Architecture Audit · GO WITH CONDITIONS** |
@@ -255,7 +259,7 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 | **P3** | **COMPLETE / PRODUCTION VERIFIED — GREEN** · **UNCHANGED** |
 | **Fala 3.5.1** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` |
 | **FAR-01** | **SOAK COMPLETE / CONTAMINATED** · **RETIREMENT NOT EXECUTED** · **NOT CLOSED** |
-| **NEXT GATE** | **STOP** — Phase 7.1.5 **CLOSED / GREEN** · do **not** start P6.8 · Owner decides next · P3 `p_take_id` = **NON-BLOCKING** |
+| **NEXT GATE** | **STOP** — Phase 7.1.6 **CLOSED / GREEN** · next phase requires separate audit / design freeze · P3 `p_take_id` = **NON-BLOCKING** |
 | Typical local residue (do not stage) | `.agents/` · `.cursor/` · `skills-lock.json` · `infra/oracle/` · `.env*` · secrets · backup artifacts · unrelated WIP |
 
 Git rules: **never** `git add .` / `-A` / `-u` — exact allowlist only. **Nie czyść** dirty WIP bez Owner GO.
@@ -817,17 +821,18 @@ No commit/push/deploy without explicit Owner GO for that step.
 
 ```text
 REPOSITORY HEAD / origin/main = verify git rev-parse HEAD (docs tip · may ≠ app)
-PRODUCTION APP SHA            = 3fccbf7
-PRODUCTION DEPLOYMENT         = dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR
+PRODUCTION APP SHA            = 4fa658d
+PRODUCTION DEPLOYMENT         = dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy
 PRODUCTION URL                = https://www.bitrymdym.pl
-PHASE 7.1.5 SHELL POLISH      = CLOSED / PRODUCTION VERIFIED — GREEN
+PHASE 7.1.6 AUTO SAVE + CAS   = CLOSED / PRODUCTION VERIFIED — GREEN
+PHASE 7.1.5 SHELL POLISH      = CLOSED / GREEN @ 3fccbf7 (ancestry · do not reopen)
 PHASE 7.1.4 MIXER DOCK        = CLOSED / GREEN @ 9abc1b6 (ancestry · do not reopen)
 PHASE 7.1.3 INSPECTOR IA      = CLOSED / GREEN @ 8f6eeca (do not reopen)
 P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 Contabo                       = STOPPED / DISABLED (capability GREEN · not always-on)
 P6.8                          = NOT STARTED / OWNER DECISION
-NEXT GATE                     = STOP — Owner decides (do NOT start P6.8)
-NOTE                          = REPOSITORY tip may ≠ PRODUCTION APP SHA 3fccbf7 · NO REDEPLOY
+NEXT GATE                     = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
+NOTE                          = REPOSITORY tip may ≠ PRODUCTION APP SHA 4fa658d · NO REDEPLOY
 NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md
                               → MASTER_HANDOFF / PROJECT_STATE
 ```
@@ -971,16 +976,17 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 ```text
 MASTER HANDOFF READY
 REPOSITORY HEAD / origin/main = verify git rev-parse HEAD (docs tip · may ≠ app)
-PRODUCTION APP SHA            = 3fccbf7 · READY / GREEN
-PRODUCTION DEPLOYMENT         = dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR
-PHASE 7.1.5 SHELL POLISH      = CLOSED / PRODUCTION VERIFIED — GREEN
+PRODUCTION APP SHA            = 4fa658d · READY / GREEN
+PRODUCTION DEPLOYMENT         = dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy
+PHASE 7.1.6 AUTO SAVE + CAS   = CLOSED / PRODUCTION VERIFIED — GREEN
+PHASE 7.1.5 SHELL POLISH      = CLOSED / GREEN @ 3fccbf7 (ancestry · do not reopen)
 PHASE 7.1.4 MIXER DOCK        = CLOSED / GREEN @ 9abc1b6 (ancestry · do not reopen)
 PHASE 7.1.3 INSPECTOR IA      = CLOSED / GREEN @ 8f6eeca (do not reopen)
 P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 WORKER                        = Contabo STOPPED / DISABLED
 P6.8                          = NOT STARTED / OWNER DECISION
-NEXT GATE                     = STOP — do NOT start P6.8 · Owner decides next
-NOTE                          = REPOSITORY tip may ≠ PRODUCTION APP SHA 3fccbf7 · NO REDEPLOY
+NEXT GATE                     = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
+NOTE                          = REPOSITORY tip may ≠ PRODUCTION APP SHA 4fa658d · NO REDEPLOY
 NEXT SESSION ENTRY            = FINAL_COLD_START_HANDOFF.md → this file → PROJECT_STATE.md
 ```
 

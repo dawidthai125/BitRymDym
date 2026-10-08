@@ -6,6 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-08 — PHASE 7.1.6 AUTO SAVE + CAS COMPLETENESS PRODUCTION GREEN + SSOT RECONCILIATION
+
+**Status:** **Phase 7.1.6 — CLOSED / LAND GREEN · PRODUCTION VERIFIED — GREEN**
+**Scope:** Living SSOT tip (FINAL_COLD_START · MASTER_HANDOFF · PROJECT_STATE · README · architecture index · closeout · DECISION_LOG · this entry)
+**Production release tip:** `4fa658d` (`4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1`) · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · READY / GREEN · https://www.bitrymdym.pl
+**Feature LAND:** `89ee919` — `feat(studio): ship phase 7.1.6 auto save`
+**Correction LAND:** `4fa658d` — `fix(studio): complete phase 7.1.6 cas wiring`
+**Previous production tip (HISTORY):** `3fccbf7` — Phase 7.1.5 Shell Polish + Stacked Escape · dpl `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR`
+**Shipped:** Studio Persist Orchestrator · CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICT · serialized FIFO · generation · retry 1s/3s/8s · 409 non-retryable · manual „Zapisz teraz” · beforeunload · CAS completeness (clips · record/place · tracks · reorder · FX · beat attach · place service) · `expectedDocumentVersion` + `documentVersion`
+**Migration:** repo `20261008160000_p7_1_6_studio_cas_completeness.sql` · applied `20261008192141_p7_1_6_studio_cas_completeness` · **not** re-run on production deploy
+**Architecture:** 1 StudioAudioEngine · 1 Studio AudioContext · PlayerProvider / E3 untouched
+**Production verify:** routes `/` `/beats` `/account` `/studio` `/studio/p/{real}` = 200 · production SHA verified · editor chunk contains Auto Save + CAS markers · real project `a8b42570-…` unchanged (`document_version=1` · 2 tracks · 0 clips) · Sacred WIP untouched
+**Verification limitation:** production interactive mutation tests (**Clip Gain / Fade / Track / Reorder / Add Clip / FX / Place / Beat / conflict**) = **NOT SAFELY MUTATED** — no prod credentials / no safe disposable path · **STATICALLY VERIFIED / PRODUCTION BUNDLE VERIFIED** (intentional safety gate · not a blocker)
+**Evidence:** [P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md)
+**Repo tip after docs reconcile:** verify `git rev-parse HEAD` · may ≠ PRODUCTION APP `4fa658d` · **NO REDEPLOY** of docs tip
+**Next:** **Phase 7.1.6 CLOSED / GREEN** · next phase requires separate audit / design freeze · do **not** invent Phase 7.1.7 scope
+
 ## 2026-10-08 — PHASE 7.1.5 SHELL POLISH + STACKED ESCAPE FIX PRODUCTION GREEN + SSOT RECONCILIATION
 
 **Status:** **Phase 7.1.5 — CLOSED / IMPLEMENTATION GREEN · LAND GREEN · PRODUCTION VERIFIED — GREEN**

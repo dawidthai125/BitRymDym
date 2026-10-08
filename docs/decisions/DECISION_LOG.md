@@ -10,6 +10,27 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Phase 7.1.6 — Auto Save + CAS Completeness — CLOSED / PRODUCTION GREEN
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — Phase 7.1.6 Implementation + LAND + CAS wiring correction + Production Verify |
+| Status | **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** |
+| Date | 2026-10-08 |
+| Feature LAND | `89ee91999a629d4e0720ecf364f63d7f09cd8bb5` (`89ee919`) |
+| Correction / Production SHA | `4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1` (`4fa658d`) |
+| Deploy | `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · https://www.bitrymdym.pl |
+| Previous tip (HISTORY) | `3fccbf7` — Phase 7.1.5 Shell Polish + Stacked Escape |
+| Migration (applied) | `20261008192141_p7_1_6_studio_cas_completeness` · **not** re-run on deploy |
+
+**Locked behavior:** one `StudioPersistOrchestrator` · CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICT · retry 1s/3s/8s · 409 non-retryable · `expectedDocumentVersion` on clips/place/tracks/reorder/FX/beat · `documentVersion` returned · place idempotent reuse validates CAS · 1 StudioAudioEngine · 1 Studio AudioContext · PlayerProvider/E3 untouched.
+
+**Verification note:** production interactive mutations = **NOT SAFELY MUTATED** (no credentials / no disposable path) · static + production bundle verified · not a blocker.
+
+**SSOT:** [P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md](../audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md)
+
+---
+
 ### Phase 7.1.5 — Shell Polish + Stacked Escape Fix — CLOSED / PRODUCTION GREEN
 
 | Pole | Wartość |
@@ -18,8 +39,8 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 | Status | **CLOSED / ACCEPTED** · **PRODUCTION VERIFIED — GREEN** |
 | Date | 2026-10-08 |
 | Feature LAND | `f891bceed773a9a6a1085962e3602b52e846e2e5` (`f891bce`) |
-| Escape fix / Production SHA | `3fccbf7e9f93df519aa57475d79d045b8d2a636d` (`3fccbf7`) |
-| Deploy | `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · https://www.bitrymdym.pl |
+| Escape fix / Production SHA (historical tip) | `3fccbf7e9f93df519aa57475d79d045b8d2a636d` (`3fccbf7`) |
+| Deploy (historical) | `dpl_2E7JrvusAzAG8bsXydpqNJ36k6JR` · https://www.bitrymdym.pl |
 | Previous tip (HISTORY) | `9abc1b6` — Phase 7.1.4 Mixer Dock |
 
 **Locked behavior:** FxSheet is top-most dialog (z-50) · Escape #1 closes FxSheet · Escape #2 closes underlying Mixer overlay · Mixer/Inspector XOR (7.1.4) preserved · 1 StudioAudioEngine · 1 Studio AudioContext · no DB/API/RLS/Auth/Storage/CAS/Premium/E3/PlayerProvider changes.
