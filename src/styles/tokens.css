@@ -4,9 +4,22 @@
 */
 
 :root {
+  /*
+    Phase 7.1.2 — brand typography semantic contract (OD-P7.1-01 = B).
+    next/font injects --font-brd-* on <html>; these map them once (no cycles).
+    DISPLAY → Source Serif 4 | UI → Schibsted Grotesk | META → IBM Plex Mono
+  */
+  --font-display: var(--font-brd-display), "Source Serif 4", ui-serif, Georgia,
+    serif;
+  --font-ui: var(--font-brd-ui), "Schibsted Grotesk", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-meta: var(--font-brd-meta), "IBM Plex Mono", ui-monospace, monospace;
+
   /* Surfaces */
   --brd-paper: #f2ebe0;
   --brd-paper-deep: #e4dccf;
+  /* Semantic app/panel fill — REUSE paper-deep (Studio already references --brd-bg). */
+  --brd-bg: var(--brd-paper-deep);
   --brd-paper-ink: #1b3c32;
   --brd-ink: #101412;
   --brd-ink-soft: #353b37;
