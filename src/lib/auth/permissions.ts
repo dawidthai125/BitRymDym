@@ -40,6 +40,18 @@ export function canAccessAdminNav(
 }
 
 /**
+ * UI-only: community „Wrzuć bit” / `/beats/upload` entry.
+ * Community upload is USER-role only (page + transport + createUserBeat).
+ * Not a security boundary — `/beats/upload` still uses requireRole(["USER"]).
+ */
+export function canAccessCommunityUpload(
+  role: SystemRole | null | undefined,
+): boolean {
+  if (!role) return false;
+  return hasRole(role, ["USER"]);
+}
+
+/**
  * UI-only: moderation queue link (ADMIN + MODERATOR).
  * Not a security boundary — /admin/moderation uses requireRole.
  */

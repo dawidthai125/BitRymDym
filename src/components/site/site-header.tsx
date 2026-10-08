@@ -4,7 +4,10 @@ import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
 import { PageFrame } from "@/components/brand/chrome";
 import { HeaderSearch } from "@/components/site/header-search";
 import { UserMenu } from "@/components/site/user-menu";
-import { canAccessAdminNav } from "@/lib/auth/permissions";
+import {
+  canAccessAdminNav,
+  canAccessCommunityUpload,
+} from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +24,9 @@ export async function SiteHeader({
   const session = await getCurrentProfile();
   const role = session?.profile.role;
   const showAdmin = canAccessAdminNav(role);
-  const showUpload = role === "USER" || showAdmin;
+  // Community upload is USER-only; do not advertise /beats/upload to ADMIN
+  // (page requireRole(["USER"]) would otherwise bounce staff to /account).
+  const showUpload = canAccessCommunityUpload(role);
   const rawName =
     session?.profile.displayName?.trim() ||
     session?.email?.split("@")[0] ||

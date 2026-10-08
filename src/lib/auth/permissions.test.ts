@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertNoPrivilegeEscalationInPayload,
   canAccessAdminNav,
+  canAccessCommunityUpload,
   canAccessModerationNav,
   hasAnyPermission,
   hasPermission,
@@ -39,6 +40,14 @@ describe("authorization helpers", () => {
     expect(canAccessAdminNav("MODERATOR")).toBe(false);
     expect(canAccessAdminNav(null)).toBe(false);
     expect(canAccessAdminNav(undefined)).toBe(false);
+  });
+
+  it("shows community upload only for USER (UI helper, not AuthZ)", () => {
+    expect(canAccessCommunityUpload("USER")).toBe(true);
+    expect(canAccessCommunityUpload("ADMIN")).toBe(false);
+    expect(canAccessCommunityUpload("MODERATOR")).toBe(false);
+    expect(canAccessCommunityUpload(null)).toBe(false);
+    expect(canAccessCommunityUpload(undefined)).toBe(false);
   });
 
   it("shows moderation nav for ADMIN and MODERATOR", () => {

@@ -6,6 +6,10 @@ import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { UserBeatActions } from "@/components/beats/user-beat-actions";
 import { BeatGrantsPanel } from "@/components/grants/beat-grants-panel";
 import { AppShell } from "@/components/site/app-shell";
+import {
+  canAccessAdminNav,
+  canAccessCommunityUpload,
+} from "@/lib/auth/permissions";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listOwnUserBeats } from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
@@ -45,6 +49,13 @@ export default async function AccountBeatsPage() {
     );
   }
 
+  const role = context.profile.role;
+  const addBeatHref = canAccessCommunityUpload(role)
+    ? "/beats/upload"
+    : canAccessAdminNav(role)
+      ? "/admin/beats/new"
+      : null;
+
   return (
     <AppShell tone="studio">
       <main className="pb-16">
@@ -60,19 +71,25 @@ export default async function AccountBeatsPage() {
                 z tego panelu.
               </p>
             </div>
-            <BrdLink href="/beats/upload">Dodaj bit</BrdLink>
+            {addBeatHref ? (
+              <BrdLink href={addBeatHref}>Dodaj bit</BrdLink>
+            ) : null}
           </header>
 
           {beats.length === 0 ? (
             <p className="text-sm text-[var(--brd-mute)]">
               Nie masz jeszcze bitów.{" "}
-              <Link
-                href="/beats/upload"
-                className="text-[var(--brd-green)] underline underline-offset-4"
-              >
-                Dodaj pierwszy
-              </Link>
-              .
+              {addBeatHref ? (
+                <Link
+                  href={addBeatHref}
+                  className="text-[var(--brd-green)] underline underline-offset-4"
+                >
+                  Dodaj pierwszy
+                </Link>
+              ) : (
+                "Brak dostępnego flow uploadu dla tej roli."
+              )}
+              {addBeatHref ? "." : null}
             </p>
           ) : (
             <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">

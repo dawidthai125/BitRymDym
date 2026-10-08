@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { UserUploadBeatForm } from "@/components/beats/user-upload-beat-form";
 import { SiteHeader } from "@/components/site/site-header";
-import { AuthError, requireRole, requireUser } from "@/lib/auth/session";
+import { AuthError, requireUser } from "@/lib/auth/session";
 import { getOwnUserBeat } from "@/lib/beats/service";
 import { canUserEditBeatStatus } from "@/lib/beats/status-labels";
 
@@ -17,9 +17,17 @@ export const metadata = {
 };
 
 export default async function BeatsUploadPage({ searchParams }: PageProps) {
+  // Community upload is USER-role only (see createUserBeat / audio-transport).
+  // Authenticated non-USER (e.g. ADMIN) must not land on a silent /account bounce
+  // when hitting this route via bookmark or stale link — send ADMIN to PLATFORM create.
   try {
-    await requireUser();
-    await requireRole(["USER"]);
+    const context = await requireUser();
+    if (context.profile.role !== "USER") {
+      if (context.profile.role === "ADMIN") {
+        redirect("/admin/beats/new");
+      }
+      redirect("/account");
+    }
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect("/sign-in");
