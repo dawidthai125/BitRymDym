@@ -104,6 +104,9 @@ export type StudioAudioContextLike = StudioFxGraphContext & {
   createStereoPanner(): PannerLike;
   createAnalyser(): AnalyserLike;
   createMediaElementSource(el: StudioMediaElement): Connectable;
+  /** Chromium — optional AudioContext output routing (AUD-01). */
+  setSinkId?(sinkId: string): Promise<void>;
+  sinkId?: string;
 };
 
 export type StudioAudioEngineHost = {
@@ -226,6 +229,8 @@ export class StudioAudioEngine {
   private tickId: number | null = null;
   private lastSyncCheckMs = 0;
   private failedClips = new Set<string>();
+  /** AUD-01 — preferred AudioContext sink ("" = system default). */
+  private preferredSinkId: string | null = null;
 
   constructor(params: {
     registry: StudioSourceAdapterRegistry;
@@ -235,6 +240,28 @@ export class StudioAudioEngine {
     this.registry = params.registry;
     this.listener = params.listener;
     this.host = params.host ?? createBrowserStudioAudioEngineHost();
+  }
+
+  /**
+   * AUD-01 — route timeline output via AudioContext.setSinkId when supported.
+   * null / "" = system default. No-op (resolves) when setSinkId is unavailable.
+   */
+  async setOutputSinkId(sinkId: string | null): Promise<{
+    applied: boolean;
+    reason?: "unsupported" | "no_context" | "disposed" | "error";
+  }> {
+    if (this.lifecycle === "disposed") {
+      return { applied: false, reason: "disposed" };
+    }
+    const next =
+      sinkId && sinkId.trim() !== "" ? sinkId.trim() : null;
+    this.preferredSinkId = next;
+    if (!this.ctx) {
+      if (!this.initialize()) {
+        return { applied: false, reason: "no_context" };
+      }
+    }
+    return this.applyPreferredSinkId();
   }
 
   getLifecycle(): StudioAudioEngineLifecycle {
@@ -404,6 +431,26 @@ export class StudioAudioEngine {
     return this.voices.get(clipId)?.clipGain ?? null;
   }
 
+  private async applyPreferredSinkId(): Promise<{
+    applied: boolean;
+    reason?: "unsupported" | "no_context" | "disposed" | "error";
+  }> {
+    if (this.lifecycle === "disposed") {
+      return { applied: false, reason: "disposed" };
+    }
+    const ctx = this.ctx;
+    if (!ctx) return { applied: false, reason: "no_context" };
+    if (typeof ctx.setSinkId !== "function") {
+      return { applied: false, reason: "unsupported" };
+    }
+    try {
+      await ctx.setSinkId(this.preferredSinkId ?? "");
+      return { applied: true };
+    } catch {
+      return { applied: false, reason: "error" };
+    }
+  }
+
   initialize(): boolean {
     if (this.lifecycle === "disposed") return false;
     if (this.ctx) {
@@ -426,6 +473,9 @@ export class StudioAudioEngine {
       this.masterAnalyser.connect(this.ctx.destination);
       this.setLifecycle("initialized");
       this.setLifecycle("ready");
+      if (this.preferredSinkId != null) {
+        void this.applyPreferredSinkId();
+      }
       return true;
     } catch {
       this.listener.onError({ code: "AUDIO_CONTEXT_UNAVAILABLE" });

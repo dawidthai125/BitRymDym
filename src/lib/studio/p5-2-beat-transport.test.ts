@@ -108,6 +108,20 @@ describe("P5.2 Project → BEAT_REF", () => {
     expect(ref!.beatId).toBe(BEAT_ID);
     expect(ref!.clip.timelineStartMs).toBe(1000);
   });
+
+  it("AUD-01: rejects stale BEAT_REF when projectBeatId SSOT differs", () => {
+    const stale = beatClip({
+      sourceBeatId: "66666666-6666-4666-8666-666666666666",
+      timelineStartMs: 0,
+    });
+    const ref = resolvePrimaryBeatRef({
+      tracks: [beatTrack()],
+      clips: [stale],
+      projectBeatId: BEAT_ID,
+    });
+    expect(ref!.beatId).toBe(BEAT_ID);
+    expect(ref!.clip.id).toBe("virtual-beat-ref");
+  });
 });
 
 describe("P5.2 StudioTransport play/pause/stop/seek/position/duration", () => {

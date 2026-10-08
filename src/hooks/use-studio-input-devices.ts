@@ -114,12 +114,14 @@ export function useStudioInputDevices(options?: {
     }
   }, [applySelection]);
 
-  const setSelectedDeviceId = useCallback((deviceId: string) => {
+  const setSelectedDeviceId = useCallback((deviceId: string | null) => {
+    const next =
+      deviceId && deviceId.trim() !== "" ? deviceId.trim() : null;
     setSoftNotice(null);
     setLastErrorCode(null);
-    setSelectedDeviceIdState(deviceId);
-    selectedRef.current = deviceId;
-    writeStoredAudioInputDeviceId(browserLocalStorage(), deviceId);
+    setSelectedDeviceIdState(next);
+    selectedRef.current = next;
+    writeStoredAudioInputDeviceId(browserLocalStorage(), next);
   }, []);
 
   const clearSoftNotice = useCallback(() => {

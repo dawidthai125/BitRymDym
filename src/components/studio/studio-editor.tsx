@@ -17,6 +17,7 @@ import {
 } from "@/components/studio/studio-fx-chain-editor";
 import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
+import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { StudioTrackMeter } from "@/components/studio/studio-track-meter";
@@ -29,7 +30,10 @@ import {
   studioFxEntryLabel,
   type StudioFxChainV1,
 } from "@/lib/studio/studio-fx-chain";
-import { resolvePrimaryBeatRef } from "@/lib/studio/studio-beat-audio";
+import {
+  beatRefMatchesProjectSsot,
+  resolvePrimaryBeatRef,
+} from "@/lib/studio/studio-beat-audio";
 import type { StudioEngineDocument } from "@/lib/studio/studio-audio-schedule";
 import {
   buildStudioClipFadesPatchBody,
@@ -96,6 +100,8 @@ export function StudioEditor({
       masterGainDb: doc.project.masterGainDb,
       masterPan: doc.project.masterPan,
       masterFxChain: doc.project.masterFxChain,
+      // AUD-01 SSOT — schedule path rejects mismatched BEAT_REF via this field.
+      projectBeatId: doc.project.beatId,
       tracks: doc.tracks.map((t) => ({
         id: t.id,
         gainDb: t.gainDb,
@@ -104,27 +110,36 @@ export function StudioEditor({
         solo: t.solo,
         effectsChain: t.effectsChain,
       })),
-      clips: doc.clips.map((c) => ({
-        id: c.id,
-        trackId: c.trackId,
-        sourceKind: c.sourceKind,
-        sourceTakeId: c.sourceTakeId,
-        sourceBeatId: c.sourceBeatId,
-        sourceOffsetMs: c.sourceOffsetMs,
-        timelineStartMs: c.timelineStartMs,
-        durationMs: c.durationMs || doc.project.timelineLengthMs,
-        gainDb: c.gainDb,
-        muted: c.muted,
-        fadeInMs: c.fadeInMs,
-        fadeOutMs: c.fadeOutMs,
-      })),
+      // Drop stale BEAT_REF from the engine graph (defense before planVoices).
+      clips: doc.clips
+        .filter((c) => {
+          if (c.sourceKind !== "BEAT_REF") return true;
+          return beatRefMatchesProjectSsot({
+            projectBeatId: doc.project.beatId,
+            sourceBeatId: c.sourceBeatId,
+          });
+        })
+        .map((c) => ({
+          id: c.id,
+          trackId: c.trackId,
+          sourceKind: c.sourceKind,
+          sourceTakeId: c.sourceTakeId,
+          sourceBeatId: c.sourceBeatId,
+          sourceOffsetMs: c.sourceOffsetMs,
+          timelineStartMs: c.timelineStartMs,
+          durationMs: c.durationMs || doc.project.timelineLengthMs,
+          gainDb: c.gainDb,
+          muted: c.muted,
+          fadeInMs: c.fadeInMs,
+          fadeOutMs: c.fadeOutMs,
+        })),
     }),
     [doc],
   );
 
   return (
     <StudioTransportProvider
-      key={doc.project.id}
+      key={`${doc.project.id}:${beatRef?.beatId ?? "none"}`}
       timelineLengthMs={doc.project.timelineLengthMs}
       beatId={beatRef?.beatId ?? null}
       engineDocument={engineDocument}
@@ -152,6 +167,7 @@ function StudioEditorInner({
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [recordingLocked, setRecordingLocked] = useState(false);
+  const [beatPickerOpen, setBeatPickerOpen] = useState(false);
   const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
@@ -608,7 +624,20 @@ function StudioEditorInner({
         </p>
       </header>
 
-      <StudioTransportBar />
+      <StudioTransportBar
+        onChooseBeat={() => setBeatPickerOpen(true)}
+      />
+
+      <StudioBeatPicker
+        projectId={doc.project.id}
+        open={beatPickerOpen}
+        onClose={() => setBeatPickerOpen(false)}
+        onAttached={(document) => {
+          setDoc(document);
+          setStatus("Bit powiązany z projektem.");
+          setError(null);
+        }}
+      />
 
       <StudioRecordingPanel
         projectId={doc.project.id}
@@ -1685,17 +1714,22 @@ function ClipEditPanel({
   );
 }
 
-function StudioTransportBar() {
+function StudioTransportBar({
+  onChooseBeat,
+}: {
+  onChooseBeat: () => void;
+}) {
   const { state, timeLabel, play, pause, stop, audioState, error, hasBeat } =
     useStudioTransport();
   const busy = audioState === "loading";
+  const noBeat = audioState === "no_beat" || (!hasBeat && audioState !== "loading");
   const statusLabel =
     audioState === "loading"
       ? "Ładowanie bitu…"
       : audioState === "idle"
         ? "Bit oczekuje na załadowanie"
         : audioState === "no_beat"
-          ? "Brak bitu w projekcie"
+          ? "Nie masz jeszcze wybranego bitu."
           : audioState === "error"
             ? "Błąd odtwarzania"
             : audioState === "playing"
@@ -1706,7 +1740,7 @@ function StudioTransportBar() {
                   ? "Gotowy"
                   : hasBeat
                     ? "Bit oczekuje na załadowanie"
-                    : "Brak bitu";
+                    : "Nie masz jeszcze wybranego bitu.";
 
   return (
     <div
@@ -1714,51 +1748,81 @@ function StudioTransportBar() {
       role="region"
       aria-label="Transport Studio"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          className="min-h-11"
-          onClick={play}
-          disabled={busy || state.phase === "playing"}
-          title="Odtwórz"
-          aria-label="Odtwórz"
-        >
-          {busy ? "Ładowanie…" : "Odtwórz"}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11"
-          onClick={pause}
-          disabled={state.phase !== "playing"}
-          title="Pauza"
-          aria-label="Pauza"
-        >
-          Pauza
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="min-h-11"
-          onClick={stop}
-          title="Stop"
-          aria-label="Stop"
-        >
-          Stop
-        </Button>
-        <span
-          className="ml-auto font-mono text-sm tabular-nums text-[var(--brd-ink)]"
-          aria-live="polite"
-        >
-          {timeLabel}
-        </span>
-      </div>
-      <p className="text-xs text-[var(--brd-mute)]" role="status">
-        {statusLabel}
-      </p>
+      {noBeat ? (
+        <div className="space-y-2">
+          <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            Bit w projekcie
+          </p>
+          <p className="text-sm text-[var(--brd-ink)]">{statusLabel}</p>
+          <Button
+            type="button"
+            size="sm"
+            className="min-h-11"
+            onClick={onChooseBeat}
+          >
+            + Wybierz bit
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="min-h-11"
+              onClick={play}
+              disabled={busy || state.phase === "playing"}
+              title="Odtwórz"
+              aria-label="Odtwórz"
+            >
+              {busy ? "Ładowanie…" : "Odtwórz"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11"
+              onClick={pause}
+              disabled={state.phase !== "playing"}
+              title="Pauza"
+              aria-label="Pauza"
+            >
+              Pauza
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11"
+              onClick={stop}
+              title="Stop"
+              aria-label="Stop"
+            >
+              Stop
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11"
+              onClick={onChooseBeat}
+              title="Zmień bit"
+              aria-label="Zmień bit"
+            >
+              Zmień bit
+            </Button>
+            <span
+              className="ml-auto font-mono text-sm tabular-nums text-[var(--brd-ink)]"
+              aria-live="polite"
+            >
+              {timeLabel}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--brd-mute)]" role="status">
+            {statusLabel}
+          </p>
+        </>
+      )}
       {error ? (
         <p className="text-xs text-destructive" role="alert">
           {error}

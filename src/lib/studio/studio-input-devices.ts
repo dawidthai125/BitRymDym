@@ -52,8 +52,9 @@ export function mapMediaDevicesToAudioInputs(
 }
 
 /**
- * Resolve selection: null = system default.
- * Stale preferred id → first available (or null) + fellBackFromStale.
+ * Resolve selection: null / empty = Automatic (system default mic).
+ * Stale preferred id → Automatic (null) + fellBackFromStale.
+ * AUD-01: do not force-first-device when user wants Automatic.
  */
 export function resolveSelectedInputDeviceId(params: {
   preferredId: string | null;
@@ -64,15 +65,15 @@ export function resolveSelectedInputDeviceId(params: {
       ? params.preferredId.trim()
       : null;
 
+  if (preferred == null) {
+    return { selectedId: null, fellBackFromStale: false };
+  }
+
   if (params.inputs.length === 0) {
     return {
       selectedId: null,
-      fellBackFromStale: preferred != null,
+      fellBackFromStale: true,
     };
-  }
-
-  if (preferred == null) {
-    return { selectedId: params.inputs[0]!.deviceId, fellBackFromStale: false };
   }
 
   if (params.inputs.some((d) => d.deviceId === preferred)) {
@@ -80,7 +81,7 @@ export function resolveSelectedInputDeviceId(params: {
   }
 
   return {
-    selectedId: params.inputs[0]!.deviceId,
+    selectedId: null,
     fellBackFromStale: true,
   };
 }

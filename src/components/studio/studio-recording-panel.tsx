@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
+import { useStudioOutputDevices } from "@/hooks/use-studio-output-devices";
 import type {
   StudioClipDto,
   StudioPlaceableTakeDto,
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
-import { studioDeviceErrorMessagePl } from "@/lib/studio/studio-input-devices";
+import {
+  acquireMicStream,
+  stopMediaStreamTracks,
+  studioDeviceErrorMessagePl,
+} from "@/lib/studio/studio-input-devices";
 import {
   toUserFacingTakeUploadError,
   uploadTakeRecordingBlob,
@@ -86,7 +91,13 @@ export function StudioRecordingPanel({
   const captureTrackIdRef = useRef<string>("");
   const recordStartMsRef = useRef<number | null>(null);
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
-  const mic = useMicAnalyser(micStream, { barCount: 32, hz: 15 });
+  const [testerStream, setTesterStream] = useState<MediaStream | null>(null);
+  const [testerError, setTesterError] = useState<string | null>(null);
+  const [advancedMicOpen, setAdvancedMicOpen] = useState(false);
+  /** Blocks tester re-acquire while arming recorder (closes dual-stream window). */
+  const [captureArming, setCaptureArming] = useState(false);
+  const captureArmingRef = useRef(false);
+  const testerStreamRef = useRef<MediaStream | null>(null);
 
   const captureActive =
     state.phase === "RECORDING" ||
@@ -94,9 +105,108 @@ export function StudioRecordingPanel({
     state.phase === "UPLOADING" ||
     state.phase === "PROCESSING";
 
+  const meterStream =
+    state.phase === "RECORDING" || state.phase === "READY"
+      ? micStream ?? testerStream
+      : testerStream;
+  const mic = useMicAnalyser(meterStream, { barCount: 32, hz: 15 });
+
   const inputDevices = useStudioInputDevices({
     recordingActive: captureActive,
   });
+
+  const setOutputSinkId = transport.setOutputSinkId;
+  const onSinkIdChange = useCallback(
+    (sinkId: string | null) => {
+      void setOutputSinkId(sinkId);
+    },
+    [setOutputSinkId],
+  );
+  const outputDevices = useStudioOutputDevices({ onSinkIdChange });
+
+  // AUD-01 — auto live mic tester (reuse useMicAnalyser; hold stream, no Studio engine).
+  useEffect(() => {
+    let cancelled = false;
+    const blockTester =
+      captureArming ||
+      state.phase === "REQUESTING_MIC" ||
+      state.phase === "RECORDING" ||
+      state.phase === "STOPPING" ||
+      state.phase === "UPLOADING" ||
+      state.phase === "PROCESSING" ||
+      state.phase === "READY_TAKE";
+
+    const selectedId = inputDevices.selectedDeviceId;
+    const refreshInputs = inputDevices.refreshInputs;
+
+    void (async () => {
+      if (blockTester) {
+        stopMediaStreamTracks(testerStreamRef.current);
+        testerStreamRef.current = null;
+        if (!cancelled) {
+          setTesterStream(null);
+          setTesterError(null);
+        }
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices?.getUserMedia
+      ) {
+        if (!cancelled) {
+          setTesterError("Brak dostępu do mikrofonu w tej przeglądarce.");
+        }
+        return;
+      }
+      const result = await acquireMicStream({
+        getUserMedia: navigator.mediaDevices.getUserMedia.bind(
+          navigator.mediaDevices,
+        ),
+        preferredDeviceId: selectedId,
+      });
+      if (cancelled || captureArmingRef.current) {
+        if (result.ok) stopMediaStreamTracks(result.stream);
+        return;
+      }
+      if (!result.ok) {
+        stopMediaStreamTracks(testerStreamRef.current);
+        testerStreamRef.current = null;
+        setTesterStream(null);
+        if (
+          result.code === "DEVICE_PERMISSION_DENIED" ||
+          result.code === "DEVICE_PERMISSION_BLOCKED"
+        ) {
+          setTesterError(
+            "Brak dostępu do mikrofonu. Zezwól przeglądarce na dostęp i spróbuj ponownie.",
+          );
+        } else {
+          setTesterError(studioDeviceErrorMessagePl(result.code));
+        }
+        return;
+      }
+      if (cancelled || captureArmingRef.current) {
+        stopMediaStreamTracks(result.stream);
+        return;
+      }
+      stopMediaStreamTracks(testerStreamRef.current);
+      testerStreamRef.current = result.stream;
+      setTesterStream(result.stream);
+      setTesterError(null);
+      void refreshInputs();
+    })();
+
+    return () => {
+      cancelled = true;
+      stopMediaStreamTracks(testerStreamRef.current);
+      testerStreamRef.current = null;
+    };
+  }, [
+    captureArming,
+    state.phase,
+    inputDevices.selectedDeviceId,
+    inputDevices.refreshInputs,
+  ]);
 
   useEffect(() => {
     phaseRef.current = state.phase;
@@ -170,6 +280,13 @@ export function StudioRecordingPanel({
     setMicStream(null);
   }
 
+  function stopTesterStream() {
+    stopMediaStreamTracks(testerStreamRef.current);
+    testerStreamRef.current = null;
+    setTesterStream(null);
+    setTesterError(null);
+  }
+
   function clearCapturePlacement() {
     setRecordStartMs(null);
     recordStartMsRef.current = null;
@@ -217,6 +334,7 @@ export function StudioRecordingPanel({
     }
 
     transport.stopTakePreview();
+    stopTesterStream();
     setWorkflowError(null);
     setKeptMessage(null);
     dispatch({ type: "REQUEST_MIC" });
@@ -300,6 +418,10 @@ export function StudioRecordingPanel({
       return;
     }
     submittingRef.current = true;
+    // AUD-01: arm before stop — effect must not re-open tester during recorder.start.
+    captureArmingRef.current = true;
+    setCaptureArming(true);
+    stopTesterStream();
     const startMs = transport.state.playheadMs;
     setRecordStartMs(startMs);
     recordStartMsRef.current = startMs;
@@ -341,7 +463,11 @@ export function StudioRecordingPanel({
           void stopAndFinalize();
         }
       }, 200);
+      captureArmingRef.current = false;
+      setCaptureArming(false);
     } catch (error) {
+      captureArmingRef.current = false;
+      setCaptureArming(false);
       clearTick();
       clearMic();
       clearCapturePlacement();
@@ -756,9 +882,11 @@ export function StudioRecordingPanel({
         </select>
       </label>
 
-      {inputDevices.inputs.length > 0 ? (
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
+        <p className="text-xs font-medium text-[var(--brd-ink)]">Mikrofon</p>
+        <p className="text-xs text-[var(--brd-mute)]">Źródło nagrywania</p>
         <label className="block w-full text-xs text-[var(--brd-mute)]">
-          Mikrofon
+          <span className="sr-only">Mikrofon</span>
           <select
             className="mt-1 w-full max-w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
             value={inputDevices.selectedDeviceId ?? ""}
@@ -768,46 +896,123 @@ export function StudioRecordingPanel({
               state.phase === "REQUESTING_MIC"
             }
             onChange={(e) => {
-              inputDevices.setSelectedDeviceId(e.target.value);
+              inputDevices.setSelectedDeviceId(
+                e.target.value === "" ? null : e.target.value,
+              );
               inputDevices.clearSoftNotice();
             }}
             aria-label="Wybierz mikrofon"
           >
-            {inputDevices.inputs.map((d) => (
-              <option key={d.deviceId} value={d.deviceId}>
-                {d.label}
-              </option>
-            ))}
+            <option value="">
+              Automatycznie — urządzenie systemowe
+            </option>
+            {!advancedMicOpen &&
+            inputDevices.selectedDeviceId &&
+            inputDevices.inputs.some(
+              (d) => d.deviceId === inputDevices.selectedDeviceId,
+            )
+              ? inputDevices.inputs
+                  .filter((d) => d.deviceId === inputDevices.selectedDeviceId)
+                  .map((d) => (
+                    <option key={d.deviceId} value={d.deviceId}>
+                      {d.label}
+                    </option>
+                  ))
+              : null}
+            {advancedMicOpen
+              ? inputDevices.inputs.map((d) => (
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.label}
+                  </option>
+                ))
+              : null}
           </select>
         </label>
-      ) : inputDevices.permission === "UNAVAILABLE" ||
+        {inputDevices.inputs.length > 1 ? (
+          <button
+            type="button"
+            className="text-xs text-[var(--brd-green)] underline-offset-2 hover:underline"
+            onClick={() => setAdvancedMicOpen((v) => !v)}
+          >
+            {advancedMicOpen
+              ? "Ukryj zaawansowane urządzenia"
+              : "Zaawansowane ustawienia audio"}
+          </button>
+        ) : null}
+        {inputDevices.permission === "UNAVAILABLE" ||
         inputDevices.lastErrorCode === "NO_INPUT_DEVICE" ? (
-        <p className="text-xs text-[var(--brd-mute)]" role="status">
-          Brak wykrytego mikrofonu. Połącz urządzenie lub przyznaj dostęp.
-        </p>
-      ) : (
-        <p className="text-xs text-[var(--brd-mute)]" role="status">
-          Lista mikrofonów pojawi się po przyznaniu dostępu.
-        </p>
-      )}
+          <p className="text-xs text-[var(--brd-mute)]" role="status">
+            Brak wykrytego mikrofonu. Połącz urządzenie lub przyznaj dostęp.
+          </p>
+        ) : null}
+        {inputDevices.softNotice ? (
+          <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
+            {inputDevices.softNotice}
+          </p>
+        ) : null}
 
-      {inputDevices.softNotice ? (
-        <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-          {inputDevices.softNotice}
-        </p>
-      ) : null}
-
-      {(state.phase === "READY" || state.phase === "RECORDING") && micStream ? (
-        <div className="w-full space-y-1">
-          <p className="text-xs text-[var(--brd-mute)]">Poziom wejścia</p>
-          <BrdInputMonitor level={mic.level} peak={mic.peak} />
-          {mic.level === "clip" || mic.level === "hot" ? (
-            <p className="text-xs text-destructive" role="status">
-              Uwaga: sygnał blisko przesterowania.
+        <div className="w-full space-y-1 pt-1">
+          <p className="text-xs text-[var(--brd-mute)]">Test mikrofonu</p>
+          {testerError ? (
+            <p className="text-xs text-destructive" role="alert">
+              {testerError}
             </p>
-          ) : null}
+          ) : meterStream ? (
+            <>
+              <p className="text-xs text-[var(--brd-ink)]" role="status">
+                {mic.level === "silent"
+                  ? "Brak sygnału — sprawdź mikrofon"
+                  : mic.level === "quiet"
+                    ? "Sygnał jest bardzo słaby"
+                    : mic.level === "clip" || mic.level === "hot"
+                      ? "Uwaga: sygnał blisko przesterowania"
+                      : "Mikrofon działa"}
+              </p>
+              <BrdInputMonitor level={mic.level} peak={mic.peak} />
+            </>
+          ) : (
+            <p className="text-xs text-[var(--brd-mute)]" role="status">
+              Oczekiwanie na uprawnienia…
+            </p>
+          )}
         </div>
-      ) : null}
+      </div>
+
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
+        <p className="text-xs font-medium text-[var(--brd-ink)]">Odsłuch</p>
+        {outputDevices.pickerEnabled ? (
+          <label className="block w-full text-xs text-[var(--brd-mute)]">
+            Urządzenie
+            <select
+              className="mt-1 w-full max-w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
+              value={outputDevices.selectedDeviceId ?? ""}
+              onChange={(e) => {
+                outputDevices.setSelectedDeviceId(
+                  e.target.value === "" ? null : e.target.value,
+                );
+              }}
+              aria-label="Wybierz urządzenie odsłuchu"
+            >
+              <option value="">Automatyczne — urządzenie systemowe</option>
+              {outputDevices.outputs.map((d) => (
+                <option key={d.deviceId} value={d.deviceId}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-xs text-[var(--brd-mute)]" role="status">
+            Automatyczny — urządzenie systemowe. Wybór urządzenia wyjściowego
+            jest kontrolowany przez system lub przeglądarkę.
+          </p>
+        )}
+        {outputDevices.softNotice ? (
+          <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
+            {outputDevices.softNotice}
+          </p>
+        ) : null}
+      </div>
 
       {contextError || state.error || workflowError ? (
         <p className="text-sm text-destructive" role="alert">

@@ -6,7 +6,10 @@
 import type { StudioClipSourceKind } from "@/config/studio";
 import { sourceOffsetSecondsAtPlayhead } from "@/lib/studio/studio-audio-clock";
 import { isTrackAudible, normalizePan } from "@/lib/studio/studio-track-ops";
-import { gainDbToLinearVolume } from "@/lib/studio/studio-beat-audio";
+import {
+  beatRefMatchesProjectSsot,
+  gainDbToLinearVolume,
+} from "@/lib/studio/studio-beat-audio";
 
 export type StudioEngineTrack = {
   id: string;
@@ -38,6 +41,12 @@ export type StudioEngineDocument = {
   masterPan: number;
   /** P6.3 — Master FX chain (pre–Master Gain/Pan). Optional for P5.10 callers. */
   masterFxChain?: unknown;
+  /**
+   * AUD-01 SSOT for project beat. When set (including null), BEAT_REF clips
+   * whose sourceBeatId does not match are never scheduled.
+   * Omit (`undefined`) only for legacy unit fixtures that predate the guard.
+   */
+  projectBeatId?: string | null;
   tracks: readonly StudioEngineTrack[];
   clips: readonly StudioEngineClip[];
   isTrackPlayable?: (trackId: string) => boolean;
@@ -62,6 +71,17 @@ export function planVoicesAtPlayhead(
   for (const clip of document.clips) {
     if (clip.muted) continue;
     if (clip.durationMs < 1) continue;
+    // AUD-01: stale BEAT_REF must not become audible when SSOT is known.
+    if (
+      clip.sourceKind === "BEAT_REF" &&
+      document.projectBeatId !== undefined &&
+      !beatRefMatchesProjectSsot({
+        projectBeatId: document.projectBeatId,
+        sourceBeatId: clip.sourceBeatId,
+      })
+    ) {
+      continue;
+    }
     if (
       playheadMs < clip.timelineStartMs ||
       playheadMs >= clip.timelineStartMs + clip.durationMs

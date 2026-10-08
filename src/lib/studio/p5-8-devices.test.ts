@@ -33,7 +33,7 @@ describe("P5.8 device discovery", () => {
 });
 
 describe("P5.8 selection + stale fallback", () => {
-  it("selects first device when no preference", () => {
+  it("keeps Automatic (null) when no preference — AUD-01", () => {
     const r = resolveSelectedInputDeviceId({
       preferredId: null,
       inputs: [
@@ -41,7 +41,7 @@ describe("P5.8 selection + stale fallback", () => {
         { deviceId: "d2", label: "B" },
       ],
     });
-    expect(r).toEqual({ selectedId: "d1", fellBackFromStale: false });
+    expect(r).toEqual({ selectedId: null, fellBackFromStale: false });
   });
 
   it("keeps valid preferred device", () => {
@@ -56,12 +56,12 @@ describe("P5.8 selection + stale fallback", () => {
     expect(r.fellBackFromStale).toBe(false);
   });
 
-  it("falls back when stored device missing", () => {
+  it("falls back to Automatic when stored device missing — AUD-01", () => {
     const r = resolveSelectedInputDeviceId({
       preferredId: "gone",
       inputs: [{ deviceId: "d1", label: "A" }],
     });
-    expect(r).toEqual({ selectedId: "d1", fellBackFromStale: true });
+    expect(r).toEqual({ selectedId: null, fellBackFromStale: true });
   });
 
   it("stale preference with empty list does not crash", () => {

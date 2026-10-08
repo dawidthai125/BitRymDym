@@ -17,6 +17,24 @@ export function listBeatRefClips(clips: StudioClipDto[]): StudioClipDto[] {
     .sort((a, b) => a.timelineStartMs - b.timelineStartMs);
 }
 
+/**
+ * AUD-01 defense-in-depth: when projectBeatId SSOT is known, only accept
+ * BEAT_REF clips whose sourceBeatId matches. Stale BEAT_REF must not win.
+ * - `undefined` projectBeatId → no SSOT filter (legacy callers / tests)
+ * - `null` / "" → no project beat → ignore all BEAT_REF clips
+ */
+export function beatRefMatchesProjectSsot(params: {
+  projectBeatId: string | null | undefined;
+  sourceBeatId: string | null | undefined;
+}): boolean {
+  if (params.projectBeatId === undefined) return true;
+  if (params.projectBeatId == null || params.projectBeatId === "") return false;
+  return (
+    typeof params.sourceBeatId === "string" &&
+    params.sourceBeatId === params.projectBeatId
+  );
+}
+
 /** Find primary BEAT_REF on a BEAT track (first by timeline start). */
 export function resolvePrimaryBeatRef(params: {
   tracks: StudioTrackDto[];
@@ -25,7 +43,12 @@ export function resolvePrimaryBeatRef(params: {
   /** When set, prefer the BEAT_REF containing this playhead (P5.3). */
   playheadMs?: number;
 }): PrimaryBeatRef | null {
-  const beatClips = listBeatRefClips(params.clips);
+  const beatClips = listBeatRefClips(params.clips).filter((c) =>
+    beatRefMatchesProjectSsot({
+      projectBeatId: params.projectBeatId,
+      sourceBeatId: c.sourceBeatId,
+    }),
+  );
 
   if (
     typeof params.playheadMs === "number" &&

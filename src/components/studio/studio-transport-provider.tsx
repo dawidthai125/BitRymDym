@@ -59,6 +59,13 @@ type StudioTransportApi = {
   trackMeter: StudioMeterSnapshot;
   /** Bind Mix Track selection → engine Track analyser target (0|1). */
   setTrackMeterTarget: (trackId: string | null) => void;
+  /**
+   * AUD-01 — AudioContext.setSinkId when supported.
+   * Returns applied=false on unsupported browsers (never fakes routing).
+   */
+  setOutputSinkId: (
+    sinkId: string | null,
+  ) => Promise<{ applied: boolean; reason?: string }>;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -331,6 +338,17 @@ export function StudioTransportProvider({
     engineRef.current?.setTrackMeterTarget(trackId);
   }, []);
 
+  const setOutputSinkId = useCallback(
+    async (
+      sinkId: string | null,
+    ): Promise<{ applied: boolean; reason?: string }> => {
+      const engine = engineRef.current;
+      if (!engine) return { applied: false, reason: "no_context" };
+      return engine.setOutputSinkId(sinkId);
+    },
+    [],
+  );
+
   const previewTake = async (takeId: string): Promise<void> => {
     if (!takeId) {
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
@@ -374,6 +392,7 @@ export function StudioTransportProvider({
     meter,
     trackMeter,
     setTrackMeterTarget,
+    setOutputSinkId,
     play,
     pause,
     stop,

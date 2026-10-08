@@ -337,6 +337,372 @@ export async function createStudioProject(input?: {
   return createStudioProjectFor(await requireUser(), input);
 }
 
+export type BeatRefClipSnapshot = {
+  id: string;
+  track_id: string;
+  source_kind: string;
+  source_take_id: string | null;
+  source_beat_id: string | null;
+  source_artifact_id: string | null;
+  timeline_start_ms: number;
+  duration_ms: number;
+  source_offset_ms: number;
+  gain_db: number | string;
+  muted: boolean;
+  fade_in_ms: number;
+  fade_out_ms: number;
+};
+
+/** Injectable persistence ops for AUD-01 fail-closed attach (testable). */
+export type AttachBeatFailClosedOps = {
+  updateProjectBeat: (args: {
+    beatId: string;
+    tempoBpm: number;
+  }) => Promise<void>;
+  deleteBeatRefIds: (ids: string[]) => Promise<void>;
+  insertBeatRef: (args: {
+    trackId: string;
+    beatId: string;
+    durationMs: number;
+  }) => Promise<void>;
+  listBeatRefsOnTrack: (
+    trackId: string,
+  ) => Promise<Array<{ id: string; source_beat_id: string | null }>>;
+  readProjectBeatId: () => Promise<string | null>;
+  restoreProjectBeat: (args: {
+    beatId: string | null;
+    tempoBpm: number;
+  }) => Promise<void>;
+  replaceBeatRefsOnTrack: (args: {
+    trackId: string;
+    rows: BeatRefClipSnapshot[];
+  }) => Promise<void>;
+};
+
+/**
+ * AUD-01 fail-closed attach core (no DB txn):
+ * snapshot already taken by caller → update beat_id → reseed BEAT_REF →
+ * verify project.beat_id + BEAT_REF → on any failure restore prior binding.
+ */
+export async function runAttachBeatFailClosed(params: {
+  ops: AttachBeatFailClosedOps;
+  requestedBeatId: string;
+  tempoBpm: number;
+  beatDurationMs: number;
+  previousBeatId: string | null;
+  previousTempoBpm: number;
+  previousBeatRefs: BeatRefClipSnapshot[];
+  beatTrackId: string | null;
+}): Promise<void> {
+  const {
+    ops,
+    requestedBeatId,
+    tempoBpm,
+    beatDurationMs,
+    previousBeatId,
+    previousTempoBpm,
+    previousBeatRefs,
+    beatTrackId,
+  } = params;
+
+  await ops.updateProjectBeat({ beatId: requestedBeatId, tempoBpm });
+
+  try {
+    if (beatTrackId) {
+      const beatRefIds = previousBeatRefs.map((c) => c.id);
+      if (beatRefIds.length > 0) {
+        await ops.deleteBeatRefIds(beatRefIds);
+      }
+      await ops.insertBeatRef({
+        trackId: beatTrackId,
+        beatId: requestedBeatId,
+        durationMs: beatDurationMs,
+      });
+
+      const actualBeatId = await ops.readProjectBeatId();
+      if (actualBeatId !== requestedBeatId) {
+        throw new Error(
+          "Project beat_id consistency check failed after attach.",
+        );
+      }
+
+      const refs = await ops.listBeatRefsOnTrack(beatTrackId);
+      const matching = refs.filter(
+        (c) => c.source_beat_id === requestedBeatId,
+      );
+      const stale = refs.filter((c) => c.source_beat_id !== requestedBeatId);
+      if (matching.length < 1) {
+        throw new Error("BEAT_REF consistency check failed after attach.");
+      }
+      if (stale.length > 0) {
+        throw new Error("Stale BEAT_REF remains after attach.");
+      }
+    } else {
+      const actualBeatId = await ops.readProjectBeatId();
+      if (actualBeatId !== requestedBeatId) {
+        throw new Error(
+          "Project beat_id consistency check failed after attach.",
+        );
+      }
+    }
+  } catch (error) {
+    try {
+      await ops.restoreProjectBeat({
+        beatId: previousBeatId,
+        tempoBpm: previousTempoBpm,
+      });
+      if (beatTrackId) {
+        await ops.replaceBeatRefsOnTrack({
+          trackId: beatTrackId,
+          rows: previousBeatRefs,
+        });
+      }
+    } catch (rollbackError) {
+      const primary =
+        error instanceof Error ? error.message : "Attach beat failed.";
+      const secondary =
+        rollbackError instanceof Error
+          ? rollbackError.message
+          : "Rollback failed.";
+      throw new Error(`${primary} | ${secondary}`);
+    }
+    throw error instanceof Error
+      ? error
+      : new Error("Nie udało się powiązać bitu z projektem.");
+  }
+}
+
+/**
+ * AUD-01 — attach / replace project beat after create.
+ * SSOT: studio_projects.beat_id. BEAT_REF is derived timeline seed.
+ */
+export async function attachBeatToStudioProjectFor(
+  context: AuthContext,
+  input: { projectId: string; beatId: string },
+): Promise<StudioProjectDocument> {
+  const projectId = input.projectId?.trim();
+  const beatId = input.beatId?.trim();
+  if (!projectId) {
+    throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+  }
+  if (!beatId) {
+    throw new AuthError("NOT_FOUND", "Wybierz bit.");
+  }
+
+  const projectRow = await assertOwnsProject(context, projectId);
+  const previousBeatId = projectRow.beat_id;
+  const previousTempoBpm =
+    Number(projectRow.tempo_bpm) || STUDIO_DEFAULT_TEMPO_BPM;
+  const admin = createSupabaseAdminClient();
+
+  const { data: beat, error: beatError } = await admin
+    .from("beats")
+    .select("id, bpm, duration_seconds, status, ownership_type, owner_id")
+    .eq("id", beatId)
+    .maybeSingle();
+  if (beatError) throw new Error(beatError.message);
+  if (!beat) {
+    throw new AuthError("NOT_FOUND", "Wybrany bit nie istnieje.");
+  }
+
+  const status = beat.status as string;
+  const ownership = beat.ownership_type as string;
+  const ownerId = beat.owner_id as string | null;
+  const isPublished = status === "PUBLISHED";
+  const isOwnUser =
+    ownership === "USER" && ownerId === context.userId;
+  if (!isPublished && !isOwnUser) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Ten bit nie jest dostępny do użycia w Studio.",
+    );
+  }
+
+  let tempoBpm = STUDIO_DEFAULT_TEMPO_BPM;
+  if (typeof beat.bpm === "number" && beat.bpm >= 20 && beat.bpm <= 400) {
+    tempoBpm = beat.bpm;
+  }
+  const durSec = Number(beat.duration_seconds ?? 60);
+  const beatDurationMs = Math.min(
+    STUDIO_DEFAULT_TIMELINE_LENGTH_MS,
+    Math.max(1000, Math.round(durSec * 1000)),
+  );
+
+  const { data: tracks, error: tracksError } = await admin
+    .from("studio_tracks")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order", { ascending: true });
+  if (tracksError) throw new Error(tracksError.message);
+  const trackRows = (tracks as TrackRow[] | null) ?? [];
+  const beatTrack = trackRows.find((t) => t.track_type === "BEAT") ?? null;
+
+  let previousBeatRefs: BeatRefClipSnapshot[] = [];
+  if (beatTrack) {
+    const { data: existingClips, error: clipsLoadError } = await admin
+      .from("studio_clips")
+      .select(
+        "id, track_id, source_kind, source_take_id, source_beat_id, source_artifact_id, timeline_start_ms, duration_ms, source_offset_ms, gain_db, muted, fade_in_ms, fade_out_ms",
+      )
+      .eq("track_id", beatTrack.id);
+    if (clipsLoadError) throw new Error(clipsLoadError.message);
+    previousBeatRefs = ((existingClips as BeatRefClipSnapshot[] | null) ?? [])
+      .filter((c) => c.source_kind === "BEAT_REF");
+  }
+
+  const ops: AttachBeatFailClosedOps = {
+    async updateProjectBeat({ beatId: nextBeatId, tempoBpm: nextTempo }) {
+      const { data, error } = await admin
+        .from("studio_projects")
+        .update({
+          beat_id: nextBeatId,
+          tempo_bpm: nextTempo,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", projectId)
+        .eq("owner_id", context.userId)
+        .select("id")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) {
+        throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+      }
+    },
+    async deleteBeatRefIds(ids) {
+      if (ids.length === 0) return;
+      const { error } = await admin.from("studio_clips").delete().in("id", ids);
+      if (error) throw new Error(error.message);
+    },
+    async insertBeatRef({ trackId, beatId: sourceBeatId, durationMs }) {
+      const { error } = await admin.from("studio_clips").insert({
+        track_id: trackId,
+        source_kind: "BEAT_REF",
+        source_beat_id: sourceBeatId,
+        timeline_start_ms: 0,
+        duration_ms: durationMs,
+        source_offset_ms: 0,
+      });
+      if (error) throw new Error(error.message);
+    },
+    async listBeatRefsOnTrack(trackId) {
+      const { data, error } = await admin
+        .from("studio_clips")
+        .select("id, source_kind, source_beat_id")
+        .eq("track_id", trackId);
+      if (error) throw new Error(error.message);
+      return (
+        (data as Array<{
+          id: string;
+          source_kind: string;
+          source_beat_id: string | null;
+        }> | null) ?? []
+      )
+        .filter((c) => c.source_kind === "BEAT_REF")
+        .map((c) => ({ id: c.id, source_beat_id: c.source_beat_id }));
+    },
+    async readProjectBeatId() {
+      const { data, error } = await admin
+        .from("studio_projects")
+        .select("beat_id")
+        .eq("id", projectId)
+        .eq("owner_id", context.userId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) {
+        throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+      }
+      return (data as { beat_id: string | null }).beat_id;
+    },
+    async restoreProjectBeat({ beatId: priorBeatId, tempoBpm: priorTempo }) {
+      const { error } = await admin
+        .from("studio_projects")
+        .update({
+          beat_id: priorBeatId,
+          tempo_bpm: priorTempo,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", projectId)
+        .eq("owner_id", context.userId);
+      if (error) {
+        throw new Error(`Attach rollback failed (project): ${error.message}`);
+      }
+    },
+    async replaceBeatRefsOnTrack({ trackId, rows }) {
+      const { data: currentClips, error: currentLoadError } = await admin
+        .from("studio_clips")
+        .select("id, source_kind")
+        .eq("track_id", trackId);
+      if (currentLoadError) {
+        throw new Error(
+          `Attach rollback failed (clip load): ${currentLoadError.message}`,
+        );
+      }
+      const currentBeatRefIds = (
+        (currentClips as Array<{ id: string; source_kind: string }> | null) ??
+        []
+      )
+        .filter((c) => c.source_kind === "BEAT_REF")
+        .map((c) => c.id);
+      if (currentBeatRefIds.length > 0) {
+        const { error: clearError } = await admin
+          .from("studio_clips")
+          .delete()
+          .in("id", currentBeatRefIds);
+        if (clearError) {
+          throw new Error(
+            `Attach rollback failed (clip clear): ${clearError.message}`,
+          );
+        }
+      }
+      if (rows.length === 0) return;
+      const { error: restoreClipsError } = await admin
+        .from("studio_clips")
+        .insert(
+          rows.map((c) => ({
+            id: c.id,
+            track_id: c.track_id,
+            source_kind: "BEAT_REF",
+            source_take_id: c.source_take_id,
+            source_beat_id: c.source_beat_id,
+            source_artifact_id: c.source_artifact_id,
+            timeline_start_ms: c.timeline_start_ms,
+            duration_ms: c.duration_ms,
+            source_offset_ms: c.source_offset_ms,
+            gain_db: c.gain_db,
+            muted: c.muted,
+            fade_in_ms: c.fade_in_ms,
+            fade_out_ms: c.fade_out_ms,
+          })),
+        );
+      if (restoreClipsError) {
+        throw new Error(
+          `Attach rollback failed (clip restore): ${restoreClipsError.message}`,
+        );
+      }
+    },
+  };
+
+  await runAttachBeatFailClosed({
+    ops,
+    requestedBeatId: beatId,
+    tempoBpm,
+    beatDurationMs,
+    previousBeatId,
+    previousTempoBpm,
+    previousBeatRefs,
+    beatTrackId: beatTrack?.id ?? null,
+  });
+
+  return getStudioProjectDocumentFor(context, projectId);
+}
+
+export async function attachBeatToStudioProject(input: {
+  projectId: string;
+  beatId: string;
+}): Promise<StudioProjectDocument> {
+  return attachBeatToStudioProjectFor(await requireUser(), input);
+}
+
 /**
  * Delete owned Studio project.
  * Cascades to studio_tracks → studio_clips (schema ON DELETE CASCADE).
