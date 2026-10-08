@@ -32,9 +32,12 @@ describe("Phase 7.1.4 mixer state / XOR", () => {
     expect(editor).toMatch(/function openInspectorOverlay/);
     expect(editor).toMatch(/setInspectorOverlayOpen\(false\)/);
     expect(editor).toMatch(/setMixerOpen\(false\)/);
-    // Toolbar uses toggle helper — open path goes through openMixerSurface only.
+    // Toolbar uses toggle helper — open path goes through openMixerSurface;
+    // Visual Parity V2 also expands on xl matchMedia.
     expect(editor).toMatch(/onClick=\{toggleMixerSurface\}/);
-    expect(editor.match(/setMixerOpen\(true\)/g)?.length ?? 0).toBe(1);
+    expect(editor.match(/setMixerOpen\(true\)/g)?.length ?? 0).toBeGreaterThanOrEqual(
+      2,
+    );
   });
 
   it("Inspector open closes Mixer; Mixer open closes Inspector overlay", () => {

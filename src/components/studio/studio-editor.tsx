@@ -126,11 +126,11 @@ export type StudioTrackCapacityProps = {
 };
 
 /**
- * Visual Shell — denser DAW lanes (header vol/pan + M/S/R keep min-h-11).
+ * Visual Parity V2 — denser DAW lanes (header vol/pan + M/S/R keep min-h-11).
  * Clip geometry SSOT unchanged; height is presentation only.
  */
-const STUDIO_DAW_LANE_HEIGHT_PX = 112;
-const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[200px] sm:w-[220px]";
+const STUDIO_DAW_LANE_HEIGHT_PX = 128;
+const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[220px] sm:w-[240px]";
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
 const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
 /** Existing take-export product surface (P4.6) — deep-link only. */
@@ -259,7 +259,10 @@ function StudioEditorInner({
   const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  /** Phase 7.1.4 — desktop dock expanded / <xl overlay open (XOR with Inspector). */
+  /**
+   * Phase 7.1.4 + Visual Parity V2 — dock / overlay open (XOR with Inspector).
+   * xl default expanded is applied via matchMedia (not mobile overlay-on-load).
+   */
   const [mixerOpen, setMixerOpen] = useState(false);
   /** Phase 7.1.5.4 — mobile edit-toolbar overflow (local UI only). */
   const [toolbarMoreOpen, setToolbarMoreOpen] = useState(false);
@@ -352,7 +355,14 @@ function StudioEditorInner({
     const apply = () => {
       const desktop = mq.matches;
       setInspectorDesktopRail(desktop);
-      if (desktop) setInspectorOverlayOpen(false);
+      if (desktop) {
+        setInspectorOverlayOpen(false);
+        // Visual Parity V2 — Mixer Contract C: xl expanded by default.
+        setMixerOpen(true);
+      } else {
+        // Avoid auto-opening <xl Mixer overlay when leaving desktop.
+        setMixerOpen(false);
+      }
     };
     apply();
     mq.addEventListener("change", apply);
@@ -1771,7 +1781,6 @@ function StudioEditorInner({
         <p className="mb-1 text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
           Out
         </p>
-        <StudioMasterMeterLive />
         <StudioMixControl
           label="Level"
           ariaLabel="Głośność Master"
@@ -1822,6 +1831,8 @@ function StudioEditorInner({
         >
           {studioFxEntryLabel(doc.project.masterFxChain)}
         </Button>
+        {/* Visual Parity V2 — Master strip order: Level · Pan · FX · meter */}
+        <StudioMasterMeterLive />
       </li>
       {doc.tracks.map((track) => {
         const audible = isTrackAudible({
@@ -1980,13 +1991,14 @@ function StudioEditorInner({
     <div
       data-testid="studio-daw-shell"
       data-studio-shell="true"
-      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-1 overflow-x-hidden"
+      data-studio-visual-parity="v2"
+      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden"
     >
       <header
         data-testid="studio-header"
-        className="flex min-h-11 items-center border-b border-[var(--brd-line)] pb-1"
+        className="flex min-h-10 items-center border-b border-[var(--brd-line)] pb-0.5"
       >
-        <h1 className="brd-display truncate text-base font-semibold tracking-tight sm:text-lg">
+        <h1 className="brd-display truncate text-sm font-semibold tracking-tight sm:text-base">
           {doc.project.title}
         </h1>
       </header>
@@ -2141,7 +2153,7 @@ function StudioEditorInner({
       ) : null}
 
       <div
-        className="flex flex-wrap items-center gap-1.5 border-b border-[var(--brd-line)] pb-1"
+        className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1"
         role="toolbar"
         aria-label="Edycja osi czasu"
         data-testid="studio-edit-toolbar"
@@ -2557,7 +2569,7 @@ function StudioEditorInner({
           data-testid="studio-inspector-desktop"
           data-studio-inspector="desktop"
           data-inspector-context={inspectorContext}
-          className="hidden w-[280px] shrink-0 flex-col gap-2 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 xl:flex"
+          className="hidden w-[300px] shrink-0 flex-col gap-1.5 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 shadow-sm xl:flex"
           aria-label={studioInspectorContextTitle(inspectorContext)}
         >
           {inspectorDesktopRail ? inspectorContent : null}
@@ -3187,196 +3199,208 @@ function StudioTransportBar({
                     ? "Bit oczekuje na załadowanie"
                     : "Nie masz jeszcze wybranego bitu.";
 
+  const beatControlsDisabled = noBeat || busy;
+
   return (
     <div
-      className="sticky top-14 z-20 shrink-0 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1 sm:top-2"
+      className="sticky top-14 z-20 shrink-0 border border-[var(--brd-ink)] bg-[color-mix(in_srgb,var(--brd-ink)_94%,black)] px-2 py-1.5 text-[var(--brd-paper)] sm:top-2"
       role="region"
       aria-label="Transport Studio"
       data-testid="studio-transport"
+      data-studio-transport-empty={noBeat ? "true" : "false"}
     >
-      {noBeat ? (
-        <div className="flex flex-wrap items-center gap-2 py-1">
-          <p className="text-sm text-[var(--brd-ink)]">{statusLabel}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div
+          className="flex flex-wrap items-center gap-1"
+          data-testid="studio-transport-ops"
+        >
           <Button
             type="button"
             size="sm"
-            className="min-h-11"
-            onClick={onChooseBeat}
+            className="min-h-11 min-w-11 border-transparent bg-[var(--brd-paper)] px-2 text-[var(--brd-ink)] hover:bg-[var(--brd-paper)]/90"
+            onClick={play}
+            disabled={beatControlsDisabled || phase === "playing"}
+            title={noBeat ? "Odtwórz — najpierw wybierz bit" : "Odtwórz"}
+            aria-label={noBeat ? "Odtwórz — wymaga bitu" : "Odtwórz"}
           >
-            + Wybierz bit
+            {busy ? "…" : "▶"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            onClick={pause}
+            disabled={noBeat || phase !== "playing"}
+            title="Pauza"
+            aria-label="Pauza"
+          >
+            ❚❚
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            onClick={stop}
+            disabled={noBeat}
+            title="Stop"
+            aria-label="Stop"
+          >
+            ■
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            className="min-h-11 min-w-11 px-2"
+            onClick={onRecord}
+            disabled={noBeat}
+            title={
+              noBeat
+                ? "Nagraj — najpierw wybierz bit"
+                : "Nagraj — otwiera istniejący kontekst nagrywania"
+            }
+            aria-label={
+              noBeat
+                ? "Nagraj — wymaga bitu"
+                : "Nagraj — otwiera panel nagrywania"
+            }
+            data-testid="studio-transport-record"
+          >
+            ●
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)]"
+            disabled
+            aria-disabled="true"
+            title="Loop niedostępny"
+            aria-label="Loop — niedostępne w tej wersji Studio"
+            data-testid="studio-transport-loop"
+          >
+            ⟳
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)]"
+            disabled
+            aria-disabled="true"
+            title="Metronom niedostępny"
+            aria-label="Metronom — niedostępne w tej wersji Studio"
+            data-testid="studio-transport-metronome"
+          >
+            ♩
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className={
+              noBeat
+                ? "min-h-11 border-[var(--brd-green)] bg-[var(--brd-green)] px-2 text-[var(--brd-paper)] hover:opacity-90"
+                : "min-h-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            }
+            variant={noBeat ? "default" : "outline"}
+            onClick={onChooseBeat}
+            title={noBeat ? "Wybierz bit" : "Zmień bit"}
+            aria-label={noBeat ? "Wybierz bit" : "Zmień bit"}
+            data-testid="studio-transport-choose-beat"
+          >
+            {noBeat ? "+ Wybierz bit" : "Bit"}
           </Button>
         </div>
-      ) : (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <div
-            className="flex flex-wrap items-center gap-1"
-            data-testid="studio-transport-ops"
-          >
-            <Button
-              type="button"
-              size="sm"
-              className="min-h-11 min-w-11 px-2"
-              onClick={play}
-              disabled={busy || phase === "playing"}
-              title="Odtwórz"
-              aria-label="Odtwórz"
-            >
-              {busy ? "…" : "▶"}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 min-w-11 px-2"
-              onClick={pause}
-              disabled={phase !== "playing"}
-              title="Pauza"
-              aria-label="Pauza"
-            >
-              ❚❚
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 min-w-11 px-2"
-              onClick={stop}
-              title="Stop"
-              aria-label="Stop"
-            >
-              ■
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="destructive"
-              className="min-h-11 min-w-11 px-2"
-              onClick={onRecord}
-              title="Nagraj — otwiera istniejący kontekst nagrywania"
-              aria-label="Nagraj — otwiera panel nagrywania"
-              data-testid="studio-transport-record"
-            >
-              ●
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 min-w-11 px-2"
-              disabled
-              aria-disabled="true"
-              title="Loop niedostępny"
-              aria-label="Loop — niedostępne w tej wersji Studio"
-              data-testid="studio-transport-loop"
-            >
-              ⟳
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 min-w-11 px-2"
-              disabled
-              aria-disabled="true"
-              title="Metronom niedostępny"
-              aria-label="Metronom — niedostępne w tej wersji Studio"
-              data-testid="studio-transport-metronome"
-            >
-              ♩
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-11 px-2"
-              onClick={onChooseBeat}
-              title="Zmień bit"
-              aria-label="Zmień bit"
-            >
-              Bit
-            </Button>
-          </div>
 
-          <div
-            className="flex min-h-11 flex-wrap items-center gap-2 border-l border-[var(--brd-line)] pl-2 font-mono text-xs tabular-nums text-[var(--brd-ink)]"
-            data-testid="studio-transport-meta"
+        <div
+          className="flex min-h-11 flex-wrap items-center gap-2 border-l border-[var(--brd-paper)]/25 pl-2 font-mono text-xs tabular-nums text-[var(--brd-paper)]"
+          data-testid="studio-transport-meta"
+        >
+          <span
+            aria-live="polite"
+            className="text-sm font-medium tracking-tight"
           >
-            <span aria-live="polite">
-              {timeLabel}
-              <span className="text-[var(--brd-mute)]"> / </span>
-              {formatStudioTimeMs(durationMs)}
-            </span>
-            <span className="text-[var(--brd-mute)]" aria-label="Tempo">
-              {tempoBpm} BPM
-            </span>
-            <span
-              className="text-[var(--brd-mute)]"
-              aria-label="Metrum"
-            >
-              {timeSignatureNum}/{timeSignatureDen}
-            </span>
-          </div>
-
-          <div
-            className="ml-auto flex min-w-[9rem] max-w-[14rem] flex-1 items-center gap-2"
-            data-testid="studio-transport-master"
-          >
-            <StudioMixControl
-              label="Master"
-              ariaLabel="Głośność Master"
-              value={masterGainDb}
-              display={`${masterGainDb.toFixed(1)} dB`}
-              min={STUDIO_MASTER_GAIN_DB_MIN}
-              max={STUDIO_MASTER_GAIN_DB_MAX}
-              step={0.5}
-              compact
-              disabled={pending}
-              onLocalChange={onMasterGainLocal}
-              onCommit={onMasterGainCommit}
-            />
-          </div>
-
-          <p
-            className={`min-h-11 max-w-[12rem] truncate text-xs leading-[2.75rem] ${
-              saveIsError || conflictActive
-                ? "text-destructive"
-                : "text-[var(--brd-mute)]"
-            }`}
-            role={saveIsError || conflictActive ? "alert" : "status"}
-            data-testid="studio-transport-save"
-          >
-            {saveStatusLabel}
-            {conflictActive ? (
-              <>
-                {" "}
-                <button
-                  type="button"
-                  className="underline"
-                  onClick={() => window.location.reload()}
-                >
-                  Odśwież
-                </button>
-              </>
-            ) : null}
-          </p>
-
-          <Link
-            href={STUDIO_EXPORT_DEEP_LINK_HREF}
-            className="inline-flex min-h-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] px-2 text-xs font-medium text-[var(--brd-ink)] hover:border-[var(--brd-green)]"
-            data-testid="studio-transport-export"
-            title="Export — istniejąca powierzchnia eksportu nagrań"
-          >
-            Export
-          </Link>
+            {timeLabel}
+            <span className="text-[var(--brd-paper)]/55"> / </span>
+            {formatStudioTimeMs(durationMs)}
+          </span>
+          <span className="text-[var(--brd-paper)]/70" aria-label="Tempo">
+            {tempoBpm} BPM
+          </span>
+          <span className="text-[var(--brd-paper)]/70" aria-label="Metrum">
+            {timeSignatureNum}/{timeSignatureDen}
+          </span>
         </div>
-      )}
-      {!noBeat ? (
+
+        <div
+          className="ml-auto flex min-w-[9rem] max-w-[14rem] flex-1 items-center gap-2 [&_label]:text-[var(--brd-paper)]/75 [&_span]:text-[var(--brd-paper)]"
+          data-testid="studio-transport-master"
+        >
+          <StudioMixControl
+            label="Master"
+            ariaLabel="Głośność Master"
+            value={masterGainDb}
+            display={`${masterGainDb.toFixed(1)} dB`}
+            min={STUDIO_MASTER_GAIN_DB_MIN}
+            max={STUDIO_MASTER_GAIN_DB_MAX}
+            step={0.5}
+            compact
+            disabled={pending}
+            onLocalChange={onMasterGainLocal}
+            onCommit={onMasterGainCommit}
+          />
+        </div>
+
+        <p
+          className={`min-h-11 max-w-[12rem] truncate text-xs leading-[2.75rem] ${
+            saveIsError || conflictActive
+              ? "text-[var(--brd-warn)]"
+              : "text-[var(--brd-paper)]/70"
+          }`}
+          role={saveIsError || conflictActive ? "alert" : "status"}
+          data-testid="studio-transport-save"
+        >
+          {saveStatusLabel}
+          {conflictActive ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="underline"
+                onClick={() => window.location.reload()}
+              >
+                Odśwież
+              </button>
+            </>
+          ) : null}
+        </p>
+
+        <Link
+          href={STUDIO_EXPORT_DEEP_LINK_HREF}
+          className="inline-flex min-h-11 items-center rounded border border-[var(--brd-paper)]/40 bg-[var(--brd-paper)] px-2.5 text-xs font-semibold text-[var(--brd-ink)] hover:border-[var(--brd-green)]"
+          data-testid="studio-transport-export"
+          title="Export — istniejąca powierzchnia eksportu nagrań"
+        >
+          Export
+        </Link>
+      </div>
+      {noBeat ? (
+        <p
+          className="mt-1 text-[11px] text-[var(--brd-paper)]/75"
+          role="status"
+          data-testid="studio-transport-nobeat-status"
+        >
+          {statusLabel} Wybierz bit, aby odblokować odtwarzanie i nagrywanie.
+        </p>
+      ) : (
         <p className="sr-only" role="status">
           {statusLabel}
         </p>
-      ) : null}
+      )}
       {error ? (
-        <p className="text-xs text-destructive" role="alert">
+        <p className="mt-1 text-xs text-[var(--brd-warn)]" role="alert">
           {error}
         </p>
       ) : null}
@@ -3511,7 +3535,7 @@ function StudioTimeline({
             data-testid="studio-track-list"
           >
             <div
-              className="flex h-6 shrink-0 items-center border-b border-[var(--brd-line)] px-2 text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]"
+              className="flex h-7 shrink-0 items-center border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)] px-2 text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]"
               aria-hidden
             >
               Ścieżki
@@ -3560,7 +3584,7 @@ function StudioTimeline({
               aria-valuenow={playheadMs}
               aria-disabled={interactionLocked || undefined}
             >
-              <div className="sticky top-0 z-[3] h-6 border-b border-[var(--brd-line)] bg-[var(--brd-paper)]">
+              <div className="sticky top-0 z-[3] h-7 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)]">
                 {ticks.map((tick) => (
                   <span
                     key={tick.ms}

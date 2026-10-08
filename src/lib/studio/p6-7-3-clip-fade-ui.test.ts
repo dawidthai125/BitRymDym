@@ -233,7 +233,8 @@ describe("P6.7.3 mobile + architecture guards", () => {
   it("transport remains reachable (sticky + labels)", () => {
     expect(editor).toMatch(/aria-label="Transport Studio"/);
     expect(editor).toMatch(/sticky top-14/);
-    expect(editor).toMatch(/aria-label="Odtwórz"/);
+    // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
+    expect(editor).toMatch(/aria-label=\{noBeat \? "Odtwórz — wymaga bitu" : "Odtwórz"\}/);
   });
 
   it("mobile layout guard: min-w-0, min-h-11 fade targets, safe-area", () => {

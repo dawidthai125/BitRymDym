@@ -106,24 +106,25 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(mixer).toMatch(/data-testid="studio-mix-track-msr"/);
   });
 
-  it("Master Mix: distinguished card + Meter → Level → Pan → FX entry", () => {
+  it("Master Mix: distinguished card + Level → Pan → FX → Meter (V2)", () => {
     expect(editor).toMatch(/border-\[var\(--brd-green\)\]/);
     expect(editor).toMatch(/Głośność Master/);
     expect(editor).toMatch(/Panorama Master/);
     expect(editor).toMatch(/StudioMasterMeter/);
     expect(editor).toMatch(/Efekty Master/);
     expect(editor).toMatch(/studioFxEntryLabel\(doc\.project\.masterFxChain\)/);
+    // Visual Parity V2 — Master strip: Level · Pan · FX · meter
     const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
     const gainIdx = mixer.indexOf('ariaLabel="Głośność Master"');
     const panIdx = mixer.indexOf('ariaLabel="Panorama Master"');
-    const meterIdx = mixer.indexOf("<StudioMasterMeter");
     const fxIdx = mixer.indexOf('aria-label="Efekty Master"');
-    expect(meterIdx).toBeGreaterThanOrEqual(0);
-    expect(gainIdx).toBeGreaterThan(meterIdx);
+    const meterIdx = mixer.indexOf("<StudioMasterMeter");
+    expect(gainIdx).toBeGreaterThanOrEqual(0);
     expect(panIdx).toBeGreaterThan(gainIdx);
     expect(fxIdx).toBeGreaterThan(panIdx);
+    expect(meterIdx).toBeGreaterThan(fxIdx);
   });
 
   it("reuses StudioMixControl for Track Gain/Pan (no duplicate raw track ranges)", () => {
@@ -161,7 +162,8 @@ describe("P6.4.3 Mix UX integration contracts", () => {
   it("transport sticky + 44px targets + accessible labels", () => {
     expect(editor).toMatch(/sticky top-14/);
     expect(editor).toMatch(/aria-label=\"Transport Studio\"/);
-    expect(editor).toMatch(/aria-label=\"Odtwórz\"/);
+    // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
+    expect(editor).toMatch(/aria-label=\{noBeat \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);
     expect(editor).toMatch(/aria-label=\"Stop\"/);
     expect(editor).toMatch(/min-h-11/);
   });

@@ -108,28 +108,33 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(editor).toMatch(/<StudioMasterMeter snapshot=\{meter\}/);
     expect(masterMeter).toMatch(/testIdPrefix=\"studio-master-meter\"/);
     expect(masterMeter).toMatch(/Miernik Master/);
-    // Phase 1 — mixer drawer hosts Master strip (not vertical form Mix).
+    // Visual Parity V2 — Master strip: Level · Pan · FX · meter
     const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
+    const levelIdx = mixer.indexOf('ariaLabel="Głośność Master"');
     const panIdx = mixer.indexOf('ariaLabel="Panorama Master"');
-    const masterMeterIdx = mixer.indexOf("<StudioMasterMeterLive");
     const masterFxIdx = mixer.indexOf('aria-label="Efekty Master"');
-    expect(panIdx).toBeGreaterThanOrEqual(0);
-    expect(masterMeterIdx).toBeGreaterThan(panIdx);
-    expect(masterFxIdx).toBeGreaterThan(masterMeterIdx);
+    const masterMeterIdx = mixer.indexOf("<StudioMasterMeterLive");
+    expect(levelIdx).toBeGreaterThanOrEqual(0);
+    expect(panIdx).toBeGreaterThan(levelIdx);
+    expect(masterFxIdx).toBeGreaterThan(panIdx);
+    expect(masterMeterIdx).toBeGreaterThan(masterFxIdx);
   });
 
-  it("desktop Mix: Track meter between Pan and FX on selected row", () => {
+  it("desktop Mix: Track meter after name, before Level (V2 / P6.6)", () => {
+    // Visual Parity V2 channel strip: name · meter · Level · Pan · M/S/R · FX
     const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
-    const panIdx = mixer.indexOf("ariaLabel={`Panorama ścieżki");
     const meterIdx = mixer.indexOf("<StudioTrackMeterLive");
+    const levelIdx = mixer.indexOf("ariaLabel={`Głośność ścieżki");
+    const panIdx = mixer.indexOf("ariaLabel={`Panorama ścieżki");
     const fxIdx = mixer.indexOf("Efekty ścieżki");
-    expect(panIdx).toBeGreaterThanOrEqual(0);
-    expect(meterIdx).toBeGreaterThan(panIdx);
-    expect(fxIdx).toBeGreaterThan(meterIdx);
+    expect(meterIdx).toBeGreaterThanOrEqual(0);
+    expect(levelIdx).toBeGreaterThan(meterIdx);
+    expect(panIdx).toBeGreaterThan(levelIdx);
+    expect(fxIdx).toBeGreaterThan(panIdx);
   });
 
   it("mobile ~390: min-w-0, min-h-11 select, no overflow traps", () => {
@@ -147,7 +152,8 @@ describe("P6.6.2 Track meter UI contracts", () => {
   it("transport remains reachable (sticky + labels)", () => {
     expect(editor).toMatch(/sticky top-14/);
     expect(editor).toMatch(/aria-label=\"Transport Studio\"/);
-    expect(editor).toMatch(/aria-label=\"Odtwórz\"/);
+    // Visual Parity V2 — Play label may include noBeat “wymaga bitu” suffix.
+    expect(editor).toMatch(/aria-label=\{noBeat \? \"Odtwórz — wymaga bitu\" : \"Odtwórz\"\}/);
     expect(editor).toMatch(/aria-label=\"Stop\"/);
     expect(editor).toMatch(/min-h-11/);
   });

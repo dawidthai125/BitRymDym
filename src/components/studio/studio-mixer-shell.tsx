@@ -163,7 +163,7 @@ export function StudioMixerDockChrome({
       data-studio-mixer="dock"
       data-mixer-expanded={expanded ? "true" : "false"}
       aria-label="Mix"
-      className="hidden shrink-0 flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] xl:flex"
+      className="hidden shrink-0 flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-[0_-2px_8px_-4px_color-mix(in_srgb,var(--brd-ink)_18%,transparent)] xl:flex"
     >
       <div
         className="flex min-h-11 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2"
