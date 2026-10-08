@@ -163,13 +163,13 @@ export function StudioMixerDockChrome({
       data-studio-mixer="dock"
       data-mixer-expanded={expanded ? "true" : "false"}
       aria-label="Mix"
-      className="hidden shrink-0 flex-col border border-[var(--brd-line)] bg-[var(--brd-bg)] xl:flex"
+      className="hidden shrink-0 flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] xl:flex"
     >
       <div
-        className="flex min-h-11 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3"
+        className="flex min-h-11 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2"
         data-testid="studio-mixer-chrome"
       >
-        <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
           Mixer
         </p>
         <Button
@@ -192,7 +192,7 @@ export function StudioMixerDockChrome({
           role="region"
           aria-label="Kanały Mixera"
           data-testid="studio-mixer-panel"
-          className="max-h-[17.5rem] min-h-0 overflow-hidden p-3"
+          className="max-h-[17.5rem] min-h-0 overflow-y-auto overflow-x-hidden p-2"
         >
           {children}
         </div>

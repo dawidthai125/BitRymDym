@@ -83,7 +83,7 @@ describe("Phase 7.1.4 desktop dock + collapse", () => {
 });
 
 describe("Phase 7.1.4 channels + Master sticky-first", () => {
-  it("reuses Gain/Pan/Meter/FX; no Mixer primary M/S/R handlers", () => {
+  it("reuses Gain/Pan/Meter/FX; M/S/R mirrors use same patchTrack (OD-VS-05)", () => {
     const channelsStart = editor.indexOf("const mixerChannels");
     expect(channelsStart).toBeGreaterThan(0);
     const channels = editor.slice(
@@ -95,10 +95,14 @@ describe("Phase 7.1.4 channels + Master sticky-first", () => {
     expect(channels).toMatch(/StudioTrackMeter/);
     expect(channels).toMatch(/Efekty Master/);
     expect(channels).toMatch(/Efekty ścieżki/);
-    expect(channels).not.toMatch(/StudioToggleChip/);
-    expect(channels).not.toMatch(/recordArmed/);
-    expect(channels).not.toMatch(/title="Wycisz"/);
-    expect(channels).not.toMatch(/title="Solo"/);
+    // Visual Shell OD-VS-05=A — mirror chips, not a second state source.
+    expect(channels).toMatch(/StudioToggleChip/);
+    expect(channels).toMatch(/data-testid="studio-mix-track-msr"/);
+    expect(channels).toMatch(/patchTrack\(track\.id, \{ muted:/);
+    expect(channels).toMatch(/patchTrack\(track\.id, \{ solo:/);
+    expect(channels).toMatch(/recordArmed:/);
+    expect(channels).not.toMatch(/useState\([^\)]*muted/);
+    expect(channels).not.toMatch(/mixerMuteStore|msrStore/);
   });
 
   it("Master sticky-first and distinct from tracks", () => {

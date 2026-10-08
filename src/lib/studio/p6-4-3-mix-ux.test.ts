@@ -83,10 +83,10 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     "utf8",
   );
 
-  it("Track Mix: Mute/Solo then Gain/Pan then FX entry", () => {
+  it("Track Mix: channel-strip order Meter → Level → Pan → M/S/R → FX (Visual Shell)", () => {
     expect(editor).toMatch(/studioFxEntryLabel/);
     expect(editor).toMatch(/aria-label=\"Mix\"/);
-    // Phase 1 DAW — Mute/Solo live on compact track headers; Gain/Pan/Meter/FX in mixer drawer.
+    // Headers + mixer both expose M/S/R; strip order is Visual Shell OD freeze.
     const muteIdx = editor.indexOf('title="Wycisz"');
     const soloIdx = editor.indexOf('title="Solo"');
     const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
@@ -99,12 +99,14 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     expect(muteIdx).toBeGreaterThan(0);
     expect(soloIdx).toBeGreaterThan(muteIdx);
     expect(gainIdx).toBeGreaterThanOrEqual(0);
+    expect(meterIdx).toBeGreaterThanOrEqual(0);
+    expect(gainIdx).toBeGreaterThan(meterIdx);
     expect(panIdx).toBeGreaterThan(gainIdx);
-    expect(meterIdx).toBeGreaterThan(panIdx);
-    expect(fxIdx).toBeGreaterThan(meterIdx);
+    expect(fxIdx).toBeGreaterThan(panIdx);
+    expect(mixer).toMatch(/data-testid="studio-mix-track-msr"/);
   });
 
-  it("Master Mix: distinguished card + Gain/Pan + Meter + FX entry", () => {
+  it("Master Mix: distinguished card + Meter → Level → Pan → FX entry", () => {
     expect(editor).toMatch(/border-\[var\(--brd-green\)\]/);
     expect(editor).toMatch(/Głośność Master/);
     expect(editor).toMatch(/Panorama Master/);
@@ -114,11 +116,14 @@ describe("P6.4.3 Mix UX integration contracts", () => {
     const mixerStart = editor.indexOf('data-testid="studio-mixer-drawer"');
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
+    const gainIdx = mixer.indexOf('ariaLabel="Głośność Master"');
     const panIdx = mixer.indexOf('ariaLabel="Panorama Master"');
     const meterIdx = mixer.indexOf("<StudioMasterMeter");
     const fxIdx = mixer.indexOf('aria-label="Efekty Master"');
-    expect(meterIdx).toBeGreaterThan(panIdx);
-    expect(fxIdx).toBeGreaterThan(meterIdx);
+    expect(meterIdx).toBeGreaterThanOrEqual(0);
+    expect(gainIdx).toBeGreaterThan(meterIdx);
+    expect(panIdx).toBeGreaterThan(gainIdx);
+    expect(fxIdx).toBeGreaterThan(panIdx);
   });
 
   it("reuses StudioMixControl for Track Gain/Pan (no duplicate raw track ranges)", () => {

@@ -99,6 +99,10 @@ import {
   type StudioPersistResult,
   type StudioPersistSnapshot,
 } from "@/lib/studio/studio-persist-orchestrator";
+import {
+  STUDIO_MASTER_GAIN_DB_MAX,
+  STUDIO_MASTER_GAIN_DB_MIN,
+} from "@/lib/studio/studio-master-mix";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import {
   canAddStudioTrack,
@@ -121,11 +125,19 @@ export type StudioTrackCapacityProps = {
   premiumTier: PremiumTier;
 };
 
-/** Phase 1 DAW — track header / timeline lane shared row height (px). */
-const STUDIO_DAW_LANE_HEIGHT_PX = 52;
-const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[240px] sm:w-[260px]";
+/**
+ * Visual Shell — denser DAW lanes (header vol/pan + M/S/R keep min-h-11).
+ * Clip geometry SSOT unchanged; height is presentation only.
+ */
+const STUDIO_DAW_LANE_HEIGHT_PX = 112;
+const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[200px] sm:w-[220px]";
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
 const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
+/** Existing take-export product surface (P4.6) — deep-link only. */
+const STUDIO_EXPORT_DEEP_LINK_HREF = "/account/takes";
+/** Track gain bounds — same as Mixer strips. */
+const STUDIO_TRACK_GAIN_DB_MIN = -24;
+const STUDIO_TRACK_GAIN_DB_MAX = 12;
 
 export function StudioEditor({
   initialDocument,
@@ -1569,11 +1581,81 @@ function StudioEditorInner({
 
   const inspectorContent = (
     <div
-      className="min-h-0 flex-1 space-y-3 overflow-y-auto"
+      className="min-h-0 flex-1 space-y-2 overflow-y-auto"
       data-testid="studio-inspector-content"
       data-inspector-context={inspectorContext}
     >
-      <p className="text-xs uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+      <div
+        role="tablist"
+        aria-label="Inspector"
+        data-testid="studio-inspector-visual-tabs"
+        className="grid grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2"
+      >
+        {(
+          [
+            {
+              id: "settings",
+              label: "Settings",
+              active:
+                inspectorContext === "track" || inspectorContext === "empty",
+              onClick: () => {
+                setInspectorPreferRecord(false);
+                setConfirmDelete(false);
+                openInspectorOverlay();
+              },
+            },
+            {
+              id: "effects",
+              label: "Effects",
+              active: false,
+              onClick: () => {
+                setInspectorPreferRecord(false);
+                if (selectedTrack) {
+                  setFxPanel({ role: "track", trackId: selectedTrack.id });
+                } else {
+                  setFxPanel({ role: "master" });
+                }
+              },
+            },
+            {
+              id: "file",
+              label: "File",
+              active: inspectorContext === "clip",
+              onClick: () => {
+                setInspectorPreferRecord(false);
+                setConfirmDelete(false);
+                openInspectorOverlay();
+              },
+            },
+            {
+              id: "record",
+              label: "Record",
+              active: inspectorContext === "record",
+              onClick: () => {
+                setInspectorPreferRecord(true);
+                openInspectorOverlay();
+              },
+            },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={tab.active}
+            data-testid={`studio-inspector-tab-${tab.id}`}
+            className={`min-h-11 rounded border px-1 text-[10px] font-medium uppercase tracking-[0.08em] ${
+              tab.active
+                ? "border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-bg)_80%,var(--brd-green)_20%)] text-[var(--brd-ink)]"
+                : "border-[var(--brd-line)] bg-[var(--brd-paper)] text-[var(--brd-mute)]"
+            }`}
+            onClick={tab.onClick}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
         {studioInspectorContextTitle(inspectorContext)}
       </p>
 
@@ -1676,29 +1758,29 @@ function StudioEditorInner({
   /** Phase 7.1.4 — shared Mixer strips (mounted once: desktop dock XOR <xl overlay). */
   const mixerChannels = (
     <ul
-      className="flex gap-3 overflow-x-auto pb-1"
+      className="flex items-stretch gap-2 overflow-x-auto pb-1"
       data-testid="studio-mixer-drawer"
       data-studio-mixer="channels"
       aria-label="Mix"
     >
       <li
         data-testid="studio-mix-master"
-        className="sticky left-0 z-[1] min-w-[11rem] shrink-0 rounded-md border-2 border-[var(--brd-green)]/35 bg-[color-mix(in_srgb,var(--brd-bg)_88%,var(--brd-green)_12%)] p-3 shadow-[4px_0_8px_-4px_color-mix(in_srgb,var(--brd-ink)_20%,transparent)]"
+        className="sticky left-0 z-[1] flex w-[7.5rem] shrink-0 flex-col rounded-md border-2 border-[var(--brd-green)]/40 bg-[color-mix(in_srgb,var(--brd-bg)_88%,var(--brd-green)_12%)] p-2 shadow-[4px_0_8px_-4px_color-mix(in_srgb,var(--brd-ink)_20%,transparent)]"
       >
-        <div className="mb-2">
-          <p className="text-sm font-semibold text-[var(--brd-ink)]">Master</p>
-          <p className="text-xs text-[var(--brd-mute)]">
-            Głośność wyjścia · efekty sumy
-          </p>
-        </div>
+        <p className="truncate text-xs font-semibold text-[var(--brd-ink)]">Master</p>
+        <p className="mb-1 text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
+          Out
+        </p>
+        <StudioMasterMeterLive />
         <StudioMixControl
-          label="Głośność"
+          label="Level"
           ariaLabel="Głośność Master"
           value={doc.project.masterGainDb}
           display={`${doc.project.masterGainDb.toFixed(1)} dB`}
-          min={-24}
-          max={12}
+          min={STUDIO_MASTER_GAIN_DB_MIN}
+          max={STUDIO_MASTER_GAIN_DB_MAX}
           step={0.5}
+          orientation="vertical"
           disabled={pending}
           onLocalChange={(masterGainDb) =>
             setDoc((prev) => ({
@@ -1711,13 +1793,14 @@ function StudioEditorInner({
           }}
         />
         <StudioMixControl
-          label="Panorama L/R"
+          label="Pan"
           ariaLabel="Panorama Master"
           value={doc.project.masterPan}
           display={doc.project.masterPan.toFixed(2)}
           min={-1}
           max={1}
           step={0.01}
+          compact
           disabled={pending}
           onLocalChange={(masterPan) =>
             setDoc((prev) => ({
@@ -1729,19 +1812,16 @@ function StudioEditorInner({
             patchMasterMix({ masterPan });
           }}
         />
-        <StudioMasterMeterLive />
-        <div className="mt-3">
-          <Button
-            type="button"
-            size="xs"
-            variant="outline"
-            className="min-h-11 w-full"
-            aria-label="Efekty Master"
-            onClick={() => setFxPanel({ role: "master" })}
-          >
-            {studioFxEntryLabel(doc.project.masterFxChain)}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          size="xs"
+          variant="outline"
+          className="mt-auto min-h-11 w-full truncate px-1 text-[10px]"
+          aria-label="Efekty Master"
+          onClick={() => setFxPanel({ role: "master" })}
+        >
+          {studioFxEntryLabel(doc.project.masterFxChain)}
+        </Button>
       </li>
       {doc.tracks.map((track) => {
         const audible = isTrackAudible({
@@ -1760,13 +1840,13 @@ function StudioEditorInner({
             data-selected={isSelected ? "true" : "false"}
             className={
               isSelected
-                ? "min-w-[11rem] shrink-0 rounded border border-[var(--brd-green)] bg-[var(--brd-bg)] p-3"
-                : "min-w-[11rem] shrink-0 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
+                ? "flex w-[7.5rem] shrink-0 flex-col rounded border border-[var(--brd-green)] bg-[var(--brd-bg)] p-2"
+                : "flex w-[7.5rem] shrink-0 flex-col rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-2"
             }
           >
             <button
               type="button"
-              className="mb-2 min-h-11 w-full rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+              className="mb-1 min-h-11 w-full rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
               aria-pressed={isSelected}
               aria-label={
                 isSelected
@@ -1778,28 +1858,32 @@ function StudioEditorInner({
                 setSelectedTrackId(isSelected ? null : track.id)
               }
             >
-              <p className="text-sm font-medium text-[var(--brd-ink)]">
+              <p className="truncate text-xs font-medium text-[var(--brd-ink)]">
                 {track.name}
-                {isBeat ? (
-                  <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--brd-mute)]">
-                    Bit projektu
-                  </span>
-                ) : null}
               </p>
-              <p className="text-xs text-[var(--brd-mute)]">
-                {labelStudioTrackType(track.trackType)}
-                {!audible ? " · wyciszona w miksie" : ""}
-                {isSelected ? " · miernik aktywny" : ""}
+              <p className="truncate font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
+                {isBeat ? "BEAT" : labelStudioTrackType(track.trackType)}
+                {!audible ? " · M" : ""}
+                {isSelected ? " · meter" : ""}
               </p>
             </button>
+            {isSelected ? (
+              <StudioTrackMeterLive trackName={track.name} />
+            ) : (
+              <div
+                className="mb-1 h-8 rounded border border-dashed border-[var(--brd-line)]"
+                aria-hidden
+              />
+            )}
             <StudioMixControl
-              label="Głośność"
+              label="Level"
               ariaLabel={`Głośność ścieżki ${track.name}`}
               value={track.gainDb}
               display={`${track.gainDb.toFixed(1)} dB`}
-              min={-24}
-              max={12}
+              min={STUDIO_TRACK_GAIN_DB_MIN}
+              max={STUDIO_TRACK_GAIN_DB_MAX}
               step={0.5}
+              orientation="vertical"
               disabled={pending}
               onLocalChange={(gainDb) =>
                 setDoc((prev) => ({
@@ -1814,13 +1898,14 @@ function StudioEditorInner({
               }}
             />
             <StudioMixControl
-              label="Panorama L/R"
+              label="Pan"
               ariaLabel={`Panorama ścieżki ${track.name}`}
               value={track.pan}
               display={track.pan.toFixed(2)}
               min={-1}
               max={1}
               step={0.01}
+              compact
               disabled={pending}
               onLocalChange={(pan) =>
                 setDoc((prev) => ({
@@ -1834,24 +1919,57 @@ function StudioEditorInner({
                 patchTrack(track.id, { pan });
               }}
             />
-            {isSelected ? (
-              <StudioTrackMeterLive trackName={track.name} />
-            ) : null}
-            <div className="mt-3">
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className="min-h-11 w-full"
-                aria-label={`Efekty ścieżki ${track.name}`}
+            <div
+              className="mt-1 flex justify-center gap-0.5"
+              data-testid="studio-mix-track-msr"
+            >
+              <StudioToggleChip
+                active={track.muted}
+                label="M"
+                title="Wycisz"
+                tone="mute"
+                className={STUDIO_DAW_CHIP_CLASS}
                 onClick={() => {
-                  setSelectedTrackId(track.id);
-                  setFxPanel({ role: "track", trackId: track.id });
+                  patchTrack(track.id, { muted: !track.muted });
                 }}
-              >
-                {fxLabel}
-              </Button>
+              />
+              <StudioToggleChip
+                active={track.solo}
+                label="S"
+                title="Solo"
+                tone="solo"
+                className={STUDIO_DAW_CHIP_CLASS}
+                onClick={() => {
+                  patchTrack(track.id, { solo: !track.solo });
+                }}
+              />
+              <StudioToggleChip
+                active={track.recordArmed}
+                label="R"
+                title="Uzbrojenie nagrywania"
+                tone="record"
+                className={STUDIO_DAW_CHIP_CLASS}
+                onClick={() => {
+                  patchTrack(track.id, {
+                    recordArmed: !track.recordArmed,
+                  });
+                }}
+              />
             </div>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              className="mt-auto min-h-11 w-full truncate px-1 text-[10px]"
+              aria-label={`Efekty ścieżki ${track.name}`}
+              title={fxLabel}
+              onClick={() => {
+                setSelectedTrackId(track.id);
+                setFxPanel({ role: "track", trackId: track.id });
+              }}
+            >
+              {fxLabel}
+            </Button>
           </li>
         );
       })}
@@ -1862,45 +1980,42 @@ function StudioEditorInner({
     <div
       data-testid="studio-daw-shell"
       data-studio-shell="true"
-      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-1.5 overflow-x-hidden"
+      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-1 overflow-x-hidden"
     >
       <header
         data-testid="studio-header"
-        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--brd-line)] pb-2"
+        className="flex min-h-11 items-center border-b border-[var(--brd-line)] pb-1"
       >
-        <div className="min-w-0 space-y-0.5">
-          <h1 className="brd-display truncate text-xl font-semibold tracking-tight sm:text-2xl">
-            {doc.project.title}
-          </h1>
-          <p className="text-xs text-[var(--brd-ink-soft)]">
-            {doc.project.tempoBpm} BPM ·{" "}
-            {doc.project.timeSignatureNum}/{doc.project.timeSignatureDen} ·{" "}
-            {formatStudioTimeMs(length)}
-          </p>
-        </div>
-        <p
-          className={`shrink-0 text-xs ${
-            error ? "text-destructive" : "text-[var(--brd-mute)]"
-          }`}
-          role={error ? "alert" : "status"}
-        >
-          {saveStatusLabel}
-          {conflictActive ? (
-            <>
-              {" "}
-              <button
-                type="button"
-                className="min-h-11 underline"
-                onClick={() => window.location.reload()}
-              >
-                Odśwież
-              </button>
-            </>
-          ) : null}
-        </p>
+        <h1 className="brd-display truncate text-base font-semibold tracking-tight sm:text-lg">
+          {doc.project.title}
+        </h1>
       </header>
 
-      <StudioTransportBar onChooseBeat={() => setBeatPickerOpen(true)} />
+      <StudioTransportBar
+        onChooseBeat={() => setBeatPickerOpen(true)}
+        onRecord={() => {
+          setInspectorPreferRecord(true);
+          openInspectorOverlay();
+        }}
+        tempoBpm={doc.project.tempoBpm}
+        timeSignatureNum={doc.project.timeSignatureNum}
+        timeSignatureDen={doc.project.timeSignatureDen}
+        durationMs={length}
+        masterGainDb={doc.project.masterGainDb}
+        pending={pending}
+        saveStatusLabel={saveStatusLabel}
+        saveIsError={Boolean(error) || persistSnap.status === "SAVE_FAILED"}
+        conflictActive={conflictActive}
+        onMasterGainLocal={(masterGainDb) =>
+          setDoc((prev) => ({
+            ...prev,
+            project: { ...prev.project, masterGainDb },
+          }))
+        }
+        onMasterGainCommit={(masterGainDb) => {
+          patchMasterMix({ masterGainDb });
+        }}
+      />
 
       <StudioBeatPicker
         projectId={doc.project.id}
@@ -2026,7 +2141,7 @@ function StudioEditorInner({
       ) : null}
 
       <div
-        className="flex flex-wrap items-center gap-2"
+        className="flex flex-wrap items-center gap-1.5 border-b border-[var(--brd-line)] pb-1"
         role="toolbar"
         aria-label="Edycja osi czasu"
         data-testid="studio-edit-toolbar"
@@ -2244,115 +2359,173 @@ function StudioEditorInner({
             renderTrackHeader={(track, index) => {
               const isSelected = activeSelectedTrackId === track.id;
               const isBeat = track.trackType === "BEAT";
+              const typeLabel = labelStudioTrackType(track.trackType);
               return (
                 <div
                   data-testid="studio-track-header"
                   data-track-id={track.id}
+                  data-track-type={track.trackType}
                   data-selected={isSelected ? "true" : "false"}
-                  className={`flex items-center gap-1 border-b border-[var(--brd-line)] px-1 ${
+                  className={`flex flex-col justify-center gap-0.5 border-b border-[var(--brd-line)] px-1 py-0.5 ${
                     isSelected
                       ? "bg-[color-mix(in_srgb,var(--brd-bg)_85%,var(--brd-green)_15%)]"
                       : "bg-[var(--brd-bg)]"
                   }`}
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
                 >
-                  <button
-                    type="button"
-                    className="min-h-11 min-w-0 flex-1 truncate rounded-sm px-1 text-left text-xs font-medium text-[var(--brd-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                    aria-pressed={isSelected}
-                    aria-label={
-                      isSelected
-                        ? `Odznacz ścieżkę ${track.name}`
-                        : `Wybierz ścieżkę ${track.name}`
-                    }
-                    data-testid="studio-track-header-select"
-                    onClick={() =>
-                      setSelectedTrackId(isSelected ? null : track.id)
-                    }
-                  >
-                    <span className="truncate">
-                      {track.name}
-                      {isBeat ? " · bit" : ""}
-                    </span>
-                  </button>
-                  <StudioToggleChip
-                    active={track.muted}
-                    label="M"
-                    title="Wycisz"
-                    className={STUDIO_DAW_CHIP_CLASS}
-                    onClick={() => {
-                      patchTrack(track.id, { muted: !track.muted });
-                    }}
-                  />
-                  <StudioToggleChip
-                    active={track.solo}
-                    label="S"
-                    title="Solo"
-                    className={STUDIO_DAW_CHIP_CLASS}
-                    onClick={() => {
-                      patchTrack(track.id, { solo: !track.solo });
-                    }}
-                  />
-                  <StudioToggleChip
-                    active={track.recordArmed}
-                    label="R"
-                    title="Uzbrojenie nagrywania"
-                    className={STUDIO_DAW_CHIP_CLASS}
-                    onClick={() => {
-                      patchTrack(track.id, {
-                        recordArmed: !track.recordArmed,
-                      });
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="ghost"
-                    className="h-11 min-h-11 min-w-11 px-0"
-                    disabled={pending || index === 0}
-                    title="Przenieś w górę"
-                    aria-label="Przenieś ścieżkę w górę"
-                    onClick={() => {
-                      reorder(track.id, "up");
-                    }}
-                  >
-                    ↑
-                  </Button>
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="ghost"
-                    className="h-11 min-h-11 min-w-11 px-0"
-                    disabled={pending || index === doc.tracks.length - 1}
-                    title="Przenieś w dół"
-                    aria-label="Przenieś ścieżkę w dół"
-                    onClick={() => {
-                      reorder(track.id, "down");
-                    }}
-                  >
-                    ↓
-                  </Button>
-                  {!isBeat ? (
+                  <div className="flex min-h-11 items-center gap-0.5">
+                    <button
+                      type="button"
+                      className="min-h-11 min-w-0 flex-1 truncate rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                      aria-pressed={isSelected}
+                      aria-label={
+                        isSelected
+                          ? `Odznacz ścieżkę ${track.name}`
+                          : `Wybierz ścieżkę ${track.name}`
+                      }
+                      data-testid="studio-track-header-select"
+                      onClick={() =>
+                        setSelectedTrackId(isSelected ? null : track.id)
+                      }
+                    >
+                      <span className="block truncate text-xs font-medium text-[var(--brd-ink)]">
+                        {track.name}
+                      </span>
+                      <span className="block truncate font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                        {isBeat ? "BEAT" : typeLabel}
+                      </span>
+                    </button>
+                    <StudioToggleChip
+                      active={track.muted}
+                      label="M"
+                      title="Wycisz"
+                      tone="mute"
+                      className={STUDIO_DAW_CHIP_CLASS}
+                      onClick={() => {
+                        patchTrack(track.id, { muted: !track.muted });
+                      }}
+                    />
+                    <StudioToggleChip
+                      active={track.solo}
+                      label="S"
+                      title="Solo"
+                      tone="solo"
+                      className={STUDIO_DAW_CHIP_CLASS}
+                      onClick={() => {
+                        patchTrack(track.id, { solo: !track.solo });
+                      }}
+                    />
+                    <StudioToggleChip
+                      active={track.recordArmed}
+                      label="R"
+                      title="Uzbrojenie nagrywania"
+                      tone="record"
+                      className={STUDIO_DAW_CHIP_CLASS}
+                      onClick={() => {
+                        patchTrack(track.id, {
+                          recordArmed: !track.recordArmed,
+                        });
+                      }}
+                    />
                     <Button
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-10 min-h-11 min-w-11 px-0"
-                      data-testid="studio-track-menu"
-                      data-track-id={track.id}
-                      disabled={recordingLocked || pending}
-                      title="Menu ścieżki"
-                      aria-label={`Menu ścieżki ${track.name}`}
-                      aria-expanded={trackMenuId === track.id}
-                      onClick={() =>
-                        setTrackMenuId((prev) =>
-                          prev === track.id ? null : track.id,
-                        )
-                      }
+                      className="h-11 min-h-11 min-w-11 px-0"
+                      disabled={pending || index === 0}
+                      title="Przenieś w górę"
+                      aria-label="Przenieś ścieżkę w górę"
+                      onClick={() => {
+                        reorder(track.id, "up");
+                      }}
                     >
-                      ⋮
+                      ↑
                     </Button>
-                  ) : null}
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="ghost"
+                      className="h-11 min-h-11 min-w-11 px-0"
+                      disabled={pending || index === doc.tracks.length - 1}
+                      title="Przenieś w dół"
+                      aria-label="Przenieś ścieżkę w dół"
+                      onClick={() => {
+                        reorder(track.id, "down");
+                      }}
+                    >
+                      ↓
+                    </Button>
+                    {!isBeat ? (
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        className="h-11 min-h-11 min-w-11 px-0"
+                        data-testid="studio-track-menu"
+                        data-track-id={track.id}
+                        disabled={recordingLocked || pending}
+                        title="Menu ścieżki"
+                        aria-label={`Menu ścieżki ${track.name}`}
+                        aria-expanded={trackMenuId === track.id}
+                        onClick={() =>
+                          setTrackMenuId((prev) =>
+                            prev === track.id ? null : track.id,
+                          )
+                        }
+                      >
+                        ⋮
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div
+                    className="grid grid-cols-2 gap-1"
+                    data-testid="studio-track-header-mix"
+                  >
+                    <StudioMixControl
+                      label="Vol"
+                      ariaLabel={`Głośność ścieżki ${track.name}`}
+                      value={track.gainDb}
+                      display={`${track.gainDb.toFixed(0)}`}
+                      min={STUDIO_TRACK_GAIN_DB_MIN}
+                      max={STUDIO_TRACK_GAIN_DB_MAX}
+                      step={0.5}
+                      compact
+                      disabled={pending}
+                      onLocalChange={(gainDb) =>
+                        setDoc((prev) => ({
+                          ...prev,
+                          tracks: prev.tracks.map((t) =>
+                            t.id === track.id ? { ...t, gainDb } : t,
+                          ),
+                        }))
+                      }
+                      onCommit={(gainDb) => {
+                        patchTrack(track.id, { gainDb });
+                      }}
+                    />
+                    <StudioMixControl
+                      label="Pan"
+                      ariaLabel={`Panorama ścieżki ${track.name}`}
+                      value={track.pan}
+                      display={track.pan.toFixed(1)}
+                      min={-1}
+                      max={1}
+                      step={0.01}
+                      compact
+                      disabled={pending}
+                      onLocalChange={(pan) =>
+                        setDoc((prev) => ({
+                          ...prev,
+                          tracks: prev.tracks.map((t) =>
+                            t.id === track.id ? { ...t, pan } : t,
+                          ),
+                        }))
+                      }
+                      onCommit={(pan) => {
+                        patchTrack(track.id, { pan });
+                      }}
+                    />
+                  </div>
                 </div>
               );
             }}
@@ -2384,7 +2557,7 @@ function StudioEditorInner({
           data-testid="studio-inspector-desktop"
           data-studio-inspector="desktop"
           data-inspector-context={inspectorContext}
-          className="hidden w-[300px] shrink-0 flex-col gap-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3 xl:flex"
+          className="hidden w-[280px] shrink-0 flex-col gap-2 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 xl:flex"
           aria-label={studioInspectorContextTitle(inspectorContext)}
         >
           {inspectorDesktopRail ? inspectorContent : null}
@@ -2513,7 +2686,9 @@ function TrackInspectorPanel({
         <p className="font-mono tabular-nums">
           Gain {track.gainDb.toFixed(1)} dB · Pan {track.pan.toFixed(2)}
         </p>
-        <p>Sterowanie M/S/R: nagłówek ścieżki · Gain/Pan/Meter: Mixer</p>
+        <p>
+          M/S/R · Vol/Pan: nagłówek ścieżki i Mixer (ten sam stan · patchTrack)
+        </p>
       </div>
 
       <Button
@@ -2960,14 +3135,39 @@ function ClipEditPanelPlayheadBound(
 
 function StudioTransportBar({
   onChooseBeat,
+  onRecord,
+  tempoBpm,
+  timeSignatureNum,
+  timeSignatureDen,
+  durationMs,
+  masterGainDb,
+  pending,
+  saveStatusLabel,
+  saveIsError,
+  conflictActive,
+  onMasterGainLocal,
+  onMasterGainCommit,
 }: {
   onChooseBeat: () => void;
+  onRecord: () => void;
+  tempoBpm: number;
+  timeSignatureNum: number;
+  timeSignatureDen: number;
+  durationMs: number;
+  masterGainDb: number;
+  pending: boolean;
+  saveStatusLabel: string;
+  saveIsError: boolean;
+  conflictActive: boolean;
+  onMasterGainLocal: (gainDb: number) => void;
+  onMasterGainCommit: (gainDb: number) => void;
 }) {
   const { phase, play, pause, stop, audioState, error, hasBeat } =
     useStudioTransportControls();
   const { timeLabel } = useStudioTransportPlayhead();
   const busy = audioState === "loading";
-  const noBeat = audioState === "no_beat" || (!hasBeat && audioState !== "loading");
+  const noBeat =
+    audioState === "no_beat" || (!hasBeat && audioState !== "loading");
   const statusLabel =
     audioState === "loading"
       ? "Ładowanie bitu…"
@@ -2989,16 +3189,13 @@ function StudioTransportBar({
 
   return (
     <div
-      className="sticky top-14 z-20 shrink-0 space-y-1 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1.5 sm:top-2"
+      className="sticky top-14 z-20 shrink-0 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 py-1 sm:top-2"
       role="region"
       aria-label="Transport Studio"
       data-testid="studio-transport"
     >
       {noBeat ? (
-        <div className="space-y-2">
-          <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-            Bit w projekcie
-          </p>
+        <div className="flex flex-wrap items-center gap-2 py-1">
           <p className="text-sm text-[var(--brd-ink)]">{statusLabel}</p>
           <Button
             type="button"
@@ -3010,65 +3207,174 @@ function StudioTransportBar({
           </Button>
         </div>
       ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div
+            className="flex flex-wrap items-center gap-1"
+            data-testid="studio-transport-ops"
+          >
             <Button
               type="button"
               size="sm"
-              className="min-h-11"
+              className="min-h-11 min-w-11 px-2"
               onClick={play}
               disabled={busy || phase === "playing"}
               title="Odtwórz"
               aria-label="Odtwórz"
             >
-              {busy ? "Ładowanie…" : "Odtwórz"}
+              {busy ? "…" : "▶"}
             </Button>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className="min-h-11"
+              className="min-h-11 min-w-11 px-2"
               onClick={pause}
               disabled={phase !== "playing"}
               title="Pauza"
               aria-label="Pauza"
             >
-              Pauza
+              ❚❚
             </Button>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className="min-h-11"
+              className="min-h-11 min-w-11 px-2"
               onClick={stop}
               title="Stop"
               aria-label="Stop"
             >
-              Stop
+              ■
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="min-h-11 min-w-11 px-2"
+              onClick={onRecord}
+              title="Nagraj — otwiera istniejący kontekst nagrywania"
+              aria-label="Nagraj — otwiera panel nagrywania"
+              data-testid="studio-transport-record"
+            >
+              ●
             </Button>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className="min-h-11"
+              className="min-h-11 min-w-11 px-2"
+              disabled
+              aria-disabled="true"
+              title="Loop niedostępny"
+              aria-label="Loop — niedostępne w tej wersji Studio"
+              data-testid="studio-transport-loop"
+            >
+              ⟳
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 min-w-11 px-2"
+              disabled
+              aria-disabled="true"
+              title="Metronom niedostępny"
+              aria-label="Metronom — niedostępne w tej wersji Studio"
+              data-testid="studio-transport-metronome"
+            >
+              ♩
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 px-2"
               onClick={onChooseBeat}
               title="Zmień bit"
               aria-label="Zmień bit"
             >
-              Zmień bit
+              Bit
             </Button>
-            <span
-              className="ml-auto font-mono text-sm tabular-nums text-[var(--brd-ink)]"
-              aria-live="polite"
-            >
+          </div>
+
+          <div
+            className="flex min-h-11 flex-wrap items-center gap-2 border-l border-[var(--brd-line)] pl-2 font-mono text-xs tabular-nums text-[var(--brd-ink)]"
+            data-testid="studio-transport-meta"
+          >
+            <span aria-live="polite">
               {timeLabel}
+              <span className="text-[var(--brd-mute)]"> / </span>
+              {formatStudioTimeMs(durationMs)}
+            </span>
+            <span className="text-[var(--brd-mute)]" aria-label="Tempo">
+              {tempoBpm} BPM
+            </span>
+            <span
+              className="text-[var(--brd-mute)]"
+              aria-label="Metrum"
+            >
+              {timeSignatureNum}/{timeSignatureDen}
             </span>
           </div>
-          <p className="text-xs text-[var(--brd-mute)]" role="status">
-            {statusLabel}
+
+          <div
+            className="ml-auto flex min-w-[9rem] max-w-[14rem] flex-1 items-center gap-2"
+            data-testid="studio-transport-master"
+          >
+            <StudioMixControl
+              label="Master"
+              ariaLabel="Głośność Master"
+              value={masterGainDb}
+              display={`${masterGainDb.toFixed(1)} dB`}
+              min={STUDIO_MASTER_GAIN_DB_MIN}
+              max={STUDIO_MASTER_GAIN_DB_MAX}
+              step={0.5}
+              compact
+              disabled={pending}
+              onLocalChange={onMasterGainLocal}
+              onCommit={onMasterGainCommit}
+            />
+          </div>
+
+          <p
+            className={`min-h-11 max-w-[12rem] truncate text-xs leading-[2.75rem] ${
+              saveIsError || conflictActive
+                ? "text-destructive"
+                : "text-[var(--brd-mute)]"
+            }`}
+            role={saveIsError || conflictActive ? "alert" : "status"}
+            data-testid="studio-transport-save"
+          >
+            {saveStatusLabel}
+            {conflictActive ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => window.location.reload()}
+                >
+                  Odśwież
+                </button>
+              </>
+            ) : null}
           </p>
-        </>
+
+          <Link
+            href={STUDIO_EXPORT_DEEP_LINK_HREF}
+            className="inline-flex min-h-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] px-2 text-xs font-medium text-[var(--brd-ink)] hover:border-[var(--brd-green)]"
+            data-testid="studio-transport-export"
+            title="Export — istniejąca powierzchnia eksportu nagrań"
+          >
+            Export
+          </Link>
+        </div>
       )}
+      {!noBeat ? (
+        <p className="sr-only" role="status">
+          {statusLabel}
+        </p>
+      ) : null}
       {error ? (
         <p className="text-xs text-destructive" role="alert">
           {error}
@@ -3193,7 +3499,7 @@ function StudioTimeline({
 
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_2%)]"
+      className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)]"
       role="region"
       aria-label="Oś czasu projektu"
       data-testid="studio-timeline"
@@ -3302,10 +3608,15 @@ function StudioTimeline({
                 );
               })}
               <div
-                className="pointer-events-none absolute bottom-0 top-6 z-[4] w-0.5 bg-[var(--brd-ink)] will-change-transform"
+                className="pointer-events-none absolute bottom-0 top-6 z-[4] w-0.5 bg-[var(--brd-audio-playhead)] will-change-transform"
                 style={{ transform: `translateX(${playheadX}px)` }}
                 data-testid="studio-playhead"
                 data-playhead-ms={playheadMs}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute top-6 z-[4] size-2 -translate-x-1/2 rounded-full bg-[var(--brd-rec)]"
+                style={{ left: playheadX }}
                 aria-hidden
               />
             </div>

@@ -102,6 +102,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) | Phase 7.1.5 Shell Polish + Stacked Escape production closeout · **CLOSED / GREEN** @ `3fccbf7` (HISTORY) |
 | [audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) | Phase 7.1.4 Mixer Dock production closeout · **CLOSED / GREEN** @ `9abc1b6` (ancestry) |
 | [decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) | Phase 7.1.4 Mixer Dock design freeze · OD-P7.1.4-01…04 |
+| [decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) | Studio Visual Shell Pass design freeze · OD-VS-01…05 · **not** P7.1.7 |
 | [audits/POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) | Polish UX Mix / Master / Recording / Playback — **CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` |
 | [audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) | Wave A Account / Beats — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` |
 | [audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) | Fala 1B Account + Panel Administracyjny — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) |

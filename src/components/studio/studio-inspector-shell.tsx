@@ -118,14 +118,14 @@ export function StudioInspectorOverlay({
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="studio-inspector-mobile"
-        className="relative flex w-full flex-col border border-[var(--brd-line)] bg-[var(--brd-bg)] shadow-lg outline-none max-md:mt-auto max-md:max-h-[70vh] max-md:rounded-t-lg max-md:pb-[env(safe-area-inset-bottom)] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0"
+        className="relative flex w-full flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none max-md:mt-auto max-md:max-h-[70vh] max-md:rounded-t-lg max-md:pb-[env(safe-area-inset-bottom)] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0"
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-3 py-2">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2 py-1.5">
           <p
             id={titleId}
-            className="text-sm font-medium text-[var(--brd-ink)]"
+            className="text-xs font-medium uppercase tracking-[0.1em] text-[var(--brd-ink)]"
           >
-            {title}
+            Inspector · {title}
           </p>
           <Button
             type="button"

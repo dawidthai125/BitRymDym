@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 
-/** Shared Studio toggle chip (Mute/Solo/FX bypass). */
+/** Shared Studio toggle chip (Mute/Solo/Record Arm / FX bypass). */
 export function StudioToggleChip({
   active,
   label,
@@ -10,6 +10,7 @@ export function StudioToggleChip({
   onClick,
   disabled,
   className,
+  tone = "default",
 }: {
   active: boolean;
   label: string;
@@ -17,7 +18,16 @@ export function StudioToggleChip({
   onClick: () => void;
   disabled?: boolean;
   className?: string;
+  /** Visual emphasis only — same boolean toggle contract. */
+  tone?: "default" | "mute" | "solo" | "record";
 }) {
+  const activeClass =
+    tone === "record" && active
+      ? "border-[var(--brd-rec)] bg-[var(--brd-rec)] text-[var(--brd-paper)] hover:opacity-90"
+      : tone === "solo" && active
+        ? "border-[var(--brd-warn)] bg-[var(--brd-warn)] text-[var(--brd-paper)] hover:opacity-90"
+        : undefined;
+
   return (
     <Button
       type="button"
@@ -27,7 +37,13 @@ export function StudioToggleChip({
       aria-pressed={active}
       aria-label={title}
       disabled={disabled}
-      className={className ?? "min-h-11 min-w-11 px-3"}
+      className={[
+        className ?? "min-h-11 min-w-11 px-3",
+        "font-mono text-xs tracking-wide",
+        activeClass,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onClick={onClick}
     >
       {label}
