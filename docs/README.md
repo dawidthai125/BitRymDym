@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production app **`4fa658d`** (**READY / GREEN**) · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · URL https://www.bitrymdym.pl · REPO tip = verify `git rev-parse HEAD` (may ≠ app · no redeploy) · **Phase 7.1.6 CLOSED / GREEN** · **FULL DOC RECONCILE / COLD START READY** · Catalog **17** · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Reuse: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [P7_1_6 closeout](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md).
+**Now:** Production tip **`3a086ad`** · dpl `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · App feature V2 **`44f7cbd`** (**GREEN / RELEASE VERIFIED / CLOSED**) · URL https://www.bitrymdym.pl · **Studio Visual Parity V2 CLOSED** · Catalog **17** · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Reuse: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [V2 freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` — **STOP** · next phase requires separate audit / design freeze · **SEARCH EXISTING FIRST** · see [REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **STOP — OWNER DECISION REQUIRED** — Studio Visual Parity V2 **CLOSED / GREEN** @ `44f7cbd` · follow-ups non-blocking · do not auto-open EPIC · **SEARCH EXISTING FIRST** · see [REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
 
 ---
 

@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-08 — **FULL DOCUMENTATION RECONCILIATION / COLD START READY** · Production **`4fa658d`** GREEN · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · REPO tip = verify `git rev-parse HEAD` (docs-only · may ≠ app) · Reuse/SSOT map shipped · **STOP**
-**Type:** Documentation continuity · dual-plane tip (REPO tip may ≠ PRODUCTION) · next = Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
+**Updated:** 2026-10-09 — **DUAL-PLANE SSOT RECONCILED** · Repo tip / Production tip **`3a086ad`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · dpl `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · Reuse/SSOT map · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · dual-plane (repo tip = production tip `3a086ad` · app feature V2 `44f7cbd`) · next = STOP after V2 · Owner decides next unit
 
 **Evidence rule (bezwzględna):**
 
@@ -25,27 +25,36 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-REPOSITORY HEAD / origin/main = verify `git rev-parse HEAD` / `git rev-parse origin/main`
-  note                        = docs tip after full cold-start reconcile · may ≠ PRODUCTION APP · NO REDEPLOY
-PRODUCTION APP SHA            = 4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1
-  short                       = 4fa658d
-  note                        = Phase 7.1.6 Auto Save + CAS Completeness · CLOSED / PRODUCTION VERIFIED — GREEN
-                              · feature LAND `89ee919` · correction LAND `4fa658d`
-                              · ancestry includes 7.1.5 `3fccbf7` · 7.1.4 `9abc1b6` · 7.1.3 `8f6eeca`
-                              · P4.6 `a72fed9` · Checkbox `836679a` · V1 `56b629e` · P6.7 `06c60b5`
-PRODUCTION DEPLOYMENT         = dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy · READY / GREEN
+REPOSITORY HEAD / origin/main = 3a086ad41005679db5124d8766d1e35fb9fc76b4
+  short                       = 3a086ad
+  note                        = docs tip · verify `git rev-parse HEAD` / `origin/main`
+APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
+  short                       = 44f7cbd
+  note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
+                              · ancestry includes 7.1.6 `4fa658d` · 7.1.5 `3fccbf7` · 7.1.4 `9abc1b6`
+                              · 7.1.3 `8f6eeca` · P4.6 `a72fed9` · Checkbox `836679a` · V1 `56b629e`
+PRODUCTION TIP SHA            = 3a086ad41005679db5124d8766d1e35fb9fc76b4
+  note                        = tip = V2 feature + docs closure · currently served on aliases
+PRODUCTION DEPLOYMENT         = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY / GREEN
+  aliases                     = www.bitrymdym.pl · bitrymdym.pl → this deployment
+V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
+  note                        = original V2 release-gate deploy · superseded for live aliases
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY / SUCCESS
-PREVIOUS PRODUCTION TIP       = 3fccbf7 · Phase 7.1.5 Shell Polish + Stacked Escape (HISTORY)
-  older prior tip             = 9abc1b6 · Phase 7.1.4 · 8f6eeca · Phase 7.1.3 · a72fed9 · P4.6 (HISTORY)
+PREVIOUS PRODUCTION TIP       = 44f7cbd / dpl_2ymz… (V2 feature) · 4fa658d (7.1.6) · 79bc69f (V1)
+  older prior tip             = 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · P4.6 (HISTORY)
 
-STUDIO BASELINE               = Phase 7.1.6 CLOSED / GREEN @ 4fa658d
+STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
+                              · Phase 7.1.6 CLOSED / GREEN @ 4fa658d (ancestry)
                               · Phase 7.1.5 Shell Polish CLOSED / GREEN @ 3fccbf7 (ancestry)
                               · Phase 7.1.4 Mixer Dock CLOSED / GREEN @ 9abc1b6 (ancestry)
                               · Phase 7.1.3 Inspector IA CLOSED / GREEN @ 8f6eeca (ancestry)
                               · V1 CLOSED / GREEN · P6.7 CLOSED / GREEN
                               · Project List UX/Delete + Checkbox PRODUCTION VERIFIED
-PHASE 7.1.6 AUTO SAVE + CAS   = CLOSED / LAND GREEN · PRODUCTION GREEN
+STUDIO VISUAL PARITY V2       = GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
+                              · freeze: decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md
+                              · follow-ups 01–04 NON-BLOCKING (waveform / overlay / picker / pixel)
+PHASE 7.1.6 AUTO SAVE + CAS   = CLOSED / LAND GREEN · PRODUCTION GREEN (ancestry @ 4fa658d)
                               · Persist Orchestrator · CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICT
                               · retry 1s/3s/8s · 409 non-retryable · Zapisz teraz · beforeunload
                               · CAS completeness + wiring · migration 20261008192141 (not re-run)
@@ -76,14 +85,14 @@ P0 / P1                       = 0 / 0
 P2                            = 2 (waveform sticky/catalog · Studio toolbar ~28px)
 P3                            = 5 (account inputs ~38px · Pełny katalog · landscape · playhead · metadata —)
 P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
-PHASE 7.1.6                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d
+PHASE 7.1.6                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d (ancestry)
 PHASE 7.1.5                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 3fccbf7 (ancestry)
-CURRENT PHASE                 = Phase 7.1.6 CLOSED / PRODUCTION GREEN · BASELINE @ 4fa658d
-NEXT GATE                     = STOP — Phase 7.1.6 CLOSED / GREEN
-                              · next phase requires separate audit / design freeze
-                              · do NOT invent Phase 7.1.7 scope
-                              · do NOT start P6.8 / P4 live-verify seam / SA-07 AWS
-                              · do NOT force-redeploy / do NOT redeploy for docs tip
+CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
+                              · production tip 3a086ad · dpl_FVcx…
+NEXT GATE                     = STOP — OWNER DECISION REQUIRED
+                              · V2 CLOSED · follow-ups NON-BLOCKING
+                              · do NOT auto-open EPIC / invent Phase 7.1.7
+                              · do NOT start P6.8 / P4 live-verify seam / SA-07 AWS / payments
                               · do NOT permanently enable Contabo without Owner GO
                               · no Automation / Autotune / E3 Studio Render
 
@@ -178,9 +187,12 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository / docs | `origin/main` · tip = verify `git rev-parse HEAD` · may ≠ production app after docs-only tip |
-| Production app | **`4fa658d`** · **READY / GREEN** · Phase 7.1.6 (ancestry: `89ee919` · `3fccbf7` · `9abc1b6` · `8f6eeca` · V1/P6.7) |
-| Production deployment | **`dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy`** · aliases www.bitrymdym.pl |
+| Repository HEAD / origin/main | **`3a086ad`** · verify `git rev-parse HEAD` / `origin/main` |
+| App feature commit (V2) | **`44f7cbd`** · Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
+| Production tip SHA | **`3a086ad`** · tip = V2 + docs closure · **READY / GREEN** |
+| Production deployment | **`dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF`** · aliases www + apex |
+| V2 verify deploy (HISTORY) | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` · superseded for live aliases |
+| Prior production tip (HISTORY) | `4fa658d` · Phase 7.1.6 · dpl `dpl_6sai…` (ancestry) |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
 | Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
@@ -200,8 +212,8 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 5.  READ decisions/DECISION_LOG.md + decisions/OPEN_DECISIONS.md
 6.  READ CHANGELOG.md (recent tip) + relevant phase audit/closeout only if needed
 7.  CHECK: git rev-parse HEAD  AND  git rev-parse origin/main
-8.  CHECK: PRODUCTION APP = 4fa658d · dpl dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy
-         (REPO docs tip may differ — that is OK · NO REDEPLOY of docs tip)
+8.  CHECK: REPO HEAD / PRODUCTION TIP = 3a086ad · dpl dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF
+         APP FEATURE V2 = 44f7cbd · V2 verify history dpl_2ymz… (not current alias binding)
 9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
 10. CHECK Sacred WIP fingerprint:
          src/lib/takes/recording-eligibility-service.ts
@@ -602,20 +614,20 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → match origin/main (docs tip after 7.1.6 reconcile)
-[ ] git rev-parse origin/main                → match HEAD
-[ ] Confirm Production app SHA = 4fa658d · dpl dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy · READY
-[ ] Confirm REPO tip may ≠ PRODUCTION APP 4fa658d · NO REDEPLOY of docs tip
+[ ] git fetch && git rev-parse HEAD           → 3a086ad · match origin/main
+[ ] git rev-parse origin/main                → match HEAD = 3a086ad
+[ ] Confirm PRODUCTION TIP SHA = 3a086ad · dpl dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY
+[ ] Confirm APP FEATURE V2 = 44f7cbd · GREEN / CLOSED · verify history dpl_2ymz… (not live alias)
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
 [ ] Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING (not Real Device Verified)
 [ ] Confirm Contabo worker = STOPPED / DISABLED · P4.6 LIVE E2E VERIFIED
-[ ] Confirm Closed = Phase 7.1.6 Auto Save + CAS Completeness · CLOSED / PRODUCTION GREEN @ 4fa658d
-[ ] Confirm Phase 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (do not reopen)
-[ ] Read MASTER_HANDOFF + PROJECT_STATE + architecture/REUSE_SSOT_MAP + P7_1_6 closeout
+[ ] Confirm Closed = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
+[ ] Confirm Phase 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (ancestry · do not reopen)
+[ ] Read MASTER_HANDOFF + PROJECT_STATE + architecture/REUSE_SSOT_MAP + V2 freeze
 [ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
-[ ] NEXT GATE = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
-[ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
+[ ] NEXT GATE = STOP — OWNER DECISION REQUIRED (no auto EPIC / P6.8 / payments)
+[ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
 [ ] Do not invent Phase 7.1.7 scope without Owner GO
 [ ] Do not commit P4 context? WIP / SA-07 untracked library / Sacred WIP without Owner GO
 [ ] SEARCH EXISTING FIRST · REUSE · no second SSOT
@@ -629,18 +641,21 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (FULL DOC RECONCILE · COLD START · Phase 7.1.6 GREEN · 2026-10-08)
+FINAL COLD START HANDOFF     = READY (DUAL-PLANE SSOT RECONCILED · V2 GREEN/CLOSED · 2026-10-09)
 REUSE / DO NOT DUPLICATE     = architecture/REUSE_SSOT_MAP.md
-REPOSITORY HEAD / origin/main = verify git rev-parse HEAD (docs tip · may ≠ app)
-PRODUCTION APP SHA           = 4fa658d · READY / GREEN
-PRODUCTION DEPLOYMENT        = dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy
-NOTE                         = REPO tip may ≠ PRODUCTION APP 4fa658d · NO REDEPLOY
-PREVIOUS PRODUCTION TIP      = 3fccbf7 (Phase 7.1.5 · HISTORY)
+REPOSITORY HEAD / origin/main = 3a086ad (verify git rev-parse HEAD)
+APP FEATURE COMMIT (V2)      = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
+PRODUCTION TIP SHA           = 3a086ad · READY / GREEN · tip = V2 + docs closure
+PRODUCTION DEPLOYMENT        = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY · www + apex
+V2 VERIFY DEPLOY (HISTORY)   = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
+NOTE                         = Repo tip = production tip = 3a086ad · app feature V2 = 44f7cbd ≠ tip
+PREVIOUS PRODUCTION TIP      = 44f7cbd / dpl_2ymz… (V2) · 4fa658d (7.1.6) · 3fccbf7 (7.1.5) · HISTORY
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio KEEP Dawid retained (PHASE 3 cleaned test-user Storage)
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
 P0 / P1 / P2 / P3            = 0 / 0 / 2 / 5
-PHASE 7.1.6 AUTO SAVE + CAS  = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d
+STUDIO VISUAL PARITY V2      = GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
+PHASE 7.1.6 AUTO SAVE + CAS  = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d (ancestry)
 PHASE 7.1.5 SHELL POLISH     = CLOSED / GREEN @ 3fccbf7 (ancestry · do not reopen)
 PHASE 7.1.4 MIXER DOCK       = CLOSED / GREEN @ 9abc1b6 (ancestry · do not reopen)
 PHASE 7.1.3 INSPECTOR IA     = CLOSED / GREEN @ 8f6eeca (do not reopen)
@@ -648,11 +663,11 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                = Phase 7.1.6 CLOSED / PRODUCTION GREEN · BASELINE @ 4fa658d
-P4 CORE                      = SHIPPED @ bface6c ⊂ 4fa658d · local seam WIP NOT BASELINE
+CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · tip 3a086ad
+P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
 WORKER                       = Contabo STOPPED / DISABLED after LIVE E2E
-NEXT GATE                    = STOP — Phase 7.1.6 CLOSED / GREEN · next phase requires separate audit / design freeze
+NEXT GATE                    = STOP — OWNER DECISION REQUIRED
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK

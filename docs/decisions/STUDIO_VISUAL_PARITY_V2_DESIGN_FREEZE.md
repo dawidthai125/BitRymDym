@@ -9,10 +9,10 @@
 
 **Design target:** Owner-approved annotated professional DAW visualization (PRIMARY)  
 **Implementation:** **COMPLETED**  
-**Release commit:** `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (`44f7cbd`) · `feat(studio): add visual parity v2`  
-**Production:** **VERIFIED** @ https://www.bitrymdym.pl  
-**Production deployment:** `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` · READY  
-**Production SHA:** `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5`  
+**Release / app feature commit:** `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (`44f7cbd`) · `feat(studio): add visual parity v2`  
+**Production (release-gate verify, HISTORY):** **VERIFIED** @ https://www.bitrymdym.pl via `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd`  
+**Current production tip SHA:** `3a086ad41005679db5124d8766d1e35fb9fc76b4` (`3a086ad`) — tip = V2 + docs closure  
+**Current production deployment:** `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · READY · aliases www + apex  
 **Baseline production (pre-V2 history):** `79bc69f9e696c535386901ff9784f00df659c98a` (`79bc69f`) — V1 Visual Shell at freeze time  
 **Prior freeze:** [STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) (V1)
 
@@ -26,9 +26,12 @@ COMMIT / PUSH / DEPLOY = DONE
 LIVE AUTHENTICATED VISUAL VERIFICATION (AC-12) = PASS
 RESPONSIVE VERIFICATION (AC-13) = PASS
 CLEANUP (disposable project) = PASS
-PRODUCTION = 44f7cbd · dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR · VERIFIED
+APP FEATURE COMMIT = 44f7cbd
+V2 VERIFY DEPLOY (HISTORY) = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
+CURRENT PRODUCTION TIP = 3a086ad · dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF
 FINAL VERDICT = GREEN — STUDIO VISUAL PARITY V2 RELEASE VERIFIED
 V2 = CLOSED (do not reopen without Owner / Architect decision)
+NEXT = STOP — OWNER DECISION REQUIRED · follow-ups NON-BLOCKING
 ```
 
 ---
