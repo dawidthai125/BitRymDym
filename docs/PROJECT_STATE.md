@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-08 — **FULL DOC RECONCILE / COLD START READY** · Production **`4fa658d`** GREEN · dpl `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · REPO tip verify `git rev-parse HEAD` · [REUSE_SSOT_MAP](./architecture/REUSE_SSOT_MAP.md) · **STOP**
+**Updated:** 2026-10-09 — **Studio Visual Parity V2 GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · dpl `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` · REPO tip verify `git rev-parse HEAD` · [REUSE_SSOT_MAP](./architecture/REUSE_SSOT_MAP.md) · **STOP**
 
 ---
 
@@ -24,17 +24,18 @@
 | **REPOSITORY HEAD / origin/main** | verify `git rev-parse HEAD` — docs tip after full cold-start reconcile · may **≠** production app |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
-| **PRODUCTION APP SHA** | `4fa658d33c7e0124d1fabc5c8c4ebbe0b05b4ba1` (**`4fa658d`**) — Phase 7.1.6 Auto Save + CAS Completeness · READY / GREEN |
-| **PRODUCTION DEPLOYMENT** | `dpl_6saiDX4bSbwWp7U7S2QLRMcGLEcy` · READY |
-| **DUAL-PLANE NOTE** | REPOSITORY tip (docs-only) may ≠ PRODUCTION APP `4fa658d` · **NO REDEPLOY** of docs tip |
-| **PREVIOUS PRODUCTION TIP (HISTORY)** | `3fccbf7` — Phase 7.1.5 Shell Polish + Stacked Escape · older: `9abc1b6` (7.1.4) · `8f6eeca` (7.1.3) |
+| **PRODUCTION APP SHA** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · READY / GREEN |
+| **PRODUCTION DEPLOYMENT** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` · READY |
+| **DUAL-PLANE NOTE** | REPOSITORY tip (docs-only / WIP) may ≠ PRODUCTION APP `44f7cbd` · **NO REDEPLOY** of docs tip |
+| **PREVIOUS PRODUCTION TIP (HISTORY)** | `4fa658d` — Phase 7.1.6 Auto Save + CAS · `79bc69f` Visual Shell V1 · `3fccbf7` 7.1.5 · older: `9abc1b6` (7.1.4) · `8f6eeca` (7.1.3) |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO BASELINE** | **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · **7.1.5 Shell Polish CLOSED / GREEN** @ `3fccbf7` · **7.1.4 Mixer Dock CLOSED / GREEN** @ `9abc1b6` · **7.1.3 Inspector CLOSED / GREEN** @ `8f6eeca` · **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
+| **STUDIO VISUAL PARITY V2** | **GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · dpl `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` · AC-12 PASS · AC-13 PASS · [freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) |
+| **STUDIO BASELINE** | **Visual Parity V2 CLOSED / GREEN** @ `44f7cbd` · **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · **7.1.5 Shell Polish CLOSED / GREEN** @ `3fccbf7` · **7.1.4 Mixer Dock CLOSED / GREEN** @ `9abc1b6` · **7.1.3 Inspector CLOSED / GREEN** @ `8f6eeca` · **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **CATALOG** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
 | **STORAGE** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) |
 | **SECURITY** | **GREEN** · Studio API **401** unauth · `studio_cas_*` anon/auth **DENIED** · service_role **ALLOWED** |
 | **MOBILE** | **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · P0/P1 **0** · P2 **2** · P3 **5** |
-| **LAST STUDIO VERIFY** | Phase 7.1.6 Auto Save + CAS **GREEN** @ `4fa658d` · prior 7.1.5 @ `3fccbf7` · 7.1.4 @ `9abc1b6` · 7.1.3 @ `8f6eeca` · Checkbox @ `836679a` · V1 @ `56b629e` |
+| **LAST STUDIO VERIFY** | Studio Visual Parity V2 **GREEN** @ `44f7cbd` · prior 7.1.6 @ `4fa658d` · 7.1.5 @ `3fccbf7` · 7.1.4 @ `9abc1b6` · 7.1.3 @ `8f6eeca` · Checkbox @ `836679a` · V1 @ `56b629e` |
 | **Phase 7.1.6 Auto Save + CAS** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `4fa658d` · dpl `dpl_6sai…` · feature `89ee919` · correction `4fa658d` · migration `20261008192141` · [closeout](./audits/P7_1_6_AUTO_SAVE_CAS_PRODUCTION_CLOSEOUT.md) |
 | **Phase 7.1.5 Shell Polish** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `3fccbf7` (ancestry) · dpl `dpl_2E7J…` · feature `f891bce` · Escape fix `3fccbf7` · [closeout](./audits/P7_1_5_SHELL_POLISH_PRODUCTION_CLOSEOUT.md) |
 | **Phase 7.1.4 Mixer Dock** | **CLOSED / PRODUCTION VERIFIED — GREEN** @ `9abc1b6` (ancestry) · OD-P7.1.4-01…04=A · [freeze](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) · [closeout](./audits/P7_1_4_MIXER_DOCK_PRODUCTION_CLOSEOUT.md) |
@@ -59,7 +60,7 @@
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **NEXT UNIT** | **STOP** — **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · next phase requires separate audit / design freeze · no Automation / Autotune / E3 Studio Render / Contabo |
+| **NEXT UNIT** | **STOP** — **Studio Visual Parity V2 CLOSED / GREEN** @ `44f7cbd` · next unit requires separate Owner / Architect audit / design freeze · no Automation / Autotune / E3 Studio Render / Contabo · V2 follow-ups are non-blocking only |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |

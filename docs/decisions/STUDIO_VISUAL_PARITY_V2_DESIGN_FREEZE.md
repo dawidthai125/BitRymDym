@@ -5,11 +5,15 @@
 **Not a phase number:** do **not** auto-label as P7.1.7  
 **Owner / Architect:** Prezes Dawid  
 **Date:** 2026-10-09  
-**Status:** **APPROVED / FROZEN — IMPLEMENTATION IN WORKTREE (AWAITING CONTROLLED COMMIT / RELEASE)**
+**Status:** **RELEASE VERIFIED — GREEN / CLOSED**
 
 **Design target:** Owner-approved annotated professional DAW visualization (PRIMARY)  
-**Baseline production:** `79bc69f9e696c535386901ff9784f00df659c98a` (`79bc69f`) — **production remains V1 Visual Shell until Owner commit + deploy**  
-**Deployment:** `dpl_HboxsyYAMfYHnxBf8tWH7LoQCJes` (READY at freeze; **not** V2)  
+**Implementation:** **COMPLETED**  
+**Release commit:** `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (`44f7cbd`) · `feat(studio): add visual parity v2`  
+**Production:** **VERIFIED** @ https://www.bitrymdym.pl  
+**Production deployment:** `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` · READY  
+**Production SHA:** `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5`  
+**Baseline production (pre-V2 history):** `79bc69f9e696c535386901ff9784f00df659c98a` (`79bc69f`) — V1 Visual Shell at freeze time  
 **Prior freeze:** [STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) (V1)
 
 ```text
@@ -17,11 +21,14 @@ V1 = historical Visual Shell implementation record (OD-VS-01…05)
 V2 = supersedes V1 ONLY as visual target / acceptance contract
 V2 ≠ P7.1.7
 V2 ≠ new audio / persist / CAS / recording architecture
-IMPLEMENTATION = EXISTS IN WORKTREE (Owner IMPLEMENTATION GO granted)
-COMMIT / PUSH / DEPLOY = NOT YET AUTHORIZED
-LIVE AUTHENTICATED VISUAL VERIFICATION (AC-12) = STILL REQUIRED
-MAXIMUM STATUS WITHOUT AC-12 = YELLOW (not GREEN)
-PRODUCTION = STILL 79bc69f (V2 NOT DEPLOYED)
+IMPLEMENTATION = COMPLETED
+COMMIT / PUSH / DEPLOY = DONE
+LIVE AUTHENTICATED VISUAL VERIFICATION (AC-12) = PASS
+RESPONSIVE VERIFICATION (AC-13) = PASS
+CLEANUP (disposable project) = PASS
+PRODUCTION = 44f7cbd · dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR · VERIFIED
+FINAL VERDICT = GREEN — STUDIO VISUAL PARITY V2 RELEASE VERIFIED
+V2 = CLOSED (do not reopen without Owner / Architect decision)
 ```
 
 ---
@@ -34,7 +41,7 @@ PRODUCTION = STILL 79bc69f (V2 NOT DEPLOYED)
 
 **Goal:** Studio visually reads as a professional DAW per the Owner design target, while preserving BitRymDym architecture.
 
-**Owner GO (2026-10-09):** B (Visual Parity Implementation) + D (Design Freeze Update) + E (scoped pass Studio Visual Parity V2) — freeze write authorized; separate Owner **IMPLEMENTATION GO** granted; implementation exists in worktree and awaits controlled commit / release (production unchanged; AC-12 live verify still required).
+**Owner GO (2026-10-09):** B (Visual Parity Implementation) + D (Design Freeze Update) + E (scoped pass Studio Visual Parity V2) — freeze write authorized; separate Owner **IMPLEMENTATION GO** granted; implementation completed, committed, deployed, and live-verified (**GREEN / CLOSED** @ `44f7cbd`).
 
 ---
 
@@ -333,6 +340,20 @@ Without authenticated live verification: **MAXIMUM STATUS = YELLOW**.
 
 Owner may accept YELLOW only as an **explicit documented waiver**.
 
+### 17.1 Release verification result (2026-10-09)
+
+**AC-12 — PASS** (authenticated Admin · localhost live):
+
+- NoBeat · Beat Selected · Transport · Timeline · Playback · Track Headers · Inspector · Mixer  
+
+**AC-13 — PASS:**
+
+- XL · MD/LG · SM  
+
+**Cleanup — PASS** (disposable test project removed; protected project untouched).
+
+**Final verdict:** **GREEN — STUDIO VISUAL PARITY V2 RELEASE VERIFIED** · V2 **CLOSED**.
+
 ---
 
 ## 18. Regression Gates
@@ -351,18 +372,18 @@ Required before release:
 ## 19. Release Criteria
 
 1. Owner GO on this Freeze *(this document — DONE)*  
-2. Separate Owner **IMPLEMENTATION GO** + allowlist  
-3. Cursor implementation (allowlist-bound)  
-4. Read-only architecture audit  
-5. Tests / typecheck / lint / build  
-6. Commit  
-7. Release Gate  
-8. Owner push / deploy decision  
-9. Vercel production SHA verification  
-10. Authenticated live visual verification  
-11. **GREEN** only if all mandatory gates PASS  
+2. Separate Owner **IMPLEMENTATION GO** + allowlist *(DONE)*  
+3. Cursor implementation (allowlist-bound) *(DONE)*  
+4. Read-only architecture audit *(DONE)*  
+5. Tests / typecheck / lint / build *(DONE)*  
+6. Commit *(DONE — `44f7cbd`)*  
+7. Release Gate *(DONE)*  
+8. Owner push / deploy decision *(DONE)*  
+9. Vercel production SHA verification *(DONE — `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` = `44f7cbd`)*  
+10. Authenticated live visual verification *(DONE — AC-12 / AC-13 PASS)*  
+11. **GREEN** only if all mandatory gates PASS → **ACHIEVED — RELEASE VERIFIED / CLOSED**  
 
-**Do not** start implementation from this Freeze alone.
+Historical note: do **not** start a new implementation from this Freeze alone; V2 is **CLOSED**.
 
 ---
 
@@ -375,6 +396,19 @@ Required before release:
 - Real Device Audio Certification  
 - Pixel-identical icon / asset pack  
 - Any phase number beyond Owner naming (including P7.1.7)  
+
+---
+
+## 21. Post-release non-blocking follow-ups
+
+Recorded at V2 **GREEN / CLOSED**. **Not** V2 reopeners. **Not** new decision IDs / EPICs / Visual Shell Pass. Implementation requires separate Owner / Architect GO.
+
+| ID | Finding | Status |
+|----|---------|--------|
+| **FOLLOW-UP 01** | Waveform / media rendering — tested PUBLISHED beat showed solid grey clip (no waveform pixels); brief „Bit oczekuje na załadowanie” then „Gotowy”; no fake waveform introduced | **NON-BLOCKING / FOLLOW-UP** |
+| **FOLLOW-UP 02** | Next.js localhost overlay `studio-editor.tsx` @ `renderTrackHeader` („2 Issues“) — root cause **NOT ESTABLISHED**; not proven as production runtime failure | **NON-BLOCKING / FOLLOW-UP** |
+| **FOLLOW-UP 03** | Beat Picker transient loading / empty flash — Catalog API returned 90 PUBLISHED; Mine = 0; final Beat Selected retest **PASS** | **NON-BLOCKING / FOLLOW-UP** |
+| **FOLLOW-UP 04** | Pixel-perfect parity — never a V2 contract | **NON-BLOCKING / OUT OF SCOPE** |
 
 ---
 
