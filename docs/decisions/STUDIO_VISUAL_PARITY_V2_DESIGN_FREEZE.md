@@ -11,8 +11,10 @@
 **Implementation:** **COMPLETED**  
 **Release / app feature commit:** `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (`44f7cbd`) · `feat(studio): add visual parity v2`  
 **Production (release-gate verify, HISTORY):** **VERIFIED** @ https://www.bitrymdym.pl via `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd`  
-**Current production tip SHA:** `3a086ad41005679db5124d8766d1e35fb9fc76b4` (`3a086ad`) — tip = V2 + docs closure  
-**Current production deployment:** `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · READY · aliases www + apex  
+**Repository tip (docs, observed):** `d515f3b7d9faf6b0d82bfba7958fece63012be82` (`d515f3b`) — docs SSOT · not a V2 feature commit  
+**Current production deployment (observed):** `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · READY · aliases www + apex · Phase 4 `vercel inspect` 2026-10-09 06:08:59 +02:00  
+**Production Git SHA (Vercel meta):** **NOT VERIFIED** · GH correlation aux. `6952679578` → `d515f3b`  
+**Prior alias binding (HISTORY):** `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` @ docs tip `3a086ad`  
 **Baseline production (pre-V2 history):** `79bc69f9e696c535386901ff9784f00df659c98a` (`79bc69f`) — V1 Visual Shell at freeze time  
 **Prior freeze:** [STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) (V1)
 
@@ -28,7 +30,9 @@ RESPONSIVE VERIFICATION (AC-13) = PASS
 CLEANUP (disposable project) = PASS
 APP FEATURE COMMIT = 44f7cbd
 V2 VERIFY DEPLOY (HISTORY) = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
-CURRENT PRODUCTION TIP = 3a086ad · dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF
+REPO TIP (docs) = d515f3b
+CURRENT PRODUCTION DEPLOY (obs.) = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6
+PRODUCTION GIT SHA (Vercel meta) = NOT VERIFIED
 FINAL VERDICT = GREEN — STUDIO VISUAL PARITY V2 RELEASE VERIFIED
 V2 = CLOSED (do not reopen without Owner / Architect decision)
 NEXT = STOP — OWNER DECISION REQUIRED · follow-ups NON-BLOCKING

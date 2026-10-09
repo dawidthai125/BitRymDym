@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-09 — **DUAL-PLANE SSOT RECONCILED** · Repo tip / Production tip **`3a086ad`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · dpl `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · Reuse/SSOT map · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · dual-plane (repo tip = production tip `3a086ad` · app feature V2 `44f7cbd`) · next = STOP after V2 · Owner decides next unit
+**Updated:** 2026-10-09 — **PHASE 4 DUAL-PLANE SSOT** · Repo tip **`d515f3b`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · Reuse/SSOT map · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · dual-plane (repo tip `d515f3b` ≠ feature V2 `44f7cbd` ≠ production dpl observation) · next = STOP after V2 · Owner decides next unit
 
 **Evidence rule (bezwzględna):**
 
@@ -25,24 +25,27 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-REPOSITORY HEAD / origin/main = 3a086ad41005679db5124d8766d1e35fb9fc76b4
-  short                       = 3a086ad
-  note                        = docs tip · verify `git rev-parse HEAD` / `origin/main`
+REPOSITORY HEAD / origin/main = d515f3b7d9faf6b0d82bfba7958fece63012be82
+  short                       = d515f3b
+  note                        = docs tip (Phase 2 SSOT) · verify `git rev-parse HEAD` / `origin/main`
+                              · docs commits `d515f3b` / `3a086ad` ≠ feature V2
 APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
   short                       = 44f7cbd
   note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
-                              · ancestry includes 7.1.6 `4fa658d` · 7.1.5 `3fccbf7` · 7.1.4 `9abc1b6`
-                              · 7.1.3 `8f6eeca` · P4.6 `a72fed9` · Checkbox `836679a` · V1 `56b629e`
-PRODUCTION TIP SHA            = 3a086ad41005679db5124d8766d1e35fb9fc76b4
-  note                        = tip = V2 feature + docs closure · currently served on aliases
-PRODUCTION DEPLOYMENT         = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY / GREEN
-  aliases                     = www.bitrymdym.pl · bitrymdym.pl → this deployment
+                              · ancestry includes docs `3a086ad` · 7.1.6 `4fa658d` · 7.1.5 `3fccbf7`
+                              · 7.1.4 `9abc1b6` · 7.1.3 `8f6eeca` · P4.6 `a72fed9` · V1 `56b629e`
+PRODUCTION DEPLOYMENT (obs.)  = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY
+  aliases                     = www.bitrymdym.pl · bitrymdym.pl → this deployment (same ID)
+  observed_at                 = 2026-10-09 06:08:59 +02:00 · Phase 4 `vercel inspect` (direct)
+PRODUCTION GIT SHA (Vercel)   = NOT VERIFIED · Vercel inspect meta does not expose commit SHA
+GH DEPLOY CORRELATION (aux.)  = id 6952679578 · sha d515f3b · NOT equivalent to Vercel meta SHA
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
   note                        = original V2 release-gate deploy · superseded for live aliases
+PRIOR ALIAS BINDING (HISTORY) = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF @ docs tip 3a086ad (Phase 2 era)
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
-DEPLOYMENT STATE              = READY / SUCCESS
-PREVIOUS PRODUCTION TIP       = 44f7cbd / dpl_2ymz… (V2 feature) · 4fa658d (7.1.6) · 79bc69f (V1)
-  older prior tip             = 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · P4.6 (HISTORY)
+DEPLOYMENT STATE              = READY (observed)
+PREVIOUS PRODUCTION TIP       = 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… (V2) · 4fa658d (7.1.6)
+  older prior tip             = 79bc69f · 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · P4.6 (HISTORY)
 
 STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
                               · Phase 7.1.6 CLOSED / GREEN @ 4fa658d (ancestry)
@@ -88,7 +91,7 @@ P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
 PHASE 7.1.6                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d (ancestry)
 PHASE 7.1.5                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 3fccbf7 (ancestry)
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · production tip 3a086ad · dpl_FVcx…
+                              · repo tip d515f3b · aliases dpl_56FGH… · Vercel SHA NOT VERIFIED
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
                               · V2 CLOSED · follow-ups NON-BLOCKING
                               · do NOT auto-open EPIC / invent Phase 7.1.7
@@ -187,12 +190,13 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository HEAD / origin/main | **`3a086ad`** · verify `git rev-parse HEAD` / `origin/main` |
+| Repository HEAD / origin/main | **`d515f3b`** · verify `git rev-parse HEAD` / `origin/main` |
 | App feature commit (V2) | **`44f7cbd`** · Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| Production tip SHA | **`3a086ad`** · tip = V2 + docs closure · **READY / GREEN** |
-| Production deployment | **`dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF`** · aliases www + apex |
+| Production deployment (observed) | **`dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6`** · READY · www + apex · observed 2026-10-09 06:08:59 +02:00 |
+| Production Git SHA (Vercel meta) | **NOT VERIFIED** |
+| GH deploy correlation (auxiliary) | `6952679578` → `d515f3b` · not equal to Vercel meta SHA |
 | V2 verify deploy (HISTORY) | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` · superseded for live aliases |
-| Prior production tip (HISTORY) | `4fa658d` · Phase 7.1.6 · dpl `dpl_6sai…` (ancestry) |
+| Prior alias binding (HISTORY) | `dpl_FVcx…` @ `3a086ad` · then `4fa658d` / `dpl_6sai…` (ancestry) |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
 | Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
@@ -212,7 +216,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 5.  READ decisions/DECISION_LOG.md + decisions/OPEN_DECISIONS.md
 6.  READ CHANGELOG.md (recent tip) + relevant phase audit/closeout only if needed
 7.  CHECK: git rev-parse HEAD  AND  git rev-parse origin/main
-8.  CHECK: REPO HEAD / PRODUCTION TIP = 3a086ad · dpl dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF
+8.  CHECK: REPO HEAD = d515f3b · aliases dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · Vercel SHA NOT VERIFIED
          APP FEATURE V2 = 44f7cbd · V2 verify history dpl_2ymz… (not current alias binding)
 9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
 10. CHECK Sacred WIP fingerprint:
@@ -614,9 +618,9 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → 3a086ad · match origin/main
-[ ] git rev-parse origin/main                → match HEAD = 3a086ad
-[ ] Confirm PRODUCTION TIP SHA = 3a086ad · dpl dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY
+[ ] git fetch && git rev-parse HEAD           → d515f3b · match origin/main
+[ ] git rev-parse origin/main                → match HEAD = d515f3b
+[ ] Confirm aliases www+apex → dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY · Vercel SHA NOT VERIFIED
 [ ] Confirm APP FEATURE V2 = 44f7cbd · GREEN / CLOSED · verify history dpl_2ymz… (not live alias)
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
 [ ] Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING (not Real Device Verified)
@@ -641,15 +645,16 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (DUAL-PLANE SSOT RECONCILED · V2 GREEN/CLOSED · 2026-10-09)
+FINAL COLD START HANDOFF     = READY (PHASE 4 DUAL-PLANE SSOT · V2 GREEN/CLOSED · 2026-10-09)
 REUSE / DO NOT DUPLICATE     = architecture/REUSE_SSOT_MAP.md
-REPOSITORY HEAD / origin/main = 3a086ad (verify git rev-parse HEAD)
+REPOSITORY HEAD / origin/main = d515f3b (verify git rev-parse HEAD)
 APP FEATURE COMMIT (V2)      = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION TIP SHA           = 3a086ad · READY / GREEN · tip = V2 + docs closure
-PRODUCTION DEPLOYMENT        = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY · www + apex
+PRODUCTION DEPLOYMENT (obs.) = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY · www + apex
+PRODUCTION GIT SHA (Vercel)  = NOT VERIFIED
+GH DEPLOY CORRELATION (aux.) = 6952679578 → d515f3b
 V2 VERIFY DEPLOY (HISTORY)   = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
-NOTE                         = Repo tip = production tip = 3a086ad · app feature V2 = 44f7cbd ≠ tip
-PREVIOUS PRODUCTION TIP      = 44f7cbd / dpl_2ymz… (V2) · 4fa658d (7.1.6) · 3fccbf7 (7.1.5) · HISTORY
+NOTE                         = Repo tip d515f3b ≠ feature V2 44f7cbd ≠ Vercel-meta SHA (unknown)
+PREVIOUS PRODUCTION TIP      = 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… · 4fa658d · HISTORY
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio KEEP Dawid retained (PHASE 3 cleaned test-user Storage)
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
@@ -663,7 +668,7 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · tip 3a086ad
+CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · repo tip d515f3b
 P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
 WORKER                       = Contabo STOPPED / DISABLED after LIVE E2E

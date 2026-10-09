@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-09 — **DUAL-PLANE SSOT RECONCILED** · tip **`3a086ad`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · dpl `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · [REUSE_SSOT_MAP](./architecture/REUSE_SSOT_MAP.md) · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-09 — **PHASE 4 DUAL-PLANE SSOT** · tip **`d515f3b`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · [REUSE_SSOT_MAP](./architecture/REUSE_SSOT_MAP.md) · **STOP — OWNER DECISION REQUIRED**
 
 ---
 
@@ -21,17 +21,19 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | `3a086ad41005679db5124d8766d1e35fb9fc76b4` (**`3a086ad`**) — verify `git rev-parse HEAD` |
+| **REPOSITORY HEAD / origin/main** | `d515f3b7d9faf6b0d82bfba7958fece63012be82` (**`d515f3b`**) — verify `git rev-parse HEAD` |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
 | **APP FEATURE COMMIT (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| **PRODUCTION TIP SHA** | `3a086ad41005679db5124d8766d1e35fb9fc76b4` (**`3a086ad`**) — tip = V2 + docs closure · currently served |
-| **PRODUCTION DEPLOYMENT** | `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · READY · aliases www + apex |
-| **DUAL-PLANE NOTE** | Repo tip = production tip = `3a086ad` · **App feature ≠ tip** (`44f7cbd` = V2 feature) · local worktree may still be dirty WIP |
+| **PRODUCTION DEPLOYMENT (observed)** | `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · READY · aliases www + apex · observed **2026-10-09 06:08:59 +02:00** (Phase 4) |
+| **PRODUCTION GIT SHA (Vercel meta)** | **NOT VERIFIED** |
+| **GH DEPLOY CORRELATION (auxiliary)** | `6952679578` → `d515f3b` · not equal to Vercel meta SHA |
+| **DUAL-PLANE NOTE** | Repo tip `d515f3b` ≠ feature V2 `44f7cbd` ≠ Vercel-meta SHA · docs tips ≠ feature commits · local WIP may still dirty |
+| **OPS NOTE (subject BOM)** | Commit `d515f3b` subject has UTF-8 BOM before `docs:` · Owner decision · **non-blocking** · do not amend without GO |
 | **V2 VERIFY DEPLOY (HISTORY)** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` — original V2 release gate · **superseded for live aliases** |
-| **PREVIOUS PRODUCTION TIP (HISTORY)** | `44f7cbd` / `dpl_2ymz…` · `4fa658d` — Phase 7.1.6 · `79bc69f` V1 · `3fccbf7` 7.1.5 · older: `9abc1b6` (7.1.4) · `8f6eeca` (7.1.3) |
+| **PREVIOUS PRODUCTION TIP (HISTORY)** | `dpl_FVcx…` @ `3a086ad` · `44f7cbd` / `dpl_2ymz…` · `4fa658d` — Phase 7.1.6 · `79bc69f` V1 · older: `3fccbf7` · `9abc1b6` · `8f6eeca` |
 | **PRODUCTION URL** | https://www.bitrymdym.pl · https://bitrymdym.pl |
-| **STUDIO VISUAL PARITY V2** | **GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · verify history `dpl_2ymz…` · current tip `3a086ad` / `dpl_FVcx…` · AC-12 PASS · AC-13 PASS · [freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) |
+| **STUDIO VISUAL PARITY V2** | **GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · verify history `dpl_2ymz…` · aliases `dpl_56FGH…` · AC-12 PASS · AC-13 PASS · [freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) |
 | **STUDIO BASELINE** | **Visual Parity V2 CLOSED / GREEN** @ `44f7cbd` · **Phase 7.1.6 CLOSED / GREEN** @ `4fa658d` · **7.1.5 Shell Polish CLOSED / GREEN** @ `3fccbf7` · **7.1.4 Mixer Dock CLOSED / GREEN** @ `9abc1b6` · **7.1.3 Inspector CLOSED / GREEN** @ `8f6eeca` · **V1 CLOSED / GREEN** · **P6.7 CLOSED / GREEN** · List UX/Delete **PRODUCTION VERIFIED** · Checkbox **PRODUCTION VERIFIED** · P6.6 GREEN · P6.5 Scenario A **PROVEN** · Scenario B **BLOCKED / INCONCLUSIVE** |
 | **CATALOG** | **GREEN** · **17** PLATFORM PUBLISHED · public ↔ admin **MATCH** |
 | **STORAGE** | **GREEN** · beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) |
@@ -94,11 +96,12 @@
 ```text
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION TIP SHA            = 3a086ad · tip = V2 + docs closure · currently served
-PRODUCTION DEPLOYMENT         = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF · READY · www + apex
+PRODUCTION DEPLOYMENT (obs.)  = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY · www + apex
+PRODUCTION GIT SHA (Vercel)   = NOT VERIFIED
+GH DEPLOY CORRELATION (aux.)  = 6952679578 → d515f3b
   V2 verify deploy (HISTORY)  = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd (superseded for aliases)
-  prior tips (HISTORY)        = 44f7cbd · 4fa658d (7.1.6) · 79bc69f (V1) · 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · 836679a · 56b629e · 06c60b5
-REPOSITORY HEAD / origin/main = 3a086ad · equals production tip · local WIP may still dirty worktree
+  prior tips (HISTORY)        = 3a086ad / dpl_FVcx… · 44f7cbd · 4fa658d (7.1.6) · 79bc69f · 3fccbf7 · 9abc1b6 · 8f6eeca
+REPOSITORY HEAD / origin/main = d515f3b · docs tip · local WIP may still dirty worktree
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3)
 SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
@@ -213,7 +216,7 @@ VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
 CURRENT                       = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · production tip 3a086ad · dpl_FVcx…
+                              · repo tip d515f3b · aliases dpl_56FGH… · Vercel SHA NOT VERIFIED
                               · 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P4.6 / Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
                               · V2 follow-ups NON-BLOCKING · do NOT auto-open EPIC / P6.8 / payments
@@ -429,10 +432,11 @@ STORAGE DISASTER RECOVERY:
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm REPOSITORY HEAD / origin/main = 3a086ad (verify git rev-parse)
+                 → Confirm REPOSITORY HEAD / origin/main = d515f3b (verify git rev-parse)
                  → Confirm APP FEATURE COMMIT (V2) = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-                 → Confirm PRODUCTION TIP SHA = 3a086ad · dpl dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF
-                 → Confirm aliases www + apex → dpl_FVcx… (V2 verify history dpl_2ymz… @ 44f7cbd)
+                 → Confirm aliases www + apex → dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY
+                 → Confirm PRODUCTION GIT SHA (Vercel meta) = NOT VERIFIED · GH aux 6952679578 → d515f3b
+                 → Confirm V2 verify history dpl_2ymz… @ 44f7cbd (not live alias)
                  → Confirm V2 follow-ups 01–04 = NON-BLOCKING (do not auto-implement)
                  → Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
                  → Read architecture/REUSE_SSOT_MAP.md before any Studio/audio/persist change

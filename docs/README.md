@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Production tip **`3a086ad`** · dpl `dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF` · App feature V2 **`44f7cbd`** (**GREEN / RELEASE VERIFIED / CLOSED**) · URL https://www.bitrymdym.pl · **Studio Visual Parity V2 CLOSED** · Catalog **17** · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Reuse: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [V2 freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md).
+**Now:** Repo tip **`d515f3b`** · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · App feature V2 **`44f7cbd`** (**GREEN / RELEASE VERIFIED / CLOSED**) · URL https://www.bitrymdym.pl · **Studio Visual Parity V2 CLOSED** · Catalog **17** · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Reuse: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [V2 freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
