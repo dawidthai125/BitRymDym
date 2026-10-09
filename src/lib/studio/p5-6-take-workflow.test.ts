@@ -61,16 +61,21 @@ const takesRoutePath = join(
 describe("P5.6 auto-place decoupling", () => {
   it("panel finalizes Take READY without calling place in stopAndFinalize", () => {
     const panel = readFileSync(panelPath, "utf8");
-    // stopAndFinalize must reach TAKE_READY without place fetch in that function body order.
+    // stopAndFinalize must reach TAKE_READY without place fetch in that function body.
     const stopIdx = panel.indexOf("async function stopAndFinalize");
+    const placeHelperIdx = panel.indexOf(
+      "async function placeReadyTakeOnTimeline",
+    );
     const keepIdx = panel.indexOf("async function onKeepWorkflowTake");
     expect(stopIdx).toBeGreaterThan(-1);
-    expect(keepIdx).toBeGreaterThan(stopIdx);
-    const stopBody = panel.slice(stopIdx, keepIdx);
+    expect(placeHelperIdx).toBeGreaterThan(stopIdx);
+    expect(keepIdx).toBeGreaterThan(placeHelperIdx);
+    const stopBody = panel.slice(stopIdx, placeHelperIdx);
     expect(stopBody).toMatch(/TAKE_READY/);
     expect(stopBody).toMatch(/uploadTakeRecordingBlob/);
     expect(stopBody).not.toMatch(/record\/place/);
     expect(panel).toMatch(/onKeepWorkflowTake/);
+    expect(panel).toMatch(/placeReadyTakeOnTimeline/);
     expect(panel).toMatch(/record\/place/);
   });
 
@@ -83,6 +88,7 @@ describe("P5.6 auto-place decoupling", () => {
     expect(panel).toMatch(/\/api\/takes\/delete/);
     expect(panel).toMatch(/Odrzucić nagranie\?/);
     expect(panel).toMatch(/Nagranie zostanie usunięte\./);
+    expect(panel).toMatch(/placeReadyTakeOnTimeline/);
   });
 });
 

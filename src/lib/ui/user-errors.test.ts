@@ -87,6 +87,25 @@ describe("take upload user-facing errors", () => {
     expect(mapped.toLowerCase()).not.toContain("table takes");
     expect(mapped).toMatch(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]|uprawnień|spróbuj|udało/i);
   });
+
+  it("maps vocal import validation failures to Polish", () => {
+    expect(
+      toUserFacingTakeUploadError(
+        "contentType is not in take interim allow-list",
+      ),
+    ).toMatch(/Nieobsługiwany format/i);
+    expect(
+      toUserFacingTakeUploadError("byteSize must be at most 20971520"),
+    ).toMatch(/za duży/i);
+    expect(
+      toUserFacingTakeUploadError("Duration 200s exceeds max 174s."),
+    ).toMatch(/za długi/i);
+    expect(
+      toUserFacingTakeUploadError(
+        "Duration could not be verified (fail-closed).",
+      ),
+    ).toMatch(/czasu trwania/i);
+  });
 });
 
 describe("playback / download mappers", () => {

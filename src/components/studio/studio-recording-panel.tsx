@@ -36,13 +36,23 @@ import {
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
 import {
+  STUDIO_VOCAL_IMPORT_ACCEPT,
+  gateStudioVocalImportFile,
+} from "@/lib/takes/studio-vocal-import";
+import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
   type StudioPersistExecutor,
   type StudioPersistResult,
 } from "@/lib/studio/studio-persist-orchestrator";
 
-type WorkflowActionBusy = "preview" | "keep" | "discard" | "place" | null;
+type WorkflowActionBusy =
+  | "preview"
+  | "keep"
+  | "discard"
+  | "place"
+  | "import"
+  | null;
 
 export function StudioRecordingPanel({
   projectId,
@@ -104,6 +114,7 @@ export function StudioRecordingPanel({
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryBusyId, setLibraryBusyId] = useState<string | null>(null);
   const [libraryPreviewId, setLibraryPreviewId] = useState<string | null>(null);
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [state, dispatch] = useReducer(
     reduceRecordingUi,
@@ -640,27 +651,33 @@ export function StudioRecordingPanel({
     }
   }
 
-  async function onKeepWorkflowTake() {
-    if (!state.takeId || keepInFlightRef.current) return;
-    const takeId = state.takeId;
+  /**
+   * Place READY take via existing CAS place route (mic Keep + vocal import).
+   * On failure READY take remains; caller may surface workflow UI.
+   */
+  async function placeReadyTakeOnTimeline(params: {
+    takeId: string;
+    busy: Exclude<WorkflowActionBusy, null>;
+    successMessage: string;
+  }): Promise<boolean> {
+    const takeId = params.takeId;
     const startMs = recordStartMsRef.current;
     const placeTrackId = captureTrackIdRef.current || trackIdRef.current;
     if (startMs == null || !placeTrackId) {
       setWorkflowError("Brak pozycji nagrania na osi czasu.");
-      return;
+      return false;
     }
 
-    // Client-side idempotency for double-tap before server round-trip.
     if (placedTakeIdsRef.current.has(takeId)) {
       setKeptMessage("Nagranie jest już na osi czasu.");
       transport.stopTakePreview();
       clearCapturePlacement();
       dispatch({ type: "RETRY_IDLE" });
-      return;
+      return true;
     }
 
     keepInFlightRef.current = true;
-    setWorkflowBusy("keep");
+    setWorkflowBusy(params.busy);
     setWorkflowError(null);
     try {
       const result = await enqueuePersistAsync(async () => {
@@ -726,19 +743,144 @@ export function StudioRecordingPanel({
         }
       });
       if (!result.ok) {
-        // READY Take remains usable — do not clear take / placement refs.
         setWorkflowError(result.message);
-        return;
+        return false;
       }
       transport.stopTakePreview();
       clearCapturePlacement();
-      setKeptMessage("Nagranie zachowane na osi czasu.");
+      setKeptMessage(params.successMessage);
       dispatch({ type: "RETRY_IDLE" });
+      return true;
     } catch {
       setWorkflowError("Nie udało się umieścić nagrania na osi czasu.");
+      return false;
     } finally {
       keepInFlightRef.current = false;
       setWorkflowBusy(null);
+    }
+  }
+
+  async function onKeepWorkflowTake() {
+    if (!state.takeId || keepInFlightRef.current) return;
+    await placeReadyTakeOnTimeline({
+      takeId: state.takeId,
+      busy: "keep",
+      successMessage: "Nagranie zachowane na osi czasu.",
+    });
+  }
+
+  async function onImportVocalFile(file: File) {
+    if (
+      submittingRef.current ||
+      keepInFlightRef.current ||
+      workflowBusy ||
+      isRecordingBusy(state.phase) ||
+      state.phase === "READY_TAKE"
+    ) {
+      return;
+    }
+    if (!trackIdRef.current) {
+      setWorkflowError("Wybierz ścieżkę wokalu przed importem.");
+      return;
+    }
+
+    const gate = gateStudioVocalImportFile(file);
+    if (!gate.ok) {
+      setWorkflowError(gate.message);
+      return;
+    }
+
+    submittingRef.current = true;
+    setWorkflowBusy("import");
+    setWorkflowError(null);
+    setKeptMessage(null);
+    transport.stopTakePreview();
+
+    try {
+      const resolvedBeatId = beatIdRef.current ?? (await loadContext());
+      const eligRes = await fetch("/api/takes/eligibility", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ beatId: resolvedBeatId }),
+      });
+      const elig = (await eligRes.json()) as {
+        success?: boolean;
+        allowed?: boolean;
+        message?: string;
+        upgradeHintMessage?: string | null;
+        maxRecordingSeconds?: number;
+        error?: string;
+      };
+      if (!eligRes.ok || !elig.success) {
+        setWorkflowError(
+          toUserFacingTakeUploadError(
+            elig.error ?? "Nie udało się sprawdzić limitu nagrań.",
+          ),
+        );
+        return;
+      }
+      if (!elig.allowed) {
+        const parts = [elig.message ?? "Nie możesz teraz importować nagrania."];
+        if (elig.upgradeHintMessage) parts.push(elig.upgradeHintMessage);
+        setWorkflowError(parts.join(" "));
+        return;
+      }
+      if (
+        typeof elig.maxRecordingSeconds === "number" &&
+        elig.maxRecordingSeconds > 0
+      ) {
+        setMaxSeconds(Math.floor(elig.maxRecordingSeconds));
+      }
+
+      const startMs = transport.state.playheadMs;
+      setRecordStartMs(startMs);
+      recordStartMsRef.current = startMs;
+      captureTrackIdRef.current = trackIdRef.current;
+
+      dispatch({ type: "UPLOAD_START" });
+      const uploaded = await uploadTakeRecordingBlob({
+        beatId: resolvedBeatId,
+        blob: file,
+        contentType: gate.contentType,
+      });
+      dispatch({ type: "FINALIZE_START" });
+      dispatch({
+        type: "TAKE_READY",
+        takeId: uploaded.takeId,
+        previewUrl: null,
+        takeDurationSeconds: uploaded.durationSeconds,
+      });
+
+      const placed = await placeReadyTakeOnTimeline({
+        takeId: uploaded.takeId,
+        busy: "import",
+        successMessage: "Wokal zaimportowany na oś czasu.",
+      });
+      if (!placed) {
+        // READY take kept — user can Zachowaj from workflow panel.
+        setKeptMessage(null);
+      }
+    } catch (error) {
+      clearCapturePlacement();
+      const raw =
+        error instanceof Error
+          ? error.message
+          : "Nie udało się zaimportować pliku audio.";
+      const message = toUserFacingTakeUploadError(raw);
+      if (/finaliz|duration|READY|MIME|probe/i.test(raw)) {
+        dispatch({ type: "FINALIZE_FAILED", message });
+      } else if (/upload|przesł/i.test(raw)) {
+        dispatch({ type: "UPLOAD_FAILED", message });
+      } else {
+        setWorkflowError(message);
+        dispatch({ type: "RETRY_IDLE" });
+      }
+    } finally {
+      submittingRef.current = false;
+      setWorkflowBusy(null);
+      if (importFileInputRef.current) {
+        importFileInputRef.current.value = "";
+      }
     }
   }
 
@@ -1213,6 +1355,39 @@ export function StudioRecordingPanel({
             }}
           >
             {primaryLabel}
+          </Button>
+          <input
+            ref={importFileInputRef}
+            type="file"
+            accept={STUDIO_VOCAL_IMPORT_ACCEPT}
+            className="sr-only"
+            aria-hidden
+            tabIndex={-1}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void onImportVocalFile(file);
+            }}
+          />
+          <Button
+            type="button"
+            size="sm"
+            className="w-full sm:w-auto"
+            variant="outline"
+            disabled={
+              primaryDisabled ||
+              workflowBusy === "import" ||
+              !canStartNewRecording(state.phase) ||
+              state.phase === "READY" ||
+              state.phase === "REQUESTING_MIC"
+            }
+            onClick={() => importFileInputRef.current?.click()}
+            aria-label="Importuj gotowy plik wokalu"
+          >
+            {workflowBusy === "import" ||
+            state.phase === "UPLOADING" ||
+            state.phase === "PROCESSING"
+              ? "Importowanie…"
+              : "Importuj wokal"}
           </Button>
           {(state.phase === "READY" ||
             state.phase === "RECORDING" ||

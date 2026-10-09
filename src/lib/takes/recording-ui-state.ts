@@ -144,10 +144,29 @@ export function reduceRecordingUi(
       if (state.phase !== "RECORDING") return state;
       return { ...state, phase: "STOPPING", error: null };
     case "UPLOAD_START":
-      if (state.phase !== "STOPPING" && state.phase !== "RECORDING") {
+      // Mic path: STOPPING/RECORDING. Studio vocal file import: IDLE and recovery phases.
+      if (
+        state.phase !== "STOPPING" &&
+        state.phase !== "RECORDING" &&
+        state.phase !== "IDLE" &&
+        state.phase !== "READY" &&
+        state.phase !== "UPLOAD_ERROR" &&
+        state.phase !== "FINALIZE_ERROR" &&
+        state.phase !== "RECORDING_ERROR" &&
+        state.phase !== "MIC_DENIED" &&
+        state.phase !== "UNSUPPORTED" &&
+        state.phase !== "BEAT_NOT_ELIGIBLE"
+      ) {
         return state;
       }
-      return { ...state, phase: "UPLOADING", error: null };
+      return {
+        ...state,
+        phase: "UPLOADING",
+        error: null,
+        takeId: null,
+        previewUrl: null,
+        takeDurationSeconds: null,
+      };
     case "FINALIZE_START":
       if (state.phase !== "UPLOADING") return state;
       return { ...state, phase: "PROCESSING", error: null };

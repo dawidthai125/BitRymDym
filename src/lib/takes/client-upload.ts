@@ -60,6 +60,32 @@ export function toUserFacingTakeUploadError(message: string): string {
   if (/REPLACE_NOT_READY|REPLACE_INVALID|REPLACE_CONFLICT/i.test(message)) {
     return "Wybrane nagranie nie nadaje się do zastąpienia.";
   }
+  if (
+    /contentType is not in take interim allow-list/i.test(message) ||
+    /INVALID_MIME/i.test(message)
+  ) {
+    return "Nieobsługiwany format pliku. Wybierz MP3, WAV, M4A lub AAC.";
+  }
+  if (
+    /byteSize must be at most/i.test(message) ||
+    /Invalid take byte size/i.test(message) ||
+    /INVALID_SIZE/i.test(message)
+  ) {
+    return "Plik jest za duży lub ma nieprawidłowy rozmiar.";
+  }
+  if (
+    /Duration \d+s exceeds max/i.test(message) ||
+    /DURATION_EXCEEDED/i.test(message) ||
+    /exceeds max \d+s/i.test(message)
+  ) {
+    return "Plik jest za długi względem limitu nagrania dla tego bitu.";
+  }
+  if (
+    /Duration could not be verified/i.test(message) ||
+    /DURATION_PROBE_FAILED/i.test(message)
+  ) {
+    return "Nie udało się odczytać czasu trwania pliku audio.";
+  }
   // Central mapper — never return raw English backend text.
   return toUserFacingError(message, "recording");
 }

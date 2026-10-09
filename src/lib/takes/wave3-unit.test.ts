@@ -35,6 +35,22 @@ describe("Recording Wave 3 — recording UI state machine", () => {
     expect(state.takeId).toBe("t1");
   });
 
+  it("allows vocal import upload path IDLE → UPLOADING → READY_TAKE", () => {
+    let state = createInitialRecordingUiSnapshot({ maxRecordingSeconds: 174 });
+    state = reduceRecordingUi(state, { type: "UPLOAD_START" });
+    expect(state.phase).toBe("UPLOADING");
+    state = reduceRecordingUi(state, { type: "FINALIZE_START" });
+    expect(state.phase).toBe("PROCESSING");
+    state = reduceRecordingUi(state, {
+      type: "TAKE_READY",
+      takeId: "import-1",
+      previewUrl: null,
+      takeDurationSeconds: 12,
+    });
+    expect(state.phase).toBe("READY_TAKE");
+    expect(state.takeId).toBe("import-1");
+  });
+
   it("maps auth and eligibility errors", () => {
     let state = createInitialRecordingUiSnapshot();
     state = reduceRecordingUi(state, { type: "REQUIRE_AUTH" });
