@@ -412,7 +412,7 @@ Recorded at V2 **GREEN / CLOSED**. **Not** V2 reopeners. **Not** new decision ID
 
 | ID | Finding | Status |
 |----|---------|--------|
-| **FOLLOW-UP 01** | Waveform / media rendering — tested PUBLISHED beat showed solid grey clip (no waveform pixels); brief „Bit oczekuje na załadowanie” then „Gotowy”; no fake waveform introduced | **NON-BLOCKING / FOLLOW-UP** |
+| **FOLLOW-UP 01** | Waveform / media rendering — tested PUBLISHED beat showed solid grey clip (no waveform pixels); brief „Bit oczekuje na załadowanie” then „Gotowy”; no fake waveform introduced. **RCA-02 (2026-10-09):** local fixture `d07f3011-…` + PUBLISHED beat — cold reload → `data-load-state=ready` + visible peaks; historical grey clip **not** reproduced; root cause **NOT ESTABLISHED**; cold-request HTTP status **NOT VERIFIED**. Evidence: [RCA_02_STUDIO_WAVEFORM_MEDIA.md](../audits/RCA_02_STUDIO_WAVEFORM_MEDIA.md). **Not** a V2 reopener. | **NON-BLOCKING / FOLLOW-UP** |
 | **FOLLOW-UP 02** | Next.js localhost overlay `studio-editor.tsx` @ `renderTrackHeader` („2 Issues“) — root cause **NOT ESTABLISHED**; not proven as production runtime failure | **NON-BLOCKING / FOLLOW-UP** |
 | **FOLLOW-UP 03** | Beat Picker transient loading / empty flash — Catalog API returned 90 PUBLISHED; Mine = 0; final Beat Selected retest **PASS** | **NON-BLOCKING / FOLLOW-UP** |
 | **FOLLOW-UP 04** | Pixel-perfect parity — never a V2 contract | **NON-BLOCKING / OUT OF SCOPE** |

@@ -57,6 +57,8 @@ STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
 STUDIO VISUAL PARITY V2       = GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
                               · freeze: decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md
                               · follow-ups 01–04 NON-BLOCKING (waveform / overlay / picker / pixel)
+                              · RCA-02 FOLLOW-UP 01: HISTORICAL ISSUE NOT REPRODUCED (local) · root cause NOT ESTABLISHED
+                              · evidence: audits/RCA_02_STUDIO_WAVEFORM_MEDIA.md · not a V2 reopen
 PHASE 7.1.6 AUTO SAVE + CAS   = CLOSED / LAND GREEN · PRODUCTION GREEN (ancestry @ 4fa658d)
                               · Persist Orchestrator · CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICT
                               · retry 1s/3s/8s · 409 non-retryable · Zapisz teraz · beforeunload

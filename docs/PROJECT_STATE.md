@@ -405,6 +405,7 @@ STORAGE DISASTER RECOVERY:
 ### OPEN
 
 - **No authorized next Studio product unit** — Studio Visual Parity V2 CLOSED / GREEN @ `44f7cbd` · **STOP — OWNER DECISION REQUIRED** · V2 follow-ups NON-BLOCKING · **P6.8 NOT STARTED / OWNER DECISION**
+- **RCA-02 Studio waveform / media (FOLLOW-UP 01):** **HISTORICAL ISSUE NOT REPRODUCED** on local project `d07f3011-…` · root cause **NOT ESTABLISHED** · not a global RCA close · [RCA_02_STUDIO_WAVEFORM_MEDIA.md](./audits/RCA_02_STUDIO_WAVEFORM_MEDIA.md)
 - OD-04 / OD-07 (payments / Premium prices)
 - W2-B debt P2-2 / P2-3 / P2-4
 - FAR-01 closeout / retirement (ops)
