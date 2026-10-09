@@ -2374,6 +2374,7 @@ function StudioEditorInner({
               const typeLabel = labelStudioTrackType(track.trackType);
               return (
                 <div
+                  key={track.id}
                   data-testid="studio-track-header"
                   data-track-id={track.id}
                   data-track-type={track.trackType}
