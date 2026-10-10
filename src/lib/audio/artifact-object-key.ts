@@ -98,6 +98,41 @@ export function expectedTakeExportArtifactObjectKey(params: {
   }
 }
 
+/**
+ * OD-SFM-F02 — Studio Final Mix export artifact key (audio-artifacts bucket).
+ * user/{ownerId}/studio-export/{projectId}/jobs/{jobId}/WAV.wav
+ * MVP tier is WAV only; server builds path from verified UUIDs.
+ */
+export function buildStudioExportArtifactObjectKey(params: {
+  ownerId: string;
+  projectId: string;
+  jobId: string;
+  tier?: AudioArtifactTier;
+}): string {
+  assertUuid(params.ownerId, "ownerId");
+  assertUuid(params.projectId, "projectId");
+  assertUuid(params.jobId, "jobId");
+  const tier = params.tier ?? "WAV";
+  if (tier !== "WAV") {
+    throw new Error("STUDIO_EXPORT MVP supports WAV tier only");
+  }
+  return `user/${params.ownerId}/studio-export/${params.projectId}/jobs/${params.jobId}/WAV.wav`;
+}
+
+export function expectedStudioExportArtifactObjectKey(params: {
+  ownerId: string;
+  projectId: string;
+  jobId: string;
+  tier?: AudioArtifactTier;
+  objectKey: string;
+}): boolean {
+  try {
+    return params.objectKey === buildStudioExportArtifactObjectKey(params);
+  } catch {
+    return false;
+  }
+}
+
 export function isAudioArtifactsBucket(bucket: string): boolean {
   return bucket === AUDIO_ARTIFACTS_BUCKET;
 }

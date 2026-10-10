@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-09 — **PHASE 4 DUAL-PLANE SSOT** · tip **`d515f3b`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · [REUSE_SSOT_MAP](./architecture/REUSE_SSOT_MAP.md) · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-10 — **STUDIO_EXPORT Stage I.7 local E2E PASS** · Stage I.3A focus/a11y **in main** · Stage I.8 reconcile/docs · production **NOT DEPLOYED** · Contabo **STOPPED** · FX parity **NOT VERIFIED** · tip verify `git rev-parse HEAD` · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) · prior Phase 4 dual-plane tip **`d515f3b`** · V2 **`44f7cbd`** · **STOP — Owner GO for Contabo/canary or commit land (no auto-prod)**
 
 ---
 
@@ -64,7 +64,8 @@
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — **Studio Visual Parity V2 CLOSED / GREEN** @ `44f7cbd` · V2 follow-ups **NON-BLOCKING** · do not auto-open EPIC / P6.8 / payments · no Automation / Autotune / E3 Studio Render / Contabo |
+| **STUDIO_EXPORT (Final Mix)** | Stages A–I local WIP · H2 bake **PASS** (historical) · **I.3A** dialog focus/a11y in main (`studio-dialog-focus.ts`) · **I.7 local E2E PASS** (UI→POST→worker-once→WAV/QC→Storage→authorized download→cleanup; RIFF/WAVE PCM16 stereo 44.1 kHz · 1500 ms · matching SHA) · **I.7 did not run automated unit suite** · production **NOT DEPLOYED** · Contabo **STOPPED** · FX live/offline parity **NOT VERIFIED** · cross-user download AuthZ **NOT VERIFIED** · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — local E2E closed · dirty WIP (no commit) · next: Contabo/canary Ops GO **or** commit/land GO · do not auto-deploy / open EPIC |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |

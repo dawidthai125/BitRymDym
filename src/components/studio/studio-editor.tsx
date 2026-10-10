@@ -32,6 +32,7 @@ import {
   StudioMixerOverlay,
 } from "@/components/studio/studio-mixer-shell";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
+import { StudioExportControl } from "@/components/studio/studio-export-control";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { StudioTrackMeter } from "@/components/studio/studio-track-meter";
@@ -133,8 +134,6 @@ const STUDIO_DAW_LANE_HEIGHT_PX = 128;
 const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[220px] sm:w-[240px]";
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
 const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
-/** Existing take-export product surface (P4.6) — deep-link only. */
-const STUDIO_EXPORT_DEEP_LINK_HREF = "/account/takes";
 /** Track gain bounds — same as Mixer strips. */
 const STUDIO_TRACK_GAIN_DB_MIN = -24;
 const STUDIO_TRACK_GAIN_DB_MAX = 12;
@@ -2004,6 +2003,8 @@ function StudioEditorInner({
       </header>
 
       <StudioTransportBar
+        projectId={doc.project.id}
+        getExpectedDocumentVersion={expectedDocumentVersion}
         onChooseBeat={() => setBeatPickerOpen(true)}
         onRecord={() => {
           setInspectorPreferRecord(true);
@@ -3147,6 +3148,8 @@ function ClipEditPanelPlayheadBound(
 }
 
 function StudioTransportBar({
+  projectId,
+  getExpectedDocumentVersion,
   onChooseBeat,
   onRecord,
   tempoBpm,
@@ -3161,6 +3164,8 @@ function StudioTransportBar({
   onMasterGainLocal,
   onMasterGainCommit,
 }: {
+  projectId: string;
+  getExpectedDocumentVersion: () => number;
   onChooseBeat: () => void;
   onRecord: () => void;
   tempoBpm: number;
@@ -3378,14 +3383,10 @@ function StudioTransportBar({
           ) : null}
         </p>
 
-        <Link
-          href={STUDIO_EXPORT_DEEP_LINK_HREF}
-          className="inline-flex min-h-11 items-center rounded border border-[var(--brd-paper)]/40 bg-[var(--brd-paper)] px-2.5 text-xs font-semibold text-[var(--brd-ink)] hover:border-[var(--brd-green)]"
-          data-testid="studio-transport-export"
-          title="Export — istniejąca powierzchnia eksportu nagrań"
-        >
-          Export
-        </Link>
+        <StudioExportControl
+          projectId={projectId}
+          getExpectedDocumentVersion={getExpectedDocumentVersion}
+        />
       </div>
       {noBeat ? (
         <p

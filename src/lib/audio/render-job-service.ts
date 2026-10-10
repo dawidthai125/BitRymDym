@@ -55,6 +55,10 @@ import {
   type AuthorizedRenderSources,
   type AuthorizedTakeExportSources,
 } from "@/lib/audio/render-source-resolution";
+import {
+  resolveAuthorizedStudioExportSourcesForJob,
+  type AuthorizedStudioExportSources,
+} from "@/lib/audio/studio-export-source-resolution";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -78,8 +82,9 @@ export type RenderJobRecord = {
   id: string;
   ownerId: string;
   mixSessionId: string | null;
-  kind?: "MIX" | "TAKE_EXPORT";
+  kind?: "MIX" | "TAKE_EXPORT" | "STUDIO_EXPORT";
   takeId?: string | null;
+  projectId?: string | null;
   requestedTier: RenderJobTier;
   idempotencyKey: string;
   status: RenderJobStatus;
@@ -103,6 +108,7 @@ type RenderJobRow = {
   mix_session_id: string | null;
   kind?: string | null;
   take_id?: string | null;
+  project_id?: string | null;
   requested_tier: RenderJobTier;
   idempotency_key: string;
   status: RenderJobStatus;
@@ -121,17 +127,24 @@ type RenderJobRow = {
 };
 
 const JOB_SELECT =
-  "id, owner_id, mix_session_id, take_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at";
+  "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at";
+
+function mapJobKind(
+  kind: string | null | undefined,
+): "MIX" | "TAKE_EXPORT" | "STUDIO_EXPORT" {
+  if (kind === "TAKE_EXPORT") return "TAKE_EXPORT";
+  if (kind === "STUDIO_EXPORT") return "STUDIO_EXPORT";
+  return "MIX";
+}
 
 function mapJob(row: RenderJobRow): RenderJobRecord {
-  const kind =
-    row.kind === "TAKE_EXPORT" ? "TAKE_EXPORT" : ("MIX" as const);
   return {
     id: row.id,
     ownerId: row.owner_id,
     mixSessionId: row.mix_session_id,
-    kind,
+    kind: mapJobKind(row.kind),
     takeId: row.take_id ?? null,
+    projectId: row.project_id ?? null,
     requestedTier: row.requested_tier,
     idempotencyKey: row.idempotency_key,
     status: row.status,
@@ -635,7 +648,10 @@ export async function claimRenderJobAsWorker(
   jobId: string,
 ): Promise<{
   job: RenderJobRecord;
-  sources: AuthorizedRenderSources | AuthorizedTakeExportSources;
+  sources:
+    | AuthorizedRenderSources
+    | AuthorizedTakeExportSources
+    | AuthorizedStudioExportSources;
 }> {
   assertRenderJobsRuntimeEnabled();
   const admin = createSupabaseAdminClient();
@@ -656,12 +672,18 @@ export async function claimRenderJobAsWorker(
   }
 
   // FINDING-01 — re-validate sources before entering RUNNING.
-  let sources: AuthorizedRenderSources | AuthorizedTakeExportSources;
+  // STUDIO_EXPORT: snapshot is immutable content; sources re-AuthZ live (SOURCE_* → FAILED).
+  let sources:
+    | AuthorizedRenderSources
+    | AuthorizedTakeExportSources
+    | AuthorizedStudioExportSources;
   try {
     sources =
       current.kind === "TAKE_EXPORT"
         ? await resolveAuthorizedTakeExportSourcesForJob(jobId)
-        : await resolveAuthorizedRenderSourcesForJob(jobId);
+        : current.kind === "STUDIO_EXPORT"
+          ? await resolveAuthorizedStudioExportSourcesForJob(jobId)
+          : await resolveAuthorizedRenderSourcesForJob(jobId);
   } catch (sourceError) {
     const message =
       sourceError instanceof Error

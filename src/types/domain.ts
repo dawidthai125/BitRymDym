@@ -152,7 +152,8 @@ export type RenderJobTier = (typeof RENDER_JOB_TIERS)[number];
 export const MIX_RENDER_JOB_TIERS = ["BASIC_MP3", "HQ_MP3", "WAV"] as const;
 export type MixRenderJobTier = (typeof MIX_RENDER_JOB_TIERS)[number];
 
-export const RENDER_JOB_KINDS = ["MIX", "TAKE_EXPORT"] as const;
+/** Job source kinds. STUDIO_EXPORT is a first-class worker kind (local bake + UI Export). */
+export const RENDER_JOB_KINDS = ["MIX", "TAKE_EXPORT", "STUDIO_EXPORT"] as const;
 export type RenderJobKind = (typeof RENDER_JOB_KINDS)[number];
 
 export const AUDIO_ARTIFACT_STATUSES = [

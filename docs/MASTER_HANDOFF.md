@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-09 — **PHASE 4 DUAL-PLANE SSOT** · Repo tip **`d515f3b`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · Reuse/SSOT map · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-10 — **STUDIO_EXPORT Stage I.7 local E2E PASS** · I.3A a11y in main · I.8 reconcile/docs · prior Phase 4 dual-plane tip **`d515f3b`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · Contabo **STOPPED** · prod pipeline **NOT DEPLOYED** · **STOP — OWNER DECISION REQUIRED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -46,7 +46,8 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Phase 7.1.3 Inspector IA** | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (ancestry · do not reopen) |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked lib/migration = **NOT PRODUCTION** |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — **Studio Visual Parity V2 CLOSED / GREEN** @ `44f7cbd` · V2 follow-ups **NON-BLOCKING** · do **not** auto-open EPIC / P6.8 / payments · no Automation / Autotune / E3 Studio Render / Contabo |
+| **STUDIO_EXPORT (Final Mix)** | Local WIP A–I.8 · H2 historical · I.3A focus in main · **I.7 local E2E PASS** (not prod) · Contabo **STOPPED** · FX parity **NOT VERIFIED** · cross-user download AuthZ **NOT VERIFIED** · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — local E2E closed · Contabo/canary or commit/land GO only · no auto-prod |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |

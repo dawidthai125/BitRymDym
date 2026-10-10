@@ -17,6 +17,10 @@ import {
   type StudioFxReverbParams,
   type StudioFxType,
 } from "@/lib/studio/studio-fx-chain";
+import {
+  fillStudioSyntheticImpulse,
+  studioImpulseLengthFrames,
+} from "@/lib/studio/studio-fx-impulse";
 
 type ParamValue = { value: number };
 
@@ -152,16 +156,16 @@ function applyLimiter(node: DynamicsLike, ceiling: GainLike, params: StudioFxLim
 
 function createImpulse(ctx: StudioFxGraphContext, decaySeconds: number): BufferLike {
   const rate = ctx.sampleRate || 48000;
-  const length = Math.max(1, Math.floor(rate * decaySeconds));
+  const length = studioImpulseLengthFrames(rate, decaySeconds);
   const buffer = ctx.createBuffer(2, length, rate);
-  for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
-    const data = buffer.getChannelData(channel);
-    for (let i = 0; i < length; i += 1) {
-      data[i] =
-        (Math.random() * 2 - 1) *
-        Math.exp(-i / (rate * (decaySeconds / 3)));
-    }
-  }
+  // Live keeps Math.random — same non-deterministic product semantics as before.
+  fillStudioSyntheticImpulse(
+    buffer.getChannelData(0),
+    buffer.getChannelData(1),
+    rate,
+    decaySeconds,
+    Math.random,
+  );
   return buffer;
 }
 

@@ -6,6 +6,44 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-10 — STUDIO_EXPORT Stage I.8 reconcile I.3A + SSOT
+
+**Status:** **LOCAL RECONCILE** · **UNIT TESTS THIS SESSION** · **NO COMMIT/PUSH/DEPLOY**
+**Scope:** Promote Stage I.3A dialog focus/a11y from worktree into main; update living SSOT after Stage I.7 PASS
+**Code:** `studio-dialog-focus.ts` · `studio-export-control.tsx` (focus trap / Escape / restore / dialog semantics) · `studio-export-ui.test.ts` I.3A suite · `domain.ts` comment (kind is worker-backed)
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · bake freeze Stage I/I.7 status · historical Stage F “bake not implemented” marked superseded
+**Not done:** Contabo · prod deploy · cross-user download AuthZ · FX live/offline parity · commit/push
+**Next:** Owner GO Contabo/canary **or** commit/land — do not mark production GREEN
+
+## 2026-10-10 — STUDIO_EXPORT Stage I.7 controlled local E2E
+
+**Status:** **PASS** · **LOCAL ISOLATED ONLY** · **PRODUCTION NOT DEPLOYED** · **Contabo STOPPED**
+**Scope:** Worktree + local Supabase UI→POST→single `e3:worker:once`→WAV/QC→Storage→`audio_artifacts`→authorized download→cleanup
+**Evidence:** RIFF/WAVE · PCM 16-bit stereo · 44.1 kHz · duration 1500 ms · Storage SHA = download SHA
+**Automated tests in I.7 session:** **none** (runtime only)
+**Gaps:** FX live/offline parity **NOT VERIFIED** · cross-user download AuthZ **NOT VERIFIED** · prod **NOT VERIFIED**
+**Next:** Stage I.8 reconcile/docs (this follow-on)
+
+## 2026-10-10 — STUDIO_EXPORT Stage I UI Export wiring
+
+**Status:** **LOCAL UI IMPLEMENTATION** · **UNIT/SOURCE TESTED** · later **I.7 local E2E PASS** (see above) · **PRODUCTION NOT DEPLOYED**
+**Scope:** Stage I after local H2 bake smoke PASS (historical) — wire Studio transport Export to existing STUDIO_EXPORT backend
+**UI:** `StudioExportControl` · `studio-export-client.ts` · replaces OD-VS-03 `/account/takes` deep-link in transport (deep-link is **not** the current Export path)
+**API used:** `POST/GET /api/studio/projects/[projectId]/export` (project-scoped status + `artifactId`) · download `GET /api/mix/artifacts/[id]/download` (owner AuthZ)
+**Tests:** `src/lib/studio/studio-export-ui.test.ts` · visual-shell export assertion updated
+**Not done (Stage I session):** Contabo · commit/push/deploy · Sacred WIP
+**Next (historical):** Owner GO for runtime UI→API — **closed by Stage I.7**
+
+## 2026-10-10 — STUDIO_EXPORT Stage G local bake implementation
+
+**Status:** **LOCAL IMPLEMENTATION** · **UNIT TESTED** · **LOCAL INTEGRATION NOT RUN** · **LIVE PARITY NOT VERIFIED** · **PRODUCTION NOT DEPLOYED**
+**Scope:** Stage G after Owner ACCEPT OD-SFM-F01…F07 (F04: no silent FX-tail trim)
+**Freeze:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md)
+**Code:** `runClaimedStudioExportWorkerJob` · `buildStudioExportArtifactObjectKey` · `planStudioExportDuration` · `studioEngineDocumentFromProject` · offline `exportDurationMs`
+**Migration (file only):** `supabase/migrations/20261010030000_studio_export_audio_artifacts.sql` — `audio_artifacts.project_id` + ternary XOR — **NOT APPLIED**
+**Not done:** worker-once · Contabo · real Storage/DB bake · UI Export · commit/push/deploy · Sacred WIP
+**Next:** Stage H GO — apply migration locally + isolated worker smoke
+
 ## 2026-10-08 — FULL DOCUMENTATION RECONCILIATION / COLD START READY
 
 **Status:** **DOCS ONLY** · FULL PROJECT continuity pack · **COLD START READY** · **NO DUPLICATION CONTRACT READY**

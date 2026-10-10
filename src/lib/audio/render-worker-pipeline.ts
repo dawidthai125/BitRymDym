@@ -12,7 +12,9 @@ import {
 } from "@/config/audio-render";
 import {
   buildAudioArtifactObjectKey,
+  buildStudioExportArtifactObjectKey,
   buildTakeExportArtifactObjectKey,
+  expectedStudioExportArtifactObjectKey,
   expectedTakeExportArtifactObjectKey,
 } from "@/lib/audio/artifact-object-key";
 import {
@@ -40,9 +42,17 @@ import {
   resolveAuthorizedRenderSourcesForJob,
   resolveAuthorizedTakeExportSourcesForJob,
 } from "@/lib/audio/render-source-resolution";
+import { resolveAuthorizedStudioExportSourcesForJob } from "@/lib/audio/studio-export-source-resolution";
 import { bakeServerBasicV1 } from "@/lib/audio/server-basic-bake";
 import { bakeServerProV1 } from "@/lib/audio/server-pro-bake";
 import { encodeWavFromBake } from "@/lib/audio/wav-encode";
+import { studioEngineDocumentFromProject } from "@/lib/studio/studio-engine-document-from-project";
+import { planStudioExportDuration } from "@/lib/studio/studio-export-fx-post-roll";
+import {
+  renderStudioDocumentOffline,
+  StudioOfflineRenderError,
+  type StudioOfflinePcmResolver,
+} from "@/lib/studio/studio-offline-render";
 import type { RenderJobTier } from "@/types/domain";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -128,8 +138,30 @@ async function ensureFailedIfStillRunning(
   }
 }
 
+function mapStudioOfflineRenderFail(error: StudioOfflineRenderError): {
+  code: string;
+  message: string;
+} {
+  switch (error.code) {
+    case "STUDIO_RENDER_SOURCE_MISSING":
+    case "STUDIO_RENDER_SOURCE_INVALID":
+      return { code: "SOURCE_UNAVAILABLE", message: error.message };
+    case "STUDIO_RENDER_DURATION_CAP":
+    case "STUDIO_RENDER_TAIL_DURATION_CAP":
+    case "STUDIO_RENDER_MEMORY_CAP":
+      return { code: "LIMIT", message: error.message };
+    case "STUDIO_RENDER_ARTIFACT_UNSUPPORTED":
+    case "STUDIO_RENDER_FX_UNSUPPORTED":
+    case "STUDIO_RENDER_EMPTY_SESSION":
+    case "STUDIO_RENDER_INVALID_DOCUMENT":
+    default:
+      return { code: "ENCODE_FAILED", message: error.message };
+  }
+}
+
 /**
- * Dispatcher — EXTERNAL worker entry for MIX (Basic/HQ/WAV) and TAKE_EXPORT.
+ * Dispatcher — EXTERNAL worker entry for MIX, TAKE_EXPORT, STUDIO_EXPORT.
+ * Unknown kind → fail-closed (never falls through to MIX bake).
  */
 export async function runRealRenderWorkerJob(
   jobId: string,
@@ -137,6 +169,20 @@ export async function runRealRenderWorkerJob(
   const { job } = await claimRenderJobAsWorker(jobId);
   if (job.kind === "TAKE_EXPORT") {
     return runClaimedTakeExportWorkerJob(job);
+  }
+  if (job.kind === "STUDIO_EXPORT") {
+    return runClaimedStudioExportWorkerJob(job);
+  }
+  if (job.kind !== "MIX" && job.kind !== undefined) {
+    await failRunningJob(
+      jobId,
+      "INVALID",
+      `Unsupported render job kind: ${String(job.kind)}`,
+    );
+    throw new RenderJobDomainError(
+      `Unsupported render job kind: ${String(job.kind)}`,
+      "INVALID",
+    );
   }
   if (job.requestedTier === "BASIC_MP3") {
     return runClaimedBasicMp3WorkerJob(job);
@@ -153,6 +199,162 @@ export async function runRealRenderWorkerJob(
     `Unsupported render tier: ${job.requestedTier}`,
     "INVALID",
   );
+}
+
+/**
+ * Stage G — STUDIO_EXPORT offline bake → WAV → canonical artifact.
+ * Sources re-AuthZ at claim and again here (FINDING-01). No Contabo start.
+ */
+async function runClaimedStudioExportWorkerJob(
+  job: RenderJobRecord,
+): Promise<RealWorkerPipelineResult> {
+  const jobId = job.id;
+  const projectId = job.projectId;
+  if (!projectId) {
+    await failRunningJob(jobId, "INVALID", "STUDIO_EXPORT missing project_id.");
+    throw new RenderJobDomainError(
+      "STUDIO_EXPORT missing project_id.",
+      "INVALID",
+    );
+  }
+  if (job.requestedTier !== "WAV") {
+    await failRunningJob(
+      jobId,
+      "TIER_UNSUPPORTED",
+      `STUDIO_EXPORT MVP supports WAV only, got ${job.requestedTier}.`,
+    );
+    throw new RenderJobDomainError(
+      `STUDIO_EXPORT MVP supports WAV only, got ${job.requestedTier}.`,
+      "INVALID",
+    );
+  }
+
+  try {
+    const fresh = await resolveAuthorizedStudioExportSourcesForJob(jobId);
+    const engineDocument = studioEngineDocumentFromProject(
+      fresh.documentSnapshot.document,
+    );
+
+    let durationPlan;
+    try {
+      durationPlan = planStudioExportDuration(engineDocument);
+    } catch (e) {
+      if (e instanceof StudioOfflineRenderError) {
+        const mapped = mapStudioOfflineRenderFail(e);
+        await failRunningJob(jobId, mapped.code, mapped.message);
+      }
+      throw e;
+    }
+
+    const pcmByTake = new Map<string, DecodedPcmStereo>();
+    const pcmByBeat = new Map<string, DecodedPcmStereo>();
+
+    for (const [takeId, ref] of Object.entries(fresh.takes)) {
+      const bytes = await downloadSourceBytes({
+        bucket: ref.storageBucket,
+        objectKey: ref.objectKey,
+      });
+      try {
+        pcmByTake.set(
+          takeId,
+          await decodeRenderSourceToStereoPcm({
+            bytes,
+            contentType: ref.contentType,
+            label: `take:${takeId}`,
+          }),
+        );
+      } catch (e) {
+        const code = renderDecodeErrorCode(e);
+        const message = e instanceof Error ? e.message : "SOURCE_DECODE";
+        await failRunningJob(jobId, code, message);
+        throw e;
+      }
+    }
+
+    for (const [beatId, ref] of Object.entries(fresh.beats)) {
+      const bytes = await downloadSourceBytes({
+        bucket: ref.storageBucket,
+        objectKey: ref.objectKey,
+      });
+      try {
+        pcmByBeat.set(
+          beatId,
+          await decodeRenderSourceToStereoPcm({
+            bytes,
+            contentType: ref.contentType,
+            label: `beat:${beatId}`,
+          }),
+        );
+      } catch (e) {
+        const code = renderDecodeErrorCode(e);
+        const message = e instanceof Error ? e.message : "SOURCE_DECODE";
+        await failRunningJob(jobId, code, message);
+        throw e;
+      }
+    }
+
+    const resolvePcm: StudioOfflinePcmResolver = (key) => {
+      if (key.kind === "TAKE") return pcmByTake.get(key.takeId) ?? null;
+      return pcmByBeat.get(key.beatId) ?? null;
+    };
+
+    let offline;
+    try {
+      offline = await renderStudioDocumentOffline({
+        document: engineDocument,
+        resolvePcm,
+        exportDurationMs: durationPlan.exportDurationMs,
+      });
+    } catch (e) {
+      if (e instanceof StudioOfflineRenderError) {
+        const mapped = mapStudioOfflineRenderFail(e);
+        await failRunningJob(jobId, mapped.code, mapped.message);
+      }
+      throw e;
+    }
+
+    const bake = decodedPcmToBakeInput({
+      interleaved: offline.interleaved,
+      sampleRate: offline.sampleRate,
+      channels: 2,
+      frames: offline.frames,
+    });
+
+    let encoded;
+    try {
+      encoded = await encodeWavFromBake(bake);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "WAV_ENCODE_FAILED";
+      await failRunningJob(jobId, "ENCODE_FAILED", message);
+      throw e;
+    }
+
+    const objectKey = buildStudioExportArtifactObjectKey({
+      ownerId: job.ownerId,
+      projectId,
+      jobId: job.id,
+      tier: "WAV",
+    });
+
+    return completeRealArtifactAfterEncode({
+      jobId: job.id,
+      qualityTier: "WAV",
+      objectKey,
+      encodedBytes: encoded.bytes,
+      contentType: "audio/wav",
+      checksumSha256: encoded.checksumSha256,
+      byteSize: encoded.byteSize,
+      durationMs: encoded.durationMs,
+      bitrateKbps: null,
+      sampleRate: encoded.sampleRate,
+      encoder: encoded.encoder,
+      artifactMode: "STUDIO_EXPORT",
+      projectId,
+    });
+  } catch (error) {
+    await ensureFailedIfStillRunning(jobId, error);
+    throw error;
+  }
 }
 
 /**
@@ -492,7 +694,9 @@ async function runClaimedPremiumWorkerJob(
 
 /**
  * Upload QC'd bytes + insert READY + SUCCEEDED (FINDING-02/03).
- * MIX: mix_session_id + mix/ key. TAKE_EXPORT: take_id + take-export/ key.
+ * MIX: mix_session_id + mix/ key.
+ * TAKE_EXPORT: take_id + take-export/ key.
+ * STUDIO_EXPORT: project_id + studio-export/ key (upsert for idempotent retry).
  */
 export async function completeRealArtifactAfterEncode(params: {
   jobId: string;
@@ -506,15 +710,16 @@ export async function completeRealArtifactAfterEncode(params: {
   bitrateKbps: number | null;
   sampleRate: number;
   encoder: string;
-  artifactMode?: "MIX" | "TAKE_EXPORT";
+  artifactMode?: "MIX" | "TAKE_EXPORT" | "STUDIO_EXPORT";
   takeId?: string | null;
+  projectId?: string | null;
 }): Promise<RealWorkerPipelineResult> {
   const mode = params.artifactMode ?? "MIX";
   const admin = createSupabaseAdminClient();
   const { data: row, error } = await admin
     .from("render_jobs")
     .select(
-      "id, owner_id, mix_session_id, take_id, kind, requested_tier, status, entitlement_snapshot, timeout_at",
+      "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, status, entitlement_snapshot, timeout_at",
     )
     .eq("id", params.jobId)
     .maybeSingle();
@@ -558,6 +763,34 @@ export async function completeRealArtifactAfterEncode(params: {
         "FORBIDDEN",
       );
     }
+  } else if (mode === "STUDIO_EXPORT") {
+    const projectId = params.projectId ?? (row.project_id as string | null);
+    if (!projectId) {
+      throw new RenderJobDomainError(
+        "STUDIO_EXPORT completion missing project_id.",
+        "INVALID",
+      );
+    }
+    if ((row.kind as string | null) !== "STUDIO_EXPORT") {
+      throw new RenderJobDomainError(
+        "STUDIO_EXPORT completion requires kind=STUDIO_EXPORT.",
+        "INVALID",
+      );
+    }
+    if (
+      !expectedStudioExportArtifactObjectKey({
+        ownerId: row.owner_id as string,
+        projectId,
+        jobId: row.id as string,
+        tier: params.qualityTier,
+        objectKey: params.objectKey,
+      })
+    ) {
+      throw new RenderJobDomainError(
+        "Client/arbitrary object_key rejected.",
+        "FORBIDDEN",
+      );
+    }
   } else {
     if (!row.mix_session_id) {
       throw new RenderJobDomainError(
@@ -589,11 +822,12 @@ export async function completeRealArtifactAfterEncode(params: {
   const expiresAt = new Date(Date.now() + retentionSec * 1000).toISOString();
   const finishedAt = new Date().toISOString();
 
+  // STUDIO_EXPORT: upsert so retry of the same jobId overwrites a partial orphan.
   const { error: uploadError } = await admin.storage
     .from(AUDIO_ARTIFACTS_BUCKET)
     .upload(params.objectKey, params.encodedBytes, {
       contentType: params.contentType,
-      upsert: false,
+      upsert: mode === "STUDIO_EXPORT",
     });
   if (uploadError) {
     await failRunningJob(params.jobId, "UPLOAD_FAILED", uploadError.message);
@@ -614,17 +848,73 @@ export async function completeRealArtifactAfterEncode(params: {
     );
   }
 
+  // Idempotent retry: if READY artifact already exists for this job, reuse it.
+  const { data: existingArt } = await admin
+    .from("audio_artifacts")
+    .select("id, object_key, status")
+    .eq("render_job_id", row.id)
+    .maybeSingle();
+  if (
+    existingArt &&
+    existingArt.status === "READY" &&
+    existingArt.object_key === params.objectKey
+  ) {
+    const { data: repaired, error: repairError } = await admin
+      .from("render_jobs")
+      .update({
+        status: "SUCCEEDED",
+        finished_at: finishedAt,
+        progress: 100,
+        error_code: null,
+        error_message: null,
+      })
+      .eq("id", params.jobId)
+      .eq("status", "RUNNING")
+      .select(
+        "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
+      )
+      .maybeSingle();
+    if (repairError) throw new Error(repairError.message);
+    if (!repaired) {
+      throw new RenderJobDomainError(
+        "Job left RUNNING during Studio artifact repair.",
+        "CONFLICT",
+      );
+    }
+    const jobRecord = await getJobRecord(params.jobId);
+    return {
+      job: jobRecord,
+      artifactId: existingArt.id as string,
+      objectKey: params.objectKey,
+      byteSize: params.byteSize,
+      checksumSha256: params.checksumSha256,
+      bitrateKbps: params.bitrateKbps,
+      durationMs: params.durationMs,
+      encoder: params.encoder,
+      qualityTier: params.qualityTier,
+      contentType: params.contentType,
+    };
+  }
+
   const takeIdForInsert =
     mode === "TAKE_EXPORT"
       ? (params.takeId ?? (row.take_id as string))
+      : null;
+  const projectIdForInsert =
+    mode === "STUDIO_EXPORT"
+      ? (params.projectId ?? (row.project_id as string))
       : null;
 
   const { data: artifact, error: artError } = await admin
     .from("audio_artifacts")
     .insert({
       owner_id: row.owner_id,
-      mix_session_id: mode === "TAKE_EXPORT" ? null : row.mix_session_id,
+      mix_session_id:
+        mode === "TAKE_EXPORT" || mode === "STUDIO_EXPORT"
+          ? null
+          : row.mix_session_id,
       take_id: takeIdForInsert,
+      project_id: projectIdForInsert,
       render_job_id: row.id,
       format: params.contentType,
       quality_tier: params.qualityTier,
@@ -666,12 +956,14 @@ export async function completeRealArtifactAfterEncode(params: {
     .eq("id", params.jobId)
     .eq("status", "RUNNING")
     .select(
-      "id, owner_id, mix_session_id, take_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
+      "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
     )
     .maybeSingle();
 
   if (succError) throw new Error(succError.message);
   if (!succeeded) {
+    // Do not delete READY artifact if another path already SUCCEEDED; only
+    // compensate when we own a fresh insert and job left RUNNING without SUCCEEDED.
     await admin.from("audio_artifacts").delete().eq("id", artifact.id);
     await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove([params.objectKey]);
     throw new RenderJobDomainError(
@@ -680,7 +972,7 @@ export async function completeRealArtifactAfterEncode(params: {
     );
   }
 
-  // MIX awards require mix_session_id — skip for TAKE_EXPORT.
+  // MIX awards require mix_session_id — skip for TAKE_EXPORT / STUDIO_EXPORT.
   if (succeeded.mix_session_id) {
     const { hookRenderJobSucceeded } = await import(
       "@/lib/creator-progress/award-hooks"
@@ -731,20 +1023,26 @@ async function getJobRecord(jobId: string): Promise<RenderJobRecord> {
   const { data, error } = await admin
     .from("render_jobs")
     .select(
-      "id, owner_id, mix_session_id, take_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
+      "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
     )
     .eq("id", jobId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "job missing");
   const snapshot = parseRenderJobEntitlementSnapshot(data.entitlement_snapshot);
-  const kind =
-    data.kind === "TAKE_EXPORT" ? ("TAKE_EXPORT" as const) : ("MIX" as const);
+  const kindRaw = data.kind as string | null;
+  const kind: RenderJobRecord["kind"] =
+    kindRaw === "TAKE_EXPORT"
+      ? "TAKE_EXPORT"
+      : kindRaw === "STUDIO_EXPORT"
+        ? "STUDIO_EXPORT"
+        : "MIX";
   return {
     id: data.id as string,
     ownerId: data.owner_id as string,
     mixSessionId: (data.mix_session_id as string | null) ?? null,
     kind,
     takeId: (data.take_id as string | null) ?? null,
+    projectId: (data.project_id as string | null) ?? null,
     requestedTier: data.requested_tier as RenderJobRecord["requestedTier"],
     idempotencyKey: data.idempotency_key as string,
     status: data.status as RenderJobRecord["status"],

@@ -26,14 +26,18 @@ describe("Studio Visual Shell — Transport", () => {
     expect(editor).toMatch(/setInspectorPreferRecord\(true\)/);
   });
 
-  it("shows BPM / signature / duration / master / save / export deep-link", () => {
+  it("shows BPM / signature / duration / master / save / Studio WAV export control", () => {
+    const exportControl = readFileSync(
+      join(root, "src/components/studio/studio-export-control.tsx"),
+      "utf8",
+    );
     expect(editor).toMatch(/data-testid="studio-transport-meta"/);
     expect(editor).toMatch(/data-testid="studio-transport-master"/);
     expect(editor).toMatch(/data-testid="studio-transport-save"/);
-    expect(editor).toMatch(/data-testid="studio-transport-export"/);
-    expect(editor).toMatch(/STUDIO_EXPORT_DEEP_LINK_HREF/);
-    expect(editor).toMatch(/href=\{STUDIO_EXPORT_DEEP_LINK_HREF\}/);
-    expect(editor).toMatch(/\/account\/takes/);
+    // Stage I supersedes OD-VS-03 deep-link for Final Mix Export meaning.
+    expect(editor).toMatch(/StudioExportControl/);
+    expect(exportControl).toMatch(/data-testid="studio-transport-export"/);
+    expect(editor).not.toMatch(/STUDIO_EXPORT_DEEP_LINK_HREF/);
     expect(editor).toMatch(/patchMasterMix\(\{ masterGainDb \}\)/);
   });
 

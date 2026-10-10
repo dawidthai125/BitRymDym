@@ -114,3 +114,29 @@ export function getRenderWorkerSecret(): string | null {
 export function isE3PublicAudioAuthorized(): boolean {
   return E3_PUBLIC_AUDIO === true;
 }
+
+/**
+ * STUDIO_EXPORT Stage B — document / source caps (fail-closed).
+ * Justified from existing SSOT:
+ * - tracks ≤ GOLD `studioMaxTracks` (8) in premium-tiers
+ * - clips: no DB hard cap → conservative 8×32
+ * - unique TAKE ≤ clip cap
+ * - unique BEAT_REF: project beat SSOT is typically 1; allow 2 before reject
+ * - snapshot JSON: headroom for 256 clips + FX chains (8 effects max each)
+ * MVP tier: WAV (OD-SFM-02 default), capability EXPORT_WAV.
+ */
+export const STUDIO_EXPORT_DOCUMENT_SNAPSHOT_SCHEMA_VERSION = 1 as const;
+export const STUDIO_EXPORT_MAX_TRACKS = 8;
+export const STUDIO_EXPORT_MAX_CLIPS = 256;
+export const STUDIO_EXPORT_MAX_UNIQUE_TAKES = 64;
+export const STUDIO_EXPORT_MAX_UNIQUE_BEATS = 2;
+/** Serialized snapshot envelope max size (UTF-8 bytes). */
+export const STUDIO_EXPORT_MAX_SNAPSHOT_BYTES = 256 * 1024;
+/** MVP requested_tier for STUDIO_EXPORT enqueue. */
+export const STUDIO_EXPORT_MVP_TIER = "WAV" as const;
+
+/**
+ * OD-SFM-F04 — absolute FX post-roll ceiling (ms) for Studio Export bake.
+ * Documented in studio-export-fx-post-roll.ts — does not guarantee full decay.
+ */
+export const STUDIO_EXPORT_FX_POST_ROLL_MAX_MS = 3000;

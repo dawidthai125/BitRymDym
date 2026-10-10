@@ -20,7 +20,7 @@ describe("Studio Visual Parity V2 — transport empty shell", () => {
     expect(editor).toMatch(/data-testid="studio-transport-meta"/);
     expect(editor).toMatch(/data-testid="studio-transport-master"/);
     expect(editor).toMatch(/data-testid="studio-transport-save"/);
-    expect(editor).toMatch(/data-testid="studio-transport-export"/);
+    expect(editor).toMatch(/StudioExportControl/);
     expect(editor).toMatch(/data-testid="studio-transport-choose-beat"/);
     expect(editor).toMatch(/data-testid="studio-transport-nobeat-status"/);
     // Must not use exclusive noBeat strip that omits ops chrome.

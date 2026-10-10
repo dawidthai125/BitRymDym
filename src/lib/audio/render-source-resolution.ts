@@ -180,6 +180,12 @@ export async function resolveAuthorizedRenderSourcesForJob(
       "INVALID",
     );
   }
+  if (jobRow.kind === "STUDIO_EXPORT") {
+    throw new RenderJobDomainError(
+      "STUDIO_EXPORT must use resolveAuthorizedStudioExportSourcesForJob.",
+      "INVALID",
+    );
+  }
   if (jobRow.status !== "QUEUED" && jobRow.status !== "RUNNING") {
     throw new RenderJobDomainError(
       `Cannot resolve sources for job in status ${jobRow.status}.`,

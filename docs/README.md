@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Repo tip **`d515f3b`** · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · App feature V2 **`44f7cbd`** (**GREEN / RELEASE VERIFIED / CLOSED**) · URL https://www.bitrymdym.pl · **Studio Visual Parity V2 CLOSED** · Catalog **17** · Storage orphans **0** · Security **GREEN** · Mobile **TECHNICALLY READY — DEVICE CERTIFICATION PENDING** · Contabo **STOPPED/DISABLED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Reuse: [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [V2 freeze](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md).
+**Now:** Repo tip verify `git rev-parse HEAD` · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · App feature V2 **`44f7cbd`** (**GREEN / CLOSED**) · **STUDIO_EXPORT** local E2E **I.7 PASS** · I.3A a11y in main · **not** production GREEN · Contabo **STOPPED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · Final Mix: [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -104,6 +104,9 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md](./decisions/P7_1_4_MIXER_DOCK_DESIGN_FREEZE.md) | Phase 7.1.4 Mixer Dock design freeze · OD-P7.1.4-01…04 |
 | [decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) | Studio Visual Shell Pass design freeze · OD-VS-01…05 · **not** P7.1.7 |
 | [decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) | Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · **not** P7.1.7 |
+| [decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md) | Studio Final Mix product freeze · OD-SFM · OD-VS-03 supersession for Export meaning |
+| [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) | STUDIO_EXPORT bake/UI stages · Stage I UI local WIP · not production GREEN |
+| [architecture/STUDIO_FINAL_MIX_ARCHITECTURE_AUDIT.md](./architecture/STUDIO_FINAL_MIX_ARCHITECTURE_AUDIT.md) | Studio Final Mix architecture audit |
 | [audits/POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) | Polish UX Mix / Master / Recording / Playback — **CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` |
 | [audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) | Wave A Account / Beats — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` |
 | [audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md](./audits/FALA_1B_ACCOUNT_ADMIN_VISUAL_FOUNDATION_CLOSEOUT.md) | Fala 1B Account + Panel Administracyjny — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `42369c0` (historical) |

@@ -12,8 +12,16 @@ import { limitsForPremiumTier } from "@/config/premium-tiers";
 import type { EffectiveAudioEntitlement } from "@/lib/audio/effective-entitlement";
 import type { MixParameters } from "@/lib/mix/params";
 import type { PremiumTier } from "@/types/premium";
-import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
-import { MIX_RENDER_JOB_TIERS, RENDER_JOB_TIERS } from "@/types/domain";
+import type {
+  RenderJobKind,
+  RenderJobStatus,
+  RenderJobTier,
+} from "@/types/domain";
+import {
+  MIX_RENDER_JOB_TIERS,
+  RENDER_JOB_KINDS,
+  RENDER_JOB_TIERS,
+} from "@/types/domain";
 import { utcDayWindowStart } from "@/lib/downloads/limits";
 
 export const RENDER_JOB_ACTIVE_STATUSES = [
@@ -75,6 +83,39 @@ export function isRenderJobTier(value: unknown): value is RenderJobTier {
     typeof value === "string" &&
     (RENDER_JOB_TIERS as readonly string[]).includes(value)
   );
+}
+
+export function isRenderJobKind(value: unknown): value is RenderJobKind {
+  return (
+    typeof value === "string" &&
+    (RENDER_JOB_KINDS as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * Mirrors `render_jobs_source_xor_chk` after STUDIO_EXPORT Stage A.
+ * Does not enqueue, resolve AuthZ, or dispatch a worker.
+ */
+export function isValidRenderJobSourceXor(fields: {
+  kind: string;
+  mixSessionId: string | null;
+  takeId: string | null;
+  projectId: string | null;
+}): boolean {
+  const hasMix = fields.mixSessionId != null;
+  const hasTake = fields.takeId != null;
+  const hasProject = fields.projectId != null;
+
+  if (fields.kind === "MIX") {
+    return hasMix && !hasTake && !hasProject;
+  }
+  if (fields.kind === "TAKE_EXPORT") {
+    return hasTake && !hasMix && !hasProject;
+  }
+  if (fields.kind === "STUDIO_EXPORT") {
+    return hasProject && !hasMix && !hasTake;
+  }
+  return false;
 }
 
 /** E3 MIX create path — excludes P4 take-only MP3_192. */
