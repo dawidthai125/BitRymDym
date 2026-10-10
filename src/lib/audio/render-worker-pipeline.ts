@@ -9,6 +9,7 @@ import "server-only";
 import {
   AUDIO_ARTIFACTS_BUCKET,
   AUDIO_CODEC,
+  AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS,
 } from "@/config/audio-render";
 import {
   buildAudioArtifactObjectKey,
@@ -43,7 +44,10 @@ import {
   resolveAuthorizedTakeExportSourcesForJob,
 } from "@/lib/audio/render-source-resolution";
 import { resolveAuthorizedStudioExportSourcesForJob } from "@/lib/audio/studio-export-source-resolution";
-import { bakeServerBasicV1 } from "@/lib/audio/server-basic-bake";
+import {
+  bakeServerBasicV1,
+  resampleStereoInterleaved,
+} from "@/lib/audio/server-basic-bake";
 import { bakeServerProV1 } from "@/lib/audio/server-pro-bake";
 import { encodeWavFromBake } from "@/lib/audio/wav-encode";
 import { studioEngineDocumentFromProject } from "@/lib/studio/studio-engine-document-from-project";
@@ -64,6 +68,128 @@ function decodedPcmToBakeInput(pcm: DecodedPcmStereo): BakePcmInput {
     frames: pcm.frames,
     durationMs: Math.max(1, Math.round((pcm.frames / pcm.sampleRate) * 1000)),
   };
+}
+
+/**
+ * I.45E — STUDIO_EXPORT only: fail-closed PCM prepare error before offline render.
+ * Mapped to SOURCE_UNAVAILABLE (same class as STUDIO_RENDER_SOURCE_INVALID).
+ */
+export class StudioExportPcmPrepareError extends Error {
+  readonly code = "STUDIO_EXPORT_PCM_INVALID" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "StudioExportPcmPrepareError";
+  }
+}
+
+/** Max output frames at WAV target for the global source-duration ceiling (+1 frame slack). */
+const STUDIO_EXPORT_MAX_TARGET_FRAMES =
+  Math.floor(
+    AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS * AUDIO_CODEC.WAV_SAMPLE_RATE,
+  ) + 1;
+
+function assertStudioExportPcmShape(
+  pcm: DecodedPcmStereo,
+  label: string,
+  phase: "input" | "output",
+): void {
+  if (pcm.channels !== 2) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: ${phase} channels must be 2.`,
+    );
+  }
+  if (
+    !Number.isFinite(pcm.frames) ||
+    pcm.frames < 1 ||
+    !Number.isInteger(pcm.frames)
+  ) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: ${phase} frames must be a positive integer.`,
+    );
+  }
+  if (pcm.interleaved.length !== pcm.frames * 2) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: ${phase} interleaved length must equal frames * 2.`,
+    );
+  }
+  const probe = Math.min(pcm.interleaved.length, 64);
+  for (let i = 0; i < probe; i++) {
+    if (!Number.isFinite(pcm.interleaved[i]!)) {
+      throw new StudioExportPcmPrepareError(
+        `${label}: ${phase} non-finite PCM sample.`,
+      );
+    }
+  }
+}
+
+function assertSafeStudioExportSampleRate(
+  sampleRate: number,
+  frames: number,
+  label: string,
+): void {
+  if (
+    typeof sampleRate !== "number" ||
+    !Number.isFinite(sampleRate) ||
+    sampleRate <= 0
+  ) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: sampleRate must be a finite positive number.`,
+    );
+  }
+  const durationSec = frames / sampleRate;
+  if (
+    !Number.isFinite(durationSec) ||
+    durationSec <= 0 ||
+    durationSec > AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS
+  ) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: source duration ${durationSec}s exceeds max ${AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS}s or is invalid.`,
+    );
+  }
+  const target = AUDIO_CODEC.WAV_SAMPLE_RATE;
+  const ratio = sampleRate / target;
+  if (!Number.isFinite(ratio) || ratio <= 0) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: unsafe sampleRate/target ratio for resample.`,
+    );
+  }
+  const projectedOutFrames = Math.max(1, Math.floor(frames / ratio));
+  if (
+    !Number.isFinite(projectedOutFrames) ||
+    projectedOutFrames > STUDIO_EXPORT_MAX_TARGET_FRAMES
+  ) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: projected resample frames ${projectedOutFrames} exceed safe max ${STUDIO_EXPORT_MAX_TARGET_FRAMES}.`,
+    );
+  }
+}
+
+/**
+ * I.45E — After decode, before pcmByTake/pcmByBeat: ensure PCM @ WAV_SAMPLE_RATE.
+ * Identity when already at target. Reuses E3 MIX linear `resampleStereoInterleaved`.
+ * Does not mutate the source buffer when resampling (helper allocates a new one).
+ */
+export function toStudioExportRenderPcm(
+  input: DecodedPcmStereo,
+  label: string,
+): DecodedPcmStereo {
+  assertStudioExportPcmShape(input, label, "input");
+  assertSafeStudioExportSampleRate(input.sampleRate, input.frames, label);
+
+  const target = AUDIO_CODEC.WAV_SAMPLE_RATE;
+  const prepared =
+    input.sampleRate === target
+      ? input
+      : resampleStereoInterleaved(input, target);
+
+  assertStudioExportPcmShape(prepared, label, "output");
+  if (prepared.sampleRate !== target) {
+    throw new StudioExportPcmPrepareError(
+      `${label}: output sampleRate must be ${target}, got ${prepared.sampleRate}.`,
+    );
+  }
+  return prepared;
 }
 
 export type RealWorkerPipelineResult = {
@@ -255,15 +381,18 @@ async function runClaimedStudioExportWorkerJob(
         objectKey: ref.objectKey,
       });
       try {
-        pcmByTake.set(
-          takeId,
-          await decodeRenderSourceToStereoPcm({
-            bytes,
-            contentType: ref.contentType,
-            label: "take",
-          }),
-        );
+        const decoded = await decodeRenderSourceToStereoPcm({
+          bytes,
+          contentType: ref.contentType,
+          label: "take",
+        });
+        // I.45E — resample to WAV target only on STUDIO_EXPORT path; drop decoded ref after prepare.
+        pcmByTake.set(takeId, toStudioExportRenderPcm(decoded, `TAKE:${takeId}`));
       } catch (e) {
+        if (e instanceof StudioExportPcmPrepareError) {
+          await failRunningJob(jobId, "SOURCE_UNAVAILABLE", e.message);
+          throw e;
+        }
         const code = renderDecodeErrorCode(e);
         const message = e instanceof Error ? e.message : "SOURCE_DECODE";
         await failRunningJob(jobId, code, message);
@@ -277,15 +406,17 @@ async function runClaimedStudioExportWorkerJob(
         objectKey: ref.objectKey,
       });
       try {
-        pcmByBeat.set(
-          beatId,
-          await decodeRenderSourceToStereoPcm({
-            bytes,
-            contentType: ref.contentType,
-            label: "beat",
-          }),
-        );
+        const decoded = await decodeRenderSourceToStereoPcm({
+          bytes,
+          contentType: ref.contentType,
+          label: "beat",
+        });
+        pcmByBeat.set(beatId, toStudioExportRenderPcm(decoded, `BEAT_REF:${beatId}`));
       } catch (e) {
+        if (e instanceof StudioExportPcmPrepareError) {
+          await failRunningJob(jobId, "SOURCE_UNAVAILABLE", e.message);
+          throw e;
+        }
         const code = renderDecodeErrorCode(e);
         const message = e instanceof Error ? e.message : "SOURCE_DECODE";
         await failRunningJob(jobId, code, message);
