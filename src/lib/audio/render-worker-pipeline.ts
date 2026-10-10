@@ -260,7 +260,7 @@ async function runClaimedStudioExportWorkerJob(
           await decodeRenderSourceToStereoPcm({
             bytes,
             contentType: ref.contentType,
-            label: `take:${takeId}`,
+            label: "take",
           }),
         );
       } catch (e) {
@@ -282,7 +282,7 @@ async function runClaimedStudioExportWorkerJob(
           await decodeRenderSourceToStereoPcm({
             bytes,
             contentType: ref.contentType,
-            label: `beat:${beatId}`,
+            label: "beat",
           }),
         );
       } catch (e) {

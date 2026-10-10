@@ -15,7 +15,6 @@ import {
   applyLinearGainPanSample,
   renderStudioDocumentOffline,
   studioOfflineRenderOutputBytesForDurationMs,
-  STUDIO_OFFLINE_RENDER_CHANNELS,
   STUDIO_OFFLINE_RENDER_ENGINE,
   STUDIO_OFFLINE_RENDER_MAX_DURATION_MS,
   STUDIO_OFFLINE_RENDER_MAX_OUTPUT_BYTES,

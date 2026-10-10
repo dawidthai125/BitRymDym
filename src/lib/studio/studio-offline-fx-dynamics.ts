@@ -110,7 +110,7 @@ export function processDynamicsSample(
   right: number,
   params: DynamicsRuntimeParams,
   state: DynamicsState,
-  sampleRate: number,
+  _sampleRate: number,
   attackCoeff: number,
   releaseCoeff: number,
 ): { left: number; right: number } {

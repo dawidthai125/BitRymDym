@@ -445,11 +445,14 @@ describe("SFM-3B EQ integrated into offline render", () => {
     const params = defaultStudioFxParams("eq");
     params.mid = { frequencyHz: 1000, gainDb: 6, q: 1 };
     const masterChain = addStudioFxToChain(emptyStudioFxChain(), "eq", "master");
+    const masterFx = masterChain.effects[0]!;
     const withParams: StudioFxChainV1 = {
       schemaVersion: 1,
       effects: [
         {
-          ...masterChain.effects[0]!,
+          id: masterFx.id,
+          type: "eq",
+          enabled: masterFx.enabled,
           params,
         },
       ],
@@ -826,10 +829,16 @@ describe("SFM-3C compressor + limiter", () => {
     const eq = addStudioFxToChain(emptyStudioFxChain(), "eq", "track");
     const eqParams = defaultStudioFxParams("eq");
     eqParams.mid = { frequencyHz: 1000, gainDb: 0, q: 1 };
+    const eqFx = eq.effects[0]!;
     const chain: StudioFxChainV1 = {
       schemaVersion: 1,
       effects: [
-        { ...eq.effects[0]!, params: eqParams },
+        {
+          id: eqFx.id,
+          type: "eq",
+          enabled: eqFx.enabled,
+          params: eqParams,
+        },
         compressorEffect({
           thresholdDb: -24,
           ratio: 4,
@@ -1195,10 +1204,16 @@ describe("SFM-3D delay + reverb", () => {
 
   it("integration: track delay + master reverb + EQ order", async () => {
     const eq = addStudioFxToChain(emptyStudioFxChain(), "eq", "track");
+    const eqFx = eq.effects[0]!;
     const trackChain: StudioFxChainV1 = {
       schemaVersion: 1,
       effects: [
-        { ...eq.effects[0]!, params: defaultStudioFxParams("eq") },
+        {
+          id: eqFx.id,
+          type: "eq",
+          enabled: eqFx.enabled,
+          params: defaultStudioFxParams("eq"),
+        },
         delayEffect({ mix: 0.3, timeMs: 40, feedback: 0.2 }),
       ],
     };
