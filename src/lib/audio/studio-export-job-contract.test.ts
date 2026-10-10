@@ -14,7 +14,7 @@ import {
 import { RENDER_JOB_KINDS } from "@/types/domain";
 
 const MIGRATION =
-  "supabase/migrations/20261010010000_studio_export_render_job_kind.sql";
+  "supabase/migrations/20261010185003_studio_export_render_job_kind.sql";
 const P4_MIGRATION =
   "supabase/migrations/20261005230000_p4_recording_identity_download_foundation.sql";
 

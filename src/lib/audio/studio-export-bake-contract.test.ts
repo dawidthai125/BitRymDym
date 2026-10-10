@@ -16,7 +16,7 @@ import {
 import { STUDIO_EXPORT_FX_POST_ROLL_MAX_MS } from "@/config/audio-render";
 
 const ARTIFACT_MIGRATION =
-  "supabase/migrations/20261010030000_studio_export_audio_artifacts.sql";
+  "supabase/migrations/20261010185034_studio_export_audio_artifacts.sql";
 const PIPELINE = "src/lib/audio/render-worker-pipeline.ts";
 
 const OWNER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";

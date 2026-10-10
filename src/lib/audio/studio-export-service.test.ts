@@ -23,7 +23,7 @@ describe("STUDIO_EXPORT Stage B — migration source", () => {
     const sql = readFileSync(
       join(
         ROOT,
-        "supabase/migrations/20261010020000_studio_export_document_snapshot.sql",
+        "supabase/migrations/20261010185020_studio_export_document_snapshot.sql",
       ),
       "utf8",
     );

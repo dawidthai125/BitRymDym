@@ -17,7 +17,8 @@ TAKE_EXPORT ≠ STUDIO SESSION EXPORT
 **Follow-on decision doc:** [STUDIO_FINAL_MIX_DESIGN_FREEZE.md](../decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md)
 **SFM-2 offline core (local):** [STUDIO_FINAL_MIX_SFM2_OFFLINE_RENDER.md](./STUDIO_FINAL_MIX_SFM2_OFFLINE_RENDER.md) — PCM bake dry-only; no job/worker/UI
 **Stage F bake/artifact freeze:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](../decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) — Owner ACCEPT OD-SFM-F01…F07
-**Stage G local bake:** IMPLEMENTED in workspace · UNIT TESTED · migration `20261010030000_studio_export_audio_artifacts.sql` **NOT APPLIED** · LOCAL INTEGRATION NOT RUN · LIVE PARITY NOT VERIFIED · PRODUCTION NOT DEPLOYED
+**Stage G local bake:** IMPLEMENTED in workspace · UNIT TESTED · migration `20261010030000_studio_export_audio_artifacts.sql` **NOT APPLIED** *(status at this audit)* · LOCAL INTEGRATION NOT RUN · LIVE PARITY NOT VERIFIED · PRODUCTION NOT DEPLOYED
+**Addendum I.26/I.28:** production later applied the same SQL as `20261010185034_studio_export_audio_artifacts` (MCP history); local file renamed to that version in I.28 — SQL unchanged. This audit line is historical, not current production schema status.
 
 ---
 
