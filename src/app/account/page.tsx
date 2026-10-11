@@ -14,6 +14,8 @@ import {
 } from "@/components/auth/auth-forms";
 import { DisplayNameForm } from "@/components/auth/display-name-form";
 import { AppShell } from "@/components/site/app-shell";
+import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { signOutAction } from "@/lib/auth/actions";
 import { canAccessAdminNav } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -82,6 +84,29 @@ export default async function AccountPage({
     context.profile.userNumber != null
       ? String(context.profile.userNumber)
       : "—";
+
+  // Premium SSOT — same resolver as Admin / EXPORT_WAV (own user only).
+  let planDisplay = formatAccountPlanDisplay({
+    premiumTier: "FREE",
+    premiumActive: false,
+    premiumExpiresAt: null,
+    loadError: true,
+  });
+  try {
+    const product = await resolveProductEntitlementForAuthContext(context);
+    planDisplay = formatAccountPlanDisplay({
+      premiumTier: product.premiumTier,
+      premiumActive: product.premiumActive,
+      premiumExpiresAt: product.premiumExpiresAt,
+    });
+  } catch {
+    planDisplay = formatAccountPlanDisplay({
+      premiumTier: "FREE",
+      premiumActive: false,
+      premiumExpiresAt: null,
+      loadError: true,
+    });
+  }
 
   return (
     <AppShell tone="studio">
@@ -280,9 +305,18 @@ export default async function AccountPage({
 
                 <div>
                   <SectionLabel className="mb-2">Twój plan</SectionLabel>
-                  <p className="text-sm text-[var(--brd-ink-soft)]">
-                    Darmowy — odsłuch, nagrania i podstawowy miks. Premium
-                    odblokuje wyższe jakości eksportu, gdy będzie dostępne.
+                  <p
+                    className="text-sm text-[var(--brd-ink-soft)]"
+                    data-testid="account-plan-summary"
+                    data-premium-tier={planDisplay.tierLabel}
+                    data-premium-active={
+                      planDisplay.premiumActive ? "true" : "false"
+                    }
+                    data-plan-verified={
+                      planDisplay.verified ? "true" : "false"
+                    }
+                  >
+                    {planDisplay.summary}
                   </p>
                 </div>
 
