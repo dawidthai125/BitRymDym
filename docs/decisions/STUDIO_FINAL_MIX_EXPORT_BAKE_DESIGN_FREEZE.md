@@ -439,6 +439,7 @@ Stage J  Contabo / prod canary — Ops GO only after explicit Owner GO
 | UI control `StudioExportControl` | **IMPLEMENTED** (local WIP) — replaces OD-VS-03 deep-link in transport |
 | Enqueue | `POST /api/studio/projects/[projectId]/export` |
 | Status | `GET …/export?jobId=` — owner + project-scoped; returns `artifactId` when READY |
+| Latest recovery (I.45AU) | `GET …/export` (no `jobId`) — owner + project ownership; `found:false` when empty; **no enqueue**; UI restores on dialog open |
 | Download | Existing `GET /api/mix/artifacts/[id]/download` (owner AuthZ / FINDING-03) |
 | UI unit/source tests | **RUN locally** (`studio-export-ui.test.ts` incl. I.3A focus contracts) |
 | Dialog focus / a11y (I.3A) | **IMPLEMENTED in main** (`studio-dialog-focus.ts`) · unit tested · prior local browser I.3B |
@@ -446,6 +447,15 @@ Stage J  Contabo / prod canary — Ops GO only after explicit Owner GO
 | Production / Contabo | **NOT DEPLOYED** / **STOPPED** |
 | Live/offline FX parity | **NOT VERIFIED** |
 | Cross-user download AuthZ | **NOT VERIFIED** in I.7 |
+
+### I.45AU / I.45AW addendum — export recovery (integration I.45AZ)
+
+- **Problem:** UI held `jobId` only in React state; reload → IDLE and a new POST could create a duplicate job.
+- **Contract:** `GET /api/studio/projects/{projectId}/export` without `jobId` returns the latest own `STUDIO_EXPORT` (`created_at DESC`, `id DESC` tie-break) after project ownership check. Empty: `{ success: true, found: false, projectId }`. Existing `?jobId=` unchanged.
+- **I.17:** Both GET paths return allowlisted `errorCode` / `errorMessage` (never raw DB/renderer text). UI uses safe `mapped.message` for FAILED in poll and recovery.
+- **UI:** On dialog open only — GET latest (AbortController + generation guard). Never POST on mount/recovery/poll. `SUCCEEDED` + READY → download; without READY → `UNAVAILABLE` + „Sprawdź status” (GET only).
+- **I.45AW:** `UNAVAILABLE` with tracked `jobId` does **not** show generic „Ponów”; optional explicit „Utwórz nowy eksport mimo braku gotowego pliku” uses `forceNewAttempt` + new `attemptId`.
+- **Non-goals:** No migration/new table · no `localStorage` SSOT · no download AuthZ change · no Contabo. Does **not** replace Owner WIP freeze sections for I.14–I.18 / I.45E / migrations in other worktrees.
 
 ---
 

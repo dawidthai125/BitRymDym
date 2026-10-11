@@ -12,8 +12,10 @@ import {
   STUDIO_EXPORT_POLL_MAX_ATTEMPTS,
   createStudioExportIdempotencyKey,
   mapStudioExportHttpResult,
+  mapStudioExportLatestHttpResult,
   studioExportArtifactDownloadUrl,
   studioExportEnqueueUrl,
+  studioExportLatestStatusUrl,
   studioExportPhaseLabel,
   studioExportStatusUrl,
   type StudioExportUiPhase,
@@ -29,6 +31,7 @@ export type StudioExportControlProps = {
 /**
  * Stage I — Studio Final Mix WAV export control.
  * Uses POST/GET /api/studio/projects/[projectId]/export + owner artifact download.
+ * I.45AU — on dialog open, GET latest (read-only) restores prior job; never auto-POST.
  * Does not auto-enqueue on mount. Does not accept client object keys.
  */
 export function StudioExportControl({
@@ -42,6 +45,7 @@ export function StudioExportControl({
   const [artifactId, setArtifactId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   const titleId = useId();
   const descriptionId = useId();
@@ -52,6 +56,8 @@ export function StudioExportControl({
   const idempotencyKeyRef = useRef<string | null>(null);
   const pollAttemptsRef = useRef(0);
   const pollInFlightRef = useRef(false);
+  /** Invalidates in-flight recovery when dialog closes or enqueue starts. */
+  const recoverGenRef = useRef(0);
   const projectIdRef = useRef(projectId);
   projectIdRef.current = projectId;
 
@@ -98,6 +104,114 @@ export function StudioExportControl({
       idempotencyKeyRef.current = null;
     }
   }
+
+  function applyRecoveredJob(mapped: {
+    phase: StudioExportUiPhase;
+    jobId: string;
+    projectId: string;
+    artifactId: string | null;
+    message?: string | null;
+  }) {
+    if (mapped.projectId && mapped.projectId !== projectIdRef.current) {
+      setPhase("FAILED");
+      setMessage("Eksport dotyczy innego projektu.");
+      return;
+    }
+    setJobId(mapped.jobId);
+    setArtifactId(mapped.artifactId);
+    pollAttemptsRef.current = 0;
+    if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
+      setPhase("UNAVAILABLE");
+      setMessage(
+        "Eksport zakończony, ale artefakt nie jest jeszcze dostępny.",
+      );
+      return;
+    }
+    setPhase(mapped.phase);
+    if (mapped.phase === "FAILED") {
+      // I.17 — typed empty-session vs generic FAILED; never show raw API text.
+      setMessage(
+        mapped.message ??
+          "Eksport nie powiódł się. Możesz spróbować ponownie.",
+      );
+    } else {
+      setMessage(null);
+    }
+  }
+
+  // I.45AU — recover latest export on dialog open only (not on re-render / mount).
+  useEffect(() => {
+    if (!open) {
+      recoverGenRef.current += 1;
+      setRecovering(false);
+      return;
+    }
+
+    const gen = ++recoverGenRef.current;
+    const ac = new AbortController();
+    setRecovering(true);
+
+    async function recoverLatest() {
+      try {
+        let res: Response;
+        try {
+          res = await fetch(
+            studioExportLatestStatusUrl(projectIdRef.current),
+            {
+              method: "GET",
+              credentials: "same-origin",
+              signal: ac.signal,
+            },
+          );
+        } catch {
+          if (ac.signal.aborted || gen !== recoverGenRef.current) return;
+          setPhase("UNAVAILABLE");
+          setMessage("Nie udało się odczytać statusu. Spróbuj ponownie.");
+          return;
+        }
+        if (gen !== recoverGenRef.current) return;
+        const json = (await res.json()) as Parameters<
+          typeof mapStudioExportLatestHttpResult
+        >[0]["json"];
+        if (gen !== recoverGenRef.current) return;
+        const mapped = mapStudioExportLatestHttpResult({
+          httpStatus: res.status,
+          json,
+        });
+        if (gen !== recoverGenRef.current) return;
+        if (!mapped.ok) {
+          applyMappedFailure(mapped);
+          return;
+        }
+        if (mapped.empty) {
+          setJobId(null);
+          setArtifactId(null);
+          setPhase("IDLE");
+          setMessage(null);
+          return;
+        }
+        applyRecoveredJob({
+          phase: mapped.phase,
+          jobId: mapped.jobId,
+          projectId: mapped.projectId,
+          artifactId: mapped.artifactId,
+          message: mapped.message,
+        });
+      } finally {
+        if (gen === recoverGenRef.current) {
+          setRecovering(false);
+        }
+      }
+    }
+
+    void recoverLatest();
+    return () => {
+      ac.abort();
+      recoverGenRef.current += 1;
+    };
+    // Recovery is intentionally keyed only on dialog open + project.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- I.45AU open-only recovery
+  }, [open, projectId]);
 
   async function pollOnce(activeJobId: string) {
     if (pollInFlightRef.current) return;
@@ -154,7 +268,11 @@ export function StudioExportControl({
       }
       setPhase(mapped.phase);
       if (mapped.phase === "FAILED") {
-        setMessage("Eksport nie powiódł się. Możesz spróbować ponownie.");
+        // I.17 — typed empty-session vs generic FAILED; never show raw API text.
+        setMessage(
+          mapped.message ??
+            "Eksport nie powiódł się. Możesz spróbować ponownie.",
+        );
       }
     } finally {
       pollInFlightRef.current = false;
@@ -204,6 +322,10 @@ export function StudioExportControl({
       return;
     }
     if (phase === "SUBMITTING") return;
+
+    // Invalidate any in-flight recovery so it cannot overwrite a user enqueue.
+    recoverGenRef.current += 1;
+    setRecovering(false);
 
     if (options?.forceNewAttempt) {
       attemptIdRef.current = null;
@@ -320,14 +442,34 @@ export function StudioExportControl({
   }
 
   const submitting = phase === "SUBMITTING";
+  // I.45AW — UNAVAILABLE with a tracked jobId is status-recovery, not "Ponów".
+  // New export then requires an explicit force-new action (forceNewAttempt).
+  const unavailableWithTrackedJob = phase === "UNAVAILABLE" && Boolean(jobId);
   const canStart =
     !disabled &&
     !submitting &&
+    !recovering &&
+    !unavailableWithTrackedJob &&
     (phase === "IDLE" ||
       phase === "FAILED" ||
       phase === "CONFLICT" ||
-      phase === "UNAVAILABLE");
+      phase === "UNAVAILABLE" ||
+      phase === "SUCCEEDED");
+  const canForceNewDespiteUnavailable =
+    !disabled &&
+    !submitting &&
+    !recovering &&
+    unavailableWithTrackedJob;
   const showDownload = phase === "SUCCEEDED" && Boolean(artifactId);
+  const startLabel = submitting
+    ? "Wysyłanie…"
+    : recovering
+      ? "Odzyskiwanie…"
+      : phase === "IDLE"
+        ? "Eksportuj WAV"
+        : phase === "SUCCEEDED"
+          ? "Eksportuj ponownie"
+          : "Ponów eksport";
 
   return (
     <div className="relative">
@@ -383,7 +525,9 @@ export function StudioExportControl({
               data-testid="studio-export-status"
               data-phase={phase}
             >
-              {studioExportPhaseLabel(phase)}
+              {recovering && phase === "IDLE"
+                ? "Odzyskiwanie statusu…"
+                : studioExportPhaseLabel(phase)}
             </p>
 
             {message ? (
@@ -397,27 +541,28 @@ export function StudioExportControl({
             ) : null}
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
-                disabled={!canStart}
-                data-testid="studio-export-start"
-                onClick={() =>
-                  void enqueueExport({
-                    // FAILED/CONFLICT need a new attempt. UNAVAILABLE (incl. network
-                    // ambiguity) reuses the same idempotency key.
-                    forceNewAttempt:
-                      phase === "FAILED" || phase === "CONFLICT",
-                  })
-                }
-              >
-                {submitting
-                  ? "Wysyłanie…"
-                  : phase === "IDLE"
-                    ? "Eksportuj WAV"
-                    : "Ponów eksport"}
-              </Button>
+              {/* Primary start — hidden when UNAVAILABLE already tracks a jobId (I.45AW). */}
+              {!unavailableWithTrackedJob ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  disabled={!canStart}
+                  data-testid="studio-export-start"
+                  onClick={() =>
+                    void enqueueExport({
+                      // FAILED/CONFLICT/SUCCEEDED need a new attempt. UNAVAILABLE
+                      // without jobId (network ambiguity) reuses the same idempotency key.
+                      forceNewAttempt:
+                        phase === "FAILED" ||
+                        phase === "CONFLICT" ||
+                        phase === "SUCCEEDED",
+                    })
+                  }
+                >
+                  {startLabel}
+                </Button>
+              ) : null}
 
               {jobId &&
               (phase === "QUEUED" ||
@@ -432,6 +577,21 @@ export function StudioExportControl({
                   onClick={() => void onRefreshStatus()}
                 >
                   Sprawdź status
+                </Button>
+              ) : null}
+
+              {canForceNewDespiteUnavailable ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                  data-testid="studio-export-force-new"
+                  onClick={() =>
+                    void enqueueExport({ forceNewAttempt: true })
+                  }
+                >
+                  Utwórz nowy eksport mimo braku gotowego pliku
                 </Button>
               ) : null}
 
