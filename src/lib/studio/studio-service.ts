@@ -64,6 +64,10 @@ import {
 } from "@/lib/studio/studio-master-mix";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  isStudioProjectExportHistoryFkViolation,
+  STUDIO_PROJECT_DELETE_EXPORT_HISTORY_CONFLICT_PL,
+} from "@/lib/studio/studio-project-delete";
 
 type ProjectRow = {
   id: string;
@@ -728,7 +732,8 @@ export async function attachBeatToStudioProject(input: {
 /**
  * Delete owned Studio project.
  * Cascades to studio_tracks → studio_clips (schema ON DELETE CASCADE).
- * Does NOT delete Takes, Beats, or audio artifacts — clip FKs use ON DELETE SET NULL.
+ * Does NOT delete Takes, Beats, render_jobs, or audio artifacts.
+ * Projects with export history (render_jobs / audio_artifacts) are blocked (409).
  */
 export async function deleteStudioProjectFor(
   context: AuthContext,
@@ -739,6 +744,35 @@ export async function deleteStudioProjectFor(
   }
   await assertOwnsProject(context, projectId);
   const admin = createSupabaseAdminClient();
+
+  const { count: renderJobCount, error: renderJobCountError } = await admin
+    .from("render_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+  if (renderJobCountError) {
+    throw new Error(renderJobCountError.message);
+  }
+  if ((renderJobCount ?? 0) > 0) {
+    throw new AuthError(
+      "CONFLICT",
+      STUDIO_PROJECT_DELETE_EXPORT_HISTORY_CONFLICT_PL,
+    );
+  }
+
+  const { count: artifactCount, error: artifactCountError } = await admin
+    .from("audio_artifacts")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+  if (artifactCountError) {
+    throw new Error(artifactCountError.message);
+  }
+  if ((artifactCount ?? 0) > 0) {
+    throw new AuthError(
+      "CONFLICT",
+      STUDIO_PROJECT_DELETE_EXPORT_HISTORY_CONFLICT_PL,
+    );
+  }
+
   const { data, error } = await admin
     .from("studio_projects")
     .delete()
@@ -746,7 +780,15 @@ export async function deleteStudioProjectFor(
     .eq("owner_id", context.userId)
     .select("id")
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isStudioProjectExportHistoryFkViolation(error)) {
+      throw new AuthError(
+        "CONFLICT",
+        STUDIO_PROJECT_DELETE_EXPORT_HISTORY_CONFLICT_PL,
+      );
+    }
+    throw new Error(error.message);
+  }
   if (!data) {
     throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
   }
