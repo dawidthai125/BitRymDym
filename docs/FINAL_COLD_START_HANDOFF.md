@@ -2,8 +2,10 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-09 — **PHASE 4 DUAL-PLANE SSOT** · Repo tip **`d515f3b`** · App feature V2 **`44f7cbd`** GREEN/CLOSED · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · Vercel SHA **NOT VERIFIED** · Reuse/SSOT map · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · dual-plane (repo tip `d515f3b` ≠ feature V2 `44f7cbd` ≠ production dpl observation) · next = STOP after V2 · Owner decides next unit
+**Updated:** 2026-10-11 — remote tip **`ce2f0cc`** · dpl **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · PR #5 delete×export-history · I.45CV **PRODUCTION VERIFIED** (409 narrow) · STUDIO_EXPORT APP DEPLOYED · V2 **`44f7cbd`** GREEN/CLOSED · **≠** Full Final Mix Production GREEN / Stage J · Contabo last-known disabled · markers **I.45CF** (selective · ≠ full tree) · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · cold-start entry · dual-plane (remote tip `ce2f0cc` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit
+
+**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.
 
 **Evidence rule (bezwzględna):**
 
@@ -25,26 +27,31 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-REPOSITORY HEAD / origin/main = d515f3b7d9faf6b0d82bfba7958fece63012be82
-  short                       = d515f3b
-  note                        = docs tip (Phase 2 SSOT) · verify `git rev-parse HEAD` / `origin/main`
-                              · docs commits `d515f3b` / `3a086ad` ≠ feature V2
+REPOSITORY HEAD / origin/main = ce2f0cc7ad7f5257577e858d64ca8531ebb35000
+  short                       = ce2f0cc
+  note                        = Merge PR #5 (Studio delete export-history conflict) · verify remotely
+                              · local WIP may diverge · do not assume local HEAD == origin/main
 APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
   short                       = 44f7cbd
   note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
-                              · ancestry includes docs `3a086ad` · 7.1.6 `4fa658d` · 7.1.5 `3fccbf7`
-                              · 7.1.4 `9abc1b6` · 7.1.3 `8f6eeca` · P4.6 `a72fed9` · V1 `56b629e`
-PRODUCTION DEPLOYMENT (obs.)  = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY
-  aliases                     = www.bitrymdym.pl · bitrymdym.pl → this deployment (same ID)
-  observed_at                 = 2026-10-09 06:08:59 +02:00 · Phase 4 `vercel inspect` (direct)
-PRODUCTION GIT SHA (Vercel)   = NOT VERIFIED · Vercel inspect meta does not expose commit SHA
-GH DEPLOY CORRELATION (aux.)  = id 6952679578 · sha d515f3b · NOT equivalent to Vercel meta SHA
+                              · ancestry includes 7.1.6 `4fa658d` · 7.1.5 `3fccbf7` · P4.6 `a72fed9` · V1 `56b629e`
+PRODUCTION DEPLOYMENT (obs.)  = dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH · READY
+  aliases                     = www.bitrymdym.pl · bitrymdym.pl → this deployment
+  observed_at                 = 2026-10-11 · post PR #5
+PRODUCTION GIT SHA            = ce2f0cc
+STUDIO_EXPORT APP             = DEPLOYED (live tip ce2f0cc / dpl_1P8ixpt…)
+                              · ≠ Full Final Mix Production GREEN · Stage J OPEN
+                              · narrow evidence: I.45BK/BM/BO + I.45BY SUCCEEDED (do not re-run)
+                              · I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow)
+                              · empty-project happy-path delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
   note                        = original V2 release-gate deploy · superseded for live aliases
-PRIOR ALIAS BINDING (HISTORY) = dpl_FVcxa4Ad4NiotwJNSZAigDvEpuwF @ docs tip 3a086ad (Phase 2 era)
+PRIOR ALIAS BINDING (HISTORY) = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · docs tip d515f3b (Phase 4 era)
+                              · earlier: dpl_FVcx… @ 3a086ad · dpl_2ymz… @ 44f7cbd
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 DEPLOYMENT STATE              = READY (observed)
-PREVIOUS PRODUCTION TIP       = 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… (V2) · 4fa658d (7.1.6)
+LIVING SSOT                   = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT)
+PREVIOUS PRODUCTION TIP       = d515f3b / dpl_56FGH… · 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… · 4fa658d
   older prior tip             = 79bc69f · 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · P4.6 (HISTORY)
 
 STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
@@ -53,7 +60,9 @@ STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
                               · Phase 7.1.4 Mixer Dock CLOSED / GREEN @ 9abc1b6 (ancestry)
                               · Phase 7.1.3 Inspector IA CLOSED / GREEN @ 8f6eeca (ancestry)
                               · V1 CLOSED / GREEN · P6.7 CLOSED / GREEN
-                              · Project List UX/Delete + Checkbox PRODUCTION VERIFIED
+                              · Project List UX/Delete PRODUCTION VERIFIED (@ 2c4b416)
+                              · Delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV @ ce2f0cc)
+                              · empty-project delete NOT RETESTED · Checkbox PRODUCTION VERIFIED
 STUDIO VISUAL PARITY V2       = GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
                               · freeze: decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md
                               · follow-ups 01–04 NON-BLOCKING (waveform / overlay / picker / pixel)
@@ -93,13 +102,18 @@ P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
 PHASE 7.1.6                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d (ancestry)
 PHASE 7.1.5                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 3fccbf7 (ancestry)
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · repo tip d515f3b · aliases dpl_56FGH… · Vercel SHA NOT VERIFIED
+                              · remote tip ce2f0cc · aliases dpl_1P8ixpt… · STUDIO_EXPORT APP DEPLOYED
+                              · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
+                              · Final Mix ≠ Production GREEN · Stage J OPEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
+                              · Stage J vs P6.8 · markers done (I.45CF) · no auto Contabo / no re-run export
                               · V2 CLOSED · follow-ups NON-BLOCKING
                               · do NOT auto-open EPIC / invent Phase 7.1.7
-                              · do NOT start P6.8 / P4 live-verify seam / SA-07 AWS / payments
-                              · do NOT permanently enable Contabo without Owner GO
-                              · no Automation / Autotune / E3 Studio Render
+                              · do NOT start P6.8 / P4 live-verify seam / SA-07 AWS / payments without Owner GO
+                              · do NOT permanently enable Contabo / claim continuous-mode / full-tree = tip without Owner GO
+                              · do NOT re-run SUCCEEDED Studio Export job `61b7cdf1…` without new enqueue GO
+                              · do NOT claim empty-project delete PRODUCTION VERIFIED (I.45CV out of scope)
+                              · no Automation / Autotune
 
 CURRENT PRODUCTION USER STATE = PHASE 3 CLEANUP COMPLETE / GREEN
   auth.users / profiles       = 1 / 1
@@ -126,9 +140,11 @@ V1 DB MIGRATIONS (historical applied)   = 20261007080752 · 20261007080758 · 20
 KNOWN WAIVER                  = e3-7-f-download-authz / EXPORT_WAV · WAIVED BY OWNER
 BRANCH                        = main
 SUPABASE PROJECT              = rzzxrgcdogkybkiidqgw
-WORKER                        = Contabo EXTERNAL · STOPPED / DISABLED after P4.6 LIVE E2E
-                              · capability GREEN · not always-on
-                              · host tree historically 836679a+phase1 (bootstrap 92496d4)
+WORKER                        = Contabo EXTERNAL · last-known disabled/inactive
+                              · pipeline tip-aligned @faf734b (I.45BV) · markers I.45CF reference tip (selective ≠ full tree)
+                              · I.45CB closure: 1 RAW_MATCH + 66 CRLF-only · API-outside drift OPEN
+                              · capability GREEN · not always-on · ≠ continuous-mode ready
+                              · bootstrap history 92496d4 / prior 836679a+phase1
 
 STUDIO P5.1–P5.6              = PRODUCTION VERIFIED — GREEN
 P5.8 STATUS                   = PRODUCTION VERIFIED — GREEN @ 95e04ff · finalize ≠ place preserved
@@ -192,13 +208,14 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Repository HEAD / origin/main | **`d515f3b`** · verify `git rev-parse HEAD` / `origin/main` |
+| Repository HEAD / origin/main | **`ce2f0cc`** · remote tip · local WIP may diverge · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | App feature commit (V2) | **`44f7cbd`** · Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| Production deployment (observed) | **`dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6`** · READY · www + apex · observed 2026-10-09 06:08:59 +02:00 |
-| Production Git SHA (Vercel meta) | **NOT VERIFIED** |
-| GH deploy correlation (auxiliary) | `6952679578` → `d515f3b` · not equal to Vercel meta SHA |
+| Production deployment (observed) | **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · READY · www + apex · post PR #5 |
+| Production Git SHA | **`ce2f0cc`** |
+| STUDIO_EXPORT app | **DEPLOYED** · ≠ Full Final Mix Production GREEN · Stage J OPEN |
+| Delete×export history | **PRODUCTION VERIFIED (narrow I.45CV)** · empty-project delete **NOT TESTED** |
 | V2 verify deploy (HISTORY) | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` · superseded for live aliases |
-| Prior alias binding (HISTORY) | `dpl_FVcx…` @ `3a086ad` · then `4fa658d` / `dpl_6sai…` (ancestry) |
+| Prior alias binding (HISTORY) | `dpl_56FGH…` @ `d515f3b` · `dpl_FVcx…` @ `3a086ad` · `4fa658d` / `dpl_6sai…` |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
 | Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
@@ -218,8 +235,9 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 5.  READ decisions/DECISION_LOG.md + decisions/OPEN_DECISIONS.md
 6.  READ CHANGELOG.md (recent tip) + relevant phase audit/closeout only if needed
 7.  CHECK: git rev-parse HEAD  AND  git rev-parse origin/main
-8.  CHECK: REPO HEAD = d515f3b · aliases dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · Vercel SHA NOT VERIFIED
-         APP FEATURE V2 = 44f7cbd · V2 verify history dpl_2ymz… (not current alias binding)
+8.  CHECK: remote tip ce2f0cc · aliases dpl_1P8ixpt… · STUDIO_EXPORT APP DEPLOYED
+         delete×export-history 409 PRODUCTION VERIFIED (narrow) · empty delete NOT TESTED
+         APP FEATURE V2 = 44f7cbd · living SSOT = PROJECT_STATE.md (not this file alone)
 9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
 10. CHECK Sacred WIP fingerprint:
          src/lib/takes/recording-eligibility-service.ts
@@ -620,19 +638,22 @@ WIP preserved
 ## 10. Cold-start checklist
 
 ```text
-[ ] git fetch && git rev-parse HEAD           → d515f3b · match origin/main
-[ ] git rev-parse origin/main                → match HEAD = d515f3b
-[ ] Confirm aliases www+apex → dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY · Vercel SHA NOT VERIFIED
+[ ] Read PROJECT_STATE.md FIRST as living SSOT (tip / deploy / Studio Export / Contabo / NEXT)
+[ ] Confirm remote tip ce2f0cc (PR #5) · local WIP may diverge — do not force local HEAD == main
+[ ] Confirm aliases www+apex → dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH · READY · SHA ce2f0cc
+[ ] Confirm STUDIO_EXPORT APP DEPLOYED · ≠ Full Final Mix Production GREEN · Stage J OPEN
+[ ] Confirm I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow) · empty delete NOT TESTED
 [ ] Confirm APP FEATURE V2 = 44f7cbd · GREEN / CLOSED · verify history dpl_2ymz… (not live alias)
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
 [ ] Confirm Mobile = TECHNICALLY READY — DEVICE CERTIFICATION PENDING (not Real Device Verified)
-[ ] Confirm Contabo worker = STOPPED / DISABLED · P4.6 LIVE E2E VERIFIED
+[ ] Confirm Contabo last-known disabled/inactive · pipeline @faf734b · markers I.45CF reference tip (selective ≠ full tree) · not always-on
 [ ] Confirm Closed = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
 [ ] Confirm Phase 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (ancestry · do not reopen)
-[ ] Read MASTER_HANDOFF + PROJECT_STATE + architecture/REUSE_SSOT_MAP + V2 freeze
+[ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze (living Stage I)
 [ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
-[ ] NEXT GATE = STOP — OWNER DECISION REQUIRED (no auto EPIC / P6.8 / payments)
+[ ] NEXT GATE = STOP — Stage J vs P6.8 · markers done (I.45CF) · no auto Contabo / no re-run export
+[ ] Do not re-run SUCCEEDED Studio Export job without new Owner enqueue GO
 [ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
 [ ] Do not invent Phase 7.1.7 scope without Owner GO
 [ ] Do not commit P4 context? WIP / SA-07 untracked library / Sacred WIP without Owner GO
@@ -647,16 +668,18 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (PHASE 4 DUAL-PLANE SSOT · V2 GREEN/CLOSED · 2026-10-09)
+FINAL COLD START HANDOFF     = READY (2026-10-11 · tip ce2f0cc · STUDIO_EXPORT DEPLOYED · V2 GREEN/CLOSED)
 REUSE / DO NOT DUPLICATE     = architecture/REUSE_SSOT_MAP.md
-REPOSITORY HEAD / origin/main = d515f3b (verify git rev-parse HEAD)
+LIVING SSOT                  = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT)
+REPOSITORY HEAD / origin/main = ce2f0cc (remote; local WIP may diverge)
 APP FEATURE COMMIT (V2)      = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION DEPLOYMENT (obs.) = dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6 · READY · www + apex
-PRODUCTION GIT SHA (Vercel)  = NOT VERIFIED
-GH DEPLOY CORRELATION (aux.) = 6952679578 → d515f3b
+PRODUCTION DEPLOYMENT (obs.) = dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH · READY · www + apex
+PRODUCTION GIT SHA           = ce2f0cc
+STUDIO_EXPORT APP            = DEPLOYED · ≠ Full Final Mix Production GREEN · Stage J OPEN
+DELETE×EXPORT HISTORY        = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)   = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
-NOTE                         = Repo tip d515f3b ≠ feature V2 44f7cbd ≠ Vercel-meta SHA (unknown)
-PREVIOUS PRODUCTION TIP      = 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… · 4fa658d · HISTORY
+NOTE                         = remote tip ce2f0cc ≠ local dirty WIP ≠ feature V2 44f7cbd
+PREVIOUS PRODUCTION TIP      = faf734b / dpl_9YDCy… · d515f3b / dpl_56FGH… · HISTORY
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio KEEP Dawid retained (PHASE 3 cleaned test-user Storage)
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
@@ -670,11 +693,11 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · repo tip d515f3b
+CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · remote tip ce2f0cc
 P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
-WORKER                       = Contabo STOPPED / DISABLED after LIVE E2E
-NEXT GATE                    = STOP — OWNER DECISION REQUIRED
+WORKER                       = Contabo last-known disabled/inactive · pipeline @faf734b · markers I.45CF reference tip (selective ≠ full tree)
+NEXT GATE                    = STOP — Stage J vs P6.8 · markers done (I.45CF) · no auto Contabo / no re-run export
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK

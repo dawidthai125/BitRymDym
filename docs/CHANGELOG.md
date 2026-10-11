@@ -6,6 +6,66 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-11 — I.45CW Studio project delete export-history conflict (SSOT docs)
+
+**Status:** **DOCS RECONCILE (I.45CW)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO RE-DELETE / NO JOB RE-RUN**
+**Land:** PR #5 merge `ce2f0cc7ad7f5257577e858d64ca8531ebb35000` · feature `18eec832a330a33dc4db5678917cde923e849b07` · Vercel Production `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` (Ready)
+**Behavior (Variant A):** hard-delete of owned Studio project with `render_jobs` / `audio_artifacts` → controlled `AuthError CONFLICT` → HTTP **409** + Polish message; FK `ON DELETE RESTRICT` unchanged; jobs/artifacts/takes/beats/Storage **not** deleted
+**I.45CV runtime (Owner GO, exactly one DELETE):** project `d07f3011-8a64-4d90-a54a-cd50d1219b6a` · HTTP **409** · exact PL copy · project retained · `render_jobs` 1→1 · `audio_artifacts` 1→1 · no raw SQL/FK · job `61b7cdf1-…` untouched
+**PRODUCTION VERIFIED (narrow):** scenario *projekt ma historię eksportów → HTTP 409 → dane zachowane* only
+**Not claimed:** empty-project happy-path delete · full Project List Delete module re-verification · Final Mix / Stage J GREEN · Contabo always-on · soft-delete/archive
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living note · list-delete gate addendum · this entry
+**Next:** Stage J vs P6.8 (Owner GO) · do not re-run export `61b7cdf1…` · no auto Contabo start
+
+## 2026-10-11 — I.45CB–I.45CF Contabo markers update (SSOT docs I.45CG)
+
+**Status:** **DOCS RECONCILE (I.45CG)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO WORKER START / NO NEW ONESHOT**
+**I.45CB:** Contabo remaining tree drift RO — true runtime closure 67 vs `faf734b`: **1 RAW_MATCH** (`render-worker-pipeline.ts` SHA256 `4a737f94…`) · **66 LINE_ENDING_ONLY** · **0 REAL_CONTENT_DIFF** · API-outside-closure drift OPEN (`studio-export-service` / missing `failure-contract`)
+**I.45CC–CE:** marker compatibility + write preflight — two-file ordered publish (not pair-atomic) · `DEPLOYED_COMMIT` = reference tip not full-tree claim
+**I.45CF:** markers APPLIED — tip `faf734bd99a13b427f00745563b54583f7258e94` · `SOURCE=github-raw-blob-selective` · `PATHS=src/lib/audio/render-worker-pipeline.ts` · `I45CC_STATUS=applied` · marker SHA256 `DEPLOYED_COMMIT`=`bdf63b2f…404c` · `WORKER_TARGET_SHA`=`f84af2a8…5379` · backup `/opt/bitrymdym-e3-worker/_backup_20261011T133026Z_i45cf_markers/` · apply script validator failed after both publishes; independent re-verify **PASS** · no rollback · service remained disabled/inactive · no oneshot
+**History retained:** pre-I.45CF markers `4778be5`/I.45Q · I.45BU flag last-known TRUE · current flag **UNKNOWN**
+**Not claimed:** Contabo full-tree = `faf734b` · continuous mode · Stage J CLOSED · Final Mix Production GREEN · P6.8 · FX parity · Studio migration CLOSED · new enqueue/oneshot
+**Docs (I.45CG):** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living Contabo row · this entry
+**Next:** Stage J vs P6.8 (Owner GO only) · do not re-run export `61b7cdf1…` · no auto Contabo start
+
+## 2026-10-11 — I.45BS–I.45BY Contabo pipeline tip-align + export status (SSOT docs I.45CA)
+
+**Status:** **DOCS RECONCILE (I.45CA)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO WORKER START / NO NEW ONESHOT**
+**I.45BS:** Contabo RO readiness — service disabled/inactive · pipeline then @ `4778be5` · tree drift vs GitHub OPEN
+**I.45BU:** safe flag check `E3_RENDER_JOBS_ENABLED` → **VERIFIED TRUE** (no raw value / no other env dump)
+**I.45BV/BW:** single-file sync `render-worker-pipeline.ts` → SHA256 `4a737f94…` (= `@faf734b`) · backup old `f1815bdd…` · markers still `4778be5`/I.45Q · post-sync verify PASS WITH LIMITATIONS
+**I.45BY:** owner-auth GET job `61b7cdf1-0dfa-41aa-a493-e4f438d09131` / project `d07f3011-8a64-4d90-a54a-cd50d1219b6a` → HTTP 200 · `STUDIO_EXPORT` · **SUCCEEDED** · artifact present · **no re-run**
+**Not claimed:** worker continuous mode · full worker-tree align · Stage J CLOSED · Final Mix Production GREEN · Studio migration CLOSED · new enqueue/oneshot after I.45BV
+**Docs (I.45CA):** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living Stage I · this entry
+**Next (historical I.45CA):** worker-tree drift RO audit/plan → optional markers GO → Stage J vs P6.8 — **superseded living NEXT by I.45CG** (markers done)
+
+## 2026-10-11 — STUDIO_EXPORT PR #4 land + I.45 narrow production smoke (SSOT docs)
+
+**Status:** **APP DEPLOYED** @ `faf734bd99a13b427f00745563b54583f7258e94` / `dpl_9YDCyG4jU6cDuyLu111VaEVQmSqy` · **≠ Final Mix Production GREEN / Stage J** · **Studio migration ≠ CLOSED** · **THIS NOTE = DOCS SSOT RECONCILE (I.45BR)** · **NO CODE / NO COMMIT IN THIS NOTE**
+**Merge:** PR #4 — Studio Export recovery (I.45AU/AW latest GET) + I.17 typed public failure surface on status/recovery paths
+**Prod smoke (narrow, Owner-authorized I.45BK/BM/BO):** recovery GET-only **PASS** · existing WAV download **PASS** (API HTTP 200 · RIFF/WAVE · size match · Windows saves `WAV.wav`)
+**Not claimed:** new prod enqueue→Contabo worker E2E · empty-session on production · cross-user download AuthZ · full Live↔Offline FX/PCM parity · Contabo always-on · Loop/Metronom · P6.8 · Stage J CLOSED
+**Docs (I.45BR):** PROJECT_STATE · MASTER_HANDOFF · README · bake freeze living Stage I · this changelog entry
+**Next:** Contabo readiness read-only + strategic Stage J vs P6.8 — Owner GO only
+
+## 2026-10-10 — STUDIO_EXPORT Stages I.26–I.28 production migrations + local version alignment
+
+**Status:** **PRODUCTION SCHEMA APPLIED (I.26)** · **LOCAL FILENAME ALIGNMENT (I.28)** · **NO DEPLOY / CANARY / WORKER START** · **NO COMMIT IN THIS NOTE**
+**Production applied versions (MCP `apply_migration` on `rzzxrgcdogkybkiidqgw`):**
+`20261010185003_studio_export_render_job_kind` · `20261010185020_studio_export_document_snapshot` · `20261010185034_studio_export_audio_artifacts`
+**Original local filename prefixes (pre–I.28):** `20261010010000` · `20261010020000` · `20261010030000`
+**I.28:** renamed local migration files to match production history versions; **SQL content unchanged** (same SHA-256); production migration history **not rewritten**
+**I.27:** read-only reconciliation audit — do **not** run `supabase db push` until local filenames and remote history versions are verified aligned (risk of re-applying DDL under the old local prefixes)
+**Not claimed here:** app deploy · Contabo start · Studio Export canary · commit/push of rename
+
+## 2026-10-10 — STUDIO_EXPORT Stage I.20 SSOT reconcile + I.18 evidence freeze
+
+**Status:** **DOCS ONLY** · **NO CODE** · **NO TESTS / WORKER / SUPABASE** · **NO COMMIT/PUSH/DEPLOY**
+**Scope:** Freeze historical I.18 local empty-session integration PASS; correct SSOT contradictions (I.14-02 typed `error_code`; remove stale “no worker+DB integration”)
+**Docs:** [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](./audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · bake freeze §8/§16 / Stage I status
+**Not claimed:** production schema · prod deploy · Contabo · canary · full Live↔Offline PCM parity
+**Next:** Owner GO for fresh production schema verification (read-only) before any migrate/deploy/canary discussion
+
 ## 2026-10-10 — STUDIO_EXPORT Stage I.8 reconcile I.3A + SSOT
 
 **Status:** **LOCAL RECONCILE** · **UNIT TESTS THIS SESSION** · **NO COMMIT/PUSH/DEPLOY**

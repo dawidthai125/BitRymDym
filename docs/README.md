@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Repo tip verify `git rev-parse HEAD` · aliases → `dpl_56FGHZNNdfgZ9k2qsLGHDRD4QcX6` · App feature V2 **`44f7cbd`** (**GREEN / CLOSED**) · **STUDIO_EXPORT** local E2E **I.7 PASS** · I.3A a11y in main · **not** production GREEN · Contabo **STOPPED** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · Living: [PROJECT_STATE.md](./PROJECT_STATE.md) · Final Mix: [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md).
+**Now:** Remote tip **`ce2f0cc`** · aliases → **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · V2 **`44f7cbd`** (**GREEN / CLOSED**) · **STUDIO_EXPORT APP DEPLOYED** · I.45BY export **SUCCEEDED** (do not re-run) · **I.45CV** delete×export-history → HTTP **409** **PRODUCTION VERIFIED** (narrow; empty delete NOT tested) · Contabo last-known **disabled** · markers **I.45CF** (selective · ≠ full tree) · **Studio migration ≠ CLOSED** · **Final Mix / Stage J ≠ Production GREEN** · waiver `EXPORT_WAV`. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · **Living SSOT only:** [PROJECT_STATE.md](./PROJECT_STATE.md) · Final Mix: [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -105,7 +105,8 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) | Studio Visual Shell Pass design freeze · OD-VS-01…05 · **not** P7.1.7 |
 | [decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) | Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · **not** P7.1.7 |
 | [decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md) | Studio Final Mix product freeze · OD-SFM · OD-VS-03 supersession for Export meaning |
-| [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) | STUDIO_EXPORT bake/UI stages · Stage I UI local WIP · not production GREEN |
+| [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) | STUDIO_EXPORT bake/UI · live tip `ce2f0cc` · I.45 recovery/download + I.45BY SUCCEEDED · I.45CV delete×export-history 409 PRODUCTION VERIFIED (narrow) · Contabo markers I.45CF (selective) · Stage J / Final Mix GREEN still open |
+| [audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](./audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) | I.18 local empty-session worker/DB/Storage evidence freeze (historical session) |
 | [architecture/STUDIO_FINAL_MIX_ARCHITECTURE_AUDIT.md](./architecture/STUDIO_FINAL_MIX_ARCHITECTURE_AUDIT.md) | Studio Final Mix architecture audit |
 | [audits/POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) | Polish UX Mix / Master / Recording / Playback — **CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` |
 | [audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) | Wave A Account / Beats — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` |
