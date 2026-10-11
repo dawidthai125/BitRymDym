@@ -276,9 +276,15 @@ function mapStudioOfflineRenderFail(error: StudioOfflineRenderError): {
     case "STUDIO_RENDER_TAIL_DURATION_CAP":
     case "STUDIO_RENDER_MEMORY_CAP":
       return { code: "LIMIT", message: error.message };
+    // I.17 — preserve typed empty-session code for Studio Export job.error_code.
+    // Message stored on the job is non-secret; Studio GET never echoes it raw.
+    case "STUDIO_RENDER_EMPTY_SESSION":
+      return {
+        code: "STUDIO_RENDER_EMPTY_SESSION",
+        message: "No audible voices on the Studio timeline.",
+      };
     case "STUDIO_RENDER_ARTIFACT_UNSUPPORTED":
     case "STUDIO_RENDER_FX_UNSUPPORTED":
-    case "STUDIO_RENDER_EMPTY_SESSION":
     case "STUDIO_RENDER_INVALID_DOCUMENT":
     default:
       return { code: "ENCODE_FAILED", message: error.message };

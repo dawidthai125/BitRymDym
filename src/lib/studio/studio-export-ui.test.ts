@@ -14,8 +14,10 @@ import {
   isStudioExportTerminalStatus,
   mapJobStatusToUiPhase,
   mapStudioExportHttpResult,
+  mapStudioExportLatestHttpResult,
   studioExportArtifactDownloadUrl,
   studioExportEnqueueUrl,
+  studioExportLatestStatusUrl,
   studioExportStatusUrl,
 } from "@/lib/studio/studio-export-client";
 import { handleStudioDialogKeydown } from "@/lib/studio/studio-dialog-focus";
@@ -72,9 +74,88 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     expect(studioExportStatusUrl("abc", "job-1")).toBe(
       "/api/studio/projects/abc/export?jobId=job-1",
     );
+    expect(studioExportLatestStatusUrl("abc")).toBe(
+      "/api/studio/projects/abc/export",
+    );
     expect(studioExportArtifactDownloadUrl("art-1")).toBe(
       "/api/mix/artifacts/art-1/download",
     );
+  });
+
+  it("I.45AU maps latest empty / job / auth without inventing enqueue", () => {
+    const empty = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: { success: true, found: false, projectId: "p1" },
+    });
+    expect(empty.ok).toBe(true);
+    if (empty.ok) {
+      expect(empty.empty).toBe(true);
+    }
+    const found = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j1",
+        projectId: "p1",
+        status: "SUCCEEDED",
+        artifactId: "art-1",
+      },
+    });
+    expect(found.ok).toBe(true);
+    if (found.ok && !found.empty) {
+      expect(found.phase).toBe("SUCCEEDED");
+      expect(found.artifactId).toBe("art-1");
+      expect(found.errorCode).toBeNull();
+      expect(found.message).toBeNull();
+    }
+    const queued = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j2",
+        projectId: "p1",
+        status: "QUEUED",
+        artifactId: null,
+      },
+    });
+    expect(queued.ok).toBe(true);
+    if (queued.ok && !queued.empty) {
+      expect(queued.phase).toBe("QUEUED");
+    }
+    const failed = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j3",
+        projectId: "p1",
+        status: "FAILED",
+        artifactId: null,
+        errorCode: "STUDIO_RENDER_EMPTY_SESSION",
+        errorMessage: "raw should be ignored",
+      },
+    });
+    expect(failed.ok).toBe(true);
+    if (failed.ok && !failed.empty) {
+      expect(failed.phase).toBe("FAILED");
+      expect(failed.errorCode).toBe("STUDIO_RENDER_EMPTY_SESSION");
+      expect(failed.message).toMatch(/pustej lub całkowicie wyciszonej/i);
+      expect(failed.message).not.toMatch(/raw should be ignored/);
+    }
+    expect(
+      mapStudioExportLatestHttpResult({
+        httpStatus: 401,
+        json: { error: "x" },
+      }).ok,
+    ).toBe(false);
+    expect(
+      mapStudioExportLatestHttpResult({
+        httpStatus: 403,
+        json: { error: "x" },
+      }).ok,
+    ).toBe(false);
   });
 
   it("maps success enqueue / status payloads", () => {
@@ -199,6 +280,16 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(pollEffect?.[0] ?? "").not.toMatch(/enqueueExport|studioExportEnqueueUrl/);
     expect(control).toMatch(/data-testid="studio-export-start"/);
     expect(control).toMatch(/void enqueueExport\(/);
+    // I.45AU recovery effect is GET-only.
+    expect(control).toMatch(/studioExportLatestStatusUrl/);
+    expect(control).toMatch(/mapStudioExportLatestHttpResult/);
+    const recoverEffect = control.match(
+      /recoverLatest[\s\S]*?studioExportLatestStatusUrl[\s\S]*?\}, \[open, projectId\]/,
+    );
+    expect(recoverEffect?.[0] ?? "").toMatch(/method: "GET"/);
+    expect(recoverEffect?.[0] ?? "").not.toMatch(
+      /studioExportEnqueueUrl|method: "POST"/,
+    );
   });
 
   it("passes expectedDocumentVersion + idempotencyKey; no client source claims", () => {
@@ -235,18 +326,96 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(control).toMatch(/forceNewAttempt/);
     expect(control).toMatch(/networkError: true/);
     expect(control).toMatch(/idempotencyKeyRef/);
-    expect(control).toMatch(
-      /forceNewAttempt:\s*\r?\n\s*phase === "FAILED" \|\| phase === "CONFLICT"/,
-    );
+    expect(control).toMatch(/phase === "FAILED"/);
+    expect(control).toMatch(/phase === "CONFLICT"/);
+    expect(control).toMatch(/phase === "SUCCEEDED"/);
+    expect(control).toMatch(/forceNewAttempt:/);
     expect(control).toMatch(/reuses the same idempotency key/);
     expect(control).toMatch(/mapped\.phase === "CONFLICT"/);
   });
 
+  it("I.45AU recovers on dialog open; SUCCEEDED re-export uses forceNewAttempt", () => {
+    expect(control).toMatch(/recoverGenRef/);
+    expect(control).toMatch(/\[open, projectId\]/);
+    expect(control).toMatch(/Eksportuj ponownie/);
+    expect(control).toMatch(
+      /phase === "FAILED" \|\|\s*phase === "CONFLICT" \|\|\s*phase === "SUCCEEDED"/,
+    );
+    expect(control).toMatch(/phase === "SUCCEEDED"/);
+    expect(control).toMatch(/canStart/);
+    // Recovery must not POST; abort on close.
+    expect(control).toMatch(/ac\.abort\(\)/);
+    expect(control).not.toMatch(/object_key|objectKey/);
+    // FAILED retry path still forceNewAttempt (no regression).
+    expect(control).toMatch(/Ponów eksport/);
+  });
+
+  it("I.17 FAILED uses safe mapped.message in poll and applyRecoveredJob", () => {
+    expect(control).toMatch(/typed empty-session vs generic FAILED/);
+    expect(control).toMatch(/mapped\.message \?\?/);
+    expect(control).toMatch(/function applyRecoveredJob/);
+    expect(control).toMatch(/message: mapped\.message/);
+    // Must not surface raw API/DB error text as the FAILED status copy.
+    expect(control).not.toMatch(/setMessage\(\s*json\.error/);
+    expect(control).not.toMatch(/setMessage\(\s*error\.message/);
+  });
+
+  it("I.45AW UNAVAILABLE with jobId prefers status GET; force-new is explicit", () => {
+    // Recovered SUCCEEDED without artifact → UNAVAILABLE (keeps jobId).
+    expect(control).toMatch(
+      /mapped\.phase === "SUCCEEDED" && !mapped\.artifactId/,
+    );
+    expect(control).toMatch(
+      /Eksport zakończony, ale artefakt nie jest jeszcze dostępny/,
+    );
+    expect(control).toMatch(/unavailableWithTrackedJob/);
+    expect(control).toMatch(
+      /phase === "UNAVAILABLE" && Boolean\(jobId\)/,
+    );
+    // Generic start hidden / blocked when UNAVAILABLE tracks a job.
+    expect(control).toMatch(/!unavailableWithTrackedJob/);
+    expect(control).toMatch(/canForceNewDespiteUnavailable/);
+    expect(control).toMatch(/data-testid="studio-export-force-new"/);
+    expect(control).toMatch(
+      /Utwórz nowy eksport mimo braku gotowego pliku/,
+    );
+    expect(control).toMatch(
+      /enqueueExport\(\{ forceNewAttempt: true \}\)/,
+    );
+    // Refresh is GET-only via pollOnce → studioExportStatusUrl.
+    expect(control).toMatch(/data-testid="studio-export-refresh"/);
+    expect(control).toMatch(/onRefreshStatus/);
+    const refreshFn = control.match(
+      /async function onRefreshStatus\(\) \{[\s\S]*?\n  \}/,
+    )?.[0] ?? "";
+    expect(refreshFn).toMatch(/pollOnce\(jobId\)/);
+    expect(refreshFn).not.toMatch(/studioExportEnqueueUrl|method: "POST"/);
+    // Does not clear jobId on UNAVAILABLE path in applyRecoveredJob.
+    expect(control).toMatch(/function applyRecoveredJob/);
+    expect(control).toMatch(/setJobId\(mapped\.jobId\)/);
+    const recoveredUnavailable = control.match(
+      /setJobId\(mapped\.jobId\)[\s\S]{0,400}?Eksport zakończony, ale artefakt nie jest jeszcze dostępny/,
+    )?.[0] ?? "";
+    expect(recoveredUnavailable.length).toBeGreaterThan(0);
+    expect(recoveredUnavailable).not.toMatch(/setJobId\(null\)/);
+    // FAILED / CONFLICT still use generic start + forceNewAttempt (no regression).
+    expect(control).toMatch(/Ponów eksport/);
+    expect(control).toMatch(/phase === "FAILED"/);
+    expect(control).toMatch(/phase === "CONFLICT"/);
+    // SUCCEEDED + READY download path unchanged.
+    expect(control).toMatch(
+      /phase === "SUCCEEDED" && Boolean\(artifactId\)/,
+    );
+    expect(control).toMatch(/data-testid="studio-export-download"/);
+  });
+
   it("status GET is project-scoped and returns artifactId", () => {
     expect(route).toMatch(/getOwnStudioExportJob\(jobId, \{ projectId \}\)/);
+    expect(route).toMatch(/getLatestOwnStudioExportJob\(projectId\)/);
     expect(route).toMatch(/artifactId: job\.artifactId \?\? null/);
     expect(service).toMatch(/resolveStudioExportArtifactIdFor/);
     expect(service).toMatch(/options\?: \{ projectId\?: string \}/);
+    expect(service).toMatch(/getLatestOwnStudioExportJobFor/);
   });
 
   it("keeps min hit target and dialog a11y", () => {

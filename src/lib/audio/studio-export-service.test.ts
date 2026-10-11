@@ -184,3 +184,55 @@ describe("STUDIO_EXPORT Stage B — API route", () => {
     expect(src).not.toMatch(/startContabo|contabo\.start/i);
   });
 });
+
+describe("STUDIO_EXPORT I.45AU — latest recovery (source)", () => {
+  const service = readFileSync(
+    join(ROOT, "src/lib/audio/studio-export-service.ts"),
+    "utf8",
+  );
+  const route = readFileSync(
+    join(
+      ROOT,
+      "src/app/api/studio/projects/[projectId]/export/route.ts",
+    ),
+    "utf8",
+  );
+
+  it("adds getLatestOwnStudioExportJobFor with owner + project + kind filters", () => {
+    expect(service).toMatch(/export async function getLatestOwnStudioExportJobFor/);
+    expect(service).toMatch(/export async function getLatestOwnStudioExportJob/);
+    expect(service).toMatch(/requireUser\(\)/);
+    expect(service).toMatch(/\.eq\("owner_id", context\.userId\)/);
+    expect(service).toMatch(/\.eq\("project_id", projectId\)/);
+    expect(service).toMatch(/\.eq\("kind", "STUDIO_EXPORT"\)/);
+    expect(service).toMatch(/order\("created_at", \{ ascending: false \}\)/);
+    expect(service).toMatch(/order\("id", \{ ascending: false \}\)/);
+    expect(service).toMatch(/resolveStudioExportArtifactIdFor/);
+    expect(service).toMatch(/Brak dostępu do tego projektu/);
+    expect(service).toMatch(/Projekt nie został znaleziony/);
+    expect(service).not.toMatch(/object_key/);
+  });
+
+  it("I.17 + latest GET both expose allowlisted errorCode/errorMessage", () => {
+    expect(service).toMatch(/publicStudioExportFailure/);
+    expect(service).toMatch(/error_code/);
+    expect(service).toMatch(/errorCode: publicFail\.errorCode/);
+    expect(route).toMatch(/errorCode: job\.errorCode \?\? null/);
+    expect(route).toMatch(/errorMessage: job\.errorMessage \?\? null/);
+    expect(route).toMatch(/studioExportJobStatusJson/);
+    expect(route).not.toMatch(/error_message:|rawError|renderer/);
+  });
+
+  it("GET without jobId uses latest; empty found=false; jobId path preserved", () => {
+    expect(route).toMatch(/getLatestOwnStudioExportJob\(projectId\)/);
+    expect(route).toMatch(/found: false/);
+    expect(route).toMatch(/found: true/);
+    expect(route).toMatch(/getOwnStudioExportJob\(jobId, \{ projectId \}\)/);
+    expect(route).not.toMatch(/jobId is required/);
+    // Latest / GET branch must not call enqueue (POST remains separate).
+    const getFn = route.match(/export async function GET\([\s\S]*$/)?.[0] ?? "";
+    expect(getFn.length).toBeGreaterThan(0);
+    expect(getFn).not.toMatch(/createStudioExportJob/);
+    expect(getFn).not.toMatch(/object_key|objectKey/);
+  });
+});
