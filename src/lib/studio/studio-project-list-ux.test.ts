@@ -84,7 +84,29 @@ describe("Studio project delete — service + route", () => {
     const deleteBlock = service.slice(start, end);
     expect(deleteBlock).not.toMatch(/\.from\("takes"\)/);
     expect(deleteBlock).not.toMatch(/storage/);
-    expect(deleteBlock).not.toMatch(/audio_artifacts/);
+    // Existence pre-check may SELECT audio_artifacts / render_jobs; must not DELETE them.
+    expect(deleteBlock).toMatch(/\.from\("audio_artifacts"\)\s*\.select\(/);
+    expect(deleteBlock).toMatch(/\.from\("render_jobs"\)\s*\.select\(/);
+    expect(deleteBlock).not.toMatch(/\.from\("audio_artifacts"\)\s*\.delete\(/);
+    expect(deleteBlock).not.toMatch(/\.from\("render_jobs"\)\s*\.delete\(/);
+    expect(deleteBlock).toMatch(/\.from\("studio_projects"\)\s*\.delete\(\)/);
+  });
+
+  it("pre-checks export history and maps FK race to AuthError CONFLICT", () => {
+    const start = service.indexOf(
+      "export async function deleteStudioProjectFor",
+    );
+    const end = service.indexOf(
+      "export async function getStudioProjectDocumentFor",
+    );
+    const deleteBlock = service.slice(start, end);
+    expect(deleteBlock).toMatch(/\.from\("render_jobs"\)/);
+    expect(deleteBlock).toMatch(/\.from\("audio_artifacts"\)/);
+    expect(deleteBlock).toMatch(/count:\s*"exact"/);
+    expect(deleteBlock).toMatch(/head:\s*true/);
+    expect(deleteBlock).toMatch(/AuthError\(\s*"CONFLICT"/);
+    expect(deleteBlock).toMatch(/isStudioProjectExportHistoryFkViolation/);
+    expect(deleteBlock).toMatch(/STUDIO_PROJECT_DELETE_EXPORT_HISTORY_CONFLICT_PL/);
   });
 });
 
@@ -142,6 +164,15 @@ describe("Studio project list UX", () => {
     expect(list).toMatch(/Następna/);
     expect(list).toMatch(/Poprzednia/);
     expect(list).toMatch(/deleteProjectRequest/);
+  });
+
+  it("surfaces domain delete error (not raw Postgres) and names failed bulk project", () => {
+    expect(list).toMatch(/json\.error/);
+    expect(list).toMatch(/setDeleteError/);
+    expect(list).not.toMatch(/violates foreign key/);
+    expect(list).not.toMatch(/render_jobs_project_id_fkey/);
+    expect(list).toMatch(/failedTitle/);
+    expect(list).toMatch(/„\$\{failedTitle\}”: \$\{base\}/);
   });
 
   it("uses branded BrdCheckbox (not native accent)", () => {
