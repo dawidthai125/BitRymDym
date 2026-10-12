@@ -6,6 +6,29 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-12 — I.45DX docs plane clarity (app tip vs docs tip vs deployments)
+
+**Status:** **DOCS CLARITY (I.45DX)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO / NO REDEPLOY**
+**Planes (authoritative):** app-code tip **`ce2f0cc`** · app deploy **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · docs merge tip **`d3ef59a`** (PR #6) · docs-only deploy **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** (auto after PR #6) · **not interchangeable**
+**I.45DR facts unchanged:** job `53398f9e-…` **SUCCEEDED** · artifact `21d98be2-…` **READY** · persistent worker **disabled/inactive** · Full Final Mix GREEN **OPEN** · P6.8 **NOT STARTED**
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living plane notes · this entry
+**Next:** Owner GO on publication of this docs branch · do not swap `ce2f0cc`↔`d3ef59a` as if equivalent
+
+## 2026-10-12 — I.45DR Contabo STUDIO_EXPORT WAV canary (SSOT docs I.45DT)
+
+**Status:** **RUNTIME PASS (narrow canary)** · **DOCS RECONCILE (I.45DT)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO RETRY**
+**Chain:** I.45DM SSH BLOCKED → I.45DN reachability RO → I.45DO post-SSH preflight PASS → **I.45DP** manual oneshot as `bitrymdym-e3` **FAIL** before claim (`worker.env` `root:root` 600 / dir 700 unreadable; `E3_RENDER_JOBS_ENABLED=OFF` in process) → **I.45DQ** RO RCA: systemd loads `EnvironmentFile` as manager before `User=bitrymdym-e3` (no chmod) → **I.45DR** GO-ONESHOT via transient `systemd-run`
+**I.45DR execution:** `systemd-run --wait --collect --uid=bitrymdym-e3 --gid=bitrymdym-e3` · unit `bitrymdym-e3-canary-53398f9e` · `WorkingDirectory=/opt/bitrymdym-e3-worker` · `EnvironmentFile=-/etc/bitrymdym-e3-worker/worker.env` · `npm run e3:worker:once -- 53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` · exit **0** · unit **collected**
+**Job:** `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` · project `bfc3d223-6107-4e11-a96a-470d88439f0b` · `STUDIO_EXPORT` · `WAV` · attempt **1** · **SUCCEEDED** · `started_at=2026-10-12 04:09:30.42 UTC` · `finished_at=2026-10-12 04:09:37.125 UTC` · `worker_ref=null`
+**Artifact:** `21d98be2-29b2-4d1d-8efb-b1c40af4709e` · **READY** · bucket `audio-artifacts` · `audio/wav` · **10,584,044** B (= `storage.objects`) · **60,000** ms · encoder `pcm_s16le_wav`
+**Persistent service:** `bitrymdym-e3-worker.service` remained **disabled/inactive** · no continuous worker / timer / cron · no other jobs · no `worker.env` permission/content change
+**Flag:** `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed I.45DO/I.45DR (not a perpetual runtime guarantee)
+**Historic job:** `61b7cdf1-0dfa-41aa-a493-e4f438d09131` remained **SUCCEEDED** / untouched
+**I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary
+**Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** (Live↔Offline FX/PCM · empty-session prod · cross-user AuthZ · Studio migration CLOSED · Contabo full-tree = tip · always-on · Stage J full close · P6.8)
+**Docs (I.45DT):** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living Contabo/Stage J · this entry
+**Next:** Owner GO — remaining Final Mix gates vs P6.8 · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · no auto Contabo enable
+
 ## 2026-10-11 — I.45CW Studio project delete export-history conflict (SSOT docs)
 
 **Status:** **DOCS RECONCILE (I.45CW)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO RE-DELETE / NO JOB RE-RUN**
