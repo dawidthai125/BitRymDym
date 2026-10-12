@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-12 — **GitHub main tip `522e514`** (PR #10 · docs J2 closeout · **≠** deploy proof) · app-code tip **`ce2f0cc`** (last-established in available evidence · **≠** fresh prod verify) · prod last-known **`dpl_7Cp2gQ9…`** @ **`df37048`** (I.45EJ-R1 · **HISTORICAL / NEEDS FRESH VERIFY**) · aliases **www** + **`bitrymdym.vercel.app`** / apex **308→www** (last-known · **NOT re-verified**) · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** · **J2 Download AuthZ PASS / CLOSED** (I.45EX-A16/A17/A18) · persistent worker **disabled/inactive** · **≠** Full Final Mix Production GREEN · Stage J canary evidence **PASS (narrow)** · **Stage J OPEN** (J2 only) · remaining Final Mix gates **OPEN** · I.45BY + I.45DR SUCCEEDED jobs — **do not re-run** · markers **I.45CF** (selective · ≠ full tree) · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-12 — **I.47 session closure** · GitHub main tip **`f730a7a`** (PR #11) · prior **`522e514`** (PR #10) = HISTORY · app-code tip **`ce2f0cc`** · prod last-confirmed **`dpl_28oH…`** @ **`f730a7a`** (**I.46-A10** · Ready · apex redirect e2e **NOT VERIFIED**) · **I.45DR** WAV canary **PASS** · **J2 PASS / CLOSED** · **Stage J OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · markers **I.45CF** (selective · ≠ full tree) · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · cold-start prompts → [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12 · **STOP — OWNER DECISION REQUIRED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -24,15 +24,15 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl (canonical) · https://bitrymdym.pl (308→www) · https://bitrymdym.vercel.app |
-| **GitHub main tip / origin/main (confirmed)** | **`522e514fcc42f314b4db621c80c30d7412ee7e08` (`522e514`)** — Merge PR #10 (docs-only · J2 closeout) · **≠** production deployment SHA · merge does **not** prove deploy · local WIP may diverge · local `origin/main` ref may lag · full living matrix → [PROJECT_STATE.md](./PROJECT_STATE.md) |
-| **Prior docs tip (HISTORY)** | **`df37048`** — Merge PR #8 (docs-only) · tip before PR #10 · also last documented production deployment SHA (I.45EJ-R1) |
-| **App-code tip (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 · last app-feature tip before docs tips PR #6–#10 · **≠** Git tip · **≠** independently freshly verified production app SHA |
+| **GitHub main tip / origin/main (confirmed)** | **`f730a7af1ed34a9667e7bfba1a766d8481ed9df5` (`f730a7a`)** — Merge PR #11 (docs-only SSOT tip/plane) · local WIP may diverge · local `origin/main` ref may lag · full living matrix → [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| **Prior docs tip (HISTORY)** | **`522e514`** — Merge PR #10 (docs J2 closeout) · tip before PR #11 · prior **`df37048`** (PR #8) remains HISTORY |
+| **App-code tip (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 · last app-feature tip before docs tips PR #6–#11 · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **App feature commit (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| **Production deployment (last-known / HISTORICAL)** | **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** · last documented Ready · Current · Latest · SHA **`df37048`** · evidence **I.45EJ-R1 PASS** · **NOT VERIFIED as current** · **NEEDS FRESH VERIFY** |
-| **Production Git SHA (last-known / HISTORICAL)** | **`df37048`** — last documented deployment SHA (PR #8 era) · **≠** Git tip `522e514` · commit ≠ deployment ≠ domain alias · **NEEDS FRESH VERIFY** |
-| **Domain aliases (last-known I.45EJ-R1 · NOT re-verified)** | **`www.bitrymdym.pl`** ASSIGNED · **`bitrymdym.vercel.app`** ASSIGNED · **`bitrymdym.pl`** HTTP **308 → www** (not a direct deployment alias) — historical until re-verified |
-| **Prior production deploy (HISTORY)** | `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` @ `ce2f0cc` (PR #5) · `dpl_9YDCyG4jU6cDuyLu111VaEVQmSqy` @ `faf734b` (PR #4) · earlier `dpl_56FGH…` · superseded for live aliases |
-| **Dual-plane note** | Git tip `522e514` ≠ app-code tip `ce2f0cc` ≠ last-known prod `df37048` / `dpl_7Cp2gQ9…` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · PR #10 documentation-only · merge ≠ deploy proof · see [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| **Production deployment (last-confirmed I.46-A10)** | **`dpl_28oHcn3w146saZ6fNDFsiCQehUQP`** · Ready · SHA **`f730a7a`** · evidence **I.46-A10** · **I.47 does not re-verify** · Ready ≠ functional GREEN |
+| **Production Git SHA (last-confirmed I.46-A10)** | **`f730a7a`** — equals Git tip after PR #11 · prior **`df37048`** / `dpl_7Cp2gQ9…` = HISTORY |
+| **Domain aliases (last-confirmed I.46-A10)** | **`www.bitrymdym.pl`** · **`bitrymdym.vercel.app`** · **`bitrymdym.pl`** ASSIGNED · apex redirect e2e **NOT VERIFIED** |
+| **Prior production deploy (HISTORY)** | `dpl_7Cp2gQ9…` @ `df37048` (I.45EJ-R1) · `dpl_1P8ixpt…` @ `ce2f0cc` (PR #5) · `dpl_9YDCy…` @ `faf734b` (PR #4) · earlier `dpl_56FGH…` |
+| **Dual-plane note** | Git tip `f730a7a` ≠ app-code tip `ce2f0cc` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · PR #11 docs-only · I.46-A10 confirms prod deploy SHA · see [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | **V2 verify deploy (HISTORY)** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` — original V2 release gate · **superseded for live aliases** |
 | **V2 verify deploy (HISTORY)** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` — original V2 release gate · **superseded for live aliases** |
 | **Previous production tip (HISTORY)** | `dpl_FVcx…` @ `3a086ad` · `44f7cbd` / `dpl_2ymz…` · `4fa658d` — Phase 7.1.6 · `79bc69f` V1 · older: `3fccbf7` · `9abc1b6` · `8f6eeca` |
@@ -50,7 +50,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Phase 7.1.3 Inspector IA** | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (ancestry · do not reopen) |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked lib/migration = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip **`522e514`** (PR #10 docs J2 closeout · **≠** deploy proof) · last-known prod **`df37048`** / `dpl_7Cp2gQ9…` (I.45EJ-R1 · **HISTORICAL / NEEDS FRESH VERIFY** · docs-only PR #8 era — **≠** new app feature) · **I.45DR — PASS:** narrow WAV canary · job `53398f9e-…` / project `bfc3d223-…` · artifact `21d98be2-…` **READY** · **J2 Download AuthZ — PASS / CLOSED** (I.45EX-A16/A17/A18 · artifact `c596e7bc-…` · owner 200 · other-user 403 · unauth 401 · ≠ full AuthZ audit) · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · **Stage J OPEN** (J2 only) · prior I.45BY `61b7cdf1…` **SUCCEEDED** (do not re-run either) · I.45CV delete-conflict **PRODUCTION VERIFIED** (HTTP 409 · empty delete NOT tested) · Contabo persistent: **disabled/inactive** · markers **I.45CF** (selective · ≠ full tree) · open: remaining Stage J / Final Mix gates · always-on · empty-session prod · full FX/PCM · Studio migration CLOSED · Stage J full close · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip **`f730a7a`** (PR #11 docs SSOT) · prod last-confirmed **`f730a7a`** / `dpl_28oH…` (**I.46-A10** · Ready · not re-verified in I.47) · **I.45DR — PASS:** narrow WAV canary · job `53398f9e-…` / project `bfc3d223-…` · artifact `21d98be2-…` **READY** · **J2 Download AuthZ — PASS / CLOSED** (I.45EX-A16/A17/A18 · artifact `c596e7bc-…` · owner 200 · other-user 403 · unauth 401 · ≠ full AuthZ audit) · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · **Stage J OPEN** (J2 only) · prior I.45BY `61b7cdf1…` **SUCCEEDED** (do not re-run either) · I.45CV delete-conflict **PRODUCTION VERIFIED** (HTTP 409 · empty delete NOT tested) · Contabo persistent: **disabled/inactive** · markers **I.45CF** (selective · ≠ full tree) · open: remaining Stage J / Final Mix gates · always-on · empty-session prod · full FX/PCM · Studio migration CLOSED · Stage J full close · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
 | **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · **J2 PASS / CLOSED** · remaining Stage J / Final Mix gates **OPEN** · P6.8 **NOT STARTED** · markers **done** (I.45CF) · no auto Contabo enable / Final Mix GREEN · do not re-run `53398f9e-…` or `61b7cdf1…` · do not claim empty-project delete verified · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
@@ -131,7 +131,7 @@ P6 product FX   = P6.1–P6.4.3 PRODUCTION VERIFIED — GREEN
                 · Automation / Autotune = NOT READY
                 · P6.7 = Clip GainNode fades · set_fades CAS · Trim/Split fade inherit
 Phase 7.1.x     = 7.1.3 Inspector · 7.1.4 Mixer Dock · 7.1.5 Shell+Escape · 7.1.6 Auto Save+CAS
-                · ALL CLOSED / GREEN · ancestry @ 4fa658d · Git tip 522e514 · app-code tip ce2f0cc · last-known prod df37048 · app feature V2 44f7cbd
+                · ALL CLOSED / GREEN · ancestry @ 4fa658d · Git tip f730a7a · app-code tip ce2f0cc · prod last-confirmed f730a7a (I.46-A10) · app feature V2 44f7cbd
 Persistence     = StudioPersistOrchestrator ONLY (CLEAN/DIRTY/SAVING/SAVE_FAILED/CONFLICT)
                 · retry 1s/3s/8s · 409 non-retryable · expectedDocumentVersion everywhere
                 · interactive prod mutations for 7.1.6 = NOT SAFELY MUTATED (safety gate)
@@ -211,10 +211,12 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 
 | SHA / ID | Meaning |
 |----------|---------|
-| `origin/main` / HEAD | **GITHUB MAIN TIP (remote, confirmed)** · `522e514` · local WIP may diverge · local ref may lag · living SSOT → PROJECT_STATE · **≠** deploy proof |
-| `522e514` | **CURRENT GITHUB MAIN TIP** · Merge PR #10 (docs-only · J2 Download AuthZ gate closeout) · **≠** app feature release · **≠** production deployment SHA |
-| `df37048` | **PRIOR DOCS TIP (HISTORY)** · Merge PR #8 (docs-only SSOT) · also **last-known PRODUCTION GIT SHA** (I.45EJ-R1) · **NEEDS FRESH VERIFY** as live deploy |
-| `dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5` | **LAST-KNOWN PRODUCTION DEPLOYMENT (HISTORICAL)** · last documented Ready · Current · Latest · SHA `df37048` · aliases www + `bitrymdym.vercel.app` · apex 308→www · **NOT VERIFIED as current** · **NEEDS FRESH VERIFY** |
+| `origin/main` / HEAD | **GITHUB MAIN TIP (remote, confirmed)** · `f730a7a` · local WIP may diverge · local ref may lag · living SSOT → PROJECT_STATE |
+| `f730a7a` | **CURRENT GITHUB MAIN TIP** · Merge PR #11 (docs-only SSOT tip/plane) · **≠** app feature release · prod deploy SHA confirmed I.46-A10 |
+| `522e514` | **PRIOR DOCS TIP (HISTORY)** · Merge PR #10 (docs J2 closeout) |
+| `df37048` | **PRIOR DOCS TIP / PRIOR PROD SHA (HISTORY)** · Merge PR #8 · superseded as live deploy by I.46-A10 (`f730a7a` / `dpl_28oH…`) |
+| `dpl_28oHcn3w146saZ6fNDFsiCQehUQP` | **LAST-CONFIRMED PRODUCTION DEPLOYMENT (I.46-A10)** · Ready · SHA `f730a7a` · aliases www + vercel.app + apex assigned · apex redirect e2e **NOT VERIFIED** · I.47 does not re-verify |
+| `dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5` | **PRIOR PRODUCTION DEPLOYMENT (HISTORY)** · SHA `df37048` · I.45EJ-R1 |
 | `ce2f0cc` | **APP-CODE TIP (last-established in available evidence)** · Merge PR #5 (Studio delete export-history conflict) · **≠** freshly verified production app SHA · see PROJECT_STATE |
 | `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` | **HISTORY** · prior production @ `ce2f0cc` (PR #5) · superseded for live aliases |
 | `d3ef59a` | **HISTORY** · Merge PR #6 (docs-only) · superseded by later docs tips |
@@ -284,12 +286,12 @@ Pre-ARCH-05 snapshot (do not reuse as living): USER 8 / PLATFORM 3 / ORPHAN 32 /
 |-------|--------|
 | Branch | `main` |
 | Remote | `origin` → `https://github.com/dawidthai125/BitRymDym` |
-| **GitHub main tip / origin/main** | `522e514` — PR #10 docs J2 closeout · **≠** deploy proof · local WIP may diverge · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| **GitHub main tip / origin/main** | `f730a7a` — PR #11 docs SSOT · local WIP may diverge · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · cold-start prompts → [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12 |
 | **App-code tip (last-established evidence)** | `ce2f0cc` / prior `dpl_1P8ixpt…` — PR #5 · **≠** Git tip · **≠** fresh prod verify |
 | **App feature commit (V2)** | **`44f7cbd`** — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| **Production deployment (last-known / HISTORICAL)** | **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** · last documented Ready/Current/Latest · aliases last-known · **NEEDS FRESH VERIFY** |
-| **Production Git SHA (last-known / HISTORICAL)** | **`df37048`** — **≠** Git tip `522e514` · **NEEDS FRESH VERIFY** |
-| **Dual-plane** | Git tip `522e514` ≠ app-code tip `ce2f0cc` ≠ last-known prod `df37048` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · V2 verify history `dpl_2ymz…` |
+| **Production deployment (last-confirmed I.46-A10)** | **`dpl_28oH…`** · Ready · SHA `f730a7a` · apex redirect e2e **NOT VERIFIED** · I.47 does not re-verify |
+| **Production Git SHA (last-confirmed I.46-A10)** | **`f730a7a`** — equals Git tip · prior `df37048` = HISTORY |
+| **Dual-plane** | Git tip `f730a7a` ≠ app-code tip `ce2f0cc` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · V2 verify history `dpl_2ymz…` |
 | **P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** |
 | **P5.8** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` |
 | **P5.9** | **Architecture Audit · GO WITH CONDITIONS** |
@@ -866,12 +868,12 @@ No commit/push/deploy without explicit Owner GO for that step.
 ### CANONICAL CURRENT (dual-plane)
 
 ```text
-GITHUB MAIN TIP / origin/main = 522e514 (PR #10 docs J2 closeout · ≠ deploy proof · remote confirmed; local WIP may diverge)
+GITHUB MAIN TIP / origin/main = f730a7a (PR #11 docs SSOT · remote confirmed; local WIP may diverge)
 APP-CODE TIP (last-established evidence) = ce2f0cc / prior dpl_1P8ixpt… (PR #5) · ≠ Git tip · ≠ fresh prod verify
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION DEPLOYMENT (last-known / HISTORICAL) = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · last documented Ready/Current/Latest (I.45EJ-R1) · NEEDS FRESH VERIFY
+PRODUCTION DEPLOYMENT (last-confirmed I.46-A10) = dpl_28oHcn3w146saZ6fNDFsiCQehUQP · Ready · SHA f730a7a · I.47 does not re-verify
   aliases (last-known · NOT re-verified) = www.bitrymdym.pl · bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www
-PRODUCTION GIT SHA (last-known / HISTORICAL) = df37048 · ≠ Git tip 522e514 · NEEDS FRESH VERIFY
+PRODUCTION GIT SHA (last-confirmed I.46-A10) = f730a7a · equals Git tip · prior df37048 = HISTORY
 STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
 DELETE×EXPORT HISTORY         = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
@@ -885,7 +887,7 @@ P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 Contabo                       = persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · pipeline @faf734b · markers I.45CF (selective ≠ full tree) · not always-on
 P6.8                          = NOT STARTED / OWNER DECISION
 NEXT GATE                     = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
-NOTE                          = Living SSOT = PROJECT_STATE.md · Git tip 522e514 ≠ app-code tip ce2f0cc ≠ last-known prod df37048/dpl_7Cp2gQ9… ≠ local dirty WIP ≠ V2 44f7cbd · PR #10 docs-only · merge ≠ deploy proof · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
+NOTE                          = Living SSOT = PROJECT_STATE.md · Git tip f730a7a ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #11 docs-only · prod deploy I.46-A10 @ f730a7a · cold-start prompts FINAL_COLD_START §12 · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
 SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md → PROJECT_STATE (SSOT) / MASTER_HANDOFF / REUSE_SSOT_MAP
@@ -1029,12 +1031,12 @@ STEMS · artifact_kind · public Free HQ/WAV · payments/Premium catalog product
 
 ```text
 MASTER HANDOFF READY
-GITHUB MAIN TIP / origin/main = 522e514 (PR #10 docs J2 closeout · ≠ deploy proof · remote confirmed; local WIP may diverge)
+GITHUB MAIN TIP / origin/main = f730a7a (PR #11 docs SSOT · remote confirmed; local WIP may diverge)
 APP-CODE TIP (last-established evidence) = ce2f0cc / prior dpl_1P8ixpt… (PR #5) · ≠ Git tip · ≠ fresh prod verify
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION DEPLOYMENT (last-known / HISTORICAL) = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · last documented Ready/Current/Latest (I.45EJ-R1) · NEEDS FRESH VERIFY
+PRODUCTION DEPLOYMENT (last-confirmed I.46-A10) = dpl_28oHcn3w146saZ6fNDFsiCQehUQP · Ready · SHA f730a7a · I.47 does not re-verify
   aliases (last-known · NOT re-verified) = www.bitrymdym.pl · bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www
-PRODUCTION GIT SHA (last-known / HISTORICAL) = df37048 · ≠ Git tip 522e514 · NEEDS FRESH VERIFY
+PRODUCTION GIT SHA (last-confirmed I.46-A10) = f730a7a · equals Git tip · prior df37048 = HISTORY
 STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
 DELETE×EXPORT HISTORY         = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
@@ -1047,7 +1049,7 @@ P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 WORKER                        = Contabo persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · pipeline @faf734b · markers I.45CF (selective ≠ full tree)
 P6.8                          = NOT STARTED / OWNER DECISION
 NEXT GATE                     = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
-NOTE                          = Living SSOT = PROJECT_STATE.md · Git tip 522e514 ≠ app-code tip ce2f0cc ≠ last-known prod df37048/dpl_7Cp2gQ9… ≠ local dirty WIP ≠ V2 44f7cbd · PR #10 docs-only · merge ≠ deploy proof · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
+NOTE                          = Living SSOT = PROJECT_STATE.md · Git tip f730a7a ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #11 docs-only · prod deploy I.46-A10 @ f730a7a · cold-start prompts FINAL_COLD_START §12 · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
 SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 NEXT SESSION ENTRY            = FINAL_COLD_START_HANDOFF.md → PROJECT_STATE.md → this file → REUSE_SSOT_MAP.md
