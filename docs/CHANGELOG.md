@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-12 — I.45DZ SSOT tip reconciliation after PR #7
+
+**Status:** **DOCS TIP RECONCILE (I.45DZ)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO / NO REDEPLOY**
+**Git:** remote `main` / docs merge tip **`e3dc0b9036ee85dd91ffca845362b4b12431f1bc` (`e3dc0b9`)** — Merge PR #7 · prior docs tip **`d3ef59a`** (PR #6) = **HISTORY** · app-code tip **`ce2f0cc`** unchanged
+**Deployments:** app **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** @ `ce2f0cc` · docs-only last-known **`dpl_HM2sq…`** (PR #6) · post-PR #7 docs `dpl_*` **UNKNOWN** (not guessed)
+**I.45DR / gates unchanged:** narrow WAV canary PASS · Full Final Mix GREEN **OPEN** · Stage J full close **OPEN** · P6.8 **NOT STARTED** · persistent worker **disabled/inactive** (last-known)
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living tip rows · this entry
+**Next:** Owner GO on publication of this docs tip reconcile · do not treat docs tip as app tip
+
 ## 2026-10-12 — I.45DX docs plane clarity (app tip vs docs tip vs deployments)
 
 **Status:** **DOCS CLARITY (I.45DX)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO / NO REDEPLOY**

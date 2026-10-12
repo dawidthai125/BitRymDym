@@ -32,7 +32,7 @@ E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
 | Unit / contract tests | **UNIT TESTED** |
 | Local worker / Storage / DB bake | **LOCAL INTEGRATION NOT RUN** |
 | Live Web Audio parity | **FUNCTIONAL EVIDENCE ACCEPTED (I.14-01)** — not full PCM / bit-perfect parity |
-| Production / Contabo | **APP DEPLOYED** (app-code tip `ce2f0cc` / app deploy `dpl_1P8ixpt…`; docs tip `d3ef59a` / docs-only deploy `dpl_HM2sq…` ≠ app; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · Full Final Mix GREEN **OPEN** |
+| Production / Contabo | **APP DEPLOYED** (app-code tip `ce2f0cc` / app deploy `dpl_1P8ixpt…`; docs tip `e3dc0b9` PR #7 · prior docs tip `d3ef59a` HISTORY · docs-only last-known `dpl_HM2sq…` PR #6 · post-PR #7 `dpl_*` UNKNOWN ≠ app; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · Full Final Mix GREEN **OPEN** |
 
 **Legend used below**
 
@@ -483,7 +483,7 @@ Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12
 | UI unit/source tests | **RUN locally** (`studio-export-ui.test.ts` incl. I.3A focus contracts) |
 | Dialog focus / a11y (I.3A) | **IMPLEMENTED in main** (`studio-dialog-focus.ts`) · unit tested · prior local browser I.3B |
 | Runtime UI → API → worker → download | **PASS Stage I.7** (local isolated) · **I.45DR** prod Contabo enqueue→transient worker→READY artifact **PASS (narrow WAV)** · owner download of I.45DR artifact **not** re-claimed here |
-| Production app | **DEPLOYED** · app-code tip **`ce2f0cc`** / app deploy `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` (PR #5) · docs tip **`d3ef59a`** / docs-only deploy `dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g` (PR #6) · **≠** new app-code · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
+| Production app | **DEPLOYED** · app-code tip **`ce2f0cc`** / app deploy `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` (PR #5) · docs tip **`e3dc0b9`** (PR #7) · prior docs tip **`d3ef59a`** HISTORY (PR #6) · docs-only last-known `dpl_HM2sq…` (PR #6) · post-PR #7 `dpl_*` **UNKNOWN** · **≠** new app-code · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
 | Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** |
 | Contabo pipeline / markers (last-known) | Byte-synced only: `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94…` (= `@faf734b`; I.45BV/BW) · persistent service **disabled/inactive** · **markers I.45CF APPLIED:** tip `faf734b` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed I.45DO/I.45DR · **I.45DR** ops path: transient `systemd-run --wait --collect` + `EnvironmentFile=-/etc/bitrymdym-e3-worker/worker.env` as `bitrymdym-e3` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as service user **FAIL** (no claim; no chmod) · **≠** continuous-mode / full-tree claim |
 | Live/offline FX parity | **FUNCTIONAL EVIDENCE (I.13F/I.14-01)** — not full PCM parity |
@@ -541,7 +541,7 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 | **Historical session evidence** | I.13F FX freeze · I.18 empty-session freeze (session-dated; not re-executed in I.20) |
 | **Production unverified (remaining)** | Contabo always-on · empty-session on prod · cross-user download AuthZ · full Live↔Offline PCM parity · Full Final Mix Production GREEN / Stage J full close — **not** proven by I.18, I.45BK/BM/BO, or narrow **I.45DR** canary |
 
-> **Supersession (I.26 / I.28 / PR #4 / I.45DR):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** (app-code tip `ce2f0cc` / app deploy `dpl_1P8ixpt…`; docs tip `d3ef59a` / docs-only deploy `dpl_HM2sq…` ≠ app; PR #4 history `@faf734b`). **I.45DR** recorded a narrow Contabo WAV canary PASS. Contabo always-on / Full Final Mix Production GREEN / remaining parity gates remain separate Owner GOs.
+> **Supersession (I.26 / I.28 / PR #4 / I.45DR):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** (app-code tip `ce2f0cc` / app deploy `dpl_1P8ixpt…`; docs tip `e3dc0b9` PR #7 · prior docs tip `d3ef59a` HISTORY · docs-only last-known `dpl_HM2sq…` PR #6 · post-PR #7 `dpl_*` UNKNOWN ≠ app; PR #4 history `@faf734b`). **I.45DR** recorded a narrow Contabo WAV canary PASS. Contabo always-on / Full Final Mix Production GREEN / remaining parity gates remain separate Owner GOs.
 
 **Migration filename mapping (I.26–I.28):** original local `20261010010000` / `20261010020000` / `20261010030000` → repo + prod history `20261010185003` / `20261010185020` / `20261010185034`. Do not treat old prefixes as current filesystem paths.
 
