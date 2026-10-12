@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-12 — I.45EK Production deploy & alias SSOT (I.45EJ-R1 evidence)
+
+**Status:** **DOCS RECONCILE (I.45EK-DOCS)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO REDEPLOY / NO ALIAS MUTATION**
+**Evidence:** **I.45EJ-R1 PASS** — authorized Vercel panel read-only (existing evidence; **not** a fresh live re-verify in this note)
+**PR #8:** MERGED · merge SHA `df37048d0b34439de5b77ed83350048a6335c391` · **docs-only** (not an app feature release)
+**Vercel Production:** `dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5` · deployment SHA `df37048…` · Ready · Current · Latest (per I.45EJ-R1)
+**Aliases:** `www.bitrymdym.pl` **ASSIGNED** · `bitrymdym.vercel.app` **ASSIGNED** · `bitrymdym.pl` HTTP **308 → www** (not a direct deployment alias)
+**Planes:** commit ≠ deployment ≠ domain alias · docs tip `df37048` / `dpl_7Cp2gQ9…` · app-code tip `ce2f0cc` / prior `dpl_1P8ixpt…` = **HISTORY** for live aliases
+**Not claimed:** Final Mix / Stage J / P6.8 / Contabo always-on / worker status change — prior OPEN / last-known unchanged
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living Production row · this entry
+**Next:** Owner GO for commit/publish of docs tip · remaining Final Mix gates vs P6.8 · no auto Contabo enable
+
 ## 2026-10-12 — I.45DZ SSOT tip reconciliation after PR #7
 
 **Status:** **DOCS TIP RECONCILE (I.45DZ)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO / NO REDEPLOY**
