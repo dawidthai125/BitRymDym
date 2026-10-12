@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-12 — docs tip **`d3ef59a`** (PR #6) · app-code **`ce2f0cc`** / app deploy **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · docs-only deploy **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** (job `53398f9e-…` · artifact `21d98be2-…` READY) · persistent worker **disabled/inactive** · **≠ Full Final Mix Production GREEN** · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45BY `61b7cdf1…` + I.45DR `53398f9e…` — **do not re-run** · markers **I.45CF** (**≠ full-tree**) · Studio migration **≠ CLOSED** · V2 **`44f7cbd`** GREEN · **NEXT:** Owner GO — remaining Final Mix gates vs P6.8 — no auto Contabo enable
+**Updated:** 2026-10-12 — docs tip **`e3dc0b9`** (PR #7) · app-code **`ce2f0cc`** / app deploy **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · docs-only deploy last-known **`dpl_HM2sq…`** (PR #6) · post-PR #7 docs `dpl_*` **UNKNOWN** · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** (job `53398f9e-…` · artifact `21d98be2-…` READY) · persistent worker **disabled/inactive** · **≠ Full Final Mix Production GREEN** · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45BY `61b7cdf1…` + I.45DR `53398f9e…` — **do not re-run** · markers **I.45CF** (**≠ full-tree**) · Studio migration **≠ CLOSED** · V2 **`44f7cbd`** GREEN · **NEXT:** Owner GO — remaining Final Mix gates vs P6.8 — no auto Contabo enable
 
 ---
 
@@ -21,16 +21,18 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **DOCS MERGE TIP / origin/main** | **`d3ef59a39774f04874e58fb44188726c69c1da7d` (`d3ef59a`)** — Merge PR #6 (docs-only) · later than app-code tip · verify remotely; local worktree may still be dirty / diverge |
+| **DOCS MERGE TIP / origin/main** | **`e3dc0b9036ee85dd91ffca845362b4b12431f1bc` (`e3dc0b9`)** — Merge PR #7 (docs-only SSOT) · later than app-code tip · verify remotely; local worktree may still be dirty / diverge |
+| **PRIOR DOCS MERGE TIP (HISTORY)** | **`d3ef59a39774f04874e58fb44188726c69c1da7d` (`d3ef59a`)** — Merge PR #6 (docs-only) · superseded by PR #7 for current docs/`origin/main` tip |
 | **APP-CODE TIP** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete export-history conflict) · **current app-code baseline** · **≠** docs merge tip |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
 | **APP FEATURE COMMIT (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
 | **PRODUCTION APP DEPLOYMENT (observed)** | **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · READY · Production · aliases www + apex · observed **2026-10-11** (post PR #5) · SHA **`ce2f0cc`** |
-| **DOCS-ONLY DEPLOYMENT (observed)** | **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** — auto after PR #6 merge · **≠** new app-code deploy |
-| **PRODUCTION GIT SHA (app)** | **`ce2f0cc`** — correlates to app deploy `dpl_1P8ixpt…` · **≠** docs merge tip `d3ef59a` |
+| **DOCS-ONLY DEPLOYMENT (last-known)** | **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** — auto after PR #6 · **≠** app deploy · **≠** proven ID for post-PR #7 docs deploy |
+| **DOCS-ONLY DEPLOYMENT POST PR #7** | **UNKNOWN** — GH Production deploy @ `e3dc0b9` observed success; public `dpl_*` not confirmed in SSOT sources |
+| **PRODUCTION GIT SHA (app)** | **`ce2f0cc`** — correlates to app deploy `dpl_1P8ixpt…` · **≠** docs merge tip `e3dc0b9` |
 | **PRIOR PRODUCTION DEPLOY (HISTORY)** | `dpl_9YDCyG4jU6cDuyLu111VaEVQmSqy` @ `faf734b` (PR #4) · earlier `dpl_56FGH…` · superseded for live aliases |
-| **DUAL-PLANE NOTE** | Docs tip `d3ef59a` ≠ app-code tip `ce2f0cc` ≠ app deploy `dpl_1P8ixpt…` ≠ docs-only deploy `dpl_HM2sq…` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · do not assume `origin/main` == production app |
+| **DUAL-PLANE NOTE** | Docs tip `e3dc0b9` ≠ prior docs tip `d3ef59a` (HISTORY) ≠ app-code tip `ce2f0cc` ≠ app deploy `dpl_1P8ixpt…` ≠ docs-only last-known `dpl_HM2sq…` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · do not assume `origin/main` == production app |
 | **OPS NOTE (subject BOM)** | Commit `d515f3b` subject has UTF-8 BOM before `docs:` · Owner decision · **non-blocking** · do not amend without GO |
 | **V2 VERIFY DEPLOY (HISTORY)** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` — original V2 release gate · **superseded for live aliases** |
 | **PREVIOUS PRODUCTION TIP (HISTORY)** | `dpl_FVcx…` @ `3a086ad` · `44f7cbd` / `dpl_2ymz…` · `4fa658d` — Phase 7.1.6 · `79bc69f` V1 · older: `3fccbf7` · `9abc1b6` · `8f6eeca` |
@@ -102,11 +104,13 @@
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
 PRODUCTION APP DEPLOYMENT     = dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH · READY · www + apex (post PR #5) · SHA ce2f0cc
-DOCS-ONLY DEPLOYMENT          = dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g · auto after PR #6 · ≠ app-code deploy
+DOCS-ONLY DEPLOYMENT (last-kn)= dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g · after PR #6 · ≠ app · ≠ confirmed post-PR #7 dpl_*
+DOCS-ONLY DEPLOY POST PR #7   = UNKNOWN (GH Production @ e3dc0b9 success; public dpl_* unconfirmed)
 PRODUCTION GIT SHA (app)      = ce2f0cc (app-code tip / PR #5) · ≠ docs merge tip
   prior deploy (HISTORY)      = dpl_9YDCy… @ faf734b (PR #4) · dpl_56FGH… · superseded for live aliases
   V2 verify deploy (HISTORY)  = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd (superseded for aliases)
-DOCS MERGE TIP / origin/main  = d3ef59a (PR #6 docs-only) · local WIP may still dirty / diverge
+DOCS MERGE TIP / origin/main  = e3dc0b9036ee85dd91ffca845362b4b12431f1bc (PR #7) · local WIP may still dirty / diverge
+PRIOR DOCS MERGE (HISTORY)    = d3ef59a (PR #6) · superseded by PR #7
 APP-CODE TIP                  = ce2f0cc (PR #5) · current app-code baseline · ≠ docs tip
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3)
@@ -222,8 +226,10 @@ VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
 CURRENT                       = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · docs tip d3ef59a (PR #6) · app-code tip ce2f0cc · app deploy dpl_1P8ixpt…
-                              · docs-only deploy dpl_HM2sq… · STUDIO_EXPORT app DEPLOYED
+                              · docs tip e3dc0b9 (PR #7) · prior docs tip d3ef59a HISTORY (PR #6)
+                              · app-code tip ce2f0cc · app deploy dpl_1P8ixpt…
+                              · docs-only last-known dpl_HM2sq… (PR #6) · post-PR #7 dpl_* UNKNOWN
+                              · STUDIO_EXPORT app DEPLOYED
                               · I.45DR narrow Contabo WAV canary PASS (job 53398f9e… · artifact 21d98be2… READY)
                               · persistent Contabo worker disabled/inactive · not always-on
                               · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
