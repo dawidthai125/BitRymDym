@@ -11,9 +11,10 @@
 ```text
 OWNER ACCEPT: OD-SFM-F01…F07 (F04 modified — no silent tail trim)
 STAGE G–I: IMPLEMENTED · landed PR #4 @ faf734b · dpl_9YDCy…
-APP DEPLOYED · ≠ Final Mix Production GREEN / Stage J
+APP DEPLOYED · I.45DR narrow Contabo WAV canary PASS
+≠ Full Final Mix Production GREEN (remaining gates OPEN)
 LIVE PARITY NOT FULLY VERIFIED · Contabo not always-on claimed
-STAGE J / CONTABO CANARY / FULL PARITY: SEPARATE OWNER GO
+STAGE J FULL CLOSE / FULL PARITY / ALWAYS-ON: SEPARATE OWNER GO
 E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
 ```
 
@@ -31,7 +32,7 @@ E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
 | Unit / contract tests | **UNIT TESTED** |
 | Local worker / Storage / DB bake | **LOCAL INTEGRATION NOT RUN** |
 | Live Web Audio parity | **FUNCTIONAL EVIDENCE ACCEPTED (I.14-01)** — not full PCM / bit-perfect parity |
-| Production / Contabo | **APP DEPLOYED** @ `faf734b` / `dpl_9YDCy…` · Contabo **not** always-on · Stage J **OPEN** |
+| Production / Contabo | **APP DEPLOYED** (app-code tip `ce2f0cc` / app deploy `dpl_1P8ixpt…`; docs tip `d3ef59a` / docs-only deploy `dpl_HM2sq…` ≠ app; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · Full Final Mix GREEN **OPEN** |
 
 **Legend used below**
 
@@ -467,10 +468,10 @@ Stage I.3A Export dialog focus/a11y — DONE in main workspace (unit + prior loc
 Stage I.7 Controlled local E2E — PASS (UI→API→worker-once→WAV→Storage→download→cleanup)
 Stage I.8 Main↔worktree I.3A reconcile + SSOT docs — historical
 Stage I land PR #4 @ faf734b / dpl_9YDCy… — I.17 + I.45AU/AW recovery · narrow prod smoke I.45BK/BM/BO
-Stage J  Contabo / prod canary — Ops GO only after explicit Owner GO (**OPEN**)
+Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12) · Full Final Mix GREEN / remaining gates still **OPEN**
 ```
 
-### Stage I status (2026-10-11)
+### Stage I status (2026-10-11; Contabo/Stage J living rows updated 2026-10-12)
 
 | Plane | Status |
 |-------|--------|
@@ -481,15 +482,16 @@ Stage J  Contabo / prod canary — Ops GO only after explicit Owner GO (**OPEN**
 | Download | Existing `GET /api/mix/artifacts/[id]/download` (owner AuthZ / FINDING-03) |
 | UI unit/source tests | **RUN locally** (`studio-export-ui.test.ts` incl. I.3A focus contracts) |
 | Dialog focus / a11y (I.3A) | **IMPLEMENTED in main** (`studio-dialog-focus.ts`) · unit tested · prior local browser I.3B |
-| Runtime UI → API → worker → download | **PASS Stage I.7** (local isolated) · **prod enqueue→worker E2E not claimed** |
-| Production app | **DEPLOYED** · live tip **`ce2f0cc`** / `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` (PR #5) · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
-| Contabo / Stage J | **OPEN** · Contabo not claimed always-on · ≠ Full Final Mix Production GREEN |
-| Contabo pipeline / markers (last-known) | Byte-synced only: `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94…` (= `@faf734b`; I.45BV/BW) · service disabled/inactive · **markers I.45CF APPLIED:** tip `faf734b` · `SOURCE=github-raw-blob-selective` · `PATHS` = pipeline only · `NOTE=DEPLOYED_COMMIT_is_reference_tip_not_full_tree_sync` · backup `_backup_20261011T133026Z_i45cf_markers/` · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · prior `4778be5`/I.45Q = history · **no** new oneshot after I.45BV · **≠** full-tree claim |
+| Runtime UI → API → worker → download | **PASS Stage I.7** (local isolated) · **I.45DR** prod Contabo enqueue→transient worker→READY artifact **PASS (narrow WAV)** · owner download of I.45DR artifact **not** re-claimed here |
+| Production app | **DEPLOYED** · app-code tip **`ce2f0cc`** / app deploy `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` (PR #5) · docs tip **`d3ef59a`** / docs-only deploy `dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g` (PR #6) · **≠** new app-code · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
+| Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** |
+| Contabo pipeline / markers (last-known) | Byte-synced only: `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94…` (= `@faf734b`; I.45BV/BW) · persistent service **disabled/inactive** · **markers I.45CF APPLIED:** tip `faf734b` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed I.45DO/I.45DR · **I.45DR** ops path: transient `systemd-run --wait --collect` + `EnvironmentFile=-/etc/bitrymdym-e3-worker/worker.env` as `bitrymdym-e3` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as service user **FAIL** (no claim; no chmod) · **≠** continuous-mode / full-tree claim |
 | Live/offline FX parity | **FUNCTIONAL EVIDENCE (I.13F/I.14-01)** — not full PCM parity |
 | Cross-user download AuthZ | **NOT VERIFIED** |
 | Empty-session contract (I.15 → I.18) | **I.15** renderer · **I.17** typed public failure (variant B, in PR #4) · **I.18 local PASS** — [I.18 evidence](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md). **Empty-session on production not claimed.** |
 | Prod smoke (I.45BK/BM/BO) | Recovery GET-only **PASS** · existing WAV download **PASS** (API 200 · RIFF/WAVE · size match · Windows `WAV.wav`) |
 | Owner status (I.45BY) | Job `61b7cdf1-…` / project `d07f3011-…` · HTTP 200 · `STUDIO_EXPORT` · **SUCCEEDED** · artifact present · **do not re-run** |
+| Contabo canary (I.45DR) | Job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · `STUDIO_EXPORT` · `WAV` · attempt 1 · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · bucket `audio-artifacts` · 10,584,044 B (= `storage.objects`) · 60,000 ms · encoder `pcm_s16le_wav` · **do not re-run** |
 | Project delete × export history (I.45CV) | **PRODUCTION VERIFIED (narrow)** @ `ce2f0cc` / PR #5 — DELETE project with `render_jobs`/`audio_artifacts` → HTTP **409** + PL copy · project + deps retained · FK RESTRICT unchanged · empty-project delete **NOT TESTED** · soft-delete **OUT** |
 
 ### I.45AU / I.45AW addendum — export recovery (landed PR #4)
@@ -499,7 +501,7 @@ Stage J  Contabo / prod canary — Ops GO only after explicit Owner GO (**OPEN**
 - **I.17:** Both GET paths return allowlisted `errorCode` / `errorMessage` (never raw DB/renderer text). UI uses safe `mapped.message` for FAILED in poll and recovery.
 - **UI:** On dialog open only — GET latest (AbortController + generation guard). Never POST on mount/recovery/poll. `SUCCEEDED` + READY → download; without READY → `UNAVAILABLE` + „Sprawdź status” (GET only).
 - **I.45AW:** `UNAVAILABLE` with tracked `jobId` does **not** show generic „Ponów”; optional explicit „Utwórz nowy eksport mimo braku gotowego pliku” uses `forceNewAttempt` + new `attemptId`.
-- **Prod evidence (narrow):** I.45BK recovery GET-only PASS · I.45BM/BO owner WAV download PASS — does **not** close Stage J / Contabo / full parity / Studio migration.
+- **Prod evidence (narrow):** I.45BK recovery GET-only PASS · I.45BM/BO owner WAV download PASS · **I.45DR** Contabo WAV canary PASS — does **not** close Full Final Mix Production GREEN / always-on Contabo / full parity / Studio migration.
 - **Non-goals:** No migration/new table · no `localStorage` SSOT · no download AuthZ change · no Contabo always-on from this addendum.
 
 ---
@@ -537,21 +539,21 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 |-------|---------|
 | **Confirmed local behavior** | I.15–I.18 above (code + local integration) |
 | **Historical session evidence** | I.13F FX freeze · I.18 empty-session freeze (session-dated; not re-executed in I.20) |
-| **Production unverified (remaining)** | Contabo always-on · Stage J canary · empty-session on prod · cross-user download AuthZ · full Live↔Offline PCM parity — **not** proven by I.18 or I.45BK/BM/BO |
+| **Production unverified (remaining)** | Contabo always-on · empty-session on prod · cross-user download AuthZ · full Live↔Offline PCM parity · Full Final Mix Production GREEN / Stage J full close — **not** proven by I.18, I.45BK/BM/BO, or narrow **I.45DR** canary |
 
-> **Supersession (I.26 / I.28 / PR #4):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** @ `faf734b` / `dpl_9YDCy…` (PR #4). Contabo / Stage J canary / Final Mix Production GREEN remain separate Owner GOs.
+> **Supersession (I.26 / I.28 / PR #4 / I.45DR):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** (app-code tip `ce2f0cc` / app deploy `dpl_1P8ixpt…`; docs tip `d3ef59a` / docs-only deploy `dpl_HM2sq…` ≠ app; PR #4 history `@faf734b`). **I.45DR** recorded a narrow Contabo WAV canary PASS. Contabo always-on / Full Final Mix Production GREEN / remaining parity gates remain separate Owner GOs.
 
 **Migration filename mapping (I.26–I.28):** original local `20261010010000` / `20261010020000` / `20261010030000` → repo + prod history `20261010185003` / `20261010185020` / `20261010185034`. Do not treat old prefixes as current filesystem paths.
 
 ### Open (Owner may decide later)
 
 - Stronger Live↔Offline numeric thresholds (I.14-01 keeps functional bar).
-- Contabo readiness / Stage J canary / Final Mix Production GREEN — each requires a **separate** Owner GO.
+- Contabo always-on / Full Final Mix Production GREEN / Stage J full close — each requires a **separate** Owner GO (narrow I.45DR canary already recorded).
 - Empty-session on production · cross-user download AuthZ · full FX/PCM parity · Loop/Metronom · P6.8.
 
 ### Explicit non-authorization (unchanged)
 
-No Contabo start · no Stage J canary · no Final Mix GREEN claim · no DSP/reverb/resampler edits · no Sacred WIP edits · no commit/push/deploy from this living-status update alone.
+No Contabo always-on · no Final Mix GREEN claim · no DSP/reverb/resampler edits · no Sacred WIP edits · no commit/push/deploy from this living-status update alone · no re-run of SUCCEEDED jobs `53398f9e-…` / `61b7cdf1-…`.
 
 ### Stage I.17 — typed failure contract (variant B, local)
 
@@ -565,7 +567,7 @@ No Contabo start · no Stage J canary · no Final Mix GREEN claim · no DSP/reve
 | MIX/TAKE_EXPORT | Unchanged taxonomy and mappers |
 | Unit/source tests | `studio-export-failure-i17.test.ts` |
 | Local worker/DB integration | **Done in I.18** (see evidence freeze); **does not** replace production verification |
-| Still separate GO | Contabo · Stage J canary · empty-session on prod · Final Mix Production GREEN |
+| Still separate GO | Contabo always-on · empty-session on prod · Full Final Mix Production GREEN / Stage J full close (narrow I.45DR canary already PASS) |
 
 ### Stage I.20 — SSOT reconciliation (docs only)
 

@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-11 — **origin/main `ce2f0cc`** / prod **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · PR #5 Studio delete export-history conflict · I.45CV scenario **PRODUCTION VERIFIED** (409 only) · prior tip `faf734b` / `dpl_9YDCy…` = HISTORY · STUDIO_EXPORT app still DEPLOYED · **≠ Full Final Mix Production GREEN** · I.45BY job `61b7cdf1…` **SUCCEEDED** (do not re-run) · Contabo last-known **disabled/inactive** · markers **I.45CF** reference tip (**≠ full-tree**) · Studio migration **≠ CLOSED** · V2 **`44f7cbd`** GREEN · **NEXT:** Stage J vs P6.8 (Owner GO) — no auto Contabo / no re-run export
+**Updated:** 2026-10-12 — docs tip **`d3ef59a`** (PR #6) · app-code **`ce2f0cc`** / app deploy **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · docs-only deploy **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** (job `53398f9e-…` · artifact `21d98be2-…` READY) · persistent worker **disabled/inactive** · **≠ Full Final Mix Production GREEN** · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45BY `61b7cdf1…` + I.45DR `53398f9e…` — **do not re-run** · markers **I.45CF** (**≠ full-tree**) · Studio migration **≠ CLOSED** · V2 **`44f7cbd`** GREEN · **NEXT:** Owner GO — remaining Final Mix gates vs P6.8 — no auto Contabo enable
 
 ---
 
@@ -21,14 +21,16 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **REPOSITORY HEAD / origin/main** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 · verify remotely; local worktree may still be dirty / diverge |
+| **DOCS MERGE TIP / origin/main** | **`d3ef59a39774f04874e58fb44188726c69c1da7d` (`d3ef59a`)** — Merge PR #6 (docs-only) · later than app-code tip · verify remotely; local worktree may still be dirty / diverge |
+| **APP-CODE TIP** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete export-history conflict) · **current app-code baseline** · **≠** docs merge tip |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
 | **APP FEATURE COMMIT (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| **PRODUCTION DEPLOYMENT (observed)** | **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · READY · Production · aliases www + apex · observed **2026-10-11** (post PR #5) |
-| **PRODUCTION GIT SHA** | **`ce2f0cc`** (GitHub `main` + GH Deployment correlation to this dpl) |
+| **PRODUCTION APP DEPLOYMENT (observed)** | **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · READY · Production · aliases www + apex · observed **2026-10-11** (post PR #5) · SHA **`ce2f0cc`** |
+| **DOCS-ONLY DEPLOYMENT (observed)** | **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** — auto after PR #6 merge · **≠** new app-code deploy |
+| **PRODUCTION GIT SHA (app)** | **`ce2f0cc`** — correlates to app deploy `dpl_1P8ixpt…` · **≠** docs merge tip `d3ef59a` |
 | **PRIOR PRODUCTION DEPLOY (HISTORY)** | `dpl_9YDCyG4jU6cDuyLu111VaEVQmSqy` @ `faf734b` (PR #4) · earlier `dpl_56FGH…` · superseded for live aliases |
-| **DUAL-PLANE NOTE** | Remote tip `ce2f0cc` ≠ local dirty WIP HEAD · feature V2 `44f7cbd` remains ancestry GREEN · do not assume local `main` == production |
+| **DUAL-PLANE NOTE** | Docs tip `d3ef59a` ≠ app-code tip `ce2f0cc` ≠ app deploy `dpl_1P8ixpt…` ≠ docs-only deploy `dpl_HM2sq…` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · do not assume `origin/main` == production app |
 | **OPS NOTE (subject BOM)** | Commit `d515f3b` subject has UTF-8 BOM before `docs:` · Owner decision · **non-blocking** · do not amend without GO |
 | **V2 VERIFY DEPLOY (HISTORY)** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` — original V2 release gate · **superseded for live aliases** |
 | **PREVIOUS PRODUCTION TIP (HISTORY)** | `dpl_FVcx…` @ `3a086ad` · `44f7cbd` / `dpl_2ymz…` · `4fa658d` — Phase 7.1.6 · `79bc69f` V1 · older: `3fccbf7` · `9abc1b6` · `8f6eeca` |
@@ -65,9 +67,9 @@
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · live tip **`ce2f0cc`** / `dpl_1P8ixpt…` · **≠ Full Final Mix Production GREEN / Stage J** · Evidence (narrow): I.45BK/BM/BO + I.45BY job `61b7cdf1-…` / project `d07f3011-…` **SUCCEEDED** — **do not re-run** · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only; deps retained) · **Not claimed:** Contabo always-on · full worker-tree align · empty-session on prod · cross-user AuthZ · full FX/PCM parity · empty-project delete · Studio migration CLOSED · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
-| **Contabo E3 worker (last-known)** | Host `vmi3622761` · service **disabled/inactive** (I.45BW/CE) · **byte-synced path only:** `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94a2519515f0f6ad6a78603a8351718427f9e84119d7fbacd43388bfe6` (= `@faf734b`; I.45BV/BW) · **markers I.45CF APPLIED:** `DEPLOYED_COMMIT` / `WORKER_TARGET_SHA` tip = `faf734bd99a13b427f00745563b54583f7258e94` · `SOURCE=github-raw-blob-selective` · `PATHS=src/lib/audio/render-worker-pipeline.ts` · `NOTE=DEPLOYED_COMMIT_is_reference_tip_not_full_tree_sync` · marker file SHA256 `DEPLOYED_COMMIT`=`bdf63b2f…404c` · `WORKER_TARGET_SHA`=`f84af2a8…5379` · backup `_backup_20261011T133026Z_i45cf_markers/` · **I.45CB** true runtime closure 67: **1 RAW_MATCH** + **66 LINE_ENDING_ONLY** + **0 REAL_CONTENT_DIFF** · API-outside-closure drift **OPEN** · prior markers `4778be5`/I.45Q = **history** · `E3_RENDER_JOBS_ENABLED` last-known **TRUE** @ I.45BU · current **UNKNOWN** · **no** new oneshot after I.45BV · **≠** continuous-mode / full-tree align |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — Stage J vs P6.8 (or other Owner-scoped Contabo hygiene) · markers update **done** (I.45CF) · do **not** re-oneshot / re-run SUCCEEDED job `61b7cdf1…` · do not mark Final Mix / Studio migration CLOSED · do not auto-start Contabo · do not claim full VPS tree = `faf734b` |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / app deploy `dpl_1P8ixpt…` · **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · `audio-artifacts` · 10,584,044 B · 60,000 ms · `pcm_s16le_wav` · **Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · prior evidence: I.45BK/BM/BO + I.45BY `61b7cdf1-…` **SUCCEEDED** — **do not re-run** either job · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only) · **Not claimed:** Contabo always-on · full worker-tree align · empty-session on prod · cross-user AuthZ · full FX/PCM parity · empty-project delete · Studio migration CLOSED · Stage J full close · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **Contabo E3 worker (last-known)** | Host `vmi3622761` · persistent service **disabled/inactive** (I.45BW/CE/DR) · **byte-synced path only:** `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94a2519515f0f6ad6a78603a8351718427f9e84119d7fbacd43388bfe6` (= `@faf734b`; I.45BV/BW) · **markers I.45CF APPLIED:** tip `faf734bd99a13b427f00745563b54583f7258e94` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed **I.45DO/I.45DR** (not perpetual) · **I.45DR** oneshot via transient `systemd-run` + `EnvironmentFile` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as `bitrymdym-e3` **FAIL** (env unreadable; no claim; no chmod) · **≠** continuous-mode / full-tree align |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · remaining Final Mix gates **OPEN** · P6.8 **NOT STARTED** · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · do not mark Final Mix / Studio migration / Stage J full close · do not auto-enable Contabo · do not claim full VPS tree = `faf734b` |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -89,7 +91,7 @@
 | **STORAGE-ARCH-01** | LOCKED · Hybrid C |
 | **STORAGE-ARCH-07 / Local Layer-2** | DESIGN FREEZE COMPLETE · **43/43 RESTORE VERIFIED** · AWS DEFERRED |
 | **E3** | PRODUCTION VERIFIED — GREEN |
-| **Worker** | Contabo EXTERNAL COMPUTE · last-known **disabled/inactive** · pipeline tip-aligned `@faf734b` (I.45BV) · markers reference tip `faf734b` (I.45CF; selective · ≠ full tree) · closure CRLF-only + API-outside drift OPEN · not always-on · capability GREEN · bootstrap history `92496d4` / prior `836679a+phase1` |
+| **Worker** | Contabo EXTERNAL COMPUTE · persistent **disabled/inactive** · I.45DR narrow canary via transient oneshot **PASS** · pipeline tip-aligned `@faf734b` (I.45BV) · markers I.45CF (selective · ≠ full tree) · flag TRUE last-confirmed I.45DO/DR · not always-on · capability GREEN · bootstrap history `92496d4` |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
 
 ---
@@ -99,11 +101,13 @@
 ```text
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION DEPLOYMENT (obs.)  = dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH · READY · www + apex (post PR #5)
-PRODUCTION GIT SHA            = ce2f0cc (GitHub main / merge PR #5)
+PRODUCTION APP DEPLOYMENT     = dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH · READY · www + apex (post PR #5) · SHA ce2f0cc
+DOCS-ONLY DEPLOYMENT          = dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g · auto after PR #6 · ≠ app-code deploy
+PRODUCTION GIT SHA (app)      = ce2f0cc (app-code tip / PR #5) · ≠ docs merge tip
   prior deploy (HISTORY)      = dpl_9YDCy… @ faf734b (PR #4) · dpl_56FGH… · superseded for live aliases
   V2 verify deploy (HISTORY)  = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd (superseded for aliases)
-REPOSITORY HEAD / origin/main = ce2f0cc · local WIP may still dirty / diverge from remote
+DOCS MERGE TIP / origin/main  = d3ef59a (PR #6 docs-only) · local WIP may still dirty / diverge
+APP-CODE TIP                  = ce2f0cc (PR #5) · current app-code baseline · ≠ docs tip
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3)
 SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
@@ -218,16 +222,20 @@ VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
 CURRENT                       = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · remote tip ce2f0cc · aliases dpl_1P8ixpt… · STUDIO_EXPORT app DEPLOYED
+                              · docs tip d3ef59a (PR #6) · app-code tip ce2f0cc · app deploy dpl_1P8ixpt…
+                              · docs-only deploy dpl_HM2sq… · STUDIO_EXPORT app DEPLOYED
+                              · I.45DR narrow Contabo WAV canary PASS (job 53398f9e… · artifact 21d98be2… READY)
+                              · persistent Contabo worker disabled/inactive · not always-on
                               · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
-                              · Final Mix ≠ Production GREEN · Studio migration ≠ CLOSED
+                              · Full Final Mix Production GREEN NOT VERIFIED / OPEN · Studio migration ≠ CLOSED
                               · 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P4.6 / Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · Stage J vs P6.8 (Owner GO) · markers I.45CF done · DEPLOYED_COMMIT = reference tip not full-tree
+                              · I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED
+                              · markers I.45CF done · DEPLOYED_COMMIT = reference tip not full-tree
                               · V2 follow-ups NON-BLOCKING · do NOT auto-open EPIC / payments
                               · do NOT reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P6.5 Scenario B / P4.6
                               · do NOT permanently enable Contabo / claim continuous-mode without Owner GO
-                              · do NOT re-run SUCCEEDED Studio Export job · do NOT claim Final Mix GREEN / Studio migration CLOSED
+                              · do NOT re-run SUCCEEDED jobs 53398f9e… or 61b7cdf1… · do NOT claim Final Mix GREEN / Stage J full close / Studio migration CLOSED
                               · do NOT claim Contabo full-tree = tip · API-outside-closure drift remains OPEN
                               · do NOT claim empty-project delete PRODUCTION VERIFIED (I.45CV out of scope)
                               · do NOT commit P4 local seam / SA-07 untracked / Sacred WIP without Owner GO
@@ -250,7 +258,7 @@ FAR-01                        = NOT CLOSED (ops contaminated soak — not produc
 Durable media                = Supabase Storage (beat-audio · take-audio · audio-artifacts)
 Metadata SSOT                = Supabase PostgreSQL
 Application                  = Vercel / Next.js
-EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · last-known disabled/inactive (I.45BW) · not always-on
+EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · persistent disabled/inactive (I.45BW/DR) · I.45DR transient canary PASS · not always-on
 Role ≠ Account Level ≠ Creator Rank ≠ Premium Tier
 Premium SSOT                 = resolveProductEntitlement + PREMIUM_TIER_MATRIX
 Sample Policy SSOT           = getSamplePolicy + SAMPLE_POLICY_DEFAULTS + sample_policy_settings
