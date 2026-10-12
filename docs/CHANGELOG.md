@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-12 — I.46-A5 SSOT tip/plane reconcile after PR #10 merge
+
+**Status:** **DOCS RECONCILE (I.46-A5)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO / NO REDEPLOY**
+**PR #10:** **MERGED** · merge SHA `522e514fcc42f314b4db621c80c30d7412ee7e08` (`522e514`) · scope = **documentation-only** closure of Stage J gate **J2** (Download AuthZ closeout docs)
+**Planes (authoritative after this note):** GitHub main tip **`522e514`** · app-code tip **`ce2f0cc`** (last-established in available evidence) · production last-known **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** @ **`df37048`** (I.45EJ-R1 · **HISTORICAL / NEEDS FRESH VERIFY**)
+**Explicit non-claims:** merge `522e514` does **not** prove that SHA was deployed · docs may deploy via pipeline, but this task does **not** assume that happened · domain aliases remain last-known until re-verified · merge is **not** evidence of a functional app-code production release
+**Gates unchanged:** J2 **PASS / CLOSED** · Stage J **OPEN** · Full Final Mix GREEN **NOT VERIFIED / OPEN** · P6.8 **NOT STARTED** · `object_key` live probe **NOT EXECUTED** · Contabo always-on **OPEN / NOT VERIFIED**
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living tip/plane rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · fresh production plane verify if needed · no auto Contabo enable
+
 ## 2026-10-12 — I.45EX J2 Download AuthZ gate PASS / CLOSED (A16–A18)
 
 **Status:** **DOCS CLOSEOUT (I.45EX J2)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO**
@@ -15,6 +25,7 @@ Format: data, zakres, skrót.
 **Not claimed:** Stage J full close · Full Final Mix Production GREEN · P6.8 · Contabo always-on · full module security audit · deploy/tip change
 **Docs:** [I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living AuthZ/J2 rows · this entry
 **Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo enable
+**Later tip note:** PR #10 merged this closeout at `522e514` — see I.46-A5 entry above for tip/plane split (merge ≠ deploy)
 
 ## 2026-10-12 — I.45EK Production deploy & alias SSOT (I.45EJ-R1 evidence)
 
