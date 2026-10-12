@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-12 — I.47 Session Closure & Cold-Start Handoff
+
+**Status:** **DOCS SESSION CLOSURE (I.47)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO / NO REDEPLOY**
+**Git tip (remote main):** **`f730a7af1ed34a9667e7bfba1a766d8481ed9df5` (`f730a7a`)** — Merge PR #11 (docs-only SSOT tip/plane) · prior tip **`522e514`** (PR #10 J2 docs) = HISTORY
+**I.46 closure facts:** PR #10 merged @ `522e514` · PR #11 merged @ `f730a7a` · **I.46-A10** confirmed Production deploy **`dpl_28oHcn3w146saZ6fNDFsiCQehUQP`** Ready @ SHA `f730a7a` · aliases www + `bitrymdym.vercel.app` + `bitrymdym.pl` assigned · apex redirect e2e **NOT VERIFIED** · functional app GREEN **not** claimed
+**Planes after I.47:** Git tip **`f730a7a`** · app-code tip **`ce2f0cc`** · prod last-confirmed **`dpl_28oH…` @ `f730a7a`** (I.46-A10 · this note does **not** re-verify) · prior prod `dpl_7Cp2gQ9…` @ `df37048` = HISTORY
+**Gates unchanged:** J2 **PASS / CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · `object_key` live probe **NOT EXECUTED** · Contabo always-on **OPEN / NOT VERIFIED** · apex redirect e2e **NOT VERIFIED**
+**Cold-start:** complete MASTER PROMPTS (ChatGPT + Cursor) in [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · FINAL_COLD_START · README · bake freeze living tip/plane rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo · no sync dirty local main · no commit/push of I.47 without separate GO
+
 ## 2026-10-12 — I.46-A5 SSOT tip/plane reconcile after PR #10 merge
 
 **Status:** **DOCS RECONCILE (I.46-A5)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO / NO REDEPLOY**
