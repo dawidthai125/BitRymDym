@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-12 — I.45EX J2 Download AuthZ gate PASS / CLOSED (A16–A18)
+
+**Status:** **DOCS CLOSEOUT (I.45EX J2)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO**
+**Gate:** Stage J **J2** (narrow cross-user / owner / unauth download AuthZ) → **PASS / CLOSED**
+**Evidence:** I.45EX-A16 owner GET → HTTP **200** · `success=true` · `hasUrl=true` · `qualityTier=WAV` · ALLOW · I.45EX-A17 other user → HTTP **403** · `success=false` · `hasUrl=false` · DENY · I.45EX-A18 unauth `credentials: 'omit'` → HTTP **401** · `success=false` · `hasUrl=false` · DENY
+**Fixture:** artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · job `61b7cdf1-…` untouched · canary `21d98be2-…` excluded · Sacred SHA256 **MATCH** on all three · no WAV bytes / no signed URL in evidence · `object_key` live probe **NOT EXECUTED**
+**Not claimed:** Stage J full close · Full Final Mix Production GREEN · P6.8 · Contabo always-on · full module security audit · deploy/tip change
+**Docs:** [I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living AuthZ/J2 rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo enable
+
 ## 2026-10-12 — I.45EK Production deploy & alias SSOT (I.45EJ-R1 evidence)
 
 **Status:** **DOCS RECONCILE (I.45EK-DOCS)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO REDEPLOY / NO ALIAS MUTATION**
