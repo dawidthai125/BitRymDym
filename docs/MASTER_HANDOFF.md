@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-12 — **docs tip `df37048`** / prod **`dpl_7Cp2gQ9…`** (Ready · Current · Latest · I.45EJ-R1 PASS RO) · aliases **www** + **`bitrymdym.vercel.app`** · apex **308→www** · app-code tip **`ce2f0cc`** (HISTORY for live aliases) · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** · persistent worker **disabled/inactive** · **≠** Full Final Mix Production GREEN · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45BY + I.45DR SUCCEEDED jobs — **do not re-run** · markers **I.45CF** (selective · ≠ full tree) · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-12 — **docs tip `df37048`** / prod **`dpl_7Cp2gQ9…`** (Ready · Current · Latest · I.45EJ-R1 PASS RO) · aliases **www** + **`bitrymdym.vercel.app`** · apex **308→www** · app-code tip **`ce2f0cc`** (HISTORY for live aliases) · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** · **J2 Download AuthZ PASS / CLOSED** (I.45EX-A16/A17/A18) · persistent worker **disabled/inactive** · **≠** Full Final Mix Production GREEN · Stage J canary evidence **PASS (narrow)** · **Stage J OPEN** (J2 only) · remaining Final Mix gates **OPEN** · I.45BY + I.45DR SUCCEEDED jobs — **do not re-run** · markers **I.45CF** (selective · ≠ full tree) · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -49,8 +49,8 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Phase 7.1.3 Inspector IA** | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (ancestry · do not reopen) |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked lib/migration = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · current docs/prod tip **`df37048`** / `dpl_7Cp2gQ9…` (I.45EJ-R1 · docs-only PR #8 — **≠** new app feature) · **I.45DR — PASS:** narrow WAV canary · job `53398f9e-…` / project `bfc3d223-…` · artifact `21d98be2-…` **READY** · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · prior I.45BY `61b7cdf1…` **SUCCEEDED** (do not re-run either) · I.45CV delete-conflict **PRODUCTION VERIFIED** (HTTP 409 · empty delete NOT tested) · Contabo persistent: **disabled/inactive** · markers **I.45CF** (selective · ≠ full tree) · open: remaining Final Mix gates · always-on · AuthZ · empty-session prod · full FX/PCM · Studio migration CLOSED · Stage J full close · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · remaining Final Mix gates **OPEN** · P6.8 **NOT STARTED** · markers **done** (I.45CF) · no auto Contabo enable / Final Mix GREEN · do not re-run `53398f9e-…` or `61b7cdf1…` · do not claim empty-project delete verified · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · current docs/prod tip **`df37048`** / `dpl_7Cp2gQ9…` (I.45EJ-R1 · docs-only PR #8 — **≠** new app feature) · **I.45DR — PASS:** narrow WAV canary · job `53398f9e-…` / project `bfc3d223-…` · artifact `21d98be2-…` **READY** · **J2 Download AuthZ — PASS / CLOSED** (I.45EX-A16/A17/A18 · artifact `c596e7bc-…` · owner 200 · other-user 403 · unauth 401 · ≠ full AuthZ audit) · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · **Stage J OPEN** (J2 only) · prior I.45BY `61b7cdf1…` **SUCCEEDED** (do not re-run either) · I.45CV delete-conflict **PRODUCTION VERIFIED** (HTTP 409 · empty delete NOT tested) · Contabo persistent: **disabled/inactive** · markers **I.45CF** (selective · ≠ full tree) · open: remaining Stage J / Final Mix gates · always-on · empty-session prod · full FX/PCM · Studio migration CLOSED · Stage J full close · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · **J2 PASS / CLOSED** · remaining Stage J / Final Mix gates **OPEN** · P6.8 **NOT STARTED** · markers **done** (I.45CF) · no auto Contabo enable / Final Mix GREEN · do not re-run `53398f9e-…` or `61b7cdf1…` · do not claim empty-project delete verified · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -870,7 +870,7 @@ APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
 PRODUCTION DEPLOYMENT (obs.)  = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready · Current · Latest (I.45EJ-R1)
   aliases                     = www.bitrymdym.pl · bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www
 PRODUCTION GIT SHA            = df37048
-STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · ≠ Full Final Mix Production GREEN
+STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
 DELETE×EXPORT HISTORY         = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
 PRODUCTION URL                = https://www.bitrymdym.pl
@@ -882,8 +882,8 @@ PHASE 7.1.3 INSPECTOR IA      = CLOSED / GREEN @ 8f6eeca (do not reopen)
 P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 Contabo                       = persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · pipeline @faf734b · markers I.45CF (selective ≠ full tree) · not always-on
 P6.8                          = NOT STARTED / OWNER DECISION
-NEXT GATE                     = STOP — I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
-NOTE                          = Living SSOT = PROJECT_STATE.md · docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #8 / I.45EK docs-only
+NEXT GATE                     = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
+NOTE                          = Living SSOT = PROJECT_STATE.md · docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #8 / I.45EK docs-only · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
 SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md → PROJECT_STATE (SSOT) / MASTER_HANDOFF / REUSE_SSOT_MAP
@@ -1033,7 +1033,7 @@ APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
 PRODUCTION DEPLOYMENT (obs.)  = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready · Current · Latest (I.45EJ-R1)
   aliases                     = www.bitrymdym.pl · bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www
 PRODUCTION GIT SHA            = df37048
-STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · ≠ Full Final Mix Production GREEN
+STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
 DELETE×EXPORT HISTORY         = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
 STUDIO VISUAL PARITY V2       = GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
@@ -1044,8 +1044,8 @@ PHASE 7.1.3 INSPECTOR IA      = CLOSED / GREEN @ 8f6eeca (do not reopen)
 P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 WORKER                        = Contabo persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · pipeline @faf734b · markers I.45CF (selective ≠ full tree)
 P6.8                          = NOT STARTED / OWNER DECISION
-NEXT GATE                     = STOP — I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
-NOTE                          = Living SSOT = PROJECT_STATE.md · docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #8 / I.45EK docs-only
+NEXT GATE                     = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
+NOTE                          = Living SSOT = PROJECT_STATE.md · docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #8 / I.45EK docs-only · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
 SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 NEXT SESSION ENTRY            = FINAL_COLD_START_HANDOFF.md → PROJECT_STATE.md → this file → REUSE_SSOT_MAP.md

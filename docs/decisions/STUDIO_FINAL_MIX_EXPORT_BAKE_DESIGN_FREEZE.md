@@ -12,7 +12,8 @@
 OWNER ACCEPT: OD-SFM-F01…F07 (F04 modified — no silent tail trim)
 STAGE G–I: IMPLEMENTED · landed PR #4 @ faf734b · dpl_9YDCy…
 APP DEPLOYED · I.45DR narrow Contabo WAV canary PASS
-≠ Full Final Mix Production GREEN (remaining gates OPEN)
+J2 DOWNLOAD AUTHZ: PASS / CLOSED (I.45EX-A16/A17/A18)
+STAGE J: OPEN (J2 only) · ≠ Full Final Mix Production GREEN (remaining gates OPEN)
 LIVE PARITY NOT FULLY VERIFIED · Contabo not always-on claimed
 STAGE J FULL CLOSE / FULL PARITY / ALWAYS-ON: SEPARATE OWNER GO
 E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
@@ -32,7 +33,7 @@ E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
 | Unit / contract tests | **UNIT TESTED** |
 | Local worker / Storage / DB bake | **LOCAL INTEGRATION NOT RUN** |
 | Live Web Audio parity | **FUNCTIONAL EVIDENCE ACCEPTED (I.14-01)** — not full PCM / bit-perfect parity |
-| Production / Contabo | **APP DEPLOYED** (docs/prod tip `df37048` / `dpl_7Cp2gQ9…` · I.45EJ-R1; app-code tip `ce2f0cc` / prior `dpl_1P8ixpt…` HISTORY; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · Full Final Mix GREEN **OPEN** |
+| Production / Contabo | **APP DEPLOYED** (docs/prod tip `df37048` / `dpl_7Cp2gQ9…` · I.45EJ-R1; app-code tip `ce2f0cc` / prior `dpl_1P8ixpt…` HISTORY; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · **J2 PASS / CLOSED** · Stage J **OPEN** · Full Final Mix GREEN **OPEN** |
 
 **Legend used below**
 
@@ -468,7 +469,7 @@ Stage I.3A Export dialog focus/a11y — DONE in main workspace (unit + prior loc
 Stage I.7 Controlled local E2E — PASS (UI→API→worker-once→WAV→Storage→download→cleanup)
 Stage I.8 Main↔worktree I.3A reconcile + SSOT docs — historical
 Stage I land PR #4 @ faf734b / dpl_9YDCy… — I.17 + I.45AU/AW recovery · narrow prod smoke I.45BK/BM/BO
-Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12) · Full Final Mix GREEN / remaining gates still **OPEN**
+Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12) · **J2 Download AuthZ PASS / CLOSED** (I.45EX-A16/A17/A18) · Stage J **OPEN** (J2 only) · Full Final Mix GREEN / remaining gates still **OPEN**
 ```
 
 ### Stage I status (2026-10-11; Contabo/Stage J living rows updated 2026-10-12)
@@ -484,10 +485,10 @@ Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12
 | Dialog focus / a11y (I.3A) | **IMPLEMENTED in main** (`studio-dialog-focus.ts`) · unit tested · prior local browser I.3B |
 | Runtime UI → API → worker → download | **PASS Stage I.7** (local isolated) · **I.45DR** prod Contabo enqueue→transient worker→READY artifact **PASS (narrow WAV)** · owner download of I.45DR artifact **not** re-claimed here |
 | Production app | **DEPLOYED** · docs/prod tip **`df37048`** / `dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5` (PR #8 docs-only · Ready/Current/Latest · I.45EJ-R1) · aliases www + `bitrymdym.vercel.app` · apex 308→www · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` (PR #5) = HISTORY · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
-| Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** |
+| Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **J2 PASS / CLOSED** (I.45EX-A16/A17/A18) · **Stage J OPEN** (J2 only) · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** |
 | Contabo pipeline / markers (last-known) | Byte-synced only: `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94…` (= `@faf734b`; I.45BV/BW) · persistent service **disabled/inactive** · **markers I.45CF APPLIED:** tip `faf734b` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed I.45DO/I.45DR · **I.45DR** ops path: transient `systemd-run --wait --collect` + `EnvironmentFile=-/etc/bitrymdym-e3-worker/worker.env` as `bitrymdym-e3` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as service user **FAIL** (no claim; no chmod) · **≠** continuous-mode / full-tree claim |
 | Live/offline FX parity | **FUNCTIONAL EVIDENCE (I.13F/I.14-01)** — not full PCM parity |
-| Cross-user download AuthZ | **NOT VERIFIED** |
+| Cross-user download AuthZ (J2) | **PASS / CLOSED** — I.45EX-A16 owner HTTP **200** ALLOW · I.45EX-A17 other-user HTTP **403** DENY · I.45EX-A18 unauth HTTP **401** DENY · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · ≠ full module audit · `object_key` live probe **NOT EXECUTED** · [closeout](../audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) |
 | Empty-session contract (I.15 → I.18) | **I.15** renderer · **I.17** typed public failure (variant B, in PR #4) · **I.18 local PASS** — [I.18 evidence](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md). **Empty-session on production not claimed.** |
 | Prod smoke (I.45BK/BM/BO) | Recovery GET-only **PASS** · existing WAV download **PASS** (API 200 · RIFF/WAVE · size match · Windows `WAV.wav`) |
 | Owner status (I.45BY) | Job `61b7cdf1-…` / project `d07f3011-…` · HTTP 200 · `STUDIO_EXPORT` · **SUCCEEDED** · artifact present · **do not re-run** |
@@ -539,7 +540,7 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 |-------|---------|
 | **Confirmed local behavior** | I.15–I.18 above (code + local integration) |
 | **Historical session evidence** | I.13F FX freeze · I.18 empty-session freeze (session-dated; not re-executed in I.20) |
-| **Production unverified (remaining)** | Contabo always-on · empty-session on prod · cross-user download AuthZ · full Live↔Offline PCM parity · Full Final Mix Production GREEN / Stage J full close — **not** proven by I.18, I.45BK/BM/BO, or narrow **I.45DR** canary |
+| **Production unverified (remaining)** | Contabo always-on · empty-session on prod · full Live↔Offline PCM parity · Full Final Mix Production GREEN / Stage J full close — **not** proven by I.18, I.45BK/BM/BO, narrow **I.45DR** canary, or narrow **J2** AuthZ (J2 closed separately; Stage J still OPEN) |
 
 > **Supersession (I.26 / I.28 / PR #4 / I.45DR / I.45EJ-R1):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** (app-code tip `ce2f0cc`; docs/prod tip `df37048` / `dpl_7Cp2gQ9…` per I.45EJ-R1 — PR #8 docs-only; PR #4 history `@faf734b`). **I.45DR** recorded a narrow Contabo WAV canary PASS. Contabo always-on / Full Final Mix Production GREEN / remaining parity gates remain separate Owner GOs.
 
@@ -548,8 +549,8 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 ### Open (Owner may decide later)
 
 - Stronger Live↔Offline numeric thresholds (I.14-01 keeps functional bar).
-- Contabo always-on / Full Final Mix Production GREEN / Stage J full close — each requires a **separate** Owner GO (narrow I.45DR canary already recorded).
-- Empty-session on production · cross-user download AuthZ · full FX/PCM parity · Loop/Metronom · P6.8.
+- Contabo always-on / Full Final Mix Production GREEN / Stage J full close — each requires a **separate** Owner GO (narrow I.45DR canary already recorded; narrow **J2** AuthZ already **PASS / CLOSED**).
+- Empty-session on production · full FX/PCM parity · Loop/Metronom · remaining Stage J gates · P6.8.
 
 ### Explicit non-authorization (unchanged)
 
@@ -567,7 +568,7 @@ No Contabo always-on · no Final Mix GREEN claim · no DSP/reverb/resampler edit
 | MIX/TAKE_EXPORT | Unchanged taxonomy and mappers |
 | Unit/source tests | `studio-export-failure-i17.test.ts` |
 | Local worker/DB integration | **Done in I.18** (see evidence freeze); **does not** replace production verification |
-| Still separate GO | Contabo always-on · empty-session on prod · Full Final Mix Production GREEN / Stage J full close (narrow I.45DR canary already PASS) |
+| Still separate GO | Contabo always-on · empty-session on prod · Full Final Mix Production GREEN / Stage J full close (narrow I.45DR canary already PASS · narrow J2 AuthZ already PASS/CLOSED) |
 
 ### Stage I.20 — SSOT reconciliation (docs only)
 

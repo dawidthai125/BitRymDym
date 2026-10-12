@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-12 — docs tip **`df37048`** · dpl **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** (Ready · Current · Latest · I.45EJ-R1 PASS RO) · aliases **www** + **`bitrymdym.vercel.app`** · apex **308→www** · app-code tip **`ce2f0cc`** (HISTORY for live aliases) · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** · persistent worker **disabled/inactive** · **≠** Full Final Mix Production GREEN · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45CV **PRODUCTION VERIFIED** (409 narrow) · V2 **`44f7cbd`** GREEN/CLOSED · markers **I.45CF** (selective · ≠ full tree) · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-12 — docs tip **`df37048`** · dpl **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** (Ready · Current · Latest · I.45EJ-R1 PASS RO) · aliases **www** + **`bitrymdym.vercel.app`** · apex **308→www** · app-code tip **`ce2f0cc`** (HISTORY for live aliases) · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** · **J2 Download AuthZ PASS / CLOSED** (I.45EX-A16/A17/A18) · persistent worker **disabled/inactive** · **≠** Full Final Mix Production GREEN · Stage J canary evidence **PASS (narrow)** · **Stage J OPEN** (J2 only) · remaining Final Mix gates **OPEN** · I.45CV **PRODUCTION VERIFIED** (409 narrow) · V2 **`44f7cbd`** GREEN/CLOSED · markers **I.45CF** (selective · ≠ full tree) · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
 **Type:** Documentation continuity · cold-start entry · dual-plane (docs tip `df37048` ≠ app-code tip `ce2f0cc` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.
@@ -49,6 +49,8 @@ STUDIO_EXPORT APP             = DEPLOYED (app-code tip ce2f0cc · docs/prod tip 
                               · PR #8 = docs-only · ≠ new app feature release
                               · I.45DR — PASS: narrow production STUDIO_EXPORT WAV canary
                               · job 53398f9e-… / project bfc3d223-… / artifact 21d98be2-… READY
+                              · J2 Download AuthZ — PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc-…)
+                              · Stage J OPEN (J2 only) · ≠ Stage J full close
                               · Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN
                               · prior: I.45BK/BM/BO + I.45BY 61b7cdf1-… SUCCEEDED (do not re-run either)
                               · I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow)
@@ -113,10 +115,11 @@ CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
                               · docs tip df37048 / dpl_7Cp2gQ9… (I.45EJ-R1) · app-code tip ce2f0cc (HISTORY)
                               · STUDIO_EXPORT APP DEPLOYED
                               · I.45DR narrow Contabo WAV canary PASS · persistent worker disabled/inactive
+                              · J2 Download AuthZ PASS / CLOSED · Stage J OPEN (J2 only)
                               · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
                               · Full Final Mix Production GREEN NOT VERIFIED / OPEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED
+                              · I.45DR narrow canary PASS · J2 PASS / CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED
                               · markers done (I.45CF) · no auto Contabo enable / no re-run SUCCEEDED exports
                               · V2 CLOSED · follow-ups NON-BLOCKING
                               · do NOT auto-open EPIC / invent Phase 7.1.7
@@ -657,8 +660,8 @@ WIP preserved
 [ ] Read PROJECT_STATE.md FIRST as living SSOT (tip / deploy / Studio Export / Contabo / NEXT)
 [ ] Confirm docs tip df37048 (PR #8 docs-only) · local WIP may diverge — do not force local HEAD == main · do not treat origin/main as app-code baseline
 [ ] Confirm dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready/Current/Latest · SHA df37048 (I.45EJ-R1)
-[ ] Confirm STUDIO_EXPORT APP DEPLOYED · I.45DR narrow WAV canary PASS · ≠ Full Final Mix Production GREEN
-[ ] Confirm I.45DR job 53398f9e-… / artifact 21d98be2-… READY · do not re-run · I.45BY 61b7cdf1-… untouched
+[ ] Confirm STUDIO_EXPORT APP DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
+[ ] Confirm I.45DR job 53398f9e-… / artifact 21d98be2-… READY · do not re-run · I.45BY 61b7cdf1-… untouched · J2 fixture c596e7bc-… (no re-run)
 [ ] Confirm I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow) · empty delete NOT TESTED
 [ ] Confirm APP FEATURE V2 = 44f7cbd · GREEN / CLOSED · verify history dpl_2ymz… (not live alias)
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
@@ -666,10 +669,10 @@ WIP preserved
 [ ] Confirm Contabo persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · markers I.45CF (selective ≠ full tree) · not always-on
 [ ] Confirm Closed = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
 [ ] Confirm Phase 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (ancestry · do not reopen)
-[ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze (living Contabo/Stage J)
+[ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze + audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 [ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
-[ ] NEXT GATE = STOP — I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo
+[ ] NEXT GATE = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo
 [ ] Do not re-run SUCCEEDED Studio Export jobs 53398f9e… or 61b7cdf1… without new Owner GO
 [ ] Local main / Owner WIP diverge from origin/main — no fetch/pull/clean/sync without Owner GO
 [ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
@@ -686,7 +689,7 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (2026-10-12 · docs tip df37048 · I.45EJ-R1 · I.45DR narrow canary PASS · V2 GREEN/CLOSED)
+FINAL COLD START HANDOFF     = READY (2026-10-12 · docs tip df37048 · I.45EJ-R1 · I.45DR narrow canary PASS · J2 AuthZ PASS/CLOSED · V2 GREEN/CLOSED)
 REUSE / DO NOT DUPLICATE     = architecture/REUSE_SSOT_MAP.md
 LIVING SSOT                  = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT)
 DOCS TIP / origin/main       = df37048 (PR #8 docs-only · remote confirmed; local WIP may diverge)
@@ -695,10 +698,10 @@ APP-CODE TIP (HISTORY)       = ce2f0cc (PR #5 · last app-feature tip · ≠ cur
 APP FEATURE COMMIT (V2)      = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
 PRODUCTION DEPLOYMENT (obs.) = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready · Current · Latest (I.45EJ-R1)
 PRODUCTION GIT SHA           = df37048
-STUDIO_EXPORT APP            = DEPLOYED · I.45DR narrow WAV canary PASS · ≠ Full Final Mix Production GREEN
+STUDIO_EXPORT APP            = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
 DELETE×EXPORT HISTORY        = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)   = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
-NOTE                         = docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ feature V2 44f7cbd · no sync/cleanup without Owner GO
+NOTE                         = docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ feature V2 44f7cbd · no sync/cleanup without Owner GO · J2 closeout audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 PREVIOUS PRODUCTION TIP      = faf734b / dpl_9YDCy… · d515f3b / dpl_56FGH… · HISTORY
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio KEEP Dawid retained (PHASE 3 cleaned test-user Storage)
 SECURITY                     = GREEN
@@ -713,11 +716,11 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · docs tip df37048 · I.45DR canary PASS
+CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · docs tip df37048 · I.45DR canary PASS · J2 PASS/CLOSED
 P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
 WORKER                       = Contabo persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · markers I.45CF (selective ≠ full tree)
-NEXT GATE                    = STOP — I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
+NEXT GATE                    = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK
