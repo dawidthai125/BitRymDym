@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — GO-DF-CONTABO-POLL Design Freeze ACCEPTED
+
+**Status:** **DESIGN FREEZE** · **NO CODE** · **NO CONTABO ENABLE** · **NO RPC/POLLER IMPL** · direct `main` (no PR)
+**Locked:** OD-CWP-01…08 · V1 poller = **`STUDIO_EXPORT` only** · max 1 active · atomic claim-next · FINDING-01 on `RUNNING` · bake must not re-claim `QUEUED` · no auto-retry · enqueue unchanged
+**Explicit:** freeze ≠ implementation ≠ host enable · Final Mix GREEN scope unchanged
+**Docs:** decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md · OPEN_DECISIONS · DECISION_LOG · PROJECT_STATE · README · FINAL_COLD / MASTER · this entry
+**Next OPEN GOs:** GO-IMPL-CONTABO-POLL · GO-HOST-RO-CONTABO · GO-SYNC · GO-ENABLE-CANARY · GO-ALWAYS-ON
+
 ## 2026-10-13 — Final Mix Production GREEN VERIFIED (docs closeout)
 
 **Status:** **DOCS CLOSEOUT** · Final Mix Production GREEN **VERIFIED** under frozen IN allowlist · direct `main` (no PR)

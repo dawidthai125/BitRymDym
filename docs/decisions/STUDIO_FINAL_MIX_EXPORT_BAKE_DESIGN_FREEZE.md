@@ -576,7 +576,7 @@ No Contabo always-on · no Final Mix GREEN claim · no DSP/reverb/resampler edit
 | MIX/TAKE_EXPORT | Unchanged taxonomy and mappers |
 | Unit/source tests | `studio-export-failure-i17.test.ts` |
 | Local worker/DB integration | **Done in I.18** (see evidence freeze); **does not** replace production verification |
-| Still separate GO | Contabo always-on (Ops) · P6.8 · full IDOR · apex · empty-project delete (Final Mix GREEN **VERIFIED** under [GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · Stage J CLOSED · empty-session prod PASS · FULL FIXTURE PASS · ≠ expand GREEN to WAIVE/OUT) |
+| Still separate GO | Contabo poller **impl/enable** ([GO-DF-CONTABO-POLL freeze](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) ACCEPTED · ≠ enable) · P6.8 · full IDOR · apex · empty-project delete (Final Mix GREEN **VERIFIED** · ≠ expand GREEN to WAIVE/OUT) |
 
 ### Stage I.20 — SSOT reconciliation (docs only)
 

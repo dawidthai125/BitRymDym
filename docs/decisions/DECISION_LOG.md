@@ -10,6 +10,22 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Contabo Continuous Worker V1 — DESIGN FREEZE ACCEPTED (GO-DF-CONTABO-POLL)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — GO-DF-CONTABO-POLL |
+| Status | **CLOSED / ACCEPTED** (Design Freeze only) · implementation / enable **NOT AUTHORIZED** |
+| Date | 2026-10-13 |
+| Freeze | [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
+| Locked IDs | **OD-CWP-01…08** |
+
+**Locked behavior:** supervised poller · **`STUDIO_EXPORT` only** · max 1 active render/instance · atomic claim-next (`SKIP LOCKED` + CAS `QUEUED→RUNNING`) · FINDING-01 AuthZ after claim while `RUNNING` · bake entry must **not** re-claim · no auto-retry after `FAILED`/`TIMEOUT`/crash · enqueue **unchanged** · graceful shutdown defined · secrets/URLs not logged.
+
+**Next GOs (OPEN):** GO-IMPL-CONTABO-POLL · GO-HOST-RO-CONTABO · GO-SYNC-CONTABO-POLL · GO-ENABLE-CONTABO-POLL-CANARY · GO-CONTABO-POLL-ALWAYS-ON.
+
+---
+
 ### Phase 7.1.6 — Auto Save + CAS Completeness — CLOSED / PRODUCTION GREEN
 
 | Pole | Wartość |
