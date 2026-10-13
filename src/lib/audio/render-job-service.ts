@@ -736,6 +736,99 @@ export async function claimRenderJobAsWorker(
   return { job: mapJob(updated as RenderJobRow), sources };
 }
 
+function mapSourceResolutionFailCode(sourceError: unknown): string {
+  if (!(sourceError instanceof RenderJobDomainError)) {
+    return "SOURCE_UNAVAILABLE";
+  }
+  if (sourceError.code === "LIMIT") return "SOURCE_LIMIT";
+  if (sourceError.code === "NOT_FOUND") return "SOURCE_UNAVAILABLE";
+  return "SOURCE_FORBIDDEN";
+}
+
+/**
+ * Contabo Continuous Worker V1 — atomic claim-next + FINDING-01 on RUNNING.
+ * RPC sets QUEUED→RUNNING; AuthZ failures mark RUNNING→FAILED (never re-QUEUED).
+ * Must not call claimRenderJobAsWorker (expects QUEUED).
+ */
+export async function claimNextStudioExportAsWorker(
+  workerRef: string,
+): Promise<{
+  job: RenderJobRecord;
+  sources: AuthorizedStudioExportSources;
+} | null> {
+  assertRenderJobsRuntimeEnabled();
+  const trimmed = workerRef.trim();
+  if (!trimmed) {
+    throw new RenderJobDomainError("worker_ref required.", "INVALID");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("claim_next_studio_export_job", {
+    p_worker_ref: trimmed,
+  });
+  if (error) throw new Error(error.message);
+
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  if (rows.length === 0) return null;
+
+  const row = rows[0] as RenderJobRow;
+  const job = mapJob(row);
+  if (job.status !== "RUNNING" || job.kind !== "STUDIO_EXPORT") {
+    throw new RenderJobDomainError(
+      "claim_next_studio_export_job returned unexpected job state.",
+      "CONFLICT",
+    );
+  }
+
+  // FINDING-01 — job is already RUNNING; fail closed → FAILED (OD-CWP-05/06).
+  try {
+    const sources = await resolveAuthorizedStudioExportSourcesForJob(job.id);
+    return { job, sources };
+  } catch (sourceError) {
+    const message =
+      sourceError instanceof Error
+        ? sourceError.message
+        : "Source resolution failed.";
+    const code = mapSourceResolutionFailCode(sourceError);
+    await admin
+      .from("render_jobs")
+      .update({
+        status: "FAILED",
+        finished_at: new Date().toISOString(),
+        error_code: code,
+        error_message: message.slice(0, 500),
+      })
+      .eq("id", job.id)
+      .eq("status", "RUNNING");
+    const wrapped =
+      sourceError instanceof Error
+        ? sourceError
+        : new Error(String(sourceError));
+    (
+      wrapped as Error & {
+        jobId?: string;
+        studioExportAuthzFail?: boolean;
+        errorCode?: string;
+      }
+    ).jobId = job.id;
+    (
+      wrapped as Error & {
+        jobId?: string;
+        studioExportAuthzFail?: boolean;
+        errorCode?: string;
+      }
+    ).studioExportAuthzFail = true;
+    (
+      wrapped as Error & {
+        jobId?: string;
+        studioExportAuthzFail?: boolean;
+        errorCode?: string;
+      }
+    ).errorCode = code;
+    throw wrapped;
+  }
+}
+
 /**
  * Fake SUCCESS: placeholder object + READY artifact.
  * Rejects if job was CANCELLED / timed out / not RUNNING.

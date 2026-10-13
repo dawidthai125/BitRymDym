@@ -97,11 +97,11 @@
 | EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / IMPLEMENTED** — 2026-10-05 · OD-P3-01…11 · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · Premium Tier TTL/cap · follow-up `p_take_id` NON-BLOCKING · **UNCHANGED** by Fala 3.5.1 |
 | EPIC-FALA-351 | Recording Experience + Dual Audio Timeline | Recording UX | Live MIC · Input Monitor · READY_TAKE dual preview | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** — 2026-10-05 · feature `c690831` · verify `75bd80f` · no P1/P2/P3 reopen |
 | OD-CWP-01…08 | Contabo continuous poller V1 (STUDIO_EXPORT only · atomic claim · no auto-retry) | Contabo Ops | Poller impl / enable | **CLOSED / ACCEPTED** — 2026-10-13 · [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) · impl/enable = separate GOs |
-| GO-IMPL-CONTABO-POLL | Implement RPC + poller + tests (no enable) | OD-CWP | Code/migration | **OPEN** — blocked until Owner GO |
-| GO-HOST-RO-CONTABO | Live Contabo read-only verify | OD-CWP | Sync/enable | **OPEN** — blocked until Owner GO |
-| GO-SYNC-CONTABO-POLL | Sync approved poller tree to Contabo | OD-CWP | Enable | **OPEN** — blocked until Owner GO |
-| GO-ENABLE-CONTABO-POLL-CANARY | Enable poller · one new STUDIO_EXPORT canary | OD-CWP | Always-on | **OPEN** — blocked until Owner GO |
-| GO-CONTABO-POLL-ALWAYS-ON | Persistent poller enable after canary PASS | OD-CWP | Production continuous | **OPEN** — blocked until Owner GO |
+| GO-IMPL-CONTABO-POLL | Implement RPC + poller + tests (no enable) | OD-CWP | Code/migration | **CLOSED / IMPLEMENTED / LOCAL TESTS PASS** — 2026-10-13 · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · Contabo sync/deploy/canary/always-on **NOT DONE** |
+| GO-HOST-RO-CONTABO | Live Contabo read-only verify | OD-CWP | Sync/enable | **OPEN** — host verification **NOT DONE** |
+| GO-SYNC-CONTABO-POLL | Sync approved poller tree to Contabo | OD-CWP | Enable | **OPEN** — Contabo sync **NOT DONE** |
+| GO-ENABLE-CONTABO-POLL-CANARY | Enable poller · one new STUDIO_EXPORT canary | OD-CWP | Always-on | **OPEN** — canary **NOT RUN** |
+| GO-CONTABO-POLL-ALWAYS-ON | Persistent poller enable after canary PASS | OD-CWP | Production continuous | **OPEN** — always-on **NOT ENABLED** |
 
 ---
 
@@ -146,7 +146,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-CWP-01…08 | Contabo continuous poller V1 · STUDIO_EXPORT only · atomic claim-next · max 1 · no auto-retry · enqueue unchanged | 2026-10-13 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
-Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED** · impl/enable **OPEN** GOs).
+Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
@@ -173,11 +173,11 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | OD-15 | Identyfikacja wizualna | Final Design System |
 | OD-16 | Język marki | Copy UI |
 | OD-18 | Liczenie udostępnień | Beat sharing stats |
-| GO-IMPL-CONTABO-POLL | Implementacja pollera Contabo (kod/RPC/testy · bez enable) | Continuous STUDIO_EXPORT |
-| GO-HOST-RO-CONTABO | Live RO verify hosta Contabo | Sync / enable |
-| GO-SYNC-CONTABO-POLL | Sync drzewa pollera na Contabo | Enable canary |
-| GO-ENABLE-CONTABO-POLL-CANARY | Enable + jeden nowy job canary | Always-on |
-| GO-CONTABO-POLL-ALWAYS-ON | Persistent enable po canary PASS | Production continuous export |
+| GO-HOST-RO-CONTABO | Live RO verify hosta Contabo (**NOT DONE**) | Sync / enable |
+| GO-SYNC-CONTABO-POLL | Sync drzewa pollera na Contabo (**NOT DONE**) | Enable canary |
+| GO-ENABLE-CONTABO-POLL-CANARY | Enable + jeden nowy job canary (**NOT RUN**) | Always-on |
+| GO-CONTABO-POLL-ALWAYS-ON | Persistent enable po canary PASS (**NOT ENABLED**) | Production continuous export |
+| (prod migration apply) | Apply `claim_next_studio_export_job` on production DB | Remote claim-next |
 
 ---
 

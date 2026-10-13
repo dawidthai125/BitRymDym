@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-13 — **GO-DF-CONTABO-POLL Design Freeze ACCEPTED** ([freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Final Mix GREEN **VERIFIED** · Contabo persistent **disabled/inactive** · poller impl/enable **NOT AUTHORIZED** · app-code tip **`ce2f0cc`** · prod last-known **`2adb569`** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · MASTER PROMPTS → §12 · **STOP — OWNER DECISION REQUIRED** (GO-IMPL-CONTABO-POLL / GO-HOST-RO-CONTABO · no auto enable)
+**Updated:** 2026-10-13 — **GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Contabo sync **NOT DONE** · deploy **NOT DONE** · host **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · Final Mix GREEN **VERIFIED** (unchanged) · Contabo persistent **disabled/inactive** · app-code tip **`ce2f0cc`** · prod last-known **`2adb569`** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED** (GO-HOST-RO / GO-SYNC / canary / always-on · no auto enable)
 **Type:** Documentation continuity · cold-start entry · dual-plane (Git tip docs ≠ app-code tip `ce2f0cc` ≠ prod last-known `2adb569` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.

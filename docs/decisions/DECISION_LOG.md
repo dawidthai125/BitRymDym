@@ -10,19 +10,34 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Contabo Continuous Worker V1 — IMPLEMENTED / LOCAL TESTS PASS (GO-IMPL-CONTABO-POLL)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — GO-IMPL-CONTABO-POLL |
+| Status | **CLOSED / IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** |
+| Date | 2026-10-13 |
+| Freeze | [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
+| Impl report | [CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) |
+| Locked IDs | **OD-CWP-01…08** (unchanged) |
+
+**Delivered (local):** migration `claim_next_studio_export_job` (service_role · SKIP LOCKED + CAS) · `claimNextStudioExportAsWorker` · `runAlreadyClaimedStudioExportWorkerJob` · `e3:worker:poll` · vitest PASS. Enqueue unchanged. No prod DB apply · no Contabo mutate.
+
+**Next GOs (OPEN):** GO-HOST-RO-CONTABO · GO-SYNC-CONTABO-POLL · GO-ENABLE-CONTABO-POLL-CANARY · GO-CONTABO-POLL-ALWAYS-ON · production migration apply.
+
+---
+
 ### Contabo Continuous Worker V1 — DESIGN FREEZE ACCEPTED (GO-DF-CONTABO-POLL)
 
 | Pole | Wartość |
 |------|---------|
 | Decision / gate | Owner GO — GO-DF-CONTABO-POLL |
-| Status | **CLOSED / ACCEPTED** (Design Freeze only) · implementation / enable **NOT AUTHORIZED** |
+| Status | **CLOSED / ACCEPTED** (Design Freeze) · followed by GO-IMPL local impl |
 | Date | 2026-10-13 |
 | Freeze | [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
 | Locked IDs | **OD-CWP-01…08** |
 
 **Locked behavior:** supervised poller · **`STUDIO_EXPORT` only** · max 1 active render/instance · atomic claim-next (`SKIP LOCKED` + CAS `QUEUED→RUNNING`) · FINDING-01 AuthZ after claim while `RUNNING` · bake entry must **not** re-claim · no auto-retry after `FAILED`/`TIMEOUT`/crash · enqueue **unchanged** · graceful shutdown defined · secrets/URLs not logged.
-
-**Next GOs (OPEN):** GO-IMPL-CONTABO-POLL · GO-HOST-RO-CONTABO · GO-SYNC-CONTABO-POLL · GO-ENABLE-CONTABO-POLL-CANARY · GO-CONTABO-POLL-ALWAYS-ON.
 
 ---
 

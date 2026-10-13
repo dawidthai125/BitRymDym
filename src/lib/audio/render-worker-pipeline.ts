@@ -294,6 +294,7 @@ function mapStudioOfflineRenderFail(error: StudioOfflineRenderError): {
 /**
  * Dispatcher — EXTERNAL worker entry for MIX, TAKE_EXPORT, STUDIO_EXPORT.
  * Unknown kind → fail-closed (never falls through to MIX bake).
+ * STUDIO_EXPORT: claim-by-id then shared already-RUNNING bake (poller shares bake).
  */
 export async function runRealRenderWorkerJob(
   jobId: string,
@@ -303,7 +304,7 @@ export async function runRealRenderWorkerJob(
     return runClaimedTakeExportWorkerJob(job);
   }
   if (job.kind === "STUDIO_EXPORT") {
-    return runClaimedStudioExportWorkerJob(job);
+    return runAlreadyClaimedStudioExportWorkerJob(job);
   }
   if (job.kind !== "MIX" && job.kind !== undefined) {
     await failRunningJob(
@@ -334,12 +335,26 @@ export async function runRealRenderWorkerJob(
 }
 
 /**
- * Stage G — STUDIO_EXPORT offline bake → WAV → canonical artifact.
- * Sources re-AuthZ at claim and again here (FINDING-01). No Contabo start.
+ * Stage G — STUDIO_EXPORT bake for an already-RUNNING job.
+ * MUST NOT claim again (poller claim-next / oneshot claim already set RUNNING).
+ * Sources re-AuthZ here (FINDING-01). No Contabo start. No auto-retry.
  */
-async function runClaimedStudioExportWorkerJob(
+export async function runAlreadyClaimedStudioExportWorkerJob(
   job: RenderJobRecord,
 ): Promise<RealWorkerPipelineResult> {
+  if (job.kind !== "STUDIO_EXPORT") {
+    throw new RenderJobDomainError(
+      `runAlreadyClaimedStudioExportWorkerJob requires STUDIO_EXPORT, got ${String(job.kind)}.`,
+      "INVALID",
+    );
+  }
+  if (job.status !== "RUNNING") {
+    throw new RenderJobDomainError(
+      `Cannot bake STUDIO_EXPORT in status ${job.status} (expected RUNNING; no second claim).`,
+      "CONFLICT",
+    );
+  }
+
   const jobId = job.id;
   const projectId = job.projectId;
   if (!projectId) {

@@ -6,13 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — GO-IMPL-CONTABO-POLL IMPLEMENTED / LOCAL TESTS PASS
+
+**Status:** **CODE + LOCAL TESTS** · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · direct `main` (no PR)
+**Delivered:** migration `claim_next_studio_export_job` (service_role · SKIP LOCKED + CAS) · `claimNextStudioExportAsWorker` · `runAlreadyClaimedStudioExportWorkerJob` · `npm run e3:worker:poll` · vitest PASS
+**Explicit:** local impl ≠ Contabo enable · Final Mix GREEN / WAIVE / OUT unchanged · migration **not** applied to production
+**Docs:** audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md · freeze living · OPEN_DECISIONS · DECISION_LOG · PROJECT_STATE · README · FINAL_COLD / MASTER · this entry
+**Next OPEN GOs:** GO-HOST-RO-CONTABO · GO-SYNC-CONTABO-POLL · GO-ENABLE-CANARY · GO-ALWAYS-ON · prod migration apply
+
 ## 2026-10-13 — GO-DF-CONTABO-POLL Design Freeze ACCEPTED
 
-**Status:** **DESIGN FREEZE** · **NO CODE** · **NO CONTABO ENABLE** · **NO RPC/POLLER IMPL** · direct `main` (no PR)
+**Status:** **DESIGN FREEZE** · followed by GO-IMPL local impl · **NO CONTABO ENABLE** · direct `main` (no PR)
 **Locked:** OD-CWP-01…08 · V1 poller = **`STUDIO_EXPORT` only** · max 1 active · atomic claim-next · FINDING-01 on `RUNNING` · bake must not re-claim `QUEUED` · no auto-retry · enqueue unchanged
-**Explicit:** freeze ≠ implementation ≠ host enable · Final Mix GREEN scope unchanged
+**Explicit:** freeze ≠ Contabo enable · Final Mix GREEN scope unchanged
 **Docs:** decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md · OPEN_DECISIONS · DECISION_LOG · PROJECT_STATE · README · FINAL_COLD / MASTER · this entry
-**Next OPEN GOs:** GO-IMPL-CONTABO-POLL · GO-HOST-RO-CONTABO · GO-SYNC · GO-ENABLE-CANARY · GO-ALWAYS-ON
+**Next OPEN GOs (at freeze time):** GO-IMPL-CONTABO-POLL · GO-HOST-RO-CONTABO · GO-SYNC · GO-ENABLE-CANARY · GO-ALWAYS-ON
 
 ## 2026-10-13 — Final Mix Production GREEN VERIFIED (docs closeout)
 

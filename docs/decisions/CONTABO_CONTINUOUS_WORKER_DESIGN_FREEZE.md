@@ -1,20 +1,22 @@
 # Contabo Continuous Worker — Design Freeze (GO-DF-CONTABO-POLL)
 
-**Status:** **DESIGN FREEZE ACCEPTED** (GO-DF-CONTABO-POLL) · implementation **NOT AUTHORIZED**  
+**Status:** **DESIGN FREEZE ACCEPTED** (GO-DF-CONTABO-POLL) · **GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync / production deploy / host verify / canary / always-on **NOT DONE**  
 **Date:** 2026-10-13  
-**Unit:** GO-DF-CONTABO-POLL (documentation-only)  
+**Unit:** GO-DF-CONTABO-POLL (freeze) · GO-IMPL-CONTABO-POLL (local code)  
 **Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)  
+**Impl report:** [CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md)  
 **Parent context:** Final Mix Production GREEN **VERIFIED** (frozen IN) · Contabo always-on still **OPEN / NOT VERIFIED** · last-known persistent unit **disabled/inactive**  
 **Related:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) · [E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md](../audits/E3_PRODUCTION_ENABLEMENT_DESIGN_FREEZE.md) · [P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md](../audits/P4_6_PHASE2_WORKER_INFRASTRUCTURE_REPORT.md)
 
 ```text
 DESIGN FREEZE: ACCEPTED
+GO-IMPL: IMPLEMENTED / LOCAL TESTS PASS
 V1 poller kinds: STUDIO_EXPORT only
 Max active renders / instance: 1
 Claim: atomic claim-next + FINDING-01 + bake on RUNNING
 Auto-retry FAILED/TIMEOUT/crash: FORBIDDEN
 Enqueue contract: UNCHANGED
-Implementation / enable / SSH mutate: NOT AUTHORIZED by this freeze
+Contabo sync / production deploy / host verify / canary / always-on: NOT DONE
 ```
 
 ---
@@ -179,15 +181,15 @@ A peek that returns `id` without holding exclusion until CAS allows two pollers 
 
 ---
 
-## 9. Proposed impl surface (not authorized now)
+## 9. Impl surface (GO-IMPL local)
 
-| Area | Proposal |
-|------|----------|
-| Script | `scripts/e3-render-worker-poll.ts` · `npm run e3:worker:poll` |
-| DB | Migration: RPC `claim_next_studio_export_job(p_worker_ref text)` service_role only · SKIP LOCKED + CAS |
-| App | Split claim vs `runAlreadyClaimedStudioExportWorkerJob`; poller uses claim-next + AuthZ + bake |
+| Area | Status |
+|------|--------|
+| Script | `scripts/e3-render-worker-poll.ts` · `npm run e3:worker:poll` — **IN REPO** |
+| DB | Migration `20261013120000_claim_next_studio_export_job.sql` — **IN REPO** · **not applied to production** |
+| App | `claimNextStudioExportAsWorker` + `runAlreadyClaimedStudioExportWorkerJob` + poller core — **IN REPO** |
 | HTTP enqueue / claim-by-id API | Unchanged |
-| systemd | New/updated unit `Type=simple` running poll (Ops GO); do not silently reuse oneshot+`E3_RENDER_JOB_ID` without redesign |
+| systemd | Ops GO only — **NOT ENABLED** |
 
 ---
 
@@ -220,12 +222,12 @@ Impl/enable GOs must re-verify planes. Poller code must be present on Contabo at
 
 | Stage | Owner GO | Action |
 |-------|----------|--------|
-| A | **GO-DF-CONTABO-POLL** (this) | Freeze only |
-| B | **GO-IMPL-CONTABO-POLL** | RPC + poller + tests · **no** enable |
-| C | **GO-HOST-RO-CONTABO** | Live read-only host verify |
-| D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo |
-| E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe |
-| F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable after canary PASS |
+| A | **GO-DF-CONTABO-POLL** | Freeze only — **DONE** |
+| B | **GO-IMPL-CONTABO-POLL** | RPC + poller + tests · **no** enable — **IMPLEMENTED / LOCAL TESTS PASS** |
+| C | **GO-HOST-RO-CONTABO** | Live read-only host verify — **NOT DONE** |
+| D | **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo — **NOT DONE** |
+| E | **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job · observe — **NOT RUN** |
+| F | **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable after canary PASS — **NOT ENABLED** |
 
 **Rollback (any enable stage):** stop/disable poller unit · confirm no worker process · optional restore oneshot+`E3_RENDER_JOB_ID` unit · leave jobs terminal; do not mass re-QUEUED.
 
@@ -241,8 +243,10 @@ No application code · no migrations applied · no Contabo SSH mutate · no enab
 
 ```text
 GO-DF-CONTABO-POLL: DESIGN FREEZE ACCEPTED
+GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS
 V1: STUDIO_EXPORT only · max 1 active · atomic claim-next · no auto-retry
 Claim contract: RUNNING after claim-next · bake must not re-claim QUEUED
 Enqueue: UNCHANGED
-NEXT: Owner GO — GO-IMPL-CONTABO-POLL (code) and/or GO-HOST-RO-CONTABO · ≠ enable yet
+Contabo sync / deploy / host verify / canary / always-on: NOT DONE
+NEXT: Owner GO — GO-HOST-RO-CONTABO · GO-SYNC · canary · always-on · prod migration apply
 ```

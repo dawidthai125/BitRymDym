@@ -148,7 +148,7 @@ describe("P4.6 Phase 1 artifact keys (T09–T11)", () => {
     const pipeline = read("src/lib/audio/render-worker-pipeline.ts");
     expect(pipeline).toMatch(/take_id:\s*takeIdForInsert/);
     expect(pipeline).toMatch(
-      /mix_session_id:\s*mode === "TAKE_EXPORT" \? null/,
+      /mix_session_id:\s*\n?\s*mode === "TAKE_EXPORT" \|\| mode === "STUDIO_EXPORT"\s*\n?\s*\? null/,
     );
   });
 
@@ -216,7 +216,9 @@ describe("P4.6 Phase 1 worker pipeline contracts (T12–T20)", () => {
 
   it("T19 MP3_192 uses encodeMp3192FromBake", () => {
     expect(pipeline).toMatch(/encodeMp3192FromBake/);
-    const takeFnStart = pipeline.indexOf("runClaimedTakeExportWorkerJob");
+    const takeFnStart = pipeline.indexOf(
+      "async function runClaimedTakeExportWorkerJob",
+    );
     const takeFn = pipeline.slice(takeFnStart, takeFnStart + 3500);
     expect(takeFn).toMatch(/encodeMp3192FromBake\(bake\)/);
   });
