@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — I.48 SSOT tip/plane reconcile after PR #12
+
+**Status:** **DOCS RECONCILE (I.48-A3)** · **NO CODE** · **NO COMMIT/PUSH/PR/DEPLOY IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO** · isolated worktree only
+**Git tip (remote main):** **`2adb5699e72c9c8c35023500a001310e227e70d7` (`2adb569`)** — Merge PR #12 (docs-only I.47 session-closure handoff) · prior tip **`f730a7a`** (PR #11) = HISTORY
+**Production deploy (observed I.48-A0):** **`dpl_sAyrsHCfMVLFer669J2MgbbXbhGN`** · Ready · SHA **`2adb569`** · evidence cold-start RO (GitHub Deployments + Vercel CLI) · **I.48-A2/A3 do not re-verify** · Ready ≠ functional app GREEN ≠ Final Mix GREEN
+**Prior prod (HISTORY):** **`dpl_28oHcn3w146saZ6fNDFsiCQehUQP`** @ **`f730a7a`** (I.46-A10 / I.47 snapshot)
+**Planes after I.48:** Git tip **`2adb569`** · app-code tip **`ce2f0cc`** (unchanged) · prod observed **`dpl_sAyrsHC…` @ `2adb569`** · dual-plane: tip ≠ app-code ≠ dirty local WIP ≠ V2 `44f7cbd` · commit ≠ deployment ≠ domain alias
+**Gates unchanged:** J2 **PASS / CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · `object_key` live probe **NOT EXECUTED** · Contabo always-on **OPEN / NOT VERIFIED** · apex redirect e2e **NOT VERIFIED** · Empty-session Production **NOT VERIFIED** · FX/PCM parity **NOT VERIFIED** · Empty-project delete **NOT VERIFIED**
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · FINAL_COLD_START · README · bake freeze living tip/plane rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo · no sync dirty local main · no commit/push of I.48 without separate GO
+
 ## 2026-10-12 — I.47 Session Closure & Cold-Start Handoff
 
 **Status:** **DOCS SESSION CLOSURE (I.47)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO / NO REDEPLOY**
