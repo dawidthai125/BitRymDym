@@ -10,33 +10,46 @@
  *   E3_WORKER_REF=<unique instance id>
  *   E3_POLLER_POLL_MS=2000 (optional)
  *
+ * Kill switch (GO-POLLER-KILL-SWITCH-01):
+ *   false / 0 / no / off / missing / empty / invalid → log poller_disabled, exit 0.
+ *   No claim RPC, no bake, no status mutation. No crash loop with Restart=no.
+ *   Changing worker.env / unit Environment= requires process stop/restart
+ *   (no hot-reload of the flag).
+ *
  * Does NOT enable Contabo systemd, apply prod migrations, or auto-retry FAILED jobs.
  * Logs never include secrets, tokens, cookies, or signed URLs.
  */
 
+import { decideStudioExportPollerBootstrap } from "../src/lib/audio/studio-export-poller-bootstrap";
 import { createStudioExportPoller } from "../src/lib/audio/studio-export-poller";
-import { redactUnsafeLogText } from "../src/lib/audio/studio-export-poller-log";
-
-function resolveWorkerRef(): string {
-  const fromEnv = process.env.E3_WORKER_REF?.trim();
-  if (fromEnv) return fromEnv;
-  return `poller:${process.pid}`;
-}
-
-function resolvePollMs(): number {
-  const raw = process.env.E3_POLLER_POLL_MS?.trim();
-  if (!raw) return 2000;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n < 200 || n > 60_000) {
-    throw new Error("E3_POLLER_POLL_MS must be 200..60000");
-  }
-  return Math.floor(n);
-}
+import {
+  formatSafePollerLog,
+  redactUnsafeLogText,
+} from "../src/lib/audio/studio-export-poller-log";
 
 async function main() {
+  const decision = decideStudioExportPollerBootstrap({
+    renderJobsEnabledRaw: process.env.E3_RENDER_JOBS_ENABLED,
+    workerRefRaw: process.env.E3_WORKER_REF,
+    pollMsRaw: process.env.E3_POLLER_POLL_MS,
+    pid: process.pid,
+  });
+
+  if (decision.action === "exit_disabled") {
+    // eslint-disable-next-line no-console -- worker process
+    console.log(
+      formatSafePollerLog({
+        event: decision.event,
+        errorCode: decision.errorCode,
+        workerRef: decision.workerRef,
+      }),
+    );
+    process.exit(decision.exitCode);
+  }
+
   const poller = createStudioExportPoller({
-    workerRef: resolveWorkerRef(),
-    pollMs: resolvePollMs(),
+    workerRef: decision.workerRef,
+    pollMs: decision.pollMs,
   });
 
   const onSignal = (signal: string) => {

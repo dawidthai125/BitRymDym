@@ -1,18 +1,14 @@
 # Contabo Continuous Worker V1 — Implementation Report (GO-IMPL-CONTABO-POLL)
 
-**Status:** **IMPLEMENTED / LOCAL TESTS PASS**  
+**Status:** **IMPLEMENTED / LOCAL TESTS PASS** · **GO-POLLER-KILL-SWITCH-01** fail-closed bootstrap  
 **Date:** 2026-10-13  
-**Unit:** GO-IMPL-CONTABO-POLL  
+**Unit:** GO-IMPL-CONTABO-POLL · GO-POLLER-KILL-SWITCH-01  
 **Design Freeze:** [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](../decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)
 
 ```text
 IMPLEMENTED / LOCAL TESTS PASS
-Contabo sync — NOT DONE
-production deployment — NOT DONE
-host verification — NOT DONE
-canary — NOT RUN
-always-on — NOT ENABLED
-Final Mix Production GREEN — UNCHANGED (VERIFIED)
+Kill switch: poller_disabled + exit 0 when E3_RENDER_JOBS_ENABLED fail-closed OFF
+Contabo always-on — NOT ENABLED (separate Owner GO)
 ```
 
 ---
@@ -84,24 +80,34 @@ Covered: kind qualification · concurrent claim race (sim) · empty queue · sin
 
 ---
 
-## 5. Explicit non-actions
+## 5. Kill switch (`E3_RENDER_JOBS_ENABLED`) — GO-POLLER-KILL-SWITCH-01
 
-- No production Supabase migration apply  
-- No Contabo SSH / sync / unit enable  
-- No production enqueue / claim / render / artifact download  
-- No Final Mix GREEN / WAIVE / OUT scope change  
+| Input | Bootstrap | Claim / bake |
+|-------|-----------|--------------|
+| `true` / `1` / `yes` / `on` (any case) | `poller_start` → claim loop | Allowed (existing AuthZ) |
+| `false` / `0` / `no` / `off` | `poller_disabled` · **exit 0** | **None** |
+| missing / empty / garbage | same as OFF (fail-closed) | **None** |
+
+- Entry: `decideStudioExportPollerBootstrap` **before** `createStudioExportPoller` / `runUntilStopped`.
+- Defense in depth: `claimNextStudioExportAsWorker` → `assertRenderJobsRuntimeEnabled()` before RPC.
+- Env / unit changes **do not hot-reload** — require process stop/restart.
+- With systemd `Restart=no`, disabled exit 0 leaves the unit inactive without crash-loop.
+- Oneshot path unchanged (still uses shared runtime assert; no poller bootstrap).
+
+---
+
+## 6. Explicit non-actions
+
+- No production Supabase mutation / enqueue / claim / bake in this GO  
+- No systemd enable / start / always-on  
 - Sacred WIP untouched · dirty main worktree unused for edits  
 
 ---
 
-## 6. Remaining Owner GOs
+## 7. Remaining Owner GOs
 
 | GO | Purpose |
 |----|---------|
-| **GO-HOST-RO-CONTABO** | Live read-only host verify |
-| **GO-SYNC-CONTABO-POLL** | Sync approved tree to Contabo |
-| **GO-ENABLE-CONTABO-POLL-CANARY** | Enable poller · one new job |
-| **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable after canary PASS |
-| (also) production migration apply | Separate Owner GO before any remote RPC use |
+| **GO-CONTABO-POLL-ALWAYS-ON** | Persistent enable after kill-switch sync + Owner decision |
 
-**Stop line:** local impl ≠ Contabo sync ≠ deploy ≠ canary ≠ always-on.
+**Stop line:** kill-switch code ≠ always-on activation.

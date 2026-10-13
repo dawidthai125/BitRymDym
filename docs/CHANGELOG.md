@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — GO-POLLER-KILL-SWITCH-01 fail-closed poller bootstrap
+
+**Status:** **CODE + LOCAL TESTS** · selective Contabo sync in same GO · **NO** always-on / enable / start · direct `main` (no PR)
+**Delivered:** `decideStudioExportPollerBootstrap` · `parseE3RenderJobsEnabledFlag` · `E3_RENDER_JOBS_ENABLED` false/missing/empty/invalid → `poller_disabled` + exit **0** (no claim/bake) · defense-in-depth `assertRenderJobsRuntimeEnabled` unchanged · vitest kill-switch suite
+**Ops note:** flag changes require process restart (no hot-reload) · systemd `Restart=no` remains
+**Explicit:** no enqueue/claim/bake on prod · oneshot unit unchanged · Sacred WIP untouched
+**Docs:** CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION · DESIGN_FREEZE OD-CWP-09 · this entry
+**Next:** Owner GO for always-on activation (separate)
+
 ## 2026-10-13 — GO-IMPL-CONTABO-POLL IMPLEMENTED / LOCAL TESTS PASS
 
 **Status:** **CODE + LOCAL TESTS** · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · direct `main` (no PR)

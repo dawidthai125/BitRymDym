@@ -1,8 +1,8 @@
 # Contabo Continuous Worker — Design Freeze (GO-DF-CONTABO-POLL)
 
-**Status:** **DESIGN FREEZE ACCEPTED** (GO-DF-CONTABO-POLL) · **GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync / production deploy / host verify / canary / always-on **NOT DONE**  
+**Status:** **DESIGN FREEZE ACCEPTED** (GO-DF-CONTABO-POLL) · **GO-IMPL-CONTABO-POLL: IMPLEMENTED** · **GO-POLLER-KILL-SWITCH-01: fail-closed bootstrap** · Contabo always-on **NOT ENABLED**  
 **Date:** 2026-10-13  
-**Unit:** GO-DF-CONTABO-POLL (freeze) · GO-IMPL-CONTABO-POLL (local code)  
+**Unit:** GO-DF-CONTABO-POLL (freeze) · GO-IMPL-CONTABO-POLL · GO-POLLER-KILL-SWITCH-01  
 **Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)  
 **Impl report:** [CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md)  
 **Parent context:** Final Mix Production GREEN **VERIFIED** (frozen IN) · Contabo always-on still **OPEN / NOT VERIFIED** · last-known persistent unit **disabled/inactive**  
@@ -51,6 +51,7 @@ This freeze does **not** enable Contabo, sync the host tree, deploy, or implemen
 | **OD-CWP-06** | **No** automatic retry after `FAILED`, `TIMEOUT`, or crash (no auto re-QUEUED) |
 | **OD-CWP-07** | Graceful shutdown: stop accepting new claims; in-flight behavior explicit (§7) |
 | **OD-CWP-08** | Enqueue remains **unchanged** unless a future separate OD proves necessity |
+| **OD-CWP-09** | `E3_RENDER_JOBS_ENABLED` fail-closed: false-class / missing / empty / invalid → **no claim/bake**; poller logs `poller_disabled` and exits **0** (no crash-loop with `Restart=no`). Env changes require process restart (no hot-reload). |
 
 ---
 
