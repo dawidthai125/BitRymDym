@@ -76,7 +76,7 @@ They do **not** prove:
 
 | Item | Living posture (unchanged) |
 |------|----------------------------|
-| Empty-session production probe | **NOT VERIFIED** |
+| Empty-session production probe | **PASS** (living · after Stage J close · [STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md](./STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md)) · Stage J closeout did **not** itself PASS this row |
 | Contabo always-on / persistent worker | **OPEN / NOT VERIFIED** · **disabled/inactive** |
 | **P6.8** | **NOT STARTED** |
 | Full Live↔Offline PCM parity | functional only · **≠** full PCM · I.13F tip files MISSING ON MAIN |
@@ -107,6 +107,8 @@ IN gates: I.45DR · J2 · object_key · P5 · P6 (documented PASS)
 WAIVE: byte-level fixture WAV/RIFF
 FULL FIXTURE VERIFIED: NOT CONFIRMED
 Final Mix Production GREEN: NOT VERIFIED
-OUT unchanged: empty-session prod · always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
-NEXT: Owner GO — Final Mix / Contabo / P6.8 / other OUT items (separate) · ≠ claim GREEN from this close
+OUT at Stage J close time included empty-session prod (later living PASS — see STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md)
+Living OUT remaining: always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
+NEXT: Owner GO — FULL FIXTURE / Final Mix GREEN / Contabo / P6.8 (separate) · ≠ claim GREEN from Stage J close
 ```
+

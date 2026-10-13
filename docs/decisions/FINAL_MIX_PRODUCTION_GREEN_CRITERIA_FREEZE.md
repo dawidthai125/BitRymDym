@@ -11,9 +11,10 @@
 Final Mix Production GREEN: NOT VERIFIED (criteria frozen · ≠ GREEN yet)
 FULL FIXTURE VERIFIED: NOT CONFIRMED (IN for GREEN · not yet PASS)
 Stage J: CLOSED
+Empty-session production gate: PASS (living result · gate #6)
 P6.8: NOT STARTED
 Contabo always-on: OPEN / NOT VERIFIED · persistent worker disabled/inactive (WAIVE for GREEN)
-I.18 tip evidence: MISSING ON CURRENT MAIN (evidence blocker)
+I.18 tip evidence: ON MAIN (gate #8 · local report · ≠ sole prod proof)
 I.13F tip evidence: MISSING ON CURRENT MAIN (≠ automatic IN for GREEN)
 ```
 
@@ -40,9 +41,9 @@ All of the following must be **PASS** (or **PASS / CLOSED**) with canonical tip 
 | 3 | **J2** Download AuthZ | **PASS / CLOSED** | [I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md](../audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) |
 | 4 | **object_key** reject-only (narrow) | **PASS** | [STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md](../audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md) |
 | 5 | **P5 / P6** owner download (JSON) | **PASS** | [STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md](../audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md) · JSON only · **≠** WAV bytes · **≠** FULL FIXTURE VERIFIED |
-| 6 | **I.18 empty-session production probe** | **NOT VERIFIED** | Separate Owner GO required. **PASS when:** controlled enqueue of empty/inaudible session → job **FAILED** · public/allowlisted `errorCode` / persisted code **`STUDIO_RENDER_EMPTY_SESSION`** · **no** SUCCEEDED/READY silent WAV artifact |
+| 6 | **I.18 empty-session production probe** | **PASS** | [STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md](../audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md) · job `dac8ccb9-…` · `FAILED` · `STUDIO_RENDER_EMPTY_SESSION` · `artifactId=null` · no SUCCEEDED/READY/WAV · **PASS criterion unchanged** (this row records living result only) |
 | 7 | **FULL FIXTURE VERIFIED** | **NOT CONFIRMED** | Separate Owner GO required. **PASS when:** bytes obtained via allowed download flow for a real export artifact · `RIFF`/`WAVE` QC · size/coherence check · **no** signed URL / token / cookie / secret retained in docs, logs, or repo |
-| 8 | **I.18 evidence integrity on tip** | **MISSING ON CURRENT MAIN** | Canonical report must exist on `origin/main` and align with empty-session criteria. Expected path: `docs/audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` · **blocker until present + consistent** (land/recover via separate GO · **do not** copy from dirty worktree in this unit) |
+| 8 | **I.18 evidence integrity on tip** | **ON MAIN / PASS** | Canonical local report on tip: [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · **≠** production probe (gate #6 has separate closeout) · freeze-time “MISSING” status **superseded** by GO-LAND-I18-PUBLISH + this living registration |
 
 **Binding limits:**
 
@@ -78,17 +79,18 @@ Each OUT item requires its **own** Owner GO and evidence class.
 
 ---
 
-## 5. Tip evidence gaps (this freeze — no fabrication)
+## 5. Tip evidence gaps (living registration)
 
 | Path | Tip status | Role for GREEN |
 |------|------------|----------------|
-| `docs/audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` | **MISSING ON CURRENT MAIN** | **IN blocker** (gate 8) · also prerequisite integrity for documenting gate 6 |
+| `docs/audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` | **ON MAIN** | Gate **#8** satisfied · local class only |
+| `docs/audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md` | **ON MAIN** (this closeout) | Gate **#6** production PASS evidence |
 | `docs/audits/STUDIO_FX_PARITY_I13F_REPORT.md` | **MISSING ON CURRENT MAIN** | Historical tip gap · **≠** automatic IN |
 | `docs/audits/STUDIO_FX_PARITY_I13F_EVIDENCE.json` | **MISSING ON CURRENT MAIN** | Historical tip gap · **≠** automatic IN |
 
-**Future GO (not this unit):** safe recovery/land of I.18 tip evidence without dirty-worktree sync, reset, or inventing content from code.
+Freeze-time wording that listed I.18 as MISSING / empty-session as NOT VERIFIED is **historical** for the GO-FM-CRITERIA unit itself; living IN statuses are the table in §2.
 
-Do **not** copy, stage, or rewrite dirty-local copies of I.18/I.13F in this criteria freeze.
+Do **not** copy, stage, or rewrite dirty-local copies of I.13F without a dedicated Owner GO.
 
 ---
 
@@ -115,11 +117,11 @@ Only after a separate Owner GO that:
 ## 8. Stop line
 
 ```text
-GO-FM-CRITERIA: ACCEPTED
+GO-FM-CRITERIA: ACCEPTED (criteria unchanged)
 Final Mix Production GREEN: NOT VERIFIED
-IN open blockers: I.18 tip evidence MISSING · empty-session prod NOT VERIFIED · FULL FIXTURE VERIFIED NOT CONFIRMED
-IN already satisfied (historical): Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON
+IN open blockers: FULL FIXTURE VERIFIED NOT CONFIRMED
+IN already satisfied: Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON · I.18 tip ON MAIN · empty-session prod PASS
 WAIVE: Contabo always-on · bit-perfect PCM · P6.8
 OUT: full IDOR · apex · empty-project delete · Studio migration CLOSED claim
-NEXT: Owner GO — I.18 tip recovery (docs) · then separate GOs for empty-session prod + fixture bytes · ≠ GREEN yet
+NEXT: Owner GO — FULL FIXTURE VERIFIED and/or Final Mix GREEN closeout · ≠ GREEN yet
 ```
