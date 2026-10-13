@@ -33,7 +33,7 @@ E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
 | Unit / contract tests | **UNIT TESTED** |
 | Local worker / Storage / DB bake | **LOCAL INTEGRATION NOT RUN** |
 | Live Web Audio parity | **FUNCTIONAL EVIDENCE ACCEPTED (I.14-01)** — not full PCM / bit-perfect parity |
-| Production / Contabo | **APP DEPLOYED** (Git tip `2adb569` PR #12 docs; prod observed `dpl_sAyrsHC…` @ `2adb569` · **I.48-A0** Ready · **I.48-A2/A3 do not re-verify**; prior `dpl_28oH…` @ `f730a7a` = HISTORY I.46-A10; app-code tip `ce2f0cc` / prior `dpl_1P8ixpt…`; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · **J2 PASS / CLOSED** · Stage J **OPEN** · Full Final Mix GREEN **OPEN** · apex redirect e2e **NOT VERIFIED** |
+| Production / Contabo | **APP DEPLOYED** (Git tip = **GO-A** docs integrity · parent `50d7788` · prior `2adb569` I.48 HISTORY; prod last-known `dpl_sAyrsHC…` @ `2adb569` · **I.48-A0** Ready · **≠** Git tip · GO-A did not re-verify; prior `dpl_28oH…` @ `f730a7a` = HISTORY I.46-A10; app-code tip `ce2f0cc` / prior `dpl_1P8ixpt…`; PR #4 history `@faf734b`) · Contabo **not** always-on · **I.45DR** narrow canary **PASS** · **J2 PASS / CLOSED** · **object_key reject-only PASS** (narrow) · Stage J **OPEN** · Full Final Mix GREEN **OPEN** · apex redirect e2e **NOT VERIFIED** |
 
 **Legend used below**
 
@@ -306,7 +306,7 @@ if exportMs > 180_000 → STUDIO_RENDER_TAIL_DURATION_CAP (typed; never silent t
 | ID | Decision | Binding effect |
 |----|----------|----------------|
 | **I.14-01 Evidence** | Plane B **9/9 PASS** = **functional evidence**, not full Live↔Offline PCM / bit-perfect parity | Missing harness metrics remain a limitation; do not claim full sonic identity |
-| **I.14-02 Mute** | Fully inaudible session → controlled **`STUDIO_RENDER_EMPTY_SESSION`** at offline renderer; **no** automatic silent WAV | **I.17:** job persists `error_code=STUDIO_RENDER_EMPTY_SESSION` (typed; not collapsed to `ENCODE_FAILED`); public status allowlists code + safe PL message; no READY artifact / no SUCCEEDED. **I.18:** confirmed locally (worker/DB/Storage) — see [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) |
+| **I.14-02 Mute** | Fully inaudible session → controlled **`STUDIO_RENDER_EMPTY_SESSION`** at offline renderer; **no** automatic silent WAV | **I.17:** job persists `error_code=STUDIO_RENDER_EMPTY_SESSION` (typed; not collapsed to `ENCODE_FAILED`); public status allowlists code + safe PL message; no READY artifact / no SUCCEEDED. **I.18:** confirmed locally (worker/DB/Storage) per historical session notes — evidence file **MISSING ON CURRENT MAIN** (`STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED**) |
 | **I.14-03 Reverb** | Live vs offline IR differences accepted for V1 | No IR / seed / convolve changes in I.15 |
 | **I.14-04 Resampling** | Linear resample accepted for V1 parity harness | No new resampler; export remains 44.1 kHz stereo |
 
@@ -325,7 +325,7 @@ if exportMs > 180_000 → STUDIO_RENDER_TAIL_DURATION_CAP (typed; never silent t
 | Tests | `src/lib/audio/studio-export-resample-i45.test.ts` (local) |
 | Not authorized by this addendum | Production canary · Contabo · commit/push/deploy |
 
-Evidence freeze (FX parity): `docs/audits/STUDIO_FX_PARITY_I13F_EVIDENCE.json` + `STUDIO_FX_PARITY_I13F_REPORT.md`.
+Evidence freeze (FX parity): `STUDIO_FX_PARITY_I13F_EVIDENCE.json` + `STUDIO_FX_PARITY_I13F_REPORT.md` — **MISSING ON CURRENT MAIN** · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED** (do not treat as tip-available artifacts).
 
 **Chronology (empty-session / failure contract):**
 
@@ -333,7 +333,7 @@ Evidence freeze (FX parity): `docs/audits/STUDIO_FX_PARITY_I13F_EVIDENCE.json` +
 |-------|--------|----------------|
 | **I.15** | Renderer contract + unit/source tests | Local code/tests |
 | **I.17** | Typed `error_code` + allowlisted status GET + UI | Local code/tests |
-| **I.18** | Worker-once + DB + Storage + public status | **Local integration PASS** — [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) (historical Owner session; frozen in I.20 docs) |
+| **I.18** | Worker-once + DB + Storage + public status | **Local integration PASS** (historical Owner session; frozen in I.20 docs) — evidence file **MISSING ON CURRENT MAIN** (`STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED**) |
 
 **Not authorized by I.14–I.18:** production migrations, prod deploy, canary, Contabo, prod enqueue, commit/push/deploy.
 
@@ -484,12 +484,12 @@ Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12
 | UI unit/source tests | **RUN locally** (`studio-export-ui.test.ts` incl. I.3A focus contracts) |
 | Dialog focus / a11y (I.3A) | **IMPLEMENTED in main** (`studio-dialog-focus.ts`) · unit tested · prior local browser I.3B |
 | Runtime UI → API → worker → download | **PASS Stage I.7** (local isolated) · **I.45DR** prod Contabo enqueue→transient worker→READY artifact **PASS (narrow WAV)** · owner download of I.45DR artifact **not** re-claimed here |
-| Production app | **DEPLOYED** · Git tip **`2adb569`** (PR #12 docs) · prod observed **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** Ready · I.48-A2/A3 do not re-verify) · aliases www + `bitrymdym.vercel.app` + `bitrymdym.pl` last-known · apex redirect e2e **NOT VERIFIED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` (PR #5) = last-established evidence · prior `dpl_28oH…` @ `f730a7a` = HISTORY (I.46-A10) · prior `dpl_7Cp2gQ9…` @ `df37048` = HISTORY · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
+| Production app | **DEPLOYED** · Git tip = **GO-A** (parent **`50d7788`** · prior **`2adb569`** I.48 HISTORY) · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** Ready · **≠** Git tip · GO-A did not re-verify) · aliases www + `bitrymdym.vercel.app` + `bitrymdym.pl` last-known · apex redirect e2e **NOT VERIFIED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` (PR #5) = last-established evidence · prior `dpl_28oH…` @ `f730a7a` = HISTORY (I.46-A10) · prior `dpl_7Cp2gQ9…` @ `df37048` = HISTORY · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
 | Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **J2 PASS / CLOSED** (I.45EX-A16/A17/A18) · **Stage J OPEN** (J2 only) · **Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** |
 | Contabo pipeline / markers (last-known) | Byte-synced only: `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94…` (= `@faf734b`; I.45BV/BW) · persistent service **disabled/inactive** · **markers I.45CF APPLIED:** tip `faf734b` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed I.45DO/I.45DR · **I.45DR** ops path: transient `systemd-run --wait --collect` + `EnvironmentFile=-/etc/bitrymdym-e3-worker/worker.env` as `bitrymdym-e3` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as service user **FAIL** (no claim; no chmod) · **≠** continuous-mode / full-tree claim |
-| Live/offline FX parity | **FUNCTIONAL EVIDENCE (I.13F/I.14-01)** — not full PCM parity |
-| Cross-user download AuthZ (J2) | **PASS / CLOSED** — I.45EX-A16 owner HTTP **200** ALLOW · I.45EX-A17 other-user HTTP **403** DENY · I.45EX-A18 unauth HTTP **401** DENY · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · ≠ full module audit · `object_key` live probe **NOT EXECUTED** · [closeout](../audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) |
-| Empty-session contract (I.15 → I.18) | **I.15** renderer · **I.17** typed public failure (variant B, in PR #4) · **I.18 local PASS** — [I.18 evidence](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md). **Empty-session on production not claimed.** |
+| Live/offline FX parity | **FUNCTIONAL EVIDENCE (I.13F/I.14-01)** — not full PCM parity · I.13F report/json **MISSING ON CURRENT MAIN** (**HISTORICAL LOCAL EVIDENCE — NOT COMMITTED**) |
+| Cross-user download AuthZ (J2) | **PASS / CLOSED** — I.45EX-A16 owner HTTP **200** ALLOW · I.45EX-A17 other-user HTTP **403** DENY · I.45EX-A18 unauth HTTP **401** DENY · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · ≠ full module audit · **object_key reject-only (tested scope) PASS** (P1–P4, P8–P9 · P5/P6 NOT EXECUTED · [closeout](../audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · J2 [closeout](../audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) |
+| Empty-session contract (I.15 → I.18) | **I.15** renderer · **I.17** typed public failure (variant B, in PR #4) · **I.18 local PASS** (historical) — evidence file **MISSING ON CURRENT MAIN** (`STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED**). **Empty-session on production not claimed.** |
 | Prod smoke (I.45BK/BM/BO) | Recovery GET-only **PASS** · existing WAV download **PASS** (API 200 · RIFF/WAVE · size match · Windows `WAV.wav`) |
 | Owner status (I.45BY) | Job `61b7cdf1-…` / project `d07f3011-…` · HTTP 200 · `STUDIO_EXPORT` · **SUCCEEDED** · artifact present · **do not re-run** |
 | Contabo canary (I.45DR) | Job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · `STUDIO_EXPORT` · `WAV` · attempt 1 · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · bucket `audio-artifacts` · 10,584,044 B (= `storage.objects`) · 60,000 ms · encoder `pcm_s16le_wav` · **do not re-run** |
@@ -531,7 +531,7 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 3. Same code also used for non-positive `timelineLengthMs` in duration planning — not an RMS gate.
 4. Worker `runClaimedStudioExportWorkerJob`: catch → `mapStudioOfflineRenderFail` → `failRunningJob` **before** `encodeWavFromBake` / Storage / `completeRealArtifactAfterEncode`.
 5. **I.17:** empty session persists typed `error_code=STUDIO_RENDER_EMPTY_SESSION` (not collapsed to `ENCODE_FAILED`); status GET returns allowlisted `errorCode` + safe `errorMessage`; UI shows Polish empty-session copy.
-6. **I.18 (local integration PASS):** historical Owner session on local Supabase (`127.0.0.1:54321` / `:54322`) — enqueue → worker-once → FAILED + typed code; no SUCCEEDED / READY / WAV; public message ≠ internal DB text; fixture cleaned. Evidence: [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md). *(I.20 only froze the report; did not re-run.)*
+6. **I.18 (local integration PASS):** historical Owner session on local Supabase (`127.0.0.1:54321` / `:54322`) — enqueue → worker-once → FAILED + typed code; no SUCCEEDED / READY / WAV; public message ≠ internal DB text; fixture cleaned. Evidence file **MISSING ON CURRENT MAIN** (`STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED**). *(I.20 only froze the report; did not re-run.)*
 7. Live Studio playback may still produce near-silence when muted (UX); **export bake must not** emit silent WAV for an empty audible set.
 
 ### Evidence classes (do not conflate)

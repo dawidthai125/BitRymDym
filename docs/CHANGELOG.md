@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — GO-A Stage J docs integrity (A2)
+
+**Status:** **DOCS INTEGRITY** · **NO CODE** · **NO PROD HTTP** · **NO P5/P6** · **NO CONTABO** · direct `main` (no PR)
+**Scope:** Living tip/plane reconcile to Git tip after `50d7788` · bake freeze `object_key` living row aligned to reject-only **PASS** · I.18/I.13F tip links marked **MISSING ON CURRENT MAIN** / **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED** (A2 — do not land dirty local files)
+**Gates unchanged:** object_key reject-only **PASS** · P5/P6 **NOT EXECUTED** · FIXTURE VERIFIED **NOT CONFIRMED** · J2 **PASS/CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN/NOT VERIFIED**
+**Docs:** PROJECT_STATE · bake freeze · README · FINAL_COLD_START · MASTER_HANDOFF · this entry · related I.18 link hygiene
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · optional P5/P6
+
 ## 2026-10-13 — I.48 SSOT tip/plane reconcile after PR #12
 
 **Status:** **DOCS RECONCILE (I.48-A3)** · **NO CODE** · **NO COMMIT/PUSH/PR/DEPLOY IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO** · isolated worktree only
@@ -149,7 +157,7 @@ Format: data, zakres, skrót.
 
 **Status:** **DOCS ONLY** · **NO CODE** · **NO TESTS / WORKER / SUPABASE** · **NO COMMIT/PUSH/DEPLOY**
 **Scope:** Freeze historical I.18 local empty-session integration PASS; correct SSOT contradictions (I.14-02 typed `error_code`; remove stale “no worker+DB integration”)
-**Docs:** [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](./audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · bake freeze §8/§16 / Stage I status
+**Docs:** `STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` (**MISSING ON CURRENT MAIN** · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED** · GO-A A2) · bake freeze §8/§16 / Stage I status
 **Not claimed:** production schema · prod deploy · Contabo · canary · full Live↔Offline PCM parity
 **Next:** Owner GO for fresh production schema verification (read-only) before any migrate/deploy/canary discussion
 
