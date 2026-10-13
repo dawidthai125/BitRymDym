@@ -1,18 +1,19 @@
 # Final Mix Production GREEN — Criteria Freeze (GO-FM-CRITERIA)
 
-**Status:** **CRITERIA FREEZE ACCEPTED** · living **Final Mix Production GREEN** remains **NOT VERIFIED** (closeout = separate GO)  
+**Status:** **CRITERIA FREEZE ACCEPTED** · living **Final Mix Production GREEN: VERIFIED** ([closeout](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md))  
 **Date:** 2026-10-13  
-**Unit:** GO-FM-CRITERIA (documentation-only)  
+**Unit:** GO-FM-CRITERIA (documentation-only criteria lock) · GREEN living result applied by GO-FINAL-MIX-PRODUCTION-GREEN-CLOSEOUT  
 **Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)  
 **Parent freeze:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md)  
-**Stage J close:** [STAGE_J_FINAL_CLOSURE.md](../audits/STAGE_J_FINAL_CLOSURE.md) · [STAGE_J_CLOSURE_CRITERIA_FREEZE.md](./STAGE_J_CLOSURE_CRITERIA_FREEZE.md)
+**Stage J close:** [STAGE_J_FINAL_CLOSURE.md](../audits/STAGE_J_FINAL_CLOSURE.md) · [STAGE_J_CLOSURE_CRITERIA_FREEZE.md](./STAGE_J_CLOSURE_CRITERIA_FREEZE.md)  
+**GREEN closeout:** [FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md)
 
 ```text
-Final Mix Production GREEN: NOT VERIFIED (criteria frozen · ≠ GREEN yet · needs separate closeout GO)
+Final Mix Production GREEN: VERIFIED (frozen IN allowlist only · closeout applied)
 FULL FIXTURE VERIFIED: PASS (living result · gate #7)
 Stage J: CLOSED
 Empty-session production gate: PASS (living result · gate #6)
-P6.8: NOT STARTED
+P6.8: NOT STARTED (WAIVE for GREEN)
 Contabo always-on: OPEN / NOT VERIFIED · persistent worker disabled/inactive (WAIVE for GREEN)
 I.18 tip evidence: ON MAIN (gate #8 · local report · ≠ sole prod proof)
 I.13F tip evidence: MISSING ON CURRENT MAIN (≠ automatic IN for GREEN)
@@ -22,11 +23,9 @@ I.13F tip evidence: MISSING ON CURRENT MAIN (≠ automatic IN for GREEN)
 
 ## 1. Purpose
 
-Lock the **allowlist** of evidence required to mark **Final Mix Production GREEN**, plus explicit **WAIVE / OUT**, so later closeout cannot invent gates or over-claim Contabo always-on / bit-perfect PCM / P6.8.
+Lock the **allowlist** of evidence required to mark **Final Mix Production GREEN**, plus explicit **WAIVE / OUT**, so closeout cannot invent gates or over-claim Contabo always-on / bit-perfect PCM / P6.8.
 
-This note does **not** declare GREEN. Final living `Final Mix Production GREEN` requires a separate Owner GO + docs closeout after **all IN** rows are PASS under this freeze.
-
-Production probes for empty-session and fixture bytes are **not authorized** by this unit.
+Living GREEN was declared only after a separate Owner GO confirmed all **IN** rows PASS under this freeze ([closeout](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md)).
 
 ---
 
@@ -41,9 +40,9 @@ All of the following must be **PASS** (or **PASS / CLOSED**) with canonical tip 
 | 3 | **J2** Download AuthZ | **PASS / CLOSED** | [I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md](../audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) |
 | 4 | **object_key** reject-only (narrow) | **PASS** | [STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md](../audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md) |
 | 5 | **P5 / P6** owner download (JSON) | **PASS** | [STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md](../audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md) · JSON only · **≠** WAV bytes · **≠** FULL FIXTURE VERIFIED |
-| 6 | **I.18 empty-session production probe** | **PASS** | [STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md](../audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md) · job `dac8ccb9-…` · `FAILED` · `STUDIO_RENDER_EMPTY_SESSION` · `artifactId=null` · no SUCCEEDED/READY/WAV · **PASS criterion unchanged** (this row records living result only) |
-| 7 | **FULL FIXTURE VERIFIED** | **PASS** | [FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md](../audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) · artifact `21d98be2-…` (I.45DR READY) · Owner download bytes · `RIFF`/`WAVE` · size coherence **10,584,044** B · **no** signed URL/token/cookie retained · **PASS criterion unchanged** (living result only) |
-| 8 | **I.18 evidence integrity on tip** | **ON MAIN / PASS** | Canonical local report on tip: [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · **≠** production probe (gate #6 has separate closeout) · freeze-time “MISSING” status **superseded** by GO-LAND-I18-PUBLISH + this living registration |
+| 6 | **I.18 empty-session production probe** | **PASS** | [STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md](../audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md) · job `dac8ccb9-…` · `FAILED` · `STUDIO_RENDER_EMPTY_SESSION` · `artifactId=null` · no SUCCEEDED/READY/WAV · **PASS criterion unchanged** |
+| 7 | **FULL FIXTURE VERIFIED** | **PASS** | [FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md](../audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) · artifact `21d98be2-…` (I.45DR READY) · Owner download bytes · `RIFF`/`WAVE` · size coherence **10,584,044** B · **no** signed URL/token/cookie retained · **PASS criterion unchanged** |
+| 8 | **I.18 evidence integrity on tip** | **ON MAIN / PASS** | Canonical local report on tip: [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · **≠** production probe (gate #6 has separate closeout) |
 
 **Binding limits:**
 
@@ -85,33 +84,33 @@ Each OUT item requires its **own** Owner GO and evidence class.
 |------|------------|----------------|
 | `docs/audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` | **ON MAIN** | Gate **#8** satisfied · local class only |
 | `docs/audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md` | **ON MAIN** | Gate **#6** production PASS evidence |
-| `docs/audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md` | **ON MAIN** (this closeout) | Gate **#7** PASS evidence |
+| `docs/audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md` | **ON MAIN** | Gate **#7** PASS evidence |
+| `docs/audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md` | **ON MAIN** (this GREEN closeout) | Living GREEN VERIFIED under this freeze |
 | `docs/audits/STUDIO_FX_PARITY_I13F_REPORT.md` | **MISSING ON CURRENT MAIN** | Historical tip gap · **≠** automatic IN |
 | `docs/audits/STUDIO_FX_PARITY_I13F_EVIDENCE.json` | **MISSING ON CURRENT MAIN** | Historical tip gap · **≠** automatic IN |
-
-Freeze-time wording that listed I.18 as MISSING / empty-session / FULL FIXTURE as open is **historical** for the GO-FM-CRITERIA unit itself; living IN statuses are the table in §2.
 
 Do **not** copy, stage, or rewrite dirty-local copies of I.13F without a dedicated Owner GO.
 
 ---
 
-## 6. When Final Mix may be marked GREEN (later GO)
+## 6. When Final Mix may be marked GREEN
 
-Only after a separate Owner GO that:
+Applied by [FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) after Owner GO that:
 
-1. Confirms all **IN** rows PASS under this freeze (including tip I.18 evidence + prod empty-session + FULL FIXTURE VERIFIED);  
-2. Records all **WAIVE** rows explicitly;  
-3. Leaves all **OUT** statuses unchanged;  
-4. Does **not** declare Contabo always-on, bit-perfect PCM, or P6.8 as side effects.
+1. Confirmed all **IN** rows PASS under this freeze;  
+2. Recorded all **WAIVE** rows explicitly;  
+3. Left all **OUT** statuses unchanged;  
+4. Did **not** declare Contabo always-on, bit-perfect PCM, or P6.8 as side effects.
+
+Expanding GREEN beyond this freeze requires a new Owner criteria GO.
 
 ---
 
-## 7. Explicit non-actions (this criteria freeze)
+## 7. Explicit non-actions (criteria freeze unit itself)
 
-- No production HTTP · no empty-session prod probe · no WAV download · no signed URL open  
-- No Contabo / worker / SQL / Supabase / Storage writes · no P6.8  
-- No application code · no Sacred WIP · no dirty worktree sync  
-- **No** `Final Mix Production GREEN` living claim  
+Historical GO-FM-CRITERIA freeze unit: no production HTTP · no Contabo · no WAV · no GREEN living claim at freeze time.
+
+GREEN living claim = separate closeout only ([closeout](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md)).
 
 ---
 
@@ -119,10 +118,11 @@ Only after a separate Owner GO that:
 
 ```text
 GO-FM-CRITERIA: ACCEPTED (criteria unchanged)
-Final Mix Production GREEN: NOT VERIFIED
+Final Mix Production GREEN: VERIFIED
 IN open blockers: none
 IN all PASS: Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON · I.18 tip ON MAIN · empty-session prod PASS · FULL FIXTURE VERIFIED PASS
 WAIVE: Contabo always-on · bit-perfect PCM · P6.8
 OUT: full IDOR · apex · empty-project delete · Studio migration CLOSED claim
-NEXT: Owner GO — Final Mix Production GREEN docs closeout · ≠ GREEN yet
+closeout: audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md
+NEXT: Owner decision — Contabo Ops / P6.8 / OUT items (independent) · do not expand GREEN scope
 ```

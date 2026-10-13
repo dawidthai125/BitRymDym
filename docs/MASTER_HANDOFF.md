@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-13 — **FULL FIXTURE VERIFIED PASS** ([closeout](./audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md)) · empty-session prod **PASS** · **Stage J: CLOSED** · FM criteria [GO-FM-CRITERIA](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · **all IN PASS** · Final Mix **NOT VERIFIED / NOT GREEN** (needs GREEN closeout GO) · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip) · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · I.18 local **ON MAIN** · I.13F tip **MISSING** · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · cold-start prompts → [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12 · **STOP — OWNER DECISION REQUIRED** (Final Mix GREEN closeout / Contabo / P6.8)
+**Updated:** 2026-10-13 — **Final Mix Production GREEN: VERIFIED** ([closeout](./audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) · frozen IN only) · **FULL FIXTURE VERIFIED PASS** · empty-session prod **PASS** · **Stage J: CLOSED** · FM criteria [GO-FM-CRITERIA](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · **all IN PASS** · **WAIVE:** Contabo always-on · bit-perfect PCM · P6.8 · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip) · Contabo always-on **OPEN / NOT VERIFIED** · disabled/inactive · I.18 local **ON MAIN** · I.13F tip **MISSING** · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · cold-start prompts → [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12 · **STOP — OWNER DECISION REQUIRED** (Contabo Ops / P6.8 / OUT · do not expand GREEN)
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -49,8 +49,8 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **Phase 7.1.3 Inspector IA** | **CLOSED / PRODUCTION GREEN** @ `8f6eeca` (ancestry · do not reopen) |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked lib/migration = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **FULL FIXTURE VERIFIED closeout** (parent **`51a37a2`**) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip) · **Stage J: CLOSED** · **FULL FIXTURE VERIFIED PASS** ([closeout](./audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) · artifact `21d98be2-…`) · empty-session prod **PASS** · **all IN PASS** · **Final Mix Production GREEN — NOT VERIFIED** (needs GREEN closeout GO) · Contabo persistent: **disabled/inactive** · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · [FM criteria](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — Final Mix criteria **FROZEN** · **all IN PASS** · Final Mix still **NOT VERIFIED** · **NEXT:** Owner GO — Final Mix Production GREEN docs closeout · P6.8 **NOT STARTED** · no auto Contabo · do not re-run `53398f9e-…` or `61b7cdf1…` · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **Final Mix Production GREEN closeout** (parent **`dcd2308`**) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip) · **Stage J: CLOSED** · **FULL FIXTURE VERIFIED PASS** · empty-session prod **PASS** · **all IN PASS** · **Final Mix Production GREEN: VERIFIED** ([closeout](./audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) · frozen IN only) · Contabo persistent: **disabled/inactive** · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) · [FM criteria](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — Final Mix GREEN **VERIFIED** (frozen IN) · **NEXT:** Contabo Ops / P6.8 / OUT · do not expand GREEN · P6.8 **NOT STARTED** · no auto Contabo · do not re-run `53398f9e-…` or `61b7cdf1…` · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
@@ -869,13 +869,13 @@ No commit/push/deploy without explicit Owner GO for that step.
 ### CANONICAL CURRENT (dual-plane)
 
 ```text
-GITHUB MAIN TIP / origin/main = FULL FIXTURE VERIFIED closeout · parent 51a37a2 · verify remotely after fetch · local WIP may diverge
+GITHUB MAIN TIP / origin/main = Final Mix Production GREEN closeout · parent dcd2308 · verify remotely after fetch · local WIP may diverge
 APP-CODE TIP (last-established evidence) = ce2f0cc / prior dpl_1P8ixpt… (PR #5) · ≠ Git tip · ≠ fresh prod verify
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
 PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN · Ready · SHA 2adb569 · ≠ Git tip · I.48-A2/A3 do not re-verify
   aliases (last-known · NOT e2e) = www.bitrymdym.pl · bitrymdym.vercel.app · bitrymdym.pl · apex redirect e2e NOT VERIFIED
 PRODUCTION GIT SHA (observed I.48-A0) = 2adb569 · ≠ Git tip · prior f730a7a / dpl_28oH… = HISTORY
-STUDIO_EXPORT APP             = DEPLOYED · I.45DR PASS · J2 PASS/CLOSED · Stage J CLOSED · FULL FIXTURE VERIFIED PASS · all IN PASS · ≠ Full Final Mix Production GREEN
+STUDIO_EXPORT APP             = DEPLOYED · I.45DR PASS · J2 PASS/CLOSED · Stage J CLOSED · FULL FIXTURE VERIFIED PASS · all IN PASS · Final Mix Production GREEN VERIFIED (frozen IN)
 DELETE×EXPORT HISTORY         = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
 PRODUCTION URL                = https://www.bitrymdym.pl
@@ -886,9 +886,9 @@ PHASE 7.1.4 MIXER DOCK        = CLOSED / GREEN @ 9abc1b6 (ancestry · do not reo
 PHASE 7.1.3 INSPECTOR IA      = CLOSED / GREEN @ 8f6eeca (do not reopen)
 P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 Contabo                       = persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · pipeline @faf734b · markers I.45CF (selective ≠ full tree) · not always-on
-P6.8                          = NOT STARTED / OWNER DECISION
-NEXT GATE                     = STOP — all IN PASS · Final Mix NOT VERIFIED · NEXT = Owner GO Final Mix GREEN docs closeout · Contabo always-on OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
-NOTE                          = Living SSOT = PROJECT_STATE.md · FULL FIXTURE closeout docs/audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md · Git tip docs ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · prod deploy I.48-A0 @ 2adb569 · cold-start prompts FINAL_COLD_START §12
+P6.8                          = NOT STARTED / OWNER DECISION (WAIVE for Final Mix GREEN)
+NEXT GATE                     = STOP — Final Mix GREEN VERIFIED · NEXT = Contabo Ops / P6.8 / OUT · do not expand GREEN · Contabo always-on OPEN · no auto Contabo / no re-run SUCCEEDED exports
+NOTE                          = Living SSOT = PROJECT_STATE.md · GREEN closeout docs/audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · Git tip docs ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · prod deploy I.48-A0 @ 2adb569 · cold-start prompts FINAL_COLD_START §12
 REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
 SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md → PROJECT_STATE (SSOT) / MASTER_HANDOFF / REUSE_SSOT_MAP

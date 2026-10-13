@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-13 — **FULL FIXTURE VERIFIED PASS** ([closeout](./audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md)) · empty-session prod **PASS** · **Stage J: CLOSED** · FM criteria [GO-FM-CRITERIA](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · **all IN PASS** · Final Mix **NOT VERIFIED / NOT GREEN** (needs GREEN closeout GO) · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip) · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · I.18 local **ON MAIN** · I.13F tip **MISSING** · V2 **`44f7cbd`** GREEN/CLOSED · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · MASTER PROMPTS → §12 · **STOP — OWNER DECISION REQUIRED** (Final Mix GREEN closeout / Contabo / P6.8)
+**Updated:** 2026-10-13 — **Final Mix Production GREEN: VERIFIED** ([closeout](./audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) · frozen IN only) · **FULL FIXTURE VERIFIED PASS** · empty-session prod **PASS** · **Stage J: CLOSED** · FM criteria [GO-FM-CRITERIA](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · **all IN PASS** · **WAIVE:** Contabo always-on · bit-perfect PCM · P6.8 · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip) · Contabo always-on **OPEN / NOT VERIFIED** · disabled/inactive · I.18 local **ON MAIN** · I.13F tip **MISSING** · V2 **`44f7cbd`** GREEN/CLOSED · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · MASTER PROMPTS → §12 · **STOP — OWNER DECISION REQUIRED** (Contabo Ops / P6.8 / OUT · do not expand GREEN)
 **Type:** Documentation continuity · cold-start entry · dual-plane (Git tip docs ≠ app-code tip `ce2f0cc` ≠ prod last-known `2adb569` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.
@@ -58,7 +58,7 @@ STUDIO_EXPORT APP             = DEPLOYED (app-code tip ce2f0cc · Git tip 2adb56
                               · job 53398f9e-… / project bfc3d223-… / artifact 21d98be2-… READY
                               · J2 Download AuthZ — PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc-…)
                               · Stage J: CLOSED (GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md) · WAIVE byte-level fixture
-                              · Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN · FULL FIXTURE VERIFIED PASS (audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md)
+                              · Final Mix Production GREEN: VERIFIED (audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only) · FULL FIXTURE VERIFIED PASS
                               · prior: I.45BK/BM/BO + I.45BY 61b7cdf1-… SUCCEEDED (do not re-run either)
                               · I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow)
                               · empty-project happy-path delete NOT TESTED
@@ -119,14 +119,14 @@ P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
 PHASE 7.1.6                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d (ancestry)
 PHASE 7.1.5                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 3fccbf7 (ancestry)
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · Git tip = FULL FIXTURE VERIFIED closeout · parent 51a37a2 · prod last-known 2adb569 / dpl_sAyrsHC… (I.48-A0 · Ready · ≠ Git tip)
+                              · Git tip = Final Mix Production GREEN closeout · parent dcd2308 · prod last-known 2adb569 / dpl_sAyrsHC… (I.48-A0 · Ready · ≠ Git tip)
                               · app-code tip ce2f0cc (last-established evidence)
                               · STUDIO_EXPORT APP DEPLOYED
                               · Stage J CLOSED · FULL FIXTURE VERIFIED PASS · empty-session prod PASS · all IN PASS
+                              · Final Mix Production GREEN: VERIFIED (frozen IN only)
                               · I.45DR PASS · persistent worker disabled/inactive
-                              · Full Final Mix Production GREEN NOT VERIFIED (needs separate GREEN closeout GO)
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · all IN PASS · NEXT = Owner GO Final Mix Production GREEN docs closeout · ≠ GREEN yet
+                              · Final Mix GREEN VERIFIED · NEXT = Contabo Ops / P6.8 / OUT (independent) · do not expand GREEN
                               · P6.8 NOT STARTED · Contabo always-on WAIVED for GREEN (Ops GO separate)
                               · markers done (I.45CF) · no auto Contabo enable / no re-run SUCCEEDED exports
                               · V2 CLOSED · follow-ups NON-BLOCKING

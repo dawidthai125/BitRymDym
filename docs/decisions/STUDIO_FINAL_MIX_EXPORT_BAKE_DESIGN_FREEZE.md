@@ -14,12 +14,13 @@ STAGE G–I: IMPLEMENTED · landed PR #4 @ faf734b · dpl_9YDCy…
 APP DEPLOYED · I.45DR narrow Contabo WAV canary PASS
 J2 DOWNLOAD AUTHZ: PASS / CLOSED (I.45EX-A16/A17/A18)
 STAGE J: CLOSED (GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md)
-FINAL MIX GREEN CRITERIA: FROZEN (GO-FM-CRITERIA) · living GREEN NOT VERIFIED
+FINAL MIX GREEN CRITERIA: FROZEN (GO-FM-CRITERIA)
+Final Mix Production GREEN: VERIFIED (audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only)
 Empty-session production gate: PASS
 FULL FIXTURE VERIFIED: PASS (audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md)
-FM IN open: none (all IN PASS · GREEN closeout still separate)
+FM IN open: none (all IN PASS)
 FM WAIVE: Contabo always-on · bit-perfect PCM · P6.8
-≠ Full Final Mix Production GREEN yet
+≠ Contabo always-on · ≠ bit-perfect PCM · ≠ P6.8 · ≠ OUT items
 E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
 STAGE J CRITERIA: decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md
 FM CRITERIA: decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md
@@ -491,7 +492,7 @@ Stage J  Contabo / prod canary — **I.45DR narrow WAV canary PASS** (2026-10-12
 | Dialog focus / a11y (I.3A) | **IMPLEMENTED in main** (`studio-dialog-focus.ts`) · unit tested · prior local browser I.3B |
 | Runtime UI → API → worker → download | **PASS Stage I.7** (local isolated) · **I.45DR** prod Contabo enqueue→transient worker→READY artifact **PASS (narrow WAV)** · owner download of I.45DR artifact **not** re-claimed here |
 | Production app | **DEPLOYED** · Git tip = **GO-A** (parent **`50d7788`** · prior **`2adb569`** I.48 HISTORY) · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** Ready · **≠** Git tip · GO-A did not re-verify) · aliases www + `bitrymdym.vercel.app` + `bitrymdym.pl` last-known · apex redirect e2e **NOT VERIFIED** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` (PR #5) = last-established evidence · prior `dpl_28oH…` @ `f730a7a` = HISTORY (I.46-A10) · prior `dpl_7Cp2gQ9…` @ `df37048` = HISTORY · prior PR #4 `@faf734b` / `dpl_9YDCy…` = HISTORY |
-| Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **J2 PASS / CLOSED** · **Stage J: CLOSED** ([final closeout](../audits/STAGE_J_FINAL_CLOSURE.md) · [GO-SJ-CRITERIA](./STAGE_J_CLOSURE_CRITERIA_FREEZE.md)) · **Final Mix GREEN criteria FROZEN** ([GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md)) · living **Final Mix Production GREEN — nadal NOT VERIFIED** · Contabo always-on **WAIVED** for GREEN (Ops GO separate) |
+| Contabo / Stage J | **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · Contabo **not** always-on · **J2 PASS / CLOSED** · **Stage J: CLOSED** ([final closeout](../audits/STAGE_J_FINAL_CLOSURE.md) · [GO-SJ-CRITERIA](./STAGE_J_CLOSURE_CRITERIA_FREEZE.md)) · **Final Mix GREEN criteria FROZEN** ([GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md)) · living **Final Mix Production GREEN: VERIFIED** ([closeout](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) · frozen IN only) · Contabo always-on **WAIVED** for GREEN (Ops GO separate) |
 | Contabo pipeline / markers (last-known) | Byte-synced only: `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94…` (= `@faf734b`; I.45BV/BW) · persistent service **disabled/inactive** · **markers I.45CF APPLIED:** tip `faf734b` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed I.45DO/I.45DR · **I.45DR** ops path: transient `systemd-run --wait --collect` + `EnvironmentFile=-/etc/bitrymdym-e3-worker/worker.env` as `bitrymdym-e3` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as service user **FAIL** (no claim; no chmod) · **≠** continuous-mode / full-tree claim |
 | Live/offline FX parity | **FUNCTIONAL EVIDENCE (I.13F/I.14-01)** — not full PCM parity · I.13F report/json **MISSING ON CURRENT MAIN** (**HISTORICAL LOCAL EVIDENCE — NOT COMMITTED**) |
 | Cross-user download AuthZ (J2) | **PASS / CLOSED** — I.45EX-A16 owner HTTP **200** ALLOW · I.45EX-A17 other-user HTTP **403** DENY · I.45EX-A18 unauth HTTP **401** DENY · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · ≠ full module audit · **object_key reject-only (tested scope) PASS** (separate · [closeout](../audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · **P5/P6 owner download endpoint PASS** (JSON only · ≠ WAV retrieval · [closeout](../audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md)) · FIXTURE VERIFIED **NOT CONFIRMED** · Stage J close **WAIVE** byte-level WAV/RIFF ([criteria freeze](./STAGE_J_CLOSURE_CRITERIA_FREEZE.md)) · J2 [closeout](../audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) |
@@ -547,7 +548,7 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 |-------|---------|
 | **Confirmed local behavior** | I.15–I.18 above (code + local integration) |
 | **Historical session evidence** | I.13F FX freeze · I.18 empty-session freeze (session-dated; not re-executed in I.20) |
-| **Production unverified (remaining)** | Contabo always-on · full Live↔Offline PCM parity (WAIVE for GREEN) · Full Final Mix Production GREEN living claim — **not** automatic from IN PASSes · **FULL FIXTURE VERIFIED** now **PASS** via [closeout](../audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) |
+| **Production unverified (remaining)** | Contabo always-on (Ops) · full Live↔Offline PCM parity (WAIVE) · P6.8 (WAIVE) · OUT items · **Final Mix Production GREEN VERIFIED** under freeze via [GREEN closeout](../audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) · **FULL FIXTURE VERIFIED PASS** via [fixture closeout](../audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) |
 
 > **Supersession (I.26 / I.28 / PR #4 / I.45DR / I.45EJ-R1 / PR #10 / PR #11 / I.46-A10 / I.47 / PR #12 / I.48-A0):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** (app-code tip `ce2f0cc`; Git tip `2adb569` PR #12 docs; prod observed `dpl_sAyrsHC…` @ `2adb569` per **I.48-A0** — I.48-A2/A3 do not re-verify; Ready ≠ Final Mix GREEN; prior `f730a7a` / `dpl_28oH…` = HISTORY I.46-A10; prior `df37048` / `dpl_7Cp2gQ9…` = HISTORY; PR #4 history `@faf734b`). **I.45DR** recorded a narrow Contabo WAV canary PASS. Contabo always-on / Full Final Mix Production GREEN / remaining parity gates remain separate Owner GOs.
 
@@ -556,8 +557,8 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 ### Open (Owner may decide later)
 
 - Stronger Live↔Offline numeric thresholds (I.14-01 keeps functional bar).
-- Contabo always-on / Full Final Mix Production GREEN living closeout — each requires a **separate** Owner GO (**FULL FIXTURE VERIFIED PASS** recorded; **J2** **PASS / CLOSED**; Stage J **CLOSED**; empty-session **prod PASS** recorded).
-- Full FX/PCM parity · Loop/Metronom · P6.8.
+- Contabo always-on (Ops) — separate Owner GO (**Final Mix GREEN VERIFIED** under freeze; **FULL FIXTURE VERIFIED PASS**; **J2** **PASS / CLOSED**; Stage J **CLOSED**; empty-session **prod PASS**).
+- Full FX/PCM parity · Loop/Metronom · P6.8 (WAIVE for GREEN).
 
 ### Explicit non-authorization (unchanged)
 
@@ -575,7 +576,7 @@ No Contabo always-on · no Final Mix GREEN claim · no DSP/reverb/resampler edit
 | MIX/TAKE_EXPORT | Unchanged taxonomy and mappers |
 | Unit/source tests | `studio-export-failure-i17.test.ts` |
 | Local worker/DB integration | **Done in I.18** (see evidence freeze); **does not** replace production verification |
-| Still separate GO | Final Mix GREEN closeout applying [GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · Contabo always-on (Ops) · P6.8 · full IDOR · apex · empty-project delete (Stage J CLOSED · empty-session prod PASS · FULL FIXTURE PASS · ≠ GREEN yet) |
+| Still separate GO | Contabo always-on (Ops) · P6.8 · full IDOR · apex · empty-project delete (Final Mix GREEN **VERIFIED** under [GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · Stage J CLOSED · empty-session prod PASS · FULL FIXTURE PASS · ≠ expand GREEN to WAIVE/OUT) |
 
 ### Stage I.20 — SSOT reconciliation (docs only)
 

@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — Final Mix Production GREEN VERIFIED (docs closeout)
+
+**Status:** **DOCS CLOSEOUT** · Final Mix Production GREEN **VERIFIED** under frozen IN allowlist · direct `main` (no PR)
+**Preflight tip:** `dcd23080e1adbc951f0c1b58224bcf24248860b8` · all IN PASS verified from source closeouts
+**IN:** Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON · empty-session prod · FULL FIXTURE (`21d98be2-…` · RIFF/WAVE · 10,584,044 B · SHA-256 recorded) · I.18 tip ON MAIN
+**WAIVE unchanged:** Contabo always-on (disabled/inactive) · bit-perfect PCM · P6.8
+**OUT unchanged:** full IDOR · apex · empty-project delete · Studio migration CLOSED claim
+**Explicit:** GREEN ≠ Contabo always-on · ≠ bit-perfect · ≠ P6.8 · ≠ OUT · no new probes
+**Docs:** audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · PROJECT_STATE · GO-FM-CRITERIA living · bake freeze · README · FINAL_COLD / MASTER · this entry
+**Next:** Owner decision — Contabo Ops / P6.8 / OUT (independent) · do not expand GREEN scope
+
 ## 2026-10-13 — FULL FIXTURE VERIFIED PASS (gate #7 · Path B)
 
 **Status:** **DOCS CLOSEOUT** after Owner-authorized byte download + QC · Final Mix still **NOT VERIFIED** · direct `main` (no PR)
