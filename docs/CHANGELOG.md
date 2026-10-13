@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — GO-FM-CRITERIA Final Mix Production GREEN freeze
+
+**Status:** **CRITERIA FREEZE** · **NO CODE** · **NO PROD HTTP** · **NO WAV** · **NO CONTABO** · Final Mix still **NOT VERIFIED** (≠ GREEN) · direct `main` (no PR)
+**IN already:** Stage J **CLOSED** · I.45DR **PASS** · J2 **PASS/CLOSED** · object_key **PASS** · P5/P6 JSON **PASS**
+**IN open blockers:** I.18 tip evidence **MISSING ON MAIN** · empty-session prod **NOT VERIFIED** · **FULL FIXTURE VERIFIED NOT CONFIRMED**
+**WAIVE:** Contabo always-on / persistent · bit-perfect PCM · P6.8
+**OUT:** full IDOR · apex · empty-project delete · Studio migration CLOSED claim
+**Docs:** decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md · PROJECT_STATE §4H · bake freeze · README · this entry
+**Next:** Owner GO — I.18 tip recovery · then empty-session prod + fixture bytes (separate) · ≠ GREEN yet
+
 ## 2026-10-13 — GO-SJ-DOCS-CLOSE Stage J CLOSED
 
 **Status:** **Stage J: CLOSED** · **DOCS ONLY** · **NO CODE** · **NO PROD HTTP** · **NO WAV** · **NO CONTABO** · direct `main` (no PR)
