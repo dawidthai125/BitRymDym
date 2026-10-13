@@ -8,8 +8,8 @@
 **Stage J close:** [STAGE_J_FINAL_CLOSURE.md](../audits/STAGE_J_FINAL_CLOSURE.md) · [STAGE_J_CLOSURE_CRITERIA_FREEZE.md](./STAGE_J_CLOSURE_CRITERIA_FREEZE.md)
 
 ```text
-Final Mix Production GREEN: NOT VERIFIED (criteria frozen · ≠ GREEN yet)
-FULL FIXTURE VERIFIED: NOT CONFIRMED (IN for GREEN · not yet PASS)
+Final Mix Production GREEN: NOT VERIFIED (criteria frozen · ≠ GREEN yet · needs separate closeout GO)
+FULL FIXTURE VERIFIED: PASS (living result · gate #7)
 Stage J: CLOSED
 Empty-session production gate: PASS (living result · gate #6)
 P6.8: NOT STARTED
@@ -42,7 +42,7 @@ All of the following must be **PASS** (or **PASS / CLOSED**) with canonical tip 
 | 4 | **object_key** reject-only (narrow) | **PASS** | [STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md](../audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md) |
 | 5 | **P5 / P6** owner download (JSON) | **PASS** | [STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md](../audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md) · JSON only · **≠** WAV bytes · **≠** FULL FIXTURE VERIFIED |
 | 6 | **I.18 empty-session production probe** | **PASS** | [STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md](../audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md) · job `dac8ccb9-…` · `FAILED` · `STUDIO_RENDER_EMPTY_SESSION` · `artifactId=null` · no SUCCEEDED/READY/WAV · **PASS criterion unchanged** (this row records living result only) |
-| 7 | **FULL FIXTURE VERIFIED** | **NOT CONFIRMED** | Separate Owner GO required. **PASS when:** bytes obtained via allowed download flow for a real export artifact · `RIFF`/`WAVE` QC · size/coherence check · **no** signed URL / token / cookie / secret retained in docs, logs, or repo |
+| 7 | **FULL FIXTURE VERIFIED** | **PASS** | [FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md](../audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) · artifact `21d98be2-…` (I.45DR READY) · Owner download bytes · `RIFF`/`WAVE` · size coherence **10,584,044** B · **no** signed URL/token/cookie retained · **PASS criterion unchanged** (living result only) |
 | 8 | **I.18 evidence integrity on tip** | **ON MAIN / PASS** | Canonical local report on tip: [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · **≠** production probe (gate #6 has separate closeout) · freeze-time “MISSING” status **superseded** by GO-LAND-I18-PUBLISH + this living registration |
 
 **Binding limits:**
@@ -84,11 +84,12 @@ Each OUT item requires its **own** Owner GO and evidence class.
 | Path | Tip status | Role for GREEN |
 |------|------------|----------------|
 | `docs/audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` | **ON MAIN** | Gate **#8** satisfied · local class only |
-| `docs/audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md` | **ON MAIN** (this closeout) | Gate **#6** production PASS evidence |
+| `docs/audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md` | **ON MAIN** | Gate **#6** production PASS evidence |
+| `docs/audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md` | **ON MAIN** (this closeout) | Gate **#7** PASS evidence |
 | `docs/audits/STUDIO_FX_PARITY_I13F_REPORT.md` | **MISSING ON CURRENT MAIN** | Historical tip gap · **≠** automatic IN |
 | `docs/audits/STUDIO_FX_PARITY_I13F_EVIDENCE.json` | **MISSING ON CURRENT MAIN** | Historical tip gap · **≠** automatic IN |
 
-Freeze-time wording that listed I.18 as MISSING / empty-session as NOT VERIFIED is **historical** for the GO-FM-CRITERIA unit itself; living IN statuses are the table in §2.
+Freeze-time wording that listed I.18 as MISSING / empty-session / FULL FIXTURE as open is **historical** for the GO-FM-CRITERIA unit itself; living IN statuses are the table in §2.
 
 Do **not** copy, stage, or rewrite dirty-local copies of I.13F without a dedicated Owner GO.
 
@@ -119,9 +120,9 @@ Only after a separate Owner GO that:
 ```text
 GO-FM-CRITERIA: ACCEPTED (criteria unchanged)
 Final Mix Production GREEN: NOT VERIFIED
-IN open blockers: FULL FIXTURE VERIFIED NOT CONFIRMED
-IN already satisfied: Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON · I.18 tip ON MAIN · empty-session prod PASS
+IN open blockers: none
+IN all PASS: Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON · I.18 tip ON MAIN · empty-session prod PASS · FULL FIXTURE VERIFIED PASS
 WAIVE: Contabo always-on · bit-perfect PCM · P6.8
 OUT: full IDOR · apex · empty-project delete · Studio migration CLOSED claim
-NEXT: Owner GO — FULL FIXTURE VERIFIED and/or Final Mix GREEN closeout · ≠ GREEN yet
+NEXT: Owner GO — Final Mix Production GREEN docs closeout · ≠ GREEN yet
 ```

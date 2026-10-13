@@ -15,8 +15,9 @@ APP DEPLOYED · I.45DR narrow Contabo WAV canary PASS
 J2 DOWNLOAD AUTHZ: PASS / CLOSED (I.45EX-A16/A17/A18)
 STAGE J: CLOSED (GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md)
 FINAL MIX GREEN CRITERIA: FROZEN (GO-FM-CRITERIA) · living GREEN NOT VERIFIED
-Empty-session production gate: PASS (audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md)
-FM IN open: FULL FIXTURE VERIFIED
+Empty-session production gate: PASS
+FULL FIXTURE VERIFIED: PASS (audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md)
+FM IN open: none (all IN PASS · GREEN closeout still separate)
 FM WAIVE: Contabo always-on · bit-perfect PCM · P6.8
 ≠ Full Final Mix Production GREEN yet
 E3 MIX / TAKE_EXPORT CONTRACTS: UNCHANGED
@@ -546,7 +547,7 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 |-------|---------|
 | **Confirmed local behavior** | I.15–I.18 above (code + local integration) |
 | **Historical session evidence** | I.13F FX freeze · I.18 empty-session freeze (session-dated; not re-executed in I.20) |
-| **Production unverified (remaining)** | Contabo always-on · full Live↔Offline PCM parity · **FULL FIXTURE VERIFIED** · Full Final Mix Production GREEN — **not** proven by I.18 local, empty-session **prod PASS**, I.45BK/BM/BO, narrow **I.45DR**, or **J2** (Stage J **CLOSED**; empty-session prod is a separate Final Mix IN) |
+| **Production unverified (remaining)** | Contabo always-on · full Live↔Offline PCM parity (WAIVE for GREEN) · Full Final Mix Production GREEN living claim — **not** automatic from IN PASSes · **FULL FIXTURE VERIFIED** now **PASS** via [closeout](../audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) |
 
 > **Supersession (I.26 / I.28 / PR #4 / I.45DR / I.45EJ-R1 / PR #10 / PR #11 / I.46-A10 / I.47 / PR #12 / I.48-A0):** The I.18 row above remains a session-dated evidence class. Production applied Studio Export migrations as `20261010185003` / `20261010185020` / `20261010185034` (I.26); local files renamed in I.28 (SQL unchanged). App code **DEPLOYED** (app-code tip `ce2f0cc`; Git tip `2adb569` PR #12 docs; prod observed `dpl_sAyrsHC…` @ `2adb569` per **I.48-A0** — I.48-A2/A3 do not re-verify; Ready ≠ Final Mix GREEN; prior `f730a7a` / `dpl_28oH…` = HISTORY I.46-A10; prior `df37048` / `dpl_7Cp2gQ9…` = HISTORY; PR #4 history `@faf734b`). **I.45DR** recorded a narrow Contabo WAV canary PASS. Contabo always-on / Full Final Mix Production GREEN / remaining parity gates remain separate Owner GOs.
 
@@ -555,7 +556,7 @@ NEXT: Owner GO for local migration apply + worker-once integration smoke
 ### Open (Owner may decide later)
 
 - Stronger Live↔Offline numeric thresholds (I.14-01 keeps functional bar).
-- Contabo always-on / Full Final Mix Production GREEN / FULL FIXTURE VERIFIED — each requires a **separate** Owner GO (narrow I.45DR canary already recorded; **J2** **PASS / CLOSED**; Stage J **CLOSED**; empty-session **prod PASS** recorded).
+- Contabo always-on / Full Final Mix Production GREEN living closeout — each requires a **separate** Owner GO (**FULL FIXTURE VERIFIED PASS** recorded; **J2** **PASS / CLOSED**; Stage J **CLOSED**; empty-session **prod PASS** recorded).
 - Full FX/PCM parity · Loop/Metronom · P6.8.
 
 ### Explicit non-authorization (unchanged)
@@ -574,7 +575,7 @@ No Contabo always-on · no Final Mix GREEN claim · no DSP/reverb/resampler edit
 | MIX/TAKE_EXPORT | Unchanged taxonomy and mappers |
 | Unit/source tests | `studio-export-failure-i17.test.ts` |
 | Local worker/DB integration | **Done in I.18** (see evidence freeze); **does not** replace production verification |
-| Still separate GO | FULL FIXTURE VERIFIED · Final Mix GREEN closeout applying [GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · Contabo always-on (Ops) · P6.8 · full IDOR · apex · empty-project delete (Stage J CLOSED · empty-session prod PASS · ≠ GREEN yet) |
+| Still separate GO | Final Mix GREEN closeout applying [GO-FM-CRITERIA](./FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) · Contabo always-on (Ops) · P6.8 · full IDOR · apex · empty-project delete (Stage J CLOSED · empty-session prod PASS · FULL FIXTURE PASS · ≠ GREEN yet) |
 
 ### Stage I.20 — SSOT reconciliation (docs only)
 
