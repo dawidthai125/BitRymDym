@@ -580,7 +580,7 @@ IN (satisfied · not re-probed)
   · P6 owner download ?foo=1 = PASS (JSON only)
 WAIVE                         = byte-level WAV/RIFF for c596e7bc-a031-4df8-a17b-31c4fd2cce8b (Stage J WAIVE · ≠ Final Mix gate #7)
 FULL FIXTURE VERIFIED         = PASS (after Stage J · audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md · artifact 21d98be2-…)
-Final Mix Production GREEN    = NOT VERIFIED (Stage J CLOSED ≠ Final Mix GREEN · all IN PASS still need GREEN closeout GO)
+Final Mix Production GREEN    = VERIFIED (after Stage J · audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only · ≠ Contabo always-on / bit-perfect / P6.8 / OUT)
 OUT (independent statuses · living)
   · empty-session production probe = PASS (after Stage J close · audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md)
   · Contabo always-on / persistent worker = OPEN / NOT VERIFIED · disabled/inactive
