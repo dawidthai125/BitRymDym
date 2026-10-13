@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — Stage J P5/P6 owner download probe PASS (docs closeout)
+
+**Status:** **DOCS CLOSEOUT** · **NO CODE** · **NO RE-PROBE** · **NO WAV / SIGNED URL** · direct `main` (no PR)
+**Result:** P5 **PASS** · P6 **PASS** — owner download endpoint JSON only (artifact `c596e7bc-…`) · ≠ WAV retrieval · ≠ full FIXTURE VERIFIED
+**Gates unchanged:** object_key reject-only **PASS** (separate) · J2 **PASS/CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN/NOT VERIFIED**
+**Docs:** audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md · PROJECT_STATE §4E · bake freeze AuthZ row · README · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8
+
 ## 2026-10-13 — GO-A Stage J docs integrity (A2)
 
 **Status:** **DOCS INTEGRITY** · **NO CODE** · **NO PROD HTTP** · **NO P5/P6** · **NO CONTABO** · direct `main` (no PR)

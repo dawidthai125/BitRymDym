@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-13 — **GO-A Stage J docs integrity (A2)** · Git tip = this commit (parent **`50d7788`** object_key reject-only closeout · prior **`d69a5fe`** PR #13 / **`2adb569`** PR #12 I.48 = HISTORY) · **object_key reject-only (tested scope) PASS** (P1–P4, P8–P9 · P5/P6 NOT EXECUTED · [closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · Ready · **≠** current Git tip · no fresh deploy verify in GO-A) · app-code tip **`ce2f0cc`** · **I.45DR** WAV canary **PASS** · **J2 PASS / CLOSED** · **Stage J OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · apex redirect e2e **NOT VERIFIED** · I.18/I.13F evidence files **MISSING ON CURRENT MAIN** (historical local only · not committed) · Sacred WIP protected · **NEXT:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 (optional P5/P6) — no auto Contabo · no sync dirty local main
+**Updated:** 2026-10-13 — **P5/P6 owner download probe PASS** (endpoint JSON only · ≠ WAV retrieval · [closeout](./audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md)) · prior **GO-A** tip **`16f4761`** · parent **`50d7788`** object_key closeout · **object_key reject-only PASS** (separate · [closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip) · app-code tip **`ce2f0cc`** · **J2 PASS / CLOSED** · **Stage J OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · **FIXTURE VERIFIED NOT CONFIRMED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · Sacred WIP protected · **NEXT:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 — no auto Contabo · no sync dirty local main
 
 ---
 
@@ -21,8 +21,8 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **GITHUB MAIN TIP / origin/main (confirmed)** | **GO-A Stage J docs integrity (A2)** — this commit · parent **`50d77889820ad407bdbfe56c27ad91d306b26cf3` (`50d7788`)** (object_key reject-only closeout) · prior **`d69a5fe`** (PR #13) / **`2adb569`** (PR #12 I.48) / **`f730a7a`** (PR #11) = HISTORY · **≠** automatic functional app release · verify with `git rev-parse origin/main` after fetch · local worktree may still be dirty / diverge |
-| **PRIOR DOCS TIP (HISTORY)** | **`50d7788`** — object_key reject-only closeout (parent of GO-A) · **`d69a5fe`** PR #13 · **`2adb569`** PR #12 · **`f730a7a`** PR #11 · **`522e514`** PR #10 J2 · **`df37048`** PR #8 |
+| **GITHUB MAIN TIP / origin/main (confirmed)** | **P5/P6 owner download probe docs closeout** — this commit · parent **`16f476150624f9fa14f7b4620d3b77fc2a323752` (`16f4761`)** (GO-A) · prior **`50d7788`** object_key closeout / **`d69a5fe`** / **`2adb569`** = HISTORY · **≠** automatic functional app release · verify with `git rev-parse origin/main` after fetch · local worktree may still be dirty / diverge |
+| **PRIOR DOCS TIP (HISTORY)** | **`16f4761`** — GO-A docs integrity · **`50d7788`** object_key reject-only closeout · **`d69a5fe`** PR #13 · **`2adb569`** PR #12 · **`f730a7a`** PR #11 · **`522e514`** PR #10 J2 · **`df37048`** PR #8 |
 | **APP-CODE TIP (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete×export-history) · last app-feature tip on `main` before docs tips · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
@@ -68,7 +68,7 @@
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **GO-A** (parent **`50d7788`** · prior **`2adb569`** I.48 HISTORY) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip · GO-A did not re-verify · Ready ≠ Final Mix GREEN) · prior prod **`f730a7a`** / `dpl_28oH…` = HISTORY (I.46-A10) · **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · `audio-artifacts` · 10,584,044 B · 60,000 ms · `pcm_s16le_wav` · **J2 Download AuthZ — PASS / CLOSED** (I.45EX-A16/A17/A18 · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · owner 200 ALLOW · other-user 403 DENY · unauth 401 DENY · ≠ full AuthZ module audit · separate gate) · **object_key reject-only (tested scope) — PASS** (P1–P4, P8–P9 · P5/P6 NOT EXECUTED / OUT OF SCOPE · FIXTURE VERIFIED NOT CONFIRMED · [closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · **Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · **Stage J OPEN** (J2 only) · prior evidence: I.45BK/BM/BO + I.45BY `61b7cdf1-…` **SUCCEEDED** — **do not re-run** either job · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only) · **Not claimed:** Contabo always-on · full worker-tree align · empty-session on prod · full FX/PCM parity · empty-project delete · Studio migration CLOSED · Stage J full close · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **GO-A** (parent **`50d7788`** · prior **`2adb569`** I.48 HISTORY) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip · GO-A did not re-verify · Ready ≠ Final Mix GREEN) · prior prod **`f730a7a`** / `dpl_28oH…` = HISTORY (I.46-A10) · **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · `audio-artifacts` · 10,584,044 B · 60,000 ms · `pcm_s16le_wav` · **J2 Download AuthZ — PASS / CLOSED** (I.45EX-A16/A17/A18 · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · owner 200 ALLOW · other-user 403 DENY · unauth 401 DENY · ≠ full AuthZ module audit · separate gate) · **object_key reject-only (tested scope) — PASS** (P1–P4, P8–P9 · separate · [closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · **P5/P6 owner download endpoint — PASS** (JSON response only · ≠ WAV retrieval · artifact `c596e7bc-…` · [closeout](./audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md)) · **FIXTURE VERIFIED NOT CONFIRMED** · **Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · **Stage J OPEN** (J2 only) · prior evidence: I.45BK/BM/BO + I.45BY `61b7cdf1-…` **SUCCEEDED** — **do not re-run** either job · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only) · **Not claimed:** Contabo always-on · full worker-tree align · empty-session on prod · full FX/PCM parity · empty-project delete · Studio migration CLOSED · Stage J full close · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
 | **Contabo E3 worker (last-known)** | Host `vmi3622761` · persistent service **disabled/inactive** (I.45BW/CE/DR) · **byte-synced path only:** `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94a2519515f0f6ad6a78603a8351718427f9e84119d7fbacd43388bfe6` (= `@faf734b`; I.45BV/BW) · **markers I.45CF APPLIED:** tip `faf734bd99a13b427f00745563b54583f7258e94` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed **I.45DO/I.45DR** (not perpetual) · **I.45DR** oneshot via transient `systemd-run` + `EnvironmentFile` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as `bitrymdym-e3` **FAIL** (env unreadable; no claim; no chmod) · **≠** continuous-mode / full-tree align |
 | **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · **J2 PASS / CLOSED** · remaining Stage J / Final Mix gates **OPEN** · P6.8 **NOT STARTED** · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · do not mark Final Mix / Studio migration / Stage J full close · do not auto-enable Contabo · do not claim full VPS tree = `faf734b` |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
@@ -232,14 +232,15 @@ CURRENT                       = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
                               · STUDIO_EXPORT app DEPLOYED
                               · I.45DR narrow Contabo WAV canary PASS (job 53398f9e… · artifact 21d98be2… READY)
                               · J2 Download AuthZ PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc…)
-                              · object_key reject-only (tested scope) PASS — P1–P4, P8–P9 · P5/P6 NOT EXECUTED / OUT OF SCOPE · FIXTURE VERIFIED NOT CONFIRMED · audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md
+                              · object_key reject-only (tested scope) PASS — P1–P4, P8–P9 · audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md
+                              · P5/P6 owner download endpoint PASS — JSON only · ≠ WAV retrieval · FIXTURE VERIFIED NOT CONFIRMED · audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md
                               · Stage J OPEN (J2 only) · ≠ Stage J full close
                               · persistent Contabo worker disabled/inactive · not always-on
                               · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
                               · Full Final Mix Production GREEN NOT VERIFIED / OPEN · Studio migration ≠ CLOSED
                               · 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P4.6 / Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · I.45DR narrow canary PASS · J2 PASS / CLOSED · object_key reject-only PASS (narrow) · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED
+                              · I.45DR narrow canary PASS · J2 PASS / CLOSED · object_key reject-only PASS (narrow) · P5/P6 endpoint PASS (narrow) · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED
                               · markers I.45CF done · DEPLOYED_COMMIT = reference tip not full-tree
                               · V2 follow-ups NON-BLOCKING · do NOT auto-open EPIC / payments
                               · do NOT reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P6.5 Scenario B / P4.6
@@ -524,6 +525,25 @@ I.18 / I.13F files on main    = MISSING ON CURRENT MAIN
                               · do NOT treat broken tip links as available evidence
 A2 CHOICE                     = rewrite living refs · do NOT land dirty I.18/I.13F files
 SCOPE                         = docs only · no code · no prod HTTP · no Contabo · no P5/P6
+```
+
+## 4E. P5/P6 owner download probe (2026-10-13)
+
+```text
+SESSION                       = Stage J P5/P6 owner download probe documentation closeout
+EVIDENCE                      = prior probe session report (not re-executed in this docs unit)
+ARTIFACT                      = c596e7bc-a031-4df8-a17b-31c4fd2cce8b
+HISTORICAL JOB                = 61b7cdf1-0dfa-41aa-a493-e4f438d09131 — not re-run
+P5                            = PASS — GET …/download · HTTP 200 · success=true · qualityTier=WAV · hasUrl=true
+P6                            = PASS — GET …/download?foo=1 · HTTP 200 · same functional shape · hasUrl=true
+SCOPE LIMIT                   = endpoint JSON response only · ≠ WAV byte download · ≠ signed URL open
+FULL FIXTURE VERIFIED         = NOT CONFIRMED
+object_key reject-only        = PASS — separate prior scope (do not merge)
+J2 Download AuthZ             = PASS / CLOSED (separate gate)
+Stage J                       = OPEN
+Full Final Mix Production GREEN = NOT VERIFIED
+P6.8 / Contabo always-on      = unchanged (NOT STARTED · OPEN / NOT VERIFIED)
+CLOSEOUT                      = audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md
 ```
 
 ## 5. Next Session Entry
