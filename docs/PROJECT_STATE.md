@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-13 — **P5/P6 owner download probe PASS** (endpoint JSON only · ≠ WAV retrieval · [closeout](./audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md)) · prior **GO-A** tip **`16f4761`** · parent **`50d7788`** object_key closeout · **object_key reject-only PASS** (separate · [closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip) · app-code tip **`ce2f0cc`** · **J2 PASS / CLOSED** · **Stage J OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · **FIXTURE VERIFIED NOT CONFIRMED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · Sacred WIP protected · **NEXT:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 — no auto Contabo · no sync dirty local main
+**Updated:** 2026-10-13 — **GO-SJ-CRITERIA** Stage J closure criteria **FROZEN** ([decision](./decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md)) · **Stage J still OPEN** (≠ CLOSED) · IN: I.45DR · J2 · object_key · P5/P6 JSON · **WAIVE** byte-level WAV/RIFF for fixture `c596e7bc-…` (≠ FULL FIXTURE VERIFIED) · prior tip **`9627159`** P5/P6 closeout · **object_key reject-only PASS** · **J2 PASS / CLOSED** · Final Mix **NOT VERIFIED / NOT GREEN** · **FIXTURE VERIFIED NOT CONFIRMED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · Sacred WIP protected · **NEXT:** Owner GO — Stage J CLOSED docs closeout (apply freeze) · ≠ Final Mix GREEN · no auto Contabo · no sync dirty local main
 
 ---
 
@@ -21,8 +21,8 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **GITHUB MAIN TIP / origin/main (confirmed)** | **P5/P6 owner download probe docs closeout** — this commit · parent **`16f476150624f9fa14f7b4620d3b77fc2a323752` (`16f4761`)** (GO-A) · prior **`50d7788`** object_key closeout / **`d69a5fe`** / **`2adb569`** = HISTORY · **≠** automatic functional app release · verify with `git rev-parse origin/main` after fetch · local worktree may still be dirty / diverge |
-| **PRIOR DOCS TIP (HISTORY)** | **`16f4761`** — GO-A docs integrity · **`50d7788`** object_key reject-only closeout · **`d69a5fe`** PR #13 · **`2adb569`** PR #12 · **`f730a7a`** PR #11 · **`522e514`** PR #10 J2 · **`df37048`** PR #8 |
+| **GITHUB MAIN TIP / origin/main (confirmed)** | **GO-SJ-CRITERIA** Stage J closure criteria freeze — this commit · parent **`9627159d18f9c63e4a3b14216bf8cd8e4f2bb26e` (`9627159`)** (P5/P6 closeout) · prior **`16f4761`** GO-A / **`50d7788`** object_key / **`2adb569`** = HISTORY · **≠** automatic functional app release · verify with `git rev-parse origin/main` after fetch · local worktree may still be dirty / diverge |
+| **PRIOR DOCS TIP (HISTORY)** | **`9627159`** — P5/P6 owner download probe closeout · **`16f4761`** GO-A · **`50d7788`** object_key reject-only · **`d69a5fe`** PR #13 · **`2adb569`** PR #12 · **`f730a7a`** PR #11 · **`522e514`** PR #10 J2 · **`df37048`** PR #8 |
 | **APP-CODE TIP (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete×export-history) · last app-feature tip on `main` before docs tips · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
@@ -68,9 +68,9 @@
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **GO-A** (parent **`50d7788`** · prior **`2adb569`** I.48 HISTORY) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip · GO-A did not re-verify · Ready ≠ Final Mix GREEN) · prior prod **`f730a7a`** / `dpl_28oH…` = HISTORY (I.46-A10) · **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · `audio-artifacts` · 10,584,044 B · 60,000 ms · `pcm_s16le_wav` · **J2 Download AuthZ — PASS / CLOSED** (I.45EX-A16/A17/A18 · artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · owner 200 ALLOW · other-user 403 DENY · unauth 401 DENY · ≠ full AuthZ module audit · separate gate) · **object_key reject-only (tested scope) — PASS** (P1–P4, P8–P9 · separate · [closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · **P5/P6 owner download endpoint — PASS** (JSON response only · ≠ WAV retrieval · artifact `c596e7bc-…` · [closeout](./audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md)) · **FIXTURE VERIFIED NOT CONFIRMED** · **Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · **Stage J OPEN** (J2 only) · prior evidence: I.45BK/BM/BO + I.45BY `61b7cdf1-…` **SUCCEEDED** — **do not re-run** either job · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only) · **Not claimed:** Contabo always-on · full worker-tree align · empty-session on prod · full FX/PCM parity · empty-project delete · Studio migration CLOSED · Stage J full close · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
-| **Contabo E3 worker (last-known)** | Host `vmi3622761` · persistent service **disabled/inactive** (I.45BW/CE/DR) · **byte-synced path only:** `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94a2519515f0f6ad6a78603a8351718427f9e84119d7fbacd43388bfe6` (= `@faf734b`; I.45BV/BW) · **markers I.45CF APPLIED:** tip `faf734bd99a13b427f00745563b54583f7258e94` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed **I.45DO/I.45DR** (not perpetual) · **I.45DR** oneshot via transient `systemd-run` + `EnvironmentFile` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as `bitrymdym-e3` **FAIL** (env unreadable; no claim; no chmod) · **≠** continuous-mode / full-tree align |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · **J2 PASS / CLOSED** · remaining Stage J / Final Mix gates **OPEN** · P6.8 **NOT STARTED** · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · do not mark Final Mix / Studio migration / Stage J full close · do not auto-enable Contabo · do not claim full VPS tree = `faf734b` |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **GO-SJ-CRITERIA** (parent **`9627159`** · prior **`16f4761`** GO-A / **`2adb569`** I.48 HISTORY) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip · Ready ≠ Final Mix GREEN) · prior prod **`f730a7a`** / `dpl_28oH…` = HISTORY (I.46-A10) · **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · job `53398f9e-…` / artifact `21d98be2-…` **READY** · **J2 Download AuthZ — PASS / CLOSED** (artifact `c596e7bc-…` · ≠ full AuthZ module audit) · **object_key reject-only (tested scope) — PASS** ([closeout](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md)) · **P5/P6 owner download endpoint — PASS** (JSON only · ≠ WAV retrieval · [closeout](./audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md)) · **Stage J closure criteria FROZEN** ([GO-SJ-CRITERIA](./decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md)) · **Stage J OPEN** (≠ CLOSED yet) · **WAIVE** byte-level WAV/RIFF for `c596e7bc-…` as Stage J close requirement · **FIXTURE VERIFIED NOT CONFIRMED** · **Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · prior evidence: I.45BK/BM/BO + I.45BY `61b7cdf1-…` **SUCCEEDED** — **do not re-run** · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only) · **OUT of Stage J CLOSED:** empty-session prod · Contabo always-on / persistent worker · P6.8 · full Live↔Offline PCM · Final Mix GREEN · full IDOR beyond J2 · apex redirect e2e · empty-project delete · [J2 closeout](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **Contabo E3 worker (last-known)** | Host `vmi3622761` · persistent service **disabled/inactive** (I.45BW/CE/DR) · **byte-synced path only:** `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94a2519515f0f6ad6a78603a8351718427f9e84119d7fbacd43388bfe6` (= `@faf734b`; I.45BV/BW) · **markers I.45CF APPLIED:** tip `faf734bd99a13b427f00745563b54583f7258e94` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed **I.45DO/I.45DR** (not perpetual) · **I.45DR** oneshot via transient `systemd-run` + `EnvironmentFile` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as `bitrymdym-e3` **FAIL** (env unreadable; no claim; no chmod) · **≠** continuous-mode / full-tree align · **OUT** of Stage J CLOSED criteria (GO-SJ-CRITERIA) |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — Stage J criteria **FROZEN** · Stage J still **OPEN** · IN gates documented PASS · **NEXT:** Owner GO — Stage J CLOSED docs closeout (apply freeze) · do **not** declare Final Mix GREEN / Contabo always-on / FULL FIXTURE VERIFIED · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · do not auto-enable Contabo · do not claim full VPS tree = `faf734b` |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -223,29 +223,34 @@ VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
 CURRENT                       = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · Git tip = GO-A docs integrity (A2) · parent 50d7788 · prior d69a5fe / 2adb569 = HISTORY
-                              · prod last-known dpl_sAyrsHC… @ 2adb569 (I.48-A0 · Ready · ≠ Git tip · GO-A did not re-verify)
+                              · Git tip = GO-SJ-CRITERIA Stage J closure criteria freeze · parent 9627159 · prior 16f4761 / 50d7788 / 2adb569 = HISTORY
+                              · Stage J closure criteria FROZEN · Stage J OPEN (≠ CLOSED) · decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md
+                              · IN for Stage J CLOSED: I.45DR PASS · J2 PASS/CLOSED · object_key reject-only PASS · P5/P6 JSON PASS
+                              · WAIVE: byte-level WAV/RIFF for fixture c596e7bc-… (≠ FULL FIXTURE VERIFIED)
+                              · OUT (independent): empty-session prod · Contabo always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
+                              · prod last-known dpl_sAyrsHC… @ 2adb569 (I.48-A0 · Ready · ≠ Git tip)
                               · prior prod dpl_28oH… @ f730a7a = HISTORY (I.46-A10 / I.47)
                               · aliases www + bitrymdym.vercel.app + bitrymdym.pl last-known (I.48-A0) · apex redirect e2e NOT VERIFIED
                               · app-code tip ce2f0cc / prior dpl_1P8ixpt… = last-established evidence (≠ Git tip)
-                              · PR #12 docs-only · ≠ app feature release · Ready ≠ Final Mix GREEN
+                              · Ready ≠ Final Mix GREEN · FIXTURE VERIFIED NOT CONFIRMED
                               · STUDIO_EXPORT app DEPLOYED
                               · I.45DR narrow Contabo WAV canary PASS (job 53398f9e… · artifact 21d98be2… READY)
                               · J2 Download AuthZ PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc…)
                               · object_key reject-only (tested scope) PASS — P1–P4, P8–P9 · audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md
-                              · P5/P6 owner download endpoint PASS — JSON only · ≠ WAV retrieval · FIXTURE VERIFIED NOT CONFIRMED · audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md
-                              · Stage J OPEN (J2 only) · ≠ Stage J full close
+                              · P5/P6 owner download endpoint PASS — JSON only · ≠ WAV retrieval · audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md
                               · persistent Contabo worker disabled/inactive · not always-on
                               · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
                               · Full Final Mix Production GREEN NOT VERIFIED / OPEN · Studio migration ≠ CLOSED
                               · 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P4.6 / Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · I.45DR narrow canary PASS · J2 PASS / CLOSED · object_key reject-only PASS (narrow) · P5/P6 endpoint PASS (narrow) · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED
+                              · Stage J criteria FROZEN · Stage J still OPEN · NEXT = Owner GO Stage J CLOSED docs closeout (apply freeze)
+                              · do NOT declare Final Mix GREEN / Contabo always-on / FULL FIXTURE VERIFIED / Stage J CLOSED in this tip
+                              · P6.8 NOT STARTED · OUT items keep independent statuses
                               · markers I.45CF done · DEPLOYED_COMMIT = reference tip not full-tree
                               · V2 follow-ups NON-BLOCKING · do NOT auto-open EPIC / payments
                               · do NOT reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P6.5 Scenario B / P4.6
                               · do NOT permanently enable Contabo / claim continuous-mode without Owner GO
-                              · do NOT re-run SUCCEEDED jobs 53398f9e… or 61b7cdf1… · do NOT claim Final Mix GREEN / Stage J full close / Studio migration CLOSED
+                              · do NOT re-run SUCCEEDED jobs 53398f9e… or 61b7cdf1…
                               · do NOT claim Contabo full-tree = tip · API-outside-closure drift remains OPEN
                               · do NOT claim empty-project delete PRODUCTION VERIFIED (I.45CV out of scope)
                               · do NOT commit P4 local seam / SA-07 untracked / Sacred WIP without Owner GO
@@ -546,12 +551,47 @@ P6.8 / Contabo always-on      = unchanged (NOT STARTED · OPEN / NOT VERIFIED)
 CLOSEOUT                      = audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md
 ```
 
+## 4F. Stage J closure criteria freeze (GO-SJ-CRITERIA · 2026-10-13)
+
+```text
+SESSION                       = GO-SJ-CRITERIA — freeze Stage J CLOSED allowlist (docs only)
+DECISION                      = decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md
+Stage J                       = OPEN (criteria frozen · ≠ Stage J CLOSED yet)
+IN (required for Stage J CLOSED)
+  · I.45DR narrow Contabo WAV canary = PASS
+  · J2 Download AuthZ = PASS / CLOSED
+  · object_key reject-only (narrow) = PASS
+  · P5 owner download endpoint = PASS (JSON response only)
+  · P6 owner download ?foo=1 = PASS (JSON response only)
+WAIVE (not required for Stage J CLOSED)
+  · byte-level WAV download / RIFF QC for fixture c596e7bc-a031-4df8-a17b-31c4fd2cce8b
+  · ≠ FULL FIXTURE VERIFIED · ≠ WAV correctness claim · does not alter prior probe results
+OUT (independent statuses — do not PASS/CLOSE via Stage J close)
+  · empty-session production probe
+  · Contabo always-on / persistent worker
+  · P6.8
+  · full Live↔Offline PCM parity
+  · Final Mix Production GREEN
+  · full IDOR beyond documented J2
+  · apex redirect e2e
+  · empty-project delete
+FULL FIXTURE VERIFIED         = NOT CONFIRMED (unchanged)
+Final Mix Production GREEN    = NOT VERIFIED (unchanged)
+P6.8 / Contabo always-on      = NOT STARTED · OPEN / NOT VERIFIED (unchanged)
+SCOPE                         = docs only · no prod HTTP · no WAV · no Contabo · no app code · no Stage J CLOSED
+NEXT                          = Owner GO — Stage J CLOSED docs closeout applying this freeze · ≠ Final Mix GREEN
+```
+
 ## 5. Next Session Entry
 
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm GitHub main tip / origin/main = GO-A tip (parent 50d7788 · verify remotely after fetch)
+                 → Confirm GitHub main tip / origin/main = GO-SJ-CRITERIA tip (parent 9627159 · verify remotely after fetch)
+                 → Confirm Stage J closure criteria FROZEN · Stage J still OPEN · decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md
+                 → IN for Stage J CLOSED: I.45DR · J2 · object_key · P5/P6 JSON (documented PASS)
+                 → WAIVE: byte-level fixture WAV/RIFF · FIXTURE VERIFIED NOT CONFIRMED
+                 → OUT keep independent status: empty-session prod · always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
                  → Treat prod dpl_sAyrsHCfMVLFer669J2MgbbXbhGN @ SHA 2adb569 as last-known I.48-A0 (Ready) · ≠ Git tip · no fresh deploy verify assumed · Ready ≠ functional GREEN
                  → Treat prior dpl_28oH… @ f730a7a as HISTORY (I.46-A10 / I.47)
                  → Treat aliases www + bitrymdym.vercel.app + bitrymdym.pl as last-known (I.48-A0) · apex redirect e2e NOT VERIFIED
@@ -570,7 +610,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → Confirm Contabo worker = STOPPED / DISABLED
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
-                 → NEXT GATE = STOP — OWNER DECISION REQUIRED (no auto EPIC / P6.8 / payments)
+                 → NEXT GATE = STOP — OWNER DECISION REQUIRED (Stage J CLOSED closeout vs Final Mix / P6.8 · no auto EPIC / payments)
                  → SEARCH EXISTING FIRST · DO NOT DUPLICATE engine/player/orchestrator/CAS/selection
                  → Do NOT reimplement V2 / Auto Save/CAS / 7.1.6 / Escape / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P4.6
                  → Do NOT commit P4 context? seam / SA-07 untracked / Sacred WIP without Owner GO

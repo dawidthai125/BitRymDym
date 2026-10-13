@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-13 — GO-SJ-CRITERIA Stage J closure criteria freeze
+
+**Status:** **CRITERIA FREEZE** · **NO CODE** · **NO PROD HTTP** · **NO WAV** · **NO CONTABO** · Stage J still **OPEN** (≠ CLOSED) · direct `main` (no PR)
+**IN (required for Stage J CLOSED):** I.45DR **PASS** · J2 **PASS/CLOSED** · object_key reject-only **PASS** · P5/P6 JSON **PASS**
+**WAIVE:** byte-level WAV/RIFF for fixture `c596e7bc-…` · ≠ FULL FIXTURE VERIFIED · ≠ WAV correctness
+**OUT (independent):** empty-session prod · Contabo always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
+**Docs:** decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md · PROJECT_STATE §4F · bake freeze living Stage J rows · README · this entry
+**Next:** Owner GO — Stage J CLOSED docs closeout (apply freeze) · ≠ Final Mix GREEN
+
 ## 2026-10-13 — Stage J P5/P6 owner download probe PASS (docs closeout)
 
 **Status:** **DOCS CLOSEOUT** · **NO CODE** · **NO RE-PROBE** · **NO WAV / SIGNED URL** · direct `main` (no PR)
