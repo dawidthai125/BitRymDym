@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-13 — **GO-A Stage J docs integrity (A2)** · Git tip = this commit (parent **`50d7788`** · prior **`2adb569`** I.48 = HISTORY) · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip · no fresh deploy verify · apex redirect e2e **NOT VERIFIED**) · **object_key reject-only PASS** · **J2 PASS / CLOSED** · **Stage J OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · I.18/I.13F **MISSING ON CURRENT MAIN** · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · cold-start prompts → [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12 · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-13 — **GO-SJ-DOCS-CLOSE** · **Stage J: CLOSED** ([final closeout](./audits/STAGE_J_FINAL_CLOSURE.md)) · criteria [GO-SJ-CRITERIA](./decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md) · parent tip **`6daabfb`** · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip · apex redirect e2e **NOT VERIFIED**) · **FIXTURE VERIFIED NOT CONFIRMED** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · I.18/I.13F **MISSING ON CURRENT MAIN** · Studio migration **≠** CLOSED · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · cold-start prompts → [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12 · **STOP — OWNER DECISION REQUIRED** (Final Mix / Contabo / P6.8)
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -875,7 +875,7 @@ APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
 PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN · Ready · SHA 2adb569 · I.48-A2/A3 do not re-verify
   aliases (last-known · NOT e2e) = www.bitrymdym.pl · bitrymdym.vercel.app · bitrymdym.pl · apex redirect e2e NOT VERIFIED
 PRODUCTION GIT SHA (observed I.48-A0) = 2adb569 · equals Git tip · prior f730a7a / dpl_28oH… = HISTORY
-STUDIO_EXPORT APP             = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
+STUDIO_EXPORT APP             = DEPLOYED · I.45DR PASS · J2 PASS/CLOSED · Stage J CLOSED · ≠ Full Final Mix Production GREEN · FIXTURE VERIFIED NOT CONFIRMED
 DELETE×EXPORT HISTORY         = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
 PRODUCTION URL                = https://www.bitrymdym.pl
@@ -887,8 +887,8 @@ PHASE 7.1.3 INSPECTOR IA      = CLOSED / GREEN @ 8f6eeca (do not reopen)
 P4.6                          = CLOSED / GREEN @ a72fed9 (ancestry)
 Contabo                       = persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · pipeline @faf734b · markers I.45CF (selective ≠ full tree) · not always-on
 P6.8                          = NOT STARTED / OWNER DECISION
-NEXT GATE                     = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
-NOTE                          = Living SSOT = PROJECT_STATE.md · Git tip 2adb569 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · PR #12 docs-only · prod deploy I.48-A0 @ 2adb569 · cold-start prompts FINAL_COLD_START §12 · J2 closeout docs/audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
+NEXT GATE                     = STOP — Stage J CLOSED · Final Mix NOT VERIFIED · Contabo always-on OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
+NOTE                          = Living SSOT = PROJECT_STATE.md · Stage J closeout docs/audits/STAGE_J_FINAL_CLOSURE.md · Git tip docs ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ V2 44f7cbd · prod deploy I.48-A0 @ 2adb569 · cold-start prompts FINAL_COLD_START §12
 REUSE MAP                     = docs/architecture/REUSE_SSOT_MAP.md
 SACRED WIP SHA256             = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 NEXT SESSION ENTRY            = Read FINAL_COLD_START_HANDOFF.md → PROJECT_STATE (SSOT) / MASTER_HANDOFF / REUSE_SSOT_MAP

@@ -1,13 +1,15 @@
 # Stage J — Closure Criteria Freeze (GO-SJ-CRITERIA)
 
-**Status:** **CRITERIA FREEZE ACCEPTED** · Stage J living status remains **OPEN** (final closeout = separate GO)  
-**Date:** 2026-10-13  
-**Unit:** GO-SJ-CRITERIA (documentation-only)  
-**Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)  
+**Status:** **CRITERIA FREEZE ACCEPTED** · applied by **GO-SJ-DOCS-CLOSE** → living **Stage J: CLOSED** ([final closeout](../audits/STAGE_J_FINAL_CLOSURE.md))
+**Date:** 2026-10-13
+**Unit:** GO-SJ-CRITERIA (documentation-only)
+**Living SSOT:** [PROJECT_STATE.md](../PROJECT_STATE.md)
 **Parent freeze:** [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md)
 
 ```text
-Stage J: OPEN (criteria frozen · ≠ Stage J CLOSED yet)
+Criteria freeze: ACCEPTED (binding allowlist)
+Living Stage J after GO-SJ-DOCS-CLOSE: CLOSED
+At freeze authoring: Stage J was OPEN (historical)
 FULL FIXTURE VERIFIED: NOT CONFIRMED (WAIVE byte-level for Stage J close)
 Final Mix Production GREEN: NOT VERIFIED
 P6.8: NOT STARTED
@@ -100,9 +102,10 @@ Only after a separate Owner GO that:
 
 ```text
 GO-SJ-CRITERIA: ACCEPTED
-Stage J: OPEN
+Applied: GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md
+Living Stage J: CLOSED
 IN gates: I.45DR · J2 · object_key · P5 · P6 (documented PASS)
 WAIVE: byte-level fixture WAV/RIFF for Stage J close
 OUT: empty-session prod · always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
-NEXT: Owner GO — Stage J CLOSED docs closeout (apply this freeze) · ≠ Final Mix GREEN
+NEXT: Owner GO — Final Mix / Contabo / P6.8 / other OUT · ≠ Final Mix GREEN from Stage J close
 ```

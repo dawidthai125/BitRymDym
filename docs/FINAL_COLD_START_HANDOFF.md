@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-13 — **GO-A Stage J docs integrity (A2)** · Git tip = this commit (parent **`50d7788`** · prior **`2adb569`** I.48 / **`f730a7a`** PR #11 = HISTORY) · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip · no fresh deploy verify · apex redirect e2e **NOT VERIFIED**) · **object_key reject-only PASS** · **J2 PASS / CLOSED** · **Stage J OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · I.18/I.13F **MISSING ON CURRENT MAIN** · V2 **`44f7cbd`** GREEN/CLOSED · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · MASTER PROMPTS → §12 · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · cold-start entry · dual-plane (Git tip GO-A/`50d7788` ≠ app-code tip `ce2f0cc` ≠ prod last-known `2adb569` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-13 — **GO-SJ-DOCS-CLOSE** · **Stage J: CLOSED** ([final closeout](./audits/STAGE_J_FINAL_CLOSURE.md)) · criteria [GO-SJ-CRITERIA](./decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md) · parent tip **`6daabfb`** · app-code tip **`ce2f0cc`** · prod last-known **`dpl_sAyrsHC…`** @ **`2adb569`** (**I.48-A0** · **≠** Git tip · apex redirect e2e **NOT VERIFIED**) · **FIXTURE VERIFIED NOT CONFIRMED** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · Contabo always-on **OPEN / NOT VERIFIED** · I.18/I.13F **MISSING ON CURRENT MAIN** · V2 **`44f7cbd`** GREEN/CLOSED · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · MASTER PROMPTS → §12 · **STOP — OWNER DECISION REQUIRED** (Final Mix / Contabo / P6.8)
+**Type:** Documentation continuity · cold-start entry · dual-plane (Git tip docs ≠ app-code tip `ce2f0cc` ≠ prod last-known `2adb569` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.
 
@@ -57,8 +57,8 @@ STUDIO_EXPORT APP             = DEPLOYED (app-code tip ce2f0cc · Git tip 2adb56
                               · I.45DR — PASS: narrow production STUDIO_EXPORT WAV canary
                               · job 53398f9e-… / project bfc3d223-… / artifact 21d98be2-… READY
                               · J2 Download AuthZ — PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc-…)
-                              · Stage J OPEN (J2 only) · ≠ Stage J full close
-                              · Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN
+                              · Stage J: CLOSED (GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md) · WAIVE byte-level fixture
+                              · Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN · FIXTURE VERIFIED NOT CONFIRMED
                               · prior: I.45BK/BM/BO + I.45BY 61b7cdf1-… SUCCEEDED (do not re-run either)
                               · I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow)
                               · empty-project happy-path delete NOT TESTED
