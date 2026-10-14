@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-13 — **GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · **Final Mix Production GREEN: VERIFIED** (unchanged) · Contabo persistent **disabled/inactive** · **NEXT:** GO-HOST-RO-CONTABO / GO-SYNC / canary / always-on / prod migration apply · Sacred WIP protected
+**Updated:** 2026-10-14 — **Studio Final Mix Product Contract OWNER ACCEPTED (docs-only)** ([addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-02 **SUPERSEDED** product ladder · OD-SFM-07+ living) · **implementation NOT DONE** · **production NOT CHANGED** · prior tip Contabo poller kill-switch / local impl history unchanged by this docs tip · Sacred WIP protected
 
 ---
 
@@ -21,7 +21,8 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **GITHUB MAIN TIP / origin/main (confirmed)** | **GO-IMPL-CONTABO-POLL** — this commit · parent **`7d8738022c54c85901eae23aa199e0078b34f912` (`7d87380`)** (Design Freeze) · prior **`22c7d56`** GREEN living / **`a1df783`** GREEN closeout / **`dcd2308`** FULL FIXTURE = HISTORY · **≠** automatic Contabo enable or production deploy · verify with `git rev-parse origin/main` after fetch · local worktree may still be dirty / diverge |
+| **GITHUB MAIN TIP / origin/main (confirmed)** | **Studio Final Mix Product Contract ACCEPTED (docs-only)** — this commit · parent = prior tip (poller kill-switch / Contabo V1 history) · **≠** Implementation GO · **≠** Contabo enable · **≠** payments · verify with `git rev-parse origin/main` after fetch · other local worktrees may still be dirty / diverge |
+| **STUDIO FINAL MIX PRODUCT CONTRACT** | **OWNER ACCEPTED 2026-10-14** · [addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · ladder + version grants + Warsaw day limits + 7,99 day-slot semantics · Accept→MIX→MASTER · **NOT IMPLEMENTED** · OPEN: OD-SFM-08 shape · OD-SFM-12 details · OD-SFM-14 leftovers · F01–F07 multi-format relation |
 | **PRIOR DOCS TIP (HISTORY)** | **`7d87380`** — Contabo poller Design Freeze · **`22c7d56`** — Final Mix GREEN §4G align · **`a1df783`** — GREEN VERIFIED closeout · **`dcd2308`** — FULL FIXTURE VERIFIED · **`51a37a2`** — empty-session · **`99bb10e`** I.18 · **`cee88f8`** FM criteria · **`e4971d2`** Stage J · **`2adb569`** PR #12 |
 | **APP-CODE TIP (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete×export-history) · last app-feature tip on `main` before docs tips · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |

@@ -10,6 +10,24 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Studio Final Mix — Product Contract Addendum ACCEPTED (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner formal ACCEPT — Studio Final Mix Product Contract |
+| Status | **CLOSED / ACCEPTED (product contract / SSOT docs)** · implementation **NOT DONE** · production **NOT CHANGED** · Contabo / payments **NOT CHANGED** |
+| Date | 2026-10-14 |
+| Document | [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) |
+| Parent | [STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_DESIGN_FREEZE.md) · bake [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| Locked / accepted IDs | **OD-SFM-07**, **OD-SFM-09…11**, **OD-SFM-13**, **OD-SFM-15…18**; **OD-SFM-08/12/14** directionally accepted with **OPEN** technical leftovers; **OD-SFM-02 SUPERSEDED** (product ladder scope; history preserved) |
+| Explicit non-claims | Multi-variant Studio export **not** implemented by this entry · paid 7,99 provider **not** integrated · WAV-only runtime path may still exist until Implementation GO |
+
+**Accepted product rules (summary):** plan ladder FREE deny-all downloads / BRONZE 128 / SILVER 128+192 / GOLD +320+WAV · daily first-version grants 0/1/2/5 · grant per version (all plan qualities) · re-download without new grant · reset midnight `Europe/Warsaw`+DST · Accept→MIX→MASTER before export · lazy on-demand variants · 90d retention (details OPEN) · paid **7,99 PLN** = one extra first-download day-slot (not unlimited) · domain ≠ E3 MixPanel / `mix_sessions` / TAKE_EXPORT.
+
+**Still OPEN:** OD-SFM-08 shape · OD-SFM-12 retention mechanics · OD-SFM-14 slot TTL/bind/refund-after/provider · F01–F07 multi-format relation · limit concurrency design.
+
+---
+
 ### Contabo Continuous Worker V1 — IMPLEMENTED / LOCAL TESTS PASS (GO-IMPL-CONTABO-POLL)
 
 | Pole | Wartość |

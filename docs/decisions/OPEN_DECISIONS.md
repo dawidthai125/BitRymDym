@@ -144,9 +144,20 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-SA-07-01…16 | STORAGE-ARCH-07 backup design freeze · external S3-compatible BACKUP plane · SHA-256 · Object Lock · GC ladder · Phase A **BLOCKED** · VPS COPY **43/43** · AWS **DEFERRED** | 2026-10-04 |
 | OD-VPS-LOCAL-01…12 | Local Windows Layer-2 · **43/43 RESTORE VERIFIED** · path `C:\BitRymDym-Backup\` | 2026-10-05 |
 | OD-CWP-01…08 | Contabo continuous poller V1 · STUDIO_EXPORT only · atomic claim-next · max 1 · no auto-retry · enqueue unchanged | 2026-10-13 |
+| OD-SFM-02 | Historical WAV-only MVP ladder · **SUPERSEDED (product ladder)** by Product Contract Addendum | 2026-10-14 |
+| OD-SFM-07 | Studio Final Mix quality ladder + daily first-download limits (0/1/2/5) | 2026-10-14 |
+| OD-SFM-09 | Explicit „Zatwierdź do finalizacji” on immutable version | 2026-10-14 |
+| OD-SFM-10 | Current vs historical final AuthZ / presentation | 2026-10-14 |
+| OD-SFM-11 | Server-side AuthZ for export / grant / download URL | 2026-10-14 |
+| OD-SFM-13 | Daily first-download grant caps FREE0/BRONZE1/SILVER2/GOLD5 | 2026-10-14 |
+| OD-SFM-15 | Re-download entitled version without new grant | 2026-10-14 |
+| OD-SFM-16 | Edited work = new version + re-accept + MIX + MASTER + new grant | 2026-10-14 |
+| OD-SFM-17 | One grant per version (all plan-allowed qualities) | 2026-10-14 |
+| OD-SFM-18 | Day reset midnight `Europe/Warsaw` + DST | 2026-10-14 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
+Studio Final Mix product contract: [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) (**OWNER ACCEPTED 2026-10-14** · **docs only** · implementation **NOT DONE**).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
@@ -173,11 +184,19 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | OD-15 | Identyfikacja wizualna | Final Design System |
 | OD-16 | Język marki | Copy UI |
 | OD-18 | Liczenie udostępnień | Beat sharing stats |
+| OD-SFM-08 | Studio Final Mix — techniczny model etapów MIX/MASTER (job kinds vs checkpoints vs durable stage records) · kierunek etapów **ACCEPTED** w Product Contract; shape **OPEN** | SFM Implementation GO |
+| OD-SFM-12 | Studio Final Mix — start 90d retencji · current final po TTL · metadane po delete · wpływ slotu na retencję (90d liczba **ACCEPTED**; szczegóły **OPEN**) | SFM retention / janitor |
+| OD-SFM-14 | Studio Final Mix — TTL niewykorzystanego slotu 7,99 · bind do wersji · refund po consume · provider/webhook (semantyka limitu dnia **ACCEPTED**; reszta **OPEN**) | SFM paid day-slot |
 | GO-HOST-RO-CONTABO | Live RO verify hosta Contabo (**NOT DONE**) | Sync / enable |
 | GO-SYNC-CONTABO-POLL | Sync drzewa pollera na Contabo (**NOT DONE**) | Enable canary |
 | GO-ENABLE-CONTABO-POLL-CANARY | Enable + jeden nowy job canary (**NOT RUN**) | Always-on |
 | GO-CONTABO-POLL-ALWAYS-ON | Persistent enable po canary PASS (**NOT ENABLED**) | Production continuous export |
 | (prod migration apply) | Apply `claim_next_studio_export_job` on production DB | Remote claim-next |
+
+**Studio Final Mix — dodatkowe OPEN bez nowego ID registry (nie wymyślać OD-*):**
+
+- Relacja Product Contract (multi-format / 90d) do zamrożonych **OD-SFM-F01…F07** (w tym klucz obiektu `…/WAV.wav`) — wymaga jawnego uzgodnienia przed Implementation GO multi-variant.
+- Idempotencja, transakcyjność i współbieżność rozliczania dziennego grantu oraz płatnego slotu SFM — zamknąć w design freeze limitów przed kodem (wzorce beat/RAW tylko jako reuse techniczny, nie wspólny meter).
 
 ---
 

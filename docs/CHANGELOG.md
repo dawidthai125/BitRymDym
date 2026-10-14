@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-14 — Studio Final Mix Product Contract ACCEPTED (docs-only)
+
+**Status:** **DOCS / SSOT** · Owner formal ACCEPT · **NO CODE** · **NO MIGRATIONS** · **NO PRODUCTION CHANGES** · **NO CONTABO / PAYMENTS** · direct `main` via isolated worktree (no PR)
+**Delivered:** [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-07…18 living product rules · **OD-SFM-02 SUPERSEDED** (product ladder; history preserved in Design Freeze §13) · OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE updates
+**Accepted (summary):** plan download ladder · grant per version · daily first-download 0/1/2/5 · reset `Europe/Warsaw`+DST · paid **7,99 PLN** = one extra first-download day-slot · Accept→MIX→MASTER · lazy variants · 90d retention (details OPEN) · domain ≠ E3 / TAKE_EXPORT
+**Explicit non-claims:** multi-variant Studio export **not** implemented · paid provider **not** integrated · runtime may still be WAV-only MVP until Implementation GO
+**Still OPEN:** OD-SFM-08 shape · OD-SFM-12 retention mechanics · OD-SFM-14 TTL/bind/refund-after/provider · F01–F07 multi-format relation · limit concurrency design
+**Next:** Owner GO for version/stage design freeze + Implementation GO (separate)
+
 ## 2026-10-13 — GO-POLLER-KILL-SWITCH-01 fail-closed poller bootstrap
 
 **Status:** **CODE + LOCAL TESTS** · selective Contabo sync in same GO · **NO** always-on / enable / start · direct `main` (no PR)

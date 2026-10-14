@@ -444,7 +444,7 @@ Job id, kind, status transitions, error_code, durations (claim→encode→upload
 | **OD-SFM-F06** | ARTIFACT → fail | **ACCEPT** | offline renderer |
 | **OD-SFM-F07** | Local code first; worker once separate | **ACCEPT** | no worker run in Stage G |
 
-Parent decisions still in force: OD-SFM-01…06 in [STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_DESIGN_FREEZE.md).
+Parent decisions: OD-SFM-01…06 in [STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_DESIGN_FREEZE.md). **Note (2026-10-14):** OD-SFM-02 (WAV-only product ladder) is **SUPERSEDED** for living product scope by [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md); this bake freeze’s F02 `…/WAV.wav` key and WAV MVP artifact path remain historically valid until a multi-format F-relation freeze / Implementation GO. OD-SFM-F01…F07 stay **IN FORCE**.
 
 ---
 

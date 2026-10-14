@@ -263,11 +263,19 @@ If implementation discovers a hard need for a new bucket or table, **stop and re
 | ID | Question | Default if Owner silent |
 |----|----------|-------------------------|
 | OD-SFM-01 | Job kind name (`STUDIO_EXPORT` vs other) | Use `STUDIO_EXPORT` |
-| OD-SFM-02 | MVP format ladder (WAV only vs MP3 tiers) | WAV-only MVP |
+| OD-SFM-02 | MVP format ladder (WAV only vs MP3 tiers) | **Historical default:** WAV-only MVP · **SUPERSEDED (product ladder scope) 2026-10-14** by [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) (OD-SFM-07+) — do **not** delete this row; living product ladder = addendum · implementation still requires separate GO |
 | OD-SFM-03 | Max export duration / memory policy | Fail-closed ≤ sample-policy-ish cap (propose at impl GO) |
 | OD-SFM-04 | Realization host: Contabo vs other | Contabo only after Ops GO; no always-on |
 | OD-SFM-05 | Replace Export deep-link in same PR as enqueue | YES — Export must not remain Takes-only |
 | OD-SFM-06 | Accept supersession of Visual Shell **OD-VS-03** for Export meaning | Required for UI wiring; default = ACCEPT with this freeze |
+
+### Supersession — OD-SFM-02 (product ladder)
+
+**Historical decision (preserved):** OD-SFM-02 locked Studio Final Mix MVP output to **WAV-only**.
+
+**Living product contract (Owner ACCEPT 2026-10-14):** multi-plan quality ladder, version grants, daily first-download limits, paid extra day-slot (7,99 PLN), Accept→MIX→MASTER gates — see [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md).
+
+**Unchanged by this supersession alone:** bake/artifact decisions OD-SFM-F01…F07 remain in force until explicitly amended; shipping code may still be WAV-only until a separate Implementation GO; Contabo/ops GOs remain separate.
 
 ---
 
