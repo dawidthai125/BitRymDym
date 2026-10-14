@@ -32,7 +32,13 @@ export type SfmDomainErrorCode =
   | "INVALID"
   | "INVALID_SESSION"
   | "DISABLED"
-  | "CONFLICT";
+  | "CONFLICT"
+  | "LIMIT_EXCEEDED"
+  | "NO_GRANT"
+  | "QUALITY_DENIED"
+  | "PLAN_DENIED"
+  | "FREE_NO_DOWNLOAD"
+  | "NO_SLOT";
 
 export class SfmDomainError extends Error {
   readonly code: SfmDomainErrorCode;
@@ -137,11 +143,21 @@ export function mapSfmRpcErrorMessage(message: string): SfmDomainErrorCode {
       return "FORBIDDEN";
     case "INVALID":
       return "INVALID";
+    case "LIMIT_EXCEEDED":
+      return "LIMIT_EXCEEDED";
+    case "NO_GRANT":
+      return "NO_GRANT";
+    case "NO_SLOT":
+      return "NO_SLOT";
+    case "FREE_NO_DOWNLOAD":
+      return "FREE_NO_DOWNLOAD";
     default:
       if (message.includes("VERSION_CONFLICT")) return "VERSION_CONFLICT";
       if (message.includes("ILLEGAL_TRANSITION")) return "ILLEGAL_TRANSITION";
+      if (message.includes("LIMIT_EXCEEDED")) return "LIMIT_EXCEEDED";
       if (message.includes("NOT_OWNER")) return "NOT_OWNER";
       if (message.includes("NOT_FOUND")) return "NOT_FOUND";
+      if (message.includes("NOT_ELIGIBLE")) return "NOT_ELIGIBLE";
       return "CONFLICT";
   }
 }
