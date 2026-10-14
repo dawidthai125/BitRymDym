@@ -160,12 +160,17 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-SFM-16 | Edited work = new version + re-accept + MIX + MASTER + new grant | 2026-10-14 |
 | OD-SFM-17 | One grant per version (all plan-allowed qualities) | 2026-10-14 |
 | OD-SFM-18 | Day reset midnight `Europe/Warsaw` + DST | 2026-10-14 |
+| OD-SFM-ID-01 | SFM dedicated download route + deny SFM on mix route after cutover | 2026-10-14 |
+| OD-SFM-ID-02 | Version grant + historical `granted_qualities` snapshot (≠ unlimited future qualities) | 2026-10-14 |
+| OD-SFM-ID-03 | Multiple paid slots `AVAILABLE` per Warsaw day | 2026-10-14 |
+| OD-SFM-ID-04 | `SFM_MIX` = separate executor job (≠ E3 `kind=MIX`) | 2026-10-14 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
 Studio Final Mix product contract: [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) (**OWNER ACCEPTED** · **docs only** · implementation **NOT DONE**).
 SFM Version/Stages freeze: [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) (**OWNER ACCEPTED** docs · `SFM_MIX`/`SFM_MASTER` · **NOT IMPLEMENTED**).
 SFM F-addendum: [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) (**OWNER ACCEPTED** docs · F02/F03 **SUPERSEDED SFM-only** by F02b/F03b · **NOT IMPLEMENTED**).
+SFM Implementation Design pack: [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) (**OWNER ACCEPTED design docs** · OD-SFM-ID-01…04 · **NOT IMPLEMENTED** · **NO COMMIT** in reconciliation session).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
@@ -198,10 +203,13 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | GO-CONTABO-POLL-ALWAYS-ON | Persistent enable po canary PASS (**NOT ENABLED**) | Production continuous export |
 | (prod migration apply) | Apply `claim_next_studio_export_job` on production DB | Remote claim-next |
 
-**Studio Final Mix — nadal OPEN po ACCEPT docs F02b/F03b/Stages:**
+**Studio Final Mix — nadal OPEN po ACCEPT Implementation Design (OD-SFM-ID-01…04):**
 
-- Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14).
-- Implementation Design: SQL/RPC for grant+slot concurrency, promote-current artifact (Correction B), Contabo executors — **not** product OPEN; blocked on Implementation GO.
+- Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03).
+- **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT).
+- **OD-SFM-ID-06** — Legacy WAV rows (`project_id` set, `sfm_version_id` NULL) after download cutover (deny / grandfather / backfill).
+- **OD-SFM-ID-07** — Exact `render_jobs.kind` strings for SFM_MIX / SFM_MASTER / quality encode.
+- Implementation / migrations / Contabo executors — blocked on **Implementation GO** (≠ docs ACCEPT).
 - Shipping code may still be historical WAV-only / tier retention until Implementation GO.
 
 ---

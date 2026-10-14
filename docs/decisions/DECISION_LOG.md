@@ -10,6 +10,24 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Studio Final Mix — Implementation Design reconciled (OD-SFM-ID-01…04) (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — Implementation Design reconciliation |
+| Status | **CLOSED / ACCEPTED (design docs)** · **NOT IMPLEMENTED** · **NO COMMIT/PUSH** · production **NOT CHANGED** |
+| Date | 2026-10-14 |
+| Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) |
+| Locked IDs | **OD-SFM-ID-01** · **OD-SFM-ID-02** · **OD-SFM-ID-03** · **OD-SFM-ID-04** |
+| Still OPEN | **OD-04** · **OD-SFM-ID-05** (upgrade expand qualities) · **OD-SFM-ID-06** (legacy WAV cutover) · **OD-SFM-ID-07** (job kind strings) · Implementation GO |
+
+**OD-SFM-ID-01:** dedicated SFM download route; after cutover `/api/mix/artifacts/…` **DENY** SFM (`sfm_version_id`); E3/TAKE/RAW unchanged; DB domain binding; READY/object_key/URL alone insufficient.
+**OD-SFM-ID-02:** version grant ≠ single quality; historical `granted_qualities` snapshot at FIRST_GRANT; downgrade keeps historical; new qualities follow current plan; grant ≠ unlimited future qualities; expand-on-upgrade = OD-SFM-ID-05 OPEN (strict until then).
+**OD-SFM-ID-03:** many `AVAILABLE` paid slots per Warsaw day; atomic bind on grant; no double-consume; midnight expiry; refund rules unchanged.
+**OD-SFM-ID-04:** `SFM_MIX` = separate executor job bound to version/stage; ≠ E3 `kind=MIX`; MIX done ≠ MASTER done.
+
+---
+
 ### Studio Final Mix — F02b / F03b / Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only)
 
 | Pole | Wartość |
@@ -276,14 +294,14 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 **OD-SA-07-14a:** Contabo allowed **only** as WORKING/STAGING Layer-1 backup *target* · sole/final DR forbidden · compute role unchanged.
 
-**Phase 1 executed:** SSH key-only · root SSH off · UFW on · fail2ban sshd · admin path `ubuntu`+sudo.  
-**Phase 2 executed:** user `bitrymdym-backup` · `/srv/bitrymdym-backup/{objects,manifests,restore-drills,logs}` · 0700 · empty · E3/ubuntu isolation PASS.  
-**Phase 3 executed:** transfer/manifest/SHA design + fixture tests + metadata dry-run **PASS**.  
-**Phase 4 executed:** controlled canary COPY **3/43** · SHA+size VERIFIED · claim = **CANARY BACKED UP**.  
-**Phase 5 executed:** isolated restore drill from VPS backup · SHA+size+WAV/ffprobe **PASS** ×3 · claim = **CANARY RESTORE VERIFIED**.  
+**Phase 1 executed:** SSH key-only · root SSH off · UFW on · fail2ban sshd · admin path `ubuntu`+sudo.
+**Phase 2 executed:** user `bitrymdym-backup` · `/srv/bitrymdym-backup/{objects,manifests,restore-drills,logs}` · 0700 · empty · E3/ubuntu isolation PASS.
+**Phase 3 executed:** transfer/manifest/SHA design + fixture tests + metadata dry-run **PASS**.
+**Phase 4 executed:** controlled canary COPY **3/43** · SHA+size VERIFIED · claim = **CANARY BACKED UP**.
+**Phase 5 executed:** isolated restore drill from VPS backup · SHA+size+WAV/ffprobe **PASS** ×3 · claim = **CANARY RESTORE VERIFIED**.
 **Phase 6 executed:** full VPS Layer-1 expansion · **40** new COPY + canary **3** = **43/43 BACKED UP** · SHA reconcile **43/43** · restore still **3/43** · orphans **BACKED UP / NOT SAFE FOR DELETE** · ARCH-05 **NOT READY**.
 
-**Still does not authorize (without further GO):** VPS Phase 7 restore expansion · AWS immutable DR · ARCH-05 delete.  
+**Still does not authorize (without further GO):** VPS Phase 7 restore expansion · AWS immutable DR · ARCH-05 delete.
 **Related:** Local Layer-2 Design Freeze **CLOSED** (OD-VPS-LOCAL-01…12) — implementation still requires separate GO; AWS **DEFERRED** for current variant (not cancelled).
 
 ---
@@ -425,7 +443,7 @@ Production apply (2026-10-04): app `ddcee65` · deploy `dpl_C1y6toEPYacQmsxv5Jsa
 | OD-REC-07 / D07 | Anti-abuse: anon 1/3 · BEGINNER 3/10 · PRO 10/30 · LEGEND 20/60 (active / sessions per UTC day); concurrent 1 |
 | OD-REC-08 / D08 | Own take download YES for BEGINNER/PRO/LEGEND; anon no durable take download |
 
-Also locked (architecture-resolvable / SSOT):  
+Also locked (architecture-resolvable / SSOT):
 `recording_max_seconds = MIN(beat.duration, entitlement.max, 180)` server-enforced; MIC TAKE ≠ mixed song; MIX/EXPORT separate EPIC (OD-14 remains OPEN).
 
 **Scope**

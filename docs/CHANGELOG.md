@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-14 — SFM Implementation Design reconciled OD-SFM-ID-01…04 (docs-only, local worktree)
+
+**Status:** **DOCS** · Owner design decisions ACCEPTED · **NO CODE** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION**
+**Delivered (isolated worktree):** [IMPLEMENTATION_DESIGN](./decisions/STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./decisions/STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./decisions/STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./decisions/STUDIO_FINAL_MIX_TEST_MATRIX.md) · OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE
+**OD-SFM-ID-01:** dedicated SFM download route; mix route DENY SFM after cutover; E3/TAKE/RAW unchanged
+**OD-SFM-ID-02:** version grant + historical `granted_qualities` snapshot; ≠ unlimited future qualities; expand-on-upgrade = OD-SFM-ID-05 OPEN (strict until then)
+**OD-SFM-ID-03:** many `AVAILABLE` paid slots per Warsaw day; atomic bind; idempotent payment_ref
+**OD-SFM-ID-04:** `SFM_MIX` = separate executor job ≠ E3 `kind=MIX`
+**Still OPEN:** OD-04 · OD-SFM-ID-05…07 · Implementation GO · Contabo Ops GOs
+**Next:** docs-publish GO · then separate Implementation GO
+
 ## 2026-10-14 — SFM F02b/F03b + Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only, local worktree)
 
 **Status:** **DOCS** · Owner ACCEPT with corrections · **NO CODE** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION**
