@@ -1,15 +1,15 @@
 # Studio Final Mix — RPC & Security Contract
 
-**Status:** `OWNER ACCEPTED (design docs)` — reconciled 2026-10-14 — **NOT IMPLEMENTED**
-**Date:** 2026-10-14 (reconciliation)
+**Status:** `OWNER ACCEPTED (design docs)` — reconciled 2026-10-14 · **OD-SFM-ID-07 CLOSED 2026-10-14** · Stage C claim/XOR **NOT IMPLEMENTED**
+**Date:** 2026-10-14 (reconciliation; ID-07 accept same day)
 **Parent design:** [STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md)
 **Data model:** [STUDIO_FINAL_MIX_DATA_MODEL.md](./STUDIO_FINAL_MIX_DATA_MODEL.md)
-**Analyzed tip:** `fdcca3b42a00d7039facc5eff40259f9799bf779`
+**Analyzed tip (design reconciliation):** `fdcca3b42a00d7039facc5eff40259f9799bf779` · **OD-SFM-ID-07 discovery tip:** `a4ea89c5b1c8cb74aec243a002ca22805fe293e9`
 
 ```text
 NO SQL MIGRATIONS / NO CODE FROM THIS DOCUMENT
 READY / object_key / signed URL ALONE ≠ AUTHORIZATION
-OD-SFM-ID-01…04 ACCEPTED (docs) · OD-04 OPEN
+OD-SFM-ID-01…04 + OD-SFM-ID-07 ACCEPTED (docs) · OD-04 OPEN
 SECURITY DEFINER REQUIRES fixed search_path + REVOKE FROM PUBLIC/anon
 ```
 
@@ -85,15 +85,16 @@ Nazwy RPC = propozycja. Implementacja może być RPC Postgres **lub** transakcja
 | **Caller** | owner (start) lub service | **service/worker only** |
 | **Preconditions start** | version ACCEPTED+; `SFM_MIX` after Accept; `SFM_MASTER` only if `SFM_MIX` SUCCEEDED |
 | **Preconditions complete** | stage RUNNING; walidacja wyniku joba; job SUCCEEDED **nie wystarcza** bez complete |
-| **TX start** | PENDING→RUNNING; **enqueue osobnego joba wykonawczego** (OD-SFM-ID-04) związanego z version+stage | — |
+| **TX start** | PENDING→RUNNING; enqueue `render_jobs.kind` = `SFM_MIX_PREPARE` (stage `SFM_MIX`) lub `SFM_MASTER_BAKE` (stage `SFM_MASTER`) — **OD-SFM-ID-07** | — |
 | **TX complete** | RUNNING→SUCCEEDED/FAILED; MASTER SUCCEEDED → retention_anchor, expires_at, EXPORTS_ELIGIBLE, `current_final`, supersede prior | |
 | **CAS** | `UPDATE … WHERE status=PENDING` | `WHERE status=RUNNING` |
 | **Idempotency job** | UNIQUE `(owner_id, idempotency_key)` na `render_jobs` | |
 | **Errors** | `ILLEGAL_TRANSITION`, `FORBIDDEN` | `CONFLICT`, `FORBIDDEN_CLIENT`, `QC_FAILED` |
 | **Audit** | `SFM_STAGE_STARTED` + `SFM_*_JOB_ENQUEUED` | `SFM_STAGE_COMPLETED` |
 
-**Zakaz:** E3 `kind=MIX` complete path piszący `studio_final_stages`.
-**SFM_MIX SUCCEEDED ≠ mastering.**
+**OD-SFM-ID-07 (docs):** job kinds ≠ domain stage names; job SUCCEEDED ≠ stage complete; claim/dispatch SFM **osobne** od `claim_next_studio_export_job` / STUDIO poller; `mapJobKind` fail-closed (no unknown→MIX); no Contabo auto-enable; no auto FAILED→QUEUED; CHECK/XOR/version bind = Stage C GO.
+**Zakaz:** E3 `kind=MIX` lub `STUDIO_EXPORT` jako tożsamość SFM; E3 complete path piszący `studio_final_stages`.
+**Domain `SFM_MIX` SUCCEEDED ≠ mastering.**
 
 ### 4.3 `sfm_enqueue_quality_encode`
 
@@ -102,7 +103,7 @@ Nazwy RPC = propozycja. Implementacja może być RPC Postgres **lub** transakcja
 | **Params** | `p_version_id`, `p_quality`, `p_idempotency_key` |
 | **Caller** | authenticated owner |
 | **Preconditions** | version `EXPORTS_ELIGIBLE`; not expired; `resolveSfmQualityEntitlement` allow; **grant required** przed encode **lub** claim w tej samej TX (rekomendacja: grant najpierw) |
-| **TX** | insert `render_jobs` z snapshot wersji + quality; XOR project_id; **nie** mix_session/take |
+| **TX** | insert `render_jobs` **`kind=SFM_QUALITY_ENCODE`** (OD-SFM-ID-07) z snapshot wersji + quality; XOR/version bind = Stage C; **nie** mix_session/take; **nie** `STUDIO_EXPORT`/`MIX` |
 | **Idempotency** | UNIQUE `(owner_id, idempotency_key)` EXISTS na `render_jobs` |
 | **Errors** | `NOT_ELIGIBLE`, `QUALITY_DENIED`, `NO_GRANT`, `CONFLICT` |
 | **Audit** | `SFM_QUALITY_ENQUEUED` |

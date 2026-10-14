@@ -10,21 +10,52 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Studio Final Mix — OD-SFM-ID-07 ACCEPTED (render_jobs.kind strings) (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT — OD-SFM-ID-07 variant A |
+| Status | **CLOSED / ACCEPTED (docs)** · Stage C code **NOT AUTHORIZED by this entry** · production / Contabo **NOT CHANGED** |
+| Date | 2026-10-14 |
+| Discovery | READ-ONLY audit @ `a4ea89c` (allowed kinds today: `MIX` \| `TAKE_EXPORT` \| `STUDIO_EXPORT`) |
+| Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [OPEN_DECISIONS](./OPEN_DECISIONS.md) |
+| Locked ID | **OD-SFM-ID-07** |
+| Still OPEN | **OD-04** · **OD-SFM-ID-05** · **OD-SFM-ID-06** · Contabo Ops GOs · Stage C Implementation GO |
+
+**Exact `render_jobs.kind` (new, Stage C):**
+- `SFM_MIX_PREPARE` — executor for domain stage `SFM_MIX` (snapshot validate / prepare; ≠ stage name as job kind)
+- `SFM_MASTER_BAKE` — executor for domain stage `SFM_MASTER` (offline master bake)
+- `SFM_QUALITY_ENCODE` — lazy on-demand quality encode after `EXPORTS_ELIGIBLE`
+
+**Rules locked with OD-SFM-ID-07:**
+1. `studio_final_stages.kind` remains only `SFM_MIX` \| `SFM_MASTER`.
+2. Job `SUCCEEDED` alone ≠ domain stage complete — explicit `sfm_complete_stage` + stage↔job binding (Stage C).
+3. **Forbidden** as SFM executor identity: `kind=MIX`, `kind=STUDIO_EXPORT` (E3 / legacy Studio WAV unchanged).
+4. `mapJobKind` / dispatch: **fail-closed** on unknown kinds — **no** fallback unknown → `MIX`.
+5. Separate SFM claim/dispatch paths; existing `claim_next_studio_export_job` / STUDIO_EXPORT Contabo poller **unchanged**.
+6. Do **not** auto-enable new kinds on Contabo poller — host sync / canary / always-on = separate Ops GOs.
+7. Retry policy unchanged: no auto `FAILED` → `QUEUED` unless Owner approves otherwise.
+8. CHECK/XOR extension, version binding column, claim RPCs, stage↔job wiring = **Stage C Implementation GO** (not this docs entry).
+
+**Supersedes (docs):** prior OPEN wording that OD-SFM-ID-07 was undecided; example strings in DATA_MODEL §3.8 are now **ACCEPTED** (not merely illustrative).
+
+---
+
 ### Studio Final Mix — Implementation Design reconciled (OD-SFM-ID-01…04) (docs-only)
 
 | Pole | Wartość |
 |------|---------|
 | Decision / gate | Owner GO — Implementation Design reconciliation |
-| Status | **CLOSED / ACCEPTED (design docs)** · **NOT IMPLEMENTED** · **NO COMMIT/PUSH** · production **NOT CHANGED** |
+| Status | **CLOSED / ACCEPTED (design docs)** · foundation later implemented under separate GOs · production **NOT CHANGED by this historical entry** |
 | Date | 2026-10-14 |
 | Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) |
 | Locked IDs | **OD-SFM-ID-01** · **OD-SFM-ID-02** · **OD-SFM-ID-03** · **OD-SFM-ID-04** |
-| Still OPEN | **OD-04** · **OD-SFM-ID-05** (upgrade expand qualities) · **OD-SFM-ID-06** (legacy WAV cutover) · **OD-SFM-ID-07** (job kind strings) · Implementation GO |
+| Still OPEN (at entry time; see later OD-SFM-ID-07 entry) | **OD-04** · **OD-SFM-ID-05** · **OD-SFM-ID-06** · **OD-SFM-ID-07** (later **CLOSED**) · Implementation GO |
 
 **OD-SFM-ID-01:** dedicated SFM download route; after cutover `/api/mix/artifacts/…` **DENY** SFM (`sfm_version_id`); E3/TAKE/RAW unchanged; DB domain binding; READY/object_key/URL alone insufficient.
 **OD-SFM-ID-02:** version grant ≠ single quality; historical `granted_qualities` snapshot at FIRST_GRANT; downgrade keeps historical; new qualities follow current plan; grant ≠ unlimited future qualities; expand-on-upgrade = OD-SFM-ID-05 OPEN (strict until then).
 **OD-SFM-ID-03:** many `AVAILABLE` paid slots per Warsaw day; atomic bind on grant; no double-consume; midnight expiry; refund rules unchanged.
-**OD-SFM-ID-04:** `SFM_MIX` = separate executor job bound to version/stage; ≠ E3 `kind=MIX`; MIX done ≠ MASTER done.
+**OD-SFM-ID-04:** `SFM_MIX` = separate executor job bound to version/stage; ≠ E3 `kind=MIX`; MIX done ≠ MASTER done. Exact job kind strings later locked by **OD-SFM-ID-07**.
 
 ---
 

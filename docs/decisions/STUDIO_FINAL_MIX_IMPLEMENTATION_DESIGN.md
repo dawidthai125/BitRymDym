@@ -1,19 +1,19 @@
 # Studio Final Mix — Implementation Design
 
-**Status:** `OWNER ACCEPTED (design docs)` — reconciled 2026-10-14 — **NOT IMPLEMENTED**
-**Date:** 2026-10-14 (reconciliation GO)
+**Status:** `OWNER ACCEPTED (design docs)` — reconciled 2026-10-14 · **OD-SFM-ID-07 CLOSED 2026-10-14** · Stage A/B1 on `main` · Stage C executors **NOT IMPLEMENTED**
+**Date:** 2026-10-14 (reconciliation GO; ID-07 accept same day)
 **Type:** IMPLEMENTATION DESIGN — living technical project for future Implementation GO
-**Analyzed tip:** `fdcca3b42a00d7039facc5eff40259f9799bf779` (`origin/main`)
+**Analyzed tip (design reconciliation):** `fdcca3b42a00d7039facc5eff40259f9799bf779` · **OD-SFM-ID-07 discovery tip:** `a4ea89c5b1c8cb74aec243a002ca22805fe293e9`
 **Product contract:** [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md)
 **Stages freeze:** [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md)
 **F-addendum:** [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md)
 **Companion docs:** [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md)
 
 ```text
-IMPLEMENTATION = NOT AUTHORIZED BY THIS DOCUMENT
+STAGE C EXECUTORS = NOT AUTHORIZED BY THIS DOCS-ONLY ID-07 ACCEPT
 OD-04 PAYMENT PROVIDER = OPEN
-OWNER DESIGN DECISIONS 1–4 = ACCEPTED (docs) — see §0
-≠ E3 render_jobs.kind = 'MIX' · ≠ mix_sessions · ≠ TAKE_EXPORT · ≠ RAW
+OWNER DESIGN DECISIONS 1–4 + OD-SFM-ID-07 = ACCEPTED (docs) — see §0
+≠ E3 render_jobs.kind = 'MIX' · ≠ STUDIO_EXPORT as SFM identity · ≠ TAKE_EXPORT · ≠ RAW
 REUSE FIRST · SSOT FIRST · ZERO DUPLICATE BUSINESS LOGIC
 READY / object_key / URL ALONE ≠ DOWNLOAD RIGHT
 ```
@@ -28,8 +28,19 @@ READY / object_key / URL ALONE ≠ DOWNLOAD RIGHT
 | **OD-SFM-ID-02** | Grant wersji + historyczny zakres jakości (≠ unlimited future qualities) | **ACCEPTED Z DOPRECYZOWANIEM** |
 | **OD-SFM-ID-03** | Wiele slotów `AVAILABLE` / dzień | **ACCEPTED** |
 | **OD-SFM-ID-04** | `SFM_MIX` = osobne zadanie wykonawcze (≠ E3 `kind=MIX`) | **ACCEPTED** |
+| **OD-SFM-ID-07** | Exact `render_jobs.kind` = `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` | **ACCEPTED / CLOSED** |
 
-Szczegóły poniżej (§4, §5, §7, §10). Nadal OPEN: §12 + `OPEN_DECISIONS.md`.
+Szczegóły poniżej (§4, §5, §7, §10, §12). Nadal OPEN: OD-SFM-ID-05/06 · OD-04 · Contabo Ops · Stage C Implementation GO — `OPEN_DECISIONS.md`.
+
+### 0.1 OD-SFM-ID-07 — exact executor kinds (ACCEPTED)
+
+| `render_jobs.kind` | Rola wykonawcza | Domenowy `studio_final_stages.kind` |
+|--------------------|-----------------|-------------------------------------|
+| `SFM_MIX_PREPARE` | Validate / prepare against frozen version snapshot | `SFM_MIX` |
+| `SFM_MASTER_BAKE` | Offline master bake | `SFM_MASTER` |
+| `SFM_QUALITY_ENCODE` | Lazy on-demand quality encode | (after `EXPORTS_ELIGIBLE`) |
+
+**Locked with accept:** stage names ≠ job kinds · job SUCCEEDED ≠ stage complete · no `MIX` / `STUDIO_EXPORT` as SFM identity · fail-closed `mapJobKind`/dispatch · separate claim/dispatch · STUDIO_EXPORT poller unchanged · no Contabo auto-enable · no auto `FAILED→QUEUED` · CHECK/XOR/version bind/claim RPC = Stage C GO.
 ---
 
 ## 1. Cel i granice
@@ -211,7 +222,7 @@ UI Studio
   → SFM download route (OD-SFM-ID-01)
 
 Domain DB: versions · stages · grants · paid slots (many AVAILABLE)
-Execution: render_jobs — SFM_MIX job + SFM_MASTER job + quality encode (≠ kind=MIX)
+Execution: render_jobs — `SFM_MIX_PREPARE` + `SFM_MASTER_BAKE` + `SFM_QUALITY_ENCODE` (≠ kind=MIX / STUDIO_EXPORT)
 Storage: audio-artifacts bucket (istniejący)
 AuthZ: SFM resolver + grant ≠ artifact READY
 Retention: F03b 90d from MASTER_SUCCEEDED (≠ Premium matrix)
@@ -222,7 +233,7 @@ Retention: F03b 90d from MASTER_SUCCEEDED (≠ Premium matrix)
 | Element | Decyzja |
 |---------|---------|
 | `studio_projects` | ROZSZERZYĆ: `current_final_version_id` |
-| `render_jobs` / worker claim | REUSE infrastruktury; **osobne** job kinds/metadata SFM — nazwy exact OPEN §12.3 |
+| `render_jobs` / worker claim | REUSE infrastruktury; **osobne** job kinds SFM — **OD-SFM-ID-07 ACCEPTED:** `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (claim/XOR = Stage C) |
 | `audio_artifacts` + bucket | ROZSZERZYĆ kolumnami SFM; bez nowego bucketa |
 | `premium_entitlements` | REUSE jako źródło **planu** |
 | Beat `reserve_beat_download_slot` | WZORZEC atomowości; **nie** współdzielić limitu; **nie** UTC day |
@@ -234,37 +245,38 @@ Retention: F03b 90d from MASTER_SUCCEEDED (≠ Premium matrix)
 
 ## 7. Przepływy (happy path)
 
-### 7.1 Finalizacja + **SFM_MIX jako job (OD-SFM-ID-04 ACCEPTED)**
+### 7.1 Finalizacja + executory (OD-SFM-ID-04 + **OD-SFM-ID-07 ACCEPTED**)
 
 ```text
 Edit project (document_version++)
 → [Zatwierdź do finalizacji] + expectedDocumentVersion
 → insert studio_final_versions (immutable snapshot) + stages PENDING
-→ enqueue SFM_MIX executor job bound to (version_id, stage SFM_MIX)
+→ enqueue render_jobs.kind=SFM_MIX_PREPARE bound to (version_id, stage SFM_MIX)
 → worker: validate/prepare against frozen snapshot → QC
 → sfm_complete_stage(SFM_MIX, SUCCEEDED)  // job SUCCEEDED alone ≠ stage
-→ enqueue SFM_MASTER executor (only if SFM_MIX SUCCEEDED)
+→ enqueue render_jobs.kind=SFM_MASTER_BAKE (only if SFM_MIX SUCCEEDED)
 → worker: offline bake → QC
 → sfm_complete_stage(SFM_MASTER, SUCCEEDED)
 → retention_anchor_at = now; expires_at = anchor+90d
 → version EXPORTS_ELIGIBLE; set current_final_version_id
+→ (later) enqueue SFM_QUALITY_ENCODE per QUALITY on demand
 ```
 
-**Kontrakt zadania `SFM_MIX` (docs):**
+**Kontrakt wykonania (docs — Stage C implements):**
 
 | Element | Wymaganie |
 |---------|-----------|
-| Binding | `version_id` + stage `SFM_MIX` + optional `job_id` |
+| Job kinds | `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (**OD-SFM-ID-07**) |
+| Domain stages | tylko `SFM_MIX` \| `SFM_MASTER` na `studio_final_stages` |
+| Binding | `version_id` + stage + optional `job_id`; job SUCCEEDED ≠ stage SUCCEEDED |
 | Wejście | wyłącznie snapshot wersji (immutable); nie żywy `document_version` projektu |
-| Stany joba | zgodne z istniejącym workerem (QUEUED/RUNNING/SUCCEEDED/FAILED) — **bez** auto-retry do QUEUED wbrew polityce Contabo |
-| Idempotencja | UNIQUE owner+idempotency_key; claim SKIP LOCKED / CAS |
-| Konkurencja | jeden aktywny sensible job na stage; przegrany CONFLICT |
-| Walidacja wyniku | fail-closed przed `sfm_complete_stage(SUCCEEDED)` |
-| Audyt | `SFM_MIX_JOB_*` + stage transition events |
-| Retry | bezpieczny: nowy attempt / nowy job wg policy; nie ciche nadpisanie |
+| Stany joba | QUEUED/RUNNING/SUCCEEDED/FAILED — **bez** auto-retry do QUEUED wbrew polityce Contabo |
+| Claim | osobne RPC SFM; **nie** `claim_next_studio_export_job` / STUDIO poller |
+| Zakaz identity | `kind=MIX` · `kind=STUDIO_EXPORT` jako SFM |
+| `mapJobKind` / dispatch | fail-closed na nieznany kind (zakaz fallback → MIX) |
 | Wejście do MASTER | **tylko** gdy domain stage `SFM_MIX=SUCCEEDED` |
 
-**Zakończenie `SFM_MIX` ≠ mastering.** `SFM_MASTER` = osobny etap + osobne zadanie.
+**Zakończenie stage `SFM_MIX` ≠ mastering.** Stage `SFM_MASTER` = osobny etap + job `SFM_MASTER_BAKE`.
 
 ### 7.2 Pierwsze pobranie jakości
 
@@ -296,7 +308,7 @@ Pełne kontrakty: [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) ·
 |---------|----------------|
 | Version | ACCEPTED → (via stages) EXPORTS_ELIGIBLE → SUPERSEDED \| EXPIRED |
 | Stage | UNIQUE (version, SFM_MIX\|SFM_MASTER); MASTER dopiero po MIX SUCCEEDED; job status ≠ domain status |
-| SFM_MIX job | osobny executor; SUCCEEDED → complete stage; ≠ E3 MIX |
+| SFM executor jobs | `SFM_MIX_PREPARE` / `SFM_MASTER_BAKE` / `SFM_QUALITY_ENCODE`; SUCCEEDED → complete stage; ≠ E3 MIX / STUDIO_EXPORT |
 | Grant | 1 na (user, version); `granted_qualities` snapshot; re-download bez consume |
 | Slot | wiele AVAILABLE / user / day; AVAILABLE → CONSUMED (bind) \| EXPIRED (Warsaw midnight) \| REVOKED |
 | Artifact | ≤1 `is_current` READY per (versionId, QUALITY); promote po QC |
@@ -370,17 +382,19 @@ Feature flag: `SFM_VERSIONS_V1` (nazwa robocza). Legacy WAV path aż do cutover 
 
 ---
 
-## 12. Otwarte decyzje (po reconciliation)
+## 12. Otwarte decyzje (po reconciliation + ID-07)
 
 | ID | Temat | Status |
 |----|--------|--------|
 | OD-SFM-ID-05 | Expand `granted_qualities` po upgrade bez nowego daily/slot? | **OPEN** (do czasu: strict snapshot) |
 | OD-SFM-ID-06 | Legacy WAV `project_id` bez `sfm_version_id` po cutover | **OPEN** |
-| OD-SFM-ID-07 | Exact `render_jobs.kind` strings dla SFM_MIX / MASTER / quality | **OPEN** |
+| OD-SFM-ID-07 | Exact `render_jobs.kind` strings | **CLOSED / ACCEPTED** — `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (§0.1) |
 | OD-04 | Operator płatności | **OPEN** |
-| Contabo/poller | Ops GOs | **OPEN** (osobne) |
+| Contabo/poller | Ops GOs (STUDIO + future SFM) | **OPEN** (osobne; SFM kinds **nie** auto-join STUDIO poller) |
 
-**Zamknięte w tym GO (docs):** OD-SFM-ID-01…04.
+**Zamknięte (docs):** OD-SFM-ID-01…04 · **OD-SFM-ID-07**.
+
+**History (superseded OPEN wording):** earlier drafts listed OD-SFM-ID-07 as OPEN with example strings — those examples are now the accepted exact values; history preserved in DECISION_LOG.
 
 ---
 
@@ -390,7 +404,7 @@ Feature flag: `SFM_VERSIONS_V1` (nazwa robocza). Legacy WAV path aż do cutover 
 - Grant ≠ artifact; historyczne jakości ≠ unlimited future.
 - Macierz SFM zachowana (SILVER = 128+192).
 - `Europe/Warsaw` + DST; wiele slotów AVAILABLE.
-- 90d F03b; SFM_MIX = osobny job.
+- 90d F03b; SFM executors = `SFM_MIX_PREPARE` / `SFM_MASTER_BAKE` / `SFM_QUALITY_ENCODE` (OD-SFM-ID-07).
 - Semantyczna izolacja E3/TAKE/RAW.
 - Osobna trasa download SFM + deny na mix route po cutover.
 - Resolver SFM **osobny** od `EXPORT_WAV`.
@@ -399,9 +413,10 @@ Feature flag: `SFM_VERSIONS_V1` (nazwa robocza). Legacy WAV path aż do cutover 
 
 ## 14. Następny krok
 
-1. Docs-publish GO (osobne) — te pliki + living SSOT.
-2. Odpowiedzi Ownera na OD-SFM-ID-05…07 (opcjonalnie przed impl).
-3. Osobne **Implementation GO** (schema → RPC → app → staging → Contabo).
-4. Checkout slotów dopiero po CLOSED OD-04.
+1. Docs-publish GO dla ACCEPT OD-SFM-ID-07 (osobne) — living SSOT.
+2. Odpowiedzi Ownera na OD-SFM-ID-05 / OD-SFM-ID-06 (opcjonalnie).
+3. Osobne **GO-SFM-IMPL-C** — CHECK/XOR/version bind · claim RPC · enqueue `SFM_*` · stage↔job · fail-closed `mapJobKind` (≠ Contabo enable).
+4. Contabo Ops GOs — osobno; nie włączać SFM kinds do STUDIO poller automatycznie.
+5. Checkout slotów dopiero po CLOSED OD-04.
 
-**Ten dokument nie upoważnia do implementacji.**
+**ACCEPT OD-SFM-ID-07 (docs) nie upoważnia do implementacji Etapu C ani Contabo.**

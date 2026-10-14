@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-14 — OD-SFM-ID-07 ACCEPTED — exact SFM `render_jobs.kind` (docs-only, local worktree)
+
+**Status:** **DOCS** · Owner ACCEPT variant A · **NO CODE** · **NO MIGRATIONS** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION** · **NO CONTABO**
+**Base tip:** `a4ea89c5b1c8cb74aec243a002ca22805fe293e9` (`origin/main`)
+**Delivered (isolated worktree):** OPEN_DECISIONS · DECISION_LOG · [IMPLEMENTATION_DESIGN](./decisions/STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./decisions/STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./decisions/STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · PROJECT_STATE · CHANGELOG
+**OD-SFM-ID-07 CLOSED:** `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE`
+**Locked:** domain stages remain `SFM_MIX`/`SFM_MASTER` · job SUCCEEDED ≠ stage complete · ≠ MIX/STUDIO_EXPORT identity · fail-closed `mapJobKind` · separate SFM claim · STUDIO_EXPORT poller unchanged · no Contabo auto-enable · no auto FAILED→QUEUED
+**Deferred to Stage C Implementation GO:** CHECK/XOR · version bind · claim RPC · stage↔job wiring
+**Still OPEN:** OD-04 · OD-SFM-ID-05 · OD-SFM-ID-06 · Contabo Ops GOs · GO-SFM-IMPL-C
+**Next:** docs-publish GO (Owner) · then Stage C Implementation GO (not this session)
+
 ## 2026-10-14 — SFM Implementation Design reconciled OD-SFM-ID-01…04 (docs-only, local worktree)
 
 **Status:** **DOCS** · Owner design decisions ACCEPTED · **NO CODE** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION**
@@ -14,8 +25,8 @@ Format: data, zakres, skrót.
 **OD-SFM-ID-02:** version grant + historical `granted_qualities` snapshot; ≠ unlimited future qualities; expand-on-upgrade = OD-SFM-ID-05 OPEN (strict until then)
 **OD-SFM-ID-03:** many `AVAILABLE` paid slots per Warsaw day; atomic bind; idempotent payment_ref
 **OD-SFM-ID-04:** `SFM_MIX` = separate executor job ≠ E3 `kind=MIX`
-**Still OPEN:** OD-04 · OD-SFM-ID-05…07 · Implementation GO · Contabo Ops GOs
-**Next:** docs-publish GO · then separate Implementation GO
+**Still OPEN (at entry time; OD-SFM-ID-07 later CLOSED same day):** OD-04 · OD-SFM-ID-05…07 · Implementation GO · Contabo Ops GOs
+**Next (historical):** docs-publish GO · then separate Implementation GO — see OD-SFM-ID-07 ACCEPT entry above
 
 ## 2026-10-14 — SFM F02b/F03b + Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only, local worktree)
 

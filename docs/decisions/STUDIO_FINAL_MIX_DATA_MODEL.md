@@ -1,16 +1,16 @@
 # Studio Final Mix — Data Model
 
-**Status:** `OWNER ACCEPTED (design docs)` — reconciled 2026-10-14 — **NOT IMPLEMENTED**
-**Date:** 2026-10-14 (reconciliation)
+**Status:** `OWNER ACCEPTED (design docs)` — reconciled 2026-10-14 · **OD-SFM-ID-07 CLOSED 2026-10-14** · Stage C CHECK/XOR/kinds **NOT IMPLEMENTED**
+**Date:** 2026-10-14 (reconciliation; ID-07 accept same day)
 **Parent design:** [STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md)
 **RPC/Security:** [STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md)
-**Analyzed tip:** `fdcca3b42a00d7039facc5eff40259f9799bf779`
+**Analyzed tip (design reconciliation):** `fdcca3b42a00d7039facc5eff40259f9799bf779` · **OD-SFM-ID-07 discovery tip:** `a4ea89c5b1c8cb74aec243a002ca22805fe293e9`
 
 ```text
 NO MIGRATIONS FROM THIS DOCUMENT
 REUSE FIRST — new tables only where existing model cannot hold domain invariants
-≠ E3 MIX / TAKE_EXPORT / RAW semantics
-OD-SFM-ID-01…04 ACCEPTED (docs) · OD-SFM-ID-05…07 / OD-04 OPEN
+≠ E3 MIX / TAKE_EXPORT / RAW / STUDIO_EXPORT as SFM identity
+OD-SFM-ID-01…04 + OD-SFM-ID-07 ACCEPTED (docs) · OD-SFM-ID-05/06 · OD-04 OPEN
 ```
 
 ---
@@ -20,7 +20,7 @@ OD-SFM-ID-01…04 ACCEPTED (docs) · OD-SFM-ID-05…07 / OD-04 OPEN
 | Encja / element | Status | Dowód | Rola dziś |
 |-----------------|--------|-------|-----------|
 | `studio_projects` | EXISTS | migracja `p5_1_studio_project_…` | Projekt edytowalny; `document_version` CAS |
-| `render_jobs` | EXISTS | E3 foundation + `studio_export_render_job_kind` | Job `STUDIO_EXPORT` / `MIX` / `TAKE_EXPORT` |
+| `render_jobs` | EXISTS | E3 foundation + `studio_export_render_job_kind` | Today: `STUDIO_EXPORT` / `MIX` / `TAKE_EXPORT` · SFM kinds **OD-SFM-ID-07 ACCEPTED docs** (Stage C) |
 | `render_jobs.document_snapshot` | EXISTS | `20261010185020_…` | Snapshot przy enqueue (nie Accept) |
 | `audio_artifacts` | EXISTS | E3 + `project_id` XOR | READY artifact; UNIQUE `render_job_id` |
 | `audio_artifacts` UNIQUE `(storage_bucket, object_key)` | EXISTS | indeks produkcyjny | Brak silent path collision |
@@ -166,19 +166,26 @@ Zachować: UNIQUE `render_job_id`; UNIQUE `(storage_bucket, object_key)`; XOR mi
 
 Legacy wiersze WAV MVP: `project_id` set, `sfm_version_id` NULL — bez `is_current` SFM.
 
-### 3.8 Warstwa jobów — REUSE `render_jobs` (**OD-SFM-ID-04**)
+### 3.8 Warstwa jobów — REUSE `render_jobs` (**OD-SFM-ID-04** + **OD-SFM-ID-07 ACCEPTED**)
 
 | Potrzeba | Decyzja |
 |----------|---------|
-| **SFM_MIX** | **Osobne zadanie wykonawcze** powiązane z `version_id` + stage `SFM_MIX` (nie inline-only) |
-| **SFM_MASTER** | Osobne zadanie wykonawcze po `SFM_MIX` SUCCEEDED |
-| Quality encode | Osobny job per `(versionId, QUALITY)` + idempotency key |
-| Exact `kind` strings | **OD-SFM-ID-07 OPEN** (np. `SFM_MIX_PREPARE` / `SFM_MASTER_BAKE` / `SFM_QUALITY_ENCODE`) |
-| Claim worker | Wzorzec `claim_next_studio_export_job` — osobne claim RPC dla kinds SFM |
+| Domain stage `SFM_MIX` | Executor job `kind=SFM_MIX_PREPARE` bound to `version_id` + stage (nie inline-only) |
+| Domain stage `SFM_MASTER` | Executor job `kind=SFM_MASTER_BAKE` only after domain `SFM_MIX` SUCCEEDED |
+| Quality encode | Executor job `kind=SFM_QUALITY_ENCODE` per `(versionId, QUALITY)` + idempotency key (lazy) |
+| Exact `kind` strings | **OD-SFM-ID-07 ACCEPTED / CLOSED:** `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` |
+| Domain stages | `studio_final_stages.kind` remains **only** `SFM_MIX` \| `SFM_MASTER` (≠ job kind names) |
+| Claim worker | Osobne claim/dispatch SFM — **nie** reuse `claim_next_studio_export_job` / STUDIO poller |
+| `mapJobKind` / dispatch | Fail-closed na nieznany kind — **zakaz** fallback unknown → `MIX` |
+| Contabo | **Nie** auto-enable nowych kinds w pollerze STUDIO_EXPORT — osobne Ops GOs |
+| Retry | Brak auto `FAILED` → `QUEUED` (istniejący kontrakt) |
+| Stage C schema | Version-id bind / CHECK / XOR / claim RPC = **Implementation GO** (nie ten docs ACCEPT) |
 
-**Zakaz:** `kind='MIX'` (E3) jako tożsamość etapu lub joba SFM.
+**History (superseded):** earlier drafts marked exact kind strings as **OD-SFM-ID-07 OPEN** with the same example names — those names are now **ACCEPTED**.
+
+**Zakaz identity SFM:** `kind='MIX'` · `kind='STUDIO_EXPORT'` (E3 / legacy Studio WAV unchanged).
+Job `SUCCEEDED` alone ≠ domain stage complete — explicit stage↔job bind + `sfm_complete_stage`.
 `stages.job_id` → `render_jobs.id` (ref tylko).
----
 
 ## 4. Stany i przejścia (dane)
 
