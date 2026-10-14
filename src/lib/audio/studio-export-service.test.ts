@@ -77,14 +77,20 @@ describe("STUDIO_EXPORT Stage B — enqueue service contracts", () => {
 
 describe("STUDIO_EXPORT Stage B — claim / mapJob / bake guard", () => {
   it("mapJob recognizes STUDIO_EXPORT (no silent MIX fallback)", () => {
-    const src = readFileSync(
+    const service = readFileSync(
       join(ROOT, "src/lib/audio/render-job-service.ts"),
       "utf8",
     );
-    expect(src).toMatch(/kind === "STUDIO_EXPORT"/);
-    expect(src).toMatch(/resolveAuthorizedStudioExportSourcesForJob/);
-    expect(src).toMatch(/mapJobKind/);
-    expect(src).toMatch(/return "STUDIO_EXPORT"/);
+    const core = readFileSync(
+      join(ROOT, "src/lib/audio/render-job-core.ts"),
+      "utf8",
+    );
+    expect(service).toMatch(/kind === "STUDIO_EXPORT"/);
+    expect(service).toMatch(/resolveAuthorizedStudioExportSourcesForJob/);
+    expect(service).toMatch(/mapJobKind/);
+    expect(core).toMatch(/if \(kind === "STUDIO_EXPORT"\) return "STUDIO_EXPORT"/);
+    expect(core).toMatch(/Unsupported render job kind/);
+    expect(core).not.toMatch(/return "MIX";\s*\n\s*\}/);
   });
 
   it("MIX resolver rejects STUDIO_EXPORT", () => {
@@ -103,7 +109,7 @@ describe("STUDIO_EXPORT Stage B — claim / mapJob / bake guard", () => {
       "utf8",
     );
     expect(src).toMatch(/job\.kind === "STUDIO_EXPORT"/);
-    expect(src).toMatch(/runClaimedStudioExportWorkerJob/);
+    expect(src).toMatch(/runAlreadyClaimedStudioExportWorkerJob/);
     expect(src).toMatch(/renderStudioDocumentOffline/);
     expect(src).not.toMatch(/STUDIO_EXPORT bake is not implemented/);
     const studioIdx = src.indexOf('job.kind === "STUDIO_EXPORT"');
@@ -111,7 +117,9 @@ describe("STUDIO_EXPORT Stage B — claim / mapJob / bake guard", () => {
     expect(studioIdx).toBeGreaterThan(-1);
     expect(studioIdx).toBeLessThan(basicIdx);
     // Studio path must not call E3 MIX bake helpers.
-    const studioFn = src.indexOf("async function runClaimedStudioExportWorkerJob");
+    const studioFn = src.indexOf(
+      "async function runAlreadyClaimedStudioExportWorkerJob",
+    );
     const studioEnd = src.indexOf(
       "async function runClaimedTakeExportWorkerJob",
       studioFn,

@@ -26,6 +26,7 @@ import {
 } from "@/lib/audio/mp3-encode";
 import {
   canCompleteRenderJobSuccess,
+  mapJobKind,
   parseRenderJobEntitlementSnapshot,
   retentionSecondsForTier,
   RenderJobDomainError,
@@ -293,7 +294,8 @@ function mapStudioOfflineRenderFail(error: StudioOfflineRenderError): {
 
 /**
  * Dispatcher — EXTERNAL worker entry for MIX, TAKE_EXPORT, STUDIO_EXPORT.
- * Unknown kind → fail-closed (never falls through to MIX bake).
+ * Unknown / SFM kinds → fail-closed (never falls through to MIX bake).
+ * SFM claim/bake is separate (claim_next_sfm_job); Stage C has no encode yet.
  * STUDIO_EXPORT: claim-by-id then shared already-RUNNING bake (poller shares bake).
  */
 export async function runRealRenderWorkerJob(
@@ -306,7 +308,7 @@ export async function runRealRenderWorkerJob(
   if (job.kind === "STUDIO_EXPORT") {
     return runAlreadyClaimedStudioExportWorkerJob(job);
   }
-  if (job.kind !== "MIX" && job.kind !== undefined) {
+  if (job.kind !== "MIX") {
     await failRunningJob(
       jobId,
       "INVALID",
@@ -1175,19 +1177,13 @@ async function getJobRecord(jobId: string): Promise<RenderJobRecord> {
   const { data, error } = await admin
     .from("render_jobs")
     .select(
-      "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
+      "id, owner_id, mix_session_id, take_id, project_id, sfm_version_id, sfm_quality, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at",
     )
     .eq("id", jobId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "job missing");
   const snapshot = parseRenderJobEntitlementSnapshot(data.entitlement_snapshot);
-  const kindRaw = data.kind as string | null;
-  const kind: RenderJobRecord["kind"] =
-    kindRaw === "TAKE_EXPORT"
-      ? "TAKE_EXPORT"
-      : kindRaw === "STUDIO_EXPORT"
-        ? "STUDIO_EXPORT"
-        : "MIX";
+  const kind = mapJobKind(data.kind as string | null);
   return {
     id: data.id as string,
     ownerId: data.owner_id as string,
@@ -1195,6 +1191,8 @@ async function getJobRecord(jobId: string): Promise<RenderJobRecord> {
     kind,
     takeId: (data.take_id as string | null) ?? null,
     projectId: (data.project_id as string | null) ?? null,
+    sfmVersionId: (data.sfm_version_id as string | null) ?? null,
+    sfmQuality: (data.sfm_quality as string | null) ?? null,
     requestedTier: data.requested_tier as RenderJobRecord["requestedTier"],
     idempotencyKey: data.idempotency_key as string,
     status: data.status as RenderJobRecord["status"],

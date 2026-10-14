@@ -16,11 +16,13 @@ import type {
   RenderJobKind,
   RenderJobStatus,
   RenderJobTier,
+  SfmExecutorJobKind,
 } from "@/types/domain";
 import {
   MIX_RENDER_JOB_TIERS,
   RENDER_JOB_KINDS,
   RENDER_JOB_TIERS,
+  SFM_EXECUTOR_JOB_KINDS,
 } from "@/types/domain";
 import { utcDayWindowStart } from "@/lib/downloads/limits";
 
@@ -92,8 +94,34 @@ export function isRenderJobKind(value: unknown): value is RenderJobKind {
   );
 }
 
+export function isSfmExecutorJobKind(
+  value: unknown,
+): value is SfmExecutorJobKind {
+  return (
+    typeof value === "string" &&
+    (SFM_EXECUTOR_JOB_KINDS as readonly string[]).includes(value)
+  );
+}
+
 /**
- * Mirrors `render_jobs_source_xor_chk` after STUDIO_EXPORT Stage A.
+ * Fail-closed kind mapper (OD-SFM-ID-07).
+ * Unknown / null kinds MUST NOT fall through to MIX.
+ */
+export function mapJobKind(kind: string | null | undefined): RenderJobKind {
+  if (kind === "MIX") return "MIX";
+  if (kind === "TAKE_EXPORT") return "TAKE_EXPORT";
+  if (kind === "STUDIO_EXPORT") return "STUDIO_EXPORT";
+  if (kind === "SFM_MIX_PREPARE") return "SFM_MIX_PREPARE";
+  if (kind === "SFM_MASTER_BAKE") return "SFM_MASTER_BAKE";
+  if (kind === "SFM_QUALITY_ENCODE") return "SFM_QUALITY_ENCODE";
+  throw new RenderJobDomainError(
+    `Unsupported render job kind: ${String(kind ?? "null")}`,
+    "INVALID",
+  );
+}
+
+/**
+ * Mirrors `render_jobs_source_xor_chk` after SFM Stage C.
  * Does not enqueue, resolve AuthZ, or dispatch a worker.
  */
 export function isValidRenderJobSourceXor(fields: {
@@ -101,19 +129,52 @@ export function isValidRenderJobSourceXor(fields: {
   mixSessionId: string | null;
   takeId: string | null;
   projectId: string | null;
+  sfmVersionId?: string | null;
+  sfmQuality?: string | null;
 }): boolean {
   const hasMix = fields.mixSessionId != null;
   const hasTake = fields.takeId != null;
   const hasProject = fields.projectId != null;
+  const hasSfmVersion = fields.sfmVersionId != null;
+  const hasSfmQuality = fields.sfmQuality != null;
 
   if (fields.kind === "MIX") {
-    return hasMix && !hasTake && !hasProject;
+    return hasMix && !hasTake && !hasProject && !hasSfmVersion && !hasSfmQuality;
   }
   if (fields.kind === "TAKE_EXPORT") {
-    return hasTake && !hasMix && !hasProject;
+    return hasTake && !hasMix && !hasProject && !hasSfmVersion && !hasSfmQuality;
   }
   if (fields.kind === "STUDIO_EXPORT") {
-    return hasProject && !hasMix && !hasTake;
+    return (
+      hasProject && !hasMix && !hasTake && !hasSfmVersion && !hasSfmQuality
+    );
+  }
+  if (
+    fields.kind === "SFM_MIX_PREPARE" ||
+    fields.kind === "SFM_MASTER_BAKE"
+  ) {
+    return (
+      hasSfmVersion &&
+      hasProject &&
+      !hasMix &&
+      !hasTake &&
+      !hasSfmQuality
+    );
+  }
+  if (fields.kind === "SFM_QUALITY_ENCODE") {
+    const qualityOk =
+      fields.sfmQuality === "MP3_128" ||
+      fields.sfmQuality === "MP3_192" ||
+      fields.sfmQuality === "MP3_320" ||
+      fields.sfmQuality === "WAV";
+    return (
+      hasSfmVersion &&
+      hasProject &&
+      !hasMix &&
+      !hasTake &&
+      hasSfmQuality &&
+      qualityOk
+    );
   }
   return false;
 }

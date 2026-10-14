@@ -51,7 +51,7 @@ describe("V1 poller qualification (OD-CWP-01/02)", () => {
     });
   });
 
-  it("rejects MIX, TAKE_EXPORT, and unknown kinds", () => {
+  it("rejects MIX, TAKE_EXPORT, SFM executors, and unknown kinds", () => {
     expect(
       qualifyStudioExportPollerJob({ ...baseEligible, kind: "MIX" }),
     ).toEqual({ eligible: false, reason: "KIND_OUT" });
@@ -59,10 +59,29 @@ describe("V1 poller qualification (OD-CWP-01/02)", () => {
       qualifyStudioExportPollerJob({ ...baseEligible, kind: "TAKE_EXPORT" }),
     ).toEqual({ eligible: false, reason: "KIND_OUT" });
     expect(
+      qualifyStudioExportPollerJob({
+        ...baseEligible,
+        kind: "SFM_MIX_PREPARE",
+      }),
+    ).toEqual({ eligible: false, reason: "KIND_OUT" });
+    expect(
+      qualifyStudioExportPollerJob({
+        ...baseEligible,
+        kind: "SFM_MASTER_BAKE",
+      }),
+    ).toEqual({ eligible: false, reason: "KIND_OUT" });
+    expect(
+      qualifyStudioExportPollerJob({
+        ...baseEligible,
+        kind: "SFM_QUALITY_ENCODE",
+      }),
+    ).toEqual({ eligible: false, reason: "KIND_OUT" });
+    expect(
       qualifyStudioExportPollerJob({ ...baseEligible, kind: "WEIRD" }),
     ).toEqual({ eligible: false, reason: "KIND_OUT" });
     expect(isPollerOutOfScopeKind("MIX")).toBe(true);
     expect(isPollerOutOfScopeKind("TAKE_EXPORT")).toBe(true);
+    expect(isPollerOutOfScopeKind("SFM_MIX_PREPARE")).toBe(true);
     expect(isPollerOutOfScopeKind("STUDIO_EXPORT")).toBe(false);
   });
 

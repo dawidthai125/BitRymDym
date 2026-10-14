@@ -1,6 +1,7 @@
 /**
- * SFM Foundation Stage A — pure domain contracts (no I/O).
- * Stages are domain records; ≠ render_jobs.kind (OD-SFM-ID-07 OPEN).
+ * SFM Foundation — pure domain contracts (no I/O).
+ * Stages are domain records; ≠ render_jobs.kind
+ * (OD-SFM-ID-07 CLOSED: SFM_MIX_PREPARE / SFM_MASTER_BAKE / SFM_QUALITY_ENCODE).
  */
 
 export const SFM_STAGE_KINDS = ["SFM_MIX", "SFM_MASTER"] as const;
@@ -28,6 +29,7 @@ export type SfmDomainErrorCode =
   | "NOT_FOUND"
   | "VERSION_CONFLICT"
   | "ILLEGAL_TRANSITION"
+  | "RECOVERY_REQUIRED"
   | "NOT_ELIGIBLE"
   | "INVALID"
   | "INVALID_SESSION"
@@ -137,6 +139,8 @@ export function mapSfmRpcErrorMessage(message: string): SfmDomainErrorCode {
       return "VERSION_CONFLICT";
     case "ILLEGAL_TRANSITION":
       return "ILLEGAL_TRANSITION";
+    case "RECOVERY_REQUIRED":
+      return "RECOVERY_REQUIRED";
     case "NOT_ELIGIBLE":
       return "NOT_ELIGIBLE";
     case "FORBIDDEN":
@@ -151,13 +155,17 @@ export function mapSfmRpcErrorMessage(message: string): SfmDomainErrorCode {
       return "NO_SLOT";
     case "FREE_NO_DOWNLOAD":
       return "FREE_NO_DOWNLOAD";
+    case "CONFLICT":
+      return "CONFLICT";
     default:
       if (message.includes("VERSION_CONFLICT")) return "VERSION_CONFLICT";
+      if (message.includes("RECOVERY_REQUIRED")) return "RECOVERY_REQUIRED";
       if (message.includes("ILLEGAL_TRANSITION")) return "ILLEGAL_TRANSITION";
       if (message.includes("LIMIT_EXCEEDED")) return "LIMIT_EXCEEDED";
       if (message.includes("NOT_OWNER")) return "NOT_OWNER";
       if (message.includes("NOT_FOUND")) return "NOT_FOUND";
       if (message.includes("NOT_ELIGIBLE")) return "NOT_ELIGIBLE";
+      if (message.includes("CONFLICT")) return "CONFLICT";
       return "CONFLICT";
   }
 }

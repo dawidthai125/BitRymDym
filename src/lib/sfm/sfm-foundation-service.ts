@@ -1,6 +1,7 @@
 /**
- * SFM Foundation Stage A — Accept + domain stage transitions.
- * Out of scope: grants, quality encode, download route, render_jobs.kind enqueue.
+ * SFM Foundation — Accept + domain stage transitions.
+ * Stage C: sfm_start_stage enqueues SFM_* executor jobs and binds stage.job_id.
+ * Job SUCCEEDED alone does not complete a stage — use completeSfmStageForService.
  */
 
 import "server-only";
@@ -39,6 +40,7 @@ export type SfmStageRecord = {
   status: SfmStageStatus;
   startedAt: string | null;
   finishedAt?: string | null;
+  jobId?: string | null;
   versionStatus?: SfmVersionStatus;
   currentFinalVersionId?: string | null;
 };
@@ -194,12 +196,13 @@ export async function startSfmStageFor(
     kind: record.kind as SfmStageKind,
     status: record.status as SfmStageStatus,
     startedAt: (record.started_at as string | null) ?? null,
+    jobId: (record.job_id as string | null) ?? null,
   };
 }
 
 /**
- * Service/worker path — Stage A uses this for domain completion tests only.
- * Does not enqueue or claim render jobs.
+ * Service/worker path — completes domain stage after executor job terminal state.
+ * Does not mark stage complete from job SUCCEEDED alone (caller must invoke this).
  */
 export async function completeSfmStageForService(input: {
   versionId: string;
