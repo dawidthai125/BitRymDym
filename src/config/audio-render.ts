@@ -118,6 +118,20 @@ export const E3_RENDER_JOBS_ENABLED = parseE3RenderJobsEnabledFlag(
 );
 
 /**
+ * SFM Foundation Stage A — Accept / domain stages gate (GO-SFM-IMPL-A).
+ * Default OFF (fail-closed). Independent of E3_RENDER_JOBS_ENABLED.
+ * Does not authorize grants, quality encode, download route, or Contabo jobs.
+ */
+export function isSfmVersionsV1Enabled(
+  raw: string | undefined = process.env.SFM_VERSIONS_V1,
+): boolean {
+  return parseBoolEnv(raw, false) === true;
+}
+
+/** Module snapshot of SFM_VERSIONS_V1 (tests prefer isSfmVersionsV1Enabled()). */
+export const SFM_VERSIONS_V1 = isSfmVersionsV1Enabled();
+
+/**
  * Worker-facing auth for CLAIM / complete (OD-E35-03).
  * Server-only secret — never expose to client. Distinct from feature flags.
  */
