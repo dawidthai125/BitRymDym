@@ -277,6 +277,8 @@ If implementation discovers a hard need for a new bucket or table, **stop and re
 
 **Unchanged by this supersession alone:** bake/artifact decisions OD-SFM-F01…F07 remain in force until explicitly amended; shipping code may still be WAV-only until a separate Implementation GO; Contabo/ops GOs remain separate.
 
+**2026-10-14 follow-up (docs):** OD-SFM-08 / 12 / 14 Owner-ACCEPTED. Stages DF + F02b/F03b **OWNER ACCEPTED (docs)** with corrections A/B/C: [VERSION_STAGES](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) (`SFM_MIX`/`SFM_MASTER`) · [F_ADDENDUM](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) (F02/F03 superseded **SFM-only**). **NOT IMPLEMENTED.**
+
 ---
 
 ## 14. Implementation Phases (ordering only — not authorized)

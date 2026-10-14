@@ -10,6 +10,38 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Studio Final Mix — F02b / F03b / Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT with corrections — F-addendum + Version/Stages DF |
+| Status | **CLOSED / ACCEPTED (docs)** · **NOT IMPLEMENTED** · **NO COMMIT/PUSH in this session** · production **NOT CHANGED** |
+| Date | 2026-10-14 |
+| F-addendum | [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) |
+| Stages DF | [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) |
+| Locked IDs | **OD-SFM-F02b** · **OD-SFM-F03b** · Stages DF (`SFM_MIX`/`SFM_MASTER`) |
+| Supersession | **F02 → F02b** and **F03 → F03b** for **Studio Final Mix only**; F01/F04–F07 unchanged; TAKE/RAW/E3 retention unchanged |
+| Corrections | **A** historical grant/downgrade AuthZ · **B** ≤1 current READY per `(versionId, QUALITY)` · **C** domain names `SFM_MIX`/`SFM_MASTER` |
+| Still OPEN | **OD-04** payment provider · Implementation GO · SQL/promote-current Implementation Design |
+
+---
+
+### Studio Final Mix — OD-SFM-08 / 12 / 14 CLOSED + F-addendum then PROPOSAL (docs-only) — HISTORY
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT — OD-SFM-08 variant C · OD-SFM-12 · OD-SFM-14 (prior to F/Stages ACCEPT-with-corrections) |
+| Status | **CLOSED / ACCEPTED (product architecture docs)** · followed same day by F02b/F03b/Stages ACCEPT entry above |
+| Date | 2026-10-14 |
+| Product contract | [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) |
+| Locked IDs | **OD-SFM-08** · **OD-SFM-12** · **OD-SFM-14** (plus prior OD-SFM-07/09–11/13/15–18) |
+
+**OD-SFM-08:** durable domain stages + separate jobs; light mix stage; bake in master stage; ≠ E3 `kind=MIX`.
+**OD-SFM-12:** 90d from `MASTER_SUCCEEDED`; clear `current_final` on TTL; tombstone; grant ≠ file.
+**OD-SFM-14:** variant B day-slot; Warsaw expiry; refund rules.
+
+---
+
 ### Studio Final Mix — Product Contract Addendum ACCEPTED (docs-only)
 
 | Pole | Wartość |
@@ -19,12 +51,12 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 | Date | 2026-10-14 |
 | Document | [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) |
 | Parent | [STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_DESIGN_FREEZE.md) · bake [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
-| Locked / accepted IDs | **OD-SFM-07**, **OD-SFM-09…11**, **OD-SFM-13**, **OD-SFM-15…18**; **OD-SFM-08/12/14** directionally accepted with **OPEN** technical leftovers; **OD-SFM-02 SUPERSEDED** (product ladder scope; history preserved) |
+| Locked / accepted IDs | **OD-SFM-07**, **OD-SFM-09…11**, **OD-SFM-13**, **OD-SFM-15…18**; **OD-SFM-08/12/14** later closed in follow-up entry; **OD-SFM-02 SUPERSEDED** (product ladder scope; history preserved) |
 | Explicit non-claims | Multi-variant Studio export **not** implemented by this entry · paid 7,99 provider **not** integrated · WAV-only runtime path may still exist until Implementation GO |
 
-**Accepted product rules (summary):** plan ladder FREE deny-all downloads / BRONZE 128 / SILVER 128+192 / GOLD +320+WAV · daily first-version grants 0/1/2/5 · grant per version (all plan qualities) · re-download without new grant · reset midnight `Europe/Warsaw`+DST · Accept→MIX→MASTER before export · lazy on-demand variants · 90d retention (details OPEN) · paid **7,99 PLN** = one extra first-download day-slot (not unlimited) · domain ≠ E3 MixPanel / `mix_sessions` / TAKE_EXPORT.
+**Accepted product rules (summary):** plan ladder FREE deny-all downloads / BRONZE 128 / SILVER 128+192 / GOLD +320+WAV · daily first-version grants 0/1/2/5 · grant per version (all plan qualities) · re-download without new grant · reset midnight `Europe/Warsaw`+DST · Accept→MIX→MASTER before export · lazy on-demand variants · 90d retention · paid **7,99 PLN** = one extra first-download day-slot (not unlimited) · domain ≠ E3 MixPanel / `mix_sessions` / TAKE_EXPORT.
 
-**Still OPEN:** OD-SFM-08 shape · OD-SFM-12 retention mechanics · OD-SFM-14 slot TTL/bind/refund-after/provider · F01–F07 multi-format relation · limit concurrency design.
+**Follow-up (same day):** OD-SFM-08/12/14 detail CLOSED — see entry above; F02b/F03b remain PROPOSAL.
 
 ---
 

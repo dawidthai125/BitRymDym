@@ -6,14 +6,31 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-14 — SFM F02b/F03b + Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only, local worktree)
+
+**Status:** **DOCS** · Owner ACCEPT with corrections · **NO CODE** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION**
+**Delivered (isolated worktree):** [F-addendum](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) · [Stages DF](./decisions/STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) · product contract / bake freeze / OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE
+**Correction A:** historical grant + OD-SFM-17 downgrade AuthZ; object_key/URL/READY alone insufficient
+**Correction B:** ≤1 current downloadable artifact per `(versionId, QUALITY)`; atomic promote; concurrent winner rule (SQL TBD Implementation Design)
+**Correction C:** domain stage names **`SFM_MIX` / `SFM_MASTER`** (≠ E3 `kind=MIX`)
+**Supersession:** F02→F02b and F03→F03b **Studio Final Mix only**; F01/F04–F07 unchanged; TAKE/RAW/E3 unchanged
+**Still OPEN:** OD-04 payment provider · Implementation GO
+**Next:** optional docs publish GO · then separate Implementation GO
+
+## 2026-10-14 — SFM OD-SFM-08/12/14 ACCEPTED + F-addendum / Stages DF then PROPOSAL (docs-only) — HISTORY
+
+**Status:** **DOCS** · Owner ACCEPT OD-SFM-08/12/14 · F/Stages were PROPOSAL pending — superseded same day by ACCEPT-with-corrections entry above
+**OD-SFM-08/12/14:** variant C · 90d · paid slot B
+**Next (historical):** Owner ACCEPT F/Stages — **DONE** (see entry above)
+
 ## 2026-10-14 — Studio Final Mix Product Contract ACCEPTED (docs-only)
 
 **Status:** **DOCS / SSOT** · Owner formal ACCEPT · **NO CODE** · **NO MIGRATIONS** · **NO PRODUCTION CHANGES** · **NO CONTABO / PAYMENTS** · direct `main` via isolated worktree (no PR)
 **Delivered:** [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-07…18 living product rules · **OD-SFM-02 SUPERSEDED** (product ladder; history preserved in Design Freeze §13) · OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE updates
-**Accepted (summary):** plan download ladder · grant per version · daily first-download 0/1/2/5 · reset `Europe/Warsaw`+DST · paid **7,99 PLN** = one extra first-download day-slot · Accept→MIX→MASTER · lazy variants · 90d retention (details OPEN) · domain ≠ E3 / TAKE_EXPORT
+**Accepted (summary):** plan download ladder · grant per version · daily first-download 0/1/2/5 · reset `Europe/Warsaw`+DST · paid **7,99 PLN** = one extra first-download day-slot · Accept→MIX→MASTER · lazy variants · 90d retention · domain ≠ E3 / TAKE_EXPORT
 **Explicit non-claims:** multi-variant Studio export **not** implemented · paid provider **not** integrated · runtime may still be WAV-only MVP until Implementation GO
-**Still OPEN:** OD-SFM-08 shape · OD-SFM-12 retention mechanics · OD-SFM-14 TTL/bind/refund-after/provider · F01–F07 multi-format relation · limit concurrency design
-**Next:** Owner GO for version/stage design freeze + Implementation GO (separate)
+**Follow-up same day:** OD-SFM-08/12/14 detail CLOSED + F/Stages proposals — see entry above
+**Next:** Owner review of F-addendum / Stages DF proposals
 
 ## 2026-10-13 — GO-POLLER-KILL-SWITCH-01 fail-closed poller bootstrap
 

@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-14 — **Studio Final Mix Product Contract OWNER ACCEPTED (docs-only)** ([addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-02 **SUPERSEDED** product ladder · OD-SFM-07+ living) · **implementation NOT DONE** · **production NOT CHANGED** · prior tip Contabo poller kill-switch / local impl history unchanged by this docs tip · Sacred WIP protected
+**Updated:** 2026-10-14 — **SFM F02b/F03b + Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only)** ([F](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) · [stages](./decisions/STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) · `SFM_MIX`/`SFM_MASTER`) · F02/F03 **SUPERSEDED SFM-only** · **NOT IMPLEMENTED** · **NO COMMIT/PUSH** · OD-04 provider **OPEN** · Sacred WIP protected
 
 ---
 
@@ -22,7 +22,8 @@
 |------|---------|
 | Canonical branch | `main` |
 | **GITHUB MAIN TIP / origin/main (confirmed)** | **Studio Final Mix Product Contract ACCEPTED (docs-only)** — this commit · parent = prior tip (poller kill-switch / Contabo V1 history) · **≠** Implementation GO · **≠** Contabo enable · **≠** payments · verify with `git rev-parse origin/main` after fetch · other local worktrees may still be dirty / diverge |
-| **STUDIO FINAL MIX PRODUCT CONTRACT** | **OWNER ACCEPTED 2026-10-14** · [addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · ladder + version grants + Warsaw day limits + 7,99 day-slot semantics · Accept→MIX→MASTER · **NOT IMPLEMENTED** · OPEN: OD-SFM-08 shape · OD-SFM-12 details · OD-SFM-14 leftovers · F01–F07 multi-format relation |
+| **STUDIO FINAL MIX PRODUCT CONTRACT** | **OWNER ACCEPTED** · [addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-08/12/14 CLOSED · **NOT IMPLEMENTED** |
+| **SFM F-ADDENDUM / STAGES DF** | **OWNER ACCEPTED (docs)** · [F02b/F03b](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) · [stages](./decisions/STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) · F02/F03 **SUPERSEDED SFM-only** · corrections A/B/C · **NOT IMPLEMENTED** · **OD-04 OPEN** |
 | **PRIOR DOCS TIP (HISTORY)** | **`7d87380`** — Contabo poller Design Freeze · **`22c7d56`** — Final Mix GREEN §4G align · **`a1df783`** — GREEN VERIFIED closeout · **`dcd2308`** — FULL FIXTURE VERIFIED · **`51a37a2`** — empty-session · **`99bb10e`** I.18 · **`cee88f8`** FM criteria · **`e4971d2`** Stage J · **`2adb569`** PR #12 |
 | **APP-CODE TIP (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete×export-history) · last app-feature tip on `main` before docs tips · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |

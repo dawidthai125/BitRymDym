@@ -48,7 +48,7 @@ Ta macierz dotyczy **wyłącznie** Studio Final Mix (≠ TAKE_EXPORT ladder ≠ 
 
 ---
 
-## 3. OD-SFM-08 — Osobne etapy MIX i MASTERING (**KIERUNEK ACCEPTED · SHAPE TECHNICZNY OPEN**)
+## 3. OD-SFM-08 — Osobne etapy MIX i MASTERING (**OWNER ACCEPTED — wariant C**)
 
 Sekwencja domenowa:
 
@@ -56,13 +56,19 @@ Sekwencja domenowa:
 ACCEPTED_VERSION → MIX → MASTERING → EXPORT_VARIANTS (on-demand)
 ```
 
-- MIX nie rozpoczyna się bez akceptacji konkretnej wersji.
-- MASTERING nie rozpoczyna się przed sukcesem MIX.
-- Eksport finalny / generowanie wariantu nie rozpoczyna się przed sukcesem MASTERING.
-- Status zadania joba technicznego **nie** zastępuje statusu domenowego.
-- Etapy są domeną Studio Final Mix — **nie** E3 MixPanel / `mix_sessions`.
+**Owner ACCEPT (2026-10-14) — wariant C:**
 
-**OPEN (przed Implementation GO):** dokładny podział na osobne rodzaje jobów vs checkpointy vs trwałe rekordy etapów — wymaga osobnego design freeze.
+- Trwałe **rekordy domenowych etapów** powiązane z zaakceptowaną wersją.
+- Joby wykonawcze pozostają **osobną warstwą techniczną**.
+- MIX i MASTER są odrębnymi etapami domenowymi.
+- MIX MVP może być **lekkim** etapem przygotowania i walidacji.
+- Właściwy offline bake odbywa się w **MASTER**.
+- **Zakaz** utożsamiania Studio MIX z E3 `render_jobs.kind = 'MIX'` oraz scalania z `mix_sessions` / `TAKE_EXPORT`.
+- Status joba technicznego **nie** zastępuje statusu domenowego.
+
+Szczegółowy Design Freeze etapów: [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) (**OWNER ACCEPTED** docs · nazwy domenowe `SFM_MIX` / `SFM_MASTER` · **NOT IMPLEMENTED**).
+
+**Nadal nie zaimplementowane** — ta decyzja jest dokumentacyjna.
 
 ---
 
@@ -95,7 +101,7 @@ Wcześniej uprawnione wersje historyczne wolno pobierać ponownie, jeśli:
 
 UI musi jednoznacznie oznaczać je jako **historyczne**.
 
-Retencja: **90 dni** (patrz OD-SFM-12 — szczegóły start/koniec OPEN).
+Retencja: **90 dni** (patrz OD-SFM-12 — **ACCEPTED**).
 
 ---
 
@@ -122,19 +128,21 @@ Ponowne wydanie URL **nie** zużywa kolejnego dziennego limitu ani płatnego slo
 
 ---
 
-## 7. OD-SFM-12 — Retencja (**90 dni ACCEPTED · szczegóły OPEN**)
+## 7. OD-SFM-12 — Retencja (**OWNER ACCEPTED**)
 
-- Retencja finalnych artefaktów Studio Final Mix: **90 dni**.
-- Zakup dodatkowego slotu **nie** powinien sam w sobie przedłużać retencji (**propozycja / oczekiwanie produktowe**; formalne zamknięcie szczegółów poniżej).
+- Retencja finalnej wersji Studio Final Mix: **90 dni**.
+- Zegar zaczyna się w momencie **`MASTER_SUCCEEDED` / final eligibility** dla konkretnej wersji.
+- Wszystkie warianty jakości tej wersji dzielą **ten sam** punkt odniesienia retencji.
+- Po TTL: jeśli `current_final_version_id` wskazuje wygasłą wersję → **usuń wskaźnik**; wygasła wersja **nie** może być prezentowana jako aktualny final.
+- Zachować **tombstone**, metadane historii i audyt uprawnień.
+- Uprawnienie logiczne do wersji **nie** gwarantuje fizycznego istnienia pliku.
+- Regeneracja dopuszczalna tylko gdy istnieją wymagane źródła i snapshot oraz AuthZ nadal pozwala.
+- Zakup dodatkowego slotu **nie** przedłuża retencji.
+- Nie obiecywać bezterminowego przechowywania ani odtwarzania plików.
 
-**OPEN przed implementacją / sprzedażą obietnic:**
+**F03b OWNER ACCEPTED (docs):** [F-addendum](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) — SFM-only 90d; historical F03 superseded **for Studio Final Mix only**. Shipping code may still use matrix until Implementation GO.
 
-- moment rozpoczęcia liczenia 90 dni;
-- zachowanie **bieżącego** finala po upływie TTL;
-- zachowanie metadanych / historii po usunięciu pliku;
-- wpływ (lub brak wpływu) płatnego slotu na retencję — zamrozić przy Implementation GO.
-
-Nie obiecywać bezterminowej dostępności plików.
+**Nadal nie zaimplementowane.**
 
 ---
 
@@ -154,32 +162,28 @@ Nie obiecywać bezterminowej dostępności plików.
 
 ---
 
-## 9. OD-SFM-14 — Dodatkowy slot 7,99 PLN (**CENA + SEMANTYKA LIMITU ACCEPTED · reszta OPEN**)
-
-### Wiążąca semantyka (Owner ACCEPTED)
+## 9. OD-SFM-14 — Dodatkowy slot 7,99 PLN (**OWNER ACCEPTED — wariant B**)
 
 Płatność **7,99 PLN** zapewnia **jeden jednorazowy dodatkowy limit pierwszego pobrania w danym dniu**.
 
-- Jest to jednorazowe zwiększenie dziennego limitu pierwszych pobrań, **nie** nielimitowany download, abonament ani wielokrotne użycie tego samego slotu.
-- Slot służy do **jednego** dodatkowego pierwszego pobrania wersji, dla której użytkownik nie ma jeszcze grantu.
-- Po wykorzystaniu slot **nie** może być użyty ponownie.
-- Ponowne pobranie wcześniej uprawnionego pliku / wersji **nie** zużywa nowego grantu ani nowego płatnego slotu.
-- Zakup **nie** omija: właściciela, etapów finalizacji (Accept → MIX → MASTER), aktualności wersji ani jakości niedostępnych w planie.
+**Owner ACCEPT (2026-10-14) — wariant B:**
+
+- Po potwierdzeniu płatności slot może mieć stan **`AVAILABLE`**.
+- Slot wiąże się z konkretną wersją **atomowo przy przyznawaniu grantu** pierwszego pobrania (nie przy samym checkout).
+- Niewykorzystany slot **wygasa o północy `Europe/Warsaw`** i **nie** przechodzi na kolejny dzień.
+- Ponowne pobranie wcześniej uprawnionej wersji **nie** zużywa grantu ani slotu.
+- Zwrot **przed** wykorzystaniem → odebranie (`REVOKED`) niewykorzystanego slotu.
+- Zwrot **po** wykorzystaniu → **zachować** już przyznany grant; **nie** cofać grantu automatycznie; **nie** przyznawać ponownie dziennego limitu.
+- Zakup **nie** omija: właściciela, Accept → MIX → MASTER, aktualności wersji ani jakości poza planem.
+- Zdarzenia odrębne: zakup → potwierdzenie płatności → `AVAILABLE` → grant → generowanie pliku → URL.
+- Płatność / webhook **idempotentne**; nieudana / anulowana płatność nie przyznaje slotu.
 
 ### Nadal OPEN
 
-- termin ważności **niewykorzystanego** slotu;
-- dokładny moment przypisania slotu do wersji;
-- zachowanie przy zmianie planu;
-- zwrot **po** wykorzystaniu slotu (polityka);
-- dostawca płatności i kontrakt webhooków / idempotencji płatności.
+- dostawca płatności i szczegółowy kontrakt webhooków (**OD-04** / osobne GO);
+- szczegóły implementacyjne ledgerów (nazwy tabel / RPC) — Design Freeze Implementation.
 
-### Zwroty (ramy)
-
-- Zwrot **przed** wykorzystaniem: unieważnia niewykorzystany slot.
-- Zwrot **po** wykorzystaniu: polityka **OPEN**.
-
-Płatność musi być idempotentna: powtórzony webhook nie przyznaje drugiego slotu; płatność nieudana / anulowana nie przyznaje slotu.
+**Nadal nie zaimplementowane.**
 
 ---
 
@@ -238,17 +242,19 @@ Generowanie nie może startować przed sukcesem MASTERING. Żądania tej samej w
 
 ---
 
-## 15. Relacja do OD-SFM-F01…F07 (**OPEN uzgodnienie przed multi-format impl**)
+## 15. Relacja do OD-SFM-F01…F07
 
-Bake/artifact freeze (OD-SFM-F01…F07) pozostaje w mocy dla zrealizowanego WAV MVP (m.in. F02 klucz `…/WAV.wav`, F03 retention reuse w ówczesnym zakresie).
+→ [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) — **OWNER ACCEPTED** (docs).
 
-Ten kontrakt **rozszerza** produkt o multi-variant + limity + etapy domenowe. Przed Implementation GO multi-format wymagane jest jawne uzgodnienie:
+| ID | Status |
+|----|--------|
+| F01, F04–F07 | **IN FORCE** (unchanged) |
+| F02 | **SUPERSEDED (SFM only)** by **F02b** |
+| F02b | **OWNER ACCEPTED** · multi-format keys · current READY · AuthZ/downgrade · **NOT IMPLEMENTED** |
+| F03 | **SUPERSEDED (SFM only)** by **F03b** |
+| F03b | **OWNER ACCEPTED** · 90d from MASTER_SUCCEEDED · **NOT IMPLEMENTED** |
 
-- nowych kształtów object key (poza samym `WAV.wav`);
-- relacji 90-dniowej retencji produktowej (OD-SFM-12) do F03 / `artifactRetentionSeconds`;
-- braku cichego naruszenia F01…F07.
-
-Do uzgodnienia: status **OPEN** (nie ACCEPTED jako F-addendum w tym commicie).
+Kod produkcyjny może nadal realizować historyczne F02/F03 do osobnego Implementation GO.
 
 ---
 
@@ -270,10 +276,10 @@ Do uzgodnienia: status **OPEN** (nie ACCEPTED jako F-addendum w tym commicie).
 
 - formalne ACCEPT niniejszego addendum — **DONE (2026-10-14)**;
 - jawne supersede OD-SFM-02 — **DONE (docs)**;
-- design freeze modelu wersji i etapów (zamknięcie OPEN OD-SFM-08 shape);
-- model limitów / ledger / płatnego slotu (zamknięcie OPEN OD-SFM-14 gdzie blokuje kod);
-- uzgodnienie F01–F07 vs multi-format + retencja;
-- osobny Owner GO na kod.
+- OD-SFM-08 / 12 / 14 Owner decisions — **DONE (docs)**;
+- Version/Stages DF + F02b/F03b — **DONE (docs ACCEPT)** · **NOT IMPLEMENTED**;
+- osobny Owner GO na **kod** (Implementation);
+- osobne GO płatności (dostawca) — **OD-04 OPEN**.
 
 **Przed Production / Ops GO:**
 
@@ -287,16 +293,18 @@ Do uzgodnienia: status **OPEN** (nie ACCEPTED jako F-addendum w tym commicie).
 | ID | Temat | Status |
 |----|--------|--------|
 | OD-SFM-07 | Drabinka jakości + limity dzienne (macierz) | **ACCEPTED** |
-| OD-SFM-08 | Osobne etapy MIX/MASTER (kierunek) | **ACCEPTED (kierunek)** · **OPEN (shape techniczny)** |
+| OD-SFM-08 | Etapy MIX/MASTER — wariant C (durable stages + jobs) | **OWNER ACCEPTED** · **NOT IMPLEMENTED** |
 | OD-SFM-09 | „Zatwierdź do finalizacji” | **ACCEPTED** |
 | OD-SFM-10 | Aktualny vs historyczny final | **ACCEPTED** |
 | OD-SFM-11 | AuthZ serwerowa | **ACCEPTED** |
-| OD-SFM-12 | Retencja 90 dni | **ACCEPTED (90d)** · **OPEN (start/TTL current/metadane)** |
+| OD-SFM-12 | Retencja 90d od MASTER_SUCCEEDED + TTL current/tombstone | **OWNER ACCEPTED** · **NOT IMPLEMENTED** |
 | OD-SFM-13 | Limity 0/1/2/5 | **ACCEPTED** |
-| OD-SFM-14 | Slot 7,99 PLN (semantyka limitu dnia) | **ACCEPTED (semantyka)** · **OPEN (TTL/bind/refund-after/provider)** |
+| OD-SFM-14 | Slot 7,99 — wariant B (AVAILABLE → bind at grant; Warsaw expiry) | **OWNER ACCEPTED** · provider **OPEN** · **NOT IMPLEMENTED** |
 | OD-SFM-15 | Re-download bez nowego grantu | **ACCEPTED** |
 | OD-SFM-16 | Nowa wersja = nowy proces + grant | **ACCEPTED** |
 | OD-SFM-17 | Grant per wersja (nie per jakość) | **ACCEPTED** |
 | OD-SFM-18 | Reset `Europe/Warsaw` + DST | **ACCEPTED** |
 | OD-SFM-02 | WAV-only MVP | **SUPERSEDED (product ladder)** — historia zachowana |
-| OD-SFM-F01…F07 | Bake/artifact | **IN FORCE** · multi-format relation **OPEN** |
+| OD-SFM-F01, F04–F07 | Bake/artifact (non-superseded) | **IN FORCE** |
+| OD-SFM-F02 / F03 | Historical WAV key + tier retention (SFM) | **SUPERSEDED (SFM scope)** — historia zachowana |
+| OD-SFM-F02b / F03b | Multi-format keys + SFM 90d | **OWNER ACCEPTED** · **NOT IMPLEMENTED** — [F-addendum](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) |
