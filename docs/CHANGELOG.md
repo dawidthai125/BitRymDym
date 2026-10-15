@@ -6,6 +6,32 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-15 — SFM HTTP Surface on main: SSOT tip reconcile (docs-only)
+
+**Status:** **DOCS SSOT** · **NO APP CODE IN THIS DOCS GO** · **NO DEPLOY** · **NO FLAG CHANGE** · **NO STAGING E2E** · **NO SFM WORKER OPS** · **NO `db push` / repair / apply** · **NO CONTABO**
+**Git tip (confirmed):** `2f7050e47b47241b753bdd2c3de8352ef629d9e9` (`2f7050e`) — `feat(sfm): expose Studio Final Mix owner HTTP surface`
+**Parent:** `2d3514c86cb5bc67996fba480140bb0f3f8d5878` (`2d3514c`)
+**What landed on `main` (app commit already published):** owner HTTP surface — Accept · version/status · MIX/MASTER stage start · grants · quality encode · job status · SFM download (AuthZ before signed URL) · safe error mapping
+**Local unit tests (publish evidence only):** `npx vitest run src/lib/sfm` **200 PASS** at HTTP-surface publish — **≠** re-run in this docs GO · **≠** staging/prod E2E
+**Planes (do not collapse):**
+
+| Plane | Status |
+|-------|--------|
+| Code on `main` | A · B1 · C · D · OD-06 · HTTP surface @ `2f7050e` |
+| Staging deployment SHA | **UNKNOWN / NOT VERIFIED** |
+| Staging schema | **UNVERIFIED** (do not assume ≡ prod) |
+| Staging SFM worker | **NOT WIRED** (dedicated poll entrypoint absent; STUDIO poller remains `STUDIO_EXPORT` only) |
+| Staging E2E | **NOT DONE** |
+| Prod app deploy of tip | **NOT VERIFIED** (last-known deploy SHA **`2adb569`**) |
+| Prod DB SFM A–D | Prior MCP apply + version drift (`20261015…` ≠ local `20261014…`) · **no remote re-verify** here |
+| `SFM_VERSIONS_V1` | Default **OFF** in code · staging remote value **NOT VERIFIED** |
+| SFM Production GREEN | **NOT CLAIMED** |
+
+**Still OPEN:** OD-04 · OD-SFM-ID-05 · migration full alignment · SFM worker entrypoint · staging RO · staging E2E · flag/deploy Contabo SFM Ops
+**Preserved:** migration drift ban (`db push` / `migration up` / `migration repair` **BLOCKED**) · Final Mix (STUDIO_EXPORT) GREEN / WAIVE / OUT unchanged · I.27/I.28
+**SSOT:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+**Next:** Owner docs-publish GO for this reconcile · then separate GOs for worker / staging RO / migration / E2E (one GO ≠ next)
+
 ## 2026-10-15 — SFM SSOT reconcile: Stages A/B1/C/D + OD-06 CODE ON MAIN (docs-only)
 
 **Status:** **DOCS SSOT** · **NO APP CODE** · **NO MIGRATIONS** · **NO `db push` / repair / apply** · **NO DEPLOY / FLAG / CONTABO**

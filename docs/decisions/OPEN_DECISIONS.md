@@ -169,10 +169,10 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
-Studio Final Mix product contract: [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) (**OWNER ACCEPTED** · **docs only** · implementation **NOT DONE**).
-SFM Version/Stages freeze: [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) (**OWNER ACCEPTED** docs · `SFM_MIX`/`SFM_MASTER` · **NOT IMPLEMENTED**).
-SFM F-addendum: [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) (**OWNER ACCEPTED** docs · F02/F03 **SUPERSEDED SFM-only** by F02b/F03b · **NOT IMPLEMENTED**).
-SFM Implementation Design pack: [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) (**OWNER ACCEPTED design docs** · OD-SFM-ID-01…04 + **OD-SFM-ID-07 CLOSED** · Stage A/B1 code on `main` · Stage C executors **NOT IMPLEMENTED**).
+Studio Final Mix product contract: [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) (**OWNER ACCEPTED** · product cutover **NOT DONE**).
+SFM Version/Stages freeze: [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) (**OWNER ACCEPTED** docs · `SFM_MIX`/`SFM_MASTER` · **CODE ON MAIN** · ≠ staging/prod E2E GREEN).
+SFM F-addendum: [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) (**OWNER ACCEPTED** docs · F02/F03 **SUPERSEDED SFM-only** by F02b/F03b · **CODE ON MAIN** for A/B1/C/D paths · ≠ cutover).
+SFM Implementation Design pack: [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) (**OWNER ACCEPTED design docs** · OD-SFM-ID-01…04 + **OD-SFM-ID-07 CLOSED** · Stages A/B1/C/D + OD-06 + **HTTP surface** on `main` @ **`2f7050e`** · staging E2E / SFM worker ops / Production GREEN **NOT DONE**).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
@@ -207,11 +207,11 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 
 **Studio Final Mix — nadal OPEN po ACCEPT OD-SFM-ID-01…04 + OD-SFM-ID-06 + OD-SFM-ID-07:**
 
-- Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03).
-- **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT).
-- Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller; OD-SFM-ID-07 kinds locked but not auto-enabled).
-- Production cutover / `SFM_VERSIONS_V1=ON` / remote migration apply / UI wire **publish** to main + smoke — **separate Owner GO each** (local AuthZ + local UI wire may exist; **not** production-verified; cutover ≠ DONE).
-- Stage C/D executors on Contabo — separate Ops GOs.
+- Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03). **Do not close.**
+- **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT). **Do not close.**
+- **Note (2026-10-15):** owner HTTP surface published on `main` @ **`2f7050e`** (Accept / status / stages / grants / encode / jobs / download). **≠** staging E2E · **≠** SFM worker ops wired · **≠** Production GREEN · **≠** closing OD-04 / OD-SFM-ID-05.
+- Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller; dedicated SFM worker entrypoint **NOT WIRED**).
+- Production cutover / `SFM_VERSIONS_V1=ON` / staging RO / staging E2E / remote migration reconcile — **separate Owner GO each** (code on `main` ≠ cutover DONE).
 
 ---
 
