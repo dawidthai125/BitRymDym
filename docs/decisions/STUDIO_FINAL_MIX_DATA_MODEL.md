@@ -10,7 +10,7 @@
 NO MIGRATIONS FROM THIS DOCUMENT
 REUSE FIRST — new tables only where existing model cannot hold domain invariants
 ≠ E3 MIX / TAKE_EXPORT / RAW / STUDIO_EXPORT as SFM identity
-OD-SFM-ID-01…04 + OD-SFM-ID-07 ACCEPTED (docs) · OD-SFM-ID-05/06 · OD-04 OPEN
+OD-SFM-ID-01…04 + OD-SFM-ID-06 + OD-SFM-ID-07 ACCEPTED (docs) · OD-SFM-ID-05 · OD-04 OPEN
 ```
 
 ---
@@ -297,7 +297,7 @@ Przechowywana w **kodzie SSOT** (nie w DB tier matrix Premium):
 | Wiersze bez `sfm_version_id` | legalne; poza partial UNIQUE current SFM |
 | Nowe encode po GO | zawsze `sfm_version_id` + `sfm_quality` + F02b key |
 
-Polityka AuthZ legacy po cutover: OPEN Owner (Implementation Design §12.1).
+Polityka AuthZ legacy po cutover: **OD-SFM-ID-06 CLOSED** — DENY as current SFM final · no backfill · no physical delete (Implementation Design §4.3).
 
 ---
 

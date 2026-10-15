@@ -331,10 +331,11 @@ describe("SFM B1 — grant service source contracts", () => {
 });
 
 describe("SFM B1 — regression MIX / TAKE / E3 / Sacred WIP", () => {
-  it("does not alter mix download route or artifact-download AuthZ", () => {
+  it("mix download route still has no SFM grant claim (OD-06 domain gate is separate)", () => {
     const mix = read(MIX_ROUTE);
     const art = read(ARTIFACT_DOWNLOAD);
     expect(mix).not.toMatch(/sfm_claim_version_grant|studio_final_version_grants/);
+    // OD-SFM-ID-06 may classify domain on mix path; grant resolver stays SFM-route-only.
     expect(art).not.toMatch(/sfm_claim_version_grant|resolveSfmQualityEntitlement/);
   });
 

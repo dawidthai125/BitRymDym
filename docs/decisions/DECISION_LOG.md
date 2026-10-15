@@ -10,6 +10,34 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Studio Final Mix — OD-SFM-ID-06 CLOSED (legacy WAV deny-without-backfill)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner direction — deny legacy as current SFM final · no backfill · no physical WAV/MP3 delete |
+| Status | **CLOSED / ACCEPTED (policy + local AuthZ)** · production cutover / flag ON / remote migrate **NOT DONE by this entry** · no commit/push/deploy required by decision alone |
+| Date | 2026-10-15 |
+| Base tip (impl worktree) | `18c2c6a` |
+| Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [OPEN_DECISIONS](./OPEN_DECISIONS.md) |
+| Locked ID | **OD-SFM-ID-06** |
+| Related | **OD-SFM-ID-01** (dedicated SFM route + deny SFM on mix route) |
+| Still OPEN | **OD-04** · **OD-SFM-ID-05** · Contabo Ops · production SFM cutover GO |
+
+**Policy locked:**
+1. Legacy Studio rows (`project_id` set, `sfm_version_id` NULL) are **not** current Studio Final Mix finals.
+2. **No automatic backfill** of versions/grants from legacy WAV evidence.
+3. SFM download route (`GET /api/studio/artifacts/[artifactId]/download`) **DENY** when `sfm_version_id` is NULL.
+4. After `SFM_VERSIONS_V1` cutover: mix route **DENY** `LEGACY_STUDIO` domain (DB XOR) — not presented as SFM final.
+5. Mix route **always DENY** rows with `sfm_version_id IS NOT NULL` (OD-SFM-ID-01).
+6. E3 (`mix_session_id`) / TAKE (`take_id`) / RAW semantics **unchanged**.
+7. **No physical delete** of historical Owner WAV/MP3; retention ≠ download entitlement.
+8. Optional historical download-only grandfather path = **out of scope** (would need a new Owner GO).
+9. **UI sequencing (F-03):** `studioExportArtifactDownloadUrl` still targets `/api/mix/artifacts/…`. Enabling `SFM_VERSIONS_V1` without wiring Studio UI to `/api/studio/artifacts/…` will DENY `LEGACY_STUDIO` / MVP STUDIO_EXPORT downloads on the mix route. **Separate Owner GO** for UI wire + prod migrate + flag ON. This entry does **not** activate production cutover.
+
+**Supersedes (docs):** prior OPEN wording that OD-SFM-ID-06 was undecided among deny / grandfather / backfill.
+
+---
+
 ### Studio Final Mix — OD-SFM-ID-07 ACCEPTED (render_jobs.kind strings) (docs-only)
 
 | Pole | Wartość |
@@ -20,7 +48,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 | Discovery | READ-ONLY audit @ `a4ea89c` (allowed kinds today: `MIX` \| `TAKE_EXPORT` \| `STUDIO_EXPORT`) |
 | Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [OPEN_DECISIONS](./OPEN_DECISIONS.md) |
 | Locked ID | **OD-SFM-ID-07** |
-| Still OPEN | **OD-04** · **OD-SFM-ID-05** · **OD-SFM-ID-06** · Contabo Ops GOs · Stage C Implementation GO |
+| Still OPEN (at entry time) | **OD-04** · **OD-SFM-ID-05** · **OD-SFM-ID-06** (later **CLOSED** 2026-10-15) · Contabo Ops GOs · Stage C Implementation GO |
 
 **Exact `render_jobs.kind` (new, Stage C):**
 - `SFM_MIX_PREPARE` — executor for domain stage `SFM_MIX` (snapshot validate / prepare; ≠ stage name as job kind)

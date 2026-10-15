@@ -165,6 +165,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-SFM-ID-03 | Multiple paid slots `AVAILABLE` per Warsaw day | 2026-10-14 |
 | OD-SFM-ID-04 | `SFM_MIX` = separate executor job (≠ E3 `kind=MIX`) | 2026-10-14 |
 | OD-SFM-ID-07 | Exact `render_jobs.kind` = `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (≠ stage names; ≠ MIX/STUDIO_EXPORT) | 2026-10-14 |
+| OD-SFM-ID-06 | Legacy Studio WAV (`project_id` set, `sfm_version_id` NULL) after cutover = **DENY** as current SFM final · **no backfill** · **no physical delete** | 2026-10-15 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
@@ -204,13 +205,13 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | GO-CONTABO-POLL-ALWAYS-ON | Persistent enable po canary PASS (**NOT ENABLED**) | Production continuous export |
 | (prod migration apply) | Apply `claim_next_studio_export_job` on production DB | Remote claim-next |
 
-**Studio Final Mix — nadal OPEN po ACCEPT OD-SFM-ID-01…04 + OD-SFM-ID-07:**
+**Studio Final Mix — nadal OPEN po ACCEPT OD-SFM-ID-01…04 + OD-SFM-ID-06 + OD-SFM-ID-07:**
 
 - Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03).
 - **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT).
-- **OD-SFM-ID-06** — Legacy WAV rows (`project_id` set, `sfm_version_id` NULL) after download cutover (deny / grandfather / backfill).
 - Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller; OD-SFM-ID-07 kinds locked but not auto-enabled).
-- Stage C (executor jobs / XOR / claim RPC / `mapJobKind` wiring) — blocked on **GO-SFM-IMPL-C** after this docs ACCEPT (**OD-SFM-ID-07 CLOSED** — kinds locked; see CLOSED table).
+- Production cutover / `SFM_VERSIONS_V1=ON` / remote migration apply / UI wire to SFM download route — **separate Owner GO** (local AuthZ code may exist; **not** production-verified).
+- Stage C/D executors on Contabo — separate Ops GOs.
 
 ---
 

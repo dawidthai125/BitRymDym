@@ -30,7 +30,7 @@ READY / object_key / URL ALONE ≠ DOWNLOAD RIGHT
 | **OD-SFM-ID-04** | `SFM_MIX` = osobne zadanie wykonawcze (≠ E3 `kind=MIX`) | **ACCEPTED** |
 | **OD-SFM-ID-07** | Exact `render_jobs.kind` = `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` | **ACCEPTED / CLOSED** |
 
-Szczegóły poniżej (§4, §5, §7, §10, §12). Nadal OPEN: OD-SFM-ID-05/06 · OD-04 · Contabo Ops · Stage C Implementation GO — `OPEN_DECISIONS.md`.
+Szczegóły poniżej (§4, §5, §7, §10, §12). Nadal OPEN: OD-SFM-ID-05 · OD-04 · Contabo Ops · production cutover GO — `OPEN_DECISIONS.md`. **OD-SFM-ID-06 CLOSED** (deny-without-backfill).
 
 ### 0.1 OD-SFM-ID-07 — exact executor kinds (ACCEPTED)
 
@@ -143,7 +143,7 @@ Serwis: `createOwnSfmArtifactDownloadSignedUrlFor` — SFM AuthZ only (nie `EXPO
 | Flag ON — nowe Accept/SFM rows | UI SFM → nowa trasa; wymaga grant+resolver | DL01–DL03 |
 | Cutover | Mix route: jeśli `sfm_version_id IS NOT NULL` → **403/404 DENY** (fail-closed) | DL05 |
 | E3 MIX / TAKE | Mix route bez zmian AuthZ dla `mix_session_id` / `take_id` | DL06–DL07 R04–R05 |
-| Pre-SFM WAV (`project_id` set, `sfm_version_id` NULL) | Polityka grandfather vs deny — **OPEN** §12.1 / OD-SFM-ID-06 | A09 |
+| Pre-SFM WAV (`project_id` set, `sfm_version_id` NULL) | **OD-SFM-ID-06 CLOSED:** DENY as current SFM final · no backfill · mix DENY when `SFM_VERSIONS_V1` ON · no physical delete · **UI still on mix route until separate wire GO** | A09 |
 
 Próba pobrania SFM starą trasą po cutover: **zawsze DENY** (nawet owner + READY).
 
@@ -387,12 +387,12 @@ Feature flag: `SFM_VERSIONS_V1` (nazwa robocza). Legacy WAV path aż do cutover 
 | ID | Temat | Status |
 |----|--------|--------|
 | OD-SFM-ID-05 | Expand `granted_qualities` po upgrade bez nowego daily/slot? | **OPEN** (do czasu: strict snapshot) |
-| OD-SFM-ID-06 | Legacy WAV `project_id` bez `sfm_version_id` po cutover | **OPEN** |
+| OD-SFM-ID-06 | Legacy WAV `project_id` bez `sfm_version_id` po cutover | **CLOSED** — DENY / no backfill / no physical delete (2026-10-15) |
 | OD-SFM-ID-07 | Exact `render_jobs.kind` strings | **CLOSED / ACCEPTED** — `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (§0.1) |
 | OD-04 | Operator płatności | **OPEN** |
 | Contabo/poller | Ops GOs (STUDIO + future SFM) | **OPEN** (osobne; SFM kinds **nie** auto-join STUDIO poller) |
 
-**Zamknięte (docs):** OD-SFM-ID-01…04 · **OD-SFM-ID-07**.
+**Zamknięte (docs):** OD-SFM-ID-01…04 · **OD-SFM-ID-06** · **OD-SFM-ID-07**.
 
 **History (superseded OPEN wording):** earlier drafts listed OD-SFM-ID-07 as OPEN with example strings — those examples are now the accepted exact values; history preserved in DECISION_LOG.
 

@@ -9,6 +9,7 @@ import {
   AUDIO_ARTIFACT_DOWNLOAD_TTL_SECONDS,
   AUDIO_ARTIFACTS_BUCKET,
   E3_RENDER_JOBS_ENABLED,
+  isSfmVersionsV1Enabled,
 } from "@/config/audio-render";
 import {
   assertAudioCapability,
@@ -25,6 +26,10 @@ import {
 } from "@/lib/audio/render-job-core";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
+import {
+  assertOwnedThenMixRouteDomain,
+  classifyAudioArtifactDomain,
+} from "@/lib/sfm/sfm-artifact-domain";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type ArtifactDownloadResult = {
@@ -65,7 +70,7 @@ export async function createOwnArtifactDownloadSignedUrlFor(
   const { data: artifact, error } = await admin
     .from("audio_artifacts")
     .select(
-      "id, owner_id, render_job_id, format, quality_tier, storage_bucket, object_key, byte_size, duration_ms, status, expires_at, deleted_at",
+      "id, owner_id, project_id, mix_session_id, take_id, sfm_version_id, render_job_id, format, quality_tier, storage_bucket, object_key, byte_size, duration_ms, status, expires_at, deleted_at",
     )
     .eq("id", params.artifactId)
     .maybeSingle();
@@ -74,9 +79,22 @@ export async function createOwnArtifactDownloadSignedUrlFor(
   if (!artifact) {
     throw new AuthError("NOT_FOUND", "Artifact not found.");
   }
-  if ((artifact.owner_id as string) !== context.userId) {
-    throw new AuthError("FORBIDDEN", "Not artifact owner.");
-  }
+
+  // OD-SFM-ID-01 / OD-SFM-ID-06 + F-02 — ownership before domain denial.
+  // SFM → always DENY on mix. LEGACY_STUDIO → DENY when SFM_VERSIONS_V1 ON.
+  // E3_MIX / TAKE continue AuthZ below after owner+domain gate.
+  const domain = classifyAudioArtifactDomain({
+    sfmVersionId: (artifact.sfm_version_id as string | null) ?? null,
+    mixSessionId: (artifact.mix_session_id as string | null) ?? null,
+    takeId: (artifact.take_id as string | null) ?? null,
+    projectId: (artifact.project_id as string | null) ?? null,
+  });
+  assertOwnedThenMixRouteDomain({
+    artifactOwnerId: artifact.owner_id as string,
+    userId: context.userId,
+    domain,
+    sfmVersionsV1Enabled: isSfmVersionsV1Enabled(),
+  });
   if (artifact.deleted_at) {
     throw new AuthError("FORBIDDEN", "Artifact was deleted.");
   }
