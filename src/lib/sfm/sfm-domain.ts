@@ -30,8 +30,10 @@ export type SfmDomainErrorCode =
   | "VERSION_CONFLICT"
   | "ILLEGAL_TRANSITION"
   | "RECOVERY_REQUIRED"
+  | "QC_FAILED"
   | "NOT_ELIGIBLE"
   | "INVALID"
+  | "DOWNGRADE_NEW_QUALITY"
   | "INVALID_SESSION"
   | "DISABLED"
   | "CONFLICT"
@@ -141,6 +143,8 @@ export function mapSfmRpcErrorMessage(message: string): SfmDomainErrorCode {
       return "ILLEGAL_TRANSITION";
     case "RECOVERY_REQUIRED":
       return "RECOVERY_REQUIRED";
+    case "QC_FAILED":
+      return "QC_FAILED";
     case "NOT_ELIGIBLE":
       return "NOT_ELIGIBLE";
     case "FORBIDDEN":
@@ -151,6 +155,12 @@ export function mapSfmRpcErrorMessage(message: string): SfmDomainErrorCode {
       return "LIMIT_EXCEEDED";
     case "NO_GRANT":
       return "NO_GRANT";
+    case "QUALITY_DENIED":
+      return "QUALITY_DENIED";
+    case "PLAN_DENIED":
+      return "PLAN_DENIED";
+    case "DOWNGRADE_NEW_QUALITY":
+      return "DOWNGRADE_NEW_QUALITY";
     case "NO_SLOT":
       return "NO_SLOT";
     case "FREE_NO_DOWNLOAD":
@@ -160,11 +170,14 @@ export function mapSfmRpcErrorMessage(message: string): SfmDomainErrorCode {
     default:
       if (message.includes("VERSION_CONFLICT")) return "VERSION_CONFLICT";
       if (message.includes("RECOVERY_REQUIRED")) return "RECOVERY_REQUIRED";
+      if (message.includes("QC_FAILED")) return "QC_FAILED";
       if (message.includes("ILLEGAL_TRANSITION")) return "ILLEGAL_TRANSITION";
       if (message.includes("LIMIT_EXCEEDED")) return "LIMIT_EXCEEDED";
+      if (message.includes("DOWNGRADE_NEW_QUALITY")) return "DOWNGRADE_NEW_QUALITY";
       if (message.includes("NOT_OWNER")) return "NOT_OWNER";
       if (message.includes("NOT_FOUND")) return "NOT_FOUND";
       if (message.includes("NOT_ELIGIBLE")) return "NOT_ELIGIBLE";
+      if (message.includes("NO_GRANT")) return "NO_GRANT";
       if (message.includes("CONFLICT")) return "CONFLICT";
       return "CONFLICT";
   }

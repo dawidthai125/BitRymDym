@@ -1,5 +1,6 @@
 /**
- * SFM Stage C — executor enqueue / claim helpers (no bake/encode).
+ * SFM Stage C/D — executor enqueue / claim helpers.
+ * Stage D: grant + granted_qualities gate before lazy QUALITY enqueue.
  * Contabo STUDIO_EXPORT poller must not call these.
  */
 
@@ -8,6 +9,7 @@ import "server-only";
 import { isSfmVersionsV1Enabled } from "@/config/audio-render";
 import type { AuthContext } from "@/lib/auth/types";
 import { AuthError } from "@/lib/auth/session";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { claimNextSfmJobAsWorker } from "@/lib/audio/render-job-service";
 import {
   mapSfmRpcErrorMessage,
@@ -17,6 +19,7 @@ import {
   isSfmQuality,
   type SfmQuality,
 } from "@/lib/sfm/sfm-plan-matrix";
+import { resolveSfmQualityEntitlement } from "@/lib/sfm/sfm-quality-entitlement";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 function assertSfmVersionsEnabled(): void {
@@ -47,7 +50,7 @@ export type SfmQualityEncodeJobRecord = {
   sfmQuality: SfmQuality;
 };
 
-/** Lazy QUALITY encode enqueue (infrastructure only — no encode execution). */
+/** Lazy QUALITY encode enqueue — requires version grant + quality ∈ snapshot. */
 export async function enqueueSfmQualityEncodeFor(
   context: AuthContext,
   input: {
@@ -72,6 +75,41 @@ export async function enqueueSfmQualityEncodeFor(
   }
 
   const admin = createSupabaseAdminClient();
+
+  const { data: grantRow, error: grantError } = await admin
+    .from("studio_final_version_grants")
+    .select("granted_qualities")
+    .eq("user_id", context.userId)
+    .eq("version_id", input.versionId)
+    .maybeSingle();
+  if (grantError) throw new Error(grantError.message);
+
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const entitlement = resolveSfmQualityEntitlement({
+    premiumTier: product.premiumTier,
+    quality: input.quality,
+    versionGrant: grantRow
+      ? {
+          grantedQualities: (grantRow.granted_qualities as SfmQuality[]) ?? [],
+        }
+      : null,
+    accessMode: "ENQUEUE",
+  });
+  if (!entitlement.allow) {
+    throw new SfmDomainError(
+      `SFM quality enqueue denied (${entitlement.denyCode}).`,
+      entitlement.denyCode === "DOWNGRADE_NEW_QUALITY"
+        ? "DOWNGRADE_NEW_QUALITY"
+        : entitlement.denyCode === "NO_GRANT"
+          ? "NO_GRANT"
+          : entitlement.denyCode === "FREE_NO_DOWNLOAD"
+            ? "FREE_NO_DOWNLOAD"
+            : entitlement.denyCode === "PLAN_DENIED"
+              ? "PLAN_DENIED"
+              : "QUALITY_DENIED",
+    );
+  }
+
   const { data, error } = await admin.rpc("sfm_enqueue_quality_encode", {
     p_version_id: input.versionId,
     p_owner_id: context.userId,
