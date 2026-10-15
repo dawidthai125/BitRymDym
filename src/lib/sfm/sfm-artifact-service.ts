@@ -11,10 +11,9 @@ import { AUDIO_ARTIFACTS_BUCKET } from "@/config/audio-render";
 import {
   canCompleteRenderJobSuccess,
   RenderJobDomainError,
-  type RenderJobRecord,
-  type RenderJobTier,
 } from "@/lib/audio/render-job-core";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
 import {
   buildSfmQualityArtifactObjectKey,
   expectedSfmQualityArtifactObjectKey,
@@ -90,7 +89,7 @@ export async function finalizeSfmQualityArtifactAfterEncode(params: {
     throw new RenderJobDomainError("Render job not found.", "NOT_FOUND");
   }
 
-  if (!canCompleteRenderJobSuccess(row.status as RenderJobRecord["status"])) {
+  if (!canCompleteRenderJobSuccess(row.status as RenderJobStatus)) {
     throw new RenderJobDomainError(
       `Cannot complete job in status ${row.status}.`,
       "CONFLICT",

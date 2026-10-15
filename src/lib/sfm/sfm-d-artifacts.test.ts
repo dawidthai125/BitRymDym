@@ -564,6 +564,27 @@ describe("SFM Stage D — F-02 partial finalize recovery (no auto-QUEUED)", () =
   });
 });
 
+describe("SFM Stage D — type SSOT contracts", () => {
+  it("imports RenderJobStatus/Tier from domain; not Record/Tier from render-job-core", () => {
+    const svc = read(ARTIFACT_SVC);
+    expect(svc).toMatch(
+      /import type \{\s*RenderJobStatus,\s*RenderJobTier\s*\} from ["']@\/types\/domain["']/,
+    );
+    expect(svc).not.toMatch(
+      /from ["']@\/lib\/audio\/render-job-core["'][\s\S]*RenderJobRecord/,
+    );
+    expect(svc).not.toMatch(
+      /type RenderJobRecord|type RenderJobTier[\s\S]*from ["']@\/lib\/audio\/render-job-core["']/,
+    );
+    // Canonical homes (no duplicate type defs in SFM finalize service)
+    const domain = read("src/types/domain.ts");
+    expect(domain).toMatch(/export type RenderJobTier/);
+    expect(domain).toMatch(/export type RenderJobStatus/);
+    const jobService = read("src/lib/audio/render-job-service.ts");
+    expect(jobService).toMatch(/export type RenderJobRecord/);
+  });
+});
+
 describe("SFM Stage D — regression Studio / E3 / TAKE / poller / Sacred WIP", () => {
   it("does not widen STUDIO poller; SFM kinds remain out of scope", () => {
     const poller = read(POLLER);

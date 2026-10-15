@@ -252,12 +252,14 @@ export class StudioExportPollerCore {
       await this.sleep(this.pollMs);
     }
 
-    if (this.inFlight) {
+    // Truthy checks on Promise are always true (TS2801). Compare to null;
+    // after each await, finally may have cleared inFlight.
+    if (this.inFlight !== null) {
       const graceDeadline = this.now() + this.shutdownGraceMs;
-      while (this.inFlight && this.now() < graceDeadline) {
+      while (this.inFlight !== null && this.now() < graceDeadline) {
         await this.sleep(50);
       }
-      if (this.inFlight) {
+      if (this.inFlight !== null) {
         this.log({
           event: "shutdown_grace_exceeded",
           workerRef: this.workerRef,
