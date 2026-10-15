@@ -17,7 +17,8 @@ export const runtime = "nodejs";
  * GET  ?jobId= — status + artifactId when SUCCEEDED (project-scoped).
  * GET  (no jobId) — I.45AU latest own STUDIO_EXPORT for project (read-only; no enqueue).
  * I.17 — both GET paths return allowlisted errorCode/errorMessage when terminal-fail.
- * Download uses existing GET /api/mix/artifacts/[id]/download (owner AuthZ).
+ * Download routing (OD-SFM-ID-06 UI wire): status returns trusted sfmVersionId;
+ * client picks SFM vs mix download route. Server AuthZ unchanged.
  */
 export async function POST(
   request: Request,
@@ -42,6 +43,7 @@ export async function POST(
       documentVersion: job.documentVersion,
       documentDigest: job.documentDigest,
       artifactId: job.artifactId ?? null,
+      sfmVersionId: job.sfmVersionId ?? null,
       workerInfraStatus: job.workerInfraStatus,
       errorCode: job.errorCode ?? null,
       errorMessage: job.errorMessage ?? null,
@@ -81,6 +83,7 @@ function studioExportJobStatusJson(job: {
   documentVersion: number;
   documentDigest: string;
   artifactId?: string | null;
+  sfmVersionId?: string | null;
   workerInfraStatus: string;
   errorCode?: string | null;
   errorMessage?: string | null;
@@ -95,6 +98,7 @@ function studioExportJobStatusJson(job: {
     documentVersion: job.documentVersion,
     documentDigest: job.documentDigest,
     artifactId: job.artifactId ?? null,
+    sfmVersionId: job.sfmVersionId ?? null,
     workerInfraStatus: job.workerInfraStatus,
     // I.17 — allowlisted public failure fields (null when not terminal-fail).
     errorCode: job.errorCode ?? null,

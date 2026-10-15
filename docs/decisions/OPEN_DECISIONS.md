@@ -210,7 +210,7 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 - Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03).
 - **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT).
 - Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller; OD-SFM-ID-07 kinds locked but not auto-enabled).
-- Production cutover / `SFM_VERSIONS_V1=ON` / remote migration apply / UI wire to SFM download route — **separate Owner GO** (local AuthZ code may exist; **not** production-verified).
+- Production cutover / `SFM_VERSIONS_V1=ON` / remote migration apply / UI wire **publish** to main + smoke — **separate Owner GO each** (local AuthZ + local UI wire may exist; **not** production-verified; cutover ≠ DONE).
 - Stage C/D executors on Contabo — separate Ops GOs.
 
 ---

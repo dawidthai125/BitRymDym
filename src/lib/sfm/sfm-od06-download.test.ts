@@ -524,14 +524,12 @@ describe("OD-SFM-ID-06 — source contracts + F-03 UI blocker docs", () => {
     );
   });
 
-  it("F-03: studioExportArtifactDownloadUrl still points at mix route", () => {
+  it("F-03 closed locally: SFM uses studio route; legacy/null stays on mix", () => {
     const client = read(STUDIO_CLIENT);
-    expect(client).toMatch(
-      /studioExportArtifactDownloadUrl[\s\S]*\/api\/mix\/artifacts\//,
-    );
-    expect(client).not.toMatch(
-      /studioExportArtifactDownloadUrl[\s\S]*\/api\/studio\/artifacts\//,
-    );
+    expect(client).toMatch(/\/api\/studio\/artifacts\/\$\{id\}\/download/);
+    expect(client).toMatch(/\/api\/mix\/artifacts\/\$\{id\}\/download/);
+    expect(client).toMatch(/options\?\.sfmVersionId/);
+    expect(client).toMatch(/Never classify by projectId/);
   });
 
   it("mix route still uses createOwnArtifactDownloadSignedUrl", () => {

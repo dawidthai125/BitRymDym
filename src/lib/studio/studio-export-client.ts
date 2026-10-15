@@ -92,8 +92,83 @@ export function studioExportLatestStatusUrl(projectId: string): string {
   return `/api/studio/projects/${encodeURIComponent(projectId)}/export`;
 }
 
-export function studioExportArtifactDownloadUrl(artifactId: string): string {
-  return `/api/mix/artifacts/${encodeURIComponent(artifactId)}/download`;
+/**
+ * OD-SFM-ID-06 UI wire — download route from trusted server `sfmVersionId` only.
+ * - Non-empty sfmVersionId → SFM route (OD-SFM-ID-01).
+ * - Null / absent / empty → mix route (LEGACY_STUDIO pre-cutover; never invent SFM).
+ * Never classify by projectId, filename, or client guesses. E3/MIX and TAKE do not use this helper.
+ */
+export function studioExportArtifactDownloadUrl(
+  artifactId: string,
+  options?: { sfmVersionId?: string | null },
+): string {
+  const id = encodeURIComponent(artifactId);
+  if (
+    typeof options?.sfmVersionId === "string" &&
+    options.sfmVersionId.length > 0
+  ) {
+    return `/api/studio/artifacts/${id}/download`;
+  }
+  return `/api/mix/artifacts/${id}/download`;
+}
+
+/** Trusted sfm_version_id from export status — never invent from projectId / filename. */
+export function parseStudioExportSfmVersionId(
+  value: unknown,
+): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+export type StudioExportDownloadMappedResult =
+  | { ok: true; url: string }
+  | { ok: false; httpStatus: number; message: string };
+
+/**
+ * Map download JSON — AuthZ errors stay failures; missing url is never success.
+ * Does not invent signed URLs or bypass the download route.
+ */
+export function mapStudioExportDownloadHttpResult(input: {
+  httpStatus: number;
+  json: { success?: boolean; url?: string; error?: string };
+}): StudioExportDownloadMappedResult {
+  if (input.httpStatus === 401) {
+    return {
+      ok: false,
+      httpStatus: 401,
+      message: "Zaloguj się, aby pobrać eksport.",
+    };
+  }
+  if (input.httpStatus === 403) {
+    return {
+      ok: false,
+      httpStatus: 403,
+      message: "Brak uprawnień do pobrania tego artefaktu.",
+    };
+  }
+  if (input.httpStatus === 404) {
+    return {
+      ok: false,
+      httpStatus: 404,
+      message: "Artefakt nie został znaleziony.",
+    };
+  }
+
+  const url =
+    typeof input.json.url === "string" && input.json.url.length > 0
+      ? input.json.url
+      : null;
+  if (input.httpStatus >= 200 && input.httpStatus < 300 && url) {
+    return { ok: true, url };
+  }
+
+  return {
+    ok: false,
+    httpStatus: input.httpStatus,
+    message:
+      typeof input.json.error === "string" && input.json.error.length > 0
+        ? input.json.error
+        : "Pobieranie niedostępne.",
+  };
 }
 
 export type StudioExportApiPayload = {
@@ -104,6 +179,11 @@ export type StudioExportApiPayload = {
   projectId?: string;
   status?: string;
   artifactId?: string | null;
+  /**
+   * Trusted DB `audio_artifacts.sfm_version_id` when artifact present.
+   * Null for LEGACY_STUDIO (project_id set, no SFM version) — never invent.
+   */
+  sfmVersionId?: string | null;
   /** I.17 — allowlisted public failure code from status GET. */
   errorCode?: string | null;
   /** I.17 — safe public message; client re-derives from code (does not trust raw). */
@@ -120,6 +200,8 @@ export type StudioExportMappedResult =
       projectId: string;
       status: string;
       artifactId: string | null;
+      /** Trusted from status payload — null means not SFM (do not invent). */
+      sfmVersionId: string | null;
       errorCode: string | null;
       message: string | null;
     }
@@ -243,6 +325,7 @@ export function mapStudioExportHttpResult(input: {
     projectId: typeof json.projectId === "string" ? json.projectId : "",
     status: json.status,
     artifactId: typeof json.artifactId === "string" ? json.artifactId : null,
+    sfmVersionId: parseStudioExportSfmVersionId(json.sfmVersionId),
     errorCode: failure.errorCode,
     message: failure.message,
   };
@@ -262,6 +345,7 @@ export type StudioExportLatestMappedResult =
       projectId: string;
       status: string;
       artifactId: string | null;
+      sfmVersionId: string | null;
       /** I.17 — forwarded from mapStudioExportHttpResult when FAILED. */
       errorCode: string | null;
       message: string | null;
@@ -340,6 +424,7 @@ export function mapStudioExportLatestHttpResult(input: {
     projectId: mapped.projectId,
     status: mapped.status,
     artifactId: mapped.artifactId,
+    sfmVersionId: mapped.sfmVersionId,
     errorCode: mapped.errorCode,
     message: mapped.message,
   };

@@ -13,8 +13,10 @@ import {
   isStudioExportActiveStatus,
   isStudioExportTerminalStatus,
   mapJobStatusToUiPhase,
+  mapStudioExportDownloadHttpResult,
   mapStudioExportHttpResult,
   mapStudioExportLatestHttpResult,
+  parseStudioExportSfmVersionId,
   studioExportArtifactDownloadUrl,
   studioExportEnqueueUrl,
   studioExportLatestStatusUrl,
@@ -67,7 +69,7 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     expect(a).toMatch(/^studio-export:proj-1:3:attempt-a$/);
   });
 
-  it("uses project-scoped enqueue/status URLs and owner artifact download", () => {
+  it("uses project-scoped enqueue/status URLs and domain-aware artifact download", () => {
     expect(studioExportEnqueueUrl("abc")).toBe(
       "/api/studio/projects/abc/export",
     );
@@ -77,9 +79,67 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     expect(studioExportLatestStatusUrl("abc")).toBe(
       "/api/studio/projects/abc/export",
     );
+    // LEGACY_STUDIO / no sfmVersionId → mix (pre-cutover; never invent SFM).
     expect(studioExportArtifactDownloadUrl("art-1")).toBe(
       "/api/mix/artifacts/art-1/download",
     );
+    expect(studioExportArtifactDownloadUrl("art-1", { sfmVersionId: null })).toBe(
+      "/api/mix/artifacts/art-1/download",
+    );
+    expect(studioExportArtifactDownloadUrl("art-1", { sfmVersionId: "" })).toBe(
+      "/api/mix/artifacts/art-1/download",
+    );
+    // SFM — trusted non-empty sfmVersionId only.
+    expect(
+      studioExportArtifactDownloadUrl("art-1", {
+        sfmVersionId: "ver-sfm-1",
+      }),
+    ).toBe("/api/studio/artifacts/art-1/download");
+  });
+
+  it("OD-06 UI wire — never invents SFM from projectId / empty / non-string", () => {
+    expect(parseStudioExportSfmVersionId(undefined)).toBeNull();
+    expect(parseStudioExportSfmVersionId(null)).toBeNull();
+    expect(parseStudioExportSfmVersionId("")).toBeNull();
+    expect(parseStudioExportSfmVersionId(123)).toBeNull();
+    expect(parseStudioExportSfmVersionId("ver-1")).toBe("ver-1");
+    // projectId alone must not flip route to SFM.
+    expect(
+      studioExportArtifactDownloadUrl("legacy-art", {
+        sfmVersionId: parseStudioExportSfmVersionId(undefined),
+      }),
+    ).toBe("/api/mix/artifacts/legacy-art/download");
+  });
+
+  it("OD-06 UI wire — download AuthZ errors never look like success", () => {
+    for (const status of [401, 403, 404]) {
+      const mapped = mapStudioExportDownloadHttpResult({
+        httpStatus: status,
+        json: { success: true, url: "https://evil.example/signed" },
+      });
+      expect(mapped.ok).toBe(false);
+      if (!mapped.ok) {
+        expect(mapped.httpStatus).toBe(status);
+      }
+    }
+    const missingUrl = mapStudioExportDownloadHttpResult({
+      httpStatus: 200,
+      json: { success: true },
+    });
+    expect(missingUrl.ok).toBe(false);
+    const emptyUrl = mapStudioExportDownloadHttpResult({
+      httpStatus: 200,
+      json: { success: true, url: "" },
+    });
+    expect(emptyUrl.ok).toBe(false);
+    const ok = mapStudioExportDownloadHttpResult({
+      httpStatus: 200,
+      json: { success: true, url: "https://storage.example/signed" },
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.url).toBe("https://storage.example/signed");
+    }
   });
 
   it("I.45AU maps latest empty / job / auth without inventing enqueue", () => {
@@ -106,8 +166,30 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     if (found.ok && !found.empty) {
       expect(found.phase).toBe("SUCCEEDED");
       expect(found.artifactId).toBe("art-1");
+      expect(found.sfmVersionId).toBeNull();
       expect(found.errorCode).toBeNull();
       expect(found.message).toBeNull();
+    }
+    const foundSfm = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j1s",
+        projectId: "p1",
+        status: "SUCCEEDED",
+        artifactId: "art-sfm",
+        sfmVersionId: "ver-sfm",
+      },
+    });
+    expect(foundSfm.ok).toBe(true);
+    if (foundSfm.ok && !foundSfm.empty) {
+      expect(foundSfm.sfmVersionId).toBe("ver-sfm");
+      expect(
+        studioExportArtifactDownloadUrl(foundSfm.artifactId!, {
+          sfmVersionId: foundSfm.sfmVersionId,
+        }),
+      ).toBe("/api/studio/artifacts/art-sfm/download");
     }
     const queued = mapStudioExportLatestHttpResult({
       httpStatus: 200,
@@ -192,6 +274,22 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     if (mapped.ok) {
       expect(mapped.phase).toBe("SUCCEEDED");
       expect(mapped.artifactId).toBe("art-9");
+      expect(mapped.sfmVersionId).toBeNull();
+    }
+    const sfm = mapStudioExportHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        jobId: "j2",
+        projectId: "p1",
+        status: "SUCCEEDED",
+        artifactId: "art-sfm",
+        sfmVersionId: "ver-9",
+      },
+    });
+    expect(sfm.ok).toBe(true);
+    if (sfm.ok) {
+      expect(sfm.sfmVersionId).toBe("ver-9");
     }
   });
 
@@ -237,6 +335,33 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
   it("bounds polling attempts", () => {
     expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeGreaterThan(0);
     expect(STUDIO_EXPORT_POLL_MAX_ATTEMPTS).toBeLessThanOrEqual(60);
+  });
+});
+
+describe("OD-06 UI wire — domain routing matrix (source)", () => {
+  it("keeps E3/MIX and TAKE on mix artifact download; RAW take path untouched", () => {
+    const mixPanel = readFileSync(
+      join(ROOT, "src/components/mix/mix-panel.tsx"),
+      "utf8",
+    );
+    const takeMenu = readFileSync(
+      join(ROOT, "src/components/takes/take-download-menu.tsx"),
+      "utf8",
+    );
+    const takeRaw = readFileSync(
+      join(ROOT, "src/app/api/takes/download/route.ts"),
+      "utf8",
+    );
+    expect(mixPanel).toMatch(
+      /\/api\/mix\/artifacts\/\$\{exportArtifactId\}\/download/,
+    );
+    expect(mixPanel).not.toMatch(/\/api\/studio\/artifacts\//);
+    expect(takeMenu).toMatch(
+      /\/api\/mix\/artifacts\/\$\{artifactId\}\/download/,
+    );
+    expect(takeMenu).not.toMatch(/\/api\/studio\/artifacts\//);
+    expect(takeRaw).not.toMatch(/createOwnSfmArtifactDownloadSignedUrl/);
+    expect(takeRaw).not.toMatch(/studioExportArtifactDownloadUrl/);
   });
 });
 
@@ -313,10 +438,16 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
   });
 
   it("downloads only via owner artifact endpoint (no raw object key links)", () => {
-    expect(control).toMatch(/studioExportArtifactDownloadUrl\(artifactId\)/);
+    expect(control).toMatch(
+      /studioExportArtifactDownloadUrl\(artifactId,\s*\{\s*sfmVersionId\s*\}\)/,
+    );
+    expect(control).toMatch(/mapStudioExportDownloadHttpResult/);
     expect(studioExportArtifactDownloadUrl("art-x")).toContain(
       "/api/mix/artifacts/art-x/download",
     );
+    expect(
+      studioExportArtifactDownloadUrl("art-x", { sfmVersionId: "v1" }),
+    ).toContain("/api/studio/artifacts/art-x/download");
     expect(control).not.toMatch(/object_key|storage\/v1|supabase\.co\/storage/);
     expect(control).toMatch(/data-testid="studio-export-download"/);
     expect(control).toMatch(/phase === "SUCCEEDED" && Boolean\(artifactId\)/);
@@ -413,7 +544,9 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(route).toMatch(/getOwnStudioExportJob\(jobId, \{ projectId \}\)/);
     expect(route).toMatch(/getLatestOwnStudioExportJob\(projectId\)/);
     expect(route).toMatch(/artifactId: job\.artifactId \?\? null/);
-    expect(service).toMatch(/resolveStudioExportArtifactIdFor/);
+    expect(service).toMatch(/resolveStudioExportArtifactFor/);
+    expect(service).toMatch(/sfm_version_id/);
+    expect(route).toMatch(/sfmVersionId: job\.sfmVersionId \?\? null/);
     expect(service).toMatch(/options\?: \{ projectId\?: string \}/);
     expect(service).toMatch(/getLatestOwnStudioExportJobFor/);
   });

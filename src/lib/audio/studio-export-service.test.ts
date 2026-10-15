@@ -189,6 +189,7 @@ describe("STUDIO_EXPORT Stage B — API route", () => {
     expect(src).toMatch(/expectedDocumentVersion/);
     expect(src).toMatch(/getOwnStudioExportJob\(jobId, \{ projectId \}\)/);
     expect(src).toMatch(/artifactId: job\.artifactId \?\? null/);
+    expect(src).toMatch(/sfmVersionId: job\.sfmVersionId \?\? null/);
     expect(src).not.toMatch(/startContabo|contabo\.start/i);
   });
 });
@@ -215,7 +216,8 @@ describe("STUDIO_EXPORT I.45AU — latest recovery (source)", () => {
     expect(service).toMatch(/\.eq\("kind", "STUDIO_EXPORT"\)/);
     expect(service).toMatch(/order\("created_at", \{ ascending: false \}\)/);
     expect(service).toMatch(/order\("id", \{ ascending: false \}\)/);
-    expect(service).toMatch(/resolveStudioExportArtifactIdFor/);
+    expect(service).toMatch(/resolveStudioExportArtifactFor/);
+    expect(service).toMatch(/sfm_version_id/);
     expect(service).toMatch(/Brak dostępu do tego projektu/);
     expect(service).toMatch(/Projekt nie został znaleziony/);
     expect(service).not.toMatch(/object_key/);

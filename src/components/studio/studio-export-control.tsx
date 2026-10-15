@@ -11,6 +11,7 @@ import {
   STUDIO_EXPORT_POLL_INTERVAL_MS,
   STUDIO_EXPORT_POLL_MAX_ATTEMPTS,
   createStudioExportIdempotencyKey,
+  mapStudioExportDownloadHttpResult,
   mapStudioExportHttpResult,
   mapStudioExportLatestHttpResult,
   studioExportArtifactDownloadUrl,
@@ -43,6 +44,8 @@ export function StudioExportControl({
   const [phase, setPhase] = useState<StudioExportUiPhase>("IDLE");
   const [jobId, setJobId] = useState<string | null>(null);
   const [artifactId, setArtifactId] = useState<string | null>(null);
+  /** Trusted from export status — null = LEGACY_STUDIO / not SFM (never invent). */
+  const [sfmVersionId, setSfmVersionId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [recovering, setRecovering] = useState(false);
@@ -110,6 +113,7 @@ export function StudioExportControl({
     jobId: string;
     projectId: string;
     artifactId: string | null;
+    sfmVersionId: string | null;
     message?: string | null;
   }) {
     if (mapped.projectId && mapped.projectId !== projectIdRef.current) {
@@ -119,6 +123,7 @@ export function StudioExportControl({
     }
     setJobId(mapped.jobId);
     setArtifactId(mapped.artifactId);
+    setSfmVersionId(mapped.sfmVersionId);
     pollAttemptsRef.current = 0;
     if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
       setPhase("UNAVAILABLE");
@@ -186,6 +191,7 @@ export function StudioExportControl({
         if (mapped.empty) {
           setJobId(null);
           setArtifactId(null);
+          setSfmVersionId(null);
           setPhase("IDLE");
           setMessage(null);
           return;
@@ -195,6 +201,7 @@ export function StudioExportControl({
           jobId: mapped.jobId,
           projectId: mapped.projectId,
           artifactId: mapped.artifactId,
+          sfmVersionId: mapped.sfmVersionId,
           message: mapped.message,
         });
       } finally {
@@ -258,6 +265,7 @@ export function StudioExportControl({
       setJobId(mapped.jobId);
       if (mapped.artifactId) {
         setArtifactId(mapped.artifactId);
+        setSfmVersionId(mapped.sfmVersionId);
       }
       if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
         setPhase("UNAVAILABLE");
@@ -332,6 +340,7 @@ export function StudioExportControl({
       idempotencyKeyRef.current = null;
       setJobId(null);
       setArtifactId(null);
+      setSfmVersionId(null);
       pollAttemptsRef.current = 0;
     }
 
@@ -390,6 +399,7 @@ export function StudioExportControl({
     setJobId(mapped.jobId);
     if (mapped.artifactId) {
       setArtifactId(mapped.artifactId);
+      setSfmVersionId(mapped.sfmVersionId);
     }
     if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
       setPhase("UNAVAILABLE");
@@ -405,19 +415,31 @@ export function StudioExportControl({
     setDownloading(true);
     setMessage(null);
     try {
-      const res = await fetch(studioExportArtifactDownloadUrl(artifactId), {
-        method: "GET",
-        credentials: "same-origin",
-      });
-      const json = (await res.json()) as {
-        success?: boolean;
-        url?: string;
-        error?: string;
-      };
-      if (!res.ok || !json.url) {
-        throw new Error(json.error ?? "Pobieranie niedostępne.");
+      const res = await fetch(
+        studioExportArtifactDownloadUrl(artifactId, { sfmVersionId }),
+        {
+          method: "GET",
+          credentials: "same-origin",
+        },
+      );
+      let json: { success?: boolean; url?: string; error?: string } = {};
+      try {
+        json = (await res.json()) as {
+          success?: boolean;
+          url?: string;
+          error?: string;
+        };
+      } catch {
+        json = {};
       }
-      window.location.assign(json.url);
+      const mapped = mapStudioExportDownloadHttpResult({
+        httpStatus: res.status,
+        json,
+      });
+      if (!mapped.ok) {
+        throw new Error(mapped.message);
+      }
+      window.location.assign(mapped.url);
     } catch (e) {
       setMessage(
         toUserFacingError(

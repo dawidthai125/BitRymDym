@@ -113,7 +113,7 @@ Szczegóły poniżej (§4, §5, §7, §10, §12). Nadal OPEN: OD-SFM-ID-05 · OD
   `GET /api/mix/artifacts/[id]/download`
   → `createOwnArtifactDownloadSignedUrl` / `For`
   (`src/app/api/mix/artifacts/[id]/download/route.ts`, `src/lib/audio/artifact-download.ts`).
-- UI Studio używa tej ścieżki (`studioExportArtifactDownloadUrl`) — wygoda, **nie** wspólna domena.
+- UI Studio (`studioExportArtifactDownloadUrl`) — local OD-06 wire: trusted `sfmVersionId` → `/api/studio/artifacts/…`; null → mix (LEGACY). E3/TAKE unchanged. **nie** wspólna domena AuthZ.
 - AuthZ dziś: owner, READY, not deleted, not expired, bucket, capability z DB `quality_tier`, job SUCCEEDED.
 - **Brak:** grant wersji, SFM quality resolver, `sfm_version_id`.
 
@@ -143,7 +143,7 @@ Serwis: `createOwnSfmArtifactDownloadSignedUrlFor` — SFM AuthZ only (nie `EXPO
 | Flag ON — nowe Accept/SFM rows | UI SFM → nowa trasa; wymaga grant+resolver | DL01–DL03 |
 | Cutover | Mix route: jeśli `sfm_version_id IS NOT NULL` → **403/404 DENY** (fail-closed) | DL05 |
 | E3 MIX / TAKE | Mix route bez zmian AuthZ dla `mix_session_id` / `take_id` | DL06–DL07 R04–R05 |
-| Pre-SFM WAV (`project_id` set, `sfm_version_id` NULL) | **OD-SFM-ID-06 CLOSED:** DENY as current SFM final · no backfill · mix DENY when `SFM_VERSIONS_V1` ON · no physical delete · **UI still on mix route until separate wire GO** | A09 |
+| Pre-SFM WAV (`project_id` set, `sfm_version_id` NULL) | **OD-SFM-ID-06 CLOSED:** DENY as current SFM final · no backfill · mix DENY when `SFM_VERSIONS_V1` ON · no physical delete · **local UI wire:** null `sfmVersionId` → mix route (pre-cutover); non-empty → SFM route · publish/migrate/flag/smoke = separate GOs | A09 |
 
 Próba pobrania SFM starą trasą po cutover: **zawsze DENY** (nawet owner + READY).
 

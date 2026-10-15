@@ -32,7 +32,7 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 6. E3 (`mix_session_id`) / TAKE (`take_id`) / RAW semantics **unchanged**.
 7. **No physical delete** of historical Owner WAV/MP3; retention ≠ download entitlement.
 8. Optional historical download-only grandfather path = **out of scope** (would need a new Owner GO).
-9. **UI sequencing (F-03):** `studioExportArtifactDownloadUrl` still targets `/api/mix/artifacts/…`. Enabling `SFM_VERSIONS_V1` without wiring Studio UI to `/api/studio/artifacts/…` will DENY `LEGACY_STUDIO` / MVP STUDIO_EXPORT downloads on the mix route. **Separate Owner GO** for UI wire + prod migrate + flag ON. This entry does **not** activate production cutover.
+9. **UI sequencing (F-03):** local UI wire routes Studio download by trusted status `sfmVersionId` — non-empty → `/api/studio/artifacts/…`; null/absent → `/api/mix/artifacts/…` (LEGACY_STUDIO pre-cutover). Enabling `SFM_VERSIONS_V1` without published UI wire + prod migrate still DENY `LEGACY_STUDIO` on the mix route. **Separate Owner GO** for UI wire publish + prod migrate + flag ON + smoke. This entry does **not** activate production cutover.
 
 **Supersedes (docs):** prior OPEN wording that OD-SFM-ID-06 was undecided among deny / grandfather / backfill.
 
