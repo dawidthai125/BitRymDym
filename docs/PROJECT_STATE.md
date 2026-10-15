@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-14 — **OD-SFM-ID-07 ACCEPTED (docs-only)** · exact `render_jobs.kind` = `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` · [design](./decisions/STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [data](./decisions/STUDIO_FINAL_MIX_DATA_MODEL.md) · [rpc](./decisions/STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · Stage A/B1 on `main` @ `a4ea89c` · Stage C **NOT IMPLEMENTED** · **NO COMMIT/PUSH** · OD-04 / OD-SFM-ID-05/06 **OPEN** · Contabo SFM enable **OPEN** · Sacred WIP protected
+**Updated:** 2026-10-15 — **MIGRATION HISTORY DRIFT GUARDRAIL (docs)** · `db push` / `migration up` **BLOCKED** until full registry alignment · see [CHANGELOG](./CHANGELOG.md) · prior: OD-SFM-ID-07 / SFM design pack · Sacred WIP protected
 
 ---
 
@@ -97,6 +97,20 @@
 | **E3** | PRODUCTION VERIFIED — GREEN |
 | **Worker** | Contabo EXTERNAL COMPUTE · persistent **disabled/inactive** · I.45DR narrow canary via transient oneshot **PASS** · pipeline tip-aligned `@faf734b` (I.45BV) · markers I.45CF (selective · ≠ full tree) · flag TRUE last-confirmed I.45DO/DR · not always-on · capability GREEN · bootstrap history `92496d4` |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
+| **MIGRATION HISTORY GUARDRAIL** | **ACTIVE (2026-10-15)** · registry drift is **project-wide** (audit: **43** name-matched divergent versions · **10** aligned) · SFM A–D on prod via MCP under remote `20261015…` vs local files `20261014…` · **`supabase db push` / `migration up` BLOCKED** until full alignment Owner GO · partial SFM `migration repair` **does not** unlock push · do not mix MCP apply vs CLI push without same-GO history closeout · future migrations: file → local test → **separate Owner GO apply** → verify history + objects · preserves I.27/I.28 · [CHANGELOG](./CHANGELOG.md) |
+
+---
+
+## 2b. Migration history — hard bans (living)
+
+```text
+db push / migration up (prod)     = BLOCKED until full local↔remote version alignment (Owner GO)
+migration repair / history rewrite = BLOCKED without separate Owner GO
+re-apply migration SQL            = BLOCKED
+partial SFM-only repair           = does NOT unlock db push
+SFM_VERSIONS_V1 / deploy / worker = unchanged — still require their own Owner GOs
+I.27 / I.28                       = PRESERVED (no push until aligned · optional rename-to-match-prod)
+```
 
 ---
 

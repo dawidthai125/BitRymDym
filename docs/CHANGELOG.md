@@ -6,6 +6,25 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-15 — Migration history drift guardrail (docs-only)
+
+**Status:** **DOCS GUARDRAIL** · **NO CODE / NO SQL / NO MIGRATION FILE CHANGES** · **NO `db push` / `migration up` / `migration repair` / re-apply** · **NO DEPLOY / FLAG / WORKER**
+**Supersedes for ops policy only:** extends I.27 ban; **does not rewrite** I.27/I.28 historical entry (see **2026-10-10 — STUDIO_EXPORT Stages I.26–I.28**)
+**Context:** Production SFM schema A→B1→C→D applied via MCP `apply_migration` on `rzzxrgcdogkybkiidqgw`. Local filenames use `20261014…`; remote `schema_migrations` recorded apply-time `20261015…` for the same four names. Broader audit: **43** name-matched migrations with divergent versions · **10** version-aligned · partial SFM-only repair **does not** clear the rest.
+**Living rules (mandatory until Owner GO for full history alignment):**
+
+1. **Drift scope:** Migration history drift is a **project-wide** registry problem, not SFM-only. Do not treat “SFM applied” as “history aligned.”
+2. **Hard ban:** Do **not** run `supabase db push` or `supabase migration up` against production until local filenames and remote `schema_migrations` versions are **fully** reconciled under an explicit Owner GO. Risk: re-applying DDL under local version stamps missing from remote history.
+3. **No mixed apply without same-GO history closeout:** Do not mix production apply mechanisms (MCP `apply_migration` vs CLI `db push`) in an uncontrolled way. If MCP apply is used, the **same Owner-approved scope** must also close history (repair and/or filename alignment) **or** explicitly leave status quo with this ban still in force.
+4. **Partial SFM repair ≠ unlock:** Marking only the four SFM local `20261014…` versions applied (and/or reverting remote `20261015…`) **does not** authorize `db push`. Remaining drifts stay blocking.
+5. **Future migration ladder (every change):** (a) author migration file · (b) local test · (c) **separate Owner GO** for production apply · (d) verify remote history **and** objects after apply · (e) no flag/deploy/worker in the same GO unless that GO says so.
+6. **Still forbidden without separate GO:** `migration repair`, rewriting `schema_migrations`, re-running migration SQL, enabling `SFM_VERSIONS_V1`, deploy, Contabo/worker ops.
+
+**Preserved:** I.27 (no `db push` until aligned) · I.28 (rename local files to match prod versions; SQL unchanged; history not rewritten)
+**Not claimed:** full history reconciliation executed · `db push` safe · SFM flag ON · app deploy for SFM cutover
+**SSOT pointers:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2b · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+**Next:** Owner chooses status quo (keep ban) **or** separate GO for SFM-narrow repair **or** full alignment (repair / I.28-style rename) — none of those are authorized by this docs note alone
+
 ## 2026-10-14 — OD-SFM-ID-07 ACCEPTED — exact SFM `render_jobs.kind` (docs-only, local worktree)
 
 **Status:** **DOCS** · Owner ACCEPT variant A · **NO CODE** · **NO MIGRATIONS** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION** · **NO CONTABO**

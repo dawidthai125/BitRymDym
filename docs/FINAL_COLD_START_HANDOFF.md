@@ -17,6 +17,15 @@ Production verification = separate stage
 REPOSITORY STATE ≠ PRODUCTION APP STATE ≠ PRODUCTION DB STATE ≠ STORAGE STATE
 ```
 
+**Migration history guardrail (2026-10-15 — living; details [CHANGELOG](./CHANGELOG.md) / [PROJECT_STATE](./PROJECT_STATE.md) §2b):**
+
+```text
+supabase db push / migration up (prod) = BLOCKED until full registry alignment (Owner GO)
+partial SFM migration repair           = does NOT unlock db push
+mixed MCP apply vs CLI push            = forbidden without same-GO history closeout
+I.27 / I.28                            = PRESERVED
+```
+
 ---
 
 ## 0. READ THIS FIRST — CURRENT STATUS

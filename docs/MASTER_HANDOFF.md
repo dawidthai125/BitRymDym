@@ -53,6 +53,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — Contabo poller V1 **IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · **NEXT:** GO-HOST-RO-CONTABO / GO-SYNC / canary / always-on / prod migration · ≠ enable · Final Mix GREEN **VERIFIED** · P6.8 **NOT STARTED** · SSOT → [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | **Known waiver** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Production DB tip** | includes Studio P5.1 schema + P3 `claim_anon_take_to_account` + admin W4 + P1 `sample_policy_settings` · verify remote before DB work |
+| **Migration history guardrail (2026-10-15)** | **ACTIVE** · project-wide version drift (43 divergent / 10 aligned by name) · SFM remote `20261015…` ≠ local `20261014…` · **`db push` / `migration up` BLOCKED** · partial SFM repair ≠ unlock · no mixed MCP/CLI apply without same-GO history closeout · ladder: file → test → Owner GO apply → verify history+objects · I.27/I.28 preserved · [CHANGELOG](./CHANGELOG.md) · [PROJECT_STATE](./PROJECT_STATE.md) §2b |
 | **Studio P5.1–P5.6** | **PRODUCTION VERIFIED — GREEN** (foundation → Take Workflow · `finalize ≠ place`) |
 | **P5.8 Studio Devices / Input** | **PRODUCTION VERIFIED — GREEN** @ `95e04ff` · [freeze](./decisions/P5_8_STUDIO_DEVICES_DESIGN_FREEZE.md) |
 | **P5.10 Studio Audio Engine** | **PRODUCTION VERIFIED — GREEN** @ `9c2a958` · [freeze](./decisions/P5_10_STUDIO_AUDIO_ENGINE_DESIGN_FREEZE.md) |
