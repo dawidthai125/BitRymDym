@@ -334,7 +334,17 @@ describe("SFM Stage C — Contabo / E3 / TAKE / Sacred WIP isolation", () => {
   it("does not wire SFM claim into STUDIO poller module", () => {
     const poller = read(POLLER);
     expect(poller).not.toMatch(/claim_next_sfm_job|claimNextSfmJob/);
+    expect(poller).not.toMatch(/runAlreadyClaimedSfmWorkerJob|sfm-worker-pipeline/);
     expect(poller).toMatch(/claimNextStudioExportAsWorker|STUDIO_EXPORT/);
+  });
+
+  it("keeps SFM bake in dedicated sfm-worker-pipeline (not Contabo)", () => {
+    const sfmPipeline = read("src/lib/sfm/sfm-worker-pipeline.ts");
+    const pipeline = read(RENDER_PIPELINE);
+    expect(sfmPipeline).toMatch(/runAlreadyClaimedSfmWorkerJob/);
+    expect(sfmPipeline).toMatch(/SFM_MIX_PREPARE|SFM_MASTER_BAKE|SFM_QUALITY_ENCODE/);
+    expect(pipeline).not.toMatch(/from \"@\/lib\/sfm\/sfm-worker/);
+    expect(pipeline).toMatch(/claim_next_sfm_job|dedicated SFM worker/);
   });
 
   it("does not modify Sacred WIP recording-eligibility-service", () => {

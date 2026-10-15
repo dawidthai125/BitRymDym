@@ -295,7 +295,8 @@ function mapStudioOfflineRenderFail(error: StudioOfflineRenderError): {
 /**
  * Dispatcher — EXTERNAL worker entry for MIX, TAKE_EXPORT, STUDIO_EXPORT.
  * Unknown / SFM kinds → fail-closed (never falls through to MIX bake).
- * SFM claim/bake is separate (claim_next_sfm_job); Stage C has no encode yet.
+ * SFM claim/bake is separate (claim_next_sfm_job; dedicated SFM worker module).
+ * Contabo STUDIO poller must not call SFM.
  * STUDIO_EXPORT: claim-by-id then shared already-RUNNING bake (poller shares bake).
  */
 export async function runRealRenderWorkerJob(
