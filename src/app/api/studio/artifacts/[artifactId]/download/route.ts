@@ -32,14 +32,15 @@ export async function GET(request: Request, context: RouteContext) {
   } catch (error) {
     if (error instanceof AuthError || error instanceof SfmDomainError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, code: error.code },
         { status: toSfmDownloadHttpStatus(error) },
       );
     }
+    // Never echo raw SQL/RPC/storage internals to the client.
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "SFM artifact download failed.",
+        error: "Pobranie artefaktu Studio Final Mix nie powiodło się.",
+        code: "INVALID",
       },
       { status: 400 },
     );
