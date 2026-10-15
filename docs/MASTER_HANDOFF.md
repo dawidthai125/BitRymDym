@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-13 — **GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Contabo sync **NOT DONE** · deploy **NOT DONE** · host **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · Final Mix GREEN **VERIFIED** (unchanged) · Contabo persistent **disabled/inactive** · app-code tip **`ce2f0cc`** · prod last-known **`2adb569`** · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED** (GO-HOST-RO / GO-SYNC / canary / always-on · no auto enable)
+**Updated:** 2026-10-15 — **SFM SSOT RECONCILE** · Stages A/B1/C/D + OD-06 download/UI = **CODE ON MAIN** · tip = this docs commit · parent **`e8d2127`** · **≠** SFM product cutover / Production GREEN · migration drift guardrail **ACTIVE** · Contabo STUDIO poller local · Contabo sync/deploy/canary/always-on **NOT DONE** · Final Mix (STUDIO_EXPORT) GREEN **VERIFIED** (unchanged) · prod last-known deploy **`2adb569`** · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -24,7 +24,7 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl (canonical) · https://bitrymdym.pl (308→www) · https://bitrymdym.vercel.app |
-| **GitHub main tip / origin/main (confirmed)** | **`2adb5699e72c9c8c35023500a001310e227e70d7` (`2adb569`)** — Merge PR #12 (docs-only I.47 session-closure) · local WIP may diverge · local `origin/main` ref may lag · full living matrix → [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| **GitHub main tip / origin/main (confirmed)** | **this docs SSOT reconcile** · parent **`e8d2127`** (SFM type/poller · A/B1/C/D+OD-06 **CODE ON MAIN**) · **≠** prod deploy · **≠** `SFM_VERSIONS_V1` ON · living matrix → [PROJECT_STATE.md](./PROJECT_STATE.md) · prior HISTORY includes `bfed53d` / `2adb569` |
 | **Prior docs tip (HISTORY)** | **`f730a7a`** — Merge PR #11 · tip before PR #12 · prior **`522e514`** (PR #10) · prior **`df37048`** (PR #8) remain HISTORY |
 | **App-code tip (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 · last app-feature tip before docs tips PR #6–#12 · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **App feature commit (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |

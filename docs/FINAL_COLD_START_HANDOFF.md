@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-13 — **GO-IMPL-CONTABO-POLL: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Contabo sync **NOT DONE** · deploy **NOT DONE** · host **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · Final Mix GREEN **VERIFIED** (unchanged) · Contabo persistent **disabled/inactive** · app-code tip **`ce2f0cc`** · prod last-known **`2adb569`** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED** (GO-HOST-RO / GO-SYNC / canary / always-on · no auto enable)
-**Type:** Documentation continuity · cold-start entry · dual-plane (Git tip docs ≠ app-code tip `ce2f0cc` ≠ prod last-known `2adb569` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-15 — **SFM SSOT RECONCILE** · A/B1/C/D+OD-06 **CODE ON MAIN** · tip = this docs commit · parent **`e8d2127`** · **≠** SFM cutover / Production GREEN · migration drift guardrail **ACTIVE** · Contabo STUDIO poller local · Contabo sync/deploy/canary/always-on **NOT DONE** · Final Mix (STUDIO_EXPORT) GREEN **VERIFIED** (unchanged) · prod last-known deploy **`2adb569`** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · cold-start entry · dual-plane (Git tip = this docs SSOT · SFM app parent **`e8d2127`** ≠ prod last-known **`2adb569`** ≠ local dirty WIP ≠ feature V2 `44f7cbd` · SFM DB applied ≠ flag ON ≠ Contabo SFM bake) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.
 
@@ -36,19 +36,11 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-GITHUB MAIN TIP / origin/main = 2adb5699e72c9c8c35023500a001310e227e70d7
-  short                       = 2adb569
-  note                        = Merge PR #12 (docs-only I.47 session-closure) · verify remotely
-                              · local WIP may diverge · local origin/main ref may lag without fetch
-                              · commit ≠ deployment ≠ domain alias ≠ functional GREEN
-PRIOR DOCS TIP (HISTORY)      = f730a7af1ed34a9667e7bfba1a766d8481ed9df5
-  short                       = f730a7a
-  note                        = Merge PR #11 (docs SSOT tip/plane) · tip before PR #12
-                              · prior 522e514 (PR #10) · prior df37048 (PR #8) remain HISTORY
-APP-CODE TIP (last-established evidence) = ce2f0cc7ad7f5257577e858d64ca8531ebb35000
-  short                       = ce2f0cc
-  note                        = Merge PR #5 (Studio delete export-history) · last app-feature tip
-                              · prior dpl_1P8ixpt… · ≠ Git tip · ≠ independently freshly verified production app SHA
+GITHUB MAIN TIP / origin/main = this docs SSOT reconcile (verify: git rev-parse origin/main)
+  note                        = SFM A/B1/C/D + OD-06 download/UI CODE ON MAIN (app parent e8d2127)
+                              · ≠ prod deploy · ≠ SFM_VERSIONS_V1 ON · ≠ SFM Production GREEN
+                              · living detail → docs/PROJECT_STATE.md (SFM CODE STATUS)
+PRIOR TIP (HISTORY)           = e8d2127 (SFM type/poller) · bfed53d (migration drift) · 2adb569 (PR #12)
 APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
   short                       = 44f7cbd
   note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
@@ -59,10 +51,13 @@ PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN
                               · apex redirect e2e NOT VERIFIED
   evidence                    = I.48-A0 (cold-start RO) — GitHub Deployments + Vercel CLI · not re-verified in A2/A3
 PRODUCTION GIT SHA (observed I.48-A0) = 2adb569
-  note                        = equals Git tip after PR #12 · prior f730a7a / dpl_28oH… = HISTORY (I.46-A10)
+  note                        = last-known deploy SHA · ≠ current Git tip e8d2127 · prior f730a7a / dpl_28oH… = HISTORY
                               · prior df37048 / dpl_7Cp2gQ9… = HISTORY
-STUDIO_EXPORT APP             = DEPLOYED (app-code tip ce2f0cc · Git tip 2adb569 · prod observed 2adb569 / dpl_sAyrsHC…)
-                              · PR #12 = docs-only · ≠ new app feature release · Ready ≠ Final Mix GREEN
+SFM VERSIONS (product)        = CODE ON MAIN · flag default OFF · staging E2E NOT DONE · Contabo SFM NOT WIRED
+                              · DB A–D via MCP with version drift · Production GREEN NOT CLAIMED
+STUDIO_EXPORT APP             = DEPLOYED (ancestry · prod observed 2adb569 / dpl_sAyrsHC…)
+                              · Final Mix STUDIO_EXPORT GREEN VERIFIED (frozen IN) · ≠ SFM Versions cutover
+                              · Ready ≠ SFM Production GREEN
                               · I.45DR — PASS: narrow production STUDIO_EXPORT WAV canary
                               · job 53398f9e-… / project bfc3d223-… / artifact 21d98be2-… READY
                               · J2 Download AuthZ — PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc-…)

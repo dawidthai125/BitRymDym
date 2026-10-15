@@ -6,6 +6,29 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-15 — SFM SSOT reconcile: Stages A/B1/C/D + OD-06 CODE ON MAIN (docs-only)
+
+**Status:** **DOCS SSOT** · **NO APP CODE** · **NO MIGRATIONS** · **NO `db push` / repair / apply** · **NO DEPLOY / FLAG / CONTABO**
+**Parent tip:** `e8d21271e7af5042eadc5b6d30d2e3fbbed99e3c` (`e8d2127`) — SFM type/poller fix already on `main`
+**Problem fixed:** Living `PROJECT_STATE` still said Stage C executors **NOT IMPLEMENTED** and framed F-addendum/product as unimplemented, while `main` already contains foundation/grants/executor/artifacts/download+UI (commits `7fb5dcb` → `e8d2127`).
+**Planes (do not collapse):**
+
+| Plane | Status |
+|-------|--------|
+| Code on `main` | A · B1 · C (`claim_next_sfm_job` service_role) · D · OD-06 download + UI `sfmVersionId` |
+| Local unit tests | `src/lib/sfm` **143 PASS** at tip evidence (re-verify after fetch) |
+| Staging E2E | **NOT DONE** |
+| Prod app deploy of tip | **NOT VERIFIED** (last-known deploy SHA **`2adb569`**) |
+| Prod DB SFM A–D | Applied via MCP; remote versions `20261015…` ≠ local `20261014…` · drift guardrail **ACTIVE** |
+| `SFM_VERSIONS_V1` | Default **OFF** |
+| Contabo SFM bake/claim | **NOT WIRED** (poller remains `STUDIO_EXPORT` only) |
+| SFM Production GREEN | **NOT CLAIMED** |
+
+**Still OPEN:** OD-04 · OD-SFM-ID-05 · migration full alignment · deploy · flag · Contabo SFM Ops · staging/prod E2E
+**Preserved:** historical CHANGELOG design-accept entries (do not rewrite) · I.27/I.28 · migration drift ban · Final Mix (STUDIO_EXPORT) GREEN / WAIVE / OUT unchanged
+**SSOT:** [PROJECT_STATE.md](./PROJECT_STATE.md) · pointers in MASTER / FINAL_COLD Updated lines
+**Next:** Owner docs-publish GO for this reconcile · then separate GOs for ops planes above
+
 ## 2026-10-15 — Migration history drift guardrail (docs-only)
 
 **Status:** **DOCS GUARDRAIL** · **NO CODE / NO SQL / NO MIGRATION FILE CHANGES** · **NO `db push` / `migration up` / `migration repair` / re-apply** · **NO DEPLOY / FLAG / WORKER**
