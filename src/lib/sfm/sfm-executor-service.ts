@@ -10,7 +10,10 @@ import { isSfmVersionsV1Enabled } from "@/config/audio-render";
 import type { AuthContext } from "@/lib/auth/types";
 import { AuthError } from "@/lib/auth/session";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
-import { claimNextSfmJobAsWorker } from "@/lib/audio/render-job-service";
+import {
+  claimNextSfmJobAsWorker,
+  rejectSfmExecutorJobKindOut,
+} from "@/lib/audio/render-job-service";
 import {
   mapSfmRpcErrorMessage,
   SfmDomainError,
@@ -135,4 +138,12 @@ export async function enqueueSfmQualityEncodeFor(
 /** Worker entry for SFM claim-next (separate from STUDIO_EXPORT poller). */
 export async function claimNextSfmExecutorJobForWorker(workerRef: string) {
   return claimNextSfmJobAsWorker(workerRef);
+}
+
+/** Worker entry for OD-SFM-WORKER-KIND-REJECT (CAS KIND_OUT → FAILED). */
+export async function rejectSfmExecutorJobKindForWorker(
+  jobId: string,
+  workerRef: string,
+) {
+  return rejectSfmExecutorJobKindOut(jobId, workerRef);
 }

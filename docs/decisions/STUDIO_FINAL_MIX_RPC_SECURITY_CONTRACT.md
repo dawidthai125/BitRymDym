@@ -96,6 +96,21 @@ Nazwy RPC = propozycja. Implementacja może być RPC Postgres **lub** transakcja
 **Zakaz:** E3 `kind=MIX` lub `STUDIO_EXPORT` jako tożsamość SFM; E3 complete path piszący `studio_final_stages`.
 **Domain `SFM_MIX` SUCCEEDED ≠ mastering.**
 
+### 4.2b `reject_sfm_executor_job_kind` (OD-SFM-WORKER-KIND-REJECT)
+
+| | |
+|--|--|
+| **Params** | `p_job_id uuid`, `p_worker_ref text` |
+| **Caller** | **service_role only** (SFM worker) |
+| **Preconditions** | job `RUNNING`; `worker_ref` exact match; SFM claim shape (`sfm_version_id`/`project_id` set; `mix_session_id`/`take_id` null) |
+| **TX / CAS** | single `UPDATE … WHERE id AND status='RUNNING' AND worker_ref AND SFM shape` → `FAILED`, `error_code='KIND_OUT'`, `finished_at` |
+| **Return** | `SETOF render_jobs` — row on success; **empty** on CAS miss (no leak of foreign jobs) |
+| **Idempotency** | re-call after success → empty (not success); no second mutate |
+| **Does not** | bake · enqueue · requeue · mutate `studio_final_stages` · create artifacts · orphan timeout reclaim |
+| **Ambiguous RPC** | poller logs fail/cas_miss · **no** `markJobFailed` fallback · **no** retry that hides state |
+| **Stage** | bound job `FAILED` → existing F-02 `RECOVERY_REQUIRED` (no auto-retry) |
+| **Migration** | `20261016120000_sfm_reject_executor_job_kind.sql` (**local**; remote apply = separate GO) |
+
 ### 4.3 `sfm_enqueue_quality_encode`
 
 | | |

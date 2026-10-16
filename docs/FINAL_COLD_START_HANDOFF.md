@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-15 — **SFM HTTP SURFACE SSOT RECONCILE** · tip **`2f7050e`** · parent **`2d3514c`** · A/B1/C/D+OD-06+**HTTP surface** **CODE ON MAIN** · **≠** staging E2E · **≠** SFM cutover / Production GREEN · migration drift guardrail **ACTIVE** · Contabo STUDIO poller local · Contabo SFM worker **NOT WIRED** · Contabo sync/deploy/canary/always-on **NOT DONE** · Final Mix (STUDIO_EXPORT) GREEN **VERIFIED** (unchanged) · prod last-known deploy **`2adb569`** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip **`2f7050e`** ≠ staging deploy **UNKNOWN** ≠ staging schema **UNVERIFIED** ≠ SFM worker **NOT WIRED** ≠ prod last-known **`2adb569`** ≠ local dirty WIP ≠ feature V2 `44f7cbd` · SFM DB applied ≠ flag ON ≠ Contabo SFM bake) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-16 — tip **`d3c99e3`** (SFM poller on `main`) · **OD-SFM-WORKER-KIND-REJECT** local pending review · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · staging E2E **BLOCKED** · `SFM_VERSIONS_V1` OFF · Contabo sync/canary/always-on **NOT DONE** · Final Mix GREEN **VERIFIED** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip **`d3c99e3`** ≠ staging deploy **UNKNOWN** ≠ staging schema **UNVERIFIED** ≠ KIND_REJECT remote apply **NOT DONE** ≠ prod last-known ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; **§0 below is current.** Later sections that still cite tip `2adb569` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
 

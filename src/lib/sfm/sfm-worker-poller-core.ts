@@ -20,11 +20,19 @@ export const SFM_WORKER_POLLER_DEFAULT_POLL_MS = 2_000;
 /** Same shape as pipeline input — must carry claim fields through bake. */
 export type SfmWorkerPollerJob = SfmAlreadyClaimedWorkerJob;
 
+export type SfmWorkerKindRejectRpcResult =
+  | "rejected"
+  | "cas_miss"
+  | "rpc_fail";
+
 export type SfmWorkerPollerMetrics = {
   claims_ok: number;
   claims_empty: number;
   claims_fail: number;
   kind_reject: number;
+  kind_reject_rpc_ok: number;
+  kind_reject_cas_miss: number;
+  kind_reject_rpc_fail: number;
   bake_fail: number;
   bake_ok: number;
   shutdowns: number;
@@ -41,6 +49,14 @@ export type SfmWorkerPollerCoreDeps = {
   shutdownGraceMs?: number;
   claimNext: (workerRef: string) => Promise<SfmWorkerPollerClaimResult>;
   bake: (job: SfmWorkerPollerJob) => Promise<{ status: string }>;
+  /**
+   * OD-SFM-WORKER-KIND-REJECT — atomic FAILED/KIND_OUT via RPC.
+   * Must not bake, requeue, or fall back to a second markFailed mutation.
+   */
+  rejectUnsupportedKind?: (
+    job: SfmWorkerPollerJob,
+    workerRef: string,
+  ) => Promise<SfmWorkerKindRejectRpcResult>;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
   log?: (fields: SafePollerLogFields) => void;
@@ -51,7 +67,12 @@ export type SfmWorkerPollerTickResult =
   | { outcome: "busy" }
   | { outcome: "stopping" }
   | { outcome: "claim_fail"; errorCode?: string }
-  | { outcome: "kind_reject"; jobId: string; kind: string }
+  | {
+      outcome: "kind_reject";
+      jobId: string;
+      kind: string;
+      rejectResult?: SfmWorkerKindRejectRpcResult;
+    }
   | { outcome: "claim_started"; jobId: string; kind: string }
   | { outcome: "bake_ok"; jobId: string; kind: string; status: string }
   | { outcome: "bake_fail"; jobId: string; kind: string; errorCode?: string };
@@ -77,6 +98,9 @@ export class SfmWorkerPollerCore {
     claims_empty: 0,
     claims_fail: 0,
     kind_reject: 0,
+    kind_reject_rpc_ok: 0,
+    kind_reject_cas_miss: 0,
+    kind_reject_rpc_fail: 0,
     bake_fail: 0,
     bake_ok: 0,
     shutdowns: 0,
@@ -88,6 +112,9 @@ export class SfmWorkerPollerCore {
   private inFlight: Promise<void> | null = null;
   private readonly claimNext: SfmWorkerPollerCoreDeps["claimNext"];
   private readonly bake: SfmWorkerPollerCoreDeps["bake"];
+  private readonly rejectUnsupportedKind:
+    | SfmWorkerPollerCoreDeps["rejectUnsupportedKind"]
+    | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly now: () => number;
   private readonly log: (fields: SafePollerLogFields) => void;
@@ -102,6 +129,7 @@ export class SfmWorkerPollerCore {
       deps.shutdownGraceMs ?? SFM_WORKER_POLLER_SHUTDOWN_GRACE_MS;
     this.claimNext = deps.claimNext;
     this.bake = deps.bake;
+    this.rejectUnsupportedKind = deps.rejectUnsupportedKind;
     this.sleep = deps.sleep ?? defaultSleep;
     this.now = deps.now ?? Date.now;
     this.log = deps.log ?? defaultLog;
@@ -174,16 +202,57 @@ export class SfmWorkerPollerCore {
 
     if (!isSfmExecutorJobKind(kind)) {
       this.metrics.kind_reject += 1;
-      this.log({
-        event: "kind_reject",
-        jobId,
-        kind,
-        errorCode: "KIND_OUT",
-        workerRef: this.workerRef,
-      });
-      // Do not bake; do not auto-requeue. Job remains as claimed by RPC
-      // (RUNNING) — recovery is operator/RPC path, not poller auto-retry.
-      return { outcome: "kind_reject", jobId, kind };
+      // Do not bake; do not auto-requeue. OD-SFM-WORKER-KIND-REJECT:
+      // atomic FAILED/KIND_OUT via dedicated RPC when provided.
+      let rejectResult: SfmWorkerKindRejectRpcResult | undefined;
+      if (this.rejectUnsupportedKind) {
+        try {
+          rejectResult = await this.rejectUnsupportedKind(
+            claimed.job,
+            this.workerRef,
+          );
+        } catch {
+          rejectResult = "rpc_fail";
+        }
+        if (rejectResult === "rejected") {
+          this.metrics.kind_reject_rpc_ok += 1;
+          this.log({
+            event: "kind_reject_ok",
+            jobId,
+            kind,
+            errorCode: "KIND_OUT",
+            status: "FAILED",
+            workerRef: this.workerRef,
+          });
+        } else if (rejectResult === "cas_miss") {
+          this.metrics.kind_reject_cas_miss += 1;
+          this.log({
+            event: "kind_reject_cas_miss",
+            jobId,
+            kind,
+            errorCode: "KIND_OUT",
+            workerRef: this.workerRef,
+          });
+        } else {
+          this.metrics.kind_reject_rpc_fail += 1;
+          this.log({
+            event: "kind_reject_rpc_fail",
+            jobId,
+            kind,
+            errorCode: "KIND_OUT",
+            workerRef: this.workerRef,
+          });
+        }
+      } else {
+        this.log({
+          event: "kind_reject",
+          jobId,
+          kind,
+          errorCode: "KIND_OUT",
+          workerRef: this.workerRef,
+        });
+      }
+      return { outcome: "kind_reject", jobId, kind, rejectResult };
     }
 
     this.metrics.claims_ok += 1;

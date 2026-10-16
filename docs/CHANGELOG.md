@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-16 — OD-SFM-WORKER-KIND-REJECT local impl (KIND_OUT → FAILED RPC)
+
+**Status:** **LOCAL ONLY** · **NO COMMIT/PUSH IN THIS GO** · **NO REMOTE MIGRATION APPLY** · **NO DEPLOY** · **NO FLAG** · **NO WORKER RUN** · **NO STAGING E2E**
+**Base tip:** `d3c99e348aa8f24d9d8d50a69a1629552211a630` (`d3c99e3`) — dedicated SFM worker poller already on `main`
+**Decision:** OD-SFM-WORKER-KIND-REJECT — unsupported kind after claim → atomic `FAILED` + `KIND_OUT` via `reject_sfm_executor_job_kind` (SECURITY DEFINER · CAS `RUNNING`+`worker_ref` · service_role)
+**Scope:** migration `20261016120000_sfm_reject_executor_job_kind.sql` · poller reject wiring · local unit/contract tests · SSOT decision notes
+**Does not:** orphan kill/grace recovery (`OD-SFM-WORKER-ORPHAN-TIMEOUT` **OPEN**) · auto-retry/requeue · stage reset · remote apply · Production GREEN
+**Staging E2E:** **BLOCKED** until Owner review + separate GO
+**`SFM_VERSIONS_V1`:** OFF
+
 ## 2026-10-15 — SFM HTTP Surface on main: SSOT tip reconcile (docs-only)
 
 **Status:** **DOCS SSOT** · **NO APP CODE IN THIS DOCS GO** · **NO DEPLOY** · **NO FLAG CHANGE** · **NO STAGING E2E** · **NO SFM WORKER OPS** · **NO `db push` / repair / apply** · **NO CONTABO**

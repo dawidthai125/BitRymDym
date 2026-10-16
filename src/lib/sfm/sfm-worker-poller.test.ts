@@ -176,21 +176,26 @@ describe("GO-SFM-WORKER-ENTRY — poller core concurrency / claim / bake / shutd
 
   it("only SFM executor kinds bake; MIX rejected as kind_reject", async () => {
     const bake = vi.fn(async () => ({ status: "SUCCEEDED" }));
+    const rejectUnsupportedKind = vi.fn(async () => "rejected" as const);
     const poller = new SfmWorkerPollerCore({
       workerRef: "sfm-1",
       claimNext: async () => ({
         job: sfmJob({ id: "j1", kind: "MIX" }),
       }),
       bake,
+      rejectUnsupportedKind,
     });
     const tick = await poller.runTick();
     expect(tick).toMatchObject({
       outcome: "kind_reject",
       jobId: "j1",
       kind: "MIX",
+      rejectResult: "rejected",
     });
     expect(bake).not.toHaveBeenCalled();
+    expect(rejectUnsupportedKind).toHaveBeenCalledTimes(1);
     expect(poller.metrics.kind_reject).toBe(1);
+    expect(poller.metrics.kind_reject_rpc_ok).toBe(1);
   });
 
   it("bakes all three SFM kinds", async () => {
@@ -374,26 +379,32 @@ describe("GO-SFM-WORKER-ENTRY — STUDIO isolation contracts", () => {
     expect(wire).toMatch(/claimNextSfmExecutorJobForWorker/);
     expect(wire).toMatch(/runAlreadyClaimedSfmWorkerJob/);
     expect(wire).toMatch(/toSfmAlreadyClaimedWorkerJob/);
+    expect(wire).toMatch(/rejectSfmExecutorJobKindForWorker/);
     expect(wire).not.toMatch(
       /as Parameters<typeof runAlreadyClaimedSfmWorkerJob>/,
     );
     expect(wire).not.toMatch(/claimNextStudioExportAsWorker|claim_next_studio_export/);
   });
 
-  it("kind_reject still leaves RUNNING (P1 unchanged — no markFailed/requeue)", async () => {
+  it("kind_reject calls reject RPC path; no bake / no requeue / no markJobFailed fallback", async () => {
     const bake = vi.fn(async () => ({ status: "SUCCEEDED" }));
+    const rejectUnsupportedKind = vi.fn(async () => "rejected" as const);
     const poller = new SfmWorkerPollerCore({
       workerRef: "sfm-1",
       claimNext: async () => ({
         job: sfmJob({ id: "j-reject", kind: "STUDIO_EXPORT" }),
       }),
       bake,
+      rejectUnsupportedKind,
     });
     const tick = await poller.runTick();
     expect(tick.outcome).toBe("kind_reject");
     expect(bake).not.toHaveBeenCalled();
-    expect(read(CORE)).toMatch(/Job remains as claimed by RPC/);
-    expect(read(CORE)).not.toMatch(/markJobFailed|requeueJob/);
+    expect(rejectUnsupportedKind).toHaveBeenCalledTimes(1);
+    expect(read(CORE)).toMatch(/OD-SFM-WORKER-KIND-REJECT/);
+    expect(read(CORE)).not.toMatch(/requeueJob|FAILED_TO_QUEUED/);
+    expect(read(WIRE)).toMatch(/no alternate status mutation/);
+    expect(read(WIRE)).not.toMatch(/\.markJobFailed\(|defaultMarkFailed/);
   });
 
   it("script + npm entry exist; Sacred WIP untouched", () => {

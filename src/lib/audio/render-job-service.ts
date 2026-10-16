@@ -789,6 +789,54 @@ export async function claimNextSfmJobAsWorker(
 }
 
 /**
+ * OD-SFM-WORKER-KIND-REJECT — atomic KIND_OUT terminal for an already-claimed
+ * SFM-shaped executor job. Uses reject_sfm_executor_job_kind (CAS RUNNING+worker_ref).
+ * Empty RPC result = CAS miss (no leak). Never requeues. Does not mutate stages.
+ * Does not mapJob (rejected kind may be outside mapJobKind allowlist).
+ */
+export type RejectSfmExecutorJobKindResult =
+  | { outcome: "rejected"; jobId: string; errorCode: "KIND_OUT" }
+  | { outcome: "cas_miss" };
+
+export async function rejectSfmExecutorJobKindOut(
+  jobId: string,
+  workerRef: string,
+): Promise<RejectSfmExecutorJobKindResult> {
+  assertRenderJobsRuntimeEnabled();
+  const trimmedJobId = jobId.trim();
+  const trimmedRef = workerRef.trim();
+  if (!trimmedJobId) {
+    throw new RenderJobDomainError("job_id required.", "INVALID");
+  }
+  if (!trimmedRef) {
+    throw new RenderJobDomainError("worker_ref required.", "INVALID");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("reject_sfm_executor_job_kind", {
+    p_job_id: trimmedJobId,
+    p_worker_ref: trimmedRef,
+  });
+  if (error) throw new Error(error.message);
+
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  if (rows.length === 0) return { outcome: "cas_miss" };
+
+  const row = rows[0] as RenderJobRow;
+  if (String(row.status) !== "FAILED" || row.error_code !== "KIND_OUT") {
+    throw new RenderJobDomainError(
+      "reject_sfm_executor_job_kind returned unexpected job state.",
+      "CONFLICT",
+    );
+  }
+  return {
+    outcome: "rejected",
+    jobId: String(row.id),
+    errorCode: "KIND_OUT",
+  };
+}
+
+/**
  * Contabo Continuous Worker V1 — atomic claim-next + FINDING-01 on RUNNING.
  * RPC sets QUEUED→RUNNING; AuthZ failures mark RUNNING→FAILED (never re-QUEUED).
  * Must not call claimRenderJobAsWorker (expects QUEUED).

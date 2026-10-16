@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-15 — **SFM HTTP SURFACE SSOT RECONCILE** · tip **`2f7050e`** · parent **`2d3514c`** · A/B1/C/D + OD-06 + **HTTP surface** = **CODE ON MAIN** · **≠** staging E2E · **≠** SFM product cutover / Production GREEN · migration drift guardrail **ACTIVE** · Contabo STUDIO poller local · Contabo SFM worker **NOT WIRED** · Contabo sync/deploy/canary/always-on **NOT DONE** · Final Mix (STUDIO_EXPORT) GREEN **VERIFIED** (unchanged) · prod last-known deploy **`2adb569`** · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-16 — tip **`d3c99e3`** (SFM dedicated poller on `main`) · **OD-SFM-WORKER-KIND-REJECT** local (KIND_OUT→FAILED RPC; pending review) · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · staging E2E **BLOCKED** · `SFM_VERSIONS_V1` OFF · Contabo sync/canary/always-on **NOT DONE** · Final Mix (STUDIO_EXPORT) GREEN **VERIFIED** (unchanged) · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)

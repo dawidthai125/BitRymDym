@@ -237,9 +237,25 @@ Production e2e / Contabo: **osobne GO** — nie część docs GO.
 
 ---
 
+## 13b. OD-SFM-WORKER-KIND-REJECT (plan — local unit/contract)
+
+| # | Scenariusz | Expect | Warstwy |
+|---|------------|--------|---------|
+| KR01 | RUNNING + matching `worker_ref` + SFM shape | `FAILED` / `KIND_OUT` | U D |
+| KR02 | Wrong `worker_ref` | empty / no mutate | U D S |
+| KR03 | Already terminal | empty / no mutate | U D |
+| KR04 | Parallel reject | ≤1 mutate | D |
+| KR05 | Poller unsupported kind | reject RPC · no bake · no requeue | U |
+| KR06 | RPC cas_miss / fail | no `markJobFailed` fallback | U |
+| KR07 | Bound job FAILED | stage `RECOVERY_REQUIRED` (no auto-retry) | U |
+| KR08 | STUDIO poller isolation | no SFM reject wire | R |
+
+Remote Postgres concurrency / live service_role ACL = osobne GO (nie część local unit).
+
 ## 14. Non-goals tej macierzy
 
 - Uruchamianie testów produkcyjnych.
 - Certyfikacja OD-04 real checkout.
 - Bit-perfect Live↔Offline (poza zakresem SFM product AuthZ).
 - Twierdzenie, że QC MP3 już EXISTS dla STUDIO multi-quality (dziś WAV-only FACT).
+- Orphan kill/grace timeout recovery (`OD-SFM-WORKER-ORPHAN-TIMEOUT`).

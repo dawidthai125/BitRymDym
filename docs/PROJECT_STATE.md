@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-15 — **SFM HTTP SURFACE SSOT RECONCILE (docs)** · tip **`2f7050e`** (`feat(sfm): expose Studio Final Mix owner HTTP surface`) · parent **`2d3514c`** · A/B1/C/D + OD-06 + **HTTP surface** = **CODE ON MAIN** · **≠** staging E2E · **≠** product cutover · **≠** SFM Production GREEN · migration drift guardrail **ACTIVE** · see [CHANGELOG](./CHANGELOG.md)
+**Updated:** 2026-10-16 — **SFM KIND_REJECT local** · published tip **`d3c99e3`** (SFM worker poller on `main`) · **OD-SFM-WORKER-KIND-REJECT** local impl pending Owner review · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · staging E2E **BLOCKED** · `SFM_VERSIONS_V1` OFF · see [CHANGELOG](./CHANGELOG.md)
 
 ---
 
@@ -21,7 +21,7 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **GITHUB MAIN TIP / origin/main (confirmed)** | **`2f7050e47b47241b753bdd2c3de8352ef629d9e9` (`2f7050e`)** — `feat(sfm): expose Studio Final Mix owner HTTP surface` · parent **`2d3514c86cb5bc67996fba480140bb0f3f8d5878` (`2d3514c`)** · SFM A/B1/C/D + OD-06 + **owner HTTP surface** on `main` · **≠** Vercel deploy · **≠** staging E2E · **≠** `SFM_VERSIONS_V1` ON · **≠** Contabo SFM bake · **≠** SFM Production GREEN · verify with `git rev-parse origin/main` after fetch |
+| **GITHUB MAIN TIP / origin/main (confirmed)** | **`d3c99e348aa8f24d9d8d50a69a1629552211a630` (`d3c99e3`)** — `feat(sfm): add dedicated SFM worker poller` · parent **`e6294cca7a5101e496c5406b58629584a39c3aff`** · SFM A/B1/C/D + OD-06 + HTTP + **dedicated poller** on `main` · **OD-SFM-WORKER-KIND-REJECT** local (uncommitted) · **≠** Vercel deploy · **≠** staging E2E · **≠** `SFM_VERSIONS_V1` ON · **≠** SFM Production GREEN · verify with `git rev-parse origin/main` after fetch |
 | **SFM PLANES (do not collapse)** | **(1) Code on `main`:** A/B1/C/D + OD-06 + HTTP surface @ **`2f7050e`** · **(2) Staging deployment SHA:** **UNKNOWN / NOT VERIFIED** · **(3) Staging schema:** **UNVERIFIED** this session (do not assume = prod) · **(4) Staging SFM worker:** **NOT WIRED** (ops; bake/claim libs exist) · **(5) Prod app:** last-known deploy **`2adb569`** · **NOT VERIFIED** vs tip `2f7050e` · **(6) Prod DB:** SFM A–D previously applied via MCP under remote `20261015…` ≠ local `20261014…` — **no remote re-verify** in this docs GO |
 | **STUDIO FINAL MIX PRODUCT CONTRACT** | **OWNER ACCEPTED** · [addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-08/12/14 CLOSED · **product cutover NOT DONE** (flag default OFF · no staging/prod E2E GREEN for SFM Versions) · code planes → **SFM CODE STATUS** / **SFM PLANES** |
 | **SFM F-ADDENDUM / STAGES DF** | **OWNER ACCEPTED (docs)** · [F02b/F03b](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) · [stages](./decisions/STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) · F02/F03 **SUPERSEDED SFM-only** · corrections A/B/C · **CODE ON MAIN** for A/B1/C/D + HTTP · **≠** product cutover · **OD-04 OPEN** |

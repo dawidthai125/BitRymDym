@@ -166,6 +166,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-SFM-ID-04 | `SFM_MIX` = separate executor job (≠ E3 `kind=MIX`) | 2026-10-14 |
 | OD-SFM-ID-07 | Exact `render_jobs.kind` = `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (≠ stage names; ≠ MIX/STUDIO_EXPORT) | 2026-10-14 |
 | OD-SFM-ID-06 | Legacy Studio WAV (`project_id` set, `sfm_version_id` NULL) after cutover = **DENY** as current SFM final · **no backfill** · **no physical delete** | 2026-10-15 |
+| OD-SFM-WORKER-KIND-REJECT | Unsupported kind after SFM claim → atomic `FAILED` + `error_code=KIND_OUT` via `reject_sfm_executor_job_kind` (SECURITY DEFINER · CAS `RUNNING`+`worker_ref` · service_role) · **no** bake/requeue/stage reset · ambiguous RPC = no fallback mutate · **local code pending Owner review/publish** · **≠** orphan timeout recovery | 2026-10-16 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
 Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
@@ -209,8 +210,9 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 
 - Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03). **Do not close.**
 - **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT). **Do not close.**
-- **Note (2026-10-15):** owner HTTP surface published on `main` @ **`2f7050e`** (Accept / status / stages / grants / encode / jobs / download). **≠** staging E2E · **≠** SFM worker ops wired · **≠** Production GREEN · **≠** closing OD-04 / OD-SFM-ID-05.
-- Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller; dedicated SFM worker entrypoint **NOT WIRED**).
+- **OD-SFM-WORKER-ORPHAN-TIMEOUT** — Recovery for process kill / SIGTERM grace exceed / claim CONFLICT orphans left `RUNNING` (**OPEN**; **≠** KIND_OUT reject). **Do not close** without separate Owner GO.
+- **Note (2026-10-16):** dedicated SFM worker poller published on `main` @ **`d3c99e3`**. **OD-SFM-WORKER-KIND-REJECT** Owner-approved (`KIND_OUT→FAILED` RPC) — **local impl pending review** · migration **not applied** remote · **≠** staging E2E · **≠** `SFM_VERSIONS_V1` ON · **≠** Production GREEN.
+- Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller).
 - Production cutover / `SFM_VERSIONS_V1=ON` / staging RO / staging E2E / remote migration reconcile — **separate Owner GO each** (code on `main` ≠ cutover DONE).
 
 ---

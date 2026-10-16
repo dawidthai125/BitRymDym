@@ -143,6 +143,7 @@ describe("GO-SFM-WORKER-ENTRY-FIX-P0 — job field passthrough", () => {
     );
     expect(wire).toMatch(/toSfmAlreadyClaimedWorkerJob/);
     expect(wire).toMatch(/runAlreadyClaimedSfmWorkerJob\(job\)/);
+    expect(wire).toMatch(/rejectSfmExecutorJobKindForWorker/);
     expect(wire).not.toMatch(
       /as Parameters<typeof runAlreadyClaimedSfmWorkerJob>/,
     );
