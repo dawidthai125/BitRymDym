@@ -24,6 +24,39 @@ import { isSfmQuality, type SfmQuality } from "@/lib/sfm/sfm-plan-matrix";
 import type { SfmExecutorJobKind } from "@/types/domain";
 import { mapJobKind } from "@/lib/audio/render-job-core";
 
+/**
+ * Fields required by `runAlreadyClaimedSfmWorkerJob` after `claim_next_sfm_job`.
+ * Single SSOT for poller core + pipeline (no server-only import).
+ * Shape aligns with RenderJobRecord fields used by the SFM bake pipeline.
+ */
+export type SfmAlreadyClaimedWorkerJob = {
+  id: string;
+  kind: string;
+  status: string;
+  ownerId: string;
+  projectId?: string | null;
+  sfmVersionId?: string | null;
+  sfmQuality?: string | null;
+};
+
+/**
+ * Explicit field pick — prevents accidental {id,kind,status}-only strip at wiring.
+ * Runtime-complete for TypeScript assignability into the pipeline.
+ */
+export function toSfmAlreadyClaimedWorkerJob(
+  job: SfmAlreadyClaimedWorkerJob,
+): SfmAlreadyClaimedWorkerJob {
+  return {
+    id: job.id,
+    kind: job.kind,
+    status: job.status,
+    ownerId: job.ownerId,
+    projectId: job.projectId ?? null,
+    sfmVersionId: job.sfmVersionId ?? null,
+    sfmQuality: job.sfmQuality ?? null,
+  };
+}
+
 /** Fail-closed: only the three OD-SFM-ID-07 executor kinds. */
 export function requireSfmExecutorJobKind(
   kind: string | null | undefined,

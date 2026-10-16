@@ -132,6 +132,27 @@ export function isSfmVersionsV1Enabled(
 export const SFM_VERSIONS_V1 = isSfmVersionsV1Enabled();
 
 /**
+ * SFM dedicated worker process kill switch (GO-SFM-WORKER-ENTRY).
+ * Default OFF. Independent of SFM_VERSIONS_V1 (product) and of
+ * E3_RENDER_JOBS_ENABLED (STUDIO_EXPORT / claim runtime).
+ * Missing / empty / invalid → false (fail-closed).
+ */
+export function parseSfmWorkerEnabledFlag(
+  raw: string | undefined,
+): boolean {
+  return parseBoolEnv(raw, false) === true;
+}
+
+export function isSfmWorkerEnabled(
+  raw: string | undefined = process.env.SFM_WORKER_ENABLED,
+): boolean {
+  return parseSfmWorkerEnabledFlag(raw);
+}
+
+/** Module snapshot of SFM_WORKER_ENABLED (tests prefer isSfmWorkerEnabled()). */
+export const SFM_WORKER_ENABLED = isSfmWorkerEnabled();
+
+/**
  * Worker-facing auth for CLAIM / complete (OD-E35-03).
  * Server-only secret — never expose to client. Distinct from feature flags.
  */

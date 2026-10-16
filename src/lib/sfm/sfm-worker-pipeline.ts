@@ -10,7 +10,6 @@ import "server-only";
 
 import type { BakePcmInput } from "@/lib/audio/mp3-encode";
 import { RenderJobDomainError } from "@/lib/audio/render-job-core";
-import type { RenderJobRecord } from "@/lib/audio/render-job-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { completeSfmStageForService } from "@/lib/sfm/sfm-foundation-service";
 import { stageKindForSfmExecutor } from "@/lib/sfm/sfm-executor-kinds";
@@ -28,11 +27,14 @@ import {
   requireSfmExecutorJobKind,
   requireSfmQualityFromJob,
   validateSfmMixPrepareSnapshot,
+  type SfmAlreadyClaimedWorkerJob,
   type SfmMixPrepareValidation,
 } from "@/lib/sfm/sfm-worker-core";
 import { SfmDomainError } from "@/lib/sfm/sfm-domain";
 import type { SfmExecutorJobKind } from "@/types/domain";
 import type { SfmQuality } from "@/lib/sfm/sfm-plan-matrix";
+
+export type { SfmAlreadyClaimedWorkerJob };
 
 export type SfmWorkerPipelineResult =
   | {
@@ -217,16 +219,7 @@ function mapFailCode(error: unknown): { code: string; message: string } {
  * MUST NOT be called from STUDIO_EXPORT poller.
  */
 export async function runAlreadyClaimedSfmWorkerJob(
-  job: Pick<
-    RenderJobRecord,
-    | "id"
-    | "kind"
-    | "status"
-    | "ownerId"
-    | "projectId"
-    | "sfmVersionId"
-    | "sfmQuality"
-  >,
+  job: SfmAlreadyClaimedWorkerJob,
   deps: Partial<SfmWorkerPipelineDeps> = {},
 ): Promise<SfmWorkerPipelineResult> {
   const d: SfmWorkerPipelineDeps = { ...defaultDeps(), ...deps };
