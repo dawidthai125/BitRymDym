@@ -4,12 +4,31 @@
  * Recording entitlements remain in config/recording.ts — do not merge.
  */
 
-function parseBoolEnv(raw: string | undefined, fallback: boolean): boolean {
+/**
+ * Shared bool env parse (fail-closed defaults via caller fallback).
+ * true-class: 1 / true / yes / on (case-insensitive)
+ * false-class: 0 / false / no / off
+ * missing / empty / garbage → fallback (for E3_RENDER_JOBS_ENABLED: false)
+ */
+export function parseBoolEnv(
+  raw: string | undefined,
+  fallback: boolean,
+): boolean {
   if (raw === undefined || raw === "") return fallback;
   const v = raw.trim().toLowerCase();
   if (v === "1" || v === "true" || v === "yes" || v === "on") return true;
   if (v === "0" || v === "false" || v === "no" || v === "off") return false;
   return fallback;
+}
+
+/**
+ * Fail-closed gate for durable Render Jobs / Contabo poller claim path.
+ * Only explicit true-class enables processing. Garbage never enables.
+ */
+export function parseE3RenderJobsEnabledFlag(
+  raw: string | undefined,
+): boolean {
+  return parseBoolEnv(raw, false) === true;
 }
 
 /** Private durable mix/export bucket (OAD-07). Not take-audio / beat-audio. */
@@ -94,10 +113,44 @@ export const E3_MIX_ENABLED = parseBoolEnv(process.env.E3_MIX_ENABLED, false);
  * Default OFF. Independent of E3_MIX_ENABLED / E3_PUBLIC_AUDIO.
  * Never authorizes public Free Audio by itself.
  */
-export const E3_RENDER_JOBS_ENABLED = parseBoolEnv(
+export const E3_RENDER_JOBS_ENABLED = parseE3RenderJobsEnabledFlag(
   process.env.E3_RENDER_JOBS_ENABLED,
-  false,
 );
+
+/**
+ * SFM Foundation Stage A — Accept / domain stages gate (GO-SFM-IMPL-A).
+ * Default OFF (fail-closed). Independent of E3_RENDER_JOBS_ENABLED.
+ * Does not authorize grants, quality encode, download route, or Contabo jobs.
+ */
+export function isSfmVersionsV1Enabled(
+  raw: string | undefined = process.env.SFM_VERSIONS_V1,
+): boolean {
+  return parseBoolEnv(raw, false) === true;
+}
+
+/** Module snapshot of SFM_VERSIONS_V1 (tests prefer isSfmVersionsV1Enabled()). */
+export const SFM_VERSIONS_V1 = isSfmVersionsV1Enabled();
+
+/**
+ * SFM dedicated worker process kill switch (GO-SFM-WORKER-ENTRY).
+ * Default OFF. Independent of SFM_VERSIONS_V1 (product) and of
+ * E3_RENDER_JOBS_ENABLED (STUDIO_EXPORT / claim runtime).
+ * Missing / empty / invalid → false (fail-closed).
+ */
+export function parseSfmWorkerEnabledFlag(
+  raw: string | undefined,
+): boolean {
+  return parseBoolEnv(raw, false) === true;
+}
+
+export function isSfmWorkerEnabled(
+  raw: string | undefined = process.env.SFM_WORKER_ENABLED,
+): boolean {
+  return parseSfmWorkerEnabledFlag(raw);
+}
+
+/** Module snapshot of SFM_WORKER_ENABLED (tests prefer isSfmWorkerEnabled()). */
+export const SFM_WORKER_ENABLED = isSfmWorkerEnabled();
 
 /**
  * Worker-facing auth for CLAIM / complete (OD-E35-03).

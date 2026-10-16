@@ -66,12 +66,22 @@ export type StudioExportJobRecord = {
   /** Present when status is SUCCEEDED and a READY artifact exists for the owner. */
   artifactId?: string | null;
   /**
+   * Trusted `audio_artifacts.sfm_version_id` when artifact present.
+   * Null for LEGACY_STUDIO (MVP STUDIO_EXPORT) — client must not invent SFM.
+   */
+  sfmVersionId?: string | null;
+  /**
    * I.17 — allowlisted public failure code (null when not terminal-fail).
    * Derived from render_jobs.error_code; never trusts raw DB message text.
    */
   errorCode?: string | null;
   /** Safe public message paired with errorCode (never raw renderer/DB text). */
   errorMessage?: string | null;
+};
+
+type StudioExportArtifactRef = {
+  artifactId: string | null;
+  sfmVersionId: string | null;
 };
 
 const STUDIO_EXPORT_JOB_SELECT =
@@ -88,7 +98,7 @@ function assertStudioExportJobsEnabled(): void {
 
 function mapStudioExportJob(
   row: Record<string, unknown>,
-  artifactId: string | null = null,
+  artifact: StudioExportArtifactRef | string | null = null,
 ): StudioExportJobRecord {
   const snapshot = row.document_snapshot as
     | {
@@ -103,6 +113,12 @@ function mapStudioExportJob(
     rawErrorCode:
       typeof row.error_code === "string" ? row.error_code : null,
   });
+  const artifactRef: StudioExportArtifactRef =
+    artifact === null || artifact === undefined
+      ? { artifactId: null, sfmVersionId: null }
+      : typeof artifact === "string"
+        ? { artifactId: artifact, sfmVersionId: null }
+        : artifact;
   return {
     id: row.id as string,
     ownerId: row.owner_id as string,
@@ -121,23 +137,26 @@ function mapStudioExportJob(
         : "",
     createdAt: row.created_at as string,
     workerInfraStatus: "PREPARED_CODE",
-    artifactId,
+    artifactId: artifactRef.artifactId,
+    sfmVersionId: artifactRef.sfmVersionId,
     errorCode: publicFail.errorCode,
     errorMessage: publicFail.errorMessage,
   };
 }
 
-async function resolveStudioExportArtifactIdFor(
+async function resolveStudioExportArtifactFor(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   context: AuthContext,
   jobId: string,
   status: string,
-): Promise<string | null> {
-  if (status !== "SUCCEEDED") return null;
+): Promise<StudioExportArtifactRef> {
+  if (status !== "SUCCEEDED") {
+    return { artifactId: null, sfmVersionId: null };
+  }
   const nowIso = new Date().toISOString();
   const { data: art } = await admin
     .from("audio_artifacts")
-    .select("id")
+    .select("id, sfm_version_id")
     .eq("render_job_id", jobId)
     .eq("owner_id", context.userId)
     .eq("status", "READY")
@@ -146,7 +165,12 @@ async function resolveStudioExportArtifactIdFor(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return (art?.id as string | undefined) ?? null;
+  const artifactId = (art?.id as string | undefined) ?? null;
+  const sfmVersionId =
+    typeof art?.sfm_version_id === "string" && art.sfm_version_id.length > 0
+      ? art.sfm_version_id
+      : null;
+  return { artifactId, sfmVersionId };
 }
 
 /**
@@ -223,13 +247,13 @@ export async function createStudioExportJobFor(
         "CONFLICT",
       );
     }
-    const artifactId = await resolveStudioExportArtifactIdFor(
+    const artifact = await resolveStudioExportArtifactFor(
       admin,
       context,
       existing.id as string,
       existing.status as string,
     );
-    return mapStudioExportJob(existing, artifactId);
+    return mapStudioExportJob(existing, artifact);
   }
 
   // Ownership + canonical document (server-side).
@@ -425,13 +449,13 @@ export async function getOwnStudioExportJobFor(
   ) {
     throw new AuthError("NOT_FOUND", "Studio export job not found.");
   }
-  const artifactId = await resolveStudioExportArtifactIdFor(
+  const artifact = await resolveStudioExportArtifactFor(
     admin,
     context,
     data.id as string,
     data.status as string,
   );
-  return mapStudioExportJob(data, artifactId);
+  return mapStudioExportJob(data, artifact);
 }
 
 export async function getOwnStudioExportJob(
@@ -439,4 +463,61 @@ export async function getOwnStudioExportJob(
   options?: { projectId?: string },
 ): Promise<StudioExportJobRecord> {
   return getOwnStudioExportJobFor(await requireUser(), jobId, options);
+}
+
+/**
+ * I.45AU — latest own STUDIO_EXPORT for an owned project (read-only recovery).
+ * Does not enqueue. Returns null when the owner has no export jobs for the project.
+ * Uses I.17 mapStudioExportJob (allowlisted errorCode/errorMessage when FAILED).
+ */
+export async function getLatestOwnStudioExportJobFor(
+  context: AuthContext,
+  projectId: string,
+): Promise<StudioExportJobRecord | null> {
+  if (typeof projectId !== "string" || projectId.length < 8) {
+    throw new RenderJobDomainError("Invalid projectId.", "INVALID");
+  }
+
+  const admin = createSupabaseAdminClient();
+
+  // Ownership matches enqueue contract (same AuthError surface; no document load).
+  const { data: projectRow, error: projectError } = await admin
+    .from("studio_projects")
+    .select("id, owner_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (projectError) throw new Error(projectError.message);
+  if (!projectRow) {
+    throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+  }
+  if ((projectRow.owner_id as string) !== context.userId) {
+    throw new AuthError("FORBIDDEN", "Brak dostępu do tego projektu.");
+  }
+
+  const { data, error } = await admin
+    .from("render_jobs")
+    .select(STUDIO_EXPORT_JOB_SELECT)
+    .eq("owner_id", context.userId)
+    .eq("project_id", projectId)
+    .eq("kind", "STUDIO_EXPORT")
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const artifact = await resolveStudioExportArtifactFor(
+    admin,
+    context,
+    data.id as string,
+    data.status as string,
+  );
+  return mapStudioExportJob(data, artifact);
+}
+
+export async function getLatestOwnStudioExportJob(
+  projectId: string,
+): Promise<StudioExportJobRecord | null> {
+  return getLatestOwnStudioExportJobFor(await requireUser(), projectId);
 }

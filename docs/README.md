@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** Docs tip **`df37048`** · prod **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** (Ready · Current · Latest · **I.45EJ-R1 PASS** RO) · aliases **www** + **`bitrymdym.vercel.app`** ASSIGNED · apex **308→www** · app-code tip **`ce2f0cc`** (HISTORY for live aliases) · V2 **`44f7cbd`** (**GREEN / CLOSED**) · **STUDIO_EXPORT APP DEPLOYED** · **I.45DR** narrow Contabo WAV canary **PASS** (job `53398f9e-…` · artifact `21d98be2-…` READY) · persistent worker **disabled/inactive** · I.45BY + I.45DR SUCCEEDED — **do not re-run** · **I.45CV** delete×export-history → HTTP **409** **PRODUCTION VERIFIED** (narrow) · markers **I.45CF** (selective · ≠ full tree) · **Studio migration ≠ CLOSED** · **Full Final Mix Production GREEN — OPEN / NOT VERIFIED** · P6.8 **NOT STARTED** · waiver `EXPORT_WAV` · PR #8 = docs-only (**≠** app feature release). Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · **Living SSOT only:** [PROJECT_STATE.md](./PROJECT_STATE.md) · Final Mix: [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md).
+**Now:** **Final Mix Production GREEN: VERIFIED** · **Contabo continuous poller V1: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Contabo sync **NOT DONE** · deploy **NOT DONE** · host **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · **NEXT:** GO-HOST-RO-CONTABO / GO-SYNC / canary / always-on. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · **Living SSOT:** [PROJECT_STATE.md](./PROJECT_STATE.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -71,7 +71,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 
 | Dokument | Opis |
 |----------|------|
-| [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) |
+| [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) · **§12 MASTER PROMPTS** |
 | [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu |
 | [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) | Cold-start handoff (GPT + Cursor) |
 | [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) | Konstytucja produktu (v0.1) |
@@ -105,8 +105,18 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | [decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_SHELL_DESIGN_FREEZE.md) | Studio Visual Shell Pass design freeze · OD-VS-01…05 · **not** P7.1.7 |
 | [decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md](./decisions/STUDIO_VISUAL_PARITY_V2_DESIGN_FREEZE.md) | Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** @ `44f7cbd` · **not** P7.1.7 |
 | [decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_DESIGN_FREEZE.md) | Studio Final Mix product freeze · OD-SFM · OD-VS-03 supersession for Export meaning |
-| [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) | STUDIO_EXPORT bake/UI · docs tip `df37048` / `dpl_7Cp2gQ9…` (I.45EJ-R1) · app-code tip `ce2f0cc` HISTORY · I.45DR narrow Contabo WAV canary PASS · I.45BY SUCCEEDED · I.45CV 409 PRODUCTION VERIFIED (narrow) · Contabo markers I.45CF (selective) · Full Final Mix GREEN still OPEN |
-| [audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](./audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) | I.18 local empty-session worker/DB/Storage evidence freeze (historical session) |
+| [decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) | STUDIO_EXPORT bake/UI · **Stage J CLOSED** · empty-session **prod PASS** · **FULL FIXTURE VERIFIED PASS** · Final Mix GREEN **VERIFIED** (frozen IN) |
+| [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md) | Final Mix Production GREEN criteria freeze · living GREEN **VERIFIED** · all IN **PASS** |
+| [audits/STAGE_J_FINAL_CLOSURE.md](./audits/STAGE_J_FINAL_CLOSURE.md) | Stage J — **CLOSED** |
+| [audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) | Stage J gate **J2** Download AuthZ — **PASS / CLOSED** (I.45EX-A16/A17/A18) · ≠ Final Mix GREEN |
+| [audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md](./audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md) | Stage J object_key reject-only — **PASS** (narrow · separate from P5/P6) |
+| [audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md](./audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md) | Stage J P5/P6 owner download endpoint — **PASS** (JSON only · ≠ WAV retrieval) |
+| [audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](./audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) | I.18 local empty-session evidence — **ON MAIN** · ≠ production probe |
+| [audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md](./audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md) | Empty-session **production** gate — **PASS** · ≠ Final Mix GREEN |
+| [audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md](./audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) | Gate **#7 FULL FIXTURE VERIFIED** — **PASS** |
+| [audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md](./audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) | Final Mix Production GREEN — **VERIFIED** (frozen IN only · WAIVE/OUT unchanged) |
+| [decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) | Contabo continuous poller V1 — **DESIGN FREEZE ACCEPTED** · STUDIO_EXPORT only |
+| [audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) | Contabo poller V1 — **IMPLEMENTED / LOCAL TESTS PASS** · sync/deploy/host/canary/always-on **NOT DONE** |
 | [architecture/STUDIO_FINAL_MIX_ARCHITECTURE_AUDIT.md](./architecture/STUDIO_FINAL_MIX_ARCHITECTURE_AUDIT.md) | Studio Final Mix architecture audit |
 | [audits/POLISH_UX_PRODUCTION_CLOSEOUT.md](./audits/POLISH_UX_PRODUCTION_CLOSEOUT.md) | Polish UX Mix / Master / Recording / Playback — **CLOSED / PRODUCTION VERIFIED — PASS WITH EVIDENCE LIMITATIONS** @ `0afa29b` |
 | [audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md](./audits/A_ACCOUNT_BEATS_PRODUCTION_CLOSEOUT.md) | Wave A Account / Beats — **CLOSED / PRODUCTION VERIFIED — GREEN** @ `2c4200b` |

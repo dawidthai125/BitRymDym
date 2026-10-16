@@ -13,9 +13,13 @@ import {
   isStudioExportActiveStatus,
   isStudioExportTerminalStatus,
   mapJobStatusToUiPhase,
+  mapStudioExportDownloadHttpResult,
   mapStudioExportHttpResult,
+  mapStudioExportLatestHttpResult,
+  parseStudioExportSfmVersionId,
   studioExportArtifactDownloadUrl,
   studioExportEnqueueUrl,
+  studioExportLatestStatusUrl,
   studioExportStatusUrl,
 } from "@/lib/studio/studio-export-client";
 import { handleStudioDialogKeydown } from "@/lib/studio/studio-dialog-focus";
@@ -65,16 +69,175 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     expect(a).toMatch(/^studio-export:proj-1:3:attempt-a$/);
   });
 
-  it("uses project-scoped enqueue/status URLs and owner artifact download", () => {
+  it("uses project-scoped enqueue/status URLs and domain-aware artifact download", () => {
     expect(studioExportEnqueueUrl("abc")).toBe(
       "/api/studio/projects/abc/export",
     );
     expect(studioExportStatusUrl("abc", "job-1")).toBe(
       "/api/studio/projects/abc/export?jobId=job-1",
     );
+    expect(studioExportLatestStatusUrl("abc")).toBe(
+      "/api/studio/projects/abc/export",
+    );
+    // LEGACY_STUDIO / no sfmVersionId → mix (pre-cutover; never invent SFM).
     expect(studioExportArtifactDownloadUrl("art-1")).toBe(
       "/api/mix/artifacts/art-1/download",
     );
+    expect(studioExportArtifactDownloadUrl("art-1", { sfmVersionId: null })).toBe(
+      "/api/mix/artifacts/art-1/download",
+    );
+    expect(studioExportArtifactDownloadUrl("art-1", { sfmVersionId: "" })).toBe(
+      "/api/mix/artifacts/art-1/download",
+    );
+    // SFM — trusted non-empty sfmVersionId only.
+    expect(
+      studioExportArtifactDownloadUrl("art-1", {
+        sfmVersionId: "ver-sfm-1",
+      }),
+    ).toBe("/api/studio/artifacts/art-1/download");
+  });
+
+  it("OD-06 UI wire — never invents SFM from projectId / empty / non-string", () => {
+    expect(parseStudioExportSfmVersionId(undefined)).toBeNull();
+    expect(parseStudioExportSfmVersionId(null)).toBeNull();
+    expect(parseStudioExportSfmVersionId("")).toBeNull();
+    expect(parseStudioExportSfmVersionId(123)).toBeNull();
+    expect(parseStudioExportSfmVersionId("ver-1")).toBe("ver-1");
+    // projectId alone must not flip route to SFM.
+    expect(
+      studioExportArtifactDownloadUrl("legacy-art", {
+        sfmVersionId: parseStudioExportSfmVersionId(undefined),
+      }),
+    ).toBe("/api/mix/artifacts/legacy-art/download");
+  });
+
+  it("OD-06 UI wire — download AuthZ errors never look like success", () => {
+    for (const status of [401, 403, 404]) {
+      const mapped = mapStudioExportDownloadHttpResult({
+        httpStatus: status,
+        json: { success: true, url: "https://evil.example/signed" },
+      });
+      expect(mapped.ok).toBe(false);
+      if (!mapped.ok) {
+        expect(mapped.httpStatus).toBe(status);
+      }
+    }
+    const missingUrl = mapStudioExportDownloadHttpResult({
+      httpStatus: 200,
+      json: { success: true },
+    });
+    expect(missingUrl.ok).toBe(false);
+    const emptyUrl = mapStudioExportDownloadHttpResult({
+      httpStatus: 200,
+      json: { success: true, url: "" },
+    });
+    expect(emptyUrl.ok).toBe(false);
+    const ok = mapStudioExportDownloadHttpResult({
+      httpStatus: 200,
+      json: { success: true, url: "https://storage.example/signed" },
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.url).toBe("https://storage.example/signed");
+    }
+  });
+
+  it("I.45AU maps latest empty / job / auth without inventing enqueue", () => {
+    const empty = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: { success: true, found: false, projectId: "p1" },
+    });
+    expect(empty.ok).toBe(true);
+    if (empty.ok) {
+      expect(empty.empty).toBe(true);
+    }
+    const found = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j1",
+        projectId: "p1",
+        status: "SUCCEEDED",
+        artifactId: "art-1",
+      },
+    });
+    expect(found.ok).toBe(true);
+    if (found.ok && !found.empty) {
+      expect(found.phase).toBe("SUCCEEDED");
+      expect(found.artifactId).toBe("art-1");
+      expect(found.sfmVersionId).toBeNull();
+      expect(found.errorCode).toBeNull();
+      expect(found.message).toBeNull();
+    }
+    const foundSfm = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j1s",
+        projectId: "p1",
+        status: "SUCCEEDED",
+        artifactId: "art-sfm",
+        sfmVersionId: "ver-sfm",
+      },
+    });
+    expect(foundSfm.ok).toBe(true);
+    if (foundSfm.ok && !foundSfm.empty) {
+      expect(foundSfm.sfmVersionId).toBe("ver-sfm");
+      expect(
+        studioExportArtifactDownloadUrl(foundSfm.artifactId!, {
+          sfmVersionId: foundSfm.sfmVersionId,
+        }),
+      ).toBe("/api/studio/artifacts/art-sfm/download");
+    }
+    const queued = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j2",
+        projectId: "p1",
+        status: "QUEUED",
+        artifactId: null,
+      },
+    });
+    expect(queued.ok).toBe(true);
+    if (queued.ok && !queued.empty) {
+      expect(queued.phase).toBe("QUEUED");
+    }
+    const failed = mapStudioExportLatestHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        found: true,
+        jobId: "j3",
+        projectId: "p1",
+        status: "FAILED",
+        artifactId: null,
+        errorCode: "STUDIO_RENDER_EMPTY_SESSION",
+        errorMessage: "raw should be ignored",
+      },
+    });
+    expect(failed.ok).toBe(true);
+    if (failed.ok && !failed.empty) {
+      expect(failed.phase).toBe("FAILED");
+      expect(failed.errorCode).toBe("STUDIO_RENDER_EMPTY_SESSION");
+      expect(failed.message).toMatch(/pustej lub całkowicie wyciszonej/i);
+      expect(failed.message).not.toMatch(/raw should be ignored/);
+    }
+    expect(
+      mapStudioExportLatestHttpResult({
+        httpStatus: 401,
+        json: { error: "x" },
+      }).ok,
+    ).toBe(false);
+    expect(
+      mapStudioExportLatestHttpResult({
+        httpStatus: 403,
+        json: { error: "x" },
+      }).ok,
+    ).toBe(false);
   });
 
   it("maps success enqueue / status payloads", () => {
@@ -111,6 +274,22 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
     if (mapped.ok) {
       expect(mapped.phase).toBe("SUCCEEDED");
       expect(mapped.artifactId).toBe("art-9");
+      expect(mapped.sfmVersionId).toBeNull();
+    }
+    const sfm = mapStudioExportHttpResult({
+      httpStatus: 200,
+      json: {
+        success: true,
+        jobId: "j2",
+        projectId: "p1",
+        status: "SUCCEEDED",
+        artifactId: "art-sfm",
+        sfmVersionId: "ver-9",
+      },
+    });
+    expect(sfm.ok).toBe(true);
+    if (sfm.ok) {
+      expect(sfm.sfmVersionId).toBe("ver-9");
     }
   });
 
@@ -159,6 +338,33 @@ describe("STUDIO_EXPORT Stage I — client mapping", () => {
   });
 });
 
+describe("OD-06 UI wire — domain routing matrix (source)", () => {
+  it("keeps E3/MIX and TAKE on mix artifact download; RAW take path untouched", () => {
+    const mixPanel = readFileSync(
+      join(ROOT, "src/components/mix/mix-panel.tsx"),
+      "utf8",
+    );
+    const takeMenu = readFileSync(
+      join(ROOT, "src/components/takes/take-download-menu.tsx"),
+      "utf8",
+    );
+    const takeRaw = readFileSync(
+      join(ROOT, "src/app/api/takes/download/route.ts"),
+      "utf8",
+    );
+    expect(mixPanel).toMatch(
+      /\/api\/mix\/artifacts\/\$\{exportArtifactId\}\/download/,
+    );
+    expect(mixPanel).not.toMatch(/\/api\/studio\/artifacts\//);
+    expect(takeMenu).toMatch(
+      /\/api\/mix\/artifacts\/\$\{artifactId\}\/download/,
+    );
+    expect(takeMenu).not.toMatch(/\/api\/studio\/artifacts\//);
+    expect(takeRaw).not.toMatch(/createOwnSfmArtifactDownloadSignedUrl/);
+    expect(takeRaw).not.toMatch(/studioExportArtifactDownloadUrl/);
+  });
+});
+
 describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
   const control = readFileSync(
     join(ROOT, "src/components/studio/studio-export-control.tsx"),
@@ -199,6 +405,16 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(pollEffect?.[0] ?? "").not.toMatch(/enqueueExport|studioExportEnqueueUrl/);
     expect(control).toMatch(/data-testid="studio-export-start"/);
     expect(control).toMatch(/void enqueueExport\(/);
+    // I.45AU recovery effect is GET-only.
+    expect(control).toMatch(/studioExportLatestStatusUrl/);
+    expect(control).toMatch(/mapStudioExportLatestHttpResult/);
+    const recoverEffect = control.match(
+      /recoverLatest[\s\S]*?studioExportLatestStatusUrl[\s\S]*?\}, \[open, projectId\]/,
+    );
+    expect(recoverEffect?.[0] ?? "").toMatch(/method: "GET"/);
+    expect(recoverEffect?.[0] ?? "").not.toMatch(
+      /studioExportEnqueueUrl|method: "POST"/,
+    );
   });
 
   it("passes expectedDocumentVersion + idempotencyKey; no client source claims", () => {
@@ -222,10 +438,16 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
   });
 
   it("downloads only via owner artifact endpoint (no raw object key links)", () => {
-    expect(control).toMatch(/studioExportArtifactDownloadUrl\(artifactId\)/);
+    expect(control).toMatch(
+      /studioExportArtifactDownloadUrl\(artifactId,\s*\{\s*sfmVersionId\s*\}\)/,
+    );
+    expect(control).toMatch(/mapStudioExportDownloadHttpResult/);
     expect(studioExportArtifactDownloadUrl("art-x")).toContain(
       "/api/mix/artifacts/art-x/download",
     );
+    expect(
+      studioExportArtifactDownloadUrl("art-x", { sfmVersionId: "v1" }),
+    ).toContain("/api/studio/artifacts/art-x/download");
     expect(control).not.toMatch(/object_key|storage\/v1|supabase\.co\/storage/);
     expect(control).toMatch(/data-testid="studio-export-download"/);
     expect(control).toMatch(/phase === "SUCCEEDED" && Boolean\(artifactId\)/);
@@ -235,18 +457,98 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(control).toMatch(/forceNewAttempt/);
     expect(control).toMatch(/networkError: true/);
     expect(control).toMatch(/idempotencyKeyRef/);
-    expect(control).toMatch(
-      /forceNewAttempt:\s*\r?\n\s*phase === "FAILED" \|\| phase === "CONFLICT"/,
-    );
+    expect(control).toMatch(/phase === "FAILED"/);
+    expect(control).toMatch(/phase === "CONFLICT"/);
+    expect(control).toMatch(/phase === "SUCCEEDED"/);
+    expect(control).toMatch(/forceNewAttempt:/);
     expect(control).toMatch(/reuses the same idempotency key/);
     expect(control).toMatch(/mapped\.phase === "CONFLICT"/);
   });
 
+  it("I.45AU recovers on dialog open; SUCCEEDED re-export uses forceNewAttempt", () => {
+    expect(control).toMatch(/recoverGenRef/);
+    expect(control).toMatch(/\[open, projectId\]/);
+    expect(control).toMatch(/Eksportuj ponownie/);
+    expect(control).toMatch(
+      /phase === "FAILED" \|\|\s*phase === "CONFLICT" \|\|\s*phase === "SUCCEEDED"/,
+    );
+    expect(control).toMatch(/phase === "SUCCEEDED"/);
+    expect(control).toMatch(/canStart/);
+    // Recovery must not POST; abort on close.
+    expect(control).toMatch(/ac\.abort\(\)/);
+    expect(control).not.toMatch(/object_key|objectKey/);
+    // FAILED retry path still forceNewAttempt (no regression).
+    expect(control).toMatch(/Ponów eksport/);
+  });
+
+  it("I.17 FAILED uses safe mapped.message in poll and applyRecoveredJob", () => {
+    expect(control).toMatch(/typed empty-session vs generic FAILED/);
+    expect(control).toMatch(/mapped\.message \?\?/);
+    expect(control).toMatch(/function applyRecoveredJob/);
+    expect(control).toMatch(/message: mapped\.message/);
+    // Must not surface raw API/DB error text as the FAILED status copy.
+    expect(control).not.toMatch(/setMessage\(\s*json\.error/);
+    expect(control).not.toMatch(/setMessage\(\s*error\.message/);
+  });
+
+  it("I.45AW UNAVAILABLE with jobId prefers status GET; force-new is explicit", () => {
+    // Recovered SUCCEEDED without artifact → UNAVAILABLE (keeps jobId).
+    expect(control).toMatch(
+      /mapped\.phase === "SUCCEEDED" && !mapped\.artifactId/,
+    );
+    expect(control).toMatch(
+      /Eksport zakończony, ale artefakt nie jest jeszcze dostępny/,
+    );
+    expect(control).toMatch(/unavailableWithTrackedJob/);
+    expect(control).toMatch(
+      /phase === "UNAVAILABLE" && Boolean\(jobId\)/,
+    );
+    // Generic start hidden / blocked when UNAVAILABLE tracks a job.
+    expect(control).toMatch(/!unavailableWithTrackedJob/);
+    expect(control).toMatch(/canForceNewDespiteUnavailable/);
+    expect(control).toMatch(/data-testid="studio-export-force-new"/);
+    expect(control).toMatch(
+      /Utwórz nowy eksport mimo braku gotowego pliku/,
+    );
+    expect(control).toMatch(
+      /enqueueExport\(\{ forceNewAttempt: true \}\)/,
+    );
+    // Refresh is GET-only via pollOnce → studioExportStatusUrl.
+    expect(control).toMatch(/data-testid="studio-export-refresh"/);
+    expect(control).toMatch(/onRefreshStatus/);
+    const refreshFn = control.match(
+      /async function onRefreshStatus\(\) \{[\s\S]*?\n  \}/,
+    )?.[0] ?? "";
+    expect(refreshFn).toMatch(/pollOnce\(jobId\)/);
+    expect(refreshFn).not.toMatch(/studioExportEnqueueUrl|method: "POST"/);
+    // Does not clear jobId on UNAVAILABLE path in applyRecoveredJob.
+    expect(control).toMatch(/function applyRecoveredJob/);
+    expect(control).toMatch(/setJobId\(mapped\.jobId\)/);
+    const recoveredUnavailable = control.match(
+      /setJobId\(mapped\.jobId\)[\s\S]{0,400}?Eksport zakończony, ale artefakt nie jest jeszcze dostępny/,
+    )?.[0] ?? "";
+    expect(recoveredUnavailable.length).toBeGreaterThan(0);
+    expect(recoveredUnavailable).not.toMatch(/setJobId\(null\)/);
+    // FAILED / CONFLICT still use generic start + forceNewAttempt (no regression).
+    expect(control).toMatch(/Ponów eksport/);
+    expect(control).toMatch(/phase === "FAILED"/);
+    expect(control).toMatch(/phase === "CONFLICT"/);
+    // SUCCEEDED + READY download path unchanged.
+    expect(control).toMatch(
+      /phase === "SUCCEEDED" && Boolean\(artifactId\)/,
+    );
+    expect(control).toMatch(/data-testid="studio-export-download"/);
+  });
+
   it("status GET is project-scoped and returns artifactId", () => {
     expect(route).toMatch(/getOwnStudioExportJob\(jobId, \{ projectId \}\)/);
+    expect(route).toMatch(/getLatestOwnStudioExportJob\(projectId\)/);
     expect(route).toMatch(/artifactId: job\.artifactId \?\? null/);
-    expect(service).toMatch(/resolveStudioExportArtifactIdFor/);
+    expect(service).toMatch(/resolveStudioExportArtifactFor/);
+    expect(service).toMatch(/sfm_version_id/);
+    expect(route).toMatch(/sfmVersionId: job\.sfmVersionId \?\? null/);
     expect(service).toMatch(/options\?: \{ projectId\?: string \}/);
+    expect(service).toMatch(/getLatestOwnStudioExportJobFor/);
   });
 
   it("keeps min hit target and dialog a11y", () => {

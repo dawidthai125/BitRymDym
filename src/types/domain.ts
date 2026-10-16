@@ -152,9 +152,27 @@ export type RenderJobTier = (typeof RENDER_JOB_TIERS)[number];
 export const MIX_RENDER_JOB_TIERS = ["BASIC_MP3", "HQ_MP3", "WAV"] as const;
 export type MixRenderJobTier = (typeof MIX_RENDER_JOB_TIERS)[number];
 
-/** Job source kinds. STUDIO_EXPORT is a first-class worker kind (local bake + UI Export). */
-export const RENDER_JOB_KINDS = ["MIX", "TAKE_EXPORT", "STUDIO_EXPORT"] as const;
+/**
+ * Job source kinds.
+ * SFM_* = Studio Final Mix executors (OD-SFM-ID-07) — ≠ domain stages SFM_MIX/SFM_MASTER.
+ */
+export const RENDER_JOB_KINDS = [
+  "MIX",
+  "TAKE_EXPORT",
+  "STUDIO_EXPORT",
+  "SFM_MIX_PREPARE",
+  "SFM_MASTER_BAKE",
+  "SFM_QUALITY_ENCODE",
+] as const;
 export type RenderJobKind = (typeof RENDER_JOB_KINDS)[number];
+
+/** SFM executor kinds only (Stage C). Contabo STUDIO poller must not claim these. */
+export const SFM_EXECUTOR_JOB_KINDS = [
+  "SFM_MIX_PREPARE",
+  "SFM_MASTER_BAKE",
+  "SFM_QUALITY_ENCODE",
+] as const;
+export type SfmExecutorJobKind = (typeof SFM_EXECUTOR_JOB_KINDS)[number];
 
 export const AUDIO_ARTIFACT_STATUSES = [
   "READY",

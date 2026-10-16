@@ -352,10 +352,13 @@ export function StudioProjectList({
     setDeleteError(null);
     startTransition(async () => {
       const deleted: string[] = [];
+      let failedTitle: string | null = null;
       try {
         for (const project of targets) {
+          failedTitle = project.title;
           await deleteProjectRequest(project.id);
           deleted.push(project.id);
+          failedTitle = null;
         }
         setProjects((prev) => prev.filter((p) => !deleted.includes(p.id)));
         setSelectedIds(new Set());
@@ -370,10 +373,12 @@ export function StudioProjectList({
             return next;
           });
         }
-        setDeleteError(
+        const base =
           e instanceof Error
             ? e.message
-            : "Nie udało się usunąć zaznaczonych projektów.",
+            : "Nie udało się usunąć zaznaczonych projektów.";
+        setDeleteError(
+          failedTitle ? `„${failedTitle}”: ${base}` : base,
         );
       }
     });

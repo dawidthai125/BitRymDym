@@ -96,6 +96,12 @@
 | OD-PL-06 | Master brand | POLISH-01 | Mix/Master UI | **CLOSED / ACCEPTED** — 2026-10-05 · Master **KEEP EN** Title Case |
 | EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / IMPLEMENTED** — 2026-10-05 · OD-P3-01…11 · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · Premium Tier TTL/cap · follow-up `p_take_id` NON-BLOCKING · **UNCHANGED** by Fala 3.5.1 |
 | EPIC-FALA-351 | Recording Experience + Dual Audio Timeline | Recording UX | Live MIC · Input Monitor · READY_TAKE dual preview | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** — 2026-10-05 · feature `c690831` · verify `75bd80f` · no P1/P2/P3 reopen |
+| OD-CWP-01…08 | Contabo continuous poller V1 (STUDIO_EXPORT only · atomic claim · no auto-retry) | Contabo Ops | Poller impl / enable | **CLOSED / ACCEPTED** — 2026-10-13 · [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) · impl/enable = separate GOs |
+| GO-IMPL-CONTABO-POLL | Implement RPC + poller + tests (no enable) | OD-CWP | Code/migration | **CLOSED / IMPLEMENTED / LOCAL TESTS PASS** — 2026-10-13 · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · Contabo sync/deploy/canary/always-on **NOT DONE** |
+| GO-HOST-RO-CONTABO | Live Contabo read-only verify | OD-CWP | Sync/enable | **OPEN** — host verification **NOT DONE** |
+| GO-SYNC-CONTABO-POLL | Sync approved poller tree to Contabo | OD-CWP | Enable | **OPEN** — Contabo sync **NOT DONE** |
+| GO-ENABLE-CONTABO-POLL-CANARY | Enable poller · one new STUDIO_EXPORT canary | OD-CWP | Always-on | **OPEN** — canary **NOT RUN** |
+| GO-CONTABO-POLL-ALWAYS-ON | Persistent poller enable after canary PASS | OD-CWP | Production continuous | **OPEN** — always-on **NOT ENABLED** |
 
 ---
 
@@ -137,8 +143,37 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-ADMIN-DELETE-01…10 | Admin delete other accounts YES; self NO; last ADMIN NO; reason YES; Resend; `USER_ACCOUNT_DELETE`; ADMIN+`users.edit` | 2026-10-04 |
 | OD-SA-07-01…16 | STORAGE-ARCH-07 backup design freeze · external S3-compatible BACKUP plane · SHA-256 · Object Lock · GC ladder · Phase A **BLOCKED** · VPS COPY **43/43** · AWS **DEFERRED** | 2026-10-04 |
 | OD-VPS-LOCAL-01…12 | Local Windows Layer-2 · **43/43 RESTORE VERIFIED** · path `C:\BitRymDym-Backup\` | 2026-10-05 |
+| OD-CWP-01…08 | Contabo continuous poller V1 · STUDIO_EXPORT only · atomic claim-next · max 1 · no auto-retry · enqueue unchanged | 2026-10-13 |
+| OD-SFM-02 | Historical WAV-only MVP ladder · **SUPERSEDED (product ladder)** by Product Contract Addendum | 2026-10-14 |
+| OD-SFM-07 | Studio Final Mix quality ladder + daily first-download limits (0/1/2/5) | 2026-10-14 |
+| OD-SFM-08 | SFM MIX/MASTER — durable domain stages + separate jobs (variant C); light MIX; bake in MASTER; ≠ E3 `kind=MIX` | 2026-10-14 |
+| OD-SFM-09 | Explicit „Zatwierdź do finalizacji” on immutable version | 2026-10-14 |
+| OD-SFM-10 | Current vs historical final AuthZ / presentation | 2026-10-14 |
+| OD-SFM-11 | Server-side AuthZ for export / grant / download URL | 2026-10-14 |
+| OD-SFM-12 | SFM retention 90d from MASTER_SUCCEEDED; clear current_final on TTL; tombstone; grant ≠ file | 2026-10-14 |
+| OD-SFM-13 | Daily first-download grant caps FREE0/BRONZE1/SILVER2/GOLD5 | 2026-10-14 |
+| OD-SFM-14 | Paid 7,99 day-slot variant B (AVAILABLE → bind at grant; Warsaw expiry; refund rules) | 2026-10-14 |
+| OD-SFM-F02b | SFM multi-format version-scoped keys · current READY invariant · AuthZ/downgrade (supersedes F02 SFM-only) | 2026-10-14 |
+| OD-SFM-F03b | SFM 90d from MASTER_SUCCEEDED (supersedes F03 SFM-only; ≠ TAKE/RAW/E3) | 2026-10-14 |
+| OD-SFM-STAGES-DF | Version/Stages DF · domain names SFM_MIX / SFM_MASTER | 2026-10-14 |
+| OD-SFM-15 | Re-download entitled version without new grant | 2026-10-14 |
+| OD-SFM-16 | Edited work = new version + re-accept + MIX + MASTER + new grant | 2026-10-14 |
+| OD-SFM-17 | One grant per version (all plan-allowed qualities) | 2026-10-14 |
+| OD-SFM-18 | Day reset midnight `Europe/Warsaw` + DST | 2026-10-14 |
+| OD-SFM-ID-01 | SFM dedicated download route + deny SFM on mix route after cutover | 2026-10-14 |
+| OD-SFM-ID-02 | Version grant + historical `granted_qualities` snapshot (≠ unlimited future qualities) | 2026-10-14 |
+| OD-SFM-ID-03 | Multiple paid slots `AVAILABLE` per Warsaw day | 2026-10-14 |
+| OD-SFM-ID-04 | `SFM_MIX` = separate executor job (≠ E3 `kind=MIX`) | 2026-10-14 |
+| OD-SFM-ID-07 | Exact `render_jobs.kind` = `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (≠ stage names; ≠ MIX/STUDIO_EXPORT) | 2026-10-14 |
+| OD-SFM-ID-06 | Legacy Studio WAV (`project_id` set, `sfm_version_id` NULL) after cutover = **DENY** as current SFM final · **no backfill** · **no physical delete** | 2026-10-15 |
+| OD-SFM-WORKER-KIND-REJECT | Unsupported kind after SFM claim → atomic `FAILED` + `error_code=KIND_OUT` via `reject_sfm_executor_job_kind` (SECURITY DEFINER · CAS `RUNNING`+`worker_ref` · service_role) · **no** bake/requeue/stage reset · ambiguous RPC = no fallback mutate · **local code pending Owner review/publish** · **≠** orphan timeout recovery | 2026-10-16 |
 
 Freeze: [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md).
+Contabo poller: [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) (**DESIGN FREEZE ACCEPTED**) · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) (**IMPLEMENTED / LOCAL TESTS PASS**) · sync/deploy/host/canary/always-on **OPEN**.
+Studio Final Mix product contract: [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) (**OWNER ACCEPTED** · product cutover **NOT DONE**).
+SFM Version/Stages freeze: [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) (**OWNER ACCEPTED** docs · `SFM_MIX`/`SFM_MASTER` · **CODE ON MAIN** · ≠ staging/prod E2E GREEN).
+SFM F-addendum: [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) (**OWNER ACCEPTED** docs · F02/F03 **SUPERSEDED SFM-only** by F02b/F03b · **CODE ON MAIN** for A/B1/C/D paths · ≠ cutover).
+SFM Implementation Design pack: [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) (**OWNER ACCEPTED design docs** · OD-SFM-ID-01…04 + **OD-SFM-ID-07 CLOSED** · Stages A/B1/C/D + OD-06 + **HTTP surface** on `main` @ **`2f7050e`** · staging E2E / SFM worker ops / Production GREEN **NOT DONE**).
 W2 contract: [W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md](./W2_PREMIUM_FOUNDATION_DESIGN_CONTRACT.md).
 Admin users: [ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md](./ADMIN_USER_MANAGEMENT_DESIGN_FREEZE.md).
 W4 Admin Delete: [ADMIN_USER_DELETE_DESIGN_FREEZE.md](./ADMIN_USER_DELETE_DESIGN_FREEZE.md) (**CLOSED / PRODUCTION VERIFIED**).
@@ -165,6 +200,20 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 | OD-15 | Identyfikacja wizualna | Final Design System |
 | OD-16 | Język marki | Copy UI |
 | OD-18 | Liczenie udostępnień | Beat sharing stats |
+| GO-HOST-RO-CONTABO | Live RO verify hosta Contabo (**NOT DONE**) | Sync / enable |
+| GO-SYNC-CONTABO-POLL | Sync drzewa pollera na Contabo (**NOT DONE**) | Enable canary |
+| GO-ENABLE-CONTABO-POLL-CANARY | Enable + jeden nowy job canary (**NOT RUN**) | Always-on |
+| GO-CONTABO-POLL-ALWAYS-ON | Persistent enable po canary PASS (**NOT ENABLED**) | Production continuous export |
+| (prod migration apply) | Apply `claim_next_studio_export_job` on production DB | Remote claim-next |
+
+**Studio Final Mix — nadal OPEN po ACCEPT OD-SFM-ID-01…04 + OD-SFM-ID-06 + OD-SFM-ID-07:**
+
+- Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03). **Do not close.**
+- **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT). **Do not close.**
+- **OD-SFM-WORKER-ORPHAN-TIMEOUT** — Recovery for process kill / SIGTERM grace exceed / claim CONFLICT orphans left `RUNNING` (**OPEN**; **≠** KIND_OUT reject). **Do not close** without separate Owner GO.
+- **Note (2026-10-16):** dedicated SFM worker poller published on `main` @ **`d3c99e3`**. **OD-SFM-WORKER-KIND-REJECT** Owner-approved (`KIND_OUT→FAILED` RPC) — **local impl pending review** · migration **not applied** remote · **≠** staging E2E · **≠** `SFM_VERSIONS_V1` ON · **≠** Production GREEN.
+- Contabo host sync / poller enable for SFM kinds — blocked on **separate Contabo Ops GOs** (must not auto-join STUDIO_EXPORT poller).
+- Production cutover / `SFM_VERSIONS_V1=ON` / staging RO / staging E2E / remote migration reconcile — **separate Owner GO each** (code on `main` ≠ cutover DONE).
 
 ---
 

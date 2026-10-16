@@ -23,8 +23,10 @@ const TAKE_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const PROJECT_ID = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
 describe("STUDIO_EXPORT Stage A — TypeScript kind SSOT", () => {
-  it("keeps MIX and TAKE_EXPORT; adds STUDIO_EXPORT", () => {
-    expect(RENDER_JOB_KINDS).toEqual(["MIX", "TAKE_EXPORT", "STUDIO_EXPORT"]);
+  it("keeps MIX, TAKE_EXPORT, STUDIO_EXPORT (SFM kinds added in Stage C)", () => {
+    expect(RENDER_JOB_KINDS).toContain("MIX");
+    expect(RENDER_JOB_KINDS).toContain("TAKE_EXPORT");
+    expect(RENDER_JOB_KINDS).toContain("STUDIO_EXPORT");
     expect(isRenderJobKind("MIX")).toBe(true);
     expect(isRenderJobKind("TAKE_EXPORT")).toBe(true);
     expect(isRenderJobKind("STUDIO_EXPORT")).toBe(true);

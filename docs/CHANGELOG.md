@@ -6,6 +6,275 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-16 — OD-SFM-WORKER-KIND-REJECT local impl (KIND_OUT → FAILED RPC)
+
+**Status:** **LOCAL ONLY** · **NO COMMIT/PUSH IN THIS GO** · **NO REMOTE MIGRATION APPLY** · **NO DEPLOY** · **NO FLAG** · **NO WORKER RUN** · **NO STAGING E2E**
+**Base tip:** `d3c99e348aa8f24d9d8d50a69a1629552211a630` (`d3c99e3`) — dedicated SFM worker poller already on `main`
+**Decision:** OD-SFM-WORKER-KIND-REJECT — unsupported kind after claim → atomic `FAILED` + `KIND_OUT` via `reject_sfm_executor_job_kind` (SECURITY DEFINER · CAS `RUNNING`+`worker_ref` · service_role)
+**Scope:** migration `20261016120000_sfm_reject_executor_job_kind.sql` · poller reject wiring · local unit/contract tests · SSOT decision notes
+**Does not:** orphan kill/grace recovery (`OD-SFM-WORKER-ORPHAN-TIMEOUT` **OPEN**) · auto-retry/requeue · stage reset · remote apply · Production GREEN
+**Staging E2E:** **BLOCKED** until Owner review + separate GO
+**`SFM_VERSIONS_V1`:** OFF
+
+## 2026-10-15 — SFM HTTP Surface on main: SSOT tip reconcile (docs-only)
+
+**Status:** **DOCS SSOT** · **NO APP CODE IN THIS DOCS GO** · **NO DEPLOY** · **NO FLAG CHANGE** · **NO STAGING E2E** · **NO SFM WORKER OPS** · **NO `db push` / repair / apply** · **NO CONTABO**
+**Git tip (confirmed):** `2f7050e47b47241b753bdd2c3de8352ef629d9e9` (`2f7050e`) — `feat(sfm): expose Studio Final Mix owner HTTP surface`
+**Parent:** `2d3514c86cb5bc67996fba480140bb0f3f8d5878` (`2d3514c`)
+**What landed on `main` (app commit already published):** owner HTTP surface — Accept · version/status · MIX/MASTER stage start · grants · quality encode · job status · SFM download (AuthZ before signed URL) · safe error mapping
+**Local unit tests (publish evidence only):** `npx vitest run src/lib/sfm` **200 PASS** at HTTP-surface publish — **≠** re-run in this docs GO · **≠** staging/prod E2E
+**Planes (do not collapse):**
+
+| Plane | Status |
+|-------|--------|
+| Code on `main` | A · B1 · C · D · OD-06 · HTTP surface @ `2f7050e` |
+| Staging deployment SHA | **UNKNOWN / NOT VERIFIED** |
+| Staging schema | **UNVERIFIED** (do not assume ≡ prod) |
+| Staging SFM worker | **NOT WIRED** (dedicated poll entrypoint absent; STUDIO poller remains `STUDIO_EXPORT` only) |
+| Staging E2E | **NOT DONE** |
+| Prod app deploy of tip | **NOT VERIFIED** (last-known deploy SHA **`2adb569`**) |
+| Prod DB SFM A–D | Prior MCP apply + version drift (`20261015…` ≠ local `20261014…`) · **no remote re-verify** here |
+| `SFM_VERSIONS_V1` | Default **OFF** in code · staging remote value **NOT VERIFIED** |
+| SFM Production GREEN | **NOT CLAIMED** |
+
+**Still OPEN:** OD-04 · OD-SFM-ID-05 · migration full alignment · SFM worker entrypoint · staging RO · staging E2E · flag/deploy Contabo SFM Ops
+**Preserved:** migration drift ban (`db push` / `migration up` / `migration repair` **BLOCKED**) · Final Mix (STUDIO_EXPORT) GREEN / WAIVE / OUT unchanged · I.27/I.28
+**SSOT:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+**Next:** Owner docs-publish GO for this reconcile · then separate GOs for worker / staging RO / migration / E2E (one GO ≠ next)
+
+## 2026-10-15 — SFM SSOT reconcile: Stages A/B1/C/D + OD-06 CODE ON MAIN (docs-only)
+
+**Status:** **DOCS SSOT** · **NO APP CODE** · **NO MIGRATIONS** · **NO `db push` / repair / apply** · **NO DEPLOY / FLAG / CONTABO**
+**Parent tip:** `e8d21271e7af5042eadc5b6d30d2e3fbbed99e3c` (`e8d2127`) — SFM type/poller fix already on `main`
+**Problem fixed:** Living `PROJECT_STATE` still said Stage C executors **NOT IMPLEMENTED** and framed F-addendum/product as unimplemented, while `main` already contains foundation/grants/executor/artifacts/download+UI (commits `7fb5dcb` → `e8d2127`).
+**Planes (do not collapse):**
+
+| Plane | Status |
+|-------|--------|
+| Code on `main` | A · B1 · C (`claim_next_sfm_job` service_role) · D · OD-06 download + UI `sfmVersionId` |
+| Local unit tests | `src/lib/sfm` **143 PASS** at tip evidence (re-verify after fetch) |
+| Staging E2E | **NOT DONE** |
+| Prod app deploy of tip | **NOT VERIFIED** (last-known deploy SHA **`2adb569`**) |
+| Prod DB SFM A–D | Applied via MCP; remote versions `20261015…` ≠ local `20261014…` · drift guardrail **ACTIVE** |
+| `SFM_VERSIONS_V1` | Default **OFF** |
+| Contabo SFM bake/claim | **NOT WIRED** (poller remains `STUDIO_EXPORT` only) |
+| SFM Production GREEN | **NOT CLAIMED** |
+
+**Still OPEN:** OD-04 · OD-SFM-ID-05 · migration full alignment · deploy · flag · Contabo SFM Ops · staging/prod E2E
+**Preserved:** historical CHANGELOG design-accept entries (do not rewrite) · I.27/I.28 · migration drift ban · Final Mix (STUDIO_EXPORT) GREEN / WAIVE / OUT unchanged
+**SSOT:** [PROJECT_STATE.md](./PROJECT_STATE.md) · pointers in MASTER / FINAL_COLD Updated lines
+**Next:** Owner docs-publish GO for this reconcile · then separate GOs for ops planes above
+
+## 2026-10-15 — Migration history drift guardrail (docs-only)
+
+**Status:** **DOCS GUARDRAIL** · **NO CODE / NO SQL / NO MIGRATION FILE CHANGES** · **NO `db push` / `migration up` / `migration repair` / re-apply** · **NO DEPLOY / FLAG / WORKER**
+**Supersedes for ops policy only:** extends I.27 ban; **does not rewrite** I.27/I.28 historical entry (see **2026-10-10 — STUDIO_EXPORT Stages I.26–I.28**)
+**Context:** Production SFM schema A→B1→C→D applied via MCP `apply_migration` on `rzzxrgcdogkybkiidqgw`. Local filenames use `20261014…`; remote `schema_migrations` recorded apply-time `20261015…` for the same four names. Broader audit: **43** name-matched migrations with divergent versions · **10** version-aligned · partial SFM-only repair **does not** clear the rest.
+**Living rules (mandatory until Owner GO for full history alignment):**
+
+1. **Drift scope:** Migration history drift is a **project-wide** registry problem, not SFM-only. Do not treat “SFM applied” as “history aligned.”
+2. **Hard ban:** Do **not** run `supabase db push` or `supabase migration up` against production until local filenames and remote `schema_migrations` versions are **fully** reconciled under an explicit Owner GO. Risk: re-applying DDL under local version stamps missing from remote history.
+3. **No mixed apply without same-GO history closeout:** Do not mix production apply mechanisms (MCP `apply_migration` vs CLI `db push`) in an uncontrolled way. If MCP apply is used, the **same Owner-approved scope** must also close history (repair and/or filename alignment) **or** explicitly leave status quo with this ban still in force.
+4. **Partial SFM repair ≠ unlock:** Marking only the four SFM local `20261014…` versions applied (and/or reverting remote `20261015…`) **does not** authorize `db push`. Remaining drifts stay blocking.
+5. **Future migration ladder (every change):** (a) author migration file · (b) local test · (c) **separate Owner GO** for production apply · (d) verify remote history **and** objects after apply · (e) no flag/deploy/worker in the same GO unless that GO says so.
+6. **Still forbidden without separate GO:** `migration repair`, rewriting `schema_migrations`, re-running migration SQL, enabling `SFM_VERSIONS_V1`, deploy, Contabo/worker ops.
+
+**Preserved:** I.27 (no `db push` until aligned) · I.28 (rename local files to match prod versions; SQL unchanged; history not rewritten)
+**Not claimed:** full history reconciliation executed · `db push` safe · SFM flag ON · app deploy for SFM cutover
+**SSOT pointers:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2b · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
+**Next:** Owner chooses status quo (keep ban) **or** separate GO for SFM-narrow repair **or** full alignment (repair / I.28-style rename) — none of those are authorized by this docs note alone
+
+## 2026-10-14 — OD-SFM-ID-07 ACCEPTED — exact SFM `render_jobs.kind` (docs-only, local worktree)
+
+**Status:** **DOCS** · Owner ACCEPT variant A · **NO CODE** · **NO MIGRATIONS** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION** · **NO CONTABO**
+**Base tip:** `a4ea89c5b1c8cb74aec243a002ca22805fe293e9` (`origin/main`)
+**Delivered (isolated worktree):** OPEN_DECISIONS · DECISION_LOG · [IMPLEMENTATION_DESIGN](./decisions/STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./decisions/STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./decisions/STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · PROJECT_STATE · CHANGELOG
+**OD-SFM-ID-07 CLOSED:** `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE`
+**Locked:** domain stages remain `SFM_MIX`/`SFM_MASTER` · job SUCCEEDED ≠ stage complete · ≠ MIX/STUDIO_EXPORT identity · fail-closed `mapJobKind` · separate SFM claim · STUDIO_EXPORT poller unchanged · no Contabo auto-enable · no auto FAILED→QUEUED
+**Deferred to Stage C Implementation GO:** CHECK/XOR · version bind · claim RPC · stage↔job wiring
+**Still OPEN:** OD-04 · OD-SFM-ID-05 · OD-SFM-ID-06 · Contabo Ops GOs · GO-SFM-IMPL-C
+**Next:** docs-publish GO (Owner) · then Stage C Implementation GO (not this session)
+
+## 2026-10-14 — SFM Implementation Design reconciled OD-SFM-ID-01…04 (docs-only, local worktree)
+
+**Status:** **DOCS** · Owner design decisions ACCEPTED · **NO CODE** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION**
+**Delivered (isolated worktree):** [IMPLEMENTATION_DESIGN](./decisions/STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./decisions/STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./decisions/STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./decisions/STUDIO_FINAL_MIX_TEST_MATRIX.md) · OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE
+**OD-SFM-ID-01:** dedicated SFM download route; mix route DENY SFM after cutover; E3/TAKE/RAW unchanged
+**OD-SFM-ID-02:** version grant + historical `granted_qualities` snapshot; ≠ unlimited future qualities; expand-on-upgrade = OD-SFM-ID-05 OPEN (strict until then)
+**OD-SFM-ID-03:** many `AVAILABLE` paid slots per Warsaw day; atomic bind; idempotent payment_ref
+**OD-SFM-ID-04:** `SFM_MIX` = separate executor job ≠ E3 `kind=MIX`
+**Still OPEN (at entry time; OD-SFM-ID-07 later CLOSED same day):** OD-04 · OD-SFM-ID-05…07 · Implementation GO · Contabo Ops GOs
+**Next (historical):** docs-publish GO · then separate Implementation GO — see OD-SFM-ID-07 ACCEPT entry above
+
+## 2026-10-14 — SFM F02b/F03b + Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only, local worktree)
+
+**Status:** **DOCS** · Owner ACCEPT with corrections · **NO CODE** · **NO COMMIT** · **NO PUSH** · **NO PRODUCTION**
+**Delivered (isolated worktree):** [F-addendum](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) · [Stages DF](./decisions/STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) · product contract / bake freeze / OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE
+**Correction A:** historical grant + OD-SFM-17 downgrade AuthZ; object_key/URL/READY alone insufficient
+**Correction B:** ≤1 current downloadable artifact per `(versionId, QUALITY)`; atomic promote; concurrent winner rule (SQL TBD Implementation Design)
+**Correction C:** domain stage names **`SFM_MIX` / `SFM_MASTER`** (≠ E3 `kind=MIX`)
+**Supersession:** F02→F02b and F03→F03b **Studio Final Mix only**; F01/F04–F07 unchanged; TAKE/RAW/E3 unchanged
+**Still OPEN:** OD-04 payment provider · Implementation GO
+**Next:** optional docs publish GO · then separate Implementation GO
+
+## 2026-10-14 — SFM OD-SFM-08/12/14 ACCEPTED + F-addendum / Stages DF then PROPOSAL (docs-only) — HISTORY
+
+**Status:** **DOCS** · Owner ACCEPT OD-SFM-08/12/14 · F/Stages were PROPOSAL pending — superseded same day by ACCEPT-with-corrections entry above
+**OD-SFM-08/12/14:** variant C · 90d · paid slot B
+**Next (historical):** Owner ACCEPT F/Stages — **DONE** (see entry above)
+
+## 2026-10-14 — Studio Final Mix Product Contract ACCEPTED (docs-only)
+
+**Status:** **DOCS / SSOT** · Owner formal ACCEPT · **NO CODE** · **NO MIGRATIONS** · **NO PRODUCTION CHANGES** · **NO CONTABO / PAYMENTS** · direct `main` via isolated worktree (no PR)
+**Delivered:** [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-07…18 living product rules · **OD-SFM-02 SUPERSEDED** (product ladder; history preserved in Design Freeze §13) · OPEN_DECISIONS / DECISION_LOG / PROJECT_STATE updates
+**Accepted (summary):** plan download ladder · grant per version · daily first-download 0/1/2/5 · reset `Europe/Warsaw`+DST · paid **7,99 PLN** = one extra first-download day-slot · Accept→MIX→MASTER · lazy variants · 90d retention · domain ≠ E3 / TAKE_EXPORT
+**Explicit non-claims:** multi-variant Studio export **not** implemented · paid provider **not** integrated · runtime may still be WAV-only MVP until Implementation GO
+**Follow-up same day:** OD-SFM-08/12/14 detail CLOSED + F/Stages proposals — see entry above
+**Next:** Owner review of F-addendum / Stages DF proposals
+
+## 2026-10-13 — GO-POLLER-KILL-SWITCH-01 fail-closed poller bootstrap
+
+**Status:** **CODE + LOCAL TESTS** · selective Contabo sync in same GO · **NO** always-on / enable / start · direct `main` (no PR)
+**Delivered:** `decideStudioExportPollerBootstrap` · `parseE3RenderJobsEnabledFlag` · `E3_RENDER_JOBS_ENABLED` false/missing/empty/invalid → `poller_disabled` + exit **0** (no claim/bake) · defense-in-depth `assertRenderJobsRuntimeEnabled` unchanged · vitest kill-switch suite
+**Ops note:** flag changes require process restart (no hot-reload) · systemd `Restart=no` remains
+**Explicit:** no enqueue/claim/bake on prod · oneshot unit unchanged · Sacred WIP untouched
+**Docs:** CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION · DESIGN_FREEZE OD-CWP-09 · this entry
+**Next:** Owner GO for always-on activation (separate)
+
+## 2026-10-13 — GO-IMPL-CONTABO-POLL IMPLEMENTED / LOCAL TESTS PASS
+
+**Status:** **CODE + LOCAL TESTS** · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · direct `main` (no PR)
+**Delivered:** migration `claim_next_studio_export_job` (service_role · SKIP LOCKED + CAS) · `claimNextStudioExportAsWorker` · `runAlreadyClaimedStudioExportWorkerJob` · `npm run e3:worker:poll` · vitest PASS
+**Explicit:** local impl ≠ Contabo enable · Final Mix GREEN / WAIVE / OUT unchanged · migration **not** applied to production
+**Docs:** audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md · freeze living · OPEN_DECISIONS · DECISION_LOG · PROJECT_STATE · README · FINAL_COLD / MASTER · this entry
+**Next OPEN GOs:** GO-HOST-RO-CONTABO · GO-SYNC-CONTABO-POLL · GO-ENABLE-CANARY · GO-ALWAYS-ON · prod migration apply
+
+## 2026-10-13 — GO-DF-CONTABO-POLL Design Freeze ACCEPTED
+
+**Status:** **DESIGN FREEZE** · followed by GO-IMPL local impl · **NO CONTABO ENABLE** · direct `main` (no PR)
+**Locked:** OD-CWP-01…08 · V1 poller = **`STUDIO_EXPORT` only** · max 1 active · atomic claim-next · FINDING-01 on `RUNNING` · bake must not re-claim `QUEUED` · no auto-retry · enqueue unchanged
+**Explicit:** freeze ≠ Contabo enable · Final Mix GREEN scope unchanged
+**Docs:** decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md · OPEN_DECISIONS · DECISION_LOG · PROJECT_STATE · README · FINAL_COLD / MASTER · this entry
+**Next OPEN GOs (at freeze time):** GO-IMPL-CONTABO-POLL · GO-HOST-RO-CONTABO · GO-SYNC · GO-ENABLE-CANARY · GO-ALWAYS-ON
+
+## 2026-10-13 — Final Mix Production GREEN VERIFIED (docs closeout)
+
+**Status:** **DOCS CLOSEOUT** · Final Mix Production GREEN **VERIFIED** under frozen IN allowlist · direct `main` (no PR)
+**Preflight tip:** `dcd23080e1adbc951f0c1b58224bcf24248860b8` · all IN PASS verified from source closeouts
+**IN:** Stage J CLOSED · I.45DR · J2 · object_key · P5/P6 JSON · empty-session prod · FULL FIXTURE (`21d98be2-…` · RIFF/WAVE · 10,584,044 B · SHA-256 recorded) · I.18 tip ON MAIN
+**WAIVE unchanged:** Contabo always-on (disabled/inactive) · bit-perfect PCM · P6.8
+**OUT unchanged:** full IDOR · apex · empty-project delete · Studio migration CLOSED claim
+**Explicit:** GREEN ≠ Contabo always-on · ≠ bit-perfect · ≠ P6.8 · ≠ OUT · no new probes
+**Docs:** audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · PROJECT_STATE · GO-FM-CRITERIA living · bake freeze · README · FINAL_COLD / MASTER · this entry
+**Next:** Owner decision — Contabo Ops / P6.8 / OUT (independent) · do not expand GREEN scope
+
+## 2026-10-13 — FULL FIXTURE VERIFIED PASS (gate #7 · Path B)
+
+**Status:** **DOCS CLOSEOUT** after Owner-authorized byte download + QC · Final Mix still **NOT VERIFIED** · direct `main` (no PR)
+**Gate #7:** **PASS** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` (I.45DR READY) · `RIFF`/`WAVE` · 10,584,044 B · size coherence · SHA-256 fingerprint recorded · **no** signed URL/token/cookie retained
+**Path A rejected:** tip I.45BM/BO one-liners insufficient without dedicated byte/QC report
+**Unchanged:** Stage J **CLOSED** · empty-session prod **PASS** · Contabo always-on **disabled/inactive** · P6.8 **NOT STARTED**
+**Explicit:** FULL FIXTURE PASS **≠** Final Mix Production GREEN (needs separate GREEN closeout GO)
+**Docs:** audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md · PROJECT_STATE · GO-FM-CRITERIA living gate #7 · bake freeze · README · FINAL_COLD / MASTER · this entry
+**Next:** Owner GO — Final Mix Production GREEN docs closeout · ≠ GREEN yet
+
+## 2026-10-13 — Empty-session production gate PASS (docs closeout)
+
+**Status:** **DOCS CLOSEOUT** · **NO CODE** · **NO PROD HTTP** · **NO CONTABO** (execution already done under prior Owner GOs) · Final Mix still **NOT VERIFIED** · direct `main` (no PR)
+**Gate:** Empty-session production **PASS** · job `dac8ccb9-4bb1-48e9-848a-e8bfeb65d4fb` · `FAILED` · `STUDIO_RENDER_EMPTY_SESSION` · `artifactId=null` · no SUCCEEDED/READY/WAV
+**Unchanged:** Stage J **CLOSED** · **FULL FIXTURE VERIFIED NOT CONFIRMED** · Contabo always-on **disabled/inactive** · P6.8 **NOT STARTED**
+**Explicit:** empty-session prod PASS **≠** Final Mix Production GREEN
+**Docs:** audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md · PROJECT_STATE · GO-FM-CRITERIA living gate rows · bake freeze · README · FINAL_COLD · this entry
+**Next:** Owner GO — FULL FIXTURE VERIFIED / Final Mix GREEN closeout (separate) · ≠ GREEN yet
+
+## 2026-10-13 — GO-FM-CRITERIA Final Mix Production GREEN freeze
+
+**Status:** **CRITERIA FREEZE** · **NO CODE** · **NO PROD HTTP** · **NO WAV** · **NO CONTABO** · Final Mix still **NOT VERIFIED** (≠ GREEN) · direct `main` (no PR)
+**IN already:** Stage J **CLOSED** · I.45DR **PASS** · J2 **PASS/CLOSED** · object_key **PASS** · P5/P6 JSON **PASS**
+**IN open blockers:** I.18 tip evidence **MISSING ON MAIN** · empty-session prod **NOT VERIFIED** · **FULL FIXTURE VERIFIED NOT CONFIRMED**
+**WAIVE:** Contabo always-on / persistent · bit-perfect PCM · P6.8
+**OUT:** full IDOR · apex · empty-project delete · Studio migration CLOSED claim
+**Docs:** decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md · PROJECT_STATE §4H · bake freeze · README · this entry
+**Next:** Owner GO — I.18 tip recovery · then empty-session prod + fixture bytes (separate) · ≠ GREEN yet
+
+## 2026-10-13 — GO-SJ-DOCS-CLOSE Stage J CLOSED
+
+**Status:** **Stage J: CLOSED** · **DOCS ONLY** · **NO CODE** · **NO PROD HTTP** · **NO WAV** · **NO CONTABO** · direct `main` (no PR)
+**IN satisfied:** I.45DR **PASS** · J2 **PASS/CLOSED** · object_key reject-only **PASS** · P5/P6 JSON **PASS**
+**WAIVE:** byte-level WAV/RIFF for `c596e7bc-…` · **FULL FIXTURE VERIFIED = NOT CONFIRMED**
+**OUT unchanged:** empty-session prod · Contabo always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
+**Explicit:** Stage J CLOSED **≠** Final Mix Production GREEN
+**Docs:** audits/STAGE_J_FINAL_CLOSURE.md · PROJECT_STATE §4G · bake freeze · README · FINAL_COLD / MASTER living headers · criteria freeze applied note · this entry
+**Next:** Owner GO — Final Mix / Contabo / P6.8 / other OUT
+
+## 2026-10-13 — GO-SJ-CRITERIA Stage J closure criteria freeze
+
+**Status:** **CRITERIA FREEZE** · **NO CODE** · **NO PROD HTTP** · **NO WAV** · **NO CONTABO** · Stage J still **OPEN** (≠ CLOSED) · direct `main` (no PR)
+**IN (required for Stage J CLOSED):** I.45DR **PASS** · J2 **PASS/CLOSED** · object_key reject-only **PASS** · P5/P6 JSON **PASS**
+**WAIVE:** byte-level WAV/RIFF for fixture `c596e7bc-…` · ≠ FULL FIXTURE VERIFIED · ≠ WAV correctness
+**OUT (independent):** empty-session prod · Contabo always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
+**Docs:** decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md · PROJECT_STATE §4F · bake freeze living Stage J rows · README · this entry
+**Next:** Owner GO — Stage J CLOSED docs closeout (apply freeze) · ≠ Final Mix GREEN
+
+## 2026-10-13 — Stage J P5/P6 owner download probe PASS (docs closeout)
+
+**Status:** **DOCS CLOSEOUT** · **NO CODE** · **NO RE-PROBE** · **NO WAV / SIGNED URL** · direct `main` (no PR)
+**Result:** P5 **PASS** · P6 **PASS** — owner download endpoint JSON only (artifact `c596e7bc-…`) · ≠ WAV retrieval · ≠ full FIXTURE VERIFIED
+**Gates unchanged:** object_key reject-only **PASS** (separate) · J2 **PASS/CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN/NOT VERIFIED**
+**Docs:** audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md · PROJECT_STATE §4E · bake freeze AuthZ row · README · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8
+
+## 2026-10-13 — GO-A Stage J docs integrity (A2)
+
+**Status:** **DOCS INTEGRITY** · **NO CODE** · **NO PROD HTTP** · **NO P5/P6** · **NO CONTABO** · direct `main` (no PR)
+**Scope:** Living tip/plane reconcile to Git tip after `50d7788` · bake freeze `object_key` living row aligned to reject-only **PASS** · I.18/I.13F tip links marked **MISSING ON CURRENT MAIN** / **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED** (A2 — do not land dirty local files)
+**Gates unchanged:** object_key reject-only **PASS** · P5/P6 **NOT EXECUTED** · FIXTURE VERIFIED **NOT CONFIRMED** · J2 **PASS/CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED** · P6.8 **NOT STARTED** · Contabo always-on **OPEN/NOT VERIFIED**
+**Docs:** PROJECT_STATE · bake freeze · README · FINAL_COLD_START · MASTER_HANDOFF · this entry · related I.18 link hygiene
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · optional P5/P6
+
+## 2026-10-13 — I.48 SSOT tip/plane reconcile after PR #12
+
+**Status:** **DOCS RECONCILE (I.48-A3)** · **NO CODE** · **NO COMMIT/PUSH/PR/DEPLOY IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO** · isolated worktree only
+**Git tip (remote main):** **`2adb5699e72c9c8c35023500a001310e227e70d7` (`2adb569`)** — Merge PR #12 (docs-only I.47 session-closure handoff) · prior tip **`f730a7a`** (PR #11) = HISTORY
+**Production deploy (observed I.48-A0):** **`dpl_sAyrsHCfMVLFer669J2MgbbXbhGN`** · Ready · SHA **`2adb569`** · evidence cold-start RO (GitHub Deployments + Vercel CLI) · **I.48-A2/A3 do not re-verify** · Ready ≠ functional app GREEN ≠ Final Mix GREEN
+**Prior prod (HISTORY):** **`dpl_28oHcn3w146saZ6fNDFsiCQehUQP`** @ **`f730a7a`** (I.46-A10 / I.47 snapshot)
+**Planes after I.48:** Git tip **`2adb569`** · app-code tip **`ce2f0cc`** (unchanged) · prod observed **`dpl_sAyrsHC…` @ `2adb569`** · dual-plane: tip ≠ app-code ≠ dirty local WIP ≠ V2 `44f7cbd` · commit ≠ deployment ≠ domain alias
+**Gates unchanged:** J2 **PASS / CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · `object_key` live probe **NOT EXECUTED** · Contabo always-on **OPEN / NOT VERIFIED** · apex redirect e2e **NOT VERIFIED** · Empty-session Production **NOT VERIFIED** · FX/PCM parity **NOT VERIFIED** · Empty-project delete **NOT VERIFIED**
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · FINAL_COLD_START · README · bake freeze living tip/plane rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo · no sync dirty local main · no commit/push of I.48 without separate GO
+
+## 2026-10-12 — I.47 Session Closure & Cold-Start Handoff
+
+**Status:** **DOCS SESSION CLOSURE (I.47)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO / NO REDEPLOY**
+**Git tip (remote main):** **`f730a7af1ed34a9667e7bfba1a766d8481ed9df5` (`f730a7a`)** — Merge PR #11 (docs-only SSOT tip/plane) · prior tip **`522e514`** (PR #10 J2 docs) = HISTORY
+**I.46 closure facts:** PR #10 merged @ `522e514` · PR #11 merged @ `f730a7a` · **I.46-A10** confirmed Production deploy **`dpl_28oHcn3w146saZ6fNDFsiCQehUQP`** Ready @ SHA `f730a7a` · aliases www + `bitrymdym.vercel.app` + `bitrymdym.pl` assigned · apex redirect e2e **NOT VERIFIED** · functional app GREEN **not** claimed
+**Planes after I.47:** Git tip **`f730a7a`** · app-code tip **`ce2f0cc`** · prod last-confirmed **`dpl_28oH…` @ `f730a7a`** (I.46-A10 · this note does **not** re-verify) · prior prod `dpl_7Cp2gQ9…` @ `df37048` = HISTORY
+**Gates unchanged:** J2 **PASS / CLOSED** · Stage J **OPEN** · Final Mix **NOT VERIFIED / NOT GREEN** · P6.8 **NOT STARTED** · `object_key` live probe **NOT EXECUTED** · Contabo always-on **OPEN / NOT VERIFIED** · apex redirect e2e **NOT VERIFIED**
+**Cold-start:** complete MASTER PROMPTS (ChatGPT + Cursor) in [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §12
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · FINAL_COLD_START · README · bake freeze living tip/plane rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo · no sync dirty local main · no commit/push of I.47 without separate GO
+
+## 2026-10-12 — I.46-A5 SSOT tip/plane reconcile after PR #10 merge
+
+**Status:** **DOCS RECONCILE (I.46-A5)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO / NO REDEPLOY**
+**PR #10:** **MERGED** · merge SHA `522e514fcc42f314b4db621c80c30d7412ee7e08` (`522e514`) · scope = **documentation-only** closure of Stage J gate **J2** (Download AuthZ closeout docs)
+**Planes (authoritative after this note):** GitHub main tip **`522e514`** · app-code tip **`ce2f0cc`** (last-established in available evidence) · production last-known **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** @ **`df37048`** (I.45EJ-R1 · **HISTORICAL / NEEDS FRESH VERIFY**)
+**Explicit non-claims:** merge `522e514` does **not** prove that SHA was deployed · docs may deploy via pipeline, but this task does **not** assume that happened · domain aliases remain last-known until re-verified · merge is **not** evidence of a functional app-code production release
+**Gates unchanged:** J2 **PASS / CLOSED** · Stage J **OPEN** · Full Final Mix GREEN **NOT VERIFIED / OPEN** · P6.8 **NOT STARTED** · `object_key` live probe **NOT EXECUTED** · Contabo always-on **OPEN / NOT VERIFIED**
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living tip/plane rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · fresh production plane verify if needed · no auto Contabo enable
+
+## 2026-10-12 — I.45EX J2 Download AuthZ gate PASS / CLOSED (A16–A18)
+
+**Status:** **DOCS CLOSEOUT (I.45EX J2)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO HTTP / NO SQL / NO CONTABO**
+**Gate:** Stage J **J2** (narrow cross-user / owner / unauth download AuthZ) → **PASS / CLOSED**
+**Evidence:** I.45EX-A16 owner GET → HTTP **200** · `success=true` · `hasUrl=true` · `qualityTier=WAV` · ALLOW · I.45EX-A17 other user → HTTP **403** · `success=false` · `hasUrl=false` · DENY · I.45EX-A18 unauth `credentials: 'omit'` → HTTP **401** · `success=false` · `hasUrl=false` · DENY
+**Fixture:** artifact `c596e7bc-a031-4df8-a17b-31c4fd2cce8b` · job `61b7cdf1-…` untouched · canary `21d98be2-…` excluded · Sacred SHA256 **MATCH** on all three · no WAV bytes / no signed URL in evidence · `object_key` live probe **NOT EXECUTED**
+**Not claimed:** Stage J full close · Full Final Mix Production GREEN · P6.8 · Contabo always-on · full module security audit · deploy/tip change
+**Docs:** [I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living AuthZ/J2 rows · this entry
+**Next:** Owner GO — remaining Stage J / Final Mix gates vs P6.8 · no auto Contabo enable
+**Later tip note:** PR #10 merged this closeout at `522e514` — see I.46-A5 entry above for tip/plane split (merge ≠ deploy)
+
 ## 2026-10-12 — I.45EK Production deploy & alias SSOT (I.45EJ-R1 evidence)
 
 **Status:** **DOCS RECONCILE (I.45EK-DOCS)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO REDEPLOY / NO ALIAS MUTATION**
@@ -17,6 +286,23 @@ Format: data, zakres, skrót.
 **Not claimed:** Final Mix / Stage J / P6.8 / Contabo always-on / worker status change — prior OPEN / last-known unchanged
 **Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living Production row · this entry
 **Next:** Owner GO for commit/publish of docs tip · remaining Final Mix gates vs P6.8 · no auto Contabo enable
+
+## 2026-10-12 — I.45DZ SSOT tip reconciliation after PR #7
+
+**Status:** **DOCS TIP RECONCILE (I.45DZ)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO / NO REDEPLOY**
+**Git:** remote `main` / docs merge tip **`e3dc0b9036ee85dd91ffca845362b4b12431f1bc` (`e3dc0b9`)** — Merge PR #7 · prior docs tip **`d3ef59a`** (PR #6) = **HISTORY** · app-code tip **`ce2f0cc`** unchanged
+**Deployments:** app **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** @ `ce2f0cc` · docs-only last-known **`dpl_HM2sq…`** (PR #6) · post-PR #7 docs `dpl_*` **UNKNOWN** (not guessed)
+**I.45DR / gates unchanged:** narrow WAV canary PASS · Full Final Mix GREEN **OPEN** · Stage J full close **OPEN** · P6.8 **NOT STARTED** · persistent worker **disabled/inactive** (last-known)
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living tip rows · this entry
+**Next:** Owner GO on publication of this docs tip reconcile · do not treat docs tip as app tip
+
+## 2026-10-12 — I.45DX docs plane clarity (app tip vs docs tip vs deployments)
+
+**Status:** **DOCS CLARITY (I.45DX)** · **NO CODE / NO COMMIT IN THIS NOTE** · **NO CONTABO / NO REDEPLOY**
+**Planes (authoritative):** app-code tip **`ce2f0cc`** · app deploy **`dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH`** · docs merge tip **`d3ef59a`** (PR #6) · docs-only deploy **`dpl_HM2sqJFv5XJSJ5tU7hmXR4znzN5g`** (auto after PR #6) · **not interchangeable**
+**I.45DR facts unchanged:** job `53398f9e-…` **SUCCEEDED** · artifact `21d98be2-…` **READY** · persistent worker **disabled/inactive** · Full Final Mix GREEN **OPEN** · P6.8 **NOT STARTED**
+**Docs:** PROJECT_STATE · MASTER_HANDOFF · README · FINAL_COLD_START · bake freeze living plane notes · this entry
+**Next:** Owner GO on publication of this docs branch · do not swap `ce2f0cc`↔`d3ef59a` as if equivalent
 
 ## 2026-10-12 — I.45DR Contabo STUDIO_EXPORT WAV canary (SSOT docs I.45DT)
 
@@ -89,7 +375,7 @@ Format: data, zakres, skrót.
 
 **Status:** **DOCS ONLY** · **NO CODE** · **NO TESTS / WORKER / SUPABASE** · **NO COMMIT/PUSH/DEPLOY**
 **Scope:** Freeze historical I.18 local empty-session integration PASS; correct SSOT contradictions (I.14-02 typed `error_code`; remove stale “no worker+DB integration”)
-**Docs:** [STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md](./audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md) · bake freeze §8/§16 / Stage I status
+**Docs:** `STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md` (**MISSING ON CURRENT MAIN** · **HISTORICAL LOCAL EVIDENCE — NOT COMMITTED** · GO-A A2) · bake freeze §8/§16 / Stage I status
 **Not claimed:** production schema · prod deploy · Contabo · canary · full Live↔Offline PCM parity
 **Next:** Owner GO for fresh production schema verification (read-only) before any migrate/deploy/canary discussion
 

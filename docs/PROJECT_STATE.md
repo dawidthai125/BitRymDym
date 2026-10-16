@@ -2,7 +2,7 @@
 
 **Dokument żywy.** Aktualizuj po każdej sesji z istotnymi zmianami.
 **Entry point:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → ten plik.
-**Updated:** 2026-10-12 — **docs tip `df37048`** / prod **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** (Ready · Current · Latest · I.45EJ-R1 PASS RO) · aliases **www** + **`bitrymdym.vercel.app`** · apex **308→www** · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` = HISTORY · **I.45DR** narrow Contabo WAV canary **PASS** (job `53398f9e-…` · artifact `21d98be2-…` READY) · persistent worker **disabled/inactive** · **≠ Full Final Mix Production GREEN** · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45BY `61b7cdf1…` + I.45DR `53398f9e…` — **do not re-run** · markers **I.45CF** (**≠ full-tree**) · Studio migration **≠ CLOSED** · V2 **`44f7cbd`** GREEN · **NEXT:** Owner GO — remaining Final Mix gates vs P6.8 — no auto Contabo enable
+**Updated:** 2026-10-16 — **SFM KIND_REJECT local** · published tip **`d3c99e3`** (SFM worker poller on `main`) · **OD-SFM-WORKER-KIND-REJECT** local impl pending Owner review · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · staging E2E **BLOCKED** · `SFM_VERSIONS_V1` OFF · see [CHANGELOG](./CHANGELOG.md)
 
 ---
 
@@ -21,16 +21,22 @@
 | Pole | Wartość |
 |------|---------|
 | Canonical branch | `main` |
-| **DOCS TIP / origin/main (confirmed)** | **`df37048d0b34439de5b77ed83350048a6335c391` (`df37048`)** — Merge PR #8 (docs-only SSOT) · evidence **I.45EJ-R1** · local worktree may still be dirty / diverge · local `origin/main` ref may lag without fetch |
-| **APP-CODE TIP (HISTORY for live aliases)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 (Studio delete×export-history) · last app-feature tip on `main` before docs tips PR #6–#8 · **≠** current docs/deploy tip |
+| **GITHUB MAIN TIP / origin/main (confirmed)** | **`d3c99e348aa8f24d9d8d50a69a1629552211a630` (`d3c99e3`)** — `feat(sfm): add dedicated SFM worker poller` · parent **`e6294cca7a5101e496c5406b58629584a39c3aff`** · SFM A/B1/C/D + OD-06 + HTTP + **dedicated poller** on `main` · **OD-SFM-WORKER-KIND-REJECT** local (uncommitted) · **≠** Vercel deploy · **≠** staging E2E · **≠** `SFM_VERSIONS_V1` ON · **≠** SFM Production GREEN · verify with `git rev-parse origin/main` after fetch |
+| **SFM PLANES (do not collapse)** | **(1) Code on `main`:** A/B1/C/D + OD-06 + HTTP surface @ **`2f7050e`** · **(2) Staging deployment SHA:** **UNKNOWN / NOT VERIFIED** · **(3) Staging schema:** **UNVERIFIED** this session (do not assume = prod) · **(4) Staging SFM worker:** **NOT WIRED** (ops; bake/claim libs exist) · **(5) Prod app:** last-known deploy **`2adb569`** · **NOT VERIFIED** vs tip `2f7050e` · **(6) Prod DB:** SFM A–D previously applied via MCP under remote `20261015…` ≠ local `20261014…` — **no remote re-verify** in this docs GO |
+| **STUDIO FINAL MIX PRODUCT CONTRACT** | **OWNER ACCEPTED** · [addendum](./decisions/STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) · OD-SFM-08/12/14 CLOSED · **product cutover NOT DONE** (flag default OFF · no staging/prod E2E GREEN for SFM Versions) · code planes → **SFM CODE STATUS** / **SFM PLANES** |
+| **SFM F-ADDENDUM / STAGES DF** | **OWNER ACCEPTED (docs)** · [F02b/F03b](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) · [stages](./decisions/STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) · F02/F03 **SUPERSEDED SFM-only** · corrections A/B/C · **CODE ON MAIN** for A/B1/C/D + HTTP · **≠** product cutover · **OD-04 OPEN** |
+| **SFM IMPLEMENTATION DESIGN** | **OWNER ACCEPTED (design docs)** · OD-SFM-ID-01…04 + **OD-SFM-ID-07 CLOSED** · [pack](./decisions/STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · kinds `SFM_MIX_PREPARE`/`SFM_MASTER_BAKE`/`SFM_QUALITY_ENCODE` · separate `claim_next_sfm_job` (service_role) · fail-closed `mapJobKind` · **Stages A/B1/C/D + OD-06 + HTTP surface = CODE ON MAIN** · Contabo STUDIO poller **does not** claim SFM kinds · **OD-SFM-ID-05 + OD-04 OPEN** · OD-SFM-ID-06 cutover semantics **not production-verified** |
+| **SFM CODE STATUS (living planes)** | **A** foundation `7fb5dcb` · **B1** grants/Warsaw day `a4ea89c` · **C** executor + `claim_next_sfm_job` `7dd4265` · **D** encode/artifacts/promote/retention `18c2c6a` · **OD-06** download AuthZ `cd582ea` + UI `sfmVersionId` route `bf34767` · worker bake libs `2d3514c` · **HTTP surface** Accept / version status / stages start / grants / encode / job status / download @ **`2f7050e`** · **local unit tests (publish evidence):** `npx vitest run src/lib/sfm` **200 PASS** at HTTP-surface publish (report evidence; **≠** re-run in this docs GO) · prior **143 PASS** evidence @ `e8d2127` = HISTORY · **`SFM_VERSIONS_V1`:** default **OFF** in code · staging remote value **NOT VERIFIED** · **staging E2E:** **NOT DONE** · **staging deployment SHA:** **UNKNOWN / NOT VERIFIED** · **SFM worker (ops):** **NOT WIRED** (dedicated poll entrypoint absent; STUDIO poller = `STUDIO_EXPORT` only) · **prod app deploy of tip:** **NOT VERIFIED** (last-known **`2adb569`**) · **prod DB:** SFM A–D via MCP (`20261015…` ≠ local `20261014…`) — prior SSOT claim; **no remote re-verify here** · **SFM Production GREEN:** **NOT CLAIMED** |
+| **PRIOR DOCS / APP TIPS (HISTORY)** | Docs SSOT reconcile (parent **`e8d2127`**) · **`e8d2127`** SFM type/poller · **`2d3514c`** SFM worker bake · **`bfed53d`** migration drift guardrail · **`7d87380`** Contabo poller DF · **`22c7d56`** Final Mix GREEN §4G · **`a1df783`** GREEN VERIFIED · **`dcd2308`** FULL FIXTURE · **`51a37a2`** empty-session · **`99bb10e`** I.18 · **`cee88f8`** FM criteria · **`e4971d2`** Stage J · **`2adb569`** PR #12 |
+| **APP-CODE TIP (last-established in available evidence)** | **SFM app code on `main` through `2f7050e`** (HTTP surface) · prior polish **`e8d2127`** / bake **`2d3514c`** = ancestry · prior non-SFM app-feature tip **`ce2f0cc`** (PR #5) remains HISTORY for Studio delete×export · **≠** independently freshly verified **production deploy** SHA (**still last-known `2adb569`**) |
 | **REUSE / DO NOT DUPLICATE** | [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · SEARCH EXISTING FIRST |
 | **SACRED WIP** | `src/lib/takes/recording-eligibility-service.ts` · SHA256 `5AE4C231…50EEECB9` · do not reset/clean |
 | **APP FEATURE COMMIT (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| **PRODUCTION DEPLOYMENT (observed)** | **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** · Ready · Current · Latest · Production · SHA **`df37048`** · evidence **I.45EJ-R1 PASS** (authorized Vercel panel RO — not a fresh live re-verify in this note) |
-| **PRODUCTION GIT SHA** | **`df37048`** (deployment SHA = PR #8 merge · commit ≠ deployment ≠ domain alias) |
-| **DOMAIN ALIASES (I.45EJ-R1)** | **`www.bitrymdym.pl`** ASSIGNED · **`bitrymdym.vercel.app`** ASSIGNED · **`bitrymdym.pl`** HTTP **308 → www** (not a direct deployment alias) |
-| **PRIOR PRODUCTION DEPLOY (HISTORY)** | `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` @ `ce2f0cc` (PR #5 app-code) · `dpl_9YDCyG4jU6cDuyLu111VaEVQmSqy` @ `faf734b` (PR #4) · earlier `dpl_56FGH…` · superseded for live aliases |
-| **DUAL-PLANE NOTE** | Docs tip `df37048` / `dpl_7Cp2gQ9…` ≠ app-code tip `ce2f0cc` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · PR #8 was documentation-only · do not assume local `main` == production |
+| **PRODUCTION DEPLOYMENT (last-known I.48-A0)** | **`dpl_sAyrsHCfMVLFer669J2MgbbXbhGN`** · Production · **Ready** · SHA **`2adb569`** · URL `bitrymdym-m6ilfuqbp-…vercel.app` · evidence **I.48-A0** (cold-start RO) · **not re-verified** vs tip `2f7050e` · Ready ≠ functional app GREEN · **≠** current Git tip |
+| **PRODUCTION GIT SHA (last-known I.48-A0)** | **`2adb569`** — last observed deploy SHA · **≠** current Git tip **`2f7050e`** · commit ≠ domain alias ≠ functional verify · prior **`f730a7a`** / `dpl_28oH…` = HISTORY (I.46-A10 / I.47) · prior **`df37048`** / `dpl_7Cp2gQ9…` = HISTORY (I.45EJ-R1) |
+| **DOMAIN ALIASES (last-known from I.48-A0 inspect · NOT e2e)** | **`www.bitrymdym.pl`** · **`bitrymdym.vercel.app`** · **`bitrymdym.pl`** listed on Ready deploy · apex redirect e2e **NOT VERIFIED** (no HTTP in I.48) |
+| **PRIOR PRODUCTION DEPLOY (HISTORY)** | `dpl_28oHcn3w146saZ6fNDFsiCQehUQP` @ `f730a7a` (I.46-A10 / I.47 snapshot) · `dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5` @ `df37048` (I.45EJ-R1) · `dpl_1P8ixpt…` @ `ce2f0cc` (PR #5) · `dpl_9YDCy…` @ `faf734b` (PR #4) · earlier `dpl_56FGH…` |
+| **DUAL-PLANE NOTE** | Git tip **`2f7050e`** ≠ staging deploy (**UNKNOWN**) ≠ staging schema (**UNVERIFIED**) ≠ staging SFM worker (**NOT WIRED**) ≠ prod last-known deploy **`2adb569`** / `dpl_sAyrsHC…` ≠ local dirty WIP ≠ feature V2 `44f7cbd` · SFM schema on prod DB ≠ flag ON ≠ Contabo SFM bake · tip ≠ functional SFM Production GREEN · I.48-A0 deploy evidence **not** re-verified for this tip · staging ≠ prod schema assumed |
 | **OPS NOTE (subject BOM)** | Commit `d515f3b` subject has UTF-8 BOM before `docs:` · Owner decision · **non-blocking** · do not amend without GO |
 | **V2 VERIFY DEPLOY (HISTORY)** | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` — original V2 release gate · **superseded for live aliases** |
 | **PREVIOUS PRODUCTION TIP (HISTORY)** | `dpl_FVcx…` @ `3a086ad` · `44f7cbd` / `dpl_2ymz…` · `4fa658d` — Phase 7.1.6 · `79bc69f` V1 · older: `3fccbf7` · `9abc1b6` · `8f6eeca` |
@@ -67,9 +73,9 @@
 | **P4 CORE** | **SHIPPED** @ `bface6c` ⊂ `836679a` · local `context?` / `p4-live-verify` = **LOCAL WIP · NOT BASELINE** |
 | **P4.6 TAKE_EXPORT** | **CLOSED / PRODUCTION VERIFIED / LIVE E2E VERIFIED / GREEN** @ `a72fed9` (ancestry) / `dpl_8PDy…` · Contabo **STOPPED/DISABLED** after controlled E2E — [closeout](./audits/P4_6_PRODUCTION_CLOSEOUT.md) |
 | **SA-07** | Design Freeze **COMPLETE** · AWS **BLOCKED** · local untracked = **NOT PRODUCTION** |
-| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · current docs/prod tip **`df37048`** / `dpl_7Cp2gQ9…` (I.45EJ-R1 · docs-only PR #8 — **≠** new app feature) · **I.45DR — PASS:** narrow production STUDIO_EXPORT WAV canary · job `53398f9e-7b7f-4dc5-bc76-34e9648c6aa1` / project `bfc3d223-6107-4e11-a96a-470d88439f0b` · **SUCCEEDED** · artifact `21d98be2-29b2-4d1d-8efb-b1c40af4709e` **READY** · `audio-artifacts` · 10,584,044 B · 60,000 ms · `pcm_s16le_wav` · **Full Studio Final Mix Production GREEN — nadal NOT VERIFIED / OPEN** · prior evidence: I.45BK/BM/BO + I.45BY `61b7cdf1-…` **SUCCEEDED** — **do not re-run** either job · I.45CV delete-conflict **PRODUCTION VERIFIED** (409 only) · **Not claimed:** Contabo always-on · full worker-tree align · empty-session on prod · cross-user AuthZ · full FX/PCM parity · empty-project delete · Studio migration CLOSED · Stage J full close · [freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
-| **Contabo E3 worker (last-known)** | Host `vmi3622761` · persistent service **disabled/inactive** (I.45BW/CE/DR) · **byte-synced path only:** `src/lib/audio/render-worker-pipeline.ts` SHA256 `4a737f94a2519515f0f6ad6a78603a8351718427f9e84119d7fbacd43388bfe6` (= `@faf734b`; I.45BV/BW) · **markers I.45CF APPLIED:** tip `faf734bd99a13b427f00745563b54583f7258e94` · selective · **≠ full-tree** · **I.45CB** closure 67: 1 RAW_MATCH + 66 LINE_ENDING_ONLY · API-outside-closure drift **OPEN** · `E3_RENDER_JOBS_ENABLED` **TRUE** — last confirmed **I.45DO/I.45DR** (not perpetual) · **I.45DR** oneshot via transient `systemd-run` + `EnvironmentFile` (unit `bitrymdym-e3-canary-53398f9e` · collected) · **I.45DP** manual `source` as `bitrymdym-e3` **FAIL** (env unreadable; no claim; no chmod) · **≠** continuous-mode / full-tree align |
-| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — I.45DR narrow canary **PASS** · remaining Final Mix gates **OPEN** · P6.8 **NOT STARTED** · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · do not mark Final Mix / Studio migration / Stage J full close · do not auto-enable Contabo · do not claim full VPS tree = `faf734b` |
+| **STUDIO_EXPORT (Final Mix)** | **APP DEPLOYED** (ancestry PR #4 @ `faf734b`) · app-code tip **`ce2f0cc`** / prior `dpl_1P8ixpt…` · Git tip = **Final Mix Production GREEN closeout** (parent **`dcd2308`** · prior **`51a37a2`** / **`99bb10e`** / **`cee88f8`** / **`2adb569`** I.48 HISTORY) · prod last-known **`2adb569`** / `dpl_sAyrsHC…` (**I.48-A0** · Ready · **≠** Git tip) · **Final Mix GREEN criteria FROZEN** ([GO-FM-CRITERIA](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md)) · **Final Mix Production GREEN: VERIFIED** ([closeout](./audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md) · frozen IN only) · **Stage J: CLOSED** · **FULL FIXTURE VERIFIED PASS** ([closeout](./audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md) · artifact `21d98be2-…` · RIFF/WAVE · 10,584,044 B) · **Empty-session production PASS** ([closeout](./audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md) · job `dac8ccb9-…`) · **I.18 local ON MAIN** · **IN all PASS** · **IN open:** none · **WAIVE:** Contabo always-on · bit-perfect PCM · P6.8 · prior: I.45BK/BM/BO + I.45BY `61b7cdf1-…` — **do not re-run** · I.45CV **PRODUCTION VERIFIED** (409 only) · **OUT:** full IDOR · apex · empty-project delete · Studio migration CLOSED claim · [J2](./audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md) · [bake freeze](./decisions/STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| **Contabo E3 worker (last-known)** | Host `vmi3622761` · persistent service **disabled/inactive** · oneshot path last-known · **≠** continuous-mode on host · **Continuous poller V1 code: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) · OD-CWP-01…08) · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · migration not applied to production · API-outside-closure **OPEN** · selective pipeline tip `@faf734b` last-known |
+| **NEXT UNIT** | **STOP — OWNER DECISION REQUIRED** — SFM A/B1/C/D+OD-06+HTTP **CODE ON MAIN** @ `2f7050e` · Contabo STUDIO poller **IMPLEMENTED locally** · **ordered SFM GOs (independent; one GO ≠ next):** **A** this SSOT docs reconcile · **B** dedicated SFM worker entrypoint (if missing — confirmed NOT WIRED) · **C** staging read-only verification · **D** migration reconcile after RO evidence · **E** staging E2E only after critical gates + separate GO · also OPEN: Contabo STUDIO GO-HOST-RO / GO-SYNC / canary / always-on · **OD-04** · **OD-SFM-ID-05** · do **not** enable SFM flag or SFM worker without GO · do **not** re-run `53398f9e-…` or `61b7cdf1-…` · Final Mix (STUDIO_EXPORT) GREEN / WAIVE / OUT **unchanged** · P6.8 independent · **≠** SFM Versions Production GREEN |
 | **KNOWN WAIVER** | `e3-7-f-download-authz` / `EXPORT_WAV` · **PRE-EXISTING / OUT OF SCOPE / WAIVED BY OWNER** |
 | **Fala 3.5.1 Recording Experience** | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` — [RECORDING.md](./architecture/RECORDING.md) |
 | **P3 Anonymous → Account Claim** | **COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` — [RECORDING.md](./architecture/RECORDING.md) |
@@ -93,6 +99,21 @@
 | **E3** | PRODUCTION VERIFIED — GREEN |
 | **Worker** | Contabo EXTERNAL COMPUTE · persistent **disabled/inactive** · I.45DR narrow canary via transient oneshot **PASS** · pipeline tip-aligned `@faf734b` (I.45BV) · markers I.45CF (selective · ≠ full tree) · flag TRUE last-confirmed I.45DO/DR · not always-on · capability GREEN · bootstrap history `92496d4` |
 | Supabase project | `rzzxrgcdogkybkiidqgw` |
+| **MIGRATION HISTORY GUARDRAIL** | **ACTIVE (2026-10-15)** · registry drift is **project-wide** (audit: **43** name-matched divergent versions · **10** aligned) · SFM A–D on prod via MCP under remote `20261015…` vs local files `20261014…` · **do not assume staging schema ≡ prod** · **`supabase db push` / `migration up` / `migration repair` BLOCKED** until full alignment Owner GO · partial SFM repair **does not** unlock push · do not mix MCP apply vs CLI push without same-GO history closeout · future migrations: file → local test → **separate Owner GO apply** → verify history + objects · preserves I.27/I.28 · [CHANGELOG](./CHANGELOG.md) |
+
+---
+
+## 2b. Migration history — hard bans (living)
+
+```text
+db push / migration up (prod)     = BLOCKED until full local↔remote version alignment (Owner GO)
+migration repair / history rewrite = BLOCKED without separate Owner GO
+re-apply migration SQL            = BLOCKED
+partial SFM-only repair           = does NOT unlock db push
+staging schema ≠ assumed prod     = staging must be verified separately (RO GO)
+SFM_VERSIONS_V1 / deploy / worker = unchanged — still require their own Owner GOs
+I.27 / I.28                       = PRESERVED (no push until aligned · optional rename-to-match-prod)
+```
 
 ---
 
@@ -101,13 +122,13 @@
 ```text
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
 APP FEATURE COMMIT (V2)       = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION DEPLOYMENT (obs.)  = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready · Current · Latest (I.45EJ-R1)
-  aliases                     = www.bitrymdym.pl · bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www
-PRODUCTION GIT SHA            = df37048 (PR #8 docs-only merge · deployment SHA)
-  app-code tip (HISTORY)      = ce2f0cc / dpl_1P8ixpt… (PR #5) · superseded for live aliases
-  prior deploy (HISTORY)      = dpl_9YDCy… @ faf734b (PR #4) · dpl_56FGH… · superseded for live aliases
+PRODUCTION DEPLOYMENT (last-known I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN · Ready · SHA 2adb569 · ≠ current Git tip · GO-A did not re-verify
+  aliases (last-known · NOT e2e) = www.bitrymdym.pl · bitrymdym.vercel.app · bitrymdym.pl · apex redirect e2e NOT VERIFIED
+PRODUCTION GIT SHA (last-known I.48-A0) = 2adb569 · ≠ current Git tip (GO-A / parent 50d7788) · prior f730a7a / dpl_28oH… = HISTORY (I.46-A10) · prior df37048 / dpl_7Cp2gQ9… = HISTORY
+  app-code tip (last-established evidence) = ce2f0cc / dpl_1P8ixpt… (PR #5) · ≠ fresh prod verify · ≠ Git tip
+  prior deploy (HISTORY)      = dpl_28oH… @ f730a7a · dpl_7Cp2gQ9… @ df37048 · dpl_9YDCy… @ faf734b · dpl_56FGH…
   V2 verify deploy (HISTORY)  = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd (superseded for aliases)
-DOCS TIP / origin/main        = df37048 · local WIP may still dirty / diverge · local origin/main ref may lag
+GITHUB MAIN TIP / origin/main = this docs SSOT reconcile · parent e8d2127 (SFM A/B1/C/D+OD-06 CODE ON MAIN) · ≠ prod deploy 2adb569 · ≠ SFM_VERSIONS_V1 ON · ≠ SFM Production GREEN · local WIP may still dirty / diverge · verify remotely after fetch
 CATALOG                       = GREEN · 17 PLATFORM PUBLISHED · public ↔ admin MATCH
 STORAGE                       = GREEN · beat-audio 17 platform · orphans 0 · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3)
 SECURITY                      = GREEN · Studio API 401 · studio_cas_* ACL
@@ -222,20 +243,38 @@ VPS Layer-1                   = 43/43 BACKED UP · Contabo ≠ durable SSOT
 AWS Object Lock               = DEFERRED
 
 CURRENT                       = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · docs tip df37048 / dpl_7Cp2gQ9… (I.45EJ-R1) · app-code tip ce2f0cc (HISTORY for aliases)
-                              · aliases www + bitrymdym.vercel.app · apex 308→www · STUDIO_EXPORT app DEPLOYED
-                              · I.45DR narrow Contabo WAV canary PASS (job 53398f9e… · artifact 21d98be2… READY)
-                              · persistent Contabo worker disabled/inactive · not always-on
-                              · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
-                              · Full Final Mix Production GREEN NOT VERIFIED / OPEN · Studio migration ≠ CLOSED
+                              · Git tip = Final Mix Production GREEN closeout · parent dcd2308 · prior 51a37a2 / 99bb10e / cee88f8 / 2adb569 = HISTORY
+                              · Final Mix GREEN criteria FROZEN · decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md
+                              · Final Mix Production GREEN: VERIFIED · audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md (frozen IN only)
+                              · Stage J: CLOSED · audits/STAGE_J_FINAL_CLOSURE.md
+                              · FULL FIXTURE VERIFIED PASS · audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md (artifact 21d98be2-…)
+                              · Empty-session production gate PASS · audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md
+                              · I.18 local evidence ON MAIN · audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md
+                              · IN all PASS: Stage J · I.45DR · J2 · object_key · P5/P6 JSON · I.18 tip · empty-session prod · FULL FIXTURE
+                              · IN open blockers: none
+                              · WAIVE for GREEN: Contabo always-on · bit-perfect PCM · P6.8
+                              · OUT: full IDOR · apex · empty-project delete · Studio migration CLOSED claim
+                              · I.13F tip MISSING ON MAIN (≠ automatic GREEN IN)
+                              · prod last-known dpl_sAyrsHC… @ 2adb569 (I.48-A0 · Ready · ≠ Git tip)
+                              · aliases www + bitrymdym.vercel.app + bitrymdym.pl last-known · apex redirect e2e NOT VERIFIED
+                              · app-code tip ce2f0cc · GREEN ≠ Contabo always-on / bit-perfect / P6.8 / OUT
+                              · STUDIO_EXPORT app DEPLOYED · persistent Contabo disabled/inactive
                               · 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P4.6 / Checkbox / List UX / V1 / P6.7 CLOSED / GREEN
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED
+                              · Contabo continuous poller V1 IMPLEMENTED / LOCAL TESTS PASS · audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md
+                              · Contabo sync NOT DONE · production deployment NOT DONE · host verification NOT DONE · canary NOT RUN · always-on NOT ENABLED
+                              · NEXT = GO-HOST-RO-CONTABO · GO-SYNC · canary · always-on · prod migration apply
+                              · Final Mix Production GREEN VERIFIED (frozen IN) · P6.8 / OUT independent
+                              · do NOT expand GREEN to WAIVE/OUT claims
+                              · do NOT auto-enable Contabo poller / always-on
+                              · do NOT re-run SUCCEEDED jobs 53398f9e… or 61b7cdf1…
+                              · do NOT land dirty I.13F without dedicated GO · do NOT invent evidence from code
+                              · P6.8 NOT STARTED · Contabo always-on WAIVED for GREEN (Ops GO separate)
                               · markers I.45CF done · DEPLOYED_COMMIT = reference tip not full-tree
                               · V2 follow-ups NON-BLOCKING · do NOT auto-open EPIC / payments
                               · do NOT reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P6.5 Scenario B / P4.6
                               · do NOT permanently enable Contabo / claim continuous-mode without Owner GO
-                              · do NOT re-run SUCCEEDED jobs 53398f9e… or 61b7cdf1… · do NOT claim Final Mix GREEN / Stage J full close / Studio migration CLOSED
+                              · do NOT re-run SUCCEEDED jobs 53398f9e… or 61b7cdf1…
                               · do NOT claim Contabo full-tree = tip · API-outside-closure drift remains OPEN
                               · do NOT claim empty-project delete PRODUCTION VERIFIED (I.45CV out of scope)
                               · do NOT commit P4 local seam / SA-07 untracked / Sacred WIP without Owner GO
@@ -444,15 +483,211 @@ STORAGE DISASTER RECOVERY:
 
 ---
 
+## 4A. I.47 Session Closure (2026-10-12) — HISTORY
+
+```text
+SESSION                       = I.47 — documentation-only session closure + cold-start handoff
+DONE (I.46 chain)             = PR #10 merged @ 522e514 (J2 docs closeout)
+                              · PR #11 merged @ f730a7a (docs SSOT tip/plane · six docs files)
+                              · I.46-A10 production deploy confirm: dpl_28oH… Ready @ f730a7a
+                              · aliases www + bitrymdym.vercel.app + bitrymdym.pl assigned (I.46-A10)
+NOT VERIFIED / NOT CLAIMED    = apex redirect e2e · functional app GREEN · Final Mix GREEN
+                              · Contabo always-on · P6.8 · object_key live probe · Stage J full close
+GATES (unchanged semantics)   = J2 PASS/CLOSED · Stage J OPEN · Final Mix NOT VERIFIED/NOT GREEN
+                              · P6.8 NOT STARTED · object_key live probe NOT EXECUTED
+                              · Contabo always-on OPEN/NOT VERIFIED · apex redirect e2e NOT VERIFIED
+SAFE NEXT START               = Owner GO on remaining Stage J / Final Mix gates vs P6.8
+                              · use FINAL_COLD_START §12 MASTER PROMPTS · isolated worktree · no dirty-main sync
+I.47 SCOPE                    = docs only · no code · no HTTP · no Contabo · no deploy · no commit without GO
+NOTE (post-I.48)              = PR #12 later merged I.47 docs onto main as tip 2adb569 · living tip/deploy rows superseded by §4B
+```
+
+## 4B. I.48 Tip/Plane Reconcile (2026-10-13)
+
+```text
+SESSION                       = I.48 — docs-only tip/plane reconcile after PR #12 (isolated worktree)
+GITHUB MAIN TIP               = 2adb569 (PR #12 · Merge docs/i47-session-closure-handoff)
+PRODUCTION DEPLOY (I.48-A0)   = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN · Ready · SHA 2adb569
+                              · I.48-A2/A3 do NOT re-verify · Ready ≠ functional GREEN ≠ Final Mix GREEN
+PRIOR TIP/DEPLOY (HISTORY)    = f730a7a / dpl_28oH… (I.46-A10 / I.47 snapshot)
+APP-CODE TIP                  = ce2f0cc (unchanged · last-established evidence)
+GATES (unchanged)             = J2 PASS/CLOSED · Stage J OPEN · Final Mix NOT VERIFIED/NOT GREEN
+                              · P6.8 NOT STARTED · object_key live probe NOT EXECUTED
+                              · Contabo always-on OPEN/NOT VERIFIED · apex redirect e2e NOT VERIFIED
+                              · Empty-session Production NOT VERIFIED · FX/PCM parity NOT VERIFIED
+                              · Empty-project delete NOT VERIFIED
+I.48 SCOPE                    = docs allowlist only · no code · no commit/push/PR/deploy in A3 · no dirty-main sync
+```
+
+## 4C. object_key reject-only live probe (2026-10-13)
+
+```text
+SESSION                       = Stage J object_key reject-only documentation closeout
+EVIDENCE                      = Owner-supplied session reports (not committed repo artifacts)
+                              · Owner A: P1, P2 (21 keys alone), P8, P9 — report 24/24 PASS
+                              · P4 unauthenticated — PASS · HTTP 403
+                              · P3 Other B user_number 469 · object_key=x — PASS · HTTP 403
+                                · message includes "Client must not supply object_key as render source."
+                                · hasUrl=false · single GET only
+object_key reject-only (tested scope) = PASS — P1–P4, P8–P9
+P5 / P6                       = NOT EXECUTED / OUT OF SCOPE
+FIXTURE VERIFIED              = NOT CONFIRMED
+J2 Download AuthZ             = PASS / CLOSED (separate gate · I.45EX-A16/A17/A18)
+Stage J                       = OPEN
+Full Final Mix Production GREEN = NOT VERIFIED
+P6.8 / Contabo always-on      = unchanged (NOT STARTED · OPEN / NOT VERIFIED)
+CLOSEOUT                      = audits/STAGE_J_OBJECT_KEY_REJECT_ONLY_PROBE_CLOSEOUT.md
+NOTE                          = ≠ owner happy-path download · ≠ full fixture · ≠ Stage J close · ≠ Final Mix GREEN
+                              · I.47/I.48 history rows above remain true for those sessions
+```
+
+## 4D. GO-A Stage J docs integrity (2026-10-13) — A2
+
+```text
+SESSION                       = Stage J docs integrity · tip/plane reconcile + evidence-link hygiene (A2)
+GIT TIP                       = this GO-A commit · parent 50d7788 · prior d69a5fe / 2adb569 = HISTORY
+PROD DEPLOY                   = last-known I.48-A0 dpl_sAyrsHC… @ 2adb569 · ≠ Git tip · no fresh verify
+object_key reject-only        = PASS (unchanged · bake freeze living row aligned)
+P5/P6 / FIXTURE / Stage J / Final Mix GREEN / P6.8 / Contabo always-on = unchanged
+I.18 / I.13F files on main    = MISSING ON CURRENT MAIN
+                              · HISTORICAL LOCAL EVIDENCE — NOT COMMITTED (dirty local ?? only)
+                              · do NOT treat broken tip links as available evidence
+A2 CHOICE                     = rewrite living refs · do NOT land dirty I.18/I.13F files
+SCOPE                         = docs only · no code · no prod HTTP · no Contabo · no P5/P6
+```
+
+## 4E. P5/P6 owner download probe (2026-10-13)
+
+```text
+SESSION                       = Stage J P5/P6 owner download probe documentation closeout
+EVIDENCE                      = prior probe session report (not re-executed in this docs unit)
+ARTIFACT                      = c596e7bc-a031-4df8-a17b-31c4fd2cce8b
+HISTORICAL JOB                = 61b7cdf1-0dfa-41aa-a493-e4f438d09131 — not re-run
+P5                            = PASS — GET …/download · HTTP 200 · success=true · qualityTier=WAV · hasUrl=true
+P6                            = PASS — GET …/download?foo=1 · HTTP 200 · same functional shape · hasUrl=true
+SCOPE LIMIT                   = endpoint JSON response only · ≠ WAV byte download · ≠ signed URL open
+FULL FIXTURE VERIFIED         = NOT CONFIRMED
+object_key reject-only        = PASS — separate prior scope (do not merge)
+J2 Download AuthZ             = PASS / CLOSED (separate gate)
+Stage J                       = OPEN
+Full Final Mix Production GREEN = NOT VERIFIED
+P6.8 / Contabo always-on      = unchanged (NOT STARTED · OPEN / NOT VERIFIED)
+CLOSEOUT                      = audits/STAGE_J_P5_P6_OWNER_DOWNLOAD_PROBE_CLOSEOUT.md
+```
+
+## 4F. Stage J closure criteria freeze (GO-SJ-CRITERIA · 2026-10-13) — HISTORY
+
+```text
+SESSION                       = GO-SJ-CRITERIA — freeze Stage J CLOSED allowlist (docs only)
+DECISION                      = decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md
+HISTORICAL Stage J at freeze  = OPEN (criteria frozen · closeout = separate GO — now applied in §4G)
+IN (required for Stage J CLOSED) — all documented PASS at freeze time
+  · I.45DR · J2 · object_key · P5 JSON · P6 JSON
+WAIVE                         = byte-level WAV/RIFF for c596e7bc-… · ≠ FULL FIXTURE VERIFIED
+OUT                           = empty-session prod · always-on · P6.8 · full PCM · Final Mix GREEN · full IDOR · apex · empty-project delete
+APPLIED BY                    = GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md · living Stage J = CLOSED (§4G)
+```
+
+## 4G. Stage J final closure (GO-SJ-DOCS-CLOSE · 2026-10-13)
+
+```text
+SESSION                       = GO-SJ-DOCS-CLOSE — Stage J evidence-gate closeout (docs only)
+CLOSEOUT                      = audits/STAGE_J_FINAL_CLOSURE.md
+CRITERIA                      = decisions/STAGE_J_CLOSURE_CRITERIA_FREEZE.md
+Stage J                       = CLOSED
+IN (satisfied · not re-probed)
+  · I.45DR narrow Contabo WAV canary = PASS
+  · J2 Download AuthZ = PASS / CLOSED
+  · object_key reject-only (narrow) = PASS
+  · P5 owner download endpoint = PASS (JSON only)
+  · P6 owner download ?foo=1 = PASS (JSON only)
+WAIVE                         = byte-level WAV/RIFF for c596e7bc-a031-4df8-a17b-31c4fd2cce8b (Stage J WAIVE · ≠ Final Mix gate #7)
+FULL FIXTURE VERIFIED         = PASS (after Stage J · audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md · artifact 21d98be2-…)
+Final Mix Production GREEN    = VERIFIED (after Stage J · audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only · ≠ Contabo always-on / bit-perfect / P6.8 / OUT)
+OUT (independent statuses · living)
+  · empty-session production probe = PASS (after Stage J close · audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md)
+  · Contabo always-on / persistent worker = OPEN / NOT VERIFIED · disabled/inactive
+  · P6.8 = NOT STARTED
+  · full Live↔Offline PCM = NOT full parity
+  · Final Mix Production GREEN = NOT VERIFIED
+  · full IDOR beyond J2 = NOT CLAIMED
+  · apex redirect e2e = NOT VERIFIED
+  · empty-project delete = NOT TESTED / NOT VERIFIED
+SCOPE                         = docs only · no prod HTTP · no WAV · no Contabo · no app code
+NEXT                          = Owner GO — Final Mix Production GREEN docs closeout / Contabo Ops / P6.8 · ≠ claim GREEN from Stage J or FULL FIXTURE alone
+```
+
+## 4H. Final Mix Production GREEN criteria freeze (GO-FM-CRITERIA · 2026-10-13)
+
+```text
+SESSION                       = GO-FM-CRITERIA — freeze Final Mix Production GREEN allowlist (docs only)
+DECISION                      = decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md
+Final Mix Production GREEN    = VERIFIED (living · after GREEN closeout §4I · frozen IN only)
+IN already satisfied (historical · do not re-run)
+  · Stage J CLOSED
+  · I.45DR PASS
+  · J2 PASS / CLOSED
+  · object_key reject-only PASS
+  · P5/P6 JSON PASS (≠ WAV bytes · ≠ FULL FIXTURE VERIFIED)
+IN satisfied since GO-LAND-I18-PUBLISH (tip)
+  · I.18 tip evidence = ON MAIN · audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md (historical local PASS 2026-10-10)
+IN satisfied — empty-session production closeout
+  · I.18 empty-session production probe = PASS · audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md · job dac8ccb9-…
+IN satisfied — FULL FIXTURE VERIFIED closeout
+  · FULL FIXTURE VERIFIED = PASS · audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md · artifact 21d98be2-…
+IN open blockers
+  · none (all IN PASS under freeze)
+GREEN closeout applied
+  · Final Mix Production GREEN = VERIFIED · audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only
+WAIVE (not required for GREEN · unchanged)
+  · Contabo always-on / persistent worker (Ops GO separate · remains disabled/inactive)
+  · bit-perfect Live↔Offline PCM (I.14-01 functional stands)
+  · P6.8 / independent epics
+OUT (independent · unchanged)
+  · full IDOR beyond J2
+  · apex redirect e2e
+  · empty-project delete
+  · Studio migration CLOSED claim
+I.13F tip evidence            = MISSING ON CURRENT MAIN · ≠ automatic GREEN IN
+NOTE                          = GREEN = frozen IN allowlist only · ≠ Contabo always-on · ≠ bit-perfect PCM · ≠ P6.8 · ≠ OUT
+NEXT                          = Owner decision — Contabo Ops / P6.8 / OUT items · do not expand GREEN scope
+```
+
+## 4I. Final Mix Production GREEN closeout (GO-FINAL-MIX-PRODUCTION-GREEN-CLOSEOUT · 2026-10-13)
+
+```text
+SESSION                       = GO-FINAL-MIX-PRODUCTION-GREEN-CLOSEOUT — docs-only GREEN living claim
+CLOSEOUT                      = audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md
+CRITERIA                      = decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md
+PREFLIGHT TIP                 = dcd23080e1adbc951f0c1b58224bcf24248860b8 (FULL FIXTURE VERIFIED)
+Final Mix Production GREEN    = VERIFIED (frozen IN only)
+IN                            = all PASS (Stage J · I.45DR · J2 · object_key · P5/P6 · empty-session prod · FULL FIXTURE · I.18 tip)
+WAIVE / OUT                   = unchanged
+SCOPE                         = docs only · no prod HTTP · no Contabo · no WAV · no app code
+```
+
 ## 5. Next Session Entry
 
 ```text
 NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → MASTER_HANDOFF.md / this PROJECT_STATE
-                 → Confirm docs tip / origin/main = df37048 (PR #8 docs-only · verify remotely; local ref may lag)
-                 → Confirm prod dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready/Current/Latest · SHA df37048 (I.45EJ-R1)
-                 → Confirm aliases: www + bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www (not direct alias)
-                 → Confirm app-code tip ce2f0cc / prior dpl_1P8ixpt… = HISTORY for live aliases (≠ docs tip)
+                 → Confirm GitHub main tip / origin/main = Final Mix Production GREEN closeout tip (parent dcd2308 · verify remotely after fetch)
+                 → Confirm Final Mix GREEN criteria FROZEN · decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md
+                 → Confirm Final Mix Production GREEN = VERIFIED · audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md (frozen IN only)
+                 → Confirm Stage J: CLOSED · audits/STAGE_J_FINAL_CLOSURE.md
+                 → Confirm FULL FIXTURE VERIFIED PASS · audits/FINAL_MIX_FULL_FIXTURE_VERIFIED_CLOSEOUT.md
+                 → Confirm empty-session production gate PASS · audits/STUDIO_EXPORT_EMPTY_SESSION_PRODUCTION_CLOSEOUT.md
+                 → Confirm I.18 local evidence ON MAIN · audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md
+                 → Confirm IN open blockers: none
+                 → Confirm WAIVE: Contabo always-on · bit-perfect PCM · P6.8 (do NOT claim as GREEN side effects)
+                 → OUT keep independent: full IDOR · apex · empty-project delete · Studio migration CLOSED claim
+                 → Treat I.13F evidence path as MISSING ON CURRENT MAIN (do NOT land dirty copy without dedicated GO)
+                 → Treat prod dpl_sAyrsHCfMVLFer669J2MgbbXbhGN @ SHA 2adb569 as last-known I.48-A0 (Ready) · ≠ Git tip
+                 → Treat prior dpl_28oH… @ f730a7a as HISTORY (I.46-A10 / I.47)
+                 → Treat aliases www + bitrymdym.vercel.app + bitrymdym.pl as last-known (I.48-A0) · apex redirect e2e NOT VERIFIED
+                 → Confirm app-code tip ce2f0cc / prior dpl_1P8ixpt… = last-established in available evidence (≠ Git tip · ≠ fresh prod verify)
+                 → Read FINAL_COLD_START §12 MASTER PROMPTS for ChatGPT / Cursor cold-start
+                 → Do NOT sync/clean dirty local main (Sacred WIP protected · last-known large WIP)
                  → Confirm APP FEATURE COMMIT (V2) = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
                  → Confirm V2 verify history dpl_2ymz… @ 44f7cbd (not live alias)
                  → Confirm V2 follow-ups 01–04 = NON-BLOCKING (do not auto-implement)
@@ -464,7 +699,7 @@ NEXT SESSION ENTRY = Read FINAL_COLD_START_HANDOFF.md
                  → Confirm Contabo worker = STOPPED / DISABLED
                  → P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN
                  → P6.5 Scenario A PROVEN · Scenario B BLOCKED / INCONCLUSIVE (do not reopen)
-                 → NEXT GATE = STOP — OWNER DECISION REQUIRED (no auto EPIC / P6.8 / payments)
+                 → NEXT GATE = STOP — OWNER DECISION REQUIRED (Final Mix GREEN closeout docs · no auto EPIC / payments)
                  → SEARCH EXISTING FIRST · DO NOT DUPLICATE engine/player/orchestrator/CAS/selection
                  → Do NOT reimplement V2 / Auto Save/CAS / 7.1.6 / Escape / 7.1.5 / 7.1.4 / 7.1.3 / V1 / P6.7 / P6.6 / P4.6
                  → Do NOT commit P4 context? seam / SA-07 untracked / Sacred WIP without Owner GO

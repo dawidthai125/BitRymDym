@@ -10,6 +10,164 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Studio Final Mix — OD-SFM-ID-06 CLOSED (legacy WAV deny-without-backfill)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner direction — deny legacy as current SFM final · no backfill · no physical WAV/MP3 delete |
+| Status | **CLOSED / ACCEPTED (policy + local AuthZ)** · production cutover / flag ON / remote migrate **NOT DONE by this entry** · no commit/push/deploy required by decision alone |
+| Date | 2026-10-15 |
+| Base tip (impl worktree) | `18c2c6a` |
+| Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [OPEN_DECISIONS](./OPEN_DECISIONS.md) |
+| Locked ID | **OD-SFM-ID-06** |
+| Related | **OD-SFM-ID-01** (dedicated SFM route + deny SFM on mix route) |
+| Still OPEN | **OD-04** · **OD-SFM-ID-05** · Contabo Ops · production SFM cutover GO |
+
+**Policy locked:**
+1. Legacy Studio rows (`project_id` set, `sfm_version_id` NULL) are **not** current Studio Final Mix finals.
+2. **No automatic backfill** of versions/grants from legacy WAV evidence.
+3. SFM download route (`GET /api/studio/artifacts/[artifactId]/download`) **DENY** when `sfm_version_id` is NULL.
+4. After `SFM_VERSIONS_V1` cutover: mix route **DENY** `LEGACY_STUDIO` domain (DB XOR) — not presented as SFM final.
+5. Mix route **always DENY** rows with `sfm_version_id IS NOT NULL` (OD-SFM-ID-01).
+6. E3 (`mix_session_id`) / TAKE (`take_id`) / RAW semantics **unchanged**.
+7. **No physical delete** of historical Owner WAV/MP3; retention ≠ download entitlement.
+8. Optional historical download-only grandfather path = **out of scope** (would need a new Owner GO).
+9. **UI sequencing (F-03):** local UI wire routes Studio download by trusted status `sfmVersionId` — non-empty → `/api/studio/artifacts/…`; null/absent → `/api/mix/artifacts/…` (LEGACY_STUDIO pre-cutover). Enabling `SFM_VERSIONS_V1` without published UI wire + prod migrate still DENY `LEGACY_STUDIO` on the mix route. **Separate Owner GO** for UI wire publish + prod migrate + flag ON + smoke. This entry does **not** activate production cutover.
+
+**Supersedes (docs):** prior OPEN wording that OD-SFM-ID-06 was undecided among deny / grandfather / backfill.
+
+---
+
+### Studio Final Mix — OD-SFM-ID-07 ACCEPTED (render_jobs.kind strings) (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT — OD-SFM-ID-07 variant A |
+| Status | **CLOSED / ACCEPTED (docs)** · Stage C code **NOT AUTHORIZED by this entry** · production / Contabo **NOT CHANGED** |
+| Date | 2026-10-14 |
+| Discovery | READ-ONLY audit @ `a4ea89c` (allowed kinds today: `MIX` \| `TAKE_EXPORT` \| `STUDIO_EXPORT`) |
+| Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [OPEN_DECISIONS](./OPEN_DECISIONS.md) |
+| Locked ID | **OD-SFM-ID-07** |
+| Still OPEN (at entry time) | **OD-04** · **OD-SFM-ID-05** · **OD-SFM-ID-06** (later **CLOSED** 2026-10-15) · Contabo Ops GOs · Stage C Implementation GO |
+
+**Exact `render_jobs.kind` (new, Stage C):**
+- `SFM_MIX_PREPARE` — executor for domain stage `SFM_MIX` (snapshot validate / prepare; ≠ stage name as job kind)
+- `SFM_MASTER_BAKE` — executor for domain stage `SFM_MASTER` (offline master bake)
+- `SFM_QUALITY_ENCODE` — lazy on-demand quality encode after `EXPORTS_ELIGIBLE`
+
+**Rules locked with OD-SFM-ID-07:**
+1. `studio_final_stages.kind` remains only `SFM_MIX` \| `SFM_MASTER`.
+2. Job `SUCCEEDED` alone ≠ domain stage complete — explicit `sfm_complete_stage` + stage↔job binding (Stage C).
+3. **Forbidden** as SFM executor identity: `kind=MIX`, `kind=STUDIO_EXPORT` (E3 / legacy Studio WAV unchanged).
+4. `mapJobKind` / dispatch: **fail-closed** on unknown kinds — **no** fallback unknown → `MIX`.
+5. Separate SFM claim/dispatch paths; existing `claim_next_studio_export_job` / STUDIO_EXPORT Contabo poller **unchanged**.
+6. Do **not** auto-enable new kinds on Contabo poller — host sync / canary / always-on = separate Ops GOs.
+7. Retry policy unchanged: no auto `FAILED` → `QUEUED` unless Owner approves otherwise.
+8. CHECK/XOR extension, version binding column, claim RPCs, stage↔job wiring = **Stage C Implementation GO** (not this docs entry).
+
+**Supersedes (docs):** prior OPEN wording that OD-SFM-ID-07 was undecided; example strings in DATA_MODEL §3.8 are now **ACCEPTED** (not merely illustrative).
+
+---
+
+### Studio Final Mix — Implementation Design reconciled (OD-SFM-ID-01…04) (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — Implementation Design reconciliation |
+| Status | **CLOSED / ACCEPTED (design docs)** · foundation later implemented under separate GOs · production **NOT CHANGED by this historical entry** |
+| Date | 2026-10-14 |
+| Documents | [IMPLEMENTATION_DESIGN](./STUDIO_FINAL_MIX_IMPLEMENTATION_DESIGN.md) · [DATA_MODEL](./STUDIO_FINAL_MIX_DATA_MODEL.md) · [RPC_SECURITY](./STUDIO_FINAL_MIX_RPC_SECURITY_CONTRACT.md) · [TEST_MATRIX](./STUDIO_FINAL_MIX_TEST_MATRIX.md) |
+| Locked IDs | **OD-SFM-ID-01** · **OD-SFM-ID-02** · **OD-SFM-ID-03** · **OD-SFM-ID-04** |
+| Still OPEN (at entry time; see later OD-SFM-ID-07 entry) | **OD-04** · **OD-SFM-ID-05** · **OD-SFM-ID-06** · **OD-SFM-ID-07** (later **CLOSED**) · Implementation GO |
+
+**OD-SFM-ID-01:** dedicated SFM download route; after cutover `/api/mix/artifacts/…` **DENY** SFM (`sfm_version_id`); E3/TAKE/RAW unchanged; DB domain binding; READY/object_key/URL alone insufficient.
+**OD-SFM-ID-02:** version grant ≠ single quality; historical `granted_qualities` snapshot at FIRST_GRANT; downgrade keeps historical; new qualities follow current plan; grant ≠ unlimited future qualities; expand-on-upgrade = OD-SFM-ID-05 OPEN (strict until then).
+**OD-SFM-ID-03:** many `AVAILABLE` paid slots per Warsaw day; atomic bind on grant; no double-consume; midnight expiry; refund rules unchanged.
+**OD-SFM-ID-04:** `SFM_MIX` = separate executor job bound to version/stage; ≠ E3 `kind=MIX`; MIX done ≠ MASTER done. Exact job kind strings later locked by **OD-SFM-ID-07**.
+
+---
+
+### Studio Final Mix — F02b / F03b / Stages DF OWNER ACCEPTED with corrections A/B/C (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT with corrections — F-addendum + Version/Stages DF |
+| Status | **CLOSED / ACCEPTED (docs)** · **NOT IMPLEMENTED** · **NO COMMIT/PUSH in this session** · production **NOT CHANGED** |
+| Date | 2026-10-14 |
+| F-addendum | [STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_F_ADDENDUM_PROPOSAL.md) |
+| Stages DF | [STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md](./STUDIO_FINAL_MIX_VERSION_STAGES_DESIGN_FREEZE_PROPOSAL.md) |
+| Locked IDs | **OD-SFM-F02b** · **OD-SFM-F03b** · Stages DF (`SFM_MIX`/`SFM_MASTER`) |
+| Supersession | **F02 → F02b** and **F03 → F03b** for **Studio Final Mix only**; F01/F04–F07 unchanged; TAKE/RAW/E3 retention unchanged |
+| Corrections | **A** historical grant/downgrade AuthZ · **B** ≤1 current READY per `(versionId, QUALITY)` · **C** domain names `SFM_MIX`/`SFM_MASTER` |
+| Still OPEN | **OD-04** payment provider · Implementation GO · SQL/promote-current Implementation Design |
+
+---
+
+### Studio Final Mix — OD-SFM-08 / 12 / 14 CLOSED + F-addendum then PROPOSAL (docs-only) — HISTORY
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT — OD-SFM-08 variant C · OD-SFM-12 · OD-SFM-14 (prior to F/Stages ACCEPT-with-corrections) |
+| Status | **CLOSED / ACCEPTED (product architecture docs)** · followed same day by F02b/F03b/Stages ACCEPT entry above |
+| Date | 2026-10-14 |
+| Product contract | [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) |
+| Locked IDs | **OD-SFM-08** · **OD-SFM-12** · **OD-SFM-14** (plus prior OD-SFM-07/09–11/13/15–18) |
+
+**OD-SFM-08:** durable domain stages + separate jobs; light mix stage; bake in master stage; ≠ E3 `kind=MIX`.
+**OD-SFM-12:** 90d from `MASTER_SUCCEEDED`; clear `current_final` on TTL; tombstone; grant ≠ file.
+**OD-SFM-14:** variant B day-slot; Warsaw expiry; refund rules.
+
+---
+
+### Studio Final Mix — Product Contract Addendum ACCEPTED (docs-only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner formal ACCEPT — Studio Final Mix Product Contract |
+| Status | **CLOSED / ACCEPTED (product contract / SSOT docs)** · implementation **NOT DONE** · production **NOT CHANGED** · Contabo / payments **NOT CHANGED** |
+| Date | 2026-10-14 |
+| Document | [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) |
+| Parent | [STUDIO_FINAL_MIX_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_DESIGN_FREEZE.md) · bake [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) |
+| Locked / accepted IDs | **OD-SFM-07**, **OD-SFM-09…11**, **OD-SFM-13**, **OD-SFM-15…18**; **OD-SFM-08/12/14** later closed in follow-up entry; **OD-SFM-02 SUPERSEDED** (product ladder scope; history preserved) |
+| Explicit non-claims | Multi-variant Studio export **not** implemented by this entry · paid 7,99 provider **not** integrated · WAV-only runtime path may still exist until Implementation GO |
+
+**Accepted product rules (summary):** plan ladder FREE deny-all downloads / BRONZE 128 / SILVER 128+192 / GOLD +320+WAV · daily first-version grants 0/1/2/5 · grant per version (all plan qualities) · re-download without new grant · reset midnight `Europe/Warsaw`+DST · Accept→MIX→MASTER before export · lazy on-demand variants · 90d retention · paid **7,99 PLN** = one extra first-download day-slot (not unlimited) · domain ≠ E3 MixPanel / `mix_sessions` / TAKE_EXPORT.
+
+**Follow-up (same day):** OD-SFM-08/12/14 detail CLOSED — see entry above; F02b/F03b remain PROPOSAL.
+
+---
+
+### Contabo Continuous Worker V1 — IMPLEMENTED / LOCAL TESTS PASS (GO-IMPL-CONTABO-POLL)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — GO-IMPL-CONTABO-POLL |
+| Status | **CLOSED / IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync **NOT DONE** · production deployment **NOT DONE** · host verification **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** |
+| Date | 2026-10-13 |
+| Freeze | [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
+| Impl report | [CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) |
+| Locked IDs | **OD-CWP-01…08** (unchanged) |
+
+**Delivered (local):** migration `claim_next_studio_export_job` (service_role · SKIP LOCKED + CAS) · `claimNextStudioExportAsWorker` · `runAlreadyClaimedStudioExportWorkerJob` · `e3:worker:poll` · vitest PASS. Enqueue unchanged. No prod DB apply · no Contabo mutate.
+
+**Next GOs (OPEN):** GO-HOST-RO-CONTABO · GO-SYNC-CONTABO-POLL · GO-ENABLE-CONTABO-POLL-CANARY · GO-CONTABO-POLL-ALWAYS-ON · production migration apply.
+
+---
+
+### Contabo Continuous Worker V1 — DESIGN FREEZE ACCEPTED (GO-DF-CONTABO-POLL)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner GO — GO-DF-CONTABO-POLL |
+| Status | **CLOSED / ACCEPTED** (Design Freeze) · followed by GO-IMPL local impl |
+| Date | 2026-10-13 |
+| Freeze | [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) |
+| Locked IDs | **OD-CWP-01…08** |
+
+**Locked behavior:** supervised poller · **`STUDIO_EXPORT` only** · max 1 active render/instance · atomic claim-next (`SKIP LOCKED` + CAS `QUEUED→RUNNING`) · FINDING-01 AuthZ after claim while `RUNNING` · bake entry must **not** re-claim · no auto-retry after `FAILED`/`TIMEOUT`/crash · enqueue **unchanged** · graceful shutdown defined · secrets/URLs not logged.
+
+---
+
 ### Phase 7.1.6 — Auto Save + CAS Completeness — CLOSED / PRODUCTION GREEN
 
 | Pole | Wartość |
@@ -195,14 +353,14 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 **OD-SA-07-14a:** Contabo allowed **only** as WORKING/STAGING Layer-1 backup *target* · sole/final DR forbidden · compute role unchanged.
 
-**Phase 1 executed:** SSH key-only · root SSH off · UFW on · fail2ban sshd · admin path `ubuntu`+sudo.  
-**Phase 2 executed:** user `bitrymdym-backup` · `/srv/bitrymdym-backup/{objects,manifests,restore-drills,logs}` · 0700 · empty · E3/ubuntu isolation PASS.  
-**Phase 3 executed:** transfer/manifest/SHA design + fixture tests + metadata dry-run **PASS**.  
-**Phase 4 executed:** controlled canary COPY **3/43** · SHA+size VERIFIED · claim = **CANARY BACKED UP**.  
-**Phase 5 executed:** isolated restore drill from VPS backup · SHA+size+WAV/ffprobe **PASS** ×3 · claim = **CANARY RESTORE VERIFIED**.  
+**Phase 1 executed:** SSH key-only · root SSH off · UFW on · fail2ban sshd · admin path `ubuntu`+sudo.
+**Phase 2 executed:** user `bitrymdym-backup` · `/srv/bitrymdym-backup/{objects,manifests,restore-drills,logs}` · 0700 · empty · E3/ubuntu isolation PASS.
+**Phase 3 executed:** transfer/manifest/SHA design + fixture tests + metadata dry-run **PASS**.
+**Phase 4 executed:** controlled canary COPY **3/43** · SHA+size VERIFIED · claim = **CANARY BACKED UP**.
+**Phase 5 executed:** isolated restore drill from VPS backup · SHA+size+WAV/ffprobe **PASS** ×3 · claim = **CANARY RESTORE VERIFIED**.
 **Phase 6 executed:** full VPS Layer-1 expansion · **40** new COPY + canary **3** = **43/43 BACKED UP** · SHA reconcile **43/43** · restore still **3/43** · orphans **BACKED UP / NOT SAFE FOR DELETE** · ARCH-05 **NOT READY**.
 
-**Still does not authorize (without further GO):** VPS Phase 7 restore expansion · AWS immutable DR · ARCH-05 delete.  
+**Still does not authorize (without further GO):** VPS Phase 7 restore expansion · AWS immutable DR · ARCH-05 delete.
 **Related:** Local Layer-2 Design Freeze **CLOSED** (OD-VPS-LOCAL-01…12) — implementation still requires separate GO; AWS **DEFERRED** for current variant (not cancelled).
 
 ---
@@ -344,7 +502,7 @@ Production apply (2026-10-04): app `ddcee65` · deploy `dpl_C1y6toEPYacQmsxv5Jsa
 | OD-REC-07 / D07 | Anti-abuse: anon 1/3 · BEGINNER 3/10 · PRO 10/30 · LEGEND 20/60 (active / sessions per UTC day); concurrent 1 |
 | OD-REC-08 / D08 | Own take download YES for BEGINNER/PRO/LEGEND; anon no durable take download |
 
-Also locked (architecture-resolvable / SSOT):  
+Also locked (architecture-resolvable / SSOT):
 `recording_max_seconds = MIN(beat.duration, entitlement.max, 180)` server-enforced; MIC TAKE ≠ mixed song; MIX/EXPORT separate EPIC (OD-14 remains OPEN).
 
 **Scope**

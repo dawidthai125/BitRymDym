@@ -2,10 +2,10 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-12 — docs tip **`df37048`** · dpl **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** (Ready · Current · Latest · I.45EJ-R1 PASS RO) · aliases **www** + **`bitrymdym.vercel.app`** · apex **308→www** · app-code tip **`ce2f0cc`** (HISTORY for live aliases) · **I.45DR** narrow Contabo STUDIO_EXPORT WAV canary **PASS** · persistent worker **disabled/inactive** · **≠** Full Final Mix Production GREEN · Stage J canary evidence **PASS (narrow)** · remaining Final Mix gates **OPEN** · I.45CV **PRODUCTION VERIFIED** (409 narrow) · V2 **`44f7cbd`** GREEN/CLOSED · markers **I.45CF** (selective · ≠ full tree) · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · cold-start entry · dual-plane (docs tip `df37048` ≠ app-code tip `ce2f0cc` ≠ local dirty WIP ≠ feature V2 `44f7cbd`) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-16 — tip **`d3c99e3`** (SFM poller on `main`) · **OD-SFM-WORKER-KIND-REJECT** local pending review · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · staging E2E **BLOCKED** · `SFM_VERSIONS_V1` OFF · Contabo sync/canary/always-on **NOT DONE** · Final Mix GREEN **VERIFIED** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip **`d3c99e3`** ≠ staging deploy **UNKNOWN** ≠ staging schema **UNVERIFIED** ≠ KIND_REJECT remote apply **NOT DONE** ≠ prod last-known ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
-**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; do not treat stale historical blocks below as current tip without checking PROJECT_STATE.
+**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; **§0 below is current.** Later sections that still cite tip `2adb569` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
 
 **Evidence rule (bezwzględna):**
 
@@ -15,6 +15,15 @@ Documentation alone ≠ proof a feature is shipped
 Decision CLOSED ≠ delivery SHIPPED
 Production verification = separate stage
 REPOSITORY STATE ≠ PRODUCTION APP STATE ≠ PRODUCTION DB STATE ≠ STORAGE STATE
+```
+
+**Migration history guardrail (2026-10-15 — living; details [CHANGELOG](./CHANGELOG.md) / [PROJECT_STATE](./PROJECT_STATE.md) §2b):**
+
+```text
+supabase db push / migration up (prod) = BLOCKED until full registry alignment (Owner GO)
+partial SFM migration repair           = does NOT unlock db push
+mixed MCP apply vs CLI push            = forbidden without same-GO history closeout
+I.27 / I.28                            = PRESERVED
 ```
 
 ---
@@ -27,29 +36,45 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-DOCS TIP / origin/main        = df37048d0b34439de5b77ed83350048a6335c391
-  short                       = df37048
-  note                        = Merge PR #8 (docs-only SSOT) · evidence I.45EJ-R1 · verify remotely
-                              · local WIP may diverge · local origin/main ref may lag without fetch
-                              · commit ≠ deployment ≠ domain alias
-APP-CODE TIP (HISTORY)        = ce2f0cc7ad7f5257577e858d64ca8531ebb35000
-  short                       = ce2f0cc
-  note                        = Merge PR #5 (Studio delete export-history) · last app-feature tip
-                              · prior dpl_1P8ixpt… · superseded for live aliases · ≠ current docs tip
+GITHUB MAIN TIP / origin/main = 2f7050e47b47241b753bdd2c3de8352ef629d9e9 (verify: git rev-parse origin/main)
+  subject                     = feat(sfm): expose Studio Final Mix owner HTTP surface
+  parent                      = 2d3514c86cb5bc67996fba480140bb0f3f8d5878
+  note                        = SFM A/B1/C/D + OD-06 + owner HTTP surface CODE ON MAIN
+                              · Accept / version status / stages start / grants / encode / jobs / download
+                              · ≠ prod deploy · ≠ staging deploy verified · ≠ staging E2E
+                              · ≠ SFM_VERSIONS_V1 ON · ≠ SFM Production GREEN
+                              · living detail → docs/PROJECT_STATE.md (SFM CODE STATUS / SFM PLANES)
+PRIOR TIP (HISTORY)           = docs SSOT reconcile (parent e8d2127) · e8d2127 (type/poller)
+                              · 2d3514c (SFM worker bake) · bfed53d (migration drift) · 2adb569 (PR #12)
 APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
   short                       = 44f7cbd
   note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
                               · ancestry includes 7.1.6 `4fa658d` · 7.1.5 `3fccbf7` · P4.6 `a72fed9` · V1 `56b629e`
-PRODUCTION DEPLOYMENT (obs.)  = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready · Current · Latest
-  aliases                     = www.bitrymdym.pl ASSIGNED · bitrymdym.vercel.app ASSIGNED
-                              · bitrymdym.pl = HTTP 308 → www (not a direct deployment alias)
-  evidence                    = I.45EJ-R1 PASS (authorized Vercel panel RO — not a fresh live re-verify here)
-PRODUCTION GIT SHA            = df37048
-STUDIO_EXPORT APP             = DEPLOYED (app-code tip ce2f0cc · docs/prod tip df37048 / dpl_7Cp2gQ9…)
-                              · PR #8 = docs-only · ≠ new app feature release
+PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN
+  note                        = Ready · SHA 2adb569 · not re-verified vs tip 2f7050e · Ready ≠ functional app GREEN
+  aliases (last-known · NOT e2e) = www.bitrymdym.pl · bitrymdym.vercel.app · bitrymdym.pl
+                              · apex redirect e2e NOT VERIFIED
+  evidence                    = I.48-A0 (cold-start RO) — GitHub Deployments + Vercel CLI · not re-verified in A2/A3
+PRODUCTION GIT SHA (observed I.48-A0) = 2adb569
+  note                        = last-known deploy SHA · ≠ current Git tip 2f7050e · prior f730a7a / dpl_28oH… = HISTORY
+                              · prior df37048 / dpl_7Cp2gQ9… = HISTORY
+SFM VERSIONS (product)        = CODE ON MAIN (incl. HTTP surface @ 2f7050e)
+                              · flag default OFF in code · staging remote flag NOT VERIFIED
+                              · staging deployment SHA UNKNOWN / NOT VERIFIED
+                              · staging schema UNVERIFIED (≠ assume prod)
+                              · staging E2E NOT DONE
+                              · SFM worker ops NOT WIRED (dedicated poll entrypoint absent)
+                              · Contabo STUDIO poller does NOT claim SFM kinds
+                              · DB A–D via MCP with version drift (prior SSOT; no remote re-verify here)
+                              · OD-04 OPEN · OD-SFM-ID-05 OPEN · Production GREEN NOT CLAIMED
+STUDIO_EXPORT APP             = DEPLOYED (ancestry · prod observed 2adb569 / dpl_sAyrsHC…)
+                              · Final Mix STUDIO_EXPORT GREEN VERIFIED (frozen IN) · ≠ SFM Versions cutover
+                              · Ready ≠ SFM Production GREEN
                               · I.45DR — PASS: narrow production STUDIO_EXPORT WAV canary
                               · job 53398f9e-… / project bfc3d223-… / artifact 21d98be2-… READY
-                              · Full Final Mix Production GREEN — nadal NOT VERIFIED / OPEN
+                              · J2 Download AuthZ — PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc-…)
+                              · Stage J: CLOSED (GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md) · WAIVE byte-level fixture
+                              · Final Mix Production GREEN: VERIFIED (audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only) · FULL FIXTURE VERIFIED PASS
                               · prior: I.45BK/BM/BO + I.45BY 61b7cdf1-… SUCCEEDED (do not re-run either)
                               · I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow)
                               · empty-project happy-path delete NOT TESTED
@@ -57,9 +82,9 @@ V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
   note                        = original V2 release-gate deploy · superseded for live aliases
 PRIOR ALIAS BINDING (HISTORY) = dpl_1P8ixpt… @ ce2f0cc · dpl_56FGH… @ d515f3b · dpl_FVcx… @ 3a086ad
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl (308→www) · https://bitrymdym.vercel.app
-DEPLOYMENT STATE              = Ready · Current · Latest (I.45EJ-R1)
+DEPLOYMENT STATE (observed I.48-A0) = Ready · SHA 2adb569 · not re-verified vs 2f7050e · Ready ≠ functional GREEN
 LIVING SSOT                   = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT)
-PREVIOUS PRODUCTION TIP       = ce2f0cc / dpl_1P8ixpt… · faf734b / dpl_9YDCy… · d515f3b / dpl_56FGH… · 44f7cbd / dpl_2ymz… · 4fa658d
+PREVIOUS PRODUCTION TIP       = d515f3b / dpl_56FGH… · 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… · 4fa658d
   older prior tip             = 79bc69f · 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · P4.6 (HISTORY)
 
 STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
@@ -110,13 +135,15 @@ P6.8                          = NOT STARTED · OWNER DECISION REQUIRED
 PHASE 7.1.6                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 4fa658d (ancestry)
 PHASE 7.1.5                   = CLOSED / PRODUCTION VERIFIED — GREEN @ 3fccbf7 (ancestry)
 CURRENT PHASE                 = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd
-                              · docs tip df37048 / dpl_7Cp2gQ9… (I.45EJ-R1) · app-code tip ce2f0cc (HISTORY)
-                              · aliases www + bitrymdym.vercel.app · apex 308→www · STUDIO_EXPORT APP DEPLOYED
-                              · I.45DR narrow Contabo WAV canary PASS · persistent worker disabled/inactive
-                              · delete×export-history conflict PRODUCTION VERIFIED (narrow I.45CV)
-                              · Full Final Mix Production GREEN NOT VERIFIED / OPEN
+                              · Git tip = Final Mix Production GREEN closeout · parent dcd2308 · prod last-known 2adb569 / dpl_sAyrsHC… (I.48-A0 · Ready · ≠ Git tip)
+                              · app-code tip ce2f0cc (last-established evidence)
+                              · STUDIO_EXPORT APP DEPLOYED
+                              · Stage J CLOSED · FULL FIXTURE VERIFIED PASS · empty-session prod PASS · all IN PASS
+                              · Final Mix Production GREEN: VERIFIED (frozen IN only)
+                              · I.45DR PASS · persistent worker disabled/inactive
 NEXT GATE                     = STOP — OWNER DECISION REQUIRED
-                              · I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED
+                              · Final Mix GREEN VERIFIED · NEXT = Contabo Ops / P6.8 / OUT (independent) · do not expand GREEN
+                              · P6.8 NOT STARTED · Contabo always-on WAIVED for GREEN (Ops GO separate)
                               · markers done (I.45CF) · no auto Contabo enable / no re-run SUCCEEDED exports
                               · V2 CLOSED · follow-ups NON-BLOCKING
                               · do NOT auto-open EPIC / invent Phase 7.1.7
@@ -219,16 +246,17 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Docs tip / origin/main (confirmed) | **`df37048`** · PR #8 docs-only · evidence I.45EJ-R1 · local WIP may diverge · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) |
-| App-code tip (HISTORY for live aliases) | **`ce2f0cc`** · PR #5 · prior `dpl_1P8ixpt…` · superseded for live aliases |
+| GitHub main tip / origin/main (confirmed) | **`2adb569`** · PR #12 docs I.47 merge · local WIP may diverge · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) |
+| Prior docs merge tip (HISTORY) | **`f730a7a`** · PR #11 · tip before PR #12 · prior **`522e514`** (PR #10) · prior **`df37048`** (PR #8) remain HISTORY |
+| App-code tip (last-established in available evidence) | **`ce2f0cc`** · PR #5 · last app-feature tip · **≠** Git tip `2adb569` · **≠** independently freshly verified production app SHA |
 | App feature commit (V2) | **`44f7cbd`** · Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |
-| Production deployment (observed) | **`dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5`** · Ready · Current · Latest · SHA `df37048` · I.45EJ-R1 |
-| Domain aliases (I.45EJ-R1) | **www** + **`bitrymdym.vercel.app`** ASSIGNED · apex **308→www** (not a direct alias) |
-| Production Git SHA | **`df37048`** |
-| STUDIO_EXPORT app | **DEPLOYED** · **I.45DR** narrow WAV canary **PASS** · ≠ Full Final Mix Production GREEN · PR #8 ≠ app feature |
+| Production deployment (observed I.48-A0) | **`dpl_sAyrsHCfMVLFer669J2MgbbXbhGN`** · Ready · SHA `2adb569` · I.48-A2/A3 do not re-verify · Ready ≠ functional GREEN |
+| Domain aliases (last-known · NOT e2e) | **www** + **bitrymdym.vercel.app** + **bitrymdym.pl** · apex redirect e2e **NOT VERIFIED** |
+| Production Git SHA (observed I.48-A0) | **`2adb569`** — equals Git tip · prior `f730a7a` / `dpl_28oH…` = HISTORY |
+| STUDIO_EXPORT app | **DEPLOYED** · **I.45DR** narrow WAV canary **PASS** · ≠ Full Final Mix Production GREEN |
 | Delete×export history | **PRODUCTION VERIFIED (narrow I.45CV)** · empty-project delete **NOT TESTED** |
 | V2 verify deploy (HISTORY) | `dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR` @ `44f7cbd` · superseded for live aliases |
-| Prior alias binding (HISTORY) | `dpl_1P8ixpt…` @ `ce2f0cc` · `dpl_56FGH…` @ `d515f3b` · `dpl_FVcx…` @ `3a086ad` · `4fa658d` / `dpl_6sai…` |
+| Prior alias binding (HISTORY) | `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` @ `ce2f0cc` (PR #5 · superseded for live aliases · **≠** current docs deployment) · `dpl_56FGH…` @ `d515f3b` · `dpl_FVcx…` @ `3a086ad` · `4fa658d` / `dpl_6sai…` |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
 | Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
@@ -248,11 +276,14 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 5.  READ decisions/DECISION_LOG.md + decisions/OPEN_DECISIONS.md
 6.  READ CHANGELOG.md (recent tip) + relevant phase audit/closeout only if needed
 7.  CHECK: git rev-parse HEAD  AND  git rev-parse origin/main
-8.  CHECK: docs tip df37048 · dpl_7Cp2gQ9… Ready/Current/Latest (I.45EJ-R1)
-         aliases www + bitrymdym.vercel.app ASSIGNED · apex 308→www
-         app-code tip ce2f0cc / prior dpl_1P8ixpt… = HISTORY · STUDIO_EXPORT APP DEPLOYED
-         delete×export-history 409 PRODUCTION VERIFIED (narrow) · empty delete NOT TESTED
-         APP FEATURE V2 = 44f7cbd · living SSOT = PROJECT_STATE.md (not this file alone)
+8.  CHECK: Git tip 2adb569 (PR #12 docs I.47 merge)
+         prod observed dpl_sAyrsHC… @ 2adb569 (I.48-A0 · Ready · I.48-A2/A3 do not re-verify)
+         prior dpl_28oH… @ f730a7a = HISTORY (I.46-A10)
+         app-code tip ce2f0cc = last-established evidence · ≠ Git tip · ≠ fresh prod verify
+         STUDIO_EXPORT APP DEPLOYED · delete×export-history 409 PRODUCTION VERIFIED (narrow)
+         empty delete NOT TESTED · APP FEATURE V2 = 44f7cbd · living SSOT = PROJECT_STATE.md
+         do NOT treat origin/main as app-code baseline · Ready ≠ Final Mix GREEN
+         READ §12 MASTER PROMPTS before opening new ChatGPT / Cursor sessions
 9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
 10. CHECK Sacred WIP fingerprint:
          src/lib/takes/recording-eligibility-service.ts
@@ -654,12 +685,11 @@ WIP preserved
 
 ```text
 [ ] Read PROJECT_STATE.md FIRST as living SSOT (tip / deploy / Studio Export / Contabo / NEXT)
-[ ] Confirm docs tip df37048 (PR #8 docs-only) · local WIP may diverge — do not force local HEAD == main
-[ ] Confirm dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready/Current/Latest · SHA df37048 (I.45EJ-R1)
-[ ] Confirm aliases: www + bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www (not direct alias)
-[ ] Confirm app-code tip ce2f0cc / prior dpl_1P8ixpt… = HISTORY for live aliases
-[ ] Confirm STUDIO_EXPORT APP DEPLOYED · I.45DR narrow WAV canary PASS · ≠ Full Final Mix Production GREEN
-[ ] Confirm I.45DR job 53398f9e-… / artifact 21d98be2-… READY · do not re-run · I.45BY 61b7cdf1-… untouched
+[ ] Confirm Git tip 2adb569 (PR #12 docs I.47 merge) · local WIP may diverge — do not force local HEAD == main · do not treat origin/main as app-code baseline
+[ ] Treat dpl_sAyrsHCfMVLFer669J2MgbbXbhGN @ SHA 2adb569 as observed I.48-A0 (Ready) · I.48-A2/A3 do not re-verify · prior dpl_28oH@f730a7a = HISTORY · apex redirect e2e NOT VERIFIED · Ready ≠ functional GREEN
+[ ] Read §12 MASTER PROMPTS (ChatGPT + Cursor) before starting a new session
+[ ] Confirm STUDIO_EXPORT APP DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
+[ ] Confirm I.45DR job 53398f9e-… / artifact 21d98be2-… READY · do not re-run · I.45BY 61b7cdf1-… untouched · J2 fixture c596e7bc-… (no re-run)
 [ ] Confirm I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow) · empty delete NOT TESTED
 [ ] Confirm APP FEATURE V2 = 44f7cbd · GREEN / CLOSED · verify history dpl_2ymz… (not live alias)
 [ ] Confirm Catalog 17 PLATFORM · Storage orphans 0 · Security 401 + CAS ACL
@@ -667,10 +697,10 @@ WIP preserved
 [ ] Confirm Contabo persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · markers I.45CF (selective ≠ full tree) · not always-on
 [ ] Confirm Closed = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
 [ ] Confirm Phase 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (ancestry · do not reopen)
-[ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze (living Contabo/Stage J)
+[ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze + audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 [ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
-[ ] NEXT GATE = STOP — I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo
+[ ] NEXT GATE = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo
 [ ] Do not re-run SUCCEEDED Studio Export jobs 53398f9e… or 61b7cdf1… without new Owner GO
 [ ] Local main / Owner WIP diverge from origin/main — no fetch/pull/clean/sync without Owner GO
 [ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
@@ -687,20 +717,20 @@ WIP preserved
 ## 11. Handoff stamp
 
 ```text
-FINAL COLD START HANDOFF     = READY (2026-10-12 · docs tip df37048 · I.45EJ-R1 · I.45DR narrow canary PASS · V2 GREEN/CLOSED)
+FINAL COLD START HANDOFF     = READY (2026-10-13 · I.48 tip/plane · Git tip 2adb569 · prod observed I.48-A0 dpl_sAyrsHC@2adb569 · I.45DR canary PASS · J2 PASS/CLOSED · V2 GREEN/CLOSED)
 REUSE / DO NOT DUPLICATE     = architecture/REUSE_SSOT_MAP.md
 LIVING SSOT                  = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT)
-DOCS TIP / origin/main       = df37048 (PR #8 docs-only · remote confirmed; local WIP may diverge)
-APP-CODE TIP (HISTORY)       = ce2f0cc / dpl_1P8ixpt… (PR #5 · superseded for live aliases)
+GITHUB MAIN TIP / origin/main = 2adb569 (PR #12 docs I.47 merge · remote confirmed; local WIP may diverge)
+PRIOR DOCS TIP (HISTORY)     = f730a7a (PR #11) · tip before PR #12 · prior 522e514 (PR #10) · prior df37048 (PR #8)
+APP-CODE TIP (last-established evidence) = ce2f0cc (PR #5 · ≠ Git tip · ≠ fresh prod verify)
 APP FEATURE COMMIT (V2)      = 44f7cbd · GREEN / RELEASE VERIFIED / CLOSED
-PRODUCTION DEPLOYMENT (obs.) = dpl_7Cp2gQ9BX3s8jVG9faL3LUjMgyt5 · Ready · Current · Latest (I.45EJ-R1)
-  aliases                    = www + bitrymdym.vercel.app ASSIGNED · bitrymdym.pl = 308→www
-PRODUCTION GIT SHA           = df37048
-STUDIO_EXPORT APP            = DEPLOYED · I.45DR narrow WAV canary PASS · ≠ Full Final Mix Production GREEN
+PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN · Ready · SHA 2adb569 · I.48-A2/A3 do not re-verify
+PRODUCTION GIT SHA (observed I.48-A0) = 2adb569 · equals Git tip · prior f730a7a / dpl_28oH… = HISTORY
+STUDIO_EXPORT APP            = DEPLOYED · I.45DR narrow WAV canary PASS · J2 AuthZ PASS/CLOSED · Stage J OPEN · ≠ Full Final Mix Production GREEN
 DELETE×EXPORT HISTORY        = PRODUCTION VERIFIED (narrow I.45CV) · empty delete NOT TESTED
 V2 VERIFY DEPLOY (HISTORY)   = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
-NOTE                         = docs tip df37048 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ feature V2 44f7cbd · no sync/cleanup without Owner GO
-PREVIOUS PRODUCTION TIP      = ce2f0cc / dpl_1P8ixpt… · faf734b / dpl_9YDCy… · d515f3b / dpl_56FGH… · HISTORY
+NOTE                         = Git tip 2adb569 ≠ app-code tip ce2f0cc ≠ local dirty WIP ≠ feature V2 44f7cbd · Ready ≠ Final Mix GREEN · no sync/cleanup without Owner GO · MASTER PROMPTS §12 · J2 closeout audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
+PREVIOUS PRODUCTION TIP      = dpl_28oH… @ f730a7a · faf734b / dpl_9YDCy… · d515f3b / dpl_56FGH… · HISTORY
 CATALOG / STORAGE            = 17 PLATFORM · beat-audio orphans 0 · take-audio KEEP Dawid retained (PHASE 3 cleaned test-user Storage)
 SECURITY                     = GREEN
 MOBILE                       = TECHNICALLY READY — DEVICE CERTIFICATION PENDING
@@ -714,15 +744,111 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · docs tip df37048 · I.45DR canary PASS
+CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · Git tip 2adb569 · prod observed 2adb569 (I.48-A0) · I.45DR canary PASS · J2 PASS/CLOSED
 P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
 WORKER                       = Contabo persistent disabled/inactive · I.45DR transient canary PASS · flag TRUE @ I.45DO/DR · markers I.45CF (selective ≠ full tree)
-NEXT GATE                    = STOP — I.45DR narrow canary PASS · remaining Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
+NEXT GATE                    = STOP — I.45DR narrow canary PASS · J2 PASS/CLOSED · remaining Stage J / Final Mix gates OPEN · P6.8 NOT STARTED · no auto Contabo / no re-run SUCCEEDED exports
 KNOWN WAIVER                 = e3-7-f EXPORT_WAV · WAIVED
 PRIOR CHAT REQUIRED          = NO
 NIE BUDUJ OD NOWA            = TAK
 SEARCH BEFORE CREATE         = TAK
 ```
+
+---
+
+## 12. MASTER PROMPTS — cold start (I.47)
+
+Kanoniczne, kompletne prompty startowe. **Nie kopiuj całego SSOT do czatu** — odsyłaj do plików w repozytorium. Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md).
+
+### 12.1 MASTER PROMPT — NOWA SESJA CHATGPT
+
+```text
+# BITRYMDYM — MASTER PROMPT · NOWA SESJA CHATGPT (ARCHITEKT)
+
+## Rola
+Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
+- Prowadzisz analizę, decyzje, roadmapę i RCA.
+- Wydajesz konkretny prompt Cursor Agent **dopiero** po analizie raportu, gdy istnieje zatwierdzony kolejny krok i Owner GO.
+- Nie implementujesz w repozytorium; nie commitujesz; nie deployujesz.
+- Respektujesz decyzje Ownera (Prezes Dawid) i granice udzielonego GO. Nie rozszerzasz zakresu samodzielnie.
+
+## Obowiązkowy cold start (kolejność)
+1. docs/FINAL_COLD_START_HANDOFF.md (ten plik · §0–§12)
+2. docs/MASTER_HANDOFF.md
+3. docs/PROJECT_STATE.md  ← jedyny living SSOT tip/deploy/NEXT
+4. AGENTS.md (reguły Next.js w tym repo)
+5. docs/README.md · docs/CHANGELOG.md (recent)
+6. docs/architecture/REUSE_SSOT_MAP.md przed propozycją zmian Studio/audio/persist
+7. W razie potrzeby: docs/decisions/* · docs/architecture/* · właściwy audit/closeout
+
+## Rozróżniaj zawsze
+- GitHub main tip ≠ app-code tip ≠ Production deployment SHA ≠ lokalny dirty worktree ≠ historyczne raporty
+- Decision CLOSED ≠ SHIPPED ≠ PRODUCTION VERIFIED
+- CODE + remote schema + production evidence > dokumentacja
+- Historyczny raport ≠ świeża weryfikacja — oznacz źródło i datę
+
+## Aktualny stan (skrót — szczegóły w PROJECT_STATE)
+- Git tip: 2adb569 (PR #12 docs) · prior f730a7a (PR #11) = HISTORY
+- App-code tip: ce2f0cc (last-established evidence)
+- Prod observed: dpl_sAyrsHC… @ 2adb569 (I.48-A0 Ready) · I.48-A2/A3 nie re-weryfikują
+- Prior prod: dpl_28oH… @ f730a7a = HISTORY (I.46-A10)
+- Apex redirect e2e: NOT VERIFIED · Ready ≠ functional GREEN
+- J2: PASS / CLOSED · Stage J: OPEN · Final Mix: NOT VERIFIED / NOT GREEN
+- P6.8: NOT STARTED · object_key live probe: NOT EXECUTED
+- Contabo always-on: OPEN / NOT VERIFIED · persistent worker: disabled/inactive
+- Sacred WIP chroniony · dirty local main NIE synchronizować bez GO
+
+## Otwarte gate’y (nie zamykaj bez nowego evidence + Owner GO)
+- Stage J (poza J2) · Full Final Mix Production GREEN
+- P6.8 · Contabo always-on · apex redirect e2e · Studio migration CLOSED
+- empty-session on prod · full FX/PCM parity · empty-project delete
+
+## Procedura po raporcie Cursor
+1. Przeczytaj raport vs SSOT (fakty vs założenia).
+2. Jeśli Owner dał GO na kolejny krok — wydaj JEDEN konkretny prompt Cursor z jawnym scope.
+3. Jeśli brak GO / BLOCKED / niejasność — STOP i pytaj Ownera.
+4. Nie zapisuj planów jako wykonanych.
+```
+
+### 12.2 MASTER PROMPT — NOWA SESJA CURSOR AGENT
+
+```text
+# BITRYMDYM — MASTER PROMPT · NOWA SESJA CURSOR AGENT (WYKONAWCA)
+
+## Rola
+Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
+- Implementujesz / dokumentujesz / weryfikujesz wyłącznie w zakresie jawnego Owner GO / promptu.
+- Nie jesteś architektem decyzji produktowych; nie rozszerzasz zakresu zgody.
+- Nie commituj / nie pushuj / nie merguj / nie deployuj automatycznie bez osobnego GO.
+
+## Obowiązkowy cold start (kolejność)
+1. AGENTS.md
+2. docs/FINAL_COLD_START_HANDOFF.md (§0A–0C · §12)
+3. docs/MASTER_HANDOFF.md
+4. docs/PROJECT_STATE.md  ← living SSOT
+5. docs/architecture/REUSE_SSOT_MAP.md przed zmianami Studio/audio/persist
+6. Właściwy freeze / audit wskazany w prompcie
+
+## Preflight przed każdą mutacją
+- git branch --show-current · git rev-parse HEAD · git status --short
+- Potwierdź izolowany worktree / branch — NIE pracuj w dirty main bez GO
+- Sacred WIP: src/lib/takes/recording-eligibility-service.ts
+  SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+  (sprawdź tylko read-only hash; nie reset/clean/restore)
+- Zakaz: git stash / reset / clean / restore / rebase / checkout wpływający na istniejące WIP
+- Zakaz: git add -A / -u / .
+- Zakaz: HTTP do produkcji / Contabo / SQL / deploy — chyba że prompt jawnie daje GO
+
+## Aktualny stan (skrót — szczegóły w PROJECT_STATE)
+- Git tip: 2adb569 · app-code tip: ce2f0cc · prod observed I.48-A0: dpl_sAyrsHC@2adb569 (A2/A3 nie re-weryfikują)
+- Gates: J2 CLOSED · Stage J OPEN · Final Mix NOT GREEN · P6.8 NOT STARTED
+- Contabo always-on OPEN/NOT VERIFIED · apex redirect e2e NOT VERIFIED
+
+## Raportowanie
+Po pracy zwróć: VERDICT · branch/worktree · HEAD · zmienione pliki · faktyczne wyniki komend · otwarte kwestie · potwierdzenie braku niedozwolonych operacji.
+STOP po raporcie, jeśli prompt tak wymaga.
+```
+
 
 *End of FINAL COLD START HANDOFF.*

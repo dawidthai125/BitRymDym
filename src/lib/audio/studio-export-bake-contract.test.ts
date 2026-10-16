@@ -124,7 +124,7 @@ describe("STUDIO_EXPORT Stage G — worker bake wiring (source contract)", () =>
   const src = readFileSync(join(process.cwd(), PIPELINE), "utf8");
 
   it("dispatches STUDIO_EXPORT to bake path (not DISABLED)", () => {
-    expect(src).toMatch(/runClaimedStudioExportWorkerJob/);
+    expect(src).toMatch(/runAlreadyClaimedStudioExportWorkerJob/);
     expect(src).toMatch(/renderStudioDocumentOffline/);
     expect(src).toMatch(/planStudioExportDuration/);
     expect(src).toMatch(/encodeWavFromBake/);

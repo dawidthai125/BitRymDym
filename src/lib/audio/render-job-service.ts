@@ -38,6 +38,8 @@ import {
   computeTimeoutAtFromClaim,
   isMixRenderJobTier,
   isRunningJobTimedOut,
+  isSfmExecutorJobKind,
+  mapJobKind,
   parseRenderJobEntitlementSnapshot,
   quotaBytesForTier,
   retentionSecondsForTier,
@@ -45,6 +47,7 @@ import {
   RenderJobDomainError,
   type RenderJobEntitlementSnapshot,
 } from "@/lib/audio/render-job-core";
+import type { RenderJobKind } from "@/types/domain";
 import { getRenderWorkerAdapter } from "@/lib/audio/worker-adapter";
 import {
   rejectClientRenderSourceClaims,
@@ -82,9 +85,11 @@ export type RenderJobRecord = {
   id: string;
   ownerId: string;
   mixSessionId: string | null;
-  kind?: "MIX" | "TAKE_EXPORT" | "STUDIO_EXPORT";
+  kind: RenderJobKind;
   takeId?: string | null;
   projectId?: string | null;
+  sfmVersionId?: string | null;
+  sfmQuality?: string | null;
   requestedTier: RenderJobTier;
   idempotencyKey: string;
   status: RenderJobStatus;
@@ -109,6 +114,8 @@ type RenderJobRow = {
   kind?: string | null;
   take_id?: string | null;
   project_id?: string | null;
+  sfm_version_id?: string | null;
+  sfm_quality?: string | null;
   requested_tier: RenderJobTier;
   idempotency_key: string;
   status: RenderJobStatus;
@@ -127,15 +134,7 @@ type RenderJobRow = {
 };
 
 const JOB_SELECT =
-  "id, owner_id, mix_session_id, take_id, project_id, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at";
-
-function mapJobKind(
-  kind: string | null | undefined,
-): "MIX" | "TAKE_EXPORT" | "STUDIO_EXPORT" {
-  if (kind === "TAKE_EXPORT") return "TAKE_EXPORT";
-  if (kind === "STUDIO_EXPORT") return "STUDIO_EXPORT";
-  return "MIX";
-}
+  "id, owner_id, mix_session_id, take_id, project_id, sfm_version_id, sfm_quality, kind, requested_tier, idempotency_key, status, progress, attempt, entitlement_snapshot, error_code, error_message, queued_at, started_at, finished_at, timeout_at, worker_ref, created_at, updated_at";
 
 function mapJob(row: RenderJobRow): RenderJobRecord {
   return {
@@ -145,6 +144,8 @@ function mapJob(row: RenderJobRow): RenderJobRecord {
     kind: mapJobKind(row.kind),
     takeId: row.take_id ?? null,
     projectId: row.project_id ?? null,
+    sfmVersionId: row.sfm_version_id ?? null,
+    sfmQuality: row.sfm_quality ?? null,
     requestedTier: row.requested_tier,
     idempotencyKey: row.idempotency_key,
     status: row.status,
@@ -671,6 +672,14 @@ export async function claimRenderJobAsWorker(
     );
   }
 
+  // SFM executors use claim_next_sfm_job — never MIX/TAKE/STUDIO source paths.
+  if (isSfmExecutorJobKind(current.kind)) {
+    throw new RenderJobDomainError(
+      "SFM executor jobs must use claim_next_sfm_job (not claim-by-id MIX path).",
+      "INVALID",
+    );
+  }
+
   // FINDING-01 — re-validate sources before entering RUNNING.
   // STUDIO_EXPORT: snapshot is immutable content; sources re-AuthZ live (SOURCE_* → FAILED).
   let sources:
@@ -734,6 +743,181 @@ export async function claimRenderJobAsWorker(
     throw new RenderJobDomainError("Claim race lost.", "CONFLICT");
   }
   return { job: mapJob(updated as RenderJobRow), sources };
+}
+
+function mapSourceResolutionFailCode(sourceError: unknown): string {
+  if (!(sourceError instanceof RenderJobDomainError)) {
+    return "SOURCE_UNAVAILABLE";
+  }
+  if (sourceError.code === "LIMIT") return "SOURCE_LIMIT";
+  if (sourceError.code === "NOT_FOUND") return "SOURCE_UNAVAILABLE";
+  return "SOURCE_FORBIDDEN";
+}
+
+/**
+ * SFM Stage C — atomic claim-next for SFM_* kinds only.
+ * Does not claim MIX / TAKE_EXPORT / STUDIO_EXPORT.
+ * No bake/encode here; no Contabo poller wiring; never FAILED→QUEUED.
+ */
+export async function claimNextSfmJobAsWorker(
+  workerRef: string,
+): Promise<{ job: RenderJobRecord } | null> {
+  assertRenderJobsRuntimeEnabled();
+  const trimmed = workerRef.trim();
+  if (!trimmed) {
+    throw new RenderJobDomainError("worker_ref required.", "INVALID");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("claim_next_sfm_job", {
+    p_worker_ref: trimmed,
+  });
+  if (error) throw new Error(error.message);
+
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  if (rows.length === 0) return null;
+
+  const row = rows[0] as RenderJobRow;
+  const job = mapJob(row);
+  if (job.status !== "RUNNING" || !isSfmExecutorJobKind(job.kind)) {
+    throw new RenderJobDomainError(
+      "claim_next_sfm_job returned unexpected job state.",
+      "CONFLICT",
+    );
+  }
+  return { job };
+}
+
+/**
+ * OD-SFM-WORKER-KIND-REJECT — atomic KIND_OUT terminal for an already-claimed
+ * SFM-shaped executor job. Uses reject_sfm_executor_job_kind (CAS RUNNING+worker_ref).
+ * Empty RPC result = CAS miss (no leak). Never requeues. Does not mutate stages.
+ * Does not mapJob (rejected kind may be outside mapJobKind allowlist).
+ */
+export type RejectSfmExecutorJobKindResult =
+  | { outcome: "rejected"; jobId: string; errorCode: "KIND_OUT" }
+  | { outcome: "cas_miss" };
+
+export async function rejectSfmExecutorJobKindOut(
+  jobId: string,
+  workerRef: string,
+): Promise<RejectSfmExecutorJobKindResult> {
+  assertRenderJobsRuntimeEnabled();
+  const trimmedJobId = jobId.trim();
+  const trimmedRef = workerRef.trim();
+  if (!trimmedJobId) {
+    throw new RenderJobDomainError("job_id required.", "INVALID");
+  }
+  if (!trimmedRef) {
+    throw new RenderJobDomainError("worker_ref required.", "INVALID");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("reject_sfm_executor_job_kind", {
+    p_job_id: trimmedJobId,
+    p_worker_ref: trimmedRef,
+  });
+  if (error) throw new Error(error.message);
+
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  if (rows.length === 0) return { outcome: "cas_miss" };
+
+  const row = rows[0] as RenderJobRow;
+  if (String(row.status) !== "FAILED" || row.error_code !== "KIND_OUT") {
+    throw new RenderJobDomainError(
+      "reject_sfm_executor_job_kind returned unexpected job state.",
+      "CONFLICT",
+    );
+  }
+  return {
+    outcome: "rejected",
+    jobId: String(row.id),
+    errorCode: "KIND_OUT",
+  };
+}
+
+/**
+ * Contabo Continuous Worker V1 — atomic claim-next + FINDING-01 on RUNNING.
+ * RPC sets QUEUED→RUNNING; AuthZ failures mark RUNNING→FAILED (never re-QUEUED).
+ * Must not call claimRenderJobAsWorker (expects QUEUED).
+ */
+export async function claimNextStudioExportAsWorker(
+  workerRef: string,
+): Promise<{
+  job: RenderJobRecord;
+  sources: AuthorizedStudioExportSources;
+} | null> {
+  assertRenderJobsRuntimeEnabled();
+  const trimmed = workerRef.trim();
+  if (!trimmed) {
+    throw new RenderJobDomainError("worker_ref required.", "INVALID");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("claim_next_studio_export_job", {
+    p_worker_ref: trimmed,
+  });
+  if (error) throw new Error(error.message);
+
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  if (rows.length === 0) return null;
+
+  const row = rows[0] as RenderJobRow;
+  const job = mapJob(row);
+  if (job.status !== "RUNNING" || job.kind !== "STUDIO_EXPORT") {
+    throw new RenderJobDomainError(
+      "claim_next_studio_export_job returned unexpected job state.",
+      "CONFLICT",
+    );
+  }
+
+  // FINDING-01 — job is already RUNNING; fail closed → FAILED (OD-CWP-05/06).
+  try {
+    const sources = await resolveAuthorizedStudioExportSourcesForJob(job.id);
+    return { job, sources };
+  } catch (sourceError) {
+    const message =
+      sourceError instanceof Error
+        ? sourceError.message
+        : "Source resolution failed.";
+    const code = mapSourceResolutionFailCode(sourceError);
+    await admin
+      .from("render_jobs")
+      .update({
+        status: "FAILED",
+        finished_at: new Date().toISOString(),
+        error_code: code,
+        error_message: message.slice(0, 500),
+      })
+      .eq("id", job.id)
+      .eq("status", "RUNNING");
+    const wrapped =
+      sourceError instanceof Error
+        ? sourceError
+        : new Error(String(sourceError));
+    (
+      wrapped as Error & {
+        jobId?: string;
+        studioExportAuthzFail?: boolean;
+        errorCode?: string;
+      }
+    ).jobId = job.id;
+    (
+      wrapped as Error & {
+        jobId?: string;
+        studioExportAuthzFail?: boolean;
+        errorCode?: string;
+      }
+    ).studioExportAuthzFail = true;
+    (
+      wrapped as Error & {
+        jobId?: string;
+        studioExportAuthzFail?: boolean;
+        errorCode?: string;
+      }
+    ).errorCode = code;
+    throw wrapped;
+  }
 }
 
 /**
