@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-16 — SSOT tip alignment (docs-only)
+
+**Status:** **DOCS ONLY** · **NO DATABASE APPLY** · **NO DEPLOY** · **NO RPC** · **NO FLAG / POLLER / CONTABO RE-VERIFY** · **NO LIVE CAS** · **NO STAGING E2E**
+**Git tip (confirmed this stage):** `b71a54913fd5b9768baad0ff38e11f45ef4e2e39` (`b71a549`) — `merge: integrate origin/main with local BitRymDym checkpoint`
+**KIND_REJECT:** code and repo migration `20261016120000_sfm_reject_executor_job_kind.sql` are in `main` history at `69e50d0e6bbfdfa8ee7696e79e680ddea5019d88` (`69e50d0`), an ancestor of the tip. A file in Git **≠** a database apply.
+**Poller:** `d3c99e348aa8f24d9d8d50a69a1629552211a630` (`d3c99e3`) remains the dedicated-poller commit. Runtime activity **NOT RE-VERIFIED IN THIS STAGE**.
+**Prior entry below** records the local-impl session. It is not the current tip.
+
 ## 2026-10-16 — OD-SFM-WORKER-KIND-REJECT local impl (KIND_OUT → FAILED RPC)
 
 **Status:** **LOCAL ONLY** · **NO COMMIT/PUSH IN THIS GO** · **NO REMOTE MIGRATION APPLY** · **NO DEPLOY** · **NO FLAG** · **NO WORKER RUN** · **NO STAGING E2E**
