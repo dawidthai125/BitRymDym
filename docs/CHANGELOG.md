@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-16 — SSOT tip moved by the docs publish
+
+**Status:** **DOCS ONLY** · **NO DATABASE APPLY** · **NO DEPLOY** · **NO RPC** · **NO FLAG / POLLER / CONTABO RE-VERIFY** · **NO LIVE CAS** · **NO STAGING E2E**
+**Git tip (confirmed):** `81c2496fec9699605ba2809e09f45e9fc69b7a19` (`81c2496`) — `docs: align the living SFM tip with main without claiming a live apply`
+**Parent:** `b71a54913fd5b9768baad0ff38e11f45ef4e2e39` (`b71a549`)
+**KIND_REJECT:** code and repo migration `20261016120000_sfm_reject_executor_job_kind.sql` remain in history at `69e50d0`, an ancestor of this tip. A file in Git **≠** a database apply. Live CAS/concurrency and staging E2E **NOT CONFIRMED**. Runtime flag, poller activity, and Contabo **NOT RE-VERIFIED**.
+**Prior entry below** recorded `b71a549` as the tip of that earlier docs pass. It is not the current tip.
+
 ## 2026-10-16 — SSOT tip alignment (docs-only)
 
 **Status:** **DOCS ONLY** · **NO DATABASE APPLY** · **NO DEPLOY** · **NO RPC** · **NO FLAG / POLLER / CONTABO RE-VERIFY** · **NO LIVE CAS** · **NO STAGING E2E**
