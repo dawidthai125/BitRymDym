@@ -269,7 +269,9 @@ describe("Phase 2 editor wiring + architecture", () => {
   });
 
   it("split still uses exact playheadMs", () => {
-    expect(editor).toMatch(/atTimelineMs: getPlayheadMs\(\)/);
+    // Capture playhead at user intent (before serial queue), not at network start.
+    expect(editor).toMatch(/const atTimelineMs = getPlayheadMs\(\)/);
+    expect(editor).toMatch(/atTimelineMs,/);
     expect(editor).toMatch(/splitSelectedAtPlayhead/);
   });
 

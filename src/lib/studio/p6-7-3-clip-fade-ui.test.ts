@@ -113,7 +113,9 @@ describe("P6.7.3 save / CAS integration", () => {
     });
     expect(editor).toMatch(/buildStudioClipFadesPatchBody/);
     expect(editor).toMatch(/saveClipFades/);
-    expect(editor).toMatch(/expectedDocumentVersion: doc\.project\.documentVersion/);
+    expect(editor).toMatch(
+      /expectedDocumentVersion: docRef\.current\.project\.documentVersion/,
+    );
   });
 
   it("success updates documentVersion and fade values from backend", () => {
@@ -159,15 +161,15 @@ describe("P6.7.3 save / CAS integration", () => {
   });
 
   it("409 does not blind-retry (no retry loop in save path)", () => {
-    expect(editor).toMatch(/No blind retry/);
     expect(editor).not.toMatch(/while\s*\(.*409/);
     expect(editor).not.toMatch(/for\s*\(.*retry/);
-    const saveIdx = editor.indexOf("async function saveClipFades");
-    const saveChunk = editor.slice(saveIdx, saveIdx + 1200);
+    const saveIdx = editor.indexOf("function saveClipFades");
+    const saveChunk = editor.slice(saveIdx, saveIdx + 1600);
     expect(saveChunk).toMatch(/interpretStudioClipFadesPersistResponse/);
-    // Single fetch; failure throws — no second PATCH attempt.
+    expect(saveChunk).toMatch(/classifyPersistHttpFailure/);
+    // Single fetch per enqueue; conflict is non-retryable.
     expect(saveChunk.match(/await fetch\(/g)?.length).toBe(1);
-    expect(saveChunk).toMatch(/throw new Error\(result\.message\)/);
+    expect(saveChunk).toMatch(/failure\.kind === "conflict"/);
     expect(saveChunk).not.toMatch(/await saveClipFades/);
   });
 
@@ -199,19 +201,14 @@ describe("P6.7.3 save / CAS integration", () => {
     expect(result.ok === false && result.message).toMatch(/uprawnień/i);
   });
 
-  it("explicit Zapisz fade — slider commit stays local only", () => {
-    expect(editor).toMatch(/aria-label="Zapisz fade"/);
-    expect(editor).toMatch(/Zapisz fade/);
+  it("P7.1.6 fade auto-commit on pointerup; Zapisz teraz is manual flush", () => {
+    expect(editor).toMatch(/aria-label="Zapisz teraz fade"/);
+    expect(editor).toMatch(/Zapisz teraz/);
+    expect(editor).toMatch(/onSaveFades\(next, draftFadeOut\)/);
     expect(editor).toMatch(/onSaveFades\(draftFadeIn, draftFadeOut\)/);
-    // Fade StudioMixControl commits only update local draft — not saveClipFades
-    expect(editor).toMatch(
-      /ariaLabel="Fade In"[\s\S]*?onCommit=\{setDraftFadeIn\}/,
-    );
-    expect(editor).toMatch(
-      /ariaLabel="Fade Out"[\s\S]*?onCommit=\{setDraftFadeOut\}/,
-    );
-    expect(editor).not.toMatch(/onCommit=\{.*saveClipFades/);
-    // Save is button-gated (dirty), not pointerUp → PATCH.
+    expect(editor).toMatch(/ariaLabel="Fade In"/);
+    expect(editor).toMatch(/ariaLabel="Fade Out"/);
+    expect(editor).toMatch(/onFlushPersist/);
     expect(editor).toMatch(/disabled=\{pending \|\| !fadeDirty\}/);
   });
 });
@@ -239,7 +236,7 @@ describe("P6.7.3 mobile + architecture guards", () => {
 
   it("mobile layout guard: min-w-0, min-h-11 fade targets, safe-area", () => {
     expect(editor).toMatch(/min-w-0 space-y-3 rounded border/);
-    expect(editor).toMatch(/aria-label="Zapisz fade"/);
+    expect(editor).toMatch(/aria-label="Zapisz teraz fade"/);
     expect(editor).toMatch(/min-h-11 w-full min-w-0/);
     // Phase 1 DAW — safe-area clearance moved to project page shell.
     expect(editor).toMatch(/studio-daw-shell/);
@@ -266,7 +263,7 @@ describe("P6.7.3 mobile + architecture guards", () => {
 
   it("reuses existing Clip PATCH path — no /fade endpoint", () => {
     expect(editor).toMatch(
-      /\/api\/studio\/projects\/\$\{doc\.project\.id\}\/clips\/\$\{selectedClip\.id\}/,
+      /\/api\/studio\/projects\/\$\{docRef\.current\.project\.id\}\/clips\/\$\{clipId\}/,
     );
     expect(editor).not.toMatch(/\/fade"/);
     expect(editor).not.toMatch(/\/fades"/);

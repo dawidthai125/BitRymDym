@@ -193,3 +193,22 @@ POST-RECORDING V1 = CLOSED / GREEN
 ```
 
 **STOP.** Waiting on Owner decision. Do **not** start P6.8 · P7 · Automation · Autotune · Undo · Autosave · Contabo · E3 Studio Render.
+
+---
+
+### 19. Addendum — I.45CW / I.45CV (2026-10-11) · export-history delete conflict
+
+Historical gate above (**CLOSED** @ `2c4b416`) remains valid for original List UX / Delete scope.
+
+**Additive production evidence (does not reopen this gate as a full re-verify):**
+
+```text
+Merge / tip     = ce2f0cc7ad7f5257577e858d64ca8531ebb35000 (PR #5)
+Deployment      = dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH
+Scenario        = project with export history → HTTP 409 → project + render_jobs + audio_artifacts retained
+Runtime         = I.45CV PASS (exactly one Owner DELETE on d07f3011-…)
+PRODUCTION VERIFIED (narrow) = that scenario only
+NOT CLAIMED     = empty-project happy-path delete · soft-delete/archive · full delete-module retest
+```
+
+See living SSOT: [PROJECT_STATE.md](../PROJECT_STATE.md) · [CHANGELOG.md](../CHANGELOG.md) I.45CW.

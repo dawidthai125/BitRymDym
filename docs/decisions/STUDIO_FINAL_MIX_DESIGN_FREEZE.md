@@ -43,7 +43,7 @@ Studio Export UI     = MUST eventually enqueue Studio Final Mix (not Takes deep-
 | Forbidden: Studio export pipeline | **Allowed** under this freeze + later Implementation GO |
 | Contabo/always-on | Still **FORBIDDEN** without separate Ops GO (§5, §8) |
 
-**Stage I (UI Export) — local WIP:** transport control is `StudioExportControl` (`Eksportuj WAV`) → `POST/GET /api/studio/projects/[projectId]/export` + owner download via `/api/mix/artifacts/[id]/download`. This implements OD-SFM-05 in the workspace. **Later:** Stage I.3A dialog focus/a11y; Stage I.7 **local E2E PASS** (isolated only). **Not** production GREEN: Contabo still STOPPED; live/offline FX parity unverified. See [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) Stage I status.
+**Stage I (UI Export) — local WIP:** transport control is `StudioExportControl` (`Eksportuj WAV`) → `POST/GET /api/studio/projects/[projectId]/export` + owner download via `/api/mix/artifacts/[id]/download`. This implements OD-SFM-05 in the workspace. **Later:** Stage I.3A dialog focus/a11y; Stage I.7 **local E2E PASS** (isolated only); Stage I.18 **local empty-session integration PASS** ([evidence](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md)). **Not** production GREEN: Contabo still STOPPED; full Live↔Offline PCM parity not claimed (I.14-01 functional only). See [STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md](./STUDIO_FINAL_MIX_EXPORT_BAKE_DESIGN_FREEZE.md) Stage I status.
 
 **Unchanged by supersession:** P4.6 Take Export on `/account/takes` remains the take-download product; Visual Shell layout/chrome freezes otherwise intact; Loop/Metronome disabled affordances unchanged.
 

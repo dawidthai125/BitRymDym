@@ -34,6 +34,7 @@ import {
   buildStudioExportDocumentSnapshot,
   collectStudioExportSourceRefs,
 } from "@/lib/audio/studio-export-document-snapshot";
+import { publicStudioExportFailure } from "@/lib/audio/studio-export-failure-contract";
 import { authorizeStudioExportSourcesForDocument } from "@/lib/audio/studio-export-source-resolution";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
@@ -64,10 +65,17 @@ export type StudioExportJobRecord = {
   workerInfraStatus: "PREPARED_CODE" | "BLOCKED_INFRA";
   /** Present when status is SUCCEEDED and a READY artifact exists for the owner. */
   artifactId?: string | null;
+  /**
+   * I.17 — allowlisted public failure code (null when not terminal-fail).
+   * Derived from render_jobs.error_code; never trusts raw DB message text.
+   */
+  errorCode?: string | null;
+  /** Safe public message paired with errorCode (never raw renderer/DB text). */
+  errorMessage?: string | null;
 };
 
 const STUDIO_EXPORT_JOB_SELECT =
-  "id, owner_id, project_id, kind, requested_tier, idempotency_key, status, created_at, document_snapshot, mix_session_id, take_id";
+  "id, owner_id, project_id, kind, requested_tier, idempotency_key, status, created_at, document_snapshot, mix_session_id, take_id, error_code";
 
 function assertStudioExportJobsEnabled(): void {
   if (E3_RENDER_JOBS_ENABLED !== true) {
@@ -89,13 +97,19 @@ function mapStudioExportJob(
       }
     | null
     | undefined;
+  const status = row.status as RenderJobStatus;
+  const publicFail = publicStudioExportFailure({
+    status,
+    rawErrorCode:
+      typeof row.error_code === "string" ? row.error_code : null,
+  });
   return {
     id: row.id as string,
     ownerId: row.owner_id as string,
     projectId: row.project_id as string,
     kind: "STUDIO_EXPORT",
     requestedTier: row.requested_tier as RenderJobTier,
-    status: row.status as RenderJobStatus,
+    status,
     idempotencyKey: row.idempotency_key as string,
     documentVersion:
       typeof snapshot?.documentVersion === "number"
@@ -108,6 +122,8 @@ function mapStudioExportJob(
     createdAt: row.created_at as string,
     workerInfraStatus: "PREPARED_CODE",
     artifactId,
+    errorCode: publicFail.errorCode,
+    errorMessage: publicFail.errorMessage,
   };
 }
 

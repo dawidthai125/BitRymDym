@@ -299,7 +299,8 @@ describe("PR-01/02 AuthZ / API contract (source)", () => {
       "utf8",
     );
     expect(editor).toMatch(/function ClipEditPanel/);
-    expect(editor).toMatch(/Zapisz głośność/);
+    expect(editor).toMatch(/Zapisz teraz/);
+    expect(editor).toMatch(/onSaveGain\(next\)/);
     expect(editor).toMatch(/Wycisz klip/);
     expect(editor).toMatch(/onSaveGain/);
     expect(editor).toMatch(/onSaveMute/);

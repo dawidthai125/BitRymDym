@@ -12,9 +12,9 @@ const editor = readFileSync(
 
 describe("PR-05 ClipEditPanel UX polish", () => {
   it("exposes Edit capabilities: Gain, Mute, Fade, Trim, Split, Duplicate, Delete", () => {
-    expect(editor).toMatch(/Zapisz głośność/);
+    expect(editor).toMatch(/Zapisz teraz/);
     expect(editor).toMatch(/Wycisz klip/);
-    expect(editor).toMatch(/Zapisz fade/);
+    expect(editor).toMatch(/onSaveFades/);
     expect(editor).toMatch(/Przytnij początek/);
     expect(editor).toMatch(/Przytnij koniec/);
     expect(editor).toMatch(/Podziel/);

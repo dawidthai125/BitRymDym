@@ -1,8 +1,61 @@
-# BitRymDym Supabase — local/project config placeholder
-# Apply SQL migrations from supabase/migrations via Supabase CLI or Dashboard SQL editor.
+# BitRymDym — Supabase Local
+# project_id is a local label only — not a network path to cloud.
+# Never use this configuration to connect to production.
 # Do not store secrets here.
+#
+# PostgreSQL major_version: set to 15 per Owner GO proposal.
+# NOT confirmed from migrations or remote SHOW server_version.
+# Supabase CLI 2.102.0 default template uses major_version = 17.
+# Revisit before first `supabase start` if Engine rejects the image.
 
-project_id = "rzzxrgcdogkybkiidqgw"
+project_id = "bitrymdym-local"
 
 [api]
 enabled = true
+port = 54321
+# Includes storage schema for local Storage API exposure (Owner GO proposal).
+# CLI 2.102.0 default template uses ["public", "graphql_public"] only.
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+# Explicitly disable seed so CLI defaults (enabled + ./seed.sql) do not apply.
+# No seed.sql / seed.local.e2e.sql paths are configured.
+[db.seed]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[realtime]
+enabled = true
+
+[analytics]
+enabled = false

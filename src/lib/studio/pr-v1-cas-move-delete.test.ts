@@ -33,13 +33,16 @@ describe("PR-04 Move CAS alignment", () => {
       join(process.cwd(), "src/components/studio/studio-editor.tsx"),
       "utf8",
     );
-    // Inspector panel still uses op:"move" + expectedDocumentVersion.
-    expect(editor).toMatch(/op:\s*"move"[\s\S]*?expectedDocumentVersion/);
+    // Inspector panel: op move via patchClip; CAS version from orchestrator boundary.
+    expect(editor).toMatch(/op:\s*"move"/);
+    expect(editor).toMatch(
+      /function patchClip\([\s\S]*?expectedDocumentVersion\(\)/,
+    );
     // Timeline drag commits via persistClipGeometryCommit (CAS body).
     expect(editor).toMatch(/persistClipGeometryCommit/);
     expect(editor).toMatch(/body\.op = \"move\"/);
     expect(editor).toMatch(
-      /expectedDocumentVersion: doc\.project\.documentVersion/,
+      /expectedDocumentVersion: docRef\.current\.project\.documentVersion/,
     );
   });
 });
@@ -102,10 +105,13 @@ describe("PR-04 Delete CAS alignment", () => {
       join(process.cwd(), "src/components/studio/studio-editor.tsx"),
       "utf8",
     );
-    expect(editor).toMatch(/async function deleteSelectedClip/);
+    expect(editor).toMatch(/function deleteSelectedClip\(\): void/);
+    expect(editor).toMatch(
+      /function deleteSelectedClip\(\): void \{[\s\S]*?enqueuePersist/,
+    );
     expect(editor).toMatch(/method: "DELETE"/);
     expect(editor).toMatch(
-      /expectedDocumentVersion:\s*doc\.project\.documentVersion/,
+      /expectedDocumentVersion:\s*expectedDocumentVersion\(\)/,
     );
   });
 });

@@ -393,14 +393,13 @@ describe("P6.7.x Split CAS / service contract", () => {
   });
 
   it("editor sends expectedDocumentVersion on trim + split", () => {
+    expect(editor).toMatch(/op: "trim_left_to_playhead"/);
+    expect(editor).toMatch(/op: "trim_right_to_playhead"/);
     expect(editor).toMatch(
-      /op: "trim_left_to_playhead"[\s\S]*expectedDocumentVersion: doc\.project\.documentVersion/,
+      /function patchClip\([\s\S]*?expectedDocumentVersion\(\)/,
     );
     expect(editor).toMatch(
-      /op: "trim_right_to_playhead"[\s\S]*expectedDocumentVersion: doc\.project\.documentVersion/,
-    );
-    expect(editor).toMatch(
-      /expectedDocumentVersion: doc\.project\.documentVersion/,
+      /function splitSelectedAtPlayhead\(\): void \{[\s\S]*?expectedDocumentVersion\(\)/,
     );
     expect(editor).toMatch(/\/split/);
   });

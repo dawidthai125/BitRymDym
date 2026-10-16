@@ -3,6 +3,11 @@
  * Pure mapping / request builders; no auto-enqueue.
  */
 
+import {
+  isStudioExportPublicErrorCode,
+  studioExportPublicErrorMessage,
+} from "@/lib/audio/studio-export-failure-contract";
+
 export type StudioExportUiPhase =
   | "IDLE"
   | "SUBMITTING"
@@ -92,6 +97,10 @@ export type StudioExportApiPayload = {
   projectId?: string;
   status?: string;
   artifactId?: string | null;
+  /** I.17 — allowlisted public failure code from status GET. */
+  errorCode?: string | null;
+  /** I.17 — safe public message; client re-derives from code (does not trust raw). */
+  errorMessage?: string | null;
   code?: string;
   error?: string;
 };
@@ -104,6 +113,8 @@ export type StudioExportMappedResult =
       projectId: string;
       status: string;
       artifactId: string | null;
+      errorCode: string | null;
+      message: string | null;
     }
   | {
       ok: false;
@@ -113,6 +124,24 @@ export type StudioExportMappedResult =
       message: string;
       ambiguousNetwork?: boolean;
     };
+
+function resolvePublicFailureFromPayload(json: StudioExportApiPayload): {
+  errorCode: string | null;
+  message: string | null;
+} {
+  const raw =
+    typeof json.errorCode === "string" && json.errorCode.length > 0
+      ? json.errorCode
+      : null;
+  if (!raw) {
+    return { errorCode: null, message: null };
+  }
+  const errorCode = isStudioExportPublicErrorCode(raw) ? raw : "ENCODE_FAILED";
+  return {
+    errorCode,
+    message: studioExportPublicErrorMessage(errorCode),
+  };
+}
 
 export function mapStudioExportHttpResult(input: {
   httpStatus: number;
@@ -196,6 +225,10 @@ export function mapStudioExportHttpResult(input: {
   }
 
   const phase = mapJobStatusToUiPhase(json.status);
+  const failure =
+    phase === "FAILED"
+      ? resolvePublicFailureFromPayload(json)
+      : { errorCode: null, message: null };
   return {
     ok: true,
     phase,
@@ -203,6 +236,8 @@ export function mapStudioExportHttpResult(input: {
     projectId: typeof json.projectId === "string" ? json.projectId : "",
     status: json.status,
     artifactId: typeof json.artifactId === "string" ? json.artifactId : null,
+    errorCode: failure.errorCode,
+    message: failure.message,
   };
 }
 

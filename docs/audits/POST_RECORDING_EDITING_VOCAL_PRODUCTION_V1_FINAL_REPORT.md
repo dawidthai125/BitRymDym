@@ -1,212 +1,168 @@
-# POST-RECORDING EDITING / VOCAL PRODUCTION V1 — FINAL REPORT
+# POST-RECORDING EDITING / VOCAL PRODUCTION V1
+## PRODUCTION GATE FINAL REPORT
 
 **Date:** 2026-10-07  
-**Verdict:** **IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED**  
-**Repo implementation tip (pre-docs commit):** `3216cf0` (`feat(studio): PR-03/04/05…`) + prior `1a62158` (PR-01/02)  
-**Production app SHA (unchanged):** `06c60b5` — still P6.7 only  
-**P6.7 status:** remains **CLOSED / GREEN** (not reopened)
+**Verdict:** **PRODUCTION VERIFIED — GREEN**  
+**Status:** **CLOSED** — see [PRODUCTION_GATE.md](./POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md)  
+**Deployed:** `56b629e` · `dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei`
 
 ---
 
-## 1. Scope
+### 1. Baseline
 
-V1 enables non-destructive post-recording Clip editing on the existing Studio path:
-
-```text
-Take (immutable) → Studio Project → Track → Clip → ONE StudioAudioEngine
-```
-
-**IN:** Clip Gain, Clip Mute, Duplicate Clip, CAS alignment for Move/Delete, ClipEditPanel UX polish, tests + SSOT.
-
-**OUT:** Autosave, Undo/Redo, Automation, Autotune, Clip Pan, Region Mute, E3 Studio render, Contabo, P7, second audio engine.
-
----
-
-## 2. Implemented PRs
-
-| PR | Status | Notes |
-|----|--------|--------|
-| PR-01 Clip Gain Write Path | DONE | `set_gain` + CAS RPC + UI |
-| PR-02 Clip Mute Write Path | DONE | `set_mute` + same CAS RPC + UI |
-| PR-03 Duplicate Clip | DONE | CAS insert · same `source_take_id` |
-| PR-04 CAS Move/Delete | DONE | Move always CAS · Delete CAS RPC |
-| PR-05 Timeline/Clip UX | DONE | Gain/Mute/Duplicate in ClipEditPanel |
-| PR-06 Production Gate | DONE (gate) | Code/tests/DB RPCs · **app not deployed** |
-
----
-
-## 3. Changed files (implementation)
-
-- `src/lib/studio/studio-clip-mix.ts` (new)
-- `src/lib/studio/studio-clip-ops.ts` — `resolveDuplicateClipPlacement`
-- `src/lib/studio/studio-service.ts` — gain/mute/duplicate/delete CAS; move always CAS
-- `src/app/api/studio/projects/[projectId]/clips/[clipId]/route.ts` — `set_gain` / `set_mute` / DELETE CAS
-- `src/app/api/studio/projects/[projectId]/clips/[clipId]/duplicate/route.ts` (new)
-- `src/components/studio/studio-editor.tsx` — ClipEditPanel controls
-- Tests: `pr-v1-*.test.ts` + regression updates (`p5-3`, `p5-4`, `p6-7-x`, `p6-7-3`)
-
----
-
-## 4. DB migrations
-
-| Repo file | Applied version + name (Supabase) |
-|-----------|-----------------------------------|
-| `20261007150000_pr_v1_studio_cas_clip_gain_mute.sql` | `20261007080752` `pr_v1_studio_cas_clip_gain_mute` |
-| `20261007151000_pr_v1_studio_cas_clip_duplicate.sql` | `20261007080758` `pr_v1_studio_cas_clip_duplicate` |
-| `20261007152000_pr_v1_studio_cas_clip_delete.sql` | `20261007080800` `pr_v1_studio_cas_clip_delete` |
-
-No new tables/columns. Reuses `studio_clips.gain_db` / `muted` / fades / geometry.
-
-**Note:** filename timestamp ≠ applied version id (same pattern as P6.7 / P0).
-
----
-
-## 5. RPCs
-
-| RPC | Purpose | ACL |
-|-----|---------|-----|
-| `studio_cas_apply_clip_gain_mute` | Persist gain_db + muted + version | anon/auth **DENY** · service_role **ALLOW** |
-| `studio_cas_apply_clip_duplicate` | Insert Clip copy + version | anon/auth **DENY** · service_role **ALLOW** |
-| `studio_cas_apply_clip_delete` | Delete Clip + version | anon/auth **DENY** · service_role **ALLOW** |
-| `studio_cas_apply_clip_geometry_fades` (reuse) | Move + trim geometry | existing P0 ACL |
-
-**LIVE ACL evidence (production DB):** all three new RPCs `anon_exec=false`, `auth_exec=false`, `service_exec=true`.
-
----
-
-## 6. API / server actions
-
-| Method | Path | Op |
-|--------|------|----|
-| PATCH | `/api/studio/projects/:projectId/clips/:clipId` | `set_gain`, `set_mute` (+ existing fades/geometry) |
-| POST | `/api/studio/projects/:projectId/clips/:clipId/duplicate` | duplicate |
-| DELETE | `/api/studio/projects/:projectId/clips/:clipId` | body `{ expectedDocumentVersion }` |
-
-Path: `requireUser` → ownership (`loadOwnedClip`) → service_role RPC. No client privileged RPC.
-
----
-
-## 7. UI changes
-
-ClipEditPanel (edit mode):
-
-- Clip Gain (−24…12 dB) + explicit „Zapisz głośność”
-- Clip Mute toggle
-- Fade In/Out (unchanged P6.7)
-- Trim / Split / Move / Delete
-- **Powiel** (duplicate)
-- Primary controls `min-h-11` (≥44px)
-
----
-
-## 8. Tests
-
-- Studio suite: **445 PASS** (`src/lib/studio`)
-- V1 suites: gain/mute, duplicate, CAS move/delete, UX polish, architecture guards
-- TypeScript: `tsc --noEmit` **PASS** (after test typing fix)
-- P6.7 regression suites updated/passing (fade write/UI, trim/split)
-
----
-
-## 9. Security verification
-
-| Check | Result |
+| Plane | Value |
 |-------|--------|
-| Contract: unauth → 401 / non-owner → 403/404 / stale → 409 | Covered by shared AuthError / StudioFxCasConflictError mapping + V1 source tests |
-| anon EXECUTE new RPCs | **DENIED** (live SQL) |
-| authenticated EXECUTE new RPCs | **DENIED** (live SQL) |
-| service_role EXECUTE | **ALLOWED** (live SQL) |
-| App path ownership | `loadOwnedClip` / `assertOwnsProject` |
-| Production HTTP E2E on new endpoints | **NOT RUN** (app not deployed) |
+| Previous production SHA | `06c60b5` (P6.7 Clip Fades) |
+| Implementation commits | `1a62158` (PR-01/02) · `3216cf0` (PR-03/04/05) · `56b629e` (PR-06 docs tip) |
+| Final deployed SHA | `56b629ec16dcd9df95d52b93f0aa6d1715ba7f4c` (`56b629e`) |
+| Ancestry check | `1a62158` ⊂ HEAD · `3216cf0` ⊂ HEAD · `56b629e` = HEAD at gate |
 
 ---
 
-## 10. CAS verification
+### 2. Deployment
 
-- Gain / Mute / Duplicate / Delete: atomic `document_version` bump via new RPCs
-- Move: now always uses `studio_cas_apply_clip_geometry_fades` (PR-04 alignment; removes pre-P6.7 non-CAS move)
-- Stale version → empty RPC result → `StudioFxCasConflictError` → HTTP 409
-
----
-
-## 11. Take immutability verification
-
-- Duplicate / gain / mute / delete / move SQL and service: **no** `takes` UPDATE, **no** Storage object copy
-- Duplicate copies Clip row fields including `source_take_id` only
-- Architecture guard test asserts this contract
-
----
-
-## 12. Mobile verification
-
-- Source contract: ClipEditPanel `min-h-11`, `min-w-0`, no separate mobile engine
-- Live ~390px browser production check: **NOT RUN** (app not deployed with V1 UI)
-
----
-
-## 13. P6.7 regression
-
-- Fade write/UI/trim/split tests **PASS**
-- Engine fade formula unchanged (`effectiveGain = baseClipGain × fadeEnvelope`)
-- P6.7 **not** marked reopened
-- Production still serves `06c60b5` (P6.7) until V1 app deploy
-
----
-
-## 14. Production deployment
-
-| Plane | Status |
+| Field | Value |
 |-------|--------|
-| Production DB RPCs | **APPLIED** (three V1 migrations) |
-| Production app | **NOT DEPLOYED** — still `06c60b5` |
-| Contabo | untouched STOPPED/DISABLED |
-| E3 | untouched |
+| Production deployment ID | `dpl_HcaXhP9nZXnDAWCAUBvoFu6Qh9Ei` |
+| Production URL | https://www.bitrymdym.pl · https://bitrymdym.pl |
+| GitHub deployment ID | `6908396342` |
+| Production app SHA | `56b629e` |
+| Served Studio editor chunk | `/_next/static/immutable/chunks/1rnqr79fxkwx9.js` |
+| Timestamp (GH Production) | `2026-10-07T11:12:49Z` |
+| Deploy method | Clean Git production deploy (dirty WIP tree not promoted) |
 
 ---
 
-## 15. Production SHA
+### 3. Tests
+
+| Suite | Result |
+|-------|--------|
+| Vitest | **1566 PASS · 1 FAIL · 1 SKIP** (1568 total) |
+| TypeScript (`tsc --noEmit`) | **PASS** |
+| Lint (full repo) | **33 errors · 7 warnings** — **PRE-EXISTING / OUT OF SCOPE** (e.g. `mix-panel.tsx` refs) |
+| Lint (V1 scoped files) | **PASS** (`--max-warnings 0`) |
+| Build (`next build`) | **PASS** |
+| Architecture / Studio | V1 + P6.7 suites included in Vitest; chunk scan: `StudioAudioEngine` present · `VocalEditorEngine` / `FadeEngine` / `mix-graph` / `StudioMixEngine` **absent** · `PlayerProvider` shell-only (non-editor chunk) |
+| Security (unit + live HTTP) | See §6 |
+
+**Known FAIL (OUT OF SCOPE):** `src/lib/takes/wave4-live.test.ts` — FREE Sample Policy expire assertion (`expected READY to be EXPIRED`). **PRE-EXISTING** · unrelated to V1 · does **not** block this gate.
+
+**Known SKIP:** 1 skipped test in community-wave2-e2e suite (pre-existing pattern).
+
+---
+
+### 4. DB
+
+| Item | Result |
+|------|--------|
+| Migrations (prod applied) | `20261007080752` `pr_v1_studio_cas_clip_gain_mute` · `20261007080758` `pr_v1_studio_cas_clip_duplicate` · `20261007080800` `pr_v1_studio_cas_clip_delete` |
+| Repo filenames | `20261007150000_…` · `20261007151000_…` · `20261007152000_…` (filename ≠ applied version — documented mapping) |
+| RPCs | `studio_cas_apply_clip_gain_mute` · `studio_cas_apply_clip_duplicate` · `studio_cas_apply_clip_delete` · reuse `studio_cas_apply_clip_geometry_fades` / `studio_cas_apply_clip_split` / `studio_cas_apply_fx_chain` |
+| ACL (live SQL) | anon **DENIED** · authenticated **DENIED** · service_role **ALLOWED** (all listed `studio_cas_*`) |
+| `document_version` | CAS bump on gain/mute/duplicate/fade/move/trim/split/delete (API smoke versions 1→9) |
+| Re-migration | **not** re-applied (already correct) |
+
+**Security Advisor:** no new `studio_cas_*` anon/authenticated EXECUTE findings. Residual WARN/INFO (e.g. `is_admin`, HIBP disabled, RLS-no-policy tables) are **PRE-EXISTING / OUT OF V1**.
+
+---
+
+### 5. Production Smoke
+
+Owner project UI: `https://www.bitrymdym.pl/studio/p/d2bdb431-4b40-4d7c-9bfc-d18d05cbad14`  
+API fixture project (service path): cleaned after gate.
+
+| Test | Result |
+|------|--------|
+| Place Take | **PASS** (existing READY Take → Clip on vocal track; UI shows Nagranie clips) |
+| Clip Gain | **PASS** (API `set_gain` → `gainDb=-3` · reload persist · UI Gain control + Zapisz głośność present) |
+| Clip Mute | **PASS** (API `set_mute` → `muted=true` · UI toggle `aria-pressed=true` · Play → status `Odtwarzanie`) |
+| Duplicate | **PASS** (API 201 · same `sourceTakeId` · new clip id · independent params) |
+| Trim | **PASS** (API geometry CAS) |
+| Split | **PASS** (API 201 left/right) |
+| Move | **PASS** (API CAS geometry) |
+| Delete | **PASS** (API CAS delete) |
+| Fade | **PASS** (API fade in/out · UI Zapisz fade) |
+| Track Mix | **PASS** (UI: Track Gain/Pan/Mute/Solo present · no V1 regression) |
+| Track FX | **PASS** (UI FX controls present · no V1 regression) |
+| Master FX | **PASS** (UI Master FX present · no V1 regression) |
+| Save/Reload | **PASS** (API reload row: gain/mute/fades/geometry persisted) |
+
+**Note:** Subjective ear-level A/B loudness was not independently certified by the agent browser (CDP has no reliable ear). Functional path = CAS persist + mute UI state + transport Play `Odtwarzanie` + unit engine contracts.
+
+---
+
+### 6. Security
+
+| Test | Result |
+|------|--------|
+| Unauth | **PASS** — `set_gain` / `set_mute` / duplicate / delete → **401** |
+| Cross-user | **PASS** — foreign project/clip gain → **403** |
+| Stale version | **PASS** — stale `expectedDocumentVersion` → **409** |
+| anon RPC | **PASS** — `42501 permission denied` on `studio_cas_apply_clip_gain_mute` |
+| authenticated RPC | **PASS** — `42501 permission denied` |
+| Owner path | **PASS** — owner CAS ops **200/201** |
+
+---
+
+### 7. Take Immutability
+
+**PASS**
+
+| Field | Before = After |
+|-------|----------------|
+| `source_take_id` | `c9dee378-dffc-460d-a4f1-58c09460b2d9` |
+| `object_key` | `…/takes/c9dee378-…/mic.bin` |
+| `storage_bucket` | `take-audio` |
+| `status` / `duration_seconds` | unchanged |
+| `unchanged` flag | `true` after gain · mute · duplicate · fade · move · trim · split · delete |
+
+No Take rewrite · no Storage object copy.
+
+---
+
+### 8. Mobile
+
+**PASS** @ ~390px (viewport `clientWidth=390`)
+
+- `overflowX: false`
+- ClipEditPanel usable after clip select (Gain / Mute / Powiel / Fade / Trim / Split / Delete)
+- Primary controls measured **44px** height (`min-h-11`): Zapisz głośność · Wycisz · Powiel · Zapisz fade · Odtwórz · Przytnij…
+- No separate mobile engine / path
+
+---
+
+### 9. P6.7 Regression
+
+**PASS — no V1 regression · P6.7 remains CLOSED / GREEN**
+
+- Fade / trim / split / CAS / FX paths exercised in production API smoke
+- Chunk still contains P6.7 fade UI strings + V1 controls
+- P6.7 status **not** reopened
+
+---
+
+### 10. Known Limitations (OUT OF V1)
+
+- Undo/Redo
+- Autosave
+- Region Mute
+- Clip Pan
+- Automation
+- Autotune
+- Studio → E3 render
+- P7
+- Contabo enable
+- P6.8
+- Subjective ear-level A/B loudness certification (agent CDP limitation; functional mute/gain path verified)
+
+---
+
+### 11. Final Verdict
 
 ```text
-PRODUCTION APP SHA     = 06c60b5 (unchanged · P6.7)
-REPO IMPLEMENTATION    = 3216cf0 (+ 1a62158) · docs tip advances with this report commit
+PRODUCTION VERIFIED — GREEN
 ```
 
----
+See [PRODUCTION_GATE.md](./POST_RECORDING_EDITING_VOCAL_PRODUCTION_V1_PRODUCTION_GATE.md). Interim RED (meter sampling error) superseded.
 
-## 16. Production verification
-
-**NOT PRODUCTION VERIFIED**
-
-Missing for GREEN:
-
-1. Deploy app containing V1 UI/API
-2. Live owner E2E: gain/mute/duplicate save → reload → playback
-3. Live security HTTP on new endpoints
-4. Live mobile ~390 check on deployed UI
-5. Live P6.7 fade regression on deployed build
-
-DB ACL for new RPCs is verified; that alone ≠ production feature GREEN.
-
----
-
-## 17. Known limitations
-
-- Duplicate placement: prefer immediately after source; if unfit, same start (MIX overlap) — documented in tests
-- Move now requires `expectedDocumentVersion` (breaking vs old non-CAS move clients — only Studio UI)
-- No production browser evidence for V1 audible gain/mute yet
-
----
-
-## 18. Deferred items
-
-Autosave · Undo/Redo · Automation · Autotune · Clip Pan · Region Mute · Studio→E3 render · Contabo · P7 / MIDI · P6.8
-
----
-
-## 19. Final verdict
-
-```text
-IMPLEMENTATION COMPLETE — NOT PRODUCTION VERIFIED
-```
-
-**STOP.** Do not start P6.8 / Automation / Autotune / E3 Studio Render / Undo / Autosave / P7. Await Owner decision for deploy + production gate (or next workstream).
+**STOP.** Do **not** start P6.8 · force-redeploy · Automation · Autotune · Undo/Redo · Autosave · Studio → E3 Render · P7 · Contabo.

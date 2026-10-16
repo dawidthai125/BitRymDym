@@ -54,7 +54,7 @@ Interpretation SSOT is **not** duplicated: membership uses `interpretStudioSessi
 | Unsupported FX schema | `STUDIO_RENDER_FX_UNSUPPORTED` |
 | Missing PCM from resolver | `STUDIO_RENDER_SOURCE_MISSING` |
 | Wrong sample rate / buffer | `STUDIO_RENDER_SOURCE_INVALID` |
-| No audible voices | `STUDIO_RENDER_EMPTY_SESSION` |
+| No audible voices | `STUDIO_RENDER_EMPTY_SESSION` (I.14-02 / I.15–I.18 local; typed job code I.17; see bake freeze §16 + [I.18 evidence](../audits/STUDIO_EXPORT_I18_EMPTY_SESSION_INTEGRATION.md)) |
 | Timeline > 180_000 ms | `STUDIO_RENDER_DURATION_CAP` |
 | Output / total PCM over public budget | `STUDIO_RENDER_MEMORY_CAP` |
 | Storage fetch / AuthZ inside renderer | Forbidden — caller injects PCM |

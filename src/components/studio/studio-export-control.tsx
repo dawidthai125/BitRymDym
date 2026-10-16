@@ -154,7 +154,11 @@ export function StudioExportControl({
       }
       setPhase(mapped.phase);
       if (mapped.phase === "FAILED") {
-        setMessage("Eksport nie powiódł się. Możesz spróbować ponownie.");
+        // I.17 — typed empty-session vs generic FAILED; never show raw API text.
+        setMessage(
+          mapped.message ??
+            "Eksport nie powiódł się. Możesz spróbować ponownie.",
+        );
       }
     } finally {
       pollInFlightRef.current = false;

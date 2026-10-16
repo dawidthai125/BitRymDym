@@ -89,6 +89,9 @@ export async function GET(
       documentDigest: job.documentDigest,
       artifactId: job.artifactId ?? null,
       workerInfraStatus: job.workerInfraStatus,
+      // I.17 — allowlisted public failure fields (null when not terminal-fail).
+      errorCode: job.errorCode ?? null,
+      errorMessage: job.errorMessage ?? null,
     });
   } catch (error) {
     if (error instanceof RenderJobDomainError) {

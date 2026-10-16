@@ -231,7 +231,7 @@ describe("P6.4.1 AuthZ / API contract (source + error mapping)", () => {
     expect(routeSrc).not.toMatch(/PlayerProvider/);
   });
 
-  it("Track PATCH route returns documentVersion", () => {
+  it("Track PATCH route returns documentVersion + CAS expectedDocumentVersion", () => {
     const routeSrc = readFileSync(
       join(
         process.cwd(),
@@ -241,6 +241,9 @@ describe("P6.4.1 AuthZ / API contract (source + error mapping)", () => {
     );
     expect(routeSrc).toMatch(/documentVersion:\s*result\.documentVersion/);
     expect(routeSrc).toMatch(/updateStudioTrackControls/);
+    expect(routeSrc).toMatch(
+      /expectedDocumentVersion: body\.expectedDocumentVersion/,
+    );
   });
 
   it("service Master Mix uses existing columns + CAS eq document_version", () => {

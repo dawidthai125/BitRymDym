@@ -386,6 +386,8 @@ Blind delete / GC without dry-run + Owner GO = **FORBIDDEN**.
 | Contabo tmp | **Never** backup / never primary |
 | Exceptions to Mix no-backup | Only by separate Owner Decision |
 
+**Later design closure (does not rewrite this V1 freeze history):** STORAGE-ARCH-07 Design Freeze (2026-10-04) closed OD-SA-07-01…16 for the **BACKUP plane** architecture — [STORAGE_ARCH_07_DESIGN_FREEZE.md](./STORAGE_ARCH_07_DESIGN_FREEZE.md). Implementation GO later issued · Phase A **BLOCKED** (no AWS account/CLI/credentials) · Storage COPY **0/43**. Historical local DB dump **FOUND** ≠ Storage object backup — [HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md](./HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md). **OD-SA-07** (Mix no-backup default) is unchanged.
+
 ---
 
 ## 18. Migration Strategy — LOCKED (OD-SA-02)
@@ -506,7 +508,7 @@ STORAGE-ARCH-01 Design Freeze **COMPLETE** when:
 | STORAGE-ARCH-04 | ORPHAN INVENTORY | Classify beat-audio orphans + dry-run | OD-SA-08 |
 | STORAGE-ARCH-05 | ORPHAN DELETE | Delete only after dry-run + Owner GO | OD-SA-08 |
 | STORAGE-ARCH-06 | STAGED KEY MIGRATION | Legacy → canonical after dual-read | OD-SA-02 |
-| STORAGE-ARCH-07 | BACKUP / ARCHIVE DESIGN | Source MASTER backup before scale | OD-SA-06 |
+| STORAGE-ARCH-07 | BACKUP / ARCHIVE DESIGN | Source MASTER backup before scale · **DESIGN FREEZE COMPLETE** (2026-10-04) · OD-SA-07-01…16 **CLOSED** · Phase A **BLOCKED** · Storage COPY **0/43** · historical local DB dump **FOUND** ≠ Storage object bytes — [freeze](./STORAGE_ARCH_07_DESIGN_FREEZE.md) · [DB audit](./HISTORICAL_LOCAL_DB_BACKUP_AUDIT.md) | OD-SA-06 |
 | STORAGE-ARCH-08 | WORKER HARDENING | Retry loop / host tmp sweep (optional) | separate GO |
 | STORAGE-ARCH-09 | ARTWORK (optional) | Only if future OD reopens OD-SA-04 | future OD |
 | STORAGE-ARCH-10 | BEAT DERIVATIVES (optional) | Only if product OD reopens OD-SA-03 | future OD |
