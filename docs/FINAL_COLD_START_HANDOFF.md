@@ -2,8 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-16 — tip **`81c2496`** (parent **`b71a549`**) · KIND_REJECT code on `main` @ **`69e50d0`** (ancestor; repo migration **≠** database apply) · poller commit **`d3c99e3`** is ancestry · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · live CAS/concurrency and staging E2E **NOT CONFIRMED** · runtime flag, poller activity, Contabo **NOT RE-VERIFIED IN THIS STAGE** · Final Mix GREEN closeout **unchanged / not re-verified here** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip **`81c2496`** (parent **`b71a549`**) ≠ staging deploy **NOT RE-VERIFIED IN THIS STAGE** ≠ staging schema **NOT RE-VERIFIED IN THIS STAGE** ≠ database apply **NOT CONFIRMED** ≠ prod last-known ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-16 — tip **`5212933`** (parent **`81c2496`**) · KIND_REJECT code on `main` @ **`69e50d0`** (ancestor; repo migration **≠** database apply) · poller commit **`d3c99e3`** is ancestry · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · live CAS/concurrency and staging E2E **NOT CONFIRMED** · runtime flag, poller activity, Contabo **NOT RE-VERIFIED IN THIS STAGE** · Final Mix GREEN closeout **unchanged / not re-verified here** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
+**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip **`5212933`** (parent **`81c2496`**) ≠ staging deploy **NOT RE-VERIFIED IN THIS STAGE** ≠ staging schema **NOT RE-VERIFIED IN THIS STAGE** ≠ database apply **NOT CONFIRMED** ≠ prod last-known ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; **§0 below is current.** Later sections that still cite tip `2adb569` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
 
@@ -36,9 +36,9 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-GITHUB MAIN TIP / origin/main = 81c2496fec9699605ba2809e09f45e9fc69b7a19 (verify: git rev-parse origin/main)
-  parent                      = b71a54913fd5b9768baad0ff38e11f45ef4e2e39
-  subject                     = docs: align the living SFM tip with main without claiming a live apply
+GITHUB MAIN TIP / origin/main = 5212933630d1e2ff6271f56d928502a3e86b49d1 (verify: git rev-parse origin/main)
+  parent                      = 81c2496fec9699605ba2809e09f45e9fc69b7a19
+  subject                     = docs: reconcile SFM SSOT with published main tip
   note                        = ≠ 69e50d0 · KIND_REJECT code + repo migration 20261016120000_sfm_reject_executor_job_kind.sql
                               · entered at 69e50d0 · Git file ≠ database apply
                               · poller commit d3c99e3 and HTTP surface 2f7050e are ancestry
@@ -54,14 +54,14 @@ APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
   note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
                               · ancestry includes 7.1.6 `4fa658d` · 7.1.5 `3fccbf7` · P4.6 `a72fed9` · V1 `56b629e`
 PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN
-  note                        = Ready · SHA 2adb569 · not re-verified vs current Git tip 81c2496 · Ready ≠ functional app GREEN
+  note                        = Ready · SHA 2adb569 · not re-verified vs current Git tip 5212933 · Ready ≠ functional app GREEN
   aliases (last-known · NOT e2e) = www.bitrymdym.pl · bitrymdym.vercel.app · bitrymdym.pl
                               · apex redirect e2e NOT VERIFIED
   evidence                    = I.48-A0 (cold-start RO) — GitHub Deployments + Vercel CLI · not re-verified in A2/A3
 PRODUCTION GIT SHA (observed I.48-A0) = 2adb569
-  note                        = last-known deploy SHA · ≠ current Git tip 81c2496 · prior f730a7a / dpl_28oH… = HISTORY
+  note                        = last-known deploy SHA · ≠ current Git tip 5212933 · prior f730a7a / dpl_28oH… = HISTORY
                               · prior df37048 / dpl_7Cp2gQ9… = HISTORY
-SFM VERSIONS (product)        = CODE ON MAIN through tip 81c2496 (parent b71a549)
+SFM VERSIONS (product)        = CODE ON MAIN through tip 5212933 (parent 81c2496)
                               · HTTP surface 2f7050e · poller commit d3c99e3 · KIND_REJECT 69e50d0
                               · repo migration file ≠ database apply
                               · runtime flag NOT RE-VERIFIED IN THIS STAGE
