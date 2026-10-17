@@ -46,6 +46,22 @@ export async function requireAdminUsersListAccess() {
   return context;
 }
 
+export type AdminUsersListAccessDenial = "UNAUTHENTICATED" | "FORBIDDEN";
+
+/**
+ * Expected denials thrown by requireAdminUsersListAccess. Any other error
+ * (including other AuthError codes) must keep propagating.
+ */
+export function adminUsersListAccessDenial(
+  error: unknown,
+): AdminUsersListAccessDenial | null {
+  if (!(error instanceof AuthError)) return null;
+  if (error.code === "UNAUTHENTICATED" || error.code === "FORBIDDEN") {
+    return error.code;
+  }
+  return null;
+}
+
 function mapProfile(row: {
   id: string;
   display_name: string | null;

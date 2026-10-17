@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AdminUsersAuditFilters } from "@/components/admin/admin-users-audit-filters";
 import { AdminUsersDeleteDialog } from "@/components/admin/admin-users-delete-dialog";
@@ -7,7 +8,11 @@ import { AdminUsersManageDialog } from "@/components/admin/admin-users-manage-di
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { listAdminUserAuditEvents } from "@/lib/admin/users-audit-list";
 import { parseAdminUsersAuditQuery } from "@/lib/admin/users-audit-query";
-import { listAdminUsers } from "@/lib/admin/users-list";
+import {
+  adminUsersListAccessDenial,
+  listAdminUsers,
+  type AdminUsersListAccessDenial,
+} from "@/lib/admin/users-list";
 import { parseAdminUsersQuery } from "@/lib/admin/users-query";
 import { AuthError, getCurrentProfile } from "@/lib/auth/session";
 import {
@@ -68,12 +73,21 @@ export default async function AdminUsersPage({
 
   let result: Awaited<ReturnType<typeof listAdminUsers>> | null = null;
   let loadFailed = false;
+  let denial: AdminUsersListAccessDenial | null = null;
   try {
     result = await listAdminUsers(query);
   } catch (error) {
-    if (error instanceof AuthError) throw error;
-    loadFailed = true;
+    denial = adminUsersListAccessDenial(error);
+    if (!denial) {
+      if (error instanceof AuthError) throw error;
+      loadFailed = true;
+    }
   }
+
+  // The layout renders the same denial, but it does not stop this page from
+  // rendering, so the page must handle it too instead of throwing.
+  if (denial === "UNAUTHENTICATED") redirect("/sign-in");
+  if (denial === "FORBIDDEN") return null;
 
   let auditResult: Awaited<ReturnType<typeof listAdminUserAuditEvents>> | null =
     null;
