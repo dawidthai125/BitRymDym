@@ -190,6 +190,13 @@ Do not document secrets.
 ### Security boundaries
 
 - Profile self-update: `display_name` only · `PROTECTED_PROFILE_FIELDS` blocks `id` / `role` / `account_level` / `user_number`
+- **F1-C DB enforcement** (migration `20261017120000_f1c_profiles_privilege_hardening.sql`):
+  - `anon` / `authenticated`: **no** table-level INSERT/UPDATE on `profiles`; `authenticated` has only column `UPDATE (display_name)`; SELECT + RLS (`profiles_select_own_or_admin`, `profiles_update_own`) unchanged
+  - Profile rows are created only by `handle_new_user()` (SECURITY DEFINER on `auth.users` insert); clients never INSERT
+  - Trigger `prevent_privilege_escalation()` (SECURITY DEFINER, `search_path = ''`): `role` / `account_level` / `experience_total` change allowed only for `auth.role() = 'service_role'` **or** `session_user = 'postgres'` (maintainer). **Never** test `current_user` inside SECURITY DEFINER — it is always the owner (`postgres`)
+  - `user_number` stays guarded by `prevent_user_number_mutation` (service_role only)
+  - Regression guards: `src/lib/auth/profile-privilege-hardening.test.ts` (static; flags any later broad profiles grant) · `src/lib/auth/profile-privilege-hardening-local.test.ts` (opt-in local Supabase: `F1C_LOCAL_DB_TEST=1` + `LOCAL_SUPABASE_*`)
+  - Out of scope (separate analysis): other `current_user = 'postgres'` checks in `award_creator_experience`, `prevent_creator_experience_privilege_escalation`, `admin_apply_user_management`, `admin_assert_user_deletable` (protected today by EXECUTE ACL / RLS)
 - Password change: session + reauth (`signInWithPassword`) + Auth `updateUser` — never via profiles UPDATE
 - Forgot password:
   - `resetPasswordForEmail` → `getAuthPasswordResetRedirectTo()` (`/auth/callback?flow=recovery`)
@@ -241,6 +248,8 @@ Do not document secrets.
 | Canonical promotion | `main` @ `efe3f71` — **LOCKED** |
 
 Static audit ≠ proof of live RLS on a production database. Live suite confirmed RLS on project `rzzxrgcdogkybkiidqgw`.
+
+**Regression note (F1, 2026-10-17):** migration `20261003210322_creator_progress_w1_profile_experience_guard.sql` added a `current_user IS DISTINCT FROM 'postgres'` bypass inside a SECURITY DEFINER trigger, which made role / account_level / experience_total self-escalation possible for `authenticated` via PostgREST. The 2026-09-25 "DENY (live)" rows above predate that migration. Fixed by F1-C (see Security boundaries); production state is recorded in [PROJECT_STATE.md](../PROJECT_STATE.md) / [CHANGELOG.md](../CHANGELOG.md).
 
 ## Next.js note
 

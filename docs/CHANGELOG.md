@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-17 — F1-C security fix: profiles privilege hardening
+
+**Status:** **REPO MIGRATION + TESTS + DOCS** · **LOCAL SUPABASE PASS** · production apply is a separate step after push (a file in Git **≠** a database apply)
+**Base tip:** `4ca9c2d50517fb058c0d26ac20e82e9f9961677e` (`4ca9c2d`)
+**Finding F1:** `prevent_privilege_escalation()` is SECURITY DEFINER (owner `postgres`), so its `current_user IS DISTINCT FROM 'postgres'` maintainer bypass was always false → `authenticated` could change own `role` / `account_level` / `experience_total` via PostgREST (table grants + `profiles_update_own` allowed it). Introduced by `20261003210322`.
+**Fix (F1-C = variant 2 + defense in depth):** migration `20261017120000_f1c_profiles_privilege_hardening.sql`
+- trigger: `session_user` instead of `current_user`; `search_path = ''`
+- `REVOKE INSERT, UPDATE ON public.profiles FROM PUBLIC, anon, authenticated` · `GRANT UPDATE (display_name) TO authenticated`
+- in-migration assertions on final ACL, function definition, trigger, RLS policy (abort on mismatch)
+**Unchanged:** SELECT grants · RLS policies · `handle_new_user()` · `prevent_user_number_mutation` · service_role privileges · award/admin RPC ACL
+**Tests:** `src/lib/auth/profile-privilege-hardening.test.ts` (static, always on) · `src/lib/auth/profile-privilege-hardening-local.test.ts` (opt-in local Supabase; T1–T5: display_name self-update, protected columns 42501, foreign row RLS, anon deny, signup/handle_new_user, award/admin RPC via service_role, maintainer session, broad-grant regression detection, trigger in SECURITY DEFINER context). Baseline (pre-migration) run: 4/7 FAIL (vulnerability reproduced locally); post-migration: 7/7 PASS.
+**Out of scope:** other F2 `current_user` checks (award/admin RPCs — ACL-protected) · beat renumbering · `user_number_seq` · TX-ACL/TX-SEQ · M1 · S1 · K3 · D1 · M2 · R1
+**Historical exploitation:** **NOT VERIFIED**
+
 ## 2026-10-16 — SSOT tip moved by the docs publish
 
 **Status:** **DOCS ONLY** · **NO DATABASE APPLY** · **NO DEPLOY** · **NO RPC** · **NO FLAG / POLLER / CONTABO RE-VERIFY** · **NO LIVE CAS** · **NO STAGING E2E**
