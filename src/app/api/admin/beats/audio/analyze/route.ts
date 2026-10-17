@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { AuthError } from "@/lib/auth/session";
+import {
+  beatAudioApiErrorResponse,
+  beatApiBadRequest,
+} from "@/lib/beats/beat-operation-error";
 import { analyzePlatformBeatPendingUpload } from "@/lib/beats/audio-transport";
+import { isUuid } from "@/lib/beats/audio-validation";
 
 export const runtime = "nodejs";
 
@@ -11,18 +15,15 @@ export const runtime = "nodejs";
  * Asset remains PENDING_UPLOAD (not READY).
  */
 export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as {
-      beatId?: string;
-      assetId?: string;
-    };
-    if (typeof body.beatId !== "string" || typeof body.assetId !== "string") {
-      return NextResponse.json(
-        { error: "beatId and assetId are required." },
-        { status: 400 },
-      );
-    }
+  const body = (await request.json().catch(() => null)) as {
+    beatId?: unknown;
+    assetId?: unknown;
+  } | null;
+  if (!body || !isUuid(body.beatId) || !isUuid(body.assetId)) {
+    return beatApiBadRequest("beatId and assetId (uuid) are required.");
+  }
 
+  try {
     const result = await analyzePlatformBeatPendingUpload({
       beatId: body.beatId,
       assetId: body.assetId,
@@ -30,18 +31,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.code === "FORBIDDEN" ? 403 : 401 },
-      );
-    }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Analiza audio nie powiodła się.",
-      },
-      { status: 400 },
+    return beatAudioApiErrorResponse(
+      error,
+      "api/admin/beats/audio/analyze",
     );
   }
 }

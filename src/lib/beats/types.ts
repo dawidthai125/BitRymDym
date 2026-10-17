@@ -64,9 +64,7 @@ export function mapPublicBeatRow(row: BeatRow): Beat {
   return mapBeatRow(row, { includeRejectionReason: false });
 }
 
-export function toBeatInsertPayload(value: {
-  ownershipType: BeatOwnershipType;
-  ownerId: string | null;
+type BeatMetadataValue = {
   title: string;
   producer: string | null;
   description: string | null;
@@ -78,12 +76,11 @@ export function toBeatInsertPayload(value: {
   durationSeconds: number;
   tags: string[];
   coverRef: string | null;
-  status: BeatStatus;
-  rejectionReason?: string | null;
-}) {
+};
+
+/** Metadata columns only — never ownership, status or rejection_reason. */
+export function toBeatMetadataPayload(value: BeatMetadataValue) {
   return {
-    ownership_type: value.ownershipType,
-    owner_id: value.ownerId,
     title: value.title,
     producer: value.producer,
     description: value.description,
@@ -95,6 +92,21 @@ export function toBeatInsertPayload(value: {
     duration_seconds: value.durationSeconds,
     tags: value.tags,
     cover_ref: value.coverRef,
+  };
+}
+
+export function toBeatInsertPayload(
+  value: BeatMetadataValue & {
+    ownershipType: BeatOwnershipType;
+    ownerId: string | null;
+    status: BeatStatus;
+    rejectionReason?: string | null;
+  },
+) {
+  return {
+    ownership_type: value.ownershipType,
+    owner_id: value.ownerId,
+    ...toBeatMetadataPayload(value),
     status: value.status,
     ...(value.rejectionReason !== undefined
       ? { rejection_reason: value.rejectionReason }

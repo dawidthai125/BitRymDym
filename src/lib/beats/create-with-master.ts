@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { AuthError, requirePermission } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/session";
 import { finalizePlatformBeatAfterUpload } from "@/lib/beats/audio-transport";
+import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 import type { BeatBpmAnalysis } from "@/lib/beats/bpm-ensemble";
 
 export type CreateWithMasterActionState = {
@@ -13,11 +14,8 @@ export type CreateWithMasterActionState = {
 };
 
 function catchCreate(error: unknown): CreateWithMasterActionState {
-  if (error instanceof AuthError) {
-    return { error: error.message, success: false };
-  }
   return {
-    error: error instanceof Error ? error.message : "Beat action failed.",
+    error: beatActionErrorMessage(error, "beats/create-with-master"),
     success: false,
   };
 }

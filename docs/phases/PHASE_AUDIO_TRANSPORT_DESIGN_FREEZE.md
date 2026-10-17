@@ -85,6 +85,8 @@ Reuse existing model only:
 
 **Provisional draft fields:** `bpm = 1`, `duration_seconds = 1` until analyze/finalize overwrite. Provisional BPM is **not** a detector result and must never remain after successful finalize. Asset must **not** be READY until finalize succeeds.
 
+> **Addendum — Security Wave 5 (2026-10-17, local, not deployed):** analyze no longer writes the beat (title / `duration_seconds`); it only records `byte_size` on the still-`PENDING_UPLOAD` asset. Beat metadata, duration and MASTER activation are committed together by finalize through `public.finalize_beat_master_asset` (one transaction). See `docs/architecture/AUTHORIZATION.md` (MASTER asset activation).
+
 ---
 
 ## 5. BPM V1 (frozen â€” do not change)

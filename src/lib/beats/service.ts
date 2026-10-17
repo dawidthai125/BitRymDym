@@ -13,6 +13,7 @@ import {
 } from "@/lib/beats/admin-publish";
 import {
   assertUserBeatObjectKeyBinding,
+  isUuid,
 } from "@/lib/beats/audio-validation";
 import {
   assertSubmitCooldown,
@@ -24,12 +25,14 @@ import {
   type BeatInput,
 } from "@/lib/beats/validation";
 import { withPublicAuthors } from "@/lib/beats/public-author";
+import { BeatRequestError } from "@/lib/beats/request-error";
 import {
   BEAT_SELECT_FULL,
   BEAT_SELECT_PUBLIC,
   mapBeatRow,
   mapPublicBeatRow,
   toBeatInsertPayload,
+  toBeatMetadataPayload,
   type BeatRow,
 } from "@/lib/beats/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -40,6 +43,11 @@ export type PlatformBeatAdminListItem = Beat & {
 };
 
 async function loadBeat(beatId: string): Promise<Beat> {
+  // PostgREST rejects a malformed uuid with 22P02, which would surface as an
+  // internal error instead of "no such beat".
+  if (!isUuid(beatId)) {
+    throw new AuthError("NOT_FOUND", "Beat not found.");
+  }
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -186,11 +194,11 @@ export async function createPlatformBeat(
     status: input.status ?? "DRAFT",
   });
   if (!validated.ok) {
-    throw new Error(validated.errors.join("; "));
+    throw new BeatRequestError(validated.errors.join("; "));
   }
 
   if (validated.value.status !== "DRAFT") {
-    throw new Error(
+    throw new BeatRequestError(
       "New platform beats must start as DRAFT. Publish only after active MASTER READY.",
     );
   }
@@ -242,7 +250,7 @@ export async function createUserBeat(
     status: "DRAFT",
   });
   if (!validated.ok) {
-    throw new Error(validated.errors.join("; "));
+    throw new BeatRequestError(validated.errors.join("; "));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -268,8 +276,11 @@ export async function createUserBeat(
 }
 
 /**
- * Community Wave 2: patch own USER DRAFT metadata via admin client after AuthZ.
- * Call only after assertUserDraftTransportAccess.
+ * Community Wave 2/3: patch metadata of the owner's USER DRAFT / REJECTED beat
+ * with the service-role client. The beats trigger skips every check for
+ * service_role, so this function is the whole boundary: `ownerId` must be the
+ * authenticated user, and ownership, type and status are re-checked here and
+ * pinned in the UPDATE. Only metadata columns are written.
  */
 export async function patchUserDraftMetadataAfterAuthz(params: {
   beatId: string;
@@ -288,6 +299,9 @@ export async function patchUserDraftMetadataAfterAuthz(params: {
     coverRef?: string | null;
   };
 }): Promise<void> {
+  if (!isUuid(params.beatId)) {
+    throw new AuthError("NOT_FOUND", "Beat not found.");
+  }
   const admin = createSupabaseAdminClient();
   const { data: current, error: loadError } = await admin
     .from("beats")
@@ -325,32 +339,33 @@ export async function patchUserDraftMetadataAfterAuthz(params: {
     tags: params.patch.tags ?? beat.tags,
     coverRef:
       params.patch.coverRef !== undefined ? params.patch.coverRef : beat.coverRef,
-    status: beat.status,
+    // Status is not written. Validate metadata against the USER draft rules so
+    // the create-only "USER beats start as DRAFT" rule does not block REJECTED.
+    status: "DRAFT",
   };
 
   const validated = validateBeatInput(nextInput);
   if (!validated.ok) {
-    throw new Error(validated.errors.join("; "));
+    throw new BeatRequestError(validated.errors.join("; "));
   }
 
-  const { error } = await admin
+  const { data: updated, error } = await admin
     .from("beats")
-    .update(
-      toBeatInsertPayload({
-        ...validated.value,
-        ownershipType: "USER",
-        ownerId: params.ownerId,
-        status: beat.status,
-        rejectionReason: beat.rejectionReason,
-      }),
-    )
+    .update(toBeatMetadataPayload(validated.value))
     .eq("id", params.beatId)
     .eq("owner_id", params.ownerId)
     .eq("ownership_type", "USER")
-    .in("status", ["DRAFT", "REJECTED"]);
+    .eq("status", beat.status)
+    .select("id");
 
   if (error) {
     throw new Error(error.message);
+  }
+  if (!updated || updated.length === 0) {
+    throw new AuthError(
+      "CONFLICT",
+      "Beat changed during the metadata update. Reload and try again.",
+    );
   }
 }
 
@@ -406,7 +421,7 @@ export async function updateBeatMetadata(
 
   const validated = validateBeatInput(nextInput);
   if (!validated.ok) {
-    throw new Error(validated.errors.join("; "));
+    throw new BeatRequestError(validated.errors.join("; "));
   }
 
   const supabase = await createSupabaseServerClient();

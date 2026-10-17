@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { AuthError, requireUser } from "@/lib/auth/session";
+import { requireUser } from "@/lib/auth/session";
+import { isUuid } from "@/lib/beats/audio-validation";
 import {
-  createBeatAccessGrantFor,
+  beatApiBadRequest,
+  beatApiErrorResponse,
+} from "@/lib/beats/beat-operation-error";
+import {
+  createBeatAccessGrantForGrantee,
   listOwnerBeatAccessGrantsFor,
   rejectGrantClientPrivilegeFields,
-  resolveGranteeUserId,
 } from "@/lib/grants/beat-access-grants";
 
 export const runtime = "nodejs";
-
-function authStatus(error: AuthError): number {
-  if (error.code === "UNAUTHENTICATED") return 401;
-  if (error.code === "NOT_FOUND") return 404;
-  if (error.code === "CONFLICT") return 409;
-  return 403;
-}
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -25,21 +22,15 @@ type RouteContext = { params: Promise<{ id: string }> };
  */
 export async function GET(_request: Request, context: RouteContext) {
   try {
-    const { id: beatId } = await context.params;
     const auth = await requireUser();
+    const { id: beatId } = await context.params;
+    if (!isUuid(beatId)) {
+      return beatApiBadRequest("Beat id must be a uuid.");
+    }
     const grants = await listOwnerBeatAccessGrantsFor(auth, beatId);
     return NextResponse.json({ success: true, grants });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: authStatus(error) },
-      );
-    }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "List grants failed." },
-      { status: 400 },
-    );
+    return beatApiErrorResponse(error, "api/beats/[id]/grants GET");
   }
 }
 
@@ -48,60 +39,41 @@ export async function GET(_request: Request, context: RouteContext) {
  * POST /api/beats/[id]/grants
  * Body: { granteeUserId | grantee } + optional expiresAt
  * Privilege fields rejected. Server forces can_record=true.
+ * Input (including expiresAt) is validated before any query; the grantee
+ * lookup runs only after ownership of the beat is proven (service).
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const { id: beatId } = await context.params;
     const auth = await requireUser();
-    const body = (await request.json()) as Record<string, unknown>;
-    rejectGrantClientPrivilegeFields(body);
+    const { id: beatId } = await context.params;
+    if (!isUuid(beatId)) {
+      return beatApiBadRequest("Beat id must be a uuid.");
+    }
+
+    const body: unknown = await request.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return beatApiBadRequest("JSON object body is required.");
+    }
+    const fields = body as Record<string, unknown>;
+    rejectGrantClientPrivilegeFields(fields);
 
     const rawGrantee =
-      typeof body.granteeUserId === "string"
-        ? body.granteeUserId
-        : typeof body.grantee === "string"
-          ? body.grantee
+      typeof fields.granteeUserId === "string"
+        ? fields.granteeUserId
+        : typeof fields.grantee === "string"
+          ? fields.grantee
           : null;
-    if (!rawGrantee) {
-      return NextResponse.json(
-        { error: "granteeUserId (or grantee) is required." },
-        { status: 400 },
-      );
+    if (!rawGrantee || !rawGrantee.trim()) {
+      return beatApiBadRequest("granteeUserId (or grantee) is required.");
     }
-
-    const expiresAt =
-      body.expiresAt === null || body.expiresAt === undefined
-        ? null
-        : typeof body.expiresAt === "string"
-          ? body.expiresAt
-          : null;
-    if (body.expiresAt != null && typeof body.expiresAt !== "string") {
-      return NextResponse.json(
-        { error: "expiresAt must be an ISO string or null." },
-        { status: 400 },
-      );
-    }
-
-    const granteeUserId = await resolveGranteeUserId(rawGrantee);
-    const result = await createBeatAccessGrantFor(auth, {
+    const result = await createBeatAccessGrantForGrantee(auth, {
       beatId,
-      granteeUserId,
-      expiresAt,
+      grantee: rawGrantee,
+      expiresAt: fields.expiresAt,
     });
 
     return NextResponse.json({ success: true, grantId: result.grantId });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: authStatus(error) },
-      );
-    }
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Create grant failed.",
-      },
-      { status: 400 },
-    );
+    return beatApiErrorResponse(error, "api/beats/[id]/grants POST");
   }
 }

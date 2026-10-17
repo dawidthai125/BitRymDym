@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { AuthError } from "@/lib/auth/session";
+import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 import {
   archiveBeat,
   deleteBeat,
@@ -20,15 +20,9 @@ export type BeatActionState = {
 };
 
 function catchAction(error: unknown): BeatActionState {
-  if (error instanceof AuthError) {
-    return {
-      error: toUserFacingError(error.message, "generic"),
-      success: false,
-    };
-  }
   return {
     error: toUserFacingError(
-      error instanceof Error ? error.message : null,
+      beatActionErrorMessage(error, "beats/actions"),
       "generic",
     ),
     success: false,

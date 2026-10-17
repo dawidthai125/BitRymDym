@@ -59,6 +59,11 @@ export function buildBeatAudioObjectKey(params: {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Beat / asset ids are uuid columns; anything else can never match a row. */
+export function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
 function assertUuidSegment(value: string, label: string): string | null {
   if (!UUID_RE.test(value)) {
     return `${label} must be a uuid`;

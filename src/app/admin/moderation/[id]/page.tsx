@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { ModerationDecisionControls } from "@/components/beats/moderation-decision-controls";
 import { PlaybackShell } from "@/components/player/playback-shell";
+import { checkAccess } from "@/lib/auth/access-denial";
 import { AuthError, getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
-import { getStaffCommunityBeatForModeration } from "@/lib/beats/service";
+import {
+  getStaffCommunityBeatForModeration,
+  requireModerationAccess,
+} from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
 import { labelBeatOwnership } from "@/lib/ui/labels";
 
@@ -17,11 +21,21 @@ type PageProps = {
 export default async function AdminModerationDetailPage({ params }: PageProps) {
   const { id } = await params;
 
+  // The loader also throws FORBIDDEN for content reasons (not a USER beat, not
+  // in a moderation status), so the viewer denial comes from the guard alone.
+  const denial = await checkAccess(requireModerationAccess);
+  if (denial === "UNAUTHENTICATED") redirect("/sign-in");
+  if (denial === "FORBIDDEN") return null;
+
   let beat;
   try {
     beat = await getStaffCommunityBeatForModeration(id);
   } catch (error) {
-    if (error instanceof AuthError) {
+    // Hide beats that are missing or outside the moderation queue.
+    if (
+      error instanceof AuthError &&
+      (error.code === "NOT_FOUND" || error.code === "FORBIDDEN")
+    ) {
       notFound();
     }
     throw error;
@@ -32,13 +46,20 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
   const isAdmin = context?.profile.role === "ADMIN";
   let ownerLabel = beat.ownerId ? `${beat.ownerId.slice(0, 8)}…` : "—";
   if (isAdmin && beat.ownerId) {
-    const identities = await loadAdminProfileIdentities([beat.ownerId]);
-    const identity = identities.get(beat.ownerId);
-    if (identity) {
-      ownerLabel = formatProfileWithUserNumber(
-        identity.displayName,
-        identity.userNumber,
-      );
+    try {
+      const identities = await loadAdminProfileIdentities([beat.ownerId]);
+      const identity = identities.get(beat.ownerId);
+      if (identity) {
+        ownerLabel = formatProfileWithUserNumber(
+          identity.displayName,
+          identity.userNumber,
+        );
+      }
+    } catch (error) {
+      // Role lost since the guard: keep the masked id instead of failing the page.
+      if (!(error instanceof AuthError && error.code === "FORBIDDEN")) {
+        throw error;
+      }
     }
   }
 

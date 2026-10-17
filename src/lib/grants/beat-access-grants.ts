@@ -11,8 +11,13 @@ import {
 } from "@/config/beat-access-grants";
 import type { AuthContext } from "@/lib/auth/types";
 import { AuthError } from "@/lib/auth/session";
+import { isUuid } from "@/lib/beats/audio-validation";
+import { BeatRequestError } from "@/lib/beats/request-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { rejectGrantClientPrivilegeFields } from "@/lib/grants/grant-input";
+import {
+  parseGrantExpiresAt,
+  rejectGrantClientPrivilegeFields,
+} from "@/lib/grants/grant-input";
 
 export { rejectGrantClientPrivilegeFields };
 
@@ -84,7 +89,7 @@ function mapCreateRpcError(message: string): never {
     );
   }
   if (message.includes("INVALID_EXPIRY")) {
-    throw new AuthError("FORBIDDEN", "expiresAt must be in the future.");
+    throw new BeatRequestError("expiresAt must be in the future.");
   }
   throw new Error(message);
 }
@@ -93,6 +98,9 @@ async function loadOwnedUserBeatOrThrow(params: {
   beatId: string;
   ownerId: string;
 }) {
+  if (!isUuid(params.beatId)) {
+    throw new AuthError("NOT_FOUND", "Beat not found.");
+  }
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("beats")
@@ -153,6 +161,7 @@ export async function createBeatAccessGrantFor(
   if (!context.userId) {
     throw new AuthError("UNAUTHENTICATED", "Authentication required.");
   }
+  const expiresAt = parseGrantExpiresAt(params.expiresAt);
 
   // App-layer AuthZ (RPC re-checks ownership / PUBLISHED / caps).
   await loadOwnedUserBeatOrThrow({
@@ -160,25 +169,60 @@ export async function createBeatAccessGrantFor(
     ownerId: context.userId,
   });
 
-  if (params.granteeUserId === context.userId) {
-    throw new AuthError("FORBIDDEN", "Cannot grant access to yourself.");
-  }
+  return insertBeatAccessGrant(context.userId, {
+    beatId: params.beatId,
+    granteeUserId: params.granteeUserId,
+    expiresAt,
+  });
+}
 
-  let expiresAt: string | null = null;
-  if (params.expiresAt != null && params.expiresAt !== "") {
-    const ms = Date.parse(params.expiresAt);
-    if (Number.isNaN(ms) || ms <= Date.now()) {
-      throw new AuthError("FORBIDDEN", "expiresAt must be a future ISO timestamp.");
-    }
-    expiresAt = new Date(ms).toISOString();
+/**
+ * Owner create from raw grantee input (UUID or exact display name). The
+ * profile lookup runs only after ownership is proven, so a non-owner cannot
+ * use this to probe whether a user or display name exists.
+ */
+export async function createBeatAccessGrantForGrantee(
+  context: AuthContext,
+  params: {
+    beatId: string;
+    grantee: string;
+    /** Raw client value; validated before any query. */
+    expiresAt?: unknown;
+  },
+): Promise<{ grantId: string }> {
+  if (!context.userId) {
+    throw new AuthError("UNAUTHENTICATED", "Authentication required.");
+  }
+  const expiresAt = parseGrantExpiresAt(params.expiresAt);
+
+  await loadOwnedUserBeatOrThrow({
+    beatId: params.beatId,
+    ownerId: context.userId,
+  });
+  const granteeUserId = await resolveGranteeUserId(params.grantee);
+
+  return insertBeatAccessGrant(context.userId, {
+    beatId: params.beatId,
+    granteeUserId,
+    expiresAt,
+  });
+}
+
+/** Call only after `loadOwnedUserBeatOrThrow` for `ownerId`. */
+async function insertBeatAccessGrant(
+  ownerId: string,
+  params: { beatId: string; granteeUserId: string; expiresAt: string | null },
+): Promise<{ grantId: string }> {
+  if (params.granteeUserId === ownerId) {
+    throw new AuthError("FORBIDDEN", "Cannot grant access to yourself.");
   }
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("create_beat_access_grant", {
     p_beat_id: params.beatId,
     p_grantee_user_id: params.granteeUserId,
-    p_granted_by: context.userId,
-    p_expires_at: expiresAt,
+    p_granted_by: ownerId,
+    p_expires_at: params.expiresAt,
     p_max_active: MAX_ACTIVE_BEAT_ACCESS_GRANTS,
   });
 
@@ -249,6 +293,9 @@ export async function revokeBeatAccessGrantFor(
     beatId: params.beatId,
     ownerId: context.userId,
   });
+  if (!isUuid(params.grantId)) {
+    throw new AuthError("NOT_FOUND", "Grant not found.");
+  }
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -318,8 +365,8 @@ export async function listActiveGranteeGrantsFor(
   }));
 }
 
-/** Resolve grantee by UUID or exact display_name (owner UX). */
-export async function resolveGranteeUserId(input: string): Promise<string> {
+/** Resolve grantee by UUID or exact display_name (owner UX); after ownership only. */
+async function resolveGranteeUserId(input: string): Promise<string> {
   const trimmed = input.trim();
   if (!trimmed) {
     throw new AuthError("NOT_FOUND", "Grantee user not found.");
@@ -350,10 +397,7 @@ export async function resolveGranteeUserId(input: string): Promise<string> {
     throw new AuthError("NOT_FOUND", "Grantee user not found.");
   }
   if (data.length > 1) {
-    throw new AuthError(
-      "FORBIDDEN",
-      "Display name is ambiguous; use the user UUID.",
-    );
+    throw new BeatRequestError("Display name is ambiguous; use the user UUID.");
   }
   return data[0].id as string;
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { AuthError, requireUser } from "@/lib/auth/session";
+import { requireUser } from "@/lib/auth/session";
+import { beatApiErrorResponse } from "@/lib/beats/beat-operation-error";
 import { listActiveGranteeGrantsFor } from "@/lib/grants/beat-access-grants";
 
 export const runtime = "nodejs";
@@ -15,18 +16,6 @@ export async function GET() {
     const grants = await listActiveGranteeGrantsFor(auth);
     return NextResponse.json({ success: true, grants });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status =
-        error.code === "UNAUTHENTICATED"
-          ? 401
-          : error.code === "NOT_FOUND"
-            ? 404
-            : 403;
-      return NextResponse.json({ error: error.message }, { status });
-    }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "List grants failed." },
-      { status: 400 },
-    );
+    return beatApiErrorResponse(error, "api/account/grants");
   }
 }

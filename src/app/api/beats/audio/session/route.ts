@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { AuthError } from "@/lib/auth/session";
 import { createUserBeatSignedUploadSession } from "@/lib/beats/audio-transport";
+import { isUuid } from "@/lib/beats/audio-validation";
+import {
+  beatAudioApiErrorResponse,
+  beatApiBadRequest,
+} from "@/lib/beats/beat-operation-error";
 
 export const runtime = "nodejs";
+
+// Passed through untouched: any non-empty value is rejected by the transport.
+type StorageParam = string | null | undefined;
 
 /**
  * Community Wave 2 — USER signed upload session.
@@ -11,55 +18,44 @@ export const runtime = "nodejs";
  * Client must NOT send objectKey / ownerId / bucket / assetId.
  */
 export async function POST(request: Request) {
+  const body = (await request.json().catch(() => null)) as {
+    beatId?: unknown;
+    contentType?: unknown;
+    byteSize?: unknown;
+    originalFilename?: unknown;
+    objectKey?: unknown;
+    ownerId?: unknown;
+    bucket?: unknown;
+    assetId?: unknown;
+  } | null;
+
+  if (
+    !body ||
+    !isUuid(body.beatId) ||
+    typeof body.contentType !== "string" ||
+    typeof body.byteSize !== "number" ||
+    !Number.isInteger(body.byteSize)
+  ) {
+    return beatApiBadRequest(
+      "beatId (uuid), contentType and integer byteSize are required.",
+    );
+  }
+
   try {
-    const body = (await request.json()) as {
-      beatId?: string;
-      contentType?: string;
-      byteSize?: number;
-      originalFilename?: string | null;
-      objectKey?: string | null;
-      ownerId?: string | null;
-      bucket?: string | null;
-      assetId?: string | null;
-    };
-
-    if (
-      typeof body.beatId !== "string" ||
-      typeof body.contentType !== "string" ||
-      typeof body.byteSize !== "number" ||
-      !Number.isInteger(body.byteSize)
-    ) {
-      return NextResponse.json(
-        { error: "beatId, contentType and integer byteSize are required." },
-        { status: 400 },
-      );
-    }
-
     const session = await createUserBeatSignedUploadSession({
       beatId: body.beatId,
       contentType: body.contentType,
       byteSize: body.byteSize,
-      originalFilename: body.originalFilename ?? null,
-      objectKey: body.objectKey,
-      ownerId: body.ownerId,
-      bucket: body.bucket,
-      assetId: body.assetId,
+      originalFilename:
+        typeof body.originalFilename === "string" ? body.originalFilename : null,
+      objectKey: body.objectKey as StorageParam,
+      ownerId: body.ownerId as StorageParam,
+      bucket: body.bucket as StorageParam,
+      assetId: body.assetId as StorageParam,
     });
 
     return NextResponse.json({ success: true, ...session });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.code === "FORBIDDEN" ? 403 : 401 },
-      );
-    }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Upload session failed.",
-      },
-      { status: 400 },
-    );
+    return beatAudioApiErrorResponse(error, "api/beats/audio/session");
   }
 }

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { AuthError } from "@/lib/auth/session";
 import { finalizeUserBeatAfterUpload } from "@/lib/beats/audio-transport";
+import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 
 export type FinalizeUserBeatState = {
   error: string | null;
@@ -39,11 +39,8 @@ export async function finalizeUserBeatWithMasterAction(params: {
     revalidatePath("/beats");
     return { error: null, success: true, beatId: result.beatId };
   } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: error.message, success: false };
-    }
     return {
-      error: error instanceof Error ? error.message : "Finalize failed.",
+      error: beatActionErrorMessage(error, "beats/user-create-with-master"),
       success: false,
     };
   }

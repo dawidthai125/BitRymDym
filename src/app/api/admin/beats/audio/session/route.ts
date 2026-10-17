@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { AuthError } from "@/lib/auth/session";
+import {
+  beatAudioApiErrorResponse,
+  beatApiBadRequest,
+} from "@/lib/beats/beat-operation-error";
 import { createPlatformBeatSignedUploadSession } from "@/lib/beats/audio-transport";
 
 export const runtime = "nodejs";
@@ -10,44 +13,36 @@ export const runtime = "nodejs";
  * → DRAFT beat + PENDING_UPLOAD asset + signed upload credentials.
  */
 export async function POST(request: Request) {
+  const body = (await request.json().catch(() => null)) as {
+    contentType?: unknown;
+    byteSize?: unknown;
+    originalFilename?: unknown;
+  } | null;
+
+  if (
+    !body ||
+    typeof body.contentType !== "string" ||
+    typeof body.byteSize !== "number" ||
+    !Number.isInteger(body.byteSize)
+  ) {
+    return beatApiBadRequest(
+      "contentType and integer byteSize are required.",
+    );
+  }
+
   try {
-    const body = (await request.json()) as {
-      contentType?: string;
-      byteSize?: number;
-      originalFilename?: string | null;
-    };
-
-    if (
-      typeof body.contentType !== "string" ||
-      typeof body.byteSize !== "number" ||
-      !Number.isInteger(body.byteSize)
-    ) {
-      return NextResponse.json(
-        { error: "contentType and integer byteSize are required." },
-        { status: 400 },
-      );
-    }
-
     const session = await createPlatformBeatSignedUploadSession({
       contentType: body.contentType,
       byteSize: body.byteSize,
-      originalFilename: body.originalFilename ?? null,
+      originalFilename:
+        typeof body.originalFilename === "string" ? body.originalFilename : null,
     });
 
     return NextResponse.json({ success: true, ...session });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.code === "FORBIDDEN" ? 403 : 401 },
-      );
-    }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Upload session failed.",
-      },
-      { status: 400 },
+    return beatAudioApiErrorResponse(
+      error,
+      "api/admin/beats/audio/session",
     );
   }
 }

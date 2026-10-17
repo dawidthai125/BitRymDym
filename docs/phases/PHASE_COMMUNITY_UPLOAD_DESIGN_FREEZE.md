@@ -439,6 +439,8 @@ createUserBeat / existing USER DRAFT
 
 Replacement reuses `activateAssetReady` (previous MASTER → REPLACED). Storage INSERT remains DENY.
 
+> **Addendum — Security Wave 5 (2026-10-17, local, not deployed):** `activateAssetReady` is replaced by the transactional `public.finalize_beat_master_asset` (previous MASTER → REPLACED, new asset READY and beat metadata in one transaction). See `docs/architecture/AUTHORIZATION.md` (MASTER asset activation).
+
 ---
 
 ## Wave 3 implementation note (2026-09-27)

@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
-import { AuthError } from "@/lib/auth/session";
 import {
   PROVISIONAL_DRAFT_BPM,
   PROVISIONAL_DRAFT_DURATION_SECONDS,
 } from "@/lib/beats/audio-transport";
+import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 import {
   approveUserBeat,
   archiveOwnUserBeat,
@@ -25,12 +25,8 @@ export type CommunityActionState = {
 };
 
 function catchAction(error: unknown): CommunityActionState {
-  if (error instanceof AuthError) {
-    return { error: error.message, success: false };
-  }
   return {
-    error:
-      error instanceof Error ? error.message : "Community beat action failed.",
+    error: beatActionErrorMessage(error, "beats/community-actions"),
     success: false,
   };
 }

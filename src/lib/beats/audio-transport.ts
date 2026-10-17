@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth/session";
 import {
   analyzeBeatAudioBytes,
+  probeAudioDurationFromBytes,
   type AnalyzedBeatBpm,
 } from "@/lib/beats/audio-duration";
 import {
@@ -29,21 +30,24 @@ import {
   BEAT_AUDIO_MAX_BYTES,
   buildBeatAudioObjectKey,
   buildUserBeatAudioObjectKey,
+  isUuid,
   resolveAudioContentType,
   validateAudioUploadMeta,
 } from "@/lib/beats/audio-validation";
 import { suggestTitleFromFilename } from "@/lib/beats/filename-title";
-import {
-  createPlatformBeat,
-  patchUserDraftMetadataAfterAuthz,
-  updateBeatMetadata,
-} from "@/lib/beats/service";
+import { BeatRequestError } from "@/lib/beats/request-error";
+import { createPlatformBeat } from "@/lib/beats/service";
 import {
   assertUserAssetBinding,
   assertUserDraftTransportAccess,
   rejectClientChosenStorageParams,
   UserAudioAuthzError,
 } from "@/lib/beats/user-audio-authz";
+import {
+  validateBeatInput,
+  type BeatInput,
+  type NormalizedBeatInput,
+} from "@/lib/beats/validation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -95,6 +99,7 @@ async function requireAdminEdit() {
 }
 
 async function loadPlatformBeatOrThrow(beatId: string) {
+  if (!isUuid(beatId)) throw new AuthError("NOT_FOUND", "Beat not found.");
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -114,6 +119,9 @@ async function loadPlatformBeatOrThrow(beatId: string) {
 }
 
 async function loadAssetOrThrow(assetId: string): Promise<BeatAudioAssetRow> {
+  if (!isUuid(assetId)) {
+    throw new AuthError("NOT_FOUND", "Audio asset not found.");
+  }
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("beat_audio_assets")
@@ -139,60 +147,154 @@ export async function downloadBeatAudioObjectBytes(
   return new Uint8Array(buf);
 }
 
+/**
+ * Best effort on an error path: callers always rethrow the original error, so
+ * a failure here is logged instead of replacing it. Only a PENDING_UPLOAD
+ * asset may become FAILED (never an active / READY / REPLACED one).
+ */
 async function markAssetFailed(assetId: string): Promise<void> {
   const admin = createSupabaseAdminClient();
-  await admin
+  const { error } = await admin
     .from("beat_audio_assets")
     .update({ status: "FAILED", is_active: false })
-    .eq("id", assetId);
+    .eq("id", assetId)
+    .eq("status", "PENDING_UPLOAD");
+  if (error) {
+    console.error("[beats/audio-transport] markAssetFailed failed", {
+      assetId,
+      error: error.message,
+    });
+  }
 }
 
-async function activateAssetReady(params: {
-  assetId: string;
+const NOT_PENDING_MASTER = "Asset is not a pending MASTER upload.";
+const ACTIVE_AUDIO_CHANGED = "Active audio changed during the update. Try again.";
+const BEAT_CHANGED = "Beat changed during the update. Reload and try again.";
+
+/** Only the PENDING_UPLOAD MASTER of an upload session may be analyzed. */
+function assertPendingMasterUpload(asset: BeatAudioAssetRow): void {
+  if (asset.purpose !== "MASTER" || asset.status !== "PENDING_UPLOAD") {
+    throw new BeatRequestError(NOT_PENDING_MASTER, "CONFLICT");
+  }
+}
+
+/**
+ * Finalize accepts a pending MASTER, or the active READY MASTER so that a retry
+ * after a lost response reaches the RPC, which answers it as an idempotent
+ * replay only when the request matches what was committed.
+ */
+function assertFinalizableMasterAsset(asset: BeatAudioAssetRow): void {
+  const replayCandidate = asset.status === "READY" && asset.is_active;
+  if (asset.purpose !== "MASTER" || (asset.status !== "PENDING_UPLOAD" && !replayCandidate)) {
+    throw new BeatRequestError(NOT_PENDING_MASTER, "CONFLICT");
+  }
+}
+
+/** Beat columns committed together with the MASTER they describe. */
+type FinalizeBeatMetadata = Omit<
+  NormalizedBeatInput,
+  "ownershipType" | "ownerId" | "status"
+>;
+
+function validateFinalizeMetadata(
+  input: Omit<BeatInput, "status">,
+): FinalizeBeatMetadata {
+  // Metadata rules do not depend on status; "DRAFT" only satisfies the
+  // create-time rule for USER beats.
+  const validated = validateBeatInput({ ...input, status: "DRAFT" });
+  if (!validated.ok) {
+    throw new BeatRequestError(validated.errors.join("; "));
+  }
+  const value = validated.value;
+  return {
+    title: value.title,
+    producer: value.producer,
+    description: value.description,
+    genre: value.genre,
+    style: value.style,
+    bpm: value.bpm,
+    key: value.key,
+    scale: value.scale,
+    durationSeconds: value.durationSeconds,
+    tags: value.tags,
+    coverRef: value.coverRef,
+  };
+}
+
+const FINALIZE_RPC_ERRORS: Record<string, () => Error> = {
+  BEAT_NOT_FOUND: () => new AuthError("NOT_FOUND", "Beat not found."),
+  ASSET_NOT_FOUND: () => new AuthError("NOT_FOUND", "Audio asset not found."),
+  ASSET_BEAT_MISMATCH: () =>
+    new AuthError("FORBIDDEN", "Asset does not belong to beat."),
+  BEAT_CHANGED: () => new AuthError("CONFLICT", BEAT_CHANGED),
+  NOT_PENDING_MASTER: () => new BeatRequestError(NOT_PENDING_MASTER, "CONFLICT"),
+  ALREADY_FINALIZED: () => new BeatRequestError(NOT_PENDING_MASTER, "CONFLICT"),
+  ACTIVE_AUDIO_CHANGED: () =>
+    new BeatRequestError(ACTIVE_AUDIO_CHANGED, "CONFLICT"),
+};
+
+type FinalizeRpcResult = {
+  beat_id: string;
+  asset: BeatAudioAssetRow;
+  replaced_asset_id: string | null;
+  idempotent_replay: boolean;
+};
+
+/**
+ * Activate a pending MASTER in one database transaction
+ * (`finalize_beat_master_asset`): the previous active MASTER becomes REPLACED,
+ * the asset becomes READY + active and the beat gets `durationSeconds` plus,
+ * when given, the full metadata of this upload — all or nothing. Callers
+ * authorize first; the RPC re-checks beat ownership / status and asset state
+ * under row locks. Domain refusals are AuthError / CONFLICT; anything else
+ * (connection, permission, constraint) is an unexpected error.
+ */
+async function finalizeMasterAssetAtomically(params: {
   beatId: string;
-  purpose: BeatAudioPurpose;
+  assetId: string;
+  ownershipType: Beat["ownershipType"];
+  ownerId: string | null;
   contentType: string;
   byteSize: number;
   checksum: string;
+  durationSeconds: number;
+  metadata: FinalizeBeatMetadata | null;
 }): Promise<BeatAudioAsset> {
   const admin = createSupabaseAdminClient();
+  const metadata = params.metadata;
+  const { data, error } = await admin.rpc("finalize_beat_master_asset", {
+    p_beat_id: params.beatId,
+    p_asset_id: params.assetId,
+    p_ownership_type: params.ownershipType,
+    p_owner_id: params.ownerId,
+    p_content_type: params.contentType,
+    p_byte_size: params.byteSize,
+    p_checksum_sha256: params.checksum,
+    p_duration_seconds: params.durationSeconds,
+    p_apply_metadata: metadata !== null,
+    p_title: metadata?.title ?? null,
+    p_producer: metadata?.producer ?? null,
+    p_description: metadata?.description ?? null,
+    p_genre: metadata?.genre ?? null,
+    p_style: metadata?.style ?? null,
+    p_bpm: metadata?.bpm ?? null,
+    p_key: metadata?.key ?? null,
+    p_scale: metadata?.scale ?? null,
+    p_tags: metadata?.tags ?? null,
+    p_cover_ref: metadata?.coverRef ?? null,
+  });
 
-  const { data: previousActive } = await admin
-    .from("beat_audio_assets")
-    .select("id")
-    .eq("beat_id", params.beatId)
-    .eq("purpose", params.purpose)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (previousActive?.id && previousActive.id !== params.assetId) {
-    await admin
-      .from("beat_audio_assets")
-      .update({
-        is_active: false,
-        status: "REPLACED",
-        replaced_by_asset_id: params.assetId,
-      })
-      .eq("id", previousActive.id);
+  if (error) {
+    const domainError =
+      error.code === "P0001" ? FINALIZE_RPC_ERRORS[error.message] : undefined;
+    if (domainError) throw domainError();
+    throw new Error(error.message);
   }
-
-  const { data: ready, error } = await admin
-    .from("beat_audio_assets")
-    .update({
-      status: "READY",
-      is_active: true,
-      content_type: params.contentType,
-      byte_size: params.byteSize,
-      checksum_sha256: params.checksum,
-    })
-    .eq("id", params.assetId)
-    .select(BEAT_AUDIO_ASSET_SELECT)
-    .single();
-
-  if (error || !ready) {
-    throw new Error(error?.message ?? "Failed to activate audio asset.");
+  const result = data as FinalizeRpcResult | null;
+  if (!result?.asset || result.asset.id !== params.assetId) {
+    throw new Error("finalize_beat_master_asset returned no asset.");
   }
-  return mapBeatAudioAssetRow(ready as BeatAudioAssetRow);
+  return mapBeatAudioAssetRow(result.asset);
 }
 
 function mapBpmForClient(
@@ -253,7 +355,7 @@ export async function createPlatformBeatSignedUploadSession(params: {
     byteSize: params.byteSize,
   });
   if (!meta.ok) {
-    throw new Error(meta.errors.join("; "));
+    throw new BeatRequestError(meta.errors.join("; "));
   }
 
   const titleSuggestion =
@@ -327,23 +429,26 @@ export async function createPlatformBeatSignedUploadSession(params: {
 }
 
 /**
- * After client binary upload: download object, analyze duration+BPM, update draft duration.
- * Asset stays PENDING_UPLOAD (not READY).
+ * After client binary upload: download object, analyze duration+BPM and store
+ * size / checksum on the pending asset. Asset stays PENDING_UPLOAD; the beat is
+ * not written — its duration and metadata are committed with the MASTER at
+ * finalize.
  */
 export async function analyzePlatformBeatPendingUpload(params: {
   beatId: string;
   assetId: string;
 }): Promise<TransportAnalyzeResult> {
   await requireAdminCreate();
+  // Analyze writes the asset row (beats.edit); check it before any read or
+  // write so a denial leaves no partial state.
+  await requireAdminEdit();
   await loadPlatformBeatOrThrow(params.beatId);
   const asset = await loadAssetOrThrow(params.assetId);
 
   if (asset.beat_id !== params.beatId) {
     throw new AuthError("FORBIDDEN", "Asset does not belong to beat.");
   }
-  if (asset.status !== "PENDING_UPLOAD") {
-    throw new Error("Asset is not awaiting analysis (PENDING_UPLOAD).");
-  }
+  assertPendingMasterUpload(asset);
 
   let bytes: Uint8Array;
   try {
@@ -357,7 +462,9 @@ export async function analyzePlatformBeatPendingUpload(params: {
 
   if (bytes.byteLength > BEAT_AUDIO_MAX_BYTES) {
     await markAssetFailed(params.assetId);
-    throw new Error(`byteSize must be at most ${BEAT_AUDIO_MAX_BYTES}`);
+    throw new BeatRequestError(
+      `byteSize must be at most ${BEAT_AUDIO_MAX_BYTES}`,
+    );
   }
 
   const meta = validateAudioUploadMeta({
@@ -366,7 +473,7 @@ export async function analyzePlatformBeatPendingUpload(params: {
   });
   if (!meta.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(meta.errors.join("; "));
+    throw new BeatRequestError(meta.errors.join("; "));
   }
 
   const analyzed = await analyzeBeatAudioBytes({
@@ -377,24 +484,21 @@ export async function analyzePlatformBeatPendingUpload(params: {
 
   if (!analyzed.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(analyzed.error);
+    throw new BeatRequestError(analyzed.error);
   }
 
   const checksum = createHash("sha256").update(bytes).digest("hex");
   const admin = createSupabaseAdminClient();
-  await admin
+  const { error: assetUpdateError } = await admin
     .from("beat_audio_assets")
     .update({
       byte_size: bytes.byteLength,
       checksum_sha256: checksum,
       content_type: analyzed.contentType,
     })
-    .eq("id", params.assetId);
-
-  await updateBeatMetadata(params.beatId, {
-    durationSeconds: analyzed.durationSeconds,
-    title: analyzed.titleSuggestion || undefined,
-  });
+    .eq("id", params.assetId)
+    .eq("status", "PENDING_UPLOAD");
+  if (assetUpdateError) throw new Error(assetUpdateError.message);
 
   const bpmEnvelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
   const bpmMapped = mapBpmForClient(analyzed.bpm, bpmEnvelope);
@@ -411,7 +515,7 @@ export async function analyzePlatformBeatPendingUpload(params: {
 }
 
 /**
- * Finalize metadata + BPM policy + mark MASTER READY.
+ * Finalize: BPM policy, then metadata + MASTER activation in one transaction.
  * Re-downloads audio for server revalidation (client BPM untrusted).
  */
 export async function finalizePlatformBeatAfterUpload(params: {
@@ -432,18 +536,16 @@ export async function finalizePlatformBeatAfterUpload(params: {
   coverRef?: string | null;
 }): Promise<{ beatId: string; bpmSource?: string }> {
   await requireAdminCreate();
+  // Finalize writes beat metadata (beats.edit) and may mark the asset FAILED
+  // before that; check it first so a denial leaves no partial state.
+  await requireAdminEdit();
   await loadPlatformBeatOrThrow(params.beatId);
   const asset = await loadAssetOrThrow(params.assetId);
 
   if (asset.beat_id !== params.beatId) {
     throw new AuthError("FORBIDDEN", "Asset does not belong to beat.");
   }
-  if (asset.status === "READY" && asset.is_active) {
-    throw new Error("Asset already READY.");
-  }
-  if (asset.status === "FAILED") {
-    throw new Error("Asset FAILED — upload/analyze again.");
-  }
+  assertFinalizableMasterAsset(asset);
 
   const bytes = await downloadBeatAudioObjectBytes(asset.object_key);
   const analyzed = await analyzeBeatAudioBytes({
@@ -453,7 +555,7 @@ export async function finalizePlatformBeatAfterUpload(params: {
   });
   if (!analyzed.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(analyzed.error);
+    throw new BeatRequestError(analyzed.error);
   }
 
   // Security boundary: rebuild envelope from bytes — never trust client candidates.
@@ -465,10 +567,12 @@ export async function finalizePlatformBeatAfterUpload(params: {
     bpmManualOverride: Boolean(params.bpmManualOverride),
   });
   if (!bpmResolved.ok) {
-    throw new Error(bpmResolved.error);
+    throw new BeatRequestError(bpmResolved.error);
   }
 
-  await updateBeatMetadata(params.beatId, {
+  const metadata = validateFinalizeMetadata({
+    ownershipType: "PLATFORM",
+    ownerId: null,
     title: params.title,
     producer: params.producer ?? null,
     description: params.description ?? null,
@@ -483,13 +587,16 @@ export async function finalizePlatformBeatAfterUpload(params: {
   });
 
   const checksum = createHash("sha256").update(bytes).digest("hex");
-  await activateAssetReady({
-    assetId: params.assetId,
+  await finalizeMasterAssetAtomically({
     beatId: params.beatId,
-    purpose: "MASTER",
+    assetId: params.assetId,
+    ownershipType: "PLATFORM",
+    ownerId: null,
     contentType: analyzed.contentType,
     byteSize: bytes.byteLength,
     checksum,
+    durationSeconds: metadata.durationSeconds,
+    metadata,
   });
 
   return { beatId: params.beatId, bpmSource: bpmResolved.bpmSource };
@@ -518,7 +625,7 @@ export async function createMasterReplaceSignedUploadSession(params: {
     byteSize: params.byteSize,
   });
   if (!meta.ok) {
-    throw new Error(meta.errors.join("; "));
+    throw new BeatRequestError(meta.errors.join("; "));
   }
 
   const purpose: BeatAudioPurpose = "MASTER";
@@ -571,7 +678,9 @@ export async function createMasterReplaceSignedUploadSession(params: {
 }
 
 /**
- * Complete MASTER replace: validate object exists, mark READY (no BPM path).
+ * Complete MASTER replace: validate the object, measure its duration and
+ * activate it with the beat duration in one transaction. Other metadata,
+ * including BPM, is kept (no BPM path here).
  */
 export async function completeMasterReplaceUpload(params: {
   beatId: string;
@@ -583,6 +692,7 @@ export async function completeMasterReplaceUpload(params: {
   if (asset.beat_id !== params.beatId) {
     throw new AuthError("FORBIDDEN", "Asset does not belong to beat.");
   }
+  assertFinalizableMasterAsset(asset);
 
   let bytes: Uint8Array;
   try {
@@ -600,17 +710,31 @@ export async function completeMasterReplaceUpload(params: {
   });
   if (!meta.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(meta.errors.join("; "));
+    throw new BeatRequestError(meta.errors.join("; "));
+  }
+
+  const contentType = asset.content_type ?? "audio/mpeg";
+  const duration = await probeAudioDurationFromBytes({
+    bytes,
+    contentTypeHint: contentType,
+    originalFilename: asset.original_filename,
+  });
+  if (!duration.ok) {
+    await markAssetFailed(params.assetId);
+    throw new BeatRequestError(duration.error);
   }
 
   const checksum = createHash("sha256").update(bytes).digest("hex");
-  return activateAssetReady({
-    assetId: params.assetId,
+  return finalizeMasterAssetAtomically({
     beatId: params.beatId,
-    purpose: "MASTER",
-    contentType: asset.content_type ?? "audio/mpeg",
+    assetId: params.assetId,
+    ownershipType: "PLATFORM",
+    ownerId: null,
+    contentType,
     byteSize: bytes.byteLength,
     checksum,
+    durationSeconds: duration.durationSeconds,
+    metadata: null,
   });
 }
 
@@ -641,6 +765,7 @@ async function loadUserOwnedDraftOrThrow(
   context: AuthContext,
   beatId: string,
 ): Promise<Beat> {
+  if (!isUuid(beatId)) throw new AuthError("NOT_FOUND", "Beat not found.");
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("beats")
@@ -684,7 +809,7 @@ async function loadUserOwnedDraftOrThrow(
 
 /**
  * Attach PENDING_UPLOAD MASTER + signed URL to an existing USER DRAFT.
- * Replaces active MASTER safely on finalize (activateAssetReady → REPLACED).
+ * Replaces active MASTER on finalize (finalize_beat_master_asset → REPLACED).
  * Client must not supply objectKey / ownerId / bucket / assetId.
  */
 export async function createUserBeatSignedUploadSessionFor(
@@ -724,7 +849,7 @@ export async function createUserBeatSignedUploadSessionFor(
     byteSize: params.byteSize,
   });
   if (!meta.ok) {
-    throw new Error(meta.errors.join("; "));
+    throw new BeatRequestError(meta.errors.join("; "));
   }
 
   const purpose: BeatAudioPurpose = "MASTER";
@@ -813,9 +938,7 @@ export async function analyzeUserBeatPendingUploadFor(
     rethrowAuthz(error);
   }
 
-  if (asset.status !== "PENDING_UPLOAD") {
-    throw new Error("Asset is not awaiting analysis (PENDING_UPLOAD).");
-  }
+  assertPendingMasterUpload(asset);
 
   let bytes: Uint8Array;
   try {
@@ -829,7 +952,9 @@ export async function analyzeUserBeatPendingUploadFor(
 
   if (bytes.byteLength > BEAT_AUDIO_MAX_BYTES) {
     await markAssetFailed(params.assetId);
-    throw new Error(`byteSize must be at most ${BEAT_AUDIO_MAX_BYTES}`);
+    throw new BeatRequestError(
+      `byteSize must be at most ${BEAT_AUDIO_MAX_BYTES}`,
+    );
   }
 
   const meta = validateAudioUploadMeta({
@@ -838,7 +963,7 @@ export async function analyzeUserBeatPendingUploadFor(
   });
   if (!meta.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(meta.errors.join("; "));
+    throw new BeatRequestError(meta.errors.join("; "));
   }
 
   const analyzed = await analyzeBeatAudioBytes({
@@ -849,29 +974,24 @@ export async function analyzeUserBeatPendingUploadFor(
 
   if (!analyzed.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(analyzed.error);
+    throw new BeatRequestError(analyzed.error);
   }
 
   const checksum = createHash("sha256").update(bytes).digest("hex");
   const admin = createSupabaseAdminClient();
-  await admin
+  const { error: assetUpdateError } = await admin
     .from("beat_audio_assets")
     .update({
       byte_size: bytes.byteLength,
       checksum_sha256: checksum,
       content_type: analyzed.contentType,
     })
-    .eq("id", params.assetId);
+    .eq("id", params.assetId)
+    .eq("status", "PENDING_UPLOAD");
+  if (assetUpdateError) throw new Error(assetUpdateError.message);
 
-  await patchUserDraftMetadataAfterAuthz({
-    beatId: params.beatId,
-    ownerId: context.userId,
-    patch: {
-      durationSeconds: analyzed.durationSeconds,
-      title: analyzed.titleSuggestion || undefined,
-    },
-  });
-
+  // The beat is not written here: duration and metadata are committed with the
+  // MASTER at finalize, so an abandoned or replaced upload never shows up on it.
   const bpmEnvelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
   const bpmMapped = mapBpmForClient(analyzed.bpm, bpmEnvelope);
 
@@ -928,17 +1048,14 @@ export async function finalizeUserBeatAfterUploadFor(
     rethrowAuthz(error);
   }
 
-  if (asset.status === "READY" && asset.is_active) {
-    throw new Error("Asset already READY.");
-  }
-  if (asset.status === "FAILED") {
-    throw new Error("Asset FAILED — upload/analyze again.");
-  }
+  assertFinalizableMasterAsset(asset);
 
   const bytes = await downloadBeatAudioObjectBytes(asset.object_key);
   if (bytes.byteLength > BEAT_AUDIO_MAX_BYTES) {
     await markAssetFailed(params.assetId);
-    throw new Error(`byteSize must be at most ${BEAT_AUDIO_MAX_BYTES}`);
+    throw new BeatRequestError(
+      `byteSize must be at most ${BEAT_AUDIO_MAX_BYTES}`,
+    );
   }
 
   const analyzed = await analyzeBeatAudioBytes({
@@ -948,7 +1065,7 @@ export async function finalizeUserBeatAfterUploadFor(
   });
   if (!analyzed.ok) {
     await markAssetFailed(params.assetId);
-    throw new Error(analyzed.error);
+    throw new BeatRequestError(analyzed.error);
   }
 
   const envelope = buildBpmUncertaintyEnvelopeFromProbe(analyzed.bpmProbe);
@@ -959,38 +1076,41 @@ export async function finalizeUserBeatAfterUploadFor(
     bpmManualOverride: Boolean(params.bpmManualOverride),
   });
   if (!bpmResolved.ok) {
-    throw new Error(bpmResolved.error);
+    throw new BeatRequestError(bpmResolved.error);
   }
 
-  await patchUserDraftMetadataAfterAuthz({
-    beatId: params.beatId,
+  const metadata = validateFinalizeMetadata({
+    ownershipType: "USER",
     ownerId: context.userId,
-    patch: {
-      title: params.title,
-      producer: params.producer ?? null,
-      description: params.description ?? null,
-      genre: params.genre ?? null,
-      style: params.style ?? null,
-      bpm: bpmResolved.bpm,
-      key: params.key ?? null,
-      scale: params.scale ?? null,
-      durationSeconds: analyzed.durationSeconds,
-      tags: params.tags ?? [],
-      coverRef: params.coverRef ?? null,
-    },
+    title: params.title,
+    producer: params.producer ?? null,
+    description: params.description ?? null,
+    genre: params.genre ?? null,
+    style: params.style ?? null,
+    bpm: bpmResolved.bpm,
+    key: params.key ?? null,
+    scale: params.scale ?? null,
+    durationSeconds: analyzed.durationSeconds,
+    tags: params.tags ?? [],
+    coverRef: params.coverRef ?? null,
   });
 
   const checksum = createHash("sha256").update(bytes).digest("hex");
-  await activateAssetReady({
-    assetId: params.assetId,
+  // ownerId is always the session user; the RPC pins owner, USER type and
+  // DRAFT / REJECTED status under the beat row lock.
+  await finalizeMasterAssetAtomically({
     beatId: params.beatId,
-    purpose: "MASTER",
+    assetId: params.assetId,
+    ownershipType: "USER",
+    ownerId: context.userId,
     contentType: analyzed.contentType,
     byteSize: bytes.byteLength,
     checksum,
+    durationSeconds: metadata.durationSeconds,
+    metadata,
   });
 
-  // Invariant: beat remains DRAFT (Wave 2 — no submit)
+  // Invariant: beat status is unchanged (DRAFT or REJECTED); finalize never submits.
   return { beatId: params.beatId, bpmSource: bpmResolved.bpmSource };
 }
 

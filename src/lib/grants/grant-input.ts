@@ -3,6 +3,7 @@
  */
 
 import { AuthError } from "@/lib/auth/session";
+import { BeatRequestError } from "@/lib/beats/request-error";
 
 /** Reject client privilege / capability injection. */
 export function rejectGrantClientPrivilegeFields(
@@ -29,4 +30,24 @@ export function rejectGrantClientPrivilegeFields(
       );
     }
   }
+}
+
+/**
+ * Optional grant expiry: absent / null / "" → no expiry; otherwise a parsable
+ * timestamp strictly in the future (the RPC re-checks against DB `now()`).
+ * Invalid input is a request error (400), not a permission denial.
+ */
+export function parseGrantExpiresAt(
+  value: unknown,
+  now: number = Date.now(),
+): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string") {
+    throw new BeatRequestError("expiresAt must be an ISO string or null.");
+  }
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms) || ms <= now) {
+    throw new BeatRequestError("expiresAt must be a future ISO timestamp.");
+  }
+  return new Date(ms).toISOString();
 }
