@@ -255,6 +255,8 @@ Static audit ≠ proof of live RLS on a production database. Live suite confirme
 
 `middleware` → `proxy` deprecation in Next.js 16: **NON-BLOCKING TECHNICAL NOTE** (no migration in Phase 1.3).
 
+**Layout gates do not stop page rendering (2026-10-17).** A layout and its page render in parallel, so a layout `require*` gate (redirect / "Brak dostępu") is UI, not a barrier for the page's data calls; server functions keep their own `require*` guards. A page under a layout gate that calls a guarded loader resolves the viewer denial first with `checkAccess(guard)` (`src/lib/auth/access-denial.ts`): `UNAUTHENTICATED` → `redirect("/sign-in")`, `FORBIDDEN` → denial UI or `null`, anything else propagates. Pass only viewer guards (`requireRole` / `requirePermission` compositions), never data functions that also throw `FORBIDDEN` for content reasons. Classification is `instanceof AuthError` + code, never message text. Record: [CHANGELOG 2026-10-17 — Admin auth denials](../CHANGELOG.md).
+
 ---
 
 ## Phase 1.4 — Beats AuthZ extension
@@ -317,7 +319,7 @@ Design Freeze: [PHASE_1_7_DESIGN_FREEZE.md](../phases/PHASE_1_7_DESIGN_FREEZE.md
 
 | Surface | Rule |
 |---------|------|
-| `/admin/beats*` | ADMIN role required (layout gate) |
+| `/admin/beats*` | ADMIN role required (layout gate) · list + detail pages: ADMIN + `beats.edit` (`requireAdminPlatformBeatsAccess`, checked in the page before data) |
 | `/admin/users` | List: ADMIN + `users.view`/`users.edit`. Mutations: ADMIN + `users.edit` + RPC `admin_apply_user_management`. History: ADMIN + `audit_log.view` + service_role SELECT. MODERATOR DENY |
 | Create / edit / upload / publish | `beats.create` / `beats.edit` + ADMIN |
 | USER / MODERATOR / anonymous | DENY PLATFORM write ops |

@@ -1,12 +1,32 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
+import { checkAccess } from "@/lib/auth/access-denial";
 import { formatDurationSeconds } from "@/lib/beats/public";
-import { listPlatformBeatsForAdmin } from "@/lib/beats/service";
+import {
+  listPlatformBeatsForAdmin,
+  requireAdminPlatformBeatsAccess,
+} from "@/lib/beats/service";
 import { labelBeatStatus } from "@/lib/ui/labels";
 import { cn } from "@/lib/utils";
 
 export default async function AdminBeatsListPage() {
+  // The layout gate does not stop this page from rendering, and its role check
+  // is narrower than this guard (no `beats.edit`), so handle the denial here.
+  const denial = await checkAccess(requireAdminPlatformBeatsAccess);
+  if (denial === "UNAUTHENTICATED") redirect("/sign-in");
+  if (denial === "FORBIDDEN") {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-16">
+        <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Brak uprawnienia do edycji bitów platformy.
+        </p>
+      </main>
+    );
+  }
+
   const beats = await listPlatformBeatsForAdmin();
 
   return (

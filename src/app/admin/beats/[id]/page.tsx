@@ -1,13 +1,17 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { AdminAudioUploadForm } from "@/components/admin/admin-audio-upload-form";
 import { AdminLifecycleControls } from "@/components/admin/admin-lifecycle-controls";
 import { AdminMetadataForm } from "@/components/admin/admin-metadata-form";
 import { AdminPlatformOpsExportButton } from "@/components/admin/admin-platform-ops-export-button";
+import { checkAccess } from "@/lib/auth/access-denial";
 import { AuthError } from "@/lib/auth/session";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
-import { getPlatformBeatForAdmin } from "@/lib/beats/service";
+import {
+  getPlatformBeatForAdmin,
+  requireAdminPlatformBeatsAccess,
+} from "@/lib/beats/service";
 import { labelBeatStatus } from "@/lib/ui/labels";
 
 type PageProps = {
@@ -16,6 +20,21 @@ type PageProps = {
 
 export default async function AdminBeatDetailPage({ params }: PageProps) {
   const { id } = await params;
+
+  // getPlatformBeatForAdmin also throws FORBIDDEN for non-PLATFORM beats, so the
+  // viewer denial is resolved from the guard alone, before loading the beat.
+  const denial = await checkAccess(requireAdminPlatformBeatsAccess);
+  if (denial === "UNAUTHENTICATED") redirect("/sign-in");
+  if (denial === "FORBIDDEN") {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-16">
+        <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Brak uprawnienia do edycji bitów platformy.
+        </p>
+      </main>
+    );
+  }
 
   let beat;
   try {

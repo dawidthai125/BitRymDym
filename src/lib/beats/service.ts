@@ -60,6 +60,17 @@ async function requireAdminPlatformOps(): Promise<void> {
   await requireRole(["ADMIN"]);
 }
 
+/** Viewer access for the admin PLATFORM beats list / detail (ADMIN + `beats.edit`). */
+export async function requireAdminPlatformBeatsAccess(): Promise<void> {
+  await requireAdminPlatformOps();
+  await requirePermission("beats.edit");
+}
+
+/** Viewer access for the moderation queue / detail (ADMIN or MODERATOR). */
+export async function requireModerationAccess(): Promise<void> {
+  await requireRole(["ADMIN", "MODERATOR"]);
+}
+
 /**
  * Publish hard gate — READY + same-beat MASTER, then USER object-key binding.
  * Call BEFORE status transition (Wave 4: gate first, then PUBLISHED).
@@ -723,8 +734,7 @@ export async function getPublishedBeat(beatId: string): Promise<Beat | null> {
 export async function listPlatformBeatsForAdmin(): Promise<
   PlatformBeatAdminListItem[]
 > {
-  await requireAdminPlatformOps();
-  await requirePermission("beats.edit");
+  await requireAdminPlatformBeatsAccess();
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -764,8 +774,7 @@ export async function listPlatformBeatsForAdmin(): Promise<
 }
 
 export async function getPlatformBeatForAdmin(beatId: string): Promise<Beat> {
-  await requireAdminPlatformOps();
-  await requirePermission("beats.edit");
+  await requireAdminPlatformBeatsAccess();
 
   const beat = await loadBeat(beatId);
   if (beat.ownershipType !== "PLATFORM") {
@@ -849,7 +858,7 @@ export async function getOwnUserBeat(beatId: string): Promise<OwnUserBeatListIte
 export async function listPendingReviewForModeration(): Promise<
   ModerationQueueItem[]
 > {
-  await requireRole(["ADMIN", "MODERATOR"]);
+  await requireModerationAccess();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -872,7 +881,7 @@ export async function listPendingReviewForModeration(): Promise<
 export async function listApprovedForModeration(): Promise<
   ModerationQueueItem[]
 > {
-  await requireRole(["ADMIN", "MODERATOR"]);
+  await requireModerationAccess();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
@@ -905,7 +914,7 @@ export async function getStaffCommunityBeatForModeration(
     "APPROVED",
   ],
 ): Promise<ModerationQueueItem> {
-  await requireRole(["ADMIN", "MODERATOR"]);
+  await requireModerationAccess();
   const beat = await loadBeat(beatId);
   if (beat.ownershipType !== "USER") {
     throw new AuthError("FORBIDDEN", "Moderation is for USER beats.");

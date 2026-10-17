@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { checkAccess } from "@/lib/auth/access-denial";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
 import {
   listApprovedForModeration,
   listPendingReviewForModeration,
+  requireModerationAccess,
 } from "@/lib/beats/service";
 import { beatStatusLabelPl } from "@/lib/beats/status-labels";
 
@@ -94,6 +97,12 @@ function QueueSection({
 }
 
 export default async function AdminModerationQueuePage() {
+  // The /admin layout renders the same denial (identical role set) but does not
+  // stop this page from rendering, so the page must not throw it.
+  const denial = await checkAccess(requireModerationAccess);
+  if (denial === "UNAUTHENTICATED") redirect("/sign-in");
+  if (denial === "FORBIDDEN") return null;
+
   const [pending, approved, context] = await Promise.all([
     listPendingReviewForModeration(),
     listApprovedForModeration(),
