@@ -6,6 +6,23 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-17 — F1-C production deployment reconciled (docs-only)
+
+**Status:** **DOCS ONLY** · no code / migration / production change in this commit · canonical record of the F1-C production state (other docs link here)
+**Implementation commit (Git):** `fc8570508acbff7553c605e12b522b24968bb84f` (`fc85705`) — `fix(security): harden profile privilege protection` · parent `4ca9c2d` · this docs commit is its direct child
+**Production migration history:** `20261017081616 f1c_profiles_privilege_hardening` (applied via MCP `apply_migration`) · repo file `20261017120000_f1c_profiles_privilege_hardening.sql` · version drift is the known MCP-apply pattern — **do not** rewrite history entries to align versions
+**Production DB read-back (SELECT only, after apply):** `prevent_privilege_escalation()` SECURITY DEFINER · `search_path=""` · body MD5 identical to local apply of the repo file · `profiles` ACL `anon` / `authenticated` = `rdDxtm` (no INSERT/UPDATE) · column ACL `display_name={authenticated=w}` · no client INSERT on any column · `service_role` unchanged · triggers `profiles_prevent_privilege_escalation` / `profiles_prevent_user_number_mutation` / `profiles_set_updated_at` enabled · policies `profiles_select_own_or_admin` / `profiles_update_own` · RLS ON · `on_auth_user_created` enabled · `handle_new_user` / `award_creator_experience` / `admin_apply_user_management` EXECUTE = `postgres` + `service_role` only
+**Vercel deployment:** `dpl_524m9URrk1MwZhcjpEYV7gi3DmaY` · commit `fc85705` · target production · **Ready** · build `Compiled successfully` · aliases `www.bitrymdym.pl` · `bitrymdym.pl` (+ `bitrymdym.vercel.app`) · supersedes last-known `dpl_sAyrsHCfMVLFer669J2MgbbXbhGN` @ `2adb569`
+**Local tests (pre-commit evidence):** `F1C_LOCAL_DB_TEST=1 npx vitest run src/lib/auth` **91/91 PASS** (incl. F1-C T1–T5 on fresh local Supabase) · `npx tsc --noEmit` **PASS** · ESLint (new files) **PASS**
+**Production smoke (read-only):** HTTP 200 for `/` · `/sign-in` · `/sign-up` · `/beats` · `/forgot-password` · `/account` · `/settings` · `/admin/users` · Supabase logs after deploy (postgres / pgbouncer / postgrest / edge): no `permission denied` / `42501`, no error entries
+**NOT VERIFIED (deliberately, would require production writes):**
+1. `display_name` save via UI on production (owner account write) — privilege confirmed by catalog read only
+2. Full sign-up E2E on production (real account + irreversible `user_number_seq` consumption) — covered only locally (T3) + trigger/ACL read-back
+**Also not verified by this deploy:** functional behaviour of other app code between `2adb569` and `fc85705` now served by production (e.g. SFM HTTP surface) · `SFM_VERSIONS_V1` runtime flag · historical exploitation of F1
+**Remaining risks (out of F1-C scope):** F2 — `current_user = 'postgres'` checks in `award_creator_experience`, `prevent_creator_experience_privilege_escalation`, `admin_apply_user_management`, `admin_assert_user_deletable` (protected today by EXECUTE ACL / RLS; separate analysis) · `anon` / `authenticated` still hold `rdDxtm` on `profiles` (no DELETE policy → RLS matches no rows; TRUNCATE etc. not exposed via PostgREST)
+**Design / boundaries:** [AUTHORIZATION.md](./architecture/AUTHORIZATION.md) (Security boundaries → F1-C) · living state: [PROJECT_STATE.md](./PROJECT_STATE.md) §2
+**Prior entry below** records the implementation commit before production apply. Its "production apply is a separate step" status is superseded by this entry.
+
 ## 2026-10-17 — F1-C security fix: profiles privilege hardening
 
 **Status:** **REPO MIGRATION + TESTS + DOCS** · **LOCAL SUPABASE PASS** · production apply is a separate step after push (a file in Git **≠** a database apply)
