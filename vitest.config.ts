@@ -1,5 +1,7 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import path from "node:path";
+
+import { INTEGRATION_TEST_FILES } from "./src/test/integration-test-files";
 
 export default defineConfig({
   test: {
@@ -8,6 +10,8 @@ export default defineConfig({
       "src/**/*.test.ts",
       "scripts/bpm/**/*.test.ts",
     ],
+    exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
+    setupFiles: ["./src/test/vitest.setup.ts"],
   },
   resolve: {
     alias: {

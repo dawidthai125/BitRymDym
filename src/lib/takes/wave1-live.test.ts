@@ -1,48 +1,37 @@
 /**
  * Live foundation — Recording Wave 1: takes RLS + take-audio storage.
  * No MediaRecorder / product upload transport.
+ * Creates its own PUBLISHED beat; every user, beat and object is tracked by
+ * `createIntegrationFixtures` and removed via `onTestFinished` (also on failure).
  */
 import { randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import {
+  createIntegrationFixtures,
+  type IntegrationFixtures,
+} from "@/test/integration-fixtures";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
 import { buildUserTakeObjectKey } from "@/lib/takes/object-key";
 
-function readEnvLocal(): Record<string, string> {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (!m) continue;
-    let val = m[2]!;
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[m[1]!] = val;
-  }
-  return out;
-}
+const integration = resolveIntegrationEnv();
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+const anonKey = integration.enabled ? integration.anonKey : undefined;
 
-const env = { ...readEnvLocal(), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const live = Boolean(url && serviceKey && anonKey);
+if (integration.enabled) applyIntegrationEnv(integration);
 
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
-
-async function makeUser(admin: SupabaseClient, label: string) {
+async function makeUser(
+  admin: SupabaseClient,
+  fixtures: IntegrationFixtures,
+  label: string,
+) {
   const email = `wave1-take-${label}-${randomUUID().slice(0, 8)}@bitrymdym.test`;
   const password = `Wave1Take-${randomUUID()}`;
   const { data, error } = await admin.auth.admin.createUser({
@@ -51,13 +40,14 @@ async function makeUser(admin: SupabaseClient, label: string) {
     email_confirm: true,
   });
   expect(error).toBeNull();
-  const userId = data.user!.id;
-  await admin.from("profiles").upsert({
+  const userId = fixtures.trackUser(data.user!.id);
+  const { error: profileErr } = await admin.from("profiles").upsert({
     id: userId,
     role: "USER",
     account_level: "BEGINNER_RAPPER",
     display_name: label,
   });
+  expect(profileErr).toBeNull();
   const client = createClient(url!, anonKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -74,19 +64,34 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
       const admin = createClient(url!, serviceKey!, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
-      const owner = await makeUser(admin, "owner");
-      const other = await makeUser(admin, "other");
-      const staff = await makeUser(admin, "mod");
+      const fixtures = createIntegrationFixtures(admin);
+      onTestFinished(() => fixtures.cleanup());
+      const owner = await makeUser(admin, fixtures, "owner");
+      const other = await makeUser(admin, fixtures, "other");
+      const staff = await makeUser(admin, fixtures, "mod");
       await admin
         .from("profiles")
         .update({ role: "MODERATOR" })
         .eq("id", staff.userId);
 
+      const seededBeatId = fixtures.trackBeat(randomUUID());
+      const { error: seedErr } = await admin.from("beats").insert({
+        id: seededBeatId,
+        owner_id: owner.userId,
+        ownership_type: "USER",
+        title: `Wave1 Beat ${seededBeatId.slice(0, 6)}`,
+        bpm: 120,
+        duration_seconds: 90,
+        status: "PUBLISHED",
+        tags: [],
+      });
+      expect(seedErr).toBeNull();
+
       const { data: pubBeat, error: beatErr } = await admin
         .from("beats")
         .select("id, duration_seconds, bpm")
+        .eq("id", seededBeatId)
         .eq("status", "PUBLISHED")
-        .limit(1)
         .maybeSingle();
       expect(beatErr).toBeNull();
       expect(pubBeat?.id).toBeTruthy();
@@ -260,6 +265,7 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
 
       // Storage: take-audio private — client INSERT DENY
       const clientPath = `user/${owner.userId}/takes/${randomUUID()}/mic.bin`;
+      fixtures.trackObject(TAKE_AUDIO_BUCKET, clientPath);
       const { error: storageInsertErr } = await owner.client.storage
         .from(TAKE_AUDIO_BUCKET)
         .upload(clientPath, new Uint8Array([1, 2, 3]), {
@@ -270,6 +276,7 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
 
       // Service signed upload foundation PASS
       const signedKey = `user/${owner.userId}/takes/${randomUUID()}/mic.bin`;
+      fixtures.trackObject(TAKE_AUDIO_BUCKET, signedKey);
       const signed = await admin.storage
         .from(TAKE_AUDIO_BUCKET)
         .createSignedUploadUrl(signedKey);
@@ -303,12 +310,6 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
       const takeBucket = buckets?.find((b) => b.id === TAKE_AUDIO_BUCKET);
       expect(beatBucket?.public).toBe(false);
       expect(takeBucket?.public).toBe(false);
-
-      // Cleanup takes + users
-      await admin.from("takes").delete().eq("id", takeId);
-      await admin.auth.admin.deleteUser(owner.userId);
-      await admin.auth.admin.deleteUser(other.userId);
-      await admin.auth.admin.deleteUser(staff.userId);
     },
     120_000,
   );

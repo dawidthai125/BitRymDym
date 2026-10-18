@@ -12,6 +12,23 @@ export const RECORDING_GLOBAL_MAX_SECONDS = 180;
 /** Interim take object size cap (20 MiB). */
 export const TAKE_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 
+/**
+ * STU-14 — max age of a browser-local (IndexedDB) copy of an unsaved Studio
+ * recording. Older copies are deleted on the next Studio visit.
+ */
+export const TAKE_LOCAL_RECOVERY_TTL_SECONDS = 24 * 60 * 60;
+
+/**
+ * STU-16 — server upload window of a PENDING_UPLOAD reservation (server clock,
+ * from `created_at`). Past it, a reservation without an uploaded object no
+ * longer blocks the actor's next session: the claim RPC (or the takes janitor)
+ * marks it FAILED (`PENDING_UPLOAD_WINDOW_ELAPSED`). Independent of retention
+ * (`expires_at`). Does not refund `SESSION_DAY_CAP` (UTC-day take count by
+ * `created_at`, any status). Must equal `public.take_pending_upload_window_seconds()`
+ * and stay ≥ the browser recovery lease max hold (15 min).
+ */
+export const TAKE_PENDING_UPLOAD_WINDOW_SECONDS = 15 * 60;
+
 /** Short-lived signed GET for owner take preview. */
 export const TAKE_AUDIO_PREVIEW_TTL_SECONDS = 120;
 

@@ -154,3 +154,35 @@ Reason                     = production/repository tip advanced after subsequent
 **Verify findings (non-blocking):** F351-V-01 LOW (first automated REC generic error · retry succeeded · no micro-patch) · F351-V-02 FALSE POSITIVE / NOT REPRODUCED (sticky-nav intercept = tooling artifact).
 
 **Historical:** Implementation closeout (2026-10-02) recorded Owner **PRELIMINARY PASS** · Production **NOT DEPLOYED** — that label is **superseded** by dedicated production verify (2026-10-05). Closeout: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) · Plan: [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](../audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md)
+
+## STU-14/15/16 — Local recording safety & recovery (Studio + Quick Take) — LOCAL ONLY · NOT COMMITTED · NOT DEPLOYED
+
+Full behaviour description (format v2, ownership, lease, TTL, messages, browser limits, diagnostics): [README — Nagrywanie — wspólne lokalne zabezpieczenie i odzyskiwanie](../../README.md).
+
+| Piece | Location |
+|-------|----------|
+| Recovery logic (save, list, recover, discard, lease) | `src/lib/takes/take-recording-recovery.ts` |
+| IndexedDB adapter (reconnect after lost connection) | `src/lib/takes/take-recording-recovery-idb.ts` |
+| Banner (both surfaces) | `src/components/takes/take-recording-recovery-banner.tsx` |
+| Leave guard (Studio) | `src/components/studio/studio-leave-guard.ts` |
+| Server upload window (STU-16) | `supabase/migrations/20261018120000_stu16_pending_upload_window.sql` · `src/lib/takes/takes-janitor.ts` · `TAKE_PENDING_UPLOAD_WINDOW_SECONDS` in `src/config/recording.ts` |
+| Tests | `src/lib/studio/stu-14-recording-recovery.test.ts` · `stu-15-recovery-lease.test.ts` · `stu-15-recovery-idb.test.ts` · `stu-16-pending-upload-window.test.ts` · live: `src/lib/takes/stu16-pending-upload-window-live.test.ts` |
+
+**Contract:** the lease is browser-only (IndexedDB transaction, 120 s, renewed every 30 s, max 15 min). Server-side duplicate protection stays `CONCURRENT_SESSION` + idempotent finalize of the same `takeId`. A local copy is deleted only after `READY` of the same `takeId`. RLS unchanged; STU-16 changes the two claim RPCs and adds two functions (local migration only, not applied in production).
+
+**Server upload window (STU-16, local only):** a `PENDING_UPLOAD` reservation blocks new sessions of the same actor (owner or guest hash) for 900 s of server time from `created_at` (`public.take_pending_upload_window_seconds()`; value confirmed by the Owner on 2026-10-18 — `OD-REC-PENDING-UPLOAD-TTL`). After the window, and only if `storage.objects` has no object for it, the next claim of the same actor marks it `FAILED` / `PENDING_UPLOAD_WINDOW_ELAPSED` inside the claim transaction under the per-actor advisory lock shared with finalize; the janitor does the same via `release_stale_pending_take_reservations(p_limit)` (`service_role` only, `SECURITY INVOKER`, `search_path = ''`) and removes objects uploaded after the release. A reservation whose object landed is never released. A failing claim (daily cap, `REPLACE_REQUIRED`, duplicate id) rolls the release back. **`SESSION_DAY_CAP`:** releasing a reservation after the window does **not** refund the daily session — the UTC-day counter counts every take row of the actor with `created_at` that day (any status, including `FAILED` / `PENDING_UPLOAD_WINDOW_ELAPSED`); a takeover is a new claim and spends another session. Local copy and `READY` takes are untouched by the window.
+
+**`PENDING_UPLOAD` states:**
+
+| State | Meaning | Client behaviour |
+|-------|---------|------------------|
+| active | upload of this `takeId` in progress in a tab holding the lease (inside the window) | other tabs show `BUSY`, no actions |
+| recoverable | copy knows `takeId`, no live lease | finalize same `takeId` → `READY`, or 403 (`FAILED`, incl. released by the window) → one fresh upload |
+| ambiguous | session response lost, `takeId` unknown | inside the window: `CONCURRENT_SESSION` → copy kept, message names the window; after it: next claim takes the slot over |
+| stale | window elapsed, no object | released → `FAILED` `PENDING_UPLOAD_WINDOW_ELAPSED` (claim or janitor) |
+| object landed | object exists, not finalized | kept until `expires_at`; finalize → `READY` |
+| expired | past `expires_at` (= full retention TTL) | janitor removes; client never deletes by age |
+
+**PASS criteria:** no false success (only server `READY` confirms) · no duplicate take per copy · copy survives every failure until `READY` or explicit discard · Polish messages without raw codes · discard needs confirmation (Escape cancels, focus restored) · one tab acts at a time.
+
+**Verification:** Chromium only (390×844, 1440×900; synthetic / loopback audio, no physical mic). Safari / Firefox not tested.
