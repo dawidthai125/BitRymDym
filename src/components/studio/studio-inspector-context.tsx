@@ -21,6 +21,25 @@ export function deriveStudioInspectorContext(
   return "empty";
 }
 
+/** STU-08 — IDLE mount reports active=false and must not drop an explicit Record choice. */
+export function studioPreferRecordAfterCaptureReport(
+  prev: boolean,
+  active: boolean,
+): boolean {
+  return active || prev;
+}
+
+/** STU-10 — block overlay close only while capture is in flight on the overlay host. */
+export function studioInspectorOverlayCloseBlocked(input: {
+  recordingLocked: boolean;
+  overlayHostsInspector: boolean;
+}): boolean {
+  return input.recordingLocked && input.overlayHostsInspector;
+}
+
+export const STUDIO_INSPECTOR_CLOSE_BLOCKED_PL =
+  "Nie można zamknąć Inspectora, dopóki trwa nagrywanie lub zapisywanie take'a.";
+
 export function studioInspectorContextTitle(
   context: StudioInspectorContext,
 ): string {

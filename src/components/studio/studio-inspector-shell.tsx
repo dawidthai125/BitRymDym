@@ -20,6 +20,8 @@ type StudioInspectorShellProps = {
   children: ReactNode;
   /** Phase 7.1.5 — optional id for aria-controls from toolbar. */
   panelId?: string;
+  /** STU-10 — set only when a close attempt was rejected during capture. */
+  closeBlockedMessage?: string | null;
 };
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
@@ -43,6 +45,7 @@ export function StudioInspectorOverlay({
   onClose,
   children,
   panelId,
+  closeBlockedMessage = null,
 }: StudioInspectorShellProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -139,6 +142,11 @@ export function StudioInspectorOverlay({
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
           {children}
+          {closeBlockedMessage ? (
+            <p role="alert" className="text-sm text-destructive">
+              {closeBlockedMessage}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

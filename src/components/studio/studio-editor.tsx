@@ -24,9 +24,14 @@ import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
 import {
   deriveStudioInspectorContext,
+  STUDIO_INSPECTOR_CLOSE_BLOCKED_PL,
   studioInspectorContextTitle,
+  studioPreferRecordAfterCaptureReport,
+  studioInspectorOverlayCloseBlocked,
 } from "@/components/studio/studio-inspector-context";
 import { StudioInspectorOverlay } from "@/components/studio/studio-inspector-shell";
+import { StudioLeaveGuardDialog, useStudioLeaveGuard } from "@/components/studio/studio-leave-guard-dialog";
+import { studioPageUnloadPrompt } from "@/components/studio/studio-leave-guard";
 import {
   StudioMixerDockChrome,
   StudioMixerOverlay,
@@ -273,6 +278,10 @@ function StudioEditorInner({
   const [inspectorOverlayOpen, setInspectorOverlayOpen] = useState(false);
   /** Explicit Record context when user opens Nagraj without active capture. */
   const [inspectorPreferRecord, setInspectorPreferRecord] = useState(false);
+  const [inspectorCloseRejected, setInspectorCloseRejected] = useState(false);
+  const [captureInterruptedNotice, setCaptureInterruptedNotice] = useState<
+    string | null
+  >(null);
   /** xl dock vs overlay — ensure Inspector content mounts once (no dual RecordingPanel). */
   const [inspectorDesktopRail, setInspectorDesktopRail] = useState(false);
   const mixerPanelId = useId();
@@ -281,6 +290,10 @@ function StudioEditorInner({
   const transport = useStudioTransportControls();
   const { setTrackMeterTarget, resolveClipSourceUrl, getPlayheadMs } = transport;
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
+  const studioShellRef = useRef<HTMLDivElement | null>(null);
+  const recordingLockedRef = useRef(false);
+  const unloadAllowedRef = useRef<() => boolean>(() => false);
+  const leaveGuard = useStudioLeaveGuard(recordingLocked, studioShellRef);
   const pendingZoomScrollLeftRef = useRef<number | null>(null);
   const pxPerMsRef = useRef(pxPerMs);
   const anySolo = doc.tracks.some((t) => t.solo);
@@ -330,12 +343,23 @@ function StudioEditorInner({
     setInspectorOverlayOpen(true);
   }
 
-  function closeInspectorOverlay() {
+  function closeInspectorOverlay(): boolean {
+    if (
+      studioInspectorOverlayCloseBlocked({
+        recordingLocked,
+        overlayHostsInspector: inspectorOverlayOpen && !inspectorDesktopRail,
+      })
+    ) {
+      setInspectorCloseRejected(true);
+      return false;
+    }
+    setInspectorCloseRejected(false);
     setInspectorOverlayOpen(false);
+    return true;
   }
 
   function openMixerSurface() {
-    setInspectorOverlayOpen(false);
+    if (!closeInspectorOverlay()) return;
     setMixerOpen(true);
   }
 
@@ -391,15 +415,27 @@ function StudioEditorInner({
   }, []);
 
   useEffect(() => {
+    recordingLockedRef.current = recordingLocked;
+    unloadAllowedRef.current = leaveGuard.unloadAllowed;
+  });
+
+  useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       const snap = persistRef.current?.getSnapshot();
+      const persistGuarded = Boolean(
+        snap &&
+          (snap.status === "DIRTY" ||
+            snap.status === "SAVING" ||
+            snap.status === "SAVE_FAILED" ||
+            snap.queued ||
+            snap.inFlight),
+      );
       if (
-        !snap ||
-        (snap.status !== "DIRTY" &&
-          snap.status !== "SAVING" &&
-          snap.status !== "SAVE_FAILED" &&
-          !snap.queued &&
-          !snap.inFlight)
+        !studioPageUnloadPrompt({
+          unloadAllowed: unloadAllowedRef.current(),
+          captureActive: recordingLockedRef.current,
+          persistGuarded,
+        })
       ) {
         return;
       }
@@ -1682,17 +1718,22 @@ function StudioEditorInner({
           preferredTrackId={activeSelectedTrackId}
           onRecordingActiveChange={(active) => {
             setRecordingLocked(active);
+            setInspectorPreferRecord((prev) =>
+              studioPreferRecordAfterCaptureReport(prev, active),
+            );
             if (active) {
               setMode("seek");
               setSelectedClipId(clearClipSelection());
               setConfirmDelete(false);
-              setInspectorPreferRecord(true);
+              setCaptureInterruptedNotice(null);
+            } else {
+              setInspectorCloseRejected(false);
             }
-            // Do not clear inspectorPreferRecord on inactive: the panel reports
-            // captureActive=false on mount (IDLE), which would immediately
-            // unmount Record context and bounce back to track/empty.
-            // Prefer-record is cleared by explicit UI (other tabs, clip select,
-            // clip created).
+            if (active) setInspectorPreferRecord(true);
+          }}
+          onCaptureInterrupted={(message) => {
+            transport.pause();
+            setCaptureInterruptedNotice(message);
           }}
           onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
           recoverySavedKey={recoverySavedKey}
@@ -1997,6 +2038,7 @@ function StudioEditorInner({
 
   return (
     <div
+      ref={studioShellRef}
       data-testid="studio-daw-shell"
       data-studio-shell="true"
       data-studio-visual-parity="v2"
@@ -2161,6 +2203,20 @@ function StudioEditorInner({
           TRYB NAGRYWANIA — edycja klipów i przewijanie są zablokowane.
         </p>
       ) : null}
+      {captureInterruptedNotice ? (
+        <p
+          className="rounded border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {captureInterruptedNotice}
+        </p>
+      ) : null}
+
+      <StudioLeaveGuardDialog
+        open={leaveGuard.open}
+        onStay={leaveGuard.stay}
+        onLeave={leaveGuard.leave}
+      />
 
       <TakeRecordingRecoveryBanner
         surface="STUDIO"
@@ -2601,6 +2657,11 @@ function StudioEditorInner({
         context={inspectorContext}
         panelId={inspectorPanelId}
         onClose={closeInspectorOverlay}
+        closeBlockedMessage={
+          inspectorCloseRejected && recordingLocked
+            ? STUDIO_INSPECTOR_CLOSE_BLOCKED_PL
+            : null
+        }
       >
         {inspectorContent}
       </StudioInspectorOverlay>

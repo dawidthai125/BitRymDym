@@ -52,8 +52,10 @@ describe("Phase 7.1.4 mixer state / XOR", () => {
       editor.indexOf("function openMixerSurface"),
       editor.indexOf("function closeMixerSurface"),
     );
-    expect(openMixer).toMatch(/setInspectorOverlayOpen\(false\)/);
+    // STU-10 — overlay close goes through the single gate, which sets the overlay closed.
+    expect(openMixer).toMatch(/closeInspectorOverlay\(\)/);
     expect(openMixer).toMatch(/setMixerOpen\(true\)/);
+    expect(editor).toMatch(/setInspectorOverlayOpen\(false\)/);
   });
 
   it("desktop coexistence: dock uses xl rail; overlay gated off desktop", () => {
