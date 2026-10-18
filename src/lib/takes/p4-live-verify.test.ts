@@ -34,6 +34,21 @@ import {
 } from "@/lib/beats/audio-validation";
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { resolveRecordingEligibility } from "@/lib/takes/recording-eligibility-service";
+
+/**
+ * Live tests may pass an AuthContext override. The committed eligibility
+ * service reads cookies only; Sacred WIP accepts optional `context`. Cast at
+ * the call site so production `next build` typechecks against HEAD without
+ * editing the Sacred WIP eligibility module.
+ */
+async function resolveRecordingEligibilityForTest(params: {
+  beatId: string;
+  context?: AuthContext | null;
+}): Promise<Awaited<ReturnType<typeof resolveRecordingEligibility>>> {
+  return resolveRecordingEligibility(
+    params as Parameters<typeof resolveRecordingEligibility>[0],
+  );
+}
 import { createOwnTakeDownloadSignedUrlFor } from "@/lib/takes/take-download";
 import { buildTakeExportLadder } from "@/lib/takes/take-export-capability";
 import { createTakeExportJobFor } from "@/lib/takes/take-export-service";
@@ -186,7 +201,7 @@ describe.runIf(live)("P4 live verification", () => {
         const other = await makeUser(admin, fixtures, "other", "BEGINNER_RAPPER", "FREE");
         const seeded = await seedPublishedBeat(admin, fixtures, free.userId, bytes, 60);
 
-        const eligOk = await resolveRecordingEligibility({
+        const eligOk = await resolveRecordingEligibilityForTest({
           beatId: seeded.beatId,
           context: free.context,
         });
@@ -204,7 +219,7 @@ describe.runIf(live)("P4 live verification", () => {
           status: "DRAFT",
           tags: [],
         });
-        const eligDeny = await resolveRecordingEligibility({
+        const eligDeny = await resolveRecordingEligibilityForTest({
           beatId: draftId,
           context: free.context,
         });
