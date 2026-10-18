@@ -1687,9 +1687,12 @@ function StudioEditorInner({
               setSelectedClipId(clearClipSelection());
               setConfirmDelete(false);
               setInspectorPreferRecord(true);
-            } else {
-              setInspectorPreferRecord(false);
             }
+            // Do not clear inspectorPreferRecord on inactive: the panel reports
+            // captureActive=false on mount (IDLE), which would immediately
+            // unmount Record context and bounce back to track/empty.
+            // Prefer-record is cleared by explicit UI (other tabs, clip select,
+            // clip created).
           }}
           onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
           recoverySavedKey={recoverySavedKey}
