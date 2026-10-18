@@ -95,6 +95,7 @@ export class TakeMediaRecorder {
   private stopResolver: ((result: TakeRecorderResult) => void) | null = null;
   private stopRejecter: ((error: TakeRecorderError) => void) | null = null;
   private cancelled = false;
+  private cancelResolvers: Array<() => void> = [];
 
   constructor(private readonly deps: TakeRecorderDeps = {}) {}
 
@@ -107,7 +108,22 @@ export class TakeMediaRecorder {
     return this.stream;
   }
 
-  async start(options?: { audioDeviceId?: string }): Promise<{ mimeType: string }> {
+  /** Ask the browser to emit buffered audio now (e.g. before the page is hidden). */
+  flush(): void {
+    if (this.recorder && this.recorder.state === "recording") {
+      try {
+        this.recorder.requestData();
+      } catch {
+        // ignore — the next timeslice still delivers the data
+      }
+    }
+  }
+
+  async start(options?: {
+    audioDeviceId?: string;
+    /** Called for every non-empty chunk, in order, including the final one after stop/cancel. */
+    onChunk?: (chunk: Blob) => void;
+  }): Promise<{ mimeType: string }> {
     if (this.isRecording) {
       throw new TakeRecorderError(
         "ALREADY_RECORDING",
@@ -180,9 +196,17 @@ export class TakeMediaRecorder {
       );
     }
 
+    const onChunk = options?.onChunk;
     this.recorder.ondataavailable = (event: BlobEvent) => {
       if (event.data && event.data.size > 0) {
         this.chunks.push(event.data);
+        if (onChunk) {
+          try {
+            onChunk(event.data);
+          } catch {
+            // local persistence must never break capture
+          }
+        }
       }
     };
 
@@ -197,6 +221,7 @@ export class TakeMediaRecorder {
       }
       this.cleanupStream();
       this.recorder = null;
+      this.resolveCancel();
     };
 
     this.recorder.onstop = () => {
@@ -210,6 +235,7 @@ export class TakeMediaRecorder {
           );
           this.clearStopHandlers();
         }
+        this.resolveCancel();
         return;
       }
 
@@ -267,22 +293,39 @@ export class TakeMediaRecorder {
     });
   }
 
-  /** Abort without producing a Blob for upload. */
-  cancel(): void {
+  /**
+   * Abort without producing a Blob for upload. Resolves once the recorder has
+   * stopped, i.e. after the final `onChunk` delivery.
+   */
+  cancel(): Promise<void> {
     this.cancelled = true;
-    if (this.recorder && this.recorder.state !== "inactive") {
-      try {
-        this.recorder.stop();
-      } catch {
-        this.cleanupStream();
-        this.recorder = null;
-        this.chunks = [];
+    const recorder = this.recorder;
+    if (recorder && (recorder.state !== "inactive" || this.stopRejecter)) {
+      const stopped = new Promise<void>((resolve) => {
+        this.cancelResolvers.push(resolve);
+      });
+      if (recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch {
+          this.cleanupStream();
+          this.recorder = null;
+          this.chunks = [];
+          this.resolveCancel();
+        }
       }
-      return;
+      return stopped;
     }
     this.cleanupStream();
     this.recorder = null;
     this.chunks = [];
+    return Promise.resolve();
+  }
+
+  private resolveCancel() {
+    const resolvers = this.cancelResolvers;
+    this.cancelResolvers = [];
+    for (const resolve of resolvers) resolve();
   }
 
   private clearStopHandlers() {

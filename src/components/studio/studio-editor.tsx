@@ -32,6 +32,7 @@ import {
   StudioMixerOverlay,
 } from "@/components/studio/studio-mixer-shell";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
+import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -254,6 +255,9 @@ function StudioEditorInner({
   /** Phase 6 — open ⋮ menu for a non-BEAT track. */
   const [trackMenuId, setTrackMenuId] = useState<string | null>(null);
   const [recordingLocked, setRecordingLocked] = useState(false);
+  /** STU-14 — re-read browser-local recovery copies. */
+  const [recoveryRefreshKey, setRecoveryRefreshKey] = useState(0);
+  const [recoverySavedKey, setRecoverySavedKey] = useState(0);
   const [beatPickerOpen, setBeatPickerOpen] = useState(false);
   const [fxPanel, setFxPanel] = useState<FxPanelTarget | null>(null);
   /** Mix Track selection (SoT) — drives P6.6.1 Track meter target. */
@@ -1687,6 +1691,8 @@ function StudioEditorInner({
               setInspectorPreferRecord(false);
             }
           }}
+          onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
+          recoverySavedKey={recoverySavedKey}
           onClipCreated={(clip, nextDocumentVersion) => {
             applyPersistedDoc((prev) => ({
               ...prev,
@@ -2152,6 +2158,15 @@ function StudioEditorInner({
           TRYB NAGRYWANIA — edycja klipów i przewijanie są zablokowane.
         </p>
       ) : null}
+
+      <TakeRecordingRecoveryBanner
+        surface="STUDIO"
+        scopeId={doc.project.id}
+        authenticated
+        refreshKey={recoveryRefreshKey}
+        hidden={recordingLocked}
+        onSaved={() => setRecoverySavedKey((key) => key + 1)}
+      />
 
       <div
         className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1"

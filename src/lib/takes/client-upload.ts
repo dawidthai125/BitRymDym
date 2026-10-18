@@ -113,6 +113,49 @@ export class TakeReplaceRequiredError extends Error {
   }
 }
 
+/** Transport failure with the raw API message kept for non-UI decisions. */
+export class TakeTransportError extends Error {
+  readonly rawMessage: string;
+
+  constructor(rawMessage: string) {
+    super(toUserFacingTakeUploadError(rawMessage));
+    this.name = "TakeTransportError";
+    this.rawMessage = rawMessage;
+  }
+}
+
+/** Server-confirmed transport stage; `takeId` is the server take identity. */
+export type TakeUploadStage =
+  | { stage: "SESSION_CREATED"; takeId: string }
+  | { stage: "BINARY_UPLOADED"; takeId: string };
+
+async function postTakeFinalize(
+  finalizePath: string,
+  takeId: string,
+): Promise<TakeUploadTransportResult> {
+  const finalizeRes = await fetch(finalizePath, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ takeId }),
+  });
+  const finalizeJson = (await finalizeRes.json()) as TakeUploadTransportResult & {
+    success?: boolean;
+    error?: string;
+  };
+  if (!finalizeRes.ok || !finalizeJson.success) {
+    throw new TakeTransportError(finalizeJson.error ?? "Take finalize failed.");
+  }
+
+  return {
+    takeId: finalizeJson.takeId,
+    beatId: finalizeJson.beatId,
+    status: "READY",
+    durationSeconds: finalizeJson.durationSeconds,
+    byteSize: finalizeJson.byteSize,
+    contentType: finalizeJson.contentType,
+  };
+}
+
 async function runTakeUploadTransport(params: {
   beatId: string;
   blob: Blob;
@@ -120,6 +163,7 @@ async function runTakeUploadTransport(params: {
   replaceTakeId?: string | null;
   sessionPath: string;
   finalizePath: string;
+  onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
   const contentType =
     params.contentType ??
@@ -163,12 +207,14 @@ async function runTakeUploadTransport(params: {
         sessionJson.error,
       );
     }
-    throw new Error(
-      toUserFacingTakeUploadError(
-        sessionJson.error ?? "Take upload session failed.",
-      ),
+    throw new TakeTransportError(
+      sessionJson.error ?? "Take upload session failed.",
     );
   }
+  await params.onStage?.({
+    stage: "SESSION_CREATED",
+    takeId: sessionJson.takeId,
+  });
 
   const supabase = createSupabaseBrowserClient();
   const { error: uploadError } = await supabase.storage
@@ -179,38 +225,16 @@ async function runTakeUploadTransport(params: {
     });
 
   if (uploadError) {
-    throw new Error(
-      toUserFacingTakeUploadError(
-        uploadError.message || "Take binary upload failed.",
-      ),
+    throw new TakeTransportError(
+      uploadError.message || "Take binary upload failed.",
     );
   }
-
-  const finalizeRes = await fetch(params.finalizePath, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ takeId: sessionJson.takeId }),
+  await params.onStage?.({
+    stage: "BINARY_UPLOADED",
+    takeId: sessionJson.takeId,
   });
-  const finalizeJson = (await finalizeRes.json()) as TakeUploadTransportResult & {
-    success?: boolean;
-    error?: string;
-  };
-  if (!finalizeRes.ok || !finalizeJson.success) {
-    throw new Error(
-      toUserFacingTakeUploadError(
-        finalizeJson.error ?? "Take finalize failed.",
-      ),
-    );
-  }
 
-  return {
-    takeId: finalizeJson.takeId,
-    beatId: finalizeJson.beatId,
-    status: "READY",
-    durationSeconds: finalizeJson.durationSeconds,
-    byteSize: finalizeJson.byteSize,
-    contentType: finalizeJson.contentType,
-  };
+  return postTakeFinalize(params.finalizePath, sessionJson.takeId);
 }
 
 export async function uploadTakeRecordingBlob(params: {
@@ -218,6 +242,7 @@ export async function uploadTakeRecordingBlob(params: {
   blob: Blob;
   contentType?: string;
   replaceTakeId?: string | null;
+  onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
     ...params,
@@ -226,15 +251,30 @@ export async function uploadTakeRecordingBlob(params: {
   });
 }
 
+/** Finalize an already uploaded take (server replays READY idempotently). */
+export async function finalizeTakeRecordingUpload(
+  takeId: string,
+): Promise<TakeUploadTransportResult> {
+  return postTakeFinalize("/api/takes/finalize", takeId);
+}
+
 export async function uploadAnonTakeRecordingBlob(params: {
   beatId: string;
   blob: Blob;
   contentType?: string;
   replaceTakeId?: string | null;
+  onStage?: (stage: TakeUploadStage) => void | Promise<void>;
 }): Promise<TakeUploadTransportResult> {
   return runTakeUploadTransport({
     ...params,
     sessionPath: "/api/takes/anon/session",
     finalizePath: "/api/takes/anon/finalize",
   });
+}
+
+/** Guest variant of {@link finalizeTakeRecordingUpload} (cookie identity server-side). */
+export async function finalizeAnonTakeRecordingUpload(
+  takeId: string,
+): Promise<TakeUploadTransportResult> {
+  return postTakeFinalize("/api/takes/anon/finalize", takeId);
 }

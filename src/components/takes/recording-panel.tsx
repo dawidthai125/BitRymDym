@@ -23,6 +23,7 @@ import {
   toUserFacingTakeUploadError,
   uploadAnonTakeRecordingBlob,
   uploadTakeRecordingBlob,
+  type TakeUploadStage,
 } from "@/lib/takes/client-upload";
 import type { ReplaceableTakeSummary } from "@/lib/takes/claim-errors";
 import {
@@ -33,6 +34,23 @@ import {
   reduceRecordingUi,
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
+import {
+  TakeRecoveryLeaseLostError,
+  createTakeRecoveryChunkBuffer,
+  createTakeRecoveryWriter,
+  takeRecoveryWriterStatusPl,
+  type TakeRecoveryWriter,
+  type TakeRecoveryWriterState,
+} from "@/lib/takes/take-recording-recovery";
+import {
+  getBrowserTakeRecoveryStore,
+  getTakeRecoveryTabClaimant,
+  getTakeRecoveryViewerUserId,
+} from "@/lib/takes/take-recording-recovery-idb";
+import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
+
+const LOCALLY_SECURED_SUFFIX_PL =
+  " Nagranie jest zabezpieczone lokalnie — możesz je odzyskać.";
 
 type RecordingPanelProps = {
   beatId: string;
@@ -106,7 +124,33 @@ export function RecordingPanel({
     ReplaceableTakeSummary[] | null
   >(null);
   const [replaceBusy, setReplaceBusy] = useState(false);
+  const recoveryWriterRef = useRef<TakeRecoveryWriter | null>(null);
+  /** Copy kept (with its lease) while the user picks a take to replace. */
+  const replaceWriterRef = useRef<TakeRecoveryWriter | null>(null);
+  const mountedRef = useRef(true);
+  const [localSafety, setLocalSafety] =
+    useState<TakeRecoveryWriterState | null>(null);
+  const [recoveryRefreshKey, setRecoveryRefreshKey] = useState(0);
   const mic = useMicAnalyser(micStream, { barCount: 48, hz: 15 });
+
+  function bumpRecoveryList() {
+    if (mountedRef.current) setRecoveryRefreshKey((key) => key + 1);
+  }
+
+  function sealInterruptedRecovery(
+    writer: TakeRecoveryWriter,
+    stopped: Promise<void>,
+  ) {
+    void stopped
+      .then(() => writer.finish("INTERRUPTED", 5_000))
+      .then(bumpRecoveryList);
+  }
+
+  function releaseReplaceWriter() {
+    const writer = replaceWriterRef.current;
+    replaceWriterRef.current = null;
+    if (writer) void writer.release().then(bumpRecoveryList);
+  }
   const recProgress =
     maxSeconds > 0 ? Math.min(1, state.elapsedMs / (maxSeconds * 1000)) : 0;
 
@@ -139,19 +183,32 @@ export function RecordingPanel({
 
   useEffect(() => {
     const playback = playbackRef.current;
+    mountedRef.current = true;
+    void getBrowserTakeRecoveryStore().catch(() => null);
     return () => {
+      mountedRef.current = false;
       if (tickRef.current) {
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
       clearMicMonitor();
+      const writer = recoveryWriterRef.current;
+      recoveryWriterRef.current = null;
+      let stopped: Promise<void> = Promise.resolve();
       try {
-        recorderRef.current?.cancel();
+        stopped = recorderRef.current?.cancel() ?? stopped;
       } catch {
         // ignore
       }
+      // Leaving mid-capture: keep what was recorded for recovery on return.
+      if (writer) sealInterruptedRecovery(writer, stopped.catch(() => undefined));
+      const replaceWriter = replaceWriterRef.current;
+      replaceWriterRef.current = null;
+      if (replaceWriter) void replaceWriter.release();
       playback?.setControlsLocked(false);
     };
+    // sealInterruptedRecovery only touches refs and the mounted-guarded setter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playbackRef]);
 
   useEffect(() => {
@@ -210,6 +267,7 @@ export function RecordingPanel({
     dispatch({ type: "REQUEST_MIC" });
     setTakeBlob(null);
     setReplaceCandidates(null);
+    releaseReplaceWriter();
     try {
       const eligRes = await fetch("/api/takes/eligibility", {
         method: "POST",
@@ -309,23 +367,35 @@ export function RecordingPanel({
       return;
     }
 
+    const writer = recoveryWriterRef.current;
+    let locallySecured = false;
     try {
       const result = await recorder.stop();
+      recoveryWriterRef.current = null;
+      locallySecured = writer ? await writer.finish("COMPLETE", 3_000) : false;
       setTakeBlob(result.blob);
       setTakeMime(result.mimeType);
       dispatch({ type: "UPLOAD_START" });
       try {
+        const onStage = (stage: TakeUploadStage) =>
+          writer?.noteStage(stage.stage, stage.takeId);
         const uploaded = isAuthenticatedRef.current
           ? await uploadTakeRecordingBlob({
               beatId: beatIdRef.current,
               blob: result.blob,
               contentType: result.mimeType,
+              onStage,
             })
           : await uploadAnonTakeRecordingBlob({
               beatId: beatIdRef.current,
               blob: result.blob,
               contentType: result.mimeType,
+              onStage,
             });
+        if (writer) {
+          await writer.confirmSaved(uploaded.takeId);
+          bumpRecoveryList();
+        }
         setReplaceCandidates(null);
         dispatch({ type: "FINALIZE_START" });
         let previewUrl: string | null = null;
@@ -344,18 +414,29 @@ export function RecordingPanel({
           takeDurationSeconds: uploaded.durationSeconds,
         });
       } catch (error) {
-        if (error instanceof TakeReplaceRequiredError) {
+        if (error instanceof TakeRecoveryLeaseLostError) {
+          // Another tab owns the copy now — it finalizes; this tab must not.
+          bumpRecoveryList();
+          dispatch({ type: "UPLOAD_FAILED", message: error.message });
+        } else if (error instanceof TakeReplaceRequiredError) {
+          if (writer) replaceWriterRef.current = writer;
           setReplaceCandidates(error.replaceableTakes);
           dispatch({
             type: "UPLOAD_FAILED",
             message: toUserFacingTakeUploadError(error.message),
           });
         } else {
+          if (writer) {
+            await writer.release();
+            bumpRecoveryList();
+          }
           const raw =
             error instanceof Error
               ? error.message
               : "Nie udało się przesłać ani sfinalizować nagrania.";
-          const message = toUserFacingTakeUploadError(raw);
+          const message =
+            toUserFacingTakeUploadError(raw) +
+            (locallySecured ? LOCALLY_SECURED_SUFFIX_PL : "");
           if (/expired|wygas/i.test(raw) || /wygas/i.test(message)) {
             dispatch({ type: "EXPIRED", message });
           } else if (
@@ -373,6 +454,11 @@ export function RecordingPanel({
       if (error instanceof TakeRecorderError && error.code === "CANCELLED") {
         dispatch({ type: "RETRY_IDLE" });
       } else {
+        // Stop failed: whatever reached the copy stays recoverable.
+        if (writer && recoveryWriterRef.current === writer) {
+          recoveryWriterRef.current = null;
+          sealInterruptedRecovery(writer, Promise.resolve());
+        }
         dispatch({
           type: "RECORDING_FAILED",
           message: toUserFacingTakeUploadError(
@@ -386,6 +472,7 @@ export function RecordingPanel({
       playbackRef.current?.setControlsLocked(false);
       submittingRef.current = false;
       recorderRef.current = null;
+      if (mountedRef.current) setLocalSafety(null);
     }
   }
 
@@ -396,9 +483,41 @@ export function RecordingPanel({
 
     const recorder = recorderRef.current ?? new TakeMediaRecorder();
     recorderRef.current = recorder;
+    const authenticated = isAuthenticatedRef.current;
+    const [recoveryStore, ownerUserId] = await Promise.all([
+      getBrowserTakeRecoveryStore().catch(() => null),
+      getTakeRecoveryViewerUserId(authenticated),
+    ]);
+    if (!mountedRef.current) {
+      submittingRef.current = false;
+      return;
+    }
+    const chunkBuffer = createTakeRecoveryChunkBuffer();
 
     try {
-      await recorder.start();
+      const started = await recorder.start({ onChunk: chunkBuffer.onChunk });
+      if (!mountedRef.current) {
+        await recorder.cancel().catch(() => undefined);
+        throw new TakeRecorderError("CANCELLED", "Panel closed.");
+      }
+      const writer = createTakeRecoveryWriter({
+        // Signed in but account unknown: ownership unverifiable, keep no copy.
+        store: ownerUserId === undefined ? null : recoveryStore,
+        recoveryId: crypto.randomUUID(),
+        claimant: getTakeRecoveryTabClaimant(),
+        surface: "QUICK_TAKE",
+        projectId: null,
+        ownerUserId: ownerUserId ?? null,
+        beatId: beatIdRef.current,
+        mimeType: started.mimeType,
+        maxRecordingSeconds: maxSecondsRef.current,
+        onStateChange: (next) => {
+          if (mountedRef.current) setLocalSafety(next);
+        },
+      });
+      chunkBuffer.attach(writer);
+      recoveryWriterRef.current = writer;
+      setLocalSafety(writer.state);
       setMicStream(recorder.getStream());
       await playbackRef.current?.playFromStart();
       dispatch({ type: "START_RECORDING" });
@@ -416,8 +535,12 @@ export function RecordingPanel({
       clearMicMonitor();
       playbackRef.current?.stopPlayback();
       playbackRef.current?.setControlsLocked(false);
+      const writer = recoveryWriterRef.current;
+      recoveryWriterRef.current = null;
+      setLocalSafety(null);
+      if (writer) void writer.discard();
       try {
-        recorder.cancel();
+        void recorder.cancel().catch(() => undefined);
       } catch {
         // ignore
       }
@@ -455,8 +578,15 @@ export function RecordingPanel({
     setTakeBlob(null);
     setTakeMime(null);
     setReplaceCandidates(null);
+    // Explicit cancel mid-capture = conscious discard of the local copy;
+    // a finished take awaiting replace choice stays recoverable.
+    const writer = recoveryWriterRef.current;
+    recoveryWriterRef.current = null;
+    setLocalSafety(null);
+    if (writer) void writer.discard();
+    releaseReplaceWriter();
     try {
-      recorderRef.current?.cancel();
+      void recorderRef.current?.cancel().catch(() => undefined);
     } catch {
       // ignore
     }
@@ -472,20 +602,30 @@ export function RecordingPanel({
     setReplaceBusy(true);
     submittingRef.current = true;
     dispatch({ type: "UPLOAD_START" });
+    const writer = replaceWriterRef.current;
+    replaceWriterRef.current = null;
     try {
+      const onStage = (stage: TakeUploadStage) =>
+        writer?.noteStage(stage.stage, stage.takeId);
       const uploaded = isAuthenticatedRef.current
         ? await uploadTakeRecordingBlob({
             beatId: beatIdRef.current,
             blob: takeBlob,
             contentType: takeMime ?? takeBlob.type ?? "audio/webm",
             replaceTakeId,
+            onStage,
           })
         : await uploadAnonTakeRecordingBlob({
             beatId: beatIdRef.current,
             blob: takeBlob,
             contentType: takeMime ?? takeBlob.type ?? "audio/webm",
             replaceTakeId,
+            onStage,
           });
+      if (writer) {
+        await writer.confirmSaved(uploaded.takeId);
+        bumpRecoveryList();
+      }
       setReplaceCandidates(null);
       dispatch({ type: "FINALIZE_START" });
       let previewUrl: string | null = null;
@@ -504,26 +644,54 @@ export function RecordingPanel({
         takeDurationSeconds: uploaded.durationSeconds,
       });
     } catch (error) {
-      if (error instanceof TakeReplaceRequiredError) {
+      if (error instanceof TakeRecoveryLeaseLostError) {
+        bumpRecoveryList();
+        dispatch({ type: "UPLOAD_FAILED", message: error.message });
+      } else if (error instanceof TakeReplaceRequiredError) {
+        if (writer) replaceWriterRef.current = writer;
         setReplaceCandidates(error.replaceableTakes);
         dispatch({
           type: "UPLOAD_FAILED",
           message: toUserFacingTakeUploadError(error.message),
         });
       } else {
+        if (writer) {
+          await writer.release();
+          bumpRecoveryList();
+        }
         dispatch({
           type: "UPLOAD_FAILED",
-          message: toUserFacingTakeUploadError(
-            error instanceof Error
-              ? error.message
-              : "Nie udało się zastąpić nagrania.",
-          ),
+          message:
+            toUserFacingTakeUploadError(
+              error instanceof Error
+                ? error.message
+                : "Nie udało się zastąpić nagrania.",
+            ) + (writer ? LOCALLY_SECURED_SUFFIX_PL : ""),
         });
       }
     } finally {
       setReplaceBusy(false);
       submittingRef.current = false;
     }
+  }
+
+  async function showRecoveredTake(takeId: string) {
+    if (!mountedRef.current || !canStartNewRecording(phaseRef.current)) return;
+    setTakeBlob(null);
+    setReplaceCandidates(null);
+    let previewUrl: string | null = null;
+    try {
+      previewUrl = await fetchTakePreviewUrl(takeId, !isAuthenticatedRef.current);
+    } catch {
+      previewUrl = null;
+    }
+    if (!mountedRef.current || !canStartNewRecording(phaseRef.current)) return;
+    dispatch({
+      type: "TAKE_READY",
+      takeId,
+      previewUrl,
+      takeDurationSeconds: null,
+    });
   }
 
   async function refreshPreview() {
@@ -569,6 +737,15 @@ export function RecordingPanel({
           {isAuthenticated ? " · konto" : " · gość"} 
         </p>
       </div>
+
+      <TakeRecordingRecoveryBanner
+        surface="QUICK_TAKE"
+        scopeId={beatId}
+        authenticated={isAuthenticated}
+        refreshKey={recoveryRefreshKey}
+        hidden={busy || replaceCandidates != null}
+        onSaved={(takeId) => void showRecoveredTake(takeId)}
+      />
 
       {state.phase === "AUTH_REQUIRED" ? (
         <p className="text-sm text-muted-foreground" role="status">
@@ -642,6 +819,19 @@ export function RecordingPanel({
           </div>
 
           <BrdInputMonitor level={mic.level} peak={mic.peak} />
+          {localSafety ? (
+            <p
+              className={
+                localSafety === "UNAVAILABLE"
+                  ? "text-xs text-destructive"
+                  : "text-xs text-muted-foreground"
+              }
+              data-testid="take-local-safety"
+              data-state={localSafety}
+            >
+              {takeRecoveryWriterStatusPl(localSafety)}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

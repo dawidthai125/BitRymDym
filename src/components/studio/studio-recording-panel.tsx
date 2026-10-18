@@ -32,6 +32,8 @@ import {
   canStartNewRecording,
   createInitialRecordingUiSnapshot,
   isRecordingBusy,
+  isRecordingCaptureActive,
+  recordingInterruptedNoticePl,
   reduceRecordingUi,
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
@@ -39,6 +41,19 @@ import {
   STUDIO_VOCAL_IMPORT_ACCEPT,
   gateStudioVocalImportFile,
 } from "@/lib/takes/studio-vocal-import";
+import {
+  TakeRecoveryLeaseLostError,
+  createTakeRecoveryChunkBuffer,
+  createTakeRecoveryWriter,
+  takeRecoveryWriterStatusPl,
+  type TakeRecoveryWriter,
+  type TakeRecoveryWriterState,
+} from "@/lib/takes/take-recording-recovery";
+import {
+  getBrowserTakeRecoveryStore,
+  getTakeRecoveryTabClaimant,
+  getTakeRecoveryViewerUserId,
+} from "@/lib/takes/take-recording-recovery-idb";
 import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
@@ -61,6 +76,9 @@ export function StudioRecordingPanel({
   tracks,
   onClipCreated,
   onRecordingActiveChange,
+  onCaptureInterrupted,
+  onLocalRecoveryChanged,
+  recoverySavedKey = 0,
   embedded = false,
   /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
   preferredTrackId = null,
@@ -75,6 +93,15 @@ export function StudioRecordingPanel({
   tracks: StudioTrackDto[];
   onClipCreated: (clip: StudioClipDto, documentVersion: number) => void;
   onRecordingActiveChange?: (active: boolean) => void;
+  /**
+   * Panel unmounted while capture was in flight. onRecordingActiveChange(false)
+   * is reported first; the message says whether the take was lost.
+   */
+  onCaptureInterrupted?: (message: string) => void;
+  /** STU-14 — a browser-local recovery copy was sealed, released or removed. */
+  onLocalRecoveryChanged?: () => void;
+  /** STU-16 — bumped when the recovery banner saved a copy; clears a stale upload error. */
+  recoverySavedKey?: number;
   /** Phase 1 — denser chrome when hosted inside Inspector. */
   embedded?: boolean;
   preferredTrackId?: string | null;
@@ -143,11 +170,17 @@ export function StudioRecordingPanel({
   const captureArmingRef = useRef(false);
   const testerStreamRef = useRef<MediaStream | null>(null);
 
-  const captureActive =
-    state.phase === "RECORDING" ||
-    state.phase === "STOPPING" ||
-    state.phase === "UPLOADING" ||
-    state.phase === "PROCESSING";
+  const mountedRef = useRef(false);
+  const captureReportRef = useRef({
+    onRecordingActiveChange,
+    onCaptureInterrupted,
+    onLocalRecoveryChanged,
+  });
+  const recoveryWriterRef = useRef<TakeRecoveryWriter | null>(null);
+  const [localSafety, setLocalSafety] =
+    useState<TakeRecoveryWriterState | null>(null);
+
+  const captureActive = isRecordingCaptureActive(state.phase);
 
   const meterStream =
     state.phase === "RECORDING" || state.phase === "READY"
@@ -257,6 +290,13 @@ export function StudioRecordingPanel({
   }, [state.phase]);
 
   useEffect(() => {
+    if (recoverySavedKey === 0) return;
+    if (phaseRef.current === "UPLOAD_ERROR" || phaseRef.current === "FINALIZE_ERROR") {
+      dispatch({ type: "RETRY_IDLE" });
+    }
+  }, [recoverySavedKey]);
+
+  useEffect(() => {
     beatIdRef.current = beatId;
     maxSecondsRef.current = maxSeconds;
     trackIdRef.current = trackId;
@@ -282,16 +322,23 @@ export function StudioRecordingPanel({
       if (phaseRef.current !== "RECORDING") return;
       clearTick();
       clearMic();
+      const writer = recoveryWriterRef.current;
+      recoveryWriterRef.current = null;
+      let stopped: Promise<void> = Promise.resolve();
       try {
-        recorderRef.current?.cancel();
+        stopped = recorderRef.current?.cancel() ?? stopped;
       } catch {
         // ignore
       }
       recorderRef.current = null;
       clearCapturePlacement();
+      const secured = writer != null && writer.state !== "UNAVAILABLE";
+      if (writer) sealInterruptedRecovery(writer, stopped);
       dispatch({
         type: "RECORDING_FAILED",
-        message: studioDeviceErrorMessagePl("DEVICE_DISCONNECTED"),
+        message: secured
+          ? `${studioDeviceErrorMessagePl("DEVICE_DISCONNECTED")} Nagrana część jest zabezpieczona lokalnie — możesz ją odzyskać.`
+          : studioDeviceErrorMessagePl("DEVICE_DISCONNECTED"),
       });
     };
     track.addEventListener("ended", onEnded);
@@ -301,14 +348,59 @@ export function StudioRecordingPanel({
   }, [state.phase, micStream]);
 
   useEffect(() => {
+    captureReportRef.current = {
+      onRecordingActiveChange,
+      onCaptureInterrupted,
+      onLocalRecoveryChanged,
+    };
+  });
+
+  // Flush buffered audio to the local copy before the page may be frozen or killed.
+  useEffect(() => {
+    if (state.phase !== "RECORDING") return;
+    const flush = () => recorderRef.current?.flush();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [state.phase]);
+
+  useEffect(() => {
+    // Warm up IndexedDB so starting a take does not wait for it.
+    void getBrowserTakeRecoveryStore().catch(() => null);
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      const capturePhase =
+        phaseRef.current === "RECORDING" || phaseRef.current === "STOPPING";
+      const writer = capturePhase ? recoveryWriterRef.current : null;
+      recoveryWriterRef.current = null;
+      const interruptedNotice = recordingInterruptedNoticePl(phaseRef.current, {
+        locallySecured: writer != null && writer.state !== "UNAVAILABLE",
+      });
       if (tickRef.current) clearInterval(tickRef.current);
+      let stopped: Promise<void> = Promise.resolve();
       try {
-        recorderRef.current?.cancel();
+        stopped = recorderRef.current?.cancel() ?? stopped;
       } catch {
         // ignore
       }
+      if (writer) sealInterruptedRecovery(writer, stopped);
       transport.stopTakePreview();
+      // The host's lock mirrors captureActive; nobody else can clear it now.
+      if (interruptedNotice) {
+        const report = captureReportRef.current;
+        report.onRecordingActiveChange?.(false);
+        report.onCaptureInterrupted?.(interruptedNotice);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount cleanup only
   }, []);
@@ -475,12 +567,21 @@ export function StudioRecordingPanel({
 
     const recorder = recorderRef.current ?? new TakeMediaRecorder();
     recorderRef.current = recorder;
+    const [recoveryStore, ownerUserId] = await Promise.all([
+      getBrowserTakeRecoveryStore().catch(() => null),
+      getTakeRecoveryViewerUserId(true),
+    ]);
+    let writer: TakeRecoveryWriter | null = null;
+    const chunkBuffer = createTakeRecoveryChunkBuffer();
+    const onChunk = chunkBuffer.onChunk;
 
     try {
+      let started: { mimeType: string };
       try {
-        await recorder.start({
+        started = await recorder.start({
           audioDeviceId:
             inputDevices.audioDeviceIdForRecorder || undefined,
+          onChunk,
         });
       } catch (firstStartError) {
         // Stale preference: one retry with system default (P5.8 AC-07).
@@ -489,11 +590,34 @@ export function StudioRecordingPanel({
           firstStartError instanceof TakeRecorderError &&
           firstStartError.code === "RECORDING_ERROR"
         ) {
-          await recorder.start({});
+          started = await recorder.start({ onChunk });
         } else {
           throw firstStartError;
         }
       }
+      // Unmounted while getUserMedia was pending: start() reset the cancel flag.
+      if (!mountedRef.current) {
+        void recorder.cancel();
+        return;
+      }
+      writer = createTakeRecoveryWriter({
+        // Ownership must be verifiable, otherwise no local copy is kept.
+        store: ownerUserId ? recoveryStore : null,
+        recoveryId: crypto.randomUUID(),
+        claimant: getTakeRecoveryTabClaimant(),
+        surface: "STUDIO",
+        projectId,
+        ownerUserId: ownerUserId ?? null,
+        beatId: beatIdRef.current,
+        mimeType: started.mimeType,
+        maxRecordingSeconds: maxSecondsRef.current,
+        onStateChange: (next) => {
+          if (mountedRef.current) setLocalSafety(next);
+        },
+      });
+      chunkBuffer.attach(writer);
+      recoveryWriterRef.current = writer;
+      setLocalSafety(writer.state);
       setMicStream(recorder.getStream());
       // Keep beat playing under the new take when possible.
       transport.play();
@@ -517,10 +641,13 @@ export function StudioRecordingPanel({
       clearCapturePlacement();
       transport.pause();
       try {
-        recorder.cancel();
+        void recorder.cancel();
       } catch {
         // ignore
       }
+      recoveryWriterRef.current = null;
+      setLocalSafety(null);
+      void writer?.discard();
       if (
         error instanceof TakeRecorderError &&
         error.code === "PERMISSION_DENIED"
@@ -576,14 +703,24 @@ export function StudioRecordingPanel({
       return;
     }
 
+    const writer = recoveryWriterRef.current;
+    let locallySecured = false;
     try {
       const result = await recorder.stop();
       dispatch({ type: "UPLOAD_START" });
+      recoveryWriterRef.current = null;
+      locallySecured = writer ? await writer.finish("COMPLETE", 3_000) : false;
       const uploaded = await uploadTakeRecordingBlob({
         beatId: beatIdRef.current,
         blob: result.blob,
         contentType: result.mimeType,
+        onStage: (stage) => writer?.noteStage(stage.stage, stage.takeId),
       });
+      if (writer) {
+        void writer
+          .confirmSaved(uploaded.takeId)
+          .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
+      }
       dispatch({ type: "FINALIZE_START" });
 
       // Take is READY after uploadTakeRecordingBlob finalize — do not auto-place.
@@ -598,14 +735,33 @@ export function StudioRecordingPanel({
       // Preserve recordStartMs / captureTrackId for Zachowaj placement.
     } catch (error) {
       clearCapturePlacement();
-      if (error instanceof TakeRecorderError && error.code === "CANCELLED") {
+      const cancelled =
+        error instanceof TakeRecorderError && error.code === "CANCELLED";
+      if (writer && !cancelled && recoveryWriterRef.current === writer) {
+        // recorder.stop() itself failed — keep the captured prefix recoverable.
+        recoveryWriterRef.current = null;
+        locallySecured = writer.state !== "UNAVAILABLE";
+        sealInterruptedRecovery(writer, Promise.resolve());
+      }
+      if (cancelled) {
         dispatch({ type: "RETRY_IDLE" });
+      } else if (error instanceof TakeRecoveryLeaseLostError) {
+        // Another tab owns the copy now — it finalizes; this tab must not.
+        captureReportRef.current.onLocalRecoveryChanged?.();
+        dispatch({ type: "UPLOAD_FAILED", message: error.message });
       } else {
         const raw =
           error instanceof Error
             ? error.message
             : "Nie udało się zapisać nagrania.";
-        const message = toUserFacingTakeUploadError(raw);
+        if (writer && locallySecured && recoveryWriterRef.current !== writer) {
+          void writer
+            .release()
+            .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
+        }
+        const message = locallySecured
+          ? `${toUserFacingTakeUploadError(raw)} Nagranie jest zabezpieczone lokalnie — możesz je odzyskać.`
+          : toUserFacingTakeUploadError(raw);
         if (/finaliz|duration|READY|MIME/i.test(raw)) {
           dispatch({ type: "FINALIZE_FAILED", message });
         } else {
@@ -615,7 +771,17 @@ export function StudioRecordingPanel({
     } finally {
       submittingRef.current = false;
       recorderRef.current = null;
+      if (mountedRef.current) setLocalSafety(null);
     }
+  }
+
+  function sealInterruptedRecovery(
+    writer: TakeRecoveryWriter,
+    stopped: Promise<void>,
+  ) {
+    void stopped
+      .then(() => writer.finish("INTERRUPTED", 5_000))
+      .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
   }
 
   function cancelRecording() {
@@ -625,11 +791,15 @@ export function StudioRecordingPanel({
     transport.pause();
     transport.stopTakePreview();
     try {
-      recorderRef.current?.cancel();
+      void recorderRef.current?.cancel();
     } catch {
       // ignore
     }
     recorderRef.current = null;
+    // Explicit user cancel: the take is not wanted, so no local copy is kept.
+    void recoveryWriterRef.current?.discard();
+    recoveryWriterRef.current = null;
+    setLocalSafety(null);
     setWorkflowError(null);
     dispatch({ type: "RETRY_IDLE" });
   }
@@ -1103,9 +1273,20 @@ export function StudioRecordingPanel({
           Nagrywanie
         </h2>
         {state.phase === "RECORDING" ? (
-          <p className="text-xs font-medium text-destructive" role="status">
-            TRYB NAGRYWANIA · {formatStudioTimeMs(Math.round(state.elapsedMs))}
-          </p>
+          <div className="space-y-0.5 text-right">
+            <p className="text-xs font-medium text-destructive" role="status">
+              TRYB NAGRYWANIA · {formatStudioTimeMs(Math.round(state.elapsedMs))}
+            </p>
+            {localSafety ? (
+              <p
+                className="text-[11px] text-[var(--brd-mute)]"
+                data-testid="studio-recording-local-safety"
+                data-state={localSafety}
+              >
+                {takeRecoveryWriterStatusPl(localSafety)}
+              </p>
+            ) : null}
+          </div>
         ) : (
           <p className="text-xs text-[var(--brd-mute)]">
             Start: playhead {formatStudioTimeMs(transport.state.playheadMs)}

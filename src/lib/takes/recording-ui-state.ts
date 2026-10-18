@@ -231,6 +231,40 @@ export function isRecordingBusy(phase: RecordingUiPhase): boolean {
   );
 }
 
+/**
+ * Capture / finalize in flight — the host must keep StudioRecordingPanel
+ * mounted (unmount cancels the recorder). READY_TAKE and errors are not active.
+ */
+export function isRecordingCaptureActive(phase: RecordingUiPhase): boolean {
+  return (
+    phase === "RECORDING" ||
+    phase === "STOPPING" ||
+    phase === "UPLOADING" ||
+    phase === "PROCESSING"
+  );
+}
+
+/**
+ * Notice when the recording panel unmounts mid-capture. RECORDING / STOPPING:
+ * the recorder is cancelled and the take is lost. UPLOADING / PROCESSING: the
+ * upload continues without UI and the Take lands in the library if it succeeds.
+ */
+export function recordingInterruptedNoticePl(
+  phase: RecordingUiPhase,
+  options?: { locallySecured?: boolean },
+): string | null {
+  if (phase === "RECORDING" || phase === "STOPPING") {
+    if (options?.locallySecured) {
+      return "Nagrywanie przerwane — panel nagrywania został zamknięty. Nagranie nie zostało zapisane na serwerze, ale jego część jest zabezpieczona lokalnie — możesz ją odzyskać.";
+    }
+    return "Nagrywanie przerwane — panel nagrywania został zamknięty. Nagranie nie zostało zapisane.";
+  }
+  if (phase === "UPLOADING" || phase === "PROCESSING") {
+    return "Panel nagrywania został zamknięty podczas zapisu. Jeśli zapis się powiedzie, nagranie znajdziesz w „Moje Take'i”.";
+  }
+  return null;
+}
+
 export function canStartNewRecording(phase: RecordingUiPhase): boolean {
   return (
     phase === "IDLE" ||
