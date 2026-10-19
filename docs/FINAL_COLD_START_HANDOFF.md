@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-19 — **SSOT tip/plane reconcile (docs-only)** · docs tip **`d2fc609`** · app tip **`d12e38e`** (BPM CONFLICT LABELING CLOSED) · last alias-control deploy **`dpl_4Mhme5x9QYk1vSigcGCx8NYyLZnX`** READY (re-verified 2026-10-19 ~08:23 +0200 · serves www/apex · exact dpl commit SHA NOT VERIFIED in CLI meta) · HISTORY: **`dpl_6K73…`** BPM UX functional READY deploy · docs push auto-deploys · WAV-6 tempo **OPEN / separate** · Sacred WIP hash MATCH · dirty worktree **preserve** · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) · [CHANGELOG 2026-10-19](./CHANGELOG.md) · SFM / Contabo / Security Wave 5 finalize path planes **unchanged** vs prior SSOT (still Owner GO)
+**Updated:** 2026-10-19 — **STU-16 local live 17/17 PASS + deploy SHA VERIFIED (docs-only)** · parent tip **`9bd1f86`** · app tip **`d12e38e`** · Vercel **`dpl_Eoror…` @ `9bd1f86`** SHA VERIFIED · local Supabase ports **54421/54422/54420/54423** (Inbucket **54324**; do **not** assume API **54321**) · Windows excluded TCP **54224–54323** caused prior bind failure · prod functional / concurrency / janitor / SESSION_DAY_CAP runtime **NOT VERIFIED** · Sacred WIP MATCH · dirty WIP **preserve** · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) · [CHANGELOG 2026-10-19](./CHANGELOG.md)
 **Type:** Documentation continuity · cold-start entry · multi-plane (Git tip ≠ auto-deploy docs descendants ≠ staging ≠ prod DB apply ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes. This file is entry + continuity; **§0 below is current for tip/deploy.** Later sections that still cite tip `2adb569` / `5212933` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
@@ -36,29 +36,34 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-GITHUB MAIN TIP / origin/main = d2fc609dc48ca066d8eb6349f18b2b863ff4ed0a
-                              (verify: git ls-remote origin refs/heads/main)
-  docs tip                    = d2fc609 · docs: record BPM conflict UX closure and session handoff
+GITHUB MAIN TIP / origin/main = verify: git ls-remote origin refs/heads/main
+  parent tip before this docs = 9bd1f86026f3a0003a9b4295ab15097dec3e5643
+                              · docs: reconcile STU-16 production evidence
   app tip                     = d12e38e64423b28ec34f04659712147de4966a18
                               · fix(bpm): clarify conflict hypothesis labels · CLOSED 2026-10-19
   note                        = living detail → docs/PROJECT_STATE.md
-PRODUCTION DEPLOYMENT         = dpl_4Mhme5x9QYk1vSigcGCx8NYyLZnX
-  note                        = READY · last alias-control 2026-10-19 ~08:23 +0200
-                              · serves www.bitrymdym.pl · bitrymdym.pl
-                              · exact dpl Git SHA NOT VERIFIED in Vercel CLI meta
-                              · time-correlated with docs tip d2fc609 · app code ≡ d12e38e for BPM UX
-                              · docs-only push auto-deploys — dpl id is NOT a durable live pointer
-HISTORY BPM UX DEPLOY         = dpl_6K73CZWphFdfPz4JjrvLapERTjwT · READY ~06:09 +0200
-                              · correlated with d12e38e · superseded for www/apex at 08:23 control
-                              · READY ≠ failed · READY ≠ functional GREEN
-PRODUCTION APP SHA (BPM UX)   = d12e38e · docs tip d2fc609 may advance without app change
+PRODUCTION DEPLOYMENT         = dpl_Eoror2bbVeu896BtrCtysicNYPuZ
+  note                        = READY · commit SHA VERIFIED 9bd1f86 (build log + GH status)
+                              · aliases www / apex / vercel.app
+                              · READY ≠ STU-16 functional GREEN
+                              · docs-only push auto-deploys — re-verify live with vercel inspect
+HISTORY alias-control         = dpl_4Mhme… · HISTORY BPM UX dpl_6K73… @ d12e38e
+PRODUCTION APP SHA (BPM UX)   = d12e38e · docs tip may advance without app change
 BPM CONFLICT LABELING         = CLOSED · 91/91 (session evidence) · isolated model+SSR PASS
                               · NOT: live prod CONFLICT UI · Playwright form E2E
 WAV-6 TEMPO                   = OPEN / separate · stored 65 · signal ~99–101 · unchanged
-STU-16                        = code+migration ON main @ c2be3b0 · Production DB migration apply VERIFIED BY READ-ONLY AUDIT (20261018154129 / stu16_pending_upload_window · TTL 900 · Git file 20261018120000 drift noted) · functional / SESSION_DAY_CAP runtime-E2E / concurrency / Vercel dpl SHA NOT VERIFIED · living detail → PROJECT_STATE
+LOCAL SUPABASE PORTS          = API 54421 · DB 54422 · shadow 54420 · Studio 54423 · Inbucket 54324
+                              · DO NOT assume API is still 54321
+                              · reason: Windows excluded TCP 54224–54323 blocked old ports
+STU-16                        = code+migration ON main @ c2be3b0 · Production DB apply VERIFIED BY READ-ONLY AUDIT
+                              · Local live 17/17 PASS (TTL via created_at backdate)
+                              · Vercel dpl SHA VERIFIED @ 9bd1f86
+                              · prod functional / prod SESSION_DAY_CAP / prod concurrency / prod janitor NOT VERIFIED
+                              · living detail → PROJECT_STATE
 SACRED WIP                    = recording-eligibility-service.ts
                               SHA256 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 DIRTY WORKTREE                = PRESERVE · live tests + untracked audits/scripts · do not clean
+                              · supabase/config.toml port remapping may remain uncommitted WIP
 SFM VERSIONS (product)        = CODE ON MAIN (ancestry) · KIND_REJECT 69e50d0 · poller d3c99e3
                               · repo migration file ≠ database apply · Production GREEN NOT CLAIMED
                               · living SFM planes → docs/PROJECT_STATE.md
@@ -681,7 +686,7 @@ WIP preserved
 [ ] Confirm Contabo persistent disabled/inactive · sync/canary/always-on NOT DONE · not always-on
 [ ] Confirm Closed = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
 [ ] Confirm Phase 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (ancestry · do not reopen)
-[ ] Confirm STU-16: code on main @ c2be3b0 · Production DB migration apply VERIFIED BY READ-ONLY AUDIT per PROJECT_STATE · functional / E2E / concurrency NOT VERIFIED · Git vs DB timestamp drift noted
+[ ] Confirm STU-16: code on main @ c2be3b0 · Production DB apply VERIFIED BY READ-ONLY AUDIT · Local live 17/17 PASS · Vercel dpl SHA VERIFIED @ 9bd1f86 · prod functional / E2E / concurrency NOT VERIFIED · local API port 54421 (not 54321) · Git vs DB timestamp drift noted
 [ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze + audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 [ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
@@ -726,7 +731,7 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-STU-16                       = DB migration apply VERIFIED BY READ-ONLY AUDIT · functional NOT VERIFIED · see PROJECT_STATE
+STU-16                       = DB apply VERIFIED · local live 17/17 PASS · prod functional NOT VERIFIED · local API 54421 · see PROJECT_STATE
 CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · living tip = PROJECT_STATE
 P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
@@ -778,7 +783,7 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Apex redirect e2e: NOT VERIFIED · Ready ≠ functional GREEN
 - Final Mix (STUDIO_EXPORT) GREEN VERIFIED (frozen IN) per PROJECT_STATE · ≠ SFM Production GREEN
 - P6.8: NOT STARTED · Contabo always-on / sync / canary: NOT DONE
-- STU-16: DB migration apply VERIFIED BY READ-ONLY AUDIT · functional / E2E / concurrency NOT VERIFIED (PROJECT_STATE)
+- STU-16: DB apply VERIFIED · local live 17/17 PASS · prod functional / E2E / concurrency NOT VERIFIED (PROJECT_STATE) · local API 54421
 - Sacred WIP chroniony · dirty local main NIE synchronizować bez GO
 
 ## Otwarte gate’y (nie zamykaj bez nowego evidence + Owner GO)
@@ -827,7 +832,7 @@ Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
 - Living tip/deploy/NEXT = docs/PROJECT_STATE.md §2 (nie cytuj 2adb569 / 5212933 jako current)
 - Docs push auto-deploys — nie traktuj historycznego dpl id jako trwałego live pointera
 - Contabo always-on / SFM Production GREEN = NOT VERIFIED lub NOT DONE per PROJECT_STATE
-- STU-16: DB migration apply VERIFIED BY READ-ONLY AUDIT · functional verify NOT VERIFIED (PROJECT_STATE)
+- STU-16: DB apply VERIFIED · local live 17/17 PASS · prod functional verify NOT VERIFIED (PROJECT_STATE)
 - Apex redirect e2e NOT VERIFIED · Ready ≠ functional GREEN
 
 ## Raportowanie

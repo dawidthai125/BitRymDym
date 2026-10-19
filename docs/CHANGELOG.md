@@ -6,12 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-19 — STU-16 local live integration verified (docs-only)
+
+**Status:** **DOCS ONLY** · Owner GO · records local STU-16 live suite evidence + local Supabase port remapping · **no** app code / migration / prod DB write / Storage / Auth mutation / deploy in this docs session · **`supabase/config.toml` port WIP not included in this commit**
+**Local ports:** Windows excluded TCP **54224–54323** blocked prior API/DB/studio/shadow · remapped to API **54421** · DB **54422** · shadow **54420** · Studio **54423** · Inbucket **54324** (unchanged) · `npx supabase start` from backup **without** `db reset` · Auth `http://127.0.0.1:54421/auth/v1/health` → **HTTP 200**
+**Local live suite:** `npx vitest run --config vitest.integration.config.ts src/lib/takes/stu16-pending-upload-window-live.test.ts --reporter=verbose` → **17 passed / 0 failed / 0 skipped** · exit **0** · ~4.2 s · TTL via **`created_at` backdate** (not wall-clock 900 s)
+**Also recorded:** Vercel **`dpl_Eoror2bbVeu896BtrCtysicNYPuZ`** commit SHA **VERIFIED** @ **`9bd1f86`** (prior read-only evidence; READY ≠ functional GREEN)
+**Still NOT VERIFIED (production):** functional E2E · `SESSION_DAY_CAP` runtime · concurrency · janitor schedule · SQL byte-for-byte vs Git · STU-16 **not** Production GREEN
+**Canonical:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [RECORDING.md](./architecture/RECORDING.md)
+
 ## 2026-10-19 — STU-16 production database evidence reconciled
 
 **Status:** **DOCS ONLY** · Owner GO · reconciles living SSOT with READ-ONLY Supabase Production + STU-16 audit evidence · **no** code / migration / DB write / Storage / Auth / deploy / commit in this docs session
 **Production DB migration apply:** **VERIFIED BY READ-ONLY AUDIT** · project **`rzzxrgcdogkybkiidqgw`** · history version **`20261018154129`** / name **`stu16_pending_upload_window`** · Git file `supabase/migrations/20261018120000_stu16_pending_upload_window.sql` (commit **`c2be3b0`**) · **timestamp drift** Git `20261018120000` ≠ DB `20261018154129` (name aligned; not treated as confirmed schema FAIL; no re-apply)
 **Checked in audit scope:** live TTL **900 s** · app constant **900** · STU-16 functions present · `search_path=''` · claim DEFINER / release INVOKER · `EXECUTE` for `service_role` (`anon`/`authenticated` none) · window/storage/advisory markers in defs · **not** full byte-for-byte body compare
-**Still NOT VERIFIED:** Production functional verification · `SESSION_DAY_CAP` runtime/E2E · concurrency · Vercel deployment commit SHA · STU-16 **not** closed as Production GREEN
+**Still NOT VERIFIED (at time of this entry):** Production functional verification · `SESSION_DAY_CAP` runtime/E2E · concurrency · Vercel deployment commit SHA — **later same day:** Vercel SHA **VERIFIED** and **local live 17/17 PASS** recorded in [entry above](#2026-10-19--stu-16-local-live-integration-verified-docs-only); production functional / prod concurrency / prod janitor / SQL byte-for-byte remain NOT VERIFIED · STU-16 **not** closed as Production GREEN
 **Canonical:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [RECORDING.md](./architecture/RECORDING.md)
 
 ## 2026-10-19 — SSOT tip/plane reconcile (docs-only; no app change)
