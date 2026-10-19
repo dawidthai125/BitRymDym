@@ -5,7 +5,9 @@ import {
   confirmationResultPath,
   confirmationStatusFromAuthError,
   decideAuthCallbackRoute,
+  isEmailChangeCallback,
   isRecoveryCallback,
+  EMAIL_CHANGE_CALLBACK_FLOW,
   CONFIRMATION_COPY,
   CONFIRMATION_EMAIL_CALLBACK_PATH,
   POST_CONFIRMATION_IDENTITY,
@@ -18,6 +20,7 @@ import {
   SIGNUP_PENDING_NEUTRAL_MESSAGE,
 } from "@/lib/auth/signup-result";
 import {
+  getAuthEmailChangeRedirectTo,
   getAuthEmailRedirectTo,
   getAuthPasswordResetRedirectTo,
 } from "@/lib/site-url";
@@ -120,7 +123,7 @@ describe("PKCE code flow preserved", () => {
         tokenHash: null,
         type: null,
       }),
-    ).toEqual({ kind: "pkce", code: "abc", recovery: false });
+    ).toEqual({ kind: "pkce", code: "abc", recovery: false, emailChange: false });
   });
 
   it("maps PKCE verifier mismatch to invalid (no raw leak)", () => {
@@ -159,6 +162,7 @@ describe("password recovery callback contract", () => {
       kind: "pkce",
       code: "pkce-code",
       recovery: true,
+      emailChange: false,
     });
     expect(isRecoveryCallback(result)).toBe(true);
   });
@@ -173,6 +177,7 @@ describe("password recovery callback contract", () => {
       kind: "pkce",
       code: "pkce-code",
       recovery: true,
+      emailChange: false,
     });
   });
 
@@ -339,6 +344,82 @@ describe("signup anti-enumeration unchanged", () => {
       identities: [],
     });
     expect(a).toEqual(b);
+  });
+});
+
+describe("email change callback does not capture signup or recovery", () => {
+  it("classifies OTP email_change separately from signup and recovery", () => {
+    const result = classifyAuthCallbackParams({
+      code: null,
+      tokenHash: "mail-hash",
+      type: "email_change",
+    });
+    expect(isEmailChangeCallback(result)).toBe(true);
+    expect(isRecoveryCallback(result)).toBe(false);
+    const decision = decideAuthCallbackRoute({
+      classified: result,
+      exchangeOk: true,
+    });
+    expect(decision).toEqual({ kind: "email_change", signOut: false });
+    expect(decision.kind).not.toBe("confirmed");
+  });
+
+  it("classifies PKCE flow=email_change and does not treat it as recovery", () => {
+    const result = classifyAuthCallbackParams({
+      code: "pkce-code",
+      tokenHash: null,
+      type: null,
+      flow: EMAIL_CHANGE_CALLBACK_FLOW,
+    });
+    expect(result).toEqual({
+      kind: "pkce",
+      code: "pkce-code",
+      recovery: false,
+      emailChange: true,
+    });
+    expect(
+      decideAuthCallbackRoute({ classified: result, exchangeOk: true }),
+    ).toEqual({ kind: "email_change", signOut: false });
+  });
+
+  it("failed or replayed email-change link stays off the signup page", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: {
+        kind: "otp",
+        tokenHash: "stale",
+        type: "email_change",
+      },
+      exchangeOk: false,
+      exchangeErrorMessage: "otp_expired",
+    });
+    expect(decision).toEqual({ kind: "email_change_failed", signOut: false });
+  });
+
+  it("signup OTP success is unchanged", () => {
+    const decision = decideAuthCallbackRoute({
+      classified: { kind: "otp", tokenHash: "h", type: "signup" },
+      exchangeOk: true,
+    });
+    expect(decision).toEqual({
+      kind: "confirmed",
+      status: "success",
+      signOut: true,
+    });
+  });
+
+  it("email-change redirect is distinct from signup and recovery", () => {
+    const prev = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.bitrymdym.pl";
+    try {
+      expect(getAuthEmailChangeRedirectTo()).toBe(
+        "https://www.bitrymdym.pl/auth/callback?flow=email_change",
+      );
+      expect(getAuthPasswordResetRedirectTo()).toContain("flow=recovery");
+      expect(getAuthEmailRedirectTo()).not.toContain("flow=email_change");
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = prev;
+    }
   });
 });
 

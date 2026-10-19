@@ -24,6 +24,12 @@ export const RECOVERY_EMAIL_CALLBACK_PATH =
 /** Query marker on resetPasswordForEmail redirectTo (PKCE landing). */
 export const RECOVERY_CALLBACK_FLOW = "recovery";
 
+/** Query marker on updateUser email redirectTo (PKCE landing). */
+export const EMAIL_CHANGE_CALLBACK_FLOW = "email_change";
+
+/** GoTrue OTP type for an email-change confirmation link. */
+export const EMAIL_CHANGE_OTP_TYPE = "email_change";
+
 export const CONFIRMATION_COPY = {
   success: {
     title: "Konto zostało aktywowane!",
@@ -41,7 +47,7 @@ export const CONFIRMATION_COPY = {
 
 export type AuthCallbackKind =
   | { kind: "otp"; tokenHash: string; type: string }
-  | { kind: "pkce"; code: string; recovery: boolean }
+  | { kind: "pkce"; code: string; recovery: boolean; emailChange?: boolean }
   | { kind: "missing" };
 
 /**
@@ -67,10 +73,13 @@ export function classifyAuthCallbackParams(input: {
     return { kind: "otp", tokenHash, type };
   }
 
-  // PKCE code may carry recovery intent via flow= or type= (no token_hash).
+  // PKCE code may carry recovery or email-change intent (no token_hash).
   if (code && !tokenHash) {
     const recovery = flow === RECOVERY_CALLBACK_FLOW || type === "recovery";
-    return { kind: "pkce", code, recovery };
+    const emailChange =
+      !recovery &&
+      (flow === EMAIL_CHANGE_CALLBACK_FLOW || type === EMAIL_CHANGE_OTP_TYPE);
+    return { kind: "pkce", code, recovery, emailChange };
   }
 
   // Incomplete OTP params (hash without type, or type without hash/code) → missing
@@ -87,12 +96,20 @@ export function isRecoveryCallback(classified: AuthCallbackKind): boolean {
   return false;
 }
 
+export function isEmailChangeCallback(classified: AuthCallbackKind): boolean {
+  if (classified.kind === "otp") return classified.type === EMAIL_CHANGE_OTP_TYPE;
+  if (classified.kind === "pkce") return classified.emailChange === true;
+  return false;
+}
+
 /**
  * Pure post-exchange routing decision (testable without Next / Supabase I/O).
  */
 export type AuthCallbackRouteDecision =
   | { kind: "reset_password"; signOut: false }
   | { kind: "forgot_password"; signOut: false }
+  | { kind: "email_change"; signOut: false }
+  | { kind: "email_change_failed"; signOut: false }
   | {
       kind: "confirmed";
       status: ConfirmationStatus;
@@ -109,6 +126,13 @@ export function decideAuthCallbackRoute(params: {
 
   if (classified.kind === "missing") {
     return { kind: "confirmed", status: "error", signOut: false };
+  }
+
+  if (isEmailChangeCallback(classified)) {
+    if (!exchangeOk) {
+      return { kind: "email_change_failed", signOut: false };
+    }
+    return { kind: "email_change", signOut: false };
   }
 
   if (!exchangeOk) {

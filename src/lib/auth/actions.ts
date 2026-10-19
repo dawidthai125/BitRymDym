@@ -6,12 +6,17 @@ import { redirect } from "next/navigation";
 import { deleteOwnAccount } from "@/lib/auth/delete-account";
 import { assertDeleteTargetsSessionUser } from "@/lib/auth/delete-account-policy";
 import { validateDisplayName } from "@/lib/auth/display-name";
+import {
+  EMAIL_CHANGE_AWAITING_MESSAGE,
+  requestEmailChange,
+} from "@/lib/auth/email-change";
 import { validateNewPassword } from "@/lib/auth/password-policy";
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { AuthError, getCurrentProfile, requireUser } from "@/lib/auth/session";
 import { interpretSignUpResult } from "@/lib/auth/signup-result";
 import {
+  getAuthEmailChangeRedirectTo,
   getAuthEmailRedirectTo,
   getAuthPasswordResetRedirectTo,
 } from "@/lib/site-url";
@@ -31,6 +36,8 @@ export type AuthActionState = {
   error: string | null;
   success: boolean;
   message?: string | null;
+  /** Email change started; not a completed address swap. */
+  pendingConfirmation?: boolean;
 };
 
 function requireConfiguredSupabase() {
@@ -346,6 +353,74 @@ export async function updatePasswordAfterResetAction(
     success: true,
     message: "Hasło zostało ustawione. Możesz się zalogować.",
   };
+}
+
+export async function requestEmailChangeAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  let sessionUserId: string | null = null;
+  let sessionEmail: string | null = null;
+  try {
+    requireConfiguredSupabase();
+    const context = await requireUser();
+    sessionUserId = context.userId;
+    sessionEmail = context.email;
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: toUserFacingAuthError(error), success: false };
+    }
+    return {
+      error: "Zmiana adresu e-mail jest chwilowo niedostępna.",
+      success: false,
+    };
+  }
+
+  try {
+    const result = await requestEmailChange({
+      sessionUserId,
+      sessionEmail,
+      newEmail: String(formData.get("newEmail") ?? ""),
+      confirmEmail: String(formData.get("confirmEmail") ?? ""),
+      currentPassword: String(formData.get("currentPassword") ?? ""),
+      claimedUserId: String(formData.get("userId") ?? "") || null,
+      claimedUserNumber: String(formData.get("userNumber") ?? "") || null,
+      reauthenticate: async (password) => {
+        const reauth = await reauthenticateWithPassword(password);
+        if (!reauth.ok) return { ok: false, error: reauth.error };
+        return { ok: true };
+      },
+      startAuthEmailChange: async (email) => {
+        const supabase = await createSupabaseServerClient();
+        const { error } = await supabase.auth.updateUser(
+          { email },
+          { emailRedirectTo: getAuthEmailChangeRedirectTo() },
+        );
+        return { errorMessage: error?.message ?? null };
+      },
+    });
+
+    if (!result.ok) {
+      return { error: result.error, success: false, pendingConfirmation: false };
+    }
+
+    revalidatePath("/account");
+    return {
+      error: null,
+      success: false,
+      pendingConfirmation: true,
+      message: result.message || EMAIL_CHANGE_AWAITING_MESSAGE,
+    };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: toUserFacingAuthError(error), success: false };
+    }
+    return {
+      error: "Nie udało się rozpocząć zmiany adresu. Sprawdź dane i spróbuj ponownie.",
+      success: false,
+      pendingConfirmation: false,
+    };
+  }
 }
 
 export async function deleteAccountAction(

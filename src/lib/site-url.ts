@@ -60,4 +60,12 @@ export function getAuthPasswordResetRedirectTo(): string {
   return `${getSiteUrl()}/auth/callback?flow=recovery`;
 }
 
+/**
+ * PKCE landing for Auth email change. OTP templates still use token_hash +
+ * type=email_change. Must stay on the Supabase redirect allow-list.
+ */
+export function getAuthEmailChangeRedirectTo(): string {
+  return `${getSiteUrl()}/auth/callback?flow=email_change`;
+}
+
 export const SITE_URL_CANONICAL_PRODUCTION = CANONICAL_PRODUCTION_ORIGIN;

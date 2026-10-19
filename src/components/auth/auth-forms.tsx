@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import {
   changePasswordAction,
   deleteAccountAction,
+  requestEmailChangeAction,
   requestPasswordResetAction,
   signInAction,
   signUpAction,
@@ -272,6 +273,68 @@ export function ResetPasswordForm() {
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
         {pending ? "Zapisywanie…" : "Ustaw nowe hasło"}
+      </Button>
+    </form>
+  );
+}
+
+export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
+  const [state, action, pending] = useActionState(
+    requestEmailChangeAction,
+    initialState,
+  );
+
+  return (
+    <form action={action} className="flex w-full flex-col gap-3">
+      <p className="text-sm text-[var(--brd-ink-soft)]">
+        Obecny adres: <span className="break-all">{currentEmail || "—"}</span>
+      </p>
+      <p className="text-sm text-[var(--brd-mute)]">
+        Zmiana zaczyna się po haśle. Adres logowania zostaje dotychczasowy,
+        dopóki nie potwierdzisz wiadomości na obecnej i nowej skrzynce.
+      </p>
+      <label className="flex flex-col gap-1 text-sm">
+        Nowy e-mail
+        <input
+          name="newEmail"
+          type="email"
+          required
+          autoComplete="email"
+          className="rounded-lg border border-border bg-background px-3 py-2"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Powtórz nowy e-mail
+        <input
+          name="confirmEmail"
+          type="email"
+          required
+          autoComplete="email"
+          className="rounded-lg border border-border bg-background px-3 py-2"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Aktualne hasło
+        <input
+          name="currentPassword"
+          type="password"
+          required
+          autoComplete="current-password"
+          className="rounded-lg border border-border bg-background px-3 py-2"
+        />
+      </label>
+      {state.error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      {state.pendingConfirmation && state.message ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {state.message}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={pending} className="min-h-11 w-full">
+        {pending ? "Wysyłanie…" : "Rozpocznij zmianę e-mail"}
       </Button>
     </form>
   );

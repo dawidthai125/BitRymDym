@@ -342,7 +342,9 @@ sendAdminAccountDeletionEmail({ to, reason })
 - `reason`: already validated plain text.
 - Server-only; never import from client components.
 
-**Subject:** `Twoje konto w BitRymDym zostało usunięte`
+**Subject (production wording verified 2026-10-04):** `Twoje konto w BitRymDym zostało usunięte`
+
+**Local copy after that verification:** `src/lib/email/admin-account-deletion-mail.ts` and [EMAIL.md](../architecture/EMAIL.md) use the subject `Konto w BitRymDym zostało usunięte`. That wording is not deployed. This freeze remains the record of the W4 decision and of the mail that was production-verified. It is not the source of the unpublished copy.
 
 **Body (structure):**
 

@@ -1,25 +1,43 @@
 import { escapeHtml } from "@/lib/email/html-escape";
 
 export const ADMIN_ACCOUNT_DELETION_SUBJECT =
-  "Twoje konto w BitRymDym zostało usunięte";
+  "Konto w BitRymDym zostało usunięte";
+
+function deletionReason(reason: string): string {
+  return reason.trim();
+}
 
 export function buildAdminAccountDeletionText(reason: string): string {
-  return [
-    "Konto w BitRymDym zostało usunięte przez administratora.",
+  const why = deletionReason(reason);
+  const lines = [
+    "Administrator usunął Twoje konto w BitRymDym.",
+    "To już jest zrobione: nie zalogujesz się na nie ponownie.",
+    "Ta wiadomość niczego nie cofa.",
+  ];
+  if (why) {
+    lines.push("", `Powód: ${why}`);
+  }
+  lines.push(
     "",
-    `Powód: ${reason}`,
-    "",
-    "Nie możesz już zalogować się na to konto. Dane prywatne zostały usunięte zgodnie z zasadami serwisu. Opublikowane utwory mogą pozostać w serwisie w zanonimizowanej formie.",
-  ].join("\n");
+    "Dane prywatne zostały usunięte według zasad serwisu. Opublikowane utwory mogą zostać w zanonimizowanej formie.",
+  );
+  return lines.join("\n");
 }
 
 export function buildAdminAccountDeletionHtml(reason: string): string {
-  const safe = escapeHtml(reason);
-  return [
-    "<p>Konto w BitRymDym zostało usunięte przez administratora.</p>",
-    `<p>Powód: ${safe}</p>`,
-    "<p>Nie możesz już zalogować się na to konto. Dane prywatne zostały usunięte zgodnie z zasadami serwisu. Opublikowane utwory mogą pozostać w serwisie w zanonimizowanej formie.</p>",
-  ].join("");
+  const why = deletionReason(reason);
+  const parts = [
+    "<p>Administrator usunął Twoje konto w BitRymDym.</p>",
+    "<p>To już jest zrobione: nie zalogujesz się na nie ponownie.</p>",
+    "<p>Ta wiadomość niczego nie cofa.</p>",
+  ];
+  if (why) {
+    parts.push(`<p>Powód: ${escapeHtml(why)}</p>`);
+  }
+  parts.push(
+    "<p>Dane prywatne zostały usunięte według zasad serwisu. Opublikowane utwory mogą zostać w zanonimizowanej formie.</p>",
+  );
+  return parts.join("");
 }
 
 export function adminDeletionMailContainsForbidden(payload: string): boolean {

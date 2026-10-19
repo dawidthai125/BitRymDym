@@ -5,8 +5,13 @@ import {
   classifyAuthCallbackParams,
   confirmationResultPath,
   decideAuthCallbackRoute,
+  isEmailChangeCallback,
   isRecoveryCallback,
 } from "@/lib/auth/confirmation";
+import {
+  emailChangeAccountPath,
+  emailChangeLandingAfterVerify,
+} from "@/lib/auth/email-change";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -29,6 +34,12 @@ function redirectAbsolute(request: NextRequest, path: string) {
  * - OTP: ?token_hash=…&type=recovery → keep session → /auth/reset-password
  * - PKCE: ?code=…&flow=recovery (from getAuthPasswordResetRedirectTo) → keep session → /auth/reset-password
  * Signup / other confirms: sign out → /auth/confirmed
+ * Email change (type=email_change or flow=email_change): keep session → /account
+ *   One pending new_email is not a finished change.
+ *   A successful verify with no user is the first secure-email confirmation,
+ *   not a finished change and not an invalid link.
+ *   Auth finishing the procedure is not product success unless Secure email
+ *   change is known to be on. This route does not read that project flag.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -81,17 +92,35 @@ export async function GET(request: NextRequest) {
     if (decision.kind === "forgot_password") {
       return redirectAbsolute(request, "/forgot-password");
     }
+    if (decision.kind === "email_change_failed") {
+      return redirectAbsolute(request, emailChangeAccountPath("invalid"));
+    }
+    if (decision.kind === "email_change") {
+      const { data, error: userError } = await supabase.auth.getUser();
+      const landing = emailChangeLandingAfterVerify({
+        exchangeOk: true,
+        userError: Boolean(userError),
+        user: data.user ?? null,
+      });
+      return redirectAbsolute(request, emailChangeAccountPath(landing));
+    }
     return redirectAbsolute(request, confirmationResultPath(decision.status));
   } catch {
-    // Fail closed: never leave a half-open recovery session on unexpected errors.
-    try {
-      const supabase = await createSupabaseServerClient();
-      await supabase.auth.signOut();
-    } catch {
-      // ignore
+    // Fail closed on signup. Do not wipe a recovery or email-change session.
+    const emailChange = isEmailChangeCallback(classified);
+    if (!recovery && !emailChange) {
+      try {
+        const supabase = await createSupabaseServerClient();
+        await supabase.auth.signOut();
+      } catch {
+        // ignore
+      }
     }
     if (recovery) {
       return redirectAbsolute(request, "/forgot-password");
+    }
+    if (emailChange) {
+      return redirectAbsolute(request, emailChangeAccountPath("error"));
     }
     return redirectAbsolute(request, confirmationResultPath("error"));
   }

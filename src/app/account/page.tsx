@@ -9,6 +9,7 @@ import {
 } from "@/components/brand/chrome";
 import { Waveform } from "@/components/brand/waveform";
 import {
+  ChangeEmailForm,
   ChangePasswordForm,
   DeleteAccountForm,
 } from "@/components/auth/auth-forms";
@@ -25,6 +26,11 @@ import {
   listOwnTakes,
   takeRecentNonDeletedTakes,
 } from "@/lib/takes/list-own-takes";
+import {
+  EMAIL_CHANGE_AUTH_FINISHED_UNVERIFIED_MESSAGE,
+  EMAIL_CHANGE_INVALID_LINK_MESSAGE,
+  EMAIL_CHANGE_PARTIAL_MESSAGE,
+} from "@/lib/auth/email-change";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import {
   labelAccountLevel,
@@ -38,7 +44,7 @@ import {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ claim?: string }>;
+  searchParams: Promise<{ claim?: string; emailChange?: string }>;
 }) {
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
@@ -66,6 +72,14 @@ export default async function AccountPage({
     claimParam === "ok" || claimParam === "cap" || claimParam === "error"
       ? claimParam
       : null;
+  const emailChangeNotice =
+    params.emailChange === "partial"
+      ? EMAIL_CHANGE_PARTIAL_MESSAGE
+      : params.emailChange === "invalid" || params.emailChange === "error"
+        ? EMAIL_CHANGE_INVALID_LINK_MESSAGE
+        : params.emailChange === "auth_finished"
+          ? EMAIL_CHANGE_AUTH_FINISHED_UNVERIFIED_MESSAGE
+          : null;
 
   const showAdminNav = canAccessAdminNav(context.profile.role);
   // Profile surface: exclude soft-deleted at query (not slice-then-filter).
@@ -341,6 +355,12 @@ export default async function AccountPage({
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
                 <SectionLabel>Bezpieczeństwo</SectionLabel>
+                {emailChangeNotice ? (
+                  <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
+                    {emailChangeNotice}
+                  </p>
+                ) : null}
+                <ChangeEmailForm currentEmail={context.email ?? ""} />
                 <ChangePasswordForm />
                 <p className="text-sm text-[var(--brd-mute)]">
                   Nie pamiętasz hasła?{" "}
