@@ -55,7 +55,7 @@ PRODUCTION APP SHA (BPM UX)   = d12e38e · docs tip d2fc609 may advance without 
 BPM CONFLICT LABELING         = CLOSED · 91/91 (session evidence) · isolated model+SSR PASS
                               · NOT: live prod CONFLICT UI · Playwright form E2E
 WAV-6 TEMPO                   = OPEN / separate · stored 65 · signal ~99–101 · unchanged
-STU-16                        = code+migration ON main @ c2be3b0 · Production DB apply NOT VERIFIED
+STU-16                        = code+migration ON main @ c2be3b0 · Production DB migration apply VERIFIED BY READ-ONLY AUDIT (20261018154129 / stu16_pending_upload_window · TTL 900 · Git file 20261018120000 drift noted) · functional / SESSION_DAY_CAP runtime-E2E / concurrency / Vercel dpl SHA NOT VERIFIED · living detail → PROJECT_STATE
 SACRED WIP                    = recording-eligibility-service.ts
                               SHA256 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 DIRTY WORKTREE                = PRESERVE · live tests + untracked audits/scripts · do not clean
@@ -681,7 +681,7 @@ WIP preserved
 [ ] Confirm Contabo persistent disabled/inactive · sync/canary/always-on NOT DONE · not always-on
 [ ] Confirm Closed = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED @ 44f7cbd
 [ ] Confirm Phase 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 remain CLOSED (ancestry · do not reopen)
-[ ] Confirm STU-16: code on main @ c2be3b0 · Production DB apply NOT VERIFIED · file ≠ apply
+[ ] Confirm STU-16: code on main @ c2be3b0 · Production DB migration apply VERIFIED BY READ-ONLY AUDIT per PROJECT_STATE · functional / E2E / concurrency NOT VERIFIED · Git vs DB timestamp drift noted
 [ ] Read MASTER_HANDOFF + architecture/REUSE_SSOT_MAP + V2 freeze + bake freeze + audits/I45EX_J2_DOWNLOAD_AUTHZ_GATE_CLOSEOUT.md
 [ ] Confirm Sacred WIP SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
@@ -726,7 +726,7 @@ P4.6 TAKE_EXPORT             = CLOSED / GREEN @ a72fed9 (ancestry)
 P6.7                         = CLOSED / GREEN (ancestry 06c60b5)
 V1                           = CLOSED / GREEN (ancestry 56b629e)
 P6.8                         = NOT STARTED · OWNER DECISION REQUIRED
-STU-16                       = code on main @ c2be3b0 · Production DB apply NOT VERIFIED
+STU-16                       = DB migration apply VERIFIED BY READ-ONLY AUDIT · functional NOT VERIFIED · see PROJECT_STATE
 CURRENT PHASE                = Studio Visual Parity V2 CLOSED / GREEN @ 44f7cbd · living tip = PROJECT_STATE
 P4 CORE                      = SHIPPED @ bface6c ⊂ ancestry · local seam WIP NOT BASELINE
 SA-07                        = DESIGN FREEZE COMPLETE · AWS BLOCKED · local WIP NOT PRODUCTION
@@ -778,13 +778,13 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Apex redirect e2e: NOT VERIFIED · Ready ≠ functional GREEN
 - Final Mix (STUDIO_EXPORT) GREEN VERIFIED (frozen IN) per PROJECT_STATE · ≠ SFM Production GREEN
 - P6.8: NOT STARTED · Contabo always-on / sync / canary: NOT DONE
-- STU-16: code on main @ c2be3b0 · Production DB apply NOT VERIFIED
+- STU-16: DB migration apply VERIFIED BY READ-ONLY AUDIT · functional / E2E / concurrency NOT VERIFIED (PROJECT_STATE)
 - Sacred WIP chroniony · dirty local main NIE synchronizować bez GO
 
 ## Otwarte gate’y (nie zamykaj bez nowego evidence + Owner GO)
 - SFM worker / staging / migrate / E2E (ordered GOs in PROJECT_STATE)
 - Contabo GO-HOST-RO / sync / canary / always-on
-- P6.8 · STU-16 prod migrate · Security Wave 5 prod finalize path
+- P6.8 · STU-16 production functional verify · Security Wave 5 prod finalize path
 - apex redirect e2e · empty-project delete · live BPM CONFLICT UI
 
 ## Procedura po raporcie Cursor
@@ -826,7 +826,8 @@ Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
 ## Aktualny stan (skrót — szczegóły WYŁĄCZNIE w PROJECT_STATE)
 - Living tip/deploy/NEXT = docs/PROJECT_STATE.md §2 (nie cytuj 2adb569 / 5212933 jako current)
 - Docs push auto-deploys — nie traktuj historycznego dpl id jako trwałego live pointera
-- Contabo always-on / SFM Production GREEN / STU-16 DB apply = NOT VERIFIED lub NOT DONE per PROJECT_STATE
+- Contabo always-on / SFM Production GREEN = NOT VERIFIED lub NOT DONE per PROJECT_STATE
+- STU-16: DB migration apply VERIFIED BY READ-ONLY AUDIT · functional verify NOT VERIFIED (PROJECT_STATE)
 - Apex redirect e2e NOT VERIFIED · Ready ≠ functional GREEN
 
 ## Raportowanie
