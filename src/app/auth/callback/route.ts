@@ -9,9 +9,16 @@ import {
   isRecoveryCallback,
 } from "@/lib/auth/confirmation";
 import {
-  emailChangeAccountPath,
-  emailChangeLandingAfterVerify,
+  classifyEmailChangeVerification,
+  parseSecureEmailChangeAttestation,
+  EMAIL_CHANGE_NOTICE_COOKIE,
+  emailChangeResultPath,
+  type EmailChangeNoticeStatus,
 } from "@/lib/auth/email-change";
+import {
+  emailChangeNoticeSetOptions,
+  noticeCookieValue,
+} from "@/lib/auth/email-change-notice";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -21,6 +28,23 @@ function redirectAbsolute(request: NextRequest, path: string) {
   } catch {
     return NextResponse.redirect(new URL(path, request.url));
   }
+}
+
+function redirectEmailChange(
+  request: NextRequest,
+  status: EmailChangeNoticeStatus,
+  hasSession: boolean,
+) {
+  const response = redirectAbsolute(request, emailChangeResultPath(hasSession));
+  const value = noticeCookieValue(status);
+  if (value) {
+    response.cookies.set(
+      EMAIL_CHANGE_NOTICE_COOKIE,
+      value,
+      emailChangeNoticeSetOptions(),
+    );
+  }
+  return response;
 }
 
 /**
@@ -34,12 +58,11 @@ function redirectAbsolute(request: NextRequest, path: string) {
  * - OTP: ?token_hash=…&type=recovery → keep session → /auth/reset-password
  * - PKCE: ?code=…&flow=recovery (from getAuthPasswordResetRedirectTo) → keep session → /auth/reset-password
  * Signup / other confirms: sign out → /auth/confirmed
- * Email change (type=email_change or flow=email_change): keep session → /account
- *   One pending new_email is not a finished change.
- *   A successful verify with no user is the first secure-email confirmation,
- *   not a finished change and not an invalid link.
- *   Auth finishing the procedure is not product success unless Secure email
- *   change is known to be on. This route does not read that project flag.
+ * Email change (type=email_change or flow=email_change): keep any session.
+ *   The notice is a signed cookie, not a query param.
+ *   No session after a successful email-change OTP is the first secure confirmation (1/2).
+ *   2/2 requires that OTP to issue a session and AUTH_SECURE_EMAIL_CHANGE=on.
+ *   Unset or any other value stays unknown. The env var is server-only.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -60,20 +83,27 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     let exchangeOk = false;
     let exchangeErrorMessage: string | null = null;
+    let verifyIssuedSession = false;
+    let verifyReturnedUser = false;
+    const verifyTransport = classified.kind === "otp" ? "otp" : "pkce";
 
     if (classified.kind === "otp") {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         type: classified.type as EmailOtpType,
         token_hash: classified.tokenHash,
       });
       exchangeOk = !error;
       exchangeErrorMessage = error?.message ?? null;
+      verifyIssuedSession = Boolean(data?.session);
+      verifyReturnedUser = Boolean(data?.user);
     } else {
-      const { error } = await supabase.auth.exchangeCodeForSession(
+      const { data, error } = await supabase.auth.exchangeCodeForSession(
         classified.code,
       );
       exchangeOk = !error;
       exchangeErrorMessage = error?.message ?? null;
+      verifyIssuedSession = Boolean(data?.session);
+      verifyReturnedUser = Boolean(data?.user);
     }
 
     const decision = decideAuthCallbackRoute({
@@ -93,16 +123,22 @@ export async function GET(request: NextRequest) {
       return redirectAbsolute(request, "/forgot-password");
     }
     if (decision.kind === "email_change_failed") {
-      return redirectAbsolute(request, emailChangeAccountPath("invalid"));
+      return redirectEmailChange(request, "invalid", false);
     }
     if (decision.kind === "email_change") {
-      const { data, error: userError } = await supabase.auth.getUser();
-      const landing = emailChangeLandingAfterVerify({
+      const { data } = await supabase.auth.getUser();
+      const user = data.user ?? null;
+      const status = classifyEmailChangeVerification({
         exchangeOk: true,
-        userError: Boolean(userError),
-        user: data.user ?? null,
+        verifyTransport,
+        verifyIssuedSession,
+        verifyReturnedUser,
+        user,
+        secureEmailChangeEnabled: parseSecureEmailChangeAttestation(
+          process.env.AUTH_SECURE_EMAIL_CHANGE,
+        ),
       });
-      return redirectAbsolute(request, emailChangeAccountPath(landing));
+      return redirectEmailChange(request, status, Boolean(user));
     }
     return redirectAbsolute(request, confirmationResultPath(decision.status));
   } catch {
@@ -120,7 +156,7 @@ export async function GET(request: NextRequest) {
       return redirectAbsolute(request, "/forgot-password");
     }
     if (emailChange) {
-      return redirectAbsolute(request, emailChangeAccountPath("error"));
+      return redirectEmailChange(request, "unknown", false);
     }
     return redirectAbsolute(request, confirmationResultPath("error"));
   }

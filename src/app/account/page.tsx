@@ -17,20 +17,19 @@ import { DisplayNameForm } from "@/components/auth/display-name-form";
 import { AppShell } from "@/components/site/app-shell";
 import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
+import { EmailChangeNotice } from "@/components/auth/email-change-notice";
 import { signOutAction } from "@/lib/auth/actions";
+import { resolveEmailChangeNoticeDisplay } from "@/lib/auth/email-change";
+import { readEmailChangeNotice } from "@/lib/auth/email-change-notice";
 import { canAccessAdminNav } from "@/lib/auth/permissions";
-import { getCurrentProfile } from "@/lib/auth/session";
+import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import {
   listOwnTakes,
   takeRecentNonDeletedTakes,
 } from "@/lib/takes/list-own-takes";
-import {
-  EMAIL_CHANGE_AUTH_FINISHED_UNVERIFIED_MESSAGE,
-  EMAIL_CHANGE_INVALID_LINK_MESSAGE,
-  EMAIL_CHANGE_PARTIAL_MESSAGE,
-} from "@/lib/auth/email-change";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import {
   labelAccountLevel,
@@ -44,7 +43,7 @@ import {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ claim?: string; emailChange?: string }>;
+  searchParams: Promise<{ claim?: string }>;
 }) {
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
@@ -72,14 +71,13 @@ export default async function AccountPage({
     claimParam === "ok" || claimParam === "cap" || claimParam === "error"
       ? claimParam
       : null;
-  const emailChangeNotice =
-    params.emailChange === "partial"
-      ? EMAIL_CHANGE_PARTIAL_MESSAGE
-      : params.emailChange === "invalid" || params.emailChange === "error"
-        ? EMAIL_CHANGE_INVALID_LINK_MESSAGE
-        : params.emailChange === "auth_finished"
-          ? EMAIL_CHANGE_AUTH_FINISHED_UNVERIFIED_MESSAGE
-          : null;
+  const authUser = await getSessionUser();
+  const signedEmailChangeStatus = await readEmailChangeNotice();
+  const emailChangeStatus = resolveEmailChangeNoticeDisplay({
+    signedStatus: signedEmailChangeStatus,
+    pendingNewEmail: authUser?.new_email,
+    sessionReadable: true,
+  });
 
   const showAdminNav = canAccessAdminNav(context.profile.role);
   // Profile surface: exclude soft-deleted at query (not slice-then-filter).
@@ -355,11 +353,10 @@ export default async function AccountPage({
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
                 <SectionLabel>Bezpieczeństwo</SectionLabel>
-                {emailChangeNotice ? (
-                  <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
-                    {emailChangeNotice}
-                  </p>
+                {emailChangeStatus ? (
+                  <EmailChangeNotice status={emailChangeStatus} />
                 ) : null}
+                {signedEmailChangeStatus ? <ConsumeEmailChangeNotice /> : null}
                 <ChangeEmailForm currentEmail={context.email ?? ""} />
                 <ChangePasswordForm />
                 <p className="text-sm text-[var(--brd-mute)]">

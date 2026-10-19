@@ -86,8 +86,8 @@ Temat: `Ustaw nowe hasło — BitRymDym`
 
 **Konfiguracja:** Change email address.
 **Placeholdery:** `{{ .NewEmail }}`, `{{ .SiteURL }}`, `{{ .TokenHash }}`.
-**Link:** ten sam wzorzec co signup i recovery, z `type=email_change`. Szablon zmiany adresu udostępnia `{{ .TokenHash }}`. Auth buduje oba maile z typem `email_change` i osobnym hashem dla starej i nowej skrzynki. `verifyOtp` dostaje tylko `token_hash` i `type`. Pierwsze potwierdzenie wraca bez sesji; aplikacja pokazuje wtedy `emailChange=partial`, nie sukces i nie „link nieważny”.
-**Nie obiecywać**, że jedno kliknięcie kończy zmianę. Secure email change było włączone przy odczycie 2026-10-19; aplikacja i tak nie czyta tej flagi w runtime.
+**Link:** ten sam wzorzec co signup i recovery, z `type=email_change`. Szablon zmiany adresu udostępnia `{{ .TokenHash }}`. Auth buduje oba maile z typem `email_change` i osobnym hashem dla starej i nowej skrzynki. `verifyOtp` dostaje tylko `token_hash` i `type`. Pierwsze potwierdzenie OTP wraca bez sesji; aplikacja pokazuje wtedy komunikat 1/2, nie sukces. Brak `new_email` bez odczytanej flagi Secure email change zostaje stanem niejednoznacznym, nie 2/2. Wynik jedzie w jednorazowym podpisanym ciasteczku httpOnly i jest kasowany po pokazaniu. Parametr URL nie jest dowodem potwierdzenia.
+**Nie obiecywać**, że jedno kliknięcie kończy zmianę. Publiczne `GET /auth/v1/settings` nie zawiera Secure email change. Drugie potwierdzenie wraca zwykłą sesją, tak samo jak jedyne potwierdzenie przy wyłączonej fladze, więc sama sesja nie jest dowodem 2/2. Komunikat 2/2 wymaga serwerowej zmiennej `AUTH_SECURE_EMAIL_CHANGE=on`, ustawionej dopiero po sprawdzeniu, że w Dashboardzie Secure email change jest włączone. Inna wartość zostawia stan niejednoznaczny.
 
 Temat: `Potwierdź zmianę adresu — BitRymDym`
 
