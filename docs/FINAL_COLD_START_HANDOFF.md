@@ -2,10 +2,10 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-16 — tip **`5212933`** (parent **`81c2496`**) · KIND_REJECT code on `main` @ **`69e50d0`** (ancestor; repo migration **≠** database apply) · poller commit **`d3c99e3`** is ancestry · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · live CAS/concurrency and staging E2E **NOT CONFIRMED** · runtime flag, poller activity, Contabo **NOT RE-VERIFIED IN THIS STAGE** · Final Mix GREEN closeout **unchanged / not re-verified here** · **Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md) only** · **STOP — OWNER DECISION REQUIRED**
-**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip **`5212933`** (parent **`81c2496`**) ≠ staging deploy **NOT RE-VERIFIED IN THIS STAGE** ≠ staging schema **NOT RE-VERIFIED IN THIS STAGE** ≠ database apply **NOT CONFIRMED** ≠ prod last-known ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-19 — functional tip **`d12e38e`** (`fix(bpm): clarify conflict hypothesis labels`) on production · deploy **`dpl_6K73CZWphFdfPz4JjrvLapERTjwT`** READY · **BPM CONFLICT LABELING CLOSED** · WAV-6 tempo **OPEN / separate** · Sacred WIP hash MATCH · dirty worktree **preserve** · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) · [CHANGELOG 2026-10-19](./CHANGELOG.md) · SFM / Contabo / Security Wave 5 finalize path planes **unchanged** vs prior SSOT (still Owner GO)
+**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip ≠ auto-deploy docs descendants ≠ staging ≠ prod DB apply ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
-**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT. This file is entry + continuity; **§0 below is current.** Later sections that still cite tip `2adb569` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
+**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling. This file is entry + continuity; **§0 below is current for tip/deploy.** Later sections that still cite tip `2adb569` / `5212933` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
 
 **Evidence rule (bezwzględna):**
 
@@ -36,61 +36,31 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-GITHUB MAIN TIP / origin/main = 5212933630d1e2ff6271f56d928502a3e86b49d1 (verify: git rev-parse origin/main)
-  parent                      = 81c2496fec9699605ba2809e09f45e9fc69b7a19
-  subject                     = docs: reconcile SFM SSOT with published main tip
-  note                        = ≠ 69e50d0 · KIND_REJECT code + repo migration 20261016120000_sfm_reject_executor_job_kind.sql
-                              · entered at 69e50d0 · Git file ≠ database apply
-                              · poller commit d3c99e3 and HTTP surface 2f7050e are ancestry
-                              · live CAS/concurrency NOT CONFIRMED · staging E2E NOT CONFIRMED
-                              · runtime flag / poller activity / Contabo NOT RE-VERIFIED IN THIS STAGE
-                              · ≠ SFM Production GREEN
-                              · living detail → docs/PROJECT_STATE.md (SFM CODE STATUS / SFM PLANES)
-PRIOR TIP (HISTORY)           = b71a549 (parent of 81c2496) · 2f7050e (HTTP surface) · d3c99e3 (dedicated poller) · 69e50d0 (KIND_REJECT)
-                              · docs SSOT reconcile (parent e8d2127) · e8d2127 (type/poller)
-                              · 2d3514c (SFM worker bake) · bfed53d (migration drift) · 2adb569 (PR #12)
-APP FEATURE COMMIT (V2)       = 44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5
-  short                       = 44f7cbd
-  note                        = Studio Visual Parity V2 · GREEN / RELEASE VERIFIED / CLOSED
-                              · ancestry includes 7.1.6 `4fa658d` · 7.1.5 `3fccbf7` · P4.6 `a72fed9` · V1 `56b629e`
-PRODUCTION DEPLOYMENT (observed I.48-A0) = dpl_sAyrsHCfMVLFer669J2MgbbXbhGN
-  note                        = Ready · SHA 2adb569 · not re-verified vs current Git tip 5212933 · Ready ≠ functional app GREEN
-  aliases (last-known · NOT e2e) = www.bitrymdym.pl · bitrymdym.vercel.app · bitrymdym.pl
-                              · apex redirect e2e NOT VERIFIED
-  evidence                    = I.48-A0 (cold-start RO) — GitHub Deployments + Vercel CLI · not re-verified in A2/A3
-PRODUCTION GIT SHA (observed I.48-A0) = 2adb569
-  note                        = last-known deploy SHA · ≠ current Git tip 5212933 · prior f730a7a / dpl_28oH… = HISTORY
-                              · prior df37048 / dpl_7Cp2gQ9… = HISTORY
-SFM VERSIONS (product)        = CODE ON MAIN through tip 5212933 (parent 81c2496)
-                              · HTTP surface 2f7050e · poller commit d3c99e3 · KIND_REJECT 69e50d0
-                              · repo migration file ≠ database apply
-                              · runtime flag NOT RE-VERIFIED IN THIS STAGE
-                              · staging deployment SHA NOT RE-VERIFIED IN THIS STAGE
-                              · staging schema NOT RE-VERIFIED IN THIS STAGE (≠ assume prod)
-                              · staging E2E NOT CONFIRMED
-                              · SFM worker activity NOT RE-VERIFIED IN THIS STAGE
-                              · Contabo activity NOT RE-VERIFIED IN THIS STAGE
-                              · DB A–D via MCP with version drift (prior SSOT; no remote re-verify here)
-                              · OD-04 OPEN · OD-SFM-ID-05 OPEN · Production GREEN NOT CLAIMED
-STUDIO_EXPORT APP             = DEPLOYED (ancestry · prod observed 2adb569 / dpl_sAyrsHC…)
-                              · Final Mix STUDIO_EXPORT GREEN VERIFIED (frozen IN) · ≠ SFM Versions cutover
-                              · Ready ≠ SFM Production GREEN
-                              · I.45DR — PASS: narrow production STUDIO_EXPORT WAV canary
-                              · job 53398f9e-… / project bfc3d223-… / artifact 21d98be2-… READY
-                              · J2 Download AuthZ — PASS / CLOSED (I.45EX-A16/A17/A18 · artifact c596e7bc-…)
-                              · Stage J: CLOSED (GO-SJ-DOCS-CLOSE · audits/STAGE_J_FINAL_CLOSURE.md) · WAIVE byte-level fixture
-                              · Final Mix Production GREEN: VERIFIED (audits/FINAL_MIX_PRODUCTION_GREEN_CLOSEOUT.md · frozen IN only) · FULL FIXTURE VERIFIED PASS
-                              · prior: I.45BK/BM/BO + I.45BY 61b7cdf1-… SUCCEEDED (do not re-run either)
-                              · I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow)
-                              · empty-project happy-path delete NOT TESTED
-V2 VERIFY DEPLOY (HISTORY)    = dpl_2ymzMb24QtrYxWBJWmdufeTaTqkR @ 44f7cbd
-  note                        = original V2 release-gate deploy · superseded for live aliases
-PRIOR ALIAS BINDING (HISTORY) = dpl_1P8ixpt… @ ce2f0cc · dpl_56FGH… @ d515f3b · dpl_FVcx… @ 3a086ad
+GITHUB MAIN TIP / origin/main = d12e38e64423b28ec34f04659712147de4966a18
+                              (verify: git ls-remote origin refs/heads/main — docs tip advances after docs push)
+  parent                      = d70be665ac9dec2e5ddc868dc0af8eb28fdb2220
+  subject                     = fix(bpm): clarify conflict hypothesis labels
+  note                        = CONFLICT UX presentation only · CLOSED 2026-10-19
+                              · living detail → docs/PROJECT_STATE.md (BPM CONFLICT LABELING UX)
+PRODUCTION DEPLOYMENT (2026-10-19) = dpl_6K73CZWphFdfPz4JjrvLapERTjwT
+  note                        = READY · Production · SHA d12e38e · auto-deploy after push
+  aliases                     = www.bitrymdym.pl · bitrymdym.pl · bitrymdym.vercel.app
+PRODUCTION GIT SHA            = d12e38e (app) · docs tip may advance after this closeout push
+BPM CONFLICT LABELING         = CLOSED · 91/91 · isolated model+SSR PASS
+                              · NOT: live prod CONFLICT UI · Playwright form E2E
+WAV-6 TEMPO                   = OPEN / separate · stored 65 · signal ~99–101 · unchanged
+SACRED WIP                    = recording-eligibility-service.ts
+                              SHA256 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+DIRTY WORKTREE                = PRESERVE · live tests + untracked audits/scripts · do not clean
+SFM VERSIONS (product)        = CODE ON MAIN (ancestry) · KIND_REJECT 69e50d0 · poller d3c99e3
+                              · repo migration file ≠ database apply · Production GREEN NOT CLAIMED
+                              · living SFM planes → docs/PROJECT_STATE.md
+STUDIO_EXPORT APP             = Final Mix STUDIO_EXPORT GREEN VERIFIED (frozen IN; HISTORY planes)
+                              · ≠ SFM Versions cutover · Ready ≠ SFM Production GREEN
+APP FEATURE COMMIT (V2)       = 44f7cbd · Studio Visual Parity V2 GREEN / CLOSED (HISTORY baseline)
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl (308→www) · https://bitrymdym.vercel.app
-DEPLOYMENT STATE (observed I.48-A0) = Ready · SHA 2adb569 · not re-verified vs 2f7050e · Ready ≠ functional GREEN
-LIVING SSOT                   = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT)
-PREVIOUS PRODUCTION TIP       = d515f3b / dpl_56FGH… · 3a086ad / dpl_FVcx… · 44f7cbd / dpl_2ymz… · 4fa658d
-  older prior tip             = 79bc69f · 3fccbf7 · 9abc1b6 · 8f6eeca · a72fed9 · P4.6 (HISTORY)
+LIVING SSOT                   = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT / BPM UX)
+PRIOR PRODUCTION TIP (HISTORY)= d70be66 · de65ff9/1d33d3b · 2adb569 / dpl_sAyrsHC… (I.48-A0)
 
 STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
                               · Phase 7.1.6 CLOSED / GREEN @ 4fa658d (ancestry)

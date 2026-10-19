@@ -1,11 +1,12 @@
 # BPM Uncertainty UX + Controlled User Override — DESIGN REVIEW
 
-**Status:** DESIGN APPROVED · **IMPLEMENTATION CLOSED** (domain/server/UI)  
-**Date:** 2026-10-05  
-**Scope:** product + contract design for controlled BPM correction during upload  
-**Implemented:** `bpm-uncertainty.ts` + `bpm-uncertainty-ui.ts` + `BpmUncertaintyField` wired into admin/user upload · no DB migration  
-**Full browser READY E2E:** **BLOCKED / ACCEPTED ENVIRONMENT LIMITATION** (no local Docker/Supabase; Owner accepted — not an E2E PASS). See `docs/audits/BPM_E2E_ACCEPTANCE_AND_DURATION_210_AUDIT.md`.  
-**Non-goals this phase:** DB mutation · resolver threshold changes · VocalRemover integration · import · commit/push/deploy
+**Status:** DESIGN APPROVED · **IMPLEMENTATION CLOSED** (domain/server/UI) · **CONFLICT LABELING UX CLOSED** 2026-10-19 @ `d12e38e`
+**Date:** 2026-10-05 · **Labeling closeout:** 2026-10-19
+**Scope:** product + contract design for controlled BPM correction during upload
+**Implemented:** `bpm-uncertainty.ts` + `bpm-uncertainty-ui.ts` + `BpmUncertaintyField` wired into admin/user upload · no DB migration
+**CONFLICT labeling (2026-10-19):** presentation-only fix in `bpm-uncertainty-ui.ts` (+ tests) · commit `d12e38e64423b28ec34f04659712147de4966a18` · on production via auto-deploy `dpl_6K73CZWphFdfPz4JjrvLapERTjwT` · see §6.1 · [CHANGELOG 2026-10-19](../CHANGELOG.md)
+**Full browser READY E2E:** historically **BLOCKED / ACCEPTED ENVIRONMENT LIMITATION** · 2026-10-19 isolation verified model + SSR for CONFLICT · **live production CONFLICT UI after analyze NOT VERIFIED** · Playwright form E2E optional / non-blocking. See `docs/audits/BPM_E2E_ACCEPTANCE_AND_DURATION_210_AUDIT.md`.
+**Non-goals (labeling closeout):** DB mutation · resolver / DSP threshold changes · beat metadata / WAV BPM edits · VocalRemover integration
 
 ```text
 PRODUCT RULE
@@ -326,13 +327,31 @@ Treat as **privileged out-of-band** path, not user upload UX. Design recommendat
 | **HIGH** | Show BPM as detected | No free field; optional “Inne opcje systemu” if supporting candidates exist | “Wykryto automatycznie” — no accuracy claims |
 | **MEDIUM** | Preselect top; show ranked chips/buttons | Buttons / select of allowlist only | “Wybierz tempo — propozycje systemu” |
 | **LOW** | No pre-accept; force select | Buttons / select | “Nie udało się jednoznacznie ustalić — wybierz spośród wykrytych” |
-| **CONFLICT** | Two (or few) hypothesis cards | Pick hypothesis A **or** B — **not** a wide slider | “System widzi dwie możliwe tempa” |
+| **CONFLICT** | Two (or few) hypothesis cards | Pick hypothesis A **or** B — **not** a wide slider | Neutral `Hipoteza {n} BPM` · ranking copy (see §6.1) |
 | **UNAVAILABLE** | Block free invent | Owner policy (§8) | Format / decode message |
 
 **Controls allowed:** buttons, select, slider **only** when `range` is non-null and narrow.  
 **Controls forbidden:** unrestricted number/text input for detector-available path.
 
 **Blocking:** Finalize / READY disabled until selection valid for MEDIUM/LOW/CONFLICT.
+
+### 6.1 CONFLICT labeling (CLOSED 2026-10-19 · `d12e38e`)
+
+Presentation layer only (`buildBpmUxModel` / `BpmUncertaintyField`). **Does not** change `resolveCanonicalBpm`, envelope construction, DSP, finalize allowlist, or AUTO behaviour.
+
+| Rule | Contract |
+|------|----------|
+| Option labels | `Hipoteza {n} BPM` for every allowlisted hypothesis member |
+| Forbidden index-based quality words | Do **not** call hypotheses „główna” / „alternatywna” solely because of array order |
+| Signal-score hint | `Najwyższy score sygnałowy (0.xx)` **only** when a clear top composite exists with margin **`>= 0.05`** vs runner; otherwise **no** quality hint |
+| Option order | Follow envelope hypothesis member order · **do not** re-sort options by composite score for display |
+| Ranking copy | Description must state that signal ranking is **not** an automatic tempo decision (optional conflict reason suffix allowed) |
+| Model under CONFLICT | `recommendedBpm = null` · `requiresSelection = true` · `canProceed = false` · `defaultSelectionMode = null` · no preselected radio that bypasses choice |
+| Gate | `canProceedWithBpmSelection` / form `canSubmit` remain blocked until an allowlisted pick |
+
+**Verification bound to this closeout:** unit suites 91/91 · isolated offline WAV-6 → CONFLICT + SSR field render **PASS** · **not** claimed: production live CONFLICT after analyze · full Playwright form E2E.
+
+**Separate OPEN topic:** production WAV-6 stored BPM **65** vs ~99–101 signal / `RATIO_1_5_AMBIGUITY` — Owner listen / data correction **≠** this UX closure · do not treat 100 BPM as ground truth without Owner confirmation.
 
 ---
 

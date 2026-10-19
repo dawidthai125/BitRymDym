@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-19 — BPM CONFLICT labeling UX CLOSED (app on production; this entry = docs closeout)
+
+**Status:** **BPM CONFLICT LABELING CLOSED** · functional commit **`d12e38e64423b28ec34f04659712147de4966a18`** (`d12e38e`, `fix(bpm): clarify conflict hypothesis labels`, parent `d70be665…`) on `origin/main` · Vercel production **`dpl_6K73CZWphFdfPz4JjrvLapERTjwT`** READY · target Production · aliases include `www.bitrymdym.pl` · auto-deploy after push (no separate promote in the QA session) · **no** DB / Storage / beat metadata / WAV BPM mutation · **no** DSP / `bpm-resolve` / `bpm-uncertainty` envelope algorithm change
+**Implementation files:** `src/lib/beats/bpm-uncertainty-ui.ts` · `src/lib/beats/bpm-uncertainty-ui.test.ts` only
+**UX contract (CONFLICT presentation):** labels `Hipoteza {n} BPM` · no „główna/alternatywna hipoteza” from array index · hint `Najwyższy score sygnałowy (0.xx)` only when clear composite margin `>= 0.05` · close scores → no quality hint · option order follows envelope hypotheses (not composite sort) · copy includes `Ranking sygnałowy nie oznacza automatycznej decyzji o tempie` (+ optional reason) · model keeps `recommendedBpm = null`, `requiresSelection = true`, `canProceed = false`, `defaultSelectionMode = null` · explicit user pick required · AUTO path unchanged
+**Regression tests (this verification):** `bpm-uncertainty-ui` 19/19 · `bpm-uncertainty` 21/21 · `bpm-resolve` 33/33 · `bpm-quality-v2` 18/18 · **91/91 PASS**
+**Isolated verification:** offline local `PawejJaBokoTy-6.wav` → envelope `CONFLICT` / `RATIO_1_5_AMBIGUITY` · `buildBpmUxModel` + SSR `BpmUncertaintyField` · labels / score hint on 100 / no auto-recommend / selection gate · presentation order 65 → 99 → 100 → 101 · verdict `PASS — ISOLATED E2E VERIFIED` (model + SSR; **not** full browser form E2E)
+**NOT VERIFIED / NOT CLAIMED:** RTL component suite · Playwright form E2E · local `:3100` (unavailable that session) · `scripts/_e2e-bpm-uncertainty-verify.ts` (writes `docs/audits/`) · live production CONFLICT UI after analyze · ground-truth tempo of WAV-6
+**WAV-6 (separate, OPEN for tempo):** production stored BPM **65** unchanged · signal/segments ~99–101 · conflict reason `RATIO_1_5_AMBIGUITY` · **do not** treat 100 as confirmed ground truth · Owner listen / data correction = separate GO · UX labeling closure ≠ BPM metadata correction
+**Sacred WIP:** `src/lib/takes/recording-eligibility-service.ts` SHA-256 `5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9` MATCH · dirty worktree (live tests + untracked audits/scripts) **preserved** · not part of `d12e38e`
+**Closure rules:** no further functional commit / push / deploy for this UX fix without a new concrete bug · no BPM algorithm change · no WAV-6 metadata edit under this closure · optional Playwright form E2E = independent QA backlog item, **non-blocking** for this closeout
+**Canonical living tip / deploy pointers:** [PROJECT_STATE.md](./PROJECT_STATE.md) · design semantics: [BPM_UNCERTAINTY_UX_DESIGN.md](./architecture/BPM_UNCERTAINTY_UX_DESIGN.md) §6.1
+
 ## 2026-10-18 — STU-16: server upload window for PENDING_UPLOAD, p4 fixture leak fixed (local only)
 
 **Status:** **LOCAL ONLY** · **NOT COMMITTED · NOT PUSHED · NOT DEPLOYED** · migration **not applied in production** · no production data / Auth / Storage change
