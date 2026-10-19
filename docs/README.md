@@ -19,7 +19,7 @@
 
 **Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
 
-**Now:** **Final Mix Production GREEN: VERIFIED** · **Contabo continuous poller V1: IMPLEMENTED / LOCAL TESTS PASS** ([impl](./audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · [freeze](./decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md)) · Contabo sync **NOT DONE** · deploy **NOT DONE** · host **NOT DONE** · canary **NOT RUN** · always-on **NOT ENABLED** · **NEXT:** GO-HOST-RO-CONTABO / GO-SYNC / canary / always-on. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · **Living SSOT:** [PROJECT_STATE.md](./PROJECT_STATE.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
+**Now / Next (living):** tip Git, app tip, deployment ID, NEXT UNIT i statusy SFM/Contabo/STU-16 — **tylko** [PROJECT_STATE.md](./PROJECT_STATE.md) (nie duplikuj tu rejestru dpl). **Final Mix Production GREEN: VERIFIED** (frozen IN) · Contabo continuous poller V1: **IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync/host/canary/always-on **NOT DONE**. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -63,7 +63,7 @@ Nie duplikować całych treści — stosować linki.
 
 See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
-**Next:** **STOP — OWNER DECISION REQUIRED** — Studio Visual Parity V2 **CLOSED / GREEN** @ `44f7cbd` · follow-ups non-blocking · do not auto-open EPIC · **SEARCH EXISTING FIRST** · see [REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Next:** **STOP — OWNER DECISION REQUIRED** — szczegóły kandydatów GO w [PROJECT_STATE.md](./PROJECT_STATE.md) (NEXT UNIT) · Studio Visual Parity V2 **CLOSED / GREEN** @ `44f7cbd` · follow-ups non-blocking · do not auto-open EPIC · **SEARCH EXISTING FIRST** · see [REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md).
 
 ---
 

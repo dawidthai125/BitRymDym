@@ -1,21 +1,23 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-16 — tip **`5212933`** (parent **`81c2496`**) · KIND_REJECT code on `main` @ **`69e50d0`** (ancestor; repo migration **≠** database apply) · poller commit **`d3c99e3`** is ancestry · **OD-SFM-WORKER-ORPHAN-TIMEOUT OPEN** · live CAS/concurrency and staging E2E **NOT CONFIRMED** · runtime flag, poller activity, Contabo **NOT RE-VERIFIED IN THIS STAGE** · Final Mix (STUDIO_EXPORT) GREEN closeout **unchanged / not re-verified here** · **SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md)** · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-19 — **pointer hardening (docs-only)** · living tip / deployment / NEXT UNIT → **[PROJECT_STATE.md](./PROJECT_STATE.md) ONLY** · body tables below that still cite tip **`5212933`** / prod **`2adb569`** are **HISTORY** unless independently re-verified and matching PROJECT_STATE · KIND_REJECT / SFM / Contabo planes unchanged (code ≠ apply ≠ GREEN) · **STOP — OWNER DECISION REQUIRED**
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
-**Living state (SSOT):** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Living state (SSOT) — REQUIRED for tip / deploy / NEXT:** [PROJECT_STATE.md](./PROJECT_STATE.md)
 **Reuse / DO NOT DUPLICATE:** [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
 **FAR-01 living ops (historyczny / nie NEXT):** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
 
-**Ten dokument = continuity** (szczegółowy cold-start).
+**Ten dokument = continuity** (szczegółowy cold-start / historia). **Nie** konkuruje z living tipem w PROJECT_STATE.
 Product WHAT: [MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md). Technical HOW: [SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md).
 
 **Evidence rule:** code + remote schema + production evidence > documentation prose.
 Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 
 **Planes:** REPOSITORY · PRODUCTION APP · PRODUCTION DB · PRODUCTION STORAGE · SESSION/OPERATOR — never merge.
+
+> **Living tip / deployment / NEXT UNIT:** always read [PROJECT_STATE.md](./PROJECT_STATE.md) §2 first. SHA tables in this file may lag; treat them as **HISTORY** unless they match PROJECT_STATE after independent verification.
 
 ---
 
@@ -24,7 +26,8 @@ Decision CLOSED ≠ SHIPPED. SHIPPED ≠ PRODUCTION VERIFIED.
 | Field | Value |
 |-------|--------|
 | URL | https://www.bitrymdym.pl (canonical) · https://bitrymdym.pl (308→www) · https://bitrymdym.vercel.app |
-| **GitHub main tip / origin/main (confirmed)** | **`5212933630d1e2ff6271f56d928502a3e86b49d1` (`5212933`)** — `docs: reconcile SFM SSOT with published main tip` · parent **`81c2496`** · **≠** `69e50d0` · KIND_REJECT code + repo migration entered at **`69e50d0`** · poller commit **`d3c99e3`** and HTTP surface **`2f7050e`** are ancestry · Git file **≠** database apply · live CAS/concurrency and staging E2E **NOT CONFIRMED** · runtime flag / poller / Contabo **NOT RE-VERIFIED IN THIS STAGE** · living matrix → [PROJECT_STATE.md](./PROJECT_STATE.md) · prior HISTORY includes docs reconcile / `e8d2127` / `bfed53d` / `2adb569` |
+| **Living tip / deploy / NEXT** | **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** — do not use the HISTORY row below as current |
+| **GitHub main tip / origin/main (HISTORY snapshot · 2026-10-16 era)** | Was **`5212933630d1e2ff6271f56d928502a3e86b49d1` (`5212933`)** — `docs: reconcile SFM SSOT with published main tip` · parent **`81c2496`** · **≠** living tip · KIND_REJECT / poller / HTTP remain ancestry · living matrix → [PROJECT_STATE.md](./PROJECT_STATE.md) |
 | **Prior docs tip (HISTORY)** | **`f730a7a`** — Merge PR #11 · tip before PR #12 · prior **`522e514`** (PR #10) · prior **`df37048`** (PR #8) remain HISTORY |
 | **App-code tip (last-established in available evidence)** | **`ce2f0cc7ad7f5257577e858d64ca8531ebb35000` (`ce2f0cc`)** — Merge PR #5 · last app-feature tip before docs tips PR #6–#12 · **≠** Git tip · **≠** independently freshly verified production app SHA |
 | **App feature commit (V2)** | `44f7cbd2671dd5ece6ea298cc78bfae9a0f7a7f5` (**`44f7cbd`**) — Studio Visual Parity V2 · **GREEN / RELEASE VERIFIED / CLOSED** |

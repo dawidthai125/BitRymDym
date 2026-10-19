@@ -4,9 +4,10 @@
 **Date:** 2026-10-05 · **Labeling closeout:** 2026-10-19
 **Scope:** product + contract design for controlled BPM correction during upload
 **Implemented:** `bpm-uncertainty.ts` + `bpm-uncertainty-ui.ts` + `BpmUncertaintyField` wired into admin/user upload · no DB migration
-**CONFLICT labeling (2026-10-19):** presentation-only fix in `bpm-uncertainty-ui.ts` (+ tests) · commit `d12e38e64423b28ec34f04659712147de4966a18` · on production via auto-deploy `dpl_6K73CZWphFdfPz4JjrvLapERTjwT` · see §6.1 · [CHANGELOG 2026-10-19](../CHANGELOG.md)
+**CONFLICT labeling (2026-10-19):** presentation-only fix in `bpm-uncertainty-ui.ts` (+ tests) · commit `d12e38e64423b28ec34f04659712147de4966a18` · functional deploy HISTORY `dpl_6K73CZWphFdfPz4JjrvLapERTjwT` READY · see §6.1 · [CHANGELOG 2026-10-19](../CHANGELOG.md)
+**Deploy ID note:** Vercel auto-deploys docs-only pushes to `main`. A deployment ID (including later alias moves) is **not** by itself proof of which app commit is live — correlate with Git tip / app tip in [PROJECT_STATE.md](../PROJECT_STATE.md). Exact dpl→commit SHA may be **NOT VERIFIED** in CLI meta.
 **Full browser READY E2E:** historically **BLOCKED / ACCEPTED ENVIRONMENT LIMITATION** · 2026-10-19 isolation verified model + SSR for CONFLICT · **live production CONFLICT UI after analyze NOT VERIFIED** · Playwright form E2E optional / non-blocking. See `docs/audits/BPM_E2E_ACCEPTANCE_AND_DURATION_210_AUDIT.md`.
-**Non-goals (labeling closeout):** DB mutation · resolver / DSP threshold changes · beat metadata / WAV BPM edits · VocalRemover integration
+**Non-goals (labeling closeout):** DB mutation · resolver / DSP threshold changes · beat metadata / WAV BPM edits · VocalRemover integration · WAV-6 ground-truth tempo remains **OPEN / separate**
 
 ```text
 PRODUCT RULE
