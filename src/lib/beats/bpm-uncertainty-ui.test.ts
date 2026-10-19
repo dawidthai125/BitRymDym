@@ -122,9 +122,16 @@ describe("BPM uncertainty UX model", () => {
     expect(model.phase).toBe("CONFLICT");
     expect(model.range).toBeNull();
     expect(model.recommendedBpm).toBeNull();
+    expect(model.requiresSelection).toBe(true);
     expect(model.headline).toContain("nie może jednoznacznie określić BPM");
+    expect(model.description).toMatch(/Ranking sygnałowy nie oznacza automatycznej decyzji/i);
     expect(model.options.map((o) => o.bpm)).toEqual([92, 138]);
-    expect(model.options.some((o) => o.hint?.includes("hipoteza"))).toBe(true);
+    expect(model.options.every((o) => o.label.startsWith("Hipoteza "))).toBe(
+      true,
+    );
+    expect(
+      model.options.some((o) => o.hint?.toLowerCase().includes("główna")),
+    ).toBe(false);
   });
 
   it("5. allowlist is respected — options never invent values", () => {
@@ -248,7 +255,7 @@ describe("BPM uncertainty UX model", () => {
     ).toBe(false);
   });
 
-  it("12. accessibility semantics: CONFLICT options carry hypothesis hints", () => {
+  it("12. accessibility semantics: CONFLICT options carry hypothesis labels", () => {
     const model = buildBpmUxModel(
       envelope({
         confidenceClass: "CONFLICT",
@@ -267,9 +274,16 @@ describe("BPM uncertainty UX model", () => {
             range: null,
           },
         ],
+        candidates: [
+          { bpm: 92, rank: 1, score: 0.5, clusterId: "h0", role: "TOP" },
+          { bpm: 138, rank: 2, score: 0.4, clusterId: "h1", role: "RUNNER" },
+        ],
       }),
     );
     expect(model.options.every((o) => o.label.includes("BPM"))).toBe(true);
+    expect(model.options.every((o) => o.label.startsWith("Hipoteza "))).toBe(
+      true,
+    );
     expect(model.options.every((o) => typeof o.bpm === "number")).toBe(true);
   });
 
@@ -285,6 +299,269 @@ describe("BPM uncertainty UX model", () => {
     ).toBe(true);
     expect(resolveBpmSelectionMode({ envelope: env, selectedBpm: 95 })).toBe(
       "AUTO",
+    );
+  });
+
+  it("A. RATIO_1_5 65 vs 100 — no array-order preference; clear top may be labeled", () => {
+    const model = buildBpmUxModel(
+      envelope({
+        confidenceClass: "CONFLICT",
+        reason: "RATIO_1_5_AMBIGUITY",
+        detectedBpm: 100,
+        requiresExplicitSelection: true,
+        allowlist: [65, 99, 100, 101],
+        // Ascending BPM order: 65 first — must NOT become quality preference.
+        hypotheses: [
+          {
+            id: "h0",
+            representativeBpm: 65,
+            members: [65],
+            range: null,
+          },
+          {
+            id: "h1",
+            representativeBpm: 100,
+            members: [99, 100, 101],
+            range: { min: 99, max: 101 },
+          },
+        ],
+        candidates: [
+          { bpm: 100, rank: 1, score: 0.715, clusterId: "h1", role: "TOP" },
+          { bpm: 65, rank: 2, score: 0.399, clusterId: "h0", role: "RUNNER" },
+          {
+            bpm: 99,
+            rank: 3,
+            score: 0,
+            clusterId: "h1",
+            role: "RATIO_1_5_ALT",
+          },
+          {
+            bpm: 101,
+            rank: 4,
+            score: 0,
+            clusterId: "h1",
+            role: "SUPPORTING",
+          },
+        ],
+      }),
+    );
+    expect(model.phase).toBe("CONFLICT");
+    expect(model.recommendedBpm).toBeNull();
+    expect(model.requiresSelection).toBe(true);
+    expect(model.canProceed).toBe(false);
+    expect(model.defaultSelectionMode).toBeNull();
+    expect(model.description).toMatch(/Ranking sygnałowy nie oznacza automatycznej decyzji/i);
+    expect(model.description).toContain("RATIO_1_5_AMBIGUITY");
+
+    const opt65 = model.options.find((o) => o.bpm === 65);
+    const opt100 = model.options.find((o) => o.bpm === 100);
+    expect(opt65?.label).toBe("Hipoteza 65 BPM");
+    expect(opt100?.label).toBe("Hipoteza 100 BPM");
+    expect(opt65?.hint ?? "").not.toMatch(/główna|Najwyższy score/i);
+    expect(opt100?.hint).toMatch(/Najwyższy score sygnałowy/i);
+    // Presentation still follows hypothesis member order (65 before 100).
+    expect(model.options[0]?.bpm).toBe(65);
+    expect(
+      canProceedWithBpmSelection({
+        envelope: envelope({
+          confidenceClass: "CONFLICT",
+          allowlist: [65, 100],
+          detectedBpm: 100,
+        }),
+        selectedBpm: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("B. Hard conflict 99 vs 131 — explicit choice; no auto-resolution labels", () => {
+    const model = buildBpmUxModel(
+      envelope({
+        confidenceClass: "CONFLICT",
+        reason: "ESTIMATOR_HARD_CONFLICT",
+        detectedBpm: 131,
+        allowlist: [99, 131],
+        hypotheses: [
+          {
+            id: "h0",
+            representativeBpm: 99,
+            members: [99],
+            range: null,
+          },
+          {
+            id: "h1",
+            representativeBpm: 131,
+            members: [131],
+            range: null,
+          },
+        ],
+        candidates: [
+          { bpm: 131, rank: 1, score: 0.745, clusterId: "h1", role: "TOP" },
+          { bpm: 99, rank: 2, score: 0.659, clusterId: "h0", role: "RUNNER" },
+        ],
+      }),
+    );
+    expect(model.recommendedBpm).toBeNull();
+    expect(model.requiresSelection).toBe(true);
+    expect(model.options.map((o) => o.bpm)).toEqual([99, 131]);
+    expect(
+      model.options.every(
+        (o) => !(o.hint ?? "").toLowerCase().includes("główna"),
+      ),
+    ).toBe(true);
+    expect(
+      model.options.find((o) => o.bpm === 131)?.hint,
+    ).toMatch(/Najwyższy score sygnałowy/i);
+  });
+
+  it("C. Conflict 97 vs 130 — no auto recommendation; labels independent of BPM sort", () => {
+    const model = buildBpmUxModel(
+      envelope({
+        confidenceClass: "CONFLICT",
+        reason: "ESTIMATOR_HARD_CONFLICT",
+        detectedBpm: 97,
+        allowlist: [97, 130],
+        hypotheses: [
+          {
+            id: "h0",
+            representativeBpm: 97,
+            members: [97],
+            range: null,
+          },
+          {
+            id: "h1",
+            representativeBpm: 130,
+            members: [130],
+            range: null,
+          },
+        ],
+        candidates: [
+          { bpm: 97, rank: 1, score: 0.693, clusterId: "h0", role: "TOP" },
+          { bpm: 130, rank: 2, score: 0.591, clusterId: "h1", role: "RUNNER" },
+        ],
+      }),
+    );
+    expect(model.recommendedBpm).toBeNull();
+    expect(model.requiresSelection).toBe(true);
+    expect(model.options[0]?.bpm).toBe(97);
+    expect(model.options[0]?.hint).toMatch(/Najwyższy score sygnałowy/i);
+    expect(model.options[1]?.bpm).toBe(130);
+    expect(model.options[1]?.hint).toBeUndefined();
+  });
+
+  it("D. Close scores — no preferential signal-leader hint", () => {
+    const model = buildBpmUxModel(
+      envelope({
+        confidenceClass: "CONFLICT",
+        reason: "INSUFFICIENT_MARGIN",
+        detectedBpm: 100,
+        allowlist: [96, 100],
+        hypotheses: [
+          {
+            id: "h0",
+            representativeBpm: 96,
+            members: [96],
+            range: null,
+          },
+          {
+            id: "h1",
+            representativeBpm: 100,
+            members: [100],
+            range: null,
+          },
+        ],
+        candidates: [
+          { bpm: 100, rank: 1, score: 0.41, clusterId: "h1", role: "TOP" },
+          { bpm: 96, rank: 2, score: 0.4, clusterId: "h0", role: "RUNNER" },
+        ],
+      }),
+    );
+    expect(model.recommendedBpm).toBeNull();
+    expect(
+      model.options.every(
+        (o) => !(o.hint ?? "").includes("Najwyższy score sygnałowy"),
+      ),
+    ).toBe(true);
+    expect(model.options.every((o) => o.label.startsWith("Hipoteza "))).toBe(
+      true,
+    );
+  });
+
+  it("E. Highest score under CONFLICT still requires explicit selection", () => {
+    const env = envelope({
+      confidenceClass: "CONFLICT",
+      reason: "RATIO_1_5_AMBIGUITY",
+      detectedBpm: 100,
+      requiresExplicitSelection: true,
+      allowlist: [65, 100],
+      hypotheses: [
+        { id: "h0", representativeBpm: 65, members: [65], range: null },
+        { id: "h1", representativeBpm: 100, members: [100], range: null },
+      ],
+      candidates: [
+        { bpm: 100, rank: 1, score: 0.72, clusterId: "h1", role: "TOP" },
+        { bpm: 65, rank: 2, score: 0.4, clusterId: "h0", role: "RUNNER" },
+      ],
+    });
+    const model = buildBpmUxModel(env);
+    expect(model.recommendedBpm).toBeNull();
+    expect(model.requiresSelection).toBe(true);
+    expect(model.canProceed).toBe(false);
+    expect(model.defaultSelectionMode).toBeNull();
+    expect(
+      canProceedWithBpmSelection({ envelope: env, selectedBpm: null }),
+    ).toBe(false);
+    expect(
+      canProceedWithBpmSelection({ envelope: env, selectedBpm: 100 }),
+    ).toBe(true);
+    expect(
+      resolveBpmSelectionMode({ envelope: env, selectedBpm: 100 }),
+    ).toBe("CANDIDATE");
+  });
+
+  it("F. hypotheses[0] is not treated as quality winner solely by array order", () => {
+    const model = buildBpmUxModel(
+      envelope({
+        confidenceClass: "CONFLICT",
+        reason: "RATIO_1_5_AMBIGUITY",
+        detectedBpm: 100,
+        allowlist: [65, 100],
+        hypotheses: [
+          { id: "h0", representativeBpm: 65, members: [65], range: null },
+          { id: "h1", representativeBpm: 100, members: [100], range: null },
+        ],
+        candidates: [
+          { bpm: 100, rank: 1, score: 0.715, clusterId: "h1", role: "TOP" },
+          { bpm: 65, rank: 2, score: 0.399, clusterId: "h0", role: "RUNNER" },
+        ],
+      }),
+    );
+    expect(model.options[0]?.bpm).toBe(65);
+    expect(model.options[0]?.hypothesisId).toBe("h0");
+    expect(model.options[0]?.hint ?? "").not.toMatch(/Najwyższy score|główna/i);
+    expect(model.options[1]?.bpm).toBe(100);
+    expect(model.options[1]?.hint).toMatch(/Najwyższy score sygnałowy/i);
+    // Deterministic presentation order preserved across rebuild.
+    const again = buildBpmUxModel(
+      envelope({
+        confidenceClass: "CONFLICT",
+        reason: "RATIO_1_5_AMBIGUITY",
+        detectedBpm: 100,
+        allowlist: [65, 100],
+        hypotheses: [
+          { id: "h0", representativeBpm: 65, members: [65], range: null },
+          { id: "h1", representativeBpm: 100, members: [100], range: null },
+        ],
+        candidates: [
+          { bpm: 100, rank: 1, score: 0.715, clusterId: "h1", role: "TOP" },
+          { bpm: 65, rank: 2, score: 0.399, clusterId: "h0", role: "RUNNER" },
+        ],
+      }),
+    );
+    expect(again.options.map((o) => o.bpm)).toEqual(
+      model.options.map((o) => o.bpm),
+    );
+    expect(again.options.map((o) => o.hint)).toEqual(
+      model.options.map((o) => o.hint),
     );
   });
 });

@@ -59,6 +59,46 @@ function optionLabel(bpm: number): string {
   return `${bpm} BPM`;
 }
 
+function conflictHypothesisLabel(bpm: number): string {
+  return `Hipoteza ${bpm} BPM`;
+}
+
+/**
+ * Clear composite/signal-score leader among allowlisted candidates.
+ * Presentation only — never drives recommendedBpm under CONFLICT.
+ * Returns null when scores are missing, tied, or margin is too small.
+ */
+function resolveClearTopSignalBpm(
+  candidates: BpmUncertaintyEnvelope["candidates"],
+  allowlist: readonly number[],
+): number | null {
+  const scored = candidates
+    .filter(
+      (c) =>
+        allowlist.includes(c.bpm) &&
+        typeof c.score === "number" &&
+        Number.isFinite(c.score),
+    )
+    .map((c) => ({ bpm: c.bpm, score: c.score }))
+    .sort((a, b) => b.score - a.score || a.bpm - b.bpm);
+
+  if (scored.length === 0) return null;
+  const top = scored[0]!;
+  if (!(top.score > 0)) return null;
+
+  const runner = scored[1];
+  /** Minimum absolute composite gap to call out a signal leader in UI copy. */
+  const CLEAR_SCORE_MARGIN = 0.05;
+  if (runner != null && top.score - runner.score < CLEAR_SCORE_MARGIN) {
+    return null;
+  }
+  return top.bpm;
+}
+
+function formatConflictScore(score: number): string {
+  return score.toFixed(2);
+}
+
 /**
  * Build presentational model from server envelope.
  * Options are always filtered to allowlist — never invent BPM values.
@@ -117,40 +157,66 @@ export function buildBpmUxModel(
   }
 
   if (envelope.confidenceClass === "CONFLICT") {
+    const topSignalBpm = resolveClearTopSignalBpm(
+      envelope.candidates,
+      allowlist,
+    );
+    const topSignalScore =
+      topSignalBpm != null
+        ? envelope.candidates.find((c) => c.bpm === topSignalBpm)?.score
+        : undefined;
+
+    // Preserve hypothesis iteration order from the envelope (presentation ≠ ranking).
+    // Do not re-sort by composite — that would conflate display order with quality.
     const hypOptions: BpmUxOption[] = [];
     for (const h of envelope.hypotheses) {
       for (const bpm of uniqSorted(h.members)) {
         if (!allowlist.includes(bpm)) continue;
         if (hypOptions.some((o) => o.bpm === bpm)) continue;
+        const isClearTop = topSignalBpm != null && bpm === topSignalBpm;
         hypOptions.push({
           bpm,
-          label: optionLabel(bpm),
-          hint:
-            bpm === h.representativeBpm
-              ? h.id === envelope.hypotheses[0]?.id
-                ? "główna hipoteza"
-                : "alternatywna hipoteza"
-              : "wariant hipotezy",
+          label: conflictHypothesisLabel(bpm),
+          hint: isClearTop
+            ? typeof topSignalScore === "number" &&
+              Number.isFinite(topSignalScore)
+              ? `Najwyższy score sygnałowy (${formatConflictScore(topSignalScore)})`
+              : "Najwyższy score sygnałowy"
+            : undefined,
           hypothesisId: h.id,
         });
       }
     }
-    // Fallback: allowlist if hypotheses empty
+    // Fallback: allowlist if hypotheses empty — still no array-order preference.
     const options =
       hypOptions.length > 0
         ? hypOptions
-        : allowlist.map((bpm) => ({
-            bpm,
-            label: optionLabel(bpm),
-            hint: "kandydat systemu",
-          }));
+        : allowlist.map((bpm) => {
+            const isClearTop = topSignalBpm != null && bpm === topSignalBpm;
+            const score = envelope.candidates.find((c) => c.bpm === bpm)?.score;
+            return {
+              bpm,
+              label: conflictHypothesisLabel(bpm),
+              hint: isClearTop
+                ? typeof score === "number" && Number.isFinite(score)
+                  ? `Najwyższy score sygnałowy (${formatConflictScore(score)})`
+                  : "Najwyższy score sygnałowy"
+                : undefined,
+            };
+          });
+
+    const reasonSuffix =
+      envelope.reason.trim().length > 0 && envelope.reason !== "TEST"
+        ? ` Powód konfliktu: ${envelope.reason}.`
+        : "";
 
     return {
       phase: "CONFLICT",
       confidenceClass: "CONFLICT",
       headline: "System nie może jednoznacznie określić BPM.",
       description:
-        "Wybierz jedną z systemowych hipotez. Ranking nie jest automatyczną decyzją.",
+        "Wybierz jedną z systemowych hipotez. Ranking sygnałowy nie oznacza automatycznej decyzji o tempie." +
+        reasonSuffix,
       detectedBpm: envelope.detectedBpm,
       recommendedBpm: null,
       options,
