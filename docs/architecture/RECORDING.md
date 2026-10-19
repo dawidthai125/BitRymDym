@@ -175,7 +175,7 @@ Full behaviour description (format v2, ownership, lease, TTL, messages, browser 
 | Plane | Status |
 |-------|--------|
 | **(1) Git** | Migration file + claim/janitor/config/tests **ON `main`** @ **`c2be3b0`** (`c2be3b0159deb02481dd402bd276ad35bf34b273`) · file `supabase/migrations/20261018120000_stu16_pending_upload_window.sql` |
-| **(2) App deploy** | Code present in production bundles by ancestry · **Vercel deployment commit SHA: VERIFIED** (2026-10-19) · `dpl_Eoror2bbVeu896BtrCtysicNYPuZ` @ **`9bd1f86`** (build log + GH status) · READY ≠ functional GREEN |
+| **(2) App deploy** | Code present in production bundles by ancestry · **Live docs dpl (tip/dpl reconcile 2026-10-19):** `dpl_4d5KefeYNbBgqTYfYmwnZFJgCivb` @ **`0f07e84`** (build log; docs auto-deploy ≠ app-code change) · app tip **`d12e38e`** · **HISTORY SHA verify:** `dpl_Eoror…` @ `9bd1f86` · READY ≠ functional GREEN |
 | **(3) Production DB migration apply** | **VERIFIED BY READ-ONLY AUDIT** (2026-10-19) · project **`rzzxrgcdogkybkiidqgw`** · history version **`20261018154129`** / name **`stu16_pending_upload_window`** · live TTL **900 s** · checked defs/grants in audit scope (see below) · **≠** functional GREEN |
 | **(4) Local live integration** | **VERIFIED PASS 17/17** (2026-10-19) · `stu16-pending-upload-window-live.test.ts` via `vitest.integration.config.ts` · local Supabase API **`127.0.0.1:54421`** (ports remapped off Windows excluded **54224–54323**; do not assume **`54321`**) · TTL via **`created_at` backdate**, not wall-clock 900 s · **≠** production runtime |
 | **(5) Production functional verification** | **NOT VERIFIED** — no production writing E2E / prod concurrency / prod janitor schedule exercise |

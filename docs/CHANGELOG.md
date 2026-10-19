@@ -6,12 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-19 — STU-16 tip and deployment evidence reconciled (docs-only)
+
+**Status:** **DOCS ONLY** · Owner GO · updates living tip/dpl pointers after local-evidence commit auto-deploy · **no** app code / migration / prod DB write / Storage / Auth mutation / manual deploy in this session · **`supabase/config.toml` port WIP not included**
+**Confirmed planes:** tip / `origin/main` parent **`0f07e846b116b11212b276427b243380633c5a7f` (`0f07e84`)** — `docs: record local STU-16 verification evidence` · live docs deployment **`dpl_4d5KefeYNbBgqTYfYmwnZFJgCivb`** READY @ **`0f07e84`** (build log Commit: 0f07e84) · **app tip unchanged `d12e38e`** · docs auto-deploy ≠ new application-code deploy
+**Local evidence (unchanged; not re-run here):** last documented live suite **17/17 PASS** — see entry below
+**HISTORY:** earlier STU-16 SHA verify **`dpl_Eoror2bbVeu896BtrCtysicNYPuZ` @ `9bd1f86`**
+**Still NOT VERIFIED (production):** functional E2E · `SESSION_DAY_CAP` runtime · concurrency · janitor schedule · SQL byte-for-byte vs Git · STU-16 **not** Production GREEN · status remains **NOT VERIFIED — NO PRODUCTION FUNCTIONAL PASS**
+**Canonical:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [RECORDING.md](./architecture/RECORDING.md)
+
 ## 2026-10-19 — STU-16 local live integration verified (docs-only)
 
 **Status:** **DOCS ONLY** · Owner GO · records local STU-16 live suite evidence + local Supabase port remapping · **no** app code / migration / prod DB write / Storage / Auth mutation / deploy in this docs session · **`supabase/config.toml` port WIP not included in this commit**
 **Local ports:** Windows excluded TCP **54224–54323** blocked prior API/DB/studio/shadow · remapped to API **54421** · DB **54422** · shadow **54420** · Studio **54423** · Inbucket **54324** (unchanged) · `npx supabase start` from backup **without** `db reset` · Auth `http://127.0.0.1:54421/auth/v1/health` → **HTTP 200**
 **Local live suite:** `npx vitest run --config vitest.integration.config.ts src/lib/takes/stu16-pending-upload-window-live.test.ts --reporter=verbose` → **17 passed / 0 failed / 0 skipped** · exit **0** · ~4.2 s · TTL via **`created_at` backdate** (not wall-clock 900 s)
-**Also recorded:** Vercel **`dpl_Eoror2bbVeu896BtrCtysicNYPuZ`** commit SHA **VERIFIED** @ **`9bd1f86`** (prior read-only evidence; READY ≠ functional GREEN)
+**Also recorded (superseded as live dpl by tip/dpl reconcile above):** Vercel **`dpl_Eoror2bbVeu896BtrCtysicNYPuZ`** commit SHA **VERIFIED** @ **`9bd1f86`** (READY ≠ functional GREEN; later live alias = `dpl_4d5Kefe…` @ `0f07e84`)
 **Still NOT VERIFIED (production):** functional E2E · `SESSION_DAY_CAP` runtime · concurrency · janitor schedule · SQL byte-for-byte vs Git · STU-16 **not** Production GREEN
 **Canonical:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [RECORDING.md](./architecture/RECORDING.md)
 

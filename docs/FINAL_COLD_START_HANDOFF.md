@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-19 — **STU-16 local live 17/17 PASS + deploy SHA VERIFIED (docs-only)** · parent tip **`9bd1f86`** · app tip **`d12e38e`** · Vercel **`dpl_Eoror…` @ `9bd1f86`** SHA VERIFIED · local Supabase ports **54421/54422/54420/54423** (Inbucket **54324**; do **not** assume API **54321**) · Windows excluded TCP **54224–54323** caused prior bind failure · prod functional / concurrency / janitor / SESSION_DAY_CAP runtime **NOT VERIFIED** · Sacred WIP MATCH · dirty WIP **preserve** · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) · [CHANGELOG 2026-10-19](./CHANGELOG.md)
+**Updated:** 2026-10-19 — **STU-16 tip/dpl reconcile (docs-only)** · parent tip **`0f07e84`** · app tip **`d12e38e`** · live docs dpl **`dpl_4d5Kefe…` @ `0f07e84`** (docs auto-deploy ≠ app change) · last documented local live **17/17 PASS** (not re-run here) · local Supabase ports **54421/54422/54420/54423** (Inbucket **54324**; do **not** assume API **54321**) · prod functional / concurrency / janitor / SESSION_DAY_CAP runtime **NOT VERIFIED** · Sacred WIP MATCH · dirty WIP **preserve** · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) · [CHANGELOG 2026-10-19](./CHANGELOG.md)
 **Type:** Documentation continuity · cold-start entry · multi-plane (Git tip ≠ auto-deploy docs descendants ≠ staging ≠ prod DB apply ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes. This file is entry + continuity; **§0 below is current for tip/deploy.** Later sections that still cite tip `2adb569` / `5212933` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
@@ -37,16 +37,18 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 
 ```text
 GITHUB MAIN TIP / origin/main = verify: git ls-remote origin refs/heads/main
-  parent tip before this docs = 9bd1f86026f3a0003a9b4295ab15097dec3e5643
-                              · docs: reconcile STU-16 production evidence
+  parent tip before this docs = 0f07e846b116b11212b276427b243380633c5a7f
+                              · docs: record local STU-16 verification evidence
   app tip                     = d12e38e64423b28ec34f04659712147de4966a18
                               · fix(bpm): clarify conflict hypothesis labels · CLOSED 2026-10-19
   note                        = living detail → docs/PROJECT_STATE.md
-PRODUCTION DEPLOYMENT         = dpl_Eoror2bbVeu896BtrCtysicNYPuZ
-  note                        = READY · commit SHA VERIFIED 9bd1f86 (build log + GH status)
+PRODUCTION DEPLOYMENT         = dpl_4d5KefeYNbBgqTYfYmwnZFJgCivb
+  note                        = READY · docs commit SHA VERIFIED 0f07e84 (build log)
+                              · docs auto-deploy ≠ app-code change
                               · aliases www / apex / vercel.app
                               · READY ≠ STU-16 functional GREEN
                               · docs-only push auto-deploys — re-verify live with vercel inspect
+HISTORY STU-16 SHA verify     = dpl_Eoror… @ 9bd1f86
 HISTORY alias-control         = dpl_4Mhme… · HISTORY BPM UX dpl_6K73… @ d12e38e
 PRODUCTION APP SHA (BPM UX)   = d12e38e · docs tip may advance without app change
 BPM CONFLICT LABELING         = CLOSED · 91/91 (session evidence) · isolated model+SSR PASS
