@@ -5,6 +5,10 @@
  */
 
 import {
+  releaseSessionAudio,
+  retainSessionAudio,
+} from "@/lib/audio/session-audio-bytes";
+import {
   createStudioClockEpoch,
   isVoiceInSync,
   playheadMsFromContextClock,
@@ -23,6 +27,10 @@ import type {
   StudioResolvedSource,
   StudioSourceAdapterRegistry,
 } from "@/lib/studio/studio-audio-source-adapter";
+import {
+  shouldReuseStudioVoice,
+  studioClipSourceIdentity,
+} from "@/lib/studio/studio-voice-identity";
 import {
   interpretStudioFxChainForPlayback,
   studioFxPlaybackFingerprint,
@@ -144,6 +152,8 @@ type Voice = {
   mediaSource: Connectable;
   clipGain: GainLike;
   sourceUrl: string;
+  /** WAVE 1.1 — beat|asset or take:id; used to detect master replacement. */
+  identityKey: string | null;
   disposed: boolean;
 };
 
@@ -643,6 +653,7 @@ export class StudioAudioEngine {
       mediaSource,
       clipGain,
       sourceUrl: url,
+      identityKey: null,
       disposed: false,
     });
 
@@ -1253,8 +1264,6 @@ export class StudioAudioEngine {
   private async ensureTimelineVoice(
     clip: StudioEngineClip,
   ): Promise<Voice | null> {
-    const existing = this.voices.get(clip.id);
-    if (existing && !existing.disposed) return existing;
     if (!this.ctx) return null;
 
     const adapter = this.registry.get(clip.sourceKind);
@@ -1268,7 +1277,35 @@ export class StudioAudioEngine {
       return null;
     }
 
+    // TAKE identity is immutable (replace → new take id). BEAT_REF must
+    // re-resolve so master replacement (new assetId) can replace the voice.
+    const existingEarly = this.voices.get(clip.id);
+    if (
+      existingEarly &&
+      !existingEarly.disposed &&
+      clip.sourceKind !== "BEAT_REF"
+    ) {
+      return existingEarly;
+    }
+
     const resolved = await adapter.resolve(clip);
+    const nextIdentity = studioClipSourceIdentity(clip);
+
+    // WAVE 1.1: after await, reuse only when identity still matches.
+    const existingAfterResolve = this.voices.get(clip.id);
+    if (existingAfterResolve && !existingAfterResolve.disposed) {
+      if (
+        shouldReuseStudioVoice({
+          existingIdentityKey: existingAfterResolve.identityKey,
+          nextIdentityKey: nextIdentity,
+        })
+      ) {
+        return existingAfterResolve;
+      }
+      // Master (or identity) changed — drop stale MediaElement before create.
+      this.disposeVoice(clip.id);
+    }
+
     if (!resolved.ok) {
       this.failedClips.add(clip.id);
       this.listener.onError({
@@ -1280,7 +1317,7 @@ export class StudioAudioEngine {
     }
 
     try {
-      return this.createVoice(clip, resolved.source);
+      return this.createVoice(clip, resolved.source, nextIdentity);
     } catch {
       this.failedClips.add(clip.id);
       this.listener.onError({
@@ -1295,6 +1332,7 @@ export class StudioAudioEngine {
   private createVoice(
     clip: StudioEngineClip,
     source: StudioResolvedSource,
+    identityKey: string | null,
   ): Voice {
     if (!this.ctx) {
       throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
@@ -1306,6 +1344,9 @@ export class StudioAudioEngine {
     element.muted = false;
     element.src = source.url;
     element.load();
+    if (identityKey && source.url.startsWith("blob:")) {
+      retainSessionAudio(identityKey);
+    }
     const mediaSource = this.ctx.createMediaElementSource(element);
     const clipGain = this.ctx.createGain();
     // Initial hold; syncVoices applies position-correct fade schedule.
@@ -1326,6 +1367,7 @@ export class StudioAudioEngine {
       mediaSource,
       clipGain,
       sourceUrl: source.url,
+      identityKey,
       disposed: false,
     };
     this.voices.set(clip.id, voice);
@@ -1346,6 +1388,8 @@ export class StudioAudioEngine {
     const voice = this.voices.get(id);
     if (!voice) return;
     voice.disposed = true;
+    const pinnedKey = voice.identityKey;
+    const wasBlob = voice.sourceUrl.startsWith("blob:");
     try {
       voice.element.pause();
       voice.element.src = "";
@@ -1360,5 +1404,8 @@ export class StudioAudioEngine {
       /* ignore */
     }
     this.voices.delete(id);
+    if (pinnedKey && wasBlob) {
+      releaseSessionAudio(pinnedKey);
+    }
   }
 }

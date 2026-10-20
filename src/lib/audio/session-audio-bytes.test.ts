@@ -10,8 +10,11 @@ import {
   loadSessionAudioBytes,
   loadSessionAudioFromUrl,
   peekSessionAudioBytes,
+  releaseSessionAudio,
   resetSessionAudioCacheForTests,
+  retainSessionAudio,
   sessionAudioCacheSize,
+  sessionAudioRetainCount,
   SESSION_AUDIO_CACHE_MAX_ENTRIES,
 } from "@/lib/audio/session-audio-bytes";
 
@@ -162,5 +165,50 @@ describe("session audio bytes", () => {
 
   it("respects max entries constant", () => {
     expect(SESSION_AUDIO_CACHE_MAX_ENTRIES).toBe(8);
+  });
+
+  it("invalidate does not revoke blob while retained by active playback", () => {
+    const key = buildSessionAudioKey({
+      kind: "beat",
+      id: "active",
+      versionId: "a1",
+    });
+    const bytes = new Uint8Array([1, 2, 3]).buffer;
+    const url = ensureSessionAudioObjectUrl(key, bytes);
+    retainSessionAudio(key);
+    expect(sessionAudioRetainCount(key)).toBe(1);
+
+    invalidateSessionAudio(key);
+    // Still playable — revoke deferred while MediaElement holds the blob.
+    expect(getSessionAudioObjectUrl(key)).toBe(url);
+    expect(sessionAudioCacheSize()).toBe(1);
+
+    releaseSessionAudio(key);
+    expect(getSessionAudioObjectUrl(key)).toBeNull();
+    expect(sessionAudioCacheSize()).toBe(0);
+  });
+
+  it("LRU does not evict retained entries", () => {
+    const pinned = buildSessionAudioKey({
+      kind: "beat",
+      id: "pin",
+      versionId: "1",
+    });
+    ensureSessionAudioObjectUrl(pinned, new Uint8Array([9]).buffer);
+    retainSessionAudio(pinned);
+    const pinnedUrl = getSessionAudioObjectUrl(pinned);
+
+    for (let i = 0; i < SESSION_AUDIO_CACHE_MAX_ENTRIES + 2; i += 1) {
+      const k = buildSessionAudioKey({
+        kind: "beat",
+        id: `x${i}`,
+        versionId: "1",
+      });
+      ensureSessionAudioObjectUrl(k, new Uint8Array([i]).buffer);
+    }
+
+    expect(getSessionAudioObjectUrl(pinned)).toBe(pinnedUrl);
+    expect(sessionAudioRetainCount(pinned)).toBe(1);
+    releaseSessionAudio(pinned);
   });
 });

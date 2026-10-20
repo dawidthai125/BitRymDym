@@ -133,6 +133,12 @@ export type ResolveStudioWaveformPeaksParams = {
   url: string;
   peaksPerSecond?: number;
   cache?: StudioWaveformPeaksCache;
+  /**
+   * When false, skip session-byte hydrate even if the dedup flag is ON.
+   * Used for provisional beat:id keys (no assetId) so we never cache
+   * unversioned master bytes.
+   */
+  useSessionBytes?: boolean;
   load?: (
     url: string,
     peaksPerSecond: number,
@@ -168,11 +174,14 @@ export async function resolveStudioWaveformPeaks(
     return { payload, cacheHit: false };
   }
 
+  const useSessionBytes =
+    params.useSessionBytes !== false && isAudioSessionDedupEnabled();
+
   const promise = (async () => {
     let payload: StudioWaveformPeaksPayload;
     if (load !== studioPeaksFromAudioUrl) {
       payload = await load(params.url, pps);
-    } else if (isAudioSessionDedupEnabled()) {
+    } else if (useSessionBytes) {
       const cachedBytes = peekSessionAudioBytes(params.sourceKey);
       if (cachedBytes) {
         payload = await studioPeaksFromAudioBytes(cachedBytes, pps);

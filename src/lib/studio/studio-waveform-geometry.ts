@@ -3,6 +3,7 @@
  * Clip integer-ms fields remain SSOT; waveform only visualizes them.
  */
 
+import { getResolvedStudioBeatAudioSourceKey } from "@/lib/studio/studio-beat-session-source";
 import { assertIntegerMs } from "@/lib/studio/studio-time";
 import type { StudioClipDto } from "@/lib/studio/studio-types";
 
@@ -25,7 +26,12 @@ export type StudioWaveformTimelineWindow = {
   durationMs: number;
 };
 
-/** Deterministic cache / decode identity — never keyed by clipId alone. */
+/**
+ * Deterministic cache / decode identity — never keyed by clipId alone.
+ * BEAT_REF: prefer versioned session key (beat:id|assetId) after transport
+ * resolve; provisional beat:id only before asset identity is known.
+ * TAKE: takeId is the immutable READY object identity (new take → new id).
+ */
 export function studioWaveformSourceKey(
   clip: Pick<
     StudioClipDto,
@@ -36,7 +42,10 @@ export function studioWaveformSourceKey(
     return `take:${clip.sourceTakeId}`;
   }
   if (clip.sourceKind === "BEAT_REF" && clip.sourceBeatId) {
-    return `beat:${clip.sourceBeatId}`;
+    return (
+      getResolvedStudioBeatAudioSourceKey(clip.sourceBeatId) ??
+      `beat:${clip.sourceBeatId}`
+    );
   }
   if (clip.sourceKind === "ARTIFACT" && clip.sourceArtifactId) {
     return `artifact:${clip.sourceArtifactId}`;

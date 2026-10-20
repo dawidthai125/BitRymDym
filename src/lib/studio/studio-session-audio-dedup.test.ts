@@ -6,6 +6,10 @@ import {
   sessionAudioCacheSize,
 } from "@/lib/audio/session-audio-bytes";
 import {
+  resetStudioBeatSessionKeysForTests,
+  studioBeatAudioSourceKey,
+} from "@/lib/studio/studio-beat-session-source";
+import {
   createStudioWaveformPeaksCache,
   resetStudioWaveformPeaksCacheForTests,
   resolveStudioWaveformPeaks,
@@ -18,15 +22,20 @@ import {
 afterEach(() => {
   resetSessionAudioCacheForTests();
   resetStudioWaveformPeaksCacheForTests();
+  resetStudioBeatSessionKeysForTests();
   vi.unstubAllEnvs();
 });
 
 describe("WAVE 1-B studio session + waveform share", () => {
-  it("session key for beat matches waveform sourceKey prefix", () => {
-    // Transport stores under `beat:${id}`; waveform sourceKey is the same.
-    expect(buildSessionAudioKey({ kind: "beat", id: "abc" })).toContain(
-      "beat:abc",
+  it("WAVE 1.1 session key for beat includes assetId (Player parity)", () => {
+    expect(studioBeatAudioSourceKey("abc", "asset-1")).toBe(
+      buildSessionAudioKey({
+        kind: "beat",
+        id: "abc",
+        versionId: "asset-1",
+      }),
     );
+    expect(studioBeatAudioSourceKey("abc", "asset-1")).toBe("beat:abc|asset-1");
   });
 
   it("custom load path still used when injected (flag-independent tests)", async () => {

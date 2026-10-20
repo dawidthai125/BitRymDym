@@ -31,6 +31,7 @@ import {
   createStudioSourceAdapterRegistry,
   type StudioResolvedSource,
 } from "@/lib/studio/studio-audio-source-adapter";
+import { resolveStudioBeatSessionSource } from "@/lib/studio/studio-beat-session-source";
 import { STUDIO_METER_NEUTRAL } from "@/lib/studio/studio-meter";
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
@@ -163,43 +164,19 @@ export function StudioTransportProvider({
     Boolean(beatId) || engineDocument.clips.some((c) => c.sourceKind === "TAKE");
 
   async function resolveBeatUrl(id: string): Promise<StudioResolvedSource | null> {
-    const cached = beatCacheRef.current.get(id);
-    if (cached && cached.expiresAt - Date.now() > URL_REFRESH_MS) {
-      return cached;
-    }
+    // WAVE 1.1: always re-resolve access so active assetId is known.
+    // URL/blob cache is keyed by beat|assetId — never bare beatId.
     const result = await requestBeatAudioAccessAction({
       beatId: id,
       purpose: PUBLIC_PLAYBACK_PURPOSE,
     });
-    if (!result.success || !result.url) return null;
-
-    let playableUrl = result.url;
-    let expiresAt = result.expiresAt
-      ? Date.parse(result.expiresAt)
-      : Date.now() + 60_000;
-
-    // WAVE 1-B: hydrate session bytes under waveform sourceKey `beat:${id}`
-    // so MediaElement + peaks share one Storage GET.
-    if (isAudioSessionDedupEnabled()) {
-      const sessionKey = `beat:${id}`;
-      const { objectUrl } = await loadSessionAudioFromUrl(
-        sessionKey,
-        result.url,
-        { enabled: true },
-      );
-      if (objectUrl) {
-        playableUrl = objectUrl;
-        // Blob URLs do not expire with signed TTL; keep cache warm for the tab.
-        expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-      }
-    }
-
-    const source: StudioResolvedSource = {
-      url: playableUrl,
-      expiresAt,
-    };
-    beatCacheRef.current.set(id, source);
-    return source;
+    return resolveStudioBeatSessionSource({
+      beatId: id,
+      access: result,
+      urlCache: beatCacheRef.current,
+      dedupEnabled: isAudioSessionDedupEnabled(),
+      urlRefreshMs: URL_REFRESH_MS,
+    });
   }
 
   async function resolveTakeUrl(id: string): Promise<StudioResolvedSource | null> {

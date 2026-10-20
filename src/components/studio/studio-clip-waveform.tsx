@@ -13,6 +13,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
+import { isVersionedBeatAudioSourceKey } from "@/lib/studio/studio-beat-session-source";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import type { StudioClipDto } from "@/lib/studio/studio-types";
 import { resolveStudioWaveformPeaks } from "@/lib/studio/studio-waveform-cache";
@@ -183,9 +184,15 @@ export function StudioClipWaveform({
           setLoadState("error");
           return;
         }
+        // After transport resolve, BEAT_REF key becomes beat:id|assetId.
+        const resolvedKey = studioWaveformSourceKey(clip) ?? sourceKey;
+        const useSessionBytes =
+          clip.sourceKind !== "BEAT_REF" ||
+          isVersionedBeatAudioSourceKey(resolvedKey);
         const { payload } = await resolveStudioWaveformPeaks({
-          sourceKey,
+          sourceKey: resolvedKey,
           url,
+          useSessionBytes,
         });
         if (cancelled) return;
         setPeaksPerSecond(payload.peaksPerSecond);

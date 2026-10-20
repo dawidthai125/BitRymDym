@@ -2,6 +2,9 @@
  * WAVE 1 — tab/session-scoped audio byte cache (client).
  * Dedupes parallel loaders; optional blob: object URLs for MediaElement.
  * Not a cross-user or durable cache. Keys must be resource identity, never signed URLs.
+ *
+ * WAVE 1.1: retain/release pins active blob URLs so invalidate/LRU cannot
+ * revoke a source still held by a playing MediaElement.
  */
 
 import { isAudioSessionDedupEnabled } from "@/config/audio-session-dedup";
@@ -16,6 +19,8 @@ type CacheEntry = {
   objectUrl: string | null;
   mimeType: string;
   touchedAt: number;
+  retainCount: number;
+  pendingRevoke: boolean;
 };
 
 const store = new Map<string, CacheEntry>();
@@ -38,13 +43,24 @@ function revokeObjectUrl(entry: CacheEntry): void {
   entry.objectUrl = null;
 }
 
+function hardRemove(entry: CacheEntry): void {
+  revokeObjectUrl(entry);
+  store.delete(entry.key);
+  inflight.delete(entry.key);
+}
+
 function evictIfNeeded(): void {
   while (store.size > SESSION_AUDIO_CACHE_MAX_ENTRIES) {
-    const oldest = store.keys().next().value as string | undefined;
-    if (!oldest) break;
-    const removed = store.get(oldest);
-    store.delete(oldest);
-    if (removed) revokeObjectUrl(removed);
+    let victimKey: string | undefined;
+    for (const [key, entry] of store) {
+      if (entry.retainCount > 0) continue;
+      victimKey = key;
+      break;
+    }
+    if (!victimKey) break;
+    const removed = store.get(victimKey);
+    if (removed) hardRemove(removed);
+    else store.delete(victimKey);
   }
 }
 
@@ -63,6 +79,33 @@ export function peekSessionAudioBytes(key: string): ArrayBuffer | null {
   if (!entry) return null;
   touch(entry);
   return entry.bytes;
+}
+
+/**
+ * Pin a session entry while a MediaElement (or other consumer) uses its blob URL.
+ * No-op if the key is absent.
+ */
+export function retainSessionAudio(key: string): void {
+  const entry = store.get(key);
+  if (!entry) return;
+  entry.retainCount += 1;
+  touch(entry);
+}
+
+/**
+ * Release a previous retain. If invalidate was deferred, revokes when count hits 0.
+ */
+export function releaseSessionAudio(key: string): void {
+  const entry = store.get(key);
+  if (!entry) return;
+  entry.retainCount = Math.max(0, entry.retainCount - 1);
+  if (entry.retainCount === 0 && entry.pendingRevoke) {
+    hardRemove(entry);
+  }
+}
+
+export function sessionAudioRetainCount(key: string): number {
+  return store.get(key)?.retainCount ?? 0;
 }
 
 export async function loadSessionAudioBytes(
@@ -97,6 +140,8 @@ export async function loadSessionAudioBytes(
       objectUrl: null,
       mimeType: "application/octet-stream",
       touchedAt: Date.now(),
+      retainCount: 0,
+      pendingRevoke: false,
     };
     store.set(key, entry);
     evictIfNeeded();
@@ -136,6 +181,8 @@ export function ensureSessionAudioObjectUrl(
     objectUrl: url,
     mimeType,
     touchedAt: Date.now(),
+    retainCount: 0,
+    pendingRevoke: false,
   });
   evictIfNeeded();
   return url;
@@ -151,17 +198,21 @@ export function getSessionAudioObjectUrl(key: string): string | null {
 export function invalidateSessionAudio(key: string): void {
   const entry = store.get(key);
   if (!entry) return;
-  revokeObjectUrl(entry);
-  store.delete(key);
-  inflight.delete(key);
+  if (entry.retainCount > 0) {
+    entry.pendingRevoke = true;
+    return;
+  }
+  hardRemove(entry);
 }
 
 export function clearSessionAudioCache(): void {
-  for (const entry of store.values()) {
-    revokeObjectUrl(entry);
+  for (const entry of [...store.values()]) {
+    if (entry.retainCount > 0) {
+      entry.pendingRevoke = true;
+      continue;
+    }
+    hardRemove(entry);
   }
-  store.clear();
-  inflight.clear();
 }
 
 export function sessionAudioCacheSize(): number {
@@ -170,7 +221,13 @@ export function sessionAudioCacheSize(): number {
 
 /** Test helper. */
 export function resetSessionAudioCacheForTests(): void {
-  clearSessionAudioCache();
+  for (const entry of store.values()) {
+    entry.retainCount = 0;
+    entry.pendingRevoke = false;
+    revokeObjectUrl(entry);
+  }
+  store.clear();
+  inflight.clear();
 }
 
 /**
