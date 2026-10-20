@@ -240,3 +240,15 @@ export async function studioPeaksFromAudioUrl(
   const buffer = await decodeAudioBufferForStudioPeaks(bytes);
   return studioPeaksFromAudioBuffer(buffer, peaksPerSecond);
 }
+
+/**
+ * WAVE 1-B — decode peaks from an ArrayBuffer already held in-session
+ * (no second Storage GET when engine/waveform share bytes).
+ */
+export async function studioPeaksFromAudioBytes(
+  bytes: ArrayBuffer,
+  peaksPerSecond: number = STUDIO_WAVEFORM_PEAKS_PER_SECOND,
+): Promise<StudioWaveformPeaksPayload> {
+  const buffer = await decodeAudioBufferForStudioPeaks(bytes);
+  return studioPeaksFromAudioBuffer(buffer, peaksPerSecond);
+}

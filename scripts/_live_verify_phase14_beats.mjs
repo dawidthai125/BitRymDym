@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { assertScriptStorageTarget } from "./lib/storage-host-guard.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -43,6 +44,17 @@ const secrets = [anon, service].filter(Boolean);
 
 if (!url || !anon || !service) {
   console.log("FAIL ENV :: missing keys");
+  process.exit(2);
+}
+
+try {
+  assertScriptStorageTarget({
+    scriptId: "live_verify_phase14_beats",
+    supabaseUrl: url,
+    env: { ...env, ...process.env },
+  });
+} catch (err) {
+  console.log(`FAIL STORAGE_HOST_GUARD :: ${redact(err?.message ?? err, secrets)}`);
   process.exit(2);
 }
 

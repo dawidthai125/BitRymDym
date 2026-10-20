@@ -12,6 +12,8 @@ import {
 } from "react";
 
 import { usePlayerOptional } from "@/components/player/player-provider";
+import { isAudioSessionDedupEnabled } from "@/config/audio-session-dedup";
+import { loadSessionAudioFromUrl } from "@/lib/audio/session-audio-bytes";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import { PUBLIC_PLAYBACK_PURPOSE } from "@/lib/beats/public";
 import {
@@ -170,11 +172,31 @@ export function StudioTransportProvider({
       purpose: PUBLIC_PLAYBACK_PURPOSE,
     });
     if (!result.success || !result.url) return null;
+
+    let playableUrl = result.url;
+    let expiresAt = result.expiresAt
+      ? Date.parse(result.expiresAt)
+      : Date.now() + 60_000;
+
+    // WAVE 1-B: hydrate session bytes under waveform sourceKey `beat:${id}`
+    // so MediaElement + peaks share one Storage GET.
+    if (isAudioSessionDedupEnabled()) {
+      const sessionKey = `beat:${id}`;
+      const { objectUrl } = await loadSessionAudioFromUrl(
+        sessionKey,
+        result.url,
+        { enabled: true },
+      );
+      if (objectUrl) {
+        playableUrl = objectUrl;
+        // Blob URLs do not expire with signed TTL; keep cache warm for the tab.
+        expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+      }
+    }
+
     const source: StudioResolvedSource = {
-      url: result.url,
-      expiresAt: result.expiresAt
-        ? Date.parse(result.expiresAt)
-        : Date.now() + 60_000,
+      url: playableUrl,
+      expiresAt,
     };
     beatCacheRef.current.set(id, source);
     return source;
@@ -196,9 +218,28 @@ export function StudioTransportProvider({
       expiresAt?: string;
     };
     if (!res.ok || !json.success || !json.url) return null;
+
+    let playableUrl = json.url;
+    let expiresAt = json.expiresAt
+      ? Date.parse(json.expiresAt)
+      : Date.now() + 60_000;
+
+    if (isAudioSessionDedupEnabled()) {
+      const sessionKey = `take:${id}`;
+      const { objectUrl } = await loadSessionAudioFromUrl(
+        sessionKey,
+        json.url,
+        { enabled: true },
+      );
+      if (objectUrl) {
+        playableUrl = objectUrl;
+        expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+      }
+    }
+
     const source: StudioResolvedSource = {
-      url: json.url,
-      expiresAt: json.expiresAt ? Date.parse(json.expiresAt) : Date.now() + 60_000,
+      url: playableUrl,
+      expiresAt,
     };
     takeCacheRef.current.set(id, source);
     return source;

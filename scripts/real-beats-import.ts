@@ -26,6 +26,7 @@ import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 import { analyzeBeatAudioBytes } from "../src/lib/beats/audio-duration";
+import { assertScriptStorageTarget } from "../src/lib/ops/storage-host-guard";
 import {
   buildBpmUncertaintyEnvelopeFromProbe,
   resolveCreateBpm,
@@ -108,6 +109,15 @@ function adminClient() {
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) stop("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  try {
+    assertScriptStorageTarget({
+      scriptId: "real_beats_import",
+      supabaseUrl: url,
+      env: { ...env, ...process.env },
+    });
+  } catch (err) {
+    stop(err instanceof Error ? err.message : String(err));
+  }
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

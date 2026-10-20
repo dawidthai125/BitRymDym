@@ -11,6 +11,12 @@ import {
   type ReactNode,
 } from "react";
 
+import { isAudioSessionDedupEnabled } from "@/config/audio-session-dedup";
+import {
+  buildSessionAudioKey,
+  invalidateSessionAudio,
+  loadSessionAudioFromUrl,
+} from "@/lib/audio/session-audio-bytes";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import {
   PUBLIC_PLAYBACK_PURPOSE,
@@ -68,6 +74,8 @@ export function usePlayerOptional(): PlayerContextValue | null {
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
+  /** Session cache key for the current blob:/bytes (WAVE 1-A). */
+  const sessionKeyRef = useRef<string | null>(null);
   const durationRef = useRef(0);
   const [track, setTrack] = useState<PlayerTrack | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("idle");
@@ -125,6 +133,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onErr);
       audioRef.current = null;
+      if (sessionKeyRef.current) {
+        invalidateSessionAudio(sessionKeyRef.current);
+        sessionKeyRef.current = null;
+      }
     };
   }, []);
 
@@ -135,8 +147,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current;
     if (!audio) throw new Error("Player niedostępny.");
 
-    if (audio.dataset.beatId === beatId && audio.src && !expired) {
-      return audio.src;
+    const dedup = isAudioSessionDedupEnabled();
+
+    // Same beat + already have a playable src: reuse without network when
+    // (a) signed URL still valid, or (b) dedup ON and src is a session blob.
+    if (audio.dataset.beatId === beatId && audio.src) {
+      const usingBlob = audio.src.startsWith("blob:");
+      if (!expired || (dedup && usingBlob && sessionKeyRef.current)) {
+        return audio.src;
+      }
     }
 
     const result = await requestBeatAudioAccessAction({
@@ -150,9 +169,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     expiresAtRef.current = result.expiresAt ?? null;
     audio.dataset.beatId = beatId;
-    audio.src = result.url;
-    audio.load();
-    return result.url;
+
+    if (!dedup) {
+      if (sessionKeyRef.current) {
+        invalidateSessionAudio(sessionKeyRef.current);
+        sessionKeyRef.current = null;
+      }
+      audio.src = result.url;
+      audio.load();
+      return result.url;
+    }
+
+    const sessionKey = buildSessionAudioKey({
+      kind: "beat",
+      id: beatId,
+      versionId: result.assetId ?? null,
+    });
+    if (sessionKeyRef.current && sessionKeyRef.current !== sessionKey) {
+      invalidateSessionAudio(sessionKeyRef.current);
+    }
+    sessionKeyRef.current = sessionKey;
+
+    const { objectUrl } = await loadSessionAudioFromUrl(sessionKey, result.url, {
+      enabled: true,
+    });
+    const playable = objectUrl ?? result.url;
+    if (audio.src !== playable) {
+      audio.src = playable;
+      audio.load();
+    }
+    return playable;
   }, []);
 
   const restartFromStartIfNeeded = useCallback((audio: HTMLAudioElement) => {
@@ -256,6 +302,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeAttribute("src");
       audio.load();
       delete audio.dataset.beatId;
+    }
+    if (sessionKeyRef.current) {
+      invalidateSessionAudio(sessionKeyRef.current);
+      sessionKeyRef.current = null;
     }
     expiresAtRef.current = null;
     setTrack(null);

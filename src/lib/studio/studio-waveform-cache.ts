@@ -1,9 +1,16 @@
 /**
  * Phase 3 — Client-only waveform peaks cache (LRU + in-flight dedupe).
  * No Supabase table / no DB migration.
+ * WAVE 1-B: optional session-byte load so engine + waveform share one GET.
  */
 
+import { isAudioSessionDedupEnabled } from "@/config/audio-session-dedup";
 import {
+  loadSessionAudioFromUrl,
+  peekSessionAudioBytes,
+} from "@/lib/audio/session-audio-bytes";
+import {
+  studioPeaksFromAudioBytes,
   studioPeaksFromAudioUrl,
   STUDIO_WAVEFORM_PEAKS_PER_SECOND,
   type StudioWaveformPeaksPayload,
@@ -162,7 +169,24 @@ export async function resolveStudioWaveformPeaks(
   }
 
   const promise = (async () => {
-    const payload = await load(params.url, pps);
+    let payload: StudioWaveformPeaksPayload;
+    if (load !== studioPeaksFromAudioUrl) {
+      payload = await load(params.url, pps);
+    } else if (isAudioSessionDedupEnabled()) {
+      const cachedBytes = peekSessionAudioBytes(params.sourceKey);
+      if (cachedBytes) {
+        payload = await studioPeaksFromAudioBytes(cachedBytes, pps);
+      } else {
+        const { bytes } = await loadSessionAudioFromUrl(
+          params.sourceKey,
+          params.url,
+          { enabled: true },
+        );
+        payload = await studioPeaksFromAudioBytes(bytes, pps);
+      }
+    } else {
+      payload = await load(params.url, pps);
+    }
     const key = buildStudioWaveformCacheKey({
       sourceKey: params.sourceKey,
       peaksPerSecond: payload.peaksPerSecond,
