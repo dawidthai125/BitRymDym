@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   approveUserBeatAction,
+  closeOpenRightsReviewAction,
   publishApprovedUserBeatAction,
   rejectUserBeatAction,
 } from "@/lib/beats/community-actions";
@@ -17,10 +18,12 @@ export function ModerationDecisionControls({
   beatId,
   status,
   activeMasterReady,
+  openReviews = [],
 }: {
   beatId: string;
   status: string;
   activeMasterReady: boolean;
+  openReviews?: Array<{ id: string; kind: string; checksumSha256: string }>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -59,6 +62,44 @@ export function ModerationDecisionControls({
     });
   }
 
+  function onClose(reviewId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await closeOpenRightsReviewAction(
+        reviewId,
+        "dismissed_no_publish",
+        "Zamknięcie sprawy nie jest zgodą na publikację.",
+      );
+      if (!result.success) {
+        setError(result.error ?? "Nie udało się zamknąć sprawy.");
+        return;
+      }
+      setError(null);
+      router.refresh();
+    });
+  }
+
+  const reviewList =
+    openReviews.length > 0 ? (
+      <div className="flex flex-col gap-2">
+        <p className="text-sm text-muted-foreground">
+          Otwarte sprawy dotyczą konkretnego pliku. Zamknięcie nie publikuje
+          bitu.
+        </p>
+        {openReviews.map((review) => (
+          <Button
+            key={review.id}
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => onClose(review.id)}
+          >
+            Zamknij sprawę {review.kind} bez publikacji
+          </Button>
+        ))}
+      </div>
+    ) : null;
+
   function onPublish() {
     setError(null);
     if (!activeMasterReady) {
@@ -90,6 +131,7 @@ export function ModerationDecisionControls({
         >
           Opublikuj
         </Button>
+        {reviewList}
         {!activeMasterReady ? (
           <p className="text-sm text-destructive">
             Brak gotowego audio Master — publikacja zablokowana.
@@ -106,6 +148,7 @@ export function ModerationDecisionControls({
 
   return (
     <div className="flex flex-col gap-4">
+      {reviewList}
       <div className="flex flex-wrap gap-3">
         <Button type="button" disabled={pending} onClick={onApprove}>
           Zatwierdź

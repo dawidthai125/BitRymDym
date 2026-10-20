@@ -8,7 +8,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import {
   archiveOwnUserBeatAction,
   returnRejectedToDraftAction,
-  submitUserBeatAction,
 } from "@/lib/beats/community-actions";
 import { cn } from "@/lib/utils";
 
@@ -55,9 +54,9 @@ export function UserBeatActions({
           type="button"
           size="sm"
           disabled={pending}
-          onClick={() => run(submitUserBeatAction)}
+          onClick={() => router.push(`/beats/upload?beatId=${beatId}`)}
         >
-          Wyślij do moderacji
+          Oświadczenie i wysyłka
         </Button>
       ) : null}
       {status === "REJECTED" ? (

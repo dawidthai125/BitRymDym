@@ -68,9 +68,12 @@ export async function createPlatformBeatAction(
   };
 }
 
-export async function publishBeatAction(beatId: string): Promise<BeatActionState> {
+export async function publishBeatAction(
+  beatId: string,
+  options?: { licenseAcknowledged?: boolean },
+): Promise<BeatActionState> {
   try {
-    await transitionBeatStatus(beatId, "PUBLISHED");
+    await transitionBeatStatus(beatId, "PUBLISHED", options);
     revalidateBeatSurfaces(beatId);
     return { error: null, success: true, beatId };
   } catch (error) {

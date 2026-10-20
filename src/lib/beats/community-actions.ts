@@ -7,6 +7,7 @@ import {
   PROVISIONAL_DRAFT_DURATION_SECONDS,
 } from "@/lib/beats/audio-transport";
 import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
+import { requireUser } from "@/lib/auth/session";
 import {
   approveUserBeat,
   archiveOwnUserBeat,
@@ -63,9 +64,10 @@ export async function createUserDraftBeatAction(params?: {
 
 export async function submitUserBeatAction(
   beatId: string,
+  options?: { rightsAccepted?: boolean },
 ): Promise<CommunityActionState> {
   try {
-    const beat = await submitUserBeat(beatId);
+    const beat = await submitUserBeat(beatId, options);
     revalidateCommunitySurfaces(beat.id);
     return { error: null, success: true, beatId: beat.id };
   } catch (error) {
@@ -150,6 +152,22 @@ export async function rejectUserBeatAction(
     const beat = await rejectUserBeat(beatId, rejectionReason);
     revalidateCommunitySurfaces(beat.id);
     return { error: null, success: true, beatId: beat.id };
+  } catch (error) {
+    return catchAction(error);
+  }
+}
+
+export async function closeOpenRightsReviewAction(
+  reviewId: string,
+  outcome: "dismissed_no_publish" | "still_blocked" | "needs_new_master",
+  reason: string,
+): Promise<CommunityActionState> {
+  try {
+    await requireUser();
+    const { closeOpenRightsReview } = await import("@/lib/beats/rights-records");
+    const beatId = await closeOpenRightsReview({ reviewId, outcome, reason });
+    revalidateCommunitySurfaces(beatId);
+    return { error: null, success: true, beatId };
   } catch (error) {
     return catchAction(error);
   }

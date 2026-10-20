@@ -117,6 +117,7 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           beatId={beat.id}
           status={beat.status}
           activeMasterReady={beat.activeMasterReady}
+          openReviews={beat.openRightsReviews ?? []}
         />
       </section>
     </main>

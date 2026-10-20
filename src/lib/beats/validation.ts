@@ -139,6 +139,15 @@ export function canTransitionStatus(params: {
   }
 
   if (actor === "ADMIN") {
+    // USER publish is the community path for every actor, including ADMIN.
+    // PLATFORM DRAFT → PUBLISHED stays on ADMIN_BEAT_TRANSITIONS.
+    if (
+      to === "PUBLISHED" &&
+      ownershipType === "USER" &&
+      from !== "APPROVED"
+    ) {
+      return false;
+    }
     return ADMIN_BEAT_TRANSITIONS[from].includes(to);
   }
 

@@ -19,6 +19,11 @@ import {
   assertSubmitCooldown,
 } from "@/lib/beats/submit-cooldown";
 import {
+  USER_RIGHTS_STATEMENT_VERSION,
+  evaluateUserPublishRights,
+  staffMayModerateBeat,
+} from "@/lib/beats/rights-policy";
+import {
   canTransitionStatus,
   validateBeatInput,
   validateRejectionReason,
@@ -442,7 +447,7 @@ export async function updateBeatMetadata(
 export async function transitionBeatStatus(
   beatId: string,
   to: BeatStatus,
-  options?: { rejectionReason?: string | null },
+  options?: { rejectionReason?: string | null; licenseAcknowledged?: boolean },
 ): Promise<Beat> {
   const context = await requireUser();
   const current = await loadBeat(beatId);
@@ -506,6 +511,21 @@ export async function transitionBeatStatus(
 
   if (to === "PUBLISHED") {
     await assertActiveMasterReadyForPublish(current);
+    if (current.ownershipType === "PLATFORM") {
+      if (!options?.licenseAcknowledged) {
+        throw new AuthError(
+          "FORBIDDEN",
+          "Publikacja platformy wymaga potwierdzenia licencji dla aktualnego Mastera. Sam opis lub referencja nie wystarczą.",
+        );
+      }
+      const { recordPlatformLicense } = await import(
+        "@/lib/beats/rights-records"
+      );
+      await recordPlatformLicense({
+        beatId: current.id,
+        verifierId: context.userId,
+      });
+    }
   }
 
   const patch: Record<string, unknown> = { status: to };
@@ -534,6 +554,11 @@ export async function transitionBeatStatus(
     .single();
 
   if (error) {
+    const { rightsDatabaseMessage } = await import("@/lib/beats/rights-policy");
+    const rightsMessage = rightsDatabaseMessage(error.message);
+    if (rightsMessage) {
+      throw new AuthError("FORBIDDEN", rightsMessage);
+    }
     throw new Error(error.message);
   }
 
@@ -541,7 +566,10 @@ export async function transitionBeatStatus(
 }
 
 /** Community Wave 3/5: DRAFT → PENDING_REVIEW (own + MASTER READY + submit cooldown). */
-export async function submitUserBeat(beatId: string): Promise<Beat> {
+export async function submitUserBeat(
+  beatId: string,
+  options?: { rightsAccepted?: boolean },
+): Promise<Beat> {
   const context = await requireUser();
   await requirePermission("beats.create");
   const current = await loadBeat(beatId);
@@ -564,10 +592,39 @@ export async function submitUserBeat(beatId: string): Promise<Beat> {
     throw new AuthError("FORBIDDEN", cooldown.error);
   }
   await assertActiveMasterReadyForCommunityTransition(current, "Submit");
+  if (!current.ownerId) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Nie można złożyć oświadczenia za usunięte konto właściciela.",
+    );
+  }
+  if (!options?.rightsAccepted) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Zaznacz oświadczenie o prawach do nagrania i sampli.",
+    );
+  }
+  const { prepareUserSubmissionRights } = await import(
+    "@/lib/beats/rights-records"
+  );
+  await prepareUserSubmissionRights({
+    beatId: current.id,
+    ownerId: current.ownerId,
+  });
+  const { recordRecognitionReview } = await import("@/lib/beats/rights-records");
+  const { localRecognitionResult } = await import(
+    "@/lib/beats/rights-recognition"
+  );
+  await recordRecognitionReview({
+    beatId: current.id,
+    actorId: context.userId,
+    result: localRecognitionResult(),
+  });
   return transitionBeatStatus(beatId, "PENDING_REVIEW");
 }
 
 export async function approveUserBeat(beatId: string): Promise<Beat> {
+  const context = await requireUser();
   await requirePermission("beats.approve");
   const current = await loadBeat(beatId);
   if (current.ownershipType !== "USER") {
@@ -575,6 +632,9 @@ export async function approveUserBeat(beatId: string): Promise<Beat> {
   }
   if (!current.ownerId) {
     throw new AuthError("FORBIDDEN", "USER beat must have an owner.");
+  }
+  if (!staffMayModerateBeat(context.userId, current.ownerId)) {
+    throw new AuthError("FORBIDDEN", "Staff cannot moderate their own beat.");
   }
   if (current.status !== "PENDING_REVIEW") {
     throw new AuthError(
@@ -601,10 +661,17 @@ export async function rejectUserBeat(
   beatId: string,
   rejectionReason: string,
 ): Promise<Beat> {
+  const context = await requireUser();
   await requirePermission("beats.reject");
   const current = await loadBeat(beatId);
   if (current.ownershipType !== "USER") {
     throw new AuthError("FORBIDDEN", "rejectUserBeat is for USER beats.");
+  }
+  if (!current.ownerId) {
+    throw new AuthError("FORBIDDEN", "USER beat must have an owner.");
+  }
+  if (!staffMayModerateBeat(context.userId, current.ownerId)) {
+    throw new AuthError("FORBIDDEN", "Staff cannot moderate their own beat.");
   }
   if (current.status !== "PENDING_REVIEW") {
     throw new AuthError(
@@ -639,6 +706,9 @@ export async function publishApprovedUserBeat(beatId: string): Promise<Beat> {
   if (!current.ownerId) {
     throw new AuthError("FORBIDDEN", "USER beat must have an owner.");
   }
+  if (!staffMayModerateBeat(context.userId, current.ownerId)) {
+    throw new AuthError("FORBIDDEN", "Staff cannot moderate their own beat.");
+  }
   if (current.status !== "APPROVED") {
     throw new AuthError(
       "FORBIDDEN",
@@ -646,8 +716,32 @@ export async function publishApprovedUserBeat(beatId: string): Promise<Beat> {
     );
   }
 
-  // Gate FIRST — never transition then check audio.
   await assertActiveMasterReadyForPublish(current);
+  const { loadUserPublishRightsFacts } = await import(
+    "@/lib/beats/rights-records"
+  );
+  const facts = await loadUserPublishRightsFacts(current.id);
+  const decision = evaluateUserPublishRights({
+    beatId: current.id,
+    status: current.status,
+    masterReady: true,
+    attestation: facts.attestation,
+    currentChecksum: facts.checksum ?? "",
+    statementVersion: USER_RIGHTS_STATEMENT_VERSION,
+    check: facts.openManualReview
+      ? { kind: "not_run" }
+      : { kind: "no_signal" },
+    openManualReview: facts.openManualReview,
+    hashBlocked: facts.hashBlocked,
+    ownerId: current.ownerId,
+    latestClosedOutcome: facts.latestClosedOutcome,
+  });
+  if (!decision.ok) {
+    throw new AuthError(
+      "FORBIDDEN",
+      "Publikacja nie spełnia kontroli praw dla aktualnego Mastera. Brak oświadczenia, blokada, otwarta lub nierozwiązana sprawa albo brak właściciela zatrzymują publikację.",
+    );
+  }
 
   const published = await transitionBeatStatus(beatId, "PUBLISHED");
   if (published.ownerId !== current.ownerId) {
@@ -807,6 +901,11 @@ export type OwnUserBeatListItem = Beat & {
 
 export type ModerationQueueItem = Beat & {
   activeMasterReady: boolean;
+  openRightsReviews?: Array<{
+    id: string;
+    kind: string;
+    checksumSha256: string;
+  }>;
 };
 
 async function attachActiveMasterReady(
@@ -941,5 +1040,7 @@ export async function getStaffCommunityBeatForModeration(
     );
   }
   const [withReady] = await attachActiveMasterReady([beat]);
-  return withReady!;
+  const { listOpenRightsReviews } = await import("@/lib/beats/rights-records");
+  const openRightsReviews = await listOpenRightsReviews(beat.id);
+  return { ...withReady!, openRightsReviews };
 }

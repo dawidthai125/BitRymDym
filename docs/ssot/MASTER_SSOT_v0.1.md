@@ -1375,6 +1375,21 @@ Comments
 Reports
 ```
 
+### Rights Safety P0 (lokalna implementacja — nie produkcja)
+
+Lokalnie przygotowano Rights Safety P0-A/B/C (bramka publikacji, nierozstrzygnięte review, zgłoszenia właściciela, ochrona aktywnego Mastera). To **nie** jest GREEN produkcji i **nie** oznacza, że migracje są zastosowane na środowisku docelowym.
+
+Obowiązkowa kolejność czterech migracji:
+
+1. `20261019120000_beat_rights_safety_p0.sql`
+2. `20261020120000_beat_rights_safety_p0_fix.sql`
+3. `20261020180000_beat_rights_safety_p0_remediation.sql`
+4. `20261020210000_beat_rights_safety_p0_master_mutation_guard.sql`
+
+Pominięcie remediation (krok 3) pozostawia niekompletny łańcuch P0-A/B. Szczegóły: [BEAT_RIGHTS_SAFETY.md](../architecture/BEAT_RIGHTS_SAFETY.md), addenda w [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
+
+**Testy (rozróżnienie):** świeżo potwierdzone na izolowanym disposable (`bitrymdym-rights-p0-disposable-20261020`, host `127.0.0.1:55433`): `beat-rights-p0-master-mutation-suite.mjs` TOTAL=92 FAIL=0 exit 0; `beat-rights-p0-remediation-suite.mjs` PASS_COUNT=70 FAIL=0 exit 0; unit `rights-policy.test.ts` 13/13 (2026-10-20, sesja release). Read-only preflight schematu docelowego: zależności (`beats`, `beat_audio_assets`, enumy, `finalize_beat_master_asset`) obecne; obiekty Rights Safety jeszcze **nie** istnieją; żadna z czterech migracji P0 **nie** figuruje w historii zastosowanych migracji. Dokumentacja lokalna / commit kodu ≠ zastosowanie migracji na produkcji. Produkcja **nie** jest GREEN.
+
 ---
 
 # 47. FAZA 3 — WSPÓŁPRACA

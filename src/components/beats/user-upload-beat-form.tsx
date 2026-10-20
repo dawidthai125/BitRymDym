@@ -92,6 +92,7 @@ export function UserUploadBeatForm({
     existingBeatId ?? null,
   );
   const [submitted, setSubmitted] = useState(false);
+  const [rightsAccepted, setRightsAccepted] = useState(false);
   const analyzeGeneration = useRef(0);
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -421,9 +422,13 @@ export function UserUploadBeatForm({
       setFormError("Najpierw zapisz wersję roboczą z gotowym audio.");
       return;
     }
+    if (!rightsAccepted) {
+      setFormError("Zaznacz oświadczenie o prawach do nagrania i sampli.");
+      return;
+    }
 
     startTransition(async () => {
-      const result = await submitUserBeatAction(beatId);
+      const result = await submitUserBeatAction(beatId, { rightsAccepted: true });
       if (!result.success) {
         setFormError(result.error ?? "Nie udało się wysłać do moderacji.");
         return;
@@ -445,7 +450,7 @@ export function UserUploadBeatForm({
       selectedBpm,
     });
   const canSubmitModeration =
-    savedDraft && !pending && !analyzing && !submitted;
+    savedDraft && rightsAccepted && !pending && !analyzing && !submitted;
 
   let statusLine: string | null = null;
   if (analysis.status === "uploading" || analyzing) {
@@ -578,6 +583,20 @@ export function UserUploadBeatForm({
           zablokowana do czasu decyzji moderatora.
         </p>
       ) : null}
+
+      <label className="flex items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={rightsAccepted}
+          onChange={(event) => setRightsAccepted(event.target.checked)}
+        />
+        <span>
+          Oświadczam, że mam prawa do tego nagrania i do sampli w nim użytych
+          albo mam zgodę uprawnionych. Rozumiem, że to oświadczenie nie
+          zastępuje weryfikacji i że BitRymDym może wstrzymać publikację.
+        </span>
+      </label>
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={!canSaveDraft}>

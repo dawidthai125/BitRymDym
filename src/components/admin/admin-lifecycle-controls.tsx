@@ -25,6 +25,7 @@ export function AdminLifecycleControls({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [licenseAcknowledged, setLicenseAcknowledged] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
 
   const gate = getAdminPublishGate({ status, activeMasterReady });
@@ -75,6 +76,21 @@ export function AdminLifecycleControls({
         </p>
       ) : null}
 
+      {status === "DRAFT" ? (
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={licenseAcknowledged}
+            onChange={(event) => setLicenseAcknowledged(event.target.checked)}
+          />
+          <span>
+            Potwierdzam, że ten Master ma udokumentowaną licencję na publikację
+            w katalogu. Zaznaczenie nie zastępuje wpisu licencji w bazie.
+          </span>
+        </label>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {status === "DRAFT" ? (
           <Button
@@ -88,7 +104,16 @@ export function AdminLifecycleControls({
                 setError(latest.blockedReason ?? "Publikacja zablokowana.");
                 return;
               }
-              run(() => publishBeatAction(beatId), "Opublikowano.");
+              if (!licenseAcknowledged) {
+                setError(
+                  "Potwierdź licencję dla aktualnego Mastera. Sama referencja nie wystarcza.",
+                );
+                return;
+              }
+              run(
+                () => publishBeatAction(beatId, { licenseAcknowledged: true }),
+                "Opublikowano.",
+              );
             }}
           >
             {pending ? "Publikowanie…" : "Publikuj"}
