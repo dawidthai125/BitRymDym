@@ -108,7 +108,8 @@ export async function encodeSfmQualityFromBake(
 ): Promise<SfmEncodedArtifact> {
   let encoded: Mp3EncodeResult | WavEncodeResult;
   if (quality === "WAV") {
-    encoded = await encodeWavFromBake(bake);
+    const wavCompat = await encodeWavFromBake(bake);
+    encoded = { ...wavCompat, profile: "WAV_COMPAT" };
   } else if (quality === "MP3_128") {
     encoded = await encodeBasicMp3FromBake(bake);
   } else if (quality === "MP3_192") {
