@@ -42,7 +42,11 @@ const BASIC_CAPS = [
   "EXPORT_BASIC_MP3",
 ] as const satisfies readonly AudioCapabilityKey[];
 
-/** BRONZE+: mid MP3 + mix HQ. Take-export 320 remains SILVER+ via canExportOwnTake. */
+/**
+ * Mix/Studio capability overlay (≠ Premium download ladder).
+ * Download qualities are gated by `@/config/premium-export-policy`.
+ * BRONZE+ may bake HQ for Studio listen; finished-file download still SSOT.
+ */
 const BRONZE_CAPS = [
   ...BASIC_CAPS,
   "EXPORT_MP3_192",
@@ -53,11 +57,14 @@ const SILVER_CAPS = [
   ...BRONZE_CAPS,
   "MIX_PRO",
   "MASTER_PRO",
+  "EXPORT_MP3_256",
 ] as const satisfies readonly AudioCapabilityKey[];
 
 const GOLD_CAPS = [
   ...SILVER_CAPS,
   "EXPORT_WAV",
+  "EXPORT_WAV_PRO",
+  "EXPORT_WAV_MASTER",
 ] as const satisfies readonly AudioCapabilityKey[];
 
 /**

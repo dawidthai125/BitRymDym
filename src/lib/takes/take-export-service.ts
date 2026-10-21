@@ -30,7 +30,7 @@ import {
 import { assertOwnReadyTakeAccess } from "@/lib/takes/take-access";
 import {
   canExportOwnTake,
-  isTakeExportQuality,
+  normalizeTakeExportQuality,
   renderTierForTakeExportQuality,
   type TakeExportQuality,
 } from "@/lib/takes/take-export-capability";
@@ -83,10 +83,10 @@ export async function createTakeExportJobFor(
 ): Promise<TakeExportJobRecord> {
   assertTakeExportJobsEnabled();
 
-  if (!isTakeExportQuality(input.quality)) {
+  const quality = normalizeTakeExportQuality(input.quality);
+  if (!quality) {
     throw new RenderJobDomainError("Unknown take export quality.", "INVALID");
   }
-  const quality = input.quality;
   const tier = renderTierForTakeExportQuality(quality);
 
   if (typeof input.takeId !== "string" || input.takeId.length < 8) {
@@ -101,7 +101,9 @@ export async function createTakeExportJobFor(
   if (!canExportOwnTake({ premiumTier: product.premiumTier, quality })) {
     throw new AuthError(
       "FORBIDDEN",
-      `Eksport ${quality} niedostępny w planie ${product.premiumTier}.`,
+      product.premiumTier === "FREE"
+        ? "Pobieranie gotowych plików wymaga pakietu Premium."
+        : `Eksport ${quality} niedostępny w planie ${product.premiumTier}.`,
     );
   }
 
@@ -174,6 +176,19 @@ export async function createTakeExportJobFor(
     userId: context.userId,
     purpose: "export",
   });
+
+  // PREMIUM-03 — best-effort WORK_READY mark (no-op if migration not applied).
+  try {
+    const { markPremiumWorkReadyFor } = await import(
+      "@/lib/premium/premium-unlock-service"
+    );
+    await markPremiumWorkReadyFor(context, {
+      domain: "TAKE",
+      domainRef: take.id as string,
+    });
+  } catch {
+    // Local Docker / migration not applied — export path remains usable.
+  }
 
   const dayStart = utcDayStartIso();
   const { count: jobsToday, error: dayErr } = await admin
@@ -304,14 +319,20 @@ export async function getOwnTakeExportJobFor(
   if (error) throw new Error(error.message);
   if (!data) throw new AuthError("NOT_FOUND", "Take export job not found.");
   const tier = data.requested_tier as RenderJobTier;
-  const quality =
+  const quality: TakeExportQuality =
     tier === "BASIC_MP3"
       ? "MP3_128"
       : tier === "MP3_192"
         ? "MP3_192"
-        : tier === "HQ_MP3"
-          ? "MP3_320"
-          : "WAV";
+        : tier === "MP3_256"
+          ? "MP3_256"
+          : tier === "HQ_MP3"
+            ? "MP3_320"
+            : tier === "WAV_PRO"
+              ? "WAV_PRO"
+              : tier === "WAV_MASTER"
+                ? "WAV_MASTER"
+                : "WAV_COMPAT";
 
   let artifactId: string | null = null;
   if ((data.status as string) === "SUCCEEDED") {

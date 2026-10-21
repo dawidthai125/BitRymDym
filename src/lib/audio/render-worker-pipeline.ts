@@ -22,6 +22,7 @@ import {
   encodeBasicMp3FromBake,
   encodeHqMp3FromBake,
   encodeMp3192FromBake,
+  encodeMp3256FromBake,
   type BakePcmInput,
 } from "@/lib/audio/mp3-encode";
 import {
@@ -50,7 +51,10 @@ import {
   resampleStereoInterleaved,
 } from "@/lib/audio/server-basic-bake";
 import { bakeServerProV1 } from "@/lib/audio/server-pro-bake";
-import { encodeWavFromBake } from "@/lib/audio/wav-encode";
+import {
+  encodeWavFromBake,
+  encodeWavProfileFromBake,
+} from "@/lib/audio/wav-encode";
 import { studioEngineDocumentFromProject } from "@/lib/studio/studio-engine-document-from-project";
 import { planStudioExportDuration } from "@/lib/studio/studio-export-fx-post-roll";
 import {
@@ -528,8 +532,11 @@ async function runClaimedTakeExportWorkerJob(
   if (
     tier !== "BASIC_MP3" &&
     tier !== "MP3_192" &&
+    tier !== "MP3_256" &&
     tier !== "HQ_MP3" &&
-    tier !== "WAV"
+    tier !== "WAV" &&
+    tier !== "WAV_PRO" &&
+    tier !== "WAV_MASTER"
   ) {
     await failRunningJob(
       jobId,
@@ -608,6 +615,24 @@ async function runClaimedTakeExportWorkerJob(
         takeId,
       });
     }
+    if (tier === "MP3_256") {
+      const encoded = await encodeMp3256FromBake(bake);
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "MP3_256",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/mpeg",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: encoded.bitrateKbps,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+        artifactMode: "TAKE_EXPORT",
+        takeId,
+      });
+    }
     if (tier === "HQ_MP3") {
       const encoded = await encodeHqMp3FromBake(bake);
       return completeRealArtifactAfterEncode({
@@ -620,6 +645,42 @@ async function runClaimedTakeExportWorkerJob(
         byteSize: encoded.byteSize,
         durationMs: encoded.durationMs,
         bitrateKbps: encoded.bitrateKbps,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+        artifactMode: "TAKE_EXPORT",
+        takeId,
+      });
+    }
+    if (tier === "WAV_PRO") {
+      const encoded = await encodeWavProfileFromBake(bake, "WAV_PRO");
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "WAV_PRO",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/wav",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: null,
+        sampleRate: encoded.sampleRate,
+        encoder: encoded.encoder,
+        artifactMode: "TAKE_EXPORT",
+        takeId,
+      });
+    }
+    if (tier === "WAV_MASTER") {
+      const encoded = await encodeWavProfileFromBake(bake, "WAV_MASTER");
+      return completeRealArtifactAfterEncode({
+        jobId: job.id,
+        qualityTier: "WAV_MASTER",
+        objectKey,
+        encodedBytes: encoded.bytes,
+        contentType: "audio/wav",
+        checksumSha256: encoded.checksumSha256,
+        byteSize: encoded.byteSize,
+        durationMs: encoded.durationMs,
+        bitrateKbps: null,
         sampleRate: encoded.sampleRate,
         encoder: encoded.encoder,
         artifactMode: "TAKE_EXPORT",

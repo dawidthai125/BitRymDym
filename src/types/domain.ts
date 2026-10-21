@@ -139,16 +139,23 @@ export const RENDER_JOB_STATUSES = [
 ] as const;
 export type RenderJobStatus = (typeof RENDER_JOB_STATUSES)[number];
 
-/** Mix + take-export quality tiers. MIX create path rejects MP3_192 (P4). */
+/**
+ * Mix + take-export + Premium WAV ladder tiers.
+ * MIX create path rejects take-only / Premium-only tiers (P4 / PREMIUM-05).
+ * `WAV` remains legacy COMPAT (16/44.1) for SFM + existing MIX.
+ */
 export const RENDER_JOB_TIERS = [
   "BASIC_MP3",
   "MP3_192",
+  "MP3_256",
   "HQ_MP3",
   "WAV",
+  "WAV_PRO",
+  "WAV_MASTER",
 ] as const;
 export type RenderJobTier = (typeof RENDER_JOB_TIERS)[number];
 
-/** E3 mix create/claim quality set — excludes P4 take-only MP3_192. */
+/** E3 mix create/claim quality set — excludes take-only / Premium WAV ladder. */
 export const MIX_RENDER_JOB_TIERS = ["BASIC_MP3", "HQ_MP3", "WAV"] as const;
 export type MixRenderJobTier = (typeof MIX_RENDER_JOB_TIERS)[number];
 

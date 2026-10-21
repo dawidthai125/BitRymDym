@@ -117,8 +117,11 @@ describe("E3.1 — audio foundation (unit)", () => {
       "MASTER_PRO",
       "EXPORT_BASIC_MP3",
       "EXPORT_MP3_192",
+      "EXPORT_MP3_256",
       "EXPORT_HQ_MP3",
       "EXPORT_WAV",
+      "EXPORT_WAV_PRO",
+      "EXPORT_WAV_MASTER",
     ]);
     expect(AUDIO_CAPABILITY_KEYS.join(",")).not.toMatch(/STEM/i);
   });
@@ -191,8 +194,11 @@ describe("E3.1 — audio foundation (unit)", () => {
     expect(RENDER_JOB_TIERS).toEqual([
       "BASIC_MP3",
       "MP3_192",
+      "MP3_256",
       "HQ_MP3",
       "WAV",
+      "WAV_PRO",
+      "WAV_MASTER",
     ]);
     expect(AUDIO_ARTIFACT_STATUSES).toEqual([
       "READY",

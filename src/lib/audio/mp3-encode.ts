@@ -321,3 +321,16 @@ export async function encodeMp3192FromBake(
 ): Promise<Mp3EncodeResult> {
   return encodeMp3FromBakePcm(bake, MP3_192_TARGET_BITRATE_KBPS);
 }
+
+/** PREMIUM-05 — SILVER+ download bitrate (256 kbps). */
+export const MP3_256_TARGET_BITRATE_KBPS = AUDIO_CODEC.MP3_256_BITRATE_KBPS;
+
+export async function encodeMp3256FromBake(
+  bake: BakePcmInput,
+): Promise<Mp3EncodeResult> {
+  return encodeMp3FromBakePcm(bake, MP3_256_TARGET_BITRATE_KBPS);
+}
+
+export async function qcMp3256Bytes(bytes: Buffer): Promise<Mp3QcResult> {
+  return qcMp3Bytes(bytes, MP3_256_TARGET_BITRATE_KBPS);
+}

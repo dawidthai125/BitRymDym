@@ -6,8 +6,11 @@ const UUID_RE =
 export const AUDIO_ARTIFACT_TIERS = [
   "BASIC_MP3",
   "MP3_192",
+  "MP3_256",
   "HQ_MP3",
   "WAV",
+  "WAV_PRO",
+  "WAV_MASTER",
 ] as const;
 export type AudioArtifactTier = (typeof AUDIO_ARTIFACT_TIERS)[number];
 
@@ -18,7 +21,9 @@ function assertUuid(value: string, label: string): void {
 }
 
 function extensionForTier(tier: AudioArtifactTier): "mp3" | "wav" {
-  if (tier === "WAV") return "wav";
+  if (tier === "WAV" || tier === "WAV_PRO" || tier === "WAV_MASTER") {
+    return "wav";
+  }
   return "mp3";
 }
 

@@ -1,22 +1,37 @@
 /**
- * P4.4 / P4.6 — take-export quality ladder (stricter than E3 MIX).
- * MIX keeps PREMIUM_TIER_MATRIX capabilities as-is.
- * TAKE_EXPORT uses this resolver only.
+ * P4.4 / P4.6 / PREMIUM-01 — take-export quality ladder.
+ * Canonical download policy: `@/config/premium-export-policy` (Premium SSOT).
+ * MIX keeps PREMIUM_TIER_MATRIX capabilities as-is (mix ≠ download).
+ * SFM keeps SFM_PLAN_MATRIX (D-4) — do not import here for decisions.
  */
 
 import type { AudioCapabilityKey } from "@/config/audio-render";
+import {
+  buildPremiumDownloadLadder,
+  canDownloadPremiumQuality,
+  isPremiumDownloadQuality,
+  type PremiumDownloadQuality,
+} from "@/config/premium-export-policy";
 import type { PremiumTier } from "@/types/premium";
 import type { RenderJobTier } from "@/types/domain";
 
-/** UX / API quality keys for own-take rendered download. */
+/** API / UX quality keys for own-take rendered download (Premium SSOT). */
 export const TAKE_EXPORT_QUALITIES = [
   "MP3_128",
   "MP3_192",
+  "MP3_256",
   "MP3_320",
-  "WAV",
-] as const;
+  "WAV_COMPAT",
+  "WAV_PRO",
+  "WAV_MASTER",
+] as const satisfies readonly PremiumDownloadQuality[];
 
 export type TakeExportQuality = (typeof TAKE_EXPORT_QUALITIES)[number];
+
+/** @deprecated Prefer WAV_COMPAT — kept for request body alias only. */
+export const TAKE_EXPORT_LEGACY_ALIASES: Record<string, TakeExportQuality> = {
+  WAV: "WAV_COMPAT",
+};
 
 export type TakeExportLadderItem = {
   quality: TakeExportQuality;
@@ -29,110 +44,99 @@ export type TakeExportLadderItem = {
   lockedMessage: string | null;
 };
 
-const QUALITY_META: Record<
+const QUALITY_TO_RENDER: Record<
   TakeExportQuality,
-  {
-    renderTier: RenderJobTier;
-    capability: AudioCapabilityKey;
-    label: string;
-    detail: string;
-    requiredTier: PremiumTier;
-  }
+  { renderTier: RenderJobTier; capability: AudioCapabilityKey }
 > = {
-  MP3_128: {
-    renderTier: "BASIC_MP3",
-    capability: "EXPORT_BASIC_MP3",
-    label: "MP3 — 128 kbps",
-    detail: "podstawowa jakość",
-    requiredTier: "FREE",
-  },
-  MP3_192: {
-    renderTier: "MP3_192",
-    capability: "EXPORT_MP3_192",
-    label: "MP3 — 192 kbps",
-    detail: "wyższa jakość",
-    requiredTier: "BRONZE",
-  },
-  MP3_320: {
-    renderTier: "HQ_MP3",
-    capability: "EXPORT_HQ_MP3",
-    label: "MP3 — 320 kbps",
-    detail: "najwyższa jakość MP3",
-    requiredTier: "SILVER",
-  },
-  WAV: {
-    renderTier: "WAV",
-    capability: "EXPORT_WAV",
-    label: "WAV",
-    detail: "bezstratny plik audio — jakość studyjna",
-    requiredTier: "GOLD",
-  },
+  MP3_128: { renderTier: "BASIC_MP3", capability: "EXPORT_BASIC_MP3" },
+  MP3_192: { renderTier: "MP3_192", capability: "EXPORT_MP3_192" },
+  MP3_256: { renderTier: "MP3_256", capability: "EXPORT_MP3_256" },
+  MP3_320: { renderTier: "HQ_MP3", capability: "EXPORT_HQ_MP3" },
+  WAV_COMPAT: { renderTier: "WAV", capability: "EXPORT_WAV" },
+  WAV_PRO: { renderTier: "WAV_PRO", capability: "EXPORT_WAV_PRO" },
+  WAV_MASTER: { renderTier: "WAV_MASTER", capability: "EXPORT_WAV_MASTER" },
 };
 
-/** Frozen product ladder for TAKE_EXPORT only (not MIX). */
+/** Frozen product ladder — delegates to Premium SSOT. */
 export const TAKE_EXPORT_UNLOCKED_BY_TIER: Record<
   PremiumTier,
   readonly TakeExportQuality[]
 > = {
-  FREE: ["MP3_128"],
-  BRONZE: ["MP3_128", "MP3_192"],
-  SILVER: ["MP3_128", "MP3_192", "MP3_320"],
-  GOLD: ["MP3_128", "MP3_192", "MP3_320", "WAV"],
+  FREE: [],
+  BRONZE: ["MP3_128"],
+  SILVER: ["MP3_128", "MP3_192", "MP3_256"],
+  GOLD: [
+    "MP3_128",
+    "MP3_192",
+    "MP3_256",
+    "MP3_320",
+    "WAV_COMPAT",
+    "WAV_PRO",
+    "WAV_MASTER",
+  ],
 };
+
+export function normalizeTakeExportQuality(
+  value: unknown,
+): TakeExportQuality | null {
+  if (typeof value !== "string") return null;
+  const aliased = TAKE_EXPORT_LEGACY_ALIASES[value] ?? value;
+  if (!isPremiumDownloadQuality(aliased)) return null;
+  if (!(TAKE_EXPORT_QUALITIES as readonly string[]).includes(aliased)) {
+    return null;
+  }
+  return aliased as TakeExportQuality;
+}
 
 export function isTakeExportQuality(
   value: unknown,
 ): value is TakeExportQuality {
-  return (
-    typeof value === "string" &&
-    (TAKE_EXPORT_QUALITIES as readonly string[]).includes(value)
-  );
+  return normalizeTakeExportQuality(value) != null;
 }
 
 export function renderTierForTakeExportQuality(
   quality: TakeExportQuality,
 ): RenderJobTier {
-  return QUALITY_META[quality].renderTier;
+  return QUALITY_TO_RENDER[quality].renderTier;
 }
 
 export function capabilityForTakeExportQuality(
   quality: TakeExportQuality,
 ): AudioCapabilityKey {
-  return QUALITY_META[quality].capability;
+  return QUALITY_TO_RENDER[quality].capability;
 }
 
 export function canExportOwnTake(params: {
   premiumTier: PremiumTier;
   quality: TakeExportQuality;
 }): boolean {
-  return TAKE_EXPORT_UNLOCKED_BY_TIER[params.premiumTier].includes(
-    params.quality,
-  );
+  return canDownloadPremiumQuality({
+    premiumTier: params.premiumTier,
+    quality: params.quality,
+  });
 }
 
-/** Full ladder always — never hide higher qualities. */
+/** Full ladder always — never hide higher qualities (OD-EXPORT-03). */
 export function buildTakeExportLadder(
   premiumTier: PremiumTier,
 ): TakeExportLadderItem[] {
-  return TAKE_EXPORT_QUALITIES.map((quality) => {
-    const meta = QUALITY_META[quality];
-    const unlocked = canExportOwnTake({ premiumTier, quality });
+  return buildPremiumDownloadLadder(premiumTier).map((row) => {
+    const quality = row.quality as TakeExportQuality;
+    const map = QUALITY_TO_RENDER[quality];
     return {
       quality,
-      renderTier: meta.renderTier,
-      capability: meta.capability,
-      label: meta.label,
-      detail: meta.detail,
-      unlocked,
-      requiredTier: meta.requiredTier,
-      lockedMessage: unlocked
-        ? null
-        : `Dostępne w planie ${meta.requiredTier}.`,
+      renderTier: map.renderTier,
+      capability: map.capability,
+      label: row.label,
+      detail: row.detail,
+      unlocked: row.unlocked,
+      requiredTier: row.requiredTier,
+      lockedMessage: row.lockedMessage,
     };
   });
 }
 
-/** RAW own-take download (mic.bin) — GOLD Sample Policy only. */
+/** RAW own-take download (mic.bin) — GOLD Sample Policy only (≠ Premium unlock). */
 export function canDownloadOwnTakeRaw(params: {
   canDownloadOwnTake: boolean;
 }): boolean {

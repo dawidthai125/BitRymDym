@@ -14,7 +14,10 @@ import {
 import {
   assertAudioCapability,
 } from "@/lib/audio/effective-entitlement";
-import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import {
+  resolveAudioEntitlementForAuthContext,
+  resolveProductEntitlementForAuthContext,
+} from "@/lib/audio/load-premium-entitlement";
 import {
   PublicAudioGateError,
   assertPublicFreeAudioReleased,
@@ -26,6 +29,14 @@ import {
 } from "@/lib/audio/render-job-core";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
+import {
+  evaluatePremiumDownloadGate,
+  premiumQualityFromRenderTier,
+} from "@/lib/premium/premium-download-authz";
+import {
+  denyMessageForPremiumDownloadReason,
+  loadPremiumWorkDownloadContext,
+} from "@/lib/premium/premium-download-context";
 import {
   assertOwnedThenMixRouteDomain,
   classifyAudioArtifactDomain,
@@ -114,6 +125,35 @@ export async function createOwnArtifactDownloadSignedUrlFor(
     throw new AuthError("FORBIDDEN", "Invalid artifact quality_tier.");
   }
   assertAudioCapability(entitlement, capabilityForRenderTier(qualityTier));
+
+  // PREMIUM-01/04/09 — quality live (D-3) + sticky unlock + R1 retention before mint.
+  // FREE never downloads ready MIX artifacts. Client never supplies unlock/tier.
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const premiumQuality = premiumQualityFromRenderTier(qualityTier);
+  if (!premiumQuality) {
+    throw new AuthError("FORBIDDEN", "Nieobsługiwana jakość pliku.");
+  }
+  const workCtx = await loadPremiumWorkDownloadContext({
+    admin,
+    userId: context.userId,
+    takeId: (artifact.take_id as string | null) ?? null,
+    projectId: (artifact.project_id as string | null) ?? null,
+    mixSessionId: (artifact.mix_session_id as string | null) ?? null,
+  });
+  const gate = evaluatePremiumDownloadGate({
+    premiumTier: product.premiumTier,
+    quality: premiumQuality,
+    hasUnlock: workCtx.hasUnlock,
+    retentionExpiresAtMs: workCtx.retentionExpiresAtMs,
+    nowMs: Date.now(),
+    workStatus: workCtx.workStatus,
+  });
+  if (!gate.ok) {
+    throw new AuthError(
+      "FORBIDDEN",
+      denyMessageForPremiumDownloadReason(gate.reason),
+    );
+  }
 
   // FINDING-03 — READY alone is insufficient; owning job must be SUCCEEDED.
   const { data: job, error: jobError } = await admin

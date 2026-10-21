@@ -192,7 +192,10 @@ export function capabilityForRenderTier(
 ): AudioCapabilityKey {
   if (tier === "BASIC_MP3") return "EXPORT_BASIC_MP3";
   if (tier === "MP3_192") return "EXPORT_MP3_192";
+  if (tier === "MP3_256") return "EXPORT_MP3_256";
   if (tier === "HQ_MP3") return "EXPORT_HQ_MP3";
+  if (tier === "WAV_PRO") return "EXPORT_WAV_PRO";
+  if (tier === "WAV_MASTER") return "EXPORT_WAV_MASTER";
   return "EXPORT_WAV";
 }
 

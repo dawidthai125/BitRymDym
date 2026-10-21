@@ -64,13 +64,21 @@ export const AUDIO_RENDER_MAX_ATTEMPTS = 3;
 /** Signed GET TTL class (reuse download pattern). */
 export const AUDIO_ARTIFACT_DOWNLOAD_TTL_SECONDS = 300;
 
-/** OAD-06 codec baseline (IP-05). P4 adds mid MP3 bitrate for take export. */
+/**
+ * OAD-06 codec baseline + PREMIUM-05 ladders.
+ * WAV_* defaults remain COMPAT (16/44.1); PRO/MASTER via premium-export-policy.
+ */
 export const AUDIO_CODEC = {
   BASIC_MP3_BITRATE_KBPS: 128,
   MP3_192_BITRATE_KBPS: 192,
+  MP3_256_BITRATE_KBPS: 256,
   HQ_MP3_BITRATE_KBPS: 320,
   WAV_SAMPLE_RATE: 44100,
   WAV_BIT_DEPTH: 16,
+  WAV_PRO_SAMPLE_RATE: 44100,
+  WAV_PRO_BIT_DEPTH: 24,
+  WAV_MASTER_SAMPLE_RATE: 48000,
+  WAV_MASTER_BIT_DEPTH: 24,
   CHANNELS: 2,
 } as const;
 
@@ -78,7 +86,8 @@ export const AUDIO_CODEC = {
  * Capability keys (frozen list).
  * Effective resolution: lib/audio/effective-entitlement.ts (E3.2).
  * STEMS intentionally absent.
- * P4: EXPORT_MP3_192 for take-export ladder (BRONZE+); MIX path unchanged.
+ * PREMIUM-01: EXPORT_MP3_256 / WAV_PRO / WAV_MASTER for Premium download ladder.
+ * Mix path still uses BASIC / HQ / WAV (COMPAT) from PREMIUM_TIER_MATRIX.
  */
 export const AUDIO_CAPABILITY_KEYS = [
   "MIX_BASIC",
@@ -87,8 +96,11 @@ export const AUDIO_CAPABILITY_KEYS = [
   "MASTER_PRO",
   "EXPORT_BASIC_MP3",
   "EXPORT_MP3_192",
+  "EXPORT_MP3_256",
   "EXPORT_HQ_MP3",
   "EXPORT_WAV",
+  "EXPORT_WAV_PRO",
+  "EXPORT_WAV_MASTER",
 ] as const;
 
 export type AudioCapabilityKey = (typeof AUDIO_CAPABILITY_KEYS)[number];
