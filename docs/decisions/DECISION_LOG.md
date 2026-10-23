@@ -10,6 +10,17 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Autonomia wykonawcza agenta — zatwierdzona (operacyjna)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner — zwykła praca agenta od analizy do standardowego wdrożenia |
+| Status | **ACCEPTED — OPERATING POLICY** · nie zamyka OD-15 · nie jest zgodą na bramki bezpieczeństwa |
+| Date | 2026-10-23 |
+| Documents | [AGENTS.md](../../AGENTS.md) · [DOCUMENTATION_CONTINUITY.md](../DOCUMENTATION_CONTINUITY.md) |
+
+Treść polityki jest w `AGENTS.md`. Ten wpis jej nie powtarza. Historyczne wpisy poniżej, które odmawiają commit/push/deploy dla własnego zakresu, zostają w mocy dla tamtych decyzji.
+
 ### Studio Final Mix — OD-SFM-ID-06 CLOSED (legacy WAV deny-without-backfill)
 
 | Pole | Wartość |

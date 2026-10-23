@@ -50,14 +50,15 @@ Implementację potwierdza code/schema (+ production verify, gdy dotyczy).
 IMPLEMENTATION
 → TEST
 → DOCUMENTATION UPDATE
-→ AUDIT
-→ OWNER REVIEW
+→ PRZEGLĄD DIFFU
 → COMMIT
-→ PUSH
+→ PUSH na main
 → DEPLOY / VERIFY
 ```
 
-(Dla sesji wyłącznie dokumentacyjnych: pomiń IMPLEMENTATION / TEST kodu aplikacji, zachowaj DOCUMENTATION UPDATE → AUDIT → OWNER REVIEW.)
+Zwykłe zlecenie nie czeka na osobną zgodę przed commitem, pushem ani standardowym deploymentem. Kolejność i bramki bezpieczeństwa: [AGENTS.md](../AGENTS.md), polityka autonomii. Dokumentacja nadal jest częścią ukończenia, nie dowodem wdrożenia.
+
+(Dla sesji wyłącznie dokumentacyjnej: pomiń IMPLEMENTATION i test kodu aplikacji. Zostaw aktualizację dokumentów, przegląd diffu i — gdy zakres na to pozwala — commit, push i wynik auto-deployu.)
 
 ---
 

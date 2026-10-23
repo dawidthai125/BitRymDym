@@ -249,7 +249,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 | Prior alias binding (HISTORY) | `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` @ `ce2f0cc` (PR #5 · superseded for live aliases · **≠** current docs deployment) · `dpl_56FGH…` @ `d515f3b` · `dpl_FVcx…` @ `3a086ad` · `4fa658d` / `dpl_6sai…` |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
-| Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
+| Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić, nie resetować i nie commitować Sacred WIP ani niepowiązanego WIP**; zwykły zakres według [AGENTS.md](../AGENTS.md) · verify Sacred WIP SHA before/after any session |
 
 **Primary continuity:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
 **Reuse / DO NOT DUPLICATE:** [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
@@ -283,7 +283,7 @@ BEFORE ANY IMPLEMENTATION:
   SEARCH EXISTING CODE FIRST
   → identify SSOT / service / route / RPC / component / state owner / persistence path / tests
   → REUSE
-  → AUDIT → REPORT → wait for Owner GO
+  → zlecony zakres realizuj według AGENTS.md; nowy epik i bramka bezpieczeństwa wymagają osobnej zgody
   → never invent second orchestrator / engine / player / CAS / selection store
 ```
 
@@ -332,9 +332,9 @@ FORBIDDEN = git reset / restore / checkout -- / clean / stash of this WIP withou
 9. [CHANGELOG.md](./CHANGELOG.md)
 10. Relevant audit/closeout **only** when Owner selects that surface
 
-**Before any implementation:** SEARCH EXISTING → AUDIT → REPORT → wait for **Owner GO**.
+**Before any implementation:** SEARCH EXISTING → REUSE. Zlecony zakres realizuj według [AGENTS.md](../AGENTS.md). Nowy epik i bramka bezpieczeństwa wymagają osobnej zgody.
 
-Repo root: [AGENTS.md](../AGENTS.md) — Next.js w tym repo może różnić się od training data.
+Repo root: [AGENTS.md](../AGENTS.md) — Next.js w tym repo może różnić się od training data. Polityka autonomii jest w tym samym pliku.
 
 ---
 
@@ -694,14 +694,14 @@ WIP preserved
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
 [ ] NEXT GATE = STOP — OWNER DECISION REQUIRED (PROJECT_STATE NEXT UNIT) · no auto Contabo / SFM flag
 [ ] Do not re-run SUCCEEDED Studio Export jobs 53398f9e… or 61b7cdf1… without new Owner GO
-[ ] Local dirty WIP may diverge — no fetch/pull/clean/sync without Owner GO
+[ ] Local dirty WIP may diverge — do not clean, stash, reset, or sync unrelated WIP. Ordinary task scope follows AGENTS.md
 [ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
 [ ] Do not invent Phase 7.1.7 scope without Owner GO
 [ ] Do not commit P4 context? WIP / SA-07 untracked library / Sacred WIP without Owner GO
 [ ] SEARCH EXISTING FIRST · REUSE · no second SSOT
 [ ] Nie reopen closed epics bez nowego evidence
 [ ] Nie czyść dirty WIP bez Owner GO
-[ ] AUDIT FIRST → report → wait for Owner GO (no auto-start)
+[ ] Zlecony zakres realizuj według AGENTS.md. Nie startuj nowego epiku ani bramki bezpieczeństwa bez osobnej zgody.
 ```
 
 ---
@@ -759,15 +759,15 @@ Kanoniczne, kompletne prompty startowe. **Nie kopiuj całego SSOT do czatu** —
 ## Rola
 Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Prowadzisz analizę, decyzje, roadmapę i RCA.
-- Wydajesz konkretny prompt Cursor Agent **dopiero** po analizie raportu, gdy istnieje zatwierdzony kolejny krok i Owner GO.
-- Nie implementujesz w repozytorium; nie commitujesz; nie deployujesz.
+- Po analizie wydajesz prompt Cursor Agent na zwykły zakres. Nie dokładasz drugiej zgody na commit, push ani standardowy deployment; to rozstrzyga AGENTS.md. Nowy epik i bramka bezpieczeństwa nadal wymagają osobnej zgody Ownera.
+- Ta rola architekta nie implementuje w repozytorium, nie commituje i nie deployuje. Wykonawca Cursor robi to według AGENTS.md.
 - Respektujesz decyzje Ownera (Prezes Dawid) i granice udzielonego GO. Nie rozszerzasz zakresu samodzielnie.
 
 ## Obowiązkowy cold start (kolejność)
 1. docs/FINAL_COLD_START_HANDOFF.md (ten plik · §0–§12)
 2. docs/MASTER_HANDOFF.md
 3. docs/PROJECT_STATE.md  ← jedyny living SSOT tip/deploy/NEXT
-4. AGENTS.md (reguły Next.js w tym repo)
+4. AGENTS.md (Next.js, egress audio, polityka autonomii)
 5. docs/README.md · docs/CHANGELOG.md (recent)
 6. docs/architecture/REUSE_SSOT_MAP.md przed propozycją zmian Studio/audio/persist
 7. W razie potrzeby: docs/decisions/* · docs/architecture/* · właściwy audit/closeout
@@ -786,7 +786,7 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Final Mix (STUDIO_EXPORT) GREEN VERIFIED (frozen IN) per PROJECT_STATE · ≠ SFM Production GREEN
 - P6.8: NOT STARTED · Contabo always-on / sync / canary: NOT DONE
 - STU-16: DB apply VERIFIED · local live 17/17 PASS · prod functional / E2E / concurrency NOT VERIFIED (PROJECT_STATE) · local API 54421
-- Sacred WIP chroniony · dirty local main NIE synchronizować bez GO
+- Sacred WIP chroniony · nie synchronizuj niepowiązanego dirty WIP · zwykły zakres według AGENTS.md
 
 ## Otwarte gate’y (nie zamykaj bez nowego evidence + Owner GO)
 - SFM worker / staging / migrate / E2E (ordered GOs in PROJECT_STATE)
@@ -810,7 +810,7 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
 - Implementujesz / dokumentujesz / weryfikujesz wyłącznie w zakresie jawnego Owner GO / promptu.
 - Nie jesteś architektem decyzji produktowych; nie rozszerzasz zakresu zgody.
-- Nie commituj / nie pushuj / nie merguj / nie deployuj automatycznie bez osobnego GO.
+- Zwykły commit, push na main i standardowy deployment: AGENTS.md. Pull request nie jest obowiązkowy. Bramki bezpieczeństwa z AGENTS.md wymagają osobnej zgody.
 
 ## Obowiązkowy cold start (kolejność)
 1. AGENTS.md
@@ -822,13 +822,13 @@ Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
 
 ## Preflight przed każdą mutacją
 - git branch --show-current · git rev-parse HEAD · git status --short
-- Potwierdź izolowany worktree / branch — NIE pracuj w dirty main bez GO
+- main jest dopuszczalny. Zachowaj niepowiązany dirty WIP i Sacred WIP. Nie edytuj tych samych plików równoległym agentem.
 - Sacred WIP: src/lib/takes/recording-eligibility-service.ts
   SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
   (sprawdź tylko read-only hash; nie reset/clean/restore)
 - Zakaz: git stash / reset / clean / restore / rebase / checkout wpływający na istniejące WIP
 - Zakaz: git add -A / -u / .
-- Zakaz: HTTP do produkcji / Contabo / SQL / deploy — chyba że prompt jawnie daje GO
+- Zakaz: produkcyjne mastery audio, zapis do produkcyjnej bazy, Contabo i SQL. Standardowy push na main uruchamia auto-deploy Vercel; weryfikacja statusu wdrożenia jest w AGENTS.md.
 
 ## Aktualny stan (skrót — szczegóły WYŁĄCZNIE w PROJECT_STATE)
 - Living tip/deploy/NEXT = docs/PROJECT_STATE.md §2 (nie cytuj 2adb569 / 5212933 jako current)

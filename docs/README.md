@@ -17,7 +17,7 @@
 9. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–5 **CLOSED / PRODUCTION VERIFIED**
 10. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
 
-**Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
+**Przed implementacją przeczytaj:** FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + właściwą architekturę + OPEN_DECISIONS + [AGENTS.md](../AGENTS.md). Zwykły zlecony zakres realizuj według polityki autonomii w `AGENTS.md`. Osobna zgoda zostaje przy nowym epiku i bramkach bezpieczeństwa, nie przy każdym commicie, pushu ani standardowym deployu.
 
 **Now / Next (living):** tip Git, app tip, deployment ID, NEXT UNIT i statusy SFM/Contabo/STU-16 — **tylko** [PROJECT_STATE.md](./PROJECT_STATE.md) (nie duplikuj tu rejestru dpl). **Final Mix Production GREEN: VERIFIED** (frozen IN) · Contabo continuous poller V1: **IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync/host/canary/always-on **NOT DONE**. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
 

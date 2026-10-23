@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-23 — polityka autonomii wykonawczej
+
+**Status:** polityka zapisana w [AGENTS.md](../AGENTS.md). Ten wpis nie jest wdrożeniem i nie zamyka OD-15.
+**Zakres:** zwykłe zlecenie obejmuje implementację, testy, commit, push na `main` i standardowy auto-deploy Vercel bez osobnego pytania. Pull request nie jest obowiązkowy. Bramki utraty danych, force-push, sekretów, infrastruktury poza pipeline i Sacred WIP zostają.
+**Spójność:** [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) · [README.md](./README.md) · instrukcje wykonawcze w [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md).
+
 ## 2026-10-19 — STU-16 tip and deployment evidence reconciled (docs-only)
 
 **Status:** **DOCS ONLY** · Owner GO · updates living tip/dpl pointers after local-evidence commit auto-deploy · **no** app code / migration / prod DB write / Storage / Auth mutation / manual deploy in this session · **`supabase/config.toml` port WIP not included**
