@@ -74,9 +74,10 @@ export async function SiteHeader({
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
-          <ThemeToggle className="shrink-0" />
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <HeaderSearch className="hidden sm:block" compact />
+          {/* Motyw bezpośrednio przy Zaloguj / menu konta — także na mobile */}
+          <ThemeToggle className="shrink-0" />
           {session ? (
             <UserMenu
               displayName={displayName}
@@ -86,15 +87,12 @@ export async function SiteHeader({
             />
           ) : (
             <>
-              <Link
-                href="/sign-in"
-                className={cn(navLinkClass, "hidden sm:inline-flex")}
-              >
+              <Link href="/sign-in" className={navLinkClass}>
                 Zaloguj
               </Link>
               <Link
                 href="/sign-up"
-                className="inline-flex min-h-11 items-center border border-[var(--brd-green)] bg-[var(--brd-green)] px-3.5 text-sm text-[var(--brd-paper)]"
+                className="inline-flex min-h-11 items-center border border-[var(--brd-green)] bg-[var(--brd-green)] px-2.5 text-sm text-[var(--brd-paper)] sm:px-3.5"
               >
                 Dołącz
               </Link>

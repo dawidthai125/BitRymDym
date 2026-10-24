@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — global dark chrome: toggle by auth + route pass
+
+**Status:** additive · **OD-15 / OD-16 remain OPEN**
+**Chrome:** ThemeToggle immediately before Zaloguj / UserMenu (mobile too) · `/auth/*` AuthThemeBar layout · downloads wash → `--brd-paper`
+**Evidence:** [audits/_visual_theme_global_routes_2026-10-24/README.md](./audits/_visual_theme_global_routes_2026-10-24/README.md) · logged-in Studio/account/takes/settings **NOT VERIFIED**
+
 ## 2026-10-24 — on-media foam + theme toggle evidence follow-up
 
 **Status:** additive fix on `f3b8e75` · **OD-15 / OD-16 remain OPEN**

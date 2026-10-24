@@ -1,0 +1,1209 @@
+{
+  "shots": [
+    {
+      "file": "dark-home-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "home",
+      "url": "/",
+      "gated": false
+    },
+    {
+      "file": "dark-beats-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "beats",
+      "url": "/beats",
+      "gated": false
+    },
+    {
+      "file": "dark-beat-detail-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "beat-detail",
+      "url": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e",
+      "gated": false
+    },
+    {
+      "file": "dark-about-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "about",
+      "url": "/about",
+      "gated": false
+    },
+    {
+      "file": "dark-signin-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "signin",
+      "url": "/sign-in",
+      "gated": false
+    },
+    {
+      "file": "dark-signup-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "signup",
+      "url": "/sign-up",
+      "gated": false
+    },
+    {
+      "file": "dark-forgot-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "forgot",
+      "url": "/forgot-password",
+      "gated": false
+    },
+    {
+      "file": "dark-studio-gate-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "studio-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-takes-gate-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "takes-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-account-gate-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "account-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-settings-gate-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "settings-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-library-gate-desktop-1280x800.png",
+      "theme": "dark",
+      "route": "library-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-home-desktop-1280x800.png",
+      "theme": "light",
+      "route": "home",
+      "url": "/",
+      "gated": false
+    },
+    {
+      "file": "light-beats-desktop-1280x800.png",
+      "theme": "light",
+      "route": "beats",
+      "url": "/beats",
+      "gated": false
+    },
+    {
+      "file": "light-beat-detail-desktop-1280x800.png",
+      "theme": "light",
+      "route": "beat-detail",
+      "url": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e",
+      "gated": false
+    },
+    {
+      "file": "light-about-desktop-1280x800.png",
+      "theme": "light",
+      "route": "about",
+      "url": "/about",
+      "gated": false
+    },
+    {
+      "file": "light-signin-desktop-1280x800.png",
+      "theme": "light",
+      "route": "signin",
+      "url": "/sign-in",
+      "gated": false
+    },
+    {
+      "file": "light-signup-desktop-1280x800.png",
+      "theme": "light",
+      "route": "signup",
+      "url": "/sign-up",
+      "gated": false
+    },
+    {
+      "file": "light-forgot-desktop-1280x800.png",
+      "theme": "light",
+      "route": "forgot",
+      "url": "/forgot-password",
+      "gated": false
+    },
+    {
+      "file": "light-studio-gate-desktop-1280x800.png",
+      "theme": "light",
+      "route": "studio-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-takes-gate-desktop-1280x800.png",
+      "theme": "light",
+      "route": "takes-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-account-gate-desktop-1280x800.png",
+      "theme": "light",
+      "route": "account-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-settings-gate-desktop-1280x800.png",
+      "theme": "light",
+      "route": "settings-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-library-gate-desktop-1280x800.png",
+      "theme": "light",
+      "route": "library-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-home-mobile-390x844.png",
+      "theme": "dark",
+      "route": "home",
+      "url": "/",
+      "gated": false
+    },
+    {
+      "file": "dark-beats-mobile-390x844.png",
+      "theme": "dark",
+      "route": "beats",
+      "url": "/beats",
+      "gated": false
+    },
+    {
+      "file": "dark-beat-detail-mobile-390x844.png",
+      "theme": "dark",
+      "route": "beat-detail",
+      "url": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e",
+      "gated": false
+    },
+    {
+      "file": "dark-about-mobile-390x844.png",
+      "theme": "dark",
+      "route": "about",
+      "url": "/about",
+      "gated": false
+    },
+    {
+      "file": "dark-signin-mobile-390x844.png",
+      "theme": "dark",
+      "route": "signin",
+      "url": "/sign-in",
+      "gated": false
+    },
+    {
+      "file": "dark-signup-mobile-390x844.png",
+      "theme": "dark",
+      "route": "signup",
+      "url": "/sign-up",
+      "gated": false
+    },
+    {
+      "file": "dark-forgot-mobile-390x844.png",
+      "theme": "dark",
+      "route": "forgot",
+      "url": "/forgot-password",
+      "gated": false
+    },
+    {
+      "file": "dark-studio-gate-mobile-390x844.png",
+      "theme": "dark",
+      "route": "studio-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-takes-gate-mobile-390x844.png",
+      "theme": "dark",
+      "route": "takes-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-account-gate-mobile-390x844.png",
+      "theme": "dark",
+      "route": "account-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-settings-gate-mobile-390x844.png",
+      "theme": "dark",
+      "route": "settings-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "dark-library-gate-mobile-390x844.png",
+      "theme": "dark",
+      "route": "library-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-home-mobile-390x844.png",
+      "theme": "light",
+      "route": "home",
+      "url": "/",
+      "gated": false
+    },
+    {
+      "file": "light-beats-mobile-390x844.png",
+      "theme": "light",
+      "route": "beats",
+      "url": "/beats",
+      "gated": false
+    },
+    {
+      "file": "light-beat-detail-mobile-390x844.png",
+      "theme": "light",
+      "route": "beat-detail",
+      "url": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e",
+      "gated": false
+    },
+    {
+      "file": "light-about-mobile-390x844.png",
+      "theme": "light",
+      "route": "about",
+      "url": "/about",
+      "gated": false
+    },
+    {
+      "file": "light-signin-mobile-390x844.png",
+      "theme": "light",
+      "route": "signin",
+      "url": "/sign-in",
+      "gated": false
+    },
+    {
+      "file": "light-signup-mobile-390x844.png",
+      "theme": "light",
+      "route": "signup",
+      "url": "/sign-up",
+      "gated": false
+    },
+    {
+      "file": "light-forgot-mobile-390x844.png",
+      "theme": "light",
+      "route": "forgot",
+      "url": "/forgot-password",
+      "gated": false
+    },
+    {
+      "file": "light-studio-gate-mobile-390x844.png",
+      "theme": "light",
+      "route": "studio-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-takes-gate-mobile-390x844.png",
+      "theme": "light",
+      "route": "takes-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-account-gate-mobile-390x844.png",
+      "theme": "light",
+      "route": "account-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-settings-gate-mobile-390x844.png",
+      "theme": "light",
+      "route": "settings-gate",
+      "url": "/sign-in",
+      "gated": true
+    },
+    {
+      "file": "light-library-gate-mobile-390x844.png",
+      "theme": "light",
+      "route": "library-gate",
+      "url": "/sign-in",
+      "gated": true
+    }
+  ],
+  "togglePlacement": [
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "home",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "beats",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beats"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "beat-detail",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "about",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/about"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "signin",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "signup",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-up"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "forgot",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/forgot-password"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "studio-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "takes-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "account-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "settings-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "route": "library-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "home",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "beats",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beats"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "beat-detail",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "about",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/about"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "signin",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "signup",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-up"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "forgot",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/forgot-password"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "studio-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "takes-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "account-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "settings-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "route": "library-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "home",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "beats",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beats"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "beat-detail",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "about",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/about"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "signin",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "signup",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-up"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "forgot",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/forgot-password"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "studio-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "takes-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "account-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "settings-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "route": "library-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "home",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "beats",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beats"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "beat-detail",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "about",
+      "surface": "header",
+      "buttons": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "Zaloguj",
+        "Dołącz"
+      ],
+      "toggleIdx": 5,
+      "authIdx": 6,
+      "toggleBeforeAuth": true,
+      "finalUrl": "/about"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "signin",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "signup",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-up"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "forgot",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/forgot-password"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "studio-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "takes-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "account-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "settings-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    },
+    {
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "route": "library-gate",
+      "surface": "auth-or-gate",
+      "hasToggle": true,
+      "finalUrl": "/sign-in"
+    }
+  ],
+  "ihdr": [
+    {
+      "file": "dark-home-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-beats-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-beat-detail-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-about-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-signin-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-signup-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-forgot-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-studio-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-takes-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-account-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-settings-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-library-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-home-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-beats-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-beat-detail-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-about-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-signin-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-signup-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-forgot-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-studio-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-takes-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-account-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-settings-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-library-gate-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-home-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-beats-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-beat-detail-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-about-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-signin-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-signup-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-forgot-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-studio-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-takes-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-account-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-settings-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-library-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-home-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-beats-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-beat-detail-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-about-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-signin-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-signup-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-forgot-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-studio-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-takes-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-account-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-settings-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-library-gate-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    }
+  ],
+  "beatHref": "/beat/fd1f8593-10e6-4a9d-b234-5726a9a5db2e"
+}

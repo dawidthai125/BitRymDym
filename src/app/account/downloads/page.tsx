@@ -40,7 +40,7 @@ export default async function MyDownloadsPage() {
   const items = await listMyDownloadHistory();
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_oklch(0.97_0.01_95)_0%,_var(--background)_55%)]">
+    <div className="min-h-dvh bg-[var(--brd-paper)] text-[var(--brd-ink)]">
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
         <div className="space-y-2">

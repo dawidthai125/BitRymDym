@@ -68,13 +68,13 @@ export function ThemeToggle({ className }: { className?: string }) {
       title={nextHint}
       data-theme-ready="true"
       className={cn(
-        "inline-flex min-h-11 items-center gap-1.5 border border-[var(--brd-line)] bg-transparent px-2.5 text-sm text-[var(--brd-ink-soft)] outline-none transition-colors",
+        "inline-flex min-h-11 items-center gap-1 border border-[var(--brd-line)] bg-transparent px-2 text-sm text-[var(--brd-ink-soft)] outline-none transition-colors sm:gap-1.5 sm:px-2.5",
         "hover:border-[var(--brd-line-strong)] hover:text-[var(--brd-ink)]",
         "focus-visible:ring-2 focus-visible:ring-[var(--brd-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brd-paper)]",
         className,
       )}
     >
-      <span className="brd-meta text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+      <span className="brd-meta hidden text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)] sm:inline">
         Motyw
       </span>
       <span className="font-medium text-[var(--brd-ink)]">{label}</span>
