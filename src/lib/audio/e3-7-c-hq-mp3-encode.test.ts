@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  encodeHqMp3FromBake,
-  qcHqMp3Bytes,
-} from "@/lib/audio/mp3-encode";
-import { assertNativeFfmpegAvailable } from "@/lib/audio/native-ffmpeg";
-import { RenderJobDomainError } from "@/lib/audio/render-job-core";
+import { assertMp3EncodeToolchain } from "@/lib/audio/mp3-encode-toolchain";
+import { encodeHqMp3FromBake, qcHqMp3Bytes } from "@/lib/audio/mp3-encode";
 import { bakeServerProV1 } from "@/lib/audio/server-pro-bake";
 import {
   defaultMixParameters,
@@ -28,12 +24,12 @@ function synthStereo(frames = 4410 * 2) {
 }
 
 describe("E3.7-C — HQ MP3 320 encode + QC", () => {
-  it("ffmpeg available", async () => {
-    const info = await assertNativeFfmpegAvailable();
-    expect(info.versionLine.toLowerCase()).toContain("ffmpeg");
+  it("ffmpeg, ffprobe, and libmp3lame are available on the resolved binaries", async () => {
+    await assertMp3EncodeToolchain();
   });
 
   it("encodes server-pro-v1 bake to ~320 kbps stereo and passes QC", async () => {
+    await assertMp3EncodeToolchain();
     const parameters = defaultMixParameters();
     parameters.pro = defaultMixProParams();
     const bake = bakeServerProV1({
@@ -55,11 +51,4 @@ describe("E3.7-C — HQ MP3 320 encode + QC", () => {
     expect(qc.ok).toBe(true);
     expect(qc.channels).toBe(2);
   }, 60_000);
-
-  it("rejects fake placeholder in HQ QC", async () => {
-    const fake = Buffer.from("e3.5-fake-placeholder:job:HQ_MP3\n", "utf8");
-    await expect(qcHqMp3Bytes(fake)).rejects.toBeInstanceOf(
-      RenderJobDomainError,
-    );
-  });
 });

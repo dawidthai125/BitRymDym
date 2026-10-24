@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:media": "vitest run --config vitest.media.config.ts",
     "benchmark:bpm": "tsx scripts/run-bpm-benchmark.ts",
     "experiment:bpm-v2": "tsx scripts/run-bpm-experiment-v2.ts",
     "experiment:bpm-v3": "tsx scripts/run-bpm-experiment-v3.ts",
