@@ -1,0 +1,65 @@
+{
+  "capturedAt": "2026-10-24T18:02:33.278Z",
+  "fixtureStatusExpected": "APPROVED_not_PUBLISHED",
+  "pickerVisibility": {
+    "status": "PASS",
+    "surface": "Moje"
+  },
+  "recordingGate": {
+    "status": "LIFTED_OR_ABSENT",
+    "gateCopyPresent": false
+  },
+  "consciousArm": {
+    "status": "FAIL",
+    "arms": [
+      "false",
+      "false"
+    ]
+  },
+  "mockRec": {
+    "status": "BLOCKED",
+    "note": "REC primary absent while unpublished-gate active"
+  },
+  "takeSave": {
+    "status": "NOT_RUN"
+  },
+  "archive": {
+    "status": "NOT_RUN"
+  },
+  "themeRoundTrip": null,
+  "motywPlacement": {
+    "dark": {
+      "ok": true,
+      "toggleIdx": 5
+    },
+    "light": {
+      "ok": true,
+      "toggleIdx": 5
+    }
+  },
+  "ihdr": [
+    {
+      "file": "dark-editor-approved-attached-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-editor-approved-attached-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    }
+  ],
+  "shots": [
+    "dark-editor-approved-attached-desktop-1280x800.png",
+    "light-editor-approved-attached-desktop-1280x800.png"
+  ],
+  "defects": [
+    "page.waitForFunction: Timeout 8000ms exceeded."
+  ],
+  "productVsMock": {
+    "productBlock": "Publish blocked by rights attestation product gate; REC requires PUBLISHED",
+    "mockNotExercised": "MediaRecorder harness not reached because product gate blocks REC primary"
+  }
+}

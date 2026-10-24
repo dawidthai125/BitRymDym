@@ -1,0 +1,89 @@
+{
+  "capturedAt": "2026-10-24T18:04:39.245Z",
+  "ihdr": [
+    {
+      "file": "dark-editor-approved-attached-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-editor-approved-attached-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    }
+  ],
+  "fixtureOnEditor": false,
+  "transportButtons": [
+    {
+      "aria": "Odtwórz",
+      "text": "▶"
+    },
+    {
+      "aria": "Pauza",
+      "text": "❚❚"
+    },
+    {
+      "aria": "Stop",
+      "text": "■"
+    },
+    {
+      "aria": "Nagraj — otwiera panel nagrywania",
+      "text": "●"
+    },
+    {
+      "aria": "Loop — niedostępne w tej wersji Studio",
+      "text": "⟳"
+    },
+    {
+      "aria": "Metronom — niedostępne w tej wersji Studio",
+      "text": "♩"
+    },
+    {
+      "aria": "Zmień bit",
+      "text": "Bit"
+    },
+    {
+      "aria": null,
+      "text": "Historia miksu"
+    },
+    {
+      "aria": null,
+      "text": "Eksportuj WAV"
+    }
+  ],
+  "panelVisible": true,
+  "panelSnippet": "Nagrywanie\n\nStart: playhead 00:00.000\n\nŚcieżka\nWokal\n\nMikrofon\n\nŹródło nagrywania\n\nMikrofon\nAutomatycznie — urządzenie systemowe\n\nTest mikrofonu\n\nNie udało się uruchomić mikrofonu.\n\nOdsłuch\n\nUrządzenie\nAutomatyczne — urządzenie systemowe\nOdsłuch 1\nPrzygotuj mikrofon\nImportuj wokal\n▸ Moje Take'i\n\nLimit: 180s · istniejące limity konta i TTL pozostają w mocy. Usunięcie klipu nie usuwa nagrania źródłowego.",
+  "gate": {
+    "publishedOnlyCopy": false,
+    "eligibilityMessage": false,
+    "prepareMic": true,
+    "nagrajPrimary": false
+  },
+  "recordingGateStatus": "NOT_VERIFIED",
+  "consciousArm": {
+    "before": [
+      "false",
+      "false"
+    ],
+    "after": [
+      "true",
+      "false"
+    ],
+    "status": "PASS"
+  },
+  "themeRoundTrip": {
+    "status": "PASS",
+    "afterReloadLight": {
+      "storage": "light",
+      "dataTheme": "light",
+      "hasDark": false
+    },
+    "afterReloadDark": {
+      "storage": "dark",
+      "dataTheme": "dark",
+      "hasDark": true
+    }
+  }
+}

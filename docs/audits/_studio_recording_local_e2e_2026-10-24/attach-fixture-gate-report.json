@@ -1,0 +1,14 @@
+{
+  "capturedAt": "2026-10-24T18:05:21.261Z",
+  "pickerCount": 1,
+  "pickerStatus": "PASS",
+  "fixtureOnEditor": false,
+  "panelVisible": true,
+  "panelSnippet": "Nagrywanie\n\nStart: playhead 00:00.000\n\nŚcieżka\nWokal\n\nMikrofon\n\nŹródło nagrywania\n\nMikrofon\nAutomatycznie — urządzenie systemowe\n\nTest mikrofonu\n\nNie udało się uruchomić mikrofonu.\n\nOdsłuch\n\nUrządzenie\nAutomatyczne — urządzenie systemowe\nOdsłuch 1\nPrzygotuj mikrofon\nImportuj wokal\n▸ Moje Take'i\n\nLimit: 180s · istniejące limity konta i TTL pozostają w mocy. Usunięcie klipu nie usuwa nagrania źródłowego.",
+  "gate": {
+    "publishedOnlyCopy": false,
+    "prepareMic": true,
+    "nagrajPrimary": false
+  },
+  "recordingGateStatus": "NOT_VERIFIED"
+}

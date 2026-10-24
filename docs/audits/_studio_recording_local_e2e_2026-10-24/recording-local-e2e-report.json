@@ -1,0 +1,161 @@
+{
+  "base": "http://127.0.0.1:3460",
+  "capturedAt": "2026-10-24T17:42:00.174Z",
+  "defaultR": {
+    "status": "PASS",
+    "arms": [
+      {
+        "ariaPressed": "false",
+        "text": "R"
+      },
+      {
+        "ariaPressed": "false",
+        "text": "R"
+      },
+      {
+        "ariaPressed": "false",
+        "text": "R"
+      },
+      {
+        "ariaPressed": "false",
+        "text": "R"
+      }
+    ]
+  },
+  "consciousArm": {
+    "status": "PASS",
+    "armedIdx": 0,
+    "armedCount": 2,
+    "note": "Duplicate R nodes from responsive layouts are OK if at least one is armed after click",
+    "arms": [
+      {
+        "ariaPressed": "true",
+        "text": "R"
+      },
+      {
+        "ariaPressed": "false",
+        "text": "R"
+      },
+      {
+        "ariaPressed": "true",
+        "text": "R"
+      },
+      {
+        "ariaPressed": "false",
+        "text": "R"
+      }
+    ]
+  },
+  "masterContrast": {
+    "dark": {
+      "ok": true,
+      "color": "rgb(239,233,223)",
+      "background": "rgb(11,13,12)",
+      "fontSize": "10px",
+      "ratio": 16.15,
+      "aaNormal": true,
+      "surface": "studio-transport"
+    },
+    "light": {
+      "ok": true,
+      "color": "rgb(242,235,224)",
+      "background": "rgb(15,19,17)",
+      "fontSize": "10px",
+      "ratio": 15.81,
+      "aaNormal": true,
+      "surface": "studio-transport"
+    }
+  },
+  "recordingE2E": {
+    "status": "NOT_VERIFIED",
+    "reason": "studio-recording-requires-PUBLISHED-beat",
+    "detail": "UI: Nagrywanie jest dostepne tylko dla opublikowanych bitow. Fixture Visual Fixture is DRAFT; local publish path blocked (rights/moderation: Status change is not allowed / RIGHTS_ACTOR_REQUIRED). Mock MediaRecorder was injected but REC primary never unlocked.",
+    "mockReady": true,
+    "takeSaved": false,
+    "archiveVerified": false
+  },
+  "themeRoundTrip": "PASS",
+  "motywPlacement": {
+    "dark": {
+      "ok": true,
+      "toggleIdx": 5,
+      "nodes": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na jasny motyw",
+        "TThemeVisualLocal"
+      ]
+    },
+    "light": {
+      "ok": true,
+      "toggleIdx": 5,
+      "nodes": [
+        "Strona główna BitRymDym",
+        "Bity",
+        "Społeczność",
+        "O nas",
+        "Studio",
+        "Przełącz na ciemny motyw",
+        "TThemeVisualLocal"
+      ]
+    }
+  },
+  "shots": [
+    {
+      "id": "dark-editor-default-r-desktop-1280x800.png",
+      "status": "PASS"
+    },
+    {
+      "id": "light-editor-default-r-desktop-1280x800.png",
+      "status": "PASS"
+    },
+    {
+      "id": "dark-editor-default-r-mobile-390x844.png",
+      "status": "PASS"
+    },
+    {
+      "id": "light-editor-default-r-mobile-390x844.png",
+      "status": "PASS"
+    }
+  ],
+  "ihdr": [
+    {
+      "file": "dark-editor-default-r-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-editor-default-r-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-editor-default-r-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-editor-default-r-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    }
+  ],
+  "mockLimitations": [
+    "Page initScript FakeMediaRecorder + silent getUserMedia; blob from local chromium-mediarecorder-opus.webm (not played)",
+    "Chromium --use-fake-ui-for-media-stream --use-fake-device-for-media-stream",
+    "REC E2E blocked upstream by PUBLISHED beat gate before mock could exercise stop/finalize"
+  ],
+  "defects": [],
+  "projectIdSet": true,
+  "defaultRFix": {
+    "file": "src/lib/studio/studio-service.ts",
+    "note": "VOCAL seed record_armed true->false. studio-editor.tsx had no default-true; Owner allowed editor edit but root cause was project seed."
+  }
+}

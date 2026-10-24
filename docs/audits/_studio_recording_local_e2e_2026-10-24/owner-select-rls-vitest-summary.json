@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-10-24T20:19:38.000Z",
+  "suite": "beat-audio-assets-owner-select-local.test.ts",
+  "optIn": "BEAT_AUDIO_OWNER_SELECT_LOCAL_TEST=1 + BRD_INTEGRATION_TESTS=1 + LOCAL_SUPABASE_* loopback",
+  "result": "PASS",
+  "tests": {
+    "policy_exists_authenticated_select": "PASS",
+    "owner_select_published_catalog_peer_anon_isolation_non_published": "PASS",
+    "policy_select_only_no_write": "PASS"
+  },
+  "notes": {
+    "migration": "20261024201348_beat_audio_assets_owner_select.sql",
+    "policy": "beat_audio_assets_select_own FOR SELECT TO authenticated USING owner_id = auth.uid() via beats join",
+    "draftIsolation": "Verified earlier while replacement fixture was DRAFT (owner READY>=1, peer=0, anon=0). After UI publish, published catalog peer visibility is expected via beat_audio_assets_select_published; non-PUBLISHED APPROVED fixture still peer=0 and anon=0.",
+    "noSecrets": true
+  }
+}

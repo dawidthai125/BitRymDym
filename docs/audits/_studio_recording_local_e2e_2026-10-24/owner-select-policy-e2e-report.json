@@ -1,0 +1,89 @@
+{
+  "capturedAt": "2026-10-24T20:16:45.200Z",
+  "title": "Visual Fixture — Published Local Only",
+  "blockedLeftUntouched": true,
+  "steps": [
+    {
+      "step": "owner-row",
+      "hint": "Visual Fixture — Published Local Only Wersja robocza · 00:04 · 81 BPM · audio gotowe Edytuj Oświadczenie i wysyłka Archiwizuj"
+    },
+    {
+      "step": "after-submit",
+      "hint": "Visual Fixture — Published Local Only W moderacji · 00:04 · 81 BPM · audio gotowe"
+    },
+    {
+      "step": "published"
+    }
+  ],
+  "statuses": {
+    "rights": "PASS",
+    "submit": "PASS",
+    "moderation": "PASS",
+    "publication": "PASS",
+    "picker": "PASS",
+    "consciousR": "PASS",
+    "recordingGateLifted": "PASS",
+    "mockRec": "PASS",
+    "takeSave": "PASS",
+    "themeRoundTrip": "PASS",
+    "motywPlacement": "PASS",
+    "archive": "PASS",
+    "ihdr": "PASS",
+    "blockedOriginalUntouched": "PASS",
+    "docker": "PASS",
+    "loopbackSupabase": "PASS",
+    "production": "NOT_RUN"
+  },
+  "ihdr": [
+    {
+      "file": "dark-editor-published-attached-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-editor-published-attached-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-editor-published-attached-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-editor-published-attached-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-archive-after-take-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-archive-after-take-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-archive-after-take-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-archive-after-take-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    }
+  ],
+  "defects": [],
+  "mockLimitation": "MediaRecorder/getUserMedia harness-only; does not bypass product PUBLISHED gate or rights."
+}

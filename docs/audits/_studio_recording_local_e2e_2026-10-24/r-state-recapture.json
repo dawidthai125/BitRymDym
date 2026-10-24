@@ -1,0 +1,48 @@
+{
+  "unarmedOnOpen": true,
+  "arms0": [
+    "false",
+    "false",
+    "false",
+    "false"
+  ],
+  "armsAfterClick": [
+    "false",
+    "false",
+    "false",
+    "false"
+  ],
+  "consciousArmOk": false,
+  "ihdr": [
+    {
+      "file": "dark-editor-r-unarmed-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-editor-r-unarmed-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-editor-r-unarmed-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-editor-r-unarmed-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "dark-editor-r-conscious-arm-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-10-24T19:03:17.796Z",
+  "steps": [
+    {
+      "step": "upload-open",
+      "alreadyReady": false
+    },
+    {
+      "step": "pre-submit",
+      "disabled": true
+    },
+    {
+      "step": "post-submit",
+      "urlKind": "upload",
+      "alerts": [
+        "Dodaj bit · BitRymDym · BitRymDym"
+      ],
+      "hasPendingCopy": true,
+      "stillDraftCopy": true
+    }
+  ],
+  "status": "BLOCKED",
+  "ownerRowAfter": "BitySpołecznośćO nasStudioSzukaj bitówMotywCiemnyTThemeVisualLocalStudioMoje bityWersje robocze, moderacja i decyzje — bez publicznej publikacji z tego panelu.Dodaj bitVisual Fixture — Published Local OnlyWersja robocza · 00:04 · 81 BPMEdytujArchiwizujVisual Fixture — Local OnlyZ",
+  "defect": "submit-did-not-reach-pending"
+}

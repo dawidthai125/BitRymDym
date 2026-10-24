@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-10-24T19:05:22.066Z",
+  "steps": [
+    {
+      "step": "edit",
+      "hasBeatId": true
+    },
+    {
+      "step": "save-wait",
+      "result": "BANNER"
+    },
+    {
+      "step": "reload-state",
+      "audioReadyCopy": false,
+      "oswiadczenieVisible": true,
+      "submitDisabled": true
+    },
+    {
+      "step": "second-finalize-reload",
+      "audioReadyCopy": false
+    }
+  ],
+  "status": "BLOCKED",
+  "defect": "master-not-ready-after-finalize-reload"
+}

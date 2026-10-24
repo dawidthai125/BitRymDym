@@ -1,0 +1,42 @@
+{
+  "capturedAt": "2026-10-24T18:59:24.344Z",
+  "title": "Visual Fixture — Published Local Only",
+  "blockedLeftUntouched": true,
+  "steps": [
+    {
+      "step": "login",
+      "kind": "theme-visual",
+      "ok": true
+    },
+    {
+      "step": "analyze",
+      "radioCount": 4,
+      "unavailable": false,
+      "snippet": "Bity\nSpołeczność\nO nas\nStudio\nSzukaj bitów\nMOTYW\nCiemny\nT\nThemeVisualLocal\n← Moje bity\nDodaj bit\n\nWgraj audio, sprawdź BPM i czas, zapisz wersję roboczą, potem wyślij do moderacji. Publikacja jest tylko po decyzji moderatora (Wave 4).\n\nAudio\nWybierz plik audio *\n\nPrzesyłanie audio…\n\nCzas\n00:04\nRozmiar\n344.6 KiB\nPlik\n_local-soft-click-4s.wav\nMetadane\nTytuł *\nSystem nie może jednoznacznie określić BPM.\n\nWybierz jedną z systemowych hipotez. Ranking sygnałowy nie oznacza automatycznej decyzji o temp"
+    },
+    {
+      "step": "title-set",
+      "ok": true
+    },
+    {
+      "step": "save-draft",
+      "ok": true
+    },
+    {
+      "step": "rights-attestation-checked",
+      "ok": true
+    },
+    {
+      "step": "submit-moderation",
+      "ok": true,
+      "urlKind": "other"
+    },
+    {
+      "step": "login",
+      "kind": "theme-mod",
+      "ok": true
+    }
+  ],
+  "status": "BLOCKED",
+  "defect": "fixture-missing-in-moderation-queue"
+}

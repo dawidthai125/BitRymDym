@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-10-24T17:59:48.581Z",
+  "steps": [
+    {
+      "step": "login",
+      "ok": true,
+      "kind": "theme-mod"
+    },
+    {
+      "step": "open-detail",
+      "ok": true,
+      "pathKind": "moderation-detail"
+    }
+  ],
+  "status": "NOT_VERIFIED",
+  "defect": "still-on-publish-surface"
+}

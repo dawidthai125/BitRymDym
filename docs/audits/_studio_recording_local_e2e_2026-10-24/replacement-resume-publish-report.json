@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-10-24T19:00:24.596Z",
+  "steps": [],
+  "status": "BLOCKED",
+  "ownerBeatsHasTitle": true,
+  "ownerBeatsSnippetKind": "has-keywords",
+  "ownerTitleHits": 1,
+  "ownerRowHint": "Visual Fixture — Published Local Only\n\nWersja robocza · 00:04 · 81 BPM\n\nEdytuj\nArchiwizuj",
+  "afterOpenUrlKind": "account-beats",
+  "modList": {
+    "hasTitle": false,
+    "pendingSection": true,
+    "approvedSection": true
+  },
+  "defect": "still-missing-in-moderation"
+}

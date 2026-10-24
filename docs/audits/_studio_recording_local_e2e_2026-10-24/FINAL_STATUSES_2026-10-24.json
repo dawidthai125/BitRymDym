@@ -1,0 +1,33 @@
+{
+  "capturedAt": "2026-10-24T20:20:00.000Z",
+  "go": "GO_OWNER_DRAFT_ASSET_SELECT_POLICY",
+  "fixtureTitle": "Visual Fixture — Published Local Only",
+  "blockedOriginalTitle": "Visual Fixture — Local Only",
+  "statuses": {
+    "rls_owner_draft_select": "PASS",
+    "isolation_peer_user": "PASS",
+    "isolation_anon": "PASS",
+    "submit": "PASS",
+    "rights": "PASS",
+    "moderation": "PASS",
+    "publication": "PASS",
+    "picker_visibility": "PASS",
+    "recording_gate_lifted": "PASS",
+    "conscious_R_arm": "PASS",
+    "mocked_REC_start_stop": "PASS",
+    "take_save": "PASS",
+    "archive_take_visibility": "PASS",
+    "theme_motyw": "PASS",
+    "theme_round_trip": "PASS",
+    "ihdr": "PASS",
+    "docker": "PASS",
+    "loopback_supabase": "PASS",
+    "production": "NOT_RUN"
+  },
+  "notes": {
+    "rls": "Additive policy beat_audio_assets_select_own applied locally via migration 20261024201348. Vitest 3/3 PASS. Pre-publish DRAFT isolation confirmed; post-publish peer visibility via select_published is expected and regression-checked.",
+    "e2e": "UI-only submit→rights→mod→publish on replacement fixture; Studio attach; conscious R; harness FakeMediaRecorder REC→save take→archive. No Play/export/upload/delete. Blocked original fixture left APPROVED without attestation.",
+    "env": ".env.local restored byte-exact (SHA-256 match); temp creds wiped; Next :3460 stopped.",
+    "constraints_honored": "No Sacred WIP; no studio-editor/studio-service/config.toml/CAS edits; no db reset/start/seeds/SQL status patches; no commit/push/deploy; no production."
+  }
+}

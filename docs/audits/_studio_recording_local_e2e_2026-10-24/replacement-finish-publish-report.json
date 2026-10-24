@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-10-24T19:01:10.252Z",
+  "steps": [
+    {
+      "step": "open-edit",
+      "urlHasBeatId": true
+    },
+    {
+      "step": "reanalyze",
+      "radioCount": 4
+    },
+    {
+      "step": "draft-saved-ready",
+      "ok": true
+    }
+  ],
+  "status": "FAIL",
+  "defect": "page.waitForURL: Timeout 90000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+}

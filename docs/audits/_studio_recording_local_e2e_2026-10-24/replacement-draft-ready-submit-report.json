@@ -1,0 +1,39 @@
+{
+  "capturedAt": "2026-10-24T19:04:13.645Z",
+  "steps": [
+    {
+      "step": "edit-open",
+      "ok": true
+    },
+    {
+      "step": "file-set",
+      "bytes": 352844
+    },
+    {
+      "step": "analyze-outcome",
+      "outcomeStr": "radios:4"
+    },
+    {
+      "step": "pre-save",
+      "saveDisabled": false
+    },
+    {
+      "step": "save",
+      "saved": true,
+      "err": null
+    },
+    {
+      "step": "pre-submit",
+      "disabled": false
+    },
+    {
+      "step": "submit-result",
+      "url": "/beats/upload",
+      "err": "Submit requires an active MASTER READY audio asset.",
+      "bodyHasPending": true
+    }
+  ],
+  "status": "BLOCKED",
+  "defect": "submit-error",
+  "submitError": "Submit requires an active MASTER READY audio asset."
+}
