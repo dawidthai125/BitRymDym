@@ -39,12 +39,13 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 ═══ SESSION VERIFY 2026-10-24 (Git · post local↔GitHub reconcile) ═══
 REPO PATH                     = C:\Users\dawid\Desktop\BitRymDym\bitrymdym
 BRANCH                        = main
-LOCAL HEAD                    = 4b14ac9bb9c568957ab920452d0bde14b1f1956b
-                              · Merge remote-tracking branch 'origin/main'
+LOCAL HEAD / ORIGIN/MAIN      = IDENTICAL (ahead/behind 0/0)
+                              · verify: git rev-parse HEAD · git ls-remote origin refs/heads/main
+RECONCILE MERGE               = 4b14ac9bb9c568957ab920452d0bde14b1f1956b
                               · integrates b55b5fb (docs consolidation) + 90e538d + 800f611
-ORIGIN/MAIN (ls-remote)       = 4b14ac9bb9c568957ab920452d0bde14b1f1956b
-                              · IDENTICAL to local HEAD
-AHEAD/BEHIND                  = 0 / 0
+SESSION VERIFY DOCS           = 61fba990bb9844c4e6f02c9cfcf675a35d74933a
+                              · docs: record post-reconcile Git tip and SESSION VERIFY
+                              · later tip pins may be children — re-check ls-remote
 DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits · scripts)
                               · do NOT clean / stash / reset / sync unrelated WIP
 SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts

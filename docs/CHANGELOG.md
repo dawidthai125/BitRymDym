@@ -8,7 +8,7 @@ Format: data, zakres, skrót.
 
 ## 2026-10-24 — local ↔ GitHub main reconciliation
 
-**Status:** Git tip **`4b14ac9`** = `origin/main` · merge of docs consolidation **`b55b5fb`** with remote **`90e538d`** + **`800f611`** · dirty WIP **PRESERVE** (Premium Retention HOLD · registries · Sacred WIP)
+**Status:** local HEAD = `origin/main` (0/0) · reconcile merge **`4b14ac9`** (`b55b5fb` + `90e538d` + `800f611`) · SESSION VERIFY docs **`61fba99`** · dirty WIP **PRESERVE** (Premium Retention HOLD · registries · Sacred WIP)
 **Conflicts resolved (both sides kept):** `README.md` (FX parity + media suite) · `docs/CHANGELOG.md` · `docs/FINAL_COLD_START_HANDOFF.md` (Contabo SSH NOT VERIFIED · cold-start §0A)
 **Checks:** `media-suite-selection` + `mp3-qc-reject` → **5/5 PASS** · production deploy **NOT RE-VERIFIED**
 **Not published as app WIP:** package.json / vitest Premium deltas · OPEN_DECISIONS / DECISION_LOG dirty · Sacred WIP
