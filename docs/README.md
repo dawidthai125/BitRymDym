@@ -17,7 +17,7 @@
 9. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–5 **CLOSED / PRODUCTION VERIFIED**
 10. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
 
-**Nie zaczynaj implementacji** przed: FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + relevant architecture + OPEN_DECISIONS + **Owner GO**.
+**Przed implementacją przeczytaj:** FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + właściwą architekturę + OPEN_DECISIONS + [AGENTS.md](../AGENTS.md). Zwykły zlecony zakres realizuj według polityki autonomii w `AGENTS.md`. Osobna zgoda zostaje przy nowym epiku i bramkach bezpieczeństwa, nie przy każdym commicie, pushu ani standardowym deployu.
 
 **Now / Next (living):** tip Git, app tip, deployment ID, NEXT UNIT i statusy SFM/Contabo/STU-16 — **tylko** [PROJECT_STATE.md](./PROJECT_STATE.md) (nie duplikuj tu rejestru dpl). **Final Mix Production GREEN: VERIFIED** (frozen IN) · Contabo continuous poller V1: **IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync/host/canary/always-on **NOT DONE**. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
 
@@ -30,14 +30,17 @@ Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 
 | Dokument | Rola |
 |----------|------|
-| MASTER HANDOFF | COLD-START CONTINUITY (canonical entry) |
+| FINAL COLD START HANDOFF | **START HERE** — ultra entry · HOW TO START · §12 prompts · Sacred WIP |
+| MASTER HANDOFF | Full continuity / architecture detail (after cold start) |
 | MASTER SSOT | WHAT / PRODUCT TRUTH |
 | SYSTEM ARCHITECTURE | HOW / TECHNICAL ARCHITECTURE |
+| REUSE / SSOT MAP | Domain → SSOT → owner · DO NOT DUPLICATE |
 | DECISION LOG | WHY / DECISION HISTORY |
 | OPEN DECISIONS | WHAT IS STILL UNDECIDED |
-| PROJECT STATE | WHERE ARE WE NOW |
+| PROJECT STATE | WHERE ARE WE NOW (living tip / deploy / connections) |
 | PHASE DOCUMENTS | WHAT PHASE / SCOPE |
-| FEATURE DOCUMENTATION | HOW A FEATURE WORKS |
+| FEATURE DOCUMENTATION / AUDITS | HOW A FEATURE WORKS · evidence |
+| RUNBOOKS | Operator procedures (no secrets) |
 | CHANGELOG | WHAT CHANGED OVER TIME |
 
 Nie duplikować całych treści — stosować linki.
@@ -72,8 +75,11 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 | Dokument | Opis |
 |----------|------|
 | [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) · **§12 MASTER PROMPTS** |
-| [PROJECT_STATE.md](./PROJECT_STATE.md) | Aktualny stan projektu |
-| [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) | Cold-start handoff (GPT + Cursor) |
+| [PROJECT_STATE.md](./PROJECT_STATE.md) | Living tip / deploy / NEXT / **§2c connections** |
+| [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) | Full continuity (detail after cold start) |
+| [runbooks/PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) | Production bootstrap · connection notes (no secrets) |
+| [decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md](./decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md) | Premium Retention fencing · **HOLD** (local WIP) |
+| [audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md](./audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md) | Docs consolidation inventory + cold-start recovery evidence |
 | [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) | Konstytucja produktu (v0.1) |
 | [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) | Baseline architektury (OD-01–03) |
 | [architecture/AUTHORIZATION.md](./architecture/AUTHORIZATION.md) | Phase 1.3 AuthZ (+ 1.4 beats AuthZ notes) |

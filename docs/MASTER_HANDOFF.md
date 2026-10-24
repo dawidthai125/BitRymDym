@@ -1,11 +1,11 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-19 — **pointer hardening (docs-only)** · living tip / deployment / NEXT UNIT → **[PROJECT_STATE.md](./PROJECT_STATE.md) ONLY** · body tables below that still cite tip **`5212933`** / prod **`2adb569`** are **HISTORY** unless independently re-verified and matching PROJECT_STATE · KIND_REJECT / SFM / Contabo planes unchanged (code ≠ apply ≠ GREEN) · **STOP — OWNER DECISION REQUIRED**
+**Updated:** 2026-10-24 — **cold-start consolidation pointer (docs-only)** · living tip / deployment / NEXT / connections → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 + §2c ONLY** · Git SESSION VERIFY 2026-10-24: local HEAD **`96e4c31`** behind **`origin/main` `800f611`** · body tables below that still cite tip **`5212933`** / prod **`2adb569`** / **`0a565c0`** are **HISTORY / LAST DOCUMENTED** unless they match PROJECT_STATE after independent re-verify · KIND_REJECT / SFM / Contabo planes unchanged (code ≠ apply ≠ GREEN) · Premium Retention **HOLD** (local WIP) · **STOP — OWNER DECISION REQUIRED** · evidence [audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md](./audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md)
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
-**Living state (SSOT) — REQUIRED for tip / deploy / NEXT:** [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Living state (SSOT) — REQUIRED for tip / deploy / NEXT / connections:** [PROJECT_STATE.md](./PROJECT_STATE.md)
 **Reuse / DO NOT DUPLICATE:** [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
 **FAR-01 living ops (historyczny / nie NEXT):** [FAR_01_CURRENT_STATE.md](./audits/FAR_01_CURRENT_STATE.md)
 

@@ -8,6 +8,20 @@
 
 **NEVER** record in this file, chat, or git: service-role keys, passwords, access tokens, cookies, or secret env values.
 
+**Living connections matrix (tip / Contabo / ports / classes):** [PROJECT_STATE.md](../PROJECT_STATE.md) §2c · cold start [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md) §0.
+
+### Connection quick-check (read-only · 2026-10-24)
+
+| System | Verify without secrets | Class |
+|--------|------------------------|-------|
+| GitHub `main` | `git ls-remote origin refs/heads/main` | tip SHA CURRENTLY VERIFIED in PROJECT_STATE SESSION VERIFY |
+| Vercel aliases | `vercel inspect www.bitrymdym.pl` (Operator) | production dpl **NOT RE-VERIFIED** in consolidation session |
+| Supabase | Dashboard project `rzzxrgcdogkybkiidqgw` · SQL read-only | LAST DOCUMENTED · no agent secret dump |
+| Contabo host `vmi3622761` | Owner SSH only · agent must not invent credentials | live SSH **NOT VERIFIED** |
+| Local Supabase | health on `127.0.0.1:54421` when stack running | ports LAST DOCUMENTED WIP |
+
+**Escalation:** connection failure or contradiction → mark `NOT VERIFIED` in PROJECT_STATE · do not mutate production · ask Owner.
+
 ---
 
 ## Progress log (2026-09-26)

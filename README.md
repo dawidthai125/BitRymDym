@@ -8,22 +8,19 @@ Platforma muzyczna skupiona na rapie, hip-hopie i kulturze tworzenia bitów.
 
 | Element | Wartość |
 |---------|---------|
-| Cold start | [docs/FINAL_COLD_START_HANDOFF.md](./docs/FINAL_COLD_START_HANDOFF.md) |
+| Cold start | [docs/FINAL_COLD_START_HANDOFF.md](./docs/FINAL_COLD_START_HANDOFF.md) · **§12 prompts** |
 | Master Handoff | [docs/MASTER_HANDOFF.md](./docs/MASTER_HANDOFF.md) |
-| Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) |
+| Project State | [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md) · living tip / deploy / **§2c connections** |
 | SSOT | [v0.1 FOUNDATION DRAFT](./docs/ssot/MASTER_SSOT_v0.1.md) |
-| **Production application** | `06c60b5` · https://www.bitrymdym.pl · **P6.7 GREEN · CLOSED** |
-| **Repo / docs tip (origin/main)** | verify `git rev-parse HEAD` · **≠** production app `06c60b5` |
-| **Production deployment** | `dpl_CpGUtwjDbvXdJ8oEuDyDFjQ1UgNp` |
-| POLISH-01 / P0 / P1 / P2 | **CLOSED / PRODUCTION VERIFIED** |
+| **Git / production planes** | **ONLY** [PROJECT_STATE.md](./docs/PROJECT_STATE.md) §2 — do not trust SHAs in this README table |
+| **Production URL** | https://www.bitrymdym.pl · apex → www (e2e NOT VERIFIED) · https://bitrymdym.vercel.app |
+| POLISH-01 / P0 / P1 / P2 | **CLOSED / PRODUCTION VERIFIED** (ancestry) |
 | Recording Waves 1–5 | **CLOSED** / **PRODUCTION VERIFIED** |
-| Studio P5.1–P5.6 / P5.8 / P5.10 | **PRODUCTION VERIFIED — GREEN** |
-| Studio P6.1–P6.4.3 / P6.6 / P6.7 | **PRODUCTION VERIFIED — GREEN** · P6.7 CLOSED |
-| P6.5 Scenario B | **BLOCKED / INCONCLUSIVE** (do not reopen) |
-| P5.7 / P5.9 | Architecture Audit **GO WITH CONDITIONS** |
-| Community Upload | **CLOSED / LOCKED** @ `c5e1f17` |
+| Studio P5–P6.7 / V2 | see PROJECT_STATE · P6.5 Scenario B **BLOCKED / INCONCLUSIVE** |
+| Community Upload | **CLOSED / LOCKED** |
+| Premium Retention | **HOLD** · local WIP · [fencing contract](./docs/decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md) |
 | Płatności / Premium catalog | wyłączone / NOT IMPLEMENTED |
-| Next | **STOP** — do not start P6.8 · Owner decides — see FINAL_COLD_START |
+| Next | **STOP — OWNER DECISION REQUIRED** — [PROJECT_STATE NEXT UNIT](./docs/PROJECT_STATE.md) |
 
 ## Nowy agent — start tutaj
 
@@ -71,12 +68,14 @@ Skopiuj `.env.example` → `.env.local`. Nie commituj sekretów. Nie commituj `.
 **Testy nigdy nie łączą się z produkcją.** `.env.local` zawiera produkcyjne klucze — żaden test go nie czyta i nie wolno przekazywać jego wartości do testów.
 
 ```bash
-npm test                    # domyślny zestaw: tylko testy jednostkowe, bez bazy
+npm test                    # domyślny zestaw: testy bez bazy i bez prawdziwego kodowania MP3
+npm run test:media          # prawdziwe kodowanie MP3 — wymaga FFmpeg, FFprobe i libmp3lame
 npx vitest run src/lib/studio   # wybrany katalog (ścieżki podawaj dosłownie)
 npm run test:integration    # testy zapisujące do bazy — wyłącznie lokalny stack
 ```
 
-- **Domyślny zestaw** (`vitest.config.ts`) wyklucza wszystkie pliki z `src/test/integration-test-files.ts` (także przy podaniu ścieżki wprost) i instaluje globalny guard sieci (`src/test/network-guard.ts`): każde żądanie `fetch` (supabase-js: REST, Auth, Storage), każde `new WebSocket(...)` (supabase-js Realtime) i każde połączenie gniazda Node (`net.Socket.prototype.connect` — czyli także `node:http`, `node:https`, `node:tls` i surowe `net`) poza `127.0.0.1` / `localhost` / `::1` kończy się błędem `[test-network-guard]` przed połączeniem. Guard działa tylko w procesie Vitest i nie ma przełącznika.
+- **Domyślny zestaw** (`vitest.config.ts`) wyklucza pliki z `src/test/integration-test-files.ts`, testy FX parity i dwa pliki prawdziwego kodowania MP3 (`src/test/media-encode-test-files.ts`). Wykluczenie działa także przy podaniu ścieżki wprost oraz w `npm run test:watch`, bo oba używają tej samej konfiguracji. Instaluje globalny guard sieci (`src/test/network-guard.ts`): każde żądanie `fetch` (supabase-js: REST, Auth, Storage), każde `new WebSocket(...)` (supabase-js Realtime) i każde połączenie gniazda Node (`net.Socket.prototype.connect` — czyli także `node:http`, `node:https`, `node:tls` i surowe `net`) poza `127.0.0.1` / `localhost` / `::1` kończy się błędem `[test-network-guard]` przed połączeniem. Guard działa tylko w procesie Vitest i nie ma przełącznika.
+- **Kodowanie MP3** (`npm run test:media`, `vitest.media.config.ts`) uruchamia wyłącznie `e3-6-c-mp3-encode.test.ts` i `e3-7-c-hq-mp3-encode.test.ts`. Wymaga działających FFmpeg i FFprobe oraz enkodera `libmp3lame` na liście `ffmpeg -encoders`. Ścieżki biorą się z `E3_FFMPEG_PATH` i `E3_FFPROBE_PATH`, a gdy są puste — z nazw `ffmpeg` i `ffprobe` na PATH, tak jak `src/lib/audio/native-ffmpeg.ts`. Brak binarki, awaria narzędzia albo brak `libmp3lame` kończy przebieg błędem, nie pominięciem. Nie ma zatwierdzonego pinu wersji FFmpeg. Nieuruchomiony `test:media` to **NOT RUN**, nie PASS. Samo wykluczenie tych plików z `npm test` też nie jest PASS kodowania. Odrzuty placeholderów, pustego bufora i śmieci zostają w `npm test` (`src/lib/audio/mp3-qc-reject.test.ts`) i nie uruchamiają FFmpeg ani FFprobe.
 - **Testy integracyjne** (`vitest.integration.config.ts`) wymagają jawnie: `BRD_INTEGRATION_TESTS=1` oraz `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, `LOCAL_SUPABASE_SERVICE_ROLE_KEY` z `supabase status -o env`. Brak konfiguracji, host spoza loopback (np. `*.supabase.co`) lub brak fixture'a → wszystkie pliki failują przed pierwszym zapytaniem. Nie istnieje flaga omijająca blokadę produkcji. Część plików ma dodatkowy własny opt-in (`F1C_LOCAL_DB_TEST=1`, `BEAT_FINALIZE_LOCAL_DB_TEST=1`) i lokalny kontener DB (`docker exec`). Pozostałe ustawienia (np. `E3_RENDER_JOBS_ENABLED`) testy biorą tylko z jawnie ustawionego środowiska powłoki. Lokalny stack: `supabase start` (wymaga działającego Dockera), wartości z `supabase status -o env`.
 - Nowy test, który tworzy użytkowników, zapisuje do bazy lub Storage → dopisz go do `src/test/integration-test-files.ts` i bramkuj przez `resolveIntegrationEnv()` z `src/test/integration-env.ts`. Pilnuje tego `src/test/stu-11-production-test-safety.test.ts`.
 - **Pominięty ≠ zaliczony.** Wynik `skipped` w testach integracyjnych oznacza, że nie zostały wykonane — raportuj go osobno.

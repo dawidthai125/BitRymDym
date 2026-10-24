@@ -2,10 +2,10 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-19 — **STU-16 tip/dpl reconcile (docs-only)** · parent tip **`0f07e84`** · app tip **`d12e38e`** · live docs dpl **`dpl_4d5Kefe…` @ `0f07e84`** (docs auto-deploy ≠ app change) · last documented local live **17/17 PASS** (not re-run here) · local Supabase ports **54421/54422/54420/54423** (Inbucket **54324**; do **not** assume API **54321**) · prod functional / concurrency / janitor / SESSION_DAY_CAP runtime **NOT VERIFIED** · Sacred WIP MATCH · dirty WIP **preserve** · living detail → [PROJECT_STATE.md](./PROJECT_STATE.md) · [CHANGELOG 2026-10-19](./CHANGELOG.md)
-**Type:** Documentation continuity · cold-start entry · multi-plane (Git tip ≠ auto-deploy docs descendants ≠ staging ≠ prod DB apply ≠ local dirty WIP) · Owner decides next unit · no sync/cleanup without GO
+**Updated:** 2026-10-24 — **DOCUMENTATION CONSOLIDATION / COLD-START RECOVERY (docs-only, no commit/push)** · Git planes re-verified read-only · living tip/deploy/NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** · prior STU-16 Limited Production Pass evidence retained as **LAST DOCUMENTED (2026-10-19)** · Sacred WIP fingerprint **MATCH** · dirty WIP **PRESERVE** · consolidation evidence → [audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md](./audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md) · [CHANGELOG 2026-10-24](./CHANGELOG.md)
+**Type:** Documentation continuity · cold-start entry · multi-plane (local HEAD ≠ origin/main ≠ production deploy ≠ prod DB ≠ Storage ≠ dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
-**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes. This file is entry + continuity; **§0 below is current for tip/deploy.** Later sections that still cite tip `2adb569` / `5212933` / older planes are **HISTORY** — do not treat them as current tip without checking PROJECT_STATE + §0.
+**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 below is living for Git planes as of 2026-10-24.** Blocks that still cite tip `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git ls-remote` before claiming current tip.
 
 **Evidence rule (bezwzględna):**
 
@@ -36,44 +36,55 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-GITHUB MAIN TIP / origin/main = verify: git ls-remote origin refs/heads/main
-  parent tip before this docs = 0f07e846b116b11212b276427b243380633c5a7f
-                              · docs: record local STU-16 verification evidence
-  app tip                     = d12e38e64423b28ec34f04659712147de4966a18
-                              · fix(bpm): clarify conflict hypothesis labels · CLOSED 2026-10-19
-  note                        = living detail → docs/PROJECT_STATE.md
-PRODUCTION DEPLOYMENT         = dpl_4d5KefeYNbBgqTYfYmwnZFJgCivb
-  note                        = READY · docs commit SHA VERIFIED 0f07e84 (build log)
-                              · docs auto-deploy ≠ app-code change
-                              · aliases www / apex / vercel.app
-                              · READY ≠ STU-16 functional GREEN
-                              · docs-only push auto-deploys — re-verify live with vercel inspect
-HISTORY STU-16 SHA verify     = dpl_Eoror… @ 9bd1f86
-HISTORY alias-control         = dpl_4Mhme… · HISTORY BPM UX dpl_6K73… @ d12e38e
-PRODUCTION APP SHA (BPM UX)   = d12e38e · docs tip may advance without app change
-BPM CONFLICT LABELING         = CLOSED · 91/91 (session evidence) · isolated model+SSR PASS
-                              · NOT: live prod CONFLICT UI · Playwright form E2E
-WAV-6 TEMPO                   = OPEN / separate · stored 65 · signal ~99–101 · unchanged
-LOCAL SUPABASE PORTS          = API 54421 · DB 54422 · shadow 54420 · Studio 54423 · Inbucket 54324
-                              · DO NOT assume API is still 54321
-                              · reason: Windows excluded TCP 54224–54323 blocked old ports
-STU-16                        = code+migration ON main @ c2be3b0 · Production DB apply VERIFIED BY READ-ONLY AUDIT
-                              · Local live 17/17 PASS (TTL via created_at backdate)
-                              · Vercel dpl SHA VERIFIED @ 9bd1f86
-                              · prod functional / prod SESSION_DAY_CAP / prod concurrency / prod janitor NOT VERIFIED
-                              · living detail → PROJECT_STATE
-SACRED WIP                    = recording-eligibility-service.ts
+═══ SESSION VERIFY 2026-10-24 (read-only git · docs consolidation) ═══
+REPO PATH                     = C:\Users\dawid\Desktop\BitRymDym\bitrymdym
+BRANCH                        = main
+LOCAL HEAD                    = 96e4c31550819ba70297945d13cd7dec3113bf0f
+                              · fix(build): restore reproducible Premium production build (2026-10-21)
+ORIGIN/MAIN (ls-remote)       = 800f611de0b3853bf6cb64e16bc72b2be40d3252
+                              · test(audio): isolate real MP3 encode from the default suite (2026-10-23)
+AHEAD/BEHIND                  = local BEHIND origin/main by 2
+                              · missing on local HEAD: 90e538d (docs autonomy policy) · 800f611 (media suite)
+                              · DO NOT fetch/pull/merge/reset without Owner GO (dirty worktree)
+DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits · scripts)
+                              · do NOT clean / stash / reset / sync unrelated WIP
+SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts
                               SHA256 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
-DIRTY WORKTREE                = PRESERVE · live tests + untracked audits/scripts · do not clean
-                              · supabase/config.toml port remapping may remain uncommitted WIP
+                              · MATCH verified 2026-10-24 (hash only · do not open/edit)
+PRODUCTION DEPLOYMENT         = NOT RE-VERIFIED IN THIS SESSION
+                              · last documented READY dpl_31mz… @ 0a565c0 (2026-10-19)
+                              · origin tip 800f611 likely auto-deployed — re-verify:
+                                vercel inspect www.bitrymdym.pl
+                              · Ready ≠ functional GREEN
+APP TIP (last documented)     = d12e38e · BPM CONFLICT labeling CLOSED 2026-10-19
+NEXT UNIT                     = STOP — OWNER DECISION REQUIRED · see PROJECT_STATE §2 NEXT UNIT
+PREMIUM RETENTION             = HOLD · local untracked WIP (migrations + fencing contract + PG gate)
+                              · NOT on origin/main · NOT applied remotely · NOT activated
+                              · contract: decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md
+CONNECTIONS MATRIX            = PROJECT_STATE §2c · runbooks/PRODUCTION_BOOTSTRAP.md
+LOCAL SUPABASE PORTS (WIP)    = API 54421 · DB 54422 · shadow 54420 · Studio 54423 · Inbucket 54324
+                              · DO NOT assume API is still 54321
+CONTABO / VPS                 = last-known host vmi3622761 · persistent disabled/inactive
+                              · SSH/live host status: NOT VERIFIED in this session
+PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl (308→www)
+                              · https://bitrymdym.vercel.app
+LIVING SSOT                   = docs/PROJECT_STATE.md
+ENTRY                         = this file → MASTER_HANDOFF → PROJECT_STATE
+PROMPTS                       = §12 below
+
+═══ LAST DOCUMENTED 2026-10-19 (STU-16 Limited Production Pass · ≠ current Git tip) ═══
+DOCS TIP (then)               = 0a565c0 · live docs dpl last-known dpl_31mz… @ 0a565c0
+STU-16 STATUS                 = LIMITED PRODUCTION PASS (F-A1/F-B1/F-B2 + cleanup)
+                              · PASS: XP ledger · SQL semantic · Cron schedule
+                              · NOT: janitor fire · wall-clock 900 s · concurrency · SQL byte-for-byte
+HISTORY docs dpl              = dpl_4d5Kefe… @ 0f07e84 · dpl_Eoror… @ 9bd1f86
+BPM CONFLICT LABELING         = CLOSED @ d12e38e · NOT: live prod CONFLICT UI
+WAV-6 TEMPO                   = OPEN / separate · stored 65 · signal ~99–101
+STU-16 CODE                   = c2be3b0 · DB apply VERIFIED BY READ-ONLY AUDIT · local live 17/17 PASS
 SFM VERSIONS (product)        = CODE ON MAIN (ancestry) · KIND_REJECT 69e50d0 · poller d3c99e3
-                              · repo migration file ≠ database apply · Production GREEN NOT CLAIMED
-                              · living SFM planes → docs/PROJECT_STATE.md
-STUDIO_EXPORT APP             = Final Mix STUDIO_EXPORT GREEN VERIFIED (frozen IN; HISTORY planes)
-                              · ≠ SFM Versions cutover · Ready ≠ SFM Production GREEN
-APP FEATURE COMMIT (V2)       = 44f7cbd · Studio Visual Parity V2 GREEN / CLOSED (HISTORY baseline)
-PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl (308→www) · https://bitrymdym.vercel.app
-LIVING SSOT                   = docs/PROJECT_STATE.md (canonical tip / Contabo / NEXT / BPM UX)
+                              · repo migration ≠ database apply · Production GREEN NOT CLAIMED
+STUDIO_EXPORT APP             = Final Mix GREEN VERIFIED (frozen IN) · ≠ SFM cutover
+APP FEATURE COMMIT (V2)       = 44f7cbd · Visual Parity V2 GREEN / CLOSED
 PRIOR PRODUCTION TIP (HISTORY)= d70be66 · de65ff9/1d33d3b · 2adb569 / dpl_sAyrsHC… (I.48-A0) · dpl_6K73…
 
 STUDIO BASELINE               = Visual Parity V2 CLOSED / GREEN @ 44f7cbd
@@ -249,7 +260,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 | Prior alias binding (HISTORY) | `dpl_1P8ixpt2snpqTHMvERKSDtvDcwRH` @ `ce2f0cc` (PR #5 · superseded for live aliases · **≠** current docs deployment) · `dpl_56FGH…` @ `d515f3b` · `dpl_FVcx…` @ `3a086ad` · `4fa658d` / `dpl_6sai…` |
 | Production DB | includes P7.1.6 CAS completeness (`20261008192141`) + P6.7 + V1 CAS RPCs + P3 claim + P1/P2 · verify remote before DB work |
 | Production Storage | beat-audio **17** platform · orphans **0** · take-audio KEEP Dawid retained · test-user Storage cleaned (PHASE 3) · historical VPS/Local backup evidence retained |
-| Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić / nie commitować bez Owner GO** · verify Sacred WIP SHA before/after any session |
+| Session / operator | dirty local WIP may exist (Sacred WIP · P4 seam · SA-07 untracked · docs audits) — **nie czyścić, nie resetować i nie commitować Sacred WIP ani niepowiązanego WIP**; zwykły zakres według [AGENTS.md](../AGENTS.md) · verify Sacred WIP SHA before/after any session |
 
 **Primary continuity:** [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
 **Reuse / DO NOT DUPLICATE:** [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md)
@@ -265,25 +276,29 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 4.  READ architecture/README.md + architecture/REUSE_SSOT_MAP.md
 5.  READ decisions/DECISION_LOG.md + decisions/OPEN_DECISIONS.md
 6.  READ CHANGELOG.md (recent tip) + relevant phase audit/closeout only if needed
-7.  CHECK: git rev-parse HEAD  AND  git rev-parse origin/main
-8.  CHECK: living tip/deploy ONLY in PROJECT_STATE.md (§2) — do not use stale SHA below as current
-         HISTORY (I.48-A0 era): Git tip 2adb569 · dpl_sAyrsHC… @ 2adb569 · prior dpl_28oH… @ f730a7a
-         app-code tip ce2f0cc = older Studio evidence · ≠ living docs tip · ≠ fresh prod verify
-         STUDIO_EXPORT APP DEPLOYED · delete×export-history 409 PRODUCTION VERIFIED (narrow)
-         empty delete NOT TESTED · APP FEATURE V2 = 44f7cbd · living SSOT = PROJECT_STATE.md
-         do NOT treat origin/main as app-code baseline · Ready ≠ Final Mix GREEN
+7.  CHECK: git rev-parse HEAD  AND  git ls-remote origin refs/heads/main
+         (local HEAD may be BEHIND origin while dirty — do NOT pull without Owner GO)
+8.  CHECK: living tip/deploy/NEXT/connections ONLY in PROJECT_STATE.md (§2 + §2c)
+         SESSION VERIFY banner in §0 above = current Git planes for this recovery
+         LAST DOCUMENTED STU-16 / dpl_31mz… / 0a565c0 = 2026-10-19 evidence · ≠ auto-current
+         HISTORY (I.48-A0 era): Git tip 2adb569 · dpl_sAyrsHC… — do not cite as current
+         do NOT treat origin/main as app-code baseline · Ready ≠ functional GREEN
          docs push auto-deploys — re-verify aliases with vercel inspect before claiming live dpl
          READ §12 MASTER PROMPTS before opening new ChatGPT / Cursor sessions
 9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
-10. CHECK Sacred WIP fingerprint:
+10. CHECK Sacred WIP fingerprint (hash only — do not open the file):
          src/lib/takes/recording-eligibility-service.ts
          SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
+11. LOCAL RUN / TESTS (not duplicated here):
+         root README.md — `.env.local`, `npm run dev`, `npm test`, `npm run test:media`
+         integration opt-in: BRD_INTEGRATION_TESTS=1 + LOCAL_SUPABASE_* — never Vitest → prod Storage
+         living HEAD + dirty file list = git only (docs never claim a live dirty inventory)
 
 BEFORE ANY IMPLEMENTATION:
   SEARCH EXISTING CODE FIRST
   → identify SSOT / service / route / RPC / component / state owner / persistence path / tests
   → REUSE
-  → AUDIT → REPORT → wait for Owner GO
+  → zlecony zakres realizuj według AGENTS.md; nowy epik i bramka bezpieczeństwa wymagają osobnej zgody
   → never invent second orchestrator / engine / player / CAS / selection store
 ```
 
@@ -332,9 +347,9 @@ FORBIDDEN = git reset / restore / checkout -- / clean / stash of this WIP withou
 9. [CHANGELOG.md](./CHANGELOG.md)
 10. Relevant audit/closeout **only** when Owner selects that surface
 
-**Before any implementation:** SEARCH EXISTING → AUDIT → REPORT → wait for **Owner GO**.
+**Before any implementation:** SEARCH EXISTING → REUSE. Zlecony zakres realizuj według [AGENTS.md](../AGENTS.md). Nowy epik i bramka bezpieczeństwa wymagają osobnej zgody.
 
-Repo root: [AGENTS.md](../AGENTS.md) — Next.js w tym repo może różnić się od training data.
+Repo root: [AGENTS.md](../AGENTS.md) — Next.js w tym repo może różnić się od training data. Polityka autonomii jest w tym samym pliku.
 
 ---
 
@@ -694,14 +709,14 @@ WIP preserved
 [ ] P5.1–P5.6 / P5.8 / P5.10 GREEN · P6.1–P6.4.3 / P6.6 / P6.7 GREEN · V1 GREEN · P6.5 Scenario B BLOCKED
 [ ] NEXT GATE = STOP — OWNER DECISION REQUIRED (PROJECT_STATE NEXT UNIT) · no auto Contabo / SFM flag
 [ ] Do not re-run SUCCEEDED Studio Export jobs 53398f9e… or 61b7cdf1… without new Owner GO
-[ ] Local dirty WIP may diverge — no fetch/pull/clean/sync without Owner GO
+[ ] Local dirty WIP may diverge — do not clean, stash, reset, or sync unrelated WIP. Ordinary task scope follows AGENTS.md
 [ ] Do not reimplement Auto Save/CAS/engine/player · do not reopen V2 / 7.1.6 / 7.1.5 / 7.1.4 / 7.1.3 / P6.6 / P6.5 Scenario B
 [ ] Do not invent Phase 7.1.7 scope without Owner GO
 [ ] Do not commit P4 context? WIP / SA-07 untracked library / Sacred WIP without Owner GO
 [ ] SEARCH EXISTING FIRST · REUSE · no second SSOT
 [ ] Nie reopen closed epics bez nowego evidence
 [ ] Nie czyść dirty WIP bez Owner GO
-[ ] AUDIT FIRST → report → wait for Owner GO (no auto-start)
+[ ] Zlecony zakres realizuj według AGENTS.md. Nie startuj nowego epiku ani bramki bezpieczeństwa bez osobnej zgody.
 ```
 
 ---
@@ -759,15 +774,15 @@ Kanoniczne, kompletne prompty startowe. **Nie kopiuj całego SSOT do czatu** —
 ## Rola
 Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Prowadzisz analizę, decyzje, roadmapę i RCA.
-- Wydajesz konkretny prompt Cursor Agent **dopiero** po analizie raportu, gdy istnieje zatwierdzony kolejny krok i Owner GO.
-- Nie implementujesz w repozytorium; nie commitujesz; nie deployujesz.
+- Po analizie wydajesz prompt Cursor Agent na zwykły zakres. Nie dokładasz drugiej zgody na commit, push ani standardowy deployment; to rozstrzyga AGENTS.md. Nowy epik i bramka bezpieczeństwa nadal wymagają osobnej zgody Ownera.
+- Ta rola architekta nie implementuje w repozytorium, nie commituje i nie deployuje. Wykonawca Cursor robi to według AGENTS.md.
 - Respektujesz decyzje Ownera (Prezes Dawid) i granice udzielonego GO. Nie rozszerzasz zakresu samodzielnie.
 
 ## Obowiązkowy cold start (kolejność)
 1. docs/FINAL_COLD_START_HANDOFF.md (ten plik · §0–§12)
 2. docs/MASTER_HANDOFF.md
 3. docs/PROJECT_STATE.md  ← jedyny living SSOT tip/deploy/NEXT
-4. AGENTS.md (reguły Next.js w tym repo)
+4. AGENTS.md (Next.js, egress audio, polityka autonomii)
 5. docs/README.md · docs/CHANGELOG.md (recent)
 6. docs/architecture/REUSE_SSOT_MAP.md przed propozycją zmian Studio/audio/persist
 7. W razie potrzeby: docs/decisions/* · docs/architecture/* · właściwy audit/closeout
@@ -779,20 +794,25 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Historyczny raport ≠ świeża weryfikacja — oznacz źródło i datę
 
 ## Aktualny stan (skrót — szczegóły WYŁĄCZNIE w PROJECT_STATE)
-- Living Git tip / app tip / live deployment ID / NEXT UNIT = docs/PROJECT_STATE.md §2
-- Do NOT cite 2adb569 / 5212933 / dpl_sAyrsHC as current tip (those = HISTORY / I.48 era)
+- Living Git tip / app tip / live deployment ID / NEXT UNIT / connections = docs/PROJECT_STATE.md §2 + §2c
+- Always distinguish: local HEAD ≠ origin/main ≠ production dpl ≠ prod DB ≠ Storage ≠ dirty WIP
+- Do NOT cite 2adb569 / 5212933 / dpl_sAyrsHC / 0a565c0 as current tip without re-verify (HISTORY / LAST DOCUMENTED)
 - Docs push auto-deploys — re-verify aliases before claiming live dpl
 - Apex redirect e2e: NOT VERIFIED · Ready ≠ functional GREEN
 - Final Mix (STUDIO_EXPORT) GREEN VERIFIED (frozen IN) per PROJECT_STATE · ≠ SFM Production GREEN
-- P6.8: NOT STARTED · Contabo always-on / sync / canary: NOT DONE
-- STU-16: DB apply VERIFIED · local live 17/17 PASS · prod functional / E2E / concurrency NOT VERIFIED (PROJECT_STATE) · local API 54421
-- Sacred WIP chroniony · dirty local main NIE synchronizować bez GO
+- P6.8: NOT STARTED · Contabo always-on / sync / canary: NOT DONE · Contabo SSH live: NOT VERIFIED
+- STU-16: LIMITED PRODUCTION PASS last documented · ≠ Production GREEN · local API 54421
+- Premium Retention: HOLD · local untracked only · do not activate / migrate remotely without GO
+- Sacred WIP chroniony · nie synchronizuj niepowiązanego dirty WIP · zwykły zakres według AGENTS.md
+- Przed wyborem nowego zadania: sprawdź PROJECT_STATE + CHANGELOG + właściwy audit — czy już wykonane
 
 ## Otwarte gate’y (nie zamykaj bez nowego evidence + Owner GO)
 - SFM worker / staging / migrate / E2E (ordered GOs in PROJECT_STATE)
 - Contabo GO-HOST-RO / sync / canary / always-on
-- P6.8 · STU-16 production functional verify · Security Wave 5 prod finalize path
+- P6.8 · STU-16 Production GREEN · Security Wave 5 prod finalize path
+- Premium Retention OD-PRET-* / OD-62-* (HOLD) · registry sync OPEN_DECISIONS/DECISION_LOG (dirty — nie nadpisuj)
 - apex redirect e2e · empty-project delete · live BPM CONFLICT UI
+- Nie twórz nowego EPIC-a bez decyzji Ownera
 
 ## Procedura po raporcie Cursor
 1. Przeczytaj raport vs SSOT (fakty vs założenia).
@@ -810,7 +830,7 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
 - Implementujesz / dokumentujesz / weryfikujesz wyłącznie w zakresie jawnego Owner GO / promptu.
 - Nie jesteś architektem decyzji produktowych; nie rozszerzasz zakresu zgody.
-- Nie commituj / nie pushuj / nie merguj / nie deployuj automatycznie bez osobnego GO.
+- Zwykły commit, push na main i standardowy deployment: AGENTS.md. Pull request nie jest obowiązkowy. Bramki bezpieczeństwa z AGENTS.md wymagają osobnej zgody.
 
 ## Obowiązkowy cold start (kolejność)
 1. AGENTS.md
@@ -821,21 +841,30 @@ Jesteś Cursor Agent — wykonawca prac w repozytorium BitRymDym.
 6. Właściwy freeze / audit wskazany w prompcie
 
 ## Preflight przed każdą mutacją
-- git branch --show-current · git rev-parse HEAD · git status --short
-- Potwierdź izolowany worktree / branch — NIE pracuj w dirty main bez GO
+- git branch --show-current · git rev-parse HEAD · git ls-remote origin refs/heads/main · git status --short
+- Porównaj local HEAD vs origin/main vs PROJECT_STATE SESSION VERIFY — nie zakładaj synchronizacji
+- main jest dopuszczalny. Zachowaj niepowiązany dirty WIP i Sacred WIP. Nie edytuj tych samych plików równoległym agentem.
+- Nie twórz dodatkowego worktree ani PR dla zwykłego zakresu.
 - Sacred WIP: src/lib/takes/recording-eligibility-service.ts
   SHA256 = 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
-  (sprawdź tylko read-only hash; nie reset/clean/restore)
+  (sprawdź tylko read-only hash; nie otwieraj / nie reset/clean/restore)
 - Zakaz: git stash / reset / clean / restore / rebase / checkout wpływający na istniejące WIP
 - Zakaz: git add -A / -u / .
-- Zakaz: HTTP do produkcji / Contabo / SQL / deploy — chyba że prompt jawnie daje GO
+- Zakaz: produkcyjne mastery audio, zapis do produkcyjnej bazy, Contabo i SQL produkcyjne.
+  Standardowy push na main uruchamia auto-deploy Vercel; weryfikacja statusu wdrożenia jest w AGENTS.md.
+- Testy: preferuj lokalne / fixtures · BRD_INTEGRATION_TESTS=1 + LOCAL_SUPABASE_* · nigdy Vitest → prod Storage
+- Subagenci / skills: używaj gdy realnie przyspieszają; nie deleguj dostępu do Sacred WIP
 
 ## Aktualny stan (skrót — szczegóły WYŁĄCZNIE w PROJECT_STATE)
-- Living tip/deploy/NEXT = docs/PROJECT_STATE.md §2 (nie cytuj 2adb569 / 5212933 jako current)
+- Living tip/deploy/NEXT/connections = docs/PROJECT_STATE.md §2 + §2c
+- local HEAD ≠ origin/main możliwe przy dirty tree — nie cytuj 2adb569 / 5212933 / 0a565c0 jako current bez re-verify
 - Docs push auto-deploys — nie traktuj historycznego dpl id jako trwałego live pointera
-- Contabo always-on / SFM Production GREEN = NOT VERIFIED lub NOT DONE per PROJECT_STATE
-- STU-16: DB apply VERIFIED · local live 17/17 PASS · prod functional verify NOT VERIFIED (PROJECT_STATE)
+- Contabo always-on / SSH live / SFM Production GREEN = NOT VERIFIED lub NOT DONE per PROJECT_STATE
+- Premium Retention = HOLD (local WIP) · nie aktywuj
+- STU-16: LIMITED PRODUCTION PASS last documented · ≠ Production GREEN
 - Apex redirect e2e NOT VERIFIED · Ready ≠ functional GREEN
+- Po ukończeniu: aktualizuj dokumentację (DOCUMENTATION_CONTINUITY) · raportuj dowody, nie same deklaracje
+- Brak dowodu → BLOCKED / NOT VERIFIED / NOT PROVEN
 
 ## Raportowanie
 Po pracy zwróć: VERDICT · branch/worktree · HEAD · zmienione pliki · faktyczne wyniki komend · otwarte kwestie · potwierdzenie braku niedozwolonych operacji.

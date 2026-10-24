@@ -6,6 +6,40 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — documentation consolidation & cold-start recovery (docs-only)
+
+**Status:** docs inventory + SSOT tip planes reconciled · **no** commit / push / branch switch / prod mutation / migration apply in this session
+**Verified (read-only git):** local HEAD **`96e4c31`** · `origin/main` **`800f611`** · local **behind by 2** · Sacred WIP SHA256 **MATCH** · dirty worktree **PRESERVE**
+**Production deploy:** **NOT RE-VERIFIED** this session · last documented READY **`dpl_31mz…` @ `0a565c0`** (2026-10-19) · re-check with `vercel inspect`
+**Updated docs:** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) §0 SESSION VERIFY · [PROJECT_STATE.md](./PROJECT_STATE.md) §2 + **§2c connections** · [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) entry order · [README.md](./README.md) ownership · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) pointer · [runbooks/PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) connections · evidence [audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md](./audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md)
+**Not modified (dirty / foreign risk):** [decisions/OPEN_DECISIONS.md](./decisions/OPEN_DECISIONS.md) · [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — proposed registry entries only in the audit evidence file
+**Premium Retention:** HOLD · local untracked only · see [PREMIUM_RETENTION_FENCING_CONTRACT.md](./decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md)
+
+## 2026-10-23 — polityka autonomii wykonawczej
+
+**Status:** polityka zapisana w [AGENTS.md](../AGENTS.md). Ten wpis nie jest wdrożeniem i nie zamyka OD-15.
+**Zakres:** zwykłe zlecenie obejmuje implementację, testy, commit, push na `main` i standardowy auto-deploy Vercel bez osobnego pytania. Pull request nie jest obowiązkowy. Bramki utraty danych, force-push, sekretów, infrastruktury poza pipeline i Sacred WIP zostają.
+**Spójność:** [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md) · [README.md](./README.md) · instrukcje wykonawcze w [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md).
+
+## 2026-10-19 — STU-16 Evidence V2/V3 (docs-only)
+
+**Status:** still **`STU-16 LIMITED PRODUCTION PASS`** · **≠** Production GREEN · no app code / prod write / Cron invoke / commit in this entry
+**Evidence V2 (read-only, same day):** XP ledger **PASS** — one `creator_experience_events` row `TAKE_READY` / idempotency `take_ready:f0cbcc6e-2dac-419e-bc5c-c2407495d6cc` / amount 10 / unique index · SQL semantic parity **PASS** (TTL 900, DEFINER claim, INVOKER release, `search_path=''`, `service_role` EXECUTE) · Git migration timestamp `20261018120000` vs prod history `20261018154129` · SQL byte-for-byte **NOT VERIFIED**
+**Evidence V3 (observability, 2026-10-19 ~13:50Z):** Cron schedule **PASS** on live project (`/api/cron/takes-janitor` · `0 0 * * *`) · deployment `dpl_31mz…` created **2026-10-19 08:31Z** (after that day's 00:00Z tick) · `vercel logs --query takes-janitor --since 48h` → **no logs** · postgres logs show migration apply `2026-10-18T15:41:29Z` only, not a janitor RPC · Cron fire **NOT VERIFIED** · next natural tick **2026-10-20 00:00:00Z** (02:00 Europe/Warsaw) · QA UTC-day sessions **2/3** · pending **0** (preflight only; no claim)
+**Still NOT VERIFIED:** janitor Cron fire · janitor cleanup counters · wall-clock 900 s · concurrency load · SQL byte-for-byte
+**Local tests:** not re-run in V3 (prior session same day: 6 files / 50 PASS — historical)
+
+## 2026-10-19 — STU-16 LIMITED PRODUCTION PASS + consolidated audit (docs-only)
+
+**Status:** **`STU-16 LIMITED PRODUCTION PASS`** · docs SSOT reconcile after controlled production GO + read-only security/TTL/XP/SQL audit · **no** app code / migration / prod write / deploy / commit in the audit session itself · **≠** Production GREEN
+**Confirmed (historical Owner GO evidence, not re-executed in audit session):** F-A1 claim→signed upload→finalize `READY` · F-B2 HTTP 409 `CONCURRENT_SESSION` · F-B1 idempotent finalize · soft-delete cleanup of exact `takeId`/`object_key` · fixture `src/lib/beats/fixtures/chromium-mediarecorder-opus.webm` (43 589 B, duration 3 s) · QA USER `418a6a91-ec4a-47a4-af72-e9dae39c25e0` · beat `fd1f8593-10e6-4a9d-b234-5726a9a5db2e` · take `f0cbcc6e-2dac-419e-bc5c-c2407495d6cc` · day-cap after retry **2/3** FREE (no soft-delete refund)
+**Prior fixture miss:** ~0.25 s silent WAV → `DURATION_PROBE_FAILED` because `Math.round(0.25)=0` below `BEAT_DURATION_MIN` (1) — WAV container itself readable by music-metadata
+**Audit (this session, read-only):** reject client-chosen `ownerId`/`objectKey`/`takeId` · claim DEFINER + release INVOKER + TTL **900** re-confirmed · `hookTakeReadyAuth` → `awardTakeReady` with idempotency key `take_ready:{takeId}` + `ignoreAwardErrors` (XP failure must not unwind READY) · janitor Cron `0 0 * * *` + `CRON_SECRET` configured in code/`vercel.json` · **Cron fire NOT VERIFIED** · SQL byte-for-byte **NOT VERIFIED** (grants/TTL/security markers PASS)
+**Safe local tests run:** `audio-duration.chromium-webm` + `award-config` + `wave2-unit` + `p2-replace-unit` → **26/26 PASS**
+**Still NOT VERIFIED / next GO:** XP prod ledger · wall-clock 900 s · janitor Cron fire · concurrency load · optional SQL body hash parity
+**Planes:** tip parent **`0a565c0`** · live docs dpl last-known **`dpl_31mz…` @ `0a565c0`** · app tip **`d12e38e`**
+**Canonical:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [RECORDING.md](./architecture/RECORDING.md)
+
 ## 2026-10-19 — STU-16 tip and deployment evidence reconciled (docs-only)
 
 **Status:** **DOCS ONLY** · Owner GO · updates living tip/dpl pointers after local-evidence commit auto-deploy · **no** app code / migration / prod DB write / Storage / Auth mutation / manual deploy in this session · **`supabase/config.toml` port WIP not included**
