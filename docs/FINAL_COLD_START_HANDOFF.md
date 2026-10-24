@@ -801,7 +801,7 @@ Jesteś ChatGPT Architect / RCA lead dla BitRymDym.
 - Apex redirect e2e: NOT VERIFIED · Ready ≠ functional GREEN
 - Final Mix (STUDIO_EXPORT) GREEN VERIFIED (frozen IN) per PROJECT_STATE · ≠ SFM Production GREEN
 - P6.8: NOT STARTED · Contabo always-on / sync / canary: NOT DONE · Contabo SSH live: NOT VERIFIED
-- STU-16: LIMITED PRODUCTION PASS last documented · ≠ Production GREEN · local API 54421
+- STU-16: LIMITED PRODUCTION PASS last documented · ≠ Production GREEN · DB apply VERIFIED · local live 17/17 PASS (historical) · local API 54421
 - Premium Retention: HOLD · local untracked only · do not activate / migrate remotely without GO
 - Sacred WIP chroniony · nie synchronizuj niepowiązanego dirty WIP · zwykły zakres według AGENTS.md
 - Przed wyborem nowego zadania: sprawdź PROJECT_STATE + CHANGELOG + właściwy audit — czy już wykonane
