@@ -293,7 +293,8 @@ export async function createStudioProjectFor(
       name: defaultTrackName("VOCAL"),
       track_type: "VOCAL",
       sort_order: 1,
-      record_armed: true,
+      // Default unarmed - user must consciously arm R before REC.
+      record_armed: false,
     },
   ];
 
