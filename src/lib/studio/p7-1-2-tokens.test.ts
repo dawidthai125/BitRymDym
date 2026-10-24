@@ -64,6 +64,19 @@ describe("Phase 7.1.2 color tokens", () => {
     expect(tokens).toMatch(/--brd-paper-deep:\s*#e4dccf/);
   });
 
+  it("defines theme-stable --brd-on-media for light text on photo overlays", () => {
+    expect(tokens).toMatch(/--brd-on-media:\s*var\(--brd-recess-fg\)/);
+    expect(tokens).toMatch(/--brd-recess-fg:\s*#efe9df/);
+    // Dark theme must not remap on-media to graphite paper.
+    const darkStart = tokens.indexOf('html[data-theme="dark"]');
+    const darkEnd = tokens.indexOf('html[data-theme="light"]', darkStart);
+    const darkBlock = tokens.slice(
+      darkStart,
+      darkEnd === -1 ? undefined : darkEnd,
+    );
+    expect(darkBlock).not.toMatch(/--brd-on-media\s*:/);
+  });
+
   it("exposes --brd-bg to Tailwind theme", () => {
     expect(globals).toMatch(/--color-brd-bg:\s*var\(--brd-bg\)/);
   });

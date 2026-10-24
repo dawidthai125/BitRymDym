@@ -16,7 +16,7 @@ const variants = {
   danger:
     "rounded-[var(--brd-r-cta)] border-[var(--brd-rec)] bg-[var(--brd-rec)] text-[var(--brd-paper)] hover:opacity-90",
   onDark:
-    "rounded-[var(--brd-r-cta)] border-[color-mix(in_srgb,var(--brd-paper)_70%,transparent)] bg-[var(--brd-paper)] text-[var(--brd-ink)] hover:bg-[color-mix(in_srgb,var(--brd-paper)_88%,transparent)]",
+    "rounded-[var(--brd-r-cta)] border-[color-mix(in_srgb,var(--brd-on-media)_70%,transparent)] bg-[var(--brd-on-media)] text-[var(--brd-recess)] hover:bg-[color-mix(in_srgb,var(--brd-on-media)_88%,transparent)]",
   bare: "rounded-none border-transparent px-0 text-[var(--brd-green)] underline-offset-4 hover:underline",
 } as const;
 

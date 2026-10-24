@@ -54,6 +54,12 @@
   --brd-recess-fg: #efe9df;
 
   /*
+    Always-light foam for text/borders on photos & dark media scrims.
+    Do NOT use --brd-paper here: in dark theme paper is graphite surface.
+  */
+  --brd-on-media: var(--brd-recess-fg);
+
+  /*
     Sparse amber accent for Studio / archiwum (not a primary CTA).
     Public zine keeps green; REC stays --brd-rec.
   */

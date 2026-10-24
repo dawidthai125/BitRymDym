@@ -65,22 +65,25 @@ export default async function HomePage() {
                 className="absolute inset-0 h-full w-full border-0"
               />
               {featured ? (
-                <div className="absolute inset-x-0 bottom-0 z-10 border-t border-[color-mix(in_srgb,var(--brd-paper)_22%,transparent)] bg-[color-mix(in_srgb,var(--brd-graphite)_88%,transparent)] px-3 py-3 text-[var(--brd-paper)] sm:px-5 sm:py-4">
+                <div
+                  data-testid="home-featured-media-overlay"
+                  className="absolute inset-x-0 bottom-0 z-10 border-t border-[color-mix(in_srgb,var(--brd-on-media)_22%,transparent)] bg-[color-mix(in_srgb,var(--brd-graphite)_88%,transparent)] px-3 py-3 text-[var(--brd-on-media)] sm:px-5 sm:py-4"
+                >
                   <div className="flex items-center gap-3">
                     <BeatArtwork
                       variant={featured.artworkVariant}
                       title={featured.title}
                       size="sm"
-                      className="size-12 border-[color-mix(in_srgb,var(--brd-paper)_18%,transparent)]"
+                      className="size-12 border-[color-mix(in_srgb,var(--brd-on-media)_18%,transparent)]"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-paper)_55%,transparent)]">
+                      <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-on-media)_55%,transparent)]">
                         Z katalogu
                       </p>
                       <p className="truncate text-sm font-medium">
                         {featured.title}
                       </p>
-                      <p className="brd-meta truncate text-[10px] text-[color-mix(in_srgb,var(--brd-paper)_62%,transparent)]">
+                      <p className="brd-meta truncate text-[10px] text-[color-mix(in_srgb,var(--brd-on-media)_62%,transparent)]">
                         {featured.producer} · {featured.bpm} BPM ·{" "}
                         {formatDurationSeconds(featured.durationSeconds)}
                       </p>
@@ -132,7 +135,7 @@ export default async function HomePage() {
                 focus="45% 40%"
                 className="absolute inset-0 border-0"
               />
-              <div className="absolute inset-x-4 bottom-4 z-10 border border-[color-mix(in_srgb,var(--brd-paper)_18%,transparent)] bg-[color-mix(in_srgb,var(--brd-graphite)_78%,transparent)] p-3 text-[var(--brd-paper)] sm:left-5 sm:right-auto sm:w-[min(100%,20rem)] lg:hidden">
+              <div className="absolute inset-x-4 bottom-4 z-10 border border-[color-mix(in_srgb,var(--brd-on-media)_18%,transparent)] bg-[color-mix(in_srgb,var(--brd-graphite)_78%,transparent)] p-3 text-[var(--brd-on-media)] sm:left-5 sm:right-auto sm:w-[min(100%,20rem)] lg:hidden">
                 <Waveform
                   seed="home-rec-mobile"
                   progress={0.34}
@@ -141,7 +144,7 @@ export default async function HomePage() {
                   heightClassName="h-8"
                 />
                 <div className="mt-2 flex items-center justify-between">
-                  <p className="brd-meta text-[10px] text-[color-mix(in_srgb,var(--brd-paper)_60%,transparent)]">
+                  <p className="brd-meta text-[10px] text-[color-mix(in_srgb,var(--brd-on-media)_60%,transparent)]">
                     00:12 / 00:30
                   </p>
                   <span className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-rec)]">
@@ -210,8 +213,8 @@ export default async function HomePage() {
                   focus="50% 45%"
                   className="absolute inset-0 border-0"
                 />
-                <div className="absolute inset-x-0 bottom-0 space-y-2 bg-[linear-gradient(180deg,transparent,rgba(10,14,12,0.9))] p-4 text-[var(--brd-paper)] sm:p-5">
-                  <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-paper)_55%,transparent)]">
+                <div className="absolute inset-x-0 bottom-0 space-y-2 bg-[linear-gradient(180deg,transparent,rgba(10,14,12,0.9))] p-4 text-[var(--brd-on-media)] sm:p-5">
+                  <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-on-media)_55%,transparent)]">
                     Studio
                   </p>
                   <Waveform
@@ -291,7 +294,7 @@ export default async function HomePage() {
               width="wide"
               className="relative flex min-h-[16rem] flex-col items-center justify-center py-12 text-center sm:min-h-[18rem] sm:py-14"
             >
-              <h2 className="brd-display max-w-lg text-[clamp(1.85rem,4vw,2.75rem)] font-semibold tracking-tight text-balance text-[var(--brd-paper)] drop-shadow-sm">
+              <h2 className="brd-display max-w-lg text-[clamp(1.85rem,4vw,2.75rem)] font-semibold tracking-tight text-balance text-[var(--brd-on-media)] drop-shadow-sm">
                 Masz bit.
                 <br />
                 Masz głos.

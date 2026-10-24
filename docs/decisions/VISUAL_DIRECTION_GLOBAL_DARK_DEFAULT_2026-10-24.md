@@ -38,6 +38,12 @@ Shared invariants: logo, Source Serif 4 / Schibsted Grotesk / IBM Plex Mono, wav
 
 ---
 
+## On-media foam (follow-up)
+
+`--brd-on-media` (= `--brd-recess-fg` `#efe9df`) is the semantic light foreground for photo overlays and dark scrims. Do not use `--brd-paper` for that role in dark theme (paper is graphite surface). Card fills and green/rec button ink keep their existing `--brd-paper` roles.
+
+---
+
 ## Brand assets (Owner follow-up)
 
 Dark mode inverts the current lockup PNG for readability. Authored **light-on-dark** logo + real covers would improve brand without inventing stock photos.
@@ -46,4 +52,4 @@ Dark mode inverts the current lockup PNG for readability. Authored **light-on-da
 
 ## Evidence
 
-[audits/_visual_theme_global_dark_2026-10-24/README.md](../audits/_visual_theme_global_dark_2026-10-24/README.md)
+[audits/_visual_theme_global_dark_2026-10-24/README.md](../audits/_visual_theme_global_dark_2026-10-24/README.md) · follow-up [audits/_visual_theme_followup_on_media_2026-10-24/README.md](../audits/_visual_theme_followup_on_media_2026-10-24/README.md)

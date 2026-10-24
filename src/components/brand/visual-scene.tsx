@@ -60,7 +60,7 @@ export function VisualScene({
         />
       ) : null}
       {caption ? (
-        <p className="absolute bottom-3 left-3 right-3 brd-meta text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-paper)_75%,transparent)]">
+        <p className="absolute bottom-3 left-3 right-3 brd-meta text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-on-media)_75%,transparent)]">
           {caption}
         </p>
       ) : null}

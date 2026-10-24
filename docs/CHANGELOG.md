@@ -6,6 +6,13 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — on-media foam + theme toggle evidence follow-up
+
+**Status:** additive fix on `f3b8e75` · **OD-15 / OD-16 remain OPEN**
+**Fix:** `--brd-on-media` for light text on photo overlays (home / VisualScene / `onDark`); paper stays surface token
+**Evidence:** storageState-seeded Playwright asserts (no post-load `data-theme` spoof) · overlay pixel contrast · [audits/_visual_theme_followup_on_media_2026-10-24/README.md](./audits/_visual_theme_followup_on_media_2026-10-24/README.md)
+**Not verified:** logged-in Studio/takes/account · production UI smoke · FOUC via screenshot alone
+
 ## 2026-10-24 — global dark theme default + light toggle
 
 **Status:** additive Owner direction · **OD-15 / OD-16 remain OPEN** · Studio V2 structure **unchanged**

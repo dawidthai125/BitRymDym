@@ -1,0 +1,174 @@
+{
+  "probes": [
+    {
+      "file": "dark-home-desktop-1280x800.png",
+      "theme": "dark",
+      "tag": "desktop-1280x800",
+      "probe": {
+        "ok": true,
+        "fgCss": "rgb(239, 233, 223)",
+        "fgRgb": [
+          239,
+          233,
+          223
+        ],
+        "sampledBgRgb": [
+          48,
+          48,
+          44
+        ],
+        "usedFallbackBg": false,
+        "ratio": 10.97,
+        "pngSize": {
+          "w": 747,
+          "h": 144
+        },
+        "png": "probe-overlay-bg-dark-desktop.png"
+      }
+    },
+    {
+      "file": "light-home-desktop-1280x800.png",
+      "theme": "light",
+      "tag": "desktop-1280x800",
+      "probe": {
+        "ok": true,
+        "fgCss": "rgb(239, 233, 223)",
+        "fgRgb": [
+          239,
+          233,
+          223
+        ],
+        "sampledBgRgb": [
+          48,
+          48,
+          44
+        ],
+        "usedFallbackBg": false,
+        "ratio": 10.97,
+        "pngSize": {
+          "w": 747,
+          "h": 144
+        },
+        "png": "probe-overlay-bg-light-desktop.png"
+      }
+    },
+    {
+      "file": "dark-home-mobile-390x844.png",
+      "theme": "dark",
+      "tag": "mobile-390x844",
+      "probe": {
+        "ok": true,
+        "fgCss": "rgb(239, 233, 223)",
+        "fgRgb": [
+          239,
+          233,
+          223
+        ],
+        "sampledBgRgb": [
+          58,
+          57,
+          52
+        ],
+        "usedFallbackBg": false,
+        "ratio": 9.58,
+        "pngSize": {
+          "w": 390,
+          "h": 109
+        },
+        "png": "probe-overlay-bg-dark-mobile.png"
+      }
+    },
+    {
+      "file": "light-home-mobile-390x844.png",
+      "theme": "light",
+      "tag": "mobile-390x844",
+      "probe": {
+        "ok": true,
+        "fgCss": "rgb(239, 233, 223)",
+        "fgRgb": [
+          239,
+          233,
+          223
+        ],
+        "sampledBgRgb": [
+          54,
+          55,
+          51
+        ],
+        "usedFallbackBg": false,
+        "ratio": 9.93,
+        "pngSize": {
+          "w": 390,
+          "h": 109
+        },
+        "png": "probe-overlay-bg-light-mobile.png"
+      }
+    }
+  ],
+  "toggle": {
+    "desktop-1280x800": "PASS",
+    "mobile-390x844": "PASS"
+  },
+  "ihdr": [
+    {
+      "file": "dark-home-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "light-home-desktop-1280x800.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "toggle-desktop-1280x800-after-reload-dark.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "toggle-desktop-1280x800-after-reload-light.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "toggle-desktop-1280x800-after-toggle-light.png",
+      "w": 1280,
+      "h": 800,
+      "ok": true
+    },
+    {
+      "file": "dark-home-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "light-home-mobile-390x844.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "toggle-mobile-390x844-after-reload-dark.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "toggle-mobile-390x844-after-reload-light.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    },
+    {
+      "file": "toggle-mobile-390x844-after-toggle-light.png",
+      "w": 390,
+      "h": 844,
+      "ok": true
+    }
+  ]
+}
