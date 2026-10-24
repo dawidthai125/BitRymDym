@@ -106,7 +106,7 @@ export function BeatCatalogRow({
         <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
           {featured ? (
             <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[var(--brd-green)]">
-              Polecane
+              A1 · Press
             </p>
           ) : null}
           <h2
@@ -178,7 +178,7 @@ export function BeatCatalogRow({
           <Link href={`/beat/${beat.id}`} className="min-w-0 flex-1 space-y-0.5">
             {featured ? (
               <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-green)]">
-                Polecane
+                A1 · Press
               </p>
             ) : null}
             <h2 className="brd-display truncate text-[15px] font-semibold leading-snug">

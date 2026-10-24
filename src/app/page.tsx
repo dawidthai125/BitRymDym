@@ -29,23 +29,28 @@ export default async function HomePage() {
   return (
     <AppShell tone="public">
       <main>
-        {/* 1. HERO — photo-led product composition */}
+        {/* 1. HERO — okładka numeru (zine / label cover) */}
         <section className="border-b border-[var(--brd-line)]">
-          <div className="grid lg:grid-cols-12 lg:min-h-[min(58vh,32rem)]">
-            <div className="flex flex-col justify-end gap-3.5 px-[max(var(--brd-gutter),env(safe-area-inset-left))] py-7 lg:col-span-5 lg:justify-center lg:py-9 lg:pr-8 xl:pl-[max(var(--brd-gutter),calc((100vw-92rem)/2+var(--brd-gutter)))]">
-              <SectionLabel>BitRymDym</SectionLabel>
-              <h1 className="brd-display max-w-[11ch] text-[clamp(2.35rem,5.2vw,4rem)] leading-[0.9] font-semibold tracking-tight">
+          <div className="grid lg:grid-cols-12 lg:min-h-[min(62vh,34rem)]">
+            <div className="flex flex-col justify-end gap-3.5 px-[max(var(--brd-gutter),env(safe-area-inset-left))] py-7 lg:col-span-5 lg:justify-center lg:py-10 lg:pr-8 xl:pl-[max(var(--brd-gutter),calc((100vw-92rem)/2+var(--brd-gutter)))]">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <SectionLabel>BitRymDym</SectionLabel>
+                <span className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
+                  Zine · niezależne wydawnictwo
+                </span>
+              </div>
+              <h1 className="brd-display max-w-[12ch] text-[clamp(2.5rem,5.4vw,4.25rem)] leading-[0.88] font-semibold tracking-tight">
                 Tu zaczynają się Twoje wersy
               </h1>
-              <p className="max-w-[28ch] text-[0.95rem] leading-snug text-[var(--brd-ink-soft)] sm:text-base">
-                Odkrywaj bity. Nagrywaj. Twórz.
+              <p className="max-w-[30ch] text-[0.95rem] leading-snug text-[var(--brd-ink-soft)] sm:text-base">
+                Katalog bitów. Mikrofon. Numer.
                 <br />
-                Rozwijaj swoje brzmienie w jednym miejscu.
+                Papierowa okładka — cyfrowa sesja.
               </p>
               <div className="flex flex-wrap gap-2 pt-0.5">
-                <BrdLink href="/beats">Przeglądaj bity</BrdLink>
+                <BrdLink href="/beats">Otwórz katalog</BrdLink>
                 <BrdLink href={recordHref} variant="secondary">
-                  Nagraj
+                  Nagraj wers
                 </BrdLink>
               </div>
             </div>
@@ -53,14 +58,14 @@ export default async function HomePage() {
             <div className="relative aspect-[5/4] w-full sm:aspect-[16/11] lg:col-span-7 lg:aspect-auto lg:min-h-full">
               <VisualScene
                 kind="studio-mic"
-                label="Sesja studyjna"
+                label="Okładka — scena studyjna (materiał demo)"
                 dim
                 priority
                 focus="58% 42%"
                 className="absolute inset-0 h-full w-full border-0"
               />
               {featured ? (
-                <div className="absolute inset-x-3 bottom-3 z-10 border border-[color-mix(in_srgb,var(--brd-paper)_20%,transparent)] bg-[color-mix(in_srgb,var(--brd-graphite)_86%,transparent)] p-3 text-[var(--brd-paper)] sm:inset-x-auto sm:bottom-5 sm:left-5 sm:w-[min(100%,24rem)]">
+                <div className="absolute inset-x-0 bottom-0 z-10 border-t border-[color-mix(in_srgb,var(--brd-paper)_22%,transparent)] bg-[color-mix(in_srgb,var(--brd-graphite)_88%,transparent)] px-3 py-3 text-[var(--brd-paper)] sm:px-5 sm:py-4">
                   <div className="flex items-center gap-3">
                     <BeatArtwork
                       variant={featured.artworkVariant}
@@ -70,7 +75,7 @@ export default async function HomePage() {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-paper)_55%,transparent)]">
-                        Teraz w katalogu
+                        A1 · z katalogu
                       </p>
                       <p className="truncate text-sm font-medium">
                         {featured.title}
@@ -95,21 +100,21 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 2. BITY — marketplace preview */}
+        {/* 2. BITY — spis treści wydawnictwa */}
         <section className="border-b border-[var(--brd-line)]">
           <PageFrame width="wide" className="py-7 sm:py-8">
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-2 brd-zine-masthead pb-3">
               <div>
-                <SectionLabel>Katalog</SectionLabel>
+                <SectionLabel>Katalog · press sheet</SectionLabel>
                 <h2 className="brd-display mt-0.5 text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
                   Słuchaj. Wybierz. Nagraj.
                 </h2>
               </div>
               <Link
                 href="/beats"
-                className="text-sm text-[var(--brd-green)] hover:underline"
+                className="brd-meta text-[11px] uppercase tracking-[0.14em] text-[var(--brd-green)] hover:underline"
               >
-                Pełny katalog →
+                Pełny spis →
               </Link>
             </div>
             <HomeBeatStrip beats={strip} />
@@ -153,12 +158,12 @@ export default async function HomePage() {
                 </SectionLabel>
               </div>
               <h2 className="brd-display text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
-                Nagraj swój głos.
+                Mikrofon. Limit. Take.
               </h2>
-              <p className="max-w-[32ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-                Wybierz bit, włącz mikrofon i złap wers.
+              <p className="max-w-[34ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">
+                Przygotuj mic, złap wers na bicie, domknij take przed limitem.
                 <br />
-                Bez studia na wynajem — od razu w BitRymDym.
+                Czerwony sygnał REC — tylko gdy naprawdę nagrywasz.
               </p>
               <div className="hidden border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 lg:block">
                 <Waveform
@@ -223,7 +228,7 @@ export default async function HomePage() {
                 <div className="flex flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
                   <div>
                     <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-                      Ostatnia sesja
+                      Z katalogu · nie Twoja sesja
                     </p>
                     {featured ? (
                       <div className="mt-3 flex items-start gap-3">
@@ -240,14 +245,14 @@ export default async function HomePage() {
                           <p className="text-sm text-[var(--brd-mute)]">
                             {featured.producer}
                           </p>
-                          <p className="brd-meta text-[10px] text-[var(--brd-ok)]">
-                            Gotowe
+                          <p className="brd-meta text-[10px] text-[var(--brd-green)]">
+                            Do otwarcia w Studio
                           </p>
                         </div>
                       </div>
                     ) : (
                       <p className="mt-3 text-sm text-[var(--brd-mute)]">
-                        Twoje nagrania pojawią się tutaj.
+                        Gdy katalog się zapełni — tu zobaczysz przykładowy bit.
                       </p>
                     )}
                   </div>

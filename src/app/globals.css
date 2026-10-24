@@ -56,6 +56,10 @@
     --color-brd-green-deep: var(--brd-green-deep);
     --color-brd-graphite: var(--brd-graphite);
     --color-brd-warm-gray: var(--brd-warm-gray);
+    --color-brd-recess: var(--brd-recess);
+    --color-brd-recess-fg: var(--brd-recess-fg);
+    --color-brd-amber: var(--brd-amber);
+    --color-brd-amber-soft: var(--brd-amber-soft);
     --color-brd-rec: var(--brd-rec);
     --color-brd-ok: var(--brd-ok);
     --color-brd-warn: var(--brd-warn);
@@ -186,4 +190,103 @@
   border-radius: 0;
   background: var(--brd-green);
   border: 1px solid var(--brd-paper);
+}
+
+/*
+  Control-room surface — LOCAL visual variant for Studio + archiwum nagrań.
+  Do NOT bind to AppShell tone="studio" (shared with account/library/settings).
+  Scope via data-brd-surface="control-room" on page main/wrapper only.
+  Remaps existing --brd-* names so DAW children pick up night graphite without
+  a second design system. REC stays red; amber is sparse focus/accent.
+*/
+[data-brd-surface="control-room"] {
+  --brd-paper: #161918;
+  --brd-paper-deep: #101312;
+  --brd-bg: #101312;
+  --brd-ink: #efe9df;
+  --brd-ink-soft: #d2cbc0;
+  --brd-mute: #9a9488;
+  --brd-warm-gray: #a39c90;
+  --brd-line: #2f3532;
+  --brd-line-strong: #454c48;
+  --brd-green: #7eb59a;
+  --brd-green-soft: #9acbb0;
+  --brd-green-muted: #6a8f7d;
+  --brd-green-wash: #24352e;
+  --brd-green-mist: color-mix(in srgb, var(--brd-green-wash) 70%, var(--brd-paper));
+  --brd-green-deep: #0f241e;
+  --brd-ok: #7eb59a;
+  --brd-warn: var(--brd-amber);
+  --brd-focus: var(--brd-amber);
+  --brd-audio-play: var(--brd-amber-soft);
+  --brd-audio-play-hover: var(--brd-amber);
+  --brd-audio-wave-played: var(--brd-amber-soft);
+  --brd-audio-wave-rest: rgba(239, 233, 223, 0.34);
+  --brd-audio-playhead: var(--brd-ink);
+  --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 94%, transparent);
+  --brd-audio-line: var(--brd-line);
+  --background: var(--brd-paper);
+  --foreground: var(--brd-ink);
+  --card: var(--brd-paper);
+  --card-foreground: var(--brd-ink);
+  --popover: var(--brd-paper);
+  --popover-foreground: var(--brd-ink);
+  /* Primary CTA stays remapped green; amber is focus / sparse accent only. */
+  --primary: var(--brd-green);
+  --primary-foreground: var(--brd-recess);
+  --secondary: var(--brd-paper-deep);
+  --secondary-foreground: var(--brd-ink);
+  --muted: var(--brd-paper-deep);
+  --muted-foreground: var(--brd-mute);
+  --accent: var(--brd-graphite-soft);
+  --accent-foreground: var(--brd-ink);
+  --destructive: var(--brd-rec);
+  --border: var(--brd-line);
+  --input: var(--brd-line);
+  --ring: var(--brd-amber);
+  --brd-surface: var(--brd-paper);
+  color: var(--brd-ink);
+  background-color: var(--brd-paper);
+}
+
+[data-brd-surface="control-room"] .brd-scrub::-webkit-slider-thumb {
+  background: var(--brd-amber);
+  border-color: var(--brd-recess);
+}
+
+[data-brd-surface="control-room"] .brd-scrub::-moz-range-thumb {
+  background: var(--brd-amber);
+  border-color: var(--brd-recess);
+}
+
+/*
+  Transport bar uses inverted paper/ink utilities (dark strip + light labels).
+  Inside control-room, restore paper=foam / ink=recess locally so the strip
+  stays night without editing studio-editor WIP hunks.
+*/
+[data-brd-surface="control-room"] [data-testid="studio-transport"] {
+  --brd-paper: var(--brd-recess-fg);
+  --brd-ink: var(--brd-recess);
+  --brd-warn: var(--brd-amber);
+}
+
+/* Public zine — press-sheet hairline masthead helper */
+.brd-zine-masthead {
+  border-bottom: 1px solid var(--brd-line);
+}
+
+.brd-session-step {
+  font-family: var(--font-meta), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brd-mute);
+}
+
+.brd-session-step[data-active="true"] {
+  color: var(--brd-ink);
+}
+
+.brd-session-step[data-rec="true"][data-active="true"] {
+  color: var(--brd-rec);
 }

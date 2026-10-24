@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — visual direction: paper zine + control room
+
+**Status:** additive Owner visual direction · **OD-15 / OD-16 remain OPEN** · Studio Visual Parity V2 structural contracts **unchanged**
+**Surfaces:** public (`/`, `/beats`, `/beat/[id]` + Quick Take) → paper zine / label cover · Studio + `/account/takes` → night graphite via `data-brd-surface="control-room"` (not global `tone="studio"`)
+**Tokens:** `--brd-amber`, `--brd-recess` / `--brd-recess-fg` · control-room remap in `globals.css`
+**Docs:** [decisions/VISUAL_DIRECTION_ZINE_CONTROL_ROOM_2026-10-24.md](./decisions/VISUAL_DIRECTION_ZINE_CONTROL_ROOM_2026-10-24.md)
+**Out:** schema/migrations/prod audio · Sacred WIP · account/library/settings global repaint · closing OD-15/16
+
 ## 2026-10-24 — local ↔ GitHub main reconciliation
 
 **Status:** local HEAD = `origin/main` (0/0) · reconcile merge **`4b14ac9`** (`b55b5fb` + `90e538d` + `800f611`) · SESSION VERIFY docs **`61fba99`** · dirty WIP **PRESERVE** (Premium Retention HOLD · registries · Sacred WIP)

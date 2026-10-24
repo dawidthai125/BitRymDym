@@ -40,6 +40,20 @@
   --brd-graphite: #1c1f1d;
   --brd-graphite-soft: #2a2e2b;
 
+  /*
+    Recess chrome — always-dark strip (Studio transport).
+    Stable under control-room remaps of --brd-paper / --brd-ink.
+  */
+  --brd-recess: #0c0e0d;
+  --brd-recess-fg: #efe9df;
+
+  /*
+    Sparse amber accent for Studio / archiwum (not a primary CTA).
+    Public zine keeps green; REC stays --brd-rec.
+  */
+  --brd-amber: #c4893a;
+  --brd-amber-soft: #d4a35c;
+
   /* Signal */
   --brd-rec: #9a2f2f;
   --brd-ok: #2f5a4a;

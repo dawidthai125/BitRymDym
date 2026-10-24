@@ -40,7 +40,10 @@ export default async function StudioProjectPage({ params }: PageProps) {
 
   return (
     <AppShell tone="studio">
-      <main className="overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4">
+      <main
+        data-brd-surface="control-room"
+        className="min-h-[calc(100dvh-4.5rem)] overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4"
+      >
         <PageFrame
           width="full"
           className="flex min-h-[calc(100dvh-4.5rem)] flex-col gap-2 overflow-x-hidden py-2 sm:py-3"
@@ -48,7 +51,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
           <div className="flex items-center justify-between gap-2">
             <Link
               href="/studio"
-              className="min-h-11 text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
+              className="min-h-11 text-sm text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
               ← Wszystkie projekty
             </Link>

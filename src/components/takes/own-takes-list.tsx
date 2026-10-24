@@ -128,21 +128,35 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Nie masz jeszcze nagrań. Nagraj na stronie bitu.
-      </p>
+      <div className="border border-[var(--brd-line)] px-4 py-10 text-center">
+        <p className="brd-display text-xl font-semibold text-[var(--brd-ink)]">
+          Pusty dziennik
+        </p>
+        <p className="mt-2 text-sm text-[var(--brd-mute)]">
+          Nie masz jeszcze nagrań. Nagraj na stronie bitu — wpis pojawi się
+          tutaj.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <p
+          className="border border-[var(--brd-rec)]/40 bg-[color-mix(in_srgb,var(--brd-rec)_10%,transparent)] px-3 py-2 text-sm text-[var(--brd-rec)]"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
-      <ul className="divide-y divide-border border-y border-border">
-        {items.map((take) => {
+      <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        {items.length}{" "}
+        {items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów"} ·
+        dziennik sesji
+      </p>
+      <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
+        {items.map((take, index) => {
           const busy = busyId === take.id;
           const showDownload =
             take.canPreview ||
@@ -153,42 +167,49 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
               key={take.id}
               className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between"
             >
-              <div className="min-w-0 flex-1 space-y-1">
-                {editingId === take.id ? (
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      type="text"
-                      value={titleDraft}
-                      maxLength={120}
-                      onChange={(e) => setTitleDraft(e.target.value)}
-                      className="min-h-11 w-full max-w-sm rounded border border-[var(--brd-line)] bg-transparent px-3 text-sm"
-                      aria-label="Tytuł nagrania"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={busy}
-                      className="min-h-11"
-                      onClick={() => void onSaveTitle(take)}
-                    >
-                      Zapisz
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-11"
-                      onClick={() => setEditingId(null)}
-                    >
-                      Anuluj
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="font-medium tracking-tight">
-                    {take.displayTitle}
-                  </p>
-                )}
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
+                    #{String(items.length - index).padStart(2, "0")}
+                  </span>
+                  {editingId === take.id ? (
+                    <div className="flex w-full flex-wrap gap-2">
+                      <input
+                        type="text"
+                        value={titleDraft}
+                        maxLength={120}
+                        onChange={(e) => setTitleDraft(e.target.value)}
+                        className="min-h-11 w-full max-w-sm border border-[var(--brd-line)] bg-transparent px-3 text-sm text-[var(--brd-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)] disabled:opacity-50"
+                        aria-label="Tytuł nagrania"
+                        disabled={busy}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={busy}
+                        className="min-h-11"
+                        onClick={() => void onSaveTitle(take)}
+                      >
+                        Zapisz
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-11"
+                        onClick={() => setEditingId(null)}
+                        disabled={busy}
+                      >
+                        Anuluj
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
+                      {take.displayTitle}
+                    </p>
+                  )}
+                </div>
+                <p className="text-sm text-[var(--brd-ink-soft)]">
                   {take.authorDisplayName
                     ? `Autor: ${take.authorDisplayName}`
                     : "Autor: —"}
@@ -197,7 +218,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                   {take.beatTitle ? (
                     <Link
                       href={`/beat/${take.beatId}`}
-                      className="underline-offset-4 hover:underline"
+                      className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
                     >
                       {take.beatTitle}
                     </Link>
@@ -205,7 +226,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     <span>{take.beatId.slice(0, 8)}</span>
                   )}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
                   {labelTakeStatus(take.displayStatus)}
                   {" · "}
                   {labelRecordingMode(take.recordingMode)}
@@ -213,7 +234,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     ? ` · ${formatDurationSeconds(take.durationSeconds)}`
                     : ""}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="brd-meta text-[10px] text-[var(--brd-mute)]">
                   Utworzono {formatWhen(take.createdAt)}
                   {" · "}
                   Wygasa {formatWhen(take.expiresAt)}
@@ -244,7 +265,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     className="min-h-11"
                     onClick={() => void onPreview(take)}
                   >
-                    Podgląd
+                    {busy && busyId === take.id ? "…" : "Podgląd"}
                   </Button>
                 ) : null}
                 {showDownload && take.displayStatus === "READY" ? (

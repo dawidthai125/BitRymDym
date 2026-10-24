@@ -28,15 +28,21 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
     <AppShell tone="public">
       <main>
         <PageFrame width="wide" className="py-5 sm:py-6">
-          <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-[var(--brd-line)] pb-3">
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-[var(--brd-line)] pb-3">
             <div className="min-w-0 space-y-1">
-              <SectionLabel>Bity</SectionLabel>
-              <h1 className="brd-display text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
+              <SectionLabel>Katalog · tracklista</SectionLabel>
+              <h1 className="brd-display text-2xl font-semibold tracking-tight sm:text-[1.85rem]">
                 Znajdź swój bit.
               </h1>
+              <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                {beats.length > 0
+                  ? `${beats.length} pozycji · odsłuch → nagranie`
+                  : "Pusto · czekamy na press"}
+              </p>
             </div>
-            <p className="max-w-xs pb-0.5 text-sm text-[var(--brd-mute)]">
-              Odsłuchaj. Wybierz. Nagraj.
+            <p className="max-w-xs pb-0.5 text-sm leading-snug text-[var(--brd-mute)]">
+              Jak spis treści niezależnego wydawnictwa — bez marketplace’owego
+              szumu.
             </p>
           </header>
 

@@ -244,7 +244,7 @@ export function BeatDetailClient({
             </p>
           )}
 
-          <p className="brd-meta flex flex-wrap gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          <p className="brd-meta flex flex-wrap gap-x-3 gap-y-1 border-y border-[var(--brd-line)] py-2 text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
             <span>
               <span className="text-[var(--brd-mute)]">Tempo </span>
               <span className="text-[var(--brd-ink)]">
@@ -264,6 +264,15 @@ export function BeatDetailClient({
             <span>
               <span className="text-[var(--brd-mute)]">Gatunek </span>
               <span className="text-[var(--brd-ink)]">{beat.genre ?? "—"}</span>
+            </span>
+            <span aria-hidden="true" className="text-[var(--brd-line)]">
+              ·
+            </span>
+            <span>
+              <span className="text-[var(--brd-mute)]">Czas </span>
+              <span className="text-[var(--brd-ink)]">
+                {formatDurationSeconds(beat.durationSeconds)}
+              </span>
             </span>
           </p>
 
@@ -392,9 +401,19 @@ export function BeatDetailClient({
             }
           }}
         >
-          <h2 className="brd-display text-xl font-semibold">
-            Nagraj na tym bicie
-          </h2>
+          <div className="space-y-1">
+            <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[var(--brd-rec)]">
+              Sesja · Quick Take
+            </p>
+            <h2 className="brd-display text-xl font-semibold">
+              Nagraj na tym bicie
+            </h2>
+            <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
+              Mic → REC → limit czasu → przebiegi bitu i mikrofonu → podgląd
+              take’a. Istniejące stany błędów i komunikaty bezpieczeństwa bez
+              zmian.
+            </p>
+          </div>
           <BeatRecordingSurface
             beatId={beat.id}
             title={beat.title}

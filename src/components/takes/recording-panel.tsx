@@ -718,6 +718,24 @@ export function RecordingPanel({
   const busy = isRecordingBusy(state.phase);
   const elapsedSec = Math.floor(state.elapsedMs / 1000);
 
+  const stepPrep =
+    state.phase === "IDLE" ||
+    state.phase === "REQUESTING_MIC" ||
+    state.phase === "READY" ||
+    state.phase === "AUTH_REQUIRED" ||
+    state.phase === "BEAT_NOT_ELIGIBLE" ||
+    state.phase === "MIC_DENIED" ||
+    state.phase === "UNSUPPORTED" ||
+    state.phase === "RECORDING_ERROR" ||
+    state.phase === "UPLOAD_ERROR" ||
+    state.phase === "FINALIZE_ERROR" ||
+    state.phase === "EXPIRED";
+  const stepRec =
+    state.phase === "RECORDING" || state.phase === "STOPPING";
+  const stepSend =
+    state.phase === "UPLOADING" || state.phase === "PROCESSING";
+  const stepReady = state.phase === "READY_TAKE";
+
   return (
     <div
       className={cn(
@@ -728,14 +746,59 @@ export function RecordingPanel({
       aria-label="Nagrywanie"
       data-recording-phase={state.phase}
     >
-      <div className="space-y-1">
-        <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
-          Nagraj
-        </p>
-        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          Limit {formatDurationSeconds(maxSeconds)}
-          {isAuthenticated ? " · konto" : " · gość"} 
-        </p>
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
+            Quick Take
+          </p>
+          <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+            Limit {formatDurationSeconds(maxSeconds)}
+            {isAuthenticated ? " · konto" : " · gość"}
+          </p>
+        </div>
+        <ol
+          className="flex flex-wrap items-center gap-x-2 gap-y-1 border-y border-[var(--brd-line)] py-2"
+          aria-label="Rytm sesji nagrywania"
+        >
+          <li
+            className="brd-session-step"
+            data-active={stepPrep ? "true" : undefined}
+            aria-current={stepPrep ? "step" : undefined}
+          >
+            1 · Mic
+          </li>
+          <li aria-hidden className="text-[var(--brd-line)]">
+            /
+          </li>
+          <li
+            className="brd-session-step"
+            data-active={stepRec ? "true" : undefined}
+            data-rec={stepRec ? "true" : undefined}
+            aria-current={stepRec ? "step" : undefined}
+          >
+            2 · REC
+          </li>
+          <li aria-hidden className="text-[var(--brd-line)]">
+            /
+          </li>
+          <li
+            className="brd-session-step"
+            data-active={stepSend ? "true" : undefined}
+            aria-current={stepSend ? "step" : undefined}
+          >
+            3 · Wysyłka
+          </li>
+          <li aria-hidden className="text-[var(--brd-line)]">
+            /
+          </li>
+          <li
+            className="brd-session-step"
+            data-active={stepReady ? "true" : undefined}
+            aria-current={stepReady ? "step" : undefined}
+          >
+            4 · Take
+          </li>
+        </ol>
       </div>
 
       <TakeRecordingRecoveryBanner
@@ -780,27 +843,36 @@ export function RecordingPanel({
       ) : null}
 
       {state.phase === "READY" ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          Mikrofon gotowy. Nagranie wystartuje razem z bit’em od początku.
+        <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
+          Mikrofon gotowy. Nagranie wystartuje razem z bit’em od początku —
+          trzymaj limit w polu widzenia.
         </p>
       ) : null}
 
       {state.phase === "RECORDING" ? (
         <div className="space-y-3">
-          <div className="flex items-center gap-3" role="status">
-            <span
-              className="inline-block size-2.5 bg-[var(--brd-rec)] motion-reduce:animate-none"
-              aria-hidden
-            />
-            <span className="brd-meta text-sm font-medium text-[var(--brd-rec)]">
-              REC {formatDurationSeconds(elapsedSec)} /{" "}
-              {formatDurationSeconds(maxSeconds)}
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 border border-[var(--brd-rec)]/40 bg-[color-mix(in_srgb,var(--brd-rec)_8%,transparent)] px-3 py-2"
+            role="status"
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="inline-block size-2.5 animate-pulse bg-[var(--brd-rec)] motion-reduce:animate-none"
+                aria-hidden
+              />
+              <span className="brd-meta text-sm font-medium text-[var(--brd-rec)]">
+                REC {formatDurationSeconds(elapsedSec)} /{" "}
+                {formatDurationSeconds(maxSeconds)}
+              </span>
+            </div>
+            <span className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+              Limit sesji
             </span>
           </div>
 
           <div className="space-y-2">
             <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Bit
+              Przebieg bitu
             </p>
             <Waveform
               seed={beatId}
@@ -813,7 +885,7 @@ export function RecordingPanel({
 
           <div className="space-y-2">
             <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Nagranie · mikrofon
+              Przebieg mikrofonu
             </p>
             <BrdLiveMicWaveform bars={mic.bars} progress={recProgress} />
           </div>
@@ -849,8 +921,8 @@ export function RecordingPanel({
 
       {state.phase === "READY_TAKE" ? (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-foreground" role="status">
-            Twoje nagranie jest gotowe
+          <p className="text-sm font-medium text-[var(--brd-ink)]" role="status">
+            Take gotowy — podgląd poniżej
             {state.takeDurationSeconds != null
               ? ` · ${formatDurationSeconds(state.takeDurationSeconds)}`
               : ""}
