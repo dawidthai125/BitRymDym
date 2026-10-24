@@ -104,6 +104,17 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+html[data-theme="dark"] .brd-grain {
+  opacity: 0.07;
+  mix-blend-mode: soft-light;
+}
+
+/* Lockup PNG is dark-on-transparent — invert for graphite surfaces until
+   Owner supplies a light-on-dark brand asset. */
+html[data-theme="dark"] .brd-logo-img {
+  filter: brightness(0) invert(1);
+}
+
 .brd-paper > *:not(.brd-grain) {
   position: relative;
   z-index: 1;
@@ -193,84 +204,31 @@
 }
 
 /*
-  Control-room surface — LOCAL visual variant for Studio + archiwum nagrań.
-  Do NOT bind to AppShell tone="studio" (shared with account/library/settings).
-  Scope via data-brd-surface="control-room" on page main/wrapper only.
-  Remaps existing --brd-* names so DAW children pick up night graphite without
-  a second design system. REC stays red; amber is sparse focus/accent.
+  data-brd-surface="control-room" is historical markup on Studio/takes mains.
+  Global html[data-theme="dark"] now owns the graphite palette — do not stack
+  a second competing remap here. Attribute remains for docs/selectors only.
 */
 [data-brd-surface="control-room"] {
-  --brd-paper: #161918;
-  --brd-paper-deep: #101312;
-  --brd-bg: #101312;
-  --brd-ink: #efe9df;
-  --brd-ink-soft: #d2cbc0;
-  --brd-mute: #9a9488;
-  --brd-warm-gray: #a39c90;
-  --brd-line: #2f3532;
-  --brd-line-strong: #454c48;
-  --brd-green: #7eb59a;
-  --brd-green-soft: #9acbb0;
-  --brd-green-muted: #6a8f7d;
-  --brd-green-wash: #24352e;
-  --brd-green-mist: color-mix(in srgb, var(--brd-green-wash) 70%, var(--brd-paper));
-  --brd-green-deep: #0f241e;
-  --brd-ok: #7eb59a;
-  /*
-    REC / destructive on night paper — public #9a2f2f is ~2.4:1 (fails AA).
-    Brighter scoped signal keeps REC red and clears ~4.7:1 on #161918.
-  */
-  --brd-rec: #db5a5a;
-  --brd-danger: var(--brd-rec);
-  --brd-warn: var(--brd-amber);
-  --brd-focus: var(--brd-amber);
-  --brd-audio-play: var(--brd-amber-soft);
-  --brd-audio-play-hover: var(--brd-amber);
-  --brd-audio-wave-played: var(--brd-amber-soft);
-  --brd-audio-wave-rest: rgba(239, 233, 223, 0.34);
-  --brd-audio-playhead: var(--brd-ink);
-  --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 94%, transparent);
-  --brd-audio-line: var(--brd-line);
-  --background: var(--brd-paper);
-  --foreground: var(--brd-ink);
-  --card: var(--brd-paper);
-  --card-foreground: var(--brd-ink);
-  --popover: var(--brd-paper);
-  --popover-foreground: var(--brd-ink);
-  /* Primary CTA stays remapped green; amber is focus / sparse accent only. */
-  --primary: var(--brd-green);
-  --primary-foreground: var(--brd-recess);
-  --secondary: var(--brd-paper-deep);
-  --secondary-foreground: var(--brd-ink);
-  --muted: var(--brd-paper-deep);
-  --muted-foreground: var(--brd-mute);
-  --accent: var(--brd-graphite-soft);
-  --accent-foreground: var(--brd-ink);
-  --destructive: var(--brd-rec);
-  --border: var(--brd-line);
-  --input: var(--brd-line);
-  --ring: var(--brd-amber);
-  --brd-surface: var(--brd-paper);
   color: var(--brd-ink);
   background-color: var(--brd-paper);
 }
 
-[data-brd-surface="control-room"] .brd-scrub::-webkit-slider-thumb {
+html[data-theme="dark"] .brd-scrub::-webkit-slider-thumb {
   background: var(--brd-amber);
   border-color: var(--brd-recess);
 }
 
-[data-brd-surface="control-room"] .brd-scrub::-moz-range-thumb {
+html[data-theme="dark"] .brd-scrub::-moz-range-thumb {
   background: var(--brd-amber);
   border-color: var(--brd-recess);
 }
 
 /*
   Transport bar uses inverted paper/ink utilities (dark strip + light labels).
-  Inside control-room, restore paper=foam / ink=recess locally so the strip
+  Under global dark, restore paper=foam / ink=recess locally so the strip
   stays night without editing studio-editor WIP hunks.
 */
-[data-brd-surface="control-room"] [data-testid="studio-transport"] {
+html[data-theme="dark"] [data-testid="studio-transport"] {
   --brd-paper: var(--brd-recess-fg);
   --brd-ink: var(--brd-recess);
   --brd-warn: var(--brd-amber);

@@ -4,9 +4,11 @@ import {
   Schibsted_Grotesk,
   Source_Serif_4,
 } from "next/font/google";
+import Script from "next/script";
 
 import { ClientProviders } from "@/components/site/client-providers";
 import { siteMetadata } from "@/config/site";
+import { BRD_THEME_BOOT_SCRIPT } from "@/lib/ui/theme";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -46,6 +48,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,
+  colorScheme: "dark light" as const,
 };
 
 export default function RootLayout({
@@ -56,14 +59,21 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
+      data-theme="dark"
       className={cn(
-        "font-sans",
+        "dark font-sans",
         fontDisplay.variable,
         fontUi.variable,
         fontMeta.variable,
       )}
+      suppressHydrationWarning
     >
-      <body className="min-h-dvh pb-[env(safe-area-inset-bottom)] antialiased">
+      <body className="min-h-dvh bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] text-[var(--brd-ink)] antialiased">
+        <Script
+          id="brd-theme-boot"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: BRD_THEME_BOOT_SCRIPT }}
+        />
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

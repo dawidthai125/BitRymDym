@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
 import { PageFrame } from "@/components/brand/chrome";
 import { HeaderSearch } from "@/components/site/header-search";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 import { UserMenu } from "@/components/site/user-menu";
 import {
   canAccessAdminNav,
@@ -74,6 +75,7 @@ export async function SiteHeader({
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle className="shrink-0" />
           <HeaderSearch className="hidden sm:block" compact />
           {session ? (
             <UserMenu

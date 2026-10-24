@@ -35,7 +35,7 @@ export function BrdLogo({
       width={width}
       height={height}
       priority={priority}
-      className={cn("h-auto w-auto", className)}
+      className={cn("brd-logo-img h-auto w-auto", className)}
       style={{ height, width: "auto" }}
     />
   );
@@ -76,7 +76,7 @@ export function BrdLogoHomeLink({
         height={height}
         priority={priority}
         sizes="(max-width: 640px) 176px, 240px"
-        className="h-auto w-[5.5rem] object-contain object-left sm:w-[7.5rem]"
+        className="brd-logo-img h-auto w-[5.5rem] object-contain object-left sm:w-[7.5rem]"
       />
     </Link>
   );

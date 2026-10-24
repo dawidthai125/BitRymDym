@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — global dark theme default + light toggle
+
+**Status:** additive Owner direction · **OD-15 / OD-16 remain OPEN** · Studio V2 structure **unchanged**
+**Default:** `html[data-theme="dark"]` (control-room graphite + REC `#db5a5a`) · light = paper zine
+**Persist:** `localStorage bitrymdym.theme` · FOUC boot script · toggle in SiteHeader / auth bar
+**Docs:** [decisions/VISUAL_DIRECTION_GLOBAL_DARK_DEFAULT_2026-10-24.md](./decisions/VISUAL_DIRECTION_GLOBAL_DARK_DEFAULT_2026-10-24.md)
+**Evidence:** [audits/_visual_theme_global_dark_2026-10-24/README.md](./audits/_visual_theme_global_dark_2026-10-24/README.md)
+
 ## 2026-10-24 — visual evidence correction (viewport PNG)
 
 **Status:** evidence-only · no chrome / product UI change

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SignUpForm } from "@/components/auth/auth-forms";
+import { AuthThemeBar } from "@/components/site/auth-theme-bar";
 import { getCurrentProfile } from "@/lib/auth/session";
 
 export default async function SignUpPage() {
@@ -12,6 +13,7 @@ export default async function SignUpPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-16">
+      <AuthThemeBar />
       <h1 className="text-2xl font-semibold tracking-tight">Załóż konto</h1>
       <p className="text-sm text-muted-foreground">
         Zakładasz konto twórcy. Po rejestracji potwierdź swój adres e-mail.

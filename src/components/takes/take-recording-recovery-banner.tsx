@@ -212,7 +212,7 @@ export function TakeRecordingRecoveryBanner({
 
   return (
     <section
-      className="space-y-2 rounded border border-amber-500/50 bg-amber-500/5 px-3 py-2 text-sm text-[var(--brd-ink)]"
+      className="space-y-2 rounded border border-[var(--brd-amber)]/50 bg-[color-mix(in_srgb,var(--brd-amber)_8%,transparent)] px-3 py-2 text-sm text-[var(--brd-ink)]"
       aria-label="Niezapisane nagrania"
       data-testid="take-recovery-banner"
       data-surface={surface}

@@ -1,6 +1,11 @@
 /*
   BitRymDym Master Visual Redesign v2 — design tokens (WORKING).
   Expand existing system; do not fork a second brand language.
+
+  Theme SSOT (2026-10-24):
+  - Default app theme = dark (html[data-theme="dark"]) — graphite control-room palette.
+  - Light = paper zine (:root / html[data-theme="light"]).
+  - Preference: localStorage bitrymdym.theme only (no DB).
 */
 
 :root {
@@ -23,7 +28,8 @@
   --brd-paper-ink: #1b3c32;
   --brd-ink: #101412;
   --brd-ink-soft: #353b37;
-  --brd-mute: #6a716b;
+  /* Darkened for AA ≥4.5:1 on paper #f2ebe0 (was #6a716b ≈4.24:1). */
+  --brd-mute: #5c635c;
   --brd-warm-gray: #8a8478;
   --brd-line: #c8bfb0;
   --brd-line-strong: #a89f90;
@@ -71,6 +77,11 @@
   --brd-audio-rec: var(--brd-rec);
   --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 96%, transparent);
   --brd-audio-line: var(--brd-line);
+  /* Inverted waveform on photo/dark scenes — solid rgba (WebKit-safe). */
+  --brd-audio-wave-inverted-played: rgba(242, 235, 224, 0.88);
+  --brd-audio-wave-inverted-rest: rgba(242, 235, 224, 0.28);
+  --brd-audio-wave-inverted-playhead: rgba(242, 235, 224, 0.92);
+  --brd-audio-wave-take-rest: rgba(16, 20, 18, 0.28);
 
   /* Shape — sharp by default */
   --brd-r-none: 0;
@@ -123,9 +134,81 @@
 
   --brd-surface: var(--brd-paper);
   --brd-focus: var(--brd-green-soft);
+
+  color-scheme: light;
 }
 
+/*
+  Global dark — same semantic names as light (single design system).
+  Values lifted from former [data-brd-surface="control-room"] remap.
+*/
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brd-paper: #161918;
+  --brd-paper-deep: #101312;
+  --brd-bg: #101312;
+  --brd-ink: #efe9df;
+  --brd-ink-soft: #d2cbc0;
+  --brd-mute: #9a9488;
+  --brd-warm-gray: #a39c90;
+  --brd-line: #2f3532;
+  --brd-line-strong: #454c48;
+  --brd-green: #7eb59a;
+  --brd-green-soft: #9acbb0;
+  --brd-green-muted: #6a8f7d;
+  --brd-green-wash: #24352e;
+  --brd-green-mist: color-mix(
+    in srgb,
+    var(--brd-green-wash) 70%,
+    var(--brd-paper)
+  );
+  --brd-green-deep: #0f241e;
+  --brd-ok: #7eb59a;
+  --brd-rec: #db5a5a;
+  --brd-danger: var(--brd-rec);
+  --brd-warn: var(--brd-amber);
+  --brd-focus: var(--brd-amber);
+  --brd-audio-play: var(--brd-amber-soft);
+  --brd-audio-play-hover: var(--brd-amber);
+  --brd-audio-wave-played: var(--brd-amber-soft);
+  --brd-audio-wave-rest: rgba(239, 233, 223, 0.34);
+  --brd-audio-playhead: var(--brd-ink);
+  --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 94%, transparent);
+  --brd-audio-line: var(--brd-line);
+  --brd-audio-wave-inverted-played: rgba(239, 233, 223, 0.88);
+  --brd-audio-wave-inverted-rest: rgba(239, 233, 223, 0.28);
+  --brd-audio-wave-inverted-playhead: rgba(239, 233, 223, 0.92);
+  --brd-audio-wave-take-rest: rgba(239, 233, 223, 0.28);
+
+  --background: var(--brd-paper);
+  --foreground: var(--brd-ink);
+  --card: var(--brd-paper);
+  --card-foreground: var(--brd-ink);
+  --popover: var(--brd-paper);
+  --popover-foreground: var(--brd-ink);
+  --primary: var(--brd-green);
+  --primary-foreground: var(--brd-recess);
+  --secondary: var(--brd-paper-deep);
+  --secondary-foreground: var(--brd-ink);
+  --muted: var(--brd-paper-deep);
+  --muted-foreground: var(--brd-mute);
+  --accent: var(--brd-graphite-soft);
+  --accent-foreground: var(--brd-ink);
+  --destructive: var(--brd-rec);
+  --border: var(--brd-line);
+  --input: var(--brd-line);
+  --ring: var(--brd-amber);
+  --brd-surface: var(--brd-paper);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Tailwind dark: variant stays in sync with data-theme via .dark class on html. */
 .dark {
+  /* Token values come from html[data-theme="dark"]; keep shadcn slots aligned. */
   --background: var(--brd-paper);
   --foreground: var(--brd-ink);
 }

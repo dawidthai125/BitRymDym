@@ -95,19 +95,19 @@ export function Waveform({
      resolve to transparent in WebKit when set via style={{}}, wiping the BIT rail. */
   const activeColor =
     tone === "inverted"
-      ? "rgba(242, 235, 224, 0.88)"
+      ? "var(--brd-audio-wave-inverted-played)"
       : tone === "take"
         ? "var(--brd-graphite-soft)"
         : "var(--brd-audio-wave-played)";
   const idleColor =
     tone === "inverted"
-      ? "rgba(242, 235, 224, 0.28)"
+      ? "var(--brd-audio-wave-inverted-rest)"
       : tone === "take"
-        ? "rgba(16, 20, 18, 0.28)"
+        ? "var(--brd-audio-wave-take-rest)"
         : "var(--brd-audio-wave-rest)";
   const playheadColor =
     tone === "inverted"
-      ? "rgba(242, 235, 224, 0.92)"
+      ? "var(--brd-audio-wave-inverted-playhead)"
       : "var(--brd-audio-playhead)";
 
   function ratioFromPointer(
