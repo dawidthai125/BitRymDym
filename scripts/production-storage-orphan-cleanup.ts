@@ -14,6 +14,7 @@
  * Testability: call classifyWithDepsAsync / executeWithDeps / executeDeletePhaseWithDeps
  * with injected deps. Production client is created only in CLI path (createProductionDeps).
  * Delete phase re-classifies claimed SAFE_DELETE before remove (R1).
+ * Batch remove outcomes are reported OK|ERROR|AMBIGUOUS; fail-stop never auto-retries (R3.1).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -35,6 +36,19 @@ const FIXTURE_SIZES = new Set([16044, 2646044]);
 
 export type PathKind = "user" | "platform" | "catalog" | "other";
 export type OrphanClassification = "SAFE_DELETE" | "KEEP" | "UNKNOWN";
+
+/** Per-batch remove outcome. OK = API returned no error — not independent Storage proof. */
+export type OrphanBatchRemoveStatus = "OK" | "ERROR" | "AMBIGUOUS";
+
+export type OrphanBatchRemoveReport = {
+  batch_index: number;
+  path_count: number;
+  paths: string[];
+  status: OrphanBatchRemoveStatus;
+  error_message?: string;
+  /** Always false: this script does not re-list objects after remove. */
+  storage_state_independently_verified: false;
+};
 
 export type ClassRow = {
   object_path: string;
@@ -101,6 +115,8 @@ export type OrphanCleanupDeps = {
     rows: ClassRow[];
   }) => void;
   onEvidence?: (evidence: Record<string, unknown>) => void;
+  /** Fired after each storageRemove attempt (success, API error, or thrown failure). */
+  onBatchReport?: (report: OrphanBatchRemoveReport) => void;
   batchSize?: number;
   /** Production default 17; tests may set null to skip count gate. */
   requiredPlatformAssetCount?: number | null;
@@ -480,9 +496,37 @@ export async function executeDeletePhaseWithDeps(
   }
 
   console.log(`Deleting ${toDelete.length} SAFE_DELETE beat-audio objects...`);
+  const batchReports: OrphanBatchRemoveReport[] = [];
   let deleted = 0;
+
+  const emitBatchReport = (report: OrphanBatchRemoveReport): void => {
+    batchReports.push(report);
+    deps.onBatchReport?.(report);
+    console.log(JSON.stringify({ orphan_batch: report }));
+  };
+
+  const failStopAfterRemoveAttempts = (message: string): never => {
+    const failEvidence = {
+      finished_at: new Date().toISOString(),
+      outcome: "FAIL_STOP",
+      orphan_cleanup_pass: false,
+      summary_pre: summary,
+      batches: batchReports,
+      claimed_ok_path_count: deleted,
+      note:
+        "FAIL_STOP after one or more storageRemove attempts. Earlier OK batches are not rolled back. claimed_ok_path_count is client-reported path count for OK batches only — not independently verified Storage state. Partial mutation may have occurred. No automatic retry or resume.",
+    };
+    deps.onEvidence?.(failEvidence);
+    console.log(JSON.stringify(failEvidence, null, 2));
+    console.log(
+      "ORPHAN CLEANUP FAIL_STOP — partial Storage mutation may have occurred; not a PASS",
+    );
+    abort(message);
+  };
+
   for (let i = 0; i < toDelete.length; i += batchSize) {
     const chunk = toDelete.slice(i, i + batchSize);
+    const batchIndex = i / batchSize + 1;
     for (const objectPath of chunk) {
       try {
         assertKeySafeToRemove({
@@ -498,17 +542,50 @@ export async function executeDeletePhaseWithDeps(
         );
       }
     }
-    const { error } = await deps.storageRemove(
-      BEAT_AUDIO_ORPHAN_BUCKET,
-      chunk,
-    );
-    if (error) {
-      abort(
-        `remove batch failed — aborting further deletes: ${error.message}`,
+
+    let removeResult: { error: { message: string } | null };
+    try {
+      removeResult = await deps.storageRemove(
+        BEAT_AUDIO_ORPHAN_BUCKET,
+        chunk,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      emitBatchReport({
+        batch_index: batchIndex,
+        path_count: chunk.length,
+        paths: [...chunk],
+        status: "AMBIGUOUS",
+        error_message: msg,
+        storage_state_independently_verified: false,
+      });
+      failStopAfterRemoveAttempts(
+        `remove batch threw — aborting further deletes (Storage state for this batch unknown): ${msg}`,
       );
     }
+
+    if (removeResult.error) {
+      emitBatchReport({
+        batch_index: batchIndex,
+        path_count: chunk.length,
+        paths: [...chunk],
+        status: "ERROR",
+        error_message: removeResult.error.message,
+        storage_state_independently_verified: false,
+      });
+      failStopAfterRemoveAttempts(
+        `remove batch failed — aborting further deletes (Storage state for this batch unverified/possibly partial): ${removeResult.error.message}`,
+      );
+    }
+
+    emitBatchReport({
+      batch_index: batchIndex,
+      path_count: chunk.length,
+      paths: [...chunk],
+      status: "OK",
+      storage_state_independently_verified: false,
+    });
     deleted += chunk.length;
-    console.log(`  batch ${i / batchSize + 1}: ${chunk.length}`);
   }
 
   if (requiredPlatformCount != null) {
@@ -532,8 +609,13 @@ export async function executeDeletePhaseWithDeps(
   const counts = await deps.countBeatsAndAssets();
   const evidence = {
     finished_at: new Date().toISOString(),
+    outcome: "PASS",
+    orphan_cleanup_pass: true,
     summary_pre: summary,
     deleted_count: deleted,
+    deleted_count_note:
+      "Client-reported sum of paths in OK batches only — not an independent Storage existence verification",
+    batches: batchReports,
     db_after: { beats: counts.beats, assets: counts.assets },
     platform_assets_verified: requiredPlatformCount,
     unmapped_take_preserved: deps.verifyUnmappedTake !== false,

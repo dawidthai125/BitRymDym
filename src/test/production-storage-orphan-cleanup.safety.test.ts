@@ -1,5 +1,5 @@
 /**
- * P0 + P0.2 + P0.3 (R1) local safety tests for orphan cleanup.
+ * P0 + P0.2 + P0.3 (R1) + R3.1 local safety tests for orphan cleanup.
  * Helpers + executeWithDeps / executeDeletePhaseWithDeps with mocks only.
  * Never creates a real Supabase client or reads production inventory.
  */
@@ -15,6 +15,7 @@ import {
   type ClassRow,
   type ClassifyDbContext,
   type InventoryObject,
+  type OrphanBatchRemoveReport,
   type OrphanCleanupDeps,
 } from "../../scripts/production-storage-orphan-cleanup";
 
@@ -444,5 +445,158 @@ describe("orphan cleanup P0.3 R1 re-classification before delete", () => {
       ),
     ).rejects.toBeInstanceOf(OrphanCleanupAbortError);
     expect(removeCalls).toHaveLength(0);
+  });
+});
+
+describe("orphan cleanup R3.1 batch evidence + fail-stop", () => {
+  it("R3.1a: batch1 OK then batch2 ERROR — two removes, no batch3, not PASS", async () => {
+    const inv: InventoryObject[] = [0, 1, 2].map((n) => ({
+      object_path: userOrphanKey(n),
+      size_bytes: 16044,
+      created_at: null,
+    }));
+    const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
+    const batchReports: OrphanBatchRemoveReport[] = [];
+    let evidence: Record<string, unknown> | null = null;
+    const { deps } = baseMockDeps({
+      getInventory: () => inv,
+      batchSize: 1,
+      onBatchReport: (r) => batchReports.push(r),
+      onEvidence: (e) => {
+        evidence = e;
+      },
+      storageRemove: async (bucket, paths) => {
+        removeCalls.push({ bucket, paths: [...paths] });
+        if (removeCalls.length === 1) return { error: null };
+        return { error: { message: "mock batch2 failure" } };
+      },
+    });
+
+    await expect(executeWithDeps(deps)).rejects.toBeInstanceOf(
+      OrphanCleanupAbortError,
+    );
+    expect(removeCalls).toHaveLength(2);
+    expect(batchReports).toHaveLength(2);
+    expect(batchReports[0]?.status).toBe("OK");
+    expect(batchReports[0]?.batch_index).toBe(1);
+    expect(batchReports[1]?.status).toBe("ERROR");
+    expect(batchReports[1]?.batch_index).toBe(2);
+    expect(evidence?.outcome).toBe("FAIL_STOP");
+    expect(evidence?.orphan_cleanup_pass).toBe(false);
+    expect(evidence?.claimed_ok_path_count).toBe(1);
+  });
+
+  it("R3.1b: batch1 OK then batch2 throw — AMBIGUOUS, not PASS, no further batches", async () => {
+    const inv: InventoryObject[] = [0, 1, 2].map((n) => ({
+      object_path: userOrphanKey(n),
+      size_bytes: 16044,
+      created_at: null,
+    }));
+    const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
+    const batchReports: OrphanBatchRemoveReport[] = [];
+    let evidence: Record<string, unknown> | null = null;
+    const { deps } = baseMockDeps({
+      getInventory: () => inv,
+      batchSize: 1,
+      onBatchReport: (r) => batchReports.push(r),
+      onEvidence: (e) => {
+        evidence = e;
+      },
+      storageRemove: async (bucket, paths) => {
+        removeCalls.push({ bucket, paths: [...paths] });
+        if (removeCalls.length === 1) return { error: null };
+        throw new Error("mock network throw");
+      },
+    });
+
+    await expect(executeWithDeps(deps)).rejects.toBeInstanceOf(
+      OrphanCleanupAbortError,
+    );
+    expect(removeCalls).toHaveLength(2);
+    expect(batchReports[0]?.status).toBe("OK");
+    expect(batchReports[1]?.status).toBe("AMBIGUOUS");
+    expect(batchReports[1]?.storage_state_independently_verified).toBe(false);
+    expect(evidence?.outcome).toBe("FAIL_STOP");
+    expect(evidence?.orphan_cleanup_pass).toBe(false);
+  });
+
+  it("R3.1c: first batch ERROR — no second batch, not PASS", async () => {
+    const inv: InventoryObject[] = [0, 1].map((n) => ({
+      object_path: userOrphanKey(n),
+      size_bytes: 16044,
+      created_at: null,
+    }));
+    const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
+    const batchReports: OrphanBatchRemoveReport[] = [];
+    let evidence: Record<string, unknown> | null = null;
+    const { deps } = baseMockDeps({
+      getInventory: () => inv,
+      batchSize: 1,
+      onBatchReport: (r) => batchReports.push(r),
+      onEvidence: (e) => {
+        evidence = e;
+      },
+      storageRemove: async (bucket, paths) => {
+        removeCalls.push({ bucket, paths: [...paths] });
+        return { error: { message: "first batch failed" } };
+      },
+    });
+
+    await expect(executeWithDeps(deps)).rejects.toBeInstanceOf(
+      OrphanCleanupAbortError,
+    );
+    expect(removeCalls).toHaveLength(1);
+    expect(batchReports).toHaveLength(1);
+    expect(batchReports[0]?.status).toBe("ERROR");
+    expect(evidence?.outcome).toBe("FAIL_STOP");
+    expect(evidence?.orphan_cleanup_pass).toBe(false);
+    expect(evidence?.claimed_ok_path_count).toBe(0);
+  });
+
+  it("R3.1d: all batches OK — PASS evidence retained", async () => {
+    const inv: InventoryObject[] = [0, 1].map((n) => ({
+      object_path: userOrphanKey(n),
+      size_bytes: 16044,
+      created_at: null,
+    }));
+    const batchReports: OrphanBatchRemoveReport[] = [];
+    let evidence: Record<string, unknown> | null = null;
+    const { deps, removeCalls } = baseMockDeps({
+      getInventory: () => inv,
+      batchSize: 1,
+      onBatchReport: (r) => batchReports.push(r),
+      onEvidence: (e) => {
+        evidence = e;
+      },
+    });
+
+    const result = await executeWithDeps(deps);
+    expect(result.deleted).toBe(2);
+    expect(removeCalls).toHaveLength(2);
+    expect(batchReports.every((b) => b.status === "OK")).toBe(true);
+    expect(evidence?.outcome).toBe("PASS");
+    expect(evidence?.orphan_cleanup_pass).toBe(true);
+    expect(Array.isArray(evidence?.batches)).toBe(true);
+  });
+
+  it("R3.1e: unsafe batch still blocks storageRemove (R1 preserved)", async () => {
+    const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
+    const batchReports: OrphanBatchRemoveReport[] = [];
+    const { deps } = baseMockDeps({
+      storageRemove: async (bucket, paths) => {
+        removeCalls.push({ bucket, paths: [...paths] });
+        return { error: null };
+      },
+      onBatchReport: (r) => batchReports.push(r),
+    });
+    await expect(
+      executeDeletePhaseWithDeps(
+        deps,
+        [forgeSafeDelete(CATALOG_KEY, 16044)],
+        { SAFE_DELETE: 1, KEEP: 0, UNKNOWN: 0 },
+      ),
+    ).rejects.toBeInstanceOf(OrphanCleanupAbortError);
+    expect(removeCalls).toHaveLength(0);
+    expect(batchReports).toHaveLength(0);
   });
 });
