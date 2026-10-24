@@ -64,7 +64,7 @@ PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl
 OD-15 / OD-16                 = OPEN
 LIVING SSOT                   = docs/PROJECT_STATE.md
 ENTRY                         = this file → MASTER_HANDOFF → PROJECT_STATE → FUNCTIONAL MAP
-PROMPTS                       = handoffs/ + §12 below (if present)
+PROMPTS                       = docs/handoffs/*_PL.md (living) · §12 = HISTORY continuity
 
 ═══ LAST DOCUMENTED 2026-10-19 (STU-16 Limited Production Pass · ≠ current Git tip) ═══
 DOCS TIP (then)               = 0a565c0 · live docs dpl last-known dpl_31mz… @ 0a565c0
@@ -278,7 +278,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
          HISTORY (I.48-A0 era): Git tip 2adb569 · dpl_sAyrsHC… — do not cite as current
          do NOT treat origin/main as app-code baseline · Ready ≠ functional GREEN
          docs push auto-deploys — re-verify aliases with vercel inspect before claiming live dpl
-         READ §12 MASTER PROMPTS before opening new ChatGPT / Cursor sessions
+         READ docs/handoffs/*_PL.md (living) · §12 = HISTORY continuity
 9.  CHECK: git status --short  → dirty tree may exist · DO NOT clean/stash/reset
 10. CHECK Sacred WIP fingerprint (hash only — do not open the file):
          src/lib/takes/recording-eligibility-service.ts
@@ -687,7 +687,7 @@ WIP preserved
 [ ] Confirm living Git tip + app tip + live dpl from PROJECT_STATE §2 (do NOT treat HISTORY tip 2adb569 / 5212933 as current)
 [ ] HISTORY only: dpl_sAyrsHC… @ 2adb569 was I.48-A0 observed Ready · not a living alias pointer · apex redirect e2e NOT VERIFIED · Ready ≠ functional GREEN
 [ ] Re-verify aliases with vercel inspect before claiming a live deployment ID (docs push auto-deploys)
-[ ] Read §12 MASTER PROMPTS (ChatGPT + Cursor) before starting a new session — living skrót = PROJECT_STATE
+[ ] Read docs/handoffs/MASTER_START_PROMPT_*_PL.md before a new session · §12 = HISTORY · living skrót = PROJECT_STATE
 [ ] Confirm STUDIO_EXPORT Final Mix GREEN VERIFIED (frozen IN) per PROJECT_STATE · ≠ SFM Versions Production GREEN
 [ ] Confirm I.45DR job 53398f9e-… / artifact 21d98be2-… READY · do not re-run · I.45BY 61b7cdf1-… untouched · J2 fixture c596e7bc-… (no re-run)
 [ ] Confirm I.45CV delete×export-history → HTTP 409 PRODUCTION VERIFIED (narrow) · empty delete NOT TESTED
@@ -758,9 +758,13 @@ SEARCH BEFORE CREATE         = TAK
 
 ## 12. MASTER PROMPTS — cold start (I.47)
 
-Kanoniczne, kompletne prompty startowe. **Nie kopiuj całego SSOT do czatu** — odsyłaj do plików w repozytorium. Living SSOT = [PROJECT_STATE.md](./PROJECT_STATE.md).
+**Living copy-paste start prompts (PL, 2026-10-24):**  
+[handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md)
+
+Tekst §12.1 / §12.2 poniżej = **continuity / HISTORY (I.47)** — struktura ról i reading order pozostaje ważna; **nie** utrzymuj drugiego living tipu ani drugiego „aktualnego stanu” w tym bloku. Skrót sesji i tip/deploy → [PROJECT_STATE.md](./PROJECT_STATE.md) §2 · mapa → [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md). **Nie kopiuj całego SSOT do czatu.**
 
 ### 12.1 MASTER PROMPT — NOWA SESJA CHATGPT
+
 
 ```text
 # BITRYMDYM — MASTER PROMPT · NOWA SESJA CHATGPT (ARCHITEKT)
