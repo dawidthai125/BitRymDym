@@ -36,13 +36,12 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
               </h1>
               <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
                 {beats.length > 0
-                  ? `${beats.length} pozycji · odsłuch → nagranie`
-                  : "Pusto · czekamy na press"}
+                  ? `${beats.length} bitów · słuchaj, potem nagraj`
+                  : "Cicho · katalog w drodze"}
               </p>
             </div>
             <p className="max-w-xs pb-0.5 text-sm leading-snug text-[var(--brd-mute)]">
-              Jak spis treści niezależnego wydawnictwa — bez marketplace’owego
-              szumu.
+              Czysta lista bitów. Bez banerów i hustlu.
             </p>
           </header>
 

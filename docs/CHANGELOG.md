@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — visual follow-up: copy + control-room REC AA
+
+**Status:** additive polish on `e160f9d` · **OD-15 / OD-16 remain OPEN** · Studio V2 structure **unchanged**
+**Copy:** natural PL on home / beats / beat Quick Take intro / takes archive / catalog “Wyróżniony” · no OD-16 close
+**Contrast:** control-room `--brd-rec: #db5a5a` (~4.74:1 on `#161918`); public REC hex unchanged
+**Seam:** paper header over graphite kept as intentional frame (local fixture screenshots) · live Studio UI **NOT VERIFIED** (auth gate)
+**Evidence:** [audits/_visual_followup_2026-10-24/README.md](./audits/_visual_followup_2026-10-24/README.md)
+
 ## 2026-10-24 — visual direction: paper zine + control room
 
 **Status:** additive Owner visual direction · **OD-15 / OD-16 remain OPEN** · Studio Visual Parity V2 structural contracts **unchanged**

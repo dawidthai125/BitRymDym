@@ -409,9 +409,7 @@ export function BeatDetailClient({
               Nagraj na tym bicie
             </h2>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Mic → REC → limit czasu → przebiegi bitu i mikrofonu → podgląd
-              take’a. Istniejące stany błędów i komunikaty bezpieczeństwa bez
-              zmian.
+              Wbijasz mic, łapiesz take przed limitem, odsłuchujesz poniżej.
             </p>
           </div>
           <BeatRecordingSurface

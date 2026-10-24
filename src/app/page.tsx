@@ -75,7 +75,7 @@ export default async function HomePage() {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-paper)_55%,transparent)]">
-                        A1 · z katalogu
+                        Z katalogu
                       </p>
                       <p className="truncate text-sm font-medium">
                         {featured.title}
@@ -105,7 +105,7 @@ export default async function HomePage() {
           <PageFrame width="wide" className="py-7 sm:py-8">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-2 brd-zine-masthead pb-3">
               <div>
-                <SectionLabel>Katalog · press sheet</SectionLabel>
+                <SectionLabel>Katalog · spis</SectionLabel>
                 <h2 className="brd-display mt-0.5 text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
                   Słuchaj. Wybierz. Nagraj.
                 </h2>
@@ -228,7 +228,7 @@ export default async function HomePage() {
                 <div className="flex flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
                   <div>
                     <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-                      Z katalogu · nie Twoja sesja
+                      Z katalogu · podgląd
                     </p>
                     {featured ? (
                       <div className="mt-3 flex items-start gap-3">
@@ -252,7 +252,7 @@ export default async function HomePage() {
                       </div>
                     ) : (
                       <p className="mt-3 text-sm text-[var(--brd-mute)]">
-                        Gdy katalog się zapełni — tu zobaczysz przykładowy bit.
+                        Tu wyląduje pierwszy bit z katalogu.
                       </p>
                     )}
                   </div>

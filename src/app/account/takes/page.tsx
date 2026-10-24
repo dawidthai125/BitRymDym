@@ -38,8 +38,7 @@ export default async function AccountTakesPage() {
               Moje nagrania
             </h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Dziennik prób — podgląd, pobieranie i usuwanie. Bez nowych
-              metadanych: tylko to, co już masz zapisane.
+              Podgląd, pobieranie, usuwanie — tylko to, co już nagrałeś.
             </p>
           </header>
 

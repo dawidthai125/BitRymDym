@@ -216,6 +216,12 @@
   --brd-green-mist: color-mix(in srgb, var(--brd-green-wash) 70%, var(--brd-paper));
   --brd-green-deep: #0f241e;
   --brd-ok: #7eb59a;
+  /*
+    REC / destructive on night paper — public #9a2f2f is ~2.4:1 (fails AA).
+    Brighter scoped signal keeps REC red and clears ~4.7:1 on #161918.
+  */
+  --brd-rec: #db5a5a;
+  --brd-danger: var(--brd-rec);
   --brd-warn: var(--brd-amber);
   --brd-focus: var(--brd-amber);
   --brd-audio-play: var(--brd-amber-soft);

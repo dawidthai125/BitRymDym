@@ -922,7 +922,7 @@ export function RecordingPanel({
       {state.phase === "READY_TAKE" ? (
         <div className="space-y-3">
           <p className="text-sm font-medium text-[var(--brd-ink)]" role="status">
-            Take gotowy — podgląd poniżej
+            Take gotowy — odsłuchaj poniżej
             {state.takeDurationSeconds != null
               ? ` · ${formatDurationSeconds(state.takeDurationSeconds)}`
               : ""}

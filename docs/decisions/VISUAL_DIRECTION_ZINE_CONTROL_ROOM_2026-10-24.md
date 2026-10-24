@@ -63,3 +63,16 @@ Demo visuals (`public/demo/visual/*`, hash-based `BeatArtwork`) are **not** real
 - Studio / takes archive readable on graphite with warm text; amber sparse; REC red for record
 - Mobile + desktop contrast / focus / disabled / loading / error / empty preserved
 - No global repaint of account / library / settings via `tone="studio"`
+
+---
+
+## 6. Follow-up 2026-10-24 (copy + control-room REC)
+
+**Additive polish only · OD-15 / OD-16 still OPEN · Studio V2 structure unchanged**
+
+| Change | Detail |
+|--------|--------|
+| UI copy | Dropped implementation-y strings (“bezpieczeństwa bez zmian”, “marketplace’owego szumu”, “czekamy na press”, “nie Twoja sesja”, etc.) for short PL rapper-facing lines |
+| REC contrast | Under `[data-brd-surface="control-room"]` only: `--brd-rec: #db5a5a` (~4.74:1 on `#161918`); public `#9a2f2f` kept |
+| Chrome seam | Paper header/nav over graphite main treated as intentional brand frame after local fixture screenshots — **no** global header theme |
+| Evidence | [audits/_visual_followup_2026-10-24/README.md](../audits/_visual_followup_2026-10-24/README.md) |
