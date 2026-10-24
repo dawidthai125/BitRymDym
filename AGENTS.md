@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -67,3 +67,20 @@ Rollback może iść autonomicznie tylko wtedy, gdy procedura jest wcześniej za
 Istniejący wygląd jest punktem odniesienia. Zwykłe zadanie funkcjonalne nie przebudowuje design systemu. Wyraźne zlecenie redesignu obejmuje nowe koncepcje wizualne, typografię, paletę, układ i język artystyczny w tym zakresie. Historyczny Design Freeze zamyka dawny zakres. Nie traktuj go jako zakazu zleconego redesignu i nie oznaczaj OD-15 jako CLOSED przy okazji wyglądu.
 
 <!-- END:bitrymdym-autonomy-policy -->
+
+<!-- BEGIN:bitrymdym-cursor-skills-protocol -->
+
+# Protokół skills i subagentów (Cursor)
+
+Trwały protokół pracy agenta Cursor w BitRymDym (nie zastępuje autonomii ani bramek powyżej).
+
+1. **Przed zadaniem** sprawdź dostępne Agent Skills i przeczytaj instrukcje **tylko** pasujących skillsów (np. research-and-planning, documentation-audit, security-review, testing-and-verification, deployment-readiness, frontend-ux).
+2. **Read-only subagenci** — używaj ich do niezależnych analiz, audytów bezpieczeństwa, kontroli zakresu staged i weryfikacji faktów. Subagent nie edytuje plików, nie dostaje sekretów / env / cookies i **nigdy** nie dostaje Sacred WIP.
+3. **Główny Cursor** wykonuje edycje w zakresie zlecenia.
+4. **Brakujący skill** — wolno doinstalować wyłącznie z oficjalnego lub curated źródła GitHub po odczycie manifestu/instrukcji i przypięciu wersji albo commita. Zakaz niezweryfikowanych bootstrap scriptów, przypadkowych promptów i binariów. W raporcie podaj nazwę, źródło i wersję.
+5. **Sacred WIP** `src/lib/takes/recording-eligibility-service.ts` — nigdy nie czytaj, nie wyszukuj, nie diffuj, nie haszuj i nie przekazuj agentom.
+6. **Dirty WIP** — zachowuj; nie czyść, nie stashuj, nie resetuj i nie synchronizuj niepowiązanego worktree bez bramki Ownera.
+7. **Dokumentacja vs produkcja** — lokalny PASS ≠ produkcja; Ready deploy ≠ funkcjonalne GREEN. Aktualny tip i deploy → `docs/PROJECT_STATE.md`.
+
+<!-- END:bitrymdym-cursor-skills-protocol -->
+

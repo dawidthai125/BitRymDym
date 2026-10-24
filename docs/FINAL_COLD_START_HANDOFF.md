@@ -2,7 +2,7 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-24 — **DOCUMENTATION CONSOLIDATION / COLD-START RECOVERY (docs-only, no commit/push)** · Git planes re-verified read-only · living tip/deploy/NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** · prior STU-16 Limited Production Pass evidence retained as **LAST DOCUMENTED (2026-10-19)** · Sacred WIP fingerprint **MATCH** · dirty WIP **PRESERVE** · consolidation evidence → [audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md](./audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md) · [CHANGELOG 2026-10-24](./CHANGELOG.md)
+**Updated:** 2026-10-24 — **Studio / RLS / theme delivery + docs consolidation** · living tip **`35543c8`** (parent **`1e75fd3`**) · mapa funkcji [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) · public+admin smoke **PASS** · USER RLS/REC/migracje prod **NOT VERIFIED/NOT RUN** · OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** · [CHANGELOG 2026-10-24](./CHANGELOG.md)
 **Type:** Documentation continuity · cold-start entry · multi-plane (local HEAD ≠ origin/main ≠ production deploy ≠ prod DB ≠ Storage ≠ dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 below is living for Git planes as of 2026-10-24.** Blocks that still cite tip `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git ls-remote` before claiming current tip.
@@ -36,40 +36,35 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-═══ SESSION VERIFY 2026-10-24 (Git · post local↔GitHub reconcile) ═══
+═══ SESSION VERIFY 2026-10-24 (Studio / RLS / theme · post push) ═══
 REPO PATH                     = C:\Users\dawid\Desktop\BitRymDym\bitrymdym
 BRANCH                        = main
-LOCAL HEAD / ORIGIN/MAIN      = IDENTICAL (ahead/behind 0/0)
+LIVING TIP                    = 35543c8 (VOCAL unarmed)
+                              · parent 1e75fd3 (owner SELECT DRAFT assets + local audit pack)
                               · verify: git rev-parse HEAD · git ls-remote origin refs/heads/main
-RECONCILE MERGE               = 4b14ac9bb9c568957ab920452d0bde14b1f1956b
-                              · integrates b55b5fb (docs consolidation) + 90e538d + 800f611
-SESSION VERIFY DOCS           = 61fba990bb9844c4e6f02c9cfcf675a35d74933a
-                              · docs: record post-reconcile Git tip and SESSION VERIFY
-                              · later tip pins may be children — re-check ls-remote
-DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits · scripts)
+DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits)
                               · do NOT clean / stash / reset / sync unrelated WIP
 SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts
-                              · PRESERVE · status-only · do not open/edit/hash/search
-PRODUCTION DEPLOYMENT         = NOT RE-VERIFIED IN THIS SESSION
-                              · last documented READY dpl_31mz… @ 0a565c0 (2026-10-19)
-                              · tip 4b14ac9 may auto-deploy — re-verify:
-                                vercel inspect www.bitrymdym.pl
-                              · Ready ≠ functional GREEN
-APP TIP (last documented)     = d12e38e · BPM CONFLICT labeling CLOSED 2026-10-19
+                              · PRESERVE · never open/edit/hash/search/diff/pass to agents
+PRODUCTION DEPLOYMENT         = GitHub Production @ 35543c8 success (2026-10-24)
+                              · public smoke PASS · admin auth visual PASS
+                              · vercel inspect CLI OAuth NOT RUN (do not login blindly)
+                              · Ready ≠ functional GREEN · USER RLS / REC / migracje NOT VERIFIED
+FUNCTIONAL MAP                = docs/PROJECT_FUNCTIONAL_MAP.md
+START PROMPTS                 = docs/handoffs/MASTER_START_PROMPT_CHATGPT_PL.md
+                              · docs/handoffs/MASTER_START_PROMPT_CURSOR_PL.md
+APP TIP (BPM UX HISTORY)      = d12e38e · CONFLICT labeling CLOSED 2026-10-19
 NEXT UNIT                     = STOP — OWNER DECISION REQUIRED · see PROJECT_STATE §2 NEXT UNIT
-PREMIUM RETENTION             = HOLD · local WIP (migrations + fencing contract + PG gate)
-                              · not activated · not applied remotely · keep uncommitted
-                              · contract: decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md
-CONNECTIONS MATRIX            = PROJECT_STATE §2c · runbooks/PRODUCTION_BOOTSTRAP.md
+PREMIUM RETENTION             = HOLD · local WIP · not activated remotely
 LOCAL SUPABASE PORTS (WIP)    = API 54421 · DB 54422 · shadow 54420 · Studio 54423 · Inbucket 54324
                               · DO NOT assume API is still 54321
-CONTABO / VPS                 = last-known host vmi3622761 · persistent disabled/inactive
-                              · SSH/live host status: NOT VERIFIED in this session
+LOCAL STUDIO E2E              = mock MediaRecorder · loopback only · restore .env.local byte-exact
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl (308→www)
                               · https://bitrymdym.vercel.app
+OD-15 / OD-16                 = OPEN
 LIVING SSOT                   = docs/PROJECT_STATE.md
-ENTRY                         = this file → MASTER_HANDOFF → PROJECT_STATE
-PROMPTS                       = §12 below
+ENTRY                         = this file → MASTER_HANDOFF → PROJECT_STATE → FUNCTIONAL MAP
+PROMPTS                       = handoffs/ + §12 below (if present)
 
 ═══ LAST DOCUMENTED 2026-10-19 (STU-16 Limited Production Pass · ≠ current Git tip) ═══
 DOCS TIP (then)               = 0a565c0 · live docs dpl last-known dpl_31mz… @ 0a565c0

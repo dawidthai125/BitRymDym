@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — Studio delivery docs consolidation + cold-start handoffs
+
+**Status:** docs-only consolidation after Studio / RLS / theme session  
+**Tip (app):** **`35543c8`** (VOCAL unarmed) · parent **`1e75fd3`** (owner SELECT + local Studio evidence)  
+**Prod (read-only):** GitHub Production deployment **success** @ `35543c8` · public smoke **PASS** · admin authenticated visual **PASS** · USER RLS / audio-REC / migracje **NOT VERIFIED / NOT RUN**  
+**Docs:** [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) · PROJECT_STATE / FINAL_COLD_START / MASTER_HANDOFF / AGENTS skills protocol  
+**OD-15 / OD-16:** remain **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE**
+
 ## 2026-10-24 — logged-in theme chrome BLOCKED (no Docker / no session)
 
 **Status:** evidence-only · **OD-15 / OD-16 remain OPEN**

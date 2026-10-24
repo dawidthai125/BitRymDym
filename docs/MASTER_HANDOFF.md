@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-24 — **cold-start consolidation pointer (docs-only)** · living tip / deployment / NEXT / connections → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 + §2c ONLY** · Git SESSION VERIFY 2026-10-24: local HEAD **`96e4c31`** behind **`origin/main` `800f611`** · body tables below that still cite tip **`5212933`** / prod **`2adb569`** / **`0a565c0`** are **HISTORY / LAST DOCUMENTED** unless they match PROJECT_STATE after independent re-verify · KIND_REJECT / SFM / Contabo planes unchanged (code ≠ apply ≠ GREEN) · Premium Retention **HOLD** (local WIP) · **STOP — OWNER DECISION REQUIRED** · evidence [audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md](./audits/DOCUMENTATION_CONSOLIDATION_COLD_START_2026-10-24.md)
+**Updated:** 2026-10-24 — **Studio / RLS / theme delivery pointer** · living tip / deployment / NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 ONLY** (tip **`35543c8`**) · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/](./handoffs/) · body tables citing **`5212933`** / **`2adb569`** / **`0a565c0`** = **HISTORY** unless re-verified · Premium Retention **HOLD** · OD-15/OD-16 **OPEN** · **STOP — OWNER DECISION REQUIRED** · evidence [audits/_studio_recording_local_e2e_2026-10-24/](./audits/_studio_recording_local_e2e_2026-10-24/)
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
