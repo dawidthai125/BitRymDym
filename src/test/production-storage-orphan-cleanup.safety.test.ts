@@ -1,5 +1,5 @@
 /**
- * P0 + P0.2 + P0.3 (R1) + R3.1 local safety tests for orphan cleanup.
+ * P0 + P0.2 + P0.3 (R1) + R2 import isolation + R3.1 local safety tests.
  * Helpers + executeWithDeps / executeDeletePhaseWithDeps with mocks only.
  * Never creates a real Supabase client or reads production inventory.
  */
@@ -158,12 +158,34 @@ describe("orphan cleanup P0 helper safety", () => {
   });
 });
 
-describe("orphan cleanup P0.2 executeWithDeps integration", () => {
-  it("import does not create production client (createClient never used here)", () => {
-    // This suite only uses executeWithDeps with mocks; createProductionDeps is CLI-only.
-    expect(typeof executeWithDeps).toBe("function");
-  });
+describe("orphan cleanup R2 import isolation", () => {
+  it("dynamic import does not call createClient", async () => {
+    // Fresh module graph so this assertion is not satisfied by a prior cache hit.
+    vi.resetModules();
+    const createClientMock = vi.fn(() => {
+      throw new Error(
+        "createClient must not run during orphan-cleanup module import",
+      );
+    });
+    // Registered before dynamic imports below (doMock is not hoisted).
+    vi.doMock("@supabase/supabase-js", () => ({
+      createClient: createClientMock,
+    }));
 
+    // Prove the mock is the active binding before evaluating the cleanup module.
+    const supabase = await import("@supabase/supabase-js");
+    expect(supabase.createClient).toBe(createClientMock);
+    expect(createClientMock).toHaveBeenCalledTimes(0);
+
+    const mod = await import("../../scripts/production-storage-orphan-cleanup");
+
+    expect(createClientMock).toHaveBeenCalledTimes(0);
+    expect(typeof mod.executeWithDeps).toBe("function");
+    // Do not call main / createProductionDeps / execute / classify — import only.
+  });
+});
+
+describe("orphan cleanup P0.2 executeWithDeps integration", () => {
   it("T1a: catalog with metadata — executeWithDeps → remove calls = 0", async () => {
     const inv: InventoryObject[] = [
       { object_path: CATALOG_KEY, size_bytes: 16044, created_at: null },
