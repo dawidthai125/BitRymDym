@@ -1,21 +1,29 @@
 {
-  "probedAt": "2026-10-24T15:14:00Z",
+  "probedAt": "2026-10-24T15:18:00Z",
   "base": "http://localhost:3456",
-  "playwright": {
-    "goto": "/studio",
-    "finalUrl": "http://localhost:3456/sign-in",
-    "cookieCount": 0,
-    "authCookieNames": []
-  },
-  "ideBrowser": {
-    "goto": "/account",
-    "finalUrl": "http://localhost:3456/sign-in",
-    "observed": "sign-in form + theme toggle; no account menu"
+  "overall": "BLOCKED",
+  "spoofUsed": false,
+  "docker": {
+    "cliOnPath": false,
+    "desktopExePresent": false,
+    "registryUninstallDocker": false
   },
   "localSupabase": {
-    "dockerOnPath": false,
-    "supabaseStatus": "failed — docker not found"
+    "url": "http://127.0.0.1:54321",
+    "reachable": false
   },
-  "spoofUsed": false,
-  "loggedInScreenshots": []
+  "playwright": {
+    "cookieCount": 0,
+    "authCookieNames": [],
+    "routes": [
+      { "route": "/studio", "finalUrl": "http://localhost:3456/sign-in", "redirectedToSignIn": true },
+      { "route": "/account/takes", "finalUrl": "http://localhost:3456/sign-in", "redirectedToSignIn": true },
+      { "route": "/account", "finalUrl": "http://localhost:3456/sign-in", "redirectedToSignIn": true },
+      { "route": "/account/downloads", "finalUrl": "http://localhost:3456/sign-in", "redirectedToSignIn": true },
+      { "route": "/settings", "finalUrl": "http://localhost:3456/sign-in", "redirectedToSignIn": true },
+      { "route": "/library", "finalUrl": "http://localhost:3456/sign-in", "redirectedToSignIn": true }
+    ]
+  },
+  "loggedInScreenshots": [],
+  "ihdr": []
 }

@@ -6,10 +6,10 @@ Format: data, zakres, skrót.
 
 ---
 
-## 2026-10-24 — logged-in theme chrome probe (no session)
+## 2026-10-24 — logged-in theme chrome BLOCKED (no Docker / no session)
 
 **Status:** evidence-only · **OD-15 / OD-16 remain OPEN**
-**Result:** Studio / takes / account / downloads / settings / library remain **NOT VERIFIED** — no authorized local session; Docker/local Supabase unavailable; auth gate not spoofed
+**Result:** Studio / takes / account / downloads / settings / library = **BLOCKED** — Docker Desktop absent; local Supabase down; all six routes redirect to `/sign-in`; auth not spoofed; no logged-in PNGs
 **Evidence:** [audits/_visual_theme_logged_in_2026-10-24/README.md](./audits/_visual_theme_logged_in_2026-10-24/README.md)
 
 ## 2026-10-24 — global dark chrome: toggle by auth + route pass
