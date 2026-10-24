@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-24 — visual evidence correction (viewport PNG)
+
+**Status:** evidence-only · no chrome / product UI change
+**Fix:** replaced Cursor-panel PNGs (IHDR **489×698**, misleading names) with Playwright captures **1280×800** and **390×844**, DevTools hidden · Studio logged-in still **NOT VERIFIED**
+**Evidence:** [audits/_visual_followup_2026-10-24/README.md](./audits/_visual_followup_2026-10-24/README.md)
+
 ## 2026-10-24 — visual follow-up: copy + control-room REC AA
 
 **Status:** additive polish on `e160f9d` · **OD-15 / OD-16 remain OPEN** · Studio V2 structure **unchanged**
