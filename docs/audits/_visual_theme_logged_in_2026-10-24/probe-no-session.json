@@ -1,0 +1,21 @@
+{
+  "probedAt": "2026-10-24T15:14:00Z",
+  "base": "http://localhost:3456",
+  "playwright": {
+    "goto": "/studio",
+    "finalUrl": "http://localhost:3456/sign-in",
+    "cookieCount": 0,
+    "authCookieNames": []
+  },
+  "ideBrowser": {
+    "goto": "/account",
+    "finalUrl": "http://localhost:3456/sign-in",
+    "observed": "sign-in form + theme toggle; no account menu"
+  },
+  "localSupabase": {
+    "dockerOnPath": false,
+    "supabaseStatus": "failed — docker not found"
+  },
+  "spoofUsed": false,
+  "loggedInScreenshots": []
+}
