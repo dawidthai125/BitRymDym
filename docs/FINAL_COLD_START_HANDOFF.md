@@ -36,30 +36,28 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-═══ SESSION VERIFY 2026-10-24 (read-only git · docs consolidation) ═══
+═══ SESSION VERIFY 2026-10-24 (Git · post local↔GitHub reconcile) ═══
 REPO PATH                     = C:\Users\dawid\Desktop\BitRymDym\bitrymdym
 BRANCH                        = main
-LOCAL HEAD                    = 96e4c31550819ba70297945d13cd7dec3113bf0f
-                              · fix(build): restore reproducible Premium production build (2026-10-21)
-ORIGIN/MAIN (ls-remote)       = 800f611de0b3853bf6cb64e16bc72b2be40d3252
-                              · test(audio): isolate real MP3 encode from the default suite (2026-10-23)
-AHEAD/BEHIND                  = local BEHIND origin/main by 2
-                              · missing on local HEAD: 90e538d (docs autonomy policy) · 800f611 (media suite)
-                              · DO NOT fetch/pull/merge/reset without Owner GO (dirty worktree)
+LOCAL HEAD                    = 4b14ac9bb9c568957ab920452d0bde14b1f1956b
+                              · Merge remote-tracking branch 'origin/main'
+                              · integrates b55b5fb (docs consolidation) + 90e538d + 800f611
+ORIGIN/MAIN (ls-remote)       = 4b14ac9bb9c568957ab920452d0bde14b1f1956b
+                              · IDENTICAL to local HEAD
+AHEAD/BEHIND                  = 0 / 0
 DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits · scripts)
                               · do NOT clean / stash / reset / sync unrelated WIP
 SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts
-                              SHA256 5AE4C2311704DCDAE51CE36D8E69E1CA162F0C55AB14866EB30E73DC50EEECB9
-                              · MATCH verified 2026-10-24 (hash only · do not open/edit)
+                              · PRESERVE · status-only · do not open/edit/hash/search
 PRODUCTION DEPLOYMENT         = NOT RE-VERIFIED IN THIS SESSION
                               · last documented READY dpl_31mz… @ 0a565c0 (2026-10-19)
-                              · origin tip 800f611 likely auto-deployed — re-verify:
+                              · tip 4b14ac9 may auto-deploy — re-verify:
                                 vercel inspect www.bitrymdym.pl
                               · Ready ≠ functional GREEN
 APP TIP (last documented)     = d12e38e · BPM CONFLICT labeling CLOSED 2026-10-19
 NEXT UNIT                     = STOP — OWNER DECISION REQUIRED · see PROJECT_STATE §2 NEXT UNIT
-PREMIUM RETENTION             = HOLD · local untracked WIP (migrations + fencing contract + PG gate)
-                              · NOT on origin/main · NOT applied remotely · NOT activated
+PREMIUM RETENTION             = HOLD · local WIP (migrations + fencing contract + PG gate)
+                              · not activated · not applied remotely · keep uncommitted
                               · contract: decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md
 CONNECTIONS MATRIX            = PROJECT_STATE §2c · runbooks/PRODUCTION_BOOTSTRAP.md
 LOCAL SUPABASE PORTS (WIP)    = API 54421 · DB 54422 · shadow 54420 · Studio 54423 · Inbucket 54324
