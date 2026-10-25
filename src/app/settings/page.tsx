@@ -92,7 +92,10 @@ export default async function SettingsPage() {
             aria-labelledby="settings-theme"
             className="mt-8 border border-[var(--brd-line)] p-5"
           >
-            <SectionLabel>Wygląd</SectionLabel>
+            {/* Decorative eyebrow — announced name is the h2 below. */}
+            <div aria-hidden="true">
+              <SectionLabel>Wygląd</SectionLabel>
+            </div>
             <h2
               id="settings-theme"
               className="mt-2 text-lg font-semibold tracking-tight"
@@ -108,36 +111,49 @@ export default async function SettingsPage() {
             </div>
           </section>
 
-          {SETTINGS_HUB_LINKS.map((group) => (
-            <section
-              key={group.group}
-              aria-label={group.group}
-              className="mt-8"
-            >
-              <SectionLabel>{group.group}</SectionLabel>
-              <ul className="mt-3 divide-y divide-[var(--brd-line)] border border-[var(--brd-line)]">
-                {group.items.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex min-h-11 flex-col gap-0.5 px-4 py-3 outline-none transition-colors",
-                        "hover:bg-[var(--brd-paper-deep)]",
-                        "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brd-focus)]",
-                      )}
-                    >
-                      <span className="text-sm font-medium text-[var(--brd-ink)]">
-                        {item.title}
-                      </span>
-                      <span className="text-sm text-[var(--brd-ink-soft)]">
-                        {item.description}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          {SETTINGS_HUB_LINKS.map((group) => {
+            const headingId = `settings-group-${group.group
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "")}`;
+            return (
+              <section
+                key={group.group}
+                aria-labelledby={headingId}
+                className="mt-8"
+              >
+                <h2
+                  id={headingId}
+                  className="brd-meta text-[11px] uppercase tracking-[0.18em] text-[var(--brd-mute)]"
+                >
+                  {group.group}
+                </h2>
+                <ul className="mt-3 divide-y divide-[var(--brd-line)] border border-[var(--brd-line)]">
+                  {group.items.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex min-h-11 flex-col gap-0.5 px-4 py-3 outline-none transition-colors",
+                          "hover:bg-[var(--brd-paper-deep)]",
+                          "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brd-focus)]",
+                        )}
+                      >
+                        <span className="text-sm font-medium text-[var(--brd-ink)]">
+                          {item.title}
+                        </span>
+                        <span className="text-sm text-[var(--brd-ink-soft)]">
+                          {item.description}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
         </PageFrame>
       </main>
     </AppShell>

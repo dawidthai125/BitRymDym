@@ -58,4 +58,21 @@ describe("settings hub (navigation only)", () => {
   it("Premium copy does not claim in-app purchase", () => {
     expect(src).toMatch(/Zakup w aplikacji nie jest dostępny/);
   });
+
+  it("exposes real h2 headings for theme and link groups", () => {
+    expect(src).toMatch(/id="settings-theme"[\s\S]*?>\s*Motyw\s*</);
+    expect(src).toContain('aria-labelledby={headingId}');
+    expect(src).toMatch(/<h2\b[^>]*\bid=\{headingId\}/);
+    expect(src).toContain("Konto — powiązane ekrany");
+  });
+
+  it("account hash destinations still exist on /account", () => {
+    const account = readFileSync(
+      join(process.cwd(), "src/app/account/page.tsx"),
+      "utf8",
+    );
+    for (const id of ["profil", "security", "danger"] as const) {
+      expect(account).toContain(`id="${id}"`);
+    }
+  });
 });
