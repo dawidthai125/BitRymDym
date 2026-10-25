@@ -4,8 +4,8 @@
 |------|---------|
 | Data | 2026-10-25 |
 | Charakter | **Audyt read-only** — bez implementacji, bez migracji, bez deployu |
-| Lokalny HEAD / `origin/main` | **`4c64ef3`** (`docs(ops): add ECC Stage 1 protected frontmatter checklist`) — FACT: `git rev-parse` + `git ls-remote` w sesji audytu |
-| Living tip w `PROJECT_STATE.md` §2 | Po GO 2026-10-25: tip przed docs **`36b1447`**; migracja owner SELECT **applied** (patrz §4) — re-check `ls-remote` po docs push |
+| Living tip / `origin/main` (aktualny) | **`57bba09`** (`docs(rls): record prod owner SELECT apply and blocked USER smoke`) — re-check `ls-remote` po tej korekcie · **HISTORY sesji audytu RO:** wtedy zmierzono **`4c64ef3`** (`docs(ops): add ECC Stage 1 protected frontmatter checklist`) |
+| Living tip w `PROJECT_STATE.md` §2 | Docs RLS commit **`57bba09`** · tip przed tym docs = **`36b1447`** · migracja owner SELECT **applied** (patrz §4) — re-check `ls-remote` po korekcie EOL/scope |
 | Produkcja (deploy / smoke) | Public+admin visual PASS @ `35543c8` (2026-10-24) **HISTORY**; owner SELECT **DB apply PASS** 2026-10-25; USER RLS runtime **BLOCKED** |
 | Zakazane pliki | Sacred WIP `recording-eligibility-service.ts` · `studio-editor.tsx` — **nie otwierane / nie diffowane** |
 | Dirty WIP | **PRESERVE** (bez reset/stash/sync) |
@@ -100,7 +100,7 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 | Gold 90d design-only; prod **28d** (Owner 2026-10-25) | **ZGODNE** | [PREMIUM_GOLD_RETENTION_28D…](../decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md) + `premium-tiers.ts` + `PREMIUM_RETENTION_DAYS` |
 | GOLD 28d export vs matrix (historycznie 30d) | **ROZSTRZYGNIĘTE** → obie osie **28d** | Owner GO 2026-10-25; SILVER nadal 30d; W2B living claim też **28d** |
 | Retention HOLD | **ZGODNE** | STATE + brak crona retention w `vercel.json` |
-| Living tip `35543c8` (STATE §2) vs git `4c64ef3` | **SPRZECZNE / stale docs** | `git ls-remote` w sesji |
+| Living tip `35543c8` (STATE §2) vs git `4c64ef3` | **HISTORY sesji audytu** (wówczas SPRZECZNE) · **SUPERSEDED** tipem docs **`57bba09`** / living **`36b1447`→`57bba09`** | `git ls-remote` w sesji RO |
 | STATE §2 vs §2c deploy SHA | **wewnętrznie stale** | documentation-auditor |
 | Unit Sample Policy / Premium | **PASS** (sesja) | vitest 28+19+8+23 |
 | Owner SELECT migracja apply + catalog | **PASS** (2026-10-25) | history `20261025152524`; policy `beat_audio_assets_select_own` |
@@ -130,7 +130,7 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 - Desktop `site-header` **bez** `aria-current="page"` (mobile bottom nav ma) — a11y finding  
 - `/settings` = stub PARTIAL  
 - MASTER_SSOT / handoff Account Level **stale** względem Sample Policy  
-- `PROJECT_STATE` tip/deploy sekcje **nie zsynchronizowane** z `4c64ef3`  
+- ~~`PROJECT_STATE` tip/deploy sekcje **nie zsynchronizowane** z `4c64ef3`~~ — **SUPERSEDED:** living tip docs **`57bba09`** (wcześniejszy pomiar sesji RO = `4c64ef3` = HISTORY)  
 - Deep Studio editor **NOT VERIFIED** (celowe ograniczenie audytu)  
 - Wcześniejszy a11y: tap targets mobile header, etykiety (PASS z zastrzeżeniami) — nie regenerowane tu  
 - ~~Rozbieżność Gold 28d vs 30d~~ — **ROZSTRZYGNIĘTE Owner 2026-10-25:** obie osie **28d**; Premium Retention nadal **HOLD**  
@@ -149,7 +149,7 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 | **P0** | Nie aktywować Premium Retention / worker JWT / Storage purge bez osobnego GO |
 | **P1** | Domknięcie OD-04/07 przed jakimkolwiek sklepem; nie obiecywać cen |
 | **P1** | ~~Apply owner SELECT `beat_audio_assets`~~ → **DONE 2026-10-25**; pozostałe: **USER owner/peer/anon runtime smoke** (dedykowane sesje) |
-| **P1** | Aktualizacja living tip/deploy w PROJECT_STATE do `4c64ef3` + re-verify Vercel (docs GO) |
+| **P1** | ~~Aktualizacja living tip/deploy w PROJECT_STATE do `4c64ef3`~~ — **SUPERSEDED** (tip przeszedł `36b1447` → docs `57bba09`; nie wracać do `4c64ef3` jako celu) · Vercel re-verify = osobny docs GO przy potrzebie |
 | **P1** | SFM: staging E2E + worker host przed Production GREEN claim |
 | **P2** | Zsynchronizować MASTER_SSOT §19–23 / handoff Account Level z Sample Policy albo oznaczyć HISTORY |
 | **P2** | ~~Ujednolicić GOLD 28d vs 30d~~ → **DONE** (Owner 2026-10-25); Retention activation nadal osobne GO |
@@ -177,7 +177,7 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 
 ## 8. Rekomendacje kolejnych kroków (bez wdrożenia)
 
-1. **Docs GO:** zaktualizować PROJECT_STATE §2 tip/deploy do faktu `4c64ef3` + re-verify aliases.  
+1. **Docs GO (tip `4c64ef3`):** **SUPERSEDED** — living tip po docs RLS = **`57bba09`** (nie celować w `4c64ef3`). Re-verify aliases tylko przy osobnym GO.  
 2. **SSOT GO:** oznaczyć lub poprawić MASTER_SSOT / handoff Account Level vs Sample Policy (jedna oś prawdy).  
 3. **Security GO (remaining):** runtime USER owner/peer/anon na prod z istniejącymi sesjami + DRAFT (apply już DONE 2026-10-25).  
 
