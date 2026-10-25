@@ -87,17 +87,24 @@ describe("Recording Wave 4 — Sample Policy (Premium Tier)", () => {
     ).toBe(180);
   });
 
-  it("Account Level does not raise FREE sample policy", () => {
-    const legendCtx = ctx();
-    legendCtx.profile.accountLevel = "LEGEND_RAPPER";
-    expect(
-      assertTakeRecordAccess({
-        context: legendCtx,
+  it.each(["PRO_RAPPER", "LEGEND_RAPPER"] as const)(
+    "Account Level %s + FREE premium stays 30s QUICK (session AuthZ seam)",
+    (accountLevel) => {
+      // createTakeRecordingSessionFor → assertTakeRecordAccess(premiumTier from product);
+      // Rank must not raise duration / Full mode when Product Entitlement is FREE.
+      const ranked = ctx();
+      ranked.profile.accountLevel = accountLevel;
+      const access = assertTakeRecordAccess({
+        context: ranked,
         beat: { id: "b", status: "PUBLISHED", durationSeconds: 240 },
         premiumTier: "FREE",
-      }).maxRecordingSeconds,
-    ).toBe(30);
-  });
+      });
+      expect(access.maxRecordingSeconds).toBe(30);
+      expect(recordingModeForMaxSeconds(access.maxRecordingSeconds)).toBe(
+        "QUICK",
+      );
+    },
+  );
 
   it("recording mode maps QUICK vs FULL from max seconds", () => {
     expect(recordingModeForMaxSeconds(30)).toBe("QUICK");
