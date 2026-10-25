@@ -4,6 +4,7 @@
  * Never reads .env.local. Aborts on non-loopback URL.
  */
 import { execFileSync } from "child_process";
+import { randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
@@ -54,6 +55,114 @@ WHERE pol.polrelid = 'public.beat_audio_assets'::regclass
   AND pol.polcmd = 'r';
 `);
     expect(name).toBe("beat_audio_assets_select_own");
+  });
+
+  it("private DRAFT+MASTER READY: owner sees beat+asset; peer/anon see neither (transactional fixture)", () => {
+    // IDs stay in-process only — never logged or written to evidence files.
+    const ownerId = randomUUID();
+    const peerId = randomUUID();
+    const beatId = randomUUID();
+    const assetId = randomUUID();
+    expect(ownerId).not.toBe(peerId);
+
+    const raw = psql(`
+BEGIN;
+
+INSERT INTO auth.users (id, email, aud, role, raw_user_meta_data)
+VALUES (
+  ${psqlLiteral(ownerId)}::uuid,
+  ${psqlLiteral(`rls-own-${ownerId.slice(0, 8)}@bitrymdym.test`)},
+  'authenticated',
+  'authenticated',
+  '{"display_name":"RLS own"}'::jsonb
+);
+
+SET LOCAL ROLE service_role;
+SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
+
+INSERT INTO public.beats (
+  id, ownership_type, owner_id, title, bpm, duration_seconds, status, tags
+)
+VALUES (
+  ${psqlLiteral(beatId)}::uuid,
+  'USER',
+  ${psqlLiteral(ownerId)}::uuid,
+  ${psqlLiteral(`RLS DRAFT fixture ${beatId.slice(0, 8)}`)},
+  120,
+  30,
+  'DRAFT',
+  '{}'
+);
+
+INSERT INTO public.beat_audio_assets (
+  id, beat_id, purpose, status, object_key, content_type, byte_size, checksum_sha256, is_active
+)
+VALUES (
+  ${psqlLiteral(assetId)}::uuid,
+  ${psqlLiteral(beatId)}::uuid,
+  'MASTER',
+  'READY',
+  ${psqlLiteral(`user/${ownerId}/${beatId}/${assetId}.bin`)},
+  'audio/wav',
+  4096,
+  repeat('a', 64),
+  true
+);
+
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT set_config(
+  'request.jwt.claims',
+  ${psqlLiteral(JSON.stringify({ sub: ownerId, role: "authenticated" }))},
+  true
+);
+SELECT 'OWNER_BEAT=' || count(*)::text
+FROM public.beats WHERE id = ${psqlLiteral(beatId)}::uuid;
+SELECT 'OWNER_ASSET=' || count(*)::text
+FROM public.beat_audio_assets
+WHERE beat_id = ${psqlLiteral(beatId)}::uuid
+  AND purpose = 'MASTER'
+  AND is_active
+  AND status = 'READY';
+
+SELECT set_config(
+  'request.jwt.claims',
+  ${psqlLiteral(JSON.stringify({ sub: peerId, role: "authenticated" }))},
+  true
+);
+SELECT 'PEER_BEAT=' || count(*)::text
+FROM public.beats WHERE id = ${psqlLiteral(beatId)}::uuid;
+SELECT 'PEER_ASSET=' || count(*)::text
+FROM public.beat_audio_assets WHERE beat_id = ${psqlLiteral(beatId)}::uuid;
+
+RESET ROLE;
+SET LOCAL ROLE anon;
+SELECT set_config('request.jwt.claims', '{"role":"anon"}', true);
+SELECT 'ANON_BEAT=' || count(*)::text
+FROM public.beats WHERE id = ${psqlLiteral(beatId)}::uuid;
+SELECT 'ANON_ASSET=' || count(*)::text
+FROM public.beat_audio_assets WHERE beat_id = ${psqlLiteral(beatId)}::uuid;
+
+ROLLBACK;
+`);
+
+    const counts = parseLabeledCounts(raw);
+    expect(counts.OWNER_BEAT).toBe(1);
+    expect(counts.OWNER_ASSET).toBe(1);
+    expect(counts.PEER_BEAT).toBe(0);
+    expect(counts.PEER_ASSET).toBe(0);
+    expect(counts.ANON_BEAT).toBe(0);
+    expect(counts.ANON_ASSET).toBe(0);
+
+    // Fixture must not survive the rolled-back transaction.
+    const leftover = lastNumeric(
+      psql(`
+SELECT count(*)::text
+FROM public.beats
+WHERE id = ${psqlLiteral(beatId)}::uuid;
+`),
+    );
+    expect(leftover).toBe(0);
   });
 
   it("owner SELECT works; peer/anon isolated on non-PUBLISHED; PUBLISHED catalog intact", () => {
@@ -197,4 +306,15 @@ function lastNumeric(raw: string): number {
     if (/^\d+$/.test(lines[i]!)) return Number(lines[i]);
   }
   return Number.NaN;
+}
+
+function parseLabeledCounts(raw: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const m = line.trim().match(
+      /^(OWNER_BEAT|OWNER_ASSET|PEER_BEAT|PEER_ASSET|ANON_BEAT|ANON_ASSET)=(\d+)$/,
+    );
+    if (m) out[m[1]!] = Number(m[2]);
+  }
+  return out;
 }
