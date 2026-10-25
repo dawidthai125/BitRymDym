@@ -43,6 +43,15 @@ const DENSITY_PRESETS: Record<
   default: { bars: 72, heightClassName: "h-12" },
 };
 
+/**
+ * Sticky mini-player seek: visual bars stay h-5 (20px); interactive hit target
+ * is min-h-11 (44px). Used only when density="sticky" && interactive.
+ * Catalog / detail / studio densities are unchanged.
+ */
+export const STICKY_SEEK_HIT_CLASS =
+  "relative flex min-h-11 w-full select-none items-center";
+export const STICKY_SEEK_VISUAL_CLASS = "h-5";
+
 type WaveformProps = {
   seed: string;
   progress?: number;
@@ -82,6 +91,8 @@ export function Waveform({
   const preset = DENSITY_PRESETS[density];
   const barCount = peaksProp?.length || bars || preset.bars;
   const height = heightClassName ?? preset.heightClassName;
+  const stickySeekHit =
+    density === "sticky" && interactive && !heightClassName;
   const peaks =
     peaksProp && peaksProp.length > 0
       ? peaksProp
@@ -149,12 +160,18 @@ export function Waveform({
 
   return (
     <div
-      className={cn("relative w-full select-none", height, className)}
+      className={cn(
+        stickySeekHit
+          ? STICKY_SEEK_HIT_CLASS
+          : cn("relative w-full select-none", height),
+        className,
+      )}
       role={interactive ? "slider" : "img"}
       aria-label={ariaLabel}
       aria-valuemin={interactive ? 0 : undefined}
       aria-valuemax={interactive ? 100 : undefined}
       aria-valuenow={interactive ? Math.round(clamped * 100) : undefined}
+      data-seek-hit={stickySeekHit ? "sticky" : undefined}
       style={interactive ? { touchAction: "none" } : undefined}
       onPointerDown={interactive && onSeekRatio ? handlePointerDown : undefined}
       onPointerMove={interactive && onSeekRatio ? handlePointerMove : undefined}
@@ -178,7 +195,13 @@ export function Waveform({
       }
       tabIndex={interactive ? 0 : undefined}
     >
-      <div className="flex h-full w-full items-center gap-px">
+      <div
+        className={cn(
+          "relative flex w-full items-center gap-px",
+          stickySeekHit ? STICKY_SEEK_VISUAL_CLASS : "h-full",
+        )}
+        aria-hidden={stickySeekHit ? true : undefined}
+      >
         {peaks.map((peak, index) => {
           const ratio = (index + 0.5) / peaks.length;
           const active = ratio <= clamped;
@@ -194,8 +217,19 @@ export function Waveform({
             />
           );
         })}
+        {playheadVisible && stickySeekHit ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-[8%] w-px"
+            style={{
+              left: `${clamped * 100}%`,
+              backgroundColor: playheadColor,
+              opacity: 0.85,
+            }}
+          />
+        ) : null}
       </div>
-      {playheadVisible ? (
+      {playheadVisible && !stickySeekHit ? (
         <span
           aria-hidden
           className="pointer-events-none absolute inset-y-[8%] w-px"
