@@ -571,7 +571,7 @@ DECISION REQUIRED
 
 # 18. QUICK TAKE — TYMCZASOWE NAGRANIE
 
-> **Implementation policy (2026-09-27):** Recording / Quick Take Design Freeze v1.0 is **LOCKED** — see [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md). Owner decisions OD-REC-01…08 CLOSED. Runtime implementation awaits Wave 1 Owner GO. V1 stores **MIC TAKE** only (not permanent beat+vocal mix). Account Level supplies base entitlements; future Premium is an overlay (payments still OFF). SSOT §22–§23 “Premium Full Take” language remains product truth for paid tier; V1 maps Full Take to `PRO_RAPPER` / `LEGEND_RAPPER` base entitlements per freeze D04/D05 until Premium plans (OD-08) ship.
+> **Implementation policy (P1 / OD-08 — supersedes 2026-09-27 Account Level→Full Take note):** Recording / Quick Take Design Freeze v1.0 remains **LOCKED** for MIC TAKE semantics — see [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md). Owner OD-REC-01…08 CLOSED. V1 stores **MIC TAKE** only (not permanent beat+vocal mix). **Recording duration and QUICK/FULL** are governed by **Premium Tier Sample Policy** (`SAMPLE_POLICY_DEFAULTS` / `getSamplePolicy`; actors `ANONYMOUS` · `FREE` · `BRONZE` · `SILVER` · `GOLD`) — **not** Account Level. `PRO_RAPPER` / `LEGEND_RAPPER` alone do **not** raise the limit or grant Full Take; with Product Entitlement `FREE`, AuthZ keeps **30 s / QUICK** (wave4-unit). Admin may override **only** BRONZE/SILVER/GOLD `maxRecordingSeconds` (1–180). Historical freeze D04/D05 Rank→Full Take mapping is **stale** vs P1. This axis is **not** export/unlock, W2 artifact retention, or SFM. See §19–§23.
 
 BitRymDym posiada własny system nagrywania zintegrowany z autorskim playerem.
 
