@@ -168,6 +168,8 @@ account_level = BEGINNER_RAPPER
 `BEGINNER_RAPPER` jest **zatwierdzonym** defaultem nowego użytkownika.  
 Nie jest mechanizmem Premium i nie przyznaje płatnych funkcji.
 
+**Limity nagrań Quick Take (runtime):** nie wynikają z Account Level. Oś limitu to **Premium Tier / Sample Policy actor** (`ANONYMOUS` · `FREE` · `BRONZE` · `SILVER` · `GOLD`) — kod: `SAMPLE_POLICY_DEFAULTS` / `getSamplePolicy`. Patrz §19–§23 (skorygowane względem P1).
+
 **First ADMIN (OD-20 CLOSED / ACCEPTED, 2026-09-25):**
 
 Pierwszy ADMIN jest tworzony wyłącznie przez **manual / operator-controlled bootstrap** poza normalnym signup flow aplikacji.  
@@ -590,11 +592,16 @@ Użytkownik musi udzielić przeglądarce dostępu do mikrofonu.
 
 # 19. QUICK TAKE — UŻYTKOWNIK STANDARDOWY
 
-Standardowy użytkownik może nagrać:
+> **Oś limitu (P1 / runtime):** Sample Policy actor **FREE** (zalogowany bez płatnego entitlement), **nie** Account Level.
+> Wartości poniżej = **runtime defaults** z `SAMPLE_POLICY_DEFAULTS` (nie osobna reguła Rank).
+
+Standardowy użytkownik (FREE Sample Policy) może nagrać:
 
 ```text
 MAKSYMALNIE 30 SEKUND
 ```
+
+(efektywnie: `MIN(długość bitu, 30, 180)`.)
 
 Nagranie jest tymczasowe.
 
@@ -646,13 +653,15 @@ Zalogowany użytkownik może zapisać próbkę w:
 MOJE PRÓBKI
 ```
 
-Standardowa retencja:
+**Retencja (runtime default FREE Sample Policy — nie Account Level):**
 
 ```text
-24 GODZINY
+12 GODZIN
 ```
 
-Po 24 godzinach nagranie jest automatycznie usuwane.
+(`SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds` = 12 × 3600. Historyczne „24 godziny” / Account Level BEGINNER = **stale** względem P1.)
+
+Po upływie TTL nagranie jest automatycznie usuwane (janitor / `expires_at`).
 
 Użytkownik może wcześniej:
 
@@ -665,21 +674,18 @@ Użytkownik może wcześniej:
 
 # 22. PREMIUM — FULL TAKE
 
-Użytkownik Premium może nagrać cały utwór na wybranym bicie.
+> **Runtime (P1):** „Premium” w sensie limitu nagrania = Sample Policy actors **BRONZE / SILVER / GOLD** (overlay `premium_entitlements`), **nie** Account Level `PRO_RAPPER` / `LEGEND_RAPPER`.
+> Długość = `MIN(długość bitu, tierCap, 180)`. Defaults: BRONZE 60 s · SILVER 120 s · GOLD 180 s. Admin może nadpisać **tylko** duration B/S/G (1–180 s) w `sample_policy_settings`.
 
-Maksymalny czas nagrania:
+Użytkownik z płatnym Premium Tier może nagrać na wybranym bicie w limicie swojego tieru (do długości bitu, max globalny 180 s).
 
-```text
-DŁUGOŚĆ BITU
-```
-
-z ograniczeniem:
+Maksymalny czas nagrania (kształt reguły):
 
 ```text
-MAKSYMALNIE 180 SEKUND
+MIN(DŁUGOŚĆ BITU, LIMIT_TIERU, 180 SEKUND)
 ```
 
-Przykłady:
+Przykłady (gdy limit tieru ≥ długość bitu, np. GOLD 180):
 
 ```text
 Bit 1:42 → nagranie maks. 1:42
@@ -688,21 +694,27 @@ Bit 2:58 → nagranie maks. 2:58
 Bit 3:00 → nagranie maks. 3:00
 ```
 
-Żaden bit nie może mieć więcej niż 3:00.
+Żaden bit nie może mieć więcej niż 3:00 (global technical max).
 
 ---
 
 # 23. PREMIUM — TYMCZASOWE NAGRANIE
 
-Nagranie Premium jest nadal nagraniem tymczasowym.
+Nagranie Premium Tier jest nadal nagraniem tymczasowym.
 
 Nie jest automatycznie publicznym utworem.
 
-Retencja:
+**Retencja (runtime defaults Sample Policy — nie Account Level, nie stałe „10 dni”):**
 
 ```text
-10 DNI
+BRONZE  36 GODZIN
+SILVER  60 GODZIN
+GOLD    84 GODZIN
 ```
+
+(`SAMPLE_POLICY_DEFAULTS.*.ttlSeconds`. Historyczne `premium_take_retention_days = 10` / Account Level PRO 10d · LEGEND 30d = **stale** względem P1.)
+
+TTL / active READY / sessions / RAW download flag: z defaults (bez admin override). Duration B/S/G: możliwy override admina.
 
 Nagranie trafia do:
 
@@ -713,19 +725,11 @@ MOJE PRÓBKI
 Użytkownik może:
 
 - odtworzyć,
-- pobrać,
+- pobrać (zgodnie z `canDownloadOwnTake` / AuthZ — GOLD default capability; egzekucja downloadu wg osobnego kontraktu P4),
 - usunąć,
-- opublikować jako utwór.
+- opublikować jako utwór (osobne reguły produktu).
 
-Po 10 dniach plik zostaje automatycznie usunięty.
-
-Okres 10 dni nie powinien być zaszyty w wielu miejscach aplikacji.
-
-Przykładowa konfiguracja:
-
-```text
-premium_take_retention_days = 10
-```
+Po upływie TTL plik jest usuwany zgodnie z janitorem / `expires_at`.
 
 ---
 

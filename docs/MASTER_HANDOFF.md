@@ -471,13 +471,27 @@ AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
 
 **Roles:** `USER` · `MODERATOR` · `ADMINISTRATOR` (permissions via `permissions` / `role_permissions`).
 
-**Account levels (recording / retention / caps):**
+**Account levels** (`profiles.account_level` — Rank / signup path; **≠** Quick Take recording limits):
 
-| Level | Max record | Retention | Active READY | Sessions / UTC day |
-|-------|------------|-----------|--------------|--------------------|
-| BEGINNER_RAPPER | `MIN(beat, 30)` | 24h | 3 | 10 |
-| PRO_RAPPER | `MIN(beat, 180)` | 10d | 10 | 30 |
-| LEGEND_RAPPER | `MIN(beat, 180)` | 30d | 20 | 60 |
+| Level | Product role |
+|-------|--------------|
+| `BEGINNER_RAPPER` | Signup default (OD-19 CLOSED). Not a Sample Policy actor. |
+| `PRO_RAPPER` | Account Rank — **≠** Premium Tier. |
+| `LEGEND_RAPPER` | Account Rank — **≠** Premium Tier. |
+
+Recording / retention / session caps for Quick Take use **Premium Tier Sample Policy** (`SAMPLE_POLICY_DEFAULTS` · `getSamplePolicy` · §8b P1) — **not** Account Level. A user without paid entitlement maps to **FREE** policy at runtime.
+
+**Runtime defaults** (code `SAMPLE_POLICY_DEFAULTS` — product Tier axis; not Account Level):
+
+| Actor | Max record (default) | TTL | Active READY | Sessions / UTC day |
+|-------|----------------------|-----|--------------|--------------------|
+| ANONYMOUS | 15 s (system-fixed) | 2 h | 1 | 3 |
+| FREE | 30 s (system-fixed) | 12 h | 3 | 3 |
+| BRONZE | 60 s | 36 h | 5 | 5 |
+| SILVER | 120 s | 60 h | 7 | 7 |
+| GOLD | 180 s | 84 h | 10 | 10 |
+
+Effective max record = `MIN(beatDuration, tierCap, 180)`. Admin may override **only** BRONZE/SILVER/GOLD `maxRecordingSeconds` (1–180) via `sample_policy_settings`; TTL / sessions / active-ready / `canDownloadOwnTake` stay on defaults.
 
 Concurrent recording sessions: **max 1** `PENDING_UPLOAD` per owner.
 Signup default account level: closed decision (BEGINNER path) — see Decision Log OD-19.
@@ -671,8 +685,8 @@ P3 ACCOUNT CLAIM = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936
 | D02 | GREEN @ `e98ba52` |
 | Cron | `0 0 * * *` |
 | `CRON_SECRET` | configured (secret) |
-| Retention | BEGINNER 24h · PRO 10d · LEGEND 30d |
-| Max seconds | BEGINNER 30 · PRO/LEGEND `MIN(beat,180)` |
+| Retention | Sample Policy TTL (ANON 2h · FREE 12h · BRONZE 36h · SILVER 60h · GOLD 84h) — **≠** Account Level |
+| Max seconds | Sample Policy defaults (ANON 15 · FREE 30 · BRONZE 60 · SILVER 120 · GOLD 180), then `MIN(beat, cap, 180)` |
 | Anti-abuse | as §6 table · concurrent = 1 |
 | Take statuses | PENDING_UPLOAD · READY · FAILED · EXPIRED · DELETED |
 | Surfaces | Beat recording UI · `/account/takes` · preview/download/delete APIs · Moje bity grants · `/account/shared` |
