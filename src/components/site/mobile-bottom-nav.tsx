@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { isSiteNavHrefActive } from "@/components/site/site-nav-active";
 import { cn } from "@/lib/utils";
 
 type MobileBottomNavProps = {
@@ -42,20 +43,15 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
         )}
       >
         {items.map((item) => {
-          const active =
-            item.href === "/studio"
-              ? pathname.startsWith("/studio") || pathname.startsWith("/account")
-              : item.href === "/library"
-                ? pathname.startsWith("/library")
-                : item.href === "/profile"
-                  ? pathname.startsWith("/profile")
-                  : pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`);
+          const active = isSiteNavHrefActive(pathname, item.href, {
+            studioIncludesAccount: true,
+          });
 
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] tracking-wide",
                   active

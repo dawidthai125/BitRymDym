@@ -13,6 +13,7 @@ import {
   updatePasswordAfterResetAction,
   type AuthActionState,
 } from "@/lib/auth/actions";
+import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
 import { Button } from "@/components/ui/button";
 
 const initialState: AuthActionState = { error: null, success: false };
@@ -29,7 +30,7 @@ export function SignInForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -39,7 +40,7 @@ export function SignInForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (
@@ -76,7 +77,7 @@ export function SignUpForm() {
           minLength={3}
           maxLength={30}
           autoComplete="nickname"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -86,7 +87,7 @@ export function SignUpForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -97,7 +98,7 @@ export function SignUpForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -108,7 +109,7 @@ export function SignUpForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (
@@ -143,7 +144,7 @@ export function ChangePasswordForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -154,7 +155,7 @@ export function ChangePasswordForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -165,7 +166,7 @@ export function ChangePasswordForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (
@@ -200,7 +201,7 @@ export function ForgotPasswordForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (
@@ -252,7 +253,7 @@ export function ResetPasswordForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -263,7 +264,7 @@ export function ResetPasswordForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (
@@ -300,7 +301,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           type="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -310,7 +311,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           type="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -320,7 +321,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (
@@ -360,7 +361,7 @@ export function DeleteAccountForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -370,7 +371,7 @@ export function DeleteAccountForm() {
           type="text"
           required
           autoComplete="off"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (

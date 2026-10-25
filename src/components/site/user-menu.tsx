@@ -46,6 +46,7 @@ export function UserMenu({
           "inline-flex min-h-11 items-center gap-2 border border-[var(--brd-line)] px-2.5 text-sm",
           open && "border-[var(--brd-green)]",
         )}
+        aria-label={displayName}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
@@ -72,6 +73,9 @@ export function UserMenu({
           <MenuLink href="/studio" onNavigate={() => setOpen(false)}>
             Studio
           </MenuLink>
+          <MenuLink href="/premium" onNavigate={() => setOpen(false)}>
+            Premium
+          </MenuLink>
           <MenuLink href="/library" onNavigate={() => setOpen(false)}>
             Biblioteka
           </MenuLink>
@@ -95,7 +99,7 @@ export function UserMenu({
             <button
               type="submit"
               role="menuitem"
-              className="flex w-full px-3 py-2.5 text-left text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
+              className="flex min-h-11 w-full items-center px-3 py-2.5 text-left text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
             >
               Wyloguj
             </button>
@@ -119,7 +123,7 @@ function MenuLink({
     <Link
       href={href}
       role="menuitem"
-      className="block px-3 py-2.5 text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
+      className="flex min-h-11 items-center px-3 py-2.5 text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
       onClick={onNavigate}
     >
       {children}

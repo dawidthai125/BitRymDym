@@ -3,6 +3,8 @@ import Link from "next/link";
 import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
 import { PageFrame } from "@/components/brand/chrome";
 import { HeaderSearch } from "@/components/site/header-search";
+import { SiteMainNav } from "@/components/site/site-main-nav";
+import { siteNavLinkClass } from "@/components/site/site-nav-active";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { UserMenu } from "@/components/site/user-menu";
 import {
@@ -11,9 +13,6 @@ import {
 } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
-
-const navLinkClass =
-  "inline-flex min-h-11 items-center px-2.5 text-sm text-[var(--brd-ink-soft)] transition-colors hover:text-[var(--brd-ink)]";
 
 export async function SiteHeader({
   className,
@@ -55,23 +54,7 @@ export async function SiteHeader({
         <div className="flex min-w-0 items-center gap-1 sm:gap-2">
           <BrdLogoHomeLink />
 
-          <nav
-            className="hidden items-center lg:flex"
-            aria-label="Główne menu"
-          >
-            <Link href="/beats" className={navLinkClass}>
-              Bity
-            </Link>
-            <Link href="/about" className={navLinkClass}>
-              Społeczność
-            </Link>
-            <Link href="/about" className={navLinkClass}>
-              O nas
-            </Link>
-            <Link href="/studio" className={navLinkClass}>
-              Studio
-            </Link>
-          </nav>
+          <SiteMainNav />
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -87,7 +70,7 @@ export async function SiteHeader({
             />
           ) : (
             <>
-              <Link href="/sign-in" className={navLinkClass}>
+              <Link href="/sign-in" className={siteNavLinkClass}>
                 Zaloguj
               </Link>
               <Link

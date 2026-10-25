@@ -41,7 +41,7 @@ export function HeaderSearch({
         placeholder={compact ? "Szukaj" : "Szukaj bitów…"}
         autoComplete="off"
         className={cn(
-          "min-h-10 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)] focus-visible:ring-1 focus-visible:ring-[var(--brd-green-soft)]",
+          "min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)] focus-visible:ring-1 focus-visible:ring-[var(--brd-green-soft)]",
           compact ? "max-w-[7.5rem] md:max-w-[11rem]" : "max-w-[14rem]",
         )}
       />

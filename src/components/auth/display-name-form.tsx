@@ -6,6 +6,7 @@ import {
   updateDisplayNameAction,
   type AuthActionState,
 } from "@/lib/auth/actions";
+import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
 import { Button } from "@/components/ui/button";
 
 const initialState: AuthActionState = { error: null, success: false };
@@ -32,7 +33,7 @@ export function DisplayNameForm({
           maxLength={30}
           defaultValue={initialDisplayName}
           autoComplete="nickname"
-          className="rounded-lg border border-border bg-background px-3 py-2"
+          className={AUTH_FIELD_CLASS}
         />
       </label>
       {state.error ? (

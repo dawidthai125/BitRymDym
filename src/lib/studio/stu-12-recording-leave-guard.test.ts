@@ -26,6 +26,7 @@ const dialog = read("src/components/studio/studio-leave-guard-dialog.tsx");
 const guardSrc = read("src/components/studio/studio-leave-guard.ts");
 const mobileNav = read("src/components/site/mobile-bottom-nav.tsx");
 const siteHeader = read("src/components/site/site-header.tsx");
+const siteMainNav = read("src/components/site/site-main-nav.tsx");
 const studioPage = read("src/app/studio/p/[projectId]/page.tsx");
 
 const STUDIO_URL = "http://localhost:3000/studio/p/project-1";
@@ -148,8 +149,11 @@ function hrefsFrom(source: string): string[] {
 
 describe("STU-12 A — active capture blocks standard app navigation", () => {
   it("SiteHeader links are intercepted before Next sees the click", () => {
-    const hrefs = hrefsFrom(siteHeader);
-    expect(hrefs).toEqual(expect.arrayContaining(["/beats", "/about", "/studio"]));
+    // Primary desktop links live in SiteMainNav; auth CTAs remain in SiteHeader.
+    const hrefs = [...hrefsFrom(siteHeader), ...hrefsFrom(siteMainNav)];
+    expect(hrefs).toEqual(
+      expect.arrayContaining(["/beats", "/about", "/studio", "/premium"]),
+    );
     for (const href of hrefs) {
       const { win, intents } = setup();
       const link = fakeAnchor(win, href);
