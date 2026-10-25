@@ -391,6 +391,7 @@ Feature flag: `SFM_VERSIONS_V1` (nazwa robocza). Legacy WAV path aż do cutover 
 | OD-SFM-ID-07 | Exact `render_jobs.kind` strings | **CLOSED / ACCEPTED** — `SFM_MIX_PREPARE` · `SFM_MASTER_BAKE` · `SFM_QUALITY_ENCODE` (§0.1) |
 | OD-04 | Operator płatności | **OPEN** |
 | Contabo/poller | Ops GOs (STUDIO + future SFM) | **OPEN** (osobne; SFM kinds **nie** auto-join STUDIO poller) |
+| SFM systemd (repo prep) | Dedicated unit artifact only | **RECORDED** — unit `bitrymdym-sfm-worker-poll.service` · `User=`/`Group=` `bitrymdym-sfm` · WD `/opt/bitrymdym-sfm-worker` · `EnvironmentFile=/etc/bitrymdym-sfm-worker/worker.env` · `Restart=no` · dedicated SFM host (**not** second poller on Contabo STUDIO) · flags `SFM_VERSIONS_V1` / `SFM_WORKER_ENABLED` remain OFF · **≠** GO-B host install / enable / start · artifact: `deploy/systemd/bitrymdym-sfm-worker-poll.service` |
 
 **Zamknięte (docs):** OD-SFM-ID-01…04 · **OD-SFM-ID-06** · **OD-SFM-ID-07**.
 

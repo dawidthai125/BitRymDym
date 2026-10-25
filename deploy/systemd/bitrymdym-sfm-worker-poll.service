@@ -1,0 +1,29 @@
+# BitRymDym - dedicated SFM worker poller (repository artifact only).
+#
+# Owner decisions (repo prep; host install = separate GO-B):
+#   Unit: bitrymdym-sfm-worker-poll.service
+#   User/Group: bitrymdym-sfm (system account, no interactive login - host ops)
+#   WorkingDirectory: /opt/bitrymdym-sfm-worker
+#   EnvironmentFile: /etc/bitrymdym-sfm-worker/worker.env
+#     (outside repo; after host install: root:bitrymdym-sfm mode 0640)
+#   Restart=no (until separate retry/idempotency verification)
+#   Architecture: dedicated SFM host - NOT the STUDIO E3 host; not a second
+#     poller beside bitrymdym-e3-worker-poll.
+#
+# Fail-closed entrypoint: npm run sfm:worker:poll -> scripts/sfm-worker-poll.ts
+#   (SFM_WORKER_ENABLED / SFM_VERSIONS_V1 default OFF -> exit 0, no claim).
+# This unit does NOT set those flags. Do not enable/start here.
+
+[Unit]
+Description=BitRymDym dedicated SFM worker poller
+
+[Service]
+User=bitrymdym-sfm
+Group=bitrymdym-sfm
+WorkingDirectory=/opt/bitrymdym-sfm-worker
+EnvironmentFile=/etc/bitrymdym-sfm-worker/worker.env
+ExecStart=/usr/bin/npm run sfm:worker:poll
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
