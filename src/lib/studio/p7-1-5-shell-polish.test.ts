@@ -323,7 +323,7 @@ describe("Phase 7.1.5.4 — mobile toolbar overflow", () => {
     expect(toolbar).toMatch(/studio-add-track/);
     const buttons = toolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [];
     expect(buttons.length).toBeGreaterThanOrEqual(10);
-    expect(toolbar.match(/className="min-h-11/g)?.length ?? 0).toBe(
+    expect(toolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0).toBe(
       buttons.length,
     );
   });

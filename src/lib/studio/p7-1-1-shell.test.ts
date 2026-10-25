@@ -45,7 +45,7 @@ describe("Phase 7.1.1 shell landmarks", () => {
 });
 
 describe("Phase 7.1.1 edit toolbar hit targets", () => {
-  it("primary edit-toolbar controls declare min-h-11", () => {
+  it("primary edit-toolbar controls declare min-h-11 min-w-11 (≥44×44)", () => {
     const toolbarStart = editor.indexOf('data-testid="studio-edit-toolbar"');
     expect(toolbarStart).toBeGreaterThan(0);
     const toolbarEnd = editor.indexOf(
@@ -56,7 +56,7 @@ describe("Phase 7.1.1 edit toolbar hit targets", () => {
     const buttonCount = (toolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [])
       .length;
     expect(buttonCount).toBeGreaterThanOrEqual(10);
-    expect(toolbar.match(/className="min-h-11/g)?.length ?? 0).toBe(
+    expect(toolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0).toBe(
       buttonCount,
     );
     for (const label of [

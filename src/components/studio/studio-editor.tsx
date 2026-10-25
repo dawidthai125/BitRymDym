@@ -2237,7 +2237,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant={timelineMode === "seek" ? "default" : "outline"}
-          className="min-h-11"
+          className="min-h-11 min-w-11"
           disabled={recordingLocked}
           onClick={() => setMode("seek")}
         >
@@ -2247,7 +2247,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant={timelineMode === "edit" ? "default" : "outline"}
-          className="min-h-11"
+          className="min-h-11 min-w-11"
           disabled={recordingLocked}
           onClick={() => setMode("edit")}
         >
@@ -2257,7 +2257,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-11"
+          className="min-h-11 min-w-11"
           disabled={recordingLocked || pending || !selectedClip}
           title="Podziel w playhead"
           onClick={() => {
@@ -2270,7 +2270,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-11"
+          className="min-h-11 min-w-11"
           disabled={recordingLocked || !selectedClip}
           title="Usuń klip"
           onClick={() => {
@@ -2285,7 +2285,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-11"
+          className="min-h-11 min-w-11"
           data-testid="studio-add-track"
           disabled={recordingLocked || pending || atTrackCapacity}
           title={
@@ -2303,7 +2303,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-11 xl:hidden"
+          className="min-h-11 min-w-11 xl:hidden"
           aria-expanded={inspectorOverlayOpen}
           aria-controls={inspectorPanelId}
           onClick={() => {
@@ -2317,7 +2317,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant={mixerOpen ? "default" : "outline"}
-          className="min-h-11"
+          className="min-h-11 min-w-11"
           aria-pressed={mixerOpen}
           aria-expanded={mixerOpen}
           aria-controls={mixerPanelId}
@@ -2329,7 +2329,7 @@ function StudioEditorInner({
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-11 md:hidden"
+          className="min-h-11 min-w-11 md:hidden"
           data-testid="studio-toolbar-more"
           aria-expanded={toolbarMoreOpen}
           aria-controls="studio-toolbar-overflow"
@@ -2363,7 +2363,7 @@ function StudioEditorInner({
             <Link
               href={STUDIO_TRACK_UPGRADE_HREF}
               data-testid="studio-track-upgrade-cta"
-              className="inline-flex min-h-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 text-xs font-medium text-[var(--brd-green)] hover:bg-[var(--brd-bg)]"
+              className="inline-flex min-h-11 min-w-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 text-xs font-medium text-[var(--brd-green)] hover:bg-[var(--brd-bg)]"
             >
               Zmień pakiet
             </Link>
@@ -2380,7 +2380,7 @@ function StudioEditorInner({
             type="button"
             size="sm"
             variant={snapPreset === "off" ? "outline" : "default"}
-            className="min-h-11"
+            className="min-h-11 min-w-11"
             aria-pressed={snapPreset !== "off"}
             title={`Snap: ${studioSnapPresetLabel(snapPreset)} (kliknij aby zmienić: OFF / 20 / 100 / 1000 ms)`}
             onClick={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
@@ -2391,7 +2391,7 @@ function StudioEditorInner({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11"
+            className="min-h-11 min-w-11"
             title="Pomniejsz oś czasu"
             onClick={() =>
               zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current))
@@ -2403,7 +2403,7 @@ function StudioEditorInner({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11"
+            className="min-h-11 min-w-11"
             title="Powiększ oś czasu"
             onClick={() =>
               zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current))
@@ -2415,7 +2415,7 @@ function StudioEditorInner({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11"
+            className="min-h-11 min-w-11"
             title="Dopasuj oś czasu do szerokości"
             onClick={() => {
               const el = timelineScrollRef.current;
