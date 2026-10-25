@@ -521,7 +521,7 @@ export async function executeDeletePhaseWithDeps(
     console.log(
       "ORPHAN CLEANUP FAIL_STOP — partial Storage mutation may have occurred; not a PASS",
     );
-    abort(message);
+    return abort(message);
   };
 
   for (let i = 0; i < toDelete.length; i += batchSize) {
@@ -559,7 +559,7 @@ export async function executeDeletePhaseWithDeps(
         error_message: msg,
         storage_state_independently_verified: false,
       });
-      failStopAfterRemoveAttempts(
+      return failStopAfterRemoveAttempts(
         `remove batch threw — aborting further deletes (Storage state for this batch unknown): ${msg}`,
       );
     }
@@ -573,7 +573,7 @@ export async function executeDeletePhaseWithDeps(
         error_message: removeResult.error.message,
         storage_state_independently_verified: false,
       });
-      failStopAfterRemoveAttempts(
+      return failStopAfterRemoveAttempts(
         `remove batch failed — aborting further deletes (Storage state for this batch unverified/possibly partial): ${removeResult.error.message}`,
       );
     }
