@@ -1,0 +1,61 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { describe, expect, it } from "vitest";
+
+describe("settings hub (navigation only)", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/settings/page.tsx"),
+    "utf8",
+  );
+
+  it("keeps auth gate and AppShell", () => {
+    expect(src).toContain("getCurrentProfile()");
+    expect(src).toContain('redirect("/sign-in")');
+    expect(src).toContain('AppShell tone="studio"');
+  });
+
+  it("states it is a hub to existing settings, not new options", () => {
+    expect(src).toMatch(/prowadzi do istniejących ustawień/i);
+    expect(src).toMatch(/Nie\s+dodaje nowych opcji/i);
+    expect(src).not.toMatch(/kolejnej fali/i);
+  });
+
+  it("links only to confirmed working destinations", () => {
+    const expected = [
+      "/account#profil",
+      "/account#security",
+      "/account#danger",
+      "/account",
+      "/account/takes",
+      "/account/beats",
+      "/account/downloads",
+      "/account/shared",
+      "/premium",
+    ];
+    for (const href of expected) {
+      expect(src).toContain(`href: "${href}"`);
+    }
+    // Do not advertise favorites stub or invent theme route.
+    expect(src).not.toContain("/library/favorites");
+    expect(src).not.toContain("/settings/theme");
+  });
+
+  it("reuses ThemeToggle instead of duplicating theme logic", () => {
+    expect(src).toContain('from "@/components/site/theme-toggle"');
+    expect(src).toContain("<ThemeToggle");
+    expect(src).not.toContain("localStorage");
+    expect(src).not.toContain("bitrymdym.theme");
+  });
+
+  it("does not embed duplicate profile/password forms", () => {
+    expect(src).not.toContain("DisplayNameForm");
+    expect(src).not.toContain("ChangePasswordForm");
+    expect(src).not.toContain("ChangeEmailForm");
+    expect(src).not.toContain("DeleteAccountForm");
+  });
+
+  it("Premium copy does not claim in-app purchase", () => {
+    expect(src).toMatch(/Zakup w aplikacji nie jest dostępny/);
+  });
+});
