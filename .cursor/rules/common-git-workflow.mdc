@@ -1,3 +1,8 @@
+---
+description: ECC git conventions — opcjonalne; BitRymDym: bez PR jako default (patrz bitrymdym-ssot-over-ecc)
+alwaysApply: false
+---
+
 # Git Workflow
 
 ## Commit Message Format

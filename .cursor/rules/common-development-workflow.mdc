@@ -1,3 +1,8 @@
+---
+description: ECC development pipeline (plan/TDD/PR) — opcjonalne; BitRymDym stosuje proporcjonalnie do ryzyka
+alwaysApply: false
+---
+
 # Development Workflow
 
 > This file extends [common/git-workflow.md](./git-workflow.md) with the full feature development process that happens before git operations.

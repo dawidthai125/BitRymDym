@@ -37,9 +37,25 @@ Stan instalatora (ścieżki lokalne): `.cursor/ecc-install-state.json` — lokal
 - Nie instalować profilu `full` / globalnego setupu „na wszelki wypadek”
 - Nie traktować obecności plików `ecc-*` jako dowodu, że Cursor zawsze je spawn’uje automatycznie
 
+## Smoke UI (nowa sesja Cursor) — zamyka lukę runtime
+
+Bez tego ładowanie `ecc-*` i skuteczność `alwaysApply` pozostają **NOT VERIFIED**:
+
+1. Nowa rozmowa w workspace `bitrymdym`.
+2. Sprawdź, że agent respektuje overlay (Sacred WIP, bez PR jako default, PL).
+3. Rules: widoczny `bitrymdym-ssot-over-ecc`; `common-git-workflow` / `common-development-workflow` / `common-testing` **nie** jako Always.
+4. Agents/commands: obecność `ecc-*` / `/ecc-guide` (FACT: widoczne / nie).
+5. Negatywny: brak Hooks; `mcp.json` tylko Supabase.
+
+## Uwagi po review
+
+- Reguły językowe ECC używają często `paths:` (format Claude); w Cursor standardem bywa `globs:` — scoping może być martwy (**NOT VERIFIED**).
+- Lokalny patch BitRymDym: `alwaysApply: false` na trzech common workflow/testing — **przywrócić po update ECC**, jeśli instalator nadpisze frontmatter.
+- Bundled skills są pod `.cursor/.agents/skills/`, nie pod `.cursor/skills/`.
+
 ## Aktualizacja ECC
 
 1. Sklonuj oficjalne repo do katalogu TEMP (nie do worktree BitRymDym).
 2. `node …/install-apply.js --modules rules-core,agents-core,commands-core --target cursor --no-hooks --dry-run`
-3. Sprawdź kolizje z `mcp.json`, `settings.json`, overlay BitRymDym.
+3. Sprawdź kolizje z `mcp.json`, `settings.json`, overlay BitRymDym oraz czy frontmatter `alwaysApply: false` na common git/dev/testing przetrwał.
 4. Zastosuj dopiero po przeglądzie planu.
