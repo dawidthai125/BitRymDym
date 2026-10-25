@@ -1,12 +1,14 @@
 # BitRymDym — pełny audyt funkcji, Premium i stanu produktu
 
+> **SUPERSEDED (runtime USER RLS only, 2026-10-25):** Owner-reported prod smoke → owner SELECT **PASS** · anon **PASS** · peer **PASS** · **≠ Product GREEN**. Living evidence: [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) + [PROJECT_STATE.md](../PROJECT_STATE.md) §2. Poniższy snapshot zachowuje **HISTORY** twierdzeń „runtime BLOCKED” z sesji audytu RO przed tym smoke; nie jest drugą macierzą living.
+
 | Pole | Wartość |
 |------|---------|
 | Data | 2026-10-25 |
 | Charakter | **Audyt read-only** — bez implementacji, bez migracji, bez deployu |
-| Living tip / `origin/main` (aktualny) | **`57bba09`** (`docs(rls): record prod owner SELECT apply and blocked USER smoke`) — re-check `ls-remote` po tej korekcie · **HISTORY sesji audytu RO:** wtedy zmierzono **`4c64ef3`** (`docs(ops): add ECC Stage 1 protected frontmatter checklist`) |
-| Living tip w `PROJECT_STATE.md` §2 | Docs RLS commit **`57bba09`** · tip przed tym docs = **`36b1447`** · migracja owner SELECT **applied** (patrz §4) — re-check `ls-remote` po korekcie EOL/scope |
-| Produkcja (deploy / smoke) | Public+admin visual PASS @ `35543c8` (2026-10-24) **HISTORY**; owner SELECT **DB apply PASS** 2026-10-25; USER RLS runtime **BLOCKED** |
+| Living tip / `origin/main` (aktualny) | Pre-peer-docs tip **`d8846ff`** (re-check `ls-remote` po docs peer PASS) · **HISTORY:** docs apply row **`57bba09`**; sesja RO audytu mierzyła **`4c64ef3`** |
+| Living tip w `PROJECT_STATE.md` §2 | Tip przed docs peer PASS = **`d8846ff`** · migracja owner SELECT **applied** · Owner-reported USER runtime **PASS** (patrz smoke) |
+| Produkcja (deploy / smoke) | Public+admin visual PASS @ `35543c8` (2026-10-24) **HISTORY**; owner SELECT **DB apply PASS** 2026-10-25; USER RLS runtime **PASS** (Owner-reported) — **≠ Product GREEN** |
 | Zakazane pliki | Sacred WIP `recording-eligibility-service.ts` · `studio-editor.tsx` — **nie otwierane / nie diffowane** |
 | Dirty WIP | **PRESERVE** (bez reset/stash/sync) |
 
@@ -17,11 +19,11 @@
 
 ## 1. Podsumowanie wykonawcze
 
-BitRymDym to działająca platforma (katalog, auth, Studio, Quick Take, Premium entitlements, admin) z bogatym kodem i historycznymi closeoutami PRODUCTION VERIFIED dla wielu fal Studio/Security. **Produkt jako całość nie jest GREEN:** brak self-serve płatności (OD-04/07 OPEN), Premium Retention **HOLD**, SFM Versions bez Production GREEN, deep editor Studio **NOT VERIFIED** (plik zabroniony). **Aktualizacja 2026-10-25:** migracja `beat_audio_assets_select_own` **applied + catalog read-back PASS** na `rzzxrgcdogkybkiidqgw`; **USER owner/peer/anon RLS runtime nadal BLOCKED** (brak dedykowanych sesji). Apply ≠ Product GREEN.
+BitRymDym to działająca platforma (katalog, auth, Studio, Quick Take, Premium entitlements, admin) z bogatym kodem i historycznymi closeoutami PRODUCTION VERIFIED dla wielu fal Studio/Security. **Produkt jako całość nie jest GREEN:** brak self-serve płatności (OD-04/07 OPEN), Premium Retention **HOLD**, SFM Versions bez Production GREEN, deep editor Studio **NOT VERIFIED** (plik zabroniony). **Aktualizacja 2026-10-25:** migracja `beat_audio_assets_select_own` **applied + catalog read-back PASS** na `rzzxrgcdogkybkiidqgw`. **Runtime USER RLS (Owner-reported, po tym audycie RO):** owner SELECT **PASS** · anon **PASS** · peer **PASS** — evidence [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). Apply + runtime PASS **≠ Product GREEN**.
 
 **Najmocniejsze dowody lokalne w tej sesji:** unit testy Sample Policy + Premium foundation + P4 RAW + download limits (**78 PASS** łącznie w trzech przebiegach); lokalny Supabase loopback health **200**; wcześniejszy bezpieczny preview Home/`/premium` (loopback, 2026-10-25) — wizualnie PASS z zastrzeżeniami a11y.
 
-**Najważniejsze luki:** płatności/ceny; Retention HOLD; rozjazd MASTER_SSOT / MASTER_HANDOFF Account Level vs runtime Sample Policy; Studio editor bez audytu głębokiego; **prod USER RLS runtime (owner/peer/anon)**; Contabo/SFM worker planes; Sample Catalog & Scratch DJ — kontrakt accepted, **implementation NOT authorized**.
+**Najważniejsze luki:** płatności/ceny; Retention HOLD; rozjazd MASTER_SSOT / MASTER_HANDOFF Account Level vs runtime Sample Policy; Studio editor bez audytu głębokiego; Contabo/SFM worker planes; Sample Catalog & Scratch DJ — kontrakt accepted, **implementation NOT authorized**. *(Prod USER RLS owner/peer/anon — **SUPERSEDED** z BLOCKED → Owner-reported PASS; nie mylić z Product GREEN.)*
 
 ---
 
@@ -104,8 +106,8 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 | STATE §2 vs §2c deploy SHA | **wewnętrznie stale** | documentation-auditor |
 | Unit Sample Policy / Premium | **PASS** (sesja) | vitest 28+19+8+23 |
 | Owner SELECT migracja apply + catalog | **PASS** (2026-10-25) | history `20261025152524`; policy `beat_audio_assets_select_own` |
-| Prod USER owner SELECT (JWT) | **BLOCKED** | brak sesji USER + DRAFT |
-| Prod peer / anon isolation | **BLOCKED** | j.w. |
+| Prod USER owner SELECT (JWT) | **PASS** (Owner-reported) · **HISTORY w sesji RO:** BLOCKED | [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) |
+| Prod peer / anon isolation | **PASS** (Owner-reported) · **HISTORY w sesji RO:** BLOCKED | j.w.; claims rozdzielone; ≠ GREEN |
 | Prod finalize Wave 5 path | **NOT VERIFIED** | STATE |
 | SFM Production GREEN | **NOT CLAIMED** | STATE |
 
@@ -148,7 +150,7 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 | **P0** | Koncentracja zaufania: `service_role` + signed Storage — każdy błąd AuthZ w app omija RLS klienta (security-auditor) |
 | **P0** | Nie aktywować Premium Retention / worker JWT / Storage purge bez osobnego GO |
 | **P1** | Domknięcie OD-04/07 przed jakimkolwiek sklepem; nie obiecywać cen |
-| **P1** | ~~Apply owner SELECT `beat_audio_assets`~~ → **DONE 2026-10-25**; pozostałe: **USER owner/peer/anon runtime smoke** (dedykowane sesje) |
+| **P1** | ~~Apply owner SELECT `beat_audio_assets`~~ → **DONE 2026-10-25**; ~~USER owner/peer/anon runtime smoke~~ → **Owner-reported PASS 2026-10-25** (≠ Product GREEN) |
 | **P1** | ~~Aktualizacja living tip/deploy w PROJECT_STATE do `4c64ef3`~~ — **SUPERSEDED** (tip przeszedł `36b1447` → docs `57bba09`; nie wracać do `4c64ef3` jako celu) · Vercel re-verify = osobny docs GO przy potrzebie |
 | **P1** | SFM: staging E2E + worker host przed Production GREEN claim |
 | **P2** | Zsynchronizować MASTER_SSOT §19–23 / handoff Account Level z Sample Policy albo oznaczyć HISTORY |
@@ -179,7 +181,7 @@ Jedyny import UI edytora w app: `src/app/studio/p/[projectId]/page.tsx` → `stu
 
 1. **Docs GO (tip `4c64ef3`):** **SUPERSEDED** — living tip po docs RLS = **`57bba09`** (nie celować w `4c64ef3`). Re-verify aliases tylko przy osobnym GO.  
 2. **SSOT GO:** oznaczyć lub poprawić MASTER_SSOT / handoff Account Level vs Sample Policy (jedna oś prawdy).  
-3. **Security GO (remaining):** runtime USER owner/peer/anon na prod z istniejącymi sesjami + DRAFT (apply już DONE 2026-10-25).  
+3. **Security GO (USER RLS runtime):** ~~remaining~~ → **Owner-reported PASS 2026-10-25** (owner/anon/peer; ≠ Product GREEN). Dalsze security GO = osobny zakres (nie re-open tego smoke bez powodu).  
 
 4. **Product GO:** OD-04/07 przed sklepem; Retention pozostaje HOLD.  
 5. **Studio GO:** osobny audyt deep editor z uprawnieniem do `studio-editor.tsx` + real mic poza Cursor egress.  
@@ -256,8 +258,8 @@ Zakres testów: [test-auditor](d94e052b-3ba6-4aee-b2f7-7a234660b277).
 | **BROKEN** | *(brak nowego odtworzenia w tej sesji)* |
 | **NOT IMPLEMENTED** | Self-serve płatności/ceny; Sample Catalog/Scratch DJ; aktywacja Retention na origin |
 | **BLOCKED** | `db push` (migration drift — docs); Retention aktywacja bez GO |
-| **BLOCKED** | Prod USER owner/peer/anon RLS runtime (brak sesji+DRAFT, 2026-10-25) |
+| **HISTORY → PASS** | Prod USER owner/peer/anon RLS runtime — sesja RO: BLOCKED; **Owner-reported PASS** 2026-10-25 (≠ GREEN) |
 | **NOT VERIFIED** | Studio deep editor; Sacred eligibility; Contabo; SFM staging; pełne audio/mic |
 
-**Werdykt produktu:** **nie PASS / nie GREEN** — apply owner SELECT **nie** podnosi produktu do GREEN; runtime USER RLS **BLOCKED**; OD-04/07 OPEN; Retention HOLD.
+**Werdykt produktu:** **nie PASS / nie GREEN** — apply + Owner-reported USER RLS runtime PASS **nie** podnoszą produktu do GREEN; OD-04/07 OPEN; Retention HOLD.
 )

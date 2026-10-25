@@ -1,8 +1,8 @@
 # BitRymDym — mapa funkcji (kanoniczna)
 
-**Updated:** 2026-10-25 (prod apply owner SELECT + rozdzielone claimy RLS)  
-**Living tip / deploy:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2 — tip przed docs = **`36b1447`**; re-check `ls-remote` / Deployments po pushu.  
-**Evidence rule:** PASS / FAIL / BLOCKED / NOT RUN / NOT VERIFIED tylko z dowodu.
+**Updated:** 2026-10-25 (Owner-reported USER RLS runtime: owner/anon/peer **PASS**; ≠ Product GREEN)  
+**Living tip / deploy:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2 — tip przed tym docs = **`d8846ff`**; re-check `ls-remote` / Deployments po pushu.  
+**Evidence rule:** PASS / FAIL / BLOCKED / NOT RUN / NOT VERIFIED tylko z dowodu. Owner-reported = fakt przekazany Ownerem (nie niezależny re-run agenta).
 
 ---
 
@@ -31,7 +31,7 @@
 | Downloads | `/account/downloads` (i powiązane) |
 
 **Admin visual smoke (prod, 2026-10-24):** authenticated routes Studio hub / takes / account / settings / library + Motyw placement + persistence → **PASS** ([ADMIN_SESSION_AUTH_VISUAL_SMOKE_2026-10-24.md](./audits/_studio_recording_local_e2e_2026-10-24/ADMIN_SESSION_AUTH_VISUAL_SMOKE_2026-10-24.md)).  
-**USER RLS runtime na prod:** **BLOCKED** (2026-10-25) — brak jawnych sesji zwykłego USER + dedykowanego DRAFT; sesja admina **nie** jest dowodem.
+**USER RLS runtime na prod (Owner-reported, 2026-10-25):** owner SELECT **PASS** · anon isolation **PASS** · peer isolation **PASS** → [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). Sesja admina / `service_role` **nie** są dowodem. **≠ Product GREEN.**
 
 ---
 
@@ -55,11 +55,12 @@
 
 - Commit **`1e75fd3`** (repo SQL): policy `beat_audio_assets_select_own` — SELECT dla `authenticated` gdy `beats.owner_id = auth.uid()` (w tym DRAFT).
 - Lokalnie: vitest owner/peer/anon + E2E submit→mod→publish→mock REC → **PASS** ([owner-select-policy-e2e-report.json](./audits/_studio_recording_local_e2e_2026-10-24/owner-select-policy-e2e-report.json)).
-- **Prod migracja apply + catalog read-back (2026-10-25):** **PASS** — project **`rzzxrgcdogkybkiidqgw`** · history **`20261025152524` / `beat_audio_assets_owner_select`** (repo `20261024201348_…`; drift OK) · policy EXISTS · SELECT · `authenticated` · owner-uid predicate.
-- **Prod USER owner SELECT (runtime JWT):** **BLOCKED**
-- **Prod peer isolation:** **BLOCKED**
-- **Prod anon isolation:** **BLOCKED**
-- Admin / service_role **nie** zastępują powyższych claimów runtime.
+- **Prod migracja apply + catalog read-back (2026-10-25):** **PASS** — project **`rzzxrgcdogkybkiidqgw`** · history **`20261025152524` / `beat_audio_assets_owner_select`** (repo `20261024201348_…`; drift OK) · policy EXISTS · SELECT · `authenticated` · owner-uid predicate. **Osobny claim** od runtime.
+- **Prod USER owner SELECT (runtime JWT):** **PASS** (Owner-reported)
+- **Prod peer isolation:** **PASS** (Owner-reported — JWT `authenticated`, nie service_role; PostgREST counts 0; UI peera pusty)
+- **Prod anon isolation:** **PASS** (Owner-reported)
+- Evidence: [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). **≠ Product GREEN.** Admin / service_role **nie** zastępują claimów runtime.
+- **HISTORY (same day, pre-runtime):** apply SESSION earlier recorded owner/peer/anon runtime **BLOCKED** for lack of USER sessions — superseded for runtime only.
 
 ---
 
@@ -83,11 +84,11 @@
 | Deploy powiązany z `35543c8` | — | **PASS** (GitHub Deployments `success`; `vercel inspect` OAuth **NOT RUN**) |
 | Admin authenticated visual | — | **PASS** |
 | Owner SELECT — migracja/katalog | **PASS** (loopback) | Apply + read-back **PASS** (2026-10-25) |
-| Owner SELECT — USER runtime | **PASS** (loopback) | **BLOCKED** (brak sesji USER+DRAFT) |
+| Owner SELECT — USER runtime | **PASS** (loopback) | **PASS** (Owner-reported 2026-10-25) |
 | VOCAL unarmed seed | **PASS** (commit + prior E2E) | Bundle ancestry po deploy tip |
 | Mock REC → take → archive | **PASS** (harness) | **NOT RUN** |
 | Real mic / Play masters | **NOT RUN** | **NOT RUN** |
-| Ordinary USER RLS (peer/anon) | lokalny peer/anon **PASS** | **BLOCKED** (prod) |
+| Ordinary USER RLS (peer/anon) | lokalny peer/anon **PASS** | peer **PASS** · anon **PASS** (Owner-reported; ≠ GREEN) |
 | Premium Retention | HOLD (local WIP) | nieaktywne |
 
 ---

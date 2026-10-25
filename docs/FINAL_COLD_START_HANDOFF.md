@@ -2,7 +2,8 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-24 — **Studio / RLS / theme delivery + docs consolidation** · living tip **`35543c8`** (parent **`1e75fd3`**) · mapa funkcji [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) · public+admin smoke **PASS** · USER RLS/REC/migracje prod **NOT VERIFIED/NOT RUN** · OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** · [CHANGELOG 2026-10-24](./CHANGELOG.md)
+**Updated:** 2026-10-25 — pointer sync · Owner-reported USER RLS runtime (owner/anon/peer) **PASS** · **≠ Product GREEN** · evidence [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** (pre-docs tip **`d8846ff`**) · REC/mic nadal **NOT RUN** · OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE**  
+**Prior (2026-10-24):** Studio / theme consolidation · tip **`35543c8`** · public+admin smoke **PASS** · then USER RLS/REC/migracje **NOT VERIFIED/NOT RUN** — **HISTORY** for USER RLS runtime (superseded 2026-10-25 Owner-reported) · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · prompts [handoffs/](./handoffs/) · [CHANGELOG 2026-10-24](./CHANGELOG.md)
 **Type:** Documentation continuity · cold-start entry · multi-plane (local HEAD ≠ origin/main ≠ production deploy ≠ prod DB ≠ Storage ≠ dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
 **Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 below is living for Git planes as of 2026-10-24.** Blocks that still cite tip `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git ls-remote` before claiming current tip.
@@ -49,7 +50,10 @@ SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts
 PRODUCTION DEPLOYMENT         = GitHub Production @ 35543c8 success (2026-10-24)
                               · public smoke PASS · admin auth visual PASS
                               · vercel inspect CLI OAuth NOT RUN (do not login blindly)
-                              · Ready ≠ functional GREEN · USER RLS / REC / migracje NOT VERIFIED
+                              · Ready ≠ functional GREEN · (2026-10-24) USER RLS/REC/migracje NOT VERIFIED — HISTORY
+                              · 2026-10-25 Owner-reported USER RLS: owner/anon/peer PASS · ≠ GREEN
+                              · → PROJECT_STATE §2 · audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md
+                              · REC / mic still NOT RUN
 FUNCTIONAL MAP                = docs/PROJECT_FUNCTIONAL_MAP.md
 START PROMPTS                 = docs/handoffs/MASTER_START_PROMPT_CHATGPT_PL.md
                               · docs/handoffs/MASTER_START_PROMPT_CURSOR_PL.md

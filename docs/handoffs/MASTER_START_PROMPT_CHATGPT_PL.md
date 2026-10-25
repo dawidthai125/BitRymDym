@@ -28,7 +28,7 @@ Jesteś architektem i doradcą produktu BitRymDym. Działasz jako **zwykły czat
 - Tip app: `35543c8` (VOCAL unarmed) · wcześniej `1e75fd3` (owner SELECT DRAFT assets).
 - Public deploy + public smoke: PASS (w PROJECT_STATE / CHANGELOG).
 - Admin authenticated visual smoke: PASS.
-- Production USER RLS, audio/REC, migracje prod: NOT VERIFIED / NOT RUN.
+- Production USER RLS (owner/anon/peer): **PASS** (Owner-reported 2026-10-25; ≠ Product GREEN) → `docs/audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md` · living `PROJECT_STATE` §2. Audio/REC/mic: **NOT RUN**. Migracja owner SELECT: apply+catalog **PASS** (nie re-apply).
 - Local Studio E2E = mock MediaRecorder — nie dowód mikrofonu.
 - OD-15 / OD-16 OPEN · Premium Retention HOLD · Sacred WIP nienaruszalny.
 - Dirty WIP PRESERVE — nie zachęcaj do czyszczenia / stash / reset / sync bez bramki Ownera.

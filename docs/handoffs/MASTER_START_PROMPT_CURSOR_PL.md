@@ -31,7 +31,7 @@ Jesteś Cursor Agentem w BitRymDym. Wykonujesz kod, testy, Git i standardowy pip
 
 - **Motyw:** dark default · light papier · Motyw przed Zaloguj/UserMenu · `bitrymdym.theme` · OD-15/OD-16 **OPEN**.
 - **Studio:** hub `/studio` · editor · takes · R **unarmed** na seed VOCAL (`35543c8`) · REC wymaga PUBLISHED + świadome R.
-- **RLS:** `beat_audio_assets_select_own` (`1e75fd3`) — owner SELECT własnych assetów (w tym DRAFT); lokalnie PASS; **prod apply NOT RUN**.
+- **RLS:** `beat_audio_assets_select_own` (`1e75fd3`) — owner SELECT własnych assetów (w tym DRAFT); lokalnie PASS; **prod apply+catalog PASS** (2026-10-25); **Owner-reported runtime** owner/anon/peer **PASS** (≠ Product GREEN) → `docs/audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md` · living → `PROJECT_STATE` §2.
 - **Local E2E:** Fake MediaRecorder + fixture webm — nie dowód realnego mic/prod audio.
 - **Local env:** Docker + Supabase loopback `:54421` · Next temp `:3460` · `.env.local` bajt w bajt · bez `db reset`/seedów bez GO.
 - **Premium Retention:** HOLD (local WIP).
@@ -43,14 +43,15 @@ Jesteś Cursor Agentem w BitRymDym. Wykonujesz kod, testy, Git i standardowy pip
 | Commits `1e75fd3` + `35543c8` on `main` | pushed |
 | Public deploy @ `35543c8` + public smoke | PASS |
 | Admin authenticated visual smoke | PASS |
-| Prod USER RLS / audio-REC / migracje | NOT VERIFIED / NOT RUN |
+| Prod USER RLS (owner/anon/peer) | PASS (Owner-reported 2026-10-25; ≠ GREEN) |
+| Prod audio-REC / mic | NOT RUN |
 
 Szczegóły: `docs/audits/_studio_recording_local_e2e_2026-10-24/` · `ADMIN_SESSION_AUTH_VISUAL_SMOKE_2026-10-24.md`.
 
 ## Otwarte ryzyka przed kolejnymi zadaniami
 
-1. Produkcyjna migracja owner SELECT — osobna bramka Ownera.
-2. Produkcyjny USER RLS / Studio po zalogowaniu USER — NOT VERIFIED.
+1. ~~Produkcyjna migracja owner SELECT~~ → DONE apply 2026-10-25 (nie re-apply; drift history OK).
+2. ~~Produkcyjny USER RLS owner/anon/peer~~ → Owner-reported PASS 2026-10-25; **≠ Product GREEN**; Studio deep / REC nadal osobne.
 3. Produkcyjne audio / REC / Play masters — zakaz egress bez GO.
 4. Sacred WIP + mixed dirty tree — nie sprzątaj.
 
