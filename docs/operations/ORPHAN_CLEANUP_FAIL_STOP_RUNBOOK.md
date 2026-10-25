@@ -1,7 +1,35 @@
-# Orphan cleanup — fail-stop operator runbook (R3.1)
+# Orphan cleanup — fail-stop operator runbook (R3.1 / R4.1)
 
 Standalone operational notes for `scripts/production-storage-orphan-cleanup.ts`.
 This document does **not** authorize production mutation, deploy, or Catalog/Scratch work.
+
+## Classification and protected prefixes
+
+For objects under the `beat-audio` orphan flow:
+
+| Path | Classification | Deletion |
+|------|----------------|----------|
+| `catalog/*` | `KEEP` | Never qualifies for delete |
+| `platform/*` | `KEEP` | Never qualifies for delete |
+| Unknown prefix | `UNKNOWN` | Never qualifies for delete |
+| `user/*` | Only after real classification + gates | Prefix alone is **not** delete authority |
+
+A `user/*` object must still pass the script’s classification rules and remove gates. Do not treat path shape as permission to delete.
+
+## Re-classification before remove (R1)
+
+A row labeled `SAFE_DELETE` (including a stale or forged label) is **not** final delete consent.
+
+Immediately before remove, the delete phase re-runs classification on claimed `SAFE_DELETE` candidates. If the fresh result is not `SAFE_DELETE`, execution **aborts before** any `storageRemove` for that run’s remaining work.
+
+This gate reduces forged-label bypass in the delete phase. It does **not** prove production Storage safety, deploy parity, or that every risk class is closed.
+
+## Validation and bucket
+
+- The full candidate list is validated (re-classify + pre-remove asserts / prefix gates) **before** the first `storageRemove`.
+- Each batch is checked again with the pre-remove assert **before** that batch’s `storageRemove`.
+- Removes are invoked only against bucket `beat-audio`.
+- A batch failure does **not** authorize automatic retry, resume, or rollback of earlier `OK` batches.
 
 ## Batch statuses
 
@@ -15,10 +43,12 @@ This document does **not** authorize production mutation, deploy, or Catalog/Scr
 
 ## Fail-stop rules
 
-1. After any `ERROR` or `AMBIGUOUS` batch, the script **stops**. Later batches are **not** started.
-2. Earlier `OK` batches are **not** rolled back by this script.
-3. Full success prints `ORPHAN CLEANUP PASS` only after all batches and post-checks complete.
-4. Partial / failed runs emit `outcome: FAIL_STOP` and `orphan_cleanup_pass: false`. Do **not** treat them as PASS.
+1. After any `ERROR` or `AMBIGUOUS` batch (i.e. after a `storageRemove` attempt that failed or threw), the script **stops**. Later batches are **not** started. Earlier `OK` batches are **not** rolled back.
+2. Evidence with `outcome: FAIL_STOP` and `orphan_cleanup_pass: false` is emitted when the run stops **after one or more `storageRemove` attempts** (API error or thrown failure). Do **not** treat that as PASS.
+3. Aborts **before** any `storageRemove` (for example failed R1 re-classification or pre-remove validation) also **stop** the run and must **not** be treated as PASS. Those paths use the abort mechanism and **do not necessarily** emit the same `FAIL_STOP` evidence payload.
+4. `ORPHAN CLEANUP PASS` / `outcome: PASS` is allowed **only** after all batches and required post-checks complete successfully.
+
+Not every unsuccessful run emits `FAIL_STOP` evidence — only fail-stops tied to remove attempts as above.
 
 ## Operator prohibitions
 
@@ -26,7 +56,7 @@ This document does **not** authorize production mutation, deploy, or Catalog/Scr
 - **Do not** treat a remove error as proof that nothing was deleted.
 - **Do not** resume by blindly re-running the same path list without a new inventory and re-classification.
 - **Do not** automatically expand the original delete scope when investigating a failed run.
-- **No production `--execute` / Storage mutation** without a **separate Owner GO** for that mutation.
+- **No production `--execute` / Storage mutation** without a **separate Owner GO** for that mutation. The `--execute` flag remains **technically available** in the CLI; this runbook is procedural, not a technical lock.
 - Re-classification (R1) and local safety tests are **not** proof that production Storage is safe or that a deploy matches this tip.
 
 ## Before any subsequent production attempt (only with Owner GO)
