@@ -3,7 +3,9 @@
  * W2-B: beat-download daily limits enforced at runtime via
  * `limits.downloadsDaily` + `PREMIUM_ANON_DOWNLOADS_DAILY` (ANON ≠ FREE).
  * Render daily/concurrent/quota/retention: ONE authoritative source (this matrix).
- * Gold 90d retention = DESIGN ONLY until artifact janitor GO.
+ * Gold production retention = **28 days** (Owner 2026-10-25; aligns with
+ * `PREMIUM_RETENTION_DAYS.GOLD` / OD-EXPORT-12). Gold 90d = DESIGN ONLY until
+ * artifact janitor GO. Premium Retention feature remains HOLD.
  */
 
 import type { AudioCapabilityKey } from "@/config/audio-render";
@@ -68,8 +70,9 @@ const GOLD_CAPS = [
 ] as const satisfies readonly AudioCapabilityKey[];
 
 /**
- * Canonical matrix. Gold production retention stays 30d (SILVER class)
- * while design catalog records 90d — not production-enabled.
+ * Canonical matrix. Gold production retention = 28d (Owner 2026-10-25).
+ * SILVER stays 30d. Design catalog may still list Gold 90d — not production-enabled
+ * (`goldRetentionDesignOnly` + `isGoldRetentionProductionEnabled() === false`).
  */
 export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
   FREE: {
@@ -112,8 +115,9 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     downloadsDaily: 50,
     rendersDaily: 40,
     rendersConcurrent: 3,
-    // PRODUCTION-SAFE until artifact janitor verifies 90d.
-    artifactRetentionSeconds: 30 * DAY,
+    // Owner 2026-10-25: production Gold = 28d (same unit DAY as SILVER/others).
+    // 90d remains design-only until janitor GO; Retention executor stays HOLD.
+    artifactRetentionSeconds: 28 * DAY,
     artifactRetentionDesignSeconds: 90 * DAY,
     goldRetentionDesignOnly: true,
     artifactQuotaBytes: 5 * GIB,

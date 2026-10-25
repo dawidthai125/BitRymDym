@@ -249,8 +249,8 @@ describe("W2-A — Premium tier foundation (unit/contract)", () => {
     const gold = limitsForPremiumTier("GOLD");
     expect(gold.goldRetentionDesignOnly).toBe(true);
     expect(gold.artifactRetentionDesignSeconds).toBe(90 * 24 * 60 * 60);
-    expect(gold.artifactRetentionSeconds).toBe(30 * 24 * 60 * 60);
-    expect(retentionSecondsForTier("GOLD")).toBe(30 * 24 * 60 * 60);
+    expect(gold.artifactRetentionSeconds).toBe(28 * 24 * 60 * 60);
+    expect(retentionSecondsForTier("GOLD")).toBe(28 * 24 * 60 * 60);
   });
 
   it("S: E3 audio wrapper delegates to product resolver (single SSOT)", () => {
