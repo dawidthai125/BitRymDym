@@ -128,7 +128,7 @@ const FIXTURE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-describe("sticky waveform seek target (browser bbox)", () => {
+describe("sticky waveform seek target (fixture CSS bbox — not React mount)", () => {
   let browser: Browser;
 
   beforeAll(async () => {
