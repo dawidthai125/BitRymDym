@@ -14,7 +14,8 @@
 | Scripts | `.cursor/scripts/` | narzędzia install/shared; **bez** aktywnego hook runtime |
 | Hooki | — | **nieaktywne** (`hookConsent: declined`, brak `hooks.json`) |
 | MCP ECC | — | **nie** dodawano; zachowano istniejący `.cursor/mcp.json` (Supabase) |
-| Skills ECC | `.cursor/skills/` | puste w tej instalacji — skills projektowe pozostają w `.agents/skills/` i user skills |
+| Skills ECC (bundled) | `.cursor/.agents/skills/` | pakiet z `agents-core`; **nie** mylić z user skills ani `.agents/skills/` BitRymDym — dobieraj świadomie, nie ładuj hurtowo |
+| Skills ECC (Cursor path) | `.cursor/skills/` | puste w tej instalacji |
 
 Stan instalatora (ścieżki lokalne): `.cursor/ecc-install-state.json` — lokalny, nie traktować jako SSOT.
 
