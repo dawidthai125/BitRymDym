@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local probe dumps, gate directories, and browser session files
+/scripts/_tmp_*
+
 # supabase CLI local temp
 supabase/.temp/
 
@@ -43,3 +46,6 @@ supabase/.temp/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ECC install-state (absolute local paths; not SSOT)
+.cursor/ecc-install-state.json

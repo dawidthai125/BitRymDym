@@ -81,6 +81,7 @@ Trwały protokół pracy agenta Cursor w BitRymDym (nie zastępuje autonomii ani
 5. **Sacred WIP** `src/lib/takes/recording-eligibility-service.ts` — nigdy nie czytaj, nie wyszukuj, nie diffuj, nie haszuj i nie przekazuj agentom.
 6. **Dirty WIP** — zachowuj; nie czyść, nie stashuj, nie resetuj i nie synchronizuj niepowiązanego worktree bez bramki Ownera.
 7. **Dokumentacja vs produkcja** — lokalny PASS ≠ produkcja; Ready deploy ≠ funkcjonalne GREEN. Aktualny tip i deploy → `docs/PROJECT_STATE.md`.
+8. **ECC (Cursor)** — lokalna instalacja w `.cursor/` wspiera planowanie/review; **nie** zastępuje tego protokołu ani SSOT. Hierarchia i ograniczenia: reguła `bitrymdym-ssot-over-ecc.mdc` oraz `docs/operations/ECC_CURSOR_WORKFLOW.md`. Hooki ECC domyślnie wyłączone.
 
 <!-- END:bitrymdym-cursor-skills-protocol -->
 

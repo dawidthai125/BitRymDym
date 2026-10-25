@@ -1,0 +1,40 @@
+---
+description: BitRymDym nadrzędność względem ECC — zawsze stosuj przed regułami ECC
+alwaysApply: true
+---
+
+# BitRymDym ponad ECC
+
+ECC (rules/agents/commands w `.cursor/`) wspiera pracę agenta. **Nie zastępuje** SSOT, `AGENTS.md`, decyzji Ownera ani lokalnych skills BitRymDym.
+
+## Hierarchia (od najwyższej)
+
+1. Jawne polecenie Ownera / GO w bieżącej rozmowie
+2. `AGENTS.md` (autonomia, bramki, Sacred WIP, egress audio, protokół skills)
+3. Dokumenty SSOT i decyzje projektu (`docs/ssot/`, `docs/decisions/`, architektura)
+4. Lokalne skills BitRymDym (user + `.agents/skills/`)
+5. Reguły i agenci ECC w `.cursor/`
+
+Przy konflikcie wygrywa wyższy poziom. Nie domykaj decyzji OPEN (np. OD-15) „przy okazji” reguł ECC.
+
+## Obowiązkowe w każdej sesji
+
+- Komunikacja, dokumentacja i raporty po polsku (nazwy kodu bez zmian)
+- SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC · MOBILE FIRST
+- Nie czytaj / nie diffuj Sacred WIP: `src/lib/takes/recording-eligibility-service.ts`
+- Chroń dirty worktree; bez `git reset --hard`, force-push, stash niepowiązanego WIP
+- Standard BitRymDym: **bez PR** jako domyślnego procesu — ignoruj sekcje „Pull Request Workflow” / `gh pr` w `common-git-workflow` i „Pre-Review Checks” nastawione na PR w `common-development-workflow`
+- Nie wymagaj zawsze `gh search` / pełnego TDD / 80% coverage — stosuj skills i testy **proporcjonalne do ryzyka** BitRymDym
+- Bez nieautoryzowanych mutacji produkcyjnych, sekretów w logach, masowego formatowania
+- Dopasuj plan, testy i review do **ryzyka** zadania — nie uruchamiaj pełnego pipeline ECC dla drobnej zmiany
+
+## Dobór zasobów
+
+- Skills: tylko pasujące do zadania; nie ładuj całego katalogu ECC/skills
+- Subagenci Cursor (`Task` / dostępne typy lokalne) oraz agenci `ecc-*` w `.cursor/agents/` — używaj świadomie; nazwy `ecc:…` z dokumentacji ECC mogą nie mapować 1:1 na typy Task w tej instalacji Cursor
+- Supabase / auth / Storage / RLS → skills Supabase + security-review
+- Hooki ECC: **wyłączone** w tej integracji, dopóki Owner nie zatwierdzi osobnego audytu
+
+## Weryfikacja
+
+Nie uznawaj pracy za skończoną po samym wygenerowaniu kodu. Podawaj prawdziwe wyniki testów i status wdrożenia. Rozdzielaj: `FACT` / `INFERENCE` / `NOT VERIFIED` / `BLOCKED`.
