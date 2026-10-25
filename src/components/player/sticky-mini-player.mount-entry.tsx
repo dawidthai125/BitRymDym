@@ -1,6 +1,6 @@
 /**
  * Test-only IIFE entry: mount real StickyMiniPlayer under isolated MountPlayerProvider.
- * Bundled by sticky-mini-player.mount-host.test.ts — not an app route.
+ * Bundled by sticky-mini-player.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
 

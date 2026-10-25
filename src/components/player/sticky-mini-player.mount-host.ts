@@ -2,8 +2,8 @@
  * Node host: esbuild IIFE + Playwright Chromium for StickyMiniPlayer mount.
  * Pattern mirrors studio-fx-parity-oac-host (local-only, no network / Supabase).
  *
- * Named as a Vitest `*.test.ts` file so project tsconfig exclude keeps it out of
- * production `next build` typecheck (playwright is a devDependency).
+ * Excluded from production tsconfig (playwright is a devDependency) so `next build`
+ * typecheck does not require it; not a Vitest suite — imported only by mount tests.
  */
 import * as esbuild from "esbuild";
 import { readFileSync } from "node:fs";

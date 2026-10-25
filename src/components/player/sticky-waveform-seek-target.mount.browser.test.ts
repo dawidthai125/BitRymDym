@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
   closeStickyMountHost,
   measureStickyMiniPlayerAt,
-} from "@/components/player/sticky-mini-player.mount-host.test";
+} from "@/components/player/sticky-mini-player.mount-host";
 
 const MIN_HIT_PX = 44;
 const VISUAL_H_PX = 20;

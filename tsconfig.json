@@ -33,5 +33,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/components/player/sticky-mini-player.mount-host.ts"
+  ]
 }
