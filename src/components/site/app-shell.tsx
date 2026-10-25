@@ -1,5 +1,9 @@
 import { MobileBottomNav } from "@/components/site/mobile-bottom-nav";
 import { SiteHeader } from "@/components/site/site-header";
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_LANDMARK_CLASS,
+} from "@/components/site/skip-to-main";
 import { StickyMiniPlayer } from "@/components/player/sticky-mini-player";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
@@ -24,8 +28,15 @@ export async function AppShell({
   return (
     <div className={cn("min-h-dvh", className)}>
       <SiteHeader />
+      {/*
+        Skip target is a div: AppShell children already render their own main landmark.
+        Nesting another main landmark would be invalid HTML.
+      */}
       <div
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
         className={cn(
+          MAIN_CONTENT_LANDMARK_CLASS,
           !isAdminChrome &&
             "pb-[calc(3.75rem+env(safe-area-inset-bottom)+3.5rem)] md:pb-16",
         )}

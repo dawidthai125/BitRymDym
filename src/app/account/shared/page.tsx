@@ -2,8 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/site/site-header";
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_LANDMARK_CLASS,
+} from "@/components/site/skip-to-main";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listActiveGranteeGrantsFor } from "@/lib/grants/beat-access-grants";
+import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: "Bity udostępnione · BitRymDym",
@@ -25,7 +30,14 @@ export default async function AccountSharedBeatsPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
+      <main
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
+        className={cn(
+          "mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12",
+          MAIN_CONTENT_LANDMARK_CLASS,
+        )}
+      >
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">
             Bity udostępnione

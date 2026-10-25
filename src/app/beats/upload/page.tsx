@@ -3,9 +3,14 @@ import { redirect } from "next/navigation";
 
 import { UserUploadBeatForm } from "@/components/beats/user-upload-beat-form";
 import { SiteHeader } from "@/components/site/site-header";
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_LANDMARK_CLASS,
+} from "@/components/site/skip-to-main";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { getOwnUserBeat } from "@/lib/beats/service";
 import { canUserEditBeatStatus } from "@/lib/beats/status-labels";
+import { cn } from "@/lib/utils";
 
 type PageProps = {
   searchParams: Promise<{ beatId?: string }>;
@@ -70,7 +75,14 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
+      <main
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
+        className={cn(
+          "mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12",
+          MAIN_CONTENT_LANDMARK_CLASS,
+        )}
+      >
         <header className="space-y-2">
           <Link
             href="/account/beats"

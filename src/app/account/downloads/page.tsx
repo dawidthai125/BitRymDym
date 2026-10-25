@@ -2,9 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/site/site-header";
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_LANDMARK_CLASS,
+} from "@/components/site/skip-to-main";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listMyDownloadHistory } from "@/lib/downloads/history";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
+import { cn } from "@/lib/utils";
 
 function formatDownloadedAt(iso: string): string {
   const d = new Date(iso);
@@ -42,7 +47,14 @@ export default async function MyDownloadsPage() {
   return (
     <div className="min-h-dvh bg-[var(--brd-paper)] text-[var(--brd-ink)]">
       <SiteHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
+      <main
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
+        className={cn(
+          "mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10",
+          MAIN_CONTENT_LANDMARK_CLASS,
+        )}
+      >
         <div className="space-y-2">
           <Link
             href="/account"

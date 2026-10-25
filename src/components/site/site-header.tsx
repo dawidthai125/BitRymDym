@@ -5,6 +5,7 @@ import { PageFrame } from "@/components/brand/chrome";
 import { HeaderSearch } from "@/components/site/header-search";
 import { SiteMainNav } from "@/components/site/site-main-nav";
 import { siteNavLinkClass } from "@/components/site/site-nav-active";
+import { SkipToMainContent } from "@/components/site/skip-to-main";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { UserMenu } from "@/components/site/user-menu";
 import {
@@ -38,12 +39,14 @@ export async function SiteHeader({
     : rawName;
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-40 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_94%,transparent)] backdrop-blur-[2px]",
-        className,
-      )}
-    >
+    <>
+      <SkipToMainContent />
+      <header
+        className={cn(
+          "sticky top-0 z-40 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_94%,transparent)] backdrop-blur-[2px]",
+          className,
+        )}
+      >
       <PageFrame
         width={tone === "admin" ? "ops" : "wide"}
         className={cn(
@@ -84,5 +87,6 @@ export async function SiteHeader({
         </div>
       </PageFrame>
     </header>
+    </>
   );
 }

@@ -2,6 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/site/site-header";
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_LANDMARK_CLASS,
+} from "@/components/site/skip-to-main";
+import { cn } from "@/lib/utils";
 import { AuthError, requireRole } from "@/lib/auth/session";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
@@ -25,7 +30,14 @@ export default async function AdminLayout({
     return (
       <div className="min-h-dvh">
         <SiteHeader tone="admin" />
-        <main className="mx-auto max-w-3xl px-6 py-16">
+        <main
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
+          className={cn(
+            "mx-auto max-w-3xl px-6 py-16",
+            MAIN_CONTENT_LANDMARK_CLASS,
+          )}
+        >
           <h1 className="brd-display text-2xl font-semibold tracking-tight">
             Brak dostępu
           </h1>
@@ -113,7 +125,17 @@ export default async function AdminLayout({
           </Link>
         </nav>
       </div>
-      {children}
+      {/*
+        Skip target is a div: admin pages already render their own main landmark.
+        Nesting another main landmark would be invalid HTML.
+      */}
+      <div
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
+        className={MAIN_CONTENT_LANDMARK_CLASS}
+      >
+        {children}
+      </div>
     </div>
   );
 }

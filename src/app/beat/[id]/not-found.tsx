@@ -1,12 +1,24 @@
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site/site-header";
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_LANDMARK_CLASS,
+} from "@/components/site/skip-to-main";
+import { cn } from "@/lib/utils";
 
 export default function BeatNotFound() {
   return (
     <div className="min-h-dvh">
       <SiteHeader />
-      <main className="mx-auto flex max-w-lg flex-col gap-4 px-6 py-16">
+      <main
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
+        className={cn(
+          "mx-auto flex max-w-lg flex-col gap-4 px-6 py-16",
+          MAIN_CONTENT_LANDMARK_CLASS,
+        )}
+      >
         <h1 className="text-2xl font-semibold tracking-tight">
           Bit niedostępny
         </h1>
