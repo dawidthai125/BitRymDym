@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { filterPresentedBeatsCatalogByQuery } from "@/lib/ui/beats-catalog-search";
+import {
+  filterPresentedBeatsCatalogByQuery,
+  foldCatalogSearchText,
+} from "@/lib/ui/beats-catalog-search";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
 
 function beat(
@@ -113,6 +116,88 @@ describe("filterPresentedBeatsCatalogByQuery", () => {
         "HIP-HOP",
       ).map((b) => b.id),
     ).toEqual(["h"]);
+  });
+
+  it("matches ASCII query against Polish diacritics (laka↔Łąka, zolty↔Żółty)", () => {
+    const input = [...FIXTURE];
+    expect(
+      filterPresentedBeatsCatalogByQuery(input, "laka").map((b) => b.id),
+    ).toEqual(["f"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(input, "zolty").map((b) => b.id),
+    ).toEqual(["d"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("rev", { title: "Laka" })],
+        "łąka",
+      ).map((b) => b.id),
+    ).toEqual(["rev"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("rev2", { title: "Zolty" })],
+        "żółty",
+      ).map((b) => b.id),
+    ).toEqual(["rev2"]);
+  });
+
+  it("folds Polish diacritics on producer / genre / key as well as title", () => {
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("p", { title: "X", producer: "Łąka Beats" })],
+        "laka",
+      ).map((b) => b.id),
+    ).toEqual(["p"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("g", { title: "X", genre: "Żółty" })],
+        "zolty",
+      ).map((b) => b.id),
+    ).toEqual(["g"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("k", { title: "X", key: "Łąka" })],
+        "laka",
+      ).map((b) => b.id),
+    ).toEqual(["k"]);
+  });
+
+  it("matches NFC and NFD Unicode forms symmetrically", () => {
+    const nfc = "Łąka";
+    const nfd = nfc.normalize("NFD");
+    expect(nfd).not.toBe(nfc);
+    expect(foldCatalogSearchText(nfc)).toBe(foldCatalogSearchText(nfd));
+    expect(foldCatalogSearchText(nfc)).toBe("laka");
+
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("nfc", { title: nfc })],
+        nfd,
+      ).map((b) => b.id),
+    ).toEqual(["nfc"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("nfd", { title: nfd })],
+        "laka",
+      ).map((b) => b.id),
+    ).toEqual(["nfd"]);
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("zol", { title: "Żółty".normalize("NFD") })],
+        "zolty",
+      ).map((b) => b.id),
+    ).toEqual(["zol"]);
+  });
+
+  it("maps ł explicitly because NFD alone does not fold it to l", () => {
+    expect("ł".normalize("NFD")).toBe("ł");
+    expect(foldCatalogSearchText("ł")).toBe("l");
+    expect(foldCatalogSearchText("Ł")).toBe("l");
+    expect(
+      filterPresentedBeatsCatalogByQuery(
+        [beat("l", { title: "Łąka" })],
+        "laka",
+      ).map((b) => b.id),
+    ).toEqual(["l"]);
   });
 
   it("returns [] when nothing matches; null genre/key do not throw", () => {
