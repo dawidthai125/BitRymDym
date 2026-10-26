@@ -67,6 +67,23 @@ async function countAxCheckboxesNamed(
   }).length;
 }
 
+async function countAxSlidersNamed(
+  page: Page,
+  context: BrowserContext,
+  namePattern: RegExp,
+): Promise<number> {
+  const client = await context.newCDPSession(page);
+  await client.send("Accessibility.enable");
+  const { nodes } = (await client.send("Accessibility.getFullAXTree")) as {
+    nodes: AxNode[];
+  };
+  return nodes.filter((n) => {
+    if (n.ignored) return false;
+    if ((n.role?.value || "") !== "slider") return false;
+    return namePattern.test(n.name?.value || "");
+  }).length;
+}
+
 async function probeFilterProgrammaticGroupsAtViewport(
   page: Page,
   context: BrowserContext,
@@ -156,6 +173,102 @@ async function probeFilterProgrammaticGroupsAtViewport(
 
   const status = page.getByRole("status");
   const statusText = (await status.innerText()).trim();
+  expect(statusText).toMatch(/1 bit/);
+
+  if (!mobile) {
+    expect(await page.locator("ul li:visible").count()).toBe(1);
+  }
+
+  return { networkNonLocal, audioElementCount };
+}
+
+async function probeBpmRangeSlidersAtViewport(
+  page: Page,
+  context: BrowserContext,
+  js: string,
+  css: string,
+  mobile: boolean,
+): Promise<{ networkNonLocal: number; audioElementCount: number }> {
+  let networkNonLocal = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.startsWith("data:") || url.startsWith("blob:")) {
+      await route.continue();
+      return;
+    }
+    if (
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("https://localhost")
+    ) {
+      await route.continue();
+      return;
+    }
+    networkNonLocal += 1;
+    await route.abort();
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="beats-filters-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_BEATS_FILTERS_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  const audioElementCount = await page.locator("audio").count();
+
+  if (mobile) {
+    await page.getByRole("button", { name: /^Filtry/ }).click();
+    await page
+      .getByRole("dialog", { name: "Filtry katalogu" })
+      .waitFor({ state: "visible" });
+  }
+
+  const bpmMin = page.getByRole("slider", { name: "BPM min", exact: true });
+  const bpmMax = page.getByRole("slider", { name: "BPM max", exact: true });
+
+  expect(await bpmMin.count()).toBe(1);
+  expect(await bpmMin.isVisible()).toBe(true);
+  expect(await bpmMax.count()).toBe(1);
+  expect(await bpmMax.isVisible()).toBe(true);
+
+  expect(await countAxSlidersNamed(page, context, /^BPM min$/i)).toBe(1);
+  expect(await countAxSlidersNamed(page, context, /^BPM max$/i)).toBe(1);
+
+  expect(await bpmMin.getAttribute("min")).toBe("128");
+  expect(await bpmMin.getAttribute("max")).toBe("140");
+  expect(await bpmMin.inputValue()).toBe("128");
+  expect(await bpmMax.getAttribute("min")).toBe("128");
+  expect(await bpmMax.getAttribute("max")).toBe("140");
+  expect(await bpmMax.inputValue()).toBe("140");
+
+  await bpmMin.focus();
+  await page.keyboard.press("ArrowRight");
+  expect(await bpmMin.inputValue()).toBe("129");
+  expect(await bpmMin.evaluate((el) => el === document.activeElement)).toBe(
+    true,
+  );
+  await page.keyboard.press("ArrowLeft");
+  expect(await bpmMin.inputValue()).toBe("128");
+
+  await bpmMax.focus();
+  await page.keyboard.press("ArrowLeft");
+  expect(await bpmMax.inputValue()).toBe("139");
+  expect(await bpmMax.evaluate((el) => el === document.activeElement)).toBe(
+    true,
+  );
+
+  if (mobile) {
+    await page.getByRole("button", { name: /Pokaż wyniki/i }).click();
+    await page
+      .getByRole("dialog", { name: "Filtry katalogu" })
+      .waitFor({ state: "hidden" });
+  }
+
+  const statusText = (await page.getByRole("status").innerText()).trim();
   expect(statusText).toMatch(/1 bit/);
 
   if (!mobile) {
@@ -350,6 +463,59 @@ describe("beats catalog — result status live region (real mount)", () => {
         });
         const page = await context.newPage();
         const probe = await probeFilterProgrammaticGroupsAtViewport(
+          page,
+          context,
+          js,
+          css,
+          vp.mobile,
+        );
+        expect(probe.audioElementCount).toBe(0);
+        expect(probe.networkNonLocal).toBe(0);
+        await context.close();
+      }
+    } finally {
+      await browser.close();
+    }
+  }, 90_000);
+
+  it("mobile + desktop: BPM range sliders bounds, keyboard, filter status; AX once each", async () => {
+    invalidateBeatsFiltersMountBundle();
+    const [js, css] = await Promise.all([
+      getBeatsFiltersMountBundle(),
+      Promise.resolve(getBeatsFiltersMountCss()),
+    ]);
+
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--disable-gpu", "--no-sandbox"],
+    });
+
+    const viewports = [
+      {
+        width: 390,
+        height: 844,
+        isMobile: true as const,
+        hasTouch: true as const,
+        mobile: true,
+      },
+      {
+        width: 1280,
+        height: 800,
+        isMobile: false as const,
+        hasTouch: false as const,
+        mobile: false,
+      },
+    ];
+
+    try {
+      for (const vp of viewports) {
+        const context = await browser.newContext({
+          viewport: { width: vp.width, height: vp.height },
+          isMobile: vp.isMobile,
+          hasTouch: vp.hasTouch,
+        });
+        const page = await context.newPage();
+        const probe = await probeBpmRangeSlidersAtViewport(
           page,
           context,
           js,
