@@ -19,18 +19,18 @@ describe("header search + account menu touch targets", () => {
     expect(src).not.toMatch(/(?:^|\s|")min-h-10(?:\s|"|$)/);
   });
 
-  it("UserMenu MenuLink and Wyloguj expose min-h-11 hit area", () => {
+  it("UserMenu nav links and Wyloguj expose min-h-11 hit area", () => {
     const src = readFileSync(
       join(root, "src/components/site/user-menu.tsx"),
       "utf8",
     );
-    const menuLinkClass = src.match(
-      /function MenuLink[\s\S]*?className="([^"]*)"/,
+    const navLinkClass = src.match(
+      /function AccountNavLink[\s\S]*?className=\{cn\(\s*"([^"]*)"/,
     );
-    expect(menuLinkClass?.[1]).toMatch(/(?:^|\s)min-h-11(?:\s|$)/);
+    expect(navLinkClass?.[1]).toMatch(/(?:^|\s)min-h-11(?:\s|$)/);
 
     const logoutClass = src.match(
-      /type="submit"\s+role="menuitem"\s+className="([^"]*)"/,
+      /type="submit"\s+className=\{cn\(\s*"([^"]*)"/,
     );
     expect(logoutClass?.[1]).toMatch(/(?:^|\s)min-h-11(?:\s|$)/);
   });

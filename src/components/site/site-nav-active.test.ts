@@ -89,13 +89,21 @@ describe("desktop SiteMainNav aria-current contract", () => {
     expect(miniPlayer).toMatch(/\blg:bottom-0\b/);
   });
 
-  it("user-menu trigger has aria-label when visible name is hidden on mobile", () => {
+  it("user-menu uses disclosure semantics, not APG menu roles", () => {
     const src = readFileSync(
       join(root, "src/components/site/user-menu.tsx"),
       "utf8",
     );
-    expect(src).toContain("aria-label={displayName}");
-    expect(src).toContain('aria-haspopup="menu"');
+    expect(src).toContain("aria-expanded={open}");
+    expect(src).toContain("aria-controls={open ? panelId : undefined}");
+    expect(src).toContain("Menu konta:");
+    expect(src).toContain('aria-label="Menu konta"');
+    expect(src).toContain("buttonRef.current?.focus()");
+    expect(src).toMatch(/if\s*\(\s*!open\s*\)\s*return/);
+    expect(src).toMatch(/},\s*\[\s*open\s*\]\s*\)/);
+    expect(src).not.toContain('aria-haspopup="menu"');
+    expect(src).not.toMatch(/role="menu"/);
+    expect(src).not.toMatch(/role="menuitem"/);
   });
 });
 

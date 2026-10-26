@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { signOutAction } from "@/lib/auth/actions";
 import { cn } from "@/lib/utils";
+
+const focusRing =
+  "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brd-paper)]";
 
 type UserMenuProps = {
   displayName: string;
@@ -20,15 +23,32 @@ export function UserMenu({
   showUpload,
 }: UserMenuProps) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const initial = (displayName || email || "U").charAt(0).toUpperCase();
 
   useEffect(() => {
+    if (!open) return;
+
     function onDoc(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      if (rootRef.current?.contains(e.target as Node)) return;
+      const panel = panelRef.current;
+      const hadFocusInside =
+        panel &&
+        document.activeElement instanceof Node &&
+        panel.contains(document.activeElement);
+      setOpen(false);
+      if (hadFocusInside) {
+        buttonRef.current?.focus();
+      }
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      setOpen(false);
+      buttonRef.current?.focus();
     }
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
@@ -36,19 +56,21 @@ export function UserMenu({
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [open]);
 
   return (
     <div className="relative" ref={rootRef}>
       <button
+        ref={buttonRef}
         type="button"
         className={cn(
           "inline-flex min-h-11 items-center gap-2 border border-[var(--brd-line)] px-2.5 text-sm",
+          focusRing,
           open && "border-[var(--brd-green)]",
         )}
-        aria-label={displayName}
+        aria-label={`Menu konta: ${displayName}`}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
       >
         <span
@@ -64,42 +86,50 @@ export function UserMenu({
 
       {open ? (
         <div
-          role="menu"
+          id={panelId}
+          ref={panelRef}
           className="absolute right-0 z-50 mt-2 w-56 border border-[var(--brd-line)] bg-[var(--brd-paper)] py-1 shadow-sm"
         >
           <p className="border-b border-[var(--brd-line)] px-3 py-2 text-xs text-[var(--brd-mute)]">
             {email || displayName}
           </p>
-          <MenuLink href="/studio" onNavigate={() => setOpen(false)}>
-            Studio
-          </MenuLink>
-          <MenuLink href="/premium" onNavigate={() => setOpen(false)}>
-            Premium
-          </MenuLink>
-          <MenuLink href="/library" onNavigate={() => setOpen(false)}>
-            Biblioteka
-          </MenuLink>
-          <MenuLink href="/profile" onNavigate={() => setOpen(false)}>
-            Profil
-          </MenuLink>
-          <MenuLink href="/settings" onNavigate={() => setOpen(false)}>
-            Ustawienia
-          </MenuLink>
-          {showUpload ? (
-            <MenuLink href="/beats/upload" onNavigate={() => setOpen(false)}>
-              Wrzuć bit
-            </MenuLink>
-          ) : null}
-          {showAdmin ? (
-            <MenuLink href="/admin" onNavigate={() => setOpen(false)}>
-              Panel administratora
-            </MenuLink>
-          ) : null}
+          <nav aria-label="Menu konta" className="flex flex-col">
+            <AccountNavLink href="/studio" onNavigate={() => setOpen(false)}>
+              Studio
+            </AccountNavLink>
+            <AccountNavLink href="/premium" onNavigate={() => setOpen(false)}>
+              Premium
+            </AccountNavLink>
+            <AccountNavLink href="/library" onNavigate={() => setOpen(false)}>
+              Biblioteka
+            </AccountNavLink>
+            <AccountNavLink href="/profile" onNavigate={() => setOpen(false)}>
+              Profil
+            </AccountNavLink>
+            <AccountNavLink href="/settings" onNavigate={() => setOpen(false)}>
+              Ustawienia
+            </AccountNavLink>
+            {showUpload ? (
+              <AccountNavLink
+                href="/beats/upload"
+                onNavigate={() => setOpen(false)}
+              >
+                Wrzuć bit
+              </AccountNavLink>
+            ) : null}
+            {showAdmin ? (
+              <AccountNavLink href="/admin" onNavigate={() => setOpen(false)}>
+                Panel administratora
+              </AccountNavLink>
+            ) : null}
+          </nav>
           <form action={signOutAction} className="border-t border-[var(--brd-line)]">
             <button
               type="submit"
-              role="menuitem"
-              className="flex min-h-11 w-full items-center px-3 py-2.5 text-left text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
+              className={cn(
+                "flex min-h-11 w-full items-center px-3 py-2.5 text-left text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]",
+                focusRing,
+              )}
             >
               Wyloguj
             </button>
@@ -110,7 +140,7 @@ export function UserMenu({
   );
 }
 
-function MenuLink({
+function AccountNavLink({
   href,
   children,
   onNavigate,
@@ -122,8 +152,10 @@ function MenuLink({
   return (
     <Link
       href={href}
-      role="menuitem"
-      className="flex min-h-11 items-center px-3 py-2.5 text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
+      className={cn(
+        "flex min-h-11 items-center px-3 py-2.5 text-sm text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]",
+        focusRing,
+      )}
       onClick={onNavigate}
     >
       {children}
