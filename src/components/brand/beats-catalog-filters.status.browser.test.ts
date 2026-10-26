@@ -50,6 +50,121 @@ async function countSortujComboboxesInAxTree(
   }).length;
 }
 
+async function countAxCheckboxesNamed(
+  page: Page,
+  context: BrowserContext,
+  name: string,
+): Promise<number> {
+  const client = await context.newCDPSession(page);
+  await client.send("Accessibility.enable");
+  const { nodes } = (await client.send("Accessibility.getFullAXTree")) as {
+    nodes: AxNode[];
+  };
+  return nodes.filter((n) => {
+    if (n.ignored) return false;
+    if ((n.role?.value || "") !== "checkbox") return false;
+    return (n.name?.value || "") === name;
+  }).length;
+}
+
+async function probeFilterProgrammaticGroupsAtViewport(
+  page: Page,
+  context: BrowserContext,
+  js: string,
+  css: string,
+  mobile: boolean,
+): Promise<{ networkNonLocal: number; audioElementCount: number }> {
+  let networkNonLocal = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.startsWith("data:") || url.startsWith("blob:")) {
+      await route.continue();
+      return;
+    }
+    if (
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("https://localhost")
+    ) {
+      await route.continue();
+      return;
+    }
+    networkNonLocal += 1;
+    await route.abort();
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="beats-filters-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_BEATS_FILTERS_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  const audioElementCount = await page.locator("audio").count();
+
+  if (mobile) {
+    await page.getByRole("button", { name: /^Filtry/ }).click();
+    await page
+      .getByRole("dialog", { name: "Filtry katalogu" })
+      .waitFor({ state: "visible" });
+  }
+
+  const gatunekGroup = page.getByRole("group", { name: "Gatunek", exact: true });
+  const tonacjaGroup = page.getByRole("group", {
+    name: "Tonacja",
+    exact: true,
+  });
+  expect(await gatunekGroup.count()).toBe(1);
+  expect(await gatunekGroup.isVisible()).toBe(true);
+  expect(await tonacjaGroup.count()).toBe(1);
+  expect(await tonacjaGroup.isVisible()).toBe(true);
+
+  expect(
+    await gatunekGroup.getByRole("checkbox", { name: "Trap", exact: true }).count(),
+  ).toBe(1);
+  expect(
+    await gatunekGroup.getByRole("checkbox", { name: "Drill", exact: true }).count(),
+  ).toBe(1);
+  expect(
+    await tonacjaGroup.getByRole("checkbox", { name: "Am", exact: true }).count(),
+  ).toBe(1);
+  expect(
+    await tonacjaGroup.getByRole("checkbox", { name: "Gm", exact: true }).count(),
+  ).toBe(1);
+
+  for (const label of ["Trap", "Drill", "Am", "Gm"] as const) {
+    expect(await countAxCheckboxesNamed(page, context, label)).toBe(1);
+  }
+
+  const trapCheckbox = gatunekGroup.getByRole("checkbox", {
+    name: "Trap",
+    exact: true,
+  });
+  await trapCheckbox.focus();
+  await page.keyboard.press("Space");
+  expect(await trapCheckbox.isChecked()).toBe(true);
+
+  if (mobile) {
+    await page.getByRole("button", { name: /Pokaż wyniki/i }).click();
+    await page
+      .getByRole("dialog", { name: "Filtry katalogu" })
+      .waitFor({ state: "hidden" });
+  }
+
+  const status = page.getByRole("status");
+  const statusText = (await status.innerText()).trim();
+  expect(statusText).toMatch(/1 bit/);
+
+  if (!mobile) {
+    expect(await page.locator("ul li:visible").count()).toBe(1);
+  }
+
+  return { networkNonLocal, audioElementCount };
+}
+
 async function probeSortComboboxAtViewport(
   page: Page,
   context: BrowserContext,
@@ -188,6 +303,59 @@ describe("beats catalog — result status live region (real mount)", () => {
         });
         const page = await context.newPage();
         const probe = await probeSortComboboxAtViewport(page, context, js, css);
+        expect(probe.audioElementCount).toBe(0);
+        expect(probe.networkNonLocal).toBe(0);
+        await context.close();
+      }
+    } finally {
+      await browser.close();
+    }
+  }, 90_000);
+
+  it("mobile + desktop: programmatic filter groups; Trap keyboard filter; AX once each", async () => {
+    invalidateBeatsFiltersMountBundle();
+    const [js, css] = await Promise.all([
+      getBeatsFiltersMountBundle(),
+      Promise.resolve(getBeatsFiltersMountCss()),
+    ]);
+
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--disable-gpu", "--no-sandbox"],
+    });
+
+    const viewports = [
+      {
+        width: 390,
+        height: 844,
+        isMobile: true as const,
+        hasTouch: true as const,
+        mobile: true,
+      },
+      {
+        width: 1280,
+        height: 800,
+        isMobile: false as const,
+        hasTouch: false as const,
+        mobile: false,
+      },
+    ];
+
+    try {
+      for (const vp of viewports) {
+        const context = await browser.newContext({
+          viewport: { width: vp.width, height: vp.height },
+          isMobile: vp.isMobile,
+          hasTouch: vp.hasTouch,
+        });
+        const page = await context.newPage();
+        const probe = await probeFilterProgrammaticGroupsAtViewport(
+          page,
+          context,
+          js,
+          css,
+          vp.mobile,
+        );
         expect(probe.audioElementCount).toBe(0);
         expect(probe.networkNonLocal).toBe(0);
         await context.close();

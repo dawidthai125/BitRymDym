@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -488,9 +489,17 @@ function FilterGroup({
   title: string;
   children: React.ReactNode;
 }) {
+  const titleId = useId();
   return (
-    <div className="space-y-1.5 border-t border-[var(--brd-line)] py-3.5 first:border-t-0 first:pt-0">
-      <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+    <div
+      role="group"
+      aria-labelledby={titleId}
+      className="space-y-1.5 border-t border-[var(--brd-line)] py-3.5 first:border-t-0 first:pt-0"
+    >
+      <p
+        id={titleId}
+        className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]"
+      >
         {title}
       </p>
       <div className="space-y-0.5">{children}</div>
