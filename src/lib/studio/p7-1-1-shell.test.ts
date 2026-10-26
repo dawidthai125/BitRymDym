@@ -11,6 +11,10 @@ const editor = readFileSync(
   join(root, "src/components/studio/studio-editor.tsx"),
   "utf8",
 );
+const editToolbar = readFileSync(
+  join(root, "src/components/studio/studio-edit-toolbar.tsx"),
+  "utf8",
+);
 const page = readFileSync(
   join(root, "src/app/studio/p/[projectId]/page.tsx"),
   "utf8",
@@ -22,7 +26,8 @@ describe("Phase 7.1.1 shell landmarks", () => {
     expect(editor).toMatch(/data-studio-shell="true"/);
     expect(editor).toMatch(/data-testid="studio-header"/);
     expect(editor).toMatch(/data-testid="studio-transport"/);
-    expect(editor).toMatch(/data-testid="studio-edit-toolbar"/);
+    expect(editor).toMatch(/<StudioEditToolbar[\s\S]*?\/>/);
+    expect(editToolbar).toMatch(/data-testid="studio-edit-toolbar"/);
     expect(editor).toMatch(/data-testid="studio-track-list"/);
     expect(editor).toMatch(/data-testid="studio-timeline"/);
     expect(editor).toMatch(/data-testid="studio-inspector-desktop"/);
@@ -46,19 +51,13 @@ describe("Phase 7.1.1 shell landmarks", () => {
 
 describe("Phase 7.1.1 edit toolbar hit targets", () => {
   it("primary edit-toolbar controls declare min-h-11 min-w-11 (≥44×44)", () => {
-    const toolbarStart = editor.indexOf('data-testid="studio-edit-toolbar"');
-    expect(toolbarStart).toBeGreaterThan(0);
-    const toolbarEnd = editor.indexOf(
-      'className="flex min-h-0 flex-col gap-3 xl:flex-row',
-      toolbarStart,
-    );
-    const toolbar = editor.slice(toolbarStart, toolbarEnd);
-    const buttonCount = (toolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [])
+    expect(editor).toMatch(/<StudioEditToolbar[\s\S]*?\/>/);
+    const buttonCount = (editToolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [])
       .length;
     expect(buttonCount).toBeGreaterThanOrEqual(10);
-    expect(toolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0).toBe(
-      buttonCount,
-    );
+    expect(
+      editToolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0,
+    ).toBe(buttonCount);
     for (const label of [
       "Zaznacz",
       "Edycja",
@@ -70,9 +69,9 @@ describe("Phase 7.1.1 edit toolbar hit targets", () => {
       "Fit",
       "Mixer",
     ]) {
-      expect(toolbar).toContain(label);
+      expect(editToolbar).toContain(label);
     }
-    expect(toolbar).toMatch(/studio-add-track/);
+    expect(editToolbar).toMatch(/studio-add-track/);
   });
 
   it("track chips and reorder use ≥44px hit area classes", () => {

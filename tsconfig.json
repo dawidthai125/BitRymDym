@@ -37,6 +37,7 @@
     "node_modules",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "src/components/player/sticky-mini-player.mount-host.ts"
+    "src/components/player/sticky-mini-player.mount-host.ts",
+    "src/components/studio/studio-edit-toolbar.mount-host.ts"
   ]
 }

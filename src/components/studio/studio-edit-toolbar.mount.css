@@ -1,0 +1,204 @@
+/**
+ * Tailwind-equivalent utilities for StudioEditToolbar + Button size=sm mount.
+ * Root 16px → min-h-11 / min-w-11 = 44px. Harness stylesheet only.
+ */
+:root {
+  font-size: 16px;
+  --brd-ink: #111;
+  --brd-mute: #666;
+  --brd-green: #0a7;
+  --brd-paper: #fafafa;
+  --brd-line: #ccc;
+  --brd-bg: #f0f0f0;
+  --radius-md: 12px;
+  --primary: #222;
+  --primary-foreground: #fff;
+  --background: #eee;
+  --foreground: #111;
+  --border: #ccc;
+  --muted: #e8e8e8;
+  --ring: #0a7;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--brd-bg);
+}
+.flex {
+  display: flex;
+}
+.inline-flex {
+  display: inline-flex;
+}
+.hidden {
+  display: none;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.shrink-0 {
+  flex-shrink: 0;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.w-full {
+  width: 100%;
+}
+.min-h-11 {
+  min-height: 2.75rem;
+}
+.min-w-11 {
+  min-width: 2.75rem;
+}
+.h-7 {
+  height: 1.75rem;
+}
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+.border-b {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+.border-transparent {
+  border-color: transparent;
+}
+.border-\[var\(--brd-line\)\] {
+  border-color: var(--brd-line);
+}
+.border-border {
+  border-color: var(--border);
+}
+.bg-\[var\(--brd-paper\)\] {
+  background-color: var(--brd-paper);
+}
+.bg-\[var\(--brd-bg\)\] {
+  background-color: var(--brd-bg);
+}
+.bg-background {
+  background-color: var(--background);
+}
+.bg-primary {
+  background-color: var(--primary);
+}
+.bg-clip-padding {
+  background-clip: padding-box;
+}
+.text-\[var\(--brd-ink\)\] {
+  color: var(--brd-ink);
+}
+.text-\[var\(--brd-mute\)\] {
+  color: var(--brd-mute);
+}
+.text-\[var\(--brd-green\)\] {
+  color: var(--brd-green);
+}
+.text-primary-foreground {
+  color: var(--primary-foreground);
+}
+.text-foreground {
+  color: var(--foreground);
+}
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
+.text-\[0\.8rem\] {
+  font-size: 0.8rem;
+}
+.text-\[10px\] {
+  font-size: 10px;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-mono {
+  font-family: ui-monospace, monospace;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+.select-none {
+  user-select: none;
+}
+.rounded {
+  border-radius: 0.25rem;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-\[min\(var\(--radius-md\)\,12px\)\] {
+  border-radius: 12px;
+}
+.px-0\.5 {
+  padding-left: 0.125rem;
+  padding-right: 0.125rem;
+}
+.px-1 {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.outline-none {
+  outline: none;
+}
+.transition-all {
+  transition: all 0.15s ease;
+}
+/* Mobile measurement: reveal overflow without clicking Więcej */
+@media (max-width: 767px) {
+  [data-testid="studio-toolbar-overflow"].hidden {
+    display: flex !important;
+    width: 100%;
+  }
+}
+@media (min-width: 640px) {
+  .sm\:inline {
+    display: inline;
+  }
+  .sm\:hidden {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  .md\:hidden {
+    display: none;
+  }
+  .md\:contents {
+    display: contents;
+  }
+}
+@media (min-width: 1280px) {
+  .xl\:hidden {
+    display: none;
+  }
+}

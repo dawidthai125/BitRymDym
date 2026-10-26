@@ -85,7 +85,7 @@ describe("Phase 7.1.2 color tokens", () => {
 describe("Phase 7.1.2 preserves 7.1.1 shell contracts", () => {
   it("keeps shell landmarks and ≥44px toolbar hit targets", () => {
     expect(editor).toMatch(/data-testid="studio-daw-shell"/);
-    expect(editor).toMatch(/data-testid="studio-edit-toolbar"/);
+    expect(editor).toMatch(/StudioEditToolbar/);
     expect(editor).toMatch(/data-testid="studio-track-header"/);
     expect(editor).toMatch(/STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11/);
     expect(editor).toMatch(/overflow-x-hidden/);

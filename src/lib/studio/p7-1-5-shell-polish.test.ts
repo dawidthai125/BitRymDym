@@ -12,6 +12,10 @@ const editor = readFileSync(
   join(root, "src/components/studio/studio-editor.tsx"),
   "utf8",
 );
+const editToolbar = readFileSync(
+  join(root, "src/components/studio/studio-edit-toolbar.tsx"),
+  "utf8",
+);
 const provider = readFileSync(
   join(root, "src/components/studio/studio-transport-provider.tsx"),
   "utf8",
@@ -297,15 +301,10 @@ describe("Phase 7.1.5.3 — minimal transport keyboard", () => {
 
 describe("Phase 7.1.5.4 — mobile toolbar overflow", () => {
   it("exposes Więcej overflow while keeping primary controls and ≥44px", () => {
-    const toolbarStart = editor.indexOf('data-testid="studio-edit-toolbar"');
-    const toolbarEnd = editor.indexOf(
-      'className="flex min-h-0 flex-col gap-3 xl:flex-row',
-      toolbarStart,
-    );
-    const toolbar = editor.slice(toolbarStart, toolbarEnd);
-    expect(toolbar).toMatch(/studio-toolbar-more/);
-    expect(toolbar).toMatch(/Więcej/);
-    expect(toolbar).toMatch(/studio-toolbar-overflow/);
+    expect(editor).toMatch(/<StudioEditToolbar[\s\S]*?\/>/);
+    expect(editToolbar).toMatch(/studio-toolbar-more/);
+    expect(editToolbar).toMatch(/Więcej/);
+    expect(editToolbar).toMatch(/studio-toolbar-overflow/);
     for (const label of [
       "Zaznacz",
       "Edycja",
@@ -318,20 +317,21 @@ describe("Phase 7.1.5.4 — mobile toolbar overflow", () => {
       "zoom+",
       "Fit",
     ]) {
-      expect(toolbar).toContain(label);
+      expect(editToolbar).toContain(label);
     }
-    expect(toolbar).toMatch(/studio-add-track/);
-    const buttons = toolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [];
+    expect(editToolbar).toMatch(/studio-add-track/);
+    const buttons = editToolbar.match(/<Button[\s\S]*?<\/Button>/g) ?? [];
     expect(buttons.length).toBeGreaterThanOrEqual(10);
-    expect(toolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0).toBe(
-      buttons.length,
-    );
+    expect(
+      editToolbar.match(/className="min-h-11 min-w-11/g)?.length ?? 0,
+    ).toBe(buttons.length);
   });
 });
 
 describe("Phase 7.1.5.5 — optional micro-polish", () => {
   it("wires Inspector aria-controls to overlay panel id", () => {
-    expect(editor).toMatch(/aria-controls=\{inspectorPanelId\}/);
+    expect(editor).toMatch(/inspectorPanelId=\{inspectorPanelId\}/);
+    expect(editToolbar).toMatch(/aria-controls=\{props\.inspectorPanelId\}/);
     expect(inspectorShell).toMatch(/panelId\?:/);
     expect(inspectorShell).toMatch(/id=\{panelId\}/);
   });
