@@ -6,7 +6,7 @@ import * as esbuild from "esbuild";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, type Browser } from "playwright";
+import { chromium, type Browser, type Locator } from "playwright";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(HERE, "beats-catalog-filters.mount-entry.tsx");
@@ -482,4 +482,212 @@ export async function probeBeatsCatalogResultStatus(): Promise<BeatsCatalogResul
 
   await context.close();
   return emptyProbe;
+}
+
+export type BeatsCatalogBpmFilterStatusProbe = {
+  mounted: boolean;
+  initialStatusText: string;
+  initialInAxTree: boolean;
+  backgroundInertWhileOpen: boolean;
+  shellInertWhileOpen: boolean;
+  showResultsLabelIncludesOne: boolean;
+  dialogClosedAfterApply: boolean;
+  backgroundInertAfterClose: boolean;
+  shellInertAfterClose: boolean;
+  statusInertAncestor: boolean;
+  statusCount: number;
+  finalStatusText: string;
+  finalInAxTree: boolean;
+  metaAriaHiddenPresent: boolean;
+  metaVisibleText: string;
+  audioElementCount: number;
+  networkNonLocal: number;
+};
+
+async function setReactControlledRangeValue(
+  slider: Locator,
+  value: number,
+): Promise<void> {
+  await slider.evaluate((el, val) => {
+    const input = el as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    setter?.call(input, String(val));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, value);
+}
+
+async function readBackgroundInert(
+  page: Awaited<ReturnType<Browser["newPage"]>>,
+): Promise<boolean> {
+  return page.evaluate(() => {
+    const bg = document.querySelector(
+      "[data-beats-catalog-background]",
+    ) as HTMLElement | null;
+    return Boolean(bg && "inert" in bg && bg.inert);
+  });
+}
+
+async function readShellInert(
+  page: Awaited<ReturnType<Browser["newPage"]>>,
+): Promise<boolean> {
+  return page.evaluate(() => {
+    const shell = document.querySelector(
+      "[data-app-shell]",
+    ) as HTMLElement | null;
+    return Boolean(shell && "inert" in shell && shell.inert);
+  });
+}
+
+async function readStatusInertAncestor(
+  page: Awaited<ReturnType<Browser["newPage"]>>,
+): Promise<boolean> {
+  return page.evaluate(() => {
+    const status = document.querySelector('[role="status"]');
+    let node: HTMLElement | null = status as HTMLElement | null;
+    while (node) {
+      if ("inert" in node && node.inert) return true;
+      node = node.parentElement;
+    }
+    return false;
+  });
+}
+
+export async function probeBeatsCatalogBpmFilterStatus(): Promise<BeatsCatalogBpmFilterStatusProbe> {
+  const [js, css] = await Promise.all([
+    getBeatsFiltersMountBundle(),
+    Promise.resolve(getBeatsFiltersMountCss()),
+  ]);
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await context.newPage();
+  let networkNonLocal = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.startsWith("data:") || url.startsWith("blob:")) {
+      await route.continue();
+      return;
+    }
+    if (
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("https://localhost")
+    ) {
+      await route.continue();
+      return;
+    }
+    networkNonLocal += 1;
+    await route.abort();
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="beats-filters-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_BEATS_FILTERS_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  const empty: BeatsCatalogBpmFilterStatusProbe = {
+    mounted: false,
+    initialStatusText: "",
+    initialInAxTree: false,
+    backgroundInertWhileOpen: false,
+    shellInertWhileOpen: false,
+    showResultsLabelIncludesOne: false,
+    dialogClosedAfterApply: false,
+    backgroundInertAfterClose: true,
+    shellInertAfterClose: true,
+    statusInertAncestor: true,
+    statusCount: 0,
+    finalStatusText: "",
+    finalInAxTree: false,
+    metaAriaHiddenPresent: false,
+    metaVisibleText: "",
+    audioElementCount: await page.locator("audio").count(),
+    networkNonLocal,
+  };
+
+  const search = page.locator("#beats-search");
+  if ((await search.count()) < 1) {
+    await context.close();
+    return empty;
+  }
+
+  empty.mounted = true;
+
+  const initialStatusText = (await readStatusText(page)).trim();
+  empty.initialStatusText = initialStatusText;
+  empty.initialInAxTree = await axHasRoleText(
+    page,
+    context,
+    "status",
+    initialStatusText,
+  );
+
+  await page.getByRole("button", { name: /^Filtry/ }).click();
+  await page.getByRole("dialog", { name: "Filtry katalogu" }).waitFor({
+    state: "visible",
+  });
+
+  empty.backgroundInertWhileOpen = await readBackgroundInert(page);
+  empty.shellInertWhileOpen = await readShellInert(page);
+
+  const bpmMaxSlider = page.getByRole("slider", { name: /BPM max/i });
+  await setReactControlledRangeValue(bpmMaxSlider, 129);
+
+  const showResults = page.getByRole("button", { name: /Pokaż wyniki/i });
+  await showResults.waitFor({ state: "visible" });
+  const showResultsText = (await showResults.innerText()).trim();
+  empty.showResultsLabelIncludesOne = /Pokaż wyniki \(1\)/.test(showResultsText);
+
+  await showResults.click();
+  await page
+    .getByRole("dialog", { name: "Filtry katalogu" })
+    .waitFor({ state: "hidden" });
+
+  empty.dialogClosedAfterApply = !(await page.evaluate(() =>
+    Boolean(
+      document.querySelector('[role="dialog"][aria-label="Filtry katalogu"]'),
+    ),
+  ));
+
+  empty.backgroundInertAfterClose = await readBackgroundInert(page);
+  empty.shellInertAfterClose = await readShellInert(page);
+  empty.statusInertAncestor = await readStatusInertAncestor(page);
+  empty.statusCount = await page.getByRole("status").count();
+
+  const finalStatusText = (await readStatusText(page)).trim();
+  empty.finalStatusText = finalStatusText;
+  empty.finalInAxTree = await axHasRoleText(
+    page,
+    context,
+    "status",
+    "1 bit · z 2",
+  );
+
+  empty.metaVisibleText = await page.evaluate(() => {
+    const meta = document.querySelector(
+      "p.brd-meta[aria-hidden]",
+    ) as HTMLElement | null;
+    return meta?.textContent?.trim().replace(/\s+/g, " ") ?? "";
+  });
+  empty.metaAriaHiddenPresent = await page.evaluate(() =>
+    Boolean(document.querySelector("p.brd-meta[aria-hidden]")),
+  );
+
+  empty.audioElementCount = await page.locator("audio").count();
+  empty.networkNonLocal = networkNonLocal;
+
+  await context.close();
+  return empty;
 }
