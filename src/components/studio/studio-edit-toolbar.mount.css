@@ -171,12 +171,28 @@ body {
 .outline-none {
   outline: none;
 }
+.focus-visible\:border-ring:focus-visible {
+  border-color: var(--ring);
+}
+.focus-visible\:ring-3:focus-visible {
+  --tw-ring-width: 3px;
+}
+.focus-visible\:ring-ring\/50:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+}
+/* Harness focus indicator (mirrors Button focus-visible ring; higher specificity than outline-none) */
+[data-testid="studio-edit-toolbar"] :is(button, a):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+}
 .transition-all {
   transition: all 0.15s ease;
 }
-/* Mobile measurement: reveal overflow without clicking Więcej */
+/* Hit-area only: reveal overflow without opening Więcej. Keyboard probes omit this attr. */
 @media (max-width: 767px) {
-  [data-testid="studio-toolbar-overflow"].hidden {
+  html[data-brd-toolbar-hit-measure]
+    [data-testid="studio-toolbar-overflow"].hidden {
     display: flex !important;
     width: 100%;
   }

@@ -90,6 +90,12 @@ export async function closeStudioToolbarMountHost(): Promise<void> {
   bundleCache = null;
 }
 
+/** Drop esbuild/CSS cache after source edits within the same Vitest process. */
+export function invalidateStudioToolbarMountBundle(): void {
+  bundleCache = null;
+  cssCache = null;
+}
+
 export type ToolbarControlRect = {
   label: string;
   testId: string | null;
@@ -148,7 +154,7 @@ export async function measureStudioEditToolbarAt(viewport: {
     });
 
     await page.setContent(
-      `<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/><style>${css}</style></head><body><div id="studio-toolbar-mount-root"></div></body></html>`,
+      `<!DOCTYPE html><html lang="pl" data-brd-toolbar-hit-measure="1"><head><meta charset="utf-8"/><style>${css}</style></head><body><div id="studio-toolbar-mount-root"></div></body></html>`,
       { waitUntil: "domcontentloaded" },
     );
     await page.addScriptTag({ content: bundle });
@@ -235,6 +241,262 @@ export async function measureStudioEditToolbarAt(viewport: {
       overlaps,
       audioElementCount: measured.audioElementCount,
       usedRealButtonAttr: measured.usedRealButtonAttr,
+    };
+  } finally {
+    await page.close();
+  }
+}
+
+export type ToolbarKeyboardStop = {
+  label: string;
+  testId: string | null;
+  tag: string;
+  ariaExpanded: string | null;
+  matchesFocusVisible: boolean;
+  hasVisibleFocusIndicator: boolean;
+};
+
+export type StudioToolbarKeyboardProbe = {
+  mounted: boolean;
+  usedRealButtonAttr: boolean;
+  audioElementCount: number;
+  networkAborted: number;
+  networkAllowedNonLocal: number;
+  tabStops: ToolbarKeyboardStop[];
+  allStopsNamed: boolean;
+  allStopsFocusVisible: boolean;
+  moreButtonPresent: boolean;
+  moreOpenViaEnter: {
+    ariaExpanded: string | null;
+    overflowHiddenClass: boolean;
+    overflowDisplay: string;
+  } | null;
+  moreAfterEscape: {
+    ariaExpanded: string | null;
+    overflowHiddenClass: boolean;
+    overflowDisplay: string;
+    focusBackOnMore: boolean;
+  } | null;
+  activatedForbiddenAction: boolean;
+};
+
+type FocusSnapshot = {
+  label: string;
+  testId: string | null;
+  tag: string;
+  ariaExpanded: string | null;
+  matchesFocusVisible: boolean;
+  hasVisibleFocusIndicator: boolean;
+  isBody: boolean;
+};
+
+async function readActiveFocus(page: {
+  evaluate: (fn: () => FocusSnapshot) => Promise<FocusSnapshot>;
+}): Promise<FocusSnapshot> {
+  return page.evaluate(() => {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el || el === document.body || el === document.documentElement) {
+      return {
+        label: "",
+        testId: null,
+        tag: "body",
+        ariaExpanded: null,
+        matchesFocusVisible: false,
+        hasVisibleFocusIndicator: false,
+        isBody: true,
+      };
+    }
+    const cs = window.getComputedStyle(el);
+    const outlineOk =
+      cs.outlineStyle !== "none" &&
+      cs.outlineStyle !== "" &&
+      cs.outlineWidth !== "0px";
+    const shadowOk = Boolean(cs.boxShadow && cs.boxShadow !== "none");
+    const label = (
+      el.getAttribute("aria-label") ||
+      el.textContent ||
+      el.getAttribute("title") ||
+      ""
+    )
+      .trim()
+      .replace(/\s+/g, " ");
+    return {
+      label,
+      testId: el.getAttribute("data-testid"),
+      tag: el.tagName.toLowerCase(),
+      ariaExpanded: el.getAttribute("aria-expanded"),
+      matchesFocusVisible: el.matches(":focus-visible"),
+      hasVisibleFocusIndicator: outlineOk || shadowOk,
+      isBody: false,
+    };
+  });
+}
+
+/**
+ * Native Tab / Enter / Escape against real StudioEditToolbar.
+ * Does not click menu actions that mutate project data.
+ * Omits hit-measure CSS override so mobile Więcej can open/close for real.
+ */
+export async function probeStudioEditToolbarKeyboardAt(viewport: {
+  width: number;
+  height: number;
+}): Promise<StudioToolbarKeyboardProbe> {
+  const bundle = await getStudioToolbarMountBundle();
+  const css = getStudioToolbarMountCss();
+  const browser = await getBrowser();
+  const page = await browser.newPage({ viewport });
+  let networkAborted = 0;
+  let networkAllowedNonLocal = 0;
+  let activatedForbiddenAction = false;
+
+  try {
+    await page.route("**/*", async (route) => {
+      const url = route.request().url();
+      if (
+        url.startsWith("data:") ||
+        url === "about:blank" ||
+        url.startsWith("blob:")
+      ) {
+        networkAllowedNonLocal += 0;
+        await route.continue();
+        return;
+      }
+      networkAborted += 1;
+      await route.abort();
+    });
+
+    page.on("pageerror", (err) => {
+      if (/mount harness forbids toolbar action/.test(err.message)) {
+        activatedForbiddenAction = true;
+      }
+    });
+
+    await page.setContent(
+      `<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/><style>${css}</style></head><body><div id="studio-toolbar-mount-root"></div></body></html>`,
+      { waitUntil: "domcontentloaded" },
+    );
+    await page.addScriptTag({ content: bundle });
+    await page.evaluate(() => {
+      const api = window.__BRD_STUDIO_TOOLBAR_MOUNT__;
+      if (!api) throw new Error("__BRD_STUDIO_TOOLBAR_MOUNT__ missing");
+      api.mount("studio-toolbar-mount-root");
+    });
+    await page.waitForSelector('[data-testid="studio-edit-toolbar"]', {
+      timeout: 10_000,
+    });
+
+    const meta = await page.evaluate(() => {
+      const root = document.querySelector(
+        '[data-testid="studio-edit-toolbar"]',
+      );
+      const interactive = root
+        ? ([
+            ...root.querySelectorAll("button, a[href]"),
+          ] as HTMLElement[])
+        : [];
+      return {
+        mounted: Boolean(root),
+        usedRealButtonAttr: interactive.some(
+          (el) => el.getAttribute("data-slot") === "button",
+        ),
+        audioElementCount: document.querySelectorAll("audio").length,
+        moreButtonPresent: (() => {
+          const el = document.querySelector(
+            '[data-testid="studio-toolbar-more"]',
+          ) as HTMLElement | null;
+          if (!el) return false;
+          const cs = window.getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          return cs.display !== "none" && r.width > 0 && r.height > 0;
+        })(),
+      };
+    });
+
+    await page.locator("body").click({ position: { x: 1, y: 1 } });
+
+    const tabStops: ToolbarKeyboardStop[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < 24; i++) {
+      await page.keyboard.press("Tab");
+      const snap = await readActiveFocus(page);
+      if (snap.isBody) break;
+      const key = `${snap.tag}:${snap.testId ?? ""}:${snap.label}`;
+      if (seen.has(key)) break;
+      seen.add(key);
+      tabStops.push({
+        label: snap.label,
+        testId: snap.testId,
+        tag: snap.tag,
+        ariaExpanded: snap.ariaExpanded,
+        matchesFocusVisible: snap.matchesFocusVisible,
+        hasVisibleFocusIndicator: snap.hasVisibleFocusIndicator,
+      });
+    }
+
+    const isMobile = viewport.width < 768;
+    let moreOpenViaEnter: StudioToolbarKeyboardProbe["moreOpenViaEnter"] =
+      null;
+    let moreAfterEscape: StudioToolbarKeyboardProbe["moreAfterEscape"] =
+      null;
+
+    if (isMobile && meta.moreButtonPresent) {
+      const more = page.locator('[data-testid="studio-toolbar-more"]');
+      await more.focus();
+      await page.keyboard.press("Enter");
+      moreOpenViaEnter = await page.evaluate(() => {
+        const btn = document.querySelector(
+          '[data-testid="studio-toolbar-more"]',
+        );
+        const overflow = document.querySelector(
+          '[data-testid="studio-toolbar-overflow"]',
+        ) as HTMLElement | null;
+        return {
+          ariaExpanded: btn?.getAttribute("aria-expanded") ?? null,
+          overflowHiddenClass: overflow?.classList.contains("hidden") ?? true,
+          overflowDisplay: overflow
+            ? window.getComputedStyle(overflow).display
+            : "none",
+        };
+      });
+
+      await page.keyboard.press("Escape");
+      const afterEsc = await page.evaluate(() => {
+        const btn = document.querySelector(
+          '[data-testid="studio-toolbar-more"]',
+        ) as HTMLElement | null;
+        const overflow = document.querySelector(
+          '[data-testid="studio-toolbar-overflow"]',
+        ) as HTMLElement | null;
+        return {
+          ariaExpanded: btn?.getAttribute("aria-expanded") ?? null,
+          overflowHiddenClass: overflow?.classList.contains("hidden") ?? true,
+          overflowDisplay: overflow
+            ? window.getComputedStyle(overflow).display
+            : "none",
+          focusBackOnMore:
+            document.activeElement === btn ||
+            document.activeElement?.getAttribute("data-testid") ===
+              "studio-toolbar-more",
+        };
+      });
+      moreAfterEscape = afterEsc;
+    }
+
+    return {
+      mounted: meta.mounted,
+      usedRealButtonAttr: meta.usedRealButtonAttr,
+      audioElementCount: meta.audioElementCount,
+      networkAborted,
+      networkAllowedNonLocal,
+      tabStops,
+      allStopsNamed: tabStops.every((s) => s.label.length > 0),
+      allStopsFocusVisible: tabStops.every(
+        (s) => s.matchesFocusVisible && s.hasVisibleFocusIndicator,
+      ),
+      moreButtonPresent: meta.moreButtonPresent,
+      moreOpenViaEnter,
+      moreAfterEscape,
+      activatedForbiddenAction,
     };
   } finally {
     await page.close();

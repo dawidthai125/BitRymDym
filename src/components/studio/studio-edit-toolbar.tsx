@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,19 @@ export type StudioEditToolbarProps = {
 
 export function StudioEditToolbar(props: StudioEditToolbarProps) {
   const [toolbarMoreOpen, setToolbarMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!toolbarMoreOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setToolbarMoreOpen(false);
+      moreButtonRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [toolbarMoreOpen]);
 
   return (
     <div
@@ -145,6 +158,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         Mixer
       </Button>
       <Button
+        ref={moreButtonRef}
         type="button"
         size="sm"
         variant="outline"
