@@ -133,7 +133,7 @@ export function BeatsCatalogClient({
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
-            className="inline-flex min-h-10 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
+            className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
           >
             Filtry{activeFilterCount ? ` (${activeFilterCount})` : ""}
           </button>
@@ -215,7 +215,7 @@ export function BeatsCatalogClient({
               </p>
               <button
                 type="button"
-                className="min-h-10 px-1 text-sm text-[var(--brd-mute)]"
+                className="min-h-11 px-1 text-sm text-[var(--brd-mute)]"
                 onClick={() => setFiltersOpen(false)}
               >
                 Zamknij
@@ -251,7 +251,7 @@ function SortSelect({
       <select
         value={sort}
         onChange={(e) => onChange(e.target.value as SortId)}
-        className="min-h-10 border-0 border-b border-[var(--brd-line)] bg-transparent py-1 pl-0 pr-1 text-sm text-[var(--brd-ink)] outline-none focus-visible:border-[var(--brd-green)]"
+        className="min-h-11 border-0 border-b border-[var(--brd-line)] bg-transparent py-1 pl-0 pr-1 text-sm text-[var(--brd-ink)] outline-none focus-visible:border-[var(--brd-green)]"
       >
         <option value="newest">Najnowsze</option>
         <option value="featured">Polecane</option>
