@@ -42,6 +42,8 @@
     "src/components/brand/beats-catalog-filters.mount-host.ts",
     "src/components/auth/sign-up-form.mount-host.ts",
     "src/components/auth/sign-in-form.mount-host.ts",
-    "src/components/auth/forgot-password-form.mount-host.ts"
+    "src/components/auth/forgot-password-form.mount-host.ts",
+    "src/components/auth/change-password-form.mount-host.ts",
+    "src/components/auth/change-email-form.mount-host.ts"
   ]
 }

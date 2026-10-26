@@ -105,6 +105,19 @@ body {
 .hover\:text-foreground:hover {
   color: var(--foreground);
 }
+:root {
+  --brd-ink-soft: #444;
+  --brd-mute: #666;
+}
+.break-all {
+  word-break: break-all;
+}
+.text-\[var\(--brd-ink-soft\)\] {
+  color: var(--brd-ink-soft);
+}
+.text-\[var\(--brd-mute\)\] {
+  color: var(--brd-mute);
+}
 .border {
   border-width: 1px;
   border-style: solid;
