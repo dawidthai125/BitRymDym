@@ -16,13 +16,17 @@ import {
   setAppShellInert,
 } from "@/lib/a11y/modal-focus-trap";
 import {
+  sortPresentedBeatsCatalog,
+  type BeatsCatalogSortId,
+} from "@/lib/ui/beats-catalog-sort";
+import {
   catalogGenresFromBeats,
   catalogKeysFromBeats,
   type PresentedBeat,
 } from "@/lib/ui/demo-beats";
 import { cn } from "@/lib/utils";
 
-type SortId = "newest" | "featured" | "listened";
+type SortId = BeatsCatalogSortId;
 
 type BeatsCatalogClientProps = {
   beats: PresentedBeat[];
@@ -83,7 +87,7 @@ export function BeatsCatalogClient({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = beats.filter((b) => {
+    const list = beats.filter((b) => {
       if (genres.length && (!b.genre || !genres.includes(b.genre))) return false;
       if (keys.length && (!b.key || !keys.includes(b.key))) return false;
       if (bpmFilterActive && (b.bpm < bpmMin || b.bpm > bpmMax)) return false;
@@ -96,14 +100,7 @@ export function BeatsCatalogClient({
       );
     });
 
-    if (sort === "featured") {
-      list = [...list].sort((a, b) => a.title.localeCompare(b.title, "pl"));
-    } else if (sort === "listened") {
-      list = [...list].sort(
-        (a, b) => b.bpm - a.bpm || a.title.localeCompare(b.title, "pl"),
-      );
-    }
-    return list;
+    return sortPresentedBeatsCatalog(list, sort);
   }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
 
   const activeFilterCount =
