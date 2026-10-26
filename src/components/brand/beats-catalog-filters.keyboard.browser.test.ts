@@ -22,6 +22,8 @@ describe("beats catalog Filtry — keyboard focus trap (real mount)", () => {
     expect(p.audioElementCount).toBe(0);
     expect(p.networkNonLocal).toBe(0);
     expect(p.afterOpenInsideDialog, JSON.stringify(p)).toBe(true);
+    expect(p.backgroundInertWhileOpen, JSON.stringify(p)).toBe(true);
+    expect(p.catalogSearchExposedInAxWhileOpen, JSON.stringify(p)).toBe(false);
     expect(p.tabForwardEscaped, JSON.stringify(p)).toBe(false);
     expect(p.tabBackwardEscaped, JSON.stringify(p)).toBe(false);
     expect(p.uniqueInDialogForward.length).toBeGreaterThan(0);

@@ -122,6 +122,8 @@ export type BeatsFiltersKeyboardProbe = {
   escapeClosed: boolean;
   focusBackOnFiltry: boolean;
   uniqueInDialogForward: string[];
+  backgroundInertWhileOpen: boolean;
+  catalogSearchExposedInAxWhileOpen: boolean;
   audioElementCount: number;
   networkNonLocal: number;
 };
@@ -217,6 +219,8 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
     escapeClosed: false,
     focusBackOnFiltry: false,
     uniqueInDialogForward: [],
+    backgroundInertWhileOpen: false,
+    catalogSearchExposedInAxWhileOpen: true,
     audioElementCount: await page.locator("audio").count(),
     networkNonLocal,
   };
@@ -231,6 +235,26 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
   const afterOpen = await activeMeta();
   result.afterOpenInsideDialog = afterOpen.insideDialog;
   result.afterOpenName = afterOpen.name;
+
+  result.backgroundInertWhileOpen = await page.evaluate(() => {
+    const bg = document.querySelector(
+      "[data-beats-catalog-background]",
+    ) as HTMLElement | null;
+    return Boolean(bg && "inert" in bg && bg.inert);
+  });
+
+  const client = await context.newCDPSession(page);
+  await client.send("Accessibility.enable");
+  const { nodes } = await client.send("Accessibility.getFullAXTree");
+  result.catalogSearchExposedInAxWhileOpen = nodes.some((n) => {
+    if (n.ignored) return false;
+    const name = n.name?.value || "";
+    const role = n.role?.value || "";
+    return (
+      role === "searchbox" ||
+      (/szukaj/i.test(name) && (role === "searchbox" || role === "textbox"))
+    );
+  });
 
   const forwardNames: string[] = [];
   let forwardEscaped = false;

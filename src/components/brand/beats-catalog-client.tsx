@@ -40,15 +40,19 @@ export function BeatsCatalogClient({
 
   const closeFiltersSheet = useCallback(() => {
     setFiltersOpen(false);
-    filtersTriggerRef.current?.focus();
   }, []);
 
-  // Mobile filter sheet: Inspector/Mixer-style trap (focus in, Tab wrap, Escape).
+  // Mobile filter sheet: Inspector-style trap; restore trigger after inert clears.
   useEffect(() => {
     if (!filtersOpen) return;
     const panel = filtersPanelRef.current;
+    const trigger = filtersTriggerRef.current;
     if (!panel) return;
-    return attachModalFocusTrap(panel, { onClose: closeFiltersSheet });
+    const dispose = attachModalFocusTrap(panel, { onClose: closeFiltersSheet });
+    return () => {
+      dispose();
+      trigger?.focus();
+    };
   }, [filtersOpen, closeFiltersSheet]);
 
   const genreOptions = useMemo(() => catalogGenresFromBeats(beats), [beats]);
@@ -132,87 +136,97 @@ export function BeatsCatalogClient({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2.5">
-        <label htmlFor="beats-search" className="sr-only">
-          Szukaj bitów
-        </label>
-        <input
-          id="beats-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Szukaj bitu, producenta, gatunku…"
-          autoComplete="off"
-          className="min-h-11 w-full border-b border-[var(--brd-line)] bg-transparent px-0 py-2.5 text-[15px] text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)]"
-        />
+      {/*
+        Background (not the dialog overlay) is inert while the mobile sheet is open
+        so AT / pointer cannot reach catalog chrome behind aria-modal.
+        Overlay stays a sibling — never inert the dialog host.
+      */}
+      <div
+        data-beats-catalog-background=""
+        inert={filtersOpen ? true : undefined}
+      >
+        <div className="space-y-2.5">
+          <label htmlFor="beats-search" className="sr-only">
+            Szukaj bitów
+          </label>
+          <input
+            id="beats-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj bitu, producenta, gatunku…"
+            autoComplete="off"
+            className="min-h-11 w-full border-b border-[var(--brd-line)] bg-transparent px-0 py-2.5 text-[15px] text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)]"
+          />
 
-        <div className="flex flex-wrap items-center gap-2 lg:hidden">
-          <button
-            ref={filtersTriggerRef}
-            type="button"
-            aria-expanded={filtersOpen}
-            aria-haspopup="dialog"
-            aria-controls={filtersDialogId}
-            onClick={() => setFiltersOpen(true)}
-            className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
-          >
-            Filtry{activeFilterCount ? ` (${activeFilterCount})` : ""}
-          </button>
-          <span className="text-[var(--brd-line)]" aria-hidden>
-            ·
-          </span>
-          <SortSelect sort={sort} onChange={setSort} />
-        </div>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-7 xl:grid-cols-[14.5rem_minmax(0,1fr)]">
-        <aside className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
-          {filterPanel}
-        </aside>
-
-        <div className="min-w-0">
-          <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--brd-line)] pb-2">
-            <p className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]">
-              {filtered.length === 1 ? "1 bit" : `${filtered.length} bitów`}
-              {filtered.length !== beats.length
-                ? ` · z ${beats.length}`
-                : null}
-            </p>
-            <div className="hidden lg:block">
-              <SortSelect sort={sort} onChange={setSort} />
-            </div>
+          <div className="flex flex-wrap items-center gap-2 lg:hidden">
+            <button
+              ref={filtersTriggerRef}
+              type="button"
+              aria-expanded={filtersOpen}
+              aria-haspopup="dialog"
+              aria-controls={filtersDialogId}
+              onClick={() => setFiltersOpen(true)}
+              className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
+            >
+              Filtry{activeFilterCount ? ` (${activeFilterCount})` : ""}
+            </button>
+            <span className="text-[var(--brd-line)]" aria-hidden>
+              ·
+            </span>
+            <SortSelect sort={sort} onChange={setSort} />
           </div>
+        </div>
 
-          {filtered.length === 0 ? (
-            <div className="px-1 py-10 text-center">
-              <p className="brd-display text-xl font-semibold">Cicho.</p>
-              <p className="mt-2 text-sm text-[var(--brd-mute)]">
-                Brak bitów dla tych filtrów. Zmień kryteria albo wyczyść filtry.
+        <div className="grid gap-5 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-7 xl:grid-cols-[14.5rem_minmax(0,1fr)]">
+          <aside className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
+            {filterPanel}
+          </aside>
+
+          <div className="min-w-0">
+            <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--brd-line)] pb-2">
+              <p className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]">
+                {filtered.length === 1 ? "1 bit" : `${filtered.length} bitów`}
+                {filtered.length !== beats.length
+                  ? ` · z ${beats.length}`
+                  : null}
               </p>
-              {activeFilterCount > 0 || query ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearFilters();
-                    setQuery("");
-                  }}
-                  className="mt-4 text-sm text-[var(--brd-green)] hover:underline"
-                >
-                  Wyczyść wszystko
-                </button>
-              ) : null}
+              <div className="hidden lg:block">
+                <SortSelect sort={sort} onChange={setSort} />
+              </div>
             </div>
-          ) : (
-            <ul>
-              {filtered.map((beat, index) => (
-                <BeatCatalogRow
-                  key={beat.id}
-                  beat={beat}
-                  featured={index === 0}
-                />
-              ))}
-            </ul>
-          )}
+
+            {filtered.length === 0 ? (
+              <div className="px-1 py-10 text-center">
+                <p className="brd-display text-xl font-semibold">Cicho.</p>
+                <p className="mt-2 text-sm text-[var(--brd-mute)]">
+                  Brak bitów dla tych filtrów. Zmień kryteria albo wyczyść filtry.
+                </p>
+                {activeFilterCount > 0 || query ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearFilters();
+                      setQuery("");
+                    }}
+                    className="mt-4 text-sm text-[var(--brd-green)] hover:underline"
+                  >
+                    Wyczyść wszystko
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <ul>
+                {filtered.map((beat, index) => (
+                  <BeatCatalogRow
+                    key={beat.id}
+                    beat={beat}
+                    featured={index === 0}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

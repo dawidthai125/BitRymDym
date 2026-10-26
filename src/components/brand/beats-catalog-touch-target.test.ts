@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Beats catalog chrome touch targets â€” mobile Filtry / Sort / sheet Zamknij
- * were min-h-10 (40px); project CTA standard is min-h-11 (â‰Ą44px), same as
+ * Beats catalog chrome touch targets Ă˘â‚¬â€ť mobile Filtry / Sort / sheet Zamknij
+ * were min-h-10 (40px); project CTA standard is min-h-11 (Ă˘â€°Ä„44px), same as
  * header-search-touch-target.test.ts.
  */
 describe("beats catalog filter/sort touch targets", () => {
@@ -37,5 +37,7 @@ describe("beats catalog filter/sort touch targets", () => {
     expect(src).toMatch(/aria-haspopup="dialog"/);
     expect(src).toMatch(/aria-controls=\{filtersDialogId\}/);
     expect(src).toMatch(/tabIndex=\{-1\}/);
+    expect(src).toMatch(/data-beats-catalog-background/);
+    expect(src).toMatch(/inert=\{filtersOpen \? true : undefined\}/);
   });
 });
