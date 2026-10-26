@@ -15,6 +15,11 @@ import {
   attachModalFocusTrap,
   setAppShellInert,
 } from "@/lib/a11y/modal-focus-trap";
+import {
+  catalogBpmBoundsFromBeats,
+  countActiveCatalogChipFilters,
+  filterPresentedBeatsCatalogByChips,
+} from "@/lib/ui/beats-catalog-filters";
 import { filterPresentedBeatsCatalogByQuery } from "@/lib/ui/beats-catalog-search";
 import {
   sortPresentedBeatsCatalog,
@@ -46,8 +51,12 @@ export function BeatsCatalogClient({
   const [genres, setGenres] = useState<string[]>([]);
   const [keys, setKeys] = useState<string[]>([]);
   const [bpmFilterActive, setBpmFilterActive] = useState(false);
-  const [bpmMin, setBpmMin] = useState(70);
-  const [bpmMax, setBpmMax] = useState(160);
+  const [bpmMin, setBpmMin] = useState(
+    () => catalogBpmBoundsFromBeats(beats).min,
+  );
+  const [bpmMax, setBpmMax] = useState(
+    () => catalogBpmBoundsFromBeats(beats).max,
+  );
   const [sort, setSort] = useState<SortId>("newest");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const portalReady = useSyncExternalStore(
@@ -80,25 +89,28 @@ export function BeatsCatalogClient({
 
   const genreOptions = useMemo(() => catalogGenresFromBeats(beats), [beats]);
   const keyOptions = useMemo(() => catalogKeysFromBeats(beats), [beats]);
-  const bpmBounds = useMemo(() => {
-    const bpms = beats.map((b) => b.bpm).filter((n) => Number.isFinite(n));
-    if (bpms.length === 0) return { min: 70, max: 160 };
-    return { min: Math.min(...bpms), max: Math.max(...bpms) };
-  }, [beats]);
+  const bpmBounds = useMemo(
+    () => catalogBpmBoundsFromBeats(beats),
+    [beats],
+  );
 
   const filtered = useMemo(() => {
-    const chipFiltered = beats.filter((b) => {
-      if (genres.length && (!b.genre || !genres.includes(b.genre))) return false;
-      if (keys.length && (!b.key || !keys.includes(b.key))) return false;
-      if (bpmFilterActive && (b.bpm < bpmMin || b.bpm > bpmMax)) return false;
-      return true;
+    const chipFiltered = filterPresentedBeatsCatalogByChips(beats, {
+      genres,
+      keys,
+      bpmFilterActive,
+      bpmMin,
+      bpmMax,
     });
     const list = filterPresentedBeatsCatalogByQuery(chipFiltered, query);
     return sortPresentedBeatsCatalog(list, sort);
   }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
 
-  const activeFilterCount =
-    genres.length + keys.length + (bpmFilterActive ? 1 : 0);
+  const activeFilterCount = countActiveCatalogChipFilters({
+    genres,
+    keys,
+    bpmFilterActive,
+  });
 
   function clearFilters() {
     setGenres([]);
