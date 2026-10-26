@@ -588,6 +588,17 @@ System ma działać na:
 
 Użytkownik musi udzielić przeglądarce dostępu do mikrofonu.
 
+### Katalog sampli platformy i kopia TAKE (kontrakt produktowy)
+
+> **Status (2026-10-25):** zatwierdzony kontrakt dokumentacyjny — **implementacja niezatwierdzona**. Nie interpretuj tej sekcji jako dowodu, że katalogowe TAKE już istnieją w kodzie lub produkcji.
+
+BitRymDym może udostępniać **platformowy katalog sampli audio** (w v1 publikuje wyłącznie platforma). Dodanie sampla do projektu Studio **kopiuje bajty** do prywatnego `TAKE` użytkownika (`recording_mode = QUICK`, `beat_id` = bit projektu, istniejące limity TTL / sesji / aktywnych TAKE / max 180 s, bez wyjątków katalogowych). Oryginał katalogowy i prywatna kopia to odrębne byty. Klip Studio odwołuje się do prywatnej kopii (`source_kind = TAKE`).
+
+Pełny kontrakt (licencje, Scratch DJ v1, eksport, reuse jednego `StudioAudioEngine`):  
+[SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](../decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md).
+
+Ta sekcja **nie** zastępuje ani nie unieważnia powyższej polityki MIC Quick Take / Design Freeze nagrywania.
+
 ---
 
 # 19. QUICK TAKE — UŻYTKOWNIK STANDARDOWY

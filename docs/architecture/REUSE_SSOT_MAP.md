@@ -2,7 +2,8 @@
 
 **Authority:** Canonical **reuse inventory** for new GPT + Cursor agents.  
 **Does not replace:** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) · [PROJECT_STATE.md](../PROJECT_STATE.md).  
-**Updated:** 2026-10-08 — post Phase 7.1.6 GREEN · docs tip may ≠ production app `4fa658d`.
+**Updated:** 2026-10-08 — post Phase 7.1.6 GREEN · docs tip may ≠ production app `4fa658d`.  
+**Docs pointer (2026-10-25):** Sample catalog copy + Scratch DJ v1 product contract (implementation **NOT** authorized) → [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](../decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md).
 
 **Rule:** Before writing new code → **SEARCH THIS MAP + CODE** → REUSE. Never invent a second SSOT.
 
@@ -29,6 +30,8 @@
 | Auth session | `requireUser` / session helpers | Auth | `src/lib/auth/session.ts` |
 | Recording eligibility | eligibility service (**local Sacred WIP may exist**) | Takes | `src/lib/takes/recording-eligibility-service.ts` · `recording-eligibility.ts` |
 | Studio record / place | `studio-record-service` | Studio recording | `src/lib/studio/studio-record-service.ts` · `/api/studio/projects/[id]/record/*` |
+| Sample catalog → private TAKE copy (product contract) | [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](../decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) | Platform catalog + takes + Studio place | **NOT SHIPPED** · reuse existing TAKE pipeline + owner gates · one `StudioAudioEngine` · existing persist/CAS · **no** second player/engine/orchestrator |
+| Scratch DJ v1 (product contract) | same decision doc | Extends `StudioAudioEngine` voices/params | **NOT SHIPPED** · persist via orchestrator + CAS only |
 | Studio CRUD / attach / CAS writers | `studio-service` | Studio server | `src/lib/studio/studio-service.ts` · `/api/studio/projects/**` |
 | Compute (FFmpeg export) | Contabo EXTERNAL COMPUTE | Worker host | Contabo · **STOPPED/DISABLED** after P4.6 E2E (capability GREEN ≠ always-on) |
 | App hosting | Vercel Production | Deploy | https://www.bitrymdym.pl |
@@ -73,6 +76,8 @@ DO NOT CREATE A SECOND:
   · recording eligibility fork (Sacred WIP)
   · durable media SSOT outside Supabase Storage
   · always-on Contabo without Owner GO
+  · second Scratch/DJ audio engine or PlayerProvider-inside-Studio for catalog samples
+  · catalog Studio clip that bypasses private TAKE copy (bare catalog URL as clip source)
 ```
 
 **If a feature sounds similar → SEARCH FIRST** (`rg`, this map, architecture audits, existing routes).
