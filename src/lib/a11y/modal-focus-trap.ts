@@ -61,3 +61,19 @@ export function attachModalFocusTrap(
   window.addEventListener("keydown", onKeyDown);
   return () => window.removeEventListener("keydown", onKeyDown);
 }
+
+/**
+ * Mark AppShell chrome (header / main / bottom nav) inert while a portaled
+ * modal lives outside `[data-app-shell]`. Never call this on an ancestor of the
+ * dialog node.
+ */
+export function setAppShellInert(inert: boolean): () => void {
+  if (typeof document === "undefined") return () => {};
+  const shell = document.querySelector<HTMLElement>("[data-app-shell]");
+  if (!shell) return () => {};
+  const previous = shell.inert;
+  shell.inert = inert;
+  return () => {
+    shell.inert = previous;
+  };
+}

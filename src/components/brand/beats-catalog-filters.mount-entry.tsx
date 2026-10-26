@@ -1,7 +1,10 @@
 /**
- * Test-only IIFE entry: mount real BeatsCatalogClient (filters sheet + trap).
+ * Test-only IIFE entry: mount real BeatsCatalogClient inside AppShell-shaped chrome.
  * Bundled by beats-catalog-filters.mount-host.ts — not an app route.
  */
+/* eslint-disable @next/next/no-html-link-for-pages -- fixture markers for AX probe, not app navigation */
+
+import type { ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
@@ -34,6 +37,28 @@ declare global {
 
 let root: Root | null = null;
 
+function ShellFixture({ children }: { children: ReactNode }) {
+  return (
+    <div data-app-shell>
+      <header>
+        <a href="/">BitRymDym</a>
+        <button type="button">Motyw</button>
+        <a href="/sign-in">Konto</a>
+      </header>
+      <nav aria-label="Główna">
+        <a href="/beats">Bity</a>
+        <a href="/studio">Studio</a>
+      </nav>
+      <div id="main-content">{children}</div>
+      <nav aria-label="Nawigacja mobilna">
+        <a href="/beats">Bity</a>
+        <a href="/studio">Studio</a>
+        <a href="/account">Profil</a>
+      </nav>
+    </div>
+  );
+}
+
 function mount(hostId = "beats-filters-mount-root"): void {
   const el = document.getElementById(hostId);
   if (!el) throw new Error(`mount host #${hostId} missing`);
@@ -42,7 +67,11 @@ function mount(hostId = "beats-filters-mount-root"): void {
     root = null;
   }
   root = createRoot(el);
-  root.render(<BeatsCatalogClient beats={FIXTURE} />);
+  root.render(
+    <ShellFixture>
+      <BeatsCatalogClient beats={FIXTURE} />
+    </ShellFixture>,
+  );
 }
 
 function unmount(): void {

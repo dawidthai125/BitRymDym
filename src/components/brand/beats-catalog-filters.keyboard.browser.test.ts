@@ -24,10 +24,17 @@ describe("beats catalog Filtry — keyboard focus trap (real mount)", () => {
     expect(p.afterOpenInsideDialog, JSON.stringify(p)).toBe(true);
     expect(p.backgroundInertWhileOpen, JSON.stringify(p)).toBe(true);
     expect(p.catalogSearchExposedInAxWhileOpen, JSON.stringify(p)).toBe(false);
+    expect(p.shellAxWhileOpen.shellInert, JSON.stringify(p)).toBe(true);
+    expect(p.shellAxWhileOpen.logoExposed, JSON.stringify(p)).toBe(false);
+    expect(p.shellAxWhileOpen.themeExposed, JSON.stringify(p)).toBe(false);
+    expect(p.shellAxWhileOpen.navBityExposed, JSON.stringify(p)).toBe(false);
     expect(p.tabForwardEscaped, JSON.stringify(p)).toBe(false);
     expect(p.tabBackwardEscaped, JSON.stringify(p)).toBe(false);
     expect(p.uniqueInDialogForward.length).toBeGreaterThan(0);
     expect(p.escapeClosed).toBe(true);
     expect(p.focusBackOnFiltry).toBe(true);
+    expect(p.shellAxAfterClose.shellInert, JSON.stringify(p)).toBe(false);
+    expect(p.shellAxAfterClose.themeExposed, JSON.stringify(p)).toBe(true);
+    expect(p.shellAxAfterClose.navBityExposed, JSON.stringify(p)).toBe(true);
   }, 90_000);
 });

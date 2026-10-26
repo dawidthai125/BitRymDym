@@ -29,10 +29,13 @@ describe("beats catalog filter/sort touch targets", () => {
 
   it("mobile Filtry sheet uses shared modal focus trap + restore trigger", () => {
     expect(src).toMatch(/attachModalFocusTrap/);
+    expect(src).toMatch(/setAppShellInert/);
+    expect(src).toMatch(/createPortal/);
+    expect(src).toMatch(/document\.body/);
     expect(src).toMatch(/filtersTriggerRef/);
     expect(src).toMatch(/filtersPanelRef/);
     expect(src).toMatch(/closeFiltersSheet/);
-    expect(src).toMatch(/filtersTriggerRef\.current\?\.focus\(\)/);
+    expect(src).toMatch(/trigger\?\.focus\(\)/);
     expect(src).toMatch(/aria-expanded=\{filtersOpen\}/);
     expect(src).toMatch(/aria-haspopup="dialog"/);
     expect(src).toMatch(/aria-controls=\{filtersDialogId\}/);

@@ -26,7 +26,7 @@ export async function AppShell({
   const isAdminChrome = tone === "admin";
 
   return (
-    <div className={cn("min-h-dvh", className)}>
+    <div data-app-shell className={cn("min-h-dvh", className)}>
       <SiteHeader />
       {/*
         Skip target is a div: AppShell children already render their own main landmark.

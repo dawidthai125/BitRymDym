@@ -1,9 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
 
 import { BeatCatalogRow } from "@/components/brand/beat-catalog-row";
-import { attachModalFocusTrap } from "@/lib/a11y/modal-focus-trap";
+import {
+  attachModalFocusTrap,
+  setAppShellInert,
+} from "@/lib/a11y/modal-focus-trap";
 import {
   catalogGenresFromBeats,
   catalogKeysFromBeats,
@@ -34,6 +45,11 @@ export function BeatsCatalogClient({
   const [bpmMax, setBpmMax] = useState(160);
   const [sort, setSort] = useState<SortId>("newest");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const portalReady = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const filtersTriggerRef = useRef<HTMLButtonElement | null>(null);
   const filtersPanelRef = useRef<HTMLDivElement | null>(null);
   const filtersDialogId = "beats-catalog-filters-dialog";
@@ -42,18 +58,20 @@ export function BeatsCatalogClient({
     setFiltersOpen(false);
   }, []);
 
-  // Mobile filter sheet: Inspector-style trap; restore trigger after inert clears.
+  // Mobile filter sheet: portal outside AppShell, inert shell chrome, trap focus.
   useEffect(() => {
-    if (!filtersOpen) return;
+    if (!filtersOpen || !portalReady) return;
     const panel = filtersPanelRef.current;
     const trigger = filtersTriggerRef.current;
     if (!panel) return;
+    const restoreShell = setAppShellInert(true);
     const dispose = attachModalFocusTrap(panel, { onClose: closeFiltersSheet });
     return () => {
       dispose();
+      restoreShell();
       trigger?.focus();
     };
-  }, [filtersOpen, closeFiltersSheet]);
+  }, [filtersOpen, portalReady, closeFiltersSheet]);
 
   const genreOptions = useMemo(() => catalogGenresFromBeats(beats), [beats]);
   const keyOptions = useMemo(() => catalogKeysFromBeats(beats), [beats]);
@@ -230,46 +248,49 @@ export function BeatsCatalogClient({
         </div>
       </div>
 
-      {filtersOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_40%,transparent)]"
-            aria-label="Zamknij filtry"
-            onClick={closeFiltersSheet}
-          />
-          <div
-            ref={filtersPanelRef}
-            id={filtersDialogId}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Filtry katalogu"
-            tabIndex={-1}
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 outline-none"
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <p className="brd-meta text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-                Filtry
-              </p>
+      {filtersOpen && portalReady
+        ? createPortal(
+            <div className="fixed inset-0 z-50 lg:hidden">
               <button
                 type="button"
-                className="min-h-11 px-1 text-sm text-[var(--brd-mute)]"
+                className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_40%,transparent)]"
+                aria-label="Zamknij filtry"
                 onClick={closeFiltersSheet}
+              />
+              <div
+                ref={filtersPanelRef}
+                id={filtersDialogId}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Filtry katalogu"
+                tabIndex={-1}
+                className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 outline-none"
               >
-                Zamknij
-              </button>
-            </div>
-            {filterPanel}
-            <button
-              type="button"
-              className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[var(--brd-green)] text-sm text-[var(--brd-paper)]"
-              onClick={closeFiltersSheet}
-            >
-              Pokaż wyniki ({filtered.length})
-            </button>
-          </div>
-        </div>
-      ) : null}
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="brd-meta text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                    Filtry
+                  </p>
+                  <button
+                    type="button"
+                    className="min-h-11 px-1 text-sm text-[var(--brd-mute)]"
+                    onClick={closeFiltersSheet}
+                  >
+                    Zamknij
+                  </button>
+                </div>
+                {filterPanel}
+                <button
+                  type="button"
+                  className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[var(--brd-green)] text-sm text-[var(--brd-paper)]"
+                  onClick={closeFiltersSheet}
+                >
+                  Pokaż wyniki ({filtered.length})
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

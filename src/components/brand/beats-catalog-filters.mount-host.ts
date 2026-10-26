@@ -113,6 +113,13 @@ export function invalidateBeatsFiltersMountBundle(): void {
   cssCache = null;
 }
 
+export type BeatsFiltersShellAxProbe = {
+  logoExposed: boolean;
+  themeExposed: boolean;
+  navBityExposed: boolean;
+  shellInert: boolean;
+};
+
 export type BeatsFiltersKeyboardProbe = {
   mounted: boolean;
   afterOpenInsideDialog: boolean;
@@ -124,6 +131,8 @@ export type BeatsFiltersKeyboardProbe = {
   uniqueInDialogForward: string[];
   backgroundInertWhileOpen: boolean;
   catalogSearchExposedInAxWhileOpen: boolean;
+  shellAxWhileOpen: BeatsFiltersShellAxProbe;
+  shellAxAfterClose: BeatsFiltersShellAxProbe;
   audioElementCount: number;
   networkNonLocal: number;
 };
@@ -199,9 +208,37 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
     );
   }
 
+  async function readShellAx(): Promise<BeatsFiltersShellAxProbe> {
+    const shellInert = await page.evaluate(() => {
+      const shell = document.querySelector(
+        "[data-app-shell]",
+      ) as HTMLElement | null;
+      return Boolean(shell && "inert" in shell && shell.inert);
+    });
+    const client = await context.newCDPSession(page);
+    await client.send("Accessibility.enable");
+    const { nodes } = await client.send("Accessibility.getFullAXTree");
+    const visible = nodes.filter((n) => !n.ignored);
+    const logoExposed = visible.some((n) => {
+      const name = n.name?.value || "";
+      const role = n.role?.value || "";
+      return /BitRymDym/i.test(name) && (role === "link" || role === "StaticText");
+    });
+    const themeExposed = visible.some((n) => {
+      const name = n.name?.value || "";
+      return /^Motyw$/i.test(name.trim());
+    });
+    const navBityExposed = visible.some((n) => {
+      const name = n.name?.value || "";
+      const role = n.role?.value || "";
+      return role === "link" && /^Bity$/i.test(name.trim());
+    });
+    return { logoExposed, themeExposed, navBityExposed, shellInert };
+  }
+
   // Tab to Filtry
   let onFiltry = false;
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 40; i++) {
     await page.keyboard.press("Tab");
     const a = await activeMeta();
     if (a.tag === "button" && /^Filtry/i.test(a.name)) {
@@ -209,6 +246,13 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
       break;
     }
   }
+
+  const emptyShell: BeatsFiltersShellAxProbe = {
+    logoExposed: false,
+    themeExposed: false,
+    navBityExposed: false,
+    shellInert: false,
+  };
 
   const result: BeatsFiltersKeyboardProbe = {
     mounted: onFiltry,
@@ -221,6 +265,8 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
     uniqueInDialogForward: [],
     backgroundInertWhileOpen: false,
     catalogSearchExposedInAxWhileOpen: true,
+    shellAxWhileOpen: { ...emptyShell },
+    shellAxAfterClose: { ...emptyShell },
     audioElementCount: await page.locator("audio").count(),
     networkNonLocal,
   };
@@ -243,18 +289,22 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
     return Boolean(bg && "inert" in bg && bg.inert);
   });
 
-  const client = await context.newCDPSession(page);
-  await client.send("Accessibility.enable");
-  const { nodes } = await client.send("Accessibility.getFullAXTree");
-  result.catalogSearchExposedInAxWhileOpen = nodes.some((n) => {
-    if (n.ignored) return false;
-    const name = n.name?.value || "";
-    const role = n.role?.value || "";
-    return (
-      role === "searchbox" ||
-      (/szukaj/i.test(name) && (role === "searchbox" || role === "textbox"))
-    );
-  });
+  result.shellAxWhileOpen = await readShellAx();
+
+  {
+    const client = await context.newCDPSession(page);
+    await client.send("Accessibility.enable");
+    const { nodes } = await client.send("Accessibility.getFullAXTree");
+    result.catalogSearchExposedInAxWhileOpen = nodes.some((n) => {
+      if (n.ignored) return false;
+      const name = n.name?.value || "";
+      const role = n.role?.value || "";
+      return (
+        role === "searchbox" ||
+        (/szukaj/i.test(name) && (role === "searchbox" || role === "textbox"))
+      );
+    });
+  }
 
   const forwardNames: string[] = [];
   let forwardEscaped = false;
@@ -287,6 +337,7 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
   const afterEsc = await activeMeta();
   result.focusBackOnFiltry =
     afterEsc.tag === "button" && /^Filtry/i.test(afterEsc.name);
+  result.shellAxAfterClose = await readShellAx();
 
   await context.close();
   return result;
