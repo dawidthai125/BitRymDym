@@ -606,3 +606,204 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
     await page.close();
   }
 }
+
+/** How pointer/touch seek was exercised in the probe (for test documentation). */
+export type CatalogWaveformPointerInputMethod = "mouse" | "touchscreen";
+
+export type CatalogWaveformSeekPointerProbe = {
+  mounted: boolean;
+  sliderVisible: boolean;
+  initialAriaValuenow: string | null;
+  initialAriaValuetext: string | null;
+  afterTap: {
+    ariaValuenow: string | null;
+    ariaValuetext: string | null;
+    lastRatio: number | null;
+    callsLength: number;
+  };
+  inputMethod: CatalogWaveformPointerInputMethod;
+  audioElementCount: number;
+  networkNonLocal: number;
+  passInitialA11y: boolean;
+  passTapSeek: boolean;
+  passNoAudioOrNetwork: boolean;
+};
+
+/**
+ * Real Waveform mount — pointer/mouse/touch tap seek on `[data-seek-hit="catalog"]`.
+ * Mobile (`hasTouch: true`) uses Playwright `page.touchscreen.tap` when available.
+ */
+export async function probeCatalogWaveformSeekPointerAt(viewport: {
+  width: number;
+  height: number;
+  hasTouch?: boolean;
+}): Promise<CatalogWaveformSeekPointerProbe> {
+  invalidateCatalogWaveformMountBundle();
+  const bundle = await getCatalogWaveformMountBundle();
+  const css = getCatalogWaveformMountCss();
+  const browser = await getBrowser();
+  const page = await browser.newPage({
+    viewport: { width: viewport.width, height: viewport.height },
+    hasTouch: viewport.hasTouch ?? false,
+  });
+
+  let networkNonLocal = 0;
+  const inputMethod: CatalogWaveformPointerInputMethod = viewport.hasTouch
+    ? "touchscreen"
+    : "mouse";
+
+  const failProbe = (
+    partial: Partial<CatalogWaveformSeekPointerProbe> = {},
+  ): CatalogWaveformSeekPointerProbe => ({
+    mounted: false,
+    sliderVisible: false,
+    initialAriaValuenow: null,
+    initialAriaValuetext: null,
+    afterTap: {
+      ariaValuenow: null,
+      ariaValuetext: null,
+      lastRatio: null,
+      callsLength: 0,
+    },
+    inputMethod,
+    audioElementCount: 0,
+    networkNonLocal,
+    passInitialA11y: false,
+    passTapSeek: false,
+    passNoAudioOrNetwork: false,
+    ...partial,
+  });
+
+  try {
+    await page.route("**/*", async (route) => {
+      const url = route.request().url();
+      if (
+        url.startsWith("data:") ||
+        url === "about:blank" ||
+        url.startsWith("blob:")
+      ) {
+        await route.continue();
+        return;
+      }
+      networkNonLocal += 1;
+      await route.abort();
+    });
+
+    await page.setContent(
+      `<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"/><style>${css}</style></head><body><div id="${MOUNT_ROOT_ID}" class="w-full"></div></body></html>`,
+      { waitUntil: "domcontentloaded" },
+    );
+    await page.addScriptTag({ content: bundle });
+    await page.evaluate(
+      ({ mountOpts, hostId }) => {
+        const api = window.__BRD_CATALOG_WAVEFORM_MOUNT__;
+        if (!api) throw new Error("__BRD_CATALOG_WAVEFORM_MOUNT__ missing");
+        api.mount(mountOpts, hostId);
+      },
+      {
+        mountOpts: {
+          density: "catalog" as const,
+          wireSeekCallback: true,
+        },
+        hostId: MOUNT_ROOT_ID,
+      },
+    );
+
+    await page.waitForSelector('[data-seek-hit="catalog"]', {
+      timeout: 10_000,
+    });
+
+    const slider = page.getByRole("slider", { name: SLIDER_A11Y_NAME });
+    const sliderVisible = await slider.isVisible().catch(() => false);
+    if (!sliderVisible) {
+      return failProbe({ networkNonLocal });
+    }
+
+    const initialAttrs = await slider.evaluate((el) => ({
+      now: el.getAttribute("aria-valuenow"),
+      valueText: el.getAttribute("aria-valuetext"),
+    }));
+
+    const seekHit = page.locator('[data-seek-hit="catalog"]');
+    const box = await seekHit.boundingBox();
+    if (!box || box.width <= 0) {
+      return failProbe({
+        networkNonLocal,
+        initialAriaValuenow: initialAttrs.now,
+        initialAriaValuetext: initialAttrs.valueText,
+      });
+    }
+
+    const tapX = box.x + box.width * 0.9;
+    const tapY = box.y + box.height / 2;
+
+    if (viewport.hasTouch) {
+      await page.touchscreen.tap(tapX, tapY);
+    } else {
+      await page.mouse.click(tapX, tapY);
+    }
+
+    await page.waitForFunction(
+      () => {
+        const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
+        return (seek?.calls?.length ?? 0) >= 1;
+      },
+      undefined,
+      { timeout: 5_000 },
+    );
+
+    const afterTap = await page.evaluate(() => {
+      const el = document.querySelector('[data-seek-hit="catalog"]');
+      const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
+      return {
+        ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
+        lastRatio: seek?.lastRatio ?? null,
+        callsLength: seek?.calls?.length ?? 0,
+      };
+    });
+
+    const audioElementCount = await page.evaluate(
+      () => document.querySelectorAll("audio").length,
+    );
+
+    const passInitialA11y =
+      initialAttrs.now === "35" && initialAttrs.valueText === "35%";
+
+    const expectedNow =
+      afterTap.lastRatio !== null
+        ? String(Math.round(afterTap.lastRatio * 100))
+        : null;
+    const expectedValueText =
+      expectedNow !== null ? `${expectedNow}%` : null;
+
+    const passTapSeek =
+      afterTap.callsLength >= 1 &&
+      afterTap.lastRatio !== null &&
+      afterTap.lastRatio >= 0.75 &&
+      ratioApprox(afterTap.lastRatio, 0.9, 0.08) &&
+      afterTap.ariaValuenow === expectedNow &&
+      afterTap.ariaValuetext === expectedValueText;
+
+    const passNoAudioOrNetwork =
+      audioElementCount === 0 && networkNonLocal === 0;
+
+    return {
+      mounted: true,
+      sliderVisible: true,
+      initialAriaValuenow: initialAttrs.now,
+      initialAriaValuetext: initialAttrs.valueText,
+      afterTap,
+      inputMethod,
+      audioElementCount,
+      networkNonLocal,
+      passInitialA11y,
+      passTapSeek,
+      passNoAudioOrNetwork,
+    };
+  } catch {
+    return failProbe({ networkNonLocal });
+  } finally {
+    await page.close();
+  }
+}
