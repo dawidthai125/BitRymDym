@@ -22,6 +22,17 @@ const FIXTURE: PresentedBeat[] = [
     durationSeconds: 30,
     artworkVariant: 0,
   },
+  {
+    id: "mount-beat-2",
+    title: "River Flow",
+    producer: "Probe",
+    genre: "Drill",
+    mood: null,
+    key: "Gm",
+    bpm: 128,
+    durationSeconds: 30,
+    artworkVariant: 1,
+  },
 ];
 
 export type BeatsCatalogFiltersMountApi = {

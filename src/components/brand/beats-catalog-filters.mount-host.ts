@@ -342,3 +342,144 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
   await context.close();
   return result;
 }
+
+export type BeatsCatalogResultStatusProbe = {
+  mounted: boolean;
+  initialStatusText: string;
+  initialInAxTree: boolean;
+  emptyStatusText: string;
+  emptyInAxTree: boolean;
+  restoredStatusText: string;
+  restoredInAxTree: boolean;
+  audioElementCount: number;
+  networkNonLocal: number;
+};
+
+async function axHasRoleText(
+  page: Awaited<ReturnType<Browser["newPage"]>>,
+  context: Awaited<ReturnType<Browser["newContext"]>>,
+  role: "status",
+  text: string,
+): Promise<boolean> {
+  const client = await context.newCDPSession(page);
+  await client.send("Accessibility.enable");
+  const { nodes } = await client.send("Accessibility.getFullAXTree");
+  const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+  function collectName(nodeId: number | undefined, depth = 0): string {
+    if (nodeId == null || depth > 6) return "";
+    const n = byId.get(nodeId);
+    if (!n || n.ignored) return "";
+    const self = n.name?.value || "";
+    const kids = (n.childIds || [])
+      .map((id) => collectName(id, depth + 1))
+      .join(" ");
+    return `${self} ${kids}`.trim();
+  }
+  return nodes.some((n) => {
+    if (n.ignored) return false;
+    if ((n.role?.value || "") !== role) return false;
+    return collectName(n.nodeId).includes(text);
+  });
+}
+
+async function readStatusText(
+  page: Awaited<ReturnType<Browser["newPage"]>>,
+): Promise<string> {
+  return page.getByRole("status").first().innerText();
+}
+
+export async function probeBeatsCatalogResultStatus(): Promise<BeatsCatalogResultStatusProbe> {
+  const [js, css] = await Promise.all([
+    getBeatsFiltersMountBundle(),
+    Promise.resolve(getBeatsFiltersMountCss()),
+  ]);
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await context.newPage();
+  let networkNonLocal = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.startsWith("data:") || url.startsWith("blob:")) {
+      await route.continue();
+      return;
+    }
+    if (
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("https://localhost")
+    ) {
+      await route.continue();
+      return;
+    }
+    networkNonLocal += 1;
+    await route.abort();
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="beats-filters-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_BEATS_FILTERS_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  const emptyProbe: BeatsCatalogResultStatusProbe = {
+    mounted: false,
+    initialStatusText: "",
+    initialInAxTree: false,
+    emptyStatusText: "",
+    emptyInAxTree: false,
+    restoredStatusText: "",
+    restoredInAxTree: false,
+    audioElementCount: await page.locator("audio").count(),
+    networkNonLocal,
+  };
+
+  const search = page.locator("#beats-search");
+  if ((await search.count()) < 1) {
+    await context.close();
+    return emptyProbe;
+  }
+
+  emptyProbe.mounted = true;
+
+  const initialStatusText = (await readStatusText(page)).trim();
+  emptyProbe.initialStatusText = initialStatusText;
+  emptyProbe.initialInAxTree = await axHasRoleText(
+    page,
+    context,
+    "status",
+    initialStatusText,
+  );
+
+  await search.fill("brd_nohit_probe");
+  await page.waitForTimeout(50);
+  const emptyStatusText = (await readStatusText(page)).trim();
+  emptyProbe.emptyStatusText = emptyStatusText;
+  emptyProbe.emptyInAxTree = await axHasRoleText(
+    page,
+    context,
+    "status",
+    "Cicho. Brak bitów dla tych filtrów.",
+  );
+
+  await search.fill("");
+  await page.waitForTimeout(50);
+  const restoredStatusText = (await readStatusText(page)).trim();
+  emptyProbe.restoredStatusText = restoredStatusText;
+  emptyProbe.restoredInAxTree = await axHasRoleText(
+    page,
+    context,
+    "status",
+    restoredStatusText,
+  );
+
+  await context.close();
+  return emptyProbe;
+}

@@ -34,6 +34,26 @@ import { cn } from "@/lib/utils";
 
 type SortId = BeatsCatalogSortId;
 
+/**
+ * AT live region copy — mirrors visible meta count, or empty headline + first hint.
+ * Same string for identical counts → polite live regions typically skip re-announce
+ * (sort / sheet open without count change stay quiet).
+ */
+export function beatsCatalogResultStatusMessage(
+  filteredCount: number,
+  totalCount: number,
+): string {
+  if (filteredCount === 0) {
+    return "Cicho. Brak bitów dla tych filtrów.";
+  }
+  const countLabel =
+    filteredCount === 1 ? "1 bit" : `${filteredCount} bitów`;
+  if (filteredCount !== totalCount) {
+    return `${countLabel} · z ${totalCount}`;
+  }
+  return countLabel;
+}
+
 type BeatsCatalogClientProps = {
   beats: PresentedBeat[];
   initialQuery?: string;
@@ -105,6 +125,11 @@ export function BeatsCatalogClient({
     const list = filterPresentedBeatsCatalogByQuery(chipFiltered, query);
     return sortPresentedBeatsCatalog(list, sort);
   }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
+
+  const liveResultStatus = beatsCatalogResultStatusMessage(
+    filtered.length,
+    beats.length,
+  );
 
   const activeFilterCount = countActiveCatalogChipFilters({
     genres,
@@ -206,7 +231,18 @@ export function BeatsCatalogClient({
 
           <div className="min-w-0">
             <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--brd-line)] pb-2">
-              <p className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]">
+              <div
+                className="sr-only"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {liveResultStatus}
+              </div>
+              <p
+                className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]"
+                aria-hidden
+              >
                 {filtered.length === 1 ? "1 bit" : `${filtered.length} bitów`}
                 {filtered.length !== beats.length
                   ? ` · z ${beats.length}`
