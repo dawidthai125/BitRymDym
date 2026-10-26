@@ -1,0 +1,140 @@
+/**
+ * Minimal utilities for SignUpForm + Button + AUTH_FIELD_CLASS.
+ * Harness stylesheet only — not production CSS.
+ */
+:root {
+  font-size: 16px;
+  --primary: #222;
+  --primary-foreground: #fff;
+  --background: #fff;
+  --foreground: #111;
+  --border: #ccc;
+  --muted: #e8e8e8;
+  --muted-foreground: #666;
+  --destructive: #b00020;
+  --ring: #0a7;
+  --radius-md: 12px;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f5f5f5;
+  color: var(--foreground);
+}
+.flex {
+  display: flex;
+}
+.inline-flex {
+  display: inline-flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.items-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.shrink-0 {
+  flex-shrink: 0;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.w-full {
+  width: 100%;
+}
+.max-w-sm {
+  max-width: 24rem;
+}
+.min-h-11 {
+  min-height: 2.75rem;
+}
+.h-8 {
+  height: 2rem;
+}
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+.border-transparent {
+  border-color: transparent;
+}
+.border-border {
+  border-color: var(--border);
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.bg-background {
+  background-color: var(--background);
+}
+.bg-primary {
+  background-color: var(--primary);
+}
+.bg-clip-padding {
+  background-clip: padding-box;
+}
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+}
+.font-medium {
+  font-weight: 500;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+.select-none {
+  user-select: none;
+}
+.outline-none {
+  outline: none;
+}
+.text-primary-foreground {
+  color: var(--primary-foreground);
+}
+.text-destructive {
+  color: var(--destructive);
+}
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.transition-all {
+  transition: all 0.15s ease;
+}
+.disabled\:pointer-events-none:disabled {
+  pointer-events: none;
+}
+.disabled\:opacity-50:disabled {
+  opacity: 0.5;
+}
+.focus-visible\:border-ring:focus-visible {
+  border-color: var(--ring);
+}
+.focus-visible\:ring-3:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+}
