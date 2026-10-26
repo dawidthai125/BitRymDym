@@ -345,6 +345,9 @@ export async function probeBeatsFiltersKeyboard(): Promise<BeatsFiltersKeyboardP
 
 export type BeatsCatalogResultStatusProbe = {
   mounted: boolean;
+  searchFoundByAccessibleName: boolean;
+  searchPlaceholder: string;
+  searchPlaceholderIsNotAccessibleName: boolean;
   initialStatusText: string;
   initialInAxTree: boolean;
   emptyStatusText: string;
@@ -431,6 +434,9 @@ export async function probeBeatsCatalogResultStatus(): Promise<BeatsCatalogResul
 
   const emptyProbe: BeatsCatalogResultStatusProbe = {
     mounted: false,
+    searchFoundByAccessibleName: false,
+    searchPlaceholder: "",
+    searchPlaceholderIsNotAccessibleName: false,
     initialStatusText: "",
     initialInAxTree: false,
     emptyStatusText: "",
@@ -448,6 +454,24 @@ export async function probeBeatsCatalogResultStatus(): Promise<BeatsCatalogResul
   }
 
   emptyProbe.mounted = true;
+
+  const namedSearch = page.getByRole("searchbox", {
+    name: "Szukaj bitów",
+    exact: true,
+  });
+  emptyProbe.searchFoundByAccessibleName = (await namedSearch.count()) === 1;
+  const catalogSearch = page.locator("#beats-search");
+  emptyProbe.searchPlaceholder =
+    (await catalogSearch.getAttribute("placeholder")) ?? "";
+  emptyProbe.searchPlaceholderIsNotAccessibleName =
+    emptyProbe.searchPlaceholder.length > 0 &&
+    emptyProbe.searchPlaceholder !== "Szukaj bitów" &&
+    (await page
+      .getByRole("searchbox", {
+        name: emptyProbe.searchPlaceholder,
+        exact: true,
+      })
+      .count()) === 0;
 
   const initialStatusText = (await readStatusText(page)).trim();
   emptyProbe.initialStatusText = initialStatusText;

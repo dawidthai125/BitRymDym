@@ -19,6 +19,13 @@ describe("beats catalog — result status live region (real mount)", () => {
     invalidateBeatsFiltersMountBundle();
     const p = await probeBeatsCatalogResultStatus();
     expect(p.mounted, JSON.stringify(p)).toBe(true);
+    expect(p.searchFoundByAccessibleName, JSON.stringify(p)).toBe(true);
+    expect(p.searchPlaceholder, JSON.stringify(p)).toBe(
+      "Szukaj bitu, producenta, gatunku…",
+    );
+    expect(p.searchPlaceholderIsNotAccessibleName, JSON.stringify(p)).toBe(
+      true,
+    );
     expect(p.audioElementCount).toBe(0);
     expect(p.networkNonLocal).toBe(0);
     expect(p.initialStatusText, JSON.stringify(p)).toBe("2 bity");
