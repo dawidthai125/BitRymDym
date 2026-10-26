@@ -30,6 +30,7 @@ import {
   catalogKeysFromBeats,
   type PresentedBeat,
 } from "@/lib/ui/demo-beats";
+import { formatBeatCountLabel } from "@/lib/ui/format-beat-count-label";
 import { cn } from "@/lib/utils";
 
 type SortId = BeatsCatalogSortId;
@@ -46,8 +47,7 @@ export function beatsCatalogResultStatusMessage(
   if (filteredCount === 0) {
     return "Cicho. Brak bitów dla tych filtrów.";
   }
-  const countLabel =
-    filteredCount === 1 ? "1 bit" : `${filteredCount} bitów`;
+  const countLabel = formatBeatCountLabel(filteredCount);
   if (filteredCount !== totalCount) {
     return `${countLabel} · z ${totalCount}`;
   }
@@ -243,7 +243,7 @@ export function BeatsCatalogClient({
                 className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]"
                 aria-hidden
               >
-                {filtered.length === 1 ? "1 bit" : `${filtered.length} bitów`}
+                {formatBeatCountLabel(filtered.length)}
                 {filtered.length !== beats.length
                   ? ` · z ${beats.length}`
                   : null}

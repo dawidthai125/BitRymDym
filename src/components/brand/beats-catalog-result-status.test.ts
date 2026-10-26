@@ -19,8 +19,9 @@ describe("BeatsCatalogClient result status — source contract", () => {
   });
 
   it("hides visible meta count from AT (aria-hidden on count paragraph)", () => {
+    expect(src).toContain("formatBeatCountLabel");
     const metaBlock = src.match(
-      /aria-hidden[\s\S]*?filtered\.length === 1 \? "1 bit"/,
+      /aria-hidden[\s\S]*?formatBeatCountLabel\(filtered\.length\)/,
     );
     expect(metaBlock?.[0]).toBeTruthy();
   });
@@ -34,9 +35,21 @@ describe("BeatsCatalogClient result status — source contract", () => {
 
   it("beatsCatalogResultStatusMessage — pluralization and filtered subset", () => {
     expect(beatsCatalogResultStatusMessage(1, 3)).toBe("1 bit · z 3");
-    expect(beatsCatalogResultStatusMessage(2, 2)).toBe("2 bitów");
+    expect(beatsCatalogResultStatusMessage(2, 2)).toBe("2 bity");
+    expect(beatsCatalogResultStatusMessage(2, 5)).toBe("2 bity · z 5");
+    expect(beatsCatalogResultStatusMessage(3, 3)).toBe("3 bity");
+    expect(beatsCatalogResultStatusMessage(4, 10)).toBe("4 bity · z 10");
+    expect(beatsCatalogResultStatusMessage(5, 5)).toBe("5 bitów");
+    expect(beatsCatalogResultStatusMessage(12, 20)).toBe("12 bitów · z 20");
+    expect(beatsCatalogResultStatusMessage(21, 21)).toBe("21 bitów");
+    expect(beatsCatalogResultStatusMessage(22, 22)).toBe("22 bity");
+    expect(beatsCatalogResultStatusMessage(24, 30)).toBe("24 bity · z 30");
     expect(beatsCatalogResultStatusMessage(0, 5)).toBe(
       "Cicho. Brak bitów dla tych filtrów.",
     );
+  });
+
+  it("uses formatBeatCountLabel for live status count label", () => {
+    expect(src).toMatch(/formatBeatCountLabel\(filteredCount\)/);
   });
 });
