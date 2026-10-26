@@ -106,8 +106,31 @@ body {
   color: var(--foreground);
 }
 :root {
+  --brd-line: #ccc;
+  --brd-ink: #111;
   --brd-ink-soft: #444;
   --brd-mute: #666;
+}
+.space-y-1 > * + * {
+  margin-top: 0.25rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.text-base {
+  font-size: 1rem;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.leading-6 {
+  line-height: 1.5rem;
+}
+.border-\[var\(--brd-line\)\] {
+  border-color: var(--brd-line);
+}
+.text-\[var\(--brd-ink\)\] {
+  color: var(--brd-ink);
 }
 .break-all {
   word-break: break-all;
