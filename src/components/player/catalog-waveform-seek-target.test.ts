@@ -38,18 +38,24 @@ describe("catalog waveform seek target (source)", () => {
     expect(STICKY_SEEK_VISUAL_CLASS).toBe("h-5");
   });
 
-  it("interactive Waveform exposes slider a11y and Arrow ±0.03 seek keys", () => {
+  it("interactive Waveform exposes slider a11y and full APG keyboard seek", () => {
     const src = readSrc("src/components/brand/waveform.tsx");
     expect(src).toMatch(/role=\{interactive \? "slider" : "img"\}/);
     expect(src).toContain('aria-label": ariaLabel = "Przebieg audio"');
     expect(src).toContain("aria-valuemin={interactive ? 0 : undefined}");
     expect(src).toContain("aria-valuemax={interactive ? 100 : undefined}");
     expect(src).toContain("Math.round(clamped * 100)");
+    expect(src).toContain("aria-valuetext");
+    expect(src).toContain('aria-orientation={interactive ? "horizontal" : undefined}');
     expect(src).toContain("tabIndex={interactive ? 0 : undefined}");
-    expect(src).toContain('event.key === "ArrowRight"');
-    expect(src).toContain("clamped + 0.03");
-    expect(src).toContain('event.key === "ArrowLeft"');
-    expect(src).toContain("clamped - 0.03");
+    expect(src).toContain('case "ArrowRight"');
+    expect(src).toContain('case "ArrowUp"');
+    expect(src).toContain("SEEK_KEYBOARD_STEP");
+    expect(src).toContain('case "ArrowLeft"');
+    expect(src).toContain('case "ArrowDown"');
+    expect(src).toContain('case "Home"');
+    expect(src).toContain('case "End"');
+    expect(src).toContain("event.stopPropagation()");
   });
 
   it("catalog hit-wrap is not blocked by heightClassName", () => {

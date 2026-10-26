@@ -215,15 +215,38 @@ export type CatalogWaveformSeekKeyboardProbe = {
   ariaValuemin: string | null;
   ariaValuemax: string | null;
   initialAriaValuenow: string | null;
+  initialAriaValuetext: string | null;
   tabIndex: string | null;
   tabFocusReachedSlider: boolean;
   afterArrowRight: {
     ariaValuenow: string | null;
+    ariaValuetext: string | null;
     lastRatio: number | null;
     callsLength: number;
   };
   afterArrowLeft: {
     ariaValuenow: string | null;
+    ariaValuetext: string | null;
+    lastRatio: number | null;
+  };
+  afterArrowUp: {
+    ariaValuenow: string | null;
+    ariaValuetext: string | null;
+    lastRatio: number | null;
+  };
+  afterArrowDown: {
+    ariaValuenow: string | null;
+    ariaValuetext: string | null;
+    lastRatio: number | null;
+  };
+  afterHome: {
+    ariaValuenow: string | null;
+    ariaValuetext: string | null;
+    lastRatio: number | null;
+  };
+  afterEnd: {
+    ariaValuenow: string | null;
+    ariaValuetext: string | null;
     lastRatio: number | null;
   };
   audioElementCount: number;
@@ -232,6 +255,10 @@ export type CatalogWaveformSeekKeyboardProbe = {
   passTabFocus: boolean;
   passArrowRight: boolean;
   passArrowLeft: boolean;
+  passArrowUp: boolean;
+  passArrowDown: boolean;
+  passHome: boolean;
+  passEnd: boolean;
   passNoAudioOrNetwork: boolean;
 };
 
@@ -265,15 +292,38 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
     ariaValuemin: null,
     ariaValuemax: null,
     initialAriaValuenow: null,
+    initialAriaValuetext: null,
     tabIndex: null,
     tabFocusReachedSlider: false,
     afterArrowRight: {
       ariaValuenow: null,
+      ariaValuetext: null,
       lastRatio: null,
       callsLength: 0,
     },
     afterArrowLeft: {
       ariaValuenow: null,
+      ariaValuetext: null,
+      lastRatio: null,
+    },
+    afterArrowUp: {
+      ariaValuenow: null,
+      ariaValuetext: null,
+      lastRatio: null,
+    },
+    afterArrowDown: {
+      ariaValuenow: null,
+      ariaValuetext: null,
+      lastRatio: null,
+    },
+    afterHome: {
+      ariaValuenow: null,
+      ariaValuetext: null,
+      lastRatio: null,
+    },
+    afterEnd: {
+      ariaValuenow: null,
+      ariaValuetext: null,
       lastRatio: null,
     },
     audioElementCount: 0,
@@ -282,6 +332,10 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
     passTabFocus: false,
     passArrowRight: false,
     passArrowLeft: false,
+    passArrowUp: false,
+    passArrowDown: false,
+    passHome: false,
+    passEnd: false,
     passNoAudioOrNetwork: false,
     ...partial,
   });
@@ -335,6 +389,7 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
       min: el.getAttribute("aria-valuemin"),
       max: el.getAttribute("aria-valuemax"),
       now: el.getAttribute("aria-valuenow"),
+      valueText: el.getAttribute("aria-valuetext"),
       tabIndex: el.getAttribute("tabindex"),
     }));
 
@@ -367,6 +422,7 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
       const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
       return {
         ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
         lastRatio: seek?.lastRatio ?? null,
         callsLength: seek?.calls?.length ?? 0,
       };
@@ -387,6 +443,87 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
       const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
       return {
         ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
+        lastRatio: seek?.lastRatio ?? null,
+      };
+    });
+
+    await page.keyboard.press("ArrowUp");
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-seek-hit="catalog"]');
+        return el?.getAttribute("aria-valuenow") === "38";
+      },
+      undefined,
+      { timeout: 5_000 },
+    );
+
+    const afterArrowUp = await page.evaluate(() => {
+      const el = document.querySelector('[data-seek-hit="catalog"]');
+      const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
+      return {
+        ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
+        lastRatio: seek?.lastRatio ?? null,
+      };
+    });
+
+    await page.keyboard.press("ArrowDown");
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-seek-hit="catalog"]');
+        return el?.getAttribute("aria-valuenow") === "35";
+      },
+      undefined,
+      { timeout: 5_000 },
+    );
+
+    const afterArrowDown = await page.evaluate(() => {
+      const el = document.querySelector('[data-seek-hit="catalog"]');
+      const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
+      return {
+        ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
+        lastRatio: seek?.lastRatio ?? null,
+      };
+    });
+
+    await page.keyboard.press("Home");
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-seek-hit="catalog"]');
+        return el?.getAttribute("aria-valuenow") === "0";
+      },
+      undefined,
+      { timeout: 5_000 },
+    );
+
+    const afterHome = await page.evaluate(() => {
+      const el = document.querySelector('[data-seek-hit="catalog"]');
+      const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
+      return {
+        ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
+        lastRatio: seek?.lastRatio ?? null,
+      };
+    });
+
+    await page.keyboard.press("End");
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-seek-hit="catalog"]');
+        return el?.getAttribute("aria-valuenow") === "100";
+      },
+      undefined,
+      { timeout: 5_000 },
+    );
+
+    const afterEnd = await page.evaluate(() => {
+      const el = document.querySelector('[data-seek-hit="catalog"]');
+      const seek = window.__BRD_CATALOG_WAVEFORM_SEEK__;
+      return {
+        ariaValuenow: el?.getAttribute("aria-valuenow") ?? null,
+        ariaValuetext: el?.getAttribute("aria-valuetext") ?? null,
         lastRatio: seek?.lastRatio ?? null,
       };
     });
@@ -399,16 +536,39 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
       initialAttrs.min === "0" &&
       initialAttrs.max === "100" &&
       initialAttrs.now === "35" &&
+      initialAttrs.valueText === "35%" &&
       initialAttrs.tabIndex === "0";
 
     const passArrowRight =
       afterArrowRight.ariaValuenow === "38" &&
+      afterArrowRight.ariaValuetext === "38%" &&
       afterArrowRight.callsLength >= 1 &&
       ratioApprox(afterArrowRight.lastRatio, 0.38);
 
     const passArrowLeft =
       afterArrowLeft.ariaValuenow === "35" &&
+      afterArrowLeft.ariaValuetext === "35%" &&
       ratioApprox(afterArrowLeft.lastRatio, 0.35);
+
+    const passArrowUp =
+      afterArrowUp.ariaValuenow === "38" &&
+      afterArrowUp.ariaValuetext === "38%" &&
+      ratioApprox(afterArrowUp.lastRatio, 0.38);
+
+    const passArrowDown =
+      afterArrowDown.ariaValuenow === "35" &&
+      afterArrowDown.ariaValuetext === "35%" &&
+      ratioApprox(afterArrowDown.lastRatio, 0.35);
+
+    const passHome =
+      afterHome.ariaValuenow === "0" &&
+      afterHome.ariaValuetext === "0%" &&
+      ratioApprox(afterHome.lastRatio, 0);
+
+    const passEnd =
+      afterEnd.ariaValuenow === "100" &&
+      afterEnd.ariaValuetext === "100%" &&
+      ratioApprox(afterEnd.lastRatio, 1);
 
     const passNoAudioOrNetwork =
       audioElementCount === 0 && networkNonLocal === 0;
@@ -419,16 +579,25 @@ export async function probeCatalogWaveformSeekKeyboardA11yAt(viewport: {
       ariaValuemin: initialAttrs.min,
       ariaValuemax: initialAttrs.max,
       initialAriaValuenow: initialAttrs.now,
+      initialAriaValuetext: initialAttrs.valueText,
       tabIndex: initialAttrs.tabIndex,
       tabFocusReachedSlider,
       afterArrowRight,
       afterArrowLeft,
+      afterArrowUp,
+      afterArrowDown,
+      afterHome,
+      afterEnd,
       audioElementCount,
       networkNonLocal,
       passInitialA11y,
       passTabFocus: tabFocusReachedSlider,
       passArrowRight,
       passArrowLeft,
+      passArrowUp,
+      passArrowDown,
+      passHome,
+      passEnd,
       passNoAudioOrNetwork,
     };
   } catch {

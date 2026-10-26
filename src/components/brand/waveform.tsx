@@ -1,6 +1,10 @@
 "use client";
 
-import { useRef, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import { seekRatioFromClientX } from "@/lib/player/playback-progress";
 import { cn } from "@/lib/utils";
@@ -55,6 +59,8 @@ export const STICKY_SEEK_HIT_CLASS =
   "relative flex min-h-11 w-full select-none items-center";
 export const CATALOG_SEEK_HIT_CLASS = STICKY_SEEK_HIT_CLASS;
 export const STICKY_SEEK_VISUAL_CLASS = "h-5";
+
+const SEEK_KEYBOARD_STEP = 0.03;
 
 type WaveformProps = {
   seed: string;
@@ -165,6 +171,34 @@ export function Waveform({
     }
   }
 
+  function handleSeekKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (!interactive || !onSeekRatio) return;
+
+    let next: number | null = null;
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        next = Math.min(1, clamped + SEEK_KEYBOARD_STEP);
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        next = Math.max(0, clamped - SEEK_KEYBOARD_STEP);
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    onSeekRatio(next);
+  }
+
   return (
     <div
       className={cn(
@@ -180,6 +214,10 @@ export function Waveform({
       aria-valuemin={interactive ? 0 : undefined}
       aria-valuemax={interactive ? 100 : undefined}
       aria-valuenow={interactive ? Math.round(clamped * 100) : undefined}
+      aria-valuetext={
+        interactive ? `${Math.round(clamped * 100)}%` : undefined
+      }
+      aria-orientation={interactive ? "horizontal" : undefined}
       data-seek-hit={stickySeekHit ? "sticky" : catalogSeekHit ? "catalog" : undefined}
       style={interactive ? { touchAction: "none" } : undefined}
       onPointerDown={interactive && onSeekRatio ? handlePointerDown : undefined}
@@ -188,20 +226,7 @@ export function Waveform({
       onPointerCancel={
         interactive && onSeekRatio ? handlePointerCancel : undefined
       }
-      onKeyDown={
-        interactive && onSeekRatio
-          ? (event) => {
-              if (event.key === "ArrowRight") {
-                event.preventDefault();
-                onSeekRatio(Math.min(1, clamped + 0.03));
-              }
-              if (event.key === "ArrowLeft") {
-                event.preventDefault();
-                onSeekRatio(Math.max(0, clamped - 0.03));
-              }
-            }
-          : undefined
-      }
+      onKeyDown={interactive && onSeekRatio ? handleSeekKeyDown : undefined}
       tabIndex={interactive ? 0 : undefined}
     >
       <div
