@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BeatCatalogRow } from "@/components/brand/beat-catalog-row";
 import {
@@ -33,6 +33,27 @@ export function BeatsCatalogClient({
   const [bpmMax, setBpmMax] = useState(160);
   const [sort, setSort] = useState<SortId>("newest");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const filtersDialogId = "beats-catalog-filters-dialog";
+
+  function closeFiltersSheet() {
+    setFiltersOpen(false);
+    filtersTriggerRef.current?.focus();
+  }
+
+  // Mobile filter sheet: Escape closes and restores focus to Filtry trigger
+  // (same contract as StudioEditToolbar disclosure).
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setFiltersOpen(false);
+      filtersTriggerRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [filtersOpen]);
 
   const genreOptions = useMemo(() => catalogGenresFromBeats(beats), [beats]);
   const keyOptions = useMemo(() => catalogKeysFromBeats(beats), [beats]);
@@ -131,7 +152,11 @@ export function BeatsCatalogClient({
 
         <div className="flex flex-wrap items-center gap-2 lg:hidden">
           <button
+            ref={filtersTriggerRef}
             type="button"
+            aria-expanded={filtersOpen}
+            aria-haspopup="dialog"
+            aria-controls={filtersDialogId}
             onClick={() => setFiltersOpen(true)}
             className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
           >
@@ -201,9 +226,10 @@ export function BeatsCatalogClient({
             type="button"
             className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_40%,transparent)]"
             aria-label="Zamknij filtry"
-            onClick={() => setFiltersOpen(false)}
+            onClick={closeFiltersSheet}
           />
           <div
+            id={filtersDialogId}
             role="dialog"
             aria-modal="true"
             aria-label="Filtry katalogu"
@@ -216,7 +242,7 @@ export function BeatsCatalogClient({
               <button
                 type="button"
                 className="min-h-11 px-1 text-sm text-[var(--brd-mute)]"
-                onClick={() => setFiltersOpen(false)}
+                onClick={closeFiltersSheet}
               >
                 Zamknij
               </button>
@@ -225,7 +251,7 @@ export function BeatsCatalogClient({
             <button
               type="button"
               className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[var(--brd-green)] text-sm text-[var(--brd-paper)]"
-              onClick={() => setFiltersOpen(false)}
+              onClick={closeFiltersSheet}
             >
               Pokaż wyniki ({filtered.length})
             </button>

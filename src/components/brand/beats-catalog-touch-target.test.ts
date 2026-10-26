@@ -26,4 +26,15 @@ describe("beats catalog filter/sort touch targets", () => {
 
     expect(src).not.toMatch(/(?:^|\s|")min-h-10(?:\s|"|$)/);
   });
+
+  it("mobile Filtry sheet closes on Escape and restores focus to trigger", () => {
+    expect(src).toMatch(/filtersTriggerRef/);
+    expect(src).toMatch(/function closeFiltersSheet/);
+    expect(src).toMatch(/event\.key !== "Escape"/);
+    expect(src).toMatch(/closeFiltersSheet\(\)/);
+    expect(src).toMatch(/filtersTriggerRef\.current\?\.focus\(\)/);
+    expect(src).toMatch(/aria-expanded=\{filtersOpen\}/);
+    expect(src).toMatch(/aria-haspopup="dialog"/);
+    expect(src).toMatch(/aria-controls=\{filtersDialogId\}/);
+  });
 });
