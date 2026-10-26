@@ -243,8 +243,8 @@ body {
     display: inline;
   }
 }
-@media (min-width: 768px) {
-  .md\:bottom-0 {
+@media (min-width: 1024px) {
+  .lg\:bottom-0 {
     bottom: 0;
   }
 }

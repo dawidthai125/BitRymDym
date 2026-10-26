@@ -43,7 +43,7 @@ export function StickyMiniPlayer() {
     <div
       className={cn(
         "fixed inset-x-0 z-30 border-t border-[var(--brd-audio-line)] bg-[var(--brd-audio-surface)]",
-        "bottom-[calc(3.75rem+env(safe-area-inset-bottom))] md:bottom-0",
+        "bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-0",
       )}
       role="region"
       aria-label="Odtwarzacz"

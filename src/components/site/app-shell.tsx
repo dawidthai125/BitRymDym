@@ -38,7 +38,7 @@ export async function AppShell({
         className={cn(
           MAIN_CONTENT_LANDMARK_CLASS,
           !isAdminChrome &&
-            "pb-[calc(3.75rem+env(safe-area-inset-bottom)+3.5rem)] md:pb-16",
+            "pb-[calc(3.75rem+env(safe-area-inset-bottom)+3.5rem)] lg:pb-16",
         )}
       >
         {children}

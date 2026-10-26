@@ -66,6 +66,29 @@ describe("desktop SiteMainNav aria-current contract", () => {
     expect(src).toContain('aria-current={active ? "page" : undefined}');
   });
 
+  it("SiteMainNav and MobileBottomNav hand off at lg (no tablet nav gap)", () => {
+    const mainNav = readFileSync(
+      join(root, "src/components/site/site-main-nav.tsx"),
+      "utf8",
+    );
+    const bottomNav = readFileSync(
+      join(root, "src/components/site/mobile-bottom-nav.tsx"),
+      "utf8",
+    );
+    const appShell = readFileSync(
+      join(root, "src/components/site/app-shell.tsx"),
+      "utf8",
+    );
+    const miniPlayer = readFileSync(
+      join(root, "src/components/player/sticky-mini-player.tsx"),
+      "utf8",
+    );
+    expect(mainNav).toMatch(/\blg:flex\b/);
+    expect(bottomNav).toMatch(/\blg:hidden\b/);
+    expect(appShell).toMatch(/\blg:pb-16\b/);
+    expect(miniPlayer).toMatch(/\blg:bottom-0\b/);
+  });
+
   it("user-menu trigger has aria-label when visible name is hidden on mobile", () => {
     const src = readFileSync(
       join(root, "src/components/site/user-menu.tsx"),

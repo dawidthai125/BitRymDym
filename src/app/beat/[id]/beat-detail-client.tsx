@@ -375,7 +375,7 @@ export function BeatDetailClient({
       {hasAudio ? (
         <section
           id="nagranie"
-          className="scroll-mt-32 space-y-3 border-t border-[var(--brd-line)] pt-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8"
+          className="scroll-mt-32 space-y-3 border-t border-[var(--brd-line)] pt-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8"
           onFocusCapture={() => {
             recordingFocusRef.current = true;
             document.documentElement.removeAttribute(

@@ -33,7 +33,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_96%,transparent)] pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_96%,transparent)] pb-[env(safe-area-inset-bottom)] lg:hidden"
       aria-label="Nawigacja mobilna"
     >
       <ul
