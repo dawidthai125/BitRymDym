@@ -62,8 +62,48 @@ body {
 .min-h-11 {
   min-height: 2.75rem;
 }
+.min-w-11 {
+  min-width: 2.75rem;
+}
+.relative {
+  position: relative;
+}
+.absolute {
+  position: absolute;
+}
+.top-0 {
+  top: 0;
+}
+.right-0 {
+  right: 0;
+}
+.pr-12 {
+  padding-right: 3rem;
+}
+.size-8 {
+  width: 2rem;
+  height: 2rem;
+}
+.h-11 {
+  height: 2.75rem;
+}
+.w-11 {
+  width: 2.75rem;
+}
+.p-0 {
+  padding: 0;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
 .h-8 {
   height: 2rem;
+}
+.hover\:bg-muted:hover {
+  background-color: var(--muted);
+}
+.hover\:text-foreground:hover {
+  color: var(--foreground);
 }
 .border {
   border-width: 1px;

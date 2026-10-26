@@ -253,3 +253,172 @@ export async function probeSignInFormNeutralCredentialsError(): Promise<SignInNe
     authShapedAttempts,
   };
 }
+
+export type SignInPasswordVisibilityProbe = {
+  mounted: boolean;
+  initialType: string | null;
+  afterClickType: string | null;
+  afterKeyboardType: string | null;
+  valueAfterClick: string | null;
+  initialAriaLabel: string | null;
+  afterClickAriaLabel: string | null;
+  initialPressed: string | null;
+  afterClickPressed: string | null;
+  mockCallsAfterToggle: number;
+  toggleWidthMobile: number;
+  toggleHeightMobile: number;
+  toggleWidthDesktop: number;
+  toggleHeightDesktop: number;
+  usedRealButton: boolean;
+  networkNonLocal: number;
+  authShapedAttempts: number;
+};
+
+async function mountSignInPage(
+  viewport: { width: number; height: number; isMobile?: boolean },
+) {
+  const [js, css] = await Promise.all([
+    getSignInFormMountBundle(),
+    Promise.resolve(getSignInFormMountCss()),
+  ]);
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    isMobile: viewport.isMobile ?? false,
+    hasTouch: viewport.isMobile ?? false,
+  });
+  const page = await context.newPage();
+
+  let networkNonLocal = 0;
+  let authShapedAttempts = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (
+      url.startsWith("data:") ||
+      url.startsWith("blob:") ||
+      url === "about:blank"
+    ) {
+      await route.continue();
+      return;
+    }
+    if (/\/auth\/v1\//i.test(url) || /supabase\.co/i.test(url)) {
+      authShapedAttempts += 1;
+    }
+    networkNonLocal += 1;
+    await route.abort("blockedbyclient");
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="sign-in-form-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_SIGN_IN_FORM_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  return { context, page, networkNonLocal: () => networkNonLocal, authShapedAttempts: () => authShapedAttempts };
+}
+
+export async function probeSignInFormPasswordVisibility(): Promise<SignInPasswordVisibilityProbe> {
+  invalidateSignInFormMountBundle();
+  const mobile = await mountSignInPage({
+    width: 390,
+    height: 844,
+    isMobile: true,
+  });
+
+  const formVisible = await mobile.page.locator("form").count();
+  if (formVisible < 1) {
+    await mobile.context.close();
+    return {
+      mounted: false,
+      initialType: null,
+      afterClickType: null,
+      afterKeyboardType: null,
+      valueAfterClick: null,
+      initialAriaLabel: null,
+      afterClickAriaLabel: null,
+      initialPressed: null,
+      afterClickPressed: null,
+      mockCallsAfterToggle: 0,
+      toggleWidthMobile: 0,
+      toggleHeightMobile: 0,
+      toggleWidthDesktop: 0,
+      toggleHeightDesktop: 0,
+      usedRealButton: false,
+      networkNonLocal: mobile.networkNonLocal(),
+      authShapedAttempts: mobile.authShapedAttempts(),
+    };
+  }
+
+  const password = mobile.page.locator('input[name="password"]');
+  const toggle = mobile.page.getByRole("button", { name: /Pokaż hasło|Ukryj hasło/i });
+  const secret = "fake-password-A";
+
+  await password.fill(secret);
+
+  const initialType = await password.getAttribute("type");
+  const initialAriaLabel = await toggle.getAttribute("aria-label");
+  const initialPressed = await toggle.getAttribute("aria-pressed");
+  const mobileBox = await toggle.boundingBox();
+
+  await toggle.click();
+  const afterClickType = await password.getAttribute("type");
+  const valueAfterClick = await password.inputValue();
+  const afterClickToggle = mobile.page.getByRole("button", {
+    name: /Ukryj hasło/i,
+  });
+  const afterClickAriaLabel = await afterClickToggle.getAttribute("aria-label");
+  const afterClickPressed = await afterClickToggle.getAttribute("aria-pressed");
+  const usedRealButton =
+    (await afterClickToggle.getAttribute("data-slot")) === "button";
+
+  await afterClickToggle.focus();
+  await mobile.page.keyboard.press("Space");
+  const afterKeyboardType = await password.getAttribute("type");
+
+  const mockCallsAfterToggle = await mobile.page.evaluate(
+    () => window.__BRD_SIGN_IN_MOCK_CALLS__ ?? 0,
+  );
+  const networkMobile = mobile.networkNonLocal();
+  const authMobile = mobile.authShapedAttempts();
+  await mobile.context.close();
+
+  const desktop = await mountSignInPage({
+    width: 1280,
+    height: 800,
+    isMobile: false,
+  });
+  const desktopToggle = desktop.page.getByRole("button", {
+    name: /Pokaż hasło/i,
+  });
+  await desktopToggle.waitFor({ state: "visible", timeout: 10_000 });
+  const desktopBox = await desktopToggle.boundingBox();
+  const networkDesktop = desktop.networkNonLocal();
+  const authDesktop = desktop.authShapedAttempts();
+  await desktop.context.close();
+
+  const roundPx = (n: number | undefined) => Math.round(n ?? 0);
+
+  return {
+    mounted: true,
+    initialType,
+    afterClickType,
+    afterKeyboardType,
+    valueAfterClick,
+    initialAriaLabel,
+    afterClickAriaLabel,
+    initialPressed,
+    afterClickPressed,
+    mockCallsAfterToggle,
+    toggleWidthMobile: roundPx(mobileBox?.width),
+    toggleHeightMobile: roundPx(mobileBox?.height),
+    toggleWidthDesktop: roundPx(desktopBox?.width),
+    toggleHeightDesktop: roundPx(desktopBox?.height),
+    usedRealButton,
+    networkNonLocal: networkMobile + networkDesktop,
+    authShapedAttempts: authMobile + authDesktop,
+  };
+}

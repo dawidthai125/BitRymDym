@@ -243,3 +243,238 @@ export async function probeSignUpFormPasswordMismatch(): Promise<SignUpMismatchM
     authShapedAttempts,
   };
 }
+
+export type SignUpPasswordVisibilityProbe = {
+  mounted: boolean;
+  passwordInitialType: string | null;
+  confirmInitialType: string | null;
+  passwordAfterOwnToggle: string | null;
+  confirmAfterPasswordToggle: string | null;
+  confirmAfterOwnToggle: string | null;
+  passwordAfterConfirmToggle: string | null;
+  passwordValuePreserved: boolean;
+  confirmValuePreserved: boolean;
+  passwordToggleLabelHidden: string | null;
+  passwordToggleLabelShown: string | null;
+  confirmToggleLabelHidden: string | null;
+  confirmToggleLabelShown: string | null;
+  passwordPressedAfterClick: string | null;
+  passwordTypeAfterKeyboard: string | null;
+  mockCallsAfterToggles: number;
+  passwordToggleMinSideMobile: number;
+  confirmToggleMinSideMobile: number;
+  passwordToggleMinSideDesktop: number;
+  confirmToggleMinSideDesktop: number;
+  usedRealButton: boolean;
+  networkNonLocal: number;
+  authShapedAttempts: number;
+};
+
+async function mountSignUpPage(viewport: {
+  width: number;
+  height: number;
+  isMobile?: boolean;
+}) {
+  const [js, css] = await Promise.all([
+    getSignUpFormMountBundle(),
+    Promise.resolve(getSignUpFormMountCss()),
+  ]);
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    isMobile: viewport.isMobile ?? false,
+    hasTouch: viewport.isMobile ?? false,
+  });
+  const page = await context.newPage();
+
+  let networkNonLocal = 0;
+  let authShapedAttempts = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (
+      url.startsWith("data:") ||
+      url.startsWith("blob:") ||
+      url === "about:blank"
+    ) {
+      await route.continue();
+      return;
+    }
+    if (/\/auth\/v1\//i.test(url) || /supabase\.co/i.test(url)) {
+      authShapedAttempts += 1;
+    }
+    networkNonLocal += 1;
+    await route.abort("blockedbyclient");
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="sign-up-form-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_SIGN_UP_FORM_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  return {
+    context,
+    page,
+    networkNonLocal: () => networkNonLocal,
+    authShapedAttempts: () => authShapedAttempts,
+  };
+}
+
+export async function probeSignUpFormPasswordVisibility(): Promise<SignUpPasswordVisibilityProbe> {
+  invalidateSignUpFormMountBundle();
+  const mobile = await mountSignUpPage({
+    width: 390,
+    height: 844,
+    isMobile: true,
+  });
+
+  const formVisible = await mobile.page.locator("form").count();
+  if (formVisible < 1) {
+    await mobile.context.close();
+    return {
+      mounted: false,
+      passwordInitialType: null,
+      confirmInitialType: null,
+      passwordAfterOwnToggle: null,
+      confirmAfterPasswordToggle: null,
+      confirmAfterOwnToggle: null,
+      passwordAfterConfirmToggle: null,
+      passwordValuePreserved: false,
+      confirmValuePreserved: false,
+      passwordToggleLabelHidden: null,
+      passwordToggleLabelShown: null,
+      confirmToggleLabelHidden: null,
+      confirmToggleLabelShown: null,
+      passwordPressedAfterClick: null,
+      passwordTypeAfterKeyboard: null,
+      mockCallsAfterToggles: 0,
+      passwordToggleMinSideMobile: 0,
+      confirmToggleMinSideMobile: 0,
+      passwordToggleMinSideDesktop: 0,
+      confirmToggleMinSideDesktop: 0,
+      usedRealButton: false,
+      networkNonLocal: mobile.networkNonLocal(),
+      authShapedAttempts: mobile.authShapedAttempts(),
+    };
+  }
+
+  const password = mobile.page.locator('input[name="password"]');
+  const confirm = mobile.page.locator('input[name="confirmPassword"]');
+  const passwordToggleShow = mobile.page.getByRole("button", {
+    name: "Pokaż hasło",
+    exact: true,
+  });
+  const confirmToggleShow = mobile.page.getByRole("button", {
+    name: "Pokaż powtórzone hasło",
+    exact: true,
+  });
+
+  await password.fill("fake-password-A");
+  await confirm.fill("fake-password-B");
+
+  const passwordInitialType = await password.getAttribute("type");
+  const confirmInitialType = await confirm.getAttribute("type");
+  const passwordToggleLabelHidden = await passwordToggleShow.getAttribute(
+    "aria-label",
+  );
+  const confirmToggleLabelHidden = await confirmToggleShow.getAttribute(
+    "aria-label",
+  );
+
+  const pwBox = await passwordToggleShow.boundingBox();
+  const cfBox = await confirmToggleShow.boundingBox();
+
+  await passwordToggleShow.click();
+  const passwordAfterOwnToggle = await password.getAttribute("type");
+  const confirmAfterPasswordToggle = await confirm.getAttribute("type");
+  const passwordToggleHide = mobile.page.getByRole("button", {
+    name: "Ukryj hasło",
+    exact: true,
+  });
+  const passwordToggleLabelShown = await passwordToggleHide.getAttribute(
+    "aria-label",
+  );
+  const passwordValuePreserved =
+    (await password.inputValue()) === "fake-password-A";
+
+  await confirmToggleShow.click();
+  const confirmAfterOwnToggle = await confirm.getAttribute("type");
+  const passwordAfterConfirmToggle = await password.getAttribute("type");
+  const confirmValuePreserved =
+    (await confirm.inputValue()) === "fake-password-B";
+  const confirmToggleHide = mobile.page.getByRole("button", {
+    name: "Ukryj powtórzone hasło",
+    exact: true,
+  });
+  const confirmToggleLabelShown = await confirmToggleHide.getAttribute(
+    "aria-label",
+  );
+  const passwordPressedAfterClick =
+    await passwordToggleHide.getAttribute("aria-pressed");
+  const usedRealButton =
+    (await passwordToggleHide.getAttribute("data-slot")) === "button";
+
+  await passwordToggleHide.focus();
+  await mobile.page.keyboard.press("Space");
+  const passwordTypeAfterKeyboard = await password.getAttribute("type");
+
+  const mockCallsAfterToggles = await mobile.page.evaluate(
+    () => window.__BRD_SIGN_UP_MOCK_CALLS__ ?? 0,
+  );
+  const networkMobile = mobile.networkNonLocal();
+  const authMobile = mobile.authShapedAttempts();
+  await mobile.context.close();
+
+  const desktop = await mountSignUpPage({
+    width: 1280,
+    height: 800,
+    isMobile: false,
+  });
+  const desktopPw = desktop.page.getByRole("button", {
+    name: "Pokaż hasło",
+    exact: true,
+  });
+  const desktopCf = desktop.page.getByRole("button", {
+    name: "Pokaż powtórzone hasło",
+    exact: true,
+  });
+  await desktopPw.waitFor({ state: "visible", timeout: 10_000 });
+  const dPw = await desktopPw.boundingBox();
+  const dCf = await desktopCf.boundingBox();
+  const networkDesktop = desktop.networkNonLocal();
+  const authDesktop = desktop.authShapedAttempts();
+  await desktop.context.close();
+
+  const minSide = (box: { width: number; height: number } | null) =>
+    Math.round(Math.min(box?.width ?? 0, box?.height ?? 0));
+
+  return {
+    mounted: true,
+    passwordInitialType,
+    confirmInitialType,
+    passwordAfterOwnToggle,
+    confirmAfterPasswordToggle,
+    confirmAfterOwnToggle,
+    passwordAfterConfirmToggle,
+    passwordValuePreserved,
+    confirmValuePreserved,
+    passwordToggleLabelHidden,
+    passwordToggleLabelShown,
+    confirmToggleLabelHidden,
+    confirmToggleLabelShown,
+    passwordPressedAfterClick,
+    passwordTypeAfterKeyboard,
+    mockCallsAfterToggles,
+    passwordToggleMinSideMobile: minSide(pwBox),
+    confirmToggleMinSideMobile: minSide(cfBox),
+    passwordToggleMinSideDesktop: minSide(dPw),
+    confirmToggleMinSideDesktop: minSide(dCf),
+    usedRealButton,
+    networkNonLocal: networkMobile + networkDesktop,
+    authShapedAttempts: authMobile + authDesktop,
+  };
+}

@@ -14,6 +14,7 @@ import {
   type AuthActionState,
 } from "@/lib/auth/actions";
 import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
+import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
 import { Button } from "@/components/ui/button";
 
 const initialState: AuthActionState = { error: null, success: false };
@@ -33,16 +34,12 @@ export function SignInForm() {
           className={AUTH_FIELD_CLASS}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Hasło
-        <input
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
+      <PasswordFieldWithToggle
+        label="Hasło"
+        name="password"
+        required
+        autoComplete="current-password"
+      />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {state.error}
@@ -90,28 +87,22 @@ export function SignUpForm() {
           className={AUTH_FIELD_CLASS}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Hasło
-        <input
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Powtórz hasło
-        <input
-          name="confirmPassword"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={AUTH_FIELD_CLASS}
-        />
-      </label>
+      <PasswordFieldWithToggle
+        label="Hasło"
+        name="password"
+        required
+        minLength={8}
+        autoComplete="new-password"
+      />
+      <PasswordFieldWithToggle
+        label="Powtórz hasło"
+        name="confirmPassword"
+        required
+        minLength={8}
+        autoComplete="new-password"
+        showLabel="Pokaż powtórzone hasło"
+        hideLabel="Ukryj powtórzone hasło"
+      />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {state.error}
