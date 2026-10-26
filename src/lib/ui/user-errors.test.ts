@@ -45,15 +45,29 @@ describe("mapSupabaseAuthError", () => {
 });
 
 describe("interpretSignUpResult localization", () => {
-  it("maps signup raw error to Polish", () => {
+  it("maps taken-email hard error to neutral pending (anti-enumeration shape)", () => {
     const result = interpretSignUpResult({
       error: { message: "User already registered" },
       session: null,
     });
+    expect(result).toEqual({
+      kind: "pending_confirmation",
+      message: expect.stringMatching(/skrzynk|e-mail|email/i),
+    });
+    if (result.kind === "pending_confirmation") {
+      expect(result.message.toLowerCase()).not.toContain("already registered");
+    }
+  });
+
+  it("keeps generic signup failures as Polish errors", () => {
+    const result = interpretSignUpResult({
+      error: { message: "Signup failed" },
+      session: null,
+    });
     expect(result.kind).toBe("error");
     if (result.kind === "error") {
-      expect(result.error.toLowerCase()).not.toContain("already registered");
-      expect(result.error).toMatch(/konto|zaloguj|spróbuj/i);
+      expect(result.error.toLowerCase()).not.toContain("signup failed");
+      expect(result.error).toMatch(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]|Spróbuj|udało/i);
     }
   });
 });

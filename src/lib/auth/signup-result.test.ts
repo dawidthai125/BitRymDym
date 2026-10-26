@@ -63,6 +63,29 @@ describe("interpretSignUpResult", () => {
     }
   });
 
+  it("hard already-registered error matches fresh pending (anti-enumeration shape)", () => {
+    const fresh = interpretSignUpResult({
+      error: null,
+      session: null,
+      identities: [{ provider: "email" }],
+    });
+    const takenHard = interpretSignUpResult({
+      error: { message: "User already registered" },
+      session: null,
+      identities: null,
+    });
+    expect(takenHard).toEqual(fresh);
+    expect(takenHard.kind).toBe("pending_confirmation");
+  });
+
+  it("generic provider signup errors stay distinguishable as errors", () => {
+    const result = interpretSignUpResult({
+      error: { message: "Signup failed" },
+      session: null,
+    });
+    expect(result.kind).toBe("error");
+  });
+
   it("does not treat error=null alone as authenticated session", () => {
     const result = interpretSignUpResult({
       error: null,

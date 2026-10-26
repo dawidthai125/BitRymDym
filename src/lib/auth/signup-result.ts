@@ -3,7 +3,10 @@
  * Anti-enumeration: no-session paths share one neutral message.
  */
 
-import { mapSupabaseAuthError } from "@/lib/ui/user-errors";
+import {
+  isSupabaseEmailAlreadyRegisteredError,
+  mapSupabaseAuthError,
+} from "@/lib/ui/user-errors";
 
 export const SIGNUP_PENDING_NEUTRAL_MESSAGE =
   "Sprawdź swoją skrzynkę e-mail i potwierdź konto. Jeśli konto z tym adresem już istnieje, zaloguj się lub skorzystaj z opcji resetowania hasła.";
@@ -24,6 +27,13 @@ export function interpretSignUpResult(input: {
   identities?: unknown[] | null;
 }): SignUpInterpretation {
   if (input.error) {
+    // Hard "already registered" → same success-shaped pending as obfuscated duplicate.
+    if (isSupabaseEmailAlreadyRegisteredError(input.error.message)) {
+      return {
+        kind: "pending_confirmation",
+        message: SIGNUP_PENDING_NEUTRAL_MESSAGE,
+      };
+    }
     return { kind: "error", error: mapSupabaseAuthError(input.error.message) };
   }
 

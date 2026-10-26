@@ -37,6 +37,19 @@ export function looksLikePolishUserMessage(message: string): boolean {
   );
 }
 
+/** Provider copy that would otherwise reveal a taken signup email. */
+export function isSupabaseEmailAlreadyRegisteredError(
+  message: string | null | undefined,
+): boolean {
+  if (!message) return false;
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("user already registered") ||
+    lower.includes("already been registered") ||
+    lower.includes("email address is already")
+  );
+}
+
 /**
  * Map Supabase Auth API messages → Polish (anti-enumeration where needed).
  */
@@ -62,12 +75,8 @@ export function mapSupabaseAuthError(
   ) {
     return "Potwierdź adres e-mail, zanim się zalogujesz.";
   }
-  if (
-    lower.includes("user already registered") ||
-    lower.includes("already been registered") ||
-    lower.includes("email address is already")
-  ) {
-    // Anti-enumeration-friendly generic for signup hard failures.
+  if (isSupabaseEmailAlreadyRegisteredError(message)) {
+    // Fallback copy if a non-signup path surfaces this provider error.
     return "Nie udało się założyć konta. Spróbuj ponownie lub zaloguj się.";
   }
   if (
