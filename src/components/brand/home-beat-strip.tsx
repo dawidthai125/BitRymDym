@@ -115,6 +115,7 @@ function HomeBeatRow({
           <Waveform
             seed={beat.id}
             progress={progress}
+            density="catalog"
             bars={featured ? 64 : 48}
             heightClassName={featured ? "h-10" : "h-7"}
             showPlayhead={isCurrent}
@@ -136,6 +137,7 @@ function HomeBeatRow({
         <Waveform
           seed={beat.id}
           progress={progress}
+          density="catalog"
           bars={featured ? 44 : 34}
           heightClassName={featured ? "h-7" : "h-5"}
           showPlayhead={isCurrent}
