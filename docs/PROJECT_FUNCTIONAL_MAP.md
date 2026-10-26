@@ -1,66 +1,87 @@
 # BitRymDym — mapa funkcji (kanoniczna)
 
-**Updated:** 2026-10-25 (Owner-reported USER RLS runtime: owner/anon/peer **PASS**; ≠ Product GREEN)  
-**Living tip / deploy:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2 — tip przed tym docs = **`d8846ff`**; re-check `ls-remote` / Deployments po pushu.  
-**Evidence rule:** PASS / FAIL / BLOCKED / NOT RUN / NOT VERIFIED tylko z dowodu. Owner-reported = fakt przekazany Ownerem (nie niezależny re-run agenta).
+**Updated:** 2026-10-26 (docs cold-start sync · tip **`11a664b`**)  
+**Living tip / deploy:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2 — pre-docs tip **`11a664b`**; Production **success** `2026-10-26T20:11:21Z`; re-check `git rev-parse HEAD` / Deployments po pushu.  
+**Evidence rule:** PASS / FAIL / BLOCKED / NOT RUN / NOT VERIFIED tylko z dowodu. Owner-reported = fakt przekazany Ownerem (nie niezależny re-run agenta).  
+**Płaszczyzny dowodu (nie mylić):** `CODE` · `UNIT/INTEGRATION TEST` · `REAL-MOUNT` · `PRODUCTION UI` · `PRODUCTION DB/RLS` · `DEPLOY` · `OWNER-REPORTED`.
+
+Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **BLOCKED** · **NOT VERIFIED** · **HISTORY**.
 
 ---
 
 ## Publiczne (anon)
 
-| Powierzchnia | Ścieżka | Uwagi |
-|--------------|---------|--------|
-| Home | `/` | Brand / katalog / CTA |
-| Katalog bitów | `/beats` | Lista / wyszukiwanie |
-| Detal bitu + Quick Take | `/beat/[id]` | Odtwarzanie katalogowe ≠ Studio engine |
-| About | `/about` | Treść marki |
-| Sign-in | `/sign-in` | Formularz auth |
+| Powierzchnia | Co użytkownik może | Główne ścieżki | Testy (zakres) | Ostatni dowód | Status | Pozostałe / odblokowanie |
+|--------------|-------------------|----------------|----------------|---------------|--------|---------------------------|
+| Home | Brand, CTA, wejście do katalogu | `/` · `src/app/page.tsx` | touch/home link (częściowe) | PRODUCTION UI public smoke **PASS** @ `35543c8` (**HISTORY** 2026-10-24) · **DEPLOY** tip living osobno | **PARTIAL** | OD-15/16 OPEN; pełny re-smoke **NOT VERIFIED** na `11a664b` |
+| Katalog bitów | Szukaj, sortuj, filtruj, odsłuch katalogowy | `/beats` · `beats-catalog-client.tsx` · `beats-catalog-{search,sort,filters}.ts` | UNIT search/sort/filters · REAL-MOUNT filters keyboard/status · waveform seek REAL-MOUNT | **CODE**+**REAL-MOUNT** continuum a11y 2026-10-26 · PRODUCTION UI katalog **HISTORY** smoke @ `35543c8` | **PARTIAL** | Pełny AT na prod layout **NOT VERIFIED**; bez egress audio |
+| Detal bitu + Quick Take | Play katalogowy, wejście QT | `/beat/[id]` | tablet padding (nav commit) | Sample Policy **UNIT** · eligibility Sacred → głęboka bramka **NOT VERIFIED** | **PARTIAL** | REC/mic **NOT RUN**; Sacred WIP nie czytać |
+| About | Treść marki | `/about` | — | PRODUCTION UI smoke **HISTORY** @ `35543c8` | **DONE** (docs smoke) / re-run **NOT VERIFIED** | — |
+| Premium (public) | Porównanie limitów; bez cen/checkout | `/premium` · `premium-tiers.ts` · `overflow-x-scroll-region.tsx` | UNIT w2a/w2b · headings; **brak** REAL-MOUNT scroll | **CODE** `11d6042` · PRODUCTION UI table/fokus raportowane **PASS** · touch swipe **BLOCKED** (harness) | **PARTIAL** | OD-04/07 **OPEN**; Retention worker **HOLD** |
+| Sign-in / Sign-up / Forgot | Auth forms, anti-enum | `/sign-in` · `/sign-up` · `/forgot-password` | UNIT actions + REAL-MOUNT mounts | **CODE**+**UNIT**+**REAL-MOUNT** · prod Auth E2E **NOT VERIFIED** | **PARTIAL** | Real inbox / rate-limit UX = Owner smoke |
 
-**Public smoke (prod, 2026-10-24, po tip `35543c8`):** `/`, `/beats`, `/about`, `/sign-in` → HTTP 200 (**PASS**). Motyw przełączany UI na home (**PASS**).
-
----
-
-## Auth i konto
-
-| Powierzchnia | Ścieżka |
-|--------------|---------|
-| Account hub | `/account` |
-| Takes archive | `/account/takes` |
-| Settings | `/settings` |
-| Library | `/library` |
-| Downloads | `/account/downloads` (i powiązane) |
-
-**Admin visual smoke (prod, 2026-10-24):** authenticated routes Studio hub / takes / account / settings / library + Motyw placement + persistence → **PASS** ([ADMIN_SESSION_AUTH_VISUAL_SMOKE_2026-10-24.md](./audits/_studio_recording_local_e2e_2026-10-24/ADMIN_SESSION_AUTH_VISUAL_SMOKE_2026-10-24.md)).  
-**USER RLS runtime na prod (Owner-reported, 2026-10-25):** owner SELECT **PASS** · anon isolation **PASS** · peer isolation **PASS** → [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). Sesja admina / `service_role` **nie** są dowodem. **≠ Product GREEN.**
+**Public smoke (prod, 2026-10-24, tip `35543c8` HISTORY):** `/`, `/beats`, `/about`, `/sign-in` → HTTP 200 (**PASS**). Motyw na home (**PASS**).
 
 ---
 
-## Studio
+## Auth, konto, nawigacja
 
-| Powierzchnia | Opis | Weryfikacja |
-|--------------|------|-------------|
-| Studio hub | `/studio` — lista projektów | Prod admin visual **PASS**; lokalnie **PASS** w auditach |
-| Studio editor | Edytor projektu (transport, ścieżki, R, REC) | Lokalny mock E2E **PASS** na PUBLISHED fixture; prod editor **NOT RUN** w smoke admina |
-| Takes | Archiwum nagrań | Prod empty archive OK; lokalny take save **PASS** (mock) |
-| Motyw | Dark default · light papier · toggle obok auth/UserMenu | Global + logged-in visual evidence; OD-15/OD-16 **OPEN** |
+| Powierzchnia | Co użytkownik może | Główne ścieżki | Testy | Dowód | Status | Pozostałe |
+|--------------|-------------------|----------------|-------|-------|--------|-----------|
+| UserMenu | Otwórz/zamknij menu konta (disclosure) | `user-menu.tsx` · `site-header.tsx` | source-contract `site-nav-active` · touch `header-search-touch-target` | **DEPLOY** `11a664b` · **PRODUCTION UI** AX/Escape/hit **PASS** (390/820/1280) · Tab/`focus-visible` **NOT VERIFIED** | **PARTIAL** | Nie klikać Wyloguj w smoke bez GO |
+| Motyw | Dark default / light papier | `theme-toggle.tsx` | theme-toggle-label | PRODUCTION UI + visual evidence 2026-10-24 | **DONE** (evidence) | OD-15/16 **OPEN** |
+| Nav responsive | Desktop top / mobile bottom; handoff `lg` | `site-main-nav` · `mobile-bottom-nav` · `app-shell` | `site-nav-active` (lg handoff) | **CODE** `c702d27` · PRODUCTION UI tablet gap fix **DEPLOYED** · pełny viewport re-smoke **NOT VERIFIED** | **PARTIAL** | — |
+| Skip link | Przejdź do treści | AppShell | `ccb4f0c` Tab/Enter path | **UNIT**/keyboard probe | **PARTIAL** | Prod AT **NOT VERIFIED** |
+| Account hub | Profil, bezpieczeństwo | `/account` | change-email/password mounts · display-name status | REAL-MOUNT lokalnie · prod USER **NOT VERIFIED** | **PARTIAL** | — |
+| Settings | Hub ustawień | `/settings` | settings-hub redirect | Stub historyczny → hub | **PARTIAL** | — |
+| Library / downloads | Ulubione, historia | `/library*` · `/account/downloads` | limits UNIT | UI flow **NOT VERIFIED** | **PARTIAL** / **NOT VERIFIED** | — |
+| Takes archive | Lista nagrań | `/account/takes` | — | Admin empty archive OK (docs) | **DONE** (docs) / USER **NOT VERIFIED** | — |
 
-### Nagranie (produkt)
+**Admin visual smoke (prod, 2026-10-24 HISTORY):** Studio hub / takes / account / settings / library + Motyw → **PASS**.  
+**USER RLS runtime (Owner-reported, 2026-10-25):** owner/anon/peer **PASS** → [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). **≠ Product GREEN.**
 
-- Beat musi być **PUBLISHED** (bramka produktowa).
-- Ścieżki seed: **R nieuzbrojone** — VOCAL `record_armed: false` od commita **`35543c8`** (`fix(studio): start vocal tracks unarmed`).
-- Świadome R uzbraja wybraną ścieżkę (CAS rozbraja pozostałe — ancestry migracji).
-- Lokalny E2E używa **Fake MediaRecorder** + fixture `chromium-mediarecorder-opus.webm` — **nie** jest dowodem realnego mikrofonu / produkcji audio.
+---
 
-### RLS `beat_audio_assets` (owner SELECT)
+## Premium — osie (nie scalać)
 
-- Commit **`1e75fd3`** (repo SQL): policy `beat_audio_assets_select_own` — SELECT dla `authenticated` gdy `beats.owner_id = auth.uid()` (w tym DRAFT).
-- Lokalnie: vitest owner/peer/anon + E2E submit→mod→publish→mock REC → **PASS** ([owner-select-policy-e2e-report.json](./audits/_studio_recording_local_e2e_2026-10-24/owner-select-policy-e2e-report.json)).
-- **Prod migracja apply + catalog read-back (2026-10-25):** **PASS** — project **`rzzxrgcdogkybkiidqgw`** · history **`20261025152524` / `beat_audio_assets_owner_select`** (repo `20261024201348_…`; drift OK) · policy EXISTS · SELECT · `authenticated` · owner-uid predicate. **Osobny claim** od runtime.
-- **Prod USER owner SELECT (runtime JWT):** **PASS** (Owner-reported)
-- **Prod peer isolation:** **PASS** (Owner-reported — JWT `authenticated`, nie service_role; PostgREST counts 0; UI peera pusty)
-- **Prod anon isolation:** **PASS** (Owner-reported)
-- Evidence: [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). **≠ Product GREEN.** Admin / service_role **nie** zastępują claimów runtime.
-- **HISTORY (same day, pre-runtime):** apply SESSION earlier recorded owner/peer/anon runtime **BLOCKED** for lack of USER sessions — superseded for runtime only.
+| Oś | Wartości (defaults / Owner) | Egzekwowanie | Status |
+|----|----------------------------|--------------|--------|
+| Pobrania beat / dzień | ANON2…GOLD50 | `PREMIUM_TIER_MATRIX` + ledger | **DONE** UNIT · prod live **NOT VERIFIED** |
+| Quick Take (Sample Policy) | czas/TTL/sesje — `SAMPLE_POLICY_DEFAULTS` (+ admin duration B/S/G) | `getSamplePolicy` · **nie** Account Level | **DONE** UNIT (P1) · eligibility Sacred **NOT VERIFIED** |
+| Export / unlock jakość | ladder `PREMIUM_RETENTION_DAYS` / export policy | download/unlock gates | **PARTIAL** · OD-04/07 **OPEN** |
+| Retencja artefaktów | FREE 48h · BRONZE 7d · SILVER 30d · **GOLD 28d prod** (Owner 2026-10-25); 90d design-only | matrix + export days | **ZGODNE** kod↔decyzja · worker **HOLD** |
+| Premium Retention worker | cron/janitor | lokalne WIP · **nie** w `vercel.json` | **HOLD** |
+| Self-serve ceny/płatności | — | brak checkout | **OPEN** (OD-04/OD-07) |
+
+---
+
+## Studio / REC / export (bezpieczne źródła tylko)
+
+| Powierzchnia | Status | Dowód | Zakaz |
+|--------------|--------|-------|-------|
+| Studio hub `/studio` | **DONE** (docs admin visual) | PRODUCTION UI HISTORY @ `35543c8` | — |
+| Studio editor | **NOT VERIFIED** (ten pakiet) | Historyczne closeouty V2/P6.x w PROJECT_STATE = baseline docs | **nie** otwieraj `studio-editor.tsx` / `studio-service.ts` bez scope |
+| REC / mic | **NOT RUN** | Mock MediaRecorder lokalnie ≠ mic | Audio egress policy |
+| `beat_audio_assets` owner SELECT | Apply+catalog **PASS** · runtime **OWNER-REPORTED PASS** | history `20261025152524` · smoke 2026-10-25 | ≠ Product GREEN |
+| Final Mix (STUDIO_EXPORT) | GREEN VERIFIED (frozen IN) | PROJECT_STATE | ≠ SFM Versions GREEN |
+| SFM Versions | Code ON MAIN · Production GREEN **NOT CLAIMED** | PROJECT_STATE SFM planes | Host/staging **NOT RE-VERIFIED** |
+| Contabo worker | Code local · sync/canary/always-on **NOT DONE** | PROJECT_STATE | Osobne GO |
+
+---
+
+## Macierz weryfikacji (skrót 2026-10-26)
+
+| Obszar | CODE | UNIT/REAL-MOUNT | PRODUCTION UI | PRODUCTION DB/RLS | DEPLOY |
+|--------|------|-----------------|---------------|-------------------|--------|
+| Tip `11a664b` | tak | UserMenu contracts | UserMenu PARTIAL smoke | — | **success** |
+| Tablet nav `c702d27` | tak | site-nav-active | **NOT VERIFIED** re-smoke | — | ancestry na tip |
+| Premium table `11d6042` | tak | brak dedicated test | fokus/table PASS · swipe **BLOCKED** | — | ancestry |
+| Katalog filters/waveform | tak | REAL-MOUNT | HISTORY smoke | — | ancestry |
+| Auth anti-enum | tak | UNIT+mount | **NOT VERIFIED** | — | ancestry |
+| USER RLS owner/peer/anon | SQL on main | lokalne testy | — | **OWNER-REPORTED PASS** | apply 2026-10-25 |
+| Premium Retention | lokalny WIP | — | nieaktywne | nieaktywne | **HOLD** |
+| SFM runtime | ON MAIN | unit evidence HISTORY | — | **NOT CLAIMED** GREEN | ≠ cutover |
+| REC/mic | — | mock only | **NOT RUN** | — | — |
 
 ---
 
@@ -70,26 +91,18 @@
 |------|--------|
 | Dark = default (`data-theme="dark"`) | Udokumentowany Owner direction 2026-10-24 |
 | Light = papier / zine | j.w. |
-| Toggle przed Zaloguj / UserMenu (desktop + mobile) | PASS w evidence |
-| Persist `localStorage bitrymdym.theme` | PASS (triada storage ≡ data-theme ≡ `.dark`) |
-| OD-15 / OD-16 | **OPEN** — nie zamykać przy okazji wyglądu |
+| Toggle przed Zaloguj / UserMenu | PASS w evidence |
+| Persist `localStorage bitrymdym.theme` | PASS |
+| OD-15 / OD-16 | **OPEN** |
 
 ---
 
-## Macierz weryfikacji (sesja 2026-10-24)
+## Sprzeczności żywe (nie rozstrzygnięte tu)
 
-| Obszar | Lokalnie | Produkcja |
-|--------|----------|-----------|
-| Public routes smoke | — | **PASS** |
-| Deploy powiązany z `35543c8` | — | **PASS** (GitHub Deployments `success`; `vercel inspect` OAuth **NOT RUN**) |
-| Admin authenticated visual | — | **PASS** |
-| Owner SELECT — migracja/katalog | **PASS** (loopback) | Apply + read-back **PASS** (2026-10-25) |
-| Owner SELECT — USER runtime | **PASS** (loopback) | **PASS** (Owner-reported 2026-10-25) |
-| VOCAL unarmed seed | **PASS** (commit + prior E2E) | Bundle ancestry po deploy tip |
-| Mock REC → take → archive | **PASS** (harness) | **NOT RUN** |
-| Real mic / Play masters | **NOT RUN** | **NOT RUN** |
-| Ordinary USER RLS (peer/anon) | lokalny peer/anon **PASS** | peer **PASS** · anon **PASS** (Owner-reported; ≠ GREEN) |
-| Premium Retention | HOLD (local WIP) | nieaktywne |
+| Temat | Klasyfikacja | Uwaga |
+|-------|--------------|-------|
+| MASTER_SSOT / Recording Freeze Account Level vs Sample Policy jako oś QT | **SPRZECZNE / BLOCKED** (decyzja Ownera) | Runtime = Sample Policy (`recording.ts`); nie zamykać w docs tip-sync |
+| Living tip w starych akapitach HISTORY vs §2 | **HISTORY** | Zawsze wierz §2 PROJECT_STATE |
 
 ---
 

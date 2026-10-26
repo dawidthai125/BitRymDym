@@ -6,6 +6,32 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-26 — Docs cold-start sync (tip `11a664b`)
+
+**Status:** documentation only · **≠ Product GREEN**  
+**FACT tip (pre-docs):** **`11a664b`** · GitHub Production **success** `2026-10-26T20:11:21Z` (re-check Deployments after this push)  
+**App ancestry (already on main):** UserMenu disclosure · tablet nav `@ lg` (`c702d27`) · Premium keyboard table scroll (`11d6042`) · katalog/auth a11y continuum  
+**Docs updated:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [handoffs/MASTER_START_PROMPT_*_PL.md](./handoffs/) · [README.md](./README.md) · audit pointer [FULL_PRODUCT_FUNCTIONAL_AUDIT_2026-10-25.md](./audits/FULL_PRODUCT_FUNCTIONAL_AUDIT_2026-10-25.md)  
+**Evidence recorded:** PRODUCTION UI UserMenu **PARTIAL** (AX/Escape/hit PASS; Tab/`focus-visible` NOT VERIFIED) · USER RLS Owner-reported PASS (2026-10-25) unchanged · Premium Retention **HOLD** · OD-04/07/15/16 **OPEN** · SFM GREEN **NOT CLAIMED**  
+**Unchanged:** Sacred WIP · dirty WIP · no Studio protected file opens · no Product GREEN
+
+## 2026-10-25 — Premium Gold retention = 28 days (Owner; HOLD unchanged)
+
+**Status:** Owner decision · **code + docs** · **Premium Retention remains HOLD** (no cron/janitor/activation)  
+**Decision:** [decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md](./decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md)  
+**Code:** `PREMIUM_TIER_MATRIX.GOLD.artifactRetentionSeconds` → **28 × DAY** (was 30); aligns with `PREMIUM_RETENTION_DAYS.GOLD` / OD-EXPORT-12 · SILVER **30d** unchanged · `retentionSecondsForPremium(true)` remains SILVER class (30d) · `isGoldRetentionProductionEnabled()` still **false** (90d design-only)  
+**Docs:** W2 / W2B · PROJECT_STATE · `/premium` · decision file · audit closeout  
+**Verify:** vitest **48 PASS** / 4 files (`w2a`, `e3-1`, `e3-5`, `premium-export-policy`) — GOLD 28d + SILVER/`premiumActive` 30d  
+**Not done:** commit/push/deploy · Retention cron · Storage/DB mutations · OD-15/OD-16 unchanged **OPEN** · Premium Retention **HOLD**
+
+## 2026-10-25 — Sample Catalog & Scratch DJ v1 product contract (docs-only)
+
+**Status:** documentation only · **implementation NOT authorized** · **NOT SHIPPED**  
+**New:** [decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) — platform catalog → private TAKE copy → Studio clip; Scratch DJ v1; export/CAS/reuse rules  
+**Pointers:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) (version **0.1** unchanged) · [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)  
+**Unchanged:** living tip / production SHA claims not re-verified (no Git in this GO) · OD-15 / OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE**  
+**Skipped (dirty / blocked):** `OPEN_DECISIONS.md` · `DECISION_LOG.md` · `RECORDING.md` · `studio-service.ts` · `studio-editor.tsx` · no `STUDIO_MASTER_ARCHITECTURE.md` created
+
 ## 2026-10-24 — Studio delivery docs consolidation + cold-start handoffs
 
 **Status:** docs-only consolidation after Studio / RLS / theme session  

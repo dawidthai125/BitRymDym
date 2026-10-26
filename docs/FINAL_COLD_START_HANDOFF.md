@@ -2,11 +2,12 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-25 — pointer sync · Owner-reported USER RLS runtime (owner/anon/peer) **PASS** · **≠ Product GREEN** · evidence [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** (pre-docs tip **`d8846ff`**) · REC/mic nadal **NOT RUN** · OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE**  
-**Prior (2026-10-24):** Studio / theme consolidation · tip **`35543c8`** · public+admin smoke **PASS** · then USER RLS/REC/migracje **NOT VERIFIED/NOT RUN** — **HISTORY** for USER RLS runtime (superseded 2026-10-25 Owner-reported) · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · prompts [handoffs/](./handoffs/) · [CHANGELOG 2026-10-24](./CHANGELOG.md)
+**Updated:** 2026-10-26 — docs cold-start sync · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** (pre-docs tip **`11a664b`**) · Production **success** @ `11a664b` · UserMenu PRODUCTION UI smoke **PARTIAL** · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · prompts [handoffs/](./handoffs/) · Owner-reported USER RLS (2026-10-25) **PASS** · **≠ Product GREEN** · REC/mic **NOT RUN** · OD-04/OD-07/OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · [CHANGELOG 2026-10-26](./CHANGELOG.md)  
+**Prior (2026-10-25):** pointer sync · Owner-reported USER RLS runtime (owner/anon/peer) **PASS** · evidence [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) · tip then **`d8846ff`**  
+**Prior (2026-10-24):** Studio / theme consolidation · tip **`35543c8`** · public+admin smoke **PASS** · then USER RLS/REC/migracje **NOT VERIFIED/NOT RUN** — **HISTORY** for USER RLS runtime (superseded 2026-10-25 Owner-reported) · [CHANGELOG 2026-10-24](./CHANGELOG.md)
 **Type:** Documentation continuity · cold-start entry · multi-plane (local HEAD ≠ origin/main ≠ production deploy ≠ prod DB ≠ Storage ≠ dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
-**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 below is living for Git planes as of 2026-10-24.** Blocks that still cite tip `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git ls-remote` before claiming current tip.
+**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 SESSION VERIFY below is living for Git planes as of 2026-10-26.** Blocks that still cite tip `d8846ff` / `35543c8` / `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the current SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git rev-parse HEAD` before claiming current tip.
 
 **Evidence rule (bezwzględna):**
 
@@ -37,38 +38,46 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-═══ SESSION VERIFY 2026-10-24 (Studio / RLS / theme · post push) ═══
+═══ SESSION VERIFY 2026-10-26 (a11y continuum + docs cold-start) ═══
 REPO PATH                     = C:\Users\dawid\Desktop\BitRymDym\bitrymdym
 BRANCH                        = main
-LIVING TIP                    = 35543c8 (VOCAL unarmed)
-                              · parent 1e75fd3 (owner SELECT DRAFT assets + local audit pack)
-                              · verify: git rev-parse HEAD · git ls-remote origin refs/heads/main
+LIVING TIP                    = 11a664b (UserMenu disclosure a11y)
+                              · ancestry: c702d27 (tablet nav @ lg) · 11d6042 (Premium table keyboard scroll)
+                              · verify: git rev-parse HEAD · gh Deployments Production (no blind Vercel OAuth)
 DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits)
                               · do NOT clean / stash / reset / sync unrelated WIP
 SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts
                               · PRESERVE · never open/edit/hash/search/diff/pass to agents
-PRODUCTION DEPLOYMENT         = GitHub Production @ 35543c8 success (2026-10-24)
-                              · public smoke PASS · admin auth visual PASS
-                              · vercel inspect CLI OAuth NOT RUN (do not login blindly)
-                              · Ready ≠ functional GREEN · (2026-10-24) USER RLS/REC/migracje NOT VERIFIED — HISTORY
+PROTECTED STUDIO FILES        = studio-editor.tsx · studio-service.ts — do not open without Owner scope
+PRODUCTION DEPLOYMENT         = GitHub Production @ 11a664b success (2026-10-26T20:11:21Z)
+                              · UserMenu PRODUCTION UI: AX/Escape/hit PASS · Tab/focus-visible NOT VERIFIED
+                              · HISTORY 35543c8: public smoke PASS · admin auth visual PASS
                               · 2026-10-25 Owner-reported USER RLS: owner/anon/peer PASS · ≠ GREEN
                               · → PROJECT_STATE §2 · audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md
-                              · REC / mic still NOT RUN
+                              · REC / mic still NOT RUN · Ready ≠ Product GREEN
 FUNCTIONAL MAP                = docs/PROJECT_FUNCTIONAL_MAP.md
 START PROMPTS                 = docs/handoffs/MASTER_START_PROMPT_CHATGPT_PL.md
                               · docs/handoffs/MASTER_START_PROMPT_CURSOR_PL.md
+CURSOR MODELS                 = tylko aktualna pula Cursor Models (Composer/Grok gdy dostępne)
+                              · potwierdź model przed spawnem · Other Models zabronione bez Owner GO
 APP TIP (BPM UX HISTORY)      = d12e38e · CONFLICT labeling CLOSED 2026-10-19
 NEXT UNIT                     = STOP — OWNER DECISION REQUIRED · see PROJECT_STATE §2 NEXT UNIT
-PREMIUM RETENTION             = HOLD · local WIP · not activated remotely
+PREMIUM RETENTION             = HOLD · local WIP · not activated remotely · Gold value 28d OWNER-ACCEPTED
 LOCAL SUPABASE PORTS (WIP)    = API 54421 · DB 54422 · shadow 54420 · Studio 54423 · Inbucket 54324
                               · DO NOT assume API is still 54321
 LOCAL STUDIO E2E              = mock MediaRecorder · loopback only · restore .env.local byte-exact
 PRODUCTION URL                = https://www.bitrymdym.pl · https://bitrymdym.pl (308→www)
                               · https://bitrymdym.vercel.app
+OD-04 / OD-07                 = OPEN (płatności / ceny)
 OD-15 / OD-16                 = OPEN
 LIVING SSOT                   = docs/PROJECT_STATE.md
 ENTRY                         = this file → MASTER_HANDOFF → PROJECT_STATE → FUNCTIONAL MAP
 PROMPTS                       = docs/handoffs/*_PL.md (living) · §12 = HISTORY continuity
+
+═══ HISTORY 2026-10-24 (Studio / RLS / theme · tip 35543c8 · ≠ living tip) ═══
+LIVING TIP (then)             = 35543c8 (VOCAL unarmed) · parent 1e75fd3
+PRODUCTION (then)             = success @ 35543c8 · public+admin visual PASS
+                              · USER RLS then NOT VERIFIED — superseded 2026-10-25 Owner-reported PASS
 
 ═══ LAST DOCUMENTED 2026-10-19 (STU-16 Limited Production Pass · ≠ current Git tip) ═══
 DOCS TIP (then)               = 0a565c0 · live docs dpl last-known dpl_31mz… @ 0a565c0

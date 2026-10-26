@@ -1,14 +1,16 @@
 # BitRymDym — pełny audyt funkcji, Premium i stanu produktu
 
+> **LIVING TIP / DEPLOY (2026-10-26):** nie używaj tipów z tabeli poniżej jako living. Aktualny tip/deploy → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (**`11a664b`** · Production **success**). Mapa living → [PROJECT_FUNCTIONAL_MAP.md](../PROJECT_FUNCTIONAL_MAP.md). Ten plik = **snapshot audytu 2026-10-25** + supersession RLS; continuum a11y (UserMenu/katalog/Premium table/tablet nav) jest na `main` po dacie snapshotu.
+
 > **SUPERSEDED (runtime USER RLS only, 2026-10-25):** Owner-reported prod smoke → owner SELECT **PASS** · anon **PASS** · peer **PASS** · **≠ Product GREEN**. Living evidence: [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) + [PROJECT_STATE.md](../PROJECT_STATE.md) §2. Poniższy snapshot zachowuje **HISTORY** twierdzeń „runtime BLOCKED” z sesji audytu RO przed tym smoke; nie jest drugą macierzą living.
 
 | Pole | Wartość |
 |------|---------|
-| Data | 2026-10-25 |
+| Data | 2026-10-25 (**snapshot**; living tip 2026-10-26 = **`11a664b`**) |
 | Charakter | **Audyt read-only** — bez implementacji, bez migracji, bez deployu |
-| Living tip / `origin/main` (aktualny) | Pre-peer-docs tip **`d8846ff`** (re-check `ls-remote` po docs peer PASS) · **HISTORY:** docs apply row **`57bba09`**; sesja RO audytu mierzyła **`4c64ef3`** |
-| Living tip w `PROJECT_STATE.md` §2 | Tip przed docs peer PASS = **`d8846ff`** · migracja owner SELECT **applied** · Owner-reported USER runtime **PASS** (patrz smoke) |
-| Produkcja (deploy / smoke) | Public+admin visual PASS @ `35543c8` (2026-10-24) **HISTORY**; owner SELECT **DB apply PASS** 2026-10-25; USER RLS runtime **PASS** (Owner-reported) — **≠ Product GREEN** |
+| Living tip / `origin/main` (w dniu snapshotu) | **HISTORY** pre-peer-docs **`d8846ff`** · sesja RO mierzyła też **`4c64ef3`** — **nie** living 2026-10-26 |
+| Living tip w `PROJECT_STATE.md` §2 | **Patrz living STATE** (nie ten wiersz) · w dniu snapshotu: **`d8846ff`** + USER runtime **PASS** |
+| Produkcja (deploy / smoke) | **Living:** Deployments @ **`11a664b`** (2026-10-26) · UserMenu PRODUCTION UI **PARTIAL** · **HISTORY:** public+admin visual PASS @ `35543c8` · owner SELECT apply PASS · USER RLS **OWNER-REPORTED PASS** — **≠ Product GREEN** |
 | Zakazane pliki | Sacred WIP `recording-eligibility-service.ts` · `studio-editor.tsx` — **nie otwierane / nie diffowane** |
 | Dirty WIP | **PRESERVE** (bez reset/stash/sync) |
 

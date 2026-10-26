@@ -19,7 +19,7 @@
 
 **Przed implementacją przeczytaj:** FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + właściwą architekturę + OPEN_DECISIONS + [AGENTS.md](../AGENTS.md). Zwykły zlecony zakres realizuj według polityki autonomii w `AGENTS.md`. Osobna zgoda zostaje przy nowym epiku i bramkach bezpieczeństwa, nie przy każdym commicie, pushu ani standardowym deployu.
 
-**Now / Next (living):** tip Git, app tip, deployment ID, NEXT UNIT i statusy SFM/Contabo/STU-16 — **tylko** [PROJECT_STATE.md](./PROJECT_STATE.md) (nie duplikuj tu rejestru dpl). **Final Mix Production GREEN: VERIFIED** (frozen IN) · Contabo continuous poller V1: **IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync/host/canary/always-on **NOT DONE**. Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
+**Now / Next (living):** tip Git, app tip, deployment ID, NEXT UNIT i statusy SFM/Contabo/STU-16 — **tylko** [PROJECT_STATE.md](./PROJECT_STATE.md) (nie duplikuj tu rejestru dpl). Mapa funkcji: [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md). Prompty cold-start: [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md). **Final Mix Production GREEN: VERIFIED** (frozen IN) · Contabo continuous poller V1: **IMPLEMENTED / LOCAL TESTS PASS** · Contabo sync/host/canary/always-on **NOT DONE** · **≠ Product GREEN** (cały produkt). Start: [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · FM criteria: [decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md](./decisions/FINAL_MIX_PRODUCTION_GREEN_CRITERIA_FREEZE.md).
 
 Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 **MASTER_HANDOFF** = cold-start continuity layer. Documentation ≠ proof of shipped implementation.
@@ -74,8 +74,11 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 
 | Dokument | Opis |
 |----------|------|
-| [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) · **§12 MASTER PROMPTS** |
+| [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) · **§0 SESSION VERIFY** |
 | [PROJECT_STATE.md](./PROJECT_STATE.md) | Living tip / deploy / NEXT / **§2c connections** |
+| [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) | Kanoniczna mapa funkcji + płaszczyzny dowodu |
+| [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) | Prompt startowy ChatGPT (planista/audytor) |
+| [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) | Prompt startowy Cursor Agent (executor) |
 | [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) | Full continuity (detail after cold start) |
 | [runbooks/PRODUCTION_BOOTSTRAP.md](./runbooks/PRODUCTION_BOOTSTRAP.md) | Production bootstrap · connection notes (no secrets) |
 | [decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md](./decisions/PREMIUM_RETENTION_FENCING_CONTRACT.md) | Premium Retention fencing · **HOLD** (local WIP) |

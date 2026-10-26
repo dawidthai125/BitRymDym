@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-24 — **Studio / RLS / theme delivery pointer** · living tip / deployment / NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 ONLY** (tip **`35543c8`**) · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/](./handoffs/) · body tables citing **`5212933`** / **`2adb569`** / **`0a565c0`** = **HISTORY** unless re-verified · Premium Retention **HOLD** · OD-15/OD-16 **OPEN** · **STOP — OWNER DECISION REQUIRED** · evidence [audits/_studio_recording_local_e2e_2026-10-24/](./audits/_studio_recording_local_e2e_2026-10-24/)
+**Updated:** 2026-10-26 — **docs cold-start pointer** · living tip / deployment / NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 ONLY** (pre-docs tip **`11a664b`**) · **≠ Product GREEN** · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/](./handoffs/) · body tables citing **`d8846ff`** / **`35543c8`** / **`5212933`** / **`2adb569`** / **`0a565c0`** = **HISTORY** unless re-verified · Premium Retention **HOLD** · OD-04/OD-07/OD-15/OD-16 **OPEN** · **STOP — OWNER DECISION REQUIRED** · evidence Studio [audits/_studio_recording_local_e2e_2026-10-24/](./audits/_studio_recording_local_e2e_2026-10-24/) · USER RLS [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md)
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
