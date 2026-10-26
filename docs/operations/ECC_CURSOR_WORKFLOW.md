@@ -2,7 +2,53 @@
 
 **Status:** aktywna integracja lokalna (minimalna)  
 **Źródło ECC:** https://github.com/affaan-m/ECC · wersja `2.2.3` · commit `90606c8315ee09cafc303515c5f33024db6b9882`  
-**Nadrzędność:** SSOT + `AGENTS.md` > ECC
+**Nadrzędność (hierarchia):** zgody Ownera i bezpieczeństwo → `AGENTS.md` + SSOT projektu → reguły projektowe (w tym Always overlay) → neutralne narzędzia globalne → ECC jako warstwa pomocnicza. ECC nie zastępuje SSOT ani nie rozszerza uprawnień.
+
+## Model operacyjny Cursor Agent + ECC (Stage 5, GO-0)
+
+Trwały standard doboru narzędzi w BitRymDym. Nie zastępuje `AGENTS.md` (autonomia, bramki, Sacred WIP, dirty worktree, egress audio). Uzupełnia protokół skills/subagentów.
+
+### Role
+
+| Rola | Odpowiedzialność |
+|------|------------------|
+| Główny Cursor Agent | Implementacja w zakresie, orchestracja, testy adekwatne do ryzyka, raport końcowy po polsku |
+| Subagent | Opcjonalnie: niezależna analiza lub review; nie domyślny drugi implementer |
+| Skills | Procedury do zadania — czytać tylko pasujące; nie ładować hurtowo |
+| Commands | Świadomie wywoływane procedury; **nie** auto-start, instalatory ani update bez osobnego GO |
+| Rules / `AGENTS.md` | Źródła prawdy i ograniczenia sesji |
+
+### Zasady doboru
+
+- **Minimalny wystarczający zestaw** — nie uruchamiaj całej biblioteki agentów ECC (~71) ani bundled skills (~46) przy każdym zadaniu.
+- Subagent tylko gdy rola jest jednoznaczna, a koszt i ryzyko delegacji są uzasadnione. Obecność typu na liście ≠ dowód bezpiecznego spawnu ani egzekucji ograniczeń.
+- Identyfikator runtime subagenta to pole frontmatter `name`, nie prefiks pliku `ecc-`. Przy kolizji nazw Cursor daje pierwszeństwo definicji projektowej (docs Cursor).
+- W BitRymDym przy obecnej kolizji identyfikatory `architect` i `code-reviewer` traktuj jako **projektowe definicje ECC** (nie jako globalnych audytorów PL o tych samych `name`). **Nie zmieniaj nazw agentów** bez osobnego GO Ownera.
+- Nie zakładaj, że deklaracje `readonly` i `tools` w frontmatter są w pełni egzekwowane przez runtime bez osobnych dowodów (`NOT VERIFIED`, dopóki brak weryfikacji).
+- Do niezależnego review preferuj typy bez kolizji z ECC (np. globalne `debugger`, `security-auditor`, `test-auditor`, `documentation-auditor`, `researcher`) oraz user skills — zamiast polegać na przysłoniętych globalnych `architect` / `code-reviewer`.
+- Skills: dobór do zadania. User skills (`~\.cursor\skills`) i projektowe `.agents/skills/` (Supabase) mają pierwszeństwo w codziennym flow. Bundled ECC w `.cursor/.agents/skills/` to biblioteka na dysku — **nie** przenoś ani nie kopiuj hurtowo 46 skills; auto-wykrywanie tej ścieżki pozostaje do potwierdzenia (`NOT VERIFIED` / Stage 3–4).
+- Przy duplikacie nazwy `security-review` używaj **user** skill, nie zakładaj bundled ECC.
+- Hooks ECC: **wyłączone**. Nie włączaj bez osobnego audytu i GO. Nie rozszerzaj MCP o serwery ECC.
+- Nie uruchamiaj automatycznie Commands, `/auto-update`, `/project-init`, `/hookify*`, `/prune`, `/promote`, `/setup-pm` ani innych procesów instalacji/aktualizacji bez GO.
+
+### Weryfikacja i statusy
+
+- Wymagaj **rzeczywistych** wyników testów i kontroli — nie deklaruj PASS na podstawie samego zapewnienia agenta ani samej obecności konfiguracji.
+- Rozróżniaj w raportach: `FACT` · `INFERENCE` · `NOT VERIFIED` · `BLOCKED` (oraz informacje z innych agentów jako osobną kategorię, gdy dotyczy).
+- Status zadania / kontroli: `PASS` · `CONDITIONAL PASS` · `FAIL` · `BLOCKED` · `NOT VERIFIED`.
+- Lokalny PASS ≠ produkcja; tip deploy → `docs/PROJECT_STATE.md`. Obowiązuje blok audio egress z `AGENTS.md`.
+
+### Osobna zgoda Ownera (poza zwykłą autonomią BitRymDym)
+
+Oprócz bramek w `AGENTS.md` osobnego GO wymagają m.in.:
+
+- zmiana nazw / pól `name` agentów (rozstrzygnięcie kolizji);
+- przenoszenie lub instalacja skills (w tym z bundled ECC na oficjalne ścieżki);
+- aktywacja hooks; rozszerzanie MCP; profil ECC `full` / reinstall / update z ryzykiem nadpisania;
+- operacje produkcyjne, migracje z ryzykiem danych, działania destrukcyjne;
+- czyszczenie dirty worktree, nadpisanie Sacred WIP, nieautoryzowane operacje Git (force-push, `reset --hard` itd.).
+
+Sacred WIP (`src/lib/takes/recording-eligibility-service.ts`), dirty worktree i SSOT FIRST / REUSE FIRST / ZERO DUPLICATE LOGIC / MOBILE FIRST — bez zmian względem `AGENTS.md` i reguły `bitrymdym-ssot-over-ecc.mdc`.
 
 ## Co jest zainstalowane
 
@@ -47,12 +93,13 @@ Bez tego ładowanie `ecc-*` i skuteczność `alwaysApply` pozostają **NOT VERIF
 4. Agents/commands: obecność `ecc-*` / `/ecc-guide` (FACT: widoczne / nie).
 5. Negatywny: brak Hooks; `mcp.json` tylko Supabase.
 
-## Uwagi po review (Stage 1)
+## Uwagi po review (Stage 1–2)
 
-- Reguły językowe ECC używają `paths:` (format Claude); Cursor oczekuje zwykle `globs:` — scoping kontekstowy **NOT VERIFIED** / prawdopodobnie martwy. Masowa zamiana `paths`→`globs` wymaga osobnego GO (nadpisanie przy każdym update ECC).
-- Siedem `common-*.mdc` bez frontmatteru (`common-agents`, `common-code-review`, `common-coding-style`, `common-hooks`, `common-patterns`, `common-performance`, `common-security`) — nie patchowane w Stage 1; monitorować w Settings→Rules.
-- Bundled skills: `.cursor/.agents/skills/` (nie auto-katalog Agent Skills w sesji Stage 1).
-- Stage 1: pliki/hooks/MCP **PASS**; smoke Settings→Rules **NOT VERIFIED** bez obserwacji UI Ownera → werdykt **CONDITIONAL PASS**.
+- **Stage 2 (GO):** 110 reguł ECC: `paths:` → `globs: "…"` + `alwaysApply: false` (format [Cursor Rules](https://cursor.com/docs/rules)). `angular-testing.mdc` zostawione na `paths:` (CONFLICT: same test globs co Vitest). ArkTS/Vue/Angular-hooks: usunięto zbyt szerokie `**/*.ts` / `**/*.spec.ts`. **React Native:** wszystkie `react-native-*.mdc` zawężone do `app.config.*` / `app.json` / `expo-env.d.ts` / `android/**` / `ios/**` (nie `**/*.ts`) — brak auto-attach na Next/TS BitRymDym.
+- Siedem `common-*.mdc` bez frontmatteru — bez zmian (AMBIGUOUS).
+- Bundled skills: `.cursor/.agents/skills/`.
+- Runtime attach `globs` w sesji Agent: **NOT VERIFIED** (wymaga smoke UI / odczytu pliku `.ts` w czacie).
+- Po **update ECC**: installer może przywrócić `paths:` — ponów Stage 2 albo checklistę poniżej.
 
 ## Checklist chronionych wartości (po każdym update ECC)
 
@@ -64,9 +111,46 @@ Przed commitowaniem wyniku installera porównaj i przywróć, jeśli zniknęło:
 | `common-git-workflow.mdc` | `alwaysApply: false` + description BitRymDym |
 | `common-development-workflow.mdc` | `alwaysApply: false` + description BitRymDym |
 | `common-testing.mdc` | `alwaysApply: false` + description BitRymDym |
+| reguły językowe `*.mdc` | preferuj `globs:` (nie `paths:`); po update ECC ponów Stage 2 jeśli wróci `paths:` |
+| `angular-testing.mdc` | wyjątek: może zostać na `paths:` (unikaj attach do Vitest) albo osobne GO |
 | `.cursor/mcp.json` | tylko Supabase; **bez** `chrome-devtools` |
 | `.cursor/hooks.json` | **nie** istnieje / hookConsent declined |
 | `.cursor/settings.json` | bez niespodziewanego MCP |
+
+## BitRymDym — praktyczny zestaw równoległy (Stage 6)
+
+Minimalny zestaw ról do pracy nad kodem strony i funkcjami. **Nie** ładuj całej biblioteki ECC.
+
+| Rola | Identyfikator runtime | Tryb (deklarowany) | Uwagi |
+|------|----------------------|--------------------|--------|
+| Explorer / mapowanie | `explore` lub `code-explorer` | read-only (deklaracja) | SSOT + istniejące rozwiązania + zakres plików |
+| Test auditor | `test-auditor` | read-only (deklaracja) | pokrycie i adekwatność weryfikacji |
+| Security auditor | `security-auditor` | read-only (deklaracja) | Auth, RLS, sekrety, granice zaufania |
+| Code review | `code-reviewer` (projektowy ECC) albo globalny review bez kolizji | read-only (deklaracja) | konkretny diff; egzekwowanie tools = **NOT VERIFIED** bez dowodu |
+| Implementation worker | `implementation-worker` | write-capable, **tylko przypisane ścieżki** | plik `.cursor/agents/bitrymdym-implementation-worker.md`; bez commit/push/deploy; **Task spawn** wymaga, by typ pojawił się w enum sesji (nowa rozmowa / reload Customizations) — dopóki enum go nie ma: **NOT VERIFIED** / użyj orchestratora z jawną listą ścieżek |
+
+### Modele subagentów (twarde)
+
+- Dozwolone wyłącznie modele z puli **Cursor Models** na koncie (Composer / Grok / Cursor Auto).
+- Zabronione: **Other Models** (Claude, Gemini, Muse) oraz automatyczny fallback do nich.
+- Przy spawn: jawnie przypnij model (np. `composer-2.5-fast`). Sam `inherit`/`Default` bez potwierdzenia z puli **nie wystarczy**.
+- Pliki ECC z `model: sonnet` (i podobne) **nie** są dowodem, że runtime użyje Claude — orchestrator i tak musi przypiąć Cursor Model; nie edytuj masowo nazw/modeli ECC bez GO Ownera.
+
+### Skill React/Next (przypięty)
+
+| Skill | Lokalizacja | Pin | Status pliku |
+|-------|-------------|-----|--------------|
+| `vercel-react-best-practices` | `.agents/skills/react-best-practices/` | `vercel-labs/agent-skills@063bee94c3f4df8453406c830b0a7df0f2860278` | skopiowany ręcznie (markdown/JSON); atrybucja `ATTRIBUTION.md`; lock `skills-lock.json` |
+
+- Równoważny bundled ECC `frontend-patterns` w `.cursor/.agents/skills/` pozostaje na dysku; **nie** kopiować hurtowo. Dla React/Next performance preferuj skill Vercel w `.agents/skills/` (ta sama ścieżka co Supabase).
+- Supabase: istniejące `.agents/skills/supabase*` — **nie** reinstalować bez luki.
+- obra/superpowers: przegląd informacyjny tylko; zawiera `hooks/` — **nie instalować** w tym projekcie bez osobnego GO.
+
+### Równoległość
+
+- Audytorzy RO mogą biec równolegle.
+- Wiele `implementation-worker`: **rozłączne listy plików** (lub osobne worktree, jeśli Cursor je zapewnia). Bez koordynacji — nie edytować tych samych ścieżek równocześnie.
+- Deklaracja `tools` / readonly w frontmatter ≠ gwarancja egzekwowania przez Cursor — raportuj `NOT VERIFIED`, dopóki brak smoke UI.
 
 ## Aktualizacja ECC
 
