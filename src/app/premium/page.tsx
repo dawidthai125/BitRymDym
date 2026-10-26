@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { AppShell } from "@/components/site/app-shell";
 import {
   OWN_TAKE_RAW_DOWNLOADS_DAILY,
@@ -101,7 +102,10 @@ export default function PremiumPage() {
               </li>
             </ul>
 
-            <div className="mt-6 overflow-x-auto border border-[var(--brd-line)]">
+            <OverflowXScrollRegion
+              className="mt-6 overflow-x-auto border border-[var(--brd-line)]"
+              ariaLabel="Porównanie dziennych pobrań i ścieżek Studio według poziomu Premium"
+            >
               <table className="w-full min-w-[28rem] text-left text-sm">
                 <caption className="sr-only">
                   Porównanie dziennych pobrań i maksymalnej liczby ścieżek Studio
@@ -142,7 +146,7 @@ export default function PremiumPage() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </OverflowXScrollRegion>
             <p className="mt-3 text-xs text-[var(--brd-mute)]">
               Pobrania i ścieżki Studio — z macierzy Premium. Nagrania — z
               polityki próbek (z możliwą korektą czasu przez operatora). To nie
