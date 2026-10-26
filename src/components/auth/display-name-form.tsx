@@ -42,7 +42,9 @@ export function DisplayNameForm({
         </p>
       ) : null}
       {state.success ? (
-        <p className="text-sm text-muted-foreground">Zapisano.</p>
+        <p className="text-sm text-muted-foreground" role="status">
+          Zapisano.
+        </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11">
         {pending ? "Zapisywanie…" : "Zapisz ksywkę"}
