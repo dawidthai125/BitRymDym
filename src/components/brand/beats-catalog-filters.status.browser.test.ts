@@ -1,7 +1,7 @@
 /**
  * Real BeatsCatalogClient — search/filter result count live region (role=status).
  */
-import { chromium, type BrowserContext, type Page } from "playwright";
+import { chromium, type BrowserContext, type Locator, type Page } from "playwright";
 import { afterAll, describe, expect, it } from "vitest";
 
 import {
@@ -278,6 +278,154 @@ async function probeBpmRangeSlidersAtViewport(
   return { networkNonLocal, audioElementCount };
 }
 
+async function setReactControlledRangeValueLocal(
+  slider: Locator,
+  value: number,
+): Promise<void> {
+  await slider.evaluate((el, val) => {
+    const input = el as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    setter?.call(input, String(val));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, value);
+}
+
+async function assertStatusMatchesList(
+  page: Page,
+  expectedCount: 0 | 1 | 2,
+): Promise<void> {
+  const statusText = (await page.getByRole("status").innerText()).trim();
+  if (expectedCount === 0) {
+    expect(statusText).toBe("Cicho. Brak bitów dla tych filtrów.");
+  } else if (expectedCount === 1) {
+    expect(statusText).toBe("1 bit · z 2");
+  } else {
+    expect(statusText).toBe("2 bity");
+  }
+  expect(await page.locator("ul li:visible").count()).toBe(expectedCount);
+}
+
+async function probeFilterCombinationsAtViewport(
+  page: Page,
+  context: BrowserContext,
+  js: string,
+  css: string,
+  mobile: boolean,
+): Promise<{ networkNonLocal: number; audioElementCount: number }> {
+  void context;
+
+  let networkNonLocal = 0;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.startsWith("data:") || url.startsWith("blob:")) {
+      await route.continue();
+      return;
+    }
+    if (
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("https://localhost")
+    ) {
+      await route.continue();
+      return;
+    }
+    networkNonLocal += 1;
+    await route.abort();
+  });
+
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head>
+    <body>
+      <div id="beats-filters-mount-root"></div>
+      <script>${js}</script>
+      <script>window.__BRD_BEATS_FILTERS_MOUNT__.mount();</script>
+    </body></html>`,
+    { waitUntil: "domcontentloaded" },
+  );
+
+  const audioElementCount = await page.locator("audio").count();
+
+  await page
+    .getByRole("combobox", { name: "Sortuj", exact: true })
+    .selectOption("featured");
+
+  const openFiltersIfMobile = async (): Promise<void> => {
+    if (!mobile) return;
+    await page.getByRole("button", { name: /^Filtry/ }).click();
+    await page
+      .getByRole("dialog", { name: "Filtry katalogu" })
+      .waitFor({ state: "visible" });
+  };
+
+  const applyFiltersIfMobile = async (): Promise<void> => {
+    if (!mobile) return;
+    await page.getByRole("button", { name: /Pokaż wyniki/i }).click();
+    await page
+      .getByRole("dialog", { name: "Filtry katalogu" })
+      .waitFor({ state: "hidden" });
+  };
+
+  const gatunekGroup = page.getByRole("group", { name: "Gatunek", exact: true });
+  const tonacjaGroup = page.getByRole("group", {
+    name: "Tonacja",
+    exact: true,
+  });
+
+  // a) OR: Trap + Drill → 2
+  await openFiltersIfMobile();
+  await gatunekGroup
+    .getByRole("checkbox", { name: "Trap", exact: true })
+    .check();
+  await gatunekGroup
+    .getByRole("checkbox", { name: "Drill", exact: true })
+    .check();
+  await applyFiltersIfMobile();
+  await assertStatusMatchesList(page, 2);
+
+  // b) AND: Trap + Am → 1
+  await openFiltersIfMobile();
+  await gatunekGroup
+    .getByRole("checkbox", { name: "Drill", exact: true })
+    .uncheck();
+  await tonacjaGroup.getByRole("checkbox", { name: "Am", exact: true }).check();
+  await applyFiltersIfMobile();
+  await assertStatusMatchesList(page, 1);
+
+  // c) SEARCH: River → 0; clear → 1
+  const searchbox = page.getByRole("searchbox", {
+    name: "Szukaj bitów",
+    exact: true,
+  });
+  await searchbox.fill("River");
+  await assertStatusMatchesList(page, 0);
+  await searchbox.fill("");
+  await assertStatusMatchesList(page, 1);
+
+  // d) BPM max 129 → 0
+  await openFiltersIfMobile();
+  const bpmMax = page.getByRole("slider", { name: "BPM max", exact: true });
+  await setReactControlledRangeValueLocal(bpmMax, 129);
+  await applyFiltersIfMobile();
+  await assertStatusMatchesList(page, 0);
+
+  // e) Wyczyść → 2; sort unchanged
+  await openFiltersIfMobile();
+  await page.getByRole("button", { name: "Wyczyść", exact: true }).click();
+  await applyFiltersIfMobile();
+  await assertStatusMatchesList(page, 2);
+  expect(
+    await page
+      .getByRole("combobox", { name: "Sortuj", exact: true })
+      .inputValue(),
+  ).toBe("featured");
+
+  return { networkNonLocal, audioElementCount };
+}
+
 async function probeSortComboboxAtViewport(
   page: Page,
   context: BrowserContext,
@@ -516,6 +664,59 @@ describe("beats catalog — result status live region (real mount)", () => {
         });
         const page = await context.newPage();
         const probe = await probeBpmRangeSlidersAtViewport(
+          page,
+          context,
+          js,
+          css,
+          vp.mobile,
+        );
+        expect(probe.audioElementCount).toBe(0);
+        expect(probe.networkNonLocal).toBe(0);
+        await context.close();
+      }
+    } finally {
+      await browser.close();
+    }
+  }, 90_000);
+
+  it("mobile + desktop: filter OR/AND, search, BPM, clear; status + list count", async () => {
+    invalidateBeatsFiltersMountBundle();
+    const [js, css] = await Promise.all([
+      getBeatsFiltersMountBundle(),
+      Promise.resolve(getBeatsFiltersMountCss()),
+    ]);
+
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--disable-gpu", "--no-sandbox"],
+    });
+
+    const viewports = [
+      {
+        width: 390,
+        height: 844,
+        isMobile: true as const,
+        hasTouch: true as const,
+        mobile: true,
+      },
+      {
+        width: 1280,
+        height: 800,
+        isMobile: false as const,
+        hasTouch: false as const,
+        mobile: false,
+      },
+    ];
+
+    try {
+      for (const vp of viewports) {
+        const context = await browser.newContext({
+          viewport: { width: vp.width, height: vp.height },
+          isMobile: vp.isMobile,
+          hasTouch: vp.hasTouch,
+        });
+        const page = await context.newPage();
+        const probe = await probeFilterCombinationsAtViewport(
           page,
           context,
           js,
