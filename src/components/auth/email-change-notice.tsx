@@ -12,7 +12,7 @@ export function EmailChangeNotice({
   return (
     <div
       className="space-y-1 border border-[var(--brd-line)] p-4"
-      role="status"
+      role={status === "invalid" ? "alert" : "status"}
     >
       <h2 className="text-base font-semibold text-[var(--brd-ink)]">
         {copy.title}
