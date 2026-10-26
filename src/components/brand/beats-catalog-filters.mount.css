@@ -15,6 +15,15 @@ body {
 .lg\:block {
   display: none !important;
 }
+/* Tailwind v4 default --breakpoint-lg: 64rem (theme.css); harness-only. */
+@media (min-width: 64rem) {
+  .lg\:hidden {
+    display: none !important;
+  }
+  .lg\:block {
+    display: block !important;
+  }
+}
 .fixed {
   position: fixed;
   inset: 0;
