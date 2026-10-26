@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Beats catalog chrome touch targets — mobile Filtry / Sort / sheet Zamknij
- * were min-h-10 (40px); project CTA standard is min-h-11 (≥44px), same as
+ * Beats catalog chrome touch targets â€” mobile Filtry / Sort / sheet Zamknij
+ * were min-h-10 (40px); project CTA standard is min-h-11 (â‰Ą44px), same as
  * header-search-touch-target.test.ts.
  */
 describe("beats catalog filter/sort touch targets", () => {
@@ -27,14 +27,15 @@ describe("beats catalog filter/sort touch targets", () => {
     expect(src).not.toMatch(/(?:^|\s|")min-h-10(?:\s|"|$)/);
   });
 
-  it("mobile Filtry sheet closes on Escape and restores focus to trigger", () => {
+  it("mobile Filtry sheet uses shared modal focus trap + restore trigger", () => {
+    expect(src).toMatch(/attachModalFocusTrap/);
     expect(src).toMatch(/filtersTriggerRef/);
-    expect(src).toMatch(/function closeFiltersSheet/);
-    expect(src).toMatch(/event\.key !== "Escape"/);
-    expect(src).toMatch(/closeFiltersSheet\(\)/);
+    expect(src).toMatch(/filtersPanelRef/);
+    expect(src).toMatch(/closeFiltersSheet/);
     expect(src).toMatch(/filtersTriggerRef\.current\?\.focus\(\)/);
     expect(src).toMatch(/aria-expanded=\{filtersOpen\}/);
     expect(src).toMatch(/aria-haspopup="dialog"/);
     expect(src).toMatch(/aria-controls=\{filtersDialogId\}/);
+    expect(src).toMatch(/tabIndex=\{-1\}/);
   });
 });

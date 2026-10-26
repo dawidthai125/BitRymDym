@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BeatCatalogRow } from "@/components/brand/beat-catalog-row";
+import { attachModalFocusTrap } from "@/lib/a11y/modal-focus-trap";
 import {
   catalogGenresFromBeats,
   catalogKeysFromBeats,
@@ -34,26 +35,21 @@ export function BeatsCatalogClient({
   const [sort, setSort] = useState<SortId>("newest");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const filtersPanelRef = useRef<HTMLDivElement | null>(null);
   const filtersDialogId = "beats-catalog-filters-dialog";
 
-  function closeFiltersSheet() {
+  const closeFiltersSheet = useCallback(() => {
     setFiltersOpen(false);
     filtersTriggerRef.current?.focus();
-  }
+  }, []);
 
-  // Mobile filter sheet: Escape closes and restores focus to Filtry trigger
-  // (same contract as StudioEditToolbar disclosure).
+  // Mobile filter sheet: Inspector/Mixer-style trap (focus in, Tab wrap, Escape).
   useEffect(() => {
     if (!filtersOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setFiltersOpen(false);
-      filtersTriggerRef.current?.focus();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [filtersOpen]);
+    const panel = filtersPanelRef.current;
+    if (!panel) return;
+    return attachModalFocusTrap(panel, { onClose: closeFiltersSheet });
+  }, [filtersOpen, closeFiltersSheet]);
 
   const genreOptions = useMemo(() => catalogGenresFromBeats(beats), [beats]);
   const keyOptions = useMemo(() => catalogKeysFromBeats(beats), [beats]);
@@ -229,11 +225,13 @@ export function BeatsCatalogClient({
             onClick={closeFiltersSheet}
           />
           <div
+            ref={filtersPanelRef}
             id={filtersDialogId}
             role="dialog"
             aria-modal="true"
             aria-label="Filtry katalogu"
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
+            tabIndex={-1}
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 outline-none"
           >
             <div className="mb-2 flex items-center justify-between">
               <p className="brd-meta text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
