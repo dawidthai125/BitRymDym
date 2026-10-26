@@ -21,6 +21,27 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 Treść polityki jest w `AGENTS.md`. Ten wpis jej nie powtarza. Historyczne wpisy poniżej, które odmawiają commit/push/deploy dla własnego zakresu, zostają w mocy dla tamtych decyzji.
 
+### Studio Mix Working Plane — OD-MIX-WP-01 / 02 / 03 CLOSED (direction only)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT — Studio Mix Working Plane architecture direction |
+| Status | **CLOSED / OWNER ACCEPTED — DIRECTION ONLY** · **≠ Implementation GO** · **≠** prod migration / Supabase / Storage mutate · **≠** commit/push/deploy authorization |
+| Date | 2026-10-20 |
+| Documents | [STUDIO_MIX_WORKING_PLANE_DESIGN_FREEZE.md](./STUDIO_MIX_WORKING_PLANE_DESIGN_FREEZE.md) · clarification note in [STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md](./STUDIO_FINAL_MIX_PRODUCT_CONTRACT_ADDENDUM.md) §3 |
+| Locked IDs | **OD-MIX-WP-01** · **OD-MIX-WP-02** · **OD-MIX-WP-03** |
+| Related (unchanged) | OD-SFM-08 / OD-SFM-09 ladder · P6 FX/CAS · `studio_final_versions` semantics |
+
+**Locked direction:**
+
+1. **OD-MIX-WP-01:** Working Plane = tip + append-only param history **before** OD-SFM-09; **not** SFM light MIX stage; **forbid** `studio_final_versions` as working-param history; SFM ladder unchanged.
+2. **OD-MIX-WP-02:** New tables / repo migration design allowed as **future** scope only; creating migration files and Implementation require **separate Implementation GO**; **no** production migration apply.
+3. **OD-MIX-WP-03:** Mix MVP v1 = live param A/B on `StudioAudioEngine`; **no** required ARTIFACT playback; **no** mandatory SFM bake; **out:** mastering, external LLM, sending audio to external AI.
+
+**Explicit non-authorization:** This entry records architecture direction only. It does **not** authorize Implementation GO, code changes, SQL migration files, production DB/Storage/config mutations, commits, pushes, or deploys.
+
+---
+
 ### Studio Final Mix — OD-SFM-ID-06 CLOSED (legacy WAV deny-without-backfill)
 
 | Pole | Wartość |
