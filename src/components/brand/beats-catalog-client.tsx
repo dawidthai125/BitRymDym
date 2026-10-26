@@ -15,6 +15,7 @@ import {
   attachModalFocusTrap,
   setAppShellInert,
 } from "@/lib/a11y/modal-focus-trap";
+import { filterPresentedBeatsCatalogByQuery } from "@/lib/ui/beats-catalog-search";
 import {
   sortPresentedBeatsCatalog,
   type BeatsCatalogSortId,
@@ -86,20 +87,13 @@ export function BeatsCatalogClient({
   }, [beats]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = beats.filter((b) => {
+    const chipFiltered = beats.filter((b) => {
       if (genres.length && (!b.genre || !genres.includes(b.genre))) return false;
       if (keys.length && (!b.key || !keys.includes(b.key))) return false;
       if (bpmFilterActive && (b.bpm < bpmMin || b.bpm > bpmMax)) return false;
-      if (!q) return true;
-      return (
-        b.title.toLowerCase().includes(q) ||
-        b.producer.toLowerCase().includes(q) ||
-        (b.genre?.toLowerCase().includes(q) ?? false) ||
-        (b.key?.toLowerCase().includes(q) ?? false)
-      );
+      return true;
     });
-
+    const list = filterPresentedBeatsCatalogByQuery(chipFiltered, query);
     return sortPresentedBeatsCatalog(list, sort);
   }, [beats, query, genres, keys, bpmFilterActive, bpmMin, bpmMax, sort]);
 
