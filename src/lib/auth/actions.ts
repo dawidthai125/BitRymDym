@@ -27,7 +27,7 @@ import {
   tryClaimAnonTakeAfterAuth,
 } from "@/lib/takes/anon-account-claim";
 import {
-  mapSupabaseAuthError,
+  mapSignInAuthError,
   toUserFacingAuthError,
   toUserFacingError,
 } from "@/lib/ui/user-errors";
@@ -163,7 +163,7 @@ export async function signInAction(
   });
 
   if (error) {
-    return { error: mapSupabaseAuthError(error.message), success: false };
+    return { error: mapSignInAuthError(error.message), success: false };
   }
 
   revalidatePath("/");

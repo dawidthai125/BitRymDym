@@ -10,16 +10,44 @@ import {
 } from "@/lib/beats/public";
 import { toUserFacingTakeUploadError } from "@/lib/takes/client-upload";
 import {
+  mapSignInAuthError,
   mapSupabaseAuthError,
+  SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE,
   toUserFacingAuthError,
   toUserFacingError,
   toUserFacingMixError,
 } from "@/lib/ui/user-errors";
 
+describe("mapSignInAuthError", () => {
+  it("collapses credentials, unconfirmed, and user-not-found to one neutral message", () => {
+    expect(mapSignInAuthError("Invalid login credentials")).toBe(
+      SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE,
+    );
+    expect(mapSignInAuthError("Email not confirmed")).toBe(
+      SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE,
+    );
+    expect(mapSignInAuthError("User not found")).toBe(
+      SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE,
+    );
+  });
+
+  it("keeps rate limit distinct from credential failures", () => {
+    const mapped = mapSignInAuthError("Request rate limit exceeded");
+    expect(mapped).not.toBe(SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE);
+    expect(mapped.toLowerCase()).toMatch(/limit|spróbuj|później/);
+  });
+});
+
 describe("mapSupabaseAuthError", () => {
   it("maps invalid credentials to Polish without revealing account existence", () => {
     expect(mapSupabaseAuthError("Invalid login credentials")).toBe(
       "Nieprawidłowy e-mail lub hasło.",
+    );
+  });
+
+  it("keeps email-not-confirmed distinct for non-sign-in callers", () => {
+    expect(mapSupabaseAuthError("Email not confirmed")).toBe(
+      "Potwierdź adres e-mail, zanim się zalogujesz.",
     );
   });
 

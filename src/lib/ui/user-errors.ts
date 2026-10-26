@@ -50,6 +50,42 @@ export function isSupabaseEmailAlreadyRegisteredError(
   );
 }
 
+/** Neutral sign-in copy — same for unknown / wrong password / unconfirmed. */
+export const SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE =
+  "Nieprawidłowy e-mail lub hasło.";
+
+/** Provider errors that would otherwise reveal whether an account exists. */
+export function isSignInExistenceRelatedAuthError(
+  message: string | null | undefined,
+): boolean {
+  if (!message) return true;
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("invalid login credentials") ||
+    lower.includes("invalid email or password") ||
+    lower.includes("wrong password") ||
+    lower.includes("invalid credentials") ||
+    lower.includes("email not confirmed") ||
+    lower.includes("email_not_confirmed") ||
+    lower.includes("user not found") ||
+    lower.includes("user_not_found")
+  );
+}
+
+/**
+ * Sign-in facing mapper: collapse existence-related provider errors to one
+ * neutral message (same principle as signup / forgot-password anti-enumeration).
+ * Keeps safe non-existence errors (rate limit, config, invalid email format).
+ */
+export function mapSignInAuthError(
+  message: string | null | undefined,
+): string {
+  if (isSignInExistenceRelatedAuthError(message)) {
+    return SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE;
+  }
+  return mapSupabaseAuthError(message);
+}
+
 /**
  * Map Supabase Auth API messages → Polish (anti-enumeration where needed).
  */
@@ -67,12 +103,13 @@ export function mapSupabaseAuthError(
     lower.includes("wrong password") ||
     lower.includes("invalid credentials")
   ) {
-    return "Nieprawidłowy e-mail lub hasło.";
+    return SIGNIN_NEUTRAL_CREDENTIALS_MESSAGE;
   }
   if (
     lower.includes("email not confirmed") ||
     lower.includes("email_not_confirmed")
   ) {
+    // Kept for non-sign-in callers; sign-in uses mapSignInAuthError instead.
     return "Potwierdź adres e-mail, zanim się zalogujesz.";
   }
   if (isSupabaseEmailAlreadyRegisteredError(message)) {
