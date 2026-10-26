@@ -38,6 +38,7 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "src/components/player/sticky-mini-player.mount-host.ts",
+    "src/components/player/catalog-waveform-seek-target.mount-host.ts",
     "src/components/studio/studio-edit-toolbar.mount-host.ts",
     "src/components/brand/beats-catalog-filters.mount-host.ts",
     "src/components/auth/sign-up-form.mount-host.ts",
