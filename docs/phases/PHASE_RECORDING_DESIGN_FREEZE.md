@@ -5,6 +5,7 @@
 **Owner:** Prezes Dawid  
 **Architect:** ChatGPT (Chief Product / Technical Architect)  
 **Baseline:** `main` @ `c5e1f17` · Community Upload + Moderation EPIC = **CLOSED**  
+**Living docs note (2026-10-26):** QT LIMITS living SSOT = **Account Level** per **OD-QT-01** (Owner D1/B-QT = B). Freeze body D04/D05 **LEAVE** (aligned). P1 Sample Policy-as-LIMITS-axis = HISTORY. Runtime cutover **NOT VERIFIED**.
 **Prerequisite audits:**  
 - [RECORDING_QUICK_TAKE_COLD_START_AUDIT.md](../audits/RECORDING_QUICK_TAKE_COLD_START_AUDIT.md)  
 - [RECORDING_QUICK_TAKE_DESIGN_FREEZE_PROPOSAL.md](../audits/RECORDING_QUICK_TAKE_DESIGN_FREEZE_PROPOSAL.md)  
@@ -15,6 +16,8 @@ RECORDING_DESIGN_FREEZE = LOCKED
 IMPLEMENTATION          = NONE (await Wave 1 GO)
 MIGRATION / BUCKETS     = NONE yet
 ```
+
+> Historical banner above (`IMPLEMENTATION = NONE`) is **HISTORY** relative to Waves 1–5 / P3 / Fala 3.5.1 delivery — freeze text body remains LOCKED; do not rewrite D04/D05.
 
 ---
 

@@ -94,7 +94,7 @@
 | OD-PL-04 | PENDING_REVIEW label | POLISH-01 | UI status | **CLOSED / ACCEPTED** — 2026-10-05 · **W moderacji** |
 | OD-PL-05 | Studio brand | POLISH-01 | Nav / IA copy | **CLOSED / ACCEPTED** — 2026-10-05 · Studio **KEEP EN** |
 | OD-PL-06 | Master brand | POLISH-01 | Mix/Master UI | **CLOSED / ACCEPTED** — 2026-10-05 · Master **KEEP EN** Title Case |
-| EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / IMPLEMENTED** — 2026-10-05 · OD-P3-01…11 · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · Premium Tier TTL/cap · follow-up `p_take_id` NON-BLOCKING · **UNCHANGED** by Fala 3.5.1 |
+| EPIC-P3 | Anonymous → Account Claim | Recording / D02 | Take ownership after signup/login | **CLOSED / IMPLEMENTED** — 2026-10-05 · OD-P3-01…11 · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · living QT LIMITS axis = **Account Level** (**OD-QT-01**) · ship-time Premium Tier TTL/cap = HISTORY · follow-up `p_take_id` NON-BLOCKING · **UNCHANGED** by Fala 3.5.1 |
 | EPIC-FALA-351 | Recording Experience + Dual Audio Timeline | Recording UX | Live MIC · Input Monitor · READY_TAKE dual preview | **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** — 2026-10-05 · feature `c690831` · verify `75bd80f` · no P1/P2/P3 reopen |
 | OD-CWP-01…08 | Contabo continuous poller V1 (STUDIO_EXPORT only · atomic claim · no auto-retry) | Contabo Ops | Poller impl / enable | **CLOSED / ACCEPTED** — 2026-10-13 · [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](./CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) · impl/enable = separate GOs |
 | GO-IMPL-CONTABO-POLL | Implement RPC + poller + tests (no enable) | OD-CWP | Code/migration | **CLOSED / IMPLEMENTED / LOCAL TESTS PASS** — 2026-10-13 · [impl](../audits/CONTABO_CONTINUOUS_WORKER_V1_IMPLEMENTATION.md) · Contabo sync/deploy/canary/always-on **NOT DONE** |
@@ -129,6 +129,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-REC-03 | Shared grants + RECORD IN Recording EPIC; least privilege flags | 2026-09-27 |
 | OD-REC-04 | Hybrid: Account Level base + future Premium overlay; no payments in V1 | 2026-09-27 |
 | OD-REC-05 | Retention BEGINNER 24h / PRO 10d / LEGEND 30d | 2026-09-27 |
+| OD-QT-01 | QT LIMITS living docs axis = **Account Level** (Owner D1/B-QT = B) · ≠ Implementation GO · runtime **NOT VERIFIED** | 2026-10-26 |
 | OD-REC-06 | Own take preview/download/delete; Track publish OUT of Recording EPIC | 2026-09-27 |
 | OD-REC-07 | Anti-abuse caps (anon/BEGINNER/PRO/LEGEND active + daily sessions) | 2026-09-27 |
 | OD-REC-08 | Own take download YES for logged-in tiers; anon no durable take DL | 2026-09-27 |
@@ -276,7 +277,8 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 - **P2-4** = **OPEN** (known MCP production migration version drift).
 - Historical foundation-contract “W2-D downloads” naming is not rewritten; current Owner gate name = **W2-B PREMIUM ENFORCEMENT**.
 - **Living production tip (2026-10-05):** `dabbc936` · POLISH-01 / P0 / P1 / P2 / **P3** **CLOSED / PRODUCTION VERIFIED**.
-- **EPIC-P3** Anonymous → Account Claim = **CLOSED / IMPLEMENTED / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · OD-P3-01…11 · Premium Tier TTL/cap · cookie E2E CODE-VERIFIED / FULL E2E NOT EXECUTED · follow-up `p_take_id` **NON-BLOCKING** · **UNCHANGED** by Fala 3.5.1.
+- **EPIC-P3** Anonymous → Account Claim = **CLOSED / IMPLEMENTED / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · OD-P3-01…11 · living QT LIMITS = **Account Level** (**OD-QT-01**) · ship-time Premium Tier TTL/cap = HISTORY · cookie E2E CODE-VERIFIED / FULL E2E NOT EXECUTED · follow-up `p_take_id` **NON-BLOCKING** · **UNCHANGED** by Fala 3.5.1.
+- **OD-QT-01** (2026-10-26) = **CLOSED / ACCEPTED (docs)** — QT LIMITS axis = Account Level · ≠ runtime cutover · ≠ Product GREEN.
 - **EPIC-FALA-351** Recording Experience = **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` · no P1/P2/P3 reopen · no micro-patch required.
 - W2-B documentation closeout is **not** the current NEXT product gate.
 
@@ -286,7 +288,8 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 
 **Status:** **CLOSED / IMPLEMENTED** · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` · deploy `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR`
 **Delivery:** RPC `claim_anon_take_to_account` · `src/lib/takes/anon-account-claim.ts` · auth hooks · `/account?claim=`
-**TTL/cap axis:** Premium Tier via `getSamplePolicy` (NOT Account Level / Rank / Role)
+**TTL/cap axis (living docs):** **Account Level** per **OD-QT-01** (NOT Premium Tier / Sample Policy as living QT LIMITS SSOT)
+**TTL/cap axis (ship HISTORY):** P3 delivery used Premium Tier via `getSamplePolicy` — evidence **unchanged**; runtime cutover **NOT VERIFIED**
 **Cookie production:** CODE-VERIFIED · full disposable E2E NOT EXECUTED
 **Follow-up:** `p_take_id` hardening — **NON-BLOCKING** (do not implement without Owner GO)
 

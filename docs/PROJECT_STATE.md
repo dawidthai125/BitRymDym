@@ -357,8 +357,10 @@ Application                  = Vercel / Next.js
 EXTERNAL COMPUTE             = Contabo VPS (FFmpeg ephemeral) · persistent disabled/inactive (I.45BW/DR) · I.45DR transient canary PASS · not always-on
 Role ≠ Account Level ≠ Creator Rank ≠ Premium Tier
 Premium SSOT                 = resolveProductEntitlement + PREMIUM_TIER_MATRIX
-Sample Policy SSOT           = getSamplePolicy + SAMPLE_POLICY_DEFAULTS + sample_policy_settings
-P3 claim TTL/cap             = Premium Tier via getSamplePolicy (NOT Account Level)
+Sample Policy (P1 HISTORY for QT LIMITS) = getSamplePolicy + SAMPLE_POLICY_DEFAULTS + sample_policy_settings — **not** living QT LIMITS SSOT after OD-QT-01
+QT LIMITS living docs        = **Account Level** (**OD-QT-01** · Owner D1/B-QT = B · 2026-10-26) · Design Freeze D04/D05 · runtime cutover **NOT VERIFIED**
+P3 claim TTL/cap (living)    = Account Level per OD-QT-01
+P3 claim TTL/cap (ship HISTORY) = Premium Tier via getSamplePolicy at `dabbc936` — delivery evidence unchanged
 UI labels SSOT               = src/lib/ui/labels.ts (+ status-labels re-export)
 
 Studio audio boundary        = StudioTransport != PlayerProvider

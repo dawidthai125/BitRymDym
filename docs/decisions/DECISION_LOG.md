@@ -42,6 +42,30 @@ Treść polityki jest w `AGENTS.md`. Ten wpis jej nie powtarza. Historyczne wpis
 
 ---
 
+### OD-QT-01 — Quick Take LIMITS axis = Account Level — CLOSED / ACCEPTED (docs)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner D1/B-QT = **B** — Account Level as canonical QT LIMITS axis |
+| Locked ID | **OD-QT-01** |
+| Status | **CLOSED / ACCEPTED (docs)** · **≠** Implementation GO · **≠** runtime/AuthZ/eligibility cutover · **≠** Sacred WIP · **≠** Product GREEN |
+| Date | 2026-10-26 |
+| Work item | SSOT-QT-DECISION-B-01 |
+| Scope | Living documentation for Quick Take **duration / retention TTL / session·active caps / QUICK\|FULL** (LIMITS only) |
+| Canonical axis | **Account Level** (`BEGINNER_RAPPER` · `PRO_RAPPER` · `LEGEND_RAPPER`) · anon QT remains a separate actor under Recording freeze |
+| Explicitly NOT this axis (for QT LIMITS) | Premium Tier / Sample Policy actors (`ANONYMOUS` · `FREE` · `BRONZE` · `SILVER` · `GOLD`) as living SSOT for QT LIMITS |
+| Related CLOSED (unchanged) | OD-REC-01…08 · OD-REC-04 Hybrid (AL base + future Premium overlay) · OD-REC-05 retention ranks · OD-08 (Premium ≠ Rank ≠ AL ≠ Role) · OD-P3-01…11 **ship/GREEN** = HISTORY for claim delivery |
+| Supersedes (living docs claim only) | P1 living wording that Sample Policy / Premium Tier is the QT LIMITS axis; MASTER_SSOT „D04/D05 stale vs P1” for LIMITS; EPIC-P3 / RECORDING / PROJECT_STATE living „TTL/cap = Premium Tier” as canonical docs |
+| Does NOT supersede | Design Freeze D04/D05 body (**LEAVE** LOCKED history · aligned with B); Premium download/export/artifact ladders; Role ≠ Account Level; Sample Catalog/Scratch contract; OD-04/07/15/16; Retention worker HOLD; SFM |
+| Documents synced | MASTER_SSOT §4 · §18–23 · RECORDING.md P3 TTL/cap · PROJECT_STATE §3.1 · PROJECT_FUNCTIONAL_MAP · OPEN_DECISIONS EPIC-P3 · CHANGELOG |
+| Explicit non-authorization | No code, eligibility, migracje, AuthZ, Storage, commit/push/deploy by this entry alone; runtime may still enforce Sample Policy until separate Implementation GO — **runtime compliance NOT VERIFIED** |
+
+**Locked:** Living documentation treats **Account Level** as the single canonical QT LIMITS axis. OD-REC-04 Hybrid remains: a future Premium overlay may exist for other domains; it does **not** redefine QT LIMITS away from Account Level without a new Owner decision.
+
+**Consequences:** Living pointers listed above must follow OD-QT-01; P1 Sample Policy QT-axis claims become HISTORY for LIMITS; code alignment = osobne Implementation GO.
+
+---
+
 ### Studio Final Mix — OD-SFM-ID-06 CLOSED (legacy WAV deny-without-backfill)
 
 | Pole | Wartość |
@@ -287,7 +311,8 @@ Treść polityki jest w `AGENTS.md`. Ten wpis jej nie powtarza. Historyczne wpis
 | Status | **CLOSED / IMPLEMENTED** · **PRODUCTION VERIFIED — GREEN** @ `dabbc936` |
 | Date | 2026-10-05 |
 | Deploy | `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · https://www.bitrymdym.pl |
-| TTL/cap axis | **Premium Tier** via `getSamplePolicy` (NOT Account Level / Rank / Role) |
+| TTL/cap axis (ship HISTORY) | At P3 ship: **Premium Tier** via `getSamplePolicy` (NOT Account Level) — delivery evidence **unchanged** |
+| TTL/cap axis (living docs) | **Account Level** per **OD-QT-01** (2026-10-26) · Sample Policy / Premium Tier ≠ living QT LIMITS SSOT · runtime cutover **NOT VERIFIED** |
 | RPC | `claim_anon_take_to_account` · SECURITY DEFINER · `search_path=public` · service_role-only |
 | Migration | `20261005211153_p3_claim_anon_take_to_account.sql` |
 

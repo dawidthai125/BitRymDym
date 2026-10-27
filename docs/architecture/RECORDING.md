@@ -22,12 +22,13 @@
 | Orchestrator | `src/lib/takes/anon-account-claim.ts` |
 | Auth hooks | `src/lib/auth/actions.ts` (sign-in / sign-up session) · `tryClaimAnonTakeAfterAuth` |
 | Studio banner | `src/app/account/page.tsx` `?claim=` |
-| TTL/cap SSOT | **Premium Tier** → `getSamplePolicy` / `SAMPLE_POLICY_DEFAULTS` (**≠** Account Level / Rank / Role) |
+| TTL/cap SSOT (living docs) | **Account Level** per **OD-QT-01** (2026-10-26) · Design Freeze D04/D05 · **≠** Premium Tier / Sample Policy as living QT LIMITS |
+| TTL/cap SSOT (ship HISTORY) | P3 delivery used Premium Tier → `getSamplePolicy` — evidence **unchanged** · runtime cutover **NOT VERIFIED** |
 
 ```text
 Anonymous Take → READY → successful sign-in/sign-up session
   → anonymous identity hash (brd_tk_aid) → latest eligible READY
-  → Premium Tier getSamplePolicy (cap/TTL)
+  → Account Level QT LIMITS (OD-QT-01) for living docs · ship-time path used getSamplePolicy (HISTORY)
   → Storage COPY anon/{hashPrefix}/takes/{takeId}/mic.bin
   → claim_anon_take_to_account(...)  (SECURITY DEFINER · search_path=public · service_role-only
        · advisory locks anonymous→owner · READY/not deleted/not expired)

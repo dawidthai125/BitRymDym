@@ -168,7 +168,7 @@ account_level = BEGINNER_RAPPER
 `BEGINNER_RAPPER` jest **zatwierdzonym** defaultem nowego użytkownika.  
 Nie jest mechanizmem Premium i nie przyznaje płatnych funkcji.
 
-**Limity nagrań Quick Take (runtime):** nie wynikają z Account Level. Oś limitu to **Premium Tier / Sample Policy actor** (`ANONYMOUS` · `FREE` · `BRONZE` · `SILVER` · `GOLD`) — kod: `SAMPLE_POLICY_DEFAULTS` / `getSamplePolicy`. Patrz §19–§23 (skorygowane względem P1).
+**Limity nagrań Quick Take (living docs — OD-QT-01, 2026-10-26):** kanoniczna oś LIMITS = **Account Level** (`BEGINNER_RAPPER` · `PRO_RAPPER` · `LEGEND_RAPPER`). Premium Tier / Sample Policy **nie** jest living SSOT dla QT LIMITS. Historyczne P1 wording (Sample Policy jako oś) = **HISTORY**. Runtime/kod eligibility **NOT VERIFIED** w tym wpisie — cutover wymaga osobnego Implementation GO. Patrz §18–§23.
 
 **First ADMIN (OD-20 CLOSED / ACCEPTED, 2026-09-25):**
 
@@ -571,7 +571,7 @@ DECISION REQUIRED
 
 # 18. QUICK TAKE — TYMCZASOWE NAGRANIE
 
-> **Implementation policy (P1 / OD-08 — supersedes 2026-09-27 Account Level→Full Take note):** Recording / Quick Take Design Freeze v1.0 remains **LOCKED** for MIC TAKE semantics — see [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md). Owner OD-REC-01…08 CLOSED. V1 stores **MIC TAKE** only (not permanent beat+vocal mix). **Recording duration and QUICK/FULL** are governed by **Premium Tier Sample Policy** (`SAMPLE_POLICY_DEFAULTS` / `getSamplePolicy`; actors `ANONYMOUS` · `FREE` · `BRONZE` · `SILVER` · `GOLD`) — **not** Account Level. `PRO_RAPPER` / `LEGEND_RAPPER` alone do **not** raise the limit or grant Full Take; with Product Entitlement `FREE`, AuthZ keeps **30 s / QUICK** (wave4-unit). Admin may override **only** BRONZE/SILVER/GOLD `maxRecordingSeconds` (1–180). Historical freeze D04/D05 Rank→Full Take mapping is **stale** vs P1. This axis is **not** export/unlock, W2 artifact retention, or SFM. See §19–§23.
+> **Living docs policy (OD-QT-01, 2026-10-26 — Owner D1/B-QT = B):** Recording / Quick Take Design Freeze v1.0 remains **LOCKED** for MIC TAKE semantics — see [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md). Owner OD-REC-01…08 CLOSED. V1 stores **MIC TAKE** only (not permanent beat+vocal mix). **Recording duration, QUICK/FULL, take retention TTL, and session/active caps (QT LIMITS)** are governed by **Account Level** (`BEGINNER_RAPPER` · `PRO_RAPPER` · `LEGEND_RAPPER`) per freeze D04/D05 + **OD-QT-01** — **not** Premium Tier Sample Policy as living SSOT. P1 living claim that Sample Policy / `getSamplePolicy` is the QT LIMITS axis is **HISTORY** (ship evidence may remain). OD-REC-04 Hybrid (AL base + future Premium overlay) unchanged for non-LIMITS domains. This axis is **not** export/unlock, W2 artifact retention, or SFM. **Runtime compliance NOT VERIFIED** — Implementation GO required to align code. See §19–§23.
 
 BitRymDym posiada własny system nagrywania zintegrowany z autorskim playerem.
 
@@ -603,16 +603,17 @@ Ta sekcja **nie** zastępuje ani nie unieważnia powyższej polityki MIC Quick T
 
 # 19. QUICK TAKE — UŻYTKOWNIK STANDARDOWY
 
-> **Oś limitu (P1 / runtime):** Sample Policy actor **FREE** (zalogowany bez płatnego entitlement), **nie** Account Level.
-> Wartości poniżej = **runtime defaults** z `SAMPLE_POLICY_DEFAULTS` (nie osobna reguła Rank).
+> **Oś limitu (living docs — OD-QT-01):** Account Level **BEGINNER_RAPPER** (default signup · OD-19).
+> Wartości poniżej = Design Freeze D04/D05 / OD-REC (docs). P1 Sample Policy FREE 30 s = **HISTORY** for LIMITS axis.
+> Runtime egzekwowanie **NOT VERIFIED** w tym dokumencie.
 
-Standardowy użytkownik (FREE Sample Policy) może nagrać:
+Użytkownik z Account Level **BEGINNER_RAPPER** może nagrać (Quick Take):
 
 ```text
 MAKSYMALNIE 30 SEKUND
 ```
 
-(efektywnie: `MIN(długość bitu, 30, 180)`.)
+(efektywnie: `MIN(długość bitu, 30, 180)` — per freeze.)
 
 Nagranie jest tymczasowe.
 
@@ -664,13 +665,13 @@ Zalogowany użytkownik może zapisać próbkę w:
 MOJE PRÓBKI
 ```
 
-**Retencja (runtime default FREE Sample Policy — nie Account Level):**
+**Retencja (living docs — OD-QT-01 / OD-REC-05 — Account Level BEGINNER):**
 
 ```text
-12 GODZIN
+24 GODZINY
 ```
 
-(`SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds` = 12 × 3600. Historyczne „24 godziny” / Account Level BEGINNER = **stale** względem P1.)
+(OD-REC-05 / Design Freeze D05. P1 Sample Policy FREE 12 h = **HISTORY** for QT LIMITS axis. Runtime **NOT VERIFIED**.)
 
 Po upływie TTL nagranie jest automatycznie usuwane (janitor / `expires_at`).
 
@@ -683,20 +684,21 @@ Użytkownik może wcześniej:
 
 ---
 
-# 22. PREMIUM — FULL TAKE
+# 22. ACCOUNT LEVEL — FULL TAKE (PRO / LEGEND)
 
-> **Runtime (P1):** „Premium” w sensie limitu nagrania = Sample Policy actors **BRONZE / SILVER / GOLD** (overlay `premium_entitlements`), **nie** Account Level `PRO_RAPPER` / `LEGEND_RAPPER`.
-> Długość = `MIN(długość bitu, tierCap, 180)`. Defaults: BRONZE 60 s · SILVER 120 s · GOLD 180 s. Admin może nadpisać **tylko** duration B/S/G (1–180 s) w `sample_policy_settings`.
+> **Living docs (OD-QT-01 / freeze D04):** Full Take duration = Account Level **PRO_RAPPER** / **LEGEND_RAPPER** (do długości bitu, max 180 s) — **nie** Sample Policy BRONZE/SILVER/GOLD jako living QT LIMITS SSOT.
+> P1 defaults BRONZE 60 / SILVER 120 / GOLD 180 via `getSamplePolicy` = **HISTORY** for QT LIMITS (ship evidence). OD-REC-04 Hybrid: future Premium overlay numbers remain OPEN/DEFERRED and do **not** redefine this living axis without a new Owner decision.
+> Runtime **NOT VERIFIED**.
 
-Użytkownik z płatnym Premium Tier może nagrać na wybranym bicie w limicie swojego tieru (do długości bitu, max globalny 180 s).
+Użytkownik z Account Level **PRO_RAPPER** lub **LEGEND_RAPPER** może nagrać Full Take na wybranym bicie (do długości bitu, max globalny 180 s) per Design Freeze.
 
 Maksymalny czas nagrania (kształt reguły):
 
 ```text
-MIN(DŁUGOŚĆ BITU, LIMIT_TIERU, 180 SEKUND)
+MIN(DŁUGOŚĆ BITU, 180 SEKUND)
 ```
 
-Przykłady (gdy limit tieru ≥ długość bitu, np. GOLD 180):
+Przykłady:
 
 ```text
 Bit 1:42 → nagranie maks. 1:42
@@ -709,23 +711,22 @@ Bit 3:00 → nagranie maks. 3:00
 
 ---
 
-# 23. PREMIUM — TYMCZASOWE NAGRANIE
+# 23. ACCOUNT LEVEL — TYMCZASOWE NAGRANIE (PRO / LEGEND)
 
-Nagranie Premium Tier jest nadal nagraniem tymczasowym.
+Nagranie PRO/LEGEND jest nadal nagraniem tymczasowym (MIC TAKE).
 
 Nie jest automatycznie publicznym utworem.
 
-**Retencja (runtime defaults Sample Policy — nie Account Level, nie stałe „10 dni”):**
+**Retencja (living docs — OD-QT-01 / OD-REC-05 — Account Level):**
 
 ```text
-BRONZE  36 GODZIN
-SILVER  60 GODZIN
-GOLD    84 GODZIN
+PRO_RAPPER     10 DNI
+LEGEND_RAPPER  30 DNI
 ```
 
-(`SAMPLE_POLICY_DEFAULTS.*.ttlSeconds`. Historyczne `premium_take_retention_days = 10` / Account Level PRO 10d · LEGEND 30d = **stale** względem P1.)
+(Design Freeze D05 / OD-REC-05. P1 Sample Policy BRONZE 36 h / SILVER 60 h / GOLD 84 h = **HISTORY** for QT LIMITS axis. Runtime **NOT VERIFIED**.)
 
-TTL / active READY / sessions / RAW download flag: z defaults (bez admin override). Duration B/S/G: możliwy override admina.
+TTL / active READY / sessions: per Recording freeze + OD-REC-07 (docs). Future Premium overlay numbers = OPEN/DEFERRED (OD-REC-04) — nie living QT LIMITS SSOT.
 
 Nagranie trafia do:
 

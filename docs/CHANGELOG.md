@@ -6,6 +6,14 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-26 — OD-QT-01: QT LIMITS axis = Account Level (docs-only)
+
+**Status:** documentation only · Owner D1/B-QT = **B** · **≠** Implementation GO · **≠** runtime cutover · **≠ Product GREEN**
+**Decision:** [DECISION_LOG.md](./decisions/DECISION_LOG.md) · **OD-QT-01** — living QT LIMITS (duration / TTL / caps / QUICK|FULL) = **Account Level**; P1 Sample Policy as LIMITS axis = HISTORY
+**Docs synced:** OPEN_DECISIONS (EPIC-P3 TTL) · MASTER_SSOT §4 · §18–23 · RECORDING.md P3 TTL/cap · PROJECT_STATE §3.1 · PROJECT_FUNCTIONAL_MAP (QT row + sprzeczności)
+**Explicit non-claim:** eligibility/Sacred WIP not audited · code may still enforce Sample Policy until osobne Implementation GO · OD-04/07/15/16 unchanged OPEN · Premium Retention HOLD · SFM GREEN NOT CLAIMED
+**Not done:** commit/push/deploy of this sync (Owner staging decision) · runtime AuthZ change · Product GREEN
+
 ## 2026-10-26 — Docs cold-start sync (tip `11a664b`)
 
 **Status:** documentation only · **≠ Product GREEN**  

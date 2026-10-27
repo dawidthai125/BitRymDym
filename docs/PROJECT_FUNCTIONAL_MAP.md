@@ -15,7 +15,7 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 |--------------|-------------------|----------------|----------------|---------------|--------|---------------------------|
 | Home | Brand, CTA, wejście do katalogu | `/` · `src/app/page.tsx` | touch/home link (częściowe) | PRODUCTION UI public smoke **PASS** @ `35543c8` (**HISTORY** 2026-10-24) · **DEPLOY** tip living osobno | **PARTIAL** | OD-15/16 OPEN; pełny re-smoke **NOT VERIFIED** na `11a664b` |
 | Katalog bitów | Szukaj, sortuj, filtruj, odsłuch katalogowy | `/beats` · `beats-catalog-client.tsx` · `beats-catalog-{search,sort,filters}.ts` | UNIT search/sort/filters · REAL-MOUNT filters keyboard/status · waveform seek REAL-MOUNT | **CODE**+**REAL-MOUNT** continuum a11y 2026-10-26 · PRODUCTION UI katalog **HISTORY** smoke @ `35543c8` | **PARTIAL** | Pełny AT na prod layout **NOT VERIFIED**; bez egress audio |
-| Detal bitu + Quick Take | Play katalogowy, wejście QT | `/beat/[id]` | tablet padding (nav commit) | Sample Policy **UNIT** · eligibility Sacred → głęboka bramka **NOT VERIFIED** | **PARTIAL** | REC/mic **NOT RUN**; Sacred WIP nie czytać |
+| Detal bitu + Quick Take | Play katalogowy, wejście QT | `/beat/[id]` | tablet padding (nav commit) | docs LIMITS = **OD-QT-01** Account Level · P1 Sample Policy UNIT = HISTORY · eligibility Sacred **NOT VERIFIED** | **PARTIAL** | REC/mic **NOT RUN**; Sacred WIP nie czytać · runtime **NOT VERIFIED** |
 | About | Treść marki | `/about` | — | PRODUCTION UI smoke **HISTORY** @ `35543c8` | **DONE** (docs smoke) / re-run **NOT VERIFIED** | — |
 | Premium (public) | Porównanie limitów; bez cen/checkout | `/premium` · `premium-tiers.ts` · `overflow-x-scroll-region.tsx` | UNIT w2a/w2b · headings; **brak** REAL-MOUNT scroll | **CODE** `11d6042` · PRODUCTION UI table/fokus raportowane **PASS** · touch swipe **BLOCKED** (harness) | **PARTIAL** | OD-04/07 **OPEN**; Retention worker **HOLD** |
 | Sign-in / Sign-up / Forgot | Auth forms, anti-enum | `/sign-in` · `/sign-up` · `/forgot-password` | UNIT actions + REAL-MOUNT mounts | **CODE**+**UNIT**+**REAL-MOUNT** · prod Auth E2E **NOT VERIFIED** | **PARTIAL** | Real inbox / rate-limit UX = Owner smoke |
@@ -47,7 +47,7 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 | Oś | Wartości (defaults / Owner) | Egzekwowanie | Status |
 |----|----------------------------|--------------|--------|
 | Pobrania beat / dzień | ANON2…GOLD50 | `PREMIUM_TIER_MATRIX` + ledger | **DONE** UNIT · prod live **NOT VERIFIED** |
-| Quick Take (Sample Policy) | czas/TTL/sesje — `SAMPLE_POLICY_DEFAULTS` (+ admin duration B/S/G) | `getSamplePolicy` · **nie** Account Level | **DONE** UNIT (P1) · eligibility Sacred **NOT VERIFIED** |
+| Quick Take LIMITS (Account Level) | czas/TTL/sesje/QUICK\|FULL — Design Freeze D04/D05 · **OD-QT-01** | living docs = **Account Level** · P1 Sample Policy ship = HISTORY · runtime **NOT VERIFIED** | **DONE** docs (OD-QT-01) · UNIT P1 HISTORY · eligibility Sacred **NOT VERIFIED** |
 | Export / unlock jakość | ladder `PREMIUM_RETENTION_DAYS` / export policy | download/unlock gates | **PARTIAL** · OD-04/07 **OPEN** |
 | Retencja artefaktów | FREE 48h · BRONZE 7d · SILVER 30d · **GOLD 28d prod** (Owner 2026-10-25); 90d design-only | matrix + export days | **ZGODNE** kod↔decyzja · worker **HOLD** |
 | Premium Retention worker | cron/janitor | lokalne WIP · **nie** w `vercel.json` | **HOLD** |
@@ -97,11 +97,11 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 
 ---
 
-## Sprzeczności żywe (nie rozstrzygnięte tu)
+## Sprzeczności / rozstrzygnięcia (living)
 
 | Temat | Klasyfikacja | Uwaga |
 |-------|--------------|-------|
-| MASTER_SSOT / Recording Freeze Account Level vs Sample Policy jako oś QT | **SPRZECZNE / BLOCKED** (decyzja Ownera) | Runtime = Sample Policy (`recording.ts`); nie zamykać w docs tip-sync |
+| Oś QT LIMITS: Account Level vs Sample Policy | **ROZSTRZYGNIĘTE (docs)** — Owner D1/B-QT = **B** · **OD-QT-01** (2026-10-26) | Living docs = **Account Level**; P1 Sample Policy jako oś LIMITS = HISTORY; **runtime compliance NOT VERIFIED** (osobne Implementation GO); Sacred WIP nie audytowany |
 | Living tip w starych akapitach HISTORY vs §2 | **HISTORY** | Zawsze wierz §2 PROJECT_STATE |
 
 ---
