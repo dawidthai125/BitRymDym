@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Unit 1: living tip / Production deploy reconcile (docs-only)
+
+**Status:** documentation only · GitHub Production **success** · Vercel commit status **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN** · **≠ Implementation GO**
+**FACT tip / HEAD / origin/main:** **`a1b84f68d570a9324328d3673ba5a04f3915414c`** (`docs(cursor): map Owner team roles to existing agents`; parent **`332336c`**)
+**FACT deploy:** GitHub Production deployment **`7371104561`** **success** `2026-10-27T21:40:25Z` @ that SHA · Vercel commit status **success** (`Deployment has completed`) · unique URL `https://bitrymdym-aj5uz96jn-dawidthai125s-projects.vercel.app` · dashboard `https://vercel.com/dawidthai125s-projects/bitrymdym/699An9GSua2HV4d6BTEgsSNqbbXH`
+**NOT VERIFIED:** `dpl_*` id · alias binding `www.bitrymdym.pl` / `bitrymdym.pl` / `bitrymdym.vercel.app` → this SHA (no `vercel inspect`; no OAuth)
+**Scope:** living tip / deploy pointers in [PROJECT_STATE.md](./PROJECT_STATE.md) §2 (+ §2c / PRODUCTION rows) reconciled to tip `a1b84f6…` · prior GO-5G tip/deploy/alias era **`d462b22…` / `dpl_7Xwqf…` / `7354583257` / ALIAS VERIFIED** kept as **Prior / HISTORY**
+**Explicit non-claim:** GitHub success + Vercel commit status **≠** alias binding · **≠** PRODUCTION VERIFIED · **≠** Product GREEN · **≠** Sample Catalog / Premium Retention / SFM cutover · `STOP — OWNER DECISION REQUIRED` **kept**
+**Docs updated:** [PROJECT_STATE.md](./PROJECT_STATE.md) · this CHANGELOG entry
+**Unchanged / out of scope:** Sacred WIP · remaining dirty WIP · SESSION_BRIDGE · FINAL_COLD_START · app code · OD-15 OPEN · Premium Retention HOLD
+
 ## 2026-10-27 — SESSION_BRIDGE §4 archive (docs-only)
 
 **Status:** documentation only · Owner GO archiwizacja · **≠** tip/deploy reconcile · **≠** Product GREEN · **bez** commit/push/deploy w tym GO
@@ -26,6 +37,28 @@ Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). Row
 | 2026-10-27 | GO-1 | Utworzenie SESSION_BRIDGE + wskaźniki | EXECUTED | PASS | Szablon ACTIVE; CONTINUITY/README pointers | Treść w commitcie `03d889a` (dostarczona przez GO-3b) | `03d889a…` | — |
 
 ---
+
+## 2026-10-27 — GO-5G-C: living tip / Production deploy / alias reconcile (docs-only)
+
+**Status:** documentation only · **DEPLOYMENT VERIFIED** · **ALIAS VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN** · **≠ Implementation GO**
+**FACT tip / HEAD:** **`d462b22ec73bbd5931492cc90b028e6c6af71441`** (`docs: populate session bridge execution history`; parent **`03d889a`**; ancestry includes prior docs tip **`2cc4cc1`**)
+**FACT deploy (GO-5G-B evidence):** Vercel Production **`dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1`** · target **production** · **Ready** @ that SHA · GitHub Production deployment **`7354583257`** **success**
+**FACT aliases:** **`www.bitrymdym.pl`** · **`bitrymdym.pl`** · **`bitrymdym.vercel.app`** → that `dpl_*` (**ALIAS VERIFIED**; evidence `vercel inspect` + Vercel commit status)
+**Scope:** living tip / deploy / alias pointers in [PROJECT_STATE.md](./PROJECT_STATE.md) §2 (+ §2c) reconciled to tip `d462b22…` · prior tip/deploy era **`2cc4cc1…` / `7350328308` / www→SHA then UNVERIFIED** kept as **Prior / HISTORY**
+**Explicit non-claim:** Ready + alias binding **≠** full production product verification · **≠** Product GREEN · P-NEXT-06 as Prior/HISTORY = previous tip/deploy reference only — **≠** closure of QT / OD-SC / Sample Catalog product track (Implementation still **NOT AUTHORIZED**; §13 blockers remain)
+**Docs updated:** [PROJECT_STATE.md](./PROJECT_STATE.md) (tip/deploy/alias living rows; this CHANGELOG entry) · SESSION_BRIDGE tip refresh = **out of this entry** (osobne GO)
+**Unchanged / out of scope:** Sacred WIP · dirty WIP · app code · no commit/push of this CHANGELOG in GO-5G-G · no deploy/alias mutation
+
+## 2026-10-27 — P-NEXT-06A/C/B: tip/deploy + QT labels + OD-SC discoverability (docs-only)
+
+**Status:** documentation only · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · **≠ Implementation GO**
+**FACT tip (pre-docs):** **`2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b`** · GitHub Production deployment **`7350328308`** **success** `2026-10-27T04:26:54Z` · alias **`www.bitrymdym.pl` → SHA UNVERIFIED**
+**06A:** living tip/deploy pointers → `2cc4cc1…` + deploy id; prior tip **`11a664b`** kept as HISTORY where evidence belongs
+**06C:** living QT LIMITS = **Account Level / OD-QT-01**; Sample Policy / `getSamplePolicy` labeled **HISTORY** in handoffs; D02 15s vs 30s both labeled; STU header stamp vs planes; P4 freeze-era vs PROJECT_STATE SHIPPED — dual labels; runtime QT **NOT VERIFIED**
+**06B:** OD-SC-01…05 CLOSED pointers in DECISION_LOG + OPEN_DECISIONS + functional map; Storage policy blockers §13 **retained** · **Implementation NOT AUTHORIZED**
+**Docs updated:** PROJECT_STATE · FINAL_COLD_START · MASTER_HANDOFF · PROJECT_FUNCTIONAL_MAP · RECORDING.md · D02 addendum · P4 freeze · OPEN_DECISIONS · DECISION_LOG · handoffs prompts · this CHANGELOG
+**Unchanged / out of scope:** Sacred WIP · dirty WIP · `SYSTEM_ARCHITECTURE.md` (dirty `M`) · app code · no commit/push/deploy in this GO
+
 ## 2026-10-26 — OD-QT-01: QT LIMITS axis = Account Level (docs-only)
 
 **Status:** documentation only · Owner D1/B-QT = **B** · **≠** Implementation GO · **≠** runtime cutover · **≠ Product GREEN**
@@ -36,36 +69,36 @@ Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). Row
 
 ## 2026-10-26 — Docs cold-start sync (tip `11a664b`)
 
-**Status:** documentation only · **≠ Product GREEN**  
-**FACT tip (pre-docs):** **`11a664b`** · GitHub Production **success** `2026-10-26T20:11:21Z` (re-check Deployments after this push)  
-**App ancestry (already on main):** UserMenu disclosure · tablet nav `@ lg` (`c702d27`) · Premium keyboard table scroll (`11d6042`) · katalog/auth a11y continuum  
-**Docs updated:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [handoffs/MASTER_START_PROMPT_*_PL.md](./handoffs/) · [README.md](./README.md) · audit pointer [FULL_PRODUCT_FUNCTIONAL_AUDIT_2026-10-25.md](./audits/FULL_PRODUCT_FUNCTIONAL_AUDIT_2026-10-25.md)  
-**Evidence recorded:** PRODUCTION UI UserMenu **PARTIAL** (AX/Escape/hit PASS; Tab/`focus-visible` NOT VERIFIED) · USER RLS Owner-reported PASS (2026-10-25) unchanged · Premium Retention **HOLD** · OD-04/07/15/16 **OPEN** · SFM GREEN **NOT CLAIMED**  
+**Status:** documentation only · **≠ Product GREEN**
+**FACT tip (pre-docs):** **`11a664b`** · GitHub Production **success** `2026-10-26T20:11:21Z` (re-check Deployments after this push)
+**App ancestry (already on main):** UserMenu disclosure · tablet nav `@ lg` (`c702d27`) · Premium keyboard table scroll (`11d6042`) · katalog/auth a11y continuum
+**Docs updated:** [PROJECT_STATE.md](./PROJECT_STATE.md) · [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) · [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [handoffs/MASTER_START_PROMPT_*_PL.md](./handoffs/) · [README.md](./README.md) · audit pointer [FULL_PRODUCT_FUNCTIONAL_AUDIT_2026-10-25.md](./audits/FULL_PRODUCT_FUNCTIONAL_AUDIT_2026-10-25.md)
+**Evidence recorded:** PRODUCTION UI UserMenu **PARTIAL** (AX/Escape/hit PASS; Tab/`focus-visible` NOT VERIFIED) · USER RLS Owner-reported PASS (2026-10-25) unchanged · Premium Retention **HOLD** · OD-04/07/15/16 **OPEN** · SFM GREEN **NOT CLAIMED**
 **Unchanged:** Sacred WIP · dirty WIP · no Studio protected file opens · no Product GREEN
 
 ## 2026-10-25 — Premium Gold retention = 28 days (Owner; HOLD unchanged)
 
-**Status:** Owner decision · **code + docs** · **Premium Retention remains HOLD** (no cron/janitor/activation)  
-**Decision:** [decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md](./decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md)  
-**Code:** `PREMIUM_TIER_MATRIX.GOLD.artifactRetentionSeconds` → **28 × DAY** (was 30); aligns with `PREMIUM_RETENTION_DAYS.GOLD` / OD-EXPORT-12 · SILVER **30d** unchanged · `retentionSecondsForPremium(true)` remains SILVER class (30d) · `isGoldRetentionProductionEnabled()` still **false** (90d design-only)  
-**Docs:** W2 / W2B · PROJECT_STATE · `/premium` · decision file · audit closeout  
-**Verify:** vitest **48 PASS** / 4 files (`w2a`, `e3-1`, `e3-5`, `premium-export-policy`) — GOLD 28d + SILVER/`premiumActive` 30d  
+**Status:** Owner decision · **code + docs** · **Premium Retention remains HOLD** (no cron/janitor/activation)
+**Decision:** [decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md](./decisions/PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md)
+**Code:** `PREMIUM_TIER_MATRIX.GOLD.artifactRetentionSeconds` → **28 × DAY** (was 30); aligns with `PREMIUM_RETENTION_DAYS.GOLD` / OD-EXPORT-12 · SILVER **30d** unchanged · `retentionSecondsForPremium(true)` remains SILVER class (30d) · `isGoldRetentionProductionEnabled()` still **false** (90d design-only)
+**Docs:** W2 / W2B · PROJECT_STATE · `/premium` · decision file · audit closeout
+**Verify:** vitest **48 PASS** / 4 files (`w2a`, `e3-1`, `e3-5`, `premium-export-policy`) — GOLD 28d + SILVER/`premiumActive` 30d
 **Not done:** commit/push/deploy · Retention cron · Storage/DB mutations · OD-15/OD-16 unchanged **OPEN** · Premium Retention **HOLD**
 
 ## 2026-10-25 — Sample Catalog & Scratch DJ v1 product contract (docs-only)
 
-**Status:** documentation only · **implementation NOT authorized** · **NOT SHIPPED**  
-**New:** [decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) — platform catalog → private TAKE copy → Studio clip; Scratch DJ v1; export/CAS/reuse rules  
-**Pointers:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) (version **0.1** unchanged) · [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)  
-**Unchanged:** living tip / production SHA claims not re-verified (no Git in this GO) · OD-15 / OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE**  
+**Status:** documentation only · **implementation NOT authorized** · **NOT SHIPPED**
+**New:** [decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) — platform catalog → private TAKE copy → Studio clip; Scratch DJ v1; export/CAS/reuse rules
+**Pointers:** [ssot/MASTER_SSOT_v0.1.md](./ssot/MASTER_SSOT_v0.1.md) (version **0.1** unchanged) · [architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · [architecture/SYSTEM_ARCHITECTURE.md](./architecture/SYSTEM_ARCHITECTURE.md) · [PROJECT_STATE.md](./PROJECT_STATE.md)
+**Unchanged:** living tip / production SHA claims not re-verified (no Git in this GO) · OD-15 / OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE**
 **Skipped (dirty / blocked):** `OPEN_DECISIONS.md` · `DECISION_LOG.md` · `RECORDING.md` · `studio-service.ts` · `studio-editor.tsx` · no `STUDIO_MASTER_ARCHITECTURE.md` created
 
 ## 2026-10-24 — Studio delivery docs consolidation + cold-start handoffs
 
-**Status:** docs-only consolidation after Studio / RLS / theme session  
-**Tip (app):** **`35543c8`** (VOCAL unarmed) · parent **`1e75fd3`** (owner SELECT + local Studio evidence)  
-**Prod (read-only):** GitHub Production deployment **success** @ `35543c8` · public smoke **PASS** · admin authenticated visual **PASS** · USER RLS / audio-REC / migracje **NOT VERIFIED / NOT RUN**  
-**Docs:** [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) · PROJECT_STATE / FINAL_COLD_START / MASTER_HANDOFF / AGENTS skills protocol  
+**Status:** docs-only consolidation after Studio / RLS / theme session
+**Tip (app):** **`35543c8`** (VOCAL unarmed) · parent **`1e75fd3`** (owner SELECT + local Studio evidence)
+**Prod (read-only):** GitHub Production deployment **success** @ `35543c8` · public smoke **PASS** · admin authenticated visual **PASS** · USER RLS / audio-REC / migracje **NOT VERIFIED / NOT RUN**
+**Docs:** [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) · PROJECT_STATE / FINAL_COLD_START / MASTER_HANDOFF / AGENTS skills protocol
 **OD-15 / OD-16:** remain **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE**
 
 ## 2026-10-24 — logged-in theme chrome BLOCKED (no Docker / no session)
