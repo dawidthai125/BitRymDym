@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
 
 import { AuthError, requireUser } from "@/lib/auth/session";
-import { prepareCatalogAssetCopy } from "@/lib/catalog/catalog-originals";
+import {
+  catalogCopyErrorHttpStatus,
+  prepareCatalogAssetCopy,
+} from "@/lib/catalog/catalog-originals";
 
 export const runtime = "nodejs";
 
 /**
- * Implementation Catalog skeleton — platform catalog → private TAKE copy.
- * Authenticated. No Storage/DB write. Copy remains COPY_NOT_IMPLEMENTED.
+ * Catalog → private TAKE copy planner.
+ * Authenticated. Fail-closed when policies/prod are unknown.
+ * No Storage/DB write. Client beatId is ignored.
  */
 export async function POST(request: Request) {
   try {
     await requireUser();
-    const body = (await request.json()) as {
+    let body: {
       catalogAssetId?: unknown;
       projectId?: unknown;
       contentType?: unknown;
@@ -20,6 +24,11 @@ export async function POST(request: Request) {
       durationSeconds?: unknown;
       beatId?: unknown;
     };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    }
     void body.beatId;
 
     if (typeof body.catalogAssetId !== "string" || typeof body.projectId !== "string") {
@@ -46,15 +55,10 @@ export async function POST(request: Request) {
       byteSize: body.byteSize,
       durationSeconds: body.durationSeconds,
     });
-    if (result.error === "VALIDATION_FAILED") {
-      return NextResponse.json(
-        { error: result.error, details: result.details },
-        { status: 400 },
-      );
-    }
+    void result.write;
     return NextResponse.json(
       { error: result.error, details: result.details },
-      { status: 501 },
+      { status: catalogCopyErrorHttpStatus(result.error) },
     );
   } catch (error) {
     if (error instanceof AuthError) {

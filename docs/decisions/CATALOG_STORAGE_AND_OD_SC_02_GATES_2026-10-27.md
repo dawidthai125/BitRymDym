@@ -39,7 +39,8 @@ Orphan KEEP `catalog/*` zostaje straż delete (już w kodzie). Retention catalog
 ## 3. Runtime
 
 Kanoniczne miejsce: `src/lib/beats/audio-validation.ts` (`validateObjectKey` + `buildCatalogOriginalObjectKey` + `validateCatalogOriginalUploadMeta`).  
-Szkielet copy: `src/lib/catalog/catalog-originals.ts` · `POST /api/catalog/copy` (wymaga sesji, **501** `COPY_NOT_IMPLEMENTED`, zero zapisu).
+Copy planner: `src/lib/catalog/catalog-originals.ts` · `POST /api/catalog/copy` (sesja wymagana).  
+Fail-closed default: brak potwierdzonego prod apply / tabeli / polityk `catalog_originals_service_*` → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` (**503**), **zero zapisu**. Content sniff nadal `CATALOG_CONTENT_GATE_NOT_IMPLEMENTED`. Dest TAKE key **nie** jest wymyślany.
 
 Scratch DJ v1 UI / CAS / Studio chronione = **OUT** (osobny NEXT).
 
