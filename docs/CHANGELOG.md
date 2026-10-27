@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Gate 0: alias / `dpl_*` best-effort (docs-only)
+
+**Status:** documentation only · GitHub Production **success** · Vercel commit status **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN**
+**FACT tip / HEAD / origin/main:** **`1c34a535867cf710ae6707a77a73a04aa3449af4`** (`docs: archive session bridge executed rows for gates 0-3`; parent **`bde3009`**)
+**FACT deploy:** GitHub Production deployment **`7371927399`** **success** `2026-10-27T22:24:34Z` @ that SHA · Vercel commit status **success** (`Deployment has completed`) · unique URL `https://bitrymdym-jypwmgukh-dawidthai125s-projects.vercel.app` · dashboard `https://vercel.com/dawidthai125s-projects/bitrymdym/8N3C7ryXXx2LVaYt3G7ju5q1sirc`
+**NOT VERIFIED:** `dpl_*` id · alias binding `www.bitrymdym.pl` / `bitrymdym.pl` / `bitrymdym.vercel.app` → this SHA (no `vercel` CLI; unique URL SSO-walled; `www` HTTPS 200 without SHA bind)
+**Scope:** living tip / deploy pointers in [PROJECT_STATE.md](./PROJECT_STATE.md) §2 (+ PRODUCTION rows) reconciled to tip `1c34a53…` · prior Unit 1 era **`a1b84f6…` / `7371104561`** kept as **HISTORY**
+**Explicit non-claim:** GitHub success + Vercel commit status **≠** alias binding · **≠** PRODUCTION VERIFIED · **≠** Product GREEN · historyczny `dpl_7Xwqf…` @ `d462b22` **nie** przenoszony
+**Docs updated:** [PROJECT_STATE.md](./PROJECT_STATE.md) · this CHANGELOG entry · SESSION_BRIDGE §4
+**Unchanged / out of scope:** Sacred WIP · remaining dirty WIP · app code · OD-15 OPEN · Premium Retention HOLD
+
 ## 2026-10-27 — SESSION_BRIDGE §4 archive (third batch, docs-only)
 
 **Status:** documentation only · Owner GO archiwizacja przed Gate 0–3 · **≠** tip/deploy reconcile · **≠** Product GREEN
