@@ -129,6 +129,30 @@ Minimalny zestaw ról do pracy nad kodem strony i funkcjami. **Nie** ładuj cał
 | Code review | `code-reviewer` (projektowy ECC) albo globalny review bez kolizji | read-only (deklaracja) | konkretny diff; egzekwowanie tools = **NOT VERIFIED** bez dowodu |
 | Implementation worker | `implementation-worker` | write-capable, **tylko przypisane ścieżki** | plik `.cursor/agents/bitrymdym-implementation-worker.md`; bez commit/push/deploy; **Task spawn** wymaga, by typ pojawił się w enum sesji (nowa rozmowa / reload Customizations) — dopóki enum go nie ma: **NOT VERIFIED** / użyj orchestratora z jawną listą ścieżek |
 
+### Mapa ról zespołu (Owner)
+
+Pełny zespół programistyczny mapuje się na **istniejące** agenty i skills. Nie twórz drugiego agenta ani skilla o tej samej odpowiedzialności. Commit i push zostają przy orchestratorze (`AGENTS.md`) — nie spawnuj commitera/pushera.
+
+| Rola | Kanoniczny agent / skill | Status | Uwagi |
+|------|--------------------------|--------|-------|
+| Koordynator | Główny Cursor Agent + reguła Zespół Cursor | READY | Jeden aktywny writer w checkout |
+| Analiza | `research-and-planning` · `architecture-and-reuse` · `explore` / `code-explorer` / `researcher` | READY | User skills przed ECC |
+| Pomysły / plan | `planner` · `research-and-planning` | READY | Opcjonalnie bundled `product-capability` / `gan-planner`. Pin Cursor Model — frontmatter ECC (`opus`/`sonnet`) nie jest modelem runtime |
+| Grafik / UX | `frontend-ux` · `a11y-architect` | READY | Zwykłe zadanie = istniejący design. `frontend-design` tylko po osobnym GO |
+| Searching | `explore` / `code-explorer` / `researcher` / `docs-lookup` | READY | Nie instaluj MCP pod bundled `deep-research` bez GO |
+| Pisanie kodu | `implementation-worker` + orchestrator | READY | Tylko allowlista; bez commit/push/deploy |
+| Weryfikacja kodu | user `code-review` · `typescript-reviewer` / `react-reviewer` · `security-auditor` · `test-auditor` | READY | Przy kolizji `code-reviewer` preferuj review bez kolizji + user skill |
+| Debugger | Task `debugger` · `systematic-debugging` | READY | Brak `ecc-debugger.md` jest OK |
+| Tester | `testing-and-verification` · `test-auditor` · `e2e-runner` | READY | Proporcjonalnie do ryzyka |
+| Commiter | Orchestrator; `commit-reviewer` tylko message | READY | `commit-reviewer` nie woła `git commit` |
+| Pusher | Orchestrator · `deployment-readiness` | READY | Lokalny PASS ≠ produkcja |
+| Security | user `security-review` · `security-auditor` · `.agents/skills/supabase*` | READY | User skill wygrywa z bundled `security-review` |
+| Dokumentacja | `documentation-audit` · `documentation-auditor` | READY | Nie drugi handoff / SESSION_BRIDGE |
+| Baza | `database-review` · `database-reviewer` · supabase skills | READY | Nie reinstalować |
+| Performance UI | `.agents/skills/react-best-practices` | READY | Pin w tabeli Skill React/Next |
+
+Instalacje zewnętrzne i nowe `bitrymdym-*.md` tylko gdy ta tabela pokaże **GAP** zdolności — obecnie brak. Biblioteka ECC (~70 agentów, 46 bundled skills) zostaje na dysku; ładuj wyłącznie wiersz z tej mapy albo tabeli spawn powyżej.
+
 ### Modele subagentów (twarde)
 
 - Dozwolone wyłącznie modele z puli **Cursor Models** na koncie (Composer / Grok / Cursor Auto).
