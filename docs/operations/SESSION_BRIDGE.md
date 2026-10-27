@@ -48,12 +48,27 @@ Opcjonalnie (po powyższym):
 
 Aktualizuj po `git status`, przed nowym zadaniem. **Nie** wklejaj treści diffów, `.env`, tokenów ani PII.
 
-| when (ISO) | branch | HEAD (short) | staged | unstaged | untracked | areas (high level) | sacred | notes |
-|------------|--------|--------------|--------|----------|-----------|--------------------|--------|-------|
-| | | | | | | | path-only PRESERVE | dirty PRESERVE |
+Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym SSOT WIP — przed każdym zadaniem **ponów** `git status`. Całego dirty WIP **nie** przypisuj do jednego GO.
+
+| when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
+|------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-27T09:49:43+01:00 (odświeżono po gap fill) | main | `03d889a` | 0 | ~169 | ~332 | docs≈187 · `.cursor`≈112 · `src`≈77 · `.agents`≈62 · scripts≈42 · supabase≈13 · inne | path `M` PRESERVE | porcelain≈501; indeks pusty; w tym `M` ten plik (gap fill, **nie** staged); **nie** cały WIP = SESSION_BRIDGE |
 
 **Sacred WIP (path-only):** `src/lib/takes/recording-eligibility-service.ts`
 — nigdy nie czytaj / nie wyszukuj / nie diffuj / nie haszuj / nie przekazuj subagentom (`AGENTS.md`). W tabeli: tylko obecność w `git status`, bez treści.
+
+### 2.1 Tip / deploy — konflikt źródeł (datowany; nie rozstrzygaj tu)
+
+Kontrola `2026-10-27T09:49+01:00` (bez `fetch`):
+
+| Źródło | Wartość | Uwaga |
+|--------|---------|--------|
+| Lokalny `HEAD` | `03d889a3667058c9355d85c640fe49b4dc9f8b91` | commit lokalny GO-3b; **nie** = produkcja |
+| Lokalny `origin/main` | `2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b` | **bez fetch** — świeżość remote **NOT VERIFIED** |
+| Living tip w [PROJECT_STATE.md](../PROJECT_STATE.md) §2 | `2cc4cc1…` | kanoniczny tip/deploy/NEXT — **nie zmieniaj** w tym pliku |
+| Push `03d889a` | **nie wykonany** (lokalnie ahead 1) | deploy / www alias → **nie deklaruj** |
+
+**Rozstrzygnięcie tip/push/PROJECT_STATE = osobne GO Ownera.** Ten bridge tylko sygnalizuje konflikt.
 
 **Zakazy (ten dokument nie upoważnia do):**
 `git stash` · `clean` · `reset` · `restore` · `checkout` wpływający na WIP · `git add -A` / `-u` / `.` · commit / push / deploy / instalacje bez odpowiedniego GO · automatyczne „porządki” dirty tree.
@@ -93,9 +108,16 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
-| | | | | | | | | |
+| 2026-10-27 | SESSION_BRIDGE gap audit | Uzupełnienie §2/§4 bridge (ten wpis) | EXECUTED | PARTIAL | Minimalna edycja tylko tego pliku; bez stage/commit/push | Diff lokalny `docs/operations/SESSION_BRIDGE.md` (po kontroli); raport agenta w czacie | _(brak commita)_ | Stage/commit tego pliku = osobne GO |
+| 2026-10-27 | AUTONOMY READINESS | Audyt gotowości Cursor+ECC (×2 raporty) | EXECUTED | PARTIAL | A spełniony · B częściowy · C nie; `PARTIALLY READY` | Raporty w sesji Cursor (bez zapisu do repo); Task A–D + review | N/A | Bridge/tip/NEXT Owner; ≠ Product GREEN |
+| 2026-10-27 | P-NEXT-10A | Audyt blokera przed publikacją 06/08 | EXECUTED | PASS | Baza `03d889a` SAFE; D02 path potwierdzona | Raport 10A; `git show` triad; 1× plik D02 w `docs/phases/` | N/A (RO) | Czeka GO na P-NEXT-10B / push |
+| 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
+| 2026-10-27 | GO-3b | Strip trailing WS + commit triad bridge | EXECUTED | PASS | Commit lokalny 3 ścieżek; `--check` exit 0; **push nie** | `git show 03d889a` · paths: SESSION_BRIDGE, CONTINUITY, README | `03d889a…` | Push / tip PROJECT_STATE = osobne GO |
+| 2026-10-27 | GO-3 | Path-scoped commit triad | EXECUTED | FAIL | `git diff --cached --check` trailing WS w SESSION_BRIDGE | Raport GO-3 BLOCKED | — | Naprawione w GO-3b |
+| 2026-10-27 | GO-2 | RO audit zakresu GO-1 | EXECUTED | PASS | Zakres triad OK; bez Sacred/Studio | Raport GO-2 w sesji | N/A (RO) | — |
+| 2026-10-27 | GO-1 | Utworzenie SESSION_BRIDGE + wskaźniki | EXECUTED | PASS | Szablon ACTIVE; CONTINUITY/README pointers | Treść w commitcie `03d889a` (dostarczona przez GO-3b) | `03d889a…` | — |
 
-_(Pusty szablon — nie wypełniaj fikcyjnymi zdarzeniami, SHA ani statusami produkcji.)_
+**Licznik `EXECUTED` w tabeli:** 7 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu.
 
 ### 4.1 Limit i archiwizacja
 
@@ -125,7 +147,11 @@ Linkuj, nie duplikuj:
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**
-- _(puste)_
+- Push lokalnego `03d889a` na `origin/main` **albo** świadome dalsze lokalne commity na tej bazie — **bez** force / fetch/pull bez GO.
+- Reconcile living tip / deploy w [PROJECT_STATE.md](../PROJECT_STATE.md) po decyzji o push (ten plik **nie** aktualizuje tipa).
+- P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = `03d889a` (nie `2cc4cc1`).
+- Stage/commit **tej** aktualizacji SESSION_BRIDGE (§2/§4) — osobne GO dokumentacyjne.
+- NEXT UNIT produktu nadal → PROJECT_STATE (**STOP — OWNER DECISION REQUIRED**); nie mylić z GO dokumentacyjnymi powyżej.
 
 ---
 
