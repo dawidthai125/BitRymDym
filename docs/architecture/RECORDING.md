@@ -121,7 +121,7 @@ Anonymous Take → READY → successful sign-in/sign-up session
 | APIs | `/api/takes/anon/session` · `finalize` · `preview` |
 | UI | `RecordingPanel` anonymous path · beat detail max SSOT |
 
-**Contract:** TTL 7200s · max **15s** (P1 SAMPLE_POLICY) · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · **anon→account claim = P3 IN** (auto after login/signup · Storage move · Premium Tier TTL/cap) · dual-play OUT · no grant APIs.
+**Contract:** TTL 7200s · max **15s** (P1 SAMPLE_POLICY) · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · **anon→account claim = P3 IN** (auto after login/signup · Storage move · Premium Tier TTL/cap = HISTORY · living QT LIMITS = Account Level / OD-QT-01 · runtime NOT VERIFIED) · dual-play OUT · no grant APIs.
 
 **W4/W5:** authenticated `claim_take_recording_session` and Shared Grants unchanged.
 
