@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Gate 1: SFM staging/host RO (docs-only)
+
+**Status:** documentation only · read-only Git + MCP SELECT prod · **≠** flag ON · **≠** bake · **≠** SFM Production GREEN
+**Audit:** [SFM_PLANES_STAGING_HOST_RO_2026-10-27.md](./audits/SFM_PLANES_STAGING_HOST_RO_2026-10-27.md)
+**FACT (1) code:** `5212933` ancestor living tip (`merge-base` exit 0)
+**FACT (2–4) staging:** **NOT VERIFIED** — GitHub last-20 Production only · MCP jeden projekt BitRymDym · `list_branches` [] · **nie** assumed = prod
+**FACT (6) prod DB:** history A–D + KIND_REJECT present (version drift vs repo files) · tables + RPC exist · versions/stages/grants **0** · SFM kind jobs **0**
+**NOT VERIFIED:** `SFM_VERSIONS_V1` runtime value · staging deploy/schema/worker · host process (Gate 2)
+**Explicit non-claim:** flaga **nie** włączona · worker always-on **nie** włączony · migracje **nie** apply
+**Docs updated:** audit nowy · PROJECT_STATE SFM PLANES / SFM CODE STATUS · this CHANGELOG · SESSION_BRIDGE §4
+**Unchanged / out of scope:** NEXT UNIT STOP · Sacred WIP · Studio chronione · app code
+
 ## 2026-10-27 — Gate 0: alias / `dpl_*` best-effort (docs-only)
 
 **Status:** documentation only · GitHub Production **success** · Vercel commit status **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN**
