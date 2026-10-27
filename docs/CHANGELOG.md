@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Sample Catalog §13 Storage / allowlist RO audit (docs-only)
+
+**Status:** documentation only · read-only repo + SELECT prod · **≠ Implementation GO** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**Scope:** nowy audyt [SAMPLE_CATALOG_S13_STORAGE_POLICIES_RO_2026-10-27.md](./audits/SAMPLE_CATALOG_S13_STORAGE_POLICIES_RO_2026-10-27.md) · kontrakt §13 blockers **zostają NOT VERIFIED**
+**FACT live (SELECT):** 3 buckety · `beat-audio` 50 MiB + FLAC · polityki `storage.objects` = 3× FAR-01 (brak `catalog/` · brak polityk anon/authenticated) · prefix `catalog/` **0** obiektów · RLS ON
+**FACT repo:** `validateObjectKey` tylko `platform/` / `user/` · brak encji catalog original · orphan KEEP `catalog/*` = straż delete, nie access policy
+**Explicit non-claim:** Implementation **NOT AUTHORIZED** · STOP w PROJECT_STATE **zachowany** · ten wpis **nie** zamyka OD-SC ani OD-15 · **nie** mutowano Storage
+**Docs updated:** audit nowy · this CHANGELOG entry
+**Unchanged / out of scope:** `PROJECT_STATE.md` (tip/deploy/NEXT) · Sacred WIP · Studio chronione · app code
+
 ## 2026-10-27 — Unit 1: living tip / Production deploy reconcile (docs-only)
 
 **Status:** documentation only · GitHub Production **success** · Vercel commit status **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN** · **≠ Implementation GO**
