@@ -32,7 +32,7 @@ Przy konflikcie wygrywa wyższy poziom. Nie domykaj decyzji OPEN (np. OD-15) „
 
 Nie twórz drugiego systemu ciągłości. Jedyna procedura kroków: [SESSION_BRIDGE.md](../../docs/operations/SESSION_BRIDGE.md) §1 (start) i §6 (przekazanie). Ta reguła trzyma tylko nazwy triggerów i straże. Tip / deploy / NEXT wyłącznie [PROJECT_STATE.md](../../docs/PROJECT_STATE.md) §2. Praca wykonawcza: `AGENTS.md`, sekcja „Kolejność”. ECC `save-session` / `resume-session` **nie** zastępują tego.
 
-**„Kontynuuj projekt”** (oraz równoważne wznowienie) → wykonaj SESSION_BRIDGE §1 od razu. Żywy Git (`git rev-parse`, `git status`, a przy tipie zdalnym `git ls-remote`) wygrywa ze snapshotem mostu i z banerem `FINAL_COLD_START_HANDOFF`. Living tip / deploy / NEXT zostają w PROJECT_STATE §2. Przy rozjeździe raportuj oba źródła i nie edytuj plików mixed bez GO.
+**„Kontynuuj projekt”** (oraz równoważne wznowienie) → wykonaj SESSION_BRIDGE §1 od razu. Żywy Git (`git rev-parse`, `git status`, a przy tipie zdalnym `git ls-remote`) wygrywa ze snapshotem mostu i z banerem `FINAL_COLD_START_HANDOFF`. Living tip / deploy / NEXT zostają w PROJECT_STATE §2. Przy rozjeździe raportuj oba źródła i nie edytuj plików mixed bez GO. Po tym starcie stosuj sekcję **Zespół Cursor** poniżej. Wznowienie nie zdejmuje `STOP — OWNER DECISION REQUIRED` i nie autoryzuje prac zablokowanych.
 
 **Podczas pracy:** SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC; rozróżniaj kod · docs · Git · deploy; lokalna edycja ≠ commit ≠ push ≠ deploy. Nie twórz drugiego handoffu.
 
@@ -44,6 +44,50 @@ Nie twórz drugiego systemu ciągłości. Jedyna procedura kroków: [SESSION_BRI
 - Subagenci Cursor (`Task` / dostępne typy lokalne) oraz agenci `ecc-*` w `.cursor/agents/` — używaj świadomie; nazwy `ecc:…` z dokumentacji ECC mogą nie mapować 1:1 na typy Task w tej instalacji Cursor
 - Supabase / auth / Storage / RLS → skills Supabase + security-review
 - Hooki ECC: **wyłączone** w tej integracji, dopóki Owner nie zatwierdzi osobnego audytu
+
+## Zespół Cursor
+
+Trwały model pracy koordynatora. Obowiązuje w każdej sesji, także po „Kontynuuj projekt”. Nie zastępuje hierarchii, `AGENTS.md` ani bramek. Nie tworzy drugiego handoffu.
+
+### Autonomia i zasoby
+
+- Koordynator sam planuje, deleguje, integruje i raportuje.
+- Używa subagentów, Skills, ECC, bibliotek, MCP i narzędzi, gdy są przydatne. Przed użyciem sprawdza, że zasób jest dostępny, oraz jaki ma zakres i ograniczenia.
+- Nie odrzucaj przydatnego, zweryfikowanego zasobu bez powodu. We wspólnym checkout nie uruchamiaj wielu writerów naraz. Dobór „tylko pasujące” i zakaz pełnego pipeline ECC dla drobnej zmiany pozostają wyżej.
+
+### Git
+
+- Standard: praca bezpośrednio na `main`. Worktree nie jest domyślnym modelem. PR nie jest obowiązkowy.
+- Przed implementacją ustal dokładną allowlistę ścieżek.
+- Istniejący dirty WIP oraz ścieżki chronione są poza zakresem, dopóki Owner nie zatwierdzi inaczej. Chronione, status-only: Sacred `src/lib/takes/recording-eligibility-service.ts`, `src/components/studio/studio-editor.tsx`, `src/lib/studio/studio-service.ts`, `docs/architecture/SYSTEM_ARCHITECTURE.md`.
+- Wspólny checkout ma jednego aktywnego writera.
+- Nie używaj `reset`, `restore`, `clean` ani `stash`, żeby rozwiązać konflikt albo przygotować repozytorium.
+
+### Bramka stanu
+
+- Przed i po każdym zadaniu zapisz pełny `git status --porcelain=v1` i hash tego wyjścia. Porównaj pełny status.
+- Sprawdź jawny wykaz zmienionych ścieżek, diff unstaged i staged oraz zgodność z allowlistą.
+- Hash statusu jest kontrolą dodatkową. Nie dowodzi, że nie było chwilowej zmiany później cofniętej.
+- Nieoczekiwana zmiana = STOP i raport. Nie cofaj jej automatycznie.
+
+### Cykl zadania implementacyjnego
+
+1. Plan i kryteria akceptacji.
+2. Implementacja.
+3. Testy proporcjonalne do ryzyka.
+4. Debugger: błędy, przypadki brzegowe, przyczyna źródłowa.
+5. Niezależny code review: poprawność, architektura, bezpieczeństwo, regresje.
+6. Przy problemach: poprawka u implementera, potem ponowne testy, debugger i niezależny review.
+7. Koniec tylko po spełnieniu kryteriów albo po jawnym zgłoszeniu blokady.
+8. Dopiero potem raport dowodów oraz path-scoped commit i push według `AGENTS.md`.
+
+Sama deklaracja `PASS` nie jest dowodem. Liczą się wykonane testy i kontrola kodu.
+
+### Owner
+
+- Nie zmieniaj decyzji oznaczonych jako wymagające Ownera.
+- `STOP — OWNER DECISION REQUIRED` zostaje do osobnej decyzji Ownera.
+- Sample Catalog, Scratch DJ i inne prace zablokowane wymagają osobnej autoryzacji.
 
 ## Weryfikacja
 
