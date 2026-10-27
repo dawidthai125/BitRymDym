@@ -1,8 +1,8 @@
 # Catalog Storage policies + OD-SC-02 gates (2026-10-27)
 
-**Status:** Implementation design **in repo** · Owner GO Implementation Catalog (Gate 3)  
-**Does not close:** OD-SC-01…05 values · OD-15 · OD-16 · Scratch DJ v1  
-**Prod apply:** **BLOCKED** — migracja tylko w Git, bez `apply_migration` / MCP apply
+**Status:** Implementation design **in repo** · Owner GO Implementation Catalog (Gate 3) · **prod schema APPLIED 2026-10-27**  
+**Does not close:** OD-SC-01…05 values · OD-15 · OD-16 · Scratch DJ v1 · content sniff · live Storage probe  
+**Prod apply:** **APPLIED** — MCP `apply_migration` · history `20261027225553` / `catalog_originals_storage_and_entity` · read-back **PASS** · [audit](../audits/CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md)
 
 Kontrakt: [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) §12–13  
 Audyt RO: [SAMPLE_CATALOG_S13_STORAGE_POLICIES_RO_2026-10-27.md](../audits/SAMPLE_CATALOG_S13_STORAGE_POLICIES_RO_2026-10-27.md)
@@ -49,4 +49,5 @@ Scratch DJ v1 UI / CAS / Studio chronione = **OUT** (osobny NEXT).
 ## 4. Prod
 
 Migracja `supabase/migrations/20261027220000_catalog_originals_storage_and_entity.sql` = **SHIPPED in repo**.  
-**Prod apply = BLOCKED** czekając na GO apply.
+**Prod apply = APPLIED** (2026-10-27) via MCP `apply_migration` · remote version **`20261027225553`** (drift vs repo `20261027220000` — **nie** repair) · tabela + 4 polityki Storage + grants read-back **PASS**.  
+Live probe upload / content sniff / Scratch DJ = **osobne GO**. **≠ Product GREEN**.

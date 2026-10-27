@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-27T23:57:00+01:00 (catalog prod apply, pomiar przed docs commit) | main | `0af0dc3` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`0af0dc3` (`ls-remote`); allowlista: apply audit + CHANGELOG + PS + bridge + gates + kontrakt §13 + REUSE; Sacred/Studio PRESERVE |
 | 2026-10-27T23:50:00+01:00 (Gates A/B/C, pomiar przed docs commit) | main | `5a6bc55` | 0 | ~166 | ~332 | catalog already committed; remaining dirty — **nie** przypisuj | path `M` PRESERVE | porcelain hash przed docs `e0f4456f…` (pre-catalog); catalog commit `5a6bc55`; allowlista docs: audit+CHANGELOG+PS+bridge; Sacred/Studio PRESERVE |
 | 2026-10-27T23:25:00+01:00 (Gates 0–3 archive, pomiar przed tym zapisem) | main | `bde3009` | 0 | ~166 | ~332 | pozostałe dirty — **nie** przypisuj do tego GO | path `M` PRESERVE | porcelain hash przed edycją `43c60883…`; `HEAD`=`origin/main`=`bde3009` (`ls-remote`); allowlista tego unitu: `SESSION_BRIDGE.md` + `CHANGELOG.md`; `PROJECT_STATE` nietknięty w micro-commit archiwum; tip SSOT = PROJECT_STATE |
 | 2026-10-27T22:50:51+01:00 (Unit 2 closeout, pomiar przed tym zapisem) | main | `0449410` | 0 | 166 | 332 | pozostałe dirty — **nie** przypisuj do tego GO | path `M` PRESERVE | porcelain=498 poza allowlistą hash `bbd0660c…`; po zapisie ten plik + `CHANGELOG` `M` → porcelain=500 / unstaged 168; indeks pusty; `HEAD`=`origin/main`=`0449410` (`ls-remote`); `PROJECT_STATE` czysty (Unit 1 @ `0449410`, nie edytowany); tip SSOT = PROJECT_STATE |
@@ -74,14 +75,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-27T23:50+01:00` (`git rev-parse HEAD`; GitHub Deployments API; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-27T23:57+01:00` (`git rev-parse HEAD`; `ls-remote`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (pre-docs) | `5a6bc55` | `feat(catalog): fail-closed copy when Storage policies are unknown`; parent **`5200c6d…`** |
-| Last independently verified deploy | `5200c6da5813f0a446393b3ce79e9f03478f9bbd` | GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · unique URL `bitrymdym-j1sp78uxs-…` SSO · `dpl_*` **NOT VERIFIED** · alias www **NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Gates A/B/C | Ten zapis edytuje most + CHANGELOG + PS + audit journal |
+| Lokalny `HEAD` (pre-docs) | `0af0dc3` | `docs: record Contabo journal RO and catalog fail-closed progress` = `origin/main` |
+| Last independently verified deploy | `5200c6da5813f0a446393b3ce79e9f03478f9bbd` | GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` (pre-this-docs) |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · catalog schema **APPLIED** `20261027225553` · live probe **BLOCKED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Catalog prod apply | Ten zapis edytuje most + CHANGELOG + PS + apply audit |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -130,6 +131,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-27 | CAT-APPLY | Catalog originals prod apply | EXECUTED | PASS | MCP `apply_migration` **PASS**. History **`20261027225553` / `catalog_originals_storage_and_entity`** (drift vs repo `20261027220000` — nie repair). Read-back: `catalog_assets` RLS ON+FORCE · 4 Storage `catalog_originals_service_*` · grants SIDU service_role / deny client. Vitest **19/19**. Live probe **BLOCKED**. Scratch **OUT**. ≠ Product GREEN. | MCP list/apply/execute_sql · [audit](../audits/CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md) · vitest catalog+audio-validation | _(ten commit)_ | NEXT: controlled live probe GO |
 | 2026-10-27 | GATE-C | Catalog copy fail-closed (repo) | EXECUTED | PASS | Planner: unknown policies/prod → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` · unpublished/unlicensed → `CATALOG_ASSET_NOT_COPYABLE` · content sniff fail-closed · dest key nie wymyślany · zero writes. Route 503/409/501 · `requireUser` · JSON 400. Vitest **19/19**. Prod apply **BLOCKED**. Scratch **OUT**. | `git show 5a6bc55` · vitest catalog-originals + audio-validation | `5a6bc55…` | Owner GO: prod apply `20261027220000` (checklist) **albo** content sniff |
 | 2026-10-27 | GATE-B | alias / `dpl_*` @ `5200c6d` (bez OAuth) | EXECUTED | PARTIAL | Tip `5200c6d…` (`ls-remote` then). GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` @ ten SHA · Vercel **success** · unique URL `bitrymdym-j1sp78uxs-…` **302 SSO** · dashboard `…/8KYY2axTYMN4CKzsxEteqy857k5R`. **`dpl_*` NOT VERIFIED**. **ALIAS NOT VERIFIED** (`www` 200, brak SHA bind). | `gh` deployments `7372230897` · commit status success · curl www 200 / unique 302 | `5200c6d…` | Bind alias/`dpl_*` wymaga OAuth/`vercel inspect` |
 | 2026-10-27 | GATE-A | Contabo poll journal RO (LEFT RUNNING) | EXECUTED | PASS | Owner: zostaw RUNNING. Status **enabled/active/running** PID **847** since 2026-10-23 20:47 CEST. `journalctl -n 80` = `claims_empty` / `busy=false`. Sekrety brak. **Nie** stop/start/enable. Audit appended. | `systemctl status/show` · `journalctl -n 80` · audit journal section | _(ten commit)_ | Poll zostaje. SHA hosta nadal NOT VERIFIED |
@@ -145,7 +147,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-27 | UNIT-2 | Closeout SESSION_BRIDGE: archiwum §4 + tip snapshot | EXECUTED | PARTIAL | Zarchiwizowano 3 najstarsze `EXECUTED` (`GO-5G-F` · `GO-5G-C` · `P-NEXT-10A`) → [CHANGELOG.md](../CHANGELOG.md) `### SESSION_BRIDGE archive`. Living `EXECUTED` 14→11, po tym wierszu **12**. `P-NEXT-10` BLOCKED zachowany. §2/§2.1/§5 → living Git `0449410…` (`ls-remote` zgodny). GitHub Production `7371268857` success `2026-10-27T21:49:06Z` @ ten SHA; Vercel commit status success; host `bitrymdym-absxk3egj-…vercel.app`. `dpl_*` / alias www / runtime SHA **NOT VERIFIED**. `PROJECT_STATE` nietknięty (Unit 1). Path-scoped commit+push allowlisty w tym unicie | `git rev-parse`/`ls-remote` `0449410` · GitHub deployment `7371268857` · hash porcelain poza allowlistą `bbd0660c…` | `0449410…` (tip przed tym commitem) | Po pushu nowy SHA ≠ SSOT PS. Alias / `dpl_*` = osobne GO. Produkt = STOP |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 13 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fourth batch + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fourth batch + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
 
 ### 4.1 Limit i archiwizacja
 
@@ -176,14 +178,12 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (odczyt `2026-10-27T23:30+01:00`; bez `vercel inspect`):**
-- GitHub Production deployment **`7371927399`** · **success** · `2026-10-27T22:24:34Z` @ **`1c34a53…`** · status commita Vercel **success** · host deploymentu `bitrymdym-jypwmgukh-…vercel.app`
-- `dpl_*` dla `1c34a53` **NOT VERIFIED** · alias **`www.bitrymdym.pl`** → ten deployment **NOT VERIFIED** · runtime SHA **NOT VERIFIED**
-- Historyczny `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` @ **`d462b22…`** (GO-5G-B) **nie** jest dowodem aliasu dla `1c34a53`
-- HISTORY deploy `7371723802` @ `bde3009…` · `7371560902` @ `77343b6…` · `7371104561` @ `a1b84f6…` — **superseded** living Git `1c34a53…`
-- **DEPLOYMENT success ≠ PRODUCTION VERIFIED ≠ Product GREEN**
+**Last-known deploy / alias (odczyt `2026-10-27T23:57+01:00`; bez `vercel inspect`):**
+- Living Git pre-docs: **`0af0dc3…`** = `origin/main` (`ls-remote`)
+- Last independently verified GitHub Production **`7372230897`** · **success** · `2026-10-27T22:42:24Z` @ **`5200c6d…`**
+- Catalog schema **APPLIED** `20261027225553` · live probe **BLOCKED**
+- `dpl_*` / alias www **NOT VERIFIED** · **DEPLOYMENT success ≠ PRODUCTION VERIFIED ≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
-- Lokalny tip operacyjny Git (ten bridge): **`1c34a53…`** (parent **`bde3009…`**) — `ls-remote` zgodny · SSOT tip PS = Gate 0 reconcile (ten sam SHA do commita Gate 0)
 
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**
 - Path-scoped commit dirty docs poza P-NEXT-10B — **bez** Sacred / reszty WIP. `PROJECT_STATE` nietknięty (pętla tip).

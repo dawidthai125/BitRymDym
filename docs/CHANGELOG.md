@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Catalog originals prod apply + read-back
+
+**Status:** schema **APPLIED** · read-back **PASS** · Implementation **≠** Scratch DJ · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „GO działajcie skutecznie i szybko!” = prod apply (MCP `apply_migration`, nie `db push` / repair)
+**Pre-apply:** `list_migrations` — brak `catalog_originals_storage_and_entity` · tip start `0af0dc3…` = `origin/main`
+**Apply:** name `catalog_originals_storage_and_entity` · SQL 1:1 z `supabase/migrations/20261027220000_catalog_originals_storage_and_entity.sql` · MCP `{success:true}`
+**Historia:** **`20261027225553` / `catalog_originals_storage_and_entity`** · drift vs repo `20261027220000` — **nie** repair (jak F1-C / STU-16)
+**Read-back PASS:** `catalog_assets` RLS ON+FORCE · polityka `catalog_assets_service_all` TO `service_role` · anon/authenticated table priv **false** · service_role SIDU **true** · Storage **4/4** `catalog_originals_service_{select,insert,update,delete}` TO `service_role` na `beat-audio` `catalog/{uuid}/original.bin`
+**Tests:** `npm test -- --run src/lib/catalog/catalog-originals.test.ts src/lib/beats/audio-validation.test.ts` → **19/19 PASS**
+**Explicit non-claim:** live Storage probe **BLOCKED** (osobne GO) · content sniff NOT IMPLEMENTED · Scratch NOT SHIPPED · advisors pre-existing **nie** naprawiane
+**Audit:** [CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md](./audits/CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md)
+**Docs updated:** gates · kontrakt §13 · REUSE map · this CHANGELOG · PROJECT_STATE Sample Catalog · SESSION_BRIDGE
+**NEXT:** controlled live probe GO
+
 ## 2026-10-27 — Gate C: catalog copy fail-closed (repo; prod apply BLOCKED)
 
 **Status:** code + tests **PASS** · **SHIPPED in repo** · **NOT in prod** · Scratch DJ v1 **OUT** · **≠ Product GREEN**
