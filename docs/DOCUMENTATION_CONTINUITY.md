@@ -74,6 +74,7 @@ Zwykłe zlecenie nie czeka na osobną zgodę przed commitem, pushem ani standard
 | DECISION LOG | WHY / DECISION HISTORY |
 | OPEN DECISIONS | WHAT IS STILL UNDECIDED |
 | PROJECT STATE | WHERE ARE WE NOW (living tip / dual-plane) |
+| SESSION BRIDGE | Przekazywanie kontekstu wykonawczego między sesjami — **nie** living tip / deploy / NEXT / produkcja ([operations/SESSION_BRIDGE.md](./operations/SESSION_BRIDGE.md)) |
 | PHASE DOCUMENTS | WHAT PHASE / SCOPE |
 | FEATURE DOCUMENTATION / AUDITS | HOW A FEATURE WORKS · evidence |
 | CHANGELOG | WHAT CHANGED OVER TIME |
@@ -100,4 +101,4 @@ Nowy Cursor Agent lub nowy ChatGPT musi móc z dokumentacji ustalić:
 
 **Nie wolno** wymagać czytania całej historii rozmów.
 
-**Canonical entry (cold start):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → [PROJECT_STATE.md](./PROJECT_STATE.md) → kolejność w [README.md](./README.md). Living tip/deploy/NEXT = **PROJECT_STATE only**. MASTER_HANDOFF = szczegółowa ciągłość / historia — nie konkuruje z tipem.
+**Canonical entry (cold start):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) → [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) → [PROJECT_STATE.md](./PROJECT_STATE.md) → [operations/SESSION_BRIDGE.md](./operations/SESSION_BRIDGE.md) (kontekst wykonawczy sesji; **≠** tip/deploy) → kolejność w [README.md](./README.md). Living tip/deploy/NEXT = **PROJECT_STATE only**. MASTER_HANDOFF = szczegółowa ciągłość / historia — nie konkuruje z tipem.

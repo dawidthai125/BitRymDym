@@ -38,6 +38,7 @@ Stała zasada: [DOCUMENTATION_CONTINUITY.md](./DOCUMENTATION_CONTINUITY.md).
 | DECISION LOG | WHY / DECISION HISTORY |
 | OPEN DECISIONS | WHAT IS STILL UNDECIDED |
 | PROJECT STATE | WHERE ARE WE NOW (living tip / deploy / connections) |
+| SESSION BRIDGE | Kontekst wykonawczy między sesjami — **≠** tip / deploy / produkcja |
 | PHASE DOCUMENTS | WHAT PHASE / SCOPE |
 | FEATURE DOCUMENTATION / AUDITS | HOW A FEATURE WORKS · evidence |
 | RUNBOOKS | Operator procedures (no secrets) |
@@ -76,6 +77,7 @@ See [MASTER_HANDOFF.md](./MASTER_HANDOFF.md) · [DOCUMENTATION_CONTINUITY.md](./
 |----------|------|
 | [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md) | Ultra cold-start entry (nowy GPT + Cursor) · **§0 SESSION VERIFY** |
 | [PROJECT_STATE.md](./PROJECT_STATE.md) | Living tip / deploy / NEXT / **§2c connections** |
+| [operations/SESSION_BRIDGE.md](./operations/SESSION_BRIDGE.md) | Rejestr przekazywania kontekstu między sesjami (max 15 EXECUTED) · **nie** SSOT tip/deploy |
 | [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) | Kanoniczna mapa funkcji + płaszczyzny dowodu |
 | [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) | Prompt startowy ChatGPT (planista/audytor) |
 | [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md) | Prompt startowy Cursor Agent (executor) |
