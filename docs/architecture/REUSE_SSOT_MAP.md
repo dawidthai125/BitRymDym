@@ -1,11 +1,17 @@
 # BitRymDym — Reuse / SSOT / DO NOT DUPLICATE Map
 
 **Authority:** Canonical **reuse inventory** for new GPT + Cursor agents.  
-**Does not replace:** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) · [PROJECT_STATE.md](../PROJECT_STATE.md).  
+**Does not replace:** [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md) · [MASTER_HANDOFF.md](../MASTER_HANDOFF.md) · [PROJECT_STATE.md](../PROJECT_STATE.md) · polityka agenta [AGENTS.md](../../AGENTS.md).  
 **Updated:** 2026-10-08 — post Phase 7.1.6 GREEN · docs tip may ≠ production app `4fa658d`.  
 **Docs pointer (2026-10-25):** Sample catalog copy + Scratch DJ v1 product contract (implementation **NOT** authorized) → [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](../decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md).
 
 **Rule:** Before writing new code → **SEARCH THIS MAP + CODE** → REUSE. Never invent a second SSOT.
+
+**MODIFY BEFORE CREATE / ONE CANONICAL IMPLEMENTATION** (skrót; pełna polityka → [AGENTS.md](../../AGENTS.md)):
+
+- Najpierw znajdź istniejącego ownera w §1–§2 tej mapy i w kodzie; rozszerz go, zanim utworzysz nowy plik/serwis/hook/endpoint.
+- Jedna odpowiedzialność = jedno kanoniczne miejsce, chyba że architektura uzasadnia rozdzielenie (powód w raporcie).
+- Skill wspomagający: `architecture-and-reuse`. Handoff sesji / tip ≠ ta mapa → [SESSION_BRIDGE](../operations/SESSION_BRIDGE.md) · [PROJECT_STATE](../PROJECT_STATE.md).
 
 ---
 

@@ -31,11 +31,21 @@ To jest polityka zachowania agenta w BitRymDym. Nie nadaje uprawnień GitHuba, V
 
 Zwykłe zlecenie obejmuje analizę, implementację, testy, commit, push na `main` i standardowy deployment. Nie pytaj o zgodę na każdy z tych kroków. Pull request nie jest obowiązkowy.
 
+**Polityka Git (zatwierdzona):** zwykłe, bezpieczne, path-scoped commit i push są dozwolone według tej autonomii. **Osobnego GO** nadal wymagają: chroniony / mixed WIP (Sacred, Studio chronione, `SYSTEM_ARCHITECTURE.md`, oraz dirty `PROJECT_STATE.md` / `CHANGELOG.md` bez izolacji lub jawnego GO na cały plik), operacje destrukcyjne (`reset --hard`, force-push, stash/clean niepowiązanego WIP), migracje i zapisy produkcyjne poza zatwierdzonym procesem, oraz twierdzenia `PRODUCTION VERIFIED` / Product GREEN bez niezależnych dowodów. Jawne GO Ownera w bieżącej rozmowie może zawęzić commit/push dla konkretnej fazy — wtedy obowiązuje to GO.
+
+## Zasady architektury (obowiązkowe)
+
+- **SSOT FIRST** · **REUSE FIRST** · **ZERO DUPLICATE LOGIC** · **MOBILE FIRST**
+- **MODIFY BEFORE CREATE** — jeśli istniejący komponent, serwis, hook, helper, endpoint lub dokument spełnia tę samą odpowiedzialność, najpierw oceń rozbudowę lub refaktoryzację; nowy element tylko gdy istniejący nie wystarcza albo rozdzielenie jest architektonicznie uzasadnione (powód w raporcie).
+- **ONE CANONICAL IMPLEMENTATION** — jedna odpowiedzialność ma jedno kanoniczne miejsce (mapa: `docs/architecture/REUSE_SSOT_MAP.md`), chyba że architektura uzasadnia inaczej.
+- **VERIFY BEFORE CLAIMING** — nie zgłaszaj ukończenia, PASS, deploy ani produkcji bez dowodów; rozróżniaj FACT / INFERENCE / NOT VERIFIED / BLOCKED.
+- **CONTINUITY FIRST** — po istotnej jednostce pracy zostaw stan do przejęcia: aktualizuj właściwe istniejące dokumenty (nie twórz drugiego master handoffu); handoff wykonawczy → `docs/operations/SESSION_BRIDGE.md`; tip/deploy/NEXT → `docs/PROJECT_STATE.md`.
+
 ## Kolejność
 
 1. Ustal zakres i kryteria akceptacji.
 2. Sprawdź `git status`. Zostaw niepowiązane zmiany i Sacred WIP: `src/lib/takes/recording-eligibility-service.ts`.
-3. Przeczytaj SSOT i decyzje właściwe dla zmiany. Nie zamykaj decyzji OPEN, w tym OD-15, bez procesu decyzji.
+3. Przeczytaj SSOT i decyzje właściwe dla zmiany. Przed nowym kodem: `docs/architecture/REUSE_SSOT_MAP.md` + skill `architecture-and-reuse` (gdy dostępny). Nie zamykaj decyzji OPEN, w tym OD-15, bez procesu decyzji.
 4. Zaimplementuj zakres. Refaktoryzacja tylko taka, jakiej ten zakres wymaga.
 5. Uruchom testy, lint, typecheck, build i kontrole dobrane do ryzyka. Popraw błędy znalezione w tych kontrolach.
 6. Przejrzyj diff. Nie commituj `.env`, tokenów, kluczy, logów z danymi poufnymi ani przypadkowych artefaktów. Nie używaj `git add -A`, `-u` ani `.`.
@@ -56,7 +66,8 @@ Zwykłe zlecenie obejmuje analizę, implementację, testy, commit, push na `main
 - infrastruktura, rozliczenia i zasoby chmurowe poza standardowym pipeline Vercel;
 - zapis albo inna niezatwierdzona operacja na produkcyjnej bazie;
 - obejście zabezpieczeń platformy albo cudzych uprawnień;
-- instalacja gstack, Superpowers albo `frontend-design`.
+- instalacja gstack, Superpowers albo `frontend-design`;
+- ingerencja w pliki chronione (Sacred WIP; `studio-editor.tsx`; `studio-service.ts`; `docs/architecture/SYSTEM_ARCHITECTURE.md`) oraz commit mixed WIP `PROJECT_STATE.md` / `CHANGELOG.md` bez izolacji lub jawnego GO na cały plik.
 
 Gdy kontrola nie przejdzie, pojawi się konflikt, ryzyko utraty danych albo niepewność środowiska, zatrzymaj ryzykowny krok. Bezpieczną przyczynę w zakresie zadania diagnozuj i napraw. O decyzję proś przy bramce albo gdy nie ma bezpiecznego dalszego kroku.
 
@@ -74,14 +85,15 @@ Istniejący wygląd jest punktem odniesienia. Zwykłe zadanie funkcjonalne nie p
 
 Trwały protokół pracy agenta Cursor w BitRymDym (nie zastępuje autonomii ani bramek powyżej).
 
-1. **Przed zadaniem** sprawdź dostępne Agent Skills i przeczytaj instrukcje **tylko** pasujących skillsów (np. research-and-planning, documentation-audit, security-review, testing-and-verification, deployment-readiness, frontend-ux).
+1. **Przed zadaniem** sprawdź dostępne Agent Skills i przeczytaj instrukcje **tylko** pasujących skillsów (np. research-and-planning, architecture-and-reuse, documentation-audit, security-review, testing-and-verification, deployment-readiness, frontend-ux).
 2. **Read-only subagenci** — używaj ich do niezależnych analiz, audytów bezpieczeństwa, kontroli zakresu staged i weryfikacji faktów. Subagent nie edytuje plików, nie dostaje sekretów / env / cookies i **nigdy** nie dostaje Sacred WIP.
-3. **Główny Cursor** wykonuje edycje w zakresie zlecenia.
-4. **Brakujący skill** — wolno doinstalować wyłącznie z oficjalnego lub curated źródła GitHub po odczycie manifestu/instrukcji i przypięciu wersji albo commita. Zakaz niezweryfikowanych bootstrap scriptów, przypadkowych promptów i binariów. W raporcie podaj nazwę, źródło i wersję.
-5. **Sacred WIP** `src/lib/takes/recording-eligibility-service.ts` — nigdy nie czytaj, nie wyszukuj, nie diffuj, nie haszuj i nie przekazuj agentom.
-6. **Dirty WIP** — zachowuj; nie czyść, nie stashuj, nie resetuj i nie synchronizuj niepowiązanego worktree bez bramki Ownera.
-7. **Dokumentacja vs produkcja** — lokalny PASS ≠ produkcja; Ready deploy ≠ funkcjonalne GREEN. Aktualny tip i deploy → `docs/PROJECT_STATE.md`.
-8. **ECC (Cursor)** — lokalna instalacja w `.cursor/` wspiera planowanie/review; **nie** zastępuje tego protokołu ani SSOT. Hierarchia i ograniczenia: reguła `bitrymdym-ssot-over-ecc.mdc` oraz `docs/operations/ECC_CURSOR_WORKFLOW.md`. Hooki ECC domyślnie wyłączone.
+3. **Brief podagenta (obowiązkowy)** — cel i kryteria akceptacji; zasady architektury z tej polityki; konkretne pliki w zakresie; zakaz duplikatów / MODIFY BEFORE CREATE; lista chronionych ścieżek; bezpieczny skrót stanu Git/WIP (bez treści Sacred); wymóg raportu: zmienione pliki, testy, ryzyka, otwarte problemy. Podagent **nie** rozszerza zakresu samodzielnie. Przy równoległych edycjach zakresy muszą być rozłączne albo scalenie kontrolowane przez głównego agenta.
+4. **Główny Cursor** wykonuje edycje w zakresie zlecenia.
+5. **Brakujący skill** — wolno doinstalować wyłącznie z oficjalnego lub curated źródła GitHub po odczycie manifestu/instrukcji i przypięciu wersji albo commita. Zakaz niezweryfikowanych bootstrap scriptów, przypadkowych promptów i binariów. W raporcie podaj nazwę, źródło i wersję. Instalacja bez osobnego GO Ownera jest zabroniona, gdy zmienia środowisko poza bieżącym zadaniem.
+6. **Sacred WIP** `src/lib/takes/recording-eligibility-service.ts` — nigdy nie czytaj, nie wyszukuj, nie diffuj, nie haszuj i nie przekazuj agentom.
+7. **Dirty WIP** — zachowuj; nie czyść, nie stashuj, nie resetuj i nie synchronizuj niepowiązanego worktree bez bramki Ownera.
+8. **Dokumentacja vs produkcja** — lokalny PASS ≠ produkcja; Ready deploy ≠ funkcjonalne GREEN. Aktualny tip i deploy → `docs/PROJECT_STATE.md`.
+9. **ECC (Cursor)** — lokalna instalacja w `.cursor/` wspiera planowanie/review; **nie** zastępuje tego protokołu ani SSOT. Hierarchia i ograniczenia: reguła `bitrymdym-ssot-over-ecc.mdc` oraz `docs/operations/ECC_CURSOR_WORKFLOW.md`. Hooki ECC domyślnie wyłączone. ECC `save-session` / `resume-session` **nie** są kanoniczną ciągłością — kanon: PROJECT_STATE + SESSION_BRIDGE.
 
 <!-- END:bitrymdym-cursor-skills-protocol -->
 

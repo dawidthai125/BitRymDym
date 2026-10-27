@@ -70,14 +70,16 @@ Zwykłe zlecenie nie czeka na osobną zgodę przed commitem, pushem ani standard
 | MASTER HANDOFF | Full continuity / architecture handoff (detail after cold start) |
 | MASTER SSOT | WHAT / PRODUCT TRUTH |
 | SYSTEM ARCHITECTURE | HOW / TECHNICAL ARCHITECTURE |
-| REUSE / SSOT MAP | Domain → SSOT → owner → location · **DO NOT DUPLICATE** |
+| REUSE / SSOT MAP | Domain → SSOT → owner → location · **DO NOT DUPLICATE** · **MODIFY BEFORE CREATE** / **ONE CANONICAL** ([architecture/REUSE_SSOT_MAP.md](./architecture/REUSE_SSOT_MAP.md) · zasady w [AGENTS.md](../AGENTS.md)) — **nie** jest handoffem tipu/sesji |
 | DECISION LOG | WHY / DECISION HISTORY |
 | OPEN DECISIONS | WHAT IS STILL UNDECIDED |
 | PROJECT STATE | WHERE ARE WE NOW (living tip / dual-plane) |
-| SESSION BRIDGE | Przekazywanie kontekstu wykonawczego między sesjami — **nie** living tip / deploy / NEXT / produkcja ([operations/SESSION_BRIDGE.md](./operations/SESSION_BRIDGE.md)) |
+| SESSION BRIDGE | **Wykonawcze przekazanie sesji** (cold-start checklist, WIP snapshot status-only, rejestr `EXECUTED`, handoff po zadaniu) — **nie** living tip / deploy / NEXT / produkcja · **nie** mapa reuse ([operations/SESSION_BRIDGE.md](./operations/SESSION_BRIDGE.md)) |
 | PHASE DOCUMENTS | WHAT PHASE / SCOPE |
 | FEATURE DOCUMENTATION / AUDITS | HOW A FEATURE WORKS · evidence |
 | CHANGELOG | WHAT CHANGED OVER TIME |
+
+**Podział ról (anti-dupe dokumentów):** `SESSION_BRIDGE` = ciągłość **wykonawcza** między sesjami agenta. `REUSE_SSOT_MAP` = kanoniczna mapa **ponownego użycia** i zapobiegania drugiej implementacji. Living tip/deploy/NEXT = wyłącznie `PROJECT_STATE`. Nie tworzyć trzeciego konkurencyjnego mechanizmu handoffu (np. nowego „master contract” dokumentu).
 
 Nie duplikować całych treści — stosować linki / referencje.
 Nie tworzyć drugiego „master” handoffu.
