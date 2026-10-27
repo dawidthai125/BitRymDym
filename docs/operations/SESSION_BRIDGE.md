@@ -116,7 +116,8 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
-| 2026-10-27 | KONTRAKT A–D | Autonomia / reuse / handoff (AGENTS+bridge+continuity+REUSE map) | EXECUTED | PARTIAL | Commit+push allowlisty 4 ścieżek: `AGENTS.md` · `docs/operations/SESSION_BRIDGE.md` · `docs/DOCUMENTATION_CONTINUITY.md` · `docs/architecture/REUSE_SSOT_MAP.md` · message `docs: encode BitRymDym autonomy and session handoff contract` · lokalny `HEAD`/`origin/main` = `fa5b7ca…` · **≠** nowy deploy claim | `git show fa5b7ca` · paths only | `fa5b7ca…` | Tip SSOT / deploy / NEXT → PROJECT_STATE (lag możliwy) · limit 15 pełny · commit tego bridge refresh = osobne GO |
+| 2026-10-27 | GO-SB-ARCHIVE | Archiwizacja §4 → CHANGELOG `### SESSION_BRIDGE archive` | EXECUTED | PASS | Przeniesiono 6 najstarszych `EXECUTED` (SESSION_BRIDGE gap audit · AUTONOMY READINESS · GO-3b · GO-3 · GO-2 · GO-1) do [CHANGELOG.md](../CHANGELOG.md) `### SESSION_BRIDGE archive` · `BLOCKED` `P-NEXT-10` zachowany w living · **bez** commit/push | Diff allowlista: `SESSION_BRIDGE.md` + `CHANGELOG.md` | _(brak commita)_ | Path-scoped commit obu plików = osobne GO |
+| 2026-10-27 | KONTRAKT A–D | Autonomia / reuse / handoff (AGENTS+bridge+continuity+REUSE map) | EXECUTED | PARTIAL | Commit+push allowlisty 4 ścieżek: `AGENTS.md` · `docs/operations/SESSION_BRIDGE.md` · `docs/DOCUMENTATION_CONTINUITY.md` · `docs/architecture/REUSE_SSOT_MAP.md` · message `docs: encode BitRymDym autonomy and session handoff contract` · lokalny `HEAD`/`origin/main` = `fa5b7ca…` · **≠** nowy deploy claim | `git show fa5b7ca` · paths only | `fa5b7ca…` | Tip SSOT / deploy / NEXT → PROJECT_STATE (lag możliwy) · commit bridge refresh = osobne GO |
 | 2026-10-27 | GO-5G-O | SESSION_BRIDGE tip reconcile → `d05aa4e` | EXECUTED | PARTIAL | Living snapshot O: tip `d05aa4e`; deploy `@ d462b22`; **HISTORY:** commit Q + push R → tip `db435ed` | Raporty O/Q/R · `git show db435ed` | `db435ed…` (Q) | Mixed WIP PS/CL = osobne GO |
 | 2026-10-27 | GO-5G-M | Push jednego commita `d05aa4e` | EXECUTED | PASS | Push `origin/main` bez force; remote SHA potwierdzony (raport M) | Raport GO-5G-M · `ls-remote` / GitHub API w M | `d05aa4e…` | Deploy/alias re-verify = osobne GO |
 | 2026-10-27 | GO-5G-J | Commit wyłącznie SESSION_BRIDGE | EXECUTED | PASS | Lokalny commit 1 pliku; message `docs: refresh session bridge snapshot` | `git show d05aa4e` · path only bridge | `d05aa4e…` | Push = GO-5G-M (done) |
@@ -124,16 +125,10 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-27 | GO-5G-G | CHANGELOG wpis GO-5G-C | EXECUTED | PARTIAL | Dodano wpis tip `d462b22` / `dpl_7Xwqf…` / ALIAS VERIFIED; P-NEXT-06 zachowany; ≠ Product GREEN | Dirty `docs/CHANGELOG.md` + raport GO-5G-G | _(brak commita)_ | Commit CHANGELOG = osobne GO |
 | 2026-10-27 | GO-5G-F | PROJECT_STATE §5 → §2 NEXT UNIT | EXECUTED | PASS | §5 zredukowany do pointera; STOP Owner; P-NEXT-06 ≠ product CLOSED | Dirty `docs/PROJECT_STATE.md` + raport GO-5G-F | _(brak commita)_ | Commit PROJECT_STATE = osobne GO |
 | 2026-10-27 | GO-5G-C | PROJECT_STATE tip/deploy/alias reconcile | EXECUTED | PARTIAL | Living tip `d462b22` · `dpl_7Xwqf…` · DEPLOYMENT/ALIAS VERIFIED · ≠ PRODUCTION VERIFIED ≠ Product GREEN | Dirty `docs/PROJECT_STATE.md` + raporty GO-5G-B/C | _(brak commita)_ | Commit PROJECT_STATE = osobne GO |
-| 2026-10-27 | SESSION_BRIDGE gap audit | Uzupełnienie §2/§4 bridge (ten wpis) | EXECUTED | PARTIAL | Minimalna edycja tylko tego pliku; bez stage/commit/push | Diff lokalny `docs/operations/SESSION_BRIDGE.md` (po kontroli); raport agenta w czacie | _(brak commita)_ | Stage/commit tego pliku = osobne GO |
-| 2026-10-27 | AUTONOMY READINESS | Audyt gotowości Cursor+ECC (×2 raporty) | EXECUTED | PARTIAL | A spełniony · B częściowy · C nie; `PARTIALLY READY` | Raporty w sesji Cursor (bez zapisu do repo); Task A–D + review | N/A | Bridge/tip/NEXT Owner; ≠ Product GREEN |
 | 2026-10-27 | P-NEXT-10A | Audyt blokera przed publikacją 06/08 | EXECUTED | PASS | Baza `03d889a` SAFE; D02 path potwierdzona | Raport 10A; `git show` triad; 1× plik D02 w `docs/phases/` | N/A (RO) | Czeka GO na P-NEXT-10B / push |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
-| 2026-10-27 | GO-3b | Strip trailing WS + commit triad bridge | EXECUTED | PASS | Commit lokalny 3 ścieżek; `--check` exit 0; **push nie** | `git show 03d889a` · paths: SESSION_BRIDGE, CONTINUITY, README | `03d889a…` | Push / tip PROJECT_STATE = osobne GO |
-| 2026-10-27 | GO-3 | Path-scoped commit triad | EXECUTED | FAIL | `git diff --cached --check` trailing WS w SESSION_BRIDGE | Raport GO-3 BLOCKED | — | Naprawione w GO-3b |
-| 2026-10-27 | GO-2 | RO audit zakresu GO-1 | EXECUTED | PASS | Zakres triad OK; bez Sacred/Studio | Raport GO-2 w sesji | N/A (RO) | — |
-| 2026-10-27 | GO-1 | Utworzenie SESSION_BRIDGE + wskaźniki | EXECUTED | PASS | Szablon ACTIVE; CONTINUITY/README pointers | Treść w commitcie `03d889a` (dostarczona przez GO-3b) | `03d889a…` | — |
 
-**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. **STOP** przed kolejnym `EXECUTED` bez GO archiwizacji → CHANGELOG.
+**Licznik `EXECUTED` w tabeli:** 10 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum starszych `EXECUTED`: [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
 
 ### 4.1 Limit i archiwizacja
 
@@ -172,9 +167,9 @@ Linkuj, nie duplikuj:
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**
 - Path-scoped commit dirty docs (osobne GO / allowlista): `PROJECT_STATE` (P-NEXT-06+GO-5G-C+F) · `CHANGELOG` (P-NEXT-06+GO-5G-G) — **bez** Sacred / reszty WIP.
 - Path-scoped commit tego pliku (`SESSION_BRIDGE` tip refresh post A–D) — osobne GO · **bez** `git add -A`.
-- Archiwizacja SESSION_BRIDGE §4 → CHANGELOG (limit 15 `EXECUTED` **pełny**) — osobne GO.
+- Path-scoped commit allowlisty archiwum (`SESSION_BRIDGE` + `CHANGELOG` po GO-SB-ARCHIVE) — osobne GO · **bez** `git add -A`.
 - P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = **`fa5b7ca`** (ancestor: `db435ed` / `d05aa4e` / `d462b22` / `03d889a`).
-- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R tip reconcile @ `db435ed`) · kontrakt A–D commit+push @ **`fa5b7ca`**.
+- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R tip reconcile @ `db435ed`) · kontrakt A–D commit+push @ **`fa5b7ca`** · **GO-SB-ARCHIVE** (6× `EXECUTED` → CHANGELOG `### SESSION_BRIDGE archive`; living §4 = 10 `EXECUTED` + 1 `BLOCKED`; **bez** commit/push w tym GO).
 - P-NEXT-06 tip/deploy era = HISTORY w PS/CHANGELOG — **≠** zamknięcie toru produktowego QT / OD-SC / Sample Catalog (**Implementation NOT AUTHORIZED**).
 - NEXT UNIT produktu → PROJECT_STATE (**STOP — OWNER DECISION REQUIRED**); Implementation **nie** autoryzowana; nie mylić z GO dokumentacyjnymi powyżej.
 

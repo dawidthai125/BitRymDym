@@ -6,6 +6,26 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — SESSION_BRIDGE §4 archive (docs-only)
+
+**Status:** documentation only · Owner GO archiwizacja · **≠** tip/deploy reconcile · **≠** Product GREEN · **bez** commit/push/deploy w tym GO
+**Scope:** przeniesiono starsze wpisy `EXECUTED` z [SESSION_BRIDGE.md](./operations/SESSION_BRIDGE.md) §4 → sekcja poniżej · wpis `BLOCKED` (`P-NEXT-10`) pozostaje w living §4 · living limit ≤15 zwolniony
+**Unchanged / out of scope:** `PROJECT_STATE.md` · Sacred WIP · Studio chronione · tip/deploy claims · pozostały dirty WIP CHANGELOG (GO-5G-C / P-NEXT-06) nietknięty poza tą sekcją · commit/push = osobne GO
+
+### SESSION_BRIDGE archive
+
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). Rows below are the oldest living `EXECUTED` entries at archive time, preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+
+| date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
+|------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-27 | SESSION_BRIDGE gap audit | Uzupełnienie §2/§4 bridge (ten wpis) | EXECUTED | PARTIAL | Minimalna edycja tylko tego pliku; bez stage/commit/push | Diff lokalny `docs/operations/SESSION_BRIDGE.md` (po kontroli); raport agenta w czacie | _(brak commita)_ | Stage/commit tego pliku = osobne GO |
+| 2026-10-27 | AUTONOMY READINESS | Audyt gotowości Cursor+ECC (×2 raporty) | EXECUTED | PARTIAL | A spełniony · B częściowy · C nie; `PARTIALLY READY` | Raporty w sesji Cursor (bez zapisu do repo); Task A–D + review | N/A | Bridge/tip/NEXT Owner; ≠ Product GREEN |
+| 2026-10-27 | GO-3b | Strip trailing WS + commit triad bridge | EXECUTED | PASS | Commit lokalny 3 ścieżek; `--check` exit 0; **push nie** | `git show 03d889a` · paths: SESSION_BRIDGE, CONTINUITY, README | `03d889a…` | Push / tip PROJECT_STATE = osobne GO |
+| 2026-10-27 | GO-3 | Path-scoped commit triad | EXECUTED | FAIL | `git diff --cached --check` trailing WS w SESSION_BRIDGE | Raport GO-3 BLOCKED | — | Naprawione w GO-3b |
+| 2026-10-27 | GO-2 | RO audit zakresu GO-1 | EXECUTED | PASS | Zakres triad OK; bez Sacred/Studio | Raport GO-2 w sesji | N/A (RO) | — |
+| 2026-10-27 | GO-1 | Utworzenie SESSION_BRIDGE + wskaźniki | EXECUTED | PASS | Szablon ACTIVE; CONTINUITY/README pointers | Treść w commitcie `03d889a` (dostarczona przez GO-3b) | `03d889a…` | — |
+
+---
 ## 2026-10-26 — OD-QT-01: QT LIMITS axis = Account Level (docs-only)
 
 **Status:** documentation only · Owner D1/B-QT = **B** · **≠** Implementation GO · **≠** runtime cutover · **≠ Product GREEN**
