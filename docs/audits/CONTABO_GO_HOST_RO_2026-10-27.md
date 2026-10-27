@@ -5,34 +5,62 @@
 | Charakter | **Read-only host probe** · **bez** enable / start / stop / sync / canary |
 | Data | 2026-10-27 |
 | Kontrakt | [CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md](../decisions/CONTABO_CONTINUOUS_WORKER_DESIGN_FREEZE.md) · PROJECT_STATE §2c |
-| Host last-known | `vmi3622761` · `ubuntu@161.97.72.197` · path `/opt/bitrymdym-e3-worker` |
-| Klucz last-known | `~/.ssh/bitrymdym-e3-contabo` (**nazwa tylko**) |
+| Host | `vmi3622761` · `ubuntu@161.97.72.197` · path `/opt/bitrymdym-e3-worker` |
+| Klucz użyty (path only) | `C:\Users\dawid\.ssh\bitrymdym-contabo-recovery-ed25519` |
+| Pub fingerprint (name only) | `SHA256:gTD4UkPftDiDhP5cUjnXsxJCnGxmjb/t8ZNMkxVlsdc` · comment `bitrymdym-contabo-recovery` · ED25519 |
 
-**Werdykt: BLOCKED** — live SSH **NOT DONE — blocked on SSH**.
+**Werdykt: PASS (RO)** — live SSH **DONE**. Gate 2 „MISSING key” był **błędny** (zła tożsamość + `BatchMode` na kluczu z passphrase). Always-on / sync / canary **nie** ruszane.
 
 ---
 
-## FACT — ta sesja
+## Korekta Gate 2 (ta sama doba)
 
 | Check | Wynik |
 |-------|--------|
-| Klucz dokumentowany `~/.ssh/bitrymdym-e3-contabo` | **MISSING** (`Test-Path` false) |
-| Próba SSH documented key · BatchMode · ConnectTimeout 12s | **FAIL** exit **255** · `Identity file … not accessible` · potem `Permission denied (publickey)` |
-| Klucz recovery `~/.ssh/bitrymdym-contabo-recovery-ed25519` (istnieje na maszynie Ownera) | **FAIL** exit **255** · `Permission denied (publickey)` · **nie** dumpowano materiału klucza |
-| Timeout / host down | **nie** — host odpowiada odmową klucza (INFERENCE: TCP/SSH daemon osiągalny) |
-| `systemctl` / unit / env names / git SHA na hoście | **NOT DONE** |
-| Always-on / persist enable | **nie** próbowane |
-
-Last successful RO SSH w docs: **2026-10-16** (`SFM_KIND_REJECT_DEPLOYMENT_HOST_VERIFICATION_12.md`). To **nie** jest dowód tej sesji.
+| Dokumentowane `~/.ssh/bitrymdym-e3-contabo` | **ABSENT** na tym koncie Windows — **zamierzone** (CONTABO-RESCUE-15, transkrypt `0e64fd9c` 2026-10-23: „Do not recreate”) |
+| Gate 2 `Test-Path` tego pliku = MISSING | **FACT** · **nie** znaczy „brak klucza do hosta” |
+| Gate 2 `BatchMode` + recovery key → exit 255 `Permission denied (publickey)` | **FACT** · przyczyna: klucz **wymaga passphrase** (`ssh-keygen -y -P ""` exit 1) · `ssh-add` agent **niedostępny** |
+| Właściwa ścieżka (wcześniej użyta w Cursorze) | `C:\Users\dawid\.ssh\bitrymdym-contabo-recovery-ed25519` — **EXISTS** · `~/.ssh/config` **brak** |
 
 ---
 
-## Co pozostaje last-known (docs, nie re-verify)
+## FACT — live RO (ta sesja, po passphrase w oknie konsoli)
 
-Persistent systemd **disabled/inactive** · oneshot path · always-on **NOT ENABLED** · sync **NOT DONE**.
+| Check | Wynik |
+|-------|--------|
+| SSH interactive (nie BatchMode) · IdentitiesOnly · publickey | **PASS** exit **0** · `whoami=ubuntu` |
+| `hostname` | `vmi3622761` |
+| `uptime` | `4 days, 3:51` (odczyt `2026-10-27T22:38:47Z`) |
+| `bitrymdym-e3-worker.service` | `is-enabled=disabled` · `is-active=inactive` · `ActiveState=inactive` · `SubState=dead` · `MainPID=0` · `UnitFileState=disabled` |
+| `bitrymdym-e3-worker-poll.service` | `is-enabled=enabled` · `is-active=active` · `ActiveState=active` · `SubState=running` · `MainPID=847` · `UnitFileState=enabled` · `User=bitrymdym-e3` · `WorkingDirectory=/opt/bitrymdym-e3-worker` · `ExecStart=/usr/bin/npm run e3:worker:poll` · start_time **Fri 2026-10-23 20:47:04 CEST** · `Result=success` |
+| `/opt/bitrymdym-e3-worker` | istnieje · `drwxr-x--- root:bitrymdym-e3` · mtime **Oct 13** · `ls` jako `ubuntu` = Permission denied |
+| Git w katalogu workera | **`HAS_GIT=no`** (`sudo -n test -d …/.git`) · `rev-parse` / `status` **NOT AVAILABLE** |
+| `/etc/bitrymdym-e3-worker` | istnieje · `drwx------ root:root` · `ubuntu` ls denied |
+| `sudo -n true` | **yes** |
+| Env **names only** (`sudo -n grep` + `sed` redact) | `BITRYMDYM_PRODUCTION_BASE_URL` · `E3_RENDER_WORKER_SECRET` · `NEXT_PUBLIC_SUPABASE_URL` · `SUPABASE_SERVICE_ROLE_KEY` · `E3_RENDER_JOBS_ENABLED` · `E3_MIX_ENABLED` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Always-on / persist enable / start / stop / sync | **nie** próbowane |
+
+Wartości `worker.env` **nie** dumpowane.
 
 ---
 
-## Zakazy
+## INFERENCE
 
-Nie enable always-on · nie sync mutate · nie canary · nie dump `worker.env` / kluczy.
+- Drzewo workera **nie** jest checkoutem gita w last-known path (brak `.git` nawet przez sudo). SHA hosta z `git rev-parse` = **nie do odczytania tą ścieżką**.
+- `bitrymdym-e3-worker-poll` działa od **2026-10-23 20:47 CEST** (dzień rescue) — **nie** uruchomione w tej sesji. To **nie** jest Owner GO „enable always-on” z tej sesji; to jest **żywy stan** unitu poll.
+- Persistent oneshot `bitrymdym-e3-worker.service` pozostaje **disabled/inactive** — zgodne z last-known freeze dla tego unitu.
+
+---
+
+## NOT VERIFIED
+
+- SHA drzewa workera (brak `.git`; markerów I.45CF **nie** czytano)
+- Wartość flag `E3_RENDER_JOBS_ENABLED` / `E3_MIX_ENABLED` (tylko nazwy)
+- Czy poll faktycznie claimuje joby
+- Alias / `dpl_*` / Product GREEN
+
+---
+
+## Zakazy (dotrzymane)
+
+Nie enable always-on · nie sync mutate · nie canary · nie dump `worker.env` / kluczy · nie recreate `bitrymdym-e3-contabo`.

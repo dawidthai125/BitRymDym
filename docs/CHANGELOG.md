@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Contabo GO-HOST-RO retry (live SSH PASS)
+
+**Status:** documentation · live host **RO PASS** · **≠** always-on GO · **≠** sync · **≠** canary · **≠** Product GREEN
+**Audit:** [CONTABO_GO_HOST_RO_2026-10-27.md](./audits/CONTABO_GO_HOST_RO_2026-10-27.md)
+**FACT:** klucz `C:\Users\dawid\.ssh\bitrymdym-contabo-recovery-ed25519` (passphrase; nie BatchMode) · `hostname=vmi3622761` · `bitrymdym-e3-worker.service` **disabled/inactive** · `bitrymdym-e3-worker-poll.service` **enabled/active/running** PID 847 since 2026-10-23 20:47 CEST · `/opt/bitrymdym-e3-worker` exists · **`HAS_GIT=no`** (sudo) · env **names only**
+**Korekta Gate 2:** `bitrymdym-e3-contabo` ABSENT **zamierzone**; BatchMode 255 = passphrase, nie „brak klucza”
+**Explicit non-claim:** always-on **nie** włączone w tej sesji · wartości env **nie** dumpowane · SHA drzewa hosta **NOT VERIFIED**
+**Docs updated:** audit · PROJECT_STATE Contabo / §2c · this CHANGELOG · SESSION_BRIDGE §4
+
 ## 2026-10-27 — Gate 3: Implementation Catalog (repo; prod apply BLOCKED)
 
 **Status:** code + SQL in Git · **SHIPPED in repo** · **NOT in prod** · Scratch DJ v1 **OUT** · **≠ Product GREEN**
