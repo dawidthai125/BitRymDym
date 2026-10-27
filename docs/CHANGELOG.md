@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Gate 2: Contabo GO-HOST-RO (docs-only)
+
+**Status:** documentation only · **BLOCKED** on SSH · **≠** always-on · **≠** sync · **≠** canary
+**Audit:** [CONTABO_GO_HOST_RO_2026-10-27.md](./audits/CONTABO_GO_HOST_RO_2026-10-27.md)
+**FACT:** documented key `~/.ssh/bitrymdym-e3-contabo` **MISSING** · SSH BatchMode `ubuntu@161.97.72.197` exit **255** `Permission denied (publickey)` (documented + recovery key name) · host **nie** timeout
+**NOT DONE:** service status · unit file · env names · git SHA on host
+**Explicit non-claim:** always-on **nie** włączone · wartości kluczy **nie** dumpowane
+**Docs updated:** audit nowy · PROJECT_STATE Contabo pointer · this CHANGELOG · SESSION_BRIDGE §4
+
 ## 2026-10-27 — Gate 1: SFM staging/host RO (docs-only)
 
 **Status:** documentation only · read-only Git + MCP SELECT prod · **≠** flag ON · **≠** bake · **≠** SFM Production GREEN
