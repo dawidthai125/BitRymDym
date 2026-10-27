@@ -8,14 +8,14 @@
 | Project | `rzzxrgcdogkybkiidqgw` |
 | Living SSOT | [PROJECT_STATE.md](../PROJECT_STATE.md) §2 — Sample Catalog **Implementation NOT AUTHORIZED** · **STOP** zachowany |
 
-**Legenda:** FACT / INFERENCE / NOT VERIFIED / BLOCKED.  
+**Legenda:** FACT / INFERENCE / NOT VERIFIED / BLOCKED.
 **Produkt:** **≠ Product GREEN** · **≠ Implementation GO** · **≠ SHIPPED**.
 
 ---
 
 ## Decyzja zakresu
 
-Gate produktowy: **Sample Catalog §13 read-only** (najbezpieczniejszy z kanonu NEXT).  
+Gate produktowy: **Sample Catalog §13 read-only** (najbezpieczniejszy z kanonu NEXT).
 **Nie** robiono: Implementation Catalog/Scratch, Contabo SSH, SFM flag/`db push`, Premium Retention, Sacred/Studio.
 
 Powód CREATE tego pliku: w `docs/audits/` nie ma istniejącego audytu §13. Zamknięte GREEN (P1 Sample Policy, Storage orphan `user/*`, beat catalog fixture) mają **inny** zakres — nie dopisywać tu.
