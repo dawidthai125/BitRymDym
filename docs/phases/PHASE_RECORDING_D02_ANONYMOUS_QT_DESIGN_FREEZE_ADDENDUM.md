@@ -1,11 +1,11 @@
 # PHASE — RECORDING D02 ANONYMOUS QUICK TAKE — DESIGN FREEZE ADDENDUM
 
-**Status:** **DESIGN FREEZE COMPLETE** · **DELIVERED / PRODUCTION VERIFIED** @ `e98ba52`  
-**Date:** 2026-09-28  
-**Owner:** Prezes Dawid  
-**Type:** Design Freeze Addendum (D02 contract) + post-release status reconciliation  
-**Parent freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](./PHASE_RECORDING_DESIGN_FREEZE.md) (v1.0 LOCKED 2026-09-27)  
-**Prerequisite audit:** D02 Anonymous Quick Take Audit (2026-09-28) · READ-ONLY  
+**Status:** **DESIGN FREEZE COMPLETE** · **DELIVERED / PRODUCTION VERIFIED** @ `e98ba52`
+**Date:** 2026-09-28
+**Owner:** Prezes Dawid
+**Type:** Design Freeze Addendum (D02 contract) + post-release status reconciliation
+**Parent freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](./PHASE_RECORDING_DESIGN_FREEZE.md) (v1.0 LOCKED 2026-09-27)
+**Prerequisite audit:** D02 Anonymous Quick Take Audit (2026-09-28) · READ-ONLY
 **Closeout:** [RECORDING_D02_PRODUCTION_CLOSEOUT.md](../audits/RECORDING_D02_PRODUCTION_CLOSEOUT.md)
 
 ```text
@@ -25,8 +25,12 @@ WAVE 5                    = CLOSED / PRODUCTION VERIFIED @ 37892a6 (unchanged by
 
 **Freeze-era snapshot (historical — do not treat as current):** Design Freeze Addendum initially recorded `IMPLEMENTATION GO = NONE` · delivery `NOT SHIPPED` · production baseline `37892a6`. That was correct **before** Owner Implementation GO and commit `e98ba52`.
 
-**This document remains the CURRENT CONTRACT for D02 product rules.**  
+**This document remains the CURRENT CONTRACT for D02 product rules.**
 Delivery status is **SHIPPED** — see closeout. Historical wave closeouts (W2–W5 “anon OUT”) remain delivery history for those waves and do **not** cancel D02 IN V1.
+
+> **Living QT LIMITS axis (OD-QT-01):** Account Level — this freeze’s **30 s** anon max = Design Freeze D02/D04 / OD-REC-02 (**LEAVE**).
+> **HISTORY:** P1 Sample Policy ANON **15 s** (see [RECORDING.md](../architecture/RECORDING.md) D02 contract · MASTER_HANDOFF §6) = ship-time Sample Policy axis, **not** living QT LIMITS SSOT.
+> Runtime / eligibility which duration is enforced = **NOT VERIFIED**. Do **not** rewrite **30 s** → **15 s** in this freeze body.
 
 ---
 
@@ -167,7 +171,7 @@ Prefer:
 Client → Server AuthZ → service_role controlled ops → DB
 ```
 
-Do **not** open broad anon `SELECT` on `takes` in Design Freeze.  
+Do **not** open broad anon `SELECT` on `takes` in Design Freeze.
 Any RLS policy for anon is an **Architecture Review** item if required.
 
 ---
@@ -297,15 +301,15 @@ TOKEN → HASH → TAKE BINDING → SERVER AUTHZ → STATUS → EXPIRY → SIGNE
 
 D02 delivery **excludes**:
 
-- MIX · EXPORT · Track · Track Publishing  
-- Premium · Payments  
-- Shared Grant PLAYBACK · Shared Grant DOWNLOAD  
-- Messaging · Voting · Comments  
-- Wave 5 behavioral changes  
-- HIBP · migration drift · hydration warning  
-- Dual-play  
-- Anon→account claim (V1)  
-- IP/device fingerprinting / extra cooldown  
+- MIX · EXPORT · Track · Track Publishing
+- Premium · Payments
+- Shared Grant PLAYBACK · Shared Grant DOWNLOAD
+- Messaging · Voting · Comments
+- Wave 5 behavioral changes
+- HIBP · migration drift · hydration warning
+- Dual-play
+- Anon→account claim (V1)
+- IP/device fingerprinting / extra cooldown
 
 ---
 

@@ -1,10 +1,10 @@
 # P4 — Recording Identity, Eligibility & Download Foundation — DESIGN FREEZE
 
-**Status:** DESIGN FREEZE COMPLETE — WAITING FOR OWNER IMPLEMENTATION GO  
-**Date:** 2026-10-05  
-**Decydent produktu:** Owner (Prezes Dawid)  
-**Decyzje techniczne:** Architect + Cursor Agent (ten dokument)  
-**Upstream audit:** P4 ARCHITECTURE AUDIT (chat session · READ-ONLY)  
+**Status:** DESIGN FREEZE COMPLETE — WAITING FOR OWNER IMPLEMENTATION GO
+**Date:** 2026-10-05
+**Decydent produktu:** Owner (Prezes Dawid)
+**Decyzje techniczne:** Architect + Cursor Agent (ten dokument)
+**Upstream audit:** P4 ARCHITECTURE AUDIT (chat session · READ-ONLY)
 **Related SSOT:** [RECORDING_SAMPLE_DOWNLOAD_DESIGN_FREEZE.md](./RECORDING_SAMPLE_DOWNLOAD_DESIGN_FREEZE.md) · [architecture/RECORDING.md](../architecture/RECORDING.md) · P1 Sample Policy · E3 audio-render
 
 ```text
@@ -16,6 +16,11 @@ P3 / P1 / P2 / Fala 3.5.1 = CLOSED — do not reopen
 NEXT GATE               = Owner Implementation GO → P4.1…
 ```
 
+> **HISTORY (freeze-era 2026-10-05):** `IMPLEMENTATION = NOT STARTED / NOT AUTHORIZED` above is the **freeze-gate snapshot** — keep for audit.
+> **Living delivery:** [PROJECT_STATE.md](../PROJECT_STATE.md) — **P4 CORE SHIPPED** @ `bface6c` · P4.6 **GREEN** @ `a72fed9` · local `context?` / `p4-live-verify` = **NOT BASELINE**.
+> Eligibility / Sacred WIP runtime = **NOT VERIFIED** in this file. Do **not** rewrite the freeze body to SHIPPED.
+> **HISTORY (body wording):** Sample Policy / `getSamplePolicy` / ANON **15 s** below = freeze-era / P1 ship-time eligibility design — **not** living QT LIMITS after **OD-QT-01** (living = Account Level). Runtime which axis/number applies = **NOT VERIFIED**.
+
 ---
 
 ## 1. Status
@@ -25,7 +30,7 @@ P4 NAME (canonical):
   Recording Identity, Eligibility & Download Foundation
 
 DESIGN FREEZE = COMPLETE
-IMPLEMENTATION = NOT STARTED
+IMPLEMENTATION = NOT STARTED   ← freeze-era snapshot (2026-10-05); living delivery → PROJECT_STATE
 PRODUCTION VERIFY = N/A
 
 NAMING:
@@ -50,11 +55,11 @@ NAMING:
 
 ## 3. Problem
 
-1. Eligibility recording jest częściowo egzekwowana w sesji/finalize, ale UX może otworzyć mic zanim user dostanie jasny DENY + Premium CTA.  
-2. Take nie ma **tożsamości produktowej** (title); lista `/account/takes` to głównie status/TTL.  
-3. `canDownloadOwnTake` istnieje w Sample Policy, ale **`take-download.ts` nie egzekwuje** GOLD + counter C.  
-4. Brak drabiny jakości pobrań (128/192/320/WAV) i LOCKED UX.  
-5. E3 eksportuje **mix** beat+take; take-only multi-bitrate **nie istnieje**.  
+1. Eligibility recording jest częściowo egzekwowana w sesji/finalize, ale UX może otworzyć mic zanim user dostanie jasny DENY + Premium CTA.
+2. Take nie ma **tożsamości produktowej** (title); lista `/account/takes` to głównie status/TTL.
+3. `canDownloadOwnTake` istnieje w Sample Policy, ale **`take-download.ts` nie egzekwuje** GOLD + counter C.
+4. Brak drabiny jakości pobrań (128/192/320/WAV) i LOCKED UX.
+5. E3 eksportuje **mix** beat+take; take-only multi-bitrate **nie istnieje**.
 6. Pomyłka nazewnicza „P4” groziła rozjechaniem epiku.
 
 ---
@@ -63,12 +68,12 @@ NAMING:
 
 Jeden spójny fundament:
 
-1. **Recording Eligibility** — server-side gate przed mic.  
-2. **Recording Identity** — title + author z profilu + beat + duration.  
-3. **My Recordings** — rozszerzenie `/account/takes`.  
-4. **Download UX** — pełna lista jakości + LOCKED.  
-5. **Download capability enforcement** — server AuthZ + ledger.  
-6. **Take export pipeline** — worker FFmpeg → `audio_artifacts` (+ `EXPORT_MP3_192`).  
+1. **Recording Eligibility** — server-side gate przed mic.
+2. **Recording Identity** — title + author z profilu + beat + duration.
+3. **My Recordings** — rozszerzenie `/account/takes`.
+4. **Download UX** — pełna lista jakości + LOCKED.
+5. **Download capability enforcement** — server AuthZ + ledger.
+6. **Take export pipeline** — worker FFmpeg → `audio_artifacts` (+ `EXPORT_MP3_192`).
 7. **Studio compatibility** — Take pozostaje source; Project/Track/Clip później.
 
 ---
@@ -176,7 +181,7 @@ MIX PLANE (existing E3 — orthogonal)
 | `title` | `text NULL` | User-visible identity; empty → UI fallback (beat title / „Nagranie”) |
 | *(existing)* | — | `owner_id` XOR anon · `beat_id` · `duration_seconds` · status · snapshots · `audio_offset_ms` |
 
-**Constraints:** `title` max length **120** chars (CHECK / app validate). No UNIQUE.  
+**Constraints:** `title` max length **120** chars (CHECK / app validate). No UNIQUE.
 **Author:** **not** denormalized on take — always join/resolve `profiles.display_name` for `owner_id` (anon → „Gość” / no public author).
 
 ### 9.2 `take_download_events` — new (RAW ledger)
@@ -189,7 +194,7 @@ MIX PLANE (existing E3 — orthogonal)
 | `created_at` | timestamptz |
 | UTC day bucket | for counter C (index `(user_id, created_at)` or generated day key) |
 
-Increment **only after** successful signed-URL issuance (mirror OD-17 beat download order).  
+Increment **only after** successful signed-URL issuance (mirror OD-17 beat download order).
 **Never** reuse `beat_download_events`.
 
 ### 9.3 Take export jobs — new discriminant on existing plane
@@ -207,7 +212,7 @@ Alternatively (if enum coupling too tight): table `take_export_jobs` mirroring j
 
 ### 9.4 `audio_artifacts`
 
-REUSE bucket `audio-artifacts`.  
+REUSE bucket `audio-artifacts`.
 Object key pattern (TAKE_EXPORT):
 
 ```text
@@ -233,7 +238,7 @@ Take must not grow cover_ref that later forces rewrite.
 
 ## 10. Capability model
 
-### 10.1 Recording (Sample Policy axis — existing)
+### 10.1 Recording (Sample Policy axis — existing · **HISTORY** for QT LIMITS after OD-QT-01)
 
 | Key | Source |
 |-----|--------|
@@ -263,7 +268,7 @@ Take must not grow cover_ref that later forces rewrite.
 | SILVER | + `EXPORT_HQ_MP3` (+ MIX_PRO as today) |
 | GOLD | + `EXPORT_WAV` (+ `DOWNLOAD_OWN_TAKE_RAW`) |
 
-> **Note:** Today BRONZE already has `EXPORT_HQ_MP3` in E3 mix matrix. P4 **product ladder** for **take export** is stricter (320 = SILVER+).  
+> **Note:** Today BRONZE already has `EXPORT_HQ_MP3` in E3 mix matrix. P4 **product ladder** for **take export** is stricter (320 = SILVER+).
 > **Technical decision:** Keep E3 mix capabilities as-is for MIX kind. Apply the FREE/BRONZE/SILVER/GOLD ladder above to **`TAKE_EXPORT` kind only** via dedicated resolver `canExportOwnTake(quality)`. Avoid breaking existing mix GOLD/SILVER contracts.
 
 ### 10.3 Extension slot (NOT implemented)
@@ -370,7 +375,7 @@ Optional title field (pre-start or post-READY edit). Author display from profile
 
 ### 15.3 My Recordings (`/account/takes`)
 
-Columns/cards: title · author · beat · duration · created · status · preview · download menu (ladder).  
+Columns/cards: title · author · beat · duration · created · status · preview · download menu (ladder).
 `canDownload` flags from **server DTO only** (fix current `activeReady` spoof).
 
 ### 15.4 Fala 3.5.1
@@ -397,9 +402,9 @@ No redesign of live MIC / dual preview; eligibility wraps entry only.
 ## 17. Tests
 
 ### Eligibility
-- FREE allow under caps  
-- FREE/BRONZE deny when daily/active exhausted  
-- ANON 15s policy unchanged  
+- FREE allow under caps
+- FREE/BRONZE deny when daily/active exhausted
+- ANON 15s policy unchanged (**HISTORY** P1 Sample Policy · ≠ living QT LIMITS / OD-QT-01 · runtime **NOT VERIFIED**)
 - DENY does not invoke getUserMedia (unit/UI)
 
 ### Download RAW
@@ -412,10 +417,10 @@ No redesign of live MIC / dual preview; eligibility wraps entry only.
 - title save/list · author from display_name · beat · duration
 
 ### Regression
-- P3 claim paths  
-- authenticated + anon recording  
-- `/account/takes` list  
-- Fala 3.5.1 REC dual rail  
+- P3 claim paths
+- authenticated + anon recording
+- `/account/takes` list
+- Fala 3.5.1 REC dual rail
 - E3 MIX export still works (kind=MIX)
 
 ---
@@ -461,9 +466,9 @@ Feature flags optional: `TAKE_EXPORT_ENABLED` for P4.6 canary.
 
 ## 20. Rollback
 
-- Config flag off → hide export ladder / disable enqueue  
-- Migration additive → columns/tables remain harmless  
-- Do not delete user artifacts on rollback without Owner GO  
+- Config flag off → hide export ladder / disable enqueue
+- Migration additive → columns/tables remain harmless
+- Do not delete user artifacts on rollback without Owner GO
 - RAW enforcement revert = restore pre-P4 download allow for auth READY (**avoid** unless emergency)
 
 ---
@@ -513,40 +518,40 @@ P4 must not implement any of the above.
 ## 24. Implementation units (frozen order)
 
 ### P4.1 — Eligibility Gate
-- **Scope:** `canStartRecording` server + UI block before mic  
-- **Files:** entitlement helpers · recording-panel entry · beat-recording-surface  
-- **DB:** none  
-- **AuthZ:** Sample Policy + beat eligibility  
-- **Tests:** allow/deny matrix  
+- **Scope:** `canStartRecording` server + UI block before mic
+- **Files:** entitlement helpers · recording-panel entry · beat-recording-surface
+- **DB:** none
+- **AuthZ:** Sample Policy + beat eligibility
+- **Tests:** allow/deny matrix
 - **AC:** AC-01
 
 ### P4.2 — Recording Identity / Metadata
-- **Scope:** `takes.title` · resolve author  
-- **Files:** migration · take transport finalize/update · types  
-- **DB:** `takes.title`  
-- **Tests:** metadata  
+- **Scope:** `takes.title` · resolve author
+- **Files:** migration · take transport finalize/update · types
+- **DB:** `takes.title`
+- **Tests:** metadata
 - **AC:** AC-02, AC-03
 
 ### P4.3 — My Recordings UX
-- **Scope:** `/account/takes` cards/list enrichment  
-- **Files:** `list-own-takes.ts` · `own-takes-list.tsx`  
-- **DB:** none beyond P4.2  
+- **Scope:** `/account/takes` cards/list enrichment
+- **Files:** `list-own-takes.ts` · `own-takes-list.tsx`
+- **DB:** none beyond P4.2
 - **AC:** AC-02–AC-03 list display
 
 ### P4.4 — Download Capability UX
-- **Scope:** quality ladder + LOCKED · server DTO flags  
-- **Files:** account takes UI · capability label helpers  
+- **Scope:** quality ladder + LOCKED · server DTO flags
+- **Files:** account takes UI · capability label helpers
 - **AC:** AC-04
 
 ### P4.5 — Download Server Enforcement (RAW)
-- **Scope:** GOLD RAW + `take_download_events` + daily C · fix `listOwnTakes.canDownload`  
-- **Files:** `take-download.ts` · `take-access.ts` · migration events  
+- **Scope:** GOLD RAW + `take_download_events` + daily C · fix `listOwnTakes.canDownload`
+- **Files:** `take-download.ts` · `take-access.ts` · migration events
 - **AC:** AC-07, AC-08
 
 ### P4.6 — Take Export Pipeline / 192 kbps
-- **Scope:** TAKE_EXPORT jobs · worker · artifacts · `EXPORT_MP3_192` · tier resolver  
-- **Files:** audio-render config · worker pipeline · APIs · matrix  
-- **Storage:** `audio-artifacts` new key prefix  
+- **Scope:** TAKE_EXPORT jobs · worker · artifacts · `EXPORT_MP3_192` · tier resolver
+- **Files:** audio-render config · worker pipeline · APIs · matrix
+- **Storage:** `audio-artifacts` new key prefix
 - **AC:** AC-05, AC-06, AC-09, AC-10
 
 ### P4.7 — Artwork foundation

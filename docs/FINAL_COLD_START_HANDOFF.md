@@ -2,12 +2,13 @@
 
 **Purpose:** Jedyny wymagany entry point dla nowego ChatGPT Architect + Cursor Agent.
 **Owner / Product Owner:** Prezes Dawid
-**Updated:** 2026-10-26 — docs cold-start sync · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** (pre-docs tip **`11a664b`**) · Production **success** @ `11a664b` · UserMenu PRODUCTION UI smoke **PARTIAL** · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · prompts [handoffs/](./handoffs/) · Owner-reported USER RLS (2026-10-25) **PASS** · **≠ Product GREEN** · REC/mic **NOT RUN** · OD-04/OD-07/OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · [CHANGELOG 2026-10-26](./CHANGELOG.md)  
-**Prior (2026-10-25):** pointer sync · Owner-reported USER RLS runtime (owner/anon/peer) **PASS** · evidence [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) · tip then **`d8846ff`**  
+**Updated:** 2026-10-27 — P-NEXT-06A/C/B · living tip/deploy → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** (pre-docs tip **`2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b`**) · GitHub Production **`7350328308` success** @ that SHA · alias **`www` → SHA UNVERIFIED** · QT living LIMITS = **Account Level / OD-QT-01** · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · prompts [handoffs/](./handoffs/) · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED** · REC/mic **NOT RUN** · OD-04/OD-07/OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · Sacred WIP **PRESERVE** · dirty WIP **PRESERVE** · [CHANGELOG 2026-10-27](./CHANGELOG.md)
+**Prior (2026-10-26):** docs cold-start sync · tip/deploy **`11a664b`** · Production **success** @ `11a664b` · UserMenu PRODUCTION UI smoke **PARTIAL** · [CHANGELOG 2026-10-26](./CHANGELOG.md)
+**Prior (2026-10-25):** pointer sync · Owner-reported USER RLS runtime (owner/anon/peer) **PASS** · evidence [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md) · tip then **`d8846ff`**
 **Prior (2026-10-24):** Studio / theme consolidation · tip **`35543c8`** · public+admin smoke **PASS** · then USER RLS/REC/migracje **NOT VERIFIED/NOT RUN** — **HISTORY** for USER RLS runtime (superseded 2026-10-25 Owner-reported) · [CHANGELOG 2026-10-24](./CHANGELOG.md)
 **Type:** Documentation continuity · cold-start entry · multi-plane (local HEAD ≠ origin/main ≠ production deploy ≠ prod DB ≠ Storage ≠ dirty WIP) · Owner decides next unit · no sync/cleanup without GO
 
-**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 SESSION VERIFY below is living for Git planes as of 2026-10-26.** Blocks that still cite tip `d8846ff` / `35543c8` / `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the current SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git rev-parse HEAD` before claiming current tip.
+**Living SSOT (canonical):** [PROJECT_STATE.md](./PROJECT_STATE.md) — tip, deploy, Studio Export, Contabo last-known, NEXT UNIT, BPM CONFLICT labeling, STU-16 planes, connections matrix. This file is **START HERE** entry + continuity; **§0 SESSION VERIFY below is living for Git planes as of 2026-10-27.** Blocks that still cite tip `11a664b` / `d8846ff` / `35543c8` / `0a565c0` / `dpl_31mz…` / `2adb569` / `5212933` without the current SESSION VERIFY banner are **LAST DOCUMENTED / HISTORY** — re-check PROJECT_STATE + `git rev-parse HEAD` before claiming current tip.
 
 **Evidence rule (bezwzględna):**
 
@@ -38,23 +39,27 @@ BitRymDym to platforma muzyczna: **rap · hip-hop · bity · odsłuch · pobiera
 **Obecny chat NIE jest wymagany** — ciągłość = docs + evidence w repo.
 
 ```text
-═══ SESSION VERIFY 2026-10-26 (a11y continuum + docs cold-start) ═══
+═══ SESSION VERIFY 2026-10-27 (docs tip/deploy + QT/OD-SC reconcile) ═══
 REPO PATH                     = C:\Users\dawid\Desktop\BitRymDym\bitrymdym
 BRANCH                        = main
-LIVING TIP                    = 11a664b (UserMenu disclosure a11y)
-                              · ancestry: c702d27 (tablet nav @ lg) · 11d6042 (Premium table keyboard scroll)
+LIVING TIP                    = 2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b
+                              · docs-only chain on main · app ancestry includes UserMenu 11a664b
+                              · ancestry also: c702d27 (tablet nav @ lg) · 11d6042 (Premium table keyboard scroll)
                               · verify: git rev-parse HEAD · gh Deployments Production (no blind Vercel OAuth)
 DIRTY WORKTREE                = YES · PRESERVE · large mixed WIP (Studio · Premium Retention · audits)
                               · do NOT clean / stash / reset / sync unrelated WIP
 SACRED WIP                    = src/lib/takes/recording-eligibility-service.ts
                               · PRESERVE · never open/edit/hash/search/diff/pass to agents
 PROTECTED STUDIO FILES        = studio-editor.tsx · studio-service.ts — do not open without Owner scope
-PRODUCTION DEPLOYMENT         = GitHub Production @ 11a664b success (2026-10-26T20:11:21Z)
-                              · UserMenu PRODUCTION UI: AX/Escape/hit PASS · Tab/focus-visible NOT VERIFIED
+PRODUCTION DEPLOYMENT         = GitHub Production id 7350328308 success @ 2cc4cc1… (2026-10-27T04:26:54Z)
+                              · DEPLOYMENT READY ≠ PRODUCTION VERIFIED ≠ Product GREEN
+                              · www.bitrymdym.pl → this SHA = UNVERIFIED (no vercel inspect in this GO)
+                              · HISTORY 11a664b: UserMenu AX/Escape/hit PASS · Tab/focus-visible NOT VERIFIED
                               · HISTORY 35543c8: public smoke PASS · admin auth visual PASS
                               · 2026-10-25 Owner-reported USER RLS: owner/anon/peer PASS · ≠ GREEN
                               · → PROJECT_STATE §2 · audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md
-                              · REC / mic still NOT RUN · Ready ≠ Product GREEN
+                              · REC / mic still NOT RUN · QT runtime NOT VERIFIED
+QT LIMITS (living docs)       = Account Level / OD-QT-01 · Sample Policy = HISTORY · runtime NOT VERIFIED
 FUNCTIONAL MAP                = docs/PROJECT_FUNCTIONAL_MAP.md
 START PROMPTS                 = docs/handoffs/MASTER_START_PROMPT_CHATGPT_PL.md
                               · docs/handoffs/MASTER_START_PROMPT_CURSOR_PL.md
@@ -253,7 +258,7 @@ P3 FOLLOW-UP                  = p_take_id hardening · NON-BLOCKING
 
 | Plane | Current tip / state |
 |-------|---------------------|
-| Living tip / deploy / NEXT | **[PROJECT_STATE.md](./PROJECT_STATE.md) §2** (docs tip `d2fc609` · app tip `d12e38e` · last alias-control `dpl_4Mhme…` — re-verify before claiming) |
+| Living tip / deploy / NEXT | **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 ONLY** — living tip **`2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b`** · www alias SHA **UNVERIFIED** · prior docs tip `d2fc609` · app tip `d12e38e` · alias-control `dpl_4Mhme…` = **HISTORY** (re-verify before claiming) |
 | GitHub main tip (HISTORY · I.48) | **`2adb569`** · PR #12 docs I.47 merge · **not** living tip |
 | Prior docs merge tip (HISTORY) | **`f730a7a`** · PR #11 · tip before PR #12 · prior **`522e514`** (PR #10) · prior **`df37048`** (PR #8) remain HISTORY |
 | App-code tip (older Studio evidence · HISTORY) | **`ce2f0cc`** · PR #5 · **≠** living app tip `d12e38e` · **≠** independently freshly verified production app SHA |
@@ -479,10 +484,13 @@ Dirty worktree: **nie czyść** bez Owner GO.
 **SHA:** `dabbc93695c14609095db90b581e65ceaf221611`
 **Deploy:** `dpl_Hd4QAwDkkw99FMiFhh8nJ1N6nvsR` · https://www.bitrymdym.pl
 
+> **P3 GREEN @ `dabbc936` = ship HISTORY for claim delivery.** Living QT LIMITS axis = **Account Level** ([OD-QT-01](./decisions/DECISION_LOG.md)). Runtime cutover of LIMITS **NOT VERIFIED**. This section does **not** claim Product GREEN for the whole app.
+
 ```text
 Architecture:
   Anonymous READY → auth session → tryClaimAnonTakeAfterAuth
-  → Premium Tier getSamplePolicy (TTL/cap)
+  → living docs TTL/cap: Account Level (OD-QT-01)
+  → Premium Tier getSamplePolicy (TTL/cap)   ← ship HISTORY @ dabbc936 · ≠ living QT LIMITS SSOT
   → Storage COPY anon/.../mic.bin → claim_anon_take_to_account
   → ownership XOR transfer → user/.../mic.bin
   → DELETE source → clear brd_tk_aid (CLAIM_OK / IDEMPOTENT_REPLAY only)
@@ -771,7 +779,7 @@ SEARCH BEFORE CREATE         = TAK
 
 ## 12. MASTER PROMPTS — cold start (I.47)
 
-**Living copy-paste start prompts (PL, 2026-10-24):**  
+**Living copy-paste start prompts (PL, 2026-10-24):**
 [handoffs/MASTER_START_PROMPT_CHATGPT_PL.md](./handoffs/MASTER_START_PROMPT_CHATGPT_PL.md) · [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](./handoffs/MASTER_START_PROMPT_CURSOR_PL.md)
 
 Tekst §12.1 / §12.2 poniżej = **continuity / HISTORY (I.47)** — struktura ról i reading order pozostaje ważna; **nie** utrzymuj drugiego living tipu ani drugiego „aktualnego stanu” w tym bloku. Skrót sesji i tip/deploy → [PROJECT_STATE.md](./PROJECT_STATE.md) §2 · mapa → [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md). **Nie kopiuj całego SSOT do czatu.**

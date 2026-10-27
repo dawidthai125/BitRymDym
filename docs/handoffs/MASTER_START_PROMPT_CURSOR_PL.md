@@ -46,10 +46,11 @@ Lokalny PASS ≠ produkcja. Deploy success ≠ Product GREEN.
 
 ### Skrót living (weryfikuj w PROJECT_STATE — może się zmienić)
 
-| Obszar | Status (ostatni sync docs 2026-10-26) |
+| Obszar | Status (ostatni sync docs 2026-10-27) |
 |--------|--------------------------------------|
-| Tip / Production deploy | **`11a664b`** success (re-check HEAD + Deployments) |
-| UserMenu PRODUCTION UI | AX/Escape/hit **PASS** · Tab/`focus-visible` **NOT VERIFIED** |
+| Tip / Production deploy | **`2cc4cc1…`** · GH **`7350328308` success** · www → SHA **UNVERIFIED** (re-check HEAD + Deployments) |
+| QT LIMITS (living docs) | **Account Level / OD-QT-01** · Sample Policy = HISTORY · runtime **NOT VERIFIED** |
+| UserMenu PRODUCTION UI | AX/Escape/hit **PASS** (era **`11a664b`**) · Tab/`focus-visible` **NOT VERIFIED** |
 | Tablet nav `c702d27` / Premium table `11d6042` | **CODE**+**DEPLOY** ancestry · pełny re-smoke **NOT VERIFIED** |
 | USER RLS owner/anon/peer | **OWNER-REPORTED PASS** 2026-10-25 · ≠ GREEN |
 | Premium Retention | **HOLD** · Gold value 28d accepted |

@@ -42,6 +42,20 @@ Treść polityki jest w `AGENTS.md`. Ten wpis jej nie powtarza. Historyczne wpis
 
 ---
 
+### OD-SC-01…05 — Sample Catalog technical decisions — CLOSED / ACCEPTED (docs)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner ACCEPT — OD-SC-01…05 + exact catalog object-key design direction |
+| Locked IDs | **OD-SC-01** · **OD-SC-02** · **OD-SC-03** · **OD-SC-04** · **OD-SC-05** |
+| Status | **CLOSED / ACCEPTED (docs)** · `OWNER-ACCEPTED — TECHNICAL DECISION` · exact key **OWNER-ACCEPTED — DESIGN DIRECTION ONLY** · **≠ Implementation GO** · **≠** Product GREEN |
+| Date | 2026-10-25 |
+| Canonical | [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) §12 |
+| Explicit non-authorization | Ten wpis **nie** daje Implementation GO, migracji, zmian kodu, zmian polityk Storage ani automatycznego orphan cleanup. Production Storage policies i blocked cleanup tooling pozostają **NOT VERIFIED** (kontrakt §13). **Implementation NOT AUTHORIZED · NOT SHIPPED.** |
+| Does not reopen | OD-SC jako OPEN · OD-15 / OD-16 pozostają **OPEN** · Premium Retention pozostaje **HOLD** |
+
+---
+
 ### OD-QT-01 — Quick Take LIMITS axis = Account Level — CLOSED / ACCEPTED (docs)
 
 | Pole | Wartość |
@@ -57,7 +71,7 @@ Treść polityki jest w `AGENTS.md`. Ten wpis jej nie powtarza. Historyczne wpis
 | Related CLOSED (unchanged) | OD-REC-01…08 · OD-REC-04 Hybrid (AL base + future Premium overlay) · OD-REC-05 retention ranks · OD-08 (Premium ≠ Rank ≠ AL ≠ Role) · OD-P3-01…11 **ship/GREEN** = HISTORY for claim delivery |
 | Supersedes (living docs claim only) | P1 living wording that Sample Policy / Premium Tier is the QT LIMITS axis; MASTER_SSOT „D04/D05 stale vs P1” for LIMITS; EPIC-P3 / RECORDING / PROJECT_STATE living „TTL/cap = Premium Tier” as canonical docs |
 | Does NOT supersede | Design Freeze D04/D05 body (**LEAVE** LOCKED history · aligned with B); Premium download/export/artifact ladders; Role ≠ Account Level; Sample Catalog/Scratch contract; OD-04/07/15/16; Retention worker HOLD; SFM |
-| Documents synced | MASTER_SSOT §4 · §18–23 · RECORDING.md P3 TTL/cap · PROJECT_STATE §3.1 · PROJECT_FUNCTIONAL_MAP · OPEN_DECISIONS EPIC-P3 · CHANGELOG |
+| Documents synced | MASTER_SSOT §4 · §18–23 · RECORDING.md P3 TTL/cap · PROJECT_STATE §3.1 · PROJECT_FUNCTIONAL_MAP · OPEN_DECISIONS EPIC-P3 · CHANGELOG · (2026-10-27 follow-up) MASTER_HANDOFF §6/§8b/§9 + FINAL_COLD_START §8 HISTORY labels |
 | Explicit non-authorization | No code, eligibility, migracje, AuthZ, Storage, commit/push/deploy by this entry alone; runtime may still enforce Sample Policy until separate Implementation GO — **runtime compliance NOT VERIFIED** |
 
 **Locked:** Living documentation treats **Account Level** as the single canonical QT LIMITS axis. OD-REC-04 Hybrid remains: a future Premium overlay may exist for other domains; it does **not** redefine QT LIMITS away from Account Level without a new Owner decision.

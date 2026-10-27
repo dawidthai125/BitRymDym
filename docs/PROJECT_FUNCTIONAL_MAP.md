@@ -1,8 +1,8 @@
 # BitRymDym — mapa funkcji (kanoniczna)
 
-**Updated:** 2026-10-26 (docs cold-start sync · tip **`11a664b`**)  
-**Living tip / deploy:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2 — pre-docs tip **`11a664b`**; Production **success** `2026-10-26T20:11:21Z`; re-check `git rev-parse HEAD` / Deployments po pushu.  
-**Evidence rule:** PASS / FAIL / BLOCKED / NOT RUN / NOT VERIFIED tylko z dowodu. Owner-reported = fakt przekazany Ownerem (nie niezależny re-run agenta).  
+**Updated:** 2026-10-27 (P-NEXT-06A/C/B · tip **`2cc4cc1…`**)
+**Living tip / deploy:** [PROJECT_STATE.md](./PROJECT_STATE.md) §2 — pre-docs tip **`2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b`**; GitHub Production **`7350328308` success** `2026-10-27T04:26:54Z`; alias **`www` → SHA UNVERIFIED**; re-check `git rev-parse HEAD` / Deployments po pushu.
+**Evidence rule:** PASS / FAIL / BLOCKED / NOT RUN / NOT VERIFIED tylko z dowodu. Owner-reported = fakt przekazany Ownerem (nie niezależny re-run agenta).
 **Płaszczyzny dowodu (nie mylić):** `CODE` · `UNIT/INTEGRATION TEST` · `REAL-MOUNT` · `PRODUCTION UI` · `PRODUCTION DB/RLS` · `DEPLOY` · `OWNER-REPORTED`.
 
 Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **BLOCKED** · **NOT VERIFIED** · **HISTORY**.
@@ -13,7 +13,7 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 
 | Powierzchnia | Co użytkownik może | Główne ścieżki | Testy (zakres) | Ostatni dowód | Status | Pozostałe / odblokowanie |
 |--------------|-------------------|----------------|----------------|---------------|--------|---------------------------|
-| Home | Brand, CTA, wejście do katalogu | `/` · `src/app/page.tsx` | touch/home link (częściowe) | PRODUCTION UI public smoke **PASS** @ `35543c8` (**HISTORY** 2026-10-24) · **DEPLOY** tip living osobno | **PARTIAL** | OD-15/16 OPEN; pełny re-smoke **NOT VERIFIED** na `11a664b` |
+| Home | Brand, CTA, wejście do katalogu | `/` · `src/app/page.tsx` | touch/home link (częściowe) | PRODUCTION UI public smoke **PASS** @ `35543c8` (**HISTORY** 2026-10-24) · **DEPLOY** tip living osobno | **PARTIAL** | OD-15/16 OPEN; pełny re-smoke **NOT VERIFIED** na living tip |
 | Katalog bitów | Szukaj, sortuj, filtruj, odsłuch katalogowy | `/beats` · `beats-catalog-client.tsx` · `beats-catalog-{search,sort,filters}.ts` | UNIT search/sort/filters · REAL-MOUNT filters keyboard/status · waveform seek REAL-MOUNT | **CODE**+**REAL-MOUNT** continuum a11y 2026-10-26 · PRODUCTION UI katalog **HISTORY** smoke @ `35543c8` | **PARTIAL** | Pełny AT na prod layout **NOT VERIFIED**; bez egress audio |
 | Detal bitu + Quick Take | Play katalogowy, wejście QT | `/beat/[id]` | tablet padding (nav commit) | docs LIMITS = **OD-QT-01** Account Level · P1 Sample Policy UNIT = HISTORY · eligibility Sacred **NOT VERIFIED** | **PARTIAL** | REC/mic **NOT RUN**; Sacred WIP nie czytać · runtime **NOT VERIFIED** |
 | About | Treść marki | `/about` | — | PRODUCTION UI smoke **HISTORY** @ `35543c8` | **DONE** (docs smoke) / re-run **NOT VERIFIED** | — |
@@ -28,7 +28,7 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 
 | Powierzchnia | Co użytkownik może | Główne ścieżki | Testy | Dowód | Status | Pozostałe |
 |--------------|-------------------|----------------|-------|-------|--------|-----------|
-| UserMenu | Otwórz/zamknij menu konta (disclosure) | `user-menu.tsx` · `site-header.tsx` | source-contract `site-nav-active` · touch `header-search-touch-target` | **DEPLOY** `11a664b` · **PRODUCTION UI** AX/Escape/hit **PASS** (390/820/1280) · Tab/`focus-visible` **NOT VERIFIED** | **PARTIAL** | Nie klikać Wyloguj w smoke bez GO |
+| UserMenu | Otwórz/zamknij menu konta (disclosure) | `user-menu.tsx` · `site-header.tsx` | source-contract `site-nav-active` · touch `header-search-touch-target` | **DEPLOY** ancestry **`11a664b`** (HISTORY smoke era) · living tip docs **`2cc4cc1…`** · **PRODUCTION UI** AX/Escape/hit **PASS** (390/820/1280) · Tab/`focus-visible` **NOT VERIFIED** | **PARTIAL** | Nie klikać Wyloguj w smoke bez GO |
 | Motyw | Dark default / light papier | `theme-toggle.tsx` | theme-toggle-label | PRODUCTION UI + visual evidence 2026-10-24 | **DONE** (evidence) | OD-15/16 **OPEN** |
 | Nav responsive | Desktop top / mobile bottom; handoff `lg` | `site-main-nav` · `mobile-bottom-nav` · `app-shell` | `site-nav-active` (lg handoff) | **CODE** `c702d27` · PRODUCTION UI tablet gap fix **DEPLOYED** · pełny viewport re-smoke **NOT VERIFIED** | **PARTIAL** | — |
 | Skip link | Przejdź do treści | AppShell | `ccb4f0c` Tab/Enter path | **UNIT**/keyboard probe | **PARTIAL** | Prod AT **NOT VERIFIED** |
@@ -37,7 +37,7 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 | Library / downloads | Ulubione, historia | `/library*` · `/account/downloads` | limits UNIT | UI flow **NOT VERIFIED** | **PARTIAL** / **NOT VERIFIED** | — |
 | Takes archive | Lista nagrań | `/account/takes` | — | Admin empty archive OK (docs) | **DONE** (docs) / USER **NOT VERIFIED** | — |
 
-**Admin visual smoke (prod, 2026-10-24 HISTORY):** Studio hub / takes / account / settings / library + Motyw → **PASS**.  
+**Admin visual smoke (prod, 2026-10-24 HISTORY):** Studio hub / takes / account / settings / library + Motyw → **PASS**.
 **USER RLS runtime (Owner-reported, 2026-10-25):** owner/anon/peer **PASS** → [PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md). **≠ Product GREEN.**
 
 ---
@@ -66,14 +66,16 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 | Final Mix (STUDIO_EXPORT) | GREEN VERIFIED (frozen IN) | PROJECT_STATE | ≠ SFM Versions GREEN |
 | SFM Versions | Code ON MAIN · Production GREEN **NOT CLAIMED** | PROJECT_STATE SFM planes | Host/staging **NOT RE-VERIFIED** |
 | Contabo worker | Code local · sync/canary/always-on **NOT DONE** | PROJECT_STATE | Osobne GO |
+| Sample Catalog + Scratch DJ v1 | **BLOCKED** | Kontrakt [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./decisions/SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) §12: **OD-SC-01…05** **OWNER-ACCEPTED — TECHNICAL DECISION** · **Implementation NOT AUTHORIZED** · **NOT SHIPPED** | Bez Implementation GO · Storage policies access/list/delete/retention/orphan **NOT VERIFIED** (kontrakt §13) |
 
 ---
 
-## Macierz weryfikacji (skrót 2026-10-26)
+## Macierz weryfikacji (skrót 2026-10-27)
 
 | Obszar | CODE | UNIT/REAL-MOUNT | PRODUCTION UI | PRODUCTION DB/RLS | DEPLOY |
 |--------|------|-----------------|---------------|-------------------|--------|
-| Tip `11a664b` | tak | UserMenu contracts | UserMenu PARTIAL smoke | — | **success** |
+| Tip `2cc4cc1…` | docs tip | — | — | — | GH **`7350328308` success** · www SHA **UNVERIFIED** |
+| Tip `11a664b` (HISTORY) | tak | UserMenu contracts | UserMenu PARTIAL smoke | — | **success** (2026-10-26) |
 | Tablet nav `c702d27` | tak | site-nav-active | **NOT VERIFIED** re-smoke | — | ancestry na tip |
 | Premium table `11d6042` | tak | brak dedicated test | fokus/table PASS · swipe **BLOCKED** | — | ancestry |
 | Katalog filters/waveform | tak | REAL-MOUNT | HISTORY smoke | — | ancestry |

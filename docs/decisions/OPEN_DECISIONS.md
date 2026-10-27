@@ -130,6 +130,7 @@ Szczegóły: [DECISION_LOG.md](./DECISION_LOG.md).
 | OD-REC-04 | Hybrid: Account Level base + future Premium overlay; no payments in V1 | 2026-09-27 |
 | OD-REC-05 | Retention BEGINNER 24h / PRO 10d / LEGEND 30d | 2026-09-27 |
 | OD-QT-01 | QT LIMITS living docs axis = **Account Level** (Owner D1/B-QT = B) · ≠ Implementation GO · runtime **NOT VERIFIED** | 2026-10-26 |
+| OD-SC-01…05 | Sample Catalog: oryginały = istniejący **beat-audio** + prefix platformowy + osobna encja metadanych; allowlist/size; bez FLAC; Quantize default OFF · exact key **DESIGN DIRECTION ONLY** · **OWNER-ACCEPTED — TECHNICAL DECISION** · ≠ Implementation GO · Storage policies **NOT VERIFIED** · [kontrakt §12](./SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) | 2026-10-25 |
 | OD-REC-06 | Own take preview/download/delete; Track publish OUT of Recording EPIC | 2026-09-27 |
 | OD-REC-07 | Anti-abuse caps (anon/BEGINNER/PRO/LEGEND active + daily sessions) | 2026-09-27 |
 | OD-REC-08 | Own take download YES for logged-in tiers; anon no durable take DL | 2026-09-27 |
@@ -279,6 +280,7 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 - **Living production tip (2026-10-05):** `dabbc936` · POLISH-01 / P0 / P1 / P2 / **P3** **CLOSED / PRODUCTION VERIFIED**.
 - **EPIC-P3** Anonymous → Account Claim = **CLOSED / IMPLEMENTED / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · OD-P3-01…11 · living QT LIMITS = **Account Level** (**OD-QT-01**) · ship-time Premium Tier TTL/cap = HISTORY · cookie E2E CODE-VERIFIED / FULL E2E NOT EXECUTED · follow-up `p_take_id` **NON-BLOCKING** · **UNCHANGED** by Fala 3.5.1.
 - **OD-QT-01** (2026-10-26) = **CLOSED / ACCEPTED (docs)** — QT LIMITS axis = Account Level · ≠ runtime cutover · ≠ Product GREEN.
+- **OD-SC-01…05** (2026-10-25) = **CLOSED / ACCEPTED (docs)** — `OWNER-ACCEPTED — TECHNICAL DECISION` w [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) §12 · **Implementation NOT AUTHORIZED · NOT SHIPPED** · Storage policies **NOT VERIFIED** (kontrakt §13).
 - **EPIC-FALA-351** Recording Experience = **CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` · verify `75bd80f` · no P1/P2/P3 reopen · no micro-patch required.
 - W2-B documentation closeout is **not** the current NEXT product gate.
 

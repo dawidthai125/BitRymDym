@@ -1,7 +1,7 @@
 # BitRymDym — Master Handoff
 
 **Purpose:** Pełna ciągłość cold-start dla nowego GPT + Cursor Agent.
-**Updated:** 2026-10-26 — **docs cold-start pointer** · living tip / deployment / NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 ONLY** (pre-docs tip **`11a664b`**) · **≠ Product GREEN** · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/](./handoffs/) · body tables citing **`d8846ff`** / **`35543c8`** / **`5212933`** / **`2adb569`** / **`0a565c0`** = **HISTORY** unless re-verified · Premium Retention **HOLD** · OD-04/OD-07/OD-15/OD-16 **OPEN** · **STOP — OWNER DECISION REQUIRED** · evidence Studio [audits/_studio_recording_local_e2e_2026-10-24/](./audits/_studio_recording_local_e2e_2026-10-24/) · USER RLS [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md)
+**Updated:** 2026-10-27 — **P-NEXT-06A/C pointer** · living tip / deployment / NEXT → **[PROJECT_STATE.md](./PROJECT_STATE.md) §2 ONLY** (pre-docs tip **`2cc4cc1c3e3a3536e7bf8fbae48dca3485700d5b`** · GH deploy **`7350328308` success** · www alias SHA **UNVERIFIED**) · QT living LIMITS = **Account Level / OD-QT-01** · **≠ Product GREEN** · mapa [PROJECT_FUNCTIONAL_MAP.md](./PROJECT_FUNCTIONAL_MAP.md) · start prompts [handoffs/](./handoffs/) · body tables citing **`11a664b`** / **`d8846ff`** / **`35543c8`** / **`5212933`** / **`2adb569`** / **`0a565c0`** = **HISTORY** unless re-verified · Premium Retention **HOLD** · OD-04/OD-07/OD-15/OD-16 **OPEN** · **STOP — OWNER DECISION REQUIRED** · evidence Studio [audits/_studio_recording_local_e2e_2026-10-24/](./audits/_studio_recording_local_e2e_2026-10-24/) · USER RLS [audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md](./audits/PROD_USER_RLS_RUNTIME_SMOKE_2026-10-25.md)
 **Owner:** Prezes Dawid
 
 **Ultra entry (czytaj najpierw):** [FINAL_COLD_START_HANDOFF.md](./FINAL_COLD_START_HANDOFF.md)
@@ -469,9 +469,12 @@ AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
 
 ## 6. Roles and Account Levels
 
+> **HISTORY (P1 ship-time axis):** Sample Policy / `getSamplePolicy` / `SAMPLE_POLICY_DEFAULTS` = P1 delivery evidence — **not** living QT LIMITS SSOT.
+> **Living docs (OD-QT-01, 2026-10-26):** QT LIMITS axis = **Account Level**. Runtime cutover **NOT VERIFIED**. See [DECISION_LOG OD-QT-01](./decisions/DECISION_LOG.md) · [PROJECT_STATE §3.1](./PROJECT_STATE.md).
+
 **Roles:** `USER` · `MODERATOR` · `ADMINISTRATOR` (permissions via `permissions` / `role_permissions`).
 
-**Account levels** (`profiles.account_level` — Rank / signup path; **≠** Quick Take recording limits):
+**Account levels** (`profiles.account_level` — Rank / signup path; **≠** Premium Tier; living QT LIMITS = Account Level per **OD-QT-01**):
 
 | Level | Product role |
 |-------|--------------|
@@ -479,9 +482,11 @@ AUTH → AUTHZ → EFFECTIVE ENTITLEMENT → ANTI-ABUSE
 | `PRO_RAPPER` | Account Rank — **≠** Premium Tier. |
 | `LEGEND_RAPPER` | Account Rank — **≠** Premium Tier. |
 
-Recording / retention / session caps for Quick Take use **Premium Tier Sample Policy** (`SAMPLE_POLICY_DEFAULTS` · `getSamplePolicy` · §8b P1) — **not** Account Level. A user without paid entitlement maps to **FREE** policy at runtime.
+**Living docs (OD-QT-01):** Quick Take LIMITS (duration / retention TTL / session·active caps / QUICK|FULL) = **Account Level** — **not** Premium Tier. Runtime cutover **NOT VERIFIED**.
 
-**Runtime defaults** (code `SAMPLE_POLICY_DEFAULTS` — product Tier axis; not Account Level):
+**HISTORY (P1 ship-time):** those caps were documented against **Premium Tier Sample Policy** (`SAMPLE_POLICY_DEFAULTS` · `getSamplePolicy` · §8b P1); a user without paid entitlement mapped to **FREE** policy at ship-time. That Sample Policy axis is **legacy for QT LIMITS** and is **not** living SSOT after OD-QT-01.
+
+**P1 defaults (HISTORY)** — code `SAMPLE_POLICY_DEFAULTS` — product Tier axis; **not** living QT LIMITS:
 
 | Actor | Max record (default) | TTL | Active READY | Sessions / UTC day |
 |-------|----------------------|-----|--------------|--------------------|
@@ -579,7 +584,9 @@ Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 
 ---
 
-## 8b. Recording security + Sample Policy + Replace + POLISH-01 (living)
+## 8b. Recording security + Sample Policy + Replace + POLISH-01 (P1/P2 HISTORY + delivery)
+
+> Living QT LIMITS = **Account Level / OD-QT-01**. P1 Sample Policy below = **HISTORY** for QT LIMITS axis. Runtime cutover **NOT VERIFIED**.
 
 ### P0 — PLATFORM master download deny
 
@@ -589,11 +596,11 @@ Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 - Helper: `canDownloadOriginalBeatMaster` — **nie** generic `canDownload`
 - Evidence: [P0_PLATFORM_MASTER_DOWNLOAD_DENY.md](./audits/P0_PLATFORM_MASTER_DOWNLOAD_DENY.md)
 
-### P1 — Sample Policy
+### P1 — Sample Policy (**HISTORY** for QT LIMITS)
 
-- SSOT: `getSamplePolicy` · `SAMPLE_POLICY_DEFAULTS` · `sample_policy_settings` · audit `SAMPLE_POLICY_UPDATE`
-- Premium Tier = źródło limitu (Anonymous ≠ Free)
-- BEGINNER bez entitlement → runtime mapuje do FREE policy
+- SSOT (ship): `getSamplePolicy` · `SAMPLE_POLICY_DEFAULTS` · `sample_policy_settings` · audit `SAMPLE_POLICY_UPDATE`
+- Premium Tier = źródło limitu (Anonymous ≠ Free) — **HISTORY** for living QT LIMITS after OD-QT-01
+- BEGINNER bez entitlement → runtime mapuje do FREE policy *(ship-time; runtime compliance NOT VERIFIED vs Account Level)*
 - Defaults: Bronze 60 · Silver 120 · Gold 180 · global technical max **180 s**
 - Admin-only mutation · UI: **Polityka nagrań**
 - Representative limits: ANON 15s/2h · FREE 30s/12h · Bronze/Silver/Gold configurable duration + day/active caps
@@ -685,8 +692,8 @@ P3 ACCOUNT CLAIM = COMPLETE / PRODUCTION VERIFIED — GREEN @ dabbc936
 | D02 | GREEN @ `e98ba52` |
 | Cron | `0 0 * * *` |
 | `CRON_SECRET` | configured (secret) |
-| Retention | Sample Policy TTL (ANON 2h · FREE 12h · BRONZE 36h · SILVER 60h · GOLD 84h) — **≠** Account Level |
-| Max seconds | Sample Policy defaults (ANON 15 · FREE 30 · BRONZE 60 · SILVER 120 · GOLD 180), then `MIN(beat, cap, 180)` |
+| Retention | Sample Policy TTL (ANON 2h · FREE 12h · BRONZE 36h · SILVER 60h · GOLD 84h) — **P1 HISTORY** for QT LIMITS · living axis = Account Level (**OD-QT-01**) · runtime **NOT VERIFIED** |
+| Max seconds | Sample Policy defaults (ANON 15 · FREE 30 · BRONZE 60 · SILVER 120 · GOLD 180), then `MIN(beat, cap, 180)` — **P1 HISTORY** · freeze D02/D04 living docs duration for anon = **30 s** · runtime which number applies = **NOT VERIFIED** |
 | Anti-abuse | as §6 table · concurrent = 1 |
 | Take statuses | PENDING_UPLOAD · READY · FAILED · EXPIRED · DELETED |
 | Surfaces | Beat recording UI · `/account/takes` · preview/download/delete APIs · Moje bity grants · `/account/shared` |

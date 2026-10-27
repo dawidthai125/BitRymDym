@@ -121,7 +121,7 @@ Anonymous Take → READY → successful sign-in/sign-up session
 | APIs | `/api/takes/anon/session` · `finalize` · `preview` |
 | UI | `RecordingPanel` anonymous path · beat detail max SSOT |
 
-**Contract:** TTL 7200s · max **15s** (P1 SAMPLE_POLICY) · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · **anon→account claim = P3 IN** (auto after login/signup · Storage move · Premium Tier TTL/cap = HISTORY · living QT LIMITS = Account Level / OD-QT-01 · runtime NOT VERIFIED) · dual-play OUT · no grant APIs.
+**Contract:** TTL 7200s · max **15s** (P1 SAMPLE_POLICY · **HISTORY** for QT LIMITS) · living docs anon duration (freeze D02/D04 / OD-REC-02) = **30 s** · which number applies in runtime = **NOT VERIFIED** · caps 1/3/concurrent 1 · hash-only · PUBLISHED+READY master · preview YES · durable anon download NO · **anon→account claim = P3 IN** (auto after login/signup · Storage move · Premium Tier TTL/cap = HISTORY · living QT LIMITS = Account Level / OD-QT-01 · runtime NOT VERIFIED) · dual-play OUT · no grant APIs.
 
 **W4/W5:** authenticated `claim_take_recording_session` and Shared Grants unchanged.
 
@@ -156,7 +156,10 @@ Reason                     = production/repository tip advanced after subsequent
 
 **Historical:** Implementation closeout (2026-10-02) recorded Owner **PRELIMINARY PASS** · Production **NOT DEPLOYED** — that label is **superseded** by dedicated production verify (2026-10-05). Closeout: [FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md](../audits/FALA_351_RECORDING_EXPERIENCE_CLOSEOUT.md) · Plan: [D_FALA_351_PRODUCTION_VERIFY_PLAN.md](../audits/D_FALA_351_PRODUCTION_VERIFY_PLAN.md)
 
-## STU-14/15/16 — Local recording safety & recovery (Studio + Quick Take) — LOCAL ONLY · NOT COMMITTED · NOT DEPLOYED
+## STU-14/15/16 — Local recording safety & recovery (Studio + Quick Take)
+
+> **HISTORY (freeze/local stamp):** earlier header claimed `LOCAL ONLY · NOT COMMITTED · NOT DEPLOYED` — do **not** treat that as living planes.
+> **Living planes:** table STU-16 (1)–(5) below · Git ON `main` @ `c2be3b0` · **STU-16 LIMITED PRODUCTION PASS** ≠ Production GREEN · janitor Cron fire / wall-clock 900 s = **NOT VERIFIED**.
 
 Full behaviour description (format v2, ownership, lease, TTL, messages, browser limits, diagnostics): [README — Nagrywanie — wspólne lokalne zabezpieczenie i odzyskiwanie](../../README.md).
 

@@ -39,12 +39,12 @@ Jednostkowy test, plik w repo, działająca strona ani sukces deployu **nie** s�
 - Sacred WIP `src/lib/takes/recording-eligibility-service.ts` — nie czytaj / nie cytuj / nie proś o diff.
 - `studio-editor.tsx` / `studio-service.ts` — poza zakresem bez jawnego GO.
 - Dirty WIP PRESERVE — nie zachęcaj do clean/stash/reset/sync bez bramki.
-- Premium: **osobne osie** export/unlock vs retencja artefaktów; QT = Sample Policy; Retention worker = **HOLD** dopóki SSOT nie mówi inaczej.
+- Premium: **osobne osie** export/unlock vs retencja artefaktów; QT LIMITS living docs = **Account Level / OD-QT-01** (Sample Policy = HISTORY); runtime QT **NOT VERIFIED**; Retention worker = **HOLD** dopóki SSOT nie mówi inaczej.
 - Konflikty dwóch żywych docs bez hierarchii → **SPRZECZNE / BLOCKED**; nie rozstrzygaj za Ownera.
 
 ## Kontekst sesji (weryfikuj w docs — może być HISTORY)
 
-- Ostatni sync docs (2026-10-26): tip/deploy **`11a664b`** · UserMenu PRODUCTION UI **PARTIAL** (AX/Escape/hit PASS; Tab/`focus-visible` NOT VERIFIED).
+- Ostatni sync docs (2026-10-27): tip **`2cc4cc1…`** · GH Production **`7350328308` success** · www → SHA **UNVERIFIED** · QT LIMITS = **Account Level / OD-QT-01** · UserMenu PRODUCTION UI **PARTIAL** (era `11a664b`; AX/Escape/hit PASS; Tab/`focus-visible` NOT VERIFIED).
 - USER RLS owner/anon/peer: **OWNER-REPORTED PASS** 2026-10-25 · ≠ GREEN.
 - OD-04/OD-07/OD-15/OD-16 **OPEN** · Premium Retention **HOLD** · SFM Production GREEN **NOT CLAIMED** · REC/mic **NOT RUN**.
 
