@@ -6,6 +6,37 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Gate C: catalog copy fail-closed (repo; prod apply BLOCKED)
+
+**Status:** code + tests **PASS** · **SHIPPED in repo** · **NOT in prod** · Scratch DJ v1 **OUT** · **≠ Product GREEN**
+**Code:** `src/lib/catalog/catalog-originals.ts` planner — brak prod apply / tabeli / polityk `catalog_originals_service_*` → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` · brak PUBLISHED+license → `CATALOG_ASSET_NOT_COPYABLE` · content sniff nadal fail-closed · dest TAKE key **nie** wymyślany · **zero zapisu**
+**API:** `POST /api/catalog/copy` — `requireUser` · JSON 400 · `beatId` ignorowane · write intent **nie** w body · 503/409/501
+**Tests:** `npm test -- --run src/lib/catalog/catalog-originals.test.ts src/lib/beats/audio-validation.test.ts` → **19/19 PASS**
+**Git:** `5a6bc55` `feat(catalog): fail-closed copy when Storage policies are unknown` (parent `5200c6d`)
+**Explicit non-claim:** prod `apply_migration` **BLOCKED** (brak Owner „prod apply”) · content sniff NOT IMPLEMENTED · Scratch NOT SHIPPED
+**Docs updated:** [CATALOG_STORAGE_AND_OD_SC_02_GATES_2026-10-27.md](./decisions/CATALOG_STORAGE_AND_OD_SC_02_GATES_2026-10-27.md) · REUSE map · this CHANGELOG · PROJECT_STATE Sample Catalog · SESSION_BRIDGE
+
+## 2026-10-27 — Gate B: alias / `dpl_*` best-effort @ `5200c6d` (docs-only)
+
+**Status:** GitHub Production **success** · Vercel commit status **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN**
+**FACT tip (pre-catalog):** **`5200c6da5813f0a446393b3ce79e9f03478f9bbd`** (`docs: verify Contabo host read-only after SSH key locate`)
+**FACT deploy:** GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` @ **`5200c6d…`** · unique URL `https://bitrymdym-j1sp78uxs-dawidthai125s-projects.vercel.app` (**302 SSO**) · dashboard `https://vercel.com/dawidthai125s-projects/bitrymdym/8KYY2axTYMN4CKzsxEteqy857k5R`
+**FACT www:** `https://www.bitrymdym.pl` HTTPS **200** · brak `dpl_*` / SHA w nagłówkach
+**NOT VERIFIED:** `dpl_*` (brak `vercel` CLI · unique URL SSO-walled · bez OAuth login)
+**Explicit non-claim:** historyczny `dpl_7Xwqf…` @ `d462b22` **nie** przenoszony
+
+## 2026-10-27 — Gate A: Contabo poll journal RO (LEFT RUNNING)
+
+**Status:** live host **journal RO PASS** · poll **zostawiony RUNNING** · **≠** always-on GO · **≠** sync · **≠** stop/restart
+**Audit:** [CONTABO_GO_HOST_RO_2026-10-27.md](./audits/CONTABO_GO_HOST_RO_2026-10-27.md) § Journal RO
+**FACT:** `bitrymdym-e3-worker-poll` **enabled/active/running** PID **847** since **2026-10-23 20:47:04 CEST** · journal `-n 80` = `claims_empty` / `busy=false` · sekrety **brak** · **nie** stop/start/enable/disable
+**Explicit non-claim:** SHA drzewa hosta nadal NOT VERIFIED · `claims_empty` ≠ dowód pustej kolejki produktowej
+
+## 2026-10-27 — SESSION_BRIDGE §4 archive (fourth batch, room for A/B/C)
+
+**Status:** documentation only · archiwizacja living `EXECUTED` ≥14 · **≠** Product GREEN
+**Scope:** przeniesiono 5 najstarszych living `EXECUTED` (`GO-TEAM-CLOSE` · `GO-SESSION-CLOSE` · `CONTINUITY-RELIABILITY` · `COLD-START-CLOSE` · `GO-SB-ARCHIVE`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-27 — Contabo GO-HOST-RO retry (live SSH PASS)
 
 **Status:** documentation · live host **RO PASS** · **≠** always-on GO · **≠** sync · **≠** canary · **≠** Product GREEN
@@ -92,10 +123,15 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-27 | GO-TEAM-CLOSE | Audyt zespołu, smoke RO, reguła, commit, handoff | EXECUTED | PARTIAL | Faza 0 bez edycji. Etap 1: `security-auditor`, hash porcelain przed=po `18b4bc34…`, indeks pusty; read-only jest prośbą, blokada zapisu **NOT VERIFIED**. Etap 2: sekcja Zespół Cursor w `.cursor/rules/bitrymdym-ssot-over-ecc.mdc`. Commit+push jednego pliku `92a1262` `chore(cursor): establish autonomous team workflow`, rodzic `2d872e5`, `ls-remote` zgodny. GitHub Production `7370676473` success @ ten SHA; Vercel commit status success; `dpl_*` NOT READ; alias www i runtime SHA **NOT VERIFIED**. `PROJECT_STATE` / `CHANGELOG` / Sacred / Studio nietknięte. Ten zapis mostu bez kolejnego commit/push | `git show 92a1262` (1 ścieżka) · `ls-remote` `92a1262` · GitHub deployment `7370676473` · hash porcelain `18b4bc34…` | `92a1262…` | Commit tego pliku = osobne GO. Alias / `dpl_*` = osobne GO. Produkt = STOP |
+| 2026-10-27 | GO-SESSION-CLOSE | Commit ciągłości, odczyt produkcji, handoff | EXECUTED | PARTIAL | Path-scoped commit+push `7897037` `fix(docs): harden session continuity`: reguła fraz sesji oraz dwie linijki §6 (bramka `HANDOFF BLOCKED`, checklist tip/deploy). Reszta tego pliku została poza commitem. Odczyt produkcji: GitHub Deployment `7369350599` Production `success` @ ten SHA; status Vercel `success`; www HTTPS 200 tytuł BitRymDym. Alias www i runtime SHA **NOT VERIFIED**. Bez edycji `PROJECT_STATE` / `CHANGELOG` / Sacred / Studio. Ten zapis handoffu bez kolejnego commit/push/deploy | `git ls-remote` `7897037` · `git show 7897037` (2 ścieżki) · GitHub API deployment `7369350599` · curl www 200 | `7897037…` | Commit pozostałego dirty mostu = osobne GO. Alias / `dpl_*` = osobne GO. Produkt = STOP |
+| 2026-10-27 | CONTINUITY-RELIABILITY | Straż cyklu sesji: reguła = triggery, procedura = most | EXECUTED | PARTIAL | Skrócono frazy w `.cursor/rules/bitrymdym-ssot-over-ecc.mdc` do triggerów i straż `HANDOFF BLOCKED` (bez edycji CHANGELOG/PROJECT_STATE; §2 mostu nadal wolno). W §6 tego pliku usunięto nakaz aktualizacji PROJECT_STATE przy każdym handoffie. Testy: T1 PASS (subagent bez historii czatu) · T2 PASS · T3 PASS · T4 PASS na fixturze 15→`HANDOFF BLOCKED` (living tabela nienaruszona, licznik 12 po tym wierszu) · T5 PASS po korekcie snapshotu 502/170 · T6 NOT RUN (brak nowej rozmowy Ownera) · T7 PASS na tym samym subagencie (jeden krok: GO; implementacji nie zaczął). Bez commit/push/deploy | `git status` porcelain=502 staged=0 · `git rev-parse` `8b4235a` · `git ls-remote` ten sam SHA · parser §4 | _(brak commita)_ | Path-scoped commit reguły da się odseparować. Ten plik łączy COLD-START-CLOSE i ten pass — bez `git add -p`. Produkt = STOP |
+| 2026-10-27 | COLD-START-CLOSE | Cold-start „Kontynuuj projekt” + handoff sesji | EXECUTED | PARTIAL | Cold-start bez nowego zadania. `HEAD`=`origin/main`=`8b4235a…` (`ls-remote`). Odświeżono §2/§2.1/§4/§5 tego pliku. Pomiar przed zapisem: porcelain=500 / unstaged 168. Po zapisie ten plik jest `M`, więc porcelain=501 / unstaged 169. `PROJECT_STATE` / `CHANGELOG` / Sacred / Studio / `SYSTEM_ARCHITECTURE` nietknięte. Bez commit/push/deploy. Deploy po `d462b22` **NOT VERIFIED** | `git rev-parse` · `git ls-remote` · `git status` | _(brak commita)_ | Zapis jest lokalny dirty. Path-scoped commit tego pliku = osobne GO. Produkt = STOP |
+| 2026-10-27 | GO-SB-ARCHIVE | Archiwizacja §4 → CHANGELOG `### SESSION_BRIDGE archive` | EXECUTED | PASS | Przeniesiono 6 najstarszych `EXECUTED` (SESSION_BRIDGE gap audit · AUTONOMY READINESS · GO-3b · GO-3 · GO-2 · GO-1) do [CHANGELOG.md](../CHANGELOG.md) `### SESSION_BRIDGE archive` · `BLOCKED` `P-NEXT-10` zachowany w living · **bez** commit/push | Diff allowlista: `SESSION_BRIDGE.md` + `CHANGELOG.md` | _(brak commita)_ | Path-scoped commit obu plików = osobne GO |
 | 2026-10-27 | KONTRAKT A–D | Autonomia / reuse / handoff (AGENTS+bridge+continuity+REUSE map) | EXECUTED | PARTIAL | Commit+push allowlisty 4 ścieżek: `AGENTS.md` · `docs/operations/SESSION_BRIDGE.md` · `docs/DOCUMENTATION_CONTINUITY.md` · `docs/architecture/REUSE_SSOT_MAP.md` · message `docs: encode BitRymDym autonomy and session handoff contract` · lokalny `HEAD`/`origin/main` = `fa5b7ca…` · **≠** nowy deploy claim | `git show fa5b7ca` · paths only | `fa5b7ca…` | Tip SSOT / deploy / NEXT → PROJECT_STATE (lag możliwy) · commit bridge refresh = osobne GO |
 | 2026-10-27 | GO-5G-O | SESSION_BRIDGE tip reconcile → `d05aa4e` | EXECUTED | PARTIAL | Living snapshot O: tip `d05aa4e`; deploy `@ d462b22`; **HISTORY:** commit Q + push R → tip `db435ed` | Raporty O/Q/R · `git show db435ed` | `db435ed…` (Q) | Mixed WIP PS/CL = osobne GO |
 | 2026-10-27 | GO-5G-M | Push jednego commita `d05aa4e` | EXECUTED | PASS | Push `origin/main` bez force; remote SHA potwierdzony (raport M) | Raport GO-5G-M · `ls-remote` / GitHub API w M | `d05aa4e…` | Deploy/alias re-verify = osobne GO |
