@@ -10,11 +10,44 @@ import {
   canDownloadOriginalBeatMaster,
   canRequestBeatAudioAccess,
   signedUrlTtlSeconds,
+  sniffAudioContainer,
   validateAudioUploadMeta,
+  validateCatalogOriginalContentSniff,
   validateCatalogOriginalUploadMeta,
   validateObjectKey,
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
+
+function wavBytes(): Uint8Array {
+  const bytes = new Uint8Array(12);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0); // RIFF
+  bytes.set([0x57, 0x41, 0x56, 0x45], 8); // WAVE
+  return bytes;
+}
+
+function mp4Bytes(): Uint8Array {
+  const bytes = new Uint8Array(12);
+  bytes.set([0x00, 0x00, 0x00, 0x18], 0);
+  bytes.set([0x66, 0x74, 0x79, 0x70], 4); // ftyp
+  bytes.set([0x4d, 0x34, 0x41, 0x20], 8); // M4A
+  return bytes;
+}
+
+function mpegId3Bytes(): Uint8Array {
+  return new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00]);
+}
+
+function mpegFrameBytes(): Uint8Array {
+  return new Uint8Array([0xff, 0xfb, 0x90, 0x00]);
+}
+
+function aacAdtsBytes(): Uint8Array {
+  return new Uint8Array([0xff, 0xf1, 0x50, 0x80]);
+}
+
+function flacBytes(): Uint8Array {
+  return new Uint8Array([0x66, 0x4c, 0x61, 0x43]); // fLaC
+}
 
 describe("resolveAudioContentType", () => {
   it("prefers valid File.type", () => {
@@ -218,5 +251,83 @@ describe("catalog original object key (OD-SC-01)", () => {
         durationSeconds: 180,
       }).ok,
     ).toBe(true);
+  });
+});
+
+describe("catalog original content sniff (OD-SC-02)", () => {
+  it("accepts WAV / MPEG / MP4 / AAC matching declared MIME", () => {
+    expect(
+      validateCatalogOriginalContentSniff({
+        bytes: wavBytes(),
+        declaredContentType: "audio/wav",
+      }),
+    ).toEqual({ ok: true, sniffedContentType: "audio/wav" });
+    expect(
+      validateCatalogOriginalContentSniff({
+        bytes: wavBytes(),
+        declaredContentType: "audio/x-wav",
+      }),
+    ).toEqual({ ok: true, sniffedContentType: "audio/wav" });
+    expect(
+      validateCatalogOriginalContentSniff({
+        bytes: mpegId3Bytes(),
+        declaredContentType: "audio/mpeg",
+      }),
+    ).toEqual({ ok: true, sniffedContentType: "audio/mpeg" });
+    expect(
+      validateCatalogOriginalContentSniff({
+        bytes: mpegFrameBytes(),
+        declaredContentType: "audio/mpeg",
+      }),
+    ).toEqual({ ok: true, sniffedContentType: "audio/mpeg" });
+    expect(
+      validateCatalogOriginalContentSniff({
+        bytes: mp4Bytes(),
+        declaredContentType: "audio/mp4",
+      }),
+    ).toEqual({ ok: true, sniffedContentType: "audio/mp4" });
+    expect(
+      validateCatalogOriginalContentSniff({
+        bytes: aacAdtsBytes(),
+        declaredContentType: "audio/aac",
+      }),
+    ).toEqual({ ok: true, sniffedContentType: "audio/aac" });
+  });
+
+  it("rejects spoofed Content-Type, empty, missing, and unsupported containers", () => {
+    const spoof = validateCatalogOriginalContentSniff({
+      bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]), // %PDF
+      declaredContentType: "audio/mpeg",
+    });
+    expect(spoof.ok).toBe(false);
+    if (!spoof.ok) expect(spoof.error).toBe("CATALOG_CONTENT_UNSUPPORTED");
+
+    const mismatch = validateCatalogOriginalContentSniff({
+      bytes: wavBytes(),
+      declaredContentType: "audio/mpeg",
+    });
+    expect(mismatch.ok).toBe(false);
+    if (!mismatch.ok) expect(mismatch.error).toBe("CATALOG_CONTENT_TYPE_MISMATCH");
+
+    const empty = validateCatalogOriginalContentSniff({
+      bytes: new Uint8Array(),
+      declaredContentType: "audio/wav",
+    });
+    expect(empty.ok).toBe(false);
+    if (!empty.ok) expect(empty.error).toBe("CATALOG_CONTENT_EMPTY");
+
+    const missing = validateCatalogOriginalContentSniff({
+      declaredContentType: "audio/wav",
+    });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.error).toBe("CATALOG_CONTENT_BYTES_REQUIRED");
+
+    const flac = validateCatalogOriginalContentSniff({
+      bytes: flacBytes(),
+      declaredContentType: "audio/mpeg",
+    });
+    expect(flac.ok).toBe(false);
+    if (!flac.ok) expect(flac.error).toBe("CATALOG_CONTENT_UNSUPPORTED");
+    expect(sniffAudioContainer(flacBytes()).mimeGuess).toBe("audio/flac");
   });
 });

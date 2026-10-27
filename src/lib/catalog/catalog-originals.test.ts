@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import {
   CATALOG_ASSET_NOT_COPYABLE,
-  CATALOG_CONTENT_GATE_NOT_IMPLEMENTED,
+  CATALOG_CONTENT_BYTES_REQUIRED,
+  CATALOG_CONTENT_EMPTY,
+  CATALOG_CONTENT_TYPE_MISMATCH,
+  CATALOG_CONTENT_UNSUPPORTED,
+  CATALOG_COPY_NOT_IMPLEMENTED,
   CATALOG_COPY_WRITE_FORBIDDEN,
   CATALOG_REQUIRED_STORAGE_POLICIES,
   CATALOG_STORAGE_POLICIES_UNAVAILABLE,
@@ -37,6 +41,15 @@ const READY_SNAPSHOT = {
   catalogAssetsTablePresent: true,
   storagePolicyNames: CATALOG_REQUIRED_STORAGE_POLICIES,
 };
+
+const READY_ASSET = { publishState: "PUBLISHED", licenseAllowsCopy: true };
+
+function wavBytes(): Uint8Array {
+  const bytes = new Uint8Array(12);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0);
+  bytes.set([0x57, 0x41, 0x56, 0x45], 8);
+  return bytes;
+}
 
 describe("catalog original declared gates", () => {
   it("accepts OD-SC-02 mpeg/wav/mp4/aac within 20 MiB and 180 s", () => {
@@ -82,9 +95,12 @@ describe("catalog original declared gates", () => {
 
 describe("catalog copy fail-closed planner", () => {
   it("defaults to policies/prod unavailable and never allows writes", () => {
-    expect(evaluateCatalogOriginalContentGate()).toEqual({
+    expect(
+      evaluateCatalogOriginalContentGate({ declaredContentType: "audio/wav" }),
+    ).toEqual({
       ok: false,
-      error: CATALOG_CONTENT_GATE_NOT_IMPLEMENTED,
+      error: CATALOG_CONTENT_BYTES_REQUIRED,
+      details: ["original bytes are required for content sniff"],
     });
     expect(evaluateCatalogStorageReadiness(unknownCatalogStorageReadiness())).toEqual({
       ok: false,
@@ -142,13 +158,51 @@ describe("catalog copy fail-closed planner", () => {
     expect(unlicensed.write?.destObjectKey).toBeNull();
   });
 
-  it("still blocks writes after declared+policy+license gates (content sniff)", () => {
+  it("rejects missing, empty, spoofed, and unsupported original bytes", () => {
+    const missing = prepareCatalogAssetCopy(VALID_INPUT, {
+      readiness: READY_SNAPSHOT,
+      catalogAsset: READY_ASSET,
+    });
+    expect(missing.error).toBe(CATALOG_CONTENT_BYTES_REQUIRED);
+    expect(catalogCopyErrorHttpStatus(missing.error)).toBe(415);
+
+    const empty = prepareCatalogAssetCopy(VALID_INPUT, {
+      readiness: READY_SNAPSHOT,
+      catalogAsset: READY_ASSET,
+      originalBytes: new Uint8Array(),
+    });
+    expect(empty.error).toBe(CATALOG_CONTENT_EMPTY);
+    expect(catalogCopyErrorHttpStatus(empty.error)).toBe(415);
+
+    const spoof = prepareCatalogAssetCopy(VALID_INPUT, {
+      readiness: READY_SNAPSHOT,
+      catalogAsset: READY_ASSET,
+      originalBytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]),
+    });
+    expect(spoof.error).toBe(CATALOG_CONTENT_UNSUPPORTED);
+    expect(catalogCopyErrorHttpStatus(spoof.error)).toBe(415);
+
+    const mismatch = prepareCatalogAssetCopy(
+      { ...VALID_INPUT, contentType: "audio/mpeg" },
+      {
+        readiness: READY_SNAPSHOT,
+        catalogAsset: READY_ASSET,
+        originalBytes: wavBytes(),
+      },
+    );
+    expect(mismatch.error).toBe(CATALOG_CONTENT_TYPE_MISMATCH);
+    expect(mismatch.write?.allowed).toBe(false);
+    expect(mismatch.write?.destObjectKey).toBeNull();
+  });
+
+  it("passes content sniff then still forbids writes (copy E2E not in this GO)", () => {
     const prepared = prepareCatalogAssetCopy(VALID_INPUT, {
       readiness: READY_SNAPSHOT,
-      catalogAsset: { publishState: "PUBLISHED", licenseAllowsCopy: true },
+      catalogAsset: READY_ASSET,
+      originalBytes: wavBytes(),
     });
     expect(prepared.ok).toBe(false);
-    expect(prepared.error).toBe(CATALOG_CONTENT_GATE_NOT_IMPLEMENTED);
+    expect(prepared.error).toBe(CATALOG_COPY_NOT_IMPLEMENTED);
     expect(prepared.details).toEqual([CATALOG_COPY_WRITE_FORBIDDEN]);
     expect(prepared.write?.allowed).toBe(false);
     expect(prepared.write?.destObjectKey).toBeNull();

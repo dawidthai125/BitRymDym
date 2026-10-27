@@ -3,13 +3,19 @@ import { isUuid } from "@/lib/beats/audio-validation";
 import {
   BEAT_AUDIO_BUCKET,
   buildCatalogOriginalObjectKey,
+  validateCatalogOriginalContentSniff,
   validateCatalogOriginalUploadMeta,
   validateObjectKey,
 } from "@/lib/beats/audio-validation";
 
 export const CATALOG_COPY_NOT_IMPLEMENTED = "COPY_NOT_IMPLEMENTED" as const;
-export const CATALOG_CONTENT_GATE_NOT_IMPLEMENTED =
-  "CATALOG_CONTENT_GATE_NOT_IMPLEMENTED" as const;
+export const CATALOG_CONTENT_BYTES_REQUIRED =
+  "CATALOG_CONTENT_BYTES_REQUIRED" as const;
+export const CATALOG_CONTENT_EMPTY = "CATALOG_CONTENT_EMPTY" as const;
+export const CATALOG_CONTENT_TYPE_MISMATCH =
+  "CATALOG_CONTENT_TYPE_MISMATCH" as const;
+export const CATALOG_CONTENT_UNSUPPORTED =
+  "CATALOG_CONTENT_UNSUPPORTED" as const;
 export const CATALOG_STORAGE_POLICIES_UNAVAILABLE =
   "CATALOG_STORAGE_POLICIES_UNAVAILABLE" as const;
 export const CATALOG_ASSET_NOT_COPYABLE = "CATALOG_ASSET_NOT_COPYABLE" as const;
@@ -58,12 +64,12 @@ export function evaluateCatalogOriginalDeclaredGates(
   return { ok: true, objectKey };
 }
 
-/** Fourth OD-SC-02 gate — not implemented; never treat client MIME as content proof. */
-export function evaluateCatalogOriginalContentGate(): {
-  ok: false;
-  error: typeof CATALOG_CONTENT_GATE_NOT_IMPLEMENTED;
-} {
-  return { ok: false, error: CATALOG_CONTENT_GATE_NOT_IMPLEMENTED };
+/** Fourth OD-SC-02 gate — magic-byte sniff; never treat client MIME as content proof. */
+export function evaluateCatalogOriginalContentGate(params: {
+  bytes?: Uint8Array | null;
+  declaredContentType: string;
+}) {
+  return validateCatalogOriginalContentSniff(params);
 }
 
 export type CatalogCopyRequest = CatalogOriginalDeclaredInput & {
@@ -178,6 +184,8 @@ export function planCatalogCopyWrites(
 export type CatalogCopyContext = {
   readiness?: CatalogStorageReadinessSnapshot;
   catalogAsset?: CatalogAssetCopyEligibility | null;
+  /** Server-held original bytes only — never log this payload. */
+  originalBytes?: Uint8Array | null;
 };
 
 export type CatalogCopyPrepareResult = {
@@ -189,8 +197,8 @@ export type CatalogCopyPrepareResult = {
 
 /**
  * Platform catalog → private TAKE copy planner.
- * Fail-closed: missing policies/prod, missing asset, or unimplemented
- * content sniff → safe error. Zero Storage/DB writes.
+ * Fail-closed: missing policies/prod, missing asset, or content sniff
+ * reject → safe error. Zero Storage/DB writes.
  */
 export function prepareCatalogAssetCopy(
   input: CatalogCopyRequest,
@@ -239,10 +247,22 @@ export function prepareCatalogAssetCopy(
     };
   }
 
-  const content = evaluateCatalogOriginalContentGate();
+  const content = evaluateCatalogOriginalContentGate({
+    bytes: context.originalBytes,
+    declaredContentType: input.contentType,
+  });
+  if (!content.ok) {
+    return {
+      ok: false,
+      error: content.error,
+      details: content.details,
+      write,
+    };
+  }
+
   return {
     ok: false,
-    error: content.error,
+    error: CATALOG_COPY_NOT_IMPLEMENTED,
     details: [CATALOG_COPY_WRITE_FORBIDDEN],
     write,
   };
@@ -257,6 +277,14 @@ export function catalogCopyErrorHttpStatus(error: string): number {
   }
   if (error === CATALOG_ASSET_NOT_COPYABLE) {
     return 409;
+  }
+  if (
+    error === CATALOG_CONTENT_BYTES_REQUIRED ||
+    error === CATALOG_CONTENT_EMPTY ||
+    error === CATALOG_CONTENT_TYPE_MISMATCH ||
+    error === CATALOG_CONTENT_UNSUPPORTED
+  ) {
+    return 415;
   }
   return 501;
 }

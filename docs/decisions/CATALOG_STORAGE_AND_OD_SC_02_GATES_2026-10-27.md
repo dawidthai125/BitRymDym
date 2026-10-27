@@ -1,7 +1,7 @@
 # Catalog Storage policies + OD-SC-02 gates (2026-10-27)
 
 **Status:** Implementation design **in repo** · Owner GO Implementation Catalog (Gate 3) · **prod schema APPLIED 2026-10-27**  
-**Does not close:** OD-SC-01…05 values · OD-15 · OD-16 · Scratch DJ v1 · content sniff · live Storage probe  
+**Does not close:** OD-SC-01…05 values · OD-15 · OD-16 · Scratch DJ v1 · copy E2E · live Storage probe already PASS (2026-10-28)  
 **Prod apply:** **APPLIED** — MCP `apply_migration` · history `20261027225553` / `catalog_originals_storage_and_entity` · read-back **PASS** · [audit](../audits/CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md)
 
 Kontrakt: [SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md](./SAMPLE_CATALOG_AND_DJ_SCRATCH_CONTRACT.md) §12–13  
@@ -19,7 +19,7 @@ Audyt RO: [SAMPLE_CATALOG_S13_STORAGE_POLICIES_RO_2026-10-27.md](../audits/SAMPL
 
 OD-SC-02 **nie** jest cicho przepisane na 50 MiB/FLAC. Rozjazd jest **zaprojektowany:** dwie allowlisty, jedno kanoniczne `validateObjectKey`.
 
-Czwarta bramka (treść pliku) = **fail-closed NOT IMPLEMENTED** (`CATALOG_CONTENT_GATE_NOT_IMPLEMENTED`). Client MIME ≠ content proof.
+Czwarta bramka (treść pliku) = **SHIPPED in repo** (`sniffAudioContainer` + `validateCatalogOriginalContentSniff`). Client MIME ≠ content proof. Spoof / empty / unsupported → `CATALOG_CONTENT_*` (**415**).
 
 ---
 
@@ -38,9 +38,9 @@ Orphan KEEP `catalog/*` zostaje straż delete (już w kodzie). Retention catalog
 
 ## 3. Runtime
 
-Kanoniczne miejsce: `src/lib/beats/audio-validation.ts` (`validateObjectKey` + `buildCatalogOriginalObjectKey` + `validateCatalogOriginalUploadMeta`).  
+Kanoniczne miejsce: `src/lib/beats/audio-validation.ts` (`validateObjectKey` + `buildCatalogOriginalObjectKey` + `validateCatalogOriginalUploadMeta` + `sniffAudioContainer` + `validateCatalogOriginalContentSniff`).  
 Copy planner: `src/lib/catalog/catalog-originals.ts` · `POST /api/catalog/copy` (sesja wymagana).  
-Fail-closed default: brak potwierdzonego prod apply / tabeli / polityk `catalog_originals_service_*` → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` (**503**), **zero zapisu**. Content sniff nadal `CATALOG_CONTENT_GATE_NOT_IMPLEMENTED`. Dest TAKE key **nie** jest wymyślany.
+Fail-closed default: brak potwierdzonego prod apply / tabeli / polityk `catalog_originals_service_*` → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` (**503**), **zero zapisu**. Content sniff wymaga server-held bytes; brak/empty/spoof/unsupported → `CATALOG_CONTENT_*` (**415**). Sniff PASS nadal **zero zapisu** (`COPY_NOT_IMPLEMENTED`). Dest TAKE key **nie** jest wymyślany.
 
 Scratch DJ v1 UI / CAS / Studio chronione = **OUT** (osobny NEXT).
 
@@ -50,4 +50,4 @@ Scratch DJ v1 UI / CAS / Studio chronione = **OUT** (osobny NEXT).
 
 Migracja `supabase/migrations/20261027220000_catalog_originals_storage_and_entity.sql` = **SHIPPED in repo**.  
 **Prod apply = APPLIED** (2026-10-27) via MCP `apply_migration` · remote version **`20261027225553`** (drift vs repo `20261027220000` — **nie** repair) · tabela + 4 polityki Storage + grants read-back **PASS**.  
-Live probe upload / content sniff / Scratch DJ = **osobne GO**. **≠ Product GREEN**.
+Live probe **PASS** (2026-10-28). Content sniff **SHIPPED in repo**. Copy E2E / Scratch DJ = **osobne GO**. **≠ Product GREEN**.

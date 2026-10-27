@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 /**
  * Catalog → private TAKE copy planner.
  * Authenticated. Fail-closed when policies/prod are unknown.
+ * Content sniff requires server-held original bytes (not client MIME).
  * No Storage/DB write. Client beatId is ignored.
  */
 export async function POST(request: Request) {

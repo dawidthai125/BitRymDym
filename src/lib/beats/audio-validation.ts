@@ -230,6 +230,126 @@ export function validateObjectKey(objectKey: string): string | null {
   return "object key must start with platform/, user/, or catalog/";
 }
 
+export type CatalogContentSniffError =
+  | "CATALOG_CONTENT_BYTES_REQUIRED"
+  | "CATALOG_CONTENT_EMPTY"
+  | "CATALOG_CONTENT_TYPE_MISMATCH"
+  | "CATALOG_CONTENT_UNSUPPORTED";
+
+function asciiAt(bytes: Uint8Array, start: number, length: number): string {
+  const end = Math.min(start + length, bytes.byteLength);
+  let out = "";
+  for (let i = start; i < end; i++) {
+    out += String.fromCharCode(bytes[i]!);
+  }
+  return out;
+}
+
+/**
+ * Magic-byte container sniff (WAV / MPEG / MP4 / AAC / FLAC).
+ * Canonical detector — reused by catalog OD-SC-02 and Storage backup verify.
+ * Does not log or return raw payload bytes.
+ */
+export function sniffAudioContainer(bytes: Uint8Array): {
+  mimeGuess: string;
+  wavHeader: boolean;
+  readable: boolean;
+} {
+  const readable = bytes.byteLength > 0;
+  if (!readable) {
+    return { mimeGuess: "application/octet-stream", wavHeader: false, readable };
+  }
+
+  const wavHeader =
+    bytes.byteLength >= 12 &&
+    asciiAt(bytes, 0, 4) === "RIFF" &&
+    asciiAt(bytes, 8, 4) === "WAVE";
+  if (wavHeader) {
+    return { mimeGuess: "audio/wav", wavHeader: true, readable };
+  }
+  if (bytes.byteLength >= 8 && asciiAt(bytes, 4, 4) === "ftyp") {
+    return { mimeGuess: "audio/mp4", wavHeader: false, readable };
+  }
+  if (bytes.byteLength >= 4 && asciiAt(bytes, 0, 4) === "fLaC") {
+    return { mimeGuess: "audio/flac", wavHeader: false, readable };
+  }
+  if (bytes.byteLength >= 3 && asciiAt(bytes, 0, 3) === "ID3") {
+    return { mimeGuess: "audio/mpeg", wavHeader: false, readable };
+  }
+  if (bytes.byteLength >= 2 && bytes[0] === 0xff) {
+    // AAC ADTS: 12-bit sync + layer bits 00.
+    if ((bytes[1]! & 0xf6) === 0xf0) {
+      return { mimeGuess: "audio/aac", wavHeader: false, readable };
+    }
+    if ((bytes[1]! & 0xe0) === 0xe0) {
+      return { mimeGuess: "audio/mpeg", wavHeader: false, readable };
+    }
+  }
+  return { mimeGuess: "application/octet-stream", wavHeader: false, readable };
+}
+
+function normalizeDeclaredCatalogContentType(contentType: string): string {
+  return contentType.split(";")[0]!.trim().toLowerCase();
+}
+
+function catalogDeclaredMatchesSniff(
+  declaredContentType: string,
+  sniffedMime: string,
+): boolean {
+  const declared = normalizeDeclaredCatalogContentType(declaredContentType);
+  if (sniffedMime === "audio/wav") {
+    return declared === "audio/wav" || declared === "audio/x-wav";
+  }
+  return declared === sniffedMime;
+}
+
+/**
+ * Fourth OD-SC-02 gate: real-file content vs declared MIME.
+ * Client Content-Type is never treated as proof.
+ */
+export function validateCatalogOriginalContentSniff(params: {
+  bytes?: Uint8Array | null;
+  declaredContentType: string;
+}):
+  | { ok: true; sniffedContentType: string }
+  | { ok: false; error: CatalogContentSniffError; details: string[] } {
+  if (params.bytes == null) {
+    return {
+      ok: false,
+      error: "CATALOG_CONTENT_BYTES_REQUIRED",
+      details: ["original bytes are required for content sniff"],
+    };
+  }
+  if (params.bytes.byteLength === 0) {
+    return {
+      ok: false,
+      error: "CATALOG_CONTENT_EMPTY",
+      details: ["original bytes are empty"],
+    };
+  }
+
+  const sniff = sniffAudioContainer(params.bytes);
+  if (
+    !(CATALOG_ORIGINAL_MIME_ALLOWLIST as readonly string[]).includes(
+      sniff.mimeGuess,
+    )
+  ) {
+    return {
+      ok: false,
+      error: "CATALOG_CONTENT_UNSUPPORTED",
+      details: ["sniffed container is not in catalog original allow-list"],
+    };
+  }
+  if (!catalogDeclaredMatchesSniff(params.declaredContentType, sniff.mimeGuess)) {
+    return {
+      ok: false,
+      error: "CATALOG_CONTENT_TYPE_MISMATCH",
+      details: ["declared contentType does not match sniffed container"],
+    };
+  }
+  return { ok: true, sniffedContentType: sniff.mimeGuess };
+}
+
 export function validateCatalogOriginalUploadMeta(params: {
   contentType: string;
   byteSize: number;
