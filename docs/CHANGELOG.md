@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Catalog originals controlled live Storage probe
+
+**Status:** live probe **PASS** · cleanup **done** · Implementation **≠** Scratch DJ · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „GO” = controlled live probe po apply `20261027225553`
+**Tip start:** `6f3a728…` = `origin/main` (`ls-remote`)
+**Pre:** `catalog/` objects **0** · `catalog_assets` **0** · policies `catalog_originals_service_*` **4**
+**Probe:** UUID `8c288da2-9017-415e-b715-64e65d4a35e9` · `beat-audio` `catalog/{uuid}/original.bin` · lokalny WAV **16044** B · `audio/wav` · service_role upload/list/download **PASS** · anon download **DENIED** · delete **PASS**
+**Copy API:** **pominięte** (brak bezpiecznego test USER)
+**Post leftover:** catalog objects **0** · catalog_assets **0**
+**Explicit non-claim:** content sniff NOT IMPLEMENTED · Scratch NOT SHIPPED · service_role bypassrls **nie** rozstrzygnięty osobno
+**Audit:** [CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md](./audits/CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md)
+**NEXT:** content sniff **albo** copy E2E **albo** Scratch — osobne GO
+
 ## 2026-10-27 — Catalog originals prod apply + read-back
 
 **Status:** schema **APPLIED** · read-back **PASS** · Implementation **≠** Scratch DJ · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

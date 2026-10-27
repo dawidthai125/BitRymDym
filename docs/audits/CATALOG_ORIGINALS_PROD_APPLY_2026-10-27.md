@@ -103,4 +103,6 @@ Ten GO **nie** podpina runtime probe Storage i **nie** zmienia API. Runtime copy
 
 ## NEXT
 
-**Jeden:** Owner GO **controlled live probe** (Storage `catalog/{uuid}/original.bin`) — nie ten dokument.
+**HISTORY (ten apply):** controlled live probe był następnym GO.
+**Done 2026-10-28:** live Storage probe **PASS** + cleanup — [CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md](./CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md).
+**Living NEXT Catalog:** content sniff / copy E2E / Scratch — osobne GO.
