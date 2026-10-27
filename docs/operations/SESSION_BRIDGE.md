@@ -72,15 +72,15 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-27T22:50+01:00` (`git rev-parse HEAD`; `git ls-remote origin refs/heads/main`; GitHub Deployments API; **bez** `vercel inspect`):
+Kontrola `2026-10-27T23:05+01:00` (`git rev-parse HEAD`; `git ls-remote origin refs/heads/main`; GitHub Deployments API; **bez** `vercel inspect`):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` | `044941057c6b5a6da22caa2d9f7bace496e76888` | `docs: reconcile living tip and deploy after team map.`; parent **`a1b84f6…`** |
-| Lokalny `origin/main` | `044941057c6b5a6da22caa2d9f7bace496e76888` | `0/0` vs `HEAD` · serwer potwierdzony `ls-remote` w tym closeout |
-| Opublikowany tip `main` | `0449410…` | Unit 1 tip/deploy reconcile · **≠** SSOT tip (→ PROJECT_STATE) · **≠** PRODUCTION VERIFIED |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** (ten bridge **nie** zastępuje) · living zapis w PS = Unit 1 (`a1b84f6…` / `7371104561`; plik **nie** edytowany tutaj — unik pętli tip=ten commit) · **żywy Git wygrywa:** `0449410…` · GitHub Production **`7371268857`** **success** `2026-10-27T21:49:06Z` @ **`0449410…`** · status commita Vercel **success** · host `bitrymdym-absxk3egj-…vercel.app` · `dpl_*` tego SHA **NOT VERIFIED** · alias `www` → ten deployment **NOT VERIFIED** · runtime SHA **NOT VERIFIED** · historyczny `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` @ **`d462b22…`** **nie** przenoszony · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Unit 2 allowlista | Ten closeout edytuje `SESSION_BRIDGE.md` + `CHANGELOG.md` (archiwum §4) · `PROJECT_STATE` czysty / nietknięty |
+| Lokalny `HEAD` | `77343b6151fbc87bd113b369abb8564e223f897f` | `docs: publish P-NEXT-06/08 QT labels and OD-SC pointers`; parent **`f5b3515…`** |
+| Lokalny `origin/main` | `77343b6151fbc87bd113b369abb8564e223f897f` | `0/0` vs `HEAD` · serwer potwierdzony `ls-remote` w P-NEXT-10B |
+| Opublikowany tip `main` | `77343b6…` | P-NEXT-10B 06/08 · **≠** SSOT tip (→ PROJECT_STATE) · **≠** PRODUCTION VERIFIED |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** (ten bridge **nie** zastępuje) · living zapis w PS = Unit 1 (`a1b84f6…` / `7371104561`; plik **nie** edytowany tutaj — unik pętli tip=ten commit) · **żywy Git wygrywa:** `77343b6…` · GitHub Production **`7371560902`** **success** `2026-10-27T22:05:04Z` @ **`77343b6…`** · status commita Vercel **success** · host `bitrymdym-r3m22qy0g-…vercel.app` · `dpl_*` tego SHA **NOT VERIFIED** · alias `www` → ten deployment **NOT VERIFIED** · runtime SHA **NOT VERIFIED** · historyczny `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` @ **`d462b22…`** **nie** przenoszony · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | P-NEXT-10B closeout | Ten zapis edytuje `SESSION_BRIDGE.md` (§4 wiersz + §2.1/§5) · `PROJECT_STATE` / `CHANGELOG` nietknięte |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -129,6 +129,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-27 | P-NEXT-10B | Commit+push allowlisty 06/08 (D02 kanoniczna) | EXECUTED | PARTIAL | Path-scoped commit+push 10 dirty ścieżek 06/08 (z 12). `PROJECT_STATE` + `CHANGELOG` już CLEAN na `main` (Unit 1 / archiwum). D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`. HEAD/`origin/main` = `77343b6…` (`ls-remote`). GitHub Production `7371560902` success `2026-10-27T22:05:04Z` @ ten SHA; Vercel commit status success; host `bitrymdym-r3m22qy0g-…vercel.app`. `dpl_*` / alias www / runtime SHA **NOT VERIFIED**. `PROJECT_STATE` nietknięty. Sacred / Studio / `SYSTEM_ARCHITECTURE` status-only PRESERVE. P-NEXT-10 BLOCKED zachowany jako historia | `git show 77343b6` (10 paths) · `ls-remote` `77343b6` · GitHub deployment `7371560902` | `77343b6…` | Alias / `dpl_*` = osobne GO. Produkt NEXT = osobny gate (nie Implementation Catalog) |
 | 2026-10-27 | UNIT-2 | Closeout SESSION_BRIDGE: archiwum §4 + tip snapshot | EXECUTED | PARTIAL | Zarchiwizowano 3 najstarsze `EXECUTED` (`GO-5G-F` · `GO-5G-C` · `P-NEXT-10A`) → [CHANGELOG.md](../CHANGELOG.md) `### SESSION_BRIDGE archive`. Living `EXECUTED` 14→11, po tym wierszu **12**. `P-NEXT-10` BLOCKED zachowany. §2/§2.1/§5 → living Git `0449410…` (`ls-remote` zgodny). GitHub Production `7371268857` success `2026-10-27T21:49:06Z` @ ten SHA; Vercel commit status success; host `bitrymdym-absxk3egj-…vercel.app`. `dpl_*` / alias www / runtime SHA **NOT VERIFIED**. `PROJECT_STATE` nietknięty (Unit 1). Path-scoped commit+push allowlisty w tym unicie | `git rev-parse`/`ls-remote` `0449410` · GitHub deployment `7371268857` · hash porcelain poza allowlistą `bbd0660c…` | `0449410…` (tip przed tym commitem) | Po pushu nowy SHA ≠ SSOT PS. Alias / `dpl_*` = osobne GO. Produkt = STOP |
 | 2026-10-27 | GO-TEAM-CLOSE | Audyt zespołu, smoke RO, reguła, commit, handoff | EXECUTED | PARTIAL | Faza 0 bez edycji. Etap 1: `security-auditor`, hash porcelain przed=po `18b4bc34…`, indeks pusty; read-only jest prośbą, blokada zapisu **NOT VERIFIED**. Etap 2: sekcja Zespół Cursor w `.cursor/rules/bitrymdym-ssot-over-ecc.mdc`. Commit+push jednego pliku `92a1262` `chore(cursor): establish autonomous team workflow`, rodzic `2d872e5`, `ls-remote` zgodny. GitHub Production `7370676473` success @ ten SHA; Vercel commit status success; `dpl_*` NOT READ; alias www i runtime SHA **NOT VERIFIED**. `PROJECT_STATE` / `CHANGELOG` / Sacred / Studio nietknięte. Ten zapis mostu bez kolejnego commit/push | `git show 92a1262` (1 ścieżka) · `ls-remote` `92a1262` · GitHub deployment `7370676473` · hash porcelain `18b4bc34…` | `92a1262…` | Commit tego pliku = osobne GO. Alias / `dpl_*` = osobne GO. Produkt = STOP |
 | 2026-10-27 | GO-SESSION-CLOSE | Commit ciągłości, odczyt produkcji, handoff | EXECUTED | PARTIAL | Path-scoped commit+push `7897037` `fix(docs): harden session continuity`: reguła fraz sesji oraz dwie linijki §6 (bramka `HANDOFF BLOCKED`, checklist tip/deploy). Reszta tego pliku została poza commitem. Odczyt produkcji: GitHub Deployment `7369350599` Production `success` @ ten SHA; status Vercel `success`; www HTTPS 200 tytuł BitRymDym. Alias www i runtime SHA **NOT VERIFIED**. Bez edycji `PROJECT_STATE` / `CHANGELOG` / Sacred / Studio. Ten zapis handoffu bez kolejnego commit/push/deploy | `git ls-remote` `7897037` · `git show 7897037` (2 ścieżki) · GitHub API deployment `7369350599` · curl www 200 | `7897037…` | Commit pozostałego dirty mostu = osobne GO. Alias / `dpl_*` = osobne GO. Produkt = STOP |
@@ -143,7 +144,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-27 | GO-5G-G | CHANGELOG wpis GO-5G-C | EXECUTED | PARTIAL | Dodano wpis tip `d462b22` / `dpl_7Xwqf…` / ALIAS VERIFIED; P-NEXT-06 zachowany; ≠ Product GREEN | Dirty `docs/CHANGELOG.md` + raport GO-5G-G | _(brak commita)_ | Commit CHANGELOG = osobne GO |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 12 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum starszych `EXECUTED` (w tym Unit 2: `GO-5G-F` · `GO-5G-C` · `P-NEXT-10A`): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 13 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum starszych `EXECUTED` (w tym Unit 2: `GO-5G-F` · `GO-5G-C` · `P-NEXT-10A`): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
 
 ### 4.1 Limit i archiwizacja
 
@@ -174,19 +175,18 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (odczyt `2026-10-27T22:50+01:00`; bez `vercel inspect`):**
-- GitHub Production deployment **`7371268857`** · **success** · `2026-10-27T21:49:06Z` @ **`0449410…`** · status commita Vercel **success** · host deploymentu `bitrymdym-absxk3egj-…vercel.app`
-- `dpl_*` dla `0449410` **NOT VERIFIED** · alias **`www.bitrymdym.pl`** → ten deployment **NOT VERIFIED** · runtime SHA **NOT VERIFIED**
-- Historyczny `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` @ **`d462b22…`** (GO-5G-B) **nie** jest dowodem aliasu dla `0449410`
-- HISTORY deploy `7370676473` @ `92a1262…` oraz `7371104561` @ `a1b84f6…` — **superseded** living Git `0449410…`
+**Last-known deploy / alias (odczyt `2026-10-27T23:05+01:00`; bez `vercel inspect`):**
+- GitHub Production deployment **`7371560902`** · **success** · `2026-10-27T22:05:04Z` @ **`77343b6…`** · status commita Vercel **success** · host deploymentu `bitrymdym-r3m22qy0g-…vercel.app`
+- `dpl_*` dla `77343b6` **NOT VERIFIED** · alias **`www.bitrymdym.pl`** → ten deployment **NOT VERIFIED** · runtime SHA **NOT VERIFIED**
+- Historyczny `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` @ **`d462b22…`** (GO-5G-B) **nie** jest dowodem aliasu dla `77343b6`
+- HISTORY deploy `7371268857` @ `0449410…` · `7371355221` @ `f5b3515…` · `7371104561` @ `a1b84f6…` — **superseded** living Git `77343b6…`
 - **DEPLOYMENT success ≠ PRODUCTION VERIFIED ≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
-- Lokalny tip operacyjny Git (ten bridge): **`0449410…`** (parent **`a1b84f6…`**) — `ls-remote` zgodny · **≠** living tip SSOT (PROJECT_STATE Unit 1 nadal `a1b84f6…` / `7371104561`, plik nieedytowany)
+- Lokalny tip operacyjny Git (ten bridge): **`77343b6…`** (parent **`f5b3515…`**) — `ls-remote` zgodny · **≠** living tip SSOT (PROJECT_STATE Unit 1 nadal `a1b84f6…` / `7371104561`, plik nieedytowany)
 
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**
-- Path-scoped commit dirty docs poza tym closeoutem — **bez** Sacred / reszty WIP. `PROJECT_STATE` jest czysty po Unit 1 @ **`0449410`** (nie edytować tu — pętla tip).
-- P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = aktualny tip (ancestor obejmuje **`0449410`** / `a1b84f6` / `92a1262` / `2d872e5` / `8b4235a` / `c7fbaf3` / `fa5b7ca` / …).
-- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R @ `db435ed`) · kontrakt A–D @ **`fa5b7ca`** · reconcile mostu @ **`1c2abd2`** · **GO-SB-ARCHIVE** commit+push @ **`c7fbaf3`** · continuity hardening reguły @ **`8b4235a`** · procedura §6 + reguła fraz commit+push @ **`7897037`** · domknięcie mostu @ **`2d872e5`** · reguła zespołu Cursor @ **`92a1262`** · Unit 1 tip/deploy reconcile @ **`0449410`**.
+- Path-scoped commit dirty docs poza P-NEXT-10B — **bez** Sacred / reszty WIP. `PROJECT_STATE` nietknięty (pętla tip).
+- **HISTORY (done):** P-NEXT-10B allowlista 06/08 @ **`77343b6`** (10 dirty + 2 już CLEAN: PS/CHANGELOG; D02 kanoniczna). Push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R @ `db435ed`) · kontrakt A–D @ **`fa5b7ca`** · reconcile mostu @ **`1c2abd2`** · **GO-SB-ARCHIVE** commit+push @ **`c7fbaf3`** · continuity hardening reguły @ **`8b4235a`** · procedura §6 + reguła fraz commit+push @ **`7897037`** · domknięcie mostu @ **`2d872e5`** · reguła zespołu Cursor @ **`92a1262`** · Unit 1 tip/deploy reconcile @ **`0449410`** · Unit 2 closeout @ **`f5b3515`**.
 - P-NEXT-06 tip/deploy era = HISTORY w PS/CHANGELOG — **≠** zamknięcie toru produktowego QT / OD-SC / Sample Catalog (**Implementation NOT AUTHORIZED**).
 - NEXT UNIT produktu → PROJECT_STATE (**STOP — OWNER DECISION REQUIRED**); Implementation **nie** autoryzowana; nie mylić z GO dokumentacyjnymi powyżej.
 
