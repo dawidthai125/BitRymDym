@@ -349,15 +349,15 @@ Storage and DB are **not** automatically one atomic transaction. Idempotency, re
 
 | Blocker | Status |
 |---------|--------|
-| Catalog original Storage **direction** | **OWNER-ACCEPTED (OD-SC-01)** — `beat-audio` + platform prefix + catalog metadata; exact key **DESIGN DIRECTION ONLY** `catalog/{catalogAssetId}/original.bin`; access/list/delete/retention/orphan policies **NOT VERIFIED** |
-| Audio format allowlist + max byte size | **OWNER-ACCEPTED (OD-SC-02…04)** — values in §12; runtime validation implementation **NOT VERIFIED** |
+| Catalog original Storage **direction** | **OWNER-ACCEPTED (OD-SC-01)** — `beat-audio` + prefix + encja `catalog_assets` · klucz `catalog/{catalogAssetId}/original.bin` · **repo policies SHIPPED** (`20261027220000_…`) · **prod apply BLOCKED** · access/list live **NOT VERIFIED** |
+| Audio format allowlist + max byte size | **OWNER-ACCEPTED (OD-SC-02…04)** — values in §12 unchanged · runtime declared gates **SHIPPED in repo** (`validateCatalogOriginalUploadMeta`) · content sniff **NOT IMPLEMENTED** (fail-closed) |
 | Exact AuthZ role matrix for catalog browse | **NOT VERIFIED** |
 | Fresh confirmation of `studio_cas_add_track` allowlist / editor wiring | **BLOCKED / NOT RE-VERIFIED** (dirty Studio files excluded) |
 | Storage↔DB copy failure protocol details | **NOT VERIFIED** (behaviour required; technique open) — see §12.1 |
 | Live/offline Scratch DSP parity evidence | **NOT VERIFIED** (must not be claimed until tested) |
 | Quantize feature existence / behaviour | **NOT VERIFIED** — OD-SC-05 is default-OFF intent only |
 | Sacred WIP eligibility service | **BLOCKED** — out of this contract |
-| Implementation GO | **Not granted** by this document — **Implementation NOT AUTHORIZED · NOT SHIPPED** |
+| Implementation GO | Gate 3 (2026-10-27): Storage+allowlist+API skeleton **authorized** · Scratch DJ v1 / prod apply / content sniff **still OUT** |
 
 ---
 

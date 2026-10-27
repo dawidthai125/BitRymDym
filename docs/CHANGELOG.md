@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-27 — Gate 3: Implementation Catalog (repo; prod apply BLOCKED)
+
+**Status:** code + SQL in Git · **SHIPPED in repo** · **NOT in prod** · Scratch DJ v1 **OUT** · **≠ Product GREEN**
+**Design:** [CATALOG_STORAGE_AND_OD_SC_02_GATES_2026-10-27.md](./decisions/CATALOG_STORAGE_AND_OD_SC_02_GATES_2026-10-27.md) — OD-SC-02 (20 MiB / no FLAC / 180 s) **≠** beat-audio MASTER 50 MiB+FLAC · OD values **nie** zmienione
+**Code:** `validateObjectKey` + `validateCatalogOriginalUploadMeta` · skeleton `src/lib/catalog/catalog-originals.ts` · `POST /api/catalog/copy` (auth + 501, zero zapisu)
+**SQL (repo only):** `supabase/migrations/20261027220000_catalog_originals_storage_and_entity.sql` — `catalog_assets` + Storage `catalog/` service_role · **prod apply BLOCKED**
+**Explicit non-claim:** content sniff NOT IMPLEMENTED · Scratch UI NOT SHIPPED · OD-15 OPEN
+**Docs updated:** PROJECT_STATE Sample Catalog row · kontrakt §13 pointers · REUSE map · this CHANGELOG · SESSION_BRIDGE
+
 ## 2026-10-27 — Gate 2: Contabo GO-HOST-RO (docs-only)
 
 **Status:** documentation only · **BLOCKED** on SSH · **≠** always-on · **≠** sync · **≠** canary

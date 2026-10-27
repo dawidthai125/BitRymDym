@@ -4,11 +4,14 @@ import {
   BEAT_AUDIO_DOWNLOAD_TTL_SECONDS,
   BEAT_AUDIO_MAX_BYTES,
   BEAT_AUDIO_PLAYBACK_TTL_SECONDS,
+  CATALOG_ORIGINAL_MAX_BYTES,
   buildBeatAudioObjectKey,
+  buildCatalogOriginalObjectKey,
   canDownloadOriginalBeatMaster,
   canRequestBeatAudioAccess,
   signedUrlTtlSeconds,
   validateAudioUploadMeta,
+  validateCatalogOriginalUploadMeta,
   validateObjectKey,
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
@@ -179,5 +182,41 @@ describe("beat audio access gate rules", () => {
         ownershipType: "PLATFORM",
       }),
     ).toBe(false);
+  });
+});
+
+describe("catalog original object key (OD-SC-01)", () => {
+  const catalogId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+
+  it("accepts catalog/{uuid}/original.bin and rejects other catalog shapes", () => {
+    const key = buildCatalogOriginalObjectKey(catalogId);
+    expect(key).toBe(`catalog/${catalogId}/original.bin`);
+    expect(validateObjectKey(key)).toBeNull();
+    expect(validateObjectKey(`catalog/${catalogId}/master.bin`)).not.toBeNull();
+    expect(validateObjectKey("catalog/not-a-uuid/original.bin")).not.toBeNull();
+    expect(validateObjectKey("other/prefix.bin")).toMatch(/platform\/, user\/, or catalog\//);
+  });
+
+  it("does not treat beat MASTER 50 MiB+FLAC as catalog allowlist", () => {
+    expect(
+      validateAudioUploadMeta({
+        contentType: "audio/flac",
+        byteSize: 1024,
+      }).ok,
+    ).toBe(true);
+    expect(
+      validateCatalogOriginalUploadMeta({
+        contentType: "audio/flac",
+        byteSize: 1024,
+        durationSeconds: 10,
+      }).ok,
+    ).toBe(false);
+    expect(
+      validateCatalogOriginalUploadMeta({
+        contentType: "audio/mpeg",
+        byteSize: CATALOG_ORIGINAL_MAX_BYTES,
+        durationSeconds: 180,
+      }).ok,
+    ).toBe(true);
   });
 });

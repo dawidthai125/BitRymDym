@@ -13,6 +13,21 @@ export const BEAT_AUDIO_MAX_BYTES = 50 * 1024 * 1024; // 50 MiB interim
 export const BEAT_AUDIO_PLAYBACK_TTL_SECONDS = 120;
 export const BEAT_AUDIO_DOWNLOAD_TTL_SECONDS = 300;
 
+/**
+ * OD-SC-02 catalog original gates — independent of beat MASTER allowlist.
+ * Bucket `beat-audio` stays 50 MiB + FLAC for masters. Catalog v1 is 20 MiB,
+ * no FLAC, max 180 s. Do not reuse `validateAudioUploadMeta` for catalog.
+ */
+export const CATALOG_ORIGINAL_MAX_BYTES = 20 * 1024 * 1024;
+export const CATALOG_ORIGINAL_MAX_SECONDS = 180;
+export const CATALOG_ORIGINAL_MIME_ALLOWLIST = [
+  "audio/mpeg",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/aac",
+] as const;
+
 /** OD-12 OPEN — interim MIME allow-list only (not final codec SSOT). */
 export const BEAT_AUDIO_INTERIM_MIME_ALLOWLIST = [
   "audio/mpeg",
@@ -142,10 +157,16 @@ export function isAuthorizedUserBeatObjectKeyRepresentation(params: {
   return params.objectKey === legacyTwin;
 }
 
+/** OD-SC-01 design direction: `catalog/{catalogAssetId}/original.bin`. */
+export function buildCatalogOriginalObjectKey(catalogAssetId: string): string {
+  return `catalog/${catalogAssetId.toLowerCase()}/original.bin`;
+}
+
 /**
- * Validate object key shape. Accepts platform/ and user/ prefixes.
+ * Validate object key shape. Accepts platform/, user/, and catalog/ prefixes.
  * USER accepts canonical `.../{assetId}/{purpose}.bin` and FAR-01 legacy
  * `.../master/{assetId}.bin` as structural shapes only — NOT authorization.
+ * Catalog accepts only `catalog/{catalogAssetId}/original.bin`.
  * Returns error message or null if ok.
  */
 export function validateObjectKey(objectKey: string): string | null {
@@ -197,7 +218,55 @@ export function validateObjectKey(objectKey: string): string | null {
     if (assetErr) return assetErr;
     return null;
   }
-  return "object key must start with platform/ or user/";
+  if (objectKey.startsWith("catalog/")) {
+    const parts = objectKey.split("/");
+    if (parts.length !== 3 || parts[2] !== "original.bin") {
+      return "catalog object key must be catalog/{catalogAssetId}/original.bin";
+    }
+    const idErr = assertUuidSegment(parts[1]!, "catalogAssetId");
+    if (idErr) return idErr;
+    return null;
+  }
+  return "object key must start with platform/, user/, or catalog/";
+}
+
+export function validateCatalogOriginalUploadMeta(params: {
+  contentType: string;
+  byteSize: number;
+  durationSeconds: number;
+}): { ok: true } | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  if (
+    !(CATALOG_ORIGINAL_MIME_ALLOWLIST as readonly string[]).includes(
+      params.contentType,
+    )
+  ) {
+    errors.push("contentType is not in catalog original allow-list");
+  }
+  if (
+    typeof params.byteSize !== "number" ||
+    !Number.isInteger(params.byteSize) ||
+    params.byteSize <= 0
+  ) {
+    errors.push("byteSize must be a positive integer");
+  } else if (params.byteSize > CATALOG_ORIGINAL_MAX_BYTES) {
+    errors.push(`byteSize must be at most ${CATALOG_ORIGINAL_MAX_BYTES}`);
+  }
+  if (
+    typeof params.durationSeconds !== "number" ||
+    !Number.isInteger(params.durationSeconds) ||
+    params.durationSeconds <= 0
+  ) {
+    errors.push("durationSeconds must be a positive integer");
+  } else if (params.durationSeconds > CATALOG_ORIGINAL_MAX_SECONDS) {
+    errors.push(
+      `durationSeconds must be at most ${CATALOG_ORIGINAL_MAX_SECONDS}`,
+    );
+  }
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true };
 }
 
 /**

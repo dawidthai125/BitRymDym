@@ -103,6 +103,9 @@ export function rejectArbitraryOrTraversalKey(objectKey: string): string | null 
   if (objectKey.includes("..") || objectKey.includes("//")) {
     return "object key must not contain path traversal";
   }
+  if (objectKey.startsWith("catalog/")) {
+    return "FAR-01 backfill does not accept catalog/ keys";
+  }
   return validateObjectKey(objectKey);
 }
 
