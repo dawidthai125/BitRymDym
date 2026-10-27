@@ -29,14 +29,19 @@ ECC `save-session` / magazyn poza repozytorium / pamięć czatu **nie** są kano
 
 ## 1. Cold-start (nowa sesja)
 
+**Trigger Cursor:** polecenie Ownera **„Kontynuuj projekt”** (lub równoważne wznowienie) → wykonaj tę sekcję od razu, bez pytania o osobny audyt startowy. Szczegóły fraz: reguła `.cursor/rules/bitrymdym-ssot-over-ecc.mdc` (Frazy sesji Cursor).
+
 1. Odczytaj `AGENTS.md` i obowiązujące instrukcje repozytorium (autonomia, Sacred WIP, zasady architektury).
 2. Odczytaj [FINAL_COLD_START_HANDOFF.md](../FINAL_COLD_START_HANDOFF.md).
 3. Odczytaj [PROJECT_STATE.md](../PROJECT_STATE.md), w szczególności **§2** (living tip / deploy / NEXT).
-4. Odczytaj **ten** plik (`SESSION_BRIDGE.md`).
-5. Sprawdź świeży `git status` — **zachowaj** istniejący dirty WIP.
-6. Przed planowaniem nowych zmian: [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md) · [architecture/REUSE_SSOT_MAP.md](../architecture/REUSE_SSOT_MAP.md) (kanoniczna mapa reuse / anti-dupe) · skill **`architecture-and-reuse`** (gdy dostępny) — MODIFY BEFORE CREATE / ONE CANONICAL.
-7. Ustal: FACT / NOT VERIFIED / plan — nie myl warstw; tip/deploy/NEXT wyłącznie z PROJECT_STATE.
-8. Ustal zakres następnego zadania; zatrzymaj się przed zmianami wymagającymi osobnego GO Ownera (chroniony WIP, destrukcja, produkcja).
+4. Odczytaj **ten** plik (`SESSION_BRIDGE.md`) — §4 (ostatnie `EXECUTED` / `BLOCKED`), §5 (open GO / STOP), §2 (snapshot = **wskazówka**, nie SSOT).
+5. Sprawdź świeży `git status` + `git rev-parse HEAD` / `origin/main` + staging — **zachowaj** istniejący dirty WIP. **Nie** czyść / stash / reset / restore niepowiązanego WIP.
+6. Ścieżki chronione = **status-only** (bez odczytu treści / diff / wyszukiwania / hasha / historii): Sacred `src/lib/takes/recording-eligibility-service.ts` · `src/components/studio/studio-editor.tsx` · `src/lib/studio/studio-service.ts` · `docs/architecture/SYSTEM_ARCHITECTURE.md`.
+7. Przed planowaniem nowych zmian: [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md) · [architecture/REUSE_SSOT_MAP.md](../architecture/REUSE_SSOT_MAP.md) · skill **`architecture-and-reuse`** (gdy dostępny) — MODIFY BEFORE CREATE / ONE CANONICAL.
+8. Ustal warstwy osobno: **FACT** (Git / dowód w repo) · **INFERENCE** · **NOT VERIFIED** · **BLOCKED**. Tip/deploy/NEXT wyłącznie z PROJECT_STATE §2 — **żywy Git wygrywa** nad przestarzłym wierszem §2.1/§5 tego pliku.
+9. Rozróżnij zadania: ukończone (dowód) · częściowe (`PARTIAL` / dirty bez commita) · nieuruchomione · zablokowane (`BLOCKED` / brak GO). **Nie** uznawaj ukończenia wyłącznie na podstawie starego raportu czatu lub samego wiersza `EXECUTED` bez zgodności z Git/dowodem w `outcome` / `evidence`.
+10. Ustal **jeden** konkretny, dozwolony następny krok. Zatrzymaj się przed implementacją, jeśli wymaga osobnego GO (chroniony / mixed WIP, destrukcja, produkcja, archiwizacja §4, tip w PROJECT_STATE).
+11. Zwróć krótki raport cold-startu (HEAD · dirty/Sacred status-only · NEXT/STOP · jeden następny krok · otwarte GO). Bez nowego szerokiego audytu produktu.
 
 Opcjonalnie (po powyższym):
 [handoffs/MASTER_START_PROMPT_CURSOR_PL.md](../handoffs/MASTER_START_PROMPT_CURSOR_PL.md) ·
@@ -136,7 +141,9 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 - Docelowe archiwum starszych wpisów: [CHANGELOG.md](../CHANGELOG.md) → sekcja `### SESSION_BRIDGE archive`.
 - **GO-1 i bieżąca polityka:** `docs/CHANGELOG.md` jest poza zakresem wielu GO dokumentacyjnych i może mieć dirty WIP. **Nie edytuj CHANGELOG** w ramach GO-1 ani „przy okazji” rotacji bez **osobnego GO Ownera**.
 - **Zakaz:** ciche usuwanie starszych wpisów `EXECUTED` bez zatwierdzonej procedury archiwizacji (osobne GO).
-- Gdy tabela osiągnie 15 `EXECUTED` i potrzeba dodać kolejny: **STOP** → Owner GO na archiwizację / CHANGELOG; nie kasuj wierszy samodzielnie.
+- **Przed** dopisaniem kolejnego `EXECUTED`: policz living `EXECUTED` w §4. Jeśli wynik ≥ 15 albo dopisanie przekroczyłoby 15 → **nie zapisuj** wiersza i **nie** kasuj historii.
+- Wówczas obowiązkowy wynik dla agenta: **`HANDOFF BLOCKED`** — podaj: aktualny licznik, że limit = 15, że wymagane jest **osobne GO Ownera** na archiwizację §4 → CHANGELOG `### SESSION_BRIDGE archive`, oraz że **nie** wolno tworzyć alternatywnego handoffu / drugiego mastera / cichej rotacji.
+- **Zakaz fałszywego sukcesu:** przy `HANDOFF BLOCKED` nie deklaruj „przekazanie sesji zakończone” / „handoff PASS”. Dozwolony jest raport w czacie ze statusem `HANDOFF BLOCKED` + faktami Git (status-only).
 
 ### 4.2 Przerwane / FAIL / brak commita
 
@@ -165,11 +172,11 @@ Linkuj, nie duplikuj:
 - Lokalny tip operacyjny Git (ten bridge): **`fa5b7ca…`** (parent **`db435ed…`**) — docs-only A–D; push ≠ Product GREEN · **≠** living tip SSOT (→ PROJECT_STATE).
 
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**
-- Path-scoped commit dirty docs (osobne GO / allowlista): `PROJECT_STATE` (P-NEXT-06+GO-5G-C+F) · `CHANGELOG` (P-NEXT-06+GO-5G-G) — **bez** Sacred / reszty WIP.
-- Path-scoped commit tego pliku (`SESSION_BRIDGE` tip refresh post A–D) — osobne GO · **bez** `git add -A`.
-- Path-scoped commit allowlisty archiwum (`SESSION_BRIDGE` + `CHANGELOG` po GO-SB-ARCHIVE) — osobne GO · **bez** `git add -A`.
-- P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = **`fa5b7ca`** (ancestor: `db435ed` / `d05aa4e` / `d462b22` / `03d889a`).
-- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R tip reconcile @ `db435ed`) · kontrakt A–D commit+push @ **`fa5b7ca`** · **GO-SB-ARCHIVE** (6× `EXECUTED` → CHANGELOG `### SESSION_BRIDGE archive`; living §4 = 10 `EXECUTED` + 1 `BLOCKED`; **bez** commit/push w tym GO).
+- Path-scoped commit dirty docs (osobne GO / allowlista): `PROJECT_STATE` (P-NEXT-06+GO-5G-C+F) · pozostały WIP `CHANGELOG` (P-NEXT-06+GO-5G-G + whitespace; **≠** już wypchnięte archiwum `c7fbaf3`) — **bez** Sacred / reszty WIP.
+- Path-scoped commit tego pliku (`SESSION_BRIDGE` tip refresh / continuity hardening / §2 snapshot ↔ HEAD) — osobne GO · **bez** `git add -A` · zachowaj dirty triggery §1/§6 jeśli nadal lokalne.
+- Path-scoped commit reguły `.cursor/rules/bitrymdym-ssot-over-ecc.mdc` (frazy sesji + hardening) — osobne GO / allowlista; **nie** łączyć z Sacred.
+- P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = aktualny tip (ancestor obejmuje **`c7fbaf3`** / `fa5b7ca` / …).
+- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G, lokalny dirty) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R @ `db435ed`) · kontrakt A–D @ **`fa5b7ca`** · **GO-SB-ARCHIVE** commit+push @ **`c7fbaf3`** (6× `EXECUTED` → CHANGELOG archive; living wtedy 10 `EXECUTED` + 1 `BLOCKED`).
 - P-NEXT-06 tip/deploy era = HISTORY w PS/CHANGELOG — **≠** zamknięcie toru produktowego QT / OD-SC / Sample Catalog (**Implementation NOT AUTHORIZED**).
 - NEXT UNIT produktu → PROJECT_STATE (**STOP — OWNER DECISION REQUIRED**); Implementation **nie** autoryzowana; nie mylić z GO dokumentacyjnymi powyżej.
 
@@ -177,28 +184,41 @@ Linkuj, nie duplikuj:
 
 ## 6. Checklist po zadaniu / handoff sesji
 
+**Trigger Cursor:** polecenie Ownera **„Kończymy sesję — przygotuj przekazanie pracy”** (lub równoważne zamknięcie) → wykonaj ten checklist i zaktualizuj ten plik zgodnie z rzeczywistym stanem (bez fikcji commit/push/test/deploy). Szczegóły fraz: reguła `.cursor/rules/bitrymdym-ssot-over-ecc.mdc` (Frazy sesji Cursor).
+
+**Gate przed zapisem:** policz living `EXECUTED` (§4.1). Jeśli dopisanie wiersza nie jest możliwe → **`HANDOFF BLOCKED`** (patrz §4.1) i **STOP** dalszego zapisu §4. Nadal wolno zaktualizować §2 snapshot (status-only), o ile nie wymaga to naruszenia chronionego/mixed WIP poza allowlistą tego GO. Nie obchodź limitu nowym plikiem handoffu.
+
 **Po istotnej jednostce pracy** (zanim nowa sesja przejmie zadanie) uzupełnij istniejące źródła — **nie** twórz drugiego master handoffu:
 
-1. Cel i zakres zadania (ten GO / wiersz §4).
-2. Stan początkowy vs aktualny (HEAD, staged, dirty obszary — status only; §2).
+1. Cel i zakres zadania (ten GO / wiersz §4) — albo powód `HANDOFF BLOCKED`.
+2. Stan początkowy vs aktualny (HEAD, staged, dirty obszary — status only; §2). Osobno: ukończone / częściowe / nieuruchomione / zablokowane.
 3. Kluczowe decyzje i uzasadnienie (link do OD / DECISION_LOG, nie kopiuj).
 4. Kanoniczne pliki / mechanizmy (link REUSE_SSOT_MAP + ścieżki).
-5. Zmienione pliki + krótki opis (diff allowlisty).
-6. Testy: wykonane / wyniki / niewykonane.
-7. Ryzyka, regresje, otwarte pytania.
-8. Potwierdzony Git: branch · HEAD · staging · ochrona WIP (Sacred status only).
-9. Następny krok + kryteria akceptacji + ograniczenia.
+5. Zmienione pliki + krótki opis (**tylko** diff allowlisty / ścieżki dozwolone do odczytu — Sacred/Studio chronione = status-only).
+6. Testy: wykonane / wyniki / niewykonane — bez fikcji.
+7. Ryzyka, regresje, otwarte pytania; niezacommitowany WIP = **PRESERVE** (nie czyść).
+8. Potwierdzony Git: branch · HEAD · `origin/main` (last-known) · staging · ochrona WIP (Sacred + Studio chronione = status-only).
+9. Następny krok + kryteria akceptacji + ograniczenia (**jeden** konkretny krok).
 10. Operacje nadal wymagające osobnego GO Ownera.
+
+**Weryfikacja własnego przekazania (obowiązkowa przed deklaracją sukcesu):**
+
+1. Ponów `git status` / `git rev-parse HEAD` — porównaj z twierdzeniami w raporcie i w §2/§4.
+2. Jeśli twierdzisz, że zapisano §4 / §2 — potwierdź, że diff allowlisty rzeczywiście zawiera te zmiany; inaczej **nie** deklaruj zapisu.
+3. Lokalna edycja ≠ commit ≠ push ≠ deploy. Brak dowodu → `NOT VERIFIED` / nie rość PASS.
+4. Przy `HANDOFF BLOCKED` raport czatu musi zawierać tę frazę + wymagane GO; to **nie** jest sukces handoffu plikowego.
 
 **Skrót kontrolny:**
 
 - [ ] Zakres = GO
-- [ ] Dopisano wiersz §4 (`execution` + `verification` rozdzielone; bez fikcji) — **tylko jeśli limit < 15** albo po GO archiwizacji
+- [ ] Gate limitu §4 wykonany (licznik znany)
+- [ ] Dopisano wiersz §4 (`execution` + `verification` rozdzielone; bez fikcji) — **tylko jeśli limit < 15** albo po GO archiwizacji; inaczej status **`HANDOFF BLOCKED`**
 - [ ] `git_sha` / `prod` tylko z dowodem
-- [ ] Zaktualizowano §2 WIP snapshot (status only)
-- [ ] Jeśli dodanie kolejnego `EXECUTED` przekroczyłoby 15 → **nie kasuj**; zgłoś potrzebę GO archiwizacji CHANGELOG
+- [ ] Zaktualizowano §2 WIP snapshot (status only) **albo** udokumentowano dlaczego nie (np. brak GO / konflikt WIP)
+- [ ] Jeśli dodanie kolejnego `EXECUTED` przekroczyłoby 15 → **nie kasuj**; **`HANDOFF BLOCKED`** + GO archiwizacji CHANGELOG
 - [ ] Tip/deploy: aktualizuj **PROJECT_STATE**, nie ten plik (osobny zakres/GO); living Git tip w §2.1/§5 może być odświeżony w bridge bez kopiowania SSOT tipu
-- [ ] Sacred / dirty: nietknięte poza zakresem
+- [ ] Sacred / Studio chronione / dirty poza zakresem: nietknięte
+- [ ] Raport uzgodniony z Git (weryfikacja powyżej)
 - [ ] Commit / push — wg `AGENTS.md` (path-scoped); **ten plik sam nie jest zgodą**; deploy claim ≠ push docs
 
 ---

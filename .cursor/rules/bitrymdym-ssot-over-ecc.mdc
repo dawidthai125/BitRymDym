@@ -28,6 +28,29 @@ Przy konflikcie wygrywa wyższy poziom. Nie domykaj decyzji OPEN (np. OD-15) „
 - Bez nieautoryzowanych mutacji produkcyjnych, sekretów w logach, masowego formatowania
 - Dopasuj plan, testy i review do **ryzyka** zadania — nie uruchamiaj pełnego pipeline ECC dla drobnej zmiany
 
+## Frazy sesji Cursor (kanon handoffu bez duplikatu)
+
+Nie twórz drugiego systemu ciągłości. Procedury = [SESSION_BRIDGE.md](../../docs/operations/SESSION_BRIDGE.md) §1 (start) i §6 (przekazanie). Tip / deploy / NEXT wyłącznie [PROJECT_STATE.md](../../docs/PROJECT_STATE.md) §2. ECC `save-session` / `resume-session` **nie** zastępują tego.
+
+**„Kontynuuj projekt”** (oraz równoważne wznowienie / cold-start):
+1. Odczytaj `AGENTS.md` + tę regułę; wykonaj cold-start wg SESSION_BRIDGE §1 (kolejność w §1; living tip/NEXT z PROJECT_STATE §2).
+2. Sprawdź świeży `git status` + HEAD/origin/staging (zachowaj dirty WIP; Sacred / Studio chronione / `SYSTEM_ARCHITECTURE` = status-only).
+3. Preferuj **żywy Git** nad przestarzłym snapshotem bridge §2/§2.1; tip/deploy/NEXT i tak z PROJECT_STATE §2.
+4. Ustal ostatni potwierdzony etap (bridge §4 + dowody Git) vs częściowe/zablokowane; **nie** uznawaj ukończenia samym starym raportem czatu.
+5. Wskaż **jeden** dozwolony następny krok; bez implementacji, jeśli wymaga GO; bez nowego szerokiego audytu produktu poza NEXT/GO.
+6. Przed nowym kodem: REUSE_SSOT_MAP + skill `architecture-and-reuse` (gdy dostępny).
+
+**Podczas pracy:** SSOT FIRST · REUSE FIRST · ZERO DUPLICATE LOGIC; rozróżniaj kod · docs · Git · deploy; lokalna edycja ≠ commit ≠ push ≠ deploy; skills ECC / subagenci tylko gdy realnie pomagają i są dostępne; nie instaluj narzędzi bez GO; nie twórz drugiego systemu handoffu.
+
+**„Kończymy sesję — przygotuj przekazanie pracy”** (oraz równoważne zamknięcie):
+1. Nie zaczynaj nowych zadań produktowych. Policz living `EXECUTED` w SESSION_BRIDGE §4 **przed** zapisem.
+2. Jeśli dopisanie `EXECUTED` przekroczyłoby limit 15 → **`HANDOFF BLOCKED`**: wymagane GO archiwizacji → CHANGELOG `### SESSION_BRIDGE archive`; **bez** cichej rotacji i **bez** alternatywnego handoffu; **nie** deklaruj sukcesu przekazania.
+3. Gdy limit pozwala: zaktualizuj **istniejący** SESSION_BRIDGE wg §6 (snapshot §2 status-only; wiersz §4; weryfikacja raportu vs Git).
+4. Tip / deploy / NEXT w PROJECT_STATE tylko przy osobnym GO na ten plik (mixed WIP = nie ruszać bez GO).
+5. W raporcie: ukończone / częściowe / nieuruchomione / zablokowane · weryfikacja z dowodem · Git (branch/HEAD/staging) · WIP PRESERVE · blokady · **jeden** następny krok.
+6. **Prawdziwość:** nie deklaruj zapisu / commit / push / testów / deploy bez potwierdzenia wykonania; po zapisie mostu ponów kontrolę Git vs raport.
+7. **Bezpieczeństwo:** bez naruszenia Sacred/chronionego WIP, bramek GO, deployu i operacji destrukcyjnych bez autoryzacji.
+
 ## Dobór zasobów
 
 - Skills: tylko pasujące do zadania; nie ładuj całego katalogu ECC/skills
