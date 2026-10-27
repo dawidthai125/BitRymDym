@@ -52,7 +52,8 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
-| 2026-10-27T13:57:00+01:00 (kontrakt A–D) | main | `db435ed` | 0 | ~168 | ~332 | docs≈186 · pozostałe dirty — **nie** przypisuj do kontraktu A–D | path `M` PRESERVE | porcelain≈500; indeks pusty; dirty: `PROJECT_STATE` · `CHANGELOG` · cold-start/MASTER (mixed) — poza zakresem; tip opublikowany GO-5G-Q/R |
+| 2026-10-27T14:17:35+01:00 (GO bridge tip · post A–D) | main | `fa5b7ca` | 0 | ~168 | ~332 | docs≈186 · pozostałe dirty — **nie** przypisuj do tego GO | path `M` PRESERVE | porcelain≈500; indeks pusty; dirty: `PROJECT_STATE` · `CHANGELOG` · cold-start/MASTER (mixed); lokalny tip operacyjny = commit A–D `fa5b7ca` · tip SSOT = PROJECT_STATE (nie edytowany) |
+| 2026-10-27T13:57:00+01:00 (HISTORY · kontrakt A–D pre-commit) | main | `db435ed` | 0 | ~168 | ~332 | docs≈186 · … | path `M` PRESERVE | HISTORY snapshot przed tipem `fa5b7ca` (A–D commit); tip then GO-5G-Q/R |
 | 2026-10-27T11:20:30+01:00 (HISTORY · GO-5G-O tip reconcile) | main | `d05aa4e` | 0 | ~168 | ~332 | docs≈186 · … | path `M` PRESERVE | HISTORY snapshot przed tipem `db435ed` (commit Q / push R) |
 | 2026-10-27T10:45:56+01:00 (HISTORY · GO-5G-H refresh) | main | `d462b22` | 0 | ~168 | ~332 | docs≈186 · … | path `M` PRESERVE | HISTORY snapshot przed tipem `d05aa4e` (parent bridge commit `d462b22`) |
 | 2026-10-27T09:49:43+01:00 (HISTORY · gap fill) | main | `03d889a` | 0 | ~169 | ~332 | docs≈187 · … | path `M` PRESERVE | HISTORY snapshot przed pushem tipu `d462b22` |
@@ -62,18 +63,19 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola lokalna `2026-10-27T13:57+01:00` (**bez** nowego `fetch` w fazie edycji kontraktu A–D; lokalny ref `origin/main` = last-known po GO-5G-R; **bez** nowego `vercel inspect`):
+Kontrola lokalna `2026-10-27T14:17+01:00` (**bez** nowego `fetch` w tym GO; lokalny ref `origin/main` = `fa5b7ca…` last-known lokalnie; **bez** nowego `vercel inspect`):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` | `db435edea9a6406052212736e00712607b0ca769` | tip `docs: reconcile session bridge tip` (GO-5G-Q); parent **`d05aa4e…`** |
-| Lokalny `origin/main` | `db435edea9a6406052212736e00712607b0ca769` | lokalny ref po push GO-5G-R · świeżość serwera w A–D **nie** re-weryfikowana fetch |
-| Opublikowany tip `main` (last-known GO-5G-R) | `db435ed…` | push potwierdzony raportem R (`ls-remote` + GitHub API); docs-only · **≠** nowy deploy claim |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **Git tip** living w PS może nadal lagować (`d462b22…` / wcześniejsze) — SSOT tip = PS · **Deploy last-known:** `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` Ready @ **`d462b22…`** · **DEPLOYMENT VERIFIED** · **ALIAS VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** (GO-5G-B; push docs **≠** dowód nowego `dpl_*`) |
-| Docs continuity (worktree) | GO-5G-C / F / G dirty | PS + CHANGELOG nadal dirty (mixed); commit = **osobne GO**; cold-start/MASTER dirty — poza A–D |
+| Lokalny `HEAD` | `fa5b7ca9ca0a3b7d3ffb606d1f9c838bf7e5b169` | tip operacyjny `docs: encode BitRymDym autonomy and session handoff contract` (kontrakt A–D); parent **`db435ed…`** |
+| Lokalny `origin/main` | `fa5b7ca9ca0a3b7d3ffb606d1f9c838bf7e5b169` | lokalny ref · `0/0` vs `HEAD` · świeżość serwera **nie** re-weryfikowana fetch w tym GO |
+| Opublikowany tip `main` (last-known lokalnie) | `fa5b7ca…` | docs-only A–D · **≠** nowy deploy claim · **≠** SSOT tip (→ PROJECT_STATE) |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** (ten bridge **nie** zastępuje) · living Git tip w PS może nadal lagować (`d462b22…` / wcześniejsze) · **Deploy last-known:** `dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1` Ready @ **`d462b22…`** · **DEPLOYMENT VERIFIED** · **ALIAS VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** (GO-5G-B; push docs **≠** dowód nowego `dpl_*`) |
+| Docs continuity (worktree) | GO-5G-C / F / G dirty | PS + CHANGELOG nadal dirty (mixed); commit = **osobne GO**; cold-start/MASTER dirty — poza tym GO bridge |
 
-**HISTORY (GO-5G-O tip table, `2026-10-27T11:20+01:00`):** HEAD/`origin` = `d05aa4e…` — **superseded** living Git tipem `db435ed…` (Q/R).  
-**HISTORY (GO-5G-H tip table, `2026-10-27T10:45+01:00`):** HEAD/`origin` = `d462b22…` — **superseded** living Git tipem `d05aa4e…` (J/M).  
+**HISTORY (kontrakt A–D tip table, `2026-10-27T13:57+01:00`):** HEAD/`origin` = `db435ed…` — **superseded** lokalnym tipem operacyjnym `fa5b7ca…` (A–D).  
+**HISTORY (GO-5G-O tip table, `2026-10-27T11:20+01:00`):** HEAD/`origin` = `d05aa4e…` — **superseded** tipem `db435ed…` (Q/R).  
+**HISTORY (GO-5G-H tip table, `2026-10-27T10:45+01:00`):** HEAD/`origin` = `d462b22…` — **superseded** tipem `d05aa4e…` (J/M).  
 **HISTORY (konflikt tip/push, `2026-10-27T09:49+01:00`):** HEAD=`03d889a` · `origin`=`2cc4cc1` · push then **nie** — **superseded** po pushu `d462b22` (GO-5D).
 
 **Zakazy (ten dokument nie upoważnia do):**
@@ -114,7 +116,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
-| 2026-10-27 | KONTRAKT A–D | Autonomia / reuse / handoff (AGENTS+bridge+continuity+REUSE map) | EXECUTED | PARTIAL | Edycja 4 plików allowlisty; tip bridge → `db435ed`; bez stage/commit/push w tej fazie | Diff A–D; raport implementacji | _(brak commita)_ | Path-scoped commit allowlisty = osobne GO · limit 15 pełny |
+| 2026-10-27 | KONTRAKT A–D | Autonomia / reuse / handoff (AGENTS+bridge+continuity+REUSE map) | EXECUTED | PARTIAL | Commit+push allowlisty 4 ścieżek: `AGENTS.md` · `docs/operations/SESSION_BRIDGE.md` · `docs/DOCUMENTATION_CONTINUITY.md` · `docs/architecture/REUSE_SSOT_MAP.md` · message `docs: encode BitRymDym autonomy and session handoff contract` · lokalny `HEAD`/`origin/main` = `fa5b7ca…` · **≠** nowy deploy claim | `git show fa5b7ca` · paths only | `fa5b7ca…` | Tip SSOT / deploy / NEXT → PROJECT_STATE (lag możliwy) · limit 15 pełny · commit tego bridge refresh = osobne GO |
 | 2026-10-27 | GO-5G-O | SESSION_BRIDGE tip reconcile → `d05aa4e` | EXECUTED | PARTIAL | Living snapshot O: tip `d05aa4e`; deploy `@ d462b22`; **HISTORY:** commit Q + push R → tip `db435ed` | Raporty O/Q/R · `git show db435ed` | `db435ed…` (Q) | Mixed WIP PS/CL = osobne GO |
 | 2026-10-27 | GO-5G-M | Push jednego commita `d05aa4e` | EXECUTED | PASS | Push `origin/main` bez force; remote SHA potwierdzony (raport M) | Raport GO-5G-M · `ls-remote` / GitHub API w M | `d05aa4e…` | Deploy/alias re-verify = osobne GO |
 | 2026-10-27 | GO-5G-J | Commit wyłącznie SESSION_BRIDGE | EXECUTED | PASS | Lokalny commit 1 pliku; message `docs: refresh session bridge snapshot` | `git show d05aa4e` · path only bridge | `d05aa4e…` | Push = GO-5G-M (done) |
@@ -160,19 +162,19 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (GO-5G-B; nie re-weryfikowane w A–D):**
-- Vercel Production **`dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1`** · target **production** · **Ready** @ SHA **`d462b22…`** (nie aktualizuj do `db435ed` / `d05aa4e` bez dowodu nowego `dpl_*`)
+**Last-known deploy / alias (GO-5G-B; nie re-weryfikowane w A–D ani w tym GO bridge):**
+- Vercel Production **`dpl_7XwqfE4jjXyTpPa3ozYMB4v4tro1`** · target **production** · **Ready** @ SHA **`d462b22…`** (nie aktualizuj do `fa5b7ca` / `db435ed` / `d05aa4e` bez dowodu nowego `dpl_*`)
 - Aliasy: **`www.bitrymdym.pl`** · **`bitrymdym.pl`** · **`bitrymdym.vercel.app`** → that `dpl_*`
 - **DEPLOYMENT VERIFIED** · **ALIAS VERIFIED** · **≠ PRODUCTION VERIFIED** · **≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
-- Living **Git** tip (lokalny + last-known published): **`db435ed…`** (parent **`d05aa4e…`**) — docs-only; push ≠ Product GREEN.
+- Lokalny tip operacyjny Git (ten bridge): **`fa5b7ca…`** (parent **`db435ed…`**) — docs-only A–D; push ≠ Product GREEN · **≠** living tip SSOT (→ PROJECT_STATE).
 
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**
-- Path-scoped commit allowlisty kontraktu A–D (ten bridge + `AGENTS.md` + CONTINUITY + REUSE map) — **bez** `git add -A`.
 - Path-scoped commit dirty docs (osobne GO / allowlista): `PROJECT_STATE` (P-NEXT-06+GO-5G-C+F) · `CHANGELOG` (P-NEXT-06+GO-5G-G) — **bez** Sacred / reszty WIP.
+- Path-scoped commit tego pliku (`SESSION_BRIDGE` tip refresh post A–D) — osobne GO · **bez** `git add -A`.
 - Archiwizacja SESSION_BRIDGE §4 → CHANGELOG (limit 15 `EXECUTED` **pełny**) — osobne GO.
-- P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = **`db435ed`** (ancestor: `d05aa4e` / `d462b22` / `03d889a`).
-- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R tip reconcile @ `db435ed`).
+- P-NEXT-10B (lub równoważne): allowlista 12 ścieżek 06/08 z D02 = `docs/phases/PHASE_RECORDING_D02_ANONYMOUS_QT_DESIGN_FREEZE_ADDENDUM.md`; baza HEAD = **`fa5b7ca`** (ancestor: `db435ed` / `d05aa4e` / `d462b22` / `03d889a`).
+- **HISTORY (done):** push tipu `03d889a`→`d462b22` · reconcile tip/deploy/alias w PROJECT_STATE (GO-5G-C) · §5→§2 (GO-5G-F) · wpis CHANGELOG GO-5G-C (GO-5G-G) · commit+push SESSION_BRIDGE (J/M @ `d05aa4e`; Q/R tip reconcile @ `db435ed`) · kontrakt A–D commit+push @ **`fa5b7ca`**.
 - P-NEXT-06 tip/deploy era = HISTORY w PS/CHANGELOG — **≠** zamknięcie toru produktowego QT / OD-SC / Sample Catalog (**Implementation NOT AUTHORIZED**).
 - NEXT UNIT produktu → PROJECT_STATE (**STOP — OWNER DECISION REQUIRED**); Implementation **nie** autoryzowana; nie mylić z GO dokumentacyjnymi powyżej.
 
