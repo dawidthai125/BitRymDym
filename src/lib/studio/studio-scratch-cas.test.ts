@@ -63,12 +63,18 @@ describe("Scratch CAS + SAMPLE/SCRATCH create", () => {
     expect(persist).not.toMatch(/mix-working-apply-service/);
   });
 
-  it("service reuses persist helpers without mix-working apply", () => {
+  it("service reuses persist helpers; mix-working stays off the scratch CAS path", () => {
     expect(service).toMatch(/applyStudioClipScratchCas/);
     expect(service).toMatch(/resolveStudioAddTrackTypeForWrite/);
     expect(service).toMatch(/StudioFxCasConflictError/);
     expect(service).toMatch(/p_track_type: trackType/);
-    expect(service).not.toMatch(/mix-working-apply-service/);
+    expect(persist).not.toMatch(/mix-working-apply-service/);
+    const scratchFn = service.slice(
+      service.indexOf("export async function updateStudioClipScratchFor"),
+      service.indexOf("export async function updateStudioClipGainMuteFor"),
+    );
+    expect(scratchFn).toMatch(/applyStudioClipScratchCas/);
+    expect(scratchFn).not.toMatch(/applyStudioMixWorkingOpsFor/);
   });
 
   it("routes accept trackType and set_scratch", () => {

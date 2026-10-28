@@ -49,6 +49,9 @@ export function studioEngineDocumentFromProject(
         muted: c.muted,
         fadeInMs: c.fadeInMs,
         fadeOutMs: c.fadeOutMs,
+        scratchCueMs: c.scratchCueMs,
+        scratchReverse: c.scratchReverse,
+        scratchRate: c.scratchRate,
       })),
   };
 }

@@ -1127,6 +1127,89 @@ describe("SFM-2.1 numerical geometry / mix", () => {
     ).rejects.toMatchObject({ code: "STUDIO_RENDER_DURATION_CAP" });
   });
 
+  it("applies approved Scratch reverse and rate from CAS clip fields", async () => {
+    const sr = STUDIO_OFFLINE_RENDER_SAMPLE_RATE;
+    const frames = sr; // 1s
+    const ramp = new Float32Array(frames * 2);
+    for (let i = 0; i < frames; i++) {
+      const v = i / frames;
+      ramp[i * 2] = v;
+      ramp[i * 2 + 1] = v;
+    }
+    const pcm = {
+      sampleRate: sr,
+      channels: 2 as const,
+      frames,
+      interleaved: ramp,
+    };
+    const document = doc({
+      timelineLengthMs: 200,
+      tracks: [track({ id: "t1" })],
+      clips: [
+        clip({
+          id: "c1",
+          trackId: "t1",
+          sourceKind: "TAKE",
+          sourceTakeId: "take-1",
+          durationMs: 200,
+          scratchReverse: true,
+          scratchRate: 1,
+          scratchCueMs: 0,
+        }),
+      ],
+    });
+    const reversed = await renderStudioDocumentOffline({
+      document,
+      resolvePcm: resolverFromMap({ "TAKE:take-1": pcm }),
+    });
+    const first = reversed.interleaved[0] ?? 0;
+    const lastVoice = reversed.interleaved[
+      Math.max(0, reversed.frames - 2) * 2
+    ] ?? 0;
+    expect(first).toBeGreaterThan(0.7);
+    expect(lastVoice).toBeLessThan(first);
+
+    const pitched = await renderStudioDocumentOffline({
+      document: doc({
+        timelineLengthMs: 200,
+        tracks: [track({ id: "t1" })],
+        clips: [
+          clip({
+            id: "c1",
+            trackId: "t1",
+            sourceKind: "TAKE",
+            sourceTakeId: "take-1",
+            durationMs: 200,
+            scratchReverse: false,
+            scratchRate: 2,
+            scratchCueMs: 0,
+          }),
+        ],
+      }),
+      resolvePcm: resolverFromMap({ "TAKE:take-1": pcm }),
+    });
+    const identity = await renderStudioDocumentOffline({
+      document: doc({
+        timelineLengthMs: 200,
+        tracks: [track({ id: "t1" })],
+        clips: [
+          clip({
+            id: "c1",
+            trackId: "t1",
+            sourceKind: "TAKE",
+            sourceTakeId: "take-1",
+            durationMs: 200,
+          }),
+        ],
+      }),
+      resolvePcm: resolverFromMap({ "TAKE:take-1": pcm }),
+    });
+    const pitchedMid = pitched.interleaved[Math.floor(pitched.frames / 2) * 2] ?? 0;
+    const identityMid =
+      identity.interleaved[Math.floor(identity.frames / 2) * 2] ?? 0;
+    expect(pitchedMid).toBeGreaterThan(identityMid);
+  });
+
   it("Stage G: missing PCM fails SOURCE_MISSING", async () => {
     const document = doc({
       timelineLengthMs: 100,

@@ -2,7 +2,8 @@
  * Scratch DJ v1 — approved + live parameter domain.
  * Live reverse uses BufferSource inside StudioAudioEngine (not a second engine).
  * Persist goes through existing studio_cas_* (approved cue/reverse/rate).
- * Offline encode remains fail-closed until export learns these params.
+ * Offline STUDIO_EXPORT bake applies the same approved CAS fields
+ * (cue + reverse + rate) in studio-offline-render — not a second engine.
  */
 
 export const SCRATCH_RATE_MIN = 0.25;
@@ -147,6 +148,35 @@ export function parseScratchApprovedForWrite(input: {
   };
 }
 
+/**
+ * Map approved Scratch CAS fields onto source time for STUDIO_EXPORT bake.
+ * Rate is linked pitch+speed (no independent time-stretch). Reverse reads
+ * backward through the same source window. Jog automation is OUT of v1.
+ */
+export function resolveScratchSourceMs(params: {
+  sourceOffsetMs: number;
+  localMs: number;
+  approved: StudioScratchApprovedState;
+  sourceDurationMs: number;
+}): number {
+  const rate = clampScratchRate(params.approved.rate);
+  const cueMs = Number.isFinite(params.approved.cueMs)
+    ? Math.max(0, params.approved.cueMs)
+    : 0;
+  const localMs = Number.isFinite(params.localMs) ? params.localMs : 0;
+  const sourceOffsetMs = Number.isFinite(params.sourceOffsetMs)
+    ? params.sourceOffsetMs
+    : 0;
+  const forwardMs = sourceOffsetMs + cueMs + localMs * rate;
+  if (!params.approved.reverse) return forwardMs;
+  const duration = Number.isFinite(params.sourceDurationMs)
+    ? params.sourceDurationMs
+    : 0;
+  if (duration < 1) return forwardMs;
+  // Exclusive duration maps to frame == frames; step back so t=0 hits the last sample.
+  return duration - 1e-6 - forwardMs;
+}
+
 export function assertScratchExportEncodable(approved: StudioScratchApprovedState): {
   ok: true;
 } | {
@@ -154,8 +184,21 @@ export function assertScratchExportEncodable(approved: StudioScratchApprovedStat
   error: typeof SCRATCH_EXPORT_UNSUPPORTED;
   message: string;
 } {
-  const rate = clampScratchRate(approved.rate);
-  if (approved.reverse || rate !== SCRATCH_DEFAULT_RATE) {
+  if (typeof approved.reverse !== "boolean") {
+    return {
+      ok: false,
+      error: SCRATCH_EXPORT_UNSUPPORTED,
+      message: SCRATCH_EXPORT_UNSUPPORTED_PL,
+    };
+  }
+  if (!Number.isFinite(approved.cueMs) || approved.cueMs < 0) {
+    return {
+      ok: false,
+      error: SCRATCH_EXPORT_UNSUPPORTED,
+      message: SCRATCH_EXPORT_UNSUPPORTED_PL,
+    };
+  }
+  if (!Number.isFinite(approved.rate)) {
     return {
       ok: false,
       error: SCRATCH_EXPORT_UNSUPPORTED,

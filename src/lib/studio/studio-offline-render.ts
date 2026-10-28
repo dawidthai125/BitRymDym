@@ -24,6 +24,7 @@ import {
   StudioOfflineFxError,
   type StudioOfflineFxChainHandle,
 } from "@/lib/studio/studio-offline-fx";
+import { resolveScratchSourceMs } from "@/lib/studio/studio-scratch-state";
 import { interpretStudioSessionAtPlayhead } from "@/lib/studio/studio-session-interpretation";
 
 export const STUDIO_OFFLINE_RENDER_ENGINE = "studio-offline-pcm-v1" as const;
@@ -226,13 +227,25 @@ export function applyLinearGainPanSample(
 function readSourceSample(
   pcm: DecodedPcmStereo,
   sourceOffsetMs: number,
-  playheadMsFloor: number,
-  tMs: number,
+  localMs: number,
+  scratch?: {
+    scratchCueMs?: number;
+    scratchReverse?: boolean;
+    scratchRate?: number;
+  },
 ): { left: number; right: number } | null {
-  // Continuous media position: clip.sourceOffset + local time
-  // At floor ms, voice.sourceOffsetMs = clip.sourceOffset + (floor - start)
-  // Continuous: sourceOffsetMs + (tMs - playheadMsFloor)
-  const srcMs = sourceOffsetMs + (tMs - playheadMsFloor);
+  const sourceDurationMs =
+    (pcm.frames / STUDIO_OFFLINE_RENDER_SAMPLE_RATE) * 1000;
+  const srcMs = resolveScratchSourceMs({
+    sourceOffsetMs,
+    localMs,
+    approved: {
+      cueMs: scratch?.scratchCueMs ?? 0,
+      reverse: Boolean(scratch?.scratchReverse),
+      rate: scratch?.scratchRate ?? 1,
+    },
+    sourceDurationMs,
+  });
   if (srcMs < 0) return null;
   const srcFrame = Math.floor((srcMs / 1000) * STUDIO_OFFLINE_RENDER_SAMPLE_RATE);
   if (srcFrame < 0 || srcFrame >= pcm.frames) {
@@ -538,15 +551,14 @@ export async function renderStudioDocumentOffline(
         );
       }
 
+      const clip = clipById.get(voice.clipId);
       const sample = readSourceSample(
         pcm,
-        voice.sourceOffsetMs,
-        playheadMsFloor,
-        tMs,
+        clip?.sourceOffsetMs ?? voice.sourceOffsetMs,
+        clip ? tMs - clip.timelineStartMs : tMs - playheadMsFloor,
+        clip,
       );
       if (!sample) continue;
-
-      const clip = clipById.get(voice.clipId);
       const clipGain = clip
         ? effectiveClipGain(clip, tMs)
         : voice.effectiveClipGain;

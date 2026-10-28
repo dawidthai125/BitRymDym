@@ -888,6 +888,72 @@ export async function updateStudioTrackControlsFor(
   }
 
   const row = existing as TrackRow;
+  const hasMixAllowlist =
+    typeof input.muted === "boolean" ||
+    typeof input.solo === "boolean" ||
+    (typeof input.gainDb === "number" && Number.isFinite(input.gainDb)) ||
+    typeof input.pan === "number";
+  const hasStructural =
+    typeof input.name === "string" || typeof input.recordArmed === "boolean";
+
+  // A3.5: allowlisted Mix Working params → atomic CAS gateway (tip+revision+ledger).
+  // name / recordArmed stay on legacy RPC (outside Mix Working history contract).
+  if (hasMixAllowlist) {
+    const { randomUUID } = await import("node:crypto");
+    const { applyStudioMixWorkingOpsFor } = await import(
+      "@/lib/studio/mix-working-apply-service"
+    );
+    const op: {
+      op: "set_track_controls";
+      trackId: string;
+      gainDb?: number;
+      pan?: number;
+      muted?: boolean;
+      solo?: boolean;
+    } = { op: "set_track_controls", trackId: input.trackId };
+    if (typeof input.gainDb === "number" && Number.isFinite(input.gainDb)) {
+      op.gainDb = input.gainDb;
+    }
+    if (typeof input.pan === "number") {
+      op.pan = normalizePan(input.pan);
+    }
+    if (typeof input.muted === "boolean") op.muted = input.muted;
+    if (typeof input.solo === "boolean") op.solo = input.solo;
+
+    const applied = await applyStudioMixWorkingOpsFor(context, {
+      projectId: input.projectId,
+      expectedDocumentVersion: expected,
+      requestId: randomUUID(),
+      ops: [op],
+    });
+
+    let documentVersion = applied.documentVersion;
+
+    if (hasStructural) {
+      // Rare combined PATCH: structural fields after allowlisted bump (new CAS).
+      return updateStudioTrackControlsFor(context, {
+        projectId: input.projectId,
+        trackId: input.trackId,
+        expectedDocumentVersion: documentVersion,
+        name: input.name,
+        recordArmed: input.recordArmed,
+      });
+    }
+
+    const { data: refreshed, error: refreshError } = await admin
+      .from("studio_tracks")
+      .select("*")
+      .eq("id", input.trackId)
+      .eq("project_id", input.projectId)
+      .single();
+    if (refreshError) throw new Error(refreshError.message);
+
+    return {
+      track: mapTrack(refreshed as TrackRow),
+      documentVersion,
+    };
+  }
+
   let nextName = row.name;
   if (typeof input.name === "string") {
     const name = input.name.trim().slice(0, STUDIO_TRACK_NAME_MAX_LENGTH);
@@ -1225,7 +1291,7 @@ export async function updateStudioMasterMixFor(
   masterGainDb: number;
   masterPan: number;
 }> {
-  const project = await assertOwnsProject(context, input.projectId);
+  await assertOwnsProject(context, input.projectId);
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
 
   const hasGain = input.masterGainDb !== undefined;
@@ -1237,37 +1303,43 @@ export async function updateStudioMasterMixFor(
     );
   }
 
-  const nextGain = hasGain
-    ? parseStudioMasterGainDb(input.masterGainDb)
-    : num(project.master_gain_db);
-  const nextPan = hasPan
-    ? parseStudioMasterPan(input.masterPan)
-    : num(project.master_pan);
-
-  if (expected !== project.document_version) {
-    throw new StudioFxCasConflictError();
+  const op: {
+    op: "set_master_mix";
+    masterGainDb?: number;
+    masterPan?: number;
+  } = { op: "set_master_mix" };
+  if (hasGain) {
+    op.masterGainDb = parseStudioMasterGainDb(input.masterGainDb);
   }
+  if (hasPan) {
+    op.masterPan = parseStudioMasterPan(input.masterPan);
+  }
+
+  const { randomUUID } = await import("node:crypto");
+  const { applyStudioMixWorkingOpsFor } = await import(
+    "@/lib/studio/mix-working-apply-service"
+  );
+  const applied = await applyStudioMixWorkingOpsFor(context, {
+    projectId: input.projectId,
+    expectedDocumentVersion: expected,
+    requestId: randomUUID(),
+    ops: [op],
+  });
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("studio_projects")
-    .update({
-      master_gain_db: nextGain,
-      master_pan: nextPan,
-      document_version: expected + 1,
-    })
+    .select("document_version, master_gain_db, master_pan")
     .eq("id", input.projectId)
     .eq("owner_id", context.userId)
-    .eq("document_version", expected)
-    .select("document_version, master_gain_db, master_pan")
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) throw new StudioFxCasConflictError();
+  if (!data) throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
 
   return {
-    documentVersion: num(data.document_version),
-    masterGainDb: num(data.master_gain_db),
-    masterPan: num(data.master_pan),
+    documentVersion: applied.documentVersion,
+    masterGainDb: num((data as ProjectRow).master_gain_db),
+    masterPan: num((data as ProjectRow).master_pan),
   };
 }
 
@@ -2050,31 +2122,41 @@ type FxCasRow = {
   chain: StudioFxChainV1;
 };
 
-async function applyStudioFxChainCas(params: {
-  ownerId: string;
+/**
+ * A3.5 — Track/Master FX via Mix Working atomic CAS gateway.
+ * Legacy studio_cas_apply_fx_chain is no longer used for editor FX writes.
+ */
+async function applyStudioFxChainViaMixWorking(params: {
+  context: AuthContext;
   projectId: string;
   expectedDocumentVersion: number;
   chain: StudioFxChainV1;
   trackId: string | null;
 }): Promise<FxCasRow> {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.rpc("studio_cas_apply_fx_chain", {
-    p_project_id: params.projectId,
-    p_owner_id: params.ownerId,
-    p_expected: params.expectedDocumentVersion,
-    p_chain: params.chain,
-    p_track_id: params.trackId,
+  const { randomUUID } = await import("node:crypto");
+  const { applyStudioMixWorkingOpsFor } = await import(
+    "@/lib/studio/mix-working-apply-service"
+  );
+  const ops =
+    params.trackId === null
+      ? [{ op: "set_master_fx" as const, effectsChain: params.chain }]
+      : [
+          {
+            op: "set_track_fx" as const,
+            trackId: params.trackId,
+            effectsChain: params.chain,
+          },
+        ];
+  const applied = await applyStudioMixWorkingOpsFor(params.context, {
+    projectId: params.projectId,
+    expectedDocumentVersion: params.expectedDocumentVersion,
+    requestId: randomUUID(),
+    ops,
   });
-  if (error) {
-    if (/TRACK_NOT_FOUND/i.test(error.message)) {
-      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
-    }
-    throw new Error(error.message);
-  }
-  const rows = (data as FxCasRow[] | null) ?? [];
-  const row = rows[0];
-  if (!row) throw new StudioFxCasConflictError();
-  return row;
+  return {
+    document_version: applied.documentVersion,
+    chain: params.chain,
+  };
 }
 
 export async function updateStudioTrackEffectsChainFor(
@@ -2103,8 +2185,8 @@ export async function updateStudioTrackEffectsChainFor(
   if (!track) {
     throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
   }
-  const applied = await applyStudioFxChainCas({
-    ownerId: context.userId,
+  const applied = await applyStudioFxChainViaMixWorking({
+    context,
     projectId: input.projectId,
     expectedDocumentVersion: expected,
     chain,
@@ -2136,8 +2218,8 @@ export async function updateStudioMasterFxChainFor(
   await assertOwnsProject(context, input.projectId);
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const chain = parseStudioFxChainForWrite(input.chain, { role: "master" });
-  const applied = await applyStudioFxChainCas({
-    ownerId: context.userId,
+  const applied = await applyStudioFxChainViaMixWorking({
+    context,
     projectId: input.projectId,
     expectedDocumentVersion: expected,
     chain,

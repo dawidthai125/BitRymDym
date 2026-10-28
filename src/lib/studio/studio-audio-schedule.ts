@@ -33,6 +33,10 @@ export type StudioEngineClip = {
   muted: boolean;
   fadeInMs: number;
   fadeOutMs: number;
+  /** Approved Scratch DJ v1 (CAS). Optional on older documents / fixtures. */
+  scratchCueMs?: number;
+  scratchReverse?: boolean;
+  scratchRate?: number;
 };
 
 export type StudioEngineDocument = {

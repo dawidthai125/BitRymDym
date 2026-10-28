@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 
 import { AuthError } from "@/lib/auth/session";
 import {
+  httpStatusForMixWorkingApplyError,
+  MixWorkingApplyError,
+} from "@/lib/studio/mix-working/mix-working-apply-errors";
+import {
   StudioFxCasConflictError,
   StudioFxChainError,
 } from "@/lib/studio/studio-fx-chain";
@@ -11,6 +15,12 @@ import {
 } from "@/lib/studio/studio-track-capacity";
 
 export function studioApiErrorResponse(error: unknown): NextResponse {
+  if (error instanceof MixWorkingApplyError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code },
+      { status: httpStatusForMixWorkingApplyError(error.code) },
+    );
+  }
   if (error instanceof StudioFxCasConflictError) {
     return NextResponse.json(
       { error: error.message, code: error.code },

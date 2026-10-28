@@ -52,12 +52,17 @@ export function classifyPersistHttpFailure(params: {
   code?: string;
 }): Extract<StudioPersistResult, { ok: false }> {
   const message = params.message ?? "Nie udało się zapisać.";
-  if (params.status === 409 || params.code === "FX_CHAIN_VERSION_CONFLICT") {
+  if (
+    params.status === 409 ||
+    params.code === "FX_CHAIN_VERSION_CONFLICT" ||
+    params.code === "IDEMPOTENCY_KEY_REUSE"
+  ) {
     return {
       ok: false,
       kind: "conflict",
       status: 409,
       message,
+      // Never auto-retry the same key with a different payload.
       retryable: false,
     };
   }

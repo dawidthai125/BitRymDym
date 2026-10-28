@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   SCRATCH_DEFAULT_RATE,
-  SCRATCH_EXPORT_UNSUPPORTED,
   SCRATCH_RATE_MAX,
   SCRATCH_RATE_MIN,
   applyScratchJogDelta,
@@ -10,6 +9,7 @@ import {
   assertScratchExportEncodable,
   clampScratchCueMs,
   clampScratchRate,
+  resolveScratchSourceMs,
   defaultScratchLiveState,
   releaseScratchJog,
   setScratchCue,
@@ -74,22 +74,49 @@ describe("studio-scratch-state", () => {
     ).toThrow(/cue/i);
   });
 
-  it("export fails closed for reverse or non-unity rate", () => {
+  it("export accepts approved reverse and non-unity rate for offline bake", () => {
     expect(
       assertScratchExportEncodable({ cueMs: 0, reverse: false, rate: 1 }),
     ).toEqual({ ok: true });
     expect(
-      assertScratchExportEncodable({ cueMs: 0, reverse: true, rate: 1 }).ok,
+      assertScratchExportEncodable({ cueMs: 0, reverse: true, rate: 1 }),
+    ).toEqual({ ok: true });
+    expect(
+      assertScratchExportEncodable({ cueMs: 80, reverse: false, rate: 1.2 }),
+    ).toEqual({ ok: true });
+    expect(
+      assertScratchExportEncodable({
+        cueMs: Number.NaN,
+        reverse: false,
+        rate: 1,
+      }).ok,
     ).toBe(false);
-    const pitched = assertScratchExportEncodable({
-      cueMs: 0,
-      reverse: false,
-      rate: 1.2,
-    });
-    expect(pitched.ok).toBe(false);
-    if (!pitched.ok) {
-      expect(pitched.error).toBe(SCRATCH_EXPORT_UNSUPPORTED);
-      expect(pitched.message).toMatch(/nie może pominąć/i);
-    }
+  });
+
+  it("maps approved cue/rate/reverse onto source time", () => {
+    expect(
+      resolveScratchSourceMs({
+        sourceOffsetMs: 100,
+        localMs: 50,
+        approved: { cueMs: 20, reverse: false, rate: 1 },
+        sourceDurationMs: 4000,
+      }),
+    ).toBe(170);
+    expect(
+      resolveScratchSourceMs({
+        sourceOffsetMs: 0,
+        localMs: 100,
+        approved: { cueMs: 0, reverse: false, rate: 2 },
+        sourceDurationMs: 4000,
+      }),
+    ).toBe(200);
+    expect(
+      resolveScratchSourceMs({
+        sourceOffsetMs: 0,
+        localMs: 250,
+        approved: { cueMs: 0, reverse: true, rate: 1 },
+        sourceDurationMs: 1000,
+      }),
+    ).toBeCloseTo(750, 3);
   });
 });
