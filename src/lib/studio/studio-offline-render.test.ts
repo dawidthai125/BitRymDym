@@ -11,6 +11,7 @@ import type {
   StudioEngineDocument,
   StudioEngineTrack,
 } from "@/lib/studio/studio-audio-schedule";
+import { encodeWavFromBake } from "@/lib/audio/wav-encode";
 import {
   applyLinearGainPanSample,
   renderStudioDocumentOffline,
@@ -1233,6 +1234,60 @@ describe("SFM-2.1 numerical geometry / mix", () => {
     expect(cuedFirst).toBeGreaterThan(0.35);
     expect(cuedFirst).toBeLessThan(0.45);
     expect(identityFirst).toBeLessThan(0.05);
+  });
+
+  it("encodes approved Scratch bake to WAV with RIFF/WAVE duration", async () => {
+    const sr = STUDIO_OFFLINE_RENDER_SAMPLE_RATE;
+    const frames = sr;
+    const ramp = new Float32Array(frames * 2);
+    for (let i = 0; i < frames; i++) {
+      const v = i / frames;
+      ramp[i * 2] = v;
+      ramp[i * 2 + 1] = v;
+    }
+    const pcm = {
+      sampleRate: sr,
+      channels: 2 as const,
+      frames,
+      interleaved: ramp,
+    };
+    const offline = await renderStudioDocumentOffline({
+      document: doc({
+        timelineLengthMs: 200,
+        tracks: [track({ id: "t1" })],
+        clips: [
+          clip({
+            id: "c1",
+            trackId: "t1",
+            sourceKind: "TAKE",
+            sourceTakeId: "take-1",
+            durationMs: 200,
+            scratchReverse: true,
+            scratchRate: 2,
+            scratchCueMs: 400,
+          }),
+        ],
+      }),
+      resolvePcm: resolverFromMap({ "TAKE:take-1": pcm }),
+    });
+    const encoded = await encodeWavFromBake({
+      interleaved: offline.interleaved,
+      sampleRate: offline.sampleRate,
+      channels: 2,
+      frames: offline.frames,
+      durationMs: Math.max(
+        1,
+        Math.round((offline.frames / offline.sampleRate) * 1000),
+      ),
+    });
+    expect(encoded.bytes.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(encoded.bytes.subarray(8, 12).toString("ascii")).toBe("WAVE");
+    expect(encoded.contentType).toBe("audio/wav");
+    expect(encoded.sampleRate).toBe(STUDIO_OFFLINE_RENDER_SAMPLE_RATE);
+    expect(encoded.bitDepth).toBe(16);
+    expect(encoded.durationMs).toBe(200);
+    expect(encoded.byteSize).toBeGreaterThan(44);
+    expect(encoded.bytes.length).toBe(encoded.byteSize);
   });
 
   it("Stage G: missing PCM fails SOURCE_MISSING", async () => {
