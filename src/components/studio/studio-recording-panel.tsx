@@ -4,6 +4,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
+import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
 import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
@@ -1701,6 +1702,13 @@ export function StudioRecordingPanel({
             {trackCreateBusy === "SCRATCH" ? "Dodawanie…" : "Dodaj Scratch"}
           </Button>
         </div>
+        <StudioMarkersPanel
+          projectId={projectId}
+          getExpectedDocumentVersion={getExpectedDocumentVersion}
+          enqueuePersistAsync={enqueuePersistAsync}
+          getPlayheadMs={transport.getPlayheadMs}
+          onSeek={transport.seek}
+        />
         <StudioScratchPanel
           sourceDurationMs={Math.max(1, transport.timelineLengthMs)}
           playheadInSourceMs={Math.floor(transport.getPlayheadMs())}

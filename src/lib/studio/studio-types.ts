@@ -4,6 +4,7 @@ import type {
   StudioTrackType,
 } from "@/config/studio";
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
+import type { StudioMarkerDto } from "@/lib/studio/studio-markers-state";
 
 export type StudioProjectSummary = {
   id: string;
@@ -64,6 +65,8 @@ export type StudioProjectDocument = {
   };
   tracks: StudioTrackDto[];
   clips: StudioClipDto[];
+  /** A3/P7 lite. Optional on older documents until service maps the column. */
+  markers?: StudioMarkerDto[];
 };
 
 /** Compact READY Take row for Studio place-from-library (P5.6). */
