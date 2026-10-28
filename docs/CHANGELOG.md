@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Scratch persist isolation from mix-working
+
+**Status:** kod **SHIPPED** @ `6014556…` · service **bez** mix-working · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Orchestrator — path-scoped commit+push izolacji Scratch persist
+**Tip start:** `ba181500943621a99233a8ce1974f25b2974fbe0` = `origin/main` (`ls-remote`)
+**Code:** `studio-scratch-persist.ts` = kanon CAS `studio_cas_apply_clip_scratch` + parse SAMPLE/SCRATCH · `studio-service.ts` cienki reuse · `POST /tracks` `trackType` · `PATCH …/clips` `op=set_scratch` · panel `onApprove`
+**Tests:** `npx vitest run src/lib/studio/studio-scratch-cas.test.ts` → **6/6 PASS** · `tsc --noEmit` **PASS**
+**Explicit non-claim:** mix-working **nie** restore · prod USER copy **BLOCKED** · **≠** Scratch GREEN
+**Audit:** [SCRATCH_PERSIST_ISOLATION_2026-10-28.md](./audits/SCRATCH_PERSIST_ISOLATION_2026-10-28.md)
+**NEXT:** Owner GO restore mix-working na cienki service **albo** prod USER copy **albo** export encode
+
+## 2026-10-28 — SESSION_BRIDGE §4 archive (eighth batch, room for persist isolation)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`GATE-A` · `GO-SB-ARCHIVE-4` · `GATE-2R`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` + `USER-COPY` BLOCKED zachowane
+
 ## 2026-10-28 — Scratch reverse + CAS + SAMPLE/SCRATCH create
 
 **Status:** kod **SHIPPED in repo** · CAS schema **APPLIED** · prod USER copy **BLOCKED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
@@ -216,10 +231,13 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-27 | GATE-A | Contabo poll journal RO (LEFT RUNNING) | EXECUTED | PASS | Owner: zostaw RUNNING. Status **enabled/active/running** PID **847** since 2026-10-23 20:47 CEST. `journalctl -n 80` = `claims_empty` / `busy=false`. Sekrety brak. **Nie** stop/start/enable. Audit appended. | `systemctl status/show` · `journalctl -n 80` · audit journal section | _(ten commit)_ | Poll zostaje. SHA hosta nadal NOT VERIFIED |
+| 2026-10-27 | GO-SB-ARCHIVE-4 | Archiwizacja §4 → CHANGELOG (room for A/B/C) | EXECUTED | PASS | Przeniesiono 5 najstarszych `EXECUTED` (`GO-TEAM-CLOSE` · `GO-SESSION-CLOSE` · `CONTINUITY-RELIABILITY` · `COLD-START-CLOSE` · `GO-SB-ARCHIVE`) → CHANGELOG archive. Living 14→9, po A/B/C + tym wierszu **13**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
+| 2026-10-27 | GATE-2R | Contabo GO-HOST-RO retry (właściwy klucz) | EXECUTED | PASS | Live SSH **PASS**. Klucz `C:\Users\dawid\.ssh\bitrymdym-contabo-recovery-ed25519` (passphrase). Gate 2 MISSING/`BatchMode` 255 = zła tożsamość. Host `vmi3622761`. Oneshot **disabled/inactive**. Poll **enabled/active/running** PID 847 since 2026-10-23. `HAS_GIT=no`. Always-on **nie** enable. Audit zaktualizowany. | interactive ssh exit 0 · `hostname` · `systemctl` · `sudo -n test -d .git` | `5200c6d…` | Owner GO: co z żywym `bitrymdym-e3-worker-poll` — **done: zostaw + journal RO** |
 | 2026-10-27 | GATE-3 | Implementation Catalog (policies+allowlist+skeleton) | EXECUTED | PARTIAL | Repo: OD-SC-02 gates + `catalog/` key w `validateObjectKey` · migracja `20261027220000_…` · copy skeleton 501 · **prod apply BLOCKED** · Scratch **OUT**. Tests vitest allowlist. PS: SHIPPED in repo / NOT in prod | `git show` paths · vitest audio-validation + catalog-originals | _(ten commit)_ | NEXT: prod apply GO **albo** content sniff **albo** Scratch (osobno) |
 | 2026-10-27 | GATE-2 | Contabo GO-HOST-RO | EXECUTED | BLOCKED | Live SSH **NOT DONE — blocked on SSH**. Klucz `bitrymdym-e3-contabo` **MISSING**. Recovery name istnieje, `Permission denied (publickey)` exit 255. Always-on **nie** enable. Audit [CONTABO_GO_HOST_RO_2026-10-27.md](./audits/CONTABO_GO_HOST_RO_2026-10-27.md) · PS pointer | `Test-Path` · `ssh` BatchMode 255 | _(ten commit)_ | Owner: restore documented key albo osobny GO. Gate 3 Implementation Catalog |
 | 2026-10-27 | GATE-1 | SFM staging/host RO planes | EXECUTED | PARTIAL | Audyt [SFM_PLANES_STAGING_HOST_RO_2026-10-27.md](./audits/SFM_PLANES_STAGING_HOST_RO_2026-10-27.md). (1) code `5212933` ancestor **VERIFIED**. (2–4) staging SHA/schema/worker **NOT VERIFIED** (brak targetu). (6) prod DB A–D+KIND_REJECT **VERIFIED RO** · 0 versions/jobs. Flaga **nie** ON. Host process = Gate 2. PS tylko wiersze SFM RO | `git merge-base` · MCP `list_migrations`/`list_projects`/`list_branches` · SELECT counts | _(ten commit)_ | Gate 2 Contabo GO-HOST-RO |
