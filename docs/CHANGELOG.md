@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Deploy bind FACT + §7 hygiene (dpl_*/alias NOT VERIFIED)
+
+**Status:** GH Production **`7395335802`** **success** @ **`06ffbf0`** · unique `bitrymdym-k69kchfn9-…` **302 SSO** · kod **`5043b5e`** ancestor exit 0 · www **200** bez SHA · **`dpl_*` NOT VERIFIED** · alias SHA bind **NOT VERIFIED** · HTTP copy/place z UI **PASS** (istniejący SET-SCRATCH-UI + CAT-PLACE-UI; bez nowego smoke) · §7/§5 hygiene · ucha **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „Robimy według twojej kolejności i propozycji działajcie!”
+**Tip start:** `06ffbf0ae83b2974ab37d774eb4b00f191debfef` = `origin/main` · kod **`5043b5e`**
+**Bind FACT:** `gh` deployments Production · Vercel commit status success · Vercel CLI ABSENT · unique URL SSO · bez OAuth
+**Hygiene:** §7 nie listuje już punch/metro/catalog/Scratch PARTIAL/markers A3 jako blanket OUT · §5 Next Session Entry → living `06ffbf0` / NEXT UNIT
+**Explicit non-claim:** `dpl_*` / alias SHA bind **NOT VERIFIED** · ucha Owner **NOT VERIFIED** · **≠** PRODUCTION VERIFIED · **≠** Product GREEN
+**NEXT:** stop · EXPECT ucha Owner **albo** `vercel inspect` gdy CLI/token — nie SFM / nie Contabo / nie OD-15
+
 ## 2026-10-28 — Scratch bake `--play` polarity + PlaySync PASS (ucho NOT VERIFIED)
 
 **Status:** polarność PCM/header **PASS** · SoundPlayer PlaySync **PLAY PASS** ×4 (exit 0) · ucha Owner **NOT VERIFIED** · temp WAV cleanup · 0 zmian produktu Studio · Contabo/SFM **nietknięte** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

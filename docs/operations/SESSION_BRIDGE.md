@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T20:40:00+01:00 (deploy bind + §7) | main | `06ffbf0` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `06ffbf0`=`origin/main`; kod `5043b5e` ancestor; GH **`7395335802`** success · unique `bitrymdym-k69kchfn9-…` **302 SSO**; `dpl_*`/alias **NOT VERIFIED**; HTTP copy/place z UI **PASS** (bez nowego smoke); §7/§5 hygiene; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T20:35:00+01:00 (bake --play ucha) | main | `7e14a54` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `7e14a54`=`origin/main`; kod `5043b5e`; polarność **PASS** · PlaySync ×4 **PLAY PASS** (exit 0) · ucha **NOT VERIFIED**; temp WAV cleanup; allowlista docs: CHANGELOG+PS+bridge; skrypt **nie** duplikowany; Sacred/Studio PRESERVE · OD-15 OPEN · §4 archive-18 + BAKE-LISTEN-PLAY · ≠ GREEN |
 | 2026-10-28T20:20:00+01:00 (UI Zatwierdź stan set_scratch move) | main | `5043b5e` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `5043b5e`=`origin/main`; Catalog place → Record został → Zatwierdź stan → PATCH set_scratch **200** → move **200** bez CAS/F5; leftover **0**; Bit/Wokal Keep OK; projekt `178e902d-…` v50; GH **`7394804255`** @ `5043b5e` success · unique `bitrymdym-1svy8dp50-…`; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T20:06:00+01:00 (lift lastScratchClipId) | main | `237c12e` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `237c12e`=`origin/main`; GO editor; lastScratchClipId lift + preferRecord helpers; vitest **96/96**; editor +18/−1; panel +6/−4; context +14; UI Catalog→Zatwierdź→move NOT VERIFIED; allowlista: editor+panel+context+4 testy+CHANGELOG+PS+bridge; Sacred/service PRESERVE · OD-15 OPEN · §4 archive-17 + SCRATCH-LIFT-ID · ≠ GREEN |
@@ -102,14 +103,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T20:35+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T20:40+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (przed tym commit) | `7e14a54` | start `7e14a5493586204140e1d15e4598afd78c70d77a` = `origin/main`; kod `5043b5e` |
-| Last independently verified deploy | GH **`7394804255`** @ `5043b5e` · unique `bitrymdym-1svy8dp50-…` · ancestor GH **`7381694008`** @ `56c7f2f` | obie **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · bake `--play` polarność **PASS** · PlaySync ×4 **PLAY PASS** · ucha **NOT VERIFIED** |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · bake `--play` polarność/PlaySync **PASS** · ucha **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | bake `--play` polarity + PlaySync PASS · ucha NOT VERIFIED | Ten zapis edytuje most + CHANGELOG + PS |
+| Lokalny `HEAD` (przed tym commit) | `06ffbf0` | start `06ffbf0ae83b2974ab37d774eb4b00f191debfef` = `origin/main`; kod `5043b5e` ancestor |
+| Last independently verified deploy | GH **`7395335802`** @ `06ffbf0` · unique `bitrymdym-k69kchfn9-…` **302 SSO** · ancestor GH **`7394804255`** @ `5043b5e` | obie **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · HTTP copy/place z UI **PASS** · ucha **NOT VERIFIED** |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · GH success @ `06ffbf0` · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | deploy bind FACT + §7/§5 hygiene | Ten zapis edytuje most + CHANGELOG + PS |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -158,6 +159,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | DEPLOY-BIND-H7 | Deploy bind FACT + §7 hygiene | EXECUTED | PARTIAL | Start tip `06ffbf0`=`origin/main`. Kod `5043b5e` ancestor exit 0. GH **`7395335802`** success @ `06ffbf0` · unique `bitrymdym-k69kchfn9-…` **302 SSO**. www **200** bez SHA. `dpl_*`/alias **NOT VERIFIED**. HTTP copy/place z UI **PASS** (SET-SCRATCH-UI + CAT-PLACE-UI; bez nowego smoke). §7/§5 hygiene. Ucho Owner **NOT VERIFIED**. Contabo/SFM nietknięte. ≠ Product GREEN. | `gh` `7395335802` · curl www/apex/unique | _(ten commit)_ | NEXT: stop · EXPECT ucha Owner **albo** vercel inspect gdy CLI |
 | 2026-10-28 | BAKE-LISTEN-PLAY | Scratch bake `--play` polarity + PlaySync | EXECUTED | PARTIAL | Start tip `7e14a54`=`origin/main`. Kod `5043b5e`. REUSE `scripts/_bake-listen-scratch-wav.ts` `--play --cleanup` (już na `main` @ `ad28be2`). Polarność PCM/header **PASS**. SoundPlayer PlaySync exit 0 ×4 (**PLAY PASS**). Ucho Owner **NOT VERIFIED**. Temp WAV usunięte. 0 zmian produktu Studio. Contabo/SFM nietknięte. ≠ Product GREEN. | skrypt dump · PlaySync ×4 · EXIT=0 | _(ten commit)_ | NEXT: stop · EXPECT ucha Owner: 4 rampy DC 200ms |
 | 2026-10-28 | GO-SB-ARCHIVE-18 | Archiwizacja §4 → CHANGELOG (room for bake `--play`) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`CAT-PLACE-UI` · `MARKERS-RESMOKE` · `GO-SB-ARCHIVE-13`) → CHANGELOG archive. Living 15→12, po BAKE-LISTEN-PLAY + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | SET-SCRATCH-UI | UI Zatwierdź stan → set_scratch → clip-move | EXECUTED | PASS | Start tip `5043b5e`=`origin/main`. Catalog place → Record został → Zatwierdź stan → PATCH set_scratch **200** → clip-move **200** bez CAS/F5. Cleanup leftover **0**. Bit/Wokal Keep OK. Projekt `178e902d-…` v50. GH **`7394804255`** @ `5043b5e` success · unique `bitrymdym-1svy8dp50-…`. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | Owner UI smoke · `gh` `7394804255` | `5043b5e` + ten docs | NEXT: stop kolejki ack **albo** Owner bake `--play` ucha |
@@ -174,7 +176,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-28 | GO-SB-ARCHIVE-14 | Archiwizacja §4 → CHANGELOG (room for bake listen) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GO-SB-ARCHIVE-10` · `GIT-CLOSEOUT` · `GO-SB-ARCHIVE-9`) → CHANGELOG archive. Living 15→12, po BAKE-LISTEN-POLARITY + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (eighteenth batch CAT-PLACE-UI + MARKERS-RESMOKE + GO-SB-ARCHIVE-13 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (eighteenth batch CAT-PLACE-UI + MARKERS-RESMOKE + GO-SB-ARCHIVE-13 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. **Następny EXECUTED wymaga GO archiwizacji §4.**
 
 ### 4.1 Limit i archiwizacja
 
@@ -205,10 +207,10 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (odczyt `2026-10-28T08:28+01:00`; bez `vercel inspect`):**
-- Living Git: **`5b2fceb…`** = `origin/main` (`ls-remote`)
-- GitHub Production **`7379526025`** · **success** · `2026-10-28T07:21:22Z` @ **`5b2fceb…`** · unique `bitrymdym-3lsi0b9do-…`
-- Prod USER copy **PASS** + cleanup leftover **0** · Sacred PRESERVE
+**Last-known deploy / alias (odczyt `2026-10-28T20:40+01:00`; bez `vercel inspect`):**
+- Living Git: **`06ffbf0…`** = `origin/main` (`ls-remote`) · kod **`5043b5e`** ancestor
+- GitHub Production **`7395335802`** · **success** · `2026-10-28T19:32:37Z` @ **`06ffbf0…`** · unique `bitrymdym-k69kchfn9-…` **302 SSO**
+- ancestor GH **`7394804255`** **success** @ `5043b5e`
 - `dpl_*` / alias www **NOT VERIFIED** · **DEPLOYMENT success ≠ PRODUCTION VERIFIED ≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
 
