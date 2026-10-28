@@ -35,6 +35,14 @@ const clipRoute = readFileSync(
   ),
   "utf8",
 );
+const recording = readFileSync(
+  join(root, "src/components/studio/studio-recording-panel.tsx"),
+  "utf8",
+);
+const editor = readFileSync(
+  join(root, "src/components/studio/studio-editor.tsx"),
+  "utf8",
+);
 
 describe("Scratch CAS + SAMPLE/SCRATCH create", () => {
   it("add-track allowlist is VOCAL | SAMPLE | SCRATCH and inserts p_track_type", () => {
@@ -81,6 +89,21 @@ describe("Scratch CAS + SAMPLE/SCRATCH create", () => {
     expect(addRoute).toMatch(/trackType: body\.trackType/);
     expect(clipRoute).toMatch(/set_scratch/);
     expect(clipRoute).toMatch(/updateStudioClipScratch/);
+  });
+
+  it("create-track and Scratch persist ack parent so editor docRef advances", () => {
+    expect(recording).toMatch(
+      /const version = ackDocumentVersion\(body\.documentVersion\)/,
+    );
+    expect(recording).toMatch(/op: "set_scratch"/);
+    expect(recording).toMatch(
+      /documentVersion: ackDocumentVersion\(body\.documentVersion\)/,
+    );
+    expect(recording).toMatch(/onDocumentVersionAck\?\.\(next\)/);
+    expect(editor).toMatch(/onDocumentVersionAck=\{applyAckedDocumentVersion\}/);
+    expect(editor).toMatch(
+      /function applyAckedDocumentVersion\(ack: unknown\): number/,
+    );
   });
 
   it("parse add-track type defaults to VOCAL and rejects BEAT", () => {

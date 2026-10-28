@@ -174,4 +174,33 @@ describe("Studio markers persist version tip — stale CAS regression", () => {
     expect(expectedDocumentVersion()).toBe(11);
     expect(docRef.current.project.documentVersion).toBe(11);
   });
+
+  it("scratch persist and create-track ack update docRef so clip-move getter sees N+1", () => {
+    const docRef = { current: { project: { documentVersion: 10 } } };
+    const tip = createStudioPersistVersionTip(
+      () => docRef.current.project.documentVersion,
+    );
+    const applyAckedDocumentVersion = (ack: unknown): number => {
+      const next = advanceStudioPersistDocumentVersion(
+        docRef.current.project.documentVersion,
+        ack,
+      );
+      if (next > docRef.current.project.documentVersion) {
+        docRef.current = { project: { documentVersion: next } };
+      }
+      return next;
+    };
+    const ackDocumentVersion = (ack: unknown): number => {
+      const next = tip.applyAck(ack);
+      return applyAckedDocumentVersion(next);
+    };
+    const expectedDocumentVersion = () =>
+      docRef.current.project.documentVersion;
+
+    ackDocumentVersion(11);
+
+    expect(tip.expected()).toBe(11);
+    expect(expectedDocumentVersion()).toBe(11);
+    expect(docRef.current.project.documentVersion).toBe(11);
+  });
 });

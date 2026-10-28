@@ -186,7 +186,7 @@ export function StudioRecordingPanel({
               `Nie udało się dodać ścieżki ${label}.`,
           });
         }
-        const version = persistVersionTip.applyAck(body.documentVersion);
+        const version = ackDocumentVersion(body.documentVersion);
         return {
           ok: true as const,
           documentVersion: version,
@@ -201,6 +201,7 @@ export function StudioRecordingPanel({
       setTrackCreateBusy(null);
     },
     [
+      ackDocumentVersion,
       enqueuePersistAsync,
       onTrackCreated,
       persistVersionTip,
@@ -1775,9 +1776,7 @@ export function StudioRecordingPanel({
                 }
                 return {
                   ok: true as const,
-                  documentVersion: persistVersionTip.applyAck(
-                    body.documentVersion,
-                  ),
+                  documentVersion: ackDocumentVersion(body.documentVersion),
                   apply: () => {
                     setCatalogMessage("Zapisano zatwierdzony stan Scratch.");
                   },
