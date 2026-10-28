@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Studio Keep Take UX po Stop (P5.6 bez auto-place)
+
+**Status:** kod **SHIPPED** · kontrakt P5.6 **PASS** · Owner device **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner GO B — Stop = finalize only; UX ma wskazać **Zachowaj**
+**Tip start:** `f4e6b4a1ef45967fac6d1485d9d07d0be4673d23` = `origin/main` (żywy Git)
+**Zmiana:** `studio-recording-panel.tsx` — blok „Nagranie gotowe / ✓ Zachowaj” nad Katalog/Scratch/Sample; status „Nagranie gotowe — kliknij Zachowaj, żeby wstawić na ścieżkę.”; `scrollIntoView` na `aria-label="Studio Take Workflow"` po READY_TAKE
+**P5.6:** `stopAndFinalize` nadal **bez** `record/place` / `placeReadyTakeOnTimeline`
+**Tests:** `p5-6-take-workflow` + vocal-import + stu-08 + p5-5 → **61/61 PASS**
+**Explicit non-claim:** live rec/mic **NOT RUN** · OD-15 **OPEN**
+**NEXT:** Owner sprawdza Stop → widoczny Zachowaj → ręczne umieszczenie na ścieżce
+
 ## 2026-10-28 — Catalog place E2E + Scratch export WAV fixture
 
 **Status:** place E2E **PASS** + leftover **0** · WAV header fixture **PASS** · Owner listen **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

@@ -216,6 +216,7 @@ export function StudioRecordingPanel({
   const [catalogBusy, setCatalogBusy] = useState(false);
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
+  const takeWorkflowRef = useRef<HTMLDivElement | null>(null);
 
   const [state, dispatch] = useReducer(
     reduceRecordingUi,
@@ -255,6 +256,7 @@ export function StudioRecordingPanel({
     useState<TakeRecoveryWriterState | null>(null);
 
   const captureActive = isRecordingCaptureActive(state.phase);
+  const showWorkflow = state.phase === "READY_TAKE" && state.takeId;
 
   const meterStream =
     state.phase === "RECORDING" || state.phase === "READY"
@@ -362,6 +364,14 @@ export function StudioRecordingPanel({
   useEffect(() => {
     phaseRef.current = state.phase;
   }, [state.phase]);
+
+  useEffect(() => {
+    if (!showWorkflow) return;
+    takeWorkflowRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [showWorkflow, state.takeId]);
 
   useEffect(() => {
     if (recoverySavedKey === 0) return;
@@ -1330,7 +1340,6 @@ export function StudioRecordingPanel({
     state.phase === "READY_TAKE" ||
     !trackId;
 
-  const showWorkflow = state.phase === "READY_TAKE" && state.takeId;
   const workflowDisabled = Boolean(workflowBusy);
 
   return (
@@ -1387,6 +1396,69 @@ export function StudioRecordingPanel({
           ))}
         </select>
       </label>
+
+      {showWorkflow ? (
+        <div
+          ref={takeWorkflowRef}
+          className="space-y-2 rounded border border-[var(--brd-line)] p-2"
+          aria-label="Studio Take Workflow"
+        >
+          <p className="text-sm text-[var(--brd-ink)]" role="status">
+            Nagranie gotowe — kliknij Zachowaj, żeby wstawić na ścieżkę.
+            {state.takeDurationSeconds != null
+              ? ` · ${state.takeDurationSeconds.toFixed(1)}s`
+              : ""}
+            {recordStartMs != null
+              ? ` · start ${formatStudioTimeMs(recordStartMs)}`
+              : ""}
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              size="sm"
+              className="w-full"
+              variant="outline"
+              disabled={workflowDisabled}
+              onClick={() => void onPreviewWorkflowTake()}
+            >
+              {transport.takePreviewActive ? "■ Zatrzymaj" : "▶ Odtwórz"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="w-full"
+              disabled={workflowDisabled}
+              onClick={() => void onKeepWorkflowTake()}
+            >
+              {workflowBusy === "keep" ? "Zapisywanie…" : "✓ Zachowaj"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="w-full"
+              variant="outline"
+              disabled={workflowDisabled}
+              onClick={() => void onDiscardWorkflowTake()}
+            >
+              {workflowBusy === "discard" ? "Usuwanie…" : "✕ Odrzuć"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="w-full"
+              variant="secondary"
+              disabled={workflowDisabled}
+              onClick={onRecordAgain}
+            >
+              ↻ Nagraj ponownie
+            </Button>
+          </div>
+          <p className="text-[11px] text-[var(--brd-mute)]">
+            Zachowaj umieszcza nagranie na osi czasu. Odrzucenie usuwa źródło.
+            Nagraj ponownie tworzy nowe nagranie — poprzednie pozostaje.
+          </p>
+        </div>
+      ) : null}
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
@@ -1693,68 +1765,6 @@ export function StudioRecordingPanel({
         <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
           {keptMessage}
         </p>
-      ) : null}
-
-      {showWorkflow ? (
-        <div
-          className="space-y-2 rounded border border-[var(--brd-line)] p-2"
-          aria-label="Studio Take Workflow"
-        >
-          <p className="text-sm text-[var(--brd-ink)]" role="status">
-            Nagranie gotowe
-            {state.takeDurationSeconds != null
-              ? ` · ${state.takeDurationSeconds.toFixed(1)}s`
-              : ""}
-            {recordStartMs != null
-              ? ` · start ${formatStudioTimeMs(recordStartMs)}`
-              : ""}
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              variant="outline"
-              disabled={workflowDisabled}
-              onClick={() => void onPreviewWorkflowTake()}
-            >
-              {transport.takePreviewActive ? "■ Zatrzymaj" : "▶ Odtwórz"}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              disabled={workflowDisabled}
-              onClick={() => void onKeepWorkflowTake()}
-            >
-              {workflowBusy === "keep" ? "Zapisywanie…" : "✓ Zachowaj"}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              variant="outline"
-              disabled={workflowDisabled}
-              onClick={() => void onDiscardWorkflowTake()}
-            >
-              {workflowBusy === "discard" ? "Usuwanie…" : "✕ Odrzuć"}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              variant="secondary"
-              disabled={workflowDisabled}
-              onClick={onRecordAgain}
-            >
-              ↻ Nagraj ponownie
-            </Button>
-          </div>
-          <p className="text-[11px] text-[var(--brd-mute)]">
-            Zachowaj umieszcza nagranie na osi czasu. Odrzucenie usuwa źródło.
-            Nagraj ponownie tworzy nowe nagranie — poprzednie pozostaje.
-          </p>
-        </div>
       ) : null}
 
       {!showWorkflow ? (
