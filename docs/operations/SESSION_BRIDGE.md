@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T09:34:00+01:00 (Git closeout catalog place + Scratch WAV) | main | `da2a48f` code | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `d973957` verified; test `da2a48f`; allowlista docs: audit+CHANGELOG+PS+bridge; `_catalog-place-user-e2e.mjs` **nie** commit; Sacred/Studio/mix-working PRESERVE |
 | 2026-10-28T08:28:00+01:00 (USER catalog copy E2E) | main | `5b2fceb` | 0 | ~154 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | tip `5b2fceb`=`origin/main` (`ls-remote`); allowlista docs: audit+CHANGELOG+PS+bridge; one-off script **nie** commit; Sacred/Studio PRESERVE |
 | 2026-10-28T09:18:00+01:00 (Git closeout archive+mix+bake) | main | `c58b090` | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | tip `c58b090`=`origin/main` (`ls-remote`); docs archive `4c2a085` · bake test `c58b090`; editor **nie** stage (CRLF rewrite) · Sacred PRESERVE · mix-working untracked PRESERVE |
 | 2026-10-28T08:15:00+01:00 (SB archive-9 + history wiring + scratch bake verify) | main | `c1c7e21` | 0 | ~170 | ~334 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | tip `c1c7e21`=`origin/main` (verified); archive 15→13; history control w dirty editor (A3.5 only) · Sacred PRESERVE · C BLOCKED |
@@ -84,14 +85,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T08:28+01:00` (`git rev-parse HEAD`; `ls-remote`; `gh` Production; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T09:34+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` | `5b2fceb` | = `origin/main` (`ls-remote`); `5b2fcebf79e559f7336d26d3018bddcb6180ed29` |
-| Last independently verified deploy | `5b2fcebf79e559f7336d26d3018bddcb6180ed29` | GitHub Production **`7379526025`** **success** `2026-10-28T07:21:22Z` @ ten SHA · unique `bitrymdym-3lsi0b9do-…` · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · prod USER copy **PASS** + cleanup · mix-working A3.5 SHIPPED · scratch bake PARTIAL · scratch CAS **APPLIED** `20261028050115` · mix-working schema **`20261028070108`…`70155`** · catalog **`20261027225553`** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | USER catalog copy E2E | Ten zapis edytuje most + CHANGELOG + PS + audit |
+| Lokalny `HEAD` (przed docs commit) | `da2a48f` | code `da2a48fa39360ba189601db830a647f9b7d205b3`; start `d973957` zweryfikowane = `origin/main` przed tym unitem |
+| Last independently verified deploy | `d9739578d4f101dbb7d3d157a26f93127da88cb6` | GitHub Production **`7379647890`** **success** `2026-10-28T07:29:08Z` @ `d973957` · ten unit deploy = po push · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · catalog place **PASS** leftover **0** · Scratch WAV fixture **PASS** · mix-working A3.5 SHIPPED · scratch bake PARTIAL · scratch CAS **APPLIED** `20261028050115` · mix-working schema **`20261028070108`…`70155`** · catalog **`20261027225553`** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Catalog place + Scratch WAV fixture | Ten zapis edytuje most + CHANGELOG + PS + audit |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -140,6 +141,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | GIT-CLOSEOUT-PLACE | Catalog place E2E + Scratch WAV fixture | EXECUTED | PARTIAL | Start tip `d973957` verified. C1 WAV test `da2a48f`. C2 ten docs. Place HTTP 201 leftover **0**. Probe script **nie** commit. Owner listen / prod STUDIO_EXPORT job **NOT VERIFIED**. `dpl_*` / alias **NOT VERIFIED**. ≠ Product GREEN. | [audit](../audits/SCRATCH_CATALOG_PLACE_EXPORT_2026-10-28.md) · test `da2a48f` | `da2a48f` + ten docs | NEXT: LF-normalize editor **albo** UI catalog place **albo** Owner listen |
 | 2026-10-28 | USER-COPY | Prod USER catalog copy + cleanup | EXECUTED | PASS | Sesja Dawida w Cursor Browser. Fixture WAV 16044 B → `catalog/d9b4f821-…/original.bin` + PUBLISHED+license. `POST /api/catalog/copy` HTTP **200** take `0b46506e-…` READY. Cleanup Storage+DB+XP leftover **0**. Tip `5b2fceb`=`origin/main`. GH **`7379526025`** success. `dpl_*` / alias **NOT VERIFIED**. ≠ Product GREEN. | Browser fetch · MCP leftover SELECT · [audit](../audits/CATALOG_COPY_USER_E2E_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch place **albo** słyszalny export **albo** LF-normalize editor |
 | 2026-10-28 | GO-SB-ARCHIVE-10 | Archiwizacja §4 → CHANGELOG (room for USER copy E2E) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`CAT-COPY` · `CAT-SNIFF` · `CAT-PROBE`) → CHANGELOG archive. Living 14→11, po USER-COPY + tym wierszu **13**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | GIT-CLOSEOUT | Path-scoped commit+push po unicie archive+mix+bake | EXECUTED | PARTIAL | Start tip `c1c7e21`=`origin/main`. C1 docs archive `4c2a085`. C2 bake cue test `c58b090`. C3 editor **BLOCKED** (cached rewrite 3548/3532 CRLF; `-w` = +18/−2 history wiring). Push `c1c7e21..c58b090`. GH Production **`7379453375`** success @ `c58b090`. `dpl_*` / alias **NOT VERIFIED**. Sacred / SYSTEM_ARCHITECTURE / mix-working untracked **poza** stage. ≠ Product GREEN. | `git ls-remote` · `gh` `7379453375` · vitest 33/33 · tsc PASS | `c58b090…` | NEXT: LF-normalize editor history wiring **albo** test USER copy **albo** słyszalny export |
@@ -155,7 +157,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-28 | GO-SB-ARCHIVE-6 | Archiwizacja §4 → CHANGELOG (room for Studio unlock) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-0` · `GO-SB-ARCHIVE-3` · `S13-RO`) → CHANGELOG archive. Living 15→12, po A/C + tym wierszu **15**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 13 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (tenth batch CAT-COPY + CAT-SNIFF + CAT-PROBE + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (tenth batch CAT-COPY + CAT-SNIFF + CAT-PROBE + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
 
 ### 4.1 Limit i archiwizacja
 

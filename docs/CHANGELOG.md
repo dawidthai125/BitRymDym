@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Catalog place E2E + Scratch export WAV fixture
+
+**Status:** place E2E **PASS** + leftover **0** · WAV header fixture **PASS** · Owner listen **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner — kolejność catalog→place, potem STUDIO_EXPORT fixture
+**Tip start:** `d9739578d4f101dbb7d3d157a26f93127da88cb6` = `origin/main` (zweryfikowane przed tym unitem)
+**Test:** `da2a48fa39360ba189601db830a647f9b7d205b3` · `encodes approved Scratch bake to WAV with RIFF/WAVE duration`
+**Place:** `POST /api/catalog/copy` HTTP **200** · `POST …/record/place` HTTP **201** clip `5af7df51-…` TAKE · cleanup leftover **0** · projekt Dawida zachowany
+**Explicit non-claim:** prod STUDIO_EXPORT job **NOT RUN** · Owner device listen **NOT VERIFIED** · one-off `scripts/_catalog-place-user-e2e.mjs` **nie** w commicie
+**Audit:** [SCRATCH_CATALOG_PLACE_EXPORT_2026-10-28.md](./audits/SCRATCH_CATALOG_PLACE_EXPORT_2026-10-28.md)
+**NEXT:** LF-normalize dirty editor history wiring **albo** UI catalog place **albo** Owner listen lokalnego WAV
+
 ## 2026-10-28 — Prod USER catalog copy E2E + cleanup
 
 **Status:** copy runtime **PASS** · cleanup **done** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
