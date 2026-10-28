@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Studio markers A3/P7 lite (CAS + Inspector)
+
+**Status:** kod **SHIPPED** @ `9fc7f6e…` · schema MCP **APPLIED** · Owner Inspector klik **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** follow-up po vertical slice markerów (path-scoped commit+push+apply)
+**Tip start:** `2fb71a90547f12c2ca261727b580b601e38b46ac` = `origin/main`
+**Code:** `9fc7f6e21a202531114adfbde6f932acaf2e102b` — freeze A3/P7 lite · `markers` jsonb · `studio_cas_apply_markers` · `StudioMarkersPanel` w recording Inspector · domena `studio-markers-state` / persist / API
+**Migration:** MCP `apply_migration` name `studio_markers_cas` · history **`20261028084022`** · project **`rzzxrgcdogkybkiidqgw`** · drift vs repo `20261028140000` — **nie** repair · **nie** `db push`
+**Tests:** `studio-markers-state` + `studio-markers-cas` → **7/7 PASS**
+**Deploy:** GitHub Production **`7380825799`** **success** `2026-10-28T08:40:58Z` @ `9fc7f6e` · unique `bitrymdym-hr1sncghm-…` · Vercel commit **success**
+**Explicit non-claim:** Owner UI verse/hook **NOT VERIFIED** · **≠** markers Product GREEN
+**NEXT:** Owner klik markerów w Inspector Studio
+
+## 2026-10-28 — SESSION_BRIDGE §4 archive (twelfth batch, room for markers)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`SCRATCH-CAS-REV` · `ALIAS-DPL` · `GO-SB-ARCHIVE-7`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-28 — www Metro/Loop Play + TAKE listen (AudioContext)
 
 **Status:** AudioContext **running PASS** · TAKE ścieżka odtwarzania **PASS** · ucha **NOT VERIFIED** · loop wrap **NOT VERIFIED** · `dpl_*` **NOT VERIFIED** · alias SHA bind **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
@@ -341,10 +357,13 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Eleventh batch (2026-10-28, room for DAW queue): STUDIO-C · STUDIO-A · GO-SB-ARCHIVE-6. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Eleventh batch (2026-10-28, room for DAW queue): STUDIO-C · STUDIO-A · GO-SB-ARCHIVE-6. Twelfth batch (2026-10-28, room for markers): SCRATCH-CAS-REV · ALIAS-DPL · GO-SB-ARCHIVE-7. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | SCRATCH-CAS-REV | Live reverse + SAMPLE/SCRATCH create + CAS | EXECUTED | PARTIAL | BufferSource reverse w istniejącym `StudioAudioEngine` (jeden ctx). `POST /tracks` VOCAL\|SAMPLE\|SCRATCH. `op=set_scratch` → `studio_cas_apply_clip_scratch`. MCP apply history **`20261028050115`**. Vitest slice **138/138**. Dirty editor nietknięty. Export encode **OUT**. ≠ Product GREEN. | vitest scratch-engine/state/cas + p5/p7 (bez dirty editor) · [audit](./audits/SCRATCH_REVERSE_CAS_2026-10-28.md) | _(lokalnie, pre-commit)_ | NEXT: path-scoped commit+push **albo** export encode |
+| 2026-10-28 | ALIAS-DPL | alias / `dpl_*` @ `bb4857d` (bez OAuth) | EXECUTED | PARTIAL | Tip `bb4857d…` (`ls-remote`). GitHub Production **`7377291086`** **success** `2026-10-28T04:37:56Z` @ ten SHA · Vercel **success** · unique URL `bitrymdym-gef23don8-…` **302 SSO**. **`dpl_*` NOT VERIFIED**. **ALIAS NOT VERIFIED** (`www` 200, brak SHA bind). | `gh` deployments `7377291086` · commit status success · curl www 200 / unique 302 | `bb4857d…` | Bind alias/`dpl_*` wymaga OAuth/`vercel inspect` |
+| 2026-10-28 | GO-SB-ARCHIVE-7 | Archiwizacja §4 → CHANGELOG (room for reverse/CAS) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-3` · `GATE-2` · `GATE-1`) → CHANGELOG archive. Living 15→12, po SCRATCH-CAS-REV + ALIAS-DPL + tym wierszu **15**. `P-NEXT-10` + USER-COPY BLOCKED zachowane. | Diff most + CHANGELOG archive table | _(lokalnie, pre-commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | STUDIO-C | Scratch DJ v1 PARTIAL vertical | EXECUTED | PARTIAL | Domain jog/cue/reverse/rate + export fail-closed. Catalog→TAKE→clip reuse `POST /api/catalog/copy` + `…/record/place`. Panel w recording Inspector (pointer+touch). `applyScratchLive` na istniejącym `StudioAudioEngine.playbackRate`. Vitest **131/131**. Live reverse / CAS persist / SAMPLE-SCRATCH create / export encode **OUT**. Dirty editor/service **nietknięte**. ≠ Product GREEN. | vitest scratch-* + p5/p7 guards · eslint · tsc · [audit](./audits/STUDIO_UNLOCK_AUDIT_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch persist/create track **albo** BufferSource reverse **albo** prod USER copy |
 | 2026-10-28 | STUDIO-A | Audyt Studio unlock | EXECUTED | PASS | Powierzchnia editor/service/API/CAS/REC/export/AuthZ. Sacred path-only. SAMPLE/SCRATCH typy bez create. Silnik HTMLAudio = brak native reverse. Place TAKE już istnieje. Prod USER copy **BLOCKED**. | [STUDIO_UNLOCK_AUDIT_2026-10-28.md](./audits/STUDIO_UNLOCK_AUDIT_2026-10-28.md) | _(ten commit)_ | Faza C PARTIAL done |
 | 2026-10-28 | GO-SB-ARCHIVE-6 | Archiwizacja §4 → CHANGELOG (room for Studio unlock) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-0` · `GO-SB-ARCHIVE-3` · `S13-RO`) → CHANGELOG archive. Living 15→12, po A/C + tym wierszu **15**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
