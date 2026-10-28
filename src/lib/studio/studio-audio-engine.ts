@@ -208,7 +208,15 @@ export function reverseStudioAudioBuffer(
         dest[i] = src[last - i] ?? 0;
       }
     }
-    return reversed;
+    return {
+      numberOfChannels: reversed.numberOfChannels,
+      length: reversed.length,
+      sampleRate: reversed.sampleRate,
+      duration: buffer.duration,
+      getChannelData(channel: number) {
+        return reversed.getChannelData(channel);
+      },
+    };
   }
   const channels: Float32Array[] = [];
   for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {

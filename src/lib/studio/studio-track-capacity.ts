@@ -188,9 +188,6 @@ export function shouldShowStudioTrackUpgradeCta(params: {
   return params.trackCount >= params.maxTracks;
 }
 
-/** Default add remains VOCAL. SAMPLE/SCRATCH are the contract product types. */
-export const STUDIO_ADD_TRACK_DEFAULT_TYPE: StudioTrackType = "VOCAL";
-
 export const STUDIO_ADD_TRACK_TYPES = [
   "VOCAL",
   "SAMPLE",
@@ -198,6 +195,9 @@ export const STUDIO_ADD_TRACK_TYPES = [
 ] as const;
 
 export type StudioAddTrackType = (typeof STUDIO_ADD_TRACK_TYPES)[number];
+
+/** Default add remains VOCAL. SAMPLE/SCRATCH are the contract product types. */
+export const STUDIO_ADD_TRACK_DEFAULT_TYPE: StudioAddTrackType = "VOCAL";
 
 export function isStudioAddTrackType(
   value: unknown,

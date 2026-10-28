@@ -304,5 +304,34 @@ describe("reverseStudioAudioBuffer", () => {
     };
     const reversed = reverseStudioAudioBuffer(null, source);
     expect(Array.from(reversed.getChannelData(0))).toEqual([4, 3, 2, 1]);
+    expect(reversed.duration).toBe(source.duration);
+  });
+
+  it("keeps duration when reversing through context createBuffer", () => {
+    const source: StudioAudioBufferLike = {
+      numberOfChannels: 1,
+      length: 4,
+      sampleRate: 4,
+      duration: 1,
+      getChannelData() {
+        return new Float32Array([1, 2, 3, 4]);
+      },
+    };
+    const ctx = {
+      createBuffer(numberOfChannels: number, length: number, sampleRate: number) {
+        const data = new Float32Array(length);
+        return {
+          numberOfChannels,
+          length,
+          sampleRate,
+          getChannelData() {
+            return data;
+          },
+        };
+      },
+    } as unknown as StudioAudioContextLike;
+    const reversed = reverseStudioAudioBuffer(ctx, source);
+    expect(reversed.duration).toBe(1);
+    expect(Array.from(reversed.getChannelData(0))).toEqual([4, 3, 2, 1]);
   });
 });
