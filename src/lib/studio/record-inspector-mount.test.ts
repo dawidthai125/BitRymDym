@@ -30,13 +30,17 @@ describe("Record inspector initial mount", () => {
 
   it("explicit inspector exits still clear the Record preference", () => {
     expect(editor).toMatch(/id: "settings"[\s\S]*?setInspectorPreferRecord\(false\)/);
-    expect(editor).toMatch(/onSelectClip=\{\(id\) => \{[\s\S]*?setInspectorPreferRecord\(false\)/);
+    expect(editor).toMatch(
+      /onSelectClip=\{\(id\) => \{[\s\S]*?studioPreferRecordAfterTimelineSelect/,
+    );
     expect(editor).toMatch(/setStatus\("Nagranie dodane na oś czasu\."\)/);
     const clipCreated = editor.slice(
       editor.indexOf("onClipCreated="),
       editor.indexOf("/>", editor.indexOf("onClipCreated=")),
     );
-    expect(clipCreated).toMatch(/if \(options\?\.keepRecordPanel\) \{\s*return;\s*\}/);
+    expect(clipCreated).toMatch(
+      /if \(options\?\.keepRecordPanel\) \{[\s\S]*?studioPreferRecordAfterClipCreated\([\s\S]*?keepRecordPanel:\s*true[\s\S]*?setLastScratchClipId\(clip\.id\);[\s\S]*?return;/,
+    );
     expect(clipCreated).toMatch(/setInspectorPreferRecord\(false\)/);
     expect(clipCreated).toMatch(/onTrackCreated=\{\(track, nextDocumentVersion\) => \{/);
   });

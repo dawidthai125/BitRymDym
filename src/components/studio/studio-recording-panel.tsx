@@ -97,6 +97,8 @@ export function StudioRecordingPanel({
   embedded = false,
   /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
   preferredTrackId = null,
+  lastScratchClipId,
+  onLastScratchClipIdChange,
 }: {
   projectId: string;
   /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
@@ -127,6 +129,9 @@ export function StudioRecordingPanel({
   /** Phase 1 — denser chrome when hosted inside Inspector. */
   embedded?: boolean;
   preferredTrackId?: string | null;
+  /** Editor SSOT — scratch clip survives panel unmount. */
+  lastScratchClipId: string | null;
+  onLastScratchClipIdChange: (clipId: string | null) => void;
 }) {
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
   getBaseVersionRef.current = getExpectedDocumentVersion;
@@ -147,9 +152,6 @@ export function StudioRecordingPanel({
   );
   const transport = useStudioTransport();
   const [localTracks, setLocalTracks] = useState<StudioTrackDto[]>([]);
-  const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
-    null,
-  );
   const [trackCreateBusy, setTrackCreateBusy] = useState<
     "SAMPLE" | "SCRATCH" | null
   >(null);
@@ -1678,7 +1680,7 @@ export function StudioRecordingPanel({
                         keepRecordPanel: true,
                       });
                     }
-                    setLastScratchClipId(placed.clip.id);
+                    onLastScratchClipIdChange(placed.clip.id);
                     setCatalogMessage(
                       placed.reusedExistingCopy
                         ? "Użyto istniejącej kopii TAKE i umieszczono klip."

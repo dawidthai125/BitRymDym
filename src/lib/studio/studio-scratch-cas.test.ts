@@ -116,7 +116,9 @@ describe("Scratch CAS + SAMPLE/SCRATCH create", () => {
       editor.indexOf("onClipCreated={(clip, nextDocumentVersion, options) => {"),
       editor.indexOf("/>", editor.indexOf("onClipCreated=")),
     );
-    expect(clipCreated).toMatch(/if \(options\?\.keepRecordPanel\) \{\s*return;\s*\}/);
+    expect(clipCreated).toMatch(
+      /if \(options\?\.keepRecordPanel\) \{[\s\S]*?studioPreferRecordAfterClipCreated\([\s\S]*?keepRecordPanel:\s*true[\s\S]*?setLastScratchClipId\(clip\.id\);[\s\S]*?return;/,
+    );
     expect(clipCreated).toMatch(/setInspectorPreferRecord\(false\)/);
   });
 

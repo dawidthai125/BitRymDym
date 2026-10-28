@@ -26,6 +26,8 @@ import {
   STUDIO_INSPECTOR_CLOSE_BLOCKED_PL,
   studioInspectorContextTitle,
   studioPreferRecordAfterCaptureReport,
+  studioPreferRecordAfterClipCreated,
+  studioPreferRecordAfterTimelineSelect,
   studioInspectorOverlayCloseBlocked,
 } from "@/components/studio/studio-inspector-context";
 import { StudioInspectorOverlay } from "@/components/studio/studio-inspector-shell";
@@ -277,6 +279,10 @@ function StudioEditorInner({
   const [inspectorOverlayOpen, setInspectorOverlayOpen] = useState(false);
   /** Explicit Record context when user opens Nagraj without active capture. */
   const [inspectorPreferRecord, setInspectorPreferRecord] = useState(false);
+  /** Scratch session SSOT — survives Record panel unmount. */
+  const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
+    null,
+  );
   const [inspectorCloseRejected, setInspectorCloseRejected] = useState(false);
   const [captureInterruptedNotice, setCaptureInterruptedNotice] = useState<
     string | null
@@ -1735,6 +1741,8 @@ function StudioEditorInner({
           tracks={doc.tracks}
           embedded
           preferredTrackId={activeSelectedTrackId}
+          lastScratchClipId={lastScratchClipId}
+          onLastScratchClipIdChange={setLastScratchClipId}
           onRecordingActiveChange={(active) => {
             setRecordingLocked(active);
             setInspectorPreferRecord((prev) =>
@@ -1768,6 +1776,10 @@ function StudioEditorInner({
               ),
             }));
             if (options?.keepRecordPanel) {
+              setInspectorPreferRecord(
+                studioPreferRecordAfterClipCreated({ keepRecordPanel: true }),
+              );
+              setLastScratchClipId(clip.id);
               return;
             }
             setInspectorPreferRecord(false);
@@ -2505,7 +2517,11 @@ function StudioEditorInner({
             onSeek={seekSnapped}
             onSelectClip={(id) => {
               if (recordingLocked) return;
-              setInspectorPreferRecord(false);
+              setInspectorPreferRecord(
+                studioPreferRecordAfterTimelineSelect({
+                  scratchSessionActive: lastScratchClipId != null,
+                }),
+              );
               setSelectedClipId(selectClipId(activeSelectedId, id));
               const clip = doc.clips.find((c) => c.id === id);
               if (clip) setSelectedTrackId(clip.trackId);

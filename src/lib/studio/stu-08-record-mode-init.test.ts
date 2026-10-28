@@ -226,7 +226,9 @@ describe("STU-08-D — editor / panel wiring contract", () => {
       editor.indexOf("onClipCreated={(clip, nextDocumentVersion, options) => {"),
       editor.indexOf('setStatus("Nagranie dodane na oś czasu.");'),
     );
-    expect(placed).toMatch(/if \(options\?\.keepRecordPanel\) \{\s*return;\s*\}/);
+    expect(placed).toMatch(
+      /if \(options\?\.keepRecordPanel\) \{[\s\S]*?studioPreferRecordAfterClipCreated\([\s\S]*?keepRecordPanel:\s*true[\s\S]*?setLastScratchClipId\(clip\.id\);[\s\S]*?return;/,
+    );
     expect(placed).toMatch(/setInspectorPreferRecord\(false\);/);
     expect(placed).toMatch(/setSelectedClipId\(selectClipId\(null, clip\.id\)\);/);
   });

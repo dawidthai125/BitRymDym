@@ -29,6 +29,20 @@ export function studioPreferRecordAfterCaptureReport(
   return active || prev;
 }
 
+/** Catalog / scratch place asked Record to stay — keep preferRecord, never File. */
+export function studioPreferRecordAfterClipCreated(input: {
+  keepRecordPanel?: boolean;
+}): boolean {
+  return input.keepRecordPanel === true;
+}
+
+/** Timeline clip select must not drop Record while a scratch session is active. */
+export function studioPreferRecordAfterTimelineSelect(input: {
+  scratchSessionActive: boolean;
+}): boolean {
+  return input.scratchSessionActive;
+}
+
 /** STU-10 — block overlay close only while capture is in flight on the overlay host. */
 export function studioInspectorOverlayCloseBlocked(input: {
   recordingLocked: boolean;
