@@ -77,6 +77,7 @@ export function StudioRecordingPanel({
   enqueuePersistAsync,
   tracks,
   onClipCreated,
+  onTrackCreated,
   onRecordingActiveChange,
   onCaptureInterrupted,
   onLocalRecoveryChanged,
@@ -94,6 +95,7 @@ export function StudioRecordingPanel({
   ) => Promise<StudioPersistResult>;
   tracks: StudioTrackDto[];
   onClipCreated: (clip: StudioClipDto, documentVersion: number) => void;
+  onTrackCreated?: (track: StudioTrackDto, documentVersion: number) => void;
   onRecordingActiveChange?: (active: boolean) => void;
   /**
    * Panel unmounted while capture was in flight. onRecordingActiveChange(false)
@@ -109,7 +111,74 @@ export function StudioRecordingPanel({
   preferredTrackId?: string | null;
 }) {
   const transport = useStudioTransport();
-  const recordableTracks = tracks.filter((t) => t.trackType !== "BEAT");
+  const [localTracks, setLocalTracks] = useState<StudioTrackDto[]>([]);
+  const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
+    null,
+  );
+  const [trackCreateBusy, setTrackCreateBusy] = useState<
+    "SAMPLE" | "SCRATCH" | null
+  >(null);
+  const mergedTracks = [
+    ...tracks,
+    ...localTracks.filter((local) => !tracks.some((t) => t.id === local.id)),
+  ];
+  const recordableTracks = mergedTracks.filter((t) => t.trackType !== "BEAT");
+
+  const addProductTrack = useCallback(
+    async (trackType: "SAMPLE" | "SCRATCH") => {
+      setTrackCreateBusy(trackType);
+      const label = trackType === "SAMPLE" ? "Sample" : "Scratch";
+      const result = await enqueuePersistAsync(async () => {
+        const response = await fetch(
+          `/api/studio/projects/${projectId}/tracks`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: getExpectedDocumentVersion(),
+              trackType,
+            }),
+          },
+        );
+        const body = (await response.json().catch(() => null)) as {
+          track?: StudioTrackDto;
+          documentVersion?: number;
+          message?: string;
+          error?: string;
+        } | null;
+        if (!response.ok || !body?.track) {
+          return classifyPersistHttpFailure({
+            status: response.status,
+            message:
+              body?.message ||
+              body?.error ||
+              `Nie udało się dodać ścieżki ${label}.`,
+          });
+        }
+        const version =
+          typeof body.documentVersion === "number"
+            ? body.documentVersion
+            : getExpectedDocumentVersion();
+        return {
+          ok: true as const,
+          documentVersion: version,
+          apply: () => {
+            setLocalTracks((current) => [...current, body.track!]);
+            onTrackCreated?.(body.track!, version);
+            setCatalogMessage(`Dodano ścieżkę ${label}.`);
+          },
+        };
+      });
+      if (!result.ok) setWorkflowError(result.message);
+      setTrackCreateBusy(null);
+    },
+    [
+      enqueuePersistAsync,
+      getExpectedDocumentVersion,
+      onTrackCreated,
+      projectId,
+    ],
+  );
   const trackChoices =
     recordableTracks.length > 0 ? recordableTracks : tracks;
   const defaultTrack =
@@ -1371,6 +1440,7 @@ export function StudioRecordingPanel({
                     if (!placed.reusedExistingClip) {
                       onClipCreated(placed.clip, placed.documentVersion);
                     }
+                    setLastScratchClipId(placed.clip.id);
                     setCatalogMessage(
                       placed.reusedExistingCopy
                         ? "Użyto istniejącej kopii TAKE i umieszczono klip."
@@ -1393,14 +1463,90 @@ export function StudioRecordingPanel({
             {catalogMessage}
           </p>
         ) : null}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button
+            type="button"
+            size="sm"
+            className="min-h-11 w-full"
+            disabled={trackCreateBusy !== null}
+            onClick={() => {
+              void addProductTrack("SAMPLE");
+            }}
+          >
+            {trackCreateBusy === "SAMPLE" ? "Dodawanie…" : "Dodaj Sample"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="min-h-11 w-full"
+            disabled={trackCreateBusy !== null}
+            onClick={() => {
+              void addProductTrack("SCRATCH");
+            }}
+          >
+            {trackCreateBusy === "SCRATCH" ? "Dodawanie…" : "Dodaj Scratch"}
+          </Button>
+        </div>
         <StudioScratchPanel
           sourceDurationMs={Math.max(1, transport.timelineLengthMs)}
           playheadInSourceMs={Math.floor(transport.getPlayheadMs())}
-          onLiveRate={(rate) => {
-            transport.applyScratchLive(rate);
+          onLiveRate={(rate, reverse) => {
+            transport.applyScratchLive(rate, lastScratchClipId, reverse);
           }}
           onCueJump={(cueMs) => {
             transport.seek(cueMs);
+          }}
+          onApprove={(approved) => {
+            if (!lastScratchClipId) {
+              setCatalogMessage(
+                "Najpierw umieść klip TAKE, potem zatwierdź Scratch.",
+              );
+              return;
+            }
+            void (async () => {
+              const result = await enqueuePersistAsync(async () => {
+                const response = await fetch(
+                  `/api/studio/projects/${projectId}/clips/${lastScratchClipId}`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      op: "set_scratch",
+                      cueMs: approved.cueMs,
+                      reverse: approved.reverse,
+                      rate: approved.rate,
+                      expectedDocumentVersion: getExpectedDocumentVersion(),
+                    }),
+                  },
+                );
+                const body = (await response.json().catch(() => null)) as {
+                  clip?: StudioClipDto;
+                  documentVersion?: number;
+                  message?: string;
+                  error?: string;
+                } | null;
+                if (!response.ok || !body?.clip) {
+                  return classifyPersistHttpFailure({
+                    status: response.status,
+                    message:
+                      body?.message ||
+                      body?.error ||
+                      "Nie udało się zapisać stanu Scratch.",
+                  });
+                }
+                return {
+                  ok: true as const,
+                  documentVersion:
+                    typeof body.documentVersion === "number"
+                      ? body.documentVersion
+                      : getExpectedDocumentVersion(),
+                  apply: () => {
+                    setCatalogMessage("Zapisano zatwierdzony stan Scratch.");
+                  },
+                };
+              });
+              if (!result.ok) setWorkflowError(result.message);
+            })();
           }}
         />
       </div>

@@ -39,11 +39,15 @@ import {
   assertTrackTypeDeletable,
   assertTrackTypeDuplicable,
   nextDuplicatedTrackName,
-  nextVocalTrackName,
-  STUDIO_ADD_TRACK_DEFAULT_TYPE,
   StudioBeatTrackProtectedError,
   StudioTrackCapacityError,
 } from "@/lib/studio/studio-track-capacity";
+import {
+  applyStudioClipScratchCas,
+  mapStudioClipScratchFields,
+  resolveStudioAddTrackName,
+  resolveStudioAddTrackTypeForWrite,
+} from "@/lib/studio/studio-scratch-persist";
 import type {
   StudioClipDto,
   StudioProjectDocument,
@@ -118,6 +122,9 @@ type ClipRow = {
   muted: boolean;
   fade_in_ms: number;
   fade_out_ms: number;
+  scratch_cue_ms?: number | null;
+  scratch_reverse?: boolean | null;
+  scratch_rate?: number | string | null;
 };
 
 function num(value: number | string): number {
@@ -170,6 +177,7 @@ function mapClip(row: ClipRow): StudioClipDto {
     muted: row.muted,
     fadeInMs: row.fade_in_ms,
     fadeOutMs: row.fade_out_ms,
+    ...mapStudioClipScratchFields(row),
   };
 }
 
@@ -293,7 +301,7 @@ export async function createStudioProjectFor(
       name: defaultTrackName("VOCAL"),
       track_type: "VOCAL",
       sort_order: 1,
-      // Default unarmed - user must consciously arm R before REC.
+      // Default unarmed — user must consciously arm R before REC.
       record_armed: false,
     },
   ];
@@ -946,10 +954,12 @@ export async function addStudioTrackFor(
   input: {
     projectId: string;
     expectedDocumentVersion: unknown;
+    trackType?: unknown;
   },
 ): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   await assertOwnsProject(context, input.projectId);
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const trackType = resolveStudioAddTrackTypeForWrite(input.trackType);
   const product = await resolveProductEntitlementForAuthContext(context);
   const maxTracks = product.limits.studioMaxTracks;
   if (!Number.isInteger(maxTracks) || maxTracks < 1) {
@@ -962,9 +972,10 @@ export async function addStudioTrackFor(
     .select("name")
     .eq("project_id", input.projectId);
   if (listError) throw new Error(listError.message);
-  const name = nextVocalTrackName(
-    ((existingTracks as Array<{ name: string }> | null) ?? []).map((t) => t.name),
-  );
+  const existingNames = (
+    (existingTracks as Array<{ name: string }> | null) ?? []
+  ).map((t) => t.name);
+  const name = resolveStudioAddTrackName(trackType, existingNames);
 
   const { data, error } = await admin.rpc("studio_cas_add_track", {
     p_project_id: input.projectId,
@@ -972,7 +983,7 @@ export async function addStudioTrackFor(
     p_expected: expected,
     p_max_tracks: maxTracks,
     p_name: name,
-    p_track_type: STUDIO_ADD_TRACK_DEFAULT_TYPE,
+    p_track_type: trackType,
   });
   if (error) {
     if (/TRACK_CAPACITY_REACHED/i.test(error.message)) {
@@ -1647,6 +1658,53 @@ export async function updateStudioClipFades(
   input: Parameters<typeof updateStudioClipFadesFor>[1],
 ): Promise<{ clip: StudioClipDto; documentVersion: number }> {
   return updateStudioClipFadesFor(await requireUser(), input);
+}
+
+/**
+ * Scratch DJ v1 — persist approved cue/reverse/rate via existing CAS path.
+ */
+export async function updateStudioClipScratchFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+    cueMs: unknown;
+    reverse: unknown;
+    rate: unknown;
+  },
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  const { clip } = await loadOwnedClip(
+    context,
+    input.projectId,
+    input.clipId,
+  );
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const applied = await applyStudioClipScratchCas({
+    ownerId: context.userId,
+    projectId: input.projectId,
+    clipId: input.clipId,
+    expected,
+    cueMs: input.cueMs,
+    reverse: input.reverse,
+    rate: input.rate,
+  });
+
+  return {
+    clip: mapClip({
+      ...clip,
+      scratch_cue_ms: applied.scratchCueMs,
+      scratch_reverse: applied.scratchReverse,
+      scratch_rate: applied.scratchRate,
+    }),
+    documentVersion: applied.documentVersion,
+  };
+}
+
+export async function updateStudioClipScratch(
+  input: Parameters<typeof updateStudioClipScratchFor>[1],
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipScratchFor(await requireUser(), input);
 }
 
 type ClipGainMuteCasRow = {

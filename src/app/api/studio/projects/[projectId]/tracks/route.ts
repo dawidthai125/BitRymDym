@@ -9,16 +9,18 @@ type RouteContext = {
   params: Promise<{ projectId: string }>;
 };
 
-/** POST — add VOCAL track (atomic capacity + CAS). */
+/** POST — add VOCAL | SAMPLE | SCRATCH track (atomic capacity + CAS). */
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { projectId } = await context.params;
     const body = (await request.json()) as {
       expectedDocumentVersion?: unknown;
+      trackType?: unknown;
     };
     const result = await addStudioTrack({
       projectId,
       expectedDocumentVersion: body.expectedDocumentVersion,
+      trackType: body.trackType,
     });
     return NextResponse.json({
       success: true,

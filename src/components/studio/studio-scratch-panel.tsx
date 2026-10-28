@@ -26,8 +26,9 @@ import {
 type StudioScratchPanelProps = {
   sourceDurationMs: number;
   playheadInSourceMs: number;
-  onLiveRate: (rate: number, jogging: boolean) => void;
+  onLiveRate: (rate: number, reverse: boolean, jogging: boolean) => void;
   onCueJump: (cueMs: number) => void;
+  onApprove?: (approved: StudioScratchApprovedState) => void;
 };
 
 export function StudioScratchPanel({
@@ -35,6 +36,7 @@ export function StudioScratchPanel({
   playheadInSourceMs,
   onLiveRate,
   onCueJump,
+  onApprove,
 }: StudioScratchPanelProps) {
   const jogId = useId();
   const [approved, setApproved] = useState<StudioScratchApprovedState>(
@@ -47,7 +49,11 @@ export function StudioScratchPanel({
 
   const emitRate = useCallback(
     (next: StudioScratchLiveState) => {
-      onLiveRate(studioScratchLivePlaybackRate(next), next.jogging);
+      onLiveRate(
+        studioScratchLivePlaybackRate(next),
+        next.reverse,
+        next.jogging,
+      );
     },
     [onLiveRate],
   );
@@ -85,8 +91,8 @@ export function StudioScratchPanel({
     >
       <p className="text-xs font-medium text-[var(--brd-ink)]">Scratch DJ v1</p>
       <p className="text-xs text-[var(--brd-mute)]" role="status">
-        PARTIAL — jog i tempo na istniejącym transporcie. Reverse live i zapis
-        CAS są poza tym pionem.
+        Jog, tempo i reverse na jednym silniku Studio. Zatwierdź, żeby zapisać
+        CAS.
       </p>
       <div
         id={jogId}
@@ -134,7 +140,7 @@ export function StudioScratchPanel({
           aria-pressed={live.reverse}
           onClick={() => applyLive(toggleScratchReverse(live))}
         >
-          Reverse {live.reverse ? "wł." : "wył."} (zapis)
+          Reverse {live.reverse ? "wł." : "wył."}
         </Button>
         <Button
           type="button"
@@ -144,6 +150,7 @@ export function StudioScratchPanel({
             const nextApproved = approveScratchLive(live);
             setApproved(nextApproved);
             applyLive({ ...nextApproved, jogging: false });
+            onApprove?.(nextApproved);
           }}
         >
           Zatwierdź stan
