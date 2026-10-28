@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Studio markers stale CAS documentVersion (sequential mutations)
+
+**Status:** kod **SHIPPED** @ `fadb2b0…` · Owner re-smoke dwóch mutacji **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner smoke PARTIAL — pierwsza mutacja PASS, druga CAS fail bez F5
+**Tip start:** `7dc3db4033e68b52e6c8cf055b8633d99dd4b941` = `origin/main`
+**Code:** `fadb2b0eeb13f6681778e37f57d6d2c97dbcaccf` — `createStudioPersistVersionTip` · panel + recording chrome ack PATCH `documentVersion`
+**Tests:** `studio-markers-state` + `studio-markers-cas` → **10/10 PASS**
+**Explicit non-claim:** Owner re-smoke **NOT VERIFIED** · editor `docRef` applyPersistedDoc **poza** allowlistą · **≠** markers Product GREEN
+**NEXT:** Owner re-smoke dwóch mutacji markerów bez F5
+
 ## 2026-10-28 — Studio markers A3/P7 lite (CAS + Inspector)
 
 **Status:** kod **SHIPPED** @ `9fc7f6e…` · schema MCP **APPLIED** · Owner Inspector klik **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

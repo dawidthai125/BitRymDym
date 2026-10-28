@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T09:58:00+01:00 (markers stale CAS version tip) | main | `fadb2b0` code | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | code tip `fadb2b0`=`origin/main`; parent `7dc3db4`; vitest markers **10/10**; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio editor/service PRESERVE · OD-15 OPEN · §4 EXECUTED=15 |
 | 2026-10-28T09:45:00+01:00 (Studio markers A3/P7 lite closeout) | main | `9fc7f6e` code | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | code tip `9fc7f6e`=`origin/main`; MCP apply `20261028084022`/`studio_markers_cas`; GH `7380825799` success; vitest markers **7/7**; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio editor/service PRESERVE · OD-15 OPEN · §4 archive-12 + MARKERS |
 | 2026-10-28T09:40:00+01:00 (www Metro/Loop Play + TAKE listen) | main | `c52f38c` start | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `c52f38c`=`origin/main`; GH `7380550674` success; AudioContext running; TAKE ścieżka PASS; ucha NOT VERIFIED; allowlista: listen audit+CHANGELOG+PS+bridge §2; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 (bez nowego wiersza) |
 | 2026-10-28T09:25:00+01:00 (www Loop/Metro chrome) | main | `c3b8063` start | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `c3b8063`=`origin/main`; GH `7380377160` success; www Loop/Metro runtime; `dpl_*`/SHA bind NOT VERIFIED; allowlista docs: audit+CHANGELOG+PS+Keep follow-up+bridge §2; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 (bez nowego wiersza) |
@@ -91,14 +92,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T09:45+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T09:58+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (przed docs commit) | `9fc7f6e` | code `9fc7f6e21a202531114adfbde6f932acaf2e102b`; start `2fb71a9` zweryfikowane = `origin/main` przed markers closeout |
-| Last independently verified deploy | `9fc7f6e21a202531114adfbde6f932acaf2e102b` | GitHub Production **`7380825799`** **success** `2026-10-28T08:40:58Z` @ `9fc7f6e` · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · markers **SHIPPED** · MCP **`20261028084022`/`studio_markers_cas`** · Owner Inspector klik **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Markers closeout + §4 archive-12 | Ten zapis edytuje most + CHANGELOG + PS |
+| Lokalny `HEAD` (przed docs commit) | `fadb2b0` | code `fadb2b0eeb13f6681778e37f57d6d2c97dbcaccf`; start `7dc3db4` zweryfikowane = `origin/main` przed docs tip |
+| Last independently verified deploy | `9fc7f6e21a202531114adfbde6f932acaf2e102b` | GitHub Production **`7380825799`** **success** `2026-10-28T08:40:58Z` @ `9fc7f6e` · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · living code tip now `fadb2b0` **NOT** this deploy |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · stale-version fix **SHIPPED** @ `fadb2b0` · Owner re-smoke **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Markers version tip + §4 EXECUTED=15 | Ten zapis edytuje most + CHANGELOG + PS |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -147,6 +148,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | MARKERS-CAS-VER | Stale expectedDocumentVersion po mutacji markerów | EXECUTED | PASS | Start tip `7dc3db4`=`origin/main`. Path-scoped 4 ścieżki @ `fadb2b0`. Tip `createStudioPersistVersionTip` + panel/recording ack PATCH. Vitest markers **10/10**. Owner re-smoke **NOT VERIFIED**. Editor docRef poza allowlistą. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | vitest studio-markers-* · `git ls-remote` `fadb2b0` | `fadb2b0…` | NEXT: Owner re-smoke dwóch mutacji bez F5 |
 | 2026-10-28 | MARKERS-CAS | Studio markers A3/P7 lite commit+push+apply | EXECUTED | PARTIAL | Start tip `2fb71a9`=`origin/main`. Path-scoped 10 ścieżek @ `9fc7f6e`. MCP apply **`20261028084022`/`studio_markers_cas`** project `rzzxrgcdogkybkiidqgw`. Vitest markers **7/7**. GH Production **`7380825799`** success. Owner Inspector klik **NOT VERIFIED**. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | vitest studio-markers-* · MCP list_migrations · `gh` `7380825799` | `9fc7f6e…` | NEXT: Owner klik verse/hook w Inspector |
 | 2026-10-28 | GO-SB-ARCHIVE-12 | Archiwizacja §4 → CHANGELOG (room for markers) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`SCRATCH-CAS-REV` · `ALIAS-DPL` · `GO-SB-ARCHIVE-7`) → CHANGELOG archive. Living 15→12, po MARKERS-CAS + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | KEEP-SMOKE | Keep smoke Stop→Zachowaj→clip (sesja Dawida) | EXECUTED | PASS | Start tip `26db634`=`origin/main`. Wokal armed. Mic granted. Stop → Nagranie gotowe → Zachowaj. TAKE clip 00:00–00:18. `record/place` 201. finalize 200. Odtwórz nie kliknięte. Master 0 dB. Take 18 s (nie 1–3 s). Loop/metro www niedostępne. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | [audit](../audits/KEEP_SMOKE_DAWID_2026-10-28.md) · Cursor Browser snapshot | _(ten commit)_ | NEXT: słyszalny metro/loop **albo** Owner listen clipu |
@@ -163,7 +165,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-28 | GO-SB-ARCHIVE-8 | Archiwizacja §4 → CHANGELOG (room for persist isolation) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-A` · `GO-SB-ARCHIVE-4` · `GATE-2R`) → CHANGELOG archive. Living 15→12, po SCRATCH-PERSIST + tym wierszu **14**. `P-NEXT-10` + `USER-COPY` BLOCKED zachowane. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (twelfth batch SCRATCH-CAS-REV + ALIAS-DPL + GO-SB-ARCHIVE-7 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (twelfth batch SCRATCH-CAS-REV + ALIAS-DPL + GO-SB-ARCHIVE-7 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Kolejny `EXECUTED` wymaga archiwizacji §4.
 
 ### 4.1 Limit i archiwizacja
 
