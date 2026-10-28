@@ -2,18 +2,11 @@
 
 **Owner GO:** cała kolejka. **≠ Product GREEN.** OD-15 **OPEN.** Sacred **PRESERVE.**
 
-## 1. P0 Keep smoke — PARTIAL
+## 1. P0 Keep smoke — PARTIAL (HISTORY)
 
-| Fakt | Dowód |
-|------|--------|
-| Sesja Dawida | Cursor Browser `www.bitrymdym.pl/account` · Menu „Dawid” · ID 1 |
-| Projekt | `/studio/p/178e902d-6ecf-4ef6-910c-d85612bb277c` · „Projekt z bitem” · 97 BPM |
-| Wokal uzbrojony | `Uzbrojenie nagrywania` pressed |
-| Inspector Record | ścieżka Wokal · „Start: playhead 00:00.000” · Moje Take'i |
-| Zachowaj | **niewidoczny** — brak READY (konto: 0 gotowych) |
-| Play / Nagraj | **nie** kliknięte (audio egress + brak mic permission) |
+W tej sesji DAW: Zachowaj niewidoczny (0 READY), Play/Nagraj nie kliknięte.
 
-**Owner retest (MUST):** na urządzeniu Stop → „Nagranie gotowe — kliknij Zachowaj…” → Zachowaj → clip na Wokal. Bez auto-place.
+**Superseded:** Keep smoke **PASS** 2026-10-28 — [KEEP_SMOKE_DAWID_2026-10-28.md](./KEEP_SMOKE_DAWID_2026-10-28.md).
 
 ## 2–6. Kod — `01629f5` · docs closeout `3166ae2`
 

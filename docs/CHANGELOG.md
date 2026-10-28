@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Keep smoke PASS (sesja Dawida, Stop→Zachowaj→clip)
+
+**Status:** Keep smoke **PASS** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „ty zrob test” w Cursor Browser
+**Tip start:** `26db6343416c0f13c7ac22e24393529a0301794c` = `origin/main`
+**Projekt:** `178e902d-6ecf-4ef6-910c-d85612bb277c` · Wokal armed · mic **granted**
+**Flow:** ● Nagraj → ■ Stop → „Nagranie gotowe — kliknij Zachowaj…” → **✓ Zachowaj**
+**Clip:** TAKE `00:00.000–00:18.000` na Wokal
+**Network:** `POST …/record/place` **201** · `POST /api/takes/finalize` **200**
+**Egress:** Master 0.0 dB · Odtwórz **nie** kliknięte
+**Limit:** take 18 s (nie 1–3 s) — opóźnienie snapshotu w RECORDING
+**Audit:** [KEEP_SMOKE_DAWID_2026-10-28.md](./audits/KEEP_SMOKE_DAWID_2026-10-28.md)
+**NEXT:** słyszalny metronom/loop **albo** Owner listen clipu (nie odtwarzane w tym teście)
+
 ## 2026-10-28 — Studio vs DAW queue P0–P1 (punch/metro/loop/monitor/lanes)
 
 **Status:** kod **SHIPPED** · Keep smoke **PARTIAL** · Scratch listen/BPM-grid **PARTIAL/OUT** · Markery CAS **OUT** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
