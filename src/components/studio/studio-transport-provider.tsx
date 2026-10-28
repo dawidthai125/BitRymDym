@@ -65,6 +65,8 @@ export type StudioTransportControlsApi = {
   seek: (playheadMs: number) => void;
   previewTake: (takeId: string) => Promise<void>;
   stopTakePreview: () => void;
+  applyScratchLive: (rate: number, clipId?: string | null) => void;
+  releaseScratchLive: () => void;
   resolveClipSourceUrl: (clip: {
     sourceKind: string;
     sourceTakeId: string | null;
@@ -426,6 +428,17 @@ export function StudioTransportProvider({
     [],
   );
 
+  const applyScratchLive = useCallback(
+    (rate: number, clipId?: string | null) => {
+      engineRef.current?.applyScratchLive({ clipId, rate });
+    },
+    [],
+  );
+
+  const releaseScratchLive = useCallback(() => {
+    engineRef.current?.releaseScratchLive();
+  }, []);
+
   const previewTake = useCallback(async (takeId: string): Promise<void> => {
     if (!takeId) {
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
@@ -472,6 +485,8 @@ export function StudioTransportProvider({
       seek,
       previewTake,
       stopTakePreview,
+      applyScratchLive,
+      releaseScratchLive,
       resolveClipSourceUrl,
     }),
     [
@@ -490,6 +505,8 @@ export function StudioTransportProvider({
       seek,
       previewTake,
       stopTakePreview,
+      applyScratchLive,
+      releaseScratchLive,
       resolveClipSourceUrl,
     ],
   );

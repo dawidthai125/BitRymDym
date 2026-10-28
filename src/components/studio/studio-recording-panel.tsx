@@ -4,7 +4,9 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
+import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
+import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
 import { useStudioOutputDevices } from "@/hooks/use-studio-output-devices";
@@ -141,6 +143,9 @@ export function StudioRecordingPanel({
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryBusyId, setLibraryBusyId] = useState<string | null>(null);
   const [libraryPreviewId, setLibraryPreviewId] = useState<string | null>(null);
+  const [catalogAssetId, setCatalogAssetId] = useState("");
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [state, dispatch] = useReducer(
@@ -1313,6 +1318,92 @@ export function StudioRecordingPanel({
           ))}
         </select>
       </label>
+
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
+        <p className="text-xs font-medium text-[var(--brd-ink)]">
+          Katalog → klip Studio
+        </p>
+        <label className="block text-xs text-[var(--brd-mute)]">
+          ID sample katalogu
+          <input
+            className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-2 text-sm text-[var(--brd-ink)]"
+            value={catalogAssetId}
+            onChange={(event) => setCatalogAssetId(event.target.value.trim())}
+            aria-label="ID sample katalogu"
+            autoComplete="off"
+            disabled={catalogBusy || Boolean(workflowBusy)}
+          />
+        </label>
+        <Button
+          type="button"
+          size="sm"
+          className="min-h-11 w-full"
+          disabled={
+            catalogBusy ||
+            Boolean(workflowBusy) ||
+            !catalogAssetId ||
+            !trackId
+          }
+          onClick={() => {
+            void (async () => {
+              if (!trackId || !catalogAssetId) return;
+              setCatalogBusy(true);
+              setCatalogMessage(null);
+              setWorkflowError(null);
+              const result = await enqueuePersistAsync(async () => {
+                const placed = await copyCatalogAndPlaceStudioClip({
+                  projectId,
+                  catalogAssetId,
+                  trackId,
+                  timelineStartMs: Math.floor(transport.getPlayheadMs()),
+                  expectedDocumentVersion: getExpectedDocumentVersion(),
+                });
+                if (!placed.ok) {
+                  return classifyPersistHttpFailure({
+                    status: placed.status,
+                    message: placed.error,
+                  });
+                }
+                return {
+                  ok: true as const,
+                  documentVersion: placed.documentVersion,
+                  apply: () => {
+                    if (!placed.reusedExistingClip) {
+                      onClipCreated(placed.clip, placed.documentVersion);
+                    }
+                    setCatalogMessage(
+                      placed.reusedExistingCopy
+                        ? "Użyto istniejącej kopii TAKE i umieszczono klip."
+                        : "Skopiowano sample i umieszczono klip TAKE.",
+                    );
+                  },
+                };
+              });
+              if (!result.ok) {
+                setWorkflowError(result.message);
+              }
+              setCatalogBusy(false);
+            })();
+          }}
+        >
+          {catalogBusy ? "Kopiowanie…" : "Kopiuj i umieść na playhead"}
+        </Button>
+        {catalogMessage ? (
+          <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
+            {catalogMessage}
+          </p>
+        ) : null}
+        <StudioScratchPanel
+          sourceDurationMs={Math.max(1, transport.timelineLengthMs)}
+          playheadInSourceMs={Math.floor(transport.getPlayheadMs())}
+          onLiveRate={(rate) => {
+            transport.applyScratchLive(rate);
+          }}
+          onCueJump={(cueMs) => {
+            transport.seek(cueMs);
+          }}
+        />
+      </div>
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">Mikrofon</p>

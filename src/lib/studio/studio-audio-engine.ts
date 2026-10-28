@@ -98,6 +98,8 @@ export type StudioMediaElement = {
   muted: boolean;
   crossOrigin: string | null;
   preload: string;
+  /** Linked Scratch rate. Optional so legacy test hosts keep compiling. */
+  playbackRate?: number;
   play(): Promise<void>;
   pause(): void;
   load(): void;
@@ -491,6 +493,26 @@ export class StudioAudioEngine {
       this.listener.onError({ code: "AUDIO_CONTEXT_UNAVAILABLE" });
       return false;
     }
+  }
+
+  /**
+   * Scratch DJ v1 live rate on existing timeline voices.
+   * Does not create a second engine. Reverse is not applied (HTML element).
+   */
+  applyScratchLive(params: { clipId?: string | null; rate: number }): boolean {
+    let applied = false;
+    for (const voice of this.voices.values()) {
+      if (voice.role !== "timeline" || voice.disposed) continue;
+      if (params.clipId && voice.clipId !== params.clipId) continue;
+      if (typeof voice.element.playbackRate !== "number") continue;
+      voice.element.playbackRate = params.rate;
+      applied = true;
+    }
+    return applied;
+  }
+
+  releaseScratchLive(): void {
+    this.applyScratchLive({ rate: 1 });
   }
 
   setDocument(document: StudioEngineDocument): void {
