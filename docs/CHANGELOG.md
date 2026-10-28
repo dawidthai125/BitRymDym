@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — UI Zatwierdź stan → set_scratch → clip-move PASS
+
+**Status:** Owner UI **PASS** · kod **`5043b5e`** · GH **`7394804255`** **success** @ `5043b5e` · unique `bitrymdym-1svy8dp50-…` · leftover **0** · Bit/Wokal Keep OK · projekt `178e902d-…` v50 · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** docs-only zapis Owner UI Zatwierdź stan → set_scratch → clip-move po lift lastScratchClipId
+**Tip start:** `5043b5eea03265b139e810805f9333e28694f95c` = `origin/main`
+**Flow:** Catalog place → Record został → Zatwierdź stan → PATCH set_scratch **200** → clip-move **200** bez CAS/F5
+**Cleanup:** leftover **0** · Bit/Wokal Keep OK · projekt `178e902d-…` v50
+**Explicit non-claim:** `dpl_*` / alias SHA bind **NOT VERIFIED** · **≠** Product GREEN
+**NEXT:** stop kolejki ack **albo** Owner bake `--play` ucha — nie SFM / nie Contabo
+
 ## 2026-10-28 — Lift lastScratchClipId — Record survives clip select
 
 **Status:** kod **SHIPPED** · vitest **96/96** · UI Catalog→Zatwierdź→set_scratch→move **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
