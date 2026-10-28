@@ -2,6 +2,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import {
+  createStudioPersistVersionTip,
+  resolveStudioPersistDocumentVersion,
+  StudioPersistOrchestrator,
+} from "@/lib/studio/studio-persist-orchestrator";
+
 const root = process.cwd();
 const migration = readFileSync(
   join(root, "supabase/migrations/20261028140000_studio_markers_cas.sql"),
@@ -75,5 +81,53 @@ describe("Studio markers CAS + Inspector slice", () => {
     expect(recording).toMatch(/StudioMarkersPanel/);
     expect(freeze).toMatch(/A3 \/ P7 lite/);
     expect(freeze).toMatch(/OD-15:\*\* OPEN/);
+  });
+
+  it("panel and recording chrome ack PATCH documentVersion into the persist tip", () => {
+    expect(panel).toMatch(/createStudioPersistVersionTip/);
+    expect(panel).toMatch(/versionTip\.expected\(\)/);
+    expect(panel).toMatch(/ackDocumentVersion\(body\.documentVersion\)/);
+    expect(panel).not.toMatch(
+      /expectedDocumentVersion:\s*getExpectedDocumentVersion\(\)/,
+    );
+    expect(recording).toMatch(/createStudioPersistVersionTip/);
+    expect(recording).toMatch(/persistVersionTip\.expected/);
+    expect(recording).toMatch(/onDocumentVersionAck=\{persistVersionTip\.applyAck\}/);
+  });
+});
+
+describe("Studio markers persist version tip — stale CAS regression", () => {
+  it("resolveStudioPersistDocumentVersion prefers integer ack over fallback", () => {
+    expect(resolveStudioPersistDocumentVersion(11, 10)).toBe(11);
+    expect(resolveStudioPersistDocumentVersion("11", 10)).toBe(10);
+    expect(resolveStudioPersistDocumentVersion(undefined, 10)).toBe(10);
+    expect(resolveStudioPersistDocumentVersion(0, 10)).toBe(10);
+  });
+
+  it("two mutations in one session send N then N+1 without reload", async () => {
+    const baseRef = { current: 10 };
+    const tip = createStudioPersistVersionTip(() => baseRef.current);
+    const seenExpected: number[] = [];
+    const orch = new StudioPersistOrchestrator();
+    const persist = (ack: number) =>
+      orch.requestPersistAsync(async () => {
+        const expected = tip.expected();
+        seenExpected.push(expected);
+        const documentVersion = tip.applyAck(ack);
+        return {
+          ok: true as const,
+          documentVersion,
+        };
+      });
+
+    const first = await persist(11);
+    const second = await persist(12);
+
+    expect(first).toMatchObject({ ok: true, documentVersion: 11 });
+    expect(second).toMatchObject({ ok: true, documentVersion: 12 });
+    expect(seenExpected).toEqual([10, 11]);
+    expect(tip.expected()).toBe(12);
+    expect(baseRef.current).toBe(10);
+    orch.dispose();
   });
 });

@@ -68,8 +68,10 @@ import {
 import {
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
+  createStudioPersistVersionTip,
   type StudioPersistExecutor,
   type StudioPersistResult,
+  type StudioPersistVersionTip,
 } from "@/lib/studio/studio-persist-orchestrator";
 
 type WorkflowActionBusy =
@@ -119,6 +121,15 @@ export function StudioRecordingPanel({
   embedded?: boolean;
   preferredTrackId?: string | null;
 }) {
+  const getBaseVersionRef = useRef(getExpectedDocumentVersion);
+  getBaseVersionRef.current = getExpectedDocumentVersion;
+  const persistVersionTipRef = useRef<StudioPersistVersionTip | null>(null);
+  if (persistVersionTipRef.current === null) {
+    persistVersionTipRef.current = createStudioPersistVersionTip(
+      () => getBaseVersionRef.current(),
+    );
+  }
+  const persistVersionTip = persistVersionTipRef.current;
   const transport = useStudioTransport();
   const [localTracks, setLocalTracks] = useState<StudioTrackDto[]>([]);
   const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
@@ -144,7 +155,7 @@ export function StudioRecordingPanel({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              expectedDocumentVersion: getExpectedDocumentVersion(),
+              expectedDocumentVersion: persistVersionTip.expected(),
               trackType,
             }),
           },
@@ -164,10 +175,7 @@ export function StudioRecordingPanel({
               `Nie udało się dodać ścieżki ${label}.`,
           });
         }
-        const version =
-          typeof body.documentVersion === "number"
-            ? body.documentVersion
-            : getExpectedDocumentVersion();
+        const version = persistVersionTip.applyAck(body.documentVersion);
         return {
           ok: true as const,
           documentVersion: version,
@@ -183,8 +191,8 @@ export function StudioRecordingPanel({
     },
     [
       enqueuePersistAsync,
-      getExpectedDocumentVersion,
       onTrackCreated,
+      persistVersionTip,
       projectId,
     ],
   );
@@ -1020,7 +1028,7 @@ export function StudioRecordingPanel({
                 trackId: placeTrackId,
                 takeId,
                 timelineStartMs: startMs,
-                expectedDocumentVersion: getExpectedDocumentVersion(),
+                expectedDocumentVersion: persistVersionTip.expected(),
               }),
             },
           );
@@ -1050,10 +1058,7 @@ export function StudioRecordingPanel({
             });
           }
           const clip = placed.clip;
-          const nextVersion =
-            typeof placed.documentVersion === "number"
-              ? placed.documentVersion
-              : getExpectedDocumentVersion();
+          const nextVersion = persistVersionTip.applyAck(placed.documentVersion);
           const reused = Boolean(placed.reusedExisting);
           return {
             ok: true as const,
@@ -1337,7 +1342,7 @@ export function StudioRecordingPanel({
                 trackId: placeTrackId,
                 takeId: take.id,
                 timelineStartMs,
-                expectedDocumentVersion: getExpectedDocumentVersion(),
+                expectedDocumentVersion: persistVersionTip.expected(),
                 replaceOverlapping,
               }),
             },
@@ -1366,10 +1371,7 @@ export function StudioRecordingPanel({
             });
           }
           const clip = placed.clip;
-          const nextVersion =
-            typeof placed.documentVersion === "number"
-              ? placed.documentVersion
-              : getExpectedDocumentVersion();
+          const nextVersion = persistVersionTip.applyAck(placed.documentVersion);
           const reused = Boolean(placed.reusedExisting);
           return {
             ok: true as const,
@@ -1640,7 +1642,7 @@ export function StudioRecordingPanel({
                   catalogAssetId,
                   trackId,
                   timelineStartMs: Math.floor(transport.getPlayheadMs()),
-                  expectedDocumentVersion: getExpectedDocumentVersion(),
+                  expectedDocumentVersion: persistVersionTip.expected(),
                 });
                 if (!placed.ok) {
                   return classifyPersistHttpFailure({
@@ -1648,12 +1650,15 @@ export function StudioRecordingPanel({
                     message: placed.error,
                   });
                 }
+                const documentVersion = persistVersionTip.applyAck(
+                  placed.documentVersion,
+                );
                 return {
                   ok: true as const,
-                  documentVersion: placed.documentVersion,
+                  documentVersion,
                   apply: () => {
                     if (!placed.reusedExistingClip) {
-                      onClipCreated(placed.clip, placed.documentVersion);
+                      onClipCreated(placed.clip, documentVersion);
                     }
                     setLastScratchClipId(placed.clip.id);
                     setCatalogMessage(
@@ -1704,10 +1709,11 @@ export function StudioRecordingPanel({
         </div>
         <StudioMarkersPanel
           projectId={projectId}
-          getExpectedDocumentVersion={getExpectedDocumentVersion}
+          getExpectedDocumentVersion={persistVersionTip.expected}
           enqueuePersistAsync={enqueuePersistAsync}
           getPlayheadMs={transport.getPlayheadMs}
           onSeek={transport.seek}
+          onDocumentVersionAck={persistVersionTip.applyAck}
         />
         <StudioScratchPanel
           sourceDurationMs={Math.max(1, transport.timelineLengthMs)}
@@ -1737,7 +1743,7 @@ export function StudioRecordingPanel({
                       cueMs: approved.cueMs,
                       reverse: approved.reverse,
                       rate: approved.rate,
-                      expectedDocumentVersion: getExpectedDocumentVersion(),
+                      expectedDocumentVersion: persistVersionTip.expected(),
                     }),
                   },
                 );
@@ -1758,10 +1764,9 @@ export function StudioRecordingPanel({
                 }
                 return {
                   ok: true as const,
-                  documentVersion:
-                    typeof body.documentVersion === "number"
-                      ? body.documentVersion
-                      : getExpectedDocumentVersion(),
+                  documentVersion: persistVersionTip.applyAck(
+                    body.documentVersion,
+                  ),
                   apply: () => {
                     setCatalogMessage("Zapisano zatwierdzony stan Scratch.");
                   },

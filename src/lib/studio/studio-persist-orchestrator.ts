@@ -34,6 +34,44 @@ export type StudioPersistResult =
 
 export type StudioPersistExecutor = () => Promise<StudioPersistResult>;
 
+/**
+ * CAS ack → next expectedDocumentVersion.
+ * One helper for Inspector persist surfaces (markers / place / Scratch).
+ * Does not replace editor docRef; it only keeps the next PATCH from sending N.
+ */
+export function resolveStudioPersistDocumentVersion(
+  ack: unknown,
+  fallback: number,
+): number {
+  if (typeof ack === "number" && Number.isInteger(ack) && ack >= 1) {
+    return ack;
+  }
+  return fallback;
+}
+
+export type StudioPersistVersionTip = {
+  expected: () => number;
+  applyAck: (ack: unknown) => number;
+};
+
+export function createStudioPersistVersionTip(
+  getBase: () => number,
+): StudioPersistVersionTip {
+  let acked = 0;
+  const expected = (): number => {
+    const base = getBase();
+    return acked > base ? acked : base;
+  };
+  return {
+    expected,
+    applyAck(ack: unknown): number {
+      const next = resolveStudioPersistDocumentVersion(ack, expected());
+      if (next > acked) acked = next;
+      return next;
+    },
+  };
+}
+
 export type StudioPersistLabel =
   | "Gotowe"
   | "Zapisano"

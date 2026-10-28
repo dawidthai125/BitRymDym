@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +10,10 @@ import {
 } from "@/lib/studio/studio-markers-state";
 import {
   classifyPersistHttpFailure,
+  createStudioPersistVersionTip,
   type StudioPersistExecutor,
   type StudioPersistResult,
+  type StudioPersistVersionTip,
 } from "@/lib/studio/studio-persist-orchestrator";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 
@@ -23,6 +25,8 @@ type StudioMarkersPanelProps = {
   ) => Promise<StudioPersistResult>;
   getPlayheadMs: () => number;
   onSeek?: (positionMs: number) => void;
+  /** Shared Inspector tip — same helper as recording-panel persist. */
+  onDocumentVersionAck?: (ack: unknown) => number;
 };
 
 export function StudioMarkersPanel({
@@ -31,6 +35,7 @@ export function StudioMarkersPanel({
   enqueuePersistAsync,
   getPlayheadMs,
   onSeek,
+  onDocumentVersionAck,
 }: StudioMarkersPanelProps) {
   const [markers, setMarkers] = useState<StudioMarkerDto[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
@@ -38,6 +43,23 @@ export function StudioMarkersPanel({
   );
   const [busy, setBusy] = useState<"verse" | "hook" | "remove" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const getBaseVersionRef = useRef(getExpectedDocumentVersion);
+  getBaseVersionRef.current = getExpectedDocumentVersion;
+  const versionTipRef = useRef<StudioPersistVersionTip | null>(null);
+  if (versionTipRef.current === null) {
+    versionTipRef.current = createStudioPersistVersionTip(
+      () => getBaseVersionRef.current(),
+    );
+  }
+  const versionTip = versionTipRef.current;
+  const ackDocumentVersion = useCallback(
+    (ack: unknown): number => {
+      const next = versionTip.applyAck(ack);
+      onDocumentVersionAck?.(next);
+      return next;
+    },
+    [onDocumentVersionAck, versionTip],
+  );
 
   const loadMarkers = useCallback(async () => {
     setLoadState("loading");
@@ -47,6 +69,7 @@ export function StudioMarkersPanel({
       );
       const body = (await response.json().catch(() => null)) as {
         markers?: StudioMarkerDto[];
+        documentVersion?: unknown;
         error?: string;
       } | null;
       if (!response.ok || !body?.markers) {
@@ -54,6 +77,7 @@ export function StudioMarkersPanel({
         setMessage(body?.error || "Nie udało się wczytać markerów.");
         return;
       }
+      ackDocumentVersion(body.documentVersion);
       setMarkers(body.markers);
       setLoadState("ready");
       setMessage(null);
@@ -61,7 +85,7 @@ export function StudioMarkersPanel({
       setLoadState("error");
       setMessage("Nie udało się wczytać markerów.");
     }
-  }, [projectId]);
+  }, [ackDocumentVersion, projectId]);
 
   useEffect(() => {
     void loadMarkers();
@@ -86,13 +110,13 @@ export function StudioMarkersPanel({
               positionMs:
                 op === "add" ? Math.floor(getPlayheadMs()) : undefined,
               markerId: payload.markerId,
-              expectedDocumentVersion: getExpectedDocumentVersion(),
+              expectedDocumentVersion: versionTip.expected(),
             }),
           },
         );
         const body = (await response.json().catch(() => null)) as {
           markers?: StudioMarkerDto[];
-          documentVersion?: number;
+          documentVersion?: unknown;
           message?: string;
           error?: string;
         } | null;
@@ -105,12 +129,10 @@ export function StudioMarkersPanel({
               "Nie udało się zapisać markera.",
           });
         }
+        const documentVersion = ackDocumentVersion(body.documentVersion);
         return {
           ok: true as const,
-          documentVersion:
-            typeof body.documentVersion === "number"
-              ? body.documentVersion
-              : getExpectedDocumentVersion(),
+          documentVersion,
           apply: () => {
             setMarkers(body.markers!);
             setMessage(
@@ -122,12 +144,7 @@ export function StudioMarkersPanel({
       setBusy(null);
       if (!result.ok) setMessage(result.message);
     },
-    [
-      enqueuePersistAsync,
-      getExpectedDocumentVersion,
-      getPlayheadMs,
-      projectId,
-    ],
+    [ackDocumentVersion, enqueuePersistAsync, getPlayheadMs, projectId, versionTip],
   );
 
   const sorted = markers.toSorted((a, b) => a.positionMs - b.positionMs);
