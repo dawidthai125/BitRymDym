@@ -1208,6 +1208,31 @@ describe("SFM-2.1 numerical geometry / mix", () => {
     const identityMid =
       identity.interleaved[Math.floor(identity.frames / 2) * 2] ?? 0;
     expect(pitchedMid).toBeGreaterThan(identityMid);
+
+    const cued = await renderStudioDocumentOffline({
+      document: doc({
+        timelineLengthMs: 200,
+        tracks: [track({ id: "t1" })],
+        clips: [
+          clip({
+            id: "c1",
+            trackId: "t1",
+            sourceKind: "TAKE",
+            sourceTakeId: "take-1",
+            durationMs: 200,
+            scratchReverse: false,
+            scratchRate: 1,
+            scratchCueMs: 400,
+          }),
+        ],
+      }),
+      resolvePcm: resolverFromMap({ "TAKE:take-1": pcm }),
+    });
+    const cuedFirst = cued.interleaved[0] ?? 0;
+    const identityFirst = identity.interleaved[0] ?? 0;
+    expect(cuedFirst).toBeGreaterThan(0.35);
+    expect(cuedFirst).toBeLessThan(0.45);
+    expect(identityFirst).toBeLessThan(0.05);
   });
 
   it("Stage G: missing PCM fails SOURCE_MISSING", async () => {
