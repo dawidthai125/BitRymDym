@@ -20,6 +20,7 @@ export async function POST(request: Request, context: RouteContext) {
       takeId?: string;
       timelineStartMs?: number;
       expectedDocumentVersion?: unknown;
+      replaceOverlapping?: boolean;
       ownerId?: string | null;
       objectKey?: string | null;
     };
@@ -51,6 +52,7 @@ export async function POST(request: Request, context: RouteContext) {
       takeId: body.takeId,
       timelineStartMs: body.timelineStartMs,
       expectedDocumentVersion: body.expectedDocumentVersion,
+      replaceOverlapping: body.replaceOverlapping === true,
     });
 
     return NextResponse.json(

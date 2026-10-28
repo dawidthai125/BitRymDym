@@ -131,6 +131,7 @@ export type StudioAudioContextLike = StudioFxGraphContext & {
   createAnalyser(): AnalyserLike;
   createMediaElementSource(el: StudioMediaElement): Connectable;
   createBufferSource?(): StudioBufferSourceLike;
+  createMediaStreamSource?(stream: MediaStream): Connectable;
   createBuffer?(
     numberOfChannels: number,
     length: number,
@@ -361,6 +362,13 @@ export class StudioAudioEngine {
 
   getLifecycle(): StudioAudioEngineLifecycle {
     return this.lifecycle;
+  }
+
+  /** Same Studio AudioContext for metronome click + dry input monitor. */
+  getContextForAux(): StudioAudioContextLike | null {
+    if (this.lifecycle === "disposed") return null;
+    if (!this.ctx) this.initialize();
+    return this.ctx;
   }
 
   getActiveVoiceCount(): number {

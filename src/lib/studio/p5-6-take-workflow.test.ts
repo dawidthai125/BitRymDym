@@ -102,6 +102,10 @@ describe("P5.6 auto-place decoupling", () => {
     expect(panel).toMatch(/Odrzucić nagranie\?/);
     expect(panel).toMatch(/Nagranie zostanie usunięte\./);
     expect(panel).toMatch(/placeReadyTakeOnTimeline/);
+    expect(panel).toMatch(/Zastąp/);
+    expect(panel).toMatch(/replaceOverlapping/);
+    expect(panel).toMatch(/Count-in \/ punch/);
+    expect(panel).toMatch(/Monitor do ucha/);
   });
 });
 
@@ -230,6 +234,7 @@ describe("P5.6 place / security / library routes", () => {
     expect(route).toMatch(/objectKey/);
     expect(route).toMatch(/placeReadyTakeAsStudioClip/);
     expect(route).toMatch(/reusedExisting/);
+    expect(route).toMatch(/replaceOverlapping/);
   });
 
   it("takes list route reuses listReadyTakesForStudioPlace", () => {

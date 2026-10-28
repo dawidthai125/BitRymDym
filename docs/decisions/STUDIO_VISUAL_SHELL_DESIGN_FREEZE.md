@@ -62,7 +62,7 @@ Related closed baselines (do not reopen):
 
 | ID | Topic | Choice | Summary |
 |----|-------|--------|---------|
-| **OD-VS-01** | Loop / Metronome | **B** | Disabled visual placeholders only |
+| **OD-VS-01** | Loop / Metronome | **AMENDED 2026-10-28** | Owner GO Studio-vs-DAW: runtime click + loop regionu na istniejącym clock. Historyczne **B** (disabled chrome) **superseded** w tym zakresie. Piano roll / VST / multi-track REC nadal OUT. |
 | **OD-VS-02** | Master Volume | **A** | Compact Transport control → `masterGainDb` / `patchMasterMix` |
 | **OD-VS-03** | Export | **B** | Deep-link to existing Take Export `/account/takes` |
 | **OD-VS-04** | Track Volume / Pan | **A** | Compact editable Track Header controls → `patchTrack` |
@@ -74,12 +74,17 @@ No additional OD-VS decisions. Do not invent substitutes.
 
 ## 5. OD-VS-01
 
-**Loop / Metronome — B (disabled placeholders).**
+**Loop / Metronome — AMENDED 2026-10-28 (Owner GO Studio vs DAW).**
 
-- Controls are visually present in Transport.
-- Both are `disabled` with clear unavailable aria/title copy.
-- **Not** an implemented feature.
-- Forbidden: loop runtime, metronome runtime, loop/metronome state, click-track / oscillator engine for this affordance.
+Historyczne **B** (disabled placeholders only) obowiązuje jako zapis Visual Shell V1.
+
+**Amendment (ten zakres):**
+- Metronom = runtime click na istniejącym `StudioAudioEngine` AudioContext (BufferSource, nie drugi silnik).
+- Loop = wrap playhead na istniejącym clock / `seek`.
+- Transport chrome przestaje być `disabled` fake.
+- Nadal zabronione: piano roll, VST, drugi AudioContext, sample-accurate automation.
+
+Kanoniczny freeze runtime: [STUDIO_METRONOME_LOOP_DESIGN_FREEZE.md](./STUDIO_METRONOME_LOOP_DESIGN_FREEZE.md).
 
 ---
 

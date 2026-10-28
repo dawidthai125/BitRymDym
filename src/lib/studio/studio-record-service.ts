@@ -4,11 +4,13 @@ import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
   findIdenticalTakeClipPlacement,
+  findOverlappingTakeClip,
   geometryForStudioRecording,
 } from "@/lib/studio/studio-record-ops";
 import { parseExpectedDocumentVersion } from "@/lib/studio/studio-fx-chain";
 import {
   addStudioClipFor,
+  deleteStudioClipFor,
   getStudioProjectDocumentFor,
 } from "@/lib/studio/studio-service";
 import type {
@@ -35,6 +37,8 @@ export async function placeReadyTakeAsStudioClipFor(
     /** Playhead at record start — integer ms from Studio transport SSOT. */
     timelineStartMs: number;
     expectedDocumentVersion: unknown;
+    /** When true, overlapping TAKE on the same track is deleted then placed. */
+    replaceOverlapping?: boolean;
   },
 ): Promise<{
   clip: StudioClipDto;
@@ -98,10 +102,27 @@ export async function placeReadyTakeAsStudioClipFor(
     };
   }
 
+  let expectedVersion = input.expectedDocumentVersion;
+  if (input.replaceOverlapping) {
+    const overlapping = findOverlappingTakeClip(document.clips, {
+      trackId: input.trackId,
+      startMs: geometry.timelineStartMs,
+      durationMs: geometry.durationMs,
+    });
+    if (overlapping) {
+      const deleted = await deleteStudioClipFor(context, {
+        projectId: input.projectId,
+        clipId: overlapping.id,
+        expectedDocumentVersion: expectedVersion,
+      });
+      expectedVersion = deleted.documentVersion;
+    }
+  }
+
   const placed = await addStudioClipFor(context, {
     projectId: input.projectId,
     trackId: input.trackId,
-    expectedDocumentVersion: input.expectedDocumentVersion,
+    expectedDocumentVersion: expectedVersion,
     sourceKind: "TAKE",
     sourceTakeId: input.takeId,
     timelineStartMs: geometry.timelineStartMs,

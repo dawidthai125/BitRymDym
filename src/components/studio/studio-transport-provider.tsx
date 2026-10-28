@@ -33,6 +33,12 @@ import {
 } from "@/lib/studio/studio-audio-source-adapter";
 import { resolveStudioBeatSessionSource } from "@/lib/studio/studio-beat-session-source";
 import { STUDIO_METER_NEUTRAL } from "@/lib/studio/studio-meter";
+import {
+  beatDurationMs,
+  fireStudioClick,
+  loopRegionOrNull,
+  wrapLoopPlayhead,
+} from "@/lib/studio/studio-daw-clock";
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
 
@@ -71,6 +77,19 @@ export type StudioTransportControlsApi = {
     reverse?: boolean,
   ) => void;
   releaseScratchLive: () => void;
+  tempoBpm: number;
+  timeSignatureNum: number;
+  metronomeEnabled: boolean;
+  setMetronomeEnabled: (enabled: boolean) => void;
+  loopEnabled: boolean;
+  loopStartMs: number;
+  loopEndMs: number;
+  setLoop: (next: {
+    enabled: boolean;
+    startMs?: number;
+    endMs?: number;
+  }) => void;
+  getContextForAux: () => ReturnType<StudioAudioEngine["getContextForAux"]>;
   resolveClipSourceUrl: (clip: {
     sourceKind: string;
     sourceTakeId: string | null;
@@ -138,11 +157,15 @@ export function StudioTransportProvider({
   timelineLengthMs,
   beatId,
   engineDocument,
+  tempoBpm = 120,
+  timeSignatureNum = 4,
   children,
 }: {
   timelineLengthMs: number;
   beatId: string | null;
   engineDocument: StudioEngineDocument;
+  tempoBpm?: number;
+  timeSignatureNum?: number;
   children: ReactNode;
 }) {
   const catalogPlayer = usePlayerOptional();
@@ -162,6 +185,14 @@ export function StudioTransportProvider({
   );
   const [error, setError] = useState<string | null>(null);
   const [takePreviewActive, setTakePreviewActive] = useState(false);
+  const [metronomeEnabled, setMetronomeEnabled] = useState(false);
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const [loopStartMs, setLoopStartMs] = useState(0);
+  const [loopEndMs, setLoopEndMs] = useState(timelineLengthMs);
+  const lastClickBeatRef = useRef(-1);
+  const loopRef = useRef({ enabled: false, startMs: 0, endMs: timelineLengthMs });
+  const tempoRef = useRef(tempoBpm);
+  const timeSigRef = useRef(timeSignatureNum);
   const [meter, setMeter] = useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
   const [trackMeter, setTrackMeter] =
     useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
@@ -239,10 +270,22 @@ export function StudioTransportProvider({
       ),
       listener: {
         onPlayhead(next) {
-          const clamped = clampPlayheadMs(
-            next,
-            engineDocumentRef.current.timelineLengthMs,
-          );
+          const length = engineDocumentRef.current.timelineLengthMs;
+          let clamped = clampPlayheadMs(next, length);
+          const loop = loopRef.current;
+          const region = loopRegionOrNull({
+            enabled: loop.enabled,
+            startMs: loop.startMs,
+            endMs: loop.endMs,
+            timelineLengthMs: length,
+          });
+          if (region && clamped >= region.endMs) {
+            clamped = wrapLoopPlayhead(clamped, region.startMs, region.endMs);
+            playheadMsRef.current = clamped;
+            setPlayheadMs(clamped);
+            void engineRef.current?.seek(clamped, true);
+            return;
+          }
           playheadMsRef.current = clamped;
           setPlayheadMs(clamped);
         },
@@ -296,10 +339,23 @@ export function StudioTransportProvider({
           }
         },
         onTimelineEnded() {
+          const length = engineDocumentRef.current.timelineLengthMs;
+          const loop = loopRef.current;
+          const region = loopRegionOrNull({
+            enabled: loop.enabled,
+            startMs: loop.startMs,
+            endMs: loop.endMs,
+            timelineLengthMs: length,
+          });
+          if (region) {
+            playheadMsRef.current = region.startMs;
+            setPlayheadMs(region.startMs);
+            void engine.seek(region.startMs, true);
+            return;
+          }
           setPhase("stopped");
-          const end = engineDocumentRef.current.timelineLengthMs;
-          playheadMsRef.current = end;
-          setPlayheadMs(end);
+          playheadMsRef.current = length;
+          setPlayheadMs(length);
           setAudioState((s) => (s === "error" || s === "no_beat" ? s : "ready"));
         },
       },
@@ -334,6 +390,34 @@ export function StudioTransportProvider({
     // One engine per editor mount. Document updates go through setDocument.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount/dispose only
   }, [catalogPlayer]);
+
+  tempoRef.current = tempoBpm;
+  timeSigRef.current = timeSignatureNum;
+  loopRef.current = {
+    enabled: loopEnabled,
+    startMs: loopStartMs,
+    endMs: loopEndMs,
+  };
+
+  useEffect(() => {
+    if (!metronomeEnabled) {
+      lastClickBeatRef.current = -1;
+      return;
+    }
+    const id = window.setInterval(() => {
+      if (phaseRef.current !== "playing") return;
+      const ctx = engineRef.current?.getContextForAux();
+      if (!ctx) return;
+      const beatMs = beatDurationMs(tempoRef.current);
+      if (beatMs < 1) return;
+      const beatIndex = Math.floor(playheadMsRef.current / beatMs);
+      if (beatIndex === lastClickBeatRef.current) return;
+      lastClickBeatRef.current = beatIndex;
+      const beatsPerBar = timeSigRef.current > 0 ? timeSigRef.current : 4;
+      fireStudioClick(ctx, beatIndex % beatsPerBar === 0);
+    }, 30);
+    return () => window.clearInterval(id);
+  }, [metronomeEnabled]);
 
   useEffect(() => {
     engineDocumentRef.current = engineDocument;
@@ -443,6 +527,24 @@ export function StudioTransportProvider({
     engineRef.current?.releaseScratchLive();
   }, []);
 
+  const setLoop = useCallback(
+    (next: { enabled: boolean; startMs?: number; endMs?: number }) => {
+      setLoopEnabled(next.enabled);
+      if (typeof next.startMs === "number") {
+        setLoopStartMs(Math.max(0, Math.round(next.startMs)));
+      }
+      if (typeof next.endMs === "number") {
+        setLoopEndMs(Math.round(next.endMs));
+      }
+    },
+    [],
+  );
+
+  const getContextForAux = useCallback(
+    () => engineRef.current?.getContextForAux() ?? null,
+    [],
+  );
+
   const previewTake = useCallback(async (takeId: string): Promise<void> => {
     if (!takeId) {
       setError(STUDIO_TAKE_PLAYBACK_ERROR_PL);
@@ -491,6 +593,15 @@ export function StudioTransportProvider({
       stopTakePreview,
       applyScratchLive,
       releaseScratchLive,
+      tempoBpm,
+      timeSignatureNum,
+      metronomeEnabled,
+      setMetronomeEnabled,
+      loopEnabled,
+      loopStartMs,
+      loopEndMs,
+      setLoop,
+      getContextForAux,
       resolveClipSourceUrl,
     }),
     [
@@ -511,6 +622,14 @@ export function StudioTransportProvider({
       stopTakePreview,
       applyScratchLive,
       releaseScratchLive,
+      tempoBpm,
+      timeSignatureNum,
+      metronomeEnabled,
+      loopEnabled,
+      loopStartMs,
+      loopEndMs,
+      setLoop,
+      getContextForAux,
       resolveClipSourceUrl,
     ],
   );

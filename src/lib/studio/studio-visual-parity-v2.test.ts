@@ -29,15 +29,14 @@ describe("Studio Visual Parity V2 — transport empty shell", () => {
     );
   });
 
-  it("disables playback/record when noBeat; Loop/Metronome remain disabled placeholders", () => {
+  it("disables playback/record when noBeat; Loop/Metronome are runtime toggles", () => {
     expect(editor).toMatch(/disabled=\{beatControlsDisabled \|\| phase === "playing"\}/);
     expect(editor).toMatch(/disabled=\{noBeat \|\| phase !== "playing"\}/);
     expect(editor).toMatch(/disabled=\{noBeat\}/);
     expect(editor).toMatch(/data-testid="studio-transport-loop"/);
     expect(editor).toMatch(/data-testid="studio-transport-metronome"/);
-    expect(editor).toMatch(/Loop — niedostępne/);
-    expect(editor).toMatch(/Metronom — niedostępne/);
-    expect(editor).not.toMatch(/loopEnabled|metronomeEnabled/);
+    expect(editor).toMatch(/loopEnabled/);
+    expect(editor).toMatch(/metronomeEnabled/);
   });
 });
 

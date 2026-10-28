@@ -17,12 +17,12 @@ const mixControl = readFileSync(
 );
 
 describe("Studio Visual Shell — Transport", () => {
-  it("exposes Record affordance + disabled Loop/Metronome slots", () => {
+  it("exposes Record affordance + Loop/Metronome runtime controls", () => {
     expect(editor).toMatch(/data-testid="studio-transport-record"/);
     expect(editor).toMatch(/data-testid="studio-transport-loop"/);
     expect(editor).toMatch(/data-testid="studio-transport-metronome"/);
-    expect(editor).toMatch(/Loop — niedostępne/);
-    expect(editor).toMatch(/Metronom — niedostępne/);
+    expect(editor).toMatch(/setLoop\(/);
+    expect(editor).toMatch(/setMetronomeEnabled/);
     expect(editor).toMatch(/setInspectorPreferRecord\(true\)/);
   });
 
@@ -41,9 +41,12 @@ describe("Studio Visual Shell — Transport", () => {
     expect(editor).toMatch(/patchMasterMix\(\{ masterGainDb \}\)/);
   });
 
-  it("does not implement Loop/Metronome runtime state", () => {
-    expect(editor).not.toMatch(/loopEnabled|metronomeEnabled|clickTrack/);
-    expect(editor).not.toMatch(/createOscillator|AudioWorklet.*metro/i);
+  it("wires Loop/Metronome to existing transport clock — no second engine", () => {
+    expect(editor).toMatch(/loopEnabled/);
+    expect(editor).toMatch(/metronomeEnabled/);
+    expect(editor).not.toMatch(/new StudioAudioEngine/);
+    expect(editor).not.toMatch(/new AudioContext/);
+    expect(editor).not.toMatch(/AudioWorklet.*metro/i);
   });
 });
 

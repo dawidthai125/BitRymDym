@@ -15,6 +15,14 @@ import type {
   StudioPlaceableTakeDto,
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
+import {
+  STUDIO_COUNT_IN_BARS,
+  countInDurationMs,
+  countInSeekMs,
+  normalizePunchWindow,
+  shouldAutoStopPunch,
+  type StudioCountInBars,
+} from "@/lib/studio/studio-daw-clock";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import {
   acquireMicStream,
@@ -212,6 +220,12 @@ export function StudioRecordingPanel({
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryBusyId, setLibraryBusyId] = useState<string | null>(null);
   const [libraryPreviewId, setLibraryPreviewId] = useState<string | null>(null);
+  const [countInBars, setCountInBars] = useState<StudioCountInBars>(1);
+  const [punchEnabled, setPunchEnabled] = useState(false);
+  const [punchInMs, setPunchInMs] = useState(0);
+  const [punchOutMs, setPunchOutMs] = useState(4000);
+  const [countInActive, setCountInActive] = useState(false);
+  const [monitorOn, setMonitorOn] = useState(false);
   const [catalogAssetId, setCatalogAssetId] = useState("");
   const [catalogBusy, setCatalogBusy] = useState(false);
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
@@ -255,6 +269,7 @@ export function StudioRecordingPanel({
   const [localSafety, setLocalSafety] =
     useState<TakeRecoveryWriterState | null>(null);
 
+  const punchOutRef = useRef<number | null>(null);
   const captureActive = isRecordingCaptureActive(state.phase);
   const showWorkflow = state.phase === "READY_TAKE" && state.takeId;
 
@@ -276,6 +291,25 @@ export function StudioRecordingPanel({
     [setOutputSinkId],
   );
   const outputDevices = useStudioOutputDevices({ onSinkIdChange });
+
+  useEffect(() => {
+    if (!monitorOn || !meterStream) return;
+    const ctx = transport.getContextForAux();
+    if (!ctx?.createMediaStreamSource) return;
+    const source = ctx.createMediaStreamSource(meterStream);
+    const gain = ctx.createGain();
+    gain.gain.value = 0.7;
+    source.connect(gain);
+    gain.connect(ctx.destination);
+    return () => {
+      try {
+        source.disconnect();
+        gain.disconnect();
+      } catch {
+        // already torn down
+      }
+    };
+  }, [meterStream, monitorOn, transport]);
 
   // AUD-01 — auto live mic tester (reuse useMicAnalyser; hold stream, no Studio engine).
   useEffect(() => {
@@ -642,7 +676,44 @@ export function StudioRecordingPanel({
     captureArmingRef.current = true;
     setCaptureArming(true);
     stopTesterStream();
-    const startMs = transport.state.playheadMs;
+    const punch = punchEnabled
+      ? normalizePunchWindow({
+          punchInMs,
+          punchOutMs,
+          timelineLengthMs: transport.state.timelineLengthMs,
+        })
+      : null;
+    const startMs = punch?.punchInMs ?? transport.state.playheadMs;
+    punchOutRef.current = punch?.punchOutMs ?? null;
+    const countMs = countInDurationMs(
+      transport.tempoBpm,
+      countInBars,
+      transport.timeSignatureNum,
+    );
+    if (countMs > 0) {
+      setCountInActive(true);
+      transport.seek(countInSeekMs(startMs, countMs));
+      transport.play();
+      const deadline = Date.now() + countMs + 400;
+      await new Promise<void>((resolve) => {
+        const id = window.setInterval(() => {
+          if (
+            transport.getPlayheadMs() >= startMs ||
+            Date.now() >= deadline
+          ) {
+            window.clearInterval(id);
+            resolve();
+          }
+        }, 30);
+      });
+      setCountInActive(false);
+      if (!mountedRef.current) {
+        submittingRef.current = false;
+        captureArmingRef.current = false;
+        setCaptureArming(false);
+        return;
+      }
+    }
     setRecordStartMs(startMs);
     recordStartMsRef.current = startMs;
     captureTrackIdRef.current = trackIdRef.current;
@@ -711,7 +782,10 @@ export function StudioRecordingPanel({
       tickRef.current = setInterval(() => {
         const elapsed = Date.now() - startedAtRef.current;
         dispatch({ type: "TICK", elapsedMs: elapsed });
-        if (elapsed >= maxSecondsRef.current * 1000) {
+        if (
+          elapsed >= maxSecondsRef.current * 1000 ||
+          shouldAutoStopPunch(transport.getPlayheadMs(), punchOutRef.current)
+        ) {
           void stopAndFinalize();
         }
       }, 200);
@@ -1237,7 +1311,10 @@ export function StudioRecordingPanel({
     }
   }
 
-  async function onLibraryPlace(take: StudioPlaceableTakeDto) {
+  async function onLibraryPlace(
+    take: StudioPlaceableTakeDto,
+    replaceOverlapping = false,
+  ) {
     if (!trackIdRef.current) {
       setLibraryError("Wybierz ścieżkę do nagrania.");
       return;
@@ -1260,6 +1337,7 @@ export function StudioRecordingPanel({
                 takeId: take.id,
                 timelineStartMs,
                 expectedDocumentVersion: getExpectedDocumentVersion(),
+                replaceOverlapping,
               }),
             },
           );
@@ -1396,6 +1474,70 @@ export function StudioRecordingPanel({
           ))}
         </select>
       </label>
+
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
+        <p className="text-xs font-medium text-[var(--brd-ink)]">
+          Count-in / punch
+        </p>
+        <label className="block text-xs text-[var(--brd-mute)]">
+          Count-in
+          <select
+            className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
+            value={countInBars}
+            disabled={busy && state.phase !== "READY"}
+            onChange={(e) =>
+              setCountInBars(Number(e.target.value) as StudioCountInBars)
+            }
+            aria-label="Count-in"
+          >
+            {STUDIO_COUNT_IN_BARS.map((bars) => (
+              <option key={bars} value={bars}>
+                {bars === 0 ? "Wyłączone" : `${bars} takt${bars === 1 ? "" : "y"}`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
+          <input
+            type="checkbox"
+            checked={punchEnabled}
+            onChange={(e) => setPunchEnabled(e.target.checked)}
+            disabled={busy && state.phase !== "READY"}
+          />
+          Punch-in/out na uzbrojonej ścieżce
+        </label>
+        {punchEnabled ? (
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs text-[var(--brd-mute)]">
+              In (ms)
+              <input
+                className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
+                type="number"
+                min={0}
+                value={punchInMs}
+                onChange={(e) => setPunchInMs(Number(e.target.value) || 0)}
+                aria-label="Punch-in ms"
+              />
+            </label>
+            <label className="block text-xs text-[var(--brd-mute)]">
+              Out (ms)
+              <input
+                className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
+                type="number"
+                min={1}
+                value={punchOutMs}
+                onChange={(e) => setPunchOutMs(Number(e.target.value) || 0)}
+                aria-label="Punch-out ms"
+              />
+            </label>
+          </div>
+        ) : null}
+        {countInActive ? (
+          <p className="text-xs font-medium text-destructive" role="status">
+            Count-in…
+          </p>
+        ) : null}
+      </div>
 
       {showWorkflow ? (
         <div
@@ -1710,6 +1852,20 @@ export function StudioRecordingPanel({
                       : "Mikrofon działa"}
               </p>
               <BrdInputMonitor level={mic.level} peak={mic.peak} />
+              <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
+                <input
+                  type="checkbox"
+                  checked={monitorOn}
+                  onChange={(e) => setMonitorOn(e.target.checked)}
+                />
+                Monitor do ucha (suchy)
+              </label>
+              {monitorOn ? (
+                <p className="text-[11px] text-[var(--brd-mute)]" role="status">
+                  Usłyszysz echo i latencję przeglądarki. Używaj słuchawek.
+                  Mix słychać, gdy transport gra.
+                </p>
+              ) : null}
             </>
           ) : (
             <p className="text-xs text-[var(--brd-mute)]" role="status">
@@ -1906,9 +2062,23 @@ export function StudioRecordingPanel({
                         state.phase === "READY_TAKE" ||
                         !trackId
                       }
-                      onClick={() => void onLibraryPlace(take)}
+                      onClick={() => void onLibraryPlace(take, false)}
                     >
                       Umieść w Studio
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full"
+                      variant="outline"
+                      disabled={
+                        libraryBusyId === take.id ||
+                        state.phase === "READY_TAKE" ||
+                        !trackId
+                      }
+                      onClick={() => void onLibraryPlace(take, true)}
+                    >
+                      Zastąp
                     </Button>
                   </div>
                 </li>

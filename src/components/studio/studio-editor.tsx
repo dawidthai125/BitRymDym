@@ -209,6 +209,8 @@ export function StudioEditor({
       timelineLengthMs={doc.project.timelineLengthMs}
       beatId={beatRef?.beatId ?? null}
       engineDocument={engineDocument}
+      tempoBpm={doc.project.tempoBpm}
+      timeSignatureNum={doc.project.timeSignatureNum}
     >
       <StudioEditorInner
         doc={doc}
@@ -3110,8 +3112,19 @@ function StudioTransportBar({
   onMasterGainLocal: (gainDb: number) => void;
   onMasterGainCommit: (gainDb: number) => void;
 }) {
-  const { phase, play, pause, stop, audioState, error, hasBeat } =
-    useStudioTransportControls();
+  const {
+    phase,
+    play,
+    pause,
+    stop,
+    audioState,
+    error,
+    hasBeat,
+    metronomeEnabled,
+    setMetronomeEnabled,
+    loopEnabled,
+    setLoop,
+  } = useStudioTransportControls();
   const { timeLabel } = useStudioTransportPlayhead();
   const busy = audioState === "loading";
   const noBeat =
@@ -3210,12 +3223,23 @@ function StudioTransportBar({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)]"
-            disabled
-            aria-disabled="true"
-            title="Loop niedostępny"
-            aria-label="Loop — niedostępne w tej wersji Studio"
+            className={
+              loopEnabled
+                ? "min-h-11 min-w-11 border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-green)_25%,transparent)] px-2 text-[var(--brd-paper)]"
+                : "min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            }
+            disabled={noBeat}
+            aria-pressed={loopEnabled}
+            title={loopEnabled ? "Loop włączony" : "Loop regionu"}
+            aria-label={loopEnabled ? "Loop włączony" : "Włącz loop regionu"}
             data-testid="studio-transport-loop"
+            onClick={() =>
+              setLoop({
+                enabled: !loopEnabled,
+                startMs: 0,
+                endMs: durationMs,
+              })
+            }
           >
             ⟳
           </Button>
@@ -3223,12 +3247,21 @@ function StudioTransportBar({
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)]"
-            disabled
-            aria-disabled="true"
-            title="Metronom niedostępny"
-            aria-label="Metronom — niedostępne w tej wersji Studio"
+            className={
+              metronomeEnabled
+                ? "min-h-11 min-w-11 border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-green)_25%,transparent)] px-2 text-[var(--brd-paper)]"
+                : "min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            }
+            disabled={noBeat}
+            aria-pressed={metronomeEnabled}
+            title={
+              metronomeEnabled ? "Metronom włączony" : "Metronom — klik runtime"
+            }
+            aria-label={
+              metronomeEnabled ? "Metronom włączony" : "Włącz metronom"
+            }
             data-testid="studio-transport-metronome"
+            onClick={() => setMetronomeEnabled(!metronomeEnabled)}
           >
             ♩
           </Button>
