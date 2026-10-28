@@ -39,6 +39,7 @@ import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
+import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { StudioTrackMeter } from "@/components/studio/studio-track-meter";
@@ -2050,7 +2051,12 @@ function StudioEditorInner({
 
       <StudioTransportBar
         projectId={doc.project.id}
+        tipDocumentVersion={doc.project.documentVersion}
         getExpectedDocumentVersion={expectedDocumentVersion}
+        onDocumentRefreshed={(next) => {
+          applyPersistedDoc(() => next);
+          setError(null);
+        }}
         onChooseBeat={() => setBeatPickerOpen(true)}
         onRecord={() => {
           setInspectorPreferRecord(true);
@@ -3069,7 +3075,9 @@ function ClipEditPanelPlayheadBound(
 
 function StudioTransportBar({
   projectId,
+  tipDocumentVersion,
   getExpectedDocumentVersion,
+  onDocumentRefreshed,
   onChooseBeat,
   onRecord,
   tempoBpm,
@@ -3085,7 +3093,9 @@ function StudioTransportBar({
   onMasterGainCommit,
 }: {
   projectId: string;
+  tipDocumentVersion: number;
   getExpectedDocumentVersion: () => number;
+  onDocumentRefreshed: (document: StudioProjectDocument) => void;
   onChooseBeat: () => void;
   onRecord: () => void;
   tempoBpm: number;
@@ -3303,6 +3313,13 @@ function StudioTransportBar({
           ) : null}
         </p>
 
+        <StudioMixRevisionHistoryControl
+          projectId={projectId}
+          tipDocumentVersion={tipDocumentVersion}
+          getExpectedDocumentVersion={getExpectedDocumentVersion}
+          onDocumentRefreshed={onDocumentRefreshed}
+          disabled={pending}
+        />
         <StudioExportControl
           projectId={projectId}
           getExpectedDocumentVersion={getExpectedDocumentVersion}
