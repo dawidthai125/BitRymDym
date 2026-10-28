@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — P0 unit 1 live Play PASS
+
+**Status:** Catalog place + Zatwierdź + live Play **PASS** · PATCH set_scratch **200** · Record został · leftover **0** · projekt `178e902d-…` v63 · AudioContext CDP **NOT VERIFIED** · ucha **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** docs-only zapis P0 unit 1 live Play PASS
+**Tip start:** `60d59a39098584e0d9810719e2f6d4f653fcc12d` = `origin/main` · kod **`5043b5e`** ancestor
+**Flow:** Catalog place → Record został → Zatwierdź stan → PATCH set_scratch **200** → live Play **PASS**
+**Cue:** live = `transport.seek` · bake = `resolveScratchSourceMs` · schedule nie czyta `scratchCueMs`
+**Explicit non-claim:** AudioContext CDP **NOT VERIFIED** · ucha Owner **NOT VERIFIED** · `dpl_*` @ `60d59a3` **NOT VERIFIED** this unit · last verified deploy **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** @ `7438de2` ancestor · **≠** PRODUCTION VERIFIED · **≠** Product GREEN
+**NEXT:** unit 2 mix-working — nie SFM / nie Contabo / nie OD-15
+
 ## 2026-10-28 — Vercel MCP `dpl_*` + alias SHA bind PASS @ `7438de2`
 
 **Status:** Vercel Production **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** **Ready** @ **`7438de2`** · www / apex / `bitrymdym.vercel.app` → ten `dpl_*` · unique `bitrymdym-gclyvcvdj-…` · GH **`7395502484`** **success** `2026-10-28T19:40:20Z` · **DEPLOYMENT VERIFIED** · **ALIAS VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
