@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Catalog place keeps Record + onTrackCreated → doc.tracks
+
+**Status:** kod **SHIPPED** · vitest **82/82** · UI „Zatwierdź stan” → clip-move **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „Go na wszystko” — editor aktywny po Catalog place (Record unmount + brak `onTrackCreated`)
+**Tip start:** `3a9bfd8cdc035c2a29a8f26087b6d37518f96db6` = `origin/main`
+**Root cause:** `onClipCreated` zawsze `setInspectorPreferRecord(false)` → File + unmount Record → `lastScratchClipId` ginie; `onTrackCreated` niepodpięty → Scratch/Sample poza `doc.tracks`
+**Code:** catalog place `keepRecordPanel: true` zostawia Record; `onTrackCreated` → `applyPersistedDoc` `doc.tracks` (REUSE clip/track sort); Keep/place nadal zrzuca Record
+**Tests:** `studio-scratch-cas` + `record-inspector-mount` + `stu-08-record-mode-init` + `p7-1-6-autosave-orchestrator` + `studio-markers-*` + `pr-v1-cas-move-delete` → **82/82 PASS**
+**Isolation:** editor **+17/−1**; panel **+8/−2**; bez LF-normalize; Sacred / `studio-service` / `SYSTEM_ARCHITECTURE` PRESERVE
+**Explicit non-claim:** Owner re-smoke Zatwierdź stan → set_scratch → clip-move **NOT VERIFIED** · **≠** Product GREEN
+**NEXT:** re-smoke UI Zatwierdź stan → clip-move — nie SFM / nie Contabo
+
 ## 2026-10-28 — Leftover cleanup + set_scratch→move API PASS
 
 **Status:** leftover DELETE Sample `8273aeeb` + Scratch `bced0aa2` **200** · leftover **false** · Bit/Wokal Keep OK · projekt v27 · set_scratch→move API **PASS** (place TAKE → PATCH reverse true → clip-move bez CAS) · UI „Zatwierdź stan” **NOT VERIFIED** (`lastScratchClipId` / catalog 0) · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

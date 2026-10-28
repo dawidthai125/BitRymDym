@@ -223,9 +223,10 @@ describe("STU-08-D — editor / panel wiring contract", () => {
 
   it("Record is left on clip placement after the take workflow", () => {
     const placed = editor.slice(
-      editor.indexOf("onClipCreated={(clip, nextDocumentVersion) => {"),
+      editor.indexOf("onClipCreated={(clip, nextDocumentVersion, options) => {"),
       editor.indexOf('setStatus("Nagranie dodane na oś czasu.");'),
     );
+    expect(placed).toMatch(/if \(options\?\.keepRecordPanel\) \{\s*return;\s*\}/);
     expect(placed).toMatch(/setInspectorPreferRecord\(false\);/);
     expect(placed).toMatch(/setSelectedClipId\(selectClipId\(null, clip\.id\)\);/);
   });

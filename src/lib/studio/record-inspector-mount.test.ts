@@ -36,6 +36,8 @@ describe("Record inspector initial mount", () => {
       editor.indexOf("onClipCreated="),
       editor.indexOf("/>", editor.indexOf("onClipCreated=")),
     );
+    expect(clipCreated).toMatch(/if \(options\?\.keepRecordPanel\) \{\s*return;\s*\}/);
     expect(clipCreated).toMatch(/setInspectorPreferRecord\(false\)/);
+    expect(clipCreated).toMatch(/onTrackCreated=\{\(track, nextDocumentVersion\) => \{/);
   });
 });

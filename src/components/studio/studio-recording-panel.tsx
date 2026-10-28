@@ -108,7 +108,11 @@ export function StudioRecordingPanel({
   /** Marker / Inspector ack → editor docRef (clip-move CAS). */
   onDocumentVersionAck?: (ack: unknown) => number;
   tracks: StudioTrackDto[];
-  onClipCreated: (clip: StudioClipDto, documentVersion: number) => void;
+  onClipCreated: (
+    clip: StudioClipDto,
+    documentVersion: number,
+    options?: { keepRecordPanel?: boolean },
+  ) => void;
   onTrackCreated?: (track: StudioTrackDto, documentVersion: number) => void;
   onRecordingActiveChange?: (active: boolean) => void;
   /**
@@ -1670,7 +1674,9 @@ export function StudioRecordingPanel({
                   documentVersion,
                   apply: () => {
                     if (!placed.reusedExistingClip) {
-                      onClipCreated(placed.clip, documentVersion);
+                      onClipCreated(placed.clip, documentVersion, {
+                        keepRecordPanel: true,
+                      });
                     }
                     setLastScratchClipId(placed.clip.id);
                     setCatalogMessage(

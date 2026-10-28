@@ -106,6 +106,20 @@ describe("Scratch CAS + SAMPLE/SCRATCH create", () => {
     );
   });
 
+  it("catalog place keeps Record mounted and create-track lands in editor doc.tracks", () => {
+    expect(recording).toMatch(
+      /onClipCreated\(placed\.clip, documentVersion, \{\s*keepRecordPanel: true,\s*\}\)/,
+    );
+    expect(editor).toMatch(/onTrackCreated=\{\(track, nextDocumentVersion\) => \{/);
+    expect(editor).toMatch(/tracks: \[\.\.\.prev\.tracks, track\]\.sort\(/);
+    const clipCreated = editor.slice(
+      editor.indexOf("onClipCreated={(clip, nextDocumentVersion, options) => {"),
+      editor.indexOf("/>", editor.indexOf("onClipCreated=")),
+    );
+    expect(clipCreated).toMatch(/if \(options\?\.keepRecordPanel\) \{\s*return;\s*\}/);
+    expect(clipCreated).toMatch(/setInspectorPreferRecord\(false\)/);
+  });
+
   it("parse add-track type defaults to VOCAL and rejects BEAT", () => {
     expect(parseStudioAddTrackType(undefined)).toBe(
       STUDIO_ADD_TRACK_DEFAULT_TYPE,

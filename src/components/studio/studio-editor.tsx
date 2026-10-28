@@ -1756,7 +1756,7 @@ function StudioEditorInner({
           }}
           onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
           recoverySavedKey={recoverySavedKey}
-          onClipCreated={(clip, nextDocumentVersion) => {
+          onClipCreated={(clip, nextDocumentVersion, options) => {
             applyPersistedDoc((prev) => ({
               ...prev,
               project: {
@@ -1767,10 +1767,25 @@ function StudioEditorInner({
                 (a, b) => a.timelineStartMs - b.timelineStartMs,
               ),
             }));
+            if (options?.keepRecordPanel) {
+              return;
+            }
             setInspectorPreferRecord(false);
             setSelectedClipId(selectClipId(null, clip.id));
             setSelectedTrackId(clip.trackId);
             setStatus("Nagranie dodane na oś czasu.");
+          }}
+          onTrackCreated={(track, nextDocumentVersion) => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion: nextDocumentVersion,
+              },
+              tracks: [...prev.tracks, track].sort(
+                (a, b) => a.sortOrder - b.sortOrder,
+              ),
+            }));
           }}
         />
       ) : null}
