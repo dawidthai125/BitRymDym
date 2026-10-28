@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — www Metro/Loop Play + TAKE listen (AudioContext)
+
+**Status:** AudioContext **running PASS** · TAKE ścieżka odtwarzania **PASS** · ucha **NOT VERIFIED** · loop wrap **NOT VERIFIED** · `dpl_*` **NOT VERIFIED** · alias SHA bind **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „Go pracujcie wszyscy” = NEXT po www metro chrome
+**Tip living:** `c52f38c47d830bd17cae30ce7445f59827335dfc` = `origin/main` · kod **`01629f5`** ancestor
+**Deploy:** GitHub Production **`7380550674`** **success** `2026-10-28T08:25:35Z` @ `c52f38c` · unique `bitrymdym-j7wf3q5lf-…`
+**Play:** Loop+Metro **on** · Bit muted · Master **0.0 dB** · `AudioContext` **running** 48 kHz · playhead **00:09.192** · Stop
+**TAKE:** waveform **00:00–00:18** · take `0ffb274a-…` · signed `take-audio/…/mic.bin` · **≠ błąd** · ucha **NOT VERIFIED**
+**Audit:** [WWW_METRO_LOOP_LISTEN_2026-10-28.md](./audits/WWW_METRO_LOOP_LISTEN_2026-10-28.md)
+**NEXT:** markery vertical slice (schema+CAS) **albo** Owner ear confirm klik/wokal
+
 ## 2026-10-28 — www Loop/Metronom chrome runtime (alias vs tip)
 
 **Status:** chrome **PASS** · `dpl_*` **NOT VERIFIED** · alias SHA bind **NOT VERIFIED** · słyszalność **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
@@ -16,7 +27,7 @@ Format: data, zakres, skrót.
 **Diagnoza Keep smoke:** „niedostępne w tej wersji Studio” = alias/cache lag (HISTORY), **nie** leftover OD-VS-01 disabled
 **Fix kodu:** nie
 **Audit:** [WWW_METRO_LOOP_ALIAS_2026-10-28.md](./audits/WWW_METRO_LOOP_ALIAS_2026-10-28.md)
-**NEXT:** słyszalny metronom/loop (Play — osobny GO egress) **albo** Owner listen clipu TAKE
+**NEXT:** słyszalny metronom/loop (Play — osobny GO egress) **albo** Owner listen clipu TAKE — **superseded** przez listen unit (AudioContext PASS; ucha NOT VERIFIED)
 
 ## 2026-10-28 — Keep smoke PASS (sesja Dawida, Stop→Zachowaj→clip)
 
