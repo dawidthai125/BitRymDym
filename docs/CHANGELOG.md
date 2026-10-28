@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Catalog→place Owner UI smoke PASS + cleanup
+
+**Status:** Owner UI place **PASS** · leftover catalog/take/clip/XP **0** · HTTP copy/place z UI **NOT VERIFIED** · Play **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** docs-only zapis Catalog→place Owner UI po markerach re-smoke
+**Sesja:** Dawid · projekt `178e902d-6ecf-4ef6-910c-d85612bb277c` v16
+**Seed:** `d5c79f2a-15a8-4c43-8fa1-5564ddb646b5` PUBLISHED license_allows_copy
+**Flow:** Kopiuj i umieść na playhead → Gotowe · clip TAKE `d525d69b-18df-4e51-8dc7-7229b8579c3a` 1s na Wokal · take `49bb2d34-…` · DELETE clip HTTP 200
+**Zachowane:** BEAT_REF `2f06a6b2` · Keep `af9bd5aa`
+**REUSE:** `scripts/_catalog-place-user-e2e.mjs` · 0 zmian kodu
+**Tip start:** `49c2036` = `origin/main` · kod **`fadb2b0`**
+**NEXT:** Scratch bake listen / STUDIO_EXPORT PARTIAL verify — nie SFM / nie Contabo / nie OD-15 / nie LF-normalize dirty editor
+
 ## 2026-10-28 — Owner re-smoke markerów PASS (dwie mutacje bez F5)
 
 **Status:** Owner re-smoke **PASS** · kod **`fadb2b0`** · docs tip start **`30a9bc2`** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · seek/ucho **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
