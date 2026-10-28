@@ -100,6 +100,7 @@ import {
   type StudioSnapConfig,
 } from "@/lib/studio/studio-timeline-view";
 import {
+  advanceStudioPersistDocumentVersion,
   classifyPersistHttpFailure,
   classifyPersistNetworkFailure,
   StudioPersistOrchestrator,
@@ -489,6 +490,25 @@ function StudioEditorInner({
 
   function expectedDocumentVersion(): number {
     return docRef.current.project.documentVersion;
+  }
+
+  /**
+   * Marker / Inspector CAS ack → same applyPersistedDoc path as clip place.
+   * Clip-move reads docRef, not the Inspector tip.
+   */
+  function applyAckedDocumentVersion(ack: unknown): number {
+    const next = advanceStudioPersistDocumentVersion(
+      expectedDocumentVersion(),
+      ack,
+    );
+    applyPersistedDoc((prev) => {
+      if (next <= prev.project.documentVersion) return prev;
+      return {
+        ...prev,
+        project: { ...prev.project, documentVersion: next },
+      };
+    });
+    return next;
   }
 
   function projectId(): string {
@@ -1711,6 +1731,7 @@ function StudioEditorInner({
           projectId={doc.project.id}
           getExpectedDocumentVersion={expectedDocumentVersion}
           enqueuePersistAsync={enqueuePersistAsync}
+          onDocumentVersionAck={applyAckedDocumentVersion}
           tracks={doc.tracks}
           embedded
           preferredTrackId={activeSelectedTrackId}

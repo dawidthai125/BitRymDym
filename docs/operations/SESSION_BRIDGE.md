@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T10:25:00+01:00 (markers editor docRef sync) | main | `ad28be2` start | 0 | ~152 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `ad28be2`=`origin/main`; GO editor; ack markerów → `applyPersistedDoc` / docRef; vitest markers+CAS **71/71**; editor izolacja OK (+21, bez CRLF); Sacred/service PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T10:20:00+01:00 (bake listen polarity closeout) | main | `aacaada` start | 0 | ~152 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `aacaada`=`origin/main`; code `fadb2b0`; polarność PASS · PLAY PASS ×4 · ucha NOT VERIFIED; allowlista: `_bake-listen-scratch-wav.ts`+CHANGELOG+PS+bridge; Sacred/Studio editor/service PRESERVE · OD-15 OPEN · §4 archive-14 + BAKE-LISTEN · ≠ GREEN |
 | 2026-10-28T10:12:00+01:00 (Catalog place Owner UI PASS) | main | `49c2036` start | 0 | ~152 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `49c2036`=`origin/main`; code `fadb2b0`; UI Kopiuj i umieść → Gotowe; leftover 0; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio editor/service PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T10:00:00+01:00 (Owner markers re-smoke PASS) | main | `30a9bc2` docs | 0 | ~154 | ~325 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `30a9bc2`=`origin/main`; code `fadb2b0`; GH `7381109228` @ 30a9bc2 · `7381095797` @ fadb2b0 success; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio editor/service PRESERVE · OD-15 OPEN · §4 archive-13 + RESMOKE · ≠ GREEN |
@@ -95,14 +96,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T10:20+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T10:25+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (przed docs commit) | `aacaada` | docs start `aacaadaa8cef8f0ff9a54fc9c686d065d185c08a` = `origin/main`; code `fadb2b0eeb13f6681778e37f57d6d2c97dbcaccf` |
-| Last independently verified deploy | GH **`7381109228`** @ `30a9bc2` · GH **`7381095797`** @ `fadb2b0` | obie **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · ucha bake **NOT VERIFIED** |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · bake polarność **PASS** / listen **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Bake listen polarity closeout | Ten zapis edytuje most + CHANGELOG + PS + skrypt dump |
+| Lokalny `HEAD` (przed docs commit) | `ad28be2` | docs start `ad28be2c2561e35645f5896c04eff186b5cdafe2` = `origin/main`; code markers tip `fadb2b0eeb13f6681778e37f57d6d2c97dbcaccf` |
+| Last independently verified deploy | GH **`7381109228`** @ `30a9bc2` · GH **`7381095797`** @ `fadb2b0` | obie **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · clip-move re-smoke **NOT VERIFIED** |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · editor docRef sync **SHIPPED** · Owner marker→clip-move **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Markers editor docRef sync | Ten zapis edytuje most + CHANGELOG + PS + editor/panel/orchestrator + testy |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -151,6 +152,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | MARKERS-DOCREF | Editor docRef sync po ack markerów | EXECUTED | PASS | Start tip `ad28be2`=`origin/main`. GO editor. Ack markerów → `advanceStudioPersistDocumentVersion` + `applyPersistedDoc` (REUSE tip/ack, bez drugiego CAS). Recording `ackDocumentVersion` → parent. Editor izolacja OK (+21, bez CRLF). Vitest markers+CAS/p7.1.6/stu-08/pr-v1 **71/71**. Owner marker→clip-move **NOT VERIFIED**. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | vitest studio-markers-* + p7-1-6 + stu-08 + pr-v1 | _(ten commit)_ | NEXT: Owner re-smoke marker → clip-move bez F5 |
 | 2026-10-28 | BAKE-LISTEN-POLARITY | Scratch bake listen dump polarity + PlaySync | EXECUTED | PARTIAL | Start tip `aacaada`=`origin/main`. Kod `fadb2b0`. Skrypt `scripts/_bake-listen-scratch-wav.ts` (REUSE `renderStudioDocumentOffline` + `encodeWavFromBake`). Polarność PCM/header **PASS**. SoundPlayer PlaySync exit 0 ×4 (**PLAY PASS**). Ucho Owner **NOT VERIFIED**. Temp WAV usunięte. 0 zmian produktu Studio. Contabo/SFM nietknięte. ≠ Product GREEN. | skrypt dump · PlaySync ×4 | _(ten commit)_ | NEXT: residual clip-move CAS **albo** Owner `--play` ucha |
 | 2026-10-28 | GO-SB-ARCHIVE-14 | Archiwizacja §4 → CHANGELOG (room for bake listen) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GO-SB-ARCHIVE-10` · `GIT-CLOSEOUT` · `GO-SB-ARCHIVE-9`) → CHANGELOG archive. Living 15→12, po BAKE-LISTEN-POLARITY + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | CAT-PLACE-UI | Catalog→place Owner UI smoke + cleanup | EXECUTED | PASS | Seed `d5c79f2a-15a8-4c43-8fa1-5564ddb646b5` PUBLISHED license_allows_copy. UI Dawid: Kopiuj i umieść na playhead → Gotowe. Clip TAKE `d525d69b-18df-4e51-8dc7-7229b8579c3a` 1s na Wokal · take `49bb2d34-…`. DELETE clip HTTP 200 · leftover catalog/take/clip/XP = 0. Zachowane: BEAT_REF `2f06a6b2` · Keep `af9bd5aa` · projekt `178e902d-…` v16. REUSE `scripts/_catalog-place-user-e2e.mjs` · 0 zmian kodu. Tip start `49c2036`=`origin/main`. Kod `fadb2b0`. HTTP copy/place z UI NOT VERIFIED. Play NOT VERIFIED. ≠ Product GREEN. | Owner UI smoke · leftover SELECT 0 | _(ten commit)_ | NEXT: Scratch bake listen / STUDIO_EXPORT PARTIAL verify |
@@ -167,7 +169,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-28 | USER-COPY | Prod USER catalog copy + cleanup | EXECUTED | PASS | Sesja Dawida w Cursor Browser. Fixture WAV 16044 B → `catalog/d9b4f821-…/original.bin` + PUBLISHED+license. `POST /api/catalog/copy` HTTP **200** take `0b46506e-…` READY. Cleanup Storage+DB+XP leftover **0**. Tip `5b2fceb`=`origin/main`. GH **`7379526025`** success. `dpl_*` / alias **NOT VERIFIED**. ≠ Product GREEN. | Browser fetch · MCP leftover SELECT · [audit](../audits/CATALOG_COPY_USER_E2E_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch place **albo** słyszalny export **albo** LF-normalize editor |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fourteenth batch GO-SB-ARCHIVE-10 + GIT-CLOSEOUT + GO-SB-ARCHIVE-9 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fourteenth batch GO-SB-ARCHIVE-10 + GIT-CLOSEOUT + GO-SB-ARCHIVE-9 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Kolejny `EXECUTED` wymaga archiwizacji §4.
 
 ### 4.1 Limit i archiwizacja
 

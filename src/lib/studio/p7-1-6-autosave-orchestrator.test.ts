@@ -449,6 +449,9 @@ describe("P7.1.6 CAS completeness source contracts", () => {
   const editor = read("src/components/studio/studio-editor.tsx");
 
   it("track controls require expectedDocumentVersion + RPC CAS", () => {
+    // A3.5: allowlisted mix params → Mix Working gateway; name/arm → legacy RPC.
+    expect(service).toMatch(/applyStudioMixWorkingOpsFor/);
+    expect(service).toMatch(/set_track_controls/);
     expect(service).toMatch(/studio_cas_update_track_controls/);
     expect(service).toMatch(
       /updateStudioTrackControlsFor[\s\S]*expectedDocumentVersion/,
@@ -547,7 +550,8 @@ describe("P7.1.6 CAS completeness source contracts", () => {
     expect(fx).not.toMatch(/async function persistFxChain/);
 
     expect(recording).toMatch(/enqueuePersistAsync/);
-    expect(recording).toMatch(/getExpectedDocumentVersion\(\)/);
+    expect(recording).toMatch(/getExpectedDocumentVersion/);
+    expect(recording).toMatch(/persistVersionTip\.expected\(\)/);
     expect(recording).toMatch(/record\/place/);
     expect(recording).not.toMatch(/expectedDocumentVersion:\s*documentVersion/);
 

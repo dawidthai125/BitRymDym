@@ -86,6 +86,7 @@ export function StudioRecordingPanel({
   projectId,
   getExpectedDocumentVersion,
   enqueuePersistAsync,
+  onDocumentVersionAck,
   tracks,
   onClipCreated,
   onTrackCreated,
@@ -104,6 +105,8 @@ export function StudioRecordingPanel({
   enqueuePersistAsync: (
     executor: StudioPersistExecutor,
   ) => Promise<StudioPersistResult>;
+  /** Marker / Inspector ack → editor docRef (clip-move CAS). */
+  onDocumentVersionAck?: (ack: unknown) => number;
   tracks: StudioTrackDto[];
   onClipCreated: (clip: StudioClipDto, documentVersion: number) => void;
   onTrackCreated?: (track: StudioTrackDto, documentVersion: number) => void;
@@ -130,6 +133,14 @@ export function StudioRecordingPanel({
     );
   }
   const persistVersionTip = persistVersionTipRef.current;
+  const ackDocumentVersion = useCallback(
+    (ack: unknown): number => {
+      const next = persistVersionTip.applyAck(ack);
+      onDocumentVersionAck?.(next);
+      return next;
+    },
+    [onDocumentVersionAck, persistVersionTip],
+  );
   const transport = useStudioTransport();
   const [localTracks, setLocalTracks] = useState<StudioTrackDto[]>([]);
   const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
@@ -1713,7 +1724,7 @@ export function StudioRecordingPanel({
           enqueuePersistAsync={enqueuePersistAsync}
           getPlayheadMs={transport.getPlayheadMs}
           onSeek={transport.seek}
-          onDocumentVersionAck={persistVersionTip.applyAck}
+          onDocumentVersionAck={ackDocumentVersion}
         />
         <StudioScratchPanel
           sourceDurationMs={Math.max(1, transport.timelineLengthMs)}

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  advanceStudioPersistDocumentVersion,
   createStudioPersistVersionTip,
   resolveStudioPersistDocumentVersion,
   StudioPersistOrchestrator,
@@ -30,6 +31,10 @@ const panel = readFileSync(
 );
 const recording = readFileSync(
   join(root, "src/components/studio/studio-recording-panel.tsx"),
+  "utf8",
+);
+const editor = readFileSync(
+  join(root, "src/components/studio/studio-editor.tsx"),
   "utf8",
 );
 const types = readFileSync(
@@ -92,7 +97,14 @@ describe("Studio markers CAS + Inspector slice", () => {
     );
     expect(recording).toMatch(/createStudioPersistVersionTip/);
     expect(recording).toMatch(/persistVersionTip\.expected/);
-    expect(recording).toMatch(/onDocumentVersionAck=\{persistVersionTip\.applyAck\}/);
+    expect(recording).toMatch(/const next = persistVersionTip\.applyAck\(ack\)/);
+    expect(recording).toMatch(/onDocumentVersionAck\?\.\(next\)/);
+    expect(recording).toMatch(/onDocumentVersionAck=\{ackDocumentVersion\}/);
+    expect(editor).toMatch(/onDocumentVersionAck=\{applyAckedDocumentVersion\}/);
+    expect(editor).toMatch(/advanceStudioPersistDocumentVersion/);
+    expect(editor).toMatch(
+      /function applyAckedDocumentVersion\(ack: unknown\): number/,
+    );
   });
 });
 
@@ -129,5 +141,37 @@ describe("Studio markers persist version tip — stale CAS regression", () => {
     expect(tip.expected()).toBe(12);
     expect(baseRef.current).toBe(10);
     orch.dispose();
+  });
+
+  it("advanceStudioPersistDocumentVersion never goes backwards", () => {
+    expect(advanceStudioPersistDocumentVersion(10, 11)).toBe(11);
+    expect(advanceStudioPersistDocumentVersion(11, 11)).toBe(11);
+    expect(advanceStudioPersistDocumentVersion(11, 9)).toBe(11);
+    expect(advanceStudioPersistDocumentVersion(10, "11")).toBe(10);
+  });
+
+  it("marker ack updates docRef so clip-move getter sees N+1", () => {
+    const docRef = { current: { project: { documentVersion: 10 } } };
+    const tip = createStudioPersistVersionTip(
+      () => docRef.current.project.documentVersion,
+    );
+    const applyAckedDocumentVersion = (ack: unknown): number => {
+      const next = advanceStudioPersistDocumentVersion(
+        docRef.current.project.documentVersion,
+        tip.applyAck(ack),
+      );
+      if (next > docRef.current.project.documentVersion) {
+        docRef.current = { project: { documentVersion: next } };
+      }
+      return next;
+    };
+    const expectedDocumentVersion = () =>
+      docRef.current.project.documentVersion;
+
+    applyAckedDocumentVersion(11);
+
+    expect(tip.expected()).toBe(11);
+    expect(expectedDocumentVersion()).toBe(11);
+    expect(docRef.current.project.documentVersion).toBe(11);
   });
 });

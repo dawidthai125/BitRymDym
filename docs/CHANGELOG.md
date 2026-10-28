@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Studio markers editor docRef sync (clip-move CAS)
+
+**Status:** kod **SHIPPED** · Owner marker→clip-move re-smoke **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „Go na wszystko” — odblokowany `studio-editor.tsx` wyłącznie pod sync `documentVersion`
+**Tip start:** `ad28be2c2561e35645f5896c04eff186b5cdafe2` = `origin/main`
+**Code:** `advanceStudioPersistDocumentVersion` + editor `applyAckedDocumentVersion` → `applyPersistedDoc` · recording `ackDocumentVersion` woła parent po tip ack
+**Tests:** `studio-markers-cas` + `studio-markers-state` + `p7-1-6-autosave-orchestrator` + `stu-08-record-mode-init` + `pr-v1-cas-move-delete` → **71/71 PASS**
+**Isolation:** editor dirty **CLEAN** vs HEAD; diff **+21** linii; bez LF-normalize
+**Explicit non-claim:** Owner re-smoke marker → drag/nudge **NOT VERIFIED** · Scratch/track-create ack→docRef **poza** tym unitem · **≠** Product GREEN
+**NEXT:** Owner re-smoke: marker → clip-move bez F5
+
 ## 2026-10-28 — Scratch bake listen polarity PASS (ucho NOT VERIFIED)
 
 **Status:** polarność PCM/header **PASS** · SoundPlayer PlaySync **PLAY PASS** ×4 · ucha Owner **NOT VERIFIED** · 0 zmian produktu Studio · Contabo/SFM **nietknięte** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

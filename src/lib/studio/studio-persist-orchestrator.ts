@@ -37,7 +37,8 @@ export type StudioPersistExecutor = () => Promise<StudioPersistResult>;
 /**
  * CAS ack → next expectedDocumentVersion.
  * One helper for Inspector persist surfaces (markers / place / Scratch).
- * Does not replace editor docRef; it only keeps the next PATCH from sending N.
+ * Does not replace editor docRef; Inspector must also ack the parent so
+ * clip-move / patchClip read N+1 from docRef.
  */
 export function resolveStudioPersistDocumentVersion(
   ack: unknown,
@@ -47,6 +48,15 @@ export function resolveStudioPersistDocumentVersion(
     return ack;
   }
   return fallback;
+}
+
+/** Apply a CAS ack into editor documentVersion without going backwards. */
+export function advanceStudioPersistDocumentVersion(
+  current: number,
+  ack: unknown,
+): number {
+  const next = resolveStudioPersistDocumentVersion(ack, current);
+  return next > current ? next : current;
 }
 
 export type StudioPersistVersionTip = {
