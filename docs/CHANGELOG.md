@@ -10,7 +10,8 @@ Format: data, zakres, skrót.
 
 **Status:** kod **SHIPPED** · Keep smoke **PARTIAL** · Scratch listen/BPM-grid **PARTIAL/OUT** · Markery CAS **OUT** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
 **GO:** Owner „Tak róbcie wszystko daje GO na całą kolejkę”
-**Tip start:** `6c97ef85db39fb91b25139f8ec5ce70087e61885` = `origin/main`
+**Tip start:** `6c97ef85db39fb91b25139f8ec5ce70087e61885`
+**Code:** `01629f531c82bdf66c8019c90f5597597586bf1b` · **Docs:** `3166ae286647242dfe444e47f028532783d45e71`
 **IN:** count-in + punch 1 track · metronom click (BufferSource, ten sam context) · loop wrap na clock · suchy monitor + ostrzeżenie echo · Zastąp MUST overlapping TAKE · OD-VS-01 amended
 **OUT:** Sacred · auto-place po Stop · piano roll / VST / multi-track REC · P6 automation · SFM · markery persist CAS (brak schematu) · Scratch BPM/grid
 **Tests:** daw-clock + p5-6 + visual-shell/parity + p5-2/5/8/10 + vocal-import + scratch-place + WAV fixture → **132 PASS**

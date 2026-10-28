@@ -15,7 +15,9 @@
 
 **Owner retest (MUST):** na urządzeniu Stop → „Nagranie gotowe — kliknij Zachowaj…” → Zachowaj → clip na Wokal. Bez auto-place.
 
-## 2–6. Kod — patrz freeze’y + SHA commita
+## 2–6. Kod — `01629f5` · docs closeout `3166ae2`
+
+Punch+count-in · metronom click · loop wrap · suchy monitor · Zastąp MUST. Freeze’y w `docs/decisions/STUDIO_*`.
 
 ## 7. P2 Scratch — PARTIAL / OUT BPM-grid
 
