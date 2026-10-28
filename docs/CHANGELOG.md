@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Mix Working A3.5 restore + Scratch export encode
+
+**Status:** A **SHIPPED** · B **PARTIAL** · C **BLOCKED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner trzy tropy naraz (A mix-working · B export encode · C USER copy)
+**Tip start:** `41668c00b41acceb022c03f3b914716016ee8f67` · code **`fdd9e8fa8e2779bac2976d676b5a3faf217d7b0b`**
+**A:** A3.5 hunks na cienki `studio-service` (track/master mix + FX → `applyStudioMixWorkingOpsFor`). Persist Scratch **nietknięty**. Dirty editor **nie stage’owany**.
+**A schema:** MCP apply history `20261028070108` / `20261028070125` / `20261028070133` / `20261028070155` (drift vs repo `2026102022/23/24`). RPC 8-arg present · RLS ON
+**B:** `resolveScratchSourceMs` + offline bake stosuje zatwierdzone cue/reverse/rate. `assertScratchExportEncodable` akceptuje reverse/rate. Jog **OUT**.
+**C:** **BLOCKED** — `auth.users=4` · test-like `0` · local API 54421 unreachable · zero copy/cleanup
+**Tests:** tsc **PASS** · vitest A/B slice **160 PASS** / 1 skipped
+**Audit:** [MIX_WORKING_RESTORE_SCRATCH_EXPORT_2026-10-28.md](./audits/MIX_WORKING_RESTORE_SCRATCH_EXPORT_2026-10-28.md)
+**NEXT:** Owner wskazuje test USER do copy **albo** wiring historii w editor **albo** słyszalny export verify
+
 ## 2026-10-28 — Scratch persist isolation from mix-working
 
 **Status:** kod **SHIPPED** @ `6014556…` · service **bez** mix-working · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
