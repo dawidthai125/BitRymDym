@@ -6,6 +6,17 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Owner documentVersion A+B smoke PASS
+
+**Status:** Owner A+B **PASS** · kod **`56c7f2f`** · GH **`7381694008`** **success** @ `56c7f2f` · unique `bitrymdym-gj9vss7k6-…` · ancestor GH **`7381581476`** **success** @ `1f8f776` · set_scratch→move **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** docs-only zapis Owner smoke documentVersion po Scratch/track docRef
+**Flow A:** marker → clip-move **PASS** (v17→18 marker, move expected 18→v19) bez CAS
+**Flow B:** Sample create → clip-move **PASS** (track→v20, move expected 20→v21) bez CAS
+**Cleanup:** markers n=0 v22 · Keep TAKE start 2ms · BEAT_REF OK
+**Leftover:** puste ścieżki Scratch `bced0aa2` + Sample `8273aeeb` (opcjonalny cleanup)
+**Tip start:** `56c7f2f4c1583341c289cdf58dbd168994cd5f43` = `origin/main`
+**NEXT:** set_scratch zatwierdź → clip-move **albo** cleanup pustych tracków **albo** stop kolejki ack — nie SFM / nie Contabo
+
 ## 2026-10-28 — Scratch persist + create-track ack editor docRef
 
 **Status:** kod **SHIPPED** · Owner Scratch→clip-move / track→clip-move **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

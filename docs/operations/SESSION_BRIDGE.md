@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T10:34:00+01:00 (Owner docRef A+B smoke) | main | `56c7f2f` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `56c7f2f`=`origin/main`; A marker→clip-move **PASS** (v17→18, move 18→v19) bez CAS; B Sample create→clip-move **PASS** (track→v20, move 20→v21) bez CAS; cleanup markers n=0 v22; Keep TAKE start 2ms; BEAT_REF OK; leftover puste Scratch `bced0aa2` + Sample `8273aeeb`; set_scratch→move **NOT VERIFIED**; GH `7381694008` @ 56c7f2f · `7381581476` @ 1f8f776 success; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T10:27:00+01:00 (Scratch/track editor docRef) | main | `1f8f776` start | 0 | ~152 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `1f8f776`=`origin/main`; Scratch persist + SAMPLE/SCRATCH create → `ackDocumentVersion` / parent `applyAckedDocumentVersion`; vitest **79/79**; panel +3/−4; editor nietknięty; Sacred/service PRESERVE · OD-15 OPEN · §4 archive-15 + SCRATCH-TRACK-DOCREF · ≠ GREEN |
 | 2026-10-28T10:25:00+01:00 (markers editor docRef sync) | main | `ad28be2` start | 0 | ~152 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `ad28be2`=`origin/main`; GO editor; ack markerów → `applyPersistedDoc` / docRef; vitest markers+CAS **71/71**; editor izolacja OK (+21, bez CRLF); Sacred/service PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T10:20:00+01:00 (bake listen polarity closeout) | main | `aacaada` start | 0 | ~152 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `aacaada`=`origin/main`; code `fadb2b0`; polarność PASS · PLAY PASS ×4 · ucha NOT VERIFIED; allowlista: `_bake-listen-scratch-wav.ts`+CHANGELOG+PS+bridge; Sacred/Studio editor/service PRESERVE · OD-15 OPEN · §4 archive-14 + BAKE-LISTEN · ≠ GREEN |
@@ -97,14 +98,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T10:27+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T10:34+01:00` (`git rev-parse HEAD`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (przed docs commit) | `1f8f776` | start `1f8f77669262ddf1f3ef985e6c81906234211696` = `origin/main`; editor docRef markerów ancestor |
-| Last independently verified deploy | GH **`7381109228`** @ `30a9bc2` · GH **`7381095797`** @ `fadb2b0` | obie **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · Scratch/track→clip-move **NOT VERIFIED** |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · Scratch/track ack→docRef **SHIPPED** · Owner smoke **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Scratch persist + create-track docRef | Ten zapis edytuje most + CHANGELOG + PS + recording-panel + testy |
+| Lokalny `HEAD` (przed docs commit) | `56c7f2f` | start `56c7f2f4c1583341c289cdf58dbd168994cd5f43` = `origin/main`; Scratch/track docRef code |
+| Last independently verified deploy | GH **`7381694008`** @ `56c7f2f` · unique `bitrymdym-gj9vss7k6-…` · GH **`7381581476`** @ `1f8f776` | obie **success** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · set_scratch→move **NOT VERIFIED** |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · Owner A+B documentVersion smoke **PASS** · set_scratch→move **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Owner A+B smoke sync | Ten zapis edytuje most + CHANGELOG + PS |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -153,6 +154,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | DOCREF-SMOKE-AB | Owner smoke documentVersion A+B (marker→move + Sample create→move) | EXECUTED | PASS | Start tip `56c7f2f`=`origin/main`. A) marker→clip-move **PASS** (v17→18 marker, move expected 18→v19) bez CAS. B) Sample create→clip-move **PASS** (track→v20, move expected 20→v21) bez CAS. Cleanup markers n=0 v22. Keep TAKE start 2ms. BEAT_REF OK. Leftover puste Scratch `bced0aa2` + Sample `8273aeeb` (opcjonalny cleanup). set_scratch→move **NOT VERIFIED**. GH **`7381694008`** @ `56c7f2f` success · unique `bitrymdym-gj9vss7k6-…` · GH **`7381581476`** @ `1f8f776` success. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | Owner UI smoke · `gh` `7381694008` / `7381581476` | `56c7f2f` + ten docs | NEXT: set_scratch→move **albo** cleanup pustych tracków **albo** stop kolejki ack |
 | 2026-10-28 | SCRATCH-TRACK-DOCREF | Scratch persist + create-track ack editor docRef | EXECUTED | PASS | Start tip `1f8f776`=`origin/main`. Residual po markerach: `addProductTrack` + `set_scratch` tylko tip. REUSE `ackDocumentVersion` → `applyAckedDocumentVersion` / `applyPersistedDoc`. Editor nietknięty. Panel +3/−4. Vitest scratch+markers+p7.1.6+stu-08+pr-v1 **79/79**. Owner Scratch/track→clip-move **NOT VERIFIED**. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | vitest studio-scratch-cas + studio-markers-* + p7-1-6 + stu-08 + pr-v1 | _(ten commit)_ | NEXT: Owner smoke Scratch→move / track→move bez F5 |
 | 2026-10-28 | GO-SB-ARCHIVE-15 | Archiwizacja §4 → CHANGELOG (room for Scratch/track docRef) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`KEEP-UX-B` · `GIT-CLOSEOUT-PLACE` · `USER-COPY`) → CHANGELOG archive. Living 15→12, po SCRATCH-TRACK-DOCREF + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | MARKERS-DOCREF | Editor docRef sync po ack markerów | EXECUTED | PASS | Start tip `ad28be2`=`origin/main`. GO editor. Ack markerów → `advanceStudioPersistDocumentVersion` + `applyPersistedDoc` (REUSE tip/ack, bez drugiego CAS). Recording `ackDocumentVersion` → parent. Editor izolacja OK (+21, bez CRLF). Vitest markers+CAS/p7.1.6/stu-08/pr-v1 **71/71**. Owner marker→clip-move **NOT VERIFIED**. `dpl_*`/alias NOT VERIFIED. ≠ Product GREEN. | vitest studio-markers-* + p7-1-6 + stu-08 + pr-v1 | _(ten commit)_ | NEXT: Owner re-smoke marker → clip-move bez F5 |
@@ -169,7 +171,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-28 | GO-SB-ARCHIVE-11 | Archiwizacja §4 → CHANGELOG (room for DAW queue) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`STUDIO-C` · `STUDIO-A` · `GO-SB-ARCHIVE-6`) → CHANGELOG archive. Living 15→12, po DAW-QUEUE + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | `3166ae2` | Living tip/deploy → PROJECT_STATE |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fifteenth batch KEEP-UX-B + GIT-CLOSEOUT-PLACE + USER-COPY + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fifteenth batch KEEP-UX-B + GIT-CLOSEOUT-PLACE + USER-COPY + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Następny `EXECUTED` wymaga archiwizacji §4.
 
 ### 4.1 Limit i archiwizacja
 
