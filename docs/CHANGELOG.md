@@ -6,6 +6,22 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Studio vs DAW queue P0–P1 (punch/metro/loop/monitor/lanes)
+
+**Status:** kod **SHIPPED** · Keep smoke **PARTIAL** · Scratch listen/BPM-grid **PARTIAL/OUT** · Markery CAS **OUT** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „Tak róbcie wszystko daje GO na całą kolejkę”
+**Tip start:** `6c97ef85db39fb91b25139f8ec5ce70087e61885` = `origin/main`
+**IN:** count-in + punch 1 track · metronom click (BufferSource, ten sam context) · loop wrap na clock · suchy monitor + ostrzeżenie echo · Zastąp MUST overlapping TAKE · OD-VS-01 amended
+**OUT:** Sacred · auto-place po Stop · piano roll / VST / multi-track REC · P6 automation · SFM · markery persist CAS (brak schematu) · Scratch BPM/grid
+**Tests:** daw-clock + p5-6 + visual-shell/parity + p5-2/5/8/10 + vocal-import + scratch-place + WAV fixture → **132 PASS**
+**Keep smoke:** sesja Dawida / projekt `178e902d-…` / Wokal armed / Record panel · Zachowaj niewidoczny (0 READY) · Play/Nagraj nie kliknięte
+**Audit:** [STUDIO_DAW_QUEUE_P0_P2_2026-10-28.md](./audits/STUDIO_DAW_QUEUE_P0_P2_2026-10-28.md)
+**NEXT:** Owner device Stop→Zachowaj→clip **albo** słyszalny metronom/loop
+
+## 2026-10-28 — SESSION_BRIDGE §4 archive (eleventh batch, room for DAW queue)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`STUDIO-C` · `STUDIO-A` · `GO-SB-ARCHIVE-6`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-28 — Studio Keep Take UX po Stop (P5.6 bez auto-place)
 
 **Status:** kod **SHIPPED** · kontrakt P5.6 **PASS** · Owner device **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
@@ -287,10 +303,13 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Eleventh batch (2026-10-28, room for DAW queue): STUDIO-C · STUDIO-A · GO-SB-ARCHIVE-6. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | STUDIO-C | Scratch DJ v1 PARTIAL vertical | EXECUTED | PARTIAL | Domain jog/cue/reverse/rate + export fail-closed. Catalog→TAKE→clip reuse `POST /api/catalog/copy` + `…/record/place`. Panel w recording Inspector (pointer+touch). `applyScratchLive` na istniejącym `StudioAudioEngine.playbackRate`. Vitest **131/131**. Live reverse / CAS persist / SAMPLE-SCRATCH create / export encode **OUT**. Dirty editor/service **nietknięte**. ≠ Product GREEN. | vitest scratch-* + p5/p7 guards · eslint · tsc · [audit](./audits/STUDIO_UNLOCK_AUDIT_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch persist/create track **albo** BufferSource reverse **albo** prod USER copy |
+| 2026-10-28 | STUDIO-A | Audyt Studio unlock | EXECUTED | PASS | Powierzchnia editor/service/API/CAS/REC/export/AuthZ. Sacred path-only. SAMPLE/SCRATCH typy bez create. Silnik HTMLAudio = brak native reverse. Place TAKE już istnieje. Prod USER copy **BLOCKED**. | [STUDIO_UNLOCK_AUDIT_2026-10-28.md](./audits/STUDIO_UNLOCK_AUDIT_2026-10-28.md) | _(ten commit)_ | Faza C PARTIAL done |
+| 2026-10-28 | GO-SB-ARCHIVE-6 | Archiwizacja §4 → CHANGELOG (room for Studio unlock) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-0` · `GO-SB-ARCHIVE-3` · `S13-RO`) → CHANGELOG archive. Living 15→12, po A/C + tym wierszu **15**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | CAT-COPY | Catalog copy private TAKE | EXECUTED | PARTIAL | `POST /api/catalog/copy` zapisuje prywatny TAKE z `catalog/{uuid}/original.bin` po sniff + PUBLISHED+license + project.beat_id. Fail-closed bez zapisu. Provenance `takes.title`. Vitest **39/39**. Prod USER copy **NOT VERIFIED**. Scratch **OUT**. ≠ Product GREEN. | vitest catalog-originals + catalog-copy-service + copy route + audio-validation · eslint · tsc · [audit](./audits/CATALOG_COPY_E2E_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch **albo** prod USER copy+cleanup |
 | 2026-10-28 | CAT-SNIFF | Catalog originals OD-SC-02 content sniff | EXECUTED | PASS | Usunięto `CATALOG_CONTENT_GATE_NOT_IMPLEMENTED`. `sniffAudioContainer` + `validateCatalogOriginalContentSniff` w `audio-validation.ts`. Spoof/empty/unsupported → `CATALOG_CONTENT_*` 415. Sniff PASS → `COPY_NOT_IMPLEMENTED` · **zero writes**. Vitest **36/36**. Scratch **OUT**. ≠ Product GREEN. | vitest catalog-originals + audio-validation + backup-manifest · eslint · tsc | _(ten commit)_ | NEXT: copy E2E (test USER) **albo** Scratch |
 | 2026-10-28 | CAT-PROBE | Catalog originals live Storage probe | EXECUTED | PASS | service_role upload/list/download/delete `catalog/8c288da2-9017-415e-b715-64e65d4a35e9/original.bin` **PASS** (16044 B WAV). Anon **DENIED**. Cleanup leftover **0** / `catalog_assets` **0**. Copy API **NOT RUN**. Scratch **OUT**. ≠ Product GREEN. | Node probe + host-guard · MCP leftover SELECT · [audit](./audits/CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md) | _(ten commit)_ | NEXT: content sniff / copy E2E / Scratch — sniff **done** |
