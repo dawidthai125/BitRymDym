@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Prod USER catalog copy E2E + cleanup
+
+**Status:** copy runtime **PASS** · cleanup **done** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner — sesja Dawida w Cursor Browser jako test USER
+**Tip:** `5b2fcebf79e559f7336d26d3018bddcb6180ed29` = `origin/main` (`ls-remote`)
+**Copy:** `POST /api/catalog/copy` HTTP **200** · take `0b46506e-bf35-4e3b-a069-fa18d9f01b58` · `READY` · object `user/{dawid}/takes/{take}/mic.bin` · fixture WAV **16044** B
+**Cleanup:** Storage catalog+take **0** · `catalog_assets` **0** · take **0** · XP probe `TAKE_READY` **0**
+**GitHub Production:** **`7379526025`** **success** `2026-10-28T07:21:22Z` @ `5b2fceb` · unique `bitrymdym-3lsi0b9do-…`
+**Audit:** [CATALOG_COPY_USER_E2E_2026-10-28.md](./audits/CATALOG_COPY_USER_E2E_2026-10-28.md)
+**NEXT:** Scratch place **albo** słyszalny export **albo** LF-normalize editor — osobne GO
+
+## 2026-10-28 — SESSION_BRIDGE §4 archive (tenth batch, room for USER copy E2E)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`CAT-COPY` · `CAT-SNIFF` · `CAT-PROBE`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-28 — SESSION_BRIDGE §4 archive (ninth batch, room for history wiring + scratch verify)
 
 **Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`CAT-APPLY` · `GATE-C` · `GATE-B`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` + `USER-COPY` BLOCKED zachowane
@@ -248,10 +263,13 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | CAT-COPY | Catalog copy private TAKE | EXECUTED | PARTIAL | `POST /api/catalog/copy` zapisuje prywatny TAKE z `catalog/{uuid}/original.bin` po sniff + PUBLISHED+license + project.beat_id. Fail-closed bez zapisu. Provenance `takes.title`. Vitest **39/39**. Prod USER copy **NOT VERIFIED**. Scratch **OUT**. ≠ Product GREEN. | vitest catalog-originals + catalog-copy-service + copy route + audio-validation · eslint · tsc · [audit](./audits/CATALOG_COPY_E2E_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch **albo** prod USER copy+cleanup |
+| 2026-10-28 | CAT-SNIFF | Catalog originals OD-SC-02 content sniff | EXECUTED | PASS | Usunięto `CATALOG_CONTENT_GATE_NOT_IMPLEMENTED`. `sniffAudioContainer` + `validateCatalogOriginalContentSniff` w `audio-validation.ts`. Spoof/empty/unsupported → `CATALOG_CONTENT_*` 415. Sniff PASS → `COPY_NOT_IMPLEMENTED` · **zero writes**. Vitest **36/36**. Scratch **OUT**. ≠ Product GREEN. | vitest catalog-originals + audio-validation + backup-manifest · eslint · tsc | _(ten commit)_ | NEXT: copy E2E (test USER) **albo** Scratch |
+| 2026-10-28 | CAT-PROBE | Catalog originals live Storage probe | EXECUTED | PASS | service_role upload/list/download/delete `catalog/8c288da2-9017-415e-b715-64e65d4a35e9/original.bin` **PASS** (16044 B WAV). Anon **DENIED**. Cleanup leftover **0** / `catalog_assets` **0**. Copy API **NOT RUN**. Scratch **OUT**. ≠ Product GREEN. | Node probe + host-guard · MCP leftover SELECT · [audit](./audits/CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md) | _(ten commit)_ | NEXT: content sniff / copy E2E / Scratch — sniff **done** |
 | 2026-10-27 | CAT-APPLY | Catalog originals prod apply | EXECUTED | PASS | MCP `apply_migration` **PASS**. History **`20261027225553` / `catalog_originals_storage_and_entity`** (drift vs repo `20261027220000` — nie repair). Read-back: `catalog_assets` RLS ON+FORCE · 4 Storage `catalog_originals_service_*` · grants SIDU service_role / deny client. Vitest **19/19**. Live probe **BLOCKED**. Scratch **OUT**. ≠ Product GREEN. | MCP list/apply/execute_sql · [audit](./audits/CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md) · vitest catalog+audio-validation | `6f3a728…` | NEXT: controlled live probe GO — **done** CAT-PROBE |
 | 2026-10-27 | GATE-C | Catalog copy fail-closed (repo) | EXECUTED | PASS | Planner: unknown policies/prod → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` · unpublished/unlicensed → `CATALOG_ASSET_NOT_COPYABLE` · content sniff fail-closed · dest key nie wymyślany · zero writes. Route 503/409/501 · `requireUser` · JSON 400. Vitest **19/19**. Prod apply **BLOCKED**. Scratch **OUT**. | `git show 5a6bc55` · vitest catalog-originals + audio-validation | `5a6bc55…` | Owner GO: prod apply `20261027220000` (checklist) **albo** content sniff |
 | 2026-10-27 | GATE-B | alias / `dpl_*` @ `5200c6d` (bez OAuth) | EXECUTED | PARTIAL | Tip `5200c6d…` (`ls-remote` then). GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` @ ten SHA · Vercel **success** · unique URL `bitrymdym-j1sp78uxs-…` **302 SSO** · dashboard `…/8KYY2axTYMN4CKzsxEteqy857k5R`. **`dpl_*` NOT VERIFIED**. **ALIAS NOT VERIFIED** (`www` 200, brak SHA bind). | `gh` deployments `7372230897` · commit status success · curl www 200 / unique 302 | `5200c6d…` | Bind alias/`dpl_*` wymaga OAuth/`vercel inspect` |
