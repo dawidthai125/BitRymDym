@@ -55,6 +55,7 @@ Trwały model pracy koordynatora. Obowiązuje w każdej sesji, także po „Kont
 - Używa subagentów, Skills, ECC, bibliotek, MCP i narzędzi, gdy są przydatne. Przed użyciem sprawdza, że zasób jest dostępny, oraz jaki ma zakres i ograniczenia.
 - Nie odrzucaj przydatnego, zweryfikowanego zasobu bez powodu. We wspólnym checkout nie uruchamiaj wielu writerów naraz. Dobór „tylko pasujące” i zakaz pełnego pipeline ECC dla drobnej zmiany pozostają wyżej.
 - Mapa ról Ownera → agent/skill (READY/PARTIAL/GAP): [ECC_CURSOR_WORKFLOW.md](../../docs/operations/ECC_CURSOR_WORKFLOW.md) § „Mapa ról zespołu (Owner)”. Nie twórz drugiego katalogu zespołu ani agentów commiter/pusher.
+- Tempo (1 writer + równoległe RO, skills-first, pin Cursor Model): [ECC_CURSOR_WORKFLOW.md](../../docs/operations/ECC_CURSOR_WORKFLOW.md) § „Tempo pracy”.
 
 ### Git
 

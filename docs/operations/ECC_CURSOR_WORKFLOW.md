@@ -172,9 +172,20 @@ Instalacje zewnętrzne i nowe `bitrymdym-*.md` tylko gdy ta tabela pokaże **GAP
 
 ### Równoległość
 
-- Audytorzy RO mogą biec równolegle.
-- Wiele `implementation-worker`: **rozłączne listy plików** (lub osobne worktree, jeśli Cursor je zapewnia). Bez koordynacji — nie edytować tych samych ścieżek równocześnie.
+- Na wspólnym checkout jest **jeden writer** (orchestrator albo jeden `implementation-worker` z allowlistą). Multi-writer jest **odrzucony**.
+- Audytorzy RO mogą biec równolegle. Procedura przyspieszenia: § „Tempo pracy” poniżej — nie spawnuj wielu `implementation-worker` naraz na tym checkout.
+- Worktree nie jest modelem domyślnym i wymaga GO; nie zastępuje reguły jednego writera.
 - Deklaracja `tools` / readonly w frontmatter ≠ gwarancja egzekwowania przez Cursor — raportuj `NOT VERIFIED`, dopóki brak smoke UI.
+
+### Tempo pracy
+
+Procedura przyspieszenia na wspólnym checkout. Nie zastępuje mapy ról ani `AGENTS.md`.
+
+1. **Jeden writer.** Tylko orchestrator albo jeden `implementation-worker` z allowlistą edytuje pliki. Multi-writer na tym checkout jest **odrzucony**. Worktree nie jest modelem domyślnym — wymaga GO.
+2. **Równoległe RO.** `explore` / `code-explorer` / `researcher`, user `code-review`, `security-auditor` / user `security-review`, `test-auditor` / `testing-and-verification` mogą biec równolegle. Bez Sacred WIP i bez zapisu.
+3. **Skills-first.** Czytaj tylko skill pasujący do zadania (user → `.agents/skills/` → ECC bundled). Nie ładuj hurtowo ECC (~71 agentów / ~46 skills).
+4. **Pin Cursor Model.** Przy spawn przypnij model z puli Cursor Models (np. `composer-2.5-fast`). `inherit`/`Default` bez potwierdzenia oraz Other Models (Claude / Gemini / Muse) — zakaz.
+5. **Nie hurt ECC.** Drobna zmiana = orchestrator + 1–2 skills. Review/security/test równolegle tylko przy ryzyku (auth, RLS, Storage, mutacja).
 
 ## Aktualizacja ECC
 
