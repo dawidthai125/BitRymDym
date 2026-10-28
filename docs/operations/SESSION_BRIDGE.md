@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T06:55:00+01:00 (Scratch reverse+CAS, pomiar lokalny) | main | `bb4857d` | 0 | ~170 | ~334 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`bb4857d` (`ls-remote`); allowlista: engine/scratch/CAS/service izolowane + docs; Sacred / dirty editor PRESERVE · studio-service mix-working na końcu nietknięte |
 | 2026-10-28T06:16:00+01:00 (catalog copy E2E, pomiar przed commit) | main | `3b8214b` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`3b8214b` (`ls-remote`); allowlista: catalog-originals + catalog-copy-service + copy route + docs; Sacred/Studio PRESERVE |
 | 2026-10-28T00:12:00+01:00 (catalog content sniff, pomiar przed commit) | main | `fac551a` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`fac551a` (`ls-remote`); allowlista: audio-validation + catalog-originals + backup re-export + copy route + docs; Sacred/Studio PRESERVE |
 | 2026-10-28T00:10:00+01:00 (catalog live probe, pomiar przed docs commit) | main | `6f3a728` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`6f3a728` (`ls-remote`); porcelain 488 hash `cbc18f20…`; allowlista: probe audit + apply NEXT + CHANGELOG + PS + bridge; Sacred/Studio PRESERVE |
@@ -78,14 +79,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T06:16+01:00` (`git rev-parse HEAD`; `ls-remote`; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T06:55+01:00` (`git rev-parse HEAD`; `ls-remote`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (pre-this-commit) | `3b8214b` | living tip = `origin/main` |
-| Last independently verified deploy | `5200c6da5813f0a446393b3ce79e9f03478f9bbd` | GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` (pre-this-commit) |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · catalog schema **APPLIED** `20261027225553` · live probe **PASS** · content sniff **SHIPPED** · copy path **SHIPPED in repo** · prod copy **NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Catalog copy private TAKE | Ten zapis edytuje most + CHANGELOG + PS + gates + kontrakt §13 + REUSE |
+| Lokalny `HEAD` | `bb4857d` | living tip = `origin/main` · reverse/CAS lokalnie do path-scoped commit |
+| Last independently verified deploy | `bb4857de5e0eb6b61761dbf74e70b48dfc5aae7f` | GitHub Production **`7377291086`** **success** `2026-10-28T04:37:56Z` |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · scratch CAS **APPLIED** `20261028050115` · catalog **`20261027225553`** · prod copy **BLOCKED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Scratch reverse + CAS + SAMPLE/SCRATCH | Ten zapis edytuje most + CHANGELOG + PS + kontrakt §13 + REUSE + audit |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -134,6 +135,10 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | SCRATCH-CAS-REV | Live reverse + SAMPLE/SCRATCH create + CAS | EXECUTED | PARTIAL | BufferSource reverse w istniejącym `StudioAudioEngine` (jeden ctx). `POST /tracks` VOCAL\|SAMPLE\|SCRATCH. `op=set_scratch` → `studio_cas_apply_clip_scratch`. MCP apply history **`20261028050115`**. Vitest slice **138/138**. Dirty editor nietknięty. Export encode **OUT**. ≠ Product GREEN. | vitest scratch-engine/state/cas + p5/p7 (bez dirty editor) · [audit](../audits/SCRATCH_REVERSE_CAS_2026-10-28.md) | _(lokalnie, pre-commit)_ | NEXT: path-scoped commit+push **albo** export encode |
+| 2026-10-28 | ALIAS-DPL | alias / `dpl_*` @ `bb4857d` (bez OAuth) | EXECUTED | PARTIAL | Tip `bb4857d…` (`ls-remote`). GitHub Production **`7377291086`** **success** `2026-10-28T04:37:56Z` @ ten SHA · Vercel **success** · unique URL `bitrymdym-gef23don8-…` **302 SSO**. **`dpl_*` NOT VERIFIED**. **ALIAS NOT VERIFIED** (`www` 200, brak SHA bind). | `gh` deployments `7377291086` · commit status success · curl www 200 / unique 302 | `bb4857d…` | Bind alias/`dpl_*` wymaga OAuth/`vercel inspect` |
+| 2026-10-28 | USER-COPY | Prod USER catalog copy + cleanup | BLOCKED | BLOCKED | Brak bezpiecznego test USER. MCP counts `auth.users=4` · `profiles=4` · `studio_projects=6`. Zero `POST /api/catalog/copy`. Zero insert/cleanup. ≠ PASS. | MCP SELECT counts · [audit](../audits/SCRATCH_REVERSE_CAS_2026-10-28.md) §3 | — | Owner wskazuje dedykowany QA USER + sesję |
+| 2026-10-28 | GO-SB-ARCHIVE-7 | Archiwizacja §4 → CHANGELOG (room for reverse/CAS) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-3` · `GATE-2` · `GATE-1`) → CHANGELOG archive. Living 15→12, po SCRATCH-CAS-REV + ALIAS-DPL + tym wierszu **15**. `P-NEXT-10` + USER-COPY BLOCKED zachowane. | Diff most + CHANGELOG archive table | _(lokalnie, pre-commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | STUDIO-C | Scratch DJ v1 PARTIAL vertical | EXECUTED | PARTIAL | Domain jog/cue/reverse/rate + export fail-closed. Catalog→TAKE→clip reuse `POST /api/catalog/copy` + `…/record/place`. Panel w recording Inspector (pointer+touch). `applyScratchLive` na istniejącym `StudioAudioEngine.playbackRate`. Vitest **131/131**. Live reverse / CAS persist / SAMPLE-SCRATCH create / export encode **OUT**. Dirty editor/service **nietknięte**. ≠ Product GREEN. | vitest scratch-* + p5/p7 guards · eslint · tsc · [audit](../audits/STUDIO_UNLOCK_AUDIT_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch persist/create track **albo** BufferSource reverse **albo** prod USER copy |
 | 2026-10-28 | STUDIO-A | Audyt Studio unlock | EXECUTED | PASS | Powierzchnia editor/service/API/CAS/REC/export/AuthZ. Sacred path-only. SAMPLE/SCRATCH typy bez create. Silnik HTMLAudio = brak native reverse. Place TAKE już istnieje. Prod USER copy **BLOCKED**. | [STUDIO_UNLOCK_AUDIT_2026-10-28.md](../audits/STUDIO_UNLOCK_AUDIT_2026-10-28.md) | _(ten commit)_ | Faza C PARTIAL done |
 | 2026-10-28 | GO-SB-ARCHIVE-6 | Archiwizacja §4 → CHANGELOG (room for Studio unlock) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-0` · `GO-SB-ARCHIVE-3` · `S13-RO`) → CHANGELOG archive. Living 15→12, po A/C + tym wierszu **15**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
@@ -146,12 +151,9 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-27 | GATE-A | Contabo poll journal RO (LEFT RUNNING) | EXECUTED | PASS | Owner: zostaw RUNNING. Status **enabled/active/running** PID **847** since 2026-10-23 20:47 CEST. `journalctl -n 80` = `claims_empty` / `busy=false`. Sekrety brak. **Nie** stop/start/enable. Audit appended. | `systemctl status/show` · `journalctl -n 80` · audit journal section | _(ten commit)_ | Poll zostaje. SHA hosta nadal NOT VERIFIED |
 | 2026-10-27 | GO-SB-ARCHIVE-4 | Archiwizacja §4 → CHANGELOG (room for A/B/C) | EXECUTED | PASS | Przeniesiono 5 najstarszych `EXECUTED` (`GO-TEAM-CLOSE` · `GO-SESSION-CLOSE` · `CONTINUITY-RELIABILITY` · `COLD-START-CLOSE` · `GO-SB-ARCHIVE`) → CHANGELOG archive. Living 14→9, po A/B/C + tym wierszu **13**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-27 | GATE-2R | Contabo GO-HOST-RO retry (właściwy klucz) | EXECUTED | PASS | Live SSH **PASS**. Klucz `C:\Users\dawid\.ssh\bitrymdym-contabo-recovery-ed25519` (passphrase). Gate 2 MISSING/`BatchMode` 255 = zła tożsamość. Host `vmi3622761`. Oneshot **disabled/inactive**. Poll **enabled/active/running** PID 847 since 2026-10-23. `HAS_GIT=no`. Always-on **nie** enable. Audit zaktualizowany. | interactive ssh exit 0 · `hostname` · `systemctl` · `sudo -n test -d .git` | `5200c6d…` | Owner GO: co z żywym `bitrymdym-e3-worker-poll` — **done: zostaw + journal RO** |
-| 2026-10-27 | GATE-3 | Implementation Catalog (policies+allowlist+skeleton) | EXECUTED | PARTIAL | Repo: OD-SC-02 gates + `catalog/` key w `validateObjectKey` · migracja `20261027220000_…` · copy skeleton 501 · **prod apply BLOCKED** · Scratch **OUT**. Tests vitest allowlist. PS: SHIPPED in repo / NOT in prod | `git show` paths · vitest audio-validation + catalog-originals | _(ten commit)_ | NEXT: prod apply GO **albo** content sniff **albo** Scratch (osobno) |
-| 2026-10-27 | GATE-2 | Contabo GO-HOST-RO | EXECUTED | BLOCKED | Live SSH **NOT DONE — blocked on SSH**. Klucz `bitrymdym-e3-contabo` **MISSING**. Recovery name istnieje, `Permission denied (publickey)` exit 255. Always-on **nie** enable. Audit [CONTABO_GO_HOST_RO_2026-10-27.md](../audits/CONTABO_GO_HOST_RO_2026-10-27.md) · PS pointer | `Test-Path` · `ssh` BatchMode 255 | _(ten commit)_ | Owner: restore documented key albo osobny GO. Gate 3 Implementation Catalog |
-| 2026-10-27 | GATE-1 | SFM staging/host RO planes | EXECUTED | PARTIAL | Audyt [SFM_PLANES_STAGING_HOST_RO_2026-10-27.md](../audits/SFM_PLANES_STAGING_HOST_RO_2026-10-27.md). (1) code `5212933` ancestor **VERIFIED**. (2–4) staging SHA/schema/worker **NOT VERIFIED** (brak targetu). (6) prod DB A–D+KIND_REJECT **VERIFIED RO** · 0 versions/jobs. Flaga **nie** ON. Host process = Gate 2. PS tylko wiersze SFM RO | `git merge-base` · MCP `list_migrations`/`list_projects`/`list_branches` · SELECT counts | _(ten commit)_ | Gate 2 Contabo GO-HOST-RO |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (sixth batch GATE-0 + GO-SB-ARCHIVE-3 + S13-RO + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Kolejny `EXECUTED` wymaga archiwizacji §4.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersze `P-NEXT-10` i `USER-COPY` mają `execution=BLOCKED` — **nie** liczą się do limitu. Archiwum (seventh batch GATE-3 + GATE-2 + GATE-1 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Kolejny `EXECUTED` wymaga archiwizacji §4.
 
 ### 4.1 Limit i archiwizacja
 
@@ -182,10 +184,10 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (odczyt `2026-10-28T06:16+01:00`; bez `vercel inspect`):**
-- Living Git pre-this-commit: **`3b8214b…`** = `origin/main` (`ls-remote`)
-- Last independently verified GitHub Production **`7372230897`** · **success** · `2026-10-27T22:42:24Z` @ **`5200c6d…`**
-- Catalog schema **APPLIED** `20261027225553` · live probe **PASS** · content sniff **SHIPPED** · copy path **SHIPPED in repo** · prod copy **NOT VERIFIED**
+**Last-known deploy / alias (odczyt `2026-10-28T06:55+01:00`; bez `vercel inspect`):**
+- Living Git: **`bb4857d…`** = `origin/main` (`ls-remote`) · reverse/CAS lokalnie do path-scoped commit
+- Last independently verified GitHub Production **`7377291086`** · **success** · `2026-10-28T04:37:56Z` @ **`bb4857d…`**
+- Scratch CAS **APPLIED** `20261028050115` · catalog **`20261027225553`** · prod copy **BLOCKED**
 - `dpl_*` / alias www **NOT VERIFIED** · **DEPLOYMENT success ≠ PRODUCTION VERIFIED ≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
 

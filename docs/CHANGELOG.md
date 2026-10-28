@@ -6,6 +6,24 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Scratch reverse + CAS + SAMPLE/SCRATCH create
+
+**Status:** kod **SHIPPED in repo** · CAS schema **APPLIED** · prod USER copy **BLOCKED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner GO na 4 propozycje (reverse · CAS/SAMPLE/SCRATCH · USER copy · alias/`dpl_*`)
+**Tip start:** `bb4857de5e0eb6b61761dbf74e70b48dfc5aae7f` = `origin/main` (`ls-remote`)
+**1 Live reverse:** `StudioAudioEngine.applyScratchLive({ rate, reverse })` — BufferSource na istniejącym `AudioContext` / `clipGain` · **bez** drugiego silnika
+**2 SAMPLE/SCRATCH + CAS:** `POST /tracks` `trackType` VOCAL|SAMPLE|SCRATCH · `PATCH …/clips` `op=set_scratch` · RPC `studio_cas_apply_clip_scratch` · MCP `apply_migration` history **`20261028050115` / `studio_scratch_cas_sample_scratch`** (drift vs repo `20261028120000` — nie repair)
+**3 Prod USER copy:** **BLOCKED** — `auth.users=4` · brak bezpiecznej sesji · zero zapisu / cleanup
+**4 Alias/`dpl_*`:** GitHub Production **`7377291086`** **success** `2026-10-28T04:37:56Z` @ `bb4857d` · unique URL `bitrymdym-gef23don8-…` **302 SSO** · www **200** bez SHA · **`dpl_*` NOT VERIFIED**
+**Tests:** vitest slice scratch-engine/state/cas/place + p5-1/2/3/6/10 + p7-1-3/5 + architecture-guards (bez dirty `p5-track-crud`/editor) → **138/138 PASS**
+**Explicit non-claim:** słyszalny reverse na urządzeniu **NOT VERIFIED** · **≠** Scratch GREEN · **≠** PRODUCTION VERIFIED
+**Audit:** [SCRATCH_REVERSE_CAS_2026-10-28.md](./audits/SCRATCH_REVERSE_CAS_2026-10-28.md)
+**NEXT:** path-scoped commit+push **albo** prod USER copy po wskazaniu test USER **albo** export encode
+
+## 2026-10-28 — SESSION_BRIDGE §4 archive (seventh batch, room for reverse/CAS)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`GATE-3` · `GATE-2` · `GATE-1`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-28 — Studio unlock audit + Scratch DJ v1 PARTIAL
 
 **Status:** audyt **SHIPPED** · Scratch **PARTIAL** · prod USER copy **BLOCKED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
@@ -198,10 +216,13 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-27 | GATE-3 | Implementation Catalog (policies+allowlist+skeleton) | EXECUTED | PARTIAL | Repo: OD-SC-02 gates + `catalog/` key w `validateObjectKey` · migracja `20261027220000_…` · copy skeleton 501 · **prod apply BLOCKED** · Scratch **OUT**. Tests vitest allowlist. PS: SHIPPED in repo / NOT in prod | `git show` paths · vitest audio-validation + catalog-originals | _(ten commit)_ | NEXT: prod apply GO **albo** content sniff **albo** Scratch (osobno) |
+| 2026-10-27 | GATE-2 | Contabo GO-HOST-RO | EXECUTED | BLOCKED | Live SSH **NOT DONE — blocked on SSH**. Klucz `bitrymdym-e3-contabo` **MISSING**. Recovery name istnieje, `Permission denied (publickey)` exit 255. Always-on **nie** enable. Audit [CONTABO_GO_HOST_RO_2026-10-27.md](./audits/CONTABO_GO_HOST_RO_2026-10-27.md) · PS pointer | `Test-Path` · `ssh` BatchMode 255 | _(ten commit)_ | Owner: restore documented key albo osobny GO. Gate 3 Implementation Catalog |
+| 2026-10-27 | GATE-1 | SFM staging/host RO planes | EXECUTED | PARTIAL | Audyt [SFM_PLANES_STAGING_HOST_RO_2026-10-27.md](./audits/SFM_PLANES_STAGING_HOST_RO_2026-10-27.md). (1) code `5212933` ancestor **VERIFIED**. (2–4) staging SHA/schema/worker **NOT VERIFIED** (brak targetu). (6) prod DB A–D+KIND_REJECT **VERIFIED RO** · 0 versions/jobs. Flaga **nie** ON. Host process = Gate 2. PS tylko wiersze SFM RO | `git merge-base` · MCP `list_migrations`/`list_projects`/`list_branches` · SELECT counts | _(ten commit)_ | Gate 2 Contabo GO-HOST-RO |
 | 2026-10-27 | GATE-0 | alias / `dpl_*` best-effort (bez OAuth) | EXECUTED | PARTIAL | Living tip `1c34a53…` (`ls-remote`). GitHub Production **`7371927399`** **success** `2026-10-27T22:24:34Z` @ ten SHA · Vercel commit status **success** · unique URL `bitrymdym-jypwmgukh-…vercel.app` · dashboard `…/8N3C7ryXXx2LVaYt3G7ju5q1sirc`. **`dpl_*` NOT VERIFIED** (brak `vercel` CLI · unique URL SSO). **ALIAS NOT VERIFIED** (`www` HTTPS 200, brak bindowania SHA). GitHub last-20 = Production only. PS tip/deploy reconcile + CHANGELOG. Sacred / Studio status-only PRESERVE | `git ls-remote` `1c34a53` · GitHub deployment `7371927399` · `gh` commit status success · curl www 200 | `1c34a53…` (pre-this-row commit) | Gate 1 SFM staging/host RO. Alias/`dpl_*` nadal osobny OAuth jeśli Owner chce bind |
 | 2026-10-27 | GO-SB-ARCHIVE-3 | Archiwizacja §4 → CHANGELOG (room for Gates 0–3) | EXECUTED | PASS | Przeniesiono 6 najstarszych `EXECUTED` (`KONTRAKT A–D` · `GO-5G-O` · `GO-5G-M` · `GO-5G-J` · `GO-5G-H` · `GO-5G-G`) → [CHANGELOG.md](../CHANGELOG.md) `### SESSION_BRIDGE archive`. Living `EXECUTED` 14→8, po tym wierszu **9**. `P-NEXT-10` BLOCKED zachowany. `PROJECT_STATE` nietknięty. Path-scoped commit+push allowlisty most+CHANGELOG | `git status` przed `43c60883…` · `HEAD`=`bde3009` (`ls-remote`) | `bde3009…` | Gate 0 alias/`dpl_*` best-effort, potem SFM RO · Contabo RO · Implementation Catalog |
 | 2026-10-27 | S13-RO | Sample Catalog §13 Storage/allowlist read-only | EXECUTED | PARTIAL | Audyt RO: repo + SELECT prod. §13 policies/runtime allowlista **zostają NOT VERIFIED**. Implementation **NOT AUTHORIZED**. `PROJECT_STATE` NEXT/STOP nietknięty. Commit+push `64e7ff3` audit + CHANGELOG. Host/deploy tego SHA = po pushu | `git show 64e7ff3` (2 paths) · MCP SELECT buckets/policies/prefix counts | `64e7ff3…` | Implementation Catalog = osobne GO. Alias/`dpl_*` = osobne GO |
