@@ -6,6 +6,18 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — www Loop/Metronom chrome runtime (alias vs tip)
+
+**Status:** chrome **PASS** · `dpl_*` **NOT VERIFIED** · alias SHA bind **NOT VERIFIED** · słyszalność **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner — living tip DAW (metro/loop) na aliasie www
+**Tip living:** `c3b80636622316b999ffbeece33c46274d6357c6` = `origin/main` · kod **`01629f5`** ancestor
+**Deploy:** GitHub Production **`7380377160`** **success** `2026-10-28T08:15:37Z` @ `c3b8063` · unique `bitrymdym-6m0t2jn31-…` **302 SSO** · Vercel commit **success**
+**www UI:** `/studio/p/178e902d-…` Loop **„Włącz loop regionu”** / Metro **„Metronom — klik runtime”** · `disabled=false` · toggle **PASS** · **0** „niedostępne”
+**Diagnoza Keep smoke:** „niedostępne w tej wersji Studio” = alias/cache lag (HISTORY), **nie** leftover OD-VS-01 disabled
+**Fix kodu:** nie
+**Audit:** [WWW_METRO_LOOP_ALIAS_2026-10-28.md](./audits/WWW_METRO_LOOP_ALIAS_2026-10-28.md)
+**NEXT:** słyszalny metronom/loop (Play — osobny GO egress) **albo** Owner listen clipu TAKE
+
 ## 2026-10-28 — Keep smoke PASS (sesja Dawida, Stop→Zachowaj→clip)
 
 **Status:** Keep smoke **PASS** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

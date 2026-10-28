@@ -21,6 +21,10 @@
 
 ## Nie potwierdzone
 
-- Słyszalność take / metronom / loop (Loop i Metronom na www: **„niedostępne w tej wersji Studio”**).
+- Słyszalność take / metronom / loop (w tym teście Loop i Metronom na www: **„niedostępne w tej wersji Studio”**).
 - `dpl_*` / bind aliasu do living tip.
 - Auto-place po Stop — **nie** wystąpił; place dopiero po **Zachowaj**.
+
+## Follow-up (ten sam dzień, po reload www)
+
+Living tip potem **`c3b8063`**. Chrome Loop/Metro na tym samym projekcie jest **runtime** (enabled + toggle). Obserwacja „niedostępne” z tego smoke = **HISTORY** (alias/cache), nie leftover OD-VS-01. Dowód: [WWW_METRO_LOOP_ALIAS_2026-10-28.md](./WWW_METRO_LOOP_ALIAS_2026-10-28.md). Słyszalność nadal **NOT VERIFIED**.
