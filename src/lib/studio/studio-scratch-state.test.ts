@@ -13,6 +13,7 @@ import {
   defaultScratchLiveState,
   releaseScratchJog,
   setScratchCue,
+  parseScratchApprovedForWrite,
   studioScratchLivePlaybackRate,
   toggleScratchReverse,
 } from "@/lib/studio/studio-scratch-state";
@@ -58,9 +59,19 @@ describe("studio-scratch-state", () => {
     });
   });
 
-  it("live playback rate stays positive (HTML element limit)", () => {
+  it("live rate magnitude stays positive; reverse is a separate flag", () => {
     const reversed = toggleScratchReverse(defaultScratchLiveState());
+    expect(reversed.reverse).toBe(true);
     expect(studioScratchLivePlaybackRate(reversed)).toBe(1);
+  });
+
+  it("parses approved scratch write values and clamps rate", () => {
+    expect(
+      parseScratchApprovedForWrite({ cueMs: 12.8, reverse: true, rate: 9 }),
+    ).toEqual({ cueMs: 12, reverse: true, rate: SCRATCH_RATE_MAX });
+    expect(() =>
+      parseScratchApprovedForWrite({ cueMs: -1, reverse: false, rate: 1 }),
+    ).toThrow(/cue/i);
   });
 
   it("export fails closed for reverse or non-unity rate", () => {

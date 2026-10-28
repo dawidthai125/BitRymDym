@@ -82,6 +82,22 @@ type Connectable = {
 type GainLike = Connectable & { gain: ParamValue };
 type PannerLike = Connectable & { pan: ParamValue };
 
+export type StudioAudioBufferLike = {
+  numberOfChannels: number;
+  length: number;
+  sampleRate: number;
+  duration: number;
+  getChannelData(channel: number): Float32Array;
+};
+
+export type StudioBufferSourceLike = Connectable & {
+  buffer: StudioAudioBufferLike | null;
+  playbackRate: ParamValue;
+  start(when?: number, offset?: number): void;
+  stop(when?: number): void;
+  onended: (() => void) | null;
+};
+
 /** P6.5 — Master meter tap (serial after Master Pan). */
 export type AnalyserLike = Connectable & {
   fftSize: number;
@@ -114,6 +130,13 @@ export type StudioAudioContextLike = StudioFxGraphContext & {
   createStereoPanner(): PannerLike;
   createAnalyser(): AnalyserLike;
   createMediaElementSource(el: StudioMediaElement): Connectable;
+  createBufferSource?(): StudioBufferSourceLike;
+  createBuffer?(
+    numberOfChannels: number,
+    length: number,
+    sampleRate: number,
+  ): StudioAudioBufferLike;
+  decodeAudioData?(data: ArrayBuffer): Promise<StudioAudioBufferLike>;
   /** Chromium — optional AudioContext output routing (AUD-01). */
   setSinkId?(sinkId: string): Promise<void>;
   sinkId?: string;
@@ -125,6 +148,8 @@ export type StudioAudioEngineHost = {
   nowMs(): number;
   requestTick(cb: () => void): number;
   cancelTick(id: number): void;
+  /** Decode a voice URL for BufferSource reverse. Tests inject a fixture. */
+  decodeSource?(url: string): Promise<StudioAudioBufferLike | null>;
 };
 
 export type StudioAudioEngineListener = {
@@ -157,9 +182,54 @@ type Voice = {
   /** WAVE 1.1 — beat|asset or take:id; used to detect master replacement. */
   identityKey: string | null;
   disposed: boolean;
+  decodedBuffer: StudioAudioBufferLike | null;
+  reversedBuffer: StudioAudioBufferLike | null;
+  bufferSource: StudioBufferSourceLike | null;
+  scratchReverse: boolean;
 };
 
 const PREVIEW_VOICE_ID = "__studio_preview__";
+
+export function reverseStudioAudioBuffer(
+  ctx: StudioAudioContextLike | null,
+  buffer: StudioAudioBufferLike,
+): StudioAudioBufferLike {
+  if (ctx?.createBuffer) {
+    const reversed = ctx.createBuffer(
+      buffer.numberOfChannels,
+      buffer.length,
+      buffer.sampleRate,
+    );
+    for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+      const src = buffer.getChannelData(channel);
+      const dest = reversed.getChannelData(channel);
+      const last = src.length - 1;
+      for (let i = 0; i <= last; i += 1) {
+        dest[i] = src[last - i] ?? 0;
+      }
+    }
+    return reversed;
+  }
+  const channels: Float32Array[] = [];
+  for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+    const src = buffer.getChannelData(channel);
+    const dest = new Float32Array(src.length);
+    const last = src.length - 1;
+    for (let i = 0; i <= last; i += 1) {
+      dest[i] = src[last - i] ?? 0;
+    }
+    channels.push(dest);
+  }
+  return {
+    numberOfChannels: buffer.numberOfChannels,
+    length: buffer.length,
+    sampleRate: buffer.sampleRate,
+    duration: buffer.duration,
+    getChannelData(channel: number) {
+      return channels[channel] ?? new Float32Array(buffer.length);
+    },
+  };
+}
 
 export function createBrowserStudioAudioEngineHost(): StudioAudioEngineHost {
   return {
@@ -243,6 +313,11 @@ export class StudioAudioEngine {
   private failedClips = new Set<string>();
   /** AUD-01 — preferred AudioContext sink ("" = system default). */
   private preferredSinkId: string | null = null;
+  private scratchLive: {
+    clipId: string | null;
+    rate: number;
+    reverse: boolean;
+  } = { clipId: null, rate: 1, reverse: false };
 
   constructor(params: {
     registry: StudioSourceAdapterRegistry;
@@ -283,7 +358,8 @@ export class StudioAudioEngine {
   getActiveVoiceCount(): number {
     let n = 0;
     for (const voice of this.voices.values()) {
-      if (!voice.disposed && !voice.element.paused) n += 1;
+      if (voice.disposed) continue;
+      if (voice.bufferSource || !voice.element.paused) n += 1;
     }
     return n;
   }
@@ -496,23 +572,134 @@ export class StudioAudioEngine {
   }
 
   /**
-   * Scratch DJ v1 live rate on existing timeline voices.
-   * Does not create a second engine. Reverse is not applied (HTML element).
+   * Scratch DJ v1 live rate + reverse on existing timeline voices.
+   * Reverse uses BufferSource in this same AudioContext — no second engine.
    */
-  applyScratchLive(params: { clipId?: string | null; rate: number }): boolean {
+  applyScratchLive(params: {
+    clipId?: string | null;
+    rate: number;
+    reverse?: boolean;
+  }): boolean {
+    this.scratchLive = {
+      clipId: params.clipId ?? null,
+      rate: params.rate,
+      reverse: Boolean(params.reverse),
+    };
     let applied = false;
     for (const voice of this.voices.values()) {
       if (voice.role !== "timeline" || voice.disposed) continue;
       if (params.clipId && voice.clipId !== params.clipId) continue;
-      if (typeof voice.element.playbackRate !== "number") continue;
-      voice.element.playbackRate = params.rate;
-      applied = true;
+      if (this.applyScratchToVoice(voice)) applied = true;
     }
     return applied;
   }
 
   releaseScratchLive(): void {
-    this.applyScratchLive({ rate: 1 });
+    this.applyScratchLive({
+      clipId: this.scratchLive.clipId,
+      rate: 1,
+      reverse: false,
+    });
+  }
+
+  private applyScratchToVoice(voice: Voice): boolean {
+    const rate = this.scratchLive.rate;
+    const reverse = this.scratchLive.reverse;
+    if (!reverse) {
+      this.stopBufferSource(voice);
+      if (typeof voice.element.playbackRate === "number") {
+        voice.element.playbackRate = rate;
+      }
+      voice.scratchReverse = false;
+      return typeof voice.element.playbackRate === "number";
+    }
+    if (!this.ctx?.createBufferSource) return false;
+    if (voice.decodedBuffer) {
+      return this.startReversedBufferSource(voice, rate);
+    }
+    void this.ensureDecodedBuffer(voice).then((ok) => {
+      if (!ok || voice.disposed) return;
+      if (!this.scratchLive.reverse) return;
+      if (this.scratchLive.clipId && this.scratchLive.clipId !== voice.clipId) {
+        return;
+      }
+      this.startReversedBufferSource(voice, this.scratchLive.rate);
+    });
+    return true;
+  }
+
+  private async ensureDecodedBuffer(voice: Voice): Promise<boolean> {
+    if (voice.decodedBuffer) return true;
+    try {
+      const buffer = this.host.decodeSource
+        ? await this.host.decodeSource(voice.sourceUrl)
+        : await this.decodeSourceOnContext(voice.sourceUrl);
+      if (!buffer || voice.disposed) return false;
+      voice.decodedBuffer = buffer;
+      voice.reversedBuffer = reverseStudioAudioBuffer(this.ctx, buffer);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async decodeSourceOnContext(
+    url: string,
+  ): Promise<StudioAudioBufferLike | null> {
+    if (!this.ctx?.decodeAudioData) return null;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return this.ctx.decodeAudioData(await response.arrayBuffer());
+  }
+
+  private startReversedBufferSource(voice: Voice, rate: number): boolean {
+    if (!this.ctx?.createBufferSource) return false;
+    const buffer = voice.reversedBuffer ?? voice.decodedBuffer;
+    if (!buffer) return false;
+    this.stopBufferSource(voice);
+    try {
+      voice.element.pause();
+    } catch {
+      /* ignore */
+    }
+    try {
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = rate;
+      source.connect(voice.clipGain);
+      const duration = buffer.duration || 0;
+      const offset = Math.max(
+        0,
+        Math.min(duration, duration - Math.max(0, voice.element.currentTime)),
+      );
+      source.start(0, offset);
+      source.onended = () => {
+        if (voice.bufferSource === source) voice.bufferSource = null;
+      };
+      voice.bufferSource = source;
+      voice.scratchReverse = true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private stopBufferSource(voice: Voice): void {
+    const source = voice.bufferSource;
+    voice.bufferSource = null;
+    voice.scratchReverse = false;
+    if (!source) return;
+    try {
+      source.onended = null;
+      source.stop();
+    } catch {
+      /* already stopped */
+    }
+    try {
+      source.disconnect();
+    } catch {
+      /* already disconnected */
+    }
   }
 
   setDocument(document: StudioEngineDocument): void {
@@ -677,6 +864,10 @@ export class StudioAudioEngine {
       sourceUrl: url,
       identityKey: null,
       disposed: false,
+      decodedBuffer: null,
+      reversedBuffer: null,
+      bufferSource: null,
+      scratchReverse: false,
     });
 
     try {
@@ -1022,7 +1213,7 @@ export class StudioAudioEngine {
     const plans = planVoicesAtPlayhead(this.document, playheadMs);
     for (const plan of plans) {
       const voice = this.voices.get(plan.clipId);
-      if (!voice || voice.element.paused) continue;
+      if (!voice || voice.bufferSource || voice.element.paused) continue;
       if (
         !isVoiceInSync({
           expectedSourceSeconds: plan.sourceOffsetSeconds,
@@ -1236,7 +1427,11 @@ export class StudioAudioEngine {
         voice.element.currentTime = plan.sourceOffsetSeconds;
       }
       if (!shouldPlay) {
+        this.stopBufferSource(voice);
         voice.element.pause();
+        continue;
+      }
+      if (voice.scratchReverse || voice.bufferSource) {
         continue;
       }
       if (voice.element.paused) {
@@ -1391,14 +1586,25 @@ export class StudioAudioEngine {
       sourceUrl: source.url,
       identityKey,
       disposed: false,
+      decodedBuffer: null,
+      reversedBuffer: null,
+      bufferSource: null,
+      scratchReverse: false,
     };
     this.voices.set(clip.id, voice);
+    if (this.scratchLive.reverse || this.scratchLive.rate !== 1) {
+      if (!this.scratchLive.clipId || this.scratchLive.clipId === clip.id) {
+        this.applyScratchToVoice(voice);
+      }
+    }
     return voice;
   }
 
   private pauseAllTimelineVoices(): void {
     for (const voice of this.voices.values()) {
-      if (voice.role === "timeline") voice.element.pause();
+      if (voice.role !== "timeline") continue;
+      this.stopBufferSource(voice);
+      voice.element.pause();
     }
   }
 
@@ -1410,6 +1616,7 @@ export class StudioAudioEngine {
     const voice = this.voices.get(id);
     if (!voice) return;
     voice.disposed = true;
+    this.stopBufferSource(voice);
     const pinnedKey = voice.identityKey;
     const wasBlob = voice.sourceUrl.startsWith("blob:");
     try {

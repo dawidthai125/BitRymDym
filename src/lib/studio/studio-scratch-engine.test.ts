@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  reverseStudioAudioBuffer,
   StudioAudioEngine,
+  type StudioAudioBufferLike,
   type StudioAudioContextLike,
   type StudioAudioEngineHost,
+  type StudioBufferSourceLike,
   type StudioMediaElement,
 } from "@/lib/studio/studio-audio-engine";
 import type {
@@ -54,6 +57,39 @@ function createHost(): StudioAudioEngineHost {
       return node;
     },
     createMediaElementSource: () => fakeNode(),
+    createBufferSource: () => {
+      throw new Error("createBufferSource not stubbed");
+    },
+    createBuffer(
+      numberOfChannels: number,
+      length: number,
+      sampleRate: number,
+    ) {
+      const channels = Array.from(
+        { length: numberOfChannels },
+        () => new Float32Array(length),
+      );
+      return {
+        numberOfChannels,
+        length,
+        sampleRate,
+        duration: length / sampleRate,
+        getChannelData(channel: number) {
+          return channels[channel] ?? new Float32Array(length);
+        },
+      };
+    },
+    async decodeAudioData() {
+      return {
+        numberOfChannels: 1,
+        length: 8,
+        sampleRate: 8,
+        duration: 1,
+        getChannelData() {
+          return new Float32Array([1, 2, 3, 4, 5, 6, 7, 8]);
+        },
+      };
+    },
   } as unknown as StudioAudioContextLike;
   return {
     createContext() {
@@ -164,5 +200,109 @@ describe("StudioAudioEngine Scratch live rate", () => {
     engine.releaseScratchLive();
     expect(rates.at(-1)).toBe(1);
     engine.dispose();
+  });
+
+  it("starts BufferSource reverse on the same engine and restores HTML rate", async () => {
+    const started: number[] = [];
+    const host = createHost();
+    const ctx = host.createContext();
+    host.createContext = () => ctx;
+    host.decodeSource = async () => ({
+      numberOfChannels: 1,
+      length: 4,
+      sampleRate: 4,
+      duration: 1,
+      getChannelData() {
+        return new Float32Array([1, 2, 3, 4]);
+      },
+    });
+    ctx.createBufferSource = () => {
+      const source = {
+        buffer: null as StudioAudioBufferLike | null,
+        playbackRate: { value: 1 },
+        onended: null as (() => void) | null,
+        connect() {
+          return source;
+        },
+        disconnect() {},
+        start(_when?: number, offset?: number) {
+          started.push(offset ?? 0);
+        },
+        stop() {},
+      };
+      return source as unknown as StudioBufferSourceLike;
+    };
+
+    const engine = new StudioAudioEngine({
+      registry: createStudioSourceAdapterRegistry(
+        createDefaultStudioSourceAdapters({
+          resolveBeatUrl: async () => null,
+          resolveTakeUrl: async () => ({
+            url: "https://cdn.example/take.wav",
+            expiresAt: Date.now() + 60_000,
+          }),
+        }),
+      ),
+      host,
+      listener: {
+        onPlayhead: () => undefined,
+        onLifecycle: () => undefined,
+        onError: () => undefined,
+        onTimelineEnded: () => undefined,
+      },
+    });
+
+    const track: StudioEngineTrack = {
+      id: "vocal",
+      gainDb: 0,
+      pan: 0,
+      muted: false,
+      solo: false,
+    };
+    const clip: StudioEngineClip = {
+      id: "c1",
+      trackId: "vocal",
+      sourceKind: "TAKE",
+      sourceTakeId: TAKE_A,
+      sourceBeatId: null,
+      sourceOffsetMs: 0,
+      timelineStartMs: 0,
+      durationMs: 4000,
+      gainDb: 0,
+      muted: false,
+      fadeInMs: 0,
+      fadeOutMs: 0,
+    };
+    engine.setDocument({
+      timelineLengthMs: 10_000,
+      masterGainDb: 0,
+      masterPan: 0,
+      projectBeatId: null,
+      tracks: [track],
+      clips: [clip],
+    });
+    await engine.play(0);
+    expect(engine.applyScratchLive({ rate: 1.25, reverse: true })).toBe(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(started.length).toBeGreaterThan(0);
+    expect(engine.applyScratchLive({ rate: 1, reverse: false })).toBe(true);
+    engine.dispose();
+  });
+});
+
+describe("reverseStudioAudioBuffer", () => {
+  it("reverses channel samples without a second engine", () => {
+    const source: StudioAudioBufferLike = {
+      numberOfChannels: 1,
+      length: 4,
+      sampleRate: 4,
+      duration: 1,
+      getChannelData() {
+        return new Float32Array([1, 2, 3, 4]);
+      },
+    };
+    const reversed = reverseStudioAudioBuffer(null, source);
+    expect(Array.from(reversed.getChannelData(0))).toEqual([4, 3, 2, 1]);
   });
 });

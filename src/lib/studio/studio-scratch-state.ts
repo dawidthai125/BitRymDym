@@ -1,7 +1,8 @@
 /**
  * Scratch DJ v1 — approved + live parameter domain.
- * Persist/CAS columns and offline encode are OUT of this slice.
- * One StudioAudioEngine remains the audible path (linked rate+pitch).
+ * Live reverse uses BufferSource inside StudioAudioEngine (not a second engine).
+ * Persist goes through existing studio_cas_* (approved cue/reverse/rate).
+ * Offline encode remains fail-closed until export learns these params.
  */
 
 export const SCRATCH_RATE_MIN = 0.25;
@@ -116,13 +117,34 @@ export function setScratchRate(
 }
 
 /**
- * HTMLMediaElement cannot play backwards. Live apply uses |rate| only.
- * Export must fail closed when approved reverse or non-unity rate is set.
+ * Linked live rate magnitude. Direction is a separate `reverse` flag
+ * applied by BufferSource inside StudioAudioEngine.
  */
 export function studioScratchLivePlaybackRate(
   live: StudioScratchLiveState,
 ): number {
   return clampScratchRate(live.rate);
+}
+
+export function parseScratchApprovedForWrite(input: {
+  cueMs: unknown;
+  reverse: unknown;
+  rate: unknown;
+}): StudioScratchApprovedState {
+  if (typeof input.reverse !== "boolean") {
+    throw new Error("reverse Scratch musi być wartością logiczną.");
+  }
+  if (!Number.isFinite(input.cueMs) || Number(input.cueMs) < 0) {
+    throw new Error("cue Scratch musi być nieujemną liczbą.");
+  }
+  if (!Number.isFinite(input.rate)) {
+    throw new Error("tempo Scratch musi być liczbą.");
+  }
+  return {
+    cueMs: Math.floor(Number(input.cueMs)),
+    reverse: input.reverse,
+    rate: clampScratchRate(Number(input.rate)),
+  };
 }
 
 export function assertScratchExportEncodable(approved: StudioScratchApprovedState): {

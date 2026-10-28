@@ -65,7 +65,11 @@ export type StudioTransportControlsApi = {
   seek: (playheadMs: number) => void;
   previewTake: (takeId: string) => Promise<void>;
   stopTakePreview: () => void;
-  applyScratchLive: (rate: number, clipId?: string | null) => void;
+  applyScratchLive: (
+    rate: number,
+    clipId?: string | null,
+    reverse?: boolean,
+  ) => void;
   releaseScratchLive: () => void;
   resolveClipSourceUrl: (clip: {
     sourceKind: string;
@@ -429,8 +433,8 @@ export function StudioTransportProvider({
   );
 
   const applyScratchLive = useCallback(
-    (rate: number, clipId?: string | null) => {
-      engineRef.current?.applyScratchLive({ clipId, rate });
+    (rate: number, clipId?: string | null, reverse?: boolean) => {
+      engineRef.current?.applyScratchLive({ clipId, rate, reverse });
     },
     [],
   );

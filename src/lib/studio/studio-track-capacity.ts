@@ -188,8 +188,38 @@ export function shouldShowStudioTrackUpgradeCta(params: {
   return params.trackCount >= params.maxTracks;
 }
 
-/** Phase 5 add always creates VOCAL. */
+/** Default add remains VOCAL. SAMPLE/SCRATCH are the contract product types. */
 export const STUDIO_ADD_TRACK_DEFAULT_TYPE: StudioTrackType = "VOCAL";
+
+export const STUDIO_ADD_TRACK_TYPES = [
+  "VOCAL",
+  "SAMPLE",
+  "SCRATCH",
+] as const;
+
+export type StudioAddTrackType = (typeof STUDIO_ADD_TRACK_TYPES)[number];
+
+export function isStudioAddTrackType(
+  value: unknown,
+): value is StudioAddTrackType {
+  return (
+    value === "VOCAL" || value === "SAMPLE" || value === "SCRATCH"
+  );
+}
+
+export function parseStudioAddTrackType(raw: unknown): StudioAddTrackType {
+  if (raw == null || raw === "") return STUDIO_ADD_TRACK_DEFAULT_TYPE;
+  if (isStudioAddTrackType(raw)) return raw;
+  throw new Error("TRACK_TYPE_INVALID");
+}
+
+export function nextAddTrackName(
+  trackType: StudioAddTrackType,
+  existingNames: readonly string[],
+): string {
+  if (trackType === "VOCAL") return nextVocalTrackName(existingNames);
+  return nextNumberedTrackName(defaultTrackName(trackType), existingNames);
+}
 
 /** Existing account hub for package changes (no billing system in Phase 6). */
 export const STUDIO_TRACK_UPGRADE_HREF = "/account";

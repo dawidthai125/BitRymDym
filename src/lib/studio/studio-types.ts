@@ -46,6 +46,10 @@ export type StudioClipDto = {
   muted: boolean;
   fadeInMs: number;
   fadeOutMs: number;
+  /** Approved Scratch DJ v1. Optional on older documents / fixtures. */
+  scratchCueMs?: number;
+  scratchReverse?: boolean;
+  scratchRate?: number;
 };
 
 export type StudioProjectDocument = {
