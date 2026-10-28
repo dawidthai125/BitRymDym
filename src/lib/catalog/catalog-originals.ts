@@ -7,6 +7,7 @@ import {
   validateCatalogOriginalUploadMeta,
   validateObjectKey,
 } from "@/lib/beats/audio-validation";
+import { buildUserTakeObjectKey } from "@/lib/takes/object-key";
 
 export const CATALOG_COPY_NOT_IMPLEMENTED = "COPY_NOT_IMPLEMENTED" as const;
 export const CATALOG_CONTENT_BYTES_REQUIRED =
@@ -20,6 +21,36 @@ export const CATALOG_STORAGE_POLICIES_UNAVAILABLE =
   "CATALOG_STORAGE_POLICIES_UNAVAILABLE" as const;
 export const CATALOG_ASSET_NOT_COPYABLE = "CATALOG_ASSET_NOT_COPYABLE" as const;
 export const CATALOG_COPY_WRITE_FORBIDDEN = "CATALOG_COPY_WRITE_FORBIDDEN" as const;
+export const CATALOG_NOT_FOUND = "CATALOG_NOT_FOUND" as const;
+export const CATALOG_PROJECT_NO_BEAT = "PROJECT_NO_BEAT" as const;
+export const CATALOG_SOURCE_UNAVAILABLE = "SOURCE_UNAVAILABLE" as const;
+export const CATALOG_COPY_FAILED = "COPY_FAILED" as const;
+export const CATALOG_TAKE_CAP = "TAKE_CAP" as const;
+
+/** v1 provenance on existing `takes.title` — no new column. */
+export const CATALOG_COPY_TITLE_PREFIX = "catalog:" as const;
+
+const CATALOG_COPY_TITLE_RE =
+  /^catalog:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+
+export function buildCatalogCopyTakeTitle(params: {
+  catalogAssetId: string;
+  projectId: string;
+}): string {
+  return `${CATALOG_COPY_TITLE_PREFIX}${params.catalogAssetId.toLowerCase()}:${params.projectId.toLowerCase()}`;
+}
+
+export function parseCatalogCopyTakeTitle(
+  title: string | null | undefined,
+): { catalogAssetId: string; projectId: string } | null {
+  if (typeof title !== "string") return null;
+  const match = CATALOG_COPY_TITLE_RE.exec(title.trim());
+  if (!match) return null;
+  return {
+    catalogAssetId: match[1].toLowerCase(),
+    projectId: match[2].toLowerCase(),
+  };
+}
 
 export const CATALOG_ASSETS_TABLE = "catalog_assets";
 
@@ -160,20 +191,39 @@ export function evaluateCatalogAssetCopyEligibility(
   return { ok: true };
 }
 
+export type CatalogCopyDestBinding = {
+  ownerId: string;
+  takeId: string;
+};
+
 export type CatalogCopyWriteIntent = {
-  allowed: false;
+  allowed: boolean;
   sourceBucket: typeof BEAT_AUDIO_BUCKET;
   sourceObjectKey: string;
   destBucket: typeof TAKE_AUDIO_BUCKET;
-  destObjectKey: null;
+  destObjectKey: string | null;
 };
 
-/** Intended Storage pair only — never invents a take id and never writes. */
+/**
+ * Intended Storage pair. Dest key is minted only from a claimed take id —
+ * never invented during fail-closed gates.
+ */
 export function planCatalogCopyWrites(
   sourceObjectKey: string,
+  dest?: CatalogCopyDestBinding | null,
+  authorized = false,
 ): CatalogCopyWriteIntent {
+  if (dest) {
+    return {
+      allowed: true,
+      sourceBucket: BEAT_AUDIO_BUCKET,
+      sourceObjectKey,
+      destBucket: TAKE_AUDIO_BUCKET,
+      destObjectKey: buildUserTakeObjectKey(dest),
+    };
+  }
   return {
-    allowed: false,
+    allowed: authorized,
     sourceBucket: BEAT_AUDIO_BUCKET,
     sourceObjectKey,
     destBucket: TAKE_AUDIO_BUCKET,
@@ -186,19 +236,26 @@ export type CatalogCopyContext = {
   catalogAsset?: CatalogAssetCopyEligibility | null;
   /** Server-held original bytes only — never log this payload. */
   originalBytes?: Uint8Array | null;
+  dest?: CatalogCopyDestBinding | null;
 };
 
-export type CatalogCopyPrepareResult = {
-  ok: false;
-  error: string;
-  details?: string[];
-  write: CatalogCopyWriteIntent | null;
-};
+export type CatalogCopyPrepareResult =
+  | {
+      ok: true;
+      write: CatalogCopyWriteIntent;
+    }
+  | {
+      ok: false;
+      error: string;
+      details?: string[];
+      write: CatalogCopyWriteIntent | null;
+    };
 
 /**
  * Platform catalog → private TAKE copy planner.
  * Fail-closed: missing policies/prod, missing asset, or content sniff
- * reject → safe error. Zero Storage/DB writes.
+ * reject → no dest key and allowed=false. Happy path authorizes write;
+ * dest key appears only after a claimed take id is supplied.
  */
 export function prepareCatalogAssetCopy(
   input: CatalogCopyRequest,
@@ -222,7 +279,7 @@ export function prepareCatalogAssetCopy(
     };
   }
 
-  const write = planCatalogCopyWrites(declared.objectKey);
+  const blockedWrite = planCatalogCopyWrites(declared.objectKey);
   const readiness = evaluateCatalogStorageReadiness(
     context.readiness ?? unknownCatalogStorageReadiness(),
   );
@@ -231,7 +288,7 @@ export function prepareCatalogAssetCopy(
       ok: false,
       error: readiness.error,
       details: readiness.details,
-      write,
+      write: blockedWrite,
     };
   }
 
@@ -243,7 +300,7 @@ export function prepareCatalogAssetCopy(
       ok: false,
       error: eligibility.error,
       details: eligibility.details,
-      write,
+      write: blockedWrite,
     };
   }
 
@@ -256,15 +313,17 @@ export function prepareCatalogAssetCopy(
       ok: false,
       error: content.error,
       details: content.details,
-      write,
+      write: blockedWrite,
     };
   }
 
   return {
-    ok: false,
-    error: CATALOG_COPY_NOT_IMPLEMENTED,
-    details: [CATALOG_COPY_WRITE_FORBIDDEN],
-    write,
+    ok: true,
+    write: planCatalogCopyWrites(
+      declared.objectKey,
+      context.dest ?? null,
+      true,
+    ),
   };
 }
 
@@ -272,10 +331,25 @@ export function catalogCopyErrorHttpStatus(error: string): number {
   if (error === "VALIDATION_FAILED") {
     return 400;
   }
+  if (error === "UNAUTHENTICATED") {
+    return 401;
+  }
+  if (error === "FORBIDDEN") {
+    return 403;
+  }
+  if (error === "NOT_FOUND" || error === CATALOG_NOT_FOUND) {
+    return 404;
+  }
   if (error === CATALOG_STORAGE_POLICIES_UNAVAILABLE) {
     return 503;
   }
-  if (error === CATALOG_ASSET_NOT_COPYABLE) {
+  if (
+    error === CATALOG_ASSET_NOT_COPYABLE ||
+    error === CATALOG_PROJECT_NO_BEAT ||
+    error === CATALOG_SOURCE_UNAVAILABLE ||
+    error === CATALOG_TAKE_CAP ||
+    error === "CONFLICT"
+  ) {
     return 409;
   }
   if (
@@ -286,5 +360,44 @@ export function catalogCopyErrorHttpStatus(error: string): number {
   ) {
     return 415;
   }
-  return 501;
+  if (error === CATALOG_COPY_FAILED) {
+    return 500;
+  }
+  if (error === CATALOG_COPY_NOT_IMPLEMENTED) {
+    return 501;
+  }
+  return 500;
+}
+
+export function catalogCopyUserMessage(error: string): string {
+  switch (error) {
+    case "VALIDATION_FAILED":
+      return "Niepoprawne dane kopii sample.";
+    case "UNAUTHENTICATED":
+      return "Zaloguj się, aby skopiować sample.";
+    case "FORBIDDEN":
+      return "Nie masz uprawnień do tej kopii.";
+    case "NOT_FOUND":
+    case CATALOG_NOT_FOUND:
+      return "Ten sample nie istnieje.";
+    case CATALOG_STORAGE_POLICIES_UNAVAILABLE:
+      return "Kopiowanie sample jest chwilowo niedostępne.";
+    case CATALOG_ASSET_NOT_COPYABLE:
+      return "Ten sample nie jest dostępny do skopiowania.";
+    case CATALOG_PROJECT_NO_BEAT:
+      return "Ten projekt nie ma bitu. Dodaj bit, aby skopiować sample.";
+    case CATALOG_SOURCE_UNAVAILABLE:
+      return "Oryginał sample jest niedostępny.";
+    case CATALOG_TAKE_CAP:
+      return "Osiągnięto limit nagrań. Usuń albo zastąp istniejące nagranie.";
+    case CATALOG_CONTENT_BYTES_REQUIRED:
+    case CATALOG_CONTENT_EMPTY:
+    case CATALOG_CONTENT_TYPE_MISMATCH:
+    case CATALOG_CONTENT_UNSUPPORTED:
+      return "Plik sample nie przeszedł kontroli treści.";
+    case CATALOG_COPY_FAILED:
+      return "Kopiowanie sample nie powiodło się. Nic nie zostało zapisane jako gotowe nagranie.";
+    default:
+      return "Kopiowanie sample nie powiodło się.";
+  }
 }

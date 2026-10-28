@@ -6,6 +6,19 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Catalog copy private TAKE (repo)
+
+**Status:** copy path **SHIPPED in repo** · prod copy runtime **NOT VERIFIED** · Scratch **NOT SHIPPED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner GO 2 = Catalog copy E2E
+**Tip start:** `3b8214b…` = `origin/main` (`ls-remote`)
+**Code:** `prepareCatalogAssetCopy` po sniff **ok:true** (dest key tylko po claimed take id) · `executeCatalogAssetCopyFor` czyta `catalog/{uuid}/original.bin`, fail-closed gates, claim+upload+finalize TAKE · provenance `takes.title` = `catalog:{assetId}:{projectId}` · `recording_mode=QUICK` · client `beatId`/MIME ignorowane · upload fail → FAILED + remove
+**API:** `POST /api/catalog/copy` — `requireUser` · 401/400/403/404/409/415/503/500 · PL `message` · success `{ takeId, beatId, objectKey, catalogAssetId, status: READY, reusedExisting }`
+**Tests:** `npm test -- --run src/lib/catalog/catalog-originals.test.ts src/lib/catalog/catalog-copy-service.test.ts src/app/api/catalog/copy/route.test.ts src/lib/beats/audio-validation.test.ts` → **39/39 PASS**
+**Lint/typecheck:** eslint changed files **PASS** · `tsc --noEmit` **PASS**
+**Explicit non-claim:** prod USER copy **NOT VERIFIED** (brak bezpiecznego test USER) · Scratch **OUT** · **≠ Product GREEN**
+**Audit:** [CATALOG_COPY_E2E_2026-10-28.md](./audits/CATALOG_COPY_E2E_2026-10-28.md)
+**NEXT:** Scratch DJ **albo** prod USER copy+cleanup — osobne GO
+
 ## 2026-10-28 — Catalog originals OD-SC-02 content sniff (repo)
 
 **Status:** content sniff **SHIPPED in repo** · copy E2E **NOT RUN** · Scratch **NOT SHIPPED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

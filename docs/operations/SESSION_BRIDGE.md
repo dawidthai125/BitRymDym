@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T06:16:00+01:00 (catalog copy E2E, pomiar przed commit) | main | `3b8214b` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`3b8214b` (`ls-remote`); allowlista: catalog-originals + catalog-copy-service + copy route + docs; Sacred/Studio PRESERVE |
 | 2026-10-28T00:12:00+01:00 (catalog content sniff, pomiar przed commit) | main | `fac551a` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`fac551a` (`ls-remote`); allowlista: audio-validation + catalog-originals + backup re-export + copy route + docs; Sacred/Studio PRESERVE |
 | 2026-10-28T00:10:00+01:00 (catalog live probe, pomiar przed docs commit) | main | `6f3a728` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`6f3a728` (`ls-remote`); porcelain 488 hash `cbc18f20…`; allowlista: probe audit + apply NEXT + CHANGELOG + PS + bridge; Sacred/Studio PRESERVE |
 | 2026-10-27T23:57:00+01:00 (catalog prod apply, pomiar przed docs commit) | main | `0af0dc3` | 0 | ~166 | ~332 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | `HEAD`=`origin/main`=`0af0dc3` (`ls-remote`); allowlista: apply audit + CHANGELOG + PS + bridge + gates + kontrakt §13 + REUSE; Sacred/Studio PRESERVE |
@@ -77,14 +78,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T00:12+01:00` (`git rev-parse HEAD`; `ls-remote`; **bez** `vercel inspect` / OAuth):
+Kontrola `2026-10-28T06:16+01:00` (`git rev-parse HEAD`; `ls-remote`; **bez** `vercel inspect` / OAuth):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (pre-this-commit) | `fac551a` | `docs: record catalog originals controlled live storage probe` = `origin/main` |
+| Lokalny `HEAD` (pre-this-commit) | `3b8214b` | living tip = `origin/main` |
 | Last independently verified deploy | `5200c6da5813f0a446393b3ce79e9f03478f9bbd` | GitHub Production **`7372230897`** **success** `2026-10-27T22:42:24Z` (pre-this-commit) |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · catalog schema **APPLIED** `20261027225553` · live probe **PASS** · content sniff **SHIPPED in repo** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | Catalog OD-SC-02 content sniff | Ten zapis edytuje most + CHANGELOG + PS + gates + kontrakt §13 |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · catalog schema **APPLIED** `20261027225553` · live probe **PASS** · content sniff **SHIPPED** · copy path **SHIPPED in repo** · prod copy **NOT VERIFIED** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Catalog copy private TAKE | Ten zapis edytuje most + CHANGELOG + PS + gates + kontrakt §13 + REUSE |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -133,6 +134,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | CAT-COPY | Catalog copy private TAKE | EXECUTED | PARTIAL | `POST /api/catalog/copy` zapisuje prywatny TAKE z `catalog/{uuid}/original.bin` po sniff + PUBLISHED+license + project.beat_id. Fail-closed bez zapisu. Provenance `takes.title`. Vitest **39/39**. Prod USER copy **NOT VERIFIED**. Scratch **OUT**. ≠ Product GREEN. | vitest catalog-originals + catalog-copy-service + copy route + audio-validation · eslint · tsc · [audit](../audits/CATALOG_COPY_E2E_2026-10-28.md) | _(ten commit)_ | NEXT: Scratch **albo** prod USER copy+cleanup |
 | 2026-10-28 | CAT-SNIFF | Catalog originals OD-SC-02 content sniff | EXECUTED | PASS | Usunięto `CATALOG_CONTENT_GATE_NOT_IMPLEMENTED`. `sniffAudioContainer` + `validateCatalogOriginalContentSniff` w `audio-validation.ts`. Spoof/empty/unsupported → `CATALOG_CONTENT_*` 415. Sniff PASS → `COPY_NOT_IMPLEMENTED` · **zero writes**. Vitest **36/36**. Scratch **OUT**. ≠ Product GREEN. | vitest catalog-originals + audio-validation + backup-manifest · eslint · tsc | _(ten commit)_ | NEXT: copy E2E (test USER) **albo** Scratch |
 | 2026-10-28 | CAT-PROBE | Catalog originals live Storage probe | EXECUTED | PASS | service_role upload/list/download/delete `catalog/8c288da2-9017-415e-b715-64e65d4a35e9/original.bin` **PASS** (16044 B WAV). Anon **DENIED**. Cleanup leftover **0** / `catalog_assets` **0**. Copy API **NOT RUN**. Scratch **OUT**. ≠ Product GREEN. | Node probe + host-guard · MCP leftover SELECT · [audit](../audits/CATALOG_ORIGINALS_LIVE_STORAGE_PROBE_2026-10-28.md) | _(ten commit)_ | NEXT: content sniff / copy E2E / Scratch — sniff **done** |
 | 2026-10-27 | CAT-APPLY | Catalog originals prod apply | EXECUTED | PASS | MCP `apply_migration` **PASS**. History **`20261027225553` / `catalog_originals_storage_and_entity`** (drift vs repo `20261027220000` — nie repair). Read-back: `catalog_assets` RLS ON+FORCE · 4 Storage `catalog_originals_service_*` · grants SIDU service_role / deny client. Vitest **19/19**. Live probe **BLOCKED**. Scratch **OUT**. ≠ Product GREEN. | MCP list/apply/execute_sql · [audit](../audits/CATALOG_ORIGINALS_PROD_APPLY_2026-10-27.md) · vitest catalog+audio-validation | `6f3a728…` | NEXT: controlled live probe GO — **done** CAT-PROBE |
@@ -149,7 +151,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-27 | S13-RO | Sample Catalog §13 Storage/allowlist read-only | EXECUTED | PARTIAL | Audyt RO: repo + SELECT prod. §13 policies/runtime allowlista **zostają NOT VERIFIED**. Implementation **NOT AUTHORIZED**. `PROJECT_STATE` NEXT/STOP nietknięty. Commit+push `64e7ff3` audit + CHANGELOG. Host/deploy tego SHA = po pushu | `git show 64e7ff3` (2 paths) · MCP SELECT buckets/policies/prefix counts | `64e7ff3…` | Implementation Catalog = osobne GO. Alias/`dpl_*` = osobne GO |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fifth batch UNIT-2 + P-NEXT-10B + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (fifth batch UNIT-2 + P-NEXT-10B + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Kolejny `EXECUTED` wymaga archiwizacji §4.
 
 ### 4.1 Limit i archiwizacja
 
@@ -180,10 +182,10 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (odczyt `2026-10-28T00:12+01:00`; bez `vercel inspect`):**
-- Living Git pre-this-commit: **`fac551a…`** = `origin/main` (`ls-remote`)
+**Last-known deploy / alias (odczyt `2026-10-28T06:16+01:00`; bez `vercel inspect`):**
+- Living Git pre-this-commit: **`3b8214b…`** = `origin/main` (`ls-remote`)
 - Last independently verified GitHub Production **`7372230897`** · **success** · `2026-10-27T22:42:24Z` @ **`5200c6d…`**
-- Catalog schema **APPLIED** `20261027225553` · live probe **PASS** · content sniff **SHIPPED in repo**
+- Catalog schema **APPLIED** `20261027225553` · live probe **PASS** · content sniff **SHIPPED** · copy path **SHIPPED in repo** · prod copy **NOT VERIFIED**
 - `dpl_*` / alias www **NOT VERIFIED** · **DEPLOYMENT success ≠ PRODUCTION VERIFIED ≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
 

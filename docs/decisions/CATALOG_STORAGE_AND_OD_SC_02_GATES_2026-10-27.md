@@ -39,8 +39,8 @@ Orphan KEEP `catalog/*` zostaje straż delete (już w kodzie). Retention catalog
 ## 3. Runtime
 
 Kanoniczne miejsce: `src/lib/beats/audio-validation.ts` (`validateObjectKey` + `buildCatalogOriginalObjectKey` + `validateCatalogOriginalUploadMeta` + `sniffAudioContainer` + `validateCatalogOriginalContentSniff`).  
-Copy planner: `src/lib/catalog/catalog-originals.ts` · `POST /api/catalog/copy` (sesja wymagana).  
-Fail-closed default: brak potwierdzonego prod apply / tabeli / polityk `catalog_originals_service_*` → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` (**503**), **zero zapisu**. Content sniff wymaga server-held bytes; brak/empty/spoof/unsupported → `CATALOG_CONTENT_*` (**415**). Sniff PASS nadal **zero zapisu** (`COPY_NOT_IMPLEMENTED`). Dest TAKE key **nie** jest wymyślany.
+Copy planner: `src/lib/catalog/catalog-originals.ts` · executor `src/lib/catalog/catalog-copy-service.ts` · `POST /api/catalog/copy` (sesja wymagana).  
+Fail-closed default: brak potwierdzonego prod apply / tabeli / polityk `catalog_originals_service_*` → `CATALOG_STORAGE_POLICIES_UNAVAILABLE` (**503**), **zero zapisu**. Content sniff wymaga server-held bytes; brak/empty/spoof/unsupported → `CATALOG_CONTENT_*` (**415**). Sniff PASS + PUBLISHED+license + project.beat_id → private TAKE write (claim + upload + finalize). Dest TAKE key tylko z claimed `takeId`. Prod copy runtime **NOT VERIFIED**.
 
 Scratch DJ v1 UI / CAS / Studio chronione = **OUT** (osobny NEXT).
 
@@ -50,4 +50,4 @@ Scratch DJ v1 UI / CAS / Studio chronione = **OUT** (osobny NEXT).
 
 Migracja `supabase/migrations/20261027220000_catalog_originals_storage_and_entity.sql` = **SHIPPED in repo**.  
 **Prod apply = APPLIED** (2026-10-27) via MCP `apply_migration` · remote version **`20261027225553`** (drift vs repo `20261027220000` — **nie** repair) · tabela + 4 polityki Storage + grants read-back **PASS**.  
-Live probe **PASS** (2026-10-28). Content sniff **SHIPPED in repo**. Copy E2E / Scratch DJ = **osobne GO**. **≠ Product GREEN**.
+Live probe **PASS** (2026-10-28). Content sniff **SHIPPED in repo**. Copy path **SHIPPED in repo** · prod copy runtime **NOT VERIFIED**. Scratch DJ = **osobne GO**. **≠ Product GREEN**.

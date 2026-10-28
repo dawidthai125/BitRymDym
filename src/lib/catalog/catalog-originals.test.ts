@@ -7,17 +7,23 @@ import {
   CATALOG_CONTENT_EMPTY,
   CATALOG_CONTENT_TYPE_MISMATCH,
   CATALOG_CONTENT_UNSUPPORTED,
-  CATALOG_COPY_NOT_IMPLEMENTED,
-  CATALOG_COPY_WRITE_FORBIDDEN,
+  CATALOG_COPY_FAILED,
+  CATALOG_NOT_FOUND,
+  CATALOG_PROJECT_NO_BEAT,
   CATALOG_REQUIRED_STORAGE_POLICIES,
   CATALOG_STORAGE_POLICIES_UNAVAILABLE,
+  CATALOG_TAKE_CAP,
+  buildCatalogCopyTakeTitle,
   catalogCopyErrorHttpStatus,
+  catalogCopyUserMessage,
   evaluateCatalogOriginalContentGate,
   evaluateCatalogOriginalDeclaredGates,
   evaluateCatalogStorageReadiness,
+  parseCatalogCopyTakeTitle,
   prepareCatalogAssetCopy,
   unknownCatalogStorageReadiness,
 } from "@/lib/catalog/catalog-originals";
+import { buildUserTakeObjectKey } from "@/lib/takes/object-key";
 import {
   BEAT_AUDIO_BUCKET,
   CATALOG_ORIGINAL_MAX_BYTES,
@@ -195,18 +201,62 @@ describe("catalog copy fail-closed planner", () => {
     expect(mismatch.write?.destObjectKey).toBeNull();
   });
 
-  it("passes content sniff then still forbids writes (copy E2E not in this GO)", () => {
+  it("authorizes write after sniff without inventing a dest key", () => {
     const prepared = prepareCatalogAssetCopy(VALID_INPUT, {
       readiness: READY_SNAPSHOT,
       catalogAsset: READY_ASSET,
       originalBytes: wavBytes(),
     });
-    expect(prepared.ok).toBe(false);
-    expect(prepared.error).toBe(CATALOG_COPY_NOT_IMPLEMENTED);
-    expect(prepared.details).toEqual([CATALOG_COPY_WRITE_FORBIDDEN]);
-    expect(prepared.write?.allowed).toBe(false);
-    expect(prepared.write?.destObjectKey).toBeNull();
-    expect(catalogCopyErrorHttpStatus(prepared.error)).toBe(501);
+    expect(prepared.ok).toBe(true);
+    if (!prepared.ok) return;
+    expect(prepared.write.allowed).toBe(true);
+    expect(prepared.write.destObjectKey).toBeNull();
+    expect(prepared.write.sourceObjectKey).toBe(
+      buildCatalogOriginalObjectKey(CATALOG_ID),
+    );
+  });
+
+  it("mints dest TAKE key only from a claimed owner/take pair", () => {
+    const takeId = "22222222-2222-4222-8222-222222222222";
+    const ownerId = "33333333-3333-4333-8333-333333333333";
+    const prepared = prepareCatalogAssetCopy(VALID_INPUT, {
+      readiness: READY_SNAPSHOT,
+      catalogAsset: READY_ASSET,
+      originalBytes: wavBytes(),
+      dest: { ownerId, takeId },
+    });
+    expect(prepared.ok).toBe(true);
+    if (!prepared.ok) return;
+    expect(prepared.write).toEqual({
+      allowed: true,
+      sourceBucket: BEAT_AUDIO_BUCKET,
+      sourceObjectKey: buildCatalogOriginalObjectKey(CATALOG_ID),
+      destBucket: TAKE_AUDIO_BUCKET,
+      destObjectKey: buildUserTakeObjectKey({ ownerId, takeId }),
+    });
+  });
+
+  it("stores catalog provenance in the existing take title", () => {
+    const title = buildCatalogCopyTakeTitle({
+      catalogAssetId: CATALOG_ID,
+      projectId: PROJECT_ID,
+    });
+    expect(title).toBe(`catalog:${CATALOG_ID}:${PROJECT_ID}`);
+    expect(parseCatalogCopyTakeTitle(title)).toEqual({
+      catalogAssetId: CATALOG_ID,
+      projectId: PROJECT_ID,
+    });
+    expect(parseCatalogCopyTakeTitle("Nagranie")).toBeNull();
+  });
+
+  it("maps copy runtime errors to fail-closed HTTP statuses", () => {
+    expect(catalogCopyErrorHttpStatus(CATALOG_NOT_FOUND)).toBe(404);
+    expect(catalogCopyErrorHttpStatus(CATALOG_PROJECT_NO_BEAT)).toBe(409);
+    expect(catalogCopyErrorHttpStatus(CATALOG_TAKE_CAP)).toBe(409);
+    expect(catalogCopyErrorHttpStatus(CATALOG_COPY_FAILED)).toBe(500);
+    expect(catalogCopyErrorHttpStatus("UNAUTHENTICATED")).toBe(401);
+    expect(catalogCopyUserMessage(CATALOG_PROJECT_NO_BEAT)).toMatch(/bit/i);
+    expect(catalogCopyUserMessage(CATALOG_TAKE_CAP)).toMatch(/limit/i);
   });
 
   it("rejects invalid project id before any write intent", () => {

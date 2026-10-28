@@ -357,7 +357,7 @@ Storage and DB are **not** automatically one atomic transaction. Idempotency, re
 | Live/offline Scratch DSP parity evidence | **NOT VERIFIED** (must not be claimed until tested) |
 | Quantize feature existence / behaviour | **NOT VERIFIED** — OD-SC-05 is default-OFF intent only |
 | Sacred WIP eligibility service | **BLOCKED** — out of this contract |
-| Implementation GO | Gate 3 + prod apply (2026-10-27): Storage+allowlist+API skeleton + schema **authorized/applied** · live probe **PASS** · content sniff **SHIPPED in repo** · copy E2E / Scratch DJ v1 **still OUT** |
+| Implementation GO | Gate 3 + prod apply (2026-10-27): Storage+allowlist+API skeleton + schema **authorized/applied** · live probe **PASS** · content sniff **SHIPPED in repo** · copy path **SHIPPED in repo** · prod copy runtime **NOT VERIFIED** · Scratch DJ v1 **still OUT** |
 
 ---
 
