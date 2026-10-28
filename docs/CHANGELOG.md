@@ -6,6 +6,20 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Owner re-smoke markerów PASS (dwie mutacje bez F5)
+
+**Status:** Owner re-smoke **PASS** · kod **`fadb2b0`** · docs tip start **`30a9bc2`** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · seek/ucho **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** docs-only zapis Owner re-smoke po stale-version fix
+**Sesja:** Dawid · projekt `178e902d-6ecf-4ef6-910c-d85612bb277c`
+**Flow:** Dodaj zwrotkę → Dodaj refren PATCH **200** v11→v12 (bez F5) · cleanup Usuń→Usuń do n=0 v14
+**Deploy:** GitHub Production **`7381109228`** **success** @ `30a9bc2` · **`7381095797`** **success** @ `fadb2b0`
+**Residual:** clip-move po markerze może CAS (`studio-editor` nietknięty)
+**NEXT:** Catalog→place Owner UI smoke **albo** bake listen — nie SFM / nie Contabo
+
+## 2026-10-28 — SESSION_BRIDGE §4 archive (thirteenth batch, room for markers re-smoke)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`MIX-A3.5-ENC` · `SCRATCH-PERSIST` · `GO-SB-ARCHIVE-8`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-28 — Studio markers stale CAS documentVersion (sequential mutations)
 
 **Status:** kod **SHIPPED** @ `fadb2b0…` · Owner re-smoke dwóch mutacji **NOT VERIFIED** · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
@@ -367,10 +381,13 @@ Format: data, zakres, skrót.
 
 ### SESSION_BRIDGE archive
 
-Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Eleventh batch (2026-10-28, room for DAW queue): STUDIO-C · STUDIO-A · GO-SB-ARCHIVE-6. Twelfth batch (2026-10-28, room for markers): SCRATCH-CAS-REV · ALIAS-DPL · GO-SB-ARCHIVE-7. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
+Moved from `docs/operations/SESSION_BRIDGE.md` §4 on 2026-10-27 (Owner GO). First batch: GO-1…gap audit. Second batch (Unit 2 closeout): GO-5G-F · GO-5G-C · P-NEXT-10A. Third batch (Gates 0–3 room): KONTRAKT A–D · GO-5G-O · GO-5G-M · GO-5G-J · GO-5G-H · GO-5G-G. Fourth batch (room for journal/alias/catalog): GO-TEAM-CLOSE · GO-SESSION-CLOSE · CONTINUITY-RELIABILITY · COLD-START-CLOSE · GO-SB-ARCHIVE. Fifth batch (2026-10-28, room for content sniff): UNIT-2 · P-NEXT-10B. Sixth batch (2026-10-28, room for Studio unlock): GATE-0 · GO-SB-ARCHIVE-3 · S13-RO. Seventh batch (2026-10-28, room for reverse/CAS): GATE-3 · GATE-2 · GATE-1. Eighth batch (2026-10-28, room for persist isolation): GATE-A · GO-SB-ARCHIVE-4 · GATE-2R. Ninth batch (2026-10-28, room for history wiring + scratch verify): CAT-APPLY · GATE-C · GATE-B. Tenth batch (2026-10-28, room for USER copy E2E): CAT-COPY · CAT-SNIFF · CAT-PROBE. Eleventh batch (2026-10-28, room for DAW queue): STUDIO-C · STUDIO-A · GO-SB-ARCHIVE-6. Twelfth batch (2026-10-28, room for markers): SCRATCH-CAS-REV · ALIAS-DPL · GO-SB-ARCHIVE-7. Thirteenth batch (2026-10-28, room for markers re-smoke): MIX-A3.5-ENC · SCRATCH-PERSIST · GO-SB-ARCHIVE-8. Rows preserved verbatim (newest-of-batch first). Do not delete without further Owner GO.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | MIX-A3.5-ENC | Restore Mix Working A3.5 + Scratch bake encode | EXECUTED | PARTIAL | A3.5 na cienki service. Persist Scratch nietknięty. Editor/Sacred poza stage. Bake cue/reverse/rate. Schema MCP `20261028070108`…`70155`. C BLOCKED (`auth.users=4`). tsc PASS · vitest 160 PASS. ≠ Product GREEN. | vitest A/B slice · tsc · MCP history · [audit](./audits/MIX_WORKING_RESTORE_SCRATCH_EXPORT_2026-10-28.md) | `fdd9e8f…` | NEXT: test USER **albo** editor history wiring **albo** słyszalny export |
+| 2026-10-28 | SCRATCH-PERSIST | Isolate Scratch CAS persist from mix-working | EXECUTED | PASS | `studio-scratch-persist.ts` kanon CAS. `studio-service` cienki, **0** importów mix-working. Stage 7 ścieżek. Vitest scratch-cas **6/6**. `tsc --noEmit` PASS. Editor/Sacred/mix-working **poza** stage. ≠ Product GREEN. | `git show 6014556` · vitest · tsc · [audit](./audits/SCRATCH_PERSIST_ISOLATION_2026-10-28.md) | `6014556…` | NEXT: Owner GO restore mix-working **albo** USER copy **albo** export encode |
+| 2026-10-28 | GO-SB-ARCHIVE-8 | Archiwizacja §4 → CHANGELOG (room for persist isolation) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-A` · `GO-SB-ARCHIVE-4` · `GATE-2R`) → CHANGELOG archive. Living 15→12, po SCRATCH-PERSIST + tym wierszu **14**. `P-NEXT-10` + `USER-COPY` BLOCKED zachowane. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | SCRATCH-CAS-REV | Live reverse + SAMPLE/SCRATCH create + CAS | EXECUTED | PARTIAL | BufferSource reverse w istniejącym `StudioAudioEngine` (jeden ctx). `POST /tracks` VOCAL\|SAMPLE\|SCRATCH. `op=set_scratch` → `studio_cas_apply_clip_scratch`. MCP apply history **`20261028050115`**. Vitest slice **138/138**. Dirty editor nietknięty. Export encode **OUT**. ≠ Product GREEN. | vitest scratch-engine/state/cas + p5/p7 (bez dirty editor) · [audit](./audits/SCRATCH_REVERSE_CAS_2026-10-28.md) | _(lokalnie, pre-commit)_ | NEXT: path-scoped commit+push **albo** export encode |
 | 2026-10-28 | ALIAS-DPL | alias / `dpl_*` @ `bb4857d` (bez OAuth) | EXECUTED | PARTIAL | Tip `bb4857d…` (`ls-remote`). GitHub Production **`7377291086`** **success** `2026-10-28T04:37:56Z` @ ten SHA · Vercel **success** · unique URL `bitrymdym-gef23don8-…` **302 SSO**. **`dpl_*` NOT VERIFIED**. **ALIAS NOT VERIFIED** (`www` 200, brak SHA bind). | `gh` deployments `7377291086` · commit status success · curl www 200 / unique 302 | `bb4857d…` | Bind alias/`dpl_*` wymaga OAuth/`vercel inspect` |
 | 2026-10-28 | GO-SB-ARCHIVE-7 | Archiwizacja §4 → CHANGELOG (room for reverse/CAS) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`GATE-3` · `GATE-2` · `GATE-1`) → CHANGELOG archive. Living 15→12, po SCRATCH-CAS-REV + ALIAS-DPL + tym wierszu **15**. `P-NEXT-10` + USER-COPY BLOCKED zachowane. | Diff most + CHANGELOG archive table | _(lokalnie, pre-commit)_ | Living tip/deploy → PROJECT_STATE |
