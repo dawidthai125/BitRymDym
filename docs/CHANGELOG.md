@@ -14,6 +14,8 @@ Format: data, zakres, skrót.
 **Zmiana:** `studio-recording-panel.tsx` — blok „Nagranie gotowe / ✓ Zachowaj” nad Katalog/Scratch/Sample; status „Nagranie gotowe — kliknij Zachowaj, żeby wstawić na ścieżkę.”; `scrollIntoView` na `aria-label="Studio Take Workflow"` po READY_TAKE
 **P5.6:** `stopAndFinalize` nadal **bez** `record/place` / `placeReadyTakeOnTimeline`
 **Tests:** `p5-6-take-workflow` + vocal-import + stu-08 + p5-5 → **61/61 PASS**
+**Code:** `028cc5eb1ad440941b279a0635da25af983494ee`
+**Deploy:** GitHub Production **`7379926192`** **success** `2026-10-28T07:47:24Z` @ `028cc5e` · unique `bitrymdym-5akcwnnni-…` · **`dpl_*` NOT VERIFIED** · **ALIAS NOT VERIFIED**
 **Explicit non-claim:** live rec/mic **NOT RUN** · OD-15 **OPEN**
 **NEXT:** Owner sprawdza Stop → widoczny Zachowaj → ręczne umieszczenie na ścieżce
 
