@@ -17,7 +17,7 @@ const OTHER = "33333333-3333-4333-8333-333333333333";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MIGRATION = join(
   HERE,
-  "../migrations/20261020210000_beat_rights_safety_p0_master_mutation_guard.sql",
+  "../migrations/20261029130030_beat_rights_safety_p0_master_mutation_guard.sql",
 );
 
 const results = [];

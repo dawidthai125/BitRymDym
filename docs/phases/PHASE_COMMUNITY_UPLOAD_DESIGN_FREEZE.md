@@ -540,15 +540,15 @@ Nowa publikacja USER wymaga statusu `APPROVED`, jednego aktywnego Mastera `READY
 
 **Kompletny łańcuch migracji (kolejność obowiązkowa — żaden pojedynczy plik nie wystarczy):**
 
-1. `20261019120000_beat_rights_safety_p0.sql` — model podstaw, blokad hasha, review, decyzji i pierwsza bramka publikacji;
-2. `20261020120000_beat_rights_safety_p0_fix.sql` — poprawki gate (INSERT `PUBLISHED` zabroniony, actor staff, `event_seq`);
-3. `20261020180000_beat_rights_safety_p0_remediation.sql` — P0-A (`still_blocked` / `needs_new_master`), P0-B (owner INSERT review), P0-C finalize z ponownym sprawdzeniem praw;
-4. `20261020210000_beat_rights_safety_p0_master_mutation_guard.sql` — odroczona ochrona bezpośredniej mutacji aktywnego Mastera `PUBLISHED`.
+1. `20261029130000_beat_rights_safety_p0.sql` — model podstaw, blokad hasha, review, decyzji i pierwsza bramka publikacji;
+2. `20261029130010_beat_rights_safety_p0_fix.sql` — poprawki gate (INSERT `PUBLISHED` zabroniony, actor staff, `event_seq`);
+3. `20261029130020_beat_rights_safety_p0_remediation.sql` — P0-A (`still_blocked` / `needs_new_master`), P0-B (owner INSERT review), P0-C finalize z ponownym sprawdzeniem praw;
+4. `20261029130030_beat_rights_safety_p0_master_mutation_guard.sql` — odroczona ochrona bezpośredniej mutacji aktywnego Mastera `PUBLISHED`.
 
 Pominięcie kroku 3 (remediation) pozostawia niekompletny łańcuch ochrony P0-A/B nawet przy zastosowanym fix i guardzie. Sam fix albo sam guard **nie** zamyka P0. Szczegóły: [BEAT_RIGHTS_SAFETY.md](../architecture/BEAT_RIGHTS_SAFETY.md).
 
 ## Addendum 2026-10-20 — Rights Safety P0-C master mutation guard
 
-Ochrona publikacji i finalizacji nie wystarczała przeciw bezpośredniemu `UPDATE beat_audio_assets` przez `service_role` / admina. Migracja `20261020210000_beat_rights_safety_p0_master_mutation_guard.sql` dodaje odroczony CONSTRAINT TRIGGER: przy commitcie każdej transakcji zmieniającej aktywny READY MASTER beatu `PUBLISHED` baza wymaga dokładnie jednego takiego Mastera i ponownie wywołuje `assert_beat_checksum_rights`. Bezpośrednia uprzywilejowana podmiana hasha, dezaktywacja, zmiana `purpose` / `status` / `beat_id` oraz sekwencje omijające finalizację są odrzucane z zachowaniem poprzedniego Mastera. Dozwolona ścieżka to nadal `finalize_beat_master_asset` (lub równoważna atomowa transakcja z ważną podstawą).
+Ochrona publikacji i finalizacji nie wystarczała przeciw bezpośredniemu `UPDATE beat_audio_assets` przez `service_role` / admina. Migracja `20261029130030_beat_rights_safety_p0_master_mutation_guard.sql` dodaje odroczony CONSTRAINT TRIGGER: przy commitcie każdej transakcji zmieniającej aktywny READY MASTER beatu `PUBLISHED` baza wymaga dokładnie jednego takiego Mastera i ponownie wywołuje `assert_beat_checksum_rights`. Bezpośrednia uprzywilejowana podmiana hasha, dezaktywacja, zmiana `purpose` / `status` / `beat_id` oraz sekwencje omijające finalizację są odrzucane z zachowaniem poprzedniego Mastera. Dozwolona ścieżka to nadal `finalize_beat_master_asset` (lub równoważna atomowa transakcja z ważną podstawą).
 
 Ta migracja jest **czwartym** krokiem pełnego łańcucha P0 (base → fix → remediation → guard). Nie zastępuje remediation i nie może być wdrażana zamiast kroków 1–3. Szczegóły: [BEAT_RIGHTS_SAFETY.md](../architecture/BEAT_RIGHTS_SAFETY.md).
