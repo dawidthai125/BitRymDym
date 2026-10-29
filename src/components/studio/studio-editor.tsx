@@ -147,6 +147,8 @@ import {
   type StudioApiCall,
   type StudioStructuralUndoOp,
 } from "@/lib/studio/studio-undo-structural";
+import { StudioBitekPanel } from "@/components/studio/studio-bitek-panel";
+import { StudioMixStep } from "@/components/studio/studio-mix-step";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
@@ -314,6 +316,21 @@ function StudioEditorInner({
   /** Phase 6 — open ⋮ menu for a non-BEAT track. */
   const [trackMenuId, setTrackMenuId] = useState<string | null>(null);
   const [recordingLocked, setRecordingLocked] = useState(false);
+  /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
+  const [studioStep, setStudioStep] = useState<"record" | "mix">("record");
+  const tMix = useTranslations("studio.mixStep");
+  const bitekBase = useMemo(() => {
+    const beatTrackIds = new Set(doc.tracks.filter((t) => t.trackType === "BEAT").map((t) => t.id));
+    const vocalTrackIds = new Set(
+      doc.tracks.filter((t) => t.trackType !== "BEAT" && t.trackRole !== "beat" && t.trackRole !== "instrument").map((t) => t.id),
+    );
+    return {
+      hasBeat: Boolean(doc.project.beatId) || doc.clips.some((c) => beatTrackIds.has(c.trackId)),
+      vocalTrackCount: vocalTrackIds.size,
+      vocalClipCount: doc.clips.filter((c) => vocalTrackIds.has(c.trackId)).length,
+    };
+  }, [doc.tracks, doc.clips, doc.project.beatId]);
+  const canGoMix = !recordingLocked && doc.clips.some((c) => !doc.tracks.some((t) => t.id === c.trackId && t.trackType === "BEAT"));
   /** STU-14 — re-read browser-local recovery copies. */
   const [recoveryRefreshKey, setRecoveryRefreshKey] = useState(0);
   const [recoverySavedKey, setRecoverySavedKey] = useState(0);
@@ -2533,6 +2550,47 @@ function StudioEditorInner({
         </h1>
       </header>
 
+      <nav
+        aria-label={tMix("krokiAria")}
+        data-testid="studio-step-nav"
+        className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1"
+      >
+        <ol className="flex flex-wrap items-center gap-1 text-xs uppercase tracking-[0.12em]">
+          {(["record", "mix", "master"] as const).map((s, i) => (
+            <li
+              key={s}
+              aria-current={studioStep === s ? "step" : undefined}
+              className={
+                studioStep === s
+                  ? "rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
+                  : "px-2 py-1 text-[var(--brd-mute)]"
+              }
+            >
+              {i + 1}. {s === "record" ? tMix("krokNagranie") : s === "mix" ? tMix("krokMix") : tMix("krokMastering")}
+              {s === "master" ? <span className="sr-only"> — {tMix("masteringWkrotce")}</span> : null}
+            </li>
+          ))}
+        </ol>
+        {studioStep === "record" ? (
+          <div className="ml-auto flex items-center gap-2">
+            <span id="studio-go-mix-hint" className="hidden text-xs text-[var(--brd-mute)] sm:inline">
+              {tMix("przejdzDoMixuOpis")}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              className="min-h-9 px-3"
+              data-testid="studio-go-mix"
+              aria-describedby="studio-go-mix-hint"
+              disabled={!canGoMix}
+              onClick={() => setStudioStep("mix")}
+            >
+              {tMix("przejdzDoMixu")} →
+            </Button>
+          </div>
+        ) : null}
+      </nav>
+
       <StudioTransportBar
         projectId={doc.project.id}
         tipDocumentVersion={doc.project.documentVersion}
@@ -2716,6 +2774,28 @@ function StudioEditorInner({
         refreshKey={recoveryRefreshKey}
         hidden={recordingLocked}
         onSaved={() => setRecoverySavedKey((key) => key + 1)}
+      />
+
+      {studioStep === "mix" ? (
+        <StudioMixStep
+          doc={doc}
+          resolveClipSourceUrl={resolveClipSourceUrl}
+          onBack={() => setStudioStep("record")}
+          bitekBase={bitekBase}
+        />
+      ) : (
+        <>
+      <StudioBitekPanel
+        compact
+        state={{ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } }}
+        onAction={(action) => {
+          if (action === "goMix" && canGoMix) setStudioStep("mix");
+          if (action === "chooseBeat") setBeatPickerOpen(true);
+          if (action === "record") {
+            setInspectorPreferRecord(true);
+            openInspectorOverlay();
+          }
+        }}
       />
 
       <StudioEditToolbar
@@ -3036,6 +3116,8 @@ function StudioEditorInner({
           {inspectorDesktopRail ? inspectorContent : null}
         </aside>
       </div>
+        </>
+      )}
 
       <StudioInspectorOverlay
         open={inspectorOverlayOpen && !inspectorDesktopRail}
