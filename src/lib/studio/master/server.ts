@@ -138,11 +138,15 @@ export async function signStudioStemUpload(p: { ownerId: string; projectId: stri
   return signedUpload(admin, `${studioMasterJobPrefix(p.ownerId, p.projectId, p.jobId)}/in/stems/${p.name}`);
 }
 
+/** Approved master — only while the project is unchanged since (mix edits ⇒ master again). */
 async function approvedMaster(admin: Admin, ownerId: string, projectId: string) {
-  const { data, error } = await admin.from("studio_master_jobs").select("id, result_object_key").eq("project_id", projectId).eq("owner_id", ownerId)
+  const { data: proj } = await admin.from("studio_projects").select("document_version").eq("id", projectId).eq("owner_id", ownerId).maybeSingle();
+  const { data, error } = await admin.from("studio_master_jobs").select("id, result_object_key, source_document_version").eq("project_id", projectId).eq("owner_id", ownerId)
     .eq("kind", "master").not("approved_at", "is", null).order("approved_at", { ascending: false }).limit(1).maybeSingle();
   check(error);
-  return data as { id: string; result_object_key: string | null } | null;
+  const row = data as { id: string; result_object_key: string | null; source_document_version: number } | null;
+  if (!row || Number((proj as { document_version?: number } | null)?.document_version ?? -1) !== row.source_document_version) return null;
+  return row;
 }
 
 /** Deliver phase 2: re-check, consume quota atomically, queue the job. */
