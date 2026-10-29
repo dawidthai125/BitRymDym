@@ -1,4 +1,4 @@
--- Local verification for 20261029230000_studio_gaps_p0.sql (embedded Postgres, never prod).
+-- Local verification for 20261029233000_studio_gaps_p0.sql (embedded Postgres, never prod).
 \set ON_ERROR_STOP 1
 begin;
 select id as u1 from auth.users order by id limit 1 \gset
