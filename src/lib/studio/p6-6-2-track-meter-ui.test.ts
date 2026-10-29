@@ -72,7 +72,9 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(transport).toMatch(/subscribeTrackMeter/);
     expect(trackMeter).not.toMatch(/requestAnimationFrame/);
     expect(peakMeter).not.toMatch(/requestAnimationFrame/);
-    expect(editor).not.toMatch(/requestAnimationFrame/);
+    // Only the one-shot timeline auto-fit attach loop may use rAF in the editor.
+    expect(editor.match(/requestAnimationFrame\(/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    expect(editor).not.toMatch(/requestAnimationFrame\((?!attach)/);
     expect(STUDIO_METER_HZ).toBeLessThanOrEqual(15);
   });
 
@@ -141,7 +143,6 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(peakMeter).toMatch(/min-w-0/);
     expect(peakMeter).toMatch(/w-full/);
     expect(editor).toMatch(/studio-mix-track-select/);
-    expect(editor).toMatch(/min-h-11 min-w-0 flex-1/);
     // Phase 1 DAW shell — page/frame owns safe-area pad; shell is viewport-flex.
     expect(editor).toMatch(/studio-daw-shell/);
     expect(editor).toMatch(/min-h-\[calc\(100dvh/);

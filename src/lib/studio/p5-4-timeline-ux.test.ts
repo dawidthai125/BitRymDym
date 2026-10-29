@@ -166,8 +166,9 @@ describe("P5.4 regression guards", () => {
     expect(editor).toMatch(/atTimelineMs/);
     expect(editor).toMatch(/method: "DELETE"/);
     // Phase 1–2 DAW toolbar — Snap cycle + zoom affordances (ops unchanged).
-    expect(editor).toMatch(/Snap \{studioSnapPresetLabel/);
-    expect(editor).toMatch(/title="Powiększ oś czasu"/);
+    const toolbar = readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8");
+    expect(toolbar).toMatch(/studioSnapPresetLabel\(props\.snapPreset\)/);
+    expect(toolbar).toMatch(/Przybliż oś czasu/);
   });
 
   it("StudioTransport remains distinct from PlayerProvider", () => {
