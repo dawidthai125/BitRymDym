@@ -144,7 +144,7 @@ describe("P3 — migration / source contracts", () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        "supabase/migrations/20261005211153_p3_claim_anon_take_to_account.sql",
+        "supabase/migrations/20261005191613_p3_claim_anon_take_to_account.sql",
       ),
       "utf8",
     );

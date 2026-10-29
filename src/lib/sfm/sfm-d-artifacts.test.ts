@@ -53,9 +53,9 @@ import {
 import { SFM_EXECUTOR_JOB_KINDS } from "@/types/domain";
 
 const MIGRATION_D =
-  "supabase/migrations/20261014180000_sfm_d_artifacts_promote_retention.sql";
+  "supabase/migrations/20261015073249_sfm_d_artifacts_promote_retention.sql";
 const MIGRATION_C =
-  "supabase/migrations/20261014160000_sfm_c_executor_jobs.sql";
+  "supabase/migrations/20261015073145_sfm_c_executor_jobs.sql";
 const POLLER = "src/lib/audio/studio-export-poller.ts";
 const EXECUTOR = "src/lib/sfm/sfm-executor-service.ts";
 const ARTIFACT_SVC = "src/lib/sfm/sfm-artifact-service.ts";

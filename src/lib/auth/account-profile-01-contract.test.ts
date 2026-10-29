@@ -13,7 +13,7 @@ function read(rel: string): string {
 describe("ACCOUNT/PROFILE-01 contract (static)", () => {
   it("migration does not UNIQUE display_name or alter user_number columns", () => {
     const sql = read(
-      "supabase/migrations/20261003160000_account_profile_01.sql",
+      "supabase/migrations/20261003173213_account_profile_01.sql",
     );
     expect(sql).toContain("public_author_display_names");
     expect(sql).toContain("ON DELETE SET NULL");
@@ -92,7 +92,7 @@ describe("ACCOUNT/PROFILE-01 contract (static)", () => {
   it("USER-ID-01 hardening migration remains present", () => {
     // Sequence / immutability contract must not be rewritten by ACCOUNT-01.
     const listing = read(
-      "supabase/migrations/20261003123000_user_id_01_user_number_null_hardening.sql",
+      "supabase/migrations/20261003113354_user_id_01_user_number_null_hardening.sql",
     );
     expect(listing).toMatch(/user_number/);
   });

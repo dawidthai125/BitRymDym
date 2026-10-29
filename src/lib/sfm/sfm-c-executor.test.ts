@@ -39,11 +39,11 @@ import {
 } from "@/types/domain";
 
 const MIGRATION_C =
-  "supabase/migrations/20261014160000_sfm_c_executor_jobs.sql";
+  "supabase/migrations/20261015073145_sfm_c_executor_jobs.sql";
 const MIGRATION_STUDIO_CLAIM =
-  "supabase/migrations/20261013120000_claim_next_studio_export_job.sql";
+  "supabase/migrations/20261013183721_claim_next_studio_export_job.sql";
 const MIGRATION_A =
-  "supabase/migrations/20261014120000_sfm_foundation_versions_stages.sql";
+  "supabase/migrations/20261015072911_sfm_foundation_versions_stages.sql";
 const RENDER_JOB_SERVICE = "src/lib/audio/render-job-service.ts";
 const RENDER_PIPELINE = "src/lib/audio/render-worker-pipeline.ts";
 const POLLER = "src/lib/audio/studio-export-poller.ts";

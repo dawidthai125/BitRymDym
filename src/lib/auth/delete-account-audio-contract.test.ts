@@ -10,7 +10,7 @@ function read(rel: string): string {
 
 describe("ACCOUNT/PROFILE-01 delete / audio trigger contract", () => {
   const mig = read(
-    "supabase/migrations/20261003160000_account_profile_01.sql",
+    "supabase/migrations/20261003173213_account_profile_01.sql",
   );
   const del = read("src/lib/auth/delete-account.ts");
 

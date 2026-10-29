@@ -245,7 +245,7 @@ describe.runIf(enabled)("F1-C profiles privilege hardening (local Supabase)", ()
   it("T2/T5: catalog ACL, function definition and RLS match the hardened state", () => {
     expect(psql(PROFILES_HARDENING_VIOLATIONS_SQL)).toBe("");
     expect(
-      psql("SELECT to_regclass('public.profiles') IS NOT NULL AND EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261017120000');"),
+      psql("SELECT to_regclass('public.profiles') IS NOT NULL AND EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261017081616');"),
     ).toBe("t");
   });
 

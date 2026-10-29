@@ -16,7 +16,7 @@ import { RENDER_JOB_KINDS } from "@/types/domain";
 const MIGRATION =
   "supabase/migrations/20261010185003_studio_export_render_job_kind.sql";
 const P4_MIGRATION =
-  "supabase/migrations/20261005230000_p4_recording_identity_download_foundation.sql";
+  "supabase/migrations/20261005211448_p4_recording_identity_download_foundation.sql";
 
 const MIX_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const TAKE_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";

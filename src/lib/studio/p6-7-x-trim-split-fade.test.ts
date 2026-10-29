@@ -44,7 +44,7 @@ const splitRoute = readFileSync(
 const casSql = readFileSync(
   join(
     process.cwd(),
-    "supabase/migrations/20261007130000_p6_7_x_studio_cas_trim_split.sql",
+    "supabase/migrations/20261007061049_p6_7_x_studio_cas_trim_split.sql",
   ),
   "utf8",
 );

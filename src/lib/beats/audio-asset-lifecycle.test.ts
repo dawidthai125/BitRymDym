@@ -75,7 +75,7 @@ const db = vi.hoisted(() => ({
   rpcError: null as null | { message: string; code: string },
 }));
 
-/** In-memory model of finalize_beat_master_asset (see migration 20261017140000). */
+/** In-memory model of finalize_beat_master_asset (see migration 20261017193713). */
 function finalizeRpcModel(a: Record<string, unknown>): {
   data: unknown;
   error: { message: string; code: string } | null;

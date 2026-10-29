@@ -20,7 +20,7 @@ const dbContainer =
   process.env.BEAT_FINALIZE_LOCAL_DB_CONTAINER ?? "supabase_db_bitrymdym-local";
 const MIGRATION = path.join(
   process.cwd(),
-  "supabase/migrations/20261017140000_beat_master_finalize_atomic.sql",
+  "supabase/migrations/20261017193713_beat_master_finalize_atomic.sql",
 );
 
 type DbUser = "postgres" | "authenticator";
@@ -268,7 +268,7 @@ describe.runIf(enabled)("finalize_beat_master_asset (local Postgres)", () => {
   beforeAll(() => {
     expect(
       psql(
-        "SELECT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261017140000');",
+        "SELECT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20261017193713');",
       ),
     ).toBe("t");
   });

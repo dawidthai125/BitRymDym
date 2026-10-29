@@ -12,7 +12,7 @@ import { StudioFxCasConflictError } from "@/lib/studio/studio-fx-chain";
 
 const MIGRATION = join(
   process.cwd(),
-  "supabase/migrations/20261007151000_pr_v1_studio_cas_clip_duplicate.sql",
+  "supabase/migrations/20261007080758_pr_v1_studio_cas_clip_duplicate.sql",
 );
 
 describe("PR-03 Duplicate placement", () => {

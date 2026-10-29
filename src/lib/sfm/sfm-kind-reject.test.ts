@@ -17,7 +17,7 @@ import {
 
 const ROOT = process.cwd();
 const MIGRATION =
-  "supabase/migrations/20261016120000_sfm_reject_executor_job_kind.sql";
+  "supabase/migrations/20261016040822_sfm_reject_executor_job_kind.sql";
 const SERVICE = "src/lib/audio/render-job-service.ts";
 const EXEC = "src/lib/sfm/sfm-executor-service.ts";
 const WIRE = "src/lib/sfm/sfm-worker-poller.ts";

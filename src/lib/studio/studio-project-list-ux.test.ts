@@ -41,7 +41,7 @@ describe("Studio project delete — service + route", () => {
     "src/app/api/studio/projects/[projectId]/route.ts",
   );
   const migration = read(
-    "supabase/migrations/20261006051500_p5_1_studio_project_track_clip_foundation.sql",
+    "supabase/migrations/20261006031651_p5_1_studio_project_track_clip_foundation.sql",
   );
 
   it("exposes deleteStudioProjectFor with ownership + service_role delete", () => {

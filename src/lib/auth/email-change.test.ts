@@ -522,7 +522,7 @@ describe("ACCT-EMAIL-01 source contract", () => {
     expect(body).not.toMatch(/profiles\.email/);
     expect(body).not.toMatch(/console\.(log|info|debug)/);
 
-    const sql = read("supabase/migrations/20261003160000_account_profile_01.sql");
+    const sql = read("supabase/migrations/20261003173213_account_profile_01.sql");
     expect(sql).not.toMatch(/ADD COLUMN[^;]*email/i);
 
     const form = read("src/components/auth/auth-forms.tsx");

@@ -12,7 +12,7 @@ const root = process.cwd();
 const migration = readFileSync(
   join(
     root,
-    "supabase/migrations/20261028120000_studio_scratch_cas_sample_scratch.sql",
+    "supabase/migrations/20261028050115_studio_scratch_cas_sample_scratch.sql",
   ),
   "utf8",
 );

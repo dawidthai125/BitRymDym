@@ -39,9 +39,9 @@ describe("PR-V1 architecture guards", () => {
 
   it("new V1 CAS RPCs revoke anon/authenticated and grant service_role", () => {
     const migrations = [
-      "supabase/migrations/20261007150000_pr_v1_studio_cas_clip_gain_mute.sql",
-      "supabase/migrations/20261007151000_pr_v1_studio_cas_clip_duplicate.sql",
-      "supabase/migrations/20261007152000_pr_v1_studio_cas_clip_delete.sql",
+      "supabase/migrations/20261007080752_pr_v1_studio_cas_clip_gain_mute.sql",
+      "supabase/migrations/20261007080758_pr_v1_studio_cas_clip_duplicate.sql",
+      "supabase/migrations/20261007080800_pr_v1_studio_cas_clip_delete.sql",
     ];
     for (const rel of migrations) {
       const sql = read(rel);

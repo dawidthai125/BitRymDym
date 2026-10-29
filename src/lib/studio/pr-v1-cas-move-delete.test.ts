@@ -11,7 +11,7 @@ import { StudioFxCasConflictError } from "@/lib/studio/studio-fx-chain";
 
 const DELETE_MIGRATION = join(
   process.cwd(),
-  "supabase/migrations/20261007152000_pr_v1_studio_cas_clip_delete.sql",
+  "supabase/migrations/20261007080800_pr_v1_studio_cas_clip_delete.sql",
 );
 
 describe("PR-04 Move CAS alignment", () => {

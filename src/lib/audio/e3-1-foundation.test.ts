@@ -212,7 +212,7 @@ describe("E3.1 — audio foundation (unit)", () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        "supabase/migrations/20260928200000_e3_1_audio_foundation.sql",
+        "supabase/migrations/20260928183352_e3_1_audio_foundation.sql",
       ),
       "utf8",
     );

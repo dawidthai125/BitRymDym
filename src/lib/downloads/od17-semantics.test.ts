@@ -171,7 +171,7 @@ describe("migration least-privilege + OD-17 RPCs (source contract)", () => {
   const mig = readFileSync(
     join(
       process.cwd(),
-      "supabase/migrations/20260926020000_phase_1_8a_download_reservation.sql",
+      "supabase/migrations/20260926002237_phase_1_8a_download_reservation.sql",
     ),
     "utf8",
   );

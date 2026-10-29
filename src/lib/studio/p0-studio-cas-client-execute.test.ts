@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 const MIGRATION = join(
   process.cwd(),
-  "supabase/migrations/20261007140000_p0_studio_cas_client_execute_revoke.sql",
+  "supabase/migrations/20261007073533_p0_studio_cas_client_execute_revoke.sql",
 );
 
 const RPCS = [

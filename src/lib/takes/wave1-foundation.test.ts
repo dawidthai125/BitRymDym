@@ -98,7 +98,7 @@ describe("Recording Wave 1 — take foundation (unit)", () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        "supabase/migrations/20260927180000_recording_wave1_take_foundation.sql",
+        "supabase/migrations/20260927155841_recording_wave1_take_foundation.sql",
       ),
       "utf8",
     );

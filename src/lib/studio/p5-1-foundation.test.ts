@@ -148,7 +148,7 @@ describe("P5.1 security / schema / regression guards", () => {
   const migration = readFileSync(
     join(
       process.cwd(),
-      "supabase/migrations/20261006051500_p5_1_studio_project_track_clip_foundation.sql",
+      "supabase/migrations/20261006031651_p5_1_studio_project_track_clip_foundation.sql",
     ),
     "utf8",
   );
