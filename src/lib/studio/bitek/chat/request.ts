@@ -1,4 +1,12 @@
-import { BITEK_LIMITS, BITEK_MASTER_SETTINGS, type BitekChatContext, type BitekChatTurn, type BitekMasterSetting } from "./types";
+import {
+  BITEK_LIMITS,
+  BITEK_MASTER_REF,
+  BITEK_MASTER_SETTINGS,
+  type BitekChange,
+  type BitekChatContext,
+  type BitekChatTurn,
+  type BitekMasterSetting,
+} from "./types";
 
 export type BitekChatRequest = { message: string; history: BitekChatTurn[]; context: BitekChatContext };
 
@@ -7,6 +15,34 @@ const num = (v: unknown, lo: number, hi: number, d = 0) =>
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 const ROLES = new Set(["lead_vocal", "adlib", "double", "backing", "beat", "instrument", "other"]);
 const STATUSES = new Set(["green", "yellow", "red", "na"]);
+
+/** lastChange: ≤ maxProposals entries whose ref exists in this context and whose values fit the param. */
+export function parseBitekLastChange(raw: unknown, refs: ReadonlySet<string>, step: BitekChatContext["step"]): BitekChange[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: BitekChange[] = [];
+  for (const item of raw.slice(0, BITEK_LIMITS.maxProposals)) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const trackRef = typeof r.trackRef === "string" ? r.trackRef : "";
+    const param = r.param;
+    if (step === "master") {
+      if (trackRef !== BITEK_MASTER_REF || !(BITEK_MASTER_SETTINGS as readonly unknown[]).includes(param)) continue;
+      if (typeof r.from !== "number" || typeof r.to !== "number") continue;
+      out.push({ trackRef, param: param as BitekMasterSetting, from: num(r.from, -3, 3), to: num(r.to, -3, 3) });
+      continue;
+    }
+    if (!refs.has(trackRef)) continue;
+    if (param === "muted") {
+      if (typeof r.from !== "boolean" || typeof r.to !== "boolean") continue;
+      out.push({ trackRef, param, from: r.from, to: r.to });
+    } else if (param === "gainDb" || param === "pan") {
+      if (typeof r.from !== "number" || typeof r.to !== "number") continue;
+      const [lo, hi] = param === "gainDb" ? [BITEK_LIMITS.gainDbMin, BITEK_LIMITS.gainDbMax] : [-1, 1];
+      out.push({ trackRef, param, from: num(r.from, lo, hi), to: num(r.to, lo, hi) });
+    }
+  }
+  return out.length ? out : null;
+}
 
 /** Validate untrusted JSON body. Returns an error code instead of throwing. */
 export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekChatRequest } | { ok: false; error: string } {
@@ -78,7 +114,14 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
     value: {
       message: b.message.trim(),
       history,
-      context: { lang: c.lang === "en" ? "en" : "pl", step, tracks, analysis, ...(master ? { master } : {}) },
+      context: {
+        lang: c.lang === "en" ? "en" : "pl",
+        step,
+        tracks,
+        analysis,
+        ...(master ? { master } : {}),
+        lastChange: parseBitekLastChange(c.lastChange, new Set(tracks.map((t) => t.ref)), step),
+      },
     },
   };
 }

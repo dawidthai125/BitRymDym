@@ -27,6 +27,11 @@ export type BitekChatContext = {
     masterIntegratedLufs: number | null;
     masterTruePeakDbtp: number | null;
   };
+  /**
+   * Conversational mode (gaps P0 #4): the last change the user APPLIED from
+   * BITEK (from → to). Lets "więcej / mniej / za dużo / cofnij" act on it.
+   */
+  lastChange?: BitekChange[] | null;
   /** Stage 3 — Mastering step: BITEK sees the whole song as ONE stereo track. */
   master?: null | {
     target: string;
@@ -49,6 +54,16 @@ export type BitekProposal = {
   value: number | boolean;
   /** Button label built server-side from the validated proposal (buildBitekProposalLabel), never from model text. */
   label: string;
+  /** One first-person sentence: why BITEK makes this change (model text clipped, or a server template). */
+  why?: string;
+};
+
+/** An applied change, as remembered for relative follow-ups. */
+export type BitekChange = {
+  trackRef: string;
+  param: BitekProposalParam;
+  from: number | boolean;
+  to: number | boolean;
 };
 
 export type BitekProviderId = "groq" | "gemini" | "e3" | "rules";
@@ -59,7 +74,11 @@ export type BitekChatResult = {
   proposals: BitekProposal[];
   /** Mastering: the request was about a single track — offer "Back to Mix". */
   backToMix?: boolean;
+  /** Set when the answer was a relative follow-up to the last change. */
+  relative?: BitekRelativeKind;
 };
+
+export type BitekRelativeKind = "more" | "bit_more" | "less" | "too_little" | "undo";
 
 export const BITEK_LIMITS = {
   messageMaxChars: 500,
@@ -68,6 +87,7 @@ export const BITEK_LIMITS = {
   maxTracks: 24,
   trackNameMaxChars: 40,
   maxProposals: 3,
+  whyMaxChars: 160,
   replyMaxChars: 1200,
   dailyMessagesPerUser: 60,
   gainDbMin: -24,

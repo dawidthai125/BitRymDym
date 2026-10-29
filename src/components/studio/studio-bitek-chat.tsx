@@ -5,6 +5,14 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+import {
+  bitekDecisionsByEntry,
+  isBitekDecisionNote,
+  lastBitekChange,
+  toContextLastChange,
+  type BitekDecision,
+  type BitekStoredChange,
+} from "@/lib/studio/bitek/chat/decisions";
 import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekMasterSetting, type BitekProposal } from "@/lib/studio/bitek/chat/types";
 import type { BitekStoredMessage } from "@/lib/studio/bitek/store/messages";
 import type { BitekProjectStore } from "@/components/studio/use-bitek-project";
@@ -18,7 +26,7 @@ type Entry =
 function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
   const out: Entry[] = [];
   for (const m of messages) {
-    if (m.kind === "state") continue;
+    if (m.kind === "state" || isBitekDecisionNote(m)) continue;
     if (m.kind === "chat" && m.role === "user") {
       out.push({ id: m.id, role: "user", content: m.content });
       continue;
@@ -62,7 +70,7 @@ export function StudioBitekChat({
   const t = useTranslations("studio.bitek.chat");
   const inputId = useId();
   const entries = entriesFromStore(store.messages);
-  const [applied, setApplied] = useState<Record<string, number[]>>({});
+  const decisions = bitekDecisionsByEntry(store.messages);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,24 +99,30 @@ export function StudioBitekChat({
     setBusy(true);
     setError(null);
     try {
-      const { context } = getContext();
+      const { context, trackIdByRef } = getContext();
+      // Conversational mode: "więcej / za dużo / cofnij" act on the last change the user applied.
+      const lastChange = toContextLastChange(lastBitekChange(store.messages), trackIdByRef);
       const res = await fetch("/api/studio/bitek/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history, context, projectId }),
+        body: JSON.stringify({ message, history, context: { ...context, lastChange }, projectId }),
       });
       if (res.status === 429) {
         setError(t("limit"));
         return;
       }
-      const json = (await res.json()) as Partial<BitekChatResult> & { success?: boolean };
+      const json = (await res.json()) as Partial<BitekChatResult> & {
+        success?: boolean;
+        messageIds?: { user?: string; assistant?: string };
+      };
       if (!res.ok || !json.success || typeof json.reply !== "string") {
         setError(t("blad"));
         return;
       }
       store.addLocal([
         {
-          id: crypto.randomUUID(),
+          // DB id when saved, so Zostaw/Cofnij decisions stay attached to this reply after a reload.
+          id: typeof json.messageIds?.assistant === "string" ? json.messageIds.assistant : crypto.randomUUID(),
           role: "assistant",
           kind: "chat",
           content: json.reply as string,
@@ -125,18 +139,56 @@ export function StudioBitekChat({
     }
   }
 
-  function apply(entryId: string, index: number, p: BitekProposal) {
-    if (p.trackRef === BITEK_MASTER_REF) {
-      if (!onApplyMasterProposal || typeof p.value !== "number") return;
-      onApplyMasterProposal(p.param as BitekMasterSetting, p.value);
-      setApplied((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), index] }));
-      return;
+  function recordDecision(entryId: string, decision: BitekDecision, changes: BitekStoredChange[], labels: string[]) {
+    const key = decision === "applied" ? "notatkaZastosowano" : decision === "kept" ? "notatkaZostawiono" : "notatkaCofnieto";
+    store.append(
+      [{ kind: "note", content: t(key, { labels: labels.join("; ").slice(0, 400) }), meta: { bitekChange: { entryId, decision, changes } } }],
+      // Session memory (Free): decisions stay in this tab like the chat itself.
+      { localOnly: store.memory === "session" },
+    );
+  }
+
+  /** Apply one value to a track or the whole song; returns the value it had before. */
+  function applyValue(target: string, param: BitekProposal["param"], value: number | boolean): number | boolean | null {
+    const { context, trackIdByRef } = getContext();
+    if (target === BITEK_MASTER_REF) {
+      if (!onApplyMasterProposal || typeof value !== "number") return null;
+      const from = context.master?.settings[param as BitekMasterSetting] ?? 0;
+      onApplyMasterProposal(param as BitekMasterSetting, value);
+      return from;
     }
+    const ref = Object.keys(trackIdByRef).find((r) => trackIdByRef[r] === target);
+    const track = context.tracks.find((x) => x.ref === ref);
+    if (!track) return null;
+    const from = param === "gainDb" ? track.gainDb : param === "pan" ? track.pan : param === "muted" ? track.muted : null;
+    if (from === null) return null;
+    onApplyProposal(target, { [param]: value });
+    return from;
+  }
+
+  function apply(entry: Extract<Entry, { role: "assistant" }>, index: number, p: BitekProposal) {
     // Map the model-facing ref back to a real track id on the client, against the *current* doc.
-    const trackId = getContext().trackIdByRef[p.trackRef];
-    if (!trackId) return;
-    onApplyProposal(trackId, { [p.param]: p.value });
-    setApplied((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), index] }));
+    const target = p.trackRef === BITEK_MASTER_REF ? BITEK_MASTER_REF : getContext().trackIdByRef[p.trackRef];
+    if (!target) return;
+    const from = applyValue(target, p.param, p.value);
+    if (from === null) return;
+    const prev = decisions.get(entry.id);
+    const kept = prev && prev.decision !== "undone" ? prev.changes.filter((c) => c.i !== index) : [];
+    const changes = [...kept, { i: index, target, param: p.param, from, to: p.value }];
+    recordDecision(entry.id, "applied", changes, changes.map((c) => entry.proposals[c.i]?.label ?? p.label));
+  }
+
+  function keep(entry: Extract<Entry, { role: "assistant" }>) {
+    const d = decisions.get(entry.id);
+    if (!d) return;
+    recordDecision(entry.id, "kept", d.changes, d.changes.map((c) => entry.proposals[c.i]?.label ?? ""));
+  }
+
+  function undo(entry: Extract<Entry, { role: "assistant" }>) {
+    const d = decisions.get(entry.id);
+    if (!d) return;
+    for (const c of [...d.changes].reverse()) applyValue(c.target, c.param, c.from);
+    recordDecision(entry.id, "undone", d.changes, d.changes.map((c) => entry.proposals[c.i]?.label ?? ""));
   }
 
   return (
@@ -161,28 +213,41 @@ export function StudioBitekChat({
             <li key={e.id} data-testid={e.note ? "studio-bitek-chat-note" : "studio-bitek-chat-reply"} data-provider={e.provider ?? "note"} className="flex flex-col gap-1 border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">
               <span>{e.content}</span>
               {e.proposals.length ? (
-                <ul className="flex flex-col gap-1">
+                <ul className="flex flex-col gap-1.5">
                   {e.proposals.map((p, i) => {
-                    const done = (applied[e.id] ?? []).includes(i);
+                    const d = decisions.get(e.id);
+                    const done = Boolean(d && d.decision !== "undone" && d.changes.some((c) => c.i === i));
                     return (
-                      <li key={`${p.trackRef}-${p.param}`} className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs">{p.label || `${p.trackRef} ${p.param} ${String(p.value)}`}</span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={done ? "outline" : "default"}
-                          className="min-h-9"
-                          disabled={done || disabled}
-                          aria-label={t("propozycjaAria", { label: p.label || p.param })}
-                          data-testid="studio-bitek-apply"
-                          onClick={() => apply(e.id, i, p)}
-                        >
-                          {done ? "✓" : t("zastosuj")}
-                        </Button>
+                      <li key={`${p.trackRef}-${p.param}`} className="flex flex-col gap-0.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-xs">{p.label || `${p.trackRef} ${p.param} ${String(p.value)}`}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={done ? "outline" : "default"}
+                            className="min-h-9"
+                            disabled={done || disabled}
+                            aria-label={t("propozycjaAria", { label: p.label || p.param })}
+                            data-testid="studio-bitek-apply"
+                            onClick={() => apply(e, i, p)}
+                          >
+                            {done ? "✓" : t("zastosuj")}
+                          </Button>
+                        </div>
+                        {p.why ? (
+                          <span data-testid="studio-bitek-why" className="text-xs text-[var(--brd-mute)]">
+                            {p.why}
+                          </span>
+                        ) : null}
                       </li>
                     );
                   })}
-                  {applied[e.id]?.length ? <li className="text-xs text-[var(--brd-mute)]">{t("zastosowano")}</li> : null}
+                  <BitekDecisionRow
+                    decision={decisions.get(e.id)?.decision ?? null}
+                    disabled={disabled}
+                    onKeep={() => keep(e)}
+                    onUndo={() => undo(e)}
+                  />
                 </ul>
               ) : null}
               {e.backToMix && onBackToMix ? (
@@ -239,9 +304,52 @@ export function StudioBitekChat({
           <span id={`${inputId}-count`} className={tooLong ? "text-[var(--brd-rec)]" : undefined}>
             {tooLong ? t("zaDlugie", { max: BITEK_LIMITS.messageMaxChars }) : t("licznik", { n: text.length, max: BITEK_LIMITS.messageMaxChars })}
           </span>
-          <span>{store.available ? t("zapisProjekt") : t("zapisLokalny")}</span>
+          <span data-testid="studio-bitek-memory" data-memory={store.memory}>
+            {store.memory === "session" ? t("zapisSesja") : store.available ? t("zapisProjekt") : t("zapisLokalny")}
+          </span>
         </div>
       </form>
     </div>
+  );
+}
+
+/** After "Zastosuj": keep it or roll it back (Cofnij re-applies the values from before). */
+function BitekDecisionRow({
+  decision,
+  disabled,
+  onKeep,
+  onUndo,
+}: {
+  decision: BitekDecision | null;
+  disabled?: boolean;
+  onKeep: () => void;
+  onUndo: () => void;
+}) {
+  const t = useTranslations("studio.bitek.chat");
+  if (!decision) return null;
+  if (decision === "kept") {
+    return (
+      <li data-testid="studio-bitek-decision" data-decision="kept" className="text-xs text-[var(--brd-mute)]">
+        ✓ {t("zostawione")}
+      </li>
+    );
+  }
+  if (decision === "undone") {
+    return (
+      <li data-testid="studio-bitek-decision" data-decision="undone" className="text-xs text-[var(--brd-mute)]">
+        ↺ {t("cofniete")}
+      </li>
+    );
+  }
+  return (
+    <li data-testid="studio-bitek-decision" data-decision="applied" className="flex flex-wrap items-center gap-2">
+      <span className="text-xs">{t("pasuje")}</span>
+      <Button type="button" size="sm" className="min-h-9" disabled={disabled} data-testid="studio-bitek-keep" onClick={onKeep}>
+        {t("zostaw")}
+      </Button>
+      <Button type="button" size="sm" variant="outline" className="min-h-9" disabled={disabled} data-testid="studio-bitek-undo" onClick={onUndo}>
+        {t("cofnij")}
+      </Button>
+    </li>
   );
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { bitekMemoryForTier } from "@/config/plan-policy";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { requireUser } from "@/lib/auth/session";
 import { parseBitekMessageInputs } from "@/lib/studio/bitek/store/messages";
 import { appendBitekMessages, listBitekMessages } from "@/lib/studio/bitek/store/server";
@@ -9,13 +11,22 @@ export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
-/** GET — BITEK history + notes + bubble state of an owned project. */
+/**
+ * GET — BITEK history + notes + bubble state of an owned project.
+ * `memory` (plan-policy): "session" plans get no saved chat rows back — the
+ * conversation lives in the browser tab; notes / fixes / state stay.
+ */
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { projectId } = await context.params;
     const auth = await requireUser();
-    const result = await listBitekMessages({ ownerId: auth.userId, projectId });
-    return NextResponse.json({ success: true, ...result });
+    const [result, entitlement] = await Promise.all([
+      listBitekMessages({ ownerId: auth.userId, projectId }),
+      resolveProductEntitlementForAuthContext(auth),
+    ]);
+    const memory = bitekMemoryForTier(entitlement.premiumTier);
+    const messages = memory === "project" ? result.messages : result.messages.filter((m) => m.kind !== "chat");
+    return NextResponse.json({ success: true, ...result, messages, memory });
   } catch (error) {
     return studioApiErrorResponse(error);
   }
