@@ -7,7 +7,7 @@ import { BITEK_LIMITS, type BitekChatContext, type BitekChatResult, type BitekCh
 export type BitekChainLog = {
   provider: BitekChatResult["provider"];
   ms: number;
-  attempts: { id: string; outcome: string; ms: number }[];
+  attempts: { id: string; outcome: string; ms: number; status?: number; code?: string }[];
 };
 
 /** Try providers in order; fail over on 429/5xx/timeout/network/bad JSON; rules are the final answer. Logs carry no message content. */
@@ -46,7 +46,9 @@ export async function runBitekChatChain(params: {
       return { provider: p.id, ...parsed };
     } catch (e) {
       const kind = e instanceof BitekProviderError ? e.kind : "error";
-      attempts.push({ id: p.id, outcome: kind, ms: now() - started });
+      const status = e instanceof BitekProviderError ? e.status : undefined;
+      const code = e instanceof BitekProviderError ? e.code : undefined;
+      attempts.push({ id: p.id, outcome: kind, ms: now() - started, ...(status ? { status } : {}), ...(code ? { code } : {}) });
     } finally {
       clearTimeout(timer);
     }
