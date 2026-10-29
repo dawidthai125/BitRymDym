@@ -2840,5 +2840,25 @@
  {
   "src": "BITEK",
   "en": "BITEK"
+ },
+ {
+  "src": "Data wrzucenia musi mieć format RRRR-MM-DD.",
+  "en": "Upload date must be YYYY-MM-DD."
+ },
+ {
+  "src": "Data wrzucenia nie jest prawidłową datą.",
+  "en": "Upload date is not a valid calendar date."
+ },
+ {
+  "src": "Data wrzucenia jest zbyt wczesna.",
+  "en": "Upload date is too early."
+ },
+ {
+  "src": "Data wrzucenia nie może być w przyszłości.",
+  "en": "Upload date cannot be in the future."
+ },
+ {
+  "src": "Edycja metadanych bitu",
+  "en": "Beat metadata edit"
  }
 ]

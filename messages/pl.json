@@ -549,7 +549,8 @@
       "coverRef": "Odnośnik okładki",
       "zapisanoMetadata": "Zapisano metadane.",
       "zapisywanie": "Zapisywanie…",
-      "zapiszMetadane": "Zapisz metadane"
+      "zapiszMetadane": "Zapisz metadane",
+      "dataWrzucenia": "Data wrzucenia"
     },
     "adminPlatformOpsExportButton": {
       "eksportOperacyjny": "Eksport operacyjny…",
@@ -617,6 +618,47 @@
       "zapisywanie": "Zapisywanie…",
       "potwierdzZmiane": "Potwierdź zmianę",
       "zapiszZmiany": "Zapisz zmiany"
+    },
+    "adminBeatsCatalogue": {
+      "katalogBitow": "Katalog bitów",
+      "opis": "Wszystkie bity platformy. Sortuj, szukaj i poprawiaj dane bez wchodzenia w szczegóły.",
+      "szukaj": "Szukaj",
+      "szukajPlaceholder": "Tytuł lub autor",
+      "status": "Status",
+      "wszystkie": "Wszystkie",
+      "naStronie": "Na stronie",
+      "sortuj": "Sortuj wg",
+      "kierunek": "Kierunek",
+      "malejaco": "malejąco",
+      "rosnaco": "rosnąco",
+      "filtruj": "Pokaż",
+      "wyczysc": "Wyczyść",
+      "zakres": "{first}–{last} z {total}",
+      "sortowanie": "sortowanie: {by}, {dir}",
+      "brakWynikow": "Brak bitów dla tych filtrów.",
+      "odsluch": "Odsłuch",
+      "pobrania": "Pobrania",
+      "pobraniaKrotko": "{n} pobr.",
+      "akcje": "Akcje",
+      "wiecej": "Więcej",
+      "edytuj": "Edytuj",
+      "edycjaBitu": "Edycja bitu",
+      "zamknij": "Zamknij",
+      "brakAutora": "Brak autora",
+      "stronicowanie": "Strony katalogu",
+      "poprzednia": "Poprzednia",
+      "nastepna": "Następna",
+      "sort": {
+        "uploaded": "Data wrzucenia",
+        "updated": "Ostatnia zmiana",
+        "title": "Tytuł",
+        "producer": "Autor",
+        "bpm": "BPM",
+        "duration": "Długość",
+        "key": "Tonacja",
+        "genre": "Gatunek",
+        "status": "Status"
+      }
     }
   },
   "auth": {

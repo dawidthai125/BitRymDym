@@ -112,6 +112,8 @@ export function labelAdminAuditAction(action: string): string {
       return "Usunięcie konta";
     case "SAMPLE_POLICY_UPDATE":
       return "Aktualizacja polityki nagrań";
+    case "BEAT_METADATA_UPDATE":
+      return "Edycja metadanych bitu";
     default:
       return "—";
   }

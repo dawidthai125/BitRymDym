@@ -156,7 +156,7 @@ describe("admin route contracts (no authz weakening)", () => {
   }
 
   it("data functions keep enforcing the same guards before data access", () => {
-    for (const fn of ["listPlatformBeatsForAdmin", "getPlatformBeatForAdmin"]) {
+    for (const fn of ["listPlatformBeatsForAdmin", "listPlatformBeatCatalogueForAdmin", "getPlatformBeatForAdmin"]) {
       const b = body(fn);
       expect(b).toMatch("await requireAdminPlatformBeatsAccess();");
       expect(b.indexOf("await requireAdminPlatformBeatsAccess();")).toBeLessThan(
@@ -179,7 +179,7 @@ describe("admin route contracts (no authz weakening)", () => {
 
   it("pages resolve the viewer denial before loading data", () => {
     for (const [page, guard, loader] of [
-      [beatsPage, "requireAdminPlatformBeatsAccess", "await listPlatformBeatsForAdmin()"],
+      [beatsPage, "requireAdminPlatformBeatsAccess", "await listPlatformBeatCatalogueForAdmin(query)"],
       [beatPage, "requireAdminPlatformBeatsAccess", "await getPlatformBeatForAdmin(id)"],
       [moderationPage, "requireModerationAccess", "listPendingReviewForModeration(),"],
     ] as const) {

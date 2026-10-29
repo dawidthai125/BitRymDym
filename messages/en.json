@@ -549,7 +549,8 @@
       "coverRef": "Cover ref",
       "zapisanoMetadata": "Metadata saved.",
       "zapisywanie": "Saving…",
-      "zapiszMetadane": "Save metadata"
+      "zapiszMetadane": "Save metadata",
+      "dataWrzucenia": "Upload date"
     },
     "adminPlatformOpsExportButton": {
       "eksportOperacyjny": "Operational export…",
@@ -617,6 +618,47 @@
       "zapisywanie": "Saving…",
       "potwierdzZmiane": "Confirm change",
       "zapiszZmiany": "Save changes"
+    },
+    "adminBeatsCatalogue": {
+      "katalogBitow": "Beat catalogue",
+      "opis": "All platform beats. Sort, search and fix details without opening each beat.",
+      "szukaj": "Search",
+      "szukajPlaceholder": "Title or author",
+      "status": "Status",
+      "wszystkie": "All",
+      "naStronie": "Per page",
+      "sortuj": "Sort by",
+      "kierunek": "Order",
+      "malejaco": "descending",
+      "rosnaco": "ascending",
+      "filtruj": "Apply",
+      "wyczysc": "Clear",
+      "zakres": "{first}–{last} of {total}",
+      "sortowanie": "sorted by: {by}, {dir}",
+      "brakWynikow": "No beats match these filters.",
+      "odsluch": "Preview",
+      "pobrania": "Downloads",
+      "pobraniaKrotko": "{n} dl.",
+      "akcje": "Actions",
+      "wiecej": "More",
+      "edytuj": "Edit",
+      "edycjaBitu": "Edit beat",
+      "zamknij": "Close",
+      "brakAutora": "No author",
+      "stronicowanie": "Catalogue pages",
+      "poprzednia": "Previous",
+      "nastepna": "Next",
+      "sort": {
+        "uploaded": "Upload date",
+        "updated": "Last change",
+        "title": "Title",
+        "producer": "Author",
+        "bpm": "BPM",
+        "duration": "Length",
+        "key": "Key",
+        "genre": "Genre",
+        "status": "Status"
+      }
     }
   },
   "auth": {
