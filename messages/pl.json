@@ -1722,7 +1722,7 @@
       "przejdzDoMixuOpis": "Sprawdzimy, jak wokal brzmi na tle bitu.",
       "wrocDoNagrania": "Wróć do nagrywania",
       "tytul": "Mix",
-      "opis": "Analiza działa w Twojej przeglądarce. Nic nie wysyłamy na serwer. Mierzymy ścieżki tak, jak je słyszysz: z efektami, głośnością i panoramą.",
+      "opis": "Analiza działa w przeglądarce — nic nie wysyłam na serwer.",
       "analizuj": "Analizuj mix",
       "analizujPonownie": "Analizuj ponownie",
       "analizaTrwa": "Analizuję… {pct}%",
@@ -1751,7 +1751,7 @@
       "poprawWkrotce": "Automatyczne poprawki pojawią się wkrótce.",
       "przejdzDoMasteringu": "Przejdź do Masteringu",
       "masteringZablokowany": "Najpierw popraw czerwone punkty.",
-      "masteringWkrotce": "Mastering pod Spotify, YouTube, słuchawki i klub pojawi się wkrótce. Twój mix jest gotowy.",
+      "masteringWkrotce": "Mastering pojawi się wkrótce. Twój mix jest gotowy.",
       "masteringTytul": "Mastering — wkrótce",
       "tabelaTytul": "Głośność ścieżek",
       "tabelaSciezka": "Ścieżka",
@@ -1764,7 +1764,7 @@
       "cards": {
         "loudness": {
           "title": "Głośność",
-          "ok": "Całość ma {lufs} LUFS, najgłośniejszy fragment {st} LUFS. Mastering ustawi docelową głośność.",
+          "ok": "Całość {lufs} LUFS, szczyt 3 s {st} LUFS. Mastering ustawi resztę.",
           "silent": "Nie słychać żadnego dźwięku. Sprawdź, czy ścieżki nie są wyciszone.",
           "quiet": "Całość jest bardzo cicha ({lufs} LUFS). Podnieś głośność ścieżek.",
           "hot": "Całość jest już bardzo głośna ({lufs} LUFS). Zostaw miejsce na mastering."
@@ -1886,7 +1886,9 @@
           "panRight": "Przesunąłem „{track}” w prawo ({pct}%), żeby zrobić miejsce głównemu wokalowi.",
           "spaceLead": "Dodałem krótkie echo ({note} nuty, {ms} ms przy {bpm} BPM) i lekki pogłos na „{track}”. Wokal nie brzmi sucho, a słowa zostają z przodu.",
           "spaceSide": "Dodałem pogłos ({decay} s) i echo w tempie bitu ({note} nuty, {ms} ms) na „{track}”. Adliby robią przestrzeń za Tobą."
-        }
+        },
+        "dymek": "Poprawiłem {count, plural, one {# rzecz} few {# rzeczy} other {# rzeczy}} w Twoim mixie.",
+        "sprawdzam": "Sprawdzam jeszcze raz…"
       }
     },
     "bitek": {
@@ -1950,7 +1952,28 @@
           "gemini": "odpowiedź: Gemini",
           "e3": "odpowiedź: serwer BitRymDym",
           "rules": "odpowiedź: tryb podstawowy"
-        }
+        },
+        "notatka": "Notatka BITKA",
+        "zapisProjekt": "Rozmowa zapisuje się w projekcie.",
+        "zapisLokalny": "Rozmowa zapisuje się tylko na tym urządzeniu."
+      },
+      "dock": {
+        "czatTytul": "Pogadaj z BITKIEM",
+        "zamknijCzat": "Zamknij czat",
+        "otworzCzat": "Otwórz czat z BITKIEM",
+        "aria": "BITEK — Twój producent",
+        "minimalizuj": "Zwiń dymek",
+        "zamknij": "Zamknij dymek",
+        "ukryjSzczegoly": "Ukryj szczegóły",
+        "szczegoly": "Pokaż szczegóły ({count})",
+        "pogadaj": "Pogadaj",
+        "maCos": "BITEK ma coś dla Ciebie",
+        "powitanie": "Cześć, jestem BITEK — Twój producent. Zrobimy razem ten numer od nagrania do mixu.",
+        "powitanieKrok1": "Najpierw nagrasz wokal na bit — pilnuję poziomów i podpowiadam.",
+        "powitanieKrok2": "Potem sprawdzę mix i powiem, co poprawić. Mogę też poprawić to sam.",
+        "powitanieKrok3": "W każdej chwili kliknij mnie i zapytaj o cokolwiek.",
+        "zaczynamy": "Zaczynamy",
+        "gotowy": "Jestem tu. Kliknij mnie, jak będziesz czegoś potrzebować."
       }
     }
   },

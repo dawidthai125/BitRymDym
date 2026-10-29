@@ -3,11 +3,10 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { BitekApplyProposal } from "@/components/studio/studio-bitek-chat";
-import { StudioBitekPanel } from "@/components/studio/studio-bitek-panel";
-import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
+import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { Button } from "@/components/ui/button";
-import type { BitekAction, BitekAnalysisState } from "@/lib/studio/bitek/bitek-guide";
+import { bitekRulesGuide, type BitekAction, type BitekAnalysisState } from "@/lib/studio/bitek/bitek-guide";
 import {
   runStudioMixAnalysis,
   type MixAnalysisFailure,
@@ -76,17 +75,23 @@ export function StudioMixStep({
   resolveClipSourceUrl,
   onBack,
   bitekBase,
-  onApplyProposal,
   onApplyAutofix,
   onAbOverride,
+  onBitekBubble,
+  onBitekNote,
+  chatContextRef,
 }: {
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   onBack: () => void;
   bitekBase: { hasBeat: boolean; vocalTrackCount: number; vocalClipCount: number };
-  onApplyProposal: BitekApplyProposal;
   onApplyAutofix?: MixAutofixApply;
   onAbOverride?: (before: StudioProjectDocument | null) => void;
+  /** Stage 2b — what BITEK says in the floating bubble for the Mix step. */
+  onBitekBubble?: (bubble: BitekBubble | null) => void;
+  /** Persist a BITEK note (what I did) in the project. */
+  onBitekNote?: (content: string, meta: Record<string, unknown>) => void;
+  chatContextRef?: { current: (() => BitekClientContext) | null };
 }) {
   const locale = useLocale();
   const t = useTranslations("studio.mixStep");
@@ -105,7 +110,7 @@ export function StudioMixStep({
   // Stage 2 — auto-fix state
   const [fixing, setFixing] = useState<string | null>(null);
   const [panel, setPanel] = useState<FixPanel | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [fixSeq, setFixSeq] = useState(0);
   const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null } | null>(null);
   const [abMode, setAbMode] = useState<"before" | "after">("after");
   const reanalyzeRef = useRef<{ fromSig: string } | null>(null);
@@ -115,11 +120,6 @@ export function StudioMixStep({
     abOverrideRef.current = onAbOverride;
   });
   useEffect(() => () => abOverrideRef.current?.(null), []);
-  useEffect(() => {
-    if (!toast) return;
-    const id = window.setTimeout(() => setToast(null), 6000);
-    return () => window.clearTimeout(id);
-  }, [toast]);
 
   const analyze = useCallback(async () => {
     abortRef.current?.abort();
@@ -200,16 +200,22 @@ export function StudioMixStep({
     setAb({ before: res.before, afterSig: null });
     setAbMode("after");
     setPanel({ kind: "done", notes: plan.notes, after: null });
-    setToast(t("autofix.toast", { count: plan.notes.length }));
+    setFixSeq((n) => n + 1);
+    const texts = plan.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
+    onBitekNote?.(t("autofix.historia", { summary }), { notes: texts });
   };
 
-  const analysisState: BitekAnalysisState = running
-    ? { status: "running", progress }
-    : failure
-      ? { status: "failed", reason: failure }
-      : result
-        ? { status: "done", verdict: result.verdict, stale }
-        : { status: "idle" };
+  const analysisState = useMemo<BitekAnalysisState>(
+    () =>
+      running
+        ? { status: "running", progress }
+        : failure
+          ? { status: "failed", reason: failure }
+          : result
+            ? { status: "done", verdict: result.verdict, stale }
+            : { status: "idle" },
+    [running, progress, failure, result, stale],
+  );
 
   const onBitekAction = (action: BitekAction) => {
     if (action === "analyze") void analyze();
@@ -229,9 +235,76 @@ export function StudioMixStep({
       analysis: cur.result ? { verdict: cur.result.verdict, metrics: cur.result.metrics, stale: cur.stale } : null,
     });
   }, [locale]);
+  useEffect(() => {
+    if (!chatContextRef) return;
+    chatContextRef.current = getChatContext;
+    return () => {
+      chatContextRef.current = null;
+    };
+  }, [chatContextRef, getChatContext]);
 
   const verdict = result?.verdict ?? null;
   const canMaster = Boolean(verdict?.canMaster) && !stale && !running;
+
+  // Stage 2b — BITEK bubble (short) instead of long notes on the page.
+  const tBitek = useTranslations("studio.bitek");
+  // Bubble buttons dispatch through state so the bubble object stays stable.
+  const [pending, setPending] = useState<{ id: BitekAction | "fix-all"; seq: number } | null>(null);
+  const handledSeq = useRef(0);
+  useEffect(() => {
+    if (!pending || pending.seq <= handledSeq.current) return;
+    handledSeq.current = pending.seq;
+    const pendingAction = pending.id;
+    // A click from the BITEK bubble (dispatched via state) — not a render-driven update.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (pendingAction === "fix-all") void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"));
+    else onBitekAction(pendingAction);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per dispatched action
+  }, [pending]);
+  const bubble = useMemo<BitekBubble>(() => {
+    if (fixing) return { key: `fixing-${fixing}`, mood: "thinking", text: t("poprawTrwa") };
+    if (panel?.kind === "done") {
+      const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
+      return {
+        key: `fix-${fixSeq}-${panel.after ? "checked" : "checking"}`,
+        mood: panel.after && verdict?.overall === "red" ? "alert" : "done",
+        text: [t("autofix.dymek", { count: notes.length }), panel.after ?? t("autofix.sprawdzam")].join(" "),
+        details: [...notes, t("autofix.zapisane")],
+      };
+    }
+    if (panel?.kind === "error") {
+      return { key: `fix-error-${fixSeq}`, mood: "alert", text: panel.conflict ? t("autofix.konflikt") : t("autofix.blad") };
+    }
+    if (panel?.kind === "nothing" && !running) return { key: `fix-nothing-${fixSeq}`, mood: "happy", text: t("autofix.nic") };
+    const msgs = bitekRulesGuide({ step: "mix", recording: false, ...bitekBase, analysis: analysisState });
+    const first = msgs[0];
+    const mood: BitekMood = running
+      ? "thinking"
+      : failure || (verdict && !stale && verdict.overall !== "green")
+        ? "alert"
+        : verdict?.canMaster && !stale
+          ? "done"
+          : "happy";
+    const actions: BitekBubble["actions"] = [];
+    if (first?.action) {
+      const a = first.action;
+      actions.push({ id: a, label: tBitek(`akcja.${a}`), primary: true, onClick: () => setPending((p) => ({ id: a, seq: (p?.seq ?? 0) + 1 })) });
+    }
+    if (verdict && !stale && !running && verdict.overall !== "green" && onApplyAutofix) {
+      actions.push({ id: "fix-all", label: t("poprawWszystko"), primary: !first?.action, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) });
+    }
+    return {
+      key: `mix-${analysisState.status}-${verdict ? `${verdict.overall}${verdict.redCount}${verdict.yellowCount}` : ""}-${stale ? "s" : ""}`,
+      mood,
+      text: first ? tBitek(`msg.${first.key}`, first.params ?? {}) : t("tytul"),
+      details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
+      actions,
+    };
+  }, [fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, onApplyAutofix, result]);
+  useEffect(() => {
+    onBitekBubble?.(bubble);
+  }, [bubble, onBitekBubble]);
+  useEffect(() => () => onBitekBubble?.(null), [onBitekBubble]);
 
   return (
     <div data-testid="studio-mix-step" className="flex flex-col gap-3">
@@ -241,9 +314,8 @@ export function StudioMixStep({
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
       </div>
-      <p className="max-w-[70ch] text-sm text-[var(--brd-mute)]">{t("opis")}</p>
 
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-start">
+      <div className="flex flex-col gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -351,51 +423,6 @@ export function StudioMixStep({
             </div>
           ) : null}
 
-          {panel ? (
-            <section
-              aria-live="polite"
-              aria-labelledby="studio-mix-fix-title"
-              data-testid="studio-mix-fix-panel"
-              data-kind={panel.kind}
-              className="flex flex-col gap-1.5 rounded-[2px] border border-[var(--brd-line)] border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] p-3"
-            >
-              <h3 id="studio-mix-fix-title" className="brd-display text-base leading-tight">
-                {panel.kind === "done" ? t("autofix.tytul") : t("autofix.podpis")}
-              </h3>
-              {panel.kind === "done" ? (
-                <>
-                  <ul className="flex list-disc flex-col gap-1 pl-5 text-sm">
-                    {panel.notes.map((n, i) => (
-                      <li key={`${n.key}-${i}`}>{t(`autofix.notes.${n.key}`, localizeParams(n.params, locale))}</li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-[var(--brd-mute)]">{t("autofix.zapisane")}</p>
-                  {panel.after ? (
-                    <p className="text-sm" data-testid="studio-mix-fix-after">{panel.after}</p>
-                  ) : null}
-                </>
-              ) : (
-                <p className="text-sm" role={panel.kind === "error" ? "alert" : undefined}>
-                  {panel.kind === "nothing"
-                    ? t("autofix.nic")
-                    : panel.conflict
-                      ? t("autofix.konflikt")
-                      : t("autofix.blad")}
-                </p>
-              )}
-              <p className="text-right font-mono text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">— {t("autofix.podpis")}</p>
-            </section>
-          ) : null}
-
-          {toast ? (
-            <div
-              role="status"
-              data-testid="studio-mix-toast"
-              className="fixed bottom-20 md:bottom-4 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-ink,#111)] px-4 py-2 text-sm text-[var(--brd-paper,#fff)] shadow-lg"
-            >
-              {toast}
-            </div>
-          ) : null}
 
           {verdict ? (
             <ul data-testid="studio-mix-cards" className="grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
@@ -479,13 +506,6 @@ export function StudioMixStep({
           </div>
         </div>
 
-        <div className="w-full shrink-0 xl:w-[320px]">
-          <StudioBitekPanel
-            state={{ step: "mix", recording: false, ...bitekBase, analysis: analysisState }}
-            onAction={onBitekAction}
-            chat={{ projectId: doc.project.id, getContext: getChatContext, onApplyProposal, disabled: running }}
-          />
-        </div>
       </div>
     </div>
   );

@@ -1722,7 +1722,7 @@
       "przejdzDoMixuOpis": "We'll check how your vocal sits on the beat.",
       "wrocDoNagrania": "Back to recording",
       "tytul": "Mix",
-      "opis": "The analysis runs in your browser. Nothing is uploaded. We measure tracks the way you hear them: with effects, volume and pan.",
+      "opis": "Analysis runs in your browser — nothing is uploaded.",
       "analizuj": "Analyze mix",
       "analizujPonownie": "Analyze again",
       "analizaTrwa": "Analyzing… {pct}%",
@@ -1751,7 +1751,7 @@
       "poprawWkrotce": "Automatic fixes are coming soon.",
       "przejdzDoMasteringu": "Go to Mastering",
       "masteringZablokowany": "Fix the red items first.",
-      "masteringWkrotce": "Mastering for Spotify, YouTube, headphones and club is coming soon. Your mix is ready.",
+      "masteringWkrotce": "Mastering is coming soon. Your mix is ready.",
       "masteringTytul": "Mastering — coming soon",
       "tabelaTytul": "Track loudness",
       "tabelaSciezka": "Track",
@@ -1764,7 +1764,7 @@
       "cards": {
         "loudness": {
           "title": "Loudness",
-          "ok": "The mix is {lufs} LUFS, loudest part {st} LUFS. Mastering will set the final loudness.",
+          "ok": "Overall {lufs} LUFS, 3 s max {st} LUFS. Mastering sets the rest.",
           "silent": "No sound at all. Check that the tracks aren't muted.",
           "quiet": "The mix is very quiet ({lufs} LUFS). Turn the tracks up.",
           "hot": "The mix is already very loud ({lufs} LUFS). Leave room for mastering."
@@ -1886,7 +1886,9 @@
           "panRight": "I moved “{track}” right ({pct}%) to make room for the lead vocal.",
           "spaceLead": "I added a short echo ({note} note, {ms} ms at {bpm} BPM) and a light reverb on “{track}”. The vocal isn't dry and the words stay up front.",
           "spaceSide": "I added reverb ({decay} s) and an echo in time with the beat ({note} note, {ms} ms) on “{track}”. Your adlibs make space behind you."
-        }
+        },
+        "dymek": "I fixed {count, plural, one {# thing} other {# things}} in your mix.",
+        "sprawdzam": "Checking again…"
       }
     },
     "bitek": {
@@ -1950,7 +1952,28 @@
           "gemini": "answered by: Gemini",
           "e3": "answered by: BitRymDym server",
           "rules": "answered by: basic mode"
-        }
+        },
+        "notatka": "BITEK's note",
+        "zapisProjekt": "This chat is saved in the project.",
+        "zapisLokalny": "This chat is saved on this device only."
+      },
+      "dock": {
+        "czatTytul": "Talk to BITEK",
+        "zamknijCzat": "Close chat",
+        "otworzCzat": "Open chat with BITEK",
+        "aria": "BITEK — your producer",
+        "minimalizuj": "Minimize bubble",
+        "zamknij": "Close bubble",
+        "ukryjSzczegoly": "Hide details",
+        "szczegoly": "Show details ({count})",
+        "pogadaj": "Talk",
+        "maCos": "BITEK has something for you",
+        "powitanie": "Hi, I'm BITEK — your producer. We'll take this track from recording to mix together.",
+        "powitanieKrok1": "First you record vocals over the beat — I watch levels and give tips.",
+        "powitanieKrok2": "Then I check the mix and tell you what to fix. I can fix it myself too.",
+        "powitanieKrok3": "Click me anytime and ask me anything.",
+        "zaczynamy": "Let's go",
+        "gotowy": "I'm here. Click me when you need something."
       }
     }
   },

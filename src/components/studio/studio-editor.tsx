@@ -149,7 +149,12 @@ import {
   type StudioApiCall,
   type StudioStructuralUndoOp,
 } from "@/lib/studio/studio-undo-structural";
-import { StudioBitekPanel } from "@/components/studio/studio-bitek-panel";
+import { StudioBitekChat } from "@/components/studio/studio-bitek-chat";
+import { StudioBitekDock, type BitekBubble, type BitekMood } from "@/components/studio/studio-bitek-dock";
+import { useBitekProject } from "@/components/studio/use-bitek-project";
+import { bitekRulesGuide, type BitekAction } from "@/lib/studio/bitek/bitek-guide";
+import { parseBitekBubbleState, type BitekBubbleState } from "@/lib/studio/bitek/store/messages";
+import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { StudioMixStep } from "@/components/studio/studio-mix-step";
 import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { labelStudioTrackType } from "@/lib/ui/labels";
@@ -438,6 +443,61 @@ function StudioEditorInner({
     selectedClipId: activeSelectedId,
     selectedTrackId: activeSelectedTrackId,
   });
+
+  // Stage 2b — BITEK the raccoon: per-project memory, bubble + chat overlay.
+  const tBitek = useTranslations("studio.bitek");
+  const bitekStore = useBitekProject(doc.project.id);
+  const [bitekChatOpen, setBitekChatOpen] = useState(false);
+  const [bitekChatBusy, setBitekChatBusy] = useState(false);
+  const [mixBubble, setMixBubble] = useState<BitekBubble | null>(null);
+  const mixChatContextRef = useRef<(() => BitekClientContext) | null>(null);
+  const [bitekBubbleUi, setBitekBubbleUi] = useState<BitekBubbleState | null>(null);
+  const bitekBubbleState = bitekBubbleUi ?? parseBitekBubbleState(bitekStore.messages);
+  const saveBitekBubbleState = (next: BitekBubbleState) => {
+    setBitekBubbleUi(next);
+    bitekStore.append([{ kind: "state", content: JSON.stringify(next) }]);
+  };
+  const welcomeSavedRef = useRef(false);
+  useEffect(() => {
+    if (!bitekStore.loaded || !bitekStore.fresh || welcomeSavedRef.current) return;
+    welcomeSavedRef.current = true;
+    bitekStore.append([{ kind: "welcome", content: tBitek("dock.powitanie") }]);
+  }, [bitekStore, tBitek]);
+  const onRecordBitekAction = (action: BitekAction) => {
+    if (action === "goMix" && canGoMix) setStudioStep("mix");
+    if (action === "chooseBeat") setBeatPickerOpen(true);
+    if (action === "record") {
+      setInspectorPreferRecord(true);
+      openInspectorOverlay();
+    }
+  };
+  const recordBubble: BitekBubble = (() => {
+    const msgs = bitekRulesGuide({ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } });
+    const first = msgs[0];
+    const mood: BitekMood = recordingLocked ? "thinking" : first?.key === "readyForMix" ? "done" : "happy";
+    return {
+      key: `rec-${first?.id ?? "idle"}`,
+      mood,
+      text: first ? tBitek(`msg.${first.key}`, first.params ?? {}) : tBitek("dock.gotowy"),
+      details: msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})),
+      actions: first?.action
+        ? [{ id: first.action, label: tBitek(`akcja.${first.action}`), primary: true, onClick: () => onRecordBitekAction(first.action as BitekAction) }]
+        : [],
+    };
+  })();
+  const welcomeBubble: BitekBubble | null = bitekStore.fresh
+    ? {
+        key: "welcome",
+        mood: "happy",
+        hero: true,
+        text: tBitek("dock.powitanie"),
+        details: [tBitek("dock.powitanieKrok1"), tBitek("dock.powitanieKrok2"), tBitek("dock.powitanieKrok3")],
+        actions: [{ id: "welcome-ok", label: tBitek("dock.zaczynamy"), primary: true, onClick: () => saveBitekBubbleState({ minimized: false, dismissedKey: "welcome" }) }],
+      }
+    : null;
+  const stepBubble = studioStep === "mix" ? mixBubble : recordBubble;
+  const bitekBubble =
+    welcomeBubble && bitekBubbleState.dismissedKey !== "welcome" && !bitekBubbleUi?.dismissedKey ? welcomeBubble : stepBubble;
 
   function openInspectorOverlay() {
     setMixerOpen(false);
@@ -2880,32 +2940,41 @@ function StudioEditorInner({
         onSaved={() => setRecoverySavedKey((key) => key + 1)}
       />
 
+      <StudioBitekDock
+        bubble={bitekBubble}
+        mood={bitekChatBusy ? "thinking" : (bitekBubble?.mood ?? "happy")}
+        minimized={bitekBubbleState.minimized}
+        dismissedKey={bitekBubbleState.dismissedKey}
+        onMinimizedChange={(minimized) => saveBitekBubbleState({ ...bitekBubbleState, minimized })}
+        onDismiss={(key) => saveBitekBubbleState({ minimized: false, dismissedKey: key })}
+        chatOpen={bitekChatOpen}
+        onChatOpenChange={setBitekChatOpen}
+        chat={
+          <StudioBitekChat
+            projectId={doc.project.id}
+            getContext={() => (studioStep === "mix" && mixChatContextRef.current ? mixChatContextRef.current() : getRecordChatContext())}
+            onApplyProposal={applyBitekProposal}
+            disabled={recordingLocked || pending}
+            store={bitekStore}
+            onBusyChange={setBitekChatBusy}
+          />
+        }
+      />
+
       {studioStep === "mix" ? (
         <StudioMixStep
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
           onBack={() => setStudioStep("record")}
           bitekBase={bitekBase}
-          onApplyProposal={applyBitekProposal}
           onApplyAutofix={applyMixAutofix}
           onAbOverride={onMixAbOverride}
+          onBitekBubble={setMixBubble}
+          onBitekNote={(content: string, meta: Record<string, unknown>) => bitekStore.append([{ kind: "fix", content, meta }])}
+          chatContextRef={mixChatContextRef}
         />
       ) : (
         <>
-      <StudioBitekPanel
-        compact
-        state={{ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } }}
-        chat={{ projectId: doc.project.id, getContext: getRecordChatContext, onApplyProposal: applyBitekProposal, disabled: recordingLocked || pending }}
-        onAction={(action) => {
-          if (action === "goMix" && canGoMix) setStudioStep("mix");
-          if (action === "chooseBeat") setBeatPickerOpen(true);
-          if (action === "record") {
-            setInspectorPreferRecord(true);
-            openInspectorOverlay();
-          }
-        }}
-      />
-
       <StudioEditToolbar
         timelineMode={timelineMode}
         recordingLocked={recordingLocked}
