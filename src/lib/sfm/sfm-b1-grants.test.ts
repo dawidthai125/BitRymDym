@@ -29,9 +29,9 @@ import {
 import type { PremiumTier } from "@/types/premium";
 
 const MIGRATION_B1 =
-  "supabase/migrations/20261014140000_sfm_b1_version_grants.sql";
+  "supabase/migrations/20261015072956_sfm_b1_version_grants.sql";
 const MIGRATION_A =
-  "supabase/migrations/20261014120000_sfm_foundation_versions_stages.sql";
+  "supabase/migrations/20261015072911_sfm_foundation_versions_stages.sql";
 const GRANT_SERVICE = "src/lib/sfm/sfm-grant-service.ts";
 const WARSAW = "src/lib/sfm/sfm-warsaw-day.ts";
 const RESOLVER = "src/lib/sfm/sfm-quality-entitlement.ts";

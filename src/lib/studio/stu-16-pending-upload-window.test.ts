@@ -26,7 +26,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 const migration = readFileSync(
-  join(process.cwd(), "supabase/migrations/20261018120000_stu16_pending_upload_window.sql"),
+  join(process.cwd(), "supabase/migrations/20261018154129_stu16_pending_upload_window.sql"),
   "utf8",
 );
 

@@ -21,7 +21,7 @@ function read(rel: string): string {
 }
 
 const MIGRATION =
-  "supabase/migrations/20261020220000_studio_mix_working_apply.sql";
+  "supabase/migrations/20261028070108_studio_mix_working_apply.sql";
 const SERVICE = "src/lib/studio/mix-working-apply-service.ts";
 const ROUTE =
   "src/app/api/studio/projects/[projectId]/mix-working/apply/route.ts";
@@ -80,7 +80,7 @@ describe("A1 Mix Working — migration SQL contracts", () => {
 
 describe("A2 Mix Working — revision migration contracts", () => {
   const sql = read(
-    "supabase/migrations/20261020230000_studio_mix_working_revisions.sql",
+    "supabase/migrations/20261028070133_studio_mix_working_revisions.sql",
   );
 
   it("defines append-only revisions table with service_role grants", () => {

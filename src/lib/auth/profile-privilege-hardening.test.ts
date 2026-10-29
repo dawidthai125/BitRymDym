@@ -4,7 +4,7 @@ import { resolve } from "path";
 import { describe, expect, it } from "vitest";
 
 const MIGRATIONS_DIR = resolve(process.cwd(), "supabase/migrations");
-const F1C_MIGRATION = "20261017120000_f1c_profiles_privilege_hardening.sql";
+const F1C_MIGRATION = "20261017081616_f1c_profiles_privilege_hardening.sql";
 
 function readMigration(name: string) {
   return readFileSync(resolve(MIGRATIONS_DIR, name), "utf8").replace(/\r\n/g, "\n");

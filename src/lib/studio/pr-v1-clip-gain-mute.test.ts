@@ -30,7 +30,7 @@ import {
 
 const MIGRATION = join(
   process.cwd(),
-  "supabase/migrations/20261007150000_pr_v1_studio_cas_clip_gain_mute.sql",
+  "supabase/migrations/20261007080752_pr_v1_studio_cas_clip_gain_mute.sql",
 );
 
 describe("PR-01 Clip Gain — validation", () => {

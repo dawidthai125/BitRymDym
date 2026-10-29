@@ -432,7 +432,7 @@ describe("P7.1.6 persist orchestrator state machine", () => {
 describe("P7.1.6 CAS completeness source contracts", () => {
   const service = read("src/lib/studio/studio-service.ts");
   const migration = read(
-    "supabase/migrations/20261008160000_p7_1_6_studio_cas_completeness.sql",
+    "supabase/migrations/20261008192141_p7_1_6_studio_cas_completeness.sql",
   );
   const trackRoute = read(
     "src/app/api/studio/projects/[projectId]/tracks/[trackId]/route.ts",

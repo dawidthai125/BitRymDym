@@ -1,6 +1,6 @@
 /**
  * STU-16 — server upload window for PENDING_UPLOAD reservations (migration
- * 20261018120000_stu16_pending_upload_window.sql), LOCAL Supabase only.
+ * 20261018154129_stu16_pending_upload_window.sql), LOCAL Supabase only.
  * Gate: BRD_INTEGRATION_TESTS=1 + LOCAL_SUPABASE_* + bpm fixture; catalog
  * checks via `docker exec` on the local DB container. Every user, beat and
  * take is created here and removed by `createIntegrationFixtures`.

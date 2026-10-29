@@ -23,7 +23,7 @@ import {
 
 const ROOT = process.cwd();
 const MIGRATION =
-  "supabase/migrations/20261013120000_claim_next_studio_export_job.sql";
+  "supabase/migrations/20261013183721_claim_next_studio_export_job.sql";
 const SERVICE = "src/lib/audio/render-job-service.ts";
 const PIPELINE = "src/lib/audio/render-worker-pipeline.ts";
 const POLLER_WIRE = "src/lib/audio/studio-export-poller.ts";

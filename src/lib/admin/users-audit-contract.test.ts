@@ -93,13 +93,13 @@ describe("admin users W2 no client foreign DML", () => {
 
   it("existing privilege triggers still deny authenticated role/premium DML", () => {
     const identity = readFileSync(
-      join(ROOT, "supabase/migrations/20260925120000_phase_1_3_identity.sql"),
+      join(ROOT, "supabase/migrations/20260925205522_phase_1_3_identity.sql"),
       "utf8",
     );
     const premium = readFileSync(
       join(
         ROOT,
-        "supabase/migrations/20260928200000_e3_1_audio_foundation.sql",
+        "supabase/migrations/20260928183352_e3_1_audio_foundation.sql",
       ),
       "utf8",
     );

@@ -214,7 +214,7 @@ describe("P4.6 TAKE_EXPORT foundation", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261005230000_p4_recording_identity_download_foundation.sql",
+        "supabase/migrations/20261005211448_p4_recording_identity_download_foundation.sql",
       ),
       "utf8",
     );
@@ -248,7 +248,7 @@ describe("P4 regression contracts", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261005230000_p4_recording_identity_download_foundation.sql",
+        "supabase/migrations/20261005211448_p4_recording_identity_download_foundation.sql",
       ),
       "utf8",
     );
@@ -261,7 +261,7 @@ describe("P4 regression contracts", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261005230000_p4_recording_identity_download_foundation.sql",
+        "supabase/migrations/20261005211448_p4_recording_identity_download_foundation.sql",
       ),
       "utf8",
     );

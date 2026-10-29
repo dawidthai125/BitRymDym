@@ -29,7 +29,7 @@ describe("admin users W4 SQL contract", () => {
   it("assert RPC uses the same last-admin lock as W2", () => {
     const sql = w4Sql();
     const w2 = readFileSync(
-      join(ROOT, "supabase/migrations/20261004180000_admin_user_management_w2_mutations.sql"),
+      join(ROOT, "supabase/migrations/20261004144223_admin_user_management_w2_mutations.sql"),
       "utf8",
     );
     expect(w2).toMatch(/pg_advisory_xact_lock\(4242026, 2002\)/);

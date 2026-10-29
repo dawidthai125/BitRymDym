@@ -16,7 +16,7 @@ describe("A3.5 Mix Working complete history — gateway contracts", () => {
   const applyService = read("src/lib/studio/mix-working-apply-service.ts");
   const studioService = read("src/lib/studio/studio-service.ts");
   const migration = read(
-    "supabase/migrations/20261020240000_studio_mix_working_parent_in_tx.sql",
+    "supabase/migrations/20261028070155_studio_mix_working_parent_in_tx.sql",
   );
   const control = read(
     "src/components/studio/studio-mix-revision-history-control.tsx",

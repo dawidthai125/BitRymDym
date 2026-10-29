@@ -24,7 +24,7 @@ import type { StudioProjectDocument } from "@/lib/studio/studio-types";
 import { emptyStudioFxChain } from "@/lib/studio/studio-fx-chain";
 
 const MIGRATION =
-  "supabase/migrations/20261014120000_sfm_foundation_versions_stages.sql";
+  "supabase/migrations/20261015072911_sfm_foundation_versions_stages.sql";
 const STUDIO_EXPORT_SERVICE = "src/lib/audio/studio-export-service.ts";
 const RENDER_PIPELINE = "src/lib/audio/render-worker-pipeline.ts";
 const RENDER_JOB_SERVICE = "src/lib/audio/render-job-service.ts";

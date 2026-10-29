@@ -280,7 +280,7 @@ describe("P6.7.2 AuthZ / API contract (source + error mapping)", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261007120000_p6_7_2_studio_cas_apply_clip_fades.sql",
+        "supabase/migrations/20261007061035_p6_7_2_studio_cas_apply_clip_fades.sql",
       ),
       "utf8",
     );

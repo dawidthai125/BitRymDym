@@ -11,7 +11,7 @@ import {
 
 const root = process.cwd();
 const migration = readFileSync(
-  join(root, "supabase/migrations/20261028140000_studio_markers_cas.sql"),
+  join(root, "supabase/migrations/20261028084022_studio_markers_cas.sql"),
   "utf8",
 );
 const persist = readFileSync(

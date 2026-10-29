@@ -449,7 +449,7 @@ describe("P6.1 isolation / engine untouched", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261006121600_p6_1_studio_fx_cas.sql",
+        "supabase/migrations/20261006104349_p6_1_studio_fx_cas.sql",
       ),
       "utf8",
     );
@@ -466,7 +466,7 @@ describe("P6.1 isolation / engine untouched", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261006190900_p6_1_fx_cas_document_version_qualify.sql",
+        "supabase/migrations/20261006171007_p6_1_fx_cas_document_version_qualify.sql",
       ),
       "utf8",
     );
@@ -489,7 +489,7 @@ describe("P6.1 isolation / engine untouched", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261006051500_p5_1_studio_project_track_clip_foundation.sql",
+        "supabase/migrations/20261006031651_p5_1_studio_project_track_clip_foundation.sql",
       ),
       "utf8",
     );

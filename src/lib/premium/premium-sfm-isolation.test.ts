@@ -55,7 +55,7 @@ describe("PREMIUM-07 SFM isolation (D-4)", () => {
     const sql = readFileSync(
       join(
         process.cwd(),
-        "supabase/migrations/20261021060000_premium_01_08_export_unlock_retention.sql",
+        "supabase/migrations/20261021115453_premium_01_08_export_unlock_retention.sql",
       ),
       "utf8",
     );
