@@ -1,4 +1,4 @@
-import { BITEK_LIMITS, type BitekChatContext, type BitekChatTurn } from "./types";
+import { BITEK_LIMITS, BITEK_MASTER_SETTINGS, type BitekChatContext, type BitekChatTurn, type BitekMasterSetting } from "./types";
 
 export type BitekChatRequest = { message: string; history: BitekChatTurn[]; context: BitekChatContext };
 
@@ -54,12 +54,31 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
           masterTruePeakDbtp: typeof a.masterTruePeakDbtp === "number" && Number.isFinite(a.masterTruePeakDbtp) ? a.masterTruePeakDbtp : null,
         }
       : null;
+  const step = c.step === "mix" ? "mix" : c.step === "master" ? "master" : "record";
+  const mm = c.master as Record<string, unknown> | null | undefined;
+  const master =
+    step === "master" && mm && typeof mm === "object"
+      ? {
+          target: ["streaming", "youtube", "headphones", "club"].includes(String(mm.target)) ? String(mm.target) : "streaming",
+          settings: Object.fromEntries(
+            BITEK_MASTER_SETTINGS.map((k) => [k, Math.round(num((mm.settings as Record<string, unknown> | undefined)?.[k], -3, 3) * 2) / 2]),
+          ) as Record<BitekMasterSetting, number>,
+          cards: (Array.isArray(mm.cards) ? mm.cards : []).slice(0, 12).map((x) => {
+            const r = (x ?? {}) as Record<string, unknown>;
+            return {
+              id: str(r.id, 24).replace(/[^a-z_]/gi, ""),
+              status: typeof r.status === "string" && STATUSES.has(r.status) ? r.status : "na",
+              value: str(r.value, 24) || null,
+            };
+          }),
+        }
+      : null;
   return {
     ok: true,
     value: {
       message: b.message.trim(),
       history,
-      context: { lang: c.lang === "en" ? "en" : "pl", step: c.step === "mix" ? "mix" : "record", tracks, analysis },
+      context: { lang: c.lang === "en" ? "en" : "pl", step, tracks, analysis, ...(master ? { master } : {}) },
     },
   };
 }

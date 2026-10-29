@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         ownerChecked: true,
         rows: [
           { role: "user", kind: "chat", content: parsed.value.message },
-          { role: "assistant", kind: "chat", content: result.reply.slice(0, 2000) || "…", meta: { provider: result.provider, proposals: result.proposals } },
+          { role: "assistant", kind: "chat", content: result.reply.slice(0, 2000) || "…", meta: { provider: result.provider, proposals: result.proposals, ...(result.backToMix ? { backToMix: true } : {}) } },
         ],
       });
       persisted = saved.available;

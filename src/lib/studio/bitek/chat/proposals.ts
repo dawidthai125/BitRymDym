@@ -1,4 +1,4 @@
-import { BITEK_LIMITS, type BitekChatContext, type BitekProposal } from "./types";
+import { BITEK_LIMITS, BITEK_MASTER_REF, BITEK_MASTER_SETTINGS, type BitekChatContext, type BitekMasterSetting, type BitekProposal } from "./types";
 import { sanitizeLabel } from "./prompt";
 import type { BitekLang, BitekTrackContext } from "./types";
 
@@ -49,8 +49,40 @@ function extractJsonObject(text: string): unknown {
   }
 }
 
+const MASTER_LABEL: Record<"pl" | "en", Record<BitekMasterSetting, string>> = {
+  pl: { loudness: "głośność", bright: "jasność", bass: "bas", width: "szerokość", squash: "ściśnięcie" },
+  en: { loudness: "loudness", bright: "brightness", bass: "bass", width: "width", squash: "compression" },
+};
+const fmtStep = (n: number) => `${n > 0 ? "+" : n < 0 ? "\u2212" : ""}${Math.abs(n)}`;
+
+/** Mastering proposals: only whole-track settings, only in the master step, -3..3 in 0.5 steps. */
+function validateMasterProposals(raw: unknown[], ctx: BitekChatContext): BitekProposal[] {
+  const cur = ctx.master?.settings;
+  if (ctx.step !== "master" || !cur) return [];
+  const out: BitekProposal[] = [];
+  const seen = new Set<string>();
+  for (const p of raw) {
+    if (out.length >= BITEK_LIMITS.maxProposals) break;
+    if (!p || typeof p !== "object") continue;
+    const { trackRef, param, value } = p as Record<string, unknown>;
+    if (trackRef !== BITEK_MASTER_REF || !(BITEK_MASTER_SETTINGS as readonly unknown[]).includes(param)) continue;
+    const key = param as BitekMasterSetting;
+    if (seen.has(key)) continue;
+    const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+    if (!Number.isFinite(n)) continue;
+    const v = Math.round(Math.min(3, Math.max(-3, n)) * 2) / 2;
+    if (v === cur[key]) continue;
+    seen.add(key);
+    const name = ctx.lang === "pl" ? "Całość" : "Whole song";
+    out.push({ trackRef: BITEK_MASTER_REF, param: key, value: v, label: `${name}: ${MASTER_LABEL[ctx.lang][key]} ${fmtStep(cur[key])} \u2192 ${fmtStep(v)}` });
+  }
+  return out;
+}
+
 export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekProposal[] {
   if (!Array.isArray(raw)) return [];
+  // In Mastering BITEK hears ONE stereo track: per-track proposals are never valid there.
+  if (ctx.step === "master") return validateMasterProposals(raw, ctx);
   const byRef = new Map(ctx.tracks.map((t) => [t.ref, t] as const));
   const out: BitekProposal[] = [];
   const seen = new Set<string>();
@@ -91,12 +123,13 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
 export function parseBitekModelOutput(
   text: string,
   ctx: BitekChatContext,
-): { reply: string; proposals: BitekProposal[] } | null {
-  const obj = extractJsonObject(text) as { reply?: unknown; proposals?: unknown } | null;
+): { reply: string; proposals: BitekProposal[]; backToMix?: boolean } | null {
+  const obj = extractJsonObject(text) as { reply?: unknown; proposals?: unknown; backToMix?: unknown } | null;
   if (obj && typeof obj.reply === "string" && obj.reply.trim()) {
     return {
       reply: obj.reply.trim().slice(0, BITEK_LIMITS.replyMaxChars),
       proposals: validateProposals(obj.proposals, ctx),
+      ...(ctx.step === "master" && obj.backToMix === true ? { backToMix: true } : {}),
     };
   }
   const plain = text.replace(/```[\s\S]*?```/g, "").trim();

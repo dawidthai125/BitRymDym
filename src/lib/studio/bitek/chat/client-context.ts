@@ -14,7 +14,9 @@ export type BitekClientContext = {
 export function buildBitekClientContext(params: {
   doc: StudioProjectDocument;
   lang: BitekLang;
-  step: "record" | "mix";
+  step: "record" | "mix" | "master";
+  /** Mastering: whole-song settings + master cards (BITEK hears one stereo track). */
+  master?: BitekChatContext["master"];
   analysis?: { verdict: MixVerdict; metrics: MixMetrics; stale: boolean } | null;
 }): BitekClientContext {
   const trackIdByRef: Record<string, string> = {};
@@ -39,6 +41,7 @@ export function buildBitekClientContext(params: {
             masterTruePeakDbtp: Number.isFinite(a.metrics.master.truePeakDbtp) ? a.metrics.master.truePeakDbtp : null,
           }
         : null,
+      ...(params.step === "master" && params.master ? { master: params.master } : {}),
     },
   };
 }
