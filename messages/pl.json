@@ -1246,7 +1246,12 @@
       "ponowionoZmiane": "Ponowiono zmianę",
       "nieMoznaCofnac": "Nie można cofnąć — element został usunięty",
       "rolaSciezki": "Rola ścieżki {v0}",
-      "cofnietoCzesciowo": "Cofnięto tylko częściowo — część zmian nie została zapisana. Odśwież projekt."
+      "cofnietoCzesciowo": "Cofnięto tylko częściowo — część zmian nie została zapisana. Odśwież projekt.",
+      "poziomKrotko": "Poz.",
+      "panoramaKrotko": "Pan.",
+      "panSrodekKrotko": "Ś",
+      "panLewoKrotko": "L",
+      "panPrawoKrotko": "P"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",

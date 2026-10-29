@@ -165,9 +165,18 @@ export type StudioTrackCapacityProps = {
  * Visual Parity V2 — denser DAW lanes (header vol/pan + M/S/R keep min-h-11).
  * Clip geometry SSOT unchanged; height is presentation only.
  */
-const STUDIO_DAW_LANE_HEIGHT_PX = 128;
-const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[220px] sm:w-[240px]";
+const STUDIO_DAW_LANE_HEIGHT_PX = 144;
+const STUDIO_DAW_HEADER_WIDTH_CLASS = "w-[232px] sm:w-[272px]";
 /** Phase 7.1.1 — primary track chips ≥44px hit area (visual stays compact). */
+/** Track header pan readout: C, L 35, R 100 (mono, fixed width). */
+function formatStudioPanShort(
+  pan: number,
+  labels: { center: string; left: string; right: string },
+): string {
+  const v = Math.round(pan * 100);
+  if (v === 0) return labels.center;
+  return v < 0 ? `${labels.left}${Math.abs(v)}` : `${labels.right}${v}`;
+}
 const STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0";
 /** Track gain bounds — same as Mixer strips. */
 const STUDIO_TRACK_GAIN_DB_MIN = -24;
@@ -2786,13 +2795,15 @@ function StudioEditorInner({
                   data-track-type={track.trackType}
                   data-track-role={track.trackRole}
                   data-selected={isSelected ? "true" : "false"}
-                  className="studio-track-strip flex items-stretch gap-0.5 border-b border-[var(--brd-line)] py-0.5 pl-1 pr-0.5"
+                  className="studio-track-strip flex items-stretch gap-1 border-b border-[var(--brd-line)] py-1 pl-1.5 pr-1"
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
                 >
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                   {/*
                     Mobile: 220px header cannot fit name + M/S/R + ↑↓⋮ (6×44).
-                    Row1 = name (min 4.5rem) + M/S/R; row2 = reorder/menu + mix.
+                    Row1 = name (tooltip) + M/S/R; row2 = role chip (merges the
+                    old type label) + reorder/menu; row3 = Vol / Pan, value on
+                    the label row so the two never overlap.
                   */}
                   <div className="flex min-h-11 items-center gap-0.5">
                     <button
@@ -2805,15 +2816,16 @@ function StudioEditorInner({
                           : tr("wybierzSciezke", { v0: track.name }))
                       }
                       data-testid="studio-track-header-select"
+                      title={track.name}
                       onClick={() =>
                         setSelectedTrackId(isSelected ? null : track.id)
                       }
                     >
-                      <span className="block truncate text-xs font-medium text-[var(--brd-ink)]">
+                      <span
+                        className="studio-track-name block truncate text-[13px] font-medium leading-tight text-[var(--brd-ink)]"
+                        data-testid="studio-track-name"
+                      >
                         {tl(track.name)}
-                      </span>
-                      <span className="studio-type-label mt-0.5 inline-block max-w-full truncate font-mono text-[9px] uppercase tracking-[0.12em]">
-                        {tl(isBeat ? labelStudioTrackType("BEAT") : typeLabel)}
                       </span>
                     </button>
                     <StudioToggleChip
@@ -2849,31 +2861,34 @@ function StudioEditorInner({
                       }}
                     />
                   </div>
-                  <label className="studio-track-role flex h-7 min-w-0 items-center gap-1 px-1">
-                    <span className="sr-only">
-                      {tr("rolaSciezki", { v0: track.name })}
-                    </span>
-                    <select
-                      className="studio-track-role-select h-7 min-w-0 flex-1 truncate rounded-sm font-mono text-[10px] uppercase tracking-[0.08em]"
-                      value={track.trackRole}
-                      disabled={pending || recordingLocked}
-                      data-testid="studio-track-role"
-                      data-track-id={track.id}
-                      aria-label={tr("rolaSciezki", { v0: track.name })}
-                      onChange={(event) => {
-                        const next = event.target.value;
-                        if (!isStudioTrackRole(next) || next === track.trackRole) return;
-                        patchTrack(track.id, { trackRole: next });
-                      }}
+                  <div className="flex min-h-9 min-w-0 items-center gap-0.5 sm:min-h-11">
+                    <label
+                      className="studio-track-role relative flex h-7 min-w-0 flex-1 items-center"
+                      title={`${typeLabel} · ${trRole(track.trackRole)}`}
                     >
-                      {STUDIO_TRACK_ROLES.map((role) => (
-                        <option key={role} value={role}>
-                          {trRole(role)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <div className="flex min-h-0 items-center gap-0.5">
+                      <span className="sr-only">
+                        {tr("rolaSciezki", { v0: track.name })}
+                      </span>
+                      <select
+                        className="studio-track-role-select h-7 w-full min-w-0 max-w-[9.5rem] cursor-pointer truncate rounded-sm font-mono text-[10px] uppercase tracking-[0.08em]"
+                        value={track.trackRole}
+                        disabled={pending || recordingLocked}
+                        data-testid="studio-track-role"
+                        data-track-id={track.id}
+                        aria-label={tr("rolaSciezki", { v0: track.name })}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          if (!isStudioTrackRole(next) || next === track.trackRole) return;
+                          patchTrack(track.id, { trackRole: next });
+                        }}
+                      >
+                        {STUDIO_TRACK_ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {trRole(role)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <Button
                       type="button"
                       size="xs"
@@ -2923,19 +2938,21 @@ function StudioEditorInner({
                         <StudioGlyph name="more" className="size-3.5" />
                       </Button>
                     ) : null}
+                  </div>
+                  <div className="flex min-h-0 items-center">
                     <div
-                      className="grid min-w-0 flex-1 grid-cols-2 gap-1"
+                      className="grid min-w-0 flex-1 grid-cols-2 gap-2 pr-0.5"
                       data-testid="studio-track-header-mix"
                     >
                     <StudioMixControl
-                      label={tr("vol")}
+                      label={tr("poziomKrotko")}
                       ariaLabel={tr("glosnoscSciezki", { v0: track.name })}
                       value={track.gainDb}
-                      display={`${track.gainDb.toFixed(0)}`}
+                      display={`${track.gainDb > 0 ? "+" : ""}${track.gainDb.toFixed(1)} dB`}
                       min={STUDIO_TRACK_GAIN_DB_MIN}
                       max={STUDIO_TRACK_GAIN_DB_MAX}
                       step={0.5}
-                      compact
+                      stacked
                       disabled={pending}
                       onLocalChange={(gainDb) =>
                         setDoc((prev) => ({
@@ -2950,14 +2967,14 @@ function StudioEditorInner({
                       }}
                     />
                     <StudioMixControl
-                      label={tr("pan")}
+                      label={tr("panoramaKrotko")}
                       ariaLabel={tr("panoramaSciezki", { v0: track.name })}
                       value={track.pan}
-                      display={track.pan.toFixed(1)}
+                      display={formatStudioPanShort(track.pan, { center: tr("panSrodekKrotko"), left: tr("panLewoKrotko"), right: tr("panPrawoKrotko") })}
                       min={-1}
                       max={1}
                       step={0.01}
-                      compact
+                      stacked
                       disabled={pending}
                       onLocalChange={(pan) =>
                         setDoc((prev) => ({

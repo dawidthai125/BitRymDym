@@ -1246,7 +1246,12 @@
       "ponowionoZmiane": "Change redone",
       "nieMoznaCofnac": "Can't undo — the item was deleted",
       "rolaSciezki": "Track role: {v0}",
-      "cofnietoCzesciowo": "Undo was only partly applied — some changes were not saved. Refresh the project."
+      "cofnietoCzesciowo": "Undo was only partly applied — some changes were not saved. Refresh the project.",
+      "poziomKrotko": "Vol",
+      "panoramaKrotko": "Pan",
+      "panSrodekKrotko": "C",
+      "panLewoKrotko": "L",
+      "panPrawoKrotko": "R"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",

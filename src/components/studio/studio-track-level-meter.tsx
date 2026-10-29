@@ -64,7 +64,7 @@ export function StudioTrackLevelMeter({ trackId }: { trackId: string }) {
   return (
     <div
       ref={rootRef}
-      className="studio-track-level pointer-events-none flex h-full w-1.5 shrink-0 flex-col gap-px"
+      className="studio-track-level pointer-events-none flex h-full w-2.5 shrink-0 flex-col gap-px py-0.5"
       role="img"
       aria-label={t("poziomSciezkiNaZywo")}
       data-testid="studio-track-level-meter"
@@ -73,7 +73,7 @@ export function StudioTrackLevelMeter({ trackId }: { trackId: string }) {
     >
       <div
         ref={clipRef}
-        className="studio-track-level-clip h-1 w-full shrink-0 rounded-[1px]"
+        className="studio-track-level-clip h-1.5 w-full shrink-0 rounded-[1px]"
         data-clipping="false"
         data-testid="studio-track-level-clip"
       />
