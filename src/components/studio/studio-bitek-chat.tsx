@@ -13,7 +13,12 @@ import {
   type BitekDecision,
   type BitekStoredChange,
 } from "@/lib/studio/bitek/chat/decisions";
-import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekMasterSetting, type BitekProposal } from "@/lib/studio/bitek/chat/types";
+import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekMasterSetting, type BitekProposal, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
+import { bitekTuneChain } from "@/lib/studio/bitek/chat/tune-apply";
+import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import type { PremiumTier } from "@/types/premium";
+import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
+import { useFxPresets } from "@/components/studio/studio-vocal-presets";
 import type { BitekStoredMessage } from "@/lib/studio/bitek/store/messages";
 import type { BitekProjectStore } from "@/components/studio/use-bitek-project";
 
@@ -55,7 +60,10 @@ export function StudioBitekChat({
   onBusyChange,
   onApplyMasterProposal,
   onBackToMix,
+  onApplyFxOps,
 }: {
+  /** BRD Tune proposals: one set_track_fx op through the Mix Working apply (undoable). */
+  onApplyFxOps?: (ops: MixWorkingOp[], description: string) => Promise<boolean>;
   /** Stage 3 — whole-song setting proposals (trackRef "master"). */
   onApplyMasterProposal?: (key: BitekMasterSetting, value: number) => void;
   /** Stage 3 — shown under a Mastering reply that needs Mix work. */
@@ -69,6 +77,8 @@ export function StudioBitekChat({
 }) {
   const t = useTranslations("studio.bitek.chat");
   const inputId = useId();
+  const beatKey = useProjectBeatKey(onApplyFxOps ? projectId : null);
+  const fxAccess = useFxPresets().access;
   const entries = entriesFromStore(store.messages);
   const decisions = bitekDecisionsByEntry(store.messages);
   const [text, setText] = useState("");
@@ -160,6 +170,19 @@ export function StudioBitekChat({
     const ref = Object.keys(trackIdByRef).find((r) => trackIdByRef[r] === target);
     const track = context.tracks.find((x) => x.ref === ref);
     if (!track) return null;
+    if (param === "tune") {
+      const chain = getContext().effectsChainByTrackId[target];
+      if (!onApplyFxOps || !chain || typeof value !== "number") return null;
+      const next = bitekTuneChain({
+        chain,
+        level: value as BitekTuneLevel,
+        beatKey: beatKey?.key ?? null,
+        tier: fxAccess.tier as PremiumTier,
+      });
+      if (!next) return null;
+      void onApplyFxOps([{ op: "set_track_fx", trackId: target, effectsChain: next }], `BITEK: ${track.name}`);
+      return track.tune ?? 0;
+    }
     const from = param === "gainDb" ? track.gainDb : param === "pan" ? track.pan : param === "muted" ? track.muted : null;
     if (from === null) return null;
     onApplyProposal(target, { [param]: value });

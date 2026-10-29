@@ -36,6 +36,15 @@ describe("built-in vocal presets", () => {
     }
   });
 
+  it("Trap enables BRD Tune hard style in the beat key; other presets stay untuned", () => {
+    const trap = buildVocalPresetChain("trap", { tuneKey: { keyRoot: 9, scale: 1 } });
+    expect(trap.effects[1]).toMatchObject({ type: "tune", enabled: true, params: { keyRoot: 9, scale: 1, retuneMs: 0, amount: 1 } });
+    expect(buildVocalPresetChain("trap").effects[1]!.params).toMatchObject({ scale: 2 });
+    for (const id of VOCAL_PRESET_IDS.filter((x) => x !== "trap")) {
+      expect(buildVocalPresetChain(id).effects.some((e) => e.type === "tune")).toBe(false);
+    }
+  });
+
   it("delay follows the project tempo (1/8 note)", () => {
     const delay = buildVocalPresetChain("trap", { bpm: 120 }).effects.find((e) => e.type === "delay");
     expect(delay?.params).toMatchObject({ timeMs: 250 });

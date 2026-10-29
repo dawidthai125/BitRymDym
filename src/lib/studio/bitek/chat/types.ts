@@ -12,7 +12,13 @@ export type BitekTrackContext = {
   gainDb: number;
   pan: number;
   muted: boolean;
+  /** BRD Tune on this track: 0 off, 1 natural, 2 hard / custom (vocal roles only). */
+  tune?: BitekTuneLevel;
 };
+
+export type BitekTuneLevel = 0 | 1 | 2;
+/** Track roles BITEK may tune (pitch correction is a vocal effect). */
+export const BITEK_TUNE_ROLES: readonly string[] = ["lead_vocal", "adlib", "double", "backing"];
 
 export type BitekCardContext = { id: string; status: string; value?: string | null };
 
@@ -46,7 +52,7 @@ export type BitekMasterSetting = (typeof BITEK_MASTER_SETTINGS)[number];
 /** Proposals in Mastering use trackRef "master" (the whole song). */
 export const BITEK_MASTER_REF = "master";
 
-export type BitekProposalParam = "gainDb" | "pan" | "muted" | BitekMasterSetting;
+export type BitekProposalParam = "gainDb" | "pan" | "muted" | "tune" | BitekMasterSetting;
 
 export type BitekProposal = {
   trackRef: string;

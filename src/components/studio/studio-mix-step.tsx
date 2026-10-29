@@ -22,6 +22,7 @@ import {
   type MixAutofixNote,
 } from "@/lib/studio/mix-autofix/plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
 
 export type MixAutofixApply = (
@@ -329,6 +330,7 @@ export function StudioMixStep({
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
   useEffect(() => () => onBitekBubble?.(null), [onBitekBubble]);
+  const beatKey = useProjectBeatKey(doc.project.id);
 
   return (
     <div data-testid="studio-mix-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
@@ -343,6 +345,7 @@ export function StudioMixStep({
         <StudioVocalSetsCard
           tracks={doc.tracks}
           bpm={doc.project.tempoBpm}
+          tuneKey={beatKey?.key ?? null}
           disabled={running}
           onApplyOps={async (ops, description) => (await onApplyAutofix(ops, description, { asUser: true })).ok}
         />

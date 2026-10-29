@@ -21,8 +21,10 @@ import {
   type VocalPresetSet,
 } from "@/lib/studio/presets/vocal-presets";
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
+import { clampTuneChainForTier, type TuneKey } from "@/lib/studio/tune/tune";
+import type { PremiumTier } from "@/types/premium";
 
-type PresetAccess = { tier: string; maxOwn: number; roleSets: boolean };
+type PresetAccess = { tier: string; maxOwn: number; roleSets: boolean; tuneCustom?: boolean };
 
 type FxPresetsState = { loaded: boolean; available: boolean; access: PresetAccess; presets: OwnFxPreset[] };
 const NO_ACCESS: PresetAccess = { tier: "FREE", maxOwn: 0, roleSets: false };
@@ -156,11 +158,14 @@ function SaveForm({
 export function StudioVocalPresetPicker({
   chain,
   bpm,
+  tuneKey = null,
   disabled,
   onApply,
 }: {
   chain: StudioFxChainV1;
   bpm: number;
+  /** Beat key for BRD Tune in the Trap preset. */
+  tuneKey?: TuneKey | null;
   disabled?: boolean;
   onApply: (chain: StudioFxChainV1) => Promise<boolean>;
 }) {
@@ -172,7 +177,8 @@ export function StudioVocalPresetPicker({
   const full = store.presets.length >= store.access.maxOwn;
 
   async function apply(next: StudioFxChainV1, name: string) {
-    const ok = await onApply(next);
+    // Free/Bronze: BRD Tune hard style → natural (server enforces the same gate).
+    const ok = await onApply(clampTuneChainForTier(store.access.tier as PremiumTier, next));
     if (ok) setMessage(t("ustawiono", { name }));
   }
 
@@ -190,7 +196,7 @@ export function StudioVocalPresetPicker({
             disabled={disabled}
             data-testid={`studio-vocal-preset-${id}`}
             aria-label={t("zastosujAria", { name: t(`nazwy.${id}`) })}
-            onClick={() => void apply(buildVocalPresetChain(id, { bpm }), t(`nazwy.${id}`))}
+            onClick={() => void apply(buildVocalPresetChain(id, { bpm, tuneKey }), t(`nazwy.${id}`))}
             className="min-h-11 rounded border border-[var(--brd-line)] px-2 py-1.5 text-left hover:border-[var(--brd-ink)] disabled:opacity-50"
           >
             <span className="block text-sm font-semibold text-[var(--brd-ink)]">{t(`nazwy.${id}`)}</span>
@@ -266,11 +272,13 @@ type SetTrack = { id: string; trackRole: StudioTrackRole; effectsChain: StudioFx
 export function StudioVocalSetsCard({
   tracks,
   bpm,
+  tuneKey = null,
   disabled,
   onApplyOps,
 }: {
   tracks: readonly SetTrack[];
   bpm: number;
+  tuneKey?: TuneKey | null;
   disabled?: boolean;
   onApplyOps: (ops: MixWorkingOp[], description: string) => Promise<boolean>;
 }) {
@@ -282,7 +290,10 @@ export function StudioVocalSetsCard({
   const sets = store.presets.filter((p) => p.kind === "set");
 
   async function applySet(set: VocalPresetSet, name: string) {
-    const ops = buildVocalSetOps(vocalTracks, set);
+    const tier = store.access.tier as PremiumTier;
+    const ops = buildVocalSetOps(vocalTracks, set).map((op) =>
+      op.op === "set_track_fx" ? { ...op, effectsChain: clampTuneChainForTier(tier, op.effectsChain) } : op,
+    );
     if (!ops.length) return;
     setBusy(true);
     const ok = await onApplyOps(ops, t("zestawNazwa", { name }));
@@ -313,7 +324,7 @@ export function StudioVocalSetsCard({
                 className="min-h-9"
                 disabled={disabled || busy}
                 data-testid={`studio-vocal-set-${id}`}
-                onClick={() => void applySet(buildVocalPresetSet(id, { bpm }), t(`nazwy.${id}`))}
+                onClick={() => void applySet(buildVocalPresetSet(id, { bpm, tuneKey }), t(`nazwy.${id}`))}
               >
                 {t("zastosujZestaw", { name: t(`nazwy.${id}`) })}
               </Button>

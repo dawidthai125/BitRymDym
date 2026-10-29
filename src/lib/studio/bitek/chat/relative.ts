@@ -161,6 +161,15 @@ export function resolveBitekRelative(message: string, ctx: BitekChatContext): Bi
       if (cls.kind === "undo" && typeof c.from === "boolean") raw.push({ trackRef: c.trackRef, param: "muted", value: c.from, label: "" });
       continue;
     }
+    if (c.param === "tune") {
+      // Tuning has 3 levels: "more" → hard, "less / too much" → natural (or off), "undo" → before.
+      if (typeof c.from !== "number" || typeof c.to !== "number") continue;
+      const cur = track.tune ?? (c.to as number);
+      const value =
+        cls.kind === "undo" ? c.from : cls.kind === "less" ? Math.max(0, cur - 1) : Math.min(2, cur + 1);
+      raw.push({ trackRef: c.trackRef, param: "tune", value, label: "" });
+      continue;
+    }
     if ((c.param !== "gainDb" && c.param !== "pan") || typeof c.from !== "number" || typeof c.to !== "number") continue;
     const current = c.param === "gainDb" ? track.gainDb : track.pan;
     raw.push({ trackRef: c.trackRef, param: c.param, value: nextRelativeValue({ ...cls, param: c.param, current, from: c.from, to: c.to }), label: "" });

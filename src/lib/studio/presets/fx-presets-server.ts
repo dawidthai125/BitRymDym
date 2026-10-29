@@ -1,6 +1,6 @@
 import "server-only";
 
-import { minimumTierFor, vocalPresetAccessForTier } from "@/config/plan-policy";
+import { minimumTierFor, pitchCorrectionAccessForTier, vocalPresetAccessForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
@@ -21,7 +21,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export class StudioPlanFeatureError extends Error {
   readonly code = "PLAN_FEATURE_LOCKED" as const;
   constructor(
-    readonly feature: "fx_presets_save" | "fx_presets_sets" | "fx_presets_limit",
+    readonly feature: "fx_presets_save" | "fx_presets_sets" | "fx_presets_limit" | "pitch_correction_custom",
     readonly tier: PremiumTier,
     readonly requiredTier: PremiumTier,
     message: string,
@@ -47,12 +47,23 @@ function mapRow(r: Record<string, unknown>): OwnFxPreset | null {
   }
 }
 
-export type FxPresetAccess = { tier: PremiumTier; maxOwn: number; roleSets: boolean };
+export type FxPresetAccess = {
+  tier: PremiumTier;
+  maxOwn: number;
+  roleSets: boolean;
+  /** BRD Tune: hard style + own retune speed / strength (Silver+). */
+  tuneCustom: boolean;
+};
 
 export async function fxPresetAccessFor(context: AuthContext): Promise<FxPresetAccess> {
   const tier = (await resolveProductEntitlementForAuthContext(context)).premiumTier;
   const access = vocalPresetAccessForTier(tier);
-  return { tier, maxOwn: access.maxOwn, roleSets: access.roleSets };
+  return {
+    tier,
+    maxOwn: access.maxOwn,
+    roleSets: access.roleSets,
+    tuneCustom: pitchCorrectionAccessForTier(tier).custom,
+  };
 }
 
 export async function listFxPresets(context: AuthContext): Promise<{

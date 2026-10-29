@@ -6,6 +6,7 @@ import {
   type BitekChatContext,
   type BitekChatTurn,
   type BitekMasterSetting,
+  type BitekTuneLevel,
 } from "./types";
 
 export type BitekChatRequest = { message: string; history: BitekChatTurn[]; context: BitekChatContext };
@@ -35,6 +36,10 @@ export function parseBitekLastChange(raw: unknown, refs: ReadonlySet<string>, st
     if (param === "muted") {
       if (typeof r.from !== "boolean" || typeof r.to !== "boolean") continue;
       out.push({ trackRef, param, from: r.from, to: r.to });
+    } else if (param === "tune") {
+      const ok = (v: unknown) => v === 0 || v === 1 || v === 2;
+      if (!ok(r.from) || !ok(r.to)) continue;
+      out.push({ trackRef, param, from: r.from as number, to: r.to as number });
     } else if (param === "gainDb" || param === "pan") {
       if (typeof r.from !== "number" || typeof r.to !== "number") continue;
       const [lo, hi] = param === "gainDb" ? [BITEK_LIMITS.gainDbMin, BITEK_LIMITS.gainDbMax] : [-1, 1];
@@ -69,6 +74,7 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
           gainDb: num(r.gainDb, BITEK_LIMITS.gainDbMin, BITEK_LIMITS.gainDbMax),
           pan: num(r.pan, -1, 1),
           muted: r.muted === true,
+          ...(r.tune === 0 || r.tune === 1 || r.tune === 2 ? { tune: r.tune as BitekTuneLevel } : {}),
         };
       })
     : [];

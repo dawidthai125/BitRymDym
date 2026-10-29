@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
+import { fxPresetErrorResponse } from "@/lib/studio/presets/fx-presets-http";
 import { updateStudioTrackEffectsChain } from "@/lib/studio/studio-service";
+import { assertTuneChainsAllowedForUser } from "@/lib/studio/tune/tune-gate-server";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       expectedDocumentVersion?: unknown;
       chain?: unknown;
     };
+    // Plan gate: BRD Tune hard/custom style is Silver+ (403 PLAN_FEATURE_LOCKED).
+    await assertTuneChainsAllowedForUser([body.chain]);
     const result = await updateStudioTrackEffectsChain({
       projectId,
       trackId,
@@ -29,6 +32,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       effectsChain: result.effectsChain,
     });
   } catch (error) {
-    return studioApiErrorResponse(error);
+    return fxPresetErrorResponse(error);
   }
 }

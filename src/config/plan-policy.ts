@@ -54,6 +54,15 @@ export type PlanPolicy = {
       /** Preset sets for lead / doubles / adlibs (built-in + own sets). */
       roleSets: boolean;
     };
+    /** Vocal pitch correction (BRD Tune) — gaps P0 #1. */
+    pitchCorrection: {
+      /** Natural style (gentle retune, key-locked) — every plan. */
+      natural: boolean;
+      /** Hard "trap" style + own retune speed / strength. */
+      custom: boolean;
+      /** Manual note-by-note correction — GOLD, follow-up (false until the editor ships). */
+      manualNotes: boolean;
+    };
   };
   recording: {
     /** Max length of one take (seconds). */
@@ -113,6 +122,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       lyrics: true,
       bitekMemory: "session",
       vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
+      pitchCorrection: { natural: true, custom: false, manualNotes: false },
     },
     recording: {
       maxTakeSeconds: 30,
@@ -137,6 +147,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       lyrics: true,
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
+      pitchCorrection: { natural: true, custom: false, manualNotes: false },
     },
     recording: {
       maxTakeSeconds: 60,
@@ -161,6 +172,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       lyrics: true,
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 20, roleSets: false },
+      pitchCorrection: { natural: true, custom: true, manualNotes: false },
     },
     recording: {
       maxTakeSeconds: 120,
@@ -185,6 +197,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       lyrics: true,
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 50, roleSets: true },
+      pitchCorrection: { natural: true, custom: true, manualNotes: false },
     },
     recording: {
       maxTakeSeconds: 180,
@@ -227,6 +240,10 @@ export function bitekMemoryForTier(tier: PremiumTier): BitekMemoryAccess {
 
 export function vocalPresetAccessForTier(tier: PremiumTier): PlanPolicy["tools"]["vocalPresets"] {
   return PLAN_POLICY[tier].tools.vocalPresets;
+}
+
+export function pitchCorrectionAccessForTier(tier: PremiumTier): PlanPolicy["tools"]["pitchCorrection"] {
+  return PLAN_POLICY[tier].tools.pitchCorrection;
 }
 
 /** Lowest plan that unlocks a Studio tool (for lock labels). */

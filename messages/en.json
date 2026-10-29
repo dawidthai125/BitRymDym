@@ -2471,6 +2471,41 @@
       "brakRol": "Give tracks roles (Lead vocal, Double, Adlib) so the set knows what goes where.",
       "zestawUstawiony": "Set “{name}” applied to {n} tracks — undo with Ctrl+Z.",
       "zestawBlad": "Could not apply the set. Try again."
+    },
+    "tune": {
+      "tytul": "Vocal tuning (BRD Tune)",
+      "opis": "Pulls the vocal onto the notes of the beat's key. Preview and final render sound the same.",
+      "tonacja": "Key",
+      "skala": "Scale",
+      "skale": {
+        "dur": "major",
+        "moll": "minor",
+        "chromatyczna": "chromatic (all notes)"
+      },
+      "zBitu": "Beat key: {key}",
+      "zBituNieznana": "The beat has no key saved — detect it from the audio or pick it manually.",
+      "ustawZBitu": "Use the beat key",
+      "wykryj": "Detect from beat audio",
+      "wykrywanie": "Analysing the beat…",
+      "wykryto": "Detected: {key} ({pct}% confidence)",
+      "niewykryto": "Couldn't detect the key — pick it manually.",
+      "brakAudio": "Play the beat once in the studio, then try detecting the key.",
+      "styl": "Style",
+      "style": {
+        "natural": "Natural",
+        "hard": "Trap (hard)",
+        "custom": "Custom"
+      },
+      "styleOpis": {
+        "natural": "Gentle, slower correction — keeps the voice's natural movement.",
+        "hard": "Instant snap to the note — the signature trap effect.",
+        "custom": "Your own retune speed and strength."
+      },
+      "lockSilver": "Trap style and custom speed/strength — Silver plan and up.",
+      "recznie": "Manual per-note correction (Gold) — coming soon.",
+      "latencja": "Tuning adds 40 ms latency — the studio compensates for it automatically.",
+      "szybkosc": "Retune speed",
+      "sila": "Strength"
     }
   },
   "nav": {

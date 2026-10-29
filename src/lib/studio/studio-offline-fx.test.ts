@@ -143,6 +143,7 @@ describe("SFM-3A offline FX contract", () => {
       "highpass",
       "limiter",
       "reverb",
+      "tune",
     ]);
   });
 

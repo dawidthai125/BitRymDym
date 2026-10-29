@@ -18,6 +18,7 @@ import {
   type StudioEngineDocument,
 } from "@/lib/studio/studio-audio-schedule";
 import { effectiveClipGain } from "@/lib/studio/studio-clip-fade";
+import { compensateStudioTuneLatency } from "@/lib/studio/tune/tune";
 import {
   buildStudioOfflineFxChain,
   studioOfflineFxStateBytes,
@@ -326,13 +327,16 @@ function buildOfflineFxInserts(
 export async function renderStudioDocumentOffline(
   options: StudioOfflineRenderOptions,
 ): Promise<StudioOfflineRenderResult> {
-  const document = options.document;
-  if (!document || !Array.isArray(document.tracks) || !Array.isArray(document.clips)) {
+  const rawDocument = options.document;
+  if (!rawDocument || !Array.isArray(rawDocument.tracks) || !Array.isArray(rawDocument.clips)) {
     throw new StudioOfflineRenderError(
       "STUDIO_RENDER_INVALID_DOCUMENT",
       "Studio engine document is invalid.",
     );
   }
+  // Per-sample path: tune inserts stream with a fixed delay → start tuned
+  // clips earlier (plugin-delay compensation, same as the live engine).
+  const document = compensateStudioTuneLatency(rawDocument);
 
   if (
     !Number.isFinite(document.timelineLengthMs) ||

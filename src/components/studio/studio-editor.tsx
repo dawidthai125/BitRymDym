@@ -3011,6 +3011,7 @@ function StudioEditorInner({
                   : getRecordChatContext()
             }
             onApplyProposal={applyBitekProposal}
+            onApplyFxOps={async (ops, description) => (await applyMixAutofix(ops, description)).ok}
             onApplyMasterProposal={(key, value) => masterApplyRef.current?.(key, value)}
             onBackToMix={studioStep === "master" ? () => setStudioStep("mix") : undefined}
             disabled={recordingLocked || pending}

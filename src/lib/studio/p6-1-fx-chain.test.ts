@@ -41,7 +41,7 @@ function eqEffect(overrides: Record<string, unknown> = {}) {
 }
 
 describe("P6.1 registry", () => {
-  it("lists Studio-owned types (P6 five + stage 2) with Track+Master support", () => {
+  it("lists Studio-owned types (P6 five + stage 2 + tune); tune is track-only", () => {
     expect([...STUDIO_FX_TYPES]).toEqual([
       "eq",
       "compressor",
@@ -51,9 +51,10 @@ describe("P6.1 registry", () => {
       "highpass",
       "deesser",
       "gate",
+      "tune",
     ]);
     for (const type of STUDIO_FX_TYPES) {
-      expect(STUDIO_FX_REGISTRY[type]).toEqual({ track: true, master: true });
+      expect(STUDIO_FX_REGISTRY[type]).toEqual({ track: true, master: type !== "tune" });
     }
   });
 });

@@ -2471,6 +2471,41 @@
       "brakRol": "Nadaj ścieżkom role (Wokal główny, Dubel, Adlib) — wtedy zestaw wie, co komu ustawić.",
       "zestawUstawiony": "Zestaw „{name}” ustawiony na {n} ścieżkach — cofniesz przez Ctrl+Z.",
       "zestawBlad": "Nie udało się ustawić zestawu. Spróbuj jeszcze raz."
+    },
+    "tune": {
+      "tytul": "Strojenie wokalu (BRD Tune)",
+      "opis": "Dociąga wokal do nut tonacji bitu. Podgląd i finalny render brzmią tak samo.",
+      "tonacja": "Tonacja",
+      "skala": "Skala",
+      "skale": {
+        "dur": "dur",
+        "moll": "moll",
+        "chromatyczna": "chromatyczna (wszystkie nuty)"
+      },
+      "zBitu": "Tonacja bitu: {key}",
+      "zBituNieznana": "Bit nie ma zapisanej tonacji — wykryj ją z audio albo wybierz ręcznie.",
+      "ustawZBitu": "Ustaw tonację bitu",
+      "wykryj": "Wykryj z audio bitu",
+      "wykrywanie": "Analizuję bit…",
+      "wykryto": "Wykryto: {key} (pewność {pct}%)",
+      "niewykryto": "Nie udało się wykryć tonacji — wybierz ją ręcznie.",
+      "brakAudio": "Odtwórz bit raz w studiu, potem spróbuj wykryć tonację.",
+      "styl": "Styl",
+      "style": {
+        "natural": "Naturalny",
+        "hard": "Trap (twardy)",
+        "custom": "Własny"
+      },
+      "styleOpis": {
+        "natural": "Łagodne, wolniejsze dociąganie — zostaje naturalny ruch głosu.",
+        "hard": "Natychmiastowy skok na nutę — charakterystyczny efekt trapowy.",
+        "custom": "Własna szybkość i siła strojenia."
+      },
+      "lockSilver": "Styl Trap oraz własna szybkość i siła — od planu Silver.",
+      "recznie": "Ręczna korekta pojedynczych nut (Gold) — wkrótce.",
+      "latencja": "Strojenie dodaje 40 ms opóźnienia — studio kompensuje je automatycznie.",
+      "szybkosc": "Szybkość strojenia",
+      "sila": "Siła"
     }
   },
   "nav": {

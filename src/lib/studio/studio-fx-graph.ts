@@ -10,6 +10,7 @@ import {
   type StudioFxCompressorParams,
   type StudioFxDeesserParams,
   type StudioFxGateParams,
+  type StudioFxTuneParams,
   type StudioFxHighpassParams,
   type StudioFxDelayParams,
   type StudioFxEqParams,
@@ -32,6 +33,8 @@ import {
   linearQToWebAudioDb,
   LR4_SECTION_Q,
 } from "@/lib/studio/studio-fx-stage2-dsp";
+import { toTuneCoreParams } from "@/lib/studio/tune/tune";
+import { createTuneNode } from "@/lib/studio/tune/tune-worklet";
 
 type ParamValue = { value: number };
 
@@ -592,6 +595,30 @@ function buildGateSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): Bui
   });
 }
 
+/**
+ * BRD Tune — AudioWorklet running the same TuneCore as the offline render.
+ * Worklet not loaded / unsupported → dry wire (the engine then also skips
+ * latency compensation, so timing stays right).
+ */
+function buildTuneSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const params = effect.params as StudioFxTuneParams;
+  const node = createTuneNode(ctx, toTuneCoreParams(params));
+  if (!node) {
+    return buildWireSlot(ctx, { status: "bypass", effect } as StudioFxPlaybackSlot);
+  }
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    input.connect(node as unknown as StudioFxConnectable);
+    node.connect(wet);
+    return {
+      nodes: [node as unknown as StudioFxConnectable],
+      names: ["worklet-brd-tune"],
+      apply(next) {
+        node.port.postMessage({ params: toTuneCoreParams(next.params as StudioFxTuneParams) });
+      },
+    };
+  });
+}
+
 function tryBuildProcessSlot(
   ctx: StudioFxGraphContext,
   effect: StudioFxInstance,
@@ -603,6 +630,7 @@ function tryBuildProcessSlot(
   if (effect.type === "highpass") return buildHighpassSlot(ctx, effect);
   if (effect.type === "deesser") return buildDeesserSlot(ctx, effect);
   if (effect.type === "gate") return buildGateSlot(ctx, effect);
+  if (effect.type === "tune") return buildTuneSlot(ctx, effect);
   return buildDelaySlot(ctx, effect);
 }
 
@@ -611,6 +639,8 @@ function structureKey(plan: StudioFxPlaybackPlan): string {
   return plan.slots
     .map((slot) => {
       if (slot.status === "skip") return `skip:${slot.code}`;
+      // Tune adds latency only when active → toggling rebuilds (engine re-aligns clips).
+      if (slot.effect.type === "tune") return `${slot.effect.id}:tune:${slot.status}`;
       return `${slot.effect.id}:${slot.effect.type}`;
     })
     .join("|");

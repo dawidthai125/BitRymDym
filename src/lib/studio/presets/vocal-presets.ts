@@ -15,6 +15,7 @@ import {
   type StudioFxParamsByType,
 } from "@/lib/studio/studio-fx-chain";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { tuneParams, type TuneKey } from "@/lib/studio/tune/tune";
 
 export const VOCAL_PRESET_IDS = ["clean", "trap", "drill", "boombap", "lofi", "phone"] as const;
 export type VocalPresetId = (typeof VOCAL_PRESET_IDS)[number];
@@ -43,7 +44,15 @@ const deesser = (thresholdDb = -28): FxSpec => ({
   params: { frequencyHz: 6500, thresholdDb, ratio: 4 },
 });
 
-function presetSpecs(id: VocalPresetId, bpm: number): FxSpec[] {
+/** Options shared by built-in presets / sets. */
+export type VocalPresetOptions = {
+  bpm?: number;
+  createId?: () => string;
+  /** Beat key for BRD Tune (Trap); null/undefined = chromatic until the user picks. */
+  tuneKey?: TuneKey | null;
+};
+
+function presetSpecs(id: VocalPresetId, bpm: number, tuneKey: TuneKey | null = null): FxSpec[] {
   const e = eighthMs(bpm);
   switch (id) {
     case "clean":
@@ -57,6 +66,8 @@ function presetSpecs(id: VocalPresetId, bpm: number): FxSpec[] {
     case "trap":
       return [
         { type: "highpass", enabled: true, params: { frequencyHz: 110, q: 0.707 } },
+        // BRD Tune hard style (Silver+); Free/Bronze get it clamped to natural on apply.
+        { type: "tune", enabled: true, params: tuneParams(tuneKey, "hard") },
         { type: "eq", enabled: true, params: { low: { frequencyHz: 250, gainDb: -2, q: 0.7 }, mid: { frequencyHz: 3500, gainDb: 2.5, q: 1 }, high: { frequencyHz: 12000, gainDb: 3, q: 0.7 } } },
         { type: "compressor", enabled: true, params: { thresholdDb: -20, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 4 } },
         deesser(-30),
@@ -111,11 +122,8 @@ export function isVocalPresetId(value: unknown): value is VocalPresetId {
 }
 
 /** Built-in preset → validated track chain (fresh effect ids every call). */
-export function buildVocalPresetChain(
-  id: VocalPresetId,
-  options: { bpm?: number; createId?: () => string } = {},
-): StudioFxChainV1 {
-  return toChain(presetSpecs(id, options.bpm ?? 90), options.createId ?? uuid);
+export function buildVocalPresetChain(id: VocalPresetId, options: VocalPresetOptions = {}): StudioFxChainV1 {
+  return toChain(presetSpecs(id, options.bpm ?? 90, options.tuneKey), options.createId ?? uuid);
 }
 
 /** Copy of a chain with fresh effect ids (own presets are re-applied many times). */
@@ -163,13 +171,10 @@ export function roleVariantSpecs(specs: FxSpec[], role: VocalSetRole, bpm: numbe
 export type VocalPresetSet = Partial<Record<VocalSetRole, StudioFxChainV1>>;
 
 /** Built-in set = preset on the lead + derived doubles / adlibs variants. */
-export function buildVocalPresetSet(
-  id: VocalPresetId,
-  options: { bpm?: number; createId?: () => string } = {},
-): VocalPresetSet {
+export function buildVocalPresetSet(id: VocalPresetId, options: VocalPresetOptions = {}): VocalPresetSet {
   const bpm = options.bpm ?? 90;
   const createId = options.createId ?? uuid;
-  const base = presetSpecs(id, bpm);
+  const base = presetSpecs(id, bpm, options.tuneKey);
   return {
     lead: toChain(roleVariantSpecs(base, "lead", bpm), createId),
     doubles: toChain(roleVariantSpecs(base, "doubles", bpm), createId),

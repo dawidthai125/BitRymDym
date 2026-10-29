@@ -1,16 +1,29 @@
-import { BITEK_LIMITS, BITEK_MASTER_REF, BITEK_MASTER_SETTINGS, type BitekChatContext, type BitekMasterSetting, type BitekProposal } from "./types";
+import {
+  BITEK_LIMITS,
+  BITEK_MASTER_REF,
+  BITEK_MASTER_SETTINGS,
+  BITEK_TUNE_ROLES,
+  type BitekChatContext,
+  type BitekMasterSetting,
+  type BitekProposal,
+  type BitekTuneLevel,
+} from "./types";
 import { isBitekWrongLanguage, sanitizeLabel } from "./prompt";
 import type { BitekLang, BitekTrackContext } from "./types";
 
 const fmtDb = (n: number) => `${n > 0 ? "+" : n < 0 ? "\u2212" : ""}${Math.abs(n)}`;
 const fmtPan = (n: number) => (n === 0 ? "C" : `${n < 0 ? "L" : "R"}${Math.round(Math.abs(n) * 100)}`);
+const TUNE_NAME: Record<BitekLang, Record<BitekTuneLevel, string>> = {
+  pl: { 0: "wył.", 1: "naturalne", 2: "twarde (trap)" },
+  en: { 0: "off", 1: "natural", 2: "hard (trap)" },
+};
 
 /**
  * Button label built server-side from the VALIDATED proposal (current → target), never from model text.
  * gainDb: "Wokal: −6 → −3 dB (+3)", pan: "Wokal: pan C → L50", muted: "Wokal: wycisz" / "Vocal: unmute".
  */
 export function buildBitekProposalLabel(
-  track: Pick<BitekTrackContext, "name" | "gainDb" | "pan" | "muted">,
+  track: Pick<BitekTrackContext, "name" | "gainDb" | "pan" | "muted" | "tune">,
   param: BitekProposal["param"],
   value: number | boolean,
   lang: BitekLang,
@@ -24,6 +37,9 @@ export function buildBitekProposalLabel(
     body = `${fmtDb(cur)} \u2192 ${fmtDb(v)} dB (${fmtDb(d)})`;
   } else if (param === "pan") {
     body = `pan ${fmtPan(Math.round(track.pan * 100) / 100)} \u2192 ${fmtPan(value as number)}`;
+  } else if (param === "tune") {
+    const names = TUNE_NAME[lang];
+    body = `${lang === "pl" ? "strojenie" : "tuning"} ${names[track.tune ?? 0]} \u2192 ${names[value as BitekTuneLevel]}`;
   } else {
     body = value ? (lang === "pl" ? "wycisz" : "mute") : lang === "pl" ? "włącz dźwięk" : "unmute";
   }
@@ -66,6 +82,13 @@ export function buildBitekProposalWhy(
       ? pl ? `Podgłaśniam ${name}, żeby lepiej przebijał się przez resztę.` : `I'm turning ${name} up so it cuts through the rest.`
       : pl ? `Ściszam ${name}, żeby zrobić miejsce reszcie.` : `I'm turning ${name} down to make room for the rest.`;
   }
+  if (param === "tune") {
+    return value === 0
+      ? pl ? `Wyłączam strojenie na ${name}, żeby głos brzmiał w pełni naturalnie.` : `I'm turning tuning off on ${name} so the voice sounds fully natural.`
+      : value === 2
+        ? pl ? `Włączam twarde strojenie na ${name} — ten trapowy efekt skaczącej nuty.` : `I'm switching ${name} to hard tuning — that trap snap between notes.`
+        : pl ? `Delikatnie dociągam ${name} do tonacji bitu, żeby nie było fałszu.` : `I'm gently pulling ${name} into the beat's key so nothing sounds off.`;
+  }
   if (param === "pan") {
     return value === 0
       ? pl ? `Ustawiam ${name} na środku, bo tam niesie cały numer.` : `I'm centring ${name} because that's where it carries the track.`
@@ -95,6 +118,7 @@ export function pickBitekWhy(raw: unknown, lang: BitekLang): string | null {
 function isNoop(track: BitekTrackContext, param: BitekProposal["param"], v: number | boolean): boolean {
   if (param === "gainDb") return Math.round(track.gainDb * 2) / 2 === v;
   if (param === "pan") return Math.round(track.pan * 100) / 100 === v;
+  if (param === "tune") return (track.tune ?? 0) === v;
   return track.muted === v;
 }
 
@@ -172,6 +196,12 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
     } else if (param === "muted") {
       if (typeof value !== "boolean") continue;
       v = value;
+    } else if (param === "tune") {
+      // Pitch correction: vocal tracks only, 0 off / 1 natural / 2 hard.
+      if (!BITEK_TUNE_ROLES.includes(track.role)) continue;
+      const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+      if (n !== 0 && n !== 1 && n !== 2) continue;
+      v = n;
     } else continue;
     if (isNoop(track, param, v)) continue;
     seen.add(key);
