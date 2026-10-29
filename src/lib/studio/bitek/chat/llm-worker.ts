@@ -13,6 +13,8 @@ export type BitekWorkerConfig =
       pollMs: number;
       llmTimeoutMs: number;
       purgeEveryMs: number;
+      /** 0 = off. Idle keep-warm: re-sends the static PL prompt prefix so its KV cache and pages stay hot. */
+      warmEveryMs: number;
     };
 
 const FALSEY = new Set(["", "0", "false", "off", "no"]);
@@ -45,6 +47,7 @@ export function decideBitekWorkerConfig(env: Record<string, string | undefined>,
     pollMs: int(env.BITEK_LLM_POLL_MS, 300, 100, 5000),
     llmTimeoutMs: int(env.BITEK_LLM_TIMEOUT_MS, 22000, 1000, 120000),
     purgeEveryMs: 10 * 60 * 1000,
+    warmEveryMs: int(env.BITEK_LLM_WARM_EVERY_MS, 4 * 60 * 1000, 0, 60 * 60 * 1000),
   };
 }
 
@@ -98,6 +101,7 @@ export async function processOneBitekJob(cfg: Extract<BitekWorkerConfig, { actio
         messages,
         temperature: 0.4,
         max_tokens: 256,
+        cache_prompt: true,
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,
@@ -119,4 +123,42 @@ export async function processOneBitekJob(cfg: Extract<BitekWorkerConfig, { actio
   await deps.complete(job.id, result, result ? null : outcome);
   deps.log?.({ event: "bitek_llm_job", outcome, ms: now() - t0, tokens });
   return true;
+}
+
+/**
+ * Keep-warm request: static PL system prefix (same tokens as real requests → llama.cpp prefix cache)
+ * plus a tiny stub; 1 output token. No user data.
+ */
+export async function warmBitekLlm(
+  cfg: Extract<BitekWorkerConfig, { action: "run" }>,
+  systemPrefix: string,
+  deps: { fetchFn?: typeof fetch; log?: (e: Record<string, unknown>) => void; now?: () => number } = {},
+): Promise<boolean> {
+  const now = deps.now ?? Date.now;
+  const t0 = now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await (deps.fetchFn ?? fetch)(`${cfg.llmUrl}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.llmToken}` },
+      body: JSON.stringify({
+        model: cfg.llmModel,
+        messages: [
+          { role: "system", content: `${systemPrefix}<project_data>{}</project_data>` },
+          { role: "user", content: "ok" },
+        ],
+        max_tokens: 1,
+        cache_prompt: true,
+      }),
+      signal: controller.signal,
+    });
+    deps.log?.({ event: "bitek_llm_warm", ok: res.ok, ms: now() - t0 });
+    return res.ok;
+  } catch {
+    deps.log?.({ event: "bitek_llm_warm", ok: false, ms: now() - t0 });
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }

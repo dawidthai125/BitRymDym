@@ -24,7 +24,7 @@ async function main() {
   const t0 = Date.now();
   const raw = await provider.complete(
     [
-      { role: "system", content: buildBitekSystemPrompt(ctx) },
+      { role: "system", content: buildBitekSystemPrompt(ctx, { compact: true }) },
       { role: "user", content: "Wokal jest za cichy, co zrobić?" },
     ],
     new AbortController().signal,
