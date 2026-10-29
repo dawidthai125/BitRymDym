@@ -21,6 +21,8 @@ export type BitekBubble = {
   hero?: boolean;
 };
 
+export const BITEK_AUTO_COLLAPSE_MS = 6000;
+
 export const BITEK_MOOD_SRC: Record<BitekMood, string> = {
   happy: "/bitek/bitek-happy.webp",
   thinking: "/bitek/bitek-thinking.webp",
@@ -60,9 +62,20 @@ export function StudioBitekDock({
   const avatarRef = useRef<HTMLButtonElement | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const [detailsFor, setDetailsFor] = useState<string | null>(null);
-  const visible = bubble && bubble.key !== dismissedKey && !minimized && !chatOpen ? bubble : null;
+  /** Bubbles without actions fold into the "restore" pill after a few seconds so they never cover the page. */
+  const [autoCollapsedKey, setAutoCollapsedKey] = useState<string | null>(null);
+  const autoCollapsed = Boolean(bubble && autoCollapsedKey === bubble.key);
+  const visible =
+    bubble && bubble.key !== dismissedKey && !minimized && !autoCollapsed && !chatOpen ? bubble : null;
   const showDetails = Boolean(visible && detailsFor === visible.key);
-  const hasNews = Boolean(bubble && bubble.key !== dismissedKey && minimized);
+  const hasNews = Boolean(bubble && bubble.key !== dismissedKey && (minimized || autoCollapsed));
+  const autoCollapseKey = visible && !visible.hero && !visible.actions?.length ? visible.key : null;
+
+  useEffect(() => {
+    if (!autoCollapseKey || showDetails) return;
+    const id = window.setTimeout(() => setAutoCollapsedKey(autoCollapseKey), BITEK_AUTO_COLLAPSE_MS);
+    return () => window.clearTimeout(id);
+  }, [autoCollapseKey, showDetails]);
 
   useEffect(() => {
     if (!chatOpen) return;
@@ -221,7 +234,10 @@ export function StudioBitekDock({
             type="button"
             className="bitek-pop rounded-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 py-1.5 text-xs shadow-lg"
             data-testid="studio-bitek-restore"
-            onClick={() => onMinimizedChange(false)}
+            onClick={() => {
+              setAutoCollapsedKey(null);
+              onMinimizedChange(false);
+            }}
           >
             {t("maCos")}
           </button>

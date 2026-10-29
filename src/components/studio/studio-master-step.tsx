@@ -315,7 +315,7 @@ export function StudioMasterStep({
   const limitReached = server.usage?.weekLimit != null && server.usage.used >= server.usage.weekLimit;
 
   return (
-    <div data-testid="studio-master-step" className="flex flex-col gap-3">
+    <div data-testid="studio-master-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={onBackToMix} data-testid="studio-master-back" aria-describedby="studio-master-back-hint">
           ← {t("wrocDoMixu")}

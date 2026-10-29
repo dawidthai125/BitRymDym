@@ -3331,6 +3331,8 @@ function StudioEditorInner({
         {inspectorContent}
       </StudioInspectorOverlay>
 
+      {studioStep !== "master" ? (
+      <>
       <StudioMixerDockChrome
         expanded={Boolean(inspectorDesktopRail && mixerOpen)}
         panelId={mixerPanelId}
@@ -3346,6 +3348,8 @@ function StudioEditorInner({
       >
         {mixerChannels}
       </StudioMixerOverlay>
+      </>
+      ) : null}
 
       <StudioFxSheet
         open={fxPanel !== null}

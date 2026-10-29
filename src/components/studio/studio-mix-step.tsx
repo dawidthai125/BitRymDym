@@ -311,7 +311,7 @@ export function StudioMixStep({
   useEffect(() => () => onBitekBubble?.(null), [onBitekBubble]);
 
   return (
-    <div data-testid="studio-mix-step" className="flex flex-col gap-3">
+    <div data-testid="studio-mix-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={onBack} data-testid="studio-mix-back">
           ← {t("wrocDoNagrania")}
