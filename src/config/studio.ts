@@ -37,6 +37,41 @@ export const STUDIO_TRACK_TYPES = [
 
 export type StudioTrackType = (typeof STUDIO_TRACK_TYPES)[number];
 
+/** Stage 0 — musical role of a track (DB: studio_tracks.track_role CHECK). */
+export const STUDIO_TRACK_ROLES = [
+  "lead_vocal",
+  "adlib",
+  "double",
+  "backing",
+  "beat",
+  "instrument",
+  "other",
+] as const;
+
+export type StudioTrackRole = (typeof STUDIO_TRACK_ROLES)[number];
+
+export function isStudioTrackRole(value: unknown): value is StudioTrackRole {
+  return (
+    typeof value === "string" &&
+    (STUDIO_TRACK_ROLES as readonly string[]).includes(value)
+  );
+}
+
+/** Default role for a new track / recording (mirrors the DB insert trigger). */
+export function defaultStudioTrackRole(trackType: string): StudioTrackRole {
+  switch (trackType) {
+    case "VOCAL":
+      return "lead_vocal";
+    case "BEAT":
+      return "beat";
+    case "INSTRUMENT":
+    case "GUITAR":
+      return "instrument";
+    default:
+      return "other";
+  }
+}
+
 export const STUDIO_CLIP_SOURCE_KINDS = [
   "TAKE",
   "BEAT_REF",

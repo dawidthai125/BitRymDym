@@ -1244,7 +1244,8 @@
       "ponowSkrot": "Ponów (Ctrl+Shift+Z / Ctrl+Y)",
       "cofnietoZmiane": "Cofnięto zmianę",
       "ponowionoZmiane": "Ponowiono zmianę",
-      "nieMoznaCofnac": "Nie można cofnąć — element został usunięty"
+      "nieMoznaCofnac": "Nie można cofnąć — element został usunięty",
+      "rolaSciezki": "Rola ścieżki {v0}"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",
@@ -1696,6 +1697,15 @@
       "CANCELLED": "anulowane",
       "TIMEOUT": "przekroczono czas",
       "unknown": "nieznany status eksportu"
+    },
+    "trackRole": {
+      "lead_vocal": "Wokal główny",
+      "adlib": "Adlib",
+      "double": "Dogrywka / podbicie",
+      "backing": "Chórek",
+      "beat": "Bit",
+      "instrument": "Instrument",
+      "other": "Inne"
     }
   },
   "nav": {

@@ -1244,7 +1244,8 @@
       "ponowSkrot": "Redo (Ctrl+Shift+Z / Ctrl+Y)",
       "cofnietoZmiane": "Change undone",
       "ponowionoZmiane": "Change redone",
-      "nieMoznaCofnac": "Can't undo — the item was deleted"
+      "nieMoznaCofnac": "Can't undo — the item was deleted",
+      "rolaSciezki": "Track role: {v0}"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",
@@ -1696,6 +1697,15 @@
       "CANCELLED": "cancelled",
       "TIMEOUT": "timed out",
       "unknown": "unknown export status"
+    },
+    "trackRole": {
+      "lead_vocal": "Lead vocal",
+      "adlib": "Adlib",
+      "double": "Double / stack",
+      "backing": "Backing vocal",
+      "beat": "Beat",
+      "instrument": "Instrument",
+      "other": "Other"
     }
   },
   "nav": {

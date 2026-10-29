@@ -126,6 +126,7 @@ import {
 } from "@/lib/studio/studio-track-capacity";
 import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
 import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-meter";
+import { STUDIO_TRACK_ROLES, isStudioTrackRole } from "@/config/studio";
 import {
   EMPTY_STUDIO_UNDO_HISTORY,
   pickStudioPatchBefore,
@@ -254,6 +255,7 @@ function StudioEditorInner({
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
   const tInspector = useTranslations("studio.inspectorTitle");
+  const trRole = useTranslations("studio.trackRole");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [persistSnap, setPersistSnap] = useState<StudioPersistSnapshot>({
@@ -2656,6 +2658,7 @@ function StudioEditorInner({
                   data-testid="studio-track-header"
                   data-track-id={track.id}
                   data-track-type={track.trackType}
+                  data-track-role={track.trackRole}
                   data-selected={isSelected ? "true" : "false"}
                   className="studio-track-strip flex items-stretch gap-1 border-b border-[var(--brd-line)] py-0.5 pl-1"
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
@@ -2720,6 +2723,30 @@ function StudioEditorInner({
                       }}
                     />
                   </div>
+                  <label className="studio-track-role flex h-7 min-w-0 items-center gap-1 px-1">
+                    <span className="sr-only">
+                      {tr("rolaSciezki", { v0: track.name })}
+                    </span>
+                    <select
+                      className="studio-track-role-select h-7 min-w-0 flex-1 truncate rounded-sm font-mono text-[10px] uppercase tracking-[0.08em]"
+                      value={track.trackRole}
+                      disabled={pending || recordingLocked}
+                      data-testid="studio-track-role"
+                      data-track-id={track.id}
+                      aria-label={tr("rolaSciezki", { v0: track.name })}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        if (!isStudioTrackRole(next) || next === track.trackRole) return;
+                        patchTrack(track.id, { trackRole: next });
+                      }}
+                    >
+                      {STUDIO_TRACK_ROLES.map((role) => (
+                        <option key={role} value={role}>
+                          {trRole(role)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <div className="flex min-h-0 items-center gap-0.5">
                     <Button
                       type="button"

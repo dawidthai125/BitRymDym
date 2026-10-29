@@ -1,6 +1,7 @@
 import type {
   StudioClipSourceKind,
   StudioProjectStatus,
+  StudioTrackRole,
   StudioTrackType,
 } from "@/config/studio";
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
@@ -22,6 +23,8 @@ export type StudioTrackDto = {
   projectId: string;
   name: string;
   trackType: StudioTrackType;
+  /** Stage 0 — musical role (wokal główny, adlib, …). */
+  trackRole: StudioTrackRole;
   sortOrder: number;
   gainDb: number;
   pan: number;

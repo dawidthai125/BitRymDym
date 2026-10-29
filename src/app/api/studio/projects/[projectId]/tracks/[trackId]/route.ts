@@ -24,6 +24,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       gainDb?: number;
       pan?: number;
       recordArmed?: boolean;
+      trackRole?: unknown;
     };
     const result = await updateStudioTrackControls({
       projectId,
@@ -35,6 +36,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       gainDb: body.gainDb,
       pan: body.pan,
       recordArmed: body.recordArmed,
+      trackRole: body.trackRole,
     });
     return NextResponse.json({
       success: true,

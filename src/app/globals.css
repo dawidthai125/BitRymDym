@@ -432,7 +432,22 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 .studio-track-strip {
   background: var(--tape-deck);
 }
-.studio-track-strip[data-track-type="BEAT"] /* Stage 0 — per-track level meter (header). */
+.studio-track-strip[data-track-type="BEAT"] /* Stage 0 — track role picker (header). */
+.studio-track-role-select {
+  padding: 0 0.3rem;
+  border: 1px solid var(--tape-line-strong);
+  background: var(--tape-soot);
+  color: var(--tape-cream-soft);
+}
+.studio-track-role-select:focus-visible {
+  outline: 2px solid var(--tape-amber);
+  outline-offset: 1px;
+}
+.studio-track-strip[data-track-role="lead_vocal"] .studio-track-role-select {
+  border-color: var(--tape-amber-deep);
+  color: var(--tape-amber);
+}
+/* Stage 0 — per-track level meter (header). */
 .studio-track-level-well {
   background: var(--tape-soot);
   box-shadow: inset 0 0 0 1px var(--tape-line-strong);
