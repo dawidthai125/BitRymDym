@@ -1,4 +1,4 @@
--- Local verification for 20261029130000_beat_auto_checks.sql (disposable DB only).
+-- Local verification for 20261029044811_beat_auto_checks.sql (disposable DB only).
 -- psql -v ON_ERROR_STOP=1 -f supabase/tests/beat-auto-checks.sql  → prints PASS lines, rolls back.
 \set beat '00000000-0000-0000-0000-000000000500'
 \set owner '00000000-0000-0000-0000-000000000011'

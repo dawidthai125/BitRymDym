@@ -28,7 +28,7 @@ sudo -u bitrymdym-e3 env HOME=/var/lib/bitrymdym-e3-worker /opt/bitrymdym-e3-wor
 `soundfile` jest wymagany do zapisu stemów przez Demucs 4.1. Unit ustawia `HOME=/var/lib/bitrymdym-e3-worker` i `HF_HUB_OFFLINE=1` (wagi tylko z lokalnego cache, bez sieci).
 
 ## 3. Migracja
-`supabase/migrations/20261029130000_beat_auto_checks.sql` — wgrać standardową ścieżką po review (repo nie wgrywa na prod).
+`supabase/migrations/20261029044811_beat_auto_checks.sql` — wgrać standardową ścieżką po review (repo nie wgrywa na prod).
 
 ## 4. Env `/etc/bitrymdym-e3-worker/autocheck.env` (root:bitrymdym-e3 0640)
 Sekrety Supabase (URL, service role) unit bierze z istniejącego `worker.env` (dwa `EnvironmentFile`), więc `autocheck.env` zawiera tylko ustawienia filtra:
