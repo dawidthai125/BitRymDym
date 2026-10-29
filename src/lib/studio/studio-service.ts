@@ -7,6 +7,8 @@ import {
   STUDIO_TITLE_MAX_LENGTH,
   STUDIO_TRACK_NAME_MAX_LENGTH,
   type StudioTrackType,
+  defaultStudioTrackRole,
+  isStudioTrackRole,
 } from "@/config/studio";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
@@ -97,6 +99,8 @@ type TrackRow = {
   project_id: string;
   name: string;
   track_type: string;
+  /** Stage 0 — absent until migration 20261029114247 is applied. */
+  track_role?: string | null;
   sort_order: number;
   gain_db: number | string;
   pan: number | string;
@@ -150,6 +154,9 @@ function mapTrack(row: TrackRow): StudioTrackDto {
     projectId: row.project_id,
     name: row.name,
     trackType: row.track_type as StudioTrackType,
+    trackRole: isStudioTrackRole(row.track_role)
+      ? row.track_role
+      : defaultStudioTrackRole(row.track_type),
     sortOrder: row.sort_order,
     gainDb: num(row.gain_db),
     pan: num(row.pan),
@@ -871,9 +878,13 @@ export async function updateStudioTrackControlsFor(
     gainDb?: number;
     pan?: number;
     recordArmed?: boolean;
+    trackRole?: unknown;
   },
 ): Promise<{ track: StudioTrackDto; documentVersion: number }> {
   await assertOwnsProject(context, input.projectId);
+  if (input.trackRole !== undefined) {
+    return setStudioTrackRoleFor(context, input);
+  }
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const admin = createSupabaseAdminClient();
   const { data: existing, error: loadError } = await admin
@@ -999,6 +1010,50 @@ export async function updateStudioTrackControlsFor(
     .single();
   if (refreshError) throw new Error(refreshError.message);
 
+  return {
+    track: mapTrack(refreshed as TrackRow),
+    documentVersion: num(casRow.document_version),
+  };
+}
+
+/** Stage 0 — set track role via CAS RPC (role-only PATCH). */
+async function setStudioTrackRoleFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    trackId: string;
+    expectedDocumentVersion: unknown;
+    trackRole?: unknown;
+  },
+): Promise<{ track: StudioTrackDto; documentVersion: number }> {
+  if (!isStudioTrackRole(input.trackRole)) {
+    throw new AuthError("FORBIDDEN", "Nieprawidłowa rola ścieżki.");
+  }
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_set_track_role", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+    p_track_role: input.trackRole,
+  });
+  if (error) {
+    if (/TRACK_NOT_FOUND/.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    }
+    throw new Error(error.message);
+  }
+  const casRow =
+    (data as Array<{ document_version: number }> | null)?.[0] ?? null;
+  if (!casRow) throw new StudioFxCasConflictError();
+  const { data: refreshed, error: refreshError } = await admin
+    .from("studio_tracks")
+    .select("*")
+    .eq("id", input.trackId)
+    .eq("project_id", input.projectId)
+    .single();
+  if (refreshError) throw new Error(refreshError.message);
   return {
     track: mapTrack(refreshed as TrackRow),
     documentVersion: num(casRow.document_version),

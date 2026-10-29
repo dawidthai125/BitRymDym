@@ -182,7 +182,7 @@ describe("STU-12 A — active capture blocks standard app navigation", () => {
 
   it("Studio's own links (all projects, upgrade CTA) are intercepted", () => {
     expect(studioPage).toMatch(/href="\/studio"/);
-    expect(editor).toMatch(/href=\{STUDIO_TRACK_UPGRADE_HREF\}/);
+    expect(readFileSync(join(process.cwd(), "src/components/studio/studio-edit-toolbar.tsx"), "utf8")).toMatch(/href=\{STUDIO_TRACK_UPGRADE_HREF\}/);
     for (const href of ["/studio", "/pricing", "https://example.com/elsewhere"]) {
       const { win, intents } = setup();
       const link = fakeAnchor(win, href);

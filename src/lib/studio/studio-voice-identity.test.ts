@@ -1,81 +1,30 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+import { shouldReuseStudioVoice } from "@/lib/studio/studio-voice-identity";
 
-import {
-  rememberStudioBeatAudioSourceKey,
-  resetStudioBeatSessionKeysForTests,
-} from "@/lib/studio/studio-beat-session-source";
-import {
-  shouldReuseStudioVoice,
-  studioClipSourceIdentity,
-} from "@/lib/studio/studio-voice-identity";
-
-afterEach(() => {
-  resetStudioBeatSessionKeysForTests();
-});
-
-describe("WAVE 1.1 studio voice identity", () => {
-  it("beat identity follows remembered asset key", () => {
-    const clip = {
-      sourceKind: "BEAT_REF" as const,
-      sourceBeatId: "B1",
-      sourceTakeId: null,
-    };
-    expect(studioClipSourceIdentity(clip)).toBeNull();
-    rememberStudioBeatAudioSourceKey("B1", "beat:B1|A1");
-    expect(studioClipSourceIdentity(clip)).toBe("beat:B1|A1");
-    rememberStudioBeatAudioSourceKey("B1", "beat:B1|A2");
-    expect(studioClipSourceIdentity(clip)).toBe("beat:B1|A2");
+describe("shouldReuseStudioVoice (stage 0 fade/graph regression)", () => {
+  it("reuses a versioned voice only for the same identity", () => {
+    expect(shouldReuseStudioVoice({ existingIdentityKey: "beat:b|a1", nextIdentityKey: "beat:b|a1" })).toBe(true);
+    expect(shouldReuseStudioVoice({ existingIdentityKey: "beat:b|a1", nextIdentityKey: "beat:b|a2" })).toBe(false);
   });
 
-  it("take identity is take:id", () => {
-    expect(
-      studioClipSourceIdentity({
-        sourceKind: "TAKE",
-        sourceBeatId: null,
-        sourceTakeId: "t9",
-      }),
-    ).toBe("take:t9");
-  });
-
-  it("reuse voice only when identity matches", () => {
+  it("reuses an unversioned voice when the resolved URL is unchanged (no new clip gain → no silence on seek)", () => {
     expect(
       shouldReuseStudioVoice({
-        existingIdentityKey: "beat:B1|A1",
-        nextIdentityKey: "beat:B1|A1",
+        existingIdentityKey: null,
+        nextIdentityKey: null,
+        existingSourceUrl: "https://x.test/b.bin",
+        nextSourceUrl: "https://x.test/b.bin",
       }),
     ).toBe(true);
-    expect(
-      shouldReuseStudioVoice({
-        existingIdentityKey: "beat:B1|A1",
-        nextIdentityKey: "beat:B1|A2",
-      }),
-    ).toBe(false);
-    expect(
-      shouldReuseStudioVoice({
-        existingIdentityKey: "beat:B1|A1",
-        nextIdentityKey: null,
-      }),
-    ).toBe(false);
   });
 
-  it("sticky A1 must not reuse after master becomes A2", () => {
-    rememberStudioBeatAudioSourceKey("B1", "beat:B1|A1");
-    const existing = studioClipSourceIdentity({
-      sourceKind: "BEAT_REF",
-      sourceBeatId: "B1",
-      sourceTakeId: null,
-    });
-    rememberStudioBeatAudioSourceKey("B1", "beat:B1|A2");
-    const next = studioClipSourceIdentity({
-      sourceKind: "BEAT_REF",
-      sourceBeatId: "B1",
-      sourceTakeId: null,
-    });
+  it("does not reuse an unversioned voice for a different URL or a previously versioned voice", () => {
     expect(
-      shouldReuseStudioVoice({
-        existingIdentityKey: existing,
-        nextIdentityKey: next,
-      }),
+      shouldReuseStudioVoice({ existingIdentityKey: null, nextIdentityKey: null, existingSourceUrl: "a", nextSourceUrl: "b" }),
     ).toBe(false);
+    expect(
+      shouldReuseStudioVoice({ existingIdentityKey: "beat:b|a1", nextIdentityKey: null, existingSourceUrl: "a", nextSourceUrl: "a" }),
+    ).toBe(false);
+    expect(shouldReuseStudioVoice({ existingIdentityKey: null, nextIdentityKey: null })).toBe(false);
   });
 });

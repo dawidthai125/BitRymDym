@@ -34,7 +34,10 @@ import {
   type StudioResolvedSource,
 } from "@/lib/studio/studio-audio-source-adapter";
 import { resolveStudioBeatSessionSource } from "@/lib/studio/studio-beat-session-source";
-import { STUDIO_METER_NEUTRAL } from "@/lib/studio/studio-meter";
+import {
+  STUDIO_METER_NEUTRAL,
+  type StudioTrackLevelSnapshot,
+} from "@/lib/studio/studio-meter";
 import {
   beatDurationMs,
   fireStudioClick,
@@ -64,6 +67,12 @@ export type StudioTransportControlsApi = {
   /** Imperative read of latest playhead without playhead-context subscription. */
   getPlayheadMs: () => number;
   setTrackMeterTarget: (trackId: string | null) => void;
+  /** Stage 0 — per-track meters; returns release (ref-counted, off at 0). */
+  retainTrackLevels: () => () => void;
+  /** Stage 0 — subscribe outside React state so only meter leaves re-render. */
+  subscribeTrackLevels: (
+    listener: (levels: ReadonlyMap<string, StudioTrackLevelSnapshot>) => void,
+  ) => () => void;
   setOutputSinkId: (
     sinkId: string | null,
   ) => Promise<{ applied: boolean; reason?: string }>;
@@ -199,6 +208,13 @@ export function StudioTransportProvider({
   const [meter, setMeter] = useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
   const [trackMeter, setTrackMeter] =
     useState<StudioMeterSnapshot>(STUDIO_METER_NEUTRAL);
+  const trackLevelListenersRef = useRef(
+    new Set<(levels: ReadonlyMap<string, StudioTrackLevelSnapshot>) => void>(),
+  );
+  const trackLevelsRef = useRef<ReadonlyMap<string, StudioTrackLevelSnapshot>>(
+    new Map(),
+  );
+  const trackLevelRetainRef = useRef(0);
 
   const hasTimelineAudio =
     Boolean(beatId) || engineDocument.clips.some((c) => c.sourceKind === "TAKE");
@@ -367,6 +383,11 @@ export function StudioTransportProvider({
     engine.setDocument(engineDocument);
     const unsubMeter = engine.subscribeMeter(setMeter);
     const unsubTrackMeter = engine.subscribeTrackMeter(setTrackMeter);
+    const unsubTrackLevels = engine.subscribeTrackLevels((levels) => {
+      trackLevelsRef.current = levels;
+      for (const listener of trackLevelListenersRef.current) listener(levels);
+    });
+    engine.setTrackLevelsEnabled(trackLevelRetainRef.current > 0);
 
     const onVisibility = () => {
       if (typeof document === "undefined") return;
@@ -383,6 +404,7 @@ export function StudioTransportProvider({
       }
       unsubMeter();
       unsubTrackMeter();
+      unsubTrackLevels();
       engine.setTrackMeterTarget(null);
       engine.dispose();
       engineRef.current = null;
@@ -487,6 +509,31 @@ export function StudioTransportProvider({
     engineRef.current?.setTrackMeterTarget(trackId);
   }, []);
 
+  const retainTrackLevels = useCallback(() => {
+    trackLevelRetainRef.current += 1;
+    engineRef.current?.setTrackLevelsEnabled(true);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      trackLevelRetainRef.current = Math.max(0, trackLevelRetainRef.current - 1);
+      if (trackLevelRetainRef.current === 0) {
+        engineRef.current?.setTrackLevelsEnabled(false);
+      }
+    };
+  }, []);
+
+  const subscribeTrackLevels = useCallback(
+    (listener: (levels: ReadonlyMap<string, StudioTrackLevelSnapshot>) => void) => {
+      trackLevelListenersRef.current.add(listener);
+      listener(trackLevelsRef.current);
+      return () => {
+        trackLevelListenersRef.current.delete(listener);
+      };
+    },
+    [],
+  );
+
   const setOutputSinkId = useCallback(
     async (
       sinkId: string | null,
@@ -587,6 +634,8 @@ export function StudioTransportProvider({
       takePreviewActive,
       getPlayheadMs,
       setTrackMeterTarget,
+      retainTrackLevels,
+      subscribeTrackLevels,
       setOutputSinkId,
       play,
       pause,
@@ -616,6 +665,8 @@ export function StudioTransportProvider({
       takePreviewActive,
       getPlayheadMs,
       setTrackMeterTarget,
+      retainTrackLevels,
+      subscribeTrackLevels,
       setOutputSinkId,
       play,
       pause,

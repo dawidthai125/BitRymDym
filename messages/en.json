@@ -1237,7 +1237,21 @@
       "tabEffects": "Effects",
       "tabFile": "File",
       "tabRecord": "Record",
-      "beatButton": "Beat"
+      "beatButton": "Beat",
+      "cofnij": "Undo",
+      "ponow": "Redo",
+      "cofnijSkrot": "Undo (Ctrl+Z)",
+      "ponowSkrot": "Redo (Ctrl+Shift+Z / Ctrl+Y)",
+      "cofnietoZmiane": "Change undone",
+      "ponowionoZmiane": "Change redone",
+      "nieMoznaCofnac": "Can't undo — the item was deleted",
+      "rolaSciezki": "Track role: {v0}",
+      "cofnietoCzesciowo": "Undo was only partly applied — some changes were not saved. Refresh the project.",
+      "poziomKrotko": "Vol",
+      "panoramaKrotko": "Pan",
+      "panSrodekKrotko": "C",
+      "panLewoKrotko": "L",
+      "panPrawoKrotko": "R"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",
@@ -1557,7 +1571,8 @@
     },
     "studioTrackMeter": {
       "miernikSciezki": "Track meter",
-      "poziomSciezkiSamplePeak": "Track level {v0} (sample peak)"
+      "poziomSciezkiSamplePeak": "Track level {v0} (sample peak)",
+      "poziomSciezkiNaZywo": "Live track level"
     },
     "studioTransportProvider": {
       "brakBituWProjekcie": "No beat in the project. Add a beat to listen."
@@ -1688,6 +1703,15 @@
       "CANCELLED": "cancelled",
       "TIMEOUT": "timed out",
       "unknown": "unknown export status"
+    },
+    "trackRole": {
+      "lead_vocal": "Lead vocal",
+      "adlib": "Adlib",
+      "double": "Double / stack",
+      "backing": "Backing vocal",
+      "beat": "Beat",
+      "instrument": "Instrument",
+      "other": "Other"
     }
   },
   "nav": {

@@ -440,6 +440,87 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   background: color-mix(in srgb, var(--tape-panel) 80%, var(--tape-amber) 8%);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tape-amber) 55%, transparent);
 }
+/* Stage 0 — track role picker (header). */
+.studio-track-role-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0 1.1rem 0 0.35rem;
+  border: 1px solid var(--tape-line-strong);
+  background-color: var(--tape-soot);
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 0.5rem center,
+    right 0.3rem center;
+  background-size: 0.2rem 0.2rem;
+  background-repeat: no-repeat;
+  color: var(--tape-cream-soft);
+  text-overflow: ellipsis;
+}
+.studio-track-role-select:hover:not(:disabled) {
+  border-color: var(--tape-amber-deep);
+}
+.studio-track-role-select:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+.studio-track-role-select:focus-visible {
+  outline: 2px solid var(--tape-amber);
+  outline-offset: 1px;
+}
+.studio-track-role-select option {
+  background: var(--tape-soot);
+  color: var(--tape-cream-soft);
+}
+.studio-track-strip[data-track-role="lead_vocal"] .studio-track-role-select,
+.studio-track-strip[data-track-type="BEAT"] .studio-track-role-select {
+  border-color: var(--tape-amber-deep);
+  color: var(--tape-amber);
+}
+/* Stage 0 — per-track level meter (header): dark rail + dB scale, visible in silence. */
+.studio-track-level-well {
+  background-color: color-mix(in srgb, var(--tape-soot) 65%, #000);
+  background-image:
+    /* scale ticks at 25 / 50 / 75 % (≈ -18 / -12 / -6 dB on the display curve) */
+    linear-gradient(to top,
+      transparent calc(25% - 0.5px), var(--tape-line-strong) calc(25% - 0.5px),
+      var(--tape-line-strong) calc(25% + 0.5px), transparent calc(25% + 0.5px),
+      transparent calc(50% - 0.5px), var(--tape-line-strong) calc(50% - 0.5px),
+      var(--tape-line-strong) calc(50% + 0.5px), transparent calc(50% + 0.5px),
+      transparent calc(75% - 0.5px), var(--tape-amber-deep) calc(75% - 0.5px),
+      var(--tape-amber-deep) calc(75% + 0.5px), transparent calc(75% + 0.5px)),
+    /* dim LED segments */
+    repeating-linear-gradient(to top,
+      color-mix(in srgb, var(--tape-amber) 9%, transparent) 0 3px,
+      transparent 3px 4px);
+  box-shadow: inset 0 0 0 1px var(--tape-line-strong);
+}
+.studio-track-level-fill {
+  background: linear-gradient(
+    to top,
+    var(--tape-amber-deep) 0%,
+    var(--tape-amber) 75%,
+    var(--tape-rec) 100%
+  );
+  -webkit-mask: repeating-linear-gradient(to top, #000 0 3px, transparent 3px 4px);
+  mask: repeating-linear-gradient(to top, #000 0 3px, transparent 3px 4px);
+  transition: height 60ms linear;
+}
+.studio-track-level-hold {
+  background: var(--tape-cream-soft);
+}
+.studio-track-level-clip {
+  background: color-mix(in srgb, var(--tape-soot) 65%, #000);
+  box-shadow: inset 0 0 0 1px var(--tape-line-strong);
+}
+.studio-track-level-clip[data-clipping="true"] {
+  background: var(--tape-rec);
+  box-shadow: 0 0 4px var(--tape-rec);
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-track-level-fill { transition: none; }
+}
 .studio-type-label {
   padding: 0 0.3rem;
   border: 1px solid var(--tape-line-strong);

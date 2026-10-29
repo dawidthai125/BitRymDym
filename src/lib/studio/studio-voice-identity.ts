@@ -27,8 +27,17 @@ export function studioClipSourceIdentity(
 export function shouldReuseStudioVoice(params: {
   existingIdentityKey: string | null | undefined;
   nextIdentityKey: string | null;
+  /** Unversioned fallback: same resolved URL on both sides → same media. */
+  existingSourceUrl?: string | null;
+  nextSourceUrl?: string | null;
 }): boolean {
   const next = params.nextIdentityKey;
-  if (!next) return false;
+  if (!next) {
+    return (
+      !params.existingIdentityKey &&
+      Boolean(params.nextSourceUrl) &&
+      params.existingSourceUrl === params.nextSourceUrl
+    );
+  }
   return params.existingIdentityKey === next;
 }

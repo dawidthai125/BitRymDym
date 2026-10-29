@@ -1237,7 +1237,21 @@
       "tabEffects": "Efekty",
       "tabFile": "Plik",
       "tabRecord": "Nagraj",
-      "beatButton": "Bit"
+      "beatButton": "Bit",
+      "cofnij": "Cofnij",
+      "ponow": "Ponów",
+      "cofnijSkrot": "Cofnij (Ctrl+Z)",
+      "ponowSkrot": "Ponów (Ctrl+Shift+Z / Ctrl+Y)",
+      "cofnietoZmiane": "Cofnięto zmianę",
+      "ponowionoZmiane": "Ponowiono zmianę",
+      "nieMoznaCofnac": "Nie można cofnąć — element został usunięty",
+      "rolaSciezki": "Rola ścieżki {v0}",
+      "cofnietoCzesciowo": "Cofnięto tylko częściowo — część zmian nie została zapisana. Odśwież projekt.",
+      "poziomKrotko": "Poz.",
+      "panoramaKrotko": "Pan.",
+      "panSrodekKrotko": "Ś",
+      "panLewoKrotko": "L",
+      "panPrawoKrotko": "P"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",
@@ -1557,7 +1571,8 @@
     },
     "studioTrackMeter": {
       "miernikSciezki": "Miernik ścieżki",
-      "poziomSciezkiSamplePeak": "Poziom ścieżki {v0} (sample peak)"
+      "poziomSciezkiSamplePeak": "Poziom ścieżki {v0} (sample peak)",
+      "poziomSciezkiNaZywo": "Poziom ścieżki na żywo"
     },
     "studioTransportProvider": {
       "brakBituWProjekcie": "Brak bitu w projekcie. Dodaj bit, aby odsłuchać."
@@ -1688,6 +1703,15 @@
       "CANCELLED": "anulowane",
       "TIMEOUT": "przekroczono czas",
       "unknown": "nieznany status eksportu"
+    },
+    "trackRole": {
+      "lead_vocal": "Wokal główny",
+      "adlib": "Adlib",
+      "double": "Dogrywka / podbicie",
+      "backing": "Chórek",
+      "beat": "Bit",
+      "instrument": "Instrument",
+      "other": "Inne"
     }
   },
   "nav": {

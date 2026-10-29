@@ -632,7 +632,7 @@ describe("STU-14 recording recovery — 25 scenarios", () => {
 
   it("19. auto-stop on limit: tick stops at maxSeconds; copy within limit + slack is recoverable", async () => {
     expect(panel).toMatch(
-      /if \(elapsed >= maxSecondsRef\.current \* 1000\) \{\s*void stopAndFinalize\(\);/,
+      /if \(\s*elapsed >= maxSecondsRef\.current \* 1000 \|\|[\s\S]{0,120}\)\s*\{\s*void stopAndFinalize\(\);/,
     );
     expect(panel).toMatch(/maxRecordingSeconds: maxSecondsRef\.current/);
     const store = new MemoryStore();
