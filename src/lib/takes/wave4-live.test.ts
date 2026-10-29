@@ -2,11 +2,14 @@
  * Live — Recording Wave 4 entitlement, anti-abuse, download, delete, janitor.
  */
 import { randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
@@ -25,38 +28,17 @@ import {
 import { runTakesRetentionJanitor } from "@/lib/takes/takes-janitor";
 import type { AccountLevel } from "@/types/domain";
 
-function readEnvLocal(): Record<string, string> {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (!m) continue;
-    let val = m[2]!;
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[m[1]!] = val;
-  }
-  return out;
-}
-
-const env = { ...readEnvLocal(), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const fixturePath = resolve(
   process.cwd(),
   "../bitrymdym-fixtures/bpm-120-steady.wav",
 );
-const live = Boolean(url && serviceKey && anonKey && existsSync(fixturePath));
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+const anonKey = integration.enabled ? integration.anonKey : undefined;
 
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
+if (integration.enabled) applyIntegrationEnv(integration);
 
 function userContext(
   userId: string,
@@ -194,27 +176,13 @@ async function cleanupTakeBundle(
     userIds: string[];
   },
 ) {
-  for (const takeId of params.takeIds) {
-    const { data: t } = await admin
-      .from("takes")
-      .select("object_key")
-      .eq("id", takeId)
-      .maybeSingle();
-    if (t?.object_key) {
-      await admin.storage
-        .from(TAKE_AUDIO_BUCKET)
-        .remove([t.object_key as string]);
-    }
-    await admin.from("takes").delete().eq("id", takeId);
-  }
-  await admin.storage
-    .from(BEAT_AUDIO_BUCKET)
-    .remove([params.beatObjectKey]);
-  await admin.from("beat_audio_assets").delete().eq("id", params.assetId);
-  await admin.from("beats").delete().eq("id", params.beatId);
-  for (const uid of params.userIds) {
-    await admin.auth.admin.deleteUser(uid);
-  }
+  // Takes (incl. params.takeIds) are found through the beat / owners;
+  // premium_entitlements (RESTRICT on the user) are removed before the users.
+  const fixtures = createIntegrationFixtures(admin);
+  fixtures.trackBeat(params.beatId);
+  fixtures.trackObject(BEAT_AUDIO_BUCKET, params.beatObjectKey);
+  params.userIds.forEach(fixtures.trackUser);
+  await fixtures.cleanup();
 }
 
 describe.runIf(live)("Recording Wave 4 live", () => {

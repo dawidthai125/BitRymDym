@@ -1,7 +1,7 @@
 import { configDefaults, defineConfig } from "vitest/config";
 import path from "node:path";
 
-import { INTEGRATION_TEST_FILES } from "./src/test/integration-test-files";
+import { DEFAULT_SUITE_EXCLUDE } from "./src/test/integration-test-files";
 import { MEDIA_ENCODE_TEST_FILES } from "./src/test/media-encode-test-files";
 
 export default defineConfig({
@@ -13,7 +13,7 @@ export default defineConfig({
     ],
     exclude: [
       ...configDefaults.exclude,
-      ...INTEGRATION_TEST_FILES,
+      ...DEFAULT_SUITE_EXCLUDE,
       ...MEDIA_ENCODE_TEST_FILES,
     ],
     setupFiles: ["./src/test/vitest.setup.ts"],

@@ -2,11 +2,17 @@
  * Live — Recording Wave 5 Shared Grants → RECORD.
  */
 import { randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import {
+  createIntegrationFixtures,
+  type IntegrationFixtures,
+} from "@/test/integration-fixtures";
 
 import { MAX_ACTIVE_BEAT_ACCESS_GRANTS } from "@/config/beat-access-grants";
 import { AuthError } from "@/lib/auth/session";
@@ -24,38 +30,17 @@ import {
 } from "@/lib/grants/beat-access-grants";
 import { createTakeRecordingSessionFor } from "@/lib/takes/take-transport";
 
-function readEnvLocal(): Record<string, string> {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (!m) continue;
-    let val = m[2]!;
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[m[1]!] = val;
-  }
-  return out;
-}
-
-const env = { ...readEnvLocal(), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const fixturePath = resolve(
   process.cwd(),
   "../bitrymdym-fixtures/bpm-120-steady.wav",
 );
-const live = Boolean(url && serviceKey && anonKey && existsSync(fixturePath));
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+if (integration.enabled) applyIntegrationEnv(integration);
 
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
+let fixtures: IntegrationFixtures | undefined;
 
 function userContext(userId: string, email: string): AuthContext {
   return {
@@ -85,6 +70,7 @@ async function makeUser(admin: SupabaseClient, label: string) {
   });
   expect(error).toBeNull();
   const userId = data.user!.id;
+  fixtures?.trackUser(userId);
   await admin.from("profiles").upsert({
     id: userId,
     role: "USER",
@@ -100,6 +86,7 @@ async function makePublishedUserBeat(
   bytes: Buffer,
 ) {
   const beatId = randomUUID();
+  fixtures?.trackBeat(beatId);
   const { error: beatErr } = await admin.from("beats").insert({
     id: beatId,
     owner_id: ownerId,
@@ -119,6 +106,7 @@ async function makePublishedUserBeat(
     assetId,
     purpose: "MASTER",
   });
+  fixtures?.trackObject(BEAT_AUDIO_BUCKET, objectKey);
   const { error: upErr } = await admin.storage
     .from(BEAT_AUDIO_BUCKET)
     .upload(objectKey, bytes, {
@@ -145,6 +133,13 @@ async function makePublishedUserBeat(
 }
 
 describe.runIf(live)("Recording Wave 5 — live grants", () => {
+  fixtures = createIntegrationFixtures(
+    createClient(url!, serviceKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }),
+  );
+  afterAll(() => fixtures!.cleanup(), 120_000);
+
   it("create / list / revoke / self-deny / foreign-deny / session still works", async () => {
     const admin = createClient(url!, serviceKey!, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -229,14 +224,6 @@ describe.runIf(live)("Recording Wave 5 — live grants", () => {
     });
     expect(again.grantId).not.toBe(created.grantId);
     expect(MAX_ACTIVE_BEAT_ACCESS_GRANTS).toBe(20);
-
-    await admin.from("takes").delete().eq("beat_id", beatId);
-    await admin.from("beat_access_grants").delete().eq("beat_id", beatId);
-    await admin.from("beat_audio_assets").delete().eq("beat_id", beatId);
-    await admin.from("beats").delete().eq("id", beatId);
-    await admin.auth.admin.deleteUser(owner.userId);
-    await admin.auth.admin.deleteUser(grantee.userId);
-    await admin.auth.admin.deleteUser(stranger.userId);
   }, 120_000);
 
   it("expired unrevoked grant is soft-revoked on re-create", async () => {
@@ -279,11 +266,5 @@ describe.runIf(live)("Recording Wave 5 — live grants", () => {
       .eq("id", expiredRow!.id)
       .single();
     expect(old?.revoked_at).toBeTruthy();
-
-    await admin.from("beat_access_grants").delete().eq("beat_id", beatId);
-    await admin.from("beat_audio_assets").delete().eq("beat_id", beatId);
-    await admin.from("beats").delete().eq("id", beatId);
-    await admin.auth.admin.deleteUser(owner.userId);
-    await admin.auth.admin.deleteUser(grantee.userId);
   }, 120_000);
 });

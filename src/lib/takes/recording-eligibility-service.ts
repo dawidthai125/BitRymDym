@@ -6,6 +6,7 @@
 import "server-only";
 
 import { AuthError, getCurrentProfile } from "@/lib/auth/session";
+import type { AuthContext } from "@/lib/auth/types";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { utcDayWindowStart } from "@/lib/downloads/limits";
 import {
@@ -97,9 +98,12 @@ async function countAnonActiveReady(tokenHash: string): Promise<number> {
 /**
  * Authenticated or anonymous eligibility for a published beat.
  * Cookie may be minted for anon so session counts stay consistent.
+ * Optional `context` overrides cookie session (live tests / server callers).
  */
 export async function resolveRecordingEligibility(params: {
   beatId: string;
+  /** When set, skip Next cookies() — use provided AuthContext (or null = anon). */
+  context?: AuthContext | null;
 }): Promise<RecordingEligibilityDecision> {
   if (typeof params.beatId !== "string" || params.beatId.length < 8) {
     throw new AuthError("FORBIDDEN", "Invalid beatId.");
@@ -124,7 +128,10 @@ export async function resolveRecordingEligibility(params: {
     };
   }
 
-  const auth = await getCurrentProfile();
+  const auth =
+    params.context !== undefined
+      ? params.context
+      : await getCurrentProfile();
   if (auth) {
     const product = await resolveProductEntitlementForAuthContext(auth);
     const actor = sampleActorFromPremiumTier(product.premiumTier);

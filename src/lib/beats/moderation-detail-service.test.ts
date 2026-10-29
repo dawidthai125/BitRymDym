@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   readyMaster: true,
   beatError: null as { message: string } | null,
   queries: [] as string[],
+  filters: [] as { op: "is"; column: string; value: unknown }[],
 }));
 
 function builder(table: string) {
@@ -58,6 +59,10 @@ function builder(table: string) {
   const chain = {
     select: () => chain,
     eq: () => chain,
+    is: (column: string, value: unknown) => {
+      state.filters.push({ op: "is", column, value });
+      return chain;
+    },
     in: () => chain,
     maybeSingle: async () => resolve(),
     then: (done: (value: unknown) => unknown) => done(resolve()),
@@ -143,6 +148,7 @@ beforeEach(() => {
   state.readyMaster = true;
   state.beatError = null;
   state.queries = [];
+  state.filters = [];
 });
 
 describe("viewer guard runs before any beat query", () => {
@@ -166,6 +172,11 @@ describe("viewer guard runs before any beat query", () => {
     state.viewerRole = role;
     const beat = await getStaffCommunityBeatForModeration(BEAT_ID);
     expect(beat).toMatchObject({ id: BEAT_ID, activeMasterReady: true });
+    expect(state.filters).toContainEqual({
+      op: "is",
+      column: "closed_at",
+      value: null,
+    });
   });
 });
 
@@ -206,6 +217,11 @@ describe("content checks", () => {
     await expect(
       getStaffCommunityBeatForModeration(BEAT_ID),
     ).resolves.toMatchObject({ status: "APPROVED" });
+    expect(state.filters).toContainEqual({
+      op: "is",
+      column: "closed_at",
+      value: null,
+    });
     expect(await codeOf(getPendingReviewBeatForModeration(BEAT_ID))).toBe(
       "FORBIDDEN",
     );
@@ -216,6 +232,11 @@ describe("content checks", () => {
     await expect(
       getStaffCommunityBeatForModeration(BEAT_ID),
     ).resolves.toMatchObject({ activeMasterReady: false });
+    expect(state.filters).toContainEqual({
+      op: "is",
+      column: "closed_at",
+      value: null,
+    });
   });
 
   it("database failure is a plain Error, never an AuthError", async () => {

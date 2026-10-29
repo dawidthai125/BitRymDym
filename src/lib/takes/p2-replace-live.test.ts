@@ -3,10 +3,12 @@
  * Uses controlled fixtures; cleans up takes it creates.
  */
 import { randomBytes, randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import type { AuthContext } from "@/lib/auth/types";
@@ -22,29 +24,15 @@ import {
 } from "@/lib/takes/take-transport";
 import { buildUserBeatAudioObjectKey } from "@/lib/beats/audio-validation";
 
-function loadEnvFile(path: string): Record<string, string> {
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
-    if (i <= 0) continue;
-    out[t.slice(0, i)] = t.slice(i + 1).replace(/^["']|["']$/g, "");
-  }
-  return out;
-}
-
-const env = { ...loadEnvFile(resolve(process.cwd(), ".env.local")), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const fixturePath = resolve(process.cwd(), "../bitrymdym-fixtures/bpm-120-steady.wav");
-const live = Boolean(url && serviceKey && anonKey && existsSync(fixturePath));
-
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
+const fixturePath = resolve(
+  process.cwd(),
+  "../bitrymdym-fixtures/bpm-120-steady.wav",
+);
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+if (integration.enabled) applyIntegrationEnv(integration);
 
 function makeShortSilentWav(durationSeconds = 1, sampleRate = 8000): Buffer {
   const numSamples = Math.floor(sampleRate * durationSeconds);
@@ -158,7 +146,6 @@ async function uploadSessionBlob(
 
 const createdUserIds: string[] = [];
 const createdBeatIds: string[] = [];
-const createdTakeIds: string[] = [];
 
 describe.runIf(live)("P2 — explicit sample replace live", () => {
   const admin = createClient(url!, serviceKey!, {
@@ -167,22 +154,12 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
   const bytes = makeShortSilentWav(1);
 
   afterAll(async () => {
-    for (const id of createdTakeIds) {
-      await admin.from("takes").update({ status: "FAILED", failure_reason: "P2_TEST_CLEANUP" }).eq("id", id);
-      const { data: t } = await admin.from("takes").select("object_key").eq("id", id).maybeSingle();
-      if (t?.object_key) {
-        await admin.storage.from(TAKE_AUDIO_BUCKET).remove([t.object_key as string]);
-      }
-      await admin.from("takes").delete().eq("id", id);
-    }
-    for (const beatId of createdBeatIds) {
-      await admin.from("beat_audio_assets").delete().eq("beat_id", beatId);
-      await admin.from("beats").delete().eq("id", beatId);
-    }
-    for (const uid of createdUserIds) {
-      await admin.auth.admin.deleteUser(uid);
-    }
-  });
+    // Takes are found through their beat / owner, including replace chains.
+    const fixtures = createIntegrationFixtures(admin);
+    createdBeatIds.forEach(fixtures.trackBeat);
+    createdUserIds.forEach(fixtures.trackUser);
+    await fixtures.cleanup();
+  }, 120_000);
 
   it(
     "at cap without replace → REPLACE_REQUIRED; valid replace → READY + old DELETED",
@@ -201,7 +178,6 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
         contentType: "audio/wav",
         byteSize: bytes.byteLength,
       });
-      createdTakeIds.push(s.takeId);
       await uploadSessionBlob(admin, s, bytes, "audio/wav");
       const ready = await finalizeTakeRecordingFor(owner.context, { takeId: s.takeId });
       expect(ready.status).toBe("READY");
@@ -257,7 +233,6 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
       byteSize: bytes.byteLength,
       replaceTakeId: replaceTarget,
     });
-    createdTakeIds.push(s.takeId);
     expect(s.takeId).toBeTruthy();
     await uploadSessionBlob(admin, s, bytes, "audio/wav");
     const ready = await finalizeTakeRecordingFor(owner.context, { takeId: s.takeId });
@@ -298,7 +273,6 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
       contentType: "audio/wav",
       byteSize: bytes.byteLength,
     });
-    createdTakeIds.push(s1.takeId);
     await uploadSessionBlob(admin, s1, bytes, "audio/wav");
     await finalizeAnonTakeRecordingFor(hashA, { takeId: s1.takeId });
 
@@ -326,7 +300,6 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
       byteSize: bytes.byteLength,
       replaceTakeId: s1.takeId,
     });
-    createdTakeIds.push(pending.takeId);
     const { data: stillReady } = await admin
       .from("takes")
       .select("status, deleted_at")
@@ -347,7 +320,6 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
       byteSize: bytes.byteLength,
       replaceTakeId: s1.takeId,
     });
-    createdTakeIds.push(s2.takeId);
     await uploadSessionBlob(admin, s2, bytes, "audio/wav");
     await finalizeAnonTakeRecordingFor(hashA, { takeId: s2.takeId });
 

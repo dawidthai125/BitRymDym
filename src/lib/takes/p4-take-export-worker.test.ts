@@ -89,30 +89,39 @@ describe("P4.6 Phase 1 TAKE_EXPORT source AuthZ (T01–T04)", () => {
   });
 });
 
-describe("P4.6 Phase 1 tier mapping (T05–T08, T17)", () => {
-  it("T05 BASIC_MP3 / MP3_128", () => {
+describe("P4.6 / PREMIUM-01 Phase 1 tier mapping (T05–T08, T17)", () => {
+  it("T05 BASIC_MP3 / MP3_128 — FREE denied", () => {
     expect(renderTierForTakeExportQuality("MP3_128")).toBe("BASIC_MP3");
     expect(canExportOwnTake({ premiumTier: "FREE", quality: "MP3_128" })).toBe(
-      true,
-    );
-  });
-
-  it("T06 MP3_192", () => {
-    expect(renderTierForTakeExportQuality("MP3_192")).toBe("MP3_192");
-    expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_192" })).toBe(
-      true,
-    );
-    expect(canExportOwnTake({ premiumTier: "FREE", quality: "MP3_192" })).toBe(
       false,
     );
+    expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_128" })).toBe(
+      true,
+    );
   });
 
-  it("T07 HQ_MP3 / MP3_320", () => {
+  it("T06 MP3_192 — SILVER+", () => {
+    expect(renderTierForTakeExportQuality("MP3_192")).toBe("MP3_192");
+    expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_192" })).toBe(
+      false,
+    );
+    expect(canExportOwnTake({ premiumTier: "SILVER", quality: "MP3_192" })).toBe(
+      true,
+    );
+  });
+
+  it("T07 HQ_MP3 / MP3_320 — GOLD only", () => {
     expect(renderTierForTakeExportQuality("MP3_320")).toBe("HQ_MP3");
+    expect(canExportOwnTake({ premiumTier: "SILVER", quality: "MP3_320" })).toBe(
+      false,
+    );
+    expect(canExportOwnTake({ premiumTier: "GOLD", quality: "MP3_320" })).toBe(
+      true,
+    );
   });
 
-  it("T08 WAV", () => {
-    expect(renderTierForTakeExportQuality("WAV")).toBe("WAV");
+  it("T08 WAV legacy alias → WAV_COMPAT / WAV tier", () => {
+    expect(renderTierForTakeExportQuality("WAV_COMPAT")).toBe("WAV");
   });
 
   it("T17 tier from server quality map only (not client bitrate)", () => {
