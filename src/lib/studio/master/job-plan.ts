@@ -1,10 +1,12 @@
 /**
  * Stage 3 — Studio master/deliver job planning (pure, shared by API + E3 worker).
+ * The browser uploads nothing: the E3 worker renders the mix / raw sum / stems itself from
+ * the takes + beat in storage (same TS DSP as the browser preview, see server-render.ts).
  * Storage layout in the private `audio-artifacts` bucket (keys carry no user data
  * besides opaque uuids):
- *   studio-master/{owner}/{project}/{job}/in/source.wav      ← browser-rendered approved mix / raw sum
- *   studio-master/{owner}/{project}/{job}/in/stems/NN.wav    ← dry track stems (Projekt)
- *   studio-master/{owner}/{project}/{job}/out/{kind}.{ext}   ← worker output
+ *   studio-master/{owner}/{project}/{job}/out/{kind}.{ext}        ← worker output (master: 24-bit FLAC)
+ *   studio-master/{owner}/{project}/{job}/out/{kind}.{ext}.pNNN   ← 40 MiB byte parts when > 40 MiB
+ *                                                                   (e.g. WAV 24 at 4:00), joined in the browser
  */
 import { DELIVER_FFMPEG_ARGS } from "@/lib/studio/deliver/policy";
 

@@ -75,4 +75,4 @@ def test_cli_zip(tmp_path):
     out = tmp_path / "p.zip"
     r = subprocess.run([sys.executable, str(Path(__file__).with_name("master.py")), "zip", "--in", str(d), "--out", str(out)], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout
-    assert sorted(zipfile.ZipFile(out).namelist()) == ["01-wokal.wav", "02-bit.wav"]
+    assert sorted(zipfile.ZipFile(out).namelist()) == ["01-wokal.flac", "02-bit.flac"]

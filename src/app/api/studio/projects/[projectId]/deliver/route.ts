@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/session";
-import { commitStudioDeliver, prepareStudioDeliver, signStudioStemUpload } from "@/lib/studio/master/server";
+import { commitStudioDeliver, prepareStudioDeliver } from "@/lib/studio/master/server";
 
 import { DENY_STATUS, masterErrorResponse, readJson, tierOf } from "../master/_shared";
 
@@ -26,12 +26,8 @@ export async function POST(request: Request, context: RouteContext) {
       const r = await prepareStudioDeliver(base);
       return NextResponse.json({ success: r.ok, ...r }, { status: r.ok ? 200 : DENY_STATUS[r.error] ?? 400 });
     }
-    if (body.action === "stem") {
-      if (tier !== "GOLD") return NextResponse.json({ error: "tier_project" }, { status: 403 });
-      return NextResponse.json({ success: true, ...(await signStudioStemUpload({ ownerId: auth.userId, projectId, jobId: String(body.jobId ?? ""), name: String(body.name ?? "") })) });
-    }
     if (body.action === "commit") {
-      const r = await commitStudioDeliver({ ...base, jobId: String(body.jobId ?? "") });
+      const r = await commitStudioDeliver({ ...base, jobId: String(body.jobId ?? ""), documentVersion: body.documentVersion });
       return NextResponse.json({ success: r.ok, ...r }, { status: r.ok ? 202 : DENY_STATUS[r.error] ?? 400 });
     }
     return NextResponse.json({ error: "bad_action" }, { status: 400 });

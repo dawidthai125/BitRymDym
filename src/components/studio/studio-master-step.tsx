@@ -7,13 +7,11 @@ import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-do
 import { Button } from "@/components/ui/button";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import type { DeliverFormat, DeliverKind } from "@/lib/studio/deliver/policy";
-import { encodeWavFloat, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer, uploadToSignedUrl } from "@/lib/studio/master/client";
+import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
-import { renderMixStereo } from "@/lib/studio/master/render-mix";
 import { DEFAULT_MASTER_SETTINGS, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, clampMasterSettings, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterTargetId } from "@/lib/studio/master/targets";
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
 import { decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
-import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
 
 type Tier = "FREE" | "BRONZE" | "SILVER" | "GOLD";
@@ -65,7 +63,6 @@ export function StudioMasterStep({
   const [renderPct, setRenderPct] = useState(0);
   const [renderFailed, setRenderFailed] = useState(false);
   const [mix, setMix] = useState<{ stereo: Stereo; raw: Stereo; metrics: MasterMetrics } | null>(null);
-  const inputRef = useRef<MixAnalysisInput | null>(null);
   const [target, setTarget] = useState<MasterTargetId>(initialState?.target ?? "streaming");
   const [settings, setSettings] = useState<MasterSettings>(DEFAULT_MASTER_SETTINGS);
   const [preview, setPreview] = useState<{ stereo: Stereo; metrics: MasterMetrics; key: string } | null>(null);
@@ -87,7 +84,6 @@ export function StudioMasterStep({
       const input = await decodeMixAnalysisInput({ doc, resolveSourceUrl: resolveClipSourceUrl, sampleRate: MASTER_RENDER_SAMPLE_RATE, signal: controller.signal, onProgress: (f) => setRenderPct(Math.round(f * 80)) });
       if (controller.signal.aborted) return;
       if (!input) return setRenderFailed(true);
-      inputRef.current = input;
       try {
         const r = await renderApprovedMix(input);
         if (!controller.signal.aborted) setMix({ stereo: r.mix, raw: r.raw, metrics: r.mixMetrics });
@@ -114,11 +110,13 @@ export function StudioMasterStep({
           const id = a.id;
           void fetch(`/api/studio/projects/${projectId}/jobs/${id}`)
             .then((r) => (r.ok ? r.json() : null))
-            .then((job) => {
+            .then(async (job) => {
               if (!live || !job?.job) return;
+              const url = await resultUrl(job);
+              if (!live) return;
               if (a.target && isMasterTargetId(a.target)) setTarget(a.target);
               if (a.settings) setSettings(clampMasterSettings(a.settings));
-              setSm((cur) => (cur.phase === "idle" ? { phase: "done", jobId: id, url: job.downloadUrl ?? null, metrics: (job.job.metrics as { after?: Record<string, unknown> }) ?? null } : cur));
+              setSm((cur) => (cur.phase === "idle" ? { phase: "done", jobId: id, url, metrics: (job.job.metrics as { after?: Record<string, unknown> }) ?? null } : cur));
               setApproved(true);
             })
             .catch(() => {});
@@ -214,15 +212,24 @@ export function StudioMasterStep({
     };
   }, [chatContextRef, getChatContext]);
 
-  async function pollJob(jobId: string): Promise<{ status: string; url: string | null; metrics: unknown; code: string | null }> {
+  /** Signed URL, or a joined object URL when the result is stored in ≤40 MB parts. */
+  async function resultUrl(j: { downloadUrl?: string | null; downloadParts?: string[] | null; filename?: string | null }): Promise<string | null> {
+    if (j.downloadUrl) return j.downloadUrl;
+    if (!j.downloadParts?.length) return null;
+    const ext = (j.filename ?? "").split(".").pop();
+    const blob = await joinParts(j.downloadParts, ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : "audio/wav");
+    return blob ? URL.createObjectURL(blob) : null;
+  }
+
+  async function pollJob(jobId: string): Promise<{ status: string; url: string | null; filename: string | null; metrics: unknown; code: string | null }> {
     for (let i = 0; i < 240; i++) {
       const r = await fetch(`/api/studio/projects/${projectId}/jobs/${jobId}`);
       const j = r.ok ? await r.json() : null;
       const st = j?.job?.status;
-      if (st === "succeeded" || st === "failed" || st === "cancelled") return { status: st, url: j.downloadUrl ?? null, metrics: j.job.metrics, code: j.job.errorCode ?? null };
+      if (st === "succeeded" || st === "failed" || st === "cancelled") return { status: st, url: st === "succeeded" ? await resultUrl(j) : null, filename: j.filename ?? null, metrics: j.job.metrics, code: j.job.errorCode ?? null };
       await sleep(i < 10 ? 1500 : 4000);
     }
-    return { status: "failed", url: null, metrics: null, code: "timeout" };
+    return { status: "failed", url: null, filename: null, metrics: null, code: "timeout" };
   }
 
   async function makeMaster() {
@@ -233,9 +240,9 @@ export function StudioMasterStep({
     try {
       const prep = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "prepare" }) }).then((r) => r.json());
       if (prep.available === false) return setSm({ phase: "unavailable" });
-      if (!prep.jobId || !prep.uploadUrl) return setSm({ phase: "failed", code: "prepare" });
-      if (!(await uploadToSignedUrl(prep.uploadUrl, encodeWavFloat(mix.stereo)))) return setSm({ phase: "failed", code: "upload" });
-      const commit = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "commit", jobId: prep.jobId, target, settings }) }).then((r) => r.json());
+      if (!prep.jobId) return setSm({ phase: "failed", code: "prepare" });
+      // E3 renders the mix itself from the saved project (same DSP as this preview).
+      const commit = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "commit", jobId: prep.jobId, target, settings, documentVersion: doc.project.documentVersion }) }).then((r) => r.json());
       if (commit.available === false) return setSm({ phase: "unavailable" });
       if (!commit.ok) return setSm({ phase: "failed", code: String(commit.error ?? "commit") });
       setSm({ phase: "working", jobId: prep.jobId });
@@ -268,21 +275,7 @@ export function StudioMasterStep({
       const prep = await post({ action: "prepare" });
       if (!prep.json.ok) return setDl({ key, status: prep.status === 429 ? "limit" : "error" });
       const jobId = String(prep.json.jobId);
-      if (kind === "mix" || kind === "raw") {
-        const s = kind === "mix" ? mix?.stereo : mix?.raw;
-        if (!s || !prep.json.upload?.uploadUrl || !(await uploadToSignedUrl(prep.json.upload.uploadUrl, encodeWavFloat(s)))) return setDl({ key, status: "error" });
-      }
-      if (kind === "project" && inputRef.current) {
-        const input = inputRef.current;
-        let n = 0;
-        for (const tr of input.tracks) {
-          const stem = renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id });
-          const name = `${String(++n).padStart(2, "0")}-${tr.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "track"}.wav`;
-          const sign = await post({ action: "stem", jobId, name });
-          if (!sign.json.uploadUrl || !(await uploadToSignedUrl(sign.json.uploadUrl, encodeWavFloat(stem)))) return setDl({ key, status: "error" });
-        }
-      }
-      const commit = await post({ action: "commit", jobId });
+      const commit = await post({ action: "commit", jobId, documentVersion: doc.project.documentVersion });
       if (commit.json.usage) setServer((s) => ({ ...s, usage: { used: commit.json.usage.used, weekLimit: commit.json.usage.week_limit ?? null, resetAt: commit.json.usage.reset_at ?? null } }));
       if (!commit.json.ok) return setDl({ key, status: commit.status === 429 ? "limit" : "error" });
       const done = await pollJob(jobId);
@@ -290,6 +283,7 @@ export function StudioMasterStep({
       const a = document.createElement("a");
       a.href = done.url;
       a.rel = "noopener";
+      if (done.filename) a.download = done.filename;
       a.click();
       setDl({ key, status: "done" });
     } catch {

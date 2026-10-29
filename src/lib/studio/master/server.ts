@@ -2,8 +2,9 @@ import "server-only";
 
 /**
  * Stage 3 — Mastering + delivery server logic (service_role, owner-checked).
- * Two-phase uploads: `prepare` returns a fresh job id + signed upload URL for the
- * browser-rendered input; `commit` re-checks policy, consumes quota and queues the job.
+ * Everything is rendered on E3 from the project sources in storage — the browser
+ * uploads nothing. `prepare` = policy check + fresh job id; `commit` re-checks policy
+ * (and the document version the user previewed), consumes quota and queues the job.
  * Missing tables (migration not applied) → `{ available: false }`.
  */
 import { randomUUID } from "node:crypto";
@@ -14,7 +15,8 @@ import { clampMasterSettings, isMasterTargetId } from "@/lib/studio/master/targe
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
-import { outputExt, studioMasterJobPrefix, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
+import { downloadFilename, partsOf } from "./parts";
+import { outputExt, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 
 const BUCKET = "audio-artifacts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -36,15 +38,16 @@ async function assertOwner(admin: Admin, ownerId: string, projectId: string): Pr
   return { documentVersion: Number((data as { document_version?: number }).document_version ?? 0) };
 }
 
-async function signedUpload(admin: Admin, key: string) {
-  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(key);
-  if (error || !data) throw new Error("sign_upload_failed");
-  return { uploadUrl: data.signedUrl, uploadToken: data.token, path: key };
+async function listNames(admin: Admin, dir: string): Promise<string[]> {
+  const { data } = await admin.storage.from(BUCKET).list(dir, { limit: 1000 });
+  return (data ?? []).map((f) => f.name);
 }
 
-async function inputExists(admin: Admin, prefix: string, stems: boolean): Promise<boolean> {
-  const { data } = await admin.storage.from(BUCKET).list(stems ? `${prefix}/in/stems` : `${prefix}/in`, { limit: 64 });
-  return !!data?.some((f) => (stems ? /\.wav$/i.test(f.name) : f.name === "source.wav"));
+/** Full keys making up `key` (whole object or its .pNNN parts), in order. */
+async function objectParts(admin: Admin, key: string): Promise<string[]> {
+  const i = key.lastIndexOf("/");
+  const dir = key.slice(0, i);
+  return partsOf(await listNames(admin, dir), key.slice(i + 1)).map((n) => `${dir}/${n}`);
 }
 
 export type MasterJobView = {
@@ -88,16 +91,19 @@ export async function getStudioMasterState(p: { ownerId: string; projectId: stri
 export async function prepareStudioMaster(p: { ownerId: string; projectId: string }) {
   const admin = createSupabaseAdminClient();
   await assertOwner(admin, p.ownerId, p.projectId);
-  const jobId = randomUUID();
-  return { jobId, ...(await signedUpload(admin, `${studioMasterJobPrefix(p.ownerId, p.projectId, jobId)}/in/source.wav`)) };
+  return { jobId: randomUUID(), uploadUrl: null };
 }
 
-export async function commitStudioMaster(p: { ownerId: string; projectId: string; jobId: string; target: unknown; settings: unknown }) {
+/** The browser previewed version `seen`; if the project moved on, the E3 render would differ. */
+function versionMismatch(seen: unknown, current: number): boolean {
+  return seen !== undefined && seen !== null && Number(seen) !== current;
+}
+
+export async function commitStudioMaster(p: { ownerId: string; projectId: string; jobId: string; target: unknown; settings: unknown; documentVersion?: unknown }) {
   if (!UUID.test(p.jobId) || !isMasterTargetId(p.target)) throw new AuthError("FORBIDDEN", "bad_request");
   const admin = createSupabaseAdminClient();
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
-  const prefix = studioMasterJobPrefix(p.ownerId, p.projectId, p.jobId);
-  if (!(await inputExists(admin, prefix, false))) return { ok: false as const, error: "input_missing" };
+  if (versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
   const { error } = await admin.from("studio_master_jobs").insert({
     id: p.jobId, project_id: p.projectId, owner_id: p.ownerId, kind: "master", target: p.target,
     settings: clampMasterSettings((p.settings ?? {}) as Record<string, number>), source_document_version: documentVersion, output_format: "WAV_FLOAT",
@@ -118,27 +124,14 @@ export async function approveStudioMaster(p: { ownerId: string; projectId: strin
 
 const JOB_FOR: Record<DeliverKind, StudioMasterJobKind> = { mix: "transcode", master: "transcode", raw: "raw_sum", project: "project_zip" };
 
-/** Deliver phase 1: policy check (no quota yet) + upload URL for browser-rendered inputs. */
+/** Deliver phase 1: policy check (no quota yet) + job id. */
 export async function prepareStudioDeliver(p: { ownerId: string; projectId: string; tier: PremiumTier; kind: unknown; format: unknown }) {
   const admin = createSupabaseAdminClient();
   await assertOwner(admin, p.ownerId, p.projectId);
   const approved = await approvedMaster(admin, p.ownerId, p.projectId);
   const d = decideDeliver({ tier: p.tier, kind: p.kind, format: p.format, approved: !!approved });
   if (!d.allowed) return { ok: false as const, error: d.reason };
-  const jobId = randomUUID();
-  const prefix = studioMasterJobPrefix(p.ownerId, p.projectId, jobId);
-  if (p.kind === "master") return { ok: true as const, jobId, upload: null };
-  // Projekt: stems are signed one by one via signStudioStemUpload.
-  if (p.kind === "project") return { ok: true as const, jobId, upload: null };
-  return { ok: true as const, jobId, upload: await signedUpload(admin, `${prefix}/in/source.wav`) };
-}
-
-/** Signed upload for one stem of a Projekt zip (name = NN-safe.wav). */
-export async function signStudioStemUpload(p: { ownerId: string; projectId: string; jobId: string; name: string }) {
-  if (!UUID.test(p.jobId) || !/^\d{2}-[a-z0-9_-]{1,40}\.wav$/.test(p.name)) throw new AuthError("FORBIDDEN", "bad_request");
-  const admin = createSupabaseAdminClient();
-  await assertOwner(admin, p.ownerId, p.projectId);
-  return signedUpload(admin, `${studioMasterJobPrefix(p.ownerId, p.projectId, p.jobId)}/in/stems/${p.name}`);
+  return { ok: true as const, jobId: randomUUID(), upload: null };
 }
 
 /** Approved master — only while the project is unchanged since (mix edits ⇒ master again). */
@@ -153,7 +146,7 @@ async function approvedMaster(admin: Admin, ownerId: string, projectId: string) 
 }
 
 /** Deliver phase 2: re-check, consume quota atomically, queue the job. */
-export async function commitStudioDeliver(p: { ownerId: string; projectId: string; tier: PremiumTier; jobId: string; kind: unknown; format: unknown }) {
+export async function commitStudioDeliver(p: { ownerId: string; projectId: string; tier: PremiumTier; jobId: string; kind: unknown; format: unknown; documentVersion?: unknown }) {
   if (!UUID.test(p.jobId)) throw new AuthError("FORBIDDEN", "bad_request");
   const admin = createSupabaseAdminClient();
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
@@ -162,14 +155,8 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   if (!d.allowed) return { ok: false as const, error: d.reason };
   const kind = p.kind as DeliverKind;
   const format = p.format as DeliverFormat;
-  const prefix = studioMasterJobPrefix(p.ownerId, p.projectId, p.jobId);
-  if (kind === "master") {
-    if (!approved?.result_object_key) return { ok: false as const, error: "not_approved" };
-    const { error } = await admin.storage.from(BUCKET).copy(approved.result_object_key, `${prefix}/in/source.wav`);
-    if (error) throw new Error("copy_failed");
-  } else if (!(await inputExists(admin, prefix, kind === "project"))) {
-    return { ok: false as const, error: "input_missing" };
-  }
+  if (kind === "master" && !approved?.result_object_key) return { ok: false as const, error: "not_approved" };
+  if (kind !== "master" && versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
   const { data: q, error: qe } = await admin.rpc("consume_studio_download", {
     p_owner_id: p.ownerId, p_project_id: p.projectId, p_kind: kind, p_format: format, p_tier: p.tier, p_week_limit: d.weeklyLimit,
   });
@@ -184,20 +171,39 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   return { ok: true as const, jobId: p.jobId, usage: quota };
 }
 
-/** Job status; signed download URL (10 min) once succeeded. */
-export async function getStudioJob(p: { ownerId: string; projectId: string; jobId: string; filename: string }) {
+function deliverLabel(row: Record<string, unknown>): string {
+  if (row.kind === "project_zip") return "projekt";
+  if (row.kind === "raw_sum") return "goly";
+  if (row.kind === "master") return "master";
+  return row.source_artifact_id ? "master" : "mix";
+}
+
+/** Job status; signed download URL(s) (10 min) once succeeded. Large results come as ordered parts. */
+export async function getStudioJob(p: { ownerId: string; projectId: string; jobId: string }) {
   if (!UUID.test(p.jobId)) throw new AuthError("NOT_FOUND", "not_found");
   const admin = createSupabaseAdminClient();
   await assertOwner(admin, p.ownerId, p.projectId);
+  const { data: proj } = await admin.from("studio_projects").select("title").eq("id", p.projectId).maybeSingle();
   const { data, error } = await admin.from("studio_master_jobs").select("*").eq("id", p.jobId).eq("owner_id", p.ownerId).eq("project_id", p.projectId).maybeSingle();
   check(error);
   if (!data) throw new AuthError("NOT_FOUND", "not_found");
   const row = data as Record<string, unknown>;
   let downloadUrl: string | null = null;
+  let downloadParts: string[] | null = null;
+  let filename: string | null = null;
   if (row.status === "succeeded" && typeof row.result_object_key === "string") {
-    const ext = outputExt(row.output_format as StudioMasterOutputFormat);
-    const { data: s } = await admin.storage.from(BUCKET).createSignedUrl(row.result_object_key, 600, { download: `${p.filename}.${ext}` });
-    downloadUrl = s?.signedUrl ?? null;
+    const fmt = String(row.output_format);
+    const ext = /\.(\w+)$/.exec(row.result_object_key)?.[1] ?? outputExt(fmt as StudioMasterOutputFormat);
+    filename = downloadFilename((proj as { title?: string } | null)?.title, deliverLabel(row), fmt, ext);
+    const keys = await objectParts(admin, row.result_object_key);
+    if (keys.length === 1) {
+      const { data: s } = await admin.storage.from(BUCKET).createSignedUrl(keys[0], 600, { download: filename });
+      downloadUrl = s?.signedUrl ?? null;
+    } else if (keys.length > 1) {
+      const { data: s } = await admin.storage.from(BUCKET).createSignedUrls(keys, 600);
+      downloadParts = (s ?? []).map((x) => x.signedUrl ?? "");
+      if (downloadParts.length !== keys.length || downloadParts.some((u) => !u)) downloadParts = null;
+    }
   }
-  return { job: view(row), downloadUrl };
+  return { job: view(row), downloadUrl, downloadParts, filename };
 }
