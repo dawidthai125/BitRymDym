@@ -1,5 +1,7 @@
 "use client";
 
+import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { applyMixOpsToDocument, inverseMixAutofixOps } from "@/lib/studio/mix-autofix/plan";
 import { useLibText } from "@/i18n/use-lib-text";
 
 
@@ -193,6 +195,8 @@ export function StudioEditor({
   trackCapacity: StudioTrackCapacityProps;
 }) {
   const [doc, setDoc] = useState(initialDocument);
+  /** Stage 2 — A/B: "before BITEK" mix plane heard instead of the saved one (playback only). */
+  const [mixAbOverride, setMixAbOverride] = useState<StudioProjectDocument | null>(null);
   const beatRef = useMemo(
     () =>
       resolvePrimaryBeatRef({
@@ -204,21 +208,27 @@ export function StudioEditor({
   );
 
   const engineDocument: StudioEngineDocument = useMemo(
-    () => ({
+    () => {
+      const mix = mixAbOverride;
+      const mixTrack = (id: string) => mix?.tracks.find((x) => x.id === id);
+      return {
       timelineLengthMs: doc.project.timelineLengthMs,
-      masterGainDb: doc.project.masterGainDb,
-      masterPan: doc.project.masterPan,
-      masterFxChain: doc.project.masterFxChain,
+      masterGainDb: mix ? mix.project.masterGainDb : doc.project.masterGainDb,
+      masterPan: mix ? mix.project.masterPan : doc.project.masterPan,
+      masterFxChain: mix ? mix.project.masterFxChain : doc.project.masterFxChain,
       // AUD-01 SSOT — schedule path rejects mismatched BEAT_REF via this field.
       projectBeatId: doc.project.beatId,
-      tracks: doc.tracks.map((t) => ({
-        id: t.id,
-        gainDb: t.gainDb,
-        pan: t.pan,
-        muted: t.muted,
-        solo: t.solo,
-        effectsChain: t.effectsChain,
-      })),
+      tracks: doc.tracks.map((t) => {
+        const m = mixTrack(t.id) ?? t;
+        return {
+          id: t.id,
+          gainDb: m.gainDb,
+          pan: m.pan,
+          muted: t.muted,
+          solo: t.solo,
+          effectsChain: m.effectsChain,
+        };
+      }),
       // Drop stale BEAT_REF from the engine graph (defense before planVoices).
       clips: doc.clips
         .filter((c) => {
@@ -242,8 +252,9 @@ export function StudioEditor({
           fadeInMs: c.fadeInMs,
           fadeOutMs: c.fadeOutMs,
         })),
-    }),
-    [doc],
+      };
+    },
+    [doc, mixAbOverride],
   );
 
   return (
@@ -259,6 +270,7 @@ export function StudioEditor({
         doc={doc}
         setDoc={setDoc}
         trackCapacity={trackCapacity}
+        onMixAbOverride={setMixAbOverride}
       />
     </StudioTransportProvider>
   );
@@ -268,10 +280,12 @@ function StudioEditorInner({
   doc,
   setDoc,
   trackCapacity,
+  onMixAbOverride,
 }: {
   doc: StudioProjectDocument;
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
   trackCapacity: StudioTrackCapacityProps;
+  onMixAbOverride: (before: StudioProjectDocument | null) => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
@@ -651,7 +665,83 @@ function StudioEditorInner({
         if (op.kind === "track_fx" && !committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
         persistFxChainForHistory(op);
         return true;
+      case "mix_ops": {
+        const ops = op.ops.map((o) => ("trackId" in o ? { ...o, trackId: r(o.trackId) } : o));
+        if (ops.some((o) => "trackId" in o && !committedDocRef.current.tracks.some((t) => t.id === o.trackId))) return false;
+        void persistMixWorkingOps(ops, null);
+        return true;
+      }
     }
+  }
+
+  /**
+   * Stage 2 — atomic Mix Working apply (same CAS path as history restore).
+   * `revision` = BITEK "AI" version meta; null for undo/redo replays.
+   */
+  async function persistMixWorkingOps(
+    ops: MixWorkingOp[],
+    revision: { author: "AI"; description: string } | null,
+  ): Promise<StudioPersistResult> {
+    setError(null);
+    return enqueuePersistAsync(async () => {
+      try {
+        const res = await fetch(`/api/studio/projects/${docRef.current.project.id}/mix-working/apply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedDocumentVersion: docRef.current.project.documentVersion,
+            requestId: crypto.randomUUID(),
+            ops,
+            ...(revision ? { revision } : {}),
+          }),
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (!res.ok || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? tr("nieUdaloSieZapisac"),
+            code: json.code,
+          });
+          if (!revision) {
+            if (failure.kind === "conflict") setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+            else if (!failure.retryable) setError(failure.message);
+          }
+          return failure;
+        }
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => {
+              const next = applyMixOpsToDocument(prev, ops);
+              return { ...next, project: { ...next.project, documentVersion } };
+            });
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  /** Stage 2 — BITEK auto-fix: one atomic apply, one undo entry, "AI" version. */
+  async function applyMixAutofix(
+    ops: MixWorkingOp[],
+    description: string,
+  ): Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }> {
+    if (recordingLockedRef.current || ops.length === 0) return { ok: false, conflict: false };
+    await flushPersist();
+    const before = committedDocRef.current;
+    const inverse = inverseMixAutofixOps(before, ops);
+    const result = await persistMixWorkingOps(ops, { author: "AI", description });
+    if (!result.ok) return { ok: false, conflict: result.kind === "conflict" };
+    recordUndo({ undo: { kind: "mix_ops", ops: inverse }, redo: { kind: "mix_ops", ops } });
+    return { ok: true, before };
   }
 
   const studioApiCall: StudioApiCall = async (method, path, body) => {
@@ -2797,6 +2887,8 @@ function StudioEditorInner({
           onBack={() => setStudioStep("record")}
           bitekBase={bitekBase}
           onApplyProposal={applyBitekProposal}
+          onApplyAutofix={applyMixAutofix}
+          onAbOverride={onMixAbOverride}
         />
       ) : (
         <>

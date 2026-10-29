@@ -15,6 +15,24 @@ import {
 import type { MixMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type { MixCard, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analysis/verdict";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
+import {
+  MIX_AUTOFIX_ALL,
+  MIX_CARD_FIXES,
+  planMixAutofix,
+  type MixAutofixId,
+  type MixAutofixNote,
+} from "@/lib/studio/mix-autofix/plan";
+import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+
+export type MixAutofixApply = (
+  ops: MixWorkingOp[],
+  description: string,
+) => Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }>;
+
+type FixPanel =
+  | { kind: "done"; notes: MixAutofixNote[]; after: string | null }
+  | { kind: "nothing" }
+  | { kind: "error"; conflict: boolean };
 
 const STATUS_RAIL: Record<MixCardStatus, string> = {
   green: "border-l-[var(--brd-green)]",
@@ -50,12 +68,16 @@ export function StudioMixStep({
   onBack,
   bitekBase,
   onApplyProposal,
+  onApplyAutofix,
+  onAbOverride,
 }: {
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   onBack: () => void;
   bitekBase: { hasBeat: boolean; vocalTrackCount: number; vocalClipCount: number };
   onApplyProposal: BitekApplyProposal;
+  onApplyAutofix?: MixAutofixApply;
+  onAbOverride?: (before: StudioProjectDocument | null) => void;
 }) {
   const locale = useLocale();
   const t = useTranslations("studio.mixStep");
@@ -70,6 +92,25 @@ export function StudioMixStep({
   const stale = Boolean(result && result.signature !== signature);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // Stage 2 — auto-fix state
+  const [fixing, setFixing] = useState<string | null>(null);
+  const [panel, setPanel] = useState<FixPanel | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null } | null>(null);
+  const [abMode, setAbMode] = useState<"before" | "after">("after");
+  const reanalyzeRef = useRef<{ fromSig: string } | null>(null);
+  const reportRef = useRef(false);
+  const abOverrideRef = useRef(onAbOverride);
+  useEffect(() => {
+    abOverrideRef.current = onAbOverride;
+  });
+  useEffect(() => () => abOverrideRef.current?.(null), []);
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   const analyze = useCallback(async () => {
     abortRef.current?.abort();
@@ -90,10 +131,68 @@ export function StudioMixStep({
     setRunning(false);
     if (outcome.ok) {
       setResult({ metrics: outcome.metrics, verdict: outcome.verdict, signature: sig, elapsedMs: outcome.elapsedMs });
+      if (reportRef.current) {
+        reportRef.current = false;
+        const v = outcome.verdict;
+        const after = t(`autofix.poAnalizie.${v.overall}`, { red: v.redCount, yellow: v.yellowCount });
+        setPanel((p) => (p?.kind === "done" ? { ...p, after } : p));
+      }
     } else {
       setFailure(outcome.reason);
     }
-  }, [doc, resolveClipSourceUrl, signature]);
+  }, [doc, resolveClipSourceUrl, signature, t]);
+
+  // After a confirmed apply the doc signature changes → re-analyse once.
+  useEffect(() => {
+    const pending = reanalyzeRef.current;
+    if (!pending || pending.fromSig === signature) return;
+    reanalyzeRef.current = null;
+    reportRef.current = true;
+    setAb((cur) => (cur ? { ...cur, afterSig: signature } : cur));
+    void analyze();
+  }, [signature, analyze]);
+
+  // Any further edit ends the A/B comparison (derived, not stored).
+  const abLive = ab && (!ab.afterSig || ab.afterSig === signature) ? ab : null;
+  const abEnded = Boolean(ab && !abLive);
+  useEffect(() => {
+    if (abEnded) onAbOverride?.(null);
+  }, [abEnded, onAbOverride]);
+
+  const setAbListen = (mode: "before" | "after") => {
+    const ab = abLive;
+    if (!ab) return;
+    setAbMode(mode);
+    onAbOverride?.(mode === "before" ? ab.before : null);
+  };
+
+  const runFix = async (fixes: readonly MixAutofixId[], key: string, summary: string) => {
+    if (!result || !onApplyAutofix || fixing || running || stale) return;
+    const plan = planMixAutofix({
+      doc,
+      metrics: result.metrics,
+      verdict: result.verdict,
+      fixes,
+      createId: () => crypto.randomUUID(),
+    });
+    if (plan.ops.length === 0) {
+      setPanel({ kind: "nothing" });
+      return;
+    }
+    setFixing(key);
+    if (ab) onAbOverride?.(null);
+    const res = await onApplyAutofix(plan.ops, t("autofix.historia", { summary }));
+    setFixing(null);
+    if (!res.ok) {
+      setPanel({ kind: "error", conflict: res.conflict });
+      return;
+    }
+    reanalyzeRef.current = { fromSig: signature };
+    setAb({ before: res.before, afterSig: null });
+    setAbMode("after");
+    setPanel({ kind: "done", notes: plan.notes, after: null });
+    setToast(t("autofix.toast", { count: plan.notes.length }));
+  };
 
   const analysisState: BitekAnalysisState = running
     ? { status: "running", progress }
@@ -196,13 +295,115 @@ export function StudioMixStep({
               <span className="font-mono text-xs text-[var(--brd-mute)]">
                 {t("werdyktLicznik", { red: verdict.redCount, yellow: verdict.yellowCount })}
               </span>
+              {onApplyAutofix && verdict.overall !== "green" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-9"
+                  disabled={Boolean(fixing) || running || stale}
+                  aria-describedby="studio-mix-fix-all-hint"
+                  data-testid="studio-mix-fix-all"
+                  onClick={() => void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"))}
+                >
+                  {fixing === "all" ? t("poprawTrwa") : t("poprawWszystko")}
+                </Button>
+              ) : null}
+              <span id="studio-mix-fix-all-hint" className="sr-only">{t("poprawWszystkoOpis")}</span>
+            </div>
+          ) : null}
+
+          {abLive ? (
+            <div
+              role="group"
+              aria-label={t("autofix.ab.aria")}
+              data-testid="studio-mix-ab"
+              className="flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2"
+            >
+              <span className="text-sm font-semibold">{t("autofix.ab.label")}</span>
+              {(["before", "after"] as const).map((mode) => (
+                <Button
+                  key={mode}
+                  type="button"
+                  size="sm"
+                  variant={abMode === mode ? "default" : "outline"}
+                  aria-pressed={abMode === mode}
+                  className="min-h-9"
+                  data-testid={`studio-mix-ab-${mode}`}
+                  onClick={() => setAbListen(mode)}
+                >
+                  {mode === "before" ? t("autofix.ab.przed") : t("autofix.ab.po")}
+                </Button>
+              ))}
+              <span className="text-xs text-[var(--brd-mute)]" aria-live="polite">
+                {t("autofix.ab.opis", {
+                  version: abMode === "before" ? t("autofix.ab.przed") : t("autofix.ab.po"),
+                })}
+              </span>
+            </div>
+          ) : null}
+
+          {panel ? (
+            <section
+              aria-live="polite"
+              aria-labelledby="studio-mix-fix-title"
+              data-testid="studio-mix-fix-panel"
+              data-kind={panel.kind}
+              className="flex flex-col gap-1.5 rounded-[2px] border border-[var(--brd-line)] border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] p-3"
+            >
+              <h3 id="studio-mix-fix-title" className="brd-display text-base leading-tight">
+                {panel.kind === "done" ? t("autofix.tytul") : t("autofix.podpis")}
+              </h3>
+              {panel.kind === "done" ? (
+                <>
+                  <ul className="flex list-disc flex-col gap-1 pl-5 text-sm">
+                    {panel.notes.map((n, i) => (
+                      <li key={`${n.key}-${i}`}>{t(`autofix.notes.${n.key}`, n.params)}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-[var(--brd-mute)]">{t("autofix.zapisane")}</p>
+                  {panel.after ? (
+                    <p className="text-sm" data-testid="studio-mix-fix-after">{panel.after}</p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-sm" role={panel.kind === "error" ? "alert" : undefined}>
+                  {panel.kind === "nothing"
+                    ? t("autofix.nic")
+                    : panel.conflict
+                      ? t("autofix.konflikt")
+                      : t("autofix.blad")}
+                </p>
+              )}
+              <p className="text-right font-mono text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">— {t("autofix.podpis")}</p>
+            </section>
+          ) : null}
+
+          {toast ? (
+            <div
+              role="status"
+              data-testid="studio-mix-toast"
+              className="fixed bottom-4 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-ink,#111)] px-4 py-2 text-sm text-[var(--brd-paper,#fff)] shadow-lg"
+            >
+              {toast}
             </div>
           ) : null}
 
           {verdict ? (
             <ul data-testid="studio-mix-cards" className="grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
               {verdict.cards.map((card) => (
-                <MixCardItem key={card.id} card={card} />
+                <MixCardItem
+                  key={card.id}
+                  card={card}
+                  canFix={Boolean(onApplyAutofix) && !running && !stale && !fixing}
+                  busy={fixing === card.id}
+                  onFix={() =>
+                    void runFix(
+                      MIX_CARD_FIXES[card.id],
+                      card.id,
+                      t("autofix.historiaKarta", { title: t(`cards.${card.id}.title`) }),
+                    )
+                  }
+                />
               ))}
             </ul>
           ) : null}
@@ -281,8 +482,19 @@ export function StudioMixStep({
   );
 }
 
-function MixCardItem({ card }: { card: MixCard }) {
+function MixCardItem({
+  card,
+  canFix,
+  busy,
+  onFix,
+}: {
+  card: MixCard;
+  canFix: boolean;
+  busy: boolean;
+  onFix: () => void;
+}) {
   const t = useTranslations("studio.mixStep");
+  const fixable = MIX_CARD_FIXES[card.id].length > 0;
   const hintId = `studio-mix-fix-hint-${card.id}`;
   return (
     <li
@@ -300,10 +512,22 @@ function MixCardItem({ card }: { card: MixCard }) {
       <p className="text-sm">{t(`cards.${card.id}.${card.messageKey}`, card.params)}</p>
       {card.status === "red" || card.status === "yellow" ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" size="sm" variant="outline" disabled aria-describedby={hintId} className="min-h-9">
-            {t("popraw")}
-          </Button>
-          <span id={hintId} className="text-xs text-[var(--brd-mute)]">{t("poprawWkrotce")}</span>
+          {fixable ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!canFix}
+              aria-label={t("poprawAria", { title: t(`cards.${card.id}.title`) })}
+              className="min-h-9"
+              data-testid="studio-mix-card-fix"
+              onClick={onFix}
+            >
+              {busy ? t("poprawTrwa") : t("popraw")}
+            </Button>
+          ) : (
+            <span id={hintId} className="text-xs text-[var(--brd-mute)]">{t("poprawBrak")}</span>
+          )}
         </div>
       ) : null}
     </li>

@@ -7,6 +7,7 @@
  */
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import type { StudioStructuralUndoOp } from "@/lib/studio/studio-undo-structural";
+import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 
 export const STUDIO_UNDO_HISTORY_LIMIT = 100;
 
@@ -25,6 +26,8 @@ export type StudioUndoOp =
   | { kind: "clip_mute"; clipId: string; muted: boolean }
   | { kind: "track_fx"; trackId: string; chain: StudioFxChainV1 }
   | { kind: "master_fx"; chain: StudioFxChainV1 }
+  /** Stage 2 — BITEK auto-fix batch, replayed atomically via mix-working/apply. */
+  | { kind: "mix_ops"; ops: MixWorkingOp[] }
   | StudioStructuralUndoOp;
 
 export type StudioUndoEntry = { undo: StudioUndoOp; redo: StudioUndoOp };
