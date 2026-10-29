@@ -307,7 +307,7 @@ export function BeatsCatalogClient({
                 className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 outline-none"
               >
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="brd-meta text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                  <p className="text-xs font-medium text-[var(--brd-mute)]">
                     Filtry
                   </p>
                   <button
@@ -344,7 +344,7 @@ function SortSelect({
 }) {
   return (
     <label className="inline-flex items-center gap-2 text-sm text-[var(--brd-ink-soft)]">
-      <span className="brd-meta text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+      <span className="text-xs font-medium text-[var(--brd-mute)]">
         Sortuj
       </span>
       <select
@@ -394,7 +394,7 @@ function FilterPanel({
   return (
     <div className="space-y-0">
       <div className="mb-3 flex items-baseline justify-between gap-2">
-        <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
+        <p className="text-xs font-medium text-[var(--brd-mute)]">
           Filtry
         </p>
         {activeCount > 0 ? (
@@ -427,7 +427,7 @@ function FilterPanel({
 
       <FilterGroup title="BPM">
         <div className="space-y-2 pt-0.5">
-          <p className="brd-meta text-[11px] text-[var(--brd-ink-soft)]">
+          <p className="brd-meta text-[11px] tabular-nums text-[var(--brd-ink-soft)]">
             {bpmMin}–{bpmMax}
           </p>
           <label className="block">
@@ -498,7 +498,7 @@ function FilterGroup({
     >
       <p
         id={titleId}
-        className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]"
+        className="text-xs font-medium text-[var(--brd-mute)]"
       >
         {title}
       </p>

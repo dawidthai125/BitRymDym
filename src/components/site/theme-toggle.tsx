@@ -74,7 +74,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="brd-meta hidden text-xs uppercase tracking-[0.12em] text-[var(--brd-ink-soft)] sm:inline">
+      <span className="hidden text-xs text-[var(--brd-ink-soft)] sm:inline">
         Motyw
       </span>
       <span className="font-medium text-[var(--brd-ink)]">{label}</span>
