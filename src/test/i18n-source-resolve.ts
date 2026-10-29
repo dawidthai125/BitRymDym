@@ -21,7 +21,30 @@ function icuToText(s: string): string {
   return s.replace(/'([{}<>])'/g, "$1").replace(/''/g, "'");
 }
 
-export function resolveI18nSource(src: string): string {
+/** Strip `tl(expr)` display-boundary wrappers (lib-text translation) → `expr`. */
+function unwrapLibText(src: string): string {
+  let out = "";
+  let i = 0;
+  const re = /\btl\(/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    if (m.index < i) continue;
+    let depth = 1;
+    let j = m.index + 3;
+    for (; j < src.length && depth > 0; j++) {
+      if (src[j] === "(") depth++;
+      else if (src[j] === ")") depth--;
+    }
+    if (depth !== 0) break;
+    out += src.slice(i, m.index) + unwrapLibText(src.slice(m.index + 3, j - 1));
+    i = j;
+    re.lastIndex = j;
+  }
+  return out + src.slice(i);
+}
+
+export function resolveI18nSource(input: string): string {
+  const src = unwrapLibText(input);
   const ns: Record<string, string[]> = {};
   for (const m of src.matchAll(
     /const (\w+) = (?:await getTranslations|useTranslations)\(\s*"([^"]+)"\s*\)/g,
