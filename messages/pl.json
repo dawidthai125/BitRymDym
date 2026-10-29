@@ -1900,7 +1900,9 @@
         "goRecord": "Wróć do nagrywania",
         "analyze": "Analizuj mix",
         "chooseBeat": "Wybierz bit",
-        "record": "Nagraj"
+        "record": "Nagraj",
+        "goMaster": "Przejdź do Masteringu",
+        "backToMix": "Wróć do Mixu"
       },
       "msg": {
         "recording": "Nagrywam. Skup się na wokalu, a ja poczekam.",
@@ -1955,7 +1957,8 @@
         },
         "notatka": "Notatka BITKA",
         "zapisProjekt": "Rozmowa zapisuje się w projekcie.",
-        "zapisLokalny": "Rozmowa zapisuje się tylko na tym urządzeniu."
+        "zapisLokalny": "Rozmowa zapisuje się tylko na tym urządzeniu.",
+        "wrocDoMixu": "Wróć do Mixu"
       },
       "dock": {
         "czatTytul": "Pogadaj z BITKIEM",
@@ -1974,6 +1977,168 @@
         "powitanieKrok3": "W każdej chwili kliknij mnie i zapytaj o cokolwiek.",
         "zaczynamy": "Zaczynamy",
         "gotowy": "Jestem tu. Kliknij mnie, jak będziesz czegoś potrzebować."
+      }
+    },
+    "masterStep": {
+      "tytul": "Mastering",
+      "wrocDoMixu": "Wróć do Mixu",
+      "wrocUwaga": "Po zmianach w Mixie mastering trzeba zrobić od nowa.",
+      "renderuje": "Składam Twój mix w jedną ścieżkę… {pct}%",
+      "renderBlad": "Nie udało się złożyć mixu. Wróć do Mixu i spróbuj jeszcze raz.",
+      "calyNumer": "Od teraz słyszę cały numer jako jedną ścieżkę stereo.",
+      "celTytul": "Gdzie ma grać Twój numer?",
+      "cele": {
+        "streaming": {
+          "nazwa": "Streaming",
+          "opis": "Spotify, Apple Music, Tidal"
+        },
+        "youtube": {
+          "nazwa": "YouTube / TikTok",
+          "opis": "Wideo i krótkie formy"
+        },
+        "headphones": {
+          "nazwa": "Słuchawki",
+          "opis": "Więcej dynamiki, ciszej"
+        },
+        "club": {
+          "nazwa": "Klub",
+          "opis": "Głośno, na nagłośnienie"
+        }
+      },
+      "celWartosci": "{lufs} LUFS · {tp} dBTP",
+      "ustawieniaTytul": "Brzmienie całości",
+      "ustawienia": {
+        "loudness": "Głośność",
+        "bright": "Jasność",
+        "bass": "Bas",
+        "width": "Szerokość",
+        "squash": "Ściśnięcie"
+      },
+      "mniej": "Mniej: {name}",
+      "wiecej": "Więcej: {name}",
+      "reset": "Wyzeruj",
+      "abTytul": "Porównaj A/B",
+      "abMix": "Mix",
+      "abMaster": "Master",
+      "abWyrownane": "Wyrównana głośność",
+      "abWyrownaneOpis": "Obie wersje grają równie głośno, żeby było słychać brzmienie, a nie głośność.",
+      "graj": "Odtwórz",
+      "stop": "Stop",
+      "podgladUwaga": "Podgląd w przeglądarce jest przybliżony. Finalny master robi serwer.",
+      "podgladLiczy": "Liczę podgląd…",
+      "kartyTytul": "Analiza mastera",
+      "zrobMaster": "Zrób master",
+      "masterTrwa": "Robię master na serwerze…",
+      "masterKolejka": "Czekam w kolejce…",
+      "masterBlad": "Master się nie udał ({code}). Spróbuj jeszcze raz.",
+      "serwerNiedostepny": "Serwerowy mastering nie jest jeszcze włączony. Podgląd działa, pobieranie pojawi się po włączeniu.",
+      "uploadBlad": "Nie udało się wysłać mixu na serwer.",
+      "finalTytul": "Posłuchaj gotowego numeru",
+      "finalOpis": "To jest master z serwera — dokładnie ten plik pobierzesz.",
+      "zatwierdz": "Zatwierdzam, utwór jest gotowy",
+      "zatwierdzTrwa": "Zatwierdzam…",
+      "zatwierdzone": "Zatwierdzone. Utwór jest gotowy.",
+      "pobierzTytul": "Pobierz",
+      "pobierz": {
+        "mix": "Pobierz Mix",
+        "master": "Pobierz Mastering",
+        "raw": "Pobierz „Goły utwór”",
+        "project": "Pobierz Projekt"
+      },
+      "pobierzOpis": {
+        "mix": "Twój mix bez masteringu.",
+        "master": "Gotowy numer po masteringu.",
+        "raw": "Suma ścieżek bez efektów i bez zmian AI.",
+        "project": "Wszystkie ścieżki w jednym pliku ZIP."
+      },
+      "format": {
+        "MP3_128": "MP3 128",
+        "MP3_192": "MP3 192",
+        "MP3_320": "MP3 320",
+        "WAV_24": "WAV 24-bit",
+        "ZIP": "ZIP"
+      },
+      "formatAria": "{kind} — {format}",
+      "zablokowane": "Od planu {plan}",
+      "tylkoGold": "Tylko w planie Gold",
+      "planInfo": "Twój plan: {plan}",
+      "licznikFree": "W tym tygodniu: {used} z {limit} pobrań",
+      "licznikReset": "Kolejne pobranie od {date}",
+      "limitWyczerpany": "Wykorzystałeś darmowe pobranie w tym tygodniu.",
+      "przygotowuje": "Przygotowuję plik…",
+      "gotowyPlik": "Plik gotowy — pobieranie się zaczyna.",
+      "pobierzBlad": "Nie udało się przygotować pliku.",
+      "gosc": "Zaloguj się, żeby pobierać.",
+      "plany": {
+        "FREE": "Free",
+        "BRONZE": "Bronze",
+        "SILVER": "Silver",
+        "GOLD": "Gold"
+      },
+      "cards": {
+        "loudness": {
+          "title": "Głośność",
+          "ok": "{lufs} LUFS — w celu ({goal}).",
+          "quiet": "{lufs} LUFS — ciszej niż cel {goal}.",
+          "loud": "{lufs} LUFS — głośniej niż cel {goal}.",
+          "silent": "Nie słyszę sygnału."
+        },
+        "truePeak": {
+          "title": "True peak",
+          "ok": "{tp} dBTP — bezpiecznie.",
+          "over": "{tp} dBTP — za wysoko, może trzeszczeć po konwersji."
+        },
+        "dynamics": {
+          "title": "Dynamika",
+          "ok": "PLR {plr} LU, LRA {lra} LU — numer oddycha.",
+          "dense": "PLR {plr} LU — dość gęsto.",
+          "squashed": "PLR {plr} LU — mocno ściśnięte."
+        },
+        "tonal": {
+          "title": "Balans tonalny",
+          "ok": "Blisko referencji hip-hop.",
+          "dark": "Ciemno: {band} {delta} dB vs referencja.",
+          "harsh": "Ostro: {band} +{delta} dB vs referencja.",
+          "thin": "Cienko: {band} {delta} dB vs referencja.",
+          "muddy": "Zamulone: {band} +{delta} dB vs referencja."
+        },
+        "lowEnd": {
+          "title": "Dół",
+          "ok": "Bas i sub w porządku.",
+          "weak": "Mało dołu ({delta} dB).",
+          "boomy": "Za dużo dołu (+{delta} dB)."
+        },
+        "stereo": {
+          "title": "Stereo",
+          "ok": "Korelacja {corr}, szerokość {width}%.",
+          "phase": "Korelacja {corr} — ryzyko w mono.",
+          "wide": "Bardzo szeroko ({width}%).",
+          "mono": "Prawie mono ({width}%)."
+        }
+      },
+      "pasma": {
+        "sub": "sub",
+        "bass": "bas",
+        "lowmid": "dół-środek",
+        "mid": "środek",
+        "high": "góra",
+        "air": "powietrze"
+      },
+      "bitek": {
+        "renderuje": "Składam Twój mix w jedną ścieżkę. Chwila.",
+        "gotowy": "Słyszę cały numer. Wybierz, gdzie ma grać, i porównaj A/B.",
+        "problem": "Słyszę cały numer. Najpierw spójrz na kartę „{card}”.",
+        "masterTrwa": "Robię master na serwerze. Zaraz posłuchasz.",
+        "gotowe": {
+          "streaming": "Gotowe. Tak brzmi Twój numer na Spotify.",
+          "youtube": "Gotowe. Tak zabrzmi Twój numer na YouTube i TikToku.",
+          "headphones": "Gotowe. Tak brzmi Twój numer na słuchawkach.",
+          "club": "Gotowe. Tak zagra Twój numer w klubie."
+        },
+        "zatwierdzone": "Numer jest gotowy. Pobierz to, czego potrzebujesz.",
+        "blad": "Coś poszło nie tak z masterem. Spróbuję jeszcze raz, jak klikniesz.",
+        "niedostepny": "Podgląd mastera działa, ale serwer jeszcze nie jest włączony.",
+        "wrocInfo": "Pojedynczych śladów tu nie ruszę — to robimy w Mixie."
       }
     }
   },

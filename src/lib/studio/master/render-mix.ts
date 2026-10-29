@@ -10,7 +10,7 @@ import { analysisFxChain, applyFxInPlace, type MixAnalysisInput, renderTrack, st
 
 import type { Stereo } from "./dsp";
 
-export function renderMixStereo(input: MixAnalysisInput, opts: { raw?: boolean } = {}): Stereo {
+export function renderMixStereo(input: MixAnalysisInput, opts: { raw?: boolean; normalize?: boolean; onlyTrackId?: string } = {}): Stereo {
   const sr = input.sampleRate;
   const len = Math.max(1, Math.round((input.lengthMs / 1000) * sr));
   const left = new Float32Array(len);
@@ -19,7 +19,9 @@ export function renderMixStereo(input: MixAnalysisInput, opts: { raw?: boolean }
     ? {
         ...input,
         masterEffectsChain: undefined,
-        tracks: input.tracks.map((t) => ({ ...t, gainDb: 0, pan: 0, solo: false, effectsChain: undefined })),
+        tracks: input.tracks
+          .filter((t) => !opts.onlyTrackId || t.id === opts.onlyTrackId)
+          .map((t) => ({ ...t, gainDb: 0, pan: 0, solo: false, muted: opts.onlyTrackId ? false : t.muted, effectsChain: undefined })),
       }
     : input;
   const anySolo = src.tracks.some((t) => t.solo);
@@ -31,6 +33,7 @@ export function renderMixStereo(input: MixAnalysisInput, opts: { raw?: boolean }
       right[i] += r.right[i];
     }
   }
+  if (opts.raw && opts.normalize === false) return { left, right, sampleRate: sr };
   if (opts.raw) {
     let peak = 0;
     for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(left[i]), Math.abs(right[i]));

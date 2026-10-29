@@ -156,6 +156,7 @@ import { bitekRulesGuide, type BitekAction } from "@/lib/studio/bitek/bitek-guid
 import { parseBitekBubbleState, type BitekBubbleState } from "@/lib/studio/bitek/store/messages";
 import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { StudioMixStep } from "@/components/studio/studio-mix-step";
+import { StudioMasterStep } from "@/components/studio/studio-master-step";
 import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
@@ -337,7 +338,7 @@ function StudioEditorInner({
   const [trackMenuId, setTrackMenuId] = useState<string | null>(null);
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
-  const [studioStep, setStudioStep] = useState<"record" | "mix">("record");
+  const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
   const tMix = useTranslations("studio.mixStep");
   const bitekBase = useMemo(() => {
     const beatTrackIds = new Set(doc.tracks.filter((t) => t.trackType === "BEAT").map((t) => t.id));
@@ -451,6 +452,9 @@ function StudioEditorInner({
   const [bitekChatBusy, setBitekChatBusy] = useState(false);
   const [mixBubble, setMixBubble] = useState<BitekBubble | null>(null);
   const mixChatContextRef = useRef<(() => BitekClientContext) | null>(null);
+  const [masterBubble, setMasterBubble] = useState<BitekBubble | null>(null);
+  const masterChatContextRef = useRef<(() => BitekClientContext) | null>(null);
+  const masterApplyRef = useRef<((key: "loudness" | "bright" | "bass" | "width" | "squash", value: number) => void) | null>(null);
   const [bitekBubbleUi, setBitekBubbleUi] = useState<BitekBubbleState | null>(null);
   const bitekBubbleState = bitekBubbleUi ?? parseBitekBubbleState(bitekStore.messages);
   const saveBitekBubbleState = (next: BitekBubbleState) => {
@@ -495,7 +499,7 @@ function StudioEditorInner({
         actions: [{ id: "welcome-ok", label: tBitek("dock.zaczynamy"), primary: true, onClick: () => saveBitekBubbleState({ minimized: false, dismissedKey: "welcome" }) }],
       }
     : null;
-  const stepBubble = studioStep === "mix" ? mixBubble : recordBubble;
+  const stepBubble = studioStep === "master" ? masterBubble : studioStep === "mix" ? mixBubble : recordBubble;
   const bitekBubble =
     welcomeBubble && bitekBubbleState.dismissedKey !== "welcome" && !bitekBubbleUi?.dismissedKey ? welcomeBubble : stepBubble;
 
@@ -2731,7 +2735,6 @@ function StudioEditorInner({
               }
             >
               {i + 1}. {s === "record" ? tMix("krokNagranie") : s === "mix" ? tMix("krokMix") : tMix("krokMastering")}
-              {s === "master" ? <span className="sr-only"> — {tMix("masteringWkrotce")}</span> : null}
             </li>
           ))}
         </ol>
@@ -2952,8 +2955,16 @@ function StudioEditorInner({
         chat={
           <StudioBitekChat
             projectId={doc.project.id}
-            getContext={() => (studioStep === "mix" && mixChatContextRef.current ? mixChatContextRef.current() : getRecordChatContext())}
+            getContext={() =>
+              studioStep === "master" && masterChatContextRef.current
+                ? masterChatContextRef.current()
+                : studioStep === "mix" && mixChatContextRef.current
+                  ? mixChatContextRef.current()
+                  : getRecordChatContext()
+            }
             onApplyProposal={applyBitekProposal}
+            onApplyMasterProposal={(key, value) => masterApplyRef.current?.(key, value)}
+            onBackToMix={studioStep === "master" ? () => setStudioStep("mix") : undefined}
             disabled={recordingLocked || pending}
             store={bitekStore}
             onBusyChange={setBitekChatBusy}
@@ -2961,8 +2972,18 @@ function StudioEditorInner({
         }
       />
 
-      {studioStep === "mix" ? (
+      {studioStep === "master" ? (
+        <StudioMasterStep
+          doc={doc}
+          resolveClipSourceUrl={resolveClipSourceUrl}
+          onBackToMix={() => setStudioStep("mix")}
+          onBitekBubble={setMasterBubble}
+          chatContextRef={masterChatContextRef}
+          applyRef={masterApplyRef}
+        />
+      ) : studioStep === "mix" ? (
         <StudioMixStep
+          onGoMaster={() => setStudioStep("master")}
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
           onBack={() => setStudioStep("record")}

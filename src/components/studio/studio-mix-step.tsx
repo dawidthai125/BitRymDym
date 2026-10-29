@@ -80,7 +80,10 @@ export function StudioMixStep({
   onBitekBubble,
   onBitekNote,
   chatContextRef,
+  onGoMaster,
 }: {
+  /** Stage 3 — enter Mastering with the current (approved) mix. */
+  onGoMaster?: () => void;
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   onBack: () => void;
@@ -491,7 +494,7 @@ export function StudioMixStep({
                 disabled={!canMaster}
                 aria-describedby="studio-mix-master-hint"
                 data-testid="studio-mix-go-master"
-                onClick={() => setMasterInfoOpen(true)}
+                onClick={() => (onGoMaster ? onGoMaster() : setMasterInfoOpen(true))}
               >
                 {t("przejdzDoMasteringu")} →
               </Button>

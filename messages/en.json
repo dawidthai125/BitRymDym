@@ -1900,7 +1900,9 @@
         "goRecord": "Back to recording",
         "analyze": "Analyze mix",
         "chooseBeat": "Choose a beat",
-        "record": "Record"
+        "record": "Record",
+        "goMaster": "Go to Mastering",
+        "backToMix": "Back to Mix"
       },
       "msg": {
         "recording": "Recording. Focus on the vocal, I'll wait.",
@@ -1955,7 +1957,8 @@
         },
         "notatka": "BITEK's note",
         "zapisProjekt": "This chat is saved in the project.",
-        "zapisLokalny": "This chat is saved on this device only."
+        "zapisLokalny": "This chat is saved on this device only.",
+        "wrocDoMixu": "Back to Mix"
       },
       "dock": {
         "czatTytul": "Talk to BITEK",
@@ -1974,6 +1977,168 @@
         "powitanieKrok3": "Click me anytime and ask me anything.",
         "zaczynamy": "Let's go",
         "gotowy": "I'm here. Click me when you need something."
+      }
+    },
+    "masterStep": {
+      "tytul": "Mastering",
+      "wrocDoMixu": "Back to Mix",
+      "wrocUwaga": "After Mix changes, mastering has to be done again.",
+      "renderuje": "Bouncing your mix into one track… {pct}%",
+      "renderBlad": "Couldn't bounce the mix. Go back to Mix and try again.",
+      "calyNumer": "From now on I hear the whole song as one stereo track.",
+      "celTytul": "Where will your song play?",
+      "cele": {
+        "streaming": {
+          "nazwa": "Streaming",
+          "opis": "Spotify, Apple Music, Tidal"
+        },
+        "youtube": {
+          "nazwa": "YouTube / TikTok",
+          "opis": "Video and short-form"
+        },
+        "headphones": {
+          "nazwa": "Headphones",
+          "opis": "More dynamics, quieter"
+        },
+        "club": {
+          "nazwa": "Club",
+          "opis": "Loud, for a PA"
+        }
+      },
+      "celWartosci": "{lufs} LUFS · {tp} dBTP",
+      "ustawieniaTytul": "Whole-song sound",
+      "ustawienia": {
+        "loudness": "Loudness",
+        "bright": "Brightness",
+        "bass": "Bass",
+        "width": "Width",
+        "squash": "Compression"
+      },
+      "mniej": "Less: {name}",
+      "wiecej": "More: {name}",
+      "reset": "Reset",
+      "abTytul": "A/B compare",
+      "abMix": "Mix",
+      "abMaster": "Master",
+      "abWyrownane": "Loudness-matched",
+      "abWyrownaneOpis": "Both versions play equally loud so you hear the tone, not the volume.",
+      "graj": "Play",
+      "stop": "Stop",
+      "podgladUwaga": "The browser preview is approximate. The server makes the final master.",
+      "podgladLiczy": "Computing preview…",
+      "kartyTytul": "Master analysis",
+      "zrobMaster": "Make the master",
+      "masterTrwa": "Mastering on the server…",
+      "masterKolejka": "Waiting in the queue…",
+      "masterBlad": "Mastering failed ({code}). Try again.",
+      "serwerNiedostepny": "Server mastering isn't enabled yet. The preview works; downloads appear once it's on.",
+      "uploadBlad": "Couldn't upload the mix to the server.",
+      "finalTytul": "Listen to the finished song",
+      "finalOpis": "This is the server master — exactly the file you'll download.",
+      "zatwierdz": "I approve, the song is ready",
+      "zatwierdzTrwa": "Approving…",
+      "zatwierdzone": "Approved. The song is ready.",
+      "pobierzTytul": "Download",
+      "pobierz": {
+        "mix": "Download Mix",
+        "master": "Download Master",
+        "raw": "Download “Dry song”",
+        "project": "Download Project"
+      },
+      "pobierzOpis": {
+        "mix": "Your mix without mastering.",
+        "master": "The finished, mastered song.",
+        "raw": "Sum of tracks with no effects and no AI changes.",
+        "project": "All tracks in one ZIP file."
+      },
+      "format": {
+        "MP3_128": "MP3 128",
+        "MP3_192": "MP3 192",
+        "MP3_320": "MP3 320",
+        "WAV_24": "WAV 24-bit",
+        "ZIP": "ZIP"
+      },
+      "formatAria": "{kind} — {format}",
+      "zablokowane": "From {plan}",
+      "tylkoGold": "Gold plan only",
+      "planInfo": "Your plan: {plan}",
+      "licznikFree": "This week: {used} of {limit} downloads",
+      "licznikReset": "Next download from {date}",
+      "limitWyczerpany": "You've used this week's free download.",
+      "przygotowuje": "Preparing the file…",
+      "gotowyPlik": "File ready — download starting.",
+      "pobierzBlad": "Couldn't prepare the file.",
+      "gosc": "Sign in to download.",
+      "plany": {
+        "FREE": "Free",
+        "BRONZE": "Bronze",
+        "SILVER": "Silver",
+        "GOLD": "Gold"
+      },
+      "cards": {
+        "loudness": {
+          "title": "Loudness",
+          "ok": "{lufs} LUFS — on target ({goal}).",
+          "quiet": "{lufs} LUFS — quieter than {goal}.",
+          "loud": "{lufs} LUFS — louder than {goal}.",
+          "silent": "No signal."
+        },
+        "truePeak": {
+          "title": "True peak",
+          "ok": "{tp} dBTP — safe.",
+          "over": "{tp} dBTP — too high, may distort after encoding."
+        },
+        "dynamics": {
+          "title": "Dynamics",
+          "ok": "PLR {plr} LU, LRA {lra} LU — it breathes.",
+          "dense": "PLR {plr} LU — fairly dense.",
+          "squashed": "PLR {plr} LU — heavily squashed."
+        },
+        "tonal": {
+          "title": "Tonal balance",
+          "ok": "Close to the hip-hop reference.",
+          "dark": "Dark: {band} {delta} dB vs reference.",
+          "harsh": "Harsh: {band} +{delta} dB vs reference.",
+          "thin": "Thin: {band} {delta} dB vs reference.",
+          "muddy": "Muddy: {band} +{delta} dB vs reference."
+        },
+        "lowEnd": {
+          "title": "Low end",
+          "ok": "Bass and sub are fine.",
+          "weak": "Not much low end ({delta} dB).",
+          "boomy": "Too much low end (+{delta} dB)."
+        },
+        "stereo": {
+          "title": "Stereo",
+          "ok": "Correlation {corr}, width {width}%.",
+          "phase": "Correlation {corr} — mono risk.",
+          "wide": "Very wide ({width}%).",
+          "mono": "Almost mono ({width}%)."
+        }
+      },
+      "pasma": {
+        "sub": "sub",
+        "bass": "bass",
+        "lowmid": "low-mid",
+        "mid": "mid",
+        "high": "high",
+        "air": "air"
+      },
+      "bitek": {
+        "renderuje": "Bouncing your mix into one track. One moment.",
+        "gotowy": "I hear the whole song. Pick where it plays and compare A/B.",
+        "problem": "I hear the whole song. Check the “{card}” card first.",
+        "masterTrwa": "Mastering on the server. You'll hear it soon.",
+        "gotowe": {
+          "streaming": "Done. This is how your song sounds on Spotify.",
+          "youtube": "Done. This is how your song will sound on YouTube and TikTok.",
+          "headphones": "Done. This is how your song sounds on headphones.",
+          "club": "Done. This is how your song will hit in a club."
+        },
+        "zatwierdzone": "The song is ready. Download what you need.",
+        "blad": "Something went wrong with the master. Click and I'll try again.",
+        "niedostepny": "The master preview works, but the server isn't on yet.",
+        "wrocInfo": "I can't touch single tracks here — that's Mix work."
       }
     }
   },

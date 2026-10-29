@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
-import { BITEK_LIMITS, type BitekChatResult, type BitekProposal } from "@/lib/studio/bitek/chat/types";
+import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekMasterSetting, type BitekProposal } from "@/lib/studio/bitek/chat/types";
 import type { BitekStoredMessage } from "@/lib/studio/bitek/store/messages";
 import type { BitekProjectStore } from "@/components/studio/use-bitek-project";
 
@@ -13,7 +13,7 @@ export type BitekApplyProposal = (trackId: string, patch: Record<string, number 
 
 type Entry =
   | { id: string; role: "user"; content: string }
-  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; note: boolean };
+  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; note: boolean; backToMix: boolean };
 
 function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
   const out: Entry[] = [];
@@ -23,7 +23,7 @@ function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
       out.push({ id: m.id, role: "user", content: m.content });
       continue;
     }
-    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[] };
+    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[]; backToMix?: boolean };
     out.push({
       id: m.id,
       role: "assistant",
@@ -31,6 +31,7 @@ function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
       provider: m.kind === "chat" ? (meta.provider ?? "rules") : null,
       proposals: m.kind === "chat" && Array.isArray(meta.proposals) ? meta.proposals : [],
       note: m.kind !== "chat",
+      backToMix: m.kind === "chat" && meta.backToMix === true,
     });
   }
   return out.slice(-60);
@@ -44,7 +45,13 @@ export function StudioBitekChat({
   disabled,
   store,
   onBusyChange,
+  onApplyMasterProposal,
+  onBackToMix,
 }: {
+  /** Stage 3 — whole-song setting proposals (trackRef "master"). */
+  onApplyMasterProposal?: (key: BitekMasterSetting, value: number) => void;
+  /** Stage 3 — shown under a Mastering reply that needs Mix work. */
+  onBackToMix?: () => void;
   projectId: string;
   getContext: () => BitekClientContext;
   onApplyProposal: BitekApplyProposal;
@@ -105,7 +112,7 @@ export function StudioBitekChat({
           role: "assistant",
           kind: "chat",
           content: json.reply as string,
-          meta: { provider: json.provider ?? "rules", proposals: Array.isArray(json.proposals) ? json.proposals : [] },
+          meta: { provider: json.provider ?? "rules", proposals: Array.isArray(json.proposals) ? json.proposals : [], ...(json.backToMix ? { backToMix: true } : {}) },
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -119,6 +126,12 @@ export function StudioBitekChat({
   }
 
   function apply(entryId: string, index: number, p: BitekProposal) {
+    if (p.trackRef === BITEK_MASTER_REF) {
+      if (!onApplyMasterProposal || typeof p.value !== "number") return;
+      onApplyMasterProposal(p.param as BitekMasterSetting, p.value);
+      setApplied((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), index] }));
+      return;
+    }
     // Map the model-facing ref back to a real track id on the client, against the *current* doc.
     const trackId = getContext().trackIdByRef[p.trackRef];
     if (!trackId) return;
@@ -171,6 +184,11 @@ export function StudioBitekChat({
                   })}
                   {applied[e.id]?.length ? <li className="text-xs text-[var(--brd-mute)]">{t("zastosowano")}</li> : null}
                 </ul>
+              ) : null}
+              {e.backToMix && onBackToMix ? (
+                <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" data-testid="studio-bitek-back-to-mix" onClick={onBackToMix}>
+                  ← {t("wrocDoMixu")}
+                </Button>
               ) : null}
               <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
                 {e.provider ? t(`dostawca.${e.provider}`) : t("notatka")}

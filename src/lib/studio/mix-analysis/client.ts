@@ -140,6 +140,34 @@ function runInWorker(
 }
 
 /**
+ * Stage 3 — decode every clip source into a full render input (used by Mastering
+ * to render the approved mix as one stereo track). Null when nothing decodes.
+ */
+export async function decodeMixAnalysisInput(params: {
+  doc: StudioProjectDocument;
+  resolveSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
+  sampleRate: number;
+  signal: AbortSignal;
+  onProgress?: (fraction: number) => void;
+}): Promise<MixAnalysisInput | null> {
+  const skeleton = buildMixAnalysisSkeleton(params.doc, params.sampleRate);
+  const sources: Record<string, MixAnalysisSource> = {};
+  let done = 0;
+  for (const [key, clip] of skeleton.sourceClips) {
+    if (params.signal.aborted) return null;
+    const url = await params.resolveSourceUrl(clip);
+    const decoded = url ? await decode(url, skeleton.sampleRate, params.signal).catch(() => null) : null;
+    if (decoded) sources[key] = decoded;
+    done++;
+    params.onProgress?.(done / skeleton.sourceClips.size);
+  }
+  if (Object.keys(sources).length === 0) return null;
+  const { sourceClips: _unused, ...rest } = skeleton;
+  void _unused;
+  return { ...rest, sources };
+}
+
+/**
  * Full analysis. `onProgress` gets 0–1 (decode ≈ first 40%).
  * Never throws; returns a typed failure instead.
  */
