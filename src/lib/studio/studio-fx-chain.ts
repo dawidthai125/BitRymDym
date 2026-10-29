@@ -1,5 +1,7 @@
 /**
  * P6.1 — Studio FX chain contract (JSONB v1).
+ * Stage 2 adds highpass / deesser / gate (same schemaVersion; older readers
+ * treat unknown types as a "skip" slot = dry passthrough).
  * Studio-owned. Not E3 Mix. Not StudioAudioEngine graph.
  */
 
@@ -12,6 +14,12 @@ export const STUDIO_FX_TYPES = [
   "limiter",
   "reverb",
   "delay",
+  /** Stage 2 — high-pass (low-cut) filter. */
+  "highpass",
+  /** Stage 2 — split-band de-esser (LR4 crossover + compressor on the high band). */
+  "deesser",
+  /** Stage 2 — gentle downward expander / noise gate. */
+  "gate",
 ] as const;
 
 export type StudioFxType = (typeof STUDIO_FX_TYPES)[number];
@@ -54,12 +62,36 @@ export type StudioFxDelayParams = {
   feedback: number;
 };
 
+export type StudioFxHighpassParams = {
+  frequencyHz: number;
+  q: number;
+};
+
+export type StudioFxDeesserParams = {
+  /** Crossover frequency; band above is compressed. */
+  frequencyHz: number;
+  thresholdDb: number;
+  ratio: number;
+};
+
+export type StudioFxGateParams = {
+  /** Envelope level below which the signal is attenuated. */
+  thresholdDb: number;
+  /** Maximum attenuation (dB) — "gentle" gate when small. */
+  rangeDb: number;
+  /** Envelope smoothing (ms). */
+  releaseMs: number;
+};
+
 export type StudioFxParamsByType = {
   eq: StudioFxEqParams;
   compressor: StudioFxCompressorParams;
   limiter: StudioFxLimiterParams;
   reverb: StudioFxReverbParams;
   delay: StudioFxDelayParams;
+  highpass: StudioFxHighpassParams;
+  deesser: StudioFxDeesserParams;
+  gate: StudioFxGateParams;
 };
 
 export type StudioFxInstance =
@@ -72,7 +104,10 @@ export type StudioFxInstance =
     }
   | { id: string; type: "limiter"; enabled: boolean; params: StudioFxLimiterParams }
   | { id: string; type: "reverb"; enabled: boolean; params: StudioFxReverbParams }
-  | { id: string; type: "delay"; enabled: boolean; params: StudioFxDelayParams };
+  | { id: string; type: "delay"; enabled: boolean; params: StudioFxDelayParams }
+  | { id: string; type: "highpass"; enabled: boolean; params: StudioFxHighpassParams }
+  | { id: string; type: "deesser"; enabled: boolean; params: StudioFxDeesserParams }
+  | { id: string; type: "gate"; enabled: boolean; params: StudioFxGateParams };
 
 export type StudioFxChainV1 = {
   schemaVersion: 1;
@@ -117,6 +152,16 @@ const COMP_KEYS = new Set([
 const LIMITER_KEYS = new Set(["thresholdDb", "ceilingDb"]);
 const REVERB_KEYS = new Set(["mix", "decaySeconds"]);
 const DELAY_KEYS = new Set(["mix", "timeMs", "feedback"]);
+const HIGHPASS_KEYS = new Set(["frequencyHz", "q"]);
+const DEESSER_KEYS = new Set(["frequencyHz", "thresholdDb", "ratio"]);
+const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "releaseMs"]);
+
+/** Stage 2 — parameter ranges (single source for parsers + UI sliders). */
+export const STUDIO_FX_STAGE2_RANGES = {
+  highpass: { frequencyHz: [20, 500], q: [0.1, 2] },
+  deesser: { frequencyHz: [4000, 10000], thresholdDb: [-60, 0], ratio: [1, 20] },
+  gate: { thresholdDb: [-90, -20], rangeDb: [0, 40], releaseMs: [10, 1000] },
+} as const;
 
 export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] } =
   {
@@ -135,6 +180,9 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     limiter: { thresholdDb: -1, ceilingDb: -0.1 },
     reverb: { mix: 0, decaySeconds: 1.2 },
     delay: { mix: 0, timeMs: 250, feedback: 0.25 },
+    highpass: { frequencyHz: 90, q: 0.707 },
+    deesser: { frequencyHz: 6500, thresholdDb: -30, ratio: 4 },
+    gate: { thresholdDb: -55, rangeDb: 12, releaseMs: 150 },
   };
 
 export const STUDIO_FX_REGISTRY: Record<
@@ -146,6 +194,9 @@ export const STUDIO_FX_REGISTRY: Record<
   limiter: { track: true, master: true },
   reverb: { track: true, master: true },
   delay: { track: true, master: true },
+  highpass: { track: true, master: true },
+  deesser: { track: true, master: true },
+  gate: { track: true, master: true },
 };
 
 function invalid(detail?: string): never {
@@ -330,6 +381,23 @@ function parseDelayParams(raw: unknown): StudioFxDelayParams {
   };
 }
 
+function parseRanged<T extends Record<string, number>>(
+  raw: unknown,
+  defaults: T,
+  keys: Set<string>,
+  ranges: { [K in keyof T]: readonly [number, number] },
+): T {
+  if (raw === undefined) return { ...defaults };
+  const o = requireObject(raw, "params");
+  assertKeys(o, keys, "params");
+  const out = { ...defaults } as Record<string, number>;
+  for (const key of Object.keys(ranges)) {
+    const [min, max] = ranges[key as keyof T];
+    if (o[key] !== undefined) out[key] = finiteInRange(o[key], min, max, `params.${key}`);
+  }
+  return out as T;
+}
+
 function parseEffect(
   raw: unknown,
   index: number,
@@ -348,6 +416,30 @@ function parseEffect(
   const type = o.type;
   if (type === "eq") {
     return { id, type, enabled: o.enabled, params: parseEqParams(o.params) };
+  }
+  if (type === "highpass") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.highpass, HIGHPASS_KEYS, STUDIO_FX_STAGE2_RANGES.highpass),
+    };
+  }
+  if (type === "deesser") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.deesser, DEESSER_KEYS, STUDIO_FX_STAGE2_RANGES.deesser),
+    };
+  }
+  if (type === "gate") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.gate, GATE_KEYS, STUDIO_FX_STAGE2_RANGES.gate),
+    };
   }
   if (type === "compressor") {
     return {
@@ -635,6 +727,29 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
       slider("feedback", "Sprzężenie", 0, 0.95, 0.01, ""),
     ],
   },
+  highpass: {
+    labelPl: "Filtr górnoprzepustowy",
+    params: [
+      slider("frequencyHz", "Częstotliwość odcięcia", 20, 500, 1, "Hz"),
+      slider("q", "Q", 0.1, 2, 0.01, "Q"),
+    ],
+  },
+  deesser: {
+    labelPl: "De-esser",
+    params: [
+      slider("frequencyHz", "Częstotliwość sybilantów", 4000, 10000, 10, "Hz"),
+      slider("thresholdDb", "Próg", -60, 0, 0.5, "dB"),
+      slider("ratio", "Stopień kompresji", 1, 20, 0.1, ":1"),
+    ],
+  },
+  gate: {
+    labelPl: "Bramka szumów",
+    params: [
+      slider("thresholdDb", "Próg", -90, -20, 0.5, "dB"),
+      slider("rangeDb", "Maks. tłumienie", 0, 40, 0.5, "dB"),
+      slider("releaseMs", "Wygładzanie", 10, 1000, 1, "ms"),
+    ],
+  },
 };
 
 export const FX_CHAIN_CONFLICT_UI_PL =
@@ -726,6 +841,12 @@ export function createStudioFxInstance(
         enabled: true,
         params: defaultStudioFxParams("delay"),
       };
+    case "highpass":
+      return { id, type, enabled: true, params: defaultStudioFxParams("highpass") };
+    case "deesser":
+      return { id, type, enabled: true, params: defaultStudioFxParams("deesser") };
+    case "gate":
+      return { id, type, enabled: true, params: defaultStudioFxParams("gate") };
   }
 }
 

@@ -9,6 +9,9 @@
  * - compressor / limiter: IMPLEMENTED (soft-knee dynamics approx; NOT True Peak)
  * - delay: IMPLEMENTED (feedback delay line; max 2s; no BPM sync)
  * - reverb: IMPLEMENTED (shared synthetic IR + partitioned convolve; NOT True Peak)
+ * - highpass: IMPLEMENTED (cookbook HPF, linear Q)
+ * - deesser: IMPLEMENTED (LR4 crossover + soft-knee dynamics on high band)
+ * - gate: IMPLEMENTED (rectified + LPF envelope → 1:2 expander curve, range-capped)
  * - bypass / skip slots: passthrough (matches live dry/wire audible path)
  */
 
@@ -47,6 +50,12 @@ import {
   processReverbSample,
   type StereoReverbRuntime,
 } from "@/lib/studio/studio-offline-fx-reverb";
+import {
+  deesserDynamicsSpec,
+  gateEnvelopeCutoffHz,
+  gateGainForEnvelope,
+  LR4_SECTION_Q,
+} from "@/lib/studio/studio-fx-stage2-dsp";
 
 export const STUDIO_OFFLINE_FX_ENGINE = "studio-offline-fx-v1" as const;
 
@@ -57,6 +66,9 @@ export const STUDIO_OFFLINE_FX_IMPLEMENTED: ReadonlySet<StudioFxType> = new Set(
   "limiter",
   "delay",
   "reverb",
+  "highpass",
+  "deesser",
+  "gate",
 ]);
 
 export type StudioOfflineFxSupportStatus =
@@ -300,6 +312,122 @@ export function createReverbProcessorAtRate(
   };
 }
 
+export function createHighpassProcessorAtRate(
+  effect: Extract<StudioFxInstance, { type: "highpass" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const coeffs = computeBiquadCoeffs(
+    "highpass",
+    sampleRate,
+    effect.params.frequencyHz,
+    0,
+    effect.params.q,
+  );
+  let state = createStereoBiquadState();
+  return {
+    type: "highpass",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: STEREO_BIQUAD_STATE_BYTES,
+    process(sample) {
+      return processStereoBiquadSample(sample.left, sample.right, coeffs, state);
+    },
+    reset() {
+      state = createStereoBiquadState();
+    },
+  };
+}
+
+export function createDeesserProcessorAtRate(
+  effect: Extract<StudioFxInstance, { type: "deesser" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const f = effect.params.frequencyHz;
+  const lp = computeBiquadCoeffs("lowpass", sampleRate, f, 0, LR4_SECTION_Q);
+  const hp = computeBiquadCoeffs("highpass", sampleRate, f, 0, LR4_SECTION_Q);
+  const spec = deesserDynamicsSpec(effect.params);
+  const runtime: DynamicsRuntimeParams = { ...spec, postGain: 1 };
+  const { attackCoeff, releaseCoeff } = dynamicsCoeffs(runtime, sampleRate);
+  let s = {
+    lp1: createStereoBiquadState(),
+    lp2: createStereoBiquadState(),
+    hp1: createStereoBiquadState(),
+    hp2: createStereoBiquadState(),
+    dyn: createDynamicsState(),
+  };
+  return {
+    type: "deesser",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: STEREO_BIQUAD_STATE_BYTES * 4 + DYNAMICS_STATE_BYTES,
+    process(sample) {
+      const l1 = processStereoBiquadSample(sample.left, sample.right, lp, s.lp1);
+      const low = processStereoBiquadSample(l1.left, l1.right, lp, s.lp2);
+      const h1 = processStereoBiquadSample(sample.left, sample.right, hp, s.hp1);
+      const high = processStereoBiquadSample(h1.left, h1.right, hp, s.hp2);
+      const hc = processDynamicsSample(
+        high.left,
+        high.right,
+        runtime,
+        s.dyn,
+        sampleRate,
+        attackCoeff,
+        releaseCoeff,
+      );
+      // LR4 bands sum in phase only with one band inverted at 2nd order;
+      // with 4th order (two cascaded Butterworth) they sum allpass directly.
+      return { left: low.left + hc.left, right: low.right + hc.right };
+    },
+    reset() {
+      s = {
+        lp1: createStereoBiquadState(),
+        lp2: createStereoBiquadState(),
+        hp1: createStereoBiquadState(),
+        hp2: createStereoBiquadState(),
+        dyn: createDynamicsState(),
+      };
+    },
+  };
+}
+
+export function createGateProcessorAtRate(
+  effect: Extract<StudioFxInstance, { type: "gate" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const params = effect.params;
+  const env = computeBiquadCoeffs(
+    "lowpass",
+    sampleRate,
+    gateEnvelopeCutoffHz(params),
+    0,
+    Math.SQRT1_2,
+  );
+  let state = createStereoBiquadState();
+  return {
+    type: "gate",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: STEREO_BIQUAD_STATE_BYTES,
+    process(sample) {
+      const e = processStereoBiquadSample(
+        Math.abs(sample.left),
+        Math.abs(sample.right),
+        env,
+        state,
+      );
+      // Live: AudioParam input is down-mixed to mono → average channel gains.
+      const g =
+        (gateGainForEnvelope(e.left, params) +
+          gateGainForEnvelope(e.right, params)) /
+        2;
+      return { left: sample.left * g, right: sample.right * g };
+    },
+    reset() {
+      state = createStereoBiquadState();
+    },
+  };
+}
+
 function buildProcessorForReady(
   effect: StudioFxInstance,
   sampleRate: number,
@@ -319,6 +447,15 @@ function buildProcessorForReady(
   if (effect.type === "reverb") {
     return createReverbProcessorAtRate(effect, sampleRate);
   }
+  if (effect.type === "highpass") {
+    return createHighpassProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "deesser") {
+    return createDeesserProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "gate") {
+    return createGateProcessorAtRate(effect, sampleRate);
+  }
   throw new StudioOfflineFxError(
     "STUDIO_OFFLINE_FX_UNSUPPORTED",
     `Offline FX type is not implemented.`,
@@ -331,7 +468,7 @@ function buildProcessorForReady(
  *
  * Empty / null → null (caller uses dry wire).
  * Unsupported schema → throws STUDIO_OFFLINE_FX_UNSUPPORTED.
- * All five Studio FX types are implemented when enabled; bypass/skip = wire.
+ * All Studio FX types (incl. stage 2 highpass/deesser/gate) are implemented when enabled; bypass/skip = wire.
  */
 export function buildStudioOfflineFxChain(
   rawChain: unknown,

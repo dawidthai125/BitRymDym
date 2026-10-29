@@ -26,7 +26,12 @@ export type StereoBiquadState = {
   right: BiquadChannelState;
 };
 
-export type BiquadFilterKind = "lowshelf" | "peaking" | "highshelf";
+export type BiquadFilterKind =
+  | "lowshelf"
+  | "peaking"
+  | "highshelf"
+  | "lowpass"
+  | "highpass";
 
 function emptyChannel(): BiquadChannelState {
   return { x1: 0, x2: 0, y1: 0, y2: 0 };
@@ -64,7 +69,24 @@ export function computeBiquadCoeffs(
   let a1: number;
   let a2: number;
 
-  if (kind === "peaking") {
+  if (kind === "lowpass" || kind === "highpass") {
+    // Cookbook LPF/HPF with linear Q. Web Audio takes Q in dB for these
+    // types; live code converts (Q_dB = 20·log10(q)) so both match.
+    const Q = Math.max(1e-6, q);
+    const alpha = sin / (2 * Q);
+    if (kind === "lowpass") {
+      b0 = (1 - cos) / 2;
+      b1 = 1 - cos;
+      b2 = (1 - cos) / 2;
+    } else {
+      b0 = (1 + cos) / 2;
+      b1 = -(1 + cos);
+      b2 = (1 + cos) / 2;
+    }
+    a0 = 1 + alpha;
+    a1 = -2 * cos;
+    a2 = 1 - alpha;
+  } else if (kind === "peaking") {
     const Q = Math.max(1e-6, q);
     const alpha = sin / (2 * Q);
     b0 = 1 + alpha * A;
