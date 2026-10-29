@@ -1531,6 +1531,8 @@ export class StudioAudioEngine {
         shouldReuseStudioVoice({
           existingIdentityKey: existingAfterResolve.identityKey,
           nextIdentityKey: nextIdentity,
+          existingSourceUrl: existingAfterResolve.sourceUrl,
+          nextSourceUrl: resolved.ok ? resolved.source.url : null,
         })
       ) {
         return existingAfterResolve;
