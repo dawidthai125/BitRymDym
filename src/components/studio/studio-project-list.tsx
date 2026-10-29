@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useLocale, useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import {
   useEffect,
@@ -16,10 +19,11 @@ import { BrdCheckbox } from "@/components/brand/brd-checkbox";
 import { STUDIO_PROJECT_LIST_PAGE_SIZE } from "@/config/studio";
 import type { StudioProjectSummary } from "@/lib/studio/studio-types";
 import { formatStudioListDurationMs } from "@/lib/studio/studio-time";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
-function formatProjectDate(iso: string): string {
+function formatProjectDate(iso: string, tag = "pl-PL"): string {
   try {
-    return new Intl.DateTimeFormat("pl-PL", {
+    return new Intl.DateTimeFormat(tag, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -29,9 +33,9 @@ function formatProjectDate(iso: string): string {
   }
 }
 
-function formatProjectDateTime(iso: string): string {
+function formatProjectDateTime(iso: string, tag = "pl-PL"): string {
   try {
-    return new Intl.DateTimeFormat("pl-PL", {
+    return new Intl.DateTimeFormat(tag, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -70,6 +74,7 @@ function DeleteConfirmDialog({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("studio.studioProjectList");
   const titleId = useId();
   const descId = useId();
 
@@ -107,7 +112,7 @@ function DeleteConfirmDialog({
             onClick={onClose}
             disabled={pending}
           >
-            Anuluj
+            {t("anuluj")}
           </BrdButton>
           <BrdButton
             type="button"
@@ -115,7 +120,7 @@ function DeleteConfirmDialog({
             onClick={onConfirm}
             disabled={pending}
           >
-            {pending ? "Usuwanie…" : confirmLabel}
+            {pending ? t("usuwanie") : confirmLabel}
           </BrdButton>
         </div>
       </div>
@@ -136,10 +141,12 @@ function ProjectRow({
   onToggle: (projectId: string) => void;
   onRequestDelete: (project: StudioProjectSummary) => void;
 }) {
+  const t = useTranslations("studio.studioProjectList");
+  const tag = intlTag(resolveLocale(useLocale()));
   const metaParts = [
-    `${project.tempoBpm} BPM`,
+    t("bpm", { v0: project.tempoBpm }),
     formatStudioListDurationMs(project.timelineLengthMs),
-    project.beatId ? "z bitem" : null,
+    project.beatId ? t("zBitem") : null,
   ].filter(Boolean);
   const checkboxId = `studio-project-select-${project.id}`;
 
@@ -152,7 +159,7 @@ function ProjectRow({
             checked={selected}
             disabled={pending}
             onChange={() => onToggle(project.id)}
-            aria-label={`Zaznacz projekt ${project.title}`}
+            aria-label={t("zaznaczProjekt", { v0: project.title })}
           />
         </div>
 
@@ -166,17 +173,17 @@ function ProjectRow({
             </label>
             <dl className="space-y-0.5 text-sm text-[var(--brd-ink-soft)]">
               <div className="flex flex-wrap gap-x-2">
-                <dt className="sr-only">Utworzono</dt>
+                <dt className="sr-only">{t("utworzono")}</dt>
                 <dd>
-                  <span className="text-[var(--brd-mute)]">Utworzono</span>{" "}
-                  {formatProjectDate(project.createdAt)}
+                  <span className="text-[var(--brd-mute)]">{t("utworzono")}</span>{" "}
+                  {formatProjectDate(project.createdAt, tag)}
                 </dd>
               </div>
               <div className="flex flex-wrap gap-x-2">
-                <dt className="sr-only">Edytowano</dt>
+                <dt className="sr-only">{t("edytowano")}</dt>
                 <dd>
-                  <span className="text-[var(--brd-mute)]">Edytowano</span>{" "}
-                  {formatProjectDateTime(project.updatedAt)}
+                  <span className="text-[var(--brd-mute)]">{t("edytowano")}</span>{" "}
+                  {formatProjectDateTime(project.updatedAt, tag)}
                 </dd>
               </div>
             </dl>
@@ -189,18 +196,18 @@ function ProjectRow({
             <BrdLink
               href={`/studio/p/${project.id}`}
               variant="secondary"
-              aria-label={`Otwórz projekt ${project.title}`}
+              aria-label={t("otworzProjekt", { v0: project.title })}
             >
-              Otwórz
+              {t("otworz")}
             </BrdLink>
             <BrdButton
               type="button"
               variant="danger"
               disabled={pending}
               onClick={() => onRequestDelete(project)}
-              aria-label={`Usuń projekt ${project.title}`}
+              aria-label={t("usunProjekt", { v0: project.title })}
             >
-              Usuń
+              {t("usun")}
             </BrdButton>
           </div>
         </div>
@@ -217,6 +224,7 @@ export function StudioProjectList({
   /** When set (e.g. from /studio?beatId=), create a project with BEAT_REF once. */
   seedBeatId?: string | null;
 }) {
+  const t = useTranslations("studio.studioProjectList");
   const router = useRouter();
   const selectAllId = useId();
   const [projects, setProjects] = useState(initialProjects);
@@ -268,7 +276,7 @@ export function StudioProjectList({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: beatId ? "Projekt z bitem" : "Nowy projekt",
+        title: beatId ? t("projektZBitem") : t("nowyProjekt"),
         beatId: beatId ?? null,
       }),
     });
@@ -278,7 +286,7 @@ export function StudioProjectList({
       error?: string;
     };
     if (!res.ok || !json.document) {
-      throw new Error(json.error ?? "Nie udało się utworzyć projektu.");
+      throw new Error(json.error ?? t("nieUdaloSieUtworzyc"));
     }
     setProjects((prev) => [json.document!.project, ...prev]);
     setPage(0);
@@ -340,7 +348,7 @@ export function StudioProjectList({
         router.refresh();
       } catch (e) {
         setDeleteError(
-          e instanceof Error ? e.message : "Nie udało się usunąć projektu.",
+          e instanceof Error ? e.message : t("nieUdaloSieUsunac"),
         );
       }
     });
@@ -376,7 +384,7 @@ export function StudioProjectList({
         const base =
           e instanceof Error
             ? e.message
-            : "Nie udało się usunąć zaznaczonych projektów.";
+            : t("nieUdaloSieUsunac2");
         setDeleteError(
           failedTitle ? `„${failedTitle}”: ${base}` : base,
         );
@@ -391,7 +399,7 @@ export function StudioProjectList({
       try {
         await createProject(seedBeatId);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Błąd tworzenia projektu.");
+        setError(e instanceof Error ? e.message : t("bladTworzeniaProjektu"));
       }
     });
     // intentionally once per seedBeatId mount
@@ -409,7 +417,7 @@ export function StudioProjectList({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--brd-ink-soft)]">
-          Twoje projekty Studio — najnowsze na górze.
+          {t("twojeProjektyStudioNajnowsze")}
         </p>
         <BrdButton
           type="button"
@@ -420,14 +428,14 @@ export function StudioProjectList({
                 await createProject(null);
               } catch (e) {
                 setError(
-                  e instanceof Error ? e.message : "Błąd tworzenia projektu.",
+                  e instanceof Error ? e.message : t("bladTworzeniaProjektu"),
                 );
               }
             })
           }
           disabled={pending}
         >
-          Nowy projekt
+          {t("nowyProjekt")}
         </BrdButton>
       </div>
 
@@ -439,7 +447,7 @@ export function StudioProjectList({
 
       {pending && seedBeatId ? (
         <p className="text-sm text-[var(--brd-mute)]" role="status">
-          Tworzenie projektu z bitem…
+          {t("tworzenieProjektuZBitem")}
         </p>
       ) : null}
 
@@ -449,10 +457,10 @@ export function StudioProjectList({
           role="status"
         >
           <p className="text-base font-medium text-[var(--brd-ink)]">
-            Nie masz jeszcze żadnego projektu Studio.
+            {t("nieMaszJeszczeZadnego")}
           </p>
           <p className="mt-2 text-sm text-[var(--brd-ink-soft)]">
-            Utwórz pusty projekt albo otwórz bit i wybierz „Otwórz w Studio”.
+            {t("utworzPustyProjektAlbo")}
           </p>
           <BrdButton
             type="button"
@@ -465,13 +473,13 @@ export function StudioProjectList({
                   await createProject(null);
                 } catch (e) {
                   setError(
-                    e instanceof Error ? e.message : "Błąd tworzenia projektu.",
+                    e instanceof Error ? e.message : t("bladTworzeniaProjektu"),
                   );
                 }
               })
             }
           >
-            Nowy projekt
+            {t("nowyProjekt")}
           </BrdButton>
         </div>
       ) : (
@@ -488,17 +496,17 @@ export function StudioProjectList({
                   indeterminate={someOnPageSelected}
                   disabled={pending || pageIds.length === 0}
                   onChange={toggleSelectAllOnPage}
-                  aria-label="Zaznacz wszystkie projekty na tej stronie"
+                  aria-label={t("zaznaczWszystkieProjektyNa")}
                 />
                 <span>
                   {allOnPageSelected
-                    ? "Odznacz stronę"
-                    : "Zaznacz wszystko na stronie"}
+                    ? t("odznaczStrone")
+                    : t("zaznaczWszystkoNaStronie")}
                 </span>
               </label>
               {selectedCount > 0 ? (
                 <span className="text-sm text-[var(--brd-ink-soft)]" role="status">
-                  Zaznaczono {selectedCount}
+                  {t("zaznaczono")}{" "}{selectedCount}
                 </span>
               ) : null}
             </div>
@@ -512,21 +520,21 @@ export function StudioProjectList({
                     disabled={pending}
                     onClick={clearSelection}
                   >
-                    Odznacz
+                    {t("odznacz")}
                   </BrdButton>
                   <BrdButton
                     type="button"
                     variant="danger"
                     disabled={pending}
                     onClick={requestBulkDelete}
-                    aria-label={`Usuń zaznaczone projekty (${selectedCount})`}
+                    aria-label={t("usunZaznaczoneProjekty", { v0: selectedCount })}
                   >
-                    Usuń zaznaczone
+                    {t("usunZaznaczone")}
                   </BrdButton>
                 </>
               ) : (
                 <p className="text-sm text-[var(--brd-mute)]">
-                  Zaznacz projekty, aby usunąć kilka naraz.
+                  {t("zaznaczProjektyAbyUsunac")}
                 </p>
               )}
             </div>
@@ -548,7 +556,7 @@ export function StudioProjectList({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-xs tabular-nums text-[var(--brd-mute)]">
               {rangeStart}–{rangeEnd} z {projects.length}
-              {pageCount > 1 ? ` · strona ${safePage + 1} / ${pageCount}` : ""}
+              {pageCount > 1 ? t("strona", { v0: safePage + 1, v1: pageCount }) : ""}
             </p>
             {pageCount > 1 ? (
               <div className="flex flex-wrap gap-2">
@@ -558,7 +566,7 @@ export function StudioProjectList({
                   disabled={pending || safePage === 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                 >
-                  Poprzednia
+                  {t("poprzednia")}
                 </BrdButton>
                 <BrdButton
                   type="button"
@@ -568,7 +576,7 @@ export function StudioProjectList({
                     setPage((p) => Math.min(pageCount - 1, p + 1))
                   }
                 >
-                  Następna
+                  {t("nastepna")}
                 </BrdButton>
               </div>
             ) : null}
@@ -578,20 +586,18 @@ export function StudioProjectList({
 
       {deleteTarget ? (
         <DeleteConfirmDialog
-          title="Usuń projekt?"
+          title={t("usunProjekt2")}
           description={
             <>
               <p className="font-medium text-[var(--brd-ink)]">
                 „{deleteTarget.title}”
               </p>
               <p>
-                Projekt oraz powiązane dane projektu (ścieżki, clipy na timeline)
-                zostaną usunięte. Nagrania (Takes) i bity pozostaną nietknięte.
-                Tej operacji nie można cofnąć.
+                {t("projektOrazPowiazaneDane")}
               </p>
             </>
           }
-          confirmLabel="Usuń projekt"
+          confirmLabel={t("usunProjekt3")}
           pending={pending}
           error={deleteError}
           onClose={() => {
@@ -606,11 +612,11 @@ export function StudioProjectList({
 
       {bulkDeleteOpen ? (
         <DeleteConfirmDialog
-          title="Usuń zaznaczone projekty?"
+          title={t("usunZaznaczoneProjekty2")}
           description={
             <>
               <p className="font-medium text-[var(--brd-ink)]">
-                Zostanie usuniętych: {selectedCount}
+                {t("zostanieUsunietych")}{" "}{selectedCount}
               </p>
               <ul className="max-h-40 list-disc space-y-1 overflow-y-auto pl-5 text-[var(--brd-ink)]">
                 {selectedProjects.slice(0, 8).map((project) => (
@@ -620,18 +626,16 @@ export function StudioProjectList({
                 ))}
                 {selectedCount > 8 ? (
                   <li className="text-[var(--brd-mute)]">
-                    …i jeszcze {selectedCount - 8}
+                    {t("iJeszcze")}{" "}{selectedCount - 8}
                   </li>
                 ) : null}
               </ul>
               <p>
-                Projekty oraz powiązane ścieżki/clipy zostaną usunięte. Nagrania
-                (Takes) i bity pozostaną nietknięte. Tej operacji nie można
-                cofnąć.
+                {t("projektyOrazPowiazaneSciezki")}
               </p>
             </>
           }
-          confirmLabel="Usuń zaznaczone"
+          confirmLabel={t("usunZaznaczone")}
           pending={pending}
           error={deleteError}
           onClose={() => {

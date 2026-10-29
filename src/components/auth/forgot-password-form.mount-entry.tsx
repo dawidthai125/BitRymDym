@@ -3,6 +3,7 @@
  * Bundled by forgot-password-form.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { ForgotPasswordForm } from "@/components/auth/auth-forms";
 
@@ -30,7 +31,7 @@ function mount(hostId = "forgot-password-form-mount-root"): void {
     window.__BRD_FORGOT_PASSWORD_MOCK_CALLS__ = 0;
   }
   root = createRoot(el);
-  root.render(<ForgotPasswordForm />);
+  root.render(withIntl(<ForgotPasswordForm />));
 }
 
 function unmount(): void {

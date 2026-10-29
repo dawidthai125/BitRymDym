@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   useCallback,
   useEffect,
@@ -44,13 +46,22 @@ type SortId = BeatsCatalogSortId;
 export function beatsCatalogResultStatusMessage(
   filteredCount: number,
   totalCount: number,
+  copy: {
+    empty: string;
+    count: (n: number) => string;
+    ofTotal: (label: string, total: number) => string;
+  } = {
+    empty: "Cicho. Brak bitów dla tych filtrów.",
+    count: formatBeatCountLabel,
+    ofTotal: (label, total) => `${label} · z ${total}`,
+  },
 ): string {
   if (filteredCount === 0) {
-    return "Cicho. Brak bitów dla tych filtrów.";
+    return copy.empty;
   }
-  const countLabel = formatBeatCountLabel(filteredCount);
+  const countLabel = copy.count(filteredCount);
   if (filteredCount !== totalCount) {
-    return `${countLabel} · z ${totalCount}`;
+    return copy.ofTotal(countLabel, totalCount);
   }
   return countLabel;
 }
@@ -68,6 +79,8 @@ export function BeatsCatalogClient({
   beats,
   initialQuery = "",
 }: BeatsCatalogClientProps) {
+  const t = useTranslations("common.beatsCatalogClient");
+  const tCount = useTranslations("beats.count");
   const [query, setQuery] = useState(initialQuery);
   const [genres, setGenres] = useState<string[]>([]);
   const [keys, setKeys] = useState<string[]>([]);
@@ -130,6 +143,11 @@ export function BeatsCatalogClient({
   const liveResultStatus = beatsCatalogResultStatusMessage(
     filtered.length,
     beats.length,
+    {
+      empty: tCount("emptyStatus"),
+      count: (n) => tCount("count", { count: n }),
+      ofTotal: (label, total) => tCount("ofTotal", { label, total }),
+    },
   );
 
   const activeFilterCount = countActiveCatalogChipFilters({
@@ -194,14 +212,14 @@ export function BeatsCatalogClient({
       >
         <div className="space-y-2.5">
           <label htmlFor="beats-search" className="sr-only">
-            Szukaj bitów
+            {t("szukajBitow")}
           </label>
           <input
             id="beats-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Szukaj bitu, producenta, gatunku…"
+            placeholder={t("szukajBituProducentaGatunku")}
             autoComplete="off"
             className="min-h-11 w-full border-b border-[var(--brd-line)] bg-transparent px-0 py-2.5 text-[15px] text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)]"
           />
@@ -216,7 +234,7 @@ export function BeatsCatalogClient({
               onClick={() => setFiltersOpen(true)}
               className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
             >
-              Filtry{activeFilterCount ? ` (${activeFilterCount})` : ""}
+              {t("filtry")}{activeFilterCount ? ` (${activeFilterCount})` : ""}
             </button>
             <span className="text-[var(--brd-line)]" aria-hidden>
               ·
@@ -244,7 +262,7 @@ export function BeatsCatalogClient({
                 className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]"
                 aria-hidden
               >
-                {formatBeatCountLabel(filtered.length)}
+                {tCount("count", { count: filtered.length })}
                 {filtered.length !== beats.length
                   ? ` · z ${beats.length}`
                   : null}
@@ -256,9 +274,9 @@ export function BeatsCatalogClient({
 
             {filtered.length === 0 ? (
               <div className="px-1 py-10 text-center">
-                <p className="brd-display text-xl font-semibold">Cicho.</p>
+                <p className="brd-display text-xl font-semibold">{t("cicho")}</p>
                 <p className="mt-2 text-sm text-[var(--brd-mute)]">
-                  Brak bitów dla tych filtrów. Zmień kryteria albo wyczyść filtry.
+                  {t("brakBitowDlaTych")}
                 </p>
                 {activeFilterCount > 0 || query ? (
                   <button
@@ -269,7 +287,7 @@ export function BeatsCatalogClient({
                     }}
                     className="mt-4 text-sm text-[var(--brd-green)] hover:underline"
                   >
-                    Wyczyść wszystko
+                    {t("wyczyscWszystko")}
                   </button>
                 ) : null}
               </div>
@@ -294,7 +312,7 @@ export function BeatsCatalogClient({
               <button
                 type="button"
                 className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_40%,transparent)]"
-                aria-label="Zamknij filtry"
+                aria-label={t("zamknijFiltry")}
                 onClick={closeFiltersSheet}
               />
               <div
@@ -302,20 +320,20 @@ export function BeatsCatalogClient({
                 id={filtersDialogId}
                 role="dialog"
                 aria-modal="true"
-                aria-label="Filtry katalogu"
+                aria-label={t("filtryKatalogu")}
                 tabIndex={-1}
                 className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto border-t border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 outline-none"
               >
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-medium text-[var(--brd-mute)]">
-                    Filtry
+                    {t("filtry")}
                   </p>
                   <button
                     type="button"
                     className="min-h-11 px-1 text-sm text-[var(--brd-mute)]"
                     onClick={closeFiltersSheet}
                   >
-                    Zamknij
+                    {t("zamknij")}
                   </button>
                 </div>
                 {filterPanel}
@@ -324,7 +342,7 @@ export function BeatsCatalogClient({
                   className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[var(--brd-green)] text-sm text-[var(--brd-paper)]"
                   onClick={closeFiltersSheet}
                 >
-                  Pokaż wyniki ({filtered.length})
+                  {t("pokazWyniki")}{filtered.length})
                 </button>
               </div>
             </div>,
@@ -342,19 +360,20 @@ function SortSelect({
   sort: SortId;
   onChange: (v: SortId) => void;
 }) {
+  const t = useTranslations("common.beatsCatalogClient");
   return (
     <label className="inline-flex items-center gap-2 text-sm text-[var(--brd-ink-soft)]">
       <span className="text-xs font-medium text-[var(--brd-mute)]">
-        Sortuj
+        {t("sortuj")}
       </span>
       <select
         value={sort}
         onChange={(e) => onChange(e.target.value as SortId)}
         className="min-h-11 border-0 border-b border-[var(--brd-line)] bg-transparent py-1 pl-0 pr-1 text-sm text-[var(--brd-ink)] outline-none focus-visible:border-[var(--brd-green)]"
       >
-        <option value="newest">Najnowsze</option>
-        <option value="featured">Polecane</option>
-        <option value="listened">Najczęściej słuchane</option>
+        <option value="newest">{t("najnowsze")}</option>
+        <option value="featured">{t("polecane")}</option>
+        <option value="listened">{t("najczesciejSluchane")}</option>
       </select>
     </label>
   );
@@ -391,11 +410,12 @@ function FilterPanel({
   onClear: () => void;
   activeCount: number;
 }) {
+  const t = useTranslations("common.beatsCatalogClient");
   return (
     <div className="space-y-0">
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <p className="text-xs font-medium text-[var(--brd-mute)]">
-          Filtry
+          {t("filtry")}
         </p>
         {activeCount > 0 ? (
           <button
@@ -403,15 +423,15 @@ function FilterPanel({
             onClick={onClear}
             className="text-[11px] text-[var(--brd-green)] hover:underline"
           >
-            Wyczyść
+            {t("wyczysc")}
           </button>
         ) : null}
       </div>
 
-      <FilterGroup title="Gatunek">
+      <FilterGroup title={t("gatunek")}>
         {genreOptions.length === 0 ? (
           <p className="text-[12px] text-[var(--brd-mute)]">
-            Brak gatunków w katalogu.
+            {t("brakGatunkowWKatalogu")}
           </p>
         ) : (
           genreOptions.map((g) => (
@@ -425,13 +445,13 @@ function FilterPanel({
         )}
       </FilterGroup>
 
-      <FilterGroup title="BPM">
+      <FilterGroup title={t("bpm")}>
         <div className="space-y-2 pt-0.5">
           <p className="brd-meta text-[11px] tabular-nums text-[var(--brd-ink-soft)]">
             {bpmMin}–{bpmMax}
           </p>
           <label className="block">
-            <span className="sr-only">BPM min</span>
+            <span className="sr-only">{t("bpmMin")}</span>
             <input
               type="range"
               min={bpmRangeMin}
@@ -444,7 +464,7 @@ function FilterPanel({
             />
           </label>
           <label className="block">
-            <span className="sr-only">BPM max</span>
+            <span className="sr-only">{t("bpmMax")}</span>
             <input
               type="range"
               min={bpmRangeMin}
@@ -459,10 +479,10 @@ function FilterPanel({
         </div>
       </FilterGroup>
 
-      <FilterGroup title="Tonacja">
+      <FilterGroup title={t("tonacja")}>
         {keyOptions.length === 0 ? (
           <p className="text-[12px] text-[var(--brd-mute)]">
-            Brak tonacji w katalogu.
+            {t("brakTonacjiWKatalogu")}
           </p>
         ) : (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5">

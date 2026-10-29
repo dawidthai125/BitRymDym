@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 import {
   micLevelLabelPl,
@@ -20,6 +22,7 @@ export function BrdInputMonitor({
   peak,
   className,
 }: BrdInputMonitorProps) {
+  const t = useTranslations("common.brdInputMonitor");
   const label = micLevelLabelPl(level);
   const fill = Math.min(1, Math.max(0, peak));
   const danger = level === "clip" || level === "hot";
@@ -33,7 +36,7 @@ export function BrdInputMonitor({
     >
       <div className="flex items-baseline justify-between gap-2">
         <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          Mikrofon
+          {t("mikrofon")}
         </p>
         <p
           className={cn(

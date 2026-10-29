@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -22,6 +25,7 @@ export function AdminLifecycleControls({
   status: BeatStatus;
   activeMasterReady: boolean;
 }) {
+  const t = useTranslations("admin.adminLifecycleControls");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +44,13 @@ export function AdminLifecycleControls({
       try {
         const result = await action();
         if (!result.success) {
-          setError(result.error ?? "Operacja nie powiodła się.");
+          setError(result.error ?? t("operacjaNiePowiodlaSie"));
           return;
         }
         setSuccess(okMessage);
         router.refresh();
       } catch {
-        setError("Błąd sieci / serwera.");
+        setError(t("bladSieciSerwera"));
       }
     });
   }
@@ -55,7 +59,7 @@ export function AdminLifecycleControls({
     <div className="flex max-w-xl flex-col gap-3">
       <div className="space-y-1">
         <p className="text-sm">
-          Status:{" "}
+          {t("status")}{" "}
           <span className="font-medium">{labelBeatStatus(status)}</span>
         </p>
         {!gate.enabled && gate.blockedReason ? (
@@ -85,8 +89,7 @@ export function AdminLifecycleControls({
             onChange={(event) => setLicenseAcknowledged(event.target.checked)}
           />
           <span>
-            Potwierdzam, że ten Master ma udokumentowaną licencję na publikację
-            w katalogu. Zaznaczenie nie zastępuje wpisu licencji w bazie.
+            {t("potwierdzamZeTenMaster")}
           </span>
         </label>
       ) : null}
@@ -101,22 +104,22 @@ export function AdminLifecycleControls({
               // UI gate first; server hard gate in transitionBeatStatus is authoritative.
               const latest = getAdminPublishGate({ status, activeMasterReady });
               if (!latest.enabled) {
-                setError(latest.blockedReason ?? "Publikacja zablokowana.");
+                setError(latest.blockedReason ?? t("publikacjaZablokowana"));
                 return;
               }
               if (!licenseAcknowledged) {
                 setError(
-                  "Potwierdź licencję dla aktualnego Mastera. Sama referencja nie wystarcza.",
+                  t("potwierdzLicencjeDlaAktualnego"),
                 );
                 return;
               }
               run(
                 () => publishBeatAction(beatId, { licenseAcknowledged: true }),
-                "Opublikowano.",
+                t("opublikowano"),
               );
             }}
           >
-            {pending ? "Publikowanie…" : "Publikuj"}
+            {pending ? t("publikowanie") : "Publikuj"}
           </Button>
         ) : null}
 
@@ -126,10 +129,10 @@ export function AdminLifecycleControls({
             variant="outline"
             disabled={pending}
             onClick={() =>
-              run(() => archiveBeatAction(beatId), "Zarchiwizowano.")
+              run(() => archiveBeatAction(beatId), t("zarchiwizowano"))
             }
           >
-            Archiwizuj
+            {t("archiwizuj")}
           </Button>
         ) : null}
 
@@ -141,11 +144,11 @@ export function AdminLifecycleControls({
             onClick={() =>
               run(
                 () => restoreArchivedBeatAction(beatId),
-                "Przywrócono do wersji roboczej.",
+                t("przywroconoDoWersjiRoboczej"),
               )
             }
           >
-            Przywróć do wersji roboczej
+            {t("przywrocDoWersjiRoboczej")}
           </Button>
         ) : null}
       </div>

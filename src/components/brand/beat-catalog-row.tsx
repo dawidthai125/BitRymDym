@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 
 import { BeatArtwork } from "@/components/brand/beat-artwork";
@@ -26,6 +28,7 @@ export function BeatCatalogRow({
   featured = false,
   className,
 }: BeatCatalogRowProps) {
+  const t = useTranslations("common.beatCatalogRow");
   const {
     track,
     phase,
@@ -106,7 +109,7 @@ export function BeatCatalogRow({
         <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
           {featured ? (
             <p className="brd-meta text-[9px] uppercase tracking-[0.16em] text-[var(--brd-green)]">
-              Wyróżniony
+              {t("wyrozniony")}
             </p>
           ) : null}
           <h2
@@ -140,7 +143,7 @@ export function BeatCatalogRow({
             showPlayhead={isCurrent}
             interactive
             onSeekRatio={(ratio) => void onSeekRatio(ratio)}
-            aria-label={`Przebieg: ${beat.title}`}
+            aria-label={t("przebieg", { v0: beat.title })}
           />
         </div>
 
@@ -149,8 +152,8 @@ export function BeatCatalogRow({
             type="button"
             onClick={onFavorite}
             className="inline-flex size-11 items-center justify-center text-[var(--brd-mute)] transition-colors hover:text-[var(--brd-ink)]"
-            aria-label="Dodaj do ulubionych (wkrótce)"
-            title="Ulubione — wkrótce"
+            aria-label={t("dodajDoUlubionychWkrotce")}
+            title={t("ulubioneWkrotce")}
           >
             <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </button>
@@ -178,7 +181,7 @@ export function BeatCatalogRow({
           <Link href={`/beat/${beat.id}`} className="min-w-0 flex-1 space-y-0.5">
             {featured ? (
               <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-green)]">
-                Wyróżniony
+                {t("wyrozniony")}
               </p>
             ) : null}
             <h2 className="brd-display truncate text-lg font-semibold leading-none">
@@ -218,15 +221,15 @@ export function BeatCatalogRow({
               showPlayhead={isCurrent}
               interactive
               onSeekRatio={(ratio) => void onSeekRatio(ratio)}
-              aria-label={`Przebieg: ${beat.title}`}
+              aria-label={t("przebieg", { v0: beat.title })}
             />
           </div>
           <button
             type="button"
             onClick={onFavorite}
             className="inline-flex size-11 shrink-0 items-center justify-center text-[var(--brd-mute)]"
-            aria-label="Dodaj do ulubionych (wkrótce)"
-            title="Ulubione — wkrótce"
+            aria-label={t("dodajDoUlubionychWkrotce")}
+            title={t("ulubioneWkrotce")}
           >
             <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </button>

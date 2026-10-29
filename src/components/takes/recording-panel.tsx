@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { useEffect, useReducer, useRef, useState, type RefObject } from "react";
 
@@ -97,6 +100,7 @@ export function RecordingPanel({
   playbackRef,
   className,
 }: RecordingPanelProps) {
+  const tr = useTranslations("studio.recordingPanel");
   const maxSeconds =
     typeof maxRecordingSeconds === "number" &&
     Number.isFinite(maxRecordingSeconds) &&
@@ -258,7 +262,7 @@ export function RecordingPanel({
     if (!support.supported) {
       dispatch({
         type: "UNSUPPORTED",
-        message: "Nagrywanie nie jest wspierane w tej przeglądarce.",
+        message: tr("nagrywanieNieJestWspierane"),
       });
       return;
     }
@@ -286,13 +290,13 @@ export function RecordingPanel({
         dispatch({
           type: "RECORDING_FAILED",
           message: toUserFacingTakeUploadError(
-            elig.error ?? "Nie udało się sprawdzić limitu nagrań.",
+            elig.error ?? tr("nieUdaloSieSprawdzic"),
           ),
         });
         return;
       }
       if (!elig.allowed) {
-        const parts = [elig.message ?? "Nie możesz teraz nagrywać."];
+        const parts = [elig.message ?? tr("nieMozeszTerazNagrywac")];
         if (elig.upgradeHintMessage) parts.push(elig.upgradeHintMessage);
         dispatch({
           type: "RECORDING_FAILED",
@@ -306,7 +310,7 @@ export function RecordingPanel({
         message: toUserFacingTakeUploadError(
           error instanceof Error
             ? error.message
-            : "Nie udało się sprawdzić limitu nagrań.",
+            : tr("nieUdaloSieSprawdzic"),
         ),
       });
       return;
@@ -341,7 +345,7 @@ export function RecordingPanel({
         message: toUserFacingTakeUploadError(
           error instanceof Error
             ? error.message
-            : "Nie udało się uruchomić mikrofonu.",
+            : tr("nieUdaloSieUruchomic"),
         ),
       });
     }
@@ -361,7 +365,7 @@ export function RecordingPanel({
       playbackRef.current?.setControlsLocked(false);
       dispatch({
         type: "RECORDING_FAILED",
-        message: "Brak aktywnego rekordera.",
+        message: tr("brakAktywnegoRekordera"),
       });
       submittingRef.current = false;
       return;
@@ -433,7 +437,7 @@ export function RecordingPanel({
           const raw =
             error instanceof Error
               ? error.message
-              : "Nie udało się przesłać ani sfinalizować nagrania.";
+              : tr("nieUdaloSiePrzeslac");
           const message =
             toUserFacingTakeUploadError(raw) +
             (locallySecured ? LOCALLY_SECURED_SUFFIX_PL : "");
@@ -464,7 +468,7 @@ export function RecordingPanel({
           message: toUserFacingTakeUploadError(
             error instanceof Error
               ? error.message
-              : "Błąd zatrzymania nagrania.",
+              : tr("bladZatrzymaniaNagrania"),
           ),
         });
       }
@@ -563,7 +567,7 @@ export function RecordingPanel({
           message: toUserFacingTakeUploadError(
             error instanceof Error
               ? error.message
-              : "Nie udało się zacząć nagrania.",
+              : tr("nieUdaloSieZaczac"),
           ),
         });
       }
@@ -665,7 +669,7 @@ export function RecordingPanel({
             toUserFacingTakeUploadError(
               error instanceof Error
                 ? error.message
-                : "Nie udało się zastąpić nagrania.",
+                : tr("nieUdaloSieZastapic"),
             ) + (writer ? LOCALLY_SECURED_SUFFIX_PL : ""),
         });
       }
@@ -707,7 +711,7 @@ export function RecordingPanel({
       dispatch({
         type: "FINALIZE_FAILED",
         message: toUserFacingTakeUploadError(
-          error instanceof Error ? error.message : "Podgląd niedostępny.",
+          error instanceof Error ? error.message : tr("podgladNiedostepny"),
         ),
       });
     } finally {
@@ -743,29 +747,29 @@ export function RecordingPanel({
         className,
       )}
       role="region"
-      aria-label="Nagrywanie"
+      aria-label={tr("nagrywanie")}
       data-recording-phase={state.phase}
     >
       <div className="space-y-3">
         <div className="space-y-1">
           <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
-            Quick Take
+            {tr("quickTake")}
           </p>
           <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-            Limit {formatDurationSeconds(maxSeconds)}
-            {isAuthenticated ? " · konto" : " · gość"}
+            {tr("limit")}{" "}{formatDurationSeconds(maxSeconds)}
+            {isAuthenticated ? tr("konto") : tr("gosc")}
           </p>
         </div>
         <ol
           className="flex flex-wrap items-center gap-x-2 gap-y-1 border-y border-[var(--brd-line)] py-2"
-          aria-label="Rytm sesji nagrywania"
+          aria-label={tr("rytmSesjiNagrywania")}
         >
           <li
             className="brd-session-step"
             data-active={stepPrep ? "true" : undefined}
             aria-current={stepPrep ? "step" : undefined}
           >
-            1 · Mic
+            {tr("n1Mic")}
           </li>
           <li aria-hidden className="text-[var(--brd-line)]">
             /
@@ -776,7 +780,7 @@ export function RecordingPanel({
             data-rec={stepRec ? "true" : undefined}
             aria-current={stepRec ? "step" : undefined}
           >
-            2 · REC
+            {tr("n2Rec")}
           </li>
           <li aria-hidden className="text-[var(--brd-line)]">
             /
@@ -786,7 +790,7 @@ export function RecordingPanel({
             data-active={stepSend ? "true" : undefined}
             aria-current={stepSend ? "step" : undefined}
           >
-            3 · Wysyłka
+            {tr("n3Wysylka")}
           </li>
           <li aria-hidden className="text-[var(--brd-line)]">
             /
@@ -796,7 +800,7 @@ export function RecordingPanel({
             data-active={stepReady ? "true" : undefined}
             aria-current={stepReady ? "step" : undefined}
           >
-            4 · Take
+            {tr("n4Take")}
           </li>
         </ol>
       </div>
@@ -812,19 +816,19 @@ export function RecordingPanel({
 
       {state.phase === "AUTH_REQUIRED" ? (
         <p className="text-sm text-muted-foreground" role="status">
-          Aby nagrywać dłużej,{" "}
+          {tr("abyNagrywacDluzej")}{" "}
           <Link
             href="/sign-in"
             className="underline underline-offset-4 hover:text-foreground"
           >
-            zaloguj się
+            {tr("zalogujSie")}
           </Link>{" "}
-          lub{" "}
+          {tr("lub")}{" "}
           <Link
             href="/sign-up"
             className="underline underline-offset-4 hover:text-foreground"
           >
-            załóż konto
+            {tr("zalozKonto")}
           </Link>
           .
         </p>
@@ -832,20 +836,19 @@ export function RecordingPanel({
 
       {state.phase === "BEAT_NOT_ELIGIBLE" ? (
         <p className="text-sm text-destructive" role="alert">
-          Nagrywanie dostępne tylko dla opublikowanych bitów.
+          {tr("nagrywanieDostepneTylkoDla")}
         </p>
       ) : null}
 
       {state.phase === "REQUESTING_MIC" ? (
         <p className="text-sm text-muted-foreground" role="status">
-          Prośba o dostęp do mikrofonu…
+          {tr("prosbaODostepDo")}
         </p>
       ) : null}
 
       {state.phase === "READY" ? (
         <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
-          Mikrofon gotowy. Nagranie wystartuje razem z bit’em od początku —
-          trzymaj limit w polu widzenia.
+          {tr("mikrofonGotowyNagranieWystartuje")}
         </p>
       ) : null}
 
@@ -861,31 +864,31 @@ export function RecordingPanel({
                 aria-hidden
               />
               <span className="brd-meta text-sm font-medium text-[var(--brd-rec)]">
-                REC {formatDurationSeconds(elapsedSec)} /{" "}
+                {tr("rec")}{" "}{formatDurationSeconds(elapsedSec)} /{" "}
                 {formatDurationSeconds(maxSeconds)}
               </span>
             </div>
             <span className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Limit sesji
+              {tr("limitSesji")}
             </span>
           </div>
 
           <div className="space-y-2">
             <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Przebieg bitu
+              {tr("przebiegBitu")}
             </p>
             <Waveform
               seed={beatId}
               progress={recProgress}
               density="studio"
               showPlayhead
-              aria-label="Przebieg bitu podczas nagrywania"
+              aria-label={tr("przebiegBituPodczasNagrywania")}
             />
           </div>
 
           <div className="space-y-2">
             <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Przebieg mikrofonu
+              {tr("przebiegMikrofonu")}
             </p>
             <BrdLiveMicWaveform bars={mic.bars} progress={recProgress} />
           </div>
@@ -912,17 +915,17 @@ export function RecordingPanel({
         state.phase === "PROCESSING") && (
         <p className="text-sm text-muted-foreground" role="status">
           {state.phase === "STOPPING"
-            ? "Zatrzymywanie…"
+            ? tr("zatrzymywanie")
             : state.phase === "UPLOADING"
-              ? "Przesyłanie nagrania…"
-              : "Finalizacja…"}
+              ? tr("przesylanieNagrania")
+              : tr("finalizacja")}
         </p>
       )}
 
       {state.phase === "READY_TAKE" ? (
         <div className="space-y-3">
           <p className="text-sm font-medium text-[var(--brd-ink)]" role="status">
-            Take gotowy — odsłuchaj poniżej
+            {tr("takeGotowyOdsluchajPonizej")}
             {state.takeDurationSeconds != null
               ? ` · ${formatDurationSeconds(state.takeDurationSeconds)}`
               : ""}
@@ -943,27 +946,26 @@ export function RecordingPanel({
               onClick={() => void refreshPreview()}
               className="min-h-11"
             >
-              {previewBusy ? "Ładowanie podglądu…" : "Załaduj podgląd"}
+              {previewBusy ? tr("ladowaniePodgladu") : tr("zaladujPodglad")}
             </Button>
           )}
           {!isAuthenticated ? (
             <p className="text-sm text-muted-foreground" role="status">
-              Zapisz na dłużej —{" "}
+              {tr("zapiszNaDluzej")}{" "}
               <Link
                 href="/sign-up"
                 className="underline underline-offset-4 hover:text-foreground"
               >
-                załóż konto
+                {tr("zalozKonto")}
               </Link>{" "}
-              lub{" "}
+              {tr("lub")}{" "}
               <Link
                 href="/sign-in"
                 className="underline underline-offset-4 hover:text-foreground"
               >
-                zaloguj się
+                {tr("zalogujSie")}
               </Link>
-              . Gościnne nagranie wygasa po 2h. Po zalogowaniu gotowe nagranie
-              może zostać zapisane na Twoim koncie.
+              {tr("goscinneNagranieWygasaPo")}
             </p>
           ) : null}
         </div>
@@ -981,11 +983,10 @@ export function RecordingPanel({
         <div
           className="space-y-2 rounded border border-[var(--brd-line)] p-3"
           role="group"
-          aria-label="Zastąp istniejące nagranie"
+          aria-label={tr("zastapIstniejaceNagranie")}
         >
           <p className="text-sm text-[var(--brd-ink)]">
-            Masz pełny limit zapisanych nagrań. Wybierz, które zastąpić nowym
-            nagraniem:
+            {tr("maszPelnyLimitZapisanych")}
           </p>
           <ul className="space-y-2">
             {replaceCandidates.map((t) => (
@@ -1003,7 +1004,7 @@ export function RecordingPanel({
                   onClick={() => void confirmReplace(t.id)}
                   className="min-h-10"
                 >
-                  Zastąp
+                  {tr("zastap")}
                 </Button>
               </li>
             ))}
@@ -1011,8 +1012,7 @@ export function RecordingPanel({
         </div>
       ) : replaceCandidates && replaceCandidates.length === 0 ? (
         <p className="text-sm text-[var(--brd-mute)]" role="status">
-          Brak własnych nagrań gotowych do zastąpienia. Usuń nagranie w Studio
-          albo poczekaj na wygaśnięcie.
+          {tr("brakWlasnychNagranGotowych")}
         </p>
       ) : null}
 
@@ -1032,7 +1032,7 @@ export function RecordingPanel({
             disabled={busy}
             className="min-h-11 min-w-[7rem]"
           >
-            {state.phase === "READY_TAKE" ? "Nowe nagranie" : "Nagraj"}
+            {state.phase === "READY_TAKE" ? tr("noweNagranie") : "Nagraj"}
           </Button>
         ) : null}
 
@@ -1044,7 +1044,7 @@ export function RecordingPanel({
               disabled={busy}
               className="min-h-11 min-w-[7rem]"
             >
-              Rozpocznij
+              {tr("rozpocznij")}
             </Button>
             <Button
               type="button"
@@ -1052,7 +1052,7 @@ export function RecordingPanel({
               onClick={cancelAll}
               className="min-h-11"
             >
-              Anuluj
+              {tr("anuluj")}
             </Button>
           </>
         ) : null}
@@ -1064,7 +1064,7 @@ export function RecordingPanel({
               onClick={() => void stopAndUpload()}
               className="min-h-11 min-w-[7rem]"
             >
-              Zatrzymaj
+              {tr("zatrzymaj")}
             </Button>
             <Button
               type="button"
@@ -1072,7 +1072,7 @@ export function RecordingPanel({
               onClick={cancelAll}
               className="min-h-11"
             >
-              Anuluj
+              {tr("anuluj")}
             </Button>
           </>
         ) : null}

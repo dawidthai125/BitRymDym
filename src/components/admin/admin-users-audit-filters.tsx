@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
@@ -26,6 +28,7 @@ export function AdminUsersAuditFilters({
   rank: string;
   page: string;
 }) {
+  const t = useTranslations("admin.adminUsersAuditFilters");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -58,13 +61,13 @@ export function AdminUsersAuditFilters({
         <input type="hidden" name="page" value={page} />
       ) : null}
       <label className="space-y-1 text-sm">
-        <span className="text-[var(--brd-mute)]">Operacja</span>
+        <span className="text-[var(--brd-mute)]">{t("operacja")}</span>
         <select
           name="auditAction"
           defaultValue={action || "all"}
           className={selectClass}
         >
-          <option value="all">Wszystkie</option>
+          <option value="all">{t("wszystkie")}</option>
           {ADMIN_AUDIT_ACTIONS.map((value) => (
             <option key={value} value={value}>
               {labelAdminAuditAction(value)}
@@ -73,13 +76,13 @@ export function AdminUsersAuditFilters({
         </select>
       </label>
       <label className="min-w-[12rem] space-y-1 text-sm">
-        <span className="text-[var(--brd-mute)]">ID użytkownika</span>
+        <span className="text-[var(--brd-mute)]">{t("idUzytkownika")}</span>
         <input
           name="auditUser"
           type="search"
           inputMode="numeric"
           defaultValue={auditUser}
-          placeholder="Numer ID…"
+          placeholder={t("numerId")}
           autoComplete="off"
           className="min-h-11 w-full border-b border-[var(--brd-line)] bg-transparent px-0 py-2 text-[15px] outline-none focus-visible:border-[var(--brd-green)]"
         />
@@ -89,7 +92,7 @@ export function AdminUsersAuditFilters({
         className="inline-flex min-h-11 items-center bg-[var(--brd-green)] px-4 text-sm text-[var(--brd-paper)]"
         disabled={pending}
       >
-        {pending ? "Szukanie…" : "Filtruj historię"}
+        {pending ? t("szukanie") : t("filtrujHistorie")}
       </button>
     </form>
   );

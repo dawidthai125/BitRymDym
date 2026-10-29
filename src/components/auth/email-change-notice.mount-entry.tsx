@@ -3,6 +3,7 @@
  * Bundled by email-change-notice.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { EmailChangeNotice } from "@/components/auth/email-change-notice";
 import type { EmailChangeNoticeStatus } from "@/lib/auth/email-change";
@@ -34,10 +35,10 @@ function mount(
   }
   root = createRoot(el);
   if (status === null) {
-    root.render(null);
+    root.render(withIntl(null));
     return;
   }
-  root.render(<EmailChangeNotice status={status} />);
+  root.render(withIntl(<EmailChangeNotice status={status} />));
 }
 
 function unmount(): void {

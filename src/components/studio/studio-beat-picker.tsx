@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +50,8 @@ export function StudioBeatPicker({
   ) => Promise<StudioPersistResult>;
   onAttached: (document: StudioProjectDocument) => void;
 }) {
+  const tr = useTranslations("studio.studioBeatPicker");
+  const tTab = useTranslations("studio.beatPickerTabs");
   const [tab, setTab] = useState<PickerTab>("catalog");
   const [beats, setBeats] = useState<PickerBeat[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,14 +78,14 @@ export function StudioBeatPicker({
         };
         if (cancelled) return;
         if (!res.ok || !json.success || !Array.isArray(json.beats)) {
-          throw new Error(json.error ?? "Nie udało się wczytać listy bitów.");
+          throw new Error(json.error ?? tr("nieUdaloSieWczytac2"));
         }
         setBeats(json.beats);
       } catch (e) {
         if (cancelled) return;
         setBeats([]);
         setError(
-          e instanceof Error ? e.message : "Nie udało się wczytać listy bitów.",
+          e instanceof Error ? e.message : tr("nieUdaloSieWczytac"),
         );
       } finally {
         if (!cancelled) setLoading(false);
@@ -129,7 +134,7 @@ export function StudioBeatPicker({
           ) {
             return classifyPersistHttpFailure({
               status: res.status,
-              message: json.error ?? "Nie udało się powiązać bitu.",
+              message: json.error ?? tr("nieUdaloSiePowiazac"),
               code: json.code,
             });
           }
@@ -151,7 +156,7 @@ export function StudioBeatPicker({
       }
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Nie udało się powiązać bitu.");
+      setError(e instanceof Error ? e.message : tr("nieUdaloSiePowiazac"));
     } finally {
       setAttachingId(null);
     }
@@ -164,7 +169,7 @@ export function StudioBeatPicker({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Wybierz bit"
+      aria-label={tr("wybierzBit")}
       onClick={onClose}
     >
       <div
@@ -174,14 +179,14 @@ export function StudioBeatPicker({
         <header className="flex items-center justify-between gap-3 border-b border-[var(--brd-line)] px-4 py-3">
           <div>
             <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-              Bit w projekcie
+              {tr("bitWProjekcie")}
             </p>
             <h2 className="brd-display text-lg font-semibold text-[var(--brd-ink)]">
-              Wybierz bit
+              {tr("wybierzBit")}
             </h2>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            Zamknij
+            {tr("zamknij")}
           </Button>
         </header>
 
@@ -198,17 +203,17 @@ export function StudioBeatPicker({
               aria-pressed={tab === t.id}
               onClick={() => setTab(t.id)}
             >
-              {t.label}
+              {tTab(t.id)}
             </button>
           ))}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {loading ? (
-            <p className="px-2 py-6 text-sm text-[var(--brd-mute)]">Ładowanie…</p>
+            <p className="px-2 py-6 text-sm text-[var(--brd-mute)]">{tr("ladowanie")}</p>
           ) : beats.length === 0 ? (
             <p className="px-2 py-6 text-sm text-[var(--brd-mute)]">
-              Brak bitów w tej liście.
+              {tr("brakBitowWTej")}
             </p>
           ) : (
             <ul className="divide-y divide-[var(--brd-line)]">
@@ -226,7 +231,7 @@ export function StudioBeatPicker({
                       </span>
                       <span className="block truncate text-xs text-[var(--brd-mute)]">
                         {beat.producer?.trim() || "—"}
-                        {beat.bpm != null ? ` · ${beat.bpm} BPM` : ""}
+                        {beat.bpm != null ? tr("bpm", { v0: beat.bpm }) : ""}
                       </span>
                     </span>
                     <span className="shrink-0 text-xs text-[var(--brd-green)]">

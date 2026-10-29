@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useCallback, useSyncExternalStore } from "react";
 
 import {
@@ -42,6 +44,7 @@ function getBrdThemeServerSnapshot(): BrdTheme {
  * SSR / missing preference = dark; hydrates via useSyncExternalStore.
  */
 export function ThemeToggle({ className }: { className?: string }) {
+  const t = useTranslations("nav.themeToggle");
   const theme = useSyncExternalStore(
     subscribeBrdTheme,
     getBrdThemeSnapshot,
@@ -55,9 +58,9 @@ export function ThemeToggle({ className }: { className?: string }) {
     window.dispatchEvent(new Event(BRD_THEME_CHANGE_EVENT));
   }, [theme]);
 
-  const label = theme === "dark" ? "Ciemny" : "Jasny";
+  const label = theme === "dark" ? t("ciemny") : t("jasny");
   const nextHint =
-    theme === "dark" ? "Przełącz na jasny motyw" : "Przełącz na ciemny motyw";
+    theme === "dark" ? t("przelaczNaJasnyMotyw") : t("przelaczNaCiemnyMotyw");
 
   return (
     <button
@@ -75,7 +78,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       )}
     >
       <span className="hidden text-xs text-[var(--brd-ink-soft)] sm:inline">
-        Motyw
+        {t("motyw")}
       </span>
       <span className="font-medium text-[var(--brd-ink)]">{label}</span>
     </button>

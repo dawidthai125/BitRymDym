@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -11,16 +12,20 @@ import { AuthError, requireRole } from "@/lib/auth/session";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
 
-export const metadata = {
-  title: "Panel Administracyjny",
-  description: "Panel Administracyjny BitRymDym",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("admin.adminLayout");
+  return {
+  title: t("metaTitle"),
+  description: t("metaDescription"),
 };
+}
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("admin.adminLayout");
   try {
     await requireRole(["ADMIN", "MODERATOR"]);
   } catch (error) {
@@ -39,17 +44,16 @@ export default async function AdminLayout({
           )}
         >
           <h1 className="brd-display text-2xl font-semibold tracking-tight">
-            Brak dostępu
+            {t("brakDostepu")}
           </h1>
           <p className="mt-2 text-sm text-[var(--brd-mute)]">
-            Panel Administracyjny jest dostępny dla ról administratora i
-            moderatora.
+            {t("panelAdministracyjnyJestDostepny")}
           </p>
           <Link
             href="/"
             className="mt-6 inline-block text-sm underline underline-offset-4"
           >
-            Strona główna
+            {t("stronaGlowna")}
           </Link>
         </main>
       </div>
@@ -67,14 +71,14 @@ export default async function AdminLayout({
       <div className="mx-auto w-full max-w-[var(--brd-max-ops)] px-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] py-3">
         <nav
           className="flex flex-wrap gap-1 overflow-x-auto text-sm text-[var(--brd-ink-soft)]"
-          aria-label="Panel Administracyjny"
+          aria-label={t("panelAdministracyjny")}
         >
           {showPlatform ? (
             <Link
               href="/admin"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Pulpit
+              {t("pulpit")}
             </Link>
           ) : null}
           {showPlatform ? (
@@ -82,7 +86,7 @@ export default async function AdminLayout({
               href="/admin/beats"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Bity
+              {t("bity")}
             </Link>
           ) : null}
           {showModeration ? (
@@ -90,7 +94,7 @@ export default async function AdminLayout({
               href="/admin/moderation"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Moderacja
+              {t("moderacja")}
             </Link>
           ) : null}
           {showPlatform ? (
@@ -98,7 +102,7 @@ export default async function AdminLayout({
               href="/admin/users"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Użytkownicy
+              {t("uzytkownicy")}
             </Link>
           ) : null}
           {showPlatform ? (
@@ -106,7 +110,7 @@ export default async function AdminLayout({
               href="/admin/sample-policy"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Polityka nagrań
+              {t("politykaNagran")}
             </Link>
           ) : null}
           {showPlatform ? (
@@ -114,14 +118,14 @@ export default async function AdminLayout({
               href="/admin/beats/new"
               className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
             >
-              Nowy bit
+              {t("nowyBit")}
             </Link>
           ) : null}
           <Link
             href="/beats"
             className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
           >
-            Katalog
+            {t("katalog")}
           </Link>
         </nav>
       </div>

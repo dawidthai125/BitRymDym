@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ export function StudioMarkersPanel({
   onSeek,
   onDocumentVersionAck,
 }: StudioMarkersPanelProps) {
+  const t = useTranslations("studio.studioMarkersPanel");
   const [markers, setMarkers] = useState<StudioMarkerDto[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -74,7 +77,7 @@ export function StudioMarkersPanel({
       } | null;
       if (!response.ok || !body?.markers) {
         setLoadState("error");
-        setMessage(body?.error || "Nie udało się wczytać markerów.");
+        setMessage(body?.error || t("nieUdaloSieWczytac"));
         return;
       }
       ackDocumentVersion(body.documentVersion);
@@ -83,7 +86,7 @@ export function StudioMarkersPanel({
       setMessage(null);
     } catch {
       setLoadState("error");
-      setMessage("Nie udało się wczytać markerów.");
+      setMessage(t("nieUdaloSieWczytac"));
     }
   }, [ackDocumentVersion, projectId]);
 
@@ -126,7 +129,7 @@ export function StudioMarkersPanel({
             message:
               body?.message ||
               body?.error ||
-              "Nie udało się zapisać markera.",
+              t("nieUdaloSieZapisac"),
           });
         }
         const documentVersion = ackDocumentVersion(body.documentVersion);
@@ -136,7 +139,7 @@ export function StudioMarkersPanel({
           apply: () => {
             setMarkers(body.markers!);
             setMessage(
-              op === "add" ? "Dodano marker." : "Usunięto marker.",
+              op === "add" ? t("dodanoMarker") : t("usunietoMarker"),
             );
           },
         };
@@ -155,10 +158,10 @@ export function StudioMarkersPanel({
       data-testid="studio-markers-panel"
     >
       <p className="text-xs font-medium text-[var(--brd-ink)]">
-        Markery verse / hook
+        {t("markeryVerseHook")}
       </p>
       <p className="text-xs text-[var(--brd-mute)]">
-        Dodaj przy playhead. Czas w ms. Zapis CAS dokumentu.
+        {t("dodajPrzyPlayheadCzas")}
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Button
@@ -170,7 +173,7 @@ export function StudioMarkersPanel({
             void persistOp("add", { kind: "verse" });
           }}
         >
-          {busy === "verse" ? "Dodawanie…" : "Dodaj zwrotkę"}
+          {busy === "verse" ? t("dodawanie") : t("dodajZwrotke")}
         </Button>
         <Button
           type="button"
@@ -181,17 +184,17 @@ export function StudioMarkersPanel({
             void persistOp("add", { kind: "hook" });
           }}
         >
-          {busy === "hook" ? "Dodawanie…" : "Dodaj refren"}
+          {busy === "hook" ? t("dodawanie") : t("dodajRefren")}
         </Button>
       </div>
       {loadState === "loading" ? (
         <p className="text-xs text-[var(--brd-mute)]" role="status">
-          Wczytywanie markerów…
+          {t("wczytywanieMarkerow")}
         </p>
       ) : null}
       {loadState === "ready" && sorted.length === 0 ? (
         <p className="text-xs text-[var(--brd-mute)]" role="status">
-          Brak markerów.
+          {t("brakMarkerow")}
         </p>
       ) : null}
       {sorted.length > 0 ? (
@@ -215,12 +218,12 @@ export function StudioMarkersPanel({
                 variant="ghost"
                 className="min-h-11"
                 disabled={busy !== null}
-                aria-label={`Usuń marker ${studioMarkerKindLabelPl(marker.kind)}`}
+                aria-label={t("usunMarker", { v0: studioMarkerKindLabelPl(marker.kind) })}
                 onClick={() => {
                   void persistOp("remove", { markerId: marker.id });
                 }}
               >
-                Usuń
+                {t("usun")}
               </Button>
             </li>
           ))}

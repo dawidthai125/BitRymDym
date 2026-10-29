@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -11,13 +12,14 @@ import { getSupabasePublicEnv } from "@/lib/supabase/env";
  * Requires the session user and a server-signed recovery seal for that user.
  */
 export default async function ResetPasswordPage() {
+  const t = await getTranslations("auth.authResetPasswordPage");
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6">
-        <h1 className="text-2xl font-semibold">Reset hasła</h1>
+        <h1 className="text-2xl font-semibold">{t("resetHasla")}</h1>
         <p className="text-sm text-muted-foreground">
-          Konfiguracja lokalna jest niekompletna.
+          {t("konfiguracjaLokalnaJestNiekompletna")}
         </p>
       </main>
     );
@@ -40,9 +42,9 @@ export default async function ResetPasswordPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Nowe hasło</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("noweHaslo")}</h1>
       <p className="text-sm text-muted-foreground">
-        Ustaw nowe hasło dla swojego konta.
+        {t("ustawNoweHasloDla")}
       </p>
       <ResetPasswordForm />
       <p className="text-sm text-muted-foreground">
@@ -50,7 +52,7 @@ export default async function ResetPasswordPage() {
           href="/sign-in"
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
-          Anuluj i zaloguj się
+          {t("anulujIZalogujSie")}
         </Link>
       </p>
     </main>

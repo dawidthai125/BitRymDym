@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -19,6 +20,7 @@ type PageProps = {
 };
 
 export default async function AdminBeatDetailPage({ params }: PageProps) {
+  const t = await getTranslations("admin.adminBeatsPage");
   const { id } = await params;
 
   // getPlatformBeatForAdmin also throws FORBIDDEN for non-PLATFORM beats, so the
@@ -28,9 +30,9 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
   if (denial === "FORBIDDEN") {
     return (
       <main className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("brakDostepu")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Brak uprawnienia do edycji bitów platformy.
+          {t("brakUprawnieniaDoEdycji")}
         </p>
       </main>
     );
@@ -55,27 +57,27 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
           href="/admin/beats"
           className="text-sm text-muted-foreground underline-offset-4 hover:underline"
         >
-          ← Lista
+          {t("lista")}
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight text-balance">
           {beat.title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {labelBeatStatus(beat.status)} · bit platformowy
-          {audio.activeMasterReady ? " · audio gotowe" : " · brak audio"}
+          {labelBeatStatus(beat.status)} {t("bitPlatformowy")}
+          {audio.activeMasterReady ? t("audioGotowe") : t("brakAudio")}
         </p>
         {beat.status === "PUBLISHED" ? (
           <Link
             href={`/beat/${beat.id}`}
             className="inline-block text-sm underline underline-offset-4"
           >
-            Otwórz publiczną stronę →
+            {t("otworzPublicznaStrone")}
           </Link>
         ) : null}
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Status publikacji</h2>
+        <h2 className="text-lg font-medium tracking-tight">{t("statusPublikacji")}</h2>
         <AdminLifecycleControls
           beatId={beat.id}
           status={beat.status}
@@ -84,7 +86,7 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Audio Master</h2>
+        <h2 className="text-lg font-medium tracking-tight">{t("audioMaster")}</h2>
         <AdminAudioUploadForm
           beatId={beat.id}
           activeMasterReady={audio.activeMasterReady}
@@ -97,7 +99,7 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Metadane</h2>
+        <h2 className="text-lg font-medium tracking-tight">{t("metadane")}</h2>
         <AdminMetadataForm beat={beat} />
       </section>
     </main>

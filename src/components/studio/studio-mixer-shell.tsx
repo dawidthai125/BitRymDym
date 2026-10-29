@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   useEffect,
   useId,
@@ -39,6 +41,7 @@ export function StudioMixerOverlay({
   panelId,
   children,
 }: StudioMixerOverlayProps) {
+  const t = useTranslations("studio.studioMixerShell");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -99,7 +102,7 @@ export function StudioMixerOverlay({
       <button
         type="button"
         className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
-        aria-label="Zamknij Mixer"
+        aria-label={t("zamknijMixer")}
         data-testid="studio-mixer-backdrop"
         onClick={onClose}
       />
@@ -117,7 +120,7 @@ export function StudioMixerOverlay({
             id={titleId}
             className="text-sm font-medium text-[var(--brd-ink)]"
           >
-            Mixer
+            {t("mixer")}
           </p>
           <Button
             type="button"
@@ -126,7 +129,7 @@ export function StudioMixerOverlay({
             className="min-h-11 min-w-11"
             onClick={onClose}
           >
-            Zamknij
+            {t("zamknij")}
           </Button>
         </div>
         <div
@@ -158,12 +161,13 @@ export function StudioMixerDockChrome({
   onToggle,
   children,
 }: StudioMixerDockChromeProps) {
+  const t = useTranslations("studio.studioMixerShell");
   return (
     <section
       data-testid="studio-mixer-dock"
       data-studio-mixer="dock"
       data-mixer-expanded={expanded ? "true" : "false"}
-      aria-label="Mix"
+      aria-label={t("mix")}
       className="studio-mixer-dock hidden shrink-0 flex-col xl:flex"
     >
       <div
@@ -171,7 +175,7 @@ export function StudioMixerDockChrome({
         data-testid="studio-mixer-chrome"
       >
         <p className="text-xs font-medium text-[var(--brd-mute)]">
-          Mixer
+          {t("mixer")}
         </p>
         <Button
           type="button"
@@ -180,7 +184,7 @@ export function StudioMixerDockChrome({
           className="min-h-11 min-w-11"
           aria-expanded={expanded}
           aria-controls={panelId}
-          aria-label={expanded ? "Zwiń Mixer" : "Rozwiń Mixer"}
+          aria-label={expanded ? t("zwinMixer") : t("rozwinMixer")}
           data-testid="studio-mixer-collapse"
           onClick={onToggle}
         >
@@ -191,7 +195,7 @@ export function StudioMixerDockChrome({
         <div
           id={panelId}
           role="region"
-          aria-label="Kanały Mixera"
+          aria-label={t("kanalyMixera")}
           data-testid="studio-mixer-panel"
           className="max-h-[17.5rem] min-h-0 overflow-y-auto overflow-x-hidden p-2"
         >

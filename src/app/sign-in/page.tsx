@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -6,6 +7,7 @@ import { AuthThemeBar } from "@/components/site/auth-theme-bar";
 import { getCurrentProfile } from "@/lib/auth/session";
 
 export default async function SignInPage() {
+  const t = await getTranslations("auth.signInPage");
   const context = await getCurrentProfile();
   if (context) {
     redirect("/account");
@@ -14,18 +16,18 @@ export default async function SignInPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-16">
       <AuthThemeBar />
-      <h1 className="text-2xl font-semibold tracking-tight">Zaloguj się</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("zalogujSie")}</h1>
       <p className="text-sm text-muted-foreground">
-        Zaloguj się, aby korzystać ze studia i swoich nagrań.
+        {t("zalogujSieAbyKorzystac")}
       </p>
       <SignInForm />
       <p className="text-sm text-muted-foreground">
-        Nie masz konta?{" "}
+        {t("nieMaszKonta")}{" "}
         <Link
           href="/sign-up"
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
-          Załóż konto
+          {t("zalozKonto")}
         </Link>
       </p>
     </main>

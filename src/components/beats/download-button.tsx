@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState, useTransition } from "react";
 import Link from "next/link";
 
@@ -27,6 +29,7 @@ export function DownloadButton({
   title,
   isAuthenticated = false,
 }: DownloadButtonProps) {
+  const t = useTranslations("beats.downloadButton");
   const [ui, setUi] = useState<DownloadUiState>({ phase: "idle" });
   const [isPending, startTransition] = useTransition();
 
@@ -75,7 +78,7 @@ export function DownloadButton({
         aria-busy={busy}
         className="min-h-11 min-w-11 px-4"
       >
-        {busy ? "Pobieranie…" : "Pobierz"}
+        {busy ? t("pobieranie") : "Pobierz"}
       </Button>
 
       {ui.phase === "limit" ? (
@@ -88,9 +91,9 @@ export function DownloadButton({
                 href="/sign-in"
                 className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground"
               >
-                Zaloguj się
+                {t("zalogujSie")}
               </Link>{" "}
-              aby korzystać z limitu konta.
+              {t("abyKorzystacZLimitu")}
             </>
           ) : null}
         </p>

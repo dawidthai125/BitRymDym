@@ -3,6 +3,7 @@
  * Bundled by catalog-waveform-seek-target.mount-host.ts — not an app route.
  */
 import { useEffect, useState } from "react";
+import { withIntl } from "@/test/intl-test-provider";
 import { createRoot, type Root } from "react-dom/client";
 
 import { Waveform } from "@/components/brand/waveform";
@@ -88,7 +89,7 @@ function mount(
     root = null;
   }
   root = createRoot(el);
-  root.render(<CatalogWaveformMountTree opts={opts} />);
+  root.render(withIntl(<CatalogWaveformMountTree opts={opts} />));
 }
 
 function unmount(): void {

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Waveform } from "@/components/brand/waveform";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +20,7 @@ export function BrdLiveMicWaveform({
   progress,
   className,
 }: BrdLiveMicWaveformProps) {
+  const t = useTranslations("common.brdLiveMicWaveform");
   return (
     <Waveform
       seed="live-mic"
@@ -29,7 +32,7 @@ export function BrdLiveMicWaveform({
       heightClassName="h-10 sm:h-12"
       tone="take"
       className={cn(className)}
-      aria-label="Poziom mikrofonu na żywo"
+      aria-label={t("poziomMikrofonuNaZywo")}
     />
   );
 }

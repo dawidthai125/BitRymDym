@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -9,6 +10,7 @@ export default async function AdminUsersLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("admin.adminUsersLayout");
   try {
     await requireAdminUsersListAccess();
   } catch (error) {
@@ -18,16 +20,16 @@ export default async function AdminUsersLayout({
     return (
       <div className="mx-auto max-w-3xl px-6 py-16">
         <h1 className="brd-display text-2xl font-semibold tracking-tight">
-          Brak dostępu
+          {t("brakDostepu")}
         </h1>
         <p className="mt-2 text-sm text-[var(--brd-mute)]">
-          Lista użytkowników jest dostępna wyłącznie dla administratora.
+          {t("listaUzytkownikowJestDostepna")}
         </p>
         <Link
           href="/admin/moderation"
           className="mt-6 inline-block text-sm underline underline-offset-4"
         >
-          Moderacja
+          {t("moderacja")}
         </Link>
       </div>
     );

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -9,11 +10,15 @@ import { AuthError, requireRole } from "@/lib/auth/session";
 import { loadSamplePolicySettings } from "@/lib/takes/sample-policy-settings";
 import { labelSamplePolicyActor } from "@/lib/ui/labels";
 
-export const metadata = {
-  title: "Polityka nagrań · Panel Administracyjny",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("admin.adminSamplePolicyPage");
+  return {
+  title: t("metaTitle"),
 };
+}
 
 export default async function AdminSamplePolicyPage() {
+  const t = await getTranslations("admin.adminSamplePolicyPage");
   try {
     await requireRole(["ADMIN"]);
   } catch (error) {
@@ -33,41 +38,40 @@ export default async function AdminSamplePolicyPage() {
             href="/admin"
             className="text-sm text-[var(--brd-mute)] underline-offset-4 hover:underline"
           >
-            ← Pulpit
+            {t("pulpit")}
           </Link>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
-            Polityka nagrań
+            {t("politykaNagran")}
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Konfiguracja limitu długości nagrania dla{" "}
+            {t("konfiguracjaLimituDlugosciNagrania")}{" "}
             {labelSamplePolicyActor("BRONZE")} /{" "}
             {labelSamplePolicyActor("SILVER")} /{" "}
-            {labelSamplePolicyActor("GOLD")}. Globalny limit techniczny:{" "}
+            {labelSamplePolicyActor("GOLD")}{t("globalnyLimitTechniczny")}{" "}
             {RECORDING_GLOBAL_MAX_SECONDS} s.
           </p>
         </header>
 
         <section className="mb-10 space-y-3 border border-[var(--brd-line)] p-4">
           <h2 className="text-sm font-medium uppercase tracking-wide text-[var(--brd-mute)]">
-            Stałe systemowe (bez zmian administratora)
+            {t("staleSystemoweBezZmian")}
           </h2>
           <ul className="grid gap-2 text-sm sm:grid-cols-2">
             <li>
               {labelSamplePolicyActor("ANONYMOUS")}:{" "}
-              {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds} s · czas
-              życia {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.ttlSeconds / 3600} godz.
+              {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds} {t("sCzasZycia")}{" "}{SAMPLE_POLICY_DEFAULTS.ANONYMOUS.ttlSeconds / 3600} {t("godz")}
             </li>
             <li>
               {labelSamplePolicyActor("FREE")}:{" "}
-              {SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds} s · czas życia{" "}
-              {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600} godz.
+              {SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds} {t("sCzasZycia")}{" "}
+              {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600} {t("godz")}
             </li>
           </ul>
         </section>
 
         <section className="space-y-4">
           <h2 className="text-lg font-medium tracking-tight">
-            Nadpisania administratora (maksymalny czas trwania)
+            {t("nadpisaniaAdministratoraMaksymalnyCzas")}
           </h2>
           <AdminSamplePolicyForm initial={settings} />
         </section>

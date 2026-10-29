@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { StudioPeakMeter } from "@/components/studio/studio-peak-meter";
 import type { StudioMeterSnapshot } from "@/lib/studio/studio-meter";
 
@@ -17,11 +19,12 @@ export function StudioTrackMeter({
   snapshot,
   trackName,
 }: StudioTrackMeterProps) {
+  const t = useTranslations("studio.studioTrackMeter");
   return (
     <StudioPeakMeter
       snapshot={snapshot}
-      title="Miernik ścieżki"
-      ariaLabel={`Poziom ścieżki ${trackName} (sample peak)`}
+      title={t("miernikSciezki")}
+      ariaLabel={t("poziomSciezkiSamplePeak", { v0: trackName })}
       testIdPrefix="studio-track-meter"
     />
   );

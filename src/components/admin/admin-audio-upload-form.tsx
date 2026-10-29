@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
@@ -18,6 +21,7 @@ export function AdminAudioUploadForm({
   beatId: string;
   activeMasterReady: boolean;
 }) {
+  const t = useTranslations("admin.adminAudioUploadForm");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +38,11 @@ export function AdminAudioUploadForm({
     const input = form.elements.namedItem("audio") as HTMLInputElement | null;
     const file = input?.files?.[0];
     if (!file) {
-      setError("Wybierz plik audio.");
+      setError(t("wybierzPlikAudio"));
       return;
     }
     if (file.size > BEAT_AUDIO_MAX_BYTES) {
-      setError("Plik przekracza limit 50 MiB.");
+      setError(t("plikPrzekraczaLimit50"));
       return;
     }
 
@@ -48,13 +52,13 @@ export function AdminAudioUploadForm({
         filename: file.name,
       }) ?? file.type;
     if (!contentType) {
-      setError("Nieobsługiwany format audio.");
+      setError(t("nieobslugiwanyFormatAudio"));
       return;
     }
 
     startTransition(async () => {
       try {
-        setProgress("Przygotowanie przesyłania…");
+        setProgress(t("przygotowaniePrzesylania"));
         const sessionRes = await fetch(`/api/admin/beats/${beatId}/master`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -81,14 +85,14 @@ export function AdminAudioUploadForm({
         ) {
           setError(
             toUserFacingUploadError(
-              sessionJson.error ?? "Upload session failed.",
+              sessionJson.error ?? t("uploadSessionFailed"),
             ),
           );
           setProgress(null);
           return;
         }
 
-        setProgress("Przesyłanie audio…");
+        setProgress(t("przesylanieAudio"));
         const supabase = createSupabaseBrowserClient();
         const { error: uploadError } = await supabase.storage
           .from("beat-audio")
@@ -98,13 +102,13 @@ export function AdminAudioUploadForm({
           });
         if (uploadError) {
           setError(
-            toUserFacingUploadError(uploadError.message || "Upload failed."),
+            toUserFacingUploadError(uploadError.message || t("uploadFailed")),
           );
           setProgress(null);
           return;
         }
 
-        setProgress("Finalizacja…");
+        setProgress(t("finalizacja"));
         const completeRes = await fetch(`/api/admin/beats/${beatId}/master`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -120,19 +124,19 @@ export function AdminAudioUploadForm({
         if (!completeRes.ok || !completeJson.success) {
           setError(
             toUserFacingUploadError(
-              completeJson.error ?? "Upload nie powiódł się.",
+              completeJson.error ?? t("uploadNiePowiodlSie"),
             ),
           );
           setProgress(null);
           return;
         }
 
-        setSuccess("Audio Master jest gotowe.");
+        setSuccess(t("audioMasterJestGotowe"));
         setProgress(null);
         form.reset();
         router.refresh();
       } catch {
-        setError("Błąd sieci / serwera podczas przesyłania.");
+        setError(t("bladSieciSerweraPodczas"));
         setProgress(null);
       }
     });
@@ -140,11 +144,11 @@ export function AdminAudioUploadForm({
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-3">
-      <h2 className="text-sm font-semibold tracking-wide">Audio Master</h2>
+      <h2 className="text-sm font-semibold tracking-wide">{t("audioMaster")}</h2>
       <p className="text-sm text-muted-foreground">
         {activeMasterReady
-          ? "Aktywne audio Master jest gotowe — nowe przesłanie zastąpi poprzedni plik."
-          : "Brak gotowego audio Master — wgraj plik, aby odblokować publikację."}
+          ? t("aktywneAudioMasterJest")
+          : t("brakGotowegoAudioMaster")}
       </p>
       <input
         name="audio"
@@ -170,7 +174,7 @@ export function AdminAudioUploadForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Przesyłanie…" : "Prześlij Master"}
+        {pending ? t("przesylanie") : t("przeslijMaster")}
       </Button>
     </form>
   );

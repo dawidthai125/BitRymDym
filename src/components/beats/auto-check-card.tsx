@@ -1,3 +1,4 @@
+import { useLocale, useTranslations } from "next-intl";
 import { StatusPill } from "@/components/brand/chrome";
 import {
   autoCheckBadge,
@@ -8,6 +9,7 @@ import {
   vocalRanges,
 } from "@/lib/beats/auto-check/presentation";
 import type { AutoCheckRow } from "@/lib/beats/auto-check/records";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
 const LED: Record<string, "ok" | "rec" | "warn" | "neutral"> = {
   ok: "ok",
@@ -22,10 +24,12 @@ export function AutoCheckBadge({ check }: { check: AutoCheckRow | null | undefin
 }
 
 export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefined }) {
+  const t = useTranslations("beats.autoCheckCard");
+  const tag = intlTag(resolveLocale(useLocale()));
   if (!check) {
     return (
       <p className="text-sm text-muted-foreground">
-        Brak automatycznego sprawdzenia dla tego bitu. Zatwierdzenie jest zablokowane.
+        {t("brakAutomatycznegoSprawdzeniaDla")}
       </p>
     );
   }
@@ -38,9 +42,9 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
         <AutoCheckBadge check={check} />
         <span className="brd-data text-xs text-muted-foreground">
           {check.finished_at
-            ? `zakończono ${new Date(check.finished_at).toLocaleString("pl-PL")}`
-            : `zlecono ${new Date(check.created_at).toLocaleString("pl-PL")}`}
-          {check.error_code ? ` · kod: ${check.error_code}` : ""}
+            ? t("zakonczono", { v0: new Date(check.finished_at).toLocaleString(tag) })
+            : t("zlecono", { v0: new Date(check.created_at).toLocaleString(tag) })}
+          {check.error_code ? t("kod", { v0: check.error_code }) : ""}
         </span>
       </div>
       {check.summary_pl ? <p>{check.summary_pl}</p> : null}
@@ -54,13 +58,13 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
         ))}
         {check.recognition_score != null ? (
           <div className="brd-readout flex justify-between gap-3">
-            <dt className="text-muted-foreground">Najwyższy wynik dopasowania</dt>
+            <dt className="text-muted-foreground">{t("najwyzszyWynikDopasowania")}</dt>
             <dd className="brd-data">{Number(check.recognition_score).toFixed(2)}</dd>
           </div>
         ) : null}
         {check.vocal_ratio != null ? (
           <div className="brd-readout flex justify-between gap-3">
-            <dt className="text-muted-foreground">Udział okien z wokalem</dt>
+            <dt className="text-muted-foreground">{t("udzialOkienZWokalem")}</dt>
             <dd className="brd-data">{(Number(check.vocal_ratio) * 100).toFixed(1)}%</dd>
           </div>
         ) : null}
@@ -68,12 +72,12 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
 
       {recognition.some((r) => r.matches?.length) ? (
         <div className="space-y-1">
-          <p className="font-medium">Dopasowania</p>
+          <p className="font-medium">{t("dopasowania")}</p>
           <ul className="space-y-1">
             {recognition.flatMap((r) =>
               (r.matches ?? []).map((m, i) => {
                 const href = safeMatchHref(m.url);
-                const label = [m.title ?? m.ref ?? "bez tytułu", m.artist].filter(Boolean).join(" — ");
+                const label = [m.title ?? m.ref ?? t("bezTytulu"), m.artist].filter(Boolean).join(" — ");
                 return (
                   <li key={`${r.provider}-${i}`} className="flex flex-wrap gap-2">
                     <span className="text-muted-foreground">{PROVIDER_LABELS_PL[r.provider] ?? r.provider}:</span>
@@ -85,9 +89,9 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
                       <span>{label}</span>
                     )}
                     <span className="brd-data text-muted-foreground">
-                      wynik {m.score.toFixed(2)}
+                      {t("wynik")}{" "}{m.score.toFixed(2)}
                       {m.matchedSeconds != null ? ` · ${m.matchedSeconds}s` : ""}
-                      {m.offsetSeconds != null ? ` · przesunięcie ${m.offsetSeconds}s` : ""}
+                      {m.offsetSeconds != null ? t("przesuniecieS", { v0: m.offsetSeconds }) : ""}
                     </span>
                   </li>
                 );
@@ -99,7 +103,7 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
 
       {ranges.length ? (
         <div className="space-y-1">
-          <p className="font-medium">Fragmenty z wokalem</p>
+          <p className="font-medium">{t("fragmentyZWokalem")}</p>
           <p className="brd-data text-muted-foreground">{ranges.join(", ")}</p>
         </div>
       ) : null}
@@ -107,7 +111,7 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
       {check.appeal_requested_at ? (
         <div className="space-y-1 border border-[var(--brd-line)] bg-[var(--brd-recess)] p-3">
           <p className="font-medium">
-            Odwołanie właściciela ({new Date(check.appeal_requested_at).toLocaleString("pl-PL")})
+            {t("odwolanieWlasciciela")}{new Date(check.appeal_requested_at).toLocaleString(tag)})
           </p>
           {check.appeal_note ? <p className="whitespace-pre-wrap">{check.appeal_note}</p> : null}
         </div>

@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 
 import { BeatArtwork } from "@/components/brand/beat-artwork";
@@ -14,10 +17,11 @@ import { cn } from "@/lib/utils";
  * Beat marketplace preview — dense catalog rhythm, not file list.
  */
 export function HomeBeatStrip({ beats }: { beats: PresentedBeat[] }) {
+  const t = useTranslations("common.homeBeatStrip");
   if (beats.length === 0) {
     return (
       <p className="text-sm text-[var(--brd-mute)]">
-        Jeszcze nie ma opublikowanych bitów.
+        {t("jeszczeNieMaOpublikowanych")}
       </p>
     );
   }
@@ -38,6 +42,7 @@ function HomeBeatRow({
   beat: PresentedBeat;
   featured?: boolean;
 }) {
+  const t = useTranslations("common.homeBeatStrip");
   const { track, currentTime, duration, seek, activateTrack } = usePlayer();
   const isCurrent = track?.beatId === beat.id;
   const total = duration > 0 && isCurrent ? duration : beat.durationSeconds;
@@ -86,7 +91,7 @@ function HomeBeatRow({
         <Link href={`/beat/${beat.id}`} className="min-w-0 space-y-0.5">
           {featured ? (
             <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-green)]">
-              Polecane
+              {t("polecane")}
             </p>
           ) : null}
           <p
@@ -102,7 +107,7 @@ function HomeBeatRow({
           </p>
           <p className="brd-meta truncate text-[10px] text-[var(--brd-mute)]">
             {[
-              beat.bpm > 0 ? `${beat.bpm} BPM` : null,
+              beat.bpm > 0 ? t("bpm", { v0: beat.bpm }) : null,
               beat.key,
               beat.genre,
             ]
@@ -121,7 +126,7 @@ function HomeBeatRow({
             showPlayhead={isCurrent}
             interactive
             onSeekRatio={(ratio) => void onSeekRatio(ratio)}
-            aria-label={`Przebieg: ${beat.title}`}
+            aria-label={t("przebieg", { v0: beat.title })}
           />
         </div>
 
@@ -143,7 +148,7 @@ function HomeBeatRow({
           showPlayhead={isCurrent}
           interactive
           onSeekRatio={(ratio) => void onSeekRatio(ratio)}
-          aria-label={`Przebieg: ${beat.title}`}
+          aria-label={t("przebieg", { v0: beat.title })}
         />
       </div>
     </li>

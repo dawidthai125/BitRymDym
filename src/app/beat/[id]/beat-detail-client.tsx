@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
@@ -49,6 +51,7 @@ export function BeatDetailClient({
   masterPro,
   related,
 }: BeatDetailClientProps) {
+  const t = useTranslations("beats.beatDetailClient");
   const {
     track,
     phase,
@@ -193,7 +196,7 @@ export function BeatDetailClient({
               {beat.title}
             </h1>
             <p className="text-lg text-[var(--brd-ink-soft)]">
-              <span className="sr-only">Producent: </span>
+              <span className="sr-only">{t("producent")}{" "}</span>
               {beat.producer}
             </p>
           </div>
@@ -202,7 +205,7 @@ export function BeatDetailClient({
             <section
               ref={heroPlayerRef}
               className="space-y-3 border border-[var(--brd-audio-line)] bg-[var(--brd-paper)] p-3 sm:p-4"
-              aria-label="Odtwarzacz bitu"
+              aria-label={t("odtwarzaczBitu")}
             >
               <div className="flex items-center gap-3">
                 <BrdAudioPlayButton
@@ -221,7 +224,7 @@ export function BeatDetailClient({
                     showPlayhead={isCurrent}
                     interactive
                     onSeekRatio={(ratio) => void onSeekRatio(ratio)}
-                    aria-label="Przebieg — przewiń bit"
+                    aria-label={t("przebiegPrzewinBit")}
                   />
                 </div>
                 <BrdAudioTime
@@ -240,13 +243,13 @@ export function BeatDetailClient({
             </section>
           ) : (
             <p className="text-sm text-[var(--brd-mute)]" role="status">
-              Ten bit nie ma jeszcze dostępnego audio.
+              {t("tenBitNieMa")}
             </p>
           )}
 
           <p className="brd-meta flex flex-wrap gap-x-3 gap-y-1 border-y border-[var(--brd-line)] py-2.5 text-xs uppercase tracking-[0.14em] text-[var(--brd-ink-soft)]">
             <span>
-              <span className="text-[var(--brd-mute)]">Tempo </span>
+              <span className="text-[var(--brd-mute)]">{t("tempo")}{" "}</span>
               <span className="text-[var(--brd-ink)]">
                 {beat.bpm > 0 ? beat.bpm : "—"}
               </span>
@@ -255,21 +258,21 @@ export function BeatDetailClient({
               ·
             </span>
             <span>
-              <span className="text-[var(--brd-mute)]">Tonacja </span>
+              <span className="text-[var(--brd-mute)]">{t("tonacja")}{" "}</span>
               <span className="text-[var(--brd-ink)]">{beat.key ?? "—"}</span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
             </span>
             <span>
-              <span className="text-[var(--brd-mute)]">Gatunek </span>
+              <span className="text-[var(--brd-mute)]">{t("gatunek")}{" "}</span>
               <span className="text-[var(--brd-ink)]">{beat.genre ?? "—"}</span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
             </span>
             <span>
-              <span className="text-[var(--brd-mute)]">Czas </span>
+              <span className="text-[var(--brd-mute)]">{t("czas")}{" "}</span>
               <span className="text-[var(--brd-ink)]">
                 {formatDurationSeconds(beat.durationSeconds)}
               </span>
@@ -287,7 +290,7 @@ export function BeatDetailClient({
                   "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brd-paper)]",
                 )}
               >
-                Otwórz w Studio
+                {t("otworzWStudio")}
               </Link>
             ) : null}
             {hasAudio ? (
@@ -307,7 +310,7 @@ export function BeatDetailClient({
                   history.replaceState(null, "", "#nagranie");
                 }}
               >
-                Nagraj
+                {t("nagraj")}
               </a>
             ) : null}
             {hasAudio && originalMasterDownloadAllowed ? (
@@ -321,7 +324,7 @@ export function BeatDetailClient({
                 className="text-sm text-[var(--brd-mute)]"
                 role="status"
               >
-                Pobieranie oryginalnego bitu jest niedostępne.
+                {t("pobieranieOryginalnegoBituJest")}
               </p>
             ) : null}
           </div>
@@ -329,24 +332,23 @@ export function BeatDetailClient({
       </div>
 
       <section className="max-w-prose space-y-2 border-t border-[var(--brd-line)] pt-6">
-        <h2 className="brd-display text-3xl leading-none">O bicie</h2>
+        <h2 className="brd-display text-3xl leading-none">{t("oBicie")}</h2>
         <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">
           {description ??
-            "Bit gotowy do odsłuchu i nagrania. Sprawdź tempo, tonację i nagraj swój wokal na tym podkładzie."}
+            t("bitGotowyDoOdsluchu")}
         </p>
       </section>
 
       <section className="space-y-2 border-t border-[var(--brd-line)] pt-6">
-        <h2 className="brd-display text-3xl leading-none">Licencja</h2>
+        <h2 className="brd-display text-3xl leading-none">{t("licencja")}</h2>
         <p className="max-w-prose text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-          Odsłuchaj, nagraj nagranie i korzystaj z bitu zgodnie z zasadami konta.
-          Eksport miksu znajdziesz w studio.
+          {t("odsluchajNagrajNagranieI")}
         </p>
       </section>
 
       {related.length > 0 ? (
         <section className="space-y-3 border-t border-[var(--brd-line)] pt-6">
-          <h2 className="brd-display text-3xl leading-none">Podobne bity</h2>
+          <h2 className="brd-display text-3xl leading-none">{t("podobneBity")}</h2>
           <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
             {related.map((r) => (
               <li key={r.id}>
@@ -362,7 +364,7 @@ export function BeatDetailClient({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{r.title}</p>
                     <p className="truncate text-sm text-[var(--brd-mute)]">
-                      {r.producer} · Tempo {r.bpm}
+                      {r.producer} {t("tempo2")}{" "}{r.bpm}
                     </p>
                   </div>
                 </Link>
@@ -404,10 +406,10 @@ export function BeatDetailClient({
           <div className="space-y-1">
             <h2 className="brd-display flex items-center gap-3 text-3xl leading-none">
               <span aria-hidden="true" className="studio-rec-lamp" />
-              Nagraj na tym bicie
+              {t("nagrajNaTymBicie")}
             </h2>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Wbijasz mic, łapiesz take przed limitem, odsłuchujesz poniżej.
+              {t("wbijaszMicLapieszTake")}
             </p>
           </div>
           <BeatRecordingSurface

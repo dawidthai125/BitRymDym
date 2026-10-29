@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +19,7 @@ import { cn } from "@/lib/utils";
  * Appears after first Play. Hidden while recording suppresses it.
  */
 export function StickyMiniPlayer() {
+  const t = useTranslations("common.stickyMiniPlayer");
   const {
     track,
     phase,
@@ -46,7 +49,7 @@ export function StickyMiniPlayer() {
         "bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-0",
       )}
       role="region"
-      aria-label="Odtwarzacz"
+      aria-label={t("odtwarzacz")}
     >
       <div className="mx-auto flex max-w-[var(--brd-max-public)] items-center gap-2.5 px-[max(1rem,env(safe-area-inset-left))] py-2 pr-[max(1rem,env(safe-area-inset-right))] sm:gap-3">
         <BrdAudioPlayButton
@@ -81,7 +84,7 @@ export function StickyMiniPlayer() {
             showPlayhead
             interactive
             onSeekRatio={(ratio) => seek(ratio * total)}
-            aria-label="Przebieg — przewiń bit"
+            aria-label={t("przebiegPrzewinBit")}
           />
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <p className="truncate text-[11px] text-[var(--brd-mute)]">
@@ -106,7 +109,7 @@ export function StickyMiniPlayer() {
           type="button"
           onClick={close}
           className="inline-flex size-11 shrink-0 items-center justify-center text-[var(--brd-mute)] outline-none hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-focus)]"
-          aria-label="Zamknij odtwarzacz"
+          aria-label={t("zamknijOdtwarzacz")}
         >
           <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4">
             <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -15,6 +17,7 @@ export function HeaderSearch({
   className?: string;
   compact?: boolean;
 }) {
+  const t = useTranslations("nav.headerSearch");
   const router = useRouter();
   const [q, setQ] = useState("");
 
@@ -31,14 +34,14 @@ export function HeaderSearch({
       className={cn("relative", className)}
     >
       <label htmlFor="brd-header-search" className="sr-only">
-        Szukaj bitów
+        {t("szukajBitow")}
       </label>
       <input
         id="brd-header-search"
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={compact ? "Szukaj" : "Szukaj bitów…"}
+        placeholder={compact ? t("szukajCompact") : t("szukajBitow2")}
         autoComplete="off"
         className={cn(
           "min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)] focus-visible:ring-1 focus-visible:ring-[var(--brd-green-soft)]",

@@ -1,10 +1,14 @@
 "use client";
 
+
+import { useLocale, useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { toUserFacingGrantError } from "@/lib/ui/user-errors";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
 export type BeatGrantRow = {
   id: string;
@@ -23,6 +27,8 @@ export function BeatGrantsPanel({
   beatId: string;
   initialGrants: BeatGrantRow[];
 }) {
+  const t = useTranslations("beats.beatGrantsPanel");
+  const tag = intlTag(resolveLocale(useLocale()));
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [grants, setGrants] = useState<BeatGrantRow[]>(initialGrants);
@@ -40,7 +46,7 @@ export function BeatGrantsPanel({
     if (!res.ok) {
       setError(
         toUserFacingGrantError(
-          json.error ?? "Nie udało się wczytać uprawnień dostępu.",
+          json.error ?? t("nieUdaloSieWczytac"),
         ),
       );
       return;
@@ -66,7 +72,7 @@ export function BeatGrantsPanel({
       if (!res.ok) {
         setError(
           toUserFacingGrantError(
-            json.error ?? "Nie udało się utworzyć uprawnienia dostępu.",
+            json.error ?? t("nieUdaloSieUtworzyc"),
           ),
         );
         return;
@@ -89,7 +95,7 @@ export function BeatGrantsPanel({
       if (!res.ok) {
         setError(
           toUserFacingGrantError(
-            json.error ?? "Nie udało się odwołać uprawnienia dostępu.",
+            json.error ?? t("nieUdaloSieOdwolac"),
           ),
         );
         return;
@@ -105,29 +111,27 @@ export function BeatGrantsPanel({
     <section className="space-y-3 rounded-md border border-border p-4">
       <header className="space-y-1">
         <h2 className="text-sm font-semibold tracking-tight">
-          Udostępnij nagrywanie
+          {t("udostepnijNagrywanie")}
         </h2>
         <p className="text-xs text-muted-foreground">
-          Możesz zaprosić innego użytkownika do nagrywania na tym bicie.
-          Publiczne bity z włączonym nagrywaniem nie wymagają zaproszenia.
-          Zaproszenie nie daje dostępu do próbek ani pobierania.
+          {t("mozeszZaprosicInnegoUzytkownika")}
         </p>
       </header>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <label className="flex flex-1 flex-col gap-1 text-xs">
-          Użytkownik (ID lub dokładna ksywka)
+          {t("uzytkownikIdLubDokladna")}
           <input
             className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             value={grantee}
             onChange={(e) => setGrantee(e.target.value)}
-            placeholder="ID lub ksywka"
+            placeholder={t("idLubKsywka")}
             autoComplete="off"
             disabled={pending}
           />
         </label>
         <label className="flex flex-col gap-1 text-xs sm:w-48">
-          Wygasa (opcjonalnie)
+          {t("wygasaOpcjonalnie")}
           <input
             type="datetime-local"
             className="h-9 rounded-md border border-input bg-background px-3 text-sm"
@@ -142,7 +146,7 @@ export function BeatGrantsPanel({
           disabled={pending || !grantee.trim()}
           onClick={createGrant}
         >
-          Nadaj dostęp
+          {t("nadajDostep")}
         </Button>
       </div>
 
@@ -150,7 +154,7 @@ export function BeatGrantsPanel({
 
       {active.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Brak aktywnych uprawnień dostępu.
+          {t("brakAktywnychUprawnienDostepu")}
         </p>
       ) : (
         <ul className="divide-y divide-border border-y border-border">
@@ -164,10 +168,10 @@ export function BeatGrantsPanel({
                   {g.granteeDisplayName ?? g.granteeUserId.slice(0, 8)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Nagrywanie
+                  {t("nagrywanie")}
                   {g.expiresAt
-                    ? ` · wygasa ${new Date(g.expiresAt).toLocaleString()}`
-                    : " · bezterminowy"}
+                    ? t("wygasa", { v0: new Date(g.expiresAt).toLocaleString(tag) })
+                    : t("bezterminowy")}
                 </p>
               </div>
               <Button
@@ -177,7 +181,7 @@ export function BeatGrantsPanel({
                 disabled={pending}
                 onClick={() => revokeGrant(g.id)}
               >
-                Odwołaj
+                {t("odwolaj")}
               </Button>
             </li>
           ))}

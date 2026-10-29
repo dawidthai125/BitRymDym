@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import {
   useRef,
@@ -58,6 +61,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function AdminCreateBeatForm() {
+  const tr = useTranslations("admin.adminCreateBeatForm");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [analyzing, startAnalyze] = useTransition();
@@ -97,7 +101,7 @@ export function AdminCreateBeatForm() {
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: "Plik przekracza limit 50 MiB.",
+              message: tr("plikPrzekraczaLimit50"),
             });
           }
           return;
@@ -111,7 +115,7 @@ export function AdminCreateBeatForm() {
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: "Nieobsługiwany format audio.",
+              message: tr("nieobslugiwanyFormatAudio"),
             });
           }
           return;
@@ -148,7 +152,7 @@ export function AdminCreateBeatForm() {
             setAnalysis({
               status: "error",
               message: toUserFacingUploadError(
-                sessionJson.error ?? "Upload session failed.",
+                sessionJson.error ?? tr("uploadSessionFailed"),
               ),
             });
           }
@@ -172,7 +176,7 @@ export function AdminCreateBeatForm() {
             setAnalysis({
               status: "error",
               message: toUserFacingUploadError(
-                uploadError.message || "Upload failed.",
+                uploadError.message || tr("uploadFailed"),
               ),
             });
           }
@@ -214,7 +218,7 @@ export function AdminCreateBeatForm() {
           setAnalysis({
             status: "error",
             message: toUserFacingUploadError(
-              analyzeJson.error ?? "Analiza audio nie powiodła się.",
+              analyzeJson.error ?? tr("analizaAudioNiePowiodla"),
             ),
           });
           return;
@@ -260,7 +264,7 @@ export function AdminCreateBeatForm() {
         if (analyzeGeneration.current === generation) {
           setAnalysis({
             status: "error",
-            message: "Błąd sieci / serwera podczas uploadu lub analizy.",
+            message: tr("bladSieciSerweraPodczas"),
           });
         }
       }
@@ -277,7 +281,7 @@ export function AdminCreateBeatForm() {
       setFormError(
         analysis.status === "error"
           ? analysis.message
-          : "Poczekaj na zakończenie uploadu i analizy.",
+          : tr("poczekajNaZakonczenieUploadu"),
       );
       return;
     }
@@ -294,7 +298,7 @@ export function AdminCreateBeatForm() {
       setFormError(
         model?.phase === "UNAVAILABLE"
           ? model.headline
-          : "Wybierz BPM spośród wartości zaproponowanych przez system.",
+          : tr("wybierzBpmSposrodWartosci"),
       );
       return;
     }
@@ -372,7 +376,7 @@ export function AdminCreateBeatForm() {
         setSuccess(true);
         router.push(`/admin/beats/${result.beatId}`);
       } catch {
-        setFormError("Błąd sieci / serwera podczas tworzenia.");
+        setFormError(tr("bladSieciSerweraPodczas2"));
       }
     });
   }
@@ -392,18 +396,18 @@ export function AdminCreateBeatForm() {
   if (analysis.status === "uploading" || analyzing) {
     statusLine =
       analysis.status === "analyzing"
-        ? "Analizowanie…"
-        : "Przesyłanie audio…";
+        ? tr("analizowanie")
+        : tr("przesylanieAudio");
   }
 
   return (
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold tracking-wide text-foreground">
-          Audio
+          {tr("audio")}
         </h2>
         <label className="flex flex-col gap-1 text-sm">
-          Wybierz plik audio *
+          {tr("wybierzPlikAudio")}
           <input
             name="audio"
             type="file"
@@ -430,23 +434,23 @@ export function AdminCreateBeatForm() {
         {analysis.status === "ready" ? (
           <dl className="grid gap-2 text-sm">
             <div className="flex justify-between gap-4 border-b border-border py-1">
-              <dt className="text-muted-foreground">Plik</dt>
+              <dt className="text-muted-foreground">{tr("plik")}</dt>
               <dd className="text-right text-foreground">{analysis.filename}</dd>
             </div>
             <div className="flex justify-between gap-4 border-b border-border py-1">
-              <dt className="text-muted-foreground">Format / MIME</dt>
+              <dt className="text-muted-foreground">{tr("formatMime")}</dt>
               <dd className="text-right text-foreground">
                 {analysis.contentType}
               </dd>
             </div>
             <div className="flex justify-between gap-4 border-b border-border py-1">
-              <dt className="text-muted-foreground">Rozmiar</dt>
+              <dt className="text-muted-foreground">{tr("rozmiar")}</dt>
               <dd className="text-right text-foreground">
                 {formatBytes(analysis.byteSize)}
               </dd>
             </div>
             <div className="flex justify-between gap-4 border-b border-border py-1">
-              <dt className="text-muted-foreground">Czas trwania</dt>
+              <dt className="text-muted-foreground">{tr("czasTrwania")}</dt>
               <dd className="text-right text-foreground">
                 {formatDuration(analysis.durationSeconds)}
                 <span className="ml-2 text-muted-foreground">
@@ -455,8 +459,8 @@ export function AdminCreateBeatForm() {
               </dd>
             </div>
             <div className="flex justify-between gap-4 py-1">
-              <dt className="text-muted-foreground">Status analizy</dt>
-              <dd className="text-right text-foreground">Gotowe</dd>
+              <dt className="text-muted-foreground">{tr("statusAnalizy")}</dt>
+              <dd className="text-right text-foreground">{tr("gotowe")}</dd>
             </div>
           </dl>
         ) : null}
@@ -464,10 +468,10 @@ export function AdminCreateBeatForm() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold tracking-wide text-foreground">
-          Dane beatu
+          {tr("daneBeatu")}
         </h2>
         <label className="flex flex-col gap-1 text-sm">
-          Tytuł *
+          {tr("tytul")}
           <input
             name="title"
             required
@@ -479,7 +483,7 @@ export function AdminCreateBeatForm() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Producent
+          {tr("producent")}
           <input
             name="producer"
             maxLength={500}
@@ -488,7 +492,7 @@ export function AdminCreateBeatForm() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Opis
+          {tr("opis")}
           <textarea
             name="description"
             rows={3}
@@ -499,7 +503,7 @@ export function AdminCreateBeatForm() {
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
-            Gatunek
+            {tr("gatunek")}
             <input
               name="genre"
               maxLength={500}
@@ -508,7 +512,7 @@ export function AdminCreateBeatForm() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Styl
+            {tr("styl")}
             <input
               name="style"
               maxLength={500}
@@ -529,7 +533,7 @@ export function AdminCreateBeatForm() {
             disabled={!analysisReady || pending}
             statusMessage={
               analyzing
-                ? "Analizowanie BPM…"
+                ? tr("analizowanieBpm")
                 : bpmStatusMessage
             }
             idPrefix="admin-create-bpm"
@@ -537,7 +541,7 @@ export function AdminCreateBeatForm() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
-            Tonacja
+            {tr("tonacja")}
             <input
               name="key"
               maxLength={500}
@@ -546,7 +550,7 @@ export function AdminCreateBeatForm() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Skala
+            {tr("skala")}
             <input
               name="scale"
               maxLength={500}
@@ -556,16 +560,16 @@ export function AdminCreateBeatForm() {
           </label>
         </div>
         <label className="flex flex-col gap-1 text-sm">
-          Tagi (oddzielone przecinkami)
+          {tr("tagiOddzielonePrzecinkami")}
           <input
             name="tags"
             disabled={!analysisReady || pending}
             className={fieldClass}
-            placeholder="trap, dark"
+            placeholder={tr("trapDark")}
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Cover ref
+          {tr("coverRef")}
           <input
             name="coverRef"
             maxLength={500}
@@ -577,13 +581,13 @@ export function AdminCreateBeatForm() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold tracking-wide text-foreground">
-          System
+          {tr("system")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Bit platformowy · wersja robocza · bez właściciela użytkownika
+          {tr("bitPlatformowyWersjaRobocza")}
         </p>
         <p className="text-xs text-muted-foreground">
-          Przesłanie pliku → prywatne Storage → analiza BPM → finalizacja.
+          {tr("przeslaniePlikuPrywatneStorage")}
         </p>
       </section>
 
@@ -594,12 +598,12 @@ export function AdminCreateBeatForm() {
       ) : null}
       {success ? (
         <p className="text-sm text-foreground" role="status">
-          Utworzono wersję roboczą z audio Master — przekierowanie…
+          {tr("utworzonoWersjeRoboczaZ")}
         </p>
       ) : null}
 
       <Button type="submit" disabled={!canSubmit}>
-        {pending ? "Tworzenie…" : "Utwórz wersję roboczą + Master"}
+        {pending ? tr("tworzenie") : tr("utworzWersjeRoboczaMaster")}
       </Button>
     </form>
   );

@@ -1,3 +1,4 @@
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -10,11 +11,12 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { listMyDownloadHistory } from "@/lib/downloads/history";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
-function formatDownloadedAt(iso: string): string {
+function formatDownloadedAt(iso: string, tag = "pl-PL"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("pl-PL", {
+  return d.toLocaleString(tag, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "UTC",
@@ -22,16 +24,18 @@ function formatDownloadedAt(iso: string): string {
 }
 
 export default async function MyDownloadsPage() {
+  const t = await getTranslations("account.accountDownloadsPage");
+  const tag = intlTag(resolveLocale(await getLocale()));
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6">
-        <h1 className="text-2xl font-semibold">Moje pobrane</h1>
+        <h1 className="text-2xl font-semibold">{t("mojePobrane")}</h1>
         <p className="text-sm text-muted-foreground">
-          Usługa jest chwilowo niedostępna.
+          {t("uslugaJestChwilowoNiedostepna")}
         </p>
         <Link href="/" className="text-sm underline underline-offset-4">
-          Strona główna
+          {t("stronaGlowna")}
         </Link>
       </main>
     );
@@ -60,17 +64,17 @@ export default async function MyDownloadsPage() {
             href="/account"
             className="w-fit text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            ← Konto
+            {t("konto")}
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight">Moje pobrane</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("mojePobrane")}</h1>
           <p className="text-sm text-muted-foreground">
-            Minimalna historia pobrań zalogowanego konta.
+            {t("minimalnaHistoriaPobranZalogowanego")}
           </p>
         </div>
 
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground" role="status">
-            Nie pobrano jeszcze żadnych bitów.
+            {t("niePobranoJeszczeZadnych")}
           </p>
         ) : (
           <ul className="divide-y divide-border/80 border-y border-border/80">
@@ -91,7 +95,7 @@ export default async function MyDownloadsPage() {
                   className="text-xs text-muted-foreground tabular-nums"
                   dateTime={item.lastDownloadedAt}
                 >
-                  {formatDownloadedAt(item.lastDownloadedAt)} UTC
+                  {formatDownloadedAt(item.lastDownloadedAt, tag)} {t("utc")}
                 </time>
               </li>
             ))}

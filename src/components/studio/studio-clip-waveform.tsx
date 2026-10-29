@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 /**
  * Phase 3 / 3.1 — Precision StudioClipWaveform (canvas + DPR).
  * Visual layer only — does not own playhead / AudioContext / StudioAudioEngine.
@@ -152,6 +154,7 @@ export function StudioClipWaveform({
   interactionLocked = false,
   className,
 }: StudioClipWaveformProps) {
+  const t = useTranslations("studio.studioClipWaveform");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const guideRef = useRef<HTMLDivElement | null>(null);
   const guideLabelRef = useRef<HTMLSpanElement | null>(null);
@@ -311,9 +314,9 @@ export function StudioClipWaveform({
     guide.dataset.edge = next.edge;
     const edgeHint =
       next.edge === "left"
-        ? " · trim L"
+        ? t("trimL")
         : next.edge === "right"
-          ? " · trim R"
+          ? t("trimR")
           : "";
     label.textContent = `${formatStudioTimeMs(next.timelineMs)}${edgeHint}`;
     const line = guide.firstElementChild as HTMLElement | null;
@@ -335,7 +338,7 @@ export function StudioClipWaveform({
       data-source-end-ms={sourceWindow.sourceEndMs}
       data-peaks-per-second={peaksPerSecond ?? undefined}
       data-muted={clip.muted ? "true" : "false"}
-      aria-label={`Waveform · ${formatStudioTimeMs(clip.timelineStartMs)}–${formatStudioTimeMs(clip.timelineStartMs + clip.durationMs)}`}
+      aria-label={t("waveform", { v0: formatStudioTimeMs(clip.timelineStartMs), v1: formatStudioTimeMs(clip.timelineStartMs + clip.durationMs) })}
       role="img"
       onPointerMove={
         interactionLocked

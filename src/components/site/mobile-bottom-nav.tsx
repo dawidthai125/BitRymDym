@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,19 +13,21 @@ type MobileBottomNavProps = {
 };
 
 const itemsAuth = [
-  { href: "/beats", label: "Bity" },
-  { href: "/studio", label: "Studio" },
-  { href: "/library", label: "Biblioteka" },
-  { href: "/profile", label: "Profil" },
+  { href: "/beats", label: "beats" },
+  { href: "/studio", label: "studio" },
+  { href: "/library", label: "library" },
+  { href: "/profile", label: "profile" },
 ] as const;
 
 const itemsGuest = [
-  { href: "/beats", label: "Bity" },
-  { href: "/about", label: "O nas" },
-  { href: "/sign-in", label: "Zaloguj" },
+  { href: "/beats", label: "beats" },
+  { href: "/about", label: "about" },
+  { href: "/sign-in", label: "signIn" },
 ] as const;
 
 export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
+  const t = useTranslations("nav.mobileBottomNav");
+  const tItem = useTranslations("nav.items");
   const pathname = usePathname();
   const items = isAuthenticated ? itemsAuth : itemsGuest;
 
@@ -34,7 +38,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--brd-line)] bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] lg:hidden"
-      aria-label="Nawigacja mobilna"
+      aria-label={t("nawigacjaMobilna")}
     >
       <ul
         className={cn(
@@ -68,7 +72,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
                   )}
                   aria-hidden
                 />
-                {item.label}
+                {tItem(item.label)}
               </Link>
             </li>
           );

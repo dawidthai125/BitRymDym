@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState } from "react";
 
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
@@ -39,6 +42,7 @@ export function BrdTakePreviewRail({
   takeDurationSeconds,
   className,
 }: BrdTakePreviewRailProps) {
+  const tr = useTranslations("common.brdTakePreviewRail");
   const beatRef = useRef<HTMLAudioElement | null>(null);
   const takeRef = useRef<HTMLAudioElement | null>(null);
   const graphRef = useRef<ReturnType<typeof createTakePreviewGraph> | null>(
@@ -90,7 +94,7 @@ export function BrdTakePreviewRail({
           purpose: PUBLIC_PLAYBACK_PURPOSE,
         });
         if (!access.success || !access.url) {
-          throw new Error(access.error || "Brak dostępu do bitu.");
+          throw new Error(access.error || tr("brakDostepuDoBitu"));
         }
         if (cancelled) return;
 
@@ -111,7 +115,7 @@ export function BrdTakePreviewRail({
             toSafePlaybackErrorMessage(
               e instanceof Error
                 ? e.message
-                : "Nie udało się przygotować podglądu.",
+                : tr("nieUdaloSiePrzygotowac"),
             ),
           );
           setReady(false);
@@ -159,7 +163,7 @@ export function BrdTakePreviewRail({
       await g.play();
       setPlaying(true);
     } catch {
-      setError("Nie udało się odtworzyć podglądu.");
+      setError(tr("nieUdaloSieOdtworzyc"));
     } finally {
       setLoading(false);
     }
@@ -182,14 +186,14 @@ export function BrdTakePreviewRail({
         "space-y-3 border border-[var(--brd-audio-line)] bg-[var(--brd-paper)] p-3 sm:p-4",
         className,
       )}
-      aria-label="Podgląd nagrania"
+      aria-label={tr("podgladNagrania")}
     >
       <audio ref={beatRef} preload="none" className="hidden" />
       <audio ref={takeRef} preload="none" className="hidden" />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          Podgląd · {beatTitle}
+          {tr("podglad")}{" "}{beatTitle}
         </p>
         <BrdAudioTime
           current={currentTime}
@@ -201,7 +205,7 @@ export function BrdTakePreviewRail({
 
       <div className="space-y-2">
         <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          Bit
+          {tr("bit")}
         </p>
         <Waveform
           seed={beatId}
@@ -210,13 +214,13 @@ export function BrdTakePreviewRail({
           showPlayhead={ready}
           interactive={ready}
           onSeekRatio={onSeekRatio}
-          aria-label="Przebieg bitu"
+          aria-label={tr("przebiegBitu")}
         />
       </div>
 
       <div className="space-y-2">
         <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          Nagranie
+          {tr("nagranie")}
         </p>
         <Waveform
           seed={`${beatId}:take`}
@@ -229,7 +233,7 @@ export function BrdTakePreviewRail({
           showPlayhead={ready}
           interactive={ready}
           onSeekRatio={onSeekRatio}
-          aria-label="Przebieg nagrania"
+          aria-label={tr("przebiegNagrania")}
         />
       </div>
 
@@ -241,14 +245,14 @@ export function BrdTakePreviewRail({
           size="md"
           title={beatTitle}
           onClick={() => void onToggle()}
-          aria-label={playing ? "Pauza podglądu" : "Odtwórz podgląd"}
+          aria-label={playing ? tr("pauzaPodgladu") : tr("odtworzPodglad")}
         />
         <p className="text-sm text-[var(--brd-ink-soft)]">
           {ready
-            ? "Bit + nagranie"
+            ? tr("bitNagranie")
             : takePreviewUrl
-              ? "Ładowanie podglądu…"
-              : "Brak URL podglądu"}
+              ? tr("ladowaniePodgladu")
+              : tr("brakUrlPodgladu")}
         </p>
       </div>
 

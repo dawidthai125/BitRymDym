@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -5,9 +6,13 @@ import { AppShell } from "@/components/site/app-shell";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { getCurrentProfile } from "@/lib/auth/session";
 
-export const metadata = { title: "Ulubione" };
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("beats.libraryFavoritesPage");
+  return { title: t("metaTitle") };
+}
 
 export default async function LibraryFavoritesPage() {
+  const t = await getTranslations("beats.libraryFavoritesPage");
   const session = await getCurrentProfile();
   if (!session) redirect("/sign-in");
 
@@ -15,17 +20,16 @@ export default async function LibraryFavoritesPage() {
     <AppShell tone="studio">
       <main>
         <PageFrame className="py-10">
-          <SectionLabel>Biblioteka</SectionLabel>
-          <h1 className="brd-display mt-2 text-3xl font-semibold">Ulubione</h1>
+          <SectionLabel>{t("biblioteka")}</SectionLabel>
+          <h1 className="brd-display mt-2 text-3xl font-semibold">{t("ulubione")}</h1>
           <p className="mt-3 max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Lista ulubionych bitów pojawi się w kolejnej wersji. Na razie możesz
-            wracać do katalogu i studia.
+            {t("listaUlubionychBitowPojawi")}
           </p>
           <Link
             href="/beats"
             className="mt-6 inline-flex min-h-11 items-center text-[var(--brd-green)] hover:underline"
           >
-            Przeglądaj bity →
+            {t("przegladajBity")}
           </Link>
         </PageFrame>
       </main>

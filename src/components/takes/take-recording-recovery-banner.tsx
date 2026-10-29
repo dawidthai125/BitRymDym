@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -89,6 +91,7 @@ export function TakeRecordingRecoveryBanner({
   /** Server confirmed READY for a recovered copy. */
   onSaved?: (takeId: string) => void;
 }) {
+  const t = useTranslations("studio.takeRecordingRecoveryBanner");
   const [items, setItems] = useState<TakeRecoveryListItem[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDiscardId, setConfirmDiscardId] = useState<string | null>(null);
@@ -197,12 +200,12 @@ export function TakeRecordingRecoveryBanner({
     focusNoticeRef.current = true;
     setNotice(
       result === "DISCARDED" || result === "NOT_FOUND"
-        ? { tone: "ok", text: "Lokalna kopia nagrania została odrzucona." }
+        ? { tone: "ok", text: t("lokalnaKopiaNagraniaZostala") }
         : result === "BUSY"
-          ? { tone: "error", text: "To nagranie jest właśnie obsługiwane w innej karcie." }
+          ? { tone: "error", text: t("toNagranieJestWlasnie") }
           : {
               tone: "error",
-              text: "Pamięć przeglądarki jest niedostępna — nie udało się odrzucić lokalnej kopii.",
+              text: t("pamiecPrzegladarkiJestNiedostepna"),
             },
     );
     reload();
@@ -213,13 +216,13 @@ export function TakeRecordingRecoveryBanner({
   return (
     <section
       className="space-y-2 rounded border border-[var(--brd-amber)]/50 bg-[color-mix(in_srgb,var(--brd-amber)_8%,transparent)] px-3 py-2 text-sm text-[var(--brd-ink)]"
-      aria-label="Niezapisane nagrania"
+      aria-label={t("niezapisaneNagrania")}
       data-testid="take-recovery-banner"
       data-surface={surface}
     >
       {items.length > 0 ? (
         <p className="font-medium">
-          Niezapisane nagranie w tej przeglądarce — wymaga Twojej decyzji.
+          {t("niezapisaneNagranieWTej")}
         </p>
       ) : null}
       <ul className="space-y-2">
@@ -243,13 +246,13 @@ export function TakeRecordingRecoveryBanner({
               <p>{takeRecoveryItemSummaryPl(item)}</p>
               {busy && confirmDiscardId !== id ? (
                 <p role="status" aria-live="polite">
-                  Przesyłanie nagrania… Nie zamykaj tej karty.
+                  {t("przesylanieNagraniaNieZamykaj")}
                 </p>
               ) : null}
               {confirmDiscardId === id ? (
                 <div key="confirm"
                   role="group"
-                  aria-label="Potwierdzenie odrzucenia nagrania"
+                  aria-label={t("potwierdzenieOdrzuceniaNagrania")}
                   className="flex flex-wrap items-center gap-2"
                   onKeyDown={(event) => {
                     if (event.key === "Escape" && busyId == null) {
@@ -258,7 +261,7 @@ export function TakeRecordingRecoveryBanner({
                     }
                   }}
                 >
-                  <span>Na pewno odrzucić to nagranie? Tego nie da się cofnąć.</span>
+                  <span>{t("naPewnoOdrzucicTo")}</span>
                   <Button
                     type="button"
                     size="xs"
@@ -267,7 +270,7 @@ export function TakeRecordingRecoveryBanner({
                     disabled={busyId != null}
                     onClick={() => void onDiscard(id)}
                   >
-                    Tak, odrzuć
+                    {t("takOdrzuc")}
                   </Button>
                   <Button
                     ref={(el) => el?.focus()}
@@ -278,7 +281,7 @@ export function TakeRecordingRecoveryBanner({
                     disabled={busyId != null}
                     onClick={cancelDiscard}
                   >
-                    Nie, zostaw
+                    {t("nieZostaw")}
                   </Button>
                 </div>
               ) : actionable ? (
@@ -292,8 +295,8 @@ export function TakeRecordingRecoveryBanner({
                       onClick={() => void onRecover(id)}
                     >
                       {item.record.upload?.stage === "BINARY_UPLOADED"
-                        ? "Dokończ zapis"
-                        : "Odzyskaj i zapisz"}
+                        ? t("dokonczZapis")
+                        : t("odzyskajIZapisz")}
                     </Button>
                   ) : null}
                   <Button
@@ -310,7 +313,7 @@ export function TakeRecordingRecoveryBanner({
                     disabled={busyId != null}
                     onClick={() => setConfirmDiscardId(id)}
                   >
-                    Odrzuć nagranie
+                    {t("odrzucNagranie")}
                   </Button>
                 </div>
               ) : null}
@@ -342,7 +345,7 @@ export function TakeRecordingRecoveryBanner({
             className="min-h-11 min-w-11 shrink-0"
             onClick={() => setNotice(null)}
           >
-            OK
+            {t("ok")}
           </Button>
         </div>
       ) : null}

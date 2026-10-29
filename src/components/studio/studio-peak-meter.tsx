@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -30,10 +33,11 @@ export function StudioPeakMeter({
   ariaLabel,
   testIdPrefix,
 }: StudioPeakMeterProps) {
+  const t = useTranslations("studio.studioPeakMeter");
   const peakPct = Math.round(Math.min(1, Math.max(0, snapshot.peak)) * 100);
   const dbLabel = peakToDbFs(snapshot.peak);
   const [a11yValueText, setA11yValueText] = useState(
-    `${dbLabel} sample peak`,
+    t("samplePeak2", { v0: dbLabel }),
   );
   const lastA11yMs = useRef(0);
   const lastClip = useRef(false);
@@ -47,8 +51,8 @@ export function StudioPeakMeter({
     lastA11yMs.current = now;
     setA11yValueText(
       snapshot.clipping
-        ? `${dbLabel} sample peak, clipping`
-        : `${dbLabel} sample peak`,
+        ? t("samplePeakClipping", { v0: dbLabel })
+        : t("samplePeak", { v0: dbLabel }),
     );
   }, [snapshot.peak, snapshot.clipping, dbLabel]);
 
@@ -61,7 +65,7 @@ export function StudioPeakMeter({
           data-testid={`${testIdPrefix}-peak`}
         >
           {dbLabel}
-          <span className="ml-1 text-[var(--brd-mute)]">peak</span>
+          <span className="ml-1 text-[var(--brd-mute)]">{t("peak")}</span>
         </p>
       </div>
       <div
@@ -90,7 +94,7 @@ export function StudioPeakMeter({
         data-testid={`${testIdPrefix}-clip`}
         data-clipping={snapshot.clipping ? "true" : "false"}
       >
-        {snapshot.clipping ? "Clipping" : "Bez clippingu"}
+        {snapshot.clipping ? t("clipping") : t("bezClippingu")}
       </p>
     </div>
   );

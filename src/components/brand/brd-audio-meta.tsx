@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -21,12 +22,13 @@ export function BrdAudioMeta({
   mood,
   className,
 }: BrdAudioMetaProps) {
+  const t = useTranslations("common.brdAudioMeta");
   const parts: ReactNode[] = [];
 
   if (bpm != null && bpm !== "") {
     parts.push(
       <span key="bpm" className="brd-meta text-[var(--brd-ink-soft)]">
-        {bpm} BPM
+        {bpm} {t("bpm")}
       </span>,
     );
   }
@@ -109,15 +111,16 @@ type BrdAudioStateProps = {
 };
 
 export function BrdAudioStateLabel({ state, className }: BrdAudioStateProps) {
+  const t = useTranslations("common.brdAudioMeta");
   const label =
     state === "playing"
       ? "Odtwarzanie"
       : state === "paused"
         ? "Pauza"
         : state === "loading"
-          ? "Ładowanie"
+          ? t("ladowanie")
           : state === "error"
-            ? "Błąd"
+            ? t("blad")
             : state === "recording"
               ? "Rec"
               : null;

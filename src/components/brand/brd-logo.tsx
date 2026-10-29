@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,6 +25,7 @@ export function BrdLogo({
   height = 48,
   priority = false,
 }: BrdLogoProps) {
+  const t = useTranslations("common.brdLogo");
   const width = Math.round(
     (height * BRD_LOGO_INTRINSIC.width) / BRD_LOGO_INTRINSIC.height,
   );
@@ -31,7 +33,7 @@ export function BrdLogo({
   return (
     <Image
       src={BRD_LOGO_SRC}
-      alt="BitRymDym"
+      alt={t("bitrymdym")}
       width={width}
       height={height}
       priority={priority}
@@ -55,6 +57,7 @@ export function BrdLogoHomeLink({
   className,
   priority = true,
 }: BrdLogoHomeLinkProps) {
+  const t = useTranslations("common.brdLogo");
   const width = 120;
   const height = Math.round(
     (width * BRD_LOGO_INTRINSIC.height) / BRD_LOGO_INTRINSIC.width,
@@ -63,7 +66,7 @@ export function BrdLogoHomeLink({
   return (
     <Link
       href="/"
-      aria-label="Strona główna BitRymDym"
+      aria-label={t("stronaGlownaBitrymdym")}
       className={cn(
         "inline-flex min-h-11 shrink-0 items-center self-center py-0 pr-1 sm:pr-2",
         className,
@@ -71,7 +74,7 @@ export function BrdLogoHomeLink({
     >
       <Image
         src={BRD_LOGO_SRC}
-        alt="BitRymDym"
+        alt={t("bitrymdym")}
         width={width}
         height={height}
         priority={priority}

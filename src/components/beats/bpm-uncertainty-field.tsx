@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { BpmUncertaintyEnvelope } from "@/lib/beats/bpm-uncertainty";
 import {
   buildBpmUxModel,
@@ -67,6 +69,7 @@ export function BpmUncertaintyField({
   statusMessage = null,
   idPrefix = "bpm-ux",
 }: Props) {
+  const t = useTranslations("beats.bpmUncertaintyField");
   if (!envelope) {
     return (
       <div
@@ -75,9 +78,9 @@ export function BpmUncertaintyField({
         aria-live="polite"
         data-testid="bpm-uncertainty-idle"
       >
-        <span className="font-medium">BPM</span>
+        <span className="font-medium">{t("bpm")}</span>
         <p className="text-xs text-muted-foreground">
-          BPM zostanie wykryte automatycznie po analizie audio.
+          {t("bpmZostanieWykryteAutomatycznie")}
         </p>
         {statusMessage ? (
           <p className="text-xs text-muted-foreground">{statusMessage}</p>
@@ -120,7 +123,7 @@ export function BpmUncertaintyField({
         <div className="flex flex-col gap-0.5">
           <span className="font-medium">{model.headline}</span>
           <p className="text-2xl font-semibold tabular-nums tracking-tight">
-            {model.detectedBpm != null ? `${model.detectedBpm} BPM` : "—"}
+            {model.detectedBpm != null ? t("bpm2", { v0: model.detectedBpm }) : "—"}
           </p>
           <p className="text-xs text-muted-foreground">
             {confidenceClassLabel(model.confidenceClass)}
@@ -134,12 +137,12 @@ export function BpmUncertaintyField({
         {model.options.length > 1 ? (
           <details className="rounded-lg border border-border px-3 py-2">
             <summary className="cursor-pointer text-xs text-muted-foreground">
-              Inne opcje systemu
+              {t("inneOpcjeSystemu")}
             </summary>
             <div
               className="mt-2 flex flex-col gap-2"
               role="radiogroup"
-              aria-label="Alternatywne BPM systemu"
+              aria-label={t("alternatywneBpmSystemu")}
             >
               {model.options.map((option) => (
                 <OptionButton
@@ -157,7 +160,7 @@ export function BpmUncertaintyField({
 
         {showAlternates ? (
           <p className="text-xs text-muted-foreground" role="status">
-            Wybrano inną wartość systemu: {selectedBpm} BPM.
+            {t("wybranoInnaWartoscSystemu")}{" "}{selectedBpm} {t("bpm3")}
           </p>
         ) : null}
         {statusMessage ? (
@@ -185,7 +188,7 @@ export function BpmUncertaintyField({
         <div
           className="flex flex-col gap-2"
           role="radiogroup"
-          aria-label="Hipotezy BPM"
+          aria-label={t("hipotezyBpm")}
           aria-required="true"
         >
           {model.options.map((option) => (
@@ -218,7 +221,7 @@ export function BpmUncertaintyField({
         <span className="font-medium">{model.headline}</span>
         {model.recommendedBpm != null ? (
           <p className="text-xl font-semibold tabular-nums tracking-tight">
-            {model.recommendedBpm} BPM
+            {model.recommendedBpm} {t("bpm")}
           </p>
         ) : null}
         <p className="text-xs text-muted-foreground">{model.description}</p>
@@ -227,14 +230,14 @@ export function BpmUncertaintyField({
         </p>
         {model.range != null ? (
           <p className="text-xs text-muted-foreground">
-            Wąski zakres systemu: {model.range.min}–{model.range.max} BPM
+            {t("waskiZakresSystemu")}{" "}{model.range.min}–{model.range.max} {t("bpm")}
           </p>
         ) : null}
       </div>
       <div
         className="flex flex-col gap-2 sm:flex-row sm:flex-wrap"
         role="radiogroup"
-        aria-label="Kandydaci BPM"
+        aria-label={t("kandydaciBpm")}
         aria-required="true"
       >
         {model.options.map((option) => (

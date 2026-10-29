@@ -3,6 +3,7 @@
  * Bundled by change-password-form.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { ChangePasswordForm } from "@/components/auth/auth-forms";
 
@@ -30,7 +31,7 @@ function mount(hostId = "change-password-form-mount-root"): void {
     window.__BRD_CHANGE_PASSWORD_MOCK_CALLS__ = 0;
   }
   root = createRoot(el);
-  root.render(<ChangePasswordForm />);
+  root.render(withIntl(<ChangePasswordForm />));
 }
 
 function unmount(): void {

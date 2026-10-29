@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -27,7 +28,10 @@ type BeatDetailPageProps = {
 export async function generateMetadata({ params }: BeatDetailPageProps) {
   const { id } = await params;
   const beat = await getPublishedBeat(id);
-  if (!beat) return { title: "Bit niedostępny" };
+  if (!beat) {
+    const t = await getTranslations("beats.beatPage");
+    return { title: t("beatUnavailable") };
+  }
   const presented = presentBeat(toPublicBeatDetail(beat));
   return {
     title: presented.title,
@@ -36,6 +40,7 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
 }
 
 export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
+  const tr = await getTranslations("beats.beatPage");
   const { id } = await params;
   const beat = await getPublishedBeat(id);
   if (!beat) notFound();
@@ -77,7 +82,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
         .filter((t) => t.beatId === detail.id && t.canPreview)
         .map((t) => ({
           id: t.id,
-          label: `Próba · ${t.durationSeconds ?? "?"}s`,
+          label: tr("probaS", { v0: t.durationSeconds ?? "?" }),
           durationSeconds: t.durationSeconds,
         }));
     } catch {
@@ -100,7 +105,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
             href="/beats"
             className="inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
           >
-            ← Katalog
+            {tr("katalog")}
           </Link>
           <div className="mt-4">
             <BeatDetailClient

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -96,8 +98,10 @@ export function Waveform({
   tone = "paper",
   density = "default",
   showPlayhead,
-  "aria-label": ariaLabel = "Przebieg audio",
+  "aria-label": ariaLabelProp,
 }: WaveformProps) {
+  const t = useTranslations("common.waveform");
+  const ariaLabel = ariaLabelProp ?? t("przebiegAudio");
   const preset = DENSITY_PRESETS[density];
   const barCount = peaksProp?.length || bars || preset.bars;
   const height = heightClassName ?? preset.heightClassName;

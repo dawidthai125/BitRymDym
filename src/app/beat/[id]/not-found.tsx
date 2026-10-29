@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site/site-header";
@@ -8,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function BeatNotFound() {
+  const t = useTranslations("beats.beatNotFound");
   return (
     <div className="min-h-dvh">
       <SiteHeader />
@@ -20,16 +22,16 @@ export default function BeatNotFound() {
         )}
       >
         <h1 className="text-2xl font-semibold tracking-tight">
-          Bit niedostępny
+          {t("bitNiedostepny")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Ten bit nie jest publicznie dostępny albo nie istnieje.
+          {t("tenBitNieJest")}
         </p>
         <Link
           href="/beats"
           className="text-sm underline underline-offset-4"
         >
-          Wróć do katalogu
+          {t("wrocDoKatalogu")}
         </Link>
       </main>
     </div>

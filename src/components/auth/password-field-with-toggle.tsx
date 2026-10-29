@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useId, useState } from "react";
 
 import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
@@ -27,12 +30,15 @@ export function PasswordFieldWithToggle({
   autoComplete,
   required = false,
   minLength,
-  showLabel = "Pokaż hasło",
-  hideLabel = "Ukryj hasło",
+  showLabel,
+  hideLabel,
 }: PasswordFieldWithToggleProps) {
+  const t = useTranslations("auth.passwordFieldWithToggle");
   const id = useId();
   const [visible, setVisible] = useState(false);
-  const toggleLabel = visible ? hideLabel : showLabel;
+  const toggleLabel = visible
+    ? (hideLabel ?? t("ukryjHaslo"))
+    : (showLabel ?? t("pokazHaslo"));
 
   return (
     <div className="flex flex-col gap-1 text-sm">
@@ -45,7 +51,7 @@ export function PasswordFieldWithToggle({
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
-          className={`${AUTH_FIELD_CLASS} pr-12`}
+          className={t("pr12", { v0: AUTH_FIELD_CLASS })}
         />
         <Button
           type="button"
@@ -57,7 +63,7 @@ export function PasswordFieldWithToggle({
           onClick={() => setVisible((prev) => !prev)}
         >
           <span aria-hidden="true" className="text-xs font-medium">
-            {visible ? "Ukryj" : "Pokaż"}
+            {visible ? "Ukryj" : t("pokaz")}
           </span>
         </Button>
       </div>

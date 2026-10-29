@@ -3,6 +3,7 @@
  * Bundled by change-email-form.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { ChangeEmailForm } from "@/components/auth/auth-forms";
 
@@ -30,9 +31,9 @@ function mount(hostId = "change-email-form-mount-root"): void {
     window.__BRD_CHANGE_EMAIL_MOCK_CALLS__ = 0;
   }
   root = createRoot(el);
-  root.render(
+  root.render(withIntl(
     <ChangeEmailForm currentEmail="current@example.invalid" />,
-  );
+  ));
 }
 
 function unmount(): void {

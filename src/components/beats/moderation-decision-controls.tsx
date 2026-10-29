@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -25,6 +28,7 @@ export function ModerationDecisionControls({
   activeMasterReady: boolean;
   openReviews?: Array<{ id: string; kind: string; checksumSha256: string }>;
 }) {
+  const t = useTranslations("beats.moderationDecisionControls");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [reason, setReason] = useState("");
@@ -36,7 +40,7 @@ export function ModerationDecisionControls({
     startTransition(async () => {
       const result = await approveUserBeatAction(beatId);
       if (!result.success) {
-        setError(result.error ?? "Zatwierdzenie nie powiodło się.");
+        setError(result.error ?? t("zatwierdzenieNiePowiodloSie"));
         return;
       }
       router.push("/admin/moderation");
@@ -48,13 +52,13 @@ export function ModerationDecisionControls({
     setError(null);
     const trimmed = reason.trim();
     if (!trimmed) {
-      setError("Powód odrzucenia jest wymagany.");
+      setError(t("powodOdrzuceniaJestWymagany"));
       return;
     }
     startTransition(async () => {
       const result = await rejectUserBeatAction(beatId, trimmed);
       if (!result.success) {
-        setError(result.error ?? "Odrzucenie nie powiodło się.");
+        setError(result.error ?? t("odrzucenieNiePowiodloSie"));
         return;
       }
       router.push("/admin/moderation");
@@ -68,10 +72,10 @@ export function ModerationDecisionControls({
       const result = await closeOpenRightsReviewAction(
         reviewId,
         "dismissed_no_publish",
-        "Zamknięcie sprawy nie jest zgodą na publikację.",
+        t("zamkniecieSprawyNieJest"),
       );
       if (!result.success) {
-        setError(result.error ?? "Nie udało się zamknąć sprawy.");
+        setError(result.error ?? t("nieUdaloSieZamknac"));
         return;
       }
       setError(null);
@@ -83,8 +87,7 @@ export function ModerationDecisionControls({
     openReviews.length > 0 ? (
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">
-          Otwarte sprawy dotyczą konkretnego pliku. Zamknięcie nie publikuje
-          bitu.
+          {t("otwarteSprawyDotyczaKonkretnego")}
         </p>
         {openReviews.map((review) => (
           <Button
@@ -94,7 +97,7 @@ export function ModerationDecisionControls({
             disabled={pending}
             onClick={() => onClose(review.id)}
           >
-            Zamknij sprawę {review.kind} bez publikacji
+            {t("zamknijSprawe")}{" "}{review.kind} {t("bezPublikacji")}
           </Button>
         ))}
       </div>
@@ -103,13 +106,13 @@ export function ModerationDecisionControls({
   function onPublish() {
     setError(null);
     if (!activeMasterReady) {
-      setError("Publikacja wymaga gotowego audio Master.");
+      setError(t("publikacjaWymagaGotowegoAudio"));
       return;
     }
     startTransition(async () => {
       const result = await publishApprovedUserBeatAction(beatId);
       if (!result.success) {
-        setError(result.error ?? "Publikacja nie powiodła się.");
+        setError(result.error ?? t("publikacjaNiePowiodlaSie"));
         return;
       }
       router.push("/admin/moderation");
@@ -121,20 +124,19 @@ export function ModerationDecisionControls({
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          Publikacja ustawia status Opublikowany i udostępnia bit w katalogu
-          publicznym. Nie zmienia metadanych.
+          {t("publikacjaUstawiaStatusOpublikowany")}
         </p>
         <Button
           type="button"
           disabled={pending || !activeMasterReady}
           onClick={onPublish}
         >
-          Opublikuj
+          {t("opublikuj")}
         </Button>
         {reviewList}
         {!activeMasterReady ? (
           <p className="text-sm text-destructive">
-            Brak gotowego audio Master — publikacja zablokowana.
+            {t("brakGotowegoAudioMaster")}
           </p>
         ) : null}
         {error ? (
@@ -151,7 +153,7 @@ export function ModerationDecisionControls({
       {reviewList}
       <div className="flex flex-wrap gap-3">
         <Button type="button" disabled={pending} onClick={onApprove}>
-          Zatwierdź
+          {t("zatwierdz")}
         </Button>
         <Button
           type="button"
@@ -159,21 +161,21 @@ export function ModerationDecisionControls({
           disabled={pending}
           onClick={() => setShowReject((v) => !v)}
         >
-          Odrzuć
+          {t("odrzuc")}
         </Button>
       </div>
 
       {showReject ? (
         <div className="flex flex-col gap-2">
           <label className="flex flex-col gap-1 text-sm">
-            Powód odrzucenia *
+            {t("powodOdrzucenia")}
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={2000}
               className={fieldClass}
-              placeholder="Opisz, co użytkownik powinien poprawić."
+              placeholder={t("opiszCoUzytkownikPowinien")}
             />
           </label>
           <Button
@@ -182,7 +184,7 @@ export function ModerationDecisionControls({
             disabled={pending}
             onClick={onReject}
           >
-            Potwierdź odrzucenie
+            {t("potwierdzOdrzucenie")}
           </Button>
         </div>
       ) : null}

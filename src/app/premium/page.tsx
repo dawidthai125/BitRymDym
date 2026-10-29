@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { BrdLink } from "@/components/brand/brd-button";
@@ -13,11 +15,14 @@ import {
   PREMIUM_TIER_MATRIX,
 } from "@/config/premium-tiers";
 
-export const metadata = {
-  title: "Premium — BitRymDym",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.premiumPage");
+  return {
+  title: t("metaTitle"),
   description:
-    "Poziomy Premium w BitRymDym: limity pobrań, ścieżki w Studio i jakość eksportu. Bez obiecanek o płatnościach, których jeszcze nie ma.",
+    t("metaDescription"),
 };
+}
 
 const tiers = [
   { id: "FREE" as const, label: "Free" },
@@ -27,100 +32,91 @@ const tiers = [
 ];
 
 export default function PremiumPage() {
+  const tr = useTranslations("account.premiumPage");
   return (
     <AppShell tone="public">
       <main>
         <PageFrame className="max-w-3xl py-10 sm:py-12">
-          <SectionLabel>Premium</SectionLabel>
+          <SectionLabel>{tr("premium")}</SectionLabel>
           <h1 className="brd-display mt-2 max-w-[18ch] text-[clamp(2rem,4.5vw,3rem)] font-semibold leading-[0.95] tracking-tight">
-            Więcej limitu. Lepszy eksport. Te same Studio.
+            {tr("wiecejLimituLepszyEksport")}
           </h1>
           <p className="mt-4 max-w-[42ch] text-[0.95rem] leading-relaxed text-[var(--brd-ink-soft)]">
-            Premium to warstwa uprawnień na koncie (Free / Bronze / Silver / Gold).
-            Działa w produkcie już teraz — ale{" "}
+            {tr("premiumToWarstwaUprawnien")}{" "}
             <strong className="font-medium text-[var(--brd-ink)]">
-              nie ma jeszcze samodzielnej płatności w aplikacji
+              {tr("nieMaJeszczeSamodzielnej")}
             </strong>
-            . Ceny i sklep są otwarte decyzjami produktu (OD-07).
+            {tr("cenyISklepSa")}
           </p>
 
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-now">
             <h2 id="premium-now" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">
-              Co działa już teraz
+              {tr("coDzialaJuzTeraz")}
             </h2>
             <ul className="mt-4 space-y-3 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
               <li>
-                <span className="font-medium text-[var(--brd-ink)]">Limity pobrań bitów</span>
+                <span className="font-medium text-[var(--brd-ink)]">{tr("limityPobranBitow")}</span>
                 {" — "}
-                gość: {PREMIUM_ANON_DOWNLOADS_DAILY}/dzień; konto Free:{" "}
-                {PREMIUM_TIER_MATRIX.FREE.downloadsDaily}; Bronze:{" "}
-                {PREMIUM_TIER_MATRIX.BRONZE.downloadsDaily}; Silver:{" "}
-                {PREMIUM_TIER_MATRIX.SILVER.downloadsDaily}; Gold:{" "}
+                {tr("gosc")}{" "}{PREMIUM_ANON_DOWNLOADS_DAILY}{tr("dzienKontoFree")}{" "}
+                {PREMIUM_TIER_MATRIX.FREE.downloadsDaily}{tr("bronze")}{" "}
+                {PREMIUM_TIER_MATRIX.BRONZE.downloadsDaily}{tr("silver")}{" "}
+                {PREMIUM_TIER_MATRIX.SILVER.downloadsDaily}{tr("gold")}{" "}
                 {PREMIUM_TIER_MATRIX.GOLD.downloadsDaily}.
               </li>
               <li>
-                <span className="font-medium text-[var(--brd-ink)]">Ścieżki w projekcie Studio</span>
+                <span className="font-medium text-[var(--brd-ink)]">{tr("sciezkiWProjekcieStudio")}</span>
                 {" — "}
-                Free {PREMIUM_TIER_MATRIX.FREE.studioMaxTracks}, Bronze{" "}
-                {PREMIUM_TIER_MATRIX.BRONZE.studioMaxTracks}, Silver{" "}
-                {PREMIUM_TIER_MATRIX.SILVER.studioMaxTracks}, Gold{" "}
-                {PREMIUM_TIER_MATRIX.GOLD.studioMaxTracks} (ścieżka Master nie
-                liczy się do limitu tak samo jak beat — według kontraktu Studio).
+                {tr("free")}{" "}{PREMIUM_TIER_MATRIX.FREE.studioMaxTracks}{tr("bronze2")}{" "}
+                {PREMIUM_TIER_MATRIX.BRONZE.studioMaxTracks}{tr("silver2")}{" "}
+                {PREMIUM_TIER_MATRIX.SILVER.studioMaxTracks}{tr("gold2")}{" "}
+                {PREMIUM_TIER_MATRIX.GOLD.studioMaxTracks} {tr("sciezkaMasterNieLiczy")}
               </li>
               <li>
-                <span className="font-medium text-[var(--brd-ink)]">Jakość eksportu / miksu</span>
+                <span className="font-medium text-[var(--brd-ink)]">{tr("jakoscEksportuMiksu")}</span>
                 {" — "}
-                wyższe poziomy odblokowują lepsze formaty (m.in. HQ MP3, Mix/Master
-                Pro, WAV na Gold) zgodnie z macierzą uprawnień w produkcie.
+                {tr("wyzszePoziomyOdblokowujaLepsze")}
               </li>
               <li>
                 <span className="font-medium text-[var(--brd-ink)]">
-                  Czas nagrania Quick Take / TTL próbki
+                  {tr("czasNagraniaQuickTake")}
                 </span>
                 {" — "}
-                aktywne limity nagrania według poziomu Premium: Free{" "}
+                {tr("aktywneLimityNagraniaWedlug")}{" "}
                 {SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds}&nbsp;s /{" "}
-                {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600}&nbsp;h ważności
-                próbki; Bronze{" "}
+                {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600}{tr("hWaznosciProbkiBronze")}{" "}
                 {SAMPLE_POLICY_DEFAULTS.BRONZE.maxRecordingSeconds}&nbsp;s /{" "}
-                {SAMPLE_POLICY_DEFAULTS.BRONZE.ttlSeconds / 3600}&nbsp;h; Silver{" "}
+                {SAMPLE_POLICY_DEFAULTS.BRONZE.ttlSeconds / 3600}{tr("hSilver")}{" "}
                 {SAMPLE_POLICY_DEFAULTS.SILVER.maxRecordingSeconds}&nbsp;s /{" "}
-                {SAMPLE_POLICY_DEFAULTS.SILVER.ttlSeconds / 3600}&nbsp;h; Gold
-                do {SAMPLE_POLICY_DEFAULTS.GOLD.maxRecordingSeconds}&nbsp;s /{" "}
-                {SAMPLE_POLICY_DEFAULTS.GOLD.ttlSeconds / 3600}&nbsp;h. Czas nie
-                przekroczy też długości bitu. Dla Bronze/Silver/Gold operator
-                może podnieść sam max czas (1–180&nbsp;s); ważność próbki i
-                dzienne limity sesji zostają z tych wartości domyślnych.
+                {SAMPLE_POLICY_DEFAULTS.SILVER.ttlSeconds / 3600}{tr("hGoldDo")}{" "}{SAMPLE_POLICY_DEFAULTS.GOLD.maxRecordingSeconds}&nbsp;s /{" "}
+                {SAMPLE_POLICY_DEFAULTS.GOLD.ttlSeconds / 3600}{tr("hCzasNiePrzekroczy")}
               </li>
               <li>
                 <span className="font-medium text-[var(--brd-ink)]">
-                  Pobranie własnej próbki RAW
+                  {tr("pobranieWlasnejProbkiRaw")}
                 </span>
                 {" — "}
-                tylko Gold, do {OWN_TAKE_RAW_DOWNLOADS_DAILY} pobrań dziennie.
-                Serwer odmawia RAW na niższych planach.
+                {tr("tylkoGoldDo")}{" "}{OWN_TAKE_RAW_DOWNLOADS_DAILY} {tr("pobranDziennieSerwerOdmawia")}
               </li>
             </ul>
 
             <OverflowXScrollRegion
               className="mt-6 overflow-x-auto border border-[var(--brd-line)]"
-              ariaLabel="Porównanie dziennych pobrań i ścieżek Studio według poziomu Premium"
+              ariaLabel={tr("porownanieDziennychPobranI2")}
             >
               <table className="w-full min-w-[28rem] text-left text-sm">
                 <caption className="sr-only">
-                  Porównanie dziennych pobrań i maksymalnej liczby ścieżek Studio
-                  według poziomu Premium
+                  {tr("porownanieDziennychPobranI")}
                 </caption>
                 <thead className="border-b border-[var(--brd-line)] bg-[var(--brd-paper-deep)]/50">
                   <tr>
                     <th scope="col" className="px-3 py-2.5 font-medium">
-                      Poziom
+                      {tr("poziom")}
                     </th>
                     <th scope="col" className="px-3 py-2.5 font-medium">
-                      Pobrania / dzień
+                      {tr("pobraniaDzien")}
                     </th>
                     <th scope="col" className="px-3 py-2.5 font-medium">
-                      Ścieżki Studio
+                      {tr("sciezkiStudio")}
                     </th>
                   </tr>
                 </thead>
@@ -148,89 +144,78 @@ export default function PremiumPage() {
               </table>
             </OverflowXScrollRegion>
             <p className="mt-3 text-xs text-[var(--brd-mute)]">
-              Pobrania i ścieżki Studio — z macierzy Premium. Nagrania — z
-              polityki próbek (z możliwą korektą czasu przez operatora). To nie
-              jest cennik.
+              {tr("pobraniaISciezkiStudio")}
             </p>
           </section>
 
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-planned">
             <h2 id="premium-planned" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">
-              Zaplanowane / jeszcze nie w sklepie
+              {tr("zaplanowaneJeszczeNieW")}
             </h2>
             <ul className="mt-4 space-y-3 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
               <li>
-                <span className="font-medium text-[var(--brd-ink)]">Ceny i płatności</span>
+                <span className="font-medium text-[var(--brd-ink)]">{tr("cenyIPlatnosci")}</span>
                 {" — "}
-                otwarte (OD-07 / OD-04). Nie podajemy kwot ani okresów próbnych,
-                bo nie są zatwierdzone.
+                {tr("otwarteOd07Od")}
               </li>
               <li>
-                <span className="font-medium text-[var(--brd-ink)]">Samodzielny zakup w UI</span>
+                <span className="font-medium text-[var(--brd-ink)]">{tr("samodzielnyZakupWUi")}</span>
                 {" — "}
-                odroczony. Nie ma tu przycisku „Kup Premium”.
+                {tr("odroczonyNieMaTu")}
               </li>
               <li>
-                <span className="font-medium text-[var(--brd-ink)]">Katalog Premium / STEMS</span>
+                <span className="font-medium text-[var(--brd-ink)]">{tr("katalogPremiumStems")}</span>
                 {" — "}
-                odroczone w mapie produktu.
-              </li>
-              <li>
-                <span className="font-medium text-[var(--brd-ink)]">
-                  Osobny „Full Take Premium” z historycznego SSOT §22–23
-                </span>
-                {" — "}
-                nie jest osobnym sklepem; aktywne limity Quick Take to Sample
-                Policy powyżej. Osobne liczby overlay z dawnego opisu pozostają
-                OPEN / DEFERRED względem tamtego tekstu.
+                {tr("odroczoneWMapieProduktu")}
               </li>
               <li>
                 <span className="font-medium text-[var(--brd-ink)]">
-                  Retencja artefaktów Gold
+                  {tr("osobnyFullTakePremium")}
                 </span>
                 {" — "}
-                w produkcji{" "}
-                <span className="font-medium text-[var(--brd-ink)]">28 dni</span>
+                {tr("nieJestOsobnymSklepem")}
+              </li>
+              <li>
+                <span className="font-medium text-[var(--brd-ink)]">
+                  {tr("retencjaArtefaktowGold")}
+                </span>
+                {" — "}
+                {tr("wProdukcji")}{" "}
+                <span className="font-medium text-[var(--brd-ink)]">{tr("n28Dni")}</span>
                 {" "}
-                (decyzja Ownera 2026-10-25, zgodna z kontraktem export). Wariant 90
-                dni pozostaje tylko w katalogu designu — bez janitora i bez
-                aktywacji Premium Retention (HOLD).
+                {tr("decyzjaOwnera202610")}
               </li>
             </ul>
           </section>
 
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-hold">
             <h2 id="premium-hold" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">
-              Wstrzymane (HOLD)
+              {tr("wstrzymaneHold")}
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-              <span className="font-medium text-[var(--brd-ink)]">Premium Retention</span>
+              <span className="font-medium text-[var(--brd-ink)]">{tr("premiumRetention")}</span>
               {" — "}
-              lokalny WIP, nieaktywny na produkcji. Nie jest produktem, którego możesz
-              dziś „włączyć” w ustawieniach.
+              {tr("lokalnyWipNieaktywnyNa")}
             </p>
           </section>
 
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-how">
             <h2 id="premium-how" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">
-              Jak dostać Premium dziś
+              {tr("jakDostacPremiumDzis")}
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-              Poziom nadaje się po stronie konta (m.in. przez panel administracyjny
-              z audytem zmian). Bez działających płatności w aplikacji nie obiecujemy
-              self‑serve checkoutu. Jak tylko sklep będzie gotowy — ta strona dostanie
-              jasny CTA zakupowy.
+              {tr("poziomNadajeSiePo")}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              <BrdLink href="/beats">Idź do katalogu</BrdLink>
+              <BrdLink href="/beats">{tr("idzDoKatalogu")}</BrdLink>
               <BrdLink href="/sign-up" variant="secondary">
-                Załóż konto
+                {tr("zalozKonto")}
               </BrdLink>
               <Link
                 href="/about"
                 className="inline-flex min-h-11 items-center px-2 text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
               >
-                O BitRymDym
+                {tr("oBitrymdym")}
               </Link>
             </div>
           </section>

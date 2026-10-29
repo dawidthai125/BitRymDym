@@ -3,6 +3,7 @@
  * Bundled by studio-edit-toolbar.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { forbiddenToolbarAction } from "@/components/studio/studio-edit-toolbar.mount-stubs";
@@ -32,7 +33,7 @@ function mount(hostId = "studio-toolbar-mount-root"): void {
     root = null;
   }
   root = createRoot(el);
-  root.render(
+  root.render(withIntl(
     <StudioEditToolbar
       timelineMode="seek"
       recordingLocked={false}
@@ -60,7 +61,7 @@ function mount(hostId = "studio-toolbar-mount-root"): void {
       onZoomIn={throwAction("zoomIn")}
       onFit={throwAction("fit")}
     />,
-  );
+  ));
 }
 
 function unmount(): void {

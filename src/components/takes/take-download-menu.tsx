@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +26,7 @@ export function TakeDownloadMenu({
   downloadLadder,
   disabled,
 }: TakeDownloadMenuProps) {
+  const t = useTranslations("studio.takeDownloadMenu");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,13 +48,13 @@ export function TakeDownloadMenu({
         error?: string;
       };
       if (!res.ok || !json.success || !json.url) {
-        throw new Error(json.error ?? "Pobieranie RAW niedostępne.");
+        throw new Error(json.error ?? t("pobieranieRawNiedostepne"));
       }
       window.location.assign(json.url);
     } catch (e) {
       setError(
         toUserFacingTakeUploadError(
-          e instanceof Error ? e.message : "Pobieranie niedostępne.",
+          e instanceof Error ? e.message : t("pobieranieNiedostepne"),
         ),
       );
     } finally {
@@ -66,7 +70,7 @@ export function TakeDownloadMenu({
       error?: string;
     };
     if (!res.ok || !json.url) {
-      throw new Error(json.error ?? "Pobieranie artefaktu niedostępne.");
+      throw new Error(json.error ?? t("pobieranieArtefaktuNiedostepne"));
     }
     window.location.assign(json.url);
   }
@@ -84,7 +88,7 @@ export function TakeDownloadMenu({
         error?: string;
       };
       if (!res.ok || !json.success) {
-        throw new Error(json.error ?? "Status eksportu niedostępny.");
+        throw new Error(json.error ?? t("statusEksportuNiedostepny"));
       }
       if (json.status === "SUCCEEDED" && json.artifactId) {
         return json.artifactId;
@@ -94,7 +98,7 @@ export function TakeDownloadMenu({
         json.status === "CANCELLED" ||
         json.status === "TIMEOUT"
       ) {
-        throw new Error("Eksport nie powiódł się.");
+        throw new Error(t("eksportNiePowiodlSie"));
       }
       // Contabo STOPPED: job stays QUEUED — exit early after short wait.
       if (json.status === "QUEUED" && i >= 2) {
@@ -130,7 +134,7 @@ export function TakeDownloadMenu({
         error?: string;
       };
       if (!res.ok || !json.success || !json.jobId) {
-        throw new Error(json.error ?? "Eksport niedostępny.");
+        throw new Error(json.error ?? t("eksportNiedostepny"));
       }
 
       if (json.status === "SUCCEEDED" && json.artifactId) {
@@ -155,12 +159,12 @@ export function TakeDownloadMenu({
             "Eksport w kolejce — pipeline kodu gotowy; EXTERNAL worker jest obecnie STOPPED.",
         );
       } else {
-        setInfraNote(`Status eksportu: ${json.status ?? "QUEUED"}`);
+        setInfraNote(t("statusEksportu", { v0: json.status ?? "QUEUED" }));
       }
     } catch (e) {
       setError(
         toUserFacingTakeUploadError(
-          e instanceof Error ? e.message : "Eksport niedostępny.",
+          e instanceof Error ? e.message : t("eksportNiedostepny"),
         ),
       );
     } finally {
@@ -179,7 +183,7 @@ export function TakeDownloadMenu({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        Pobierz
+        {t("pobierz")}
       </Button>
       {open ? (
         <div
@@ -187,7 +191,7 @@ export function TakeDownloadMenu({
           role="menu"
         >
           <p className="text-xs font-medium text-[var(--brd-ink)]">
-            Jakość pobrania
+            {t("jakoscPobrania")}
           </p>
           <ul className="space-y-2">
             {downloadLadder.map((item) => (
@@ -202,13 +206,13 @@ export function TakeDownloadMenu({
                   <span className="font-medium">
                     {item.unlocked ? "" : "🔒 "}
                     {item.label}
-                    {item.unlocked ? "" : " — LOCKED"}
+                    {item.unlocked ? "" : t("locked")}
                   </span>
                   <span className="text-xs text-[var(--brd-mute)]">
                     {item.unlocked
                       ? item.detail
                       : (item.lockedMessage ??
-                        `Dostępne w planie ${item.requiredTier}.`)}
+                        t("dostepneWPlanie", { v0: item.requiredTier }))}
                   </span>
                 </button>
               </li>
@@ -223,13 +227,13 @@ export function TakeDownloadMenu({
               >
                 <span className="font-medium">
                   {canDownloadRaw ? "" : "🔒 "}
-                  RAW — oryginalne nagranie
-                  {canDownloadRaw ? "" : " — LOCKED"}
+                  {t("rawOryginalneNagranie")}
+                  {canDownloadRaw ? "" : t("locked")}
                 </span>
                 <span className="text-xs text-[var(--brd-mute)]">
                   {canDownloadRaw
-                    ? "Plik źródłowy (mic)"
-                    : "Dostępne w planie GOLD."}
+                    ? t("plikZrodlowyMic")
+                    : t("dostepneWPlanieGold")}
                 </span>
               </button>
             </li>

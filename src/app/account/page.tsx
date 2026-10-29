@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -44,16 +45,17 @@ export default async function AccountPage({
 }: {
   searchParams: Promise<{ claim?: string }>;
 }) {
+  const tr = await getTranslations("account.accountPage");
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6">
-        <h1 className="brd-display text-2xl font-semibold">Studio</h1>
+        <h1 className="brd-display text-2xl font-semibold">{tr("studio")}</h1>
         <p className="text-sm text-[var(--brd-mute)]">
-          Konfiguracja lokalna jest niekompletna. Uzupełnij środowisko i wróć.
+          {tr("konfiguracjaLokalnaJestNiekompletna")}
         </p>
         <Link href="/" className="text-sm underline underline-offset-4">
-          Strona główna
+          {tr("stronaGlowna")}
         </Link>
       </main>
     );
@@ -90,7 +92,7 @@ export default async function AccountPage({
   const recentTakes = takeRecentNonDeletedTakes(takes, 5);
   const readyCount = takes.filter((t) => t.displayStatus === "READY").length;
   const displayName =
-    context.profile.displayName?.trim() || "Twórca";
+    context.profile.displayName?.trim() || tr("tworca");
   const userNumberLabel =
     context.profile.userNumber != null
       ? String(context.profile.userNumber)
@@ -126,16 +128,16 @@ export default async function AccountPage({
           <header className="mb-10 grid gap-6 border-b border-[var(--brd-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-3">
               <h1 className="brd-display text-4xl font-semibold tracking-tight sm:text-5xl">
-                Twoje studio
+                {tr("twojeStudio")}
               </h1>
               <p className="max-w-prose text-sm text-[var(--brd-ink-soft)] sm:text-base">
-                Nagrywaj, odsłuchuj i rozwijaj swoje numery.
+                {tr("nagrywajOdsluchujIRozwijaj")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <BrdLink href="/beats">+ Nowe nagranie</BrdLink>
+              <BrdLink href="/beats">{tr("noweNagranie")}</BrdLink>
               <BrdLink href="/account/takes" variant="secondary">
-                Moje nagrania
+                {tr("mojeNagrania")}
               </BrdLink>
             </div>
           </header>
@@ -145,12 +147,12 @@ export default async function AccountPage({
               className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
               role="status"
             >
-              Nagranie zostało zapisane na Twoim koncie.{" "}
+              {tr("nagranieZostaloZapisaneNa")}{" "}
               <Link
                 href="/account/takes"
                 className="underline underline-offset-4 hover:text-[var(--brd-green)]"
               >
-                Moje nagrania
+                {tr("mojeNagrania")}
               </Link>
             </div>
           ) : null}
@@ -159,8 +161,7 @@ export default async function AccountPage({
               className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
               role="status"
             >
-              Nie udało się zapisać gościnnego nagrania — masz pełny limit. Usuń
-              lub zastąp nagranie w Studio, potem odśwież stronę.
+              {tr("nieUdaloSieZapisac")}
             </div>
           ) : null}
           {claimBanner === "error" ? (
@@ -168,40 +169,39 @@ export default async function AccountPage({
               className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
               role="alert"
             >
-              Nie udało się przenieść gościnnego nagrania. Spróbuj odświeżyć
-              Studio.
+              {tr("nieUdaloSiePrzeniesc")}
             </div>
           ) : null}
 
           <div className="mb-10 flex flex-wrap gap-2">
-            <StudioChip href="/account/takes" label="Moje nagrania" />
-            <StudioChip href="/account/beats" label="Moje bity" />
-            <StudioChip href="/account/downloads" label="Eksporty i pobrania" />
-            <StudioChip href="/account/shared" label="Udostępnione" />
+            <StudioChip href="/account/takes" label={tr("mojeNagrania")} />
+            <StudioChip href="/account/beats" label={tr("mojeBity")} />
+            <StudioChip href="/account/downloads" label={tr("eksportyIPobrania")} />
+            <StudioChip href="/account/shared" label={tr("udostepnione")} />
           </div>
 
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.85fr)]">
             <section className="space-y-4">
               <div className="flex items-baseline justify-between gap-3">
-                <SectionLabel>Ostatnie nagrania</SectionLabel>
+                <SectionLabel>{tr("ostatnieNagrania")}</SectionLabel>
                 <Link
                   href="/account/takes"
                   className="text-sm text-[var(--brd-green)] hover:underline"
                 >
-                  Wszystkie →
+                  {tr("wszystkie")}
                 </Link>
               </div>
 
               {recentTakes.length === 0 ? (
                 <div className="border border-[var(--brd-line)] px-5 py-10">
                   <p className="brd-display text-xl font-semibold">
-                    Jeszcze cicho.
+                    {tr("jeszczeCicho")}
                   </p>
                   <p className="mt-2 text-sm text-[var(--brd-mute)]">
-                    Wybierz bit i nagraj pierwsze nagranie.
+                    {tr("wybierzBitINagraj")}
                   </p>
                   <div className="mt-6">
-                    <BrdLink href="/beats">Idź do katalogu</BrdLink>
+                    <BrdLink href="/beats">{tr("idzDoKatalogu")}</BrdLink>
                   </div>
                 </div>
               ) : (
@@ -237,22 +237,22 @@ export default async function AccountPage({
               )}
 
               <section className="pt-8">
-                <SectionLabel className="mb-3">Twoja biblioteka</SectionLabel>
+                <SectionLabel className="mb-3">{tr("twojaBiblioteka")}</SectionLabel>
                 <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
                   <LibraryRow
                     href="/account/takes"
-                    title="Nagrania"
-                    meta={`${readyCount} gotowych`}
+                    title={tr("nagrania")}
+                    meta={tr("gotowych", { v0: readyCount })}
                   />
                   <LibraryRow
                     href="/account/downloads"
-                    title="Pobrane bity"
-                    meta="Twoje pobrania"
+                    title={tr("pobraneBity")}
+                    meta={tr("twojePobrania")}
                   />
                   <LibraryRow
                     href="/account/beats"
-                    title="Moje bity"
-                    meta="Wgrane i w moderacji"
+                    title={tr("mojeBity")}
+                    meta={tr("wgraneIWModeracji")}
                   />
                 </ul>
               </section>
@@ -263,7 +263,7 @@ export default async function AccountPage({
                 id="profil"
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
-                <SectionLabel>Profil</SectionLabel>
+                <SectionLabel>{tr("profil")}</SectionLabel>
                 <div>
                   <p className="brd-display text-2xl font-semibold">
                     {formatProfileWithUserNumber(
@@ -279,19 +279,19 @@ export default async function AccountPage({
                 <dl className="space-y-3 border-y border-[var(--brd-line)] py-4 text-sm">
                   <div>
                     <dt className="text-xs text-[var(--brd-mute)]">
-                      Ksywka
+                      {tr("ksywka")}
                     </dt>
                     <dd className="mt-1 text-[var(--brd-ink)]">{displayName}</dd>
                   </div>
                   <div>
                     <dt className="text-xs text-[var(--brd-mute)]">
-                      ID użytkownika
+                      {tr("idUzytkownika")}
                     </dt>
                     <dd className="brd-data mt-1 text-[var(--brd-ink)]">{userNumberLabel}</dd>
                   </div>
                   <div>
                     <dt className="text-xs text-[var(--brd-mute)]">
-                      E-mail
+                      {tr("eMail")}
                     </dt>
                     <dd className="mt-1 break-all text-[var(--brd-ink)]">
                       {context.email ?? "—"}
@@ -300,8 +300,8 @@ export default async function AccountPage({
                 </dl>
 
                 <dl className="grid grid-cols-2 gap-3 text-sm">
-                  <Stat label="Nagrania" value={String(takes.length)} />
-                  <Stat label="Gotowe" value={String(readyCount)} />
+                  <Stat label={tr("nagrania")} value={String(takes.length)} />
+                  <Stat label={tr("gotowe")} value={String(readyCount)} />
                 </dl>
 
                 <DisplayNameForm
@@ -309,7 +309,7 @@ export default async function AccountPage({
                 />
 
                 <div>
-                  <SectionLabel className="mb-2">Twój plan</SectionLabel>
+                  <SectionLabel className="mb-2">{tr("twojPlan")}</SectionLabel>
                   <p
                     className="text-sm text-[var(--brd-ink-soft)]"
                     data-testid="account-plan-summary"
@@ -330,13 +330,13 @@ export default async function AccountPage({
                     href="/admin"
                     className="inline-flex min-h-11 items-center text-sm text-[var(--brd-green)] underline-offset-4 hover:underline"
                   >
-                    Panel Administracyjny →
+                    {tr("panelAdministracyjny")}
                   </Link>
                 ) : null}
 
                 <form action={signOutAction}>
                   <BrdButton type="submit" variant="secondary" className="w-full">
-                    Wyloguj
+                    {tr("wyloguj")}
                   </BrdButton>
                 </form>
               </section>
@@ -345,7 +345,7 @@ export default async function AccountPage({
                 id="security"
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
-                <SectionLabel>Bezpieczeństwo</SectionLabel>
+                <SectionLabel>{tr("bezpieczenstwo")}</SectionLabel>
                 {emailChangeStatus ? (
                   <EmailChangeNotice status={emailChangeStatus} />
                 ) : null}
@@ -353,12 +353,12 @@ export default async function AccountPage({
                 <ChangeEmailForm currentEmail={context.email ?? ""} />
                 <ChangePasswordForm />
                 <p className="text-sm text-[var(--brd-mute)]">
-                  Nie pamiętasz hasła?{" "}
+                  {tr("niePamietaszHasla")}{" "}
                   <Link
                     href="/forgot-password"
                     className="text-[var(--brd-green)] underline-offset-4 hover:underline"
                   >
-                    Reset przez e-mail
+                    {tr("resetPrzezEMail")}
                   </Link>
                 </p>
               </section>
@@ -367,7 +367,7 @@ export default async function AccountPage({
                 id="danger"
                 className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
               >
-                <SectionLabel>Usuwanie konta</SectionLabel>
+                <SectionLabel>{tr("usuwanieKonta")}</SectionLabel>
                 <DeleteAccountForm />
               </section>
             </aside>

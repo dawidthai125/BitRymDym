@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -5,9 +6,13 @@ import { AppShell } from "@/components/site/app-shell";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { getCurrentProfile } from "@/lib/auth/session";
 
-export const metadata = { title: "Biblioteka" };
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("beats.libraryPage");
+  return { title: t("metaTitle") };
+}
 
 export default async function LibraryPage() {
+  const t = await getTranslations("beats.libraryPage");
   const session = await getCurrentProfile();
   if (!session) redirect("/sign-in");
 
@@ -15,19 +20,19 @@ export default async function LibraryPage() {
     <AppShell tone="studio">
       <main>
         <PageFrame className="py-10">
-          <SectionLabel>Biblioteka</SectionLabel>
+          <SectionLabel>{t("biblioteka")}</SectionLabel>
           <h1 className="brd-display mt-2 text-3xl font-semibold">
-            Twoja biblioteka
+            {t("twojaBiblioteka")}
           </h1>
           <ul className="mt-8 divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
-            <LibLink href="/studio/recordings" title="Nagrania" meta="Twoje nagrania" />
-            <LibLink href="/library/downloads" title="Pobrane" meta="Pobrane bity" />
+            <LibLink href="/studio/recordings" title={t("nagrania")} meta={t("twojeNagrania")} />
+            <LibLink href="/library/downloads" title={t("pobrane")} meta={t("pobraneBity")} />
             <LibLink
               href="/library/favorites"
-              title="Ulubione"
-              meta="Wkrótce"
+              title={t("ulubione")}
+              meta={t("wkrotce")}
             />
-            <LibLink href="/account/shared" title="Udostępnione" meta="Bity od innych" />
+            <LibLink href="/account/shared" title={t("udostepnione")} meta={t("bityOdInnych")} />
           </ul>
         </PageFrame>
       </main>

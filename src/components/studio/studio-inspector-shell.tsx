@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   useEffect,
   useId,
@@ -9,7 +11,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import {
-  studioInspectorContextTitle,
   type StudioInspectorContext,
 } from "@/components/studio/studio-inspector-context";
 
@@ -47,6 +48,8 @@ export function StudioInspectorOverlay({
   panelId,
   closeBlockedMessage = null,
 }: StudioInspectorShellProps) {
+  const t = useTranslations("studio.studioInspectorShell");
+  const tInspector = useTranslations("studio.inspectorTitle");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -98,7 +101,7 @@ export function StudioInspectorOverlay({
 
   if (!open) return null;
 
-  const title = studioInspectorContextTitle(context);
+  const title = tInspector(context);
 
   return (
     <div
@@ -109,7 +112,7 @@ export function StudioInspectorOverlay({
       <button
         type="button"
         className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
-        aria-label="Zamknij Inspector"
+        aria-label={t("zamknijInspector")}
         data-testid="studio-inspector-backdrop"
         onClick={onClose}
       />
@@ -128,7 +131,7 @@ export function StudioInspectorOverlay({
             id={titleId}
             className="text-xs font-medium uppercase tracking-[0.1em] text-[var(--brd-ink)]"
           >
-            Inspector · {title}
+            {t("inspector")}{" "}{title}
           </p>
           <Button
             type="button"
@@ -137,7 +140,7 @@ export function StudioInspectorOverlay({
             className="min-h-11 min-w-11"
             onClick={onClose}
           >
-            Zamknij
+            {t("zamknij")}
           </Button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">

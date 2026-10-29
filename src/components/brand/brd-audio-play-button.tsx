@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 
 type BrdAudioPlayButtonProps = {
@@ -29,15 +31,16 @@ export function BrdAudioPlayButton({
   className,
   "aria-label": ariaLabel,
 }: BrdAudioPlayButtonProps) {
+  const t = useTranslations("common.brdAudioPlayButton");
   const label =
     ariaLabel ??
     (playing
       ? title
-        ? `Pauza: ${title}`
+        ? t("pauza", { v0: title })
         : "Pauza"
       : title
-        ? `Odtwórz: ${title}`
-        : "Odtwórz");
+        ? t("odtworz", { v0: title })
+        : t("odtworz2"));
 
   return (
     <button

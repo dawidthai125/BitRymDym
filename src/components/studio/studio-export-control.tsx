@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -40,6 +43,7 @@ export function StudioExportControl({
   getExpectedDocumentVersion,
   disabled,
 }: StudioExportControlProps) {
+  const t = useTranslations("studio.studioExportControl");
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<StudioExportUiPhase>("IDLE");
   const [jobId, setJobId] = useState<string | null>(null);
@@ -118,7 +122,7 @@ export function StudioExportControl({
   }) {
     if (mapped.projectId && mapped.projectId !== projectIdRef.current) {
       setPhase("FAILED");
-      setMessage("Eksport dotyczy innego projektu.");
+      setMessage(t("eksportDotyczyInnegoProjektu"));
       return;
     }
     setJobId(mapped.jobId);
@@ -128,7 +132,7 @@ export function StudioExportControl({
     if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
       setPhase("UNAVAILABLE");
       setMessage(
-        "Eksport zakończony, ale artefakt nie jest jeszcze dostępny.",
+        t("eksportZakonczonyAleArtefakt"),
       );
       return;
     }
@@ -137,7 +141,7 @@ export function StudioExportControl({
       // I.17 — typed empty-session vs generic FAILED; never show raw API text.
       setMessage(
         mapped.message ??
-          "Eksport nie powiódł się. Możesz spróbować ponownie.",
+          t("eksportNiePowiodlSie"),
       );
     } else {
       setMessage(null);
@@ -171,7 +175,7 @@ export function StudioExportControl({
         } catch {
           if (ac.signal.aborted || gen !== recoverGenRef.current) return;
           setPhase("UNAVAILABLE");
-          setMessage("Nie udało się odczytać statusu. Spróbuj ponownie.");
+          setMessage(t("nieUdaloSieOdczytac"));
           return;
         }
         if (gen !== recoverGenRef.current) return;
@@ -225,7 +229,7 @@ export function StudioExportControl({
     if (pollAttemptsRef.current >= STUDIO_EXPORT_POLL_MAX_ATTEMPTS) {
       setPhase("UNAVAILABLE");
       setMessage(
-        "Status eksportu nie jest jeszcze dostępny. Sprawdź ponownie za chwilę.",
+        t("statusEksportuNieJest"),
       );
       return;
     }
@@ -243,7 +247,7 @@ export function StudioExportControl({
         );
       } catch {
         setPhase("UNAVAILABLE");
-        setMessage("Nie udało się odczytać statusu. Spróbuj ponownie.");
+        setMessage(t("nieUdaloSieOdczytac"));
         return;
       }
       const json = (await res.json()) as Parameters<
@@ -259,7 +263,7 @@ export function StudioExportControl({
       }
       if (mapped.projectId && mapped.projectId !== projectIdRef.current) {
         setPhase("FAILED");
-        setMessage("Eksport dotyczy innego projektu.");
+        setMessage(t("eksportDotyczyInnegoProjektu"));
         return;
       }
       setJobId(mapped.jobId);
@@ -270,7 +274,7 @@ export function StudioExportControl({
       if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
         setPhase("UNAVAILABLE");
         setMessage(
-          "Eksport zakończony, ale artefakt nie jest jeszcze dostępny.",
+          t("eksportZakonczonyAleArtefakt"),
         );
         return;
       }
@@ -279,7 +283,7 @@ export function StudioExportControl({
         // I.17 — typed empty-session vs generic FAILED; never show raw API text.
         setMessage(
           mapped.message ??
-            "Eksport nie powiódł się. Możesz spróbować ponownie.",
+            t("eksportNiePowiodlSie"),
         );
       }
     } finally {
@@ -326,7 +330,7 @@ export function StudioExportControl({
   async function enqueueExport(options?: { forceNewAttempt?: boolean }) {
     if (!projectId || projectId.length < 8) {
       setPhase("FAILED");
-      setMessage("Brak prawidłowego projektu Studio.");
+      setMessage(t("brakPrawidlowegoProjektuStudio"));
       return;
     }
     if (phase === "SUBMITTING") return;
@@ -351,7 +355,7 @@ export function StudioExportControl({
       expectedDocumentVersion < 1
     ) {
       setPhase("FAILED");
-      setMessage("Nieprawidłowa wersja dokumentu. Odśwież projekt.");
+      setMessage(t("nieprawidlowaWersjaDokumentuOdswiez"));
       return;
     }
 
@@ -393,7 +397,7 @@ export function StudioExportControl({
     }
     if (mapped.projectId && mapped.projectId !== projectId) {
       setPhase("FAILED");
-      setMessage("Eksport dotyczy innego projektu.");
+      setMessage(t("eksportDotyczyInnegoProjektu"));
       return;
     }
     setJobId(mapped.jobId);
@@ -403,7 +407,7 @@ export function StudioExportControl({
     }
     if (mapped.phase === "SUCCEEDED" && !mapped.artifactId) {
       setPhase("UNAVAILABLE");
-      setMessage("Eksport zakończony, ale artefakt nie jest jeszcze dostępny.");
+      setMessage(t("eksportZakonczonyAleArtefakt"));
       return;
     }
     setPhase(mapped.phase);
@@ -443,7 +447,7 @@ export function StudioExportControl({
     } catch (e) {
       setMessage(
         toUserFacingError(
-          e instanceof Error ? e.message : "Pobieranie niedostępne.",
+          e instanceof Error ? e.message : t("pobieranieNiedostepne"),
           "download",
         ),
       );
@@ -456,7 +460,7 @@ export function StudioExportControl({
   async function onRefreshStatus() {
     if (!jobId) {
       setPhase("UNAVAILABLE");
-      setMessage("Brak aktywnego zadania eksportu.");
+      setMessage(t("brakAktywnegoZadaniaEksportu"));
       return;
     }
     pollAttemptsRef.current = 0;
@@ -484,14 +488,14 @@ export function StudioExportControl({
     unavailableWithTrackedJob;
   const showDownload = phase === "SUCCEEDED" && Boolean(artifactId);
   const startLabel = submitting
-    ? "Wysyłanie…"
+    ? t("wysylanie")
     : recovering
-      ? "Odzyskiwanie…"
+      ? t("odzyskiwanie")
       : phase === "IDLE"
-        ? "Eksportuj WAV"
+        ? t("eksportujWav")
         : phase === "SUCCEEDED"
-          ? "Eksportuj ponownie"
-          : "Ponów eksport";
+          ? t("eksportujPonownie")
+          : t("ponowEksport");
 
   return (
     <div className="relative">
@@ -500,21 +504,21 @@ export function StudioExportControl({
         type="button"
         className="inline-flex min-h-11 items-center rounded border border-[var(--brd-paper)]/40 bg-[var(--brd-paper)] px-2.5 text-xs font-semibold text-[var(--brd-ink)] hover:border-[var(--brd-green)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)] disabled:cursor-not-allowed disabled:opacity-60"
         data-testid="studio-transport-export"
-        title="Eksportuj cały dokument Studio jako WAV"
+        title={t("eksportujCalyDokumentStudio")}
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={open ? "studio-export-dialog" : undefined}
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
-        Eksportuj WAV
+        {t("eksportujWav")}
       </button>
       {open ? (
         <>
           <button
             type="button"
             className="fixed inset-0 z-20 cursor-default bg-transparent"
-            aria-label="Zamknij eksport"
+            aria-label={t("zamknijEksport")}
             data-testid="studio-export-backdrop"
             onClick={closeDialog}
           />
@@ -531,13 +535,13 @@ export function StudioExportControl({
           >
             <div className="space-y-1">
               <p id={titleId} className="text-xs font-semibold">
-                Eksport całego dokumentu
+                {t("eksportCalegoDokumentu")}
               </p>
               <p
                 id={descriptionId}
                 className="text-[11px] text-[var(--brd-ink)]/75"
               >
-                Format WAV · operacja w tle · nie eksportuje pojedynczego TAKE
+                {t("formatWavOperacjaW")}
               </p>
             </div>
 
@@ -548,7 +552,7 @@ export function StudioExportControl({
               data-phase={phase}
             >
               {recovering && phase === "IDLE"
-                ? "Odzyskiwanie statusu…"
+                ? t("odzyskiwanieStatusu")
                 : studioExportPhaseLabel(phase)}
             </p>
 
@@ -598,7 +602,7 @@ export function StudioExportControl({
                   data-testid="studio-export-refresh"
                   onClick={() => void onRefreshStatus()}
                 >
-                  Sprawdź status
+                  {t("sprawdzStatus")}
                 </Button>
               ) : null}
 
@@ -613,7 +617,7 @@ export function StudioExportControl({
                     void enqueueExport({ forceNewAttempt: true })
                   }
                 >
-                  Utwórz nowy eksport mimo braku gotowego pliku
+                  {t("utworzNowyEksportMimo")}
                 </Button>
               ) : null}
 
@@ -627,7 +631,7 @@ export function StudioExportControl({
                   data-testid="studio-export-download"
                   onClick={() => void onDownload()}
                 >
-                  {downloading ? "Pobieranie…" : "Pobierz WAV"}
+                  {downloading ? t("pobieranie") : t("pobierzWav")}
                 </Button>
               ) : null}
 
@@ -639,7 +643,7 @@ export function StudioExportControl({
                 data-testid="studio-export-close"
                 onClick={closeDialog}
               >
-                Zamknij
+                {t("zamknij")}
               </Button>
             </div>
           </div>

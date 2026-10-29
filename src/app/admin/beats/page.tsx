@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,7 @@ import { labelBeatStatus } from "@/lib/ui/labels";
 import { cn } from "@/lib/utils";
 
 export default async function AdminBeatsListPage() {
+  const t = await getTranslations("admin.adminBeatsPage");
   // The layout gate does not stop this page from rendering, and its role check
   // is narrower than this guard (no `beats.edit`), so handle the denial here.
   const denial = await checkAccess(requireAdminPlatformBeatsAccess);
@@ -19,9 +21,9 @@ export default async function AdminBeatsListPage() {
   if (denial === "FORBIDDEN") {
     return (
       <main className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("brakDostepu")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Brak uprawnienia do edycji bitów platformy.
+          {t("brakUprawnieniaDoEdycji")}
         </p>
       </main>
     );
@@ -34,22 +36,22 @@ export default async function AdminBeatsListPage() {
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--brd-line)] pb-6">
         <div className="space-y-2">
           <p className="brd-meta text-[11px] uppercase tracking-[0.2em] text-[var(--brd-mute)]">
-            Panel Administracyjny
+            {t("panelAdministracyjny")}
           </p>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
-            Bity
+            {t("bity")}
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Twórz, uzupełniaj dane, wgrywaj audio i publikuj.
+            {t("tworzUzupelniajDaneWgrywaj")}
           </p>
         </div>
         <Link href="/admin/beats/new" className={cn(buttonVariants())}>
-          Nowy bit
+          {t("nowyBit")}
         </Link>
       </header>
 
       {beats.length === 0 ? (
-        <p className="text-sm text-[var(--brd-mute)]">Brak bitów platformy.</p>
+        <p className="text-sm text-[var(--brd-mute)]">{t("brakBitowPlatformy")}</p>
       ) : (
         <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
           {beats.map((beat) => (
@@ -63,17 +65,17 @@ export default async function AdminBeatsListPage() {
                     {beat.title}
                   </p>
                   <p className="text-xs text-[var(--brd-mute)]">
-                    {labelBeatStatus(beat.status)} · audio{" "}
+                    {labelBeatStatus(beat.status)} {t("audio")}{" "}
                     {beat.activeMasterReady ? "gotowe" : "brak"}
                   </p>
                 </div>
                 <dl className="flex flex-wrap gap-x-4 text-xs text-[var(--brd-mute)] tabular-nums">
                   <div>
-                    <dt className="sr-only">BPM</dt>
-                    <dd>{beat.bpm} BPM</dd>
+                    <dt className="sr-only">{t("bpm")}</dt>
+                    <dd>{beat.bpm} {t("bpm")}</dd>
                   </div>
                   <div>
-                    <dt className="sr-only">Czas</dt>
+                    <dt className="sr-only">{t("czas")}</dt>
                     <dd>{formatDurationSeconds(beat.durationSeconds)}</dd>
                   </div>
                 </dl>

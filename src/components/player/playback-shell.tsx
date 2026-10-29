@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import {
   forwardRef,
   useEffect,
@@ -51,6 +54,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
     { beatId, title, durationSeconds, className },
     ref,
   ) {
+  const t = useTranslations("common.playbackShell");
     const labelId = useId();
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const expiresAtRef = useRef<string | null>(null);
@@ -152,7 +156,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
 
     async function playFromStart(): Promise<void> {
       const audio = audioRef.current;
-      if (!audio) throw new Error("Audio engine missing.");
+      if (!audio) throw new Error(t("audioEngineMissing"));
       dispatch({ type: "REQUEST_PLAY" });
       try {
         await ensureSignedUrl();
@@ -335,7 +339,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
               {title}
             </p>
             <p className="brd-meta mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
-              Nagrywanie
+              {t("nagrywanie")}
             </p>
           </div>
           <BrdAudioTime
@@ -351,7 +355,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
 
         <div className="space-y-2">
           <p className="brd-meta text-[9px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-            Bit
+            {t("bit")}
           </p>
           <Waveform
             seed={beatId}
@@ -360,7 +364,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             showPlayhead={hasSource || progressRatio > 0}
             interactive={!seekDisabled}
             onSeekRatio={(ratio) => void handleSeekRatio(ratio)}
-            aria-label="Przebieg — przewiń bit"
+            aria-label={t("przebiegPrzewinBit")}
           />
         </div>
 
@@ -372,23 +376,23 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             size="md"
             title={title}
             onClick={() => void handlePlayPause()}
-            aria-label={isPlayLabel(state.phase) ? "Odtwórz" : "Pauza"}
+            aria-label={isPlayLabel(state.phase) ? t("odtworz") : "Pauza"}
           />
 
           <button
             type="button"
             onClick={() => dispatch({ type: "MUTE", muted: !state.muted })}
             aria-pressed={state.muted}
-            aria-label={state.muted ? "Włącz dźwięk" : "Wycisz"}
+            aria-label={state.muted ? t("wlaczDzwiek") : "Wycisz"}
             disabled={controlsLocked}
             className="inline-flex min-h-11 items-center border border-[var(--brd-audio-line)] px-3 text-sm text-[var(--brd-ink-soft)] outline-none hover:border-[var(--brd-ink)] hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)] disabled:opacity-45"
           >
-            {state.muted ? "Wyciszony" : "Dźwięk"}
+            {state.muted ? "Wyciszony" : t("dzwiek")}
           </button>
 
           <label className="ml-auto flex min-w-[8rem] max-w-[12rem] flex-1 flex-col gap-2 text-[var(--brd-mute)]">
             <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">
-              Głośność
+              {t("glosnosc")}
             </span>
             <input
               type="range"
@@ -400,7 +404,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
               onChange={(event) =>
                 dispatch({ type: "VOLUME", volume: Number(event.target.value) })
               }
-              aria-label="Głośność"
+              aria-label={t("glosnosc")}
               className="brd-scrub h-11"
             />
           </label>
@@ -408,7 +412,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
 
         {/* Accessible seek fallback */}
         <label className="sr-only">
-          Postęp
+          {t("postep")}
           <input
             type="range"
             min={0}
