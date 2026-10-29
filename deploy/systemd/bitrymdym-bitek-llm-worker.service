@@ -1,0 +1,27 @@
+# BitRymDym - BITEK chat queue worker (repository artifact only).
+# Runs on E3 next to the other pollers, reusing the /opt/bitrymdym-e3-worker checkout.
+# Claims bitek_llm_jobs (SKIP LOCKED) and calls llama-server on 127.0.0.1:8091.
+# No inbound ports. Install steps: docs/runbooks/BITEK_E3_LLM.md.
+# Kill switch: BITEK_LLM_WORKER_ENABLED (missing/false -> exit 0, no claim).
+
+[Unit]
+Description=BitRymDym BITEK chat LLM queue worker
+After=network-online.target bitrymdym-bitek-llm.service
+Wants=bitrymdym-bitek-llm.service
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+# BITEK_LLM_WORKER_ENABLED=true, BITEK_LLM_TOKEN=<same as /etc/bitrymdym-bitek-llm/api-key>
+EnvironmentFile=/etc/bitrymdym-e3-worker/bitek-llm.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+ExecStart=/usr/bin/npm run bitek:llm:worker
+Restart=on-failure
+RestartSec=15
+MemoryMax=512M
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,12 +1,12 @@
 # BitRymDym - BITEK chat model server on E3 (repository artifact only).
 #
-# NOT INSTALLED. Host install requires Owner GO (see docs/runbooks/BITEK_E3_LLM.md).
+# Install steps: docs/runbooks/BITEK_E3_LLM.md.
 #   Binary: llama.cpp `llama-server` (MIT) at /opt/bitrymdym-bitek-llm/bin/llama-server
 #   Model:  Qwen2.5-1.5B-Instruct Q4_K_M GGUF (Apache-2.0) in /opt/bitrymdym-bitek-llm/models/
 #   API key file: /etc/bitrymdym-bitek-llm/api-key (root:bitrymdym-llm 0640, outside repo)
-#     one line: long random token = Vercel BITEK_E3_TOKEN
-#   Listens on 127.0.0.1 ONLY. Public reachability only via an outbound
-#   Cloudflare Tunnel (no inbound firewall ports opened on E3).
+#     one line: long random token = BITEK_LLM_TOKEN in /etc/bitrymdym-e3-worker/bitek-llm.env
+#   Listens on 127.0.0.1 ONLY; reached only by bitrymdym-bitek-llm-worker (DB queue).
+#   No inbound firewall ports are opened on E3.
 #   Resource caps keep the Demucs / render worker first: 2 threads, Nice=10,
 #   MemoryMax=2.5G, CPUWeight=20.
 
