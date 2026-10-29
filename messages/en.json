@@ -1712,6 +1712,168 @@
       "beat": "Beat",
       "instrument": "Instrument",
       "other": "Other"
+    },
+    "mixStep": {
+      "krokNagranie": "Record",
+      "krokMix": "Mix",
+      "krokMastering": "Mastering",
+      "krokiAria": "Song steps",
+      "przejdzDoMixu": "Go to MIX",
+      "przejdzDoMixuOpis": "We'll check how your vocal sits on the beat.",
+      "wrocDoNagrania": "Back to recording",
+      "tytul": "Mix",
+      "opis": "The analysis runs in your browser. Nothing is uploaded. We measure tracks without effects, with their volume and pan.",
+      "analizuj": "Analyze mix",
+      "analizujPonownie": "Analyze again",
+      "analizaTrwa": "Analyzing… {pct}%",
+      "anuluj": "Stop",
+      "nieaktualne": "The project changed since the last analysis. Run it again.",
+      "blad": {
+        "no_audio": "Nothing to analyze yet. Record a vocal or pick a beat.",
+        "decode_failed": "Couldn't load the recordings. Check your connection and try again.",
+        "timeout": "The analysis took too long and was stopped. Try again or shorten the project.",
+        "aborted": "Analysis stopped.",
+        "error": "Something went wrong during the analysis. Try again."
+      },
+      "werdykt": {
+        "green": "The mix works. You can move on.",
+        "yellow": "Almost there. A few things are worth fixing.",
+        "red": "Something's off. Fix the red items before mastering."
+      },
+      "werdyktLicznik": "Red: {red}, yellow: {yellow}",
+      "status": {
+        "green": "OK",
+        "yellow": "Check",
+        "red": "Problem",
+        "na": "N/A"
+      },
+      "popraw": "Fix",
+      "poprawWkrotce": "Automatic fixes are coming soon.",
+      "przejdzDoMasteringu": "Go to Mastering",
+      "masteringZablokowany": "Fix the red items first.",
+      "masteringWkrotce": "Mastering for Spotify, YouTube, headphones and club is coming soon. Your mix is ready.",
+      "masteringTytul": "Mastering — coming soon",
+      "tabelaTytul": "Track loudness",
+      "tabelaSciezka": "Track",
+      "tabelaRola": "Role",
+      "tabelaLufs": "LUFS (integrated)",
+      "tabelaSt": "LUFS (3 s, max)",
+      "tabelaSzczyt": "Peak",
+      "tabelaSuma": "Full mix",
+      "czasAnalizy": "Analysis: {s} s",
+      "cards": {
+        "loudness": {
+          "title": "Loudness",
+          "ok": "The mix is {lufs} LUFS, loudest part {st} LUFS. Mastering will set the final loudness.",
+          "silent": "No sound at all. Check that the tracks aren't muted.",
+          "quiet": "The mix is very quiet ({lufs} LUFS). Turn the tracks up.",
+          "hot": "The mix is already very loud ({lufs} LUFS). Leave room for mastering."
+        },
+        "balance": {
+          "title": "Vocal vs beat",
+          "ok": "The vocal is {lu} LU against the beat. That's right.",
+          "noBeat": "There's no beat in the project, so nothing to compare the vocal with.",
+          "noVocal": "There's no vocal in the project. Record one or set a track role.",
+          "vocalBuried": "The vocal gets lost in the beat ({lu} LU). Turn the vocal up or the beat down.",
+          "vocalTooLoud": "The vocal is much louder than the beat ({lu} LU). The beat sounds like background.",
+          "vocalLow": "The vocal is a bit too quiet against the beat ({lu} LU).",
+          "vocalHigh": "The vocal is a bit too loud against the beat ({lu} LU)."
+        },
+        "presence": {
+          "title": "Word clarity",
+          "na": "No vocal or beat to compare.",
+          "ok": "The words are clear. In the speech range the vocal leads by {db} dB.",
+          "weak": "The words are hard to make out. The vocal leads the speech range by only {db} dB.",
+          "covered": "The beat covers the words (speech range {db} dB). The vocal needs room."
+        },
+        "masking": {
+          "title": "Masking",
+          "na": "No vocal or beat to compare.",
+          "ok": "The beat rarely covers the vocal ({pct}% of the time).",
+          "some": "The beat sometimes covers the vocal ({pct}% of the time).",
+          "heavy": "The vocal blends into the beat {pct}% of the time."
+        },
+        "sibilance": {
+          "title": "Sibilance (s, sh)",
+          "na": "Not enough vocal to judge.",
+          "ok": "The s and sh sounds are natural.",
+          "some": "The s and sh sounds are a bit sharp ({db} dB).",
+          "harsh": "The s and sh sounds hurt the ears ({db} dB)."
+        },
+        "clipping": {
+          "title": "Clipping",
+          "ok": "No clipping. Mix peak {tp} dBTP.",
+          "clipped": "The recording clips ({events} spots). Turn the track down or record quieter.",
+          "overPeak": "The mix goes over 0 dB ({tp} dBTP). Turn the tracks or the master down.",
+          "fewClips": "A few short clips ({events}). Turn the loudest track down a little.",
+          "lowHeadroom": "Little headroom for mastering (peak {tp} dBTP). Turn the mix down 2–3 dB.",
+          "silent": "No sound to check."
+        },
+        "noise": {
+          "title": "Background noise",
+          "na": "Not enough recorded vocal to judge noise.",
+          "ok": "The background is clean.",
+          "some": "Slight noise in “{track}” ({db} dBFS).",
+          "loud": "Clear room noise in “{track}” ({db} dBFS)."
+        },
+        "stereo": {
+          "title": "Stereo",
+          "na": "No sound to check.",
+          "ok": "Stereo is healthy (correlation {corr}). It will sound fine on a phone too.",
+          "wide": "The mix is very wide (correlation {corr}). Something may vanish on a single speaker.",
+          "phase": "The channels cancel out (correlation {corr}). Part of the sound will vanish on a phone."
+        },
+        "panorama": {
+          "title": "Ad-libs and doubles",
+          "ok": "Ad-libs and doubles are spread to the sides and the lead vocal is centred.",
+          "noAdlibs": "No ad-libs or doubles. The lead vocal is centred.",
+          "leadOffCentre": "The lead vocal isn't centred ({names}). Move it to the middle.",
+          "adlibsCentred": "Ad-libs sit in the middle ({names}). Spread them to the sides.",
+          "oneSide": "All ad-libs are on one side. Spread them left and right.",
+          "na": "No sound to check."
+        }
+      }
+    },
+    "bitek": {
+      "nazwa": "BITEK",
+      "podtytul": "Your studio guide",
+      "panelAria": "BITEK, studio guide",
+      "czatWkrotce": "Chatting with BITEK and commands like “louder vocal” are coming soon.",
+      "czatPlaceholder": "Type a command… (soon)",
+      "akcja": {
+        "goMix": "Go to MIX",
+        "goRecord": "Back to recording",
+        "analyze": "Analyze mix",
+        "chooseBeat": "Choose a beat",
+        "record": "Record"
+      },
+      "msg": {
+        "recording": "Recording. Focus on the vocal, I'll wait.",
+        "chooseBeat": "Hi! Start by choosing the beat you'll record on.",
+        "recordVocal": "The beat is in. Now record the lead vocal.",
+        "readyForMix": "You have {count, plural, one {# recording} other {# recordings}}. When you're done, go to MIX and I'll check how the vocal sits on the beat.",
+        "mixNeedsVocal": "I need at least one recording to mix. Go back to recording.",
+        "mixIntro": "Click “Analyze mix”. I'll listen to the vocal against the beat and tell you in plain words what works and what doesn't.",
+        "mixRunning": "Listening… {pct}%",
+        "mixFailed": "I couldn't analyze the mix. Let's try again.",
+        "mixStale": "Something changed since the last analysis. I'll check again.",
+        "mixHasRed": "{count, plural, one {One thing needs} other {# things need}} fixing before mastering. Let's start with the most important.",
+        "mixRecheck": "After fixing, click “Analyze again”.",
+        "mixHasYellow": "No red items. {count, plural, one {One thing is} other {# things are}} still worth polishing.",
+        "mixAllGreen": "All good! The vocal sits well on the beat.",
+        "mixReadyForMaster": "You can go on to mastering. That step is coming soon.",
+        "fix": {
+          "clipping": "Clipping: pull the clipping track's volume down 3–6 dB. If the recording itself clips, record that part quieter.",
+          "balance": "Vocal vs beat: move the vocal or beat volume until the vocal is 0–3 LU above the beat.",
+          "presence": "Clarity: turn the vocal up or the beat down 2–3 dB. In the vocal EQ, lift around 3 kHz a little.",
+          "masking": "Masking: turn the beat down 2 dB or cut its mids (1–4 kHz) in the beat EQ.",
+          "noise": "Noise: record somewhere quieter, closer to the mic. Noise removal comes in the next stage.",
+          "sibilance": "Sibilance: angle the mic slightly away from your mouth or lower the highs (6–8 kHz) in the vocal EQ.",
+          "stereo": "Stereo: check no track is phase-inverted and narrow the widest tracks.",
+          "panorama": "Panorama: keep the lead vocal centred, pan ad-libs left and right by 30–60.",
+          "loudness": "Loudness: set the faders so the mix is neither too quiet nor clipping."
+        }
+      }
     }
   },
   "nav": {
