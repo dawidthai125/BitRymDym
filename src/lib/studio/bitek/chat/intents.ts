@@ -24,27 +24,27 @@ function byRole(ctx: BitekChatContext, roles: string[]): BitekTrackContext[] {
 
 const T = {
   pl: {
-    louder: (n: string) => `Podkręcam ${n} o 2 dB — kliknij „Zastosuj”, posłuchaj, a jak za dużo, cofnij (Ctrl+Z).`,
-    quieter: (n: string) => `Ściszam ${n} o 2 dB. Zastosuj i posłuchaj na tle reszty.`,
-    spread: "Rozkładam adliby i dogrywki na boki, żeby nie siedziały na głównym wokalu. Zastosuj i sprawdź na słuchawkach.",
-    center: "Ustawiam główny wokal na środek — tam jest jego miejsce.",
-    reverb: "Pogłos na adlibach ustawisz w efektach ścieżki (zakładka Efekty → Pogłos, „mix” ok. 20–30%). Automatyczną zmianę efektów dodam później.",
-    noTrack: "Nie widzę takiej ścieżki w projekcie. Nadaj ścieżkom role (np. Wokal główny, Adlib), wtedy łatwiej mi pomóc.",
+    louder: (n: string) => `Podkręcę ${n} o 2 dB, żeby lepiej się przebijało. Kliknij „Zastosuj” i posłuchaj — jak za dużo, cofnij (Ctrl+Z).`,
+    quieter: (n: string) => `Ściszę ${n} o 2 dB, żeby zrobić miejsce reszcie. Zastosuj i posłuchaj.`,
+    spread: "Rozłożę Twoje adliby i dogrywki na boki, żeby nie siedziały na głównym wokalu. Zastosuj i sprawdź na słuchawkach.",
+    center: "Ustawię Twój główny wokal na środku — tam jest jego miejsce, wtedy niesie cały numer.",
+    reverb: "Pogłos i echo w tempie bitu dołożę Ci przyciskiem „Popraw wszystko” w MIXIE — adliby dostaną więcej przestrzeni. Ręcznie: Efekty → Pogłos, „mix” ok. 20–30%.",
+    noTrack: "Nie widzę takiej ścieżki w Twoim projekcie. Nadaj ścieżkom role (np. Wokal główny, Adlib), wtedy wiem, co komu ustawić.",
     generic: (worst: string | null) =>
       worst
-        ? `Najpierw ogarnij kartę „${worst}” — to teraz największy problem. Napisz np. „głośniej wokal” albo „rozrzuć adliby”, a zaproponuję zmianę.`
-        : "Napisz, co chcesz zmienić, np. „głośniej wokal”, „ciszej bit” albo „rozrzuć adliby”, a zaproponuję konkretną zmianę.",
+        ? `Najpierw wziąłbym się za kartę „${worst}” — to teraz największy problem. Napisz np. „głośniej wokal” albo „rozrzuć adliby”, a zaproponuję Ci zmianę.`
+        : "Powiedz mi, co chcesz zmienić, np. „głośniej wokal”, „ciszej bit” albo „rozrzuć adliby”, a zaproponuję Ci konkretną zmianę.",
   },
   en: {
-    louder: (n: string) => `Turning ${n} up by 2 dB — hit "Apply", have a listen, and undo (Ctrl+Z) if it's too much.`,
-    quieter: (n: string) => `Turning ${n} down by 2 dB. Apply it and listen against the rest.`,
-    spread: "Spreading adlibs and doubles left and right so they don't sit on top of the lead. Apply and check on headphones.",
-    center: "Putting the lead vocal back in the centre — that's where it belongs.",
-    reverb: "Set adlib reverb in the track effects (Effects → Reverb, mix around 20–30%). Automatic effect changes come later.",
-    noTrack: "I can't find that track. Give your tracks roles (e.g. Lead vocal, Adlib) and I can help better.",
+    louder: (n: string) => `I'll turn ${n} up by 2 dB so it cuts through. Hit "Apply", have a listen, and undo (Ctrl+Z) if it's too much.`,
+    quieter: (n: string) => `I'll turn ${n} down by 2 dB to make room for the rest. Apply it and listen.`,
+    spread: "I'll spread your adlibs and doubles left and right so they don't sit on top of the lead. Apply and check on headphones.",
+    center: "I'll put your lead vocal in the centre — that's where it carries the whole track.",
+    reverb: "I'll add reverb and tempo-synced delay for you with \"Fix everything\" in MIX — adlibs get more space. By hand: Effects → Reverb, mix around 20–30%.",
+    noTrack: "I can't find that track in your project. Give your tracks roles (e.g. Lead vocal, Adlib) so I know what to set where.",
     generic: (worst: string | null) =>
       worst
-        ? `Sort out the "${worst}" card first — it's the biggest issue right now. Try "louder vocal" or "spread adlibs" and I'll suggest a change.`
+        ? `I'd start with the "${worst}" card — it's the biggest issue right now. Try "louder vocal" or "spread adlibs" and I'll suggest a change.`
         : 'Tell me what to change, e.g. "louder vocal", "quieter beat" or "spread adlibs", and I\'ll suggest a concrete tweak.',
   },
 };

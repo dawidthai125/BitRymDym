@@ -229,3 +229,19 @@ describe("BITEK language lock", () => {
     expect(seen[0]).toBe(buildBitekSystemPrompt({ ...ctx, lang: "pl" }, { compact: true }));
   });
 });
+
+describe("BITEK voice — user's private producer, first person (stage 2)", () => {
+  it("persona in all prompt variants says producer + first person", async () => {
+    const { buildBitekStaticPrefix } = await import("./prompt");
+    for (const compact of [false, true]) {
+      expect(buildBitekStaticPrefix("pl", { compact })).toMatch(/prywatny producent/);
+      expect(buildBitekStaticPrefix("en", { compact })).toMatch(/private producer/);
+      expect(buildBitekStaticPrefix("en", { compact })).toMatch(/first person/);
+    }
+  });
+  it("rule replies speak as BITEK (I'll / Podkręcę)", () => {
+    expect(bitekRulesChat("Daj głośniej wokal", ctx).reply).toMatch(/^Podkręcę/);
+    expect(bitekRulesChat("louder vocal", { ...ctx, lang: "en" }).reply).toMatch(/^I'll/);
+    expect(bitekRulesChat("więcej pogłosu", ctx).reply).toMatch(/dołożę Ci/);
+  });
+});
