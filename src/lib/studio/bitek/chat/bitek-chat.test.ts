@@ -173,3 +173,41 @@ describe("rate limit", () => {
     await expect(consumeBitekQuota({ rpc: async () => ({ data: null, error: { code: "PGRST202" } }) }, "y")).resolves.toEqual({ allowed: true, source: "memory" });
   });
 });
+
+describe("BITEK language lock", () => {
+  it("prompt states the language first and last, with a PL example", async () => {
+    const { buildBitekSystemPrompt: build } = await import("./prompt");
+    const p = build({ ...ctx, lang: "pl" });
+    expect(p.startsWith("JĘZYK:")).toBe(true);
+    expect(p.trim().endsWith("po polsku.")).toBe(true);
+    expect(p).toContain("Przykład odpowiedzi");
+    const c = build({ ...ctx, lang: "pl" }, { compact: true });
+    expect(c.length).toBeLessThan(p.length);
+    expect(c.startsWith("JĘZYK:")).toBe(true);
+  });
+  it("detects English replies when Polish is expected (and vice versa)", async () => {
+    const { isBitekWrongLanguage } = await import("./prompt");
+    expect(isBitekWrongLanguage("The vocal track is too quiet, try to increase it.", "pl")).toBe(true);
+    expect(isBitekWrongLanguage("Wokal jest za cichy, podbij go o 3 dB.", "pl")).toBe(false);
+    expect(isBitekWrongLanguage("Wokal +3 dB", "pl")).toBe(false);
+    expect(isBitekWrongLanguage("Wokal jest za cichy, podbij go i sprawdź refren.", "en")).toBe(true);
+  });
+  it("chain fails over on wrong language and gives compact prompt to compact providers", async () => {
+    const seen: string[] = [];
+    const en: BitekLlmProvider = { id: "groq", timeoutMs: 1000, complete: async () => '{"reply":"The vocal is too quiet, try to push it up.","proposals":[]}' };
+    const e3: BitekLlmProvider = {
+      id: "e3",
+      timeoutMs: 1000,
+      compactPrompt: true,
+      complete: async (m) => {
+        seen.push(m[0].content);
+        return '{"reply":"Wokal jest za cichy, podbij go.","proposals":[]}';
+      },
+    };
+    const logs: unknown[] = [];
+    const r = await runBitekChatChain({ providers: [en, e3], message: "hej", history: [], context: { ...ctx, lang: "pl" }, log: (l) => logs.push(l) });
+    expect(r.provider).toBe("e3");
+    expect(JSON.stringify(logs)).toContain("wrong_lang");
+    expect(seen[0]).toBe(buildBitekSystemPrompt({ ...ctx, lang: "pl" }, { compact: true }));
+  });
+});

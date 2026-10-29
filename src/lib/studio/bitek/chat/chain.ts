@@ -1,5 +1,5 @@
 import { bitekRulesChat } from "./intents";
-import { buildBitekSystemPrompt } from "./prompt";
+import { buildBitekSystemPrompt, isBitekWrongLanguage } from "./prompt";
 import { parseBitekModelOutput } from "./proposals";
 import { BitekProviderError, type BitekLlmProvider } from "./providers";
 import { BITEK_LIMITS, type BitekChatContext, type BitekChatResult, type BitekChatTurn } from "./types";
@@ -22,15 +22,17 @@ export async function runBitekChatChain(params: {
   const now = params.now ?? Date.now;
   const t0 = now();
   const attempts: BitekChainLog["attempts"] = [];
-  const messages = [
-    { role: "system" as const, content: buildBitekSystemPrompt(params.context) },
+  const turns = [
     ...params.history.slice(-BITEK_LIMITS.historyMaxTurns).map((h) => ({
       role: h.role,
       content: h.content.slice(0, BITEK_LIMITS.historyTurnMaxChars),
     })),
     { role: "user" as const, content: params.message },
   ];
+  const systemFull = buildBitekSystemPrompt(params.context);
   for (const p of params.providers) {
+    const system = p.compactPrompt ? buildBitekSystemPrompt(params.context, { compact: true }) : systemFull;
+    const messages = [{ role: "system" as const, content: system }, ...turns];
     const started = now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), p.timeoutMs);
@@ -38,6 +40,7 @@ export async function runBitekChatChain(params: {
       const text = await p.complete(messages, controller.signal);
       const parsed = parseBitekModelOutput(text, params.context);
       if (!parsed) throw new BitekProviderError("bad_response");
+      if (isBitekWrongLanguage(parsed.reply, params.context.lang)) throw new BitekProviderError("wrong_lang");
       attempts.push({ id: p.id, outcome: "ok", ms: now() - started });
       params.log?.({ provider: p.id, ms: now() - t0, attempts });
       return { provider: p.id, ...parsed };

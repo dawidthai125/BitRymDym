@@ -32,6 +32,7 @@ export function bitekQueueProvider(opts: {
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   return {
     id: "e3",
+    compactPrompt: true,
     // Chain abort fires slightly after our own deadline so we can mark the job expired first.
     timeoutMs: timeoutMs + 1500,
     async complete(messages, signal) {

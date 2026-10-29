@@ -2,7 +2,7 @@ import type { BitekChatTurn, BitekProviderId } from "./types";
 
 /** Server-only LLM provider chain for BITEK. Keys come from server env only. */
 
-export type BitekProviderErrorKind = "rate_limited" | "server" | "timeout" | "network" | "bad_response" | "client";
+export type BitekProviderErrorKind = "rate_limited" | "server" | "timeout" | "network" | "bad_response" | "client" | "wrong_lang";
 
 export class BitekProviderError extends Error {
   constructor(
@@ -16,6 +16,8 @@ export class BitekProviderError extends Error {
 export interface BitekLlmProvider {
   id: Exclude<BitekProviderId, "rules">;
   timeoutMs: number;
+  /** Use the short system prompt (small self-hosted model). */
+  compactPrompt?: boolean;
   complete(messages: { role: "system" | BitekChatTurn["role"]; content: string }[], signal: AbortSignal): Promise<string>;
 }
 
