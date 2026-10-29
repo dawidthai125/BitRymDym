@@ -73,10 +73,14 @@ export function openAiCompatibleProvider(opts: {
 }
 
 /**
- * Order: Groq → Gemini Flash → E3 (self-hosted) → rules (caller).
+ * Order: Groq → Gemini Flash → E3 (self-hosted, via DB queue) → rules (caller).
  * A provider is configured only when its env vars are present.
  */
-export function bitekProvidersFromEnv(env: Env = process.env, fetchFn?: FetchFn): BitekLlmProvider[] {
+export function bitekProvidersFromEnv(
+  env: Env = process.env,
+  fetchFn?: FetchFn,
+  opts: { e3Queue?: () => BitekLlmProvider } = {},
+): BitekLlmProvider[] {
   const list: BitekLlmProvider[] = [];
   if (env.GROQ_API_KEY) {
     list.push(
@@ -104,18 +108,9 @@ export function bitekProvidersFromEnv(env: Env = process.env, fetchFn?: FetchFn)
       }),
     );
   }
-  if (env.BITEK_E3_URL && env.BITEK_E3_TOKEN) {
-    list.push(
-      openAiCompatibleProvider({
-        id: "e3",
-        baseUrl: env.BITEK_E3_URL,
-        apiKey: env.BITEK_E3_TOKEN,
-        model: env.BITEK_E3_MODEL || "qwen2.5-3b-instruct",
-        timeoutMs: 25000,
-        jsonMode: true,
-        fetchFn,
-      }),
-    );
+  // E3 = self-hosted model reached via the DB queue (bitek_llm_jobs), never directly.
+  if ((env.BITEK_E3_QUEUE_ENABLED ?? "").trim().toLowerCase() === "true" && opts.e3Queue) {
+    list.push(opts.e3Queue());
   }
   return list;
 }

@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { runBitekChatChain } from "@/lib/studio/bitek/chat/chain";
 import { bitekProvidersFromEnv } from "@/lib/studio/bitek/chat/providers";
+import { bitekQueueProvider, supabaseBitekQueueDb } from "@/lib/studio/bitek/chat/queue-provider";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { consumeBitekQuota } from "@/lib/studio/bitek/chat/rate-limit";
 import { parseBitekChatRequest } from "@/lib/studio/bitek/chat/request";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -12,7 +14,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/** BITEK chat — signed-in users only; provider chain Groq → Gemini → E3 → rules. */
+/** BITEK chat — signed-in users only; provider chain Groq → Gemini → E3 (DB queue) → rules. */
 export async function POST(request: Request) {
   let userId: string;
   try {
@@ -37,7 +39,12 @@ export async function POST(request: Request) {
   if (!quota.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const result = await runBitekChatChain({
-    providers: bitekProvidersFromEnv(),
+    providers: bitekProvidersFromEnv(process.env, undefined, {
+      e3Queue: () =>
+        bitekQueueProvider({
+          db: supabaseBitekQueueDb(createSupabaseAdminClient() as unknown as Parameters<typeof supabaseBitekQueueDb>[0]),
+        }),
+    }),
     message: parsed.value.message,
     history: parsed.value.history,
     context: parsed.value.context,
