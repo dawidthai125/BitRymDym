@@ -4,13 +4,14 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
   updateBeatMetadataAction,
   type BeatActionState,
 } from "@/lib/beats/actions";
+import { warsawDateInputValue } from "@/lib/beats/admin-beat-edit";
 import type { Beat } from "@/types/domain";
 
 const initial: BeatActionState = { error: null, success: false };
@@ -18,13 +19,23 @@ const initial: BeatActionState = { error: null, success: false };
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
-export function AdminMetadataForm({ beat }: { beat: Beat }) {
+export function AdminMetadataForm({
+  beat,
+  onSaved,
+}: {
+  beat: Beat;
+  onSaved?: () => void;
+}) {
   const tl = useLibText();
   const t = useTranslations("admin.adminMetadataForm");
   const [state, action, pending] = useActionState(
     updateBeatMetadataAction,
     initial,
   );
+
+  useEffect(() => {
+    if (state.success) onSaved?.();
+  }, [state, onSaved]);
 
   return (
     <form action={action} className="flex max-w-xl flex-col gap-3">
@@ -45,6 +56,16 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
           name="producer"
           maxLength={500}
           defaultValue={beat.producer ?? ""}
+          className={fieldClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {t("dataWrzucenia")}
+        <input
+          name="uploadDate"
+          type="date"
+          min="2020-01-01"
+          defaultValue={warsawDateInputValue(beat.createdAt)}
           className={fieldClass}
         />
       </label>

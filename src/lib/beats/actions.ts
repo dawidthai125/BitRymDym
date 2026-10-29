@@ -134,6 +134,7 @@ export async function updateBeatMetadataAction(
       // Duration is server-probed from MASTER audio (Scope A) — not editable here.
       tags: parseTags(formData),
       coverRef: optionalFormText(formData, "coverRef"),
+      uploadDate: optionalFormText(formData, "uploadDate"),
     });
     revalidateBeatSurfaces(beatId);
     return { error: null, success: true, beatId };

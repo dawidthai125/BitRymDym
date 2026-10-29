@@ -30,6 +30,16 @@ import {
   type BeatInput,
 } from "@/lib/beats/validation";
 import { withPublicAuthors } from "@/lib/beats/public-author";
+import {
+  diffBeatMetadataForAudit,
+  parseUploadDateInput,
+} from "@/lib/beats/admin-beat-edit";
+import {
+  ADMIN_BEATS_SORT_COLUMNS,
+  adminBeatsPageCount,
+  adminBeatsRange,
+  type AdminBeatsQuery,
+} from "@/lib/beats/admin-catalogue-query";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import {
   BEAT_SELECT_FULL,
@@ -393,9 +403,9 @@ export async function updateOwnUserDraftMetadata(
 /** ADMIN metadata edit (not for MODERATOR full edit). */
 export async function updateBeatMetadata(
   beatId: string,
-  patch: Partial<Omit<BeatInput, "status">>,
+  patch: Partial<Omit<BeatInput, "status">> & { uploadDate?: string | null },
 ): Promise<Beat> {
-  await requireAdminPlatformOps();
+  const context = await requireRole(["ADMIN"]);
   await requirePermission("beats.edit");
 
   const current = await loadBeat(beatId);
@@ -429,10 +439,18 @@ export async function updateBeatMetadata(
     throw new BeatRequestError(validated.errors.join("; "));
   }
 
+  const uploadDate = parseUploadDateInput(patch.uploadDate, current.createdAt);
+  if (!uploadDate.ok) {
+    throw new BeatRequestError(uploadDate.error);
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("beats")
-    .update(toBeatInsertPayload(validated.value))
+    .update({
+      ...toBeatInsertPayload(validated.value),
+      ...(uploadDate.iso ? { created_at: uploadDate.iso } : {}),
+    })
     .eq("id", beatId)
     .select(BEAT_SELECT_FULL)
     .single();
@@ -441,7 +459,38 @@ export async function updateBeatMetadata(
     throw new Error(error.message);
   }
 
-  return mapBeatRow(data as BeatRow);
+  const updated = mapBeatRow(data as BeatRow);
+  await auditBeatMetadataUpdate(context, current, updated);
+  return updated;
+}
+
+/**
+ * admin_audit_events BEAT_METADATA_UPDATE (service_role insert, like
+ * SAMPLE_POLICY_UPDATE). The beat row is already written; an audit failure is
+ * logged loudly instead of failing the edit (no shared transaction).
+ */
+async function auditBeatMetadataUpdate(
+  context: Awaited<ReturnType<typeof requireRole>>,
+  before: Beat,
+  after: Beat,
+): Promise<void> {
+  const diff = diffBeatMetadataForAudit(before, after);
+  if (diff.changed.length === 0) return;
+  const { error } = await createSupabaseAdminClient()
+    .from("admin_audit_events")
+    .insert({
+      actor_user_id: context.profile.id,
+      target_user_id: null,
+      actor_user_number: context.profile.userNumber ?? null,
+      target_user_number: null,
+      action: "BEAT_METADATA_UPDATE",
+      old_value: diff.oldValue,
+      new_value: diff.newValue,
+      metadata: { beatId: after.id, fields: diff.changed },
+    });
+  if (error) {
+    console.error("[beats] admin audit insert failed:", error.message);
+  }
 }
 
 export async function transitionBeatStatus(
@@ -891,6 +940,95 @@ export async function listPlatformBeatsForAdmin(): Promise<
     ...beat,
     activeMasterReady: ready.has(beat.id),
   }));
+}
+
+export type AdminBeatCatalogueItem = PlatformBeatAdminListItem & {
+  downloadCount: number;
+};
+
+export type AdminBeatCataloguePage = {
+  rows: AdminBeatCatalogueItem[];
+  total: number;
+  page: number;
+  pageCount: number;
+};
+
+/** Paginated, server-sorted PLATFORM catalogue for /admin/beats. */
+export async function listPlatformBeatCatalogueForAdmin(
+  query: AdminBeatsQuery,
+): Promise<AdminBeatCataloguePage> {
+  await requireAdminPlatformBeatsAccess();
+
+  const supabase = await createSupabaseServerClient();
+  const column = ADMIN_BEATS_SORT_COLUMNS[query.sort];
+  const run = async (page: number) => {
+    const { from, to } = adminBeatsRange(page, query.size);
+    let q = supabase
+      .from("beats")
+      .select(BEAT_SELECT_FULL, { count: "exact" })
+      .eq("ownership_type", "PLATFORM");
+    if (query.status) q = q.eq("status", query.status);
+    if (query.q) {
+      const pattern = `"*${query.q}*"`;
+      q = q.or(`title.ilike.${pattern},producer.ilike.${pattern}`);
+    }
+    return q
+      .order(column, { ascending: query.dir === "asc", nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(from, to);
+  };
+
+  let page = query.page;
+  let res = await run(page);
+  if (res.error) throw new Error(res.error.message);
+  const total = res.count ?? 0;
+  const pageCount = adminBeatsPageCount(total, query.size);
+  if (page > pageCount) {
+    page = pageCount;
+    res = await run(page);
+    if (res.error) throw new Error(res.error.message);
+  }
+
+  const beats = ((res.data as BeatRow[] | null) ?? []).map((row) => mapBeatRow(row));
+  if (beats.length === 0) return { rows: [], total, page, pageCount };
+
+  const ids = beats.map((b) => b.id);
+  const { data: assets, error: assetError } = await supabase
+    .from("beat_audio_assets")
+    .select("beat_id")
+    .in("beat_id", ids)
+    .eq("purpose", "MASTER")
+    .eq("is_active", true)
+    .eq("status", "READY");
+  if (assetError) throw new Error(assetError.message);
+  const ready = new Set((assets ?? []).map((row) => row.beat_id as string));
+
+  // beat_download_events is select-own under RLS; counts need service_role
+  // (caller is already verified ADMIN + beats.edit above).
+  const downloads = new Map<string, number>();
+  const { data: events, error: eventsError } = await createSupabaseAdminClient()
+    .from("beat_download_events")
+    .select("beat_id")
+    .in("beat_id", ids);
+  if (eventsError) {
+    console.error("[beats] admin download counts failed:", eventsError.message);
+  } else {
+    for (const row of events ?? []) {
+      const id = row.beat_id as string;
+      downloads.set(id, (downloads.get(id) ?? 0) + 1);
+    }
+  }
+
+  return {
+    rows: beats.map((beat) => ({
+      ...beat,
+      activeMasterReady: ready.has(beat.id),
+      downloadCount: downloads.get(beat.id) ?? 0,
+    })),
+    total,
+    page,
+    pageCount,
+  };
 }
 
 export async function getPlatformBeatForAdmin(beatId: string): Promise<Beat> {
