@@ -34,7 +34,8 @@ export function studioMixSignature(doc: StudioProjectDocument): string {
   return JSON.stringify([
     doc.project.masterGainDb,
     doc.project.masterPan,
-    doc.tracks.map((t) => [t.id, t.gainDb, t.pan, t.muted, t.solo, t.trackRole]),
+    doc.project.masterFxChain,
+    doc.tracks.map((t) => [t.id, t.gainDb, t.pan, t.muted, t.solo, t.trackRole, t.effectsChain]),
     doc.clips.map((c) => [c.id, c.trackId, c.timelineStartMs, c.durationMs, c.sourceOffsetMs, c.gainDb, c.muted, c.fadeInMs, c.fadeOutMs]),
   ]);
 }

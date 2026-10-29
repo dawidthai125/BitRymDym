@@ -1722,7 +1722,7 @@
       "przejdzDoMixuOpis": "Sprawdzimy, jak wokal brzmi na tle bitu.",
       "wrocDoNagrania": "Wróć do nagrywania",
       "tytul": "Mix",
-      "opis": "Analiza działa w Twojej przeglądarce. Nic nie wysyłamy na serwer. Mierzymy ścieżki bez efektów, z ich głośnością i panoramą.",
+      "opis": "Analiza działa w Twojej przeglądarce. Nic nie wysyłamy na serwer. Mierzymy ścieżki tak, jak je słyszysz: z efektami, głośnością i panoramą.",
       "analizuj": "Analizuj mix",
       "analizujPonownie": "Analizuj ponownie",
       "analizaTrwa": "Analizuję… {pct}%",

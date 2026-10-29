@@ -8,6 +8,8 @@ import type { StudioTrackRole } from "@/config/studio";
 import { percentile, powerToDb, stftBandPowers } from "@/lib/studio/mix-analysis/dsp";
 import { measureLoudness } from "@/lib/studio/mix-analysis/loudness";
 import {
+  analysisFxChain,
+  applyFxInPlace,
   renderTrack,
   stereoPan,
   type MixAnalysisInput,
@@ -224,6 +226,8 @@ export function computeMixMetrics(input: MixAnalysisInput, onProgress?: MixProgr
     }
     onProgress?.((idx + 1) / steps);
   });
+  const masterFx = analysisFxChain(input.masterEffectsChain, "master", sr);
+  if (masterFx) applyFxInPlace(masterFx, masterL, masterR);
   const mg = Number.isFinite(input.masterGainDb) ? Math.pow(10, input.masterGainDb / 20) : 1;
   for (let i = 0; i < len; i++) {
     const [l, r] = stereoPan(masterL[i] * mg, masterR[i] * mg, false, input.masterPan);

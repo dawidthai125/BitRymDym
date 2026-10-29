@@ -1722,7 +1722,7 @@
       "przejdzDoMixuOpis": "We'll check how your vocal sits on the beat.",
       "wrocDoNagrania": "Back to recording",
       "tytul": "Mix",
-      "opis": "The analysis runs in your browser. Nothing is uploaded. We measure tracks without effects, with their volume and pan.",
+      "opis": "The analysis runs in your browser. Nothing is uploaded. We measure tracks the way you hear them: with effects, volume and pan.",
       "analizuj": "Analyze mix",
       "analizujPonownie": "Analyze again",
       "analizaTrwa": "Analyzing… {pct}%",
