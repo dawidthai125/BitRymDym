@@ -259,3 +259,14 @@ describe("Stage 1 — mix metrics & verdict on synthetic projects", () => {
     expect(seen.at(-1)).toBe(1);
   });
 });
+
+describe("mixAnalysisTimeoutMs", () => {
+  it("keeps 45 s for short projects and scales to the 300 s ceiling for 4:00 × 8 tracks", async () => {
+    const { mixAnalysisTimeoutMs, MIX_ANALYSIS_TIMEOUT_MS, MIX_ANALYSIS_MAX_TIMEOUT_MS } = await import("./client");
+    expect(mixAnalysisTimeoutMs([{ durationMs: 30000, muted: false }])).toBe(MIX_ANALYSIS_TIMEOUT_MS);
+    expect(mixAnalysisTimeoutMs([{ durationMs: 240000, muted: false }, { durationMs: 240000, muted: false }])).toBe(150000);
+    expect(mixAnalysisTimeoutMs([{ durationMs: 240000, muted: true }])).toBe(MIX_ANALYSIS_TIMEOUT_MS);
+    const eight = Array.from({ length: 8 }, () => ({ durationMs: 240000, muted: false }));
+    expect(mixAnalysisTimeoutMs(eight)).toBe(MIX_ANALYSIS_MAX_TIMEOUT_MS);
+  });
+});

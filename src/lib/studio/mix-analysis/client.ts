@@ -16,8 +16,20 @@ import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-t
 
 /** Analysis sample rate: covers 5–9 kHz sibilance band, keeps memory low. */
 export const MIX_ANALYSIS_SAMPLE_RATE = 32000;
-/** Hard budget for decode + compute. */
+/** Minimum budget for decode + compute (short projects). */
 export const MIX_ANALYSIS_TIMEOUT_MS = 45000;
+/** Ceiling for the budget (4:00, 8 tracks with reverb/delay). */
+export const MIX_ANALYSIS_MAX_TIMEOUT_MS = 300000;
+
+/**
+ * Time budget scaled by the amount of audio to process (sum of clip durations):
+ * 30 s + 0.25 s per second of audio, clamped to [45 s, 300 s].
+ * A 4:00 song on 8 tracks with FX needs ~1.5–2 min on a mid laptop.
+ */
+export function mixAnalysisTimeoutMs(clips: ReadonlyArray<Pick<MixAnalysisClip, "durationMs" | "muted">>): number {
+  const audioMs = clips.reduce((sum, c) => sum + (c.muted ? 0 : Math.max(0, c.durationMs)), 0);
+  return Math.min(MIX_ANALYSIS_MAX_TIMEOUT_MS, Math.max(MIX_ANALYSIS_TIMEOUT_MS, Math.round(30000 + audioMs * 0.25)));
+}
 /** Longest timeline analysed (ms). */
 export const MIX_ANALYSIS_MAX_LENGTH_MS = STUDIO_MAX_SONG_MS;
 
@@ -189,13 +201,14 @@ export async function runStudioMixAnalysis(params: {
   const onOuterAbort = () => controller.abort();
   outer?.addEventListener("abort", onOuterAbort, { once: true });
   let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, params.timeoutMs ?? MIX_ANALYSIS_TIMEOUT_MS);
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const progress = params.onProgress ?? (() => {});
   try {
     const skeleton = buildMixAnalysisSkeleton(params.doc);
+    timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, params.timeoutMs ?? mixAnalysisTimeoutMs(skeleton.clips));
     if (skeleton.sourceClips.size === 0) return { ok: false, reason: "no_audio" };
     const sources: Record<string, MixAnalysisSource> = {};
     let done = 0;
@@ -217,7 +230,7 @@ export async function runStudioMixAnalysis(params: {
     if (controller.signal.aborted) return { ok: false, reason: timedOut ? "timeout" : "aborted" };
     return { ok: false, reason: "error" };
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     outer?.removeEventListener("abort", onOuterAbort);
   }
 }

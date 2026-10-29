@@ -1930,7 +1930,8 @@
           "stereo": "Stereo: sprawdź, czy któraś ścieżka nie jest w przeciwfazie, i zawęź najszersze ścieżki.",
           "panorama": "Panorama: główny wokal zostaw w środku, adliby przesuń na lewo i prawo o 30–60.",
           "loudness": "Głośność: ustaw suwaki tak, żeby całość nie była ani za cicha, ani przesterowana."
-        }
+        },
+        "songLimit": "Utwór może mieć max {max} — dalej już nie nagram. Przytnij albo idź do miksu."
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",

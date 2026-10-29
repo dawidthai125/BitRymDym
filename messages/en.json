@@ -1930,7 +1930,8 @@
           "stereo": "Stereo: check no track is phase-inverted and narrow the widest tracks.",
           "panorama": "Panorama: keep the lead vocal centred, pan ad-libs left and right by 30–60.",
           "loudness": "Loudness: set the faders so the mix is neither too quiet nor clipping."
-        }
+        },
+        "songLimit": "A song can be at most {max} — I can't record past that. Trim it or move on to the mix."
       },
       "chat": {
         "inputLabel": "Message to BITEK",

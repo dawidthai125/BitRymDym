@@ -128,7 +128,7 @@ import {
 } from "@/lib/studio/studio-track-capacity";
 import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
 import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-meter";
-import { STUDIO_TRACK_ROLES, isStudioTrackRole } from "@/config/studio";
+import { STUDIO_MAX_SONG_MS, STUDIO_TRACK_ROLES, isStudioTrackRole } from "@/config/studio";
 import {
   EMPTY_STUDIO_UNDO_HISTORY,
   pickStudioPatchBefore,
@@ -489,7 +489,25 @@ function StudioEditorInner({
       openInspectorOverlay();
     }
   };
+  const takeContentEndMs = doc.clips.reduce(
+    (m, c) => (c.sourceKind === "TAKE" ? Math.max(m, c.timelineStartMs + c.durationMs) : m),
+    0,
+  );
+  const songCapMs = Math.min(length, STUDIO_MAX_SONG_MS);
   const recordBubble: BitekBubble = (() => {
+    if (!recordingLocked && takeContentEndMs > 0 && takeContentEndMs >= songCapMs - 500) {
+      const sec = Math.round(STUDIO_MAX_SONG_MS / 1000);
+      const max = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+      return {
+        key: "rec-songLimit",
+        mood: "thinking",
+        text: tBitek("msg.songLimit", { max }),
+        details: [],
+        actions: canGoMix
+          ? [{ id: "goMix", label: tBitek("akcja.goMix"), primary: true, onClick: () => onRecordBitekAction("goMix") }]
+          : [],
+      };
+    }
     const msgs = bitekRulesGuide({ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } });
     const first = msgs[0];
     const mood: BitekMood = recordingLocked ? "thinking" : first?.key === "readyForMix" ? "done" : "happy";

@@ -22,7 +22,9 @@ export async function findBitekOverlaps(page) {
     const visible = (el) => {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none" && !el.closest("[inert],[aria-hidden=true]");
+      // sr-only / skip links ("Przejdź do treści") are 1px until focused — not a real control on screen.
+      if (el.matches(".sr-only, [class*='sr-only']")) return false;
+      return r.width > 1 && r.height > 1 && cs.visibility !== "hidden" && cs.display !== "none" && !el.closest("[inert],[aria-hidden=true]");
     };
     const covered = (el) => {
       const r = el.getBoundingClientRect();
