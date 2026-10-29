@@ -1,5 +1,5 @@
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
-import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
@@ -26,21 +26,20 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
 
   return (
     <AppShell tone="public">
-      <main>
+      <main data-surface="tape" className="tape-grain">
         <PageFrame width="wide" className="py-5 sm:py-6">
-          <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-[var(--brd-line)] pb-3">
+          <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b-4 border-[var(--brd-ink)] pb-4 pt-4 sm:pt-8">
             <div className="min-w-0 space-y-1">
-              <SectionLabel>Katalog · tracklista</SectionLabel>
-              <h1 className="brd-display text-2xl font-semibold tracking-tight sm:text-[1.85rem]">
+              <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.88]">
                 Znajdź swój bit.
               </h1>
-              <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+              <p className="brd-meta pt-2 text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
                 {beats.length > 0
                   ? `${beats.length} bitów · słuchaj, potem nagraj`
                   : "Cicho · katalog w drodze"}
               </p>
             </div>
-            <p className="max-w-xs pb-0.5 text-sm leading-snug text-[var(--brd-mute)]">
+            <p className="max-w-xs pb-1 font-[family-name:var(--font-display)] text-lg italic leading-snug text-[var(--brd-ink-soft)]">
               Czysta lista bitów. Bez banerów i hustlu.
             </p>
           </header>

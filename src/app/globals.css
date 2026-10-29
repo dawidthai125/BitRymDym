@@ -345,3 +345,16 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
     transform: rotate(26deg);
   }
 }
+
+/* v3 rollout scope: surfaces opted into "Nocna sesja" typography.
+   Existing .brd-display headings switch to the poster face only here. */
+[data-surface="tape"] .brd-display {
+  font-family: var(--tape-font-poster);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+[data-surface="tape"] ::selection {
+  background: var(--tape-neon);
+  color: var(--tape-soot);
+}

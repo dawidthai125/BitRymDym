@@ -70,7 +70,7 @@ export default async function HomePage() {
 
   return (
     <AppShell tone="public">
-      <main className="tape-surface tape-grain overflow-hidden">
+      <main data-surface="tape" className="tape-surface tape-grain overflow-hidden">
         {/* HERO — poster type + the loaded tape */}
         <section aria-labelledby="home-hero" className="border-b border-tape-line">
           <div
