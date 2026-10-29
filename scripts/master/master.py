@@ -62,9 +62,19 @@ def to_stereo(x: np.ndarray) -> np.ndarray:
     return x[:, :2].astype(np.float32)
 
 
+TP_BLOCK = 1 << 17  # samples per block: keeps the 4x upsampled copy ~10 MB instead of ~700 MB for 4:00
+TP_PAD = 256  # context on both sides so block edges match the whole-signal result
+
+
 def true_peak_db(x: np.ndarray) -> float:
-    up = resample_poly(x, 4, 1, axis=0)
-    peak = float(np.max(np.abs(up))) if up.size else 0.0
+    n = len(x)
+    peak = 0.0
+    for start in range(0, n, TP_BLOCK):
+        a, b = max(0, start - TP_PAD), min(n, start + TP_BLOCK + TP_PAD)
+        up = resample_poly(x[a:b], 4, 1, axis=0)
+        lo, hi = (start - a) * 4, (min(n, start + TP_BLOCK) - a) * 4
+        if hi > lo:
+            peak = max(peak, float(np.max(np.abs(up[lo:hi]))))
     return 20 * np.log10(peak) if peak > 0 else -120.0
 
 
@@ -109,12 +119,17 @@ def tonal_balance(x: np.ndarray, sr: int) -> dict:
 
 
 def stereo_stats(x: np.ndarray) -> dict:
-    l, r = x[:, 0].astype(np.float64), x[:, 1].astype(np.float64)
-    denom = np.sqrt((l * l).sum() * (r * r).sum())
-    corr = float((l * r).sum() / denom) if denom > 0 else 1.0
-    mid, side = (l + r) / 2, (l - r) / 2
-    m, s = np.sqrt(np.mean(mid ** 2)), np.sqrt(np.mean(side ** 2))
-    side_ratio = float(s / m) if m > 0 else 0.0
+    # Block-wise float64 sums (same result, no full-length float64 copies).
+    ll = rr = lr = 0.0
+    for a in range(0, len(x), TP_BLOCK):
+        blk = x[a:a + TP_BLOCK].astype(np.float64)
+        l, r = blk[:, 0], blk[:, 1]
+        ll += float(l @ l); rr += float(r @ r); lr += float(l @ r)
+    denom = np.sqrt(ll * rr)
+    corr = float(lr / denom) if denom > 0 else 1.0
+    # mid=(l+r)/2, side=(l-r)/2 → energies from the same sums
+    m2, s2 = (ll + rr + 2 * lr) / 4, (ll + rr - 2 * lr) / 4
+    side_ratio = float(np.sqrt(max(s2, 0.0) / m2)) if m2 > 0 else 0.0
     return {"correlation": round(corr, 3), "sideToMid": round(side_ratio, 3)}
 
 
@@ -140,22 +155,26 @@ def analyze(x: np.ndarray, sr: int) -> dict:
 
 def lr4(x: np.ndarray, sr: int, f: float, kind: str) -> np.ndarray:
     sos = butter(2, f, btype=kind, fs=sr, output="sos")
-    return sosfilt(sos, sosfilt(sos, x, axis=0), axis=0)
+    return sosfilt(sos, sosfilt(sos, x, axis=0), axis=0).astype(np.float32)
 
 
 def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
     # squash -3..3 → ratio/threshold; 0 = gentle glue.
+    # Bands are built and compressed one at a time (float32) so a 4:00 song stays well
+    # under the worker's memory cap; the result is identical to summing all three at once.
     ratio = float(np.interp(squash, [-3, 0, 3], [1.2, 2.0, 4.0]))
     thr = float(np.interp(squash, [-3, 0, 3], [-12, -18, -26]))
-    low = lr4(x, sr, 150, "lowpass")
-    rest = lr4(x, sr, 150, "highpass")
-    mid = lr4(rest, sr, 4000, "lowpass")
-    high = lr4(rest, sr, 4000, "highpass")
-    bands = []
-    for band, attack, release in ((low, 30, 200), (mid, 15, 150), (high, 5, 80)):
+
+    def comp(band: np.ndarray, attack: float, release: float) -> np.ndarray:
         c = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=attack, release_ms=release)])
-        bands.append(c(band.astype(np.float32), sr))
-    y = bands[0] + bands[1] + bands[2]
+        return c(band, sr)
+
+    y = comp(lr4(x, sr, 150, "lowpass"), 30, 200)
+    rest = lr4(x, sr, 150, "highpass")
+    y = y + comp(lr4(rest, sr, 4000, "lowpass"), 15, 150)
+    high = lr4(rest, sr, 4000, "highpass")
+    del rest
+    y = y + comp(high, 5, 80)
     return y.astype(np.float32)
 
 
