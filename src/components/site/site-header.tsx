@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { BrdLogoHomeLink } from "@/components/brand/brd-logo";
@@ -6,6 +7,7 @@ import { HeaderSearch } from "@/components/site/header-search";
 import { SiteMainNav } from "@/components/site/site-main-nav";
 import { siteNavLinkClass } from "@/components/site/site-nav-active";
 import { SkipToMainContent } from "@/components/site/skip-to-main";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { UserMenu } from "@/components/site/user-menu";
 import {
@@ -22,6 +24,7 @@ export async function SiteHeader({
   className?: string;
   tone?: "public" | "studio" | "admin";
 }) {
+  const t = await getTranslations("nav.siteHeader");
   const session = await getCurrentProfile();
   const role = session?.profile.role;
   const showAdmin = canAccessAdminNav(role);
@@ -63,6 +66,7 @@ export async function SiteHeader({
         <div className="flex items-center gap-1.5 sm:gap-2">
           <HeaderSearch className="hidden sm:block" compact />
           {/* Motyw bezpośrednio przy Zaloguj / menu konta — także na mobile */}
+          <LanguageSwitcher className="hidden shrink-0 md:inline-flex" />
           <ThemeToggle className="shrink-0" />
           {session ? (
             <UserMenu
@@ -74,13 +78,13 @@ export async function SiteHeader({
           ) : (
             <>
               <Link href="/sign-in" className={siteNavLinkClass}>
-                Zaloguj
+                {t("zaloguj")}
               </Link>
               <Link
                 href="/sign-up"
                 className="inline-flex min-h-11 items-center rounded-[var(--tape-r-panel)] border border-[var(--brd-green)] bg-[var(--brd-green)] px-3 font-poster text-base font-extrabold uppercase tracking-[0.1em] text-[var(--primary-foreground)] shadow-[0_3px_0_0_var(--brd-green-muted)] transition-[transform,box-shadow] duration-[var(--tape-dur-fast)] active:translate-y-[3px] active:shadow-none sm:px-4"
               >
-                Dołącz
+                {t("dolacz")}
               </Link>
             </>
           )}

@@ -6,9 +6,11 @@ import {
   Source_Serif_4,
 } from "next/font/google";
 import Script from "next/script";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 
 import { ClientProviders } from "@/components/site/client-providers";
-import { siteMetadata } from "@/config/site";
+import { getSiteMetadata } from "@/config/site";
 import { BRD_THEME_BOOT_SCRIPT } from "@/lib/ui/theme";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +55,9 @@ const fontPoster = Big_Shoulders({
   fallback: ["Arial Narrow", "Roboto Condensed", "sans-serif-condensed", "sans-serif"],
 });
 
-export const metadata: Metadata = siteMetadata;
+export async function generateMetadata(): Promise<Metadata> {
+  return getSiteMetadata();
+}
 
 /** W6.2: enable env(safe-area-inset-*) on notched devices. */
 export const viewport = {
@@ -63,14 +67,15 @@ export const viewport = {
   colorScheme: "dark light" as const,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
     <html
-      lang="pl"
+      lang={locale}
       data-theme="dark"
       className={cn(
         "dark font-sans",
@@ -87,7 +92,9 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: BRD_THEME_BOOT_SCRIPT }}
         />
-        <ClientProviders>{children}</ClientProviders>
+        <NextIntlClientProvider>
+          <ClientProviders>{children}</ClientProviders>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
