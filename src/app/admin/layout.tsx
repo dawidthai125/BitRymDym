@@ -12,7 +12,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
 
 export const metadata = {
-  title: "Panel Administracyjny · BitRymDym",
+  title: "Panel Administracyjny",
   description: "Panel Administracyjny BitRymDym",
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useEffectEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   createMixPreviewGraph,
@@ -68,6 +68,8 @@ export function MixPanel({
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [exportArtifactId, setExportArtifactId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  // Mirrors graphRef for render (refs must not be read during render).
+  const [hasGraph, setHasGraph] = useState(false);
   const [proLockedHint, setProLockedHint] = useState(false);
   const [masterProLockedHint, setMasterProLockedHint] = useState(false);
   const [meter, setMeter] = useState<MixMeterReading | null>(null);
@@ -77,18 +79,23 @@ export function MixPanel({
   const takeAudioRef = useRef<HTMLAudioElement | null>(null);
   const graphRef = useRef<MixGraphHandles | null>(null);
 
-  const disposeGraph = useEffectEvent(() => {
+  // Plain function: only refs + stable state setters, so it is safe to call
+  // from event handlers (useEffectEvent may only be called from effects).
+  function disposeGraph() {
     graphRef.current?.dispose();
     graphRef.current = null;
+    setHasGraph(false);
     setPlaying(false);
     setMeter(null);
-  });
+  }
 
   useEffect(() => {
     return () => {
-      disposeGraph();
+      // Unmount: release the audio graph (state setters are no-ops after unmount).
+      graphRef.current?.dispose();
+      graphRef.current = null;
     };
-  }, [disposeGraph]);
+  }, []);
 
   useEffect(() => {
     if (!playing || !masterPro) return;
@@ -235,6 +242,7 @@ export function MixPanel({
         parameters: json.parameters ?? params,
       });
       graphRef.current = graph;
+      setHasGraph(true);
       await graph.play();
       setPlaying(true);
     } catch (e) {
@@ -695,7 +703,7 @@ export function MixPanel({
         <button
           type="button"
           className={touchBtn}
-          disabled={!playing && !graphRef.current}
+          disabled={!playing && !hasGraph}
           onClick={stopPreview}
         >
           Zatrzymaj
