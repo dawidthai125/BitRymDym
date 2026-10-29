@@ -25,22 +25,24 @@ export function StatusPill({
   tone?: "neutral" | "ok" | "warn" | "rec" | "green";
   className?: string;
 }) {
-  const tones = {
-    neutral: "border-[var(--brd-line)] text-[var(--brd-ink-soft)]",
-    ok: "border-[var(--brd-ok)] text-[var(--brd-ok)]",
-    warn: "border-[var(--brd-warn)] text-[var(--brd-warn)]",
-    rec: "border-[var(--brd-rec)] text-[var(--brd-rec)]",
-    green: "border-[var(--brd-green)] text-[var(--brd-green)]",
+  /** Hardware label: recessed plate + status LED. Calm — no glow. */
+  const leds = {
+    neutral: "bg-[var(--brd-mute)]",
+    ok: "bg-[var(--brd-ok)]",
+    warn: "bg-[var(--brd-warn)]",
+    rec: "bg-[var(--brd-rec)]",
+    green: "bg-[var(--brd-green)]",
   } as const;
 
   return (
     <span
       className={cn(
-        "brd-meta inline-flex items-center border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]",
-        tones[tone],
+        "brd-hw-label inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--brd-ink-soft)]",
         className,
       )}
+      data-tone={tone}
     >
+      <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", leds[tone])} />
       {children}
     </span>
   );
@@ -56,7 +58,7 @@ export function SectionLabel({
   return (
     <p
       className={cn(
-        "brd-meta text-[11px] uppercase tracking-[0.18em] text-[var(--brd-mute)]",
+        "text-sm font-semibold text-[var(--brd-ink-soft)]",
         className,
       )}
     >

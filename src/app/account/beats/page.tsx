@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { BrdLink } from "@/components/brand/brd-button";
-import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { PageFrame, StatusPill } from "@/components/brand/chrome";
 import { UserBeatActions } from "@/components/beats/user-beat-actions";
 import { BeatGrantsPanel } from "@/components/grants/beat-grants-panel";
 import { AppShell } from "@/components/site/app-shell";
@@ -12,7 +12,7 @@ import {
 } from "@/lib/auth/permissions";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listOwnUserBeats } from "@/lib/beats/service";
-import { beatStatusLabelPl } from "@/lib/beats/status-labels";
+import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
 import { listOwnerBeatAccessGrantsFor } from "@/lib/grants/beat-access-grants";
 
 export const metadata = {
@@ -62,7 +62,6 @@ export default async function AccountBeatsPage() {
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--brd-line)] pb-6">
             <div className="space-y-2">
-              <SectionLabel>Studio</SectionLabel>
               <h1 className="brd-display text-3xl font-semibold tracking-tight sm:text-4xl">
                 Moje bity
               </h1>
@@ -99,17 +98,23 @@ export default async function AccountBeatsPage() {
                   className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div className="min-w-0 space-y-1">
-                    <p className="font-medium tracking-tight text-[var(--brd-ink)]">
-                      {beat.title}
-                    </p>
-                    <p className="text-sm text-[var(--brd-mute)]">
-                      {beatStatusLabelPl(beat.status)}
-                      {beat.producer ? ` · ${beat.producer}` : ""}
-                      {" · "}
-                      {formatDuration(beat.durationSeconds)}
-                      {" · "}
-                      {beat.bpm} BPM
-                      {beat.activeMasterReady ? " · audio gotowe" : ""}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <p className="font-medium tracking-tight text-[var(--brd-ink)]">
+                        {beat.title}
+                      </p>
+                      <StatusPill tone={beatStatusTone(beat.status)}>
+                        {beatStatusLabelPl(beat.status)}
+                      </StatusPill>
+                    </div>
+                    <p className="flex flex-wrap gap-x-3 text-sm text-[var(--brd-mute)]">
+                      <span className="brd-data text-[var(--brd-ink-soft)]">
+                        {formatDuration(beat.durationSeconds)}
+                      </span>
+                      <span className="brd-data text-[var(--brd-ink-soft)]">
+                        {beat.bpm} BPM
+                      </span>
+                      {beat.producer ? <span>{beat.producer}</span> : null}
+                      {beat.activeMasterReady ? <span>audio gotowe</span> : null}
                     </p>
                     {beat.status === "REJECTED" && beat.rejectionReason ? (
                       <p className="text-sm text-[var(--brd-ink-soft)]">
