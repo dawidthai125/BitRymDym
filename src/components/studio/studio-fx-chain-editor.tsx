@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { Button } from "@/components/ui/button";
+import { StudioGlyph } from "@/components/studio/studio-glyphs";
 import {
   addStudioFxToChain,
   canMoveStudioFx,
@@ -320,7 +321,7 @@ export function StudioFxChainEditor({
                       aria-label={`Przenieś ${meta.labelPl} w górę`}
                       onClick={() => void onReorder(index, "up")}
                     >
-                      ↑
+                      <StudioGlyph name="up" className="size-3.5" />
                     </Button>
                     <Button
                       type="button"
@@ -331,7 +332,7 @@ export function StudioFxChainEditor({
                       aria-label={`Przenieś ${meta.labelPl} w dół`}
                       onClick={() => void onReorder(index, "down")}
                     >
-                      ↓
+                      <StudioGlyph name="down" className="size-3.5" />
                     </Button>
                     <StudioToggleChip
                       active={effect.enabled}

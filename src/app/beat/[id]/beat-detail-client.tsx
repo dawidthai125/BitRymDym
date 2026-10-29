@@ -402,10 +402,8 @@ export function BeatDetailClient({
           }}
         >
           <div className="space-y-1">
-            <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[var(--brd-rec)]">
-              Sesja · Quick Take
-            </p>
-            <h2 className="brd-display text-3xl leading-none">
+            <h2 className="brd-display flex items-center gap-3 text-3xl leading-none">
+              <span aria-hidden="true" className="studio-rec-lamp" />
               Nagraj na tym bicie
             </h2>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">

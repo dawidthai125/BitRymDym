@@ -71,12 +71,13 @@ export function StudioPeakMeter({
         aria-valuemax={100}
         aria-valuenow={peakPct}
         aria-valuetext={a11yValueText}
-        className="h-2 w-full min-w-0 overflow-hidden rounded-sm bg-[color-mix(in_srgb,var(--brd-line)_70%,transparent)]"
+        className="studio-vu h-2.5 w-full min-w-0 overflow-hidden"
         data-testid={`${testIdPrefix}-bar`}
+        data-clipping={snapshot.clipping ? "true" : "false"}
       >
         <div
-          className="h-full bg-[var(--brd-green)] transition-[width] duration-75 ease-out"
-          style={{ width: `${peakPct}%` }}
+          className="studio-vu-fill h-full transition-[clip-path] duration-75 ease-out"
+          style={{ clipPath: `inset(0 ${100 - peakPct}% 0 0)` }}
         />
       </div>
       <p

@@ -120,6 +120,7 @@ import {
   formatStudioTrackCapacityLabel,
   shouldShowStudioTrackUpgradeCta,
 } from "@/lib/studio/studio-track-capacity";
+import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
@@ -1917,10 +1918,10 @@ function StudioEditorInner({
     >
       <li
         data-testid="studio-mix-master"
-        className="sticky left-0 z-[1] flex w-[7.5rem] shrink-0 flex-col rounded-md border-2 border-[var(--brd-green)]/40 bg-[color-mix(in_srgb,var(--brd-bg)_88%,var(--brd-green)_12%)] p-2 shadow-[4px_0_8px_-4px_color-mix(in_srgb,var(--brd-ink)_20%,transparent)]"
+        className="studio-channel studio-channel-master sticky left-0 z-[1] flex w-[7.5rem] shrink-0 flex-col p-2"
       >
-        <p className="truncate text-xs font-semibold text-[var(--brd-ink)]">Master</p>
-        <p className="mb-1 text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
+        <p className="studio-scribble truncate text-xs font-semibold">Master</p>
+        <p className="mb-1 mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
           Out
         </p>
         <StudioMixControl
@@ -1993,8 +1994,8 @@ function StudioEditorInner({
             data-selected={isSelected ? "true" : "false"}
             className={
               isSelected
-                ? "flex w-[7.5rem] shrink-0 flex-col rounded border border-[var(--brd-green)] bg-[var(--brd-bg)] p-2"
-                : "flex w-[7.5rem] shrink-0 flex-col rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-2"
+                ? "studio-channel flex w-[7.5rem] shrink-0 flex-col p-2"
+                : "studio-channel flex w-[7.5rem] shrink-0 flex-col p-2"
             }
           >
             <button
@@ -2011,10 +2012,10 @@ function StudioEditorInner({
                 setSelectedTrackId(isSelected ? null : track.id)
               }
             >
-              <p className="truncate text-xs font-medium text-[var(--brd-ink)]">
+              <p className="studio-scribble truncate text-xs font-medium">
                 {track.name}
               </p>
-              <p className="truncate font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
+              <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
                 {isBeat ? "BEAT" : labelStudioTrackType(track.trackType)}
                 {!audible ? " · M" : ""}
                 {isSelected ? " · meter" : ""}
@@ -2024,7 +2025,7 @@ function StudioEditorInner({
               <StudioTrackMeterLive trackName={track.name} />
             ) : (
               <div
-                className="mb-1 h-8 rounded border border-dashed border-[var(--brd-line)]"
+                className="studio-vu-idle mb-1 h-8"
                 aria-hidden
               />
             )}
@@ -2141,7 +2142,7 @@ function StudioEditorInner({
         data-testid="studio-header"
         className="flex min-h-10 items-center border-b border-[var(--brd-line)] pb-0.5"
       >
-        <h1 className="brd-display truncate text-sm font-semibold tracking-tight sm:text-base">
+        <h1 className="brd-display truncate text-xl leading-none tracking-tight sm:text-2xl">
           {doc.project.title}
         </h1>
       </header>
@@ -2401,11 +2402,7 @@ function StudioEditorInner({
                   data-track-id={track.id}
                   data-track-type={track.trackType}
                   data-selected={isSelected ? "true" : "false"}
-                  className={`flex flex-col justify-center gap-0.5 border-b border-[var(--brd-line)] px-1 py-0.5 ${
-                    isSelected
-                      ? "bg-[color-mix(in_srgb,var(--brd-bg)_85%,var(--brd-green)_15%)]"
-                      : "bg-[var(--brd-bg)]"
-                  }`}
+                  className="studio-track-strip flex flex-col justify-center gap-0.5 border-b border-[var(--brd-line)] px-1 py-0.5"
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
                 >
                   {/*
@@ -2430,7 +2427,7 @@ function StudioEditorInner({
                       <span className="block truncate text-xs font-medium text-[var(--brd-ink)]">
                         {track.name}
                       </span>
-                      <span className="block truncate font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                      <span className="studio-type-label mt-0.5 inline-block max-w-full truncate font-mono text-[9px] uppercase tracking-[0.12em]">
                         {isBeat ? "BEAT" : typeLabel}
                       </span>
                     </button>
@@ -2480,7 +2477,7 @@ function StudioEditorInner({
                         reorder(track.id, "up");
                       }}
                     >
-                      ↑
+                      <StudioGlyph name="up" className="size-3.5" />
                     </Button>
                     <Button
                       type="button"
@@ -2494,7 +2491,7 @@ function StudioEditorInner({
                         reorder(track.id, "down");
                       }}
                     >
-                      ↓
+                      <StudioGlyph name="down" className="size-3.5" />
                     </Button>
                     {!isBeat ? (
                       <Button
@@ -2514,7 +2511,7 @@ function StudioEditorInner({
                           )
                         }
                       >
-                        ⋮
+                        <StudioGlyph name="more" className="size-3.5" />
                       </Button>
                     ) : null}
                     <div
@@ -3263,7 +3260,7 @@ function StudioTransportBar({
 
   return (
     <div
-      className="sticky top-14 z-20 shrink-0 border border-[var(--brd-ink)] bg-[color-mix(in_srgb,var(--brd-ink)_94%,black)] px-1.5 py-1 text-[var(--brd-paper)] sm:top-2 sm:px-2 sm:py-1.5"
+      className="studio-transport sticky top-14 z-20 shrink-0 px-1.5 py-1 sm:top-2 sm:px-2 sm:py-1.5"
       role="region"
       aria-label="Transport Studio"
       data-testid="studio-transport"
@@ -3277,43 +3274,43 @@ function StudioTransportBar({
           <Button
             type="button"
             size="sm"
-            className="min-h-11 min-w-11 border-transparent bg-[var(--brd-paper)] px-2 text-[var(--brd-ink)] hover:bg-[var(--brd-paper)]/90"
+            className="studio-key studio-key-play min-h-11 min-w-11 px-2"
             onClick={play}
             disabled={beatControlsDisabled || phase === "playing"}
             title={noBeat ? "Odtwórz — najpierw wybierz bit" : "Odtwórz"}
             aria-label={noBeat ? "Odtwórz — wymaga bitu" : "Odtwórz"}
           >
-            {busy ? "…" : "▶"}
+            {busy ? "…" : <StudioGlyph name="play" />}
           </Button>
           <Button
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            className="studio-key min-h-11 min-w-11 px-2"
             onClick={pause}
             disabled={noBeat || phase !== "playing"}
             title="Pauza"
             aria-label="Pauza"
           >
-            ❚❚
+            <StudioGlyph name="pause" />
           </Button>
           <Button
             type="button"
             size="sm"
             variant="outline"
-            className="min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+            className="studio-key min-h-11 min-w-11 px-2"
             onClick={stop}
             disabled={noBeat}
             title="Stop"
             aria-label="Stop"
           >
-            ■
+            <StudioGlyph name="stop" />
           </Button>
           <Button
             type="button"
             size="sm"
-            variant="destructive"
-            className="min-h-11 min-w-11 px-2"
+            variant="outline"
+            className="studio-rec-button min-h-11 min-w-11 gap-1.5 px-2.5"
             onClick={onRecord}
             disabled={noBeat}
             title={
@@ -3328,7 +3325,8 @@ function StudioTransportBar({
             }
             data-testid="studio-transport-record"
           >
-            ●
+            <StudioRecLamp />
+            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">REC</span>
           </Button>
           <Button
             type="button"
@@ -3336,8 +3334,8 @@ function StudioTransportBar({
             variant="outline"
             className={
               loopEnabled
-                ? "min-h-11 min-w-11 border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-green)_25%,transparent)] px-2 text-[var(--brd-paper)]"
-                : "min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+                ? "studio-key studio-key-on min-h-11 min-w-11 px-2"
+                : "studio-key min-h-11 min-w-11 px-2"
             }
             disabled={noBeat}
             aria-pressed={loopEnabled}
@@ -3352,7 +3350,7 @@ function StudioTransportBar({
               })
             }
           >
-            ⟳
+            <StudioGlyph name="loop" />
           </Button>
           <Button
             type="button"
@@ -3360,8 +3358,8 @@ function StudioTransportBar({
             variant="outline"
             className={
               metronomeEnabled
-                ? "min-h-11 min-w-11 border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-green)_25%,transparent)] px-2 text-[var(--brd-paper)]"
-                : "min-h-11 min-w-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+                ? "studio-key studio-key-on min-h-11 min-w-11 px-2"
+                : "studio-key min-h-11 min-w-11 px-2"
             }
             disabled={noBeat}
             aria-pressed={metronomeEnabled}
@@ -3374,7 +3372,7 @@ function StudioTransportBar({
             data-testid="studio-transport-metronome"
             onClick={() => setMetronomeEnabled(!metronomeEnabled)}
           >
-            ♩
+            <StudioGlyph name="metronome" />
           </Button>
           <Button
             type="button"
@@ -3382,7 +3380,7 @@ function StudioTransportBar({
             className={
               noBeat
                 ? "min-h-11 border-[var(--brd-green)] bg-[var(--brd-green)] px-2 text-[var(--brd-paper)] hover:opacity-90"
-                : "min-h-11 border-[var(--brd-paper)]/35 bg-transparent px-2 text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10"
+                : "studio-key min-h-11 px-2"
             }
             variant={noBeat ? "default" : "outline"}
             onClick={onChooseBeat}
@@ -3395,27 +3393,27 @@ function StudioTransportBar({
         </div>
 
         <div
-          className="flex min-h-11 flex-wrap items-center gap-2 border-l border-[var(--brd-paper)]/25 pl-2 font-mono text-xs tabular-nums text-[var(--brd-paper)]"
+          className="studio-counter flex min-h-11 flex-wrap items-center gap-2 px-2.5 font-mono text-xs tabular-nums"
           data-testid="studio-transport-meta"
         >
           <span
             aria-live="polite"
-            className="text-sm font-medium tracking-tight"
+            className="studio-counter-time text-sm font-medium tracking-tight"
           >
             {timeLabel}
-            <span className="text-[var(--brd-paper)]/55"> / </span>
+            <span className="studio-counter-dim"> / </span>
             {formatStudioTimeMs(durationMs)}
           </span>
-          <span className="text-[var(--brd-paper)]/70" aria-label="Tempo">
+          <span className="studio-counter-dim" aria-label="Tempo">
             {tempoBpm} BPM
           </span>
-          <span className="text-[var(--brd-paper)]/70" aria-label="Metrum">
+          <span className="studio-counter-dim" aria-label="Metrum">
             {timeSignatureNum}/{timeSignatureDen}
           </span>
         </div>
 
         <div
-          className="ml-auto flex min-w-[9rem] max-w-[14rem] flex-1 items-center gap-2 [&_label]:text-[var(--brd-paper)]/75 [&_span]:text-[var(--brd-paper)]"
+          className="ml-auto flex min-w-[9rem] max-w-[14rem] flex-1 items-center gap-2 [&_label]:!text-[11px] [&_label]:!text-[var(--tape-cream-soft)] [&_label_span_span]:!text-[var(--tape-amber)]"
           data-testid="studio-transport-master"
         >
           <StudioMixControl
@@ -3437,7 +3435,7 @@ function StudioTransportBar({
           className={`min-h-11 max-w-[12rem] truncate text-xs leading-[2.75rem] ${
             saveIsError || conflictActive
               ? "text-[var(--brd-warn)]"
-              : "text-[var(--brd-paper)]/70"
+              : "text-[var(--brd-mute)]"
           }`}
           role={saveIsError || conflictActive ? "alert" : "status"}
           data-testid="studio-transport-save"
@@ -3471,7 +3469,7 @@ function StudioTransportBar({
       </div>
       {noBeat ? (
         <p
-          className="mt-1 text-[11px] text-[var(--brd-paper)]/75"
+          className="mt-1 text-[11px] text-[var(--brd-mute)]"
           role="status"
           data-testid="studio-transport-nobeat-status"
         >

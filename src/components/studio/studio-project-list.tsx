@@ -144,7 +144,7 @@ function ProjectRow({
   const checkboxId = `studio-project-select-${project.id}`;
 
   return (
-    <li className="border-b border-[var(--brd-line)] last:border-b-0">
+    <li className="studio-project-row border-b border-[var(--brd-line)] last:border-b-0">
       <div className="flex gap-1 py-5 sm:gap-2">
         <div className="flex shrink-0 items-start">
           <BrdCheckbox

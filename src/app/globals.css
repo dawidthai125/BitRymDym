@@ -358,3 +358,149 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   background: var(--tape-neon);
   color: var(--tape-soot);
 }
+
+/* ───────────────────────────────────────────────────────────
+   Studio console (tape surface). Readability first: chrome is
+   flat panels + hairlines; the REC lamp is the only glow.
+   ─────────────────────────────────────────────────────────── */
+.studio-transport {
+  background: var(--tape-deck);
+  color: var(--tape-cream);
+  border: 1px solid var(--tape-line-strong);
+  border-top: 2px solid var(--tape-amber-deep);
+  box-shadow: 0 6px 18px -10px #000c;
+}
+.studio-key {
+  border: 1px solid var(--tape-line-strong) !important;
+  background: linear-gradient(var(--tape-panel), var(--tape-deck)) !important;
+  color: var(--tape-cream) !important;
+  border-radius: var(--tape-r-panel) !important;
+  box-shadow: inset 0 1px 0 #ffffff0d, 0 1px 0 #000a;
+}
+.studio-key:hover:not(:disabled) {
+  border-color: var(--tape-mute) !important;
+}
+.studio-key:active:not(:disabled) {
+  box-shadow: inset 0 2px 3px #000c;
+}
+.studio-key-play {
+  background: var(--tape-amber) !important;
+  border-color: var(--tape-amber) !important;
+  color: var(--tape-on-amber) !important;
+}
+.studio-key-on {
+  border-color: var(--tape-amber) !important;
+  color: var(--tape-amber) !important;
+  box-shadow: inset 0 0 0 1px var(--tape-amber);
+}
+.studio-rec-button {
+  border: 1px solid color-mix(in srgb, var(--tape-rec) 55%, var(--tape-line-strong)) !important;
+  background: var(--tape-soot) !important;
+  color: var(--tape-cream) !important;
+  border-radius: var(--tape-r-panel) !important;
+}
+.studio-rec-lamp {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: var(--tape-rec);
+  box-shadow:
+    0 0 0 1px #0008,
+    0 0 6px color-mix(in srgb, var(--tape-rec) 85%, transparent),
+    0 0 14px color-mix(in srgb, var(--tape-rec) 45%, transparent);
+}
+.studio-rec-button:disabled .studio-rec-lamp {
+  background: color-mix(in srgb, var(--tape-rec) 35%, var(--tape-soot));
+  box-shadow: 0 0 0 1px #0008;
+}
+.studio-counter {
+  background: var(--tape-soot);
+  border: 1px solid var(--tape-line);
+  box-shadow: inset 0 2px 4px #000b;
+  color: var(--tape-amber);
+}
+.studio-counter-time {
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+.studio-counter-dim {
+  color: var(--tape-mute);
+}
+
+/* Channel strip header (left of every lane). */
+.studio-track-strip {
+  background: var(--tape-deck);
+}
+.studio-track-strip[data-track-type="BEAT"] .studio-type-label {
+  border-color: var(--tape-amber-deep);
+  color: var(--tape-amber);
+}
+.studio-track-strip[data-selected="true"] {
+  background: color-mix(in srgb, var(--tape-panel) 80%, var(--tape-amber) 8%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tape-amber) 55%, transparent);
+}
+.studio-type-label {
+  padding: 0 0.3rem;
+  border: 1px solid var(--tape-line-strong);
+  color: var(--tape-cream-soft);
+  background: var(--tape-soot);
+  line-height: 1.5;
+}
+
+/* Mixer: rack dock + channel strips with scribble strips. */
+.studio-mixer-dock {
+  background: var(--tape-deck);
+  border: 1px solid var(--tape-line-strong);
+  border-top: 2px solid var(--tape-line-strong);
+}
+.studio-channel {
+  background: linear-gradient(var(--tape-panel), var(--tape-deck));
+  border: 1px solid var(--tape-line);
+  border-radius: var(--tape-r-panel);
+}
+.studio-channel[data-selected="true"] {
+  border-color: var(--tape-amber);
+  box-shadow: inset 0 0 0 1px var(--tape-amber);
+}
+.studio-channel-master {
+  border-color: var(--tape-amber-deep);
+  box-shadow: 4px 0 10px -6px #000c;
+}
+.studio-scribble {
+  background: var(--tape-cream);
+  color: var(--tape-soot);
+  padding: 0.15rem 0.35rem;
+  border-radius: 1px;
+}
+
+/* Segmented VU: fixed scale (green zone → amber → red), fill clipped to peak. */
+.studio-vu {
+  position: relative;
+  background: var(--tape-soot);
+  border: 1px solid var(--tape-line);
+}
+.studio-vu-fill {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--tape-soot) calc(10% - 2px) 10%),
+    linear-gradient(90deg, var(--tape-cream-soft) 0 70%, var(--tape-amber) 70% 90%, var(--tape-rec) 90%);
+}
+.studio-vu-idle {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--tape-deck) calc(10% - 2px) 10%),
+    color-mix(in srgb, var(--tape-line) 70%, transparent);
+  border: 1px solid var(--tape-line);
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-vu-fill {
+    transition: none;
+  }
+}
+.studio-project-row {
+  padding-inline: 0.75rem;
+  transition: background-color var(--tape-dur-fast) var(--tape-ease-out);
+}
+.studio-project-row:hover,
+.studio-project-row:focus-within {
+  background: color-mix(in srgb, var(--tape-panel) 70%, transparent);
+}

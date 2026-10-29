@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { PageFrame } from "@/components/brand/chrome";
 import { StudioProjectList } from "@/components/studio/studio-project-list";
 import { AppShell } from "@/components/site/app-shell";
 import { AuthError, requireUser } from "@/lib/auth/session";
@@ -37,14 +37,12 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
     <AppShell tone="studio">
       <main
         data-brd-surface="control-room"
+        data-surface="tape"
         className="min-h-[calc(100dvh-4.5rem)] pb-16"
       >
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
-            <SectionLabel className="text-[var(--brd-amber)]">
-              Studio · reżyserka
-            </SectionLabel>
-            <h1 className="brd-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">
               Twoje projekty
             </h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
