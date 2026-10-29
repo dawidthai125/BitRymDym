@@ -63,6 +63,10 @@ def test_cli_contract(tmp_path):
     res = json.loads(p.stdout.strip().splitlines()[-1])
     assert p.returncode == 0 and res["ok"] and out.exists()
     assert res["after"]["truePeakDb"] <= -0.3
+    # Worker progress: monotonic "progress <0..1>" lines on stderr, stdout untouched.
+    prog = [float(l.split()[1]) for l in p.stderr.splitlines() if l.startswith("progress ")]
+    assert len(prog) >= 4 and prog == sorted(prog) and 0 <= prog[0] and prog[-1] <= 1
+    assert len(p.stdout.strip().splitlines()) == 1
     p = subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "master.py"), "master", "--in", str(src), "--out", str(out), "--reference", str(src)], capture_output=True, text=True)
     assert p.returncode == 3 and json.loads(p.stdout)["error"] == "reference_not_available"
 
