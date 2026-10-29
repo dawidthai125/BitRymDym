@@ -1,4 +1,5 @@
 import { bitekRulesChat } from "./intents";
+import { bitekMasterRulesChat, classifyMasterRequest } from "./master-intents";
 import { buildBitekSystemPrompt, isBitekWrongLanguage } from "./prompt";
 import { parseBitekModelOutput } from "./proposals";
 import { BitekProviderError, type BitekLlmProvider } from "./providers";
@@ -21,6 +22,14 @@ export async function runBitekChatChain(params: {
 }): Promise<BitekChatResult> {
   const now = params.now ?? Date.now;
   const t0 = now();
+  // Mastering scope rule is deterministic: track-level asks go back to Mix, whole-track asks map to settings.
+  if (params.context.step === "master") {
+    const scope = classifyMasterRequest(params.message);
+    if (scope.kind !== "other") {
+      params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
+      return bitekMasterRulesChat(params.message, params.context, scope);
+    }
+  }
   const attempts: BitekChainLog["attempts"] = [];
   const turns = [
     ...params.history.slice(-BITEK_LIMITS.historyMaxTurns).map((h) => ({
@@ -53,7 +62,8 @@ export async function runBitekChatChain(params: {
       clearTimeout(timer);
     }
   }
-  const result = bitekRulesChat(params.message, params.context);
+  const result =
+    params.context.step === "master" ? bitekMasterRulesChat(params.message, params.context) : bitekRulesChat(params.message, params.context);
   params.log?.({ provider: "rules", ms: now() - t0, attempts });
   return result;
 }

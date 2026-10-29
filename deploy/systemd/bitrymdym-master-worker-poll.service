@@ -1,0 +1,27 @@
+# BitRymDym - Studio Mastering poller (repository artifact only).
+# Runs on the existing E3 Contabo host next to bitrymdym-e3-worker-poll,
+# reusing /opt/bitrymdym-e3-worker checkout. Install steps:
+# docs/runbooks/STUDIO_MASTER_WORKER.md. Do not enable/start from the repo.
+# Kill switch: STUDIO_MASTER_ENABLED (missing/false -> exit 0, no claim).
+# pedalboard (GPL-3) runs only as a separate python process (master.py).
+
+[Unit]
+Description=BitRymDym Studio mastering poller
+After=network-online.target
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+EnvironmentFile=/etc/bitrymdym-e3-worker/master.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+ExecStart=/usr/bin/npm run master:worker:poll
+Restart=on-failure
+RestartSec=30
+MemoryMax=2G
+CPUQuota=150%
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

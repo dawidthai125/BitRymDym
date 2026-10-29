@@ -10,6 +10,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { consumeBitekQuota } from "@/lib/studio/bitek/chat/rate-limit";
 import { parseBitekChatRequest } from "@/lib/studio/bitek/chat/request";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { bitekHistoryFromStore } from "@/lib/studio/bitek/store/messages";
+import { appendBitekMessages, listBitekMessages } from "@/lib/studio/bitek/store/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -38,6 +40,23 @@ export async function POST(request: Request) {
   const quota = await consumeBitekQuota(supabase, createHash("sha256").update(userId).digest("hex"));
   if (!quota.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
+  // Stage 2b — BITEK belongs to the project: history comes from the DB when the store exists.
+  const projectId = typeof (body as { projectId?: unknown }).projectId === "string" ? (body as { projectId: string }).projectId : null;
+  let history = parsed.value.history;
+  let stored = false;
+  if (projectId) {
+    try {
+      const store = await listBitekMessages({ ownerId: userId, projectId });
+      if (store.available) {
+        history = bitekHistoryFromStore(store.messages);
+        stored = true;
+      }
+    } catch (error) {
+      if (error instanceof AuthError) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      throw error;
+    }
+  }
+
   const result = await runBitekChatChain({
     providers: bitekProvidersFromEnv(process.env, undefined, {
       e3Queue: () =>
@@ -46,10 +65,27 @@ export async function POST(request: Request) {
         }),
     }),
     message: parsed.value.message,
-    history: parsed.value.history,
+    history,
     context: parsed.value.context,
     // Metadata only — no message content, no user id.
     log: (entry) => console.info(JSON.stringify({ event: "bitek_chat", quota: quota.source, ...entry })),
   });
-  return NextResponse.json({ success: true, ...result });
+  let persisted = false;
+  if (projectId && stored) {
+    try {
+      const saved = await appendBitekMessages({
+        ownerId: userId,
+        projectId,
+        ownerChecked: true,
+        rows: [
+          { role: "user", kind: "chat", content: parsed.value.message },
+          { role: "assistant", kind: "chat", content: result.reply.slice(0, 2000) || "…", meta: { provider: result.provider, proposals: result.proposals, ...(result.backToMix ? { backToMix: true } : {}) } },
+        ],
+      });
+      persisted = saved.available;
+    } catch {
+      // Reply still goes back; history just is not saved this time.
+    }
+  }
+  return NextResponse.json({ success: true, persisted, ...result });
 }

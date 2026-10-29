@@ -103,6 +103,8 @@ export type MixWorkingApplyServiceResult = {
 
 export type MixWorkingApplyRevisionMeta = {
   kind?: MixRevisionKind;
+  /** Stage 2 — "AI" for BITEK auto-fixes. Default USER. */
+  author?: "USER" | "AI";
   description?: string | null;
   /**
    * @deprecated A3.5-B — parent is resolved inside the CAS RPC transaction
@@ -213,7 +215,7 @@ export async function applyStudioMixWorkingOpsFor(
       revisionPayload = {
         id: randomUUID(),
         kind,
-        author: "USER",
+        author: input.revision?.author === "AI" ? "AI" : "USER",
         status: "accepted",
         description: input.revision?.description ?? null,
         restoredFromRevisionId: restoredFrom,

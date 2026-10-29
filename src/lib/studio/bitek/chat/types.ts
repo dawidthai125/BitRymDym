@@ -18,7 +18,7 @@ export type BitekCardContext = { id: string; status: string; value?: string | nu
 
 export type BitekChatContext = {
   lang: BitekLang;
-  step: "record" | "mix";
+  step: "record" | "mix" | "master";
   tracks: BitekTrackContext[];
   analysis: null | {
     overall: string;
@@ -27,9 +27,21 @@ export type BitekChatContext = {
     masterIntegratedLufs: number | null;
     masterTruePeakDbtp: number | null;
   };
+  /** Stage 3 — Mastering step: BITEK sees the whole song as ONE stereo track. */
+  master?: null | {
+    target: string;
+    settings: Record<BitekMasterSetting, number>;
+    cards: BitekCardContext[];
+  };
 };
 
-export type BitekProposalParam = "gainDb" | "pan" | "muted";
+/** Whole-track macro settings BITEK may propose in Mastering (-3..3 steps). */
+export const BITEK_MASTER_SETTINGS = ["loudness", "bright", "bass", "width", "squash"] as const;
+export type BitekMasterSetting = (typeof BITEK_MASTER_SETTINGS)[number];
+/** Proposals in Mastering use trackRef "master" (the whole song). */
+export const BITEK_MASTER_REF = "master";
+
+export type BitekProposalParam = "gainDb" | "pan" | "muted" | BitekMasterSetting;
 
 export type BitekProposal = {
   trackRef: string;
@@ -45,6 +57,8 @@ export type BitekChatResult = {
   provider: BitekProviderId;
   reply: string;
   proposals: BitekProposal[];
+  /** Mastering: the request was about a single track — offer "Back to Mix". */
+  backToMix?: boolean;
 };
 
 export const BITEK_LIMITS = {

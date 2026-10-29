@@ -1,0 +1,101 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import type { BitekMessageKind, BitekStoredMessage } from "@/lib/studio/bitek/store/messages";
+
+export type BitekProjectStore = {
+  loaded: boolean;
+  /** No welcome row when the project was opened → BITEK greets (first entry into a new project). */
+  fresh: boolean;
+  /** False when the server has no studio_bitek_messages table yet (local fallback). */
+  available: boolean;
+  messages: BitekStoredMessage[];
+  append: (rows: { kind: Exclude<BitekMessageKind, "chat">; content: string; meta?: Record<string, unknown> }[]) => void;
+  /** Chat rows saved by the chat route — mirrored locally without a refetch. */
+  addLocal: (rows: BitekStoredMessage[]) => void;
+};
+
+const fallbackKey = (projectId: string) => `brd:bitek-project:${projectId}`;
+
+/** Stage 2b — BITEK memory per project (DB; localStorage only if the table is missing). */
+export function useBitekProject(projectId: string): BitekProjectStore {
+  const [state, setState] = useState<{ loaded: boolean; fresh: boolean; available: boolean; messages: BitekStoredMessage[] }>({
+    loaded: false,
+    fresh: false,
+    available: false,
+    messages: [],
+  });
+  const availableRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      let available = false;
+      let messages: BitekStoredMessage[] = [];
+      try {
+        const res = await fetch(`/api/studio/projects/${projectId}/bitek`, { cache: "no-store" });
+        const json = (await res.json().catch(() => ({}))) as { available?: boolean; messages?: BitekStoredMessage[] };
+        if (res.ok && json.available) {
+          available = true;
+          messages = Array.isArray(json.messages) ? json.messages : [];
+        }
+      } catch {
+        /* offline → fallback */
+      }
+      if (!available) {
+        try {
+          messages = JSON.parse(localStorage.getItem(fallbackKey(projectId)) ?? "[]") as BitekStoredMessage[];
+        } catch {
+          messages = [];
+        }
+      }
+      if (cancelled) return;
+      availableRef.current = available;
+      setState({ loaded: true, fresh: !messages.some((m) => m.kind === "welcome"), available, messages });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  const addLocal = useCallback(
+    (rows: BitekStoredMessage[]) => {
+      setState((s) => {
+        const messages = [...s.messages, ...rows].slice(-120);
+        if (!availableRef.current) {
+          try {
+            localStorage.setItem(fallbackKey(projectId), JSON.stringify(messages.slice(-60)));
+          } catch {
+            /* ignore */
+          }
+        }
+        return { ...s, messages };
+      });
+    },
+    [projectId],
+  );
+
+  const append = useCallback<BitekProjectStore["append"]>(
+    (rows) => {
+      const local: BitekStoredMessage[] = rows.map((r) => ({
+        id: crypto.randomUUID(),
+        role: "assistant",
+        kind: r.kind,
+        content: r.content,
+        meta: r.meta ?? {},
+        createdAt: new Date().toISOString(),
+      }));
+      addLocal(local);
+      if (!availableRef.current) return;
+      void fetch(`/api/studio/projects/${projectId}/bitek`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: rows }),
+      }).catch(() => undefined);
+    },
+    [projectId, addLocal],
+  );
+
+  return { ...state, append, addLocal };
+}

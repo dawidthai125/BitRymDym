@@ -5,66 +5,88 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
-import { BITEK_LIMITS, type BitekChatResult, type BitekProposal } from "@/lib/studio/bitek/chat/types";
+import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekMasterSetting, type BitekProposal } from "@/lib/studio/bitek/chat/types";
+import type { BitekStoredMessage } from "@/lib/studio/bitek/store/messages";
+import type { BitekProjectStore } from "@/components/studio/use-bitek-project";
 
 export type BitekApplyProposal = (trackId: string, patch: Record<string, number | boolean>) => void;
 
 type Entry =
   | { id: string; role: "user"; content: string }
-  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"]; proposals: BitekProposal[]; applied: number[] };
+  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; note: boolean; backToMix: boolean };
 
-const storageKey = (projectId: string) => `brd:bitek-chat:${projectId}`;
+function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
+  const out: Entry[] = [];
+  for (const m of messages) {
+    if (m.kind === "state") continue;
+    if (m.kind === "chat" && m.role === "user") {
+      out.push({ id: m.id, role: "user", content: m.content });
+      continue;
+    }
+    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[]; backToMix?: boolean };
+    out.push({
+      id: m.id,
+      role: "assistant",
+      content: m.content,
+      provider: m.kind === "chat" ? (meta.provider ?? "rules") : null,
+      proposals: m.kind === "chat" && Array.isArray(meta.proposals) ? meta.proposals : [],
+      note: m.kind !== "chat",
+      backToMix: m.kind === "chat" && meta.backToMix === true,
+    });
+  }
+  return out.slice(-60);
+}
 
-/** BITEK chat: session-scoped history, typing indicator, "Apply" buttons for validated proposals. */
+/** BITEK chat: history per project (DB), typing indicator, "Apply" buttons for validated proposals. */
 export function StudioBitekChat({
   projectId,
   getContext,
   onApplyProposal,
   disabled,
+  store,
+  onBusyChange,
+  onApplyMasterProposal,
+  onBackToMix,
 }: {
+  /** Stage 3 — whole-song setting proposals (trackRef "master"). */
+  onApplyMasterProposal?: (key: BitekMasterSetting, value: number) => void;
+  /** Stage 3 — shown under a Mastering reply that needs Mix work. */
+  onBackToMix?: () => void;
   projectId: string;
   getContext: () => BitekClientContext;
   onApplyProposal: BitekApplyProposal;
   disabled?: boolean;
+  store: BitekProjectStore;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const t = useTranslations("studio.bitek.chat");
   const inputId = useId();
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const entries = entriesFromStore(store.messages);
+  const [applied, setApplied] = useState<Record<string, number[]>>({});
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLOListElement | null>(null);
-  const loaded = useRef(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(storageKey(projectId));
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydrate from sessionStorage
-      if (raw) setEntries(JSON.parse(raw) as Entry[]);
-    } catch {
-      /* ignore */
-    }
-    loaded.current = true;
-  }, [projectId]);
-
-  useEffect(() => {
-    if (!loaded.current) return;
-    try {
-      sessionStorage.setItem(storageKey(projectId), JSON.stringify(entries.slice(-30)));
-    } catch {
-      /* ignore */
-    }
     listRef.current?.lastElementChild?.scrollIntoView({ block: "nearest" });
-  }, [entries, projectId]);
+  }, [entries.length, busy]);
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
 
   const tooLong = text.length > BITEK_LIMITS.messageMaxChars;
 
   async function send() {
     const message = text.trim();
     if (!message || busy || tooLong) return;
-    const userEntry: Entry = { id: crypto.randomUUID(), role: "user", content: message };
-    const history = entries.map((e) => ({ role: e.role, content: e.content }));
-    setEntries((prev) => [...prev, userEntry]);
+    const history = store.messages
+      .filter((m) => m.kind === "chat")
+      .slice(-12)
+      .map((m) => ({ role: m.role, content: m.content }));
+    store.addLocal([{ id: crypto.randomUUID(), role: "user", kind: "chat", content: message, meta: {}, createdAt: new Date().toISOString() }]);
     setText("");
     setBusy(true);
     setError(null);
@@ -73,7 +95,7 @@ export function StudioBitekChat({
       const res = await fetch("/api/studio/bitek/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history, context }),
+        body: JSON.stringify({ message, history, context, projectId }),
       });
       if (res.status === 429) {
         setError(t("limit"));
@@ -84,32 +106,37 @@ export function StudioBitekChat({
         setError(t("blad"));
         return;
       }
-      setEntries((prev) => [
-        ...prev,
+      store.addLocal([
         {
           id: crypto.randomUUID(),
           role: "assistant",
+          kind: "chat",
           content: json.reply as string,
-          provider: json.provider ?? "rules",
-          proposals: Array.isArray(json.proposals) ? json.proposals : [],
-          applied: [],
+          meta: { provider: json.provider ?? "rules", proposals: Array.isArray(json.proposals) ? json.proposals : [], ...(json.backToMix ? { backToMix: true } : {}) },
+          createdAt: new Date().toISOString(),
         },
       ]);
     } catch {
       setError(t("blad"));
     } finally {
       setBusy(false);
+      // Keep focus in the chat after the reply (the input was disabled while waiting).
+      window.setTimeout(() => inputRef.current?.focus(), 0);
     }
   }
 
   function apply(entryId: string, index: number, p: BitekProposal) {
+    if (p.trackRef === BITEK_MASTER_REF) {
+      if (!onApplyMasterProposal || typeof p.value !== "number") return;
+      onApplyMasterProposal(p.param as BitekMasterSetting, p.value);
+      setApplied((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), index] }));
+      return;
+    }
     // Map the model-facing ref back to a real track id on the client, against the *current* doc.
     const trackId = getContext().trackIdByRef[p.trackRef];
     if (!trackId) return;
     onApplyProposal(trackId, { [p.param]: p.value });
-    setEntries((prev) =>
-      prev.map((e) => (e.id === entryId && e.role === "assistant" ? { ...e, applied: [...e.applied, index] } : e)),
-    );
+    setApplied((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), index] }));
   }
 
   return (
@@ -131,12 +158,12 @@ export function StudioBitekChat({
               {e.content}
             </li>
           ) : (
-            <li key={e.id} data-testid="studio-bitek-chat-reply" data-provider={e.provider} className="flex flex-col gap-1 border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">
+            <li key={e.id} data-testid={e.note ? "studio-bitek-chat-note" : "studio-bitek-chat-reply"} data-provider={e.provider ?? "note"} className="flex flex-col gap-1 border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">
               <span>{e.content}</span>
               {e.proposals.length ? (
                 <ul className="flex flex-col gap-1">
                   {e.proposals.map((p, i) => {
-                    const done = e.applied.includes(i);
+                    const done = (applied[e.id] ?? []).includes(i);
                     return (
                       <li key={`${p.trackRef}-${p.param}`} className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs">{p.label || `${p.trackRef} ${p.param} ${String(p.value)}`}</span>
@@ -155,10 +182,17 @@ export function StudioBitekChat({
                       </li>
                     );
                   })}
-                  {e.applied.length ? <li className="text-xs text-[var(--brd-mute)]">{t("zastosowano")}</li> : null}
+                  {applied[e.id]?.length ? <li className="text-xs text-[var(--brd-mute)]">{t("zastosowano")}</li> : null}
                 </ul>
               ) : null}
-              <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">{t(`dostawca.${e.provider}`)}</span>
+              {e.backToMix && onBackToMix ? (
+                <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" data-testid="studio-bitek-back-to-mix" onClick={onBackToMix}>
+                  ← {t("wrocDoMixu")}
+                </Button>
+              ) : null}
+              <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                {e.provider ? t(`dostawca.${e.provider}`) : t("notatka")}
+              </span>
             </li>
           ),
         )}
@@ -186,6 +220,7 @@ export function StudioBitekChat({
         <div className="flex gap-1">
           <input
             id={inputId}
+            ref={inputRef}
             data-testid="studio-bitek-input"
             value={text}
             onChange={(ev) => setText(ev.target.value)}
@@ -204,11 +239,7 @@ export function StudioBitekChat({
           <span id={`${inputId}-count`} className={tooLong ? "text-[var(--brd-rec)]" : undefined}>
             {tooLong ? t("zaDlugie", { max: BITEK_LIMITS.messageMaxChars }) : t("licznik", { n: text.length, max: BITEK_LIMITS.messageMaxChars })}
           </span>
-          {entries.length ? (
-            <button type="button" className="underline underline-offset-2" onClick={() => setEntries([])}>
-              {t("wyczysc")}
-            </button>
-          ) : null}
+          <span>{store.available ? t("zapisProjekt") : t("zapisLokalny")}</span>
         </div>
       </form>
     </div>

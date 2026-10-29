@@ -133,11 +133,14 @@ function eqChain(params: StudioFxEqParams, enabled = true): StudioFxChainV1 {
 }
 
 describe("SFM-3A offline FX contract", () => {
-  it("all five Studio FX types are marked implemented", () => {
+  it("all Studio FX types (incl. stage 2) are marked implemented", () => {
     expect([...STUDIO_OFFLINE_FX_IMPLEMENTED].sort()).toEqual([
       "compressor",
+      "deesser",
       "delay",
       "eq",
+      "gate",
+      "highpass",
       "limiter",
       "reverb",
     ]);

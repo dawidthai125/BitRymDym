@@ -693,3 +693,37 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   padding: 0.4rem 0;
   border-bottom: 1px dashed color-mix(in srgb, var(--brd-line) 80%, transparent);
 }
+
+/* Stage 2b — BITEK mascot dock (subtle; disabled with reduced motion). */
+@media (prefers-reduced-motion: no-preference) {
+  .bitek-pop {
+    animation: bitek-pop 180ms ease-out both;
+  }
+  .bitek-avatar[data-mood="thinking"] img {
+    animation: bitek-bob 1.6s ease-in-out infinite alternate;
+  }
+  .bitek-avatar img {
+    transition: transform 160ms ease-out;
+  }
+  .bitek-avatar:hover img {
+    transform: scale(1.04);
+  }
+}
+@keyframes bitek-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bitek-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-3px);
+  }
+}

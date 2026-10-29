@@ -17,6 +17,7 @@ import {
   mapMixRevisionListHttpResult,
   mapMixRevisionRestoreHttpResult,
   mixRevisionAuthorLabel,
+  mixRevisionRowLabel,
   mixRevisionDiffPathLabel,
   mixRevisionKindLabel,
   mixWorkingRevisionCompareUrl,
@@ -52,6 +53,9 @@ describe("A3 Mix Working revision UI — client", () => {
     expect(mixRevisionKindLabel("tip_apply")).toBe("Zmiana miksu");
     expect(mixRevisionKindLabel("restored")).toBe("Przywrócenie");
     expect(mixRevisionAuthorLabel("USER")).toBe("Ty");
+    expect(mixRevisionAuthorLabel("AI")).toBe("BITEK");
+    expect(mixRevisionRowLabel({ kind: "accepted", author: "AI" })).toBe("Poprawki BITKA");
+    expect(mixRevisionRowLabel({ kind: "tip_apply", author: "USER" })).toBe("Zmiana miksu");
     expect(mixRevisionKindLabel("custom_kind")).toBe("custom_kind");
   });
 

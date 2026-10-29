@@ -8,6 +8,9 @@ import {
   interpretStudioFxChainForPlayback,
   studioFxPlaybackFingerprint,
   type StudioFxCompressorParams,
+  type StudioFxDeesserParams,
+  type StudioFxGateParams,
+  type StudioFxHighpassParams,
   type StudioFxDelayParams,
   type StudioFxEqParams,
   type StudioFxInstance,
@@ -21,6 +24,14 @@ import {
   fillStudioSyntheticImpulse,
   studioImpulseLengthFrames,
 } from "@/lib/studio/studio-fx-impulse";
+import {
+  buildAbsCurve,
+  buildGateGainCurve,
+  deesserDynamicsSpec,
+  gateEnvelopeCutoffHz,
+  linearQToWebAudioDb,
+  LR4_SECTION_Q,
+} from "@/lib/studio/studio-fx-stage2-dsp";
 
 type ParamValue = { value: number };
 
@@ -60,6 +71,10 @@ type BufferLike = {
   getChannelData(channel: number): Float32Array;
 };
 
+type WaveShaperLike = StudioFxConnectable & {
+  curve: Float32Array | null;
+};
+
 export type StudioFxGraphContext = {
   sampleRate: number;
   createGain(): GainLike;
@@ -72,6 +87,8 @@ export type StudioFxGraphContext = {
     length: number,
     sampleRate: number,
   ): BufferLike;
+  /** Stage 2 gate envelope follower. Optional: missing → gate builds as wire. */
+  createWaveShaper?(): WaveShaperLike;
 };
 
 export type StudioFxSlotInspect = {
@@ -423,6 +440,158 @@ function buildWireSlot(ctx: StudioFxGraphContext, slot: StudioFxPlaybackSlot): B
   };
 }
 
+type WetBuild = {
+  nodes: StudioFxConnectable[];
+  names: string[];
+  apply(effect: StudioFxInstance): void;
+};
+
+/** Shared dry/wet shell for stage 2 inserts (same bypass semantics as P6). */
+function buildShellSlot(
+  ctx: StudioFxGraphContext,
+  effect: StudioFxInstance,
+  buildWet: (input: GainLike, wet: GainLike) => WetBuild,
+): BuiltSlot {
+  const input = ctx.createGain();
+  const output = ctx.createGain();
+  const dry = ctx.createGain();
+  const wet = ctx.createGain();
+  input.connect(dry);
+  dry.connect(output);
+  wet.connect(output);
+  const built = buildWet(input, wet);
+  built.apply(effect);
+  setBypassGains(dry, wet, effect.enabled);
+  return {
+    input,
+    output,
+    inspect: {
+      type: effect.type,
+      id: effect.id,
+      mode: effect.enabled ? "process" : "bypass",
+      nodes: ["gain", ...built.names],
+    },
+    apply(slot) {
+      if (slot.status === "skip") {
+        setBypassGains(dry, wet, false);
+        this.inspect.mode = "bypass";
+        return;
+      }
+      built.apply(slot.effect);
+      setBypassGains(dry, wet, slot.status === "ready");
+      this.inspect.mode = slot.status === "ready" ? "process" : "bypass";
+    },
+    dispose() {
+      for (const node of [input, output, dry, wet, ...built.nodes]) {
+        disconnectQuiet(node);
+      }
+    },
+  };
+}
+
+function buildHighpassSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    const hp = ctx.createBiquadFilter();
+    input.connect(hp);
+    hp.connect(wet);
+    return {
+      nodes: [hp],
+      names: ["biquad-highpass"],
+      apply(next) {
+        const p = next.params as StudioFxHighpassParams;
+        hp.type = "highpass";
+        hp.frequency.value = p.frequencyHz;
+        hp.Q.value = linearQToWebAudioDb(p.q);
+      },
+    };
+  });
+}
+
+/** LR4 split: low band dry, high band through fast dynamics, summed. */
+function buildDeesserSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    const lp1 = ctx.createBiquadFilter();
+    const lp2 = ctx.createBiquadFilter();
+    const hp1 = ctx.createBiquadFilter();
+    const hp2 = ctx.createBiquadFilter();
+    const comp = ctx.createDynamicsCompressor();
+    input.connect(lp1);
+    lp1.connect(lp2);
+    lp2.connect(wet);
+    input.connect(hp1);
+    hp1.connect(hp2);
+    hp2.connect(comp);
+    comp.connect(wet);
+    return {
+      nodes: [lp1, lp2, hp1, hp2, comp],
+      names: [
+        "biquad-lowpass",
+        "biquad-lowpass",
+        "biquad-highpass",
+        "biquad-highpass",
+        "dynamics-compressor",
+      ],
+      apply(next) {
+        const p = next.params as StudioFxDeesserParams;
+        const qDb = linearQToWebAudioDb(LR4_SECTION_Q);
+        for (const f of [lp1, lp2]) {
+          f.type = "lowpass";
+          f.frequency.value = p.frequencyHz;
+          f.Q.value = qDb;
+        }
+        for (const f of [hp1, hp2]) {
+          f.type = "highpass";
+          f.frequency.value = p.frequencyHz;
+          f.Q.value = qDb;
+        }
+        const spec = deesserDynamicsSpec(p);
+        comp.threshold.value = spec.thresholdDb;
+        comp.ratio.value = spec.ratio;
+        comp.knee.value = spec.kneeDb;
+        comp.attack.value = spec.attackSec;
+        comp.release.value = spec.releaseSec;
+      },
+    };
+  });
+}
+
+/**
+ * Downward expander from nodes: |x| → LPF envelope → gain curve → modulates
+ * a GainNode whose base gain is 0 (AudioParam input sums with value).
+ */
+function buildGateSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const createShaper = ctx.createWaveShaper?.bind(ctx);
+  if (!createShaper) {
+    return buildWireSlot(ctx, { status: "bypass", effect } as StudioFxPlaybackSlot);
+  }
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    const rect = createShaper();
+    const smooth = ctx.createBiquadFilter();
+    const curve = createShaper();
+    const vca = ctx.createGain();
+    rect.curve = buildAbsCurve();
+    input.connect(rect);
+    rect.connect(smooth);
+    smooth.connect(curve);
+    vca.gain.value = 0;
+    // AudioParam connection (structural context types only Connectable).
+    (curve.connect as (dest: unknown) => unknown)(vca.gain);
+    input.connect(vca);
+    vca.connect(wet);
+    return {
+      nodes: [rect, smooth, curve, vca],
+      names: ["waveshaper-abs", "biquad-lowpass", "waveshaper-gate", "gain-vca"],
+      apply(next) {
+        const p = next.params as StudioFxGateParams;
+        smooth.type = "lowpass";
+        smooth.frequency.value = gateEnvelopeCutoffHz(p);
+        smooth.Q.value = linearQToWebAudioDb(Math.SQRT1_2);
+        curve.curve = buildGateGainCurve(p);
+      },
+    };
+  });
+}
+
 function tryBuildProcessSlot(
   ctx: StudioFxGraphContext,
   effect: StudioFxInstance,
@@ -431,6 +600,9 @@ function tryBuildProcessSlot(
   if (effect.type === "compressor") return buildCompressorSlot(ctx, effect);
   if (effect.type === "limiter") return buildLimiterSlot(ctx, effect);
   if (effect.type === "reverb") return buildReverbSlot(ctx, effect);
+  if (effect.type === "highpass") return buildHighpassSlot(ctx, effect);
+  if (effect.type === "deesser") return buildDeesserSlot(ctx, effect);
+  if (effect.type === "gate") return buildGateSlot(ctx, effect);
   return buildDelaySlot(ctx, effect);
 }
 

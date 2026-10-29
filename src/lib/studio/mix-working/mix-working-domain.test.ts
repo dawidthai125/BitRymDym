@@ -321,7 +321,7 @@ describe("A0 Mix Working — ops validation", () => {
               effects: [
                 {
                   id: FX_ID,
-                  type: "deesser",
+                  type: "exciter",
                   enabled: true,
                   params: {},
                 },

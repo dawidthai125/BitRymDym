@@ -1,0 +1,7 @@
+pedalboard==0.9.26
+pyloudnorm==0.2.0
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12
+# tests only
+pytest>=8

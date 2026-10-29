@@ -2800,5 +2800,45 @@
  {
   "src": "Szkic",
   "en": "Scratch"
+ },
+ {
+  "src": "Filtr górnoprzepustowy",
+  "en": "High-pass filter"
+ },
+ {
+  "src": "Częstotliwość odcięcia",
+  "en": "Cutoff frequency"
+ },
+ {
+  "src": "De-esser",
+  "en": "De-esser"
+ },
+ {
+  "src": "Częstotliwość sybilantów",
+  "en": "Sibilance frequency"
+ },
+ {
+  "src": "Bramka szumów",
+  "en": "Noise gate"
+ },
+ {
+  "src": "Maks. tłumienie",
+  "en": "Max. attenuation"
+ },
+ {
+  "src": "Wygładzanie",
+  "en": "Smoothing"
+ },
+ {
+  "src": "Q",
+  "en": "Q"
+ },
+ {
+  "src": "Poprawki BITKA",
+  "en": "BITEK's fixes"
+ },
+ {
+  "src": "BITEK",
+  "en": "BITEK"
  }
 ]

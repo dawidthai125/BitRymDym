@@ -116,6 +116,15 @@ export function mixRevisionKindLabel(kind: MixRevisionKind | string): string {
   }
 }
 
+/** Stage 2 — kind label that names BITEK's own versions. */
+export function mixRevisionRowLabel(row: {
+  kind: string;
+  author: MixRevisionAuthor | string;
+}): string {
+  if (row.author === "AI") return "Poprawki BITKA";
+  return mixRevisionKindLabel(row.kind);
+}
+
 export function mixRevisionAuthorLabel(
   author: MixRevisionAuthor | string,
 ): string {
@@ -125,7 +134,8 @@ export function mixRevisionAuthorLabel(
     case "AUTOMATION":
       return "Automatyzacja";
     case "AI":
-      return "AI";
+      // Stage 2: auto-fixes are BITEK, the user's producer.
+      return "BITEK";
     default:
       return author;
   }

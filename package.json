@@ -24,6 +24,7 @@
     "far01:backfill:dry-run": "tsx scripts/far01-backfill-dry-run.ts",
     "far01:backfill:prod-dry-run": "tsx scripts/far01-backfill-prod-dry-run.ts",
     "autocheck:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/beat-auto-check-worker-poll.ts",
+    "master:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/studio-master-worker-poll.ts",
     "bitek:llm:worker": "tsx --import ./scripts/register-server-only-stub.mjs scripts/bitek-llm-worker-poll.ts"
   },
   "dependencies": {

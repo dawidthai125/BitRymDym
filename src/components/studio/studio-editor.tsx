@@ -1,5 +1,7 @@
 "use client";
 
+import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { applyMixOpsToDocument, inverseMixAutofixOps } from "@/lib/studio/mix-autofix/plan";
 import { useLibText } from "@/i18n/use-lib-text";
 
 
@@ -147,8 +149,14 @@ import {
   type StudioApiCall,
   type StudioStructuralUndoOp,
 } from "@/lib/studio/studio-undo-structural";
-import { StudioBitekPanel } from "@/components/studio/studio-bitek-panel";
+import { StudioBitekChat } from "@/components/studio/studio-bitek-chat";
+import { StudioBitekDock, type BitekBubble, type BitekMood } from "@/components/studio/studio-bitek-dock";
+import { useBitekProject } from "@/components/studio/use-bitek-project";
+import { bitekRulesGuide, type BitekAction } from "@/lib/studio/bitek/bitek-guide";
+import { parseBitekBubbleState, type BitekBubbleState } from "@/lib/studio/bitek/store/messages";
+import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { StudioMixStep } from "@/components/studio/studio-mix-step";
+import { StudioMasterStep } from "@/components/studio/studio-master-step";
 import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
@@ -193,6 +201,8 @@ export function StudioEditor({
   trackCapacity: StudioTrackCapacityProps;
 }) {
   const [doc, setDoc] = useState(initialDocument);
+  /** Stage 2 — A/B: "before BITEK" mix plane heard instead of the saved one (playback only). */
+  const [mixAbOverride, setMixAbOverride] = useState<StudioProjectDocument | null>(null);
   const beatRef = useMemo(
     () =>
       resolvePrimaryBeatRef({
@@ -204,21 +214,27 @@ export function StudioEditor({
   );
 
   const engineDocument: StudioEngineDocument = useMemo(
-    () => ({
+    () => {
+      const mix = mixAbOverride;
+      const mixTrack = (id: string) => mix?.tracks.find((x) => x.id === id);
+      return {
       timelineLengthMs: doc.project.timelineLengthMs,
-      masterGainDb: doc.project.masterGainDb,
-      masterPan: doc.project.masterPan,
-      masterFxChain: doc.project.masterFxChain,
+      masterGainDb: mix ? mix.project.masterGainDb : doc.project.masterGainDb,
+      masterPan: mix ? mix.project.masterPan : doc.project.masterPan,
+      masterFxChain: mix ? mix.project.masterFxChain : doc.project.masterFxChain,
       // AUD-01 SSOT — schedule path rejects mismatched BEAT_REF via this field.
       projectBeatId: doc.project.beatId,
-      tracks: doc.tracks.map((t) => ({
-        id: t.id,
-        gainDb: t.gainDb,
-        pan: t.pan,
-        muted: t.muted,
-        solo: t.solo,
-        effectsChain: t.effectsChain,
-      })),
+      tracks: doc.tracks.map((t) => {
+        const m = mixTrack(t.id) ?? t;
+        return {
+          id: t.id,
+          gainDb: m.gainDb,
+          pan: m.pan,
+          muted: t.muted,
+          solo: t.solo,
+          effectsChain: m.effectsChain,
+        };
+      }),
       // Drop stale BEAT_REF from the engine graph (defense before planVoices).
       clips: doc.clips
         .filter((c) => {
@@ -242,8 +258,9 @@ export function StudioEditor({
           fadeInMs: c.fadeInMs,
           fadeOutMs: c.fadeOutMs,
         })),
-    }),
-    [doc],
+      };
+    },
+    [doc, mixAbOverride],
   );
 
   return (
@@ -259,6 +276,7 @@ export function StudioEditor({
         doc={doc}
         setDoc={setDoc}
         trackCapacity={trackCapacity}
+        onMixAbOverride={setMixAbOverride}
       />
     </StudioTransportProvider>
   );
@@ -268,10 +286,12 @@ function StudioEditorInner({
   doc,
   setDoc,
   trackCapacity,
+  onMixAbOverride,
 }: {
   doc: StudioProjectDocument;
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
   trackCapacity: StudioTrackCapacityProps;
+  onMixAbOverride: (before: StudioProjectDocument | null) => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
@@ -318,7 +338,7 @@ function StudioEditorInner({
   const [trackMenuId, setTrackMenuId] = useState<string | null>(null);
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
-  const [studioStep, setStudioStep] = useState<"record" | "mix">("record");
+  const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
   const tMix = useTranslations("studio.mixStep");
   const bitekBase = useMemo(() => {
     const beatTrackIds = new Set(doc.tracks.filter((t) => t.trackType === "BEAT").map((t) => t.id));
@@ -424,6 +444,64 @@ function StudioEditorInner({
     selectedClipId: activeSelectedId,
     selectedTrackId: activeSelectedTrackId,
   });
+
+  // Stage 2b — BITEK the raccoon: per-project memory, bubble + chat overlay.
+  const tBitek = useTranslations("studio.bitek");
+  const bitekStore = useBitekProject(doc.project.id);
+  const [bitekChatOpen, setBitekChatOpen] = useState(false);
+  const [bitekChatBusy, setBitekChatBusy] = useState(false);
+  const [mixBubble, setMixBubble] = useState<BitekBubble | null>(null);
+  const mixChatContextRef = useRef<(() => BitekClientContext) | null>(null);
+  const [masterBubble, setMasterBubble] = useState<BitekBubble | null>(null);
+  const masterChatContextRef = useRef<(() => BitekClientContext) | null>(null);
+  const masterApplyRef = useRef<((key: "loudness" | "bright" | "bass" | "width" | "squash", value: number) => void) | null>(null);
+  const [bitekBubbleUi, setBitekBubbleUi] = useState<BitekBubbleState | null>(null);
+  const bitekBubbleState = bitekBubbleUi ?? parseBitekBubbleState(bitekStore.messages);
+  const saveBitekBubbleState = (next: BitekBubbleState) => {
+    setBitekBubbleUi(next);
+    bitekStore.append([{ kind: "state", content: JSON.stringify(next) }]);
+  };
+  const welcomeSavedRef = useRef(false);
+  useEffect(() => {
+    if (!bitekStore.loaded || !bitekStore.fresh || welcomeSavedRef.current) return;
+    welcomeSavedRef.current = true;
+    bitekStore.append([{ kind: "welcome", content: tBitek("dock.powitanie") }]);
+  }, [bitekStore, tBitek]);
+  const onRecordBitekAction = (action: BitekAction) => {
+    if (action === "goMix" && canGoMix) setStudioStep("mix");
+    if (action === "chooseBeat") setBeatPickerOpen(true);
+    if (action === "record") {
+      setInspectorPreferRecord(true);
+      openInspectorOverlay();
+    }
+  };
+  const recordBubble: BitekBubble = (() => {
+    const msgs = bitekRulesGuide({ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } });
+    const first = msgs[0];
+    const mood: BitekMood = recordingLocked ? "thinking" : first?.key === "readyForMix" ? "done" : "happy";
+    return {
+      key: `rec-${first?.id ?? "idle"}`,
+      mood,
+      text: first ? tBitek(`msg.${first.key}`, first.params ?? {}) : tBitek("dock.gotowy"),
+      details: msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})),
+      actions: first?.action
+        ? [{ id: first.action, label: tBitek(`akcja.${first.action}`), primary: true, onClick: () => onRecordBitekAction(first.action as BitekAction) }]
+        : [],
+    };
+  })();
+  const welcomeBubble: BitekBubble | null = bitekStore.fresh
+    ? {
+        key: "welcome",
+        mood: "happy",
+        hero: true,
+        text: tBitek("dock.powitanie"),
+        details: [tBitek("dock.powitanieKrok1"), tBitek("dock.powitanieKrok2"), tBitek("dock.powitanieKrok3")],
+        actions: [{ id: "welcome-ok", label: tBitek("dock.zaczynamy"), primary: true, onClick: () => saveBitekBubbleState({ minimized: false, dismissedKey: "welcome" }) }],
+      }
+    : null;
+  const stepBubble = studioStep === "master" ? masterBubble : studioStep === "mix" ? mixBubble : recordBubble;
+  const bitekBubble =
+    welcomeBubble && bitekBubbleState.dismissedKey !== "welcome" && !bitekBubbleUi?.dismissedKey ? welcomeBubble : stepBubble;
 
   function openInspectorOverlay() {
     setMixerOpen(false);
@@ -651,7 +729,83 @@ function StudioEditorInner({
         if (op.kind === "track_fx" && !committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
         persistFxChainForHistory(op);
         return true;
+      case "mix_ops": {
+        const ops = op.ops.map((o) => ("trackId" in o ? { ...o, trackId: r(o.trackId) } : o));
+        if (ops.some((o) => "trackId" in o && !committedDocRef.current.tracks.some((t) => t.id === o.trackId))) return false;
+        void persistMixWorkingOps(ops, null);
+        return true;
+      }
     }
+  }
+
+  /**
+   * Stage 2 — atomic Mix Working apply (same CAS path as history restore).
+   * `revision` = BITEK "AI" version meta; null for undo/redo replays.
+   */
+  async function persistMixWorkingOps(
+    ops: MixWorkingOp[],
+    revision: { author: "AI"; description: string } | null,
+  ): Promise<StudioPersistResult> {
+    setError(null);
+    return enqueuePersistAsync(async () => {
+      try {
+        const res = await fetch(`/api/studio/projects/${docRef.current.project.id}/mix-working/apply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedDocumentVersion: docRef.current.project.documentVersion,
+            requestId: crypto.randomUUID(),
+            ops,
+            ...(revision ? { revision } : {}),
+          }),
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (!res.ok || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? tr("nieUdaloSieZapisac"),
+            code: json.code,
+          });
+          if (!revision) {
+            if (failure.kind === "conflict") setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+            else if (!failure.retryable) setError(failure.message);
+          }
+          return failure;
+        }
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => {
+              const next = applyMixOpsToDocument(prev, ops);
+              return { ...next, project: { ...next.project, documentVersion } };
+            });
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  /** Stage 2 — BITEK auto-fix: one atomic apply, one undo entry, "AI" version. */
+  async function applyMixAutofix(
+    ops: MixWorkingOp[],
+    description: string,
+  ): Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }> {
+    if (recordingLockedRef.current || ops.length === 0) return { ok: false, conflict: false };
+    await flushPersist();
+    const before = committedDocRef.current;
+    const inverse = inverseMixAutofixOps(before, ops);
+    const result = await persistMixWorkingOps(ops, { author: "AI", description });
+    if (!result.ok) return { ok: false, conflict: result.kind === "conflict" };
+    recordUndo({ undo: { kind: "mix_ops", ops: inverse }, redo: { kind: "mix_ops", ops } });
+    return { ok: true, before };
   }
 
   const studioApiCall: StudioApiCall = async (method, path, body) => {
@@ -2581,7 +2735,6 @@ function StudioEditorInner({
               }
             >
               {i + 1}. {s === "record" ? tMix("krokNagranie") : s === "mix" ? tMix("krokMix") : tMix("krokMastering")}
-              {s === "master" ? <span className="sr-only"> — {tMix("masteringWkrotce")}</span> : null}
             </li>
           ))}
         </ol>
@@ -2790,30 +2943,59 @@ function StudioEditorInner({
         onSaved={() => setRecoverySavedKey((key) => key + 1)}
       />
 
-      {studioStep === "mix" ? (
+      <StudioBitekDock
+        bubble={bitekBubble}
+        mood={bitekChatBusy ? "thinking" : (bitekBubble?.mood ?? "happy")}
+        minimized={bitekBubbleState.minimized}
+        dismissedKey={bitekBubbleState.dismissedKey}
+        onMinimizedChange={(minimized) => saveBitekBubbleState({ ...bitekBubbleState, minimized })}
+        onDismiss={(key) => saveBitekBubbleState({ minimized: false, dismissedKey: key })}
+        chatOpen={bitekChatOpen}
+        onChatOpenChange={setBitekChatOpen}
+        chat={
+          <StudioBitekChat
+            projectId={doc.project.id}
+            getContext={() =>
+              studioStep === "master" && masterChatContextRef.current
+                ? masterChatContextRef.current()
+                : studioStep === "mix" && mixChatContextRef.current
+                  ? mixChatContextRef.current()
+                  : getRecordChatContext()
+            }
+            onApplyProposal={applyBitekProposal}
+            onApplyMasterProposal={(key, value) => masterApplyRef.current?.(key, value)}
+            onBackToMix={studioStep === "master" ? () => setStudioStep("mix") : undefined}
+            disabled={recordingLocked || pending}
+            store={bitekStore}
+            onBusyChange={setBitekChatBusy}
+          />
+        }
+      />
+
+      {studioStep === "master" ? (
+        <StudioMasterStep
+          doc={doc}
+          resolveClipSourceUrl={resolveClipSourceUrl}
+          onBackToMix={() => setStudioStep("mix")}
+          onBitekBubble={setMasterBubble}
+          chatContextRef={masterChatContextRef}
+          applyRef={masterApplyRef}
+        />
+      ) : studioStep === "mix" ? (
         <StudioMixStep
+          onGoMaster={() => setStudioStep("master")}
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
           onBack={() => setStudioStep("record")}
           bitekBase={bitekBase}
-          onApplyProposal={applyBitekProposal}
+          onApplyAutofix={applyMixAutofix}
+          onAbOverride={onMixAbOverride}
+          onBitekBubble={setMixBubble}
+          onBitekNote={(content: string, meta: Record<string, unknown>) => bitekStore.append([{ kind: "fix", content, meta }])}
+          chatContextRef={mixChatContextRef}
         />
       ) : (
         <>
-      <StudioBitekPanel
-        compact
-        state={{ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } }}
-        chat={{ projectId: doc.project.id, getContext: getRecordChatContext, onApplyProposal: applyBitekProposal, disabled: recordingLocked || pending }}
-        onAction={(action) => {
-          if (action === "goMix" && canGoMix) setStudioStep("mix");
-          if (action === "chooseBeat") setBeatPickerOpen(true);
-          if (action === "record") {
-            setInspectorPreferRecord(true);
-            openInspectorOverlay();
-          }
-        }}
-      />
-
       <StudioEditToolbar
         timelineMode={timelineMode}
         recordingLocked={recordingLocked}
@@ -3149,6 +3331,8 @@ function StudioEditorInner({
         {inspectorContent}
       </StudioInspectorOverlay>
 
+      {studioStep !== "master" ? (
+      <>
       <StudioMixerDockChrome
         expanded={Boolean(inspectorDesktopRail && mixerOpen)}
         panelId={mixerPanelId}
@@ -3164,6 +3348,8 @@ function StudioEditorInner({
       >
         {mixerChannels}
       </StudioMixerOverlay>
+      </>
+      ) : null}
 
       <StudioFxSheet
         open={fxPanel !== null}

@@ -1722,7 +1722,7 @@
       "przejdzDoMixuOpis": "Sprawdzimy, jak wokal brzmi na tle bitu.",
       "wrocDoNagrania": "Wróć do nagrywania",
       "tytul": "Mix",
-      "opis": "Analiza działa w Twojej przeglądarce. Nic nie wysyłamy na serwer. Mierzymy ścieżki bez efektów, z ich głośnością i panoramą.",
+      "opis": "Analiza działa w przeglądarce — nic nie wysyłam na serwer.",
       "analizuj": "Analizuj mix",
       "analizujPonownie": "Analizuj ponownie",
       "analizaTrwa": "Analizuję… {pct}%",
@@ -1751,7 +1751,7 @@
       "poprawWkrotce": "Automatyczne poprawki pojawią się wkrótce.",
       "przejdzDoMasteringu": "Przejdź do Masteringu",
       "masteringZablokowany": "Najpierw popraw czerwone punkty.",
-      "masteringWkrotce": "Mastering pod Spotify, YouTube, słuchawki i klub pojawi się wkrótce. Twój mix jest gotowy.",
+      "masteringWkrotce": "Mastering pojawi się wkrótce. Twój mix jest gotowy.",
       "masteringTytul": "Mastering — wkrótce",
       "tabelaTytul": "Głośność ścieżek",
       "tabelaSciezka": "Ścieżka",
@@ -1764,7 +1764,7 @@
       "cards": {
         "loudness": {
           "title": "Głośność",
-          "ok": "Całość ma {lufs} LUFS, najgłośniejszy fragment {st} LUFS. Mastering ustawi docelową głośność.",
+          "ok": "Całość {lufs} LUFS, szczyt 3 s {st} LUFS. Mastering ustawi resztę.",
           "silent": "Nie słychać żadnego dźwięku. Sprawdź, czy ścieżki nie są wyciszone.",
           "quiet": "Całość jest bardzo cicha ({lufs} LUFS). Podnieś głośność ścieżek.",
           "hot": "Całość jest już bardzo głośna ({lufs} LUFS). Zostaw miejsce na mastering."
@@ -1832,6 +1832,63 @@
           "oneSide": "Wszystkie adliby są po jednej stronie. Rozłóż je na lewo i prawo.",
           "na": "Brak dźwięku do sprawdzenia."
         }
+      },
+      "poprawWszystko": "Popraw wszystko",
+      "poprawWszystkoOpis": "BITEK poprawi głośność, balans, EQ, sybilanty, kompresję, szumy, panoramę i doda przestrzeń w tempie bitu.",
+      "poprawAria": "Popraw: {title}",
+      "poprawTrwa": "Poprawiam…",
+      "poprawBrak": "Tego nie poprawię automatycznie.",
+      "autofix": {
+        "podpis": "BITEK",
+        "tytul": "Co zrobiłem w Twoim mixie",
+        "nic": "Posłuchałem i tu nie mam nic do zmiany. Jest dobrze.",
+        "blad": "Nie udało mi się zapisać poprawek. Twój mix jest bez zmian. Spróbuj jeszcze raz.",
+        "konflikt": "Projekt zmienił się w międzyczasie. Odświeżyłem dane, kliknij jeszcze raz.",
+        "toast": "BITEK: poprawiłem Twój mix (zmiany: {count}). Sprawdzam jeszcze raz…",
+        "zapisane": "Zapisałem to jako wersję „BITEK” w historii mixu. Cofniesz to przez Ctrl+Z.",
+        "cofnieto": "BITEK: cofnąłem moje poprawki.",
+        "historia": "BITEK: {summary}",
+        "historiaWszystko": "poprawiłem cały mix",
+        "historiaKarta": "poprawiłem: {title}",
+        "poAnalizie": {
+          "green": "Sprawdziłem jeszcze raz: mix gra. Możesz iść do masteringu.",
+          "yellow": "Sprawdziłem jeszcze raz: jest lepiej. Drobne rzeczy do Twojego ucha: {yellow}.",
+          "red": "Sprawdziłem jeszcze raz: jest lepiej, ale część rzeczy nadal wymaga Twojej decyzji (czerwone: {red})."
+        },
+        "ab": {
+          "label": "Porównaj przed i po",
+          "przed": "Przed",
+          "po": "Po",
+          "opis": "Słuchasz: {version}. Przełączenie nie zmienia zapisanego mixu.",
+          "aria": "Odsłuch przed i po poprawkach BITKA"
+        },
+        "notes": {
+          "chainFull": "Na ścieżce „{track}” jest już 8 efektów, więc nic tam nie dokładałem.",
+          "gainClipTrack": "Ściszyłem „{track}” o {db} dB, bo przesterowało. Teraz ma zapas.",
+          "gainTrimTrack": "Ściszyłem „{track}” o {db} dB, żeby nie dobijała do zera.",
+          "gainMasterDown": "Ściszyłem całość o {db} dB, żeby zostawić zapas na mastering.",
+          "gainMasterUp": "Podgłośniłem całość o {db} dB, bo była za cicha do pracy.",
+          "balanceVocalUp": "Podgłośniłem Twój wokal o {up} dB i ściszyłem bit o {down} dB, żeby wokal siedział na wierzchu.",
+          "balanceVocalDown": "Ściszyłem wokal o {down} dB i dałem bitowi {up} dB, żeby bit nie brzmiał jak tło.",
+          "balanceSideDown": "Ściszyłem „{track}” o {db} dB. Ma być około {under} dB pod głównym wokalem, żeby nie zasłaniało słów.",
+          "balanceSideUp": "Podgłośniłem „{track}” o {db} dB. Ma być słychać, ale około {under} dB pod głównym wokalem.",
+          "compLead": "Dodałem kompresor na „{track}” ({ratio}:1). Wokal trzyma równy poziom, słowa nie uciekają.",
+          "compSide": "Dodałem delikatny kompresor na „{track}” ({ratio}:1), żeby równo siedziało w tle.",
+          "eqBeatCut": "Ściszyłem bit „{track}” o {db} dB w środku pasma (ok. 2,5 kHz), żeby Twój wokal lepiej siedział.",
+          "eqVocalHighpass": "Wyciąłem dudnienie poniżej {hz} Hz na „{track}”. Wokal brzmi czyściej, bas ma miejsce.",
+          "eqVocalPresence": "Na „{track}” zdjąłem trochę buczenia (250 Hz) i dodałem 2 dB czytelności (3,5 kHz).",
+          "deesserSoft": "Dodałem de-esser na „{track}”. Głoski s i sz są łagodniejsze.",
+          "deesserStrong": "Dodałem mocniejszy de-esser na „{track}”. Ostre s i sz już nie kłują.",
+          "denoiseGate": "Dodałem delikatną bramkę na „{track}”. W pauzach szum jest cichszy (maks. {db} dB).",
+          "denoiseRumble": "Wyciąłem też niskie szumy poniżej {hz} Hz na „{track}”.",
+          "panLeadCenter": "Ustawiłem „{track}” na środku. Główny wokal ma być w centrum.",
+          "panLeft": "Przesunąłem „{track}” w lewo ({pct}%), żeby zrobić miejsce głównemu wokalowi.",
+          "panRight": "Przesunąłem „{track}” w prawo ({pct}%), żeby zrobić miejsce głównemu wokalowi.",
+          "spaceLead": "Dodałem krótkie echo ({note} nuty, {ms} ms przy {bpm} BPM) i lekki pogłos na „{track}”. Wokal nie brzmi sucho, a słowa zostają z przodu.",
+          "spaceSide": "Dodałem pogłos ({decay} s) i echo w tempie bitu ({note} nuty, {ms} ms) na „{track}”. Adliby robią przestrzeń za Tobą."
+        },
+        "dymek": "Poprawiłem {count, plural, one {# rzecz} few {# rzeczy} other {# rzeczy}} w Twoim mixie.",
+        "sprawdzam": "Sprawdzam jeszcze raz…"
       }
     },
     "bitek": {
@@ -1843,7 +1900,9 @@
         "goRecord": "Wróć do nagrywania",
         "analyze": "Analizuj mix",
         "chooseBeat": "Wybierz bit",
-        "record": "Nagraj"
+        "record": "Nagraj",
+        "goMaster": "Przejdź do Masteringu",
+        "backToMix": "Wróć do Mixu"
       },
       "msg": {
         "recording": "Nagrywam. Skup się na wokalu, a ja poczekam.",
@@ -1895,7 +1954,191 @@
           "gemini": "odpowiedź: Gemini",
           "e3": "odpowiedź: serwer BitRymDym",
           "rules": "odpowiedź: tryb podstawowy"
+        },
+        "notatka": "Notatka BITKA",
+        "zapisProjekt": "Rozmowa zapisuje się w projekcie.",
+        "zapisLokalny": "Rozmowa zapisuje się tylko na tym urządzeniu.",
+        "wrocDoMixu": "Wróć do Mixu"
+      },
+      "dock": {
+        "czatTytul": "Pogadaj z BITKIEM",
+        "zamknijCzat": "Zamknij czat",
+        "otworzCzat": "Otwórz czat z BITKIEM",
+        "aria": "BITEK — Twój producent",
+        "minimalizuj": "Zwiń dymek",
+        "zamknij": "Zamknij dymek",
+        "ukryjSzczegoly": "Ukryj szczegóły",
+        "szczegoly": "Pokaż szczegóły ({count})",
+        "pogadaj": "Pogadaj",
+        "maCos": "BITEK ma coś dla Ciebie",
+        "powitanie": "Cześć, jestem BITEK — Twój producent. Zrobimy razem ten numer od nagrania do mixu.",
+        "powitanieKrok1": "Najpierw nagrasz wokal na bit — pilnuję poziomów i podpowiadam.",
+        "powitanieKrok2": "Potem sprawdzę mix i powiem, co poprawić. Mogę też poprawić to sam.",
+        "powitanieKrok3": "W każdej chwili kliknij mnie i zapytaj o cokolwiek.",
+        "zaczynamy": "Zaczynamy",
+        "gotowy": "Jestem tu. Kliknij mnie, jak będziesz czegoś potrzebować."
+      }
+    },
+    "masterStep": {
+      "tytul": "Mastering",
+      "wrocDoMixu": "Wróć do Mixu",
+      "wrocUwaga": "Po zmianach w Mixie mastering trzeba zrobić od nowa.",
+      "renderuje": "Składam Twój mix w jedną ścieżkę… {pct}%",
+      "renderBlad": "Nie udało się złożyć mixu. Wróć do Mixu i spróbuj jeszcze raz.",
+      "calyNumer": "Od teraz słyszę cały numer jako jedną ścieżkę stereo.",
+      "celTytul": "Gdzie ma grać Twój numer?",
+      "cele": {
+        "streaming": {
+          "nazwa": "Streaming",
+          "opis": "Spotify, Apple Music, Tidal"
+        },
+        "youtube": {
+          "nazwa": "YouTube / TikTok",
+          "opis": "Wideo i krótkie formy"
+        },
+        "headphones": {
+          "nazwa": "Słuchawki",
+          "opis": "Więcej dynamiki, ciszej"
+        },
+        "club": {
+          "nazwa": "Klub",
+          "opis": "Głośno, na nagłośnienie"
         }
+      },
+      "celWartosci": "{lufs} LUFS · {tp} dBTP",
+      "ustawieniaTytul": "Brzmienie całości",
+      "ustawienia": {
+        "loudness": "Głośność",
+        "bright": "Jasność",
+        "bass": "Bas",
+        "width": "Szerokość",
+        "squash": "Ściśnięcie"
+      },
+      "mniej": "Mniej: {name}",
+      "wiecej": "Więcej: {name}",
+      "reset": "Wyzeruj",
+      "abTytul": "Porównaj A/B",
+      "abMix": "Mix",
+      "abMaster": "Master",
+      "abWyrownane": "Wyrównana głośność",
+      "abWyrownaneOpis": "Obie wersje grają równie głośno, żeby było słychać brzmienie, a nie głośność.",
+      "graj": "Odtwórz",
+      "stop": "Stop",
+      "podgladUwaga": "Podgląd w przeglądarce jest przybliżony. Finalny master robi serwer.",
+      "podgladLiczy": "Liczę podgląd…",
+      "kartyTytul": "Analiza mastera",
+      "zrobMaster": "Zrób master",
+      "masterTrwa": "Robię master na serwerze…",
+      "masterKolejka": "Czekam w kolejce…",
+      "masterBlad": "Master się nie udał ({code}). Spróbuj jeszcze raz.",
+      "serwerNiedostepny": "Serwerowy mastering nie jest jeszcze włączony. Podgląd działa, pobieranie pojawi się po włączeniu.",
+      "uploadBlad": "Nie udało się wysłać mixu na serwer.",
+      "finalTytul": "Posłuchaj gotowego numeru",
+      "finalOpis": "To jest master z serwera — dokładnie ten plik pobierzesz.",
+      "zatwierdz": "Zatwierdzam, utwór jest gotowy",
+      "zatwierdzTrwa": "Zatwierdzam…",
+      "zatwierdzone": "Zatwierdzone. Utwór jest gotowy.",
+      "pobierzTytul": "Pobierz",
+      "pobierz": {
+        "mix": "Pobierz Mix",
+        "master": "Pobierz Mastering",
+        "raw": "Pobierz „Goły utwór”",
+        "project": "Pobierz Projekt"
+      },
+      "pobierzOpis": {
+        "mix": "Twój mix bez masteringu.",
+        "master": "Gotowy numer po masteringu.",
+        "raw": "Suma ścieżek bez efektów i bez zmian AI.",
+        "project": "Wszystkie ścieżki w jednym pliku ZIP."
+      },
+      "format": {
+        "MP3_128": "MP3 128",
+        "MP3_192": "MP3 192",
+        "MP3_320": "MP3 320",
+        "WAV_24": "WAV 24-bit",
+        "ZIP": "ZIP"
+      },
+      "formatAria": "{kind} — {format}",
+      "zablokowane": "Od planu {plan}",
+      "tylkoGold": "Tylko w planie Gold",
+      "planInfo": "Twój plan: {plan}",
+      "licznikFree": "W tym tygodniu: {used} z {limit} pobrań",
+      "licznikReset": "Kolejne pobranie od {date}",
+      "limitWyczerpany": "Wykorzystałeś darmowe pobranie w tym tygodniu.",
+      "przygotowuje": "Przygotowuję plik…",
+      "gotowyPlik": "Plik gotowy — pobieranie się zaczyna.",
+      "pobierzBlad": "Nie udało się przygotować pliku.",
+      "gosc": "Zaloguj się, żeby pobierać.",
+      "plany": {
+        "FREE": "Free",
+        "BRONZE": "Bronze",
+        "SILVER": "Silver",
+        "GOLD": "Gold"
+      },
+      "cards": {
+        "loudness": {
+          "title": "Głośność",
+          "ok": "{lufs} LUFS — w celu ({goal}).",
+          "quiet": "{lufs} LUFS — ciszej niż cel {goal}.",
+          "loud": "{lufs} LUFS — głośniej niż cel {goal}.",
+          "silent": "Nie słyszę sygnału."
+        },
+        "truePeak": {
+          "title": "True peak",
+          "ok": "{tp} dBTP — bezpiecznie.",
+          "over": "{tp} dBTP — za wysoko, może trzeszczeć po konwersji."
+        },
+        "dynamics": {
+          "title": "Dynamika",
+          "ok": "PLR {plr} LU, LRA {lra} LU — numer oddycha.",
+          "dense": "PLR {plr} LU — dość gęsto.",
+          "squashed": "PLR {plr} LU — mocno ściśnięte."
+        },
+        "tonal": {
+          "title": "Balans tonalny",
+          "ok": "Blisko referencji hip-hop.",
+          "dark": "Ciemno: {band} {delta} dB vs referencja.",
+          "harsh": "Ostro: {band} +{delta} dB vs referencja.",
+          "thin": "Cienko: {band} {delta} dB vs referencja.",
+          "muddy": "Zamulone: {band} +{delta} dB vs referencja."
+        },
+        "lowEnd": {
+          "title": "Dół",
+          "ok": "Bas i sub w porządku.",
+          "weak": "Mało dołu ({delta} dB).",
+          "boomy": "Za dużo dołu (+{delta} dB)."
+        },
+        "stereo": {
+          "title": "Stereo",
+          "ok": "Korelacja {corr}, szerokość {width}%.",
+          "phase": "Korelacja {corr} — ryzyko w mono.",
+          "wide": "Bardzo szeroko ({width}%).",
+          "mono": "Prawie mono ({width}%)."
+        }
+      },
+      "pasma": {
+        "sub": "sub",
+        "bass": "bas",
+        "lowmid": "dół-środek",
+        "mid": "środek",
+        "high": "góra",
+        "air": "powietrze"
+      },
+      "bitek": {
+        "renderuje": "Składam Twój mix w jedną ścieżkę. Chwila.",
+        "gotowy": "Słyszę cały numer. Wybierz, gdzie ma grać, i porównaj A/B.",
+        "problem": "Słyszę cały numer. Najpierw spójrz na kartę „{card}”.",
+        "masterTrwa": "Robię master na serwerze. Zaraz posłuchasz.",
+        "gotowe": {
+          "streaming": "Gotowe. Tak brzmi Twój numer na Spotify.",
+          "youtube": "Gotowe. Tak zabrzmi Twój numer na YouTube i TikToku.",
+          "headphones": "Gotowe. Tak brzmi Twój numer na słuchawkach.",
+          "club": "Gotowe. Tak zagra Twój numer w klubie."
+        },
+        "zatwierdzone": "Numer jest gotowy. Pobierz to, czego potrzebujesz.",
+        "blad": "Coś poszło nie tak z masterem. Spróbuję jeszcze raz, jak klikniesz.",
+        "niedostepny": "Podgląd mastera działa, ale serwer jeszcze nie jest włączony.",
+        "wrocInfo": "Pojedynczych śladów tu nie ruszę — to robimy w Mixie."
       }
     }
   },
