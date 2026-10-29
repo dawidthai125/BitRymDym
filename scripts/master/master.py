@@ -204,7 +204,7 @@ def master(x: np.ndarray, sr: int, target: str, settings: dict) -> tuple[np.ndar
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["analyze", "master"])
+    ap.add_argument("cmd", choices=["analyze", "master", "zip"])
     ap.add_argument("--in", dest="inp", required=True)
     ap.add_argument("--out")
     ap.add_argument("--target", default="streaming")
@@ -212,6 +212,19 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--reference")
     a = ap.parse_args(argv)
     try:
+        if a.cmd == "zip":
+            # Projekt: zip of all track WAVs in --in (dir) → --out (stored, WAV doesn't compress).
+            import os, zipfile
+            if not a.out:
+                raise ValueError("missing_out")
+            names = sorted(n for n in os.listdir(a.inp) if n.lower().endswith(".wav"))
+            if not names:
+                raise ValueError("no_stems")
+            with zipfile.ZipFile(a.out, "w", zipfile.ZIP_STORED) as z:
+                for n in names:
+                    z.write(os.path.join(a.inp, n), arcname=os.path.basename(n))
+            print(json.dumps({"ok": True, "files": len(names)}))
+            return 0
         x, sr = sf.read(a.inp, always_2d=True, dtype="float32")
         if a.cmd == "analyze":
             print(json.dumps({"ok": True, "analysis": analyze(x, sr)}))

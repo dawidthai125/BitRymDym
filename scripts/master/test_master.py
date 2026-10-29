@@ -1,5 +1,6 @@
 """Synthetic tests: python -m pytest scripts/master -q"""
 import json
+from pathlib import Path
 import os
 import subprocess
 import sys
@@ -64,3 +65,14 @@ def test_cli_contract(tmp_path):
     assert res["after"]["truePeakDb"] <= -0.3
     p = subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "master.py"), "master", "--in", str(src), "--out", str(out), "--reference", str(src)], capture_output=True, text=True)
     assert p.returncode == 3 and json.loads(p.stdout)["error"] == "reference_not_available"
+
+
+def test_cli_zip(tmp_path):
+    import subprocess, sys, zipfile
+    d = tmp_path / "stems"; d.mkdir()
+    for n in ("01-wokal.wav", "02-bit.wav"):
+        sf.write(d / n, np.zeros((4800, 2), dtype=np.float32), 48000)
+    out = tmp_path / "p.zip"
+    r = subprocess.run([sys.executable, str(Path(__file__).with_name("master.py")), "zip", "--in", str(d), "--out", str(out)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout
+    assert sorted(zipfile.ZipFile(out).namelist()) == ["01-wokal.wav", "02-bit.wav"]
