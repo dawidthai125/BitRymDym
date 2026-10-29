@@ -3,7 +3,7 @@
 import { useLibText } from "@/i18n/use-lib-text";
 
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   useEffect,
@@ -149,6 +149,7 @@ import {
 } from "@/lib/studio/studio-undo-structural";
 import { StudioBitekPanel } from "@/components/studio/studio-bitek-panel";
 import { StudioMixStep } from "@/components/studio/studio-mix-step";
+import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
@@ -331,6 +332,19 @@ function StudioEditorInner({
     };
   }, [doc.tracks, doc.clips, doc.project.beatId]);
   const canGoMix = !recordingLocked && doc.clips.some((c) => !doc.tracks.some((t) => t.id === c.trackId && t.trackType === "BEAT"));
+  const studioLocale = useLocale();
+  /** BITEK proposal → same optimistic local update + patchTrack path as the mixer controls (undoable). */
+  function applyBitekProposal(trackId: string, patch: Record<string, number | boolean>) {
+    if (recordingLockedRef.current) return;
+    if (!docRef.current.tracks.some((t) => t.id === trackId)) return;
+    setDoc((prev) => ({
+      ...prev,
+      tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, ...patch } : t)),
+    }));
+    patchTrack(trackId, patch);
+  }
+  const getRecordChatContext = () =>
+    buildBitekClientContext({ doc: docRef.current, lang: studioLocale === "en" ? "en" : "pl", step: "record" });
   /** STU-14 — re-read browser-local recovery copies. */
   const [recoveryRefreshKey, setRecoveryRefreshKey] = useState(0);
   const [recoverySavedKey, setRecoverySavedKey] = useState(0);
@@ -2782,12 +2796,14 @@ function StudioEditorInner({
           resolveClipSourceUrl={resolveClipSourceUrl}
           onBack={() => setStudioStep("record")}
           bitekBase={bitekBase}
+          onApplyProposal={applyBitekProposal}
         />
       ) : (
         <>
       <StudioBitekPanel
         compact
         state={{ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } }}
+        chat={{ projectId: doc.project.id, getContext: getRecordChatContext, onApplyProposal: applyBitekProposal, disabled: recordingLocked || pending }}
         onAction={(action) => {
           if (action === "goMix" && canGoMix) setStudioStep("mix");
           if (action === "chooseBeat") setBeatPickerOpen(true);

@@ -1,9 +1,11 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { BitekApplyProposal } from "@/components/studio/studio-bitek-chat";
 import { StudioBitekPanel } from "@/components/studio/studio-bitek-panel";
+import { buildBitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { Button } from "@/components/ui/button";
 import type { BitekAction, BitekAnalysisState } from "@/lib/studio/bitek/bitek-guide";
 import {
@@ -46,12 +48,15 @@ export function StudioMixStep({
   resolveClipSourceUrl,
   onBack,
   bitekBase,
+  onApplyProposal,
 }: {
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   onBack: () => void;
   bitekBase: { hasBeat: boolean; vocalTrackCount: number; vocalClipCount: number };
+  onApplyProposal: BitekApplyProposal;
 }) {
+  const locale = useLocale();
   const t = useTranslations("studio.mixStep");
   const tRole = useTranslations("studio.trackRole");
   const [running, setRunning] = useState(false);
@@ -101,6 +106,20 @@ export function StudioMixStep({
     if (action === "analyze") void analyze();
     if (action === "goRecord") onBack();
   };
+
+  const latest = useRef({ doc, result, stale });
+  useEffect(() => {
+    latest.current = { doc, result, stale };
+  });
+  const getChatContext = useCallback(() => {
+    const cur = latest.current;
+    return buildBitekClientContext({
+      doc: cur.doc,
+      lang: locale === "en" ? "en" : "pl",
+      step: "mix",
+      analysis: cur.result ? { verdict: cur.result.verdict, metrics: cur.result.metrics, stale: cur.stale } : null,
+    });
+  }, [locale]);
 
   const verdict = result?.verdict ?? null;
   const canMaster = Boolean(verdict?.canMaster) && !stale && !running;
@@ -253,6 +272,7 @@ export function StudioMixStep({
           <StudioBitekPanel
             state={{ step: "mix", recording: false, ...bitekBase, analysis: analysisState }}
             onAction={onBitekAction}
+            chat={{ projectId: doc.project.id, getContext: getChatContext, onApplyProposal, disabled: running }}
           />
         </div>
       </div>
