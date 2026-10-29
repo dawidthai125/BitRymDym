@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useRouter } from "next/navigation";
@@ -9,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { overrideAutoCheckAction, retryAutoCheckAction } from "@/lib/beats/community-actions";
 
 export function AutoCheckOverrideControls({ beatId, mode }: { beatId: string; mode: "override" | "retry" }) {
+  const tl = useLibText();
   const t = useTranslations("beats.autoCheckOverrideControls");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -50,9 +53,9 @@ export function AutoCheckOverrideControls({ beatId, mode }: { beatId: string; mo
         </>
       ) : null}
       <Button type="button" variant="outline" disabled={pending} onClick={run}>
-        {mode === "override" ? t("uchylAutomatyczneOdrzucenie") : t("ponowAutomatyczneSprawdzenie")}
+        {tl(mode === "override" ? t("uchylAutomatyczneOdrzucenie") : t("ponowAutomatyczneSprawdzenie"))}
       </Button>
-      {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive" role="alert">{tl(error)}</p> : null}
     </div>
   );
 }

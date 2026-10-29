@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useState } from "react";
 
 /** Shared Gain/Pan slider — local drag, commit on pointer up / keyboard commit. */
@@ -32,6 +34,7 @@ export function StudioMixControl({
   /** Denser chrome (Transport / track headers). */
   compact?: boolean;
 }) {
+  const tl = useLibText();
   const [draft, setDraft] = useState<number | null>(null);
   const shown = draft ?? value;
   const vertical = orientation === "vertical";
@@ -47,11 +50,11 @@ export function StudioMixControl({
       }
     >
       <span className={vertical ? "order-2 text-center" : undefined}>
-        {label}
-        {!compact || vertical ? ` (${display})` : null}
+        {tl(label)}
+        {tl(!compact || vertical ? ` (${display})` : null)}
         {compact && !vertical ? (
           <span className="ml-1 font-mono tabular-nums text-[var(--brd-ink)]">
-            {display}
+            {tl(display)}
           </span>
         ) : null}
       </span>
@@ -74,7 +77,7 @@ export function StudioMixControl({
             ? { writingMode: "vertical-lr", direction: "rtl" }
             : undefined
         }
-        aria-label={ariaLabel}
+        aria-label={tl(ariaLabel)}
         onChange={(e) => {
           const next = Number(e.target.value);
           setDraft(next);

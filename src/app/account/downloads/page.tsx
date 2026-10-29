@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -24,6 +25,7 @@ function formatDownloadedAt(iso: string, tag = "pl-PL"): string {
 }
 
 export default async function MyDownloadsPage() {
+  const tl = await getLibText();
   const t = await getTranslations("account.accountDownloadsPage");
   const tag = intlTag(resolveLocale(await getLocale()));
   const env = getSupabasePublicEnv();
@@ -85,17 +87,17 @@ export default async function MyDownloadsPage() {
                     href={`/beat/${item.beatId}`}
                     className="font-medium underline-offset-4 hover:underline"
                   >
-                    {item.title}
+                    {tl(item.title)}
                   </Link>
                   {item.producer ? (
-                    <p className="text-sm text-muted-foreground">{item.producer}</p>
+                    <p className="text-sm text-muted-foreground">{tl(item.producer)}</p>
                   ) : null}
                 </div>
                 <time
                   className="text-xs text-muted-foreground tabular-nums"
                   dateTime={item.lastDownloadedAt}
                 >
-                  {formatDownloadedAt(item.lastDownloadedAt, tag)} {t("utc")}
+                  {tl(formatDownloadedAt(item.lastDownloadedAt, tag))} {t("utc")}
                 </time>
               </li>
             ))}

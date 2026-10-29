@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -136,6 +138,7 @@ export function StudioRecordingPanel({
   lastScratchClipId: string | null;
   onLastScratchClipIdChange: (clipId: string | null) => void;
 }) {
+  const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
   getBaseVersionRef.current = getExpectedDocumentVersion;
@@ -1461,7 +1464,7 @@ export function StudioRecordingPanel({
         {state.phase === "RECORDING" ? (
           <div className="space-y-0.5 text-right">
             <p className="text-xs font-medium text-destructive" role="status">
-              {tr("trybNagrywania")}{" "}{formatStudioTimeMs(Math.round(state.elapsedMs))}
+              {tr("trybNagrywania")}{" "}{tl(formatStudioTimeMs(Math.round(state.elapsedMs)))}
             </p>
             {localSafety ? (
               <p
@@ -1469,13 +1472,13 @@ export function StudioRecordingPanel({
                 data-testid="studio-recording-local-safety"
                 data-state={localSafety}
               >
-                {takeRecoveryWriterStatusPl(localSafety)}
+                {tl(takeRecoveryWriterStatusPl(localSafety))}
               </p>
             ) : null}
           </div>
         ) : (
           <p className="text-xs text-[var(--brd-mute)]">
-            {tr("startPlayhead")}{" "}{formatStudioTimeMs(transport.state.playheadMs)}
+            {tr("startPlayhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
           </p>
         )}
       </div>
@@ -1494,7 +1497,7 @@ export function StudioRecordingPanel({
         >
           {trackChoices.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.name}
+              {tl(t.name)}
             </option>
           ))}
         </select>
@@ -1517,7 +1520,7 @@ export function StudioRecordingPanel({
           >
             {STUDIO_COUNT_IN_BARS.map((bars) => (
               <option key={bars} value={bars}>
-                {bars === 0 ? tr("wylaczone") : tr("takt", { v0: bars, v1: bars === 1 ? "" : "y" })}
+                {tl(bars === 0 ? tr("wylaczone") : tr("takt", { v0: bars, v1: bars === 1 ? "" : "y" }))}
               </option>
             ))}
           </select>
@@ -1572,12 +1575,12 @@ export function StudioRecordingPanel({
         >
           <p className="text-sm text-[var(--brd-ink)]" role="status">
             {tr("nagranieGotoweKliknijZachowaj")}
-            {state.takeDurationSeconds != null
+            {tl(state.takeDurationSeconds != null
               ? ` · ${state.takeDurationSeconds.toFixed(1)}s`
-              : ""}
-            {recordStartMs != null
+              : "")}
+            {tl(recordStartMs != null
               ? tr("start", { v0: formatStudioTimeMs(recordStartMs) })
-              : ""}
+              : "")}
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
@@ -1588,7 +1591,7 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={() => void onPreviewWorkflowTake()}
             >
-              {transport.takePreviewActive ? tr("zatrzymaj") : tr("odtworz")}
+              {tl(transport.takePreviewActive ? tr("zatrzymaj") : tr("odtworz"))}
             </Button>
             <Button
               type="button"
@@ -1597,7 +1600,7 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={() => void onKeepWorkflowTake()}
             >
-              {workflowBusy === "keep" ? tr("zapisywanie") : tr("zachowaj")}
+              {tl(workflowBusy === "keep" ? tr("zapisywanie") : tr("zachowaj"))}
             </Button>
             <Button
               type="button"
@@ -1607,7 +1610,7 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={() => void onDiscardWorkflowTake()}
             >
-              {workflowBusy === "discard" ? tr("usuwanie") : tr("odrzuc")}
+              {tl(workflowBusy === "discard" ? tr("usuwanie") : tr("odrzuc"))}
             </Button>
             <Button
               type="button"
@@ -1699,11 +1702,11 @@ export function StudioRecordingPanel({
             })();
           }}
         >
-          {catalogBusy ? tr("kopiowanie") : tr("kopiujIUmiescNa")}
+          {tl(catalogBusy ? tr("kopiowanie") : tr("kopiujIUmiescNa"))}
         </Button>
         {catalogMessage ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-            {catalogMessage}
+            {tl(catalogMessage)}
           </p>
         ) : null}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1716,7 +1719,7 @@ export function StudioRecordingPanel({
               void addProductTrack("SAMPLE");
             }}
           >
-            {trackCreateBusy === "SAMPLE" ? tr("dodawanie") : tr("dodajSample")}
+            {tl(trackCreateBusy === "SAMPLE" ? tr("dodawanie") : tr("dodajSample"))}
           </Button>
           <Button
             type="button"
@@ -1727,7 +1730,7 @@ export function StudioRecordingPanel({
               void addProductTrack("SCRATCH");
             }}
           >
-            {trackCreateBusy === "SCRATCH" ? tr("dodawanie") : tr("dodajScratch")}
+            {tl(trackCreateBusy === "SCRATCH" ? tr("dodawanie") : tr("dodajScratch"))}
           </Button>
         </div>
         <StudioMarkersPanel
@@ -1832,14 +1835,14 @@ export function StudioRecordingPanel({
                   .filter((d) => d.deviceId === inputDevices.selectedDeviceId)
                   .map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>
-                      {d.label}
+                      {tl(d.label)}
                     </option>
                   ))
               : null}
             {advancedMicOpen
               ? inputDevices.inputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
-                    {d.label}
+                    {tl(d.label)}
                   </option>
                 ))
               : null}
@@ -1851,9 +1854,9 @@ export function StudioRecordingPanel({
             className="text-xs text-[var(--brd-green)] underline-offset-2 hover:underline"
             onClick={() => setAdvancedMicOpen((v) => !v)}
           >
-            {advancedMicOpen
+            {tl(advancedMicOpen
               ? tr("ukryjZaawansowaneUrzadzenia")
-              : tr("zaawansowaneUstawieniaAudio")}
+              : tr("zaawansowaneUstawieniaAudio"))}
           </button>
         ) : null}
         {inputDevices.permission === "UNAVAILABLE" ||
@@ -1864,7 +1867,7 @@ export function StudioRecordingPanel({
         ) : null}
         {inputDevices.softNotice ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-            {inputDevices.softNotice}
+            {tl(inputDevices.softNotice)}
           </p>
         ) : null}
 
@@ -1872,18 +1875,18 @@ export function StudioRecordingPanel({
           <p className="text-xs text-[var(--brd-mute)]">{tr("testMikrofonu")}</p>
           {testerError ? (
             <p className="text-xs text-destructive" role="alert">
-              {testerError}
+              {tl(testerError)}
             </p>
           ) : meterStream ? (
             <>
               <p className="text-xs text-[var(--brd-ink)]" role="status">
-                {mic.level === "silent"
+                {tl(mic.level === "silent"
                   ? tr("brakSygnaluSprawdzMikrofon")
                   : mic.level === "quiet"
                     ? tr("sygnalJestBardzoSlaby")
                     : mic.level === "clip" || mic.level === "hot"
                       ? tr("uwagaSygnalBliskoPrzesterowania")
-                      : tr("mikrofonDziala")}
+                      : tr("mikrofonDziala"))}
               </p>
               <BrdInputMonitor level={mic.level} peak={mic.peak} />
               <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
@@ -1926,7 +1929,7 @@ export function StudioRecordingPanel({
               <option value="">{tr("automatyczneUrzadzenieSystemowe")}</option>
               {outputDevices.outputs.map((d) => (
                 <option key={d.deviceId} value={d.deviceId}>
-                  {d.label}
+                  {tl(d.label)}
                 </option>
               ))}
             </select>
@@ -1938,20 +1941,20 @@ export function StudioRecordingPanel({
         )}
         {outputDevices.softNotice ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-            {outputDevices.softNotice}
+            {tl(outputDevices.softNotice)}
           </p>
         ) : null}
       </div>
 
       {contextError || state.error || workflowError ? (
         <p className="text-sm text-destructive" role="alert">
-          {contextError ?? state.error ?? workflowError}
+          {tl(contextError ?? state.error ?? workflowError)}
         </p>
       ) : null}
 
       {keptMessage && state.phase !== "READY_TAKE" ? (
         <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
-          {keptMessage}
+          {tl(keptMessage)}
         </p>
       ) : null}
 
@@ -1970,7 +1973,7 @@ export function StudioRecordingPanel({
                 void prepareMicrophone();
             }}
           >
-            {primaryLabel}
+            {tl(primaryLabel)}
           </Button>
           <input
             ref={importFileInputRef}
@@ -1999,11 +2002,11 @@ export function StudioRecordingPanel({
             onClick={() => importFileInputRef.current?.click()}
             aria-label={tr("importujGotowyPlikWokalu")}
           >
-            {workflowBusy === "import" ||
+            {tl(workflowBusy === "import" ||
             state.phase === "UPLOADING" ||
             state.phase === "PROCESSING"
               ? tr("importowanie")
-              : tr("importujWokal")}
+              : tr("importujWokal"))}
           </Button>
           {(state.phase === "READY" ||
             state.phase === "RECORDING" ||
@@ -2036,7 +2039,7 @@ export function StudioRecordingPanel({
           onClick={() => void onToggleLibrary()}
           aria-expanded={libraryOpen}
         >
-          {libraryOpen ? tr("mojeTakeI") : tr("mojeTakeI2")}
+          {tl(libraryOpen ? tr("mojeTakeI") : tr("mojeTakeI2"))}
         </Button>
         {libraryOpen ? (
           <div className="space-y-2" aria-label={tr("listaReadyTake")}>
@@ -2045,7 +2048,7 @@ export function StudioRecordingPanel({
             ) : null}
             {libraryError ? (
               <p className="text-sm text-destructive" role="alert">
-                {libraryError}
+                {tl(libraryError)}
               </p>
             ) : null}
             {!libraryLoading && libraryTakes.length === 0 && !libraryError ? (
@@ -2060,7 +2063,7 @@ export function StudioRecordingPanel({
                   className="rounded border border-[var(--brd-line)] p-2"
                 >
                   <p className="text-sm text-[var(--brd-ink)]">
-                    {take.displayTitle}
+                    {tl(take.displayTitle)}
                     {!take.sameBeat ? (
                       <span className="ml-1 text-[11px] text-[var(--brd-mute)]">
                         {tr("innyBit")}
@@ -2068,11 +2071,11 @@ export function StudioRecordingPanel({
                     ) : null}
                   </p>
                   <p className="text-[11px] text-[var(--brd-mute)]">
-                    {take.durationSeconds != null
+                    {tl(take.durationSeconds != null
                       ? `${take.durationSeconds.toFixed(1)}s`
-                      : "—"}
+                      : "—")}
                     {" · "}
-                    {tr("playhead")}{" "}{formatStudioTimeMs(transport.state.playheadMs)}
+                    {tr("playhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
                   </p>
                   <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Button

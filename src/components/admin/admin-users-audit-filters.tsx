@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useRouter } from "next/navigation";
@@ -28,6 +30,7 @@ export function AdminUsersAuditFilters({
   rank: string;
   page: string;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminUsersAuditFilters");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -70,7 +73,7 @@ export function AdminUsersAuditFilters({
           <option value="all">{t("wszystkie")}</option>
           {ADMIN_AUDIT_ACTIONS.map((value) => (
             <option key={value} value={value}>
-              {labelAdminAuditAction(value)}
+              {tl(labelAdminAuditAction(value))}
             </option>
           ))}
         </select>
@@ -92,7 +95,7 @@ export function AdminUsersAuditFilters({
         className="inline-flex min-h-11 items-center bg-[var(--brd-green)] px-4 text-sm text-[var(--brd-paper)]"
         disabled={pending}
       >
-        {pending ? t("szukanie") : t("filtrujHistorie")}
+        {tl(pending ? t("szukanie") : t("filtrujHistorie"))}
       </button>
     </form>
   );

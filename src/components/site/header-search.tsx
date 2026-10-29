@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useRouter } from "next/navigation";
@@ -17,6 +19,7 @@ export function HeaderSearch({
   className?: string;
   compact?: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("nav.headerSearch");
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -41,7 +44,7 @@ export function HeaderSearch({
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={compact ? t("szukajCompact") : t("szukajBitow2")}
+        placeholder={tl(compact ? t("szukajCompact") : t("szukajBitow2"))}
         autoComplete="off"
         className={cn(
           "min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 text-sm text-[var(--brd-ink)] placeholder:text-[var(--brd-mute)] outline-none focus-visible:border-[var(--brd-green)] focus-visible:ring-1 focus-visible:ring-[var(--brd-green-soft)]",

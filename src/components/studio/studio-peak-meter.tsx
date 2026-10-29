@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -33,6 +35,7 @@ export function StudioPeakMeter({
   ariaLabel,
   testIdPrefix,
 }: StudioPeakMeterProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioPeakMeter");
   const peakPct = Math.round(Math.min(1, Math.max(0, snapshot.peak)) * 100);
   const dbLabel = peakToDbFs(snapshot.peak);
@@ -59,22 +62,22 @@ export function StudioPeakMeter({
   return (
     <div className="mt-3 min-w-0 space-y-1.5" data-testid={testIdPrefix}>
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-[var(--brd-mute)]">{title}</p>
+        <p className="text-xs text-[var(--brd-mute)]">{tl(title)}</p>
         <p
           className="truncate text-xs tabular-nums text-[var(--brd-ink)]"
           data-testid={`${testIdPrefix}-peak`}
         >
-          {dbLabel}
+          {tl(dbLabel)}
           <span className="ml-1 text-[var(--brd-mute)]">{t("peak")}</span>
         </p>
       </div>
       <div
         role="meter"
-        aria-label={ariaLabel}
+        aria-label={tl(ariaLabel)}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={peakPct}
-        aria-valuetext={a11yValueText}
+        aria-valuetext={tl(a11yValueText)}
         className="studio-vu h-2.5 w-full min-w-0 overflow-hidden"
         data-testid={`${testIdPrefix}-bar`}
         data-clipping={snapshot.clipping ? "true" : "false"}
@@ -94,7 +97,7 @@ export function StudioPeakMeter({
         data-testid={`${testIdPrefix}-clip`}
         data-clipping={snapshot.clipping ? "true" : "false"}
       >
-        {snapshot.clipping ? t("clipping") : t("bezClippingu")}
+        {tl(snapshot.clipping ? t("clipping") : t("bezClippingu"))}
       </p>
     </div>
   );

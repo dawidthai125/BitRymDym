@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import Link from "next/link";
@@ -28,6 +30,7 @@ export function BeatCatalogRow({
   featured = false,
   className,
 }: BeatCatalogRowProps) {
+  const tl = useLibText();
   const t = useTranslations("common.beatCatalogRow");
   const {
     track,
@@ -98,7 +101,7 @@ export function BeatCatalogRow({
       >
         <BeatArtwork
           variant={beat.artworkVariant}
-          title={beat.title}
+          title={tl(beat.title)}
           size="sm"
           className={cn(
             featured ? "!size-[4.75rem]" : "!size-[4.25rem]",
@@ -120,10 +123,10 @@ export function BeatCatalogRow({
                 : "text-xl leading-none",
             )}
           >
-            {beat.title}
+            {tl(beat.title)}
           </h2>
           <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
-            {beat.producer}
+            {tl(beat.producer)}
           </p>
           <BrdAudioMeta
             bpm={beat.bpm}
@@ -160,7 +163,7 @@ export function BeatCatalogRow({
           <BrdAudioPlayButton
             playing={playing}
             loading={loading}
-            title={beat.title}
+            title={tl(beat.title)}
             onClick={onPlay}
           />
         </div>
@@ -171,7 +174,7 @@ export function BeatCatalogRow({
         <div className="flex items-center gap-3">
           <BeatArtwork
             variant={beat.artworkVariant}
-            title={beat.title}
+            title={tl(beat.title)}
             size="sm"
             className={cn(
               featured ? "!size-[4.25rem]" : "!size-14",
@@ -185,10 +188,10 @@ export function BeatCatalogRow({
               </p>
             ) : null}
             <h2 className="brd-display truncate text-lg font-semibold leading-none">
-              {beat.title}
+              {tl(beat.title)}
             </h2>
             <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
-              {beat.producer}
+              {tl(beat.producer)}
             </p>
             <BrdAudioMeta
               bpm={beat.bpm}
@@ -199,7 +202,7 @@ export function BeatCatalogRow({
           <BrdAudioPlayButton
             playing={playing}
             loading={loading}
-            title={beat.title}
+            title={tl(beat.title)}
             onClick={onPlay}
           />
         </div>

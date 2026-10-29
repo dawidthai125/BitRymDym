@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -21,6 +23,7 @@ export function AdminAudioUploadForm({
   beatId: string;
   activeMasterReady: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminAudioUploadForm");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -146,9 +149,9 @@ export function AdminAudioUploadForm({
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-3">
       <h2 className="text-sm font-semibold tracking-wide">{t("audioMaster")}</h2>
       <p className="text-sm text-muted-foreground">
-        {activeMasterReady
+        {tl(activeMasterReady
           ? t("aktywneAudioMasterJest")
-          : t("brakGotowegoAudioMaster")}
+          : t("brakGotowegoAudioMaster"))}
       </p>
       <input
         name="audio"
@@ -160,21 +163,21 @@ export function AdminAudioUploadForm({
       />
       {progress ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {progress}
+          {tl(progress)}
         </p>
       ) : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
       {success ? (
         <p className="text-sm text-foreground" role="status">
-          {success}
+          {tl(success)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? t("przesylanie") : t("przeslijMaster")}
+        {tl(pending ? t("przesylanie") : t("przeslijMaster"))}
       </Button>
     </form>
   );

@@ -681,7 +681,7 @@
       "powtorzNowyEMail": "Repeat new email",
       "rozpocznijZmianeEMail": "Start email change",
       "usuniecieKontaJestNieodwracalne": "Deleting your account is irreversible. Public works may remain under an anonymous nickname. Private data (recordings, mixes, downloads) will be deleted. The user ID number does not return to the pool.",
-      "wpiszUsunAbyPotwierdzic": "Type USUŃ to confirm",
+      "wpiszUsunAbyPotwierdzic": "Type {word} to confirm",
       "usuwanie": "Deleting…",
       "usunKonto": "Delete account",
       "pokazPowtorzoneHaslo": "Show repeated password",

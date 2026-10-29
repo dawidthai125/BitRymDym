@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -20,6 +21,7 @@ type PageProps = {
 };
 
 export default async function AdminBeatDetailPage({ params }: PageProps) {
+  const tl = await getLibText();
   const t = await getTranslations("admin.adminBeatsPage");
   const { id } = await params;
 
@@ -60,11 +62,11 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
           {t("lista")}
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight text-balance">
-          {beat.title}
+          {tl(beat.title)}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {labelBeatStatus(beat.status)} {t("bitPlatformowy")}
-          {audio.activeMasterReady ? t("audioGotowe") : t("brakAudio")}
+          {tl(labelBeatStatus(beat.status))} {t("bitPlatformowy")}
+          {tl(audio.activeMasterReady ? t("audioGotowe") : t("brakAudio"))}
         </p>
         {beat.status === "PUBLISHED" ? (
           <Link
@@ -93,7 +95,7 @@ export default async function AdminBeatDetailPage({ params }: PageProps) {
         />
         <AdminPlatformOpsExportButton
           beatId={beat.id}
-          title={beat.title}
+          title={tl(beat.title)}
           activeMasterReady={audio.activeMasterReady}
         />
       </section>

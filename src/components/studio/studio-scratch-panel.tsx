@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -45,6 +47,7 @@ export function StudioScratchPanel({
   onCueJump,
   onApprove,
 }: StudioScratchPanelProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioScratchPanel");
   const jogId = useId();
   const [approved, setApproved] = useState<StudioScratchApprovedState>(
@@ -193,8 +196,8 @@ export function StudioScratchPanel({
         onKeyDown={onJogKeyDown}
         onKeyUp={onJogKeyUp}
       >
-        {t("jog")}{" "}{live.rate.toFixed(2)}×
-        {live.jogging ? t("scratch") : ""}
+        {t("jog")}{" "}{tl(live.rate.toFixed(2))}×
+        {tl(live.jogging ? t("scratch") : "")}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Button
@@ -223,7 +226,7 @@ export function StudioScratchPanel({
           aria-pressed={live.reverse}
           onClick={() => applyLive(toggleScratchReverse(live))}
         >
-          {t("reverse")}{" "}{live.reverse ? "wł." : "wył."}
+          {t("reverse")}{" "}{tl(live.reverse ? "wł." : "wył.")}
         </Button>
         <Button
           type="button"

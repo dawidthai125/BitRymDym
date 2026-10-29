@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useLocale, useTranslations } from "next-intl";
 
@@ -27,6 +29,7 @@ export function BeatGrantsPanel({
   beatId: string;
   initialGrants: BeatGrantRow[];
 }) {
+  const tl = useLibText();
   const t = useTranslations("beats.beatGrantsPanel");
   const tag = intlTag(resolveLocale(useLocale()));
   const router = useRouter();
@@ -150,7 +153,7 @@ export function BeatGrantsPanel({
         </Button>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{tl(error)}</p> : null}
 
       {active.length === 0 ? (
         <p className="text-xs text-muted-foreground">
@@ -165,13 +168,13 @@ export function BeatGrantsPanel({
             >
               <div className="space-y-0.5 text-sm">
                 <p className="font-medium">
-                  {g.granteeDisplayName ?? g.granteeUserId.slice(0, 8)}
+                  {tl(g.granteeDisplayName ?? g.granteeUserId.slice(0, 8))}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {t("nagrywanie")}
-                  {g.expiresAt
+                  {tl(g.expiresAt
                     ? t("wygasa", { v0: new Date(g.expiresAt).toLocaleString(tag) })
-                    : t("bezterminowy")}
+                    : t("bezterminowy"))}
                 </p>
               </div>
               <Button

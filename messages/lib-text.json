@@ -1,0 +1,2804 @@
+[
+ {
+  "src": " Powód konfliktu: {0}.",
+  "en": " Conflict reason: {0}.",
+  "tpl": true
+ },
+ {
+  "src": " · ważne do {0}",
+  "en": " · valid until {0}",
+  "tpl": true
+ },
+ {
+  "src": "<p>Powód: {0}</p>",
+  "en": "<p>Reason: {0}</p>",
+  "tpl": true
+ },
+ {
+  "src": "Active grant limit ({0}) reached for this beat.",
+  "en": "Active grant limit ({0}) reached for this beat.",
+  "pl": "Osiągnięto limit aktywnych dostępów ({0}) dla tego bitu.",
+  "tpl": true
+ },
+ {
+  "src": "Błąd zapisu — na Twoim koncie trwa inna sesja nagrania (np. niedokończony zapis w innej karcie). Lokalna kopia została zachowana. Niedokończona rezerwacja bez przesłanego pliku przestaje blokować zapis po {0} min od jej rozpoczęcia — spróbuj ponownie później.",
+  "en": "Save error — another recording session is active on your account (e.g. an unfinished save in another tab). The local copy was kept. An unfinished reservation without an uploaded file stops blocking saves {0} min after it started — try again later.",
+  "tpl": true
+ },
+ {
+  "src": "Błąd zapisu: {0} Lokalna kopia została zachowana — {1}",
+  "en": "Save error: {0} The local copy was kept — {1}",
+  "tpl": true
+ },
+ {
+  "src": "Concurrent render limit reached ({0}).",
+  "en": "Concurrent render limit reached ({0}).",
+  "pl": "Osiągnięto limit równoczesnych renderów ({0}).",
+  "tpl": true
+ },
+ {
+  "src": "Czas trwania musi wynosić co najmniej {0} s.",
+  "en": "Duration must be at least {0} s.",
+  "tpl": true
+ },
+ {
+  "src": "Czas trwania nie może przekraczać {0} s (wykryto {1} s).",
+  "en": "Duration cannot exceed {0} s (detected {1} s).",
+  "tpl": true
+ },
+ {
+  "src": "Daily render limit reached ({0}).",
+  "en": "Daily render limit reached ({0}).",
+  "pl": "Osiągnięto dzienny limit renderów ({0}).",
+  "tpl": true
+ },
+ {
+  "src": "Dostępne w planie {0}.",
+  "en": "Available in the {0} plan.",
+  "tpl": true
+ },
+ {
+  "src": "Dzienny limit pobrań RAW wyczerpany ({0}/dzień, plan GOLD).",
+  "en": "Daily RAW download limit used up ({0}/day, GOLD plan).",
+  "tpl": true
+ },
+ {
+  "src": "Dzienny limit sesji nagrań jest wykorzystany — nagranie nie zostało zapisane. Lokalna kopia została zachowana; możesz spróbować po odnowieniu limitu (kopia jest przechowywana do {0} h od nagrania) albo ją odrzucić.",
+  "en": "The daily recording session limit is used up — the recording was not saved. The local copy was kept; you can retry once the limit renews (the copy is kept for {0} h after recording) or discard it.",
+  "tpl": true
+ },
+ {
+  "src": "Eksport {0} niedostępny w planie {1}.",
+  "en": "{0} export is not available in the {1} plan.",
+  "tpl": true
+ },
+ {
+  "src": "FX ({0}, {1} wył.)",
+  "en": "FX ({0}, {1} off)",
+  "tpl": true
+ },
+ {
+  "src": "Filtr: wokal{0}",
+  "en": "Filter: vocal{0}",
+  "tpl": true
+ },
+ {
+  "src": "Hasło musi mieć co najmniej {0} znaków.",
+  "en": "Password must be at least {0} characters.",
+  "tpl": true
+ },
+ {
+  "src": "Konto usunięte · #{0}",
+  "en": "Account deleted · #{0}",
+  "tpl": true
+ },
+ {
+  "src": "Ksywka może mieć co najwyżej {0} znaków.",
+  "en": "Nickname can be at most {0} characters.",
+  "tpl": true
+ },
+ {
+  "src": "Ksywka musi mieć co najmniej {0} znaki.",
+  "en": "Nickname must be at least {0} characters.",
+  "tpl": true
+ },
+ {
+  "src": "Masz pełny limit aktywnych nagrań ({0}/{1}, plan {2}). Usuń nagranie lub poczekaj na wygaśnięcie.",
+  "en": "Your active recordings limit is full ({0}/{1}, {2} plan). Delete a recording or wait for one to expire.",
+  "tpl": true
+ },
+ {
+  "src": "Nagranie (ok. {0} s) jest zabezpieczone lokalnie, ale nie zostało zapisane na serwerze — wymaga odzyskania.",
+  "en": "The recording (approx. {0} s) is secured locally but was not saved on the server — it needs recovery.",
+  "tpl": true
+ },
+ {
+  "src": "Nagrywanie zostało przerwane. Zabezpieczono lokalnie fragment (ok. {0} s) — wymaga odzyskania.",
+  "en": "Recording was interrupted. A fragment (approx. {0} s) was secured locally — it needs recovery.",
+  "tpl": true
+ },
+ {
+  "src": "Najwyższy score sygnałowy ({0})",
+  "en": "Highest signal score ({0})",
+  "tpl": true
+ },
+ {
+  "src": "Odsłuch {0}",
+  "en": "Preview {0}",
+  "tpl": true
+ },
+ {
+  "src": "Odsłuch: {0}",
+  "en": "Preview: {0}",
+  "tpl": true
+ },
+ {
+  "src": "Osiągnięto limit {0} projektów Studio.",
+  "en": "The limit of {0} Studio projects has been reached.",
+  "tpl": true
+ },
+ {
+  "src": "Plik jest za duży. Maksymalny rozmiar to {0} MB.",
+  "en": "The file is too large. Maximum size is {0} MB.",
+  "tpl": true
+ },
+ {
+  "src": "Powód: {0}",
+  "en": "Reason: {0}",
+  "tpl": true
+ },
+ {
+  "src": "Publikacja niedostępna w statusie {0}.",
+  "en": "Publishing is not available in status {0}.",
+  "tpl": true
+ },
+ {
+  "src": "Użytkownik · #{0}",
+  "en": "User · #{0}",
+  "tpl": true
+ },
+ {
+  "src": "Więcej slotów w planie {0}.",
+  "en": "More slots in the {0} plan.",
+  "tpl": true
+ },
+ {
+  "src": "Wykorzystano dzienny limit nagrań ({0}/{1}, plan {2}).",
+  "en": "Daily recording limit used ({0}/{1}, {2} plan).",
+  "tpl": true
+ },
+ {
+  "src": "{0} Lokalna kopia została usunięta.",
+  "en": "{0} The local copy was deleted.",
+  "tpl": true
+ },
+ {
+  "src": "{0} Lokalną kopię usunie karta, która ją obecnie obsługuje.",
+  "en": "{0} The tab currently handling the local copy will delete it.",
+  "tpl": true
+ },
+ {
+  "src": "{0} Po zalogowaniu limit jest wyższy.",
+  "en": "{0} The limit is higher once you sign in.",
+  "tpl": true
+ },
+ {
+  "src": "{0} Zaloguj się, aby nagrywać dłużej i częściej.",
+  "en": "{0} Sign in to record longer and more often.",
+  "tpl": true
+ },
+ {
+  "src": "{0} bity",
+  "en": "{0} beats",
+  "tpl": true
+ },
+ {
+  "src": "{0} bitów",
+  "en": "{0} beats",
+  "tpl": true
+ },
+ {
+  "src": "{0} — odsłuch, nagrania i podstawowy miks. Wyższe jakości eksportu odblokujesz z Premium.",
+  "en": "{0} — listening, recordings and a basic mix. Unlock higher export quality with Premium.",
+  "tpl": true
+ },
+ {
+  "src": "Ścieżka {0} · {1}",
+  "en": "Track {0} · {1}",
+  "tpl": true
+ },
+ {
+  "src": " Nagranie jest zabezpieczone lokalnie — możesz je odzyskać.",
+  "en": " The recording is secured locally — you can recover it."
+ },
+ {
+  "src": " · odwołanie",
+  "en": " · appeal"
+ },
+ {
+  "src": "#nagranie",
+  "en": "#recording"
+ },
+ {
+  "src": "1 bit",
+  "en": "1 beat"
+ },
+ {
+  "src": "<p>Administrator usunął Twoje konto w BitRymDym.</p>",
+  "en": "<p>An administrator deleted your BitRymDym account.</p>"
+ },
+ {
+  "src": "<p>Dane prywatne zostały usunięte według zasad serwisu. Opublikowane utwory mogą zostać w zanonimizowanej formie.</p>",
+  "en": "<p>Private data was deleted according to the service rules. Published works may remain in anonymised form.</p>"
+ },
+ {
+  "src": "<p>Ta wiadomość niczego nie cofa.</p>",
+  "en": "<p>This message does not undo anything.</p>"
+ },
+ {
+  "src": "<p>To już jest zrobione: nie zalogujesz się na nie ponownie.</p>",
+  "en": "<p>This is already done: you will not be able to sign in to it again.</p>"
+ },
+ {
+  "src": "Aby potwierdzić, wpisz USUŃ.",
+  "en": "To confirm, type DELETE."
+ },
+ {
+  "src": "Administrator usunął Twoje konto w BitRymDym.",
+  "en": "An administrator deleted your BitRymDym account."
+ },
+ {
+  "src": "Adres e-mail został zmieniony po potwierdzeniu obecnej i nowej skrzynki.",
+  "en": "Your e-mail address was changed after confirming both the current and the new inbox."
+ },
+ {
+  "src": "Adres e-mail został zmieniony!",
+  "en": "Your e-mail address has been changed!"
+ },
+ {
+  "src": "Aktualizacja nie powiodła się.",
+  "en": "Update failed."
+ },
+ {
+  "src": "Aktualizacja polityki nagrań",
+  "en": "Recording policy update"
+ },
+ {
+  "src": "Aktualne hasło jest wymagane.",
+  "en": "Current password is required."
+ },
+ {
+  "src": "Aktywne nagrywanie — nagranie jest na bieżąco zabezpieczane lokalnie w tej przeglądarce.",
+  "en": "Recording in progress — the recording is continuously secured locally in this browser."
+ },
+ {
+  "src": "Aktywne nagrywanie — trwa zabezpieczanie nagrania w tej przeglądarce (jeszcze niepotwierdzone).",
+  "en": "Recording in progress — securing the recording in this browser (not yet confirmed)."
+ },
+ {
+  "src": "Analiza BPM nie powiodła się.",
+  "en": "BPM analysis failed."
+ },
+ {
+  "src": "Artefakt nie został znaleziony.",
+  "en": "Artifact not found."
+ },
+ {
+  "src": "Audio niedostępne dla tego bitu.",
+  "en": "Audio is unavailable for this beat."
+ },
+ {
+  "src": "Automatyczne sprawdzenie chwilowo nie działa. Bit czeka w kolejce i nie zostanie opublikowany bez sprawdzenia.",
+  "en": "The automatic check is temporarily down. The beat is queued and won't be published without a check."
+ },
+ {
+  "src": "Automatyczne sprawdzenie zakończone. Bit czeka teraz na moderację.",
+  "en": "Automatic check finished. The beat is now waiting for moderation."
+ },
+ {
+  "src": "Automatyczne wykrywanie BPM dla tego formatu jest niedostępne.",
+  "en": "Automatic BPM detection is unavailable for this format."
+ },
+ {
+  "src": "Automatyczne wykrywanie BPM jest niedostępne dla tego audio. Nie można przejść dalej bez bezpiecznej wartości systemowej.",
+  "en": "Automatic BPM detection is unavailable for this audio. You can't continue without a safe system value."
+ },
+ {
+  "src": "Automatyczne wykrywanie BPM jest niedostępne — nie można zapisać arbitralnego BPM.",
+  "en": "Automatic BPM detection is unavailable — an arbitrary BPM can't be saved."
+ },
+ {
+  "src": "Automatyczne wykrywanie BPM jest niedostępne.",
+  "en": "Automatic BPM detection is unavailable."
+ },
+ {
+  "src": "BPM musi być liczbą całkowitą 1–300.",
+  "en": "BPM must be a whole number 1–300."
+ },
+ {
+  "src": "BPM nie udało się wiarygodnie określić.",
+  "en": "BPM could not be determined reliably."
+ },
+ {
+  "src": "BPM spoza wartości uznanych przez system dla tego pliku.",
+  "en": "BPM is outside the values the system accepts for this file."
+ },
+ {
+  "src": "Bass · częstotliwość",
+  "en": "Bass · frequency"
+ },
+ {
+  "src": "Bass · głośność",
+  "en": "Bass · gain"
+ },
+ {
+  "src": "Bezterminowo",
+  "en": "No expiry"
+ },
+ {
+  "src": "Bit",
+  "en": "Beat"
+ },
+ {
+  "src": "Bit jest już opublikowany.",
+  "en": "The beat is already published."
+ },
+ {
+  "src": "Bit ma nieprawidłowy czas trwania.",
+  "en": "The beat has an invalid duration."
+ },
+ {
+  "src": "Bit nie ma gotowego audio do nagrywania.",
+  "en": "The beat has no ready audio for recording."
+ },
+ {
+  "src": "Bit nie przeszedł automatycznego sprawdzenia dla aktualnego Mastera (w toku, błąd lub odrzucenie).",
+  "en": "The beat did not pass the automatic check for the current Master (in progress, error or rejected)."
+ },
+ {
+  "src": "Bit użytkownika można opublikować tylko ze statusu zatwierdzonego.",
+  "en": "A user beat can only be published from the approved status."
+ },
+ {
+  "src": "Bity użytkownika nie mogą być publikowane z wersji roboczej.",
+  "en": "User beats can't be published from a draft."
+ },
+ {
+  "src": "Brak",
+  "en": "None"
+ },
+ {
+  "src": "Brak Mastera, którego dotyczy wynik kontroli.",
+  "en": "The Master the check result refers to is missing."
+ },
+ {
+  "src": "Brak audio",
+  "en": "No audio"
+ },
+ {
+  "src": "Brak automatycznego odrzucenia do uchylenia.",
+  "en": "There is no automatic rejection to override."
+ },
+ {
+  "src": "Brak dostępu do mikrofonu.",
+  "en": "No microphone access."
+ },
+ {
+  "src": "Brak dostępu do odsłuchu.",
+  "en": "No access to playback."
+ },
+ {
+  "src": "Brak dostępu do pobrania.",
+  "en": "No access to download."
+ },
+ {
+  "src": "Brak dostępu do tego projektu.",
+  "en": "No access to this project."
+ },
+ {
+  "src": "Brak dostępu do tego zadania.",
+  "en": "No access to this job."
+ },
+ {
+  "src": "Brak dostępu do tej wersji.",
+  "en": "No access to this version."
+ },
+ {
+  "src": "Brak dostępu do utworu.",
+  "en": "No access to the track."
+ },
+ {
+  "src": "Brak dostępu.",
+  "en": "No access."
+ },
+ {
+  "src": "Brak jednego gotowego Mastera z hashem. Licencja nie została zapisana.",
+  "en": "There is no single ready Master with a hash. The license was not saved."
+ },
+ {
+  "src": "Brak jednego gotowego Mastera z hashem. Nie wysłano bitu do publikacji.",
+  "en": "There is no single ready Master with a hash. The beat was not submitted for publishing."
+ },
+ {
+  "src": "Brak kredytów odblokowania.",
+  "en": "No unlock credits."
+ },
+ {
+  "src": "Brak połączenia z serwerem.",
+  "en": "No connection to the server."
+ },
+ {
+  "src": "Brak połączenia. Sprawdź sieć i spróbuj ponownie.",
+  "en": "No connection. Check your network and try again."
+ },
+ {
+  "src": "Brak połączenia. Zmiany nie zostały zapisane.",
+  "en": "No connection. Changes were not saved."
+ },
+ {
+  "src": "Brak sygnału",
+  "en": "No signal"
+ },
+ {
+  "src": "Brak uprawnień do eksportu tego projektu.",
+  "en": "You don't have permission to export this project."
+ },
+ {
+  "src": "Brak uprawnień do pobrania tego artefaktu.",
+  "en": "You don't have permission to download this artifact."
+ },
+ {
+  "src": "Brak uprawnień do tej historii miksu.",
+  "en": "You don't have permission to view this mix history."
+ },
+ {
+  "src": "Brak uprawnień do tej operacji.",
+  "en": "You don't have permission for this operation."
+ },
+ {
+  "src": "Brak uprawnień do usunięcia użytkownika.",
+  "en": "You don't have permission to delete the user."
+ },
+ {
+  "src": "Brak uprawnień do zapisu fade.",
+  "en": "You don't have permission to save the fade."
+ },
+ {
+  "src": "Brak uprawnień do zmiany użytkowników.",
+  "en": "You don't have permission to change users."
+ },
+ {
+  "src": "Brak wiarygodnych kandydatów BPM — nie można zapisać arbitralnego BPM.",
+  "en": "No reliable BPM candidates — an arbitrary BPM can't be saved."
+ },
+ {
+  "src": "Brak zmian.",
+  "en": "No changes."
+ },
+ {
+  "src": "Błąd finalizacji nagrania.",
+  "en": "Recording finalisation error."
+ },
+ {
+  "src": "Błąd nagrywania.",
+  "en": "Recording error."
+ },
+ {
+  "src": "Błąd przesyłania nagrania.",
+  "en": "Recording upload error."
+ },
+ {
+  "src": "Błąd sieci. Spróbuj ponownie.",
+  "en": "Network error. Try again."
+ },
+ {
+  "src": "CLAIM_CAP_REACHED: Active READY take limit reached — free a slot, then retry.",
+  "en": "CLAIM_CAP_REACHED: Active READY take limit reached — free a slot, then retry.",
+  "pl": "Osiągnięto limit gotowych nagrań — zwolnij miejsce i spróbuj ponownie."
+ },
+ {
+  "src": "Cicho. Brak bitów dla tych filtrów.",
+  "en": "Quiet. No beats match these filters."
+ },
+ {
+  "src": "Daily download limit reached.",
+  "en": "Daily download limit reached.",
+  "pl": "Osiągnięto dzienny limit pobrań."
+ },
+ {
+  "src": "Dane prywatne zostały usunięte według zasad serwisu. Opublikowane utwory mogą zostać w zanonimizowanej formie.",
+  "en": "Private data was deleted according to the service rules. Published works may remain in anonymised form."
+ },
+ {
+  "src": "Data wygaśnięcia musi być w przyszłości.",
+  "en": "The expiry date must be in the future."
+ },
+ {
+  "src": "Dokument Studio zmienił się. Odśwież projekt i uruchom eksport ponownie.",
+  "en": "The Studio document changed. Refresh the project and start the export again."
+ },
+ {
+  "src": "Dokument miksu zmienił się od czasu rozpoczęcia operacji. Odśwież stan projektu i potwierdź przywrócenie ponownie.",
+  "en": "The mix document changed since the operation started. Refresh the project state and confirm the restore again."
+ },
+ {
+  "src": "Dostęp do mikrofonu jest zablokowany w przeglądarce. Sprawdź ustawienia witryny.",
+  "en": "Microphone access is blocked in the browser. Check the site settings."
+ },
+ {
+  "src": "E-mail i hasło są wymagane.",
+  "en": "E-mail and password are required."
+ },
+ {
+  "src": "Eksport jest chwilowo niedostępny. Spróbuj później.",
+  "en": "Export is temporarily unavailable. Try later."
+ },
+ {
+  "src": "Eksport jest obecnie niedostępny.",
+  "en": "Export is currently unavailable."
+ },
+ {
+  "src": "Eksport nie może pominąć zatwierdzonego reverse albo tempa Scratch. Ten parametr nie jest jeszcze w offline render.",
+  "en": "Export can't skip an approved Scratch reverse or tempo. This parameter is not in offline render yet."
+ },
+ {
+  "src": "Eksport nie powiódł się",
+  "en": "Export failed"
+ },
+ {
+  "src": "Eksport nie powiódł się podczas zapisu pliku. Spróbuj ponownie.",
+  "en": "Export failed while writing the file. Try again."
+ },
+ {
+  "src": "Eksport nie powiódł się. Możesz spróbować ponownie.",
+  "en": "Export failed. You can try again."
+ },
+ {
+  "src": "Eksport nie powiódł się. Spróbuj ponownie.",
+  "en": "Export failed. Try again."
+ },
+ {
+  "src": "Eksport niedostępny (limit lub konflikt). Spróbuj później.",
+  "en": "Export unavailable (limit or conflict). Try later."
+ },
+ {
+  "src": "Eksport przekroczył limit czasu lub pamięci. Skróć sesję albo uprość efekty i spróbuj ponownie.",
+  "en": "Export exceeded the time or memory limit. Shorten the session or simplify effects and try again."
+ },
+ {
+  "src": "Eksport przekroczył limit czasu. Spróbuj ponownie.",
+  "en": "Export timed out. Try again."
+ },
+ {
+  "src": "Eksport trwa zbyt długo. Spróbuj ponownie.",
+  "en": "Export is taking too long. Try again."
+ },
+ {
+  "src": "Eksport w kolejce — pipeline kodu gotowy; EXTERNAL worker jest obecnie STOPPED.",
+  "en": "Export queued — code pipeline ready; the EXTERNAL worker is currently STOPPED."
+ },
+ {
+  "src": "Eksport został anulowany.",
+  "en": "Export was cancelled."
+ },
+ {
+  "src": "Filtr uploadu nie jest jeszcze w pełni skonfigurowany. Bit czeka w kolejce na sprawdzenie.",
+  "en": "The upload filter is not fully configured yet. The beat is queued for checking."
+ },
+ {
+  "src": "Filtr: błąd",
+  "en": "Filter: error"
+ },
+ {
+  "src": "Gotowe",
+  "en": "Ready"
+ },
+ {
+  "src": "Gość",
+  "en": "Guest"
+ },
+ {
+  "src": "Góra · Q",
+  "en": "High · Q"
+ },
+ {
+  "src": "Góra · częstotliwość",
+  "en": "High · frequency"
+ },
+ {
+  "src": "Góra · głośność",
+  "en": "High · gain"
+ },
+ {
+  "src": "Hasła nie są takie same.",
+  "en": "Passwords don't match."
+ },
+ {
+  "src": "Hasło nie spełnia wymagań bezpieczeństwa.",
+  "en": "The password doesn't meet the security requirements."
+ },
+ {
+  "src": "Hasło zostało ustawione. Możesz się zalogować.",
+  "en": "Password set. You can sign in."
+ },
+ {
+  "src": "Hasło zostało zmienione.",
+  "en": "Password changed."
+ },
+ {
+  "src": "Inna sesja nagrywania jest już w toku.",
+  "en": "Another recording session is already in progress."
+ },
+ {
+  "src": "Jeśli konto z tym adresem istnieje, wysłaliśmy link do resetu hasła.",
+  "en": "If an account with this address exists, we sent a password reset link."
+ },
+ {
+  "src": "Klip / plik",
+  "en": "Clip / file"
+ },
+ {
+  "src": "Klip nie został znaleziony.",
+  "en": "Clip not found."
+ },
+ {
+  "src": "Klucz idempotencji użyty dla innego utworu.",
+  "en": "Idempotency key used for a different track."
+ },
+ {
+  "src": "Konto usunięte",
+  "en": "Account deleted"
+ },
+ {
+  "src": "Konto w BitRymDym zostało usunięte",
+  "en": "Your BitRymDym account has been deleted"
+ },
+ {
+  "src": "Konto zostało aktywowane!",
+  "en": "Your account has been activated!"
+ },
+ {
+  "src": "Konto zostało usunięte. Nie udało się wysłać powiadomienia e-mail.",
+  "en": "The account was deleted. The e-mail notification could not be sent."
+ },
+ {
+  "src": "Konto zostało usunięte. Nie udało się zapisać wpisu w historii.",
+  "en": "The account was deleted. The history entry could not be saved."
+ },
+ {
+  "src": "Kopia TAKE jest gotowa, ale nie udało się umieścić klipu w Studio.",
+  "en": "The TAKE copy is ready, but the clip could not be placed in Studio."
+ },
+ {
+  "src": "Kopiowanie sample jest chwilowo niedostępne.",
+  "en": "Copying the sample is temporarily unavailable."
+ },
+ {
+  "src": "Kopiowanie sample nie powiodło się.",
+  "en": "Copying the sample failed."
+ },
+ {
+  "src": "Kopiowanie sample nie powiodło się. Nic nie zostało zapisane jako gotowe nagranie.",
+  "en": "Copying the sample failed. Nothing was saved as a ready recording."
+ },
+ {
+  "src": "Ksywka jest wymagana.",
+  "en": "Nickname is required."
+ },
+ {
+  "src": "Ksywka może zawierać litery, cyfry, spacje, podkreślenia i myślniki.",
+  "en": "Nickname may contain letters, digits, spaces, underscores and hyphens."
+ },
+ {
+  "src": "Legenda",
+  "en": "Legend"
+ },
+ {
+  "src": "Licencja platformy jest po terminie.",
+  "en": "The platform license is overdue."
+ },
+ {
+  "src": "Link do pobrania wygasł. Spróbuj ponownie.",
+  "en": "The download link expired. Try again."
+ },
+ {
+  "src": "Link jest nieprawidłowy lub wygasł. Poproś o nowy.",
+  "en": "The link is invalid or expired. Request a new one."
+ },
+ {
+  "src": "Link jest nieprawidłowy lub wygasł. Wróć do konta i sprawdź aktualny stan zmiany adresu.",
+  "en": "The link is invalid or expired. Go back to your account and check the current state of the address change."
+ },
+ {
+  "src": "Link potwierdzający jest nieprawidłowy lub wygasł. Poproś o nową wiadomość z potwierdzeniem.",
+  "en": "The confirmation link is invalid or expired. Request a new confirmation message."
+ },
+ {
+  "src": "Link wygasł. Poproś o nowy.",
+  "en": "The link expired. Request a new one."
+ },
+ {
+  "src": "Logowanie jest chwilowo niedostępne.",
+  "en": "Sign-in is temporarily unavailable."
+ },
+ {
+  "src": "Lokalna kopia nagrania już nie istnieje.",
+  "en": "The local copy of the recording no longer exists."
+ },
+ {
+  "src": "Lokalna kopia nagrania wygasła i została usunięta.",
+  "en": "The local copy of the recording expired and was deleted."
+ },
+ {
+  "src": "Lokalna kopia nagrania.",
+  "en": "Local copy of the recording."
+ },
+ {
+  "src": "Lokalne zabezpieczenie niedostępne — nagranie istnieje tylko w tej karcie. Nie zamykaj strony do potwierdzenia zapisu.",
+  "en": "Local backup unavailable — the recording exists only in this tab. Don't close the page until the save is confirmed."
+ },
+ {
+  "src": "Maksymalnie 8 efektów.",
+  "en": "Up to 8 effects."
+ },
+ {
+  "src": "Marker nie został znaleziony.",
+  "en": "Marker not found."
+ },
+ {
+  "src": "Master · głośność (dB)",
+  "en": "Master · gain (dB)"
+ },
+ {
+  "src": "Masz już trwający eksport. Poczekaj na zakończenie.",
+  "en": "You already have an export in progress. Wait for it to finish."
+ },
+ {
+  "src": "Masz pełny limit aktywnych nagrań — usuń lub zastąp jedno z zapisanych nagrań.",
+  "en": "Your active recordings limit is full — delete or replace one of your saved recordings."
+ },
+ {
+  "src": "Masz pełny limit nagrań — wybierz nagranie do zastąpienia.",
+  "en": "Your recordings limit is full — choose a recording to replace."
+ },
+ {
+  "src": "Mikrofon został odłączony podczas nagrywania.",
+  "en": "The microphone was disconnected during recording."
+ },
+ {
+  "src": "Miks jest chwilowo niedostępny.",
+  "en": "Mix is temporarily unavailable."
+ },
+ {
+  "src": "Moduł odblokowań nie jest jeszcze dostępny w bazie lokalnej.",
+  "en": "The unlock module is not available in the local database yet."
+ },
+ {
+  "src": "Moduł retencji nie jest jeszcze dostępny w bazie lokalnej.",
+  "en": "The retention module is not available in the local database yet."
+ },
+ {
+  "src": "Musisz być zalogowany, aby przeglądać historię miksu.",
+  "en": "You must be signed in to view mix history."
+ },
+ {
+  "src": "Musisz być zalogowany.",
+  "en": "You must be signed in."
+ },
+ {
+  "src": "Nagranie jest bardzo podobne do istniejącego utworu. Nie możemy go przyjąć. Jeśli masz do niego prawa, poproś o weryfikację przez moderatora.",
+  "en": "The recording is very similar to an existing track. We can't accept it. If you hold the rights, ask a moderator to verify it."
+ },
+ {
+  "src": "Nagranie nie jest dostępne do umieszczenia w projekcie.",
+  "en": "The recording is not available to place in the project."
+ },
+ {
+  "src": "Nagranie nie jest gotowe do eksportu.",
+  "en": "The recording is not ready for export."
+ },
+ {
+  "src": "Nagranie niedostępne do eksportu.",
+  "en": "The recording is unavailable for export."
+ },
+ {
+  "src": "Nagranie wykracza poza długość projektu. Skróć nagranie lub wydłuż projekt.",
+  "en": "The recording exceeds the project length. Shorten the recording or extend the project."
+ },
+ {
+  "src": "Nagranie zostało przesłane, ale zapis nie został potwierdzony. Wymaga dokończenia zapisu.",
+  "en": "The recording was uploaded, but the save was not confirmed. The save needs to be completed."
+ },
+ {
+  "src": "Nagrywanie jest dostępne tylko dla opublikowanych bitów.",
+  "en": "Recording is only available for published beats."
+ },
+ {
+  "src": "Nagrywanie nie jest dostępne dla tego bitu.",
+  "en": "Recording is not available for this beat."
+ },
+ {
+  "src": "Nagrywanie nie jest dostępne w tej przeglądarce.",
+  "en": "Recording is not available in this browser."
+ },
+ {
+  "src": "Nagrywanie nie jest wspierane w tej przeglądarce.",
+  "en": "Recording is not supported in this browser."
+ },
+ {
+  "src": "Nagrywanie niedostępne dla tego beatu.",
+  "en": "Recording is unavailable for this beat."
+ },
+ {
+  "src": "Nagrywanie przerwane — panel nagrywania został zamknięty. Nagranie nie zostało zapisane na serwerze, ale jego część jest zabezpieczona lokalnie — możesz ją odzyskać.",
+  "en": "Recording interrupted — the recording panel was closed. The recording was not saved on the server, but part of it is secured locally — you can recover it."
+ },
+ {
+  "src": "Nagrywanie przerwane — panel nagrywania został zamknięty. Nagranie nie zostało zapisane.",
+  "en": "Recording interrupted — the recording panel was closed. The recording was not saved."
+ },
+ {
+  "src": "Najwyższy score sygnałowy",
+  "en": "Highest signal score"
+ },
+ {
+  "src": "Nazwa ścieżki jest wymagana.",
+  "en": "Track name is required."
+ },
+ {
+  "src": "Nie masz uprawnień do tej kopii.",
+  "en": "You don't have permission for this copy."
+ },
+ {
+  "src": "Nie masz uprawnień do tej operacji.",
+  "en": "You don't have permission for this operation."
+ },
+ {
+  "src": "Nie możemy jeszcze potwierdzić zakończenia zmiany. Sprawdź aktualny adres w ustawieniach konta, zanim rozpoczniesz kolejną próbę.",
+  "en": "We can't confirm the change has finished yet. Check your current address in account settings before trying again."
+ },
+ {
+  "src": "Nie możesz przyznać dostępu samemu sobie.",
+  "en": "You can't grant access to yourself."
+ },
+ {
+  "src": "Nie możesz usunąć własnego konta z panelu administratora.",
+  "en": "You can't delete your own account from the admin panel."
+ },
+ {
+  "src": "Nie możesz zastąpić cudzego nagrania.",
+  "en": "You can't replace someone else's recording."
+ },
+ {
+  "src": "Nie możesz zatwierdzać ani publikować własnego bitu.",
+  "en": "You can't approve or publish your own beat."
+ },
+ {
+  "src": "Nie możesz zmienić własnej roli.",
+  "en": "You can't change your own role."
+ },
+ {
+  "src": "Nie można odczytać obecnego adresu z sesji.",
+  "en": "Can't read the current address from the session."
+ },
+ {
+  "src": "Nie można trwale usunąć tego projektu, ponieważ ma powiązaną historię eksportów. Historia zadań i pliki pozostają zachowane.",
+  "en": "This project can't be deleted permanently because it has a linked export history. The job history and files are kept."
+ },
+ {
+  "src": "Nie można uchylić odrzucenia własnego bitu.",
+  "en": "You can't override the rejection of your own beat."
+ },
+ {
+  "src": "Nie można usunąć ostatniego administratora.",
+  "en": "The last administrator can't be deleted."
+ },
+ {
+  "src": "Nie można utworzyć bitu od razu jako opublikowanego. Najpierw zapisz wersję roboczą.",
+  "en": "A beat can't be created as published right away. Save a draft first."
+ },
+ {
+  "src": "Nie można wyeksportować pustej lub całkowicie wyciszonej sesji. Włącz co najmniej jedno źródło dźwięku i spróbuj ponownie.",
+  "en": "An empty or fully muted session can't be exported. Enable at least one audio source and try again."
+ },
+ {
+  "src": "Nie można zamknąć Inspectora, dopóki trwa nagrywanie lub zapisywanie take'a.",
+  "en": "You can't close the Inspector while a take is recording or saving."
+ },
+ {
+  "src": "Nie można zdegradować ostatniego administratora.",
+  "en": "The last administrator can't be demoted."
+ },
+ {
+  "src": "Nie można złożyć oświadczenia ani opublikować bitu bez właściciela.",
+  "en": "A declaration can't be filed or the beat published without an owner."
+ },
+ {
+  "src": "Nie można złożyć oświadczenia za usunięte konto właściciela.",
+  "en": "A declaration can't be filed for a deleted owner account."
+ },
+ {
+  "src": "Nie przyznano dostępu do mikrofonu.",
+  "en": "Microphone access was not granted."
+ },
+ {
+  "src": "Nie udało się bezpiecznie określić BPM tego pliku.",
+  "en": "The BPM of this file could not be determined safely."
+ },
+ {
+  "src": "Nie udało się bezpiecznie określić BPM tego pliku. Nie można zakończyć uploadu.",
+  "en": "The BPM of this file could not be determined safely. The upload can't be completed."
+ },
+ {
+  "src": "Nie udało się dodać ścieżki.",
+  "en": "Couldn't add the track."
+ },
+ {
+  "src": "Nie udało się dokończyć ustawiania hasła. Poproś o nowy link.",
+  "en": "Couldn't finish setting the password. Request a new link."
+ },
+ {
+  "src": "Nie udało się nagrać. Spróbuj ponownie.",
+  "en": "Couldn't record. Try again."
+ },
+ {
+  "src": "Nie udało się odczytać czasu trwania pliku audio.",
+  "en": "Couldn't read the audio file duration."
+ },
+ {
+  "src": "Nie udało się odczytać czasu trwania z pliku audio.",
+  "en": "Couldn't read the duration from the audio file."
+ },
+ {
+  "src": "Nie udało się odczytać planu Premium. Odśwież stronę i spróbuj ponownie.",
+  "en": "Couldn't read the Premium plan. Refresh the page and try again."
+ },
+ {
+  "src": "Nie udało się odczytać pliku audio.",
+  "en": "Couldn't read the audio file."
+ },
+ {
+  "src": "Nie udało się odczytać źródeł audio. Sprawdź dostępność take/beat i spróbuj ponownie.",
+  "en": "Couldn't read the audio sources. Check that the take/beat is available and try again."
+ },
+ {
+  "src": "Nie udało się odtworzyć audio.",
+  "en": "Couldn't play the audio."
+ },
+ {
+  "src": "Nie udało się odtworzyć audio. Sprawdź połączenie lub spróbuj ponownie.",
+  "en": "Couldn't play the audio. Check your connection or try again."
+ },
+ {
+  "src": "Nie udało się odtworzyć bitu. Sprawdź połączenie lub spróbuj ponownie.",
+  "en": "Couldn't play the beat. Check your connection or try again."
+ },
+ {
+  "src": "Nie udało się odtworzyć nagrania. Sprawdź połączenie lub spróbuj ponownie.",
+  "en": "Couldn't play the recording. Check your connection or try again."
+ },
+ {
+  "src": "Nie udało się odtworzyć źródła audio. Sprawdź połączenie lub spróbuj ponownie.",
+  "en": "Couldn't play the audio source. Check your connection or try again."
+ },
+ {
+  "src": "Nie udało się otworzyć podglądu nagrania.",
+  "en": "Couldn't open the recording preview."
+ },
+ {
+  "src": "Nie udało się otworzyć podglądu.",
+  "en": "Couldn't open the preview."
+ },
+ {
+  "src": "Nie udało się oznaczyć utworu.",
+  "en": "Couldn't flag the track."
+ },
+ {
+  "src": "Nie udało się pobrać nagrania.",
+  "en": "Couldn't download the recording."
+ },
+ {
+  "src": "Nie udało się pobrać pliku.",
+  "en": "Couldn't download the file."
+ },
+ {
+  "src": "Nie udało się potwierdzić adresu",
+  "en": "Couldn't confirm the address"
+ },
+ {
+  "src": "Nie udało się potwierdzić konta",
+  "en": "Couldn't confirm the account"
+ },
+ {
+  "src": "Nie udało się powiązać bitu z projektem.",
+  "en": "Couldn't link the beat to the project."
+ },
+ {
+  "src": "Nie udało się przeanalizować pliku audio.",
+  "en": "Couldn't analyse the audio file."
+ },
+ {
+  "src": "Nie udało się przesłać ani sfinalizować nagrania.",
+  "en": "Couldn't upload or finalise the recording."
+ },
+ {
+  "src": "Nie udało się przesłać nagrania.",
+  "en": "Couldn't upload the recording."
+ },
+ {
+  "src": "Nie udało się przesłać pliku. Spróbuj ponownie.",
+  "en": "Couldn't upload the file. Try again."
+ },
+ {
+  "src": "Nie udało się przygotować usunięcia.",
+  "en": "Couldn't prepare the deletion."
+ },
+ {
+  "src": "Nie udało się rozpocząć nagrania gościa.",
+  "en": "Couldn't start the guest recording."
+ },
+ {
+  "src": "Nie udało się rozpocząć przesyłania nagrania.",
+  "en": "Couldn't start uploading the recording."
+ },
+ {
+  "src": "Nie udało się rozpocząć zmiany adresu. Sprawdź dane i spróbuj ponownie.",
+  "en": "Couldn't start the address change. Check your details and try again."
+ },
+ {
+  "src": "Nie udało się sfinalizować nagrania.",
+  "en": "Couldn't finalise the recording."
+ },
+ {
+  "src": "Nie udało się skopiować sample z katalogu.",
+  "en": "Couldn't copy the sample from the catalog."
+ },
+ {
+  "src": "Nie udało się uchylić odrzucenia filtra.",
+  "en": "Couldn't override the filter rejection."
+ },
+ {
+  "src": "Nie udało się uruchomić eksportu. Spróbuj ponownie.",
+  "en": "Couldn't start the export. Try again."
+ },
+ {
+  "src": "Nie udało się uruchomić mikrofonu.",
+  "en": "Couldn't start the microphone."
+ },
+ {
+  "src": "Nie udało się uruchomić odtwarzania. Kliknij Odtwórz, aby spróbować ponownie.",
+  "en": "Couldn't start playback. Click Play to try again."
+ },
+ {
+  "src": "Nie udało się ustawić nowego hasła.",
+  "en": "Couldn't set the new password."
+ },
+ {
+  "src": "Nie udało się usunąć konta.",
+  "en": "Couldn't delete the account."
+ },
+ {
+  "src": "Nie udało się usunąć konta. Skontaktuj się z supportem.",
+  "en": "Couldn't delete the account. Contact support."
+ },
+ {
+  "src": "Nie udało się usunąć konta. Spróbuj ponownie.",
+  "en": "Couldn't delete the account. Try again."
+ },
+ {
+  "src": "Nie udało się usunąć nagrania.",
+  "en": "Couldn't delete the recording."
+ },
+ {
+  "src": "Nie udało się usunąć projektu.",
+  "en": "Couldn't delete the project."
+ },
+ {
+  "src": "Nie udało się utworzyć URL uploadu.",
+  "en": "Couldn't create the upload URL."
+ },
+ {
+  "src": "Nie udało się utworzyć sesji nagrania.",
+  "en": "Couldn't create the recording session."
+ },
+ {
+  "src": "Nie udało się uzyskać dostępu do mikrofonu.",
+  "en": "Couldn't access the microphone."
+ },
+ {
+  "src": "Nie udało się użyć wybranego mikrofonu.",
+  "en": "Couldn't use the selected microphone."
+ },
+ {
+  "src": "Nie udało się wstawić efektu. Ścieżka gra dalej.",
+  "en": "Couldn't insert the effect. The track keeps playing."
+ },
+ {
+  "src": "Nie udało się wykonać eksportu. Spróbuj ponownie.",
+  "en": "Couldn't run the export. Try again."
+ },
+ {
+  "src": "Nie udało się wykonać operacji logowania. Spróbuj ponownie.",
+  "en": "Couldn't complete the sign-in operation. Try again."
+ },
+ {
+  "src": "Nie udało się wykonać operacji miksu. Spróbuj ponownie.",
+  "en": "Couldn't complete the mix operation. Try again."
+ },
+ {
+  "src": "Nie udało się wykonać tej operacji. Spróbuj ponownie.",
+  "en": "Couldn't complete this operation. Try again."
+ },
+ {
+  "src": "Nie udało się wysłać odwołania.",
+  "en": "Couldn't send the appeal."
+ },
+ {
+  "src": "Nie udało się zakończyć przesyłania.",
+  "en": "Couldn't finish the upload."
+ },
+ {
+  "src": "Nie udało się zalogować. Spróbuj ponownie.",
+  "en": "Couldn't sign in. Try again."
+ },
+ {
+  "src": "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie.",
+  "en": "Couldn't save the Master. Check the values and try again."
+ },
+ {
+  "src": "Nie udało się zapisać Master. Sprawdź wartości i spróbuj ponownie. (empty patch)",
+  "en": "Couldn't save the Master. Check the values and try again. (empty patch)"
+ },
+ {
+  "src": "Nie udało się zapisać beatu. Spróbuj ponownie.",
+  "en": "Couldn't save the beat. Try again."
+ },
+ {
+  "src": "Nie udało się zapisać efektów. Sprawdź parametry i spróbuj ponownie.",
+  "en": "Couldn't save the effects. Check the parameters and try again."
+ },
+ {
+  "src": "Nie udało się zapisać fade.",
+  "en": "Couldn't save the fade."
+ },
+ {
+  "src": "Nie udało się zapisać fade. Sprawdź wartości i spróbuj ponownie.",
+  "en": "Couldn't save the fade. Check the values and try again."
+ },
+ {
+  "src": "Nie udało się zapisać klipu. Sprawdź wartości i spróbuj ponownie.",
+  "en": "Couldn't save the clip. Check the values and try again."
+ },
+ {
+  "src": "Nie udało się zapisać markera.",
+  "en": "Couldn't save the marker."
+ },
+ {
+  "src": "Nie udało się zapisać stanu Scratch.",
+  "en": "Couldn't save the Scratch state."
+ },
+ {
+  "src": "Nie udało się zapisać ustawień.",
+  "en": "Couldn't save the settings."
+ },
+ {
+  "src": "Nie udało się zapisać zmian.",
+  "en": "Couldn't save the changes."
+ },
+ {
+  "src": "Nie udało się zapisać.",
+  "en": "Couldn't save."
+ },
+ {
+  "src": "Nie udało się zarządzać dostępem. Spróbuj ponownie.",
+  "en": "Couldn't manage access. Try again."
+ },
+ {
+  "src": "Nie udało się zastąpić nagrania.",
+  "en": "Couldn't replace the recording."
+ },
+ {
+  "src": "Nie udało się zatrzymać nagrania.",
+  "en": "Couldn't stop the recording."
+ },
+ {
+  "src": "Nie udało się założyć konta. Spróbuj ponownie lub zaloguj się.",
+  "en": "Couldn't create the account. Try again or sign in."
+ },
+ {
+  "src": "Nie udało się zdekodować audio do PCM.",
+  "en": "Couldn't decode the audio to PCM."
+ },
+ {
+  "src": "Nie udało się zdekodować audio do analizy BPM.",
+  "en": "Couldn't decode the audio for BPM analysis."
+ },
+ {
+  "src": "Nie udało się zduplikować ścieżki.",
+  "en": "Couldn't duplicate the track."
+ },
+ {
+  "src": "Nie udało się zlecić automatycznego sprawdzenia bitu.",
+  "en": "Couldn't request the automatic beat check."
+ },
+ {
+  "src": "Nie udało się zmienić hasła.",
+  "en": "Couldn't change the password."
+ },
+ {
+  "src": "Nie udało się zweryfikować długości nagrania.",
+  "en": "Couldn't verify the recording length."
+ },
+ {
+  "src": "Nie znaleziono nagrania.",
+  "en": "Recording not found."
+ },
+ {
+  "src": "Nie znaleziono uprawnienia dostępu.",
+  "en": "Access grant not found."
+ },
+ {
+  "src": "Nie znaleziono użytkownika.",
+  "en": "User not found."
+ },
+ {
+  "src": "Niedostępne",
+  "en": "Unavailable"
+ },
+ {
+  "src": "Nieobsługiwana jakość pliku.",
+  "en": "Unsupported file quality."
+ },
+ {
+  "src": "Nieobsługiwany format pliku. Wybierz MP3, WAV, M4A lub AAC.",
+  "en": "Unsupported file format. Choose MP3, WAV, M4A or AAC."
+ },
+ {
+  "src": "Nieobsługiwany typ ścieżki.",
+  "en": "Unsupported track type."
+ },
+ {
+  "src": "Nieokreślone",
+  "en": "Unspecified"
+ },
+ {
+  "src": "Niepełna odpowiedź unlock.",
+  "en": "Incomplete unlock response."
+ },
+ {
+  "src": "Nieprawidłowa data wygaśnięcia.",
+  "en": "Invalid expiry date."
+ },
+ {
+  "src": "Nieprawidłowa długość bitu do nagrywania.",
+  "en": "Invalid beat length for recording."
+ },
+ {
+  "src": "Nieprawidłowa rola.",
+  "en": "Invalid role."
+ },
+ {
+  "src": "Nieprawidłowe aktualne hasło.",
+  "en": "Incorrect current password."
+ },
+ {
+  "src": "Nieprawidłowy e-mail lub hasło.",
+  "en": "Incorrect e-mail or password."
+ },
+ {
+  "src": "Nieprawidłowy plan Premium.",
+  "en": "Invalid Premium plan."
+ },
+ {
+  "src": "Nieprawidłowy tryb dostępu do audio.",
+  "en": "Invalid audio access mode."
+ },
+ {
+  "src": "Nieprawidłowy workId.",
+  "en": "Invalid workId."
+ },
+ {
+  "src": "Nieznana lub brakująca operacja (op).",
+  "en": "Unknown or missing operation (op)."
+ },
+ {
+  "src": "Niska pewność",
+  "en": "Low confidence"
+ },
+ {
+  "src": "Nowe hasło jest wymagane.",
+  "en": "New password is required."
+ },
+ {
+  "src": "Nowy bit",
+  "en": "New beat"
+ },
+ {
+  "src": "Nowy projekt",
+  "en": "New project"
+ },
+ {
+  "src": "Oba potwierdzenia zostały przyjęte. Twój adres e-mail został pomyślnie zaktualizowany. Możesz wrócić do swojego konta.",
+  "en": "Both confirmations were accepted. Your e-mail address was updated successfully. You can go back to your account."
+ },
+ {
+  "src": "Odblokowanie niedostępne.",
+  "en": "Unlock unavailable."
+ },
+ {
+  "src": "Odblokuj utwór, zanim pobierzesz gotowy plik.",
+  "en": "Unlock the track before downloading the finished file."
+ },
+ {
+  "src": "Odrzucony",
+  "en": "Rejected"
+ },
+ {
+  "src": "Odtwarzanie straciło synchronizację. Spróbuj ponownie.",
+  "en": "Playback lost sync. Try again."
+ },
+ {
+  "src": "Odzyskanie niemożliwe — lokalna kopia jest uszkodzona lub niekompletna. Możesz ją tylko odrzucić.",
+  "en": "Recovery impossible — the local copy is damaged or incomplete. You can only discard it."
+ },
+ {
+  "src": "Odzyskanie niemożliwe — lokalna kopia jest uszkodzona lub w nieobsługiwanym formacie. Możesz ją tylko odrzucić.",
+  "en": "Recovery impossible — the local copy is damaged or in an unsupported format. You can only discard it."
+ },
+ {
+  "src": "Odzyskanie niemożliwe — lokalna kopia przekracza limit nagrania. Możesz ją tylko odrzucić.",
+  "en": "Recovery impossible — the local copy exceeds the recording limit. You can only discard it."
+ },
+ {
+  "src": "Odzyskanie przerwane — serwer potwierdził inne nagranie niż oczekiwane. Lokalna kopia została zachowana.",
+  "en": "Recovery aborted — the server confirmed a different recording than expected. The local copy was kept."
+ },
+ {
+  "src": "Odzyskanie przerwane — to nagranie przejęła inna karta. Lokalna kopia nie została usunięta.",
+  "en": "Recovery aborted — another tab took over this recording. The local copy was not deleted."
+ },
+ {
+  "src": "Operacja audio nie powiodła się. Spróbuj ponownie.",
+  "en": "The audio operation failed. Try again."
+ },
+ {
+  "src": "Operacja historii miksu nie powiodła się.",
+  "en": "The mix history operation failed."
+ },
+ {
+  "src": "Operacja nie powiodła się.",
+  "en": "The operation failed."
+ },
+ {
+  "src": "Operacja nie powiodła się. Spróbuj ponownie.",
+  "en": "The operation failed. Try again."
+ },
+ {
+  "src": "Opublikowany",
+  "en": "Published"
+ },
+ {
+  "src": "Opuść Studio",
+  "en": "Leave Studio"
+ },
+ {
+  "src": "Oryginał sample jest niedostępny.",
+  "en": "The sample original is unavailable."
+ },
+ {
+  "src": "Osiągnięto dzienny limit eksportów.",
+  "en": "The daily export limit has been reached."
+ },
+ {
+  "src": "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.",
+  "en": "The daily download limit has been reached. Try again tomorrow."
+ },
+ {
+  "src": "Osiągnięto dzienny limit sesji nagrań.",
+  "en": "The daily recording session limit has been reached."
+ },
+ {
+  "src": "Osiągnięto limit aktywnych dostępów.",
+  "en": "The active access limit has been reached."
+ },
+ {
+  "src": "Osiągnięto limit markerów.",
+  "en": "The marker limit has been reached."
+ },
+ {
+  "src": "Osiągnięto limit miejsca na eksporty. Usuń stare pliki lub spróbuj później.",
+  "en": "The export storage limit has been reached. Delete old files or try later."
+ },
+ {
+  "src": "Osiągnięto limit nagrań. Usuń albo zastąp istniejące nagranie.",
+  "en": "The recordings limit has been reached. Delete or replace an existing recording."
+ },
+ {
+  "src": "Osiągnięto limit ścieżek.",
+  "en": "The track limit has been reached."
+ },
+ {
+  "src": "Otwarta sprawa blokuje publikację. Zamknięcie sprawy nie publikuje bitu.",
+  "en": "An open case blocks publishing. Closing the case does not publish the beat."
+ },
+ {
+  "src": "Oświadczam, że mam prawa do tego nagrania i do sampli w nim użytych albo mam zgodę uprawnionych. Rozumiem, że to oświadczenie nie zastępuje weryfikacji i że BitRymDym może wstrzymać publikację.",
+  "en": "I declare that I hold the rights to this recording and the samples used in it, or have the consent of the rights holders. I understand this declaration does not replace verification and that BitRymDym may withhold publication."
+ },
+ {
+  "src": "PCM stereo — najwyższa jakość",
+  "en": "Stereo PCM — highest quality"
+ },
+ {
+  "src": "Pamięć przeglądarki jest niedostępna — nie można odczytać lokalnej kopii nagrania.",
+  "en": "Browser storage is unavailable — the local copy of the recording can't be read."
+ },
+ {
+  "src": "Panel nagrywania został zamknięty podczas zapisu. Jeśli zapis się powiedzie, nagranie znajdziesz w „Moje Take'i”.",
+  "en": "The recording panel was closed during the save. If the save succeeds, you'll find the recording in \"My recordings\"."
+ },
+ {
+  "src": "Pełne nagranie",
+  "en": "Full recording"
+ },
+ {
+  "src": "Platforma muzyczna — bity, nagrania, mix i społecznościowy katalog.",
+  "en": "Music platform — beats, recordings, mixing and a community catalog."
+ },
+ {
+  "src": "Playhead musi być wewnątrz klipu, aby przyciąć koniec.",
+  "en": "The playhead must be inside the clip to trim the end."
+ },
+ {
+  "src": "Playhead musi być wewnątrz klipu, aby przyciąć początek.",
+  "en": "The playhead must be inside the clip to trim the start."
+ },
+ {
+  "src": "Plik Master zmienił się w trakcie publikacji. Spróbuj ponownie.",
+  "en": "The Master file changed during publishing. Try again."
+ },
+ {
+  "src": "Plik audio jest pusty.",
+  "en": "The audio file is empty."
+ },
+ {
+  "src": "Plik eksportu jest niedostępny.",
+  "en": "The export file is unavailable."
+ },
+ {
+  "src": "Plik eksportu wygasł.",
+  "en": "The export file has expired."
+ },
+ {
+  "src": "Plik jest za duży lub ma nieprawidłowy rozmiar.",
+  "en": "The file is too large or has an invalid size."
+ },
+ {
+  "src": "Plik jest za długi względem limitu nagrania dla tego bitu.",
+  "en": "The file is too long for this beat's recording limit."
+ },
+ {
+  "src": "Plik sample nie przeszedł kontroli treści.",
+  "en": "The sample file did not pass the content check."
+ },
+ {
+  "src": "Pobieranie dostępne w pakiecie Premium.",
+  "en": "Downloads are available with Premium."
+ },
+ {
+  "src": "Pobieranie gotowych plików wymaga pakietu Premium.",
+  "en": "Downloading finished files requires Premium."
+ },
+ {
+  "src": "Pobieranie niedostępne.",
+  "en": "Download unavailable."
+ },
+ {
+  "src": "Pobieranie oryginalnego bitu jest niedostępne.",
+  "en": "Downloading the original beat is unavailable."
+ },
+ {
+  "src": "Pobranie artefaktu Studio Final Mix nie powiodło się.",
+  "en": "Downloading the Studio Final Mix artifact failed."
+ },
+ {
+  "src": "Początkujący",
+  "en": "Beginner"
+ },
+ {
+  "src": "Początkujący raper",
+  "en": "Beginner rapper"
+ },
+ {
+  "src": "Podaj adres inny niż obecny.",
+  "en": "Enter an address different from the current one."
+ },
+ {
+  "src": "Podaj powód usunięcia (10–500 znaków, bez HTML).",
+  "en": "Give a reason for deletion (10–500 characters, no HTML)."
+ },
+ {
+  "src": "Podaj prawidłowy adres e-mail.",
+  "en": "Enter a valid e-mail address."
+ },
+ {
+  "src": "Podaj uzasadnienie (min. 5 znaków).",
+  "en": "Give a justification (min. 5 characters)."
+ },
+ {
+  "src": "Podane adresy e-mail nie są zgodne.",
+  "en": "The e-mail addresses don't match."
+ },
+ {
+  "src": "Podział utworzyłby zbyt krótki klip.",
+  "en": "The split would create a clip that's too short."
+ },
+ {
+  "src": "Podziemne przejście",
+  "en": "Underpass"
+ },
+ {
+  "src": "Pogłos",
+  "en": "Reverb"
+ },
+ {
+  "src": "Pominięto efekt z niepoprawnymi parametrami. Pozostałe ścieżki grają dalej.",
+  "en": "An effect with invalid parameters was skipped. The other tracks keep playing."
+ },
+ {
+  "src": "Pominięto nieobsługiwany efekt. Pozostałe ścieżki grają dalej.",
+  "en": "An unsupported effect was skipped. The other tracks keep playing."
+ },
+ {
+  "src": "Ponowne sprawdzenie tylko dla bitów w moderacji.",
+  "en": "Re-checking is only for beats in moderation."
+ },
+ {
+  "src": "Potwierdzenie 1 z 2 zostało przyjęte. Dokończ proces, potwierdzając drugi e-mail. Damy Ci znać, gdy zmiana adresu zostanie zakończona.",
+  "en": "Confirmation 1 of 2 accepted. Finish the process by confirming the second e-mail. We'll let you know when the address change is complete."
+ },
+ {
+  "src": "Potwierdź adres e-mail, zanim się zalogujesz.",
+  "en": "Confirm your e-mail address before signing in."
+ },
+ {
+  "src": "Powód niedostępny",
+  "en": "Reason unavailable"
+ },
+ {
+  "src": "Połączenie przerwane. Sprawdź status przed ponowieniem.",
+  "en": "Connection interrupted. Check the status before retrying."
+ },
+ {
+  "src": "Pro raper",
+  "en": "Pro rapper"
+ },
+ {
+  "src": "Projekt lub zadanie eksportu nie zostało znalezione.",
+  "en": "Project or export job not found."
+ },
+ {
+  "src": "Projekt nie został znaleziony.",
+  "en": "Project not found."
+ },
+ {
+  "src": "Projekt został zmieniony w innej sesji. Odśwież dane i spróbuj ponownie.",
+  "en": "The project was changed in another session. Refresh the data and try again."
+ },
+ {
+  "src": "Projekt został zmieniony. Odśwież Studio i spróbuj ponownie.",
+  "en": "The project was changed. Refresh Studio and try again."
+ },
+ {
+  "src": "Projekt został zmieniony. Odśwież stronę.",
+  "en": "The project was changed. Refresh the page."
+ },
+ {
+  "src": "Prośba wysłana. Adres logowania jeszcze się nie zmienił. Potwierdź wiadomość na obecnej i na nowej skrzynce.",
+  "en": "Request sent. Your sign-in address hasn't changed yet. Confirm the message in both the current and the new inbox."
+ },
+ {
+  "src": "Przycięcie pozostawiłoby zbyt krótki klip.",
+  "en": "The trim would leave a clip that's too short."
+ },
+ {
+  "src": "Przywrócenie",
+  "en": "Restore"
+ },
+ {
+  "src": "Próg",
+  "en": "Threshold"
+ },
+ {
+  "src": "Publikacja dostępna tylko dla bitów platformy.",
+  "en": "Publishing is only available for platform beats."
+ },
+ {
+  "src": "Publikacja dostępna tylko ze statusu Wersja robocza.",
+  "en": "Publishing is only available from the Draft status."
+ },
+ {
+  "src": "Publikacja nie spełnia kontroli praw dla aktualnego Mastera. Brak oświadczenia, blokada, otwarta lub nierozwiązana sprawa albo brak właściciela zatrzymują publikację.",
+  "en": "Publishing fails the rights check for the current Master. A missing declaration, a block, an open or unresolved case, or a missing owner stops publishing."
+ },
+ {
+  "src": "Publikacja platformy wymaga licencji dla aktualnego Mastera. Sama referencja nie wystarcza.",
+  "en": "Platform publishing requires a license for the current Master. A reference alone is not enough."
+ },
+ {
+  "src": "Publikacja platformy wymaga potwierdzenia licencji dla aktualnego Mastera. Sam opis lub referencja nie wystarczą.",
+  "en": "Platform publishing requires license confirmation for the current Master. A description or reference alone is not enough."
+ },
+ {
+  "src": "Publikacja społeczności wymaga statusu Zatwierdzone.",
+  "en": "Community publishing requires the Approved status."
+ },
+ {
+  "src": "Publikacja wymaga oświadczenia dla aktualnego pliku audio.",
+  "en": "Publishing requires a declaration for the current audio file."
+ },
+ {
+  "src": "Publikacja zablokowana: wymagany aktywny Master w statusie Gotowe.",
+  "en": "Publishing blocked: an active Master in Ready status is required."
+ },
+ {
+  "src": "Publikację i zatwierdzenie może wykonać tylko zalogowany członek zespołu.",
+  "en": "Only a signed-in team member can publish and approve."
+ },
+ {
+  "src": "Punkt podziału musi być ściśle wewnątrz klipu.",
+  "en": "The split point must be strictly inside the clip."
+ },
+ {
+  "src": "Pusta odpowiedź unlock.",
+  "en": "Empty unlock response."
+ },
+ {
+  "src": "REPLACE_REQUIRED: Active READY take limit reached — choose a sample to replace.",
+  "en": "REPLACE_REQUIRED: Active READY take limit reached — choose a sample to replace.",
+  "pl": "Osiągnięto limit gotowych nagrań — wybierz nagranie do zastąpienia."
+ },
+ {
+  "src": "Reset hasła jest chwilowo niedostępny.",
+  "en": "Password reset is temporarily unavailable."
+ },
+ {
+  "src": "Retencja utworu wygasła.",
+  "en": "The track's retention has expired."
+ },
+ {
+  "src": "Rewizja jest nieprawidłowa lub nie może być użyta do tej operacji.",
+  "en": "The revision is invalid or can't be used for this operation."
+ },
+ {
+  "src": "SESSION_DAY_CAP: Daily recording session limit reached for your sample policy.",
+  "en": "SESSION_DAY_CAP: Daily recording session limit reached for your sample policy.",
+  "pl": "Osiągnięto dzienny limit sesji nagrań dla Twojej polityki nagrań."
+ },
+ {
+  "src": "Sesja nagrania wygasła.",
+  "en": "The recording session expired."
+ },
+ {
+  "src": "Sesja odtwarzania wygasła. Spróbuj ponownie.",
+  "en": "The playback session expired. Try again."
+ },
+ {
+  "src": "Sesja resetu wygasła. Poproś o nowy link.",
+  "en": "The reset session expired. Request a new link."
+ },
+ {
+  "src": "Sprawdź swoją skrzynkę e-mail i potwierdź konto. Jeśli konto z tym adresem już istnieje, zaloguj się lub skorzystaj z opcji resetowania hasła.",
+  "en": "Check your inbox and confirm your account. If an account with this address already exists, sign in or use the password reset option."
+ },
+ {
+  "src": "Sprzężenie",
+  "en": "Feedback"
+ },
+ {
+  "src": "Status niedostępny",
+  "en": "Status unavailable"
+ },
+ {
+  "src": "Stopień kompresji",
+  "en": "Compression ratio"
+ },
+ {
+  "src": "System nie ma pełnej pewności",
+  "en": "The system isn't fully confident"
+ },
+ {
+  "src": "System nie może jednoznacznie określić BPM.",
+  "en": "The system can't determine the BPM unambiguously."
+ },
+ {
+  "src": "System nie może jednoznacznie określić BPM. Wybierz jedną z wartości systemowych.",
+  "en": "The system can't determine the BPM unambiguously. Choose one of the system values."
+ },
+ {
+  "src": "System proponuje tempo — wybierz rekomendację lub inną wartość spośród kandydatów.",
+  "en": "The system suggests a tempo — choose the recommendation or another value from the candidates."
+ },
+ {
+  "src": "Szybkie nagranie",
+  "en": "Quick recording"
+ },
+ {
+  "src": "Słuchawki studyjne",
+  "en": "Studio headphones"
+ },
+ {
+  "src": "Ta funkcja wymaga Premium lub odpowiednich uprawnień.",
+  "en": "This feature requires Premium or the appropriate permissions."
+ },
+ {
+  "src": "Ta jakość nie jest dostępna w Twoim pakiecie.",
+  "en": "This quality is not available in your plan."
+ },
+ {
+  "src": "Ta lokalna kopia należy do innego konta lub do sesji gościa. Zaloguj się na właściwe konto, aby ją odzyskać.",
+  "en": "This local copy belongs to another account or a guest session. Sign in to the right account to recover it."
+ },
+ {
+  "src": "Ta wiadomość niczego nie cofa.",
+  "en": "This message does not undo anything."
+ },
+ {
+  "src": "Taśma analogowa",
+  "en": "Analog tape"
+ },
+ {
+  "src": "Ten bit nie jest dostępny do miksu.",
+  "en": "This beat is not available for mixing."
+ },
+ {
+  "src": "Ten bit nie jest dostępny do użycia w Studio.",
+  "en": "This beat is not available for use in Studio."
+ },
+ {
+  "src": "Ten plik jest zablokowany. Publikacja jest wstrzymana do ręcznej weryfikacji.",
+  "en": "This file is blocked. Publishing is on hold pending manual verification."
+ },
+ {
+  "src": "Ten plik jest zablokowany. Trafił do ręcznej weryfikacji i nie może zostać opublikowany.",
+  "en": "This file is blocked. It went to manual verification and can't be published."
+ },
+ {
+  "src": "Ten projekt nie ma bitu. Dodaj bit, aby nagrywać w Studio.",
+  "en": "This project has no beat. Add a beat to record in Studio."
+ },
+ {
+  "src": "Ten projekt nie ma bitu. Dodaj bit, aby skopiować sample.",
+  "en": "This project has no beat. Add a beat to copy the sample."
+ },
+ {
+  "src": "Ten sample nie istnieje.",
+  "en": "This sample doesn't exist."
+ },
+ {
+  "src": "Ten sample nie jest dostępny do skopiowania.",
+  "en": "This sample is not available for copying."
+ },
+ {
+  "src": "Ten użytkownik ma już aktywny dostęp.",
+  "en": "This user already has active access."
+ },
+ {
+  "src": "Ten łańcuch efektów nie jest obsługiwany.",
+  "en": "This effect chain is not supported."
+ },
+ {
+  "src": "To już jest zrobione: nie zalogujesz się na nie ponownie.",
+  "en": "This is already done: you will not be able to sign in to it again."
+ },
+ {
+  "src": "To nagranie jest właśnie obsługiwane w innej karcie.",
+  "en": "This recording is being handled in another tab right now."
+ },
+ {
+  "src": "To nagranie nie należy do Ciebie.",
+  "en": "This recording doesn't belong to you."
+ },
+ {
+  "src": "To żądanie zostało już użyte z innymi danymi. Nie wykonano kolejnej mutacji.",
+  "en": "This request was already used with different data. No further change was made."
+ },
+ {
+  "src": "Trwa nagrywanie lub zapisywanie take'a. Jeśli teraz opuścisz Studio, nagrywanie zostanie przerwane, a niezapisany take może przepaść.",
+  "en": "A take is recording or saving. If you leave Studio now, recording will stop and an unsaved take may be lost."
+ },
+ {
+  "src": "Twój adres e-mail został potwierdzony. Możesz teraz zalogować się do BitRymDym.",
+  "en": "Your e-mail address has been confirmed. You can now sign in to BitRymDym."
+ },
+ {
+  "src": "Twórca",
+  "en": "Creator"
+ },
+ {
+  "src": "Tylko właściciel bitu może zarządzać dostępem.",
+  "en": "Only the beat owner can manage access."
+ },
+ {
+  "src": "USUŃ",
+  "en": "DELETE"
+ },
+ {
+  "src": "Usunięcie konta",
+  "en": "Account deletion"
+ },
+ {
+  "src": "Usunięte",
+  "en": "Deleted"
+ },
+ {
+  "src": "Usunięty użytkownik",
+  "en": "Deleted user"
+ },
+ {
+  "src": "Usługa jest chwilowo niedostępna.",
+  "en": "The service is temporarily unavailable."
+ },
+ {
+  "src": "Utwór był już odblokowany.",
+  "en": "The track was already unlocked."
+ },
+ {
+  "src": "Utwór nie istnieje.",
+  "en": "The track doesn't exist."
+ },
+ {
+  "src": "Utwór nie jest gotowy do pobrania.",
+  "en": "The track is not ready for download."
+ },
+ {
+  "src": "Utwór wygasł lub nie jest gotowy.",
+  "en": "The track has expired or is not ready."
+ },
+ {
+  "src": "Utwórz bit przez przepływ audio-first (plik Master wymagany; czas z serwera).",
+  "en": "Create the beat through the audio-first flow (Master file required; duration from the server)."
+ },
+ {
+  "src": "Użyj binary upload (signed Storage). Base64 Server Action jest wyłączone.",
+  "en": "Use binary upload (signed Storage). The Base64 Server Action is disabled."
+ },
+ {
+  "src": "Użytkownik",
+  "en": "User"
+ },
+ {
+  "src": "Użytkownik usunięty",
+  "en": "User deleted"
+ },
+ {
+  "src": "WAV Compat — 16-bit / 44,1 kHz",
+  "en": "WAV Compat — 16-bit / 44.1 kHz"
+ },
+ {
+  "src": "WAV Pro — 24-bit / 44,1 kHz",
+  "en": "WAV Pro — 24-bit / 44.1 kHz"
+ },
+ {
+  "src": "Wersja lub projekt nie został znaleziony.",
+  "en": "Version or project not found."
+ },
+ {
+  "src": "Wersja nie została znaleziona.",
+  "en": "Version not found."
+ },
+ {
+  "src": "Wersja robocza",
+  "en": "Draft"
+ },
+ {
+  "src": "Wokal",
+  "en": "Vocal"
+ },
+ {
+  "src": "Wschodzący",
+  "en": "Rising"
+ },
+ {
+  "src": "Wybierz bit.",
+  "en": "Choose a beat."
+ },
+ {
+  "src": "Wybierz jedną z systemowych hipotez. Ranking sygnałowy nie oznacza automatycznej decyzji o tempie.",
+  "en": "Choose one of the system hypotheses. The signal ranking is not an automatic tempo decision."
+ },
+ {
+  "src": "Wybierz najlepszą wartość spośród wykrytych kandydatów systemowych.",
+  "en": "Choose the best value from the detected system candidates."
+ },
+ {
+  "src": "Wybierz prawidłowe BPM spośród wartości zaproponowanych przez system.",
+  "en": "Choose a valid BPM from the values suggested by the system."
+ },
+ {
+  "src": "Wybrana rewizja odpowiada już bieżącemu stanowi miksu — brak zmian do przywrócenia.",
+  "en": "The selected revision already matches the current mix — nothing to restore."
+ },
+ {
+  "src": "Wybrane nagranie nie nadaje się do zastąpienia.",
+  "en": "The selected recording can't be replaced."
+ },
+ {
+  "src": "Wybrane nagranie wygasło.",
+  "en": "The selected recording has expired."
+ },
+ {
+  "src": "Wybrane urządzenie odsłuchu jest niedostępne. Użyto automatycznego.",
+  "en": "The selected output device is unavailable. The default one was used."
+ },
+ {
+  "src": "Wybrany bit nie istnieje.",
+  "en": "The selected beat doesn't exist."
+ },
+ {
+  "src": "Wybrany format eksportu nie jest obsługiwany.",
+  "en": "The selected export format is not supported."
+ },
+ {
+  "src": "Wybrany mikrofon jest niedostępny. Użyto domyślnego urządzenia.",
+  "en": "The selected microphone is unavailable. The default device was used."
+ },
+ {
+  "src": "Wybór BPM jest już nieaktualny względem ponownej analizy pliku. Wybierz ponownie jedną z aktualnych wartości systemu.",
+  "en": "The BPM choice is outdated after the file was re-analysed. Choose one of the current system values again."
+ },
+ {
+  "src": "Wygasło",
+  "en": "Expired"
+ },
+ {
+  "src": "Wykryliśmy w bicie wokal lub mowę. Przyjmujemy wyłącznie czyste instrumentale. Usuń wokal i wgraj nowy master. Jeśli to pomyłka (np. syntezator), możesz poprosić o ponowne sprawdzenie przez moderatora.",
+  "en": "We detected vocals or speech in the beat. We only accept clean instrumentals. Remove the vocals and upload a new master. If this is a mistake (e.g. a synth), you can ask a moderator to re-check it."
+ },
+ {
+  "src": "Wyrównanie",
+  "en": "Alignment"
+ },
+ {
+  "src": "Wysoka pewność",
+  "en": "High confidence"
+ },
+ {
+  "src": "Wysoka pewność — możesz zapisać bez dodatkowej akcji.",
+  "en": "High confidence — you can save without any extra action."
+ },
+ {
+  "src": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
+  "en": "An unexpected error occurred. Try again."
+ },
+ {
+  "src": "Wystąpił problem podczas potwierdzania adresu e-mail. Spróbuj ponownie lub zaloguj się, jeśli konto jest już aktywne.",
+  "en": "There was a problem confirming the e-mail address. Try again or sign in if the account is already active."
+ },
+ {
+  "src": "Wysyłanie żądania…",
+  "en": "Sending request…"
+ },
+ {
+  "src": "Własny katalog (Chromaprint)",
+  "en": "Own catalog (Chromaprint)"
+ },
+ {
+  "src": "Za głośno",
+  "en": "Too loud"
+ },
+ {
+  "src": "Zadanie nie należy do tej wersji.",
+  "en": "The job doesn't belong to this version."
+ },
+ {
+  "src": "Zadanie nie zostało znalezione.",
+  "en": "Job not found."
+ },
+ {
+  "src": "Zaloguj się, aby dostać wyższy limit.",
+  "en": "Sign in to get a higher limit."
+ },
+ {
+  "src": "Zaloguj się, aby eksportować projekt.",
+  "en": "Sign in to export the project."
+ },
+ {
+  "src": "Zaloguj się, aby nagrywać.",
+  "en": "Sign in to record."
+ },
+ {
+  "src": "Zaloguj się, aby pobrać eksport.",
+  "en": "Sign in to download the export."
+ },
+ {
+  "src": "Zaloguj się, aby przechowywać więcej nagrań.",
+  "en": "Sign in to keep more recordings."
+ },
+ {
+  "src": "Zaloguj się, aby skopiować sample.",
+  "en": "Sign in to copy the sample."
+ },
+ {
+  "src": "Zaloguj się, aby zapisać fade.",
+  "en": "Sign in to save the fade."
+ },
+ {
+  "src": "Zamknięta sprawa nadal blokuje ten hash. Potrzebny jest nowy Master albo rozstrzygnięcie bez blokady.",
+  "en": "A closed case still blocks this hash. A new Master or a non-blocking resolution is needed."
+ },
+ {
+  "src": "Zapis potwierdzony — nagranie jest w „Moje Take'i”.",
+  "en": "Save confirmed — the recording is in \"My recordings\"."
+ },
+ {
+  "src": "Zapis potwierdzony — nagranie zostało zapisane na serwerze.",
+  "en": "Save confirmed — the recording was saved on the server."
+ },
+ {
+  "src": "Zapis tego nagrania przejęła inna karta albo lokalna kopia została już obsłużona — ta karta nie dokończy zapisu.",
+  "en": "Another tab took over saving this recording or the local copy was already handled — this tab won't finish the save."
+ },
+ {
+  "src": "Zatwierdzone",
+  "en": "Approved"
+ },
+ {
+  "src": "Zaznacz oświadczenie o prawach do nagrania i sampli.",
+  "en": "Tick the declaration about the rights to the recording and samples."
+ },
+ {
+  "src": "Zbyt wiele prób. Spróbuj ponownie za chwilę.",
+  "en": "Too many attempts. Try again in a moment."
+ },
+ {
+  "src": "Zmiana adresu e-mail jest chwilowo niedostępna.",
+  "en": "E-mail address change is temporarily unavailable."
+ },
+ {
+  "src": "Zmiana daty wygaśnięcia",
+  "en": "Expiry date change"
+ },
+ {
+  "src": "Zostań w Studio",
+  "en": "Stay in Studio"
+ },
+ {
+  "src": "active grant limit",
+  "en": "active grant limit",
+  "pl": "limit aktywnych dostępów"
+ },
+ {
+  "src": "active ready take limit",
+  "en": "active ready take limit",
+  "pl": "limit gotowych nagrań"
+ },
+ {
+  "src": "atTimelineMs jest wymagane.",
+  "en": "atTimelineMs is required."
+ },
+ {
+  "src": "audio niedostępne",
+  "en": "audio unavailable"
+ },
+ {
+  "src": "bit platformowy",
+  "en": "platform beat"
+ },
+ {
+  "src": "bit użytkownika",
+  "en": "user beat"
+ },
+ {
+  "src": "brak dopasowań",
+  "en": "no matches"
+ },
+ {
+  "src": "brak wiarygodnych kandydatów",
+  "en": "no reliable candidates"
+ },
+ {
+  "src": "błąd",
+  "en": "error"
+ },
+ {
+  "src": "concurrent render limit",
+  "en": "concurrent render limit",
+  "pl": "limit równoczesnych renderów"
+ },
+ {
+  "src": "cue Scratch musi być nieujemną liczbą.",
+  "en": "Scratch cue must be a non-negative number."
+ },
+ {
+  "src": "daily download limit",
+  "en": "daily download limit",
+  "pl": "dzienny limit pobrań"
+ },
+ {
+  "src": "daily render limit",
+  "en": "daily render limit",
+  "pl": "dzienny limit renderów"
+ },
+ {
+  "src": "dostępne",
+  "en": "available"
+ },
+ {
+  "src": "gościnny",
+  "en": "guest"
+ },
+ {
+  "src": "głośność (dB)",
+  "en": "gain (dB)"
+ },
+ {
+  "src": "limit reached",
+  "en": "limit reached",
+  "pl": "osiągnięto limit"
+ },
+ {
+  "src": "musi być liczbą",
+  "en": "must be a number"
+ },
+ {
+  "src": "najwyższa jakość MP3",
+  "en": "highest MP3 quality"
+ },
+ {
+  "src": "niedostępne",
+  "en": "unavailable"
+ },
+ {
+  "src": "niezgodny z automatyczną",
+  "en": "inconsistent with the automatic one"
+ },
+ {
+  "src": "pełny limit nagrań",
+  "en": "recordings limit full"
+ },
+ {
+  "src": "pełny limit próbek",
+  "en": "samples limit full"
+ },
+ {
+  "src": "playheadMs jest wymagane.",
+  "en": "playheadMs is required."
+ },
+ {
+  "src": "podstawowa jakość",
+  "en": "basic quality"
+ },
+ {
+  "src": "pominięty",
+  "en": "skipped"
+ },
+ {
+  "src": "projectId, catalogAssetId i trackId są wymagane.",
+  "en": "projectId, catalogAssetId and trackId are required."
+ },
+ {
+  "src": "projectId, trackId i takeId są wymagane.",
+  "en": "projectId, trackId and takeId are required."
+ },
+ {
+  "src": "przygotowuję plik",
+  "en": "preparing file"
+ },
+ {
+  "src": "rate limit",
+  "en": "rate limit",
+  "pl": "limit zapytań"
+ },
+ {
+  "src": "ready take limit",
+  "en": "ready take limit",
+  "pl": "limit gotowych nagrań"
+ },
+ {
+  "src": "reverse Scratch musi być wartością logiczną.",
+  "en": "Scratch reverse must be a boolean."
+ },
+ {
+  "src": "session limit",
+  "en": "session limit",
+  "pl": "limit sesji"
+ },
+ {
+  "src": "spoza wartości",
+  "en": "out of range"
+ },
+ {
+  "src": "spróbuj ponownie po odzyskaniu połączenia.",
+  "en": "try again once the connection is back."
+ },
+ {
+  "src": "spróbuj ponownie.",
+  "en": "try again."
+ },
+ {
+  "src": "tempo Scratch musi być liczbą.",
+  "en": "Scratch tempo must be a number."
+ },
+ {
+  "src": "timelineStartMs jest wymagane (integer ms).",
+  "en": "timelineStartMs is required (integer ms)."
+ },
+ {
+  "src": "timelineStartMs jest wymagane dla przesunięcia.",
+  "en": "timelineStartMs is required for a move."
+ },
+ {
+  "src": "timelineStartMs musi być nieujemną liczbą całkowitą.",
+  "en": "timelineStartMs must be a non-negative integer."
+ },
+ {
+  "src": "timelineStartMs, durationMs i sourceOffsetMs są wymagane.",
+  "en": "timelineStartMs, durationMs and sourceOffsetMs are required."
+ },
+ {
+  "src": "trackId i takeId są wymagane.",
+  "en": "trackId and takeId are required."
+ },
+ {
+  "src": "trimMs jest wymagane.",
+  "en": "trimMs is required."
+ },
+ {
+  "src": "użytkownik",
+  "en": "user"
+ },
+ {
+  "src": "użytkowników",
+  "en": "users"
+ },
+ {
+  "src": "wpisów",
+  "en": "entries"
+ },
+ {
+  "src": "wysoka jakość",
+  "en": "high quality"
+ },
+ {
+  "src": "wył.",
+  "en": "off"
+ },
+ {
+  "src": "wyższa jakość",
+  "en": "higher quality"
+ },
+ {
+  "src": "wł.",
+  "en": "on"
+ },
+ {
+  "src": "Łańcuch efektów nie jest obsługiwany. Ścieżka gra bez efektów.",
+  "en": "The effect chain is not supported. The track plays without effects."
+ },
+ {
+  "src": "Ścieżka",
+  "en": "Track"
+ },
+ {
+  "src": "Ścieżka nie została znaleziona.",
+  "en": "Track not found."
+ },
+ {
+  "src": "Ścieżki",
+  "en": "Tracks"
+ },
+ {
+  "src": "Ścieżki Bit nie można usunąć ani zduplikować.",
+  "en": "The Beat track can't be deleted or duplicated."
+ },
+ {
+  "src": "Ścieżki Bit nie można usunąć.",
+  "en": "The Beat track can't be deleted."
+ },
+ {
+  "src": "Ścieżki Bit nie można zduplikować.",
+  "en": "The Beat track can't be duplicated."
+ },
+ {
+  "src": "Średnia pewność",
+  "en": "Medium confidence"
+ },
+ {
+  "src": "Środek · Q",
+  "en": "Mid · Q"
+ },
+ {
+  "src": "Środek · częstotliwość",
+  "en": "Mid · frequency"
+ },
+ {
+  "src": "Środek · głośność",
+  "en": "Mid · gain"
+ },
+ {
+  "src": "Żądanie Studio Final Mix nie powiodło się.",
+  "en": "The Studio Final Mix request failed."
+ },
+ {
+  "src": "Żądanie Studio nie powiodło się.",
+  "en": "The Studio request failed."
+ },
+ {
+  "src": "Gitara",
+  "en": "Guitar"
+ },
+ {
+  "src": "Szyna",
+  "en": "Bus"
+ },
+ {
+  "src": "Inna",
+  "en": "Other"
+ },
+ {
+  "src": "Efekty",
+  "en": "Effects"
+ },
+ {
+  "src": "Elita",
+  "en": "Elite"
+ },
+ {
+  "src": "Gotowy",
+  "en": "Ready"
+ },
+ {
+  "src": "Nadanie roli administratora",
+  "en": "Granted administrator role"
+ },
+ {
+  "src": "Nadanie roli moderatora",
+  "en": "Granted moderator role"
+ },
+ {
+  "src": "Odebranie roli administratora",
+  "en": "Revoked administrator role"
+ },
+ {
+  "src": "Odebranie roli moderatora",
+  "en": "Revoked moderator role"
+ },
+ {
+  "src": "Nagranie",
+  "en": "Take"
+ },
+ {
+  "src": "Nieudane",
+  "en": "Failed"
+ },
+ {
+  "src": "Nowicjusz",
+  "en": "Newcomer"
+ },
+ {
+  "src": "W moderacji",
+  "en": "In moderation"
+ },
+ {
+  "src": "W trakcie",
+  "en": "In progress"
+ },
+ {
+  "src": "Zarchiwizowany",
+  "en": "Archived"
+ },
+ {
+  "src": "Zmiana Premium",
+  "en": "Premium change"
+ },
+ {
+  "src": "Zmiana roli",
+  "en": "Role change"
+ },
+ {
+  "src": "Nie zapisano",
+  "en": "Not saved"
+ },
+ {
+  "src": "Niezapisane zmiany",
+  "en": "Unsaved changes"
+ },
+ {
+  "src": "Zapisano",
+  "en": "Saved"
+ },
+ {
+  "src": "Zapisywanie…",
+  "en": "Saving…"
+ },
+ {
+  "src": "Pierwszy e-mail potwierdzony",
+  "en": "First email confirmed"
+ },
+ {
+  "src": "Podaj adres e-mail.",
+  "en": "Enter an email address."
+ },
+ {
+  "src": "Sprawdzamy status zmiany adresu",
+  "en": "Checking the address change status"
+ },
+ {
+  "src": "Wymagane zalogowanie.",
+  "en": "Sign-in required."
+ },
+ {
+  "src": "Wymagane logowanie.",
+  "en": "Sign-in required."
+ },
+ {
+  "src": "Atak",
+  "en": "Attack"
+ },
+ {
+  "src": "Czas",
+  "en": "Time"
+ },
+ {
+  "src": "Kompresor",
+  "en": "Compressor"
+ },
+ {
+  "src": "Poziom efektu",
+  "en": "Effect level"
+ },
+ {
+  "src": "Sufit",
+  "en": "Ceiling"
+ },
+ {
+  "src": "Zanikanie",
+  "en": "Decay"
+ },
+ {
+  "src": "Zwolnienie",
+  "en": "Release"
+ },
+ {
+  "src": "Betonowa faktura",
+  "en": "Concrete texture"
+ },
+ {
+  "src": "Biurko w studiu",
+  "en": "Studio desk"
+ },
+ {
+  "src": "Kabina nagraniowa",
+  "en": "Recording booth"
+ },
+ {
+  "src": "Konsoleta mikserska",
+  "en": "Mixing console"
+ },
+ {
+  "src": "Mikrofon studyjny",
+  "en": "Studio microphone"
+ },
+ {
+  "src": "Nocna jazda przez miasto",
+  "en": "Night drive through the city"
+ },
+ {
+  "src": "Nocne miasto za oknem",
+  "en": "Night city outside the window"
+ },
+ {
+  "src": "Sylwetka przy mikrofonie",
+  "en": "Silhouette at the microphone"
+ },
+ {
+  "src": "Tekstura fotograficzna",
+  "en": "Photographic texture"
+ },
+ {
+  "src": "Ksywka zawiera niedozwolone znaki.",
+  "en": "The nickname contains disallowed characters."
+ },
+ {
+  "src": "Refren",
+  "en": "Chorus"
+ },
+ {
+  "src": "Zwrotka",
+  "en": "Verse"
+ },
+ {
+  "src": "Nieznana operacja edycji klipu.",
+  "en": "Unknown clip edit operation."
+ },
+ {
+  "src": "Nieznana operacja markera.",
+  "en": "Unknown marker operation."
+ },
+ {
+  "src": "Nie znaleziono mikrofonu.",
+  "en": "No microphone found."
+ },
+ {
+  "src": "Nie znaleziono zasobu.",
+  "en": "Resource not found."
+ },
+ {
+  "src": "Ten format wymaga Premium.",
+  "en": "This format requires Premium."
+ },
+ {
+  "src": "Pobieranie niedozwolone.",
+  "en": "Download not allowed."
+ },
+ {
+  "src": "Pobieranie RAW wymaga planu GOLD.",
+  "en": "RAW download requires the GOLD plan."
+ },
+ {
+  "src": "Wymagany idempotencyKey.",
+  "en": "idempotencyKey is required."
+ },
+ {
+  "src": "Eksport gotowy",
+  "en": "Export ready"
+ },
+ {
+  "src": "Eksport w toku",
+  "en": "Export in progress"
+ },
+ {
+  "src": "Gotowy do eksportu",
+  "en": "Ready to export"
+ },
+ {
+  "src": "Konflikt wersji dokumentu",
+  "en": "Document version conflict"
+ },
+ {
+  "src": "W kolejce",
+  "en": "Queued"
+ },
+ {
+  "src": "Automatyzacja",
+  "en": "Automation"
+ },
+ {
+  "src": "Inne",
+  "en": "Other"
+ },
+ {
+  "src": "Master · efekty",
+  "en": "Master · effects"
+ },
+ {
+  "src": "Master · panorama",
+  "en": "Master · pan"
+ },
+ {
+  "src": "Nie znaleziono rewizji lub projektu.",
+  "en": "Revision or project not found."
+ },
+ {
+  "src": "Odrzucona",
+  "en": "Rejected"
+ },
+ {
+  "src": "Propozycja automatyczna",
+  "en": "Automatic proposal"
+ },
+ {
+  "src": "Punkt bazowy",
+  "en": "Baseline"
+ },
+ {
+  "src": "Punkt kontrolny",
+  "en": "Checkpoint"
+ },
+ {
+  "src": "Zaakceptowana",
+  "en": "Accepted"
+ },
+ {
+  "src": "Zmiana miksu",
+  "en": "Mix change"
+ },
+ {
+  "src": "Filtr: brak sprawdzenia",
+  "en": "Filter: not checked"
+ },
+ {
+  "src": "Filtr: w kolejce",
+  "en": "Filter: queued"
+ },
+ {
+  "src": "Filtr: w toku",
+  "en": "Filter: running"
+ },
+ {
+  "src": "Filtr: brak konfiguracji",
+  "en": "Filter: not configured"
+ },
+ {
+  "src": "Filtr: uchylony przez moderatora",
+  "en": "Filter: overridden by moderator"
+ },
+ {
+  "src": "Filtr: OK",
+  "en": "Filter: OK"
+ },
+ {
+  "src": "Detekcja wokalu (Demucs)",
+  "en": "Vocal detection (Demucs)"
+ },
+ {
+  "src": "przekroczony czas",
+  "en": "timed out"
+ },
+ {
+  "src": "Publikacja wymaga jednego aktywnego Mastera w stanie gotowym.",
+  "en": "Publishing requires one active Master in the ready state."
+ },
+ {
+  "src": "Wykryto automatycznie.",
+  "en": "Detected automatically."
+ },
+ {
+  "src": "wykryte automatycznie",
+  "en": "detected automatically"
+ },
+ {
+  "src": "opcja systemu",
+  "en": "system option"
+ },
+ {
+  "src": "BPM wykryte automatycznie",
+  "en": "BPM detected automatically"
+ },
+ {
+  "src": "rekomendacja systemu",
+  "en": "system recommendation"
+ },
+ {
+  "src": "kandydat systemu",
+  "en": "system candidate"
+ },
+ {
+  "src": "System sugeruje tempo",
+  "en": "The system suggests a tempo"
+ },
+ {
+  "src": "Konflikt hipotez",
+  "en": "Conflicting hypotheses"
+ },
+ {
+  "src": "Niepoprawne dane kopii sample.",
+  "en": "Invalid sample copy data."
+ },
+ {
+  "src": "Nie ma takiej otwartej sprawy.",
+  "en": "No such open case."
+ },
+ {
+  "src": "wymaga Premium",
+  "en": "requires Premium"
+ },
+ {
+  "src": "w trakcie",
+  "en": "in progress"
+ },
+ {
+  "src": "Microphone permission denied.",
+  "en": "Microphone permission denied.",
+  "pl": "Brak zgody na mikrofon."
+ },
+ {
+  "src": "MediaRecorder unavailable.",
+  "en": "MediaRecorder unavailable.",
+  "pl": "Nagrywanie nie jest dostępne w tej przeglądarce."
+ },
+ {
+  "src": "MediaRecorder error.",
+  "en": "MediaRecorder error.",
+  "pl": "Błąd nagrywania."
+ },
+ {
+  "src": "Recording was cancelled.",
+  "en": "Recording was cancelled.",
+  "pl": "Nagrywanie zostało anulowane."
+ },
+ {
+  "src": "No active recording.",
+  "en": "No active recording.",
+  "pl": "Brak aktywnego nagrania."
+ },
+ {
+  "src": "Recorder is already active.",
+  "en": "Recorder is already active.",
+  "pl": "Nagrywanie już trwa."
+ },
+ {
+  "src": "Take not found.",
+  "en": "Take not found.",
+  "pl": "Nie znaleziono nagrania."
+ },
+ {
+  "src": "Beat not found.",
+  "en": "Beat not found.",
+  "pl": "Nie znaleziono bitu."
+ },
+ {
+  "src": "Authentication required.",
+  "en": "Authentication required.",
+  "pl": "Wymagane zalogowanie."
+ },
+ {
+  "src": "Take session expired.",
+  "en": "Take session expired.",
+  "pl": "Sesja nagrania wygasła."
+ },
+ {
+  "src": "Take was deleted.",
+  "en": "Take was deleted.",
+  "pl": "Nagranie zostało usunięte."
+ },
+ {
+  "src": "Not take owner.",
+  "en": "Not take owner.",
+  "pl": "To nie jest Twoje nagranie."
+ },
+ {
+  "src": "Take could not be deleted.",
+  "en": "Take could not be deleted.",
+  "pl": "Nie udało się usunąć nagrania."
+ },
+ {
+  "src": "Beat is no longer PUBLISHED.",
+  "en": "Beat is no longer PUBLISHED.",
+  "pl": "Bit nie jest już opublikowany."
+ },
+ {
+  "src": "Take request failed.",
+  "en": "Take request failed.",
+  "pl": "Żądanie nagrania nie powiodło się."
+ },
+ {
+  "src": "Take upload session failed.",
+  "en": "Take upload session failed.",
+  "pl": "Nie udało się rozpocząć wysyłania nagrania."
+ },
+ {
+  "src": "Take binary upload failed.",
+  "en": "Take binary upload failed.",
+  "pl": "Wysyłanie pliku nagrania nie powiodło się."
+ },
+ {
+  "src": "Take finalize failed.",
+  "en": "Take finalize failed.",
+  "pl": "Nie udało się zakończyć zapisu nagrania."
+ },
+ {
+  "src": "Insufficient role.",
+  "en": "Insufficient role.",
+  "pl": "Brak uprawnień."
+ },
+ {
+  "src": "Missing permission.",
+  "en": "Missing permission.",
+  "pl": "Brak uprawnień."
+ },
+ {
+  "src": "Recording is only allowed on PUBLISHED beats.",
+  "en": "Recording is only allowed on PUBLISHED beats.",
+  "pl": "Nagrywać można tylko na opublikowanych bitach."
+ },
+ {
+  "src": "Sampel",
+  "en": "Sample"
+ },
+ {
+  "src": "Szkic",
+  "en": "Scratch"
+ }
+]

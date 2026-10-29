@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import {
   EMAIL_CHANGE_NOTICE_COPY,
   type EmailChangeNoticeStatus,
@@ -8,6 +9,7 @@ export function EmailChangeNotice({
 }: {
   status: EmailChangeNoticeStatus;
 }) {
+  const tl = useLibText();
   const copy = EMAIL_CHANGE_NOTICE_COPY[status];
   return (
     <div
@@ -15,9 +17,9 @@ export function EmailChangeNotice({
       role={status === "invalid" ? "alert" : "status"}
     >
       <h2 className="text-base font-semibold text-[var(--brd-ink)]">
-        {copy.title}
+        {tl(copy.title)}
       </h2>
-      <p className="text-sm leading-6 text-[var(--brd-ink-soft)]">{copy.body}</p>
+      <p className="text-sm leading-6 text-[var(--brd-ink-soft)]">{tl(copy.body)}</p>
     </div>
   );
 }

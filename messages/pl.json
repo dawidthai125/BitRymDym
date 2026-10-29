@@ -681,7 +681,7 @@
       "powtorzNowyEMail": "Powtórz nowy e-mail",
       "rozpocznijZmianeEMail": "Rozpocznij zmianę e-mail",
       "usuniecieKontaJestNieodwracalne": "Usunięcie konta jest nieodwracalne. Publiczne utwory mogą pozostać z anonimową ksywką. Dane prywatne (nagrania, miksy, pobrania) zostaną usunięte. Numer ID użytkownika nie wraca do puli.",
-      "wpiszUsunAbyPotwierdzic": "Wpisz USUŃ aby potwierdzić",
+      "wpiszUsunAbyPotwierdzic": "Wpisz {word}, aby potwierdzić",
       "usuwanie": "Usuwanie…",
       "usunKonto": "Usuń konto",
       "pokazPowtorzoneHaslo": "Pokaż powtórzone hasło",

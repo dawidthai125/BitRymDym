@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -33,6 +35,7 @@ export function HomeTracklist({ beats }: { beats: PresentedBeat[] }) {
 }
 
 function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
+  const tl = useLibText();
   const t = useTranslations("home.homeTracklist");
   const { track, currentTime, duration, seek, activateTrack, phase } =
     usePlayer();
@@ -82,12 +85,12 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
         className="tape-focus min-w-0 underline-offset-4 hover:underline"
       >
         <span className="block truncate font-poster text-xl font-bold uppercase leading-none tracking-[0.02em] text-tape-cream sm:text-2xl">
-          {beat.title}
+          {tl(beat.title)}
         </span>
         <span className="mt-1 block truncate text-sm text-tape-cream-soft">
-          {beat.producer}
+          {tl(beat.producer)}
           {meta ? (
-            <span className="font-mono text-xs text-tape-mute"> · {meta}</span>
+            <span className="font-mono text-xs text-tape-mute"> · {tl(meta)}</span>
           ) : null}
         </span>
       </Link>
@@ -105,9 +108,9 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
         />
       </div>
       <span className="hidden text-right font-mono text-sm tabular-nums text-tape-cream-soft sm:block">
-        {beat.durationSeconds > 0
+        {tl(beat.durationSeconds > 0
           ? formatDurationSeconds(beat.durationSeconds)
-          : "—"}
+          : "—")}
       </span>
       <HomePlayButton beat={beat} compact />
     </li>

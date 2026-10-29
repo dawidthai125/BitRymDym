@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useActionState } from "react";
@@ -17,6 +19,7 @@ const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
 export function AdminMetadataForm({ beat }: { beat: Beat }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminMetadataForm");
   const [state, action, pending] = useActionState(
     updateBeatMetadataAction,
@@ -136,7 +139,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
 
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success ? (
@@ -146,7 +149,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
       ) : null}
 
       <Button type="submit" disabled={pending}>
-        {pending ? t("zapisywanie") : t("zapiszMetadane")}
+        {tl(pending ? t("zapisywanie") : t("zapiszMetadane"))}
       </Button>
     </form>
   );

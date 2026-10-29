@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -14,6 +16,7 @@ import { cn } from "@/lib/utils";
  * Locale lives in the NEXT_LOCALE cookie; no URL prefix.
  */
 export function LanguageSwitcher({ className }: { className?: string }) {
+  const tl = useLibText();
   const t = useTranslations("language");
   const locale = useLocale() as AppLocale;
   const router = useRouter();
@@ -61,7 +64,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
                 : "text-[var(--brd-ink-soft)] hover:text-[var(--brd-ink)]",
             )}
           >
-            {code}
+            {tl(code)}
           </button>
         );
       })}

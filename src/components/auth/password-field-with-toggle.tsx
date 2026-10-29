@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -33,6 +35,7 @@ export function PasswordFieldWithToggle({
   showLabel,
   hideLabel,
 }: PasswordFieldWithToggleProps) {
+  const tl = useLibText();
   const t = useTranslations("auth.passwordFieldWithToggle");
   const id = useId();
   const [visible, setVisible] = useState(false);
@@ -42,7 +45,7 @@ export function PasswordFieldWithToggle({
 
   return (
     <div className="flex flex-col gap-1 text-sm">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{tl(label)}</label>
       <div className="relative w-full">
         <input
           id={id}
@@ -57,13 +60,13 @@ export function PasswordFieldWithToggle({
           type="button"
           variant="ghost"
           className="absolute top-0 right-0 h-11 w-11 min-h-11 min-w-11 shrink-0 p-0"
-          aria-label={toggleLabel}
+          aria-label={tl(toggleLabel)}
           aria-pressed={visible}
           aria-controls={id}
           onClick={() => setVisible((prev) => !prev)}
         >
           <span aria-hidden="true" className="text-xs font-medium">
-            {visible ? "Ukryj" : t("pokaz")}
+            {tl(visible ? "Ukryj" : t("pokaz"))}
           </span>
         </Button>
       </div>

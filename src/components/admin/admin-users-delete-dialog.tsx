@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useId, useState, useTransition } from "react";
@@ -20,6 +22,7 @@ export function AdminUsersDeleteDialog({
   userNumber: number | null;
   isSelf: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminUsersDeleteDialog");
   const titleId = useId();
   const reasonId = useId();
@@ -102,11 +105,11 @@ export function AdminUsersDeleteDialog({
               {t("usunKonto")}
             </h2>
             <p className="mt-3 text-sm">
-              {displayName?.trim() || t("uzytkownik")}
-              {userNumber != null ? ` · #${userNumber}` : ""}
+              {tl(displayName?.trim() || t("uzytkownik"))}
+              {tl(userNumber != null ? ` · #${userNumber}` : "")}
             </p>
             <p className="mt-1 text-sm text-[var(--brd-ink-soft)]">
-              {email ?? "—"}
+              {tl(email ?? "—")}
             </p>
             <p className="mt-4 text-sm font-medium" role="alert">
               {t("taOperacjaJestNieodwracalna")}
@@ -129,12 +132,12 @@ export function AdminUsersDeleteDialog({
             />
             {error ? (
               <p className="mt-3 text-sm text-[var(--brd-danger,#b42318)]" role="alert">
-                {error}
+                {tl(error)}
               </p>
             ) : null}
             {notice ? (
               <p className="mt-3 text-sm" role="status">
-                {notice}
+                {tl(notice)}
               </p>
             ) : null}
             <div className="mt-6 flex flex-wrap justify-end gap-2">
@@ -152,7 +155,7 @@ export function AdminUsersDeleteDialog({
                 onClick={submit}
                 disabled={pending}
               >
-                {pending ? t("usuwanie") : t("usunKonto")}
+                {tl(pending ? t("usuwanie") : t("usunKonto"))}
               </button>
             </div>
           </div>

@@ -4,6 +4,8 @@
  */
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useEffect, useRef, useState } from "react";
@@ -52,6 +54,7 @@ export type StudioEditToolbarProps = {
 };
 
 export function StudioEditToolbar(props: StudioEditToolbarProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioEditToolbar");
   const [toolbarMoreOpen, setToolbarMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -129,9 +132,9 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           props.recordingLocked || props.pending || props.atTrackCapacity
         }
         title={
-          props.atTrackCapacity
+          tl(props.atTrackCapacity
             ? t("osiagnietoLimitSciezek")
-            : t("dodajSciezkeWokalna")
+            : t("dodajSciezkeWokalna"))
         }
         onClick={props.onAddTrack}
       >
@@ -189,13 +192,13 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           title={t("sciezkiBitLiczonyMaster", { v0: formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks) })}
         >
           <span className="hidden sm:inline">
-            {formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks)}
+            {tl(formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks))}
           </span>
           <span className="sm:hidden">
-            {formatStudioTrackCapacityLabelCompact(
+            {tl(formatStudioTrackCapacityLabelCompact(
               props.trackCount,
               props.maxTracks,
-            )}
+            ))}
           </span>
         </span>
         {props.showUpgradeCta ? (
@@ -224,7 +227,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           title={t("snapKliknijAbyZmienic", { v0: (props.snapPreset === "off" ? t("snapOff") : studioSnapPresetLabel(props.snapPreset)) })}
           onClick={props.onSnapCycle}
         >
-          {t("snap")}{" "}{(props.snapPreset === "off" ? t("snapOff") : studioSnapPresetLabel(props.snapPreset))}
+          {t("snap")}{" "}{tl((props.snapPreset === "off" ? t("snapOff") : studioSnapPresetLabel(props.snapPreset)))}
         </Button>
         <Button
           type="button"

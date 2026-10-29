@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useCallback, useSyncExternalStore } from "react";
@@ -44,6 +46,7 @@ function getBrdThemeServerSnapshot(): BrdTheme {
  * SSR / missing preference = dark; hydrates via useSyncExternalStore.
  */
 export function ThemeToggle({ className }: { className?: string }) {
+  const tl = useLibText();
   const t = useTranslations("nav.themeToggle");
   const theme = useSyncExternalStore(
     subscribeBrdTheme,
@@ -67,8 +70,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       onClick={onToggle}
       aria-pressed={theme === "dark"}
-      aria-label={nextHint}
-      title={nextHint}
+      aria-label={tl(nextHint)}
+      title={tl(nextHint)}
       data-theme-ready="true"
       className={cn(
         "inline-flex min-h-11 items-center gap-1 border border-[var(--brd-line)] bg-transparent px-2 text-sm text-[var(--brd-ink-soft)] outline-none transition-colors sm:gap-1.5 sm:px-2.5",
@@ -80,7 +83,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       <span className="hidden text-xs text-[var(--brd-ink-soft)] sm:inline">
         {t("motyw")}
       </span>
-      <span className="font-medium text-[var(--brd-ink)]">{label}</span>
+      <span className="font-medium text-[var(--brd-ink)]">{tl(label)}</span>
     </button>
   );
 }

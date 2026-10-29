@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -28,6 +30,7 @@ export function ModerationDecisionControls({
   activeMasterReady: boolean;
   openReviews?: Array<{ id: string; kind: string; checksumSha256: string }>;
 }) {
+  const tl = useLibText();
   const t = useTranslations("beats.moderationDecisionControls");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -97,7 +100,7 @@ export function ModerationDecisionControls({
             disabled={pending}
             onClick={() => onClose(review.id)}
           >
-            {t("zamknijSprawe")}{" "}{review.kind} {t("bezPublikacji")}
+            {t("zamknijSprawe")}{" "}{tl(review.kind)} {t("bezPublikacji")}
           </Button>
         ))}
       </div>
@@ -141,7 +144,7 @@ export function ModerationDecisionControls({
         ) : null}
         {error ? (
           <p className="text-sm text-destructive" role="alert">
-            {error}
+            {tl(error)}
           </p>
         ) : null}
       </div>
@@ -191,7 +194,7 @@ export function ModerationDecisionControls({
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
     </div>

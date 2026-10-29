@@ -1,7 +1,11 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
 
-import { useTranslations } from "next-intl";
+
+import { useLocale, useTranslations } from "next-intl";
+
+import { DELETE_CONFIRM_WORD, resolveLocale } from "@/i18n/config";
 
 import Link from "next/link";
 import { useActionState } from "react";
@@ -23,6 +27,7 @@ import { Button } from "@/components/ui/button";
 const initialState: AuthActionState = { error: null, success: false };
 
 export function SignInForm() {
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signInAction, initialState);
 
@@ -46,11 +51,11 @@ export function SignInForm() {
       />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? t("logowanie") : t("zalogujSie")}
+        {tl(pending ? t("logowanie") : t("zalogujSie"))}
       </Button>
       <p className="text-sm text-muted-foreground">
         <Link
@@ -65,6 +70,7 @@ export function SignInForm() {
 }
 
 export function SignUpForm() {
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signUpAction, initialState);
 
@@ -110,22 +116,23 @@ export function SignUpForm() {
       />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.message && !state.error ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? t("tworzenieKonta") : t("zalozKonto")}
+        {tl(pending ? t("tworzenieKonta") : t("zalozKonto"))}
       </Button>
     </form>
   );
 }
 
 export function ChangePasswordForm() {
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     changePasswordAction,
@@ -168,22 +175,23 @@ export function ChangePasswordForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success && state.message ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? t("zapisywanie") : t("zmienHaslo")}
+        {tl(pending ? t("zapisywanie") : t("zmienHaslo"))}
       </Button>
     </form>
   );
 }
 
 export function ForgotPasswordForm() {
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     requestPasswordResetAction,
@@ -204,22 +212,23 @@ export function ForgotPasswordForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success && state.message ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? t("wysylanie") : t("wyslijLinkResetu")}
+        {tl(pending ? t("wysylanie") : t("wyslijLinkResetu"))}
       </Button>
     </form>
   );
 }
 
 export function ResetPasswordForm() {
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     updatePasswordAfterResetAction,
@@ -230,7 +239,7 @@ export function ResetPasswordForm() {
     return (
       <div className="flex w-full max-w-sm flex-col gap-3">
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
         <Link
           href="/sign-in"
@@ -268,17 +277,18 @@ export function ResetPasswordForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? t("zapisywanie") : t("ustawNoweHaslo")}
+        {tl(pending ? t("zapisywanie") : t("ustawNoweHaslo"))}
       </Button>
     </form>
   );
 }
 
 export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     requestEmailChangeAction,
@@ -288,7 +298,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
   return (
     <form action={action} className="flex w-full flex-col gap-3">
       <p className="text-sm text-[var(--brd-ink-soft)]">
-        {t("obecnyAdres")}{" "}<span className="break-all">{currentEmail || "—"}</span>
+        {t("obecnyAdres")}{" "}<span className="break-all">{tl(currentEmail || "—")}</span>
       </p>
       <p className="text-sm text-[var(--brd-mute)]">
         {t("zmianaZaczynaSiePo")}
@@ -325,22 +335,24 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.pendingConfirmation && state.message ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? t("wysylanie") : t("rozpocznijZmianeEMail")}
+        {tl(pending ? t("wysylanie") : t("rozpocznijZmianeEMail"))}
       </Button>
     </form>
   );
 }
 
 export function DeleteAccountForm() {
+  const locale = useLocale();
+  const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     deleteAccountAction,
@@ -363,7 +375,7 @@ export function DeleteAccountForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        {t("wpiszUsunAbyPotwierdzic")}
+        {t("wpiszUsunAbyPotwierdzic", { word: DELETE_CONFIRM_WORD[resolveLocale(locale)] })}
         <input
           name="confirmText"
           type="text"
@@ -374,7 +386,7 @@ export function DeleteAccountForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       <Button
@@ -383,7 +395,7 @@ export function DeleteAccountForm() {
         variant="destructive"
         className="min-h-11 w-full"
       >
-        {pending ? t("usuwanie") : t("usunKonto")}
+        {tl(pending ? t("usuwanie") : t("usunKonto"))}
       </Button>
     </form>
   );

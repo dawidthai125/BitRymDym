@@ -1,3 +1,5 @@
+import { useLibText } from "@/i18n/use-lib-text";
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -45,6 +47,7 @@ export default async function AccountPage({
 }: {
   searchParams: Promise<{ claim?: string }>;
 }) {
+  const tl = await getLibText();
   const tr = await getTranslations("account.accountPage");
   const env = getSupabasePublicEnv();
   if (!env.isConfigured) {
@@ -213,14 +216,14 @@ export default async function AccountPage({
                     >
                       <div className="min-w-0 space-y-2">
                         <p className="brd-display truncate text-lg font-semibold">
-                          {take.beatTitle || "Bit"}
+                          {tl(take.beatTitle || "Bit")}
                         </p>
                         <p className="flex gap-3 text-sm text-[var(--brd-mute)]">
-                          <span>{labelRecordingMode(take.recordingMode)}</span>
+                          <span>{tl(labelRecordingMode(take.recordingMode))}</span>
                           <span className="brd-data text-[var(--brd-ink-soft)]">
-                            {take.durationSeconds != null
+                            {tl(take.durationSeconds != null
                               ? formatDurationSeconds(take.durationSeconds)
-                              : "—"}
+                              : "—")}
                           </span>
                         </p>
                       </div>
@@ -229,7 +232,7 @@ export default async function AccountPage({
                           take.displayStatus === "READY" ? "ok" : "neutral"
                         }
                       >
-                        {labelTakeStatus(take.displayStatus)}
+                        {tl(labelTakeStatus(take.displayStatus))}
                       </StatusPill>
                     </li>
                   ))}
@@ -266,13 +269,13 @@ export default async function AccountPage({
                 <SectionLabel>{tr("profil")}</SectionLabel>
                 <div>
                   <p className="brd-display text-2xl font-semibold">
-                    {formatProfileWithUserNumber(
+                    {tl(formatProfileWithUserNumber(
                       displayName,
                       context.profile.userNumber,
-                    )}
+                    ))}
                   </p>
                   <p className="mt-1 text-sm text-[var(--brd-mute)]">
-                    {labelAccountLevel(context.profile.accountLevel)}
+                    {tl(labelAccountLevel(context.profile.accountLevel))}
                   </p>
                 </div>
 
@@ -281,20 +284,20 @@ export default async function AccountPage({
                     <dt className="text-xs text-[var(--brd-mute)]">
                       {tr("ksywka")}
                     </dt>
-                    <dd className="mt-1 text-[var(--brd-ink)]">{displayName}</dd>
+                    <dd className="mt-1 text-[var(--brd-ink)]">{tl(displayName)}</dd>
                   </div>
                   <div>
                     <dt className="text-xs text-[var(--brd-mute)]">
                       {tr("idUzytkownika")}
                     </dt>
-                    <dd className="brd-data mt-1 text-[var(--brd-ink)]">{userNumberLabel}</dd>
+                    <dd className="brd-data mt-1 text-[var(--brd-ink)]">{tl(userNumberLabel)}</dd>
                   </div>
                   <div>
                     <dt className="text-xs text-[var(--brd-mute)]">
                       {tr("eMail")}
                     </dt>
                     <dd className="mt-1 break-all text-[var(--brd-ink)]">
-                      {context.email ?? "—"}
+                      {tl(context.email ?? "—")}
                     </dd>
                   </div>
                 </dl>
@@ -321,7 +324,7 @@ export default async function AccountPage({
                       planDisplay.verified ? "true" : "false"
                     }
                   >
-                    {planDisplay.summary}
+                    {tl(planDisplay.summary)}
                   </p>
                 </div>
 
@@ -379,12 +382,13 @@ export default async function AccountPage({
 }
 
 function StudioChip({ href, label }: { href: string; label: string }) {
+  const tl = useLibText();
   return (
     <Link
       href={href}
       className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-4 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-green)] hover:text-[var(--brd-green)]"
     >
-      {label}
+      {tl(label)}
     </Link>
   );
 }
@@ -398,6 +402,7 @@ function LibraryRow({
   title: string;
   meta: string;
 }) {
+  const tl = useLibText();
   return (
     <li>
       <Link
@@ -405,8 +410,8 @@ function LibraryRow({
         className="flex min-h-11 items-center justify-between gap-3 py-4 hover:text-[var(--brd-green)]"
       >
         <div>
-          <p className="font-medium">{title}</p>
-          <p className="text-sm text-[var(--brd-mute)]">{meta}</p>
+          <p className="font-medium">{tl(title)}</p>
+          <p className="text-sm text-[var(--brd-mute)]">{tl(meta)}</p>
         </div>
         <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0">
           <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -417,12 +422,13 @@ function LibraryRow({
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
+  const tl = useLibText();
   return (
     <div>
       <dt className="text-xs text-[var(--brd-mute)]">
-        {label}
+        {tl(label)}
       </dt>
-      <dd className="brd-data mt-1 text-lg text-[var(--brd-ink)]">{value}</dd>
+      <dd className="brd-data mt-1 text-lg text-[var(--brd-ink)]">{tl(value)}</dd>
     </div>
   );
 }

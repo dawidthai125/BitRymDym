@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import {
@@ -79,6 +81,7 @@ export function BeatsCatalogClient({
   beats,
   initialQuery = "",
 }: BeatsCatalogClientProps) {
+  const tl = useLibText();
   const t = useTranslations("common.beatsCatalogClient");
   const tCount = useTranslations("beats.count");
   const [query, setQuery] = useState(initialQuery);
@@ -234,7 +237,7 @@ export function BeatsCatalogClient({
               onClick={() => setFiltersOpen(true)}
               className="inline-flex min-h-11 items-center border-b border-[var(--brd-line)] px-0.5 text-sm text-[var(--brd-ink)]"
             >
-              {t("filtry")}{activeFilterCount ? ` (${activeFilterCount})` : ""}
+              {t("filtry")}{tl(activeFilterCount ? ` (${activeFilterCount})` : "")}
             </button>
             <span className="text-[var(--brd-line)]" aria-hidden>
               ·
@@ -256,16 +259,16 @@ export function BeatsCatalogClient({
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {liveResultStatus}
+                {tl(liveResultStatus)}
               </div>
               <p
                 className="brd-meta text-[11px] tracking-[0.04em] text-[var(--brd-mute)]"
                 aria-hidden
               >
                 {tCount("count", { count: filtered.length })}
-                {filtered.length !== beats.length
+                {tl(filtered.length !== beats.length
                   ? ` · z ${beats.length}`
-                  : null}
+                  : null)}
               </p>
               <div className="hidden lg:block">
                 <SortSelect sort={sort} onChange={setSort} />
@@ -410,6 +413,7 @@ function FilterPanel({
   onClear: () => void;
   activeCount: number;
 }) {
+  const tl = useLibText();
   const t = useTranslations("common.beatsCatalogClient");
   return (
     <div className="space-y-0">
@@ -437,7 +441,7 @@ function FilterPanel({
           genreOptions.map((g) => (
             <CheckRow
               key={g}
-              label={g}
+              label={tl(g)}
               checked={genres.includes(g)}
               onChange={() => onToggleGenre(g)}
             />
@@ -489,7 +493,7 @@ function FilterPanel({
             {keyOptions.map((k) => (
               <CheckRow
                 key={k}
-                label={k}
+                label={tl(k)}
                 checked={keys.includes(k)}
                 onChange={() => onToggleKey(k)}
                 compact
@@ -509,6 +513,7 @@ function FilterGroup({
   title: string;
   children: React.ReactNode;
 }) {
+  const tl = useLibText();
   const titleId = useId();
   return (
     <div
@@ -520,7 +525,7 @@ function FilterGroup({
         id={titleId}
         className="text-xs font-medium text-[var(--brd-mute)]"
       >
-        {title}
+        {tl(title)}
       </p>
       <div className="space-y-0.5">{children}</div>
     </div>
@@ -538,6 +543,7 @@ function CheckRow({
   onChange: () => void;
   compact?: boolean;
 }) {
+  const tl = useLibText();
   return (
     <label
       className={cn(
@@ -554,7 +560,7 @@ function CheckRow({
         onChange={onChange}
         className="size-3.5 shrink-0 accent-[var(--brd-green)]"
       />
-      <span className="truncate">{label}</span>
+      <span className="truncate">{tl(label)}</span>
     </label>
   );
 }

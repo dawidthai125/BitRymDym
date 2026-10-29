@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 
 import {
@@ -64,6 +66,7 @@ export function StudioLeaveGuardDialog({
   onStay: () => void;
   onLeave: () => void;
 }) {
+  const tl = useLibText();
   const titleId = useId();
   const bodyId = useId();
   const stayRef = useRef<HTMLButtonElement | null>(null);
@@ -109,7 +112,7 @@ export function StudioLeaveGuardDialog({
       <button
         type="button"
         className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
-        aria-label={STUDIO_LEAVE_GUARD_STAY_PL}
+        aria-label={tl(STUDIO_LEAVE_GUARD_STAY_PL)}
         tabIndex={-1}
         onClick={onStay}
       />
@@ -125,10 +128,10 @@ export function StudioLeaveGuardDialog({
           id={titleId}
           className="text-xs font-medium uppercase tracking-[0.1em] text-destructive"
         >
-          {STUDIO_LEAVE_GUARD_TITLE_PL}
+          {tl(STUDIO_LEAVE_GUARD_TITLE_PL)}
         </p>
         <p id={bodyId} className="text-sm text-[var(--brd-ink)]">
-          {STUDIO_LEAVE_GUARD_BODY_PL}
+          {tl(STUDIO_LEAVE_GUARD_BODY_PL)}
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button
@@ -139,7 +142,7 @@ export function StudioLeaveGuardDialog({
             data-testid="studio-leave-guard-leave"
             onClick={onLeave}
           >
-            {STUDIO_LEAVE_GUARD_LEAVE_PL}
+            {tl(STUDIO_LEAVE_GUARD_LEAVE_PL)}
           </Button>
           <Button
             ref={stayRef}
@@ -148,7 +151,7 @@ export function StudioLeaveGuardDialog({
             data-testid="studio-leave-guard-stay"
             onClick={onStay}
           >
-            {STUDIO_LEAVE_GUARD_STAY_PL}
+            {tl(STUDIO_LEAVE_GUARD_STAY_PL)}
           </Button>
         </div>
       </div>

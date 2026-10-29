@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import Link from "next/link";
@@ -51,6 +53,7 @@ export function BeatDetailClient({
   masterPro,
   related,
 }: BeatDetailClientProps) {
+  const tl = useLibText();
   const t = useTranslations("beats.beatDetailClient");
   const {
     track,
@@ -185,7 +188,7 @@ export function BeatDetailClient({
       <div className="grid gap-6 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] md:items-start md:gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <BeatArtwork
           variant={beat.artworkVariant}
-          title={beat.title}
+          title={tl(beat.title)}
           size="xl"
           className="mx-auto w-full max-w-[20rem] md:mx-0 md:max-w-none"
         />
@@ -193,11 +196,11 @@ export function BeatDetailClient({
         <div className="min-w-0 space-y-5">
           <div className="space-y-2">
             <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.88] text-balance">
-              {beat.title}
+              {tl(beat.title)}
             </h1>
             <p className="text-lg text-[var(--brd-ink-soft)]">
               <span className="sr-only">{t("producent")}{" "}</span>
-              {beat.producer}
+              {tl(beat.producer)}
             </p>
           </div>
 
@@ -213,7 +216,7 @@ export function BeatDetailClient({
                   loading={loading}
                   disabled={!hasAudio}
                   size="md"
-                  title={beat.title}
+                  title={tl(beat.title)}
                   onClick={() => void onPlay()}
                 />
                 <div className="min-w-0 flex-1">
@@ -237,7 +240,7 @@ export function BeatDetailClient({
 
               {isCurrent && error ? (
                 <p className="text-sm text-[var(--brd-danger)]" role="alert">
-                  {error}
+                  {tl(error)}
                 </p>
               ) : null}
             </section>
@@ -259,14 +262,14 @@ export function BeatDetailClient({
             </span>
             <span>
               <span className="text-[var(--brd-mute)]">{t("tonacja")}{" "}</span>
-              <span className="text-[var(--brd-ink)]">{beat.key ?? "—"}</span>
+              <span className="text-[var(--brd-ink)]">{tl(beat.key ?? "—")}</span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
             </span>
             <span>
               <span className="text-[var(--brd-mute)]">{t("gatunek")}{" "}</span>
-              <span className="text-[var(--brd-ink)]">{beat.genre ?? "—"}</span>
+              <span className="text-[var(--brd-ink)]">{tl(beat.genre ?? "—")}</span>
             </span>
             <span aria-hidden="true" className="text-[var(--brd-line)]">
               ·
@@ -274,7 +277,7 @@ export function BeatDetailClient({
             <span>
               <span className="text-[var(--brd-mute)]">{t("czas")}{" "}</span>
               <span className="text-[var(--brd-ink)]">
-                {formatDurationSeconds(beat.durationSeconds)}
+                {tl(formatDurationSeconds(beat.durationSeconds))}
               </span>
             </span>
           </p>
@@ -316,7 +319,7 @@ export function BeatDetailClient({
             {hasAudio && originalMasterDownloadAllowed ? (
               <DownloadButton
                 beatId={beat.id}
-                title={beat.title}
+                title={tl(beat.title)}
                 isAuthenticated={isAuthenticated}
               />
             ) : hasAudio ? (
@@ -334,8 +337,8 @@ export function BeatDetailClient({
       <section className="max-w-prose space-y-2 border-t border-[var(--brd-line)] pt-6">
         <h2 className="brd-display text-3xl leading-none">{t("oBicie")}</h2>
         <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-          {description ??
-            t("bitGotowyDoOdsluchu")}
+          {tl(description ??
+            t("bitGotowyDoOdsluchu"))}
         </p>
       </section>
 
@@ -358,13 +361,13 @@ export function BeatDetailClient({
                 >
                   <BeatArtwork
                     variant={r.artworkVariant}
-                    title={r.title}
+                    title={tl(r.title)}
                     size="xs"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{r.title}</p>
+                    <p className="truncate font-medium">{tl(r.title)}</p>
                     <p className="truncate text-sm text-[var(--brd-mute)]">
-                      {r.producer} {t("tempo2")}{" "}{r.bpm}
+                      {tl(r.producer)} {t("tempo2")}{" "}{r.bpm}
                     </p>
                   </div>
                 </Link>
@@ -414,7 +417,7 @@ export function BeatDetailClient({
           </div>
           <BeatRecordingSurface
             beatId={beat.id}
-            title={beat.title}
+            title={tl(beat.title)}
             durationSeconds={beat.durationSeconds}
             maxRecordingSeconds={maxRecordingSeconds}
             beatStatus="PUBLISHED"

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useState, useTransition } from "react";
@@ -15,6 +17,7 @@ type AdminSamplePolicyFormProps = {
 };
 
 export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminSamplePolicyForm");
   const [bronze, setBronze] = useState(initial.bronzeMaxRecordingSeconds);
   const [silver, setSilver] = useState(initial.silverMaxRecordingSeconds);
@@ -51,9 +54,9 @@ export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
       <p className="text-sm text-[var(--brd-ink-soft)]">
         {t("globalnyLimitTechniczny")}{" "}
         <strong>{RECORDING_GLOBAL_MAX_SECONDS} s</strong>.{" "}
-        {labelSamplePolicyActor("ANONYMOUS")} (15 s) i{" "}
-        {labelSamplePolicyActor("FREE")} {t("n30SSaStale")}{" "}{labelPremiumTier("BRONZE")} /{" "}
-        {labelPremiumTier("SILVER")} / {labelPremiumTier("GOLD")}.
+        {tl(labelSamplePolicyActor("ANONYMOUS"))} (15 s) i{" "}
+        {tl(labelSamplePolicyActor("FREE"))} {t("n30SSaStale")}{" "}{tl(labelPremiumTier("BRONZE"))} /{" "}
+        {tl(labelPremiumTier("SILVER"))} / {tl(labelPremiumTier("GOLD"))}.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -82,16 +85,16 @@ export function AdminSamplePolicyForm({ initial }: AdminSamplePolicyFormProps) {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={isPending} className="min-h-11">
-          {isPending ? t("zapisywanie") : "Zapisz"}
+          {tl(isPending ? t("zapisywanie") : "Zapisz")}
         </Button>
         {success ? (
           <p className="text-sm text-[var(--brd-green)]" role="status">
-            {success}
+            {tl(success)}
           </p>
         ) : null}
         {error ? (
           <p className="text-sm text-destructive" role="alert">
-            {error}
+            {tl(error)}
           </p>
         ) : null}
       </div>
@@ -106,10 +109,11 @@ function DurationField(props: {
   onChange: (n: number) => void;
   disabled?: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminSamplePolicyForm");
   return (
     <label className="block space-y-1.5 text-sm" htmlFor={props.id}>
-      <span className="font-medium">{props.label}</span>
+      <span className="font-medium">{tl(props.label)}</span>
       <input
         id={props.id}
         type="number"

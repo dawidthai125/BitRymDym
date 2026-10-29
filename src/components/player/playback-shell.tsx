@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -54,6 +56,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
     { beatId, title, durationSeconds, className },
     ref,
   ) {
+  const tl = useLibText();
   const t = useTranslations("common.playbackShell");
     const labelId = useId();
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -336,7 +339,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
               id={labelId}
               className="brd-display truncate text-lg font-semibold tracking-tight text-[var(--brd-ink)]"
             >
-              {title}
+              {tl(title)}
             </p>
             <p className="brd-meta mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--brd-mute)]">
               {t("nagrywanie")}
@@ -374,20 +377,20 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             loading={loading}
             disabled={playDisabled}
             size="md"
-            title={title}
+            title={tl(title)}
             onClick={() => void handlePlayPause()}
-            aria-label={isPlayLabel(state.phase) ? t("odtworz") : "Pauza"}
+            aria-label={tl(isPlayLabel(state.phase) ? t("odtworz") : "Pauza")}
           />
 
           <button
             type="button"
             onClick={() => dispatch({ type: "MUTE", muted: !state.muted })}
             aria-pressed={state.muted}
-            aria-label={state.muted ? t("wlaczDzwiek") : "Wycisz"}
+            aria-label={tl(state.muted ? t("wlaczDzwiek") : "Wycisz")}
             disabled={controlsLocked}
             className="inline-flex min-h-11 items-center border border-[var(--brd-audio-line)] px-3 text-sm text-[var(--brd-ink-soft)] outline-none hover:border-[var(--brd-ink)] hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)] disabled:opacity-45"
           >
-            {state.muted ? "Wyciszony" : t("dzwiek")}
+            {tl(state.muted ? "Wyciszony" : t("dzwiek"))}
           </button>
 
           <label className="ml-auto flex min-w-[8rem] max-w-[12rem] flex-1 flex-col gap-2 text-[var(--brd-mute)]">
@@ -426,7 +429,7 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
 
         {state.error ? (
           <p className="text-sm text-[var(--brd-danger)]" role="alert">
-            {state.error}
+            {tl(state.error)}
           </p>
         ) : null}
       </div>

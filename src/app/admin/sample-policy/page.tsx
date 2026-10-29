@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -18,6 +19,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 export default async function AdminSamplePolicyPage() {
+  const tl = await getLibText();
   const t = await getTranslations("admin.adminSamplePolicyPage");
   try {
     await requireRole(["ADMIN"]);
@@ -45,9 +47,9 @@ export default async function AdminSamplePolicyPage() {
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
             {t("konfiguracjaLimituDlugosciNagrania")}{" "}
-            {labelSamplePolicyActor("BRONZE")} /{" "}
-            {labelSamplePolicyActor("SILVER")} /{" "}
-            {labelSamplePolicyActor("GOLD")}{t("globalnyLimitTechniczny")}{" "}
+            {tl(labelSamplePolicyActor("BRONZE"))} /{" "}
+            {tl(labelSamplePolicyActor("SILVER"))} /{" "}
+            {tl(labelSamplePolicyActor("GOLD"))}{t("globalnyLimitTechniczny")}{" "}
             {RECORDING_GLOBAL_MAX_SECONDS} s.
           </p>
         </header>
@@ -58,11 +60,11 @@ export default async function AdminSamplePolicyPage() {
           </h2>
           <ul className="grid gap-2 text-sm sm:grid-cols-2">
             <li>
-              {labelSamplePolicyActor("ANONYMOUS")}:{" "}
+              {tl(labelSamplePolicyActor("ANONYMOUS"))}:{" "}
               {SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds} {t("sCzasZycia")}{" "}{SAMPLE_POLICY_DEFAULTS.ANONYMOUS.ttlSeconds / 3600} {t("godz")}
             </li>
             <li>
-              {labelSamplePolicyActor("FREE")}:{" "}
+              {tl(labelSamplePolicyActor("FREE"))}:{" "}
               {SAMPLE_POLICY_DEFAULTS.FREE.maxRecordingSeconds} {t("sCzasZycia")}{" "}
               {SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds / 3600} {t("godz")}
             </li>

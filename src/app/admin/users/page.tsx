@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -66,6 +67,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const tl = await getLibText();
   const t = await getTranslations("admin.adminUsersPage");
   const tShared = await getTranslations("common.shared");
   const tag = intlTag(resolveLocale(await getLocale()));
@@ -162,15 +164,15 @@ export default async function AdminUsersPage({
             {t("nieUdaloSiePobrac")}
           </p>
         ) : !result || result.total === 0 ? (
-          <p className="mt-8 text-sm text-[var(--brd-mute)]">{emptyMessage}</p>
+          <p className="mt-8 text-sm text-[var(--brd-mute)]">{tl(emptyMessage)}</p>
         ) : (
           <div className="mt-8">
             <p className="mb-3 text-sm text-[var(--brd-mute)]">
               {result.total}{" "}
-              {result.total === 1 ? "użytkownik" : "użytkowników"}
-              {result.truncated
+              {tl(result.total === 1 ? "użytkownik" : "użytkowników")}
+              {tl(result.truncated
                 ? t("wynikiOgraniczoneZawezWyszukiwanie")
-                : ""}
+                : "")}
             </p>
             <div className="overflow-x-auto border border-[var(--brd-line)]">
               <table className="w-full min-w-[56rem] text-left text-sm">
@@ -192,24 +194,24 @@ export default async function AdminUsersPage({
                   {result.rows.map((row) => (
                     <tr key={row.id}>
                       <td className="px-3 py-3 font-medium">
-                        {row.displayName?.trim() || t("uzytkownik")}
+                        {tl(row.displayName?.trim() || t("uzytkownik"))}
                       </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
-                        {row.email ?? "—"}
+                        {tl(row.email ?? "—")}
                       </td>
                       <td className="px-3 py-3 tabular-nums">
                         {row.userNumber ?? "—"}
                       </td>
-                      <td className="px-3 py-3">{labelCreatorRank(row.rank)}</td>
+                      <td className="px-3 py-3">{tl(labelCreatorRank(row.rank))}</td>
                       <td className="px-3 py-3">
-                        {labelPremiumTier(row.premiumTier)}
+                        {tl(labelPremiumTier(row.premiumTier))}
                       </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
-                        {row.premiumTier === "FREE"
+                        {tl(row.premiumTier === "FREE"
                           ? "—"
-                          : formatExpiresAt(row.premiumExpiresAt, tag, tShared("noExpiry"))}
+                          : formatExpiresAt(row.premiumExpiresAt, tag, tShared("noExpiry")))}
                       </td>
-                      <td className="px-3 py-3">{labelSystemRole(row.role)}</td>
+                      <td className="px-3 py-3">{tl(labelSystemRole(row.role))}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col items-start gap-2">
                           <AdminUsersManageDialog
@@ -301,13 +303,13 @@ export default async function AdminUsersPage({
             </p>
           ) : !auditResult || auditResult.total === 0 ? (
             <p className="mt-8 text-sm text-[var(--brd-mute)]">
-              {auditEmptyMessage}
+              {tl(auditEmptyMessage)}
             </p>
           ) : (
             <div className="mt-8">
               <p className="mb-3 text-sm text-[var(--brd-mute)]">
                 {auditResult.total}{" "}
-                {auditResult.total === 1 ? "zmiana" : "zmian"}
+                {tl(auditResult.total === 1 ? "zmiana" : "zmian")}
               </p>
               <div className="overflow-x-auto border border-[var(--brd-line)]">
                 <table className="w-full min-w-[48rem] text-left text-sm">
@@ -324,13 +326,13 @@ export default async function AdminUsersPage({
                     {auditResult.rows.map((row) => (
                       <tr key={row.id}>
                         <td className="px-3 py-3 whitespace-nowrap">
-                          {row.createdAt}
+                          {tl(row.createdAt)}
                         </td>
-                        <td className="px-3 py-3">{row.actorLabel}</td>
-                        <td className="px-3 py-3">{row.targetLabel}</td>
-                        <td className="px-3 py-3">{row.action}</td>
+                        <td className="px-3 py-3">{tl(row.actorLabel)}</td>
+                        <td className="px-3 py-3">{tl(row.targetLabel)}</td>
+                        <td className="px-3 py-3">{tl(row.action)}</td>
                         <td className="px-3 py-3">
-                          {row.oldLabel} → {row.newLabel}
+                          {tl(row.oldLabel)} → {tl(row.newLabel)}
                         </td>
                       </tr>
                     ))}

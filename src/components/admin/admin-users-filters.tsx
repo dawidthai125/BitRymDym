@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useRouter } from "next/navigation";
@@ -32,6 +34,7 @@ export function AdminUsersFilters({
   auditAction?: string;
   auditUser?: string;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminUsersFilters");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -81,7 +84,7 @@ export function AdminUsersFilters({
           <option value="all">{t("wszystkie")}</option>
           {PREMIUM_TIERS.map((tier) => (
             <option key={tier} value={tier}>
-              {labelPremiumTier(tier)}
+              {tl(labelPremiumTier(tier))}
             </option>
           ))}
         </select>
@@ -92,7 +95,7 @@ export function AdminUsersFilters({
           <option value="all">{t("wszystkie")}</option>
           {SYSTEM_ROLES.map((value) => (
             <option key={value} value={value}>
-              {labelSystemRole(value)}
+              {tl(labelSystemRole(value))}
             </option>
           ))}
         </select>
@@ -103,7 +106,7 @@ export function AdminUsersFilters({
           <option value="all">{t("wszystkie")}</option>
           {CREATOR_RANKS.map((value) => (
             <option key={value} value={value}>
-              {labelCreatorRank(value)}
+              {tl(labelCreatorRank(value))}
             </option>
           ))}
         </select>
@@ -113,7 +116,7 @@ export function AdminUsersFilters({
         className="inline-flex min-h-11 items-center bg-[var(--brd-green)] px-4 text-sm text-[var(--brd-paper)]"
         disabled={pending}
       >
-        {pending ? t("szukanie") : "Filtruj"}
+        {tl(pending ? t("szukanie") : "Filtruj")}
       </button>
     </form>
   );

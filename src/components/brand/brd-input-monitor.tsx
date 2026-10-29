@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
@@ -22,6 +24,7 @@ export function BrdInputMonitor({
   peak,
   className,
 }: BrdInputMonitorProps) {
+  const tl = useLibText();
   const t = useTranslations("common.brdInputMonitor");
   const label = micLevelLabelPl(level);
   const fill = Math.min(1, Math.max(0, peak));
@@ -48,7 +51,7 @@ export function BrdInputMonitor({
                 : "text-[var(--brd-mute)]",
           )}
         >
-          {label}
+          {tl(label)}
         </p>
       </div>
       <div

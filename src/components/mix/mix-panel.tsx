@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -62,6 +64,7 @@ export function MixPanel({
   mixPro,
   masterPro,
 }: MixPanelProps) {
+  const tl = useLibText();
   const tr = useTranslations("studio.mixPanel");
   const tStatus = useTranslations("studio.exportStatus");
   const [takeId, setTakeId] = useState(takes[0]?.id ?? "");
@@ -422,7 +425,7 @@ export function MixPanel({
         >
           {takes.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.label}
+              {tl(t.label)}
             </option>
           ))}
         </select>
@@ -599,7 +602,7 @@ export function MixPanel({
 
       <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
-          {tr("proMix")}{" "}{mixPro ? "" : tr("zablokowane")}
+          {tr("proMix")}{" "}{tl(mixPro ? "" : tr("zablokowane"))}
         </summary>
         <div className="space-y-2 px-3 pt-1">
           {!mixPro ? (
@@ -617,7 +620,7 @@ export function MixPanel({
               disabled={busy}
               onClick={enableProDefaults}
             >
-              {params.pro ? tr("proLancuchAktywny") : tr("wlaczLancuchEfektowPro")}
+              {tl(params.pro ? tr("proLancuchAktywny") : tr("wlaczLancuchEfektowPro"))}
             </button>
           )}
           {proLockedHint && !mixPro ? (
@@ -653,7 +656,7 @@ export function MixPanel({
 
       <details className="min-w-0 border border-[var(--brd-line)] open:pb-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase marker:content-none [&::-webkit-details-marker]:hidden">
-          {tr("proMaster")}{" "}{masterPro ? "" : tr("zablokowane")}
+          {tr("proMaster")}{" "}{tl(masterPro ? "" : tr("zablokowane"))}
         </summary>
         <div className="space-y-2 px-3 pt-1">
           {!masterPro ? (
@@ -682,9 +685,9 @@ export function MixPanel({
               </div>
               <p className="text-xs tabular-nums text-muted-foreground">
                 {tr("szczyt")}{" "}
-                {meter
+                {tl(meter
                   ? tr("dbfs", { v0: meter.peakDb.toFixed(1) })
-                  : tr("wlaczPodglad")}
+                  : tr("wlaczPodglad"))}
               </p>
             </div>
           )}
@@ -703,7 +706,7 @@ export function MixPanel({
           disabled={busy || !takeId}
           onClick={() => void startPreview()}
         >
-          {playing ? tr("odswiezPodglad") : tr("odtworzMiks")}
+          {tl(playing ? tr("odswiezPodglad") : tr("odtworzMiks"))}
         </button>
         <button
           type="button"
@@ -730,9 +733,9 @@ export function MixPanel({
             aria-busy={exportBusy}
             onClick={() => void startExport("BASIC_MP3")}
           >
-            {exportBusy && exportStatus !== "error"
+            {tl(exportBusy && exportStatus !== "error"
               ? tr("eksportuje")
-              : "MP3"}
+              : "MP3")}
           </button>
           {mixPro ? (
             <>
@@ -797,7 +800,7 @@ export function MixPanel({
             aria-live="polite"
           >
             {tr("status")}{" "}{tStatus(exportStatusKey(exportStatus))}
-            {exportBusy ? tr("czekaj") : null}
+            {tl(exportBusy ? tr("czekaj") : null)}
           </p>
         ) : null}
         {mixPro ? (
@@ -809,7 +812,7 @@ export function MixPanel({
 
       {error ? (
         <p className="text-sm text-destructive text-pretty" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
 
@@ -880,10 +883,11 @@ function GainPanControl(props: {
   disabled?: boolean;
   onChange: (gainDb: number, pan: number) => void;
 }) {
+  const tl = useLibText();
   const tr = useTranslations("studio.mixPanel");
   return (
     <div className="min-w-0 space-y-2 border border-[var(--brd-line)] p-3">
-      <p className="text-xs font-medium tracking-wide uppercase">{props.label}</p>
+      <p className="text-xs font-medium tracking-wide uppercase">{tl(props.label)}</p>
       <Slider
         label={tr("wzmocnienieDb")}
         min={-24}
@@ -915,10 +919,11 @@ function Slider(props: {
   disabled?: boolean;
   onChange: (value: number) => void;
 }) {
+  const tl = useLibText();
   return (
     <label className="flex min-w-0 flex-col gap-1 text-xs">
       <span className="flex justify-between gap-2 text-muted-foreground">
-        <span className="min-w-0 truncate">{props.label}</span>
+        <span className="min-w-0 truncate">{tl(props.label)}</span>
         <span className="shrink-0 tabular-nums">{props.value}</span>
       </span>
       <input

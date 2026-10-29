@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -61,6 +63,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function AdminCreateBeatForm() {
+  const tl = useLibText();
   const tr = useTranslations("admin.adminCreateBeatForm");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -421,13 +424,13 @@ export function AdminCreateBeatForm() {
 
         {statusLine ? (
           <p className="text-sm text-muted-foreground" role="status">
-            {statusLine}
+            {tl(statusLine)}
           </p>
         ) : null}
 
         {analysis.status === "error" ? (
           <p className="text-sm text-destructive" role="alert">
-            {analysis.message}
+            {tl(analysis.message)}
           </p>
         ) : null}
 
@@ -435,24 +438,24 @@ export function AdminCreateBeatForm() {
           <dl className="grid gap-2 text-sm">
             <div className="flex justify-between gap-4 border-b border-border py-1">
               <dt className="text-muted-foreground">{tr("plik")}</dt>
-              <dd className="text-right text-foreground">{analysis.filename}</dd>
+              <dd className="text-right text-foreground">{tl(analysis.filename)}</dd>
             </div>
             <div className="flex justify-between gap-4 border-b border-border py-1">
               <dt className="text-muted-foreground">{tr("formatMime")}</dt>
               <dd className="text-right text-foreground">
-                {analysis.contentType}
+                {tl(analysis.contentType)}
               </dd>
             </div>
             <div className="flex justify-between gap-4 border-b border-border py-1">
               <dt className="text-muted-foreground">{tr("rozmiar")}</dt>
               <dd className="text-right text-foreground">
-                {formatBytes(analysis.byteSize)}
+                {tl(formatBytes(analysis.byteSize))}
               </dd>
             </div>
             <div className="flex justify-between gap-4 border-b border-border py-1">
               <dt className="text-muted-foreground">{tr("czasTrwania")}</dt>
               <dd className="text-right text-foreground">
-                {formatDuration(analysis.durationSeconds)}
+                {tl(formatDuration(analysis.durationSeconds))}
                 <span className="ml-2 text-muted-foreground">
                   ({analysis.durationSeconds} s)
                 </span>
@@ -593,7 +596,7 @@ export function AdminCreateBeatForm() {
 
       {formError ? (
         <p className="text-sm text-destructive" role="alert">
-          {formError}
+          {tl(formError)}
         </p>
       ) : null}
       {success ? (
@@ -603,7 +606,7 @@ export function AdminCreateBeatForm() {
       ) : null}
 
       <Button type="submit" disabled={!canSubmit}>
-        {pending ? tr("tworzenie") : tr("utworzWersjeRoboczaMaster")}
+        {tl(pending ? tr("tworzenie") : tr("utworzWersjeRoboczaMaster"))}
       </Button>
     </form>
   );

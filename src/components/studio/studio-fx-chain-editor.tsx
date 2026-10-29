@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import type { ReactNode } from "react";
@@ -78,6 +80,7 @@ export function StudioFxChainEditor({
   onClose,
   title,
 }: StudioFxChainEditorProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioFxChainEditor");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -246,7 +249,7 @@ export function StudioFxChainEditor({
           id={titleId}
           className="text-sm font-semibold text-[var(--brd-ink)]"
         >
-          {heading}
+          {tl(heading)}
         </h2>
         {onClose ? (
           <Button
@@ -272,7 +275,7 @@ export function StudioFxChainEditor({
                 : "text-sm text-[var(--brd-mute)]"
             }
           >
-            {message}
+            {tl(message)}
             {saving === "conflict" ? (
               <>
                 {" "}
@@ -313,7 +316,7 @@ export function StudioFxChainEditor({
                         setExpandedId(expanded ? null : effect.id)
                       }
                     >
-                      {meta.labelPl}
+                      {tl(meta.labelPl)}
                     </button>
                     <Button
                       type="button"
@@ -339,11 +342,11 @@ export function StudioFxChainEditor({
                     </Button>
                     <StudioToggleChip
                       active={effect.enabled}
-                      label={effect.enabled ? t("wlaczony") : t("wylaczony")}
+                      label={tl(effect.enabled ? t("wlaczony") : t("wylaczony"))}
                       title={
-                        effect.enabled
+                        tl(effect.enabled
                           ? t("wylaczEfektBezUsuwania")
-                          : t("wlaczEfekt")
+                          : t("wlaczEfekt"))
                       }
                       disabled={saving === "saving"}
                       onClick={() => void onToggle(effect)}
@@ -362,7 +365,7 @@ export function StudioFxChainEditor({
                         return (
                           <StudioMixControl
                             key={param.path}
-                            label={param.labelPl}
+                            label={tl(param.labelPl)}
                             ariaLabel={`${meta.labelPl}: ${param.labelPl}`}
                             value={value}
                             display={formatParam(value, param.unit)}
@@ -424,7 +427,7 @@ export function StudioFxChainEditor({
                     disabled={saving === "saving"}
                     onClick={() => void onAdd(type)}
                   >
-                    {studioFxLabelPl(type)}
+                    {tl(studioFxLabelPl(type))}
                   </Button>
                 </li>
               ))}

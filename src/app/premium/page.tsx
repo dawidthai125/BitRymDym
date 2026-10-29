@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -32,6 +33,7 @@ const tiers = [
 ];
 
 export default function PremiumPage() {
+  const tl = useLibText();
   const tr = useTranslations("account.premiumPage");
   return (
     <AppShell tone="public">
@@ -129,7 +131,7 @@ export default function PremiumPage() {
                         className="border-b border-[var(--brd-line)] last:border-0"
                       >
                         <th scope="row" className="px-3 py-2.5 font-medium text-[var(--brd-ink)]">
-                          {t.label}
+                          {tl(t.label)}
                         </th>
                         <td className="px-3 py-2.5 text-[var(--brd-ink-soft)]">
                           {lim.downloadsDaily}

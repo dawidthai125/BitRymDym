@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import {
@@ -161,6 +163,7 @@ export function StudioMixerDockChrome({
   onToggle,
   children,
 }: StudioMixerDockChromeProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioMixerShell");
   return (
     <section
@@ -184,7 +187,7 @@ export function StudioMixerDockChrome({
           className="min-h-11 min-w-11"
           aria-expanded={expanded}
           aria-controls={panelId}
-          aria-label={expanded ? t("zwinMixer") : t("rozwinMixer")}
+          aria-label={tl(expanded ? t("zwinMixer") : t("rozwinMixer"))}
           data-testid="studio-mixer-collapse"
           onClick={onToggle}
         >

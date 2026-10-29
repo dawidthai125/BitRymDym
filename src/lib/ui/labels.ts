@@ -177,9 +177,9 @@ export function labelStudioTrackType(trackType: string): string {
     case "BEAT":
       return "Bit";
     case "SAMPLE":
-      return "Sample";
+      return "Sampel";
     case "SCRATCH":
-      return "Scratch";
+      return "Szkic";
     case "INSTRUMENT":
       return "Instrument";
     case "GUITAR":

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import {
@@ -48,6 +50,7 @@ export function StudioInspectorOverlay({
   panelId,
   closeBlockedMessage = null,
 }: StudioInspectorShellProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioInspectorShell");
   const tInspector = useTranslations("studio.inspectorTitle");
   const titleId = useId();
@@ -131,7 +134,7 @@ export function StudioInspectorOverlay({
             id={titleId}
             className="text-xs font-medium uppercase tracking-[0.1em] text-[var(--brd-ink)]"
           >
-            {t("inspector")}{" "}{title}
+            {t("inspector")}{" "}{tl(title)}
           </p>
           <Button
             type="button"
@@ -147,7 +150,7 @@ export function StudioInspectorOverlay({
           {children}
           {closeBlockedMessage ? (
             <p role="alert" className="text-sm text-destructive">
-              {closeBlockedMessage}
+              {tl(closeBlockedMessage)}
             </p>
           ) : null}
         </div>

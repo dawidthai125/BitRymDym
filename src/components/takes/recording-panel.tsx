@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -100,6 +102,7 @@ export function RecordingPanel({
   playbackRef,
   className,
 }: RecordingPanelProps) {
+  const tl = useLibText();
   const tr = useTranslations("studio.recordingPanel");
   const maxSeconds =
     typeof maxRecordingSeconds === "number" &&
@@ -756,8 +759,8 @@ export function RecordingPanel({
             {tr("quickTake")}
           </p>
           <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-            {tr("limit")}{" "}{formatDurationSeconds(maxSeconds)}
-            {isAuthenticated ? tr("konto") : tr("gosc")}
+            {tr("limit")}{" "}{tl(formatDurationSeconds(maxSeconds))}
+            {tl(isAuthenticated ? tr("konto") : tr("gosc"))}
           </p>
         </div>
         <ol
@@ -864,8 +867,8 @@ export function RecordingPanel({
                 aria-hidden
               />
               <span className="brd-meta text-sm font-medium text-[var(--brd-rec)]">
-                {tr("rec")}{" "}{formatDurationSeconds(elapsedSec)} /{" "}
-                {formatDurationSeconds(maxSeconds)}
+                {tr("rec")}{" "}{tl(formatDurationSeconds(elapsedSec))} /{" "}
+                {tl(formatDurationSeconds(maxSeconds))}
               </span>
             </div>
             <span className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
@@ -904,7 +907,7 @@ export function RecordingPanel({
               data-testid="take-local-safety"
               data-state={localSafety}
             >
-              {takeRecoveryWriterStatusPl(localSafety)}
+              {tl(takeRecoveryWriterStatusPl(localSafety))}
             </p>
           ) : null}
         </div>
@@ -914,11 +917,11 @@ export function RecordingPanel({
         state.phase === "UPLOADING" ||
         state.phase === "PROCESSING") && (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.phase === "STOPPING"
+          {tl(state.phase === "STOPPING"
             ? tr("zatrzymywanie")
             : state.phase === "UPLOADING"
               ? tr("przesylanieNagrania")
-              : tr("finalizacja")}
+              : tr("finalizacja"))}
         </p>
       )}
 
@@ -926,9 +929,9 @@ export function RecordingPanel({
         <div className="space-y-3">
           <p className="text-sm font-medium text-[var(--brd-ink)]" role="status">
             {tr("takeGotowyOdsluchajPonizej")}
-            {state.takeDurationSeconds != null
+            {tl(state.takeDurationSeconds != null
               ? ` · ${formatDurationSeconds(state.takeDurationSeconds)}`
-              : ""}
+              : "")}
           </p>
           {state.previewUrl ? (
             <BrdTakePreviewRail
@@ -946,7 +949,7 @@ export function RecordingPanel({
               onClick={() => void refreshPreview()}
               className="min-h-11"
             >
-              {previewBusy ? tr("ladowaniePodgladu") : tr("zaladujPodglad")}
+              {tl(previewBusy ? tr("ladowaniePodgladu") : tr("zaladujPodglad"))}
             </Button>
           )}
           {!isAuthenticated ? (
@@ -975,7 +978,7 @@ export function RecordingPanel({
       state.phase !== "AUTH_REQUIRED" &&
       state.phase !== "BEAT_NOT_ELIGIBLE" ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
 
@@ -995,7 +998,7 @@ export function RecordingPanel({
                 className="flex flex-wrap items-center justify-between gap-2"
               >
                 <span className="text-sm text-[var(--brd-mute)]">
-                  {t.beatTitle ?? "Bit"} · {t.durationSeconds ?? "?"}s
+                  {tl(t.beatTitle ?? "Bit")} · {t.durationSeconds ?? "?"}s
                 </span>
                 <Button
                   type="button"
@@ -1032,7 +1035,7 @@ export function RecordingPanel({
             disabled={busy}
             className="min-h-11 min-w-[7rem]"
           >
-            {state.phase === "READY_TAKE" ? tr("noweNagranie") : "Nagraj"}
+            {tl(state.phase === "READY_TAKE" ? tr("noweNagranie") : "Nagraj")}
           </Button>
         ) : null}
 

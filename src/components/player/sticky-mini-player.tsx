@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import Link from "next/link";
@@ -19,6 +21,7 @@ import { cn } from "@/lib/utils";
  * Appears after first Play. Hidden while recording suppresses it.
  */
 export function StickyMiniPlayer() {
+  const tl = useLibText();
   const t = useTranslations("common.stickyMiniPlayer");
   const {
     track,
@@ -56,12 +59,12 @@ export function StickyMiniPlayer() {
           playing={playing}
           loading={loading}
           onClick={() => toggle()}
-          title={track.title}
+          title={tl(track.title)}
         />
 
         <BeatArtwork
           variant={track.artworkVariant}
-          title={track.title}
+          title={tl(track.title)}
           size="xs"
         />
 
@@ -71,10 +74,10 @@ export function StickyMiniPlayer() {
               href={`/beat/${track.beatId}`}
               className="min-w-0 truncate font-poster text-base font-bold uppercase leading-none tracking-[0.04em] text-[var(--brd-ink)] hover:text-[var(--brd-green)]"
             >
-              {track.title}
+              {tl(track.title)}
             </Link>
             <p className="hidden truncate text-xs text-[var(--brd-mute)] sm:block">
-              {track.producer}
+              {tl(track.producer)}
             </p>
           </div>
           <Waveform
@@ -88,7 +91,7 @@ export function StickyMiniPlayer() {
           />
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <p className="truncate text-[11px] text-[var(--brd-mute)]">
-              {track.producer}
+              {tl(track.producer)}
             </p>
             <BrdAudioTime
               current={currentTime}
@@ -118,7 +121,7 @@ export function StickyMiniPlayer() {
       </div>
       {error ? (
         <p className="px-4 pb-2 text-xs text-[var(--brd-danger)]" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
     </div>

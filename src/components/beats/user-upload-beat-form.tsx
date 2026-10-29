@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -78,6 +80,7 @@ export function UserUploadBeatForm({
   initialProducer = "",
   masterAlreadyReady = false,
 }: UserUploadBeatFormProps) {
+  const tl = useLibText();
   const tr = useTranslations("beats.userUploadBeatForm");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -479,26 +482,26 @@ export function UserUploadBeatForm({
           />
         </label>
         {statusLine ? (
-          <p className="text-sm text-muted-foreground">{statusLine}</p>
+          <p className="text-sm text-muted-foreground">{tl(statusLine)}</p>
         ) : null}
         {analysis.status === "ready" ? (
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <dt className="text-muted-foreground">{tr("czas")}</dt>
-              <dd>{formatDuration(analysis.durationSeconds)}</dd>
+              <dd>{tl(formatDuration(analysis.durationSeconds))}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{tr("rozmiar")}</dt>
-              <dd>{formatBytes(analysis.byteSize)}</dd>
+              <dd>{tl(formatBytes(analysis.byteSize))}</dd>
             </div>
             <div className="col-span-2">
               <dt className="text-muted-foreground">{tr("plik")}</dt>
-              <dd className="truncate">{analysis.filename}</dd>
+              <dd className="truncate">{tl(analysis.filename)}</dd>
             </div>
           </dl>
         ) : null}
         {analysis.status === "error" ? (
-          <p className="text-sm text-destructive">{analysis.message}</p>
+          <p className="text-sm text-destructive">{tl(analysis.message)}</p>
         ) : null}
         {masterAlreadyReady && analysis.status === "idle" ? (
           <p className="text-sm text-muted-foreground">
@@ -576,7 +579,7 @@ export function UserUploadBeatForm({
 
       {formError ? (
         <p className="text-sm text-destructive" role="alert">
-          {formError}
+          {tl(formError)}
         </p>
       ) : null}
 
@@ -600,7 +603,7 @@ export function UserUploadBeatForm({
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={!canSaveDraft}>
-          {pending ? tr("zapisywanie") : tr("zapiszWersjeRobocza")}
+          {tl(pending ? tr("zapisywanie") : tr("zapiszWersjeRobocza"))}
         </Button>
         <Button
           type="button"

@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import { useLocale, useTranslations } from "next-intl";
 import { StatusPill } from "@/components/brand/chrome";
 import {
@@ -19,11 +20,13 @@ const LED: Record<string, "ok" | "rec" | "warn" | "neutral"> = {
 };
 
 export function AutoCheckBadge({ check }: { check: AutoCheckRow | null | undefined }) {
+  const tl = useLibText();
   const b = autoCheckBadge(check);
-  return <StatusPill tone={LED[b.tone] ?? "neutral"}>{b.label}</StatusPill>;
+  return <StatusPill tone={LED[b.tone] ?? "neutral"}>{tl(b.label)}</StatusPill>;
 }
 
 export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefined }) {
+  const tl = useLibText();
   const t = useTranslations("beats.autoCheckCard");
   const tag = intlTag(resolveLocale(useLocale()));
   if (!check) {
@@ -41,31 +44,31 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] pb-3">
         <AutoCheckBadge check={check} />
         <span className="brd-data text-xs text-muted-foreground">
-          {check.finished_at
+          {tl(check.finished_at
             ? t("zakonczono", { v0: new Date(check.finished_at).toLocaleString(tag) })
-            : t("zlecono", { v0: new Date(check.created_at).toLocaleString(tag) })}
-          {check.error_code ? t("kod", { v0: check.error_code }) : ""}
+            : t("zlecono", { v0: new Date(check.created_at).toLocaleString(tag) }))}
+          {tl(check.error_code ? t("kod", { v0: check.error_code }) : "")}
         </span>
       </div>
-      {check.summary_pl ? <p>{check.summary_pl}</p> : null}
+      {check.summary_pl ? <p>{tl(check.summary_pl)}</p> : null}
 
       <dl className="grid grid-cols-1 gap-x-6 gap-y-0 sm:grid-cols-2">
         {Object.entries(check.providers ?? {}).map(([k, v]) => (
           <div key={k} className="brd-readout flex justify-between gap-3">
-            <dt className="text-muted-foreground">{PROVIDER_LABELS_PL[k] ?? k}</dt>
-            <dd className="brd-data">{OUTCOME_LABELS_PL[String(v)] ?? String(v)}</dd>
+            <dt className="text-muted-foreground">{tl(PROVIDER_LABELS_PL[k] ?? k)}</dt>
+            <dd className="brd-data">{tl(OUTCOME_LABELS_PL[String(v)] ?? String(v))}</dd>
           </div>
         ))}
         {check.recognition_score != null ? (
           <div className="brd-readout flex justify-between gap-3">
             <dt className="text-muted-foreground">{t("najwyzszyWynikDopasowania")}</dt>
-            <dd className="brd-data">{Number(check.recognition_score).toFixed(2)}</dd>
+            <dd className="brd-data">{tl(Number(check.recognition_score).toFixed(2))}</dd>
           </div>
         ) : null}
         {check.vocal_ratio != null ? (
           <div className="brd-readout flex justify-between gap-3">
             <dt className="text-muted-foreground">{t("udzialOkienZWokalem")}</dt>
-            <dd className="brd-data">{(Number(check.vocal_ratio) * 100).toFixed(1)}%</dd>
+            <dd className="brd-data">{tl((Number(check.vocal_ratio) * 100).toFixed(1))}%</dd>
           </div>
         ) : null}
       </dl>
@@ -80,18 +83,18 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
                 const label = [m.title ?? m.ref ?? t("bezTytulu"), m.artist].filter(Boolean).join(" — ");
                 return (
                   <li key={`${r.provider}-${i}`} className="flex flex-wrap gap-2">
-                    <span className="text-muted-foreground">{PROVIDER_LABELS_PL[r.provider] ?? r.provider}:</span>
+                    <span className="text-muted-foreground">{tl(PROVIDER_LABELS_PL[r.provider] ?? r.provider)}:</span>
                     {href ? (
                       <a href={href} className="underline underline-offset-4" target={href.startsWith("/") ? undefined : "_blank"} rel="noreferrer noopener">
-                        {label}
+                        {tl(label)}
                       </a>
                     ) : (
-                      <span>{label}</span>
+                      <span>{tl(label)}</span>
                     )}
                     <span className="brd-data text-muted-foreground">
-                      {t("wynik")}{" "}{m.score.toFixed(2)}
-                      {m.matchedSeconds != null ? ` · ${m.matchedSeconds}s` : ""}
-                      {m.offsetSeconds != null ? t("przesuniecieS", { v0: m.offsetSeconds }) : ""}
+                      {t("wynik")}{" "}{tl(m.score.toFixed(2))}
+                      {tl(m.matchedSeconds != null ? ` · ${m.matchedSeconds}s` : "")}
+                      {tl(m.offsetSeconds != null ? t("przesuniecieS", { v0: m.offsetSeconds }) : "")}
                     </span>
                   </li>
                 );
@@ -104,16 +107,16 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
       {ranges.length ? (
         <div className="space-y-1">
           <p className="font-medium">{t("fragmentyZWokalem")}</p>
-          <p className="brd-data text-muted-foreground">{ranges.join(", ")}</p>
+          <p className="brd-data text-muted-foreground">{tl(ranges.join(", "))}</p>
         </div>
       ) : null}
 
       {check.appeal_requested_at ? (
         <div className="space-y-1 border border-[var(--brd-line)] bg-[var(--brd-recess)] p-3">
           <p className="font-medium">
-            {t("odwolanieWlasciciela")}{new Date(check.appeal_requested_at).toLocaleString(tag)})
+            {t("odwolanieWlasciciela")}{tl(new Date(check.appeal_requested_at).toLocaleString(tag))})
           </p>
-          {check.appeal_note ? <p className="whitespace-pre-wrap">{check.appeal_note}</p> : null}
+          {check.appeal_note ? <p className="whitespace-pre-wrap">{tl(check.appeal_note)}</p> : null}
         </div>
       ) : null}
     </div>

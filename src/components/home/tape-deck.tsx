@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -14,6 +16,7 @@ import { cn } from "@/lib/utils";
  * (and only when the visitor allows motion).
  */
 export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
+  const tl = useLibText();
   const t = useTranslations("home.tapeDeck");
   const { track, phase, playTrack, toggle } = usePlayer();
   const isCurrent = beat ? track?.beatId === beat.id : false;
@@ -63,7 +66,7 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
                 : "bg-tape-line-strong",
             )}
           />
-          {playing ? "Play" : loading ? t("laduje") : "Stop"}
+          {tl(playing ? "Play" : loading ? t("laduje") : "Stop")}
         </p>
       </div>
 
@@ -76,14 +79,14 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
               {t("stronaA")}
             </span>
             <span className="font-mono text-[clamp(0.55rem,1.2vw,0.7rem)] uppercase">
-              {meta.join(" · ") || "—"}
+              {tl(meta.join(" · ") || "—")}
             </span>
           </div>
           <p className="mt-1.5 truncate font-[family-name:var(--font-display)] text-[clamp(1rem,2.6vw,1.45rem)] italic leading-tight">
-            {beat?.title ?? t("katalogCzekaNaPierwszy")}
+            {tl(beat?.title ?? t("katalogCzekaNaPierwszy"))}
           </p>
           <p className="truncate font-mono text-[clamp(0.55rem,1.2vw,0.72rem)] uppercase tracking-[0.1em] opacity-75">
-            {beat?.producer ?? "BitRymDym"}
+            {tl(beat?.producer ?? "BitRymDym")}
           </p>
           {/* Window with reels */}
           <div className="absolute inset-x-[16%] bottom-[10%] flex h-[36%] items-center justify-between rounded-full border-2 border-tape-on-amber/70 bg-[#17120d] px-[6%]">
@@ -103,14 +106,14 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
           disabled={!beat}
           aria-pressed={playing}
           aria-label={
-            beat
+            tl(beat
               ? `${playing ? "Pauza" : t("odtworz")}: ${beat.title}`
-              : t("brakBituDoOdtworzenia")
+              : t("brakBituDoOdtworzenia"))
           }
           className="tape-focus group inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-[var(--tape-r-panel)] border border-tape-amber-deep bg-tape-amber px-5 font-poster text-lg font-extrabold uppercase tracking-[0.12em] text-tape-on-amber shadow-[0_3px_0_0_var(--tape-amber-deep),0_10px_24px_-10px_rgba(242,169,59,0.6)] transition-[transform,box-shadow] duration-[var(--tape-dur-fast)] ease-[var(--tape-ease-out)] active:translate-y-[3px] active:shadow-none disabled:opacity-50"
         >
           {playing ? <PauseGlyph /> : <PlayGlyph />}
-          <span>{playing ? "Pauza" : loading ? "…" : "Play"}</span>
+          <span>{tl(playing ? "Pauza" : loading ? "…" : "Play")}</span>
         </button>
       </div>
     </div>

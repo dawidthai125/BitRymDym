@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
 import { PageFrame } from "@/components/brand/chrome";
@@ -22,6 +23,7 @@ type BeatsPageProps = {
  * Fala 3.1 — marketplace catalog polish. Home remains frozen.
  */
 export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps) {
+  const tl = await getLibText();
   const t = await getTranslations("beats.beatsPage");
   const params = searchParams ? await searchParams : {};
   const raw = (await listPublishedBeats()).map(toPublicCatalogItem);
@@ -39,9 +41,9 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
                 {t("znajdzSwojBit")}
               </h1>
               <p className="brd-meta pt-2 text-xs uppercase tracking-[0.14em] text-[var(--brd-green)]">
-                {beats.length > 0
+                {tl(beats.length > 0
                   ? t("bitowSluchajPotemNagraj", { v0: beats.length })
-                  : t("cichoKatalogWDrodze")}
+                  : t("cichoKatalogWDrodze"))}
               </p>
             </div>
             <p className="max-w-xs pb-1 font-[family-name:var(--font-display)] text-lg italic leading-snug text-[var(--brd-ink-soft)]">

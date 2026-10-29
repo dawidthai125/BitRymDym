@@ -12,3 +12,14 @@ export function resolveLocale(value: string | undefined | null): AppLocale {
 export function intlTag(locale: AppLocale): string {
   return locale === "en" ? "en-GB" : "pl-PL";
 }
+
+/** Word the user types to confirm account deletion, per UI language. */
+export const DELETE_CONFIRM_WORD: Record<AppLocale, string> = {
+  pl: "USUŃ",
+  en: "DELETE",
+};
+
+/** Server accepts the confirm word of any supported language (UI language may change mid-form). */
+export function isDeleteConfirmWord(value: string): boolean {
+  return LOCALES.some((l) => DELETE_CONFIRM_WORD[l] === value);
+}

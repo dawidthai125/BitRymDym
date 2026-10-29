@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { Button } from "@/components/ui/button";
 
 /** Shared Studio toggle chip (Mute/Solo/Record Arm / FX bypass). */
@@ -21,6 +23,7 @@ export function StudioToggleChip({
   /** Visual emphasis only — same boolean toggle contract. */
   tone?: "default" | "mute" | "solo" | "record";
 }) {
+  const tl = useLibText();
   const activeClass =
     tone === "record" && active
       ? "border-[var(--brd-rec)] bg-[var(--brd-rec)] text-[var(--brd-paper)] hover:opacity-90"
@@ -33,9 +36,9 @@ export function StudioToggleChip({
       type="button"
       size="xs"
       variant={active ? "default" : "outline"}
-      title={title}
+      title={tl(title)}
       aria-pressed={active}
-      aria-label={title}
+      aria-label={tl(title)}
       disabled={disabled}
       className={[
         className ?? "min-h-11 min-w-11 px-3",
@@ -46,7 +49,7 @@ export function StudioToggleChip({
         .join(" ")}
       onClick={onClick}
     >
-      {label}
+      {tl(label)}
     </Button>
   );
 }

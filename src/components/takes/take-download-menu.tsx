@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -26,6 +28,7 @@ export function TakeDownloadMenu({
   downloadLadder,
   disabled,
 }: TakeDownloadMenuProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.takeDownloadMenu");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -204,15 +207,15 @@ export function TakeDownloadMenu({
                   className="flex w-full min-h-11 flex-col items-start rounded px-2 py-2 text-left text-sm hover:bg-[var(--brd-line)]/40 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span className="font-medium">
-                    {item.unlocked ? "" : "🔒 "}
-                    {item.label}
-                    {item.unlocked ? "" : t("locked")}
+                    {tl(item.unlocked ? "" : "🔒 ")}
+                    {tl(item.label)}
+                    {tl(item.unlocked ? "" : t("locked"))}
                   </span>
                   <span className="text-xs text-[var(--brd-mute)]">
-                    {item.unlocked
+                    {tl(item.unlocked
                       ? item.detail
                       : (item.lockedMessage ??
-                        t("dostepneWPlanie", { v0: item.requiredTier }))}
+                        t("dostepneWPlanie", { v0: item.requiredTier })))}
                   </span>
                 </button>
               </li>
@@ -226,26 +229,26 @@ export function TakeDownloadMenu({
                 className="flex w-full min-h-11 flex-col items-start rounded px-2 py-2 text-left text-sm hover:bg-[var(--brd-line)]/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="font-medium">
-                  {canDownloadRaw ? "" : "🔒 "}
+                  {tl(canDownloadRaw ? "" : "🔒 ")}
                   {t("rawOryginalneNagranie")}
-                  {canDownloadRaw ? "" : t("locked")}
+                  {tl(canDownloadRaw ? "" : t("locked"))}
                 </span>
                 <span className="text-xs text-[var(--brd-mute)]">
-                  {canDownloadRaw
+                  {tl(canDownloadRaw
                     ? t("plikZrodlowyMic")
-                    : t("dostepneWPlanieGold")}
+                    : t("dostepneWPlanieGold"))}
                 </span>
               </button>
             </li>
           </ul>
           {error ? (
             <p className="text-xs text-red-600" role="alert">
-              {error}
+              {tl(error)}
             </p>
           ) : null}
           {infraNote ? (
             <p className="text-xs text-[var(--brd-mute)]" role="status">
-              {infraNote}
+              {tl(infraNote)}
             </p>
           ) : null}
         </div>

@@ -1,3 +1,5 @@
+import { useLibText } from "@/i18n/use-lib-text";
+import { getLibText } from "@/i18n/get-lib-text";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -19,6 +21,7 @@ import { labelAudioReady, labelBeatStatus } from "@/lib/ui/labels";
  * Pulpit Panelu Administracyjnego — presentation over existing admin services.
  */
 export default async function AdminIndexPage() {
+  const tl = await getLibText();
   const t = await getTranslations("admin.adminPage");
   const context = await getCurrentProfile();
   const role = context?.profile.role;
@@ -100,26 +103,26 @@ export default async function AdminIndexPage() {
                             href={`/admin/beats/${beat.id}`}
                             className="font-medium hover:text-[var(--brd-green)]"
                           >
-                            {beat.title}
+                            {tl(beat.title)}
                           </Link>
                         </td>
                         <td className="px-3 py-3">
                           <StatusPill tone="neutral">
-                            {labelBeatStatus(beat.status)}
+                            {tl(labelBeatStatus(beat.status))}
                           </StatusPill>
                         </td>
                         <td className="px-3 py-3">
                           <StatusPill
                             tone={beat.activeMasterReady ? "ok" : "warn"}
                           >
-                            {labelAudioReady(beat.activeMasterReady)}
+                            {tl(labelAudioReady(beat.activeMasterReady))}
                           </StatusPill>
                         </td>
                         <td className="brd-meta px-3 py-3 text-xs text-[var(--brd-mute)]">
                           {beat.bpm}
                         </td>
                         <td className="brd-meta px-3 py-3 text-xs text-[var(--brd-mute)]">
-                          {formatDurationSeconds(beat.durationSeconds)}
+                          {tl(formatDurationSeconds(beat.durationSeconds))}
                         </td>
                       </tr>
                     ))}
@@ -193,12 +196,13 @@ export default async function AdminIndexPage() {
 }
 
 function AdminStat({ label, value }: { label: string; value: string }) {
+  const tl = useLibText();
   return (
     <div className="bg-[var(--brd-paper)] px-4 py-4">
       <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-        {label}
+        {tl(label)}
       </p>
-      <p className="mt-2 text-2xl text-[var(--brd-ink)]">{value}</p>
+      <p className="mt-2 text-2xl text-[var(--brd-ink)]">{tl(value)}</p>
     </div>
   );
 }
@@ -214,6 +218,7 @@ function AdminLink({
   meta: string;
   soon?: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminPage");
   return (
     <li>
@@ -222,11 +227,11 @@ function AdminLink({
         className="flex min-h-11 items-center justify-between gap-3 py-3 hover:bg-[var(--brd-paper-deep)]/40"
       >
         <div className="min-w-0">
-          <p className="font-medium">{title}</p>
-          <p className="text-sm text-[var(--brd-mute)]">{meta}</p>
+          <p className="font-medium">{tl(title)}</p>
+          <p className="text-sm text-[var(--brd-mute)]">{tl(meta)}</p>
         </div>
         <StatusPill tone={soon ? "neutral" : "ok"}>
-          {soon ? t("wkrotce") : t("dostepne")}
+          {tl(soon ? t("wkrotce") : t("dostepne"))}
         </StatusPill>
       </Link>
     </li>

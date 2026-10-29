@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -25,6 +27,7 @@ export function AdminLifecycleControls({
   status: BeatStatus;
   activeMasterReady: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminLifecycleControls");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -60,23 +63,23 @@ export function AdminLifecycleControls({
       <div className="space-y-1">
         <p className="text-sm">
           {t("status")}{" "}
-          <span className="font-medium">{labelBeatStatus(status)}</span>
+          <span className="font-medium">{tl(labelBeatStatus(status))}</span>
         </p>
         {!gate.enabled && gate.blockedReason ? (
           <p className="text-sm text-muted-foreground" role="status">
-            {gate.blockedReason}
+            {tl(gate.blockedReason)}
           </p>
         ) : null}
       </div>
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
       {success ? (
         <p className="text-sm text-foreground" role="status">
-          {success}
+          {tl(success)}
         </p>
       ) : null}
 
@@ -99,7 +102,7 @@ export function AdminLifecycleControls({
           <Button
             type="button"
             disabled={pending || !gate.enabled}
-            title={gate.blockedReason ?? undefined}
+            title={tl(gate.blockedReason ?? undefined)}
             onClick={() => {
               // UI gate first; server hard gate in transitionBeatStatus is authoritative.
               const latest = getAdminPublishGate({ status, activeMasterReady });
@@ -119,7 +122,7 @@ export function AdminLifecycleControls({
               );
             }}
           >
-            {pending ? t("publikowanie") : "Publikuj"}
+            {tl(pending ? t("publikowanie") : "Publikuj")}
           </Button>
         ) : null}
 

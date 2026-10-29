@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -50,6 +52,7 @@ export function StudioBeatPicker({
   ) => Promise<StudioPersistResult>;
   onAttached: (document: StudioProjectDocument) => void;
 }) {
+  const tl = useLibText();
   const tr = useTranslations("studio.studioBeatPicker");
   const tTab = useTranslations("studio.beatPickerTabs");
   const [tab, setTab] = useState<PickerTab>("catalog");
@@ -227,15 +230,15 @@ export function StudioBeatPicker({
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-[var(--brd-ink)]">
-                        {beat.title}
+                        {tl(beat.title)}
                       </span>
                       <span className="block truncate text-xs text-[var(--brd-mute)]">
-                        {beat.producer?.trim() || "—"}
-                        {beat.bpm != null ? tr("bpm", { v0: beat.bpm }) : ""}
+                        {tl(beat.producer?.trim() || "—")}
+                        {tl(beat.bpm != null ? tr("bpm", { v0: beat.bpm }) : "")}
                       </span>
                     </span>
                     <span className="shrink-0 text-xs text-[var(--brd-green)]">
-                      {attachingId === beat.id ? "…" : "Wybierz"}
+                      {tl(attachingId === beat.id ? "…" : "Wybierz")}
                     </span>
                   </button>
                 </li>
@@ -246,7 +249,7 @@ export function StudioBeatPicker({
 
         {error ? (
           <p className="border-t border-[var(--brd-line)] px-4 py-2 text-sm text-destructive" role="alert">
-            {error}
+            {tl(error)}
           </p>
         ) : null}
       </div>

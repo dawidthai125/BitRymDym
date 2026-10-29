@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useLocale, useTranslations } from "next-intl";
 
@@ -74,6 +76,7 @@ function DeleteConfirmDialog({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioProjectList");
   const titleId = useId();
   const descId = useId();
@@ -95,14 +98,14 @@ function DeleteConfirmDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id={titleId} className="text-lg font-semibold text-[var(--brd-ink)]">
-          {title}
+          {tl(title)}
         </h2>
         <div id={descId} className="mt-3 space-y-2 text-sm text-[var(--brd-ink-soft)]">
           {description}
         </div>
         {error ? (
           <p className="mt-3 text-sm text-destructive" role="alert">
-            {error}
+            {tl(error)}
           </p>
         ) : null}
         <div className="mt-6 flex flex-wrap justify-end gap-2">
@@ -120,7 +123,7 @@ function DeleteConfirmDialog({
             onClick={onConfirm}
             disabled={pending}
           >
-            {pending ? t("usuwanie") : confirmLabel}
+            {tl(pending ? t("usuwanie") : confirmLabel)}
           </BrdButton>
         </div>
       </div>
@@ -141,6 +144,7 @@ function ProjectRow({
   onToggle: (projectId: string) => void;
   onRequestDelete: (project: StudioProjectSummary) => void;
 }) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioProjectList");
   const tag = intlTag(resolveLocale(useLocale()));
   const metaParts = [
@@ -169,7 +173,7 @@ function ProjectRow({
               htmlFor={checkboxId}
               className="block cursor-pointer truncate text-lg font-semibold tracking-tight text-[var(--brd-ink)] sm:text-xl"
             >
-              {project.title}
+              {tl(project.title)}
             </label>
             <dl className="space-y-0.5 text-sm text-[var(--brd-ink-soft)]">
               <div className="flex flex-wrap gap-x-2">
@@ -188,7 +192,7 @@ function ProjectRow({
               </div>
             </dl>
             <p className="font-mono text-xs tabular-nums text-[var(--brd-mute)]">
-              {metaParts.join(" · ")}
+              {tl(metaParts.join(" · "))}
             </p>
           </div>
 
@@ -224,6 +228,7 @@ export function StudioProjectList({
   /** When set (e.g. from /studio?beatId=), create a project with BEAT_REF once. */
   seedBeatId?: string | null;
 }) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioProjectList");
   const router = useRouter();
   const selectAllId = useId();
@@ -441,7 +446,7 @@ export function StudioProjectList({
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
 
@@ -499,9 +504,9 @@ export function StudioProjectList({
                   aria-label={t("zaznaczWszystkieProjektyNa")}
                 />
                 <span>
-                  {allOnPageSelected
+                  {tl(allOnPageSelected
                     ? t("odznaczStrone")
-                    : t("zaznaczWszystkoNaStronie")}
+                    : t("zaznaczWszystkoNaStronie"))}
                 </span>
               </label>
               {selectedCount > 0 ? (
@@ -556,7 +561,7 @@ export function StudioProjectList({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-xs tabular-nums text-[var(--brd-mute)]">
               {rangeStart}–{rangeEnd} z {projects.length}
-              {pageCount > 1 ? t("strona", { v0: safePage + 1, v1: pageCount }) : ""}
+              {tl(pageCount > 1 ? t("strona", { v0: safePage + 1, v1: pageCount }) : "")}
             </p>
             {pageCount > 1 ? (
               <div className="flex flex-wrap gap-2">
@@ -599,7 +604,7 @@ export function StudioProjectList({
           }
           confirmLabel={t("usunProjekt3")}
           pending={pending}
-          error={deleteError}
+          error={tl(deleteError)}
           onClose={() => {
             if (!pending) {
               setDeleteTarget(null);
@@ -637,7 +642,7 @@ export function StudioProjectList({
           }
           confirmLabel={t("usunZaznaczone")}
           pending={pending}
-          error={deleteError}
+          error={tl(deleteError)}
           onClose={() => {
             if (!pending) {
               setBulkDeleteOpen(false);

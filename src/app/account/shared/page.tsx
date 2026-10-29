@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -20,6 +21,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 export default async function AccountSharedBeatsPage() {
+  const tl = await getLibText();
   const t = await getTranslations("account.accountSharedPage");
   const tag = intlTag(resolveLocale(await getLocale()));
   let context;
@@ -66,12 +68,12 @@ export default async function AccountSharedBeatsPage() {
                 className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="space-y-1">
-                  <p className="font-medium tracking-tight">{g.beatTitle}</p>
+                  <p className="font-medium tracking-tight">{tl(g.beatTitle)}</p>
                   <p className="text-xs text-muted-foreground">
                     {t("nagrywanie")}
-                    {g.expiresAt
+                    {tl(g.expiresAt
                       ? t("wygasa", { v0: new Date(g.expiresAt).toLocaleString(tag) })
-                      : t("bezterminowy")}
+                      : t("bezterminowy"))}
                   </p>
                 </div>
                 <Link

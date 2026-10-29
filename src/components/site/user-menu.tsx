@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import Link from "next/link";
@@ -24,6 +26,7 @@ export function UserMenu({
   showAdmin,
   showUpload,
 }: UserMenuProps) {
+  const tl = useLibText();
   const t = useTranslations("nav.userMenu");
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -80,10 +83,10 @@ export function UserMenu({
           className="inline-flex size-7 items-center justify-center bg-[var(--brd-green)] text-xs text-[var(--brd-paper)]"
           aria-hidden
         >
-          {initial}
+          {tl(initial)}
         </span>
         <span className="hidden max-w-[8rem] truncate sm:inline">
-          {displayName}
+          {tl(displayName)}
         </span>
       </button>
 
@@ -94,7 +97,7 @@ export function UserMenu({
           className="absolute right-0 z-50 mt-2 w-56 border border-[var(--brd-line)] bg-[var(--brd-paper)] py-1 shadow-sm"
         >
           <p className="border-b border-[var(--brd-line)] px-3 py-2 text-xs text-[var(--brd-mute)]">
-            {email || displayName}
+            {tl(email || displayName)}
           </p>
           <nav aria-label={t("menuKonta2")} className="flex flex-col">
             <AccountNavLink href="/studio" onNavigate={() => setOpen(false)}>

@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -65,20 +66,21 @@ function QueueSection({
   isAdmin: boolean;
   checks: Map<string, AutoCheckRow>;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminModerationPage");
   const tag = intlTag(resolveLocale(useLocale()));
   return (
     <section className="space-y-3" aria-labelledby={`queue-${title}`}>
       <div className="flex items-baseline justify-between gap-3 border-b border-[var(--brd-line)] pb-2">
         <h2 id={`queue-${title}`} className="text-lg font-medium tracking-tight">
-          {title}
+          {tl(title)}
         </h2>
         <span className="brd-data text-sm text-[var(--brd-mute)]" aria-label={t("liczbaPozycji", { v0: items.length })}>
           {items.length}
         </span>
       </div>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
+        <p className="text-sm text-muted-foreground">{tl(empty)}</p>
       ) : (
         <table className="brd-data-table w-full table-fixed text-sm">
           <thead>
@@ -97,23 +99,23 @@ function QueueSection({
               <tr key={beat.id}>
                 <td data-label={t("bit")}>
                   <span className="block font-medium tracking-tight text-[var(--brd-ink)]">
-                    {beat.title}
+                    {tl(beat.title)}
                   </span>
                   <span className="mt-1.5 flex flex-wrap gap-1.5">
                     <StatusPill tone={beatStatusTone(beat.status)}>
-                      {beatStatusLabelPl(beat.status)}
+                      {tl(beatStatusLabelPl(beat.status))}
                     </StatusPill>
                     <AutoCheckBadge check={checks.get(beat.id)} />
                   </span>
                   {beat.producer ? (
-                    <span className="mt-1 block text-xs text-muted-foreground">{beat.producer}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{tl(beat.producer)}</span>
                   ) : null}
                 </td>
                 <td data-label={t("wlasciciel")} className={isAdmin ? undefined : "brd-data text-xs"}>
-                  {ownerLabel(beat.ownerId, identities, isAdmin)}
+                  {tl(ownerLabel(beat.ownerId, identities, isAdmin))}
                 </td>
                 <td data-label={t("czas")} className="brd-data text-right">
-                  {formatDuration(beat.durationSeconds)}
+                  {tl(formatDuration(beat.durationSeconds))}
                 </td>
                 <td data-label={t("bpm")} className="brd-data text-right">
                   {beat.bpm}
@@ -124,14 +126,14 @@ function QueueSection({
                   )}
                 </td>
                 <td data-label={t("zaktualizowano")} className="brd-data text-xs text-muted-foreground">
-                  {new Date(beat.updatedAt).toLocaleString(tag)}
+                  {tl(new Date(beat.updatedAt).toLocaleString(tag))}
                 </td>
                 <td className="text-right">
                   <Link
                     href={`/admin/moderation/${beat.id}`}
                     className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
                   >
-                    {actionLabel}
+                    {tl(actionLabel)}
                   </Link>
                 </td>
               </tr>

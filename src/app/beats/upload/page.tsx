@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -26,6 +27,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 export default async function BeatsUploadPage({ searchParams }: PageProps) {
+  const tl = await getLibText();
   const t = await getTranslations("beats.beatsUploadPage");
   // Community upload is USER-role only (see createUserBeat / audio-transport).
   // Authenticated non-USER (e.g. ADMIN) must not land on a silent /account bounce
@@ -96,7 +98,7 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
             {t("mojeBity")}
           </Link>
           <h1 className="text-3xl font-semibold tracking-tight">
-            {existing ? t("edytujBit") : t("dodajBit")}
+            {tl(existing ? t("edytujBit") : t("dodajBit"))}
           </h1>
           <p className="text-sm text-muted-foreground">
             {t("wgrajAudioSprawdzBpm")}

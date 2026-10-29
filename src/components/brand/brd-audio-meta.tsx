@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
@@ -22,6 +23,7 @@ export function BrdAudioMeta({
   mood,
   className,
 }: BrdAudioMetaProps) {
+  const tl = useLibText();
   const t = useTranslations("common.brdAudioMeta");
   const parts: ReactNode[] = [];
 
@@ -35,21 +37,21 @@ export function BrdAudioMeta({
   if (keyLabel) {
     parts.push(
       <span key="key" className="brd-meta">
-        {keyLabel}
+        {tl(keyLabel)}
       </span>,
     );
   }
   if (genre) {
     parts.push(
       <span key="genre" className="truncate">
-        {genre}
+        {tl(genre)}
       </span>,
     );
   }
   if (mood) {
     parts.push(
       <span key="mood" className="truncate">
-        {mood}
+        {tl(mood)}
       </span>,
     );
   }
@@ -93,6 +95,7 @@ export function BrdAudioTime({
   format,
   className,
 }: BrdAudioTimeProps) {
+  const tl = useLibText();
   return (
     <span
       className={cn(
@@ -100,7 +103,7 @@ export function BrdAudioTime({
         className,
       )}
     >
-      {format(current)} / {format(total)}
+      {tl(format(current))} / {tl(format(total))}
     </span>
   );
 }
@@ -111,6 +114,7 @@ type BrdAudioStateProps = {
 };
 
 export function BrdAudioStateLabel({ state, className }: BrdAudioStateProps) {
+  const tl = useLibText();
   const t = useTranslations("common.brdAudioMeta");
   const label =
     state === "playing"
@@ -139,7 +143,7 @@ export function BrdAudioStateLabel({ state, className }: BrdAudioStateProps) {
         className,
       )}
     >
-      {label}
+      {tl(label)}
     </span>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -39,6 +41,7 @@ export function StudioMarkersPanel({
   onSeek,
   onDocumentVersionAck,
 }: StudioMarkersPanelProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioMarkersPanel");
   const [markers, setMarkers] = useState<StudioMarkerDto[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
@@ -173,7 +176,7 @@ export function StudioMarkersPanel({
             void persistOp("add", { kind: "verse" });
           }}
         >
-          {busy === "verse" ? t("dodawanie") : t("dodajZwrotke")}
+          {tl(busy === "verse" ? t("dodawanie") : t("dodajZwrotke"))}
         </Button>
         <Button
           type="button"
@@ -184,7 +187,7 @@ export function StudioMarkersPanel({
             void persistOp("add", { kind: "hook" });
           }}
         >
-          {busy === "hook" ? t("dodawanie") : t("dodajRefren")}
+          {tl(busy === "hook" ? t("dodawanie") : t("dodajRefren"))}
         </Button>
       </div>
       {loadState === "loading" ? (
@@ -209,8 +212,8 @@ export function StudioMarkersPanel({
                 className="min-h-11 flex-1 text-left text-sm text-[var(--brd-ink)]"
                 onClick={() => onSeek?.(marker.positionMs)}
               >
-                {studioMarkerKindLabelPl(marker.kind)} ·{" "}
-                {formatStudioTimeMs(marker.positionMs)}
+                {tl(studioMarkerKindLabelPl(marker.kind))} ·{" "}
+                {tl(formatStudioTimeMs(marker.positionMs))}
               </button>
               <Button
                 type="button"
@@ -231,7 +234,7 @@ export function StudioMarkersPanel({
       ) : null}
       {message ? (
         <p className="text-xs text-[var(--brd-mute)]" role="status">
-          {message}
+          {tl(message)}
         </p>
       ) : null}
     </div>

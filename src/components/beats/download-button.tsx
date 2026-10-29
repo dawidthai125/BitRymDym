@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useState, useTransition } from "react";
@@ -29,6 +31,7 @@ export function DownloadButton({
   title,
   isAuthenticated = false,
 }: DownloadButtonProps) {
+  const tl = useLibText();
   const t = useTranslations("beats.downloadButton");
   const [ui, setUi] = useState<DownloadUiState>({ phase: "idle" });
   const [isPending, startTransition] = useTransition();
@@ -78,12 +81,12 @@ export function DownloadButton({
         aria-busy={busy}
         className="min-h-11 min-w-11 px-4"
       >
-        {busy ? t("pobieranie") : "Pobierz"}
+        {tl(busy ? t("pobieranie") : "Pobierz")}
       </Button>
 
       {ui.phase === "limit" ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {ui.message}
+          {tl(ui.message)}
           {!isAuthenticated ? (
             <>
               {" "}
@@ -101,7 +104,7 @@ export function DownloadButton({
 
       {ui.phase === "error" ? (
         <p className="text-sm text-destructive" role="alert">
-          {ui.message}
+          {tl(ui.message)}
         </p>
       ) : null}
     </div>

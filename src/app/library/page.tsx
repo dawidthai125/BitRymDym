@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -49,6 +50,7 @@ function LibLink({
   title: string;
   meta: string;
 }) {
+  const tl = useLibText();
   return (
     <li>
       <Link
@@ -56,8 +58,8 @@ function LibLink({
         className="flex min-h-12 items-center justify-between py-3 hover:text-[var(--brd-green)]"
       >
         <div>
-          <p className="font-medium">{title}</p>
-          <p className="text-sm text-[var(--brd-mute)]">{meta}</p>
+          <p className="font-medium">{tl(title)}</p>
+          <p className="text-sm text-[var(--brd-mute)]">{tl(meta)}</p>
         </div>
         <span aria-hidden>→</span>
       </Link>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import Link from "next/link";
@@ -53,6 +55,7 @@ export function AdminUsersManageDialog({
   premiumExpiresAt: string | null;
   isSelf: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("admin.adminUsersManageDialog");
   const titleId = useId();
   const router = useRouter();
@@ -130,16 +133,16 @@ export function AdminUsersManageDialog({
             onClick={(event) => event.stopPropagation()}
           >
             <h2 id={titleId} className="brd-display text-xl font-semibold">
-              {confirming ? t("zmianaUprawnien") : t("zarzadzajUzytkownikiem")}
+              {tl(confirming ? t("zmianaUprawnien") : t("zarzadzajUzytkownikiem"))}
             </h2>
             <dl className="mt-4 space-y-1 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--brd-mute)]">{t("ksywka")}</dt>
-                <dd>{displayName?.trim() || t("uzytkownik")}</dd>
+                <dd>{tl(displayName?.trim() || t("uzytkownik"))}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--brd-mute)]">{t("eMail")}</dt>
-                <dd className="truncate">{email ?? "—"}</dd>
+                <dd className="truncate">{tl(email ?? "—")}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--brd-mute)]">{t("id")}</dt>
@@ -160,14 +163,14 @@ export function AdminUsersManageDialog({
             {confirming ? (
               <div className="mt-6 space-y-2 text-sm">
                 <p>
-                  {t("premium")}{" "}{labelPremiumTier(premiumTier)} →{" "}
-                  {labelPremiumTier(nextTier)}
+                  {t("premium")}{" "}{tl(labelPremiumTier(premiumTier))} →{" "}
+                  {tl(labelPremiumTier(nextTier))}
                 </p>
                 <p>
-                  {t("wygasa")}{" "}{formatExpiresLabel(nextTier, expiresOn)}
+                  {t("wygasa")}{" "}{tl(formatExpiresLabel(nextTier, expiresOn))}
                 </p>
                 <p>
-                  {t("rola")}{" "}{labelSystemRole(role)} → {labelSystemRole(nextRole)}
+                  {t("rola")}{" "}{tl(labelSystemRole(role))} → {tl(labelSystemRole(nextRole))}
                 </p>
               </div>
             ) : (
@@ -185,7 +188,7 @@ export function AdminUsersManageDialog({
                   >
                     {PREMIUM_TIERS.map((tier) => (
                       <option key={tier} value={tier}>
-                        {labelPremiumTier(tier)}
+                        {tl(labelPremiumTier(tier))}
                       </option>
                     ))}
                   </select>
@@ -215,7 +218,7 @@ export function AdminUsersManageDialog({
                   >
                     {SYSTEM_ROLES.map((value) => (
                       <option key={value} value={value}>
-                        {labelSystemRole(value)}
+                        {tl(labelSystemRole(value))}
                       </option>
                     ))}
                   </select>
@@ -230,7 +233,7 @@ export function AdminUsersManageDialog({
 
             {error ? (
               <p className="mt-4 text-sm text-[var(--brd-mute)]" role="alert">
-                {error}
+                {tl(error)}
               </p>
             ) : null}
 
@@ -255,11 +258,11 @@ export function AdminUsersManageDialog({
                 onClick={submit}
                 disabled={pending}
               >
-                {pending
+                {tl(pending
                   ? t("zapisywanie")
                   : confirming
                     ? t("potwierdzZmiane")
-                    : t("zapiszZmiany")}
+                    : t("zapiszZmiany"))}
               </button>
             </div>
           </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -91,6 +93,7 @@ export function TakeRecordingRecoveryBanner({
   /** Server confirmed READY for a recovered copy. */
   onSaved?: (takeId: string) => void;
 }) {
+  const tl = useLibText();
   const t = useTranslations("studio.takeRecordingRecoveryBanner");
   const [items, setItems] = useState<TakeRecoveryListItem[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -243,7 +246,7 @@ export function TakeRecordingRecoveryBanner({
               data-testid="take-recovery-item"
               data-kind={kind}
             >
-              <p>{takeRecoveryItemSummaryPl(item)}</p>
+              <p>{tl(takeRecoveryItemSummaryPl(item))}</p>
               {busy && confirmDiscardId !== id ? (
                 <p role="status" aria-live="polite">
                   {t("przesylanieNagraniaNieZamykaj")}
@@ -294,9 +297,9 @@ export function TakeRecordingRecoveryBanner({
                       disabled={busyId != null}
                       onClick={() => void onRecover(id)}
                     >
-                      {item.record.upload?.stage === "BINARY_UPLOADED"
+                      {tl(item.record.upload?.stage === "BINARY_UPLOADED"
                         ? t("dokonczZapis")
-                        : t("odzyskajIZapisz")}
+                        : t("odzyskajIZapisz"))}
                     </Button>
                   ) : null}
                   <Button
@@ -331,7 +334,7 @@ export function TakeRecordingRecoveryBanner({
           role={notice.tone === "ok" ? "status" : "alert"}
           data-testid="take-recovery-notice"
         >
-          <p>{notice.text}</p>
+          <p>{tl(notice.text)}</p>
           <Button
             ref={(el) => {
               if (el && focusNoticeRef.current) {

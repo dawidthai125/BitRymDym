@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -30,6 +31,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default async function AccountBeatsPage() {
+  const tl = await getLibText();
   const t = await getTranslations("account.accountBeatsPage");
   let context;
   try {
@@ -92,7 +94,7 @@ export default async function AccountBeatsPage() {
               ) : (
                 t("brakDostepnegoFlowUploadu")
               )}
-              {addBeatHref ? "." : null}
+              {tl(addBeatHref ? "." : null)}
             </p>
           ) : (
             <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
@@ -104,20 +106,20 @@ export default async function AccountBeatsPage() {
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <p className="font-medium tracking-tight text-[var(--brd-ink)]">
-                        {beat.title}
+                        {tl(beat.title)}
                       </p>
                       <StatusPill tone={beatStatusTone(beat.status)}>
-                        {beatStatusLabelPl(beat.status)}
+                        {tl(beatStatusLabelPl(beat.status))}
                       </StatusPill>
                     </div>
                     <p className="flex flex-wrap gap-x-3 text-sm text-[var(--brd-mute)]">
                       <span className="brd-data text-[var(--brd-ink-soft)]">
-                        {formatDuration(beat.durationSeconds)}
+                        {tl(formatDuration(beat.durationSeconds))}
                       </span>
                       <span className="brd-data text-[var(--brd-ink-soft)]">
                         {beat.bpm} {t("bpm")}
                       </span>
-                      {beat.producer ? <span>{beat.producer}</span> : null}
+                      {beat.producer ? <span>{tl(beat.producer)}</span> : null}
                       {beat.activeMasterReady ? <span>{t("audioGotowe")}</span> : null}
                     </p>
                     {beat.status === "REJECTED" && beat.rejectionReason ? (
@@ -125,7 +127,7 @@ export default async function AccountBeatsPage() {
                         <span className="text-[var(--brd-mute)]">
                           {t("powodOdrzucenia")}{" "}
                         </span>
-                        {beat.rejectionReason}
+                        {tl(beat.rejectionReason)}
                       </p>
                     ) : null}
                     {beat.status === "APPROVED" ? (

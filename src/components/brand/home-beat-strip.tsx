@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -42,6 +44,7 @@ function HomeBeatRow({
   beat: PresentedBeat;
   featured?: boolean;
 }) {
+  const tl = useLibText();
   const t = useTranslations("common.homeBeatStrip");
   const { track, currentTime, duration, seek, activateTrack } = usePlayer();
   const isCurrent = track?.beatId === beat.id;
@@ -79,7 +82,7 @@ function HomeBeatRow({
       >
         <BeatArtwork
           variant={beat.artworkVariant}
-          title={beat.title}
+          title={tl(beat.title)}
           size="sm"
           className={cn(
             featured
@@ -100,19 +103,19 @@ function HomeBeatRow({
               featured ? "text-lg sm:text-xl" : "text-base sm:text-lg",
             )}
           >
-            {beat.title}
+            {tl(beat.title)}
           </p>
           <p className="truncate text-sm text-[var(--brd-ink-soft)]">
-            {beat.producer}
+            {tl(beat.producer)}
           </p>
           <p className="brd-meta truncate text-[10px] text-[var(--brd-mute)]">
-            {[
+            {tl([
               beat.bpm > 0 ? t("bpm", { v0: beat.bpm }) : null,
               beat.key,
               beat.genre,
             ]
               .filter(Boolean)
-              .join(" · ")}
+              .join(" · "))}
           </p>
         </Link>
 

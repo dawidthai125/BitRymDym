@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -43,6 +45,7 @@ export function StudioExportControl({
   getExpectedDocumentVersion,
   disabled,
 }: StudioExportControlProps) {
+  const tl = useLibText();
   const t = useTranslations("studio.studioExportControl");
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<StudioExportUiPhase>("IDLE");
@@ -551,9 +554,9 @@ export function StudioExportControl({
               data-testid="studio-export-status"
               data-phase={phase}
             >
-              {recovering && phase === "IDLE"
+              {tl(recovering && phase === "IDLE"
                 ? t("odzyskiwanieStatusu")
-                : studioExportPhaseLabel(phase)}
+                : studioExportPhaseLabel(phase))}
             </p>
 
             {message ? (
@@ -562,7 +565,7 @@ export function StudioExportControl({
                 role="alert"
                 data-testid="studio-export-message"
               >
-                {message}
+                {tl(message)}
               </p>
             ) : null}
 
@@ -586,7 +589,7 @@ export function StudioExportControl({
                     })
                   }
                 >
-                  {startLabel}
+                  {tl(startLabel)}
                 </Button>
               ) : null}
 
@@ -631,7 +634,7 @@ export function StudioExportControl({
                   data-testid="studio-export-download"
                   onClick={() => void onDownload()}
                 >
-                  {downloading ? t("pobieranie") : t("pobierzWav")}
+                  {tl(downloading ? t("pobieranie") : t("pobierzWav"))}
                 </Button>
               ) : null}
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useTranslations } from "next-intl";
 
@@ -42,6 +44,7 @@ export function BrdTakePreviewRail({
   takeDurationSeconds,
   className,
 }: BrdTakePreviewRailProps) {
+  const tl = useLibText();
   const tr = useTranslations("common.brdTakePreviewRail");
   const beatRef = useRef<HTMLAudioElement | null>(null);
   const takeRef = useRef<HTMLAudioElement | null>(null);
@@ -193,7 +196,7 @@ export function BrdTakePreviewRail({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-          {tr("podglad")}{" "}{beatTitle}
+          {tr("podglad")}{" "}{tl(beatTitle)}
         </p>
         <BrdAudioTime
           current={currentTime}
@@ -243,22 +246,22 @@ export function BrdTakePreviewRail({
           loading={loading}
           disabled={!ready && !takePreviewUrl}
           size="md"
-          title={beatTitle}
+          title={tl(beatTitle)}
           onClick={() => void onToggle()}
-          aria-label={playing ? tr("pauzaPodgladu") : tr("odtworzPodglad")}
+          aria-label={tl(playing ? tr("pauzaPodgladu") : tr("odtworzPodglad"))}
         />
         <p className="text-sm text-[var(--brd-ink-soft)]">
-          {ready
+          {tl(ready
             ? tr("bitNagranie")
             : takePreviewUrl
               ? tr("ladowaniePodgladu")
-              : tr("brakUrlPodgladu")}
+              : tr("brakUrlPodgladu"))}
         </p>
       </div>
 
       {error ? (
         <p className="text-sm text-[var(--brd-danger)]" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
     </div>

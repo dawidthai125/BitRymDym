@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
 }
 
 export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
+  const tl = await getLibText();
   const tr = await getTranslations("beats.beatPage");
   const { id } = await params;
   const beat = await getPublishedBeat(id);
@@ -110,7 +112,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           <div className="mt-4">
             <BeatDetailClient
               beat={presented}
-              description={detail.description}
+              description={tl(detail.description)}
               hasAudio={audioInfo.hasAudio}
               isAuthenticated={Boolean(session)}
               originalMasterDownloadAllowed={beat.ownershipType === "USER"}

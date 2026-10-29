@@ -1,3 +1,4 @@
+import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -13,6 +14,7 @@ import { labelBeatStatus } from "@/lib/ui/labels";
 import { cn } from "@/lib/utils";
 
 export default async function AdminBeatsListPage() {
+  const tl = await getLibText();
   const t = await getTranslations("admin.adminBeatsPage");
   // The layout gate does not stop this page from rendering, and its role check
   // is narrower than this guard (no `beats.edit`), so handle the denial here.
@@ -62,11 +64,11 @@ export default async function AdminBeatsListPage() {
               >
                 <div className="min-w-0 space-y-1">
                   <p className="truncate font-medium tracking-tight">
-                    {beat.title}
+                    {tl(beat.title)}
                   </p>
                   <p className="text-xs text-[var(--brd-mute)]">
-                    {labelBeatStatus(beat.status)} {t("audio")}{" "}
-                    {beat.activeMasterReady ? "gotowe" : "brak"}
+                    {tl(labelBeatStatus(beat.status))} {t("audio")}{" "}
+                    {tl(beat.activeMasterReady ? "gotowe" : "brak")}
                   </p>
                 </div>
                 <dl className="flex flex-wrap gap-x-4 text-xs text-[var(--brd-mute)] tabular-nums">
@@ -76,7 +78,7 @@ export default async function AdminBeatsListPage() {
                   </div>
                   <div>
                     <dt className="sr-only">{t("czas")}</dt>
-                    <dd>{formatDurationSeconds(beat.durationSeconds)}</dd>
+                    <dd>{tl(formatDurationSeconds(beat.durationSeconds))}</dd>
                   </div>
                 </dl>
               </Link>

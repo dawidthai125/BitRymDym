@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 
 import { useLocale, useTranslations } from "next-intl";
 
@@ -47,6 +49,7 @@ async function fetchSignedUrl(
 }
 
 export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
+  const tl = useLibText();
   const t = useTranslations("studio.ownTakesList");
   const tag = intlTag(resolveLocale(useLocale()));
   const router = useRouter();
@@ -152,12 +155,12 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
           className="border border-[var(--brd-rec)]/40 bg-[color-mix(in_srgb,var(--brd-rec)_10%,transparent)] px-3 py-2 text-sm text-[var(--brd-rec)]"
           role="alert"
         >
-          {error}
+          {tl(error)}
         </p>
       ) : null}
       <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
         {items.length}{" "}
-        {items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów"} {t("dziennikSesji")}
+        {tl(items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów")} {t("dziennikSesji")}
       </p>
       <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
         {items.map((take, index) => {
@@ -174,7 +177,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
-                    #{String(items.length - index).padStart(2, "0")}
+                    #{tl(String(items.length - index).padStart(2, "0"))}
                   </span>
                   {editingId === take.id ? (
                     <div className="flex w-full flex-wrap gap-2">
@@ -209,14 +212,14 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     </div>
                   ) : (
                     <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
-                      {take.displayTitle}
+                      {tl(take.displayTitle)}
                     </p>
                   )}
                 </div>
                 <p className="text-sm text-[var(--brd-ink-soft)]">
-                  {take.authorDisplayName
+                  {tl(take.authorDisplayName
                     ? t("autor", { v0: take.authorDisplayName })
-                    : t("autor2")}
+                    : t("autor2"))}
                   {" · "}
                   {t("bit")}{" "}
                   {take.beatTitle ? (
@@ -224,24 +227,24 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                       href={`/beat/${take.beatId}`}
                       className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
                     >
-                      {take.beatTitle}
+                      {tl(take.beatTitle)}
                     </Link>
                   ) : (
-                    <span>{take.beatId.slice(0, 8)}</span>
+                    <span>{tl(take.beatId.slice(0, 8))}</span>
                   )}
                 </p>
                 <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
-                  {labelTakeStatus(take.displayStatus)}
+                  {tl(labelTakeStatus(take.displayStatus))}
                   {" · "}
-                  {labelRecordingMode(take.recordingMode)}
-                  {take.durationSeconds != null
+                  {tl(labelRecordingMode(take.recordingMode))}
+                  {tl(take.durationSeconds != null
                     ? ` · ${formatDurationSeconds(take.durationSeconds)}`
-                    : ""}
+                    : "")}
                 </p>
                 <p className="brd-meta text-[10px] text-[var(--brd-mute)]">
-                  {t("utworzono")}{" "}{formatWhen(take.createdAt, tag)}
+                  {t("utworzono")}{" "}{tl(formatWhen(take.createdAt, tag))}
                   {" · "}
-                  {t("wygasa")}{" "}{formatWhen(take.expiresAt, tag)}
+                  {t("wygasa")}{" "}{tl(formatWhen(take.expiresAt, tag))}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -269,7 +272,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     className="min-h-11"
                     onClick={() => void onPreview(take)}
                   >
-                    {busy && busyId === take.id ? "…" : t("podglad")}
+                    {tl(busy && busyId === take.id ? "…" : t("podglad"))}
                   </Button>
                 ) : null}
                 {showDownload && take.displayStatus === "READY" ? (
