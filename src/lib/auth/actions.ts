@@ -11,6 +11,10 @@ import {
   requestEmailChange,
 } from "@/lib/auth/email-change";
 import { validateNewPassword } from "@/lib/auth/password-policy";
+import {
+  clearPasswordRecoverySeal,
+  passwordRecoverySealMatches,
+} from "@/lib/auth/password-recovery-seal-cookie";
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { AuthError, getCurrentProfile, requireUser } from "@/lib/auth/session";
@@ -333,21 +337,89 @@ export async function updatePasswordAfterResetAction(
     return { error: passwordCheck.error, success: false };
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return {
+      error: "Reset hasła jest chwilowo niedostępny.",
+      success: false,
+    };
+  }
+
+  let userId: string;
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user?.id) {
+      return {
+        error: "Sesja resetu wygasła. Poproś o nowy link.",
+        success: false,
+      };
+    }
+    userId = userData.user.id;
+  } catch {
     return {
       error: "Sesja resetu wygasła. Poproś o nowy link.",
       success: false,
     };
   }
 
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) {
+  let sealMatches = false;
+  try {
+    sealMatches = await passwordRecoverySealMatches(userId);
+  } catch {
+    return {
+      error: "Reset hasła jest chwilowo niedostępny.",
+      success: false,
+    };
+  }
+  if (!sealMatches) {
+    return {
+      error: "Sesja resetu wygasła. Poproś o nowy link.",
+      success: false,
+    };
+  }
+
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      return { error: "Nie udało się ustawić nowego hasła.", success: false };
+    }
+  } catch {
     return { error: "Nie udało się ustawić nowego hasła.", success: false };
   }
 
-  await supabase.auth.signOut();
+  let cleared = false;
+  try {
+    await clearPasswordRecoverySeal();
+    cleared = true;
+  } catch {
+    cleared = false;
+  }
+
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    if (!cleared) {
+      return {
+        error: "Nie udało się dokończyć ustawiania hasła. Poproś o nowy link.",
+        success: false,
+      };
+    }
+    return {
+      error: null,
+      success: true,
+      message: "Hasło zostało ustawione. Możesz się zalogować.",
+    };
+  }
+
+  if (!cleared) {
+    return {
+      error: "Nie udało się dokończyć ustawiania hasła. Poproś o nowy link.",
+      success: false,
+    };
+  }
+
   return {
     error: null,
     success: true,
