@@ -7,8 +7,11 @@
  *
  * Usage:
  *   npx tsx scripts/production-storage-orphan-cleanup.ts --classify
- *   npx tsx scripts/production-storage-orphan-cleanup.ts --execute
+ *   npx tsx scripts/production-storage-orphan-cleanup.ts --classify --inventory-path <file>
+ *   npx tsx scripts/production-storage-orphan-cleanup.ts --classify --inventory-stdin < inventory.json
+ *   npx tsx scripts/production-storage-orphan-cleanup.ts --execute …
  *
+ * Inventory exporter is memory-only; CLI does not write inventory files.
  * --execute still requires a separate Owner production mutate GO.
  *
  * Testability: call classifyWithDepsAsync / executeWithDeps / executeDeletePhaseWithDeps
@@ -20,9 +23,25 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { fetchCompleteTable } from "./orphan-cleanup/db-completeness";
+import {
+  parseAndAssertInventoryForFinalClassify,
+  pathDigestPrefix,
+  type OrphanInventoryDocument,
+} from "./orphan-cleanup/inventory-contract";
+import {
+  buildRedactedClassifyReport,
+  suppressSafeDeleteIfIncomplete,
+  type RedactedClassifyReport,
+} from "./orphan-cleanup/redacted-report";
 
 const OUT = join(process.cwd(), "docs", "audits");
-const CLASS_PATH = join(OUT, "PRODUCTION_STORAGE_ORPHAN_CLASSIFICATION.json");
+/** Default classify artifact is redacted (phases 2–3). Raw path dumps are not written by CLI. */
+const CLASS_REDACTED_PATH = join(
+  OUT,
+  "PRODUCTION_STORAGE_ORPHAN_CLASSIFICATION_REDACTED.json",
+);
+const INVENTORY_PATH = join(OUT, "_orphan_beat_audio_inventory.json");
 const ALLOWLIST_BEATS = join(
   OUT,
   "PRODUCTION_BEAT_CATALOG_CLEANUP_ALLOWLIST.json",
@@ -32,7 +51,8 @@ export const DEFAULT_ORPHAN_BATCH_SIZE = 40;
 const DAWID = "fdf04726-e971-42a7-9d46-8b9bdd099c23";
 const UNMAPPED_TAKE =
   "user/912b98da-845a-4957-b93a-5b78a419e958/takes/69a4d693-0a85-4d45-beee-667df6b4dbfb/mic.bin";
-const FIXTURE_SIZES = new Set([16044, 2646044]);
+export const ORPHAN_FIXTURE_SIZES = new Set([16044, 2646044]);
+const FIXTURE_SIZES = ORPHAN_FIXTURE_SIZES;
 
 export type PathKind = "user" | "platform" | "catalog" | "other";
 export type OrphanClassification = "SAFE_DELETE" | "KEEP" | "UNKNOWN";
@@ -49,6 +69,42 @@ export type OrphanBatchRemoveReport = {
   /** Always false: this script does not re-list objects after remove. */
   storage_state_independently_verified: false;
 };
+
+/** Console / evidence-safe batch view — digests only, no raw paths. */
+export type OrphanBatchRemoveReportLogSafe = {
+  batch_index: number;
+  path_count: number;
+  status: OrphanBatchRemoveStatus;
+  storage_state_independently_verified: false;
+  path_digest_prefixes: string[];
+};
+
+/** Redact a batch report for stdout / default evidence files. */
+export function redactOrphanBatchReportForLog(
+  report: OrphanBatchRemoveReport,
+): OrphanBatchRemoveReportLogSafe {
+  return {
+    batch_index: report.batch_index,
+    path_count: report.path_count,
+    status: report.status,
+    storage_state_independently_verified:
+      report.storage_state_independently_verified,
+    path_digest_prefixes: report.paths.map((p) => pathDigestPrefix(p)),
+  };
+}
+
+/** Redact evidence.batches for stdout (keeps other fields). */
+export function redactEvidenceBatchesForLog(
+  evidence: Record<string, unknown>,
+): Record<string, unknown> {
+  const safe = { ...evidence };
+  if (Array.isArray(safe.batches)) {
+    safe.batches = (safe.batches as OrphanBatchRemoveReport[]).map(
+      redactOrphanBatchReportForLog,
+    );
+  }
+  return safe;
+}
 
 export type ClassRow = {
   object_path: string;
@@ -94,10 +150,24 @@ export class OrphanCleanupAbortError extends Error {
 /** Injected runtime for classify + execute (tests supply mocks; CLI builds production deps). */
 export type OrphanCleanupDeps = {
   abort: (message: string) => never;
-  getInventory: () => InventoryObject[];
+  /** Versioned inventory document — must be listing_status=complete for final classify. */
+  getInventoryDocument: () => OrphanInventoryDocument;
   getDeletedBeatIds: () => string[];
   loadClassifyContext: () => Promise<
-    ClassifyDbContext & { platformLiveAssetCount: number }
+    ClassifyDbContext & {
+      platformLiveAssetCount: number;
+      /** When false, SAFE_DELETE is suppressed (fail-closed). */
+      db_read_complete: boolean;
+      /** Exact control count matched fetched length (not a snapshot proof). */
+      count_complete: boolean;
+      /** Stable PK pages without duplicate/missing ids. */
+      pages_consistent: boolean;
+      /**
+       * Membership frozen for the read. Current mechanism never proves this —
+       * must remain false until a stronger isolation mechanism exists.
+       */
+      snapshot_consistent: false;
+    }
   >;
   /** Always invoked as storageRemove(BEAT_AUDIO_ORPHAN_BUCKET, paths) from execute. */
   storageRemove: (
@@ -112,7 +182,11 @@ export type OrphanCleanupDeps = {
   }>;
   onClassification?: (payload: {
     summary: Record<string, unknown>;
+    redacted_report: RedactedClassifyReport;
+    /** In-process rows for tests / delete phase — CLI must not persist raw paths. */
     rows: ClassRow[];
+    inventory_complete: boolean;
+    db_read_complete: boolean;
   }) => void;
   onEvidence?: (evidence: Record<string, unknown>) => void;
   /** Fired after each storageRemove attempt (success, API error, or thrown failure). */
@@ -123,6 +197,25 @@ export type OrphanCleanupDeps = {
   verifyUnmappedTake?: boolean;
   unmappedTakeKey?: string;
 };
+
+export function parseDeletedBeatAllowlist(raw: unknown): string[] {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new Error("allowlist rejected: root must be an object");
+  }
+  const ids = (raw as { delete_beat_ids?: unknown }).delete_beat_ids;
+  if (!Array.isArray(ids)) {
+    throw new Error("allowlist rejected: delete_beat_ids must be an array");
+  }
+  const out: string[] = [];
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    if (typeof id !== "string" || !id.trim()) {
+      throw new Error(`allowlist rejected: delete_beat_ids[${i}] invalid`);
+    }
+    out.push(id);
+  }
+  return out;
+}
 
 function loadEnv(): Record<string, string> {
   const out: Record<string, string> = {};
@@ -336,11 +429,15 @@ export function assertKeySafeToRemove(params: {
   classification: OrphanClassification;
 }): void {
   const { bucket, objectPath, classification } = params;
+  const dig =
+    objectPath && typeof objectPath === "string"
+      ? pathDigestPrefix(objectPath)
+      : "n/a";
   if (!objectPath || typeof objectPath !== "string") {
     throw new Error("remove blocked: empty object path");
   }
   if (objectPath.includes("..") || objectPath.includes("//")) {
-    throw new Error(`remove blocked: invalid path ${objectPath}`);
+    throw new Error(`remove blocked: invalid path path_digest=${dig}`);
   }
   if (bucket !== BEAT_AUDIO_ORPHAN_BUCKET) {
     throw new Error(
@@ -349,19 +446,19 @@ export function assertKeySafeToRemove(params: {
   }
   if (classification !== "SAFE_DELETE") {
     throw new Error(
-      `remove blocked: classification is ${classification} for ${objectPath}`,
+      `remove blocked: classification is ${classification} path_digest=${dig}`,
     );
   }
   if (objectPath.startsWith("catalog/")) {
-    throw new Error(`remove blocked: catalog/ protected — ${objectPath}`);
+    throw new Error(`remove blocked: catalog/ protected path_digest=${dig}`);
   }
   if (objectPath.startsWith("platform/")) {
-    throw new Error(`remove blocked: platform/ protected — ${objectPath}`);
+    throw new Error(`remove blocked: platform/ protected path_digest=${dig}`);
   }
   const parsed = parsePath(objectPath);
   if (parsed.path_kind !== "user") {
     throw new Error(
-      `remove blocked: only user/* may be deleted (got ${parsed.path_kind}) — ${objectPath}`,
+      `remove blocked: only user/* may be deleted (got ${parsed.path_kind}) path_digest=${dig}`,
     );
   }
 }
@@ -372,11 +469,26 @@ async function loadClassifyDbContext(
 ): Promise<{
   ctx: ClassifyDbContext;
   platformLiveAssetCount: number;
+  db_read_complete: boolean;
+  count_complete: boolean;
+  pages_consistent: boolean;
+  snapshot_consistent: false;
 }> {
   const ctxBundle = await deps.loadClassifyContext();
-  const { platformLiveAssetCount, ...ctxBase } = ctxBundle;
+  const {
+    platformLiveAssetCount,
+    db_read_complete,
+    count_complete,
+    pages_consistent,
+    snapshot_consistent,
+    ...ctxBase
+  } = ctxBundle;
   return {
     platformLiveAssetCount,
+    db_read_complete,
+    count_complete,
+    pages_consistent,
+    snapshot_consistent: false,
     ctx: {
       ...ctxBase,
       deletedBeatIds: new Set([
@@ -387,17 +499,79 @@ async function loadClassifyDbContext(
   };
 }
 
+/** Delete may proceed only when inventory + DB completeness gates all pass. */
+function assertDeleteCompletenessGates(params: {
+  inventory_complete: boolean;
+  db_read_complete: boolean;
+  count_complete: boolean;
+  pages_consistent: boolean;
+}): void {
+  if (!params.inventory_complete) {
+    throw new OrphanCleanupAbortError(
+      "delete blocked: inventory_complete=false",
+    );
+  }
+  if (!params.db_read_complete) {
+    throw new OrphanCleanupAbortError(
+      "delete blocked: db_read_complete=false",
+    );
+  }
+  if (!params.count_complete) {
+    throw new OrphanCleanupAbortError(
+      "delete blocked: count_complete=false",
+    );
+  }
+  if (!params.pages_consistent) {
+    throw new OrphanCleanupAbortError(
+      "delete blocked: pages_consistent=false",
+    );
+  }
+  // snapshot_consistent is intentionally not required: current mechanism never
+  // proves snapshot; SAFE_DELETE is gated on count_complete + pages_consistent.
+}
+
 /** Classify using injected inventory + DB context (no production client). */
 export async function classifyWithDepsAsync(deps: OrphanCleanupDeps): Promise<{
   rows: ClassRow[];
   summary: Record<string, unknown>;
+  redacted_report: RedactedClassifyReport;
+  inventory_complete: boolean;
+  db_read_complete: boolean;
 }> {
-  const inv = deps.getInventory();
-  const { ctx, platformLiveAssetCount } = await loadClassifyDbContext(deps);
+  let inventory: OrphanInventoryDocument;
+  try {
+    inventory = parseAndAssertInventoryForFinalClassify(
+      deps.getInventoryDocument(),
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    deps.abort(msg);
+  }
 
-  const rows: ClassRow[] = inv.map((o) =>
+  const {
+    ctx,
+    platformLiveAssetCount,
+    db_read_complete,
+    count_complete,
+    pages_consistent,
+    snapshot_consistent,
+  } = await loadClassifyDbContext(deps);
+  const inventory_complete = true;
+  const actionableComplete =
+    inventory_complete &&
+    db_read_complete &&
+    count_complete &&
+    pages_consistent;
+
+  let rows: ClassRow[] = inventory.objects.map((o) =>
     classifyBeatAudioOrphanObject(o, ctx),
   );
+
+  rows = suppressSafeDeleteIfIncomplete(
+    rows,
+    inventory_complete,
+    actionableComplete,
+  ) as ClassRow[];
 
   const summary: Record<string, unknown> = {
     total: rows.length,
@@ -406,14 +580,47 @@ export async function classifyWithDepsAsync(deps: OrphanCleanupDeps): Promise<{
     UNKNOWN: rows.filter((r) => r.classification === "UNKNOWN").length,
     in_allowlist: rows.filter((r) => r.in_deleted_beat_allowlist).length,
     platform_live_assets: platformLiveAssetCount,
+    inventory_complete,
+    db_read_complete,
+    count_complete,
+    pages_consistent,
+    snapshot_consistent,
     take_audio_note:
       "take-audio unmatched objects are OUT OF DELETE SCOPE this GO; unmapped preserved = KEEP/UNKNOWN",
     catalog_note:
       "catalog/* is always KEEP — never SAFE_DELETE (P0 catalog safety)",
   };
 
-  deps.onClassification?.({ summary, rows });
-  return { rows, summary };
+  const redacted_report = buildRedactedClassifyReport({
+    classifiedAt: new Date().toISOString(),
+    inventory,
+    rows,
+    inventoryComplete: inventory_complete,
+    dbReadComplete: db_read_complete,
+    countComplete: count_complete,
+    pagesConsistent: pages_consistent,
+    snapshotConsistent: false,
+    actionableGatesPass: actionableComplete,
+    fixtureSizes: FIXTURE_SIZES,
+    integrityPass: actionableComplete,
+    integrityReasonCode: actionableComplete ? "ok" : "incomplete_flags",
+    includeDigestSamples: true,
+  });
+
+  deps.onClassification?.({
+    summary,
+    redacted_report,
+    rows,
+    inventory_complete,
+    db_read_complete,
+  });
+  return {
+    rows,
+    summary,
+    redacted_report,
+    inventory_complete,
+    db_read_complete,
+  };
 }
 
 /**
@@ -439,7 +646,39 @@ export async function executeDeletePhaseWithDeps(
   }
 
   const claimed = rows.filter((r) => r.classification === "SAFE_DELETE");
-  const { ctx } = await loadClassifyDbContext(deps);
+
+  // Completeness + inventory gates apply whenever any delete is claimed.
+  // Empty SAFE_DELETE set still allows PASS with deleted=0 (no storageRemove).
+  let ctx: ClassifyDbContext;
+  if (claimed.length > 0) {
+    let inventoryFresh: OrphanInventoryDocument;
+    try {
+      inventoryFresh = parseAndAssertInventoryForFinalClassify(
+        deps.getInventoryDocument(),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return abort(`delete blocked: inventory re-validation failed: ${msg}`);
+    }
+
+    const loaded = await loadClassifyDbContext(deps);
+    ctx = loaded.ctx;
+    try {
+      assertDeleteCompletenessGates({
+        inventory_complete: inventoryFresh.listing_status === "complete",
+        db_read_complete: loaded.db_read_complete,
+        count_complete: loaded.count_complete,
+        pages_consistent: loaded.pages_consistent,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return abort(msg);
+    }
+  } else {
+    const loaded = await loadClassifyDbContext(deps);
+    ctx = loaded.ctx;
+  }
+
   const candidates: ClassRow[] = [];
   for (const row of claimed) {
     const fresh = classifyBeatAudioOrphanObject(
@@ -452,7 +691,7 @@ export async function executeDeletePhaseWithDeps(
     );
     if (fresh.classification !== "SAFE_DELETE") {
       abort(
-        `claimed SAFE_DELETE failed re-classification: ${row.object_path} → ${fresh.classification}`,
+        `claimed SAFE_DELETE failed re-classification: path_digest=${pathDigestPrefix(row.object_path)} → ${fresh.classification}`,
       );
     }
     candidates.push(fresh);
@@ -502,7 +741,11 @@ export async function executeDeletePhaseWithDeps(
   const emitBatchReport = (report: OrphanBatchRemoveReport): void => {
     batchReports.push(report);
     deps.onBatchReport?.(report);
-    console.log(JSON.stringify({ orphan_batch: report }));
+    console.log(
+      JSON.stringify({
+        orphan_batch: redactOrphanBatchReportForLog(report),
+      }),
+    );
   };
 
   const failStopAfterRemoveAttempts = (message: string): never => {
@@ -517,7 +760,9 @@ export async function executeDeletePhaseWithDeps(
         "FAIL_STOP after one or more storageRemove attempts. Earlier OK batches are not rolled back. claimed_ok_path_count is client-reported path count for OK batches only — not independently verified Storage state. Partial mutation may have occurred. No automatic retry or resume.",
     };
     deps.onEvidence?.(failEvidence);
-    console.log(JSON.stringify(failEvidence, null, 2));
+    console.log(
+      JSON.stringify(redactEvidenceBatchesForLog(failEvidence), null, 2),
+    );
     console.log(
       "ORPHAN CLEANUP FAIL_STOP — partial Storage mutation may have occurred; not a PASS",
     );
@@ -527,6 +772,25 @@ export async function executeDeletePhaseWithDeps(
   for (let i = 0; i < toDelete.length; i += batchSize) {
     const chunk = toDelete.slice(i, i + batchSize);
     const batchIndex = i / batchSize + 1;
+
+    // Re-validate completeness before every storageRemove batch (no stale gate).
+    try {
+      parseAndAssertInventoryForFinalClassify(deps.getInventoryDocument());
+      const again = await loadClassifyDbContext(deps);
+      assertDeleteCompletenessGates({
+        inventory_complete: true,
+        db_read_complete: again.db_read_complete,
+        count_complete: again.count_complete,
+        pages_consistent: again.pages_consistent,
+      });
+    } catch (e) {
+      return abort(
+        `pre-remove completeness abort (no further deletes): ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    }
+
     for (const objectPath of chunk) {
       try {
         assertKeySafeToRemove({
@@ -535,7 +799,7 @@ export async function executeDeletePhaseWithDeps(
           classification: "SAFE_DELETE",
         });
       } catch (e) {
-        abort(
+        return abort(
           `pre-remove abort (no further deletes): ${
             e instanceof Error ? e.message : String(e)
           }`,
@@ -560,7 +824,7 @@ export async function executeDeletePhaseWithDeps(
         storage_state_independently_verified: false,
       });
       return failStopAfterRemoveAttempts(
-        `remove batch threw — aborting further deletes (Storage state for this batch unknown): ${msg}`,
+        `remove batch threw — aborting further deletes (Storage state for this batch unknown); batch_index=${batchIndex} path_count=${chunk.length}`,
       );
     }
 
@@ -574,7 +838,7 @@ export async function executeDeletePhaseWithDeps(
         storage_state_independently_verified: false,
       });
       return failStopAfterRemoveAttempts(
-        `remove batch failed — aborting further deletes (Storage state for this batch unverified/possibly partial): ${removeResult.error.message}`,
+        `remove batch failed — aborting further deletes (Storage state for this batch unverified/possibly partial); batch_index=${batchIndex} path_count=${chunk.length}`,
       );
     }
 
@@ -593,7 +857,9 @@ export async function executeDeletePhaseWithDeps(
     for (const objectKey of platKeys) {
       const ok = await deps.objectExists(BEAT_AUDIO_ORPHAN_BUCKET, objectKey);
       if (!ok) {
-        abort(`PLATFORM object missing after cleanup: ${objectKey}`);
+        abort(
+          `PLATFORM object missing after cleanup path_digest=${pathDigestPrefix(objectKey)}`,
+        );
       }
     }
   }
@@ -621,7 +887,7 @@ export async function executeDeletePhaseWithDeps(
     unmapped_take_preserved: deps.verifyUnmappedTake !== false,
   };
   deps.onEvidence?.(evidence);
-  console.log(JSON.stringify(evidence, null, 2));
+  console.log(JSON.stringify(redactEvidenceBatchesForLog(evidence), null, 2));
   console.log("ORPHAN CLEANUP PASS");
   return { deleted };
 }
@@ -635,7 +901,116 @@ export async function executeWithDeps(
   return { deleted, rows, summary };
 }
 
-function createProductionDeps(): OrphanCleanupDeps {
+/** Page size for classify DB reads — keep below commonly documented max_rows=1000; project setting NOT VERIFIED. */
+const CLASSIFY_DB_PAGE_SIZE = 500;
+
+/** PK column confirmed in supabase/migrations CREATE TABLE … id uuid PRIMARY KEY. */
+const CLASSIFY_ORDER_COLUMN = "id" as const;
+
+async function fetchTableComplete<T extends Record<string, unknown> & { id: string }>(
+  admin: SupabaseClient,
+  table: string,
+  columns: string,
+): Promise<{
+  rows: T[];
+  complete: boolean;
+  count_complete: boolean;
+  pages_consistent: boolean;
+  snapshot_consistent: false;
+  reason?: string;
+}> {
+  const exactCount = async () => {
+    const { count, error } = await admin
+      .from(table)
+      .select("*", { count: "exact", head: true });
+    if (error) return { count: null, error: error.message };
+    return { count: count ?? null };
+  };
+  const result = await fetchCompleteTable<T>({
+    setName: table,
+    pageSize: CLASSIFY_DB_PAGE_SIZE,
+    getRowId: (row) => (typeof row.id === "string" ? row.id : null),
+    fetchExactCount: exactCount,
+    // Bookend detects count drift only — still not a snapshot proof.
+    fetchExactCountBookend: exactCount,
+    fetchPage: async (from, to) => {
+      const { data, error } = await admin
+        .from(table)
+        .select(columns)
+        .order(CLASSIFY_ORDER_COLUMN, { ascending: true })
+        .range(from, to);
+      if (error) return { rows: [], error: error.message };
+      return { rows: (data ?? []) as unknown as T[] };
+    },
+  });
+  if (!result.ok) {
+    return {
+      rows: [],
+      complete: false,
+      count_complete: result.count_complete,
+      pages_consistent: result.pages_consistent,
+      snapshot_consistent: false,
+      reason: result.reason,
+    };
+  }
+  return {
+    rows: result.rows,
+    complete: true,
+    count_complete: true,
+    pages_consistent: true,
+    snapshot_consistent: false,
+  };
+}
+
+/** How CLI obtains inventory without requiring the exporter to write files. */
+export type CliInventorySource =
+  | { kind: "default_path" }
+  | { kind: "path"; path: string }
+  | { kind: "stdin" };
+
+/** Parse --inventory-path / --inventory-stdin from argv (no production I/O). */
+export function parseCliInventorySource(args: string[]): CliInventorySource {
+  if (args.includes("--inventory-stdin")) {
+    return { kind: "stdin" };
+  }
+  const eq = args.find((a) => a.startsWith("--inventory-path="));
+  if (eq) {
+    const path = eq.slice("--inventory-path=".length).trim();
+    if (!path) stop("--inventory-path= requires a non-empty path");
+    return { kind: "path", path };
+  }
+  const idx = args.indexOf("--inventory-path");
+  if (idx >= 0) {
+    const path = args[idx + 1];
+    if (!path || path.startsWith("--")) {
+      stop("--inventory-path requires a path argument");
+    }
+    return { kind: "path", path };
+  }
+  return { kind: "default_path" };
+}
+
+function loadInventoryRawFromCliSource(source: CliInventorySource): unknown {
+  if (source.kind === "stdin") {
+    const text = readFileSync(0, "utf8");
+    if (!text.trim()) {
+      stop("inventory stdin is empty");
+    }
+    return JSON.parse(text) as unknown;
+  }
+  const path =
+    source.kind === "path" ? resolve(source.path) : INVENTORY_PATH;
+  if (!existsSync(path)) {
+    stop(
+      "Missing versioned inventory document. Provide --inventory-path, --inventory-stdin with a complete orphan-inv-v1 JSON, or place the default audits inventory file after an Owner-gated export (exporter itself is memory-only).",
+    );
+  }
+  return JSON.parse(readFileSync(path, "utf8")) as unknown;
+}
+
+function createProductionDeps(
+  inventorySource: CliInventorySource = { kind: "default_path" },
+): OrphanCleanupDeps {
   const env = loadEnv();
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -645,72 +1020,132 @@ function createProductionDeps(): OrphanCleanupDeps {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // Load once — memory document; no publisher write in this path.
+  let inventoryDocument: OrphanInventoryDocument | null = null;
+  const getInventoryDocument = (): OrphanInventoryDocument => {
+    if (inventoryDocument) return inventoryDocument;
+    try {
+      inventoryDocument = parseAndAssertInventoryForFinalClassify(
+        loadInventoryRawFromCliSource(inventorySource),
+      );
+      return inventoryDocument;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      stop(msg);
+    }
+  };
+
   return {
     abort: stop,
-    getInventory: () => {
-      const invPath = join(OUT, "_orphan_beat_audio_inventory.json");
-      if (!existsSync(invPath)) {
-        stop(
-          `Missing ${invPath}. Run inventory export first (agent writes this file).`,
+    getInventoryDocument,
+    getDeletedBeatIds: () => {
+      if (!existsSync(ALLOWLIST_BEATS)) {
+        stop("Missing allowlist file");
+      }
+      try {
+        return parseDeletedBeatAllowlist(
+          JSON.parse(readFileSync(ALLOWLIST_BEATS, "utf8")) as unknown,
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        stop(msg);
+      }
+    },
+    loadClassifyContext: async () => {
+      const assetsRes = await fetchTableComplete<{
+        id: string;
+        object_key: string;
+        beat_id: string;
+      }>(admin, "beat_audio_assets", "id,object_key,beat_id");
+      const beatsRes = await fetchTableComplete<{
+        id: string;
+        ownership_type: string;
+      }>(admin, "beats", "id,ownership_type");
+      const takesRes = await fetchTableComplete<{
+        id: string;
+        object_key: string | null;
+        beat_id: string | null;
+      }>(admin, "takes", "id,object_key,beat_id");
+      const clipsRes = await fetchTableComplete<{
+        id: string;
+        source_beat_id: string | null;
+        source_take_id: string | null;
+      }>(admin, "studio_clips", "id,source_beat_id,source_take_id");
+      const projectsRes = await fetchTableComplete<{
+        id: string;
+        beat_id: string | null;
+      }>(admin, "studio_projects", "id,beat_id");
+      const artifactsRes = await fetchTableComplete<{
+        id: string;
+        object_key: string | null;
+      }>(admin, "audio_artifacts", "id,object_key");
+
+      const db_read_complete =
+        assetsRes.complete &&
+        beatsRes.complete &&
+        takesRes.complete &&
+        clipsRes.complete &&
+        projectsRes.complete &&
+        artifactsRes.complete;
+      const count_complete =
+        db_read_complete &&
+        assetsRes.count_complete &&
+        beatsRes.count_complete &&
+        takesRes.count_complete &&
+        clipsRes.count_complete &&
+        projectsRes.count_complete &&
+        artifactsRes.count_complete;
+      const pages_consistent =
+        db_read_complete &&
+        assetsRes.pages_consistent &&
+        beatsRes.pages_consistent &&
+        takesRes.pages_consistent &&
+        clipsRes.pages_consistent &&
+        projectsRes.pages_consistent &&
+        artifactsRes.pages_consistent;
+      const snapshot_consistent = false as const;
+
+      if (!db_read_complete) {
+        console.log(
+          JSON.stringify({
+            db_read_complete: false,
+            count_complete,
+            pages_consistent,
+            snapshot_consistent,
+            reasons: [
+              assetsRes.reason,
+              beatsRes.reason,
+              takesRes.reason,
+              clipsRes.reason,
+              projectsRes.reason,
+              artifactsRes.reason,
+            ].filter(Boolean),
+          }),
         );
       }
-      return JSON.parse(readFileSync(invPath, "utf8")) as InventoryObject[];
-    },
-    getDeletedBeatIds: () =>
-      (
-        JSON.parse(readFileSync(ALLOWLIST_BEATS, "utf8")) as {
-          delete_beat_ids: string[];
-        }
-      ).delete_beat_ids,
-    loadClassifyContext: async () => {
-      const { data: assets, error: aErr } = await admin
-        .from("beat_audio_assets")
-        .select("id,object_key,beat_id");
-      if (aErr) stop(aErr.message);
-      const assetKeys = new Set(
-        (assets ?? []).map((a) => a.object_key as string),
-      );
-      const assetIds = new Set((assets ?? []).map((a) => a.id as string));
-      const assetBeatIds = new Set(
-        (assets ?? []).map((a) => a.beat_id as string),
-      );
 
-      const { data: beats, error: bErr } = await admin
-        .from("beats")
-        .select("id,ownership_type");
-      if (bErr) stop(bErr.message);
-      const liveBeats = new Set((beats ?? []).map((b) => b.id as string));
+      const assets = assetsRes.rows;
+      const beats = beatsRes.rows;
+      const takes = takesRes.rows;
+      const clips = clipsRes.rows;
+      const projects = projectsRes.rows;
+      const artifacts = artifactsRes.rows;
+
+      const assetKeys = new Set(assets.map((a) => a.object_key));
+      const assetIds = new Set(assets.map((a) => a.id));
+      const assetBeatIds = new Set(assets.map((a) => a.beat_id));
+      const liveBeats = new Set(beats.map((b) => b.id));
       const platformBeats = new Set(
-        (beats ?? [])
+        beats
           .filter((b) => b.ownership_type === "PLATFORM")
-          .map((b) => b.id as string),
+          .map((b) => b.id),
       );
-
-      const { data: takes, error: tErr } = await admin
-        .from("takes")
-        .select("id,object_key,beat_id");
-      if (tErr) stop(tErr.message);
       const takeKeys = new Set(
-        (takes ?? []).map((t) => t.object_key).filter(Boolean) as string[],
+        takes.map((t) => t.object_key).filter(Boolean) as string[],
       );
-      const takeIds = new Set((takes ?? []).map((t) => t.id as string));
-
-      const { data: clips, error: cErr } = await admin
-        .from("studio_clips")
-        .select("id,source_beat_id,source_take_id");
-      if (cErr) stop(cErr.message);
-
-      const { data: projects, error: pErr } = await admin
-        .from("studio_projects")
-        .select("id,beat_id");
-      if (pErr) stop(pErr.message);
-
-      const { data: artifacts, error: artErr } = await admin
-        .from("audio_artifacts")
-        .select("id,object_key");
-      if (artErr) stop(artErr.message);
+      const takeIds = new Set(takes.map((t) => t.id));
       const artifactKeys = new Set(
-        (artifacts ?? []).map((a) => a.object_key).filter(Boolean) as string[],
+        artifacts.map((a) => a.object_key).filter(Boolean) as string[],
       );
 
       return {
@@ -722,9 +1157,13 @@ function createProductionDeps(): OrphanCleanupDeps {
         takeIds,
         artifactKeys,
         deletedBeatIds: new Set<string>(),
-        clips: (clips ?? []) as Array<{ source_beat_id: string | null }>,
-        projects: (projects ?? []) as Array<{ beat_id: string | null }>,
+        clips: clips as Array<{ source_beat_id: string | null }>,
+        projects: projects as Array<{ beat_id: string | null }>,
         platformLiveAssetCount: assetBeatIds.size,
+        db_read_complete,
+        count_complete: count_complete && db_read_complete,
+        pages_consistent: pages_consistent && db_read_complete,
+        snapshot_consistent,
       };
     },
     storageRemove: async (bucket, paths) => {
@@ -758,22 +1197,19 @@ function createProductionDeps(): OrphanCleanupDeps {
         .select("*", { count: "exact", head: true });
       return { beats: beats ?? null, assets: assets ?? null };
     },
-    onClassification: ({ summary, rows }) => {
+    onClassification: ({ summary, redacted_report }) => {
       mkdirSync(OUT, { recursive: true });
       writeFileSync(
-        CLASS_PATH,
-        JSON.stringify(
-          { classified_at: new Date().toISOString(), summary, rows },
-          null,
-          2,
-        ),
+        CLASS_REDACTED_PATH,
+        JSON.stringify(redacted_report, null, 2),
       );
       console.log(JSON.stringify(summary, null, 2));
     },
     onEvidence: (evidence) => {
+      // Persist outcome metadata without embedding raw batch paths in the default evidence file.
       writeFileSync(
         join(OUT, "PRODUCTION_STORAGE_ORPHAN_CLEANUP_EVIDENCE.json"),
-        JSON.stringify(evidence, null, 2),
+        JSON.stringify(redactEvidenceBatchesForLog(evidence), null, 2),
       );
     },
     batchSize: DEFAULT_ORPHAN_BATCH_SIZE,
@@ -783,27 +1219,30 @@ function createProductionDeps(): OrphanCleanupDeps {
   };
 }
 
-async function classifyCli() {
-  const deps = createProductionDeps();
+async function classifyCli(inventorySource: CliInventorySource) {
+  const deps = createProductionDeps(inventorySource);
   await classifyWithDepsAsync(deps);
 }
 
-async function executeCli() {
-  const deps = createProductionDeps();
+async function executeCli(inventorySource: CliInventorySource) {
+  const deps = createProductionDeps(inventorySource);
   await executeWithDeps(deps);
 }
 
 async function main() {
   const args = process.argv.slice(2);
+  const inventorySource = parseCliInventorySource(args);
   if (args.includes("--execute")) {
-    await executeCli();
+    await executeCli(inventorySource);
     return;
   }
   if (args.includes("--classify")) {
-    await classifyCli();
+    await classifyCli(inventorySource);
     return;
   }
-  stop("Pass --classify or --execute");
+  stop(
+    "Pass --classify or --execute (optional: --inventory-path <file> | --inventory-stdin)",
+  );
 }
 
 const isDirectRun =
@@ -812,7 +1251,8 @@ const isDirectRun =
 
 if (isDirectRun) {
   main().catch((e) => {
-    console.error(e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`STOP: ${msg}`);
     process.exit(1);
   });
 }

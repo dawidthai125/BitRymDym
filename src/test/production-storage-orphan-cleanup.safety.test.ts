@@ -4,6 +4,7 @@
  * Never creates a real Supabase client or reads production inventory.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { completeInventoryFixture } from "../../scripts/orphan-cleanup/inventory-contract";
 import {
   assertKeySafeToRemove,
   BEAT_AUDIO_ORPHAN_BUCKET,
@@ -18,6 +19,10 @@ import {
   type OrphanBatchRemoveReport,
   type OrphanCleanupDeps,
 } from "../../scripts/production-storage-orphan-cleanup";
+
+function invDoc(objects: InventoryObject[]) {
+  return completeInventoryFixture(objects);
+}
 
 const CATALOG_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 const CATALOG_KEY = `catalog/${CATALOG_ID}/original.bin`;
@@ -61,11 +66,15 @@ function baseMockDeps(overrides?: Partial<OrphanCleanupDeps>): {
   const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
   const deps: OrphanCleanupDeps = {
     abort: abortThrow,
-    getInventory: () => [],
+    getInventoryDocument: () => invDoc([]),
     getDeletedBeatIds: () => [],
     loadClassifyContext: async () => ({
       ...emptyCtx(),
       platformLiveAssetCount: 0,
+      db_read_complete: true,
+      count_complete: true,
+      pages_consistent: true,
+      snapshot_consistent: false as const,
     }),
     storageRemove: async (bucket, paths) => {
       removeCalls.push({ bucket, paths: [...paths] });
@@ -191,10 +200,14 @@ describe("orphan cleanup P0.2 executeWithDeps integration", () => {
       { object_path: CATALOG_KEY, size_bytes: 16044, created_at: null },
     ];
     const { deps, removeCalls } = baseMockDeps({
-      getInventory: () => inv,
+      getInventoryDocument: () => invDoc(inv),
       loadClassifyContext: async () => ({
         ...emptyCtx({ assetKeys: new Set([CATALOG_KEY]) }),
         platformLiveAssetCount: 0,
+        db_read_complete: true,
+        count_complete: true,
+        pages_consistent: true,
+        snapshot_consistent: false as const,
       }),
     });
     const result = await executeWithDeps(deps);
@@ -205,9 +218,10 @@ describe("orphan cleanup P0.2 executeWithDeps integration", () => {
 
   it("T1b: catalog without metadata — executeWithDeps → remove calls = 0", async () => {
     const { deps, removeCalls } = baseMockDeps({
-      getInventory: () => [
-        { object_path: CATALOG_KEY, size_bytes: null, created_at: null },
-      ],
+      getInventoryDocument: () =>
+        invDoc([
+          { object_path: CATALOG_KEY, size_bytes: null, created_at: null },
+        ]),
     });
     const result = await executeWithDeps(deps);
     expect(result.rows[0]?.classification).toBe("KEEP");
@@ -216,9 +230,10 @@ describe("orphan cleanup P0.2 executeWithDeps integration", () => {
 
   it("T2: platform only — executeWithDeps → remove calls = 0", async () => {
     const { deps, removeCalls } = baseMockDeps({
-      getInventory: () => [
-        { object_path: PLATFORM_KEY, size_bytes: 100, created_at: null },
-      ],
+      getInventoryDocument: () =>
+        invDoc([
+          { object_path: PLATFORM_KEY, size_bytes: 100, created_at: null },
+        ]),
     });
     const result = await executeWithDeps(deps);
     expect(result.rows[0]?.classification).toBe("KEEP");
@@ -227,9 +242,10 @@ describe("orphan cleanup P0.2 executeWithDeps integration", () => {
 
   it("T3: unknown prefix — executeWithDeps → remove calls = 0", async () => {
     const { deps, removeCalls } = baseMockDeps({
-      getInventory: () => [
-        { object_path: UNKNOWN_KEY, size_bytes: 16044, created_at: null },
-      ],
+      getInventoryDocument: () =>
+        invDoc([
+          { object_path: UNKNOWN_KEY, size_bytes: 16044, created_at: null },
+        ]),
     });
     const result = await executeWithDeps(deps);
     expect(result.rows[0]?.classification).toBe("UNKNOWN");
@@ -244,7 +260,7 @@ describe("orphan cleanup P0.2 executeWithDeps integration", () => {
     }));
     const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
     const { deps } = baseMockDeps({
-      getInventory: () => inv,
+      getInventoryDocument: () => invDoc(inv),
       batchSize: 2,
       storageRemove: async (bucket, paths) => {
         removeCalls.push({ bucket, paths: [...paths] });
@@ -310,9 +326,10 @@ describe("orphan cleanup P0.2 executeWithDeps integration", () => {
 
     const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
     const { deps } = baseMockDeps({
-      getInventory: () => [
-        { object_path: USER_ORPHAN, size_bytes: 16044, created_at: null },
-      ],
+      getInventoryDocument: () =>
+        invDoc([
+          { object_path: USER_ORPHAN, size_bytes: 16044, created_at: null },
+        ]),
       storageRemove: async (bucket, paths) => {
         removeCalls.push({ bucket, paths: [...paths] });
         return { error: null };
@@ -427,9 +444,10 @@ describe("orphan cleanup P0.3 R1 re-classification before delete", () => {
   it("R1e: correctly classified user/* fixture orphan still deletes via executeWithDeps", async () => {
     const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
     const { deps } = baseMockDeps({
-      getInventory: () => [
-        { object_path: USER_ORPHAN, size_bytes: 16044, created_at: null },
-      ],
+      getInventoryDocument: () =>
+        invDoc([
+          { object_path: USER_ORPHAN, size_bytes: 16044, created_at: null },
+        ]),
       storageRemove: async (bucket, paths) => {
         removeCalls.push({ bucket, paths: [...paths] });
         return { error: null };
@@ -481,7 +499,7 @@ describe("orphan cleanup R3.1 batch evidence + fail-stop", () => {
     const batchReports: OrphanBatchRemoveReport[] = [];
     let evidence: Record<string, unknown> | null = null;
     const { deps } = baseMockDeps({
-      getInventory: () => inv,
+      getInventoryDocument: () => invDoc(inv),
       batchSize: 1,
       onBatchReport: (r) => batchReports.push(r),
       onEvidence: (e) => {
@@ -518,7 +536,7 @@ describe("orphan cleanup R3.1 batch evidence + fail-stop", () => {
     const batchReports: OrphanBatchRemoveReport[] = [];
     let evidence: Record<string, unknown> | null = null;
     const { deps } = baseMockDeps({
-      getInventory: () => inv,
+      getInventoryDocument: () => invDoc(inv),
       batchSize: 1,
       onBatchReport: (r) => batchReports.push(r),
       onEvidence: (e) => {
@@ -552,7 +570,7 @@ describe("orphan cleanup R3.1 batch evidence + fail-stop", () => {
     const batchReports: OrphanBatchRemoveReport[] = [];
     let evidence: Record<string, unknown> | null = null;
     const { deps } = baseMockDeps({
-      getInventory: () => inv,
+      getInventoryDocument: () => invDoc(inv),
       batchSize: 1,
       onBatchReport: (r) => batchReports.push(r),
       onEvidence: (e) => {
@@ -584,7 +602,7 @@ describe("orphan cleanup R3.1 batch evidence + fail-stop", () => {
     const batchReports: OrphanBatchRemoveReport[] = [];
     let evidence: Record<string, unknown> | null = null;
     const { deps, removeCalls } = baseMockDeps({
-      getInventory: () => inv,
+      getInventoryDocument: () => invDoc(inv),
       batchSize: 1,
       onBatchReport: (r) => batchReports.push(r),
       onEvidence: (e) => {
@@ -620,5 +638,167 @@ describe("orphan cleanup R3.1 batch evidence + fail-stop", () => {
     ).rejects.toBeInstanceOf(OrphanCleanupAbortError);
     expect(removeCalls).toHaveLength(0);
     expect(batchReports).toHaveLength(0);
+  });
+});
+
+describe("P1 log redaction (execute stdout)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function captureConsole(): { logs: string[] } {
+    const logs: string[] = [];
+    const push = (...args: unknown[]) => {
+      logs.push(args.map(String).join(" "));
+    };
+    vi.spyOn(console, "log").mockImplementation(push);
+    vi.spyOn(console, "error").mockImplementation(push);
+    return { logs };
+  }
+
+  function assertNoRawControlPaths(blob: string, paths: string[]) {
+    for (const p of paths) {
+      expect(blob.includes(p), `stdout leaked path: ${p}`).toBe(false);
+    }
+    expect(blob.includes('"paths"')).toBe(false);
+    expect(blob.includes("object_path")).toBe(false);
+  }
+
+  it("PASS orphan_batch + evidence stdout omit raw paths", async () => {
+    const { logs } = captureConsole();
+    const control = [userOrphanKey(0), userOrphanKey(1)];
+    const inv: InventoryObject[] = control.map((object_path) => ({
+      object_path,
+      size_bytes: 16044,
+      created_at: null,
+    }));
+    const { deps } = baseMockDeps({
+      getInventoryDocument: () => invDoc(inv),
+      batchSize: 1,
+    });
+    await executeWithDeps(deps);
+    const blob = logs.join("\n");
+    assertNoRawControlPaths(blob, control);
+    expect(blob.includes("orphan_batch")).toBe(true);
+    expect(blob.includes("ORPHAN CLEANUP PASS")).toBe(true);
+    expect(blob.includes("path_digest_prefixes")).toBe(true);
+  });
+
+  it("FAIL_STOP ERROR stdout omits raw paths and provider error body", async () => {
+    const { logs } = captureConsole();
+    const control = [userOrphanKey(0), userOrphanKey(1)];
+    const inv: InventoryObject[] = control.map((object_path) => ({
+      object_path,
+      size_bytes: 16044,
+      created_at: null,
+    }));
+    const leakyProviderMsg = `Storage remove failed for ${control[0]}`;
+    const { deps } = baseMockDeps({
+      getInventoryDocument: () => invDoc(inv),
+      batchSize: 1,
+      storageRemove: async () => ({
+        error: { message: leakyProviderMsg },
+      }),
+    });
+    await expect(executeWithDeps(deps)).rejects.toBeInstanceOf(
+      OrphanCleanupAbortError,
+    );
+    const blob = logs.join("\n");
+    assertNoRawControlPaths(blob, control);
+    expect(blob.includes(leakyProviderMsg)).toBe(false);
+    expect(blob.includes("ORPHAN CLEANUP FAIL_STOP")).toBe(true);
+    expect(blob.includes("orphan_batch")).toBe(true);
+  });
+
+  it("FAIL_STOP AMBIGUOUS throw stdout omits raw paths", async () => {
+    const { logs } = captureConsole();
+    const control = [userOrphanKey(0)];
+    const inv: InventoryObject[] = [
+      { object_path: control[0]!, size_bytes: 16044, created_at: null },
+    ];
+    const { deps } = baseMockDeps({
+      getInventoryDocument: () => invDoc(inv),
+      storageRemove: async () => {
+        throw new Error(`network boom at ${control[0]}`);
+      },
+    });
+    await expect(executeWithDeps(deps)).rejects.toBeInstanceOf(
+      OrphanCleanupAbortError,
+    );
+    const blob = logs.join("\n");
+    assertNoRawControlPaths(blob, control);
+    expect(blob.includes("ORPHAN CLEANUP FAIL_STOP")).toBe(true);
+  });
+
+  it("reclassify abort message and stdout omit raw paths", async () => {
+    const { logs } = captureConsole();
+    const { deps } = baseMockDeps();
+    let thrown: unknown;
+    try {
+      await executeDeletePhaseWithDeps(
+        deps,
+        [forgeSafeDelete(CATALOG_KEY, 16044)],
+        { SAFE_DELETE: 1, KEEP: 0, UNKNOWN: 0 },
+      );
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(OrphanCleanupAbortError);
+    const msg = thrown instanceof Error ? thrown.message : String(thrown);
+    expect(msg.includes(CATALOG_KEY)).toBe(false);
+    expect(msg.includes("path_digest=")).toBe(true);
+    assertNoRawControlPaths(logs.join("\n"), [
+      CATALOG_KEY,
+      PLATFORM_KEY,
+      USER_ORPHAN,
+    ]);
+  });
+
+  it("assertKeySafeToRemove errors use digests not raw paths", () => {
+    expect(() =>
+      assertKeySafeToRemove({
+        bucket: BEAT_AUDIO_ORPHAN_BUCKET,
+        objectPath: CATALOG_KEY,
+        classification: "SAFE_DELETE",
+      }),
+    ).toThrow(/path_digest=/);
+    try {
+      assertKeySafeToRemove({
+        bucket: BEAT_AUDIO_ORPHAN_BUCKET,
+        objectPath: CATALOG_KEY,
+        classification: "SAFE_DELETE",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      expect(msg.includes(CATALOG_KEY)).toBe(false);
+    }
+  });
+});
+
+describe("P1 delete completeness guard", () => {
+  it("forged SAFE_DELETE with count_complete=false never calls storageRemove", async () => {
+    const removeCalls: Array<{ bucket: string; paths: string[] }> = [];
+    const { deps } = baseMockDeps({
+      storageRemove: async (bucket, paths) => {
+        removeCalls.push({ bucket, paths: [...paths] });
+        return { error: null };
+      },
+      loadClassifyContext: async () => ({
+        ...emptyCtx(),
+        platformLiveAssetCount: 0,
+        db_read_complete: true,
+        count_complete: false,
+        pages_consistent: true,
+        snapshot_consistent: false,
+      }),
+    });
+    await expect(
+      executeDeletePhaseWithDeps(
+        deps,
+        [forgeSafeDelete(USER_ORPHAN, 16044)],
+        { SAFE_DELETE: 1, KEEP: 0, UNKNOWN: 0 },
+      ),
+    ).rejects.toBeInstanceOf(OrphanCleanupAbortError);
+    expect(removeCalls).toHaveLength(0);
   });
 });

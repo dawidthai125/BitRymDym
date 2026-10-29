@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "orphan-inv-v1",
+  "title": "OrphanInventoryDocument",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bucket",
+    "prefix_scope",
+    "environment_id",
+    "listing_status",
+    "listing_started_at",
+    "listing_finished_at",
+    "page_size",
+    "pages_completed",
+    "objects_accumulated",
+    "pagination_mechanism",
+    "end_condition",
+    "key_set_digest_alg",
+    "key_set_digest",
+    "counts_by_path_kind",
+    "objects"
+  ],
+  "properties": {
+    "schema_version": { "const": "orphan-inv-v1" },
+    "bucket": { "const": "beat-audio" },
+    "prefix_scope": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["user", "platform", "catalog", "other"]
+      }
+    },
+    "environment_id": { "type": "string", "minLength": 1 },
+    "listing_status": {
+      "type": "string",
+      "enum": ["in_progress", "complete", "incomplete", "failed"]
+    },
+    "listing_started_at": { "type": "string" },
+    "listing_finished_at": { "type": ["string", "null"] },
+    "page_size": { "type": "integer", "minimum": 1 },
+    "pages_completed": { "type": "integer", "minimum": 0 },
+    "objects_accumulated": { "type": "integer", "minimum": 0 },
+    "pagination_mechanism": { "type": "string" },
+    "end_condition": { "type": ["string", "null"] },
+    "key_set_digest_alg": { "const": "sha256" },
+    "key_set_digest": { "type": "string", "minLength": 16 },
+    "counts_by_path_kind": {
+      "type": "object",
+      "required": ["user", "platform", "catalog", "other"],
+      "additionalProperties": false,
+      "properties": {
+        "user": { "type": "integer", "minimum": 0 },
+        "platform": { "type": "integer", "minimum": 0 },
+        "catalog": { "type": "integer", "minimum": 0 },
+        "other": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["object_path", "size_bytes", "created_at"],
+        "properties": {
+          "object_path": { "type": "string", "minLength": 1 },
+          "size_bytes": { "type": ["number", "null"] },
+          "created_at": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "diagnostic_only": { "type": "boolean" },
+    "failure_reason": { "type": "string" }
+  }
+}
