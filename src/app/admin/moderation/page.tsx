@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AutoCheckBadge } from "@/components/beats/auto-check-card";
 import { checkAccess } from "@/lib/auth/access-denial";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
+import { loadLatestAutoChecks, type AutoCheckRow } from "@/lib/beats/auto-check/records";
 import {
   listApprovedForModeration,
+  listAutoRejectedForModeration,
   listPendingReviewForModeration,
   requireModerationAccess,
 } from "@/lib/beats/service";
@@ -45,6 +48,7 @@ function QueueSection({
   actionLabel,
   identities,
   isAdmin,
+  checks,
 }: {
   title: string;
   empty: string;
@@ -52,6 +56,7 @@ function QueueSection({
   actionLabel: string;
   identities: Map<string, { displayName: string | null; userNumber: number | null }>;
   isAdmin: boolean;
+  checks: Map<string, AutoCheckRow>;
 }) {
   return (
     <section className="space-y-4">
@@ -66,7 +71,10 @@ function QueueSection({
               className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="space-y-1">
-                <p className="font-medium tracking-tight">{beat.title}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium tracking-tight">{beat.title}</p>
+                  <AutoCheckBadge check={checks.get(beat.id)} />
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {beat.producer ?? "—"} · owner{" "}
                   <span className={isAdmin ? undefined : "font-mono text-xs"}>
@@ -103,14 +111,18 @@ export default async function AdminModerationQueuePage() {
   if (denial === "UNAUTHENTICATED") redirect("/sign-in");
   if (denial === "FORBIDDEN") return null;
 
-  const [pending, approved, context] = await Promise.all([
+  const [pending, approved, autoRejected, context] = await Promise.all([
     listPendingReviewForModeration(),
     listApprovedForModeration(),
+    listAutoRejectedForModeration(),
     getCurrentProfile(),
   ]);
 
   const isAdmin = context?.profile.role === "ADMIN";
-  const ownerIds = [...pending, ...approved]
+  const checks = await loadLatestAutoChecks(
+    [...pending, ...approved, ...autoRejected].map((b) => b.id),
+  );
+  const ownerIds = [...pending, ...approved, ...autoRejected]
     .map((b) => b.ownerId)
     .filter((id): id is string => Boolean(id));
   const identities = isAdmin
@@ -136,6 +148,7 @@ export default async function AdminModerationQueuePage() {
         actionLabel="Odtwórz / decyzja"
         identities={identities}
         isAdmin={Boolean(isAdmin)}
+        checks={checks}
       />
 
       <QueueSection
@@ -145,6 +158,17 @@ export default async function AdminModerationQueuePage() {
         actionLabel="Opublikuj"
         identities={identities}
         isAdmin={Boolean(isAdmin)}
+        checks={checks}
+      />
+
+      <QueueSection
+        title="Odrzucone przez filtr"
+        empty="Brak automatycznie odrzuconych bitów."
+        items={autoRejected}
+        actionLabel="Szczegóły / uchyl"
+        identities={identities}
+        isAdmin={Boolean(isAdmin)}
+        checks={checks}
       />
     </main>
   );

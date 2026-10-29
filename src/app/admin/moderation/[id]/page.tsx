@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AutoCheckCard } from "@/components/beats/auto-check-card";
+import { AutoCheckOverrideControls } from "@/components/beats/auto-check-override-controls";
 import { ModerationDecisionControls } from "@/components/beats/moderation-decision-controls";
 import { PlaybackShell } from "@/components/player/playback-shell";
 import { checkAccess } from "@/lib/auth/access-denial";
 import { AuthError, getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
+import { loadLatestAutoChecks } from "@/lib/beats/auto-check/records";
 import {
   getStaffCommunityBeatForModeration,
   requireModerationAccess,
@@ -42,6 +45,8 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
   }
 
   const isApproved = beat.status === "APPROVED";
+  const isAutoRejected = beat.status === "REJECTED";
+  const autoCheck = (await loadLatestAutoChecks([beat.id])).get(beat.id) ?? null;
   const context = await getCurrentProfile();
   const isAdmin = context?.profile.role === "ADMIN";
   let ownerLabel = beat.ownerId ? `${beat.ownerId.slice(0, 8)}…` : "—";
@@ -104,6 +109,20 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
       </section>
 
       <section className="space-y-3">
+        <h2 className="text-lg font-medium tracking-tight">Automatyczne sprawdzenie</h2>
+        <AutoCheckCard check={autoCheck} />
+        {beat.status === "PENDING_REVIEW" && (!autoCheck || autoCheck.status === "error") ? (
+          <AutoCheckOverrideControls beatId={beat.id} mode="retry" />
+        ) : null}
+      </section>
+
+      {isAutoRejected ? (
+        <section className="space-y-3">
+          <h2 className="text-lg font-medium tracking-tight">Uchylenie odrzucenia</h2>
+          <AutoCheckOverrideControls beatId={beat.id} mode="override" />
+        </section>
+      ) : (
+      <section className="space-y-3">
         <h2 className="text-lg font-medium tracking-tight">
           {isApproved ? "Publikacja" : "Decyzja"}
         </h2>
@@ -120,6 +139,7 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           openReviews={beat.openRightsReviews ?? []}
         />
       </section>
+      )}
     </main>
   );
 }

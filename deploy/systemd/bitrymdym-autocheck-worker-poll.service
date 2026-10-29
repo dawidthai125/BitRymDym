@@ -1,0 +1,28 @@
+# BitRymDym - upload filter (beat_auto_check) poller (repository artifact only).
+# Runs on the existing E3 Contabo host next to bitrymdym-e3-worker-poll,
+# reusing /opt/bitrymdym-e3-worker checkout. Install steps:
+# docs/runbooks/UPLOAD_FILTER_WORKER.md. Do not enable/start from the repo.
+# Kill switch: BEAT_AUTO_CHECK_ENABLED (missing/false -> exit 0, no claim).
+
+[Unit]
+Description=BitRymDym upload filter auto-check poller
+After=network-online.target
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+EnvironmentFile=/etc/bitrymdym-e3-worker/autocheck.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/usr/bin/npm run autocheck:worker:poll
+Restart=on-failure
+RestartSec=30
+# Demucs on CPU: cap memory/CPU so the STUDIO export poller keeps headroom.
+MemoryMax=4G
+CPUQuota=200%
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
