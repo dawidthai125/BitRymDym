@@ -92,7 +92,7 @@ Implementation of the migration requires a later **W2-A Implementation GO**.
 | `downloads_daily` (anon) | 2 (OD-05) | — | — | — |
 | `renders_daily` | 5 | 10 | 20 | 40 |
 | `renders_concurrent` | 1 | 1 | 2 | 3 |
-| `artifact_retention` | 48h | 7d | 30d | **90d DESIGN ONLY** |
+| `artifact_retention` | 48h | 7d | 30d | **28d prod** (Owner 2026-10-25) · **90d DESIGN ONLY** |
 | `artifact_quota` | 250 MiB | 500 MiB | 2 GiB | 5 GiB |
 | `EXPORT_BASIC_MP3` | ✓ | ✓ | ✓ | ✓ |
 | `EXPORT_HQ_MP3` | — | ✓ | ✓ | ✓ |
@@ -102,6 +102,8 @@ Implementation of the migration requires a later **W2-A Implementation GO**.
 | Priority (design intent) | normal | elevated | elevated | highest |
 
 **W2-A note:** matrix is the product contract. Full enforcement of downloads / priority / Gold 90d PRODUCTION is **out of W2-A** (see §15–16). W2-A prepares schema + resolver + capability foundation so later gates can wire enforcement without scattering `if (tier === …)`.
+
+**Owner 2026-10-25:** production Gold artifact retention = **exactly 28 days** (aligns `PREMIUM_TIER_MATRIX` with `PREMIUM_RETENTION_DAYS` / OD-EXPORT-12). SILVER remains 30d. **90d** stays design-only (`goldRetentionDesignOnly`). **Premium Retention feature remains HOLD** — value decision ≠ activation. See [PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md](./PREMIUM_GOLD_RETENTION_28D_OWNER_DECISION_2026-10-25.md).
 
 ---
 

@@ -345,6 +345,7 @@ Nazwa: **„Unlock sticky · quality according to current package · retention n
 Dirty (nie edytowano w tym etapie): `DECISION_LOG.md`, `OPEN_DECISIONS.md`, `PROJECT_STATE.md`, `CHANGELOG.md`.
 **SSOT Premium:** wyłącznie ten plik.
 Synchronizacja rejestrów: **odroczona** (ochrona dirty WIP).
+**Wykonanie logicznego usunięcia (fencing executora retention, G3-TCB / G4-L / D-LEASE):** [`PREMIUM_RETENTION_FENCING_CONTRACT.md`](PREMIUM_RETENTION_FENCING_CONTRACT.md). Dokument inżynierski podporządkowany temu SSOT; nie zmienia polityki retencji.
 
 ---
 

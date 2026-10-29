@@ -260,7 +260,7 @@ Server-authoritative coverage required for W2-B (unit/contract; live fixture tes
 | 1 | Free / missing entitlement | FREE limits + basic caps |
 | 2 | Bronze | downloads 10 · HQ · matrix renders |
 | 3 | Silver | downloads 25 · Mix/Master Pro · matrix renders |
-| 4 | Gold | downloads 50 · WAV · matrix renders · retention prod 30d (not 90d) |
+| 4 | Gold | downloads 50 · WAV · matrix renders · retention prod **28d** (Owner 2026-10-25; not 90d design-only; Premium Retention HOLD) |
 | 5 | Missing entitlement → Free | YES |
 | 6 | Expired entitlement → Free | YES |
 | 7 | Client tier/limit/capability spoof | REJECT |
