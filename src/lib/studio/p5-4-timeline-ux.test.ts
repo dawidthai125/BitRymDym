@@ -48,6 +48,14 @@ describe("P5.4 timeline mapping", () => {
     expect(fitted).toBeGreaterThanOrEqual(STUDIO_TIMELINE_MIN_PX_PER_MS);
     expect(contentWidthPx(60_000, fitted)).toBeGreaterThanOrEqual(320);
   });
+
+  it("fit on a narrow lane does not inflate past the viewport", () => {
+    const viewport = 140;
+    const fitted = fitPxPerMs(60_000, viewport);
+    expect(
+      contentWidthPx(60_000, fitted, { viewportWidthPx: viewport }),
+    ).toBeLessThanOrEqual(viewport);
+  });
 });
 
 describe("P5.4 snap", () => {

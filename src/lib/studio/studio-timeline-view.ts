@@ -139,12 +139,18 @@ export function pxToMs(px: number, pxPerMs: number): number {
 export function contentWidthPx(
   timelineLengthMs: number,
   pxPerMs: number,
+  options?: { viewportWidthPx?: number },
 ): number {
   assertIntegerMs(timelineLengthMs, "timelineLengthMs");
-  return Math.max(
-    STUDIO_TIMELINE_MIN_CONTENT_WIDTH_PX,
-    msToPx(timelineLengthMs, pxPerMs),
-  );
+  const mapped = msToPx(timelineLengthMs, pxPerMs);
+  const viewport = options?.viewportWidthPx;
+  // On a narrow lane (phone), never force the desktop 320px floor past the viewport —
+  // that was clipping the ruler past the screen even after Fit.
+  const minFloor =
+    typeof viewport === "number" && Number.isFinite(viewport) && viewport > 0
+      ? Math.min(STUDIO_TIMELINE_MIN_CONTENT_WIDTH_PX, viewport)
+      : STUDIO_TIMELINE_MIN_CONTENT_WIDTH_PX;
+  return Math.max(minFloor, mapped);
 }
 
 export function zoomInPxPerMs(pxPerMs: number): number {
@@ -199,8 +205,23 @@ export function fitPxPerMs(
   if (!Number.isFinite(viewportWidthPx) || viewportWidthPx < 1) {
     return STUDIO_TIMELINE_DEFAULT_PX_PER_MS;
   }
-  const usable = Math.max(STUDIO_TIMELINE_MIN_CONTENT_WIDTH_PX, viewportWidthPx - 24);
+  // Use the real viewport — do not inflate to MIN_CONTENT when the lane is narrower.
+  const usable = Math.max(1, viewportWidthPx - 24);
   return clampPxPerMs(usable / timelineLengthMs);
+}
+
+/** True when rendered content width would exceed the lane viewport (needs Fit / auto-fit). */
+export function timelineContentOverflowsViewport(
+  timelineLengthMs: number,
+  viewportWidthPx: number,
+  pxPerMs: number,
+): boolean {
+  assertIntegerMs(timelineLengthMs, "timelineLengthMs");
+  if (!Number.isFinite(viewportWidthPx) || viewportWidthPx < 1) return false;
+  return (
+    contentWidthPx(timelineLengthMs, pxPerMs, { viewportWidthPx }) >
+    viewportWidthPx + 1
+  );
 }
 
 /**

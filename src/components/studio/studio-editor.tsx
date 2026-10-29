@@ -95,6 +95,7 @@ import {
   snapPresetFromConfig,
   snapTimelineMs,
   STUDIO_TIMELINE_DEFAULT_PX_PER_MS,
+  timelineContentOverflowsViewport,
   timelineMsAtViewportX,
   zoomAroundAnchorMs,
   zoomInPxPerMs,
@@ -252,6 +253,8 @@ function StudioEditorInner({
   const [mode, setMode] = useState<TimelineMode>("seek");
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [pxPerMs, setPxPerMs] = useState(STUDIO_TIMELINE_DEFAULT_PX_PER_MS);
+  /** When true, skip auto-fit on resize (user zoomed in/out). Fit button clears it. */
+  const userAdjustedZoomRef = useRef(false);
   const [snapConfig, setSnapConfig] = useState<StudioSnapConfig>(() =>
     createDefaultSnapConfig(),
   );
@@ -528,6 +531,50 @@ function StudioEditorInner({
     const el = timelineScrollRef.current;
     if (el) el.scrollLeft = nextLeft;
   }, [pxPerMs]);
+
+  /** Mobile / narrow lane: auto-Fit while the user has not manually zoomed. */
+  useEffect(() => {
+    let ro: ResizeObserver | null = null;
+    let raf = 0;
+    let tries = 0;
+
+    function maybeAutoFit(el: HTMLDivElement) {
+      if (userAdjustedZoomRef.current) return;
+      const viewport = el.clientWidth;
+      if (
+        !timelineContentOverflowsViewport(
+          length,
+          viewport,
+          pxPerMsRef.current,
+        )
+      ) {
+        return;
+      }
+      const next = fitPxPerMs(length, viewport);
+      zoomAroundViewportX(next, viewport / 2);
+    }
+
+    function attach() {
+      const el = timelineScrollRef.current;
+      if (!el) {
+        if (tries++ < 90) raf = requestAnimationFrame(attach);
+        return;
+      }
+      maybeAutoFit(el);
+      ro = new ResizeObserver(() => {
+        maybeAutoFit(el);
+      });
+      ro.observe(el);
+    }
+
+    attach();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
+    // zoomAroundViewportX uses refs for density; length is the intentional dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: length + mount only
+  }, [length]);
 
   function applySnap(ms: number, bounds?: { minMs?: number; maxMs?: number }) {
     return snapTimelineMs(ms, snapConfig, bounds);
@@ -2312,19 +2359,22 @@ function StudioEditorInner({
         }}
         onToggleMixer={toggleMixerSurface}
         onSnapCycle={() => setSnapConfig((prev) => cycleStudioSnapConfig(prev))}
-        onZoomOut={() =>
-          zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current))
-        }
-        onZoomIn={() =>
-          zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current))
-        }
+        onZoomOut={() => {
+          userAdjustedZoomRef.current = true;
+          zoomAtViewportCenter(zoomOutPxPerMs(pxPerMsRef.current));
+        }}
+        onZoomIn={() => {
+          userAdjustedZoomRef.current = true;
+          zoomAtViewportCenter(zoomInPxPerMs(pxPerMsRef.current));
+        }}
         onFit={() => {
+          userAdjustedZoomRef.current = false;
           const el = timelineScrollRef.current;
           const viewport = el?.clientWidth;
           zoomAtViewportCenter(
             fitPxPerMs(
               length,
-              typeof viewport === "number" ? viewport : 360,
+              typeof viewport === "number" && viewport > 0 ? viewport : 360,
             ),
           );
         }}
@@ -2358,10 +2408,14 @@ function StudioEditorInner({
                   }`}
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
                 >
+                  {/*
+                    Mobile: 220px header cannot fit name + M/S/R + ↑↓⋮ (6×44).
+                    Row1 = name (min 4.5rem) + M/S/R; row2 = reorder/menu + mix.
+                  */}
                   <div className="flex min-h-11 items-center gap-0.5">
                     <button
                       type="button"
-                      className="min-h-11 min-w-0 flex-1 truncate rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
+                      className="min-h-11 min-w-[4.5rem] flex-1 truncate rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                       aria-pressed={isSelected}
                       aria-label={
                         isSelected
@@ -2412,11 +2466,13 @@ function StudioEditorInner({
                         });
                       }}
                     />
+                  </div>
+                  <div className="flex min-h-0 items-center gap-0.5">
                     <Button
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-11 min-h-11 min-w-11 px-0"
+                      className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
                       disabled={pending || index === 0}
                       title="Przenieś w górę"
                       aria-label="Przenieś ścieżkę w górę"
@@ -2430,7 +2486,7 @@ function StudioEditorInner({
                       type="button"
                       size="xs"
                       variant="ghost"
-                      className="h-11 min-h-11 min-w-11 px-0"
+                      className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
                       disabled={pending || index === doc.tracks.length - 1}
                       title="Przenieś w dół"
                       aria-label="Przenieś ścieżkę w dół"
@@ -2445,7 +2501,7 @@ function StudioEditorInner({
                         type="button"
                         size="xs"
                         variant="ghost"
-                        className="h-11 min-h-11 min-w-11 px-0"
+                        className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
                         data-testid="studio-track-menu"
                         data-track-id={track.id}
                         disabled={recordingLocked || pending}
@@ -2461,11 +2517,10 @@ function StudioEditorInner({
                         ⋮
                       </Button>
                     ) : null}
-                  </div>
-                  <div
-                    className="grid grid-cols-2 gap-1"
-                    data-testid="studio-track-header-mix"
-                  >
+                    <div
+                      className="grid min-w-0 flex-1 grid-cols-2 gap-1"
+                      data-testid="studio-track-header-mix"
+                    >
                     <StudioMixControl
                       label="Vol"
                       ariaLabel={`Głośność ścieżki ${track.name}`}
@@ -2510,6 +2565,7 @@ function StudioEditorInner({
                         patchTrack(track.id, { pan });
                       }}
                     />
+                    </div>
                   </div>
                 </div>
               );
@@ -2529,7 +2585,10 @@ function StudioEditorInner({
               setConfirmDelete(false);
             }}
             scrollContainerRef={timelineScrollRef}
-            onZoomAroundViewport={zoomAroundViewportX}
+            onZoomAroundViewport={(nextPxPerMs, viewportOffsetPx) => {
+              userAdjustedZoomRef.current = true;
+              zoomAroundViewportX(nextPxPerMs, viewportOffsetPx);
+            }}
             resolveClipSourceUrl={resolveClipSourceUrl}
             snapConfig={snapConfig}
             onCommitClipGeometry={(clipId, commit) => {
@@ -3204,7 +3263,7 @@ function StudioTransportBar({
 
   return (
     <div
-      className="sticky top-14 z-20 shrink-0 border border-[var(--brd-ink)] bg-[color-mix(in_srgb,var(--brd-ink)_94%,black)] px-2 py-1.5 text-[var(--brd-paper)] sm:top-2"
+      className="sticky top-14 z-20 shrink-0 border border-[var(--brd-ink)] bg-[color-mix(in_srgb,var(--brd-ink)_94%,black)] px-1.5 py-1 text-[var(--brd-paper)] sm:top-2 sm:px-2 sm:py-1.5"
       role="region"
       aria-label="Transport Studio"
       data-testid="studio-transport"
@@ -3472,20 +3531,34 @@ function StudioTimeline({
 }) {
   const seekEnabled = mode === "seek" && !interactionLocked;
   const density = clampPxPerMs(pxPerMs);
-  const widthPx = contentWidthPx(timelineLengthMs, density);
+  const headerScrollRef = useRef<HTMLDivElement | null>(null);
+  const laneScrollRef = useRef<HTMLDivElement | null>(null);
+  const syncingScroll = useRef(false);
+  const [laneViewportWidthPx, setLaneViewportWidthPx] = useState(0);
+  const widthPx = contentWidthPx(timelineLengthMs, density, {
+    viewportWidthPx:
+      laneViewportWidthPx > 0 ? laneViewportWidthPx : undefined,
+  });
   const playheadX = msToPx(playheadMs, density);
   const ticks = buildTimelineRulerTicks({
     timelineLengthMs,
     pxPerMs: density,
   });
-  const headerScrollRef = useRef<HTMLDivElement | null>(null);
-  const laneScrollRef = useRef<HTMLDivElement | null>(null);
-  const syncingScroll = useRef(false);
 
   function assignLaneScrollEl(el: HTMLDivElement | null) {
     laneScrollRef.current = el;
     if (scrollContainerRef) scrollContainerRef.current = el;
   }
+
+  useEffect(() => {
+    const el = laneScrollRef.current;
+    if (!el) return;
+    const sync = () => setLaneViewportWidthPx(el.clientWidth);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tracks.length]);
 
   useEffect(() => {
     const el = laneScrollRef.current;

@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-29 — Mobile Studio layout (timeline fit + track hit targets)
+
+**Status:** kod **SHIPPED** · vitest stu-07 + p7-1-1 + narrow-lane fit **PASS** · Owner mobile UI smoke **NOT VERIFIED** this tip until deploy · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „tak” na unit mobile Studio layout (timeline fit + hit targety + mniej kolizji z transportem) · GO editor w zakresie unit
+**Tip start:** `3f8b094ec3fdfcbc5db54031661d6389b97a0a68` = `origin/main`
+**Root cause:** header 220px + 6× chipów 44px → select ~8px; default `0.01` px/ms → 600px; `contentWidthPx`/`fitPxPerMs` floor 320 px nadmuchiwał Fit na wąskiej lane
+**Code:** `contentWidthPx({ viewportWidthPx })` · `fitPxPerMs` bez inflacji · `timelineContentOverflowsViewport` · auto-Fit + `userAdjustedZoomRef` · track header 2 wiersze (`min-w-[4.5rem]` + M/S/R; ↑↓⋮ + mix) · transport `px-1.5 py-1` mobile
+**Allowlista:** `studio-editor.tsx` · `studio-timeline-view.ts` · `stu-07-mobile-track-chrome.test.ts` · `p5-4-timeline-ux.test.ts` · `p7-1-1-shell.test.ts` · docs tip
+**Explicit non-claim:** ucha/Play **NOT VERIFIED** · OD-15 **OPEN** · Contabo/SFM **nietknięte** · Sacred WIP **PRESERVE**
+**NEXT:** Owner mobile smoke Studio na www — nie SFM / nie Contabo
+
+## 2026-10-29 — SESSION_BRIDGE §4 archive (twenty-second batch, room for mobile Studio layout)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`SET-SCRATCH-UI` · `SCRATCH-LIFT-ID` · `GO-SB-ARCHIVE-17`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-29 — Unit 5 Scratch jog mobile (pointer + pad-normalized)
 
 **Status:** kod **SHIPPED** · vitest scratch-state/cas/engine **21/21** · Owner mobile UI smoke **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

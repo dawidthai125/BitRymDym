@@ -74,11 +74,13 @@ describe("Phase 7.1.1 edit toolbar hit targets", () => {
     expect(editToolbar).toMatch(/studio-add-track/);
   });
 
-  it("track chips and reorder use ≥44px hit area classes", () => {
+  it("track chips stay ≥44px; reorder densifies on mobile then ≥44 from sm", () => {
     expect(editor).toMatch(
       /STUDIO_DAW_CHIP_CLASS = "h-11 min-h-11 min-w-11 w-11 px-0"/,
     );
-    expect(editor).toMatch(/className="h-11 min-h-11 min-w-11 px-0"/);
+    expect(editor).toMatch(
+      /h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11/,
+    );
   });
 });
 
