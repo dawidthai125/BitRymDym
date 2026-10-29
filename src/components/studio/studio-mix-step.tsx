@@ -58,6 +58,15 @@ export function studioMixSignature(doc: StudioProjectDocument): string {
   ]);
 }
 
+/** Decimal comma in PL ("2,5:1"); strings untouched. */
+function localizeParams(params: Record<string, string | number>, locale: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(params)) {
+    out[k] = typeof v === "number" ? v.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { maximumFractionDigits: 2 }) : v;
+  }
+  return out;
+}
+
 const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(1) : "−∞");
 
 type Result = { metrics: MixMetrics; verdict: MixVerdict; signature: string; elapsedMs: number };
@@ -295,11 +304,11 @@ export function StudioMixStep({
               <span className="font-mono text-xs text-[var(--brd-mute)]">
                 {t("werdyktLicznik", { red: verdict.redCount, yellow: verdict.yellowCount })}
               </span>
-              {onApplyAutofix && verdict.overall !== "green" ? (
+              {onApplyAutofix ? (
                 <Button
                   type="button"
                   size="sm"
-                  className="min-h-9"
+                  className="min-h-9 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-fix-all-hint"
                   data-testid="studio-mix-fix-all"
@@ -357,7 +366,7 @@ export function StudioMixStep({
                 <>
                   <ul className="flex list-disc flex-col gap-1 pl-5 text-sm">
                     {panel.notes.map((n, i) => (
-                      <li key={`${n.key}-${i}`}>{t(`autofix.notes.${n.key}`, n.params)}</li>
+                      <li key={`${n.key}-${i}`}>{t(`autofix.notes.${n.key}`, localizeParams(n.params, locale))}</li>
                     ))}
                   </ul>
                   <p className="text-xs text-[var(--brd-mute)]">{t("autofix.zapisane")}</p>
@@ -382,7 +391,7 @@ export function StudioMixStep({
             <div
               role="status"
               data-testid="studio-mix-toast"
-              className="fixed bottom-4 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-ink,#111)] px-4 py-2 text-sm text-[var(--brd-paper,#fff)] shadow-lg"
+              className="fixed bottom-20 md:bottom-4 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-ink,#111)] px-4 py-2 text-sm text-[var(--brd-paper,#fff)] shadow-lg"
             >
               {toast}
             </div>
