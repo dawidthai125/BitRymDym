@@ -422,7 +422,7 @@ describe("STU-10-E — wiring contracts", () => {
       /if \(inspectorOverlayOpen\) closeInspectorOverlay\(\);/,
     );
     expect(shell).toMatch(
-      /aria-label="Zamknij Inspector"[\s\S]{0,120}onClick=\{onClose\}/,
+      /aria-label="Zamknij Inspektor"[\s\S]{0,120}onClick=\{onClose\}/,
     );
     expect(shell).toMatch(/onClick=\{onClose\}\s*>\s*Zamknij/);
     expect(shell).toMatch(/event\.key === "Escape"[\s\S]{0,80}onClose\(\);/);
@@ -435,7 +435,7 @@ describe("STU-10-E — wiring contracts", () => {
       /closeBlockedMessage \? \([\s\S]{0,200}role="alert"[\s\S]{0,120}\{closeBlockedMessage\}/,
     );
     expect(editor).toMatch(
-      /closeBlockedMessage=\{\s*inspectorCloseRejected && recordingLocked\s*\?\s*STUDIO_INSPECTOR_CLOSE_BLOCKED_PL\s*:\s*null\s*\}/,
+      /closeBlockedMessage=\{\s*inspectorCloseRejected && recordingLocked\s*\?\s*"Nie można zamknąć Inspektora[^"]*"\s*:\s*null\s*\}/,
     );
   });
 

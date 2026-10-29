@@ -63,11 +63,11 @@ describe("Phase 7.1.1 edit toolbar hit targets", () => {
       "Edycja",
       "Podziel",
       "Usuń",
-      "Snap",
-      "zoom−",
-      "zoom+",
-      "Fit",
-      "Mixer",
+      "Przyciąganie",
+      "Oddal",
+      "Przybliż",
+      "Dopasuj",
+      "Mikser",
     ]) {
       expect(editToolbar).toContain(label);
     }

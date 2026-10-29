@@ -548,8 +548,8 @@ describe("P6.5 Master meter UI contracts", () => {
     expect(peakUi).toMatch(/aria-valuemax=\{100\}/);
     expect(peakUi).toMatch(/aria-valuenow=\{peakPct\}/);
     expect(peakUi).toMatch(/aria-live=\"polite\"/);
-    expect(peakUi).toMatch(/Clipping/);
-    expect(peakUi).toMatch(/sample peak/);
+    expect(peakUi).toMatch(/Przester/);
+    expect(peakUi).toMatch(/szczyt próbki/);
     expect(peakUi).not.toMatch(/True Peak|LUFS|spectrum|WebGL|chart\.js/i);
     expect(meterUi).toMatch(/Miernik Master/);
   });

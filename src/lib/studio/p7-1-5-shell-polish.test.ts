@@ -310,12 +310,12 @@ describe("Phase 7.1.5.4 — mobile toolbar overflow", () => {
       "Edycja",
       "Podziel",
       "Usuń",
-      "Mixer",
+      "Mikser",
       "Inspector",
-      "Snap",
-      "zoom−",
-      "zoom+",
-      "Fit",
+      "Przyciąganie",
+      "Oddal",
+      "Przybliż",
+      "Dopasuj",
     ]) {
       expect(editToolbar).toContain(label);
     }

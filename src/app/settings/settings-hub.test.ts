@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+
+import plMessages from "../../../messages/pl.json";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -56,14 +58,21 @@ describe("settings hub (navigation only)", () => {
   });
 
   it("Premium copy does not claim in-app purchase", () => {
-    expect(src).toMatch(/Zakup w aplikacji nie jest dostępny/);
+    // Hub link copy lives in messages (account.settingsPage.consts).
+    expect(src).toContain("informacjaOPoziomachI");
+    expect(JSON.stringify(plMessages.account.settingsPage.consts)).toMatch(
+      /Zakup w aplikacji nie jest dostępny/,
+    );
   });
 
   it("exposes real h2 headings for theme and link groups", () => {
     expect(src).toMatch(/id="settings-theme"[\s\S]*?>\s*Motyw\s*</);
     expect(src).toContain('aria-labelledby={headingId}');
     expect(src).toMatch(/<h2\b[^>]*\bid=\{headingId\}/);
-    expect(src).toContain("Konto — powiązane ekrany");
+    expect(src).toContain('"kontoPowiazaneEkrany"');
+    expect(plMessages.account.settingsPage.consts.kontoPowiazaneEkrany).toBe(
+      "Konto — powiązane ekrany",
+    );
   });
 
   it("account hash destinations still exist on /account", () => {

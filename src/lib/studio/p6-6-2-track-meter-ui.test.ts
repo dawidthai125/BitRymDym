@@ -81,8 +81,8 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(peakMeter).toMatch(/\$\{testIdPrefix\}-peak/);
     expect(peakMeter).toMatch(/\$\{testIdPrefix\}-clip/);
     expect(peakMeter).toMatch(/data-clipping=/);
-    expect(peakMeter).toMatch(/Clipping/);
-    expect(peakMeter).toMatch(/Bez clippingu/);
+    expect(peakMeter).toMatch(/Przester/);
+    expect(peakMeter).toMatch(/Bez przesteru/);
     const hot = buildMeterSnapshot({
       peak: 0.5,
       clipping: true,
@@ -128,8 +128,8 @@ describe("P6.6.2 Track meter UI contracts", () => {
     expect(mixerStart).toBeGreaterThan(0);
     const mixer = editor.slice(mixerStart);
     const meterIdx = mixer.indexOf("<StudioTrackMeterLive");
-    const levelIdx = mixer.indexOf("ariaLabel={`Głośność ścieżki");
-    const panIdx = mixer.indexOf("ariaLabel={`Panorama ścieżki");
+    const levelIdx = mixer.indexOf('ariaLabel="Głośność ścieżki');
+    const panIdx = mixer.indexOf('ariaLabel="Panorama ścieżki');
     const fxIdx = mixer.indexOf("Efekty ścieżki");
     expect(meterIdx).toBeGreaterThanOrEqual(0);
     expect(levelIdx).toBeGreaterThan(meterIdx);
