@@ -42,7 +42,7 @@ export function StickyMiniPlayer() {
   return (
     <div
       className={cn(
-        "fixed inset-x-0 z-30 border-t border-[var(--brd-audio-line)] bg-[var(--brd-audio-surface)]",
+        "fixed inset-x-0 z-30 border-t border-[var(--brd-line-strong)] bg-[var(--brd-audio-surface)] shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.8)]",
         "bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-0",
       )}
       role="region"
@@ -66,7 +66,7 @@ export function StickyMiniPlayer() {
           <div className="flex min-w-0 items-baseline gap-2">
             <Link
               href={`/beat/${track.beatId}`}
-              className="brd-display min-w-0 truncate text-sm font-semibold tracking-tight text-[var(--brd-ink)] hover:text-[var(--brd-green)]"
+              className="min-w-0 truncate font-poster text-base font-bold uppercase leading-none tracking-[0.04em] text-[var(--brd-ink)] hover:text-[var(--brd-green)]"
             >
               {track.title}
             </Link>
@@ -105,10 +105,12 @@ export function StickyMiniPlayer() {
         <button
           type="button"
           onClick={close}
-          className="inline-flex size-11 shrink-0 items-center justify-center text-[var(--brd-mute)] outline-none hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)]"
+          className="inline-flex size-11 shrink-0 items-center justify-center text-[var(--brd-mute)] outline-none hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-focus)]"
           aria-label="Zamknij odtwarzacz"
         >
-          ✕
+          <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4">
+            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
+          </svg>
         </button>
       </div>
       {error ? (

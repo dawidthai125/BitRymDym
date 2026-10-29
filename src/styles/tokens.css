@@ -151,36 +151,43 @@
 html[data-theme="dark"] {
   color-scheme: dark;
 
-  --brd-paper: #161918;
-  --brd-paper-deep: #101312;
-  --brd-bg: #101312;
-  --brd-ink: #efe9df;
-  --brd-ink-soft: #d2cbc0;
-  --brd-mute: #9a9488;
-  --brd-warm-gray: #a39c90;
-  --brd-line: #2f3532;
-  --brd-line-strong: #454c48;
-  --brd-green: #7eb59a;
-  --brd-green-soft: #9acbb0;
-  --brd-green-muted: #6a8f7d;
-  --brd-green-wash: #24352e;
+  --brd-paper: #0e0c0a; /* v3: tape-soot */
+  --brd-paper-deep: #17130f; /* v3: tape-deck */
+  --brd-bg: #17130f;
+  --brd-ink: #f1e7d3;
+  --brd-ink-soft: #cdbfa6;
+  --brd-mute: #9e8f78;
+  --brd-warm-gray: #a89a83;
+  --brd-line: #3a3028;
+  --brd-line-strong: #5c4c3c;
+  /* v3: brand action colour = VU amber (name kept for compatibility). */
+  --brd-green: #f2a93b;
+  --brd-green-soft: #f7bb5c;
+  --brd-green-muted: #b9761e;
+  --brd-green-wash: #2c2116;
   --brd-green-mist: color-mix(
     in srgb,
     var(--brd-green-wash) 70%,
     var(--brd-paper)
   );
-  --brd-green-deep: #0f241e;
-  --brd-ok: #7eb59a;
-  --brd-rec: #db5a5a;
+  --brd-graphite: #17130f;
+  --brd-graphite-soft: #211b15;
+  --brd-recess: #0a0807;
+  --brd-recess-fg: #f1e7d3;
+  --brd-amber: #f2a93b;
+  --brd-amber-soft: #f7bb5c;
+  --brd-green-deep: #1a1006;
+  --brd-ok: #8fc49f;
+  --brd-rec: #ff5a46;
   --brd-danger: var(--brd-rec);
   --brd-warn: var(--brd-amber);
   --brd-focus: var(--brd-amber);
-  --brd-audio-play: var(--brd-amber-soft);
-  --brd-audio-play-hover: var(--brd-amber);
-  --brd-audio-wave-played: var(--brd-amber-soft);
-  --brd-audio-wave-rest: rgba(239, 233, 223, 0.34);
+  --brd-audio-play: #f2a93b;
+  --brd-audio-play-hover: #f7bb5c;
+  --brd-audio-wave-played: #f2a93b;
+  --brd-audio-wave-rest: rgba(241, 231, 211, 0.3);
   --brd-audio-playhead: var(--brd-ink);
-  --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 94%, transparent);
+  --brd-audio-surface: #211b15;
   --brd-audio-line: var(--brd-line);
   --brd-audio-wave-inverted-played: rgba(239, 233, 223, 0.88);
   --brd-audio-wave-inverted-rest: rgba(239, 233, 223, 0.28);

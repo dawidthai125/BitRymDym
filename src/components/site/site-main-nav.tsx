@@ -33,7 +33,8 @@ export function SiteMainNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               siteNavLinkClass,
-              active && "text-[var(--brd-ink)]",
+              active &&
+                "text-[var(--brd-ink)] underline decoration-[var(--brd-green)]",
             )}
           >
             {item.label}

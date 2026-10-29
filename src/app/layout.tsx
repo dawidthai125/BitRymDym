@@ -48,6 +48,9 @@ const fontPoster = Big_Shoulders({
   weight: "variable",
   variable: "--font-brd-poster",
   display: "swap",
+  // No metric overrides exist for Big Shoulders → own condensed fallback stack.
+  adjustFontFallback: false,
+  fallback: ["Arial Narrow", "Roboto Condensed", "sans-serif-condensed", "sans-serif"],
 });
 
 export const metadata: Metadata = siteMetadata;

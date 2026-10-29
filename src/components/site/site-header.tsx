@@ -43,7 +43,7 @@ export async function SiteHeader({
       <SkipToMainContent />
       <header
         className={cn(
-          "sticky top-0 z-40 border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_94%,transparent)] backdrop-blur-[2px]",
+          "sticky top-0 z-40 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-[0_1px_0_0_rgba(0,0,0,0.6)]",
           className,
         )}
       >
@@ -78,7 +78,7 @@ export async function SiteHeader({
               </Link>
               <Link
                 href="/sign-up"
-                className="inline-flex min-h-11 items-center border border-[var(--brd-green)] bg-[var(--brd-green)] px-2.5 text-sm text-[var(--brd-paper)] sm:px-3.5"
+                className="inline-flex min-h-11 items-center rounded-[var(--tape-r-panel)] border border-[var(--brd-green)] bg-[var(--brd-green)] px-3 font-poster text-base font-extrabold uppercase tracking-[0.1em] text-[var(--primary-foreground)] shadow-[0_3px_0_0_var(--brd-green-muted)] transition-[transform,box-shadow] duration-[var(--tape-dur-fast)] active:translate-y-[3px] active:shadow-none sm:px-4"
               >
                 Dołącz
               </Link>

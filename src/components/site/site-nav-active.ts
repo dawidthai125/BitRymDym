@@ -5,7 +5,7 @@
 
 /** Shared link classes for SiteHeader auth CTAs and SiteMainNav items. */
 export const siteNavLinkClass =
-  "inline-flex min-h-11 items-center px-2.5 text-sm text-[var(--brd-ink-soft)] transition-colors hover:text-[var(--brd-ink)]";
+  "inline-flex min-h-11 items-center px-2.5 font-poster text-base font-bold uppercase tracking-[0.1em] text-[var(--brd-ink-soft)] underline-offset-[6px] decoration-2 transition-colors hover:text-[var(--brd-ink)]";
 
 export type SiteNavActiveOptions = {
   /** Mobile Studio tab also covers /account hub routes. */

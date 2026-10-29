@@ -33,7 +33,7 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_96%,transparent)] pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--brd-line)] bg-[var(--brd-paper)] pb-[env(safe-area-inset-bottom)] lg:hidden"
       aria-label="Nawigacja mobilna"
     >
       <ul
@@ -53,16 +53,18 @@ export function MobileBottomNav({ isAuthenticated }: MobileBottomNavProps) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] tracking-wide",
+                  "flex min-h-14 flex-col items-center justify-center gap-1 font-poster text-sm font-bold uppercase tracking-[0.12em]",
                   active
-                    ? "text-[var(--brd-green)]"
+                    ? "text-[var(--brd-ink)]"
                     : "text-[var(--brd-mute)]",
                 )}
               >
                 <span
                   className={cn(
-                    "h-0.5 w-6",
-                    active ? "bg-[var(--brd-green)]" : "bg-transparent",
+                    "h-1 w-8",
+                    active
+                      ? "bg-[var(--brd-green)] shadow-[0_0_10px_0_var(--brd-green)]"
+                      : "bg-[var(--brd-line)]",
                   )}
                   aria-hidden
                 />
