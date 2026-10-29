@@ -2660,10 +2660,10 @@ function StudioEditorInner({
                   data-track-type={track.trackType}
                   data-track-role={track.trackRole}
                   data-selected={isSelected ? "true" : "false"}
-                  className="studio-track-strip flex items-stretch gap-1 border-b border-[var(--brd-line)] py-0.5 pl-1"
+                  className="studio-track-strip flex items-stretch gap-0.5 border-b border-[var(--brd-line)] py-0.5 pl-1 pr-0.5"
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
                 >
-                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pr-0.5">
+                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                   {/*
                     Mobile: 220px header cannot fit name + M/S/R + ↑↓⋮ (6×44).
                     Row1 = name (min 4.5rem) + M/S/R; row2 = reorder/menu + mix.

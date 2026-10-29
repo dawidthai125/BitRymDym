@@ -432,7 +432,15 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 .studio-track-strip {
   background: var(--tape-deck);
 }
-.studio-track-strip[data-track-type="BEAT"] /* Stage 0 — track role picker (header). */
+.studio-track-strip[data-track-type="BEAT"] .studio-type-label {
+  border-color: var(--tape-amber-deep);
+  color: var(--tape-amber);
+}
+.studio-track-strip[data-selected="true"] {
+  background: color-mix(in srgb, var(--tape-panel) 80%, var(--tape-amber) 8%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tape-amber) 55%, transparent);
+}
+/* Stage 0 — track role picker (header). */
 .studio-track-role-select {
   padding: 0 0.3rem;
   border: 1px solid var(--tape-line-strong);
@@ -449,7 +457,7 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 }
 /* Stage 0 — per-track level meter (header). */
 .studio-track-level-well {
-  background: var(--tape-soot);
+  background: var(--tape-panel);
   box-shadow: inset 0 0 0 1px var(--tape-line-strong);
 }
 .studio-track-level-fill {
@@ -474,14 +482,6 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
 }
 @media (prefers-reduced-motion: reduce) {
   .studio-track-level-fill { transition: none; }
-}
-.studio-type-label {
-  border-color: var(--tape-amber-deep);
-  color: var(--tape-amber);
-}
-.studio-track-strip[data-selected="true"] {
-  background: color-mix(in srgb, var(--tape-panel) 80%, var(--tape-amber) 8%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tape-amber) 55%, transparent);
 }
 .studio-type-label {
   padding: 0 0.3rem;
