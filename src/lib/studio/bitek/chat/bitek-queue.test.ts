@@ -42,6 +42,16 @@ describe("bitekQueueProvider", () => {
   });
 });
 
+describe("trimForE3", () => {
+  it("keeps system + last turns", async () => {
+    const { trimForE3 } = await import("./queue-provider");
+    const msgs = [{ role: "system" }, ...Array.from({ length: 9 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", i }))];
+    const out = trimForE3(msgs);
+    expect(out[0].role).toBe("system");
+    expect(out).toHaveLength(5);
+  });
+});
+
 describe("bitek llm worker", () => {
   const base = { BITEK_LLM_WORKER_ENABLED: "true", BITEK_LLM_TOKEN: "tok" };
   it("kill switch / token / localhost-only", () => {

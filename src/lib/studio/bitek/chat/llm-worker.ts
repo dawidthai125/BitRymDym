@@ -97,7 +97,7 @@ export async function processOneBitekJob(cfg: Extract<BitekWorkerConfig, { actio
         model: cfg.llmModel,
         messages,
         temperature: 0.4,
-        max_tokens: 400,
+        max_tokens: 256,
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,

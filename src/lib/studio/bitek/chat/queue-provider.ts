@@ -11,6 +11,16 @@ export type BitekQueueDb = {
   expireJob(id: string): Promise<void>;
 };
 
+/**
+ * E3 is a small CPU model (~30 tok/s prefill): keep the system prompt (stable prefix → llama.cpp cache)
+ * and only the last few turns so a reply fits the ~20 s budget.
+ */
+export function trimForE3<T extends { role: string }>(messages: T[], keepTurns = 4): T[] {
+  const system = messages.filter((m) => m.role === "system");
+  const rest = messages.filter((m) => m.role !== "system");
+  return [...system, ...rest.slice(-keepTurns)];
+}
+
 export function bitekQueueProvider(opts: {
   db: BitekQueueDb;
   timeoutMs?: number;
@@ -27,7 +37,7 @@ export function bitekQueueProvider(opts: {
     async complete(messages, signal) {
       let id: string;
       try {
-        id = await opts.db.insertJob(messages, new Date(Date.now() + timeoutMs));
+        id = await opts.db.insertJob(trimForE3(messages), new Date(Date.now() + timeoutMs));
       } catch {
         throw new BitekProviderError("network");
       }
