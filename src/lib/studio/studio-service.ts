@@ -99,7 +99,7 @@ type TrackRow = {
   project_id: string;
   name: string;
   track_type: string;
-  /** Stage 0 — absent until migration 20261029083405 is applied. */
+  /** Stage 0 — absent until migration 20261029114247 is applied. */
   track_role?: string | null;
   sort_order: number;
   gain_db: number | string;
