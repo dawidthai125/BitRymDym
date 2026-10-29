@@ -44,6 +44,13 @@ vi.mock("next/link", () => ({ default: () => null }));
 vi.mock("@/components/beats/moderation-decision-controls", () => ({
   ModerationDecisionControls: () => null,
 }));
+vi.mock("@/components/beats/auto-check-card", () => ({ AutoCheckCard: () => null }));
+vi.mock("@/components/beats/auto-check-override-controls", () => ({
+  AutoCheckOverrideControls: () => null,
+}));
+vi.mock("@/lib/beats/auto-check/records", () => ({
+  loadLatestAutoChecks: async () => new Map(),
+}));
 vi.mock("@/components/player/playback-shell", () => ({
   PlaybackShell: () => null,
 }));

@@ -1045,13 +1045,88 @@ export async function getStaffCommunityBeatForModeration(
     throw new AuthError("FORBIDDEN", "Moderation is for USER beats.");
   }
   if (!allowedStatuses.includes(beat.status as "PENDING_REVIEW" | "APPROVED")) {
-    throw new AuthError(
-      "FORBIDDEN",
-      `Moderation detail is only for ${allowedStatuses.join(" / ")} (current: ${beat.status}).`,
-    );
+    // Upload filter: auto-rejected (not yet overridden) beats stay reviewable for override.
+    const autoRejected =
+      beat.status === "REJECTED" && (await isAwaitingAutoCheckOverride(beat.id));
+    if (!autoRejected) {
+      throw new AuthError(
+        "FORBIDDEN",
+        `Moderation detail is only for ${allowedStatuses.join(" / ")} (current: ${beat.status}).`,
+      );
+    }
   }
   const [withReady] = await attachActiveMasterReady([beat]);
   const { listOpenRightsReviews } = await import("@/lib/beats/rights-records");
   const openRightsReviews = await listOpenRightsReviews(beat.id);
   return { ...withReady!, openRightsReviews };
+}
+
+async function isAwaitingAutoCheckOverride(beatId: string): Promise<boolean> {
+  const { loadLatestAutoChecks } = await import("@/lib/beats/auto-check/records");
+  const latest = (await loadLatestAutoChecks([beatId])).get(beatId);
+  return Boolean(
+    latest &&
+      (latest.status === "rejected_vocals" || latest.status === "rejected_match") &&
+      !latest.overridden_at,
+  );
+}
+
+/** Upload filter: REJECTED USER beats whose latest auto check rejected and is not overridden. */
+export async function listAutoRejectedForModeration(): Promise<ModerationQueueItem[]> {
+  await requireModerationAccess();
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .select(BEAT_SELECT_FULL)
+    .eq("status", "REJECTED")
+    .eq("ownership_type", "USER")
+    .order("updated_at", { ascending: false })
+    .limit(100);
+  if (error) {
+    throw new Error(error.message);
+  }
+  const beats = (data as BeatRow[] | null)?.map((row) => mapBeatRow(row)) ?? [];
+  if (beats.length === 0) return [];
+  const { loadLatestAutoChecks } = await import("@/lib/beats/auto-check/records");
+  const checks = await loadLatestAutoChecks(beats.map((b) => b.id));
+  const filtered = beats.filter((b) => {
+    const c = checks.get(b.id);
+    return c && (c.status === "rejected_vocals" || c.status === "rejected_match") && !c.overridden_at;
+  });
+  return attachActiveMasterReady(filtered);
+}
+
+/** Moderator override of an auto-reject (logged in beat_moderation_decisions). */
+export async function overrideBeatAutoCheckForModeration(
+  beatId: string,
+  reason: string,
+): Promise<void> {
+  const context = await requireRole(["ADMIN", "MODERATOR"]);
+  const trimmed = reason.trim();
+  if (trimmed.length < 5) {
+    throw new AuthError("FORBIDDEN", "Podaj uzasadnienie (min. 5 znaków).");
+  }
+  const beat = await loadBeat(beatId);
+  if (beat.ownerId === context.userId) {
+    throw new AuthError("FORBIDDEN", "Nie można uchylić odrzucenia własnego bitu.");
+  }
+  const { loadLatestAutoChecks, overrideBeatAutoCheck } = await import(
+    "@/lib/beats/auto-check/records"
+  );
+  const latest = (await loadLatestAutoChecks([beatId])).get(beatId);
+  if (!latest || !(latest.status === "rejected_vocals" || latest.status === "rejected_match") || latest.overridden_at) {
+    throw new AuthError("FORBIDDEN", "Brak automatycznego odrzucenia do uchylenia.");
+  }
+  await overrideBeatAutoCheck({ checkId: latest.id, actorId: context.userId, reason: trimmed });
+}
+
+/** Staff: re-run the filter after an error (new check for the current master). */
+export async function retryBeatAutoCheckForModeration(beatId: string): Promise<void> {
+  await requireModerationAccess();
+  const beat = await loadBeat(beatId);
+  if (beat.status !== "PENDING_REVIEW") {
+    throw new AuthError("FORBIDDEN", "Ponowne sprawdzenie tylko dla bitów w moderacji.");
+  }
+  const { enqueueBeatAutoCheck } = await import("@/lib/beats/auto-check/records");
+  await enqueueBeatAutoCheck(beatId);
 }

@@ -13,7 +13,9 @@ import {
   archiveOwnUserBeat,
   createUserBeat,
   publishApprovedUserBeat,
+  overrideBeatAutoCheckForModeration,
   rejectUserBeat,
+  retryBeatAutoCheckForModeration,
   returnRejectedUserBeatToDraft,
   submitUserBeat,
   updateOwnUserDraftMetadata,
@@ -180,6 +182,51 @@ export async function publishApprovedUserBeatAction(
     const beat = await publishApprovedUserBeat(beatId);
     revalidateCommunitySurfaces(beat.id);
     return { error: null, success: true, beatId: beat.id };
+  } catch (error) {
+    return catchAction(error);
+  }
+}
+
+export async function overrideAutoCheckAction(
+  beatId: string,
+  reason: string,
+): Promise<CommunityActionState> {
+  try {
+    await overrideBeatAutoCheckForModeration(beatId, reason);
+    revalidateCommunitySurfaces(beatId);
+    return { error: null, success: true, beatId };
+  } catch (error) {
+    return catchAction(error);
+  }
+}
+
+export async function retryAutoCheckAction(beatId: string): Promise<CommunityActionState> {
+  try {
+    await retryBeatAutoCheckForModeration(beatId);
+    revalidateCommunitySurfaces(beatId);
+    return { error: null, success: true, beatId };
+  } catch (error) {
+    return catchAction(error);
+  }
+}
+
+/** Owner appeal of an auto-reject (RLS-checked RPC as the signed-in owner). */
+export async function requestAutoCheckAppealAction(
+  checkId: string,
+  note: string,
+): Promise<CommunityActionState> {
+  try {
+    await requireUser();
+    const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.rpc("request_beat_auto_check_appeal", {
+      p_check_id: checkId,
+      p_note: note.trim().slice(0, 1000),
+    });
+    if (error) {
+      return { error: "Nie udało się wysłać odwołania.", success: false };
+    }
+    return { error: null, success: true };
   } catch (error) {
     return catchAction(error);
   }

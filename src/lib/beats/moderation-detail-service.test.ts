@@ -82,6 +82,12 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const autoCheckState: { latest: Record<string, unknown> | null } = { latest: null };
+vi.mock("@/lib/beats/auto-check/records", () => ({
+  loadLatestAutoChecks: async (ids: string[]) =>
+    new Map(autoCheckState.latest ? [[ids[0], autoCheckState.latest]] : []),
+}));
+
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => {
     throw new Error("admin client must not be used for moderation detail");
@@ -211,6 +217,30 @@ describe("content checks", () => {
       );
     },
   );
+
+  it("REJECTED with a non-overridden auto-check rejection is not FORBIDDEN (override path)", async () => {
+    state.beat = beatRow({ status: "REJECTED" });
+    autoCheckState.latest = { status: "rejected_vocals", overridden_at: null };
+    try {
+      const err = await getStaffCommunityBeatForModeration(BEAT_ID).then(
+        () => null,
+        (e: unknown) => e,
+      );
+      expect((err as { code?: string } | null)?.code).not.toBe("FORBIDDEN");
+    } finally {
+      autoCheckState.latest = null;
+    }
+  });
+
+  it("REJECTED with an overridden auto check → FORBIDDEN", async () => {
+    state.beat = beatRow({ status: "REJECTED" });
+    autoCheckState.latest = { status: "rejected_match", overridden_at: "2026-10-29T10:00:00Z" };
+    try {
+      expect(await codeOf(getStaffCommunityBeatForModeration(BEAT_ID))).toBe("FORBIDDEN");
+    } finally {
+      autoCheckState.latest = null;
+    }
+  });
 
   it("APPROVED is allowed by the staff detail but not by the pending-review variant", async () => {
     state.beat = beatRow({ status: "APPROVED" });
