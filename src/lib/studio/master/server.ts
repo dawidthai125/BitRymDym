@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 
 import { AuthError } from "@/lib/auth/session";
 import { decideDeliver, DELIVER_WEEKLY_LIMIT, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { monthlyMasterLimit, warsawMonthWindow, type MasterQuota } from "@/lib/studio/studio-plan-limits";
 import { clampMasterSettings, isMasterTargetId } from "@/lib/studio/master/targets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
@@ -24,6 +25,17 @@ type Admin = ReturnType<typeof createSupabaseAdminClient>;
 
 export class StudioMasterUnavailable extends Error {}
 const missing = (e: { code?: string } | null) => !!e && (e.code === "42P01" || e.code === "PGRST205");
+/** RPC not deployed yet (plan migration pending) → enforce in the app instead. */
+const missingFn = (e: { code?: string } | null) => !!e && (e.code === "PGRST202" || e.code === "42883");
+
+/** Masters this calendar month (Europe/Warsaw); failed/cancelled do not count. */
+async function masterMonthUsage(admin: Admin, ownerId: string, tier: PremiumTier): Promise<MasterQuota> {
+  const { startIso, resetIso } = warsawMonthWindow(new Date());
+  const { count, error } = await admin.from("studio_master_jobs").select("id", { count: "exact", head: true })
+    .eq("owner_id", ownerId).eq("kind", "master").gte("created_at", startIso).not("status", "in", "(failed,cancelled)");
+  check(error);
+  return { used: count ?? 0, monthLimit: monthlyMasterLimit(tier), resetAt: resetIso };
+}
 function check(e: { code?: string; message?: string } | null) {
   if (!e) return;
   if (missing(e)) throw new StudioMasterUnavailable("tables_missing");
@@ -61,7 +73,7 @@ const view = (r: Record<string, unknown>): MasterJobView => ({
   approvedAt: (r.approved_at as string) ?? null, settings: (r.settings as Record<string, number>) ?? null, createdAt: String(r.created_at),
 });
 
-/** Latest master job (+ approved one) and the Free weekly counter. */
+/** Latest master job (+ approved one), the download counter and the monthly master quota. */
 export async function getStudioMasterState(p: { ownerId: string; projectId: string; tier: PremiumTier }) {
   const admin = createSupabaseAdminClient();
   await assertOwner(admin, p.ownerId, p.projectId);
@@ -84,7 +96,8 @@ export async function getStudioMasterState(p: { ownerId: string; projectId: stri
     used = u?.length ?? 0;
     if (u?.[0]) resetAt = new Date(new Date(String(u[0].created_at)).getTime() + 7 * 864e5).toISOString();
   }
-  return { available: true as const, latest, approved: approved ? view(approved) : null, usage: { used, weekLimit: limit, resetAt } };
+  const masters = await masterMonthUsage(admin, p.ownerId, p.tier);
+  return { available: true as const, latest, approved: approved ? view(approved) : null, usage: { used, weekLimit: limit, resetAt }, masters };
 }
 
 /** Phase 1 of a master: job id + upload URL for the approved mix (browser-rendered WAV). */
@@ -99,17 +112,34 @@ function versionMismatch(seen: unknown, current: number): boolean {
   return seen !== undefined && seen !== null && Number(seen) !== current;
 }
 
-export async function commitStudioMaster(p: { ownerId: string; projectId: string; jobId: string; target: unknown; settings: unknown; documentVersion?: unknown }) {
+export async function commitStudioMaster(p: { ownerId: string; projectId: string; tier: PremiumTier; jobId: string; target: unknown; settings: unknown; documentVersion?: unknown }) {
   if (!UUID.test(p.jobId) || !isMasterTargetId(p.target)) throw new AuthError("FORBIDDEN", "bad_request");
   const admin = createSupabaseAdminClient();
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
   if (versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
+  const settings = clampMasterSettings((p.settings ?? {}) as Record<string, number>);
+  const monthLimit = monthlyMasterLimit(p.tier);
+  // Plan quota (plan-policy mastersPerMonth): atomic check + insert in the DB.
+  const { data: q, error: qe } = await admin.rpc("claim_studio_master_job", {
+    p_job_id: p.jobId, p_project_id: p.projectId, p_owner_id: p.ownerId, p_target: p.target, p_settings: settings,
+    p_source_document_version: documentVersion, p_month_limit: monthLimit,
+  });
+  if (!missingFn(qe)) {
+    check(qe);
+    const row = (Array.isArray(q) ? q[0] : q) as { allowed: boolean; used: number; month_limit: number; reset_at: string } | null;
+    const masters: MasterQuota = { used: Number(row?.used ?? 0), monthLimit: Number(row?.month_limit ?? monthLimit), resetAt: String(row?.reset_at ?? "") };
+    if (!row?.allowed) return { ok: false as const, error: "monthly_limit", masters };
+    return { ok: true as const, jobId: p.jobId, masters };
+  }
+  // Fallback until the migration is applied: same rule, checked in the app (not atomic).
+  const before = await masterMonthUsage(admin, p.ownerId, p.tier);
+  if (before.used >= before.monthLimit) return { ok: false as const, error: "monthly_limit", masters: before };
   const { error } = await admin.from("studio_master_jobs").insert({
     id: p.jobId, project_id: p.projectId, owner_id: p.ownerId, kind: "master", target: p.target,
-    settings: clampMasterSettings((p.settings ?? {}) as Record<string, number>), source_document_version: documentVersion, output_format: "WAV_FLOAT",
+    settings, source_document_version: documentVersion, output_format: "WAV_FLOAT",
   });
   check(error);
-  return { ok: true as const, jobId: p.jobId };
+  return { ok: true as const, jobId: p.jobId, masters: { ...before, used: before.used + 1 } };
 }
 
 export async function approveStudioMaster(p: { ownerId: string; projectId: string; jobId: string }) {

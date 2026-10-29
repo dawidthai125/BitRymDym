@@ -167,8 +167,8 @@ describe("P5.1 security / schema / regression guards", () => {
     expect(migration).not.toMatch(/takes_owner_xor/);
   });
 
-  it("soft project cap configured", () => {
-    expect(STUDIO_MAX_PROJECTS_PER_USER).toBe(25);
+  it("project list ceiling = highest plan cap (GOLD 50)", () => {
+    expect(STUDIO_MAX_PROJECTS_PER_USER).toBe(50);
   });
 
   it("StudioTransport module stays separate from PlayerProvider", () => {

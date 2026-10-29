@@ -2,8 +2,11 @@
  * P5 Studio config SSOT (OD-P5-07 soft project cap).
  */
 
-/** Soft max Studio projects per authenticated user. */
-export const STUDIO_MAX_PROJECTS_PER_USER = 25;
+/**
+ * Hard ceiling for listing projects (= highest plan cap, GOLD 50). The per-plan
+ * creation cap lives in `@/config/plan-policy` (FREE 3 / BRONZE 10 / SILVER 25 / GOLD 50).
+ */
+export const STUDIO_MAX_PROJECTS_PER_USER = 50;
 
 /** Client-side page size for /studio project list. */
 export const STUDIO_PROJECT_LIST_PAGE_SIZE = 15;

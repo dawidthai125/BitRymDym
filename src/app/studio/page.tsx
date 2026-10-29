@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { StudioProjectList } from "@/components/studio/studio-project-list";
 import { AppShell } from "@/components/site/app-shell";
+import { maxProjectsForTier } from "@/config/plan-policy";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listStudioProjects } from "@/lib/studio/studio-service";
 
@@ -22,8 +24,9 @@ type PageProps = {
 /** OD-P5-03 — Studio hub = project list (Quick Record remains on beat detail). */
 export default async function StudioProjectsPage({ searchParams }: PageProps) {
   const t = await getTranslations("studio.studioPage");
+  let auth: Awaited<ReturnType<typeof requireUser>>;
   try {
-    await requireUser();
+    auth = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect("/sign-in");
@@ -32,6 +35,7 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
   }
 
   const projects = await listStudioProjects();
+  const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
   const params = searchParams ? await searchParams : {};
   const seedBeatId =
     typeof params.beatId === "string" && params.beatId.length > 0
@@ -58,6 +62,7 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
           <StudioProjectList
             initialProjects={projects}
             seedBeatId={seedBeatId}
+            plan={{ tier, maxProjects: maxProjectsForTier(tier) }}
           />
 
           <div className="flex flex-wrap gap-4 text-sm">

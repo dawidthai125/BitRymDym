@@ -13,8 +13,15 @@ import {
   StudioBeatTrackProtectedError,
   StudioTrackCapacityError,
 } from "@/lib/studio/studio-track-capacity";
+import { StudioProjectLimitError } from "@/lib/studio/studio-plan-limits";
 
 export function studioApiErrorResponse(error: unknown): NextResponse {
+  if (error instanceof StudioProjectLimitError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code, limit: error.limit, tier: error.tier },
+      { status: 403 },
+    );
+  }
   if (error instanceof MixWorkingApplyError) {
     return NextResponse.json(
       { error: error.message, code: error.code },

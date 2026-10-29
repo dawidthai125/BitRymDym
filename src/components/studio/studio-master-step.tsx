@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { Button } from "@/components/ui/button";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
-import type { DeliverFormat, DeliverKind } from "@/lib/studio/deliver/policy";
+import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
 import { DEFAULT_MASTER_SETTINGS, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, clampMasterSettings, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterTargetId } from "@/lib/studio/master/targets";
@@ -21,6 +21,8 @@ type ServerState = {
   tier: Tier | null;
   options: Option[];
   usage: { used: number; weekLimit: number | null; resetAt: string | null } | null;
+  /** Plan quota: masters this calendar month (server-enforced). */
+  masters: { used: number; monthLimit: number; resetAt: string } | null;
 };
 type ServerMaster =
   | { phase: "idle" }
@@ -30,7 +32,7 @@ type ServerMaster =
   | { phase: "unavailable" };
 
 const STATUS_RAIL = { green: "border-l-[var(--brd-green)]", yellow: "border-l-[var(--brd-amber)]", red: "border-l-[var(--brd-rec)]", na: "border-l-[var(--brd-line)]" } as const;
-const MIN_PLAN: Record<DeliverFormat, Tier> = { MP3_128: "FREE", MP3_192: "SILVER", MP3_320: "GOLD", WAV_24: "GOLD", ZIP: "GOLD" };
+const MIN_PLAN = (format: DeliverFormat): Tier => minimumTierForDeliverFormat(format);
 const FORMATS: DeliverFormat[] = ["MP3_128", "MP3_192", "MP3_320", "WAV_24"];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -66,7 +68,7 @@ export function StudioMasterStep({
   const [target, setTarget] = useState<MasterTargetId>(initialState?.target ?? "streaming");
   const [settings, setSettings] = useState<MasterSettings>(DEFAULT_MASTER_SETTINGS);
   const [preview, setPreview] = useState<{ stereo: Stereo; metrics: MasterMetrics; key: string } | null>(null);
-  const [server, setServer] = useState<ServerState>({ available: true, tier: null, options: [], usage: null });
+  const [server, setServer] = useState<ServerState>({ available: true, tier: null, options: [], usage: null, masters: null });
   const [sm, setSm] = useState<ServerMaster>({ phase: "idle" });
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -102,7 +104,7 @@ export function StudioMasterStep({
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (!live || !j) return;
-        setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: j.usage ?? null });
+        setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: j.usage ?? null, masters: j.masters ?? null });
         if (j.available === false) return setSm({ phase: "unavailable" });
         // Restore an approved master for the current mix (after reload / coming back later).
         const a = j.approved as { id?: string; target?: string | null; status?: string; settings?: Record<string, number> | null } | null | undefined;
@@ -244,6 +246,7 @@ export function StudioMasterStep({
       // E3 renders the mix itself from the saved project (same DSP as this preview).
       const commit = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "commit", jobId: prep.jobId, target, settings, documentVersion: doc.project.documentVersion }) }).then((r) => r.json());
       if (commit.available === false) return setSm({ phase: "unavailable" });
+      if (commit.masters) setServer((s) => ({ ...s, masters: commit.masters }));
       if (!commit.ok) return setSm({ phase: "failed", code: String(commit.error ?? "commit") });
       setSm({ phase: "working", jobId: prep.jobId });
       const done = await pollJob(prep.jobId);
@@ -322,6 +325,8 @@ export function StudioMasterStep({
   const signed = (n: number) => (n > 0 ? `+${fmtN(n, n % 1 ? 1 : 0)}` : n < 0 ? `−${fmtN(-n, n % 1 ? 1 : 0)}` : "0");
   const plan = server.tier ? t(`plany.${server.tier}`) : null;
   const limitReached = server.usage?.weekLimit != null && server.usage.used >= server.usage.weekLimit;
+  const mastersLeft = server.masters ? Math.max(0, server.masters.monthLimit - server.masters.used) : null;
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale === "en" ? "en-GB" : "pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" });
 
   return (
     <div data-testid="studio-master-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
@@ -419,10 +424,22 @@ export function StudioMasterStep({
           <div className="flex flex-col gap-2 border-t border-[var(--brd-line)] pt-3">
             {sm.phase !== "done" && !approved ? (
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" size="lg" className="min-h-11 px-4" disabled={sm.phase === "working" || sm.phase === "unavailable"} onClick={() => void makeMaster()} data-testid="studio-master-make">
+                <Button type="button" size="lg" className="min-h-11 px-4" disabled={sm.phase === "working" || sm.phase === "unavailable" || mastersLeft === 0} aria-describedby={server.masters ? "studio-master-quota" : undefined} onClick={() => void makeMaster()} data-testid="studio-master-make">
+                  {mastersLeft === 0 ? "🔒 " : ""}
                   {sm.phase === "working" ? (sm.jobId ? t("masterTrwa") : t("masterKolejka")) : t("zrobMaster")}
                 </Button>
-                {sm.phase === "failed" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("masterBlad", { code: sm.code })}</p> : null}
+                {server.masters ? (
+                  <p id="studio-master-quota" data-testid="studio-master-quota" data-left={mastersLeft ?? undefined} className={`text-sm ${mastersLeft === 0 ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>
+                    {t("masteryMiesiac", { used: server.masters.used, limit: server.masters.monthLimit })}
+                    {mastersLeft === 0 && server.masters.resetAt ? ` · ${t("masteryReset", { date: fmtDate(server.masters.resetAt) })}` : ""}
+                  </p>
+                ) : null}
+                {sm.phase === "failed" && sm.code === "monthly_limit" ? (
+                  <p role="alert" data-testid="studio-master-limit" className="text-sm text-[var(--brd-rec)]">
+                    {t("masteryLimit")}{" "}
+                    {server.tier !== "GOLD" ? <a href="/premium" className="underline underline-offset-4">{t("zobaczPlany")}</a> : null}
+                  </p>
+                ) : sm.phase === "failed" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("masterBlad", { code: sm.code })}</p> : null}
                 {sm.phase === "unavailable" ? <p role="status" data-testid="studio-master-unavailable" className="text-sm">{t("serwerNiedostepny")}</p> : null}
               </div>
             ) : null}
@@ -454,6 +471,12 @@ export function StudioMasterStep({
                   {plan ? <span className="text-xs uppercase tracking-[0.12em] text-[var(--brd-mute)]">{t("planInfo", { plan })}</span> : null}
                 </div>
                 {!server.tier ? <p className="text-sm">{t("gosc")}</p> : null}
+                {server.tier === "FREE" ? (
+                  <p data-testid="studio-master-dl-free" role="status" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span>{t("freeBezPobierania")}</span>
+                    <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
+                  </p>
+                ) : null}
                 {server.tier && server.usage?.weekLimit != null ? (
                   <p data-testid="studio-master-dl-counter" className={`text-sm ${limitReached ? "text-[var(--brd-rec)]" : ""}`}>
                     {t("licznikFree", { used: server.usage.used, limit: server.usage.weekLimit })}
@@ -475,7 +498,7 @@ export function StudioMasterStep({
                               const opt = server.options.find((o) => o.kind === kind && o.format === format);
                               const enabled = Boolean(opt?.enabled) && !limitReached;
                               const key = `${kind}-${format}`;
-                              const lockedLabel = !opt?.enabled ? (kind === "project" ? t("tylkoGold") : t("zablokowane", { plan: t(`plany.${MIN_PLAN[format]}`) })) : null;
+                              const lockedLabel = !opt?.enabled ? (kind === "project" ? t("tylkoGold") : t("zablokowane", { plan: t(`plany.${MIN_PLAN(format)}`) })) : null;
                               return (
                                 <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-9" disabled={!enabled || dl?.status === "working"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
                                   {!opt?.enabled ? "🔒 " : ""}

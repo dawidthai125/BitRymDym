@@ -4,6 +4,9 @@
  * Admin duration overrides for BRONZE/SILVER/GOLD live in DB (sample_policy_settings).
  */
 
+import { GUEST_RECORDING_POLICY, PLAN_POLICY } from "@/config/plan-policy";
+import type { PremiumTier } from "@/types/premium";
+
 export const TAKE_AUDIO_BUCKET = "take-audio";
 
 /** Global technical max recording length (seconds). Never raise without Owner GO. */
@@ -45,7 +48,7 @@ export const OWN_TAKE_RAW_DOWNLOADS_DAILY = 5;
 export const TAKE_TITLE_MAX_LENGTH = 120;
 
 /** Anonymous take retention TTL (seconds). */
-export const ANON_TAKE_TTL_SECONDS = 2 * 60 * 60;
+export const ANON_TAKE_TTL_SECONDS = GUEST_RECORDING_POLICY.takeTtlSeconds;
 
 /** httpOnly opaque anonymous Take identity cookie (≠ brd_dl_aid). */
 export const ANON_TAKE_COOKIE_NAME = "brd_tk_aid";
@@ -73,8 +76,20 @@ export type SamplePolicyDefaults = {
   canDownloadOwnTake: boolean;
 };
 
+/** Recording numbers per plan come from the plan SSOT (`@/config/plan-policy`). */
+function fromPlan(tier: PremiumTier): SamplePolicyDefaults {
+  const p = PLAN_POLICY[tier];
+  return {
+    maxRecordingSeconds: p.recording.maxTakeSeconds,
+    ttlSeconds: p.recording.takeTtlSeconds,
+    maxActiveReady: p.recording.maxActiveReady,
+    maxSessionsPerUtcDay: p.recording.sessionsPerDay,
+    canDownloadOwnTake: p.downloads.ownTakeRaw,
+  };
+}
+
 /**
- * Immutable default matrix (P1 Owner GO).
+ * Immutable default matrix (P1 Owner GO; Owner 2026-10-29: FREE 1 take/day, 24 h).
  * Duration for BRONZE/SILVER/GOLD may be overridden by Admin (1..180).
  * ANONYMOUS / FREE durations are system-fixed.
  */
@@ -83,40 +98,16 @@ export const SAMPLE_POLICY_DEFAULTS: Record<
   SamplePolicyDefaults
 > = {
   ANONYMOUS: {
-    maxRecordingSeconds: 15,
+    maxRecordingSeconds: GUEST_RECORDING_POLICY.maxTakeSeconds,
     ttlSeconds: ANON_TAKE_TTL_SECONDS,
-    maxActiveReady: 1,
-    maxSessionsPerUtcDay: 3,
+    maxActiveReady: GUEST_RECORDING_POLICY.maxActiveReady,
+    maxSessionsPerUtcDay: GUEST_RECORDING_POLICY.sessionsPerDay,
     canDownloadOwnTake: false,
   },
-  FREE: {
-    maxRecordingSeconds: 30,
-    ttlSeconds: 12 * 60 * 60,
-    maxActiveReady: 3,
-    maxSessionsPerUtcDay: 3,
-    canDownloadOwnTake: false,
-  },
-  BRONZE: {
-    maxRecordingSeconds: 60,
-    ttlSeconds: 36 * 60 * 60,
-    maxActiveReady: 5,
-    maxSessionsPerUtcDay: 5,
-    canDownloadOwnTake: false,
-  },
-  SILVER: {
-    maxRecordingSeconds: 120,
-    ttlSeconds: 60 * 60 * 60,
-    maxActiveReady: 7,
-    maxSessionsPerUtcDay: 7,
-    canDownloadOwnTake: false,
-  },
-  GOLD: {
-    maxRecordingSeconds: 180,
-    ttlSeconds: 84 * 60 * 60,
-    maxActiveReady: 10,
-    maxSessionsPerUtcDay: 10,
-    canDownloadOwnTake: true,
-  },
+  FREE: fromPlan("FREE"),
+  BRONZE: fromPlan("BRONZE"),
+  SILVER: fromPlan("SILVER"),
+  GOLD: fromPlan("GOLD"),
 } as const;
 
 /** Admin may override only these tiers' max duration. */

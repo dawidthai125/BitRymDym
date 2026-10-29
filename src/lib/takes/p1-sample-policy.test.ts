@@ -23,12 +23,12 @@ describe("P1 Sample Policy matrix — getSamplePolicy", () => {
     expect(p.canDownloadOwnTake).toBe(false);
   });
 
-  it("FREE: 30s / 12h / 3 / 3 / false", () => {
+  it("FREE: 30s / 24h / 3 / 1 / false (Owner 2026-10-29)", () => {
     const p = getSamplePolicy({ actor: "FREE", beatDurationSeconds: BEAT });
     expect(p.maxRecordingSeconds).toBe(30);
-    expect(p.ttlSeconds).toBe(12 * 60 * 60);
+    expect(p.ttlSeconds).toBe(24 * 60 * 60);
     expect(p.activeReadyCap).toBe(3);
-    expect(p.dailySessionLimit).toBe(3);
+    expect(p.dailySessionLimit).toBe(1);
     expect(p.canDownloadOwnTake).toBe(false);
   });
 

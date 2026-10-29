@@ -80,7 +80,7 @@ describe("Recording Wave 2 — AuthZ interim", () => {
 
   it("maps retention and recording mode (Sample Policy FREE TTL)", () => {
     expect(retentionSecondsForAccountLevel("BEGINNER_RAPPER")).toBe(
-      12 * 60 * 60,
+      24 * 60 * 60,
     );
     expect(recordingModeForMaxSeconds(30)).toBe("QUICK");
     expect(recordingModeForMaxSeconds(31)).toBe("FULL");

@@ -124,7 +124,7 @@ describe("Recording Wave 4 — Sample Policy (Premium Tier)", () => {
 describe("Recording Wave 4 — retention / active READY helpers", () => {
   it("maps retention via Sample Policy TTL", () => {
     expect(getSamplePolicy({ actor: "FREE", beatDurationSeconds: 60 }).ttlSeconds).toBe(
-      12 * 60 * 60,
+      24 * 60 * 60,
     );
     expect(getSamplePolicy({ actor: "SILVER", beatDurationSeconds: 60 }).ttlSeconds).toBe(
       60 * 60 * 60,
@@ -153,7 +153,7 @@ describe("Recording Wave 4 — anti-abuse caps (Sample Policy)", () => {
   it("exposes P1 caps per Premium Tier", () => {
     expect(getSamplePolicy({ actor: "FREE", beatDurationSeconds: 60 })).toMatchObject({
       activeReadyCap: 3,
-      dailySessionLimit: 3,
+      dailySessionLimit: 1,
     });
     expect(getSamplePolicy({ actor: "SILVER", beatDurationSeconds: 60 })).toMatchObject({
       activeReadyCap: 7,

@@ -8,20 +8,23 @@
  * Download right ≠ mix right ≠ unlock credit ≠ retention.
  */
 
+import {
+  minimumTierForQuality,
+  PLAN_DOWNLOAD_QUALITIES,
+  PLAN_POLICY,
+  type PlanDownloadQuality,
+} from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
-/** Product download qualities for RAW/MIX/MASTER finished files (≠ SFM). */
-export const PREMIUM_DOWNLOAD_QUALITIES = [
-  "MP3_128",
-  "MP3_192",
-  "MP3_256",
-  "MP3_320",
-  "WAV_COMPAT",
-  "WAV_PRO",
-  "WAV_MASTER",
-] as const;
+/**
+ * Product download qualities for RAW/MIX/MASTER finished files (≠ SFM).
+ * The ladder per plan lives in `@/config/plan-policy` (one policy for Premium
+ * downloads AND Studio deliverables — `src/lib/studio/deliver/policy.ts` maps
+ * onto it).
+ */
+export const PREMIUM_DOWNLOAD_QUALITIES = PLAN_DOWNLOAD_QUALITIES;
 
-export type PremiumDownloadQuality = (typeof PREMIUM_DOWNLOAD_QUALITIES)[number];
+export type PremiumDownloadQuality = PlanDownloadQuality;
 
 /** Weekly track-unlock credits (OD-EXPORT-08). Not transfer counts. */
 export const PREMIUM_UNLOCK_CREDITS_PER_PERIOD: Record<PremiumTier, number> = {
@@ -34,34 +37,30 @@ export const PREMIUM_UNLOCK_CREDITS_PER_PERIOD: Record<PremiumTier, number> = {
 /** Credit period length from activation/purchase (not calendar week). */
 export const PREMIUM_CREDIT_PERIOD_DAYS = 7;
 
-/** Retention days from WORK_READY (OD-EXPORT-09…12). */
+/**
+ * Retention days from WORK_READY — same number as render artifacts
+ * (plan-policy: FREE 2 / BRONZE 7 / SILVER 30 / GOLD 60; Gold longest).
+ */
 export const PREMIUM_RETENTION_DAYS: Record<PremiumTier, number> = {
-  FREE: 7,
-  BRONZE: 7,
-  SILVER: 14,
-  GOLD: 28,
+  FREE: PLAN_POLICY.FREE.retentionDays,
+  BRONZE: PLAN_POLICY.BRONZE.retentionDays,
+  SILVER: PLAN_POLICY.SILVER.retentionDays,
+  GOLD: PLAN_POLICY.GOLD.retentionDays,
 };
 
 /**
- * Downloadable qualities by current package (OD-EXPORT-06 + D-1).
- * FREE: empty — listen/preview may still be allowed elsewhere.
+ * Downloadable qualities by current package (plan-policy).
+ * FREE: empty — no downloads at all (buttons stay visible, locked, with a
+ * premium nudge). Listen/preview may still be allowed elsewhere.
  */
 export const PREMIUM_DOWNLOAD_BY_TIER: Record<
   PremiumTier,
   readonly PremiumDownloadQuality[]
 > = {
-  FREE: [],
-  BRONZE: ["MP3_128"],
-  SILVER: ["MP3_128", "MP3_192", "MP3_256"],
-  GOLD: [
-    "MP3_128",
-    "MP3_192",
-    "MP3_256",
-    "MP3_320",
-    "WAV_COMPAT",
-    "WAV_PRO",
-    "WAV_MASTER",
-  ],
+  FREE: PLAN_POLICY.FREE.downloads.qualities,
+  BRONZE: PLAN_POLICY.BRONZE.downloads.qualities,
+  SILVER: PLAN_POLICY.SILVER.downloads.qualities,
+  GOLD: PLAN_POLICY.GOLD.downloads.qualities,
 };
 
 export const PREMIUM_WAV_PROFILES = {
@@ -156,42 +155,42 @@ export type PremiumDownloadLadderItem = {
 
 const QUALITY_META: Record<
   PremiumDownloadQuality,
-  { label: string; detail: string; requiredTier: PremiumTier }
+  { label: string; detail: string }
 > = {
   MP3_128: {
     label: "MP3 — 128 kbps",
     detail: "podstawowa jakość",
-    requiredTier: "BRONZE",
+
   },
   MP3_192: {
     label: "MP3 — 192 kbps",
     detail: "wyższa jakość",
-    requiredTier: "SILVER",
+
   },
   MP3_256: {
     label: "MP3 — 256 kbps",
     detail: "wysoka jakość",
-    requiredTier: "SILVER",
+
   },
   MP3_320: {
     label: "MP3 — 320 kbps",
     detail: "najwyższa jakość MP3",
-    requiredTier: "GOLD",
+
   },
   WAV_COMPAT: {
     label: "WAV Compat — 16-bit / 44,1 kHz",
     detail: "PCM stereo",
-    requiredTier: "GOLD",
+
   },
   WAV_PRO: {
     label: "WAV Pro — 24-bit / 44,1 kHz",
     detail: "PCM stereo",
-    requiredTier: "GOLD",
+
   },
   WAV_MASTER: {
     label: "WAV Master — 24-bit / 48 kHz",
     detail: "PCM stereo — najwyższa jakość",
-    requiredTier: "GOLD",
+
   },
 };
 
@@ -207,12 +206,12 @@ export function buildPremiumDownloadLadder(
       label: meta.label,
       detail: meta.detail,
       unlocked,
-      requiredTier: meta.requiredTier,
+      requiredTier: minimumTierForQuality(quality),
       lockedMessage: unlocked
         ? null
         : premiumTier === "FREE"
           ? "Pobieranie dostępne w pakiecie Premium."
-          : `Dostępne w planie ${meta.requiredTier}.`,
+          : `Dostępne w planie ${minimumTierForQuality(quality)}.`,
     };
   });
 }

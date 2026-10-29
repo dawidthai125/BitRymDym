@@ -11,6 +11,7 @@ import {
   defaultStudioTrackRole,
   isStudioTrackRole,
 } from "@/config/studio";
+import { maxProjectsForTier } from "@/config/plan-policy";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -45,6 +46,10 @@ import {
   StudioBeatTrackProtectedError,
   StudioTrackCapacityError,
 } from "@/lib/studio/studio-track-capacity";
+import {
+  canCreateStudioProject,
+  StudioProjectLimitError,
+} from "@/lib/studio/studio-plan-limits";
 import {
   applyStudioClipScratchCas,
   mapStudioClipScratchFields,
@@ -240,11 +245,11 @@ export async function createStudioProjectFor(
     .eq("owner_id", context.userId)
     .neq("status", "ARCHIVED");
   if (countError) throw new Error(countError.message);
-  if ((count ?? 0) >= STUDIO_MAX_PROJECTS_PER_USER) {
-    throw new AuthError(
-      "FORBIDDEN",
-      `Osiągnięto limit ${STUDIO_MAX_PROJECTS_PER_USER} projektów Studio.`,
-    );
+  // Plan cap (plan-policy: FREE 3 / BRONZE 10 / SILVER 25 / GOLD 50). Projects
+  // above the cap after a downgrade stay; only creating a new one is blocked.
+  const planTier = (await resolveProductEntitlementForAuthContext(context)).premiumTier;
+  if (!canCreateStudioProject({ tier: planTier, activeProjects: count ?? 0 })) {
+    throw new StudioProjectLimitError(planTier, maxProjectsForTier(planTier));
   }
 
   const title = (input?.title?.trim() || "Nowy projekt").slice(
