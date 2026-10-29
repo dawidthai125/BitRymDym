@@ -141,8 +141,8 @@ export function masterPreview(input: Stereo, target: MasterTargetId, settings: M
   const l = new Float32Array(input.left);
   const r = new Float32Array(input.right);
   const chain = [highpass(25, sr), shelf("low", 110, 1.5 * settings.bass, sr), shelf("high", 8000, 1.5 * settings.bright, sr)];
-  let L = l;
-  let R = r;
+  let L: Float32Array = l;
+  let R: Float32Array = r;
   for (const f of chain) {
     L = applyBiquad(L, f);
     R = applyBiquad(R, f);
