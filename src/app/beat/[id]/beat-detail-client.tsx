@@ -189,7 +189,7 @@ export function BeatDetailClient({
 
         <div className="min-w-0 space-y-5">
           <div className="space-y-2">
-            <h1 className="brd-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">
+            <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.88] text-balance">
               {beat.title}
             </h1>
             <p className="text-lg text-[var(--brd-ink-soft)]">
@@ -244,7 +244,7 @@ export function BeatDetailClient({
             </p>
           )}
 
-          <p className="brd-meta flex flex-wrap gap-x-3 gap-y-1 border-y border-[var(--brd-line)] py-2 text-[11px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          <p className="brd-meta flex flex-wrap gap-x-3 gap-y-1 border-y border-[var(--brd-line)] py-2.5 text-xs uppercase tracking-[0.14em] text-[var(--brd-ink-soft)]">
             <span>
               <span className="text-[var(--brd-mute)]">Tempo </span>
               <span className="text-[var(--brd-ink)]">
@@ -329,7 +329,7 @@ export function BeatDetailClient({
       </div>
 
       <section className="max-w-prose space-y-2 border-t border-[var(--brd-line)] pt-6">
-        <h2 className="brd-display text-xl font-semibold">O bicie</h2>
+        <h2 className="brd-display text-3xl leading-none">O bicie</h2>
         <p className="text-sm leading-relaxed text-[var(--brd-ink-soft)]">
           {description ??
             "Bit gotowy do odsłuchu i nagrania. Sprawdź tempo, tonację i nagraj swój wokal na tym podkładzie."}
@@ -337,7 +337,7 @@ export function BeatDetailClient({
       </section>
 
       <section className="space-y-2 border-t border-[var(--brd-line)] pt-6">
-        <h2 className="brd-display text-xl font-semibold">Licencja</h2>
+        <h2 className="brd-display text-3xl leading-none">Licencja</h2>
         <p className="max-w-prose text-sm leading-relaxed text-[var(--brd-ink-soft)]">
           Odsłuchaj, nagraj nagranie i korzystaj z bitu zgodnie z zasadami konta.
           Eksport miksu znajdziesz w studio.
@@ -346,7 +346,7 @@ export function BeatDetailClient({
 
       {related.length > 0 ? (
         <section className="space-y-3 border-t border-[var(--brd-line)] pt-6">
-          <h2 className="brd-display text-xl font-semibold">Podobne bity</h2>
+          <h2 className="brd-display text-3xl leading-none">Podobne bity</h2>
           <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
             {related.map((r) => (
               <li key={r.id}>
@@ -402,10 +402,8 @@ export function BeatDetailClient({
           }}
         >
           <div className="space-y-1">
-            <p className="brd-meta text-[10px] uppercase tracking-[0.16em] text-[var(--brd-rec)]">
-              Sesja · Quick Take
-            </p>
-            <h2 className="brd-display text-xl font-semibold">
+            <h2 className="brd-display flex items-center gap-3 text-3xl leading-none">
+              <span aria-hidden="true" className="studio-rec-lamp" />
               Nagraj na tym bicie
             </h2>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">

@@ -1,3 +1,4 @@
+import { StatusPill } from "@/components/brand/chrome";
 import {
   autoCheckBadge,
   OUTCOME_LABELS_PL,
@@ -8,20 +9,16 @@ import {
 } from "@/lib/beats/auto-check/presentation";
 import type { AutoCheckRow } from "@/lib/beats/auto-check/records";
 
-const TONE: Record<string, string> = {
-  ok: "border-emerald-600/40 text-emerald-700 dark:text-emerald-400",
-  danger: "border-destructive/50 text-destructive",
-  warn: "border-amber-500/50 text-amber-700 dark:text-amber-400",
-  neutral: "border-border text-muted-foreground",
+const LED: Record<string, "ok" | "rec" | "warn" | "neutral"> = {
+  ok: "ok",
+  danger: "rec",
+  warn: "warn",
+  neutral: "neutral",
 };
 
 export function AutoCheckBadge({ check }: { check: AutoCheckRow | null | undefined }) {
   const b = autoCheckBadge(check);
-  return (
-    <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${TONE[b.tone]}`}>
-      {b.label}
-    </span>
-  );
+  return <StatusPill tone={LED[b.tone] ?? "neutral"}>{b.label}</StatusPill>;
 }
 
 export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefined }) {
@@ -35,10 +32,11 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
   const { recognition, vocal } = readCheckResults(check.results);
   const ranges = vocal ? vocalRanges(vocal.windows ?? []) : [];
   return (
-    <div className="space-y-4 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="brd-rack-module space-y-4 text-sm" data-testid="auto-check-card">
+      <span aria-hidden="true" className="brd-rack-screws" />
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] pb-3">
         <AutoCheckBadge check={check} />
-        <span className="text-muted-foreground">
+        <span className="brd-data text-xs text-muted-foreground">
           {check.finished_at
             ? `zakończono ${new Date(check.finished_at).toLocaleString("pl-PL")}`
             : `zlecono ${new Date(check.created_at).toLocaleString("pl-PL")}`}
@@ -47,23 +45,23 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
       </div>
       {check.summary_pl ? <p>{check.summary_pl}</p> : null}
 
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-0 sm:grid-cols-2">
         {Object.entries(check.providers ?? {}).map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-3">
+          <div key={k} className="brd-readout flex justify-between gap-3">
             <dt className="text-muted-foreground">{PROVIDER_LABELS_PL[k] ?? k}</dt>
-            <dd>{OUTCOME_LABELS_PL[String(v)] ?? String(v)}</dd>
+            <dd className="brd-data">{OUTCOME_LABELS_PL[String(v)] ?? String(v)}</dd>
           </div>
         ))}
         {check.recognition_score != null ? (
-          <div className="flex justify-between gap-3">
+          <div className="brd-readout flex justify-between gap-3">
             <dt className="text-muted-foreground">Najwyższy wynik dopasowania</dt>
-            <dd>{Number(check.recognition_score).toFixed(2)}</dd>
+            <dd className="brd-data">{Number(check.recognition_score).toFixed(2)}</dd>
           </div>
         ) : null}
         {check.vocal_ratio != null ? (
-          <div className="flex justify-between gap-3">
+          <div className="brd-readout flex justify-between gap-3">
             <dt className="text-muted-foreground">Udział okien z wokalem</dt>
-            <dd>{(Number(check.vocal_ratio) * 100).toFixed(1)}%</dd>
+            <dd className="brd-data">{(Number(check.vocal_ratio) * 100).toFixed(1)}%</dd>
           </div>
         ) : null}
       </dl>
@@ -86,7 +84,7 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
                     ) : (
                       <span>{label}</span>
                     )}
-                    <span className="text-muted-foreground">
+                    <span className="brd-data text-muted-foreground">
                       wynik {m.score.toFixed(2)}
                       {m.matchedSeconds != null ? ` · ${m.matchedSeconds}s` : ""}
                       {m.offsetSeconds != null ? ` · przesunięcie ${m.offsetSeconds}s` : ""}
@@ -102,12 +100,12 @@ export function AutoCheckCard({ check }: { check: AutoCheckRow | null | undefine
       {ranges.length ? (
         <div className="space-y-1">
           <p className="font-medium">Fragmenty z wokalem</p>
-          <p className="text-muted-foreground">{ranges.join(", ")}</p>
+          <p className="brd-data text-muted-foreground">{ranges.join(", ")}</p>
         </div>
       ) : null}
 
       {check.appeal_requested_at ? (
-        <div className="space-y-1 rounded-lg border border-border p-3">
+        <div className="space-y-1 border border-[var(--brd-line)] bg-[var(--brd-recess)] p-3">
           <p className="font-medium">
             Odwołanie właściciela ({new Date(check.appeal_requested_at).toLocaleString("pl-PL")})
           </p>

@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { StudioGlyph } from "@/components/studio/studio-glyphs";
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
   const nodes = root.querySelectorAll<HTMLElement>(
@@ -163,13 +164,13 @@ export function StudioMixerDockChrome({
       data-studio-mixer="dock"
       data-mixer-expanded={expanded ? "true" : "false"}
       aria-label="Mix"
-      className="hidden shrink-0 flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-[0_-2px_8px_-4px_color-mix(in_srgb,var(--brd-ink)_18%,transparent)] xl:flex"
+      className="studio-mixer-dock hidden shrink-0 flex-col xl:flex"
     >
       <div
         className="flex min-h-11 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2"
         data-testid="studio-mixer-chrome"
       >
-        <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+        <p className="text-xs font-medium text-[var(--brd-mute)]">
           Mixer
         </p>
         <Button
@@ -183,7 +184,7 @@ export function StudioMixerDockChrome({
           data-testid="studio-mixer-collapse"
           onClick={onToggle}
         >
-          {expanded ? "▾" : "▴"}
+          <StudioGlyph name={expanded ? "chevron-down" : "chevron-up"} />
         </Button>
       </div>
       {expanded ? (

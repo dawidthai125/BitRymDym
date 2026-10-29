@@ -42,6 +42,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
     <AppShell tone="studio">
       <main
         data-brd-surface="control-room"
+        data-surface="tape"
         className="min-h-[calc(100dvh-4.5rem)] overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4"
       >
         <PageFrame

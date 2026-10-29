@@ -23,3 +23,20 @@ export function beatStatusLabelPl(status: BeatStatus | string): string {
 export function canUserEditBeatStatus(status: BeatStatus | string): boolean {
   return status === "DRAFT" || status === "REJECTED";
 }
+
+/** Visual tone for a beat status hardware label (presentation only). */
+export function beatStatusTone(
+  status: BeatStatus | string,
+): "neutral" | "ok" | "warn" | "rec" {
+  switch (status) {
+    case "PUBLISHED":
+    case "APPROVED":
+      return "ok";
+    case "PENDING_REVIEW":
+      return "warn";
+    case "REJECTED":
+      return "rec";
+    default:
+      return "neutral";
+  }
+}

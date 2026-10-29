@@ -151,36 +151,43 @@
 html[data-theme="dark"] {
   color-scheme: dark;
 
-  --brd-paper: #161918;
-  --brd-paper-deep: #101312;
-  --brd-bg: #101312;
-  --brd-ink: #efe9df;
-  --brd-ink-soft: #d2cbc0;
-  --brd-mute: #9a9488;
-  --brd-warm-gray: #a39c90;
-  --brd-line: #2f3532;
-  --brd-line-strong: #454c48;
-  --brd-green: #7eb59a;
-  --brd-green-soft: #9acbb0;
-  --brd-green-muted: #6a8f7d;
-  --brd-green-wash: #24352e;
+  --brd-paper: #0e0c0a; /* v3: tape-soot */
+  --brd-paper-deep: #17130f; /* v3: tape-deck */
+  --brd-bg: #17130f;
+  --brd-ink: #f1e7d3;
+  --brd-ink-soft: #cdbfa6;
+  --brd-mute: #9e8f78;
+  --brd-warm-gray: #a89a83;
+  --brd-line: #3a3028;
+  --brd-line-strong: #5c4c3c;
+  /* v3: brand action colour = VU amber (name kept for compatibility). */
+  --brd-green: #f2a93b;
+  --brd-green-soft: #f7bb5c;
+  --brd-green-muted: #b9761e;
+  --brd-green-wash: #2c2116;
   --brd-green-mist: color-mix(
     in srgb,
     var(--brd-green-wash) 70%,
     var(--brd-paper)
   );
-  --brd-green-deep: #0f241e;
-  --brd-ok: #7eb59a;
-  --brd-rec: #db5a5a;
+  --brd-graphite: #17130f;
+  --brd-graphite-soft: #211b15;
+  --brd-recess: #0a0807;
+  --brd-recess-fg: #f1e7d3;
+  --brd-amber: #f2a93b;
+  --brd-amber-soft: #f7bb5c;
+  --brd-green-deep: #1a1006;
+  --brd-ok: #8fc49f;
+  --brd-rec: #ff5a46;
   --brd-danger: var(--brd-rec);
   --brd-warn: var(--brd-amber);
   --brd-focus: var(--brd-amber);
-  --brd-audio-play: var(--brd-amber-soft);
-  --brd-audio-play-hover: var(--brd-amber);
-  --brd-audio-wave-played: var(--brd-amber-soft);
-  --brd-audio-wave-rest: rgba(239, 233, 223, 0.34);
+  --brd-audio-play: #f2a93b;
+  --brd-audio-play-hover: #f7bb5c;
+  --brd-audio-wave-played: #f2a93b;
+  --brd-audio-wave-rest: rgba(241, 231, 211, 0.3);
   --brd-audio-playhead: var(--brd-ink);
-  --brd-audio-surface: color-mix(in srgb, var(--brd-paper) 94%, transparent);
+  --brd-audio-surface: #211b15;
   --brd-audio-line: var(--brd-line);
   --brd-audio-wave-inverted-played: rgba(239, 233, 223, 0.88);
   --brd-audio-wave-inverted-rest: rgba(239, 233, 223, 0.28);
@@ -217,4 +224,56 @@ html[data-theme="light"] {
   /* Token values come from html[data-theme="dark"]; keep shadcn slots aligned. */
   --background: var(--brd-paper);
   --foreground: var(--brd-ink);
+}
+
+/*
+  ─────────────────────────────────────────────────────────────────────────
+  "Nocna sesja" — design foundation v3 (prototype, homepage first).
+  Street / analog studio / music-magazine / club-neon accent. Dark-first.
+  Additive: nothing below remaps existing --brd-* tokens, so other surfaces
+  keep rendering as before. Later phases (catalog, Studio, panels) will map
+  --brd-* onto these values surface by surface.
+  ─────────────────────────────────────────────────────────────────────────
+*/
+:root {
+  /* Surfaces — warm soot, tape-deck brown, rack panel */
+  --tape-soot: #0e0c0a;
+  --tape-deck: #17130f;
+  --tape-panel: #211b15;
+  --tape-line: #3a3028;
+  --tape-line-strong: #5c4c3c;
+
+  /* Ink — label-paper cream (AA on soot: cream 16:1, soft 10:1, mute 6.4:1) */
+  --tape-cream: #f1e7d3;
+  --tape-cream-soft: #cdbfa6;
+  --tape-mute: #9e8f78;
+
+  /* Signal — VU amber (primary action), REC red, one club neon (sparingly) */
+  --tape-amber: #f2a93b;
+  --tape-amber-deep: #b9761e;
+  --tape-on-amber: #1a1006;
+  --tape-rec: #ff4b36;
+  --tape-neon: #ff4fa3;
+
+  /* Type — poster (Big Shoulders), editorial serif (Source Serif 4 italic),
+     UI grotesk (Schibsted), measurement mono (IBM Plex Mono). */
+  --tape-font-poster: var(--font-brd-poster), "Big Shoulders", "Arial Narrow",
+    sans-serif;
+  --tape-text-mega: clamp(3.6rem, 11vw, 9.5rem);
+  --tape-text-xl: clamp(2.4rem, 5.5vw, 4.75rem);
+  --tape-text-lg: clamp(1.6rem, 3vw, 2.4rem);
+  --tape-tracking-label: 0.18em;
+
+  /* Shape — hardware: sharp panels, round knobs/reels only */
+  --tape-r-panel: 2px;
+  --tape-r-knob: 999px;
+
+  /* Space — section rhythm */
+  --tape-section-y: clamp(3.5rem, 8vw, 7rem);
+
+  /* Motion — one authored moment (reels), exponential ease-out */
+  --tape-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --tape-dur-fast: 140ms;
+  --tape-dur-base: 260ms;
+  --tape-reel-spin: 2.4s;
 }

@@ -94,7 +94,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
 
   return (
     <AppShell tone="public">
-      <main>
+      <main data-surface="tape" className="tape-grain">
         <PageFrame className="py-6 sm:py-8">
           <Link
             href="/beats"

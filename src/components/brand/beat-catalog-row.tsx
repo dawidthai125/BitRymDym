@@ -80,9 +80,9 @@ export function BeatCatalogRow({
         "border-b border-[var(--brd-audio-line)] transition-colors",
         featured && "border-t border-t-[var(--brd-audio-line)]",
         isCurrent &&
-          "bg-[color-mix(in_srgb,var(--brd-green-mist)_38%,transparent)]",
+          "bg-[var(--brd-paper-deep)] shadow-[inset_3px_0_0_0_var(--brd-green)]",
         !isCurrent &&
-          "hover:bg-[color-mix(in_srgb,var(--brd-paper-deep)_32%,transparent)]",
+          "hover:bg-[var(--brd-paper-deep)]",
         className,
       )}
     >
@@ -113,8 +113,8 @@ export function BeatCatalogRow({
             className={cn(
               "brd-display truncate font-semibold tracking-tight text-[var(--brd-ink)]",
               featured
-                ? "text-[1.125rem] leading-snug"
-                : "text-base leading-snug",
+                ? "text-[1.4rem] leading-none"
+                : "text-xl leading-none",
             )}
           >
             {beat.title}
@@ -152,7 +152,7 @@ export function BeatCatalogRow({
             aria-label="Dodaj do ulubionych (wkrótce)"
             title="Ulubione — wkrótce"
           >
-            ♡
+            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </button>
           <BrdAudioPlayButton
             playing={playing}
@@ -181,7 +181,7 @@ export function BeatCatalogRow({
                 Wyróżniony
               </p>
             ) : null}
-            <h2 className="brd-display truncate text-[15px] font-semibold leading-snug">
+            <h2 className="brd-display truncate text-lg font-semibold leading-none">
               {beat.title}
             </h2>
             <p className="truncate text-[13px] text-[var(--brd-ink-soft)]">
@@ -228,7 +228,7 @@ export function BeatCatalogRow({
             aria-label="Dodaj do ulubionych (wkrótce)"
             title="Ulubione — wkrótce"
           >
-            ♡
+            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </button>
         </div>
       </div>

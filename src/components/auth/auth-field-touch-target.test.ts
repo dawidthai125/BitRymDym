@@ -37,7 +37,7 @@ describe("auth / home touch targets (MOBILE_DEEP + product audit P2)", () => {
   it("home Pełny spis catalog link has min-h-11 hit area", () => {
     const home = readFileSync(join(root, "src/app/page.tsx"), "utf8");
     const catalogLink = home.match(
-      /href="\/beats"\s+className="([^"]*)"[\s\S]*?Pełny spis →/,
+      /href="\/beats"\s+className="([^"]*)"[\s\S]*?Pełny spis/,
     );
     expect(catalogLink).toBeTruthy();
     expect(catalogLink![1]).toMatch(/(?:^|\s)min-h-11(?:\s|$)/);

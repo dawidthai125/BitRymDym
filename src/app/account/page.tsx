@@ -7,7 +7,6 @@ import {
   SectionLabel,
   StatusPill,
 } from "@/components/brand/chrome";
-import { Waveform } from "@/components/brand/waveform";
 import {
   ChangeEmailForm,
   ChangePasswordForm,
@@ -126,7 +125,6 @@ export default async function AccountPage({
         <PageFrame className="py-10 sm:py-14">
           <header className="mb-10 grid gap-6 border-b border-[var(--brd-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-3">
-              <SectionLabel>Studio</SectionLabel>
               <h1 className="brd-display text-4xl font-semibold tracking-tight sm:text-5xl">
                 Twoje studio
               </h1>
@@ -217,19 +215,14 @@ export default async function AccountPage({
                         <p className="brd-display truncate text-lg font-semibold">
                           {take.beatTitle || "Bit"}
                         </p>
-                        <p className="text-sm text-[var(--brd-mute)]">
-                          {labelRecordingMode(take.recordingMode)}
-                          {" · "}
-                          {take.durationSeconds != null
-                            ? formatDurationSeconds(take.durationSeconds)
-                            : "—"}
+                        <p className="flex gap-3 text-sm text-[var(--brd-mute)]">
+                          <span>{labelRecordingMode(take.recordingMode)}</span>
+                          <span className="brd-data text-[var(--brd-ink-soft)]">
+                            {take.durationSeconds != null
+                              ? formatDurationSeconds(take.durationSeconds)
+                              : "—"}
+                          </span>
                         </p>
-                        <Waveform
-                          seed={take.id}
-                          progress={0.35}
-                          bars={48}
-                          heightClassName="h-7"
-                        />
                       </div>
                       <StatusPill
                         tone={
@@ -285,19 +278,19 @@ export default async function AccountPage({
 
                 <dl className="space-y-3 border-y border-[var(--brd-line)] py-4 text-sm">
                   <div>
-                    <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                    <dt className="text-xs text-[var(--brd-mute)]">
                       Ksywka
                     </dt>
                     <dd className="mt-1 text-[var(--brd-ink)]">{displayName}</dd>
                   </div>
                   <div>
-                    <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                    <dt className="text-xs text-[var(--brd-mute)]">
                       ID użytkownika
                     </dt>
-                    <dd className="mt-1 text-[var(--brd-ink)]">{userNumberLabel}</dd>
+                    <dd className="brd-data mt-1 text-[var(--brd-ink)]">{userNumberLabel}</dd>
                   </div>
                   <div>
-                    <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+                    <dt className="text-xs text-[var(--brd-mute)]">
                       E-mail
                     </dt>
                     <dd className="mt-1 break-all text-[var(--brd-ink)]">
@@ -415,7 +408,9 @@ function LibraryRow({
           <p className="font-medium">{title}</p>
           <p className="text-sm text-[var(--brd-mute)]">{meta}</p>
         </div>
-        <span aria-hidden>→</span>
+        <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0">
+          <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
       </Link>
     </li>
   );
@@ -424,10 +419,10 @@ function LibraryRow({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+      <dt className="text-xs text-[var(--brd-mute)]">
         {label}
       </dt>
-      <dd className="mt-1 text-lg text-[var(--brd-ink)]">{value}</dd>
+      <dd className="brd-data mt-1 text-lg text-[var(--brd-ink)]">{value}</dd>
     </div>
   );
 }
