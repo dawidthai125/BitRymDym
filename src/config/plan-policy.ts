@@ -36,8 +36,25 @@ export type PlanPrice = {
   yearlyPln: number | null;
 };
 
+/** BITEK chat memory: "session" = this browser tab only, "project" = saved with the project (studio_bitek_messages). */
+export type BitekMemoryAccess = "session" | "project";
+
 export type PlanPolicy = {
   price: PlanPrice;
+  /** Studio creative tools (gaps P0, 2026-10-29). */
+  tools: {
+    /** Lyrics notepad + teleprompter while recording (all logged-in plans). */
+    lyrics: boolean;
+    bitekMemory: BitekMemoryAccess;
+    vocalPresets: {
+      /** Built-in vocal sound presets (FX chain) — every plan. */
+      builtIn: boolean;
+      /** Own saved presets; 0 = cannot save. */
+      maxOwn: number;
+      /** Preset sets for lead / doubles / adlibs (built-in + own sets). */
+      roleSets: boolean;
+    };
+  };
   recording: {
     /** Max length of one take (seconds). */
     maxTakeSeconds: number;
@@ -92,6 +109,11 @@ export function yearlySavingPercent(price: PlanPrice): number | null {
 export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
   FREE: {
     price: { monthlyPln: null, yearlyPln: null },
+    tools: {
+      lyrics: true,
+      bitekMemory: "session",
+      vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
+    },
     recording: {
       maxTakeSeconds: 30,
       sessionsPerDay: 1,
@@ -111,6 +133,11 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
   },
   BRONZE: {
     price: { monthlyPln: 14.99, yearlyPln: 119 },
+    tools: {
+      lyrics: true,
+      bitekMemory: "project",
+      vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
+    },
     recording: {
       maxTakeSeconds: 60,
       sessionsPerDay: 5,
@@ -130,6 +157,11 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
   },
   SILVER: {
     price: { monthlyPln: 29.99, yearlyPln: 239 },
+    tools: {
+      lyrics: true,
+      bitekMemory: "project",
+      vocalPresets: { builtIn: true, maxOwn: 20, roleSets: false },
+    },
     recording: {
       maxTakeSeconds: 120,
       sessionsPerDay: 7,
@@ -149,6 +181,11 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
   },
   GOLD: {
     price: { monthlyPln: 49.99, yearlyPln: 399 },
+    tools: {
+      lyrics: true,
+      bitekMemory: "project",
+      vocalPresets: { builtIn: true, maxOwn: 50, roleSets: true },
+    },
     recording: {
       maxTakeSeconds: 180,
       sessionsPerDay: 10,
@@ -182,6 +219,22 @@ export const GUEST_POLICY = {
 
 export function planPolicy(tier: PremiumTier): PlanPolicy {
   return PLAN_POLICY[tier];
+}
+
+export function bitekMemoryForTier(tier: PremiumTier): BitekMemoryAccess {
+  return PLAN_POLICY[tier].tools.bitekMemory;
+}
+
+export function vocalPresetAccessForTier(tier: PremiumTier): PlanPolicy["tools"]["vocalPresets"] {
+  return PLAN_POLICY[tier].tools.vocalPresets;
+}
+
+/** Lowest plan that unlocks a Studio tool (for lock labels). */
+export function minimumTierFor(test: (policy: PlanPolicy) => boolean): PremiumTier {
+  for (const tier of ["FREE", "BRONZE", "SILVER", "GOLD"] as const) {
+    if (test(PLAN_POLICY[tier])) return tier;
+  }
+  return "GOLD";
 }
 
 export function maxRecordingTracksForTier(tier: PremiumTier): number {

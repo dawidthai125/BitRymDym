@@ -5,6 +5,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   beatDownloadsPerDayForTier,
+  bitekMemoryForTier,
+  minimumTierFor,
+  vocalPresetAccessForTier,
   GUEST_POLICY,
   maxRecordingTracksForTier,
   minimumTierForQuality,
@@ -131,5 +134,18 @@ describe("one export policy (Premium downloads = Studio deliverables)", () => {
     const src = readFileSync(join(process.cwd(), "src/lib/studio/deliver/policy.ts"), "utf8");
     expect(src).not.toMatch(/FREE:\s*\["MP3_128"\]/);
     expect(src).toContain("PLAN_POLICY");
+  });
+  it("Studio tools: lyrics for all, BITEK project memory from Bronze, own presets Silver+, role sets Gold", () => {
+    for (const tier of PREMIUM_TIERS) expect(PLAN_POLICY[tier].tools.lyrics).toBe(true);
+    expect(bitekMemoryForTier("FREE")).toBe("session");
+    expect(bitekMemoryForTier("BRONZE")).toBe("project");
+    expect(vocalPresetAccessForTier("FREE")).toEqual({ builtIn: true, maxOwn: 0, roleSets: false });
+    expect(vocalPresetAccessForTier("BRONZE").maxOwn).toBe(0);
+    expect(vocalPresetAccessForTier("SILVER").maxOwn).toBeGreaterThan(0);
+    expect(vocalPresetAccessForTier("SILVER").roleSets).toBe(false);
+    expect(vocalPresetAccessForTier("GOLD").roleSets).toBe(true);
+    expect(minimumTierFor((p) => p.tools.vocalPresets.maxOwn > 0)).toBe("SILVER");
+    expect(minimumTierFor((p) => p.tools.vocalPresets.roleSets)).toBe("GOLD");
+    expect(minimumTierFor((p) => p.tools.bitekMemory === "project")).toBe("BRONZE");
   });
 });
