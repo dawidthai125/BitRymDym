@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { StatusPill } from "@/components/brand/chrome";
 import { AutoCheckCard } from "@/components/beats/auto-check-card";
 import { AutoCheckOverrideControls } from "@/components/beats/auto-check-override-controls";
 import { ModerationDecisionControls } from "@/components/beats/moderation-decision-controls";
@@ -14,7 +15,7 @@ import {
   getStaffCommunityBeatForModeration,
   requireModerationAccess,
 } from "@/lib/beats/service";
-import { beatStatusLabelPl } from "@/lib/beats/status-labels";
+import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
 import { labelBeatOwnership } from "@/lib/ui/labels";
 
 type PageProps = {
@@ -80,15 +81,19 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
         <h1 className="text-3xl font-semibold tracking-tight text-balance">
           {beat.title}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          {beatStatusLabelPl(beat.status)} · {labelBeatOwnership("USER")} ·{" "}
-          {beat.producer ?? "bez producenta"} · {beat.bpm} BPM ·{" "}
-          {beat.durationSeconds}s
-          {beat.activeMasterReady ? " · audio gotowe" : " · brak audio"}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+          <StatusPill tone={beatStatusTone(beat.status)}>
+            {beatStatusLabelPl(beat.status)}
+          </StatusPill>
+          <span>{labelBeatOwnership("USER")}</span>
+          <span>{beat.producer ?? "bez producenta"}</span>
+          <span className="brd-data">{beat.bpm} BPM</span>
+          <span className="brd-data">{beat.durationSeconds}s</span>
+          <span>{beat.activeMasterReady ? "audio gotowe" : "brak audio"}</span>
+        </div>
         <p className="text-xs text-muted-foreground">
           Właściciel{" "}
-          <span className={isAdmin ? undefined : "font-mono"}>{ownerLabel}</span>
+          <span className={isAdmin ? undefined : "brd-data"}>{ownerLabel}</span>
         </p>
       </header>
 

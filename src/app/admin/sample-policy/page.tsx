@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminSamplePolicyForm } from "@/components/admin/admin-sample-policy-form";
-import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { PageFrame } from "@/components/brand/chrome";
 import { RECORDING_GLOBAL_MAX_SECONDS } from "@/config/recording";
 import { SAMPLE_POLICY_DEFAULTS } from "@/config/recording";
 import { AuthError, requireRole } from "@/lib/auth/session";
@@ -35,7 +35,6 @@ export default async function AdminSamplePolicyPage() {
           >
             ← Pulpit
           </Link>
-          <SectionLabel>Panel Administracyjny</SectionLabel>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
             Polityka nagrań
           </h1>

@@ -517,3 +517,98 @@ html[data-theme="dark"] [data-testid="studio-transport"] {
   font-family: var(--font-mono, ui-monospace), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
+
+/* Admin: mono data table (stacks into labelled rows below sm). */
+.brd-data-table {
+  border-collapse: collapse;
+}
+.brd-data-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--brd-mute);
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--brd-line);
+  white-space: nowrap;
+}
+.brd-data-table th.text-right {
+  text-align: right;
+}
+.brd-data-table td {
+  padding: 0.85rem 0.75rem 0.85rem 0;
+  border-bottom: 1px solid var(--brd-line);
+  vertical-align: top;
+}
+.brd-data-table td:last-child,
+.brd-data-table th:last-child {
+  padding-right: 0;
+}
+@media (max-width: 639px) {
+  .brd-data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .brd-data-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--brd-line);
+  }
+  .brd-data-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    text-align: left !important;
+  }
+  .brd-data-table td:first-child,
+  .brd-data-table td:last-child {
+    grid-column: 1 / -1;
+  }
+  .brd-data-table td[data-label]:not(:first-child)::before {
+    content: attr(data-label);
+    display: block;
+    font-family: var(--font-sans, inherit);
+    font-size: 0.7rem;
+    color: var(--brd-mute);
+  }
+}
+
+/* Admin: filter result as a rack module (screws, faceplate, readouts). */
+.brd-rack-module {
+  position: relative;
+  padding: 1rem 1.75rem;
+  background: linear-gradient(var(--tape-panel), var(--tape-deck));
+  border: 1px solid var(--brd-line);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 #ffffff0a, 0 2px 8px -4px #000c;
+}
+.brd-rack-screws {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.brd-rack-screws::before,
+.brd-rack-screws::after {
+  content: "";
+  position: absolute;
+  top: 0.65rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #8a7a66, #3a3028 70%);
+  box-shadow: inset 0 0 0 1px #0006;
+}
+.brd-rack-screws::before {
+  left: 0.6rem;
+}
+.brd-rack-screws::after {
+  right: 0.6rem;
+}
+.brd-readout {
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--brd-line) 80%, transparent);
+}

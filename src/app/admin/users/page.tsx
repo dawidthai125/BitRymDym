@@ -5,7 +5,7 @@ import { AdminUsersAuditFilters } from "@/components/admin/admin-users-audit-fil
 import { AdminUsersDeleteDialog } from "@/components/admin/admin-users-delete-dialog";
 import { AdminUsersFilters } from "@/components/admin/admin-users-filters";
 import { AdminUsersManageDialog } from "@/components/admin/admin-users-manage-dialog";
-import { PageFrame, SectionLabel } from "@/components/brand/chrome";
+import { PageFrame } from "@/components/brand/chrome";
 import { listAdminUserAuditEvents } from "@/lib/admin/users-audit-list";
 import { parseAdminUsersAuditQuery } from "@/lib/admin/users-audit-query";
 import {
@@ -131,7 +131,6 @@ export default async function AdminUsersPage({
     <main className="pb-16">
       <PageFrame width="ops" className="py-8 sm:py-10">
         <header className="mb-8 space-y-2 border-b border-[var(--brd-line)] pb-6">
-          <SectionLabel>Panel Administracyjny</SectionLabel>
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
             Użytkownicy
           </h1>

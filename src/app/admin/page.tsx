@@ -37,7 +37,6 @@ export default async function AdminIndexPage() {
       <PageFrame width="ops" className="py-8 sm:py-10">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--brd-line)] pb-6">
           <div className="space-y-2">
-            <SectionLabel>Panel Administracyjny</SectionLabel>
             <h1 className="brd-display text-3xl font-semibold tracking-tight sm:text-4xl">
               Pulpit
             </h1>

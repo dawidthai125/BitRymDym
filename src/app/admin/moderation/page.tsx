@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { StatusPill } from "@/components/brand/chrome";
 import { AutoCheckBadge } from "@/components/beats/auto-check-card";
 import { checkAccess } from "@/lib/auth/access-denial";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -13,7 +14,7 @@ import {
   listPendingReviewForModeration,
   requireModerationAccess,
 } from "@/lib/beats/service";
-import { beatStatusLabelPl } from "@/lib/beats/status-labels";
+import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
 
 export const metadata = {
   title: "Moderacja bitów · Administrator",
@@ -59,46 +60,76 @@ function QueueSection({
   checks: Map<string, AutoCheckRow>;
 }) {
   return (
-    <section className="space-y-4">
-      <h2 className="text-lg font-medium tracking-tight">{title}</h2>
+    <section className="space-y-3" aria-labelledby={`queue-${title}`}>
+      <div className="flex items-baseline justify-between gap-3 border-b border-[var(--brd-line)] pb-2">
+        <h2 id={`queue-${title}`} className="text-lg font-medium tracking-tight">
+          {title}
+        </h2>
+        <span className="brd-data text-sm text-[var(--brd-mute)]" aria-label={`Liczba pozycji: ${items.length}`}>
+          {items.length}
+        </span>
+      </div>
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{empty}</p>
       ) : (
-        <ul className="divide-y divide-border border-y border-border">
-          {items.map((beat) => (
-            <li
-              key={beat.id}
-              className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium tracking-tight">{beat.title}</p>
-                  <AutoCheckBadge check={checks.get(beat.id)} />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {beat.producer ?? "—"} · owner{" "}
-                  <span className={isAdmin ? undefined : "font-mono text-xs"}>
-                    {ownerLabel(beat.ownerId, identities, isAdmin)}
+        <table className="brd-data-table w-full table-fixed text-sm">
+          <thead>
+            <tr>
+              <th scope="col" className="w-[34%]">Bit</th>
+              <th scope="col" className="w-[18%]">Właściciel</th>
+              <th scope="col" className="w-[7%] text-right">Czas</th>
+              <th scope="col" className="w-[6%] text-right">BPM</th>
+              <th scope="col" className="w-[8%]">Audio</th>
+              <th scope="col" className="w-[13%]">Zaktualizowano</th>
+              <th scope="col"><span className="sr-only">Akcja</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((beat) => (
+              <tr key={beat.id}>
+                <td data-label="Bit">
+                  <span className="block font-medium tracking-tight text-[var(--brd-ink)]">
+                    {beat.title}
                   </span>
-                  {" · "}
-                  {formatDuration(beat.durationSeconds)} · {beat.bpm} BPM
-                  {" · "}
-                  {beatStatusLabelPl(beat.status)}
-                  {beat.activeMasterReady ? " · audio gotowe" : " · brak audio"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Zaktualizowano {new Date(beat.updatedAt).toLocaleString("pl-PL")}
-                </p>
-              </div>
-              <Link
-                href={`/admin/moderation/${beat.id}`}
-                className="text-sm font-medium underline underline-offset-4"
-              >
-                {actionLabel}
-              </Link>
-            </li>
-          ))}
-        </ul>
+                  <span className="mt-1.5 flex flex-wrap gap-1.5">
+                    <StatusPill tone={beatStatusTone(beat.status)}>
+                      {beatStatusLabelPl(beat.status)}
+                    </StatusPill>
+                    <AutoCheckBadge check={checks.get(beat.id)} />
+                  </span>
+                  {beat.producer ? (
+                    <span className="mt-1 block text-xs text-muted-foreground">{beat.producer}</span>
+                  ) : null}
+                </td>
+                <td data-label="Właściciel" className={isAdmin ? undefined : "brd-data text-xs"}>
+                  {ownerLabel(beat.ownerId, identities, isAdmin)}
+                </td>
+                <td data-label="Czas" className="brd-data text-right">
+                  {formatDuration(beat.durationSeconds)}
+                </td>
+                <td data-label="BPM" className="brd-data text-right">
+                  {beat.bpm}
+                </td>
+                <td data-label="Audio">
+                  {beat.activeMasterReady ? "gotowe" : (
+                    <span className="text-[var(--brd-warn)]">brak</span>
+                  )}
+                </td>
+                <td data-label="Zaktualizowano" className="brd-data text-xs text-muted-foreground">
+                  {new Date(beat.updatedAt).toLocaleString("pl-PL")}
+                </td>
+                <td className="text-right">
+                  <Link
+                    href={`/admin/moderation/${beat.id}`}
+                    className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
+                  >
+                    {actionLabel}
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
   );
@@ -130,7 +161,7 @@ export default async function AdminModerationQueuePage() {
     : new Map();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 pb-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-16 sm:px-6">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">
           Moderacja bitów
