@@ -85,3 +85,21 @@ describe("BITEK in Mastering — scope", () => {
     expect(buildBitekSystemPrompt(ctx())).toContain('"backToMix": true');
   });
 });
+
+describe("BITEK in Mastering — provider chain", () => {
+  const llm = { id: "groq" as const, timeoutMs: 50, complete: async () => JSON.stringify({ reply: "Dodam trochę jasności całości.", proposals: [{ trackRef: "master", param: "bright", value: 1 }] }) };
+  it("whole-song asks go through the LLM chain", async () => {
+    const r = await runBitekChatChain({ providers: [llm], message: "jaśniej całość", history: [], context: ctx() });
+    expect(r.provider).toBe("groq");
+  });
+  it("single-track asks stay deterministic (back to Mix) before the LLM", async () => {
+    const r = await runBitekChatChain({ providers: [llm], message: "głośniej wokal", history: [], context: ctx() });
+    expect(r.provider).toBe("rules");
+    expect(r.backToMix).toBe(true);
+  });
+  it("falls back to master rules when no provider answers", async () => {
+    const r = await runBitekChatChain({ providers: [], message: "jaśniej", history: [], context: ctx() });
+    expect(r.provider).toBe("rules");
+    expect(r.proposals.length).toBe(1);
+  });
+});

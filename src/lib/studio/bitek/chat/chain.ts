@@ -22,10 +22,10 @@ export async function runBitekChatChain(params: {
 }): Promise<BitekChatResult> {
   const now = params.now ?? Date.now;
   const t0 = now();
-  // Mastering scope rule is deterministic: track-level asks go back to Mix, whole-track asks map to settings.
+  // Mastering: single-track asks deterministically go back to Mix; everything else goes through the LLM chain (rules are the fallback).
   if (params.context.step === "master") {
     const scope = classifyMasterRequest(params.message);
-    if (scope.kind !== "other") {
+    if (scope.kind === "track") {
       params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
       return bitekMasterRulesChat(params.message, params.context, scope);
     }

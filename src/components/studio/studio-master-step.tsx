@@ -10,7 +10,7 @@ import type { DeliverFormat, DeliverKind } from "@/lib/studio/deliver/policy";
 import { encodeWavFloat, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer, uploadToSignedUrl } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
 import { renderMixStereo } from "@/lib/studio/master/render-mix";
-import { DEFAULT_MASTER_SETTINGS, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, clampMasterSettings, type MasterSettingKey, type MasterSettings, type MasterTargetId } from "@/lib/studio/master/targets";
+import { DEFAULT_MASTER_SETTINGS, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, clampMasterSettings, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterTargetId } from "@/lib/studio/master/targets";
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
 import { decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
@@ -107,7 +107,22 @@ export function StudioMasterStep({
       .then((j) => {
         if (!live || !j) return;
         setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: j.usage ?? null });
-        if (j.available === false) setSm({ phase: "unavailable" });
+        if (j.available === false) return setSm({ phase: "unavailable" });
+        // Restore an approved master for the current mix (after reload / coming back later).
+        const a = j.approved as { id?: string; target?: string | null; status?: string; settings?: Record<string, number> | null } | null | undefined;
+        if (a?.id && a.status === "succeeded") {
+          const id = a.id;
+          void fetch(`/api/studio/projects/${projectId}/jobs/${id}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((job) => {
+              if (!live || !job?.job) return;
+              if (a.target && isMasterTargetId(a.target)) setTarget(a.target);
+              if (a.settings) setSettings(clampMasterSettings(a.settings));
+              setSm((cur) => (cur.phase === "idle" ? { phase: "done", jobId: id, url: job.downloadUrl ?? null, metrics: (job.job.metrics as { after?: Record<string, unknown> }) ?? null } : cur));
+              setApproved(true);
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => {});
     return () => {
@@ -448,7 +463,7 @@ export function StudioMasterStep({
                 {server.tier && server.usage?.weekLimit != null ? (
                   <p data-testid="studio-master-dl-counter" className={`text-sm ${limitReached ? "text-[var(--brd-rec)]" : ""}`}>
                     {t("licznikFree", { used: server.usage.used, limit: server.usage.weekLimit })}
-                    {limitReached && server.usage.resetAt ? ` · ${t("licznikReset", { date: new Date(server.usage.resetAt).toLocaleDateString(locale === "en" ? "en-GB" : "pl-PL") })}` : ""}
+                    {limitReached && server.usage.resetAt ? ` · ${t("licznikReset", { date: new Date(server.usage.resetAt).toLocaleDateString(locale === "en" ? "en-GB" : "pl-PL", { timeZone: "Europe/Warsaw" }) })}` : ""}
                   </p>
                 ) : null}
                 {server.tier ? (

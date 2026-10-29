@@ -1982,7 +1982,7 @@
     "masterStep": {
       "tytul": "Mastering",
       "wrocDoMixu": "Wróć do Mixu",
-      "wrocUwaga": "Po zmianach w Mixie mastering trzeba zrobić od nowa.",
+      "wrocUwaga": "Jeśli wrócisz do Mixu i coś zmienisz, mastering zrobimy od nowa.",
       "renderuje": "Składam Twój mix w jedną ścieżkę… {pct}%",
       "renderBlad": "Nie udało się złożyć mixu. Wróć do Mixu i spróbuj jeszcze raz.",
       "calyNumer": "Od teraz słyszę cały numer jako jedną ścieżkę stereo.",

@@ -339,6 +339,20 @@ function StudioEditorInner({
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
   const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
+  // After a reload: an approved master for the unchanged mix reopens Mastering (with downloads).
+  const restoreProjectId = doc.project.id;
+  useEffect(() => {
+    let live = true;
+    void fetch(`/api/studio/projects/${restoreProjectId}/master`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (live && j?.approved?.id) setStudioStep((cur) => (cur === "record" ? "master" : cur));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [restoreProjectId]);
   const tMix = useTranslations("studio.mixStep");
   const bitekBase = useMemo(() => {
     const beatTrackIds = new Set(doc.tracks.filter((t) => t.trackType === "BEAT").map((t) => t.id));
