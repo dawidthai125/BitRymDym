@@ -1,9 +1,10 @@
 /**
  * F1-C — profiles privilege hardening, LOCAL Supabase only.
  *
- * Opt-in: F1C_LOCAL_DB_TEST=1 plus LOCAL_SUPABASE_URL / LOCAL_SUPABASE_ANON_KEY /
- * LOCAL_SUPABASE_SERVICE_ROLE_KEY (values from `supabase status -o env`).
- * Never reads .env.local (production). Aborts on any non-localhost URL.
+ * Opt-in: F1C_LOCAL_DB_TEST=1 plus the shared integration gate
+ * (BRD_INTEGRATION_TESTS=1, LOCAL_SUPABASE_URL / LOCAL_SUPABASE_ANON_KEY /
+ * LOCAL_SUPABASE_SERVICE_ROLE_KEY from `supabase status -o env`).
+ * Never reads .env.local (production). Aborts on any non-loopback URL.
  * Catalog checks run through `docker exec` against the local DB container.
  */
 import { execFileSync } from "child_process";
@@ -12,19 +13,18 @@ import { randomUUID } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-const enabled = process.env.F1C_LOCAL_DB_TEST === "1";
-const url = process.env.LOCAL_SUPABASE_URL ?? "";
-const anonKey = process.env.LOCAL_SUPABASE_ANON_KEY ?? "";
-const serviceKey = process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY ?? "";
+import { assertAllowedTestUrl, resolveIntegrationEnv } from "@/test/integration-env";
+
+const integration =
+  process.env.F1C_LOCAL_DB_TEST === "1"
+    ? resolveIntegrationEnv()
+    : ({ enabled: false, reason: "F1C_LOCAL_DB_TEST=1 not set" } as const);
+const enabled = integration.enabled;
+const url = integration.enabled ? integration.url : "";
+const anonKey = integration.enabled ? integration.anonKey : "";
+const serviceKey = integration.enabled ? integration.serviceKey : "";
 const dbContainer =
   process.env.F1C_LOCAL_DB_CONTAINER ?? "supabase_db_bitrymdym-local";
-
-function assertLocalUrl(value: string) {
-  const host = new URL(value).hostname.toLowerCase();
-  if (host !== "127.0.0.1" && host !== "localhost") {
-    throw new Error(`F1-C local test refuses non-local Supabase host: ${host}`);
-  }
-}
 
 function psql(sql: string, user: "postgres" | "authenticator" = "postgres") {
   return execFileSync(
@@ -146,7 +146,7 @@ describe.runIf(enabled)("F1-C profiles privilege hardening (local Supabase)", ()
   }
 
   beforeAll(() => {
-    assertLocalUrl(url);
+    assertAllowedTestUrl(url);
     expect(anonKey).not.toBe("");
     expect(serviceKey).not.toBe("");
     admin = createClient(url, serviceKey, {
@@ -158,6 +158,15 @@ describe.runIf(enabled)("F1-C profiles privilege hardening (local Supabase)", ()
   });
 
   afterAll(async () => {
+    if (created.length > 0) {
+      // Audit FKs are SET NULL: remove this suite's rows while they still point at its users.
+      const ids = created.join(",");
+      const { error } = await admin
+        .from("admin_audit_events")
+        .delete()
+        .or(`target_user_id.in.(${ids}),actor_user_id.in.(${ids})`);
+      expect(error).toBeNull();
+    }
     for (const id of created) {
       await admin.auth.admin.deleteUser(id);
     }

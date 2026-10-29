@@ -3,10 +3,13 @@
  * Requires local Supabase + fixtures; skips when unavailable.
  */
 import { randomBytes, randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import { SAMPLE_POLICY_DEFAULTS, TAKE_AUDIO_BUCKET } from "@/config/recording";
 import type { AuthContext } from "@/lib/auth/types";
@@ -23,35 +26,17 @@ import { buildUserTakeObjectKey } from "@/lib/takes/object-key";
 import { hashAnonymousTakeToken } from "@/lib/takes/token-hash";
 import { buildUserBeatAudioObjectKey } from "@/lib/beats/audio-validation";
 
-function loadEnvFile(path: string): Record<string, string> {
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
-    if (i <= 0) continue;
-    out[t.slice(0, i)] = t.slice(i + 1).replace(/^["']|["']$/g, "");
-  }
-  return out;
-}
-
-const env = {
-  ...loadEnvFile(resolve(process.cwd(), ".env.local")),
-  ...process.env,
-};
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const fixturePath = resolve(
   process.cwd(),
   "../bitrymdym-fixtures/bpm-120-steady.wav",
 );
-const live = Boolean(url && serviceKey && anonKey && existsSync(fixturePath));
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+const anonKey = integration.enabled ? integration.anonKey : undefined;
 
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
+if (integration.enabled) applyIntegrationEnv(integration);
 
 function makeShortSilentWav(durationSeconds = 1, sampleRate = 8000): Buffer {
   const numSamples = Math.floor(sampleRate * durationSeconds);
@@ -118,6 +103,7 @@ async function seedBeat(admin: SupabaseClient, ownerId: string) {
     assetId,
     purpose: "MASTER",
   });
+  cleanupBeatIds.push(beatId);
   const { error: beatErr } = await admin.from("beats").insert({
     id: beatId,
     title: `P3 Claim Beat ${beatId.slice(0, 8)}`,
@@ -152,9 +138,9 @@ async function seedBeat(admin: SupabaseClient, ownerId: string) {
   return { beatId, objectKey };
 }
 
-const cleanupTakeIds: string[] = [];
 const cleanupUserIds: string[] = [];
 const cleanupBeatKeys: string[] = [];
+const cleanupBeatIds: string[] = [];
 
 describe.runIf(live)("P3 live — anon → account claim", () => {
   const admin = createClient(url!, serviceKey!, {
@@ -162,27 +148,12 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
   });
 
   afterAll(async () => {
-    for (const id of cleanupTakeIds) {
-      const { data: t } = await admin
-        .from("takes")
-        .select("object_key")
-        .eq("id", id)
-        .maybeSingle();
-      if (t?.object_key) {
-        await admin.storage
-          .from(TAKE_AUDIO_BUCKET)
-          .remove([t.object_key as string])
-          .catch(() => undefined);
-      }
-      await admin.from("takes").delete().eq("id", id);
-    }
-    for (const key of cleanupBeatKeys) {
-      await admin.storage.from("beat-audio").remove([key]).catch(() => undefined);
-    }
-    for (const uid of cleanupUserIds) {
-      await admin.auth.admin.deleteUser(uid).catch(() => undefined);
-    }
-  });
+    const fixtures = createIntegrationFixtures(admin);
+    cleanupBeatIds.forEach(fixtures.trackBeat);
+    cleanupUserIds.forEach(fixtures.trackUser);
+    for (const key of cleanupBeatKeys) fixtures.trackObject("beat-audio", key);
+    await fixtures.cleanup();
+  }, 120_000);
 
   it(
     "claims READY anon take to user path with Premium FREE TTL",
@@ -201,8 +172,6 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
       contentType: "audio/wav",
       byteSize: wav.byteLength,
     });
-    cleanupTakeIds.push(session.takeId);
-
     const { error: putErr } = await admin.storage
       .from(TAKE_AUDIO_BUCKET)
       .uploadToSignedUrl(session.path, session.token, wav, {
@@ -320,7 +289,6 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
         contentType: "audio/wav",
         byteSize: wav.byteLength,
       });
-      cleanupTakeIds.push(s.takeId);
       const { error: putErr } = await admin.storage
         .from(TAKE_AUDIO_BUCKET)
         .uploadToSignedUrl(s.path, s.token, wav, { contentType: "audio/wav" });
@@ -336,7 +304,6 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
       contentType: "audio/wav",
       byteSize: wav.byteLength,
     });
-    cleanupTakeIds.push(session.takeId);
     const { error: putErr } = await admin.storage
       .from(TAKE_AUDIO_BUCKET)
       .uploadToSignedUrl(session.path, session.token, wav, {
@@ -391,7 +358,6 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
       contentType: "audio/wav",
       byteSize: wav.byteLength,
     });
-    cleanupTakeIds.push(session.takeId);
     // leave PENDING — no finalize
 
     const destKey = buildUserTakeObjectKey({

@@ -277,14 +277,20 @@ describe.runIf(live)("P4 live verification", () => {
         ]);
 
         expect(buildTakeExportLadder("FREE").map((i) => i.unlocked)).toEqual([
-          true,
+          false,
+          false,
+          false,
+          false,
           false,
           false,
           false,
         ]);
         expect(buildTakeExportLadder("BRONZE").map((i) => i.unlocked)).toEqual([
           true,
-          true,
+          false,
+          false,
+          false,
+          false,
           false,
           false,
         ]);
@@ -293,8 +299,14 @@ describe.runIf(live)("P4 live verification", () => {
           true,
           true,
           false,
+          false,
+          false,
+          false,
         ]);
         expect(buildTakeExportLadder("GOLD").map((i) => i.unlocked)).toEqual([
+          true,
+          true,
+          true,
           true,
           true,
           true,

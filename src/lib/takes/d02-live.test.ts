@@ -3,11 +3,16 @@
  * Caps / concurrency / IDOR / expiry / PUBLISHED-only / no grant dependency.
  */
 import { randomBytes, randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import {
+  createIntegrationFixtures,
+  type IntegrationFixtures,
+} from "@/test/integration-fixtures";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
@@ -55,38 +60,17 @@ async function forceExpireTakeForLiveTest(
   );
 }
 
-function readEnvLocal(): Record<string, string> {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (!m) continue;
-    let val = m[2]!;
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[m[1]!] = val;
-  }
-  return out;
-}
-
-const env = { ...readEnvLocal(), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const fixturePath = resolve(
   process.cwd(),
   "../bitrymdym-fixtures/bpm-120-steady.wav",
 );
-const live = Boolean(url && serviceKey && anonKey && existsSync(fixturePath));
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+if (integration.enabled) applyIntegrationEnv(integration);
 
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
+let fixtures: IntegrationFixtures | undefined;
 
 function freshHash() {
   return hashAnonymousTakeToken(randomBytes(32).toString("hex"));
@@ -141,6 +125,7 @@ async function makeUser(admin: SupabaseClient, label: string) {
   });
   expect(error).toBeNull();
   const userId = data.user!.id;
+  fixtures?.trackUser(userId);
   await admin.from("profiles").upsert({
     id: userId,
     role: "USER",
@@ -165,6 +150,8 @@ async function seedPublishedBeatWithMaster(
     assetId,
     purpose: "MASTER",
   });
+  fixtures?.trackBeat(beatId);
+  fixtures?.trackObject(BEAT_AUDIO_BUCKET, objectKey);
   expect(
     (
       await admin.from("beats").insert({
@@ -229,6 +216,8 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   });
   // Short WAV under ANONYMOUS 15s max (fixture steady wav is ~30s).
   const bytes = makeShortSilentWav(1);
+  fixtures = createIntegrationFixtures(admin);
+  afterAll(() => fixtures!.cleanup(), 120_000);
 
   it("happy path session → upload → finalize → preview; replay finalize idempotent", async () => {
     const owner = await makeUser(admin, "seed");
@@ -294,7 +283,7 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
 
   it("PUBLISHED-only: DRAFT beat DENY; non-READY master DENY path via missing asset", async () => {
     const owner = await makeUser(admin, "draft");
-    const beatId = randomUUID();
+    const beatId = fixtures!.trackBeat(randomUUID());
     expect(
       (
         await admin.from("beats").insert({

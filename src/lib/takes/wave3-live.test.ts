@@ -2,11 +2,13 @@
  * Live — Recording Wave 3 take preview signed read AuthZ.
  */
 import { randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
@@ -22,38 +24,17 @@ import {
 } from "@/lib/takes/take-transport";
 import { createOwnTakePreviewSignedUrl } from "@/lib/takes/take-preview";
 
-function readEnvLocal(): Record<string, string> {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (!m) continue;
-    let val = m[2]!;
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[m[1]!] = val;
-  }
-  return out;
-}
-
-const env = { ...readEnvLocal(), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const fixturePath = resolve(
   process.cwd(),
   "../bitrymdym-fixtures/bpm-120-steady.wav",
 );
-const live = Boolean(url && serviceKey && anonKey && existsSync(fixturePath));
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
+const anonKey = integration.enabled ? integration.anonKey : undefined;
 
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (anonKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey;
+if (integration.enabled) applyIntegrationEnv(integration);
 
 function userContext(userId: string, email: string): AuthContext {
   return {

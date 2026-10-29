@@ -119,23 +119,24 @@ describe("P4.2 take title", () => {
   });
 });
 
-describe("P4.4 take export ladder", () => {
-  it("FREE: 128 unlocked; 192/320/WAV locked", () => {
+describe("P4.4 / PREMIUM-01 take export ladder", () => {
+  it("FREE: all download qualities locked (OD-EXPORT-03)", () => {
     const ladder = buildTakeExportLadder("FREE");
-    expect(ladder.map((i) => [i.quality, i.unlocked])).toEqual([
-      ["MP3_128", true],
-      ["MP3_192", false],
-      ["MP3_320", false],
-      ["WAV", false],
-    ]);
-    expect(ladder.find((i) => i.quality === "MP3_320")?.lockedMessage).toMatch(
-      /SILVER/,
+    expect(ladder.every((i) => i.unlocked === false)).toBe(true);
+    expect(canExportOwnTake({ premiumTier: "FREE", quality: "MP3_128" })).toBe(
+      false,
+    );
+    expect(ladder.find((i) => i.quality === "MP3_128")?.lockedMessage).toMatch(
+      /Premium/,
     );
   });
 
-  it("BRONZE: 128+192 unlocked; 320/WAV locked", () => {
-    expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_192" })).toBe(
+  it("BRONZE: only MP3_128 unlocked", () => {
+    expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_128" })).toBe(
       true,
+    );
+    expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_192" })).toBe(
+      false,
     );
     expect(canExportOwnTake({ premiumTier: "BRONZE", quality: "MP3_320" })).toBe(
       false,
@@ -143,19 +144,32 @@ describe("P4.4 take export ladder", () => {
     const ladder = buildTakeExportLadder("BRONZE");
     expect(ladder.filter((i) => i.unlocked).map((i) => i.quality)).toEqual([
       "MP3_128",
-      "MP3_192",
     ]);
   });
 
-  it("SILVER: unlocked through 320; WAV locked", () => {
+  it("SILVER: 128/192/256; not 320 or WAV", () => {
     const ladder = buildTakeExportLadder("SILVER");
-    expect(ladder.find((i) => i.quality === "MP3_320")?.unlocked).toBe(true);
-    expect(ladder.find((i) => i.quality === "WAV")?.unlocked).toBe(false);
+    expect(ladder.filter((i) => i.unlocked).map((i) => i.quality)).toEqual([
+      "MP3_128",
+      "MP3_192",
+      "MP3_256",
+    ]);
+    expect(ladder.find((i) => i.quality === "MP3_320")?.unlocked).toBe(false);
+    expect(ladder.find((i) => i.quality === "WAV_COMPAT")?.unlocked).toBe(false);
   });
 
-  it("GOLD: all unlocked", () => {
+  it("GOLD: all unlocked including 3×WAV", () => {
     const ladder = buildTakeExportLadder("GOLD");
     expect(ladder.every((i) => i.unlocked)).toBe(true);
+    expect(ladder.map((i) => i.quality)).toEqual([
+      "MP3_128",
+      "MP3_192",
+      "MP3_256",
+      "MP3_320",
+      "WAV_COMPAT",
+      "WAV_PRO",
+      "WAV_MASTER",
+    ]);
   });
 
   it("does not hardcode tiers in TakeDownloadMenu", () => {

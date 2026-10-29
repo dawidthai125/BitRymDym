@@ -1,13 +1,15 @@
 /**
  * Live E2E — Community Wave 2 USER signed transport.
- * Runs against real Supabase when .env.local service role is available.
+ * Local Supabase only: BRD_INTEGRATION_TESTS=1 + LOCAL_SUPABASE_* + bpm fixture.
  */
 import { randomUUID } from "crypto";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+
+import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
 
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -17,40 +19,16 @@ import {
 } from "@/lib/beats/audio-transport";
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
 
-function readEnvLocal(): Record<string, string> {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return {};
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (!m) continue;
-    let val = m[2]!;
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[m[1]!] = val;
-  }
-  return out;
-}
-
-const env = { ...readEnvLocal(), ...process.env };
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 const fixturePath = resolve(
   process.cwd(),
   "../bitrymdym-fixtures/bpm-120-steady.wav",
 );
-const live = Boolean(url && serviceKey && existsSync(fixturePath));
+const integration = resolveIntegrationEnv({ fixturePath });
+const live = integration.enabled;
+const url = integration.enabled ? integration.url : undefined;
+const serviceKey = integration.enabled ? integration.serviceKey : undefined;
 
-// Ensure process.env for createSupabaseAdminClient inside transport
-if (url) process.env.NEXT_PUBLIC_SUPABASE_URL = url;
-if (serviceKey) process.env.SUPABASE_SERVICE_ROLE_KEY = serviceKey;
-if (env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-}
+if (integration.enabled) applyIntegrationEnv(integration);
 
 describe.runIf(live)("Community Wave 2 live E2E transport", () => {
   it(
