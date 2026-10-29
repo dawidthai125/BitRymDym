@@ -2,12 +2,14 @@ import type { BitekChatTurn, BitekProviderId } from "./types";
 
 /** Server-only LLM provider chain for BITEK. Keys come from server env only. */
 
-export type BitekProviderErrorKind = "rate_limited" | "server" | "timeout" | "network" | "bad_response" | "client";
+export type BitekProviderErrorKind = "rate_limited" | "server" | "timeout" | "network" | "bad_response" | "client" | "wrong_lang";
 
 export class BitekProviderError extends Error {
   constructor(
     readonly kind: BitekProviderErrorKind,
     readonly status?: number,
+    /** Provider error code from the response body (e.g. "invalid_api_key"); never message text. */
+    readonly code?: string,
   ) {
     super(`bitek provider ${kind}${status ? ` ${status}` : ""}`);
   }
@@ -16,6 +18,8 @@ export class BitekProviderError extends Error {
 export interface BitekLlmProvider {
   id: Exclude<BitekProviderId, "rules">;
   timeoutMs: number;
+  /** Use the short system prompt (small self-hosted model). */
+  compactPrompt?: boolean;
   complete(messages: { role: "system" | BitekChatTurn["role"]; content: string }[], signal: AbortSignal): Promise<string>;
 }
 
@@ -58,7 +62,18 @@ export function openAiCompatibleProvider(opts: {
       }
       if (res.status === 429) throw new BitekProviderError("rate_limited", 429);
       if (res.status >= 500) throw new BitekProviderError("server", res.status);
-      if (!res.ok) throw new BitekProviderError("client", res.status);
+      if (!res.ok) {
+        let code: string | undefined;
+        try {
+          const body = (await res.json()) as unknown;
+          const err = (Array.isArray(body) ? body[0] : body) as { error?: { code?: unknown; status?: unknown } } | null;
+          const c = err?.error?.code ?? err?.error?.status;
+          if (typeof c === "string" || typeof c === "number") code = String(c).replace(/[^\w.-]/g, "").slice(0, 40);
+        } catch {
+          /* ignore */
+        }
+        throw new BitekProviderError("client", res.status, code);
+      }
       let json: { choices?: { message?: { content?: unknown } }[] };
       try {
         json = await res.json();

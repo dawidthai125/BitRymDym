@@ -7,7 +7,8 @@
  *   BITEK_LLM_MODEL, BITEK_LLM_POLL_MS, BITEK_LLM_TIMEOUT_MS, BITEK_LLM_WORKER_REF.
  * Logs never include message content or secrets.
  */
-import { decideBitekWorkerConfig, processOneBitekJob, type BitekJob } from "../src/lib/studio/bitek/chat/llm-worker";
+import { decideBitekWorkerConfig, processOneBitekJob, warmBitekLlm, type BitekJob } from "../src/lib/studio/bitek/chat/llm-worker";
+import { buildBitekStaticPrefix } from "../src/lib/studio/bitek/chat/prompt";
 import { createSupabaseAdminClient } from "../src/lib/supabase/admin";
 
 const log = (e: Record<string, unknown>) => console.log(JSON.stringify(e));
@@ -23,6 +24,9 @@ async function main() {
   for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { stop = true; });
   log({ event: "bitek_llm_worker_started", workerRef: cfg.workerRef, model: cfg.llmModel, pollMs: cfg.pollMs });
   let lastPurge = 0;
+  // Last LLM activity (job or warm-up); 0 → warm right after start.
+  let lastLlm = 0;
+  const warmPrefix = buildBitekStaticPrefix("pl", { compact: true });
   while (!stop) {
     try {
       if (Date.now() - lastPurge > cfg.purgeEveryMs) {
@@ -48,7 +52,14 @@ async function main() {
         },
         log,
       });
-      if (handled) continue;
+      if (handled) {
+        lastLlm = Date.now();
+        continue;
+      }
+      if (cfg.warmEveryMs > 0 && Date.now() - lastLlm > cfg.warmEveryMs) {
+        lastLlm = Date.now();
+        await warmBitekLlm(cfg, warmPrefix, { log });
+      }
     } catch (e) {
       log({ event: "bitek_llm_worker_loop_error", message: e instanceof Error ? e.message.slice(0, 120) : "unknown" });
       await new Promise((r) => setTimeout(r, 5000));

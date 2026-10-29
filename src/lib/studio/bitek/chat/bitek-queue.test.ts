@@ -96,3 +96,23 @@ describe("bitek llm worker", () => {
     expect(await processOneBitekJob(cfg, { claim: async () => null, complete })).toBe(false);
   });
 });
+
+describe("bitek llm warm-up", () => {
+  it("sends the static prefix with 1 token and cache_prompt", async () => {
+    const { warmBitekLlm } = await import("./llm-worker");
+    const cfg = decideBitekWorkerConfig({ BITEK_LLM_WORKER_ENABLED: "true", BITEK_LLM_TOKEN: "tok" }, 1);
+    if (cfg.action !== "run") throw new Error();
+    expect(cfg.warmEveryMs).toBe(240000);
+    let body: { max_tokens: number; cache_prompt: boolean; messages: { content: string }[] } | undefined;
+    const ok = await warmBitekLlm(cfg, "PREFIX\n", {
+      fetchFn: (async (_u: string, init: RequestInit) => {
+        body = JSON.parse(String(init.body));
+        return new Response("{}");
+      }) as unknown as typeof fetch,
+    });
+    expect(ok).toBe(true);
+    expect(body?.max_tokens).toBe(1);
+    expect(body?.cache_prompt).toBe(true);
+    expect(body?.messages[0].content.startsWith("PREFIX\n<project_data>")).toBe(true);
+  });
+});
