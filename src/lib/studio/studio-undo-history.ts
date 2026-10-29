@@ -6,6 +6,7 @@
  * itself only touches local state.
  */
 import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
+import type { StudioStructuralUndoOp } from "@/lib/studio/studio-undo-structural";
 
 export const STUDIO_UNDO_HISTORY_LIMIT = 100;
 
@@ -23,7 +24,8 @@ export type StudioUndoOp =
   | { kind: "clip_gain"; clipId: string; gainDb: number }
   | { kind: "clip_mute"; clipId: string; muted: boolean }
   | { kind: "track_fx"; trackId: string; chain: StudioFxChainV1 }
-  | { kind: "master_fx"; chain: StudioFxChainV1 };
+  | { kind: "master_fx"; chain: StudioFxChainV1 }
+  | StudioStructuralUndoOp;
 
 export type StudioUndoEntry = { undo: StudioUndoOp; redo: StudioUndoOp };
 

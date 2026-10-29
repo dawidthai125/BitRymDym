@@ -1245,7 +1245,8 @@
       "cofnietoZmiane": "Change undone",
       "ponowionoZmiane": "Change redone",
       "nieMoznaCofnac": "Can't undo — the item was deleted",
-      "rolaSciezki": "Track role: {v0}"
+      "rolaSciezki": "Track role: {v0}",
+      "cofnietoCzesciowo": "Undo was only partly applied — some changes were not saved. Refresh the project."
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",

@@ -138,6 +138,15 @@ import {
   type StudioUndoHistory,
   type StudioUndoOp,
 } from "@/lib/studio/studio-undo-history";
+import {
+  canRunStudioStructuralOp,
+  isStudioStructuralUndoOp,
+  resolveStudioStructuralOpIds,
+  resolveStudioUndoId,
+  runStudioStructuralOp,
+  type StudioApiCall,
+  type StudioStructuralUndoOp,
+} from "@/lib/studio/studio-undo-structural";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
@@ -276,6 +285,8 @@ function StudioEditorInner({
     EMPTY_STUDIO_UNDO_HISTORY,
   );
   const undoHistoryRef = useRef(undoHistory);
+  /** Stage 0 undo — recreated rows: old id → new id (history keeps old ids). */
+  const undoAliasRef = useRef(new Map<string, string>());
   /** Disable conflicting controls while a persist is in-flight or queued. */
   const pending = persistSnap.inFlight || persistSnap.queued;
   const [mode, setMode] = useState<TimelineMode>("seek");
@@ -547,8 +558,21 @@ function StudioEditorInner({
   }
 
   /** Replays one history op through the normal CAS path (never re-recorded). */
-  function runUndoOp(op: StudioUndoOp): boolean {
+  function runUndoOp(rawOp: StudioUndoOp): boolean {
     const quiet = { history: false } as const;
+    const r = (id: string) => resolveStudioUndoId(undoAliasRef.current, id);
+    if (isStudioStructuralUndoOp(rawOp)) {
+      const sop = resolveStudioStructuralOpIds(rawOp, r);
+      if (!canRunStudioStructuralOp(sop, committedDocRef.current)) return false;
+      runStructuralUndoOp(sop);
+      return true;
+    }
+    const op: StudioUndoOp =
+      "clipId" in rawOp
+        ? { ...rawOp, clipId: r(rawOp.clipId) }
+        : "trackId" in rawOp
+          ? { ...rawOp, trackId: r(rawOp.trackId) }
+          : rawOp;
     switch (op.kind) {
       case "track":
         if (!committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
@@ -588,6 +612,69 @@ function StudioEditorInner({
         persistFxChainForHistory(op);
         return true;
     }
+  }
+
+  const studioApiCall: StudioApiCall = async (method, path, body) => {
+    const res = await fetch(path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    let json: Record<string, unknown> = {};
+    try {
+      json = (await res.json()) as Record<string, unknown>;
+    } catch {
+      json = {};
+    }
+    return { ok: res.ok, status: res.status, json };
+  };
+
+  /** Structural undo/redo (add/delete/split/duplicate) — one serial persist. */
+  function runStructuralUndoOp(op: StudioStructuralUndoOp): void {
+    setError(null);
+    enqueuePersist(async () => {
+      try {
+        const result = await runStudioStructuralOp(op, {
+          projectId: projectId(),
+          documentVersion: expectedDocumentVersion(),
+          doc: committedDocRef.current,
+          api: studioApiCall,
+        });
+        if (!result.ok) {
+          const failure = classifyPersistHttpFailure({
+            status: result.status,
+            message: result.message,
+            code: result.code,
+          });
+          if (failure.kind === "conflict") setError(result.message ?? FX_CHAIN_CONFLICT_UI_PL);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        for (const [oldId, newId] of result.aliases) {
+          if (oldId !== newId) undoAliasRef.current.set(oldId, newId);
+        }
+        const documentVersion = result.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...result.mutate(prev),
+              project: { ...prev.project, documentVersion },
+            }));
+            setSelectedClipId((prev) =>
+              prev && !docRef.current.clips.some((c) => c.id === prev) ? null : prev,
+            );
+            setSelectedTrackId((prev) =>
+              prev && !docRef.current.tracks.some((t) => t.id === prev) ? null : prev,
+            );
+            if (result.partial) setError(tr("cofnietoCzesciowo"));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
   }
 
   function undoStudioEdit(): void {
@@ -1158,6 +1245,10 @@ function StudioEditorInner({
               ),
             }));
             setSelectedTrackId(track.id);
+            recordUndo({
+              undo: { kind: "track_remove", trackId: track.id, clipIds: [] },
+              redo: { kind: "track_add", track },
+            });
           },
         };
       } catch {
@@ -1243,6 +1334,18 @@ function StudioEditorInner({
             }));
             setSelectedTrackId(track.id);
             setSelectedClipId(null);
+            const dupClipIds = [...clips]
+              .sort((a, b) => a.timelineStartMs - b.timelineStartMs)
+              .map((c) => c.id);
+            recordUndo({
+              undo: { kind: "track_remove", trackId: track.id, clipIds: dupClipIds },
+              redo: {
+                kind: "track_duplicate",
+                sourceTrackId: trackId,
+                duplicateTrackId: track.id,
+                duplicateClipIds: dupClipIds,
+              },
+            });
           },
         };
       } catch {
@@ -1600,6 +1703,7 @@ function StudioEditorInner({
     if (!clipId) return;
     setError(null);
     const atTimelineMs = getPlayheadMs();
+    const beforeSplit = committedClip(clipId);
     enqueuePersist(async () => {
       try {
         const res = await fetch(
@@ -1655,6 +1759,12 @@ function StudioEditorInner({
               ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
             }));
             setSelectedClipId(selectClipId(null, left.id));
+            if (beforeSplit) {
+              recordUndo({
+                undo: { kind: "clip_unsplit", leftId: left.id, rightId: right.id, original: beforeSplit },
+                redo: { kind: "clip_split", clipId: left.id, atTimelineMs, rightId: right.id },
+              });
+            }
           },
         };
       } catch {
@@ -1760,6 +1870,7 @@ function StudioEditorInner({
     const clipId = selectedClip?.id;
     if (!clipId) return;
     setError(null);
+    const beforeDelete = committedClip(clipId);
     enqueuePersist(async () => {
       try {
         const res = await fetch(
@@ -1808,6 +1919,12 @@ function StudioEditorInner({
               clips: prev.clips.filter((c) => c.id !== deletedClipId),
             }));
             setSelectedClipId(clearClipSelection());
+            if (beforeDelete) {
+              recordUndo({
+                undo: { kind: "clip_restore", clip: beforeDelete },
+                redo: { kind: "clip_remove", clipId: beforeDelete.id },
+              });
+            }
             setConfirmDelete(false);
           },
         };
@@ -1878,6 +1995,10 @@ function StudioEditorInner({
               ].sort((a, b) => a.timelineStartMs - b.timelineStartMs),
             }));
             setSelectedClipId(selectClipId(null, duplicate.id));
+            recordUndo({
+              undo: { kind: "clip_remove", clipId: duplicate.id },
+              redo: { kind: "clip_duplicate", sourceClipId: original.id, duplicateId: duplicate.id },
+            });
           },
         };
       } catch {
@@ -2075,6 +2196,10 @@ function StudioEditorInner({
                 (a, b) => a.timelineStartMs - b.timelineStartMs,
               ),
             }));
+            recordUndo({
+              undo: { kind: "clip_remove", clipId: clip.id },
+              redo: { kind: "clip_restore", clip },
+            });
             if (options?.keepRecordPanel) {
               setInspectorPreferRecord(
                 studioPreferRecordAfterClipCreated({ keepRecordPanel: true }),
@@ -2407,6 +2532,7 @@ function StudioEditorInner({
           applyPersistedDoc(() => next);
           undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
           setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
+          undoAliasRef.current = new Map();
           setError(null);
         }}
         onChooseBeat={() => setBeatPickerOpen(true)}
