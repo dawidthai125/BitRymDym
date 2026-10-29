@@ -69,10 +69,10 @@ describe("P3 — claim codes and policy axis", () => {
     );
   });
 
-  it("anonymous defaults remain 15s / 2h / cap 1", () => {
-    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds).toBe(15);
+  it("anonymous recording is off (0s / cap 0); legacy 2h TTL kept for claiming old guest takes", () => {
+    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds).toBe(0);
     expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.ttlSeconds).toBe(7200);
-    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxActiveReady).toBe(1);
+    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxActiveReady).toBe(0);
   });
 });
 

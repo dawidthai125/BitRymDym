@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
 import { PageFrame } from "@/components/brand/chrome";
+import type { LockReason } from "@/components/plans/locked-action";
 import { AppShell } from "@/components/site/app-shell";
 import { E3_MIX_ENABLED } from "@/config/audio-render";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -53,8 +54,13 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const session = await getCurrentProfile();
   const overrides = await loadSamplePolicyDurationOverrides();
   let maxRecordingSeconds: number;
+  // Owner 2026-10-29: guests and Free listen only — the button stays, locked.
+  let downloadLock: LockReason | null = session ? null : "guest";
   if (session) {
     const product = await resolveProductEntitlementForAuthContext(session);
+    if (session.profile.role !== "ADMIN" && !(product.limits.downloadsDaily > 0)) {
+      downloadLock = "plan";
+    }
     maxRecordingSeconds = getSamplePolicy({
       actor: sampleActorFromPremiumTier(product.premiumTier),
       beatDurationSeconds: detail.durationSeconds,
@@ -116,6 +122,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               hasAudio={audioInfo.hasAudio}
               isAuthenticated={Boolean(session)}
               originalMasterDownloadAllowed={beat.ownershipType === "USER"}
+              downloadLock={downloadLock}
               maxRecordingSeconds={maxRecordingSeconds}
               mixTakes={mixTakes}
               mixEnabled={E3_MIX_ENABLED === true}

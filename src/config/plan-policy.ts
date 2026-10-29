@@ -52,8 +52,11 @@ export type PlanPolicy = {
   };
   studio: {
     maxProjects: number;
-    /** studio_tracks per project (BEAT counts, Master does not). */
-    maxTracks: number;
+    /**
+     * Recording tracks per project (vocal / sample / scratch). The Bit track
+     * does NOT count, Master is not a track. Owner 2026-10-29: Free = 1.
+     */
+    maxRecordingTracks: number;
   };
   mastering: {
     /** E3 master jobs per calendar month (Europe/Warsaw); failed/cancelled do not count. */
@@ -68,6 +71,8 @@ export type PlanPolicy = {
     projectZip: boolean;
     /** Own raw take download. */
     ownTakeRaw: boolean;
+    /** Catalogue beat downloads per UTC day. 0 = listen only (button locked). */
+    beatsPerDay: number;
   };
   /** Days a finished file / render artifact is kept. Gold is the longest. */
   retentionDays: number;
@@ -94,9 +99,14 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       maxActiveReady: 3,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 3, maxTracks: 3 },
+    studio: { maxProjects: 3, maxRecordingTracks: 1 },
     mastering: { mastersPerMonth: 8, referenceMastering: "none" },
-    downloads: { qualities: [], projectZip: false, ownTakeRaw: false },
+    downloads: {
+      qualities: [],
+      projectZip: false,
+      ownTakeRaw: false,
+      beatsPerDay: 0,
+    },
     retentionDays: 2,
   },
   BRONZE: {
@@ -108,9 +118,14 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       maxActiveReady: 5,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 10, maxTracks: 3 },
+    studio: { maxProjects: 10, maxRecordingTracks: 2 },
     mastering: { mastersPerMonth: 30, referenceMastering: "none" },
-    downloads: { qualities: ["MP3_128"], projectZip: false, ownTakeRaw: false },
+    downloads: {
+      qualities: ["MP3_128"],
+      projectZip: false,
+      ownTakeRaw: false,
+      beatsPerDay: 10,
+    },
     retentionDays: 7,
   },
   SILVER: {
@@ -122,12 +137,13 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       maxActiveReady: 7,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 25, maxTracks: 5 },
+    studio: { maxProjects: 25, maxRecordingTracks: 4 },
     mastering: { mastersPerMonth: 80, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
       projectZip: false,
       ownTakeRaw: false,
+      beatsPerDay: 25,
     },
     retentionDays: 30,
   },
@@ -140,28 +156,40 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       maxActiveReady: 10,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 50, maxTracks: 8 },
+    studio: { maxProjects: 50, maxRecordingTracks: 7 },
     mastering: { mastersPerMonth: 200, referenceMastering: "included" },
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
       projectZip: true,
       ownTakeRaw: true,
+      beatsPerDay: 50,
     },
     retentionDays: 60,
   },
 };
 
-/** Guest (not logged in): short demo takes only — no Studio, no plan tools. */
-export const GUEST_RECORDING_POLICY = {
-  maxTakeSeconds: 15,
-  sessionsPerDay: 3,
-  takeTtlSeconds: 2 * H,
-  maxActiveReady: 1,
-  studioRecordingTools: false,
+/**
+ * Guest (not logged in) — Owner 2026-10-29: no Studio, no recording, no beat
+ * downloads; each catalogue beat can be previewed for 20 s, then a sign-in prompt.
+ * Studio pages redirect to /sign-in?next=…, Studio and guest-take APIs answer 401.
+ */
+export const GUEST_POLICY = {
+  studio: false,
+  recording: false,
+  beatDownloadsPerDay: 0,
+  previewSeconds: 20,
 } as const;
 
 export function planPolicy(tier: PremiumTier): PlanPolicy {
   return PLAN_POLICY[tier];
+}
+
+export function maxRecordingTracksForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].studio.maxRecordingTracks;
+}
+
+export function beatDownloadsPerDayForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].downloads.beatsPerDay;
 }
 
 export function maxProjectsForTier(tier: PremiumTier): number {

@@ -2,6 +2,8 @@
 
 import { AuthError } from "@/lib/auth/session";
 import {
+  BEAT_DOWNLOAD_LOGIN_REQUIRED,
+  BEAT_DOWNLOAD_PLAN_REQUIRED,
   requestBeatAudioAccess,
   requestPlatformBeatOpsExport,
 } from "@/lib/beats/audio-access";
@@ -26,6 +28,10 @@ export type AudioActionState = {
   url?: string;
   expiresAt?: string;
   remainingToday?: number;
+  /** Guests: stop playback here and show the sign-in prompt. */
+  previewLimitSeconds?: number;
+  /** Locked download reason (button tooltip). */
+  code?: "LOGIN_REQUIRED" | "PLAN_REQUIRED";
 };
 
 function catchAudio(
@@ -40,7 +46,13 @@ function catchAudio(
     purpose === "DOWNLOAD"
       ? toSafeDownloadErrorMessage(raw)
       : toSafePlaybackErrorMessage(raw);
-  return { error: mapped, success: false };
+  const code =
+    raw === BEAT_DOWNLOAD_LOGIN_REQUIRED
+      ? ("LOGIN_REQUIRED" as const)
+      : raw === BEAT_DOWNLOAD_PLAN_REQUIRED
+        ? ("PLAN_REQUIRED" as const)
+        : undefined;
+  return code ? { error: mapped, success: false, code } : { error: mapped, success: false };
 }
 
 export async function requestBeatAudioAccessAction(params: {
@@ -65,6 +77,7 @@ export async function requestBeatAudioAccessAction(params: {
       expiresAt: result.expiresAt,
       assetId: result.assetId,
       remainingToday: result.remainingToday,
+      previewLimitSeconds: result.previewLimitSeconds,
     };
   } catch (error) {
     return catchAudio(error, params.purpose);

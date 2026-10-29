@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { Button } from "@/components/ui/button";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
@@ -499,6 +500,14 @@ export function StudioMasterStep({
                               const enabled = Boolean(opt?.enabled) && !limitReached;
                               const key = `${kind}-${format}`;
                               const lockedLabel = !opt?.enabled ? (kind === "project" ? t("tylkoGold") : t("zablokowane", { plan: t(`plany.${MIN_PLAN(format)}`) })) : null;
+                              if (!opt?.enabled) {
+                                // Plan lock: visible, focusable, bubble on hover/focus/tap (Owner 2026-10-29).
+                                return (
+                                  <LockedAction key={format} reason="plan" minTier={MIN_PLAN(format)} testId={`studio-master-dl-${key}`} buttonClassName="px-3" dataAttrs={{ "data-enabled": "false", "aria-label": `${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })} — ${lockedLabel ?? ""}` }}>
+                                    {t(`format.${format}`)}
+                                  </LockedAction>
+                                );
+                              }
                               return (
                                 <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-9" disabled={!enabled || dl?.status === "working"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
                                   {!opt?.enabled ? "🔒 " : ""}

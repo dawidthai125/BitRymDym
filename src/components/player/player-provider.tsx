@@ -25,6 +25,7 @@ import {
   PUBLIC_PLAYBACK_PURPOSE,
   toSafePlaybackErrorMessage,
 } from "@/lib/beats/public";
+import { GuestPreviewPrompt } from "@/components/player/guest-preview-prompt";
 import { shouldRestartFromStart } from "@/lib/player/playback-progress";
 
 export type PlayerTrack = {
@@ -58,6 +59,11 @@ type PlayerContextValue = {
   seek: (time: number) => void;
   close: () => void;
   setSuppressed: (value: boolean) => void;
+  /** Guests: server-set preview cap (GUEST_POLICY.previewSeconds); null = full. */
+  previewLimitSeconds: number | null;
+  /** True after a guest hit the preview cap (sign-in prompt is shown). */
+  previewEnded: boolean;
+  dismissPreviewPrompt: () => void;
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -87,6 +93,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [suppressed, setSuppressed] = useState(false);
+  /** Guest preview cap from the server; read inside media listeners. */
+  const previewLimitRef = useRef<number | null>(null);
+  const [previewLimitSeconds, setPreviewLimitSeconds] = useState<number | null>(null);
+  const [previewEnded, setPreviewEnded] = useState(false);
 
   // Keep ended/restart fallback in sync without writing refs during render.
   useEffect(() => {
@@ -98,7 +108,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.preload = "none";
     audioRef.current = audio;
 
-    const onTime = () => setCurrentTime(audio.currentTime);
+    const onTime = () => {
+      const limit = previewLimitRef.current;
+      if (limit !== null && audio.currentTime >= limit) {
+        // Guest preview cap: stop at the limit and ask to sign in.
+        audio.pause();
+        if (audio.currentTime > limit) audio.currentTime = limit;
+        setCurrentTime(limit);
+        setPreviewEnded(true);
+        return;
+      }
+      setCurrentTime(audio.currentTime);
+    };
     const onMeta = () => {
       if (Number.isFinite(audio.duration)) setDuration(audio.duration);
     };
@@ -155,7 +176,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Same beat + already have a playable src: reuse without network when
     // (a) signed URL still valid, or (b) dedup ON and src is a session blob.
-    if (audio.dataset.beatId === beatId && audio.src) {
+    // A guest at the preview cap re-asks the server (it replays from the top
+    // anyway), so signing in lifts the cap on the next play.
+    const atPreviewCap =
+      previewLimitRef.current !== null &&
+      audio.currentTime >= previewLimitRef.current - 0.25;
+    if (audio.dataset.beatId === beatId && audio.src && !atPreviewCap) {
       const usingBlob = audio.src.startsWith("blob:");
       if (!expired || (dedup && usingBlob && sessionKeyRef.current)) {
         return audio.src;
@@ -173,6 +199,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     expiresAtRef.current = result.expiresAt ?? null;
     audio.dataset.beatId = beatId;
+    const limit =
+      typeof result.previewLimitSeconds === "number" && result.previewLimitSeconds > 0
+        ? result.previewLimitSeconds
+        : null;
+    previewLimitRef.current = limit;
+    setPreviewLimitSeconds(limit);
 
     if (!dedup) {
       if (sessionKeyRef.current) {
@@ -206,6 +238,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const restartFromStartIfNeeded = useCallback((audio: HTMLAudioElement) => {
+    const limit = previewLimitRef.current;
+    if (limit !== null && audio.currentTime >= limit - 0.25) {
+      // Guest replays the preview from the top.
+      audio.currentTime = 0;
+      setCurrentTime(0);
+      setPreviewEnded(false);
+      return;
+    }
     const d =
       Number.isFinite(audio.duration) && audio.duration > 0
         ? audio.duration
@@ -226,6 +266,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setTrack(next);
       setDuration(next.durationSeconds);
       setSuppressed(false);
+      setPreviewEnded(false);
       setPhase("loading");
 
       try {
@@ -274,6 +315,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       void (async () => {
         try {
           setPhase("loading");
+          setPreviewEnded(false);
           await ensureUrl(track.beatId);
           restartFromStartIfNeeded(audio);
           await audio.play();
@@ -295,6 +337,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const seek = useCallback((time: number) => {
     const audio = audioRef.current;
     if (!audio || !Number.isFinite(time)) return;
+    const limit = previewLimitRef.current;
+    if (limit !== null && time >= limit) {
+      // Seeking past the guest preview: park at the cap and show the prompt.
+      audio.pause();
+      audio.currentTime = limit;
+      setCurrentTime(limit);
+      setPreviewEnded(true);
+      return;
+    }
     audio.currentTime = Math.max(0, time);
     setCurrentTime(audio.currentTime);
   }, []);
@@ -312,12 +363,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       sessionKeyRef.current = null;
     }
     expiresAtRef.current = null;
+    previewLimitRef.current = null;
+    setPreviewLimitSeconds(null);
+    setPreviewEnded(false);
     setTrack(null);
     setPhase("idle");
     setCurrentTime(0);
     setDuration(0);
     setError(null);
   }, []);
+
+  const dismissPreviewPrompt = useCallback(() => setPreviewEnded(false), []);
 
   const value = useMemo(
     () => ({
@@ -333,6 +389,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       seek,
       close,
       setSuppressed,
+      previewLimitSeconds,
+      previewEnded,
+      dismissPreviewPrompt,
     }),
     [
       track,
@@ -346,10 +405,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggle,
       seek,
       close,
+      previewLimitSeconds,
+      previewEnded,
+      dismissPreviewPrompt,
     ],
   );
 
   return (
-    <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
+    <PlayerContext.Provider value={value}>
+      {children}
+      {previewEnded && previewLimitSeconds !== null ? (
+        <GuestPreviewPrompt
+          seconds={previewLimitSeconds}
+          onClose={dismissPreviewPrompt}
+        />
+      ) : null}
+    </PlayerContext.Provider>
   );
 }

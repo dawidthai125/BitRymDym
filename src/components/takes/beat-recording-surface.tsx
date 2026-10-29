@@ -2,6 +2,9 @@
 
 import { useLibText } from "@/i18n/use-lib-text";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef } from "react";
 
 import { MixPanel, type MixTakeOption } from "@/components/mix/mix-panel";
@@ -10,6 +13,7 @@ import {
   type PlaybackShellHandle,
 } from "@/components/player/playback-shell";
 import { RecordingPanel } from "@/components/takes/recording-panel";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 
 type BeatRecordingSurfaceProps = {
   beatId: string;
@@ -50,7 +54,36 @@ export function BeatRecordingSurface({
   masterPro = false,
 }: BeatRecordingSurfaceProps) {
   const tl = useLibText();
+  const tg = useTranslations("beats.recordGuest");
+  const pathname = usePathname() ?? "/";
   const playbackRef = useRef<PlaybackShellHandle | null>(null);
+
+  // Owner 2026-10-29: guests cannot record (no guest takes, no Studio).
+  if (!isAuthenticated) {
+    return (
+      <div
+        data-testid="beat-record-guest"
+        className="min-w-0 space-y-2 border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4"
+      >
+        <p className="text-sm font-medium text-[var(--brd-ink)]">{tg("tytul")}</p>
+        <p className="text-sm text-[var(--brd-ink-soft)]">{tg("opis")}</p>
+        <div className="flex flex-wrap gap-3 pt-1">
+          <Link
+            href={signInPathWithNext(pathname)}
+            className="inline-flex min-h-11 items-center rounded-[var(--brd-r-cta)] border border-[var(--brd-ink)] px-4 text-sm font-medium text-[var(--brd-ink)] hover:bg-[var(--brd-paper-deep)]"
+          >
+            {tg("zaloguj")}
+          </Link>
+          <Link
+            href="/sign-up"
+            className="inline-flex min-h-11 items-center text-sm underline underline-offset-4"
+          >
+            {tg("zalozKonto")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-w-0 space-y-4">

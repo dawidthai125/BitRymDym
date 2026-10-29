@@ -7,6 +7,7 @@ import { StudioProjectList } from "@/components/studio/studio-project-list";
 import { AppShell } from "@/components/site/app-shell";
 import { maxProjectsForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listStudioProjects } from "@/lib/studio/studio-service";
 
@@ -29,7 +30,7 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
     auth = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect("/sign-in");
+      redirect(signInPathWithNext("/studio"));
     }
     redirect("/account");
   }

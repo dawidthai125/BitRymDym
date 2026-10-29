@@ -9,7 +9,7 @@
  */
 
 import type { AudioCapabilityKey } from "@/config/audio-render";
-import { PLAN_POLICY } from "@/config/plan-policy";
+import { GUEST_POLICY, PLAN_POLICY } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
 export type PremiumPriority = "normal" | "elevated" | "highest";
@@ -27,7 +27,7 @@ export type PremiumTierLimits = {
   artifactQuotaBytes: number;
   /**
    * Max studio_tracks rows per project (BEAT counts; Master does not).
-   * From plan-policy: FREE 3 / BRONZE 3 / SILVER 5 / GOLD 8.
+   * plan-policy maxRecordingTracks + 1 Bit: FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8.
    */
   studioMaxTracks: number;
   priority: PremiumPriority;
@@ -71,7 +71,15 @@ const GOLD_CAPS = [
 ] as const satisfies readonly AudioCapabilityKey[];
 
 const retention = (tier: PremiumTier) => PLAN_POLICY[tier].retentionDays * DAY;
-const tracks = (tier: PremiumTier) => PLAN_POLICY[tier].studio.maxTracks;
+/**
+ * Total studio_tracks rows a project can hold = recording tracks + one Bit
+ * track (render sizing). Recording-track enforcement uses plan-policy
+ * `maxRecordingTracks` (Bit excluded) — see studio-service add/duplicate.
+ */
+const tracks = (tier: PremiumTier) =>
+  PLAN_POLICY[tier].studio.maxRecordingTracks + 1;
+const beatDownloads = (tier: PremiumTier) =>
+  PLAN_POLICY[tier].downloads.beatsPerDay;
 
 /**
  * Canonical matrix. Retention per plan-policy (FREE 2d / BRONZE 7d / SILVER 30d /
@@ -80,7 +88,7 @@ const tracks = (tier: PremiumTier) => PLAN_POLICY[tier].studio.maxTracks;
  */
 export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
   FREE: {
-    downloadsDaily: 4,
+    downloadsDaily: beatDownloads("FREE"),
     rendersDaily: 5,
     rendersConcurrent: 1,
     artifactRetentionSeconds: retention("FREE"),
@@ -92,7 +100,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     capabilities: BASIC_CAPS,
   },
   BRONZE: {
-    downloadsDaily: 10,
+    downloadsDaily: beatDownloads("BRONZE"),
     rendersDaily: 10,
     rendersConcurrent: 1,
     artifactRetentionSeconds: retention("BRONZE"),
@@ -104,7 +112,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     capabilities: BRONZE_CAPS,
   },
   SILVER: {
-    downloadsDaily: 25,
+    downloadsDaily: beatDownloads("SILVER"),
     rendersDaily: 20,
     rendersConcurrent: 2,
     artifactRetentionSeconds: retention("SILVER"),
@@ -116,7 +124,7 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
     capabilities: SILVER_CAPS,
   },
   GOLD: {
-    downloadsDaily: 50,
+    downloadsDaily: beatDownloads("GOLD"),
     rendersDaily: 40,
     rendersConcurrent: 3,
     // Owner 2026-10-29: Gold keeps the longest (plan-policy 60d).
@@ -131,8 +139,8 @@ export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
   },
 };
 
-/** Anon beat-download baseline (OD-05) — not switched by W2-A cutover. */
-export const PREMIUM_ANON_DOWNLOADS_DAILY = 2;
+/** Guests cannot download beats (Owner 2026-10-29: GUEST_POLICY). */
+export const PREMIUM_ANON_DOWNLOADS_DAILY = GUEST_POLICY.beatDownloadsPerDay;
 
 export function limitsForPremiumTier(tier: PremiumTier): PremiumTierLimits {
   return PREMIUM_TIER_MATRIX[tier];

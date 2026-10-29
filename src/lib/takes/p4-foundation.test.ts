@@ -71,12 +71,12 @@ describe("P4.1 decideRecordingEligibility", () => {
     expect(d.code).toBe("BEAT_NOT_PUBLISHED");
   });
 
-  it("ANONYMOUS 15s policy unchanged", () => {
+  it("ANONYMOUS cannot record (0 s policy)", () => {
     const policy = getSamplePolicy({
       actor: "ANONYMOUS",
       beatDurationSeconds: beat,
     });
-    expect(policy.maxRecordingSeconds).toBe(15);
+    expect(policy.maxRecordingSeconds).toBe(0);
     const d = decideRecordingEligibility({
       beatStatus: "PUBLISHED",
       policy,
@@ -84,8 +84,7 @@ describe("P4.1 decideRecordingEligibility", () => {
       sessionsToday: 0,
       activeReadyCount: 0,
     });
-    expect(d.allowed).toBe(true);
-    expect(d.maxRecordingSeconds).toBe(15);
+    expect(d.allowed).toBe(false);
   });
 });
 

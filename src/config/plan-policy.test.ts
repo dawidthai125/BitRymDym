@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  GUEST_RECORDING_POLICY,
+  beatDownloadsPerDayForTier,
+  GUEST_POLICY,
+  maxRecordingTracksForTier,
   minimumTierForQuality,
   PLAN_PAYMENTS_AVAILABLE,
   PLAN_POLICY,
@@ -33,17 +35,22 @@ describe("plan policy SSOT (Owner 2026-10-29)", () => {
     expect(yearlySavingPercent(PLAN_POLICY.FREE.price)).toBeNull();
   });
 
-  it("take length unchanged: 15 / 30 / 60 / 120 / 180 s (guest / Free / Bronze / Silver / Gold)", () => {
-    expect(GUEST_RECORDING_POLICY.maxTakeSeconds).toBe(15);
+  it("take length 30 / 60 / 120 / 180 s (Free / Bronze / Silver / Gold); guests cannot record", () => {
+    expect(GUEST_POLICY.recording).toBe(false);
     expect(PREMIUM_TIERS.map((t) => PLAN_POLICY[t].recording.maxTakeSeconds)).toEqual([30, 60, 120, 180]);
     expect(PREMIUM_TIERS.map((t) => SAMPLE_POLICY_DEFAULTS[t].maxRecordingSeconds)).toEqual([30, 60, 120, 180]);
-    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds).toBe(15);
+    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxRecordingSeconds).toBe(0);
+    expect(SAMPLE_POLICY_DEFAULTS.ANONYMOUS.maxSessionsPerUtcDay).toBe(0);
   });
 
-  it("Free: 1 recording a day, valid 24 h, 3 tracks, 3 projects, no downloads", () => {
+  it("Free: 1 recording a day, valid 24 h, 1 recording track (+ beat), 3 projects, no downloads of beats or files", () => {
     expect(SAMPLE_POLICY_DEFAULTS.FREE.maxSessionsPerUtcDay).toBe(1);
     expect(SAMPLE_POLICY_DEFAULTS.FREE.ttlSeconds).toBe(DAY);
-    expect(PREMIUM_TIER_MATRIX.FREE.studioMaxTracks).toBe(3);
+    expect(PLAN_POLICY.FREE.studio.maxRecordingTracks).toBe(1);
+    expect(maxRecordingTracksForTier("FREE")).toBe(1);
+    expect(PREMIUM_TIER_MATRIX.FREE.studioMaxTracks).toBe(2);
+    expect(PLAN_POLICY.FREE.downloads.beatsPerDay).toBe(0);
+    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(0);
     expect(PLAN_POLICY.FREE.studio.maxProjects).toBe(3);
     expect(PREMIUM_DOWNLOAD_BY_TIER.FREE).toEqual([]);
     expect(canDownloadFinishedPremiumFiles("FREE")).toBe(false);
@@ -66,7 +73,8 @@ describe("plan policy SSOT (Owner 2026-10-29)", () => {
       (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].recording.sessionsPerDay,
       (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].recording.takeTtlSeconds,
       (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].studio.maxProjects,
-      (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].studio.maxTracks,
+      (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].studio.maxRecordingTracks,
+      (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].downloads.beatsPerDay,
       (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].mastering.mastersPerMonth,
       (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].downloads.qualities.length,
       (t: (typeof PREMIUM_TIERS)[number]) => PLAN_POLICY[t].retentionDays,
@@ -88,7 +96,18 @@ describe("plan policy SSOT (Owner 2026-10-29)", () => {
 
   it("recording tools (calibration, loop, takes, comping) are for every signed-in plan, not for guests", () => {
     expect(PREMIUM_TIERS.every((t) => PLAN_POLICY[t].recording.studioRecordingTools)).toBe(true);
-    expect(GUEST_RECORDING_POLICY.studioRecordingTools).toBe(false);
+    expect(GUEST_POLICY.studio).toBe(false);
+  });
+
+  it("guests: no Studio, no recording, no beat downloads, 20 s preview", () => {
+    expect(GUEST_POLICY).toEqual({ studio: false, recording: false, beatDownloadsPerDay: 0, previewSeconds: 20 });
+  });
+
+  it("recording tracks per project 1 / 2 / 4 / 7 (beat not counted); beat downloads a day 0 / 10 / 25 / 50", () => {
+    expect(PREMIUM_TIERS.map(maxRecordingTracksForTier)).toEqual([1, 2, 4, 7]);
+    expect(PREMIUM_TIERS.map((t) => PREMIUM_TIER_MATRIX[t].studioMaxTracks)).toEqual([2, 3, 5, 8]);
+    expect(PREMIUM_TIERS.map(beatDownloadsPerDayForTier)).toEqual([0, 10, 25, 50]);
+    expect(PREMIUM_TIERS.map((t) => PREMIUM_TIER_MATRIX[t].downloadsDaily)).toEqual([0, 10, 25, 50]);
   });
 });
 

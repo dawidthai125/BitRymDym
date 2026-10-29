@@ -125,6 +125,50 @@
     },
     "shared": {
       "noExpiry": "Bezterminowo"
+    },
+    "planLocks": {
+      "guestDownload": "Zaloguj się, aby pobrać.",
+      "guestRecord": "Zaloguj się, aby nagrywać.",
+      "guestLink": "Zaloguj się",
+      "planDownload": "Pobieranie jest od planu {plan}.",
+      "planTrack": "Więcej ścieżek nagrań od planu {plan}.",
+      "planLink": "Zobacz plany"
+    },
+    "planUsage": {
+      "aria": "Plan {plan} — pokaż limity",
+      "tytul": "Twój plan: {plan}",
+      "wczytuje": "Wczytuję limity…",
+      "chipPobrania": "Pobrania",
+      "chipProjekty": "Projekty",
+      "odPlanu": "od {plan}",
+      "naProjekt": "maks. {n}",
+      "bezLimitu": "{used} · bez limitu",
+      "odnowienie": "od nowa {kiedy}",
+      "dobaUtc": "Dzienne limity liczą się od północy UTC.",
+      "plany": "Plany i limity",
+      "pozycja": {
+        "beatDownloads": "Pobrania bitów",
+        "studioExports": "Pliki ze Studia",
+        "projects": "Projekty Studio",
+        "recordingsToday": "Nagrania",
+        "activeTakes": "Zapisane take'i",
+        "masters": "Mastery",
+        "tracks": "Ścieżki nagrań w projekcie"
+      },
+      "okres": {
+        "day": "dziś",
+        "week": "ostatnie 7 dni",
+        "month": "w tym miesiącu",
+        "total": "razem",
+        "perProject": "bit się nie liczy"
+      }
+    },
+    "guestPreview": {
+      "tytul": "To był {s}-sekundowy podgląd",
+      "opis": "Zaloguj się, aby słuchać całych bitów, nagrywać i korzystać ze Studia.",
+      "zaloguj": "Zaloguj się",
+      "zalozKonto": "Załóż konto",
+      "zamknij": "Zamknij"
     }
   },
   "account": {
@@ -234,7 +278,7 @@
       "karta": {
         "take": "Take do {s} s · {n, plural, one {# nagranie} few {# nagrania} many {# nagrań} other {# nagrania}} dziennie",
         "waznosc": "Nagranie ważne {h} h",
-        "projekty": "{p, plural, one {# projekt} few {# projekty} many {# projektów} other {# projektu}} · {t, plural, one {# ścieżka} few {# ścieżki} many {# ścieżek} other {# ścieżki}} w projekcie",
+        "projekty": "{p, plural, one {# projekt} few {# projekty} many {# projektów} other {# projektu}} · {t, plural, one {# ścieżka nagrań} few {# ścieżki nagrań} many {# ścieżek nagrań} other {# ścieżki nagrań}} (+ bit)",
         "mastery": "{n} masterów w miesiącu",
         "pobieranie": "Pobieranie do {q}",
         "bezPobierania": "Bez pobierania (tylko odsłuch)",
@@ -267,7 +311,7 @@
         "waznosc": "Ważność nagrania",
         "godziny": "{n} h",
         "projekty": "Projekty Studio",
-        "sciezki": "Ścieżki w projekcie",
+        "sciezki": "Ścieżki nagrań w projekcie (bit się nie liczy)",
         "mastery": "Mastery / miesiąc",
         "pobieranie": "Pobieranie gotowych plików",
         "doJakosci": "do {q}",
@@ -279,10 +323,10 @@
         "bity": "Pobrania bitów / dzień"
       },
       "przypis": {
-        "gosc": "Bez konta: take do {s} s, {n, plural, one {# nagranie} few {# nagrania} many {# nagrań} other {# nagrania}} dziennie, ważne {h} h; {bity, plural, one {# pobranie} few {# pobrania} many {# pobrań} other {# pobrania}} bitów dziennie. Studio wymaga konta.",
+        "gosc": "Bez konta: odsłuch {s} s każdego bitu. Nagrywanie, pobieranie i Studio wymagają konta.",
         "narzedzia": "Kalibracja opóźnienia, pętla sekcji, take'i i comping są dla każdego zalogowanego — w limitach jego planu.",
         "mastery": "Mastery liczymy w miesiącu kalendarzowym (czas polski). Nieudany master się nie liczy.",
-        "free": "Free nie pobiera gotowych plików — przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
+        "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
         "raw": "Surowy plik własnego nagrania: tylko {plan}, do {n} pobrań dziennie.",
         "referencja": "Mastering z referencją jest w przygotowaniu: w Gold w cenie, w Silver jako płatny dodatek."
@@ -789,7 +833,8 @@
       "podobneBity": "Podobne bity",
       "tempo2": "· Tempo",
       "nagrajNaTymBicie": "Nagraj na tym bicie",
-      "wbijaszMicLapieszTake": "Wbijasz mic, łapiesz take przed limitem, odsłuchujesz poniżej."
+      "wbijaszMicLapieszTake": "Wbijasz mic, łapiesz take przed limitem, odsłuchujesz poniżej.",
+      "pobierz": "Pobierz"
     },
     "beatNotFound": {
       "bitNiedostepny": "Bit niedostępny",
@@ -966,6 +1011,12 @@
       "count": "{count, plural, one {# bit} few {# bity} many {# bitów} other {# bitu}}",
       "emptyStatus": "Cicho. Brak bitów dla tych filtrów.",
       "ofTotal": "{label} · z {total}"
+    },
+    "recordGuest": {
+      "tytul": "Nagrywanie jest dla zalogowanych",
+      "opis": "Załóż darmowe konto, żeby nagrać zwrotkę do tego bitu i otworzyć ją w Studiu.",
+      "zaloguj": "Zaloguj się",
+      "zalozKonto": "Załóż konto"
     }
   },
   "home": {
@@ -1144,7 +1195,7 @@
       "inspector": "Inspektor",
       "mixer": "Mikser",
       "wiecej": "Więcej",
-      "sciezkiBitLiczonyMaster": "Ścieżki {v0} (Bit liczony, Master nie)",
+      "sciezkiBitLiczonyMaster": "Ścieżki nagrań {v0} (bit i Master się nie liczą)",
       "zmienPakiet": "Zmień pakiet",
       "maksymalnyLimitSciezek": "Maksymalny limit ścieżek",
       "snapKliknijAbyZmienic": "Przyciąganie: {v0} (kliknij, aby zmienić: WYŁ. / 20 / 100 / 1000 ms)",

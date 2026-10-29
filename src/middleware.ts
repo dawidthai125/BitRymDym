@@ -1,9 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/** Guests have no Studio (Owner 2026-10-29): pages → sign-in, APIs → 401. */
+export function isGuestBlockedPath(pathname: string): "page" | "api" | null {
+  if (pathname === "/studio" || pathname.startsWith("/studio/")) return "page";
+  if (pathname.startsWith("/api/studio/")) return "api";
+  if (pathname.startsWith("/api/takes/anon/")) return "api";
+  return null;
+}
+
 /**
  * Refresh Supabase auth cookies on each request.
- * Route authorization for protected pages is enforced in Server Components / actions.
+ * Route authorization for protected pages is enforced in Server Components / actions;
+ * the guest Studio gate here is an early, cheap first line (pages re-check).
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -40,7 +49,25 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  const blocked = isGuestBlockedPath(request.nextUrl.pathname);
+  // Only a definite "no session" blocks; an auth outage falls through to the
+  // page/API checks instead of locking signed-in users out.
+  const noSession =
+    !data?.user && (!error || error.name === "AuthSessionMissingError" || error.status === 401 || error.status === 403);
+  if (blocked && noSession) {
+    if (blocked === "api") {
+      return NextResponse.json(
+        { error: "Zaloguj się, aby korzystać ze Studia.", code: "LOGIN_REQUIRED" },
+        { status: 401 },
+      );
+    }
+    const next = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    const target = request.nextUrl.clone();
+    target.pathname = "/sign-in";
+    target.search = `?next=${encodeURIComponent(next)}`;
+    return NextResponse.redirect(target);
+  }
   return response;
 }
 

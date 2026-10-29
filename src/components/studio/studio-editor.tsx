@@ -125,6 +125,7 @@ import {
   canAddStudioTrack,
   formatStudioTrackCapacityLabel,
   shouldShowStudioTrackUpgradeCta,
+  countRecordingTracks,
 } from "@/lib/studio/studio-track-capacity";
 import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
 import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-meter";
@@ -166,7 +167,7 @@ type FxPanelTarget =
   | { role: "master" }
   | { role: "track"; trackId: string };
 
-/** Phase 6 — server-resolved capacity SSOT (limits.studioMaxTracks). */
+/** Server-resolved capacity: plan-policy maxRecordingTracks (Bit not counted). */
 export type StudioTrackCapacityProps = {
   maxTracks: number;
   premiumTier: PremiumTier;
@@ -432,7 +433,8 @@ function StudioEditorInner({
   const trackMenuTrack = trackMenuId
     ? (doc.tracks.find((t) => t.id === trackMenuId) ?? null)
     : null;
-  const trackCount = doc.tracks.length;
+  // Recording tracks only — the Bit track does not count against the plan.
+  const trackCount = countRecordingTracks(doc.tracks);
   const maxTracks = trackCapacity.maxTracks;
   const atTrackCapacity = !canAddStudioTrack({
     currentTrackCount: trackCount,

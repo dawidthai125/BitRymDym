@@ -24,8 +24,8 @@ export const W2B_FIXTURE_TIER_SEQUENCE: readonly W2BFixtureTierPlan[] = [
  * Used by verification plans — not a second runtime SSOT.
  */
 export const W2B_FIXTURE_EXPECTED_DOWNLOADS_DAILY = {
-  ANON: 2,
-  FREE: 4,
+  ANON: 0,
+  FREE: 0,
   BRONZE: 10,
   SILVER: 25,
   GOLD: 50,

@@ -8,6 +8,7 @@ import { SiteMainNav } from "@/components/site/site-main-nav";
 import { siteNavLinkClass } from "@/components/site/site-nav-active";
 import { SkipToMainContent } from "@/components/site/skip-to-main";
 import { LanguageSwitcher } from "@/components/site/language-switcher";
+import { PlanBadge } from "@/components/plans/plan-badge";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { UserMenu } from "@/components/site/user-menu";
 import {
@@ -68,6 +69,9 @@ export async function SiteHeader({
           {/* Motyw bezpośrednio przy Zaloguj / menu konta — także na mobile */}
           <LanguageSwitcher className="hidden shrink-0 md:inline-flex" />
           <ThemeToggle className="shrink-0" />
+          {session ? (
+            <PlanBadge userKey={session.userId} />
+          ) : null}
           {session ? (
             <UserMenu
               displayName={displayName}

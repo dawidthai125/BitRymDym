@@ -125,6 +125,50 @@
     },
     "shared": {
       "noExpiry": "No expiry"
+    },
+    "planLocks": {
+      "guestDownload": "Sign in to download.",
+      "guestRecord": "Sign in to record.",
+      "guestLink": "Sign in",
+      "planDownload": "Downloads start with the {plan} plan.",
+      "planTrack": "More recording tracks with the {plan} plan.",
+      "planLink": "See plans"
+    },
+    "planUsage": {
+      "aria": "{plan} plan — show limits",
+      "tytul": "Your plan: {plan}",
+      "wczytuje": "Loading limits…",
+      "chipPobrania": "Downloads",
+      "chipProjekty": "Projects",
+      "odPlanu": "from {plan}",
+      "naProjekt": "max {n}",
+      "bezLimitu": "{used} · no limit",
+      "odnowienie": "resets {kiedy}",
+      "dobaUtc": "Daily limits reset at midnight UTC.",
+      "plany": "Plans and limits",
+      "pozycja": {
+        "beatDownloads": "Beat downloads",
+        "studioExports": "Studio files",
+        "projects": "Studio projects",
+        "recordingsToday": "Recordings",
+        "activeTakes": "Saved takes",
+        "masters": "Masters",
+        "tracks": "Recording tracks per project"
+      },
+      "okres": {
+        "day": "today",
+        "week": "last 7 days",
+        "month": "this month",
+        "total": "total",
+        "perProject": "the beat does not count"
+      }
+    },
+    "guestPreview": {
+      "tytul": "That was a {s}-second preview",
+      "opis": "Sign in to hear full beats, record and use Studio.",
+      "zaloguj": "Sign in",
+      "zalozKonto": "Create account",
+      "zamknij": "Close"
     }
   },
   "account": {
@@ -234,7 +278,7 @@
       "karta": {
         "take": "Takes up to {s} s · {n, plural, one {# recording} other {# recordings}} a day",
         "waznosc": "Recording valid {h} h",
-        "projekty": "{p, plural, one {# project} other {# projects}} · {t, plural, one {# track} other {# tracks}} per project",
+        "projekty": "{p, plural, one {# project} other {# projects}} · {t, plural, one {# recording track} other {# recording tracks}} (+ beat)",
         "mastery": "{n} masters a month",
         "pobieranie": "Downloads up to {q}",
         "bezPobierania": "No downloads (listen only)",
@@ -267,7 +311,7 @@
         "waznosc": "Recording validity",
         "godziny": "{n} h",
         "projekty": "Studio projects",
-        "sciezki": "Tracks per project",
+        "sciezki": "Recording tracks per project (beat not counted)",
         "mastery": "Masters / month",
         "pobieranie": "Finished-file downloads",
         "doJakosci": "up to {q}",
@@ -279,10 +323,10 @@
         "bity": "Beat downloads / day"
       },
       "przypis": {
-        "gosc": "Without an account: takes up to {s} s, {n} recordings a day, valid {h} h; {bity} beat downloads a day. Studio needs an account.",
+        "gosc": "Without an account: a {s}-second preview of every beat. Recording, downloads and Studio need an account.",
         "narzedzia": "Latency calibration, section loop, takes and comping are for everyone signed in — within their plan's limits.",
         "mastery": "Masters are counted per calendar month (Polish time). A failed master does not count.",
-        "free": "Free does not download finished files — the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
+        "free": "Free does not download beats or finished files — listen only; the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
         "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
         "raw": "Raw file of your own recording: {plan} only, up to {n} downloads a day.",
         "referencja": "Reference mastering is in the works: included in Gold, a paid add-on in Silver."
@@ -789,7 +833,8 @@
       "podobneBity": "Similar beats",
       "tempo2": "· Tempo",
       "nagrajNaTymBicie": "Record on this beat",
-      "wbijaszMicLapieszTake": "Grab the mic, catch a take before the limit, listen back below."
+      "wbijaszMicLapieszTake": "Grab the mic, catch a take before the limit, listen back below.",
+      "pobierz": "Download"
     },
     "beatNotFound": {
       "bitNiedostepny": "Beat unavailable",
@@ -966,6 +1011,12 @@
       "count": "{count, plural, one {# beat} other {# beats}}",
       "emptyStatus": "Quiet. No beats match these filters.",
       "ofTotal": "{label} · of {total}"
+    },
+    "recordGuest": {
+      "tytul": "Recording is for signed-in users",
+      "opis": "Create a free account to record a verse to this beat and open it in Studio.",
+      "zaloguj": "Sign in",
+      "zalozKonto": "Create account"
     }
   },
   "home": {
@@ -1144,7 +1195,7 @@
       "inspector": "Inspector",
       "mixer": "Mixer",
       "wiecej": "More",
-      "sciezkiBitLiczonyMaster": "Tracks {v0} (Beat counted, Master not)",
+      "sciezkiBitLiczonyMaster": "Recording tracks {v0} (beat and Master not counted)",
       "zmienPakiet": "Change plan",
       "maksymalnyLimitSciezek": "Maximum track limit",
       "snapKliknijAbyZmienic": "Snap: {v0} (click to change: OFF / 20 / 100 / 1000 ms)",

@@ -26,13 +26,14 @@ import { Button } from "@/components/ui/button";
 
 const initialState: AuthActionState = { error: null, success: false };
 
-export function SignInForm() {
+export function SignInForm({ next = null }: { next?: string | null } = {}) {
   const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signInAction, initialState);
 
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-1 text-sm">
         {t("eMail")}
         <input

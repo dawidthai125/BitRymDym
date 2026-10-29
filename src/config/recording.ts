@@ -4,7 +4,7 @@
  * Admin duration overrides for BRONZE/SILVER/GOLD live in DB (sample_policy_settings).
  */
 
-import { GUEST_RECORDING_POLICY, PLAN_POLICY } from "@/config/plan-policy";
+import { GUEST_POLICY, PLAN_POLICY } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
 export const TAKE_AUDIO_BUCKET = "take-audio";
@@ -47,8 +47,15 @@ export const OWN_TAKE_RAW_DOWNLOADS_DAILY = 5;
 /** P4 — max length for takes.title (CHECK + app validate). */
 export const TAKE_TITLE_MAX_LENGTH = 120;
 
-/** Anonymous take retention TTL (seconds). */
-export const ANON_TAKE_TTL_SECONDS = GUEST_RECORDING_POLICY.takeTtlSeconds;
+/**
+ * Legacy anonymous take TTL (seconds). Guests can no longer record
+ * (GUEST_POLICY.recording = false); kept so takes recorded before the change
+ * still expire and can be claimed after sign-in.
+ */
+export const ANON_TAKE_TTL_SECONDS = 2 * 60 * 60;
+
+/** Guests cannot record (Owner 2026-10-29). Guest take routes answer 401. */
+export const GUEST_RECORDING_ENABLED: boolean = GUEST_POLICY.recording;
 
 /** httpOnly opaque anonymous Take identity cookie (≠ brd_dl_aid). */
 export const ANON_TAKE_COOKIE_NAME = "brd_tk_aid";
@@ -91,17 +98,18 @@ function fromPlan(tier: PremiumTier): SamplePolicyDefaults {
 /**
  * Immutable default matrix (P1 Owner GO; Owner 2026-10-29: FREE 1 take/day, 24 h).
  * Duration for BRONZE/SILVER/GOLD may be overridden by Admin (1..180).
- * ANONYMOUS / FREE durations are system-fixed.
+ * FREE duration is system-fixed; ANONYMOUS cannot record (all zeros).
  */
 export const SAMPLE_POLICY_DEFAULTS: Record<
   SamplePolicyActor,
   SamplePolicyDefaults
 > = {
+  // Guests cannot record: take length n/a, zero sessions, zero READY takes.
   ANONYMOUS: {
-    maxRecordingSeconds: GUEST_RECORDING_POLICY.maxTakeSeconds,
+    maxRecordingSeconds: 0,
     ttlSeconds: ANON_TAKE_TTL_SECONDS,
-    maxActiveReady: GUEST_RECORDING_POLICY.maxActiveReady,
-    maxSessionsPerUtcDay: GUEST_RECORDING_POLICY.sessionsPerDay,
+    maxActiveReady: 0,
+    maxSessionsPerUtcDay: 0,
     canDownloadOwnTake: false,
   },
   FREE: fromPlan("FREE"),

@@ -7,14 +7,13 @@ import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { AppShell } from "@/components/site/app-shell";
 import {
-  GUEST_RECORDING_POLICY,
+  GUEST_POLICY,
   PLAN_PAYMENTS_AVAILABLE,
   PLAN_POLICY,
   PLAN_TRIAL_DAYS,
   yearlySavingPercent,
   type PlanDownloadQuality,
 } from "@/config/plan-policy";
-import { PREMIUM_ANON_DOWNLOADS_DAILY, PREMIUM_TIER_MATRIX } from "@/config/premium-tiers";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
 import type { PremiumTier } from "@/types/premium";
 
@@ -44,7 +43,7 @@ export default function PremiumPage() {
     { id: "sesje", label: tr("tab.sesje"), cell: (x) => String(PLAN_POLICY[x].recording.sessionsPerDay) },
     { id: "waznosc", label: tr("tab.waznosc"), cell: (x) => tr("tab.godziny", { n: hours(PLAN_POLICY[x].recording.takeTtlSeconds) }) },
     { id: "projekty", label: tr("tab.projekty"), cell: (x) => String(PLAN_POLICY[x].studio.maxProjects) },
-    { id: "sciezki", label: tr("tab.sciezki"), cell: (x) => String(PLAN_POLICY[x].studio.maxTracks) },
+    { id: "sciezki", label: tr("tab.sciezki"), cell: (x) => String(PLAN_POLICY[x].studio.maxRecordingTracks) },
     { id: "mastery", label: tr("tab.mastery"), cell: (x) => String(PLAN_POLICY[x].mastering.mastersPerMonth) },
     {
       id: "pobieranie",
@@ -57,7 +56,7 @@ export default function PremiumPage() {
     { id: "projektZip", label: tr("tab.projektZip"), cell: (x) => (PLAN_POLICY[x].downloads.projectZip ? "✓" : "—") },
     { id: "przechowywanie", label: tr("tab.przechowywanie"), cell: (x) => tr("tab.dni", { n: PLAN_POLICY[x].retentionDays }) },
     { id: "referencja", label: tr("tab.referencja"), cell: (x) => tr(`referencja.${PLAN_POLICY[x].mastering.referenceMastering}`) },
-    { id: "bity", label: tr("tab.bity"), cell: (x) => String(PREMIUM_TIER_MATRIX[x].downloadsDaily) },
+    { id: "bity", label: tr("tab.bity"), cell: (x) => (PLAN_POLICY[x].downloads.beatsPerDay > 0 ? String(PLAN_POLICY[x].downloads.beatsPerDay) : tr("tab.brakPobierania")) },
   ];
 
   return (
@@ -105,7 +104,7 @@ export default function PremiumPage() {
                     <ul className="flex flex-col gap-1 text-sm leading-snug">
                       <li>{tr("karta.take", { s: p.recording.maxTakeSeconds, n: p.recording.sessionsPerDay })}</li>
                       <li>{tr("karta.waznosc", { h: hours(p.recording.takeTtlSeconds) })}</li>
-                      <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxTracks })}</li>
+                      <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxRecordingTracks })}</li>
                       <li>{tr("karta.mastery", { n: p.mastering.mastersPerMonth })}</li>
                       <li>{bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
                       {p.mastering.referenceMastering !== "none" ? <li>{tr(`karta.referencja.${p.mastering.referenceMastering}`)}</li> : null}
@@ -143,7 +142,7 @@ export default function PremiumPage() {
               </table>
             </OverflowXScrollRegion>
             <ul className="mt-3 space-y-1 text-xs leading-relaxed text-[var(--brd-mute)]">
-              <li>{tr("przypis.gosc", { s: GUEST_RECORDING_POLICY.maxTakeSeconds, n: GUEST_RECORDING_POLICY.sessionsPerDay, h: hours(GUEST_RECORDING_POLICY.takeTtlSeconds), bity: PREMIUM_ANON_DOWNLOADS_DAILY })}</li>
+              <li>{tr("przypis.gosc", { s: GUEST_POLICY.previewSeconds })}</li>
               <li>{tr("przypis.narzedzia")}</li>
               <li>{tr("przypis.mastery")}</li>
               <li>{tr("przypis.free")}</li>

@@ -111,13 +111,13 @@ describe("Recording Wave 4 — Sample Policy (Premium Tier)", () => {
     expect(recordingModeForMaxSeconds(31)).toBe("FULL");
   });
 
-  it("ANONYMOUS is 15s", () => {
+  it("ANONYMOUS is 0s (guests cannot record)", () => {
     expect(
       assertAnonTakeRecordAccess({
         tokenHash: "a".repeat(64),
         beat: { id: "b", status: "PUBLISHED", durationSeconds: 90 },
       }).maxRecordingSeconds,
-    ).toBe(15);
+    ).toBe(0);
   });
 });
 

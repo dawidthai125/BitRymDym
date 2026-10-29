@@ -12,6 +12,7 @@ import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
 import { DownloadButton } from "@/components/beats/download-button";
+import { LockedAction, type LockReason } from "@/components/plans/locked-action";
 import { usePlayer } from "@/components/player/player-provider";
 import { BeatRecordingSurface } from "@/components/takes/beat-recording-surface";
 import { formatDurationSeconds } from "@/lib/beats/public";
@@ -28,6 +29,8 @@ type BeatDetailClientProps = {
   isAuthenticated: boolean;
   /** P0 — false for PLATFORM masters (server-computed). */
   originalMasterDownloadAllowed: boolean;
+  /** Server-resolved: guest → sign in, plan → Free (listen only). */
+  downloadLock?: LockReason | null;
   maxRecordingSeconds: number;
   mixTakes: Array<{
     id: string;
@@ -46,6 +49,7 @@ export function BeatDetailClient({
   hasAudio,
   isAuthenticated,
   originalMasterDownloadAllowed,
+  downloadLock = null,
   maxRecordingSeconds,
   mixTakes,
   mixEnabled,
@@ -316,7 +320,14 @@ export function BeatDetailClient({
                 {t("nagraj")}
               </a>
             ) : null}
-            {hasAudio && originalMasterDownloadAllowed ? (
+            {hasAudio && originalMasterDownloadAllowed && downloadLock ? (
+              <LockedAction
+                reason={downloadLock}
+                testId="beat-download-locked"
+              >
+                {t("pobierz")}
+              </LockedAction>
+            ) : hasAudio && originalMasterDownloadAllowed ? (
               <DownloadButton
                 beatId={beat.id}
                 title={tl(beat.title)}
