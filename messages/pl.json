@@ -1712,6 +1712,168 @@
       "beat": "Bit",
       "instrument": "Instrument",
       "other": "Inne"
+    },
+    "mixStep": {
+      "krokNagranie": "Nagranie",
+      "krokMix": "Mix",
+      "krokMastering": "Mastering",
+      "krokiAria": "Kroki utworu",
+      "przejdzDoMixu": "Przejdź do MIXU",
+      "przejdzDoMixuOpis": "Sprawdzimy, jak wokal brzmi na tle bitu.",
+      "wrocDoNagrania": "Wróć do nagrywania",
+      "tytul": "Mix",
+      "opis": "Analiza działa w Twojej przeglądarce. Nic nie wysyłamy na serwer. Mierzymy ścieżki bez efektów, z ich głośnością i panoramą.",
+      "analizuj": "Analizuj mix",
+      "analizujPonownie": "Analizuj ponownie",
+      "analizaTrwa": "Analizuję… {pct}%",
+      "anuluj": "Przerwij",
+      "nieaktualne": "Projekt zmienił się od ostatniej analizy. Uruchom ją ponownie.",
+      "blad": {
+        "no_audio": "Brak nagrań do analizy. Nagraj wokal albo wybierz bit.",
+        "decode_failed": "Nie udało się wczytać nagrań. Sprawdź połączenie i spróbuj ponownie.",
+        "timeout": "Analiza trwała za długo i została przerwana. Spróbuj ponownie albo skróć projekt.",
+        "aborted": "Analiza przerwana.",
+        "error": "Coś poszło nie tak podczas analizy. Spróbuj ponownie."
+      },
+      "werdykt": {
+        "green": "Mix gra. Możesz iść dalej.",
+        "yellow": "Prawie gotowe. Kilka rzeczy warto poprawić.",
+        "red": "Coś nie gra. Popraw czerwone punkty przed masteringiem."
+      },
+      "werdyktLicznik": "Czerwone: {red}, żółte: {yellow}",
+      "status": {
+        "green": "OK",
+        "yellow": "Uwaga",
+        "red": "Problem",
+        "na": "Nie dotyczy"
+      },
+      "popraw": "Popraw",
+      "poprawWkrotce": "Automatyczne poprawki pojawią się wkrótce.",
+      "przejdzDoMasteringu": "Przejdź do Masteringu",
+      "masteringZablokowany": "Najpierw popraw czerwone punkty.",
+      "masteringWkrotce": "Mastering pod Spotify, YouTube, słuchawki i klub pojawi się wkrótce. Twój mix jest gotowy.",
+      "masteringTytul": "Mastering — wkrótce",
+      "tabelaTytul": "Głośność ścieżek",
+      "tabelaSciezka": "Ścieżka",
+      "tabelaRola": "Rola",
+      "tabelaLufs": "LUFS (całość)",
+      "tabelaSt": "LUFS (3 s, maks.)",
+      "tabelaSzczyt": "Szczyt",
+      "tabelaSuma": "Całość (suma)",
+      "czasAnalizy": "Analiza: {s} s",
+      "cards": {
+        "loudness": {
+          "title": "Głośność",
+          "ok": "Całość ma {lufs} LUFS, najgłośniejszy fragment {st} LUFS. Mastering ustawi docelową głośność.",
+          "silent": "Nie słychać żadnego dźwięku. Sprawdź, czy ścieżki nie są wyciszone.",
+          "quiet": "Całość jest bardzo cicha ({lufs} LUFS). Podnieś głośność ścieżek.",
+          "hot": "Całość jest już bardzo głośna ({lufs} LUFS). Zostaw miejsce na mastering."
+        },
+        "balance": {
+          "title": "Wokal a bit",
+          "ok": "Wokal jest {lu} LU względem bitu. Tak ma być.",
+          "noBeat": "Brak bitu w projekcie, więc nie ma z czym porównać wokalu.",
+          "noVocal": "Brak wokalu w projekcie. Nagraj go albo ustaw rolę ścieżki.",
+          "vocalBuried": "Wokal ginie w bicie ({lu} LU). Podgłośnij wokal albo ścisz bit.",
+          "vocalTooLoud": "Wokal jest dużo głośniejszy od bitu ({lu} LU). Bit brzmi jak tło.",
+          "vocalLow": "Wokal jest trochę za cichy względem bitu ({lu} LU).",
+          "vocalHigh": "Wokal jest trochę za głośny względem bitu ({lu} LU)."
+        },
+        "presence": {
+          "title": "Czytelność słów",
+          "na": "Brak wokalu albo bitu do porównania.",
+          "ok": "Słowa są czytelne. W paśmie mowy wokal ma przewagę {db} dB.",
+          "weak": "Słowa są słabo czytelne. Przewaga wokalu w paśmie mowy to tylko {db} dB.",
+          "covered": "Bit zasłania słowa (pasmo mowy {db} dB). Wokal potrzebuje miejsca."
+        },
+        "masking": {
+          "title": "Maskowanie",
+          "na": "Brak wokalu albo bitu do porównania.",
+          "ok": "Bit rzadko przykrywa wokal ({pct}% czasu).",
+          "some": "Bit czasem przykrywa wokal ({pct}% czasu).",
+          "heavy": "Wokal zlewa się z bitem przez {pct}% czasu."
+        },
+        "sibilance": {
+          "title": "Sybilanty (s, sz, cz)",
+          "na": "Za mało wokalu do oceny.",
+          "ok": "Głoski s i sz brzmią naturalnie.",
+          "some": "Głoski s i sz są trochę ostre ({db} dB).",
+          "harsh": "Głoski s i sz kłują w uszy ({db} dB)."
+        },
+        "clipping": {
+          "title": "Przester",
+          "ok": "Brak przesteru. Szczyt sumy {tp} dBTP.",
+          "clipped": "Nagranie jest przesterowane ({events} miejsc). Ścisz ścieżkę albo nagraj ciszej.",
+          "overPeak": "Suma przekracza 0 dB ({tp} dBTP). Ścisz ścieżki albo całość.",
+          "fewClips": "Kilka krótkich przesterów ({events}). Warto ściszyć najgłośniejszą ścieżkę.",
+          "lowHeadroom": "Mało zapasu na mastering (szczyt {tp} dBTP). Ścisz całość o 2–3 dB.",
+          "silent": "Brak dźwięku do sprawdzenia."
+        },
+        "noise": {
+          "title": "Szum tła",
+          "na": "Za mało nagranego wokalu, żeby ocenić szum.",
+          "ok": "Tło jest czyste.",
+          "some": "Słychać lekki szum w „{track}” ({db} dBFS).",
+          "loud": "W „{track}” słychać wyraźny szum pokoju ({db} dBFS)."
+        },
+        "stereo": {
+          "title": "Stereo",
+          "na": "Brak dźwięku do sprawdzenia.",
+          "ok": "Stereo jest zdrowe (korelacja {corr}). Na telefonie też zabrzmi dobrze.",
+          "wide": "Mix jest bardzo szeroki (korelacja {corr}). Na jednym głośniku coś może zniknąć.",
+          "phase": "Kanały się znoszą (korelacja {corr}). Na telefonie część dźwięku zniknie."
+        },
+        "panorama": {
+          "title": "Adliby i podbicia",
+          "ok": "Adliby i podbicia są rozłożone na boki, a główny wokal jest w środku.",
+          "noAdlibs": "Brak adlibów i podbić. Główny wokal jest w środku.",
+          "leadOffCentre": "Główny wokal nie jest w środku ({names}). Przesuń go na środek.",
+          "adlibsCentred": "Adliby stoją w środku ({names}). Rozłóż je na boki.",
+          "oneSide": "Wszystkie adliby są po jednej stronie. Rozłóż je na lewo i prawo.",
+          "na": "Brak dźwięku do sprawdzenia."
+        }
+      }
+    },
+    "bitek": {
+      "nazwa": "BITEK",
+      "podtytul": "Twój przewodnik po studiu",
+      "panelAria": "BITEK, przewodnik po studiu",
+      "czatWkrotce": "Czat z BITKIEM i polecenia typu „głośniej wokal” pojawią się wkrótce.",
+      "czatPlaceholder": "Napisz polecenie… (wkrótce)",
+      "akcja": {
+        "goMix": "Przejdź do MIXU",
+        "goRecord": "Wróć do nagrywania",
+        "analyze": "Analizuj mix",
+        "chooseBeat": "Wybierz bit",
+        "record": "Nagraj"
+      },
+      "msg": {
+        "recording": "Nagrywam. Skup się na wokalu, a ja poczekam.",
+        "chooseBeat": "Cześć! Zacznij od wyboru bitu, na którym nagrasz wokal.",
+        "recordVocal": "Bit jest. Teraz nagraj wokal główny.",
+        "readyForMix": "Masz {count, plural, one {# nagranie} few {# nagrania} other {# nagrań}}. Gdy skończysz, przejdź do MIXU, a sprawdzę, jak wokal siedzi w bicie.",
+        "mixNeedsVocal": "Do miksu potrzebuję choć jednego nagrania. Wróć do nagrywania.",
+        "mixIntro": "Kliknij „Analizuj mix”. Posłucham wokalu na tle bitu i powiem po ludzku, co gra, a co nie.",
+        "mixRunning": "Słucham… {pct}%",
+        "mixFailed": "Nie udało mi się przeanalizować miksu. Spróbujmy jeszcze raz.",
+        "mixStale": "Coś się zmieniło od ostatniej analizy. Sprawdzę jeszcze raz.",
+        "mixHasRed": "{count, plural, one {Jedna rzecz wymaga} few {# rzeczy wymagają} other {# rzeczy wymaga}} poprawy przed masteringiem. Zacznijmy od najważniejszej.",
+        "mixRecheck": "Po poprawkach kliknij „Analizuj ponownie”.",
+        "mixHasYellow": "Nie ma czerwonych punktów. {count, plural, one {Jedną rzecz} other {# rzeczy}} warto jeszcze dopracować.",
+        "mixAllGreen": "Wszystko gra! Wokal dobrze siedzi w bicie.",
+        "mixReadyForMaster": "Możesz przejść do masteringu. Ten krok pojawi się wkrótce.",
+        "fix": {
+          "clipping": "Przester: ścisz przesterowaną ścieżkę o 3–6 dB. Jeśli przester jest w samym nagraniu, nagraj ten fragment ciszej.",
+          "balance": "Wokal a bit: zmień suwak głośności wokalu albo bitu, aż wokal będzie 0–3 LU nad bitem.",
+          "presence": "Czytelność: podgłośnij wokal albo ścisz bit o 2–3 dB. W EQ wokalu podbij lekko 3 kHz.",
+          "masking": "Maskowanie: ścisz bit o 2 dB albo w EQ bitu przytnij środek (1–4 kHz).",
+          "noise": "Szum: nagraj w cichszym miejscu, bliżej mikrofonu. Odszumianie pojawi się w kolejnym etapie.",
+          "sibilance": "Sybilanty: odsuń mikrofon trochę w bok od ust albo w EQ wokalu ścisz górę (6–8 kHz).",
+          "stereo": "Stereo: sprawdź, czy któraś ścieżka nie jest w przeciwfazie, i zawęź najszersze ścieżki.",
+          "panorama": "Panorama: główny wokal zostaw w środku, adliby przesuń na lewo i prawo o 30–60.",
+          "loudness": "Głośność: ustaw suwaki tak, żeby całość nie była ani za cicha, ani przesterowana."
+        }
+      }
     }
   },
   "nav": {
