@@ -123,6 +123,14 @@ export function StudioMixStep({
     abOverrideRef.current = onAbOverride;
   });
   useEffect(() => () => abOverrideRef.current?.(null), []);
+  // The editor passes a fresh `onApplyAutofix` every render. Keeping it out of
+  // the bubble memo stops the bubble → onBitekBubble → editor re-render →
+  // new callback → new bubble loop ("Maximum update depth exceeded" after Analizuj).
+  const applyAutofixRef = useRef(onApplyAutofix);
+  useEffect(() => {
+    applyAutofixRef.current = onApplyAutofix;
+  });
+  const canAutofix = Boolean(onApplyAutofix);
 
   const analyze = useCallback(async () => {
     abortRef.current?.abort();
@@ -179,7 +187,8 @@ export function StudioMixStep({
   };
 
   const runFix = async (fixes: readonly MixAutofixId[], key: string, summary: string) => {
-    if (!result || !onApplyAutofix || fixing || running || stale) return;
+    const applyAutofix = applyAutofixRef.current;
+    if (!result || !applyAutofix || fixing || running || stale) return;
     const plan = planMixAutofix({
       doc,
       metrics: result.metrics,
@@ -193,7 +202,7 @@ export function StudioMixStep({
     }
     setFixing(key);
     if (ab) onAbOverride?.(null);
-    const res = await onApplyAutofix(plan.ops, t("autofix.historia", { summary }));
+    const res = await applyAutofix(plan.ops, t("autofix.historia", { summary }));
     setFixing(null);
     if (!res.ok) {
       setPanel({ kind: "error", conflict: res.conflict });
@@ -302,7 +311,7 @@ export function StudioMixStep({
       const a = first.action;
       actions.push({ id: a, label: tBitek(`akcja.${a}`), primary: true, onClick: () => setPending((p) => ({ id: a, seq: (p?.seq ?? 0) + 1 })) });
     }
-    if (hasIssues && !stale && !running && onApplyAutofix) {
+    if (hasIssues && !stale && !running && canAutofix) {
       actions.push({ id: "fix-all", label: t("poprawWszystko"), primary: !first?.action, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) });
     }
     return {
@@ -312,7 +321,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, onApplyAutofix, result, autofixExhausted]);
+  }, [fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
