@@ -15,7 +15,8 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
 
-export type LockReason = "guest" | "plan";
+/** unavailable: never downloadable (PLATFORM catalogue original), no CTA. */
+export type LockReason = "guest" | "plan" | "unavailable";
 
 const TIER_LABEL: Record<PremiumTier, string> = {
   FREE: "Free",
@@ -79,7 +80,9 @@ export function LockedAction({
   }, [open]);
 
   const text =
-    reason === "guest"
+    reason === "unavailable"
+      ? t("platformDownload")
+      : reason === "guest"
       ? action === "record"
         ? t("guestRecord")
         : t("guestDownload")
@@ -141,7 +144,7 @@ export function LockedAction({
             >
               {t("guestLink")}
             </Link>
-          ) : (
+          ) : reason === "unavailable" ? null : (
             <Link
               href="/premium"
               className="font-medium text-[var(--brd-green)] underline underline-offset-2"

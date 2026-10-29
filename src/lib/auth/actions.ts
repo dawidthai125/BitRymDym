@@ -127,12 +127,14 @@ export async function signUpAction(
 
   if (outcome.kind === "session") {
     revalidatePath("/");
+    const next = safeNextPath(formData.get("next"));
     const context = await getCurrentProfile();
     if (context) {
       const claim = await tryClaimAnonTakeAfterAuth(context);
-      redirect(accountClaimRedirectPath(claim));
+      // Same rule as sign-in: a claimed guest take wins, else go back.
+      redirect(claim.ux === "none" && next ? next : accountClaimRedirectPath(claim));
     }
-    redirect("/account");
+    redirect(next ?? "/account");
   }
 
   return {

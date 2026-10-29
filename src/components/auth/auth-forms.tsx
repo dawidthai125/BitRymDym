@@ -70,13 +70,14 @@ export function SignInForm({ next = null }: { next?: string | null } = {}) {
   );
 }
 
-export function SignUpForm() {
+export function SignUpForm({ next = null }: { next?: string | null } = {}) {
   const tl = useLibText();
   const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signUpAction, initialState);
 
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-1 text-sm">
         {t("ksywka")}
         <input

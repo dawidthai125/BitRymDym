@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { SignInForm } from "@/components/auth/auth-forms";
 import { AuthThemeBar } from "@/components/site/auth-theme-bar";
-import { safeNextPath } from "@/lib/auth/next-path";
+import { safeNextPath, signUpPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 
 type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
@@ -29,7 +29,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
       <p className="text-sm text-muted-foreground">
         {t("nieMaszKonta")}{" "}
         <Link
-          href="/sign-up"
+          href={signUpPathWithNext(next)}
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
           {t("zalozKonto")}

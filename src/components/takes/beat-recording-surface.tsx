@@ -13,7 +13,7 @@ import {
   type PlaybackShellHandle,
 } from "@/components/player/playback-shell";
 import { RecordingPanel } from "@/components/takes/recording-panel";
-import { signInPathWithNext } from "@/lib/auth/next-path";
+import { signInPathWithNext, signUpPathWithNext } from "@/lib/auth/next-path";
 
 type BeatRecordingSurfaceProps = {
   beatId: string;
@@ -75,7 +75,7 @@ export function BeatRecordingSurface({
             {tg("zaloguj")}
           </Link>
           <Link
-            href="/sign-up"
+            href={signUpPathWithNext(pathname)}
             className="inline-flex min-h-11 items-center text-sm underline underline-offset-4"
           >
             {tg("zalozKonto")}

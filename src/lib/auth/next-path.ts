@@ -16,6 +16,13 @@ export function safeNextPath(raw: unknown): string | null {
   return value;
 }
 
+export function signUpPathWithNext(next: string | null | undefined): string {
+  const safe = safeNextPath(next);
+  return safe
+    ? `/sign-up?${SIGN_IN_NEXT_PARAM}=${encodeURIComponent(safe)}`
+    : "/sign-up";
+}
+
 export function signInPathWithNext(next: string): string {
   const safe = safeNextPath(next);
   return safe

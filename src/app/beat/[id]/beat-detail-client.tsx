@@ -334,12 +334,14 @@ export function BeatDetailClient({
                 isAuthenticated={isAuthenticated}
               />
             ) : hasAudio ? (
-              <p
-                className="text-sm text-[var(--brd-mute)]"
-                role="status"
+              // PLATFORM original: "Pobieranie oryginalnego bitu jest niedostępne."
+              // Locked button + tooltip, same pattern as guest/Free locks.
+              <LockedAction
+                reason="unavailable"
+                testId="beat-download-unavailable"
               >
-                {t("pobieranieOryginalnegoBituJest")}
-              </p>
+                {t("pobierz")}
+              </LockedAction>
             ) : null}
           </div>
         </div>
