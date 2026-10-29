@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  Big_Shoulders,
   IBM_Plex_Mono,
   Schibsted_Grotesk,
   Source_Serif_4,
@@ -41,6 +42,14 @@ const fontMeta = IBM_Plex_Mono({
   display: "swap",
 });
 
+/** Design v3 "Nocna sesja" — condensed poster face (homepage prototype first). */
+const fontPoster = Big_Shoulders({
+  subsets: ["latin", "latin-ext"],
+  weight: "variable",
+  variable: "--font-brd-poster",
+  display: "swap",
+});
+
 export const metadata: Metadata = siteMetadata;
 
 /** W6.2: enable env(safe-area-inset-*) on notched devices. */
@@ -65,6 +74,7 @@ export default function RootLayout({
         fontDisplay.variable,
         fontUi.variable,
         fontMeta.variable,
+        fontPoster.variable,
       )}
       suppressHydrationWarning
     >

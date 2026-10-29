@@ -218,3 +218,55 @@ html[data-theme="light"] {
   --background: var(--brd-paper);
   --foreground: var(--brd-ink);
 }
+
+/*
+  ─────────────────────────────────────────────────────────────────────────
+  "Nocna sesja" — design foundation v3 (prototype, homepage first).
+  Street / analog studio / music-magazine / club-neon accent. Dark-first.
+  Additive: nothing below remaps existing --brd-* tokens, so other surfaces
+  keep rendering as before. Later phases (catalog, Studio, panels) will map
+  --brd-* onto these values surface by surface.
+  ─────────────────────────────────────────────────────────────────────────
+*/
+:root {
+  /* Surfaces — warm soot, tape-deck brown, rack panel */
+  --tape-soot: #0e0c0a;
+  --tape-deck: #17130f;
+  --tape-panel: #211b15;
+  --tape-line: #3a3028;
+  --tape-line-strong: #5c4c3c;
+
+  /* Ink — label-paper cream (AA on soot: cream 16:1, soft 10:1, mute 6.4:1) */
+  --tape-cream: #f1e7d3;
+  --tape-cream-soft: #cdbfa6;
+  --tape-mute: #9e8f78;
+
+  /* Signal — VU amber (primary action), REC red, one club neon (sparingly) */
+  --tape-amber: #f2a93b;
+  --tape-amber-deep: #b9761e;
+  --tape-on-amber: #1a1006;
+  --tape-rec: #ff4b36;
+  --tape-neon: #ff4fa3;
+
+  /* Type — poster (Big Shoulders), editorial serif (Source Serif 4 italic),
+     UI grotesk (Schibsted), measurement mono (IBM Plex Mono). */
+  --tape-font-poster: var(--font-brd-poster), "Big Shoulders", "Arial Narrow",
+    sans-serif;
+  --tape-text-mega: clamp(3.6rem, 11vw, 9.5rem);
+  --tape-text-xl: clamp(2.4rem, 5.5vw, 4.75rem);
+  --tape-text-lg: clamp(1.6rem, 3vw, 2.4rem);
+  --tape-tracking-label: 0.18em;
+
+  /* Shape — hardware: sharp panels, round knobs/reels only */
+  --tape-r-panel: 2px;
+  --tape-r-knob: 999px;
+
+  /* Space — section rhythm */
+  --tape-section-y: clamp(3.5rem, 8vw, 7rem);
+
+  /* Motion — one authored moment (reels), exponential ease-out */
+  --tape-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --tape-dur-fast: 140ms;
+  --tape-dur-base: 260ms;
+  --tape-reel-spin: 2.4s;
+}
