@@ -1838,8 +1838,6 @@
       "nazwa": "BITEK",
       "podtytul": "Twój przewodnik po studiu",
       "panelAria": "BITEK, przewodnik po studiu",
-      "czatWkrotce": "Czat z BITKIEM i polecenia typu „głośniej wokal” pojawią się wkrótce.",
-      "czatPlaceholder": "Napisz polecenie… (wkrótce)",
       "akcja": {
         "goMix": "Przejdź do MIXU",
         "goRecord": "Wróć do nagrywania",
@@ -1872,6 +1870,31 @@
           "stereo": "Stereo: sprawdź, czy któraś ścieżka nie jest w przeciwfazie, i zawęź najszersze ścieżki.",
           "panorama": "Panorama: główny wokal zostaw w środku, adliby przesuń na lewo i prawo o 30–60.",
           "loudness": "Głośność: ustaw suwaki tak, żeby całość nie była ani za cicha, ani przesterowana."
+        }
+      },
+      "chat": {
+        "inputLabel": "Wiadomość do BITKA",
+        "placeholder": "Np. „głośniej wokal” albo „rozrzuć adliby”",
+        "wyslij": "Wyślij",
+        "pisze": "BITEK pisze…",
+        "ty": "Ty",
+        "zastosuj": "Zastosuj",
+        "zastosowano": "Zastosowano — cofniesz przez Ctrl+Z",
+        "propozycjaAria": "Propozycja zmiany: {label}",
+        "blad": "Nie udało się połączyć z BITKIEM. Spróbuj za chwilę.",
+        "limit": "Na dziś wystarczy — limit wiadomości do BITKA wyczerpany. Wróć jutro.",
+        "zaDlugie": "Za długa wiadomość (max {max} znaków).",
+        "licznik": "{n}/{max}",
+        "wyczysc": "Wyczyść rozmowę",
+        "otworz": "Pogadaj z BITKIEM",
+        "zwin": "Zwiń czat",
+        "info": "BITEK widzi tylko liczby z analizy i ustawienia ścieżek — nie słyszy nagrań. Zmiany wprowadza dopiero po Twoim kliknięciu.",
+        "powitanie": "Siema! Pytaj o miks albo napisz, co zmienić — zaproponuję konkretne ustawienie.",
+        "dostawca": {
+          "groq": "odpowiedź: Groq",
+          "gemini": "odpowiedź: Gemini",
+          "e3": "odpowiedź: serwer BitRymDym",
+          "rules": "odpowiedź: tryb podstawowy"
         }
       }
     }

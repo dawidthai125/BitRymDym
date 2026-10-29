@@ -1838,8 +1838,6 @@
       "nazwa": "BITEK",
       "podtytul": "Your studio guide",
       "panelAria": "BITEK, studio guide",
-      "czatWkrotce": "Chatting with BITEK and commands like “louder vocal” are coming soon.",
-      "czatPlaceholder": "Type a command… (soon)",
       "akcja": {
         "goMix": "Go to MIX",
         "goRecord": "Back to recording",
@@ -1872,6 +1870,31 @@
           "stereo": "Stereo: check no track is phase-inverted and narrow the widest tracks.",
           "panorama": "Panorama: keep the lead vocal centred, pan ad-libs left and right by 30–60.",
           "loudness": "Loudness: set the faders so the mix is neither too quiet nor clipping."
+        }
+      },
+      "chat": {
+        "inputLabel": "Message to BITEK",
+        "placeholder": "E.g. “louder vocal” or “spread adlibs”",
+        "wyslij": "Send",
+        "pisze": "BITEK is typing…",
+        "ty": "You",
+        "zastosuj": "Apply",
+        "zastosowano": "Applied — undo with Ctrl+Z",
+        "propozycjaAria": "Suggested change: {label}",
+        "blad": "Couldn't reach BITEK. Try again in a moment.",
+        "limit": "That's it for today — BITEK message limit reached. Come back tomorrow.",
+        "zaDlugie": "Message too long (max {max} characters).",
+        "licznik": "{n}/{max}",
+        "wyczysc": "Clear chat",
+        "otworz": "Chat with BITEK",
+        "zwin": "Collapse chat",
+        "info": "BITEK only sees the analysis numbers and track settings — it can't hear your recordings. Nothing changes until you click.",
+        "powitanie": "Hey! Ask about your mix or tell me what to change — I'll suggest a concrete setting.",
+        "dostawca": {
+          "groq": "answered by: Groq",
+          "gemini": "answered by: Gemini",
+          "e3": "answered by: BitRymDym server",
+          "rules": "answered by: basic mode"
         }
       }
     }

@@ -1,6 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useState } from "react";
+
+import { StudioBitekChat, type BitekApplyProposal } from "@/components/studio/studio-bitek-chat";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +12,14 @@ import {
   type BitekBrain,
   type BitekState,
 } from "@/lib/studio/bitek/bitek-guide";
+import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+
+export type StudioBitekChatProps = {
+  projectId: string;
+  getContext: () => BitekClientContext;
+  onApplyProposal: BitekApplyProposal;
+  disabled?: boolean;
+};
 
 const TONE_CLASS: Record<string, string> = {
   info: "border-l-[var(--brd-line)]",
@@ -24,15 +35,19 @@ const TONE_CLASS: Record<string, string> = {
 export function StudioBitekPanel({
   state,
   onAction,
-  compact = false,
+  compact: compactProp = false,
   brain = bitekRulesBrain,
+  chat,
 }: {
   state: BitekState;
   onAction: (action: BitekAction) => void;
   compact?: boolean;
   brain?: BitekBrain;
+  chat?: StudioBitekChatProps;
 }) {
   const t = useTranslations("studio.bitek");
+  const [expanded, setExpanded] = useState(false);
+  const compact = compactProp && !expanded;
   const messages = brain.guide(state);
   const shown = compact ? messages.slice(0, 1) : messages;
   return (
@@ -85,24 +100,20 @@ export function StudioBitekPanel({
           </li>
         ))}
       </ul>
-      {compact ? null : (
-        <div className="flex flex-col gap-1">
-          <label htmlFor="studio-bitek-input" className="sr-only">
-            {t("czatPlaceholder")}
-          </label>
-          <input
-            id="studio-bitek-input"
-            data-testid="studio-bitek-input"
-            disabled
-            aria-describedby="studio-bitek-soon"
-            placeholder={t("czatPlaceholder")}
-            className="h-9 w-full rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-recess)] px-2 text-sm text-[var(--brd-mute)] disabled:cursor-not-allowed"
-          />
-          <p id="studio-bitek-soon" className="text-xs text-[var(--brd-mute)]">
-            {t("czatWkrotce")}
-          </p>
-        </div>
-      )}
+      {chat && compactProp ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-9"
+          aria-expanded={expanded}
+          data-testid="studio-bitek-toggle-chat"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? t("chat.zwin") : t("chat.otworz")}
+        </Button>
+      ) : null}
+      {chat && !compact ? <StudioBitekChat {...chat} /> : null}
     </section>
   );
 }
