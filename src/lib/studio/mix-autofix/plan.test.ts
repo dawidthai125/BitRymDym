@@ -338,3 +338,16 @@ describe("Stage 2 autofix — i18n", () => {
     for (const text of Object.values(plNotes)) expect(text).toMatch(/(łem|łam|łem też|Dodałem|Ustawiłem)/);
   });
 });
+
+describe("upsertFx canonical order", () => {
+  it("inserts highpass before compressor and updates in place", () => {
+    let n = 0;
+    const id = () => `00000000-0000-4000-8000-00000000000${n++}`;
+    const comp = upsertFx(emptyStudioFxChain(), "compressor", (p) => p, id)!;
+    const both = upsertFx(comp, "highpass", (p) => ({ ...p, frequencyHz: 100 }), id)!;
+    expect(both.effects.map((e) => e.type)).toEqual(["highpass", "compressor"]);
+    const again = upsertFx(both, "highpass", (p) => ({ ...p, frequencyHz: 120 }), id)!;
+    expect(again.effects).toHaveLength(2);
+    expect((again.effects[0]!.params as { frequencyHz: number }).frequencyHz).toBe(120);
+  });
+});
