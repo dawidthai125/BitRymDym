@@ -1,6 +1,6 @@
 # Studio Mastering worker (E3) — runbook
 
-Status: **przygotowane, NIE zainstalowane**. Migracja `20261029180000_studio_master_and_downloads.sql` musi być najpierw zastosowana (ręcznie, przez właściciela).
+Status: **przygotowane, NIE zainstalowane**. Migracja `20261029173914_studio_master_and_downloads.sql` musi być najpierw zastosowana (ręcznie, przez właściciela).
 
 ## Co robi
 Kolejka `studio_master_jobs` (claim/complete RPC, service_role, SKIP LOCKED, max 3 próby).

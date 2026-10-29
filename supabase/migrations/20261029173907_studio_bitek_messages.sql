@@ -1,5 +1,5 @@
 -- Stage 2b — BITEK per project: chat history, BITEK notes (fixes, tips,
--- welcome) and the bubble state. PREPARED — NOT APPLIED to production.
+-- welcome) and the bubble state. Applied to production 2026-10-29.
 --
 -- Access: owner of the project (read) and service_role (read/write via API
 -- routes, which check ownership). Bounded: CHECKs on size + trim trigger

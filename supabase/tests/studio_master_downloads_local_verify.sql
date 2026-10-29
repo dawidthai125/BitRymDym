@@ -1,4 +1,4 @@
--- Local verification for 20261029180000_studio_master_and_downloads.sql (embedded Postgres, never prod).
+-- Local verification for 20261029173914_studio_master_and_downloads.sql (embedded Postgres, never prod).
 \set ON_ERROR_STOP 1
 begin;
 select id as u1 from auth.users order by id limit 1 \gset

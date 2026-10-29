@@ -1,6 +1,6 @@
 -- Stage 3 — Studio Mastering jobs (E3 queue) + final-track approval +
 -- server-side download quota (Free: 1 file / rolling 7 days).
--- Prepared and tested locally only. NOT applied to production.
+-- Applied to production 2026-10-29.
 -- Writes go exclusively through service_role (API routes / E3 worker).
 
 create table if not exists public.studio_master_jobs (
@@ -54,6 +54,8 @@ create policy studio_master_jobs_select_own on public.studio_master_jobs
 revoke all on public.studio_master_jobs from anon, authenticated;
 grant select on public.studio_master_jobs to authenticated;
 grant select, insert, update, delete on public.studio_master_jobs to service_role;
+
+revoke all on function public.studio_master_jobs_guard() from public, anon, authenticated;
 
 -- Worker claim (SKIP LOCKED, attempts cap) — service_role only.
 create or replace function public.claim_next_studio_master_job(p_worker_ref text)
