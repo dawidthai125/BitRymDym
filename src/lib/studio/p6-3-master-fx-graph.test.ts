@@ -705,7 +705,8 @@ describe("P6.3 transport / Gain-Pan / isolation", () => {
       "utf8",
     );
     expect(serviceSrc).toMatch(/updateStudioMasterFxChainFor/);
-    expect(serviceSrc).toMatch(/studio_cas_apply_fx_chain/);
+    expect(serviceSrc).toMatch(/applyStudioFxChainViaMixWorking/);
+    expect(serviceSrc).toMatch(/set_master_fx/);
     expect(serviceSrc).toMatch(/assertOwnsProject/);
 
     const chainSrc = readFileSync(

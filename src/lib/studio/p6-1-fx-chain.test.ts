@@ -433,12 +433,15 @@ describe("P6.1 isolation / engine untouched", () => {
     }
   });
 
-  it("studio-service FX persist does not import Mix or PlayerProvider", () => {
+  it("studio-service FX persist delegates to Mix Working gateway (A3.5)", () => {
     const service = readFileSync(
       join(process.cwd(), "src/lib/studio/studio-service.ts"),
       "utf8",
     );
-    expect(service).toMatch(/studio_cas_apply_fx_chain/);
+    expect(service).toMatch(/applyStudioFxChainViaMixWorking/);
+    expect(service).toMatch(/set_track_fx/);
+    expect(service).toMatch(/set_master_fx/);
+    expect(service).toMatch(/applyStudioMixWorkingOpsFor/);
     expect(service).not.toMatch(/mix-graph/);
     expect(service).not.toMatch(/MixPanel/);
     expect(service).not.toMatch(/player-provider/);

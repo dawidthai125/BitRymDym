@@ -26,6 +26,11 @@ import {
   createStudioSourceAdapterRegistry,
 } from "@/lib/studio/studio-audio-source-adapter";
 import { emptyStudioFxChain } from "@/lib/studio/studio-fx-chain";
+import {
+  rememberStudioBeatAudioSourceKey,
+  resetStudioBeatSessionKeysForTests,
+  studioBeatAudioSourceKey,
+} from "@/lib/studio/studio-beat-session-source";
 
 function clip(
   overrides: Partial<StudioEngineClip> & Pick<StudioEngineClip, "id">,
@@ -506,7 +511,7 @@ describe("P6.7.1 StudioAudioEngine fade wiring", () => {
   });
 
   it("seek into fade does not restart from silence", async () => {
-    const { host, created } = createFadeHost();
+    const { host } = createFadeHost();
     const registry = createStudioSourceAdapterRegistry(
       createDefaultStudioSourceAdapters({
         resolveBeatUrl: async () => ({
@@ -537,9 +542,7 @@ describe("P6.7.1 StudioAudioEngine fade wiring", () => {
     );
     await engine.play(0);
     await engine.seek(1000, true);
-    const voiceGain = created
-      .filter((n) => n.kind === "gain")
-      .find((g) => g.gain.events.some((e) => e.includes("cancel:")));
+    const voiceGain = engine.inspectVoiceClipGain("c-fade");
     expect(voiceGain).toBeTruthy();
     expect(voiceGain!.gain.value).toBeCloseTo(0.5, 8);
     expect(voiceGain!.gain.value).not.toBe(0);
@@ -580,37 +583,43 @@ describe("P6.7.1 StudioAudioEngine fade wiring", () => {
   });
 
   it("graph rebuild reuses one clip GainNode per voice", async () => {
-    const { host, created } = createFadeHost();
-    const registry = createStudioSourceAdapterRegistry(
-      createDefaultStudioSourceAdapters({
-        resolveBeatUrl: async () => ({
-          url: "https://example.test/b.bin",
-          expiresAt: Date.now() + 60_000,
+    resetStudioBeatSessionKeysForTests();
+    rememberStudioBeatAudioSourceKey("b1", studioBeatAudioSourceKey("b1", "A1"));
+    try {
+      const { host, created } = createFadeHost();
+      const registry = createStudioSourceAdapterRegistry(
+        createDefaultStudioSourceAdapters({
+          resolveBeatUrl: async () => ({
+            url: "https://example.test/b.bin",
+            expiresAt: Date.now() + 60_000,
+          }),
+          resolveTakeUrl: async () => null,
         }),
-        resolveTakeUrl: async () => null,
-      }),
-    );
-    const engine = new StudioAudioEngine({
-      host,
-      registry,
-      listener: {
-        onPlayhead: () => {},
-        onLifecycle: () => {},
-        onError: () => {},
-        onTimelineEnded: () => {},
-      },
-    });
-    const c = clip({ id: "c1", fadeInMs: 500, durationMs: 4000 });
-    engine.setDocument(docOf([c]));
-    await engine.play(0);
-    const g1 = engine.inspectVoiceClipGain("c1");
-    engine.setDocument(docOf([{ ...c, fadeInMs: 800 }]));
-    await engine.play(100);
-    const g2 = engine.inspectVoiceClipGain("c1");
-    expect(g1).toBe(g2);
-    const mediaSources = created.filter((n) => n.kind === "mediaSource");
-    expect(mediaSources.length).toBe(1);
-    engine.dispose();
+      );
+      const engine = new StudioAudioEngine({
+        host,
+        registry,
+        listener: {
+          onPlayhead: () => {},
+          onLifecycle: () => {},
+          onError: () => {},
+          onTimelineEnded: () => {},
+        },
+      });
+      const c = clip({ id: "c1", fadeInMs: 500, durationMs: 4000 });
+      engine.setDocument(docOf([c]));
+      await engine.play(0);
+      const g1 = engine.inspectVoiceClipGain("c1");
+      engine.setDocument(docOf([{ ...c, fadeInMs: 800 }]));
+      await engine.play(100);
+      const g2 = engine.inspectVoiceClipGain("c1");
+      expect(g1).toBe(g2);
+      const mediaSources = created.filter((n) => n.kind === "mediaSource");
+      expect(mediaSources.length).toBe(1);
+      engine.dispose();
+    } finally {
+      resetStudioBeatSessionKeysForTests();
+    }
   });
 });
 

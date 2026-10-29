@@ -246,17 +246,15 @@ describe("P6.4.1 AuthZ / API contract (source + error mapping)", () => {
     );
   });
 
-  it("service Master Mix uses existing columns + CAS eq document_version", () => {
+  it("service Master Mix delegates to Mix Working atomic CAS gateway (A3.5)", () => {
     const service = readFileSync(
       join(process.cwd(), "src/lib/studio/studio-service.ts"),
       "utf8",
     );
     expect(service).toMatch(/updateStudioMasterMixFor/);
-    expect(service).toMatch(/master_gain_db/);
-    expect(service).toMatch(/master_pan/);
-    expect(service).toMatch(/StudioFxCasConflictError/);
+    expect(service).toMatch(/applyStudioMixWorkingOpsFor/);
+    expect(service).toMatch(/set_master_mix/);
     expect(service).toMatch(/assertOwnsProject/);
-    expect(service).toMatch(/eq\("document_version", expected\)/);
     expect(service).not.toMatch(/master_settings/);
     expect(service).not.toMatch(/CREATE TABLE/);
     // Track controls return version
