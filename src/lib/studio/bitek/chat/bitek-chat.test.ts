@@ -51,7 +51,7 @@ describe("BITEK chat chain", () => {
       message: "głośniej", history: [], context: ctx, log,
     });
     expect(r.provider).toBe("e3");
-    expect(r.proposals).toEqual([{ trackRef: "t2", param: "gainDb", value: 2, label: "Wokal +2" }]);
+    expect(r.proposals).toEqual([{ trackRef: "t2", param: "gainDb", value: 2, label: "Wokal: 0 → +2 dB (+2)" }]);
     expect(log.mock.calls[0][0].attempts.map((a: { outcome: string }) => a.outcome)).toEqual(["rate_limited", "server", "ok"]);
   });
 
@@ -90,9 +90,9 @@ describe("proposal validation (prompt-injection hardening)", () => {
       ctx,
     );
     expect(out).toEqual([
-      { trackRef: "t2", param: "gainDb", value: 12, label: "x" },
-      { trackRef: "t3", param: "pan", value: -1, label: "" },
-      { trackRef: "t4", param: "muted", value: true, label: "" },
+      { trackRef: "t2", param: "gainDb", value: 12, label: "Wokal: 0 → +12 dB (+12)" },
+      { trackRef: "t3", param: "pan", value: -1, label: "Adlib A: pan C → L100" },
+      { trackRef: "t4", param: "muted", value: true, label: "Adlib B: wycisz" },
     ]);
   });
 
@@ -108,6 +108,24 @@ describe("proposal validation (prompt-injection hardening)", () => {
     expect(p.match(/<\/project_data>/g)?.length).toBe(1);
     expect(p).toContain("untrusted data");
     expect(buildBitekSystemPrompt({ ...ctx, lang: "en" })).toContain("You are BITEK");
+  });
+});
+
+describe("proposal labels (regression: model label 'Vocal +4 dB' vs value -2)", () => {
+  it("ignores the model label and builds ours from the validated, clamped value (PL/EN)", () => {
+    const en = { ...ctx, lang: "en" as const, tracks: [{ ...ctx.tracks[1], name: "Vocal", gainDb: -6 }] };
+    const out = parseBitekModelOutput(
+      JSON.stringify({ reply: "Boost it 4 dB.", proposals: [{ trackRef: "t2", param: "gainDb", value: -2, label: "Vocal +4 dB" }] }),
+      en,
+    );
+    expect(out?.proposals).toEqual([{ trackRef: "t2", param: "gainDb", value: -2, label: "Vocal: −6 → −2 dB (+4)" }]);
+    const pl = validateProposals([{ trackRef: "t3", param: "gainDb", value: 40, label: "Adlib +1 dB" }], ctx);
+    expect(pl[0].label).toBe("Adlib A: −6 → +12 dB (+18)");
+    expect(validateProposals([{ trackRef: "t4", param: "muted", value: true }], { ...ctx, lang: "en" })[0].label).toBe("Adlib B: mute");
+  });
+
+  it("drops no-op proposals (target equals current value)", () => {
+    expect(validateProposals([{ trackRef: "t1", param: "gainDb", value: -3 }, { trackRef: "t2", param: "pan", value: 0 }], ctx)).toEqual([]);
   });
 });
 
@@ -131,7 +149,7 @@ describe("request parsing", () => {
 
 describe("rules intents", () => {
   it("louder vocal, quieter beat, reverb = text only, EN", () => {
-    expect(bitekRulesChat("Daj głośniej wokal", ctx).proposals).toEqual([{ trackRef: "t2", param: "gainDb", value: 2, label: "Wokal: +2 dB" }]);
+    expect(bitekRulesChat("Daj głośniej wokal", ctx).proposals).toEqual([{ trackRef: "t2", param: "gainDb", value: 2, label: "Wokal: 0 → +2 dB (+2)" }]);
     expect(bitekRulesChat("ciszej bit", ctx).proposals[0]).toMatchObject({ trackRef: "t1", value: -5 });
     expect(bitekRulesChat("więcej pogłosu na adlibach", ctx).proposals).toEqual([]);
     expect(bitekRulesChat("louder vocal", { ...ctx, lang: "en" }).reply).toMatch(/Apply/);

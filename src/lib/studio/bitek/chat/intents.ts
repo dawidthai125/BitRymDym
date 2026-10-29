@@ -1,3 +1,4 @@
+import { validateProposals } from "./proposals";
 import { BITEK_LIMITS, type BitekChatContext, type BitekChatResult, type BitekProposal, type BitekTrackContext } from "./types";
 
 /** Rule-based last-resort brain: keyword intents → validated proposals, no network. */
@@ -54,7 +55,8 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
   const done = (reply: string, proposals: BitekProposal[] = []): BitekChatResult => ({
     provider: "rules",
     reply,
-    proposals: proposals.slice(0, BITEK_LIMITS.maxProposals),
+    // Same validation + server-side labels as model proposals.
+    proposals: validateProposals(proposals, ctx),
   });
 
   if (has(m, REVERB)) return done(tx.reverb);
@@ -66,7 +68,7 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
       tx.spread,
       side.map((t, i) => {
         const pan = i % 2 === 0 ? -0.5 : 0.5;
-        return { trackRef: t.ref, param: "pan" as const, value: pan, label: `${t.name}: pan ${pan > 0 ? "R" : "L"}50` };
+        return { trackRef: t.ref, param: "pan" as const, value: pan, label: "" };
       }),
     );
   }
@@ -74,7 +76,7 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
   if (has(m, CENTER) && has(m, VOCAL)) {
     const lead = byRole(ctx, ["lead_vocal"]);
     if (!lead.length) return done(tx.noTrack);
-    return done(tx.center, lead.map((t) => ({ trackRef: t.ref, param: "pan" as const, value: 0, label: `${t.name}: pan C` })));
+    return done(tx.center, lead.map((t) => ({ trackRef: t.ref, param: "pan" as const, value: 0, label: "" })));
   }
 
   const louder = has(m, LOUDER);
@@ -94,7 +96,7 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
       louder ? tx.louder(names) : tx.quieter(names),
       target.map((t) => {
         const v = clampGain(Math.round((t.gainDb + delta) * 2) / 2);
-        return { trackRef: t.ref, param: "gainDb" as const, value: v, label: `${t.name}: ${v > 0 ? "+" : ""}${v} dB` };
+        return { trackRef: t.ref, param: "gainDb" as const, value: v, label: "" };
       }),
     );
   }
