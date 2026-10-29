@@ -19,6 +19,11 @@ import {
   emailChangeNoticeSetOptions,
   noticeCookieValue,
 } from "@/lib/auth/email-change-notice";
+import {
+  PASSWORD_RECOVERY_COOKIE,
+  passwordRecoveryCookieValue,
+  passwordRecoverySetOptions,
+} from "@/lib/auth/password-recovery-seal-cookie";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -47,6 +52,15 @@ function redirectEmailChange(
   return response;
 }
 
+/** Seal is attached only when the server can sign it. Otherwise the reset form stays closed. */
+function redirectPasswordRecovery(request: NextRequest, userId: string) {
+  const value = passwordRecoveryCookieValue(userId);
+  if (!value) return null;
+  const response = redirectAbsolute(request, "/auth/reset-password");
+  response.cookies.set(PASSWORD_RECOVERY_COOKIE, value, passwordRecoverySetOptions());
+  return response;
+}
+
 /**
  * Auth callback for email confirmation, password recovery, and other Auth redirects.
  *
@@ -57,6 +71,8 @@ function redirectEmailChange(
  * Recovery contract (ACCOUNT/PROFILE-01):
  * - OTP: ?token_hash=…&type=recovery → keep session → /auth/reset-password
  * - PKCE: ?code=…&flow=recovery (from getAuthPasswordResetRedirectTo) → keep session → /auth/reset-password
+ * - The reset form also needs a server-signed brd_password_recovery cookie for that user.
+ *   No user or no seal → /forgot-password, and this branch does not call signOut.
  * Signup / other confirms: sign out → /auth/confirmed
  * Email change (type=email_change or flow=email_change): keep any session.
  *   The notice is a signed cookie, not a query param.
@@ -117,7 +133,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (decision.kind === "reset_password") {
-      return redirectAbsolute(request, "/auth/reset-password");
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) {
+        return redirectAbsolute(request, "/forgot-password");
+      }
+      const response = redirectPasswordRecovery(request, userId);
+      if (!response) {
+        return redirectAbsolute(request, "/forgot-password");
+      }
+      return response;
     }
     if (decision.kind === "forgot_password") {
       return redirectAbsolute(request, "/forgot-password");

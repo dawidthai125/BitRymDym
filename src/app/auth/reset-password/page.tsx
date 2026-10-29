@@ -2,12 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ResetPasswordForm } from "@/components/auth/auth-forms";
+import { passwordRecoverySealMatches } from "@/lib/auth/password-recovery-seal-cookie";
 import { getSessionUser } from "@/lib/auth/session";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 /**
- * Recovery landing after /auth/callback?type=recovery.
- * Requires an active recovery session from the email link.
+ * Recovery landing after a successful /auth/callback recovery exchange.
+ * Requires the session user and a server-signed recovery seal for that user.
  */
 export default async function ResetPasswordPage() {
   const env = getSupabasePublicEnv();
@@ -24,6 +25,16 @@ export default async function ResetPasswordPage() {
 
   const user = await getSessionUser();
   if (!user) {
+    redirect("/forgot-password");
+  }
+
+  let sealMatches = false;
+  try {
+    sealMatches = await passwordRecoverySealMatches(user.id);
+  } catch {
+    sealMatches = false;
+  }
+  if (!sealMatches) {
     redirect("/forgot-password");
   }
 
