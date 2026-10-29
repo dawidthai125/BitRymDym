@@ -34,6 +34,8 @@ export function openAiCompatibleProvider(opts: {
   model: string;
   timeoutMs: number;
   jsonMode?: boolean;
+  maxTokens?: number;
+  reasoningEffort?: "low" | "medium" | "high";
   fetchFn?: FetchFn;
 }): BitekLlmProvider {
   const f = opts.fetchFn ?? fetch;
@@ -50,8 +52,9 @@ export function openAiCompatibleProvider(opts: {
             model: opts.model,
             messages,
             temperature: 0.4,
-            max_tokens: 400,
+            max_tokens: opts.maxTokens ?? 400,
             ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
+            ...(opts.reasoningEffort ? { reasoning_effort: opts.reasoningEffort } : {}),
           }),
           signal,
         });
@@ -103,7 +106,10 @@ export function bitekProvidersFromEnv(
         id: "groq",
         baseUrl: "https://api.groq.com/openai/v1",
         apiKey: env.GROQ_API_KEY,
-        model: env.BITEK_GROQ_MODEL || "llama-3.3-70b-versatile",
+        // llama-3.3-70b-versatile became Enterprise-only on Groq (404 model_not_found, 2026-10).
+        model: env.BITEK_GROQ_MODEL || "openai/gpt-oss-20b",
+        reasoningEffort: "low",
+        maxTokens: 900,
         timeoutMs: 8000,
         jsonMode: true,
         fetchFn,
@@ -116,7 +122,10 @@ export function bitekProvidersFromEnv(
         id: "gemini",
         baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
         apiKey: env.GEMINI_API_KEY,
-        model: env.BITEK_GEMINI_MODEL || "gemini-2.5-flash",
+        // gemini-2.5-* is limited to legacy users (404 for new keys, 2026-10).
+        model: env.BITEK_GEMINI_MODEL || "gemini-3.5-flash-lite",
+        reasoningEffort: "low",
+        maxTokens: 900,
         timeoutMs: 10000,
         jsonMode: true,
         fetchFn,
