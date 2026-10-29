@@ -14,7 +14,7 @@ create or replace function public.bitek_chat_consume(p_limit integer)
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_uid uuid := auth.uid();
