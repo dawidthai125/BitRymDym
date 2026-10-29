@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
+import { StudioLyricsCard } from "@/components/studio/studio-lyrics-card";
 import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
@@ -2071,6 +2072,14 @@ export function StudioRecordingPanel({
         onPunchLine={setPunchLine}
         disabled={busy && state.phase !== "READY"}
         lockedReason={null}
+      />
+
+      <StudioLyricsCard
+        projectId={projectId}
+        getPlayheadMs={transport.getPlayheadMs}
+        mode={section ? recMode : "single"}
+        loopStartMs={section?.startMs ?? null}
+        punchLine={recMode === "punch" && lines.length ? Math.min(punchLine, lines.length - 1) : null}
       />
 
       <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />
