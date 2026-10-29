@@ -1,0 +1,41 @@
+# BitRymDym - BITEK chat model server on E3 (repository artifact only).
+#
+# NOT INSTALLED. Host install requires Owner GO (see docs/runbooks/BITEK_E3_LLM.md).
+#   Binary: llama.cpp `llama-server` (MIT) at /opt/bitrymdym-bitek-llm/bin/llama-server
+#   Model:  Qwen2.5-1.5B-Instruct Q4_K_M GGUF (Apache-2.0) in /opt/bitrymdym-bitek-llm/models/
+#   API key file: /etc/bitrymdym-bitek-llm/api-key (root:bitrymdym-llm 0640, outside repo)
+#     one line: long random token = Vercel BITEK_E3_TOKEN
+#   Listens on 127.0.0.1 ONLY. Public reachability only via an outbound
+#   Cloudflare Tunnel (no inbound firewall ports opened on E3).
+#   Resource caps keep the Demucs / render worker first: 2 threads, Nice=10,
+#   MemoryMax=2.5G, CPUWeight=20.
+
+[Unit]
+Description=BitRymDym BITEK chat model (llama.cpp server, localhost only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=bitrymdym-llm
+Group=bitrymdym-llm
+WorkingDirectory=/opt/bitrymdym-bitek-llm
+ExecStart=/opt/bitrymdym-bitek-llm/bin/llama-server \
+  --host 127.0.0.1 --port 8091 \
+  --model /opt/bitrymdym-bitek-llm/models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+  --alias qwen2.5-1.5b-instruct \
+  --api-key-file /etc/bitrymdym-bitek-llm/api-key \
+  --ctx-size 4096 --parallel 1 --threads 2 --threads-batch 2 \
+  --cache-reuse 256 --no-webui
+Nice=10
+CPUWeight=20
+MemoryMax=2.5G
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadOnlyPaths=/opt/bitrymdym-bitek-llm
+
+[Install]
+WantedBy=multi-user.target
