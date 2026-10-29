@@ -13,7 +13,7 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const { projectId, jobId } = await context.params;
     const auth = await requireUser();
-    const r = await getStudioJob({ ownerId: auth.userId, projectId, jobId, filename: "bitrymdym" });
+    const r = await getStudioJob({ ownerId: auth.userId, projectId, jobId });
     return NextResponse.json({ success: true, ...r });
   } catch (error) {
     return masterErrorResponse(error);

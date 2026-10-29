@@ -1842,6 +1842,7 @@
         "podpis": "BITEK",
         "tytul": "Co zrobiłem w Twoim mixie",
         "nic": "Posłuchałem i tu nie mam nic do zmiany. Jest dobrze.",
+        "wyczerpane": "Zrobiłem, co się dało w mixie — możesz iść dalej. Część uwag zostaje, master zrobi resztę.",
         "blad": "Nie udało mi się zapisać poprawek. Twój mix jest bez zmian. Spróbuj jeszcze raz.",
         "konflikt": "Projekt zmienił się w międzyczasie. Odświeżyłem dane, kliknij jeszcze raz.",
         "toast": "BITEK: poprawiłem Twój mix (zmiany: {count}). Sprawdzam jeszcze raz…",

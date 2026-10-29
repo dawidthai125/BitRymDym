@@ -13,6 +13,8 @@ export const STUDIO_TRACK_NAME_MAX_LENGTH = 80;
 
 /** Default new project timeline length (ms). */
 export const STUDIO_DEFAULT_TIMELINE_LENGTH_MS = 60_000;
+/** Max song length in Studio (timeline, render, master). New projects get exactly this timeline. */
+export const STUDIO_MAX_SONG_MS = 240_000;
 
 /**
  * Minimum Clip duration (integer ms) — mirrors DB check

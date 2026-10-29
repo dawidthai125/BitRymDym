@@ -31,7 +31,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (!body) return NextResponse.json({ error: "bad_body" }, { status: 400 });
     if (body.action === "prepare") return NextResponse.json({ success: true, ...(await prepareStudioMaster({ ownerId: auth.userId, projectId })) });
     if (body.action === "commit") {
-      const r = await commitStudioMaster({ ownerId: auth.userId, projectId, jobId: String(body.jobId ?? ""), target: body.target, settings: body.settings });
+      const r = await commitStudioMaster({ ownerId: auth.userId, projectId, jobId: String(body.jobId ?? ""), target: body.target, settings: body.settings, documentVersion: body.documentVersion });
       return NextResponse.json({ success: r.ok, ...r }, { status: r.ok ? 202 : DENY_STATUS[r.error] ?? 400 });
     }
     return NextResponse.json({ error: "bad_action" }, { status: 400 });

@@ -4,6 +4,7 @@
  * hard time budget. No server, no paid API.
  */
 
+import { STUDIO_MAX_SONG_MS } from "@/config/studio";
 import { computeMixMetrics, type MixMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type {
   MixAnalysisClip,
@@ -18,7 +19,7 @@ export const MIX_ANALYSIS_SAMPLE_RATE = 32000;
 /** Hard budget for decode + compute. */
 export const MIX_ANALYSIS_TIMEOUT_MS = 45000;
 /** Longest timeline analysed (ms). */
-export const MIX_ANALYSIS_MAX_LENGTH_MS = 10 * 60 * 1000;
+export const MIX_ANALYSIS_MAX_LENGTH_MS = STUDIO_MAX_SONG_MS;
 
 export type MixAnalysisFailure =
   | "no_audio"
@@ -75,7 +76,11 @@ export function buildMixAnalysisSkeleton(
       pan: t.pan,
       muted: t.muted,
       solo: t.solo,
+      // Track/master FX from the mix step (EQ, comp, de-esser, reverb/delay…): the
+      // analysis, the browser preview and the E3 render all hear the processed sound.
+      effectsChain: t.effectsChain,
     })),
+    masterEffectsChain: doc.project.masterFxChain,
     clips,
     sourceClips,
   };

@@ -93,12 +93,12 @@ export function createMonoPartitionedConvolver(
     N * 8 * 4 + // temps
     B * 4 * 3; // prev/in/out
 
+  // FDL as a ring buffer (newest spectrum at `head`) — no per-block copying of K spectra.
+  let head = 0;
+  const half = N >> 1;
+
   function processBlock(): void {
-    // Shift FDL
-    for (let k = K - 1; k >= 1; k -= 1) {
-      XRe[k]!.set(XRe[k - 1]!);
-      XIm[k]!.set(XIm[k - 1]!);
-    }
+    head = (head + K - 1) % K;
     // Overlap-save frame: [prev | current]
     frameRe.fill(0);
     frameIm.fill(0);
@@ -107,20 +107,30 @@ export function createMonoPartitionedConvolver(
       frameRe[B + i] = inBlock[i]!;
     }
     fftRadix2(frameRe, frameIm, false);
-    XRe[0]!.set(frameRe);
-    XIm[0]!.set(frameIm);
+    XRe[head]!.set(frameRe);
+    XIm[head]!.set(frameIm);
 
+    // Real input & IR → Hermitian spectra: accumulate bins 0..N/2, mirror the rest.
     yRe.fill(0);
     yIm.fill(0);
     for (let k = 0; k < K; k += 1) {
-      const xr = XRe[k]!;
-      const xi = XIm[k]!;
+      const slot = (head + k) % K;
+      const xr = XRe[slot]!;
+      const xi = XIm[slot]!;
       const hr = HRe[k]!;
       const hi = HIm[k]!;
-      for (let bin = 0; bin < N; bin += 1) {
-        yRe[bin]! += xr[bin]! * hr[bin]! - xi[bin]! * hi[bin]!;
-        yIm[bin]! += xr[bin]! * hi[bin]! + xi[bin]! * hr[bin]!;
+      for (let bin = 0; bin <= half; bin += 1) {
+        const a = xr[bin]!;
+        const b = xi[bin]!;
+        const c = hr[bin]!;
+        const d = hi[bin]!;
+        yRe[bin]! += a * c - b * d;
+        yIm[bin]! += a * d + b * c;
       }
+    }
+    for (let bin = 1; bin < half; bin += 1) {
+      yRe[N - bin] = yRe[bin]!;
+      yIm[N - bin] = -yIm[bin]!;
     }
     fftRadix2(yRe, yIm, true);
     for (let i = 0; i < B; i += 1) {
@@ -160,6 +170,7 @@ export function createMonoPartitionedConvolver(
       prev.fill(0);
       inBlock.fill(0);
       outQueue.fill(0);
+      head = 0;
       inCount = 0;
       outRead = 0;
       outLen = 0;

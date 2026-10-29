@@ -3,6 +3,7 @@ import "server-only";
 import {
   STUDIO_DEFAULT_TEMPO_BPM,
   STUDIO_DEFAULT_TIMELINE_LENGTH_MS,
+  STUDIO_MAX_SONG_MS,
   STUDIO_MAX_PROJECTS_PER_USER,
   STUDIO_TITLE_MAX_LENGTH,
   STUDIO_TRACK_NAME_MAX_LENGTH,
@@ -269,7 +270,7 @@ export async function createStudioProjectFor(
     }
     const durSec = Number(beat.duration_seconds ?? 60);
     beatDurationMs = Math.min(
-      STUDIO_DEFAULT_TIMELINE_LENGTH_MS,
+      STUDIO_MAX_SONG_MS,
       Math.max(1000, Math.round(durSec * 1000)),
     );
   }
@@ -282,7 +283,8 @@ export async function createStudioProjectFor(
       status: "DRAFT",
       tempo_bpm: tempoBpm,
       beat_id: beatId,
-      timeline_length_ms: STUDIO_DEFAULT_TIMELINE_LENGTH_MS,
+      // Hard 4:00 song limit: the timeline is the cap for record/import/place (assertClipPlacement).
+      timeline_length_ms: STUDIO_MAX_SONG_MS,
     })
     .select("*")
     .single();
@@ -561,7 +563,7 @@ export async function attachBeatToStudioProjectFor(
   }
   const durSec = Number(beat.duration_seconds ?? 60);
   const beatDurationMs = Math.min(
-    STUDIO_DEFAULT_TIMELINE_LENGTH_MS,
+    Math.min(STUDIO_MAX_SONG_MS, projectRow.timeline_length_ms || STUDIO_DEFAULT_TIMELINE_LENGTH_MS),
     Math.max(1000, Math.round(durSec * 1000)),
   );
 

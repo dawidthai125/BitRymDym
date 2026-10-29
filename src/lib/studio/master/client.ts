@@ -1,4 +1,4 @@
-/** Stage 3 — browser side of Mastering: worker calls + WAV encoding for the server upload. */
+/** Stage 3 — browser side of Mastering: preview workers + fetching E3 results (no uploads). */
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
 
 import type { MasterMetrics, Stereo } from "./dsp";
@@ -33,22 +33,6 @@ export function renderMasterPreview(mix: Stereo, target: MasterTargetId, setting
   return call<{ preview: Stereo; metrics: MasterMetrics }>({ op: "preview", mix: copy, target, settings }, [copy.left.buffer, copy.right.buffer]);
 }
 
-/** 32-bit float stereo WAV (lossless hand-off to the E3 master). */
-export function encodeWavFloat(s: Stereo): Blob {
-  const n = s.left.length;
-  const dataBytes = n * 2 * 4;
-  const buf = new ArrayBuffer(44 + dataBytes);
-  const v = new DataView(buf);
-  const str = (o: number, t: string) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
-  str(0, "RIFF"); v.setUint32(4, 36 + dataBytes, true); str(8, "WAVE");
-  str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 3, true); v.setUint16(22, 2, true);
-  v.setUint32(24, s.sampleRate, true); v.setUint32(28, s.sampleRate * 8, true); v.setUint16(32, 8, true); v.setUint16(34, 32, true);
-  str(36, "data"); v.setUint32(40, dataBytes, true);
-  const f = new Float32Array(buf, 44, n * 2);
-  for (let i = 0; i < n; i++) { f[2 * i] = s.left[i]; f[2 * i + 1] = s.right[i]; }
-  return new Blob([buf], { type: "audio/wav" });
-}
-
 export function stereoToAudioBuffer(ctx: BaseAudioContext, s: Stereo, gainDb = 0): AudioBuffer {
   const b = ctx.createBuffer(2, s.left.length, s.sampleRate);
   const k = Math.pow(10, gainDb / 20);
@@ -61,7 +45,14 @@ export function stereoToAudioBuffer(ctx: BaseAudioContext, s: Stereo, gainDb = 0
 }
 
 /** PUT a blob to a Supabase signed upload URL. */
-export async function uploadToSignedUrl(url: string, blob: Blob): Promise<boolean> {
-  const res = await fetch(url, { method: "PUT", headers: { "Content-Type": blob.type || "application/octet-stream", "x-upsert": "true" }, body: blob });
-  return res.ok;
+
+/** Fetch a parted result and join it into one Blob (object URL for <audio>/download). */
+export async function joinParts(urls: string[], type: string): Promise<Blob | null> {
+  const chunks: Blob[] = [];
+  for (const u of urls) {
+    const r = await fetch(u);
+    if (!r.ok) return null;
+    chunks.push(await r.blob());
+  }
+  return new Blob(chunks, { type });
 }

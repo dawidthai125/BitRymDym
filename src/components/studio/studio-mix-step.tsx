@@ -247,7 +247,14 @@ export function StudioMixStep({
   }, [chatContextRef, getChatContext]);
 
   const verdict = result?.verdict ?? null;
-  const canMaster = Boolean(verdict?.canMaster) && !stale && !running;
+  // Auto-fixes exhausted (nothing left to plan, or two rounds didn't clear the reds):
+  // don't trap the user — let them go on with a BITEK warning.
+  const autofixExhausted = useMemo(() => {
+    if (!result || stale || running || result.verdict.canMaster || !Number.isFinite(result.metrics.master.integratedLufs)) return false;
+    if (fixSeq >= 2) return true;
+    return planMixAutofix({ doc, metrics: result.metrics, verdict: result.verdict, fixes: MIX_AUTOFIX_ALL, createId: () => "x" }).ops.length === 0;
+  }, [result, stale, running, fixSeq, doc]);
+  const canMaster = (Boolean(verdict?.canMaster) || autofixExhausted) && !stale && !running;
 
   // Stage 2b — BITEK bubble (short) instead of long notes on the page.
   const tBitek = useTranslations("studio.bitek");
@@ -278,6 +285,7 @@ export function StudioMixStep({
     if (panel?.kind === "error") {
       return { key: `fix-error-${fixSeq}`, mood: "alert", text: panel.conflict ? t("autofix.konflikt") : t("autofix.blad") };
     }
+    if (autofixExhausted) return { key: `fix-exhausted-${fixSeq}`, mood: "alert", text: t("autofix.wyczerpane") };
     if (panel?.kind === "nothing" && !running) return { key: `fix-nothing-${fixSeq}`, mood: "happy", text: t("autofix.nic") };
     const msgs = bitekRulesGuide({ step: "mix", recording: false, ...bitekBase, analysis: analysisState });
     const first = msgs[0];
@@ -304,7 +312,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, onApplyAutofix, result]);
+  }, [fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, onApplyAutofix, result, autofixExhausted]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
@@ -499,7 +507,7 @@ export function StudioMixStep({
                 {t("przejdzDoMasteringu")} →
               </Button>
               <p id="studio-mix-master-hint" className="text-xs text-[var(--brd-mute)]">
-                {verdict && !verdict.canMaster ? t("masteringZablokowany") : t("masteringTytul")}
+                {autofixExhausted ? t("autofix.wyczerpane") : verdict && !verdict.canMaster ? t("masteringZablokowany") : t("masteringTytul")}
               </p>
             </div>
             {masterInfoOpen ? (

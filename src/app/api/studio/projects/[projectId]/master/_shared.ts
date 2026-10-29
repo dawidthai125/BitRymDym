@@ -25,5 +25,5 @@ export function masterErrorResponse(error: unknown) {
 }
 
 export const DENY_STATUS: Record<string, number> = {
-  login: 401, not_approved: 409, tier_format: 403, tier_project: 403, bad_request: 400, weekly_limit: 429, input_missing: 409,
+  login: 401, not_approved: 409, tier_format: 403, tier_project: 403, bad_request: 400, weekly_limit: 429, input_missing: 409, doc_changed: 409,
 };

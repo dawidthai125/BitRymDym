@@ -2721,7 +2721,7 @@ function StudioEditorInner({
       data-testid="studio-daw-shell"
       data-studio-shell="true"
       data-studio-visual-parity="v2"
-      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden"
+      className="flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden max-lg:pb-[var(--bitek-dock-h,0px)]"
     >
       <header
         data-testid="studio-header"

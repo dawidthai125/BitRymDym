@@ -1842,6 +1842,7 @@
         "podpis": "BITEK",
         "tytul": "What I did to your mix",
         "nic": "I listened and there's nothing to change here. Sounds good.",
+        "wyczerpane": "I did what I could in the mix — you can move on. Some notes remain; the master will handle the rest.",
         "blad": "I couldn't save the fixes. Your mix is unchanged. Try again.",
         "konflikt": "The project changed in the meantime. I refreshed it, click again.",
         "toast": "BITEK: I fixed your mix (changes: {count}). Checking again…",

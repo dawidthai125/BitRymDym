@@ -213,7 +213,8 @@ def main(argv: list[str]) -> int:
     a = ap.parse_args(argv)
     try:
         if a.cmd == "zip":
-            # Projekt: zip of all track WAVs in --in (dir) → --out (stored, WAV doesn't compress).
+            # Projekt: every track WAV in --in (dir) → lossless 24-bit FLAC inside --out
+            # (≈half the size of WAV, so a long 8-track song stays downloadable).
             import os, zipfile
             if not a.out:
                 raise ValueError("missing_out")
@@ -222,7 +223,13 @@ def main(argv: list[str]) -> int:
                 raise ValueError("no_stems")
             with zipfile.ZipFile(a.out, "w", zipfile.ZIP_STORED) as z:
                 for n in names:
-                    z.write(os.path.join(a.inp, n), arcname=os.path.basename(n))
+                    src = os.path.join(a.inp, n)
+                    flac = os.path.splitext(src)[0] + ".flac"
+                    data, sr_ = sf.read(src, always_2d=True, dtype="float32")
+                    sf.write(flac, data, sr_, format="FLAC", subtype="PCM_24")
+                    del data
+                    z.write(flac, arcname=os.path.basename(flac))
+                    os.remove(flac)
             print(json.dumps({"ok": True, "files": len(names)}))
             return 0
         x, sr = sf.read(a.inp, always_2d=True, dtype="float32")
@@ -236,7 +243,8 @@ def main(argv: list[str]) -> int:
         if not a.out:
             raise ValueError("missing_out")
         y, report = master(x, sr, a.target, json.loads(a.settings or "{}"))
-        sf.write(a.out, y, sr, subtype="FLOAT")
+        # 24-bit: the limiter keeps peaks below 0 dBTP, so no float headroom is needed.
+        sf.write(a.out, y, sr, subtype="PCM_24")
         print(json.dumps({"ok": True, "before": analyze(x, sr), "after": report}))
         return 0
     except Exception as e:  # noqa: BLE001 — single JSON line contract

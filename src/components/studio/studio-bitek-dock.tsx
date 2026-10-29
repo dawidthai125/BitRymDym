@@ -22,6 +22,9 @@ export type BitekBubble = {
 };
 
 export const BITEK_AUTO_COLLAPSE_MS = 6000;
+/** On phones the bubble spans the width of the screen — action bubbles fold too, a bit later. */
+export const BITEK_AUTO_COLLAPSE_MOBILE_ACTIONS_MS = 9000;
+const MOBILE_QUERY = "(max-width: 1023.98px)";
 
 export const BITEK_MOOD_SRC: Record<BitekMood, string> = {
   happy: "/bitek/bitek-happy.webp",
@@ -69,13 +72,48 @@ export function StudioBitekDock({
     bubble && bubble.key !== dismissedKey && !minimized && !autoCollapsed && !chatOpen ? bubble : null;
   const showDetails = Boolean(visible && detailsFor === visible.key);
   const hasNews = Boolean(bubble && bubble.key !== dismissedKey && (minimized || autoCollapsed));
-  const autoCollapseKey = visible && !visible.hero && !visible.actions?.length ? visible.key : null;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const on = () => setIsMobile(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const hasActions = Boolean(visible?.actions?.length);
+  const autoCollapseKey = visible && !visible.hero && (!hasActions || isMobile) ? visible.key : null;
 
   useEffect(() => {
     if (!autoCollapseKey || showDetails) return;
-    const id = window.setTimeout(() => setAutoCollapsedKey(autoCollapseKey), BITEK_AUTO_COLLAPSE_MS);
+    const ms = hasActions ? BITEK_AUTO_COLLAPSE_MOBILE_ACTIONS_MS : BITEK_AUTO_COLLAPSE_MS;
+    const id = window.setTimeout(() => setAutoCollapsedKey(autoCollapseKey), ms);
     return () => window.clearTimeout(id);
-  }, [autoCollapseKey, showDetails]);
+  }, [autoCollapseKey, showDetails, hasActions]);
+
+  /**
+   * Publish the space the dock takes at the bottom of the viewport (--bitek-dock-h) so the
+   * studio can pad its content and every control can be scrolled above the bubble.
+   */
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      const h = r.height > 0 ? Math.ceil(window.innerHeight - r.top + 12) : 0;
+      root.style.setProperty("--bitek-dock-h", `${Math.max(0, h)}px`);
+    };
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      root.style.removeProperty("--bitek-dock-h");
+    };
+  }, []);
 
   useEffect(() => {
     if (!chatOpen) return;
@@ -98,6 +136,7 @@ export function StudioBitekDock({
 
   return (
     <div
+      ref={rootRef}
       data-testid="studio-bitek-dock"
       data-mood={mood}
       className="pointer-events-none fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-end gap-2 lg:right-5 lg:bottom-5"
