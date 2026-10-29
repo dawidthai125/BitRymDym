@@ -11,7 +11,8 @@ export function ffmpegDecodeArgs(src: string, out: string, sampleRate: number): 
 }
 
 /** Parse ffmpeg's float32 WAV into planar channels (like AudioBuffer). >2 channels → first two. */
-export function parseDecodedWav(buf: Buffer): MixAnalysisSource {
+/** `shared` = channels backed by SharedArrayBuffer (handed to render threads without copying). */
+export function parseDecodedWav(buf: Buffer, shared = false): MixAnalysisSource {
   let off = 12; let channels = 0; let fmt = 0;
   while (off + 8 <= buf.length) {
     const id = buf.toString("ascii", off, off + 4); let size = buf.readUInt32LE(off + 4);
@@ -22,7 +23,7 @@ export function parseDecodedWav(buf: Buffer): MixAnalysisSource {
       const f = new Float32Array(buf.buffer.slice(buf.byteOffset + off + 8, buf.byteOffset + off + 8 + size - (size % 4)));
       const frames = Math.floor(f.length / channels); const keep = Math.min(channels, 2);
       const out: Float32Array[] = [];
-      for (let c = 0; c < keep; c++) { const ch = new Float32Array(frames); for (let i = 0; i < frames; i++) ch[i] = f[i * channels + c]!; out.push(ch); }
+      for (let c = 0; c < keep; c++) { const ch = shared ? new Float32Array(new SharedArrayBuffer(frames * 4)) : new Float32Array(frames); for (let i = 0; i < frames; i++) ch[i] = f[i * channels + c]!; out.push(ch); }
       return { channels: out };
     }
     off += 8 + size + (size % 2);

@@ -74,14 +74,7 @@ export function applyFxInPlace(
   left: Float32Array,
   right: Float32Array,
 ): void {
-  const sample = { left: 0, right: 0 };
-  for (let i = 0; i < left.length; i++) {
-    sample.left = left[i];
-    sample.right = right[i];
-    const out = chain.process(sample);
-    left[i] = out.left;
-    right[i] = out.right;
-  }
+  chain.processBuffer(left, right);
 }
 
 export type RenderedTrack = {
@@ -113,6 +106,41 @@ export function stereoPan(
   }
   const x = p;
   return [l * Math.cos((x * Math.PI) / 2), r + l * Math.sin((x * Math.PI) / 2)];
+}
+
+/**
+ * In place: (left·gain, right·gain) → stereoPan over whole buffers. Same math as
+ * stereoPan per sample (the cos/sin factors are computed once).
+ */
+export function stereoPanBuffer(left: Float32Array, right: Float32Array, mono: boolean, pan: number, gain = 1): void {
+  const p = Math.max(-1, Math.min(1, pan || 0));
+  const len = Math.min(left.length, right.length);
+  if (mono) {
+    const x = (p + 1) / 2;
+    const cl = Math.cos((x * Math.PI) / 2), sr = Math.sin((x * Math.PI) / 2);
+    for (let i = 0; i < len; i++) {
+      const l = left[i] * gain;
+      left[i] = l * cl;
+      right[i] = l * sr;
+    }
+    return;
+  }
+  if (p <= 0) {
+    const x = p + 1;
+    const c = Math.cos((x * Math.PI) / 2), sn = Math.sin((x * Math.PI) / 2);
+    for (let i = 0; i < len; i++) {
+      const l = left[i] * gain, r = right[i] * gain;
+      left[i] = l + r * c;
+      right[i] = r * sn;
+    }
+    return;
+  }
+  const c = Math.cos((p * Math.PI) / 2), sn = Math.sin((p * Math.PI) / 2);
+  for (let i = 0; i < len; i++) {
+    const l = left[i] * gain, r = right[i] * gain;
+    left[i] = l * c;
+    right[i] = r + l * sn;
+  }
 }
 
 export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, anySolo: boolean): RenderedTrack {
@@ -202,11 +230,7 @@ function renderTrackWithFx(
   // Reverb (stereo IR) turns a mono strip stereo before the panner.
   const stereoFx = fx.processors.some((p) => p.type === "reverb" && p.status === "IMPLEMENTED");
   const mono = allMono && !stereoFx;
-  for (let i = 0; i < len; i++) {
-    const [pl, pr] = stereoPan(left[i], right[i], mono, track.pan);
-    left[i] = pl;
-    right[i] = pr;
-  }
+  stereoPanBuffer(left, right, mono, track.pan);
   return { track, left, right, activeRanges, audible };
 }
 

@@ -152,3 +152,44 @@ export function processStereoBiquadSample(
     right: processChannel(right, coeffs, state.right),
   };
 }
+
+/**
+ * One channel buffer through a cascade of biquads, in place. Same arithmetic as
+ * processChannel per band (float64 between bands, via a float64 chunk); updates
+ * each band's state.
+ */
+export function processBiquadCascadeBuffer(
+  buf: Float32Array,
+  coeffs: readonly BiquadCoeffs[],
+  states: readonly BiquadChannelState[],
+): void {
+  const nb = coeffs.length;
+  if (nb === 0) return;
+  const C = 4096;
+  const tmp = new Float64Array(C);
+  const len = buf.length;
+  for (let o = 0; o < len; o += C) {
+    const m = Math.min(C, len - o);
+    for (let i = 0; i < m; i += 1) tmp[i] = buf[o + i]!;
+    for (let b = 0; b < nb; b += 1) {
+      const k = coeffs[b]!;
+      const st = states[b]!;
+      const b0 = k.b0, b1 = k.b1, b2 = k.b2, a1 = k.a1, a2 = k.a2;
+      let x1 = st.x1, x2 = st.x2, y1 = st.y1, y2 = st.y2;
+      for (let i = 0; i < m; i += 1) {
+        const x = tmp[i]!;
+        const y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+        x2 = x1;
+        x1 = x;
+        y2 = y1;
+        y1 = y;
+        tmp[i] = y;
+      }
+      st.x1 = x1;
+      st.x2 = x2;
+      st.y1 = y1;
+      st.y2 = y2;
+    }
+    for (let i = 0; i < m; i += 1) buf[o + i] = tmp[i]!;
+  }
+}

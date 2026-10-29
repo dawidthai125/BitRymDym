@@ -175,3 +175,43 @@ export function dynamicsCoeffs(
     releaseCoeff: timeCoeff(runtime.releaseSec, sampleRate),
   };
 }
+
+/**
+ * Whole stereo buffers through processDynamicsSample, in place — same math, but
+ * skips log10 for levels clearly below the knee (gain reduction is exactly 0
+ * there) and pow while the smoothed gain is exactly 0 dB.
+ */
+const DB_TO_LN = Math.LN10 / 20;
+
+export function processDynamicsBuffer(
+  left: Float32Array,
+  right: Float32Array,
+  params: DynamicsRuntimeParams,
+  state: DynamicsState,
+  attackCoeff: number,
+  releaseCoeff: number,
+): void {
+  const W = Math.max(0, params.kneeDb);
+  const lowDb = W > 0 ? params.thresholdDb - W / 2 : params.thresholdDb;
+  // Conservative margin (1e-9 relative ≈ 9e-9 dB) so float rounding of log10 can't flip a branch.
+  const skipBelow = Number.isFinite(lowDb) ? 10 ** (lowDb / 20) * (1 - 1e-9) : 0;
+  const post = params.postGain;
+  let gainDb = state.gainDb;
+  const len = Math.min(left.length, right.length);
+  for (let i = 0; i < len; i += 1) {
+    const l = sanitizeSample(left[i]!);
+    const r = sanitizeSample(right[i]!);
+    const level = Math.max(Math.abs(l), Math.abs(r));
+    const targetGr =
+      level > 0 && level < skipBelow
+        ? 0
+        : staticGainReductionDb(linearToDb(level), params.thresholdDb, params.kneeDb, params.ratio);
+    const coeff = targetGr < gainDb ? attackCoeff : releaseCoeff;
+    gainDb = coeff * gainDb + (1 - coeff) * targetGr;
+    if (!Number.isFinite(gainDb)) gainDb = 0;
+    const g = (gainDb === 0 ? 1 : Math.exp(gainDb * DB_TO_LN)) * post;
+    left[i] = sanitizeSample(l * g);
+    right[i] = sanitizeSample(r * g);
+  }
+  state.gainDb = gainDb;
+}
