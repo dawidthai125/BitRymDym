@@ -1832,6 +1832,61 @@
           "oneSide": "All ad-libs are on one side. Spread them left and right.",
           "na": "No sound to check."
         }
+      },
+      "poprawWszystko": "Fix everything",
+      "poprawWszystkoOpis": "BITEK fixes volume, balance, EQ, sibilance, compression, noise and panning, and adds space in time with the beat.",
+      "poprawAria": "Fix: {title}",
+      "poprawTrwa": "Fixing…",
+      "poprawBrak": "I can't fix this one automatically.",
+      "autofix": {
+        "podpis": "BITEK",
+        "tytul": "What I did to your mix",
+        "nic": "I listened and there's nothing to change here. Sounds good.",
+        "blad": "I couldn't save the fixes. Your mix is unchanged. Try again.",
+        "konflikt": "The project changed in the meantime. I refreshed it, click again.",
+        "toast": "BITEK: I fixed your mix (changes: {count}). Checking again…",
+        "zapisane": "I saved this as a “BITEK” version in your mix history. Undo it with Ctrl+Z.",
+        "cofnieto": "BITEK: I undid my fixes.",
+        "historia": "BITEK: {summary}",
+        "historiaWszystko": "I fixed the whole mix",
+        "historiaKarta": "I fixed: {title}",
+        "poAnalizie": {
+          "green": "I checked again: the mix works. You can move on to mastering.",
+          "yellow": "I checked again: it's better. Small things left for your ear: {yellow}.",
+          "red": "I checked again: it's better, but some things still need your call (red: {red})."
+        },
+        "ab": {
+          "label": "Compare before and after",
+          "przed": "Before",
+          "po": "After",
+          "opis": "You're hearing: {version}. Switching doesn't change your saved mix.",
+          "aria": "Listen before and after BITEK's fixes"
+        },
+        "notes": {
+          "chainFull": "“{track}” already has 8 effects, so I didn't add anything there.",
+          "gainClipTrack": "I turned “{track}” down {db} dB because it was clipping. Now it has headroom.",
+          "gainTrimTrack": "I turned “{track}” down {db} dB so it doesn't hit zero.",
+          "gainMasterDown": "I turned the whole mix down {db} dB to leave headroom for mastering.",
+          "gainMasterUp": "I turned the whole mix up {db} dB because it was too quiet to work with.",
+          "balanceVocalUp": "I turned your vocal up {up} dB and the beat down {down} dB so your vocal sits on top.",
+          "balanceVocalDown": "I turned the vocal down {down} dB and gave the beat {up} dB so the beat doesn't sound like background.",
+          "balanceSideDown": "I turned “{track}” down {db} dB. It should sit about {under} dB under the lead so it doesn't cover the words.",
+          "balanceSideUp": "I turned “{track}” up {db} dB. You should hear it, about {under} dB under the lead.",
+          "compLead": "I added a compressor on “{track}” ({ratio}:1). Your vocal stays even and the words don't get lost.",
+          "compSide": "I added a gentle compressor on “{track}” ({ratio}:1) so it sits evenly in the back.",
+          "eqBeatCut": "I turned the beat “{track}” down {db} dB in the mids (around 2.5 kHz) so your vocal sits better.",
+          "eqVocalHighpass": "I cut the rumble below {hz} Hz on “{track}”. The vocal sounds cleaner and the bass has room.",
+          "eqVocalPresence": "On “{track}” I took out some boom (250 Hz) and added 2 dB of clarity (3.5 kHz).",
+          "deesserSoft": "I added a de-esser on “{track}”. The s and sh sounds are softer.",
+          "deesserStrong": "I added a stronger de-esser on “{track}”. Harsh s and sh sounds don't sting anymore.",
+          "denoiseGate": "I added a gentle gate on “{track}”. Noise in the pauses is quieter (up to {db} dB).",
+          "denoiseRumble": "I also cut low noise below {hz} Hz on “{track}”.",
+          "panLeadCenter": "I put “{track}” in the centre. The lead vocal belongs in the middle.",
+          "panLeft": "I moved “{track}” left ({pct}%) to make room for the lead vocal.",
+          "panRight": "I moved “{track}” right ({pct}%) to make room for the lead vocal.",
+          "spaceLead": "I added a short echo ({note} note, {ms} ms at {bpm} BPM) and a light reverb on “{track}”. The vocal isn't dry and the words stay up front.",
+          "spaceSide": "I added reverb ({decay} s) and an echo in time with the beat ({note} note, {ms} ms) on “{track}”. Your adlibs make space behind you."
+        }
       }
     },
     "bitek": {

@@ -1832,6 +1832,61 @@
           "oneSide": "Wszystkie adliby są po jednej stronie. Rozłóż je na lewo i prawo.",
           "na": "Brak dźwięku do sprawdzenia."
         }
+      },
+      "poprawWszystko": "Popraw wszystko",
+      "poprawWszystkoOpis": "BITEK poprawi głośność, balans, EQ, sybilanty, kompresję, szumy, panoramę i doda przestrzeń w tempie bitu.",
+      "poprawAria": "Popraw: {title}",
+      "poprawTrwa": "Poprawiam…",
+      "poprawBrak": "Tego nie poprawię automatycznie.",
+      "autofix": {
+        "podpis": "BITEK",
+        "tytul": "Co zrobiłem w Twoim mixie",
+        "nic": "Posłuchałem i tu nie mam nic do zmiany. Jest dobrze.",
+        "blad": "Nie udało mi się zapisać poprawek. Twój mix jest bez zmian. Spróbuj jeszcze raz.",
+        "konflikt": "Projekt zmienił się w międzyczasie. Odświeżyłem dane, kliknij jeszcze raz.",
+        "toast": "BITEK: poprawiłem Twój mix (zmiany: {count}). Sprawdzam jeszcze raz…",
+        "zapisane": "Zapisałem to jako wersję „BITEK” w historii mixu. Cofniesz to przez Ctrl+Z.",
+        "cofnieto": "BITEK: cofnąłem moje poprawki.",
+        "historia": "BITEK: {summary}",
+        "historiaWszystko": "poprawiłem cały mix",
+        "historiaKarta": "poprawiłem: {title}",
+        "poAnalizie": {
+          "green": "Sprawdziłem jeszcze raz: mix gra. Możesz iść do masteringu.",
+          "yellow": "Sprawdziłem jeszcze raz: jest lepiej. Drobne rzeczy do Twojego ucha: {yellow}.",
+          "red": "Sprawdziłem jeszcze raz: jest lepiej, ale część rzeczy nadal wymaga Twojej decyzji (czerwone: {red})."
+        },
+        "ab": {
+          "label": "Porównaj przed i po",
+          "przed": "Przed",
+          "po": "Po",
+          "opis": "Słuchasz: {version}. Przełączenie nie zmienia zapisanego mixu.",
+          "aria": "Odsłuch przed i po poprawkach BITKA"
+        },
+        "notes": {
+          "chainFull": "Na ścieżce „{track}” jest już 8 efektów, więc nic tam nie dokładałem.",
+          "gainClipTrack": "Ściszyłem „{track}” o {db} dB, bo przesterowało. Teraz ma zapas.",
+          "gainTrimTrack": "Ściszyłem „{track}” o {db} dB, żeby nie dobijała do zera.",
+          "gainMasterDown": "Ściszyłem całość o {db} dB, żeby zostawić zapas na mastering.",
+          "gainMasterUp": "Podgłośniłem całość o {db} dB, bo była za cicha do pracy.",
+          "balanceVocalUp": "Podgłośniłem Twój wokal o {up} dB i ściszyłem bit o {down} dB, żeby wokal siedział na wierzchu.",
+          "balanceVocalDown": "Ściszyłem wokal o {down} dB i dałem bitowi {up} dB, żeby bit nie brzmiał jak tło.",
+          "balanceSideDown": "Ściszyłem „{track}” o {db} dB. Ma być około {under} dB pod głównym wokalem, żeby nie zasłaniało słów.",
+          "balanceSideUp": "Podgłośniłem „{track}” o {db} dB. Ma być słychać, ale około {under} dB pod głównym wokalem.",
+          "compLead": "Dodałem kompresor na „{track}” ({ratio}:1). Wokal trzyma równy poziom, słowa nie uciekają.",
+          "compSide": "Dodałem delikatny kompresor na „{track}” ({ratio}:1), żeby równo siedziało w tle.",
+          "eqBeatCut": "Ściszyłem bit „{track}” o {db} dB w środku pasma (ok. 2,5 kHz), żeby Twój wokal lepiej siedział.",
+          "eqVocalHighpass": "Wyciąłem dudnienie poniżej {hz} Hz na „{track}”. Wokal brzmi czyściej, bas ma miejsce.",
+          "eqVocalPresence": "Na „{track}” zdjąłem trochę buczenia (250 Hz) i dodałem 2 dB czytelności (3,5 kHz).",
+          "deesserSoft": "Dodałem de-esser na „{track}”. Głoski s i sz są łagodniejsze.",
+          "deesserStrong": "Dodałem mocniejszy de-esser na „{track}”. Ostre s i sz już nie kłują.",
+          "denoiseGate": "Dodałem delikatną bramkę na „{track}”. W pauzach szum jest cichszy (maks. {db} dB).",
+          "denoiseRumble": "Wyciąłem też niskie szumy poniżej {hz} Hz na „{track}”.",
+          "panLeadCenter": "Ustawiłem „{track}” na środku. Główny wokal ma być w centrum.",
+          "panLeft": "Przesunąłem „{track}” w lewo ({pct}%), żeby zrobić miejsce głównemu wokalowi.",
+          "panRight": "Przesunąłem „{track}” w prawo ({pct}%), żeby zrobić miejsce głównemu wokalowi.",
+          "spaceLead": "Dodałem krótkie echo ({note} nuty, {ms} ms przy {bpm} BPM) i lekki pogłos na „{track}”. Wokal nie brzmi sucho, a słowa zostają z przodu.",
+          "spaceSide": "Dodałem pogłos ({decay} s) i echo w tempie bitu ({note} nuty, {ms} ms) na „{track}”. Adliby robią przestrzeń za Tobą."
+        }
       }
     },
     "bitek": {
