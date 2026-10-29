@@ -79,3 +79,6 @@ supabase/.branches/
 # infra build artifacts / ORM snapshots
 /infra/**/*.zip
 /infra/**/*.CURRENT-FROM-ORM*
+
+__pycache__/
+*.pyc

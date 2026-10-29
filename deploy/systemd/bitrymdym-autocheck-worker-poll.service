@@ -12,9 +12,13 @@ After=network-online.target
 User=bitrymdym-e3
 Group=bitrymdym-e3
 WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
 EnvironmentFile=/etc/bitrymdym-e3-worker/autocheck.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+Environment=HF_HUB_OFFLINE=1
 ExecStart=/usr/bin/npm run autocheck:worker:poll
-Restart=no
+Restart=on-failure
+RestartSec=30
 # Demucs on CPU: cap memory/CPU so the STUDIO export poller keeps headroom.
 MemoryMax=4G
 CPUQuota=200%
