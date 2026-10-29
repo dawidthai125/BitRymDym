@@ -4,6 +4,7 @@ import {
   SCRATCH_DEFAULT_RATE,
   SCRATCH_RATE_MAX,
   SCRATCH_RATE_MIN,
+  SCRATCH_JOG_RATE_PER_FULL_WIDTH,
   applyScratchJogDelta,
   approveScratchLive,
   assertScratchExportEncodable,
@@ -12,6 +13,7 @@ import {
   resolveScratchSourceMs,
   defaultScratchLiveState,
   releaseScratchJog,
+  scratchJogRateDeltaFromMove,
   setScratchCue,
   parseScratchApprovedForWrite,
   studioScratchLivePlaybackRate,
@@ -44,6 +46,16 @@ describe("studio-scratch-state", () => {
     expect(released.jogging).toBe(false);
     expect(released.rate).toBe(1);
     expect(released.cueMs).toBe(120);
+  });
+
+  it("normalizes jog delta to pad width for stable mobile feel", () => {
+    expect(scratchJogRateDeltaFromMove(100, 200)).toBe(
+      0.5 * SCRATCH_JOG_RATE_PER_FULL_WIDTH,
+    );
+    const halfPad = applyScratchJogDelta(defaultScratchLiveState(), 160, 320);
+    expect(halfPad.rate).toBeCloseTo(1 + SCRATCH_JOG_RATE_PER_FULL_WIDTH / 2);
+    // Unknown width falls back to per-px sensitivity (legacy desktop path).
+    expect(scratchJogRateDeltaFromMove(50, 0)).toBe(50 * 0.02);
   });
 
   it("approve copies live cue/reverse/rate", () => {

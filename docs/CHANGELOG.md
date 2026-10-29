@@ -6,6 +6,21 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-29 — Unit 5 Scratch jog mobile (pointer + pad-normalized)
+
+**Status:** kod **SHIPPED** · vitest scratch-state/cas/engine **21/21** · Owner mobile UI smoke **NOT VERIFIED** · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** Owner „Tak zróbmy to” — mobile Scratch oporna w obsłudze
+**Tip start:** `070c0291fb4d1172756744a824a8b45c9a42a9b8` = `origin/main`
+**Root cause:** cienki `min-h-11` jog + stale `live` w `onPointerMove` + scroll kradnie gest + stałe px sensitivity
+**Code:** `scratchJogRateDeltaFromMove` (pełna szerokość pad ≈ ±2 rate) · `liveRef` + `pointerId` capture · `preventDefault` / `touch-action:none` · jog `min-h-28` (mobile) / `sm:min-h-16` · strzałki klawiatury · range `h-11`
+**Allowlista:** `studio-scratch-panel.tsx` · `studio-scratch-state.ts` · `studio-scratch-state.test.ts` · docs tip
+**Explicit non-claim:** Owner mobile smoke **NOT VERIFIED** · ucha **NOT VERIFIED** · BPM-grid / jog automation **OUT** · OD-15 **OPEN**
+**NEXT:** Owner mobile smoke jog na www — nie SFM / nie Contabo
+
+## 2026-10-29 — SESSION_BRIDGE §4 archive (twenty-first batch, room for Scratch jog mobile)
+
+**Status:** documentation · archiwizacja 3 najstarszych living `EXECUTED` (`GO-SB-ARCHIVE-16` · `LEFTOVER-SET-SCRATCH` · `CAT-PLACE-RECORD`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
 ## 2026-10-28 — Unit 4 punch/count-in/metro+loop smoke PASS
 
 **Status:** Loop+Metro toggle **PASS** · Count-in/punch UI **widoczne** · REC→Stop→Zachowaj **PASS** (finalize **200** · place **201**) · cleanup DELETE clip **200** · audit [PUNCH_METRO_UNIT4_SMOKE_2026-10-28.md](./audits/PUNCH_METRO_UNIT4_SMOKE_2026-10-28.md) · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

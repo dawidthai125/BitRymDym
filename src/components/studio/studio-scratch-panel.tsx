@@ -2,9 +2,11 @@
 
 import {
   useCallback,
+  useEffect,
   useId,
   useRef,
   useState,
+  type KeyboardEvent,
   type PointerEvent,
 } from "react";
 
@@ -31,6 +33,8 @@ type StudioScratchPanelProps = {
   onApprove?: (approved: StudioScratchApprovedState) => void;
 };
 
+const JOG_KEYBOARD_STEP = 0.05;
+
 export function StudioScratchPanel({
   sourceDurationMs,
   playheadInSourceMs,
@@ -45,7 +49,18 @@ export function StudioScratchPanel({
   const [live, setLive] = useState<StudioScratchLiveState>(
     defaultScratchLiveState,
   );
+  const liveRef = useRef(live);
+  const approvedRef = useRef(approved);
   const lastXRef = useRef<number | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    liveRef.current = live;
+  }, [live]);
+
+  useEffect(() => {
+    approvedRef.current = approved;
+  }, [approved]);
 
   const emitRate = useCallback(
     (next: StudioScratchLiveState) => {
@@ -59,40 +74,97 @@ export function StudioScratchPanel({
   );
 
   function applyLive(next: StudioScratchLiveState): void {
+    liveRef.current = next;
     setLive(next);
     emitRate(next);
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>): void {
+    // Stop vertical page scroll / Inspector swipe from stealing the jog.
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    activePointerIdRef.current = event.pointerId;
     lastXRef.current = event.clientX;
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>): void {
+    if (activePointerIdRef.current !== event.pointerId) return;
     if (lastXRef.current == null) return;
     const delta = event.clientX - lastXRef.current;
     lastXRef.current = event.clientX;
-    applyLive(applyScratchJogDelta(live, delta));
+    const padWidth = event.currentTarget.getBoundingClientRect().width;
+    applyLive(applyScratchJogDelta(liveRef.current, delta, padWidth));
   }
 
-  function onPointerUp(event: PointerEvent<HTMLDivElement>): void {
+  function endPointerJog(event: PointerEvent<HTMLDivElement>): void {
+    if (activePointerIdRef.current !== event.pointerId) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    activePointerIdRef.current = null;
     lastXRef.current = null;
-    const next = releaseScratchJog(live, approved);
+    const next = releaseScratchJog(liveRef.current, approvedRef.current);
     applyLive(next);
+  }
+
+  function onJogKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+      event.preventDefault();
+      applyLive({
+        ...setScratchRate(
+          liveRef.current,
+          liveRef.current.rate + JOG_KEYBOARD_STEP,
+        ),
+        jogging: true,
+      });
+      return;
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+      event.preventDefault();
+      applyLive({
+        ...setScratchRate(
+          liveRef.current,
+          liveRef.current.rate - JOG_KEYBOARD_STEP,
+        ),
+        jogging: true,
+      });
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      applyLive(releaseScratchJog(liveRef.current, approvedRef.current));
+      return;
+    }
+    if (
+      (event.key === " " || event.key === "Enter") &&
+      liveRef.current.jogging
+    ) {
+      event.preventDefault();
+      applyLive(releaseScratchJog(liveRef.current, approvedRef.current));
+    }
+  }
+
+  function onJogKeyUp(event: KeyboardEvent<HTMLDivElement>): void {
+    if (
+      event.key === "ArrowRight" ||
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown"
+    ) {
+      event.preventDefault();
+      applyLive(releaseScratchJog(liveRef.current, approvedRef.current));
+    }
   }
 
   return (
     <div
-      className="space-y-2 rounded border border-[var(--brd-line)] p-2"
+      className="space-y-3 rounded border border-[var(--brd-line)] p-2"
       data-testid="studio-scratch-panel"
     >
       <p className="text-xs font-medium text-[var(--brd-ink)]">Scratch DJ v1</p>
       <p className="text-xs text-[var(--brd-mute)]" role="status">
-        Jog, tempo i reverse na jednym silniku Studio. Zatwierdź, żeby zapisać
-        CAS.
+        Przeciągnij jog w poziomie (palec lub mysz). Po puszczeniu wraca do
+        zatwierdzonego tempa. Zatwierdź, żeby zapisać CAS.
       </p>
       <div
         id={jogId}
@@ -102,13 +174,21 @@ export function StudioScratchPanel({
         aria-valuemin={25}
         aria-valuemax={400}
         aria-valuenow={Math.round(live.rate * 100)}
-        aria-valuetext={`${live.rate.toFixed(2)}×`}
+        aria-valuetext={`${live.rate.toFixed(2)}×${live.jogging ? " · scratch" : ""}`}
+        aria-orientation="horizontal"
         data-testid="studio-scratch-jog"
-        className="flex min-h-11 w-full touch-none items-center justify-center rounded border border-[var(--brd-line)] bg-[var(--brd-bg-soft,transparent)] px-2 text-sm text-[var(--brd-ink)]"
+        className="flex min-h-28 w-full cursor-ew-resize touch-none select-none items-center justify-center rounded-md border-2 border-[var(--brd-line)] bg-[var(--brd-bg-soft,transparent)] px-3 text-base font-medium text-[var(--brd-ink)] active:border-[var(--brd-green)] sm:min-h-16"
+        style={{ touchAction: "none" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerUp={endPointerJog}
+        onPointerCancel={endPointerJog}
+        onLostPointerCapture={() => {
+          activePointerIdRef.current = null;
+          lastXRef.current = null;
+        }}
+        onKeyDown={onJogKeyDown}
+        onKeyUp={onJogKeyUp}
       >
         Jog · {live.rate.toFixed(2)}×
         {live.jogging ? " · scratch" : ""}
@@ -149,6 +229,7 @@ export function StudioScratchPanel({
           onClick={() => {
             const nextApproved = approveScratchLive(live);
             setApproved(nextApproved);
+            approvedRef.current = nextApproved;
             applyLive({ ...nextApproved, jogging: false });
             onApprove?.(nextApproved);
           }}
@@ -165,7 +246,7 @@ export function StudioScratchPanel({
           step={1}
           value={Math.round(live.rate * 100)}
           aria-label="Tempo Scratch"
-          className="mt-1 w-full"
+          className="mt-2 h-11 w-full accent-[var(--brd-green)]"
           onChange={(event) => {
             applyLive(setScratchRate(live, Number(event.target.value) / 100));
           }}

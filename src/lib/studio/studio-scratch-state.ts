@@ -9,7 +9,13 @@
 export const SCRATCH_RATE_MIN = 0.25;
 export const SCRATCH_RATE_MAX = 4;
 export const SCRATCH_DEFAULT_RATE = 1;
+/** Desktop pointer: rate change per CSS pixel of horizontal drag. */
 export const SCRATCH_JOG_RATE_PER_PX = 0.02;
+/**
+ * Pad-normalized jog: drag across the full jog width ≈ this many rate units
+ * (before clamp). Mobile thumbs get stable feel across viewport widths.
+ */
+export const SCRATCH_JOG_RATE_PER_FULL_WIDTH = 2;
 
 export const SCRATCH_EXPORT_UNSUPPORTED = "SCRATCH_EXPORT_UNSUPPORTED" as const;
 
@@ -55,15 +61,32 @@ export function clampScratchCueMs(
   return Math.min(Math.floor(cueMs), sourceDurationMs - 1);
 }
 
+/**
+ * Convert horizontal pad movement into a rate delta.
+ * Prefer pad width (mobile-stable). Fall back to px sensitivity when width unknown.
+ */
+export function scratchJogRateDeltaFromMove(
+  deltaPx: number,
+  padWidthPx: number,
+): number {
+  const delta = Number.isFinite(deltaPx) ? deltaPx : 0;
+  if (Number.isFinite(padWidthPx) && padWidthPx >= 8) {
+    return (delta / padWidthPx) * SCRATCH_JOG_RATE_PER_FULL_WIDTH;
+  }
+  return delta * SCRATCH_JOG_RATE_PER_PX;
+}
+
 export function applyScratchJogDelta(
   live: StudioScratchLiveState,
   deltaPx: number,
+  padWidthPx = 0,
 ): StudioScratchLiveState {
-  const delta = Number.isFinite(deltaPx) ? deltaPx : 0;
   return {
     ...live,
     jogging: true,
-    rate: clampScratchRate(live.rate + delta * SCRATCH_JOG_RATE_PER_PX),
+    rate: clampScratchRate(
+      live.rate + scratchJogRateDeltaFromMove(deltaPx, padWidthPx),
+    ),
   };
 }
 
