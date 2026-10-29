@@ -1397,10 +1397,10 @@ Lokalnie przygotowano Rights Safety P0-A/B/C (bramka publikacji, nierozstrzygni�
 
 Obowiązkowa kolejność czterech migracji:
 
-1. `20261029130000_beat_rights_safety_p0.sql`
-2. `20261029130010_beat_rights_safety_p0_fix.sql`
-3. `20261029130020_beat_rights_safety_p0_remediation.sql`
-4. `20261029130030_beat_rights_safety_p0_master_mutation_guard.sql`
+1. `20261029034653_beat_rights_safety_p0.sql`
+2. `20261029034706_beat_rights_safety_p0_fix.sql`
+3. `20261029034711_beat_rights_safety_p0_remediation.sql`
+4. `20261029034718_beat_rights_safety_p0_master_mutation_guard.sql`
 
 Pominięcie remediation (krok 3) pozostawia niekompletny łańcuch P0-A/B. Szczegóły: [BEAT_RIGHTS_SAFETY.md](../architecture/BEAT_RIGHTS_SAFETY.md), addenda w [PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](../phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md).
 
