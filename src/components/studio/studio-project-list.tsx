@@ -29,6 +29,7 @@ function formatProjectDate(iso: string, tag = "pl-PL"): string {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "Europe/Warsaw",
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -43,6 +44,7 @@ function formatProjectDateTime(iso: string, tag = "pl-PL"): string {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Warsaw",
     }).format(new Date(iso));
   } catch {
     return iso;

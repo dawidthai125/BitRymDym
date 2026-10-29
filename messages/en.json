@@ -1982,7 +1982,7 @@
     "masterStep": {
       "tytul": "Mastering",
       "wrocDoMixu": "Back to Mix",
-      "wrocUwaga": "After Mix changes, mastering has to be done again.",
+      "wrocUwaga": "If you go back to Mix and change something, we will master again.",
       "renderuje": "Bouncing your mix into one track… {pct}%",
       "renderBlad": "Couldn't bounce the mix. Go back to Mix and try again.",
       "calyNumer": "From now on I hear the whole song as one stereo track.",

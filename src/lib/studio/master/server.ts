@@ -50,11 +50,12 @@ async function inputExists(admin: Admin, prefix: string, stems: boolean): Promis
 export type MasterJobView = {
   id: string; kind: StudioMasterJobKind; status: string; target: string | null; outputFormat: StudioMasterOutputFormat;
   metrics: unknown; errorCode: string | null; approvedAt: string | null; createdAt: string;
+  settings: Record<string, number> | null;
 };
 const view = (r: Record<string, unknown>): MasterJobView => ({
   id: String(r.id), kind: r.kind as StudioMasterJobKind, status: String(r.status), target: (r.target as string) ?? null,
   outputFormat: r.output_format as StudioMasterOutputFormat, metrics: r.metrics ?? null, errorCode: (r.error_code as string) ?? null,
-  approvedAt: (r.approved_at as string) ?? null, createdAt: String(r.created_at),
+  approvedAt: (r.approved_at as string) ?? null, settings: (r.settings as Record<string, number>) ?? null, createdAt: String(r.created_at),
 });
 
 /** Latest master job (+ approved one) and the Free weekly counter. */
@@ -67,7 +68,9 @@ export async function getStudioMasterState(p: { ownerId: string; projectId: stri
   check(error);
   const rows = (data ?? []) as Record<string, unknown>[];
   const latest = rows[0] ? view(rows[0]) : null;
-  const approved = rows.find((r) => r.approved_at) ?? null;
+  // Only an approval that still matches the current mix counts (same rule as delivery).
+  const valid = await approvedMaster(admin, p.ownerId, p.projectId);
+  const approved = valid ? rows.find((r) => r.id === valid.id) ?? null : null;
   const limit = DELIVER_WEEKLY_LIMIT[p.tier];
   let used = 0;
   let resetAt: string | null = null;
