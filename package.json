@@ -20,6 +20,7 @@
     "generate:bpm-fixtures": "tsx scripts/generate-bpm-fixtures.ts",
     "e3:worker:once": "tsx --import ./scripts/register-server-only-stub.mjs scripts/e3-render-worker-once.ts",
     "e3:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/e3-render-worker-poll.ts",
+    "preview:backfill": "tsx --import ./scripts/register-server-only-stub.mjs scripts/beat-preview-backfill.ts",
     "sfm:worker:poll": "tsx --import ./scripts/register-server-only-stub.mjs scripts/sfm-worker-poll.ts",
     "far01:backfill:dry-run": "tsx scripts/far01-backfill-dry-run.ts",
     "far01:backfill:prod-dry-run": "tsx scripts/far01-backfill-prod-dry-run.ts",

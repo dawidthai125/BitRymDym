@@ -132,7 +132,8 @@
       "guestLink": "Sign in",
       "planDownload": "Downloads start with the {plan} plan.",
       "planTrack": "More recording tracks with the {plan} plan.",
-      "planLink": "See plans"
+      "planLink": "See plans",
+      "platformDownload": "Download unavailable — you can listen to and record on platform catalogue beats, but the original can't be downloaded."
     },
     "planUsage": {
       "aria": "{plan} plan — show limits",
@@ -168,7 +169,9 @@
       "opis": "Sign in to hear full beats, record and use Studio.",
       "zaloguj": "Sign in",
       "zalozKonto": "Create account",
-      "zamknij": "Close"
+      "zamknij": "Close",
+      "brakPodgladu": "This beat has no guest preview yet",
+      "brakOpis": "Sign in to listen to the full beat."
     }
   },
   "account": {

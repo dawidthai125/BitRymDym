@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { signInPathWithNext } from "@/lib/auth/next-path";
+import { signInPathWithNext, signUpPathWithNext } from "@/lib/auth/next-path";
 
 /**
  * Guest preview cap reached (GUEST_POLICY.previewSeconds). Fixed bubble above
@@ -13,9 +13,12 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 export function GuestPreviewPrompt({
   seconds,
   onClose,
+  variant = "ended",
 }: {
   seconds: number;
   onClose: () => void;
+  /** "unavailable": the beat has no 20 s guest preview asset yet. */
+  variant?: "ended" | "unavailable";
 }) {
   const t = useTranslations("common.guestPreview");
   const pathname = usePathname() ?? "/";
@@ -23,12 +26,17 @@ export function GuestPreviewPrompt({
     <div
       role="status"
       data-testid="guest-preview-prompt"
+      data-variant={variant}
       className="fixed inset-x-3 bottom-24 z-[60] mx-auto max-w-md rounded-md border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4 text-[var(--brd-ink)] shadow-xl sm:bottom-28"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="text-sm font-semibold">{t("tytul", { s: seconds })}</p>
-          <p className="text-sm text-[var(--brd-ink-soft)]">{t("opis")}</p>
+          <p className="text-sm font-semibold">
+            {variant === "unavailable" ? t("brakPodgladu") : t("tytul", { s: seconds })}
+          </p>
+          <p className="text-sm text-[var(--brd-ink-soft)]">
+            {variant === "unavailable" ? t("brakOpis") : t("opis")}
+          </p>
         </div>
         <button
           type="button"
@@ -47,7 +55,7 @@ export function GuestPreviewPrompt({
         >
           {t("zaloguj")}
         </Link>
-        <Link href="/sign-up" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
+        <Link href={signUpPathWithNext(pathname)} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
           {t("zalozKonto")}
         </Link>
       </div>

@@ -26,6 +26,7 @@ import {
   toSafePlaybackErrorMessage,
 } from "@/lib/beats/public";
 import { GuestPreviewPrompt } from "@/components/player/guest-preview-prompt";
+import { GUEST_POLICY } from "@/config/plan-policy";
 import { shouldRestartFromStart } from "@/lib/player/playback-progress";
 
 export type PlayerTrack = {
@@ -66,6 +67,14 @@ type PlayerContextValue = {
   dismissPreviewPrompt: () => void;
 };
 
+/** Guest playback refused: no 20 s preview asset (server never sends the full file). */
+class GuestPreviewUnavailableError extends Error {
+  constructor() {
+    super("guest preview unavailable");
+    this.name = "GuestPreviewUnavailableError";
+  }
+}
+
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 export function usePlayer(): PlayerContextValue {
@@ -97,6 +106,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const previewLimitRef = useRef<number | null>(null);
   const [previewLimitSeconds, setPreviewLimitSeconds] = useState<number | null>(null);
   const [previewEnded, setPreviewEnded] = useState(false);
+  /** Guest asked for a beat that has no server-side 20 s preview yet. */
+  const [previewUnavailable, setPreviewUnavailable] = useState(false);
 
   // Keep ended/restart fallback in sync without writing refs during render.
   useEffect(() => {
@@ -129,6 +140,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     const onEnded = () => {
       setPhase("paused");
+      // The guest file itself is only the 20 s preview: its end is the cap.
+      if (previewLimitRef.current !== null) setPreviewEnded(true);
       const end =
         Number.isFinite(audio.duration) && audio.duration > 0
           ? audio.duration
@@ -192,6 +205,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       beatId,
       purpose: PUBLIC_PLAYBACK_PURPOSE,
     });
+    if (!result.success && result.code === "PREVIEW_UNAVAILABLE") {
+      throw new GuestPreviewUnavailableError();
+    }
     if (!result.success || !result.url) {
       throw new Error(
         toSafePlaybackErrorMessage(result.error || t("brakDostepuDoOdsluchu")),
@@ -267,6 +283,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setDuration(next.durationSeconds);
       setSuppressed(false);
       setPreviewEnded(false);
+      setPreviewUnavailable(false);
       setPhase("loading");
 
       try {
@@ -290,6 +307,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPhase("paused");
         setCurrentTime(audio.currentTime);
       } catch (e) {
+        if (e instanceof GuestPreviewUnavailableError) {
+          setPhase("idle");
+          setPreviewUnavailable(true);
+          return;
+        }
         setPhase("error");
         setError(
           toSafePlaybackErrorMessage(
@@ -320,6 +342,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           restartFromStartIfNeeded(audio);
           await audio.play();
         } catch (e) {
+          if (e instanceof GuestPreviewUnavailableError) {
+            setPhase("idle");
+            setPreviewUnavailable(true);
+            return;
+          }
           setPhase("error");
           setError(
             toSafePlaybackErrorMessage(
@@ -373,7 +400,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
-  const dismissPreviewPrompt = useCallback(() => setPreviewEnded(false), []);
+  const dismissPreviewPrompt = useCallback(() => {
+    setPreviewEnded(false);
+    setPreviewUnavailable(false);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -414,7 +444,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return (
     <PlayerContext.Provider value={value}>
       {children}
-      {previewEnded && previewLimitSeconds !== null ? (
+      {previewUnavailable ? (
+        <GuestPreviewPrompt
+          variant="unavailable"
+          seconds={GUEST_POLICY.previewSeconds}
+          onClose={dismissPreviewPrompt}
+        />
+      ) : previewEnded && previewLimitSeconds !== null ? (
         <GuestPreviewPrompt
           seconds={previewLimitSeconds}
           onClose={dismissPreviewPrompt}

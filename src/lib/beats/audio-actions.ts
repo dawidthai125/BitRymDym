@@ -4,6 +4,7 @@ import { AuthError } from "@/lib/auth/session";
 import {
   BEAT_DOWNLOAD_LOGIN_REQUIRED,
   BEAT_DOWNLOAD_PLAN_REQUIRED,
+  BEAT_PREVIEW_LOGIN_REQUIRED,
   requestBeatAudioAccess,
   requestPlatformBeatOpsExport,
 } from "@/lib/beats/audio-access";
@@ -30,8 +31,11 @@ export type AudioActionState = {
   remainingToday?: number;
   /** Guests: stop playback here and show the sign-in prompt. */
   previewLimitSeconds?: number;
-  /** Locked download reason (button tooltip). */
-  code?: "LOGIN_REQUIRED" | "PLAN_REQUIRED";
+  /**
+   * LOGIN_REQUIRED / PLAN_REQUIRED: locked download (button tooltip).
+   * PREVIEW_UNAVAILABLE: guest playback without a 20 s preview asset.
+   */
+  code?: "LOGIN_REQUIRED" | "PLAN_REQUIRED" | "PREVIEW_UNAVAILABLE";
 };
 
 function catchAudio(
@@ -51,7 +55,9 @@ function catchAudio(
       ? ("LOGIN_REQUIRED" as const)
       : raw === BEAT_DOWNLOAD_PLAN_REQUIRED
         ? ("PLAN_REQUIRED" as const)
-        : undefined;
+        : raw === BEAT_PREVIEW_LOGIN_REQUIRED
+          ? ("PREVIEW_UNAVAILABLE" as const)
+          : undefined;
   return code ? { error: mapped, success: false, code } : { error: mapped, success: false };
 }
 

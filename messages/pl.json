@@ -132,7 +132,8 @@
       "guestLink": "Zaloguj się",
       "planDownload": "Pobieranie jest od planu {plan}.",
       "planTrack": "Więcej ścieżek nagrań od planu {plan}.",
-      "planLink": "Zobacz plany"
+      "planLink": "Zobacz plany",
+      "platformDownload": "Pobieranie niedostępne — oryginał bitu z katalogu platformy możesz odsłuchać i nagrywać na nim, ale nie pobrać."
     },
     "planUsage": {
       "aria": "Plan {plan} — pokaż limity",
@@ -168,7 +169,9 @@
       "opis": "Zaloguj się, aby słuchać całych bitów, nagrywać i korzystać ze Studia.",
       "zaloguj": "Zaloguj się",
       "zalozKonto": "Załóż konto",
-      "zamknij": "Zamknij"
+      "zamknij": "Zamknij",
+      "brakPodgladu": "Ten bit nie ma jeszcze podglądu dla gości",
+      "brakOpis": "Zaloguj się, aby posłuchać całego bitu."
     }
   },
   "account": {

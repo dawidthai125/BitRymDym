@@ -81,3 +81,17 @@ describe("vocal + env", () => {
     expect(on).toMatchObject({ action: "run", workerRef: "auto-check-42", acoustidKey: undefined });
   });
 });
+
+describe("preview worker env", () => {
+  it("preview off by default; sweep needs preview on and >= 10 s", () => {
+    const base = { BEAT_AUTO_CHECK_ENABLED: "true" };
+    const off = decideAutoCheckWorkerConfig(base, 1);
+    expect(off).toMatchObject({ previewEnabled: false, previewSweepMs: 0 });
+    const on = decideAutoCheckWorkerConfig({ ...base, BEAT_PREVIEW_ENABLED: "true", BEAT_PREVIEW_SWEEP_MS: "60000" }, 1);
+    expect(on).toMatchObject({ previewEnabled: true, previewSweepMs: 60000 });
+    const tiny = decideAutoCheckWorkerConfig({ ...base, BEAT_PREVIEW_ENABLED: "true", BEAT_PREVIEW_SWEEP_MS: "50" }, 1);
+    expect(tiny).toMatchObject({ previewSweepMs: 0 });
+    const sweepOnly = decideAutoCheckWorkerConfig({ ...base, BEAT_PREVIEW_SWEEP_MS: "60000" }, 1);
+    expect(sweepOnly).toMatchObject({ previewEnabled: false, previewSweepMs: 0 });
+  });
+});
