@@ -24,6 +24,7 @@ import {
 import {
   computeBiquadCoeffs,
   createStereoBiquadState,
+  processBiquadCascadeBuffer,
   processStereoBiquadSample,
   STEREO_BIQUAD_STATE_BYTES,
   type BiquadCoeffs,
@@ -41,12 +42,16 @@ import {
   dynamicsCoeffs,
   DYNAMICS_STATE_BYTES,
   limiterRuntimeFromParams,
+  processDynamicsBuffer,
   processDynamicsSample,
+  linearToDb,
+  staticGainReductionDb,
   type DynamicsRuntimeParams,
   type DynamicsState,
 } from "@/lib/studio/studio-offline-fx-dynamics";
 import {
   createStereoReverbRuntime,
+  processReverbBufferFresh,
   processReverbSample,
   type StereoReverbRuntime,
 } from "@/lib/studio/studio-offline-fx-reverb";
@@ -105,6 +110,8 @@ export type StudioOfflineFxProcessor = {
   /** Approximate retained state bytes (PCM plane accounting). */
   readonly stateBytes: number;
   process(sample: StudioOfflineFxSample): StudioOfflineFxSample;
+  /** Optional whole-buffer path (in place) — must equal per-sample process(). */
+  processBuffer?(left: Float32Array, right: Float32Array): void;
   reset(): void;
 };
 
@@ -114,8 +121,32 @@ export type StudioOfflineFxChainHandle = {
   readonly processors: readonly StudioOfflineFxProcessor[];
   readonly stateBytes: number;
   process(sample: StudioOfflineFxSample): StudioOfflineFxSample;
+  /**
+   * Whole buffers in place, processor by processor (the chain is serial and
+   * feed-forward, so this equals per-sample process() up to f32 rounding
+   * between stages). Use on a fresh chain for a full render.
+   */
+  processBuffer(left: Float32Array, right: Float32Array): void;
   reset(): void;
 };
+
+/** Per-sample fallback for processors without a buffer path. */
+function processBufferPerSample(
+  p: StudioOfflineFxProcessor,
+  left: Float32Array,
+  right: Float32Array,
+): void {
+  if (p.status !== "IMPLEMENTED") return;
+  const sample = { left: 0, right: 0 };
+  const len = Math.min(left.length, right.length);
+  for (let i = 0; i < len; i += 1) {
+    sample.left = left[i]!;
+    sample.right = right[i]!;
+    const out = p.process(sample);
+    left[i] = out.left;
+    right[i] = out.right;
+  }
+}
 
 function wireProcessor(
   status: "BYPASS" | "SKIP",
@@ -198,6 +229,11 @@ export function createEqProcessorAtRate(
       }
       return { left, right };
     },
+    processBuffer(left, right) {
+      const coeffs = bands.map((b) => b.coeffs);
+      processBiquadCascadeBuffer(left, coeffs, bands.map((b) => b.state.left));
+      processBiquadCascadeBuffer(right, coeffs, bands.map((b) => b.state.right));
+    },
     reset() {
       for (const band of bands) {
         band.state = createStereoBiquadState();
@@ -229,6 +265,9 @@ function createDynamicsProcessor(
         attackCoeff,
         releaseCoeff,
       );
+    },
+    processBuffer(left, right) {
+      processDynamicsBuffer(left, right, runtime, state, attackCoeff, releaseCoeff);
     },
     reset() {
       state = createDynamicsState();
@@ -293,23 +332,34 @@ export function createReverbProcessorAtRate(
   effect: Extract<StudioFxInstance, { type: "reverb" }>,
   sampleRate: number,
 ): StudioOfflineFxProcessor {
-  let runtime: StereoReverbRuntime = createStereoReverbRuntime(
+  const runtime: StereoReverbRuntime = createStereoReverbRuntime(
     effect.params,
     sampleRate,
   );
-  return {
+  let fresh = true;
+  const self: StudioOfflineFxProcessor = {
     type: "reverb",
     effectId: effect.id,
     status: "IMPLEMENTED",
     stateBytes: runtime.stateBytes,
     process(sample) {
+      fresh = false;
       return processReverbSample(sample.left, sample.right, runtime);
     },
+    processBuffer(left, right) {
+      if (!fresh) {
+        processBufferPerSample(self, left, right);
+        return;
+      }
+      fresh = false;
+      processReverbBufferFresh(runtime, left, right);
+    },
     reset() {
-      runtime.left.reset();
-      runtime.right.reset();
+      fresh = true;
+      runtime.resetConvolvers();
     },
   };
+  return self;
 }
 
 export function createHighpassProcessorAtRate(
@@ -332,10 +382,91 @@ export function createHighpassProcessorAtRate(
     process(sample) {
       return processStereoBiquadSample(sample.left, sample.right, coeffs, state);
     },
+    processBuffer(left, right) {
+      processBiquadCascadeBuffer(left, [coeffs], [state.left]);
+      processBiquadCascadeBuffer(right, [coeffs], [state.right]);
+    },
     reset() {
       state = createStereoBiquadState();
     },
   };
+}
+
+const DYN_DB_TO_LN = Math.LN10 / 20;
+type BiquadSt = { x1: number; x2: number; y1: number; y2: number };
+type DeesserState = {
+  lp1: StereoBiquadState;
+  lp2: StereoBiquadState;
+  hp1: StereoBiquadState;
+  hp2: StereoBiquadState;
+  dyn: DynamicsState;
+};
+
+function processDeesserBuffer(
+  left: Float32Array,
+  right: Float32Array,
+  lp: BiquadCoeffs,
+  hp: BiquadCoeffs,
+  s: DeesserState,
+  runtime: DynamicsRuntimeParams,
+  attackCoeff: number,
+  releaseCoeff: number,
+): void {
+  const st: BiquadSt[] = [s.lp1.left, s.lp2.left, s.hp1.left, s.hp2.left, s.lp1.right, s.lp2.right, s.hp1.right, s.hp2.right];
+  const z = new Float64Array(32);
+  for (let b = 0; b < 8; b += 1) {
+    z[b * 4] = st[b]!.x1;
+    z[b * 4 + 1] = st[b]!.x2;
+    z[b * 4 + 2] = st[b]!.y1;
+    z[b * 4 + 3] = st[b]!.y2;
+  }
+  const lb0 = lp.b0, lb1 = lp.b1, lb2 = lp.b2, la1 = lp.a1, la2 = lp.a2;
+  const hb0 = hp.b0, hb1 = hp.b1, hb2 = hp.b2, ha1 = hp.a1, ha2 = hp.a2;
+  const sec = (x: number, o: number, b0: number, b1: number, b2: number, a1: number, a2: number): number => {
+    const y = b0 * x + b1 * z[o]! + b2 * z[o + 1]! - a1 * z[o + 2]! - a2 * z[o + 3]!;
+    z[o + 1] = z[o]!;
+    z[o] = x;
+    z[o + 3] = z[o + 2]!;
+    z[o + 2] = y;
+    return y;
+  };
+  const len = Math.min(left.length, right.length);
+  const W = Math.max(0, runtime.kneeDb);
+  const lowDb = W > 0 ? runtime.thresholdDb - W / 2 : runtime.thresholdDb;
+  const skipBelow = Number.isFinite(lowDb) ? 10 ** (lowDb / 20) * (1 - 1e-9) : 0;
+  const post = runtime.postGain;
+  let gainDb = s.dyn.gainDb;
+  for (let i = 0; i < len; i += 1) {
+    const xl = left[i]!;
+    const xr = right[i]!;
+    const lowL = sec(sec(xl, 0, lb0, lb1, lb2, la1, la2), 4, lb0, lb1, lb2, la1, la2);
+    const highL = sec(sec(xl, 8, hb0, hb1, hb2, ha1, ha2), 12, hb0, hb1, hb2, ha1, ha2);
+    const lowR = sec(sec(xr, 16, lb0, lb1, lb2, la1, la2), 20, lb0, lb1, lb2, la1, la2);
+    const highR = sec(sec(xr, 24, hb0, hb1, hb2, ha1, ha2), 28, hb0, hb1, hb2, ha1, ha2);
+    // = processDynamicsSample(highL, highR, …)
+    const l = Number.isFinite(highL) ? highL : 0;
+    const r = Number.isFinite(highR) ? highR : 0;
+    const level = Math.max(Math.abs(l), Math.abs(r));
+    const targetGr =
+      level > 0 && level < skipBelow
+        ? 0
+        : staticGainReductionDb(linearToDb(level), runtime.thresholdDb, runtime.kneeDb, runtime.ratio);
+    const coeff = targetGr < gainDb ? attackCoeff : releaseCoeff;
+    gainDb = coeff * gainDb + (1 - coeff) * targetGr;
+    if (!Number.isFinite(gainDb)) gainDb = 0;
+    const g = (gainDb === 0 ? 1 : Math.exp(gainDb * DYN_DB_TO_LN)) * post;
+    const ol = l * g;
+    const or = r * g;
+    left[i] = lowL + (Number.isFinite(ol) ? ol : 0);
+    right[i] = lowR + (Number.isFinite(or) ? or : 0);
+  }
+  s.dyn.gainDb = gainDb;
+  for (let b = 0; b < 8; b += 1) {
+    st[b]!.x1 = z[b * 4]!;
+    st[b]!.x2 = z[b * 4 + 1]!;
+    st[b]!.y1 = z[b * 4 + 2]!;
+    st[b]!.y2 = z[b * 4 + 3]!;
+  }
 }
 
 export function createDeesserProcessorAtRate(
@@ -377,6 +508,10 @@ export function createDeesserProcessorAtRate(
       // LR4 bands sum in phase only with one band inverted at 2nd order;
       // with 4th order (two cascaded Butterworth) they sum allpass directly.
       return { left: low.left + hc.left, right: low.right + hc.right };
+    },
+    processBuffer(left, right) {
+      // Fused per-sample loop (same float64 arithmetic as process(), no temporaries).
+      processDeesserBuffer(left, right, lp, hp, s, runtime, attackCoeff, releaseCoeff);
     },
     reset() {
       s = {
@@ -512,6 +647,12 @@ export function buildStudioOfflineFxChain(
         cur = p.process(cur);
       }
       return cur;
+    },
+    processBuffer(left, right) {
+      for (const p of processors) {
+        if (p.processBuffer) p.processBuffer(left, right);
+        else processBufferPerSample(p, left, right);
+      }
     },
     reset() {
       for (const p of processors) p.reset();

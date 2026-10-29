@@ -9,8 +9,8 @@ import "server-only";
  * (Supabase 50 MB object cap) and joined in the browser. Logs never include URLs or keys.
  */
 import { spawn } from "node:child_process";
-import { appendFile, copyFile, mkdir, mkdtemp, open, rm, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { appendFile, copyFile, mkdir, mkdtemp, open, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
@@ -19,8 +19,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { outputExt, planStudioMasterJob, studioMasterJobPrefix, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 import { partCount, partName, partsOf, PART_BYTES } from "./parts";
 import { renderMixStereo } from "./render-mix";
+import { renderMixStereoParallel } from "./render-mix-parallel";
 import { stemFileName } from "./render-io";
-import { loadServerMixInput, writeWavFloat } from "./server-render";
+import { assertServerDocVersion, loadServerMixInput, writeWavFloat } from "./server-render";
 import type { StudioMasterWorkerConfig } from "./worker-env";
 
 type RunConfig = Extract<StudioMasterWorkerConfig, { action: "run" }>;
@@ -31,6 +32,63 @@ export type ClaimedMasterJob = {
 };
 
 const BUCKET = "audio-artifacts";
+
+/**
+ * Local (E3 disk) cache of the rendered pre-master mix per project document version:
+ * master → mix WAV/MP3 deliveries and re-masters at the same version reuse it instead
+ * of re-rendering. Bump MIX_CACHE_TAG whenever the render DSP changes. Entries expire
+ * after MIX_CACHE_TTL_MS; total size is capped.
+ */
+const MIX_CACHE_TAG = "r1";
+const MIX_CACHE_TTL_MS = 12 * 3600_000;
+const MIX_CACHE_MAX_BYTES = 3 * 1024 ** 3;
+
+function mixCacheDir(): string {
+  return process.env.STUDIO_MASTER_MIX_CACHE_DIR || path.join(homedir(), ".cache", "studio-mix");
+}
+
+function mixCacheFile(job: ClaimedMasterJob): string {
+  // ids are validated uuids (studioMasterJobPrefix) — safe as a file name.
+  return path.join(mixCacheDir(), `${job.owner_id}_${job.project_id}_v${Number(job.source_document_version)}_${MIX_CACHE_TAG}.wav`);
+}
+
+async function mixCacheHit(job: ClaimedMasterJob): Promise<string | null> {
+  const f = mixCacheFile(job);
+  try {
+    const st = await stat(f);
+    if (Date.now() - st.mtimeMs > MIX_CACHE_TTL_MS) return null;
+    const now = new Date();
+    await utimes(f, now, now);
+    return f;
+  } catch {
+    return null;
+  }
+}
+
+async function mixCacheStore(job: ClaimedMasterJob, file: string): Promise<void> {
+  try {
+    const dir = mixCacheDir();
+    await mkdir(dir, { recursive: true, mode: 0o700 });
+    const dst = mixCacheFile(job);
+    await copyFile(file, `${dst}.tmp`);
+    await rm(dst, { force: true });
+    await copyFile(`${dst}.tmp`, dst);
+    await rm(`${dst}.tmp`, { force: true });
+    // Prune: expired first, then oldest until under the size cap.
+    const entries = await Promise.all((await readdir(dir)).filter((n) => n.endsWith(".wav")).map(async (n) => {
+      const st = await stat(path.join(dir, n));
+      return { f: path.join(dir, n), m: st.mtimeMs, size: st.size };
+    }));
+    entries.sort((a, b) => b.m - a.m);
+    let total = 0;
+    for (const e of entries) {
+      total += e.size;
+      if (Date.now() - e.m > MIX_CACHE_TTL_MS || total > MIX_CACHE_MAX_BYTES) await rm(e.f, { force: true });
+    }
+  } catch {
+    /* cache is best effort */
+  }
+}
 
 export async function claimNextStudioMasterJob(cfg: RunConfig): Promise<ClaimedMasterJob | null> {
   const { data, error } = await createSupabaseAdminClient().rpc("claim_next_studio_master_job", { p_worker_ref: cfg.workerRef });
@@ -117,24 +175,37 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       cur = path.join(dir, `approved${path.extname(k)}`);
       await download(k.slice(0, k.lastIndexOf("/")), k.slice(k.lastIndexOf("/") + 1), cur);
     } else {
-      const { input, decodeMs } = await loadServerMixInput({ ownerId: job.owner_id, projectId: job.project_id, expectedVersion: job.source_document_version, workDir: dir, timeoutMs: cfg.timeoutMs });
-      timing.decodeMs = decodeMs;
-      const r0 = Date.now();
-      if (job.kind === "project_zip") {
-        const stemsDir = path.join(dir, "stems");
-        await mkdir(stemsDir);
-        let n = 0;
-        for (const tr of input.tracks) {
-          await writeWavFloat(path.join(stemsDir, stemFileName(++n, tr.name)), renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }));
-        }
-        cur = stemsDir;
+      // Full mix (master / mix delivery): reuse this version's rendered mix if E3 has it.
+      const mixKind = job.kind === "master" || job.kind === "transcode";
+      const cached = mixKind ? await mixCacheHit(job) : null;
+      if (cached) {
+        await assertServerDocVersion({ ownerId: job.owner_id, projectId: job.project_id, expectedVersion: job.source_document_version });
+        cur = cached;
+        timing.renderMs = 0;
+        timing.mixCache = 1;
       } else {
-        cur = path.join(dir, "source.wav");
-        await writeWavFloat(cur, renderMixStereo(input, job.kind === "raw_sum" ? { raw: true } : {}));
+        const { input, decodeMs } = await loadServerMixInput({ ownerId: job.owner_id, projectId: job.project_id, expectedVersion: job.source_document_version, workDir: dir, timeoutMs: cfg.timeoutMs });
+        timing.decodeMs = decodeMs;
+        const r0 = Date.now();
+        if (job.kind === "project_zip") {
+          const stemsDir = path.join(dir, "stems");
+          await mkdir(stemsDir);
+          let n = 0;
+          for (const tr of input.tracks) {
+            await writeWavFloat(path.join(stemsDir, stemFileName(++n, tr.name)), renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }));
+          }
+          cur = stemsDir;
+        } else {
+          cur = path.join(dir, "source.wav");
+          // FX chains dominate the CPU → tracks render in parallel worker threads.
+          const mix = job.kind === "raw_sum" ? renderMixStereo(input, { raw: true }) : await renderMixStereoParallel(input, {});
+          await writeWavFloat(cur, mix);
+          if (mixKind) await mixCacheStore(job, cur);
+        }
+        timing.renderMs = Date.now() - r0;
+        timing.lengthMs = input.lengthMs;
+        timing.tracks = input.tracks.length;
       }
-      timing.renderMs = Date.now() - r0;
-      timing.lengthMs = input.lengthMs;
-      timing.tracks = input.tracks.length;
     }
     for (const s of steps) {
       if (s.op === "python_master") {

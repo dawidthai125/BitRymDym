@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pyloudnorm as pyln
@@ -65,16 +67,24 @@ def to_stereo(x: np.ndarray) -> np.ndarray:
 TP_BLOCK = 1 << 17  # samples per block: keeps the 4x upsampled copy ~10 MB instead of ~700 MB for 4:00
 TP_PAD = 256  # context on both sides so block edges match the whole-signal result
 
+# scipy / pyloudnorm / pedalboard release the GIL, so independent work runs on threads
+# (same numbers, just less wall time). Two pools so nested submits can't deadlock:
+# _BLOCKS only runs leaf work (true-peak blocks), _TASKS runs the independent analysis measurements.
+THREADS = max(1, min(4, int(os.environ.get("STUDIO_MASTER_PY_THREADS") or (os.cpu_count() or 1))))
+_BLOCKS = ThreadPoolExecutor(max_workers=THREADS)
+_TASKS = ThreadPoolExecutor(max_workers=6)
+
+
+def _tp_block(x: np.ndarray, start: int) -> float:
+    n = len(x)
+    a, b = max(0, start - TP_PAD), min(n, start + TP_BLOCK + TP_PAD)
+    up = resample_poly(x[a:b], 4, 1, axis=0)
+    lo, hi = (start - a) * 4, (min(n, start + TP_BLOCK) - a) * 4
+    return float(np.max(np.abs(up[lo:hi]))) if hi > lo else 0.0
+
 
 def true_peak_db(x: np.ndarray) -> float:
-    n = len(x)
-    peak = 0.0
-    for start in range(0, n, TP_BLOCK):
-        a, b = max(0, start - TP_PAD), min(n, start + TP_BLOCK + TP_PAD)
-        up = resample_poly(x[a:b], 4, 1, axis=0)
-        lo, hi = (start - a) * 4, (min(n, start + TP_BLOCK) - a) * 4
-        if hi > lo:
-            peak = max(peak, float(np.max(np.abs(up[lo:hi]))))
+    peak = max([0.0, *_BLOCKS.map(lambda s: _tp_block(x, s), range(0, len(x), TP_BLOCK))])
     return 20 * np.log10(peak) if peak > 0 else -120.0
 
 
@@ -135,19 +145,24 @@ def stereo_stats(x: np.ndarray) -> dict:
 
 def analyze(x: np.ndarray, sr: int) -> dict:
     x = to_stereo(x)
-    lufs = integrated_lufs(x, sr)
+    f_lufs = _TASKS.submit(integrated_lufs, x, sr)
+    f_lra = _TASKS.submit(loudness_range, x, sr)
+    f_stereo = _TASKS.submit(stereo_stats, x)
     tp = true_peak_db(x)
     rms = float(np.sqrt(np.mean(x ** 2)))
     peak = float(np.max(np.abs(x))) if x.size else 0.0
+    lufs = f_lufs.result()
+    lra, stereo = f_lra.result(), f_stereo.result()
     plr = round(tp - lufs, 2)
     crest = round(20 * np.log10(peak / rms), 2) if rms > 0 and peak > 0 else 0.0
     return {
         "lufs": round(lufs, 2),
-        "lra": round(loudness_range(x, sr), 2),
+        "lra": round(lra, 2),
         "truePeakDb": round(tp, 2),
         "plr": plr,
         "crestDb": crest,
-        "stereo": stereo_stats(x),
+        "stereo": stereo,
+        # Full-length FFT is the memory peak → runs alone, after the other measurements.
         "tonal": tonal_balance(x, sr),
         "durationS": round(len(x) / sr, 2),
     }
@@ -169,6 +184,8 @@ def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
         c = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=attack, release_ms=release)])
         return c(band, sr)
 
+    # Sequential on purpose: running the bands concurrently saves ~1 s but costs ~600 MB
+    # (float64 filter intermediates), too close to the worker's 2G cap.
     y = comp(lr4(x, sr, 150, "lowpass"), 30, 200)
     rest = lr4(x, sr, 150, "highpass")
     y = y + comp(lr4(rest, sr, 4000, "lowpass"), 15, 150)
@@ -264,7 +281,8 @@ def main(argv: list[str]) -> int:
         y, report = master(x, sr, a.target, json.loads(a.settings or "{}"))
         # 24-bit: the limiter keeps peaks below 0 dBTP, so no float headroom is needed.
         sf.write(a.out, y, sr, subtype="PCM_24")
-        print(json.dumps({"ok": True, "before": analyze(x, sr), "after": report}))
+        before = analyze(x, sr)
+        print(json.dumps({"ok": True, "before": before, "after": report}))
         return 0
     except Exception as e:  # noqa: BLE001 — single JSON line contract
         print(json.dumps({"ok": False, "error": str(e)[:120]}))

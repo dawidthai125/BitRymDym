@@ -25,8 +25,16 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Stereo } from "./dsp";
 /** Same rate the browser preview renders at. */
 export const MASTER_RENDER_SAMPLE_RATE = 44100;
+const DECODE_CONCURRENCY = 3;
 
 export type ServerMixInput = { doc: StudioProjectDocument; input: MixAnalysisInput; decodeMs: number };
+
+/** The owner's project document must still be at `expectedVersion` (cheap check for cache hits). */
+export async function assertServerDocVersion(p: { ownerId: string; projectId: string; expectedVersion: number }): Promise<void> {
+  const ctx = { userId: p.ownerId, email: null, profile: null, permissions: [] } as unknown as AuthContext;
+  const doc = await getStudioProjectDocumentFor(ctx, p.projectId);
+  if (Number(doc.project.documentVersion) !== Number(p.expectedVersion)) throw new Error("doc_changed");
+}
 
 /**
  * Load the owner's project document (must still be at `expectedVersion`), re-authorise
@@ -42,23 +50,33 @@ export async function loadServerMixInput(p: { ownerId: string; projectId: string
   if (skeleton.lengthMs > STUDIO_MAX_SONG_MS + 1000) throw new Error("too_long");
   const admin = createSupabaseAdminClient();
   const sources: Record<string, MixAnalysisSource> = {};
-  let n = 0;
-  for (const key of skeleton.sourceClips.keys()) {
+  // Download + ffmpeg decode a few sources at a time (I/O and ffmpeg overlap).
+  const keys = [...skeleton.sourceClips.keys()];
+  let next = 0;
+  const decodeOne = async (n: number, key: string) => {
     const [kind, id] = key.split(":") as ["take" | "beat", string];
     const ref = kind === "take" ? takes[id] : beats[id];
-    if (!ref) continue;
+    if (!ref) return;
     const { data, error } = await admin.storage.from(ref.storageBucket).download(ref.objectKey);
     if (error || !data) throw new Error("source_missing");
     const src = path.join(p.workDir, `src-${n}`);
-    const pcm = path.join(p.workDir, `src-${n++}.wav`);
+    const pcm = path.join(p.workDir, `src-${n}.wav`);
     await writeFile(src, Buffer.from(await data.arrayBuffer()));
     // ffmpeg decode + resample to 44.1 kHz float, native channels (any container/codec).
     await runCapture(resolveFfmpegBin(), ffmpegDecodeArgs(src, pcm, MASTER_RENDER_SAMPLE_RATE), { timeoutMs: p.timeoutMs });
     const raw = await readFile(pcm);
     await rm(src, { force: true });
     await rm(pcm, { force: true });
-    sources[key] = parseDecodedWav(raw);
-  }
+    sources[key] = parseDecodedWav(raw, true);
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(DECODE_CONCURRENCY, keys.length) }, async () => {
+      while (next < keys.length) {
+        const n = next++;
+        await decodeOne(n, keys[n]!);
+      }
+    }),
+  );
   if (Object.keys(sources).length === 0) throw new Error("no_audio");
   const { sourceClips: _unused, ...rest } = skeleton;
   void _unused;
