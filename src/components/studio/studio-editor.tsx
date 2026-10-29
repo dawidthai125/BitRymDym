@@ -467,6 +467,8 @@ function StudioEditorInner({
   const [mixBubble, setMixBubble] = useState<BitekBubble | null>(null);
   const mixChatContextRef = useRef<(() => BitekClientContext) | null>(null);
   const [masterBubble, setMasterBubble] = useState<BitekBubble | null>(null);
+  // Recording P0 — latency / Bluetooth / take-lane notices from the record panel.
+  const [recToolsBubble, setRecToolsBubble] = useState<BitekBubble | null>(null);
   const masterChatContextRef = useRef<(() => BitekClientContext) | null>(null);
   const masterApplyRef = useRef<((key: "loudness" | "bright" | "bass" | "width" | "squash", value: number) => void) | null>(null);
   const [bitekBubbleUi, setBitekBubbleUi] = useState<BitekBubbleState | null>(null);
@@ -495,6 +497,7 @@ function StudioEditorInner({
   );
   const songCapMs = Math.min(length, STUDIO_MAX_SONG_MS);
   const recordBubble: BitekBubble = (() => {
+    if (recToolsBubble && !recordingLocked) return recToolsBubble;
     if (!recordingLocked && takeContentEndMs > 0 && takeContentEndMs >= songCapMs - 500) {
       const sec = Math.round(STUDIO_MAX_SONG_MS / 1000);
       const max = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -2411,6 +2414,14 @@ function StudioEditorInner({
           }}
           onLocalRecoveryChanged={() => setRecoveryRefreshKey((key) => key + 1)}
           recoverySavedKey={recoverySavedKey}
+          onBitekBubble={setRecToolsBubble}
+          onDocumentReplaced={(next) => {
+            // Comp apply = several server CAS ops → fresh document, no partial undo.
+            applyPersistedDoc(() => next);
+            undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
+            setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
+            undoAliasRef.current = new Map();
+          }}
           onClipCreated={(clip, nextDocumentVersion, options) => {
             applyPersistedDoc((prev) => ({
               ...prev,

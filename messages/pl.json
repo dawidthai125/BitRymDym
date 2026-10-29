@@ -1945,7 +1945,9 @@
         "chooseBeat": "Wybierz bit",
         "record": "Nagraj",
         "goMaster": "Przejdź do Masteringu",
-        "backToMix": "Wróć do Mixu"
+        "backToMix": "Wróć do Mixu",
+        "calibrate": "Kalibruj",
+        "manualLatency": "Ustawię ręcznie"
       },
       "msg": {
         "recording": "Nagrywam. Skup się na wokalu, a ja poczekam.",
@@ -1973,7 +1975,10 @@
           "panorama": "Panorama: główny wokal zostaw w środku, adliby przesuń na lewo i prawo o 30–60.",
           "loudness": "Głośność: ustaw suwaki tak, żeby całość nie była ani za cicha, ani przesterowana."
         },
-        "songLimit": "Utwór może mieć max {max} — dalej już nie nagram. Przytnij albo idź do miksu."
+        "songLimit": "Utwór może mieć max {max} — dalej już nie nagram. Przytnij albo idź do miksu.",
+        "latencyBluetooth": "Masz słuchawki Bluetooth — wokal może się spóźniać. Skalibruję to w 7 sekund.",
+        "latencyHigh": "Widzę {ms} ms opóźnienia. Skalibrujmy, żeby wokal siedział w bicie.",
+        "latencyDetail": "Kliki przez głośnik albo klaskanie w rytm. Możesz też ustawić ręcznie."
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",
@@ -2184,6 +2189,78 @@
         "niedostepny": "Podgląd mastera działa, ale serwer jeszcze nie jest włączony.",
         "wrocInfo": "Pojedynczych śladów tu nie ruszę — to robimy w Mixie."
       }
+    },
+    "recTools": {
+      "opoznienie": "Opóźnienie słuchawki ↔ mikrofon",
+      "kalibruj": "Kalibruj",
+      "zwin": "Zwiń",
+      "korekta": "Korekta nagrań: {ms} ms",
+      "zrodloKalibracja": "(zmierzone)",
+      "zrodloSzacunek": "(szacunek przeglądarki)",
+      "ostrzezenieBluetooth": "Słuchawki Bluetooth — opóźnienie bywa duże i pływa. Lepiej kabel; jak nie masz, skalibruj.",
+      "ostrzezenieWysokie": "Opóźnienie {ms} ms (powyżej {limit} ms) — skalibruj, żeby wokal siedział w bicie.",
+      "kalibracjaInstrukcja": "Test klików: daj głośniki albo przyłóż słuchawkę do mikrofonu, cisza w pokoju. 8 klików, ok. 7 s.",
+      "testKlikow": "Test klików (auto)",
+      "testKlaskania": "Klaskanie w rytm",
+      "mierze": "Mierzę… {beat}/{total}",
+      "klaszcz": "Klaszcz! {beat}/{total}",
+      "przerwij": "Przerwij",
+      "klaskanieInstrukcja": "W słuchawkach: 4 kliki na wejście, potem klaszcz równo z każdym z 12 klików.",
+      "wynik": "Zmierzone: {ms} ms (rozrzut {spread} ms). Zapisane dla tego sprzętu.",
+      "blad": {
+        "NO_SIGNAL": "Nie słyszę klików. Podgłośnij albo przyłóż słuchawkę do mikrofonu.",
+        "TOO_FEW": "Złapałem za mało klików. Ciszej w pokoju i jeszcze raz.",
+        "UNSTABLE": "Wyniki skaczą — pewnie Bluetooth. Spróbuj kabla albo ustaw ręcznie.",
+        "ERROR": "Nie udało się zmierzyć. Sprawdź dostęp do mikrofonu."
+      },
+      "recznaKorekta": "Ręczna korekta: {ms} ms",
+      "recznaKorektaAria": "Ręczna korekta opóźnienia w milisekundach",
+      "recznaPodpowiedz": "Wokal za późno? Przesuń w prawo. Za wcześnie? W lewo.",
+      "resetuj": "Wyczyść kalibrację tego sprzętu",
+      "trybNagrania": "Tryb nagrania",
+      "tryb": {
+        "single": "Jeden take",
+        "loop": "Pętla sekcji",
+        "punch": "Poprawka linijki"
+      },
+      "dlugoscSekcji": "Długość sekcji",
+      "taktow": "{n} taktów",
+      "odGlowicy": "Sekcja od głowicy",
+      "sekcja": "Sekcja {from}–{to}",
+      "brakSekcji": "Ustaw sekcję: przesuń głowicę i kliknij „Sekcja od głowicy”.",
+      "linijka": "Linijka do poprawki",
+      "linijkaN": "Linijka {n} · {from}",
+      "linijkaKrotko": "L{n}",
+      "petlaPodpowiedz": "Takt odliczania, potem sekcja kręci się w kółko. Każde przejście = osobny take. Stop kiedy chcesz.",
+      "punchPodpowiedz": "Wchodzisz takt wcześniej, nagrywam tylko tę linijkę i sklejam z resztą.",
+      "wejscieZa": "Wejście za…",
+      "takeWSekcjach": "Take'i w sekcjach",
+      "ileTake": "{n, plural, one {# take} few {# take'i} other {# take'ów}}",
+      "zapomnijSekcje": "Zapomnij",
+      "gwiazdka": "Oznacz gwiazdką",
+      "odgwiazdkuj": "Usuń gwiazdkę",
+      "pass": {
+        "loop": "Przejście {n}",
+        "punch": "Poprawka {n}",
+        "single": "Take {n}"
+      },
+      "niepelny": "niepełny",
+      "wCompie": "w compie",
+      "odsluch": "Odsłuch",
+      "stop": "Stop",
+      "caloSekcja": "Cała sekcja",
+      "compPoLinijkach": "Comp: wybierz take na każdą linijkę (sklejam z krótkim crossfade).",
+      "cisza": "— cisza —",
+      "zastosujNaOsi": "Zastosuj na osi",
+      "zastosujPonownie": "Ułóż ponownie na osi",
+      "tylkoLokalnie": "Take'i sekcji trzymam na razie w tej przeglądarce.",
+      "compBlad": "Nie udało się ułożyć compu na osi.",
+      "compGotowy": "Comp na osi. Puść sekcję i posłuchaj.",
+      "compNieNaOsi": "Take zapisany, ale comp nie wszedł na oś — kliknij „Zastosuj na osi”.",
+      "brakPelnegoPrzejscia": "Za krótko — nie złapałem żadnego przejścia sekcji. Take czeka niżej.",
+      "brakLinijki": "Wybierz sekcję i linijkę do poprawki.",
+      "zapisanoPrzejscia": "{n, plural, one {Mam # przejście} few {Mam # przejścia} other {Mam # przejść}}. Najnowsze pełne jest na osi.",
+      "zapisanoPunch": "Poprawka wklejona w linijkę."
     }
   },
   "nav": {

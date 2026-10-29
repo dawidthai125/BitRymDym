@@ -1945,7 +1945,9 @@
         "chooseBeat": "Choose a beat",
         "record": "Record",
         "goMaster": "Go to Mastering",
-        "backToMix": "Back to Mix"
+        "backToMix": "Back to Mix",
+        "calibrate": "Calibrate",
+        "manualLatency": "I'll set it by hand"
       },
       "msg": {
         "recording": "Recording. Focus on the vocal, I'll wait.",
@@ -1973,7 +1975,10 @@
           "panorama": "Panorama: keep the lead vocal centred, pan ad-libs left and right by 30–60.",
           "loudness": "Loudness: set the faders so the mix is neither too quiet nor clipping."
         },
-        "songLimit": "A song can be at most {max} — I can't record past that. Trim it or move on to the mix."
+        "songLimit": "A song can be at most {max} — I can't record past that. Trim it or move on to the mix.",
+        "latencyBluetooth": "You're on Bluetooth headphones — the vocal may lag. I'll calibrate it in 7 seconds.",
+        "latencyHigh": "I see {ms} ms of latency. Let's calibrate so the vocal sits on the beat.",
+        "latencyDetail": "Clicks through a speaker or clapping along. You can also set it by hand."
       },
       "chat": {
         "inputLabel": "Message to BITEK",
@@ -2184,6 +2189,78 @@
         "niedostepny": "The master preview works, but the server isn't on yet.",
         "wrocInfo": "I can't touch single tracks here — that's Mix work."
       }
+    },
+    "recTools": {
+      "opoznienie": "Headphone ↔ mic latency",
+      "kalibruj": "Calibrate",
+      "zwin": "Collapse",
+      "korekta": "Take correction: {ms} ms",
+      "zrodloKalibracja": "(measured)",
+      "zrodloSzacunek": "(browser estimate)",
+      "ostrzezenieBluetooth": "Bluetooth headphones — latency is high and drifts. Wired is better; if you can't, calibrate.",
+      "ostrzezenieWysokie": "Latency {ms} ms (above {limit} ms) — calibrate so the vocal sits on the beat.",
+      "kalibracjaInstrukcja": "Click test: use speakers or hold a headphone to the mic, quiet room. 8 clicks, about 7 s.",
+      "testKlikow": "Click test (auto)",
+      "testKlaskania": "Clap along",
+      "mierze": "Measuring… {beat}/{total}",
+      "klaszcz": "Clap! {beat}/{total}",
+      "przerwij": "Stop",
+      "klaskanieInstrukcja": "On headphones: 4 lead-in clicks, then clap with each of the 12 clicks.",
+      "wynik": "Measured: {ms} ms (spread {spread} ms). Saved for this gear.",
+      "blad": {
+        "NO_SIGNAL": "I can't hear the clicks. Turn it up or hold a headphone to the mic.",
+        "TOO_FEW": "I caught too few clicks. Quieter room and once more.",
+        "UNSTABLE": "Results jump around — probably Bluetooth. Try wired or set it by hand.",
+        "ERROR": "Couldn't measure. Check microphone access."
+      },
+      "recznaKorekta": "Manual correction: {ms} ms",
+      "recznaKorektaAria": "Manual latency correction in milliseconds",
+      "recznaPodpowiedz": "Vocal late? Move right. Early? Move left.",
+      "resetuj": "Clear this gear's calibration",
+      "trybNagrania": "Recording mode",
+      "tryb": {
+        "single": "Single take",
+        "loop": "Section loop",
+        "punch": "Fix a line"
+      },
+      "dlugoscSekcji": "Section length",
+      "taktow": "{n} bars",
+      "odGlowicy": "Section from playhead",
+      "sekcja": "Section {from}–{to}",
+      "brakSekcji": "Set a section: move the playhead and click “Section from playhead”.",
+      "linijka": "Line to fix",
+      "linijkaN": "Line {n} · {from}",
+      "linijkaKrotko": "L{n}",
+      "petlaPodpowiedz": "One bar count-in, then the section loops. Every pass = its own take. Stop whenever.",
+      "punchPodpowiedz": "You come in a bar early, I record just this line and stitch it in.",
+      "wejscieZa": "In…",
+      "takeWSekcjach": "Takes in sections",
+      "ileTake": "{n, plural, one {# take} other {# takes}}",
+      "zapomnijSekcje": "Forget",
+      "gwiazdka": "Star",
+      "odgwiazdkuj": "Unstar",
+      "pass": {
+        "loop": "Pass {n}",
+        "punch": "Fix {n}",
+        "single": "Take {n}"
+      },
+      "niepelny": "partial",
+      "wCompie": "in comp",
+      "odsluch": "Listen",
+      "stop": "Stop",
+      "caloSekcja": "Whole section",
+      "compPoLinijkach": "Comp: pick a take for each line (stitched with a short crossfade).",
+      "cisza": "— silence —",
+      "zastosujNaOsi": "Apply to timeline",
+      "zastosujPonownie": "Re-apply to timeline",
+      "tylkoLokalnie": "Section takes live in this browser for now.",
+      "compBlad": "Couldn't put the comp on the timeline.",
+      "compGotowy": "Comp is on the timeline. Play the section and listen.",
+      "compNieNaOsi": "Take saved, but the comp didn't land — click “Apply to timeline”.",
+      "brakPelnegoPrzejscia": "Too short — I didn't catch a section pass. The take waits below.",
+      "brakLinijki": "Pick a section and a line to fix.",
+      "zapisanoPrzejscia": "{n, plural, one {Got # pass} other {Got # passes}}. The newest full one is on the timeline.",
+      "zapisanoPunch": "Fix stitched into the line."
     }
   },
   "nav": {

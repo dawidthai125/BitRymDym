@@ -21,6 +21,8 @@ export async function POST(request: Request, context: RouteContext) {
       timelineStartMs?: number;
       expectedDocumentVersion?: unknown;
       replaceOverlapping?: boolean;
+      sourceOffsetMs?: number;
+      durationMs?: number;
       ownerId?: string | null;
       objectKey?: string | null;
     };
@@ -46,6 +48,17 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
+    const optionalInt = (v: unknown) =>
+      v == null ? undefined : typeof v === "number" ? v : Number.NaN;
+    const sourceOffsetMs = optionalInt(body.sourceOffsetMs);
+    const durationMs = optionalInt(body.durationMs);
+    if (Number.isNaN(sourceOffsetMs) || Number.isNaN(durationMs)) {
+      return NextResponse.json(
+        { error: "sourceOffsetMs / durationMs muszą być liczbą (integer ms)." },
+        { status: 400 },
+      );
+    }
+
     const result = await placeReadyTakeAsStudioClip({
       projectId,
       trackId: body.trackId,
@@ -53,6 +66,8 @@ export async function POST(request: Request, context: RouteContext) {
       timelineStartMs: body.timelineStartMs,
       expectedDocumentVersion: body.expectedDocumentVersion,
       replaceOverlapping: body.replaceOverlapping === true,
+      sourceOffsetMs,
+      durationMs,
     });
 
     return NextResponse.json(
