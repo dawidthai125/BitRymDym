@@ -49,3 +49,33 @@ next-env.d.ts
 
 # ECC install-state (absolute local paths; not SSOT)
 .cursor/ecc-install-state.json
+
+# local one-off production ops scripts and their outputs (never public)
+/scripts/_cleanup*
+/scripts/_patch_*
+/scripts/_probe-*
+/scripts/_preflight-*
+/scripts/_p46_*
+/scripts/_audit-*
+/scripts/_w2_ui_e2e_*
+/scripts/_catalog-place-*
+/scripts/_post_import_*
+/scripts/_build-bpm-*
+/scripts/_e2e-bpm-*
+/scripts/user_cleanup_*
+/scripts/arch-05-delete-execution.ts
+/scripts/production-beat-catalog-fixture-cleanup.ts
+/scripts/test-beats-cleanup-execution.ts
+*_stdout.txt
+*_payload.json
+/*.patch
+
+# work-in-progress scratch files
+*.wip.ts
+
+# supabase CLI branch state
+supabase/.branches/
+
+# infra build artifacts / ORM snapshots
+/infra/**/*.zip
+/infra/**/*.CURRENT-FROM-ORM*
