@@ -107,12 +107,6 @@ const MASK_BANDS = (() => {
 const PRESENCE = { loHz: 1000, hiHz: 4000 };
 const SIB = { loHz: 5000, hiHz: 9000 };
 
-function mono(l: Float32Array, r: Float32Array): Float32Array {
-  const m = new Float32Array(l.length);
-  for (let i = 0; i < l.length; i++) m[i] = 0.5 * (l[i] + r[i]);
-  return m;
-}
-
 export function spectralVocalMetrics(
   vocal: Float32Array,
   beat: Float32Array | null,
