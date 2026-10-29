@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { applyStudioMixWorkingOps } from "@/lib/studio/mix-working-apply-service";
+import { parseClientMixRevisionMeta } from "@/lib/studio/mix-working/mix-working-client-revision";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 
 export const runtime = "nodejs";
@@ -21,6 +22,7 @@ export async function POST(request: Request, context: RouteContext) {
       requestId?: unknown;
       ops?: unknown;
       ownerId?: unknown;
+      revision?: unknown;
     };
 
     // Explicitly ignore any client-supplied ownerId.
@@ -31,6 +33,8 @@ export async function POST(request: Request, context: RouteContext) {
       expectedDocumentVersion: body.expectedDocumentVersion,
       requestId: body.requestId,
       ops: body.ops,
+      // Stage 2: only { author: "AI", description } (BITEK auto-fix) is honoured.
+      revision: parseClientMixRevisionMeta(body.revision),
     });
 
     return NextResponse.json({

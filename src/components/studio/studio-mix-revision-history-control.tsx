@@ -25,6 +25,7 @@ import {
   mixRevisionAuthorLabel,
   mixRevisionDiffPathLabel,
   mixRevisionKindLabel,
+  mixRevisionRowLabel,
   mixWorkingRevisionCompareUrl,
   mixWorkingRevisionRestoreUrl,
   mixWorkingRevisionUrl,
@@ -651,7 +652,7 @@ export function StudioMixRevisionHistoryControl({
                     </p>
                     {detail ? (
                       <p className="font-mono text-[11px] text-[var(--brd-ink)]/80">
-                        {tl(mixRevisionKindLabel(detail.kind))} · v
+                        {tl(mixRevisionRowLabel(detail))} · v
                         {detail.sourceDocumentVersion}
                         {tl(detail.description ? ` · ${detail.description}` : "")}
                       </p>
@@ -797,7 +798,7 @@ function ListPanel(props: {
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-1">
                   <span className="text-xs font-semibold">
-                    {tl(mixRevisionKindLabel(row.kind))}
+                    {tl(mixRevisionRowLabel(row))}
                     {tl(row.kind === "restored" ? t("restore") : "")}
                   </span>
                   <span className="font-mono text-[10px] text-[var(--brd-ink)]/60">
