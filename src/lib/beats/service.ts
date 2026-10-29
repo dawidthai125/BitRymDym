@@ -620,7 +620,12 @@ export async function submitUserBeat(
     actorId: context.userId,
     result: localRecognitionResult(),
   });
-  return transitionBeatStatus(beatId, "PENDING_REVIEW");
+  const submitted = await transitionBeatStatus(beatId, "PENDING_REVIEW");
+  // Upload filter: the beat waits in PENDING_REVIEW with a pending auto check.
+  // Approve/Publish are blocked (DB gate + service assert) until it passes.
+  const { enqueueBeatAutoCheck } = await import("@/lib/beats/auto-check/records");
+  await enqueueBeatAutoCheck(submitted.id);
+  return submitted;
 }
 
 export async function approveUserBeat(beatId: string): Promise<Beat> {
@@ -643,6 +648,8 @@ export async function approveUserBeat(beatId: string): Promise<Beat> {
     );
   }
   await assertActiveMasterReadyForCommunityTransition(current, "Approve");
+  const { assertBeatAutoCheckCleared } = await import("@/lib/beats/auto-check/records");
+  await assertBeatAutoCheckCleared(current.id);
   const approved = await transitionBeatStatus(beatId, "APPROVED");
   if (approved.ownerId !== current.ownerId) {
     throw new AuthError("FORBIDDEN", "Owner changed during approve.");
@@ -717,6 +724,10 @@ export async function publishApprovedUserBeat(beatId: string): Promise<Beat> {
   }
 
   await assertActiveMasterReadyForPublish(current);
+  {
+    const { assertBeatAutoCheckCleared } = await import("@/lib/beats/auto-check/records");
+    await assertBeatAutoCheckCleared(current.id);
+  }
   const { loadUserPublishRightsFacts } = await import(
     "@/lib/beats/rights-records"
   );
