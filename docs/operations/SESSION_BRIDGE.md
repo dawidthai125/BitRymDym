@@ -57,6 +57,7 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 | when (ISO) | branch | HEAD (short) | staged | unstaged (tracked) | untracked | areas (high level) | sacred | notes |
 |------------|--------|--------------|--------|--------------------|-----------|--------------------|--------|-------|
+| 2026-10-28T22:45:00+01:00 (unit 4 punch/metro smoke) | main | `d25aa29` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `d25aa29`=`origin/main`; kod DAW `01629f5` ancestor; Loop+Metro toggle **PASS**; Count-in/punch UI **widoczne**; REC→Stop→Zachowaj finalize **200** place **201**; cleanup DELETE clip **200**; TAKE `507d9cc2-…` UI 19.0s; projekt `178e902d-…`; ucha/punch-ON/dpl_* **NOT VERIFIED**; last verified `dpl_D5QpniJpUc75A1vBUiiffvqRzo3P` @ `7438de2`; allowlista: audit+CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · NEXT unit 5 jog = osobne GO · ≠ GREEN |
 | 2026-10-28T21:10:00+01:00 (P0 unit 2 mix-working apply+restore) | main | `a29fa31` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `a29fa31`=`origin/main`; kod `5043b5e` ancestor; apply mute Wokal HTTP **200** v64→65; restore checkpoint **200** → v66; Wokal unmuted; Bit/Keep OK; projekt `178e902d-…` v66; kod produktu nietknięty; last verified `dpl_D5QpniJpUc75A1vBUiiffvqRzo3P` @ `7438de2`; allowlista: audit+CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 archive-20 + MIX-WORKING-APPLY · NEXT unit 4 punch/metro · ≠ GREEN |
 | 2026-10-28T20:54:00+01:00 (P0 unit 1 live Play) | main | `60d59a3` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `60d59a3`=`origin/main`; kod `5043b5e` ancestor; Catalog place + Zatwierdź + live Play **PASS**; set_scratch **200**; Record został; leftover **0**; projekt `178e902d-…` v63; live cue=`transport.seek`; bake=`resolveScratchSourceMs`; schedule nie czyta `scratchCueMs`; AudioContext CDP **NOT VERIFIED**; ucha **NOT VERIFIED**; last verified `dpl_D5QpniJpUc75A1vBUiiffvqRzo3P` @ `7438de2`; allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 EXECUTED=15 · ≠ GREEN |
 | 2026-10-28T20:45:00+01:00 (dpl/alias SHA bind) | main | `7438de2` start | 0 | ~151 | ~326 | remaining dirty — **nie** przypisuj | path `M` PRESERVE | start tip `7438de2`=`origin/main`; kod `5043b5e` ancestor; Vercel **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** Ready @ `7438de2`; unique `bitrymdym-gclyvcvdj-…`; GH **`7395502484`** success; **ALIAS VERIFIED**; HTTP copy/place z UI **PASS** (bez nowego smoke); allowlista docs: CHANGELOG+PS+bridge; Sacred/Studio PRESERVE · OD-15 OPEN · §4 archive-19 + DPL-ALIAS-BIND · ≠ GREEN |
@@ -105,14 +106,14 @@ Snapshot poniżej = stan z **jednej** kontroli odczytowej. **Nie** jest trwałym
 
 ### 2.1 Tip / deploy — ostatni znany stan (datowany; tip SSOT = PROJECT_STATE)
 
-Kontrola `2026-10-28T21:10+01:00` (`git rev-parse HEAD` + `ls-remote`):
+Kontrola `2026-10-28T22:45+01:00` (`git rev-parse HEAD` + `ls-remote`):
 
 | Źródło | Wartość | Uwaga |
 |--------|---------|--------|
-| Lokalny `HEAD` (przed tym commit) | `a29fa31` | start `a29fa31c215d03015ec6a1a575f0816a568998b7` = `origin/main`; kod `5043b5e` ancestor |
-| Last independently verified deploy | **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** Ready @ `7438de2` ancestor · unique `bitrymdym-gclyvcvdj-…` · GH **`7395502484`** success | last verified bind · `dpl_*` @ `a29fa31` **NOT VERIFIED** this unit · mix-working apply+restore **PASS** |
-| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · living tip start `a29fa31` · last verified `dpl_*` @ `7438de2` · **NEXT = unit 4 punch/metro** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
-| Docs continuity (worktree) | P0 unit 2 mix-working apply+restore HTTP PASS | Ten zapis edytuje most + CHANGELOG + PS + audit |
+| Lokalny `HEAD` (przed tym commit) | `d25aa29` | start `d25aa29a23a327b1faff98562c644463073e5878` = `origin/main`; kod DAW `01629f5` ancestor |
+| Last independently verified deploy | **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** Ready @ `7438de2` ancestor · unique `bitrymdym-gclyvcvdj-…` · GH **`7395502484`** success | last verified bind · `dpl_*` @ `d25aa29` **NOT VERIFIED** this unit · unit 4 punch/metro **PASS** |
+| Living tip / deploy / NEXT | → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c) | **SSOT tip/deploy/NEXT = PS** · living tip start `d25aa29` · last verified `dpl_*` @ `7438de2` · **NEXT = unit 5 jog (osobne GO)** · **≠ PRODUCTION VERIFIED ≠ Product GREEN** |
+| Docs continuity (worktree) | Unit 4 punch/count-in/metro+loop smoke PASS | Ten zapis edytuje most + CHANGELOG + PS + audit |
 
 **HISTORY (bridge tip table, `2026-10-27T22:21+01:00`):** HEAD/`origin` last-known `92a1262…` · GitHub Production **`7370676473`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `0449410…` (po drodze `332336c` · `a1b84f6` / `7371104561`).
 **HISTORY (bridge tip table, `2026-10-27T21:25+01:00`):** HEAD/`origin` last-known `7897037…` · GitHub Production **`7369350599`** success @ ten SHA · alias wtedy **NOT VERIFIED** — **superseded** tipem `92a1262…` (po drodze `2d872e5`, deployment **`7369738523`** success, alias też **NOT VERIFIED**).
@@ -161,6 +162,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 
 | date | prompt_id | topic | execution | verification | outcome | evidence / source | git_sha | next / block |
 |------|-----------|-------|-----------|--------------|---------|-------------------|---------|--------------|
+| 2026-10-28 | PUNCH-METRO-U4 | Unit 4 punch/count-in/metro+loop smoke PASS | EXECUTED | PASS | Start tip `d25aa29`=`origin/main`. Kod DAW `01629f5` ancestor. Loop+Metro toggle **PASS**. Count-in **1 takt** + punch checkbox **widoczne**. REC→Stop→Zachowaj finalize **200** · place **201**. Cleanup DELETE clip `ad8e362a-…` **200**. TAKE `507d9cc2-…` UI 19.0s. Projekt `178e902d-…`. Ucha/punch-ON/`dpl_*` **NOT VERIFIED**. Last verified `dpl_D5QpniJpUc75A1vBUiiffvqRzo3P` @ `7438de2`. ≠ PRODUCTION VERIFIED ≠ Product GREEN. | Owner UI smoke · [audit](../audits/PUNCH_METRO_UNIT4_SMOKE_2026-10-28.md) | `d25aa29` + ten docs | NEXT: unit 5 jog = osobne GO |
 | 2026-10-28 | MIX-WORKING-APPLY | P0 unit 2 mix-working apply+restore HTTP PASS | EXECUTED | PASS | Start tip `a29fa31`=`origin/main`. Kod `5043b5e` ancestor. Apply mute Wokal HTTP **200** v64→65. Restore checkpoint `537541b2-…` **200** → v66. Wokal unmuted. Bit/Keep OK. Projekt `178e902d-…` v66. Kod produktu nietknięty. `dpl_*` @ `a29fa31` **NOT VERIFIED** this unit. Last verified `dpl_D5QpniJpUc75A1vBUiiffvqRzo3P` @ `7438de2`. ≠ PRODUCTION VERIFIED ≠ Product GREEN. | Owner HTTP apply+restore · [audit](../audits/MIX_WORKING_APPLY_RESTORE_HTTP_2026-10-28.md) | `a29fa31` + ten docs | NEXT: unit 4 punch/metro |
 | 2026-10-28 | GO-SB-ARCHIVE-20 | Archiwizacja §4 → CHANGELOG (room for mix-working apply+restore) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`DOCREF-SMOKE-AB` · `SCRATCH-TRACK-DOCREF` · `GO-SB-ARCHIVE-15`) → CHANGELOG archive. Living 15→12, po MIX-WORKING-APPLY + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-28 | P0-LIVE-PLAY | P0 unit 1 live Play PASS | EXECUTED | PASS | Start tip `60d59a3`=`origin/main`. Kod `5043b5e` ancestor. Catalog place + Zatwierdź + live Play **PASS**. PATCH set_scratch **200**. Record został. leftover **0**. Projekt `178e902d-…` v63. Live cue = `transport.seek`; bake = `resolveScratchSourceMs`; schedule nie czyta `scratchCueMs`. AudioContext CDP **NOT VERIFIED**. Ucho **NOT VERIFIED**. `dpl_*` @ `60d59a3` **NOT VERIFIED** this unit. Last verified `dpl_D5QpniJpUc75A1vBUiiffvqRzo3P` @ `7438de2`. ≠ PRODUCTION VERIFIED ≠ Product GREEN. | Owner UI live Play | `60d59a3` + ten docs | NEXT: unit 2 mix-working |
@@ -177,7 +179,7 @@ Najnowsze na górze. **Licznik limitu:** wyłącznie wiersze `EXECUTED`.
 | 2026-10-28 | GO-SB-ARCHIVE-16 | Archiwizacja §4 → CHANGELOG (room for leftover + set_scratch API) | EXECUTED | PASS | Przeniesiono 3 najstarsze `EXECUTED` (`KEEP-SMOKE` · `DAW-QUEUE` · `GO-SB-ARCHIVE-11`) → CHANGELOG archive. Living 15→12, po LEFTOVER-SET-SCRATCH + tym wierszu **14**. `P-NEXT-10` BLOCKED zachowany. | Diff most + CHANGELOG archive table | _(ten commit)_ | Living tip/deploy → PROJECT_STATE |
 | 2026-10-27 | P-NEXT-10 | Commit+push allowlisty 06/08 | BLOCKED | BLOCKED | HEAD≠`2cc4cc1` (był już `03d889a`); zła nazwa D02 w briefie | Preflight P-NEXT-10; brak stage | — | Wznów tylko po GO z bazą `03d889a` |
 
-**Licznik `EXECUTED` w tabeli:** 14 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (twentieth batch DOCREF-SMOKE-AB + SCRATCH-TRACK-DOCREF + GO-SB-ARCHIVE-15 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. Kolejny `EXECUTED` wymaga archiwizacji §4 gdy licznik = 15.
+**Licznik `EXECUTED` w tabeli:** 15 (limit 15). Wiersz `P-NEXT-10` ma `execution=BLOCKED` — **nie** liczy się do limitu. Archiwum (twentieth batch DOCREF-SMOKE-AB + SCRATCH-TRACK-DOCREF + GO-SB-ARCHIVE-15 + earlier): [CHANGELOG.md](../CHANGELOG.md) → `### SESSION_BRIDGE archive`. **Kolejny** `EXECUTED` wymaga archiwizacji §4 przed dopisaniem (limit pełny).
 
 ### 4.1 Limit i archiwizacja
 
@@ -208,11 +210,11 @@ Linkuj, nie duplikuj:
 - NEXT / STOP → [PROJECT_STATE.md](../PROJECT_STATE.md) (NEXT UNIT)
 - OPEN → [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md)
 
-**Last-known deploy / alias (odczyt `2026-10-28T21:10+01:00`; living Git):**
-- Living Git: **`a29fa31…`** = `origin/main` (`ls-remote`) · kod **`5043b5e`** ancestor
+**Last-known deploy / alias (odczyt `2026-10-28T22:45+01:00`; living Git):**
+- Living Git: **`d25aa29…`** = `origin/main` (`ls-remote`) · kod DAW **`01629f5`** ancestor
 - Last independently verified: Vercel **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** **Ready** @ **`7438de2`** ancestor · unique `bitrymdym-gclyvcvdj-…`
 - GitHub Production **`7395502484`** · **success** · `2026-10-28T19:40:20Z` @ **`7438de2`**
-- `dpl_*` @ `a29fa31` **NOT VERIFIED** this unit · mix-working apply+restore **PASS** · **≠ PRODUCTION VERIFIED ≠ Product GREEN**
+- `dpl_*` @ `d25aa29` **NOT VERIFIED** this unit · unit 4 punch/metro **PASS** · **≠ PRODUCTION VERIFIED ≠ Product GREEN**
 - Kanoniczne wiersze tip/deploy/NEXT → [PROJECT_STATE.md](../PROJECT_STATE.md) §2 (+ §2c); ten bridge **nie** jest SSOT tipu.
 
 **Lokalne GO oczekujące (uzupełniaj ręcznie):**

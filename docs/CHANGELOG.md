@@ -6,6 +6,15 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-10-28 — Unit 4 punch/count-in/metro+loop smoke PASS
+
+**Status:** Loop+Metro toggle **PASS** · Count-in/punch UI **widoczne** · REC→Stop→Zachowaj **PASS** (finalize **200** · place **201**) · cleanup DELETE clip **200** · audit [PUNCH_METRO_UNIT4_SMOKE_2026-10-28.md](./audits/PUNCH_METRO_UNIT4_SMOKE_2026-10-28.md) · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
+**GO:** living NEXT unit 4 punch/metro · docs closeout po smoke
+**Tip start:** `d25aa29a23a327b1faff98562c644463073e5878` = `origin/main` · kod DAW **`01629f5`** ancestor
+**HTTP FACT:** finalize **200** · `record/place` **201** · DELETE clip `ad8e362a-…` **200** · TAKE `507d9cc2-…` · UI długość **19.0 s** (cel 1–3 s — harness delay)
+**Explicit non-claim:** ucha metro/count-in **NOT VERIFIED** · punch ON E2E **NOT VERIFIED** · `dpl_*`/alias this tip **NOT VERIFIED** · last verified **`dpl_D5QpniJpUc75A1vBUiiffvqRzo3P`** @ `7438de2` · unit 5 jog = osobne GO · **≠** PRODUCTION VERIFIED · **≠** Product GREEN
+**NEXT:** unit 5 jog — osobne GO · nie SFM / nie Contabo / nie OD-15
+
 ## 2026-10-28 — P0 unit 2 mix-working apply+restore HTTP PASS
 
 **Status:** mute Wokal apply **200** v64→**65** · restore checkpoint **200** v65→**66** · audit [MIX_WORKING_APPLY_RESTORE_HTTP_2026-10-28.md](./audits/MIX_WORKING_APPLY_RESTORE_HTTP_2026-10-28.md) · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**
