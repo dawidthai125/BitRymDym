@@ -278,9 +278,10 @@ export function StudioMixStep({
     if (panel?.kind === "nothing" && !running) return { key: `fix-nothing-${fixSeq}`, mood: "happy", text: t("autofix.nic") };
     const msgs = bitekRulesGuide({ step: "mix", recording: false, ...bitekBase, analysis: analysisState });
     const first = msgs[0];
+    const hasIssues = Boolean(verdict && (verdict.redCount > 0 || verdict.yellowCount > 0 || verdict.overall !== "green"));
     const mood: BitekMood = running
       ? "thinking"
-      : failure || (verdict && !stale && verdict.overall !== "green")
+      : failure || (!stale && hasIssues)
         ? "alert"
         : verdict?.canMaster && !stale
           ? "done"
@@ -290,7 +291,7 @@ export function StudioMixStep({
       const a = first.action;
       actions.push({ id: a, label: tBitek(`akcja.${a}`), primary: true, onClick: () => setPending((p) => ({ id: a, seq: (p?.seq ?? 0) + 1 })) });
     }
-    if (verdict && !stale && !running && verdict.overall !== "green" && onApplyAutofix) {
+    if (hasIssues && !stale && !running && onApplyAutofix) {
       actions.push({ id: "fix-all", label: t("poprawWszystko"), primary: !first?.action, onClick: () => setPending((p) => ({ id: "fix-all", seq: (p?.seq ?? 0) + 1 })) });
     }
     return {

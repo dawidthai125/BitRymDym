@@ -60,6 +60,7 @@ export function StudioBitekChat({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLOListElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     listRef.current?.lastElementChild?.scrollIntoView({ block: "nearest" });
@@ -112,6 +113,8 @@ export function StudioBitekChat({
       setError(t("blad"));
     } finally {
       setBusy(false);
+      // Keep focus in the chat after the reply (the input was disabled while waiting).
+      window.setTimeout(() => inputRef.current?.focus(), 0);
     }
   }
 
@@ -199,6 +202,7 @@ export function StudioBitekChat({
         <div className="flex gap-1">
           <input
             id={inputId}
+            ref={inputRef}
             data-testid="studio-bitek-input"
             value={text}
             onChange={(ev) => setText(ev.target.value)}
