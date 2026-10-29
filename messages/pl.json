@@ -1237,7 +1237,14 @@
       "tabEffects": "Efekty",
       "tabFile": "Plik",
       "tabRecord": "Nagraj",
-      "beatButton": "Bit"
+      "beatButton": "Bit",
+      "cofnij": "Cofnij",
+      "ponow": "Ponów",
+      "cofnijSkrot": "Cofnij (Ctrl+Z)",
+      "ponowSkrot": "Ponów (Ctrl+Shift+Z / Ctrl+Y)",
+      "cofnietoZmiane": "Cofnięto zmianę",
+      "ponowionoZmiane": "Ponowiono zmianę",
+      "nieMoznaCofnac": "Nie można cofnąć — element został usunięty"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",

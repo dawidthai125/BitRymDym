@@ -1237,7 +1237,14 @@
       "tabEffects": "Effects",
       "tabFile": "File",
       "tabRecord": "Record",
-      "beatButton": "Beat"
+      "beatButton": "Beat",
+      "cofnij": "Undo",
+      "ponow": "Redo",
+      "cofnijSkrot": "Undo (Ctrl+Z)",
+      "ponowSkrot": "Redo (Ctrl+Shift+Z / Ctrl+Y)",
+      "cofnietoZmiane": "Change undone",
+      "ponowionoZmiane": "Change redone",
+      "nieMoznaCofnac": "Can't undo — the item was deleted"
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",

@@ -57,6 +57,7 @@ import {
 import {
   FX_CHAIN_CONFLICT_UI_PL,
   studioFxEntryLabel,
+  type StudioFxChainV1,
 } from "@/lib/studio/studio-fx-chain";
 import {
   beatRefMatchesProjectSsot,
@@ -124,6 +125,17 @@ import {
   shouldShowStudioTrackUpgradeCta,
 } from "@/lib/studio/studio-track-capacity";
 import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
+import {
+  EMPTY_STUDIO_UNDO_HISTORY,
+  pickStudioPatchBefore,
+  pushStudioUndoEntry,
+  studioUndoShortcut,
+  takeStudioRedo,
+  takeStudioUndo,
+  type StudioUndoEntry,
+  type StudioUndoHistory,
+  type StudioUndoOp,
+} from "@/lib/studio/studio-undo-history";
 import { labelStudioTrackType } from "@/lib/ui/labels";
 import type { PremiumTier } from "@/types/premium";
 
@@ -255,6 +267,12 @@ function StudioEditorInner({
   });
   const persistRef = useRef<StudioPersistOrchestrator | null>(null);
   const docRef = useRef(doc);
+  /** Stage 0 undo — last server-acked document (drag previews never land here). */
+  const committedDocRef = useRef(doc);
+  const [undoHistory, setUndoHistory] = useState<StudioUndoHistory>(
+    EMPTY_STUDIO_UNDO_HISTORY,
+  );
+  const undoHistoryRef = useRef(undoHistory);
   /** Disable conflicting controls while a persist is in-flight or queued. */
   const pending = persistSnap.inFlight || persistSnap.queued;
   const [mode, setMode] = useState<TimelineMode>("seek");
@@ -500,7 +518,150 @@ function StudioEditorInner({
     setDoc((prev) => {
       const next = mutate(prev);
       docRef.current = next;
+      committedDocRef.current = next;
       return next;
+    });
+  }
+
+  function recordUndo(entry: StudioUndoEntry): void {
+    const next = pushStudioUndoEntry(undoHistoryRef.current, entry);
+    undoHistoryRef.current = next;
+    setUndoHistory(next);
+  }
+
+  function committedClip(clipId: string): StudioClipDto | undefined {
+    return committedDocRef.current.clips.find((c) => c.id === clipId);
+  }
+
+  function clipGeometryOp(clip: StudioClipDto): StudioUndoOp {
+    return {
+      kind: "clip_geometry",
+      clipId: clip.id,
+      timelineStartMs: clip.timelineStartMs,
+      durationMs: clip.durationMs,
+      sourceOffsetMs: clip.sourceOffsetMs,
+    };
+  }
+
+  /** Replays one history op through the normal CAS path (never re-recorded). */
+  function runUndoOp(op: StudioUndoOp): boolean {
+    const quiet = { history: false } as const;
+    switch (op.kind) {
+      case "track":
+        if (!committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
+        patchTrack(op.trackId, op.patch, quiet);
+        return true;
+      case "master":
+        patchMasterMix(op.patch, quiet);
+        return true;
+      case "clip_geometry":
+        if (!committedClip(op.clipId)) return false;
+        persistClipGeometryCommit(
+          op.clipId,
+          {
+            kind: "set_geometry",
+            timelineStartMs: op.timelineStartMs,
+            durationMs: op.durationMs,
+            sourceOffsetMs: op.sourceOffsetMs,
+          },
+          quiet,
+        );
+        return true;
+      case "clip_fades":
+        if (!committedClip(op.clipId)) return false;
+        saveClipFades(op.fadeInMs, op.fadeOutMs, { ...quiet, clipId: op.clipId });
+        return true;
+      case "clip_gain":
+        if (!committedClip(op.clipId)) return false;
+        saveClipGain(op.gainDb, { ...quiet, clipId: op.clipId });
+        return true;
+      case "clip_mute":
+        if (!committedClip(op.clipId)) return false;
+        saveClipMute(op.muted, { ...quiet, clipId: op.clipId });
+        return true;
+      case "track_fx":
+      case "master_fx":
+        if (op.kind === "track_fx" && !committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
+        persistFxChainForHistory(op);
+        return true;
+    }
+  }
+
+  function undoStudioEdit(): void {
+    const taken = takeStudioUndo(undoHistoryRef.current);
+    if (!taken) return;
+    undoHistoryRef.current = taken.history;
+    setUndoHistory(taken.history);
+    if (runUndoOp(taken.op)) setStatus(tr("cofnietoZmiane"));
+    else setStatus(tr("nieMoznaCofnac"));
+  }
+
+  function redoStudioEdit(): void {
+    const taken = takeStudioRedo(undoHistoryRef.current);
+    if (!taken) return;
+    undoHistoryRef.current = taken.history;
+    setUndoHistory(taken.history);
+    if (runUndoOp(taken.op)) setStatus(tr("ponowionoZmiane"));
+    else setStatus(tr("nieMoznaCofnac"));
+  }
+
+  function persistFxChainForHistory(
+    op: Extract<StudioUndoOp, { kind: "track_fx" | "master_fx" }>,
+  ): void {
+    setError(null);
+    enqueuePersist(async () => {
+      try {
+        const path =
+          op.kind === "master_fx"
+            ? `/api/studio/projects/${docRef.current.project.id}/master-fx`
+            : `/api/studio/projects/${docRef.current.project.id}/tracks/${op.trackId}/effects`;
+        const res = await fetch(path, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedDocumentVersion: docRef.current.project.documentVersion,
+            chain: op.chain,
+          }),
+        });
+        const json = (await res.json()) as {
+          documentVersion?: number;
+          effectsChain?: StudioFxChainV1;
+          masterFxChain?: StudioFxChainV1;
+          error?: string;
+          code?: string;
+        };
+        const chain = op.kind === "master_fx" ? json.masterFxChain : json.effectsChain;
+        if (!res.ok || !chain || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? tr("nieUdaloSieZapisac"),
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) =>
+              op.kind === "master_fx"
+                ? { ...prev, project: { ...prev.project, documentVersion, masterFxChain: chain } }
+                : {
+                    ...prev,
+                    project: { ...prev.project, documentVersion },
+                    tracks: prev.tracks.map((t) =>
+                      t.id === op.trackId ? { ...t, effectsChain: chain } : t,
+                    ),
+                  },
+            );
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
     });
   }
 
@@ -647,9 +808,12 @@ function StudioEditorInner({
   function persistClipGeometryCommit(
     clipId: string,
     commit: Exclude<StudioClipEditCommit, { kind: "noop" }>,
+    opts?: { history?: boolean },
   ): void {
     setError(null);
+    const record = opts?.history !== false;
     enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
       try {
         const body: Record<string, unknown> = {
           expectedDocumentVersion: docRef.current.project.documentVersion,
@@ -707,6 +871,9 @@ function StudioEditorInner({
           ok: true as const,
           documentVersion,
           apply: () => {
+            if (record && beforeClip) {
+              recordUndo({ undo: clipGeometryOp(beforeClip), redo: clipGeometryOp(clip) });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: { ...prev.project, documentVersion },
@@ -720,9 +887,18 @@ function StudioEditorInner({
     });
   }
 
-  function patchTrack(trackId: string, body: Record<string, unknown>): void {
+  function patchTrack(
+    trackId: string,
+    body: Record<string, unknown>,
+    opts?: { history?: boolean },
+  ): void {
     setError(null);
+    const record = opts?.history !== false;
     enqueuePersist(async () => {
+      const beforeTrack = committedDocRef.current.tracks.find((t) => t.id === trackId);
+      const before = beforeTrack
+        ? pickStudioPatchBefore(beforeTrack as unknown as Record<string, unknown>, body)
+        : null;
       try {
         const expected = docRef.current.project.documentVersion;
         const res = await fetch(
@@ -762,6 +938,12 @@ function StudioEditorInner({
           ok: true,
           documentVersion,
           apply: () => {
+            if (record && before) {
+              recordUndo({
+                undo: { kind: "track", trackId, patch: before },
+                redo: { kind: "track", trackId, patch: pickStudioPatchBefore(track as unknown as Record<string, unknown>, body) },
+              });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: { ...prev.project, documentVersion },
@@ -780,9 +962,14 @@ function StudioEditorInner({
   function patchMasterMix(body: {
     masterGainDb?: number;
     masterPan?: number;
-  }): void {
+  }, opts?: { history?: boolean }): void {
     setError(null);
+    const record = opts?.history !== false;
     enqueuePersist(async () => {
+      const before = pickStudioPatchBefore(
+        committedDocRef.current.project as unknown as Record<string, unknown>,
+        body,
+      ) as { masterGainDb?: number; masterPan?: number };
       try {
         const expected = docRef.current.project.documentVersion;
         const res = await fetch(
@@ -829,6 +1016,15 @@ function StudioEditorInner({
           ok: true,
           documentVersion,
           apply: () => {
+            if (record) {
+              recordUndo({
+                undo: { kind: "master", patch: before },
+                redo: {
+                  kind: "master",
+                  patch: pickStudioPatchBefore({ masterGainDb, masterPan }, body),
+                },
+              });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: {
@@ -1129,6 +1325,7 @@ function StudioEditorInner({
     if (!clipId) return;
     setError(null);
     enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
       try {
         const res = await fetch(
           `/api/studio/projects/${projectId()}/clips/${clipId}`,
@@ -1167,6 +1364,9 @@ function StudioEditorInner({
           ok: true as const,
           documentVersion,
           apply: () => {
+            if (beforeClip) {
+              recordUndo({ undo: clipGeometryOp(beforeClip), redo: clipGeometryOp(clip) });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: { ...prev.project, documentVersion },
@@ -1181,11 +1381,17 @@ function StudioEditorInner({
   }
 
   /** P6.7.3 / 7.1.6 — Fade In/Out auto-commit via set_fades + CAS + orchestrator. */
-  function saveClipFades(fadeInMs: number, fadeOutMs: number) {
-    const clipId = selectedClip?.id;
+  function saveClipFades(
+    fadeInMs: number,
+    fadeOutMs: number,
+    opts?: { history?: boolean; clipId?: string },
+  ) {
+    const clipId = opts?.clipId ?? selectedClip?.id;
     if (!clipId) return;
     setError(null);
+    const record = opts?.history !== false;
     enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
       try {
         const body = buildStudioClipFadesPatchBody({
           fadeInMs,
@@ -1222,6 +1428,12 @@ function StudioEditorInner({
           ok: true as const,
           documentVersion: result.documentVersion,
           apply: () => {
+            if (record && beforeClip) {
+              recordUndo({
+                undo: { kind: "clip_fades", clipId, fadeInMs: beforeClip.fadeInMs, fadeOutMs: beforeClip.fadeOutMs },
+                redo: { kind: "clip_fades", clipId, fadeInMs: result.clip.fadeInMs, fadeOutMs: result.clip.fadeOutMs },
+              });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: {
@@ -1241,11 +1453,16 @@ function StudioEditorInner({
   }
 
   /** V1 / 7.1.6 — Clip Gain auto-commit via CAS + orchestrator. */
-  function saveClipGain(gainDb: number) {
-    const clipId = selectedClip?.id;
+  function saveClipGain(
+    gainDb: number,
+    opts?: { history?: boolean; clipId?: string },
+  ) {
+    const clipId = opts?.clipId ?? selectedClip?.id;
     if (!clipId) return;
     setError(null);
+    const record = opts?.history !== false;
     enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
       try {
         const body = buildStudioClipGainPatchBody({
           gainDb,
@@ -1281,6 +1498,12 @@ function StudioEditorInner({
           ok: true as const,
           documentVersion: result.documentVersion,
           apply: () => {
+            if (record && beforeClip) {
+              recordUndo({
+                undo: { kind: "clip_gain", clipId, gainDb: beforeClip.gainDb },
+                redo: { kind: "clip_gain", clipId, gainDb: result.clip.gainDb },
+              });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: {
@@ -1300,11 +1523,16 @@ function StudioEditorInner({
   }
 
   /** V1 / 7.1.6 — Clip Mute CAS via orchestrator. */
-  function saveClipMute(muted: boolean) {
-    const clipId = selectedClip?.id;
+  function saveClipMute(
+    muted: boolean,
+    opts?: { history?: boolean; clipId?: string },
+  ) {
+    const clipId = opts?.clipId ?? selectedClip?.id;
     if (!clipId) return;
     setError(null);
+    const record = opts?.history !== false;
     enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
       try {
         const body = buildStudioClipMutePatchBody({
           muted,
@@ -1340,6 +1568,12 @@ function StudioEditorInner({
           ok: true as const,
           documentVersion: result.documentVersion,
           apply: () => {
+            if (record && beforeClip) {
+              recordUndo({
+                undo: { kind: "clip_mute", clipId, muted: beforeClip.muted },
+                redo: { kind: "clip_mute", clipId, muted: result.clip.muted },
+              });
+            }
             applyPersistedDoc((prev) => ({
               ...prev,
               project: {
@@ -1438,6 +1672,15 @@ function StudioEditorInner({
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
       if (recordingLocked || pending) return;
+
+      // Stage 0 — Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl+Y redo.
+      const undoAction = studioUndoShortcut(event);
+      if (undoAction) {
+        event.preventDefault();
+        if (undoAction === "undo") undoStudioEdit();
+        else redoStudioEdit();
+        return;
+      }
 
       // Phase 7.1.5.3 — minimal transport shortcuts (Space required; Home/End if safe).
       if (event.key === " " || event.code === "Space") {
@@ -2159,6 +2402,8 @@ function StudioEditorInner({
         getExpectedDocumentVersion={expectedDocumentVersion}
         onDocumentRefreshed={(next) => {
           applyPersistedDoc(() => next);
+          undoHistoryRef.current = EMPTY_STUDIO_UNDO_HISTORY;
+          setUndoHistory(EMPTY_STUDIO_UNDO_HISTORY);
           setError(null);
         }}
         onChooseBeat={() => setBeatPickerOpen(true)}
@@ -2184,6 +2429,10 @@ function StudioEditorInner({
         onMasterGainCommit={(masterGainDb) => {
           patchMasterMix({ masterGainDb });
         }}
+        canUndo={undoHistory.past.length > 0 && !recordingLocked}
+        canRedo={undoHistory.future.length > 0 && !recordingLocked}
+        onUndo={undoStudioEdit}
+        onRedo={redoStudioEdit}
       />
 
       <StudioBeatPicker
@@ -2657,7 +2906,11 @@ function StudioEditorInner({
             enqueuePersistAsync={enqueuePersistAsync}
             title={tr("masterEfekty")}
             onClose={() => setFxPanel(null)}
-            onFxPersisted={(masterFxChain, documentVersion) =>
+            onFxPersisted={(masterFxChain, documentVersion) => {
+              recordUndo({
+                undo: { kind: "master_fx", chain: committedDocRef.current.project.masterFxChain },
+                redo: { kind: "master_fx", chain: masterFxChain },
+              });
               applyPersistedDoc((prev) => ({
                 ...prev,
                 project: {
@@ -2665,8 +2918,8 @@ function StudioEditorInner({
                   documentVersion,
                   masterFxChain,
                 },
-              }))
-            }
+              }));
+            }}
           />
         ) : null}
         {fxPanel?.role === "track" ? (
@@ -2684,15 +2937,23 @@ function StudioEditorInner({
             enqueuePersistAsync={enqueuePersistAsync}
             title={tr("efekty", { v0: doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? tr("sciezka") })}
             onClose={() => setFxPanel(null)}
-            onFxPersisted={(effectsChain, documentVersion) =>
+            onFxPersisted={(effectsChain, documentVersion) => {
+              const trackId = fxPanel.trackId;
+              const beforeChain = committedDocRef.current.tracks.find((t) => t.id === trackId)?.effectsChain;
+              if (beforeChain) {
+                recordUndo({
+                  undo: { kind: "track_fx", trackId, chain: beforeChain },
+                  redo: { kind: "track_fx", trackId, chain: effectsChain },
+                });
+              }
               applyPersistedDoc((prev) => ({
                 ...prev,
                 project: { ...prev.project, documentVersion },
                 tracks: prev.tracks.map((t) =>
-                  t.id === fxPanel.trackId ? { ...t, effectsChain } : t,
+                  t.id === trackId ? { ...t, effectsChain } : t,
                 ),
-              }))
-            }
+              }));
+            }}
           />
         ) : null}
       </StudioFxSheet>
@@ -3204,6 +3465,10 @@ function StudioTransportBar({
   conflictActive,
   onMasterGainLocal,
   onMasterGainCommit,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: {
   projectId: string;
   tipDocumentVersion: number;
@@ -3222,6 +3487,10 @@ function StudioTransportBar({
   conflictActive: boolean;
   onMasterGainLocal: (gainDb: number) => void;
   onMasterGainCommit: (gainDb: number) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
@@ -3310,6 +3579,32 @@ function StudioTransportBar({
             aria-label={tr("stop")}
           >
             <StudioGlyph name="stop" />
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="studio-key min-h-11 min-w-11 px-2"
+            onClick={onUndo}
+            disabled={!canUndo || pending}
+            title={tr("cofnijSkrot")}
+            aria-label={tr("cofnij")}
+            data-testid="studio-transport-undo"
+          >
+            <StudioGlyph name="undo" />
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="studio-key min-h-11 min-w-11 px-2"
+            onClick={onRedo}
+            disabled={!canRedo || pending}
+            title={tr("ponowSkrot")}
+            aria-label={tr("ponow")}
+            data-testid="studio-transport-redo"
+          >
+            <StudioGlyph name="redo" />
           </Button>
           <Button
             type="button"

@@ -12,7 +12,9 @@ type GlyphName =
   | "down"
   | "more"
   | "chevron-up"
-  | "chevron-down";
+  | "chevron-down"
+  | "undo"
+  | "redo";
 
 const PATHS: Record<GlyphName, React.ReactNode> = {
   play: <path d="M5 3.5v9l8-4.5-8-4.5z" fill="currentColor" />,
@@ -52,6 +54,24 @@ const PATHS: Record<GlyphName, React.ReactNode> = {
   ),
   "chevron-up": (
     <path d="M3.5 10.5 8 6l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
+  ),
+  undo: (
+    <path
+      d="M5.5 3.5 2.5 6.5l3 3M2.5 6.5h7a4 4 0 0 1 0 8H7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="square"
+    />
+  ),
+  redo: (
+    <path
+      d="M10.5 3.5l3 3-3 3M13.5 6.5h-7a4 4 0 0 0 0 8H9"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="square"
+    />
   ),
   "chevron-down": (
     <path d="M3.5 5.5 8 10l4.5-4.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
