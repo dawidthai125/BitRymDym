@@ -49,9 +49,13 @@ import {
   buildMeterSnapshot,
   clearClipLatch,
   createClipLatchState,
+  createPeakHoldState,
   samplePeakFromTimeDomain,
   updateClipLatch,
+  updatePeakHold,
   type StudioClipLatchState,
+  type StudioPeakHoldState,
+  type StudioTrackLevelSnapshot,
   type StudioMeterSnapshot,
 } from "@/lib/studio/studio-meter";
 
@@ -76,7 +80,7 @@ type ParamValue = {
 
 type Connectable = {
   connect(dest: Connectable): Connectable;
-  disconnect(): void;
+  disconnect(dest?: Connectable): void;
 };
 
 type GainLike = Connectable & { gain: ParamValue };
@@ -312,6 +316,21 @@ export class StudioAudioEngine {
   private trackMeterListeners = new Set<
     (snapshot: StudioMeterSnapshot) => void
   >();
+  /** Stage 0 — per-track level taps (side-chain off post-pan, never inline). */
+  private trackLevelsEnabled = false;
+  private trackLevelTaps = new Map<
+    string,
+    {
+      analyser: AnalyserLike;
+      latch: StudioClipLatchState;
+      hold: StudioPeakHoldState;
+    }
+  >();
+  private trackLevelListeners = new Set<
+    (levels: ReadonlyMap<string, StudioTrackLevelSnapshot>) => void
+  >();
+  private lastTrackLevels: ReadonlyMap<string, StudioTrackLevelSnapshot> =
+    new Map();
   private tracks = new Map<string, TrackGraph>();
   private voices = new Map<string, Voice>();
   private document: StudioEngineDocument | null = null;
@@ -507,6 +526,125 @@ export class StudioAudioEngine {
     return () => {
       this.trackMeterListeners.delete(listener);
     };
+  }
+
+  /**
+   * Stage 0 — enable/disable per-track meters (one analyser per track, tapped
+   * in parallel off pan; shares the master meter tick). Disabled = 0 taps.
+   */
+  setTrackLevelsEnabled(enabled: boolean): void {
+    if (this.lifecycle === "disposed") return;
+    if (enabled === this.trackLevelsEnabled) return;
+    this.trackLevelsEnabled = enabled;
+    if (enabled) {
+      this.syncTrackLevelTaps();
+      if (this.meterActive && !this.meterVisibilityPaused) this.ensureMeterReader();
+    } else {
+      this.disposeTrackLevelTaps();
+      this.emitTrackLevels(new Map());
+    }
+  }
+
+  subscribeTrackLevels(
+    listener: (levels: ReadonlyMap<string, StudioTrackLevelSnapshot>) => void,
+  ): () => void {
+    this.trackLevelListeners.add(listener);
+    listener(this.lastTrackLevels);
+    return () => {
+      this.trackLevelListeners.delete(listener);
+    };
+  }
+
+  /** Diagnostic for tests. */
+  getTrackLevelTapCount(): number {
+    return this.trackLevelTaps.size;
+  }
+
+  private emitTrackLevels(
+    levels: ReadonlyMap<string, StudioTrackLevelSnapshot>,
+  ): void {
+    this.lastTrackLevels = levels;
+    for (const listener of this.trackLevelListeners) listener(levels);
+  }
+
+  /** (Re)connect taps; Web Audio connect() of an existing pair is a no-op. */
+  private syncTrackLevelTaps(): void {
+    if (!this.trackLevelsEnabled || !this.ctx) return;
+    for (const [trackId, graph] of this.tracks) {
+      let tap = this.trackLevelTaps.get(trackId);
+      if (!tap) {
+        try {
+          const analyser = this.ctx.createAnalyser();
+          analyser.fftSize = STUDIO_METER_FFT_SIZE;
+          analyser.smoothingTimeConstant = 0;
+          tap = {
+            analyser,
+            latch: createClipLatchState(),
+            hold: createPeakHoldState(),
+          };
+          this.trackLevelTaps.set(trackId, tap);
+        } catch {
+          continue;
+        }
+      }
+      try {
+        graph.pan.connect(tap.analyser);
+      } catch {
+        /* ignore — metering must never break playback */
+      }
+    }
+    for (const [trackId, tap] of this.trackLevelTaps) {
+      if (this.tracks.has(trackId)) continue;
+      try {
+        tap.analyser.disconnect();
+      } catch {
+        /* ignore */
+      }
+      this.trackLevelTaps.delete(trackId);
+    }
+  }
+
+  private disposeTrackLevelTaps(): void {
+    for (const [trackId, tap] of this.trackLevelTaps) {
+      const graph = this.tracks.get(trackId);
+      try {
+        if (graph) graph.pan.disconnect(tap.analyser);
+      } catch {
+        /* ignore */
+      }
+      try {
+        tap.analyser.disconnect();
+      } catch {
+        /* ignore */
+      }
+    }
+    this.trackLevelTaps.clear();
+  }
+
+  private readTrackLevels(now: number, buffer: Float32Array): void {
+    if (!this.trackLevelsEnabled || this.trackLevelTaps.size === 0) return;
+    const levels = new Map<string, StudioTrackLevelSnapshot>();
+    for (const [trackId, tap] of this.trackLevelTaps) {
+      tap.analyser.getFloatTimeDomainData(buffer);
+      const peak = samplePeakFromTimeDomain(buffer);
+      const clipping = updateClipLatch(tap.latch, peak, now);
+      const hold = updatePeakHold(tap.hold, peak, now);
+      levels.set(trackId, {
+        ...buildMeterSnapshot({ peak, clipping, timestamp: now }),
+        hold,
+      });
+    }
+    this.emitTrackLevels(levels);
+  }
+
+  private resetTrackLevels(): void {
+    if (this.trackLevelTaps.size === 0 && this.lastTrackLevels.size === 0) return;
+    for (const tap of this.trackLevelTaps.values()) {
+      clearClipLatch(tap.latch);
+      tap.hold.value = 0;
+      tap.hold.untilMs = 0;
+    }
+    this.emitTrackLevels(new Map());
   }
 
   /** P6.6.1 diagnostic — Track Pan → (0|1 Analyser) → Σ. */
@@ -907,6 +1045,9 @@ export class StudioAudioEngine {
     this.stopMetering({ reset: true });
     this.meterListeners.clear();
     this.trackMeterListeners.clear();
+    this.disposeTrackLevelTaps();
+    this.trackLevelListeners.clear();
+    this.trackLevelsEnabled = false;
     this.detachTrackMeter({ emitNeutral: false });
     this.trackMeterTargetId = null;
     try {
@@ -1020,6 +1161,7 @@ export class StudioAudioEngine {
           timestamp: this.host.nowMs(),
         }),
       );
+      this.resetTrackLevels();
     }
   }
 
@@ -1064,6 +1206,8 @@ export class StudioAudioEngine {
             }),
           );
         }
+        // Stage 0 — per-track levels on the same shared tick.
+        this.readTrackLevels(now, this.meterTimeDomain);
       }
       this.meterTickId = this.host.requestTick(tick);
     };
@@ -1144,6 +1288,7 @@ export class StudioAudioEngine {
     }
 
     this.wireTrackMeter(graph);
+    this.syncTrackLevelTaps();
   }
 
   private wireTrackMeter(graph: TrackGraph): void {
@@ -1210,6 +1355,7 @@ export class StudioAudioEngine {
       }
     }
     clearClipLatch(this.trackClipLatch);
+    this.syncTrackLevelTaps();
     if (opts.emitNeutral) {
       this.emitTrackMeterSnapshot(
         buildMeterSnapshot({
@@ -1289,6 +1435,7 @@ export class StudioAudioEngine {
     if (this.trackMeterTargetId) {
       this.ensureTrackMeterAttached();
     }
+    this.syncTrackLevelTaps();
   }
 
   private ensureTrackGraph(trackId: string): TrackGraph {

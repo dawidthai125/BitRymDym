@@ -1564,7 +1564,8 @@
     },
     "studioTrackMeter": {
       "miernikSciezki": "Track meter",
-      "poziomSciezkiSamplePeak": "Track level {v0} (sample peak)"
+      "poziomSciezkiSamplePeak": "Track level {v0} (sample peak)",
+      "poziomSciezkiNaZywo": "Live track level"
     },
     "studioTransportProvider": {
       "brakBituWProjekcie": "No beat in the project. Add a beat to listen."

@@ -125,6 +125,7 @@ import {
   shouldShowStudioTrackUpgradeCta,
 } from "@/lib/studio/studio-track-capacity";
 import { StudioGlyph, StudioRecLamp } from "@/components/studio/studio-glyphs";
+import { StudioTrackLevelMeter } from "@/components/studio/studio-track-level-meter";
 import {
   EMPTY_STUDIO_UNDO_HISTORY,
   pickStudioPatchBefore,
@@ -2656,9 +2657,10 @@ function StudioEditorInner({
                   data-track-id={track.id}
                   data-track-type={track.trackType}
                   data-selected={isSelected ? "true" : "false"}
-                  className="studio-track-strip flex flex-col justify-center gap-0.5 border-b border-[var(--brd-line)] px-1 py-0.5"
+                  className="studio-track-strip flex items-stretch gap-1 border-b border-[var(--brd-line)] py-0.5 pl-1"
                   style={{ height: STUDIO_DAW_LANE_HEIGHT_PX }}
                 >
+                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pr-0.5">
                   {/*
                     Mobile: 220px header cannot fit name + M/S/R + ↑↓⋮ (6×44).
                     Row1 = name (min 4.5rem) + M/S/R; row2 = reorder/menu + mix.
@@ -2818,6 +2820,8 @@ function StudioEditorInner({
                     />
                     </div>
                   </div>
+                  </div>
+                  <StudioTrackLevelMeter trackId={track.id} />
                 </div>
               );
             }}

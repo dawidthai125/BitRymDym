@@ -88,3 +88,37 @@ export function buildMeterSnapshot(params: {
     timestamp: params.timestamp,
   };
 }
+
+/** Stage 0 — per-track peak hold (runtime only). */
+export const STUDIO_METER_PEAK_HOLD_MS = 1000;
+
+export type StudioPeakHoldState = { value: number; untilMs: number };
+
+export function createPeakHoldState(): StudioPeakHoldState {
+  return { value: 0, untilMs: 0 };
+}
+
+/** Holds the highest recent peak for STUDIO_METER_PEAK_HOLD_MS, then follows the signal. */
+export function updatePeakHold(
+  state: StudioPeakHoldState,
+  peak: number,
+  nowMs: number,
+  holdMs: number = STUDIO_METER_PEAK_HOLD_MS,
+): number {
+  const p = Number.isFinite(peak) && peak > 0 ? Math.min(1, peak) : 0;
+  if (p >= state.value || nowMs >= state.untilMs) {
+    state.value = p;
+    state.untilMs = nowMs + holdMs;
+  }
+  return state.value;
+}
+
+export type StudioTrackLevelSnapshot = StudioMeterSnapshot & {
+  /** Linear held peak 0…1 */
+  hold: number;
+};
+
+export const STUDIO_TRACK_LEVEL_NEUTRAL: StudioTrackLevelSnapshot = {
+  ...STUDIO_METER_NEUTRAL,
+  hold: 0,
+};
