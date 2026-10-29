@@ -22,10 +22,13 @@ import {
   type MixAutofixNote,
 } from "@/lib/studio/mix-autofix/plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
 
 export type MixAutofixApply = (
   ops: MixWorkingOp[],
   description: string,
+  /** asUser: a user action (e.g. vocal preset set) — saved as a normal USER mix version, not "AI". */
+  options?: { asUser?: boolean },
 ) => Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }>;
 
 type FixPanel =
@@ -335,6 +338,15 @@ export function StudioMixStep({
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
       </div>
+
+      {onApplyAutofix ? (
+        <StudioVocalSetsCard
+          tracks={doc.tracks}
+          bpm={doc.project.tempoBpm}
+          disabled={running}
+          onApplyOps={async (ops, description) => (await onApplyAutofix(ops, description, { asUser: true })).ok}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-3">

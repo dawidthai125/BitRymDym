@@ -782,6 +782,7 @@ function StudioEditorInner({
   async function persistMixWorkingOps(
     ops: MixWorkingOp[],
     revision: { author: "AI"; description: string } | null,
+    options?: { asUser?: boolean },
   ): Promise<StudioPersistResult> {
     setError(null);
     return enqueuePersistAsync(async () => {
@@ -807,7 +808,7 @@ function StudioEditorInner({
             message: json.error ?? tr("nieUdaloSieZapisac"),
             code: json.code,
           });
-          if (!revision) {
+          if (!revision || options?.asUser) {
             if (failure.kind === "conflict") setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
             else if (!failure.retryable) setError(failure.message);
           }
@@ -834,12 +835,14 @@ function StudioEditorInner({
   async function applyMixAutofix(
     ops: MixWorkingOp[],
     description: string,
+    options?: { asUser?: boolean },
   ): Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }> {
     if (recordingLockedRef.current || ops.length === 0) return { ok: false, conflict: false };
     await flushPersist();
     const before = committedDocRef.current;
     const inverse = inverseMixAutofixOps(before, ops);
-    const result = await persistMixWorkingOps(ops, { author: "AI", description });
+    // Gaps P0 #3 — user-picked vocal sets are a USER version (server default), BITEK fixes stay "AI".
+    const result = await persistMixWorkingOps(ops, options?.asUser ? null : { author: "AI", description }, options);
     if (!result.ok) return { ok: false, conflict: result.kind === "conflict" };
     recordUndo({ undo: { kind: "mix_ops", ops: inverse }, redo: { kind: "mix_ops", ops } });
     return { ok: true, before };
@@ -3439,6 +3442,7 @@ function StudioEditorInner({
             getExpectedDocumentVersion={expectedDocumentVersion}
             enqueuePersistAsync={enqueuePersistAsync}
             title={tr("efekty", { v0: doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? tr("sciezka") })}
+            vocalPresets={{ bpm: doc.project.tempoBpm }}
             onClose={() => setFxPanel(null)}
             onFxPersisted={(effectsChain, documentVersion) => {
               const trackId = fxPanel.trackId;

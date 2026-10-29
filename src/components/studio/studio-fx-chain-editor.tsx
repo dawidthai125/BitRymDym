@@ -4,6 +4,8 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
+import { StudioVocalPresetPicker } from "@/components/studio/studio-vocal-presets";
+
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -59,6 +61,8 @@ type StudioFxChainEditorProps = {
   onFxPersisted: (chain: StudioFxChainV1, documentVersion: number) => void;
   onClose?: () => void;
   title?: string;
+  /** Gaps P0 #3 — vocal sound presets (track chains only); bpm syncs the delay. */
+  vocalPresets?: { bpm: number };
 };
 
 function formatParam(value: number, unit: string): string {
@@ -79,6 +83,7 @@ export function StudioFxChainEditor({
   onFxPersisted,
   onClose,
   title,
+  vocalPresets,
 }: StudioFxChainEditorProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioFxChainEditor");
@@ -266,6 +271,18 @@ export function StudioFxChainEditor({
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        {vocalPresets && role === "track" ? (
+          <StudioVocalPresetPicker
+            chain={chain}
+            bpm={vocalPresets.bpm}
+            disabled={saving === "saving"}
+            onApply={async (next) => {
+              const ok = await commit(next);
+              if (ok) setExpandedId(null);
+              return ok;
+            }}
+          />
+        ) : null}
         {message ? (
           <p
             role="status"
