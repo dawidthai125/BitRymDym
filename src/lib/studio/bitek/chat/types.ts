@@ -35,7 +35,7 @@ export type BitekProposal = {
   trackRef: string;
   param: BitekProposalParam;
   value: number | boolean;
-  /** Short human label shown on the button (validated, length-capped). */
+  /** Button label built server-side from the validated proposal (buildBitekProposalLabel), never from model text. */
   label: string;
 };
 

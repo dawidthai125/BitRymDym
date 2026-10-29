@@ -1,5 +1,41 @@
 import { BITEK_LIMITS, type BitekChatContext, type BitekProposal } from "./types";
 import { sanitizeLabel } from "./prompt";
+import type { BitekLang, BitekTrackContext } from "./types";
+
+const fmtDb = (n: number) => `${n > 0 ? "+" : n < 0 ? "\u2212" : ""}${Math.abs(n)}`;
+const fmtPan = (n: number) => (n === 0 ? "C" : `${n < 0 ? "L" : "R"}${Math.round(Math.abs(n) * 100)}`);
+
+/**
+ * Button label built server-side from the VALIDATED proposal (current → target), never from model text.
+ * gainDb: "Wokal: −6 → −3 dB (+3)", pan: "Wokal: pan C → L50", muted: "Wokal: wycisz" / "Vocal: unmute".
+ */
+export function buildBitekProposalLabel(
+  track: Pick<BitekTrackContext, "name" | "gainDb" | "pan" | "muted">,
+  param: BitekProposal["param"],
+  value: number | boolean,
+  lang: BitekLang,
+): string {
+  const name = sanitizeLabel(track.name, 24) || (lang === "pl" ? "Ślad" : "Track");
+  let body: string;
+  if (param === "gainDb") {
+    const cur = Math.round(track.gainDb * 2) / 2;
+    const v = value as number;
+    const d = Math.round((v - cur) * 2) / 2;
+    body = `${fmtDb(cur)} \u2192 ${fmtDb(v)} dB (${fmtDb(d)})`;
+  } else if (param === "pan") {
+    body = `pan ${fmtPan(Math.round(track.pan * 100) / 100)} \u2192 ${fmtPan(value as number)}`;
+  } else {
+    body = value ? (lang === "pl" ? "wycisz" : "mute") : lang === "pl" ? "włącz dźwięk" : "unmute";
+  }
+  return `${name}: ${body}`;
+}
+
+/** True when a proposal would not change anything (skip it). */
+function isNoop(track: BitekTrackContext, param: BitekProposal["param"], v: number | boolean): boolean {
+  if (param === "gainDb") return Math.round(track.gainDb * 2) / 2 === v;
+  if (param === "pan") return Math.round(track.pan * 100) / 100 === v;
+  return track.muted === v;
+}
 
 /** Extract the first {...} JSON object from model text (models sometimes wrap it in prose/fences). */
 function extractJsonObject(text: string): unknown {
@@ -15,14 +51,15 @@ function extractJsonObject(text: string): unknown {
 
 export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekProposal[] {
   if (!Array.isArray(raw)) return [];
-  const refs = new Set(ctx.tracks.map((t) => t.ref));
+  const byRef = new Map(ctx.tracks.map((t) => [t.ref, t] as const));
   const out: BitekProposal[] = [];
   const seen = new Set<string>();
   for (const p of raw) {
     if (out.length >= BITEK_LIMITS.maxProposals) break;
     if (!p || typeof p !== "object") continue;
-    const { trackRef, param, value, label } = p as Record<string, unknown>;
-    if (typeof trackRef !== "string" || !refs.has(trackRef)) continue;
+    const { trackRef, param, value } = p as Record<string, unknown>;
+    const track = typeof trackRef === "string" ? byRef.get(trackRef) : undefined;
+    if (!track || typeof trackRef !== "string") continue;
     const key = `${trackRef}:${String(param)}`;
     if (seen.has(key)) continue;
     let v: number | boolean;
@@ -37,12 +74,14 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
       if (typeof value !== "boolean") continue;
       v = value;
     } else continue;
+    if (isNoop(track, param, v)) continue;
     seen.add(key);
     out.push({
       trackRef,
       param,
       value: v,
-      label: sanitizeLabel(typeof label === "string" ? label : "", 60),
+      // Model-provided "label" is ignored on purpose: it may disagree with the clamped value.
+      label: buildBitekProposalLabel(track, param, v, ctx.lang),
     });
   }
   return out;
