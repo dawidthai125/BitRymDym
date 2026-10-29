@@ -4,7 +4,7 @@ Lokalna implementacja P0. To nie jest produkcyjny GREEN i nie jest dowodem praw 
 
 ## Co egzekwuje baza
 
-Migracje `20261019120000_beat_rights_safety_p0.sql`, `20261020120000_beat_rights_safety_p0_fix.sql`, `20261020180000_beat_rights_safety_p0_remediation.sql` oraz `20261020210000_beat_rights_safety_p0_master_mutation_guard.sql` dodają:
+Migracje `20261029034653_beat_rights_safety_p0.sql`, `20261029034706_beat_rights_safety_p0_fix.sql`, `20261029034711_beat_rights_safety_p0_remediation.sql` oraz `20261029034718_beat_rights_safety_p0_master_mutation_guard.sql` dodają:
 
 - `beat_rights_basis` — oświadczenie użytkownika, licencja platformy i osobne zdarzenie unieważnienia wskazujące `revokes_basis_id`;
 - `beat_blocked_audio_hashes` — wiele zdarzeń `block` i `lift` dla jednego hasha, z osobnym `id` i monotonicznym `event_seq`;
@@ -24,7 +24,7 @@ Finalizacja Mastera (`finalize_beat_master_asset`) dla bitu `PUBLISHED` ponownie
 
 ### Ochrona bezpośredniej mutacji assetów
 
-Sam gate w `finalize_beat_master_asset` nie wystarcza: `prevent_beat_audio_privilege_escalation` nadal pozwala `service_role` i adminowi mutować `beat_audio_assets` (w tym `checksum_sha256`, `is_active`, `purpose`, `status`, `beat_id`). Migracja `20261020210000_beat_rights_safety_p0_master_mutation_guard.sql` dodaje odroczony CONSTRAINT TRIGGER `beat_audio_assets_published_master_rights`. Przy commitcie transakcji, która zmienia aktywny READY MASTER opublikowanego beatu (lub pozostawia inną liczbę aktywnych Masterów niż jeden), baza wymaga dokładnie jednego aktywnego READY MASTER i ponownie wywołuje `assert_beat_checksum_rights`. Dzięki odroczeniu finalizacja (dezaktywacja + aktywacja w jednej transakcji) nadal działa, a bezpośredni uprzywilejowany UPDATE nie może zatwierdzić nielegalnego Mastera. Mutacje, które nie zmieniają aktywnego Mastera (np. wstawienie pending), nie otwierają ponownie bramki dla istniejącego hasha — zgodnie z regułą, że blokada po publikacji nie zdejmuje bitu z katalogu.
+Sam gate w `finalize_beat_master_asset` nie wystarcza: `prevent_beat_audio_privilege_escalation` nadal pozwala `service_role` i adminowi mutować `beat_audio_assets` (w tym `checksum_sha256`, `is_active`, `purpose`, `status`, `beat_id`). Migracja `20261029034718_beat_rights_safety_p0_master_mutation_guard.sql` dodaje odroczony CONSTRAINT TRIGGER `beat_audio_assets_published_master_rights`. Przy commitcie transakcji, która zmienia aktywny READY MASTER opublikowanego beatu (lub pozostawia inną liczbę aktywnych Masterów niż jeden), baza wymaga dokładnie jednego aktywnego READY MASTER i ponownie wywołuje `assert_beat_checksum_rights`. Dzięki odroczeniu finalizacja (dezaktywacja + aktywacja w jednej transakcji) nadal działa, a bezpośredni uprzywilejowany UPDATE nie może zatwierdzić nielegalnego Mastera. Mutacje, które nie zmieniają aktywnego Mastera (np. wstawienie pending), nie otwierają ponownie bramki dla istniejącego hasha — zgodnie z regułą, że blokada po publikacji nie zdejmuje bitu z katalogu.
 
 ### Ograniczenia `service_role`
 
