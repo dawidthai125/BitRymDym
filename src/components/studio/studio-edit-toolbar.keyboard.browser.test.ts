@@ -32,7 +32,7 @@ describe("studio edit-toolbar — keyboard a11y (real mount)", () => {
     expect(p.moreButtonPresent).toBe(false);
     expect(p.moreOpenViaEnter).toBeNull();
     expect(p.tabStops.some((s) => s.label === "Więcej")).toBe(false);
-    expect(p.tabStops.some((s) => s.label === "Fit")).toBe(true);
+    expect(p.tabStops.some((s) => s.label === "Dopasuj")).toBe(true);
     expect(p.tabStops.some((s) => s.label === "Zmień pakiet")).toBe(true);
   }, 90_000);
 

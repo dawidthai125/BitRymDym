@@ -1,13 +1,18 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
-export const metadata = { title: "Ustawienia" };
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.settingsPage");
+  return { title: t("metaTitle") };
+}
 
 /**
  * Settings is a navigation hub only — no new preferences or product rules.
@@ -15,64 +20,66 @@ export const metadata = { title: "Ustawienia" };
  */
 const SETTINGS_HUB_LINKS = [
   {
-    group: "Konto",
+    group: "konto",
     items: [
       {
         href: "/account#profil",
-        title: "Profil i ksywka",
-        description: "Nazwa wyświetlana, e-mail i podsumowanie planu.",
+        title: "profilIKsywka",
+        description: "nazwaWyswietlanaEMail",
       },
       {
         href: "/account#security",
-        title: "Bezpieczeństwo",
-        description: "Zmiana e-maila, hasła oraz reset hasła przez e-mail.",
+        title: "bezpieczenstwo",
+        description: "zmianaEMailaHasla",
       },
       {
         href: "/account#danger",
-        title: "Usuwanie konta",
-        description: "Trwałe usunięcie konta — istniejący formularz na koncie.",
+        title: "usuwanieKonta",
+        description: "trwaleUsuniecieKontaIstniejacy",
       },
     ],
   },
   {
-    group: "Konto — powiązane ekrany",
+    group: "kontoPowiazaneEkrany",
     items: [
       {
         href: "/account",
-        title: "Przegląd konta",
-        description: "Studio, biblioteka i skróty do nagrań oraz bitów.",
+        title: "przegladKonta",
+        description: "studioBibliotekaISkroty",
       },
       {
         href: "/account/takes",
-        title: "Moje nagrania",
-        description: "Lista własnych nagrań.",
+        title: "mojeNagrania",
+        description: "listaWlasnychNagran",
       },
       {
         href: "/account/beats",
-        title: "Moje bity",
-        description: "Wgrane bity i status moderacji.",
+        title: "mojeBity",
+        description: "wgraneBityIStatus",
       },
       {
         href: "/account/downloads",
-        title: "Pobrane bity",
-        description: "Historia pobrań.",
+        title: "pobraneBity",
+        description: "historiaPobran",
       },
       {
         href: "/account/shared",
-        title: "Bity udostępnione",
-        description: "Bity, na których masz aktywne udostępnienie do nagrania.",
+        title: "bityUdostepnione",
+        description: "bityNaKtorychMasz",
       },
       {
         href: "/premium",
-        title: "Premium — limity",
-        description:
-          "Informacja o poziomach i limitach. Zakup w aplikacji nie jest dostępny.",
+        title: "premiumLimity",
+        description: "informacjaOPoziomachI",
       },
     ],
   },
 ] as const;
 
 export default async function SettingsPage() {
+  const t = await getTranslations("account.settingsPage");
+  const tc = await getTranslations("account.settingsPage.consts");
+  const tl = await getTranslations("language");
   const session = await getCurrentProfile();
   if (!session) redirect("/sign-in");
 
@@ -80,12 +87,10 @@ export default async function SettingsPage() {
     <AppShell tone="studio">
       <main>
         <PageFrame className="py-10">
-          <SectionLabel>Konto</SectionLabel>
-          <h1 className="brd-display mt-2 text-3xl font-semibold">Ustawienia</h1>
+          <SectionLabel>{t("konto")}</SectionLabel>
+          <h1 className="brd-display mt-2 text-3xl font-semibold">{t("ustawienia")}</h1>
           <p className="mt-3 max-w-[42ch] text-sm text-[var(--brd-ink-soft)]">
-            Ta strona prowadzi do istniejących ustawień i ekranów konta. Nie
-            dodaje nowych opcji — formularze i przełączniki działają w miejscach
-            docelowych (albo tutaj, przy motywie).
+            {t("taStronaProwadziDo")}
           </p>
 
           <section
@@ -94,20 +99,31 @@ export default async function SettingsPage() {
           >
             {/* Decorative eyebrow — announced name is the h2 below. */}
             <div aria-hidden="true">
-              <SectionLabel>Wygląd</SectionLabel>
+              <SectionLabel>{t("wyglad")}</SectionLabel>
             </div>
             <h2
               id="settings-theme"
               className="mt-2 text-lg font-semibold tracking-tight"
             >
-              Motyw
+              {t("motyw")}
             </h2>
             <p className="mt-1 max-w-[40ch] text-sm text-[var(--brd-ink-soft)]">
-              Ten sam przełącznik co w nagłówku — jasny albo ciemny motyw w
-              przeglądarce.
+              {t("tenSamPrzelacznikCo")}
             </p>
             <div className="mt-4">
               <ThemeToggle />
+            </div>
+            <h2
+              id="settings-language"
+              className="mt-6 text-lg font-semibold tracking-tight"
+            >
+              {tl("label")}
+            </h2>
+            <p className="mt-1 max-w-[40ch] text-sm text-[var(--brd-ink-soft)]">
+              {tl("hint")}
+            </p>
+            <div className="mt-4">
+              <LanguageSwitcher />
             </div>
           </section>
 
@@ -120,7 +136,7 @@ export default async function SettingsPage() {
               .replace(/^-|-$/g, "")}`;
             return (
               <section
-                key={group.group}
+                key={tc(group.group)}
                 aria-labelledby={headingId}
                 className="mt-8"
               >
@@ -128,7 +144,7 @@ export default async function SettingsPage() {
                   id={headingId}
                   className="brd-meta text-[11px] uppercase tracking-[0.18em] text-[var(--brd-mute)]"
                 >
-                  {group.group}
+                  {tc(group.group)}
                 </h2>
                 <ul className="mt-3 divide-y divide-[var(--brd-line)] border border-[var(--brd-line)]">
                   {group.items.map((item) => (
@@ -142,10 +158,10 @@ export default async function SettingsPage() {
                         )}
                       >
                         <span className="text-sm font-medium text-[var(--brd-ink)]">
-                          {item.title}
+                          {tc(item.title)}
                         </span>
                         <span className="text-sm text-[var(--brd-ink-soft)]">
-                          {item.description}
+                          {tc(item.description)}
                         </span>
                       </Link>
                     </li>

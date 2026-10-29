@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import Image from "next/image";
 
 import { getDemoVisual, type DemoVisualId } from "@/lib/ui/demo-visuals";
@@ -28,13 +29,14 @@ export function VisualScene({
   priority = false,
   focus,
 }: VisualSceneProps) {
+  const tl = useLibText();
   const visual = getDemoVisual(kind);
 
   return (
     <div
       className={cn("relative overflow-hidden bg-[var(--brd-graphite)]", className)}
       role="img"
-      aria-label={label ?? visual.alt}
+      aria-label={tl(label ?? visual.alt)}
     >
       <Image
         src={visual.src}
@@ -61,7 +63,7 @@ export function VisualScene({
       ) : null}
       {caption ? (
         <p className="absolute bottom-3 left-3 right-3 brd-meta text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--brd-on-media)_75%,transparent)]">
-          {caption}
+          {tl(caption)}
         </p>
       ) : null}
     </div>

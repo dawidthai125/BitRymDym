@@ -3,6 +3,7 @@
  * Bundled by sign-up-form.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { SignUpForm } from "@/components/auth/auth-forms";
 
@@ -30,7 +31,7 @@ function mount(hostId = "sign-up-form-mount-root"): void {
     window.__BRD_SIGN_UP_MOCK_CALLS__ = 0;
   }
   root = createRoot(el);
-  root.render(<SignUpForm />);
+  root.render(withIntl(<SignUpForm />));
 }
 
 function unmount(): void {

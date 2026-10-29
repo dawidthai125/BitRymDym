@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -22,6 +26,8 @@ export function UserMenu({
   showAdmin,
   showUpload,
 }: UserMenuProps) {
+  const tl = useLibText();
+  const t = useTranslations("nav.userMenu");
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -68,7 +74,7 @@ export function UserMenu({
           focusRing,
           open && "border-[var(--brd-green)]",
         )}
-        aria-label={`Menu konta: ${displayName}`}
+        aria-label={t("menuKonta", { v0: displayName })}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
@@ -77,10 +83,10 @@ export function UserMenu({
           className="inline-flex size-7 items-center justify-center bg-[var(--brd-green)] text-xs text-[var(--brd-paper)]"
           aria-hidden
         >
-          {initial}
+          {tl(initial)}
         </span>
         <span className="hidden max-w-[8rem] truncate sm:inline">
-          {displayName}
+          {tl(displayName)}
         </span>
       </button>
 
@@ -91,35 +97,35 @@ export function UserMenu({
           className="absolute right-0 z-50 mt-2 w-56 border border-[var(--brd-line)] bg-[var(--brd-paper)] py-1 shadow-sm"
         >
           <p className="border-b border-[var(--brd-line)] px-3 py-2 text-xs text-[var(--brd-mute)]">
-            {email || displayName}
+            {tl(email || displayName)}
           </p>
-          <nav aria-label="Menu konta" className="flex flex-col">
+          <nav aria-label={t("menuKonta2")} className="flex flex-col">
             <AccountNavLink href="/studio" onNavigate={() => setOpen(false)}>
-              Studio
+              {t("studio")}
             </AccountNavLink>
             <AccountNavLink href="/premium" onNavigate={() => setOpen(false)}>
-              Premium
+              {t("premium")}
             </AccountNavLink>
             <AccountNavLink href="/library" onNavigate={() => setOpen(false)}>
-              Biblioteka
+              {t("biblioteka")}
             </AccountNavLink>
             <AccountNavLink href="/profile" onNavigate={() => setOpen(false)}>
-              Profil
+              {t("profil")}
             </AccountNavLink>
             <AccountNavLink href="/settings" onNavigate={() => setOpen(false)}>
-              Ustawienia
+              {t("ustawienia")}
             </AccountNavLink>
             {showUpload ? (
               <AccountNavLink
                 href="/beats/upload"
                 onNavigate={() => setOpen(false)}
               >
-                Wrzuć bit
+                {t("wrzucBit")}
               </AccountNavLink>
             ) : null}
             {showAdmin ? (
               <AccountNavLink href="/admin" onNavigate={() => setOpen(false)}>
-                Panel administratora
+                {t("panelAdministratora")}
               </AccountNavLink>
             ) : null}
           </nav>
@@ -131,7 +137,7 @@ export function UserMenu({
                 focusRing,
               )}
             >
-              Wyloguj
+              {t("wyloguj")}
             </button>
           </form>
         </div>

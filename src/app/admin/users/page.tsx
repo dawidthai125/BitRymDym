@@ -1,3 +1,5 @@
+import { getLibText } from "@/i18n/get-lib-text";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -20,12 +22,17 @@ import {
   labelPremiumTier,
   labelSystemRole,
 } from "@/lib/ui/labels";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
-function formatExpiresAt(iso: string | null): string {
-  if (!iso) return "Bezterminowo";
+function formatExpiresAt(
+  iso: string | null,
+  tag = "pl-PL",
+  noExpiry = "Bezterminowo",
+): string {
+  if (!iso) return noExpiry;
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "Bezterminowo";
-  return new Intl.DateTimeFormat("pl-PL", {
+  if (Number.isNaN(date.getTime())) return noExpiry;
+  return new Intl.DateTimeFormat(tag, {
     dateStyle: "medium",
   }).format(date);
 }
@@ -60,6 +67,10 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const tl = await getLibText();
+  const t = await getTranslations("admin.adminUsersPage");
+  const tShared = await getTranslations("common.shared");
+  const tag = intlTag(resolveLocale(await getLocale()));
   const raw = await searchParams;
   const query = parseAdminUsersQuery(raw);
   const auditQuery = parseAdminUsersAuditQuery(raw);
@@ -105,8 +116,8 @@ export default async function AdminUsersPage({
 
   const hasFilters = Boolean(query.q || query.role || query.premium || query.rank);
   const emptyMessage = hasFilters
-    ? "Nie znaleziono użytkowników dla podanych filtrów."
-    : "Brak użytkowników.";
+    ? t("nieZnalezionoUzytkownikowDla")
+    : t("brakUzytkownikow");
 
   const hasAuditFilters = Boolean(
     auditQuery.action ||
@@ -114,8 +125,8 @@ export default async function AdminUsersPage({
       auditQuery.rejectTarget,
   );
   const auditEmptyMessage = hasAuditFilters
-    ? "Nie znaleziono zmian dla podanych filtrów."
-    : "Brak zapisanych zmian.";
+    ? t("nieZnalezionoZmianDla")
+    : t("brakZapisanychZmian");
 
   const sharedQuery = {
     q: query.q,
@@ -132,11 +143,10 @@ export default async function AdminUsersPage({
       <PageFrame width="ops" className="py-8 sm:py-10">
         <header className="mb-8 space-y-2 border-b border-[var(--brd-line)] pb-6">
           <h1 className="brd-display text-3xl font-semibold tracking-tight">
-            Użytkownicy
+            {t("uzytkownicy")}
           </h1>
           <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Podgląd i zmiana ról oraz Premium. Usunięcie konta wymaga powodu.
-            Historia zmian jest tylko do odczytu.
+            {t("podgladIZmianaRol")}
           </p>
         </header>
 
@@ -151,32 +161,32 @@ export default async function AdminUsersPage({
 
         {loadFailed ? (
           <p className="mt-8 text-sm text-[var(--brd-mute)]" role="alert">
-            Nie udało się pobrać listy użytkowników.
+            {t("nieUdaloSiePobrac")}
           </p>
         ) : !result || result.total === 0 ? (
-          <p className="mt-8 text-sm text-[var(--brd-mute)]">{emptyMessage}</p>
+          <p className="mt-8 text-sm text-[var(--brd-mute)]">{tl(emptyMessage)}</p>
         ) : (
           <div className="mt-8">
             <p className="mb-3 text-sm text-[var(--brd-mute)]">
               {result.total}{" "}
-              {result.total === 1 ? "użytkownik" : "użytkowników"}
-              {result.truncated
-                ? " (wyniki ograniczone — zawęź wyszukiwanie)"
-                : ""}
+              {tl(result.total === 1 ? "użytkownik" : "użytkowników")}
+              {tl(result.truncated
+                ? t("wynikiOgraniczoneZawezWyszukiwanie")
+                : "")}
             </p>
             <div className="overflow-x-auto border border-[var(--brd-line)]">
               <table className="w-full min-w-[56rem] text-left text-sm">
                 <thead className="bg-[var(--brd-paper-deep)]/40 text-[var(--brd-mute)]">
                   <tr>
-                    <th className="px-3 py-3 font-medium">Ksywka</th>
-                    <th className="px-3 py-3 font-medium">E-mail</th>
-                    <th className="px-3 py-3 font-medium">ID</th>
-                    <th className="px-3 py-3 font-medium">Ranga</th>
-                    <th className="px-3 py-3 font-medium">Premium</th>
-                    <th className="px-3 py-3 font-medium">Wygasa</th>
-                    <th className="px-3 py-3 font-medium">Rola</th>
+                    <th className="px-3 py-3 font-medium">{t("ksywka")}</th>
+                    <th className="px-3 py-3 font-medium">{t("eMail")}</th>
+                    <th className="px-3 py-3 font-medium">{t("id")}</th>
+                    <th className="px-3 py-3 font-medium">{t("ranga")}</th>
+                    <th className="px-3 py-3 font-medium">{t("premium")}</th>
+                    <th className="px-3 py-3 font-medium">{t("wygasa")}</th>
+                    <th className="px-3 py-3 font-medium">{t("rola")}</th>
                     <th className="px-3 py-3 font-medium">
-                      <span className="sr-only">Akcje</span>
+                      <span className="sr-only">{t("akcje")}</span>
                     </th>
                   </tr>
                 </thead>
@@ -184,24 +194,24 @@ export default async function AdminUsersPage({
                   {result.rows.map((row) => (
                     <tr key={row.id}>
                       <td className="px-3 py-3 font-medium">
-                        {row.displayName?.trim() || "Użytkownik"}
+                        {tl(row.displayName?.trim() || t("uzytkownik"))}
                       </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
-                        {row.email ?? "—"}
+                        {tl(row.email ?? "—")}
                       </td>
                       <td className="px-3 py-3 tabular-nums">
                         {row.userNumber ?? "—"}
                       </td>
-                      <td className="px-3 py-3">{labelCreatorRank(row.rank)}</td>
+                      <td className="px-3 py-3">{tl(labelCreatorRank(row.rank))}</td>
                       <td className="px-3 py-3">
-                        {labelPremiumTier(row.premiumTier)}
+                        {tl(labelPremiumTier(row.premiumTier))}
                       </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
-                        {row.premiumTier === "FREE"
+                        {tl(row.premiumTier === "FREE"
                           ? "—"
-                          : formatExpiresAt(row.premiumExpiresAt)}
+                          : formatExpiresAt(row.premiumExpiresAt, tag, tShared("noExpiry")))}
                       </td>
-                      <td className="px-3 py-3">{labelSystemRole(row.role)}</td>
+                      <td className="px-3 py-3">{tl(labelSystemRole(row.role))}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col items-start gap-2">
                           <AdminUsersManageDialog
@@ -231,7 +241,7 @@ export default async function AdminUsersPage({
             {result.pageCount > 1 ? (
               <nav
                 className="mt-4 flex flex-wrap gap-2 text-sm"
-                aria-label="Strony listy użytkowników"
+                aria-label={t("stronyListyUzytkownikow")}
               >
                 {Array.from({ length: result.pageCount }, (_, i) => i + 1).map(
                   (page) => {
@@ -265,11 +275,10 @@ export default async function AdminUsersPage({
 
         <section className="mt-12 border-t border-[var(--brd-line)] pt-8">
           <h2 className="brd-display text-2xl font-semibold tracking-tight">
-            Historia zmian
+            {t("historiaZmian")}
           </h2>
           <p className="mt-2 max-w-prose text-sm text-[var(--brd-ink-soft)]">
-            Każdy zapisany wpis jest osobnym wierszem. Usunięci użytkownicy
-            pozostają widoczni po numerze ID.
+            {t("kazdyZapisanyWpisJest")}
           </p>
 
           <div className="mt-6">
@@ -286,44 +295,44 @@ export default async function AdminUsersPage({
 
           {auditForbidden ? (
             <p className="mt-8 text-sm text-[var(--brd-mute)]" role="alert">
-              Brak dostępu do historii zmian.
+              {t("brakDostepuDoHistorii")}
             </p>
           ) : auditLoadFailed ? (
             <p className="mt-8 text-sm text-[var(--brd-mute)]" role="alert">
-              Nie udało się pobrać historii zmian.
+              {t("nieUdaloSiePobrac2")}
             </p>
           ) : !auditResult || auditResult.total === 0 ? (
             <p className="mt-8 text-sm text-[var(--brd-mute)]">
-              {auditEmptyMessage}
+              {tl(auditEmptyMessage)}
             </p>
           ) : (
             <div className="mt-8">
               <p className="mb-3 text-sm text-[var(--brd-mute)]">
                 {auditResult.total}{" "}
-                {auditResult.total === 1 ? "zmiana" : "zmian"}
+                {tl(auditResult.total === 1 ? "zmiana" : "zmian")}
               </p>
               <div className="overflow-x-auto border border-[var(--brd-line)]">
                 <table className="w-full min-w-[48rem] text-left text-sm">
                   <thead className="bg-[var(--brd-paper-deep)]/40 text-[var(--brd-mute)]">
                     <tr>
-                      <th className="px-3 py-3 font-medium">Data</th>
-                      <th className="px-3 py-3 font-medium">Kto</th>
-                      <th className="px-3 py-3 font-medium">Kogo</th>
-                      <th className="px-3 py-3 font-medium">Operacja</th>
-                      <th className="px-3 py-3 font-medium">Zmiana</th>
+                      <th className="px-3 py-3 font-medium">{t("data")}</th>
+                      <th className="px-3 py-3 font-medium">{t("kto")}</th>
+                      <th className="px-3 py-3 font-medium">{t("kogo")}</th>
+                      <th className="px-3 py-3 font-medium">{t("operacja")}</th>
+                      <th className="px-3 py-3 font-medium">{t("zmiana")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--brd-line)]">
                     {auditResult.rows.map((row) => (
                       <tr key={row.id}>
                         <td className="px-3 py-3 whitespace-nowrap">
-                          {row.createdAt}
+                          {tl(row.createdAt)}
                         </td>
-                        <td className="px-3 py-3">{row.actorLabel}</td>
-                        <td className="px-3 py-3">{row.targetLabel}</td>
-                        <td className="px-3 py-3">{row.action}</td>
+                        <td className="px-3 py-3">{tl(row.actorLabel)}</td>
+                        <td className="px-3 py-3">{tl(row.targetLabel)}</td>
+                        <td className="px-3 py-3">{tl(row.action)}</td>
                         <td className="px-3 py-3">
-                          {row.oldLabel} → {row.newLabel}
+                          {tl(row.oldLabel)} → {tl(row.newLabel)}
                         </td>
                       </tr>
                     ))}
@@ -333,7 +342,7 @@ export default async function AdminUsersPage({
               {auditResult.pageCount > 1 ? (
                 <nav
                   className="mt-4 flex flex-wrap gap-2 text-sm"
-                  aria-label="Strony historii zmian"
+                  aria-label={t("stronyHistoriiZmian")}
                 >
                   {Array.from(
                     { length: auditResult.pageCount },

@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -76,6 +80,8 @@ export function StudioFxChainEditor({
   onClose,
   title,
 }: StudioFxChainEditorProps) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioFxChainEditor");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -90,7 +96,7 @@ export function StudioFxChainEditor({
 
   async function commit(nextChain: StudioFxChainV1): Promise<boolean> {
     setSaving("saving");
-    setMessage("Zapisywanie…");
+    setMessage(t("zapisywanie"));
     const result = await enqueuePersistAsync(async () => {
       try {
         const path =
@@ -128,7 +134,7 @@ export function StudioFxChainEditor({
         ) {
           return classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zapisać efektów.",
+            message: json.error ?? t("nieUdaloSieZapisac"),
             code: json.code,
           });
         }
@@ -172,7 +178,7 @@ export function StudioFxChainEditor({
     } catch (e) {
       setSaving("error");
       setMessage(
-        e instanceof Error ? e.message : "Nie udało się dodać efektu.",
+        e instanceof Error ? e.message : t("nieUdaloSieDodac"),
       );
     }
   }
@@ -197,7 +203,7 @@ export function StudioFxChainEditor({
       setMessage(
         e instanceof Error
           ? e.message
-          : "Nie udało się zmienić stanu efektu.",
+          : t("nieUdaloSieZmienic"),
       );
     }
   }
@@ -227,7 +233,7 @@ export function StudioFxChainEditor({
   const atMax = chain.effects.length >= STUDIO_FX_CHAIN_MAX_EFFECTS;
   const heading =
     title ??
-    (role === "master" ? "Master · Efekty" : "Ścieżka · Efekty");
+    (role === "master" ? t("masterEfekty") : t("sciezkaEfekty"));
 
   return (
     <div
@@ -243,7 +249,7 @@ export function StudioFxChainEditor({
           id={titleId}
           className="text-sm font-semibold text-[var(--brd-ink)]"
         >
-          {heading}
+          {tl(heading)}
         </h2>
         {onClose ? (
           <Button
@@ -251,10 +257,10 @@ export function StudioFxChainEditor({
             size="sm"
             variant="ghost"
             className="min-h-11 min-w-11"
-            aria-label="Zamknij efekty"
+            aria-label={t("zamknijEfekty")}
             onClick={onClose}
           >
-            Zamknij
+            {t("zamknij")}
           </Button>
         ) : null}
       </div>
@@ -269,7 +275,7 @@ export function StudioFxChainEditor({
                 : "text-sm text-[var(--brd-mute)]"
             }
           >
-            {message}
+            {tl(message)}
             {saving === "conflict" ? (
               <>
                 {" "}
@@ -278,7 +284,7 @@ export function StudioFxChainEditor({
                   className="underline"
                   onClick={() => window.location.reload()}
                 >
-                  Odśwież
+                  {t("odswiez")}
                 </button>
               </>
             ) : null}
@@ -287,10 +293,10 @@ export function StudioFxChainEditor({
 
         {chain.effects.length === 0 ? (
           <p className="text-sm text-[var(--brd-mute)]">
-            Brak efektów. Dodaj efekt.
+            {t("brakEfektowDodajEfekt")}
           </p>
         ) : (
-          <ul className="space-y-2" aria-label="Łańcuch efektów">
+          <ul className="space-y-2" aria-label={t("lancuchEfektow")}>
             {chain.effects.map((effect, index) => {
               const meta = STUDIO_FX_UI_META[effect.type];
               const expanded = expandedId === effect.id;
@@ -310,7 +316,7 @@ export function StudioFxChainEditor({
                         setExpandedId(expanded ? null : effect.id)
                       }
                     >
-                      {meta.labelPl}
+                      {tl(meta.labelPl)}
                     </button>
                     <Button
                       type="button"
@@ -318,7 +324,7 @@ export function StudioFxChainEditor({
                       variant="ghost"
                       className="min-h-11 min-w-11"
                       disabled={!canUp || saving === "saving"}
-                      aria-label={`Przenieś ${meta.labelPl} w górę`}
+                      aria-label={t("przeniesWGore", { v0: meta.labelPl })}
                       onClick={() => void onReorder(index, "up")}
                     >
                       <StudioGlyph name="up" className="size-3.5" />
@@ -329,18 +335,18 @@ export function StudioFxChainEditor({
                       variant="ghost"
                       className="min-h-11 min-w-11"
                       disabled={!canDown || saving === "saving"}
-                      aria-label={`Przenieś ${meta.labelPl} w dół`}
+                      aria-label={t("przeniesWDol", { v0: meta.labelPl })}
                       onClick={() => void onReorder(index, "down")}
                     >
                       <StudioGlyph name="down" className="size-3.5" />
                     </Button>
                     <StudioToggleChip
                       active={effect.enabled}
-                      label={effect.enabled ? "Włączony" : "Wyłączony"}
+                      label={tl(effect.enabled ? t("wlaczony") : t("wylaczony"))}
                       title={
-                        effect.enabled
-                          ? "Wyłącz efekt (bez usuwania)"
-                          : "Włącz efekt"
+                        tl(effect.enabled
+                          ? t("wylaczEfektBezUsuwania")
+                          : t("wlaczEfekt"))
                       }
                       disabled={saving === "saving"}
                       onClick={() => void onToggle(effect)}
@@ -359,7 +365,7 @@ export function StudioFxChainEditor({
                         return (
                           <StudioMixControl
                             key={param.path}
-                            label={param.labelPl}
+                            label={tl(param.labelPl)}
                             ariaLabel={`${meta.labelPl}: ${param.labelPl}`}
                             value={value}
                             display={formatParam(value, param.unit)}
@@ -384,11 +390,11 @@ export function StudioFxChainEditor({
                         size="sm"
                         variant="outline"
                         className="min-h-11"
-                        aria-label={`Usuń efekt ${meta.labelPl}`}
+                        aria-label={t("usunEfekt", { v0: meta.labelPl })}
                         disabled={saving === "saving"}
                         onClick={() => void onRemove(effect.id)}
                       >
-                        Usuń
+                        {t("usun")}
                       </Button>
                     </div>
                   ) : null}
@@ -407,7 +413,7 @@ export function StudioFxChainEditor({
             aria-expanded={addOpen}
             onClick={() => setAddOpen((v) => !v)}
           >
-            Dodaj efekt
+            {t("dodajEfekt")}
           </Button>
           {addOpen ? (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -421,7 +427,7 @@ export function StudioFxChainEditor({
                     disabled={saving === "saving"}
                     onClick={() => void onAdd(type)}
                   >
-                    {studioFxLabelPl(type)}
+                    {tl(studioFxLabelPl(type))}
                   </Button>
                 </li>
               ))}
@@ -429,7 +435,7 @@ export function StudioFxChainEditor({
           ) : null}
           {atMax ? (
             <p className="text-xs text-[var(--brd-mute)]">
-              Limit {STUDIO_FX_CHAIN_MAX_EFFECTS} efektów.
+              {t("limit")}{" "}{STUDIO_FX_CHAIN_MAX_EFFECTS} {t("efektow")}
             </p>
           ) : null}
         </div>
@@ -464,6 +470,7 @@ export function StudioFxSheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const t = useTranslations("studio.studioFxChainEditor");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -531,7 +538,7 @@ export function StudioFxSheet({
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
-        aria-label="Zamknij panel efektów"
+        aria-label={t("zamknijPanelEfektow")}
         data-testid="studio-fx-sheet-backdrop"
         onClick={onClose}
       />
@@ -545,7 +552,7 @@ export function StudioFxSheet({
         className="relative z-10 w-full max-w-lg outline-none pb-[env(safe-area-inset-bottom)] sm:px-4"
       >
         <span id={titleId} className="sr-only">
-          Efekty
+          {t("efekty")}
         </span>
         <div className="mb-2 flex justify-end sm:mb-0">
           <Button
@@ -556,7 +563,7 @@ export function StudioFxSheet({
             data-testid="studio-fx-sheet-close"
             onClick={onClose}
           >
-            Zamknij
+            {t("zamknij")}
           </Button>
         </div>
         {children}

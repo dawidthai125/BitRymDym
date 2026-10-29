@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,7 @@ export default async function AdminPlatformBeatsLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("admin.adminBeatsLayout");
   try {
     await requireRole(["ADMIN"]);
   } catch (error) {
@@ -20,15 +22,15 @@ export default async function AdminPlatformBeatsLayout({
     }
     return (
       <div className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-2xl font-semibold tracking-tight">Brak dostępu</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("brakDostepu")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Operacje bitów platformy są dostępne wyłącznie dla administratora.
+          {t("operacjeBitowPlatformySa")}
         </p>
         <Link
           href="/admin/moderation"
           className="mt-6 inline-block text-sm underline underline-offset-4"
         >
-          Moderacja bitów
+          {t("moderacjaBitow")}
         </Link>
       </div>
     );

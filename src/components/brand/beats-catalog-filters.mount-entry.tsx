@@ -5,6 +5,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- fixture markers for AX probe, not app navigation */
 
 import type { ReactNode } from "react";
+import { withIntl } from "@/test/intl-test-provider";
 import { createRoot, type Root } from "react-dom/client";
 
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
@@ -78,11 +79,11 @@ function mount(hostId = "beats-filters-mount-root"): void {
     root = null;
   }
   root = createRoot(el);
-  root.render(
+  root.render(withIntl(
     <ShellFixture>
       <BeatsCatalogClient beats={FIXTURE} />
     </ShellFixture>,
-  );
+  ));
 }
 
 function unmount(): void {

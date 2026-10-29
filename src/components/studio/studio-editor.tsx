@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import {
   useEffect,
   useId,
@@ -23,8 +28,6 @@ import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
 import {
   deriveStudioInspectorContext,
-  STUDIO_INSPECTOR_CLOSE_BLOCKED_PL,
-  studioInspectorContextTitle,
   studioPreferRecordAfterCaptureReport,
   studioPreferRecordAfterClipCreated,
   studioPreferRecordAfterTimelineSelect,
@@ -235,6 +238,9 @@ function StudioEditorInner({
   setDoc: Dispatch<SetStateAction<StudioProjectDocument>>;
   trackCapacity: StudioTrackCapacityProps;
 }) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioEditor");
+  const tInspector = useTranslations("studio.inspectorTitle");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [persistSnap, setPersistSnap] = useState<StudioPersistSnapshot>({
@@ -471,7 +477,7 @@ function StudioEditorInner({
       return {
         ok: false,
         kind: "unknown",
-        message: "Persist niedostępny.",
+        message: tr("persistNiedostepny"),
         retryable: false,
       };
     }
@@ -685,7 +691,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zapisać geometrii klipu.",
+            message: json.error ?? tr("nieUdaloSieZapisac"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -740,7 +746,7 @@ function StudioEditorInner({
         if (!res.ok || !json.track || typeof json.documentVersion !== "number") {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zaktualizować ścieżki.",
+            message: json.error ?? tr("nieUdaloSieZaktualizowac"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -806,7 +812,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zapisać Master.",
+            message: json.error ?? tr("nieUdaloSieZapisac2"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -870,7 +876,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zmienić kolejności.",
+            message: json.error ?? tr("nieUdaloSieZmienic"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -919,17 +925,17 @@ function StudioEditorInner({
           code?: string;
         };
         if (json.code === "TRACK_CAPACITY_REACHED") {
-          setError(json.error ?? "Osiągnięto limit ścieżek.");
+          setError(json.error ?? tr("osiagnietoLimitSciezek"));
           return classifyPersistHttpFailure({
             status: 403,
-            message: json.error ?? "Osiągnięto limit ścieżek.",
+            message: json.error ?? tr("osiagnietoLimitSciezek"),
             code: json.code,
           });
         }
         if (!res.ok || !json.track || typeof json.documentVersion !== "number") {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się dodać ścieżki.",
+            message: json.error ?? tr("nieUdaloSieDodac"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -986,18 +992,18 @@ function StudioEditorInner({
           code?: string;
         };
         if (json.code === "TRACK_CAPACITY_REACHED") {
-          setError(json.error ?? "Osiągnięto limit ścieżek.");
+          setError(json.error ?? tr("osiagnietoLimitSciezek"));
           return classifyPersistHttpFailure({
             status: 403,
-            message: json.error ?? "Osiągnięto limit ścieżek.",
+            message: json.error ?? tr("osiagnietoLimitSciezek"),
             code: json.code,
           });
         }
         if (json.code === "BEAT_TRACK_PROTECTED") {
-          setError(json.error ?? "Ścieżki Bit nie można zduplikować.");
+          setError(json.error ?? tr("sciezkiBitNieMozna"));
           return classifyPersistHttpFailure({
             status: 403,
-            message: json.error ?? "Ścieżki Bit nie można zduplikować.",
+            message: json.error ?? tr("sciezkiBitNieMozna"),
             code: json.code,
           });
         }
@@ -1009,7 +1015,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zduplikować ścieżki.",
+            message: json.error ?? tr("nieUdaloSieZduplikowac"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -1075,7 +1081,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się usunąć ścieżki.",
+            message: json.error ?? tr("nieUdaloSieUsunac"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -1145,7 +1151,7 @@ function StudioEditorInner({
         if (!res.ok || !json.clip || typeof json.documentVersion !== "number") {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się zapisać klipu.",
+            message: json.error ?? tr("nieUdaloSieZapisac3"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -1386,7 +1392,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się podzielić klipu.",
+            message: json.error ?? tr("nieUdaloSiePodzielic"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -1534,7 +1540,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się usunąć klipu.",
+            message: json.error ?? tr("nieUdaloSieUsunac2"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -1598,7 +1604,7 @@ function StudioEditorInner({
         ) {
           const failure = classifyPersistHttpFailure({
             status: res.status,
-            message: json.error ?? "Nie udało się powielić klipu.",
+            message: json.error ?? tr("nieUdaloSiePowielic"),
             code: json.code,
           });
           if (failure.kind === "conflict") {
@@ -1642,11 +1648,11 @@ function StudioEditorInner({
   const saveStatusLabel = conflictActive
     ? (error ?? persistSnap?.lastError ?? FX_CHAIN_CONFLICT_UI_PL)
     : persistSnap?.status === "SAVE_FAILED"
-      ? (persistSnap.lastError ?? "Nie zapisano")
+      ? (persistSnap.lastError ?? tr("nieZapisano"))
       : persistSnap
         ? persistSnap.label
         : pending
-          ? "Zapisywanie…"
+          ? tr("zapisywanie")
           : status
             ? status
             : "Gotowe";
@@ -1708,7 +1714,7 @@ function StudioEditorInner({
     >
       <div
         role="tablist"
-        aria-label="Inspector"
+        aria-label={tr("inspector")}
         data-testid="studio-inspector-visual-tabs"
         className="grid grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2"
       >
@@ -1716,7 +1722,7 @@ function StudioEditorInner({
           [
             {
               id: "settings",
-              label: "Settings",
+              label: tr("tabSettings"),
               active:
                 inspectorContext === "track" || inspectorContext === "empty",
               onClick: () => {
@@ -1727,7 +1733,7 @@ function StudioEditorInner({
             },
             {
               id: "effects",
-              label: "Effects",
+              label: tr("tabEffects"),
               active: false,
               onClick: () => {
                 setInspectorPreferRecord(false);
@@ -1740,7 +1746,7 @@ function StudioEditorInner({
             },
             {
               id: "file",
-              label: "File",
+              label: tr("tabFile"),
               active: inspectorContext === "clip",
               onClick: () => {
                 setInspectorPreferRecord(false);
@@ -1750,7 +1756,7 @@ function StudioEditorInner({
             },
             {
               id: "record",
-              label: "Record",
+              label: tr("tabRecord"),
               active: inspectorContext === "record",
               onClick: () => {
                 setInspectorPreferRecord(true);
@@ -1772,12 +1778,12 @@ function StudioEditorInner({
             }`}
             onClick={tab.onClick}
           >
-            {tab.label}
+            {tl(tab.label)}
           </button>
         ))}
       </div>
       <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-        {studioInspectorContextTitle(inspectorContext)}
+        {tInspector(inspectorContext)}
       </p>
 
       {inspectorContext === "record" ? (
@@ -1833,7 +1839,7 @@ function StudioEditorInner({
             setInspectorPreferRecord(false);
             setSelectedClipId(selectClipId(null, clip.id));
             setSelectedTrackId(clip.trackId);
-            setStatus("Nagranie dodane na oś czasu.");
+            setStatus(tr("nagranieDodaneNaOs"));
           }}
           onTrackCreated={(track, nextDocumentVersion) => {
             applyPersistedDoc((prev) => ({
@@ -1888,7 +1894,7 @@ function StudioEditorInner({
           data-testid="studio-inspector-empty"
         >
           <p className="text-sm text-[var(--brd-mute)]">
-            Wybierz ścieżkę lub klip, aby zobaczyć szczegóły.
+            {tr("wybierzSciezkeLubKlip")}
           </p>
           <Button
             type="button"
@@ -1901,7 +1907,7 @@ function StudioEditorInner({
               openInspectorOverlay();
             }}
           >
-            Nagraj
+            {tr("nagraj")}
           </Button>
         </div>
       ) : null}
@@ -1914,21 +1920,21 @@ function StudioEditorInner({
       className="flex items-stretch gap-2 overflow-x-auto pb-1"
       data-testid="studio-mixer-drawer"
       data-studio-mixer="channels"
-      aria-label="Mix"
+      aria-label={tr("mix")}
     >
       <li
         data-testid="studio-mix-master"
         className="studio-channel studio-channel-master sticky left-0 z-[1] flex w-[7.5rem] shrink-0 flex-col p-2"
       >
-        <p className="studio-scribble truncate text-xs font-semibold">Master</p>
+        <p className="studio-scribble truncate text-xs font-semibold">{tr("master")}</p>
         <p className="mb-1 mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
-          Out
+          {tr("out")}
         </p>
         <StudioMixControl
-          label="Level"
-          ariaLabel="Głośność Master"
+          label={tr("level")}
+          ariaLabel={tr("glosnoscMaster")}
           value={doc.project.masterGainDb}
-          display={`${doc.project.masterGainDb.toFixed(1)} dB`}
+          display={tr("db", { v0: doc.project.masterGainDb.toFixed(1) })}
           min={STUDIO_MASTER_GAIN_DB_MIN}
           max={STUDIO_MASTER_GAIN_DB_MAX}
           step={0.5}
@@ -1945,8 +1951,8 @@ function StudioEditorInner({
           }}
         />
         <StudioMixControl
-          label="Pan"
-          ariaLabel="Panorama Master"
+          label={tr("pan")}
+          ariaLabel={tr("panoramaMaster")}
           value={doc.project.masterPan}
           display={doc.project.masterPan.toFixed(2)}
           min={-1}
@@ -1969,10 +1975,10 @@ function StudioEditorInner({
           size="xs"
           variant="outline"
           className="mt-auto min-h-11 w-full truncate px-1 text-[10px]"
-          aria-label="Efekty Master"
+          aria-label={tr("efektyMaster")}
           onClick={() => setFxPanel({ role: "master" })}
         >
-          {studioFxEntryLabel(doc.project.masterFxChain)}
+          {tl(studioFxEntryLabel(doc.project.masterFxChain))}
         </Button>
         {/* Visual Parity V2 — Master strip order: Level · Pan · FX · meter */}
         <StudioMasterMeterLive />
@@ -2003,9 +2009,9 @@ function StudioEditorInner({
               className="mb-1 min-h-11 w-full rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
               aria-pressed={isSelected}
               aria-label={
-                isSelected
-                  ? `Odznacz ścieżkę ${track.name}`
-                  : `Wybierz ścieżkę ${track.name}`
+                tl(isSelected
+                  ? tr("odznaczSciezke", { v0: track.name })
+                  : tr("wybierzSciezke", { v0: track.name }))
               }
               data-testid="studio-mix-track-select"
               onClick={() =>
@@ -2013,12 +2019,12 @@ function StudioEditorInner({
               }
             >
               <p className="studio-scribble truncate text-xs font-medium">
-                {track.name}
+                {tl(track.name)}
               </p>
               <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--brd-mute)]">
-                {isBeat ? "BEAT" : labelStudioTrackType(track.trackType)}
-                {!audible ? " · M" : ""}
-                {isSelected ? " · meter" : ""}
+                {tl(isBeat ? labelStudioTrackType("BEAT") : labelStudioTrackType(track.trackType))}
+                {tl(!audible ? " · M" : "")}
+                {tl(isSelected ? tr("meter") : "")}
               </p>
             </button>
             {isSelected ? (
@@ -2030,10 +2036,10 @@ function StudioEditorInner({
               />
             )}
             <StudioMixControl
-              label="Level"
-              ariaLabel={`Głośność ścieżki ${track.name}`}
+              label={tr("level")}
+              ariaLabel={tr("glosnoscSciezki", { v0: track.name })}
               value={track.gainDb}
-              display={`${track.gainDb.toFixed(1)} dB`}
+              display={tr("db", { v0: track.gainDb.toFixed(1) })}
               min={STUDIO_TRACK_GAIN_DB_MIN}
               max={STUDIO_TRACK_GAIN_DB_MAX}
               step={0.5}
@@ -2052,8 +2058,8 @@ function StudioEditorInner({
               }}
             />
             <StudioMixControl
-              label="Pan"
-              ariaLabel={`Panorama ścieżki ${track.name}`}
+              label={tr("pan")}
+              ariaLabel={tr("panoramaSciezki", { v0: track.name })}
               value={track.pan}
               display={track.pan.toFixed(2)}
               min={-1}
@@ -2080,7 +2086,7 @@ function StudioEditorInner({
               <StudioToggleChip
                 active={track.muted}
                 label="M"
-                title="Wycisz"
+                title={tr("wycisz")}
                 tone="mute"
                 className={STUDIO_DAW_CHIP_CLASS}
                 onClick={() => {
@@ -2090,7 +2096,7 @@ function StudioEditorInner({
               <StudioToggleChip
                 active={track.solo}
                 label="S"
-                title="Solo"
+                title={tr("solo")}
                 tone="solo"
                 className={STUDIO_DAW_CHIP_CLASS}
                 onClick={() => {
@@ -2100,7 +2106,7 @@ function StudioEditorInner({
               <StudioToggleChip
                 active={track.recordArmed}
                 label="R"
-                title="Uzbrojenie nagrywania"
+                title={tr("uzbrojenieNagrywania")}
                 tone="record"
                 className={STUDIO_DAW_CHIP_CLASS}
                 onClick={() => {
@@ -2115,14 +2121,14 @@ function StudioEditorInner({
               size="xs"
               variant="outline"
               className="mt-auto min-h-11 w-full truncate px-1 text-[10px]"
-              aria-label={`Efekty ścieżki ${track.name}`}
-              title={fxLabel}
+              aria-label={tr("efektySciezki", { v0: track.name })}
+              title={tl(fxLabel)}
               onClick={() => {
                 setSelectedTrackId(track.id);
                 setFxPanel({ role: "track", trackId: track.id });
               }}
             >
-              {fxLabel}
+              {tl(fxLabel)}
             </Button>
           </li>
         );
@@ -2143,7 +2149,7 @@ function StudioEditorInner({
         className="flex min-h-10 items-center border-b border-[var(--brd-line)] pb-0.5"
       >
         <h1 className="brd-display truncate text-xl leading-none tracking-tight sm:text-2xl">
-          {doc.project.title}
+          {tl(doc.project.title)}
         </h1>
       </header>
 
@@ -2188,7 +2194,7 @@ function StudioEditorInner({
         enqueuePersistAsync={enqueuePersistAsync}
         onAttached={(document) => {
           applyPersistedDoc(() => document);
-          setStatus("Bit powiązany z projektem.");
+          setStatus(tr("bitPowiazanyZProjektem"));
           setError(null);
         }}
       />
@@ -2200,7 +2206,7 @@ function StudioEditorInner({
           className="flex flex-wrap items-center gap-2 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 shadow-sm"
         >
           <span className="px-1 text-xs text-[var(--brd-mute)]">
-            {trackMenuTrack.name}
+            {tl(trackMenuTrack.name)}
           </span>
           <Button
             type="button"
@@ -2211,15 +2217,15 @@ function StudioEditorInner({
             data-testid="studio-track-duplicate"
             disabled={recordingLocked || pending || atTrackCapacity}
             title={
-              atTrackCapacity
-                ? "Osiągnięto limit ścieżek"
-                : "Duplikuj ścieżkę"
+              tl(atTrackCapacity
+                ? tr("osiagnietoLimitSciezek2")
+                : tr("duplikujSciezke"))
             }
             onClick={() => {
               duplicateTrack(trackMenuTrack.id);
             }}
           >
-            Duplikuj
+            {tr("duplikuj")}
           </Button>
           <Button
             type="button"
@@ -2234,7 +2240,7 @@ function StudioEditorInner({
               setTrackMenuId(null);
             }}
           >
-            Usuń
+            {tr("usun")}
           </Button>
           <Button
             type="button"
@@ -2243,7 +2249,7 @@ function StudioEditorInner({
             className="min-h-11"
             onClick={() => setTrackMenuId(null)}
           >
-            Anuluj
+            {tr("anuluj")}
           </Button>
         </div>
       ) : null}
@@ -2260,11 +2266,10 @@ function StudioEditorInner({
             id="studio-delete-track-title"
             className="text-sm font-medium text-[var(--brd-ink)]"
           >
-            Usunąć ścieżkę {trackPendingDelete.name}?
+            {tr("usunacSciezke")}{" "}{tl(trackPendingDelete.name)}?
           </p>
           <p className="mt-1 text-xs text-[var(--brd-mute)]">
-            Ścieżka i jej klipy zostaną usunięte. Źródłowe nagrania pozostaną
-            zachowane.
+            {tr("sciezkaIJejKlipy")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
@@ -2275,7 +2280,7 @@ function StudioEditorInner({
               disabled={pending}
               onClick={() => setConfirmDeleteTrackId(null)}
             >
-              Anuluj
+              {tr("anuluj")}
             </Button>
             <Button
               type="button"
@@ -2288,7 +2293,7 @@ function StudioEditorInner({
                 deleteTrack(trackPendingDelete.id);
               }}
             >
-              Usuń
+              {tr("usun")}
             </Button>
           </div>
         </div>
@@ -2299,7 +2304,7 @@ function StudioEditorInner({
           className="rounded border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
           role="status"
         >
-          TRYB NAGRYWANIA — edycja klipów i przewijanie są zablokowane.
+          {tr("trybNagrywaniaEdycjaKlipow")}
         </p>
       ) : null}
       {captureInterruptedNotice ? (
@@ -2307,7 +2312,7 @@ function StudioEditorInner({
           className="rounded border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
           role="alert"
         >
-          {captureInterruptedNotice}
+          {tl(captureInterruptedNotice)}
         </p>
       ) : null}
 
@@ -2415,9 +2420,9 @@ function StudioEditorInner({
                       className="min-h-11 min-w-[4.5rem] flex-1 truncate rounded-sm px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)]"
                       aria-pressed={isSelected}
                       aria-label={
-                        isSelected
-                          ? `Odznacz ścieżkę ${track.name}`
-                          : `Wybierz ścieżkę ${track.name}`
+                        tl(isSelected
+                          ? tr("odznaczSciezke", { v0: track.name })
+                          : tr("wybierzSciezke", { v0: track.name }))
                       }
                       data-testid="studio-track-header-select"
                       onClick={() =>
@@ -2425,16 +2430,16 @@ function StudioEditorInner({
                       }
                     >
                       <span className="block truncate text-xs font-medium text-[var(--brd-ink)]">
-                        {track.name}
+                        {tl(track.name)}
                       </span>
                       <span className="studio-type-label mt-0.5 inline-block max-w-full truncate font-mono text-[9px] uppercase tracking-[0.12em]">
-                        {isBeat ? "BEAT" : typeLabel}
+                        {tl(isBeat ? labelStudioTrackType("BEAT") : typeLabel)}
                       </span>
                     </button>
                     <StudioToggleChip
                       active={track.muted}
                       label="M"
-                      title="Wycisz"
+                      title={tr("wycisz")}
                       tone="mute"
                       className={STUDIO_DAW_CHIP_CLASS}
                       onClick={() => {
@@ -2444,7 +2449,7 @@ function StudioEditorInner({
                     <StudioToggleChip
                       active={track.solo}
                       label="S"
-                      title="Solo"
+                      title={tr("solo")}
                       tone="solo"
                       className={STUDIO_DAW_CHIP_CLASS}
                       onClick={() => {
@@ -2454,7 +2459,7 @@ function StudioEditorInner({
                     <StudioToggleChip
                       active={track.recordArmed}
                       label="R"
-                      title="Uzbrojenie nagrywania"
+                      title={tr("uzbrojenieNagrywania")}
                       tone="record"
                       className={STUDIO_DAW_CHIP_CLASS}
                       onClick={() => {
@@ -2471,8 +2476,8 @@ function StudioEditorInner({
                       variant="ghost"
                       className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
                       disabled={pending || index === 0}
-                      title="Przenieś w górę"
-                      aria-label="Przenieś ścieżkę w górę"
+                      title={tr("przeniesWGore")}
+                      aria-label={tr("przeniesSciezkeWGore")}
                       onClick={() => {
                         reorder(track.id, "up");
                       }}
@@ -2485,8 +2490,8 @@ function StudioEditorInner({
                       variant="ghost"
                       className="h-9 min-h-9 min-w-9 shrink-0 px-0 sm:h-11 sm:min-h-11 sm:min-w-11"
                       disabled={pending || index === doc.tracks.length - 1}
-                      title="Przenieś w dół"
-                      aria-label="Przenieś ścieżkę w dół"
+                      title={tr("przeniesWDol")}
+                      aria-label={tr("przeniesSciezkeWDol")}
                       onClick={() => {
                         reorder(track.id, "down");
                       }}
@@ -2502,8 +2507,8 @@ function StudioEditorInner({
                         data-testid="studio-track-menu"
                         data-track-id={track.id}
                         disabled={recordingLocked || pending}
-                        title="Menu ścieżki"
-                        aria-label={`Menu ścieżki ${track.name}`}
+                        title={tr("menuSciezki")}
+                        aria-label={tr("menuSciezki2", { v0: track.name })}
                         aria-expanded={trackMenuId === track.id}
                         onClick={() =>
                           setTrackMenuId((prev) =>
@@ -2519,8 +2524,8 @@ function StudioEditorInner({
                       data-testid="studio-track-header-mix"
                     >
                     <StudioMixControl
-                      label="Vol"
-                      ariaLabel={`Głośność ścieżki ${track.name}`}
+                      label={tr("vol")}
+                      ariaLabel={tr("glosnoscSciezki", { v0: track.name })}
                       value={track.gainDb}
                       display={`${track.gainDb.toFixed(0)}`}
                       min={STUDIO_TRACK_GAIN_DB_MIN}
@@ -2541,8 +2546,8 @@ function StudioEditorInner({
                       }}
                     />
                     <StudioMixControl
-                      label="Pan"
-                      ariaLabel={`Panorama ścieżki ${track.name}`}
+                      label={tr("pan")}
+                      ariaLabel={tr("panoramaSciezki", { v0: track.name })}
                       value={track.pan}
                       display={track.pan.toFixed(1)}
                       min={-1}
@@ -2603,7 +2608,7 @@ function StudioEditorInner({
           data-studio-inspector="desktop"
           data-inspector-context={inspectorContext}
           className="hidden w-[300px] shrink-0 flex-col gap-1.5 rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 shadow-sm xl:flex"
-          aria-label={studioInspectorContextTitle(inspectorContext)}
+          aria-label={tInspector(inspectorContext)}
         >
           {inspectorDesktopRail ? inspectorContent : null}
         </aside>
@@ -2615,9 +2620,9 @@ function StudioEditorInner({
         panelId={inspectorPanelId}
         onClose={closeInspectorOverlay}
         closeBlockedMessage={
-          inspectorCloseRejected && recordingLocked
-            ? STUDIO_INSPECTOR_CLOSE_BLOCKED_PL
-            : null
+          tl(inspectorCloseRejected && recordingLocked
+            ? tInspector("closeBlocked")
+            : null)
         }
       >
         {inspectorContent}
@@ -2650,7 +2655,7 @@ function StudioEditorInner({
             chain={doc.project.masterFxChain}
             getExpectedDocumentVersion={expectedDocumentVersion}
             enqueuePersistAsync={enqueuePersistAsync}
-            title="Master · Efekty"
+            title={tr("masterEfekty")}
             onClose={() => setFxPanel(null)}
             onFxPersisted={(masterFxChain, documentVersion) =>
               applyPersistedDoc((prev) => ({
@@ -2677,9 +2682,7 @@ function StudioEditorInner({
             }
             getExpectedDocumentVersion={expectedDocumentVersion}
             enqueuePersistAsync={enqueuePersistAsync}
-            title={`Efekty · ${
-              doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? "Ścieżka"
-            }`}
+            title={tr("efekty", { v0: doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? tr("sciezka") })}
             onClose={() => setFxPanel(null)}
             onFxPersisted={(effectsChain, documentVersion) =>
               applyPersistedDoc((prev) => ({
@@ -2710,34 +2713,36 @@ function TrackInspectorPanel({
   onOpenEffects: () => void;
   onOpenRecord: () => void;
 }) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioEditor");
   const isBeat = track.trackType === "BEAT";
   return (
     <div className="space-y-3" data-testid="studio-inspector-track">
       <div className="space-y-1">
-        <p className="text-sm font-medium text-[var(--brd-ink)]">{track.name}</p>
+        <p className="text-sm font-medium text-[var(--brd-ink)]">{tl(track.name)}</p>
         <p className="text-xs text-[var(--brd-mute)]">
-          {labelStudioTrackType(track.trackType)}
-          {isBeat ? " · Bit projektu (chroniony)" : ""}
+          {tl(labelStudioTrackType(track.trackType))}
+          {tl(isBeat ? tr("bitProjektuChroniony") : "")}
         </p>
         <p className="font-mono text-xs tabular-nums text-[var(--brd-mute)]">
-          {formatStudioTrackCapacityLabel(trackCount, maxTracks)}
+          {tl(formatStudioTrackCapacityLabel(trackCount, maxTracks))}
         </p>
       </div>
 
       <div
         className="space-y-1 rounded border border-[var(--brd-line)] p-2 text-xs text-[var(--brd-mute)]"
-        aria-label="Stan ścieżki (skrót)"
+        aria-label={tr("stanSciezkiSkrot")}
       >
         <p>
-          M: {track.muted ? "wyciszona" : "otwarta"} · S:{" "}
-          {track.solo ? "solo" : "—"} · R:{" "}
-          {track.recordArmed ? "uzbrojona" : "—"}
+          M: {tl(track.muted ? "wyciszona" : "otwarta")} · S:{" "}
+          {tl(track.solo ? "solo" : "—")} · R:{" "}
+          {tl(track.recordArmed ? "uzbrojona" : "—")}
         </p>
         <p className="font-mono tabular-nums">
-          Gain {track.gainDb.toFixed(1)} dB · Pan {track.pan.toFixed(2)}
+          {tr("gain")}{" "}{tl(track.gainDb.toFixed(1))} {tr("dbPan")}{" "}{tl(track.pan.toFixed(2))}
         </p>
         <p>
-          M/S/R · Vol/Pan: nagłówek ścieżki i Mixer (ten sam stan · patchTrack)
+          {tr("mSRVol")}
         </p>
       </div>
 
@@ -2746,11 +2751,11 @@ function TrackInspectorPanel({
         size="sm"
         variant="outline"
         className="min-h-11 w-full"
-        aria-label={`Efekty ścieżki ${track.name}`}
+        aria-label={tr("efektySciezki", { v0: track.name })}
         data-testid="studio-inspector-track-fx"
         onClick={onOpenEffects}
       >
-        {studioFxEntryLabel(track.effectsChain)}
+        {tl(studioFxEntryLabel(track.effectsChain))}
       </Button>
 
       {!isBeat ? (
@@ -2761,7 +2766,7 @@ function TrackInspectorPanel({
           className="min-h-11 w-full"
           onClick={onOpenRecord}
         >
-          Nagraj na tej ścieżce
+          {tr("nagrajNaTejSciezce")}
         </Button>
       ) : null}
     </div>
@@ -2807,6 +2812,8 @@ function ClipEditPanel({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioEditor");
   const [draftStart, setDraftStart] = useState<number | null>(null);
   const fadeBaselineKey = clip
     ? `${clip.id}:${clip.fadeInMs}:${clip.fadeOutMs}`
@@ -2838,9 +2845,7 @@ function ClipEditPanel({
   if (!clip) {
     return (
       <div className="rounded border border-dashed border-[var(--brd-line)] p-3 text-sm text-[var(--brd-mute)]">
-        Wybierz klip, aby edytować: głośność, wyciszenie, fade, przycięcie,
-        podział, powielenie lub usunięcie. Ustaw playhead przed przycięciem /
-        podziałem.
+        {tr("wybierzKlipAbyEdytowac")}
       </div>
     );
   }
@@ -2886,12 +2891,12 @@ function ClipEditPanel({
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--brd-ink)]">
-            Zaznaczony klip · start {formatStudioTimeMs(startValue)} · długość{" "}
-            {formatStudioTimeMs(clip.durationMs)}
+            {tr("zaznaczonyKlipStart")}{" "}{tl(formatStudioTimeMs(startValue))} {tr("dlugosc")}{" "}
+            {tl(formatStudioTimeMs(clip.durationMs))}
           </p>
           <p className="text-xs text-[var(--brd-mute)]">
-            Playhead: {formatStudioTimeMs(playheadMs)} · offset źródła{" "}
-            {formatStudioTimeMs(clip.sourceOffsetMs)}
+            {tr("playhead")}{" "}{tl(formatStudioTimeMs(playheadMs))} {tr("offsetZrodla")}{" "}
+            {tl(formatStudioTimeMs(clip.sourceOffsetMs))}
           </p>
         </div>
         <Button
@@ -2902,41 +2907,41 @@ function ClipEditPanel({
           disabled={pending}
           onClick={onClearSelection}
         >
-          Odznacz
+          {tr("odznacz")}
         </Button>
       </div>
 
       <div
         className="space-y-1 rounded border border-dashed border-[var(--brd-line)] p-2 text-xs text-[var(--brd-mute)]"
         data-testid="studio-inspector-clip-source"
-        aria-label="Źródło pliku (tylko odczyt)"
+        aria-label={tr("zrodloPlikuTylkoOdczyt")}
       >
-        <p className="font-medium text-[var(--brd-ink)]">Źródło / plik</p>
-        <p>Rodzaj: {clip.sourceKind}</p>
+        <p className="font-medium text-[var(--brd-ink)]">{tr("zrodloPlik")}</p>
+        <p>{tr("rodzaj")}{" "}{tl(clip.sourceKind)}</p>
         {clip.sourceTakeId ? (
-          <p className="font-mono break-all">Take: {clip.sourceTakeId}</p>
+          <p className="font-mono break-all">{tr("take")}{" "}{tl(clip.sourceTakeId)}</p>
         ) : null}
         {clip.sourceBeatId ? (
-          <p className="font-mono break-all">Bit: {clip.sourceBeatId}</p>
+          <p className="font-mono break-all">{tr("bit")}{" "}{tl(clip.sourceBeatId)}</p>
         ) : null}
         <p className="font-mono tabular-nums">
-          Offset źródła: {formatStudioTimeMs(clip.sourceOffsetMs)}
+          {tr("offsetZrodla2")}{" "}{tl(formatStudioTimeMs(clip.sourceOffsetMs))}
         </p>
-        <p>Take/bit jest niemodyfikowalny — edytujesz tylko klip na osi.</p>
+        <p>{tr("takeBitJestNiemodyfikowalny")}</p>
       </div>
 
       <div
         className="min-w-0 space-y-2 border-b border-[var(--brd-line)] pb-3"
-        aria-label="Głośność i wyciszenie klipu"
+        aria-label={tr("glosnoscIWyciszenieKlipu")}
       >
         <p className="text-xs font-medium text-[var(--brd-ink)]">
-          Głośność klipu
+          {tr("glosnoscKlipu")}
         </p>
         <StudioMixControl
-          label="Gain"
-          ariaLabel="Głośność klipu"
+          label={tr("gain")}
+          ariaLabel={tr("glosnoscKlipu2")}
           value={draftGainDb}
-          display={`${draftGainDb.toFixed(1)} dB`}
+          display={tr("db", { v0: draftGainDb.toFixed(1) })}
           min={STUDIO_CLIP_GAIN_DB_MIN}
           max={STUDIO_CLIP_GAIN_DB_MAX}
           step={0.5}
@@ -2960,21 +2965,21 @@ function ClipEditPanel({
             onSaveGain(draftGainDb);
             onFlushPersist();
           }}
-          aria-label="Zapisz teraz głośność klipu"
+          aria-label={tr("zapiszTerazGlosnoscKlipu")}
         >
-          Zapisz teraz
+          {tr("zapiszTeraz")}
         </Button>
         <StudioToggleChip
           active={clip.muted}
-          label="Wycisz klip"
-          title="Wycisz ten klip (Take pozostaje nietknięty)"
+          label={tr("wyciszKlip")}
+          title={tr("wyciszTenKlipTake")}
           disabled={pending}
           onClick={() => onSaveMute(!clip.muted)}
         />
       </div>
 
       <label className="block min-w-0 text-xs text-[var(--brd-mute)]">
-        Przesuń (pozycja startu)
+        {tr("przesunPozycjaStartu")}
         <input
           type="range"
           min={0}
@@ -2982,7 +2987,7 @@ function ClipEditPanel({
           step={1}
           value={startValue}
           className="mt-1 h-11 w-full min-w-0"
-          aria-label="Przesuń klip"
+          aria-label={tr("przesunKlip")}
           disabled={pending}
           onChange={(e) => setDraftStart(Number(e.target.value))}
           onPointerUp={(e) => {
@@ -3000,9 +3005,9 @@ function ClipEditPanel({
           className="min-h-11"
           disabled={pending}
           onClick={onTrimLeftToPlayhead}
-          title="Przytnij początek do playhead"
+          title={tr("przytnijPoczatekDoPlayhead")}
         >
-          Przytnij początek
+          {tr("przytnijPoczatek")}
         </Button>
         <Button
           type="button"
@@ -3011,9 +3016,9 @@ function ClipEditPanel({
           className="min-h-11"
           disabled={pending}
           onClick={onTrimRightToPlayhead}
-          title="Przytnij koniec do playhead"
+          title={tr("przytnijKoniecDoPlayhead")}
         >
-          Przytnij koniec
+          {tr("przytnijKoniec")}
         </Button>
         <Button
           type="button"
@@ -3022,9 +3027,9 @@ function ClipEditPanel({
           className="min-h-11"
           disabled={pending}
           onClick={onSplit}
-          title="Podziel w playhead"
+          title={tr("podzielWPlayhead")}
         >
-          Podziel
+          {tr("podziel")}
         </Button>
         <Button
           type="button"
@@ -3033,10 +3038,10 @@ function ClipEditPanel({
           className="min-h-11"
           disabled={pending}
           onClick={onDuplicate}
-          title="Powiel klip (to samo nagranie, bez kopiowania pliku)"
-          aria-label="Powiel klip"
+          title={tr("powielKlipToSamo")}
+          aria-label={tr("powielKlip")}
         >
-          Powiel
+          {tr("powiel")}
         </Button>
         {!confirmDelete ? (
           <Button
@@ -3046,9 +3051,9 @@ function ClipEditPanel({
             className="min-h-11"
             disabled={pending}
             onClick={() => onConfirmDeleteChange(true)}
-            title="Usuń klip z osi czasu"
+            title={tr("usunKlipZOsi")}
           >
-            Usuń
+            {tr("usun")}
           </Button>
         ) : (
           <>
@@ -3059,9 +3064,9 @@ function ClipEditPanel({
               className="min-h-11"
               disabled={pending}
               onClick={onDelete}
-              title="Potwierdź usunięcie klipu"
+              title={tr("potwierdzUsuniecieKlipu")}
             >
-              Potwierdź usunięcie
+              {tr("potwierdzUsuniecie")}
             </Button>
             <Button
               type="button"
@@ -3071,30 +3076,29 @@ function ClipEditPanel({
               disabled={pending}
               onClick={() => onConfirmDeleteChange(false)}
             >
-              Anuluj
+              {tr("anuluj")}
             </Button>
           </>
         )}
       </div>
       {confirmDelete ? (
         <p className="text-xs text-destructive" role="status">
-          Usunięcie dotyczy tylko klipu na osi czasu. Źródło (nagranie / bit)
-          pozostaje nietknięte.
+          {tr("usuniecieDotyczyTylkoKlipu")}
         </p>
       ) : null}
 
       <div
         className="min-w-0 space-y-2 border-t border-[var(--brd-line)] pt-3"
-        aria-label="Fade klipu"
+        aria-label={tr("fadeKlipu")}
       >
-        <p className="text-xs font-medium text-[var(--brd-ink)]">Fade</p>
+        <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("fade")}</p>
         <p className="text-xs text-[var(--brd-mute)]">
-          Aktualnie: Fade In {formatStudioTimeMs(clip.fadeInMs)} · Fade Out{" "}
-          {formatStudioTimeMs(clip.fadeOutMs)}
+          {tr("aktualnieFadeIn")}{" "}{tl(formatStudioTimeMs(clip.fadeInMs))} {tr("fadeOut")}{" "}
+          {tl(formatStudioTimeMs(clip.fadeOutMs))}
         </p>
         <StudioMixControl
-          label="Fade In"
-          ariaLabel="Fade In"
+          label={tr("fadeIn")}
+          ariaLabel={tr("fadeIn2")}
           value={draftFadeIn}
           display={formatStudioTimeMs(draftFadeIn)}
           min={0}
@@ -3113,8 +3117,8 @@ function ClipEditPanel({
           }}
         />
         <StudioMixControl
-          label="Fade Out"
-          ariaLabel="Fade Out"
+          label={tr("fadeOut2")}
+          ariaLabel={tr("fadeOut3")}
           value={draftFadeOut}
           display={formatStudioTimeMs(draftFadeOut)}
           min={0}
@@ -3134,8 +3138,7 @@ function ClipEditPanel({
         />
         {fadeOverlapHint ? (
           <p className="text-xs text-[var(--brd-mute)]" role="status">
-            Suma Fade In i Fade Out przekracza długość klipu — przy zapisie
-            wartości zostaną znormalizowane.
+            {tr("sumaFadeInI")}
           </p>
         ) : null}
         <Button
@@ -3148,9 +3151,9 @@ function ClipEditPanel({
             onSaveFades(draftFadeIn, draftFadeOut);
             onFlushPersist();
           }}
-          aria-label="Zapisz teraz fade"
+          aria-label={tr("zapiszTerazFade")}
         >
-          Zapisz teraz
+          {tr("zapiszTeraz")}
         </Button>
       </div>
     </div>
@@ -3220,6 +3223,8 @@ function StudioTransportBar({
   onMasterGainLocal: (gainDb: number) => void;
   onMasterGainCommit: (gainDb: number) => void;
 }) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioEditor");
   const {
     phase,
     play,
@@ -3239,13 +3244,13 @@ function StudioTransportBar({
     audioState === "no_beat" || (!hasBeat && audioState !== "loading");
   const statusLabel =
     audioState === "loading"
-      ? "Ładowanie bitu…"
+      ? tr("ladowanieBitu")
       : audioState === "idle"
-        ? "Bit oczekuje na załadowanie"
+        ? tr("bitOczekujeNaZaladowanie")
         : audioState === "no_beat"
-          ? "Nie masz jeszcze wybranego bitu."
+          ? tr("nieMaszJeszczeWybranego")
           : audioState === "error"
-            ? "Błąd odtwarzania"
+            ? tr("bladOdtwarzania")
             : audioState === "playing"
               ? "Odtwarzanie"
               : audioState === "paused"
@@ -3253,8 +3258,8 @@ function StudioTransportBar({
                 : audioState === "ready"
                   ? "Gotowy"
                   : hasBeat
-                    ? "Bit oczekuje na załadowanie"
-                    : "Nie masz jeszcze wybranego bitu.";
+                    ? tr("bitOczekujeNaZaladowanie")
+                    : tr("nieMaszJeszczeWybranego");
 
   const beatControlsDisabled = noBeat || busy;
 
@@ -3262,7 +3267,7 @@ function StudioTransportBar({
     <div
       className="studio-transport sticky top-14 z-20 shrink-0 px-1.5 py-1 sm:top-2 sm:px-2 sm:py-1.5"
       role="region"
-      aria-label="Transport Studio"
+      aria-label={tr("transportStudio")}
       data-testid="studio-transport"
       data-studio-transport-empty={noBeat ? "true" : "false"}
     >
@@ -3277,8 +3282,8 @@ function StudioTransportBar({
             className="studio-key studio-key-play min-h-11 min-w-11 px-2"
             onClick={play}
             disabled={beatControlsDisabled || phase === "playing"}
-            title={noBeat ? "Odtwórz — najpierw wybierz bit" : "Odtwórz"}
-            aria-label={noBeat ? "Odtwórz — wymaga bitu" : "Odtwórz"}
+            title={tl(noBeat ? tr("odtworzNajpierwWybierzBit") : tr("odtworz"))}
+            aria-label={tl(noBeat ? tr("odtworzWymagaBitu") : tr("odtworz"))}
           >
             {busy ? "…" : <StudioGlyph name="play" />}
           </Button>
@@ -3289,8 +3294,8 @@ function StudioTransportBar({
             className="studio-key min-h-11 min-w-11 px-2"
             onClick={pause}
             disabled={noBeat || phase !== "playing"}
-            title="Pauza"
-            aria-label="Pauza"
+            title={tr("pauza")}
+            aria-label={tr("pauza")}
           >
             <StudioGlyph name="pause" />
           </Button>
@@ -3301,8 +3306,8 @@ function StudioTransportBar({
             className="studio-key min-h-11 min-w-11 px-2"
             onClick={stop}
             disabled={noBeat}
-            title="Stop"
-            aria-label="Stop"
+            title={tr("stop")}
+            aria-label={tr("stop")}
           >
             <StudioGlyph name="stop" />
           </Button>
@@ -3314,19 +3319,19 @@ function StudioTransportBar({
             onClick={onRecord}
             disabled={noBeat}
             title={
-              noBeat
-                ? "Nagraj — najpierw wybierz bit"
-                : "Nagraj — otwiera istniejący kontekst nagrywania"
+              tl(noBeat
+                ? tr("nagrajNajpierwWybierzBit")
+                : tr("nagrajOtwieraIstniejacyKontekst"))
             }
             aria-label={
-              noBeat
-                ? "Nagraj — wymaga bitu"
-                : "Nagraj — otwiera panel nagrywania"
+              tl(noBeat
+                ? tr("nagrajWymagaBitu")
+                : tr("nagrajOtwieraPanelNagrywania"))
             }
             data-testid="studio-transport-record"
           >
             <StudioRecLamp />
-            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">REC</span>
+            <span className="font-mono text-[11px] font-semibold tracking-[0.08em]">{tr("rec")}</span>
           </Button>
           <Button
             type="button"
@@ -3339,8 +3344,8 @@ function StudioTransportBar({
             }
             disabled={noBeat}
             aria-pressed={loopEnabled}
-            title={loopEnabled ? "Loop włączony" : "Loop regionu"}
-            aria-label={loopEnabled ? "Loop włączony" : "Włącz loop regionu"}
+            title={tl(loopEnabled ? tr("loopWlaczony") : tr("loopRegionu"))}
+            aria-label={tl(loopEnabled ? tr("loopWlaczony") : tr("wlaczLoopRegionu"))}
             data-testid="studio-transport-loop"
             onClick={() =>
               setLoop({
@@ -3364,10 +3369,10 @@ function StudioTransportBar({
             disabled={noBeat}
             aria-pressed={metronomeEnabled}
             title={
-              metronomeEnabled ? "Metronom włączony" : "Metronom — klik runtime"
+              tl(metronomeEnabled ? tr("metronomWlaczony") : tr("metronomKlikRuntime"))
             }
             aria-label={
-              metronomeEnabled ? "Metronom włączony" : "Włącz metronom"
+              tl(metronomeEnabled ? tr("metronomWlaczony") : tr("wlaczMetronom"))
             }
             data-testid="studio-transport-metronome"
             onClick={() => setMetronomeEnabled(!metronomeEnabled)}
@@ -3384,11 +3389,11 @@ function StudioTransportBar({
             }
             variant={noBeat ? "default" : "outline"}
             onClick={onChooseBeat}
-            title={noBeat ? "Wybierz bit" : "Zmień bit"}
-            aria-label={noBeat ? "Wybierz bit" : "Zmień bit"}
+            title={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
+            aria-label={tl(noBeat ? tr("wybierzBit") : tr("zmienBit"))}
             data-testid="studio-transport-choose-beat"
           >
-            {noBeat ? "+ Wybierz bit" : "Bit"}
+            {tl(noBeat ? tr("wybierzBit2") : tr("beatButton"))}
           </Button>
         </div>
 
@@ -3400,14 +3405,14 @@ function StudioTransportBar({
             aria-live="polite"
             className="studio-counter-time text-sm font-medium tracking-tight"
           >
-            {timeLabel}
+            {tl(timeLabel)}
             <span className="studio-counter-dim"> / </span>
-            {formatStudioTimeMs(durationMs)}
+            {tl(formatStudioTimeMs(durationMs))}
           </span>
-          <span className="studio-counter-dim" aria-label="Tempo">
-            {tempoBpm} BPM
+          <span className="studio-counter-dim" aria-label={tr("tempo")}>
+            {tempoBpm} {tr("bpm")}
           </span>
-          <span className="studio-counter-dim" aria-label="Metrum">
+          <span className="studio-counter-dim" aria-label={tr("metrum")}>
             {timeSignatureNum}/{timeSignatureDen}
           </span>
         </div>
@@ -3417,10 +3422,10 @@ function StudioTransportBar({
           data-testid="studio-transport-master"
         >
           <StudioMixControl
-            label="Master"
-            ariaLabel="Głośność Master"
+            label={tr("master")}
+            ariaLabel={tr("glosnoscMaster")}
             value={masterGainDb}
-            display={`${masterGainDb.toFixed(1)} dB`}
+            display={tr("db", { v0: masterGainDb.toFixed(1) })}
             min={STUDIO_MASTER_GAIN_DB_MIN}
             max={STUDIO_MASTER_GAIN_DB_MAX}
             step={0.5}
@@ -3440,7 +3445,7 @@ function StudioTransportBar({
           role={saveIsError || conflictActive ? "alert" : "status"}
           data-testid="studio-transport-save"
         >
-          {saveStatusLabel}
+          {tl(saveStatusLabel)}
           {conflictActive ? (
             <>
               {" "}
@@ -3449,7 +3454,7 @@ function StudioTransportBar({
                 className="underline"
                 onClick={() => window.location.reload()}
               >
-                Odśwież
+                {tr("odswiez")}
               </button>
             </>
           ) : null}
@@ -3473,16 +3478,16 @@ function StudioTransportBar({
           role="status"
           data-testid="studio-transport-nobeat-status"
         >
-          {statusLabel} Wybierz bit, aby odblokować odtwarzanie i nagrywanie.
+          {tl(statusLabel)} {tr("wybierzBitAbyOdblokowac")}
         </p>
       ) : (
         <p className="sr-only" role="status">
-          {statusLabel}
+          {tl(statusLabel)}
         </p>
       )}
       {error ? (
         <p className="mt-1 text-xs text-[var(--brd-warn)]" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
     </div>
@@ -3527,6 +3532,8 @@ function StudioTimeline({
     commit: Exclude<StudioClipEditCommit, { kind: "noop" }>,
   ) => void;
 }) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioEditor");
   const seekEnabled = mode === "seek" && !interactionLocked;
   const density = clampPxPerMs(pxPerMs);
   const headerScrollRef = useRef<HTMLDivElement | null>(null);
@@ -3620,7 +3627,7 @@ function StudioTimeline({
     <div
       className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[color-mix(in_oklch,var(--brd-paper),var(--brd-ink)_3%)]"
       role="region"
-      aria-label="Oś czasu projektu"
+      aria-label={tr("osCzasuProjektu")}
       data-testid="studio-timeline"
     >
       <div className="flex min-h-0 min-w-0 flex-1">
@@ -3633,7 +3640,7 @@ function StudioTimeline({
               className="flex h-7 shrink-0 items-center border-b border-[var(--brd-line)] bg-[color-mix(in_srgb,var(--brd-paper)_92%,var(--brd-ink)_8%)] px-2 text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]"
               aria-hidden
             >
-              Ścieżki
+              {tr("sciezki")}
             </div>
             <div
               ref={headerScrollRef}
@@ -3668,11 +3675,11 @@ function StudioTimeline({
               onClick={seekFromPointer}
               role="slider"
               aria-label={
-                interactionLocked
-                  ? "Oś czasu — tryb nagrywania"
+                tl(interactionLocked
+                  ? tr("osCzasuTrybNagrywania")
                   : seekEnabled
-                    ? "Oś czasu — kliknij, aby przewinąć"
-                    : "Oś czasu — tryb edycji klipu"
+                    ? tr("osCzasuKliknijAby")
+                    : tr("osCzasuTrybEdycji"))
               }
               aria-valuemin={0}
               aria-valuemax={timelineLengthMs}
@@ -3690,7 +3697,7 @@ function StudioTimeline({
                     }`}
                     style={{ left: msToPx(tick.ms, density) }}
                   >
-                    {tick.major ? formatStudioTimeMs(tick.ms) : "·"}
+                    {tl(tick.major ? formatStudioTimeMs(tick.ms) : "·")}
                   </span>
                 ))}
               </div>
@@ -3743,7 +3750,7 @@ function StudioTimeline({
         </div>
       </div>
       <label className="block shrink-0 border-t border-[var(--brd-line)] px-2 py-1.5 text-xs text-[var(--brd-mute)]">
-        Playhead · {formatStudioTimeMs(playheadMs)}
+        {tr("playhead2")}{" "}{tl(formatStudioTimeMs(playheadMs))}
         <input
           type="range"
           min={0}
@@ -3752,7 +3759,7 @@ function StudioTimeline({
           value={playheadMs}
           disabled={interactionLocked}
           className="mt-1 h-11 w-full"
-          aria-label="Pozycja playhead"
+          aria-label={tr("pozycjaPlayhead")}
           onChange={(e) => onSeek(Math.round(Number(e.target.value)))}
         />
       </label>

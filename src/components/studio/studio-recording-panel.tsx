@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
@@ -133,6 +138,8 @@ export function StudioRecordingPanel({
   lastScratchClipId: string | null;
   onLastScratchClipIdChange: (clipId: string | null) => void;
 }) {
+  const tl = useLibText();
+  const tr = useTranslations("studio.studioRecordingPanel");
   const getBaseVersionRef = useRef(getExpectedDocumentVersion);
   getBaseVersionRef.current = getExpectedDocumentVersion;
   const persistVersionTipRef = useRef<StudioPersistVersionTip | null>(null);
@@ -189,7 +196,7 @@ export function StudioRecordingPanel({
             message:
               body?.message ||
               body?.error ||
-              `Nie udało się dodać ścieżki ${label}.`,
+              tr("nieUdaloSieDodac", { v0: label }),
           });
         }
         const version = ackDocumentVersion(body.documentVersion);
@@ -199,7 +206,7 @@ export function StudioRecordingPanel({
           apply: () => {
             setLocalTracks((current) => [...current, body.track!]);
             onTrackCreated?.(body.track!, version);
-            setCatalogMessage(`Dodano ścieżkę ${label}.`);
+            setCatalogMessage(tr("dodanoSciezke", { v0: label }));
           },
         };
       });
@@ -369,7 +376,7 @@ export function StudioRecordingPanel({
         !navigator.mediaDevices?.getUserMedia
       ) {
         if (!cancelled) {
-          setTesterError("Brak dostępu do mikrofonu w tej przeglądarce.");
+          setTesterError(tr("brakDostepuDoMikrofonu"));
         }
         return;
       }
@@ -392,7 +399,7 @@ export function StudioRecordingPanel({
           result.code === "DEVICE_PERMISSION_BLOCKED"
         ) {
           setTesterError(
-            "Brak dostępu do mikrofonu. Zezwól przeglądarce na dostęp i spróbuj ponownie.",
+            tr("brakDostepuDoMikrofonu2"),
           );
         } else {
           setTesterError(studioDeviceErrorMessagePl(result.code));
@@ -482,7 +489,7 @@ export function StudioRecordingPanel({
       dispatch({
         type: "RECORDING_FAILED",
         message: secured
-          ? `${studioDeviceErrorMessagePl("DEVICE_DISCONNECTED")} Nagrana część jest zabezpieczona lokalnie — możesz ją odzyskać.`
+          ? tr("nagranaCzescJestZabezpieczona", { v0: studioDeviceErrorMessagePl("DEVICE_DISCONNECTED") })
           : studioDeviceErrorMessagePl("DEVICE_DISCONNECTED"),
       });
     };
@@ -586,7 +593,7 @@ export function StudioRecordingPanel({
     };
     if (!res.ok || !json.beatId) {
       throw new Error(
-        json.error ?? "Nie udało się przygotować nagrywania w Studio.",
+        json.error ?? tr("nieUdaloSiePrzygotowac"),
       );
     }
     setBeatId(json.beatId);
@@ -600,7 +607,7 @@ export function StudioRecordingPanel({
     if (!trackIdRef.current) {
       dispatch({
         type: "RECORDING_FAILED",
-        message: "Wybierz ścieżkę do nagrania.",
+        message: tr("wybierzSciezkeDoNagrania"),
       });
       return;
     }
@@ -609,7 +616,7 @@ export function StudioRecordingPanel({
     if (!support.supported) {
       dispatch({
         type: "UNSUPPORTED",
-        message: "Ta przeglądarka nie obsługuje nagrywania audio.",
+        message: tr("taPrzegladarkaNieObsluguje"),
       });
       return;
     }
@@ -638,13 +645,13 @@ export function StudioRecordingPanel({
         dispatch({
           type: "RECORDING_FAILED",
           message: toUserFacingTakeUploadError(
-            elig.error ?? "Nie udało się sprawdzić limitu nagrań.",
+            elig.error ?? tr("nieUdaloSieSprawdzic"),
           ),
         });
         return;
       }
       if (!elig.allowed) {
-        const parts = [elig.message ?? "Nie możesz teraz nagrywać."];
+        const parts = [elig.message ?? tr("nieMozeszTerazNagrywac")];
         if (elig.upgradeHintMessage) parts.push(elig.upgradeHintMessage);
         dispatch({ type: "RECORDING_FAILED", message: parts.join(" ") });
         return;
@@ -683,7 +690,7 @@ export function StudioRecordingPanel({
         message: toUserFacingTakeUploadError(
           error instanceof Error
             ? error.message
-            : "Nie udało się uruchomić mikrofonu.",
+            : tr("nieUdaloSieUruchomic"),
         ),
       });
     }
@@ -694,7 +701,7 @@ export function StudioRecordingPanel({
     if (!beatIdRef.current || !trackIdRef.current) {
       dispatch({
         type: "RECORDING_FAILED",
-        message: "Brak kontekstu nagrywania.",
+        message: tr("brakKontekstuNagrywania"),
       });
       return;
     }
@@ -847,7 +854,7 @@ export function StudioRecordingPanel({
       ) {
         dispatch({
           type: "UNSUPPORTED",
-          message: "Ta przeglądarka nie obsługuje nagrywania audio.",
+          message: tr("taPrzegladarkaNieObsluguje"),
         });
       } else {
         dispatch({
@@ -855,7 +862,7 @@ export function StudioRecordingPanel({
           message: toUserFacingTakeUploadError(
             error instanceof Error
               ? error.message
-              : "Nie udało się zacząć nagrania.",
+              : tr("nieUdaloSieZaczac"),
           ),
         });
       }
@@ -882,7 +889,7 @@ export function StudioRecordingPanel({
     if (!recorder || startMs == null || !beatIdRef.current) {
       dispatch({
         type: "RECORDING_FAILED",
-        message: "Brak aktywnego rekordera.",
+        message: tr("brakAktywnegoRekordera"),
       });
       submittingRef.current = false;
       return;
@@ -938,14 +945,14 @@ export function StudioRecordingPanel({
         const raw =
           error instanceof Error
             ? error.message
-            : "Nie udało się zapisać nagrania.";
+            : tr("nieUdaloSieZapisac2");
         if (writer && locallySecured && recoveryWriterRef.current !== writer) {
           void writer
             .release()
             .then(() => captureReportRef.current.onLocalRecoveryChanged?.());
         }
         const message = locallySecured
-          ? `${toUserFacingTakeUploadError(raw)} Nagranie jest zabezpieczone lokalnie — możesz je odzyskać.`
+          ? tr("nagranieJestZabezpieczoneLokalnie", { v0: toUserFacingTakeUploadError(raw) })
           : toUserFacingTakeUploadError(raw);
         if (/finaliz|duration|READY|MIME/i.test(raw)) {
           dispatch({ type: "FINALIZE_FAILED", message });
@@ -1000,7 +1007,7 @@ export function StudioRecordingPanel({
         await transport.previewTake(state.takeId);
       }
     } catch {
-      setWorkflowError("Nie udało się odtworzyć nagrania.");
+      setWorkflowError(tr("nieUdaloSieOdtworzyc"));
     } finally {
       setWorkflowBusy(null);
     }
@@ -1019,12 +1026,12 @@ export function StudioRecordingPanel({
     const startMs = recordStartMsRef.current;
     const placeTrackId = captureTrackIdRef.current || trackIdRef.current;
     if (startMs == null || !placeTrackId) {
-      setWorkflowError("Brak pozycji nagrania na osi czasu.");
+      setWorkflowError(tr("brakPozycjiNagraniaNa"));
       return false;
     }
 
     if (placedTakeIdsRef.current.has(takeId)) {
-      setKeptMessage("Nagranie jest już na osi czasu.");
+      setKeptMessage(tr("nagranieJestJuzNa"));
       transport.stopTakePreview();
       clearCapturePlacement();
       dispatch({ type: "RETRY_IDLE" });
@@ -1062,13 +1069,13 @@ export function StudioRecordingPanel({
             const message =
               placeRes.status === 409 ||
               placed.code === "FX_CHAIN_VERSION_CONFLICT"
-                ? placed.error ?? "Projekt został zmieniony. Odśwież stronę."
+                ? placed.error ?? tr("projektZostalZmienionyOdswiez")
                 : placed.error?.includes("dostępne") ||
                     placed.error?.includes("READY") ||
                     placeRes.status === 403
-                  ? "Nagranie nie jest już dostępne."
+                  ? tr("nagranieNieJestJuz")
                   : placed.error ??
-                    "Nie udało się umieścić nagrania na osi czasu.";
+                    tr("nieUdaloSieUmiescic");
             return classifyPersistHttpFailure({
               status: placeRes.status,
               message,
@@ -1090,7 +1097,7 @@ export function StudioRecordingPanel({
           };
         } catch {
           return classifyPersistNetworkFailure(
-            "Nie udało się umieścić nagrania na osi czasu.",
+            tr("nieUdaloSieUmiescic2"),
           );
         }
       });
@@ -1104,7 +1111,7 @@ export function StudioRecordingPanel({
       dispatch({ type: "RETRY_IDLE" });
       return true;
     } catch {
-      setWorkflowError("Nie udało się umieścić nagrania na osi czasu.");
+      setWorkflowError(tr("nieUdaloSieUmiescic"));
       return false;
     } finally {
       keepInFlightRef.current = false;
@@ -1117,7 +1124,7 @@ export function StudioRecordingPanel({
     await placeReadyTakeOnTimeline({
       takeId: state.takeId,
       busy: "keep",
-      successMessage: "Nagranie zachowane na osi czasu.",
+      successMessage: tr("nagranieZachowaneNaOsi"),
     });
   }
 
@@ -1132,7 +1139,7 @@ export function StudioRecordingPanel({
       return;
     }
     if (!trackIdRef.current) {
-      setWorkflowError("Wybierz ścieżkę wokalu przed importem.");
+      setWorkflowError(tr("wybierzSciezkeWokaluPrzed"));
       return;
     }
 
@@ -1166,13 +1173,13 @@ export function StudioRecordingPanel({
       if (!eligRes.ok || !elig.success) {
         setWorkflowError(
           toUserFacingTakeUploadError(
-            elig.error ?? "Nie udało się sprawdzić limitu nagrań.",
+            elig.error ?? tr("nieUdaloSieSprawdzic"),
           ),
         );
         return;
       }
       if (!elig.allowed) {
-        const parts = [elig.message ?? "Nie możesz teraz importować nagrania."];
+        const parts = [elig.message ?? tr("nieMozeszTerazImportowac")];
         if (elig.upgradeHintMessage) parts.push(elig.upgradeHintMessage);
         setWorkflowError(parts.join(" "));
         return;
@@ -1206,7 +1213,7 @@ export function StudioRecordingPanel({
       const placed = await placeReadyTakeOnTimeline({
         takeId: uploaded.takeId,
         busy: "import",
-        successMessage: "Wokal zaimportowany na oś czasu.",
+        successMessage: tr("wokalZaimportowanyNaOs"),
       });
       if (!placed) {
         // READY take kept — user can Zachowaj from workflow panel.
@@ -1217,7 +1224,7 @@ export function StudioRecordingPanel({
       const raw =
         error instanceof Error
           ? error.message
-          : "Nie udało się zaimportować pliku audio.";
+          : tr("nieUdaloSieZaimportowac");
       const message = toUserFacingTakeUploadError(raw);
       if (/finaliz|duration|READY|MIME|probe/i.test(raw)) {
         dispatch({ type: "FINALIZE_FAILED", message });
@@ -1239,7 +1246,7 @@ export function StudioRecordingPanel({
   async function onDiscardWorkflowTake() {
     if (!state.takeId || workflowBusy) return;
     const confirmed = window.confirm(
-      "Odrzucić nagranie?\nNagranie zostanie usunięte.",
+      tr("odrzucicNagranieNagranieZostanie"),
     );
     if (!confirmed) return;
 
@@ -1259,7 +1266,7 @@ export function StudioRecordingPanel({
       if (!res.ok || !json.success) {
         setWorkflowError(
           toUserFacingTakeUploadError(
-            json.error ?? "Nie udało się usunąć nagrania.",
+            json.error ?? tr("nieUdaloSieUsunac2"),
           ),
         );
         return;
@@ -1268,7 +1275,7 @@ export function StudioRecordingPanel({
       setKeptMessage(null);
       dispatch({ type: "RETRY_IDLE" });
     } catch {
-      setWorkflowError("Nie udało się usunąć nagrania.");
+      setWorkflowError(tr("nieUdaloSieUsunac"));
     } finally {
       setWorkflowBusy(null);
     }
@@ -1297,12 +1304,12 @@ export function StudioRecordingPanel({
         error?: string;
       };
       if (!res.ok || !json.success || !json.takes) {
-        throw new Error(json.error ?? "Nie udało się wczytać nagrań.");
+        throw new Error(json.error ?? tr("nieUdaloSieWczytac2"));
       }
       setLibraryTakes(json.takes);
     } catch (e) {
       setLibraryError(
-        e instanceof Error ? e.message : "Nie udało się wczytać nagrań.",
+        e instanceof Error ? e.message : tr("nieUdaloSieWczytac"),
       );
       setLibraryTakes([]);
     } finally {
@@ -1329,7 +1336,7 @@ export function StudioRecordingPanel({
       }
     } catch {
       setLibraryPreviewId(null);
-      setLibraryError("Nie udało się odtworzyć nagrania.");
+      setLibraryError(tr("nieUdaloSieOdtworzyc"));
     } finally {
       setLibraryBusyId(null);
     }
@@ -1340,7 +1347,7 @@ export function StudioRecordingPanel({
     replaceOverlapping = false,
   ) {
     if (!trackIdRef.current) {
-      setLibraryError("Wybierz ścieżkę do nagrania.");
+      setLibraryError(tr("wybierzSciezkeDoNagrania"));
       return;
     }
     setLibraryBusyId(take.id);
@@ -1377,11 +1384,11 @@ export function StudioRecordingPanel({
             const message =
               placeRes.status === 409 ||
               placed.code === "FX_CHAIN_VERSION_CONFLICT"
-                ? placed.error ?? "Projekt został zmieniony. Odśwież stronę."
+                ? placed.error ?? tr("projektZostalZmienionyOdswiez")
                 : placed.error?.includes("dostępne") || placeRes.status === 403
-                  ? "Nagranie nie jest już dostępne."
+                  ? tr("nagranieNieJestJuz")
                   : placed.error ??
-                    "Nie udało się umieścić nagrania na osi czasu.";
+                    tr("nieUdaloSieUmiescic");
             return classifyPersistHttpFailure({
               status: placeRes.status,
               message,
@@ -1402,7 +1409,7 @@ export function StudioRecordingPanel({
           };
         } catch {
           return classifyPersistNetworkFailure(
-            "Nie udało się umieścić nagrania na osi czasu.",
+            tr("nieUdaloSieUmiescic2"),
           );
         }
       });
@@ -1410,9 +1417,9 @@ export function StudioRecordingPanel({
         setLibraryError(result.message);
         return;
       }
-      setKeptMessage("Nagranie umieszczone na osi czasu.");
+      setKeptMessage(tr("nagranieUmieszczoneNaOsi"));
     } catch {
-      setLibraryError("Nie udało się umieścić nagrania na osi czasu.");
+      setLibraryError(tr("nieUdaloSieUmiescic"));
     } finally {
       setLibraryBusyId(null);
     }
@@ -1420,16 +1427,16 @@ export function StudioRecordingPanel({
 
   const primaryLabel =
     state.phase === "REQUESTING_MIC"
-      ? "Prośba o dostęp do mikrofonu…"
+      ? tr("prosbaODostepDo")
       : state.phase === "READY"
-        ? "● Nagraj"
+        ? tr("nagraj")
         : state.phase === "RECORDING"
-          ? "■ Zatrzymaj nagrywanie"
+          ? tr("zatrzymajNagrywanie")
           : state.phase === "STOPPING" ||
               state.phase === "UPLOADING" ||
               state.phase === "PROCESSING"
-            ? "Zapisywanie nagrania…"
-            : "Przygotuj mikrofon";
+            ? tr("zapisywanieNagrania")
+            : tr("przygotujMikrofon");
 
   const primaryDisabled =
     state.phase === "REQUESTING_MIC" ||
@@ -1448,16 +1455,16 @@ export function StudioRecordingPanel({
           ? "space-y-2 border-0 bg-transparent p-0"
           : "space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
       }
-      aria-label="Nagrywanie w Studio"
+      aria-label={tr("nagrywanieWStudio")}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-[var(--brd-ink)]">
-          Nagrywanie
+          {tr("nagrywanie")}
         </h2>
         {state.phase === "RECORDING" ? (
           <div className="space-y-0.5 text-right">
             <p className="text-xs font-medium text-destructive" role="status">
-              TRYB NAGRYWANIA · {formatStudioTimeMs(Math.round(state.elapsedMs))}
+              {tr("trybNagrywania")}{" "}{tl(formatStudioTimeMs(Math.round(state.elapsedMs)))}
             </p>
             {localSafety ? (
               <p
@@ -1465,19 +1472,19 @@ export function StudioRecordingPanel({
                 data-testid="studio-recording-local-safety"
                 data-state={localSafety}
               >
-                {takeRecoveryWriterStatusPl(localSafety)}
+                {tl(takeRecoveryWriterStatusPl(localSafety))}
               </p>
             ) : null}
           </div>
         ) : (
           <p className="text-xs text-[var(--brd-mute)]">
-            Start: playhead {formatStudioTimeMs(transport.state.playheadMs)}
+            {tr("startPlayhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
           </p>
         )}
       </div>
 
       <label className="block text-xs text-[var(--brd-mute)]">
-        Ścieżka
+        {tr("sciezka")}
         <select
           className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
           value={trackId}
@@ -1486,11 +1493,11 @@ export function StudioRecordingPanel({
             setManualTrackId(e.target.value);
             setManualForPreferred(preferredTrackId ?? null);
           }}
-          aria-label="Wybierz ścieżkę"
+          aria-label={tr("wybierzSciezke")}
         >
           {trackChoices.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.name}
+              {tl(t.name)}
             </option>
           ))}
         </select>
@@ -1498,10 +1505,10 @@ export function StudioRecordingPanel({
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
-          Count-in / punch
+          {tr("countInPunch")}
         </p>
         <label className="block text-xs text-[var(--brd-mute)]">
-          Count-in
+          {tr("countIn")}
           <select
             className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
             value={countInBars}
@@ -1509,11 +1516,11 @@ export function StudioRecordingPanel({
             onChange={(e) =>
               setCountInBars(Number(e.target.value) as StudioCountInBars)
             }
-            aria-label="Count-in"
+            aria-label={tr("countIn")}
           >
             {STUDIO_COUNT_IN_BARS.map((bars) => (
               <option key={bars} value={bars}>
-                {bars === 0 ? "Wyłączone" : `${bars} takt${bars === 1 ? "" : "y"}`}
+                {tl(bars === 0 ? tr("wylaczone") : tr("takt", { v0: bars, v1: bars === 1 ? "" : "y" }))}
               </option>
             ))}
           </select>
@@ -1525,37 +1532,37 @@ export function StudioRecordingPanel({
             onChange={(e) => setPunchEnabled(e.target.checked)}
             disabled={busy && state.phase !== "READY"}
           />
-          Punch-in/out na uzbrojonej ścieżce
+          {tr("punchInOutNa")}
         </label>
         {punchEnabled ? (
           <div className="grid grid-cols-2 gap-2">
             <label className="block text-xs text-[var(--brd-mute)]">
-              In (ms)
+              {tr("inMs")}
               <input
                 className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
                 type="number"
                 min={0}
                 value={punchInMs}
                 onChange={(e) => setPunchInMs(Number(e.target.value) || 0)}
-                aria-label="Punch-in ms"
+                aria-label={tr("punchInMs")}
               />
             </label>
             <label className="block text-xs text-[var(--brd-mute)]">
-              Out (ms)
+              {tr("outMs")}
               <input
                 className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
                 type="number"
                 min={1}
                 value={punchOutMs}
                 onChange={(e) => setPunchOutMs(Number(e.target.value) || 0)}
-                aria-label="Punch-out ms"
+                aria-label={tr("punchOutMs")}
               />
             </label>
           </div>
         ) : null}
         {countInActive ? (
           <p className="text-xs font-medium text-destructive" role="status">
-            Count-in…
+            {tr("countIn2")}
           </p>
         ) : null}
       </div>
@@ -1564,16 +1571,16 @@ export function StudioRecordingPanel({
         <div
           ref={takeWorkflowRef}
           className="space-y-2 rounded border border-[var(--brd-line)] p-2"
-          aria-label="Studio Take Workflow"
+          aria-label={tr("studioTakeWorkflow")}
         >
           <p className="text-sm text-[var(--brd-ink)]" role="status">
-            Nagranie gotowe — kliknij Zachowaj, żeby wstawić na ścieżkę.
-            {state.takeDurationSeconds != null
+            {tr("nagranieGotoweKliknijZachowaj")}
+            {tl(state.takeDurationSeconds != null
               ? ` · ${state.takeDurationSeconds.toFixed(1)}s`
-              : ""}
-            {recordStartMs != null
-              ? ` · start ${formatStudioTimeMs(recordStartMs)}`
-              : ""}
+              : "")}
+            {tl(recordStartMs != null
+              ? tr("start", { v0: formatStudioTimeMs(recordStartMs) })
+              : "")}
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
@@ -1584,7 +1591,7 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={() => void onPreviewWorkflowTake()}
             >
-              {transport.takePreviewActive ? "■ Zatrzymaj" : "▶ Odtwórz"}
+              {tl(transport.takePreviewActive ? tr("zatrzymaj") : tr("odtworz"))}
             </Button>
             <Button
               type="button"
@@ -1593,7 +1600,7 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={() => void onKeepWorkflowTake()}
             >
-              {workflowBusy === "keep" ? "Zapisywanie…" : "✓ Zachowaj"}
+              {tl(workflowBusy === "keep" ? tr("zapisywanie") : tr("zachowaj"))}
             </Button>
             <Button
               type="button"
@@ -1603,7 +1610,7 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={() => void onDiscardWorkflowTake()}
             >
-              {workflowBusy === "discard" ? "Usuwanie…" : "✕ Odrzuć"}
+              {tl(workflowBusy === "discard" ? tr("usuwanie") : tr("odrzuc"))}
             </Button>
             <Button
               type="button"
@@ -1613,27 +1620,26 @@ export function StudioRecordingPanel({
               disabled={workflowDisabled}
               onClick={onRecordAgain}
             >
-              ↻ Nagraj ponownie
+              {tr("nagrajPonownie")}
             </Button>
           </div>
           <p className="text-[11px] text-[var(--brd-mute)]">
-            Zachowaj umieszcza nagranie na osi czasu. Odrzucenie usuwa źródło.
-            Nagraj ponownie tworzy nowe nagranie — poprzednie pozostaje.
+            {tr("zachowajUmieszczaNagranieNa")}
           </p>
         </div>
       ) : null}
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
-          Katalog → klip Studio
+          {tr("katalogKlipStudio")}
         </p>
         <label className="block text-xs text-[var(--brd-mute)]">
-          ID sample katalogu
+          {tr("idSampleKatalogu")}
           <input
             className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-2 text-sm text-[var(--brd-ink)]"
             value={catalogAssetId}
             onChange={(event) => setCatalogAssetId(event.target.value.trim())}
-            aria-label="ID sample katalogu"
+            aria-label={tr("idSampleKatalogu")}
             autoComplete="off"
             disabled={catalogBusy || Boolean(workflowBusy)}
           />
@@ -1683,8 +1689,8 @@ export function StudioRecordingPanel({
                     onLastScratchClipIdChange(placed.clip.id);
                     setCatalogMessage(
                       placed.reusedExistingCopy
-                        ? "Użyto istniejącej kopii TAKE i umieszczono klip."
-                        : "Skopiowano sample i umieszczono klip TAKE.",
+                        ? tr("uzytoIstniejacejKopiiTake")
+                        : tr("skopiowanoSampleIUmieszczono"),
                     );
                   },
                 };
@@ -1696,11 +1702,11 @@ export function StudioRecordingPanel({
             })();
           }}
         >
-          {catalogBusy ? "Kopiowanie…" : "Kopiuj i umieść na playhead"}
+          {tl(catalogBusy ? tr("kopiowanie") : tr("kopiujIUmiescNa"))}
         </Button>
         {catalogMessage ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-            {catalogMessage}
+            {tl(catalogMessage)}
           </p>
         ) : null}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1713,7 +1719,7 @@ export function StudioRecordingPanel({
               void addProductTrack("SAMPLE");
             }}
           >
-            {trackCreateBusy === "SAMPLE" ? "Dodawanie…" : "Dodaj Sample"}
+            {tl(trackCreateBusy === "SAMPLE" ? tr("dodawanie") : tr("dodajSample"))}
           </Button>
           <Button
             type="button"
@@ -1724,7 +1730,7 @@ export function StudioRecordingPanel({
               void addProductTrack("SCRATCH");
             }}
           >
-            {trackCreateBusy === "SCRATCH" ? "Dodawanie…" : "Dodaj Scratch"}
+            {tl(trackCreateBusy === "SCRATCH" ? tr("dodawanie") : tr("dodajScratch"))}
           </Button>
         </div>
         <StudioMarkersPanel
@@ -1747,7 +1753,7 @@ export function StudioRecordingPanel({
           onApprove={(approved) => {
             if (!lastScratchClipId) {
               setCatalogMessage(
-                "Najpierw umieść klip TAKE, potem zatwierdź Scratch.",
+                tr("najpierwUmiescKlipTake"),
               );
               return;
             }
@@ -1779,14 +1785,14 @@ export function StudioRecordingPanel({
                     message:
                       body?.message ||
                       body?.error ||
-                      "Nie udało się zapisać stanu Scratch.",
+                      tr("nieUdaloSieZapisac"),
                   });
                 }
                 return {
                   ok: true as const,
                   documentVersion: ackDocumentVersion(body.documentVersion),
                   apply: () => {
-                    setCatalogMessage("Zapisano zatwierdzony stan Scratch.");
+                    setCatalogMessage(tr("zapisanoZatwierdzonyStanScratch"));
                   },
                 };
               });
@@ -1797,10 +1803,10 @@ export function StudioRecordingPanel({
       </div>
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
-        <p className="text-xs font-medium text-[var(--brd-ink)]">Mikrofon</p>
-        <p className="text-xs text-[var(--brd-mute)]">Źródło nagrywania</p>
+        <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
+        <p className="text-xs text-[var(--brd-mute)]">{tr("zrodloNagrywania")}</p>
         <label className="block w-full text-xs text-[var(--brd-mute)]">
-          <span className="sr-only">Mikrofon</span>
+          <span className="sr-only">{tr("mikrofon")}</span>
           <select
             className="mt-1 w-full max-w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
             value={inputDevices.selectedDeviceId ?? ""}
@@ -1815,10 +1821,10 @@ export function StudioRecordingPanel({
               );
               inputDevices.clearSoftNotice();
             }}
-            aria-label="Wybierz mikrofon"
+            aria-label={tr("wybierzMikrofon")}
           >
             <option value="">
-              Automatycznie — urządzenie systemowe
+              {tr("automatycznieUrzadzenieSystemowe")}
             </option>
             {!advancedMicOpen &&
             inputDevices.selectedDeviceId &&
@@ -1829,14 +1835,14 @@ export function StudioRecordingPanel({
                   .filter((d) => d.deviceId === inputDevices.selectedDeviceId)
                   .map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>
-                      {d.label}
+                      {tl(d.label)}
                     </option>
                   ))
               : null}
             {advancedMicOpen
               ? inputDevices.inputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
-                    {d.label}
+                    {tl(d.label)}
                   </option>
                 ))
               : null}
@@ -1848,39 +1854,39 @@ export function StudioRecordingPanel({
             className="text-xs text-[var(--brd-green)] underline-offset-2 hover:underline"
             onClick={() => setAdvancedMicOpen((v) => !v)}
           >
-            {advancedMicOpen
-              ? "Ukryj zaawansowane urządzenia"
-              : "Zaawansowane ustawienia audio"}
+            {tl(advancedMicOpen
+              ? tr("ukryjZaawansowaneUrzadzenia")
+              : tr("zaawansowaneUstawieniaAudio"))}
           </button>
         ) : null}
         {inputDevices.permission === "UNAVAILABLE" ||
         inputDevices.lastErrorCode === "NO_INPUT_DEVICE" ? (
           <p className="text-xs text-[var(--brd-mute)]" role="status">
-            Brak wykrytego mikrofonu. Połącz urządzenie lub przyznaj dostęp.
+            {tr("brakWykrytegoMikrofonuPolacz")}
           </p>
         ) : null}
         {inputDevices.softNotice ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-            {inputDevices.softNotice}
+            {tl(inputDevices.softNotice)}
           </p>
         ) : null}
 
         <div className="w-full space-y-1 pt-1">
-          <p className="text-xs text-[var(--brd-mute)]">Test mikrofonu</p>
+          <p className="text-xs text-[var(--brd-mute)]">{tr("testMikrofonu")}</p>
           {testerError ? (
             <p className="text-xs text-destructive" role="alert">
-              {testerError}
+              {tl(testerError)}
             </p>
           ) : meterStream ? (
             <>
               <p className="text-xs text-[var(--brd-ink)]" role="status">
-                {mic.level === "silent"
-                  ? "Brak sygnału — sprawdź mikrofon"
+                {tl(mic.level === "silent"
+                  ? tr("brakSygnaluSprawdzMikrofon")
                   : mic.level === "quiet"
-                    ? "Sygnał jest bardzo słaby"
+                    ? tr("sygnalJestBardzoSlaby")
                     : mic.level === "clip" || mic.level === "hot"
-                      ? "Uwaga: sygnał blisko przesterowania"
-                      : "Mikrofon działa"}
+                      ? tr("uwagaSygnalBliskoPrzesterowania")
+                      : tr("mikrofonDziala"))}
               </p>
               <BrdInputMonitor level={mic.level} peak={mic.peak} />
               <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
@@ -1889,28 +1895,27 @@ export function StudioRecordingPanel({
                   checked={monitorOn}
                   onChange={(e) => setMonitorOn(e.target.checked)}
                 />
-                Monitor do ucha (suchy)
+                {tr("monitorDoUchaSuchy")}
               </label>
               {monitorOn ? (
                 <p className="text-[11px] text-[var(--brd-mute)]" role="status">
-                  Usłyszysz echo i latencję przeglądarki. Używaj słuchawek.
-                  Mix słychać, gdy transport gra.
+                  {tr("uslyszyszEchoILatencje")}
                 </p>
               ) : null}
             </>
           ) : (
             <p className="text-xs text-[var(--brd-mute)]" role="status">
-              Oczekiwanie na uprawnienia…
+              {tr("oczekiwanieNaUprawnienia")}
             </p>
           )}
         </div>
       </div>
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
-        <p className="text-xs font-medium text-[var(--brd-ink)]">Odsłuch</p>
+        <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("odsluch")}</p>
         {outputDevices.pickerEnabled ? (
           <label className="block w-full text-xs text-[var(--brd-mute)]">
-            Urządzenie
+            {tr("urzadzenie")}
             <select
               className="mt-1 w-full max-w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-1.5 text-sm text-[var(--brd-ink)]"
               value={outputDevices.selectedDeviceId ?? ""}
@@ -1919,38 +1924,37 @@ export function StudioRecordingPanel({
                   e.target.value === "" ? null : e.target.value,
                 );
               }}
-              aria-label="Wybierz urządzenie odsłuchu"
+              aria-label={tr("wybierzUrzadzenieOdsluchu")}
             >
-              <option value="">Automatyczne — urządzenie systemowe</option>
+              <option value="">{tr("automatyczneUrzadzenieSystemowe")}</option>
               {outputDevices.outputs.map((d) => (
                 <option key={d.deviceId} value={d.deviceId}>
-                  {d.label}
+                  {tl(d.label)}
                 </option>
               ))}
             </select>
           </label>
         ) : (
           <p className="text-xs text-[var(--brd-mute)]" role="status">
-            Automatyczny — urządzenie systemowe. Wybór urządzenia wyjściowego
-            jest kontrolowany przez system lub przeglądarkę.
+            {tr("automatycznyUrzadzenieSystemoweWybor")}
           </p>
         )}
         {outputDevices.softNotice ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
-            {outputDevices.softNotice}
+            {tl(outputDevices.softNotice)}
           </p>
         ) : null}
       </div>
 
       {contextError || state.error || workflowError ? (
         <p className="text-sm text-destructive" role="alert">
-          {contextError ?? state.error ?? workflowError}
+          {tl(contextError ?? state.error ?? workflowError)}
         </p>
       ) : null}
 
       {keptMessage && state.phase !== "READY_TAKE" ? (
         <p className="text-sm text-[var(--brd-ink-soft)]" role="status">
-          {keptMessage}
+          {tl(keptMessage)}
         </p>
       ) : null}
 
@@ -1969,7 +1973,7 @@ export function StudioRecordingPanel({
                 void prepareMicrophone();
             }}
           >
-            {primaryLabel}
+            {tl(primaryLabel)}
           </Button>
           <input
             ref={importFileInputRef}
@@ -1996,13 +2000,13 @@ export function StudioRecordingPanel({
               state.phase === "REQUESTING_MIC"
             }
             onClick={() => importFileInputRef.current?.click()}
-            aria-label="Importuj gotowy plik wokalu"
+            aria-label={tr("importujGotowyPlikWokalu")}
           >
-            {workflowBusy === "import" ||
+            {tl(workflowBusy === "import" ||
             state.phase === "UPLOADING" ||
             state.phase === "PROCESSING"
-              ? "Importowanie…"
-              : "Importuj wokal"}
+              ? tr("importowanie")
+              : tr("importujWokal"))}
           </Button>
           {(state.phase === "READY" ||
             state.phase === "RECORDING" ||
@@ -2014,7 +2018,7 @@ export function StudioRecordingPanel({
               variant="outline"
               onClick={cancelRecording}
             >
-              Anuluj
+              {tr("anuluj")}
             </Button>
           )}
         </div>
@@ -2035,21 +2039,21 @@ export function StudioRecordingPanel({
           onClick={() => void onToggleLibrary()}
           aria-expanded={libraryOpen}
         >
-          {libraryOpen ? "▾ Moje Take'i" : "▸ Moje Take'i"}
+          {tl(libraryOpen ? tr("mojeTakeI") : tr("mojeTakeI2"))}
         </Button>
         {libraryOpen ? (
-          <div className="space-y-2" aria-label="Lista READY Take">
+          <div className="space-y-2" aria-label={tr("listaReadyTake")}>
             {libraryLoading ? (
-              <p className="text-xs text-[var(--brd-mute)]">Wczytywanie…</p>
+              <p className="text-xs text-[var(--brd-mute)]">{tr("wczytywanie")}</p>
             ) : null}
             {libraryError ? (
               <p className="text-sm text-destructive" role="alert">
-                {libraryError}
+                {tl(libraryError)}
               </p>
             ) : null}
             {!libraryLoading && libraryTakes.length === 0 && !libraryError ? (
               <p className="text-xs text-[var(--brd-mute)]">
-                Brak gotowych nagrań do umieszczenia.
+                {tr("brakGotowychNagranDo")}
               </p>
             ) : null}
             <ul className="max-h-48 space-y-2 overflow-y-auto">
@@ -2059,19 +2063,19 @@ export function StudioRecordingPanel({
                   className="rounded border border-[var(--brd-line)] p-2"
                 >
                   <p className="text-sm text-[var(--brd-ink)]">
-                    {take.displayTitle}
+                    {tl(take.displayTitle)}
                     {!take.sameBeat ? (
                       <span className="ml-1 text-[11px] text-[var(--brd-mute)]">
-                        (inny bit)
+                        {tr("innyBit")}
                       </span>
                     ) : null}
                   </p>
                   <p className="text-[11px] text-[var(--brd-mute)]">
-                    {take.durationSeconds != null
+                    {tl(take.durationSeconds != null
                       ? `${take.durationSeconds.toFixed(1)}s`
-                      : "—"}
+                      : "—")}
                     {" · "}
-                    playhead {formatStudioTimeMs(transport.state.playheadMs)}
+                    {tr("playhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
                   </p>
                   <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Button
@@ -2082,7 +2086,7 @@ export function StudioRecordingPanel({
                       disabled={libraryBusyId === take.id}
                       onClick={() => void onLibraryPreview(take.id)}
                     >
-                      ▶ Odtwórz
+                      {tr("odtworz")}
                     </Button>
                     <Button
                       type="button"
@@ -2095,7 +2099,7 @@ export function StudioRecordingPanel({
                       }
                       onClick={() => void onLibraryPlace(take, false)}
                     >
-                      Umieść w Studio
+                      {tr("umiescWStudio")}
                     </Button>
                     <Button
                       type="button"
@@ -2109,7 +2113,7 @@ export function StudioRecordingPanel({
                       }
                       onClick={() => void onLibraryPlace(take, true)}
                     >
-                      Zastąp
+                      {tr("zastap")}
                     </Button>
                   </div>
                 </li>
@@ -2120,8 +2124,7 @@ export function StudioRecordingPanel({
       </div>
 
       <p className="text-[11px] text-[var(--brd-mute)]">
-        Limit: {maxSeconds}s · istniejące limity konta i TTL pozostają w mocy.
-        Usunięcie klipu nie usuwa nagrania źródłowego.
+        {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
       </p>
     </section>
   );

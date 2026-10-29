@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState, useTransition } from "react";
@@ -51,6 +55,8 @@ export function AdminUsersManageDialog({
   premiumExpiresAt: string | null;
   isSelf: boolean;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("admin.adminUsersManageDialog");
   const titleId = useId();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -93,7 +99,7 @@ export function AdminUsersManageDialog({
         expiresOn: nextTier === "FREE" ? "" : expiresOn,
       });
       if (!result.success) {
-        setError(result.error ?? "Nie udało się zapisać zmian.");
+        setError(result.error ?? t("nieUdaloSieZapisac"));
         return;
       }
       close();
@@ -111,7 +117,7 @@ export function AdminUsersManageDialog({
           setOpen(true);
         }}
       >
-        Zarządzaj
+        {t("zarzadzaj")}
       </button>
       {open ? (
         <div
@@ -127,19 +133,19 @@ export function AdminUsersManageDialog({
             onClick={(event) => event.stopPropagation()}
           >
             <h2 id={titleId} className="brd-display text-xl font-semibold">
-              {confirming ? "Zmiana uprawnień" : "Zarządzaj użytkownikiem"}
+              {tl(confirming ? t("zmianaUprawnien") : t("zarzadzajUzytkownikiem"))}
             </h2>
             <dl className="mt-4 space-y-1 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-[var(--brd-mute)]">Ksywka</dt>
-                <dd>{displayName?.trim() || "Użytkownik"}</dd>
+                <dt className="text-[var(--brd-mute)]">{t("ksywka")}</dt>
+                <dd>{tl(displayName?.trim() || t("uzytkownik"))}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-[var(--brd-mute)]">E-mail</dt>
-                <dd className="truncate">{email ?? "—"}</dd>
+                <dt className="text-[var(--brd-mute)]">{t("eMail")}</dt>
+                <dd className="truncate">{tl(email ?? "—")}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-[var(--brd-mute)]">ID</dt>
+                <dt className="text-[var(--brd-mute)]">{t("id")}</dt>
                 <dd className="tabular-nums">{userNumber ?? "—"}</dd>
               </div>
             </dl>
@@ -149,7 +155,7 @@ export function AdminUsersManageDialog({
                   href={`/admin/users?auditUser=${userNumber}`}
                   className="underline underline-offset-4"
                 >
-                  Historia tego ID
+                  {t("historiaTegoId")}
                 </Link>
               </p>
             ) : null}
@@ -157,20 +163,20 @@ export function AdminUsersManageDialog({
             {confirming ? (
               <div className="mt-6 space-y-2 text-sm">
                 <p>
-                  Premium: {labelPremiumTier(premiumTier)} →{" "}
-                  {labelPremiumTier(nextTier)}
+                  {t("premium")}{" "}{tl(labelPremiumTier(premiumTier))} →{" "}
+                  {tl(labelPremiumTier(nextTier))}
                 </p>
                 <p>
-                  Wygasa: {formatExpiresLabel(nextTier, expiresOn)}
+                  {t("wygasa")}{" "}{tl(formatExpiresLabel(nextTier, expiresOn))}
                 </p>
                 <p>
-                  Rola: {labelSystemRole(role)} → {labelSystemRole(nextRole)}
+                  {t("rola")}{" "}{tl(labelSystemRole(role))} → {tl(labelSystemRole(nextRole))}
                 </p>
               </div>
             ) : (
               <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <label className="block space-y-1 text-sm">
-                  <span className="text-[var(--brd-mute)]">Premium</span>
+                  <span className="text-[var(--brd-mute)]">{t("premium2")}</span>
                   <select
                     className="min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2"
                     value={nextTier}
@@ -182,13 +188,13 @@ export function AdminUsersManageDialog({
                   >
                     {PREMIUM_TIERS.map((tier) => (
                       <option key={tier} value={tier}>
-                        {labelPremiumTier(tier)}
+                        {tl(labelPremiumTier(tier))}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="block space-y-1 text-sm">
-                  <span className="text-[var(--brd-mute)]">Wygasa</span>
+                  <span className="text-[var(--brd-mute)]">{t("wygasa2")}</span>
                   <input
                     type="date"
                     disabled={nextTier === "FREE"}
@@ -197,11 +203,11 @@ export function AdminUsersManageDialog({
                     className="min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 disabled:opacity-50"
                   />
                   <span className="text-xs text-[var(--brd-mute)]">
-                    Puste pole = bezterminowo. Data = koniec dnia (Europa/Warszawa).
+                    {t("pustePoleBezterminowoData")}
                   </span>
                 </label>
                 <label className="block space-y-1 text-sm">
-                  <span className="text-[var(--brd-mute)]">Rola</span>
+                  <span className="text-[var(--brd-mute)]">{t("rola2")}</span>
                   <select
                     className="min-h-11 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 disabled:opacity-50"
                     value={isSelf ? role : nextRole}
@@ -212,13 +218,13 @@ export function AdminUsersManageDialog({
                   >
                     {SYSTEM_ROLES.map((value) => (
                       <option key={value} value={value}>
-                        {labelSystemRole(value)}
+                        {tl(labelSystemRole(value))}
                       </option>
                     ))}
                   </select>
                   {isSelf ? (
                     <span className="text-xs text-[var(--brd-mute)]">
-                      Nie możesz zmienić własnej roli.
+                      {t("nieMozeszZmienicWlasnej")}
                     </span>
                   ) : null}
                 </label>
@@ -227,7 +233,7 @@ export function AdminUsersManageDialog({
 
             {error ? (
               <p className="mt-4 text-sm text-[var(--brd-mute)]" role="alert">
-                {error}
+                {tl(error)}
               </p>
             ) : null}
 
@@ -244,7 +250,7 @@ export function AdminUsersManageDialog({
                 }}
                 disabled={pending}
               >
-                Anuluj
+                {t("anuluj")}
               </button>
               <button
                 type="button"
@@ -252,11 +258,11 @@ export function AdminUsersManageDialog({
                 onClick={submit}
                 disabled={pending}
               >
-                {pending
-                  ? "Zapisywanie…"
+                {tl(pending
+                  ? t("zapisywanie")
                   : confirming
-                    ? "Potwierdź zmianę"
-                    : "Zapisz zmiany"}
+                    ? t("potwierdzZmiane")
+                    : t("zapiszZmiany"))}
               </button>
             </div>
           </div>

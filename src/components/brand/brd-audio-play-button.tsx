@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 
 type BrdAudioPlayButtonProps = {
@@ -29,22 +33,24 @@ export function BrdAudioPlayButton({
   className,
   "aria-label": ariaLabel,
 }: BrdAudioPlayButtonProps) {
+  const tl = useLibText();
+  const t = useTranslations("common.brdAudioPlayButton");
   const label =
     ariaLabel ??
     (playing
       ? title
-        ? `Pauza: ${title}`
+        ? t("pauza", { v0: title })
         : "Pauza"
       : title
-        ? `Odtwórz: ${title}`
-        : "Odtwórz");
+        ? t("odtworz", { v0: title })
+        : t("odtworz2"));
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      aria-label={label}
+      aria-label={tl(label)}
       aria-pressed={playing}
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-[var(--tape-r-panel)] text-[var(--tape-on-amber)] shadow-[inset_0_-3px_0_0_rgba(0,0,0,0.22)] transition-colors",

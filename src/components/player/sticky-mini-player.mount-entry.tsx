@@ -3,6 +3,7 @@
  * Bundled by sticky-mini-player.mount-host.ts — not an app route.
  */
 import { createRoot, type Root } from "react-dom/client";
+import { withIntl } from "@/test/intl-test-provider";
 
 import { StickyMiniPlayer } from "@/components/player/sticky-mini-player";
 import { MountPlayerProvider } from "@/components/player/sticky-mini-player.mount-stubs";
@@ -30,11 +31,11 @@ function mount(hostId = "sticky-mount-root"): void {
     root = null;
   }
   root = createRoot(el);
-  root.render(
+  root.render(withIntl(
     <MountPlayerProvider>
       <StickyMiniPlayer />
     </MountPlayerProvider>,
-  );
+  ));
 }
 
 function unmount(): void {

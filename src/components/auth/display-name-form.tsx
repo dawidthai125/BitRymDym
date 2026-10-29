@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { useActionState } from "react";
 
 import {
@@ -16,6 +20,8 @@ export function DisplayNameForm({
 }: {
   initialDisplayName: string;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("auth.displayNameForm");
   const [state, action, pending] = useActionState(
     updateDisplayNameAction,
     initialState,
@@ -24,7 +30,7 @@ export function DisplayNameForm({
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Ksywka
+        {t("ksywka")}
         <input
           name="displayName"
           type="text"
@@ -38,16 +44,16 @@ export function DisplayNameForm({
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success ? (
         <p className="text-sm text-muted-foreground" role="status">
-          Zapisano.
+          {t("zapisano")}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11">
-        {pending ? "Zapisywanie…" : "Zapisz ksywkę"}
+        {tl(pending ? t("zapisywanie") : t("zapiszKsywke"))}
       </Button>
     </form>
   );

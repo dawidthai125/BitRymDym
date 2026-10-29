@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
@@ -11,6 +16,8 @@ import { cn } from "@/lib/utils";
  * (and only when the visitor allows motion).
  */
 export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
+  const tl = useLibText();
+  const t = useTranslations("home.tapeDeck");
   const { track, phase, playTrack, toggle } = usePlayer();
   const isCurrent = beat ? track?.beatId === beat.id : false;
   const playing = isCurrent && phase === "playing";
@@ -31,7 +38,7 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
 
   const meta = beat
     ? [
-        beat.bpm > 0 ? `${beat.bpm} BPM` : null,
+        beat.bpm > 0 ? t("bpm", { v0: beat.bpm }) : null,
         beat.key,
         beat.durationSeconds > 0
           ? formatDurationSeconds(beat.durationSeconds)
@@ -47,7 +54,7 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
       {/* Deck faceplate */}
       <div className="flex items-center justify-between gap-3 border-b border-tape-line pb-3">
         <p className="font-poster text-sm font-bold uppercase tracking-[var(--tape-tracking-label)] text-tape-cream-soft">
-          BRD · Deck A
+          {t("brdDeckA")}
         </p>
         <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-tape-mute">
           <span
@@ -59,7 +66,7 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
                 : "bg-tape-line-strong",
             )}
           />
-          {playing ? "Play" : loading ? "Ładuję" : "Stop"}
+          {tl(playing ? "Play" : loading ? t("laduje") : "Stop")}
         </p>
       </div>
 
@@ -69,17 +76,17 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
         <div className="relative h-full rounded-[3px] bg-tape-cream px-[5%] pt-[4%] text-tape-on-amber">
           <div className="flex items-baseline justify-between gap-2 border-b-2 border-tape-on-amber/80 pb-1">
             <span className="font-poster text-[clamp(0.7rem,1.6vw,0.85rem)] font-extrabold uppercase tracking-[0.2em]">
-              Strona A
+              {t("stronaA")}
             </span>
             <span className="font-mono text-[clamp(0.55rem,1.2vw,0.7rem)] uppercase">
-              {meta.join(" · ") || "—"}
+              {tl(meta.join(" · ") || "—")}
             </span>
           </div>
           <p className="mt-1.5 truncate font-[family-name:var(--font-display)] text-[clamp(1rem,2.6vw,1.45rem)] italic leading-tight">
-            {beat?.title ?? "Katalog czeka na pierwszy bit"}
+            {tl(beat?.title ?? t("katalogCzekaNaPierwszy"))}
           </p>
           <p className="truncate font-mono text-[clamp(0.55rem,1.2vw,0.72rem)] uppercase tracking-[0.1em] opacity-75">
-            {beat?.producer ?? "BitRymDym"}
+            {tl(beat?.producer ?? "BitRymDym")}
           </p>
           {/* Window with reels */}
           <div className="absolute inset-x-[16%] bottom-[10%] flex h-[36%] items-center justify-between rounded-full border-2 border-tape-on-amber/70 bg-[#17120d] px-[6%]">
@@ -99,14 +106,14 @@ export function TapeDeck({ beat }: { beat: PresentedBeat | null }) {
           disabled={!beat}
           aria-pressed={playing}
           aria-label={
-            beat
-              ? `${playing ? "Pauza" : "Odtwórz"}: ${beat.title}`
-              : "Brak bitu do odtworzenia"
+            tl(beat
+              ? `${playing ? "Pauza" : t("odtworz")}: ${beat.title}`
+              : t("brakBituDoOdtworzenia"))
           }
           className="tape-focus group inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-[var(--tape-r-panel)] border border-tape-amber-deep bg-tape-amber px-5 font-poster text-lg font-extrabold uppercase tracking-[0.12em] text-tape-on-amber shadow-[0_3px_0_0_var(--tape-amber-deep),0_10px_24px_-10px_rgba(242,169,59,0.6)] transition-[transform,box-shadow] duration-[var(--tape-dur-fast)] ease-[var(--tape-ease-out)] active:translate-y-[3px] active:shadow-none disabled:opacity-50"
         >
           {playing ? <PauseGlyph /> : <PlayGlyph />}
-          <span>{playing ? "Pauza" : loading ? "…" : "Play"}</span>
+          <span>{tl(playing ? "Pauza" : loading ? "…" : "Play")}</span>
         </button>
       </div>
     </div>
@@ -138,6 +145,7 @@ function Reel() {
 }
 
 function VuMeter() {
+  const t = useTranslations("home.tapeDeck");
   const ticks = Array.from({ length: 11 }, (_, i) => i);
   return (
     <div
@@ -157,7 +165,7 @@ function VuMeter() {
             <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={i > 7 ? "#d0381f" : "#2a1d10"} strokeWidth="1.4" />
           );
         })}
-        <text x="100" y="62" textAnchor="middle" fontSize="11" fontFamily="var(--tape-font-poster)" fontWeight="800" letterSpacing="2" fill="#2a1d10">VU</text>
+        <text x="100" y="62" textAnchor="middle" fontSize="11" fontFamily="var(--tape-font-poster)" fontWeight="800" letterSpacing="2" fill="#2a1d10">{t("vu")}</text>
         <g className="tape-needle" style={{ transformOrigin: "100px 92px" }}>
           <line x1="100" y1="92" x2="100" y2="14" stroke="#1a1006" strokeWidth="1.6" />
         </g>

@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import {
   useRef,
@@ -75,6 +80,8 @@ export function UserUploadBeatForm({
   initialProducer = "",
   masterAlreadyReady = false,
 }: UserUploadBeatFormProps) {
+  const tl = useLibText();
+  const tr = useTranslations("beats.userUploadBeatForm");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [analyzing, startAnalyze] = useTransition();
@@ -120,7 +127,7 @@ export function UserUploadBeatForm({
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: "Plik przekracza limit 50 MiB.",
+              message: tr("plikPrzekraczaLimit50"),
             });
           }
           return;
@@ -134,7 +141,7 @@ export function UserUploadBeatForm({
           if (analyzeGeneration.current === generation) {
             setAnalysis({
               status: "error",
-              message: "Nieobsługiwany format audio.",
+              message: tr("nieobslugiwanyFormatAudio"),
             });
           }
           return;
@@ -143,14 +150,14 @@ export function UserUploadBeatForm({
         let beatId = existingBeatId ?? savedBeatId;
         if (!beatId) {
           const created = await createUserDraftBeatAction({
-            title: next.name.replace(/\.[^.]+$/, "") || "Nowy bit",
+            title: next.name.replace(/\.[^.]+$/, "") || tr("nowyBit"),
           });
           if (!created.success || !created.beatId) {
             if (analyzeGeneration.current === generation) {
               setAnalysis({
                 status: "error",
                 message: toUserFacingUploadError(
-                  created.error ?? "Nie udało się utworzyć wersji roboczej.",
+                  created.error ?? tr("nieUdaloSieUtworzyc"),
                 ),
               });
             }
@@ -191,7 +198,7 @@ export function UserUploadBeatForm({
             setAnalysis({
               status: "error",
               message: toUserFacingUploadError(
-                sessionJson.error ?? "Upload session failed.",
+                sessionJson.error ?? tr("uploadSessionFailed"),
               ),
             });
           }
@@ -215,7 +222,7 @@ export function UserUploadBeatForm({
             setAnalysis({
               status: "error",
               message: toUserFacingUploadError(
-                uploadError.message || "Upload failed.",
+                uploadError.message || tr("uploadFailed"),
               ),
             });
           }
@@ -257,7 +264,7 @@ export function UserUploadBeatForm({
           setAnalysis({
             status: "error",
             message: toUserFacingUploadError(
-              analyzeJson.error ?? "Analiza audio nie powiodła się.",
+              analyzeJson.error ?? tr("analizaAudioNiePowiodla"),
             ),
           });
           return;
@@ -302,7 +309,7 @@ export function UserUploadBeatForm({
         if (analyzeGeneration.current === generation) {
           setAnalysis({
             status: "error",
-            message: "Błąd sieci / serwera podczas uploadu lub analizy.",
+            message: tr("bladSieciSerweraPodczas"),
           });
         }
       }
@@ -318,7 +325,7 @@ export function UserUploadBeatForm({
       setFormError(
         analysis.status === "error"
           ? analysis.message
-          : "Wybierz audio i poczekaj na analizę przed zapisem wersji roboczej.",
+          : tr("wybierzAudioIPoczekaj"),
       );
       return;
     }
@@ -335,7 +342,7 @@ export function UserUploadBeatForm({
       setFormError(
         model?.phase === "UNAVAILABLE"
           ? model.headline
-          : "Wybierz BPM spośród wartości zaproponowanych przez system.",
+          : tr("wybierzBpmSposrodWartosci"),
       );
       return;
     }
@@ -409,7 +416,7 @@ export function UserUploadBeatForm({
         setSavedDraft(true);
         setSavedBeatId(result.beatId);
       } catch {
-        setFormError("Błąd sieci / serwera podczas zapisu.");
+        setFormError(tr("bladSieciSerweraPodczas2"));
       }
     });
   }
@@ -419,18 +426,18 @@ export function UserUploadBeatForm({
     const beatId =
       (analysis.status === "ready" ? analysis.beatId : null) ?? savedBeatId;
     if (!beatId || !savedDraft) {
-      setFormError("Najpierw zapisz wersję roboczą z gotowym audio.");
+      setFormError(tr("najpierwZapiszWersjeRobocza"));
       return;
     }
     if (!rightsAccepted) {
-      setFormError("Zaznacz oświadczenie o prawach do nagrania i sampli.");
+      setFormError(tr("zaznaczOswiadczenieOPrawach"));
       return;
     }
 
     startTransition(async () => {
       const result = await submitUserBeatAction(beatId, { rightsAccepted: true });
       if (!result.success) {
-        setFormError(result.error ?? "Nie udało się wysłać do moderacji.");
+        setFormError(result.error ?? tr("nieUdaloSieWyslac"));
         return;
       }
       setSubmitted(true);
@@ -455,17 +462,17 @@ export function UserUploadBeatForm({
   let statusLine: string | null = null;
   if (analysis.status === "uploading" || analyzing) {
     statusLine =
-      analysis.status === "analyzing" ? "Analizowanie…" : "Przesyłanie audio…";
+      analysis.status === "analyzing" ? tr("analizowanie") : tr("przesylanieAudio");
   }
 
   return (
     <form onSubmit={onSaveDraft} className="flex max-w-xl flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold tracking-wide text-foreground">
-          Audio
+          {tr("audio")}
         </h2>
         <label className="flex flex-col gap-1 text-sm">
-          Wybierz plik audio *
+          {tr("wybierzPlikAudio")}
           <input
             name="audio"
             type="file"
@@ -475,41 +482,40 @@ export function UserUploadBeatForm({
           />
         </label>
         {statusLine ? (
-          <p className="text-sm text-muted-foreground">{statusLine}</p>
+          <p className="text-sm text-muted-foreground">{tl(statusLine)}</p>
         ) : null}
         {analysis.status === "ready" ? (
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <dt className="text-muted-foreground">Czas</dt>
-              <dd>{formatDuration(analysis.durationSeconds)}</dd>
+              <dt className="text-muted-foreground">{tr("czas")}</dt>
+              <dd>{tl(formatDuration(analysis.durationSeconds))}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Rozmiar</dt>
-              <dd>{formatBytes(analysis.byteSize)}</dd>
+              <dt className="text-muted-foreground">{tr("rozmiar")}</dt>
+              <dd>{tl(formatBytes(analysis.byteSize))}</dd>
             </div>
             <div className="col-span-2">
-              <dt className="text-muted-foreground">Plik</dt>
-              <dd className="truncate">{analysis.filename}</dd>
+              <dt className="text-muted-foreground">{tr("plik")}</dt>
+              <dd className="truncate">{tl(analysis.filename)}</dd>
             </div>
           </dl>
         ) : null}
         {analysis.status === "error" ? (
-          <p className="text-sm text-destructive">{analysis.message}</p>
+          <p className="text-sm text-destructive">{tl(analysis.message)}</p>
         ) : null}
         {masterAlreadyReady && analysis.status === "idle" ? (
           <p className="text-sm text-muted-foreground">
-            Audio jest już gotowe. Możesz wgrać nowy plik, żeby je zastąpić,
-            albo uzupełnić metadane i wysłać do moderacji.
+            {tr("audioJestJuzGotowe")}
           </p>
         ) : null}
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold tracking-wide text-foreground">
-          Metadane
+          {tr("metadane")}
         </h2>
         <label className="flex flex-col gap-1 text-sm">
-          Tytuł *
+          {tr("tytul")}
           <input
             name="title"
             value={title}
@@ -528,11 +534,11 @@ export function UserUploadBeatForm({
             setFormError(null);
           }}
           disabled={!analysisReady || pending}
-          statusMessage={analyzing ? "Analizowanie BPM…" : bpmStatusMessage}
+          statusMessage={analyzing ? tr("analizowanieBpm") : bpmStatusMessage}
           idPrefix="user-upload-bpm"
         />
         <label className="flex flex-col gap-1 text-sm">
-          Producent
+          {tr("producent")}
           <input
             name="producer"
             defaultValue={initialProducer ?? ""}
@@ -541,7 +547,7 @@ export function UserUploadBeatForm({
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Opis
+          {tr("opis")}
           <textarea
             name="description"
             rows={3}
@@ -550,37 +556,36 @@ export function UserUploadBeatForm({
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Gatunek
+          {tr("gatunek")}
           <input name="genre" className={fieldClass} maxLength={500} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Styl
+          {tr("styl")}
           <input name="style" className={fieldClass} maxLength={500} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Tonacja
+          {tr("tonacja")}
           <input name="key" className={fieldClass} maxLength={500} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Skala
+          {tr("skala")}
           <input name="scale" className={fieldClass} maxLength={500} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Tagi (przecinkami)
+          {tr("tagiPrzecinkami")}
           <input name="tags" className={fieldClass} />
         </label>
       </section>
 
       {formError ? (
         <p className="text-sm text-destructive" role="alert">
-          {formError}
+          {tl(formError)}
         </p>
       ) : null}
 
       {savedDraft ? (
         <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-          Wersja robocza zapisana · audio gotowe. Po wysłaniu do moderacji edycja będzie
-          zablokowana do czasu decyzji moderatora.
+          {tr("wersjaRoboczaZapisanaAudio")}
         </p>
       ) : null}
 
@@ -592,15 +597,13 @@ export function UserUploadBeatForm({
           onChange={(event) => setRightsAccepted(event.target.checked)}
         />
         <span>
-          Oświadczam, że mam prawa do tego nagrania i do sampli w nim użytych
-          albo mam zgodę uprawnionych. Rozumiem, że to oświadczenie nie
-          zastępuje weryfikacji i że BitRymDym może wstrzymać publikację.
+          {tr("oswiadczamZeMamPrawa")}
         </span>
       </label>
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={!canSaveDraft}>
-          {pending ? "Zapisywanie…" : "Zapisz wersję roboczą"}
+          {tl(pending ? tr("zapisywanie") : tr("zapiszWersjeRobocza"))}
         </Button>
         <Button
           type="button"
@@ -608,13 +611,13 @@ export function UserUploadBeatForm({
           disabled={!canSubmitModeration}
           onClick={onSubmitToModeration}
         >
-          Wyślij do moderacji
+          {tr("wyslijDoModeracji")}
         </Button>
       </div>
 
       {!file && !masterAlreadyReady ? (
         <p className="text-xs text-muted-foreground">
-          Wybierz audio, żeby utworzyć wersję roboczą i uruchomić analizę BPM / czasu.
+          {tr("wybierzAudioZebyUtworzyc")}
         </p>
       ) : null}
     </form>

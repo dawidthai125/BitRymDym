@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { usePlayer } from "@/components/player/player-provider";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import type { PresentedBeat } from "@/lib/ui/demo-beats";
@@ -16,6 +18,7 @@ export function HomePlayButton({
   beat: PresentedBeat;
   compact?: boolean;
 }) {
+  const tl = useLibText();
   const { track, phase, playTrack, toggle } = usePlayer();
   const isCurrent = track?.beatId === beat.id;
   const playing = isCurrent && phase === "playing";
@@ -26,7 +29,7 @@ export function HomePlayButton({
       playing={playing}
       loading={loading}
       size={compact ? "sm" : "md"}
-      title={beat.title}
+      title={tl(beat.title)}
       className={cn(!compact && "min-w-12")}
       onClick={() => {
         if (isCurrent) toggle();

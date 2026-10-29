@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -30,10 +35,12 @@ export function StudioPeakMeter({
   ariaLabel,
   testIdPrefix,
 }: StudioPeakMeterProps) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioPeakMeter");
   const peakPct = Math.round(Math.min(1, Math.max(0, snapshot.peak)) * 100);
   const dbLabel = peakToDbFs(snapshot.peak);
   const [a11yValueText, setA11yValueText] = useState(
-    `${dbLabel} sample peak`,
+    t("samplePeak2", { v0: dbLabel }),
   );
   const lastA11yMs = useRef(0);
   const lastClip = useRef(false);
@@ -47,30 +54,30 @@ export function StudioPeakMeter({
     lastA11yMs.current = now;
     setA11yValueText(
       snapshot.clipping
-        ? `${dbLabel} sample peak, clipping`
-        : `${dbLabel} sample peak`,
+        ? t("samplePeakClipping", { v0: dbLabel })
+        : t("samplePeak", { v0: dbLabel }),
     );
   }, [snapshot.peak, snapshot.clipping, dbLabel]);
 
   return (
     <div className="mt-3 min-w-0 space-y-1.5" data-testid={testIdPrefix}>
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-[var(--brd-mute)]">{title}</p>
+        <p className="text-xs text-[var(--brd-mute)]">{tl(title)}</p>
         <p
           className="truncate text-xs tabular-nums text-[var(--brd-ink)]"
           data-testid={`${testIdPrefix}-peak`}
         >
-          {dbLabel}
-          <span className="ml-1 text-[var(--brd-mute)]">peak</span>
+          {tl(dbLabel)}
+          <span className="ml-1 text-[var(--brd-mute)]">{t("peak")}</span>
         </p>
       </div>
       <div
         role="meter"
-        aria-label={ariaLabel}
+        aria-label={tl(ariaLabel)}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={peakPct}
-        aria-valuetext={a11yValueText}
+        aria-valuetext={tl(a11yValueText)}
         className="studio-vu h-2.5 w-full min-w-0 overflow-hidden"
         data-testid={`${testIdPrefix}-bar`}
         data-clipping={snapshot.clipping ? "true" : "false"}
@@ -90,7 +97,7 @@ export function StudioPeakMeter({
         data-testid={`${testIdPrefix}-clip`}
         data-clipping={snapshot.clipping ? "true" : "false"}
       >
-        {snapshot.clipping ? "Clipping" : "Bez clippingu"}
+        {tl(snapshot.clipping ? t("clipping") : t("bezClippingu"))}
       </p>
     </div>
   );

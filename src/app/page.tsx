@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { HomeTracklist } from "@/components/home/home-tracklist";
@@ -16,38 +17,38 @@ import { presentBeats } from "@/lib/ui/demo-beats";
  */
 const CAPABILITIES = [
   {
-    channel: "Bez konta",
-    title: "Słuchaj i pobieraj bity",
-    body: "Przeglądaj katalog. Pobrania mają dzienny limit — gość ma niższy niż zalogowany użytkownik.",
+    channel: "bezKonta",
+    title: "sluchajIPobierajBity",
+    body: "przegladajKatalogPobraniaMaja",
   },
   {
-    channel: "Konto + bit opublikowany",
-    title: "Nagraj wers na bicie",
-    body: "Na stronie bitu albo w Studio. Czas nagrania zależy od poziomu Premium na koncie (i od długości bitu).",
+    channel: "kontoBitOpublikowany",
+    title: "nagrajWersNaBicie",
+    body: "naStronieBituAlbo",
   },
   {
-    channel: "Wymaga konta",
-    title: "Złóż numer w Studio",
-    body: "Projekty, ścieżki, miks i eksport w jednym miejscu. Ile ścieżek dostaniesz — zależy od Premium.",
+    channel: "wymagaKonta",
+    title: "zlozNumerWStudio",
+    body: "projektySciezkiMiksI",
   },
 ] as const;
 
 const STEPS = [
   {
-    t: "Wybierz bit",
-    d: "Wejdź w katalog, odsłuchaj i wybierz opublikowany beat.",
+    t: "wybierzBit",
+    d: "wejdzWKatalogOdsluchaj",
   },
   {
-    t: "Załóż konto",
-    d: "Do nagrania i Studio potrzebujesz konta. Sam katalog możesz przeglądać od razu.",
+    t: "zalozKonto",
+    d: "doNagraniaIStudio",
   },
   {
-    t: "Nagraj wers",
-    d: "Na stronie bitu albo w Studio — tylko na opublikowanym bicie, w limicie Premium na koncie.",
+    t: "nagrajWers",
+    d: "naStronieBituAlbo2",
   },
   {
-    t: "Dopracuj w Studio",
-    d: "Ułóż ścieżki, miksuj i eksportuj. Wyższy Premium = więcej ścieżek i lepszy eksport.",
+    t: "dopracujWStudio",
+    d: "ulozSciezkiMiksujI",
   },
 ] as const;
 
@@ -61,6 +62,8 @@ const ctaSecondary =
   "inline-flex min-h-12 items-center justify-center rounded-[var(--tape-r-panel)] border border-tape-cream-soft px-6 font-poster text-lg font-bold uppercase tracking-[0.1em] text-tape-cream transition-colors duration-[var(--tape-dur-fast)] hover:border-tape-cream hover:bg-tape-panel";
 
 export default async function HomePage() {
+  const t = await getTranslations("home.page");
+  const tc = await getTranslations("home.page.consts");
   const session = await getCurrentProfile();
   const beats = presentBeats(
     (await listPublishedBeats()).map(toPublicCatalogItem),
@@ -81,25 +84,24 @@ export default async function HomePage() {
                 id="home-hero"
                 className="font-poster text-[length:var(--tape-text-mega)] font-black uppercase leading-[0.84] tracking-[-0.01em] text-tape-cream"
               >
-                <span className="block">Bity,</span>
-                <span className="block">nagranie</span>
+                <span className="block">{t("bity")}</span>
+                <span className="block">{t("nagranie")}</span>
                 <span className="block">
-                  i <span className="text-tape-amber">Studio</span>
+                  {t("and")} <span className="text-tape-amber">{t("studio")}</span>
                 </span>
               </h1>
               <p className="mt-5 font-[family-name:var(--font-display)] text-[clamp(1.35rem,2.4vw,1.9rem)] italic leading-snug text-tape-cream">
-                dla rapera.
+                {t("dlaRapera")}
               </p>
               <p className="mt-3 max-w-[44ch] text-base leading-relaxed text-tape-cream-soft sm:text-lg">
-                Znajdź beat, nagraj wers, złóż numer w Studio. Dla ludzi, którzy
-                chcą szybko przejść od pomysłu do nagrania — bez zbędnego szumu.
+                {t("znajdzBeatNagrajWers")}
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link href="/beats" className={ctaPrimary}>
-                  Przeglądaj bity
+                  {t("przegladajBity")}
                 </Link>
                 <Link href="#jak-to-dziala" className={ctaSecondary}>
-                  Jak to działa
+                  {t("jakToDziala")}
                 </Link>
               </div>
             </div>
@@ -117,13 +119,13 @@ export default async function HomePage() {
                 id="home-katalog"
                 className="font-poster text-[length:var(--tape-text-xl)] font-black uppercase leading-[0.9] text-tape-cream"
               >
-                Posłuchaj z katalogu
+                {t("posluchajZKatalogu")}
               </h2>
               <Link
                 href="/beats"
                 className="inline-flex min-h-11 items-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-tape-amber underline-offset-4 hover:underline"
               >
-                Pełny spis <span aria-hidden="true">→</span>
+                {t("pelnySpis")}{" "}<span aria-hidden="true">→</span>
               </Link>
             </div>
             <HomeTracklist beats={strip} />
@@ -138,30 +140,29 @@ export default async function HomePage() {
                 id="home-co-mozesz"
                 className="font-poster text-[length:var(--tape-text-xl)] font-black uppercase leading-[0.9] text-tape-cream"
               >
-                Co możesz tu zrobić
+                {t("coMozeszTuZrobic")}
               </h2>
               <p className="mt-4 max-w-[38ch] font-[family-name:var(--font-display)] text-lg italic leading-snug text-tape-cream-soft">
-                Katalog otwarty od razu. Nagranie i Studio — po założeniu konta,
-                na bicie ze statusem opublikowanym.
+                {t("katalogOtwartyOdRazu")}
               </p>
             </div>
             <ul className="space-y-2 lg:col-span-8">
               {CAPABILITIES.map((c) => (
                 <li
-                  key={c.title}
+                  key={tc(c.title)}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-panel px-4 py-5 shadow-[inset_0_1px_0_#ffffff0d,0_6px_16px_-10px_#000] sm:px-5"
                 >
                   <span className="tape-rack-screw self-start" aria-hidden="true" />
                   <div className="grid gap-x-6 gap-y-1 sm:grid-cols-[12rem_1fr]">
                     <p className="font-mono text-xs uppercase tracking-[0.14em] text-tape-amber">
-                      {c.channel}
+                      {tc(c.channel)}
                     </p>
                     <div>
                       <h3 className="font-poster text-2xl font-bold uppercase leading-none text-tape-cream">
-                        {c.title}
+                        {tc(c.title)}
                       </h3>
                       <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
-                        {c.body}
+                        {tc(c.body)}
                       </p>
                     </div>
                   </div>
@@ -183,7 +184,7 @@ export default async function HomePage() {
               id="home-jak"
               className="font-poster text-[length:var(--tape-text-xl)] font-black uppercase leading-[0.9] text-tape-cream"
             >
-              Jak to działa
+              {t("jakToDziala")}
             </h2>
             <ol className="mt-10 grid gap-y-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4 lg:gap-x-0">
               {STEPS.map((s, i) => (
@@ -196,10 +197,10 @@ export default async function HomePage() {
                     {i + 1}
                   </p>
                   <h3 className="mt-3 font-poster text-2xl font-bold uppercase leading-none text-tape-cream">
-                    {s.t}
+                    {tc(s.t)}
                   </h3>
                   <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
-                    {s.d}
+                    {tc(s.d)}
                   </p>
                 </li>
               ))}
@@ -215,26 +216,24 @@ export default async function HomePage() {
                 id="home-premium"
                 className="font-poster text-[length:var(--tape-text-xl)] font-black uppercase leading-[0.9] text-tape-cream"
               >
-                Więcej limitu,{" "}
-                <span className="tape-neon-sign">gdy tego potrzebujesz</span>
+                {t("wiecejLimitu")}{" "}
+                <span className="tape-neon-sign">{t("gdyTegoPotrzebujesz")}</span>
               </h2>
               <p className="mt-5 max-w-[56ch] text-base leading-relaxed text-tape-cream-soft">
-                Premium (Free → Gold) podnosi limity pobrań, ścieżek w Studio,
-                czas nagrania i jakość eksportu. Uprawnienia już działają —{" "}
+                {t("premiumFreeGoldPodnosi")}{" "}
                 <strong className="font-semibold text-tape-cream">
-                  bez samodzielnego zakupu w aplikacji
+                  {t("bezSamodzielnegoZakupuW")}
                 </strong>
-                . Szczegóły, HOLD i co jest dopiero planowane — na stronie
-                Premium.
+                {t("szczegolyHoldICo")}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
               <Link href="/premium" className={ctaPrimary}>
-                Szczegóły Premium
+                {t("szczegolyPremium")}
               </Link>
               {!session ? (
                 <Link href="/sign-up" className={ctaSecondary}>
-                  Załóż konto
+                  {t("zalozKonto")}
                 </Link>
               ) : null}
             </div>
@@ -248,14 +247,14 @@ export default async function HomePage() {
               id="home-cta"
               className="mx-auto max-w-[12ch] font-poster text-[length:var(--tape-text-mega)] font-black uppercase leading-[0.84] text-tape-cream"
             >
-              Zacznij od katalogu
+              {t("zacznijOdKatalogu")}
             </h2>
             <p className="mx-auto mt-5 max-w-[34ch] font-[family-name:var(--font-display)] text-xl italic text-tape-cream-soft">
-              Potem konto, nagranie i Studio — w tej kolejności.
+              {t("potemKontoNagranieI")}
             </p>
             <div className="mt-8">
               <Link href="/beats" className={ctaPrimary}>
-                Otwórz katalog
+                {t("otworzKatalog")}
               </Link>
             </div>
           </div>

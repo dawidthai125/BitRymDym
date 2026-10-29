@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   createContext,
   useCallback,
@@ -168,6 +170,7 @@ export function StudioTransportProvider({
   timeSignatureNum?: number;
   children: ReactNode;
 }) {
+  const t = useTranslations("studio.studioTransportProvider");
   const catalogPlayer = usePlayerOptional();
   const engineRef = useRef<StudioAudioEngine | null>(null);
   const engineDocumentRef = useRef(engineDocument);
@@ -434,7 +437,7 @@ export function StudioTransportProvider({
     if (!engine) return;
     if (!hasTimelineAudio) {
       setAudioState("no_beat");
-      setError("Brak bitu w projekcie. Dodaj bit, aby odsłuchać.");
+      setError(t("brakBituWProjekcie"));
       return;
     }
     setTakePreviewActive(false);

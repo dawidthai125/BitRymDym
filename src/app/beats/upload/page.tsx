@@ -1,3 +1,5 @@
+import { getLibText } from "@/i18n/get-lib-text";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -16,12 +18,17 @@ type PageProps = {
   searchParams: Promise<{ beatId?: string }>;
 };
 
-export const metadata = {
-  title: "Dodaj bit · BitRymDym",
-  description: "Prześlij własny bit do moderacji",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("beats.beatsUploadPage");
+  return {
+  title: t("metaTitle"),
+  description: t("metaDescription"),
 };
+}
 
 export default async function BeatsUploadPage({ searchParams }: PageProps) {
+  const tl = await getLibText();
+  const t = await getTranslations("beats.beatsUploadPage");
   // Community upload is USER-role only (see createUserBeat / audio-transport).
   // Authenticated non-USER (e.g. ADMIN) must not land on a silent /account bounce
   // when hitting this route via bookmark or stale link — send ADMIN to PLATFORM create.
@@ -88,14 +95,13 @@ export default async function BeatsUploadPage({ searchParams }: PageProps) {
             href="/account/beats"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >
-            ← Moje bity
+            {t("mojeBity")}
           </Link>
           <h1 className="text-3xl font-semibold tracking-tight">
-            {existing ? "Edytuj bit" : "Dodaj bit"}
+            {tl(existing ? t("edytujBit") : t("dodajBit"))}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Wgraj audio, sprawdź BPM i czas, zapisz wersję roboczą, potem wyślij do
-            moderacji. Publikacja jest tylko po decyzji moderatora (Wave 4).
+            {t("wgrajAudioSprawdzBpm")}
           </p>
         </header>
 

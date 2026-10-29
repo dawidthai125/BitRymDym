@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import {
   useCallback,
   useEffect,
@@ -42,6 +47,8 @@ export function StudioScratchPanel({
   onCueJump,
   onApprove,
 }: StudioScratchPanelProps) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioScratchPanel");
   const jogId = useId();
   const [approved, setApproved] = useState<StudioScratchApprovedState>(
     defaultScratchApprovedState,
@@ -161,20 +168,19 @@ export function StudioScratchPanel({
       className="space-y-3 rounded border border-[var(--brd-line)] p-2"
       data-testid="studio-scratch-panel"
     >
-      <p className="text-xs font-medium text-[var(--brd-ink)]">Scratch DJ v1</p>
+      <p className="text-xs font-medium text-[var(--brd-ink)]">{t("scratchDjV1")}</p>
       <p className="text-xs text-[var(--brd-mute)]" role="status">
-        Przeciągnij jog w poziomie (palec lub mysz). Po puszczeniu wraca do
-        zatwierdzonego tempa. Zatwierdź, żeby zapisać CAS.
+        {t("przeciagnijJogWPoziomie")}
       </p>
       <div
         id={jogId}
         role="slider"
         tabIndex={0}
-        aria-label="Jog Scratch"
+        aria-label={t("jogScratch")}
         aria-valuemin={25}
         aria-valuemax={400}
         aria-valuenow={Math.round(live.rate * 100)}
-        aria-valuetext={`${live.rate.toFixed(2)}×${live.jogging ? " · scratch" : ""}`}
+        aria-valuetext={`${live.rate.toFixed(2)}×${live.jogging ? t("scratch2") : ""}`}
         aria-orientation="horizontal"
         data-testid="studio-scratch-jog"
         className="flex min-h-28 w-full cursor-ew-resize touch-none select-none items-center justify-center rounded-md border-2 border-[var(--brd-line)] bg-[var(--brd-bg-soft,transparent)] px-3 text-base font-medium text-[var(--brd-ink)] active:border-[var(--brd-green)] sm:min-h-16"
@@ -190,8 +196,8 @@ export function StudioScratchPanel({
         onKeyDown={onJogKeyDown}
         onKeyUp={onJogKeyUp}
       >
-        Jog · {live.rate.toFixed(2)}×
-        {live.jogging ? " · scratch" : ""}
+        {t("jog")}{" "}{tl(live.rate.toFixed(2))}×
+        {tl(live.jogging ? t("scratch") : "")}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Button
@@ -203,7 +209,7 @@ export function StudioScratchPanel({
             applyLive(next);
           }}
         >
-          Ustaw cue
+          {t("ustawCue")}
         </Button>
         <Button
           type="button"
@@ -211,7 +217,7 @@ export function StudioScratchPanel({
           className="min-h-11 w-full"
           onClick={() => onCueJump(live.cueMs)}
         >
-          Wróć do cue ({live.cueMs} ms)
+          {t("wrocDoCue")}{live.cueMs} {t("ms")}
         </Button>
         <Button
           type="button"
@@ -220,7 +226,7 @@ export function StudioScratchPanel({
           aria-pressed={live.reverse}
           onClick={() => applyLive(toggleScratchReverse(live))}
         >
-          Reverse {live.reverse ? "wł." : "wył."}
+          {t("reverse")}{" "}{tl(live.reverse ? "wł." : "wył.")}
         </Button>
         <Button
           type="button"
@@ -234,18 +240,18 @@ export function StudioScratchPanel({
             onApprove?.(nextApproved);
           }}
         >
-          Zatwierdź stan
+          {t("zatwierdzStan")}
         </Button>
       </div>
       <label className="block text-xs text-[var(--brd-mute)]">
-        Tempo (powiązane z pitch)
+        {t("tempoPowiazaneZPitch")}
         <input
           type="range"
           min={25}
           max={400}
           step={1}
           value={Math.round(live.rate * 100)}
-          aria-label="Tempo Scratch"
+          aria-label={t("tempoScratch")}
           className="mt-2 h-11 w-full accent-[var(--brd-green)]"
           onChange={(event) => {
             applyLive(setScratchRate(live, Number(event.target.value) / 100));

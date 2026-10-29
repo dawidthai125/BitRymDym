@@ -1,5 +1,12 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useLocale, useTranslations } from "next-intl";
+
+import { DELETE_CONFIRM_WORD, resolveLocale } from "@/i18n/config";
+
 import Link from "next/link";
 import { useActionState } from "react";
 
@@ -20,12 +27,14 @@ import { Button } from "@/components/ui/button";
 const initialState: AuthActionState = { error: null, success: false };
 
 export function SignInForm() {
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signInAction, initialState);
 
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        E-mail
+        {t("eMail")}
         <input
           name="email"
           type="email"
@@ -35,25 +44,25 @@ export function SignInForm() {
         />
       </label>
       <PasswordFieldWithToggle
-        label="Hasło"
+        label={t("haslo")}
         name="password"
         required
         autoComplete="current-password"
       />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? "Logowanie…" : "Zaloguj się"}
+        {tl(pending ? t("logowanie") : t("zalogujSie"))}
       </Button>
       <p className="text-sm text-muted-foreground">
         <Link
           href="/forgot-password"
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
-          Nie pamiętam hasła
+          {t("niePamietamHasla")}
         </Link>
       </p>
     </form>
@@ -61,12 +70,14 @@ export function SignInForm() {
 }
 
 export function SignUpForm() {
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(signUpAction, initialState);
 
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Ksywka
+        {t("ksywka")}
         <input
           name="displayName"
           type="text"
@@ -78,7 +89,7 @@ export function SignUpForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        E-mail
+        {t("eMail")}
         <input
           name="email"
           type="email"
@@ -88,39 +99,41 @@ export function SignUpForm() {
         />
       </label>
       <PasswordFieldWithToggle
-        label="Hasło"
+        label={t("haslo")}
         name="password"
         required
         minLength={8}
         autoComplete="new-password"
       />
       <PasswordFieldWithToggle
-        label="Powtórz hasło"
+        label={t("powtorzHaslo")}
         name="confirmPassword"
         required
         minLength={8}
         autoComplete="new-password"
-        showLabel="Pokaż powtórzone hasło"
-        hideLabel="Ukryj powtórzone hasło"
+        showLabel={t("pokazPowtorzoneHaslo")}
+        hideLabel={t("ukryjPowtorzoneHaslo")}
       />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.message && !state.error ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? "Tworzenie konta…" : "Załóż konto"}
+        {tl(pending ? t("tworzenieKonta") : t("zalozKonto"))}
       </Button>
     </form>
   );
 }
 
 export function ChangePasswordForm() {
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     changePasswordAction,
     initialState,
@@ -129,7 +142,7 @@ export function ChangePasswordForm() {
   return (
     <form action={action} className="flex w-full flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Aktualne hasło
+        {t("aktualneHaslo")}
         <input
           name="currentPassword"
           type="password"
@@ -139,7 +152,7 @@ export function ChangePasswordForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Nowe hasło
+        {t("noweHaslo")}
         <input
           name="newPassword"
           type="password"
@@ -150,7 +163,7 @@ export function ChangePasswordForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Potwierdź nowe hasło
+        {t("potwierdzNoweHaslo")}
         <input
           name="confirmPassword"
           type="password"
@@ -162,22 +175,24 @@ export function ChangePasswordForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success && state.message ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? "Zapisywanie…" : "Zmień hasło"}
+        {tl(pending ? t("zapisywanie") : t("zmienHaslo"))}
       </Button>
     </form>
   );
 }
 
 export function ForgotPasswordForm() {
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     requestPasswordResetAction,
     initialState,
@@ -186,7 +201,7 @@ export function ForgotPasswordForm() {
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        E-mail
+        {t("eMail")}
         <input
           name="email"
           type="email"
@@ -197,22 +212,24 @@ export function ForgotPasswordForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success && state.message ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? "Wysyłanie…" : "Wyślij link resetu"}
+        {tl(pending ? t("wysylanie") : t("wyslijLinkResetu"))}
       </Button>
     </form>
   );
 }
 
 export function ResetPasswordForm() {
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     updatePasswordAfterResetAction,
     initialState,
@@ -222,13 +239,13 @@ export function ResetPasswordForm() {
     return (
       <div className="flex w-full max-w-sm flex-col gap-3">
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
         <Link
           href="/sign-in"
           className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-4 text-sm underline-offset-4 hover:underline"
         >
-          Zaloguj się
+          {t("zalogujSie")}
         </Link>
       </div>
     );
@@ -237,7 +254,7 @@ export function ResetPasswordForm() {
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Nowe hasło
+        {t("noweHaslo")}
         <input
           name="newPassword"
           type="password"
@@ -248,7 +265,7 @@ export function ResetPasswordForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Potwierdź hasło
+        {t("potwierdzHaslo")}
         <input
           name="confirmPassword"
           type="password"
@@ -260,17 +277,19 @@ export function ResetPasswordForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? "Zapisywanie…" : "Ustaw nowe hasło"}
+        {tl(pending ? t("zapisywanie") : t("ustawNoweHaslo"))}
       </Button>
     </form>
   );
 }
 
 export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     requestEmailChangeAction,
     initialState,
@@ -279,14 +298,13 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
   return (
     <form action={action} className="flex w-full flex-col gap-3">
       <p className="text-sm text-[var(--brd-ink-soft)]">
-        Obecny adres: <span className="break-all">{currentEmail || "—"}</span>
+        {t("obecnyAdres")}{" "}<span className="break-all">{tl(currentEmail || "—")}</span>
       </p>
       <p className="text-sm text-[var(--brd-mute)]">
-        Zmiana zaczyna się po haśle. Adres logowania zostaje dotychczasowy,
-        dopóki nie potwierdzisz wiadomości na obecnej i nowej skrzynce.
+        {t("zmianaZaczynaSiePo")}
       </p>
       <label className="flex flex-col gap-1 text-sm">
-        Nowy e-mail
+        {t("nowyEMail")}
         <input
           name="newEmail"
           type="email"
@@ -296,7 +314,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Powtórz nowy e-mail
+        {t("powtorzNowyEMail")}
         <input
           name="confirmEmail"
           type="email"
@@ -306,7 +324,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Aktualne hasło
+        {t("aktualneHaslo")}
         <input
           name="currentPassword"
           type="password"
@@ -317,22 +335,25 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.pendingConfirmation && state.message ? (
         <p className="text-sm text-muted-foreground" role="status">
-          {state.message}
+          {tl(state.message)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="min-h-11 w-full">
-        {pending ? "Wysyłanie…" : "Rozpocznij zmianę e-mail"}
+        {tl(pending ? t("wysylanie") : t("rozpocznijZmianeEMail"))}
       </Button>
     </form>
   );
 }
 
 export function DeleteAccountForm() {
+  const locale = useLocale();
+  const tl = useLibText();
+  const t = useTranslations("auth.authForms");
   const [state, action, pending] = useActionState(
     deleteAccountAction,
     initialState,
@@ -341,12 +362,10 @@ export function DeleteAccountForm() {
   return (
     <form action={action} className="flex w-full flex-col gap-3">
       <p className="text-sm text-[var(--brd-ink-soft)]">
-        Usunięcie konta jest nieodwracalne. Publiczne utwory mogą pozostać z
-        anonimową ksywką. Dane prywatne (nagrania, miksy, pobrania) zostaną
-        usunięte. Numer ID użytkownika nie wraca do puli.
+        {t("usuniecieKontaJestNieodwracalne")}
       </p>
       <label className="flex flex-col gap-1 text-sm">
-        Aktualne hasło
+        {t("aktualneHaslo")}
         <input
           name="currentPassword"
           type="password"
@@ -356,7 +375,7 @@ export function DeleteAccountForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Wpisz USUŃ aby potwierdzić
+        {t("wpiszUsunAbyPotwierdzic", { word: DELETE_CONFIRM_WORD[resolveLocale(locale)] })}
         <input
           name="confirmText"
           type="text"
@@ -367,7 +386,7 @@ export function DeleteAccountForm() {
       </label>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       <Button
@@ -376,7 +395,7 @@ export function DeleteAccountForm() {
         variant="destructive"
         className="min-h-11 w-full"
       >
-        {pending ? "Usuwanie…" : "Usuń konto"}
+        {tl(pending ? t("usuwanie") : t("usunKonto"))}
       </Button>
     </form>
   );

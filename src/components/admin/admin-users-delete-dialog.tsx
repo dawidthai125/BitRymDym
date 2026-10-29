@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -18,6 +22,8 @@ export function AdminUsersDeleteDialog({
   userNumber: number | null;
   isSelf: boolean;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("admin.adminUsersDeleteDialog");
   const titleId = useId();
   const reasonId = useId();
   const router = useRouter();
@@ -43,7 +49,7 @@ export function AdminUsersDeleteDialog({
         reason,
       });
       if (!result.success) {
-        setError(result.error ?? "Nie udało się usunąć konta.");
+        setError(result.error ?? t("nieUdaloSieUsunac"));
         return;
       }
       router.refresh();
@@ -51,7 +57,7 @@ export function AdminUsersDeleteDialog({
         result.code === "EMAIL_NOTIFICATION_FAILED" ||
         result.code === "AUDIT_FAILED"
       ) {
-        setNotice(result.error ?? "Konto zostało usunięte.");
+        setNotice(result.error ?? t("kontoZostaloUsuniete"));
         return;
       }
       close();
@@ -61,7 +67,7 @@ export function AdminUsersDeleteDialog({
   if (isSelf) {
     return (
       <span className="text-sm text-[var(--brd-mute)]">
-        Nie możesz usunąć własnego konta.
+        {t("nieMozeszUsunacWlasnego")}
       </span>
     );
   }
@@ -78,7 +84,7 @@ export function AdminUsersDeleteDialog({
           setOpen(true);
         }}
       >
-        Usuń konto
+        {t("usunKonto")}
       </button>
       {open ? (
         <div
@@ -96,30 +102,28 @@ export function AdminUsersDeleteDialog({
             onClick={(event) => event.stopPropagation()}
           >
             <h2 id={titleId} className="text-lg font-semibold">
-              Usuń konto
+              {t("usunKonto")}
             </h2>
             <p className="mt-3 text-sm">
-              {displayName?.trim() || "Użytkownik"}
-              {userNumber != null ? ` · #${userNumber}` : ""}
+              {tl(displayName?.trim() || t("uzytkownik"))}
+              {tl(userNumber != null ? ` · #${userNumber}` : "")}
             </p>
             <p className="mt-1 text-sm text-[var(--brd-ink-soft)]">
-              {email ?? "—"}
+              {tl(email ?? "—")}
             </p>
             <p className="mt-4 text-sm font-medium" role="alert">
-              Ta operacja jest nieodwracalna.
+              {t("taOperacjaJestNieodwracalna")}
             </p>
             <p className="mt-2 text-sm text-[var(--brd-ink-soft)]">
-              Konto zostanie usunięte. Dane prywatne zostaną usunięte zgodnie z
-              zasadami konta. Opublikowane utwory pozostaną zgodnie z
-              ACCOUNT/PROFILE-01 i zostaną zanonimizowane.
+              {t("kontoZostanieUsunieteDane")}
             </p>
             <label className="mt-4 block text-sm" htmlFor={reasonId}>
-              Powód usunięcia konta
+              {t("powodUsunieciaKonta")}
             </label>
             <textarea
               id={reasonId}
               className="mt-1 min-h-24 w-full border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2 text-sm"
-              placeholder="Wpisz powód usunięcia konta…"
+              placeholder={t("wpiszPowodUsunieciaKonta")}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               maxLength={500}
@@ -128,12 +132,12 @@ export function AdminUsersDeleteDialog({
             />
             {error ? (
               <p className="mt-3 text-sm text-[var(--brd-danger,#b42318)]" role="alert">
-                {error}
+                {tl(error)}
               </p>
             ) : null}
             {notice ? (
               <p className="mt-3 text-sm" role="status">
-                {notice}
+                {tl(notice)}
               </p>
             ) : null}
             <div className="mt-6 flex flex-wrap justify-end gap-2">
@@ -143,7 +147,7 @@ export function AdminUsersDeleteDialog({
                 onClick={close}
                 disabled={pending}
               >
-                Anuluj
+                {t("anuluj")}
               </button>
               <button
                 type="button"
@@ -151,7 +155,7 @@ export function AdminUsersDeleteDialog({
                 onClick={submit}
                 disabled={pending}
               >
-                {pending ? "Usuwanie…" : "Usuń konto"}
+                {tl(pending ? t("usuwanie") : t("usunKonto"))}
               </button>
             </div>
           </div>

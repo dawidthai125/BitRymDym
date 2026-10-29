@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import {
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -96,8 +100,11 @@ export function Waveform({
   tone = "paper",
   density = "default",
   showPlayhead,
-  "aria-label": ariaLabel = "Przebieg audio",
+  "aria-label": ariaLabelProp,
 }: WaveformProps) {
+  const tl = useLibText();
+  const t = useTranslations("common.waveform");
+  const ariaLabel = ariaLabelProp ?? t("przebiegAudio");
   const preset = DENSITY_PRESETS[density];
   const barCount = peaksProp?.length || bars || preset.bars;
   const height = heightClassName ?? preset.heightClassName;
@@ -210,12 +217,12 @@ export function Waveform({
         className,
       )}
       role={interactive ? "slider" : "img"}
-      aria-label={ariaLabel}
+      aria-label={tl(ariaLabel)}
       aria-valuemin={interactive ? 0 : undefined}
       aria-valuemax={interactive ? 100 : undefined}
       aria-valuenow={interactive ? Math.round(clamped * 100) : undefined}
       aria-valuetext={
-        interactive ? `${Math.round(clamped * 100)}%` : undefined
+        tl(interactive ? `${Math.round(clamped * 100)}%` : undefined)
       }
       aria-orientation={interactive ? "horizontal" : undefined}
       data-seek-hit={stickySeekHit ? "sticky" : catalogSeekHit ? "catalog" : undefined}

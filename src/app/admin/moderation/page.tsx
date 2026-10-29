@@ -1,3 +1,6 @@
+import { useLibText } from "@/i18n/use-lib-text";
+import { useLocale, useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -15,10 +18,14 @@ import {
   requireModerationAccess,
 } from "@/lib/beats/service";
 import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
-export const metadata = {
-  title: "Moderacja bitów · Administrator",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("admin.adminModerationPage");
+  return {
+  title: t("metaTitle"),
 };
+}
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -59,71 +66,74 @@ function QueueSection({
   isAdmin: boolean;
   checks: Map<string, AutoCheckRow>;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("admin.adminModerationPage");
+  const tag = intlTag(resolveLocale(useLocale()));
   return (
     <section className="space-y-3" aria-labelledby={`queue-${title}`}>
       <div className="flex items-baseline justify-between gap-3 border-b border-[var(--brd-line)] pb-2">
         <h2 id={`queue-${title}`} className="text-lg font-medium tracking-tight">
-          {title}
+          {tl(title)}
         </h2>
-        <span className="brd-data text-sm text-[var(--brd-mute)]" aria-label={`Liczba pozycji: ${items.length}`}>
+        <span className="brd-data text-sm text-[var(--brd-mute)]" aria-label={t("liczbaPozycji", { v0: items.length })}>
           {items.length}
         </span>
       </div>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
+        <p className="text-sm text-muted-foreground">{tl(empty)}</p>
       ) : (
         <table className="brd-data-table w-full table-fixed text-sm">
           <thead>
             <tr>
-              <th scope="col" className="w-[34%]">Bit</th>
-              <th scope="col" className="w-[18%]">Właściciel</th>
-              <th scope="col" className="w-[7%] text-right">Czas</th>
-              <th scope="col" className="w-[6%] text-right">BPM</th>
-              <th scope="col" className="w-[8%]">Audio</th>
-              <th scope="col" className="w-[13%]">Zaktualizowano</th>
-              <th scope="col"><span className="sr-only">Akcja</span></th>
+              <th scope="col" className="w-[34%]">{t("bit")}</th>
+              <th scope="col" className="w-[18%]">{t("wlasciciel")}</th>
+              <th scope="col" className="w-[7%] text-right">{t("czas")}</th>
+              <th scope="col" className="w-[6%] text-right">{t("bpm")}</th>
+              <th scope="col" className="w-[8%]">{t("audio")}</th>
+              <th scope="col" className="w-[13%]">{t("zaktualizowano")}</th>
+              <th scope="col"><span className="sr-only">{t("akcja")}</span></th>
             </tr>
           </thead>
           <tbody>
             {items.map((beat) => (
               <tr key={beat.id}>
-                <td data-label="Bit">
+                <td data-label={t("bit")}>
                   <span className="block font-medium tracking-tight text-[var(--brd-ink)]">
-                    {beat.title}
+                    {tl(beat.title)}
                   </span>
                   <span className="mt-1.5 flex flex-wrap gap-1.5">
                     <StatusPill tone={beatStatusTone(beat.status)}>
-                      {beatStatusLabelPl(beat.status)}
+                      {tl(beatStatusLabelPl(beat.status))}
                     </StatusPill>
                     <AutoCheckBadge check={checks.get(beat.id)} />
                   </span>
                   {beat.producer ? (
-                    <span className="mt-1 block text-xs text-muted-foreground">{beat.producer}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{tl(beat.producer)}</span>
                   ) : null}
                 </td>
-                <td data-label="Właściciel" className={isAdmin ? undefined : "brd-data text-xs"}>
-                  {ownerLabel(beat.ownerId, identities, isAdmin)}
+                <td data-label={t("wlasciciel")} className={isAdmin ? undefined : "brd-data text-xs"}>
+                  {tl(ownerLabel(beat.ownerId, identities, isAdmin))}
                 </td>
-                <td data-label="Czas" className="brd-data text-right">
-                  {formatDuration(beat.durationSeconds)}
+                <td data-label={t("czas")} className="brd-data text-right">
+                  {tl(formatDuration(beat.durationSeconds))}
                 </td>
-                <td data-label="BPM" className="brd-data text-right">
+                <td data-label={t("bpm")} className="brd-data text-right">
                   {beat.bpm}
                 </td>
-                <td data-label="Audio">
+                <td data-label={t("audio")}>
                   {beat.activeMasterReady ? "gotowe" : (
-                    <span className="text-[var(--brd-warn)]">brak</span>
+                    <span className="text-[var(--brd-warn)]">{t("brak")}</span>
                   )}
                 </td>
-                <td data-label="Zaktualizowano" className="brd-data text-xs text-muted-foreground">
-                  {new Date(beat.updatedAt).toLocaleString("pl-PL")}
+                <td data-label={t("zaktualizowano")} className="brd-data text-xs text-muted-foreground">
+                  {tl(new Date(beat.updatedAt).toLocaleString(tag))}
                 </td>
                 <td className="text-right">
                   <Link
                     href={`/admin/moderation/${beat.id}`}
                     className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
                   >
-                    {actionLabel}
+                    {tl(actionLabel)}
                   </Link>
                 </td>
               </tr>
@@ -136,6 +146,7 @@ function QueueSection({
 }
 
 export default async function AdminModerationQueuePage() {
+  const t = await getTranslations("admin.adminModerationPage");
   // The /admin layout renders the same denial (identical role set) but does not
   // stop this page from rendering, so the page must not throw it.
   const denial = await checkAccess(requireModerationAccess);
@@ -164,39 +175,38 @@ export default async function AdminModerationQueuePage() {
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-16 sm:px-6">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">
-          Moderacja bitów
+          {t("moderacjaBitow")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          W moderacji → zatwierdź lub odrzuć. Zatwierdzone → opublikuj do
-          katalogu publicznego.
+          {t("wModeracjiZatwierdzLub")}
         </p>
       </header>
 
       <QueueSection
-        title="W moderacji"
-        empty="Brak bitów oczekujących na moderację."
+        title={t("wModeracji")}
+        empty={t("brakBitowOczekujacychNa")}
         items={pending}
-        actionLabel="Odtwórz / decyzja"
+        actionLabel={t("odtworzDecyzja")}
         identities={identities}
         isAdmin={Boolean(isAdmin)}
         checks={checks}
       />
 
       <QueueSection
-        title="Zatwierdzone"
-        empty="Brak zatwierdzonych bitów do publikacji."
+        title={t("zatwierdzone")}
+        empty={t("brakZatwierdzonychBitowDo")}
         items={approved}
-        actionLabel="Opublikuj"
+        actionLabel={t("opublikuj")}
         identities={identities}
         isAdmin={Boolean(isAdmin)}
         checks={checks}
       />
 
       <QueueSection
-        title="Odrzucone przez filtr"
-        empty="Brak automatycznie odrzuconych bitów."
+        title={t("odrzuconePrzezFiltr")}
+        empty={t("brakAutomatycznieOdrzuconychBitow")}
         items={autoRejected}
-        actionLabel="Szczegóły / uchyl"
+        actionLabel={t("szczegolyUchyl")}
         identities={identities}
         isAdmin={Boolean(isAdmin)}
         checks={checks}

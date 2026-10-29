@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -8,13 +9,17 @@ import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premiu
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { getStudioProjectDocument } from "@/lib/studio/studio-service";
 
-export const metadata = {
-  title: "Projekt Studio · BitRymDym",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("studio.studioPPage");
+  return {
+  title: t("metaTitle"),
 };
+}
 
 type PageProps = { params: Promise<{ projectId: string }> };
 
 export default async function StudioProjectPage({ params }: PageProps) {
+  const t = await getTranslations("studio.studioPPage");
   let auth;
   try {
     auth = await requireUser();
@@ -54,7 +59,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
               href="/studio"
               className="min-h-11 text-sm text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              ← Wszystkie projekty
+              {t("wszystkieProjekty")}
             </Link>
           </div>
           <StudioEditor

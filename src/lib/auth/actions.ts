@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { isDeleteConfirmWord } from "@/i18n/config";
 import { deleteOwnAccount } from "@/lib/auth/delete-account";
 import { assertDeleteTargetsSessionUser } from "@/lib/auth/delete-account-policy";
 import { validateDisplayName } from "@/lib/auth/display-name";
@@ -525,7 +526,7 @@ export async function deleteAccountAction(
 
   const currentPassword = String(formData.get("currentPassword") ?? "");
   const confirmText = String(formData.get("confirmText") ?? "").trim();
-  if (confirmText !== "USUŃ") {
+  if (!isDeleteConfirmWord(confirmText)) {
     return {
       error: "Aby potwierdzić, wpisz USUŃ.",
       success: false,

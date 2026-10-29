@@ -1,3 +1,5 @@
+import { getLibText } from "@/i18n/get-lib-text";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -23,6 +25,8 @@ type PageProps = {
 };
 
 export default async function AdminModerationDetailPage({ params }: PageProps) {
+  const tl = await getLibText();
+  const t = await getTranslations("admin.adminModerationPage");
   const { id } = await params;
 
   // The loader also throws FORBIDDEN for content reasons (not a USER beat, not
@@ -76,45 +80,45 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
           href="/admin/moderation"
           className="text-sm text-muted-foreground underline-offset-4 hover:underline"
         >
-          ← Moderacja bitów
+          {t("moderacjaBitow")}
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight text-balance">
-          {beat.title}
+          {tl(beat.title)}
         </h1>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
           <StatusPill tone={beatStatusTone(beat.status)}>
-            {beatStatusLabelPl(beat.status)}
+            {tl(beatStatusLabelPl(beat.status))}
           </StatusPill>
-          <span>{labelBeatOwnership("USER")}</span>
-          <span>{beat.producer ?? "bez producenta"}</span>
-          <span className="brd-data">{beat.bpm} BPM</span>
+          <span>{tl(labelBeatOwnership("USER"))}</span>
+          <span>{tl(beat.producer ?? t("bezProducenta"))}</span>
+          <span className="brd-data">{beat.bpm} {t("bpm")}</span>
           <span className="brd-data">{beat.durationSeconds}s</span>
-          <span>{beat.activeMasterReady ? "audio gotowe" : "brak audio"}</span>
+          <span>{tl(beat.activeMasterReady ? t("audioGotowe") : t("brakAudio"))}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Właściciel{" "}
-          <span className={isAdmin ? undefined : "brd-data"}>{ownerLabel}</span>
+          {t("wlasciciel")}{" "}
+          <span className={isAdmin ? undefined : "brd-data"}>{tl(ownerLabel)}</span>
         </p>
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Odtwórz</h2>
+        <h2 className="text-lg font-medium tracking-tight">{t("odtworz")}</h2>
         {beat.activeMasterReady ? (
           <PlaybackShell
             beatId={beat.id}
-            title={beat.title}
+            title={tl(beat.title)}
             durationSeconds={beat.durationSeconds}
           />
         ) : (
           <p className="text-sm text-destructive">
-            Brak gotowego audio —{" "}
-            {isApproved ? "nie publikuj." : "nie zatwierdzaj."}
+            {t("brakGotowegoAudio")}{" "}
+            {tl(isApproved ? t("niePublikuj") : t("nieZatwierdzaj"))}
           </p>
         )}
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium tracking-tight">Automatyczne sprawdzenie</h2>
+        <h2 className="text-lg font-medium tracking-tight">{t("automatyczneSprawdzenie")}</h2>
         <AutoCheckCard check={autoCheck} />
         {beat.status === "PENDING_REVIEW" && (!autoCheck || autoCheck.status === "error") ? (
           <AutoCheckOverrideControls beatId={beat.id} mode="retry" />
@@ -123,18 +127,17 @@ export default async function AdminModerationDetailPage({ params }: PageProps) {
 
       {isAutoRejected ? (
         <section className="space-y-3">
-          <h2 className="text-lg font-medium tracking-tight">Uchylenie odrzucenia</h2>
+          <h2 className="text-lg font-medium tracking-tight">{t("uchylenieOdrzucenia")}</h2>
           <AutoCheckOverrideControls beatId={beat.id} mode="override" />
         </section>
       ) : (
       <section className="space-y-3">
         <h2 className="text-lg font-medium tracking-tight">
-          {isApproved ? "Publikacja" : "Decyzja"}
+          {tl(isApproved ? "Publikacja" : "Decyzja")}
         </h2>
         {!isApproved ? (
           <p className="text-sm text-muted-foreground">
-            Zatwierdzenie ustawia status Zatwierdzone. Opublikowanie jest
-            osobnym krokiem.
+            {t("zatwierdzenieUstawiaStatusZatwierdzone")}
           </p>
         ) : null}
         <ModerationDecisionControls

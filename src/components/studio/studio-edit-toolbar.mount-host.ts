@@ -227,7 +227,7 @@ export async function measureStudioEditToolbarAt(viewport: {
     }
 
     const fit =
-      measured.controls.find((c) => c.label === "Fit") ?? null;
+      measured.controls.find((c) => c.label === "Dopasuj") ?? null;
     const upgrade =
       measured.controls.find(
         (c) => c.testId === "studio-track-upgrade-cta",

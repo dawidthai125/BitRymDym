@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useLocale, useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,10 +15,11 @@ import type { OwnTakeListItem } from "@/lib/takes/list-own-takes";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { toUserFacingTakeUploadError } from "@/lib/takes/client-upload";
 import { labelRecordingMode, labelTakeStatus } from "@/lib/ui/labels";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
-function formatWhen(iso: string): string {
+function formatWhen(iso: string, tag = "pl-PL"): string {
   try {
-    return new Intl.DateTimeFormat("pl-PL", {
+    return new Intl.DateTimeFormat(tag, {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(new Date(iso));
@@ -43,6 +49,9 @@ async function fetchSignedUrl(
 }
 
 export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
+  const tl = useLibText();
+  const t = useTranslations("studio.ownTakesList");
+  const tag = intlTag(resolveLocale(useLocale()));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +67,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
     } catch (e) {
       setError(
         toUserFacingTakeUploadError(
-          e instanceof Error ? e.message : "Podgląd niedostępny.",
+          e instanceof Error ? e.message : t("podgladNiedostepny"),
         ),
       );
     } finally {
@@ -67,7 +76,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
   }
 
   async function onDelete(take: OwnTakeListItem) {
-    if (!window.confirm("Usunąć to nagranie? Tej operacji nie cofniesz.")) {
+    if (!window.confirm(t("usunacToNagranieTej"))) {
       return;
     }
     setError(null);
@@ -83,13 +92,13 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
         error?: string;
       };
       if (!res.ok || !json.success) {
-        throw new Error(json.error ?? "Usuwanie nie powiodło się.");
+        throw new Error(json.error ?? t("usuwanieNiePowiodloSie"));
       }
       router.refresh();
     } catch (e) {
       setError(
         toUserFacingTakeUploadError(
-          e instanceof Error ? e.message : "Usuwanie nie powiodło się.",
+          e instanceof Error ? e.message : t("usuwanieNiePowiodloSie"),
         ),
       );
     } finally {
@@ -111,14 +120,14 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
         error?: string;
       };
       if (!res.ok || !json.success) {
-        throw new Error(json.error ?? "Nie udało się zapisać tytułu.");
+        throw new Error(json.error ?? t("nieUdaloSieZapisac"));
       }
       setEditingId(null);
       router.refresh();
     } catch (e) {
       setError(
         toUserFacingTakeUploadError(
-          e instanceof Error ? e.message : "Nie udało się zapisać tytułu.",
+          e instanceof Error ? e.message : t("nieUdaloSieZapisac"),
         ),
       );
     } finally {
@@ -130,11 +139,10 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
     return (
       <div className="border border-[var(--brd-line)] px-4 py-10 text-center">
         <p className="brd-display text-xl font-semibold text-[var(--brd-ink)]">
-          Pusty dziennik
+          {t("pustyDziennik")}
         </p>
         <p className="mt-2 text-sm text-[var(--brd-mute)]">
-          Nie masz jeszcze nagrań. Nagraj na stronie bitu — wpis pojawi się
-          tutaj.
+          {t("nieMaszJeszczeNagran")}
         </p>
       </div>
     );
@@ -147,13 +155,12 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
           className="border border-[var(--brd-rec)]/40 bg-[color-mix(in_srgb,var(--brd-rec)_10%,transparent)] px-3 py-2 text-sm text-[var(--brd-rec)]"
           role="alert"
         >
-          {error}
+          {tl(error)}
         </p>
       ) : null}
       <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
         {items.length}{" "}
-        {items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów"} ·
-        dziennik sesji
+        {tl(items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów")} {t("dziennikSesji")}
       </p>
       <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
         {items.map((take, index) => {
@@ -170,7 +177,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
-                    #{String(items.length - index).padStart(2, "0")}
+                    #{tl(String(items.length - index).padStart(2, "0"))}
                   </span>
                   {editingId === take.id ? (
                     <div className="flex w-full flex-wrap gap-2">
@@ -180,7 +187,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                         maxLength={120}
                         onChange={(e) => setTitleDraft(e.target.value)}
                         className="min-h-11 w-full max-w-sm border border-[var(--brd-line)] bg-transparent px-3 text-sm text-[var(--brd-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)] disabled:opacity-50"
-                        aria-label="Tytuł nagrania"
+                        aria-label={t("tytulNagrania")}
                         disabled={busy}
                       />
                       <Button
@@ -190,7 +197,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                         className="min-h-11"
                         onClick={() => void onSaveTitle(take)}
                       >
-                        Zapisz
+                        {t("zapisz")}
                       </Button>
                       <Button
                         type="button"
@@ -200,44 +207,44 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                         onClick={() => setEditingId(null)}
                         disabled={busy}
                       >
-                        Anuluj
+                        {t("anuluj")}
                       </Button>
                     </div>
                   ) : (
                     <p className="brd-display text-lg font-semibold tracking-tight text-[var(--brd-ink)]">
-                      {take.displayTitle}
+                      {tl(take.displayTitle)}
                     </p>
                   )}
                 </div>
                 <p className="text-sm text-[var(--brd-ink-soft)]">
-                  {take.authorDisplayName
-                    ? `Autor: ${take.authorDisplayName}`
-                    : "Autor: —"}
+                  {tl(take.authorDisplayName
+                    ? t("autor", { v0: take.authorDisplayName })
+                    : t("autor2"))}
                   {" · "}
-                  Bit:{" "}
+                  {t("bit")}{" "}
                   {take.beatTitle ? (
                     <Link
                       href={`/beat/${take.beatId}`}
                       className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
                     >
-                      {take.beatTitle}
+                      {tl(take.beatTitle)}
                     </Link>
                   ) : (
-                    <span>{take.beatId.slice(0, 8)}</span>
+                    <span>{tl(take.beatId.slice(0, 8))}</span>
                   )}
                 </p>
                 <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
-                  {labelTakeStatus(take.displayStatus)}
+                  {tl(labelTakeStatus(take.displayStatus))}
                   {" · "}
-                  {labelRecordingMode(take.recordingMode)}
-                  {take.durationSeconds != null
+                  {tl(labelRecordingMode(take.recordingMode))}
+                  {tl(take.durationSeconds != null
                     ? ` · ${formatDurationSeconds(take.durationSeconds)}`
-                    : ""}
+                    : "")}
                 </p>
                 <p className="brd-meta text-[10px] text-[var(--brd-mute)]">
-                  Utworzono {formatWhen(take.createdAt)}
+                  {t("utworzono")}{" "}{tl(formatWhen(take.createdAt, tag))}
                   {" · "}
-                  Wygasa {formatWhen(take.expiresAt)}
+                  {t("wygasa")}{" "}{tl(formatWhen(take.expiresAt, tag))}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -253,7 +260,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                       setTitleDraft(take.title ?? "");
                     }}
                   >
-                    Tytuł
+                    {t("tytul")}
                   </Button>
                 ) : null}
                 {take.canPreview ? (
@@ -265,7 +272,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     className="min-h-11"
                     onClick={() => void onPreview(take)}
                   >
-                    {busy && busyId === take.id ? "…" : "Podgląd"}
+                    {tl(busy && busyId === take.id ? "…" : t("podglad"))}
                   </Button>
                 ) : null}
                 {showDownload && take.displayStatus === "READY" ? (
@@ -285,7 +292,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     className="min-h-11"
                     onClick={() => void onDelete(take)}
                   >
-                    Usuń
+                    {t("usun")}
                   </Button>
                 ) : null}
               </div>

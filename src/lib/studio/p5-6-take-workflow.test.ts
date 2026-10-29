@@ -81,7 +81,7 @@ describe("P5.6 auto-place decoupling", () => {
 
   it("READY_TAKE Keep block sits above catalog chrome and asks for Zachowaj", () => {
     const panel = readFileSync(panelPath, "utf8");
-    const workflowIdx = panel.indexOf('aria-label="Studio Take Workflow"');
+    const workflowIdx = panel.indexOf('aria-label="Przebieg nagrania w Studio"');
     const catalogIdx = panel.indexOf("Katalog → klip Studio");
     expect(workflowIdx).toBeGreaterThan(-1);
     expect(catalogIdx).toBeGreaterThan(workflowIdx);
@@ -89,7 +89,7 @@ describe("P5.6 auto-place decoupling", () => {
       /Nagranie gotowe — kliknij Zachowaj, żeby wstawić na ścieżkę\./,
     );
     expect(panel).toMatch(/takeWorkflowRef\.current\?\.scrollIntoView/);
-    expect(panel).toMatch(/aria-label="Studio Take Workflow"/);
+    expect(panel).toMatch(/aria-label="Przebieg nagrania w Studio"/);
   });
 
   it("Keep places via existing place endpoint; Discard uses /api/takes/delete", () => {
@@ -104,7 +104,7 @@ describe("P5.6 auto-place decoupling", () => {
     expect(panel).toMatch(/placeReadyTakeOnTimeline/);
     expect(panel).toMatch(/Zastąp/);
     expect(panel).toMatch(/replaceOverlapping/);
-    expect(panel).toMatch(/Count-in \/ punch/);
+    expect(panel).toMatch(/Odliczanie \/ punch/);
     expect(panel).toMatch(/Monitor do ucha/);
   });
 });
@@ -222,7 +222,7 @@ describe("P5.6 preview / transport isolation", () => {
     expect(panel).toMatch(/previewTake/);
     expect(panel).toMatch(/stopTakePreview/);
     expect(panel).not.toMatch(/PlayerProvider/);
-    expect(panel).toMatch(/Moje Take'i/);
+    expect(panel).toMatch(/Moje nagrania/);
     expect(panel).toMatch(/Umieść w Studio/);
   });
 });

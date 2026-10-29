@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
@@ -31,13 +32,14 @@ export function BrdSymbol({
   decorative = true,
   priority = false,
 }: BrdSymbolProps) {
+  const tl = useLibText();
   const src =
     variant === "inverse" ? BRD_SYMBOL_INVERSE_SRC : BRD_SYMBOL_SRC;
 
   return (
     <Image
       src={src}
-      alt={decorative ? "" : "BitRymDym"}
+      alt={tl(decorative ? "" : "BitRymDym")}
       width={size}
       height={size}
       priority={priority}

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -7,11 +8,15 @@ import { AppShell } from "@/components/site/app-shell";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listOwnTakes } from "@/lib/takes/list-own-takes";
 
-export const metadata = {
-  title: "Moje nagrania · BitRymDym",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.accountTakesPage");
+  return {
+  title: t("metaTitle"),
 };
+}
 
 export default async function AccountTakesPage() {
+  const t = await getTranslations("account.accountTakesPage");
   try {
     await requireUser();
   } catch (error) {
@@ -32,13 +37,13 @@ export default async function AccountTakesPage() {
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
             <SectionLabel className="text-[var(--brd-amber)]">
-              Archiwum sesji
+              {t("archiwumSesji")}
             </SectionLabel>
             <h1 className="brd-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              Moje nagrania
+              {t("mojeNagrania")}
             </h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Podgląd, pobieranie, usuwanie — tylko to, co już nagrałeś.
+              {t("podgladPobieranieUsuwanieTylko")}
             </p>
           </header>
 
@@ -49,13 +54,13 @@ export default async function AccountTakesPage() {
               href="/studio"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              ← Studio
+              {t("studio")}
             </Link>
             <Link
               href="/account"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Konto
+              {t("konto")}
             </Link>
           </div>
         </PageFrame>

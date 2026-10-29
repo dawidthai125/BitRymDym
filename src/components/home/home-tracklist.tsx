@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 
 import { HomePlayButton } from "@/components/brand/home-play-button";
@@ -12,10 +17,11 @@ import { cn } from "@/lib/utils";
 
 /** Catalog preview as a side-A tracklist (A1, A2 … = real list order). */
 export function HomeTracklist({ beats }: { beats: PresentedBeat[] }) {
+  const t = useTranslations("home.homeTracklist");
   if (beats.length === 0) {
     return (
       <p className="border-y border-tape-line py-6 text-tape-cream-soft">
-        Jeszcze nie ma opublikowanych bitów.
+        {t("jeszczeNieMaOpublikowanych")}
       </p>
     );
   }
@@ -29,6 +35,8 @@ export function HomeTracklist({ beats }: { beats: PresentedBeat[] }) {
 }
 
 function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
+  const tl = useLibText();
+  const t = useTranslations("home.homeTracklist");
   const { track, currentTime, duration, seek, activateTrack, phase } =
     usePlayer();
   const isCurrent = track?.beatId === beat.id;
@@ -53,7 +61,7 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
     seek(ratio * max);
   }
 
-  const meta = [beat.bpm > 0 ? `${beat.bpm} BPM` : null, beat.key, beat.genre]
+  const meta = [beat.bpm > 0 ? t("bpm", { v0: beat.bpm }) : null, beat.key, beat.genre]
     .filter(Boolean)
     .join(" · ");
 
@@ -77,12 +85,12 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
         className="tape-focus min-w-0 underline-offset-4 hover:underline"
       >
         <span className="block truncate font-poster text-xl font-bold uppercase leading-none tracking-[0.02em] text-tape-cream sm:text-2xl">
-          {beat.title}
+          {tl(beat.title)}
         </span>
         <span className="mt-1 block truncate text-sm text-tape-cream-soft">
-          {beat.producer}
+          {tl(beat.producer)}
           {meta ? (
-            <span className="font-mono text-xs text-tape-mute"> · {meta}</span>
+            <span className="font-mono text-xs text-tape-mute"> · {tl(meta)}</span>
           ) : null}
         </span>
       </Link>
@@ -96,13 +104,13 @@ function TrackRow({ beat, index }: { beat: PresentedBeat; index: number }) {
           showPlayhead={isCurrent}
           interactive
           onSeekRatio={(r) => void onSeekRatio(r)}
-          aria-label={`Przebieg: ${beat.title}`}
+          aria-label={t("przebieg", { v0: beat.title })}
         />
       </div>
       <span className="hidden text-right font-mono text-sm tabular-nums text-tape-cream-soft sm:block">
-        {beat.durationSeconds > 0
+        {tl(beat.durationSeconds > 0
           ? formatDurationSeconds(beat.durationSeconds)
-          : "—"}
+          : "—")}
       </span>
       <HomePlayButton beat={beat} compact />
     </li>

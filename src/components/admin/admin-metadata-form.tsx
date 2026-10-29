@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +19,8 @@ const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
 export function AdminMetadataForm({ beat }: { beat: Beat }) {
+  const tl = useLibText();
+  const t = useTranslations("admin.adminMetadataForm");
   const [state, action, pending] = useActionState(
     updateBeatMetadataAction,
     initial,
@@ -24,7 +30,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
     <form action={action} className="flex max-w-xl flex-col gap-3">
       <input type="hidden" name="beatId" value={beat.id} />
       <label className="flex flex-col gap-1 text-sm">
-        Tytuł *
+        {t("tytul")}
         <input
           name="title"
           required
@@ -34,7 +40,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Producent
+        {t("producent")}
         <input
           name="producer"
           maxLength={500}
@@ -43,7 +49,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Opis
+        {t("opis")}
         <textarea
           name="description"
           rows={3}
@@ -54,7 +60,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">
-          Gatunek
+          {t("gatunek")}
           <input
             name="genre"
             maxLength={500}
@@ -63,7 +69,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Styl
+          {t("styl")}
           <input
             name="style"
             maxLength={500}
@@ -74,7 +80,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex flex-col gap-1 text-sm">
-          BPM *
+          {t("bpm")}
           <input
             name="bpm"
             type="number"
@@ -86,7 +92,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Tonacja
+          {t("tonacja")}
           <input
             name="key"
             maxLength={500}
@@ -95,7 +101,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Skala
+          {t("skala")}
           <input
             name="scale"
             maxLength={500}
@@ -105,16 +111,16 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
         </label>
       </div>
       <p className="text-sm">
-        Czas trwania (z audio){" "}
+        {t("czasTrwaniaZAudio")}{" "}
         <span className="font-medium text-foreground">
           {beat.durationSeconds} s
         </span>
         <span className="mt-0.5 block text-xs text-muted-foreground">
-          Tylko do odczytu — pochodzi z analizy pliku Master.
+          {t("tylkoDoOdczytuPochodzi")}
         </span>
       </p>
       <label className="flex flex-col gap-1 text-sm">
-        Tagi (oddzielone przecinkami)
+        {t("tagiOddzielonePrzecinkami")}
         <input
           name="tags"
           defaultValue={beat.tags.join(", ")}
@@ -122,7 +128,7 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Cover ref
+        {t("coverRef")}
         <input
           name="coverRef"
           maxLength={500}
@@ -133,17 +139,17 @@ export function AdminMetadataForm({ beat }: { beat: Beat }) {
 
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {tl(state.error)}
         </p>
       ) : null}
       {state.success ? (
         <p className="text-sm text-foreground" role="status">
-          Zapisano metadata.
+          {t("zapisanoMetadata")}
         </p>
       ) : null}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Zapisywanie…" : "Zapisz metadane"}
+        {tl(pending ? t("zapisywanie") : t("zapiszMetadane"))}
       </Button>
     </form>
   );

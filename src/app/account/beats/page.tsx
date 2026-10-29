@@ -1,3 +1,5 @@
+import { getLibText } from "@/i18n/get-lib-text";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -15,9 +17,12 @@ import { listOwnUserBeats } from "@/lib/beats/service";
 import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
 import { listOwnerBeatAccessGrantsFor } from "@/lib/grants/beat-access-grants";
 
-export const metadata = {
-  title: "Moje bity · BitRymDym",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.accountBeatsPage");
+  return {
+  title: t("metaTitle"),
 };
+}
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -26,6 +31,8 @@ function formatDuration(seconds: number): string {
 }
 
 export default async function AccountBeatsPage() {
+  const tl = await getLibText();
+  const t = await getTranslations("account.accountBeatsPage");
   let context;
   try {
     context = await requireUser();
@@ -63,32 +70,31 @@ export default async function AccountBeatsPage() {
           <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--brd-line)] pb-6">
             <div className="space-y-2">
               <h1 className="brd-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                Moje bity
+                {t("mojeBity")}
               </h1>
               <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-                Wersje robocze, moderacja i decyzje — bez publicznej publikacji
-                z tego panelu.
+                {t("wersjeRoboczeModeracjaI")}
               </p>
             </div>
             {addBeatHref ? (
-              <BrdLink href={addBeatHref}>Dodaj bit</BrdLink>
+              <BrdLink href={addBeatHref}>{t("dodajBit")}</BrdLink>
             ) : null}
           </header>
 
           {beats.length === 0 ? (
             <p className="text-sm text-[var(--brd-mute)]">
-              Nie masz jeszcze bitów.{" "}
+              {t("nieMaszJeszczeBitow")}{" "}
               {addBeatHref ? (
                 <Link
                   href={addBeatHref}
                   className="text-[var(--brd-green)] underline underline-offset-4"
                 >
-                  Dodaj pierwszy
+                  {t("dodajPierwszy")}
                 </Link>
               ) : (
-                "Brak dostępnego flow uploadu dla tej roli."
+                t("brakDostepnegoFlowUploadu")
               )}
-              {addBeatHref ? "." : null}
+              {tl(addBeatHref ? "." : null)}
             </p>
           ) : (
             <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
@@ -100,38 +106,38 @@ export default async function AccountBeatsPage() {
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <p className="font-medium tracking-tight text-[var(--brd-ink)]">
-                        {beat.title}
+                        {tl(beat.title)}
                       </p>
                       <StatusPill tone={beatStatusTone(beat.status)}>
-                        {beatStatusLabelPl(beat.status)}
+                        {tl(beatStatusLabelPl(beat.status))}
                       </StatusPill>
                     </div>
                     <p className="flex flex-wrap gap-x-3 text-sm text-[var(--brd-mute)]">
                       <span className="brd-data text-[var(--brd-ink-soft)]">
-                        {formatDuration(beat.durationSeconds)}
+                        {tl(formatDuration(beat.durationSeconds))}
                       </span>
                       <span className="brd-data text-[var(--brd-ink-soft)]">
-                        {beat.bpm} BPM
+                        {beat.bpm} {t("bpm")}
                       </span>
-                      {beat.producer ? <span>{beat.producer}</span> : null}
-                      {beat.activeMasterReady ? <span>audio gotowe</span> : null}
+                      {beat.producer ? <span>{tl(beat.producer)}</span> : null}
+                      {beat.activeMasterReady ? <span>{t("audioGotowe")}</span> : null}
                     </p>
                     {beat.status === "REJECTED" && beat.rejectionReason ? (
                       <p className="text-sm text-[var(--brd-ink-soft)]">
                         <span className="text-[var(--brd-mute)]">
-                          Powód odrzucenia:{" "}
+                          {t("powodOdrzucenia")}{" "}
                         </span>
-                        {beat.rejectionReason}
+                        {tl(beat.rejectionReason)}
                       </p>
                     ) : null}
                     {beat.status === "APPROVED" ? (
                       <p className="text-xs text-[var(--brd-mute)]">
-                        Zatwierdzone — oczekuje na publikację przez zespół.
+                        {t("zatwierdzoneOczekujeNaPublikacje")}
                       </p>
                     ) : null}
                     {beat.status === "PUBLISHED" ? (
                       <p className="text-xs text-[var(--brd-mute)]">
-                        Widoczny w publicznym katalogu.
+                        {t("widocznyWPublicznymKatalogu")}
                       </p>
                     ) : null}
                   </div>
@@ -157,7 +163,7 @@ export default async function AccountBeatsPage() {
             href="/account"
             className="text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
           >
-            ← Wróć do studia
+            {t("wrocDoStudia")}
           </Link>
         </PageFrame>
       </main>

@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +25,8 @@ export function AdminPlatformOpsExportButton({
   title,
   activeMasterReady,
 }: AdminPlatformOpsExportButtonProps) {
+  const tl = useLibText();
+  const t = useTranslations("admin.adminPlatformOpsExportButton");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -52,14 +58,14 @@ export function AdminPlatformOpsExportButton({
         aria-busy={isPending}
         className="min-h-11"
       >
-        {isPending ? "Eksport operacyjny…" : "Eksport operacyjny Master"}
+        {tl(isPending ? t("eksportOperacyjny") : t("eksportOperacyjnyMaster"))}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Privilegowany eksport bitu platformy (nie jest to pobieranie użytkownika).
+        {t("privilegowanyEksportBituPlatformy")}
       </p>
       {error ? (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
     </div>

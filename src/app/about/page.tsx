@@ -1,35 +1,39 @@
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/site/app-shell";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 
-export const metadata = {
-  title: "O BitRymDym",
-  description: "Platforma do bitów, nagrań i tworzenia numerów.",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("common.aboutPage");
+  return {
+  title: t("metaTitle"),
+  description: t("metaDescription"),
 };
+}
 
 export default function AboutPage() {
+  const t = useTranslations("common.aboutPage");
   return (
     <AppShell tone="public">
       <main>
         <PageFrame className="max-w-2xl py-12">
-          <SectionLabel>O BitRymDym</SectionLabel>
+          <SectionLabel>{t("oBitrymdym")}</SectionLabel>
           <h1 className="brd-display mt-2 text-4xl font-semibold tracking-tight">
-            Bit. Głos. Studio.
+            {t("bitGlosStudio")}
           </h1>
           <div className="mt-6 space-y-4 text-[var(--brd-ink-soft)] leading-relaxed">
             <p>
-              BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz swój głos
-              i rozwijasz numery — bez zbędnego szumu.
+              {t("bitrymdymToMiejsceW")}
             </p>
             <p>
-              Dla producentów, raperów i twórców, którzy chcą wracać tu codziennie:
-              odsłuchać, nagrać, wrócić do studia.
+              {t("dlaProducentowRaperowI")}
             </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-2">
-            <BrdLink href="/beats">Przeglądaj bity</BrdLink>
+            <BrdLink href="/beats">{t("przegladajBity")}</BrdLink>
             <BrdLink href="/sign-up" variant="secondary">
-              Załóż konto
+              {t("zalozKonto")}
             </BrdLink>
           </div>
         </PageFrame>

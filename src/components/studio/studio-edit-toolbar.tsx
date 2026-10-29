@@ -4,6 +4,10 @@
  */
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
@@ -50,6 +54,8 @@ export type StudioEditToolbarProps = {
 };
 
 export function StudioEditToolbar(props: StudioEditToolbarProps) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioEditToolbar");
   const [toolbarMoreOpen, setToolbarMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -69,7 +75,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
     <div
       className="flex flex-wrap items-center gap-1 border-b border-[var(--brd-line)] bg-[var(--brd-paper)] px-0.5 py-1"
       role="toolbar"
-      aria-label="Edycja osi czasu"
+      aria-label={t("edycjaOsiCzasu")}
       data-testid="studio-edit-toolbar"
     >
       <Button
@@ -80,7 +86,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         disabled={props.recordingLocked}
         onClick={props.onSeekMode}
       >
-        Zaznacz
+        {t("zaznacz")}
       </Button>
       <Button
         type="button"
@@ -90,7 +96,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         disabled={props.recordingLocked}
         onClick={props.onEditMode}
       >
-        Edycja
+        {t("edycja")}
       </Button>
       <Button
         type="button"
@@ -100,10 +106,10 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         disabled={
           props.recordingLocked || props.pending || !props.hasSelectedClip
         }
-        title="Podziel w playhead"
+        title={t("podzielWPlayhead")}
         onClick={props.onSplit}
       >
-        Podziel
+        {t("podziel")}
       </Button>
       <Button
         type="button"
@@ -111,10 +117,10 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         variant="outline"
         className="min-h-11 min-w-11"
         disabled={props.recordingLocked || !props.hasSelectedClip}
-        title="Usuń klip"
+        title={t("usunKlip")}
         onClick={props.onDeleteClip}
       >
-        Usuń
+        {t("usun")}
       </Button>
       <Button
         type="button"
@@ -126,13 +132,13 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           props.recordingLocked || props.pending || props.atTrackCapacity
         }
         title={
-          props.atTrackCapacity
-            ? "Osiągnięto limit ścieżek"
-            : "Dodaj ścieżkę wokalną"
+          tl(props.atTrackCapacity
+            ? t("osiagnietoLimitSciezek")
+            : t("dodajSciezkeWokalna"))
         }
         onClick={props.onAddTrack}
       >
-        + Dodaj ścieżkę
+        {t("dodajSciezke")}
       </Button>
       <Button
         type="button"
@@ -143,7 +149,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         aria-controls={props.inspectorPanelId}
         onClick={props.onToggleInspector}
       >
-        Inspector
+        {t("inspector")}
       </Button>
       <Button
         type="button"
@@ -155,7 +161,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         aria-controls={props.mixerPanelId}
         onClick={props.onToggleMixer}
       >
-        Mixer
+        {t("mixer")}
       </Button>
       <Button
         ref={moreButtonRef}
@@ -168,7 +174,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
         aria-controls="studio-toolbar-overflow"
         onClick={() => setToolbarMoreOpen((v) => !v)}
       >
-        Więcej
+        {t("wiecej")}
       </Button>
       <div
         id="studio-toolbar-overflow"
@@ -183,16 +189,16 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           data-max-tracks={props.maxTracks}
           data-premium-tier={props.premiumTier}
           className="inline-flex min-h-11 items-center gap-1 px-1 font-mono text-xs text-[var(--brd-ink)]"
-          title={`Ścieżki ${formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks)} (Bit liczony, Master nie)`}
+          title={t("sciezkiBitLiczonyMaster", { v0: formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks) })}
         >
           <span className="hidden sm:inline">
-            {formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks)}
+            {tl(formatStudioTrackCapacityLabel(props.trackCount, props.maxTracks))}
           </span>
           <span className="sm:hidden">
-            {formatStudioTrackCapacityLabelCompact(
+            {tl(formatStudioTrackCapacityLabelCompact(
               props.trackCount,
               props.maxTracks,
-            )}
+            ))}
           </span>
         </span>
         {props.showUpgradeCta ? (
@@ -201,7 +207,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
             data-testid="studio-track-upgrade-cta"
             className="inline-flex min-h-11 min-w-11 items-center rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2 text-xs font-medium text-[var(--brd-green)] hover:bg-[var(--brd-bg)]"
           >
-            Zmień pakiet
+            {t("zmienPakiet")}
           </Link>
         ) : null}
         {props.atTrackCapacity && props.premiumTier === "GOLD" ? (
@@ -209,7 +215,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
             data-testid="studio-track-capacity-max"
             className="text-[10px] text-[var(--brd-mute)]"
           >
-            Maksymalny limit ścieżek
+            {t("maksymalnyLimitSciezek")}
           </span>
         ) : null}
         <Button
@@ -218,40 +224,40 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
           variant={props.snapPreset === "off" ? "outline" : "default"}
           className="min-h-11 min-w-11"
           aria-pressed={props.snapPreset !== "off"}
-          title={`Snap: ${studioSnapPresetLabel(props.snapPreset)} (kliknij aby zmienić: OFF / 20 / 100 / 1000 ms)`}
+          title={t("snapKliknijAbyZmienic", { v0: (props.snapPreset === "off" ? t("snapOff") : studioSnapPresetLabel(props.snapPreset)) })}
           onClick={props.onSnapCycle}
         >
-          Snap {studioSnapPresetLabel(props.snapPreset)}
+          {t("snap")}{" "}{tl((props.snapPreset === "off" ? t("snapOff") : studioSnapPresetLabel(props.snapPreset)))}
         </Button>
         <Button
           type="button"
           size="sm"
           variant="outline"
           className="min-h-11 min-w-11"
-          title="Pomniejsz oś czasu"
+          title={t("pomniejszOsCzasu")}
           onClick={props.onZoomOut}
         >
-          zoom−
+          {t("zoom")}
         </Button>
         <Button
           type="button"
           size="sm"
           variant="outline"
           className="min-h-11 min-w-11"
-          title="Powiększ oś czasu"
+          title={t("powiekszOsCzasu")}
           onClick={props.onZoomIn}
         >
-          zoom+
+          {t("zoom2")}
         </Button>
         <Button
           type="button"
           size="sm"
           variant="outline"
           className="min-h-11 min-w-11"
-          title="Dopasuj oś czasu do szerokości"
+          title={t("dopasujOsCzasuDo")}
           onClick={props.onFit}
         >
-          Fit
+          {t("fit")}
         </Button>
       </div>
     </div>

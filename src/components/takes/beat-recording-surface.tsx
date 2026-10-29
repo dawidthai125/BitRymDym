@@ -1,5 +1,7 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
 import { useRef } from "react";
 
 import { MixPanel, type MixTakeOption } from "@/components/mix/mix-panel";
@@ -47,6 +49,7 @@ export function BeatRecordingSurface({
   mixPro = false,
   masterPro = false,
 }: BeatRecordingSurfaceProps) {
+  const tl = useLibText();
   const playbackRef = useRef<PlaybackShellHandle | null>(null);
 
   return (
@@ -54,7 +57,7 @@ export function BeatRecordingSurface({
       <PlaybackShell
         ref={playbackRef}
         beatId={beatId}
-        title={title}
+        title={tl(title)}
         durationSeconds={durationSeconds}
       />
       <RecordingPanel

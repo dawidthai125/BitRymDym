@@ -1,3 +1,5 @@
+import { getLibText } from "@/i18n/get-lib-text";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -9,12 +11,19 @@ import {
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listActiveGranteeGrantsFor } from "@/lib/grants/beat-access-grants";
 import { cn } from "@/lib/utils";
+import { intlTag, resolveLocale } from "@/i18n/config";
 
-export const metadata = {
-  title: "Bity udostępnione · BitRymDym",
+export async function generateMetadata(): Promise<import("next").Metadata> {
+  const t = await getTranslations("account.accountSharedPage");
+  return {
+  title: t("metaTitle"),
 };
+}
 
 export default async function AccountSharedBeatsPage() {
+  const tl = await getLibText();
+  const t = await getTranslations("account.accountSharedPage");
+  const tag = intlTag(resolveLocale(await getLocale()));
   let context;
   try {
     context = await requireUser();
@@ -40,17 +49,16 @@ export default async function AccountSharedBeatsPage() {
       >
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">
-            Bity udostępnione
+            {t("bityUdostepnione")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Bity, na których właściciele umożliwili Ci nagrywanie. Wejdź w bit,
-            aby nagrać. Udostępnienie nie daje dostępu do cudzych nagrań.
+            {t("bityNaKtorychWlasciciele")}
           </p>
         </header>
 
         {grants.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nie masz aktywnych udostępnień.
+            {t("nieMaszAktywnychUdostepnien")}
           </p>
         ) : (
           <ul className="divide-y divide-border border-y border-border">
@@ -60,19 +68,19 @@ export default async function AccountSharedBeatsPage() {
                 className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="space-y-1">
-                  <p className="font-medium tracking-tight">{g.beatTitle}</p>
+                  <p className="font-medium tracking-tight">{tl(g.beatTitle)}</p>
                   <p className="text-xs text-muted-foreground">
-                    Nagrywanie
-                    {g.expiresAt
-                      ? ` · wygasa ${new Date(g.expiresAt).toLocaleString()}`
-                      : " · bezterminowy"}
+                    {t("nagrywanie")}
+                    {tl(g.expiresAt
+                      ? t("wygasa", { v0: new Date(g.expiresAt).toLocaleString(tag) })
+                      : t("bezterminowy"))}
                   </p>
                 </div>
                 <Link
                   href={`/beat/${g.beatId}`}
                   className="text-sm font-medium underline underline-offset-4"
                 >
-                  Otwórz i nagraj
+                  {t("otworzINagraj")}
                 </Link>
               </li>
             ))}
@@ -83,7 +91,7 @@ export default async function AccountSharedBeatsPage() {
           href="/account"
           className="text-sm text-muted-foreground underline-offset-4 hover:underline"
         >
-          ← Konto
+          {t("konto")}
         </Link>
       </main>
     </div>

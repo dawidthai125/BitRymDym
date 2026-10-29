@@ -1,5 +1,9 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -64,6 +68,8 @@ export function StudioMixRevisionHistoryControl({
   onDocumentRefreshed,
   disabled,
 }: StudioMixRevisionHistoryControlProps) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioMixRevisionHistoryControl");
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<PanelView>("list");
@@ -392,8 +398,8 @@ export function StudioMixRevisionHistoryControl({
       setRestoreTone("ok");
       setStatusMessage(
         mapped.replay
-          ? "Przywrócenie już było zapisane — pokazano wynik bez ponownej zmiany."
-          : "Przywrócono stan miksu. Utworzono nową rewizję w historii.",
+          ? t("przywrocenieJuzByloZapisane")
+          : t("przywroconoStanMiksuUtworzono"),
       );
       restoreRequestIdRef.current = null;
       restoreTargetIdRef.current = null;
@@ -404,7 +410,7 @@ export function StudioMixRevisionHistoryControl({
     } catch {
       setRestoreTone("warn");
       setRestoreMessage(
-        "Brak połączenia. Sprawdź sieć i spróbuj ponownie z tym samym żądaniem.",
+        t("brakPolaczeniaSprawdzSiec"),
       );
     } finally {
       setRestoreSubmitting(false);
@@ -418,7 +424,7 @@ export function StudioMixRevisionHistoryControl({
         type="button"
         className="inline-flex min-h-11 items-center rounded border border-[var(--brd-paper)]/40 bg-transparent px-2.5 text-xs font-semibold text-[var(--brd-paper)] hover:bg-[var(--brd-paper)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brd-green)] disabled:cursor-not-allowed disabled:opacity-60"
         data-testid="studio-transport-mix-history"
-        title="Historia wersji miksu"
+        title={t("historiaWersjiMiksu")}
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={open ? "studio-mix-history-dialog" : undefined}
@@ -434,7 +440,7 @@ export function StudioMixRevisionHistoryControl({
           });
         }}
       >
-        Historia miksu
+        {t("historiaMiksu")}
       </button>
 
       {open && mounted
@@ -446,7 +452,7 @@ export function StudioMixRevisionHistoryControl({
               <button
                 type="button"
                 className="absolute inset-0 cursor-default bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
-                aria-label="Zamknij historię miksu"
+                aria-label={t("zamknijHistorieMiksu")}
                 data-testid="studio-mix-history-backdrop"
                 onClick={closeDialog}
               />
@@ -465,13 +471,13 @@ export function StudioMixRevisionHistoryControl({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p id={titleId} className="brd-ui text-sm font-semibold">
-                    Historia miksu
+                    {t("historiaMiksu")}
                   </p>
                   <p
                     id={descriptionId}
                     className="text-[11px] text-[var(--brd-ink)]/70"
                   >
-                    Rewizje dokumentu miksu · bez renderów audio i masteringu
+                    {t("rewizjeDokumentuMiksuBez")}
                   </p>
                 </div>
                 <Button
@@ -482,7 +488,7 @@ export function StudioMixRevisionHistoryControl({
                   data-testid="studio-mix-history-close"
                   onClick={closeDialog}
                 >
-                  Zamknij
+                  {t("zamknij")}
                 </Button>
               </div>
               {/*
@@ -496,14 +502,11 @@ export function StudioMixRevisionHistoryControl({
                 data-testid="studio-mix-history-migration-notice"
                 data-brd-mix-history-migration-notice="a35"
               >
-                Historia obejmuje parametry miksu (głośność, panorama, mute,
-                solo i efekty ścieżek oraz mastera) — nie całą sesję Studio.
-                Do zakończenia migracji lista może nie zawierać zmian
-                wykonanych wcześniej przez starsze ścieżki edytora.
+                {t("historiaObejmujeParametryMiksu")}
               </p>
               <nav
                 className="flex flex-wrap gap-1"
-                aria-label="Widoki historii miksu"
+                aria-label={t("widokiHistoriiMiksu")}
               >
                 <Button
                   type="button"
@@ -513,7 +516,7 @@ export function StudioMixRevisionHistoryControl({
                   data-testid="studio-mix-history-tab-list"
                   onClick={() => setView("list")}
                 >
-                  Lista
+                  {t("lista")}
                 </Button>
                 <Button
                   type="button"
@@ -526,7 +529,7 @@ export function StudioMixRevisionHistoryControl({
                     if (selectedId) void openDetail(selectedId);
                   }}
                 >
-                  Szczegóły
+                  {t("szczegoly")}
                 </Button>
                 <Button
                   type="button"
@@ -536,7 +539,7 @@ export function StudioMixRevisionHistoryControl({
                   data-testid="studio-mix-history-tab-compare"
                   onClick={() => setView("compare")}
                 >
-                  Porównaj
+                  {t("porownaj")}
                 </Button>
               </nav>
             </header>
@@ -548,7 +551,7 @@ export function StudioMixRevisionHistoryControl({
                   role="status"
                   data-testid="studio-mix-history-status"
                 >
-                  {statusMessage}
+                  {tl(statusMessage)}
                 </p>
               ) : null}
 
@@ -624,7 +627,7 @@ export function StudioMixRevisionHistoryControl({
                   <button
                     type="button"
                     className="absolute inset-0 z-20 cursor-default bg-[color-mix(in_srgb,var(--brd-ink)_55%,transparent)]"
-                    aria-label="Anuluj przywracanie"
+                    aria-label={t("anulujPrzywracanie")}
                     data-testid="studio-mix-history-restore-backdrop"
                     disabled={restoreSubmitting}
                     onClick={() => {
@@ -641,19 +644,16 @@ export function StudioMixRevisionHistoryControl({
                     data-testid="studio-mix-history-restore-dialog"
                   >
                     <p id={restoreTitleId} className="text-sm font-semibold">
-                      Przywrócić tę rewizję miksu?
+                      {t("przywrocicTeRewizjeMiksu")}
                     </p>
                     <p className="text-xs text-[var(--brd-ink)]/75">
-                      Operacja utworzy nową rewizję w historii. Nie usuwa
-                      wcześniejszych wpisów i nie przywraca plików audio,
-                      masteringu ani artefaktów — tylko dozwolone parametry
-                      dokumentu miksu.
+                      {t("operacjaUtworzyNowaRewizje")}
                     </p>
                     {detail ? (
                       <p className="font-mono text-[11px] text-[var(--brd-ink)]/80">
-                        {mixRevisionKindLabel(detail.kind)} · v
+                        {tl(mixRevisionKindLabel(detail.kind))} · v
                         {detail.sourceDocumentVersion}
-                        {detail.description ? ` · ${detail.description}` : ""}
+                        {tl(detail.description ? ` · ${detail.description}` : "")}
                       </p>
                     ) : null}
                     {restoreMessage ? (
@@ -666,7 +666,7 @@ export function StudioMixRevisionHistoryControl({
                         role="alert"
                         data-testid="studio-mix-history-restore-message"
                       >
-                        {restoreMessage}
+                        {tl(restoreMessage)}
                       </p>
                     ) : null}
                     <div className="flex flex-wrap gap-2">
@@ -679,7 +679,7 @@ export function StudioMixRevisionHistoryControl({
                         data-testid="studio-mix-history-restore-cancel"
                         onClick={() => setRestoreOpen(false)}
                       >
-                        Anuluj
+                        {t("anuluj")}
                       </Button>
                       <Button
                         type="button"
@@ -689,7 +689,7 @@ export function StudioMixRevisionHistoryControl({
                         data-testid="studio-mix-history-restore-confirm"
                         onClick={() => void confirmRestore()}
                       >
-                        {restoreSubmitting ? "Przywracanie…" : "Przywróć"}
+                        {tl(restoreSubmitting ? t("przywracanie") : t("przywroc"))}
                       </Button>
                     </div>
                   </div>
@@ -717,6 +717,8 @@ function ListPanel(props: {
   onMarkCompareFrom: (id: string) => void;
   onMarkCompareTo: (id: string) => void;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioMixRevisionHistoryControl");
   const panelKind = resolveMixHistoryListPanelKind({
     loadState: props.loadState,
     revisionCount: props.revisions.length,
@@ -747,7 +749,7 @@ function ListPanel(props: {
         data-testid="studio-mix-history-list-error"
       >
         <p className="text-xs text-[var(--brd-warn)]">
-          {props.error?.message ?? "Nie udało się wczytać historii miksu."}
+          {tl(props.error?.message ?? t("nieUdaloSieWczytac"))}
         </p>
         <Button
           type="button"
@@ -756,7 +758,7 @@ function ListPanel(props: {
           data-testid="studio-mix-history-list-retry"
           onClick={props.onRetry}
         >
-          Ponów
+          {t("ponow")}
         </Button>
       </div>
     );
@@ -769,8 +771,7 @@ function ListPanel(props: {
         role="status"
         data-testid="studio-mix-history-list-empty"
       >
-        Brak zapisanych rewizji miksu dla tego projektu. Historia pojawia się po
-        atomowych zapisach ścieżki Mix Working (apply / restore).
+        {t("brakZapisanychRewizjiMiksu")}
       </p>
     );
   }
@@ -796,26 +797,26 @@ function ListPanel(props: {
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-1">
                   <span className="text-xs font-semibold">
-                    {mixRevisionKindLabel(row.kind)}
-                    {row.kind === "restored" ? " ← restore" : ""}
+                    {tl(mixRevisionKindLabel(row.kind))}
+                    {tl(row.kind === "restored" ? t("restore") : "")}
                   </span>
                   <span className="font-mono text-[10px] text-[var(--brd-ink)]/60">
                     v{row.sourceDocumentVersion}
-                    {tip ? " · bieżący tip" : ""}
+                    {tl(tip ? t("biezacyTip") : "")}
                   </span>
                 </div>
                 <p className="mt-0.5 text-[11px] text-[var(--brd-ink)]/75">
-                  {mixRevisionAuthorLabel(row.author)}
-                  {when ? ` · ${when}` : ""}
+                  {tl(mixRevisionAuthorLabel(row.author))}
+                  {tl(when ? ` · ${when}` : "")}
                 </p>
                 {row.description ? (
                   <p className="mt-0.5 line-clamp-2 text-[11px]">
-                    {row.description}
+                    {tl(row.description)}
                   </p>
                 ) : null}
                 {row.restoredFromRevisionId ? (
                   <p className="mt-0.5 font-mono text-[10px] text-[var(--brd-ink)]/55">
-                    ze źródła {row.restoredFromRevisionId.slice(0, 8)}…
+                    {t("zeZrodla")}{" "}{tl(row.restoredFromRevisionId.slice(0, 8))}…
                   </p>
                 ) : null}
               </button>
@@ -827,7 +828,7 @@ function ListPanel(props: {
                   className="min-h-9 text-[10px]"
                   onClick={() => props.onMarkCompareFrom(row.id)}
                 >
-                  Porównaj od
+                  {t("porownajOd")}
                 </Button>
                 <Button
                   type="button"
@@ -836,7 +837,7 @@ function ListPanel(props: {
                   className="min-h-9 text-[10px]"
                   onClick={() => props.onMarkCompareTo(row.id)}
                 >
-                  Porównaj do
+                  {t("porownajDo")}
                 </Button>
               </div>
             </li>
@@ -853,7 +854,7 @@ function ListPanel(props: {
           data-testid="studio-mix-history-load-more"
           onClick={props.onLoadMore}
         >
-          {props.loading ? "Ładowanie…" : "Wczytaj starsze"}
+          {tl(props.loading ? t("ladowanie") : t("wczytajStarsze"))}
         </Button>
       ) : null}
     </div>
@@ -870,24 +871,26 @@ function DetailPanel(props: {
   onRestore: () => void;
   compareCandidates: MixRevisionListItem[];
 }) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioMixRevisionHistoryControl");
   if (props.loading) {
     return (
       <p className="text-xs" role="status" data-testid="studio-mix-history-detail-loading">
-        Ładowanie szczegółów…
+        {t("ladowanieSzczegolow")}
       </p>
     );
   }
   if (props.error) {
     return (
       <div role="alert" data-testid="studio-mix-history-detail-error">
-        <p className="text-xs text-[var(--brd-warn)]">{props.error.message}</p>
+        <p className="text-xs text-[var(--brd-warn)]">{tl(props.error.message)}</p>
         <Button
           type="button"
           size="sm"
           className="mt-2 min-h-11"
           onClick={props.onRetry}
         >
-          Ponów
+          {t("ponow")}
         </Button>
       </div>
     );
@@ -895,7 +898,7 @@ function DetailPanel(props: {
   if (!props.revision) {
     return (
       <p className="text-xs text-[var(--brd-ink)]/70" role="status">
-        Wybierz rewizję z listy, aby zobaczyć szczegóły.
+        {t("wybierzRewizjeZListy")}
       </p>
     );
   }
@@ -905,49 +908,49 @@ function DetailPanel(props: {
     <div className="space-y-3" data-testid="studio-mix-history-detail">
       <dl className="grid gap-1 text-xs">
         <div>
-          <dt className="text-[var(--brd-ink)]/55">Rodzaj</dt>
-          <dd className="font-medium">{mixRevisionKindLabel(r.kind)}</dd>
+          <dt className="text-[var(--brd-ink)]/55">{t("rodzaj")}</dt>
+          <dd className="font-medium">{tl(mixRevisionKindLabel(r.kind))}</dd>
         </div>
         <div>
-          <dt className="text-[var(--brd-ink)]/55">Autor</dt>
-          <dd>{mixRevisionAuthorLabel(r.author)}</dd>
+          <dt className="text-[var(--brd-ink)]/55">{t("autor")}</dt>
+          <dd>{tl(mixRevisionAuthorLabel(r.author))}</dd>
         </div>
         <div>
-          <dt className="text-[var(--brd-ink)]/55">Czas</dt>
-          <dd>{formatMixRevisionWhen(r.createdAt) || "—"}</dd>
+          <dt className="text-[var(--brd-ink)]/55">{t("czas")}</dt>
+          <dd>{tl(formatMixRevisionWhen(r.createdAt) || "—")}</dd>
         </div>
         <div>
-          <dt className="text-[var(--brd-ink)]/55">Wersja dokumentu</dt>
+          <dt className="text-[var(--brd-ink)]/55">{t("wersjaDokumentu")}</dt>
           <dd className="font-mono">
             v{r.sourceDocumentVersion}
-            {tip ? " (bieżący tip)" : ""}
+            {tl(tip ? t("biezacyTip2") : "")}
           </dd>
         </div>
         {r.description ? (
           <div>
-            <dt className="text-[var(--brd-ink)]/55">Opis</dt>
-            <dd>{r.description}</dd>
+            <dt className="text-[var(--brd-ink)]/55">{t("opis")}</dt>
+            <dd>{tl(r.description)}</dd>
           </div>
         ) : null}
         {r.restoredFromRevisionId ? (
           <div>
-            <dt className="text-[var(--brd-ink)]/55">Źródło restore</dt>
+            <dt className="text-[var(--brd-ink)]/55">{t("zrodloRestore")}</dt>
             <dd className="break-all font-mono text-[11px]">
-              {r.restoredFromRevisionId}
+              {tl(r.restoredFromRevisionId)}
             </dd>
           </div>
         ) : null}
         <div>
-          <dt className="text-[var(--brd-ink)]/55">Snapshot</dt>
+          <dt className="text-[var(--brd-ink)]/55">{t("snapshot")}</dt>
           <dd>
-            {r.snapshot ? "Dostępny (używany do porównania i restore)" : "Brak"}
+            {tl(r.snapshot ? t("dostepnyUzywanyDoPorownania") : "Brak")}
           </dd>
         </div>
       </dl>
 
       {props.compareCandidates.length > 0 ? (
         <label className="block space-y-1 text-xs">
-          <span className="text-[var(--brd-ink)]/70">Porównaj z</span>
+          <span className="text-[var(--brd-ink)]/70">{t("porownajZ")}</span>
           <select
             className="min-h-11 w-full rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2"
             data-testid="studio-mix-history-detail-compare-select"
@@ -957,12 +960,12 @@ function DetailPanel(props: {
             }}
           >
             <option value="" disabled>
-              Wybierz rewizję…
+              {t("wybierzRewizje")}
             </option>
             {props.compareCandidates.map((c) => (
               <option key={c.id} value={c.id}>
-                {mixRevisionKindLabel(c.kind)} · v{c.sourceDocumentVersion} ·{" "}
-                {formatMixRevisionWhen(c.createdAt) || c.id.slice(0, 8)}
+                {tl(mixRevisionKindLabel(c.kind))} · v{c.sourceDocumentVersion} ·{" "}
+                {tl(formatMixRevisionWhen(c.createdAt) || c.id.slice(0, 8))}
               </option>
             ))}
           </select>
@@ -977,7 +980,7 @@ function DetailPanel(props: {
           data-testid="studio-mix-history-detail-restore"
           onClick={props.onRestore}
         >
-          Przywróć tę rewizję…
+          {t("przywrocTeRewizje")}
         </Button>
       </div>
     </div>
@@ -995,6 +998,8 @@ function ComparePanel(props: {
   onToChange: (id: string | null) => void;
   onRun: () => void;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("studio.studioMixRevisionHistoryControl");
   const groups = props.diff
     ? groupMixRevisionDiffChanges(props.diff.changes)
     : [];
@@ -1003,7 +1008,7 @@ function ComparePanel(props: {
     <div className="space-y-3" data-testid="studio-mix-history-compare">
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="block space-y-1 text-xs">
-          <span>Rewizja A (wcześniejsza)</span>
+          <span>{t("rewizjaAWczesniejsza")}</span>
           <select
             className="min-h-11 w-full rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2"
             data-testid="studio-mix-history-compare-from"
@@ -1012,26 +1017,26 @@ function ComparePanel(props: {
               props.onFromChange(e.target.value || null)
             }
           >
-            <option value="">Wybierz…</option>
+            <option value="">{t("wybierz")}</option>
             {props.revisions.map((r) => (
               <option key={r.id} value={r.id}>
-                v{r.sourceDocumentVersion} · {mixRevisionKindLabel(r.kind)}
+                v{r.sourceDocumentVersion} · {tl(mixRevisionKindLabel(r.kind))}
               </option>
             ))}
           </select>
         </label>
         <label className="block space-y-1 text-xs">
-          <span>Rewizja B (późniejsza)</span>
+          <span>{t("rewizjaBPozniejsza")}</span>
           <select
             className="min-h-11 w-full rounded border border-[var(--brd-line)] bg-[var(--brd-paper)] px-2"
             data-testid="studio-mix-history-compare-to"
             value={props.toId ?? ""}
             onChange={(e) => props.onToChange(e.target.value || null)}
           >
-            <option value="">Wybierz…</option>
+            <option value="">{t("wybierz")}</option>
             {props.revisions.map((r) => (
               <option key={r.id} value={r.id}>
-                v{r.sourceDocumentVersion} · {mixRevisionKindLabel(r.kind)}
+                v{r.sourceDocumentVersion} · {tl(mixRevisionKindLabel(r.kind))}
               </option>
             ))}
           </select>
@@ -1045,7 +1050,7 @@ function ComparePanel(props: {
         data-testid="studio-mix-history-compare-run"
         onClick={props.onRun}
       >
-        {props.loading ? "Porównywanie…" : "Porównaj"}
+        {tl(props.loading ? t("porownywanie") : t("porownaj"))}
       </Button>
 
       {props.error ? (
@@ -1054,7 +1059,7 @@ function ComparePanel(props: {
           role="alert"
           data-testid="studio-mix-history-compare-error"
         >
-          {props.error.message}
+          {tl(props.error.message)}
         </p>
       ) : null}
 
@@ -1069,13 +1074,12 @@ function ComparePanel(props: {
               role="status"
               data-testid="studio-mix-history-compare-empty"
             >
-              Brak zmian w dozwolonych parametrach miksu między wybranymi
-              rewizjami.
+              {t("brakZmianWDozwolonych")}
             </p>
           ) : (
             groups.map((group) => (
               <section key={group.group} className="mb-3">
-                <h3 className="mb-1 text-xs font-semibold">{group.label}</h3>
+                <h3 className="mb-1 text-xs font-semibold">{tl(group.label)}</h3>
                 <ul className="space-y-2">
                   {group.changes.map((change) => (
                     <li
@@ -1083,13 +1087,13 @@ function ComparePanel(props: {
                       className="rounded border border-[var(--brd-line)] px-2 py-1.5 text-[11px]"
                     >
                       <p className="font-medium">
-                        {mixRevisionDiffPathLabel(change.path)}
+                        {tl(mixRevisionDiffPathLabel(change.path))}
                       </p>
                       <p className="mt-0.5 font-mono text-[var(--brd-ink)]/80">
-                        <span className="text-[var(--brd-ink)]/50">przed </span>
-                        {formatMixRevisionDiffValue(change.before)}
-                        <span className="text-[var(--brd-ink)]/50"> → po </span>
-                        {formatMixRevisionDiffValue(change.after)}
+                        <span className="text-[var(--brd-ink)]/50">{t("przed")}{" "}</span>
+                        {tl(formatMixRevisionDiffValue(change.before))}
+                        <span className="text-[var(--brd-ink)]/50"> {t("po")}{" "}</span>
+                        {tl(formatMixRevisionDiffValue(change.after))}
                       </p>
                     </li>
                   ))}

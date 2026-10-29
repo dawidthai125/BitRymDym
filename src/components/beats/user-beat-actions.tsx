@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -20,6 +23,7 @@ export function UserBeatActions({
   status: string;
   activeMasterReady: boolean;
 }) {
+  const t = useTranslations("beats.userBeatActions");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -29,7 +33,7 @@ export function UserBeatActions({
     startTransition(async () => {
       const result = await action(beatId);
       if (!result.success) {
-        window.alert(result.error ?? "Akcja nie powiodła się.");
+        window.alert(result.error ?? t("akcjaNiePowiodlaSie"));
         return;
       }
       router.refresh();
@@ -46,7 +50,7 @@ export function UserBeatActions({
           disabled={pending}
           onClick={() => router.push(`/beats/upload?beatId=${beatId}`)}
         >
-          Edytuj
+          {t("edytuj")}
         </Button>
       )}
       {status === "DRAFT" && activeMasterReady ? (
@@ -56,7 +60,7 @@ export function UserBeatActions({
           disabled={pending}
           onClick={() => router.push(`/beats/upload?beatId=${beatId}`)}
         >
-          Oświadczenie i wysyłka
+          {t("oswiadczenieIWysylka")}
         </Button>
       ) : null}
       {status === "REJECTED" ? (
@@ -73,7 +77,7 @@ export function UserBeatActions({
             })
           }
         >
-          Popraw i wyślij ponownie
+          {t("poprawIWyslijPonownie")}
         </Button>
       ) : null}
       {status === "PUBLISHED" ? (
@@ -81,7 +85,7 @@ export function UserBeatActions({
           href={`/beat/${beatId}`}
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
         >
-          Zobacz bit
+          {t("zobaczBit")}
         </Link>
       ) : null}
       {(status === "DRAFT" ||
@@ -94,7 +98,7 @@ export function UserBeatActions({
           disabled={pending}
           onClick={() => run(archiveOwnUserBeatAction)}
         >
-          Archiwizuj
+          {t("archiwizuj")}
         </Button>
       )}
     </div>

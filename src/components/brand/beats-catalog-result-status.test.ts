@@ -21,7 +21,7 @@ describe("BeatsCatalogClient result status — source contract", () => {
   it("hides visible meta count from AT (aria-hidden on count paragraph)", () => {
     expect(src).toContain("formatBeatCountLabel");
     const metaBlock = src.match(
-      /aria-hidden[\s\S]*?formatBeatCountLabel\(filtered\.length\)/,
+      /aria-hidden[\s\S]*?\{count, plural, one \{# bit\}/,
     );
     expect(metaBlock?.[0]).toBeTruthy();
   });
@@ -50,6 +50,8 @@ describe("BeatsCatalogClient result status — source contract", () => {
   });
 
   it("uses formatBeatCountLabel for live status count label", () => {
-    expect(src).toMatch(/formatBeatCountLabel\(filteredCount\)/);
+    // UI passes the locale-aware plural (messages beats.count.count);
+    // the default copy keeps formatBeatCountLabel.
+    expect(src).toMatch(/count: formatBeatCountLabel/);
   });
 });

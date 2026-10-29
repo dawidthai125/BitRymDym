@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import {
   createContext,
   useCallback,
@@ -72,6 +75,7 @@ export function usePlayerOptional(): PlayerContextValue | null {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations("common.playerProvider");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const expiresAtRef = useRef<string | null>(null);
   /** Session cache key for the current blob:/bytes (WAVE 1-A). */
@@ -112,7 +116,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     const onErr = () => {
       setPhase("error");
-      setError("Nie udało się odtworzyć audio.");
+      setError(t("nieUdaloSieOdtworzyc"));
     };
 
     audio.addEventListener("timeupdate", onTime);
@@ -145,7 +149,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       !expiresAtRef.current ||
       new Date(expiresAtRef.current).getTime() <= Date.now() + 5000;
     const audio = audioRef.current;
-    if (!audio) throw new Error("Player niedostępny.");
+    if (!audio) throw new Error(t("playerNiedostepny"));
 
     const dedup = isAudioSessionDedupEnabled();
 
@@ -164,7 +168,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
     if (!result.success || !result.url) {
       throw new Error(
-        toSafePlaybackErrorMessage(result.error || "Brak dostępu do odsłuchu."),
+        toSafePlaybackErrorMessage(result.error || t("brakDostepuDoOdsluchu")),
       );
     }
     expiresAtRef.current = result.expiresAt ?? null;
@@ -248,7 +252,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPhase("error");
         setError(
           toSafePlaybackErrorMessage(
-            e instanceof Error ? e.message : "Nie udało się odtworzyć audio.",
+            e instanceof Error ? e.message : t("nieUdaloSieOdtworzyc2"),
           ),
         );
       }
@@ -277,7 +281,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           setPhase("error");
           setError(
             toSafePlaybackErrorMessage(
-              e instanceof Error ? e.message : "Nie udało się odtworzyć audio.",
+              e instanceof Error ? e.message : t("nieUdaloSieOdtworzyc2"),
             ),
           );
         }

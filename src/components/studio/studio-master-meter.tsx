@@ -1,5 +1,8 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
+
 import { StudioPeakMeter } from "@/components/studio/studio-peak-meter";
 import type { StudioMeterSnapshot } from "@/lib/studio/studio-meter";
 
@@ -12,11 +15,12 @@ type StudioMasterMeterProps = {
  * Receives runtime snapshots; never touches AnalyserNode.
  */
 export function StudioMasterMeter({ snapshot }: StudioMasterMeterProps) {
+  const t = useTranslations("studio.studioMasterMeter");
   return (
     <StudioPeakMeter
       snapshot={snapshot}
-      title="Miernik Master"
-      ariaLabel="Poziom Master (sample peak)"
+      title={t("miernikMaster")}
+      ariaLabel={t("poziomMasterSamplePeak")}
       testIdPrefix="studio-master-meter"
     />
   );

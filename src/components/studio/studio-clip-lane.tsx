@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 /**
  * Phase 4 — Clip interaction layer: MOVE / TRIM L/R / seek·split targeting.
  * Preview via DOM; one CAS commit on pointer up.
@@ -78,6 +80,7 @@ export function StudioClipLaneItem({
   onSeek,
   onCommitGeometry,
 }: StudioClipLaneItemProps) {
+  const t = useTranslations("studio.studioClipLane");
   const density = clampPxPerMs(pxPerMs);
   const editEnabled = mode === "edit" && !interactionLocked;
   const seekEnabled = mode === "seek" && !interactionLocked;
@@ -238,8 +241,8 @@ export function StudioClipLaneItem({
           type="button"
           data-studio-trim-left={clip.id}
           className="absolute inset-y-0 left-0 z-[3] w-3 min-w-3 -translate-x-1/2 cursor-ew-resize touch-none max-sm:min-h-11 max-sm:w-11 max-sm:min-w-11 sm:w-4"
-          aria-label="Przytnij lewą krawędź"
-          title="Przytnij lewą krawędź"
+          aria-label={t("przytnijLewaKrawedz")}
+          title={t("przytnijLewaKrawedz")}
           onPointerDown={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -267,8 +270,8 @@ export function StudioClipLaneItem({
           type="button"
           data-studio-clip-drag={clip.id}
           className="relative z-[2] h-full w-2 min-w-2 shrink-0 cursor-grab touch-none border-r border-[var(--brd-line)]/40 bg-[var(--brd-ink)]/10 max-sm:min-h-11 max-sm:w-11 max-sm:min-w-11"
-          aria-label="Przeciągnij klip"
-          title="Przeciągnij klip"
+          aria-label={t("przeciagnijKlip")}
+          title={t("przeciagnijKlip")}
           onPointerDown={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -313,8 +316,8 @@ export function StudioClipLaneItem({
           type="button"
           data-studio-trim-right={clip.id}
           className="absolute inset-y-0 right-0 z-[3] w-3 min-w-3 translate-x-1/2 cursor-ew-resize touch-none max-sm:min-h-11 max-sm:w-11 max-sm:min-w-11 sm:w-4"
-          aria-label="Przytnij prawą krawędź"
-          title="Przytnij prawą krawędź"
+          aria-label={t("przytnijPrawaKrawedz")}
+          title={t("przytnijPrawaKrawedz")}
           onPointerDown={(e) => {
             e.stopPropagation();
             e.preventDefault();

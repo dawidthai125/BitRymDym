@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 import { artworkVariantToVisual } from "@/lib/ui/demo-visuals";
@@ -28,12 +29,13 @@ export function BeatArtwork({
   className,
   size = "sm",
 }: BeatArtworkProps) {
+  const t = useTranslations("common.beatArtwork");
   const visual = artworkVariantToVisual(variant);
 
   return (
     <div
       role="img"
-      aria-label={`Okładka: ${title}`}
+      aria-label={t("okladka", { v0: title })}
       className={cn(
         "relative shrink-0 overflow-hidden border border-[var(--brd-line)] bg-[var(--brd-graphite)]",
         sizeClass[size],

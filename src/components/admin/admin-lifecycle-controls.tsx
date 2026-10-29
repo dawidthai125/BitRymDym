@@ -1,5 +1,10 @@
 "use client";
 
+import { useLibText } from "@/i18n/use-lib-text";
+
+
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -22,6 +27,8 @@ export function AdminLifecycleControls({
   status: BeatStatus;
   activeMasterReady: boolean;
 }) {
+  const tl = useLibText();
+  const t = useTranslations("admin.adminLifecycleControls");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +47,13 @@ export function AdminLifecycleControls({
       try {
         const result = await action();
         if (!result.success) {
-          setError(result.error ?? "Operacja nie powiodła się.");
+          setError(result.error ?? t("operacjaNiePowiodlaSie"));
           return;
         }
         setSuccess(okMessage);
         router.refresh();
       } catch {
-        setError("Błąd sieci / serwera.");
+        setError(t("bladSieciSerwera"));
       }
     });
   }
@@ -55,24 +62,24 @@ export function AdminLifecycleControls({
     <div className="flex max-w-xl flex-col gap-3">
       <div className="space-y-1">
         <p className="text-sm">
-          Status:{" "}
-          <span className="font-medium">{labelBeatStatus(status)}</span>
+          {t("status")}{" "}
+          <span className="font-medium">{tl(labelBeatStatus(status))}</span>
         </p>
         {!gate.enabled && gate.blockedReason ? (
           <p className="text-sm text-muted-foreground" role="status">
-            {gate.blockedReason}
+            {tl(gate.blockedReason)}
           </p>
         ) : null}
       </div>
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {tl(error)}
         </p>
       ) : null}
       {success ? (
         <p className="text-sm text-foreground" role="status">
-          {success}
+          {tl(success)}
         </p>
       ) : null}
 
@@ -85,8 +92,7 @@ export function AdminLifecycleControls({
             onChange={(event) => setLicenseAcknowledged(event.target.checked)}
           />
           <span>
-            Potwierdzam, że ten Master ma udokumentowaną licencję na publikację
-            w katalogu. Zaznaczenie nie zastępuje wpisu licencji w bazie.
+            {t("potwierdzamZeTenMaster")}
           </span>
         </label>
       ) : null}
@@ -96,27 +102,27 @@ export function AdminLifecycleControls({
           <Button
             type="button"
             disabled={pending || !gate.enabled}
-            title={gate.blockedReason ?? undefined}
+            title={tl(gate.blockedReason ?? undefined)}
             onClick={() => {
               // UI gate first; server hard gate in transitionBeatStatus is authoritative.
               const latest = getAdminPublishGate({ status, activeMasterReady });
               if (!latest.enabled) {
-                setError(latest.blockedReason ?? "Publikacja zablokowana.");
+                setError(latest.blockedReason ?? t("publikacjaZablokowana"));
                 return;
               }
               if (!licenseAcknowledged) {
                 setError(
-                  "Potwierdź licencję dla aktualnego Mastera. Sama referencja nie wystarcza.",
+                  t("potwierdzLicencjeDlaAktualnego"),
                 );
                 return;
               }
               run(
                 () => publishBeatAction(beatId, { licenseAcknowledged: true }),
-                "Opublikowano.",
+                t("opublikowano"),
               );
             }}
           >
-            {pending ? "Publikowanie…" : "Publikuj"}
+            {tl(pending ? t("publikowanie") : "Publikuj")}
           </Button>
         ) : null}
 
@@ -126,10 +132,10 @@ export function AdminLifecycleControls({
             variant="outline"
             disabled={pending}
             onClick={() =>
-              run(() => archiveBeatAction(beatId), "Zarchiwizowano.")
+              run(() => archiveBeatAction(beatId), t("zarchiwizowano"))
             }
           >
-            Archiwizuj
+            {t("archiwizuj")}
           </Button>
         ) : null}
 
@@ -141,11 +147,11 @@ export function AdminLifecycleControls({
             onClick={() =>
               run(
                 () => restoreArchivedBeatAction(beatId),
-                "Przywrócono do wersji roboczej.",
+                t("przywroconoDoWersjiRoboczej"),
               )
             }
           >
-            Przywróć do wersji roboczej
+            {t("przywrocDoWersjiRoboczej")}
           </Button>
         ) : null}
       </div>

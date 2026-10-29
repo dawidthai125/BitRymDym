@@ -1,3 +1,4 @@
+import { useLibText } from "@/i18n/use-lib-text";
 import { cn } from "@/lib/utils";
 
 export function MetaLine({
@@ -7,11 +8,12 @@ export function MetaLine({
   items: Array<string | null | undefined | false>;
   className?: string;
 }) {
+  const tl = useLibText();
   const visible = items.filter(Boolean) as string[];
   if (visible.length === 0) return null;
   return (
     <p className={cn("brd-meta text-xs text-[var(--brd-mute)]", className)}>
-      {visible.join(" · ")}
+      {tl(visible.join(" · "))}
     </p>
   );
 }
