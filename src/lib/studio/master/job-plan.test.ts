@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { planStudioMasterJob, studioMasterJobPrefix } from "./job-plan";
+import { outputExt, planStudioMasterJob, studioMasterJobPrefix } from "./job-plan";
 import { decideStudioMasterWorkerConfig } from "./worker-env";
 
 const U = "11111111-2222-4333-8444-555555555555";
@@ -16,6 +16,12 @@ describe("studio master job plan", () => {
     expect(raw).toEqual([{ op: "ffmpeg", args: ["-c:a", "pcm_s24le", "-ar", "48000"] }]);
     expect(planStudioMasterJob({ kind: "project_zip", target: null, settings: {}, output_format: "ZIP" })).toEqual([{ op: "python_zip" }]);
     expect(() => planStudioMasterJob({ kind: "project_zip", target: null, settings: {}, output_format: "MP3_128" })).toThrow();
+  });
+  it("youtube_video is MP4 only, MP4 only for youtube_video", () => {
+    expect(planStudioMasterJob({ kind: "youtube_video", target: null, settings: {}, output_format: "MP4" })).toEqual([{ op: "youtube_video" }]);
+    expect(() => planStudioMasterJob({ kind: "youtube_video", target: null, settings: {}, output_format: "MP3_320" })).toThrow("bad_format");
+    expect(() => planStudioMasterJob({ kind: "transcode", target: null, settings: {}, output_format: "MP4" })).toThrow("bad_format");
+    expect(outputExt("MP4")).toBe("mp4");
   });
   it("prefix only from uuids", () => {
     expect(studioMasterJobPrefix(U, U, U)).toBe(`studio-master/${U}/${U}/${U}`);

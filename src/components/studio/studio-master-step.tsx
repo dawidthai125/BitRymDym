@@ -8,6 +8,7 @@ import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/stud
 import { Button } from "@/components/ui/button";
 import { StudioMasterReport } from "@/components/studio/studio-change-report";
 import { StudioListenLinks } from "@/components/studio/studio-listen-links";
+import { StudioYoutubeVideo } from "@/components/studio/studio-youtube-video";
 import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { LockedAction } from "@/components/plans/locked-action";
@@ -593,6 +594,7 @@ export function StudioMasterStep({
                 {dl?.status === "limit" || (limitReached && server.tier) ? <p role="status" className="text-sm">{t("limitWyczerpany")}</p> : null}
               </section>
             ) : null}
+            {approved && server.tier ? <StudioYoutubeVideo projectId={projectId} tier={server.tier} approved /> : null}
           </div>
         </>
       ) : null}

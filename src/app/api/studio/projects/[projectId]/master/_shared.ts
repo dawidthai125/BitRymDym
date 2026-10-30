@@ -29,4 +29,6 @@ export const DENY_STATUS: Record<string, number> = {
   // Reference mastering: plan without it / Silver without the add-on / upload checks.
   reference_locked: 403, addon_missing: 402, reference_invalid: 409, upload_incomplete: 409, not_available: 503,
   bad_format: 415, too_big: 413, too_long: 422, too_short: 422,
+  // Gold YouTube MP4.
+  tier_video: 403, image_missing: 409, daily_limit: 429, image_rejected: 422,
 };

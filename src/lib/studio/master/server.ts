@@ -196,7 +196,8 @@ export async function prepareStudioDeliver(p: { ownerId: string; projectId: stri
 }
 
 /** Approved master — only while the project is unchanged since (mix edits ⇒ master again). */
-async function approvedMaster(admin: Admin, ownerId: string, projectId: string) {
+/** Latest approved master of the project, only while it still matches the current document version. */
+export async function approvedMaster(admin: Admin, ownerId: string, projectId: string) {
   const { data: proj } = await admin.from("studio_projects").select("document_version").eq("id", projectId).eq("owner_id", ownerId).maybeSingle();
   const { data, error } = await admin.from("studio_master_jobs").select("id, result_object_key, source_document_version").eq("project_id", projectId).eq("owner_id", ownerId)
     .eq("kind", "master").not("approved_at", "is", null).order("approved_at", { ascending: false }).limit(1).maybeSingle();
@@ -236,6 +237,7 @@ function deliverLabel(row: Record<string, unknown>): string {
   if (row.kind === "project_zip") return "projekt";
   if (row.kind === "raw_sum") return "goly";
   if (row.kind === "master") return "master";
+  if (row.kind === "youtube_video") return "youtube";
   return row.source_artifact_id ? "master" : "mix";
 }
 

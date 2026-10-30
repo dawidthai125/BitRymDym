@@ -25,17 +25,30 @@ const FORMAT_TO_MIME: Record<string, string> = {
   webp: "image/webp",
 };
 
+/** Error copy for {@link assertCoverLikeImage} (beat cover vs. Studio video graphic). */
+export type CoverLikeCopy = { empty: string; tooBig: string; tooSmall: string; tooLarge: string; failed: string };
+
+export const BEAT_COVER_COPY: CoverLikeCopy = {
+  empty: "Plik okładki jest pusty.",
+  tooBig: "Okładka może mieć maksymalnie 4 MB.",
+  tooSmall: "Okładka musi mieć co najmniej 300×300 px.",
+  tooLarge: "Okładka jest zbyt duża (maks. 8000 px).",
+  failed: "Nie udało się przetworzyć okładki.",
+};
+
 /**
- * Validate by decoded content (not the client MIME), auto-orient, centre-crop
- * to a square and re-encode. sharp drops all metadata (EXIF / GPS / ICC
- * comments) unless `withMetadata` is called — it never is here.
+ * Shared input checks (beat covers + Studio YouTube video graphic): decoded content
+ * (not the client MIME) is JPG / PNG / WebP, single frame, ≤ 4 MB, 300…8000 px edges.
  */
-export async function processCoverImage(input: Uint8Array): Promise<ProcessedCover> {
+export async function assertCoverLikeImage(
+  input: Uint8Array,
+  copy: CoverLikeCopy = BEAT_COVER_COPY,
+): Promise<{ width: number; height: number }> {
   if (input.byteLength === 0) {
-    throw new BeatRequestError("Plik okładki jest pusty.");
+    throw new BeatRequestError(copy.empty);
   }
   if (input.byteLength > BEAT_COVER_MAX_INPUT_BYTES) {
-    throw new BeatRequestError("Okładka może mieć maksymalnie 4 MB.");
+    throw new BeatRequestError(copy.tooBig);
   }
   let meta: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
   try {
@@ -53,11 +66,21 @@ export async function processCoverImage(input: Uint8Array): Promise<ProcessedCov
   const w = meta.width ?? 0;
   const h = meta.height ?? 0;
   if (Math.min(w, h) < BEAT_COVER_MIN_EDGE_PX) {
-    throw new BeatRequestError("Okładka musi mieć co najmniej 300×300 px.");
+    throw new BeatRequestError(copy.tooSmall);
   }
   if (Math.max(w, h) > BEAT_COVER_MAX_EDGE_PX) {
-    throw new BeatRequestError("Okładka jest zbyt duża (maks. 8000 px).");
+    throw new BeatRequestError(copy.tooLarge);
   }
+  return { width: w, height: h };
+}
+
+/**
+ * Validate by decoded content (not the client MIME), auto-orient, centre-crop
+ * to a square and re-encode. sharp drops all metadata (EXIF / GPS / ICC
+ * comments) unless `withMetadata` is called — it never is here.
+ */
+export async function processCoverImage(input: Uint8Array): Promise<ProcessedCover> {
+  await assertCoverLikeImage(input);
 
   const base = () =>
     sharp(input, { limitInputPixels: 64_000_000 }).rotate().flatten({

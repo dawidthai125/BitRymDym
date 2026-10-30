@@ -23,6 +23,8 @@ const WEIGHTS: Record<string, Plan> = {
   transcode_master: { download: 25, encode: 60, upload: 15 },
   raw_sum: { decode: 20, render: 35, encode: 35, upload: 10 },
   project_zip: { decode: 15, render: 35, encode: 40, upload: 10 },
+  // Gold YouTube MP4: fetch master + image, build the frame, H.264/AAC encode dominates.
+  youtube_video: { download: 12, render: 4, encode: 74, upload: 10 },
 };
 
 function planKey(kind: StudioMasterJobKind, fromApprovedMaster: boolean, withReference: boolean): string {
