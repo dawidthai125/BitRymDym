@@ -3,6 +3,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import {
+  AdminUsersAddonCell,
+  AdminUsersAddonDialog,
+} from "@/components/admin/admin-users-addon-dialog";
 import { AdminUsersAuditFilters } from "@/components/admin/admin-users-audit-filters";
 import { AdminUsersDeleteDialog } from "@/components/admin/admin-users-delete-dialog";
 import { AdminUsersFilters } from "@/components/admin/admin-users-filters";
@@ -174,8 +178,8 @@ export default async function AdminUsersPage({
                 ? t("wynikiOgraniczoneZawezWyszukiwanie")
                 : "")}
             </p>
-            <div className="overflow-x-auto border border-[var(--brd-line)]">
-              <table className="w-full min-w-[56rem] text-left text-sm">
+            <div className="relative overflow-x-auto border border-[var(--brd-line)]">
+              <table className="w-full min-w-[64rem] text-left text-sm">
                 <thead className="bg-[var(--brd-paper-deep)]/40 text-[var(--brd-mute)]">
                   <tr>
                     <th className="px-3 py-3 font-medium">{t("ksywka")}</th>
@@ -184,6 +188,7 @@ export default async function AdminUsersPage({
                     <th className="px-3 py-3 font-medium">{t("ranga")}</th>
                     <th className="px-3 py-3 font-medium">{t("premium")}</th>
                     <th className="px-3 py-3 font-medium">{t("wygasa")}</th>
+                    <th className="px-3 py-3 font-medium">{t("dodatki")}</th>
                     <th className="px-3 py-3 font-medium">{t("rola")}</th>
                     <th className="px-3 py-3 font-medium">
                       <span className="sr-only">{t("akcje")}</span>
@@ -211,6 +216,12 @@ export default async function AdminUsersPage({
                           ? "—"
                           : formatExpiresAt(row.premiumExpiresAt, tag, tShared("noExpiry")))}
                       </td>
+                      <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
+                        <AdminUsersAddonCell
+                          status={row.referenceAddon}
+                          premiumTier={row.premiumTier}
+                        />
+                      </td>
                       <td className="px-3 py-3">{tl(labelSystemRole(row.role))}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col items-start gap-2">
@@ -223,6 +234,12 @@ export default async function AdminUsersPage({
                             premiumTier={row.premiumTier}
                             premiumExpiresAt={row.premiumExpiresAt}
                             isSelf={viewer?.userId === row.id}
+                          />
+                          <AdminUsersAddonDialog
+                            userId={row.id}
+                            displayName={row.displayName}
+                            premiumTier={row.premiumTier}
+                            status={row.referenceAddon}
                           />
                           <AdminUsersDeleteDialog
                             userId={row.id}

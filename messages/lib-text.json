@@ -2925,5 +2925,50 @@
   "src": "Komunikat może mieć najwyżej {0} znaków.",
   "en": "The message can be at most {0} characters.",
   "tpl": true
+ },
+ {
+  "src": "Dodanie dodatku do planu",
+  "en": "Plan add-on grant"
+ },
+ {
+  "src": "Odebranie dodatku do planu",
+  "en": "Plan add-on revoke"
+ },
+ {
+  "src": "Mastering pod referencję",
+  "en": "Reference mastering"
+ },
+ {
+  "src": "Nieznany dodatek.",
+  "en": "Unknown add-on."
+ },
+ {
+  "src": "Data końca dodatku musi być w przyszłości.",
+  "en": "The add-on end date must be in the future."
+ },
+ {
+  "src": "Nieprawidłowa data końca dodatku.",
+  "en": "Invalid add-on end date."
+ },
+ {
+  "src": "Notatka może mieć maksymalnie 200 znaków.",
+  "en": "The note can be at most 200 characters."
+ },
+ {
+  "src": "Ten użytkownik nie ma aktywnego dodatku.",
+  "en": "This user has no active add-on."
+ },
+ {
+  "src": "Brak dodatku",
+  "en": "No add-on"
+ },
+ {
+  "src": "Mastering pod referencję · do {0}",
+  "en": "Reference mastering · until {0}",
+  "tpl": true
+ },
+ {
+  "src": "Mastering pod referencję · bezterminowo",
+  "en": "Reference mastering · no expiry"
  }
 ]

@@ -114,6 +114,10 @@ export function labelAdminAuditAction(action: string): string {
       return "Aktualizacja polityki nagrań";
     case "BEAT_METADATA_UPDATE":
       return "Edycja metadanych bitu";
+    case "PLAN_ADDON_GRANT":
+      return "Dodanie dodatku do planu";
+    case "PLAN_ADDON_REVOKE":
+      return "Odebranie dodatku do planu";
     default:
       return "—";
   }

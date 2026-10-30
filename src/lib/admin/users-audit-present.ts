@@ -131,7 +131,25 @@ function mapChangeLabels(
     };
   }
 
+  if (action === "PLAN_ADDON_GRANT" || action === "PLAN_ADDON_REVOKE") {
+    return {
+      oldLabel: formatAddonValue(oldRecord),
+      newLabel: formatAddonValue(newRecord),
+    };
+  }
+
   return { oldLabel: "—", newLabel: "—" };
+}
+
+function addonName(addon: unknown): string {
+  return addon === "reference_mastering" ? "Mastering pod referencję" : "Dodatek";
+}
+
+/** e.g. "Mastering pod referencję · do 30 lis 2026" / "Brak dodatku". */
+function formatAddonValue(record: Record<string, unknown> | null): string {
+  if (!record || record.active !== true) return "Brak dodatku";
+  const until = formatExpiresValue(record.endsAt);
+  return `${addonName(record.addon)} · ${until === "Bezterminowo" ? "bezterminowo" : `do ${until}`}`;
 }
 
 export function actorAuditLabel(input: {

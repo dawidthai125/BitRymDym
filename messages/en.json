@@ -538,7 +538,8 @@
       "kogo": "Whom",
       "operacja": "Operation",
       "zmiana": "Change",
-      "stronyHistoriiZmian": "Change history pages"
+      "stronyHistoriiZmian": "Change history pages",
+      "dodatki": "Add-ons"
     },
     "adminAudioUploadForm": {
       "wybierzPlikAudio": "Choose an audio file.",
@@ -736,6 +737,34 @@
         "genre": "Genre",
         "status": "Status"
       }
+    },
+    "adminUsersAddonDialog": {
+      "dodatki": "Add-ons",
+      "tytul": "Plan add-ons",
+      "referencja": "Reference mastering",
+      "cenaSilver": "Silver add-on · {price} PLN/mo (payments not live yet — you grant it manually)",
+      "statusAktywnyDo": "Active until {date}",
+      "statusAktywnyBezterminowo": "Active, no expiry",
+      "statusWygasl": "Expired {date}",
+      "statusBrak": "None",
+      "wCeniGold": "Included in Gold",
+      "fitIncluded": "Gold already includes reference mastering — the add-on changes nothing while Gold is active.",
+      "fitApplies": "Silver plan: the add-on unlocks reference mastering.",
+      "fitNoEffect": "The add-on only works with the Silver plan. It unlocks nothing on the current plan.",
+      "aktywnyDo": "Active until",
+      "pustePole": "Empty field = no expiry. Date = end of day (Europe/Warsaw).",
+      "notatka": "Note (optional)",
+      "notatkaPlaceholder": "e.g. compensation, test, promo",
+      "przyznaj": "Grant add-on",
+      "zapiszDate": "Save new date",
+      "odbierz": "Revoke add-on",
+      "potwierdzOdebranie": "Revoke for sure? The user loses reference mastering immediately.",
+      "potwierdz": "Yes, revoke",
+      "zapisywanie": "Saving…",
+      "zamknij": "Close",
+      "audyt": "Every change is recorded in the change history below.",
+      "nieUdaloSie": "Could not save the changes.",
+      "statusOd": "Starts {date}"
     }
   },
   "auth": {
