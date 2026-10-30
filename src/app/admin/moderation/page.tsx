@@ -177,7 +177,7 @@ export default async function AdminModerationQueuePage() {
           title: c.title,
           coverUpdatedAt: c.coverUpdatedAt,
           filterNote:
-            provider === "openai"
+            provider === "gemini" || provider === "openai"
               ? `${t("filtrAi")}: ${top ?? "—"} ${score != null ? score.toFixed(2) : ""}`.trim()
               : null,
         };
