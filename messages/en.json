@@ -286,8 +286,8 @@
         "pobieranie": "Downloads up to {q}",
         "bezPobierania": "No downloads (listen only)",
         "referencja": {
-          "addon": "Reference mastering — paid add-on (soon)",
-          "included": "Reference mastering included (soon)"
+          "addon": "Reference mastering — paid add-on (online purchase coming soon)",
+          "included": "Reference mastering included"
         }
       },
       "jakosc": {
@@ -332,7 +332,7 @@
         "free": "Free does not download beats or finished files — listen only; the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
         "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
         "raw": "Raw file of your own recording: {plan} only, up to {n} downloads a day.",
-        "referencja": "Reference mastering is in the works: included in Gold, a paid add-on in Silver."
+        "referencja": "Reference mastering is live: included in Gold, a paid add-on in Silver. Buying the add-on online — coming soon; until then we enable it manually (team@bitrymdym.pl)."
       },
       "wPrzygotowaniu": "In the works",
       "platnosciTytul": "In-app payments",
@@ -2286,6 +2286,7 @@
           "download": "Fetching the approved master — {pct}%.",
           "decode": "Loading your tracks — {pct}%.",
           "render": "Mixing your tracks — {pct}%.",
+          "reference": "Loading your reference — {pct}%.",
           "master": "Mastering — {pct}%. You'll hear it soon.",
           "encode": "Encoding the file — {pct}%.",
           "upload": "Uploading the finished file — {pct}%.",
@@ -2302,12 +2303,75 @@
         "download": "Fetching the master",
         "decode": "Loading tracks",
         "render": "Mixing tracks",
+        "reference": "Loading the reference",
         "master": "Mastering",
         "encode": "Encoding the file",
         "upload": "Uploading the file",
         "done": "Done"
       },
-      "postepAria": "Server progress"
+      "postepAria": "Server progress",
+      "styl": {
+        "tytul": "Master style",
+        "opis": "A ready sound direction on top of your settings — set its strength with the slider.",
+        "brak": "No style",
+        "warm": "Warm",
+        "warmOpis": "more low end, soft top",
+        "bright": "Bright",
+        "brightOpis": "open top, clear vocal",
+        "loud": "Loud",
+        "loudOpis": "denser and louder",
+        "dynamic": "Dynamic",
+        "dynamicOpis": "more air and punch",
+        "intensywnosc": "Intensity"
+      },
+      "referencja": {
+        "tytul": "Reference mastering",
+        "opis": "Upload a track that sounds the way you want. I'll match its tonal balance, loudness and stereo width.",
+        "wPlanie": "In the Gold plan",
+        "dodatekAktywny": "Add-on active",
+        "wgraj": "Upload a reference (MP3 or WAV, up to {min} min)",
+        "wgrywa": "Uploading the reference — {pct}%",
+        "usun": "Remove",
+        "intensywnosc": "Match strength",
+        "podglad": "The browser preview doesn't include the reference — you'll hear the match in the server master.",
+        "prywatnosc": "The file is private — only the mastering server listens to it. I delete it right after the master, at the latest after 24 h.",
+        "zablokowana": "Reference mastering is in the Gold plan (an add-on in Silver).",
+        "dodatek": "In Silver it's a paid add-on ({price} PLN / month). In-app purchase — coming soon.",
+        "dodatekKontakt": "Want it now? Write to us:",
+        "mailTemat": "Add-on: reference mastering",
+        "niedostepna": "Reference mastering isn't enabled on the server yet.",
+        "bledy": {
+          "bad_format": "MP3 or WAV only.",
+          "too_big": "The file is too big (max 200 MB).",
+          "too_long": "A reference can be at most 10 minutes long.",
+          "too_short": "The reference is too short (min 1 s).",
+          "bad_request": "I can't read this file.",
+          "odczyt": "I can't read this file.",
+          "upload": "The upload failed. Try again.",
+          "locked": "Your plan doesn't include reference mastering."
+        },
+        "bitek": {
+          "gotowe": "I matched the master to your reference. What I did:",
+          "eqBoost": "I boosted the {band} by {db} dB.",
+          "eqCut": "I cut the {band} by {db} dB.",
+          "eqFlat": "The tonal balance was already close to the reference — I barely touched the EQ.",
+          "louder": "I raised the loudness to {lufs} LUFS, closer to the reference ({refLufs} LUFS).",
+          "quieter": "I kept more dynamics: {lufs} LUFS, closer to the reference ({refLufs} LUFS).",
+          "sameLoudness": "I kept the loudness at the target: {lufs} LUFS (reference: {refLufs} LUFS).",
+          "wider": "I widened the stereo by {pct}% — only above 150 Hz, the bass stays centred.",
+          "narrower": "I narrowed the stereo by {pct}%, like the reference.",
+          "sameWidth": "The stereo width was similar — I left it.",
+          "intensity": "All at {pct}% strength — use the slider to set how closely I follow the reference."
+        },
+        "pasma": {
+          "sub": "sub (20–60 Hz)",
+          "bass": "bass (60–250 Hz)",
+          "lowmid": "low mids (250 Hz–1 kHz)",
+          "mid": "mids (1–4 kHz)",
+          "high": "highs (4–10 kHz)",
+          "air": "air (10–20 kHz)"
+        }
+      }
     },
     "recTools": {
       "opoznienie": "Headphone ↔ mic latency",

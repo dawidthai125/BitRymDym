@@ -5,7 +5,8 @@
  */
 import type { StudioMasterJobKind } from "./job-plan";
 
-export const STUDIO_JOB_STAGES = ["queued", "download", "decode", "render", "master", "encode", "upload", "done"] as const;
+/** "reference" = downloading + decoding the uploaded reference track (reference mastering only). */
+export const STUDIO_JOB_STAGES = ["queued", "download", "decode", "render", "reference", "master", "encode", "upload", "done"] as const;
 export type StudioJobStage = (typeof STUDIO_JOB_STAGES)[number];
 
 export function isStudioJobStage(v: unknown): v is StudioJobStage {
@@ -16,14 +17,17 @@ type Plan = Partial<Record<StudioJobStage, number>>;
 /** Relative weights (only the stages a kind runs). */
 const WEIGHTS: Record<string, Plan> = {
   master: { decode: 8, render: 42, master: 44, upload: 6 },
+  // Reference mastering: + download/decode of the reference (a few seconds on E3).
+  master_reference: { decode: 8, render: 40, reference: 4, master: 42, upload: 6 },
   transcode_mix: { decode: 10, render: 60, encode: 22, upload: 8 },
   transcode_master: { download: 25, encode: 60, upload: 15 },
   raw_sum: { decode: 20, render: 35, encode: 35, upload: 10 },
   project_zip: { decode: 15, render: 35, encode: 40, upload: 10 },
 };
 
-function planKey(kind: StudioMasterJobKind, fromApprovedMaster: boolean): string {
+function planKey(kind: StudioMasterJobKind, fromApprovedMaster: boolean, withReference: boolean): string {
   if (kind === "transcode") return fromApprovedMaster ? "transcode_master" : "transcode_mix";
+  if (kind === "master" && withReference) return "master_reference";
   return kind;
 }
 
@@ -31,10 +35,10 @@ function planKey(kind: StudioMasterJobKind, fromApprovedMaster: boolean): string
  * Overall 0..100 for `stage` at `fraction` (0..1) of it, for this job kind.
  * A mix-cache hit simply jumps over decode/render (the bar moves forward, never back).
  */
-export function studioJobProgress(kind: StudioMasterJobKind, fromApprovedMaster: boolean, stage: StudioJobStage, fraction = 0): number {
+export function studioJobProgress(kind: StudioMasterJobKind, fromApprovedMaster: boolean, stage: StudioJobStage, fraction = 0, withReference = false): number {
   if (stage === "queued") return 0;
   if (stage === "done") return 100;
-  const plan = WEIGHTS[planKey(kind, fromApprovedMaster)] ?? WEIGHTS.master;
+  const plan = WEIGHTS[planKey(kind, fromApprovedMaster, withReference)] ?? WEIGHTS.master;
   const order = STUDIO_JOB_STAGES.filter((s) => plan[s] !== undefined);
   const total = order.reduce((n, s) => n + (plan[s] ?? 0), 0);
   let before = 0;

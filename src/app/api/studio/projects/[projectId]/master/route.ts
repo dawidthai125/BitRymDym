@@ -22,7 +22,11 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 }
 
-/** POST {action:"prepare"} → jobId + signed upload; {action:"commit", jobId, target, settings} → monthly quota claimed + queued on E3 (429 monthly_limit). */
+/**
+ * POST {action:"prepare"} → jobId; {action:"commit", jobId, target, settings, style?, styleIntensity?,
+ * referenceId?, referenceIntensity?} → monthly quota claimed + queued on E3 (429 monthly_limit,
+ * 403 reference_locked, 402 addon_missing, 409 reference_invalid).
+ */
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { projectId } = await context.params;
@@ -32,7 +36,8 @@ export async function POST(request: Request, context: RouteContext) {
     if (body.action === "prepare") return NextResponse.json({ success: true, ...(await prepareStudioMaster({ ownerId: auth.userId, projectId })) });
     if (body.action === "commit") {
       const tier = await tierOf(auth);
-      const r = await commitStudioMaster({ ownerId: auth.userId, projectId, tier, jobId: String(body.jobId ?? ""), target: body.target, settings: body.settings, documentVersion: body.documentVersion });
+      const r = await commitStudioMaster({ ownerId: auth.userId, projectId, tier, jobId: String(body.jobId ?? ""), target: body.target, settings: body.settings, documentVersion: body.documentVersion,
+        style: body.style, styleIntensity: body.styleIntensity, referenceId: body.referenceId, referenceIntensity: body.referenceIntensity });
       return NextResponse.json({ success: r.ok, ...r }, { status: r.ok ? 202 : DENY_STATUS[r.error] ?? 400 });
     }
     return NextResponse.json({ error: "bad_action" }, { status: 400 });

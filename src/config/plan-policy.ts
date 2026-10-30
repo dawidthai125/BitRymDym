@@ -99,7 +99,11 @@ export type PlanPolicy = {
   mastering: {
     /** E3 master jobs per calendar month (Europe/Warsaw); failed/cancelled do not count. */
     mastersPerMonth: number;
-    /** Reference mastering — flag only; the feature itself is in the backlog. */
+    /**
+     * Reference mastering (E3 matches tonal balance, loudness and width to an uploaded
+     * track): "included" = in the plan, "addon" = paid add-on (plan_addon_entitlements
+     * reference_mastering), "none" = locked with an upsell. Styles are for every plan.
+     */
     referenceMastering: ReferenceMasteringAccess;
   };
   downloads: {
@@ -325,8 +329,31 @@ export function referenceMasteringForTier(tier: PremiumTier): ReferenceMastering
   return PLAN_POLICY[tier].mastering.referenceMastering;
 }
 
-/** Reference mastering ships later; the flag only says who will get it. */
-export const REFERENCE_MASTERING_STATUS = "backlog" as const;
+/** Paid add-ons on top of a plan (plan_addon_entitlements.addon). */
+export const PLAN_ADDONS = ["reference_mastering"] as const;
+export type PlanAddon = (typeof PLAN_ADDONS)[number];
+
+/** Add-on prices are display-only until checkout exists (PLAN_PAYMENTS_AVAILABLE). */
+export const PLAN_ADDON_PRICE_PLN: Record<PlanAddon, { monthlyPln: number }> = {
+  reference_mastering: { monthlyPln: 9.99 },
+};
+
+export type ReferenceMasteringGate =
+  | { allowed: true; via: "plan" | "addon" }
+  | { allowed: false; reason: "plan" | "addon_missing"; minTier: PremiumTier };
+
+/** Server decision (the UI only mirrors it): Gold included, Silver with the add-on, Free/Bronze locked. */
+export function referenceMasteringGate(tier: PremiumTier, hasAddon: boolean): ReferenceMasteringGate {
+  const access = PLAN_POLICY[tier].mastering.referenceMastering;
+  if (access === "included") return { allowed: true, via: "plan" };
+  if (access === "addon") return hasAddon ? { allowed: true, via: "addon" } : { allowed: false, reason: "addon_missing", minTier: tier };
+  return { allowed: false, reason: "plan", minTier: minimumTierFor((p) => p.mastering.referenceMastering !== "none") };
+}
+
+/** Mastering styles (Ciepły / Jasny / Głośny / Dynamiczny) — every plan that can master. */
+export function masterStylesForTier(tier: PremiumTier): boolean {
+  return PLAN_POLICY[tier].mastering.mastersPerMonth > 0;
+}
 
 export function takeTtlSecondsForTier(tier: PremiumTier): number {
   return PLAN_POLICY[tier].recording.takeTtlSeconds;

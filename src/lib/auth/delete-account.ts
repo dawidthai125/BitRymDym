@@ -308,6 +308,8 @@ export async function deleteOwnAccount(params: {
 export const STUDIO_MASTER_PREFIX = (userId: string) => `studio-master/${userId}/`;
 /** Vocal cleanup results (see studio/cleanup/cleanup-worker-env.ts cleanupObjectKey). */
 export const STUDIO_CLEANUP_PREFIX = (userId: string) => `studio-cleanup/${userId}/`;
+/** Reference-mastering uploads (see studio/master/reference.ts referenceObjectKey). */
+export const STUDIO_REFERENCE_PREFIX = (userId: string) => `studio-reference/${userId}/`;
 
 async function ownedStudioProjectIds(
   admin: ReturnType<typeof createSupabaseAdminClient>,
@@ -342,8 +344,8 @@ async function deleteOwnedStudioTracks(
  * After the audio pipeline (render_jobs / audio_artifacts are RESTRICT on
  * project + final version): grants → final versions → projects (cascades
  * master jobs, cleanup jobs, listen links, BITEK messages, mix revisions,
- * take lanes), then the studio-master/<uid>/ and studio-cleanup/<uid>/ storage
- * prefixes. Projects must be gone before auth.admin.deleteUser so the account
+ * take lanes, reference uploads), then the studio-master/<uid>/, studio-cleanup/<uid>/
+ * and studio-reference/<uid>/ storage prefixes. Projects must be gone before auth.admin.deleteUser so the account
  * delete never depends on FK cascades through the Studio guard triggers.
  */
 async function deleteOwnedStudioProjects(
@@ -376,7 +378,7 @@ async function deleteOwnedStudioProjects(
     .eq("owner_id", userId);
   if (pErr) return "studio_projects_delete";
 
-  for (const prefix of [STUDIO_MASTER_PREFIX(userId), STUDIO_CLEANUP_PREFIX(userId)]) {
+  for (const prefix of [STUDIO_MASTER_PREFIX(userId), STUDIO_CLEANUP_PREFIX(userId), STUDIO_REFERENCE_PREFIX(userId)]) {
     const keys = await listAllKeysUnderPrefix(admin, AUDIO_ARTIFACTS_BUCKET, prefix);
     for (let i = 0; i < keys.length; i += 100) {
       await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove(keys.slice(i, i + 100));
