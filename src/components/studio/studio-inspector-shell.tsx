@@ -25,6 +25,11 @@ type StudioInspectorShellProps = {
   panelId?: string;
   /** STU-10 — set only when a close attempt was rejected during capture. */
   closeBlockedMessage?: string | null;
+  /**
+   * rec-live-ui — capture running: the sheet shrinks and stops being a click-blocking
+   * modal, so the timeline (live take region) and transport Stop stay visible and usable.
+   */
+  capturing?: boolean;
 };
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
@@ -49,6 +54,7 @@ export function StudioInspectorOverlay({
   children,
   panelId,
   closeBlockedMessage = null,
+  capturing = false,
 }: StudioInspectorShellProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioInspectorShell");
@@ -108,12 +114,14 @@ export function StudioInspectorOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex xl:hidden"
+      className={`fixed inset-0 z-40 flex xl:hidden ${capturing ? "pointer-events-none" : ""}`}
       data-testid="studio-inspector-overlay"
       data-studio-inspector="overlay"
+      data-capturing={capturing ? "true" : undefined}
     >
       <button
         type="button"
+        hidden={capturing}
         className="absolute inset-0 bg-[color-mix(in_srgb,var(--brd-ink)_45%,transparent)]"
         aria-label={t("zamknijInspector")}
         data-testid="studio-inspector-backdrop"
@@ -123,11 +131,13 @@ export function StudioInspectorOverlay({
         ref={panelRef}
         id={panelId}
         role="dialog"
-        aria-modal="true"
+        aria-modal={capturing ? undefined : true}
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="studio-inspector-mobile"
-        className="relative flex w-full flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none max-md:mt-auto max-md:max-h-[70vh] max-md:rounded-t-lg max-md:pb-[env(safe-area-inset-bottom)] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0"
+        className={`pointer-events-auto relative flex w-full flex-col border border-[var(--brd-line)] bg-[var(--brd-paper)] shadow-lg outline-none max-md:mt-auto ${
+          capturing ? "max-md:max-h-[34vh]" : "max-md:max-h-[70vh]"
+        } max-md:rounded-t-lg max-md:pb-[env(safe-area-inset-bottom)] md:ml-auto md:h-full md:w-[min(22rem,92vw)] md:border-l md:pb-0`}
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--brd-line)] px-2 py-1.5">
           <p

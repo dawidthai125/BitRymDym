@@ -2834,6 +2834,11 @@
       "podgladInfo": "Odsłuch nuty i odtwarzanie projektu liczę tym samym silnikiem co render. Po zmianie nut chwilę przeliczam strojenie.",
       "lock": "Ręczną korektę nut daję w planie Gold — wtedy przeciągniesz każdą nutę osobno, co do centa.",
       "zobaczGold": "Zobacz plan Gold"
+    },
+    "studioLiveTake": {
+      "nagrywanie": "● REC {czas}",
+      "zapisywanie": "Zapisywanie nagrania…",
+      "zachowajLubOdrzuc": "Nagranie gotowe — zachowaj lub odrzuć"
     }
   },
   "nav": {

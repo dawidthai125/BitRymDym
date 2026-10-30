@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { bitekDockPlacement } from "@/lib/studio/bitek-dock-placement";
 
 export type BitekMood = "happy" | "thinking" | "alert" | "done";
 
@@ -48,6 +49,9 @@ export function StudioBitekDock({
   chat,
   chatOpen,
   onChatOpenChange,
+  recording = false,
+  recordContext = false,
+  inspectorSheetOpen = false,
 }: {
   bubble: BitekBubble | null;
   mood: BitekMood;
@@ -58,7 +62,27 @@ export function StudioBitekDock({
   chat: ReactNode;
   chatOpen: boolean;
   onChatOpenChange: (open: boolean) => void;
+  /** Capture in flight — dock hides so it can never cover Stop / transport. */
+  recording?: boolean;
+  /** Record panel on screen — dock moves left, bubble folds into the pill. */
+  recordContext?: boolean;
+  /** Inspector sheet/drawer (< xl) open — dock hides under the modal. */
+  inspectorSheetOpen?: boolean;
 }) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const on = () => setIsMobile(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const placement = bitekDockPlacement({
+    recording,
+    recordContext,
+    inspectorSheetOpen,
+    narrow: isMobile,
+  });
   const t = useTranslations("studio.bitek.dock");
   const bubbleId = useId();
   const chatTitleId = useId();
@@ -68,19 +92,24 @@ export function StudioBitekDock({
   /** Bubbles without actions fold into the "restore" pill after a few seconds so they never cover the page. */
   const [autoCollapsedKey, setAutoCollapsedKey] = useState<string | null>(null);
   const autoCollapsed = Boolean(bubble && autoCollapsedKey === bubble.key);
+  /** User tapped the pill in record context — show that bubble anyway (dock is on the left). */
+  const [forcedKey, setForcedKey] = useState<string | null>(null);
+  const bubbleAllowed =
+    placement.bubble || Boolean(!placement.hidden && bubble && forcedKey === bubble.key);
   const visible =
-    bubble && bubble.key !== dismissedKey && !minimized && !autoCollapsed && !chatOpen ? bubble : null;
+    bubble &&
+    bubble.key !== dismissedKey &&
+    !minimized &&
+    !autoCollapsed &&
+    !chatOpen &&
+    bubbleAllowed
+      ? bubble
+      : null;
   const showDetails = Boolean(visible && detailsFor === visible.key);
-  const hasNews = Boolean(bubble && bubble.key !== dismissedKey && (minimized || autoCollapsed));
+  const hasNews = Boolean(
+    bubble && bubble.key !== dismissedKey && (minimized || autoCollapsed || !bubbleAllowed),
+  );
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const on = () => setIsMobile(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
   const hasActions = Boolean(visible?.actions?.length);
   const autoCollapseKey = visible && !visible.hero && (!hasActions || isMobile) ? visible.key : null;
 
@@ -120,6 +149,11 @@ export function StudioBitekDock({
     chatRef.current?.querySelector<HTMLInputElement>("input")?.focus();
   }, [chatOpen]);
 
+  // Recording started / sheet opened while chatting → close the chat, never cover controls.
+  useEffect(() => {
+    if (placement.hidden && chatOpen) onChatOpenChange(false);
+  }, [placement.hidden, chatOpen, onChatOpenChange]);
+
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key !== "Escape") return;
@@ -139,7 +173,11 @@ export function StudioBitekDock({
       ref={rootRef}
       data-testid="studio-bitek-dock"
       data-mood={mood}
-      className="pointer-events-none fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-end gap-2 lg:right-5 lg:bottom-5"
+      data-placement={placement.hidden ? "hidden" : placement.side}
+      hidden={placement.hidden}
+      className={`pointer-events-none fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex flex-col gap-2 lg:bottom-5 ${
+        placement.side === "left" ? "left-3 items-start lg:left-5" : "right-3 items-end lg:right-5"
+      }`}
     >
       {chatOpen ? (
         <div
@@ -175,7 +213,7 @@ export function StudioBitekDock({
         id={bubbleId}
         aria-live="polite"
         aria-label={t("aria")}
-        className="pointer-events-auto flex flex-col items-end"
+        className={`pointer-events-auto flex flex-col ${placement.side === "left" ? "items-start" : "items-end"}`}
       >
         {visible ? (
           <div
@@ -268,13 +306,15 @@ export function StudioBitekDock({
       </section>
 
       <div className="pointer-events-auto flex items-center gap-2">
-        {hasNews ? (
+        {/* Narrow record step: no text pill (it reached the track M/S/R) — the avatar dot says it. */}
+        {hasNews && !(placement.compact && isMobile) ? (
           <button
             type="button"
             className="bitek-pop rounded-full border border-[var(--brd-line)] bg-[var(--brd-paper)] px-3 py-1.5 text-xs shadow-lg"
             data-testid="studio-bitek-restore"
             onClick={() => {
               setAutoCollapsedKey(null);
+              if (bubble) setForcedKey(bubble.key);
               onMinimizedChange(false);
             }}
           >
@@ -288,7 +328,9 @@ export function StudioBitekDock({
           data-mood={mood}
           aria-label={chatOpen ? t("zamknijCzat") : t("otworzCzat")}
           aria-expanded={chatOpen}
-          className="bitek-avatar relative grid size-14 place-items-center rounded-full border-2 border-[var(--brd-amber)] bg-[#0d0b08] shadow-xl lg:size-20"
+          className={`bitek-avatar relative grid place-items-center rounded-full border-2 border-[var(--brd-amber)] bg-[#0d0b08] shadow-xl ${
+            placement.compact ? "size-11 lg:size-12" : "size-14 lg:size-20"
+          }`}
           onClick={() => onChatOpenChange(!chatOpen)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- static tiny asset */}

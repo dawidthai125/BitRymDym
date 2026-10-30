@@ -83,6 +83,10 @@ import {
   uploadTakeRecordingBlob,
 } from "@/lib/takes/client-upload";
 import {
+  liveTakeStatusForPhase,
+  studioLiveTakeStore,
+} from "@/lib/studio/studio-live-take";
+import {
   TakeMediaRecorder,
   TakeRecorderError,
   detectMediaRecorderSupport,
@@ -639,6 +643,36 @@ export function StudioRecordingPanel({
     trackIdRef.current = trackId;
     recordStartMsRef.current = recordStartMs;
   }, [beatId, maxSeconds, trackId, recordStartMs]);
+
+  // rec-live-ui: growing region + live mic waveform on the capture track, kept
+  // (frozen) through upload / keep-or-discard until the real clip replaces it.
+  useEffect(() => {
+    const status = liveTakeStatusForPhase(state.phase);
+    if (!status) {
+      studioLiveTakeStore.end();
+      return;
+    }
+    const live = studioLiveTakeStore.get();
+    if (status === "recording") {
+      const capTrack = captureTrackIdRef.current || trackIdRef.current;
+      const startMs = recordStartMsRef.current;
+      if (capTrack && startMs != null && (!live || live.status !== "recording")) {
+        studioLiveTakeStore.begin(capTrack, startMs);
+      }
+      return;
+    }
+    studioLiveTakeStore.setStatus(status);
+  }, [state.phase, recordStartMs]);
+
+  useEffect(() => () => studioLiveTakeStore.end(), []);
+
+  useEffect(() => {
+    const live = studioLiveTakeStore.get();
+    if (state.phase !== "RECORDING" || !startedAtRef.current || !live) return;
+    // Recorder clock (not the transport) — matches the final take length even with no beat.
+    studioLiveTakeStore.sample(live.startMs + (Date.now() - startedAtRef.current), mic.windowPeak);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sampled per analyser snapshot (15 Hz)
+  }, [mic]);
 
   useEffect(() => {
     if (!recordRequest) return;
