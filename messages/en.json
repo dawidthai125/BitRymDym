@@ -2610,7 +2610,7 @@
         "queued": "Queued…",
         "running": "Cleaning…",
         "applied": "Using the cleaned version",
-        "ready": "Ready (−{db} dB noise)",
+        "ready": "Ready (−{db, number} dB noise)",
         "failed": "Failed — try again"
       },
       "limitReached": "Daily cleanup limit reached. A higher plan gives more.",

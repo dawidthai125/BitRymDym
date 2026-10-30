@@ -2610,7 +2610,7 @@
         "queued": "W kolejce…",
         "running": "Oczyszczam…",
         "applied": "Używana wersja oczyszczona",
-        "ready": "Gotowe (−{db} dB szumu)",
+        "ready": "Gotowe (−{db, number} dB szumu)",
         "failed": "Nie udało się — spróbuj ponownie"
       },
       "limitReached": "Dzienny limit oczyszczania wykorzystany. Wyższy plan daje więcej.",
