@@ -2558,6 +2558,37 @@
           "over": "Peak {tp} dBTP is above −1 dBTP — distortion is possible after platform encoding. Master again or lower the loudness."
         }
       }
+    },
+    "share": {
+      "tytul": "Private listen link",
+      "opis": "Send someone a link — they can listen to the approved master in a browser, no sign-in and no download button. The link expires on its own and you can switch it off at any time.",
+      "limit": "Active links: {active} of {max}",
+      "limitBez": "Active links: {active} (unlimited)",
+      "waznosc": "Link lifetime",
+      "dni": "{n, plural, one {# day} other {# days}}",
+      "utworz": "Create link",
+      "limitOsiagniety": "You already have the maximum number of active links on your plan. Switch one off or change your plan.",
+      "zobaczPlany": "See plans",
+      "stan": {
+        "active": "active",
+        "expired": "expired",
+        "revoked": "switched off"
+      },
+      "wygasa": "expires {kiedy}",
+      "utworzono": "created {kiedy}",
+      "odtworzenia": "{n, plural, one {# play} other {# plays}}",
+      "adres": "Link address",
+      "kopiuj": "Copy",
+      "skopiowano": "Copied ✓",
+      "wylacz": "Switch off",
+      "uwaga": "No download button is only a deterrent — anyone listening can record the sound. Share links with people you trust.",
+      "niedostepne": "Listen links are not available yet.",
+      "blad": {
+        "limit": "You have used your plan's active link limit.",
+        "not_approved": "Approve the master first (after mix changes, approve it again).",
+        "bad_days": "This lifetime is not available on your plan.",
+        "inny": "Could not create the link. Please try again."
+      }
     }
   },
   "nav": {
@@ -2618,5 +2649,16 @@
     "pl": "Polski",
     "en": "English",
     "hint": "Language of the whole site. Polish by default."
+  },
+  "listen": {
+    "metaTitle": "Private listen",
+    "marka": "BitRymDym",
+    "prywatnyOdsluch": "Private listen",
+    "bezTytulu": "Untitled track",
+    "odtwarzacz": "Track player",
+    "wygasa": "This link expires {kiedy}.",
+    "tylkoOdsluch": "This link is for listening only. Please don't pass it on without the artist's consent.",
+    "niedostepnyTytul": "This link doesn't work",
+    "niedostepnyOpis": "The link has expired, was switched off by the artist, or is invalid."
   }
 }

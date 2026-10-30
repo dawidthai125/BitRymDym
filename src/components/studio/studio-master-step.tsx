@@ -7,6 +7,7 @@ import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-do
 import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/studio-job-progress";
 import { Button } from "@/components/ui/button";
 import { StudioMasterReport } from "@/components/studio/studio-change-report";
+import { StudioListenLinks } from "@/components/studio/studio-listen-links";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
@@ -474,6 +475,7 @@ export function StudioMasterStep({
                     {approving ? t("zatwierdzTrwa") : t("zatwierdz")}
                   </Button>
                 )}
+                {approved ? <StudioListenLinks projectId={projectId} /> : null}
               </section>
             ) : null}
 

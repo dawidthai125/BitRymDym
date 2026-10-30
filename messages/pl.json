@@ -2558,6 +2558,37 @@
           "over": "Szczyt {tp} dBTP jest powyżej −1 dBTP — po kompresji na platformie możliwy przester. Zrób master jeszcze raz albo zmniejsz głośność."
         }
       }
+    },
+    "share": {
+      "tytul": "Prywatny link do odsłuchu",
+      "opis": "Wyślij komuś link — posłucha zatwierdzonego mastera w przeglądarce, bez logowania i bez przycisku pobierania. Link wygasa sam, możesz go też wyłączyć w każdej chwili.",
+      "limit": "Aktywne linki: {active} z {max}",
+      "limitBez": "Aktywne linki: {active} (bez limitu)",
+      "waznosc": "Ważność linku",
+      "dni": "{n, plural, one {# dzień} other {# dni}}",
+      "utworz": "Utwórz link",
+      "limitOsiagniety": "Masz już maksymalną liczbę aktywnych linków w swoim planie. Wyłącz jeden albo zmień plan.",
+      "zobaczPlany": "Zobacz plany",
+      "stan": {
+        "active": "aktywny",
+        "expired": "wygasł",
+        "revoked": "wyłączony"
+      },
+      "wygasa": "wygasa {kiedy}",
+      "utworzono": "utworzony {kiedy}",
+      "odtworzenia": "{n, plural, one {# odtworzenie} few {# odtworzenia} many {# odtworzeń} other {# odtworzenia}}",
+      "adres": "Adres linku",
+      "kopiuj": "Kopiuj",
+      "skopiowano": "Skopiowano ✓",
+      "wylacz": "Wyłącz",
+      "uwaga": "Brak przycisku pobierania to tylko utrudnienie — kto słucha, może nagrać dźwięk. Wysyłaj linki osobom, którym ufasz.",
+      "niedostepne": "Linki do odsłuchu nie są jeszcze dostępne.",
+      "blad": {
+        "limit": "Limit aktywnych linków w Twoim planie jest wykorzystany.",
+        "not_approved": "Najpierw zatwierdź master (po zmianach w miksie zatwierdź go ponownie).",
+        "bad_days": "Ta długość ważności nie jest dostępna w Twoim planie.",
+        "inny": "Nie udało się utworzyć linku. Spróbuj ponownie."
+      }
     }
   },
   "nav": {
@@ -2618,5 +2649,16 @@
     "pl": "Polski",
     "en": "English",
     "hint": "Język całej strony. Domyślnie polski."
+  },
+  "listen": {
+    "metaTitle": "Prywatny odsłuch",
+    "marka": "BitRymDym",
+    "prywatnyOdsluch": "Prywatny odsłuch",
+    "bezTytulu": "Utwór bez tytułu",
+    "odtwarzacz": "Odtwarzacz utworu",
+    "wygasa": "Link wygasa {kiedy}.",
+    "tylkoOdsluch": "Ten link służy tylko do odsłuchu. Nie udostępniaj go dalej bez zgody autora.",
+    "niedostepnyTytul": "Ten link nie działa",
+    "niedostepnyOpis": "Link wygasł, został wyłączony przez autora albo jest niepoprawny."
   }
 }
