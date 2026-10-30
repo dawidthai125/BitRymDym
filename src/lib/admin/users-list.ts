@@ -21,6 +21,7 @@ import {
   type AdminUsersQuery,
 } from "@/lib/admin/users-query";
 import type { PremiumEntitlementSnapshot } from "@/lib/audio/effective-entitlement";
+import { addonStatusFromRow, type AdminAddonStatus } from "@/lib/admin/users-addons";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { experienceBoundsForRank } from "@/lib/creator-progress/rank";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -30,8 +31,13 @@ import type { AccountLevel, SystemRole } from "@/types/domain";
 const PROFILE_SELECT_ADMIN_USERS =
   "id, display_name, user_number, role, account_level, experience_total" as const;
 
+export type AdminUsersListRow = AdminUserRow & {
+  /** Open (non-revoked) reference_mastering add-on grant, if any. */
+  referenceAddon: AdminAddonStatus | null;
+};
+
 export type AdminUsersListResult = {
-  rows: AdminUserRow[];
+  rows: AdminUsersListRow[];
   total: number;
   page: number;
   pageCount: number;
@@ -216,8 +222,31 @@ export async function listAdminUsers(
   });
 
   const page = paginateSlice(filtered, query.page, ADMIN_USERS_PAGE_SIZE);
+
+  const addonsByUserId = new Map<string, AdminAddonStatus>();
+  const pageIds = page.rows.map((row) => row.id);
+  if (pageIds.length > 0) {
+    const { data: addonRows, error: addonError } = await admin
+      .from("plan_addon_entitlements")
+      .select("user_id, starts_at, ends_at, revoked_at, note")
+      .eq("addon", "reference_mastering")
+      .is("revoked_at", null)
+      .in("user_id", pageIds);
+    if (addonError) {
+      throw new Error("admin_users_addons_load_failed");
+    }
+    for (const row of addonRows ?? []) {
+      const status = addonStatusFromRow(row, nowMs);
+      if (status) addonsByUserId.set(String(row.user_id), status);
+    }
+  }
+
   return {
     ...page,
+    rows: page.rows.map((row) => ({
+      ...row,
+      referenceAddon: addonsByUserId.get(row.id) ?? null,
+    })),
     truncated,
   };
 }

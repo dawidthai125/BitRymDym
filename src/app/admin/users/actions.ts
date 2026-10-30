@@ -18,6 +18,12 @@ import {
   parseAdminDeleteReason,
   parseAdminDeleteTargetUserId,
 } from "@/lib/admin/users-delete-reason";
+import {
+  parseAdminAddonErrorCode,
+  parseAdminAddonInput,
+  polishAdminAddonError,
+  type AdminAddonCode,
+} from "@/lib/admin/users-addons";
 import { executeAccountProfile01Deletion } from "@/lib/auth/delete-account";
 import { AuthError, requirePermission, requireRole } from "@/lib/auth/session";
 import { sendAdminAccountDeletionEmail } from "@/lib/email/send-admin-account-deletion-email";
@@ -243,5 +249,46 @@ export async function applyAdminUserManagementAction(input: {
       error: polishAdminUsersMutationError("MUTATION_FAILED"),
       code: "MUTATION_FAILED",
     };
+  }
+}
+
+export type AdminAddonState = {
+  success: boolean;
+  error: string | null;
+  code: AdminAddonCode | null;
+};
+
+/** Grant (or extend) / revoke a plan add-on. RPC = one transaction incl. audit row. */
+export async function setAdminPlanAddonAction(input: {
+  targetUserId: unknown;
+  addon: unknown;
+  grant: unknown;
+  endsOn: unknown;
+  note: unknown;
+}): Promise<AdminAddonState> {
+  try {
+    const context = await requireAdminUsersMutateAccess();
+    const parsed = parseAdminAddonInput(input);
+    if (!parsed.ok) {
+      return { success: false, error: polishAdminAddonError(parsed.code), code: parsed.code };
+    }
+    const admin = createSupabaseAdminClient();
+    const { error } = await admin.rpc("admin_set_plan_addon", {
+      p_actor_id: context.userId,
+      p_target_id: parsed.value.targetUserId,
+      p_addon: parsed.value.addon,
+      p_grant: parsed.value.grant,
+      p_ends_at: parsed.value.endsAt,
+      p_note: parsed.value.note,
+    });
+    if (error) {
+      const code = parseAdminAddonErrorCode(error.message);
+      return { success: false, error: polishAdminAddonError(code), code };
+    }
+    revalidatePath("/admin/users");
+    return { success: true, error: null, code: null };
+  } catch (error) {
+    const code: AdminAddonCode = error instanceof AuthError ? "ADMIN_FORBIDDEN" : "MUTATION_FAILED";
+    return { success: false, error: polishAdminAddonError(code), code };
   }
 }

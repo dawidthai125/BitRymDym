@@ -538,7 +538,8 @@
       "kogo": "Kogo",
       "operacja": "Operacja",
       "zmiana": "Zmiana",
-      "stronyHistoriiZmian": "Strony historii zmian"
+      "stronyHistoriiZmian": "Strony historii zmian",
+      "dodatki": "Dodatki"
     },
     "adminAudioUploadForm": {
       "wybierzPlikAudio": "Wybierz plik audio.",
@@ -736,6 +737,34 @@
         "genre": "Gatunek",
         "status": "Status"
       }
+    },
+    "adminUsersAddonDialog": {
+      "dodatki": "Dodatki",
+      "tytul": "Dodatki do planu",
+      "referencja": "Mastering pod referencję",
+      "cenaSilver": "Dodatek do Silver · {price} zł/mies. (płatności jeszcze nie działają — przyznajesz ręcznie)",
+      "statusAktywnyDo": "Aktywny do {date}",
+      "statusAktywnyBezterminowo": "Aktywny bezterminowo",
+      "statusWygasl": "Wygasł {date}",
+      "statusBrak": "Brak",
+      "wCeniGold": "W cenie Gold",
+      "fitIncluded": "Plan Gold ma mastering pod referencję w cenie — dodatek nic nie zmieni, dopóki Gold jest aktywny.",
+      "fitApplies": "Plan Silver: dodatek odblokuje mastering pod referencję.",
+      "fitNoEffect": "Dodatek działa tylko przy planie Silver. Przy obecnym planie nic nie odblokuje.",
+      "aktywnyDo": "Aktywny do",
+      "pustePole": "Puste pole = bezterminowo. Data = koniec dnia (Europa/Warszawa).",
+      "notatka": "Notatka (opcjonalnie)",
+      "notatkaPlaceholder": "np. rekompensata, test, promocja",
+      "przyznaj": "Przyznaj dodatek",
+      "zapiszDate": "Zapisz nową datę",
+      "odbierz": "Odbierz dodatek",
+      "potwierdzOdebranie": "Na pewno odebrać? Użytkownik straci mastering pod referencję od razu.",
+      "potwierdz": "Tak, odbierz",
+      "zapisywanie": "Zapisywanie…",
+      "zamknij": "Zamknij",
+      "audyt": "Każda zmiana trafia do historii zmian poniżej.",
+      "nieUdaloSie": "Nie udało się zapisać zmian.",
+      "statusOd": "Zaczyna się {date}"
     }
   },
   "auth": {
