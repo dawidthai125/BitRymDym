@@ -4,10 +4,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
+import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/studio-job-progress";
 import { Button } from "@/components/ui/button";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
 import { DEFAULT_MASTER_SETTINGS, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, clampMasterSettings, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterTargetId } from "@/lib/studio/master/targets";
@@ -74,6 +76,8 @@ export function StudioMasterStep({
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
   const [dl, setDl] = useState<{ key: string; status: "working" | "done" | "error" | "limit" } | null>(null);
+  /** Live E3 progress of the running master / download job (stage + overall %). */
+  const [prog, setProg] = useState<{ master: JobProgress | null; dl: JobProgress | null }>({ master: null, dl: null });
   const [ab, setAb] = useState<"mix" | "master">("master");
   const [matched, setMatched] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -224,13 +228,16 @@ export function StudioMasterStep({
     return blob ? URL.createObjectURL(blob) : null;
   }
 
-  async function pollJob(jobId: string): Promise<{ status: string; url: string | null; filename: string | null; metrics: unknown; code: string | null }> {
+  async function pollJob(jobId: string, slot: "master" | "dl"): Promise<{ status: string; url: string | null; filename: string | null; metrics: unknown; code: string | null }> {
+    // E3 jobs take ~1 min: poll every second at first so the bar and the result feel live.
     for (let i = 0; i < 240; i++) {
       const r = await fetch(`/api/studio/projects/${projectId}/jobs/${jobId}`);
       const j = r.ok ? await r.json() : null;
       const st = j?.job?.status;
+      if (st === "succeeded") setProg((p) => ({ ...p, [slot]: { stage: "done", progress: 100 } }));
+      else if (j?.job) setProg((p) => ({ ...p, [slot]: jobProgressOf(j.job, p[slot]) }));
       if (st === "succeeded" || st === "failed" || st === "cancelled") return { status: st, url: st === "succeeded" ? await resultUrl(j) : null, filename: j.filename ?? null, metrics: j.job.metrics, code: j.job.errorCode ?? null };
-      await sleep(i < 10 ? 1500 : 4000);
+      await sleep(i < 90 ? 1000 : 3000);
     }
     return { status: "failed", url: null, filename: null, metrics: null, code: "timeout" };
   }
@@ -239,6 +246,7 @@ export function StudioMasterStep({
     if (!mix || sm.phase === "working") return;
     stop();
     setSm({ phase: "working", jobId: null });
+    setProg((p) => ({ ...p, master: { stage: "queued", progress: 0 } }));
     setApproved(false);
     try {
       const prep = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "prepare" }) }).then((r) => r.json());
@@ -250,7 +258,7 @@ export function StudioMasterStep({
       if (commit.masters) setServer((s) => ({ ...s, masters: commit.masters }));
       if (!commit.ok) return setSm({ phase: "failed", code: String(commit.error ?? "commit") });
       setSm({ phase: "working", jobId: prep.jobId });
-      const done = await pollJob(prep.jobId);
+      const done = await pollJob(prep.jobId, "master");
       if (done.status !== "succeeded") return setSm({ phase: "failed", code: done.code ?? "failed" });
       setSm({ phase: "done", jobId: prep.jobId, url: done.url, metrics: (done.metrics as { after?: Record<string, unknown> }) ?? null });
     } catch {
@@ -273,6 +281,7 @@ export function StudioMasterStep({
     const key = `${kind}-${format}`;
     if (dl?.status === "working") return;
     setDl({ key, status: "working" });
+    setProg((p) => ({ ...p, dl: { stage: "queued", progress: 0 } }));
     const post = (body: Record<string, unknown>) =>
       fetch(`/api/studio/projects/${projectId}/deliver`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, format, ...body }) }).then(async (r) => ({ status: r.status, json: await r.json().catch(() => ({})) }));
     try {
@@ -282,7 +291,7 @@ export function StudioMasterStep({
       const commit = await post({ action: "commit", jobId, documentVersion: doc.project.documentVersion });
       if (commit.json.usage) setServer((s) => ({ ...s, usage: { used: commit.json.usage.used, weekLimit: commit.json.usage.week_limit ?? null, resetAt: commit.json.usage.reset_at ?? null } }));
       if (!commit.json.ok) return setDl({ key, status: commit.status === 429 ? "limit" : "error" });
-      const done = await pollJob(jobId);
+      const done = await pollJob(jobId, "dl");
       if (done.status !== "succeeded" || !done.url) return setDl({ key, status: "error" });
       const a = document.createElement("a");
       a.href = done.url;
@@ -311,12 +320,12 @@ export function StudioMasterStep({
     else if (!mix) [mood, text, key] = ["thinking", t("bitek.renderuje"), "m-render"];
     else if (approved) [mood, text, key] = ["done", t("bitek.zatwierdzone"), "m-approved"];
     else if (sm.phase === "done") [mood, text, key] = ["done", t(`bitek.gotowe.${target}`), `m-done-${target}`];
-    else if (sm.phase === "working") [mood, text, key] = ["thinking", t("bitek.masterTrwa"), "m-working"];
+    else if (sm.phase === "working") [mood, text, key] = ["thinking", prog.master ? t(`bitek.etap.${prog.master.stage}`, { pct: prog.master.progress }) : t("bitek.masterTrwa"), `m-working-${prog.master?.stage ?? "start"}`];
     else if (sm.phase === "failed") [mood, text, key] = ["alert", t("bitek.blad"), "m-failed"];
     else if (worst?.status === "red") [mood, text, key] = ["alert", t("bitek.problem", { card: t(`cards.${worst.id}.title`) }), `m-red-${worst.id}`];
     else [mood, text, key] = ["happy", t("bitek.gotowy"), "m-ready"];
     return { key, mood, text, details: mix && !approved ? [t("bitek.wrocInfo"), ...(sm.phase === "unavailable" ? [t("bitek.niedostepny")] : [])] : undefined, actions: approved ? [] : [back] };
-  }, [renderFailed, mix, approved, sm.phase, target, worst, t, tBitek]);
+  }, [renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
@@ -435,6 +444,7 @@ export function StudioMasterStep({
                     {mastersLeft === 0 && server.masters.resetAt ? ` · ${t("masteryReset", { date: fmtDate(server.masters.resetAt) })}` : ""}
                   </p>
                 ) : null}
+                {sm.phase === "working" && prog.master ? <JobProgressBar value={prog.master} label={t(`etap.${prog.master.stage}`)} ariaLabel={t("postepAria")} testId="studio-master-progress" /> : null}
                 {sm.phase === "failed" && sm.code === "monthly_limit" ? (
                   <p role="alert" data-testid="studio-master-limit" className="text-sm text-[var(--brd-rec)]">
                     {t("masteryLimit")}{" "}
@@ -522,6 +532,7 @@ export function StudioMasterStep({
                     })}
                   </ul>
                 ) : null}
+                {dl?.status === "working" && prog.dl ? <JobProgressBar value={prog.dl} label={t(`etap.${prog.dl.stage}`)} ariaLabel={t("postepAria")} testId="studio-master-dl-progress" /> : null}
                 {dl?.status === "done" ? <p role="status" className="text-sm">{t("gotowyPlik")}</p> : null}
                 {dl?.status === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("pobierzBlad")}</p> : null}
                 {dl?.status === "limit" || (limitReached && server.tier) ? <p role="status" className="text-sm">{t("limitWyczerpany")}</p> : null}

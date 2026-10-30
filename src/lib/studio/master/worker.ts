@@ -18,6 +18,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import { outputExt, planStudioMasterJob, studioMasterJobPrefix, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 import { partCount, partName, partsOf, PART_BYTES } from "./parts";
+import { studioJobProgress, type StudioJobStage } from "./progress";
 import { renderMixStereo } from "./render-mix";
 import { renderMixStereoParallel } from "./render-mix-parallel";
 import { stemFileName } from "./render-io";
@@ -97,12 +98,48 @@ export async function claimNextStudioMasterJob(cfg: RunConfig): Promise<ClaimedM
   return row?.id ? row : null;
 }
 
-function runPython(cfg: RunConfig, args: string[]): Promise<{ code: number; json: Record<string, unknown> | null }> {
+/**
+ * Live progress → the job row (owner sees it via RLS select). Throttled, serialized,
+ * best effort: a failed progress write never fails the job; only while still running.
+ */
+function progressReporter(job: ClaimedMasterJob, workerRef: string) {
+  const fromMaster = job.kind === "transcode" && !!job.source_artifact_id;
+  let chain: Promise<unknown> = Promise.resolve();
+  let lastAt = 0;
+  let lastStage: StudioJobStage | null = null;
+  let lastPct = -1;
+  const report = (stage: StudioJobStage, fraction = 0) => {
+    const pct = studioJobProgress(job.kind, fromMaster, stage, fraction);
+    const now = Date.now();
+    if (stage === lastStage && (pct <= lastPct || now - lastAt < 1200)) return;
+    lastAt = now;
+    lastStage = stage;
+    lastPct = Math.max(lastPct, pct);
+    const row = { stage, progress: lastPct, progress_at: new Date(now).toISOString() };
+    chain = chain.then(() =>
+      createSupabaseAdminClient().from("studio_master_jobs").update(row).eq("id", job.id).eq("worker_ref", workerRef).eq("status", "running"),
+    ).catch(() => {});
+  };
+  return { report, flush: () => chain };
+}
+
+function runPython(cfg: RunConfig, args: string[], onProgress?: (fraction: number) => void): Promise<{ code: number; json: Record<string, unknown> | null }> {
   return new Promise((resolve) => {
-    const child = spawn(cfg.pythonBin, [cfg.masterScript, ...args], { stdio: ["ignore", "pipe", "ignore"] });
+    const child = spawn(cfg.pythonBin, [cfg.masterScript, ...args], { stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
+    let err = "";
     const timer = setTimeout(() => child.kill("SIGKILL"), cfg.timeoutMs);
     child.stdout.on("data", (b: Buffer) => { if (out.length < 65536) out += b.toString("utf8"); });
+    // master.py prints "progress <0..1>" lines on stderr; anything else there is dropped.
+    child.stderr.on("data", (b: Buffer) => {
+      err = (err + b.toString("utf8")).slice(-4096);
+      const lines = err.split("\n");
+      err = lines.pop() ?? "";
+      for (const l of lines) {
+        const m = /^progress ([0-9.]+)$/.exec(l.trim());
+        if (m && onProgress) onProgress(Number(m[1]));
+      }
+    });
     child.on("close", (code) => {
       clearTimeout(timer);
       let json: Record<string, unknown> | null = null;
@@ -131,7 +168,7 @@ async function download(dir: string, base: string, file: string, names?: string[
 }
 
 /** Upload `file` as `key`, or as ≤40 MB `key.pNNN` parts when larger (Supabase 50 MB cap). */
-async function uploadFile(key: string, file: string, contentType: string) {
+async function uploadFile(key: string, file: string, contentType: string, onProgress?: (fraction: number) => void) {
   const size = (await stat(file)).size;
   const n = partCount(size);
   const fh = await open(file, "r");
@@ -142,6 +179,7 @@ async function uploadFile(key: string, file: string, contentType: string) {
       await fh.read(buf, 0, len, i * PART_BYTES);
       const { error } = await createSupabaseAdminClient().storage.from(BUCKET).upload(n === 1 ? key : partName(key, i), buf, { contentType, upsert: true });
       if (error) throw new Error("upload_failed");
+      onProgress?.((i + 1) / n);
     }
   } finally {
     await fh.close();
@@ -158,6 +196,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
   let errorCode: string | null = null;
   const t0 = Date.now();
   const timing: Record<string, number> = {};
+  const progress = progressReporter(job, cfg.workerRef);
   try {
     const prefix = studioMasterJobPrefix(job.owner_id, job.project_id, job.id);
     const steps = planStudioMasterJob(job);
@@ -173,6 +212,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       if (!row?.result_object_key || row.owner_id !== job.owner_id || row.project_id !== job.project_id || row.status !== "succeeded" || row.kind !== "master") throw new Error("input_missing");
       const k = row.result_object_key;
       cur = path.join(dir, `approved${path.extname(k)}`);
+      progress.report("download");
       await download(k.slice(0, k.lastIndexOf("/")), k.slice(k.lastIndexOf("/") + 1), cur);
     } else {
       // Full mix (master / mix delivery): reuse this version's rendered mix if E3 has it.
@@ -184,7 +224,9 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
         timing.renderMs = 0;
         timing.mixCache = 1;
       } else {
-        const { input, decodeMs } = await loadServerMixInput({ ownerId: job.owner_id, projectId: job.project_id, expectedVersion: job.source_document_version, workDir: dir, timeoutMs: cfg.timeoutMs });
+        progress.report("decode");
+        const { input, decodeMs } = await loadServerMixInput({ ownerId: job.owner_id, projectId: job.project_id, expectedVersion: job.source_document_version, workDir: dir, timeoutMs: cfg.timeoutMs, onProgress: (f) => progress.report("decode", f) });
+        progress.report("render");
         timing.decodeMs = decodeMs;
         const r0 = Date.now();
         if (job.kind === "project_zip") {
@@ -193,12 +235,13 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
           let n = 0;
           for (const tr of input.tracks) {
             await writeWavFloat(path.join(stemsDir, stemFileName(++n, tr.name)), renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }));
+            progress.report("render", n / input.tracks.length);
           }
           cur = stemsDir;
         } else {
           cur = path.join(dir, "source.wav");
           // FX chains dominate the CPU → tracks render in parallel worker threads.
-          const mix = job.kind === "raw_sum" ? renderMixStereo(input, { raw: true }) : await renderMixStereoParallel(input, {});
+          const mix = job.kind === "raw_sum" ? renderMixStereo(input, { raw: true }) : await renderMixStereoParallel(input, {}, undefined, (f) => progress.report("render", f));
           await writeWavFloat(cur, mix);
           if (mixKind) await mixCacheStore(job, cur);
         }
@@ -211,16 +254,19 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       if (s.op === "python_master") {
         const next = path.join(dir, "mastered.flac");
         const m0 = Date.now();
-        const r = await runPython(cfg, ["master", "--in", cur, "--out", next, "--target", s.target, "--settings", JSON.stringify(s.settings ?? {})]);
+        progress.report("master");
+        const r = await runPython(cfg, ["master", "--in", cur, "--out", next, "--target", s.target, "--settings", JSON.stringify(s.settings ?? {})], (f) => progress.report("master", f));
         if (r.code !== 0 || !r.json?.ok) throw new Error(String(r.json?.error ?? "master_failed").slice(0, 60));
         timing.masterMs = Date.now() - m0;
         metrics = { before: r.json.before, after: r.json.after };
         cur = next;
       } else if (s.op === "python_zip") {
+        progress.report("encode");
         const r = await runPython(cfg, ["zip", "--in", cur, "--out", out]);
         if (r.code !== 0 || !r.json?.ok) throw new Error("zip_failed");
         cur = out;
       } else if (s.op === "ffmpeg") {
+        progress.report("encode");
         await runCapture(resolveFfmpegBin(), ["-hide_banner", "-loglevel", "error", "-y", "-i", cur, ...s.args, out], { timeoutMs: cfg.timeoutMs });
         cur = out;
       } else {
@@ -230,7 +276,8 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     }
     resultKey = `${prefix}/out/${job.kind}.${ext}`;
     const contentType = ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : "audio/wav";
-    const parts = await uploadFile(resultKey, cur, contentType);
+    progress.report("upload");
+    const parts = await uploadFile(resultKey, cur, contentType, (f) => progress.report("upload", f));
     timing.totalMs = Date.now() - t0;
     metrics = { ...(metrics ?? {}), parts, bytes: (await stat(cur)).size, timing, maxRssMb: Math.round(process.resourceUsage().maxRSS / 1024) };
     status = "succeeded";
@@ -239,6 +286,12 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     resultKey = null;
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+  await progress.flush();
+  if (status === "succeeded") {
+    // Final 100 % just before completion (the complete RPC only touches status/result).
+    await admin.from("studio_master_jobs").update({ stage: "done", progress: 100, progress_at: new Date().toISOString() })
+      .eq("id", job.id).eq("worker_ref", cfg.workerRef).eq("status", "running").then(() => {}, () => {});
   }
   const { error } = await admin.rpc("complete_studio_master_job", {
     p_job_id: job.id, p_worker_ref: cfg.workerRef, p_status: status, p_result_object_key: resultKey, p_metrics: metrics, p_error_code: errorCode,

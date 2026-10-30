@@ -2268,13 +2268,34 @@
         "zatwierdzone": "Numer jest gotowy. Pobierz to, czego potrzebujesz.",
         "blad": "Coś poszło nie tak z masterem. Spróbuję jeszcze raz, jak klikniesz.",
         "niedostepny": "Podgląd mastera działa, ale serwer jeszcze nie jest włączony.",
-        "wrocInfo": "Pojedynczych śladów tu nie ruszę — to robimy w Mixie."
+        "wrocInfo": "Pojedynczych śladów tu nie ruszę — to robimy w Mixie.",
+        "etap": {
+          "queued": "Czekam chwilę w kolejce na serwer.",
+          "download": "Pobieram zatwierdzony master — {pct}%.",
+          "decode": "Wczytuję Twoje ślady — {pct}%.",
+          "render": "Miksuję ślady — {pct}%.",
+          "master": "Robię master — {pct}%. Zaraz posłuchasz.",
+          "encode": "Koduję plik — {pct}%.",
+          "upload": "Wysyłam gotowy plik — {pct}%.",
+          "done": "Gotowe!"
+        }
       },
       "masteryMiesiac": "Mastery w tym miesiącu: {used} z {limit}",
       "masteryReset": "nowa pula {date}",
       "masteryLimit": "Pula masterów na ten miesiąc się skończyła. Ten mix poczeka — albo weź wyższy plan.",
       "freeBezPobierania": "W Free słuchasz, ale nie pobierasz. Pliki odblokujesz od Bronze.",
-      "zobaczPlany": "Zobacz plany"
+      "zobaczPlany": "Zobacz plany",
+      "etap": {
+        "queued": "Czekam w kolejce",
+        "download": "Pobieram master",
+        "decode": "Wczytuję ślady",
+        "render": "Miksuję ślady",
+        "master": "Robię master",
+        "encode": "Koduję plik",
+        "upload": "Wysyłam plik",
+        "done": "Gotowe"
+      },
+      "postepAria": "Postęp na serwerze"
     },
     "recTools": {
       "opoznienie": "Opóźnienie słuchawki ↔ mikrofon",

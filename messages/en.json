@@ -2268,13 +2268,34 @@
         "zatwierdzone": "The song is ready. Download what you need.",
         "blad": "Something went wrong with the master. Click and I'll try again.",
         "niedostepny": "The master preview works, but the server isn't on yet.",
-        "wrocInfo": "I can't touch single tracks here — that's Mix work."
+        "wrocInfo": "I can't touch single tracks here — that's Mix work.",
+        "etap": {
+          "queued": "Waiting a moment in the server queue.",
+          "download": "Fetching the approved master — {pct}%.",
+          "decode": "Loading your tracks — {pct}%.",
+          "render": "Mixing your tracks — {pct}%.",
+          "master": "Mastering — {pct}%. You'll hear it soon.",
+          "encode": "Encoding the file — {pct}%.",
+          "upload": "Uploading the finished file — {pct}%.",
+          "done": "Done!"
+        }
       },
       "masteryMiesiac": "Masters this month: {used} of {limit}",
       "masteryReset": "new pool {date}",
       "masteryLimit": "This month's master pool is used up. This mix can wait — or take a higher plan.",
       "freeBezPobierania": "On Free you listen, but don't download. Files unlock from Bronze.",
-      "zobaczPlany": "See plans"
+      "zobaczPlany": "See plans",
+      "etap": {
+        "queued": "Waiting in the queue",
+        "download": "Fetching the master",
+        "decode": "Loading tracks",
+        "render": "Mixing tracks",
+        "master": "Mastering",
+        "encode": "Encoding the file",
+        "upload": "Uploading the file",
+        "done": "Done"
+      },
+      "postepAria": "Server progress"
     },
     "recTools": {
       "opoznienie": "Headphone ↔ mic latency",

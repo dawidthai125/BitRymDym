@@ -40,7 +40,7 @@ export async function assertServerDocVersion(p: { ownerId: string; projectId: st
  * Load the owner's project document (must still be at `expectedVersion`), re-authorise
  * every take/beat source, download + decode them at 44.1 kHz.
  */
-export async function loadServerMixInput(p: { ownerId: string; projectId: string; expectedVersion: number; workDir: string; timeoutMs: number }): Promise<ServerMixInput> {
+export async function loadServerMixInput(p: { ownerId: string; projectId: string; expectedVersion: number; workDir: string; timeoutMs: number; onProgress?: (fraction: number) => void }): Promise<ServerMixInput> {
   const ctx = { userId: p.ownerId, email: null, profile: null, permissions: [] } as unknown as AuthContext;
   const doc = await getStudioProjectDocumentFor(ctx, p.projectId);
   if (Number(doc.project.documentVersion) !== Number(p.expectedVersion)) throw new Error("doc_changed");
@@ -68,6 +68,7 @@ export async function loadServerMixInput(p: { ownerId: string; projectId: string
     await rm(src, { force: true });
     await rm(pcm, { force: true });
     sources[key] = parseDecodedWav(raw, true);
+    p.onProgress?.(Object.keys(sources).length / keys.length);
   };
   await Promise.all(
     Array.from({ length: Math.min(DECODE_CONCURRENCY, keys.length) }, async () => {

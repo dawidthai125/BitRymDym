@@ -18,6 +18,7 @@ import type { PremiumTier } from "@/types/premium";
 
 import { downloadFilename, partsOf } from "./parts";
 import { outputExt, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
+import { isStudioJobStage, type StudioJobStage } from "./progress";
 
 const BUCKET = "audio-artifacts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -66,11 +67,15 @@ export type MasterJobView = {
   id: string; kind: StudioMasterJobKind; status: string; target: string | null; outputFormat: StudioMasterOutputFormat;
   metrics: unknown; errorCode: string | null; approvedAt: string | null; createdAt: string;
   settings: Record<string, number> | null;
+  /** Live E3 progress (null before the worker picks the job up / old rows). */
+  stage: StudioJobStage | null; progress: number | null;
 };
 const view = (r: Record<string, unknown>): MasterJobView => ({
   id: String(r.id), kind: r.kind as StudioMasterJobKind, status: String(r.status), target: (r.target as string) ?? null,
   outputFormat: r.output_format as StudioMasterOutputFormat, metrics: r.metrics ?? null, errorCode: (r.error_code as string) ?? null,
   approvedAt: (r.approved_at as string) ?? null, settings: (r.settings as Record<string, number>) ?? null, createdAt: String(r.created_at),
+  stage: isStudioJobStage(r.stage) ? r.stage : null,
+  progress: typeof r.progress === "number" && Number.isFinite(r.progress) ? Math.min(100, Math.max(0, Math.round(r.progress))) : null,
 });
 
 /** Latest master job (+ approved one), the download counter and the monthly master quota. */

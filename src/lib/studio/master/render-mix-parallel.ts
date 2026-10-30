@@ -32,16 +32,37 @@ function trackInput(src: MixAnalysisInput, trackId: string): MixAnalysisInput {
   return { ...src, tracks: src.tracks.filter((t) => t.id === trackId), clips, sources, masterEffectsChain: undefined };
 }
 
-export async function renderMixStereoParallel(input: MixAnalysisInput, opts: RenderMixOptions = {}, threads = renderThreadCount()): Promise<Stereo> {
+/** Rough CPU cost of a track: clip samples × (1 + FX weight); reverb dominates. */
+function trackCost(src: MixAnalysisInput, trackId: string): number {
+  const ms = src.clips.filter((c) => c.trackId === trackId && !c.muted).reduce((n, c) => n + Math.max(0, c.durationMs), 0);
+  const fx = (src.tracks.find((t) => t.id === trackId)?.effectsChain as { effects?: { type?: string; enabled?: boolean }[] } | null | undefined)?.effects ?? [];
+  const w = fx.reduce((n, e) => n + (e.enabled === false ? 0 : e.type === "reverb" ? 4 : e.type === "deesser" ? 2 : 1), 0);
+  return ms * (1 + w);
+}
+
+export async function renderMixStereoParallel(
+  input: MixAnalysisInput,
+  opts: RenderMixOptions = {},
+  threads = renderThreadCount(),
+  onProgress?: (fraction: number) => void,
+): Promise<Stereo> {
   const src = prepareMixInput(input, opts);
   const n = Math.min(threads, src.tracks.length);
-  if (n <= 1) return renderMixStereo(input, opts);
+  if (n <= 1) {
+    const out = renderMixStereo(input, opts);
+    onProgress?.(1);
+    return out;
+  }
   const len = mixLength(src);
   const left = new Float32Array(len);
   const right = new Float32Array(len);
   const anySolo = src.tracks.some((t) => t.solo);
   const file = path.join(__dirname, "render-track-thread.ts");
   const workers = Array.from({ length: n }, () => new Worker(file));
+  // Heaviest tracks first (LPT): the last thread to finish isn't stuck with a reverb track.
+  const order = src.tracks.map((t, i) => ({ i, cost: trackCost(src, t.id) })).sort((a, b) => b.cost - a.cost || a.i - b.i).map((x) => x.i);
+  const totalCost = order.reduce((n2, i) => n2 + trackCost(src, src.tracks[i]!.id), 0) || 1;
+  let doneCost = 0;
   try {
     let next = 0;
     await new Promise<void>((resolve, reject) => {
@@ -51,8 +72,8 @@ export async function renderMixStereoParallel(input: MixAnalysisInput, opts: Ren
           if (pending === 0) resolve();
           return;
         }
-        const seq = next++;
-        const track = src.tracks[seq];
+        const seq = order[next++]!;
+        const track = src.tracks[seq]!;
         pending++;
         w.postMessage({ seq, input: trackInput(src, track.id), track, anySolo } satisfies TrackTask);
       };
@@ -60,6 +81,8 @@ export async function renderMixStereoParallel(input: MixAnalysisInput, opts: Ren
         w.on("message", (r: TrackResult) => {
           pending--;
           if (!r.ok) return reject(new Error(r.error));
+          doneCost += trackCost(src, src.tracks[r.seq]!.id);
+          onProgress?.(doneCost / totalCost);
           if (r.use) {
             for (let i = 0; i < len; i++) {
               left[i] += r.left[i];
