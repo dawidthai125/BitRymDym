@@ -2,7 +2,7 @@ import "server-only";
 
 /**
  * Gold — AI cover generator: prompt → rules + Groq safeguard → free image provider chain
- * (Cloudflare FLUX schnell → Pollinations, 25 s each, failover + remembered limits) →
+ * (Cloudflare FLUX schnell only, 25 s, remembered limits; no third-party fallback) →
  * crop to 16:9 / 1:1 → the same Gemini filter as own video graphics (approve only) →
  * stored as the project's own video image (usable as `source: "upload"` imageId) and,
  * for the owner's own USER beat, settable as the beat cover (beat-cover pipeline again).
@@ -133,7 +133,7 @@ export async function generateAiCover(p: { ownerId: string; projectId: string; t
   if (insErr) throw new Error(insErr.message);
   const finish = (patch: Record<string, unknown>) => admin.from("studio_ai_cover_usage").update(patch).eq("id", usageId).then(() => undefined, () => undefined);
 
-  const providers = aiImageProvidersFromEnv(process.env, (a) => AI_COVER_SIZE[a]);
+  const providers = aiImageProvidersFromEnv(process.env);
   const chain = await runAiImageChain(providers, { prompt: screen.finalPrompt, aspect: p.aspect, seed: randomInt(1, 2_000_000_000) }, {
     timeoutMs: AI_COVER_PROVIDER_TIMEOUT_MS, state: dbProviderState(admin),
   });

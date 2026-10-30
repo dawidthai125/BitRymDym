@@ -1,13 +1,17 @@
 /**
- * AI image providers for the cover generator. Free tiers only:
- *  - Cloudflare Workers AI FLUX.1 schnell (env CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_AI_TOKEN;
- *    10k neurons/day ≈ 57 images, reset 00:00 UTC, exhausted → HTTP 429 / code 3036),
- *  - Pollinations.ai (Classic API, no key: one image per IP every ~45 s, 402 + Retry-After
- *    beyond that; optional POLLINATIONS_API_KEY → gen.pollinations.ai, no logo).
+ * AI image provider for the cover generator: Cloudflare Workers AI FLUX.1 schnell only
+ * (env CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_AI_TOKEN; 10k neurons/day ≈ 57 images, reset
+ * 00:00 UTC, exhausted → HTTP 429 / code 3036). When it fails the user gets the friendly
+ * "allFailed" message — there is deliberately NO third-party fallback (the former
+ * Pollinations failover was removed 2026-10-31: no DPA, processing outside the EEA).
  * Keys come from server env only and are sent as headers, never in URLs or logs.
  */
 import type { AiCoverAspect } from "./config";
 
+/**
+ * "pollinations" is a legacy id only: historical rows in studio_ai_cover_generations /
+ * studio_ai_provider_state may carry it. No Pollinations provider exists anymore.
+ */
 export type AiProviderId = "cloudflare" | "pollinations";
 export type AiImageErrorKind = "limit" | "rate" | "timeout" | "server" | "network" | "auth" | "bad_response" | "refused";
 
@@ -57,15 +61,6 @@ async function call(f: FetchFn, url: string, init: RequestInit, signal: AbortSig
   }
 }
 
-async function body(res: Response, signal: AbortSignal): Promise<Buffer> {
-  try {
-    return Buffer.from(await res.arrayBuffer());
-  } catch {
-    if (signal.aborted) throw new AiImageError("timeout");
-    throw new AiImageError("network");
-  }
-}
-
 const isImage = (b: Buffer) =>
   b.length > 1000 && ((b[0] === 0xff && b[1] === 0xd8) || (b[0] === 0x89 && b[1] === 0x50) || b.subarray(8, 12).toString("latin1") === "WEBP");
 
@@ -109,41 +104,12 @@ export function cloudflareProvider(opts: { accountId: string; token: string; fet
   };
 }
 
-export function pollinationsProvider(opts: { apiKey?: string; fetchFn?: FetchFn; now?: () => number; size: (a: AiCoverAspect) => { w: number; h: number } }): AiImageProvider {
-  const f = opts.fetchFn ?? fetch;
-  const now = opts.now ?? Date.now;
-  return {
-    id: "pollinations",
-    async generate(input, signal) {
-      const { w, h } = opts.size(input.aspect);
-      const q = new URLSearchParams({ width: String(w), height: String(h), seed: String(input.seed), nologo: "true", safe: "true", private: "true" });
-      const p = encodeURIComponent(input.prompt);
-      const url = opts.apiKey
-        ? `https://gen.pollinations.ai/image/${p}?${new URLSearchParams({ ...Object.fromEntries(q), model: "black-forest-labs/flux.1-schnell" })}`
-        : `https://image.pollinations.ai/prompt/${p}?${q}`;
-      const res = await call(f, url, { method: "GET", headers: opts.apiKey ? { Authorization: `Bearer ${opts.apiKey}` } : {} }, signal);
-      // Free tier beyond the per-IP slot → 402 + Retry-After (also accept 429).
-      if (res.status === 402 || res.status === 429) {
-        throw new AiImageError("rate", retryAfterMs(res.headers.get("retry-after"), now(), 60_000), res.status);
-      }
-      if (res.status === 401 || res.status === 403) throw new AiImageError("auth", undefined, res.status);
-      if (res.status >= 500) throw new AiImageError("server", undefined, res.status);
-      if (!res.ok) throw new AiImageError(res.status === 400 ? "refused" : "bad_response", undefined, res.status);
-      if (!(res.headers.get("content-type") ?? "").startsWith("image/")) throw new AiImageError("bad_response", undefined, res.status);
-      const img = await body(res, signal);
-      if (!isImage(img)) throw new AiImageError("bad_response", undefined, res.status);
-      return img;
-    },
-  };
-}
-
-/** Cloudflare first, Pollinations as its fallback. No Cloudflare → no providers (generator off). */
-export function aiImageProvidersFromEnv(env: Env, size: (a: AiCoverAspect) => { w: number; h: number }, fetchFn?: FetchFn): AiImageProvider[] {
+/** Cloudflare only (no external fallback). No Cloudflare → no providers (generator off). */
+export function aiImageProvidersFromEnv(env: Env, fetchFn?: FetchFn): AiImageProvider[] {
   const out: AiImageProvider[] = [];
   const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
   const token = env.CLOUDFLARE_AI_TOKEN?.trim();
   if (!accountId || !token) return out;
   out.push(cloudflareProvider({ accountId, token, fetchFn }));
-  out.push(pollinationsProvider({ apiKey: env.POLLINATIONS_API_KEY?.trim() || undefined, fetchFn, size }));
   return out;
 }

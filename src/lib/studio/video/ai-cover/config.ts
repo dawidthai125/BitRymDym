@@ -8,13 +8,13 @@ export const isAiCoverAspect = (v: unknown): v is AiCoverAspect => v === "16:9" 
 
 export const AI_COVER_PROMPT_MIN = 3;
 export const AI_COVER_PROMPT_MAX = 300;
-/** Per-provider call timeout — slower than this = switch to the next provider. */
+/** Provider call timeout — slower than this = friendly "allFailed" error. */
 export const AI_COVER_PROVIDER_TIMEOUT_MS = 25_000;
 export const AI_COVER_PER_DAY_DEFAULT = 10;
 
 /**
- * The whole generator is OFF until Cloudflare Workers AI is configured (both env vars);
- * Pollinations is only a fallback after Cloudflare, never the sole provider.
+ * The whole generator is OFF until Cloudflare Workers AI is configured (both env vars).
+ * Cloudflare is the only image provider (no external fallback).
  */
 export function aiCoverEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return !!env.CLOUDFLARE_ACCOUNT_ID?.trim() && !!env.CLOUDFLARE_AI_TOKEN?.trim();
@@ -26,7 +26,7 @@ export function aiCoverPerDay(env: Record<string, string | undefined> = process.
   return Number.isFinite(n) && n >= 1 && n <= 100 ? n : AI_COVER_PER_DAY_DEFAULT;
 }
 
-/** Final stored size (after crop). Pollinations' free API caps the area at 768², so 16:9 = 1024×576. */
+/** Final stored size (after crop of FLUX's 1024² output). */
 export const AI_COVER_SIZE: Record<AiCoverAspect, { w: number; h: number }> = {
   "16:9": { w: 1024, h: 576 },
   "1:1": { w: 768, h: 768 },

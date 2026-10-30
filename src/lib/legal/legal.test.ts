@@ -32,8 +32,10 @@ describe("legal documents", () => {
   });
   it("covers the real processors and retention", () => {
     const p = text(PRIVACY);
-    for (const s of ["Supabase", "Vercel", "E3", "Gemini", "Groq", "Cloudflare", "Pollinations", "Resend", "Free 2 dni", "Gold 45 dni", "Prezesa Urzędu Ochrony Danych"]) expect(p).toContain(s);
+    for (const s of ["Supabase", "Vercel", "E3", "Gemini", "Groq", "Cloudflare", "Resend", "Free 2 dni", "Gold 45 dni", "Prezesa Urzędu Ochrony Danych"]) expect(p).toContain(s);
     expect(text(TERMS)).toContain("art. 38 ust. 1 pkt 13");
+    // Pollinations failover removed (2026-10-31) — must not be listed as a processor.
+    expect(text(PRIVACY) + text(TERMS)).not.toMatch(/pollinations/i);
   });
   it("cookie policy lists only necessary cookies (no banner)", () => {
     const c = text(COOKIES);
