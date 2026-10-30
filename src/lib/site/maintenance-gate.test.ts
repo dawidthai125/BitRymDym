@@ -44,6 +44,24 @@ describe("classifyMaintenancePath", () => {
     ["/api/listen/x/audio", "api"],
     ["/api/mix/session", "api"],
     ["/api/studio/tune-worklet.js", "api"],
+    ["/api/email/unsubscribe", "exempt"],
+    ["/email/wypisano", "exempt"],
+    ["/api/email/unsubscribe/x", "api"],
+    ["/api/email", "api"],
+    ["/email/wypisano/x", "page"],
+    ["/email", "page"],
+    ["/beat/abc", "page"],
+    ["/beat/abc/opengraph-image", "exempt"],
+    ["/beat/abc/twitter-image", "exempt"],
+    ["/listen/tok/opengraph-image", "exempt"],
+    ["/listen/tok/twitter-image", "exempt"],
+    ["/beat/abc/opengraph-image/x", "page"],
+    ["/beat/abc/opengraph-imagex", "page"],
+    ["/beat/abc/def/opengraph-image", "page"],
+    ["/beat//opengraph-image", "page"],
+    ["/beats/abc/opengraph-image", "page"],
+    ["/studio/abc/opengraph-image", "page"],
+    ["/opengraph-image", "page"],
   ] as const)("%s → %s", (path, kind) => {
     expect(classifyMaintenancePath(path)).toBe(kind);
   });
@@ -71,6 +89,10 @@ describe("decideMaintenance", () => {
     expect(d({ pathname: "/sign-in", method: "POST" })).toBe("pass");
     expect(d({ pathname: "/api/mix/worker/claim", method: "POST" })).toBe("pass");
     expect(d({ pathname: "/api/cron/takes-janitor" })).toBe("pass");
+    // RFC 8058 one-click unsubscribe is a POST from the mail provider.
+    expect(d({ pathname: "/api/email/unsubscribe", method: "POST" })).toBe("pass");
+    expect(d({ pathname: "/beat/abc/opengraph-image" })).toBe("pass");
+    expect(d({ pathname: "/beat/abc" })).toBe("page");
   });
 });
 
