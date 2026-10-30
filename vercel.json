@@ -4,5 +4,12 @@
       "path": "/api/cron/takes-janitor",
       "schedule": "0 0 * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false,
+      "**": false
+    }
+  }
 }
