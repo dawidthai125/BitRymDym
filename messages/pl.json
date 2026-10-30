@@ -420,7 +420,8 @@
       "uzytkownicy": "Użytkownicy",
       "politykaNagran": "Polityka nagrań",
       "nowyBit": "Nowy bit",
-      "katalog": "Katalog"
+      "katalog": "Katalog",
+      "trybPrac": "Tryb prac"
     },
     "adminModerationPage": {
       "moderacjaBitow": "Moderacja bitów",
@@ -485,7 +486,9 @@
       "kolejkaSpolecznosci": "Kolejka społeczności",
       "listaWyszukiwanieFiltry": "Lista, wyszukiwanie, filtry",
       "limityDlugosciNagraniaBronze": "Limity długości nagrania Bronze / Silver / Gold",
-      "wkrotce2": "Wkrótce"
+      "wkrotce2": "Wkrótce",
+      "trybPrac": "Tryb prac",
+      "trybPracMeta": "Wyłączenie strony na czas prac"
     },
     "adminSamplePolicyPage": {
       "metaTitle": "Polityka nagrań · Panel Administracyjny",
@@ -2692,5 +2695,61 @@
     "tylkoOdsluch": "Ten link służy tylko do odsłuchu. Nie udostępniaj go dalej bez zgody autora.",
     "niedostepnyTytul": "Ten link nie działa",
     "niedostepnyOpis": "Link wygasł, został wyłączony przez autora albo jest niepoprawny."
+  },
+  "maintenance": {
+    "page": {
+      "metaTitle": "Trwają prace — BitRymDym",
+      "metaDescription": "BitRymDym jest chwilowo niedostępny z powodu prac technicznych.",
+      "status": "Przerwa techniczna",
+      "kicker": "Kanał chwilowo wyciszony",
+      "headlineTop": "Trwają",
+      "headlineBottom": "prace",
+      "lead": "Stroimy sprzęt i zaraz wracamy na bit.",
+      "body": "BitRymDym jest chwilowo niedostępny — wprowadzamy zmiany. Twoje bity, nagrania i projekty są bezpieczne.",
+      "messageLabel": "Wiadomość od ekipy",
+      "untilLabel": "Planowany powrót",
+      "noEta": "Wracamy najszybciej, jak się da.",
+      "bitekAlt": "BITEK — szop BitRymDym przy konsolecie",
+      "bitekCaption": "BITEK pilnuje studia",
+      "adminLogin": "Logowanie dla administracji",
+      "backHome": "Strona działa — wróć na stronę główną",
+      "otherLanguage": "English"
+    },
+    "banner": {
+      "label": "Tryb prac włączony",
+      "body": "Użytkownicy widzą stronę „Trwają prace”, a API zwraca 503. Ty widzisz serwis normalnie.",
+      "manage": "Zarządzaj"
+    },
+    "signIn": {
+      "noticeTitle": "Trwają prace techniczne",
+      "noticeBody": "Logowanie jest teraz dostępne tylko dla administratorów. Rejestracja jest wstrzymana."
+    },
+    "admin": {
+      "metaTitle": "Tryb prac",
+      "pulpit": "Pulpit",
+      "title": "Tryb prac",
+      "intro": "Wyłącz serwis na czas prac. Użytkownicy i goście zobaczą stronę „Trwają prace”, API zwróci 503, a zalogować się będą mogli tylko administratorzy. Panel admina, logowanie, crony i endpointy workera E3 działają dalej.",
+      "statusOn": "Trwają prace — strona wyłączona",
+      "statusOff": "Strona działa",
+      "switchLabel": "Strona dostępna dla użytkowników",
+      "switchHintOn": "Strona jest wyłączona. Przełącz, aby ją przywrócić.",
+      "switchHintOff": "Przełącz, aby włączyć tryb prac.",
+      "messageLabel": "Komunikat na stronie prac (opcjonalnie)",
+      "messagePlaceholder": "Np. Aktualizujemy Studio — nowe efekty już w drodze.",
+      "messageHint": "Do {max} znaków. Widoczny publicznie.",
+      "untilLabel": "Planowany koniec prac (opcjonalnie, czas polski)",
+      "clearUntil": "Wyczyść",
+      "warnEnable": "Po zapisaniu wszyscy poza administratorami stracą dostęp do serwisu w ciągu kilku sekund.",
+      "save": "Zapisz",
+      "saving": "Zapisywanie…",
+      "savedOn": "Tryb prac włączony.",
+      "savedOff": "Strona znowu działa.",
+      "saveError": "Nie udało się zapisać trybu prac.",
+      "preview": "Podgląd strony prac",
+      "lastChange": "Ostatnia zmiana: {when}",
+      "neverChanged": "Brak zmian — strona działa od początku.",
+      "excludedTitle": "Działa zawsze",
+      "excludedBody": "/admin, /sign-in, /forgot-password, /auth/*, /api/admin, /api/cron, /api/mix/worker (E3), /api/webhooks, /api/health, robots.txt i pliki statyczne."
+    }
   }
 }

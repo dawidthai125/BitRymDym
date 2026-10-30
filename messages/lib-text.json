@@ -2900,5 +2900,30 @@
  {
   "src": "Skala",
   "en": "Scale"
+ },
+ {
+  "src": "Trwają prace techniczne. Spróbuj ponownie później.",
+  "en": "Maintenance in progress. Please try again later."
+ },
+ {
+  "src": "Trwają prace techniczne — logowanie jest teraz dostępne tylko dla administratorów.",
+  "en": "Maintenance in progress — only administrators can sign in right now."
+ },
+ {
+  "src": "Rejestracja jest wstrzymana na czas prac technicznych.",
+  "en": "Sign-up is paused during maintenance."
+ },
+ {
+  "src": "Nieprawidłowa data zakończenia prac.",
+  "en": "Invalid maintenance end date."
+ },
+ {
+  "src": "Nie udało się zapisać trybu prac.",
+  "en": "Could not save maintenance mode."
+ },
+ {
+  "src": "Komunikat może mieć najwyżej {0} znaków.",
+  "en": "The message can be at most {0} characters.",
+  "tpl": true
  }
 ]
