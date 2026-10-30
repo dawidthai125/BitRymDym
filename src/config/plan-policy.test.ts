@@ -9,6 +9,7 @@ import {
   minimumTierFor,
   vocalPresetAccessForTier,
   GUEST_POLICY,
+  LISTEN_LINK_DB_MAX_DAYS,
   maxRecordingTracksForTier,
   minimumTierForQuality,
   PLAN_PAYMENTS_AVAILABLE,
@@ -21,6 +22,7 @@ import { canDownloadFinishedPremiumFiles, PREMIUM_DOWNLOAD_BY_TIER, PREMIUM_RETE
 import { PREMIUM_TIER_MATRIX } from "@/config/premium-tiers";
 import { SAMPLE_POLICY_DEFAULTS } from "@/config/recording";
 import { DELIVER_AUDIO_FORMATS_BY_TIER, DELIVER_FORMAT_QUALITY, DELIVER_WEEKLY_LIMIT, deliverOptions, minimumTierForDeliverFormat } from "@/lib/studio/deliver/policy";
+import { listenDayOptions } from "@/lib/studio/listen/listen-policy";
 import { PREMIUM_TIERS } from "@/types/premium";
 
 const DAY = 86_400;
@@ -147,5 +149,26 @@ describe("one export policy (Premium downloads = Studio deliverables)", () => {
     expect(minimumTierFor((p) => p.tools.vocalPresets.maxOwn > 0)).toBe("SILVER");
     expect(minimumTierFor((p) => p.tools.vocalPresets.roleSets)).toBe("GOLD");
     expect(minimumTierFor((p) => p.tools.bitekMemory === "project")).toBe("BRONZE");
+  });
+});
+
+describe("plan policy — Owner 2026-10-30 (Gold 45 d, Bronze 2 tracks)", () => {
+  it("retention 2 / 7 / 30 / 45 days; Gold still the longest", () => {
+    expect(PREMIUM_TIERS.map((t) => PLAN_POLICY[t].retentionDays)).toEqual([2, 7, 30, 45]);
+    expect(PREMIUM_RETENTION_DAYS.GOLD).toBe(45);
+    expect(PREMIUM_TIER_MATRIX.GOLD.artifactRetentionSeconds).toBe(45 * DAY);
+  });
+
+  it("Bronze: 2 recording tracks per project, Bit not counted (3 rows with the Bit)", () => {
+    expect(PLAN_POLICY.BRONZE.studio.maxRecordingTracks).toBe(2);
+    expect(PREMIUM_TIER_MATRIX.BRONZE.studioMaxTracks).toBe(3);
+  });
+
+  it("listen link max days are derived from retention (never outlive the files, DB cap 60)", () => {
+    for (const t of PREMIUM_TIERS) {
+      expect(PLAN_POLICY[t].sharing.listenLinkMaxDays).toBe(Math.min(PLAN_POLICY[t].retentionDays, LISTEN_LINK_DB_MAX_DAYS));
+      expect(Math.max(...listenDayOptions(t))).toBe(PLAN_POLICY[t].sharing.listenLinkMaxDays);
+    }
+    expect(PREMIUM_TIERS.map((t) => PLAN_POLICY[t].sharing.listenLinkMaxDays)).toEqual([2, 7, 30, 45]);
   });
 });

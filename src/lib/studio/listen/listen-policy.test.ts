@@ -25,7 +25,7 @@ describe("listen links — policy", () => {
     expect(listenDayOptions("FREE")).toEqual([1, 2]);
     expect(listenDayOptions("BRONZE")).toEqual([1, 7]);
     expect(listenDayOptions("SILVER")).toEqual([1, 7, 30]);
-    expect(listenDayOptions("GOLD")).toEqual([1, 7, 30]);
+    expect(listenDayOptions("GOLD")).toEqual([1, 7, 30, 45]);
   });
 
   it("active link caps: Free 1, Bronze 3, Silver+ unlimited", () => {

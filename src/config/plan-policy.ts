@@ -1,5 +1,6 @@
 /**
- * Plan policy SSOT (Owner decisions 2026-10-29, t45s320).
+ * Plan policy SSOT (Owner decisions 2026-10-29, t45s320; 2026-10-30: Gold
+ * retention 45 days, Bronze 2 recording tracks per project — Bit not counted).
  *
  * One table for everything a plan decides: price, recording, Studio size,
  * mastering quota, downloads, retention and add-ons. Every runtime module
@@ -70,7 +71,7 @@ export type PlanPolicy = {
   sharing: {
     /** Active (not expired / revoked) links at the same time; null = unlimited. */
     listenLinksActive: number | null;
-    /** Longest link lifetime in days (≤ file retention). */
+    /** Longest link lifetime in days — derived: = file retention (see withDerivedSharing). */
     listenLinkMaxDays: number;
   };
   recording: {
@@ -89,7 +90,9 @@ export type PlanPolicy = {
     maxProjects: number;
     /**
      * Recording tracks per project (vocal / sample / scratch). The Bit track
-     * does NOT count, Master is not a track. Owner 2026-10-29: Free = 1.
+     * does NOT count, Master is not a track. Owner 2026-10-29: Free = 1;
+     * Owner 2026-10-30: Bronze = 2. Existing projects above the cap keep their
+     * tracks; only adding / duplicating is blocked (DB: count >= p_max_tracks).
      */
     maxRecordingTracks: number;
   };
@@ -124,7 +127,30 @@ export function yearlySavingPercent(price: PlanPrice): number | null {
   return Math.floor(((full - price.yearlyPln) / full) * 100);
 }
 
-export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
+/** DB check studio_listen_links_expiry_chk allows at most 61 days. */
+export const LISTEN_LINK_DB_MAX_DAYS = 60;
+
+type PlanPolicyInput = Omit<PlanPolicy, "sharing"> & {
+  sharing: Omit<PlanPolicy["sharing"], "listenLinkMaxDays">;
+};
+
+/** A listen link never outlives the files it plays: max days = retention (DB-capped). */
+function withDerivedSharing(input: Record<PremiumTier, PlanPolicyInput>): Record<PremiumTier, PlanPolicy> {
+  const out = {} as Record<PremiumTier, PlanPolicy>;
+  for (const tier of Object.keys(input) as PremiumTier[]) {
+    const p = input[tier];
+    out[tier] = {
+      ...p,
+      sharing: {
+        ...p.sharing,
+        listenLinkMaxDays: Math.min(p.retentionDays, LISTEN_LINK_DB_MAX_DAYS),
+      },
+    };
+  }
+  return out;
+}
+
+export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
   FREE: {
     price: { monthlyPln: null, yearlyPln: null },
     tools: {
@@ -134,7 +160,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       pitchCorrection: { natural: true, custom: false, manualNotes: false },
       vocalCleanup: { perDay: 1 },
     },
-    sharing: { listenLinksActive: 1, listenLinkMaxDays: 2 },
+    sharing: { listenLinksActive: 1 },
     recording: {
       maxTakeSeconds: 30,
       sessionsPerDay: 1,
@@ -161,7 +187,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       pitchCorrection: { natural: true, custom: false, manualNotes: false },
       vocalCleanup: { perDay: 5 },
     },
-    sharing: { listenLinksActive: 3, listenLinkMaxDays: 7 },
+    sharing: { listenLinksActive: 3 },
     recording: {
       maxTakeSeconds: 60,
       sessionsPerDay: 5,
@@ -188,7 +214,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       pitchCorrection: { natural: true, custom: true, manualNotes: false },
       vocalCleanup: { perDay: 15 },
     },
-    sharing: { listenLinksActive: null, listenLinkMaxDays: 30 },
+    sharing: { listenLinksActive: null },
     recording: {
       maxTakeSeconds: 120,
       sessionsPerDay: 7,
@@ -215,7 +241,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       pitchCorrection: { natural: true, custom: true, manualNotes: false },
       vocalCleanup: { perDay: 30 },
     },
-    sharing: { listenLinksActive: null, listenLinkMaxDays: 30 },
+    sharing: { listenLinksActive: null },
     recording: {
       maxTakeSeconds: 180,
       sessionsPerDay: 10,
@@ -231,9 +257,9 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       ownTakeRaw: true,
       beatsPerDay: 50,
     },
-    retentionDays: 60,
+    retentionDays: 45,
   },
-};
+});
 
 /**
  * Guest (not logged in) — Owner 2026-10-29: no Studio, no recording, no beat

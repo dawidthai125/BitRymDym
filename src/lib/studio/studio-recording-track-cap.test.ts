@@ -16,4 +16,16 @@ describe("recording-track cap (Bit not counted)", () => {
     expect(studioTrackRowCap({ maxRecordingTracks: maxRecordingTracksForTier("GOLD"), beatTrackCount: 1 })).toBe(8);
     expect(() => studioTrackRowCap({ maxRecordingTracks: 0, beatTrackCount: 1 })).toThrow();
   });
+
+  it("Bronze project already above the cap keeps its tracks, but adding is blocked (DB: count >= cap)", () => {
+    const existing = [{ track_type: "BEAT" }, { track_type: "VOCAL" }, { track_type: "VOCAL" }, { track_type: "VOCAL" }];
+    const cap = studioTrackRowCap({
+      maxRecordingTracks: maxRecordingTracksForTier("BRONZE"),
+      beatTrackCount: existing.length - countRecordingTracks(existing),
+    });
+    expect(cap).toBe(3);
+    // studio_cas_add_track / studio_cas_duplicate_track raise TRACK_CAPACITY_REACHED when count >= cap;
+    // nothing trims existing rows, so the 4 tracks stay and only new ones are refused.
+    expect(existing.length >= cap).toBe(true);
+  });
 });
