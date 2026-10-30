@@ -893,6 +893,29 @@ export class StudioAudioEngine {
     }
   }
 
+  /**
+   * Gaps P1 #5: a take's playable source changed (cleaned ↔ original). Drop its timeline
+   * voices so the next sync re-resolves + re-decodes; re-sync now when playing.
+   */
+  invalidateTakeSource(takeId: string): void {
+    const document = this.document;
+    if (!document || !takeId) return;
+    let dropped = false;
+    for (const clip of document.clips) {
+      if (clip.sourceTakeId === takeId && this.voices.has(clip.id)) {
+        this.disposeVoice(clip.id);
+        dropped = true;
+      }
+    }
+    if (!dropped || !this.ctx || this.lifecycle !== "playing" || !this.epoch) return;
+    const playhead = playheadMsFromContextClock({
+      epoch: this.epoch,
+      contextTime: this.ctx.currentTime,
+      timelineLengthMs: document.timelineLengthMs,
+    });
+    void this.syncVoices(playhead, true);
+  }
+
   async play(playheadMs: number): Promise<void> {
     if (!this.initialize() || !this.ctx) return;
     this.stopPreviewInternal();

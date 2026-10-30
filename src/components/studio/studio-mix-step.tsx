@@ -25,6 +25,7 @@ import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
 import { StudioChangeReport } from "@/components/studio/studio-change-report";
+import { StudioVocalCleanup } from "@/components/studio/studio-vocal-cleanup";
 
 export type MixAutofixApply = (
   ops: MixWorkingOp[],
@@ -459,6 +460,8 @@ export function StudioMixStep({
               </span>
             </div>
           ) : null}
+
+          <StudioVocalCleanup doc={doc} />
 
           {abLive ? (
             <StudioChangeReport

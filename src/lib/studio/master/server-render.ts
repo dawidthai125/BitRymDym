@@ -20,6 +20,7 @@ import type { MixAnalysisInput, MixAnalysisSource } from "@/lib/studio/mix-analy
 import { ffmpegDecodeArgs, parseDecodedWav } from "./render-io";
 import { getStudioProjectDocumentFor } from "@/lib/studio/studio-service";
 import type { StudioProjectDocument } from "@/lib/studio/studio-types";
+import { applyStudioCleanupOverrides } from "@/lib/studio/cleanup/cleanup-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import type { Stereo } from "./dsp";
@@ -46,6 +47,7 @@ export async function loadServerMixInput(p: { ownerId: string; projectId: string
   if (Number(doc.project.documentVersion) !== Number(p.expectedVersion)) throw new Error("doc_changed");
   const t0 = Date.now();
   const { takes, beats } = await authorizeStudioExportSourcesForDocument({ jobOwnerId: p.ownerId, document: doc });
+  await applyStudioCleanupOverrides(takes, p.ownerId); // gaps P1 #5: applied vocal cleanup → cleaned FLAC
   const skeleton = buildMixAnalysisSkeleton(doc, MASTER_RENDER_SAMPLE_RATE);
   if (skeleton.lengthMs > STUDIO_MAX_SONG_MS + 1000) throw new Error("too_long");
   const admin = createSupabaseAdminClient();

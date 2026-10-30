@@ -45,6 +45,7 @@ import {
   wrapLoopPlayhead,
 } from "@/lib/studio/studio-daw-clock";
 import type { StudioTransportPhase } from "@/lib/studio/studio-transport";
+import { STUDIO_TAKE_SOURCE_CHANGED_EVENT } from "@/lib/studio/cleanup/cleanup-events";
 import { clampPlayheadMs, formatStudioTimeMs } from "@/lib/studio/studio-time";
 
 export type StudioAudioLoadState =
@@ -154,6 +155,22 @@ export type TakeClipTiming = {
 
 const URL_REFRESH_MS = 15_000;
 
+/** Gaps P1 #5 — signed URL of a take's applied vocal cleanup, or null (play the original). */
+async function resolveCleanedTakeSource(id: string): Promise<StudioResolvedSource | null> {
+  try {
+    const res = await fetch(`/api/studio/cleanup/source?takeId=${encodeURIComponent(id)}`, { cache: "no-store" });
+    const json = (await res.json()) as { url?: string | null; jobId?: string | null };
+    if (!res.ok || !json.url || !json.jobId) return null;
+    if (!isAudioSessionDedupEnabled()) return { url: json.url, expiresAt: Date.now() + 9 * 60_000 };
+    const { objectUrl } = await loadSessionAudioFromUrl(`take:${id}:clean:${json.jobId}`, json.url, { enabled: true });
+    return objectUrl
+      ? { url: objectUrl, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }
+      : { url: json.url, expiresAt: Date.now() + 9 * 60_000 };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Project timeline transport. Distinct from PlayerProvider.
  * Audible realization is StudioAudioEngine (Web Audio graph), not HTMLAudio mix SSOT.
@@ -240,6 +257,12 @@ export function StudioTransportProvider({
     if (cached && cached.expiresAt - Date.now() > URL_REFRESH_MS) {
       return cached;
     }
+    // Gaps P1 #5: an applied vocal cleanup replaces the take's source (same length).
+    const cleaned = await resolveCleanedTakeSource(id);
+    if (cleaned) {
+      takeCacheRef.current.set(id, cleaned);
+      return cleaned;
+    }
     const res = await fetch("/api/takes/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -277,6 +300,18 @@ export function StudioTransportProvider({
     takeCacheRef.current.set(id, source);
     return source;
   }
+
+  // Gaps P1 #5: cleaned ↔ original switched for a take → forget its URL + voices.
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const takeId = (e as CustomEvent<{ takeId?: string }>).detail?.takeId;
+      if (!takeId) return;
+      takeCacheRef.current.delete(takeId);
+      engineRef.current?.invalidateTakeSource(takeId);
+    };
+    window.addEventListener(STUDIO_TAKE_SOURCE_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(STUDIO_TAKE_SOURCE_CHANGED_EVENT, onChange);
+  }, []);
 
   useEffect(() => {
     catalogPlayer?.setSuppressed(true);

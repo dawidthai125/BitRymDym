@@ -2589,6 +2589,38 @@
         "bad_days": "Ta długość ważności nie jest dostępna w Twoim planie.",
         "inny": "Nie udało się utworzyć linku. Spróbuj ponownie."
       }
+    },
+    "cleanup": {
+      "title": "Oczyszczanie wokalu",
+      "intro": "Usuwa szum tła i pogłos pokoju z nagrania. Długość i synchronizacja zostają bez zmian, oryginał zostaje zachowany.",
+      "take": "Nagranie",
+      "quota": "Dziś zostało: {left} z {perDay}",
+      "slider": {
+        "noise": "Szum",
+        "reverb": "Pogłos pokoju"
+      },
+      "run": "Oczyść",
+      "rerun": "Oczyść ponownie",
+      "ab": {
+        "before": "Przed",
+        "after": "Po"
+      },
+      "use": "Użyj oczyszczonej w miksie",
+      "status": {
+        "queued": "W kolejce…",
+        "running": "Oczyszczam…",
+        "applied": "Używana wersja oczyszczona",
+        "ready": "Gotowe (−{db} dB szumu)",
+        "failed": "Nie udało się — spróbuj ponownie"
+      },
+      "limitReached": "Dzienny limit oczyszczania wykorzystany. Wyższy plan daje więcej.",
+      "remaster": "Zmieniłeś źródło wokalu — zrób mastering ponownie, aby objął wersję oczyszczoną.",
+      "error": {
+        "daily_limit": "Dzienny limit oczyszczania wykorzystany.",
+        "in_progress": "To nagranie jest już w trakcie oczyszczania.",
+        "take_unavailable": "To nagranie jest niedostępne (wygasło lub usunięte).",
+        "generic": "Coś poszło nie tak. Spróbuj ponownie."
+      }
     }
   },
   "nav": {

@@ -184,7 +184,8 @@ DECLARE
   v_row public.studio_cleanup_jobs;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended('studio_cleanup_jobs:' || p_owner::text, 0));
-  IF EXISTS (SELECT 1 FROM public.studio_cleanup_jobs WHERE take_id = p_take AND status IN ('queued', 'running')) THEN
+  IF EXISTS (SELECT 1 FROM public.studio_cleanup_jobs WHERE take_id = p_take
+              AND ((status = 'queued' AND attempts < 3) OR (status = 'running' AND started_at > now() - interval '15 minutes'))) THEN
     RAISE EXCEPTION 'CLEANUP_IN_PROGRESS' USING errcode = 'P0001';
   END IF;
   SELECT count(*) INTO v_used FROM public.studio_cleanup_jobs
@@ -207,7 +208,8 @@ BEGIN
      SET status = 'running', worker_ref = p_worker_ref, started_at = now(), attempts = j.attempts + 1
    WHERE j.id = (
      SELECT id FROM public.studio_cleanup_jobs
-      WHERE status = 'queued' AND attempts < 3
+      WHERE attempts < 3
+        AND (status = 'queued' OR (status = 'running' AND started_at < now() - interval '10 minutes'))  -- crashed worker
       ORDER BY created_at
       FOR UPDATE SKIP LOCKED
       LIMIT 1)

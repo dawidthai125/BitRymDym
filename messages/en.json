@@ -2589,6 +2589,38 @@
         "bad_days": "This lifetime is not available on your plan.",
         "inny": "Could not create the link. Please try again."
       }
+    },
+    "cleanup": {
+      "title": "Vocal cleanup",
+      "intro": "Removes background noise and room reverb from a take. Length and sync stay the same; the original is kept.",
+      "take": "Take",
+      "quota": "Left today: {left} of {perDay}",
+      "slider": {
+        "noise": "Noise",
+        "reverb": "Room reverb"
+      },
+      "run": "Clean up",
+      "rerun": "Clean up again",
+      "ab": {
+        "before": "Before",
+        "after": "After"
+      },
+      "use": "Use cleaned version in the mix",
+      "status": {
+        "queued": "Queued…",
+        "running": "Cleaning…",
+        "applied": "Using the cleaned version",
+        "ready": "Ready (−{db} dB noise)",
+        "failed": "Failed — try again"
+      },
+      "limitReached": "Daily cleanup limit reached. A higher plan gives more.",
+      "remaster": "You changed a vocal source — master again so it includes the cleaned version.",
+      "error": {
+        "daily_limit": "Daily cleanup limit reached.",
+        "in_progress": "This take is already being cleaned.",
+        "take_unavailable": "This take is unavailable (expired or deleted).",
+        "generic": "Something went wrong. Try again."
+      }
     }
   },
   "nav": {
