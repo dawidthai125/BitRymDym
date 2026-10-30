@@ -81,7 +81,7 @@ describe("signUpAction during maintenance", () => {
     rpc.mockResolvedValue({ data: { enabled: true, viewerIsAdmin: false }, error: null });
     const res = await signUpAction(
       prev,
-      form({ email: "n@b.c", password: "Haslo-123456!", confirmPassword: "Haslo-123456!", displayName: "nowy" }),
+      form({ email: "n@b.c", password: "Haslo-123456!", confirmPassword: "Haslo-123456!", displayName: "nowy", acceptTerms: "on" }),
     );
     expect(res).toMatchObject({ error: MAINTENANCE_SIGN_UP_ERROR, success: false });
     expect(signUp).not.toHaveBeenCalled();

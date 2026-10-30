@@ -175,6 +175,16 @@
       "zamknij": "Zamknij",
       "brakPodgladu": "Ten bit nie ma jeszcze podglądu dla gości",
       "brakOpis": "Zaloguj się, aby posłuchać całego bitu."
+    },
+    "legal": {
+      "nawigacja": "Dokumenty prawne",
+      "regulamin": "Regulamin",
+      "prywatnosc": "Polityka prywatności",
+      "cookies": "Cookies",
+      "zgodaRejestracja": "Akceptuję <regulamin>Regulamin</regulamin> i zapoznałem(-am) się z <prywatnosc>Polityką prywatności</prywatnosc>.",
+      "zakupRegulamin": "Akceptuję <regulamin>Regulamin</regulamin> (w tym zasady płatności i odnawiania Planu).",
+      "zakupNatychmiast": "Żądam rozpoczęcia świadczenia przed upływem 14 dni na odstąpienie od umowy i przyjmuję do wiadomości, że w przypadku treści cyfrowych tracę prawo odstąpienia z chwilą ich dostarczenia.",
+      "zakupWymagane": "Zaznacz obie zgody, aby przejść do płatności."
     }
   },
   "account": {

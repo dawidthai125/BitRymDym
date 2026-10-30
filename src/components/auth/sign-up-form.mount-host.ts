@@ -196,6 +196,7 @@ export async function probeSignUpFormPasswordMismatch(): Promise<SignUpMismatchM
   await page.locator('input[name="email"]').fill("probe@example.invalid");
   await page.locator('input[name="password"]').fill("fake-password-A");
   await page.locator('input[name="confirmPassword"]').fill("fake-password-B");
+  await page.locator('input[name="acceptTerms"]').check();
 
   await page.getByRole("button", { name: /Załóż konto/i }).click();
   await page.getByRole("alert").waitFor({ state: "visible", timeout: 10_000 });
