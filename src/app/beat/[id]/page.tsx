@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
 import { PageFrame } from "@/components/brand/chrome";
+import { ShareButtons } from "@/components/share/share-buttons";
 import type { LockReason } from "@/components/plans/locked-action";
 import { AppShell } from "@/components/site/app-shell";
 import { E3_MIX_ENABLED } from "@/config/audio-render";
@@ -23,6 +24,8 @@ import {
 import { loadSamplePolicyDurationOverrides } from "@/lib/takes/sample-policy-settings";
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
+import { absoluteUrl, clampText } from "@/lib/share/share-links";
+import { getSiteUrl } from "@/lib/site-url";
 import {
   canDownloadBeatByOwnerChoice,
   canUseBeatInStudio,
@@ -41,9 +44,14 @@ export async function generateMetadata({ params }: BeatDetailPageProps) {
     return { title: t("beatUnavailable") };
   }
   const presented = presentBeat(toPublicBeatDetail(beat));
+  const description = clampText(beat.description, 200) || `Odsłuch: ${presented.title}`;
+  // Card image: ./opengraph-image + ./twitter-image (dynamic, beat cover when public).
   return {
     title: presented.title,
-    description: beat.description ?? `Odsłuch: ${presented.title}`,
+    description,
+    alternates: { canonical: `/beat/${id}` },
+    openGraph: { type: "music.song", title: presented.title, description, url: `/beat/${id}` },
+    twitter: { card: "summary_large_image", title: presented.title, description },
   };
 }
 
@@ -175,6 +183,9 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               masterPro={masterPro}
               related={related}
             />
+          </div>
+          <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
+            <ShareButtons url={absoluteUrl(getSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />
           </div>
         </PageFrame>
       </main>

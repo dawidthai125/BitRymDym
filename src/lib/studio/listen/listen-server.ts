@@ -135,7 +135,7 @@ export async function revokeListenLink(p: { ownerId: string; projectId: string; 
 
 // ---------------------------------------------------------------- public side
 
-export type ResolvedListenLink = { linkId: string; title: string; expiresAt: string; objectKey: string };
+export type ResolvedListenLink = { linkId: string; title: string; expiresAt: string; objectKey: string; projectId: string | null };
 
 /** Token → active link of a still-existing approved master; null for anything else (no oracle). */
 export async function resolveListenToken(token: string): Promise<ResolvedListenLink | null> {
@@ -149,10 +149,10 @@ export async function resolveListenToken(token: string): Promise<ResolvedListenL
   }
   const link = data as { id: string; title: string; expires_at: string; revoked_at: string | null; master_job_id: string } | null;
   if (!link || listenLinkState({ expiresAt: link.expires_at, revokedAt: link.revoked_at }) !== "active") return null;
-  const { data: job } = await admin.from("studio_master_jobs").select("result_object_key, status, approved_at").eq("id", link.master_job_id).maybeSingle();
-  const j = job as { result_object_key: string | null; status: string; approved_at: string | null } | null;
+  const { data: job } = await admin.from("studio_master_jobs").select("result_object_key, status, approved_at, project_id").eq("id", link.master_job_id).maybeSingle();
+  const j = job as { result_object_key: string | null; status: string; approved_at: string | null; project_id?: string | null } | null;
   if (!j?.result_object_key || j.status !== "succeeded" || !j.approved_at) return null;
-  return { linkId: link.id, title: link.title, expiresAt: link.expires_at, objectKey: j.result_object_key };
+  return { linkId: link.id, title: link.title, expiresAt: link.expires_at, objectKey: j.result_object_key, projectId: j.project_id ?? null };
 }
 
 /** Sliding-window rate limit (per link and per hashed client IP). Fails closed on DB errors. */
