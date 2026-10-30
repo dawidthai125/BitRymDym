@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 import {
   PROVISIONAL_DRAFT_BPM,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/beats/audio-transport";
 import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 import { requireUser } from "@/lib/auth/session";
+import type { Beat } from "@/types/domain";
 import {
   approveUserBeat,
   archiveOwnUserBeat,
@@ -134,12 +136,23 @@ export async function updateOwnUserBeatMetadataAction(params: {
   }
 }
 
+/** Moderation result e-mail to the owner — after the response, never blocks or fails the action. */
+function notifyModeration(beat: Beat, kind: "beat_approved" | "beat_rejected", reason?: string) {
+  if (!beat.ownerId) return;
+  const ownerId = beat.ownerId;
+  after(async () => {
+    const { sendNotification } = await import("@/lib/email/notify/server");
+    await sendNotification({ userId: ownerId, kind, data: { beatId: beat.id, beatTitle: beat.title, reason: reason ?? null } });
+  });
+}
+
 export async function approveUserBeatAction(
   beatId: string,
 ): Promise<CommunityActionState> {
   try {
     const beat = await approveUserBeat(beatId);
     revalidateCommunitySurfaces(beat.id);
+    notifyModeration(beat, "beat_approved");
     return { error: null, success: true, beatId: beat.id };
   } catch (error) {
     return catchAction(error);
@@ -153,6 +166,7 @@ export async function rejectUserBeatAction(
   try {
     const beat = await rejectUserBeat(beatId, rejectionReason);
     revalidateCommunitySurfaces(beat.id);
+    notifyModeration(beat, "beat_rejected", rejectionReason);
     return { error: null, success: true, beatId: beat.id };
   } catch (error) {
     return catchAction(error);

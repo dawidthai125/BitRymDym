@@ -1,5 +1,5 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 
 import {
   classifyAuthCallbackParams,
@@ -24,6 +24,7 @@ import {
   passwordRecoveryCookieValue,
   passwordRecoverySetOptions,
 } from "@/lib/auth/password-recovery-seal-cookie";
+import { sendWelcomeOnce } from "@/lib/email/notify/server";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -127,6 +128,13 @@ export async function GET(request: NextRequest) {
       exchangeOk,
       exchangeErrorMessage,
     });
+
+    // Welcome e-mail once per account, after a confirmed sign-up (off unless notifications are enabled).
+    if (exchangeOk && !recovery && !isEmailChangeCallback(classified)) {
+      const { data: confirmed } = await supabase.auth.getUser();
+      const newUserId = confirmed.user?.email_confirmed_at ? confirmed.user.id : null;
+      if (newUserId) after(() => sendWelcomeOnce(newUserId).then(() => {}));
+    }
 
     if (decision.signOut) {
       await supabase.auth.signOut();

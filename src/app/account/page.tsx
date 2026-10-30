@@ -16,6 +16,10 @@ import {
   DeleteAccountForm,
 } from "@/components/auth/auth-forms";
 import { DisplayNameForm } from "@/components/auth/display-name-form";
+import { NotificationPreferencesForm } from "@/components/account/notification-preferences-form";
+import { notifyEnv } from "@/lib/email/notify/config";
+import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/site/app-shell";
 import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
@@ -68,6 +72,8 @@ export default async function AccountPage({
   if (!context) {
     redirect("/sign-in");
   }
+  const tn = await getTranslations("account.notifications");
+  const notificationPrefs = await readPreferences(createSupabaseAdminClient(), context.userId).catch(() => DEFAULT_PREFERENCES);
 
   const params = await searchParams;
   const claimParam = params.claim;
@@ -364,6 +370,15 @@ export default async function AccountPage({
                     {tr("resetPrzezEMail")}
                   </Link>
                 </p>
+              </section>
+
+              <section
+                id="powiadomienia"
+                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
+              >
+                <SectionLabel>{tn("tytul")}</SectionLabel>
+                <NotificationPreferencesForm initialPrefs={notificationPrefs} active={notifyEnv(process.env).enabled} />
+                <p className="text-xs text-[var(--brd-mute)]">{tn("informacja")}</p>
               </section>
 
               <section
