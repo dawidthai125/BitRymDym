@@ -1,5 +1,7 @@
 "use server";
 
+import { signupConsent } from "@/lib/legal/legal-config";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -68,6 +70,8 @@ function authConfigUnavailableError(): AuthActionState {
   };
 }
 
+const SIGN_UP_TERMS_REQUIRED_ERROR = "Zaakceptuj Regulamin i Politykę prywatności, aby założyć konto.";
+
 export async function signUpAction(
   _prev: AuthActionState,
   formData: FormData,
@@ -101,6 +105,10 @@ export async function signUpAction(
     return { error: ksywka.error, success: false, message: null };
   }
 
+  if (formData.get("acceptTerms") !== "on") {
+    return { error: SIGN_UP_TERMS_REQUIRED_ERROR, success: false, message: null };
+  }
+
   // Maintenance mode: no new accounts (page is gated too; this is the server check).
   const supabase = await createSupabaseServerClient();
   if ((await readSiteMaintenanceForViewer(supabase)).enabled) {
@@ -114,6 +122,8 @@ export async function signUpAction(
       emailRedirectTo: getAuthEmailRedirectTo(),
       data: {
         display_name: ksywka.value,
+        // Regulamin + Polityka prywatności accepted at sign-up (version + time).
+        ...signupConsent(),
       },
     },
   });

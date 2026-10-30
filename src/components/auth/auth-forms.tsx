@@ -22,6 +22,7 @@ import {
 } from "@/lib/auth/actions";
 import { AUTH_FIELD_CLASS } from "@/components/auth/auth-field-class";
 import { PasswordFieldWithToggle } from "@/components/auth/password-field-with-toggle";
+import { SignupConsentCheckbox } from "@/components/legal/consent-checkbox";
 import { Button } from "@/components/ui/button";
 
 const initialState: AuthActionState = { error: null, success: false };
@@ -116,6 +117,7 @@ export function SignUpForm({ next = null }: { next?: string | null } = {}) {
         showLabel={t("pokazPowtorzoneHaslo")}
         hideLabel={t("ukryjPowtorzoneHaslo")}
       />
+      <SignupConsentCheckbox />
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">
           {tl(state.error)}

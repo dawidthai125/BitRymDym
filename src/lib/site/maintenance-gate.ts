@@ -42,7 +42,11 @@ export const MAINTENANCE_OFF: MaintenanceState = Object.freeze({
  * Exact paths and prefixes that keep working during maintenance for everyone:
  * admin panel + its APIs (role-checked there), sign-in and password recovery,
  * Supabase auth callbacks, the maintenance page itself, crawler files,
- * health, cron and the E3 worker / payment webhook endpoints.
+ * health, cron and the E3 worker / payment webhook endpoints, the
+ * legal pages (/regulamin, /polityka-prywatnosci, /cookies), the e-mail
+ * unsubscribe endpoint + its confirmation page (links in sent mail must keep
+ * working) and the share-card images (crawlers). The pages behind those
+ * images (/beat/[id], /listen/[token]) stay gated.
  */
 const EXEMPT_EXACT = new Set<string>([
   MAINTENANCE_PAGE_PATH,
@@ -54,6 +58,12 @@ const EXEMPT_EXACT = new Set<string>([
   "/apple-icon.png",
   "/manifest.webmanifest",
   "/api/health",
+  "/api/email/unsubscribe",
+  "/email/wypisano",
+  // Legal pages (Regulamin / Polityka prywatności / Cookies) must stay readable.
+  "/regulamin",
+  "/polityka-prywatnosci",
+  "/cookies",
 ]);
 
 const EXEMPT_PREFIXES = [
@@ -70,6 +80,9 @@ const EXEMPT_PREFIXES = [
   "/demo/",
 ] as const;
 
+/** Share-card images only: /beat/<id>/(opengraph|twitter)-image, /listen/<token>/… */
+const SHARE_IMAGE_RE = /^\/(?:beat|listen)\/[^/]+\/(?:opengraph|twitter)-image$/;
+
 /** Public static files (fonts, images, audio worklets served from /public). */
 const STATIC_FILE_RE =
   /\.(?:svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|css|map|txt|xml|webmanifest)$/i;
@@ -79,6 +92,7 @@ export type MaintenancePathKind = "exempt" | "api" | "page";
 export function classifyMaintenancePath(pathname: string): MaintenancePathKind {
   if (pathname === "/admin" || EXEMPT_EXACT.has(pathname)) return "exempt";
   if (EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) return "exempt";
+  if (SHARE_IMAGE_RE.test(pathname)) return "exempt";
   if (STATIC_FILE_RE.test(pathname) && !pathname.startsWith("/api/")) {
     return "exempt";
   }

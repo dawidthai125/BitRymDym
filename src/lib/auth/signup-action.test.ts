@@ -37,6 +37,7 @@ function validForm(email = "probe@example.invalid"): FormData {
   data.set("displayName", "ProbeUi");
   data.set("password", "fake-password-A");
   data.set("confirmPassword", "fake-password-A");
+  data.set("acceptTerms", "on");
   return data;
 }
 
@@ -63,6 +64,23 @@ describe("signUpAction password mismatch", () => {
     });
     expect(createSupabaseServerClient).not.toHaveBeenCalled();
     expect(signUp).not.toHaveBeenCalled();
+  });
+});
+
+describe("signUpAction terms consent", () => {
+  it("refuses without the Regulamin / Polityka checkbox and never calls signUp", async () => {
+    const form = validForm();
+    form.delete("acceptTerms");
+    const result = await signUpAction(previous, form);
+    expect(result).toEqual({ error: "Zaakceptuj Regulamin i Politykę prywatności, aby założyć konto.", success: false, message: null });
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it("stores the accepted document versions in user metadata", async () => {
+    signUp.mockResolvedValue({ data: { user: { id: "u1", identities: [{ id: "i1" }] }, session: null }, error: null });
+    await signUpAction(previous, validForm());
+    const data = signUp.mock.calls[0]?.[0]?.options?.data;
+    expect(data).toMatchObject({ display_name: "ProbeUi", terms_version: expect.any(String), privacy_version: expect.any(String), terms_accepted_at: expect.any(String) });
   });
 });
 

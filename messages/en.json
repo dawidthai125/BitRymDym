@@ -176,6 +176,16 @@
       "brakPodgladu": "This beat has no guest preview yet",
       "brakOpis": "Sign in to listen to the full beat."
     },
+    "legal": {
+      "nawigacja": "Legal documents",
+      "regulamin": "Terms",
+      "prywatnosc": "Privacy policy",
+      "cookies": "Cookies",
+      "zgodaRejestracja": "I accept the <regulamin>Terms</regulamin> and have read the <prywatnosc>Privacy policy</prywatnosc>.",
+      "zakupRegulamin": "I accept the <regulamin>Terms</regulamin> (including payment and plan renewal rules).",
+      "zakupNatychmiast": "I request that performance starts before the 14-day withdrawal period ends and I acknowledge that for digital content I lose the right of withdrawal once it is delivered.",
+      "zakupWymagane": "Tick both boxes to continue to payment."
+    },
     "share": {
       "tytul": "Share",
       "kopiuj": "Copy link",
