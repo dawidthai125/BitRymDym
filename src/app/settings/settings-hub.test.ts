@@ -58,12 +58,11 @@ describe("settings hub (navigation only)", () => {
     expect(src).not.toContain("DeleteAccountForm");
   });
 
-  it("Premium copy does not claim in-app purchase", () => {
-    // Hub link copy lives in messages (account.settingsPage.consts).
+  it("Premium copy points at the Premium page and does not claim checkout is always on", () => {
     expect(src).toContain("informacjaOPoziomachI");
-    expect(JSON.stringify(plMessages.account.settingsPage.consts)).toMatch(
-      /Zakup w aplikacji nie jest dostępny/,
-    );
+    const text = plMessages.account.settingsPage.consts.informacjaOPoziomachI;
+    expect(text).toMatch(/gdy płatności są włączone/);
+    expect(text).not.toMatch(/kup teraz/i);
   });
 
   it("exposes real h2 headings for theme and link groups", () => {

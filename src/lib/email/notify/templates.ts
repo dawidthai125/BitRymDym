@@ -9,6 +9,8 @@ export type TemplateData = {
   reason?: string | null;
   projectTitle?: string | null;
   projectId?: string | null;
+  /** Server-composed purchase receipt line (already plain text). */
+  detail?: string | null;
 };
 
 export type BuiltMail = { subject: string; text: string; html: string };
@@ -37,6 +39,12 @@ function body(kind: NotifyKind, d: TemplateData): Body {
       return { subject: `Master gotowy: ${project}`, heading: "Master gotowy", lines: [hi, `master projektu „${project}” jest gotowy do odsłuchu i akceptacji.`], cta: { label: "Otwórz projekt", path: studio } };
     case "mp4_ready":
       return { subject: `Wideo MP4 gotowe: ${project}`, heading: "Wideo MP4 gotowe", lines: [hi, `wideo MP4 projektu „${project}” jest gotowe do pobrania.`], cta: { label: "Pobierz wideo", path: studio } };
+    case "purchase_confirmed":
+      return { subject: "Wpłata doszła", heading: "Wpłata doszła", lines: [hi, clean(d.detail, 400) || "Tu BITEK. Włączyłem opłacony plan na Twoim koncie."], cta: { label: "Zobacz plan", path: "/premium" } };
+    default: {
+      const neverKind: never = kind;
+      return neverKind;
+    }
   }
 }
 
@@ -46,7 +54,9 @@ export function buildMail(kind: NotifyKind, d: TemplateData, links: { unsubscrib
   const cta = b.cta ? `${base}${b.cta.path}` : null;
   const footer = kind === "welcome"
     ? "Dostajesz tę wiadomość, bo założono konto w BitRymDym."
-    : "Dostajesz tę wiadomość, bo masz włączone powiadomienia w BitRymDym.";
+    : kind === "purchase_confirmed"
+      ? "Dostajesz tę wiadomość, bo opłacono zamówienie w BitRymDym."
+      : "Dostajesz tę wiadomość, bo masz włączone powiadomienia w BitRymDym.";
   const text = [b.heading, "", ...b.lines, ...(cta ? ["", `${b.cta!.label}: ${cta}`] : []), "", "—", footer, `Ustawienia powiadomień: ${links.preferences}`, `Wypisz się: ${links.unsubscribe}`].join("\n");
   const p = (s: string) => `<p style="margin:0 0 12px">${escapeHtml(s)}</p>`;
   const html = `<!doctype html><html lang="pl"><body style="margin:0;background:#f3ebdd;font-family:Arial,Helvetica,sans-serif;color:#16130f">
