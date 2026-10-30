@@ -63,6 +63,15 @@ export type PlanPolicy = {
       /** Manual note-by-note correction — GOLD, follow-up (false until the editor ships). */
       manualNotes: boolean;
     };
+    /** Vocal cleanup (noise + room reverb reduction, E3 job) — gaps P1 #5. Takes per Warsaw day. */
+    vocalCleanup: { perDay: number };
+  };
+  /** Private listen links to the approved master (gaps P1) — no download, expiring, revocable. */
+  sharing: {
+    /** Active (not expired / revoked) links at the same time; null = unlimited. */
+    listenLinksActive: number | null;
+    /** Longest link lifetime in days (≤ file retention). */
+    listenLinkMaxDays: number;
   };
   recording: {
     /** Max length of one take (seconds). */
@@ -123,7 +132,9 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       bitekMemory: "session",
       vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
       pitchCorrection: { natural: true, custom: false, manualNotes: false },
+      vocalCleanup: { perDay: 1 },
     },
+    sharing: { listenLinksActive: 1, listenLinkMaxDays: 2 },
     recording: {
       maxTakeSeconds: 30,
       sessionsPerDay: 1,
@@ -148,7 +159,9 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
       pitchCorrection: { natural: true, custom: false, manualNotes: false },
+      vocalCleanup: { perDay: 5 },
     },
+    sharing: { listenLinksActive: 3, listenLinkMaxDays: 7 },
     recording: {
       maxTakeSeconds: 60,
       sessionsPerDay: 5,
@@ -173,7 +186,9 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 20, roleSets: false },
       pitchCorrection: { natural: true, custom: true, manualNotes: false },
+      vocalCleanup: { perDay: 15 },
     },
+    sharing: { listenLinksActive: null, listenLinkMaxDays: 30 },
     recording: {
       maxTakeSeconds: 120,
       sessionsPerDay: 7,
@@ -198,7 +213,9 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = {
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 50, roleSets: true },
       pitchCorrection: { natural: true, custom: true, manualNotes: false },
+      vocalCleanup: { perDay: 30 },
     },
+    sharing: { listenLinksActive: null, listenLinkMaxDays: 30 },
     recording: {
       maxTakeSeconds: 180,
       sessionsPerDay: 10,
@@ -247,6 +264,14 @@ export function pitchCorrectionAccessForTier(tier: PremiumTier): PlanPolicy["too
 }
 
 /** Lowest plan that unlocks a Studio tool (for lock labels). */
+export function listenLinksForTier(tier: PremiumTier): PlanPolicy["sharing"] {
+  return PLAN_POLICY[tier].sharing;
+}
+
+export function vocalCleanupPerDayForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].tools.vocalCleanup.perDay;
+}
+
 export function minimumTierFor(test: (policy: PlanPolicy) => boolean): PremiumTier {
   for (const tier of ["FREE", "BRONZE", "SILVER", "GOLD"] as const) {
     if (test(PLAN_POLICY[tier])) return tier;

@@ -2506,6 +2506,58 @@
       "latencja": "Tuning adds 40 ms latency — the studio compensates for it automatically.",
       "szybkosc": "Retune speed",
       "sila": "Strength"
+    },
+    "report": {
+      "tytul": "What I changed — track by track",
+      "wstep": "I changed {tracks, plural, one {# track} other {# tracks}} ({items, plural, one {# change} other {# changes}}). Here it is:",
+      "brakZmian": "I didn't touch anything this time.",
+      "panSrodek": "centre",
+      "panL": "{pct}% left",
+      "panR": "{pct}% right",
+      "items": {
+        "gainUp": "I turned it up by {delta} dB ({from} → {to} dB).",
+        "gainDown": "I turned it down by {delta} dB ({from} → {to} dB).",
+        "panMove": "I moved it in the stereo field: {from} → {to}.",
+        "muted": "I muted the track.",
+        "unmuted": "I unmuted the track.",
+        "fxAdded": "I added an effect: {fx}.",
+        "fxRemoved": "I removed an effect: {fx}.",
+        "fxOn": "I switched on: {fx}.",
+        "fxOff": "I switched off: {fx}.",
+        "fxChanged": "I adjusted {fx}: {changes}.",
+        "loudnessMeasured": "Measured after the change: {from} → {to} LUFS ({delta} LU)."
+      },
+      "masterTytul": "What I did in the master",
+      "master": {
+        "target": "I aimed for: {target}.",
+        "loudnessUp": "I raised the whole song by {delta} LU ({from} → {to} LUFS).",
+        "loudnessDown": "I lowered the whole song by {delta} LU ({from} → {to} LUFS).",
+        "peakTamed": "I tamed the peaks: {from} → {to} dBTP.",
+        "peakOver": "Heads up: the peak ended at {to} dBTP — above the target ceiling.",
+        "dynamics": "Dynamics (LRA): {from} → {to} LU.",
+        "setting": "Your setting: {setting} {value}."
+      },
+      "platformy": {
+        "tytul": "How it will play on platforms",
+        "opis": "Platforms even out loudness. This is how they will adjust your master with default player settings (approximate).",
+        "nazwy": {
+          "spotify": "Spotify",
+          "youtube": "YouTube",
+          "apple": "Apple Music",
+          "tiktok": "TikTok"
+        },
+        "sciszy": "Turns it down by {db} dB (reference {ref} LUFS).",
+        "podglosni": "Turns it up by {db} dB (to {ref} LUFS).",
+        "podglosniCzesciowo": "Turns it up only {db} dB — the peaks don't allow more (target {ref} LUFS).",
+        "bezZmian": "Plays unchanged (reference {ref} LUFS).",
+        "bezZmianSzczyt": "Won't turn it up — the peaks have no headroom (target {ref} LUFS).",
+        "szacunek": "TikTok doesn't publish its level — measured, approximate value.",
+        "tp": {
+          "ok": "Peak {tp} dBTP — safe for streaming codecs.",
+          "warn": "Peak {tp} dBTP: for a master this loud, ≤ {ceiling} dBTP is safer — the codec (Ogg/AAC) may add distortion.",
+          "over": "Peak {tp} dBTP is above −1 dBTP — distortion is possible after platform encoding. Master again or lower the loudness."
+        }
+      }
     }
   },
   "nav": {

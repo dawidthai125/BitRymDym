@@ -2506,6 +2506,58 @@
       "latencja": "Strojenie dodaje 40 ms opóźnienia — studio kompensuje je automatycznie.",
       "szybkosc": "Szybkość strojenia",
       "sila": "Siła"
+    },
+    "report": {
+      "tytul": "Co zmieniłem — ścieżka po ścieżce",
+      "wstep": "Zmieniłem {tracks, plural, one {# ścieżkę} few {# ścieżki} many {# ścieżek} other {# ścieżki}} ({items, plural, one {# zmiana} few {# zmiany} many {# zmian} other {# zmiany}}). Tak to wygląda:",
+      "brakZmian": "Tym razem niczego nie ruszałem.",
+      "panSrodek": "środek",
+      "panL": "{pct}% w lewo",
+      "panR": "{pct}% w prawo",
+      "items": {
+        "gainUp": "Podgłośniłem o {delta} dB ({from} → {to} dB).",
+        "gainDown": "Ściszyłem o {delta} dB ({from} → {to} dB).",
+        "panMove": "Przesunąłem w panoramie: {from} → {to}.",
+        "muted": "Wyciszyłem ścieżkę.",
+        "unmuted": "Włączyłem ścieżkę z powrotem.",
+        "fxAdded": "Dodałem efekt: {fx}.",
+        "fxRemoved": "Usunąłem efekt: {fx}.",
+        "fxOn": "Włączyłem efekt: {fx}.",
+        "fxOff": "Wyłączyłem efekt: {fx}.",
+        "fxChanged": "Przestawiłem {fx}: {changes}.",
+        "loudnessMeasured": "Zmierzyłem po zmianie: {from} → {to} LUFS ({delta} LU)."
+      },
+      "masterTytul": "Co zrobiłem w masterze",
+      "master": {
+        "target": "Celowałem w: {target}.",
+        "loudnessUp": "Podniosłem głośność całości o {delta} LU ({from} → {to} LUFS).",
+        "loudnessDown": "Ściszyłem całość o {delta} LU ({from} → {to} LUFS).",
+        "peakTamed": "Opanowałem szczyty: {from} → {to} dBTP.",
+        "peakOver": "Uwaga: szczyt wyszedł {to} dBTP — wyżej niż sufit celu.",
+        "dynamics": "Dynamika (LRA): {from} → {to} LU.",
+        "setting": "Twoje ustawienie: {setting} {value}."
+      },
+      "platformy": {
+        "tytul": "Jak zagra na platformach",
+        "opis": "Platformy wyrównują głośność utworów. Tak przestawią Twój master przy domyślnych ustawieniach odtwarzacza (wartości orientacyjne).",
+        "nazwy": {
+          "spotify": "Spotify",
+          "youtube": "YouTube",
+          "apple": "Apple Music",
+          "tiktok": "TikTok"
+        },
+        "sciszy": "Ściszy o {db} dB (poziom odniesienia {ref} LUFS).",
+        "podglosni": "Podgłośni o {db} dB (do {ref} LUFS).",
+        "podglosniCzesciowo": "Podgłośni tylko o {db} dB — dalej nie pozwalają szczyty (cel {ref} LUFS).",
+        "bezZmian": "Zagra bez zmian (poziom odniesienia {ref} LUFS).",
+        "bezZmianSzczyt": "Nie podgłośni — szczyty nie mają zapasu (cel {ref} LUFS).",
+        "szacunek": "TikTok nie publikuje poziomu — wartość z pomiarów, szacunkowa.",
+        "tp": {
+          "ok": "Szczyt {tp} dBTP — bezpiecznie dla kodeków streamingowych.",
+          "warn": "Szczyt {tp} dBTP: przy tak głośnym masterze lepiej ≤ {ceiling} dBTP — kodek (Ogg/AAC) może dodać przester.",
+          "over": "Szczyt {tp} dBTP jest powyżej −1 dBTP — po kompresji na platformie możliwy przester. Zrób master jeszcze raz albo zmniejsz głośność."
+        }
+      }
     }
   },
   "nav": {
