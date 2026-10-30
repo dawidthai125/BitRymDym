@@ -6,6 +6,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,10 @@ import {
   toUserFacingTakeUploadError,
   uploadTakeRecordingBlob,
 } from "@/lib/takes/client-upload";
+import {
+  liveTakeStatusForPhase,
+  studioLiveTakeStore,
+} from "@/lib/studio/studio-live-take";
 import {
   TakeMediaRecorder,
   TakeRecorderError,
@@ -639,6 +644,36 @@ export function StudioRecordingPanel({
     trackIdRef.current = trackId;
     recordStartMsRef.current = recordStartMs;
   }, [beatId, maxSeconds, trackId, recordStartMs]);
+
+  // rec-live-ui: growing region + live mic waveform on the capture track, kept
+  // (frozen) through upload / keep-or-discard until the real clip replaces it.
+  useEffect(() => {
+    const status = liveTakeStatusForPhase(state.phase);
+    if (!status) {
+      studioLiveTakeStore.end();
+      return;
+    }
+    const live = studioLiveTakeStore.get();
+    if (status === "recording") {
+      const capTrack = captureTrackIdRef.current || trackIdRef.current;
+      const startMs = recordStartMsRef.current;
+      if (capTrack && startMs != null && (!live || live.status !== "recording")) {
+        studioLiveTakeStore.begin(capTrack, startMs);
+      }
+      return;
+    }
+    studioLiveTakeStore.setStatus(status);
+  }, [state.phase, recordStartMs]);
+
+  useEffect(() => () => studioLiveTakeStore.end(), []);
+
+  useEffect(() => {
+    const live = studioLiveTakeStore.get();
+    if (state.phase !== "RECORDING" || !startedAtRef.current || !live) return;
+    // Recorder clock (not the transport) — matches the final take length even with no beat.
+    studioLiveTakeStore.sample(live.startMs + (Date.now() - startedAtRef.current), mic.windowPeak);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sampled per analyser snapshot (15 Hz)
+  }, [mic]);
 
   useEffect(() => {
     if (!recordRequest) return;
@@ -2045,6 +2080,24 @@ export function StudioRecordingPanel({
       }
       aria-label={tr("nagrywanieWStudio")}
     >
+      {/* rec-live-ui — mobile only (< lg): always-visible Stop while capturing, same path as
+          the 2nd REC press (stop + upload). Portal: escapes the scrolling inspector sheet. */}
+      {state.phase === "RECORDING" && typeof document !== "undefined"
+        ? createPortal(
+            <button
+              type="button"
+              data-testid="studio-rec-floating-stop"
+              className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-1/2 z-[60] flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-full border-2 border-white/80 bg-[var(--brd-rec)] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-2xl lg:hidden"
+              onClick={() => void stopAndFinalize()}
+            >
+              {tr("zatrzymajNagrywanie")}
+              <span className="font-mono text-xs opacity-90">
+                {tl(formatStudioTimeMs(Math.round(state.elapsedMs)))}
+              </span>
+            </button>,
+            document.body,
+          )
+        : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-[var(--brd-ink)]">
           {tr("nagrywanie")}

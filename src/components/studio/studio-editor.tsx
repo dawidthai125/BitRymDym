@@ -28,6 +28,7 @@ import { StudioMasterMeter } from "@/components/studio/studio-master-meter";
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
 import { StudioBeatPicker } from "@/components/studio/studio-beat-picker";
 import { StudioClipLaneItem } from "@/components/studio/studio-clip-lane";
+import { StudioLiveTakeRegion } from "@/components/studio/studio-live-take-region";
 import {
   deriveStudioInspectorContext,
   studioPreferRecordAfterCaptureReport,
@@ -3005,6 +3006,9 @@ function StudioEditorInner({
         onDismiss={(key) => saveBitekBubbleState({ minimized: false, dismissedKey: key })}
         chatOpen={bitekChatOpen}
         onChatOpenChange={setBitekChatOpen}
+        recording={recordingLocked}
+        recordContext={studioStep === "record" || recordingContextActive}
+        inspectorSheetOpen={inspectorOverlayOpen && !inspectorDesktopRail}
         chat={
           <StudioBitekChat
             projectId={doc.project.id}
@@ -3376,6 +3380,7 @@ function StudioEditorInner({
         context={inspectorContext}
         panelId={inspectorPanelId}
         onClose={closeInspectorOverlay}
+        capturing={recordingLocked}
         closeBlockedMessage={
           tl(inspectorCloseRejected && recordingLocked
             ? tInspector("closeBlocked")
@@ -4551,6 +4556,11 @@ function StudioTimeline({
                         onCommitGeometry={onCommitClipGeometry}
                       />
                     ))}
+                    <StudioLiveTakeRegion
+                      trackId={track.id}
+                      pxPerMs={density}
+                      laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
+                    />
                   </div>
                 );
               })}

@@ -2834,6 +2834,11 @@
       "podgladInfo": "The note preview and project playback use the same engine as the render. After a note change I need a moment to retune.",
       "lock": "Manual note correction comes with the Gold plan — drag every note on its own, down to the cent.",
       "zobaczGold": "See the Gold plan"
+    },
+    "studioLiveTake": {
+      "nagrywanie": "● REC {czas}",
+      "zapisywanie": "Saving take…",
+      "zachowajLubOdrzuc": "Take ready — keep or discard"
     }
   },
   "nav": {

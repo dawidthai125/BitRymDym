@@ -15,6 +15,8 @@ export type MicAnalyserSnapshot = {
   level: MicLevelState;
   /** Rolling peak bars 0..1 for live waveform */
   bars: number[];
+  /** Max peak over every frame since the previous snapshot (no gaps between emits). */
+  windowPeak: number;
 };
 
 const EMPTY: MicAnalyserSnapshot = {
@@ -22,6 +24,7 @@ const EMPTY: MicAnalyserSnapshot = {
   peakDb: -100,
   level: "silent",
   bars: [],
+  windowPeak: 0,
 };
 
 function classifyLevel(peak: number): MicLevelState {
@@ -67,6 +70,7 @@ export function useMicAnalyser(
     let analyser: AnalyserNode | null = null;
     let raf = 0;
     let lastEmit = 0;
+    let windowMax = 0;
     const intervalMs = 1000 / hz;
 
     async function start() {
@@ -100,8 +104,11 @@ export function useMicAnalyser(
           ring.push(Math.max(0.04, Math.min(1, peak)));
           if (ring.length > barCount) ring.shift();
 
+          if (peak > windowMax) windowMax = peak;
           if (now - lastEmit < intervalMs) return;
           lastEmit = now;
+          const windowPeak = windowMax;
+          windowMax = 0;
 
           const peakDb = peak > 0 ? 20 * Math.log10(peak) : -100;
           setSnap({
@@ -109,6 +116,7 @@ export function useMicAnalyser(
             peakDb,
             level: classifyLevel(peak),
             bars: [...ring],
+            windowPeak,
           });
         };
 
