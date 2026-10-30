@@ -1,4 +1,5 @@
 import type { Beat, BeatStatus } from "@/types/domain";
+import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { toUserFacingError } from "@/lib/ui/user-errors";
 
 /** Public catalog / detail visibility — PUBLISHED only. */
@@ -21,6 +22,10 @@ export type PublicBeatCatalogItem = {
   scale: string | null;
   durationSeconds: number;
   coverRef: string | null;
+  /** Approved owner cover (thumb), or null → generated artwork. */
+  coverUrl: string | null;
+  /** Full-size approved cover for the detail page. */
+  coverFullUrl: string | null;
 };
 
 export type PublicBeatDetail = PublicBeatCatalogItem & {
@@ -39,6 +44,8 @@ export function toPublicCatalogItem(beat: Beat): PublicBeatCatalogItem {
     scale: beat.scale,
     durationSeconds: beat.durationSeconds,
     coverRef: beat.coverRef,
+    coverUrl: beatCoverUrl(beat, "thumb"),
+    coverFullUrl: beatCoverUrl(beat, "full"),
   };
 }
 
@@ -79,6 +86,9 @@ export function toSafeDownloadErrorMessage(
     lower.includes("platform beat download is not available")
   ) {
     return "Pobieranie oryginalnego bitu jest niedostępne.";
+  }
+  if (lower.includes("beat download disabled by owner")) {
+    return "Autor udostępnił ten bit tylko do odsłuchu.";
   }
   // Owner 2026-10-29: guests sign in first; Free listens only.
   if (lower.includes("beat download requires sign-in")) {

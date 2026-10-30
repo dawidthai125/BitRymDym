@@ -10,6 +10,11 @@ import {
   requireUser,
 } from "@/lib/auth/session";
 import {
+  KEY_SUGGEST_MIN_CONFIDENCE,
+  detectBeatKeyFromMonoPcm,
+  type BeatKeySuggestion,
+} from "@/lib/beats/audio-key";
+import {
   analyzeBeatAudioBytes,
   probeAudioDurationFromBytes,
   type AnalyzedBeatBpm,
@@ -80,6 +85,8 @@ export type TransportAnalyzeResult = {
   bpmMessage?: string;
   /** Server uncertainty envelope — candidates / hypotheses / allowlist. */
   bpmEnvelope: BpmUncertaintyEnvelope;
+  /** User beats 2026-10-30: server key suggestion (null = manual). */
+  keySuggestion?: BeatKeySuggestion | null;
 };
 
 async function requireAdminCreate() {
@@ -966,10 +973,14 @@ export async function analyzeUserBeatPendingUploadFor(
     throw new BeatRequestError(meta.errors.join("; "));
   }
 
+  let detectedKey: BeatKeySuggestion | null = null;
   const analyzed = await analyzeBeatAudioBytes({
     bytes,
     contentType: asset.content_type ?? "audio/wav",
     originalFilename: asset.original_filename,
+    onPcm: (samples, sampleRate) => {
+      detectedKey = detectBeatKeyFromMonoPcm(samples, sampleRate);
+    },
   });
 
   if (!analyzed.ok) {
@@ -979,6 +990,9 @@ export async function analyzeUserBeatPendingUploadFor(
 
   const checksum = createHash("sha256").update(bytes).digest("hex");
   const admin = createSupabaseAdminClient();
+  // E1: analyze never writes the beat. The suggestion is returned for the
+  // form prefill and stored (advisory) at finalize.
+  const keySuggestion = detectedKey as BeatKeySuggestion | null;
   const { error: assetUpdateError } = await admin
     .from("beat_audio_assets")
     .update({
@@ -1003,6 +1017,10 @@ export async function analyzeUserBeatPendingUploadFor(
     contentType: analyzed.contentType,
     titleSuggestion: analyzed.titleSuggestion,
     ...bpmMapped,
+    keySuggestion:
+      keySuggestion && keySuggestion.confidence >= KEY_SUGGEST_MIN_CONFIDENCE
+        ? keySuggestion
+        : null,
   };
 }
 

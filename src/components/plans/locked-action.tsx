@@ -15,8 +15,11 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
 
-/** unavailable: never downloadable (PLATFORM catalogue original), no CTA. */
-export type LockReason = "guest" | "plan" | "unavailable";
+/**
+ * unavailable: never downloadable (PLATFORM catalogue original), no CTA.
+ * owner: the beat's author chose listen-only / no Studio use, no CTA.
+ */
+export type LockReason = "guest" | "plan" | "unavailable" | "owner";
 
 const TIER_LABEL: Record<PremiumTier, string> = {
   FREE: "Free",
@@ -82,6 +85,10 @@ export function LockedAction({
   const text =
     reason === "unavailable"
       ? t("platformDownload")
+      : reason === "owner"
+      ? action === "record"
+        ? t("ownerStudio")
+        : t("ownerDownload")
       : reason === "guest"
       ? action === "record"
         ? t("guestRecord")
@@ -144,7 +151,7 @@ export function LockedAction({
             >
               {t("guestLink")}
             </Link>
-          ) : reason === "unavailable" ? null : (
+          ) : reason === "unavailable" || reason === "owner" ? null : (
             <Link
               href="/premium"
               className="font-medium text-[var(--brd-green)] underline underline-offset-2"

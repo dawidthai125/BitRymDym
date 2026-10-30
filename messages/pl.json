@@ -133,7 +133,9 @@
       "planDownload": "Pobieranie jest od planu {plan}.",
       "planTrack": "Więcej ścieżek nagrań od planu {plan}.",
       "planLink": "Zobacz plany",
-      "platformDownload": "Pobieranie niedostępne — oryginał bitu z katalogu platformy możesz odsłuchać i nagrywać na nim, ale nie pobrać."
+      "platformDownload": "Pobieranie niedostępne — oryginał bitu z katalogu platformy możesz odsłuchać i nagrywać na nim, ale nie pobrać.",
+      "ownerDownload": "Autor udostępnił ten bit tylko do odsłuchu — pobieranie wyłączone.",
+      "ownerStudio": "Autor nie udostępnił tego bitu do nagrywania i użycia w Studio."
     },
     "planUsage": {
       "aria": "Plan {plan} — pokaż limity",
@@ -188,7 +190,16 @@
       "powodOdrzucenia": "Powód odrzucenia:",
       "zatwierdzoneOczekujeNaPublikacje": "Zatwierdzone — oczekuje na publikację przez zespół.",
       "widocznyWPublicznymKatalogu": "Widoczny w publicznym katalogu.",
-      "wrocDoStudia": "← Wróć do studia"
+      "wrocDoStudia": "← Wróć do studia",
+      "prywatnyTylkoTyIDostep": "Prywatny — widzisz go Ty i osoby z dostępem.",
+      "prywatny": "Prywatny",
+      "publiczny": "Publiczny",
+      "tylkoOdsluch": "Tylko odsłuch",
+      "pobieranieWlaczone": "Pobieranie włączone",
+      "bezStudio": "Bez użycia w Studio",
+      "okladkaCzeka": "Okładka czeka na moderację",
+      "okladkaOdrzucona": "Okładka odrzucona",
+      "edytuj": "Edytuj, udostępnianie i okładka"
     },
     "accountDownloadsPage": {
       "mojePobrane": "Moje pobrane",
@@ -374,6 +385,12 @@
         "premiumLimity": "Premium — limity",
         "informacjaOPoziomachI": "Informacja o poziomach i limitach. Zakup w aplikacji nie jest dostępny."
       }
+    },
+    "accountBeatEditPage": {
+      "metaTitle": "Edytuj bit",
+      "mojeBity": "← Moje bity",
+      "edytuj": "Edytuj: {title}",
+      "zobaczStroneBitu": "Zobacz stronę bitu →"
     }
   },
   "admin": {
@@ -454,7 +471,16 @@
       "szczegolyUchyl": "Szczegóły / uchyl",
       "brakBitowOczekujacychNa": "Brak bitów oczekujących na moderację.",
       "brakZatwierdzonychBitowDo": "Brak zatwierdzonych bitów do publikacji.",
-      "brakAutomatycznieOdrzuconychBitow": "Brak automatycznie odrzuconych bitów."
+      "brakAutomatycznieOdrzuconychBitow": "Brak automatycznie odrzuconych bitów.",
+      "okladkiDoModeracji": "Okładki do sprawdzenia",
+      "brakOkladek": "Brak okładek czekających na decyzję.",
+      "okladkaBitu": "Okładka: {v0}",
+      "filtrNieaktywny": "Filtr automatyczny nieaktywny — oceń ręcznie.",
+      "filtrAi": "Filtr AI",
+      "zatwierdzOkladke": "Zatwierdź",
+      "odrzucOkladke": "Odrzuć",
+      "powodOdrzuceniaOkladki": "Powód odrzucenia okładki (widzi autor):",
+      "akcjaNiePowiodla": "Akcja nie powiodła się."
     },
     "adminPage": {
       "pulpit": "Pulpit",
@@ -1024,7 +1050,11 @@
       "uploadFailed": "Przesyłanie nie powiodło się.",
       "analizaAudioNiePowiodla": "Analiza audio nie powiodła się.",
       "analizowanie": "Analizowanie…",
-      "przesylanieAudio": "Przesyłanie audio…"
+      "przesylanieAudio": "Przesyłanie audio…",
+      "tonacjaWykryta": "Wykryto automatycznie: {key} (pewność {pct}%) — możesz zmienić.",
+      "moll": "moll",
+      "dur": "dur",
+      "ustawieniaIOkladka": "Ustawienia udostępniania i okładka →"
     },
     "beatGrantsPanel": {
       "udostepnijNagrywanie": "Udostępnij nagrywanie",
@@ -1052,6 +1082,54 @@
       "opis": "Załóż darmowe konto, żeby nagrać zwrotkę do tego bitu i otworzyć ją w Studiu.",
       "zaloguj": "Zaloguj się",
       "zalozKonto": "Załóż konto"
+    },
+    "ownerBeatEdit": {
+      "okladka": "Okładka",
+      "statusOkladkiApproved": "Okładka zatwierdzona — widoczna w katalogu.",
+      "statusOkladkiPending": "Okładka czeka na moderatora — do tego czasu widać domyślną grafikę.",
+      "statusOkladkiRejected": "Okładka odrzucona przez moderatora.",
+      "statusOkladkiNone": "Brak własnej okładki — używamy domyślnej grafiki.",
+      "powod": "Powód:",
+      "wybierzOkladke": "Wybierz obraz",
+      "okladkaWymagania": "JPG, PNG lub WebP, min. 300×300 px, maks. 4 MB. Kadrujemy do kwadratu i usuwamy metadane (EXIF/GPS). Każda nowa okładka przechodzi automatyczny filtr treści.",
+      "wgrajOkladke": "Wgraj okładkę",
+      "sprawdzanie": "Sprawdzanie…",
+      "usunOkladke": "Usuń okładkę",
+      "wybierzObraz": "Najpierw wybierz obraz.",
+      "bladOkladki": "Nie udało się wgrać okładki. Spróbuj ponownie.",
+      "okladkaZatwierdzona": "Okładka przeszła filtr i jest już widoczna.",
+      "okladkaCzeka": "Okładka zapisana — czeka na sprawdzenie przez moderatora.",
+      "okladkaUsunieta": "Okładka usunięta.",
+      "nieEdytowalny": "Tego bitu nie można teraz edytować (czeka na moderację lub jest zarchiwizowany).",
+      "opublikowanyInfo": "Bit jest opublikowany — zmiany zapisują się od razu, bez ponownej moderacji.",
+      "metadane": "Metadane",
+      "tytul": "Tytuł",
+      "producent": "Producent",
+      "opis": "Opis",
+      "gatunek": "Gatunek",
+      "styl": "Styl",
+      "bpm": "BPM",
+      "tonacja": "Tonacja",
+      "skala": "Skala",
+      "wykrytaTonacja": "Wykryta tonacja: {key} (pewność {pct}%).",
+      "moll": "moll",
+      "dur": "dur",
+      "uzyjWykrytej": "Użyj wykrytej",
+      "tagi": "Tagi (po przecinku)",
+      "udostepnianie": "Udostępnianie",
+      "widocznosc": "Widoczność",
+      "publiczny": "Publiczny katalog",
+      "publicznyOpis": "Bit widać w katalogu ogólnym (po publikacji).",
+      "prywatny": "Prywatny (mój katalog)",
+      "prywatnyOpis": "Widzisz go tylko Ty i osoby, którym dasz dostęp.",
+      "pozwolPobierac": "Pozwól pobierać",
+      "pozwolPobieracOpis": "Wyłączone = tylko odsłuch. Limity planu nadal obowiązują.",
+      "pozwolStudio": "Pozwól używać w Studio innych",
+      "pozwolStudioOpis": "Nagrywanie na bicie i projekty Studio. Osoby z dostępem (granty) mogą zawsze.",
+      "zapisz": "Zapisz zmiany",
+      "zapisywanie": "Zapisywanie…",
+      "zapisano": "Zapisano.",
+      "bladZapisu": "Nie udało się zapisać zmian."
     }
   },
   "home": {

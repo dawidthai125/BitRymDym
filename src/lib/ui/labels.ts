@@ -118,6 +118,10 @@ export function labelAdminAuditAction(action: string): string {
       return "Dodanie dodatku do planu";
     case "PLAN_ADDON_REVOKE":
       return "Odebranie dodatku do planu";
+    case "BEAT_COVER_REVIEW":
+      return "Moderacja okładki bitu";
+    case "BEAT_OWNER_UPDATE":
+      return "Edycja bitu przez autora";
     default:
       return "—";
   }

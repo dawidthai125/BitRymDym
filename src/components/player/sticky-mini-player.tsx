@@ -66,6 +66,7 @@ export function StickyMiniPlayer() {
           variant={track.artworkVariant}
           title={tl(track.title)}
           size="xs"
+          coverUrl={track.coverUrl}
         />
 
         <div className="min-w-0 flex-1 space-y-1">

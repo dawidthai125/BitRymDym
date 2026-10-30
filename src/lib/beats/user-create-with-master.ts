@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireUser } from "@/lib/auth/session";
+import { recordOwnBeatKeySuggestion } from "@/lib/beats/audio-key-server";
 import { finalizeUserBeatAfterUpload } from "@/lib/beats/audio-transport";
 import { beatActionErrorMessage } from "@/lib/beats/beat-operation-error";
 
@@ -30,9 +32,19 @@ export async function finalizeUserBeatWithMasterAction(params: {
   scale?: string | null;
   tags?: string[];
   coverRef?: string | null;
+  /** Analyze-step key suggestion echoed back (advisory, validated). */
+  keySuggestion?: unknown;
 }): Promise<FinalizeUserBeatState> {
   try {
-    const result = await finalizeUserBeatAfterUpload(params);
+    const { keySuggestion, ...finalizeParams } = params;
+    const result = await finalizeUserBeatAfterUpload(finalizeParams);
+    if (keySuggestion !== undefined) {
+      await recordOwnBeatKeySuggestion({
+        context: await requireUser(),
+        beatId: result.beatId,
+        suggestion: keySuggestion,
+      });
+    }
     revalidatePath("/account");
     revalidatePath(`/account/beats`);
     // Public catalog must not gain DRAFT rows

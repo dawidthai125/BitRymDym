@@ -211,6 +211,7 @@ export async function analyzeBeatAudioBytes(params: {
   bytes: Uint8Array;
   contentType: string;
   originalFilename?: string | null;
+  onPcm?: (samples: Float32Array, sampleRate: number) => void;
 }): Promise<AnalyzedBeatAudio> {
   const meta = validateAudioUploadMeta({
     contentType: params.contentType,
@@ -232,6 +233,7 @@ export async function analyzeBeatAudioBytes(params: {
   const bpmProbe = await analyzeBeatBpm({
     bytes: params.bytes,
     contentType: params.contentType,
+    onPcm: params.onPcm,
   });
 
   return {

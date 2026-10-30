@@ -57,6 +57,7 @@ function HomeBeatRow({
     producer: beat.producer,
     durationSeconds: beat.durationSeconds,
     artworkVariant: beat.artworkVariant,
+    coverUrl: beat.coverUrl ?? null,
   };
 
   async function onSeekRatio(ratio: number) {
@@ -84,6 +85,7 @@ function HomeBeatRow({
           variant={beat.artworkVariant}
           title={tl(beat.title)}
           size="sm"
+          coverUrl={beat.coverUrl}
           className={cn(
             featured
               ? "size-[4.75rem] sm:size-[5.5rem]"

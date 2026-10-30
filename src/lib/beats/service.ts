@@ -42,6 +42,13 @@ import {
 } from "@/lib/beats/admin-catalogue-query";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import {
+  isOwnerEditAudited,
+  isOwnerEditableStatus,
+  toOwnerSettingsPayload,
+  type OwnerBeatSettings,
+} from "@/lib/beats/owner-edit-policy";
+import type { AuthContext } from "@/lib/auth/types";
+import {
   BEAT_SELECT_FULL,
   BEAT_SELECT_PUBLIC,
   mapBeatRow,
@@ -398,6 +405,136 @@ export async function updateOwnUserDraftMetadata(
     patch,
   });
   return loadBeat(beatId);
+}
+
+/**
+ * User beats 2026-10-30: owner edit of own USER beat in DRAFT / REJECTED /
+ * APPROVED / PUBLISHED (no re-moderation — owner decision) plus usage
+ * settings (visibility, allow_download, allow_studio_use). Service-role write
+ * pinned to owner + type + status; APPROVED/PUBLISHED edits are audited as
+ * BEAT_OWNER_UPDATE. Status, audio and cover are never written here.
+ */
+export async function patchOwnUserBeatAfterAuthz(params: {
+  context: AuthContext;
+  beatId: string;
+  patch: Partial<Omit<BeatInput, "status" | "ownershipType" | "ownerId" | "durationSeconds" | "coverRef">>;
+  settings?: OwnerBeatSettings;
+}): Promise<Beat> {
+  const { context } = params;
+  if (!isUuid(params.beatId)) {
+    throw new AuthError("NOT_FOUND", "Beat not found.");
+  }
+  const admin = createSupabaseAdminClient();
+  const { data: current, error: loadError } = await admin
+    .from("beats")
+    .select(BEAT_SELECT_FULL)
+    .eq("id", params.beatId)
+    .maybeSingle();
+  if (loadError) throw new Error(loadError.message);
+  if (!current) throw new AuthError("NOT_FOUND", "Beat not found.");
+
+  const beat = mapBeatRow(current as BeatRow, { includeRejectionReason: true });
+  if (beat.ownershipType !== "USER" || beat.ownerId !== context.userId) {
+    throw new AuthError("NOT_FOUND", "Beat not found.");
+  }
+  if (!isOwnerEditableStatus(beat.status)) {
+    throw new BeatRequestError(
+      "Tego bitu nie można teraz edytować (oczekuje na moderację lub jest zarchiwizowany).",
+      "CONFLICT",
+    );
+  }
+
+  const p = params.patch;
+  const nextInput: BeatInput = {
+    ownershipType: "USER",
+    ownerId: context.userId,
+    title: p.title ?? beat.title,
+    producer: p.producer !== undefined ? p.producer : beat.producer,
+    description: p.description !== undefined ? p.description : beat.description,
+    genre: p.genre !== undefined ? p.genre : beat.genre,
+    style: p.style !== undefined ? p.style : beat.style,
+    bpm: p.bpm ?? beat.bpm,
+    key: p.key !== undefined ? p.key : beat.key,
+    scale: p.scale !== undefined ? p.scale : beat.scale,
+    durationSeconds: beat.durationSeconds,
+    tags: p.tags ?? beat.tags,
+    coverRef: beat.coverRef,
+    status: "DRAFT",
+  };
+  const validated = validateBeatInput(nextInput);
+  if (!validated.ok) {
+    throw new BeatRequestError(validated.errors.join("; "));
+  }
+
+  const { data: updatedRows, error } = await admin
+    .from("beats")
+    .update({
+      ...toBeatMetadataPayload(validated.value),
+      ...toOwnerSettingsPayload(params.settings ?? {}),
+    })
+    .eq("id", params.beatId)
+    .eq("owner_id", context.userId)
+    .eq("ownership_type", "USER")
+    .eq("status", beat.status)
+    .select(BEAT_SELECT_FULL);
+  if (error) throw new Error(error.message);
+  if (!updatedRows || updatedRows.length === 0) {
+    throw new AuthError(
+      "CONFLICT",
+      "Beat changed during the metadata update. Reload and try again.",
+    );
+  }
+  const updated = mapBeatRow(updatedRows[0] as BeatRow, {
+    includeRejectionReason: true,
+  });
+
+  if (isOwnerEditAudited(beat.status)) {
+    const diff = diffBeatMetadataForAudit(beat, updated);
+    const settingsChanged: Record<string, { from: unknown; to: unknown }> = {};
+    for (const k of ["visibility", "allowDownload", "allowStudioUse"] as const) {
+      if (beat[k] !== updated[k]) {
+        settingsChanged[k] = { from: beat[k] ?? null, to: updated[k] ?? null };
+      }
+    }
+    if (diff.changed.length > 0 || Object.keys(settingsChanged).length > 0) {
+      const { error: auditError } = await admin.from("admin_audit_events").insert({
+        actor_user_id: context.profile.id,
+        target_user_id: context.profile.id,
+        actor_user_number: context.profile.userNumber ?? null,
+        target_user_number: context.profile.userNumber ?? null,
+        action: "BEAT_OWNER_UPDATE",
+        old_value: diff.oldValue,
+        new_value: diff.newValue,
+        metadata: {
+          beatId: beat.id,
+          status: beat.status,
+          fields: diff.changed,
+          settings: settingsChanged,
+        },
+      });
+      if (auditError) {
+        console.error("[beats] owner audit insert failed:", auditError.message);
+      }
+    }
+  }
+  return updated;
+}
+
+/** Owner edit page loader: own USER beat incl. private fields. */
+export async function getOwnUserBeatForEdit(beatId: string): Promise<Beat> {
+  const context = await requireUser();
+  if (!isUuid(beatId)) throw new AuthError("NOT_FOUND", "Beat not found.");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("beats")
+    .select(BEAT_SELECT_FULL)
+    .eq("id", beatId)
+    .eq("owner_id", context.userId)
+    .eq("ownership_type", "USER")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new AuthError("NOT_FOUND", "Beat not found.");
+  return mapBeatRow(data as BeatRow, { includeRejectionReason: true });
 }
 
 /** ADMIN metadata edit (not for MODERATOR full edit). */
@@ -870,6 +1007,9 @@ export async function listPublishedBeats(): Promise<Beat[]> {
     .from("beats")
     .select(BEAT_SELECT_PUBLIC)
     .eq("status", "PUBLISHED")
+    // User beats 2026-10-30: private beats never enter the public catalogue
+    // (RLS also hides them; the owner-select policy would otherwise list them).
+    .eq("visibility", "public")
     .order("created_at", { ascending: false });
 
   if (error) {

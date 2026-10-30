@@ -2970,5 +2970,105 @@
  {
   "src": "Mastering pod referencję · bezterminowo",
   "en": "Reference mastering · no expiry"
+ },
+ {
+  "src": "Okładka nie przeszła automatycznego filtra treści. Wybierz inny obraz.",
+  "en": "The cover did not pass the automatic content filter. Choose another image."
+ },
+ {
+  "src": "Odczekaj chwilę przed kolejną zmianą okładki.",
+  "en": "Wait a moment before changing the cover again."
+ },
+ {
+  "src": "Nie można zmienić okładki zarchiwizowanego bitu.",
+  "en": "You cannot change the cover of an archived beat."
+ },
+ {
+  "src": "Brak okładki do moderacji.",
+  "en": "No cover to moderate."
+ },
+ {
+  "src": "Podaj powód odrzucenia okładki.",
+  "en": "Give a reason for rejecting the cover."
+ },
+ {
+  "src": "Plik okładki jest pusty.",
+  "en": "The cover file is empty."
+ },
+ {
+  "src": "Okładka może mieć maksymalnie 4 MB.",
+  "en": "The cover can be at most 4 MB."
+ },
+ {
+  "src": "To nie jest poprawny obraz (JPG, PNG lub WebP).",
+  "en": "This is not a valid image (JPG, PNG or WebP)."
+ },
+ {
+  "src": "Animowane obrazy nie są obsługiwane.",
+  "en": "Animated images are not supported."
+ },
+ {
+  "src": "Okładka musi mieć co najmniej 300×300 px.",
+  "en": "The cover must be at least 300×300 px."
+ },
+ {
+  "src": "Okładka jest zbyt duża (maks. 8000 px).",
+  "en": "The cover is too large (max. 8000 px)."
+ },
+ {
+  "src": "Nie udało się przetworzyć okładki.",
+  "en": "Could not process the cover."
+ },
+ {
+  "src": "Wybierz plik okładki (JPG, PNG lub WebP).",
+  "en": "Choose a cover file (JPG, PNG or WebP)."
+ },
+ {
+  "src": "Tego bitu nie można teraz edytować (oczekuje na moderację lub jest zarchiwizowany).",
+  "en": "This beat cannot be edited right now (awaiting moderation or archived)."
+ },
+ {
+  "src": "Nieprawidłowe ustawienia bitu.",
+  "en": "Invalid beat settings."
+ },
+ {
+  "src": "Nieprawidłowa widoczność bitu.",
+  "en": "Invalid beat visibility."
+ },
+ {
+  "src": "Nieprawidłowa decyzja.",
+  "en": "Invalid decision."
+ },
+ {
+  "src": "Autor udostępnił ten bit tylko do odsłuchu.",
+  "en": "The author shared this beat for listening only."
+ },
+ {
+  "src": "Recording is not allowed on this beat.",
+  "en": "Recording is not allowed on this beat.",
+  "pl": "Autor nie pozwala nagrywać na tym bicie."
+ },
+ {
+  "src": "Beat download disabled by owner.",
+  "en": "The author shared this beat for listening only.",
+  "pl": "Autor udostępnił ten bit tylko do odsłuchu."
+ },
+ {
+  "src": "Cover changed during review. Reload.",
+  "en": "Cover changed during review. Reload.",
+  "pl": "Okładka zmieniła się w trakcie moderacji. Odśwież stronę."
+ },
+ {
+  "src": "Beat changed during the cover update.",
+  "en": "Beat changed during the cover update.",
+  "pl": "Bit zmienił się w trakcie zmiany okładki. Spróbuj ponownie."
+ },
+ {
+  "src": "Moderacja okładki bitu",
+  "en": "Beat cover moderation"
+ },
+ {
+  "src": "Edycja bitu przez autora",
+  "en": "Beat edited by author"
  }
 ]

@@ -45,6 +45,19 @@ export const BEAT_AUDIO_ASSET_STATUSES = [
 ] as const;
 export type BeatAudioAssetStatus = (typeof BEAT_AUDIO_ASSET_STATUSES)[number];
 
+/** User beats 2026-10-30: catalogue visibility (PLATFORM is always public). */
+export const BEAT_VISIBILITIES = ["public", "private"] as const;
+export type BeatVisibility = (typeof BEAT_VISIBILITIES)[number];
+
+/** Cover moderation state (server-managed). */
+export const BEAT_COVER_STATUSES = [
+  "none",
+  "pending",
+  "approved",
+  "rejected",
+] as const;
+export type BeatCoverStatus = (typeof BEAT_COVER_STATUSES)[number];
+
 /** Phase 1.4 beat domain metadata (no audio asset fields). */
 export type Beat = {
   id: string;
@@ -68,6 +81,17 @@ export type Beat = {
   lastSubmittedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Defaults when the column is absent (pre-migration rows): public / true / true. */
+  visibility?: BeatVisibility;
+  allowDownload?: boolean;
+  allowStudioUse?: boolean;
+  coverStatus?: BeatCoverStatus;
+  coverUpdatedAt?: string | null;
+  /** Own / staff only. */
+  coverRejectionReason?: string | null;
+  /** Server key detection (analyze step) — own / staff only. */
+  keyDetected?: string | null;
+  keyConfidence?: number | null;
 };
 
 /** Recording Wave 1 — take lifecycle (MIC TAKE, not beat asset). */

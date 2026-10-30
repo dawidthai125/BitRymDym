@@ -18,6 +18,9 @@ export type PresentedBeat = {
   bpm: number;
   durationSeconds: number;
   artworkVariant: number;
+  /** Approved owner cover (thumb) — overrides the generated artwork. */
+  coverUrl?: string | null;
+  coverFullUrl?: string | null;
 };
 
 type PresentableInput = {
@@ -30,6 +33,8 @@ type PresentableInput = {
   key?: string | null;
   scale?: string | null;
   durationSeconds: number;
+  coverUrl?: string | null;
+  coverFullUrl?: string | null;
 };
 
 /** Stable cover-art variant index from beat id (visual only). */
@@ -57,6 +62,8 @@ function toPresented(raw: PresentableInput): PresentedBeat {
       ? Math.max(0, raw.durationSeconds)
       : 0,
     artworkVariant: artworkVariantForId(raw.id),
+    coverUrl: raw.coverUrl ?? null,
+    coverFullUrl: raw.coverFullUrl ?? null,
   };
 }
 

@@ -1,4 +1,10 @@
-import type { Beat, BeatOwnershipType, BeatStatus } from "@/types/domain";
+import type {
+  Beat,
+  BeatCoverStatus,
+  BeatOwnershipType,
+  BeatStatus,
+  BeatVisibility,
+} from "@/types/domain";
 
 export type BeatRow = {
   id: string;
@@ -20,14 +26,22 @@ export type BeatRow = {
   last_submitted_at?: string | null;
   created_at: string;
   updated_at: string;
+  visibility?: BeatVisibility | null;
+  allow_download?: boolean | null;
+  allow_studio_use?: boolean | null;
+  cover_status?: BeatCoverStatus | null;
+  cover_updated_at?: string | null;
+  cover_rejection_reason?: string | null;
+  key_detected?: string | null;
+  key_confidence?: number | null;
 };
 
 /** Public catalog / detail — never select rejection_reason or last_submitted_at. */
 export const BEAT_SELECT_PUBLIC =
-  "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at";
+  "id, owner_id, ownership_type, title, producer, description, genre, style, bpm, key, scale, duration_seconds, tags, cover_ref, status, created_at, updated_at, visibility, allow_download, allow_studio_use, cover_status, cover_updated_at";
 
 /** Owner / staff — includes rejection_reason + submit cooldown cursor. */
-export const BEAT_SELECT_FULL = `${BEAT_SELECT_PUBLIC}, rejection_reason, last_submitted_at`;
+export const BEAT_SELECT_FULL = `${BEAT_SELECT_PUBLIC}, rejection_reason, last_submitted_at, cover_rejection_reason, key_detected, key_confidence`;
 
 /** @deprecated Prefer BEAT_SELECT_PUBLIC or BEAT_SELECT_FULL. */
 export const BEAT_SELECT = BEAT_SELECT_FULL;
@@ -57,6 +71,14 @@ export function mapBeatRow(
     lastSubmittedAt: include ? (row.last_submitted_at ?? null) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    visibility: row.visibility === "private" ? "private" : "public",
+    allowDownload: row.allow_download !== false,
+    allowStudioUse: row.allow_studio_use !== false,
+    coverStatus: row.cover_status ?? "none",
+    coverUpdatedAt: row.cover_updated_at ?? null,
+    coverRejectionReason: include ? (row.cover_rejection_reason ?? null) : null,
+    keyDetected: include ? (row.key_detected ?? null) : null,
+    keyConfidence: include ? (row.key_confidence ?? null) : null,
   };
 }
 

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, StatusPill } from "@/components/brand/chrome";
 import { UserBeatActions } from "@/components/beats/user-beat-actions";
@@ -13,7 +14,10 @@ import {
   canAccessCommunityUpload,
 } from "@/lib/auth/permissions";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
+import { isOwnerEditableStatus } from "@/lib/beats/owner-edit-policy";
 import { listOwnUserBeats } from "@/lib/beats/service";
+import { artworkVariantForId } from "@/lib/ui/demo-beats";
 import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
 import { listOwnerBeatAccessGrantsFor } from "@/lib/grants/beat-access-grants";
 
@@ -103,6 +107,13 @@ export default async function AccountBeatsPage() {
                   key={beat.id}
                   className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between"
                 >
+                  <div className="flex min-w-0 gap-4">
+                  <BeatArtwork
+                    variant={artworkVariantForId(beat.id)}
+                    title={tl(beat.title)}
+                    size="sm"
+                    coverUrl={beatCoverUrl(beat, "thumb", { includeUnapproved: true })}
+                  />
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <p className="font-medium tracking-tight text-[var(--brd-ink)]">
@@ -137,9 +148,29 @@ export default async function AccountBeatsPage() {
                     ) : null}
                     {beat.status === "PUBLISHED" ? (
                       <p className="text-xs text-[var(--brd-mute)]">
-                        {t("widocznyWPublicznymKatalogu")}
+                        {beat.visibility === "private"
+                          ? t("prywatnyTylkoTyIDostep")
+                          : t("widocznyWPublicznymKatalogu")}
                       </p>
                     ) : null}
+                    <p className="flex flex-wrap gap-x-3 text-xs text-[var(--brd-mute)]" data-testid="beat-usage-summary">
+                      <span>{beat.visibility === "private" ? t("prywatny") : t("publiczny")}</span>
+                      <span>{beat.allowDownload === false ? t("tylkoOdsluch") : t("pobieranieWlaczone")}</span>
+                      {beat.allowStudioUse === false ? <span>{t("bezStudio")}</span> : null}
+                      {beat.coverStatus === "pending" ? <span>{t("okladkaCzeka")}</span> : null}
+                      {beat.coverStatus === "rejected" ? (
+                        <span className="text-destructive">{t("okladkaOdrzucona")}</span>
+                      ) : null}
+                    </p>
+                    {isOwnerEditableStatus(beat.status) ? (
+                      <Link
+                        href={`/account/beats/${beat.id}/edit`}
+                        className="inline-flex min-h-11 items-center text-sm font-medium text-[var(--brd-green)] underline underline-offset-4"
+                      >
+                        {t("edytuj")}
+                      </Link>
+                    ) : null}
+                  </div>
                   </div>
                   <div className="flex w-full min-w-0 flex-col gap-3 sm:max-w-sm">
                     <UserBeatActions

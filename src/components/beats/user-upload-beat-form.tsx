@@ -5,6 +5,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useRef,
@@ -25,6 +26,7 @@ import {
   BEAT_AUDIO_MAX_BYTES,
   resolveAudioContentType,
 } from "@/lib/beats/audio-validation";
+import type { BeatKeySuggestion } from "@/lib/beats/audio-key";
 import type { BpmUncertaintyEnvelope } from "@/lib/beats/bpm-uncertainty";
 import {
   buildBpmUxModel,
@@ -100,6 +102,11 @@ export function UserUploadBeatForm({
   );
   const [submitted, setSubmitted] = useState(false);
   const [rightsAccepted, setRightsAccepted] = useState(false);
+  const [keyValue, setKeyValue] = useState("");
+  const [scaleValue, setScaleValue] = useState("");
+  const [keySuggestion, setKeySuggestion] = useState<BeatKeySuggestion | null>(
+    null,
+  );
   const analyzeGeneration = useRef(0);
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -113,6 +120,7 @@ export function UserUploadBeatForm({
     setFormError(null);
     setSavedDraft(false);
     setSubmitted(false);
+    setKeySuggestion(null);
 
     if (!next) {
       setAnalysis({ status: "idle" });
@@ -252,6 +260,7 @@ export function UserUploadBeatForm({
           bpm?: number | null;
           bpmMessage?: string;
           bpmEnvelope?: BpmUncertaintyEnvelope;
+          keySuggestion?: BeatKeySuggestion | null;
         };
 
         if (analyzeGeneration.current !== generation) return;
@@ -285,6 +294,16 @@ export function UserUploadBeatForm({
           titleSuggestion: suggestion,
           filename: next.name,
         });
+
+        // Server key detection: prefill like BPM, only into empty fields.
+        const detected = analyzeJson.keySuggestion ?? null;
+        setKeySuggestion(detected);
+        if (detected) {
+          setKeyValue((prev) => (prev.trim() ? prev : detected.key));
+          setScaleValue((prev) =>
+            prev.trim() ? prev : detected.scale === "minor" ? "minor" : "major",
+          );
+        }
 
         const envelope = analyzeJson.bpmEnvelope ?? null;
         setBpmEnvelope(envelope);
@@ -368,12 +387,8 @@ export function UserUploadBeatForm({
     const style = String(
       (form.elements.namedItem("style") as HTMLInputElement)?.value ?? "",
     ).trim();
-    const key = String(
-      (form.elements.namedItem("key") as HTMLInputElement)?.value ?? "",
-    ).trim();
-    const scale = String(
-      (form.elements.namedItem("scale") as HTMLInputElement)?.value ?? "",
-    ).trim();
+    const key = keyValue.trim();
+    const scale = scaleValue.trim();
     const tagsRaw = String(
       (form.elements.namedItem("tags") as HTMLInputElement)?.value ?? "",
     );
@@ -395,6 +410,7 @@ export function UserUploadBeatForm({
           bpmSelectionMode: selectionMode,
           key: key || null,
           scale: scale || null,
+          keySuggestion,
           tags: tagsRaw
             .split(",")
             .map((t) => t.trim())
@@ -563,14 +579,36 @@ export function UserUploadBeatForm({
           {tr("styl")}
           <input name="style" className={fieldClass} maxLength={500} />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          {tr("tonacja")}
-          <input name="key" className={fieldClass} maxLength={500} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          {tr("skala")}
-          <input name="scale" className={fieldClass} maxLength={500} />
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex min-w-0 flex-col gap-1 text-sm">
+            {tr("tonacja")}
+            <input
+              name="key"
+              value={keyValue}
+              onChange={(e) => setKeyValue(e.target.value)}
+              className={fieldClass}
+              maxLength={500}
+            />
+          </label>
+          <label className="flex min-w-0 flex-col gap-1 text-sm">
+            {tr("skala")}
+            <input
+              name="scale"
+              value={scaleValue}
+              onChange={(e) => setScaleValue(e.target.value)}
+              className={fieldClass}
+              maxLength={500}
+            />
+          </label>
+        </div>
+        {keySuggestion ? (
+          <p className="-mt-1 text-xs text-muted-foreground" data-testid="key-suggestion">
+            {tr("tonacjaWykryta", {
+              key: `${keySuggestion.key} ${keySuggestion.scale === "minor" ? tr("moll") : tr("dur")}`,
+              pct: Math.round(keySuggestion.confidence * 100),
+            })}
+          </p>
+        ) : null}
         <label className="flex flex-col gap-1 text-sm">
           {tr("tagiPrzecinkami")}
           <input name="tags" className={fieldClass} />
@@ -584,9 +622,17 @@ export function UserUploadBeatForm({
       ) : null}
 
       {savedDraft ? (
-        <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-          {tr("wersjaRoboczaZapisanaAudio")}
-        </p>
+        <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+          <p>{tr("wersjaRoboczaZapisanaAudio")}</p>
+          {savedBeatId ? (
+            <Link
+              href={`/account/beats/${savedBeatId}/edit`}
+              className="text-[var(--brd-green)] underline underline-offset-4"
+            >
+              {tr("ustawieniaIOkladka")}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       <label className="flex items-start gap-3 text-sm">

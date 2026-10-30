@@ -6,11 +6,13 @@ import { redirect } from "next/navigation";
 
 import { StatusPill } from "@/components/brand/chrome";
 import { AutoCheckBadge } from "@/components/beats/auto-check-card";
+import { CoverReviewQueue, type CoverReviewItem } from "@/components/beats/cover-review-queue";
 import { checkAccess } from "@/lib/auth/access-denial";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { loadAdminProfileIdentities } from "@/lib/auth/user-number";
 import { loadLatestAutoChecks, type AutoCheckRow } from "@/lib/beats/auto-check/records";
+import { listPendingBeatCovers } from "@/lib/beats/cover/cover-service";
 import {
   listApprovedForModeration,
   listAutoRejectedForModeration,
@@ -161,6 +163,26 @@ export default async function AdminModerationQueuePage() {
   ]);
 
   const isAdmin = context?.profile.role === "ADMIN";
+  const coverItems: CoverReviewItem[] = context
+    ? (await listPendingBeatCovers(context).catch((error: unknown) => {
+        console.error("[admin/moderation] cover queue failed", error);
+        return [];
+      })).map((c) => {
+        const m = c.moderation ?? {};
+        const provider = typeof m.provider === "string" ? m.provider : "none";
+        const top = typeof m.topCategory === "string" ? m.topCategory : null;
+        const score = typeof m.maxScore === "number" ? m.maxScore : null;
+        return {
+          beatId: c.beatId,
+          title: c.title,
+          coverUpdatedAt: c.coverUpdatedAt,
+          filterNote:
+            provider === "openai"
+              ? `${t("filtrAi")}: ${top ?? "—"} ${score != null ? score.toFixed(2) : ""}`.trim()
+              : null,
+        };
+      })
+    : [];
   const checks = await loadLatestAutoChecks(
     [...pending, ...approved, ...autoRejected].map((b) => b.id),
   );
@@ -201,6 +223,8 @@ export default async function AdminModerationQueuePage() {
         isAdmin={Boolean(isAdmin)}
         checks={checks}
       />
+
+      <CoverReviewQueue items={coverItems} />
 
       <QueueSection
         title={t("odrzuconePrzezFiltr")}
