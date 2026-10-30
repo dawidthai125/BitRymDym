@@ -82,3 +82,6 @@ supabase/.branches/
 
 __pycache__/
 *.pyc
+
+# Studio Web Workers bundled by scripts/build-studio-workers.mjs
+/public/workers/

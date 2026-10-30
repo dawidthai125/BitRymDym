@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -42,10 +45,30 @@ const securityHeaders = [
   { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
 ];
 
+/** Prebuilt Studio Web Workers (scripts/build-studio-workers.mjs, run by predev/prebuild). */
+const studioWorkers = (() => {
+  try {
+    return JSON.parse(readFileSync(path.join(process.cwd(), "public", "workers", "manifest.json"), "utf8")) as Partial<
+      Record<"master" | "mixAnalysis", string>
+    >;
+  } catch {
+    // Missing manifest → empty URLs → Studio computes on the main thread.
+    return {};
+  }
+})();
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_STUDIO_MASTER_WORKER_URL: studioWorkers.master ?? "",
+    NEXT_PUBLIC_STUDIO_MIX_ANALYSIS_WORKER_URL: studioWorkers.mixAnalysis ?? "",
+  },
   serverExternalPackages: ["music-metadata", "@audio/beat", "audio-decode"],
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Content-hashed worker bundles.
+      { source: "/workers/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+    ];
   },
   async redirects() {
     return [{ source: "/favicon.ico", destination: "/icon.png", permanent: true }];

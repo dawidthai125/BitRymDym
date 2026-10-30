@@ -1,15 +1,19 @@
 /** Stage 3 — browser side of Mastering: preview workers + fetching E3 results (no uploads). */
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
+import { spawnStudioWorker } from "@/lib/studio/studio-workers";
 
 import type { MasterMetrics, Stereo } from "./dsp";
+import { runMasterRequest, type MasterWorkerRequest } from "./master-ops";
 import type { MasterSettings, MasterTargetId } from "./targets";
 
 /** 44.1 kHz render: what the user approved is what the E3 master receives. */
 export const MASTER_RENDER_SAMPLE_RATE = 44100;
 
-function call<T>(msg: unknown, transfer: Transferable[] = []): Promise<T> {
+/** Run one request in the prebuilt Web Worker; on the main thread when the worker cannot start. */
+async function call<T>(msg: MasterWorkerRequest, transfer: Transferable[] = []): Promise<T> {
+  const worker = await spawnStudioWorker("master");
+  if (!worker) return runMasterRequest(msg).response as T;
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("./master.worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (e: MessageEvent<{ type: string; message?: string }>) => {
       worker.terminate();
       if (e.data.type === "error") reject(new Error(e.data.message ?? "worker_error"));
