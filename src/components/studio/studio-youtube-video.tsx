@@ -16,7 +16,7 @@ import type { PremiumTier } from "@/types/premium";
 
 type JobLike = { job?: { status?: string; stage?: unknown; progress?: unknown; errorCode?: string | null }; downloadUrl?: string | null; downloadParts?: string[] | null; filename?: string | null };
 type State = {
-  available: boolean; allowed?: boolean; approved?: boolean; cover?: { url: string } | null; title?: string;
+  available: boolean; rendering?: boolean; allowed?: boolean; approved?: boolean; cover?: { url: string } | null; title?: string;
   latest?: JobLike | null; usage?: { used: number; perDay: number } | null;
   /** Gold AI cover generator (null = off / table missing). */
   ai?: { available: boolean; used?: number; perDay?: number; ownBeat?: boolean } | null;
@@ -212,7 +212,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   const aiLimit = !!aiState?.perDay && (aiState.used ?? 0) >= aiState.perDay;
   const aiPromptLen = aiPrompt.trim().length;
   const limitReached = !!state?.usage && state.usage.used >= state.usage.perDay;
-  const canMake = allowed && approved && !!imageUrl && run.phase !== "working" && !limitReached && state?.available !== false;
+  const canMake = allowed && approved && !!imageUrl && run.phase !== "working" && !limitReached && state?.available !== false && state?.rendering !== false;
   const shownTitle = showText ? cleanVideoText(title) : null;
   const shownArtist = showText ? cleanVideoText(artist) : null;
 
@@ -234,6 +234,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
           <p className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm" data-testid="studio-yt-bitek"><span className="font-semibold">BITEK:</span> {t("bitek")}</p>
           {!approved ? <p role="status" className="text-sm">{t("najpierwZatwierdz")}</p> : null}
           {state?.available === false ? <p role="status" className="text-sm">{t("niedostepne")}</p> : null}
+          {state?.available !== false && state?.rendering === false ? <p role="status" className="text-sm" data-testid="studio-yt-soon">{t("wkrotce")}</p> : null}
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
             <div className="flex min-w-0 flex-col gap-3">
               <fieldset className="flex flex-col gap-1">
@@ -331,7 +332,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
           </div>
           {run.phase === "working" && prog ? <JobProgressBar value={prog} label={t(`etap.${prog.stage}`)} ariaLabel={t("postepAria")} testId="studio-yt-progress" /> : null}
           {run.phase === "done" ? <p role="status" className="text-sm">{t("gotowe")}</p> : null}
-          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "daily_limit" ? t("limit") : t("blad", { code: run.code })}</p> : null}
+          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "daily_limit" ? t("limit") : t("blad", { code: run.code })}</p> : null}
           {limitReached && run.phase !== "error" ? <p role="status" className="text-sm">{t("limit")}</p> : null}
         </>
       )}

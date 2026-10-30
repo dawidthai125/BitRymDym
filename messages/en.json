@@ -2838,6 +2838,7 @@
       "zobaczGold": "See the Gold plan"
     },
     "youtubeVideo": {
+      "wkrotce": "MP4 video rendering — coming soon. You can already generate an AI cover and set it for the beat.",
       "tytul": "YouTube MP4 video",
       "opis": "Finished track (approved master) + an image → a 1920×1080 file (H.264 + AAC), ready to upload to YouTube.",
       "bitek": "I'll put your master and the image together into one 1920×1080 video. The image is never cropped — I fit it and fill the background with a blurred copy.",

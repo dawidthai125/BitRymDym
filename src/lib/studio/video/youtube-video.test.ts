@@ -82,3 +82,24 @@ describe("frame layout + ffmpeg args", () => {
     expect(ffmpegProgressFraction("out_time_us=99000000", 10)).toBe(1);
   });
 });
+
+describe("MP4 render kill switch (no E3 youtube_video worker yet)", () => {
+  it("is OFF by default and for anything but an explicit true", async () => {
+    const { youtubeVideoRenderEnabled } = await import("./youtube-video");
+    expect(youtubeVideoRenderEnabled({})).toBe(false);
+    expect(youtubeVideoRenderEnabled({ STUDIO_YOUTUBE_VIDEO_ENABLED: "" })).toBe(false);
+    expect(youtubeVideoRenderEnabled({ STUDIO_YOUTUBE_VIDEO_ENABLED: "false" })).toBe(false);
+    expect(youtubeVideoRenderEnabled({ STUDIO_YOUTUBE_VIDEO_ENABLED: "0" })).toBe(false);
+    expect(youtubeVideoRenderEnabled({ STUDIO_YOUTUBE_VIDEO_ENABLED: " TRUE " })).toBe(true);
+    expect(youtubeVideoRenderEnabled({ STUDIO_YOUTUBE_VIDEO_ENABLED: "1" })).toBe(true);
+  });
+  it("commit path refuses before touching the DB when off", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/lib/studio/video/server.ts", "utf8");
+    const body = src.slice(src.indexOf("export async function commitYoutubeVideo"));
+    const gate = body.indexOf("youtubeVideoRenderEnabled()");
+    expect(gate).toBeGreaterThan(0);
+    expect(gate).toBeLessThan(body.indexOf("createSupabaseAdminClient()"));
+    expect(gate).toBeLessThan(body.indexOf(".insert("));
+  });
+});

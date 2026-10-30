@@ -33,7 +33,16 @@ export function youtubeVideoAllowed(tier: PremiumTier | null | undefined): boole
   return !!tier && youtubeVideoForTier(tier);
 }
 
-export type YoutubeVideoDeny = "tier_video" | "not_approved" | "bad_request" | "image_missing" | "daily_limit";
+export type YoutubeVideoDeny = "tier_video" | "not_approved" | "bad_request" | "image_missing" | "daily_limit" | "video_soon";
+
+/**
+ * Kill switch for the MP4 render: jobs are only queued when an E3 worker that knows
+ * kind `youtube_video` is deployed. Server env STUDIO_YOUTUBE_VIDEO_ENABLED, default OFF
+ * (otherwise Gold users would queue jobs nobody processes). UI shows "wkrótce".
+ */
+export function youtubeVideoRenderEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return ["1", "true", "yes", "on"].includes((env.STUDIO_YOUTUBE_VIDEO_ENABLED ?? "").trim().toLowerCase());
+}
 
 /** Server gate (UI mirrors it). Order: plan first, so lower plans always get the upsell. */
 export function decideYoutubeVideo(p: { tier: PremiumTier | null; approved: boolean; source: unknown; hasImage: boolean }):

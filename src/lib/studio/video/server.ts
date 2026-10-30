@@ -22,7 +22,7 @@ import type { PremiumTier } from "@/types/premium";
 
 import { filterVideoImage } from "./image";
 import {
-  cleanVideoText, decideYoutubeVideo, youtubeImageKey, youtubeVideoAllowed, YT_VIDEO_PER_DAY,
+  cleanVideoText, decideYoutubeVideo, youtubeImageKey, youtubeVideoAllowed, youtubeVideoRenderEnabled, YT_VIDEO_PER_DAY,
   type YoutubeVideoDeny, type YoutubeVideoSpec,
 } from "./youtube-video";
 
@@ -78,14 +78,15 @@ export async function getYoutubeVideoState(p: { ownerId: string; projectId: stri
   const allowed = youtubeVideoAllowed(p.tier);
   const approved = await approvedMaster(admin, p.ownerId, p.projectId).catch(() => null);
   const cover = await projectBeatCover(admin, p.ownerId, proj.beatId);
-  if (!allowed) return { available: true as const, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title, latest: null, usage: null };
+  const rendering = youtubeVideoRenderEnabled();
+  if (!allowed) return { available: true as const, rendering, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title, latest: null, usage: null };
   const { data, error } = await admin.from("studio_master_jobs").select("id").eq("owner_id", p.ownerId).eq("project_id", p.projectId)
     .eq("kind", "youtube_video").order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (missing(error)) return { available: false as const };
   check(error);
   const latest = data ? await getStudioJob({ ownerId: p.ownerId, projectId: p.projectId, jobId: String((data as { id: string }).id) }) : null;
   return {
-    available: true as const, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title,
+    available: true as const, rendering, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title,
     latest, usage: { used: await usedToday(admin, p.ownerId), perDay: YT_VIDEO_PER_DAY },
   };
 }
@@ -122,6 +123,8 @@ export async function commitYoutubeVideo(p: {
   ownerId: string; projectId: string; tier: PremiumTier; source: unknown; imageId?: unknown; title?: unknown; artist?: unknown;
 }): Promise<{ ok: true; jobId: string } | Deny> {
   if (!youtubeVideoAllowed(p.tier)) return { ok: false, error: "tier_video" };
+  // No E3 worker for youtube_video yet → never queue a job nobody will process.
+  if (!youtubeVideoRenderEnabled()) return { ok: false, error: "video_soon", message: "Wideo MP4 niedostępne — wkrótce." };
   const admin = createSupabaseAdminClient();
   const proj = await project(admin, p.ownerId, p.projectId);
   const approved = await approvedMaster(admin, p.ownerId, p.projectId);
