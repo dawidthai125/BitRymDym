@@ -396,6 +396,8 @@ function StudioEditorInner({
   const [inspectorOverlayOpen, setInspectorOverlayOpen] = useState(false);
   /** Explicit Record context when user opens Nagraj without active capture. */
   const [inspectorPreferRecord, setInspectorPreferRecord] = useState(false);
+  /** Top-bar REC presses not yet consumed by StudioRecordingPanel (0 = none). */
+  const [transportRecordRequest, setTransportRecordRequest] = useState(0);
   /** Scratch session SSOT — survives Record panel unmount. */
   const [lastScratchClipId, setLastScratchClipId] = useState<string | null>(
     null,
@@ -2393,6 +2395,8 @@ function StudioEditorInner({
           getExpectedDocumentVersion={expectedDocumentVersion}
           enqueuePersistAsync={enqueuePersistAsync}
           onDocumentVersionAck={applyAckedDocumentVersion}
+          recordRequest={transportRecordRequest}
+          onRecordRequestHandled={() => setTransportRecordRequest(0)}
           tracks={doc.tracks}
           embedded
           preferredTrackId={activeSelectedTrackId}
@@ -2821,6 +2825,7 @@ function StudioEditorInner({
         onRecord={() => {
           setInspectorPreferRecord(true);
           openInspectorOverlay();
+          setTransportRecordRequest((n) => n + 1);
         }}
         tempoBpm={doc.project.tempoBpm}
         timeSignatureNum={doc.project.timeSignatureNum}
