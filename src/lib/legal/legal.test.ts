@@ -25,6 +25,11 @@ describe("legal documents", () => {
     expect(text(PRIVACY)).toContain("ukończyły 16 lat");
     expect(text(TERMS)).not.toContain("tel.");
   });
+  it("catalogue licence allows credited monetisation, keeps Content ID / sync / beat resale behind consent", () => {
+    const t = text(TERMS);
+    for (const s of ["monetyzować", "Spotify", "YouTube", "prod. [ksywka autora] / BitRymDym", "Content ID", "synchronizacja", "przypisywanie sobie autorstwa Bitu"]) expect(t).toContain(s);
+    expect(t).not.toContain("w celach niekomercyjnych");
+  });
   it("covers the real processors and retention", () => {
     const p = text(PRIVACY);
     for (const s of ["Supabase", "Vercel", "E3", "Gemini", "Groq", "Cloudflare", "Pollinations", "Resend", "Free 2 dni", "Gold 45 dni", "Prezesa Urzędu Ochrony Danych"]) expect(p).toContain(s);

@@ -1,4 +1,4 @@
-/** Polityka prywatności (RODO) — WZÓR do weryfikacji przez prawnika (nie jest poradą prawną). */
+/** Polityka prywatności (RODO) BitRymDym. */
 import { LEGAL_EFFECTIVE_DATE, LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, PRIVACY_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";

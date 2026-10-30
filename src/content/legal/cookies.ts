@@ -1,4 +1,4 @@
-/** Polityka cookies — WZÓR. Only strictly necessary storage → no consent banner needed (strictly-necessary exemption, Prawo komunikacji elektronicznej). */
+/** Polityka cookies. Only strictly necessary storage → no consent banner needed (strictly-necessary exemption, Prawo komunikacji elektronicznej). */
 import { PRIVACY_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";

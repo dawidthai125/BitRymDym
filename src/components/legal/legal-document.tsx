@@ -35,9 +35,7 @@ export function LegalDocument({ doc, englishNote }: { doc: LegalDoc; englishNote
       <header className="space-y-3">
         <h1 className="text-3xl font-bold tracking-tight">{doc.title}</h1>
         <p className="text-[var(--brd-mute)]">{withMarks(doc.lead)}</p>
-        <p className="rounded-[2px] border border-dashed border-[var(--brd-line)] p-3 text-sm" role="note" data-testid="legal-template-note">
-          Wersja robocza (wzór) — przed publikacją wymaga uzupełnienia danych w [nawiasach] i weryfikacji przez prawnika. Nie stanowi porady prawnej. Wersja: {doc.version}.
-        </p>
+        <p className="text-sm text-[var(--brd-mute)]" data-testid="legal-version">Wersja: {doc.version}.</p>
         {englishNote ? <p className="text-sm text-[var(--brd-mute)]" lang="en">{englishNote}</p> : null}
       </header>
       <nav aria-label="Spis treści" className="text-sm">
