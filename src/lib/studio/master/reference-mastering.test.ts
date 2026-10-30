@@ -3,7 +3,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { masterStylesForTier, referenceMasteringGate } from "@/config/plan-policy";
+import { masterStylesForTier, PLAN_ADDON_PRICE_PLN, referenceMasteringGate } from "@/config/plan-policy";
+import { buildMasterReport } from "@/lib/studio/report/change-report";
 import pl from "../../../../messages/pl.json";
 import en from "../../../../messages/en.json";
 
@@ -25,6 +26,10 @@ describe("reference mastering gate (plan-policy)", () => {
     for (const t of ["FREE", "BRONZE"] as const) {
       expect(referenceMasteringGate(t, true)).toEqual({ allowed: false, reason: "plan", minTier: "SILVER" });
     }
+  });
+  it("Silver add-on costs 14,99 zł a month", () => {
+    expect(PLAN_ADDON_PRICE_PLN.reference_mastering).toEqual({ monthlyPln: 14.99 });
+    expect(pl.studio.masterStep.referencja.dodatek).toContain("{price} zł");
   });
   it("styles are for every plan that can master", () => {
     expect((["FREE", "BRONZE", "SILVER", "GOLD"] as const).every(masterStylesForTier)).toBe(true);
@@ -54,6 +59,18 @@ describe("mastering styles", () => {
     expect(plain).toEqual({ op: "python_master", target: "club", settings: { bass: 1 }, reference: null });
     const [bad] = planStudioMasterJob({ kind: "master", target: "club", settings: {}, output_format: "WAV_FLOAT", style: "evil", reference_id: "../x" });
     expect(bad).toMatchObject({ settings: {}, reference: null });
+  });
+});
+
+describe("master change report", () => {
+  it("reports a style as one line, not as 'your setting' offsets", () => {
+    const items = buildMasterReport({ mix: null, master: { lufs: -9, truePeakDb: -1 }, target: "streaming", settings: { bass: 1, bright: 0 }, style: { id: "warm", intensity: 60 }, tpCeiling: -1 });
+    expect(items).toEqual([
+      { key: "target", params: { target: "streaming" } },
+      { key: "style", params: { style: "warm", intensity: 60 } },
+      { key: "setting", params: { setting: "bass", value: 1 } },
+    ]);
+    expect(pl.studio.report.master.style).toBe("Styl {style} — intensywność {pct}%.");
   });
 });
 

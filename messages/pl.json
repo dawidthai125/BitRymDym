@@ -2602,6 +2602,7 @@
         "peakTamed": "Opanowałem szczyty: {from} → {to} dBTP.",
         "peakOver": "Uwaga: szczyt wyszedł {to} dBTP — wyżej niż sufit celu.",
         "dynamics": "Dynamika (LRA): {from} → {to} LU.",
+        "style": "Styl {style} — intensywność {pct}%.",
         "setting": "Twoje ustawienie: {setting} {value}."
       },
       "platformy": {

@@ -2602,6 +2602,7 @@
         "peakTamed": "I tamed the peaks: {from} → {to} dBTP.",
         "peakOver": "Heads up: the peak ended at {to} dBTP — above the target ceiling.",
         "dynamics": "Dynamics (LRA): {from} → {to} LU.",
+        "style": "Style {style} — intensity {pct}%.",
         "setting": "Your setting: {setting} {value}."
       },
       "platformy": {

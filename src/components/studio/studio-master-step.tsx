@@ -518,7 +518,7 @@ export function StudioMasterStep({
                     </ul>
                   </div>
                 ) : null}
-                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={target} settings={effective} tpCeiling={MASTER_TARGETS[target].tp} />
+                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={target} settings={settings} style={style ? { id: style, intensity: styleIntensity } : null} tpCeiling={MASTER_TARGETS[target].tp} />
                 {approved ? (
                   <p role="status" className="text-sm font-semibold">✓ {t("zatwierdzone")}</p>
                 ) : (

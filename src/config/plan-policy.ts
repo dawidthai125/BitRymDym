@@ -335,7 +335,7 @@ export type PlanAddon = (typeof PLAN_ADDONS)[number];
 
 /** Add-on prices are display-only until checkout exists (PLAN_PAYMENTS_AVAILABLE). */
 export const PLAN_ADDON_PRICE_PLN: Record<PlanAddon, { monthlyPln: number }> = {
-  reference_mastering: { monthlyPln: 9.99 },
+  reference_mastering: { monthlyPln: 14.99 },
 };
 
 export type ReferenceMasteringGate =

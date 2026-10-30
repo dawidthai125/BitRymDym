@@ -94,13 +94,16 @@ export type MasterReportItem =
   | { key: "peakOver"; params: { to: number } }
   | { key: "dynamics"; params: { from: number; to: number } }
   | { key: "setting"; params: { setting: string; value: number } }
+  | { key: "style"; params: { style: string; intensity: number } }
   | { key: "target"; params: { target: string } };
 
 export function buildMasterReport(p: {
   mix: { lufs: number; truePeakDb: number; lraLu: number } | null;
   master: { lufs: number; truePeakDb: number; lra?: number | null };
   target: string;
+  /** The user's own slider settings only — a style's offsets are reported as one "style" line. */
   settings: Record<string, number>;
+  style?: { id: string; intensity: number } | null;
   tpCeiling: number;
 }): MasterReportItem[] {
   const items: MasterReportItem[] = [{ key: "target", params: { target: p.target } }];
@@ -113,6 +116,7 @@ export function buildMasterReport(p: {
   else if (mx && mx.truePeakDb > p.tpCeiling + 0.05) items.push({ key: "peakTamed", params: { from: r1(mx.truePeakDb), to: r1(p.master.truePeakDb) } });
   if (mx && typeof p.master.lra === "number" && Number.isFinite(p.master.lra) && Number.isFinite(mx.lraLu) && Math.abs(p.master.lra - mx.lraLu) >= 0.5)
     items.push({ key: "dynamics", params: { from: r1(mx.lraLu), to: r1(p.master.lra) } });
+  if (p.style && p.style.intensity > 0) items.push({ key: "style", params: { style: p.style.id, intensity: Math.round(p.style.intensity) } });
   for (const [k, v] of Object.entries(p.settings)) if (v) items.push({ key: "setting", params: { setting: k, value: v } });
   return items;
 }
