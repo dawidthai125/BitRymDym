@@ -1,12 +1,12 @@
 /** Polityka prywatności (RODO) — WZÓR do weryfikacji przez prawnika (nie jest poradą prawną). */
-import { LEGAL_PATHS, OPERATOR as O, PRIVACY_VERSION } from "@/lib/legal/legal-config";
+import { LEGAL_EFFECTIVE_DATE, LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, PRIVACY_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";
 
 export const PRIVACY: LegalDoc = {
   title: "Polityka prywatności BitRymDym",
   version: PRIVACY_VERSION,
-  lead: "Wyjaśniamy, jakie dane przetwarzamy, po co, jak długo i komu je powierzamy. Obowiązuje od [DATA WEJŚCIA W ŻYCIE].",
+  lead: `Wyjaśniamy, jakie dane przetwarzamy, po co, jak długo i komu je powierzamy. Obowiązuje od ${LEGAL_EFFECTIVE_DATE}.`,
   sections: [
     { id: "p1", h: "1. Administrator", blocks: [
       `Administratorem danych jest ${O.name}, ${O.address}, NIP ${O.nip} („my”). Kontakt w sprawach danych: ${O.privacyEmail}. Nie wyznaczyliśmy inspektora ochrony danych.`,
@@ -17,8 +17,8 @@ export const PRIVACY: LegalDoc = {
       "Aktywność: odsłuchy, pobrania, polubienia, linki do odsłuchu i liczba ich odtworzeń, historia moderacji i odwołań.",
       "Dane techniczne: adres IP, typ przeglądarki, logi serwera i błędów, identyfikatory sesji w plikach cookie.",
       "Wiadomości: treść pytań do asystenta BITEK, opisy okładek AI, korespondencja z nami.",
-      "Po uruchomieniu płatności: dane do rozliczeń (imię i nazwisko lub firma, adres, NIP, historia transakcji). Danych kart płatniczych nie przechowujemy — obsługuje je [OPERATOR PŁATNOŚCI].",
-    ] }] },
+      "Po uruchomieniu płatności: dane do rozliczeń (imię i nazwisko lub firma, adres, NIP, historia transakcji). Danych kart płatniczych nie przechowujemy — obsługuje je zewnętrzny operator płatności wskazany przy zamówieniu — PayPro S.A. (Przelewy24) albo Krajowy Integrator Płatności S.A. (Tpay), który przetwarza dane płatnicze jako odrębny administrator.",
+    ] }, `Serwis jest przeznaczony dla osób, które ukończyły ${MINIMUM_AGE} lat — młodsze osoby nie mogą zakładać Konta. Jeśli dowiemy się, że Konto założyła osoba poniżej tego wieku, usuniemy je wraz z danymi.`] },
     { id: "p3", h: "3. Cele i podstawy prawne", blocks: [{ table: { head: ["Cel", "Podstawa (RODO)"], rows: [
       ["Prowadzenie Konta, Studio, przechowywanie i przetwarzanie Twoich plików, linki do odsłuchu, eksport", "art. 6 ust. 1 lit. b — umowa"],
       ["Moderacja Bitów i okładek (automatyczna i ręczna), przeciwdziałanie nadużyciom, bezpieczeństwo, limity", "art. 6 ust. 1 lit. f — prawnie uzasadniony interes; art. 6 ust. 1 lit. c — obowiązki z aktu o usługach cyfrowych"],
@@ -35,13 +35,13 @@ export const PRIVACY: LegalDoc = {
       { table: { head: ["Dostawca", "Do czego", "Gdzie"], rows: [
         ["Supabase", "baza danych, logowanie, przechowywanie plików", "UE (Irlandia)"],
         ["Vercel", "hosting strony i API, logi", "USA / globalnie"],
-        ["Serwer obliczeniowy E3", "miks, mastering, transkodowanie, wideo MP4, kontrola plików", "[LOKALIZACJA SERWERA E3]"],
+        ["Serwer obliczeniowy E3", "miks, mastering, transkodowanie, wideo MP4, kontrola plików", "UE (Contabo GmbH; centrum danych w Lauterbourg, Francja)"],
         ["Google (Gemini API)", "asystent BITEK, moderacja obrazów", "USA"],
         ["Groq", "asystent BITEK, kontrola i doprecyzowanie opisów okładek AI", "USA"],
         ["Cloudflare (Workers AI)", "generowanie okładek AI — tylko opis tekstowy", "USA / globalnie"],
-        ["Pollinations", "zapasowe generowanie okładek AI — tylko opis tekstowy", "[DO WERYFIKACJI]"],
+        ["Pollinations (Myceli.AI OÜ)", "zapasowe generowanie okładek AI — tylko opis tekstowy", "UE (Estonia); przetwarzanie także poza EOG, m.in. w USA"],
         ["Resend", "wysyłka e-maili (gdy włączone)", "USA"],
-        ["[OPERATOR PŁATNOŚCI]", "płatności (po uruchomieniu)", "[DO UZUPEŁNIENIA]"],
+        ["PayPro S.A. (Przelewy24) albo Krajowy Integrator Płatności S.A. (Tpay)", "płatności (po uruchomieniu) — jako odrębny administrator danych płatniczych", "UE (Polska)"],
       ] } },
       "Do dostawców AI nie wysyłamy Twojego e-maila ani hasła. Opisy okładek przed wysłaniem są filtrowane; nie wpisuj w nich danych osobowych. Przekazanie danych poza EOG odbywa się na podstawie decyzji Komisji Europejskiej (EU-US Data Privacy Framework) lub standardowych klauzul umownych (art. 46 RODO). Kopię zabezpieczeń możesz uzyskać, pisząc do nas.",
       "Opublikowane Bity, ksywka i okładki są widoczne publicznie. Link do odsłuchu działa dla każdego, kto go otrzyma — do wygaśnięcia lub wyłączenia.",
@@ -51,8 +51,8 @@ export const PRIVACY: LegalDoc = {
       "Pliki robocze Studia (miksy, mastery, eksporty, wideo) — zależnie od Planu: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni; potem są usuwane automatycznie.",
       "Utwór referencyjny do masteringu — usuwany zaraz po zakończeniu zadania.",
       "Linki do odsłuchu — do wygaśnięcia (maksymalnie zgodnie z Planem) lub wyłączenia.",
-      "Historia moderacji i zgłoszeń — przez czas istnienia treści i do [OKRES PRZECHOWYWANIA LOGÓW] po jej usunięciu (obrona roszczeń, DSA).",
-      "Logi techniczne — do [OKRES PRZECHOWYWANIA LOGÓW].",
+      "Historia moderacji i zgłoszeń — przez czas istnienia treści i do 3 lat po jej usunięciu (ustalenie, dochodzenie lub obrona roszczeń — m.in. art. 442¹ Kodeksu cywilnego; obowiązki z aktu o usługach cyfrowych), a gdy toczy się konkretne postępowanie lub spór — do jego zakończenia.",
+      "Logi techniczne (serwera, błędów i bezpieczeństwa, w tym adresy IP) — nie dłużej niż 12 miesięcy, potem są usuwane lub anonimizowane. Dłużej tylko wtedy, gdy są potrzebne do wyjaśnienia konkretnego incydentu bezpieczeństwa lub roszczenia — do jego zakończenia.",
       "Dane rozliczeniowe — 5 lat od końca roku podatkowego (po uruchomieniu płatności).",
     ] }] },
     { id: "p7", h: "7. Twoje prawa", blocks: [

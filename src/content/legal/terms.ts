@@ -1,16 +1,16 @@
 /** Regulamin serwisu BitRymDym — WZÓR do weryfikacji przez prawnika (nie jest poradą prawną). */
-import { LEGAL_PATHS, OPERATOR as O, TERMS_VERSION } from "@/lib/legal/legal-config";
+import { LEGAL_EFFECTIVE_DATE, LEGAL_PATHS, MINIMUM_AGE, OPERATOR as O, TERMS_VERSION } from "@/lib/legal/legal-config";
 
 import type { LegalDoc } from "./types";
 
 export const TERMS: LegalDoc = {
   title: "Regulamin serwisu BitRymDym",
   version: TERMS_VERSION,
-  lead: "Regulamin określa zasady korzystania z serwisu BitRymDym — katalogu bitów i przeglądarkowego studia do nagrywania, miksu i masteringu. Obowiązuje od [DATA WEJŚCIA W ŻYCIE].",
+  lead: `Regulamin określa zasady korzystania z serwisu BitRymDym — katalogu bitów i przeglądarkowego studia do nagrywania, miksu i masteringu. Obowiązuje od ${LEGAL_EFFECTIVE_DATE}.`,
   sections: [
     { id: "s1", h: "§ 1. Usługodawca i kontakt", blocks: [
       `Serwis prowadzi ${O.name}, ${O.form}, ${O.address}, NIP ${O.nip}, REGON ${O.regon} („Usługodawca”).`,
-      `Kontakt: ${O.email}${O.phone.startsWith("[") ? "" : `, tel. ${O.phone}`}. Serwis działa pod adresem ${O.domain}.`,
+      `Kontakt: ${O.email}${O.phone ? `, tel. ${O.phone}` : ""}. Serwis działa pod adresem ${O.domain}.`,
     ] },
     { id: "s2", h: "§ 2. Definicje", blocks: [{ list: [
       "Serwis — strona internetowa BitRymDym wraz z funkcjami Studia.",
@@ -32,7 +32,7 @@ export const TERMS: LegalDoc = {
       "Korzystanie z Internetu wiąże się z typowymi zagrożeniami (np. złośliwe oprogramowanie, przechwycenie danych). Użytkownik powinien chronić swoje hasło i urządzenie.",
     ] },
     { id: "s5", h: "§ 5. Konto", blocks: [
-      "Konto może założyć osoba, która ukończyła [MINIMALNY WIEK] lat; osoba niepełnoletnia — za zgodą przedstawiciela ustawowego.",
+      `Konto może założyć wyłącznie osoba, która ukończyła ${MINIMUM_AGE} lat. Osoba niepełnoletnia (od ${MINIMUM_AGE} do 18 lat) może zawrzeć umowę o Plan płatny lub Dodatek tylko za zgodą przedstawiciela ustawowego.`,
       "Użytkownik podaje prawdziwy adres e-mail, nie udostępnia Konta osobom trzecim i dba o poufność hasła. Ksywka nie może naruszać praw innych osób ani wprowadzać w błąd.",
       "Użytkownik może w każdej chwili usunąć Konto w ustawieniach (Konto → Usuwanie konta) — jest to wypowiedzenie umowy ze skutkiem natychmiastowym. Treści Użytkownika są wtedy usuwane, z zastrzeżeniem § 9 ust. 4 i Polityki prywatności.",
     ] },
@@ -45,7 +45,11 @@ export const TERMS: LegalDoc = {
     ] },
     { id: "s7", h: "§ 7. Licencje", blocks: [
       "Użytkownik zachowuje prawa do Treści Użytkownika. Udziela Usługodawcy niewyłącznej, nieodpłatnej licencji, bez ograniczeń terytorialnych, na czas przechowywania treści w Serwisie, w zakresie niezbędnym do świadczenia usług: przechowywanie, zwielokrotnianie, przetwarzanie techniczne (miks, mastering, transkodowanie, generowanie wideo), wyświetlanie i odtwarzanie w Serwisie — a dla opublikowanych Bitów także publiczne udostępnianie w katalogu.",
-      "Zasady korzystania z Bitów z katalogu (odsłuch, pobranie, użycie w utworach, oznaczenie autora, użycie komercyjne): [ZASADY LICENCJI NA BITY Z KATALOGU].",
+      "Bity z katalogu są udostępniane Użytkownikom na podstawie niewyłącznej licencji, bez prawa udzielania dalszych licencji, w zakresie opisanym w ust. 3–6. Prawa do Bitu przysługują jego autorowi — Usługodawcy (Bity Usługodawcy) albo Użytkownikowi, który go wgrał (Bity Użytkowników).",
+      "Odsłuch i nagrywanie: każdy opublikowany Bit można odsłuchać w Serwisie (bez Konta — w zakresie próbki). Zalogowany Użytkownik może nagrywać na Bicie i tworzyć na jego podstawie własny utwór (Bit wraz z Nagraniami) w Studiu, o ile autor Bitu udostępnił go do Studia.",
+      "Pobieranie: Bity Usługodawcy nie są udostępniane do pobrania. Bit Użytkownika można pobrać tylko wtedy, gdy jego autor włączył pobieranie, w dziennym limicie wynikającym z Planu. Pobrany Bit służy wyłącznie do stworzenia własnego utworu na zasadach z ust. 5; nie wolno go udostępniać ani sprzedawać jako samodzielnego podkładu.",
+      `Utwór stworzony na Bicie Użytkownik może bezpłatnie publikować i udostępniać w celach niekomercyjnych (np. w mediach społecznościowych, na YouTube, SoundCloud), z oznaczeniem autora Bitu w opisie lub napisach, np. „prod. [ksywka autora] / BitRymDym”. Odrębnej, uprzedniej zgody autora Bitu (dla Bitów Usługodawcy — Usługodawcy, ${O.email}) wymaga w szczególności: użycie komercyjne (monetyzacja, płatna dystrybucja, sprzedaż utworu, wykorzystanie w reklamie, filmie lub grze), zgłoszenie Bitu lub utworu do systemów identyfikacji treści (np. YouTube Content ID), udostępnianie samego Bitu oraz przypisywanie sobie jego autorstwa.`,
+      "Użytkownik, który publikuje Bit z włączonym nagrywaniem lub pobieraniem, udziela innym Użytkownikom licencji w zakresie ust. 3–5. Licencja obejmuje utwory stworzone w czasie, gdy Bit był dostępny — usunięcie Bitu lub wyłączenie tych opcji nie odbiera prawa do utworów wcześniej opublikowanych zgodnie z Regulaminem.",
       "Okładki i grafiki wygenerowane przez narzędzia AI w Serwisie Użytkownik może wykorzystywać wraz ze swoimi utworami; Usługodawca nie gwarantuje, że takie grafiki są objęte ochroną prawnoautorską ani że są unikalne.",
     ] },
     { id: "s8", h: "§ 8. Narzędzia AI", blocks: [
@@ -54,7 +58,7 @@ export const TERMS: LegalDoc = {
     ] },
     { id: "s9", h: "§ 9. Plany, Dodatki i płatności", blocks: [
       "Plan Free jest bezpłatny. Ceny Planów płatnych i Dodatków podane w Serwisie są cenami brutto w złotych. Do czasu uruchomienia płatności ceny mają charakter informacyjny.",
-      "Po uruchomieniu płatności: umowa o Plan płatny zostaje zawarta z chwilą opłacenia zamówienia, na wybrany okres (miesiąc lub rok); płatności obsługuje [OPERATOR PŁATNOŚCI]. Przed zapłatą Użytkownik zobaczy łączną cenę, okres, zasady odnawiania i sposób rezygnacji.",
+      "Po uruchomieniu płatności: umowa o Plan płatny zostaje zawarta z chwilą opłacenia zamówienia, na wybrany okres (miesiąc lub rok); płatności obsługuje zewnętrzny operator płatności — PayPro S.A. z siedzibą w Poznaniu (Przelewy24) albo Krajowy Integrator Płatności S.A. z siedzibą w Poznaniu (Tpay); operator obsługujący daną płatność jest wskazany przy składaniu zamówienia. Przed zapłatą Użytkownik zobaczy łączną cenę, okres, zasady odnawiania i sposób rezygnacji.",
       "Konsument może odstąpić od umowy w ciągu 14 dni od jej zawarcia bez podania przyczyny. Jeżeli Konsument zażąda rozpoczęcia świadczenia przed upływem tego terminu i przyjmie do wiadomości utratę prawa odstąpienia (treści cyfrowe dostarczane natychmiast), prawo odstąpienia wygasa zgodnie z art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta; dla usług cyfrowych świadczonych w sposób ciągły obowiązują zasady art. 35 tej ustawy.",
       "Pliki w Studiu są przechowywane przez okres zależny od Planu (§ 3 ust. 3). Po jego upływie lub po zmianie Planu na niższy pliki mogą zostać usunięte — Użytkownik powinien je wcześniej pobrać.",
     ] },

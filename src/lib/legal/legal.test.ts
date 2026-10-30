@@ -15,6 +15,16 @@ describe("legal documents", () => {
     const known = new Set([...LEGAL_PLACEHOLDERS, "[DO WERYFIKACJI]", "[DO UZUPEŁNIENIA]"]);
     expect([...used].filter((p) => !known.has(p))).toEqual([]);
   });
+  it("final documents: no placeholders left, operator data + 16+ age filled", () => {
+    for (const d of [TERMS, PRIVACY, COOKIES]) expect(text(d).match(PLACEHOLDER_RE) ?? []).toEqual([]);
+    expect(LEGAL_PLACEHOLDERS).toEqual([]);
+    expect(TERMS_VERSION).toBe("2026-11-01");
+    const all = text(TERMS) + text(PRIVACY);
+    for (const s of ["8952035524", "dawid.thai@int.pl", "1 listopada 2026", "PayPro S.A.", "Krajowy Integrator Płatności S.A.", "12 miesięcy"]) expect(all).toContain(s);
+    expect(text(TERMS)).toContain("ukończyła 16 lat");
+    expect(text(PRIVACY)).toContain("ukończyły 16 lat");
+    expect(text(TERMS)).not.toContain("tel.");
+  });
   it("covers the real processors and retention", () => {
     const p = text(PRIVACY);
     for (const s of ["Supabase", "Vercel", "E3", "Gemini", "Groq", "Cloudflare", "Pollinations", "Resend", "Free 2 dni", "Gold 45 dni", "Prezesa Urzędu Ochrony Danych"]) expect(p).toContain(s);

@@ -50,6 +50,13 @@ describe("classifyMaintenancePath", () => {
     ["/api/email", "api"],
     ["/email/wypisano/x", "page"],
     ["/email", "page"],
+    ["/regulamin", "exempt"],
+    ["/polityka-prywatnosci", "exempt"],
+    ["/cookies", "exempt"],
+    ["/regulamin/x", "page"],
+    ["/polityka-prywatnosci-x", "page"],
+    ["/cookies/x", "page"],
+    ["/cookiesx", "page"],
     ["/beat/abc", "page"],
     ["/beat/abc/opengraph-image", "exempt"],
     ["/beat/abc/twitter-image", "exempt"],
@@ -93,6 +100,8 @@ describe("decideMaintenance", () => {
     expect(d({ pathname: "/api/email/unsubscribe", method: "POST" })).toBe("pass");
     expect(d({ pathname: "/beat/abc/opengraph-image" })).toBe("pass");
     expect(d({ pathname: "/beat/abc" })).toBe("page");
+    // Legal pages stay readable (linked from the maintenance page / signup).
+    for (const pathname of ["/regulamin", "/polityka-prywatnosci", "/cookies"]) expect(d({ pathname })).toBe("pass");
   });
 });
 
