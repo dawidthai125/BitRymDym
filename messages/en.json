@@ -386,13 +386,35 @@
         "bityNaKtorychMasz": "Beats you have active recording access to.",
         "premiumLimity": "Premium — limits",
         "informacjaOPoziomachI": "Information about tiers and limits. In-app purchase is not available."
-      }
+      },
+      "powiadomieniaEMail": "E-mail notifications",
+      "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe"
     },
     "accountBeatEditPage": {
       "metaTitle": "Edit beat",
       "mojeBity": "← My beats",
       "edytuj": "Edit: {title}",
       "zobaczStroneBitu": "View beat page →"
+    },
+    "notifications": {
+      "tytul": "E-mail notifications",
+      "kontoEtykieta": "Account",
+      "kontoOpis": "Welcome e-mail after sign-up.",
+      "moderacjaEtykieta": "Beat moderation",
+      "moderacjaOpis": "Moderation result for your beats (approved / rejected).",
+      "studioEtykieta": "Studio",
+      "studioOpis": "Master ready and MP4 video ready.",
+      "zapisz": "Save notifications",
+      "zapisywanie": "Saving…",
+      "zapisano": "Saved.",
+      "zapisBlad": "Could not save. Please try again.",
+      "nieaktywne": "E-mail sending is not enabled yet. Your settings will be kept.",
+      "informacja": "Account security e-mails (e-mail confirmation, password reset) are always sent.",
+      "wypisanoTytul": "Unsubscribed",
+      "wypisanoOpis": "We will no longer send this kind of message. You can change this in account settings.",
+      "wypisanoBladTytul": "Could not unsubscribe",
+      "wypisanoBladOpis": "The link is invalid or sending is disabled. Change your settings after signing in.",
+      "przejdzDoUstawien": "Notification settings"
     }
   },
   "admin": {

@@ -27,6 +27,7 @@ describe("settings hub (navigation only)", () => {
     const expected = [
       "/account#profil",
       "/account#security",
+      "/account#powiadomienia",
       "/account#danger",
       "/account",
       "/account/takes",

@@ -386,13 +386,35 @@
         "bityNaKtorychMasz": "Bity, na których masz aktywne udostępnienie do nagrania.",
         "premiumLimity": "Premium — limity",
         "informacjaOPoziomachI": "Informacja o poziomach i limitach. Zakup w aplikacji nie jest dostępny."
-      }
+      },
+      "powiadomieniaEMail": "Powiadomienia e-mail",
+      "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie"
     },
     "accountBeatEditPage": {
       "metaTitle": "Edytuj bit",
       "mojeBity": "← Moje bity",
       "edytuj": "Edytuj: {title}",
       "zobaczStroneBitu": "Zobacz stronę bitu →"
+    },
+    "notifications": {
+      "tytul": "Powiadomienia e-mail",
+      "kontoEtykieta": "Konto",
+      "kontoOpis": "Powitanie po założeniu konta.",
+      "moderacjaEtykieta": "Moderacja bitów",
+      "moderacjaOpis": "Wynik moderacji Twoich bitów (zatwierdzony / odrzucony).",
+      "studioEtykieta": "Studio",
+      "studioOpis": "Gotowy master i gotowe wideo MP4.",
+      "zapisz": "Zapisz powiadomienia",
+      "zapisywanie": "Zapisywanie…",
+      "zapisano": "Zapisano.",
+      "zapisBlad": "Nie udało się zapisać. Spróbuj ponownie.",
+      "nieaktywne": "Wysyłka e-maili nie jest jeszcze włączona. Twoje ustawienia zostaną zapamiętane.",
+      "informacja": "Wiadomości o bezpieczeństwie konta (potwierdzenie e-maila, reset hasła) wysyłamy zawsze.",
+      "wypisanoTytul": "Wypisano z powiadomień",
+      "wypisanoOpis": "Nie będziemy już wysyłać tego rodzaju wiadomości. Zmienisz to w ustawieniach konta.",
+      "wypisanoBladTytul": "Nie udało się wypisać",
+      "wypisanoBladOpis": "Link jest nieprawidłowy albo wysyłka jest wyłączona. Zmień ustawienia po zalogowaniu.",
+      "przejdzDoUstawien": "Ustawienia powiadomień"
     }
   },
   "admin": {
