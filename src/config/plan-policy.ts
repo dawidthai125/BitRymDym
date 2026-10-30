@@ -8,8 +8,10 @@
  * deliver policy, master quota, project limit) derives its numbers from here
  * and the server enforces them — the UI only mirrors.
  *
- * Payments: there is no payment integration in the app (premium is granted by
- * an admin). Prices are display-only until checkout exists.
+ * Payments: one-off Przelewy24 checkout (no card on file). The buy buttons stay
+ * hidden until PLAN_PAYMENTS_AVAILABLE is on and the P24 env is set. Prices
+ * below are the gross PLN amounts the server charges — the client never
+ * supplies an amount.
  */
 
 import type { PremiumTier } from "@/types/premium";
@@ -343,7 +345,7 @@ export function referenceMasteringForTier(tier: PremiumTier): ReferenceMastering
 export const PLAN_ADDONS = ["reference_mastering"] as const;
 export type PlanAddon = (typeof PLAN_ADDONS)[number];
 
-/** Add-on prices are display-only until checkout exists (PLAN_PAYMENTS_AVAILABLE). */
+/** Add-on gross price. Charged only when checkout is enabled (see readPlanPaymentsAvailable). */
 export const PLAN_ADDON_PRICE_PLN: Record<PlanAddon, { monthlyPln: number }> = {
   reference_mastering: { monthlyPln: 14.99 },
 };
@@ -378,6 +380,21 @@ export function minimumTierForQuality(quality: PlanDownloadQuality): PremiumTier
 }
 
 export const PAID_TIERS = ["BRONZE", "SILVER", "GOLD"] as const;
+export type PaidTier = (typeof PAID_TIERS)[number];
 
-/** No checkout in the app yet → prices are display-only. */
-export const PLAN_PAYMENTS_AVAILABLE = false;
+const PAYMENTS_ON = new Set(["1", "true", "yes", "on"]);
+
+/**
+ * Checkout flag. Default off, so prices stay display-only until this is set
+ * in the environment (and P24 credentials exist — see isP24Configured).
+ * Read at request time; a Vercel change still needs a redeploy because Next
+ * inlines server env at build.
+ */
+export function readPlanPaymentsAvailable(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return PAYMENTS_ON.has((env.PLAN_PAYMENTS_AVAILABLE ?? "").trim().toLowerCase());
+}
+
+/** Snapshot at module load. Tests assert the default (unset env) is off. */
+export const PLAN_PAYMENTS_AVAILABLE = readPlanPaymentsAvailable();

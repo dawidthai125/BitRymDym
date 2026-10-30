@@ -182,7 +182,7 @@
       "prywatnosc": "Privacy policy",
       "cookies": "Cookies",
       "zgodaRejestracja": "I accept the <regulamin>Terms</regulamin> and have read the <prywatnosc>Privacy policy</prywatnosc>.",
-      "zakupRegulamin": "I accept the <regulamin>Terms</regulamin> (including payment and plan renewal rules).",
+      "zakupRegulamin": "I accept the <regulamin>Terms</regulamin> (one-off payment for the selected period, no card stored).",
       "zakupNatychmiast": "I request that performance starts before the 14-day withdrawal period ends and I acknowledge that for digital content I lose the right of withdrawal once it is delivered.",
       "zakupWymagane": "Tick both boxes to continue to payment."
     },
@@ -323,6 +323,7 @@
         "bezPobierania": "No downloads (listen only)",
         "referencja": {
           "addon": "Reference mastering — paid add-on (online purchase coming soon)",
+          "addonKup": "Reference mastering — paid add-on",
           "included": "Reference mastering included"
         }
       },
@@ -369,7 +370,8 @@
         "free": "Free does not download beats or finished files — listen only; the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
         "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
         "raw": "Raw file of your own recording: {plan} only, up to {n} downloads a day.",
-        "referencja": "Reference mastering is live: included in Gold, a paid add-on in Silver. Buying the add-on online — coming soon; until then we enable it manually (team@bitrymdym.pl)."
+        "referencja": "Reference mastering is live: included in Gold, a paid add-on in Silver. Buying the add-on online — coming soon; until then we enable it manually (team@bitrymdym.pl).",
+        "referencjaKup": "Reference mastering is live: included in Gold, a paid monthly add-on on Silver."
       },
       "wPrzygotowaniu": "In the works",
       "platnosciTytul": "In-app payments",
@@ -377,9 +379,76 @@
       "referencjaTytul": "Reference mastering",
       "jakDostacPremiumDzis": "How to get Premium today",
       "poziomNadajeSiePo": "The plan is granted on the account via the admin panel (with an audit trail). When payments launch, this page gets a buy button.",
+      "poziomGdyPlatnosci": "You buy the plan above, for a month or a year. An admin can still grant a plan by hand — with an audit trail.",
       "idzDoKatalogu": "Go to catalog",
       "zalozKonto": "Create account",
-      "oBitrymdym": "About BitRymDym"
+      "oBitrymdym": "About BitRymDym",
+      "checkout": {
+        "naglowek": "I'll buy you a plan",
+        "lead": "The payment is one-off. I don't store the card and I don't charge the next period myself. BLIK, transfer, card and wallets are on the Przelewy24 page.",
+        "regulaJednorazowo": "You pay once for a month or a year. Renewing means a new order, not a subscription.",
+        "regulaPrzedluzenie": "I extend the same plan from the end of the paid period — or from now, if it has already ended.",
+        "regulaWyzszy": "A higher plan starts now. Days left on the lower plan are not credited.",
+        "regulaNizszy": "I won't sell a lower plan while a higher one is still running.",
+        "maszDo": "You have {plan} until {data}.",
+        "maszBeztermin": "You have {plan} with no end date — I won't take a payment for that plan.",
+        "nieSprawdze": "I can't check your plan right now. Refresh the page before you pay.",
+        "plan": "Plan",
+        "okres": "Period",
+        "miesiac": "Month",
+        "rok": "Year",
+        "zaMiesiac": "for a month",
+        "zaRok": "for a year",
+        "place": "Pay with Przelewy24",
+        "czekam": "Opening Przelewy24…",
+        "zalogujSie": "Sign in — then I'll open the payment",
+        "dodatekTytul": "I'll add reference mastering",
+        "dodatekOpis": "One month of the add-on on Silver. Gold includes it. On Free and Bronze this add-on unlocks nothing.",
+        "dodatekPrzycisk": "Add reference mastering",
+        "blok": {
+          "DOWNGRADE": "A lower plan waits until the higher one ends.",
+          "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
+          "ADDON_INCLUDED": "On Gold, reference mastering is included.",
+          "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
+          "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it."
+        },
+        "blad": {
+          "PAYMENTS_OFF": "Payments are still off.",
+          "CONSENT": "Tick both consents — I won't open the payment without them.",
+          "EMAIL": "The account has no e-mail, and Przelewy24 requires one.",
+          "INVALID": "I don't understand this order. Pick the plan again.",
+          "RATE": "Too many unfinished payments. Try again in an hour.",
+          "PROVIDER": "Przelewy24 didn't accept the order. I didn't charge anything — try again.",
+          "ORIGIN": "That request didn't come from the BitRymDym site.",
+          "LOGIN": "Sign in and I'll open the payment.",
+          "DOWNGRADE": "I won't sell a lower plan while a higher one is still running.",
+          "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
+          "ADDON_INCLUDED": "On Gold, reference mastering is included.",
+          "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
+          "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it."
+        }
+      },
+      "returnPage": {
+        "metaTitle": "Payment — BitRymDym",
+        "kicker": "Payment",
+        "naglowek": "You're back from Przelewy24",
+        "czekam": "I'm waiting for Przelewy24 to confirm. When the payment arrives, I'll turn the plan on. You can stay on this page.",
+        "gotowe": "The payment arrived. I turned on {co} until {data}.",
+        "pominiete": "I have the payment, but I didn't change the plan: {powod}",
+        "nieudane": "This payment didn't go through. I didn't turn anything on.",
+        "brak": "I can't find this order on your account.",
+        "wroc": "Back to plans",
+        "bezDaty": "the end of the period is on the account",
+        "produkt": {
+          "referencja": "reference mastering",
+          "plan": "the plan"
+        },
+        "powod": {
+          "perpetual": "you already have access with no end date and I won't shorten it.",
+          "downgrade": "a higher plan is still running, and I don't switch on a lower one during it.",
+          "addon_perpetual": "the add-on has no end date and I won't shorten it."
+        }
+      }
     },
     "settingsPage": {
       "metaTitle": "Settings",
@@ -409,7 +478,7 @@
         "bityUdostepnione": "Shared beats",
         "bityNaKtorychMasz": "Beats you have active recording access to.",
         "premiumLimity": "Premium — limits",
-        "informacjaOPoziomachI": "Information about tiers and limits. In-app purchase is not available."
+        "informacjaOPoziomachI": "Information about tiers and limits. Purchase is on the Premium page when payments are on."
       },
       "powiadomieniaEMail": "E-mail notifications",
       "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe"

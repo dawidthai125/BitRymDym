@@ -13,6 +13,7 @@ import {
   maxRecordingTracksForTier,
   minimumTierForQuality,
   PLAN_PAYMENTS_AVAILABLE,
+  readPlanPaymentsAvailable,
   PLAN_POLICY,
   PLAN_TRIAL_DAYS,
   referenceMasteringForTier,
@@ -35,6 +36,9 @@ describe("plan policy SSOT (Owner 2026-10-29)", () => {
     expect(PLAN_POLICY.GOLD.price).toEqual({ monthlyPln: 49.99, yearlyPln: 399 });
     expect(PLAN_TRIAL_DAYS).toBe(0);
     expect(PLAN_PAYMENTS_AVAILABLE).toBe(false);
+    expect(readPlanPaymentsAvailable({})).toBe(false);
+    expect(readPlanPaymentsAvailable({ PLAN_PAYMENTS_AVAILABLE: "true" })).toBe(true);
+    expect(readPlanPaymentsAvailable({ PLAN_PAYMENTS_AVAILABLE: "false" })).toBe(false);
     expect(yearlySavingPercent(PLAN_POLICY.BRONZE.price)).toBe(33);
     expect(yearlySavingPercent(PLAN_POLICY.GOLD.price)).toBe(33);
     expect(yearlySavingPercent(PLAN_POLICY.FREE.price)).toBeNull();

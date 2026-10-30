@@ -8,12 +8,14 @@ import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-regi
 import { AppShell } from "@/components/site/app-shell";
 import {
   GUEST_POLICY,
-  PLAN_PAYMENTS_AVAILABLE,
   PLAN_POLICY,
   PLAN_TRIAL_DAYS,
+  readPlanPaymentsAvailable,
   yearlySavingPercent,
   type PlanDownloadQuality,
 } from "@/config/plan-policy";
+import { PremiumPurchaseSection } from "@/components/premium/premium-purchase-section";
+import { isP24Configured } from "@/lib/payments/p24-config";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
 import type { PremiumTier } from "@/types/premium";
 
@@ -37,6 +39,7 @@ export default function PremiumPage() {
   const locale = useLocale();
   const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", { style: "currency", currency: "PLN", minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const hours = (s: number) => Math.round(s / 3600);
+  const paymentsOn = readPlanPaymentsAvailable() && isP24Configured();
 
   const rows: { id: string; label: string; cell: (tier: PremiumTier) => string }[] = [
     { id: "take", label: tr("tab.take"), cell: (x) => tr("tab.sekundy", { n: PLAN_POLICY[x].recording.maxTakeSeconds }) },
@@ -69,11 +72,13 @@ export default function PremiumPage() {
             {tr("naglowek")}
           </h1>
           <p className="mt-4 max-w-[52ch] text-[0.95rem] leading-relaxed text-[var(--brd-ink-soft)]">{tr("lead")}</p>
-          {!PLAN_PAYMENTS_AVAILABLE ? (
+          {paymentsOn ? (
+            <PremiumPurchaseSection />
+          ) : (
             <p data-testid="premium-payments-soon" role="note" className="mt-4 max-w-[60ch] border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper-deep)]/40 px-3 py-2 text-sm">
               <strong className="font-semibold">{tr("platnosciWkrotce")}</strong> {tr("platnosciOpis")}
             </p>
-          ) : null}
+          )}
 
           <section className="mt-8" aria-label={tr("plany")}>
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="premium-plan-cards">
@@ -108,7 +113,8 @@ export default function PremiumPage() {
                       <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxRecordingTracks })}</li>
                       <li>{tr("karta.mastery", { n: p.mastering.mastersPerMonth })}</li>
                       <li>{bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
-                      {p.mastering.referenceMastering !== "none" ? <li>{tr(`karta.referencja.${p.mastering.referenceMastering}`)}</li> : null}
+                      {p.mastering.referenceMastering === "addon" ? <li>{tr(paymentsOn ? "karta.referencja.addonKup" : "karta.referencja.addon")}</li> : null}
+                      {p.mastering.referenceMastering === "included" ? <li>{tr("karta.referencja.included")}</li> : null}
                     </ul>
                     <p className="mt-auto text-xs text-[var(--brd-mute)]">{tier === "FREE" ? tr("freeStopka") : PLAN_TRIAL_DAYS === 0 ? tr("bezOkresuProbnego") : null}</p>
                   </li>
@@ -155,22 +161,24 @@ export default function PremiumPage() {
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-soon">
             <h2 id="premium-soon" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">{tr("wPrzygotowaniu")}</h2>
             <ul className="mt-4 space-y-3 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-              <li>
-                <span className="font-medium text-[var(--brd-ink)]">{tr("platnosciTytul")}</span>
-                {" — "}
-                {tr("platnosciPlan")}
-              </li>
+              {paymentsOn ? null : (
+                <li>
+                  <span className="font-medium text-[var(--brd-ink)]">{tr("platnosciTytul")}</span>
+                  {" — "}
+                  {tr("platnosciPlan")}
+                </li>
+              )}
               <li>
                 <span className="font-medium text-[var(--brd-ink)]">{tr("referencjaTytul")}</span>
                 {" — "}
-                {tr("przypis.referencja")}
+                {tr(paymentsOn ? "przypis.referencjaKup" : "przypis.referencja")}
               </li>
             </ul>
           </section>
 
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-how">
             <h2 id="premium-how" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">{tr("jakDostacPremiumDzis")}</h2>
-            <p className="mt-4 max-w-[60ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{tr("poziomNadajeSiePo")}</p>
+            <p className="mt-4 max-w-[60ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{tr(paymentsOn ? "poziomGdyPlatnosci" : "poziomNadajeSiePo")}</p>
             <div className="mt-6 flex flex-wrap gap-2">
               <BrdLink href="/beats">{tr("idzDoKatalogu")}</BrdLink>
               <BrdLink href="/sign-up" variant="secondary">{tr("zalozKonto")}</BrdLink>

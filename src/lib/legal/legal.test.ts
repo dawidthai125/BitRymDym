@@ -20,7 +20,8 @@ describe("legal documents", () => {
     expect(LEGAL_PLACEHOLDERS).toEqual([]);
     expect(TERMS_VERSION).toBe("2026-11-01");
     const all = text(TERMS) + text(PRIVACY);
-    for (const s of ["8952035524", "dawid.thai@int.pl", "1 listopada 2026", "PayPro S.A.", "Krajowy Integrator Płatności S.A.", "12 miesięcy"]) expect(all).toContain(s);
+    for (const s of ["8952035524", "dawid.thai@int.pl", "1 listopada 2026", "PayPro S.A.", "Poznaniu", "12 miesięcy"]) expect(all).toContain(s);
+    expect(all).not.toMatch(/Tpay|Krajowy Integrator/i);
     expect(text(TERMS)).toContain("ukończyła 16 lat");
     expect(text(PRIVACY)).toContain("ukończyły 16 lat");
     expect(text(TERMS)).not.toContain("tel.");

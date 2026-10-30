@@ -182,7 +182,7 @@
       "prywatnosc": "Polityka prywatności",
       "cookies": "Cookies",
       "zgodaRejestracja": "Akceptuję <regulamin>Regulamin</regulamin> i zapoznałem(-am) się z <prywatnosc>Polityką prywatności</prywatnosc>.",
-      "zakupRegulamin": "Akceptuję <regulamin>Regulamin</regulamin> (w tym zasady płatności i odnawiania Planu).",
+      "zakupRegulamin": "Akceptuję <regulamin>Regulamin</regulamin> (jednorazowa płatność za wybrany okres, bez zapisu karty).",
       "zakupNatychmiast": "Żądam rozpoczęcia świadczenia przed upływem 14 dni na odstąpienie od umowy i przyjmuję do wiadomości, że w przypadku treści cyfrowych tracę prawo odstąpienia z chwilą ich dostarczenia.",
       "zakupWymagane": "Zaznacz obie zgody, aby przejść do płatności."
     },
@@ -323,6 +323,7 @@
         "bezPobierania": "Bez pobierania (tylko odsłuch)",
         "referencja": {
           "addon": "Mastering z referencją — płatny dodatek (zakup online wkrótce)",
+          "addonKup": "Mastering z referencją — płatny dodatek",
           "included": "Mastering z referencją w cenie"
         }
       },
@@ -369,7 +370,8 @@
         "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
         "raw": "Surowy plik własnego nagrania: tylko {plan}, do {n} pobrań dziennie.",
-        "referencja": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek. Zakup dodatku online — wkrótce; do tego czasu włączamy go ręcznie (team@bitrymdym.pl)."
+        "referencja": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek. Zakup dodatku online — wkrótce; do tego czasu włączamy go ręcznie (team@bitrymdym.pl).",
+        "referencjaKup": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek na miesiąc."
       },
       "wPrzygotowaniu": "W przygotowaniu",
       "platnosciTytul": "Płatności w aplikacji",
@@ -377,9 +379,76 @@
       "referencjaTytul": "Mastering z referencją",
       "jakDostacPremiumDzis": "Jak dostać Premium dziś",
       "poziomNadajeSiePo": "Plan nadaje się na koncie przez panel administracyjny (ze śladem zmian). Kiedy ruszą płatności, ta strona dostanie przycisk zakupu.",
+      "poziomGdyPlatnosci": "Plan kupujesz powyżej, na miesiąc albo na rok. Administrator nadal może nadać plan ręcznie — ze śladem zmian.",
       "idzDoKatalogu": "Idź do katalogu",
       "zalozKonto": "Załóż konto",
-      "oBitrymdym": "O BitRymDym"
+      "oBitrymdym": "O BitRymDym",
+      "checkout": {
+        "naglowek": "Kupuję Ci plan",
+        "lead": "Płatność jest jednorazowa. Nie zapisuję karty i sam nie pobieram następnej. BLIK, przelew, karta i portfele są na stronie Przelewy24.",
+        "regulaJednorazowo": "Płacisz raz za miesiąc albo za rok. Odnowienie to nowe zamówienie, nie subskrypcja.",
+        "regulaPrzedluzenie": "Ten sam plan przedłużam od końca opłaconego okresu — albo od teraz, jeśli już się skończył.",
+        "regulaWyzszy": "Wyższy plan zaczynam od razu. Dni z niższego planu przepadają — nie przeliczam ich.",
+        "regulaNizszy": "Niższego planu nie sprzedam, dopóki wyższy jeszcze trwa.",
+        "maszDo": "Masz {plan} do {data}.",
+        "maszBeztermin": "Masz {plan} bez końca — płatności za ten plan nie przyjmę.",
+        "nieSprawdze": "Nie sprawdzę teraz Twojego planu. Odśwież stronę, zanim zapłacisz.",
+        "plan": "Plan",
+        "okres": "Okres",
+        "miesiac": "Miesiąc",
+        "rok": "Rok",
+        "zaMiesiac": "za miesiąc",
+        "zaRok": "za rok",
+        "place": "Płacę przez Przelewy24",
+        "czekam": "Otwieram Przelewy24…",
+        "zalogujSie": "Zaloguj się — wtedy otworzę płatność",
+        "dodatekTytul": "Dokupuję mastering z referencją",
+        "dodatekOpis": "Miesiąc dodatku na Silver. Na Gold masz to w cenie, na Free i Bronze ten dodatek nic nie odblokuje.",
+        "dodatekPrzycisk": "Dokupuję referencję",
+        "blok": {
+          "DOWNGRADE": "Niższy plan poczeka, aż skończy się wyższy.",
+          "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
+          "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
+          "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
+          "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go."
+        },
+        "blad": {
+          "PAYMENTS_OFF": "Płatności są jeszcze wyłączone.",
+          "CONSENT": "Zaznacz obie zgody — bez nich nie przejdę do płatności.",
+          "EMAIL": "Na koncie nie mam adresu e-mail, a Przelewy24 go wymaga.",
+          "INVALID": "Tego zamówienia nie rozumiem. Wybierz plan jeszcze raz.",
+          "RATE": "Za dużo niedokończonych płatności. Spróbuj za godzinę.",
+          "PROVIDER": "Przelewy24 nie przyjął zamówienia. Nic nie pobrałem — spróbuj jeszcze raz.",
+          "ORIGIN": "To żądanie nie przyszło ze strony BitRymDym.",
+          "LOGIN": "Zaloguj się, to otworzę płatność.",
+          "DOWNGRADE": "Niższego planu nie sprzedam, dopóki wyższy jeszcze trwa.",
+          "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
+          "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
+          "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
+          "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go."
+        }
+      },
+      "returnPage": {
+        "metaTitle": "Płatność — BitRymDym",
+        "kicker": "Płatność",
+        "naglowek": "Wracasz z Przelewy24",
+        "czekam": "Czekam na potwierdzenie z Przelewy24. Jak wpłata dojdzie, włączę plan. Możesz zostać na tej stronie.",
+        "gotowe": "Wpłata doszła. Włączyłem {co} do {data}.",
+        "pominiete": "Wpłatę mam, ale planu nie zmieniłem: {powod}",
+        "nieudane": "Ta płatność nie doszła. Nic nie włączyłem.",
+        "brak": "Nie znajduję tego zamówienia na Twoim koncie.",
+        "wroc": "Wróć do planów",
+        "bezDaty": "koniec okresu jest na koncie",
+        "produkt": {
+          "referencja": "mastering z referencją",
+          "plan": "plan"
+        },
+        "powod": {
+          "perpetual": "masz już dostęp bez końca i nie skracam go.",
+          "downgrade": "wyższy plan jeszcze trwa, a niższego nie włączam w jego trakcie.",
+          "addon_perpetual": "dodatek jest bez końca i nie skracam go."
+        }
+      }
     },
     "settingsPage": {
       "metaTitle": "Ustawienia",
@@ -409,7 +478,7 @@
         "bityUdostepnione": "Bity udostępnione",
         "bityNaKtorychMasz": "Bity, na których masz aktywne udostępnienie do nagrania.",
         "premiumLimity": "Premium — limity",
-        "informacjaOPoziomachI": "Informacja o poziomach i limitach. Zakup w aplikacji nie jest dostępny."
+        "informacjaOPoziomachI": "Informacja o poziomach i limitach. Zakup jest na stronie Premium, gdy płatności są włączone."
       },
       "powiadomieniaEMail": "Powiadomienia e-mail",
       "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie"
