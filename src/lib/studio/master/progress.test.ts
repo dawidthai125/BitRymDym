@@ -27,6 +27,11 @@ describe("studioJobProgress", () => {
     expect(studioJobProgress("transcode", true, "encode", 0)).toBe(25);
   });
 
+  it("youtube video: download → render → encode → upload, monotonic", () => {
+    const seq = (["download", "render", "encode", "upload"] as const).flatMap((st) => [studioJobProgress("youtube_video", true, st, 0), studioJobProgress("youtube_video", true, st, 1)]);
+    for (let i = 1; i < seq.length; i++) expect(seq[i]).toBeGreaterThanOrEqual(seq[i - 1]);
+    expect(studioJobProgress("youtube_video", true, "encode", 0.5)).toBeGreaterThan(40);
+  });
   it("validates stage names", () => {
     expect(isStudioJobStage("render")).toBe(true);
     expect(isStudioJobStage("hack")).toBe(false);

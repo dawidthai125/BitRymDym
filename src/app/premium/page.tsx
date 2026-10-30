@@ -54,6 +54,7 @@ export default function PremiumPage() {
       },
     },
     { id: "projektZip", label: tr("tab.projektZip"), cell: (x) => (PLAN_POLICY[x].downloads.projectZip ? "✓" : "—") },
+    { id: "wideoYt", label: tr("tab.wideoYt"), cell: (x) => (PLAN_POLICY[x].downloads.youtubeVideo ? "✓" : "—") },
     { id: "przechowywanie", label: tr("tab.przechowywanie"), cell: (x) => tr("tab.dni", { n: PLAN_POLICY[x].retentionDays }) },
     { id: "referencja", label: tr("tab.referencja"), cell: (x) => tr(`referencja.${PLAN_POLICY[x].mastering.referenceMastering}`) },
     { id: "bity", label: tr("tab.bity"), cell: (x) => (PLAN_POLICY[x].downloads.beatsPerDay > 0 ? String(PLAN_POLICY[x].downloads.beatsPerDay) : tr("tab.brakPobierania")) },

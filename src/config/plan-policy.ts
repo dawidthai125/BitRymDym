@@ -111,6 +111,8 @@ export type PlanPolicy = {
     qualities: readonly PlanDownloadQuality[];
     /** Whole project as ZIP of stems. */
     projectZip: boolean;
+    /** YouTube MP4 (approved master + beat cover / own filtered graphic, 1920×1080) — Owner 2026-10-30: GOLD. */
+    youtubeVideo: boolean;
     /** Own raw take download. */
     ownTakeRaw: boolean;
     /** Catalogue beat downloads per UTC day. 0 = listen only (button locked). */
@@ -177,6 +179,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: [],
       projectZip: false,
+      youtubeVideo: false,
       ownTakeRaw: false,
       beatsPerDay: 0,
     },
@@ -204,6 +207,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: ["MP3_128"],
       projectZip: false,
+      youtubeVideo: false,
       ownTakeRaw: false,
       beatsPerDay: 10,
     },
@@ -231,6 +235,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
       projectZip: false,
+      youtubeVideo: false,
       ownTakeRaw: false,
       beatsPerDay: 25,
     },
@@ -258,6 +263,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
       projectZip: true,
+      youtubeVideo: true,
       ownTakeRaw: true,
       beatsPerDay: 50,
     },
@@ -307,6 +313,10 @@ export function minimumTierFor(test: (policy: PlanPolicy) => boolean): PremiumTi
     if (test(PLAN_POLICY[tier])) return tier;
   }
   return "GOLD";
+}
+
+export function youtubeVideoForTier(tier: PremiumTier): boolean {
+  return PLAN_POLICY[tier].downloads.youtubeVideo;
 }
 
 export function maxRecordingTracksForTier(tier: PremiumTier): number {

@@ -12,9 +12,9 @@ import { DELIVER_FFMPEG_ARGS } from "@/lib/studio/deliver/policy";
 
 import { applyMasterStyle, clampIntensity, clampMasterSettings, isMasterStyleId } from "./targets";
 
-export const STUDIO_MASTER_JOB_KINDS = ["master", "raw_sum", "project_zip", "transcode"] as const;
+export const STUDIO_MASTER_JOB_KINDS = ["master", "raw_sum", "project_zip", "transcode", "youtube_video"] as const;
 export type StudioMasterJobKind = (typeof STUDIO_MASTER_JOB_KINDS)[number];
-export const STUDIO_MASTER_OUTPUT_FORMATS = ["WAV_FLOAT", "WAV_24", "MP3_128", "MP3_192", "MP3_320", "ZIP"] as const;
+export const STUDIO_MASTER_OUTPUT_FORMATS = ["WAV_FLOAT", "WAV_24", "MP3_128", "MP3_192", "MP3_320", "ZIP", "MP4"] as const;
 export type StudioMasterOutputFormat = (typeof STUDIO_MASTER_OUTPUT_FORMATS)[number];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,13 +24,15 @@ export function studioMasterJobPrefix(ownerId: string, projectId: string, jobId:
   return `studio-master/${ownerId}/${projectId}/${jobId}`;
 }
 
-export const outputExt = (f: StudioMasterOutputFormat) => (f === "ZIP" ? "zip" : f.startsWith("MP3") ? "mp3" : "wav");
+export const outputExt = (f: StudioMasterOutputFormat) => (f === "ZIP" ? "zip" : f === "MP4" ? "mp4" : f.startsWith("MP3") ? "mp3" : "wav");
 
 export type WorkerStep =
   /** settings = effective (user settings + style × intensity); reference = job's uploaded reference row. */
   | { op: "python_master"; target: string; settings: Record<string, number>; reference: { id: string; intensity: number } | null }
   | { op: "python_zip" }
   | { op: "ffmpeg"; args: string[] }
+  /** Gold YouTube MP4: approved master + image (src/lib/studio/video). */
+  | { op: "youtube_video" }
   | { op: "copy" };
 
 /** What the worker runs for a claimed job, in order. */
@@ -44,7 +46,11 @@ export function planStudioMasterJob(job: PlannableMasterJob): WorkerStep[] {
     if (job.output_format !== "ZIP") throw new Error("bad_format");
     return [{ op: "python_zip" }];
   }
-  if (job.output_format === "ZIP") throw new Error("bad_format");
+  if (job.kind === "youtube_video") {
+    if (job.output_format !== "MP4") throw new Error("bad_format");
+    return [{ op: "youtube_video" }];
+  }
+  if (job.output_format === "ZIP" || job.output_format === "MP4") throw new Error("bad_format");
   const steps: WorkerStep[] = [];
   if (job.kind === "master") {
     if (!job.target) throw new Error("missing_target");

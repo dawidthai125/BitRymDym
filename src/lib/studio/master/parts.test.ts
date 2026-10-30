@@ -16,6 +16,7 @@ describe("parts", () => {
     expect(slugTitle("")).toBe("bitrymdym");
     expect(downloadFilename("Mój numer", "master", "MP3_320", "mp3")).toBe("moj-numer_master_320.mp3");
     expect(downloadFilename("Mój numer", "projekt", "ZIP", "zip")).toBe("moj-numer_projekt.zip");
+    expect(downloadFilename("Mój numer", "youtube", "MP4", "mp4")).toBe("moj-numer_youtube_1080p.mp4");
     expect(downloadFilename(null, "mix", "WAV_24", "wav")).toBe("bitrymdym_mix_wav24.wav");
   });
 });

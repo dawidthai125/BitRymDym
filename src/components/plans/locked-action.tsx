@@ -36,7 +36,7 @@ type LockedActionProps = {
   /** Lowest plan that unlocks the action (plan reason). Default Bronze. */
   minTier?: PremiumTier;
   /** Copy variant. Default "download". */
-  action?: "download" | "record" | "track";
+  action?: "download" | "record" | "track" | "video";
   className?: string;
   buttonClassName?: string;
   testId?: string;
@@ -95,6 +95,8 @@ export function LockedAction({
         : t("guestDownload")
       : action === "track"
         ? t("planTrack", { plan: TIER_LABEL[minTier] })
+        : action === "video"
+          ? t("planVideo", { plan: TIER_LABEL[minTier] })
         : t("planDownload", { plan: TIER_LABEL[minTier] });
 
   return (

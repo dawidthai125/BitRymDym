@@ -14,6 +14,8 @@ import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
+import { renderYoutubeVideo } from "@/lib/studio/video/render";
+import { isYoutubeVideoSpec } from "@/lib/studio/video/youtube-video";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import { outputExt, planStudioMasterJob, studioMasterJobPrefix, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
@@ -32,6 +34,8 @@ export type ClaimedMasterJob = {
   settings: Record<string, number>; output_format: StudioMasterOutputFormat;
   source_document_version: number; source_artifact_id: string | null;
   style?: string | null; style_intensity?: number | null; reference_id?: string | null; reference_intensity?: number | null;
+  /** Gold YouTube MP4 spec (youtube_video jobs only). */
+  video?: unknown;
 };
 
 const BUCKET = "audio-artifacts";
@@ -189,6 +193,19 @@ async function uploadFile(key: string, file: string, contentType: string, onProg
   return n;
 }
 
+/** YouTube video image: a beat cover (beat-covers) or the owner's filtered upload (audio-artifacts). */
+async function downloadVideoImage(job: ClaimedMasterJob, dir: string): Promise<{ file: string; title: string | null; artist: string | null }> {
+  const spec = job.video;
+  if (!isYoutubeVideoSpec(spec)) throw new Error("video_spec_invalid");
+  // Own uploads live under the job owner's prefix only.
+  if (spec.image.bucket === "audio-artifacts" && !spec.image.key.startsWith(`studio-video/${job.owner_id}/${job.project_id}/`)) throw new Error("video_spec_invalid");
+  const { data, error } = await createSupabaseAdminClient().storage.from(spec.image.bucket).download(spec.image.key);
+  if (error || !data) throw new Error("video_image_missing");
+  const file = path.join(dir, `image${path.extname(spec.image.key) || ".img"}`);
+  await writeFile(file, Buffer.from(await data.arrayBuffer()));
+  return { file, title: spec.title, artist: spec.artist };
+}
+
 /**
  * Reference mastering: the job's uploaded reference (same owner + project, ready, not
  * expired) → E3 disk → ffmpeg decode to 16-bit 44.1 kHz stereo WAV (≤ 10:01; master.py
@@ -230,7 +247,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     const ext = job.kind === "master" ? "flac" : outputExt(job.output_format);
     const out = path.join(dir, `out.${ext}`);
     let cur: string;
-    if (job.kind === "transcode" && job.source_artifact_id) {
+    if ((job.kind === "transcode" || job.kind === "youtube_video") && job.source_artifact_id) {
       // Master delivery: the approved E3 master of this project.
       const { data: src } = await admin.from("studio_master_jobs").select("result_object_key, owner_id, project_id, status, kind")
         .eq("id", job.source_artifact_id).maybeSingle();
@@ -298,6 +315,17 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
         const r = await runPython(cfg, ["zip", "--in", cur, "--out", out]);
         if (r.code !== 0 || !r.json?.ok) throw new Error("zip_failed");
         cur = out;
+      } else if (s.op === "youtube_video") {
+        const img = await downloadVideoImage(job, dir);
+        progress.report("download", 1);
+        const r = await renderYoutubeVideo({
+          dir, image: img.file, audio: cur, out, title: img.title, artist: img.artist, timeoutMs: cfg.timeoutMs,
+          onStage: (stage, f) => progress.report(stage, f),
+        });
+        timing.frameMs = r.frameMs;
+        timing.encodeMs = r.encodeMs;
+        metrics = { video: { durationS: r.durationS, layout: r.layout, width: 1920, height: 1080 } };
+        cur = out;
       } else if (s.op === "ffmpeg") {
         progress.report("encode");
         await runCapture(resolveFfmpegBin(), ["-hide_banner", "-loglevel", "error", "-y", "-i", cur, ...s.args, out], { timeoutMs: cfg.timeoutMs });
@@ -308,7 +336,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       }
     }
     resultKey = `${prefix}/out/${job.kind}.${ext}`;
-    const contentType = ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : "audio/wav";
+    const contentType = ext === "mp4" ? "video/mp4" : ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : "audio/wav";
     progress.report("upload");
     const parts = await uploadFile(resultKey, cur, contentType, (f) => progress.report("upload", f));
     timing.totalMs = Date.now() - t0;
