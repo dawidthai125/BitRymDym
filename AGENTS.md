@@ -50,11 +50,20 @@ Zwykłe zlecenie obejmuje analizę, implementację, testy, commit, push na `main
 5. Uruchom testy, lint, typecheck, build i kontrole dobrane do ryzyka. Popraw błędy znalezione w tych kontrolach.
 6. Przejrzyj diff. Nie commituj `.env`, tokenów, kluczy, logów z danymi poufnymi ani przypadkowych artefaktów. Nie używaj `git add -A`, `-u` ani `.`.
 7. Zrób commit zakresu.
-8. Push na `main`, gdy kontrole przeszły i push nie nadpisuje cudzej pracy ani niepowiązanego lokalnego WIP.
-9. Poczekaj na wynik istniejącego pipeline. Push na `main` uruchamia auto-deploy Vercel, także dla commitów samych dokumentów. Model: `docs/PROJECT_STATE.md`, sekcja PRODUCTION DEPLOYMENT. Przed twierdzeniem o produkcji sprawdź aktualny deployment właściwego projektu, brancha i commita.
+8. Push na `main`, gdy kontrole przeszły i push nie nadpisuje cudzej pracy ani niepowiązanego lokalnego WIP. Powiązane drobne poprawki zbierz w jeden push albo jeden PR — patrz „Budżet wdrożeń Vercel”.
+9. Poczekaj na wynik istniejącego pipeline tylko wtedy, gdy push na `main` zmienia wdrożoną aplikację: to jeden produkcyjny build Vercel ze wspólnego limitu 100/dzień (patrz „Budżet wdrożeń Vercel”). Model: `docs/PROJECT_STATE.md`, sekcja PRODUCTION DEPLOYMENT. Przed twierdzeniem o produkcji sprawdź aktualny deployment właściwego projektu, brancha i commita.
 10. Sprawdź status, log builda i podstawowe działanie. Nie odtwarzaj produkcyjnych masterów i nie zmieniaj danych ani nagrań użytkowników. Obowiązuje blok audio egress powyżej.
-11. Bezpieczną, ograniczoną poprawkę w tym samym zakresie przeprowadź ponownie przez kroki 5–10.
+11. Bezpieczną, ograniczoną poprawkę w tym samym zakresie przeprowadź ponownie przez kroki 5–10. Zanim wypchniesz ją osobno na `main`, dołącz ją do jeszcze niewysłanej zmiany — każdy taki push to osobny produkcyjny build.
 12. Zgłoś commit, testy, deployment i ryzyka. Sam commit nie jest wdrożeniem. Status wdrożenia nie potwierdza wszystkich funkcji.
+
+## Budżet wdrożeń Vercel
+
+Plan Hobby ma **100 wdrożeń na dobę** wspólnie dla wgdom, KosztownyTajski i BitRymDym. `git.deploymentEnabled` nie tworzy wdrożenia dla żadnej gałęzi poza `main` (także `cursor/*`, `feat/*`, `fix/*`, `perf/*`). Każdy push na `main`, który zmienia wdrożoną aplikację, zużywa jeden produkcyjny build.
+
+- Łącz powiązane drobne poprawki w jeden PR. Nie pushuj follow-upów na `main` pojedynczo.
+- Nie otwieraj jednorazowych PR-ów.
+- Testuj lokalnie, zanim cokolwiek trafi na `main`.
+- Commit wyłącznie z docs, markdown, `.github`, `.cursor`, testami albo dokumentacją agentów pomija build (`ignoreCommand`). Brak `HEAD^` albo jakakolwiek zmiana aplikacji wymusza build.
 
 ## Bramki — osobna zgoda
 

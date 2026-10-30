@@ -9,7 +9,10 @@
     "deploymentEnabled": {
       "main": true,
       "*": false,
+      "*/*": false,
+      "*/*/*": false,
       "**": false
     }
-  }
+  },
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh"
 }
