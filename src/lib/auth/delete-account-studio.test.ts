@@ -66,7 +66,7 @@ describe("account deletion with Studio projects", () => {
  * without a JWT (auth.role() IS NULL) and the guard trigger raised.
  */
 describe("Studio guard triggers allow FK-cascade deletes only", () => {
-  const mig = read("supabase/migrations/20261030060000_studio_guards_allow_cascade_delete.sql");
+  const mig = read("supabase/migrations/20261030061000_studio_guards_allow_cascade_delete.sql");
   const sql = mig.replace(/^--.*$/gm, "");
   const guards = [
     ["prevent_studio_project_privilege_escalation", "studio_projects"],

@@ -1,9 +1,9 @@
-// Local verification for 20261030060000_studio_guards_allow_cascade_delete.sql (embedded PGlite, never prod).
+// Local verification for 20261030061000_studio_guards_allow_cascade_delete.sql (embedded PGlite, never prod).
 // Run: npx -p @electric-sql/pglite node supabase/tests/studio_guards_cascade_delete_local_verify.mjs
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 const db = new PGlite();
-const mig = readFileSync(new URL("../migrations/20261030060000_studio_guards_allow_cascade_delete.sql", import.meta.url),"utf8");
+const mig = readFileSync(new URL("../migrations/20261030061000_studio_guards_allow_cascade_delete.sql", import.meta.url),"utf8");
 await db.exec(`
 create role anon; create role authenticated; create role service_role;
 create schema auth;
