@@ -104,7 +104,9 @@ describe("Phase 7.1.3 editor IA wiring", () => {
   });
 
   it("mobile/tablet overlay has a11y dialog contract", () => {
-    expect(shell).toMatch(/aria-modal="true"/);
+    // rec-live-ui: modal except while capturing (sheet shrinks, page stays usable for Stop).
+    expect(shell).toMatch(/aria-modal=\{capturing \? undefined : true\}/);
+    expect(shell).toMatch(/hidden=\{capturing\}/);
     expect(shell).toMatch(/role="dialog"/);
     expect(shell).toMatch(/studio-inspector-backdrop/);
     expect(shell).toMatch(/Escape/);

@@ -2906,6 +2906,11 @@
         "okladkaDoMod": "Okładka bitu czeka na akceptację moderatora.",
         "okladkaBlad": "Nie udało się ustawić okładki bitu."
       }
+    },
+    "studioLiveTake": {
+      "nagrywanie": "● REC {czas}",
+      "zapisywanie": "Zapisywanie nagrania…",
+      "zachowajLubOdrzuc": "Nagranie gotowe — zachowaj lub odrzuć"
     }
   },
   "nav": {

@@ -2906,6 +2906,11 @@
         "okladkaDoMod": "The beat cover is waiting for moderator approval.",
         "okladkaBlad": "Couldn't set the beat cover."
       }
+    },
+    "studioLiveTake": {
+      "nagrywanie": "● REC {czas}",
+      "zapisywanie": "Saving take…",
+      "zachowajLubOdrzuc": "Take ready — keep or discard"
     }
   },
   "nav": {
