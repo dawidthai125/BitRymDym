@@ -3444,6 +3444,7 @@ function StudioEditorInner({
             enqueuePersistAsync={enqueuePersistAsync}
             title={tr("efekty", { v0: doc.tracks.find((t) => t.id === fxPanel.trackId)?.name ?? tr("sciezka") })}
             vocalPresets={{ bpm: doc.project.tempoBpm }}
+            trackClips={doc.clips.filter((c) => c.trackId === fxPanel.trackId)}
             onClose={() => setFxPanel(null)}
             onFxPersisted={(effectsChain, documentVersion) => {
               const trackId = fxPanel.trackId;

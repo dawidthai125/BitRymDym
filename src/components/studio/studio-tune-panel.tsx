@@ -4,9 +4,11 @@ import { useEffect, useId, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { StudioMixControl } from "@/components/studio/studio-mix-control";
+import { StudioTuneNoteEditor } from "@/components/studio/studio-tune-note-editor";
 import { useFxPresets } from "@/components/studio/studio-vocal-presets";
 import { Button } from "@/components/ui/button";
-import type { StudioFxTuneParams } from "@/lib/studio/studio-fx-chain";
+import type { StudioFxTuneParams, StudioTuneNoteEdit } from "@/lib/studio/studio-fx-chain";
+import type { NoteEditorClip } from "@/lib/studio/tune/note-editor-client";
 import { detectBeatKeyFromSession, fetchProjectBeatKey, type ProjectBeatKeyDto } from "@/lib/studio/tune/beat-key-client";
 import { formatTuneKey, TUNE_KEY_NAMES, TUNE_STYLES, tuneStyleOf, type TuneKey, type TuneStyle } from "@/lib/studio/tune/tune";
 
@@ -32,13 +34,21 @@ const SCALE_KEYS = ["dur", "moll", "chromatyczna"] as const;
 export function StudioTunePanel({
   projectId,
   params,
+  notes,
+  clips,
   disabled,
   onCommit,
+  onCommitNotes,
 }: {
   projectId: string;
   params: StudioFxTuneParams;
+  /** Gold manual notes stored on this tune effect. */
+  notes?: readonly StudioTuneNoteEdit[];
+  /** Clips of the track (note editor input). */
+  clips?: readonly NoteEditorClip[];
   disabled?: boolean;
   onCommit: (next: StudioFxTuneParams) => Promise<boolean>;
+  onCommitNotes?: (notes: StudioTuneNoteEdit[]) => Promise<boolean>;
 }) {
   const t = useTranslations("studio.tune");
   const lang = useLocale() === "en" ? "en" : "pl";
@@ -195,7 +205,17 @@ export function StudioTunePanel({
       {slider("retuneMs", t("szybkosc"), 400, 1, "ms")}
       {slider("amount", t("sila"), 1, 0.01, "")}
       <p className="text-[11px] text-[var(--brd-mute)]">{t("latencja")}</p>
-      <p className="text-[11px] text-[var(--brd-mute)]">🔒 {t("recznie")}</p>
+      {onCommitNotes ? (
+        <StudioTuneNoteEditor
+          params={params}
+          notes={notes}
+          clips={clips ?? []}
+          allowed={presets.access.tuneNotes === true}
+          loaded={presets.loaded}
+          disabled={disabled}
+          onApply={onCommitNotes}
+        />
+      ) : null}
     </div>
   );
 }

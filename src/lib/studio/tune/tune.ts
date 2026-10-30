@@ -11,6 +11,7 @@ import {
   type StudioFxChainV1,
   type StudioFxInstance,
   type StudioFxTuneParams,
+  type StudioTuneNoteEdit,
 } from "@/lib/studio/studio-fx-chain";
 
 import type { TuneCoreParams } from "./tune-core";
@@ -82,8 +83,17 @@ export function tuneParams(key: TuneKey | null, style: TuneStyle): StudioFxTuneP
   };
 }
 
-export function toTuneCoreParams(p: StudioFxTuneParams): TuneCoreParams {
-  return { keyRoot: p.keyRoot, scale: p.scale, retuneMs: p.retuneMs, amount: p.amount };
+/** Manual notes → flat TuneCore array [startMs, endMs, targetMidi, amount, retuneMs] × n. */
+export function flattenTuneNotes(notes: readonly StudioTuneNoteEdit[] | undefined): number[] | undefined {
+  if (!notes || notes.length === 0) return undefined;
+  const flat: number[] = [];
+  for (const n of notes) flat.push(n.startMs, n.endMs, n.targetMidi, n.amount, n.retuneMs);
+  return flat;
+}
+
+export function toTuneCoreParams(p: StudioFxTuneParams, notes?: readonly StudioTuneNoteEdit[]): TuneCoreParams {
+  const flat = flattenTuneNotes(notes);
+  return { keyRoot: p.keyRoot, scale: p.scale, retuneMs: p.retuneMs, amount: p.amount, ...(flat ? { notes: flat } : {}) };
 }
 
 /** True when the plan may store these params (Free/Bronze: natural style only). */
@@ -92,24 +102,41 @@ export function tuneParamsAllowedForTier(tier: PremiumTier, p: StudioFxTuneParam
   return tuneStyleOf(p) === "natural";
 }
 
+/** Manual note edits are Gold-only (plan policy `manualNotes`). */
+export function tuneNotesAllowedForTier(tier: PremiumTier, notes: readonly StudioTuneNoteEdit[] | undefined): boolean {
+  return !notes || notes.length === 0 || pitchCorrectionAccessForTier(tier).manualNotes;
+}
+
+export type LockedTuneReason = "custom" | "notes";
+
+/** Why the plan may not store this tune effect, or null when it may. */
+export function lockedTuneReason(tier: PremiumTier, e: StudioFxInstance): LockedTuneReason | null {
+  if (e.type !== "tune") return null;
+  if (!tuneNotesAllowedForTier(tier, e.notes)) return "notes";
+  if (!tuneParamsAllowedForTier(tier, e.params)) return "custom";
+  return null;
+}
+
 /** First tune effect that the plan may not store, or null when the chain is fine. */
 export function findLockedTuneEffect(tier: PremiumTier, chain: StudioFxChainV1 | null | undefined): StudioFxInstance | null {
   for (const e of chain?.effects ?? []) {
-    if (e.type === "tune" && !tuneParamsAllowedForTier(tier, e.params)) return e;
+    if (lockedTuneReason(tier, e)) return e;
   }
   return null;
 }
 
-/** Client helper: presets / BITEK on a lower plan get the natural style instead. */
+/** Client helper: presets / BITEK on a lower plan get the natural style (and no manual notes) instead. */
 export function clampTuneChainForTier(tier: PremiumTier, chain: StudioFxChainV1): StudioFxChainV1 {
   if (!findLockedTuneEffect(tier, chain)) return chain;
   return {
     ...chain,
-    effects: chain.effects.map((e) =>
-      e.type === "tune" && !tuneParamsAllowedForTier(tier, e.params)
-        ? { ...e, params: { ...e.params, ...TUNE_STYLES.natural } }
-        : e,
-    ),
+    effects: chain.effects.map((e) => {
+      if (e.type !== "tune" || !lockedTuneReason(tier, e)) return e;
+      const { notes: _drop, ...rest } = e;
+      void _drop;
+      const params = tuneParamsAllowedForTier(tier, e.params) ? e.params : { ...e.params, ...TUNE_STYLES.natural };
+      return { ...rest, params };
+    }),
   };
 }
 

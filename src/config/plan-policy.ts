@@ -61,7 +61,7 @@ export type PlanPolicy = {
       natural: boolean;
       /** Hard "trap" style + own retune speed / strength. */
       custom: boolean;
-      /** Manual note-by-note correction — GOLD, follow-up (false until the editor ships). */
+      /** Manual note-by-note correction (BRD Tune note editor) — GOLD. */
       manualNotes: boolean;
     };
     /** Vocal cleanup (noise + room reverb reduction, E3 job) — gaps P1 #5. Takes per Warsaw day. */
@@ -242,7 +242,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       lyrics: true,
       bitekMemory: "project",
       vocalPresets: { builtIn: true, maxOwn: 50, roleSets: true },
-      pitchCorrection: { natural: true, custom: true, manualNotes: false },
+      pitchCorrection: { natural: true, custom: true, manualNotes: true },
       vocalCleanup: { perDay: 30 },
     },
     sharing: { listenLinksActive: null },
