@@ -136,12 +136,13 @@ export function pollinationsProvider(opts: { apiKey?: string; fetchFn?: FetchFn;
   };
 }
 
-/** Order: Cloudflare first when configured, then Pollinations (always available). */
+/** Cloudflare first, Pollinations as its fallback. No Cloudflare → no providers (generator off). */
 export function aiImageProvidersFromEnv(env: Env, size: (a: AiCoverAspect) => { w: number; h: number }, fetchFn?: FetchFn): AiImageProvider[] {
   const out: AiImageProvider[] = [];
   const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
   const token = env.CLOUDFLARE_AI_TOKEN?.trim();
-  if (accountId && token) out.push(cloudflareProvider({ accountId, token, fetchFn }));
+  if (!accountId || !token) return out;
+  out.push(cloudflareProvider({ accountId, token, fetchFn }));
   out.push(pollinationsProvider({ apiKey: env.POLLINATIONS_API_KEY?.trim() || undefined, fetchFn, size }));
   return out;
 }

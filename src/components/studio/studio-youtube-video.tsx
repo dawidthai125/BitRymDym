@@ -238,13 +238,14 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
             <div className="flex min-w-0 flex-col gap-3">
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-semibold">{t("zrodloTytul")}</legend>
-                {(["cover", "upload", "ai"] as const).map((s) => {
-                  const disabled = (s === "cover" && !state?.cover) || (s === "ai" && !aiState?.available);
+                {/* AI generator: rendered only when the server reports it on (Cloudflare configured + migration). */}
+                {(aiState?.available ? (["cover", "upload", "ai"] as const) : (["cover", "upload"] as const)).map((s) => {
+                  const disabled = s === "cover" && !state?.cover;
                   return (
                     <label key={s} className={`flex min-h-9 items-center gap-2 text-sm ${disabled ? "opacity-60" : ""}`}>
                       <input type="radio" name={`${uid}-src`} value={s} checked={source === s} disabled={disabled} onChange={() => setSource(s)} data-testid={`studio-yt-src-${s}`} className="h-4 w-4 accent-[var(--brd-amber)]" />
                       {t(`zrodlo.${s}`)}
-                      {disabled ? <span className="text-xs text-[var(--brd-mute)]">— {s === "ai" ? t("ai.niedostepne") : t("brakOkladki")}</span> : null}
+                      {disabled ? <span className="text-xs text-[var(--brd-mute)]">— {t("brakOkladki")}</span> : null}
                     </label>
                   );
                 })}

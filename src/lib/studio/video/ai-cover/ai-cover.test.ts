@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { memoryProviderState, runAiImageChain } from "./chain";
-import { aiCoverPerDay } from "./config";
+import { aiCoverEnabled, aiCoverPerDay } from "./config";
 import { checkPromptRules, matchPromptRule } from "./prompt-rules";
 import { AiImageError, aiImageProvidersFromEnv, cloudflareProvider, nextUtcMidnight, pollinationsProvider, retryAfterMs, type AiImageProvider } from "./providers";
 import { screenAiCoverPrompt } from "./screen";
@@ -52,9 +52,13 @@ describe("AI cover provider chain", () => {
     expect(state.snapshot().pollinations).toBeGreaterThan(Date.now());
   });
 
-  it("orders Cloudflare first only when configured", () => {
+  it("is off without Cloudflare; Pollinations only as the fallback after it", () => {
     const size = () => ({ w: 1024, h: 576 });
-    expect(aiImageProvidersFromEnv({}, size).map((p) => p.id)).toEqual(["pollinations"]);
+    expect(aiImageProvidersFromEnv({}, size)).toEqual([]);
+    expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a" }, size)).toEqual([]);
+    expect(aiCoverEnabled({})).toBe(false);
+    expect(aiCoverEnabled({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: " " })).toBe(false);
+    expect(aiCoverEnabled({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t" })).toBe(true);
     expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t" }, size).map((p) => p.id)).toEqual(["cloudflare", "pollinations"]);
   });
 });

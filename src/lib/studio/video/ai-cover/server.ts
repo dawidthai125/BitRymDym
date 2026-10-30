@@ -24,7 +24,7 @@ import { filterVideoImage } from "../image";
 import { youtubeImageKey, youtubeVideoAllowed } from "../youtube-video";
 
 import { memoryProviderState, runAiImageChain, type ProviderStateStore } from "./chain";
-import { AI_COVER_MESSAGES, AI_COVER_PROVIDER_TIMEOUT_MS, AI_COVER_SIZE, aiCoverPerDay, isAiCoverAspect, type AiCoverAspect } from "./config";
+import { AI_COVER_MESSAGES, AI_COVER_PROVIDER_TIMEOUT_MS, AI_COVER_SIZE, aiCoverEnabled, aiCoverPerDay, isAiCoverAspect, type AiCoverAspect } from "./config";
 import { checkPromptRules } from "./prompt-rules";
 import { aiImageProvidersFromEnv, type AiProviderId } from "./providers";
 import { screenAiCoverPrompt } from "./screen";
@@ -86,7 +86,7 @@ export async function aiCoversUsedToday(admin: Admin, ownerId: string): Promise<
 }
 
 export async function getAiCoverState(p: { ownerId: string; projectId: string; tier: PremiumTier }) {
-  if (!youtubeVideoAllowed(p.tier)) return null;
+  if (!youtubeVideoAllowed(p.tier) || !aiCoverEnabled()) return null;
   const admin = createSupabaseAdminClient();
   const proj = await project(admin, p.ownerId, p.projectId);
   const used = await aiCoversUsedToday(admin, p.ownerId).catch((e) => (e instanceof StudioMasterUnavailable ? null : Promise.reject(e)));
@@ -108,6 +108,7 @@ async function toAspect(img: Buffer, aspect: AiCoverAspect): Promise<Buffer> {
 
 export async function generateAiCover(p: { ownerId: string; projectId: string; tier: PremiumTier; prompt: unknown; aspect: unknown }):
   Promise<{ ok: true; imageId: string; previewUrl: string | null; width: number; height: number; provider: AiProviderId; used: number; perDay: number } | AiCoverDeny> {
+  if (!aiCoverEnabled()) throw new StudioMasterUnavailable("ai_cover_off");
   if (!youtubeVideoAllowed(p.tier)) return { ok: false, error: "tier_video" };
   if (!isAiCoverAspect(p.aspect)) return { ok: false, error: "bad_request" };
   const rules = checkPromptRules(p.prompt);
@@ -165,6 +166,7 @@ export async function generateAiCover(p: { ownerId: string; projectId: string; t
 
 /** Use a project video image (AI or own upload) as the cover of the owner's own beat — full beat-cover pipeline. */
 export async function setProjectImageAsBeatCover(p: { context: AuthContext; projectId: string; imageId: unknown }) {
+  if (!aiCoverEnabled()) throw new StudioMasterUnavailable("ai_cover_off");
   if (typeof p.imageId !== "string" || !UUID.test(p.imageId)) return { ok: false as const, error: "bad_request" as const };
   const admin = createSupabaseAdminClient();
   const proj = await project(admin, p.context.userId, p.projectId);

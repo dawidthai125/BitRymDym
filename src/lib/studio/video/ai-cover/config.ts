@@ -12,6 +12,14 @@ export const AI_COVER_PROMPT_MAX = 300;
 export const AI_COVER_PROVIDER_TIMEOUT_MS = 25_000;
 export const AI_COVER_PER_DAY_DEFAULT = 10;
 
+/**
+ * The whole generator is OFF until Cloudflare Workers AI is configured (both env vars);
+ * Pollinations is only a fallback after Cloudflare, never the sole provider.
+ */
+export function aiCoverEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return !!env.CLOUDFLARE_ACCOUNT_ID?.trim() && !!env.CLOUDFLARE_AI_TOKEN?.trim();
+}
+
 /** Daily cap per user; env STUDIO_AI_COVER_PER_DAY (1–100), default 10. */
 export function aiCoverPerDay(env: Record<string, string | undefined> = process.env): number {
   const n = Number.parseInt(env.STUDIO_AI_COVER_PER_DAY ?? "", 10);
