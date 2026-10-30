@@ -286,8 +286,8 @@
         "pobieranie": "Pobieranie do {q}",
         "bezPobierania": "Bez pobierania (tylko odsłuch)",
         "referencja": {
-          "addon": "Mastering z referencją — płatny dodatek (wkrótce)",
-          "included": "Mastering z referencją w cenie (wkrótce)"
+          "addon": "Mastering z referencją — płatny dodatek (zakup online wkrótce)",
+          "included": "Mastering z referencją w cenie"
         }
       },
       "jakosc": {
@@ -332,7 +332,7 @@
         "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
         "raw": "Surowy plik własnego nagrania: tylko {plan}, do {n} pobrań dziennie.",
-        "referencja": "Mastering z referencją jest w przygotowaniu: w Gold w cenie, w Silver jako płatny dodatek."
+        "referencja": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek. Zakup dodatku online — wkrótce; do tego czasu włączamy go ręcznie (team@bitrymdym.pl)."
       },
       "wPrzygotowaniu": "W przygotowaniu",
       "platnosciTytul": "Płatności w aplikacji",
@@ -2286,6 +2286,7 @@
           "download": "Pobieram zatwierdzony master — {pct}%.",
           "decode": "Wczytuję Twoje ślady — {pct}%.",
           "render": "Miksuję ślady — {pct}%.",
+          "reference": "Wczytuję Twoją referencję — {pct}%.",
           "master": "Robię master — {pct}%. Zaraz posłuchasz.",
           "encode": "Koduję plik — {pct}%.",
           "upload": "Wysyłam gotowy plik — {pct}%.",
@@ -2302,12 +2303,75 @@
         "download": "Pobieram master",
         "decode": "Wczytuję ślady",
         "render": "Miksuję ślady",
+        "reference": "Wczytuję referencję",
         "master": "Robię master",
         "encode": "Koduję plik",
         "upload": "Wysyłam plik",
         "done": "Gotowe"
       },
-      "postepAria": "Postęp na serwerze"
+      "postepAria": "Postęp na serwerze",
+      "styl": {
+        "tytul": "Styl mastera",
+        "opis": "Gotowy kierunek brzmienia. Dokłada się do Twoich ustawień — siłę ustawiasz suwakiem.",
+        "brak": "Bez stylu",
+        "warm": "Ciepły",
+        "warmOpis": "więcej dołu, łagodna góra",
+        "bright": "Jasny",
+        "brightOpis": "otwarta góra, czytelny wokal",
+        "loud": "Głośny",
+        "loudOpis": "gęściej i głośniej",
+        "dynamic": "Dynamiczny",
+        "dynamicOpis": "więcej oddechu i uderzenia",
+        "intensywnosc": "Intensywność"
+      },
+      "referencja": {
+        "tytul": "Mastering pod referencję",
+        "opis": "Wgraj numer, który brzmi tak, jak chcesz. Dopasuję do niego barwę, głośność i szerokość stereo.",
+        "wPlanie": "W planie Gold",
+        "dodatekAktywny": "Dodatek aktywny",
+        "wgraj": "Wgraj referencję (MP3 lub WAV, do {min} min)",
+        "wgrywa": "Wysyłam referencję — {pct}%",
+        "usun": "Usuń",
+        "intensywnosc": "Siła dopasowania",
+        "podglad": "Podgląd w przeglądarce nie uwzględnia referencji — dopasowanie usłyszysz w masterze z serwera.",
+        "prywatnosc": "Plik jest prywatny — słucha go tylko serwer masteringu. Usuwam go zaraz po masterze, najpóźniej po 24 h.",
+        "zablokowana": "Mastering pod referencję jest w planie Gold (w Silver jako dodatek).",
+        "dodatek": "W Silver to płatny dodatek ({price} zł / mies.). Zakup w aplikacji — wkrótce.",
+        "dodatekKontakt": "Chcesz już teraz? Napisz do nas:",
+        "mailTemat": "Dodatek: mastering pod referencję",
+        "niedostepna": "Mastering pod referencję jeszcze nie jest włączony na serwerze.",
+        "bledy": {
+          "bad_format": "Tylko MP3 albo WAV.",
+          "too_big": "Plik jest za duży (maks. 200 MB).",
+          "too_long": "Referencja może mieć maksymalnie 10 minut.",
+          "too_short": "Referencja jest za krótka (min. 1 s).",
+          "bad_request": "Nie mogę odczytać tego pliku.",
+          "odczyt": "Nie mogę odczytać tego pliku.",
+          "upload": "Nie udało się wysłać pliku. Spróbuj jeszcze raz.",
+          "locked": "Twój plan nie ma masteringu pod referencję."
+        },
+        "bitek": {
+          "gotowe": "Dopasowałem master do Twojej referencji. Co zrobiłem:",
+          "eqBoost": "Podbiłem {band} o {db} dB.",
+          "eqCut": "Przyciąłem {band} o {db} dB.",
+          "eqFlat": "Barwa była już blisko referencji — EQ prawie nie ruszałem.",
+          "louder": "Podniosłem głośność do {lufs} LUFS, bliżej referencji ({refLufs} LUFS).",
+          "quieter": "Zostawiłem więcej dynamiki: {lufs} LUFS, bliżej referencji ({refLufs} LUFS).",
+          "sameLoudness": "Głośność zostawiłem przy celu: {lufs} LUFS (referencja: {refLufs} LUFS).",
+          "wider": "Poszerzyłem stereo o {pct}% — tylko powyżej 150 Hz, bas zostaje w środku.",
+          "narrower": "Zwęziłem stereo o {pct}%, jak w referencji.",
+          "sameWidth": "Szerokość stereo była podobna — nie ruszałem.",
+          "intensity": "Wszystko z siłą {pct}% — suwakiem zmienisz, jak mocno idę za referencją."
+        },
+        "pasma": {
+          "sub": "sub (20–60 Hz)",
+          "bass": "bas (60–250 Hz)",
+          "lowmid": "dół-środek (250 Hz–1 kHz)",
+          "mid": "środek (1–4 kHz)",
+          "high": "górę (4–10 kHz)",
+          "air": "powietrze (10–20 kHz)"
+        }
+      }
     },
     "recTools": {
       "opoznienie": "Opóźnienie słuchawki ↔ mikrofon",
@@ -2538,6 +2602,7 @@
         "peakTamed": "Opanowałem szczyty: {from} → {to} dBTP.",
         "peakOver": "Uwaga: szczyt wyszedł {to} dBTP — wyżej niż sufit celu.",
         "dynamics": "Dynamika (LRA): {from} → {to} LU.",
+        "style": "Styl {style} — intensywność {pct}%.",
         "setting": "Twoje ustawienie: {setting} {value}."
       },
       "platformy": {

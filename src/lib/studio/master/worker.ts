@@ -19,6 +19,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { outputExt, planStudioMasterJob, studioMasterJobPrefix, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 import { partCount, partName, partsOf, PART_BYTES } from "./parts";
 import { studioJobProgress, type StudioJobStage } from "./progress";
+import { REFERENCE_COLUMNS, deleteStudioReferenceById, type StudioReferenceRow } from "./reference-store";
 import { renderMixStereo } from "./render-mix";
 import { renderMixStereoParallel } from "./render-mix-parallel";
 import { stemFileName } from "./render-io";
@@ -30,6 +31,7 @@ export type ClaimedMasterJob = {
   id: string; project_id: string; owner_id: string; kind: StudioMasterJobKind; target: string | null;
   settings: Record<string, number>; output_format: StudioMasterOutputFormat;
   source_document_version: number; source_artifact_id: string | null;
+  style?: string | null; style_intensity?: number | null; reference_id?: string | null; reference_intensity?: number | null;
 };
 
 const BUCKET = "audio-artifacts";
@@ -109,7 +111,7 @@ function progressReporter(job: ClaimedMasterJob, workerRef: string) {
   let lastStage: StudioJobStage | null = null;
   let lastPct = -1;
   const report = (stage: StudioJobStage, fraction = 0) => {
-    const pct = studioJobProgress(job.kind, fromMaster, stage, fraction);
+    const pct = studioJobProgress(job.kind, fromMaster, stage, fraction, !!job.reference_id);
     const now = Date.now();
     if (stage === lastStage && (pct <= lastPct || now - lastAt < 1200)) return;
     lastAt = now;
@@ -187,6 +189,30 @@ async function uploadFile(key: string, file: string, contentType: string, onProg
   return n;
 }
 
+/**
+ * Reference mastering: the job's uploaded reference (same owner + project, ready, not
+ * expired) → E3 disk → ffmpeg decode to 16-bit 44.1 kHz stereo WAV (≤ 10:01; master.py
+ * rejects > 10:00). master.py streams it from disk, so its length barely costs memory.
+ */
+async function fetchReference(cfg: RunConfig, job: ClaimedMasterJob, referenceId: string, dir: string, onProgress: (f: number) => void): Promise<string> {
+  const { data } = await createSupabaseAdminClient().from("studio_master_references").select(REFERENCE_COLUMNS).eq("id", referenceId).maybeSingle();
+  const row = data as StudioReferenceRow | null;
+  if (!row || row.owner_id !== job.owner_id || row.project_id !== job.project_id || row.status !== "ready" || Date.parse(row.expires_at) < Date.now()) throw new Error("reference_missing");
+  const k = row.object_key;
+  const src = path.join(dir, `reference-src.${row.format}`);
+  await download(k.slice(0, k.lastIndexOf("/")), k.slice(k.lastIndexOf("/") + 1), src).catch(() => { throw new Error("reference_missing"); });
+  onProgress(0.6);
+  const wav = path.join(dir, "reference.wav");
+  try {
+    await runCapture(resolveFfmpegBin(), ["-hide_banner", "-loglevel", "error", "-y", "-i", src, "-t", "601", "-vn", "-ac", "2", "-ar", "44100", "-c:a", "pcm_s16le", "-f", "wav", wav], { timeoutMs: Math.min(cfg.timeoutMs, 120_000) });
+  } catch {
+    throw new Error("reference_unreadable");
+  }
+  await rm(src, { force: true });
+  onProgress(1);
+  return wav;
+}
+
 export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob): Promise<"succeeded" | "failed"> {
   const admin = createSupabaseAdminClient();
   const dir = await mkdtemp(path.join(tmpdir(), "studio-master-"));
@@ -254,8 +280,15 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
       if (s.op === "python_master") {
         const next = path.join(dir, "mastered.flac");
         const m0 = Date.now();
+        const args = ["master", "--in", cur, "--out", next, "--target", s.target, "--settings", JSON.stringify(s.settings ?? {})];
+        if (s.reference) {
+          progress.report("reference");
+          const ref = await fetchReference(cfg, job, s.reference.id, dir, (f) => progress.report("reference", f));
+          args.push("--reference", ref, "--reference-intensity", String(s.reference.intensity));
+          timing.referenceMs = Date.now() - m0;
+        }
         progress.report("master");
-        const r = await runPython(cfg, ["master", "--in", cur, "--out", next, "--target", s.target, "--settings", JSON.stringify(s.settings ?? {})], (f) => progress.report("master", f));
+        const r = await runPython(cfg, args, (f) => progress.report("master", f));
         if (r.code !== 0 || !r.json?.ok) throw new Error(String(r.json?.error ?? "master_failed").slice(0, 60));
         timing.masterMs = Date.now() - m0;
         metrics = { before: r.json.before, after: r.json.after };
@@ -286,6 +319,8 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     resultKey = null;
   } finally {
     await rm(dir, { recursive: true, force: true });
+    // The reference is private and single-use: gone right after the job (success or not).
+    if (job.reference_id) await deleteStudioReferenceById(job.reference_id).catch(() => {});
   }
   await progress.flush();
   if (status === "succeeded") {

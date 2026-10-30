@@ -92,19 +92,21 @@ export function StudioMasterReport({
   master,
   target,
   settings,
+  style = null,
   tpCeiling,
 }: {
   mix: { lufs: number; truePeakDb: number; lraLu: number } | null;
   master: { lufs: number; truePeakDb: number; lra?: number | null } | null;
   target: string;
   settings: Record<string, number>;
+  style?: { id: string; intensity: number } | null;
   tpCeiling: number;
 }) {
   const t = useTranslations("studio.report");
   const tm = useTranslations("studio.masterStep");
   const locale = useLocale();
   if (!master || !Number.isFinite(master.lufs)) return null;
-  const items = buildMasterReport({ mix, master, target, settings, tpCeiling });
+  const items = buildMasterReport({ mix, master, target, settings, style, tpCeiling });
   const line = (it: MasterReportItem): string => {
     switch (it.key) {
       case "target":
@@ -118,6 +120,8 @@ export function StudioMasterReport({
         return t("master.peakOver", { to: num(it.params.to, locale) });
       case "dynamics":
         return t("master.dynamics", { from: num(it.params.from, locale), to: num(it.params.to, locale) });
+      case "style":
+        return t("master.style", { style: tm(`styl.${it.params.style}`), pct: it.params.intensity });
       case "setting":
         return t("master.setting", { setting: tm(`ustawienia.${it.params.setting}`), value: signed(it.params.value, locale) });
     }

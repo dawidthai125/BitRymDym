@@ -12,13 +12,14 @@ import { randomUUID } from "node:crypto";
 import { AuthError } from "@/lib/auth/session";
 import { decideDeliver, DELIVER_WEEKLY_LIMIT, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { monthlyMasterLimit, warsawMonthWindow, type MasterQuota } from "@/lib/studio/studio-plan-limits";
-import { clampMasterSettings, isMasterTargetId } from "@/lib/studio/master/targets";
+import { clampIntensity, clampMasterSettings, DEFAULT_MASTER_INTENSITY, isMasterStyleId, isMasterTargetId, type MasterStyleId } from "@/lib/studio/master/targets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
 import { downloadFilename, partsOf } from "./parts";
 import { outputExt, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 import { isStudioJobStage, type StudioJobStage } from "./progress";
+import { referenceGateFor } from "./reference-server";
 
 const BUCKET = "audio-artifacts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -69,6 +70,8 @@ export type MasterJobView = {
   settings: Record<string, number> | null;
   /** Live E3 progress (null before the worker picks the job up / old rows). */
   stage: StudioJobStage | null; progress: number | null;
+  /** Mastering style (+ intensity %) and whether the job matched an uploaded reference. */
+  style: MasterStyleId | null; styleIntensity: number | null; reference: { intensity: number } | null;
 };
 const view = (r: Record<string, unknown>): MasterJobView => ({
   id: String(r.id), kind: r.kind as StudioMasterJobKind, status: String(r.status), target: (r.target as string) ?? null,
@@ -76,6 +79,11 @@ const view = (r: Record<string, unknown>): MasterJobView => ({
   approvedAt: (r.approved_at as string) ?? null, settings: (r.settings as Record<string, number>) ?? null, createdAt: String(r.created_at),
   stage: isStudioJobStage(r.stage) ? r.stage : null,
   progress: typeof r.progress === "number" && Number.isFinite(r.progress) ? Math.min(100, Math.max(0, Math.round(r.progress))) : null,
+  style: isMasterStyleId(r.style) ? r.style : null,
+  styleIntensity: isMasterStyleId(r.style) ? clampIntensity(r.style_intensity, 0) : null,
+  // reference_id is nulled when the row goes; reference_intensity stays on the job.
+  reference: r.reference_id || (r.metrics as { after?: { reference?: unknown } } | null)?.after?.reference
+    ? { intensity: clampIntensity(r.reference_intensity, 100) } : null,
 });
 
 /** Latest master job (+ approved one), the download counter and the monthly master quota. */
@@ -117,18 +125,35 @@ function versionMismatch(seen: unknown, current: number): boolean {
   return seen !== undefined && seen !== null && Number(seen) !== current;
 }
 
-export async function commitStudioMaster(p: { ownerId: string; projectId: string; tier: PremiumTier; jobId: string; target: unknown; settings: unknown; documentVersion?: unknown }) {
+export type MasterCommitExtras = { style?: unknown; styleIntensity?: unknown; referenceId?: unknown; referenceIntensity?: unknown };
+
+export async function commitStudioMaster(p: { ownerId: string; projectId: string; tier: PremiumTier; jobId: string; target: unknown; settings: unknown; documentVersion?: unknown } & MasterCommitExtras) {
   if (!UUID.test(p.jobId) || !isMasterTargetId(p.target)) throw new AuthError("FORBIDDEN", "bad_request");
+  if (p.style != null && p.style !== "" && !isMasterStyleId(p.style)) throw new AuthError("FORBIDDEN", "bad_request");
+  if (p.referenceId != null && p.referenceId !== "" && (typeof p.referenceId !== "string" || !UUID.test(p.referenceId))) throw new AuthError("FORBIDDEN", "bad_request");
+  const style = isMasterStyleId(p.style) ? p.style : null;
+  const referenceId = typeof p.referenceId === "string" && p.referenceId ? p.referenceId : null;
   const admin = createSupabaseAdminClient();
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
   if (versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
+  if (referenceId) {
+    // Gold: in the plan; Silver: only with the add-on; Free/Bronze: locked (server decides, UI mirrors).
+    const gate = await referenceGateFor(admin, p.ownerId, p.tier);
+    if (!gate.allowed) return { ok: false as const, error: gate.reason === "addon_missing" ? "addon_missing" : "reference_locked" };
+  }
   const settings = clampMasterSettings((p.settings ?? {}) as Record<string, number>);
   const monthLimit = monthlyMasterLimit(p.tier);
-  // Plan quota (plan-policy mastersPerMonth): atomic check + insert in the DB.
+  // Style / reference ride along only when used, so a DB without the reference migration keeps working for plain masters.
+  const extras = style || referenceId ? {
+    p_style: style, p_style_intensity: style ? clampIntensity(p.styleIntensity, DEFAULT_MASTER_INTENSITY) : 0,
+    p_reference_id: referenceId, p_reference_intensity: referenceId ? clampIntensity(p.referenceIntensity, 100) : 0,
+  } : {};
+  // Plan quota (plan-policy mastersPerMonth): atomic check + insert in the DB (reference masters count too).
   const { data: q, error: qe } = await admin.rpc("claim_studio_master_job", {
     p_job_id: p.jobId, p_project_id: p.projectId, p_owner_id: p.ownerId, p_target: p.target, p_settings: settings,
-    p_source_document_version: documentVersion, p_month_limit: monthLimit,
+    p_source_document_version: documentVersion, p_month_limit: monthLimit, ...extras,
   });
+  if (qe && (qe.message ?? "").includes("MASTER_REFERENCE_INVALID")) return { ok: false as const, error: "reference_invalid" };
   if (!missingFn(qe)) {
     check(qe);
     const row = (Array.isArray(q) ? q[0] : q) as { allowed: boolean; used: number; month_limit: number; reset_at: string } | null;
@@ -136,6 +161,7 @@ export async function commitStudioMaster(p: { ownerId: string; projectId: string
     if (!row?.allowed) return { ok: false as const, error: "monthly_limit", masters };
     return { ok: true as const, jobId: p.jobId, masters };
   }
+  if (style || referenceId) return { ok: false as const, error: "not_available" };
   // Fallback until the migration is applied: same rule, checked in the app (not atomic).
   const before = await masterMonthUsage(admin, p.ownerId, p.tier);
   if (before.used >= before.monthLimit) return { ok: false as const, error: "monthly_limit", masters: before };

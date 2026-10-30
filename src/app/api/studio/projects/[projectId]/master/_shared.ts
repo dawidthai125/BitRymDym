@@ -26,4 +26,7 @@ export function masterErrorResponse(error: unknown) {
 
 export const DENY_STATUS: Record<string, number> = {
   login: 401, not_approved: 409, tier_format: 403, tier_project: 403, bad_request: 400, weekly_limit: 429, monthly_limit: 429, input_missing: 409, doc_changed: 409,
+  // Reference mastering: plan without it / Silver without the add-on / upload checks.
+  reference_locked: 403, addon_missing: 402, reference_invalid: 409, upload_incomplete: 409, not_available: 503,
+  bad_format: 415, too_big: 413, too_long: 422, too_short: 422,
 };

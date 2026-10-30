@@ -9,11 +9,17 @@ Usage:
   master.py analyze --in mix.wav
   master.py master  --in mix.wav --out master.wav --target streaming \
                     [--settings '{"loudness":0,"bright":0,"bass":0,"width":0,"squash":0}']
-  master.py master  ... --reference ref.wav   -> reference mode (backlog, matchering)
+  master.py master  ... --reference ref.wav [--reference-intensity 0..100]
+                    -> reference mode: tonal balance (smoothed, capped matching EQ),
+                       loudness and stereo width matched to ref.wav
 
-Chain: HPF 25 Hz -> tonal shelves -> 3-band compression (LR4 split) ->
-mid/side width -> gain to target LUFS -> limiter, iterated until
-integrated LUFS is within ±0.3 LU and true peak (4x oversampled) <= target.
+Chain: HPF 25 Hz -> tonal shelves -> [reference matching EQ] -> 3-band compression
+(LR4 split) -> mid/side width [× reference width] -> gain to target LUFS -> limiter,
+iterated until integrated LUFS is within ±0.3 LU and true peak (4x oversampled) <= target.
+
+Memory: everything that used to need full-length float64 copies (K-weighting,
+LR4 crossovers, spectrum) now runs in chunks; the reference is streamed from disk.
+A 4:00 stereo mix + a 10:00 reference stays well under 1.5 GB peak RSS.
 """
 from __future__ import annotations
 
@@ -27,7 +33,7 @@ import numpy as np
 import pyloudnorm as pyln
 import soundfile as sf
 from pedalboard import Compressor, Gain, HighpassFilter, HighShelfFilter, Limiter, LowShelfFilter, Pedalboard
-from scipy.signal import butter, resample_poly, sosfilt
+from scipy.signal import butter, fftconvolve, firwin2, resample_poly, sosfilt
 
 TARGETS = {
     "streaming": {"lufs": -14.0, "tp": -1.0},
@@ -93,40 +99,90 @@ def _k_sos(sr: int) -> np.ndarray:
     return np.array([np.concatenate([f.b, f.a]) for f in pyln.Meter(sr)._filters.values()])
 
 
-def integrated_lufs(x: np.ndarray, sr: int) -> float:
-    """ITU-R BS.1770-4 gated loudness — pyloudnorm's algorithm, vectorised.
+CHUNK = 1 << 18  # samples per chunk for streaming filters (~2 MB float64 per channel)
 
-    Identical filter coefficients, block grid and gating; the two biquads run as one
-    SOS pass per channel (on threads) and block energies come from a float64 prefix
-    sum instead of a Python loop. Matches pyloudnorm to <0.0001 LU, ~4x faster."""
+
+def sos_apply(sos: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """sosfilt along axis 0 in chunks with carried state → float32, same shape.
+    Same numbers as one whole-signal float64 sosfilt (the state carries over exactly),
+    without full-length float64 intermediates."""
+    x2 = x if x.ndim == 2 else x[:, None]
+    out = np.empty(x2.shape, dtype=np.float32)
+
+    def run(c: int) -> None:
+        zi = np.zeros((sos.shape[0], 2))
+        for a in range(0, len(x2), CHUNK):
+            y, zi = sosfilt(sos, x2[a:a + CHUNK, c].astype(np.float64), zi=zi)
+            out[a:a + CHUNK, c] = y
+
+    list(_BLOCKS.map(run, range(x2.shape[1])))
+    return out if x.ndim == 2 else out[:, 0]
+
+
+class LufsStream:
+    """ITU-R BS.1770-4 integrated loudness, fed in blocks (any block size).
+
+    K-weighting runs with carried filter state; energies are summed per 100 ms hop, and
+    each 400 ms gating block (75 % overlap) is the sum of 4 hops — the same grid and
+    gating as pyloudnorm (<0.001 LU), with O(block) memory, so a 10-minute reference
+    can be measured straight from disk."""
+
+    def __init__(self, sr: int, nch: int):
+        self.sr, self.nch = sr, nch
+        self.hop = int(round(0.1 * sr))
+        self.sos = _k_sos(sr)
+        self.zi = [np.zeros((self.sos.shape[0], 2)) for _ in range(nch)]
+        self.carry = np.zeros((0, nch))
+        self.hops: list[np.ndarray] = []
+        self.n = 0
+
+    def feed(self, block: np.ndarray) -> None:
+        block = block if block.ndim == 2 else block[:, None]
+        self.n += len(block)
+        y = np.empty((len(block), self.nch))
+        for c in range(self.nch):
+            y[:, c], self.zi[c] = sosfilt(self.sos, block[:, c].astype(np.float64), zi=self.zi[c])
+        y = np.concatenate([self.carry, np.square(y)]) if len(self.carry) else np.square(y)
+        whole = (len(y) // self.hop) * self.hop
+        if whole:
+            self.hops.append(y[:whole].reshape(-1, self.hop, self.nch).sum(axis=1))
+        self.carry = y[whole:]
+
+    def result(self) -> float:
+        sr, n, t_g, step = self.sr, self.n, 0.4, 0.25
+        if n < int(t_g * sr):
+            return -70.0
+        hops = self.hops + ([self.carry.sum(axis=0, keepdims=True)] if len(self.carry) else [])
+        e = np.concatenate(hops) if hops else np.zeros((0, self.nch))
+        num_blocks = int(np.round(((n / sr - t_g) / (t_g * step)))) + 1
+        e = np.concatenate([e, np.zeros((num_blocks + 4, self.nch))])
+        cs = np.concatenate([np.zeros((1, self.nch)), np.cumsum(e, axis=0)])
+        j = np.arange(num_blocks)
+        z = ((cs[j + 4] - cs[j]) / (t_g * sr)).T  # (nch, num_blocks)
+        gains = [1.0, 1.0, 1.0, 1.41, 1.41]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            wz = np.tensordot(gains[:self.nch], z, axes=1)
+            l = -0.691 + 10.0 * np.log10(wz)
+            abs_g = l >= -70.0
+            if not abs_g.any():
+                return -70.0
+            gamma_r = -0.691 + 10.0 * np.log10(np.dot(gains[:self.nch], z[:, abs_g].mean(axis=1))) - 10.0
+            rel_g = (l > gamma_r) & (l > -70.0)
+            if not rel_g.any():
+                return -70.0
+            v = -0.691 + 10.0 * np.log10(np.dot(gains[:self.nch], z[:, rel_g].mean(axis=1)))
+        return float(v) if np.isfinite(v) else -70.0
+
+
+def integrated_lufs(x: np.ndarray, sr: int) -> float:
+    """ITU-R BS.1770-4 gated loudness (pyloudnorm's filters, grid and gating), chunked."""
     x = x if x.ndim == 2 else x[:, None]
-    n, nch = x.shape
-    t_g, step = 0.4, 0.25
-    if n < int(t_g * sr):
-        return -70.0
-    sos = _k_sos(sr)
-    chans = list(_BLOCKS.map(lambda c: sosfilt(sos, x[:, c]).astype(np.float32), range(nch)))
-    num_blocks = int(np.round(((n / sr - t_g) / (t_g * step)))) + 1
-    j = np.arange(num_blocks, dtype=np.float64)
-    lo = (t_g * (j * step) * sr).astype(np.int64)
-    hi = np.minimum((t_g * (j * step + 1) * sr).astype(np.int64), n)
-    gains = [1.0, 1.0, 1.0, 1.41, 1.41]
-    z = np.empty((nch, num_blocks))
-    for c, y in enumerate(chans):
-        cs = np.concatenate(([0.0], np.cumsum(np.square(y, dtype=np.float64))))
-        z[c] = (cs[hi] - cs[lo]) / (t_g * sr)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        wz = np.tensordot(gains[:nch], z, axes=1)
-        l = -0.691 + 10.0 * np.log10(wz)
-        abs_g = l >= -70.0
-        if not abs_g.any():
-            return -70.0
-        gamma_r = -0.691 + 10.0 * np.log10(np.dot(gains[:nch], z[:, abs_g].mean(axis=1))) - 10.0
-        rel_g = (l > gamma_r) & (l > -70.0)
-        if not rel_g.any():
-            return -70.0
-        v = -0.691 + 10.0 * np.log10(np.dot(gains[:nch], z[:, rel_g].mean(axis=1)))
-    return float(v) if np.isfinite(v) else -70.0
+    if 0.1 * sr != int(0.1 * sr):  # odd sample rate → reference implementation
+        return float(pyln.Meter(sr).integrated_loudness(x))
+    m = LufsStream(sr, x.shape[1])
+    for a in range(0, len(x), CHUNK):
+        m.feed(x[a:a + CHUNK])
+    return m.result()
 
 
 def loudness_range(x: np.ndarray, sr: int) -> float:
@@ -151,14 +207,63 @@ def loudness_range(x: np.ndarray, sr: int) -> float:
     return float(np.percentile(vals, 95) - np.percentile(vals, 10))
 
 
-def tonal_balance(x: np.ndarray, sr: int) -> dict:
-    mono = x.mean(axis=1)
-    spec = np.abs(np.fft.rfft(mono * np.hanning(len(mono)))) ** 2
-    freqs = np.fft.rfftfreq(len(mono), 1 / sr)
-    total = spec[(freqs >= 20) & (freqs <= 20000)].sum() + 1e-20
+SPEC_N = 1 << 15  # Welch segment (≈1.4 Hz bins at 44.1 kHz), Hann, 50 % overlap
+
+
+class SpectrumStream:
+    """Long-term average power spectrum of mid (L+R)/2 and side (L−R)/2, fed in blocks."""
+
+    def __init__(self, sr: int, n: int = SPEC_N):
+        self.sr, self.n = sr, n
+        self.win = np.hanning(n).astype(np.float32)
+        self.carry = np.zeros((0, 2), dtype=np.float32)
+        self.mid = np.zeros(n // 2 + 1)
+        self.side = np.zeros(n // 2 + 1)
+        self.count = 0
+        self.freqs = np.fft.rfftfreq(n, 1 / sr)
+
+    def feed(self, block: np.ndarray) -> None:
+        buf = np.concatenate([self.carry, to_stereo(block)]) if len(self.carry) else to_stereo(block)
+        hop = self.n // 2
+        a = 0
+        while a + self.n <= len(buf):
+            seg = buf[a:a + self.n]
+            m = (seg[:, 0] + seg[:, 1]) * 0.5 * self.win
+            sd = (seg[:, 0] - seg[:, 1]) * 0.5 * self.win
+            self.mid += np.abs(np.fft.rfft(m)) ** 2
+            self.side += np.abs(np.fft.rfft(sd)) ** 2
+            self.count += 1
+            a += hop
+        self.carry = buf[a:].copy()
+
+    def finish(self) -> "SpectrumStream":
+        if self.count == 0 and len(self.carry):  # shorter than one segment: zero-padded single frame
+            pad = np.zeros((self.n, 2), dtype=np.float32)
+            pad[:len(self.carry)] = self.carry
+            self.carry = np.zeros((0, 2), dtype=np.float32)
+            self.feed(pad)
+        return self
+
+    def side_to_mid(self, lo_hz: float = 0.0) -> float:
+        sel = self.freqs >= lo_hz
+        m = float(self.mid[sel].sum())
+        return float(np.sqrt(float(self.side[sel].sum()) / m)) if m > 0 else 0.0
+
+
+def spectrum_of(x: np.ndarray, sr: int) -> SpectrumStream:
+    sp = SpectrumStream(sr)
+    for a in range(0, len(x), CHUNK):
+        sp.feed(x[a:a + CHUNK])
+    return sp.finish()
+
+
+def tonal_balance(x: np.ndarray, sr: int, spec: "SpectrumStream | None" = None) -> dict:
+    sp = spec or spectrum_of(x, sr)
+    freqs, power = sp.freqs, sp.mid
+    total = power[(freqs >= 20) & (freqs <= 20000)].sum() + 1e-20
     out = {}
     for name, lo, hi in BANDS:
-        e = spec[(freqs >= lo) & (freqs < min(hi, sr / 2))].sum() + 1e-20
+        e = power[(freqs >= lo) & (freqs < min(hi, sr / 2))].sum() + 1e-20
         db = 10 * np.log10(e / total)
         out[name] = {"db": round(float(db), 2), "ref": HIPHOP_REFERENCE_DB[name], "delta": round(float(db - HIPHOP_REFERENCE_DB[name]), 2)}
     return out
@@ -187,8 +292,9 @@ def analyze(x: np.ndarray, sr: int, known: dict | None = None) -> dict:
     f_lra = _TASKS.submit(loudness_range, x, sr)
     f_stereo = _TASKS.submit(stereo_stats, x)
     tp = known["tp"] if "tp" in known else true_peak_db(x)
-    rms = float(np.sqrt(np.mean(x ** 2)))
-    peak = float(np.max(np.abs(x))) if x.size else 0.0
+    sq = sum(float(np.dot(b, b)) for b in (x[a:a + CHUNK].ravel().astype(np.float64) for a in range(0, len(x), CHUNK)))
+    rms = float(np.sqrt(sq / x.size)) if x.size else 0.0
+    peak = max((float(np.max(np.abs(x[a:a + CHUNK]))) for a in range(0, len(x), CHUNK)), default=0.0)
     lufs = f_lufs.result() if f_lufs else known["lufs"]
     lra, stereo = f_lra.result(), f_stereo.result()
     plr = round(tp - lufs, 2)
@@ -200,7 +306,6 @@ def analyze(x: np.ndarray, sr: int, known: dict | None = None) -> dict:
         "plr": plr,
         "crestDb": crest,
         "stereo": stereo,
-        # Full-length FFT is the memory peak → runs alone, after the other measurements.
         "tonal": tonal_balance(x, sr),
         "durationS": round(len(x) / sr, 2),
     }
@@ -208,7 +313,8 @@ def analyze(x: np.ndarray, sr: int, known: dict | None = None) -> dict:
 
 def lr4(x: np.ndarray, sr: int, f: float, kind: str) -> np.ndarray:
     sos = butter(2, f, btype=kind, fs=sr, output="sos")
-    return sosfilt(sos, sosfilt(sos, x, axis=0), axis=0).astype(np.float32)
+    # Linkwitz-Riley 4 = the Butterworth biquad twice → one cascade, chunked (float32 out).
+    return sos_apply(np.vstack([sos, sos]), x)
 
 
 def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
@@ -222,8 +328,7 @@ def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
         c = Pedalboard([Compressor(threshold_db=thr, ratio=ratio, attack_ms=attack, release_ms=release)])
         return c(band, sr)
 
-    # Sequential on purpose: running the bands concurrently saves ~1 s but costs ~600 MB
-    # (float64 filter intermediates), too close to the worker's 2G cap.
+    # Sequential on purpose: concurrent bands save ~1 s but keep three more full copies alive.
     y = comp(lr4(x, sr, 150, "lowpass"), 30, 200)
     rest = lr4(x, sr, 150, "highpass")
     y = y + comp(lr4(rest, sr, 4000, "lowpass"), 15, 150)
@@ -233,10 +338,139 @@ def multiband(x: np.ndarray, sr: int, squash: float) -> np.ndarray:
     return y.astype(np.float32)
 
 
-def width(x: np.ndarray, amount: float) -> np.ndarray:
+def width(x: np.ndarray, amount: float, sr: int = 44100, ref_k: float = 1.0) -> np.ndarray:
+    """User width (whole side × k) and, in reference mode, the matched width on the side
+    above WIDTH_SPLIT_HZ only (keeps the low end mono-safe)."""
     k = float(np.interp(amount, [-3, 0, 3], [0.6, 1.0, 1.4]))
     mid, side = (x[:, 0] + x[:, 1]) / 2, (x[:, 0] - x[:, 1]) / 2 * k
+    if abs(ref_k - 1.0) > 1e-3:
+        low = lr4(side, sr, WIDTH_SPLIT_HZ, "lowpass")
+        side = low + (side - low) * np.float32(ref_k)
+        del low
     return np.stack([mid + side, mid - side], axis=1).astype(np.float32)
+
+
+# ---------------------------------------------------------------- reference mastering
+
+REFERENCE_MAX_S = 600.5            # 10:00 (+ decoder slack)
+REF_EQ_CAP_DB = 6.0                # matching EQ never moves a frequency more than this (100 %)
+REF_EQ_EDGE_CAP_DB = 3.0           # tighter at the extremes (≤30 Hz, ≥16 kHz), smooth ramp in between
+REF_FIR_TAPS = 4095                # linear phase, ≈93 ms at 44.1 kHz
+REF_LUFS_RANGE = (-16.0, -7.0)     # a reference's loudness is followed only within this range
+REF_WIDTH_RANGE = (0.7, 1.4)
+WIDTH_SPLIT_HZ = 150.0
+GRID = np.geomspace(20.0, 20000.0, 161)  # 16 points / octave
+
+
+def ref_eq_cap(f: np.ndarray) -> np.ndarray:
+    """dB cap per frequency: 3 dB ≤30 Hz → 6 dB 50 Hz–12 kHz → 3 dB ≥16 kHz (log-frequency ramps,
+    so the capped curve has no steps)."""
+    lf = np.log2(np.maximum(f, 1.0))
+    return np.interp(lf, np.log2([30, 50, 12000, 16000]), [REF_EQ_EDGE_CAP_DB, REF_EQ_CAP_DB, REF_EQ_CAP_DB, REF_EQ_EDGE_CAP_DB])
+
+
+def analyze_reference(path: str) -> dict:
+    """Streams the reference from disk (never fully in memory): LUFS, mid/side spectra."""
+    info = sf.info(path)
+    if info.frames / max(1, info.samplerate) > REFERENCE_MAX_S:
+        raise ValueError("reference_too_long")
+    if info.frames < info.samplerate:
+        raise ValueError("reference_too_short")
+    sr = info.samplerate
+    lufs = LufsStream(sr, 2) if 0.1 * sr == int(0.1 * sr) else None
+    spec = SpectrumStream(sr)
+    n = 0
+    for blk in sf.blocks(path, blocksize=CHUNK, dtype="float32", always_2d=True):
+        blk = to_stereo(blk)
+        n += len(blk)
+        if lufs:
+            lufs.feed(blk)
+        spec.feed(blk)
+    spec.finish()
+    if n / sr > REFERENCE_MAX_S:
+        raise ValueError("reference_too_long")
+    loud = lufs.result() if lufs else float(pyln.Meter(sr).integrated_loudness(to_stereo(sf.read(path, dtype="float32")[0])))
+    if loud <= -60:
+        raise ValueError("reference_silent")
+    return {"sr": sr, "lufs": loud, "spec": spec, "durationS": n / sr}
+
+
+def _smoothed_db(spec: SpectrumStream, frac: float = 1 / 3) -> np.ndarray:
+    """Power spectrum → dB on GRID, averaged over ±frac/2 octave around each point."""
+    f, p = spec.freqs, spec.mid / max(1, spec.count)
+    cs = np.concatenate([[0.0], np.cumsum(p)])
+    lo = np.searchsorted(f, GRID * 2 ** (-frac / 2))
+    hi = np.maximum(np.searchsorted(f, GRID * 2 ** (frac / 2)), lo + 1)
+    hi = np.minimum(hi, len(p))
+    lo = np.minimum(lo, hi - 1)
+    return 10 * np.log10((cs[hi] - cs[lo]) / (hi - lo) + 1e-20)
+
+
+def match_curve(mix: SpectrumStream, ref: SpectrumStream, intensity: float) -> np.ndarray:
+    """Matching EQ (dB on GRID): ref − mix tonal balance, level-normalised (100 Hz–8 kHz),
+    smoothed twice (1/3 octave bins, then ±1/3 octave on the curve), capped, × intensity."""
+    d = _smoothed_db(ref) - _smoothed_db(mix)
+    nyq = min(mix.sr, ref.sr) / 2
+    valid = GRID < nyq * 0.95
+    core = valid & (GRID >= 100) & (GRID <= 8000)
+    d = d - float(np.mean(d[core]))
+    d = np.where(valid, d, d[valid][-1])
+    k = 11  # ±5 grid points ≈ ±1/3 octave
+    d = np.convolve(np.pad(d, k // 2, mode="edge"), np.ones(k) / k, mode="valid")
+    cap = ref_eq_cap(GRID)
+    return np.clip(d, -cap, cap) * float(np.clip(intensity, 0.0, 1.0))
+
+
+def fir_from_curve(curve_db: np.ndarray, sr: int) -> np.ndarray:
+    nyq = sr / 2
+    sel = GRID < nyq
+    freq = np.concatenate([[0.0], GRID[sel] / nyq, [1.0]])
+    gain_db = np.concatenate([[curve_db[sel][0]], curve_db[sel], [curve_db[sel][-1]]])
+    return firwin2(REF_FIR_TAPS, freq, 10 ** (gain_db / 20)).astype(np.float64)
+
+
+def apply_fir(x: np.ndarray, h: np.ndarray) -> np.ndarray:
+    """Linear-phase FIR, delay-compensated, chunked overlap-add → float32 (N, C)."""
+    n, d = len(x), (len(h) - 1) // 2
+    out = np.zeros(x.shape, dtype=np.float32)
+
+    def run(c: int) -> None:
+        for a in range(0, n, CHUNK):
+            y = fftconvolve(x[a:a + CHUNK, c].astype(np.float64), h)
+            s0 = a - d
+            lo, hi = max(0, s0), min(n, s0 + len(y))
+            out[lo:hi, c] += y[lo - s0:hi - s0].astype(np.float32)
+
+    list(_BLOCKS.map(run, range(x.shape[1])))
+    return out
+
+
+def band_db(curve_db: np.ndarray) -> dict:
+    return {name: round(float(np.mean(curve_db[(GRID >= lo) & (GRID < hi)])), 2) for name, lo, hi in BANDS}
+
+
+def reference_plan(y: np.ndarray, sr: int, ref: dict, intensity: float, base_goal: float, target_lufs: float) -> dict:
+    """What to change so the mix (after tone, before dynamics) follows the reference."""
+    mix_spec = spectrum_of(y, sr)
+    curve = match_curve(mix_spec, ref["spec"], intensity)
+    mix_r, ref_r = mix_spec.side_to_mid(200.0), ref["spec"].side_to_mid(200.0)
+    k = 1.0
+    if mix_r > 0.02 and ref_r > 0:  # a (near) mono mix can't be widened by scaling its side
+        k = float(np.clip((ref_r / mix_r) ** intensity, *REF_WIDTH_RANGE))
+    ref_l = float(np.clip(ref["lufs"], *REF_LUFS_RANGE))
+    goal = float(np.clip(base_goal + intensity * (ref_l - target_lufs), -18.0, -6.0))
+    return {
+        "curve": curve,
+        "widthK": k,
+        "goalLufs": goal,
+        "report": {
+            "intensity": round(intensity * 100),
+            "reference": {"lufs": round(ref["lufs"], 2), "sideToMid": round(ref_r, 3), "durationS": round(ref["durationS"], 1)},
+            "eqDb": band_db(curve),
+            "loudness": {"goalLufs": round(goal, 2), "fromTargetLufs": round(base_goal, 2)},
+            "width": {"factor": round(k, 3), "mixSideToMid": round(mix_r, 3), "refSideToMid": round(ref_r, 3)},
+        },
+    }
 
 
 LUFS_TOL = 0.3  # final loudness must land within ±0.3 LU of the goal
@@ -288,7 +522,7 @@ def _loudness_to_target(pre: np.ndarray, sr: int, goal_lufs: float, goal_tp: flo
     return np.ascontiguousarray(out, dtype=np.float32), got, tp
 
 
-def master(x: np.ndarray, sr: int, target: str, settings: dict) -> tuple[np.ndarray, dict]:
+def master(x: np.ndarray, sr: int, target: str, settings: dict, reference: dict | None = None, reference_intensity: float = 1.0) -> tuple[np.ndarray, dict]:
     if target not in TARGETS:
         raise ValueError("bad_target")
     s = clamp_settings(settings)
@@ -301,17 +535,28 @@ def master(x: np.ndarray, sr: int, target: str, settings: dict) -> tuple[np.ndar
         HighShelfFilter(cutoff_frequency_hz=8000, gain_db=1.5 * s["bright"]),
     ])
     y = tone(x.T.copy(), sr).T
+    ref_k, ref_report = 1.0, None
+    if reference is not None:
+        plan = reference_plan(y, sr, reference, float(np.clip(reference_intensity, 0.0, 1.0)), goal_lufs, TARGETS[target]["lufs"])
+        if np.max(np.abs(plan["curve"])) >= 0.05:
+            y = apply_fir(y, fir_from_curve(plan["curve"], sr))
+        ref_k, goal_lufs, ref_report = plan["widthK"], plan["goalLufs"], plan["report"]
+        _progress(0.15)
     y = multiband(y, sr, s["squash"])
-    y = width(y, s["width"])
+    y = width(y, s["width"], sr, ref_k)
     _progress(0.25)
+    pre_lufs = integrated_lufs(y, sr)
     pre = y.T.copy()
+    del y
     ceiling = goal_tp - 0.6  # sample-peak ceiling; inter-sample overs handled below
-    out, got, tp = _loudness_to_target(pre, sr, goal_lufs, goal_tp, ceiling, integrated_lufs(y, sr))
-    del pre, y
+    out, got, tp = _loudness_to_target(pre, sr, goal_lufs, goal_tp, ceiling, pre_lufs)
+    del pre
     _progress(0.78)
     report = analyze(out, sr, known={"lufs": got, "tp": tp})
-    report.update({"target": target, "targetLufs": goal_lufs, "targetTp": goal_tp, "settings": s})
-    return out.astype(np.float32), report
+    report.update({"target": target, "targetLufs": round(goal_lufs, 2), "targetTp": goal_tp, "settings": s})
+    if ref_report:
+        report["reference"] = ref_report
+    return out, report
 
 
 def main(argv: list[str]) -> int:
@@ -322,6 +567,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--target", default="streaming")
     ap.add_argument("--settings", default="{}")
     ap.add_argument("--reference")
+    ap.add_argument("--reference-intensity", type=float, default=100.0)
     a = ap.parse_args(argv)
     try:
         if a.cmd == "zip":
@@ -344,21 +590,21 @@ def main(argv: list[str]) -> int:
                     os.remove(flac)
             print(json.dumps({"ok": True, "files": len(names)}))
             return 0
-        x, sr = sf.read(a.inp, always_2d=True, dtype="float32")
-        if a.cmd == "master":
-            _progress(0.05)
         if a.cmd == "analyze":
+            x, sr = sf.read(a.inp, always_2d=True, dtype="float32")
             print(json.dumps({"ok": True, "analysis": analyze(x, sr)}))
             return 0
-        if a.reference:
-            # Reference mastering (matchering) — interface reserved, backlog.
-            print(json.dumps({"ok": False, "error": "reference_not_available"}))
-            return 3
         if not a.out:
             raise ValueError("missing_out")
-        y, report = master(x, sr, a.target, json.loads(a.settings or "{}"))
+        # Reference first (streamed from disk, small) → a bad file fails before any work.
+        ref = analyze_reference(a.reference) if a.reference else None
+        x, sr = sf.read(a.inp, always_2d=True, dtype="float32")
+        _progress(0.05)
+        y, report = master(x, sr, a.target, json.loads(a.settings or "{}"), ref, (a.reference_intensity if np.isfinite(a.reference_intensity) else 100.0) / 100.0)
+        del ref
         # 24-bit: the limiter keeps peaks below 0 dBTP, so no float headroom is needed.
         sf.write(a.out, y, sr, subtype="PCM_24")
+        del y
         _progress(0.88)
         before = analyze(x, sr)
         print(json.dumps({"ok": True, "before": before, "after": report}))

@@ -8,13 +8,15 @@ import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/stud
 import { Button } from "@/components/ui/button";
 import { StudioMasterReport } from "@/components/studio/studio-change-report";
 import { StudioListenLinks } from "@/components/studio/studio-listen-links";
+import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
-import { DEFAULT_MASTER_SETTINGS, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, clampMasterSettings, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterTargetId } from "@/lib/studio/master/targets";
+import { explainReferenceMatch, isReferenceMatchReport } from "@/lib/studio/master/reference";
+import { DEFAULT_MASTER_INTENSITY, DEFAULT_MASTER_SETTINGS, DEFAULT_REFERENCE_INTENSITY, MASTER_SETTING_KEYS, MASTER_TARGET_IDS, MASTER_TARGETS, applyMasterStyle, clampMasterSettings, isMasterStyleId, isMasterTargetId, type MasterSettingKey, type MasterSettings, type MasterStyleId, type MasterTargetId } from "@/lib/studio/master/targets";
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
 import { decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
@@ -60,7 +62,7 @@ export function StudioMasterStep({
   /** BITEK chat → apply a whole-song setting proposal. */
   applyRef?: { current: ((key: MasterSettingKey, value: number) => void) | null };
   /** Tests/screenshots only. */
-  initialState?: { target?: MasterTargetId };
+  initialState?: { target?: MasterTargetId; style?: MasterStyleId };
 }) {
   const t = useTranslations("studio.masterStep");
   const tBitek = useTranslations("studio.bitek");
@@ -72,6 +74,12 @@ export function StudioMasterStep({
   const [mix, setMix] = useState<{ stereo: Stereo; raw: Stereo; metrics: MasterMetrics } | null>(null);
   const [target, setTarget] = useState<MasterTargetId>(initialState?.target ?? "streaming");
   const [settings, setSettings] = useState<MasterSettings>(DEFAULT_MASTER_SETTINGS);
+  /** Style (Ciepły / Jasny / Głośny / Dynamiczny) × intensity on top of the settings; reference mastering. */
+  const [style, setStyle] = useState<MasterStyleId | null>(initialState?.style ?? null);
+  const [styleIntensity, setStyleIntensity] = useState(DEFAULT_MASTER_INTENSITY);
+  const [refState, setRefState] = useState<MasterReferenceState>({ loaded: false, available: true, gate: null, reference: null });
+  const [refIntensity, setRefIntensity] = useState(DEFAULT_REFERENCE_INTENSITY);
+  const effective = useMemo(() => applyMasterStyle(settings, style, styleIntensity), [settings, style, styleIntensity]);
   const [preview, setPreview] = useState<{ stereo: Stereo; metrics: MasterMetrics; key: string } | null>(null);
   const [server, setServer] = useState<ServerState>({ available: true, tier: null, options: [], usage: null, masters: null });
   const [sm, setSm] = useState<ServerMaster>({ phase: "idle" });
@@ -84,7 +92,7 @@ export function StudioMasterStep({
   const [matched, setMatched] = useState(true);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
-  const settingsKey = `${target}:${MASTER_SETTING_KEYS.map((k) => settings[k]).join(",")}`;
+  const settingsKey = `${target}:${MASTER_SETTING_KEYS.map((k) => effective[k]).join(",")}`;
 
   // 1) Bounce the approved mix (once per mount — going back to Mix discards the master).
   useEffect(() => {
@@ -114,7 +122,7 @@ export function StudioMasterStep({
         setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: j.usage ?? null, masters: j.masters ?? null });
         if (j.available === false) return setSm({ phase: "unavailable" });
         // Restore an approved master for the current mix (after reload / coming back later).
-        const a = j.approved as { id?: string; target?: string | null; status?: string; settings?: Record<string, number> | null } | null | undefined;
+        const a = j.approved as { id?: string; target?: string | null; status?: string; settings?: Record<string, number> | null; style?: string | null; styleIntensity?: number | null } | null | undefined;
         if (a?.id && a.status === "succeeded") {
           const id = a.id;
           void fetch(`/api/studio/projects/${projectId}/jobs/${id}`)
@@ -125,6 +133,10 @@ export function StudioMasterStep({
               if (!live) return;
               if (a.target && isMasterTargetId(a.target)) setTarget(a.target);
               if (a.settings) setSettings(clampMasterSettings(a.settings));
+              if (isMasterStyleId(a.style)) {
+                setStyle(a.style);
+                if (typeof a.styleIntensity === "number") setStyleIntensity(a.styleIntensity);
+              }
               setSm((cur) => (cur.phase === "idle" ? { phase: "done", jobId: id, url, metrics: (job.job.metrics as { after?: Record<string, unknown> }) ?? null } : cur));
               setApproved(true);
             })
@@ -143,7 +155,7 @@ export function StudioMasterStep({
     let live = true;
     const key = settingsKey;
     const h = setTimeout(() => {
-      void renderMasterPreview(mix.stereo, target, settings).then((r) => {
+      void renderMasterPreview(mix.stereo, target, effective).then((r) => {
         if (live) setPreview({ stereo: r.preview, metrics: r.metrics, key });
       }).catch(() => {});
     }, 250);
@@ -151,10 +163,10 @@ export function StudioMasterStep({
       live = false;
       clearTimeout(h);
     };
-  }, [mix, target, settings, settingsKey]);
+  }, [mix, target, effective, settingsKey]);
 
   const previewFresh = preview?.key === settingsKey ? preview : null;
-  const verdict = useMemo(() => (preview ? buildMasterVerdict(preview.metrics, target, settings) : null), [preview, target, settings]);
+  const verdict = useMemo(() => (preview ? buildMasterVerdict(preview.metrics, target, effective) : null), [preview, target, effective]);
 
   const stop = useCallback(() => {
     const a = audioRef.current;
@@ -187,11 +199,15 @@ export function StudioMasterStep({
     if (playing) play(which);
   };
 
-  const step = (key: MasterSettingKey, value: number) => {
-    setSettings((s) => clampMasterSettings({ ...s, [key]: value }));
+  const invalidate = () => {
     if (sm.phase === "done") setSm({ phase: "idle" });
     setApproved(false);
   };
+  const step = (key: MasterSettingKey, value: number) => {
+    setSettings((s) => clampMasterSettings({ ...s, [key]: value }));
+    invalidate();
+  };
+  const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
   const latest = useRef({ settings, target, verdict });
   useEffect(() => {
     latest.current = { settings, target, verdict };
@@ -255,10 +271,16 @@ export function StudioMasterStep({
       if (prep.available === false) return setSm({ phase: "unavailable" });
       if (!prep.jobId) return setSm({ phase: "failed", code: "prepare" });
       // E3 renders the mix itself from the saved project (same DSP as this preview).
-      const commit = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "commit", jobId: prep.jobId, target, settings, documentVersion: doc.project.documentVersion }) }).then((r) => r.json());
+      const commit = await fetch(`/api/studio/projects/${projectId}/master`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        action: "commit", jobId: prep.jobId, target, settings, documentVersion: doc.project.documentVersion,
+        ...(style ? { style, styleIntensity } : {}),
+        ...(useReference && refState.reference ? { referenceId: refState.reference.id, referenceIntensity: refIntensity } : {}),
+      }) }).then((r) => r.json());
       if (commit.available === false) return setSm({ phase: "unavailable" });
       if (commit.masters) setServer((s) => ({ ...s, masters: commit.masters }));
       if (!commit.ok) return setSm({ phase: "failed", code: String(commit.error ?? "commit") });
+      // The reference is single-use: E3 deletes it right after this master.
+      if (useReference) setRefState((r) => ({ ...r, reference: null }));
       setSm({ phase: "working", jobId: prep.jobId });
       const done = await pollJob(prep.jobId, "master");
       if (done.status !== "succeeded") return setSm({ phase: "failed", code: done.code ?? "failed" });
@@ -312,6 +334,13 @@ export function StudioMasterStep({
     if (pendingBack > 0) onBackToMix();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per click from the bubble
   }, [pendingBack]);
+  const refReport = sm.phase === "done" && isReferenceMatchReport(sm.metrics?.after?.reference) ? sm.metrics.after.reference : null;
+  const refLines = useMemo(() => (refReport ? explainReferenceMatch(refReport).map((l) => t(`referencja.bitek.${l.key}`, {
+    ...("db" in l ? { db: l.db.toLocaleString(locale === "en" ? "en-US" : "pl-PL") } : {}),
+    ...("band" in l ? { band: t(`referencja.pasma.${l.band}`) } : {}),
+    ...("lufs" in l ? { lufs: l.lufs.toLocaleString(locale === "en" ? "en-US" : "pl-PL"), refLufs: l.refLufs.toLocaleString(locale === "en" ? "en-US" : "pl-PL") } : {}),
+    ...("pct" in l ? { pct: l.pct } : {}),
+  })) : null), [refReport, t, locale]);
   const worst: MasterCard | null = verdict?.cards.find((c) => c.status === "red") ?? verdict?.cards.find((c) => c.status === "yellow") ?? null;
   const bubble = useMemo<BitekBubble>(() => {
     const back = { id: "backToMix", label: tBitek("akcja.backToMix"), onClick: () => setPendingBack((n) => n + 1) };
@@ -321,13 +350,14 @@ export function StudioMasterStep({
     if (renderFailed) [mood, text, key] = ["alert", t("renderBlad"), "m-renderfail"];
     else if (!mix) [mood, text, key] = ["thinking", t("bitek.renderuje"), "m-render"];
     else if (approved) [mood, text, key] = ["done", t("bitek.zatwierdzone"), "m-approved"];
+    else if (sm.phase === "done" && refLines) return { key: "m-done-ref", mood: "done", text: t("referencja.bitek.gotowe"), details: refLines, actions: [back] };
     else if (sm.phase === "done") [mood, text, key] = ["done", t(`bitek.gotowe.${target}`), `m-done-${target}`];
     else if (sm.phase === "working") [mood, text, key] = ["thinking", prog.master ? t(`bitek.etap.${prog.master.stage}`, { pct: prog.master.progress }) : t("bitek.masterTrwa"), `m-working-${prog.master?.stage ?? "start"}`];
     else if (sm.phase === "failed") [mood, text, key] = ["alert", t("bitek.blad"), "m-failed"];
     else if (worst?.status === "red") [mood, text, key] = ["alert", t("bitek.problem", { card: t(`cards.${worst.id}.title`) }), `m-red-${worst.id}`];
     else [mood, text, key] = ["happy", t("bitek.gotowy"), "m-ready"];
     return { key, mood, text, details: mix && !approved ? [t("bitek.wrocInfo"), ...(sm.phase === "unavailable" ? [t("bitek.niedostepny")] : [])] : undefined, actions: approved ? [] : [back] };
-  }, [renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master]);
+  }, [renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master, refLines]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
@@ -400,6 +430,19 @@ export function StudioMasterStep({
             </ul>
           </section>
 
+          <StudioMasterStyleReference
+            projectId={projectId}
+            style={style}
+            styleIntensity={styleIntensity}
+            onStyle={(v) => { setStyle(v); invalidate(); }}
+            onStyleIntensity={(v) => { setStyleIntensity(v); invalidate(); }}
+            refState={refState}
+            onRefState={(v) => { setRefState(v); invalidate(); }}
+            refIntensity={refIntensity}
+            onRefIntensity={(v) => { setRefIntensity(v); invalidate(); }}
+            disabled={sm.phase === "working"}
+          />
+
           <section aria-labelledby="studio-master-ab-title" data-testid="studio-master-ab" className="flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2">
             <h3 id="studio-master-ab-title" className="text-sm font-semibold">{t("abTytul")}</h3>
             <Button type="button" size="sm" className="min-h-9" disabled={!previewFresh} onClick={() => (playing ? stop() : play(ab))} data-testid="studio-master-play">
@@ -467,7 +510,15 @@ export function StudioMasterStep({
                     {fmtN(Number(sm.metrics.after.lufs))} LUFS · {fmtN(Number(sm.metrics.after.truePeakDb))} dBTP · LRA {fmtN(Number(sm.metrics.after.lra))} LU
                   </p>
                 ) : null}
-                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={target} settings={settings} tpCeiling={MASTER_TARGETS[target].tp} />
+                {refLines ? (
+                  <div data-testid="studio-master-reference-explain" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] pl-2">
+                    <p className="text-sm font-semibold">{t("referencja.bitek.gotowe")}</p>
+                    <ul className="list-disc pl-5 text-sm">
+                      {refLines.map((l) => <li key={l}>{l}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
+                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={target} settings={settings} style={style ? { id: style, intensity: styleIntensity } : null} tpCeiling={MASTER_TARGETS[target].tp} />
                 {approved ? (
                   <p role="status" className="text-sm font-semibold">✓ {t("zatwierdzone")}</p>
                 ) : (
