@@ -175,6 +175,20 @@
       "zamknij": "Close",
       "brakPodgladu": "This beat has no guest preview yet",
       "brakOpis": "Sign in to listen to the full beat."
+    },
+    "share": {
+      "tytul": "Share",
+      "kopiuj": "Copy link",
+      "skopiowano": "Copied ✓",
+      "wiecej": "More…",
+      "udostepnijW": "Share on {serwis}",
+      "serwis": {
+        "facebook": "Facebook",
+        "x": "X",
+        "whatsapp": "WhatsApp"
+      },
+      "ogBit": "Beat",
+      "ogOdsluch": "Private listen"
     }
   },
   "account": {
@@ -2767,7 +2781,8 @@
         "not_approved": "Approve the master first (after mix changes, approve it again).",
         "bad_days": "This lifetime is not available on your plan.",
         "inny": "Could not create the link. Please try again."
-      }
+      },
+      "tekstUdostepnienia": "Listen to my new track (private listen):"
     },
     "cleanup": {
       "title": "Vocal cleanup",

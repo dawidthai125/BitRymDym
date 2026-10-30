@@ -175,6 +175,20 @@
       "zamknij": "Zamknij",
       "brakPodgladu": "Ten bit nie ma jeszcze podglądu dla gości",
       "brakOpis": "Zaloguj się, aby posłuchać całego bitu."
+    },
+    "share": {
+      "tytul": "Udostępnij",
+      "kopiuj": "Kopiuj link",
+      "skopiowano": "Skopiowano ✓",
+      "wiecej": "Więcej…",
+      "udostepnijW": "Udostępnij w: {serwis}",
+      "serwis": {
+        "facebook": "Facebook",
+        "x": "X",
+        "whatsapp": "WhatsApp"
+      },
+      "ogBit": "Bit",
+      "ogOdsluch": "Prywatny odsłuch"
     }
   },
   "account": {
@@ -2767,7 +2781,8 @@
         "not_approved": "Najpierw zatwierdź master (po zmianach w miksie zatwierdź go ponownie).",
         "bad_days": "Ta długość ważności nie jest dostępna w Twoim planie.",
         "inny": "Nie udało się utworzyć linku. Spróbuj ponownie."
-      }
+      },
+      "tekstUdostepnienia": "Posłuchaj mojego nowego utworu (prywatny odsłuch):"
     },
     "cleanup": {
       "title": "Oczyszczanie wokalu",

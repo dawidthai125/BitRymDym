@@ -7,6 +7,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
+import { ShareButtons } from "@/components/share/share-buttons";
 import { Button } from "@/components/ui/button";
 
 type LinkView = {
@@ -110,6 +111,7 @@ export function StudioListenLinks({ projectId }: { projectId: string }) {
                   </div>
                 </div>
               ) : null}
+              {l.state === "active" ? <ShareButtons url={l.url} text={t("tekstUdostepnienia")} testId="studio-share-social" compact /> : null}
             </li>
           ))}
         </ul>
