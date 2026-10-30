@@ -1406,7 +1406,9 @@
       "panoramaKrotko": "Pan",
       "panSrodekKrotko": "C",
       "panLewoKrotko": "L",
-      "panPrawoKrotko": "R"
+      "panPrawoKrotko": "R",
+      "przeliczamStrojenie": "retuning…",
+      "przeliczamStrojenieTytul": "I'm recomputing your manual notes so you hear them in playback. Until then you hear automatic tuning."
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "The export belongs to another project.",
@@ -2721,7 +2723,7 @@
     },
     "tuneNotes": {
       "tytul": "Manual note correction (Gold)",
-      "opis": "I'll show you the notes I detected in the take. Drag a note up or down — I'll tune it exactly there when rendering.",
+      "opis": "I'll show you the notes I detected in the take. Drag a note up or down — I'll tune it exactly there in playback and the render.",
       "pokaz": "Show notes",
       "analiza": "Listening to the track and detecting notes…",
       "wykryto": "I found {count, plural, one {# note} other {# notes}}. Tap a note to select it.",
@@ -2746,12 +2748,12 @@
       "stop": "■ Stop",
       "renderuje": "Preparing preview…",
       "zastosuj": "Apply {count, plural, one {# note} other {# notes}}",
-      "zastosowano": "Saved. I'll tune your notes in the render and the master.",
+      "zastosowano": "Saved. You now hear your notes in playback, the render and the master.",
       "blad": "I couldn't save the notes. Please try again.",
       "cofnij": "Undo changes",
       "wyczysc": "Remove manual notes",
       "zapisane": "Saved manual notes: {count}",
-      "podgladInfo": "The note preview uses the same engine as the render. Normal project playback shows automatic tuning only.",
+      "podgladInfo": "The note preview and project playback use the same engine as the render. After a note change I need a moment to retune.",
       "lock": "Manual note correction comes with the Gold plan — drag every note on its own, down to the cent.",
       "zobaczGold": "See the Gold plan"
     }

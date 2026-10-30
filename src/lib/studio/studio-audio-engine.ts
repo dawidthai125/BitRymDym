@@ -60,6 +60,14 @@ import {
 } from "@/lib/studio/studio-meter";
 import { compensateStudioTuneLatency, enabledTuneCount } from "@/lib/studio/tune/tune";
 import { ensureTuneWorklet, isTuneWorkletReady } from "@/lib/studio/tune/tune-worklet";
+import {
+  bakedPlaybackChain,
+  clipSourceOriginMs,
+  tuneBakeClipKey,
+  tuneBakeSpecForChain,
+  type TuneBakeSpec,
+} from "@/lib/studio/tune/tune-bake";
+import { bakeTunedClipInBrowser, type TuneBakeRequest } from "@/lib/studio/tune/tune-bake-client";
 
 export type { StudioMeterSnapshot } from "@/lib/studio/studio-meter";
 
@@ -157,6 +165,27 @@ export type StudioAudioEngineHost = {
   cancelTick(id: number): void;
   /** Decode a voice URL for BufferSource reverse. Tests inject a fixture. */
   decodeSource?(url: string): Promise<StudioAudioBufferLike | null>;
+  /**
+   * BRD Tune (Gold) live notes: bake one clip source (prefix FX + anchored
+   * TuneCore) → playable URL. Absent → manual notes stay render-only.
+   */
+  bakeTune?(req: TuneBakeRequest, signal: AbortSignal): Promise<string | null>;
+  revokeUrl?(url: string): void;
+};
+
+/** Bake rate is fixed so a context (re)creation never invalidates the cache. */
+export const TUNE_BAKE_SAMPLE_RATE = 48000;
+/** Edits in quick succession → only the last chain is baked. */
+export const TUNE_BAKE_DEBOUNCE_MS = 150;
+/** Unused baked clips kept for instant undo/redo. */
+const TUNE_BAKE_KEEP_UNUSED = 4;
+
+type TuneBakeEntry = {
+  status: "pending" | "ready" | "failed";
+  url: string | null;
+  identity: string;
+  abort: AbortController;
+  usedAt: number;
 };
 
 export type StudioAudioEngineListener = {
@@ -168,6 +197,8 @@ export type StudioAudioEngineListener = {
     clipId?: string;
   }) => void;
   onTimelineEnded: () => void;
+  /** Tracks whose manual-note tuning is being (re)computed for live playback. */
+  onTuneBake?: (pendingTrackIds: readonly string[]) => void;
 };
 
 type TrackGraph = {
@@ -281,6 +312,10 @@ export function createBrowserStudioAudioEngineHost(): StudioAudioEngineHost {
     cancelTick(id) {
       cancelAnimationFrame(id);
     },
+    bakeTune: bakeTunedClipInBrowser,
+    revokeUrl(url) {
+      URL.revokeObjectURL(url);
+    },
   };
 }
 
@@ -343,6 +378,12 @@ export class StudioAudioEngine {
   private tickId: number | null = null;
   private lastSyncCheckMs = 0;
   private failedClips = new Set<string>();
+  /** BRD Tune live bakes: clip bake key → entry. */
+  private tuneBakes = new Map<string, TuneBakeEntry>();
+  /** trackId → clipId → ready bake key currently played for that clip. */
+  private tuneBakeAssign = new Map<string, Map<string, string>>();
+  private tuneBakeQueue: Promise<void> = Promise.resolve();
+  private tuneBakePendingSig = "";
   /** AUD-01 — preferred AudioContext sink ("" = system default). */
   private preferredSinkId: string | null = null;
   private scratchLive: {
@@ -863,7 +904,7 @@ export class StudioAudioEngine {
 
   setDocument(rawDocument: StudioEngineDocument): void {
     this.rawDocument = rawDocument;
-    const document = this.withTuneCompensation(rawDocument);
+    const document = this.withTuneCompensation(this.withTuneBakes(rawDocument));
     this.document = document;
     const clipIds = new Set(document.clips.map((c) => c.id));
     for (const failedId of [...this.failedClips]) {
@@ -900,6 +941,17 @@ export class StudioAudioEngine {
   invalidateTakeSource(takeId: string): void {
     const document = this.document;
     if (!document || !takeId) return;
+    const stale: string[] = [];
+    for (const [key, entry] of this.tuneBakes) {
+      if (entry.identity !== `take:${takeId}`) continue;
+      entry.abort.abort();
+      if (entry.url) stale.push(entry.url);
+      this.tuneBakes.delete(key);
+    }
+    if (stale.length && this.rawDocument) {
+      this.setDocument(this.rawDocument);
+      for (const url of stale) this.host.revokeUrl?.(url);
+    }
     let dropped = false;
     for (const clip of document.clips) {
       if (clip.sourceTakeId === takeId && this.voices.has(clip.id)) {
@@ -1071,6 +1123,12 @@ export class StudioAudioEngine {
   }
 
   dispose(): void {
+    for (const entry of this.tuneBakes.values()) {
+      entry.abort.abort();
+      if (entry.url) this.host.revokeUrl?.(entry.url);
+    }
+    this.tuneBakes.clear();
+    this.tuneBakeAssign.clear();
     this.stopClock();
     this.stopMetering({ reset: true });
     this.meterListeners.clear();
@@ -1568,6 +1626,144 @@ export class StudioAudioEngine {
     return document;
   }
 
+  /** Ready baked source for a clip of a baked track, else null (realtime path). */
+  private tuneBakedSourceFor(clip: StudioEngineClip): { url: string; key: string } | null {
+    const key = this.tuneBakeAssign.get(clip.trackId)?.get(clip.id);
+    const entry = key ? this.tuneBakes.get(key) : undefined;
+    return key && entry?.status === "ready" && entry.url ? { url: entry.url, key } : null;
+  }
+
+  /**
+   * BRD Tune (Gold) live notes. Tracks whose tune insert carries manual notes
+   * play per-clip baked audio (prefix FX + anchored TuneCore, same engine as
+   * the note preview and the E3 render) and run only the effects after the
+   * insert live. Until every clip of a track is baked the track keeps its
+   * previous bake (edit) or the realtime auto-tune path (first bake).
+   */
+  private withTuneBakes(raw: StudioEngineDocument): StudioEngineDocument {
+    const bake = this.host.bakeTune;
+    if (!bake && this.tuneBakes.size === 0) return raw;
+    const now = this.host.nowMs();
+    const desired = new Set<string>();
+    const pending: string[] = [];
+    const nextAssign = new Map<string, Map<string, string>>();
+    const chains = new Map<string, unknown>();
+    if (bake) {
+      for (const track of raw.tracks) {
+        const spec = tuneBakeSpecForChain(track.effectsChain);
+        if (!spec) continue;
+        const clips = raw.clips.filter((c) => c.trackId === track.id);
+        const want = new Map<string, string>();
+        let allReady = true;
+        let anyFailed = false;
+        for (const clip of clips) {
+          const identity = studioClipSourceIdentity(clip) ?? `${clip.sourceKind}:${clip.id}`;
+          const key = tuneBakeClipKey(spec, clip, identity, TUNE_BAKE_SAMPLE_RATE);
+          want.set(clip.id, key);
+          desired.add(key);
+          const entry = this.tuneBakes.get(key) ?? this.startTuneBake(key, clip, spec, identity);
+          entry.usedAt = now;
+          if (entry.status !== "ready") allReady = false;
+          if (entry.status === "failed") anyFailed = true;
+        }
+        let assign: Map<string, string> | null = allReady ? want : null;
+        if (!assign) {
+          const prev = this.tuneBakeAssign.get(track.id);
+          if (prev && clips.length > 0 && clips.every((c) => this.tuneBakes.get(prev.get(c.id) ?? "")?.status === "ready")) {
+            assign = new Map(clips.map((c) => [c.id, prev.get(c.id)!]));
+          }
+          if (!anyFailed) pending.push(track.id);
+        }
+        if (assign) {
+          nextAssign.set(track.id, assign);
+          for (const key of assign.values()) desired.add(key);
+          chains.set(track.id, bakedPlaybackChain(track.effectsChain, spec));
+        }
+      }
+    }
+    // Clips whose played source changes → drop the voice (re-created on sync).
+    const trackIds = new Set([...this.tuneBakeAssign.keys(), ...nextAssign.keys()]);
+    for (const clip of raw.clips) {
+      if (!trackIds.has(clip.trackId)) continue;
+      const before = this.tuneBakeAssign.get(clip.trackId)?.get(clip.id);
+      const after = nextAssign.get(clip.trackId)?.get(clip.id);
+      if (before !== after && this.voices.has(clip.id)) this.disposeVoice(clip.id);
+    }
+    this.tuneBakeAssign = nextAssign;
+    this.pruneTuneBakes(desired);
+    const sig = pending.join(",");
+    if (sig !== this.tuneBakePendingSig) {
+      this.tuneBakePendingSig = sig;
+      this.listener.onTuneBake?.(pending);
+    }
+    if (chains.size === 0) return raw;
+    return {
+      ...raw,
+      tracks: raw.tracks.map((t) => (chains.has(t.id) ? { ...t, effectsChain: chains.get(t.id) } : t)),
+    };
+  }
+
+  private startTuneBake(key: string, clip: StudioEngineClip, spec: TuneBakeSpec, identity: string): TuneBakeEntry {
+    const entry: TuneBakeEntry = { status: "pending", url: null, identity, abort: new AbortController(), usedAt: this.host.nowMs() };
+    this.tuneBakes.set(key, entry);
+    const snapshot = { ...clip };
+    const signal = entry.abort.signal;
+    // Serial queue: one decode + bake at a time (bounded memory on phones).
+    this.tuneBakeQueue = this.tuneBakeQueue.then(async () => {
+      if (signal.aborted) return;
+      await new Promise((r) => setTimeout(r, TUNE_BAKE_DEBOUNCE_MS));
+      if (signal.aborted) return;
+      try {
+        const adapter = this.registry.get(snapshot.sourceKind);
+        const resolved = adapter ? await adapter.resolve(snapshot) : null;
+        const url =
+          resolved?.ok && this.host.bakeTune
+            ? await this.host.bakeTune(
+                {
+                  url: resolved.source.url,
+                  sampleRate: TUNE_BAKE_SAMPLE_RATE,
+                  prefix: spec.prefix,
+                  tune: spec.tune,
+                  originMs: clipSourceOriginMs(snapshot),
+                },
+                signal,
+              )
+            : null;
+        if (signal.aborted) {
+          if (url) this.host.revokeUrl?.(url);
+          return;
+        }
+        entry.url = url;
+        entry.status = url ? "ready" : "failed";
+      } catch {
+        if (signal.aborted) return;
+        entry.status = "failed";
+      }
+      if (this.tuneBakes.get(key) === entry && this.rawDocument && this.lifecycle !== "disposed") {
+        this.setDocument(this.rawDocument);
+      }
+    });
+    return entry;
+  }
+
+  private pruneTuneBakes(desired: ReadonlySet<string>): void {
+    const unusedReady: [string, TuneBakeEntry][] = [];
+    for (const [key, entry] of this.tuneBakes) {
+      if (desired.has(key)) continue;
+      if (entry.status === "ready") {
+        unusedReady.push([key, entry]);
+        continue;
+      }
+      entry.abort.abort();
+      this.tuneBakes.delete(key);
+    }
+    unusedReady.sort((a, b) => b[1].usedAt - a[1].usedAt);
+    for (const [key, entry] of unusedReady.slice(TUNE_BAKE_KEEP_UNUSED)) {
+      if (entry.url) this.host.revokeUrl?.(entry.url);
+      this.tuneBakes.delete(key);
+    }
+  }
+
   private syncTrackFx(trackId: string, rawChain: unknown): void {
     if (!this.ctx) return;
     const graph = this.tracks.get(trackId);
@@ -1710,6 +1906,20 @@ export class StudioAudioEngine {
         clipId: clip.id,
       });
       return null;
+    }
+
+    const baked = this.tuneBakedSourceFor(clip);
+    if (baked) {
+      const existing = this.voices.get(clip.id);
+      if (existing && !existing.disposed && existing.sourceUrl === baked.url) return existing;
+      if (existing) this.disposeVoice(clip.id);
+      try {
+        return this.createVoice(clip, { url: baked.url, expiresAt: Number.MAX_SAFE_INTEGER }, `tune-bake:${baked.key}`);
+      } catch {
+        this.failedClips.add(clip.id);
+        this.listener.onError({ code: "AUDIO_OUTPUT_ERROR", sourceKind: clip.sourceKind, clipId: clip.id });
+        return null;
+      }
     }
 
     // TAKE identity is immutable (replace → new take id). BEAT_REF must
