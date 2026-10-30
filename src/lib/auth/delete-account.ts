@@ -135,7 +135,24 @@ export async function executeAccountProfile01Deletion(
       }
     }
 
+    // Studio clips reference takes/artifacts; their FK (SET NULL) cannot satisfy
+    // studio_clips_source_xor_chk, so clear the user's tracks (→ clips) first.
+    {
+      const step = await deleteOwnedStudioTracks(admin, userId);
+      if (step) {
+        return { ok: false, error: "Nie udało się przygotować usunięcia.", step };
+      }
+    }
+
     await deleteOwnedAudioPipeline(admin, userId);
+
+    // Final versions (RESTRICT from projects/grants) and projects before takes.
+    {
+      const step = await deleteOwnedStudioProjects(admin, userId);
+      if (step) {
+        return { ok: false, error: "Nie udało się przygotować usunięcia.", step };
+      }
+    }
 
     {
       const { data: takes, error: tErr } = await admin
@@ -285,6 +302,85 @@ export async function deleteOwnAccount(params: {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   return { ok: true };
+}
+
+/** Studio master/deliver outputs live outside user/ (see studio/master/server.ts). */
+export const STUDIO_MASTER_PREFIX = (userId: string) => `studio-master/${userId}/`;
+
+async function ownedStudioProjectIds(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+): Promise<string[] | null> {
+  const { data, error } = await admin
+    .from("studio_projects")
+    .select("id")
+    .eq("owner_id", userId);
+  if (error) return null;
+  return (data ?? []).map((r) => r.id as string);
+}
+
+/** Tracks cascade to studio_clips and studio_take_lanes. Returns a failed step or null. */
+async function deleteOwnedStudioTracks(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+): Promise<string | null> {
+  const projectIds = await ownedStudioProjectIds(admin, userId);
+  if (projectIds === null) return "studio_projects_list";
+  for (let i = 0; i < projectIds.length; i += 100) {
+    const { error } = await admin
+      .from("studio_tracks")
+      .delete()
+      .in("project_id", projectIds.slice(i, i + 100));
+    if (error) return "studio_tracks_delete";
+  }
+  return null;
+}
+
+/**
+ * After the audio pipeline (render_jobs / audio_artifacts are RESTRICT on
+ * project + final version): grants → final versions → projects (cascades
+ * master jobs, BITEK messages, mix revisions, take lanes), then the
+ * studio-master/<uid>/ storage prefix.
+ */
+async function deleteOwnedStudioProjects(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+): Promise<string | null> {
+  const { data: versions, error: vErr } = await admin
+    .from("studio_final_versions")
+    .select("id")
+    .eq("owner_id", userId);
+  if (vErr) return "studio_versions_list";
+  const versionIds = (versions ?? []).map((v) => v.id as string);
+  for (let i = 0; i < versionIds.length; i += 100) {
+    const { error } = await admin
+      .from("studio_final_version_grants")
+      .delete()
+      .in("version_id", versionIds.slice(i, i + 100));
+    if (error) return "studio_grants_delete";
+  }
+  if (versionIds.length > 0) {
+    const { error } = await admin
+      .from("studio_final_versions")
+      .delete()
+      .eq("owner_id", userId);
+    if (error) return "studio_versions_delete";
+  }
+  const { error: pErr } = await admin
+    .from("studio_projects")
+    .delete()
+    .eq("owner_id", userId);
+  if (pErr) return "studio_projects_delete";
+
+  const masterKeys = await listAllKeysUnderPrefix(
+    admin,
+    AUDIO_ARTIFACTS_BUCKET,
+    STUDIO_MASTER_PREFIX(userId),
+  );
+  for (let i = 0; i < masterKeys.length; i += 100) {
+    await admin.storage.from(AUDIO_ARTIFACTS_BUCKET).remove(masterKeys.slice(i, i + 100));
+  }
+  return null;
 }
 
 async function deleteOwnedAudioPipeline(
