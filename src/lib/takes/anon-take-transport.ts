@@ -1,5 +1,11 @@
 import "server-only";
 
+import {
+  BEAT_RECORD_NOT_ALLOWED,
+  BEAT_USAGE_COLUMNS,
+  beatUsageSubjectFromRow,
+} from "@/lib/beats/usage/beat-usage-server";
+import { canAnonUseBeat } from "@/lib/beats/usage/beat-usage-policy";
 import { randomUUID } from "crypto";
 
 import {
@@ -92,7 +98,7 @@ async function loadBeatOrThrow(beatId: string) {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("beats")
-    .select("id, status, duration_seconds, bpm")
+    .select(`id, duration_seconds, bpm, ${BEAT_USAGE_COLUMNS}`)
     .eq("id", beatId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -163,6 +169,11 @@ export async function createAnonTakeRecordingSessionFor(
   }
 
   const beat = await loadBeatOrThrow(params.beatId);
+  // User beats 2026-10-30: private / Studio-use-off USER beats are not
+  // recordable anonymously.
+  if (!canAnonUseBeat(beatUsageSubjectFromRow(beat)).allowed) {
+    throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);
+  }
 
   let maxRecordingSeconds: number;
   let policy: SamplePolicy;

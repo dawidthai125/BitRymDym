@@ -35,6 +35,7 @@ export type PlayerTrack = {
   producer: string;
   durationSeconds: number;
   artworkVariant: number;
+  coverUrl?: string | null;
 };
 
 type PlayerPhase = "idle" | "loading" | "playing" | "paused" | "error";

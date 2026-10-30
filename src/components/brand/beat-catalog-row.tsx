@@ -54,6 +54,7 @@ export function BeatCatalogRow({
     producer: beat.producer,
     durationSeconds: beat.durationSeconds,
     artworkVariant: beat.artworkVariant,
+    coverUrl: beat.coverUrl ?? null,
   };
 
   async function onPlay(e: React.MouseEvent) {
@@ -103,6 +104,7 @@ export function BeatCatalogRow({
           variant={beat.artworkVariant}
           title={tl(beat.title)}
           size="sm"
+          coverUrl={beat.coverUrl}
           className={cn(
             featured ? "!size-[4.75rem]" : "!size-[4.25rem]",
             isCurrent && "ring-1 ring-[var(--brd-green)]",
@@ -176,6 +178,7 @@ export function BeatCatalogRow({
             variant={beat.artworkVariant}
             title={tl(beat.title)}
             size="sm"
+            coverUrl={beat.coverUrl}
             className={cn(
               featured ? "!size-[4.25rem]" : "!size-14",
               isCurrent && "ring-1 ring-[var(--brd-green)]",

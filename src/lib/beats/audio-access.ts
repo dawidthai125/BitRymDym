@@ -31,6 +31,8 @@ import {
   throwLimitReached,
 } from "@/lib/downloads/slots";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { canDownloadBeatByOwnerChoice } from "@/lib/beats/usage/beat-usage-policy";
+import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -54,6 +56,8 @@ export const BEAT_DOWNLOAD_LOGIN_REQUIRED = "Beat download requires sign-in.";
 export const BEAT_DOWNLOAD_PLAN_REQUIRED = "Beat download requires a paid plan.";
 /** Guest asked to play a beat that has no 20 s PREVIEW asset yet. */
 export const BEAT_PREVIEW_LOGIN_REQUIRED = "Guest preview unavailable; sign in to listen.";
+/** User beats 2026-10-30: the owner switched downloads off (listen only). */
+export const BEAT_DOWNLOAD_DISABLED_BY_OWNER = "Beat download disabled by owner.";
 
 export type PlatformBeatOpsExportResult = {
   url: string;
@@ -138,7 +142,23 @@ async function resolveGuestPreviewAsset(beatId: string): Promise<BeatAudioAssetR
 type BeatAccessRow = {
   status: BeatStatus;
   ownershipType: BeatOwnershipType;
+  ownerId: string | null;
+  visibility: string | null;
+  allowDownload: boolean | null;
 };
+
+const BEAT_ACCESS_SELECT =
+  "id, status, ownership_type, owner_id, visibility, allow_download";
+
+function mapBeatAccessRow(row: Record<string, unknown>): BeatAccessRow {
+  return {
+    status: row.status as BeatStatus,
+    ownershipType: row.ownership_type as BeatOwnershipType,
+    ownerId: (row.owner_id as string | null) ?? null,
+    visibility: (row.visibility as string | null) ?? null,
+    allowDownload: (row.allow_download as boolean | null) ?? null,
+  };
+}
 
 async function loadBeatForAccess(params: {
   beatId: string;
@@ -147,32 +167,27 @@ async function loadBeatForAccess(params: {
   const supabase = await createSupabaseServerClient();
   const { data: beat, error: beatError } = await supabase
     .from("beats")
-    .select("id, status, ownership_type")
+    .select(BEAT_ACCESS_SELECT)
     .eq("id", params.beatId)
     .maybeSingle();
 
+  // RLS: private USER beats are visible only to owner / grantees / staff.
   if (beat) {
-    return {
-      status: beat.status as BeatStatus,
-      ownershipType: beat.ownership_type as BeatOwnershipType,
-    };
+    return mapBeatAccessRow(beat as Record<string, unknown>);
   }
 
   if (params.actor === "ADMIN" || params.actor === "MODERATOR") {
     const admin = createSupabaseAdminClient();
     const { data: staffBeat, error: staffError } = await admin
       .from("beats")
-      .select("id, status, ownership_type")
+      .select(BEAT_ACCESS_SELECT)
       .eq("id", params.beatId)
       .maybeSingle();
     if (staffError) {
       throw new Error(staffError.message);
     }
     if (staffBeat) {
-      return {
-        status: staffBeat.status as BeatStatus,
-        ownershipType: staffBeat.ownership_type as BeatOwnershipType,
-      };
+      return mapBeatAccessRow(staffBeat as Record<string, unknown>);
     }
   } else if (beatError) {
     throw new Error(beatError.message);
@@ -226,6 +241,34 @@ export async function requestBeatAudioAccess(params: {
       );
     }
     throw new AuthError("FORBIDDEN", "Audio access denied.");
+  }
+
+  // User beats 2026-10-30: owner choice (allow_download / private) for
+  // USER beats, before any plan check, slot or signed URL.
+  if (params.purpose === "DOWNLOAD" && beat.ownershipType === "USER") {
+    const viewerId = profileContext?.userId ?? null;
+    const isStaff = actor === "ADMIN" || actor === "MODERATOR";
+    const needsGrant =
+      !isStaff &&
+      beat.visibility === "private" &&
+      viewerId !== null &&
+      beat.ownerId !== viewerId;
+    const decision = canDownloadBeatByOwnerChoice(beat, {
+      userId: viewerId,
+      isStaff,
+      hasActiveGrant: needsGrant
+        ? await hasActiveRecordGrant({
+            beatId: params.beatId,
+            granteeUserId: viewerId,
+          })
+        : false,
+    });
+    if (!decision.allowed) {
+      if (decision.reason === "DOWNLOAD_DISABLED") {
+        throw new AuthError("FORBIDDEN", BEAT_DOWNLOAD_DISABLED_BY_OWNER);
+      }
+      throw new AuthError("NOT_FOUND", "Beat not found.");
+    }
   }
 
   // Owner 2026-10-29: guests and Free never download beats (listen only).

@@ -67,9 +67,27 @@ describe("Phase 1.6 public beats surface", () => {
       scale: "minor",
       durationSeconds: 125,
       coverRef: "cover://a",
+      coverUrl: null,
+      coverFullUrl: null,
     });
     expect(toPublicBeatDetail(beat).description).toBe("Desc");
     expect(toPublicCatalogItem(beat)).not.toHaveProperty("status");
+  });
+
+  it("exposes only approved owner covers (cache-busted URL)", () => {
+    const at = "2026-10-30T12:00:00.000Z";
+    const v = Date.parse(at);
+    expect(
+      toPublicCatalogItem({ ...makeBeat(), coverStatus: "approved", coverUpdatedAt: at }),
+    ).toMatchObject({
+      coverUrl: `/api/beats/beat-1/cover?s=thumb&v=${v}`,
+      coverFullUrl: `/api/beats/beat-1/cover?s=full&v=${v}`,
+    });
+    for (const coverStatus of ["pending", "rejected", "none"] as const) {
+      expect(
+        toPublicCatalogItem({ ...makeBeat(), coverStatus, coverUpdatedAt: at }).coverUrl,
+      ).toBeNull();
+    }
   });
 
   it("formats duration", () => {

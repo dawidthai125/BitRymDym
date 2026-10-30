@@ -12,6 +12,10 @@ import {
   isStudioTrackRole,
 } from "@/config/studio";
 import { maxProjectsForTier, maxRecordingTracksForTier } from "@/config/plan-policy";
+import {
+  BEAT_USAGE_COLUMNS,
+  assertBeatStudioUse,
+} from "@/lib/beats/usage/beat-usage-server";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -265,13 +269,18 @@ export async function createStudioProjectFor(
   if (beatId) {
     const { data: beat, error: beatError } = await admin
       .from("beats")
-      .select("id, bpm, duration_seconds")
+      .select(`id, bpm, duration_seconds, ${BEAT_USAGE_COLUMNS}`)
       .eq("id", beatId)
       .maybeSingle();
     if (beatError) throw new Error(beatError.message);
     if (!beat) {
       throw new AuthError("NOT_FOUND", "Wybrany bit nie istnieje.");
     }
+    await assertBeatStudioUse({
+      beatId,
+      row: beat as Record<string, unknown>,
+      userId: context.userId,
+    });
     if (typeof beat.bpm === "number" && beat.bpm >= 20 && beat.bpm <= 400) {
       tempoBpm = beat.bpm;
     }
@@ -543,7 +552,7 @@ export async function attachBeatToStudioProjectFor(
 
   const { data: beat, error: beatError } = await admin
     .from("beats")
-    .select("id, bpm, duration_seconds, status, ownership_type, owner_id")
+    .select(`id, bpm, duration_seconds, ${BEAT_USAGE_COLUMNS}`)
     .eq("id", beatId)
     .maybeSingle();
   if (beatError) throw new Error(beatError.message);
@@ -551,18 +560,12 @@ export async function attachBeatToStudioProjectFor(
     throw new AuthError("NOT_FOUND", "Wybrany bit nie istnieje.");
   }
 
-  const status = beat.status as string;
-  const ownership = beat.ownership_type as string;
-  const ownerId = beat.owner_id as string | null;
-  const isPublished = status === "PUBLISHED";
-  const isOwnUser =
-    ownership === "USER" && ownerId === context.userId;
-  if (!isPublished && !isOwnUser) {
-    throw new AuthError(
-      "FORBIDDEN",
-      "Ten bit nie jest dostępny do użycia w Studio.",
-    );
-  }
+  // User beats 2026-10-30: owner / PUBLISHED public + Studio use ON / grant.
+  await assertBeatStudioUse({
+    beatId,
+    row: beat as Record<string, unknown>,
+    userId: context.userId,
+  });
 
   let tempoBpm = STUDIO_DEFAULT_TEMPO_BPM;
   if (typeof beat.bpm === "number" && beat.bpm >= 20 && beat.bpm <= 400) {

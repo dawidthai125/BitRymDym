@@ -8,6 +8,7 @@ import { PageFrame } from "@/components/brand/chrome";
 import type { LockReason } from "@/components/plans/locked-action";
 import { AppShell } from "@/components/site/app-shell";
 import { E3_MIX_ENABLED } from "@/config/audio-render";
+import { hasRole } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { toPublicBeatDetail, toPublicCatalogItem } from "@/lib/beats/public";
 import { getPublishedBeat, listPublishedBeats } from "@/lib/beats/service";
@@ -22,6 +23,11 @@ import {
 import { loadSamplePolicyDurationOverrides } from "@/lib/takes/sample-policy-settings";
 import { listOwnTakesFor } from "@/lib/takes/list-own-takes";
 import { presentBeat, presentBeats } from "@/lib/ui/demo-beats";
+import {
+  canDownloadBeatByOwnerChoice,
+  canUseBeatInStudio,
+} from "@/lib/beats/usage/beat-usage-policy";
+import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
 
 type BeatDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -53,6 +59,37 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
   const audioInfo = await getBeatAudioPublicInfo(beat.id);
   const session = await getCurrentProfile();
   const overrides = await loadSamplePolicyDurationOverrides();
+  // User beats 2026-10-30: owner usage settings (server enforces too).
+  const viewerId = session?.userId ?? null;
+  const viewerIsStaff = session
+    ? hasRole(session.profile.role, ["ADMIN", "MODERATOR"])
+    : false;
+  const usageSubject = {
+    status: beat.status,
+    ownershipType: beat.ownershipType,
+    ownerId: beat.ownerId,
+    visibility: beat.visibility,
+    allowDownload: beat.allowDownload,
+    allowStudioUse: beat.allowStudioUse,
+  };
+  const restricted =
+    beat.ownershipType === "USER" &&
+    beat.ownerId !== viewerId &&
+    (beat.visibility === "private" || beat.allowStudioUse === false);
+  const viewerHasGrant =
+    restricted && viewerId
+      ? await hasActiveRecordGrant({ beatId: beat.id, granteeUserId: viewerId })
+      : false;
+  const studioUseAllowed = canUseBeatInStudio(usageSubject, {
+    userId: viewerId,
+    isStaff: viewerIsStaff,
+    hasActiveGrant: viewerHasGrant,
+  }).allowed;
+  const downloadByOwner = canDownloadBeatByOwnerChoice(usageSubject, {
+    userId: viewerId,
+    isStaff: viewerIsStaff,
+    hasActiveGrant: viewerHasGrant,
+  }).allowed;
   let maxRecordingSeconds: number;
   // Owner 2026-10-29: guests and Free listen only — the button stays, locked.
   let downloadLock: LockReason | null = session ? null : "guest";
@@ -60,6 +97,9 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     const product = await resolveProductEntitlementForAuthContext(session);
     if (session.profile.role !== "ADMIN" && !(product.limits.downloadsDaily > 0)) {
       downloadLock = "plan";
+    }
+    if (beat.ownershipType === "USER" && !downloadByOwner) {
+      downloadLock = "owner";
     }
     maxRecordingSeconds = getSamplePolicy({
       actor: sampleActorFromPremiumTier(product.premiumTier),
@@ -122,7 +162,12 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               hasAudio={audioInfo.hasAudio}
               isAuthenticated={Boolean(session)}
               originalMasterDownloadAllowed={beat.ownershipType === "USER"}
-              downloadLock={downloadLock}
+              downloadLock={
+                beat.ownershipType === "USER" && !downloadByOwner
+                  ? "owner"
+                  : downloadLock
+              }
+              studioUseAllowed={studioUseAllowed}
               maxRecordingSeconds={maxRecordingSeconds}
               mixTakes={mixTakes}
               mixEnabled={E3_MIX_ENABLED === true}

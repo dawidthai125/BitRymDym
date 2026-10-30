@@ -1,5 +1,11 @@
 import "server-only";
 
+import {
+  BEAT_RECORD_NOT_ALLOWED,
+  BEAT_USAGE_COLUMNS,
+  beatUsageSubjectFromRow,
+} from "@/lib/beats/usage/beat-usage-server";
+import { canUseBeatInStudio } from "@/lib/beats/usage/beat-usage-policy";
 import { randomUUID } from "crypto";
 
 import {
@@ -108,7 +114,7 @@ async function loadBeatOrThrow(beatId: string) {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("beats")
-    .select("id, status, duration_seconds, bpm")
+    .select(`id, duration_seconds, bpm, ${BEAT_USAGE_COLUMNS}`)
     .eq("id", beatId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -178,6 +184,16 @@ export async function createTakeRecordingSessionFor(
     beatId: params.beatId,
     granteeUserId: context.userId,
   });
+
+  // User beats 2026-10-30: owner / public + Studio use ON / active grant.
+  if (
+    !canUseBeatInStudio(beatUsageSubjectFromRow(beat), {
+      userId: context.userId,
+      hasActiveGrant: activeRecordGrant,
+    }).allowed
+  ) {
+    throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);
+  }
 
   const product = await resolveProductEntitlementForAuthContext(context);
   const overrides = await loadSamplePolicyDurationOverrides();

@@ -121,11 +121,20 @@ function mapCanonicalReason(
 export async function analyzeBeatBpm(params: {
   bytes: Uint8Array;
   contentType: string;
+  /** Reuse of the single decode (e.g. server key detection). Errors are ignored. */
+  onPcm?: (samples: Float32Array, sampleRate: number) => void;
 }): Promise<BpmProbeResult> {
   const decoded = await decodeAudioToMonoPcm({
     bytes: params.bytes,
     contentType: params.contentType,
   });
+  if (decoded.ok && params.onPcm) {
+    try {
+      params.onPcm(decoded.samples, decoded.sampleRate);
+    } catch {
+      // Secondary analysis must never break the BPM gate.
+    }
+  }
 
   if (!decoded.ok) {
     const reasonCode: BpmReasonCode =

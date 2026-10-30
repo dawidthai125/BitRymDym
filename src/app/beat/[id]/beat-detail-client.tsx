@@ -29,8 +29,10 @@ type BeatDetailClientProps = {
   isAuthenticated: boolean;
   /** P0 — false for PLATFORM masters (server-computed). */
   originalMasterDownloadAllowed: boolean;
-  /** Server-resolved: guest → sign in, plan → Free (listen only). */
+  /** Server-resolved: guest → sign in, plan → Free (listen only), owner → author disabled downloads. */
   downloadLock?: LockReason | null;
+  /** Author allows Studio use / recording for this viewer (default true). */
+  studioUseAllowed?: boolean;
   maxRecordingSeconds: number;
   mixTakes: Array<{
     id: string;
@@ -50,6 +52,7 @@ export function BeatDetailClient({
   isAuthenticated,
   originalMasterDownloadAllowed,
   downloadLock = null,
+  studioUseAllowed = true,
   maxRecordingSeconds,
   mixTakes,
   mixEnabled,
@@ -90,6 +93,7 @@ export function BeatDetailClient({
     producer: beat.producer,
     durationSeconds: beat.durationSeconds,
     artworkVariant: beat.artworkVariant,
+    coverUrl: beat.coverUrl ?? null,
   };
 
   useEffect(() => {
@@ -194,6 +198,7 @@ export function BeatDetailClient({
           variant={beat.artworkVariant}
           title={tl(beat.title)}
           size="xl"
+          coverUrl={beat.coverFullUrl ?? beat.coverUrl}
           className="mx-auto w-full max-w-[20rem] md:mx-0 md:max-w-none"
         />
 
@@ -287,7 +292,16 @@ export function BeatDetailClient({
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
-            {hasAudio && isAuthenticated ? (
+            {hasAudio && !studioUseAllowed ? (
+              <LockedAction
+                reason="owner"
+                action="record"
+                testId="beat-studio-owner-locked"
+              >
+                {t("otworzWStudio")}
+              </LockedAction>
+            ) : null}
+            {hasAudio && isAuthenticated && studioUseAllowed ? (
               <Link
                 href={`/studio?beatId=${encodeURIComponent(beat.id)}`}
                 className={cn(
@@ -300,7 +314,7 @@ export function BeatDetailClient({
                 {t("otworzWStudio")}
               </Link>
             ) : null}
-            {hasAudio ? (
+            {hasAudio && studioUseAllowed ? (
               <a
                 href="#nagranie"
                 className={cn(
@@ -376,6 +390,7 @@ export function BeatDetailClient({
                     variant={r.artworkVariant}
                     title={tl(r.title)}
                     size="xs"
+                    coverUrl={r.coverUrl}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{tl(r.title)}</p>
@@ -390,7 +405,7 @@ export function BeatDetailClient({
         </section>
       ) : null}
 
-      {hasAudio ? (
+      {hasAudio && studioUseAllowed ? (
         <section
           id="nagranie"
           className="scroll-mt-32 space-y-3 border-t border-[var(--brd-line)] pt-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8"

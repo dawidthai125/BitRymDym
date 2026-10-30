@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   downloadsDaily: 0,
   adminUsed: false,
   reserveCalls: 0,
+  row: { id: "b1", status: "PUBLISHED", ownership_type: "USER" } as Record<string, unknown>,
 }));
 
 vi.mock("@/lib/auth/session", async (orig) => {
@@ -27,10 +28,7 @@ vi.mock("@/lib/supabase/server", () => ({
       from: () => chain,
       select: () => chain,
       eq: () => chain,
-      maybeSingle: async () => ({
-        data: { id: "b1", status: "PUBLISHED", ownership_type: "USER" },
-        error: null,
-      }),
+      maybeSingle: async () => ({ data: state.row, error: null }),
     };
     return chain;
   },
@@ -62,7 +60,12 @@ vi.mock("@/lib/downloads/slots", () => ({
   }),
 }));
 
+vi.mock("@/lib/grants/beat-access-grants", () => ({
+  hasActiveRecordGrant: vi.fn(async () => false),
+}));
+
 import {
+  BEAT_DOWNLOAD_DISABLED_BY_OWNER,
   BEAT_DOWNLOAD_LOGIN_REQUIRED,
   BEAT_DOWNLOAD_PLAN_REQUIRED,
   requestBeatAudioAccess,
@@ -74,6 +77,7 @@ beforeEach(() => {
   state.downloadsDaily = 0;
   state.adminUsed = false;
   state.reserveCalls = 0;
+  state.row = { id: "b1", status: "PUBLISHED", ownership_type: "USER" };
 });
 
 describe("beat download plan gate (server)", () => {
@@ -102,6 +106,43 @@ describe("beat download plan gate (server)", () => {
       requestBeatAudioAccess({ beatId: "b1", purpose: "DOWNLOAD" }),
     ).rejects.toThrow(/admin client must not be used/);
     expect(state.adminUsed).toBe(true);
+  });
+
+  it("owner switched downloads off → FORBIDDEN before plan check / slot (paid user)", async () => {
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    state.downloadsDaily = 10;
+    state.row = {
+      id: "b1",
+      status: "PUBLISHED",
+      ownership_type: "USER",
+      owner_id: "owner-9",
+      visibility: "public",
+      allow_download: false,
+    };
+    await expect(
+      requestBeatAudioAccess({ beatId: "b1", purpose: "DOWNLOAD" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN", message: BEAT_DOWNLOAD_DISABLED_BY_OWNER });
+    expect(state.adminUsed).toBe(false);
+    expect(state.reserveCalls).toBe(0);
+    expect(toSafeDownloadErrorMessage(BEAT_DOWNLOAD_DISABLED_BY_OWNER)).toBe(
+      "Autor udostępnił ten bit tylko do odsłuchu.",
+    );
+  });
+
+  it("the owner still downloads a listen-only beat (reaches asset lookup)", async () => {
+    state.profile = { userId: "owner-9", profile: { role: "USER" } };
+    state.downloadsDaily = 10;
+    state.row = {
+      id: "b1",
+      status: "PUBLISHED",
+      ownership_type: "USER",
+      owner_id: "owner-9",
+      visibility: "private",
+      allow_download: false,
+    };
+    await expect(
+      requestBeatAudioAccess({ beatId: "b1", purpose: "DOWNLOAD" }),
+    ).rejects.toThrow(/admin client must not be used/);
   });
 
   it("user-facing copy for both denials", () => {

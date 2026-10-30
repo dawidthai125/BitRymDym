@@ -133,7 +133,9 @@
       "planDownload": "Downloads start with the {plan} plan.",
       "planTrack": "More recording tracks with the {plan} plan.",
       "planLink": "See plans",
-      "platformDownload": "Download unavailable — you can listen to and record on platform catalogue beats, but the original can't be downloaded."
+      "platformDownload": "Download unavailable — you can listen to and record on platform catalogue beats, but the original can't be downloaded.",
+      "ownerDownload": "The author shared this beat for listening only — downloads are off.",
+      "ownerStudio": "The author has not allowed recording or Studio use on this beat."
     },
     "planUsage": {
       "aria": "{plan} plan — show limits",
@@ -188,7 +190,16 @@
       "powodOdrzucenia": "Rejection reason:",
       "zatwierdzoneOczekujeNaPublikacje": "Approved — waiting for the team to publish.",
       "widocznyWPublicznymKatalogu": "Visible in the public catalogue.",
-      "wrocDoStudia": "← Back to the studio"
+      "wrocDoStudia": "← Back to the studio",
+      "prywatnyTylkoTyIDostep": "Private — visible to you and people with access.",
+      "prywatny": "Private",
+      "publiczny": "Public",
+      "tylkoOdsluch": "Listen only",
+      "pobieranieWlaczone": "Downloads on",
+      "bezStudio": "No Studio use",
+      "okladkaCzeka": "Cover awaiting moderation",
+      "okladkaOdrzucona": "Cover rejected",
+      "edytuj": "Edit, sharing and cover"
     },
     "accountDownloadsPage": {
       "mojePobrane": "My downloads",
@@ -374,6 +385,12 @@
         "premiumLimity": "Premium — limits",
         "informacjaOPoziomachI": "Information about tiers and limits. In-app purchase is not available."
       }
+    },
+    "accountBeatEditPage": {
+      "metaTitle": "Edit beat",
+      "mojeBity": "← My beats",
+      "edytuj": "Edit: {title}",
+      "zobaczStroneBitu": "View beat page →"
     }
   },
   "admin": {
@@ -454,7 +471,16 @@
       "szczegolyUchyl": "Details / override",
       "brakBitowOczekujacychNa": "No beats waiting for moderation.",
       "brakZatwierdzonychBitowDo": "No approved beats to publish.",
-      "brakAutomatycznieOdrzuconychBitow": "No automatically rejected beats."
+      "brakAutomatycznieOdrzuconychBitow": "No automatically rejected beats.",
+      "okladkiDoModeracji": "Covers to review",
+      "brakOkladek": "No covers waiting for a decision.",
+      "okladkaBitu": "Cover: {v0}",
+      "filtrNieaktywny": "Automatic filter inactive — review manually.",
+      "filtrAi": "AI filter",
+      "zatwierdzOkladke": "Approve",
+      "odrzucOkladke": "Reject",
+      "powodOdrzuceniaOkladki": "Cover rejection reason (shown to the author):",
+      "akcjaNiePowiodla": "Action failed."
     },
     "adminPage": {
       "pulpit": "Dashboard",
@@ -1024,7 +1050,11 @@
       "uploadFailed": "Upload failed.",
       "analizaAudioNiePowiodla": "Audio analysis failed.",
       "analizowanie": "Analysing…",
-      "przesylanieAudio": "Uploading audio…"
+      "przesylanieAudio": "Uploading audio…",
+      "tonacjaWykryta": "Detected automatically: {key} ({pct}% confidence) — you can change it.",
+      "moll": "minor",
+      "dur": "major",
+      "ustawieniaIOkladka": "Sharing settings and cover →"
     },
     "beatGrantsPanel": {
       "udostepnijNagrywanie": "Share recording access",
@@ -1052,6 +1082,54 @@
       "opis": "Create a free account to record a verse to this beat and open it in Studio.",
       "zaloguj": "Sign in",
       "zalozKonto": "Create account"
+    },
+    "ownerBeatEdit": {
+      "okladka": "Cover",
+      "statusOkladkiApproved": "Cover approved — visible in the catalogue.",
+      "statusOkladkiPending": "Cover is waiting for a moderator — the default artwork shows until then.",
+      "statusOkladkiRejected": "Cover rejected by a moderator.",
+      "statusOkladkiNone": "No custom cover — the default artwork is used.",
+      "powod": "Reason:",
+      "wybierzOkladke": "Choose an image",
+      "okladkaWymagania": "JPG, PNG or WebP, min. 300×300 px, max. 4 MB. We crop to a square and strip metadata (EXIF/GPS). Every new cover goes through an automatic content filter.",
+      "wgrajOkladke": "Upload cover",
+      "sprawdzanie": "Checking…",
+      "usunOkladke": "Remove cover",
+      "wybierzObraz": "Choose an image first.",
+      "bladOkladki": "Could not upload the cover. Try again.",
+      "okladkaZatwierdzona": "The cover passed the filter and is now visible.",
+      "okladkaCzeka": "Cover saved — waiting for a moderator check.",
+      "okladkaUsunieta": "Cover removed.",
+      "nieEdytowalny": "This beat cannot be edited right now (waiting for moderation or archived).",
+      "opublikowanyInfo": "The beat is published — changes save immediately, without re-moderation.",
+      "metadane": "Metadata",
+      "tytul": "Title",
+      "producent": "Producer",
+      "opis": "Description",
+      "gatunek": "Genre",
+      "styl": "Style",
+      "bpm": "BPM",
+      "tonacja": "Key",
+      "skala": "Scale",
+      "wykrytaTonacja": "Detected key: {key} ({pct}% confidence).",
+      "moll": "minor",
+      "dur": "major",
+      "uzyjWykrytej": "Use detected",
+      "tagi": "Tags (comma-separated)",
+      "udostepnianie": "Sharing",
+      "widocznosc": "Visibility",
+      "publiczny": "Public catalogue",
+      "publicznyOpis": "The beat is listed in the public catalogue (once published).",
+      "prywatny": "Private (my catalogue)",
+      "prywatnyOpis": "Only you and people you grant access can see it.",
+      "pozwolPobierac": "Allow downloads",
+      "pozwolPobieracOpis": "Off = listen only. Plan limits still apply.",
+      "pozwolStudio": "Allow use in other people’s Studio",
+      "pozwolStudioOpis": "Recording on the beat and Studio projects. People with a grant always can.",
+      "zapisz": "Save changes",
+      "zapisywanie": "Saving…",
+      "zapisano": "Saved.",
+      "bladZapisu": "Could not save the changes."
     }
   },
   "home": {

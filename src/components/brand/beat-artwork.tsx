@@ -9,6 +9,8 @@ type BeatArtworkProps = {
   title: string;
   className?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
+  /** Approved owner cover (served by /api/beats/[id]/cover). */
+  coverUrl?: string | null;
 };
 
 const sizeClass: Record<NonNullable<BeatArtworkProps["size"]>, string> = {
@@ -28,6 +30,7 @@ export function BeatArtwork({
   title,
   className,
   size = "sm",
+  coverUrl,
 }: BeatArtworkProps) {
   const t = useTranslations("common.beatArtwork");
   const visual = artworkVariantToVisual(variant);
@@ -42,6 +45,17 @@ export function BeatArtwork({
         className,
       )}
     >
+      {coverUrl ? (
+        // Owner cover: already square WebP from our API (no next/image proxy).
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={coverUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-cover"
+        />
+      ) : (
       <Image
         src={visual.src}
         alt=""
@@ -58,6 +72,7 @@ export function BeatArtwork({
         className="object-cover"
         style={{ objectPosition: visual.focus }}
       />
+      )}
       <div
         className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/25"
         aria-hidden
