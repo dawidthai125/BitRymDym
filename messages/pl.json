@@ -1406,7 +1406,9 @@
       "panoramaKrotko": "Pan.",
       "panSrodekKrotko": "Ś",
       "panLewoKrotko": "L",
-      "panPrawoKrotko": "P"
+      "panPrawoKrotko": "P",
+      "przeliczamStrojenie": "przeliczam strojenie…",
+      "przeliczamStrojenieTytul": "Przeliczam Twoje ręczne nuty, żeby było je słychać w odtwarzaniu. Do tego czasu grasz z automatycznym strojeniem."
     },
     "studioExportControl": {
       "eksportDotyczyInnegoProjektu": "Eksport dotyczy innego projektu.",
@@ -2721,7 +2723,7 @@
     },
     "tuneNotes": {
       "tytul": "Ręczna korekta nut (Gold)",
-      "opis": "Pokażę Ci nuty, które wykryłem w nagraniu. Przeciągnij nutę w górę lub w dół — przy renderze dostroję ją dokładnie tam.",
+      "opis": "Pokażę Ci nuty, które wykryłem w nagraniu. Przeciągnij nutę w górę lub w dół — dostroję ją dokładnie tam w odtwarzaniu i renderze.",
       "pokaz": "Pokaż nuty",
       "analiza": "Słucham ścieżki i wykrywam nuty…",
       "wykryto": "Wykryłem {count, plural, one {# nutę} few {# nuty} many {# nut} other {# nuty}}. Dotknij nutę, żeby ją zaznaczyć.",
@@ -2746,12 +2748,12 @@
       "stop": "■ Stop",
       "renderuje": "Przygotowuję odsłuch…",
       "zastosuj": "Zastosuj {count, plural, one {# nutę} few {# nuty} many {# nut} other {# nuty}}",
-      "zastosowano": "Zapisałem. Twoje nuty dostroję przy renderze i masterze.",
+      "zastosowano": "Zapisałem. Twoje nuty słychać teraz w odtwarzaniu, renderze i masterze.",
       "blad": "Nie udało mi się zapisać nut. Spróbuj ponownie.",
       "cofnij": "Cofnij zmiany",
       "wyczysc": "Usuń ręczne nuty",
       "zapisane": "Zapisane ręczne nuty: {count}",
-      "podgladInfo": "Odsłuch nuty liczę tym samym silnikiem co render. Zwykłe odtwarzanie projektu pokazuje tylko automatyczne strojenie.",
+      "podgladInfo": "Odsłuch nuty i odtwarzanie projektu liczę tym samym silnikiem co render. Po zmianie nut chwilę przeliczam strojenie.",
       "lock": "Ręczną korektę nut daję w planie Gold — wtedy przeciągniesz każdą nutę osobno, co do centa.",
       "zobaczGold": "Zobacz plan Gold"
     }

@@ -65,6 +65,8 @@ export type StudioTransportControlsApi = {
   error: string | null;
   hasBeat: boolean;
   takePreviewActive: boolean;
+  /** BRD Tune (Gold): tracks whose manual notes are being baked for live playback. */
+  tuneBakePendingTrackIds: readonly string[];
   /** Imperative read of latest playhead without playhead-context subscription. */
   getPlayheadMs: () => number;
   setTrackMeterTarget: (trackId: string | null) => void;
@@ -154,6 +156,7 @@ export type TakeClipTiming = {
 };
 
 const URL_REFRESH_MS = 15_000;
+const NO_TRACKS: readonly string[] = [];
 
 /** Gaps P1 #5 — signed URL of a take's applied vocal cleanup, or null (play the original). */
 async function resolveCleanedTakeSource(id: string): Promise<StudioResolvedSource | null> {
@@ -214,6 +217,7 @@ export function StudioTransportProvider({
   );
   const [error, setError] = useState<string | null>(null);
   const [takePreviewActive, setTakePreviewActive] = useState(false);
+  const [tuneBakePending, setTuneBakePending] = useState<readonly string[]>(NO_TRACKS);
   const [metronomeEnabled, setMetronomeEnabled] = useState(false);
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [loopStartMs, setLoopStartMs] = useState(0);
@@ -391,6 +395,9 @@ export function StudioTransportProvider({
           if (phaseRef.current !== "playing") {
             setAudioState("error");
           }
+        },
+        onTuneBake(pending) {
+          setTuneBakePending(pending.length ? [...pending] : NO_TRACKS);
         },
         onTimelineEnded() {
           const length = engineDocumentRef.current.timelineLengthMs;
@@ -667,6 +674,7 @@ export function StudioTransportProvider({
       error,
       hasBeat: Boolean(beatId),
       takePreviewActive,
+      tuneBakePendingTrackIds: tuneBakePending,
       getPlayheadMs,
       setTrackMeterTarget,
       retainTrackLevels,
@@ -698,6 +706,7 @@ export function StudioTransportProvider({
       error,
       beatId,
       takePreviewActive,
+      tuneBakePending,
       getPlayheadMs,
       setTrackMeterTarget,
       retainTrackLevels,

@@ -4015,6 +4015,7 @@ function StudioTransportBar({
     setMetronomeEnabled,
     loopEnabled,
     setLoop,
+    tuneBakePendingTrackIds,
   } = useStudioTransportControls();
   const { timeLabel } = useStudioTransportPlayhead();
   const busy = audioState === "loading";
@@ -4219,6 +4220,17 @@ function StudioTransportBar({
           <span className="studio-counter-dim" aria-label={tr("metrum")}>
             {timeSignatureNum}/{timeSignatureDen}
           </span>
+          {tuneBakePendingTrackIds.length > 0 ? (
+            <span
+              role="status"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--tape-amber)]/40 px-2 py-0.5 font-sans text-[11px] text-[var(--tape-amber)]"
+              title={tr("przeliczamStrojenieTytul")}
+              data-testid="studio-transport-tune-bake"
+            >
+              <span aria-hidden className="inline-block size-1.5 animate-pulse rounded-full bg-[var(--tape-amber)]" />
+              {tr("przeliczamStrojenie")}
+            </span>
+          ) : null}
         </div>
 
         <div
