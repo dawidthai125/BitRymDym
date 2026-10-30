@@ -4,6 +4,10 @@ import { useLibText } from "@/i18n/use-lib-text";
 
 import { useTranslations } from "next-intl";
 
+import { StudioVocalPresetPicker } from "@/components/studio/studio-vocal-presets";
+import { StudioTunePanel, useProjectBeatKey } from "@/components/studio/studio-tune-panel";
+import { tuneParams } from "@/lib/studio/tune/tune";
+
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -22,6 +26,7 @@ import {
   setStudioFxParamValue,
   setStudioFxParams,
   STUDIO_FX_CHAIN_MAX_EFFECTS,
+  STUDIO_FX_REGISTRY,
   STUDIO_FX_TYPES,
   STUDIO_FX_UI_META,
   studioFxLabelPl,
@@ -59,6 +64,8 @@ type StudioFxChainEditorProps = {
   onFxPersisted: (chain: StudioFxChainV1, documentVersion: number) => void;
   onClose?: () => void;
   title?: string;
+  /** Gaps P0 #3 — vocal sound presets (track chains only); bpm syncs the delay. */
+  vocalPresets?: { bpm: number };
 };
 
 function formatParam(value: number, unit: string): string {
@@ -79,6 +86,7 @@ export function StudioFxChainEditor({
   onFxPersisted,
   onClose,
   title,
+  vocalPresets,
 }: StudioFxChainEditorProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioFxChainEditor");
@@ -89,6 +97,8 @@ export function StudioFxChainEditor({
   const [message, setMessage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [localParams, setLocalParams] = useState<Record<string, number>>({});
+  // BRD Tune: beat key prefills a newly added tune slot (track chains only).
+  const beatKey = useProjectBeatKey(role === "track" ? projectId : null);
 
   useEffect(() => {
     panelRef.current?.focus();
@@ -164,7 +174,17 @@ export function StudioFxChainEditor({
   async function onAdd(type: StudioFxType) {
     setAddOpen(false);
     try {
-      const next = addStudioFxToChain(chain, type, role);
+      let next = addStudioFxToChain(chain, type, role);
+      if (type === "tune") {
+        next = {
+          ...next,
+          effects: next.effects.map((e) =>
+            e.type === "tune" && !chain.effects.some((c) => c.id === e.id)
+              ? { ...e, params: tuneParams(beatKey?.key ?? null, "natural") }
+              : e,
+          ),
+        };
+      }
       const ok = await commit(next);
       if (ok) {
         const added = next.effects[next.effects.length - 1];
@@ -266,6 +286,19 @@ export function StudioFxChainEditor({
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        {vocalPresets && role === "track" ? (
+          <StudioVocalPresetPicker
+            chain={chain}
+            bpm={vocalPresets.bpm}
+            tuneKey={beatKey?.key ?? null}
+            disabled={saving === "saving"}
+            onApply={async (next) => {
+              const ok = await commit(next);
+              if (ok) setExpandedId(null);
+              return ok;
+            }}
+          />
+        ) : null}
         {message ? (
           <p
             role="status"
@@ -355,7 +388,15 @@ export function StudioFxChainEditor({
 
                   {expanded ? (
                     <div className="mt-3 space-y-2 border-t border-[var(--brd-line)] pt-3">
-                      {meta.params.map((param) => {
+                      {effect.type === "tune" ? (
+                        <StudioTunePanel
+                          projectId={projectId}
+                          params={effect.params}
+                          disabled={saving === "saving"}
+                          onCommit={(params) => commit(setStudioFxParams(chain, effect.id, params))}
+                        />
+                      ) : null}
+                      {effect.type === "tune" ? null : meta.params.map((param) => {
                         const key = `${effect.id}:${param.path}`;
                         const committed = getStudioFxParamValue(
                           effect.params,
@@ -417,7 +458,7 @@ export function StudioFxChainEditor({
           </Button>
           {addOpen ? (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {STUDIO_FX_TYPES.map((type) => (
+              {STUDIO_FX_TYPES.filter((type) => STUDIO_FX_REGISTRY[type][role]).map((type) => (
                 <li key={type}>
                   <Button
                     type="button"

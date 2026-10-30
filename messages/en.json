@@ -2088,7 +2088,16 @@
         "notatka": "BITEK's note",
         "zapisProjekt": "This chat is saved in the project.",
         "zapisLokalny": "This chat is saved on this device only.",
-        "wrocDoMixu": "Back to Mix"
+        "wrocDoMixu": "Back to Mix",
+        "zostaw": "Keep",
+        "cofnij": "Undo",
+        "pasuje": "Sounds right? Keep it or undo.",
+        "zostawione": "Kept.",
+        "cofniete": "Undone — back to how it was.",
+        "notatkaZastosowano": "Applied: {labels}",
+        "notatkaZostawiono": "Kept: {labels}",
+        "notatkaCofnieto": "Undone: {labels}",
+        "zapisSesja": "The chat is remembered only in this tab (Free). From Bronze, BITEK remembers it in the project."
       },
       "dock": {
         "czatTytul": "Talk to BITEK",
@@ -2380,6 +2389,238 @@
         "SILVER": "Silver",
         "GOLD": "Gold"
       }
+    },
+    "lyrics": {
+      "tytul": "Lyrics",
+      "opis": "Mark sections in brackets, e.g. [Verse 1]. While recording I highlight the section you are reading.",
+      "edytuj": "Edit",
+      "prompter": "Prompter",
+      "gotowe": "Done",
+      "placeholder": "[Verse 1]\nFirst line…\nSecond line…\n\n[Hook]\n…",
+      "pusto": "No lyrics yet. Click “Edit” and paste your verses.",
+      "zapisywanie": "Saving…",
+      "zapisano": "Saved in the project",
+      "lokalnie": "Lyrics are saved on this device only.",
+      "bladZapisu": "Could not save the lyrics — a copy stays on this device.",
+      "konflikt": "The lyrics changed in another tab. Loaded the newer version.",
+      "zaDlugi": "Lyrics too long — max {max} characters.",
+      "licznik": "{n}/{max} characters",
+      "startTu": "Start here",
+      "startTuAria": "Section {label} starts at the playhead ({time})",
+      "usunStart": "Clear start",
+      "od": "from {time}",
+      "bezStartu": "no start",
+      "podpowiedz": "Set “Start here” on sections — the prompter then follows the playhead.",
+      "teraz": "Now",
+      "petla": "Loop",
+      "punch": "Punch-in",
+      "wieksze": "Bigger text",
+      "mniejsze": "Smaller text",
+      "domyslnaSekcja": "Lyrics",
+      "pokaz": "Show lyrics",
+      "ukryj": "Hide lyrics"
+    },
+    "vocalPresets": {
+      "tytul": "Vocal sound presets",
+      "opis": "One click sets the whole effect chain. The preview sounds the same as the final render.",
+      "zastap": "Replaces this track's current effects — undo with Ctrl+Z.",
+      "nazwy": {
+        "clean": "Clean",
+        "trap": "Trap",
+        "drill": "Drill",
+        "boombap": "Boom bap",
+        "lofi": "Lo-fi",
+        "phone": "Phone"
+      },
+      "opisy": {
+        "clean": "Natural, clear vocal",
+        "trap": "Bright, compressed, tempo-synced echo",
+        "drill": "Hard, upfront, short echo",
+        "boombap": "Warm, dry, classic",
+        "lofi": "Narrow band, soft reverb",
+        "phone": "Telephone earpiece effect"
+      },
+      "zastosujAria": "Apply preset {name}",
+      "ustawiono": "Preset “{name}” applied.",
+      "wlasne": "Your presets",
+      "brakWlasnych": "You have no presets of your own yet.",
+      "zapiszObecny": "Save current effects as a preset",
+      "nazwa": "Preset name",
+      "zapisz": "Save",
+      "anuluj": "Cancel",
+      "usun": "Delete",
+      "usunAria": "Delete preset {name}",
+      "zapisano": "Preset “{name}” saved.",
+      "pustyLancuch": "Add some effects first to save a preset.",
+      "limit": "{n}/{max} presets",
+      "limitPelny": "You have the maximum number of presets ({max}). Delete one first.",
+      "lockSilver": "Own presets from the Silver plan",
+      "lockGold": "Lead + doubles + adlibs sets are in the Gold plan",
+      "bladZapisu": "Could not save the preset.",
+      "niedostepne": "Saving presets is temporarily unavailable.",
+      "zestawy": "Sets: lead, doubles, adlibs",
+      "zestawyOpis": "Sets effects on all vocal tracks at once, by track role.",
+      "role": {
+        "lead": "Lead",
+        "doubles": "Doubles",
+        "adlibs": "Adlibs"
+      },
+      "zestawNazwa": "{name} — full set",
+      "zastosujZestaw": "{name} set",
+      "zapiszZestaw": "Save current vocal effects as a set",
+      "brakRol": "Give tracks roles (Lead vocal, Double, Adlib) so the set knows what goes where.",
+      "zestawUstawiony": "Set “{name}” applied to {n} tracks — undo with Ctrl+Z.",
+      "zestawBlad": "Could not apply the set. Try again."
+    },
+    "tune": {
+      "tytul": "Vocal tuning (BRD Tune)",
+      "opis": "Pulls the vocal onto the notes of the beat's key. Preview and final render sound the same.",
+      "tonacja": "Key",
+      "skala": "Scale",
+      "skale": {
+        "dur": "major",
+        "moll": "minor",
+        "chromatyczna": "chromatic (all notes)"
+      },
+      "zBitu": "Beat key: {key}",
+      "zBituNieznana": "The beat has no key saved — detect it from the audio or pick it manually.",
+      "ustawZBitu": "Use the beat key",
+      "wykryj": "Detect from beat audio",
+      "wykrywanie": "Analysing the beat…",
+      "wykryto": "Detected: {key} ({pct}% confidence)",
+      "niewykryto": "Couldn't detect the key — pick it manually.",
+      "brakAudio": "Play the beat once in the studio, then try detecting the key.",
+      "styl": "Style",
+      "style": {
+        "natural": "Natural",
+        "hard": "Trap (hard)",
+        "custom": "Custom"
+      },
+      "styleOpis": {
+        "natural": "Gentle, slower correction — keeps the voice's natural movement.",
+        "hard": "Instant snap to the note — the signature trap effect.",
+        "custom": "Your own retune speed and strength."
+      },
+      "lockSilver": "Trap style and custom speed/strength — Silver plan and up.",
+      "recznie": "Manual per-note correction (Gold) — coming soon.",
+      "latencja": "Tuning adds 40 ms latency — the studio compensates for it automatically.",
+      "szybkosc": "Retune speed",
+      "sila": "Strength"
+    },
+    "report": {
+      "tytul": "What I changed — track by track",
+      "wstep": "I changed {tracks, plural, one {# track} other {# tracks}} ({items, plural, one {# change} other {# changes}}). Here it is:",
+      "brakZmian": "I didn't touch anything this time.",
+      "panSrodek": "centre",
+      "panL": "{pct}% left",
+      "panR": "{pct}% right",
+      "items": {
+        "gainUp": "I turned it up by {delta} dB ({from} → {to} dB).",
+        "gainDown": "I turned it down by {delta} dB ({from} → {to} dB).",
+        "panMove": "I moved it in the stereo field: {from} → {to}.",
+        "muted": "I muted the track.",
+        "unmuted": "I unmuted the track.",
+        "fxAdded": "I added an effect: {fx}.",
+        "fxRemoved": "I removed an effect: {fx}.",
+        "fxOn": "I switched on: {fx}.",
+        "fxOff": "I switched off: {fx}.",
+        "fxChanged": "I adjusted {fx}: {changes}.",
+        "loudnessMeasured": "Measured after the change: {from} → {to} LUFS ({delta} LU)."
+      },
+      "masterTytul": "What I did in the master",
+      "master": {
+        "target": "I aimed for: {target}.",
+        "loudnessUp": "I raised the whole song by {delta} LU ({from} → {to} LUFS).",
+        "loudnessDown": "I lowered the whole song by {delta} LU ({from} → {to} LUFS).",
+        "peakTamed": "I tamed the peaks: {from} → {to} dBTP.",
+        "peakOver": "Heads up: the peak ended at {to} dBTP — above the target ceiling.",
+        "dynamics": "Dynamics (LRA): {from} → {to} LU.",
+        "setting": "Your setting: {setting} {value}."
+      },
+      "platformy": {
+        "tytul": "How it will play on platforms",
+        "opis": "Platforms even out loudness. This is how they will adjust your master with default player settings (approximate).",
+        "nazwy": {
+          "spotify": "Spotify",
+          "youtube": "YouTube",
+          "apple": "Apple Music",
+          "tiktok": "TikTok"
+        },
+        "sciszy": "Turns it down by {db} dB (reference {ref} LUFS).",
+        "podglosni": "Turns it up by {db} dB (to {ref} LUFS).",
+        "podglosniCzesciowo": "Turns it up only {db} dB — the peaks don't allow more (target {ref} LUFS).",
+        "bezZmian": "Plays unchanged (reference {ref} LUFS).",
+        "bezZmianSzczyt": "Won't turn it up — the peaks have no headroom (target {ref} LUFS).",
+        "szacunek": "TikTok doesn't publish its level — measured, approximate value.",
+        "tp": {
+          "ok": "Peak {tp} dBTP — safe for streaming codecs.",
+          "warn": "Peak {tp} dBTP: for a master this loud, ≤ {ceiling} dBTP is safer — the codec (Ogg/AAC) may add distortion.",
+          "over": "Peak {tp} dBTP is above −1 dBTP — distortion is possible after platform encoding. Master again or lower the loudness."
+        }
+      }
+    },
+    "share": {
+      "tytul": "Private listen link",
+      "opis": "Send someone a link — they can listen to the approved master in a browser, no sign-in and no download button. The link expires on its own and you can switch it off at any time.",
+      "limit": "Active links: {active} of {max}",
+      "limitBez": "Active links: {active} (unlimited)",
+      "waznosc": "Link lifetime",
+      "dni": "{n, plural, one {# day} other {# days}}",
+      "utworz": "Create link",
+      "limitOsiagniety": "You already have the maximum number of active links on your plan. Switch one off or change your plan.",
+      "zobaczPlany": "See plans",
+      "stan": {
+        "active": "active",
+        "expired": "expired",
+        "revoked": "switched off"
+      },
+      "wygasa": "expires {kiedy}",
+      "utworzono": "created {kiedy}",
+      "odtworzenia": "{n, plural, one {# play} other {# plays}}",
+      "adres": "Link address",
+      "kopiuj": "Copy",
+      "skopiowano": "Copied ✓",
+      "wylacz": "Switch off",
+      "uwaga": "No download button is only a deterrent — anyone listening can record the sound. Share links with people you trust.",
+      "niedostepne": "Listen links are not available yet.",
+      "blad": {
+        "limit": "You have used your plan's active link limit.",
+        "not_approved": "Approve the master first (after mix changes, approve it again).",
+        "bad_days": "This lifetime is not available on your plan.",
+        "inny": "Could not create the link. Please try again."
+      }
+    },
+    "cleanup": {
+      "title": "Vocal cleanup",
+      "intro": "Removes background noise and room reverb from a take. Length and sync stay the same; the original is kept.",
+      "take": "Take",
+      "quota": "Left today: {left} of {perDay}",
+      "slider": {
+        "noise": "Noise",
+        "reverb": "Room reverb"
+      },
+      "run": "Clean up",
+      "rerun": "Clean up again",
+      "ab": {
+        "before": "Before",
+        "after": "After"
+      },
+      "use": "Use cleaned version in the mix",
+      "status": {
+        "queued": "Queued…",
+        "running": "Cleaning…",
+        "applied": "Using the cleaned version",
+        "ready": "Ready (−{db, number} dB noise)",
+        "failed": "Failed — try again"
+      },
+      "limitReached": "Daily cleanup limit reached. A higher plan gives more.",
+      "remaster": "You changed a vocal source — master again so it includes the cleaned version.",
+      "error": {
+        "daily_limit": "Daily cleanup limit reached.",
+        "in_progress": "This take is already being cleaned.",
+        "take_unavailable": "This take is unavailable (expired or deleted).",
+        "generic": "Something went wrong. Try again."
+      }
     }
   },
   "nav": {
@@ -2440,5 +2681,16 @@
     "pl": "Polski",
     "en": "English",
     "hint": "Language of the whole site. Polish by default."
+  },
+  "listen": {
+    "metaTitle": "Private listen",
+    "marka": "BitRymDym",
+    "prywatnyOdsluch": "Private listen",
+    "bezTytulu": "Untitled track",
+    "odtwarzacz": "Track player",
+    "wygasa": "This link expires {kiedy}.",
+    "tylkoOdsluch": "This link is for listening only. Please don't pass it on without the artist's consent.",
+    "niedostepnyTytul": "This link doesn't work",
+    "niedostepnyOpis": "The link has expired, was switched off by the artist, or is invalid."
   }
 }

@@ -2,6 +2,7 @@ import { bitekRulesChat } from "./intents";
 import { bitekMasterRulesChat, classifyMasterRequest } from "./master-intents";
 import { buildBitekSystemPrompt, isBitekWrongLanguage } from "./prompt";
 import { parseBitekModelOutput } from "./proposals";
+import { resolveBitekRelative } from "./relative";
 import { BitekProviderError, type BitekLlmProvider } from "./providers";
 import { BITEK_LIMITS, type BitekChatContext, type BitekChatResult, type BitekChatTurn } from "./types";
 
@@ -22,6 +23,12 @@ export async function runBitekChatChain(params: {
 }): Promise<BitekChatResult> {
   const now = params.now ?? Date.now;
   const t0 = now();
+  // Conversational follow-up on the last applied change ("więcej", "za dużo", "cofnij") — deterministic.
+  const relative = resolveBitekRelative(params.message, params.context);
+  if (relative) {
+    params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
+    return relative;
+  }
   // Mastering: single-track asks deterministically go back to Mix; everything else goes through the LLM chain (rules are the fallback).
   if (params.context.step === "master") {
     const scope = classifyMasterRequest(params.message);

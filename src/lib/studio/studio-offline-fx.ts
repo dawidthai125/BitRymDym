@@ -62,6 +62,9 @@ import {
   LR4_SECTION_Q,
 } from "@/lib/studio/studio-fx-stage2-dsp";
 
+import { TuneCore } from "@/lib/studio/tune/tune-core";
+import { toTuneCoreParams } from "@/lib/studio/tune/tune";
+
 export const STUDIO_OFFLINE_FX_ENGINE = "studio-offline-fx-v1" as const;
 
 /** Effects with a ready (enabled) offline DSP path. */
@@ -74,6 +77,7 @@ export const STUDIO_OFFLINE_FX_IMPLEMENTED: ReadonlySet<StudioFxType> = new Set(
   "highpass",
   "deesser",
   "gate",
+  "tune",
 ]);
 
 export type StudioOfflineFxSupportStatus =
@@ -110,7 +114,10 @@ export type StudioOfflineFxProcessor = {
   /** Approximate retained state bytes (PCM plane accounting). */
   readonly stateBytes: number;
   process(sample: StudioOfflineFxSample): StudioOfflineFxSample;
-  /** Optional whole-buffer path (in place) — must equal per-sample process(). */
+  /**
+   * Optional whole-buffer path (in place) — must equal per-sample process(),
+   * except latency-compensated inserts (tune), which return it time-aligned.
+   */
   processBuffer?(left: Float32Array, right: Float32Array): void;
   reset(): void;
 };
@@ -563,6 +570,56 @@ export function createGateProcessorAtRate(
   };
 }
 
+/**
+ * BRD Tune — the SAME TuneCore class the browser AudioWorklet runs.
+ * process(): streaming, output delayed by `core.latency` (live-equivalent;
+ * per-sample renders compensate via compensateStudioTuneLatency()).
+ * processBuffer(): whole buffer, latency compensated in place (E3 mix/master).
+ */
+export function createTuneProcessorAtRate(
+  effect: Extract<StudioFxInstance, { type: "tune" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor & { readonly latencySamples: number } {
+  let core = new TuneCore(sampleRate, 2, toTuneCoreParams(effect.params));
+  const out = { left: 0, right: 0 };
+  return {
+    type: "tune",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: core.size * 4 * 3,
+    latencySamples: core.latency,
+    process(sample) {
+      core.step(sample.left, sample.right);
+      out.left = core.outL;
+      out.right = core.outR;
+      return out;
+    },
+    processBuffer(left, right) {
+      const len = Math.min(left.length, right.length);
+      const L = core.latency;
+      for (let i = 0; i < len; i += 1) {
+        core.step(left[i]!, right[i]!);
+        if (i >= L) {
+          left[i - L] = core.outL;
+          right[i - L] = core.outR;
+        }
+      }
+      // Flush the last `latency` samples with silence.
+      for (let j = 0; j < L; j += 1) {
+        core.step(0, 0);
+        const i = len - L + j;
+        if (i >= 0) {
+          left[i] = core.outL;
+          right[i] = core.outR;
+        }
+      }
+    },
+    reset() {
+      core = new TuneCore(sampleRate, 2, toTuneCoreParams(effect.params));
+    },
+  };
+}
+
 function buildProcessorForReady(
   effect: StudioFxInstance,
   sampleRate: number,
@@ -590,6 +647,9 @@ function buildProcessorForReady(
   }
   if (effect.type === "gate") {
     return createGateProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "tune") {
+    return createTuneProcessorAtRate(effect, sampleRate);
   }
   throw new StudioOfflineFxError(
     "STUDIO_OFFLINE_FX_UNSUPPORTED",

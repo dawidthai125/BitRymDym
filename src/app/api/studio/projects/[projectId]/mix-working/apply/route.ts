@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import { applyStudioMixWorkingOps } from "@/lib/studio/mix-working-apply-service";
 import { parseClientMixRevisionMeta } from "@/lib/studio/mix-working/mix-working-client-revision";
+import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
+import { fxPresetErrorResponse } from "@/lib/studio/presets/fx-presets-http";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
+import { assertTuneChainsAllowedForUser, tuneChainsInMixOps } from "@/lib/studio/tune/tune-gate-server";
 
 export const runtime = "nodejs";
 
@@ -28,6 +31,8 @@ export async function POST(request: Request, context: RouteContext) {
     // Explicitly ignore any client-supplied ownerId.
     void body.ownerId;
 
+    // Plan gate: BRD Tune hard/custom style is Silver+ (403 PLAN_FEATURE_LOCKED).
+    await assertTuneChainsAllowedForUser(tuneChainsInMixOps(body.ops));
     const result = await applyStudioMixWorkingOps({
       projectId,
       expectedDocumentVersion: body.expectedDocumentVersion,
@@ -45,6 +50,7 @@ export async function POST(request: Request, context: RouteContext) {
       revisionId: result.revisionId,
     });
   } catch (error) {
+    if (error instanceof StudioPlanFeatureError) return fxPresetErrorResponse(error);
     return studioApiErrorResponse(error);
   }
 }

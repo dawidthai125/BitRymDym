@@ -20,6 +20,8 @@ export const STUDIO_FX_TYPES = [
   "deesser",
   /** Stage 2 — gentle downward expander / noise gate. */
   "gate",
+  /** Gaps P0 #1 — vocal pitch correction to the beat key (track only). */
+  "tune",
 ] as const;
 
 export type StudioFxType = (typeof STUDIO_FX_TYPES)[number];
@@ -83,6 +85,18 @@ export type StudioFxGateParams = {
   releaseMs: number;
 };
 
+/**
+ * Pitch correction (BRD Tune). Numeric only (JSONB + generic param plumbing):
+ * keyRoot 0..11 = C..B, scale 0 major / 1 minor / 2 chromatic,
+ * retuneMs 0 = hard "trap" snap, amount 0..1 = how much of the error is fixed.
+ */
+export type StudioFxTuneParams = {
+  keyRoot: number;
+  scale: number;
+  retuneMs: number;
+  amount: number;
+};
+
 export type StudioFxParamsByType = {
   eq: StudioFxEqParams;
   compressor: StudioFxCompressorParams;
@@ -92,6 +106,7 @@ export type StudioFxParamsByType = {
   highpass: StudioFxHighpassParams;
   deesser: StudioFxDeesserParams;
   gate: StudioFxGateParams;
+  tune: StudioFxTuneParams;
 };
 
 export type StudioFxInstance =
@@ -107,7 +122,8 @@ export type StudioFxInstance =
   | { id: string; type: "delay"; enabled: boolean; params: StudioFxDelayParams }
   | { id: string; type: "highpass"; enabled: boolean; params: StudioFxHighpassParams }
   | { id: string; type: "deesser"; enabled: boolean; params: StudioFxDeesserParams }
-  | { id: string; type: "gate"; enabled: boolean; params: StudioFxGateParams };
+  | { id: string; type: "gate"; enabled: boolean; params: StudioFxGateParams }
+  | { id: string; type: "tune"; enabled: boolean; params: StudioFxTuneParams };
 
 export type StudioFxChainV1 = {
   schemaVersion: 1;
@@ -155,12 +171,14 @@ const DELAY_KEYS = new Set(["mix", "timeMs", "feedback"]);
 const HIGHPASS_KEYS = new Set(["frequencyHz", "q"]);
 const DEESSER_KEYS = new Set(["frequencyHz", "thresholdDb", "ratio"]);
 const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "releaseMs"]);
+const TUNE_KEYS = new Set(["keyRoot", "scale", "retuneMs", "amount"]);
 
 /** Stage 2 — parameter ranges (single source for parsers + UI sliders). */
 export const STUDIO_FX_STAGE2_RANGES = {
   highpass: { frequencyHz: [20, 500], q: [0.1, 2] },
   deesser: { frequencyHz: [4000, 10000], thresholdDb: [-60, 0], ratio: [1, 20] },
   gate: { thresholdDb: [-90, -20], rangeDb: [0, 40], releaseMs: [10, 1000] },
+  tune: { keyRoot: [0, 11], scale: [0, 2], retuneMs: [0, 400], amount: [0, 1] },
 } as const;
 
 export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] } =
@@ -183,11 +201,14 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     highpass: { frequencyHz: 90, q: 0.707 },
     deesser: { frequencyHz: 6500, thresholdDb: -30, ratio: 4 },
     gate: { thresholdDb: -55, rangeDb: 12, releaseMs: 150 },
+    // Natural style (Free) — chromatic until a key is known.
+    tune: { keyRoot: 0, scale: 2, retuneMs: 100, amount: 0.85 },
   };
 
+/** Where an effect may be inserted. Pitch correction is per-voice → track only. */
 export const STUDIO_FX_REGISTRY: Record<
   StudioFxType,
-  { track: true; master: true }
+  { track: true; master: boolean }
 > = {
   eq: { track: true, master: true },
   compressor: { track: true, master: true },
@@ -197,6 +218,7 @@ export const STUDIO_FX_REGISTRY: Record<
   highpass: { track: true, master: true },
   deesser: { track: true, master: true },
   gate: { track: true, master: true },
+  tune: { track: true, master: false },
 };
 
 function invalid(detail?: string): never {
@@ -441,6 +463,12 @@ function parseEffect(
       params: parseRanged(o.params, STUDIO_FX_DEFAULTS.gate, GATE_KEYS, STUDIO_FX_STAGE2_RANGES.gate),
     };
   }
+  if (type === "tune") {
+    const params = parseRanged(o.params, STUDIO_FX_DEFAULTS.tune, TUNE_KEYS, STUDIO_FX_STAGE2_RANGES.tune);
+    params.keyRoot = Math.round(params.keyRoot);
+    params.scale = Math.round(params.scale);
+    return { id, type, enabled: o.enabled, params };
+  }
   if (type === "compressor") {
     return {
       id,
@@ -519,7 +547,10 @@ export function parseStudioFxChainForWrite(
     if (ids.has(effect.id)) invalid("duplicate id");
     ids.add(effect.id);
   }
-  if (options.role === "master") assertMasterLimiterLast(effects);
+  if (options.role === "master") {
+    assertMasterLimiterLast(effects);
+    if (effects.some((e) => !STUDIO_FX_REGISTRY[e.type].master)) invalid("track-only effect on master");
+  }
   return { schemaVersion: 1, effects };
 }
 
@@ -750,6 +781,14 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
       slider("releaseMs", "Wygładzanie", 10, 1000, 1, "ms"),
     ],
   },
+  // Key/scale use dedicated pickers (StudioTunePanel); sliders = Silver+ controls.
+  tune: {
+    labelPl: "Strojenie wokalu",
+    params: [
+      slider("retuneMs", "Szybkość strojenia", 0, 400, 1, "ms"),
+      slider("amount", "Siła", 0, 1, 0.01, ""),
+    ],
+  },
 };
 
 export const FX_CHAIN_CONFLICT_UI_PL =
@@ -847,6 +886,8 @@ export function createStudioFxInstance(
       return { id, type, enabled: true, params: defaultStudioFxParams("deesser") };
     case "gate":
       return { id, type, enabled: true, params: defaultStudioFxParams("gate") };
+    case "tune":
+      return { id, type, enabled: true, params: defaultStudioFxParams("tune") };
   }
 }
 
@@ -900,6 +941,7 @@ export function addStudioFxToChain(
   if (chain.effects.length >= STUDIO_FX_CHAIN_MAX_EFFECTS) {
     throw new StudioFxChainError("FX_CHAIN_INVALID", "Maksymalnie 8 efektów.");
   }
+  if (role === "master" && !STUDIO_FX_REGISTRY[type].master) invalid("track-only effect on master");
   const effect = createStudioFxInstance(type, createId);
   const effects = [...chain.effects];
   if (role === "master") {

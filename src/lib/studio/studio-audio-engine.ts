@@ -58,6 +58,8 @@ import {
   type StudioTrackLevelSnapshot,
   type StudioMeterSnapshot,
 } from "@/lib/studio/studio-meter";
+import { compensateStudioTuneLatency, enabledTuneCount } from "@/lib/studio/tune/tune";
+import { ensureTuneWorklet, isTuneWorkletReady } from "@/lib/studio/tune/tune-worklet";
 
 export type { StudioMeterSnapshot } from "@/lib/studio/studio-meter";
 
@@ -334,6 +336,8 @@ export class StudioAudioEngine {
   private tracks = new Map<string, TrackGraph>();
   private voices = new Map<string, Voice>();
   private document: StudioEngineDocument | null = null;
+  /** Document as given (before BRD Tune latency compensation). */
+  private rawDocument: StudioEngineDocument | null = null;
   private lifecycle: StudioAudioEngineLifecycle = "created";
   private epoch: StudioClockEpoch | null = null;
   private tickId: number | null = null;
@@ -715,6 +719,7 @@ export class StudioAudioEngine {
       this.masterAnalyser.connect(this.ctx.destination);
       this.setLifecycle("initialized");
       this.setLifecycle("ready");
+      if (this.rawDocument) this.withTuneCompensation(this.rawDocument);
       if (this.preferredSinkId != null) {
         void this.applyPreferredSinkId();
       }
@@ -856,7 +861,9 @@ export class StudioAudioEngine {
     }
   }
 
-  setDocument(document: StudioEngineDocument): void {
+  setDocument(rawDocument: StudioEngineDocument): void {
+    this.rawDocument = rawDocument;
+    const document = this.withTuneCompensation(rawDocument);
     this.document = document;
     const clipIds = new Set(document.clips.map((c) => c.id));
     for (const failedId of [...this.failedClips]) {
@@ -884,6 +891,29 @@ export class StudioAudioEngine {
       });
       void this.syncVoices(playhead, true);
     }
+  }
+
+  /**
+   * Gaps P1 #5: a take's playable source changed (cleaned ↔ original). Drop its timeline
+   * voices so the next sync re-resolves + re-decodes; re-sync now when playing.
+   */
+  invalidateTakeSource(takeId: string): void {
+    const document = this.document;
+    if (!document || !takeId) return;
+    let dropped = false;
+    for (const clip of document.clips) {
+      if (clip.sourceTakeId === takeId && this.voices.has(clip.id)) {
+        this.disposeVoice(clip.id);
+        dropped = true;
+      }
+    }
+    if (!dropped || !this.ctx || this.lifecycle !== "playing" || !this.epoch) return;
+    const playhead = playheadMsFromContextClock({
+      epoch: this.epoch,
+      contextTime: this.ctx.currentTime,
+      timelineLengthMs: document.timelineLengthMs,
+    });
+    void this.syncVoices(playhead, true);
   }
 
   async play(playheadMs: number): Promise<void> {
@@ -1092,6 +1122,7 @@ export class StudioAudioEngine {
     this.ctx = null;
     this.epoch = null;
     this.document = null;
+    this.rawDocument = null;
     this.setLifecycle("disposed");
     void ctx?.close().catch(() => undefined);
   }
@@ -1511,6 +1542,30 @@ export class StudioAudioEngine {
       this.masterInput.connect(this.masterGain);
       this.masterFxFingerprint = fingerprint;
     }
+  }
+
+  /**
+   * BRD Tune: the worklet streams with a fixed delay → tuned tracks' clips
+   * start earlier (plugin-delay compensation, same helper as the per-sample
+   * offline render). Only once the worklet is live; until then tune is a dry
+   * wire and nothing is shifted. Kicks off the worklet load when needed.
+   */
+  private withTuneCompensation(document: StudioEngineDocument): StudioEngineDocument {
+    const ctx = this.ctx;
+    if (!ctx || !document.tracks.some((t) => enabledTuneCount(t.effectsChain) > 0)) return document;
+    if (isTuneWorkletReady(ctx)) return compensateStudioTuneLatency(document);
+    void ensureTuneWorklet(ctx).then((ok) => {
+      if (!ok || this.ctx !== ctx || this.lifecycle === "disposed") return;
+      // Rebuild chains that were wired dry while the worklet was loading.
+      for (const graph of this.tracks.values()) {
+        if (!graph.fx?.inspect().some((slot) => slot.type === "tune")) continue;
+        graph.fx.dispose();
+        graph.fx = null;
+        graph.fingerprint = "";
+      }
+      if (this.rawDocument) this.setDocument(this.rawDocument);
+    });
+    return document;
   }
 
   private syncTrackFx(trackId: string, rawChain: unknown): void {

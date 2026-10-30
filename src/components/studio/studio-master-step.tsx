@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/studio-job-progress";
 import { Button } from "@/components/ui/button";
+import { StudioMasterReport } from "@/components/studio/studio-change-report";
+import { StudioListenLinks } from "@/components/studio/studio-listen-links";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
@@ -465,6 +467,7 @@ export function StudioMasterStep({
                     {fmtN(Number(sm.metrics.after.lufs))} LUFS · {fmtN(Number(sm.metrics.after.truePeakDb))} dBTP · LRA {fmtN(Number(sm.metrics.after.lra))} LU
                   </p>
                 ) : null}
+                <StudioMasterReport mix={mix?.metrics ?? null} master={sm.metrics?.after ? { lufs: Number(sm.metrics.after.lufs), truePeakDb: Number(sm.metrics.after.truePeakDb), lra: Number(sm.metrics.after.lra) } : null} target={target} settings={settings} tpCeiling={MASTER_TARGETS[target].tp} />
                 {approved ? (
                   <p role="status" className="text-sm font-semibold">✓ {t("zatwierdzone")}</p>
                 ) : (
@@ -472,6 +475,7 @@ export function StudioMasterStep({
                     {approving ? t("zatwierdzTrwa") : t("zatwierdz")}
                   </Button>
                 )}
+                {approved ? <StudioListenLinks projectId={projectId} /> : null}
               </section>
             ) : null}
 

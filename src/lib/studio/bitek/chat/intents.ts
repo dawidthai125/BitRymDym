@@ -15,6 +15,9 @@ const QUIETER = /ciszej|scisz|przycisz|nizej|quieter|turn down|lower|mniej (woka
 const SPREAD = /rozrzuc|rozloz|rozstaw|na boki|szerzej|spread|wider|pan/;
 const CENTER = /na srod|wysrodk|center|centre|middle/;
 const REVERB = /poglos|reverb|echo|delay|poglosu/;
+const TUNE = /autotun|auto-tun|stroj|nastroj|dostroj|falsz|\btune|tuning|pitch|melodyn/;
+const TUNE_OFF = /bez stroj|wylacz stroj|wylacz autotun|zdejmij|no tune|turn off|disable|without/;
+const TUNE_HARD = /trap|tward|mocn|robot|hard|t-pain|efekt/;
 
 const clampGain = (v: number) => Math.min(BITEK_LIMITS.gainDbMax, Math.max(BITEK_LIMITS.gainDbMin, v));
 
@@ -28,6 +31,9 @@ const T = {
     quieter: (n: string) => `Ściszę ${n} o 2 dB, żeby zrobić miejsce reszcie. Zastosuj i posłuchaj.`,
     spread: "Rozłożę Twoje adliby i dogrywki na boki, żeby nie siedziały na głównym wokalu. Zastosuj i sprawdź na słuchawkach.",
     center: "Ustawię Twój główny wokal na środku — tam jest jego miejsce, wtedy niesie cały numer.",
+    tuneOn: (n: string) => `Włączę strojenie na ${n} w tonacji bitu. Na planie Free działa styl naturalny, twardy „trapowy” jest od Silver.`,
+    tuneHard: (n: string) => `Ustawię ${n} na twarde strojenie — ten trapowy skok między nutami. Zastosuj i posłuchaj.`,
+    tuneOff: (n: string) => `Wyłączę strojenie na ${n}, żeby głos brzmiał w pełni naturalnie.`,
     reverb: "Pogłos i echo w tempie bitu dołożę Ci przyciskiem „Popraw wszystko” w MIXIE — adliby dostaną więcej przestrzeni. Ręcznie: Efekty → Pogłos, „mix” ok. 20–30%.",
     noTrack: "Nie widzę takiej ścieżki w Twoim projekcie. Nadaj ścieżkom role (np. Wokal główny, Adlib), wtedy wiem, co komu ustawić.",
     generic: (worst: string | null) =>
@@ -40,6 +46,9 @@ const T = {
     quieter: (n: string) => `I'll turn ${n} down by 2 dB to make room for the rest. Apply it and listen.`,
     spread: "I'll spread your adlibs and doubles left and right so they don't sit on top of the lead. Apply and check on headphones.",
     center: "I'll put your lead vocal in the centre — that's where it carries the whole track.",
+    tuneOn: (n: string) => `I'll turn on tuning for ${n} in the beat's key. Free uses the natural style; the hard trap style is Silver and up.`,
+    tuneHard: (n: string) => `I'll set ${n} to hard tuning — that trap snap between notes. Apply it and listen.`,
+    tuneOff: (n: string) => `I'll turn tuning off on ${n} so the voice sounds fully natural.`,
     reverb: "I'll add reverb and tempo-synced delay for you with \"Fix everything\" in MIX — adlibs get more space. By hand: Effects → Reverb, mix around 20–30%.",
     noTrack: "I can't find that track in your project. Give your tracks roles (e.g. Lead vocal, Adlib) so I know what to set where.",
     generic: (worst: string | null) =>
@@ -58,6 +67,21 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
     // Same validation + server-side labels as model proposals.
     proposals: validateProposals(proposals, ctx),
   });
+
+  if (has(m, TUNE)) {
+    const target = has(m, ADLIB)
+      ? byRole(ctx, ["adlib", "double", "backing"])
+      : byRole(ctx, ["lead_vocal"]).length
+        ? byRole(ctx, ["lead_vocal"])
+        : byRole(ctx, ["adlib", "double", "backing"]);
+    if (!target.length) return done(tx.noTrack);
+    const level = has(m, TUNE_OFF) ? 0 : has(m, TUNE_HARD) ? 2 : 1;
+    const names = target.map((t) => t.name).join(", ");
+    return done(
+      level === 0 ? tx.tuneOff(names) : level === 2 ? tx.tuneHard(names) : tx.tuneOn(names),
+      target.map((t) => ({ trackRef: t.ref, param: "tune" as const, value: level, label: "" })),
+    );
+  }
 
   if (has(m, REVERB)) return done(tx.reverb);
 

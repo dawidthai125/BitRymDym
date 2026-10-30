@@ -2880,5 +2880,25 @@
  {
   "src": "Nie udało się wczytać limitów.",
   "en": "Could not load limits."
+ },
+ {
+  "src": "Strojenie wokalu",
+  "en": "Vocal tuning"
+ },
+ {
+  "src": "Szybkość strojenia",
+  "en": "Retune speed"
+ },
+ {
+  "src": "Siła",
+  "en": "Strength"
+ },
+ {
+  "src": "Tonacja",
+  "en": "Key"
+ },
+ {
+  "src": "Skala",
+  "en": "Scale"
  }
 ]

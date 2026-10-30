@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 
+import { requireUser } from "@/lib/auth/session";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import { attachBeatToStudioProject } from "@/lib/studio/studio-service";
+import { getProjectBeatKey } from "@/lib/studio/tune/beat-key-server";
 
 export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
+
+/** GET — key/scale of the attached beat (BRD Tune default; key null = unknown). */
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { projectId } = await context.params;
+    const auth = await requireUser();
+    const result = await getProjectBeatKey({ ownerId: auth.userId, projectId });
+    return NextResponse.json({ success: true, ...result });
+  } catch (error) {
+    return studioApiErrorResponse(error);
+  }
+}
 
 /**
  * AUD-01 / P7.1.6 — POST attach/replace studio_projects.beat_id (+ BEAT_REF seed).

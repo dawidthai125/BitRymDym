@@ -22,10 +22,16 @@ import {
   type MixAutofixNote,
 } from "@/lib/studio/mix-autofix/plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
+import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
+import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
+import { StudioChangeReport } from "@/components/studio/studio-change-report";
+import { StudioVocalCleanup } from "@/components/studio/studio-vocal-cleanup";
 
 export type MixAutofixApply = (
   ops: MixWorkingOp[],
   description: string,
+  /** asUser: a user action (e.g. vocal preset set) — saved as a normal USER mix version, not "AI". */
+  options?: { asUser?: boolean },
 ) => Promise<{ ok: true; before: StudioProjectDocument } | { ok: false; conflict: boolean }>;
 
 type FixPanel =
@@ -114,7 +120,7 @@ export function StudioMixStep({
   const [fixing, setFixing] = useState<string | null>(null);
   const [panel, setPanel] = useState<FixPanel | null>(null);
   const [fixSeq, setFixSeq] = useState(0);
-  const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null } | null>(null);
+  const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null; metricsBefore: MixMetrics | null } | null>(null);
   const [abMode, setAbMode] = useState<"before" | "after">("after");
   const reanalyzeRef = useRef<{ fromSig: string } | null>(null);
   const reportRef = useRef(false);
@@ -209,7 +215,7 @@ export function StudioMixStep({
       return;
     }
     reanalyzeRef.current = { fromSig: signature };
-    setAb({ before: res.before, afterSig: null });
+    setAb({ before: res.before, afterSig: null, metricsBefore: result.metrics });
     setAbMode("after");
     setPanel({ kind: "done", notes: plan.notes, after: null });
     setFixSeq((n) => n + 1);
@@ -326,6 +332,7 @@ export function StudioMixStep({
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
   useEffect(() => () => onBitekBubble?.(null), [onBitekBubble]);
+  const beatKey = useProjectBeatKey(doc.project.id);
 
   return (
     <div data-testid="studio-mix-step" className="flex flex-col gap-3 pb-64 lg:pb-48">
@@ -335,6 +342,16 @@ export function StudioMixStep({
         </Button>
         <h2 className="brd-display text-2xl leading-none tracking-tight">{t("tytul")}</h2>
       </div>
+
+      {onApplyAutofix ? (
+        <StudioVocalSetsCard
+          tracks={doc.tracks}
+          bpm={doc.project.tempoBpm}
+          tuneKey={beatKey?.key ?? null}
+          disabled={running}
+          onApplyOps={async (ops, description) => (await onApplyAutofix(ops, description, { asUser: true })).ok}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -444,6 +461,16 @@ export function StudioMixStep({
             </div>
           ) : null}
 
+          <StudioVocalCleanup doc={doc} />
+
+          {abLive ? (
+            <StudioChangeReport
+              before={abLive.before}
+              after={doc}
+              metricsBefore={abLive.metricsBefore}
+              metricsAfter={result && result.signature === signature ? result.metrics : null}
+            />
+          ) : null}
 
           {verdict ? (
             <ul data-testid="studio-mix-cards" className="grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">

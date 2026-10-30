@@ -7,6 +7,13 @@ import { parseBitekModelOutput, validateProposals } from "./proposals";
 import { parseBitekChatRequest } from "./request";
 import type { BitekChatContext } from "./types";
 
+/** Labels/values are asserted exactly; "why" (gaps P0 #4) is covered in relative.test.ts. */
+const noWhy = <T extends { why?: string }>(ps: readonly T[] | undefined) => (ps ?? []).map((p) => {
+    const rest = { ...p };
+    delete rest.why;
+    return rest;
+  });
+
 const ctx = (lang: "pl" | "en" = "pl"): BitekChatContext => ({
   lang,
   step: "master",
@@ -35,7 +42,7 @@ describe("BITEK in Mastering — scope", () => {
 
   it("whole-track ask → master setting proposal in 1st person", () => {
     const r = bitekMasterRulesChat("więcej basu w całości", ctx());
-    expect(r.proposals).toEqual([{ trackRef: "master", param: "bass", value: 1, label: "Całość: bas 0 → +1" }]);
+    expect(noWhy(r.proposals)).toEqual([{ trackRef: "master", param: "bass", value: 1, label: "Całość: bas 0 → +1" }]);
     expect(r.reply).toMatch(/^Dołożę/);
     const q = bitekMasterRulesChat("mniej ściśnięte", ctx());
     expect(q.proposals[0]).toMatchObject({ param: "squash", value: -1 });

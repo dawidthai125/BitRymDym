@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { bitekMemoryForTier, type BitekMemoryAccess } from "@/config/plan-policy";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import type { AuthContext } from "@/lib/auth/types";
 import { runBitekChatChain } from "@/lib/studio/bitek/chat/chain";
 import { bitekProvidersFromEnv } from "@/lib/studio/bitek/chat/providers";
 import { bitekQueueProvider, supabaseBitekQueueDb } from "@/lib/studio/bitek/chat/queue-provider";
@@ -19,8 +22,9 @@ export const maxDuration = 60;
 /** BITEK chat — signed-in users only; provider chain Groq → Gemini → E3 (DB queue) → rules. */
 export async function POST(request: Request) {
   let userId: string;
+  let auth: AuthContext;
   try {
-    const auth = await requireUser();
+    auth = await requireUser();
     userId = auth.userId;
   } catch (error) {
     if (error instanceof AuthError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
@@ -41,10 +45,15 @@ export async function POST(request: Request) {
   if (!quota.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   // Stage 2b — BITEK belongs to the project: history comes from the DB when the store exists.
+  // Gaps P0 #4 — plan-policy: Free = session memory (client history, nothing saved), Bronze+ = project memory.
   const projectId = typeof (body as { projectId?: unknown }).projectId === "string" ? (body as { projectId: string }).projectId : null;
   let history = parsed.value.history;
   let stored = false;
+  let memory: BitekMemoryAccess = "session";
   if (projectId) {
+    memory = bitekMemoryForTier((await resolveProductEntitlementForAuthContext(auth)).premiumTier);
+  }
+  if (projectId && memory === "project") {
     try {
       const store = await listBitekMessages({ ownerId: userId, projectId });
       if (store.available) {
@@ -71,6 +80,7 @@ export async function POST(request: Request) {
     log: (entry) => console.info(JSON.stringify({ event: "bitek_chat", quota: quota.source, ...entry })),
   });
   let persisted = false;
+  let messageIds: { user: string; assistant: string } | undefined;
   if (projectId && stored) {
     try {
       const saved = await appendBitekMessages({
@@ -79,13 +89,25 @@ export async function POST(request: Request) {
         ownerChecked: true,
         rows: [
           { role: "user", kind: "chat", content: parsed.value.message },
-          { role: "assistant", kind: "chat", content: result.reply.slice(0, 2000) || "…", meta: { provider: result.provider, proposals: result.proposals, ...(result.backToMix ? { backToMix: true } : {}) } },
+          {
+            role: "assistant",
+            kind: "chat",
+            content: result.reply.slice(0, 2000) || "…",
+            meta: {
+              provider: result.provider,
+              proposals: result.proposals,
+              ...(result.backToMix ? { backToMix: true } : {}),
+              ...(result.relative ? { relative: result.relative } : {}),
+            },
+          },
         ],
       });
       persisted = saved.available;
+      const [u, a] = saved.messages;
+      if (u && a) messageIds = { user: u.id, assistant: a.id };
     } catch {
       // Reply still goes back; history just is not saved this time.
     }
   }
-  return NextResponse.json({ success: true, persisted, ...result });
+  return NextResponse.json({ success: true, persisted, memory, ...(messageIds ? { messageIds } : {}), ...result });
 }

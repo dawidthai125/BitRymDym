@@ -75,6 +75,7 @@ export const MIX_AUTOFIX_TARGETS = {
 const FX_ORDER: readonly StudioFxType[] = [
   "highpass",
   "gate",
+  "tune",
   "eq",
   "compressor",
   "deesser",

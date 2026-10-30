@@ -1,0 +1,26 @@
+# BitRymDym - Studio vocal cleanup poller (repository artifact only).
+# Runs on the existing E3 Contabo host next to the master poller, reusing the
+# /opt/bitrymdym-e3-worker checkout. Do not enable/start from the repo.
+# Kill switch: STUDIO_CLEANUP_ENABLED (missing/false -> exit 0, no claim).
+# DSP is own TypeScript code (no GPL / third-party DSP); ffmpeg only decodes/encodes.
+
+[Unit]
+Description=BitRymDym Studio vocal cleanup poller
+After=network-online.target
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+EnvironmentFile=/etc/bitrymdym-e3-worker/cleanup.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+ExecStart=/usr/bin/npm run cleanup:worker:poll
+Restart=on-failure
+RestartSec=30
+MemoryMax=1G
+CPUQuota=100%
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
