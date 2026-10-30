@@ -10,6 +10,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 
 import { ClientProviders } from "@/components/site/client-providers";
+import { MaintenanceAdminBanner } from "@/components/site/maintenance-admin-banner";
 import { getSiteMetadata } from "@/config/site";
 import { BRD_THEME_BOOT_SCRIPT } from "@/lib/ui/theme";
 import { cn } from "@/lib/utils";
@@ -93,7 +94,10 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: BRD_THEME_BOOT_SCRIPT }}
         />
         <NextIntlClientProvider>
-          <ClientProviders>{children}</ClientProviders>
+          <ClientProviders>
+            <MaintenanceAdminBanner />
+            {children}
+          </ClientProviders>
         </NextIntlClientProvider>
       </body>
     </html>

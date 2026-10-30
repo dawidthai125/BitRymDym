@@ -157,6 +157,11 @@ export default async function AdminIndexPage() {
                   meta={t("limityDlugosciNagraniaBronze")}
                 />
                 <AdminLink
+                  href="/admin/site"
+                  title={t("trybPrac")}
+                  meta={t("trybPracMeta")}
+                />
+                <AdminLink
                   href="/admin"
                   title={t("nagrania")}
                   meta={t("wkrotce2")}

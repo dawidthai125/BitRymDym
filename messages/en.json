@@ -420,7 +420,8 @@
       "uzytkownicy": "Users",
       "politykaNagran": "Recording policy",
       "nowyBit": "New beat",
-      "katalog": "Catalogue"
+      "katalog": "Catalogue",
+      "trybPrac": "Maintenance"
     },
     "adminModerationPage": {
       "moderacjaBitow": "Beat moderation",
@@ -485,7 +486,9 @@
       "kolejkaSpolecznosci": "Community queue",
       "listaWyszukiwanieFiltry": "List, search, filters",
       "limityDlugosciNagraniaBronze": "Recording length limits Bronze / Silver / Gold",
-      "wkrotce2": "Coming soon"
+      "wkrotce2": "Coming soon",
+      "trybPrac": "Maintenance mode",
+      "trybPracMeta": "Take the site offline for maintenance"
     },
     "adminSamplePolicyPage": {
       "metaTitle": "Recording policy · Admin panel",
@@ -2692,5 +2695,61 @@
     "tylkoOdsluch": "This link is for listening only. Please don't pass it on without the artist's consent.",
     "niedostepnyTytul": "This link doesn't work",
     "niedostepnyOpis": "The link has expired, was switched off by the artist, or is invalid."
+  },
+  "maintenance": {
+    "page": {
+      "metaTitle": "Under maintenance — BitRymDym",
+      "metaDescription": "BitRymDym is temporarily unavailable due to maintenance.",
+      "status": "Maintenance break",
+      "kicker": "Channel temporarily muted",
+      "headlineTop": "Under",
+      "headlineBottom": "maintenance",
+      "lead": "We're tuning the gear and will be back on the beat shortly.",
+      "body": "BitRymDym is temporarily unavailable while we roll out changes. Your beats, takes and projects are safe.",
+      "messageLabel": "A note from the team",
+      "untilLabel": "Expected back",
+      "noEta": "We'll be back as soon as we can.",
+      "bitekAlt": "BITEK — the BitRymDym raccoon at the mixing desk",
+      "bitekCaption": "BITEK is minding the studio",
+      "adminLogin": "Admin sign-in",
+      "backHome": "The site is up — back to the home page",
+      "otherLanguage": "Polski"
+    },
+    "banner": {
+      "label": "Maintenance mode on",
+      "body": "Users see the “Under maintenance” page and the API returns 503. You see the site normally.",
+      "manage": "Manage"
+    },
+    "signIn": {
+      "noticeTitle": "Maintenance in progress",
+      "noticeBody": "Only administrators can sign in right now. Sign-up is paused."
+    },
+    "admin": {
+      "metaTitle": "Maintenance mode",
+      "pulpit": "Dashboard",
+      "title": "Maintenance mode",
+      "intro": "Take the site offline for maintenance. Users and guests will see the “Under maintenance” page, the API returns 503 and only administrators can sign in. The admin panel, sign-in, cron jobs and E3 worker endpoints keep working.",
+      "statusOn": "Under maintenance — site off",
+      "statusOff": "Site is up",
+      "switchLabel": "Site available to users",
+      "switchHintOn": "The site is off. Toggle to bring it back.",
+      "switchHintOff": "Toggle to turn maintenance mode on.",
+      "messageLabel": "Message on the maintenance page (optional)",
+      "messagePlaceholder": "E.g. We're updating the Studio — new effects are on the way.",
+      "messageHint": "Up to {max} characters. Shown publicly.",
+      "untilLabel": "Expected end (optional, Polish time)",
+      "clearUntil": "Clear",
+      "warnEnable": "After saving, everyone except administrators loses access within a few seconds.",
+      "save": "Save",
+      "saving": "Saving…",
+      "savedOn": "Maintenance mode is on.",
+      "savedOff": "The site is back up.",
+      "saveError": "Could not save maintenance mode.",
+      "preview": "Preview the maintenance page",
+      "lastChange": "Last change: {when}",
+      "neverChanged": "No changes — the site has been up all along.",
+      "excludedTitle": "Always available",
+      "excludedBody": "/admin, /sign-in, /forgot-password, /auth/*, /api/admin, /api/cron, /api/mix/worker (E3), /api/webhooks, /api/health, robots.txt and static files."
+    }
   }
 }

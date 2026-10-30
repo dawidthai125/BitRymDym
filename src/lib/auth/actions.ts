@@ -26,6 +26,11 @@ import {
   getAuthEmailRedirectTo,
   getAuthPasswordResetRedirectTo,
 } from "@/lib/site-url";
+import {
+  MAINTENANCE_SIGN_IN_ERROR,
+  MAINTENANCE_SIGN_UP_ERROR,
+} from "@/lib/site/maintenance-gate";
+import { readSiteMaintenanceForViewer } from "@/lib/site/maintenance-settings";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -96,7 +101,12 @@ export async function signUpAction(
     return { error: ksywka.error, success: false, message: null };
   }
 
+  // Maintenance mode: no new accounts (page is gated too; this is the server check).
   const supabase = await createSupabaseServerClient();
+  if ((await readSiteMaintenanceForViewer(supabase)).enabled) {
+    return { error: MAINTENANCE_SIGN_UP_ERROR, success: false, message: null };
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -172,6 +182,13 @@ export async function signInAction(
 
   if (error) {
     return { error: mapSignInAuthError(error.message), success: false };
+  }
+
+  // Maintenance mode: only ADMIN accounts may sign in; drop any other session.
+  const maintenance = await readSiteMaintenanceForViewer(supabase);
+  if (maintenance.enabled && !maintenance.viewerIsAdmin) {
+    await supabase.auth.signOut();
+    return { error: MAINTENANCE_SIGN_IN_ERROR, success: false };
   }
 
   revalidatePath("/");
