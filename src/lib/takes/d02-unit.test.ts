@@ -103,21 +103,21 @@ describe("Recording D02 — anonymous identity / config", () => {
     expect(TAKE_AUDIO_PREVIEW_TTL_SECONDS).toBe(120);
   });
 
-  it("anonymous caps are 1 READY / 3 per UTC day", () => {
+  it("guest recording is off: 0 READY / 0 per UTC day", () => {
     expect(antiAbuseCapsForAnonymous()).toEqual(
       RECORDING_ANTI_ABUSE.ANONYMOUS,
     );
     expect(antiAbuseCapsForAnonymous()).toEqual({
-      maxActiveReady: 1,
-      maxSessionsPerUtcDay: 3,
+      maxActiveReady: 0,
+      maxSessionsPerUtcDay: 0,
     });
   });
 });
 
 describe("Recording D02 — entitlement + AuthZ", () => {
-  it("anonymous max is MIN(beat, 15)", () => {
-    expect(computeAnonymousRecordingMaxSeconds(90)).toBe(15);
-    expect(computeAnonymousRecordingMaxSeconds(12)).toBe(12);
+  it("anonymous max is 0 s — guests cannot record", () => {
+    expect(computeAnonymousRecordingMaxSeconds(90)).toBe(0);
+    expect(computeAnonymousRecordingMaxSeconds(12)).toBe(0);
   });
 
   it("PUBLISHED ALLOW for anon hash; non-PUBLISHED DENY", () => {
@@ -126,7 +126,7 @@ describe("Recording D02 — entitlement + AuthZ", () => {
         tokenHash: HASH_A,
         beat: { id: BEAT_ID, status: "PUBLISHED", durationSeconds: 60 },
       }).maxRecordingSeconds,
-    ).toBe(15);
+    ).toBe(0);
 
     expect(() =>
       assertAnonTakeRecordAccess({

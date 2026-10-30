@@ -125,6 +125,53 @@
     },
     "shared": {
       "noExpiry": "Bezterminowo"
+    },
+    "planLocks": {
+      "guestDownload": "Zaloguj się, aby pobrać.",
+      "guestRecord": "Zaloguj się, aby nagrywać.",
+      "guestLink": "Zaloguj się",
+      "planDownload": "Pobieranie jest od planu {plan}.",
+      "planTrack": "Więcej ścieżek nagrań od planu {plan}.",
+      "planLink": "Zobacz plany",
+      "platformDownload": "Pobieranie niedostępne — oryginał bitu z katalogu platformy możesz odsłuchać i nagrywać na nim, ale nie pobrać."
+    },
+    "planUsage": {
+      "aria": "Plan {plan} — pokaż limity",
+      "tytul": "Twój plan: {plan}",
+      "wczytuje": "Wczytuję limity…",
+      "chipPobrania": "Pobrania",
+      "chipProjekty": "Projekty",
+      "odPlanu": "od {plan}",
+      "naProjekt": "maks. {n}",
+      "bezLimitu": "{used} · bez limitu",
+      "odnowienie": "od nowa {kiedy}",
+      "dobaUtc": "Dzienne limity liczą się od północy UTC.",
+      "plany": "Plany i limity",
+      "pozycja": {
+        "beatDownloads": "Pobrania bitów",
+        "studioExports": "Pliki ze Studia",
+        "projects": "Projekty Studio",
+        "recordingsToday": "Nagrania",
+        "activeTakes": "Zapisane take'i",
+        "masters": "Mastery",
+        "tracks": "Ścieżki nagrań w projekcie"
+      },
+      "okres": {
+        "day": "dziś",
+        "week": "ostatnie 7 dni",
+        "month": "w tym miesiącu",
+        "total": "razem",
+        "perProject": "bit się nie liczy"
+      }
+    },
+    "guestPreview": {
+      "tytul": "To był {s}-sekundowy podgląd",
+      "opis": "Zaloguj się, aby słuchać całych bitów, nagrywać i korzystać ze Studia.",
+      "zaloguj": "Zaloguj się",
+      "zalozKonto": "Załóż konto",
+      "zamknij": "Zamknij",
+      "brakPodgladu": "Ten bit nie ma jeszcze podglądu dla gości",
+      "brakOpis": "Zaloguj się, aby posłuchać całego bitu."
     }
   },
   "account": {
@@ -211,64 +258,91 @@
       "konto": "Konto"
     },
     "premiumPage": {
-      "metaTitle": "Premium",
-      "metaDescription": "Poziomy Premium w BitRymDym: limity pobrań, ścieżki w Studio i jakość eksportu. Bez obiecanek o płatnościach, których jeszcze nie ma.",
+      "metaTitle": "Premium — plany i ceny",
+      "metaDescription": "Plany BitRymDym: Free, Bronze, Silver i Gold. Ceny, limity nagrań, projektów, masterów i pobierania — w jednym miejscu.",
       "premium": "Premium",
-      "wiecejLimituLepszyEksport": "Więcej limitu. Lepszy eksport. Te same Studio.",
-      "premiumToWarstwaUprawnien": "Premium to warstwa uprawnień na koncie (Free / Bronze / Silver / Gold). Działa w produkcie już teraz — ale",
-      "nieMaJeszczeSamodzielnej": "nie ma jeszcze samodzielnej płatności w aplikacji",
-      "cenyISklepSa": ". Ceny i sklep są otwarte decyzjami produktu (OD-07).",
-      "coDzialaJuzTeraz": "Co działa już teraz",
-      "limityPobranBitow": "Limity pobrań bitów",
-      "gosc": "gość:",
-      "dzienKontoFree": "/dzień; konto Free:",
-      "bronze": "; Bronze:",
-      "silver": "; Silver:",
-      "gold": "; Gold:",
-      "sciezkiWProjekcieStudio": "Ścieżki w projekcie Studio",
-      "free": "Free",
-      "bronze2": ", Bronze",
-      "silver2": ", Silver",
-      "gold2": ", Gold",
-      "sciezkaMasterNieLiczy": "(ścieżka Master nie liczy się do limitu tak samo jak beat — według kontraktu Studio).",
-      "jakoscEksportuMiksu": "Jakość eksportu / miksu",
-      "wyzszePoziomyOdblokowujaLepsze": "wyższe poziomy odblokowują lepsze formaty (m.in. HQ MP3, Mix/Master Pro, WAV na Gold) zgodnie z macierzą uprawnień w produkcie.",
-      "czasNagraniaQuickTake": "Czas nagrania Quick Take / TTL próbki",
-      "aktywneLimityNagraniaWedlug": "aktywne limity nagrania według poziomu Premium: Free",
-      "hWaznosciProbkiBronze": "h ważności próbki; Bronze",
-      "hSilver": "h; Silver",
-      "hGoldDo": "h; Gold do",
-      "hCzasNiePrzekroczy": "h. Czas nie przekroczy też długości bitu. Dla Bronze/Silver/Gold operator może podnieść sam max czas (1–180 s); ważność próbki i dzienne limity sesji zostają z tych wartości domyślnych.",
-      "pobranieWlasnejProbkiRaw": "Pobranie własnej próbki RAW",
-      "tylkoGoldDo": "tylko Gold, do",
-      "pobranDziennieSerwerOdmawia": "pobrań dziennie. Serwer odmawia RAW na niższych planach.",
-      "porownanieDziennychPobranI": "Porównanie dziennych pobrań i maksymalnej liczby ścieżek Studio według poziomu Premium",
-      "poziom": "Poziom",
-      "pobraniaDzien": "Pobrania / dzień",
-      "sciezkiStudio": "Ścieżki Studio",
-      "pobraniaISciezkiStudio": "Pobrania i ścieżki Studio — z macierzy Premium. Nagrania — z polityki próbek (z możliwą korektą czasu przez operatora). To nie jest cennik.",
-      "zaplanowaneJeszczeNieW": "Zaplanowane / jeszcze nie w sklepie",
-      "cenyIPlatnosci": "Ceny i płatności",
-      "otwarteOd07Od": "otwarte (OD-07 / OD-04). Nie podajemy kwot ani okresów próbnych, bo nie są zatwierdzone.",
-      "samodzielnyZakupWUi": "Samodzielny zakup w UI",
-      "odroczonyNieMaTu": "odroczony. Nie ma tu przycisku „Kup Premium”.",
-      "katalogPremiumStems": "Katalog Premium / STEMS",
-      "odroczoneWMapieProduktu": "odroczone w mapie produktu.",
-      "osobnyFullTakePremium": "Osobny „Full Take Premium” z historycznego SSOT §22–23",
-      "nieJestOsobnymSklepem": "nie jest osobnym sklepem; aktywne limity Quick Take to Sample Policy powyżej. Osobne liczby overlay z dawnego opisu pozostają OPEN / DEFERRED względem tamtego tekstu.",
-      "retencjaArtefaktowGold": "Retencja artefaktów Gold",
-      "wProdukcji": "w produkcji",
-      "n28Dni": "28 dni",
-      "decyzjaOwnera202610": "(decyzja Ownera 2026-10-25, zgodna z kontraktem export). Wariant 90 dni pozostaje tylko w katalogu designu — bez janitora i bez aktywacji Premium Retention (HOLD).",
-      "wstrzymaneHold": "Wstrzymane (HOLD)",
-      "premiumRetention": "Premium Retention",
-      "lokalnyWipNieaktywnyNa": "lokalny WIP, nieaktywny na produkcji. Nie jest produktem, którego możesz dziś „włączyć” w ustawieniach.",
+      "naglowek": "Nagrywasz za darmo. Płacisz, kiedy kawałek ma wyjść.",
+      "lead": "Free wystarczy, żeby sprawdzić bit, nagrać zwrotkę i zrobić master. Pobieranie, dłuższe take'i, więcej projektów i dłuższe przechowywanie są w Bronze, Silver i Gold.",
+      "platnosciWkrotce": "Płatności wkrótce.",
+      "platnosciOpis": "Zakupu w aplikacji jeszcze nie ma — ceny poniżej są docelowe. Dziś plan nadaje administrator.",
+      "plany": "Plany",
+      "dlaKogo": {
+        "FREE": "na start i na próbę",
+        "BRONZE": "pierwsze numery do pobrania",
+        "SILVER": "regularne nagrywanie",
+        "GOLD": "wydajesz i oddajesz projekt dalej"
+      },
+      "cenaFree": "0 zł",
+      "miesiac": "/ mies.",
+      "rocznie": "albo {cena} rocznie",
+      "oszczedzasz": "taniej o {n}%",
+      "bezOkresuProbnego": "Bez okresu próbnego. Rezygnujesz kiedy chcesz.",
+      "freeStopka": "Bez karty. Nagrania ważne 24 h.",
+      "karta": {
+        "take": "Take do {s} s · {n, plural, one {# nagranie} few {# nagrania} many {# nagrań} other {# nagrania}} dziennie",
+        "waznosc": "Nagranie ważne {h} h",
+        "projekty": "{p, plural, one {# projekt} few {# projekty} many {# projektów} other {# projektu}} · {t, plural, one {# ścieżka nagrań} few {# ścieżki nagrań} many {# ścieżek nagrań} other {# ścieżki nagrań}} (+ bit)",
+        "mastery": "{n} masterów w miesiącu",
+        "pobieranie": "Pobieranie do {q}",
+        "bezPobierania": "Bez pobierania (tylko odsłuch)",
+        "referencja": {
+          "addon": "Mastering z referencją — płatny dodatek (wkrótce)",
+          "included": "Mastering z referencją w cenie (wkrótce)"
+        }
+      },
+      "jakosc": {
+        "MP3_128": "MP3 128",
+        "MP3_192": "MP3 192",
+        "MP3_256": "MP3 256",
+        "MP3_320": "MP3 320",
+        "WAV_COMPAT": "WAV 16-bit",
+        "WAV_PRO": "WAV 24-bit",
+        "WAV_MASTER": "WAV 24-bit / 48 kHz"
+      },
+      "referencja": {
+        "none": "—",
+        "addon": "dodatek",
+        "included": "w cenie"
+      },
+      "porownanie": "Porównanie planów",
+      "porownanieAria": "Porównanie limitów planów Free, Bronze, Silver i Gold",
+      "tab": {
+        "co": "Co",
+        "take": "Długość take'a",
+        "sekundy": "{n} s",
+        "sesje": "Nagrania dziennie",
+        "waznosc": "Ważność nagrania",
+        "godziny": "{n} h",
+        "projekty": "Projekty Studio",
+        "sciezki": "Ścieżki nagrań w projekcie (bit się nie liczy)",
+        "mastery": "Mastery / miesiąc",
+        "pobieranie": "Pobieranie gotowych plików",
+        "doJakosci": "do {q}",
+        "brakPobierania": "🔒 brak",
+        "projektZip": "Projekt (ZIP ścieżek)",
+        "przechowywanie": "Przechowywanie plików",
+        "dni": "{n} dni",
+        "referencja": "Mastering z referencją",
+        "bity": "Pobrania bitów / dzień"
+      },
+      "przypis": {
+        "gosc": "Bez konta: odsłuch {s} s każdego bitu. Nagrywanie, pobieranie i Studio wymagają konta.",
+        "narzedzia": "Kalibracja opóźnienia, pętla sekcji, take'i i comping są dla każdego zalogowanego — w limitach jego planu.",
+        "mastery": "Mastery liczymy w miesiącu kalendarzowym (czas polski). Nieudany master się nie liczy.",
+        "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
+        "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
+        "raw": "Surowy plik własnego nagrania: tylko {plan}, do {n} pobrań dziennie.",
+        "referencja": "Mastering z referencją jest w przygotowaniu: w Gold w cenie, w Silver jako płatny dodatek."
+      },
+      "wPrzygotowaniu": "W przygotowaniu",
+      "platnosciTytul": "Płatności w aplikacji",
+      "platnosciPlan": "miesięcznie albo rocznie, bez okresu próbnego. Do tego czasu plan nadaje administrator.",
+      "referencjaTytul": "Mastering z referencją",
       "jakDostacPremiumDzis": "Jak dostać Premium dziś",
-      "poziomNadajeSiePo": "Poziom nadaje się po stronie konta (m.in. przez panel administracyjny z audytem zmian). Bez działających płatności w aplikacji nie obiecujemy self‑serve checkoutu. Jak tylko sklep będzie gotowy — ta strona dostanie jasny CTA zakupowy.",
+      "poziomNadajeSiePo": "Plan nadaje się na koncie przez panel administracyjny (ze śladem zmian). Kiedy ruszą płatności, ta strona dostanie przycisk zakupu.",
       "idzDoKatalogu": "Idź do katalogu",
       "zalozKonto": "Załóż konto",
-      "oBitrymdym": "O BitRymDym",
-      "porownanieDziennychPobranI2": "Porównanie dziennych pobrań i ścieżek Studio według poziomu Premium"
+      "oBitrymdym": "O BitRymDym"
     },
     "settingsPage": {
       "metaTitle": "Ustawienia",
@@ -762,7 +836,8 @@
       "podobneBity": "Podobne bity",
       "tempo2": "· Tempo",
       "nagrajNaTymBicie": "Nagraj na tym bicie",
-      "wbijaszMicLapieszTake": "Wbijasz mic, łapiesz take przed limitem, odsłuchujesz poniżej."
+      "wbijaszMicLapieszTake": "Wbijasz mic, łapiesz take przed limitem, odsłuchujesz poniżej.",
+      "pobierz": "Pobierz"
     },
     "beatNotFound": {
       "bitNiedostepny": "Bit niedostępny",
@@ -939,6 +1014,12 @@
       "count": "{count, plural, one {# bit} few {# bity} many {# bitów} other {# bitu}}",
       "emptyStatus": "Cicho. Brak bitów dla tych filtrów.",
       "ofTotal": "{label} · z {total}"
+    },
+    "recordGuest": {
+      "tytul": "Nagrywanie jest dla zalogowanych",
+      "opis": "Załóż darmowe konto, żeby nagrać zwrotkę do tego bitu i otworzyć ją w Studiu.",
+      "zaloguj": "Zaloguj się",
+      "zalozKonto": "Załóż konto"
     }
   },
   "home": {
@@ -1117,7 +1198,7 @@
       "inspector": "Inspektor",
       "mixer": "Mikser",
       "wiecej": "Więcej",
-      "sciezkiBitLiczonyMaster": "Ścieżki {v0} (Bit liczony, Master nie)",
+      "sciezkiBitLiczonyMaster": "Ścieżki nagrań {v0} (bit i Master się nie liczą)",
       "zmienPakiet": "Zmień pakiet",
       "maksymalnyLimitSciezek": "Maksymalny limit ścieżek",
       "snapKliknijAbyZmienic": "Przyciąganie: {v0} (kliknij, aby zmienić: WYŁ. / 20 / 100 / 1000 ms)",
@@ -1945,7 +2026,9 @@
         "chooseBeat": "Wybierz bit",
         "record": "Nagraj",
         "goMaster": "Przejdź do Masteringu",
-        "backToMix": "Wróć do Mixu"
+        "backToMix": "Wróć do Mixu",
+        "calibrate": "Kalibruj",
+        "manualLatency": "Ustawię ręcznie"
       },
       "msg": {
         "recording": "Nagrywam. Skup się na wokalu, a ja poczekam.",
@@ -1973,7 +2056,10 @@
           "panorama": "Panorama: główny wokal zostaw w środku, adliby przesuń na lewo i prawo o 30–60.",
           "loudness": "Głośność: ustaw suwaki tak, żeby całość nie była ani za cicha, ani przesterowana."
         },
-        "songLimit": "Utwór może mieć max {max} — dalej już nie nagram. Przytnij albo idź do miksu."
+        "songLimit": "Utwór może mieć max {max} — dalej już nie nagram. Przytnij albo idź do miksu.",
+        "latencyBluetooth": "Masz słuchawki Bluetooth — wokal może się spóźniać. Skalibruję to w 7 sekund.",
+        "latencyHigh": "Widzę {ms} ms opóźnienia. Skalibrujmy, żeby wokal siedział w bicie.",
+        "latencyDetail": "Kliki przez głośnik albo klaskanie w rytm. Możesz też ustawić ręcznie."
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",
@@ -2183,6 +2269,95 @@
         "blad": "Coś poszło nie tak z masterem. Spróbuję jeszcze raz, jak klikniesz.",
         "niedostepny": "Podgląd mastera działa, ale serwer jeszcze nie jest włączony.",
         "wrocInfo": "Pojedynczych śladów tu nie ruszę — to robimy w Mixie."
+      },
+      "masteryMiesiac": "Mastery w tym miesiącu: {used} z {limit}",
+      "masteryReset": "nowa pula {date}",
+      "masteryLimit": "Pula masterów na ten miesiąc się skończyła. Ten mix poczeka — albo weź wyższy plan.",
+      "freeBezPobierania": "W Free słuchasz, ale nie pobierasz. Pliki odblokujesz od Bronze.",
+      "zobaczPlany": "Zobacz plany"
+    },
+    "recTools": {
+      "opoznienie": "Opóźnienie słuchawki ↔ mikrofon",
+      "kalibruj": "Kalibruj",
+      "zwin": "Zwiń",
+      "korekta": "Korekta nagrań: {ms} ms",
+      "zrodloKalibracja": "(zmierzone)",
+      "zrodloSzacunek": "(szacunek przeglądarki)",
+      "ostrzezenieBluetooth": "Słuchawki Bluetooth — opóźnienie bywa duże i pływa. Lepiej kabel; jak nie masz, skalibruj.",
+      "ostrzezenieWysokie": "Opóźnienie {ms} ms (powyżej {limit} ms) — skalibruj, żeby wokal siedział w bicie.",
+      "kalibracjaInstrukcja": "Test klików: daj głośniki albo przyłóż słuchawkę do mikrofonu, cisza w pokoju. 8 klików, ok. 7 s.",
+      "testKlikow": "Test klików (auto)",
+      "testKlaskania": "Klaskanie w rytm",
+      "mierze": "Mierzę… {beat}/{total}",
+      "klaszcz": "Klaszcz! {beat}/{total}",
+      "przerwij": "Przerwij",
+      "klaskanieInstrukcja": "W słuchawkach: 4 kliki na wejście, potem klaszcz równo z każdym z 12 klików.",
+      "wynik": "Zmierzone: {ms} ms (rozrzut {spread} ms). Zapisane dla tego sprzętu.",
+      "blad": {
+        "NO_SIGNAL": "Nie słyszę klików. Podgłośnij albo przyłóż słuchawkę do mikrofonu.",
+        "TOO_FEW": "Złapałem za mało klików. Ciszej w pokoju i jeszcze raz.",
+        "UNSTABLE": "Wyniki skaczą — pewnie Bluetooth. Spróbuj kabla albo ustaw ręcznie.",
+        "ERROR": "Nie udało się zmierzyć. Sprawdź dostęp do mikrofonu."
+      },
+      "recznaKorekta": "Ręczna korekta: {ms} ms",
+      "recznaKorektaAria": "Ręczna korekta opóźnienia w milisekundach",
+      "recznaPodpowiedz": "Wokal za późno? Przesuń w prawo. Za wcześnie? W lewo.",
+      "resetuj": "Wyczyść kalibrację tego sprzętu",
+      "trybNagrania": "Tryb nagrania",
+      "tryb": {
+        "single": "Jeden take",
+        "loop": "Pętla sekcji",
+        "punch": "Poprawka linijki"
+      },
+      "dlugoscSekcji": "Długość sekcji",
+      "taktow": "{n} taktów",
+      "odGlowicy": "Sekcja od głowicy",
+      "sekcja": "Sekcja {from}–{to}",
+      "brakSekcji": "Ustaw sekcję: przesuń głowicę i kliknij „Sekcja od głowicy”.",
+      "linijka": "Linijka do poprawki",
+      "linijkaN": "Linijka {n} · {from}",
+      "linijkaKrotko": "L{n}",
+      "petlaPodpowiedz": "Takt odliczania, potem sekcja kręci się w kółko. Każde przejście = osobny take. Stop kiedy chcesz.",
+      "punchPodpowiedz": "Wchodzisz takt wcześniej, nagrywam tylko tę linijkę i sklejam z resztą.",
+      "wejscieZa": "Wejście za…",
+      "takeWSekcjach": "Take'i w sekcjach",
+      "ileTake": "{n, plural, one {# take} few {# take'i} other {# take'ów}}",
+      "zapomnijSekcje": "Zapomnij",
+      "gwiazdka": "Oznacz gwiazdką",
+      "odgwiazdkuj": "Usuń gwiazdkę",
+      "pass": {
+        "loop": "Przejście {n}",
+        "punch": "Poprawka {n}",
+        "single": "Take {n}"
+      },
+      "niepelny": "niepełny",
+      "wCompie": "w compie",
+      "odsluch": "Odsłuch",
+      "stop": "Stop",
+      "caloSekcja": "Cała sekcja",
+      "compPoLinijkach": "Comp: wybierz take na każdą linijkę (sklejam z krótkim crossfade).",
+      "cisza": "— cisza —",
+      "zastosujNaOsi": "Zastosuj na osi",
+      "zastosujPonownie": "Ułóż ponownie na osi",
+      "tylkoLokalnie": "Take'i sekcji trzymam na razie w tej przeglądarce.",
+      "compBlad": "Nie udało się ułożyć compu na osi.",
+      "compGotowy": "Comp na osi. Puść sekcję i posłuchaj.",
+      "compNieNaOsi": "Take zapisany, ale comp nie wszedł na oś — kliknij „Zastosuj na osi”.",
+      "brakPelnegoPrzejscia": "Za krótko — nie złapałem żadnego przejścia sekcji. Take czeka niżej.",
+      "brakLinijki": "Wybierz sekcję i linijkę do poprawki.",
+      "zapisanoPrzejscia": "{n, plural, one {Mam # przejście} few {Mam # przejścia} other {Mam # przejść}}. Najnowsze pełne jest na osi.",
+      "zapisanoPunch": "Poprawka wklejona w linijkę."
+    },
+    "planLimits": {
+      "projekty": "Projekty: {used} z {limit} ({plan})",
+      "projektyLimit": "to limit planu. Usuń stary projekt albo przejdź wyżej.",
+      "projektyPonadLimit": "masz więcej niż pozwala plan. Twoje projekty zostają, ale nowego nie założysz.",
+      "zobaczPlany": "Zobacz plany",
+      "plan": {
+        "FREE": "Free",
+        "BRONZE": "Bronze",
+        "SILVER": "Silver",
+        "GOLD": "Gold"
       }
     }
   },

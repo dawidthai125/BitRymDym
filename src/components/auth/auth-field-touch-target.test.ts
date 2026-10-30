@@ -20,7 +20,9 @@ describe("auth / home touch targets (MOBILE_DEEP + product audit P2)", () => {
 
     for (const rel of files) {
       const src = readFileSync(join(root, rel), "utf8");
-      const inputs = [...src.matchAll(/<input\b[\s\S]*?\/>/g)].map((m) => m[0]!);
+      const inputs = [...src.matchAll(/<input\b[\s\S]*?\/>/g)]
+        .map((m) => m[0]!)
+        .filter((input) => !input.includes('type="hidden"'));
       expect(inputs.length, `${rel} should declare text inputs`).toBeGreaterThan(0);
       for (const input of inputs) {
         expect(input).toContain("className={AUTH_FIELD_CLASS}");

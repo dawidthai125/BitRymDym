@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
+import { LockedAction } from "@/components/plans/locked-action";
 import { Button } from "@/components/ui/button";
 import {
   formatStudioTrackCapacityLabel,
@@ -24,6 +25,14 @@ import {
 import type { PremiumTier } from "@/types/premium";
 
 export type StudioEditToolbarTimelineMode = "seek" | "edit";
+
+/** Plan that raises the recording-track limit (lock bubble). */
+const NEXT_TIER: Record<PremiumTier, PremiumTier> = {
+  FREE: "BRONZE",
+  BRONZE: "SILVER",
+  SILVER: "GOLD",
+  GOLD: "GOLD",
+};
 
 export type StudioEditToolbarProps = {
   timelineMode: StudioEditToolbarTimelineMode;
@@ -122,6 +131,19 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       >
         {t("usun")}
       </Button>
+      {props.atTrackCapacity && props.premiumTier !== "GOLD" ? (
+        // Plan lock with a bubble (hover/focus/tap) → plans; server enforces too.
+        <LockedAction
+          reason="plan"
+          action="track"
+          minTier={NEXT_TIER[props.premiumTier]}
+          testId="studio-add-track"
+          buttonClassName="px-3"
+          dataAttrs={{ "data-capacity": "full" }}
+        >
+          {t("dodajSciezke")}
+        </LockedAction>
+      ) : (
       <Button
         type="button"
         size="sm"
@@ -140,6 +162,7 @@ export function StudioEditToolbar(props: StudioEditToolbarProps) {
       >
         {t("dodajSciezke")}
       </Button>
+      )}
       <Button
         type="button"
         size="sm"

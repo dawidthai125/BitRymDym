@@ -39,6 +39,10 @@ export async function placeReadyTakeAsStudioClipFor(
     expectedDocumentVersion: unknown;
     /** When true, overlapping TAKE on the same track is deleted then placed. */
     replaceOverlapping?: boolean;
+    /** Latency compensation: skip the first N ms of the take (integer ms). */
+    sourceOffsetMs?: number;
+    /** Optional cap on clip length (integer ms). */
+    durationMs?: number;
   },
 ): Promise<{
   clip: StudioClipDto;
@@ -84,6 +88,8 @@ export async function placeReadyTakeAsStudioClipFor(
     playheadMs: input.timelineStartMs,
     durationSeconds,
     timelineLengthMs: document.project.timelineLengthMs,
+    sourceOffsetMs: input.sourceOffsetMs,
+    durationMs: input.durationMs,
   });
 
   // Keep / network retry: do not create a second identical Clip.
@@ -91,6 +97,7 @@ export async function placeReadyTakeAsStudioClipFor(
     trackId: input.trackId,
     takeId: input.takeId,
     timelineStartMs: geometry.timelineStartMs,
+    sourceOffsetMs: input.sourceOffsetMs,
   });
   if (existing) {
     return {

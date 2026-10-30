@@ -2860,5 +2860,25 @@
  {
   "src": "Edycja metadanych bitu",
   "en": "Beat metadata edit"
+ },
+ {
+  "src": "Zaloguj się, aby pobrać.",
+  "en": "Sign in to download."
+ },
+ {
+  "src": "Pobieranie bitów jest od planu Bronze.",
+  "en": "Beat downloads start with the Bronze plan."
+ },
+ {
+  "src": "Zaloguj się, aby korzystać ze Studia.",
+  "en": "Sign in to use Studio."
+ },
+ {
+  "src": "Zaloguj się.",
+  "en": "Sign in."
+ },
+ {
+  "src": "Nie udało się wczytać limitów.",
+  "en": "Could not load limits."
  }
 ]

@@ -80,6 +80,13 @@ export function toSafeDownloadErrorMessage(
   ) {
     return "Pobieranie oryginalnego bitu jest niedostępne.";
   }
+  // Owner 2026-10-29: guests sign in first; Free listens only.
+  if (lower.includes("beat download requires sign-in")) {
+    return "Zaloguj się, aby pobrać.";
+  }
+  if (lower.includes("beat download requires a paid plan")) {
+    return "Pobieranie bitów jest od planu Bronze.";
+  }
   // Preserve prior download-domain breadth for bare "limit reached".
   if (lower.includes("limit reached") && !lower.includes("render")) {
     return "Osiągnięto dzienny limit pobrań. Spróbuj ponownie jutro.";

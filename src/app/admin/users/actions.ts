@@ -22,6 +22,7 @@ import { executeAccountProfile01Deletion } from "@/lib/auth/delete-account";
 import { AuthError, requirePermission, requireRole } from "@/lib/auth/session";
 import { sendAdminAccountDeletionEmail } from "@/lib/email/send-admin-account-deletion-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { extendTakeRetentionForTier } from "@/lib/takes/take-retention-upgrade";
 import type { SystemRole } from "@/types/domain";
 
 export type AdminUsersMutationState = {
@@ -223,6 +224,9 @@ export async function applyAdminUserManagementAction(input: {
         code,
       };
     }
+
+    // Plan policy: upgrade → live takes get the new plan's validity.
+    await extendTakeRetentionForTier(parsed.value.targetUserId, parsed.value.premiumTier);
 
     revalidatePath("/admin/users");
     return { success: true, error: null, code: null };

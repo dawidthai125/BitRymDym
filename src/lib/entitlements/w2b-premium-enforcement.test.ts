@@ -93,14 +93,11 @@ function audioFromProduct(
 }
 
 describe("W2-B — download tier enforcement (pure)", () => {
-  it("ANON = 2 and ANON ≠ FREE", () => {
-    expect(PREMIUM_ANON_DOWNLOADS_DAILY).toBe(2);
-    expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(2);
-    expect(dailyDownloadLimitForActor({ actorType: "ANON" })).toBe(2);
-    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(4);
-    expect(dailyDownloadLimitForActor({ actorType: "ANON" })).not.toBe(
-      PREMIUM_TIER_MATRIX.FREE.downloadsDaily,
-    );
+  it("guests and Free download no beats (0 a day)", () => {
+    expect(PREMIUM_ANON_DOWNLOADS_DAILY).toBe(0);
+    expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(0);
+    expect(dailyDownloadLimitForActor({ actorType: "ANON" })).toBe(0);
+    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(0);
   });
 
   it("USER limits from product entitlement matrix (no tier ifs)", () => {
@@ -117,25 +114,25 @@ describe("W2-B — download tier enforcement (pure)", () => {
       ).toBe(PREMIUM_TIER_MATRIX[tier === "FREE" ? "FREE" : tier].downloadsDaily);
     }
     expect(W2B_FIXTURE_EXPECTED_DOWNLOADS_DAILY).toEqual({
-      ANON: 2,
-      FREE: 4,
+      ANON: 0,
+      FREE: 0,
       BRONZE: 10,
       SILVER: 25,
       GOLD: 50,
     });
   });
 
-  it("missing / expired / inactive → FREE downloads = 4", () => {
-    expect(entitlementFor(null).limits.downloadsDaily).toBe(4);
+  it("missing / expired / inactive → FREE downloads = 0", () => {
+    expect(entitlementFor(null).limits.downloadsDaily).toBe(0);
     expect(
       entitlementFor(
         premiumRow("GOLD", { expiresAt: "2020-01-01T00:00:00.000Z" }),
       ).limits.downloadsDaily,
-    ).toBe(4);
+    ).toBe(0);
     expect(
       entitlementFor(premiumRow("SILVER", { active: false })).limits
         .downloadsDaily,
-    ).toBe(4);
+    ).toBe(0);
   });
 
   it("cross-user entitlement ignored for caller", () => {
@@ -143,7 +140,7 @@ describe("W2-B — download tier enforcement (pure)", () => {
       premiumRow("GOLD", { userId: OTHER }),
     );
     expect(product.premiumTier).toBe("FREE");
-    expect(product.limits.downloadsDaily).toBe(4);
+    expect(product.limits.downloadsDaily).toBe(0);
   });
 
   it("client spoof of downloadsDaily rejected", () => {
@@ -197,7 +194,10 @@ describe("W2-B — download tier enforcement (pure)", () => {
     );
     expect(access).toContain("resolveProductEntitlementForAuthContext");
     expect(access).toContain("dailyDownloadLimitForActor");
-    expect(access).toContain('actorType: "ANON"');
+    // Guests are rejected before any slot is reserved (no ANON reserve path).
+    expect(access).not.toContain('actorType: "ANON"');
+    expect(access).toContain("BEAT_DOWNLOAD_LOGIN_REQUIRED");
+    expect(access).toContain("BEAT_DOWNLOAD_PLAN_REQUIRED");
   });
 });
 

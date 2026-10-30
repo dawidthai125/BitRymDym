@@ -91,6 +91,7 @@ export class TakeMediaRecorder {
   private recorder: MediaRecorder | null = null;
   private chunks: BlobPart[] = [];
   private startedAt = 0;
+  private startedPerfMs: number | null = null;
   private mimeType = "";
   private stopResolver: ((result: TakeRecorderResult) => void) | null = null;
   private stopRejecter: ((error: TakeRecorderError) => void) | null = null;
@@ -101,6 +102,24 @@ export class TakeMediaRecorder {
 
   get isRecording(): boolean {
     return this.recorder != null && this.recorder.state !== "inactive";
+  }
+
+  /**
+   * performance.now() at MediaRecorder `start` event (first captured sample ≈ here).
+   * Null until the recorder actually started. Used for latency alignment.
+   */
+  get startedAtPerfMs(): number | null {
+    return this.startedPerfMs;
+  }
+
+  /** Resolve with startedAtPerfMs once the `start` event fired (or null on timeout). */
+  async waitForStarted(timeoutMs = 1500): Promise<number | null> {
+    const t0 = Date.now();
+    while (this.startedPerfMs == null && Date.now() - t0 < timeoutMs) {
+      if (!this.isRecording) return null;
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    return this.startedPerfMs;
   }
 
   /** Active mic stream while recording — for AnalyserNode UI only. Do not stop tracks. */
@@ -123,6 +142,11 @@ export class TakeMediaRecorder {
     audioDeviceId?: string;
     /** Called for every non-empty chunk, in order, including the final one after stop/cancel. */
     onChunk?: (chunk: Blob) => void;
+    /**
+     * Disable echo cancellation / noise suppression / AGC (latency calibration:
+     * the speaker click must reach the recording unprocessed).
+     */
+    rawAudio?: boolean;
   }): Promise<{ mimeType: string }> {
     if (this.isRecording) {
       throw new TakeRecorderError(
@@ -149,9 +173,18 @@ export class TakeMediaRecorder {
 
     try {
       // P5.8: prefer ideal (not exact) so stale deviceId can soft-fail browser-side.
+      const raw: MediaTrackConstraints = options?.rawAudio
+        ? {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        : {};
       const audio: MediaTrackConstraints | boolean = options?.audioDeviceId
-        ? { deviceId: { ideal: options.audioDeviceId } }
-        : true;
+        ? { ...raw, deviceId: { ideal: options.audioDeviceId } }
+        : options?.rawAudio
+          ? raw
+          : true;
       this.stream = await getUserMedia({
         audio,
         video: false,
@@ -181,6 +214,7 @@ export class TakeMediaRecorder {
     this.cancelled = false;
     this.mimeType = support.mimeType;
     this.startedAt = now();
+    this.startedPerfMs = null;
 
     try {
       this.recorder = new MediaRecorderCtor(this.stream, {
@@ -208,6 +242,11 @@ export class TakeMediaRecorder {
           }
         }
       }
+    };
+
+    this.recorder.onstart = () => {
+      this.startedPerfMs =
+        typeof performance !== "undefined" ? performance.now() : null;
     };
 
     this.recorder.onerror = () => {

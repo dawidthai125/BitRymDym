@@ -125,6 +125,53 @@
     },
     "shared": {
       "noExpiry": "No expiry"
+    },
+    "planLocks": {
+      "guestDownload": "Sign in to download.",
+      "guestRecord": "Sign in to record.",
+      "guestLink": "Sign in",
+      "planDownload": "Downloads start with the {plan} plan.",
+      "planTrack": "More recording tracks with the {plan} plan.",
+      "planLink": "See plans",
+      "platformDownload": "Download unavailable — you can listen to and record on platform catalogue beats, but the original can't be downloaded."
+    },
+    "planUsage": {
+      "aria": "{plan} plan — show limits",
+      "tytul": "Your plan: {plan}",
+      "wczytuje": "Loading limits…",
+      "chipPobrania": "Downloads",
+      "chipProjekty": "Projects",
+      "odPlanu": "from {plan}",
+      "naProjekt": "max {n}",
+      "bezLimitu": "{used} · no limit",
+      "odnowienie": "resets {kiedy}",
+      "dobaUtc": "Daily limits reset at midnight UTC.",
+      "plany": "Plans and limits",
+      "pozycja": {
+        "beatDownloads": "Beat downloads",
+        "studioExports": "Studio files",
+        "projects": "Studio projects",
+        "recordingsToday": "Recordings",
+        "activeTakes": "Saved takes",
+        "masters": "Masters",
+        "tracks": "Recording tracks per project"
+      },
+      "okres": {
+        "day": "today",
+        "week": "last 7 days",
+        "month": "this month",
+        "total": "total",
+        "perProject": "the beat does not count"
+      }
+    },
+    "guestPreview": {
+      "tytul": "That was a {s}-second preview",
+      "opis": "Sign in to hear full beats, record and use Studio.",
+      "zaloguj": "Sign in",
+      "zalozKonto": "Create account",
+      "zamknij": "Close",
+      "brakPodgladu": "This beat has no guest preview yet",
+      "brakOpis": "Sign in to listen to the full beat."
     }
   },
   "account": {
@@ -211,64 +258,91 @@
       "konto": "Account"
     },
     "premiumPage": {
-      "metaTitle": "Premium",
-      "metaDescription": "Premium tiers in BitRymDym: download limits, Studio tracks and export quality. No promises about payments that do not exist yet.",
+      "metaTitle": "Premium — plans and prices",
+      "metaDescription": "BitRymDym plans: Free, Bronze, Silver and Gold. Prices and limits for recording, projects, masters and downloads — in one place.",
       "premium": "Premium",
-      "wiecejLimituLepszyEksport": "More limits. Better export. The same Studio.",
-      "premiumToWarstwaUprawnien": "Premium is a permission layer on your account (Free / Bronze / Silver / Gold). It already works in the product — but",
-      "nieMaJeszczeSamodzielnej": "there is no self-service payment in the app yet",
-      "cenyISklepSa": ". Prices and the shop are open product decisions (OD-07).",
-      "coDzialaJuzTeraz": "What works right now",
-      "limityPobranBitow": "Beat download limits",
-      "gosc": "guest:",
-      "dzienKontoFree": "/day; Free account:",
-      "bronze": "; Bronze:",
-      "silver": "; Silver:",
-      "gold": "; Gold:",
-      "sciezkiWProjekcieStudio": "Tracks in a Studio project",
-      "free": "Free",
-      "bronze2": ", Bronze",
-      "silver2": ", Silver",
-      "gold2": ", Gold",
-      "sciezkaMasterNieLiczy": "(the Master track does not count towards the limit, just like the beat — per the Studio contract).",
-      "jakoscEksportuMiksu": "Export / mix quality",
-      "wyzszePoziomyOdblokowujaLepsze": "higher tiers unlock better formats (incl. HQ MP3, Mix/Master Pro, WAV on Gold) according to the product''s permission matrix.",
-      "czasNagraniaQuickTake": "Quick Take recording time / sample TTL",
-      "aktywneLimityNagraniaWedlug": "active recording limits by Premium tier: Free",
-      "hWaznosciProbkiBronze": "h sample validity; Bronze",
-      "hSilver": "h; Silver",
-      "hGoldDo": "h; Gold up to",
-      "hCzasNiePrzekroczy": "h. The time will also never exceed the beat length. For Bronze/Silver/Gold an operator can raise the max time itself (1–180 s); sample validity and daily session limits stay at these defaults.",
-      "pobranieWlasnejProbkiRaw": "Downloading your own RAW sample",
-      "tylkoGoldDo": "Gold only, up to",
-      "pobranDziennieSerwerOdmawia": "downloads per day. The server refuses RAW on lower plans.",
-      "porownanieDziennychPobranI": "Comparison of daily downloads and maximum Studio tracks by Premium tier",
-      "poziom": "Tier",
-      "pobraniaDzien": "Downloads / day",
-      "sciezkiStudio": "Studio tracks",
-      "pobraniaISciezkiStudio": "Downloads and Studio tracks — from the Premium matrix. Recordings — from the sample policy (with a possible time adjustment by an operator). This is not a price list.",
-      "zaplanowaneJeszczeNieW": "Planned / not in the shop yet",
-      "cenyIPlatnosci": "Prices and payments",
-      "otwarteOd07Od": "open (OD-07 / OD-04). We do not give amounts or trial periods because they are not approved.",
-      "samodzielnyZakupWUi": "Self-service purchase in the UI",
-      "odroczonyNieMaTu": "deferred. There is no “Buy Premium” button here.",
-      "katalogPremiumStems": "Premium catalogue / STEMS",
-      "odroczoneWMapieProduktu": "deferred in the product map.",
-      "osobnyFullTakePremium": "Separate “Full Take Premium” from the historical SSOT §22–23",
-      "nieJestOsobnymSklepem": "is not a separate shop; the active Quick Take limits are the Sample Policy above. The separate overlay numbers from the old description remain OPEN / DEFERRED relative to that text.",
-      "retencjaArtefaktowGold": "Gold artefact retention",
-      "wProdukcji": "in production",
-      "n28Dni": "28 days",
-      "decyzjaOwnera202610": "(Owner decision 2026-10-25, consistent with the export contract). The 90-day variant remains only in the design catalogue — no janitor and no Premium Retention activation (HOLD).",
-      "wstrzymaneHold": "On hold (HOLD)",
-      "premiumRetention": "Premium Retention",
-      "lokalnyWipNieaktywnyNa": "local WIP, inactive in production. It is not a product you can “switch on” in settings today.",
+      "naglowek": "Record for free. Pay when the track is ready to go out.",
+      "lead": "Free is enough to try a beat, record a verse and make a master. Downloads, longer takes, more projects and longer storage come with Bronze, Silver and Gold.",
+      "platnosciWkrotce": "Payments coming soon.",
+      "platnosciOpis": "There is no in-app checkout yet — the prices below are the planned ones. Today an admin grants the plan.",
+      "plany": "Plans",
+      "dlaKogo": {
+        "FREE": "to start and try",
+        "BRONZE": "first tracks to download",
+        "SILVER": "recording regularly",
+        "GOLD": "releasing and handing off projects"
+      },
+      "cenaFree": "PLN 0",
+      "miesiac": "/ mo",
+      "rocznie": "or {cena} a year",
+      "oszczedzasz": "{n}% cheaper",
+      "bezOkresuProbnego": "No trial period. Cancel any time.",
+      "freeStopka": "No card. Recordings last 24 h.",
+      "karta": {
+        "take": "Takes up to {s} s · {n, plural, one {# recording} other {# recordings}} a day",
+        "waznosc": "Recording valid {h} h",
+        "projekty": "{p, plural, one {# project} other {# projects}} · {t, plural, one {# recording track} other {# recording tracks}} (+ beat)",
+        "mastery": "{n} masters a month",
+        "pobieranie": "Downloads up to {q}",
+        "bezPobierania": "No downloads (listen only)",
+        "referencja": {
+          "addon": "Reference mastering — paid add-on (soon)",
+          "included": "Reference mastering included (soon)"
+        }
+      },
+      "jakosc": {
+        "MP3_128": "MP3 128",
+        "MP3_192": "MP3 192",
+        "MP3_256": "MP3 256",
+        "MP3_320": "MP3 320",
+        "WAV_COMPAT": "WAV 16-bit",
+        "WAV_PRO": "WAV 24-bit",
+        "WAV_MASTER": "WAV 24-bit / 48 kHz"
+      },
+      "referencja": {
+        "none": "—",
+        "addon": "add-on",
+        "included": "included"
+      },
+      "porownanie": "Compare plans",
+      "porownanieAria": "Comparison of Free, Bronze, Silver and Gold plan limits",
+      "tab": {
+        "co": "What",
+        "take": "Take length",
+        "sekundy": "{n} s",
+        "sesje": "Recordings a day",
+        "waznosc": "Recording validity",
+        "godziny": "{n} h",
+        "projekty": "Studio projects",
+        "sciezki": "Recording tracks per project (beat not counted)",
+        "mastery": "Masters / month",
+        "pobieranie": "Finished-file downloads",
+        "doJakosci": "up to {q}",
+        "brakPobierania": "🔒 none",
+        "projektZip": "Project (ZIP of tracks)",
+        "przechowywanie": "File storage",
+        "dni": "{n} days",
+        "referencja": "Reference mastering",
+        "bity": "Beat downloads / day"
+      },
+      "przypis": {
+        "gosc": "Without an account: a {s}-second preview of every beat. Recording, downloads and Studio need an account.",
+        "narzedzia": "Latency calibration, section loop, takes and comping are for everyone signed in — within their plan's limits.",
+        "mastery": "Masters are counted per calendar month (Polish time). A failed master does not count.",
+        "free": "Free does not download beats or finished files — listen only; the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
+        "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
+        "raw": "Raw file of your own recording: {plan} only, up to {n} downloads a day.",
+        "referencja": "Reference mastering is in the works: included in Gold, a paid add-on in Silver."
+      },
+      "wPrzygotowaniu": "In the works",
+      "platnosciTytul": "In-app payments",
+      "platnosciPlan": "monthly or yearly, no trial period. Until then an admin grants the plan.",
+      "referencjaTytul": "Reference mastering",
       "jakDostacPremiumDzis": "How to get Premium today",
-      "poziomNadajeSiePo": "The tier is granted on the account side (e.g. via the admin panel with a change audit). Without working in-app payments we do not promise a self-serve checkout. As soon as the shop is ready, this page will get a clear purchase CTA.",
-      "idzDoKatalogu": "Go to the catalogue",
+      "poziomNadajeSiePo": "The plan is granted on the account via the admin panel (with an audit trail). When payments launch, this page gets a buy button.",
+      "idzDoKatalogu": "Go to catalog",
       "zalozKonto": "Create account",
-      "oBitrymdym": "About BitRymDym",
-      "porownanieDziennychPobranI2": "Comparison of daily downloads and Studio tracks by Premium tier"
+      "oBitrymdym": "About BitRymDym"
     },
     "settingsPage": {
       "metaTitle": "Settings",
@@ -762,7 +836,8 @@
       "podobneBity": "Similar beats",
       "tempo2": "· Tempo",
       "nagrajNaTymBicie": "Record on this beat",
-      "wbijaszMicLapieszTake": "Grab the mic, catch a take before the limit, listen back below."
+      "wbijaszMicLapieszTake": "Grab the mic, catch a take before the limit, listen back below.",
+      "pobierz": "Download"
     },
     "beatNotFound": {
       "bitNiedostepny": "Beat unavailable",
@@ -939,6 +1014,12 @@
       "count": "{count, plural, one {# beat} other {# beats}}",
       "emptyStatus": "Quiet. No beats match these filters.",
       "ofTotal": "{label} · of {total}"
+    },
+    "recordGuest": {
+      "tytul": "Recording is for signed-in users",
+      "opis": "Create a free account to record a verse to this beat and open it in Studio.",
+      "zaloguj": "Sign in",
+      "zalozKonto": "Create account"
     }
   },
   "home": {
@@ -1117,7 +1198,7 @@
       "inspector": "Inspector",
       "mixer": "Mixer",
       "wiecej": "More",
-      "sciezkiBitLiczonyMaster": "Tracks {v0} (Beat counted, Master not)",
+      "sciezkiBitLiczonyMaster": "Recording tracks {v0} (beat and Master not counted)",
       "zmienPakiet": "Change plan",
       "maksymalnyLimitSciezek": "Maximum track limit",
       "snapKliknijAbyZmienic": "Snap: {v0} (click to change: OFF / 20 / 100 / 1000 ms)",
@@ -1945,7 +2026,9 @@
         "chooseBeat": "Choose a beat",
         "record": "Record",
         "goMaster": "Go to Mastering",
-        "backToMix": "Back to Mix"
+        "backToMix": "Back to Mix",
+        "calibrate": "Calibrate",
+        "manualLatency": "I'll set it by hand"
       },
       "msg": {
         "recording": "Recording. Focus on the vocal, I'll wait.",
@@ -1973,7 +2056,10 @@
           "panorama": "Panorama: keep the lead vocal centred, pan ad-libs left and right by 30–60.",
           "loudness": "Loudness: set the faders so the mix is neither too quiet nor clipping."
         },
-        "songLimit": "A song can be at most {max} — I can't record past that. Trim it or move on to the mix."
+        "songLimit": "A song can be at most {max} — I can't record past that. Trim it or move on to the mix.",
+        "latencyBluetooth": "You're on Bluetooth headphones — the vocal may lag. I'll calibrate it in 7 seconds.",
+        "latencyHigh": "I see {ms} ms of latency. Let's calibrate so the vocal sits on the beat.",
+        "latencyDetail": "Clicks through a speaker or clapping along. You can also set it by hand."
       },
       "chat": {
         "inputLabel": "Message to BITEK",
@@ -2183,6 +2269,95 @@
         "blad": "Something went wrong with the master. Click and I'll try again.",
         "niedostepny": "The master preview works, but the server isn't on yet.",
         "wrocInfo": "I can't touch single tracks here — that's Mix work."
+      },
+      "masteryMiesiac": "Masters this month: {used} of {limit}",
+      "masteryReset": "new pool {date}",
+      "masteryLimit": "This month's master pool is used up. This mix can wait — or take a higher plan.",
+      "freeBezPobierania": "On Free you listen, but don't download. Files unlock from Bronze.",
+      "zobaczPlany": "See plans"
+    },
+    "recTools": {
+      "opoznienie": "Headphone ↔ mic latency",
+      "kalibruj": "Calibrate",
+      "zwin": "Collapse",
+      "korekta": "Take correction: {ms} ms",
+      "zrodloKalibracja": "(measured)",
+      "zrodloSzacunek": "(browser estimate)",
+      "ostrzezenieBluetooth": "Bluetooth headphones — latency is high and drifts. Wired is better; if you can't, calibrate.",
+      "ostrzezenieWysokie": "Latency {ms} ms (above {limit} ms) — calibrate so the vocal sits on the beat.",
+      "kalibracjaInstrukcja": "Click test: use speakers or hold a headphone to the mic, quiet room. 8 clicks, about 7 s.",
+      "testKlikow": "Click test (auto)",
+      "testKlaskania": "Clap along",
+      "mierze": "Measuring… {beat}/{total}",
+      "klaszcz": "Clap! {beat}/{total}",
+      "przerwij": "Stop",
+      "klaskanieInstrukcja": "On headphones: 4 lead-in clicks, then clap with each of the 12 clicks.",
+      "wynik": "Measured: {ms} ms (spread {spread} ms). Saved for this gear.",
+      "blad": {
+        "NO_SIGNAL": "I can't hear the clicks. Turn it up or hold a headphone to the mic.",
+        "TOO_FEW": "I caught too few clicks. Quieter room and once more.",
+        "UNSTABLE": "Results jump around — probably Bluetooth. Try wired or set it by hand.",
+        "ERROR": "Couldn't measure. Check microphone access."
+      },
+      "recznaKorekta": "Manual correction: {ms} ms",
+      "recznaKorektaAria": "Manual latency correction in milliseconds",
+      "recznaPodpowiedz": "Vocal late? Move right. Early? Move left.",
+      "resetuj": "Clear this gear's calibration",
+      "trybNagrania": "Recording mode",
+      "tryb": {
+        "single": "Single take",
+        "loop": "Section loop",
+        "punch": "Fix a line"
+      },
+      "dlugoscSekcji": "Section length",
+      "taktow": "{n} bars",
+      "odGlowicy": "Section from playhead",
+      "sekcja": "Section {from}–{to}",
+      "brakSekcji": "Set a section: move the playhead and click “Section from playhead”.",
+      "linijka": "Line to fix",
+      "linijkaN": "Line {n} · {from}",
+      "linijkaKrotko": "L{n}",
+      "petlaPodpowiedz": "One bar count-in, then the section loops. Every pass = its own take. Stop whenever.",
+      "punchPodpowiedz": "You come in a bar early, I record just this line and stitch it in.",
+      "wejscieZa": "In…",
+      "takeWSekcjach": "Takes in sections",
+      "ileTake": "{n, plural, one {# take} other {# takes}}",
+      "zapomnijSekcje": "Forget",
+      "gwiazdka": "Star",
+      "odgwiazdkuj": "Unstar",
+      "pass": {
+        "loop": "Pass {n}",
+        "punch": "Fix {n}",
+        "single": "Take {n}"
+      },
+      "niepelny": "partial",
+      "wCompie": "in comp",
+      "odsluch": "Listen",
+      "stop": "Stop",
+      "caloSekcja": "Whole section",
+      "compPoLinijkach": "Comp: pick a take for each line (stitched with a short crossfade).",
+      "cisza": "— silence —",
+      "zastosujNaOsi": "Apply to timeline",
+      "zastosujPonownie": "Re-apply to timeline",
+      "tylkoLokalnie": "Section takes live in this browser for now.",
+      "compBlad": "Couldn't put the comp on the timeline.",
+      "compGotowy": "Comp is on the timeline. Play the section and listen.",
+      "compNieNaOsi": "Take saved, but the comp didn't land — click “Apply to timeline”.",
+      "brakPelnegoPrzejscia": "Too short — I didn't catch a section pass. The take waits below.",
+      "brakLinijki": "Pick a section and a line to fix.",
+      "zapisanoPrzejscia": "{n, plural, one {Got # pass} other {Got # passes}}. The newest full one is on the timeline.",
+      "zapisanoPunch": "Fix stitched into the line."
+    },
+    "planLimits": {
+      "projekty": "Projects: {used} of {limit} ({plan})",
+      "projektyLimit": "that's your plan's limit. Delete an old project or move up.",
+      "projektyPonadLimit": "you have more than your plan allows. Your projects stay, but you can't start a new one.",
+      "zobaczPlany": "See plans",
+      "plan": {
+        "FREE": "Free",
+        "BRONZE": "Bronze",
+        "SILVER": "Silver",
+        "GOLD": "Gold"
       }
     }
   },

@@ -47,10 +47,16 @@ export async function getStudioToolbarMountBundle(): Promise<string> {
             path: "studio-toolbar-mount:next-link",
             namespace: "studio-toolbar-mount",
           }));
+          build.onResolve({ filter: /^next\/navigation$/ }, () => ({
+            path: "studio-toolbar-mount:next-navigation",
+            namespace: "studio-toolbar-mount",
+          }));
           build.onLoad(
             { filter: /.*/, namespace: "studio-toolbar-mount" },
-            () => ({
-              contents: `
+            (args) => ({
+              contents: args.path.endsWith("next-navigation")
+                ? `export function usePathname() { return "/studio/p/mount"; }`
+                : `
                 import { NextLink } from ${JSON.stringify(STUBS)};
                 export default NextLink;
               `,

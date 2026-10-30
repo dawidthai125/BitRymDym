@@ -31,6 +31,48 @@ import {
 } from "@/lib/studio/studio-daw-clock";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
 import {
+  StudioCountdown,
+  StudioLatencyCard,
+  StudioRecModeCard,
+  StudioTakeLanesCard,
+  contextLatencyEstimate,
+  useStudioLatency,
+  useTakeLanes,
+  type CalibrationUi,
+  type RecToolsMode,
+} from "@/components/studio/studio-recording-tools";
+import type { BitekBubble } from "@/components/studio/studio-bitek-dock";
+import { runLatencyCalibration } from "@/lib/studio/recording/calibration-runner";
+import {
+  CLAP_CALIBRATION,
+  CLICK_CALIBRATION,
+  renderCalibrationClick,
+} from "@/lib/studio/recording/latency";
+import {
+  alignedPlacement,
+  buildCapturedPasses,
+  loopPassStarts,
+  prerollCountdown,
+  punchLineWindow,
+  recordingPositionOf,
+  sectionLines,
+  sectionRange,
+  type MsRange,
+  type PlayheadSample,
+  type SectionBars,
+} from "@/lib/studio/recording/section-loop";
+import {
+  addPassesToLane,
+  findLaneForRange,
+  setLineChoice,
+  setSectionChoice,
+  toggleStar,
+  type LanePass,
+  type TakeLane,
+} from "@/lib/studio/recording/comping";
+import { barDurationMs, beatDurationMs } from "@/lib/studio/studio-daw-clock";
+import type { StudioProjectDocument } from "@/lib/studio/studio-types";
+import {
   acquireMicStream,
   stopMediaStreamTracks,
   studioDeviceErrorMessagePl,
@@ -104,6 +146,8 @@ export function StudioRecordingPanel({
   preferredTrackId = null,
   lastScratchClipId,
   onLastScratchClipIdChange,
+  onBitekBubble,
+  onDocumentReplaced,
 }: {
   projectId: string;
   /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
@@ -137,6 +181,10 @@ export function StudioRecordingPanel({
   /** Editor SSOT — scratch clip survives panel unmount. */
   lastScratchClipId: string | null;
   onLastScratchClipIdChange: (clipId: string | null) => void;
+  /** Recording P0 — BITEK notice (latency / Bluetooth); null clears it. */
+  onBitekBubble?: (bubble: BitekBubble | null) => void;
+  /** Recording P0 — comp apply returns a fresh document (several CAS ops). */
+  onDocumentReplaced?: (doc: StudioProjectDocument) => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
@@ -304,6 +352,49 @@ export function StudioRecordingPanel({
     useState<TakeRecoveryWriterState | null>(null);
 
   const punchOutRef = useRef<number | null>(null);
+  const loopRestoreRef = useRef<(() => void) | null>(null);
+
+  // ── Recording P0: latency, section loop / punch line, take lanes ──
+  const tRec = useTranslations("studio.recTools");
+  const tBitek = useTranslations("studio.bitek");
+  const [recMode, setRecMode] = useState<RecToolsMode>("single");
+  const [sectionBars, setSectionBars] = useState<SectionBars>(4);
+  const [sectionStartMs, setSectionStartMs] = useState<number | null>(null);
+  const [punchLine, setPunchLine] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [calibration, setCalibration] = useState<CalibrationUi>({ status: "idle" });
+  const [latencyOpenSignal, setLatencyOpenSignal] = useState(0);
+  const calibAbortRef = useRef<AbortController | null>(null);
+  const [lanesBusy, setLanesBusy] = useState(false);
+  const [laneMessage, setLaneMessage] = useState<string | null>(null);
+  const [dirtyLaneIds, setDirtyLaneIds] = useState<ReadonlySet<string>>(new Set());
+  const [passPreviewId, setPassPreviewId] = useState<string | null>(null);
+  const passAudioRef = useRef<HTMLAudioElement | null>(null);
+  const alignRef = useRef<{
+    samples: PlayheadSample[];
+    sampler: number | null;
+    recT0: number | null;
+    mode: RecToolsMode;
+    section: MsRange | null;
+    line: MsRange | null;
+    compensationMs: number;
+    countdownTarget: number | null;
+    prerollMs: number;
+    restore: (() => void) | null;
+    placement: { takeId: string; timelineStartMs: number; sourceOffsetMs: number } | null;
+  }>({
+    samples: [],
+    sampler: null,
+    recT0: null,
+    mode: "single",
+    section: null,
+    line: null,
+    compensationMs: 0,
+    countdownTarget: null,
+    prerollMs: 0,
+    restore: null,
+    placement: null,
+  });
   const captureActive = isRecordingCaptureActive(state.phase);
   const showWorkflow = state.phase === "READY_TAKE" && state.takeId;
 
@@ -325,6 +416,75 @@ export function StudioRecordingPanel({
     [setOutputSinkId],
   );
   const outputDevices = useStudioOutputDevices({ onSinkIdChange });
+
+  const inputLabel =
+    inputDevices.inputs.find((d) => d.deviceId === inputDevices.selectedDeviceId)?.label ??
+    inputDevices.inputs[0]?.label ??
+    null;
+  const outputLabel =
+    outputDevices.outputs.find((d) => d.deviceId === outputDevices.selectedDeviceId)?.label ??
+    outputDevices.outputs[0]?.label ??
+    null;
+  const latency = useStudioLatency({
+    inputLabel,
+    outputLabel,
+    readContextEstimate: () => contextLatencyEstimate(transport.getContextForAux()),
+    signedIn: true,
+  });
+  const laneStore = useTakeLanes(projectId, true);
+  const barMs = barDurationMs(transport.tempoBpm, transport.timeSignatureNum);
+  const beatMs = beatDurationMs(transport.tempoBpm);
+  const section =
+    sectionStartMs != null
+      ? sectionRange({
+          startMs: sectionStartMs,
+          bars: sectionBars,
+          barMs,
+          timelineLengthMs: transport.state.timelineLengthMs,
+        })
+      : null;
+  const lines = section ? sectionLines(section, barMs) : [];
+  const trackLanes = laneStore.lanes
+    .filter((l) => l.trackId === trackId)
+    .sort((a, b) => a.sectionStartMs - b.sectionStartMs);
+
+  const bitekReportRef = useRef(onBitekBubble);
+  useEffect(() => {
+    bitekReportRef.current = onBitekBubble;
+  });
+  useEffect(() => {
+    const report = bitekReportRef.current;
+    if (!report) return;
+    const w = latency.warning;
+    if (!w) {
+      report(null);
+      return;
+    }
+    report({
+      key: `rec-latency-${w}-${latency.deviceKey}`,
+      mood: "alert",
+      text:
+        w === "bluetooth"
+          ? tBitek("msg.latencyBluetooth")
+          : tBitek("msg.latencyHigh", { ms: latency.baseMs }),
+      details: [tBitek("msg.latencyDetail")],
+      actions: [
+        {
+          id: "calibrate",
+          label: tBitek("akcja.calibrate"),
+          primary: true,
+          onClick: () => setLatencyOpenSignal((n) => n + 1),
+        },
+        {
+          id: "manualLatency",
+          label: tBitek("akcja.manualLatency"),
+          onClick: () => setLatencyOpenSignal((n) => n + 1),
+        },
+      ],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- primitives only; avoids a render loop with the editor
+  }, [latency.warning, latency.deviceKey, latency.baseMs]);
+  useEffect(() => () => bitekReportRef.current?.(null), []);
 
   useEffect(() => {
     if (!monitorOn || !meterStream) return;
@@ -557,6 +717,300 @@ export function StudioRecordingPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount cleanup only
   }, []);
 
+  function stopAlignSampler() {
+    const a = alignRef.current;
+    if (a.sampler != null) window.clearInterval(a.sampler);
+    a.sampler = null;
+    a.countdownTarget = null;
+    setCountdown(null);
+  }
+
+  function startAlignSampler() {
+    stopAlignSampler();
+    const a = alignRef.current;
+    a.samples = [];
+    let lastBeats: number | null = null;
+    a.sampler = window.setInterval(() => {
+      const playheadMs = transport.getPlayheadMs();
+      const sample = { perfMs: performance.now(), playheadMs };
+      const prev = a.samples[a.samples.length - 1];
+      if ((!prev || prev.playheadMs !== playheadMs) && a.samples.length < 20_000) {
+        a.samples.push(sample);
+      }
+      if (a.countdownTarget != null) {
+        const beats = prerollCountdown({
+          playheadMs,
+          targetMs: a.countdownTarget,
+          beatMs,
+          prerollMs: a.prerollMs,
+        });
+        if (beats !== lastBeats) {
+          lastBeats = beats;
+          setCountdown(beats);
+        }
+        if (beats == null && playheadMs >= a.countdownTarget) {
+          a.countdownTarget = null;
+          a.restore?.();
+          a.restore = null;
+        }
+      }
+    }, 20);
+  }
+
+  /** Visual + click count-in on the Studio context when there is no room before the section. */
+  async function auxCountIn(beats: number): Promise<void> {
+    const ctx = transport.getContextForAux() as unknown as AudioContext | null;
+    if (ctx && typeof ctx.createBuffer === "function") {
+      try {
+        if (ctx.state !== "running") await ctx.resume();
+        const pcm = renderCalibrationClick(ctx.sampleRate, 0.35);
+        const buf = ctx.createBuffer(1, pcm.length, ctx.sampleRate);
+        buf.copyToChannel(pcm, 0);
+        for (let i = 0; i < beats; i += 1) {
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          src.start(ctx.currentTime + 0.05 + (i * beatMs) / 1000);
+        }
+      } catch {
+        // clicks are a nicety — the countdown still shows
+      }
+    }
+    for (let i = beats; i >= 1; i -= 1) {
+      setCountdown(i);
+      await new Promise((r) => window.setTimeout(r, beatMs));
+    }
+    setCountdown(null);
+  }
+
+  async function runCalibration(mode: "click" | "clap") {
+    if (captureActive || calibration.status === "running") return;
+    transport.pause();
+    transport.stopTakePreview();
+    const ctx = transport.getContextForAux() as unknown as AudioContext | null;
+    if (!ctx || typeof ctx.decodeAudioData !== "function") {
+      setCalibration({ status: "failed", reason: "ERROR" });
+      return;
+    }
+    const cfg = mode === "click" ? CLICK_CALIBRATION : CLAP_CALIBRATION;
+    const ac = new AbortController();
+    calibAbortRef.current = ac;
+    setCalibration({ status: "running", mode, beat: 0, total: cfg.count });
+    try {
+      const r = await runLatencyCalibration({
+        ctx,
+        mode,
+        audioDeviceId: inputDevices.audioDeviceIdForRecorder || undefined,
+        signal: ac.signal,
+        onProgress: (p) => setCalibration({ status: "running", mode, beat: p.beat, total: p.total }),
+      });
+      if (r.ok) {
+        latency.save({ roundTripMs: Math.round(r.latencyMs), method: mode, spreadMs: r.spreadMs });
+        setCalibration({ status: "done", latencyMs: r.latencyMs, spreadMs: r.spreadMs });
+      } else {
+        setCalibration({ status: "failed", reason: r.reason });
+      }
+    } catch (error) {
+      setCalibration(
+        error instanceof DOMException && error.name === "AbortError"
+          ? { status: "idle" }
+          : { status: "failed", reason: "ERROR" },
+      );
+    } finally {
+      calibAbortRef.current = null;
+    }
+  }
+
+  function chooseRecMode(next: RecToolsMode) {
+    setRecMode(next);
+    setPunchEnabled(false);
+    if (next !== "single" && sectionStartMs == null) {
+      setSectionStartMs(transport.getPlayheadMs());
+    }
+  }
+
+  function laneDirty(laneId: string, dirty: boolean) {
+    setDirtyLaneIds((prev) => {
+      const next = new Set(prev);
+      if (dirty) next.add(laneId);
+      else next.delete(laneId);
+      return next;
+    });
+  }
+
+  async function updateLane(lane: TakeLane) {
+    laneDirty(lane.id, true);
+    await laneStore.put({ ...lane, updatedAt: new Date().toISOString() });
+  }
+
+  /** Put the lane comp on the timeline (server replaces the lane's previous clips). */
+  async function applyLane(lane: TakeLane): Promise<boolean> {
+    setLanesBusy(true);
+    setLaneMessage(null);
+    try {
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const res = await fetch(`/api/studio/projects/${projectId}/record/lanes/comp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lane, expectedDocumentVersion: persistVersionTip.expected() }),
+          });
+          const body = (await res.json().catch(() => null)) as {
+            document?: StudioProjectDocument;
+            lane?: TakeLane;
+            documentVersion?: number;
+            error?: string;
+            code?: string;
+          } | null;
+          if (!res.ok || !body?.document) {
+            return classifyPersistHttpFailure({
+              status: res.status,
+              message: body?.error ?? tRec("compBlad"),
+              code: body?.code,
+            });
+          }
+          const version = ackDocumentVersion(body.documentVersion);
+          return {
+            ok: true as const,
+            documentVersion: version,
+            apply: () => {
+              onDocumentReplaced?.(body.document!);
+              if (body.lane) laneStore.replaceLocal(body.lane);
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure(tRec("compBlad"));
+        }
+      });
+      if (!result.ok) {
+        setLaneMessage(result.message);
+        return false;
+      }
+      laneDirty(lane.id, false);
+      setLaneMessage(tRec("compGotowy"));
+      return true;
+    } finally {
+      setLanesBusy(false);
+    }
+  }
+
+  async function togglePassPreview(_lane: TakeLane, pass: LanePass) {
+    const current = passAudioRef.current;
+    if (current) {
+      current.pause();
+      passAudioRef.current = null;
+    }
+    if (passPreviewId === pass.id) {
+      setPassPreviewId(null);
+      return;
+    }
+    transport.pause();
+    transport.stopTakePreview();
+    const url = await transport
+      .resolveClipSourceUrl({
+        sourceKind: "TAKE",
+        sourceTakeId: pass.takeId,
+        sourceBeatId: null,
+        sourceArtifactId: null,
+      })
+      .catch(() => null);
+    if (!url) {
+      setLaneMessage(tr("nieUdaloSieOdtworzyc"));
+      return;
+    }
+    const el = new Audio(url);
+    passAudioRef.current = el;
+    setPassPreviewId(pass.id);
+    const len = (pass.rangeEndMs - pass.rangeStartMs) / 1000;
+    const from = pass.sourceOffsetMs / 1000;
+    const stop = () => {
+      el.pause();
+      if (passAudioRef.current === el) passAudioRef.current = null;
+      setPassPreviewId((id) => (id === pass.id ? null : id));
+    };
+    el.addEventListener("loadedmetadata", () => {
+      el.currentTime = from;
+      void el.play().catch(stop);
+    });
+    el.addEventListener("timeupdate", () => {
+      if (el.currentTime >= from + len) stop();
+    });
+    el.addEventListener("ended", stop);
+    el.addEventListener("error", stop);
+  }
+
+  /** Loop / punch capture → passes → lane → comp on the timeline. Single takes keep Zachowaj. */
+  async function finishLaneCapture(takeId: string, takeDurationSeconds: number | null) {
+    const a = alignRef.current;
+    const placeTrackId = captureTrackIdRef.current || trackIdRef.current;
+    if (!a.section || a.recT0 == null || !placeTrackId) return;
+    const takeDurationMs = Math.round((takeDurationSeconds ?? 0) * 1000);
+    const range = a.mode === "punch" && a.line ? a.line : a.section;
+    const starts =
+      a.mode === "loop"
+        ? loopPassStarts({ samples: a.samples, section: a.section, recordStartPerfMs: a.recT0 })
+        : [recordingPositionOf({ samples: a.samples, targetMs: range.startMs, recordStartPerfMs: a.recT0 })].filter(
+            (v): v is number => v != null,
+          );
+    const captured = buildCapturedPasses({
+      passStartsRecMs: starts,
+      section: range,
+      takeDurationMs,
+      compensationMs: a.compensationMs,
+    });
+    if (captured.length === 0) {
+      setWorkflowError(tRec("brakPelnegoPrzejscia"));
+      return;
+    }
+    const now = new Date().toISOString();
+    const passes: Omit<LanePass, "number">[] = captured.map((c) => ({
+      id: crypto.randomUUID(),
+      takeId,
+      kind: a.mode === "punch" ? "punch" : "loop",
+      rangeStartMs: c.rangeStartMs,
+      rangeEndMs: c.rangeEndMs,
+      sourceOffsetMs: c.sourceOffsetMs,
+      takeDurationMs,
+      starred: false,
+      complete: c.complete,
+      createdAt: now,
+    }));
+    const existing =
+      findLaneForRange(laneStore.lanes, placeTrackId, a.section) ??
+      (a.mode === "punch" ? findLaneForRange(laneStore.lanes, placeTrackId, range) : null);
+    const lane: TakeLane = existing ?? {
+      id: crypto.randomUUID(),
+      trackId: placeTrackId,
+      sectionStartMs: a.section.startMs,
+      sectionEndMs: a.section.endMs,
+      lineMs: Math.max(100, Math.round(barMs)),
+      passes: [],
+      comp: [],
+      clipIds: [],
+      updatedAt: now,
+    };
+    const next = addPassesToLane(lane, passes);
+    const saved = await laneStore.put({ ...next, updatedAt: now });
+    const ok = await applyLane(saved);
+    if (!ok) {
+      setWorkflowError(tRec("compNieNaOsi"));
+      laneDirty(saved.id, true);
+    }
+    placedTakeIdsRef.current.add(takeId);
+    clearCapturePlacement();
+    setKeptMessage(
+      a.mode === "loop" ? tRec("zapisanoPrzejscia", { n: passes.length }) : tRec("zapisanoPunch"),
+    );
+    dispatch({ type: "RETRY_IDLE" });
+  }
+
+  function restoreLoopAfterCapture() {
+    alignRef.current.restore?.();
+    alignRef.current.restore = null;
+    loopRestoreRef.current?.();
+    loopRestoreRef.current = null;
+  }
+
   function clearTick() {
     if (tickRef.current) {
       clearInterval(tickRef.current);
@@ -710,20 +1164,47 @@ export function StudioRecordingPanel({
     captureArmingRef.current = true;
     setCaptureArming(true);
     stopTesterStream();
-    const punch = punchEnabled
+    const flow: RecToolsMode = recMode !== "single" && section ? recMode : "single";
+    const flowLine = flow === "punch" ? lines[Math.min(punchLine, lines.length - 1)] ?? null : null;
+    if (flow === "punch" && !flowLine) {
+      captureArmingRef.current = false;
+      setCaptureArming(false);
+      submittingRef.current = false;
+      setWorkflowError(tRec("brakLinijki"));
+      return;
+    }
+    const align = alignRef.current;
+    align.mode = flow;
+    align.section = flow === "single" ? null : section;
+    align.line = flowLine;
+    align.compensationMs = latency.compensationMs;
+    align.placement = null;
+    align.recT0 = null;
+    align.restore = null;
+    const punchWin = flowLine ? punchLineWindow({ line: flowLine, barMs, beatMs }) : null;
+    const punch = flow === "single" && punchEnabled
       ? normalizePunchWindow({
           punchInMs,
           punchOutMs,
           timelineLengthMs: transport.state.timelineLengthMs,
         })
       : null;
-    const startMs = punch?.punchInMs ?? transport.state.playheadMs;
-    punchOutRef.current = punch?.punchOutMs ?? null;
-    const countMs = countInDurationMs(
-      transport.tempoBpm,
-      countInBars,
-      transport.timeSignatureNum,
-    );
+    const startMs =
+      flow === "loop" && section
+        ? section.startMs
+        : punchWin
+          ? punchWin.recordFromMs
+          : punch?.punchInMs ?? transport.state.playheadMs;
+    punchOutRef.current = punchWin ? punchWin.stopAtMs : punch?.punchOutMs ?? null;
+    // Loop / punch run their own 1-bar pre-roll after the recorder starts.
+    const countMs =
+      flow !== "single"
+        ? 0
+        : countInDurationMs(
+            transport.tempoBpm,
+            countInBars,
+            transport.timeSignatureNum,
+          );
     if (countMs > 0) {
       setCountInActive(true);
       transport.seek(countInSeekMs(startMs, countMs));
@@ -808,6 +1289,41 @@ export function StudioRecordingPanel({
       recoveryWriterRef.current = writer;
       setLocalSafety(writer.state);
       setMicStream(recorder.getStream());
+      align.recT0 = (await recorder.waitForStarted(800)) ?? performance.now();
+      startAlignSampler();
+      if (flow === "loop" && section) {
+        const prevLoop = {
+          enabled: transport.loopEnabled,
+          startMs: transport.loopStartMs,
+          endMs: transport.loopEndMs,
+        };
+        const prevMetronome = transport.metronomeEnabled;
+        transport.setLoop({ enabled: true, startMs: section.startMs, endMs: section.endMs });
+        const restoreLoop = () => transport.setLoop(prevLoop);
+        const beatsPerBar = transport.timeSignatureNum > 0 ? transport.timeSignatureNum : 4;
+        if (section.startMs >= barMs) {
+          transport.seek(section.startMs - barMs);
+          transport.setMetronomeEnabled(true);
+          align.prerollMs = barMs;
+          align.countdownTarget = section.startMs;
+          align.restore = () => {
+            if (!prevMetronome) transport.setMetronomeEnabled(false);
+          };
+        } else {
+          transport.seek(section.startMs);
+          await auxCountIn(beatsPerBar);
+        }
+        loopRestoreRef.current = () => {
+          restoreLoop();
+          if (!prevMetronome) transport.setMetronomeEnabled(false);
+        };
+      } else if (punchWin && flowLine) {
+        transport.seek(punchWin.recordFromMs);
+        if (punchWin.prerollMs > 0) {
+          align.prerollMs = punchWin.prerollMs;
+          align.countdownTarget = flowLine.startMs;
+        }
+      }
       // Keep beat playing under the new take when possible.
       transport.play();
       dispatch({ type: "START_RECORDING" });
@@ -831,6 +1347,8 @@ export function StudioRecordingPanel({
       clearTick();
       clearMic();
       clearCapturePlacement();
+      stopAlignSampler();
+      restoreLoopAfterCapture();
       transport.pause();
       try {
         void recorder.cancel();
@@ -881,8 +1399,10 @@ export function StudioRecordingPanel({
     submittingRef.current = true;
     clearTick();
     clearMic();
+    stopAlignSampler();
     dispatch({ type: "STOP" });
     transport.pause();
+    restoreLoopAfterCapture();
 
     const recorder = recorderRef.current;
     const startMs = recordStartMsRef.current;
@@ -916,6 +1436,23 @@ export function StudioRecordingPanel({
       dispatch({ type: "FINALIZE_START" });
 
       // Take is READY after uploadTakeRecordingBlob finalize — do not auto-place.
+      const align = alignRef.current;
+      if (align.recT0 != null) {
+        const recPositionMs = recordingPositionOf({
+          samples: align.samples,
+          targetMs: startMs,
+          recordStartPerfMs: align.recT0,
+        });
+        align.placement = {
+          takeId: uploaded.takeId,
+          ...alignedPlacement({
+            startMs,
+            recPositionMs,
+            // Nothing played → nothing to line up against.
+            compensationMs: recPositionMs == null ? 0 : align.compensationMs,
+          }),
+        };
+      }
       dispatch({
         type: "TAKE_READY",
         takeId: uploaded.takeId,
@@ -925,6 +1462,9 @@ export function StudioRecordingPanel({
       setWorkflowError(null);
       setKeptMessage(null);
       // Preserve recordStartMs / captureTrackId for Zachowaj placement.
+      if (align.mode !== "single") {
+        void finishLaneCapture(uploaded.takeId, uploaded.durationSeconds ?? null);
+      }
     } catch (error) {
       clearCapturePlacement();
       const cancelled =
@@ -979,6 +1519,8 @@ export function StudioRecordingPanel({
   function cancelRecording() {
     clearTick();
     clearMic();
+    stopAlignSampler();
+    restoreLoopAfterCapture();
     clearCapturePlacement();
     transport.pause();
     transport.stopTakePreview();
@@ -1052,7 +1594,12 @@ export function StudioRecordingPanel({
               body: JSON.stringify({
                 trackId: placeTrackId,
                 takeId,
-                timelineStartMs: startMs,
+                ...(alignRef.current.placement?.takeId === takeId
+                  ? {
+                      timelineStartMs: alignRef.current.placement.timelineStartMs,
+                      sourceOffsetMs: alignRef.current.placement.sourceOffsetMs,
+                    }
+                  : { timelineStartMs: startMs }),
                 expectedDocumentVersion: persistVersionTip.expected(),
               }),
             },
@@ -1503,6 +2050,31 @@ export function StudioRecordingPanel({
         </select>
       </label>
 
+      <StudioLatencyCard
+        latency={latency}
+        calibration={calibration}
+        disabled={captureActive || state.phase === "READY_TAKE"}
+        onCalibrate={(mode) => void runCalibration(mode)}
+        onCancel={() => calibAbortRef.current?.abort()}
+        openSignal={latencyOpenSignal}
+      />
+
+      <StudioRecModeCard
+        mode={recMode}
+        onMode={chooseRecMode}
+        bars={sectionBars}
+        onBars={setSectionBars}
+        section={section}
+        onSectionFromPlayhead={() => setSectionStartMs(transport.getPlayheadMs())}
+        lines={lines}
+        punchLine={Math.min(punchLine, Math.max(0, lines.length - 1))}
+        onPunchLine={setPunchLine}
+        disabled={busy && state.phase !== "READY"}
+        lockedReason={null}
+      />
+
+      <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />
+
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
           {tr("countInPunch")}
@@ -1528,9 +2100,9 @@ export function StudioRecordingPanel({
         <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--brd-ink)]">
           <input
             type="checkbox"
-            checked={punchEnabled}
+            checked={punchEnabled && recMode === "single"}
             onChange={(e) => setPunchEnabled(e.target.checked)}
-            disabled={busy && state.phase !== "READY"}
+            disabled={(busy && state.phase !== "READY") || recMode !== "single"}
           />
           {tr("punchInOutNa")}
         </label>
@@ -1627,6 +2199,25 @@ export function StudioRecordingPanel({
             {tr("zachowajUmieszczaNagranieNa")}
           </p>
         </div>
+      ) : null}
+
+      <StudioTakeLanesCard
+        lanes={trackLanes}
+        busy={lanesBusy || captureActive}
+        previewingPassId={passPreviewId}
+        dirtyLaneIds={dirtyLaneIds}
+        localOnly={!laneStore.serverBacked}
+        onPreview={(lane, pass) => void togglePassPreview(lane, pass)}
+        onStar={(lane, pass) => void updateLane(toggleStar(lane, pass.id))}
+        onUseForSection={(lane, pass) => void updateLane(setSectionChoice(lane, pass.id))}
+        onLineChoice={(lane, line, passId) => void updateLane(setLineChoice(lane, line, passId))}
+        onApply={(lane) => void applyLane(lane)}
+        onDelete={(lane) => void laneStore.remove(lane.id)}
+      />
+      {laneMessage ? (
+        <p className="text-xs text-[var(--brd-mute)]" role="status" data-testid="studio-lane-message">
+          {laneMessage}
+        </p>
       ) : null}
 
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">

@@ -11,6 +11,7 @@ import {
   defaultStudioTrackRole,
   isStudioTrackRole,
 } from "@/config/studio";
+import { maxProjectsForTier, maxRecordingTracksForTier } from "@/config/plan-policy";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -44,7 +45,13 @@ import {
   nextDuplicatedTrackName,
   StudioBeatTrackProtectedError,
   StudioTrackCapacityError,
+  countRecordingTracks,
+  studioTrackRowCap,
 } from "@/lib/studio/studio-track-capacity";
+import {
+  canCreateStudioProject,
+  StudioProjectLimitError,
+} from "@/lib/studio/studio-plan-limits";
 import {
   applyStudioClipScratchCas,
   mapStudioClipScratchFields,
@@ -240,11 +247,11 @@ export async function createStudioProjectFor(
     .eq("owner_id", context.userId)
     .neq("status", "ARCHIVED");
   if (countError) throw new Error(countError.message);
-  if ((count ?? 0) >= STUDIO_MAX_PROJECTS_PER_USER) {
-    throw new AuthError(
-      "FORBIDDEN",
-      `Osiągnięto limit ${STUDIO_MAX_PROJECTS_PER_USER} projektów Studio.`,
-    );
+  // Plan cap (plan-policy: FREE 3 / BRONZE 10 / SILVER 25 / GOLD 50). Projects
+  // above the cap after a downgrade stay; only creating a new one is blocked.
+  const planTier = (await resolveProductEntitlementForAuthContext(context)).premiumTier;
+  if (!canCreateStudioProject({ tier: planTier, activeProjects: count ?? 0 })) {
+    throw new StudioProjectLimitError(planTier, maxProjectsForTier(planTier));
   }
 
   const title = (input?.title?.trim() || "Nowy projekt").slice(
@@ -1069,7 +1076,8 @@ export async function updateStudioTrackControls(
 }
 
 /**
- * Phase 5 — Add VOCAL track with atomic capacity (Premium studioMaxTracks SSOT).
+ * Phase 5 — Add VOCAL track with atomic capacity (plan-policy maxRecordingTracks;
+ * the Bit track does not count).
  * RPC: advisory lock → CAS → COUNT → INSERT → version bump.
  */
 export async function addStudioTrackFor(
@@ -1084,20 +1092,22 @@ export async function addStudioTrackFor(
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const trackType = resolveStudioAddTrackTypeForWrite(input.trackType);
   const product = await resolveProductEntitlementForAuthContext(context);
-  const maxTracks = product.limits.studioMaxTracks;
-  if (!Number.isInteger(maxTracks) || maxTracks < 1) {
-    throw new Error("Invalid studioMaxTracks entitlement.");
-  }
+  const maxRecordingTracks = maxRecordingTracksForTier(product.premiumTier);
 
   const admin = createSupabaseAdminClient();
   const { data: existingTracks, error: listError } = await admin
     .from("studio_tracks")
-    .select("name")
+    .select("name, track_type")
     .eq("project_id", input.projectId);
   if (listError) throw new Error(listError.message);
-  const existingNames = (
-    (existingTracks as Array<{ name: string }> | null) ?? []
-  ).map((t) => t.name);
+  const existing =
+    (existingTracks as Array<{ name: string; track_type: string }> | null) ?? [];
+  const existingNames = existing.map((t) => t.name);
+  // Plan limit counts recording tracks only; the Bit track is free.
+  const maxTracks = studioTrackRowCap({
+    maxRecordingTracks,
+    beatTrackCount: existing.length - countRecordingTracks(existing),
+  });
   const name = resolveStudioAddTrackName(trackType, existingNames);
 
   const { data, error } = await admin.rpc("studio_cas_add_track", {
@@ -1234,10 +1244,7 @@ export async function duplicateStudioTrackFor(
   await assertOwnsProject(context, input.projectId);
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const product = await resolveProductEntitlementForAuthContext(context);
-  const maxTracks = product.limits.studioMaxTracks;
-  if (!Number.isInteger(maxTracks) || maxTracks < 1) {
-    throw new Error("Invalid studioMaxTracks entitlement.");
-  }
+  const maxRecordingTracks = maxRecordingTracksForTier(product.premiumTier);
 
   const admin = createSupabaseAdminClient();
   const { data: source, error: sourceError } = await admin
@@ -1254,13 +1261,19 @@ export async function duplicateStudioTrackFor(
 
   const { data: existingTracks, error: listError } = await admin
     .from("studio_tracks")
-    .select("name")
+    .select("name, track_type")
     .eq("project_id", input.projectId);
   if (listError) throw new Error(listError.message);
+  const existing =
+    (existingTracks as Array<{ name: string; track_type: string }> | null) ?? [];
   const name = nextDuplicatedTrackName(
     source.name,
-    ((existingTracks as Array<{ name: string }> | null) ?? []).map((t) => t.name),
+    existing.map((t) => t.name),
   );
+  const maxTracks = studioTrackRowCap({
+    maxRecordingTracks,
+    beatTrackCount: existing.length - countRecordingTracks(existing),
+  });
 
   const { data, error } = await admin.rpc("studio_cas_duplicate_track", {
     p_project_id: input.projectId,

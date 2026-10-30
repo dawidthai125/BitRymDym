@@ -27,7 +27,13 @@ export type BeatStatus = (typeof BEAT_STATUSES)[number];
 export const BEAT_OWNERSHIP_TYPES = ["PLATFORM", "USER"] as const;
 export type BeatOwnershipType = (typeof BEAT_OWNERSHIP_TYPES)[number];
 
-export const BEAT_AUDIO_PURPOSES = ["MASTER", "PLAYBACK", "DOWNLOAD"] as const;
+export const BEAT_AUDIO_PURPOSES = [
+  "MASTER",
+  "PLAYBACK",
+  "DOWNLOAD",
+  /** Guest 20 s preview (server-rendered from MASTER). */
+  "PREVIEW",
+] as const;
 export type BeatAudioPurpose = (typeof BEAT_AUDIO_PURPOSES)[number];
 
 export const BEAT_AUDIO_ASSET_STATUSES = [

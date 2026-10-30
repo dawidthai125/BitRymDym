@@ -2,13 +2,14 @@
  * Premium capability / limits matrix (Design Contract SSOT).
  * W2-B: beat-download daily limits enforced at runtime via
  * `limits.downloadsDaily` + `PREMIUM_ANON_DOWNLOADS_DAILY` (ANON ≠ FREE).
- * Render daily/concurrent/quota/retention: ONE authoritative source (this matrix).
- * Gold production retention = **28 days** (Owner 2026-10-25; aligns with
- * `PREMIUM_RETENTION_DAYS.GOLD` / OD-EXPORT-12). Gold 90d = DESIGN ONLY until
- * artifact janitor GO. Premium Retention feature remains HOLD.
+ * Render daily/concurrent/quota live here; retention and Studio track caps
+ * come from the plan SSOT `@/config/plan-policy` (Owner 2026-10-29: Gold keeps
+ * the longest — 60 d > Silver 30 d; the old 28 d Gold < 30 d Silver bug is
+ * gone). Gold 90d stays DESIGN ONLY until artifact janitor GO.
  */
 
 import type { AudioCapabilityKey } from "@/config/audio-render";
+import { GUEST_POLICY, PLAN_POLICY } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
 export type PremiumPriority = "normal" | "elevated" | "highest";
@@ -26,7 +27,7 @@ export type PremiumTierLimits = {
   artifactQuotaBytes: number;
   /**
    * Max studio_tracks rows per project (BEAT counts; Master does not).
-   * FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8 — Phase 5 Track CRUD SSOT.
+   * plan-policy maxRecordingTracks + 1 Bit: FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8.
    */
   studioMaxTracks: number;
   priority: PremiumPriority;
@@ -69,66 +70,77 @@ const GOLD_CAPS = [
   "EXPORT_WAV_MASTER",
 ] as const satisfies readonly AudioCapabilityKey[];
 
+const retention = (tier: PremiumTier) => PLAN_POLICY[tier].retentionDays * DAY;
 /**
- * Canonical matrix. Gold production retention = 28d (Owner 2026-10-25).
- * SILVER stays 30d. Design catalog may still list Gold 90d — not production-enabled
+ * Total studio_tracks rows a project can hold = recording tracks + one Bit
+ * track (render sizing). Recording-track enforcement uses plan-policy
+ * `maxRecordingTracks` (Bit excluded) — see studio-service add/duplicate.
+ */
+const tracks = (tier: PremiumTier) =>
+  PLAN_POLICY[tier].studio.maxRecordingTracks + 1;
+const beatDownloads = (tier: PremiumTier) =>
+  PLAN_POLICY[tier].downloads.beatsPerDay;
+
+/**
+ * Canonical matrix. Retention per plan-policy (FREE 2d / BRONZE 7d / SILVER 30d /
+ * GOLD 60d). Design catalog may still list Gold 90d — not production-enabled
  * (`goldRetentionDesignOnly` + `isGoldRetentionProductionEnabled() === false`).
  */
 export const PREMIUM_TIER_MATRIX: Record<PremiumTier, PremiumTierLimits> = {
   FREE: {
-    downloadsDaily: 4,
+    downloadsDaily: beatDownloads("FREE"),
     rendersDaily: 5,
     rendersConcurrent: 1,
-    artifactRetentionSeconds: 48 * HOUR,
-    artifactRetentionDesignSeconds: 48 * HOUR,
+    artifactRetentionSeconds: retention("FREE"),
+    artifactRetentionDesignSeconds: retention("FREE"),
     goldRetentionDesignOnly: false,
     artifactQuotaBytes: 250 * MIB,
-    studioMaxTracks: 2,
+    studioMaxTracks: tracks("FREE"),
     priority: "normal",
     capabilities: BASIC_CAPS,
   },
   BRONZE: {
-    downloadsDaily: 10,
+    downloadsDaily: beatDownloads("BRONZE"),
     rendersDaily: 10,
     rendersConcurrent: 1,
-    artifactRetentionSeconds: 7 * DAY,
-    artifactRetentionDesignSeconds: 7 * DAY,
+    artifactRetentionSeconds: retention("BRONZE"),
+    artifactRetentionDesignSeconds: retention("BRONZE"),
     goldRetentionDesignOnly: false,
     artifactQuotaBytes: 500 * MIB,
-    studioMaxTracks: 3,
+    studioMaxTracks: tracks("BRONZE"),
     priority: "elevated",
     capabilities: BRONZE_CAPS,
   },
   SILVER: {
-    downloadsDaily: 25,
+    downloadsDaily: beatDownloads("SILVER"),
     rendersDaily: 20,
     rendersConcurrent: 2,
-    artifactRetentionSeconds: 30 * DAY,
-    artifactRetentionDesignSeconds: 30 * DAY,
+    artifactRetentionSeconds: retention("SILVER"),
+    artifactRetentionDesignSeconds: retention("SILVER"),
     goldRetentionDesignOnly: false,
     artifactQuotaBytes: 2 * GIB,
-    studioMaxTracks: 5,
+    studioMaxTracks: tracks("SILVER"),
     priority: "elevated",
     capabilities: SILVER_CAPS,
   },
   GOLD: {
-    downloadsDaily: 50,
+    downloadsDaily: beatDownloads("GOLD"),
     rendersDaily: 40,
     rendersConcurrent: 3,
-    // Owner 2026-10-25: production Gold = 28d (same unit DAY as SILVER/others).
+    // Owner 2026-10-29: Gold keeps the longest (plan-policy 60d).
     // 90d remains design-only until janitor GO; Retention executor stays HOLD.
-    artifactRetentionSeconds: 28 * DAY,
+    artifactRetentionSeconds: retention("GOLD"),
     artifactRetentionDesignSeconds: 90 * DAY,
     goldRetentionDesignOnly: true,
     artifactQuotaBytes: 5 * GIB,
-    studioMaxTracks: 8,
+    studioMaxTracks: tracks("GOLD"),
     priority: "highest",
     capabilities: GOLD_CAPS,
   },
 };
 
-/** Anon beat-download baseline (OD-05) — not switched by W2-A cutover. */
-export const PREMIUM_ANON_DOWNLOADS_DAILY = 2;
+/** Guests cannot download beats (Owner 2026-10-29: GUEST_POLICY). */
+export const PREMIUM_ANON_DOWNLOADS_DAILY = GUEST_POLICY.beatDownloadsPerDay;
 
 export function limitsForPremiumTier(tier: PremiumTier): PremiumTierLimits {
   return PREMIUM_TIER_MATRIX[tier];

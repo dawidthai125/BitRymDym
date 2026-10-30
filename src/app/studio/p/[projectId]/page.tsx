@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { PageFrame } from "@/components/brand/chrome";
 import { StudioEditor } from "@/components/studio/studio-editor";
 import { AppShell } from "@/components/site/app-shell";
+import { maxRecordingTracksForTier } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
+import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { getStudioProjectDocument } from "@/lib/studio/studio-service";
 
@@ -20,17 +22,17 @@ type PageProps = { params: Promise<{ projectId: string }> };
 
 export default async function StudioProjectPage({ params }: PageProps) {
   const t = await getTranslations("studio.studioPPage");
+  const { projectId } = await params;
   let auth;
   try {
     auth = await requireUser();
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
-      redirect("/sign-in");
+      redirect(signInPathWithNext(`/studio/p/${encodeURIComponent(projectId)}`));
     }
     redirect("/studio");
   }
 
-  const { projectId } = await params;
   let document;
   try {
     document = await getStudioProjectDocument(projectId);
@@ -65,7 +67,7 @@ export default async function StudioProjectPage({ params }: PageProps) {
           <StudioEditor
             initialDocument={document}
             trackCapacity={{
-              maxTracks: product.limits.studioMaxTracks,
+              maxTracks: maxRecordingTracksForTier(product.premiumTier),
               premiumTier: product.premiumTier,
             }}
           />

@@ -123,7 +123,7 @@ describe("W2-A — Premium tier foundation (unit/contract)", () => {
   });
 
   it("G: capability matrix matches Design Contract", () => {
-    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(4);
+    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(0);
     expect(PREMIUM_TIER_MATRIX.FREE.rendersDaily).toBe(5);
     expect(PREMIUM_TIER_MATRIX.FREE.rendersConcurrent).toBe(1);
     expect(PREMIUM_TIER_MATRIX.FREE.artifactQuotaBytes).toBe(250 * 1024 * 1024);
@@ -249,8 +249,10 @@ describe("W2-A — Premium tier foundation (unit/contract)", () => {
     const gold = limitsForPremiumTier("GOLD");
     expect(gold.goldRetentionDesignOnly).toBe(true);
     expect(gold.artifactRetentionDesignSeconds).toBe(90 * 24 * 60 * 60);
-    expect(gold.artifactRetentionSeconds).toBe(28 * 24 * 60 * 60);
-    expect(retentionSecondsForTier("GOLD")).toBe(28 * 24 * 60 * 60);
+    // Owner 2026-10-29 (plan-policy): Gold keeps the longest — 60 d > Silver 30 d.
+    expect(gold.artifactRetentionSeconds).toBe(60 * 24 * 60 * 60);
+    expect(retentionSecondsForTier("GOLD")).toBe(60 * 24 * 60 * 60);
+    expect(gold.artifactRetentionSeconds).toBeGreaterThan(limitsForPremiumTier("SILVER").artifactRetentionSeconds);
   });
 
   it("S: E3 audio wrapper delegates to product resolver (single SSOT)", () => {
@@ -282,10 +284,10 @@ describe("W2-A — Premium tier foundation (unit/contract)", () => {
   });
 
   it("download matrix SSOT (W2-B enforces at runtime via entitlement limits)", () => {
-    expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(2);
-    expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(4); // FREE baseline mirror only
-    expect(PREMIUM_ANON_DOWNLOADS_DAILY).toBe(2);
-    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(4);
+    expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(0);
+    expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(0); // FREE mirror only — Free listens, no downloads
+    expect(PREMIUM_ANON_DOWNLOADS_DAILY).toBe(0);
+    expect(PREMIUM_TIER_MATRIX.FREE.downloadsDaily).toBe(0);
     expect(PREMIUM_TIER_MATRIX.BRONZE.downloadsDaily).toBe(10);
     expect(PREMIUM_TIER_MATRIX.SILVER.downloadsDaily).toBe(25);
     expect(PREMIUM_TIER_MATRIX.GOLD.downloadsDaily).toBe(50);

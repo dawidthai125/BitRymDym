@@ -1,5 +1,6 @@
 import "server-only";
 
+import { GUEST_POLICY } from "@/config/plan-policy";
 import type { BeatOwnershipType, BeatStatus, SystemRole } from "@/types/domain";
 import {
   AuthError,
@@ -21,7 +22,6 @@ import {
   type AudioAccessActor,
   type AudioAccessPurpose,
 } from "@/lib/beats/audio-validation";
-import { ensureAnonymousDownloadIdentity } from "@/lib/downloads/anonymous-identity";
 import { dailyDownloadLimitForActor } from "@/lib/downloads/limits";
 import {
   finalizeDownload,
@@ -41,7 +41,19 @@ export type BeatAudioAccessResult = {
   beatId: string;
   assetId: string;
   remainingToday?: number;
+  /**
+   * Guests only (GUEST_POLICY.previewSeconds): the URL points at the 20 s
+   * PREVIEW asset (server-enforced); the player also stops here and asks to
+   * sign in. Signed-in users get full playback (undefined).
+   */
+  previewLimitSeconds?: number;
 };
+
+/** Raw reasons mapped to user copy in toSafeDownloadErrorMessage. */
+export const BEAT_DOWNLOAD_LOGIN_REQUIRED = "Beat download requires sign-in.";
+export const BEAT_DOWNLOAD_PLAN_REQUIRED = "Beat download requires a paid plan.";
+/** Guest asked to play a beat that has no 20 s PREVIEW asset yet. */
+export const BEAT_PREVIEW_LOGIN_REQUIRED = "Guest preview unavailable; sign in to listen.";
 
 export type PlatformBeatOpsExportResult = {
   url: string;
@@ -98,6 +110,29 @@ async function resolveActiveAsset(params: {
     throw new AuthError("NOT_FOUND", "No READY audio asset for this beat.");
   }
   return master as BeatAudioAssetRow;
+}
+
+/**
+ * Guests: only the server-rendered 20 s PREVIEW asset. Never falls back to
+ * PLAYBACK/MASTER, so a guest can never be handed the full beat file.
+ */
+async function resolveGuestPreviewAsset(beatId: string): Promise<BeatAudioAssetRow> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("beat_audio_assets")
+    .select(BEAT_AUDIO_ASSET_SELECT)
+    .eq("beat_id", beatId)
+    .eq("purpose", "PREVIEW")
+    .eq("is_active", true)
+    .eq("status", "READY")
+    .maybeSingle();
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data) {
+    throw new AuthError("UNAUTHENTICATED", BEAT_PREVIEW_LOGIN_REQUIRED);
+  }
+  return data as BeatAudioAssetRow;
 }
 
 type BeatAccessRow = {
@@ -193,13 +228,37 @@ export async function requestBeatAudioAccess(params: {
     throw new AuthError("FORBIDDEN", "Audio access denied.");
   }
 
-  const asset = await resolveActiveAsset({
-    beatId: params.beatId,
-    purpose: params.purpose,
-  });
+  // Owner 2026-10-29: guests and Free never download beats (listen only).
+  // Rejected before any slot is reserved or URL signed.
+  let userDownloadsDaily: number | null = null;
+  if (params.purpose === "DOWNLOAD") {
+    if (actor === "ANON" || !profileContext) {
+      throw new AuthError("UNAUTHENTICATED", BEAT_DOWNLOAD_LOGIN_REQUIRED);
+    } else if (actor === "USER" || actor === "MODERATOR") {
+      const entitlement =
+        await resolveProductEntitlementForAuthContext(profileContext);
+      userDownloadsDaily = entitlement.limits.downloadsDaily;
+      if (!(userDownloadsDaily > 0)) {
+        throw new AuthError("FORBIDDEN", BEAT_DOWNLOAD_PLAN_REQUIRED);
+      }
+    }
+  }
+
+  // Guests (no session) never receive the full file: 20 s PREVIEW only.
+  const guestPreview =
+    params.purpose === "PLAYBACK" && (actor === "ANON" || !profileContext);
+  const asset = guestPreview
+    ? await resolveGuestPreviewAsset(params.beatId)
+    : await resolveActiveAsset({
+        beatId: params.beatId,
+        purpose: params.purpose,
+      });
 
   if (asset.beat_id !== params.beatId) {
     throw new AuthError("FORBIDDEN", "Asset/beat relation mismatch.");
+  }
+  if (guestPreview && asset.purpose !== "PREVIEW") {
+    throw new AuthError("UNAUTHENTICATED", BEAT_PREVIEW_LOGIN_REQUIRED);
   }
 
   let reservationId: string | null = null;
@@ -208,33 +267,14 @@ export async function requestBeatAudioAccess(params: {
   if (params.purpose === "DOWNLOAD") {
     if (actor === "ADMIN") {
       // Limit-exempt for USER-owned masters only (PLATFORM denied above).
-    } else if (actor === "ANON") {
-      // ANON ≠ FREE — never resolve product FREE=4 for anonymous.
-      const { tokenHash } = await ensureAnonymousDownloadIdentity();
-      const dailyLimit = dailyDownloadLimitForActor({ actorType: "ANON" });
-      const reserve = await reserveDownloadSlot({
-        beatId: params.beatId,
-        assetId: asset.id,
-        actorType: "ANON",
-        userId: null,
-        anonymousTokenHash: tokenHash,
-        dailyLimit,
-      });
-      if (!reserve.allowed) {
-        throwLimitReached();
-      }
-      reservationId = reserve.reservationId;
-      remainingToday = reserve.remaining;
     } else if (actor === "USER" || actor === "MODERATOR") {
       // Authenticated non-admin: limit from Product Entitlement SSOT.
-      if (!profileContext) {
-        throw new AuthError("UNAUTHENTICATED", "Sign in required.");
+      if (!profileContext || userDownloadsDaily === null) {
+        throw new AuthError("UNAUTHENTICATED", BEAT_DOWNLOAD_LOGIN_REQUIRED);
       }
-      const entitlement =
-        await resolveProductEntitlementForAuthContext(profileContext);
       const dailyLimit = dailyDownloadLimitForActor({
         actorType: "USER",
-        downloadsDaily: entitlement.limits.downloadsDaily,
+        downloadsDaily: userDownloadsDaily,
       });
       const reserve = await reserveDownloadSlot({
         beatId: params.beatId,
@@ -300,6 +340,9 @@ export async function requestBeatAudioAccess(params: {
     beatId: params.beatId,
     assetId: asset.id,
     remainingToday,
+    ...(guestPreview
+      ? { previewLimitSeconds: GUEST_POLICY.previewSeconds }
+      : {}),
   };
 }
 

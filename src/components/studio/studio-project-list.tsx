@@ -225,11 +225,15 @@ function ProjectRow({
 export function StudioProjectList({
   initialProjects,
   seedBeatId = null,
+  plan = null,
 }: {
   initialProjects: StudioProjectSummary[];
   /** When set (e.g. from /studio?beatId=), create a project with BEAT_REF once. */
   seedBeatId?: string | null;
+  /** Server-resolved plan cap (plan-policy); the server enforces it on create. */
+  plan?: { tier: "FREE" | "BRONZE" | "SILVER" | "GOLD"; maxProjects: number } | null;
 }) {
+  const tPlan = useTranslations("studio.planLimits");
   const tl = useLibText();
   const t = useTranslations("studio.studioProjectList");
   const router = useRouter();
@@ -244,7 +248,9 @@ export function StudioProjectList({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [page, setPage] = useState(0);
+  const [limitHit, setLimitHit] = useState(false);
   const seededRef = useRef(false);
+  const atLimit = limitHit || (plan != null && projects.length >= plan.maxProjects);
 
   const pageCount = Math.max(
     1,
@@ -291,7 +297,12 @@ export function StudioProjectList({
       success?: boolean;
       document?: { project: StudioProjectSummary };
       error?: string;
+      code?: string;
     };
+    if (json.code === "PROJECT_LIMIT_REACHED") {
+      setLimitHit(true);
+      return;
+    }
     if (!res.ok || !json.document) {
       throw new Error(json.error ?? t("nieUdaloSieUtworzyc"));
     }
@@ -429,6 +440,8 @@ export function StudioProjectList({
         <BrdButton
           type="button"
           variant="primary"
+          data-testid="studio-new-project"
+          aria-describedby={atLimit ? "studio-project-limit" : undefined}
           onClick={() =>
             startTransition(async () => {
               try {
@@ -440,11 +453,32 @@ export function StudioProjectList({
               }
             })
           }
-          disabled={pending}
+          disabled={pending || atLimit}
         >
+          {atLimit ? "🔒 " : ""}
           {t("nowyProjekt")}
         </BrdButton>
       </div>
+
+      {plan ? (
+        <div
+          id="studio-project-limit"
+          data-testid="studio-project-limit"
+          data-at-limit={atLimit}
+          className={`flex flex-col gap-1 border-l-4 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between ${atLimit ? "border-l-[var(--brd-rec)] bg-[var(--brd-paper-deep,#f3efe6)]/40" : "border-l-[var(--brd-line)]"}`}
+          role={atLimit ? "status" : undefined}
+        >
+          <span>
+            {tPlan("projekty", { used: Math.min(projects.length, 999), limit: plan.maxProjects, plan: tPlan(`plan.${plan.tier}`) })}
+            {atLimit ? ` — ${tPlan(projects.length > plan.maxProjects ? "projektyPonadLimit" : "projektyLimit")}` : ""}
+          </span>
+          {atLimit && plan.tier !== "GOLD" ? (
+            <BrdLink href="/premium" className="self-start text-sm sm:self-auto">
+              {tPlan("zobaczPlany")}
+            </BrdLink>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">

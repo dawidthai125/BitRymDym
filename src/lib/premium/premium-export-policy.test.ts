@@ -13,7 +13,7 @@ import {
 import { SFM_PLAN_MATRIX } from "@/lib/sfm/sfm-plan-matrix";
 
 describe("PREMIUM-01 export policy SSOT", () => {
-  it("credits 0/1/2/4 and retention 7/7/14/28", () => {
+  it("credits 0/1/2/4 and retention 2/7/30/60 (plan-policy, Gold longest)", () => {
     expect(PREMIUM_UNLOCK_CREDITS_PER_PERIOD).toEqual({
       FREE: 0,
       BRONZE: 1,
@@ -21,10 +21,10 @@ describe("PREMIUM-01 export policy SSOT", () => {
       GOLD: 4,
     });
     expect(PREMIUM_RETENTION_DAYS).toEqual({
-      FREE: 7,
+      FREE: 2,
       BRONZE: 7,
-      SILVER: 14,
-      GOLD: 28,
+      SILVER: 30,
+      GOLD: 60,
     });
   });
 

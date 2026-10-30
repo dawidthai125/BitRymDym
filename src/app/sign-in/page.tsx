@@ -4,13 +4,18 @@ import { redirect } from "next/navigation";
 
 import { SignInForm } from "@/components/auth/auth-forms";
 import { AuthThemeBar } from "@/components/site/auth-theme-bar";
+import { safeNextPath, signUpPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
 
-export default async function SignInPage() {
+type PageProps = { searchParams?: Promise<{ next?: string | string[] }> };
+
+export default async function SignInPage({ searchParams }: PageProps) {
   const t = await getTranslations("auth.signInPage");
+  const params = searchParams ? await searchParams : {};
+  const next = safeNextPath(Array.isArray(params.next) ? params.next[0] : params.next);
   const context = await getCurrentProfile();
   if (context) {
-    redirect("/account");
+    redirect(next ?? "/account");
   }
 
   return (
@@ -20,11 +25,11 @@ export default async function SignInPage() {
       <p className="text-sm text-muted-foreground">
         {t("zalogujSieAbyKorzystac")}
       </p>
-      <SignInForm />
+      <SignInForm next={next} />
       <p className="text-sm text-muted-foreground">
         {t("nieMaszKonta")}{" "}
         <Link
-          href="/sign-up"
+          href={signUpPathWithNext(next)}
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
           {t("zalozKonto")}

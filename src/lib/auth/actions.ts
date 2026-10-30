@@ -17,6 +17,7 @@ import {
   passwordRecoverySealMatches,
 } from "@/lib/auth/password-recovery-seal-cookie";
 import { assertNoPrivilegeEscalationInPayload } from "@/lib/auth/permissions";
+import { safeNextPath } from "@/lib/auth/next-path";
 import { reauthenticateWithPassword } from "@/lib/auth/reauth";
 import { AuthError, getCurrentProfile, requireUser } from "@/lib/auth/session";
 import { interpretSignUpResult } from "@/lib/auth/signup-result";
@@ -126,12 +127,14 @@ export async function signUpAction(
 
   if (outcome.kind === "session") {
     revalidatePath("/");
+    const next = safeNextPath(formData.get("next"));
     const context = await getCurrentProfile();
     if (context) {
       const claim = await tryClaimAnonTakeAfterAuth(context);
-      redirect(accountClaimRedirectPath(claim));
+      // Same rule as sign-in: a claimed guest take wins, else go back.
+      redirect(claim.ux === "none" && next ? next : accountClaimRedirectPath(claim));
     }
-    redirect("/account");
+    redirect(next ?? "/account");
   }
 
   return {
@@ -172,12 +175,15 @@ export async function signInAction(
   }
 
   revalidatePath("/");
+  const next = safeNextPath(formData.get("next"));
   const context = await getCurrentProfile();
   if (context) {
     const claim = await tryClaimAnonTakeAfterAuth(context);
-    redirect(accountClaimRedirectPath(claim));
+    // A claimed guest take wins (its banner lives on /account); otherwise
+    // go back where the guest came from (e.g. /studio).
+    redirect(claim.ux === "none" && next ? next : accountClaimRedirectPath(claim));
   }
-  redirect("/account");
+  redirect(next ?? "/account");
 }
 
 export async function signOutAction(): Promise<void> {

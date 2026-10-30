@@ -17,9 +17,9 @@ import {
 } from "@/lib/downloads/limits";
 
 describe("download config SSOT", () => {
-  it("locks anon=2; FREE baseline mirror=4; cookie name", () => {
-    expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(2);
-    expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(4);
+  it("guests and Free download no beats (plan policy); cookie name", () => {
+    expect(ANONYMOUS_DAILY_DOWNLOAD_LIMIT).toBe(0);
+    expect(USER_DAILY_DOWNLOAD_LIMIT).toBe(0);
     expect(ANON_DOWNLOAD_COOKIE_NAME).toBe("brd_dl_aid");
   });
 

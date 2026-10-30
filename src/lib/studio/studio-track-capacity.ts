@@ -1,6 +1,7 @@
 /**
  * Phase 5/6 — Track capacity + CRUD planning (pure, no I/O).
- * Premium SSOT: PremiumTierLimits.studioMaxTracks (BEAT counts; Master does not).
+ * Plan SSOT: plan-policy `studio.maxRecordingTracks` — recording tracks only;
+ * the Bit track and Master do not count (Owner 2026-10-29).
  */
 
 import { defaultTrackName } from "@/lib/studio/studio-track-ops";
@@ -28,6 +29,27 @@ export class StudioBeatTrackProtectedError extends Error {
     super(message);
     this.name = "StudioBeatTrackProtectedError";
   }
+}
+
+/** Recording tracks in a project (everything except the Bit track). */
+export function countRecordingTracks(
+  tracks: ReadonlyArray<{ trackType?: string | null; track_type?: string | null }>,
+): number {
+  return tracks.filter((t) => (t.trackType ?? t.track_type) !== "BEAT").length;
+}
+
+/**
+ * Row cap passed to the add/duplicate RPCs (they count every studio_tracks
+ * row): the plan's recording-track limit plus the project's Bit track(s).
+ */
+export function studioTrackRowCap(params: {
+  maxRecordingTracks: number;
+  beatTrackCount: number;
+}): number {
+  if (!Number.isInteger(params.maxRecordingTracks) || params.maxRecordingTracks < 1) {
+    throw new Error("maxRecordingTracks must be a positive integer.");
+  }
+  return params.maxRecordingTracks + Math.max(0, params.beatTrackCount);
 }
 
 /** True when another track may be inserted under `maxTracks`. */
@@ -222,4 +244,4 @@ export function nextAddTrackName(
 }
 
 /** Existing account hub for package changes (no billing system in Phase 6). */
-export const STUDIO_TRACK_UPGRADE_HREF = "/account";
+export const STUDIO_TRACK_UPGRADE_HREF = "/premium";

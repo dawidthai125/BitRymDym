@@ -2,6 +2,9 @@
 
 import { AuthError } from "@/lib/auth/session";
 import {
+  BEAT_DOWNLOAD_LOGIN_REQUIRED,
+  BEAT_DOWNLOAD_PLAN_REQUIRED,
+  BEAT_PREVIEW_LOGIN_REQUIRED,
   requestBeatAudioAccess,
   requestPlatformBeatOpsExport,
 } from "@/lib/beats/audio-access";
@@ -26,6 +29,13 @@ export type AudioActionState = {
   url?: string;
   expiresAt?: string;
   remainingToday?: number;
+  /** Guests: stop playback here and show the sign-in prompt. */
+  previewLimitSeconds?: number;
+  /**
+   * LOGIN_REQUIRED / PLAN_REQUIRED: locked download (button tooltip).
+   * PREVIEW_UNAVAILABLE: guest playback without a 20 s preview asset.
+   */
+  code?: "LOGIN_REQUIRED" | "PLAN_REQUIRED" | "PREVIEW_UNAVAILABLE";
 };
 
 function catchAudio(
@@ -40,7 +50,15 @@ function catchAudio(
     purpose === "DOWNLOAD"
       ? toSafeDownloadErrorMessage(raw)
       : toSafePlaybackErrorMessage(raw);
-  return { error: mapped, success: false };
+  const code =
+    raw === BEAT_DOWNLOAD_LOGIN_REQUIRED
+      ? ("LOGIN_REQUIRED" as const)
+      : raw === BEAT_DOWNLOAD_PLAN_REQUIRED
+        ? ("PLAN_REQUIRED" as const)
+        : raw === BEAT_PREVIEW_LOGIN_REQUIRED
+          ? ("PREVIEW_UNAVAILABLE" as const)
+          : undefined;
+  return code ? { error: mapped, success: false, code } : { error: mapped, success: false };
 }
 
 export async function requestBeatAudioAccessAction(params: {
@@ -65,6 +83,7 @@ export async function requestBeatAudioAccessAction(params: {
       expiresAt: result.expiresAt,
       assetId: result.assetId,
       remainingToday: result.remainingToday,
+      previewLimitSeconds: result.previewLimitSeconds,
     };
   } catch (error) {
     return catchAudio(error, params.purpose);

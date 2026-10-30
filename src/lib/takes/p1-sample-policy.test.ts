@@ -14,21 +14,21 @@ import {
 const BEAT = 300;
 
 describe("P1 Sample Policy matrix — getSamplePolicy", () => {
-  it("ANONYMOUS: 15s / 2h / 1 / 3 / false", () => {
+  it("ANONYMOUS: recording off — 0s / 2h legacy TTL / 0 / 0 / false", () => {
     const p = getSamplePolicy({ actor: "ANONYMOUS", beatDurationSeconds: BEAT });
-    expect(p.maxRecordingSeconds).toBe(15);
+    expect(p.maxRecordingSeconds).toBe(0);
     expect(p.ttlSeconds).toBe(2 * 60 * 60);
-    expect(p.activeReadyCap).toBe(1);
-    expect(p.dailySessionLimit).toBe(3);
+    expect(p.activeReadyCap).toBe(0);
+    expect(p.dailySessionLimit).toBe(0);
     expect(p.canDownloadOwnTake).toBe(false);
   });
 
-  it("FREE: 30s / 12h / 3 / 3 / false", () => {
+  it("FREE: 30s / 24h / 3 / 1 / false (Owner 2026-10-29)", () => {
     const p = getSamplePolicy({ actor: "FREE", beatDurationSeconds: BEAT });
     expect(p.maxRecordingSeconds).toBe(30);
-    expect(p.ttlSeconds).toBe(12 * 60 * 60);
+    expect(p.ttlSeconds).toBe(24 * 60 * 60);
     expect(p.activeReadyCap).toBe(3);
-    expect(p.dailySessionLimit).toBe(3);
+    expect(p.dailySessionLimit).toBe(1);
     expect(p.canDownloadOwnTake).toBe(false);
   });
 
@@ -65,7 +65,7 @@ describe("P1 Sample Policy matrix — getSamplePolicy", () => {
         .maxRecordingSeconds,
     ).toBe(45);
     expect(
-      getSamplePolicy({ actor: "ANONYMOUS", beatDurationSeconds: 10 })
+      getSamplePolicy({ actor: "FREE", beatDurationSeconds: 10 })
         .maxRecordingSeconds,
     ).toBe(10);
   });
@@ -146,7 +146,7 @@ describe("P1 Admin duration overrides", () => {
         beatDurationSeconds: BEAT,
         overrides: { bronzeMaxRecordingSeconds: 90 },
       }).maxRecordingSeconds,
-    ).toBe(15);
+    ).toBe(0);
     expect(
       getSamplePolicy({
         actor: "FREE",
@@ -184,7 +184,6 @@ describe("P1 security — forged tier / duration", () => {
   });
 
   it.each([
-    ["ANONYMOUS", 15],
     ["FREE", 30],
     ["BRONZE", 60],
     ["SILVER", 120],
@@ -194,5 +193,10 @@ describe("P1 security — forged tier / duration", () => {
     expect(assertRequestedDurationAllowed({ requestedSeconds: requested, policy }).ok).toBe(
       true,
     );
+  });
+
+  it("ANONYMOUS requested 15 → DENY (guests cannot record)", () => {
+    const policy = getSamplePolicy({ actor: "ANONYMOUS", beatDurationSeconds: BEAT });
+    expect(assertRequestedDurationAllowed({ requestedSeconds: 15, policy }).ok).toBe(false);
   });
 });

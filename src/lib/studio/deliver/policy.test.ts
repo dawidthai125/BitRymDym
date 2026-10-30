@@ -10,9 +10,13 @@ describe("Studio deliver policy", () => {
     expect(d(null, "master", "MP3_128")).toEqual({ allowed: false, reason: "login" });
     expect(d("GOLD", "master", "WAV_24", false)).toEqual({ allowed: false, reason: "not_approved" });
   });
-  it("Free: MP3 128 only, 1 per week", () => {
-    expect(d("FREE", "raw", "MP3_128")).toEqual({ allowed: true, weeklyLimit: 1 });
-    expect(d("FREE", "master", "MP3_192")).toEqual({ allowed: false, reason: "tier_format" });
+  it("Free: no downloads at all (Owner 2026-10-29) — every format denied as tier_format", () => {
+    for (const kind of ["mix", "master", "raw"] as const) {
+      for (const format of ["MP3_128", "MP3_192", "MP3_320", "WAV_24"] as const) {
+        expect(d("FREE", kind, format)).toEqual({ allowed: false, reason: "tier_format" });
+      }
+    }
+    expect(d("FREE", "project", "ZIP")).toEqual({ allowed: false, reason: "tier_project" });
   });
   it("tier ladder", () => {
     expect(d("BRONZE", "mix", "MP3_128")).toEqual({ allowed: true, weeklyLimit: null });

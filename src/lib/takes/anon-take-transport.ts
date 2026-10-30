@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 
 import {
   ANON_TAKE_TTL_SECONDS,
+  GUEST_RECORDING_ENABLED,
   TAKE_AUDIO_BUCKET,
   TAKE_AUDIO_MAX_BYTES,
 } from "@/config/recording";
@@ -252,9 +253,19 @@ export async function createAnonTakeRecordingSessionFor(
   };
 }
 
+/** Guests cannot record (Owner 2026-10-29, GUEST_POLICY.recording = false). */
+export const GUEST_RECORDING_DISABLED_MESSAGE = "Zaloguj się, aby nagrywać.";
+
+function assertGuestRecordingEnabled(): void {
+  if (!GUEST_RECORDING_ENABLED) {
+    throw new AuthError("UNAUTHENTICATED", GUEST_RECORDING_DISABLED_MESSAGE);
+  }
+}
+
 export async function createAnonTakeRecordingSession(
   params: AnonSessionParams,
 ): Promise<TakeSignedUploadSession> {
+  assertGuestRecordingEnabled();
   const { tokenHash } = await ensureAnonymousTakeIdentity();
   return createAnonTakeRecordingSessionFor(tokenHash, params);
 }
@@ -430,6 +441,7 @@ export async function finalizeAnonTakeRecordingFor(
 export async function finalizeAnonTakeRecording(params: {
   takeId: string;
 }): Promise<TakeFinalizeResult> {
+  assertGuestRecordingEnabled();
   const { tokenHash } = await ensureAnonymousTakeIdentity();
   return finalizeAnonTakeRecordingFor(tokenHash, params);
 }

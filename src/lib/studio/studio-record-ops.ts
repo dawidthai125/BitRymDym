@@ -22,16 +22,19 @@ export function takeDurationSecondsToMs(durationSeconds: number): number {
 
 /**
  * Geometry for a newly recorded Take placed at the Studio playhead.
- * source_offset_ms is always 0 for a fresh capture.
+ * source_offset_ms defaults to 0; latency-compensated / comp placements pass
+ * sourceOffsetMs (skip the first N ms of the take) and optionally durationMs.
  */
 export function geometryForStudioRecording(params: {
   playheadMs: number;
   durationSeconds: number;
   timelineLengthMs: number;
+  sourceOffsetMs?: number;
+  durationMs?: number;
 }): {
   timelineStartMs: number;
   durationMs: number;
-  sourceOffsetMs: 0;
+  sourceOffsetMs: number;
 } {
   assertIntegerMs(params.playheadMs, "playheadMs");
   assertIntegerMs(params.timelineLengthMs, "timelineLengthMs");
@@ -41,7 +44,18 @@ export function geometryForStudioRecording(params: {
   if (params.playheadMs >= params.timelineLengthMs) {
     throw new Error("playheadMs must be inside the project timeline.");
   }
-  const durationMs = takeDurationSecondsToMs(params.durationSeconds);
+  const takeMs = takeDurationSecondsToMs(params.durationSeconds);
+  const sourceOffsetMs = params.sourceOffsetMs ?? 0;
+  assertIntegerMs(sourceOffsetMs, "sourceOffsetMs");
+  if (sourceOffsetMs < 0 || sourceOffsetMs >= takeMs) {
+    throw new Error("sourceOffsetMs must be inside the recorded take.");
+  }
+  let durationMs = takeMs - sourceOffsetMs;
+  if (params.durationMs != null) {
+    assertIntegerMs(params.durationMs, "durationMs");
+    if (params.durationMs < 1) throw new Error("durationMs must be >= 1.");
+    durationMs = Math.min(durationMs, params.durationMs);
+  }
   const end = params.playheadMs + durationMs;
   if (end > params.timelineLengthMs) {
     throw new Error(
@@ -51,7 +65,7 @@ export function geometryForStudioRecording(params: {
   return {
     timelineStartMs: params.playheadMs,
     durationMs,
-    sourceOffsetMs: 0,
+    sourceOffsetMs,
   };
 }
 
@@ -78,16 +92,25 @@ export function findIdenticalTakeClipPlacement<
     sourceKind: string;
     sourceTakeId: string | null;
     timelineStartMs: number;
+    sourceOffsetMs?: number;
   },
 >(
   clips: readonly T[],
-  params: { trackId: string; takeId: string; timelineStartMs: number },
+  params: {
+    trackId: string;
+    takeId: string;
+    timelineStartMs: number;
+    /** When given (aligned / comp placement) the offset must match too. */
+    sourceOffsetMs?: number;
+  },
 ): T | undefined {
   return clips.find(
     (c) =>
       c.trackId === params.trackId &&
       c.sourceKind === "TAKE" &&
       c.sourceTakeId === params.takeId &&
-      c.timelineStartMs === params.timelineStartMs,
+      c.timelineStartMs === params.timelineStartMs &&
+      (params.sourceOffsetMs == null ||
+        (c.sourceOffsetMs ?? 0) === params.sourceOffsetMs),
   );
 }
