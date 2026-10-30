@@ -2847,7 +2847,8 @@
       "zrodloTytul": "Image",
       "zrodlo": {
         "cover": "Beat cover",
-        "upload": "Own graphic"
+        "upload": "Own graphic",
+        "ai": "Generate with AI"
       },
       "brakOkladki": "This beat has no approved cover.",
       "wybierzPlik": "Choose a graphic (JPG, PNG, WebP, up to 4 MB)",
@@ -2881,6 +2882,28 @@
         "encode": "Encoding the video",
         "upload": "Uploading the file",
         "done": "Done"
+      },
+      "ai": {
+        "opisLabel": "Describe the cover",
+        "placeholder": "e.g. a neon city at night, purple lights, synthwave vibe",
+        "proporcje": "Aspect ratio",
+        "aspekt": {
+          "16:9": "16:9 (YouTube)",
+          "1:1": "Square 1:1"
+        },
+        "generuj": "Generate cover",
+        "generuje": "Generating the cover… (up to about a minute)",
+        "ponownie": "Generate again",
+        "ok": "Cover ready — it passed the content filter.",
+        "licznik": "Today: {used} / {limit} AI covers",
+        "limit": "You've used today's AI cover limit. Try again tomorrow.",
+        "blad": "Couldn't generate the cover. Try again in a moment.",
+        "niedostepne": "The cover generator isn't enabled on the server yet.",
+        "zasady": "No adult content, violence, real people, logos or brands. The prompt goes through an automatic filter and the finished image through the same filter as beat covers.",
+        "ustawOkladke": "Set as beat cover",
+        "okladkaUstawiona": "Set as the beat cover.",
+        "okladkaDoMod": "The beat cover is waiting for moderator approval.",
+        "okladkaBlad": "Couldn't set the beat cover."
       }
     }
   },

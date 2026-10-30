@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/session";
+import { getAiCoverState } from "@/lib/studio/video/ai-cover/server";
 import { commitYoutubeVideo, getYoutubeVideoState } from "@/lib/studio/video/server";
 
 import { DENY_STATUS, masterErrorResponse, readJson, tierOf } from "../master/_shared";
@@ -8,13 +9,16 @@ import { DENY_STATUS, masterErrorResponse, readJson, tierOf } from "../master/_s
 export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ projectId: string }> };
 
-/** GET — Gold YouTube MP4 state (plan gate, approved master, beat cover, latest video). */
+/** GET — Gold YouTube MP4 state (plan gate, approved master, beat cover, latest video, AI cover usage). */
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { projectId } = await context.params;
     const auth = await requireUser();
     const tier = await tierOf(auth);
-    return NextResponse.json({ success: true, tier, ...(await getYoutubeVideoState({ ownerId: auth.userId, projectId, tier })) });
+    const state = await getYoutubeVideoState({ ownerId: auth.userId, projectId, tier });
+    // AI cover generator (Gold): its own table — missing migration / error never breaks the video state.
+    const ai = state.available ? await getAiCoverState({ ownerId: auth.userId, projectId, tier }).catch(() => null) : null;
+    return NextResponse.json({ success: true, tier, ...state, ai });
   } catch (error) {
     return masterErrorResponse(error);
   }

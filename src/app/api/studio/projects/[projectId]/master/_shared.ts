@@ -31,4 +31,6 @@ export const DENY_STATUS: Record<string, number> = {
   bad_format: 415, too_big: 413, too_long: 422, too_short: 422,
   // Gold YouTube MP4.
   tier_video: 403, image_missing: 409, daily_limit: 429, image_rejected: 422,
+  // Gold AI cover generator.
+  prompt_rejected: 422, prompt_check_down: 503, ai_unavailable: 503, not_own_beat: 403,
 };

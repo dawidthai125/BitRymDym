@@ -8,6 +8,7 @@ import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/stud
 import { Button } from "@/components/ui/button";
 import { joinParts } from "@/lib/studio/master/client";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
+import { AI_COVER_ASPECTS, AI_COVER_PROMPT_MAX, AI_COVER_PROMPT_MIN, type AiCoverAspect } from "@/lib/studio/video/ai-cover/config";
 import {
   cleanVideoText, YT_VIDEO_H, YT_VIDEO_TEXT_MAX, YT_VIDEO_W, youtubeFrameLayout, youtubeVideoAllowed, type YoutubeVideoSource,
 } from "@/lib/studio/video/youtube-video";
@@ -17,7 +18,12 @@ type JobLike = { job?: { status?: string; stage?: unknown; progress?: unknown; e
 type State = {
   available: boolean; allowed?: boolean; approved?: boolean; cover?: { url: string } | null; title?: string;
   latest?: JobLike | null; usage?: { used: number; perDay: number } | null;
+  /** Gold AI cover generator (null = off / table missing). */
+  ai?: { available: boolean; used?: number; perDay?: number; ownBeat?: boolean } | null;
 };
+/** UI source: "ai" is sent as `upload` with the generated imageId. */
+type UiSource = YoutubeVideoSource | "ai";
+type AiRun = { status: "idle" | "working" | "ok" | "error"; imageId?: string; url?: string; message?: string; cover?: "idle" | "working" | "approved" | "pending" | "error"; coverMessage?: string };
 type Run =
   | { phase: "idle" }
   | { phase: "working" }
@@ -86,7 +92,10 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   const uid = useId();
   const allowed = youtubeVideoAllowed(tier);
   const [state, setState] = useState<State | null>(initialState ?? null);
-  const [source, setSource] = useState<YoutubeVideoSource>("cover");
+  const [source, setSource] = useState<UiSource>("cover");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiAspect, setAiAspect] = useState<AiCoverAspect>("16:9");
+  const [ai, setAi] = useState<AiRun>({ status: "idle" });
   const [upload, setUpload] = useState<{ status: "idle" | "checking" | "ok" | "error"; imageId?: string; url?: string; message?: string }>({ status: "idle" });
   const [showText, setShowText] = useState(true);
   const [title, setTitle] = useState(initialState?.title ?? "");
@@ -127,6 +136,40 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
     }
   }
 
+  async function generateAi() {
+    setAi({ status: "working" });
+    try {
+      const r = await fetch(`/api/studio/projects/${projectId}/video/ai-cover`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: aiPrompt, aspect: aiAspect }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.imageId) {
+        setAi({ status: "ok", imageId: j.imageId, url: j.previewUrl ?? undefined, cover: "idle" });
+        if (typeof j.used === "number") setState((s) => (s?.ai ? { ...s, ai: { ...s.ai, used: j.used, perDay: j.perDay ?? s.ai.perDay } } : s));
+        return;
+      }
+      const message = j.error === "daily_limit" ? t("ai.limit") : r.status === 200 && j.available === false ? t("ai.niedostepne") : typeof j.message === "string" ? j.message : t("ai.blad");
+      setAi({ status: "error", message });
+    } catch {
+      setAi({ status: "error", message: t("ai.blad") });
+    }
+  }
+
+  async function aiAsBeatCover() {
+    if (!ai.imageId) return;
+    setAi((a) => ({ ...a, cover: "working", coverMessage: undefined }));
+    try {
+      const r = await fetch(`/api/studio/projects/${projectId}/video/ai-cover/beat-cover`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageId: ai.imageId }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.coverStatus) return setAi((a) => ({ ...a, cover: j.coverStatus === "approved" ? "approved" : "pending" }));
+      setAi((a) => ({ ...a, cover: "error", coverMessage: typeof j.message === "string" ? j.message : t("ai.okladkaBlad") }));
+    } catch {
+      setAi((a) => ({ ...a, cover: "error", coverMessage: t("ai.okladkaBlad") }));
+    }
+  }
+
   async function poll(jobId: string): Promise<Run> {
     for (let i = 0; i < 300; i++) {
       const r = await fetch(`/api/studio/projects/${projectId}/jobs/${jobId}`);
@@ -149,7 +192,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
     try {
       const r = await fetch(`/api/studio/projects/${projectId}/video`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source, imageId: source === "upload" ? upload.imageId : undefined, title: showText ? title : null, artist: showText ? artist : null }),
+        body: JSON.stringify({ source: source === "ai" ? "upload" : source, imageId: source === "upload" ? upload.imageId : source === "ai" ? ai.imageId : undefined, title: showText ? title : null, artist: showText ? artist : null }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.status === 200 && j.available === false) return setRun({ phase: "error", code: "unavailable" });
@@ -162,7 +205,12 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
     }
   }
 
-  const imageUrl = source === "cover" ? state?.cover?.url ?? null : upload.status === "ok" ? upload.url ?? null : null;
+  const imageUrl = source === "cover" ? state?.cover?.url ?? null
+    : source === "ai" ? (ai.status === "ok" ? ai.url ?? null : null)
+    : upload.status === "ok" ? upload.url ?? null : null;
+  const aiState = state?.ai ?? null;
+  const aiLimit = !!aiState?.perDay && (aiState.used ?? 0) >= aiState.perDay;
+  const aiPromptLen = aiPrompt.trim().length;
   const limitReached = !!state?.usage && state.usage.used >= state.usage.perDay;
   const canMake = allowed && approved && !!imageUrl && run.phase !== "working" && !limitReached && state?.available !== false;
   const shownTitle = showText ? cleanVideoText(title) : null;
@@ -190,13 +238,13 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
             <div className="flex min-w-0 flex-col gap-3">
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-semibold">{t("zrodloTytul")}</legend>
-                {(["cover", "upload"] as const).map((s) => {
-                  const disabled = s === "cover" && !state?.cover;
+                {(["cover", "upload", "ai"] as const).map((s) => {
+                  const disabled = (s === "cover" && !state?.cover) || (s === "ai" && !aiState?.available);
                   return (
                     <label key={s} className={`flex min-h-9 items-center gap-2 text-sm ${disabled ? "opacity-60" : ""}`}>
                       <input type="radio" name={`${uid}-src`} value={s} checked={source === s} disabled={disabled} onChange={() => setSource(s)} data-testid={`studio-yt-src-${s}`} className="h-4 w-4 accent-[var(--brd-amber)]" />
                       {t(`zrodlo.${s}`)}
-                      {disabled ? <span className="text-xs text-[var(--brd-mute)]">— {t("brakOkladki")}</span> : null}
+                      {disabled ? <span className="text-xs text-[var(--brd-mute)]">— {s === "ai" ? t("ai.niedostepne") : t("brakOkladki")}</span> : null}
                     </label>
                   );
                 })}
@@ -209,6 +257,37 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
                     {upload.status === "ok" ? <p role="status" className="text-xs">✓ {t("grafikaOk")}</p> : null}
                     {upload.status === "error" ? <p role="alert" className="text-xs text-[var(--brd-rec)]">{upload.message}</p> : null}
                     <p className="text-xs text-[var(--brd-mute)]">{t("filtrInfo")}</p>
+                  </div>
+                ) : null}
+                {source === "ai" ? (
+                  <div className="flex flex-col gap-2 pl-6" data-testid="studio-yt-ai">
+                    <label className="flex flex-col gap-1 text-sm">
+                      {t("ai.opisLabel")}
+                      <textarea value={aiPrompt} maxLength={AI_COVER_PROMPT_MAX} rows={3} placeholder={t("ai.placeholder")} onChange={(e) => setAiPrompt(e.currentTarget.value)} data-testid="studio-yt-ai-prompt" className="rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2 py-1.5" />
+                    </label>
+                    <div role="radiogroup" aria-label={t("ai.proporcje")} className="flex flex-wrap gap-2">
+                      {AI_COVER_ASPECTS.map((a) => (
+                        <label key={a} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-[2px] border px-2 text-sm ${aiAspect === a ? "border-[var(--brd-amber)]" : "border-[var(--brd-line)]"}`}>
+                          <input type="radio" name={`${uid}-aspect`} value={a} checked={aiAspect === a} onChange={() => setAiAspect(a)} data-testid={`studio-yt-ai-aspect-${a === "1:1" ? "square" : "wide"}`} className="h-4 w-4 accent-[var(--brd-amber)]" />
+                          {t(`ai.aspekt.${a}`)}
+                        </label>
+                      ))}
+                    </div>
+                    <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" disabled={ai.status === "working" || aiLimit || aiPromptLen < AI_COVER_PROMPT_MIN} onClick={() => void generateAi()} data-testid="studio-yt-ai-generate">
+                      {ai.status === "working" ? t("ai.generuje") : ai.status === "ok" ? t("ai.ponownie") : t("ai.generuj")}
+                    </Button>
+                    {aiState?.perDay ? <span className={`text-xs ${aiLimit ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>{t("ai.licznik", { used: aiState.used ?? 0, limit: aiState.perDay })}</span> : null}
+                    {ai.status === "ok" ? <p role="status" className="text-xs">✓ {t("ai.ok")}</p> : null}
+                    {ai.status === "error" ? <p role="alert" className="text-xs text-[var(--brd-rec)]" data-testid="studio-yt-ai-error">{ai.message}</p> : null}
+                    {ai.status === "ok" && aiState?.ownBeat ? (
+                      <div className="flex flex-col gap-1">
+                        <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" disabled={ai.cover === "working" || ai.cover === "approved" || ai.cover === "pending"} onClick={() => void aiAsBeatCover()} data-testid="studio-yt-ai-beat-cover">{t("ai.ustawOkladke")}</Button>
+                        {ai.cover === "approved" ? <p role="status" className="text-xs">✓ {t("ai.okladkaUstawiona")}</p> : null}
+                        {ai.cover === "pending" ? <p role="status" className="text-xs">{t("ai.okladkaDoMod")}</p> : null}
+                        {ai.cover === "error" ? <p role="alert" className="text-xs text-[var(--brd-rec)]">{ai.coverMessage}</p> : null}
+                      </div>
+                    ) : null}
+                    <p className="text-xs text-[var(--brd-mute)]">{t("ai.zasady")}</p>
                   </div>
                 ) : null}
               </fieldset>

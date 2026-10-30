@@ -2847,7 +2847,8 @@
       "zrodloTytul": "Obraz",
       "zrodlo": {
         "cover": "Okładka bitu",
-        "upload": "Własna grafika"
+        "upload": "Własna grafika",
+        "ai": "Wygeneruj AI"
       },
       "brakOkladki": "Ten bit nie ma zatwierdzonej okładki.",
       "wybierzPlik": "Wybierz grafikę (JPG, PNG, WebP, do 4 MB)",
@@ -2881,6 +2882,28 @@
         "encode": "Koduję wideo",
         "upload": "Wysyłam plik",
         "done": "Gotowe"
+      },
+      "ai": {
+        "opisLabel": "Opisz okładkę",
+        "placeholder": "np. nocne miasto w neonach, fioletowe światła, klimat synthwave",
+        "proporcje": "Proporcje",
+        "aspekt": {
+          "16:9": "16:9 (YouTube)",
+          "1:1": "Kwadrat 1:1"
+        },
+        "generuj": "Wygeneruj okładkę",
+        "generuje": "Generuję okładkę… (do ok. minuty)",
+        "ponownie": "Wygeneruj ponownie",
+        "ok": "Okładka gotowa — przeszła filtr treści.",
+        "licznik": "Dziś: {used} / {limit} okładek AI",
+        "limit": "Na dziś wykorzystano limit okładek AI. Spróbuj jutro.",
+        "blad": "Nie udało się wygenerować okładki. Spróbuj ponownie za chwilę.",
+        "niedostepne": "Generator okładek nie jest jeszcze włączony na serwerze.",
+        "zasady": "Bez treści dla dorosłych, przemocy, prawdziwych osób, logo i marek. Opis sprawdza automatyczny filtr, a gotowy obraz — ten sam filtr co okładki bitów.",
+        "ustawOkladke": "Ustaw jako okładkę bitu",
+        "okladkaUstawiona": "Ustawiono jako okładkę bitu.",
+        "okladkaDoMod": "Okładka bitu czeka na akceptację moderatora.",
+        "okladkaBlad": "Nie udało się ustawić okładki bitu."
       }
     }
   },
