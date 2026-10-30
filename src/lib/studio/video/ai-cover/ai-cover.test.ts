@@ -73,6 +73,7 @@ describe("AI cover providers", () => {
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).not.toContain("secret");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer secret");
+    expect(JSON.parse(String(init.body))).toEqual({ prompt: "neon city", steps: 4 });
     const g = vi.fn(async () => new Response(JSON.stringify({ success: true, result: { image: JPEG.toString("base64") } })));
     const img = await cloudflareProvider({ accountId: "acc", token: "t", fetchFn: g as unknown as typeof fetch }).generate(input, signal);
     expect(img.equals(JPEG)).toBe(true);

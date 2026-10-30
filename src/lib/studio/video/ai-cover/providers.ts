@@ -81,8 +81,9 @@ export function cloudflareProvider(opts: { accountId: string; token: string; fet
       const res = await call(f, url, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.token}` },
-        // FLUX schnell on Workers AI renders 1024² only → the server crops to 16:9.
-        body: JSON.stringify({ prompt: input.prompt, steps: 4, seed: input.seed }),
+        // FLUX schnell on Workers AI renders 1024² only → the server crops to 16:9. The schema
+        // rejects any other property (live: `seed` → 400 code 5006), so only prompt + steps.
+        body: JSON.stringify({ prompt: input.prompt, steps: 4 }),
       }, signal);
       type CfBody = { success?: boolean; result?: { image?: unknown }; errors?: { code?: number }[] };
       let json: CfBody | null = null;
