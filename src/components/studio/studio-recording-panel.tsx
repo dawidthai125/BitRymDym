@@ -94,6 +94,7 @@ import {
   isRecordingCaptureActive,
   recordingInterruptedNoticePl,
   reduceRecordingUi,
+  transportRecordAction,
   type RecordingUiPhase,
 } from "@/lib/takes/recording-ui-state";
 import {
@@ -149,6 +150,8 @@ export function StudioRecordingPanel({
   onLastScratchClipIdChange,
   onBitekBubble,
   onDocumentReplaced,
+  recordRequest = 0,
+  onRecordRequestHandled,
 }: {
   projectId: string;
   /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
@@ -186,6 +189,12 @@ export function StudioRecordingPanel({
   onBitekBubble?: (bubble: BitekBubble | null) => void;
   /** Recording P0 — comp apply returns a fresh document (several CAS ops). */
   onDocumentReplaced?: (doc: StudioProjectDocument) => void;
+  /**
+   * Top-bar REC press counter (>0 = pending press). Consumed once via
+   * onRecordRequestHandled — survives the panel mounting on that same press.
+   */
+  recordRequest?: number;
+  onRecordRequestHandled?: () => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
@@ -594,6 +603,21 @@ export function StudioRecordingPanel({
     phaseRef.current = state.phase;
   }, [state.phase]);
 
+  // Top-bar REC = real record key (prod bug 2026-10-30): IDLE → mic + auto-start,
+  // READY → start, RECORDING → stop. Declared after the ref-sync effects above.
+  const autoStartAfterMicRef = useRef(false);
+  useEffect(() => {
+    if (state.phase === "READY") {
+      if (autoStartAfterMicRef.current) {
+        autoStartAfterMicRef.current = false;
+        void startRecording();
+      }
+    } else if (state.phase !== "REQUESTING_MIC" && state.phase !== "IDLE") {
+      autoStartAfterMicRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- phase-driven only
+  }, [state.phase]);
+
   useEffect(() => {
     if (!showWorkflow) return;
     takeWorkflowRef.current?.scrollIntoView({
@@ -615,6 +639,22 @@ export function StudioRecordingPanel({
     trackIdRef.current = trackId;
     recordStartMsRef.current = recordStartMs;
   }, [beatId, maxSeconds, trackId, recordStartMs]);
+
+  useEffect(() => {
+    if (!recordRequest) return;
+    onRecordRequestHandled?.();
+    const action = transportRecordAction(
+      phaseRef.current,
+      Boolean(trackIdRef.current),
+    );
+    if (action === "start") void startRecording();
+    else if (action === "stop") void stopAndFinalize();
+    else if (action === "prepare-then-start") {
+      autoStartAfterMicRef.current = true;
+      void prepareMicrophone();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- press-driven only
+  }, [recordRequest]);
 
   const busy =
     isRecordingBusy(state.phase) ||

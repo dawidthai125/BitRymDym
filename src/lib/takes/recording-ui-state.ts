@@ -279,6 +279,30 @@ export function canStartNewRecording(phase: RecordingUiPhase): boolean {
   );
 }
 
+/**
+ * Top-bar REC (studio transport) — one press must behave like a DAW record key,
+ * not only open the recording panel (prod bug 2026-10-30: REC looked dead).
+ * IDLE/error → prepare mic then auto-start; READY → start; RECORDING → stop.
+ * READY_TAKE (keep/discard decision) and in-flight phases → no-op.
+ */
+export type TransportRecordAction =
+  | "start"
+  | "stop"
+  | "prepare-then-start"
+  | "none";
+
+export function transportRecordAction(
+  phase: RecordingUiPhase,
+  hasTrack: boolean,
+): TransportRecordAction {
+  if (phase === "RECORDING") return "stop";
+  if (!hasTrack) return "none";
+  if (phase === "READY") return "start";
+  if (phase === "READY_TAKE") return "none";
+  if (canStartNewRecording(phase)) return "prepare-then-start";
+  return "none";
+}
+
 export function displayMaxRecordingSeconds(beatDurationSeconds: number): number {
   if (
     typeof beatDurationSeconds !== "number" ||
