@@ -131,7 +131,7 @@ function moderationSnapshot(m: CoverModerationOutcome) {
 
 export type CoverUploadResult = {
   coverStatus: "approved" | "pending";
-  filter: "openai" | "none";
+  filter: "gemini" | "none";
 };
 
 /** Owner uploads / replaces the cover of own USER beat. */

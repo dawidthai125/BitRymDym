@@ -48,12 +48,13 @@ describe("cover moderation decision", () => {
     expect(coverStatusForDecision("approve")).toBe("approved");
   });
 
-  it("feature flag: on only with OPENAI_API_KEY, kill switch BEAT_COVER_AI_MODERATION=0", () => {
+  it("feature flag: on only with GEMINI_API_KEY, kill switch BEAT_COVER_AI_MODERATION=0", () => {
     expect(isCoverAiModerationEnabled({})).toBe(false);
-    expect(isCoverAiModerationEnabled({ OPENAI_API_KEY: "  " })).toBe(false);
-    expect(isCoverAiModerationEnabled({ OPENAI_API_KEY: "k" })).toBe(true);
+    expect(isCoverAiModerationEnabled({ OPENAI_API_KEY: "k" })).toBe(false);
+    expect(isCoverAiModerationEnabled({ GEMINI_API_KEY: "  " })).toBe(false);
+    expect(isCoverAiModerationEnabled({ GEMINI_API_KEY: "k" })).toBe(true);
     expect(
-      isCoverAiModerationEnabled({ OPENAI_API_KEY: "k", BEAT_COVER_AI_MODERATION: "0" }),
+      isCoverAiModerationEnabled({ GEMINI_API_KEY: "k", BEAT_COVER_AI_MODERATION: "0" }),
     ).toBe(false);
   });
 });

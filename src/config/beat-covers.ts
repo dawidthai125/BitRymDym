@@ -1,7 +1,7 @@
 /**
  * User beats 2026-10-30 — cover upload + content filter SSOT.
- * Owner decision: every new cover goes through the automatic filter (OpenAI
- * omni-moderation-latest) + moderator queue; high score auto-rejects.
+ * Owner decision: every new cover goes through the automatic filter (Google
+ * Gemini vision, structured scores) + moderator queue; high score auto-rejects.
  */
 
 export const BEAT_COVER_BUCKET = "beat-covers";
@@ -33,11 +33,24 @@ export const BEAT_COVER_STRICT_CATEGORIES = [
 /** Flagged or any score ≥ this → moderator queue instead of auto-approve. */
 export const BEAT_COVER_REVIEW_SCORE = 0.3;
 
-export const OPENAI_MODERATION_MODEL = "omni-moderation-latest";
-export const OPENAI_MODERATION_TIMEOUT_MS = 10_000;
+/** Same Gemini family as BITEK; override with BEAT_COVER_GEMINI_MODEL. */
+export const GEMINI_COVER_MODERATION_MODEL = "gemini-3.5-flash-lite";
+export const GEMINI_COVER_MODERATION_TIMEOUT_MS = 12_000;
+
+/** Categories the model scores (0–1). Names match the thresholds above. */
+export const BEAT_COVER_MODERATION_CATEGORIES = [
+  "sexual",
+  "sexual/minors",
+  "violence",
+  "violence/graphic",
+  "hate",
+  "self-harm",
+  "self-harm/instructions",
+  "drugs",
+] as const;
 
 /**
- * Automatic filter switch. ON when OPENAI_API_KEY exists, unless
+ * Automatic filter switch. ON when GEMINI_API_KEY exists, unless
  * BEAT_COVER_AI_MODERATION=0. Without the key every cover waits for a
  * moderator (status pending) — never auto-approved.
  */
@@ -45,5 +58,5 @@ export function isCoverAiModerationEnabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
   if (env.BEAT_COVER_AI_MODERATION === "0") return false;
-  return Boolean(env.OPENAI_API_KEY && env.OPENAI_API_KEY.trim());
+  return Boolean(env.GEMINI_API_KEY && env.GEMINI_API_KEY.trim());
 }

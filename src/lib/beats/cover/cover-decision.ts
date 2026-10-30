@@ -11,7 +11,8 @@ import {
 export type CoverModerationDecision = "approve" | "review" | "reject";
 
 export type CoverModerationOutcome = {
-  provider: "openai" | "none";
+  /** "openai" only on covers moderated before 2026-10-30 (stored snapshots). */
+  provider: "gemini" | "none";
   decision: CoverModerationDecision;
   flagged: boolean;
   maxScore: number | null;
@@ -49,6 +50,18 @@ export function decideCoverModeration(input: {
     decision = "review";
   }
   return { decision, maxScore, topCategory };
+}
+
+/** Gemini refused to look at the image (its own safety block) → reject. */
+export function coverModerationSafetyBlocked(reason: string): CoverModerationOutcome {
+  return {
+    provider: "gemini",
+    decision: "reject",
+    flagged: true,
+    maxScore: 1,
+    topCategory: `blocked:${reason.toLowerCase()}`,
+    scores: { blocked: 1 },
+  };
 }
 
 /** Filter unavailable → moderator decides (never auto-approve). */
