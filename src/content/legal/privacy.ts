@@ -39,7 +39,6 @@ export const PRIVACY: LegalDoc = {
         ["Google (Gemini API)", "asystent BITEK, moderacja obrazów", "USA"],
         ["Groq", "asystent BITEK, kontrola i doprecyzowanie opisów okładek AI", "USA"],
         ["Cloudflare (Workers AI)", "generowanie okładek AI — tylko opis tekstowy", "USA / globalnie"],
-        ["Pollinations (Myceli.AI OÜ)", "zapasowe generowanie okładek AI — tylko opis tekstowy", "UE (Estonia); przetwarzanie także poza EOG, m.in. w USA"],
         ["Resend", "wysyłka e-maili (gdy włączone)", "USA"],
         ["PayPro S.A. (Przelewy24) albo Krajowy Integrator Płatności S.A. (Tpay)", "płatności (po uruchomieniu) — jako odrębny administrator danych płatniczych", "UE (Polska)"],
       ] } },

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { memoryProviderState, runAiImageChain } from "./chain";
 import { aiCoverEnabled, aiCoverPerDay } from "./config";
 import { checkPromptRules, matchPromptRule } from "./prompt-rules";
-import { AiImageError, aiImageProvidersFromEnv, cloudflareProvider, nextUtcMidnight, pollinationsProvider, retryAfterMs, type AiImageProvider } from "./providers";
+import { AiImageError, aiImageProvidersFromEnv, cloudflareProvider, nextUtcMidnight, retryAfterMs, type AiImageProvider } from "./providers";
 import { screenAiCoverPrompt } from "./screen";
 
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2000, 1)]);
@@ -52,14 +52,13 @@ describe("AI cover provider chain", () => {
     expect(state.snapshot().pollinations).toBeGreaterThan(Date.now());
   });
 
-  it("is off without Cloudflare; Pollinations only as the fallback after it", () => {
-    const size = () => ({ w: 1024, h: 576 });
-    expect(aiImageProvidersFromEnv({}, size)).toEqual([]);
-    expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a" }, size)).toEqual([]);
+  it("is off without Cloudflare; Cloudflare is the only provider (no Pollinations fallback)", () => {
+    expect(aiImageProvidersFromEnv({})).toEqual([]);
+    expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a" })).toEqual([]);
     expect(aiCoverEnabled({})).toBe(false);
     expect(aiCoverEnabled({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: " " })).toBe(false);
     expect(aiCoverEnabled({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t" })).toBe(true);
-    expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t" }, size).map((p) => p.id)).toEqual(["cloudflare", "pollinations"]);
+    expect(aiImageProvidersFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a", CLOUDFLARE_AI_TOKEN: "t", POLLINATIONS_API_KEY: "k" }).map((p) => p.id)).toEqual(["cloudflare"]);
   });
 });
 
@@ -77,18 +76,6 @@ describe("AI cover providers", () => {
     const g = vi.fn(async () => new Response(JSON.stringify({ success: true, result: { image: JPEG.toString("base64") } })));
     const img = await cloudflareProvider({ accountId: "acc", token: "t", fetchFn: g as unknown as typeof fetch }).generate(input, signal);
     expect(img.equals(JPEG)).toBe(true);
-  });
-
-  it("Pollinations: 402 + Retry-After → rate block; JPEG accepted; size by aspect", async () => {
-    const now = 1_000_000;
-    const f = vi.fn(async () => new Response("{}", { status: 402, headers: { "retry-after": "45" } }));
-    const p = pollinationsProvider({ fetchFn: f as unknown as typeof fetch, now: () => now, size: () => ({ w: 1024, h: 576 }) });
-    await expect(p.generate(input, signal)).rejects.toMatchObject({ kind: "rate", blockedUntil: now + 45_000 });
-    expect(String(f.mock.calls[0]?.[0 as never])).toMatch(/^https:\/\/image\.pollinations\.ai\/prompt\/neon%20city\?width=1024&height=576/);
-    const g = vi.fn(async () => new Response(JPEG, { headers: { "content-type": "image/jpeg" } }));
-    expect((await pollinationsProvider({ fetchFn: g as unknown as typeof fetch, size: () => ({ w: 1, h: 1 }) }).generate(input, signal)).length).toBe(JPEG.length);
-    const h = vi.fn(async () => new Response("<html>", { headers: { "content-type": "text/html" } }));
-    await expect(pollinationsProvider({ fetchFn: h as unknown as typeof fetch, size: () => ({ w: 1, h: 1 }) }).generate(input, signal)).rejects.toMatchObject({ kind: "bad_response" });
   });
 
   it("retryAfterMs handles seconds, dates and garbage", () => {
