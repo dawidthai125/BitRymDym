@@ -13,6 +13,7 @@ import type {
 } from "@/lib/studio/mix-analysis/render";
 import { buildMixVerdict, type MixVerdict } from "@/lib/studio/mix-analysis/verdict";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
+import { spawnStudioWorker } from "@/lib/studio/studio-workers";
 
 /** Analysis sample rate: covers 5–9 kHz sibilance band, keeps memory low. */
 export const MIX_ANALYSIS_SAMPLE_RATE = 32000;
@@ -116,16 +117,19 @@ async function decode(url: string, sampleRate: number, signal: AbortSignal): Pro
   return { channels };
 }
 
-function runInWorker(
+async function runInWorker(
   input: MixAnalysisInput,
   onProgress: (f: number) => void,
   signal: AbortSignal,
 ): Promise<MixMetrics> {
-  if (typeof Worker === "undefined") {
-    return Promise.resolve(computeMixMetrics(input, onProgress));
+  const worker = await spawnStudioWorker("mixAnalysis");
+  if (signal.aborted) {
+    worker?.terminate();
+    throw new DOMException("aborted", "AbortError");
   }
+  // Main-thread fallback (no Worker support or the worker script failed to load).
+  if (!worker) return computeMixMetrics(input, onProgress);
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("./mix-analysis.worker.ts", import.meta.url), { type: "module" });
     const stop = () => {
       worker.terminate();
       reject(new DOMException("aborted", "AbortError"));

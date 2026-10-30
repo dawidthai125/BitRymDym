@@ -5,6 +5,7 @@
 
 import { computeMixMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
+import { STUDIO_WORKER_READY } from "@/lib/studio/studio-workers";
 
 type WorkerScope = {
   onmessage: ((event: MessageEvent<MixAnalysisInput>) => void) | null;
@@ -26,3 +27,4 @@ scope.onmessage = (event) => {
     });
   }
 };
+scope.postMessage({ type: STUDIO_WORKER_READY });
