@@ -6,6 +6,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
 import { Button } from "@/components/ui/button";
@@ -2079,6 +2080,24 @@ export function StudioRecordingPanel({
       }
       aria-label={tr("nagrywanieWStudio")}
     >
+      {/* rec-live-ui — mobile only (< lg): always-visible Stop while capturing, same path as
+          the 2nd REC press (stop + upload). Portal: escapes the scrolling inspector sheet. */}
+      {state.phase === "RECORDING" && typeof document !== "undefined"
+        ? createPortal(
+            <button
+              type="button"
+              data-testid="studio-rec-floating-stop"
+              className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-1/2 z-[60] flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-full border-2 border-white/80 bg-[var(--brd-rec)] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-2xl lg:hidden"
+              onClick={() => void stopAndFinalize()}
+            >
+              {tr("zatrzymajNagrywanie")}
+              <span className="font-mono text-xs opacity-90">
+                {tl(formatStudioTimeMs(Math.round(state.elapsedMs)))}
+              </span>
+            </button>,
+            document.body,
+          )
+        : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-[var(--brd-ink)]">
           {tr("nagrywanie")}

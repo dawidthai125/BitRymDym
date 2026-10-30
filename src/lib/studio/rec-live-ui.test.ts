@@ -125,3 +125,16 @@ describe("BITEK dock never covers record UI", () => {
     });
   });
 });
+
+describe("mobile floating Stop while recording", () => {
+  it("is mobile-only, portaled, and uses the same stop+upload path", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/components/studio/studio-recording-panel.tsx", "utf8");
+    const i = src.indexOf('data-testid="studio-rec-floating-stop"');
+    expect(i).toBeGreaterThan(0);
+    const block = src.slice(src.lastIndexOf('state.phase === "RECORDING"', i), i + 900);
+    expect(block).toMatch(/createPortal\(/);
+    expect(block).toMatch(/lg:hidden/);
+    expect(block).toMatch(/onClick=\{\(\) => void stopAndFinalize\(\)\}/);
+  });
+});
