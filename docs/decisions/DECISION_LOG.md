@@ -10,6 +10,17 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Plany — Gold 45 dni przechowywania, Bronze 2 ścieżki (bez Bitu)
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | Owner — limity planów |
+| Status | **ACCEPTED** |
+| Date | 2026-10-30 |
+| Documents | `src/config/plan-policy.ts` (SSOT) |
+
+Gold: przechowywanie plików 45 dni (było 60). Bronze: 2 ścieżki nagrań na projekt, Bit się nie liczy. Maksymalna długość linku odsłuchu = przechowywanie planu (wyliczane, limit DB 61 dni). Istniejące projekty powyżej limitu zachowują ścieżki — blokowane jest tylko dodawanie/duplikowanie (`TRACK_CAPACITY_REACHED`). Już nadane terminy przechowywania nie są skracane wstecz.
+
 ### Autonomia wykonawcza agenta — zatwierdzona (operacyjna)
 
 | Pole | Wartość |

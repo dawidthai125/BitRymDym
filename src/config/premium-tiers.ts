@@ -4,7 +4,7 @@
  * `limits.downloadsDaily` + `PREMIUM_ANON_DOWNLOADS_DAILY` (ANON ≠ FREE).
  * Render daily/concurrent/quota live here; retention and Studio track caps
  * come from the plan SSOT `@/config/plan-policy` (Owner 2026-10-29: Gold keeps
- * the longest — 60 d > Silver 30 d; the old 28 d Gold < 30 d Silver bug is
+ * the longest — 45 d > Silver 30 d (Owner 2026-10-30); the old 28 d Gold < 30 d Silver bug is
  * gone). Gold 90d stays DESIGN ONLY until artifact janitor GO.
  */
 
@@ -27,7 +27,7 @@ export type PremiumTierLimits = {
   artifactQuotaBytes: number;
   /**
    * Max studio_tracks rows per project (BEAT counts; Master does not).
-   * plan-policy maxRecordingTracks + 1 Bit: FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8.
+   * plan-policy maxRecordingTracks + 1 Bit: FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8 (Bronze = 2 recording + Bit).
    */
   studioMaxTracks: number;
   priority: PremiumPriority;
