@@ -580,7 +580,15 @@ export function createTuneProcessorAtRate(
   effect: Extract<StudioFxInstance, { type: "tune" }>,
   sampleRate: number,
 ): StudioOfflineFxProcessor & { readonly latencySamples: number } {
-  let core = new TuneCore(sampleRate, 2, toTuneCoreParams(effect.params));
+  // Manual notes are anchored on the track timeline. Whole-buffer path: input
+  // sample i = timeline i. Per-sample path: tuned clips start `latency`
+  // earlier (compensateStudioTuneLatency) → input sample n = timeline n + latency.
+  const fresh = (originSamples: number) => {
+    const c = new TuneCore(sampleRate, 2, toTuneCoreParams(effect.params, effect.notes));
+    c.setTimeOrigin(originSamples);
+    return c;
+  };
+  let core = fresh(Math.round(sampleRate * 0.04));
   const out = { left: 0, right: 0 };
   return {
     type: "tune",
@@ -595,6 +603,7 @@ export function createTuneProcessorAtRate(
       return out;
     },
     processBuffer(left, right) {
+      core = fresh(0);
       const len = Math.min(left.length, right.length);
       const L = core.latency;
       for (let i = 0; i < len; i += 1) {
@@ -615,7 +624,7 @@ export function createTuneProcessorAtRate(
       }
     },
     reset() {
-      core = new TuneCore(sampleRate, 2, toTuneCoreParams(effect.params));
+      core = fresh(Math.round(sampleRate * 0.04));
     },
   };
 }

@@ -24,7 +24,7 @@ import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import { clampTuneChainForTier, type TuneKey } from "@/lib/studio/tune/tune";
 import type { PremiumTier } from "@/types/premium";
 
-type PresetAccess = { tier: string; maxOwn: number; roleSets: boolean; tuneCustom?: boolean };
+type PresetAccess = { tier: string; maxOwn: number; roleSets: boolean; tuneCustom?: boolean; tuneNotes?: boolean };
 
 type FxPresetsState = { loaded: boolean; available: boolean; access: PresetAccess; presets: OwnFxPreset[] };
 const NO_ACCESS: PresetAccess = { tier: "FREE", maxOwn: 0, roleSets: false };

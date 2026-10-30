@@ -21,7 +21,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export class StudioPlanFeatureError extends Error {
   readonly code = "PLAN_FEATURE_LOCKED" as const;
   constructor(
-    readonly feature: "fx_presets_save" | "fx_presets_sets" | "fx_presets_limit" | "pitch_correction_custom",
+    readonly feature: "fx_presets_save" | "fx_presets_sets" | "fx_presets_limit" | "pitch_correction_custom" | "pitch_correction_notes",
     readonly tier: PremiumTier,
     readonly requiredTier: PremiumTier,
     message: string,
@@ -53,6 +53,8 @@ export type FxPresetAccess = {
   roleSets: boolean;
   /** BRD Tune: hard style + own retune speed / strength (Silver+). */
   tuneCustom: boolean;
+  /** BRD Tune: manual note-by-note editor (Gold). */
+  tuneNotes: boolean;
 };
 
 export async function fxPresetAccessFor(context: AuthContext): Promise<FxPresetAccess> {
@@ -63,6 +65,7 @@ export async function fxPresetAccessFor(context: AuthContext): Promise<FxPresetA
     maxOwn: access.maxOwn,
     roleSets: access.roleSets,
     tuneCustom: pitchCorrectionAccessForTier(tier).custom,
+    tuneNotes: pitchCorrectionAccessForTier(tier).manualNotes,
   };
 }
 

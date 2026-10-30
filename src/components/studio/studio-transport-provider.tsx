@@ -751,6 +751,11 @@ export function StudioTransportProvider({
   );
 }
 
+/** Same as useStudioTransportControls, but null outside the provider (panels, tests). */
+export function useOptionalStudioTransportControls(): StudioTransportControlsApi | null {
+  return useContext(StudioTransportControlsContext);
+}
+
 export function useStudioTransportControls(): StudioTransportControlsApi {
   const ctx = useContext(StudioTransportControlsContext);
   if (!ctx) {

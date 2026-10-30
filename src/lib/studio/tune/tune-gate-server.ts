@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
 import { parseStudioFxChainForWrite } from "@/lib/studio/studio-fx-chain";
 
-import { findLockedTuneEffect } from "./tune";
+import { findLockedTuneEffect, lockedTuneReason } from "./tune";
 
 function mentionsTune(raw: unknown): boolean {
   if (!raw || typeof raw !== "object") return false;
@@ -31,7 +31,16 @@ export async function assertTuneChainsAllowedForUser(chains: readonly unknown[])
     } catch {
       continue;
     }
-    if (findLockedTuneEffect(tier, chain)) {
+    const locked = findLockedTuneEffect(tier, chain);
+    if (locked && lockedTuneReason(tier, locked) === "notes") {
+      throw new StudioPlanFeatureError(
+        "pitch_correction_notes",
+        tier,
+        minimumTierFor((p) => p.tools.pitchCorrection.manualNotes),
+        "Ręczna korekta nut jest w planie Gold.",
+      );
+    }
+    if (locked) {
       throw new StudioPlanFeatureError(
         "pitch_correction_custom",
         tier,

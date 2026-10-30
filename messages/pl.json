@@ -2598,7 +2598,7 @@
         "custom": "Własna szybkość i siła strojenia."
       },
       "lockSilver": "Styl Trap oraz własna szybkość i siła — od planu Silver.",
-      "recznie": "Ręczna korekta pojedynczych nut (Gold) — wkrótce.",
+      "recznie": "Ręczna korekta pojedynczych nut — w edytorze nut poniżej (Gold).",
       "latencja": "Strojenie dodaje 40 ms opóźnienia — studio kompensuje je automatycznie.",
       "szybkosc": "Szybkość strojenia",
       "sila": "Siła"
@@ -2718,6 +2718,42 @@
         "take_unavailable": "To nagranie jest niedostępne (wygasło lub usunięte).",
         "generic": "Coś poszło nie tak. Spróbuj ponownie."
       }
+    },
+    "tuneNotes": {
+      "tytul": "Ręczna korekta nut (Gold)",
+      "opis": "Pokażę Ci nuty, które wykryłem w nagraniu. Przeciągnij nutę w górę lub w dół — przy renderze dostroję ją dokładnie tam.",
+      "pokaz": "Pokaż nuty",
+      "analiza": "Słucham ścieżki i wykrywam nuty…",
+      "wykryto": "Wykryłem {count, plural, one {# nutę} few {# nuty} many {# nut} other {# nuty}}. Dotknij nutę, żeby ją zaznaczyć.",
+      "brakNut": "Nie znalazłem tu śpiewanych nut. Nagraj albo dodaj take na tę ścieżkę.",
+      "brakAudio": "Nie mogę wczytać audio tej ścieżki. Odtwórz projekt raz i spróbuj ponownie.",
+      "rola": "Edytor nut (piano roll)",
+      "nuta": "Nuta {from} → {to}",
+      "nutaAria": "Nuta {name} od {sec} s",
+      "polTonuWDol": "−1 półton",
+      "polTonuWGore": "+1 półton",
+      "centyWDol": "−10 c",
+      "centyWGore": "+10 c",
+      "doTonacji": "Do tonacji",
+      "oryginal": "Bez zmian",
+      "sila": "Siła strojenia nuty",
+      "szybkosc": "Szybkość dociągania",
+      "precyzja": "Precyzja przeciągania",
+      "precyzjaPolton": "Półtony",
+      "precyzjaCenty": "Centy",
+      "odsluch": "▶ Odsłuch po korekcie",
+      "odsluchOryginal": "▶ Oryginał",
+      "stop": "■ Stop",
+      "renderuje": "Przygotowuję odsłuch…",
+      "zastosuj": "Zastosuj {count, plural, one {# nutę} few {# nuty} many {# nut} other {# nuty}}",
+      "zastosowano": "Zapisałem. Twoje nuty dostroję przy renderze i masterze.",
+      "blad": "Nie udało mi się zapisać nut. Spróbuj ponownie.",
+      "cofnij": "Cofnij zmiany",
+      "wyczysc": "Usuń ręczne nuty",
+      "zapisane": "Zapisane ręczne nuty: {count}",
+      "podgladInfo": "Odsłuch nuty liczę tym samym silnikiem co render. Zwykłe odtwarzanie projektu pokazuje tylko automatyczne strojenie.",
+      "lock": "Ręczną korektę nut daję w planie Gold — wtedy przeciągniesz każdą nutę osobno, co do centa.",
+      "zobaczGold": "Zobacz plan Gold"
     }
   },
   "nav": {

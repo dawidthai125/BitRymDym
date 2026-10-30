@@ -97,6 +97,27 @@ export type StudioFxTuneParams = {
   amount: number;
 };
 
+/**
+ * Gold manual note correction (BRD Tune note editor). One edited note on the
+ * TRACK timeline: startMs/endMs, target pitch as fractional MIDI (cents =
+ * hundredths), per-note strength 0..1 and retune speed. Lives next to the
+ * numeric params (not inside) so generic param plumbing stays numeric.
+ */
+export type StudioTuneNoteEdit = {
+  startMs: number;
+  endMs: number;
+  targetMidi: number;
+  amount: number;
+  retuneMs: number;
+};
+
+export const STUDIO_TUNE_NOTES_MAX = 512 as const;
+export const STUDIO_TUNE_NOTE_RANGES = {
+  targetMidi: [24, 108],
+  amount: [0, 1],
+  retuneMs: [0, 400],
+} as const;
+
 export type StudioFxParamsByType = {
   eq: StudioFxEqParams;
   compressor: StudioFxCompressorParams;
@@ -123,7 +144,14 @@ export type StudioFxInstance =
   | { id: string; type: "highpass"; enabled: boolean; params: StudioFxHighpassParams }
   | { id: string; type: "deesser"; enabled: boolean; params: StudioFxDeesserParams }
   | { id: string; type: "gate"; enabled: boolean; params: StudioFxGateParams }
-  | { id: string; type: "tune"; enabled: boolean; params: StudioFxTuneParams };
+  | {
+      id: string;
+      type: "tune";
+      enabled: boolean;
+      params: StudioFxTuneParams;
+      /** Gold manual notes (optional; absent = automatic tuning only). */
+      notes?: StudioTuneNoteEdit[];
+    };
 
 export type StudioFxChainV1 = {
   schemaVersion: 1;
@@ -156,6 +184,34 @@ const UUID_RE =
 
 const CHAIN_KEYS = new Set(["schemaVersion", "effects"]);
 const EFFECT_KEYS = new Set(["id", "type", "enabled", "params"]);
+const TUNE_EFFECT_KEYS = new Set(["id", "type", "enabled", "params", "notes"]);
+const TUNE_NOTE_KEYS = new Set(["startMs", "endMs", "targetMidi", "amount", "retuneMs"]);
+
+/** Manual notes: sorted by start, non-overlapping, ≤ STUDIO_TUNE_NOTES_MAX. */
+export function parseStudioTuneNotes(raw: unknown): StudioTuneNoteEdit[] {
+  if (!Array.isArray(raw)) invalid("notes");
+  if (raw.length > STUDIO_TUNE_NOTES_MAX) invalid(`notes max ${STUDIO_TUNE_NOTES_MAX}`);
+  const notes = raw.map((item, i) => {
+    const o = requireObject(item, `notes[${i}]`);
+    assertKeys(o, TUNE_NOTE_KEYS, `notes[${i}]`);
+    const startMs = finiteInRange(o.startMs, 0, 3_600_000, `notes[${i}].startMs`);
+    const endMs = finiteInRange(o.endMs, 0, 3_600_000, `notes[${i}].endMs`);
+    if (endMs - startMs < 10) invalid(`notes[${i}].endMs`);
+    const r = STUDIO_TUNE_NOTE_RANGES;
+    return {
+      startMs: Math.round(startMs),
+      endMs: Math.round(endMs),
+      targetMidi: Math.round(finiteInRange(o.targetMidi, r.targetMidi[0], r.targetMidi[1], `notes[${i}].targetMidi`) * 100) / 100,
+      amount: o.amount === undefined ? 1 : finiteInRange(o.amount, r.amount[0], r.amount[1], `notes[${i}].amount`),
+      retuneMs: o.retuneMs === undefined ? 0 : finiteInRange(o.retuneMs, r.retuneMs[0], r.retuneMs[1], `notes[${i}].retuneMs`),
+    };
+  });
+  notes.sort((a, b) => a.startMs - b.startMs);
+  for (let i = 1; i < notes.length; i += 1) {
+    if (notes[i]!.startMs < notes[i - 1]!.endMs) invalid(`notes[${i}] overlap`);
+  }
+  return notes;
+}
 const BAND_KEYS = new Set(["frequencyHz", "gainDb", "q"]);
 const EQ_KEYS = new Set(["low", "mid", "high"]);
 const COMP_KEYS = new Set([
@@ -426,7 +482,7 @@ function parseEffect(
   createId: () => string,
 ): StudioFxInstance {
   const o = requireObject(raw, `effects[${index}]`);
-  assertKeys(o, EFFECT_KEYS, `effects[${index}]`);
+  assertKeys(o, o.type === "tune" ? TUNE_EFFECT_KEYS : EFFECT_KEYS, `effects[${index}]`);
   if (!isFxType(o.type)) invalid(`effects[${index}].type`);
   if (typeof o.enabled !== "boolean") invalid(`effects[${index}].enabled`);
   const id =
@@ -467,7 +523,9 @@ function parseEffect(
     const params = parseRanged(o.params, STUDIO_FX_DEFAULTS.tune, TUNE_KEYS, STUDIO_FX_STAGE2_RANGES.tune);
     params.keyRoot = Math.round(params.keyRoot);
     params.scale = Math.round(params.scale);
-    return { id, type, enabled: o.enabled, params };
+    if (o.notes === undefined) return { id, type, enabled: o.enabled, params };
+    const notes = parseStudioTuneNotes(o.notes);
+    return notes.length > 0 ? { id, type, enabled: o.enabled, params, notes } : { id, type, enabled: o.enabled, params };
   }
   if (type === "compressor") {
     return {
@@ -679,6 +737,7 @@ export function studioFxPlaybackFingerprint(plan: StudioFxPlaybackPlan): string 
         type: slot.effect.type,
         enabled: slot.effect.enabled,
         params: slot.effect.params,
+        ...(slot.effect.type === "tune" && slot.effect.notes ? { notes: slot.effect.notes } : {}),
       };
     }),
   );

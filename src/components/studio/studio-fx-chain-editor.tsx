@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { StudioVocalPresetPicker } from "@/components/studio/studio-vocal-presets";
 import { StudioTunePanel, useProjectBeatKey } from "@/components/studio/studio-tune-panel";
+import type { NoteEditorClip } from "@/lib/studio/tune/note-editor-client";
 import { tuneParams } from "@/lib/studio/tune/tune";
 
 import type { ReactNode } from "react";
@@ -66,6 +67,8 @@ type StudioFxChainEditorProps = {
   title?: string;
   /** Gaps P0 #3 — vocal sound presets (track chains only); bpm syncs the delay. */
   vocalPresets?: { bpm: number };
+  /** Track chains: the track's clips (BRD Tune note editor, Gold). */
+  trackClips?: readonly NoteEditorClip[];
 };
 
 function formatParam(value: number, unit: string): string {
@@ -87,6 +90,7 @@ export function StudioFxChainEditor({
   onClose,
   title,
   vocalPresets,
+  trackClips,
 }: StudioFxChainEditorProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioFxChainEditor");
@@ -392,8 +396,24 @@ export function StudioFxChainEditor({
                         <StudioTunePanel
                           projectId={projectId}
                           params={effect.params}
+                          notes={effect.notes}
+                          clips={trackClips}
                           disabled={saving === "saving"}
                           onCommit={(params) => commit(setStudioFxParams(chain, effect.id, params))}
+                          onCommitNotes={
+                            role === "track"
+                              ? (notes) =>
+                                  commit({
+                                    ...chain,
+                                    effects: chain.effects.map((e) => {
+                                      if (e.id !== effect.id || e.type !== "tune") return e;
+                                      const { notes: _old, ...rest } = e;
+                                      void _old;
+                                      return notes.length > 0 ? { ...rest, notes } : rest;
+                                    }),
+                                  })
+                              : undefined
+                          }
                         />
                       ) : null}
                       {effect.type === "tune" ? null : meta.params.map((param) => {

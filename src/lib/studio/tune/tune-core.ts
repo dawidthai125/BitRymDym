@@ -31,6 +31,13 @@ export type TuneCoreParams = {
   retuneMs: number;
   /** 0..1 — fraction of the pitch error that gets corrected. */
   amount: number;
+  /**
+   * Gold manual note correction: flat [startMs, endMs, targetMidi, amount,
+   * retuneMs] × n on the TRACK timeline. Only used once the caller tells the
+   * core where its sample 0 sits (`setTimeOrigin`) — the live worklet never
+   * does (it starts at an arbitrary playhead), offline/E3 renders always do.
+   */
+  notes?: number[];
 };
 
 export class TuneCore {
@@ -72,6 +79,14 @@ export class TuneCore {
   declare retuneMs: number;
   declare amount: number;
   declare scaleMask: number[];
+  declare noteS: number[];
+  declare noteE: number[];
+  declare noteP: number[];
+  declare noteA: number[];
+  declare noteR: number[];
+  declare noteIdx: number;
+  declare origin: number;
+  declare notesOn: boolean;
 
   constructor(sampleRate: number, channels: number, params: TuneCoreParams) {
     const sr = sampleRate > 0 ? sampleRate : 44100;
@@ -127,6 +142,14 @@ export class TuneCore {
     this.retuneMs = 0;
     this.amount = 1;
     this.scaleMask = [];
+    this.noteS = [];
+    this.noteE = [];
+    this.noteP = [];
+    this.noteA = [];
+    this.noteR = [];
+    this.noteIdx = 0;
+    this.origin = 0;
+    this.notesOn = false;
     this.setParams(params);
   }
 
@@ -148,6 +171,53 @@ export class TuneCore {
       for (let i = 0; i < steps.length; i += 1) mask[(this.keyRoot + steps[i]!) % 12] = 1;
     }
     this.scaleMask = mask;
+    // Manual notes (sorted, non-overlapping) → sample positions.
+    this.noteS = [];
+    this.noteE = [];
+    this.noteP = [];
+    this.noteA = [];
+    this.noteR = [];
+    this.noteIdx = 0;
+    const flat = params.notes;
+    if (flat && flat.length >= 5) {
+      const msToS = this.sampleRate / 1000;
+      for (let i = 0; i + 4 < flat.length; i += 5) {
+        const s0 = Number(flat[i]);
+        const e0 = Number(flat[i + 1]);
+        const p0 = Number(flat[i + 2]);
+        const a0 = Number(flat[i + 3]);
+        const r0 = Number(flat[i + 4]);
+        if (!(e0 > s0) || !(p0 >= 24 && p0 <= 108)) continue;
+        this.noteS.push(Math.round(s0 * msToS));
+        this.noteE.push(Math.round(e0 * msToS));
+        this.noteP.push(p0);
+        this.noteA.push(a0 >= 0 && a0 <= 1 ? a0 : 1);
+        this.noteR.push(r0 > 0 && r0 <= 1000 ? r0 : 0);
+      }
+    }
+  }
+
+  /**
+   * Anchor the stream on the track timeline: input sample n = timeline sample
+   * n + origin. Enables manual notes (offline / E3 renders, note preview).
+   */
+  setTimeOrigin(originSamples: number): void {
+    this.origin = Math.round(Number(originSamples)) || 0;
+    this.notesOn = true;
+    this.noteIdx = 0;
+  }
+
+  /** Index of the manual note covering timeline sample t, or -1. */
+  noteAt(t: number): number {
+    const S = this.noteS;
+    const E = this.noteE;
+    const count = S.length;
+    if (!this.notesOn || count === 0) return -1;
+    let i = this.noteIdx;
+    if (i >= count || S[i]! > t) i = 0;
+    while (i < count && E[i]! <= t) i += 1;
+    this.noteIdx = i < count ? i : count - 1;
+    return i < count && S[i]! <= t ? i : -1;
   }
 
   /** Nearest allowed MIDI note (scale) to a fractional MIDI pitch. */
@@ -224,7 +294,20 @@ export class TuneCore {
       }
     }
     let goal = 0;
-    if (voiced) {
+    // Analysis window centre on the track timeline (YIN looks back ~W samples).
+    const manual = this.noteAt(this.n + this.origin - ((this.yinW * this.decim) >> 1));
+    let retune = this.retuneMs;
+    if (voiced && manual >= 0) {
+      // Gold: the user's target note (cents precision), up to ±12 semitones.
+      const midi = 69 + 12 * Math.log2(this.sampleRate / periodFull / 440);
+      const goalNote = this.noteP[manual]!;
+      this.target = Math.round(goalNote);
+      let err = goalNote - midi;
+      if (err > 12) err = 12;
+      if (err < -12) err = -12;
+      goal = err * this.noteA[manual]!;
+      retune = this.noteR[manual]!;
+    } else if (voiced) {
       const midi = 69 + 12 * Math.log2(this.sampleRate / periodFull / 440);
       const note = this.snap(midi);
       this.target = note;
@@ -236,8 +319,8 @@ export class TuneCore {
       this.target = -1;
     }
     const alpha =
-      this.retuneMs > 0
-        ? 1 - Math.exp(-this.hop / ((this.retuneMs / 1000) * this.sampleRate))
+      retune > 0
+        ? 1 - Math.exp(-this.hop / ((retune / 1000) * this.sampleRate))
         : 1;
     this.corr += (goal - this.corr) * alpha;
     if (!voiced && Math.abs(this.corr) < 1e-4) this.corr = 0;
