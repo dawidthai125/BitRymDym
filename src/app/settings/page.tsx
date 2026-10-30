@@ -33,6 +33,11 @@ const SETTINGS_HUB_LINKS = [
         description: "zmianaEMailaHasla",
       },
       {
+        href: "/account#powiadomienia",
+        title: "powiadomieniaEMail",
+        description: "moderacjaMasterMp4",
+      },
+      {
         href: "/account#danger",
         title: "usuwanieKonta",
         description: "trwaleUsuniecieKontaIstniejacy",

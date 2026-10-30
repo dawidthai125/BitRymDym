@@ -14,6 +14,7 @@ import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
+import { notifyStudioJobReady } from "@/lib/email/notify/server";
 import { renderYoutubeVideo } from "@/lib/studio/video/render";
 import { isYoutubeVideoSpec } from "@/lib/studio/video/youtube-video";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -360,5 +361,7 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     p_job_id: job.id, p_worker_ref: cfg.workerRef, p_status: status, p_result_object_key: resultKey, p_metrics: metrics, p_error_code: errorCode,
   });
   if (error) throw new Error(`complete_failed:${error.code ?? "?"}`);
+  // "Master / MP4 ready" e-mail (off unless EMAIL_NOTIFICATIONS_ENABLED + Resend env on E3); never fails the job.
+  if (status === "succeeded") await notifyStudioJobReady(job).catch(() => {});
   return status;
 }

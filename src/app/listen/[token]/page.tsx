@@ -10,7 +10,13 @@ type Props = { params: Promise<{ token: string }> };
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("listen");
-  return { title: t("metaTitle"), robots: { index: false, follow: false }, referrer: "no-referrer" };
+  const description = t("tylkoOdsluch");
+  // Card image: ./opengraph-image + ./twitter-image (title + public beat cover only). Still noindex.
+  return {
+    title: t("metaTitle"), description, robots: { index: false, follow: false }, referrer: "no-referrer",
+    openGraph: { type: "website", title: t("metaTitle"), description },
+    twitter: { card: "summary_large_image", title: t("metaTitle"), description },
+  };
 }
 
 /** Gaps P1 — public, auth-free player for a private listen link (no download, no BITEK). */
