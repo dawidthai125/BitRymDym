@@ -1,5 +1,17 @@
+import { MASTER_TARGETS } from "@/lib/studio/master/targets";
+
+import { validateBitekJobs } from "./jobs";
+import { resolveMasterLoudness } from "./master-loudness";
 import { validateProposals } from "./proposals";
-import { BITEK_MASTER_REF, type BitekChatContext, type BitekChatResult, type BitekMasterSetting, type BitekProposal } from "./types";
+import {
+  BITEK_MASTER_REF,
+  type BitekChatContext,
+  type BitekChatResult,
+  type BitekMasterSetting,
+  type BitekMasterStyle,
+  type BitekMasterTarget,
+  type BitekProposal,
+} from "./types";
 
 /**
  * Stage 3 — BITEK in Mastering. Here I hear the whole song as ONE stereo track:
@@ -87,4 +99,86 @@ export function bitekMasterRulesChat(message: string, ctx: BitekChatContext, sco
   }
   const worst = ctx.master?.cards.find((c) => c.status === "red") ?? ctx.master?.cards.find((c) => c.status === "yellow") ?? null;
   return { provider: "rules", reply: tx.generic(worst ? worst.id : null), proposals: [] };
+}
+
+const STYLES: { re: RegExp; style: BitekMasterStyle }[] = [
+  { re: /styl ciepl|cieply master|warm (master|style)/, style: "warm" },
+  { re: /styl jasn|jasny master|bright (master|style)/, style: "bright" },
+  { re: /styl glosn|glosny master|loud (master|style)/, style: "loud" },
+  { re: /styl dynamic|dynamiczny master|dynamic (master|style)/, style: "dynamic" },
+];
+
+/** Named mastering style → one job the user confirms. Null when the message is not a style ask. */
+export function bitekMasterStyleChat(message: string, ctx: BitekChatContext): BitekChatResult | null {
+  const style = STYLES.find((s) => s.re.test(norm(message)))?.style;
+  if (!style || !ctx.master) return null;
+  const jobs = validateBitekJobs([{ kind: "masterStyle", style }], ctx);
+  if (!jobs.length) return null;
+  const reply =
+    ctx.lang === "pl"
+      ? `Ustawię styl „${jobs[0]!.label.replace(/^Styl masteringu: /, "")}” na całej piosence. Kliknij „Zastosuj”, a jak nie pasuje — cofnij.`
+      : `I'll set the “${jobs[0]!.label.replace(/^Mastering style: /, "")}” style on the whole song. Hit Apply, and undo if it doesn't fit.`;
+  return { provider: "rules", reply, proposals: [], jobs };
+}
+
+const TARGET_ASK: { re: RegExp; id: BitekMasterTarget }[] = [
+  { re: /spotify|streaming|do streamu/, id: "streaming" },
+  { re: /youtube|tiktok/, id: "youtube" },
+  { re: /sluchawk|headphone/, id: "headphones" },
+  { re: /klub|club/, id: "club" },
+];
+
+const TARGET_NAME: Record<"pl" | "en", Record<BitekMasterTarget, string>> = {
+  pl: { streaming: "streamingu", youtube: "YouTube", headphones: "słuchawek", club: "klubu" },
+  en: { streaming: "streaming", youtube: "YouTube", headphones: "headphones", club: "club" },
+};
+
+/** Switch the mastering loudness target. Null when the message is not that ask. */
+export function bitekMasterTargetChat(message: string, ctx: BitekChatContext): BitekChatResult | null {
+  const m = norm(message);
+  if (!/dopasuj|pod spotify|pod youtube|pod tiktok|pod klub|na sluchawk|for streaming|for youtube|for headphones|for club|cel (streaming|youtube|klub|sluch)/.test(m)) return null;
+  if (!ctx.master) return null;
+  const id = TARGET_ASK.find((t) => t.re.test(m))?.id;
+  if (!id) return null;
+  const pl = ctx.lang === "pl";
+  const measured = ctx.analysis?.masterIntegratedLufs;
+  const peak = ctx.analysis?.masterTruePeakDbtp ?? null;
+  const jobs = ctx.master.target === id ? [] : validateBitekJobs([{ kind: "masterTarget", target: id }], ctx);
+  if (measured === null || measured === undefined || !Number.isFinite(measured)) {
+    if (!jobs.length) {
+      return {
+        provider: "rules",
+        reply: pl
+          ? "Ten cel już jest wybrany. Nie mam pomiaru LUFS, więc nie zgaduję, o ile LU podnieść. Zrób master, wtedy powiem z liczb."
+          : "That target is already selected. I don't have a LUFS measurement, so I won't guess the step. Make the master and I'll use the numbers.",
+        proposals: [],
+      };
+    }
+    return {
+      provider: "rules",
+      reply: pl
+        ? `Przełączę cel na ${jobs[0]!.label.replace(/^Cel: /, "")}. Nie mam jeszcze pomiaru LUFS, więc nie podaję kroku w LU. Kliknij „Zastosuj”.`
+        : `I'll switch the target to ${jobs[0]!.label.replace(/^Target: /, "")}. I don't have a LUFS measurement yet, so I won't quote a LU step. Hit Apply.`,
+      proposals: [],
+      jobs,
+    };
+  }
+  const decision = resolveMasterLoudness({
+    measuredLufs: measured,
+    targetLufs: MASTER_TARGETS[id].lufs,
+    truePeakDb: peak !== null && Number.isFinite(peak) ? peak : null,
+    ceilingDb: MASTER_TARGETS[id].tp,
+    currentOffset: ctx.master.settings.loudness,
+    lang: ctx.lang,
+    targetName: TARGET_NAME[ctx.lang][id],
+  });
+  const proposals = decision.changesKnob
+    ? validateProposals([{ trackRef: BITEK_MASTER_REF, param: "loudness", value: decision.offset, label: "" }], ctx)
+    : [];
+  return {
+    provider: "rules",
+    reply: decision.reply,
+    proposals,
+    ...(jobs.length ? { jobs } : {}),
+  };
 }

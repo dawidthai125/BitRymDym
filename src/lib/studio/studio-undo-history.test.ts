@@ -48,6 +48,24 @@ describe("studio undo history", () => {
     ).toEqual({ gainDb: -2 });
   });
 
+  it("roundtrips a mastering session and skips an identical snap", () => {
+    const before = {
+      settings: { loudness: 0, bright: 0, bass: 0, width: 0, squash: 0 },
+      target: "streaming",
+      style: null,
+      styleIntensity: 50,
+    };
+    const after = { ...before, settings: { ...before.settings, loudness: 1.5 }, style: "warm" as string | null };
+    const entry: StudioUndoEntry = {
+      undo: { kind: "master_session", snap: before },
+      redo: { kind: "master_session", snap: after },
+    };
+    const h = pushStudioUndoEntry(EMPTY_STUDIO_UNDO_HISTORY, entry);
+    expect(takeStudioUndo(h)!.op).toEqual(entry.undo);
+    expect(takeStudioRedo(takeStudioUndo(h)!.history)!.op).toEqual(entry.redo);
+    expect(pushStudioUndoEntry(h, { undo: entry.undo, redo: entry.undo })).toBe(h);
+  });
+
   it("maps keyboard shortcuts", () => {
     const k = (key: string, o: Partial<{ ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }> = {}) =>
       studioUndoShortcut({ key, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...o });
@@ -70,5 +88,8 @@ describe("studio editor undo wiring", () => {
     expect(editor).toMatch(/data-testid="studio-transport-redo"/);
     expect(editor).toMatch(/committedDocRef\.current = next/);
     expect(editor).toMatch(/history: false/);
+    expect(editor).toMatch(/kind: "master_session"/);
+    expect(editor).toMatch(/onCommitMasterSession/);
+    expect(editor).toMatch(/masterSessionRef/);
   });
 });

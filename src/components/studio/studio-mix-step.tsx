@@ -1,10 +1,19 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+import type { BitekMixFixId } from "@/lib/studio/bitek/chat/types";
+import {
+  clearBitekRecordHandoff,
+  gainDbForTakePeak,
+  readBitekRecordHandoff,
+  subscribeBitekRecordHandoff,
+  type BitekRecordHandoff,
+} from "@/lib/studio/bitek/record-handoff";
+import { watchMixManual, type ManualIssue, type WatchTrack } from "@/lib/studio/bitek/manual-watch";
 import { Button } from "@/components/ui/button";
 import { bitekRulesGuide, type BitekAction, type BitekAnalysisState } from "@/lib/studio/bitek/bitek-guide";
 import {
@@ -244,14 +253,33 @@ export function StudioMixStep({
   useEffect(() => {
     latest.current = { doc, result, stale };
   });
-  const getChatContext = useCallback(() => {
+  const getChatContext = useCallback((): BitekClientContext => {
     const cur = latest.current;
-    return buildBitekClientContext({
+    const base = buildBitekClientContext({
       doc: cur.doc,
       lang: locale === "en" ? "en" : "pl",
       step: "mix",
       analysis: cur.result ? { verdict: cur.result.verdict, metrics: cur.result.metrics, stale: cur.stale } : null,
     });
+    return {
+      ...base,
+      applyMixFix: async (fixes: BitekMixFixId[]) => {
+        const snap = latest.current;
+        const apply = applyAutofixRef.current;
+        if (!snap.result || snap.stale) return { ok: false, reason: "no-analysis" };
+        if (!apply) return { ok: false, reason: "failed" };
+        const plan = planMixAutofix({
+          doc: snap.doc,
+          metrics: snap.result.metrics,
+          verdict: snap.result.verdict,
+          fixes,
+          createId: () => crypto.randomUUID(),
+        });
+        if (plan.ops.length === 0) return { ok: false, reason: "empty" };
+        const res = await apply(plan.ops, "BITEK");
+        return res.ok ? { ok: true } : { ok: false, reason: "failed" };
+      },
+    };
   }, [locale]);
   useEffect(() => {
     if (!chatContextRef) return;
@@ -275,6 +303,51 @@ export function StudioMixStep({
   const tBitek = useTranslations("studio.bitek");
   // Bubble buttons dispatch through state so the bubble object stays stable.
   const [pending, setPending] = useState<{ id: BitekAction | "fix-all"; seq: number } | null>(null);
+  const handoffKey = useSyncExternalStore(
+    subscribeBitekRecordHandoff,
+    () => {
+      const h = readBitekRecordHandoff(doc.project.id);
+      return h ? `${h.issue}|${h.peakDb}|${h.at}` : "";
+    },
+    () => "",
+  );
+  const handoff: BitekRecordHandoff | null = handoffKey
+    ? readBitekRecordHandoff(doc.project.id)
+    : null;
+  const applyHandoffRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    applyHandoffRef.current = () => {
+      const pendingHandoff = handoff;
+      if (!pendingHandoff || !onApplyAutofix) return;
+      const vocal =
+        doc.tracks.find((t) => t.trackRole === "lead_vocal" && doc.clips.some((c) => c.trackId === t.id && c.durationMs > 0)) ??
+        doc.tracks.find((t) => (t.trackRole === "adlib" || t.trackRole === "double" || t.trackRole === "backing") && doc.clips.some((c) => c.trackId === t.id && c.durationMs > 0));
+      if (!vocal) {
+        clearBitekRecordHandoff();
+        return;
+      }
+      const snap = latest.current;
+      const fixes: MixAutofixId[] = pendingHandoff.issue === "clip" ? ["gain"] : ["balance", "gain"];
+      const measured = snap.result && !snap.stale
+        ? planMixAutofix({
+            doc,
+            metrics: snap.result.metrics,
+            verdict: snap.result.verdict,
+            fixes,
+            createId: () => crypto.randomUUID(),
+          })
+        : null;
+      const gain = gainDbForTakePeak(vocal.gainDb, pendingHandoff.issue, pendingHandoff.peakDb);
+      const ops = measured && measured.ops.length > 0
+        ? measured.ops
+        : gain === null
+          ? []
+          : [{ op: "set_track_controls" as const, trackId: vocal.id, gainDb: gain }];
+      clearBitekRecordHandoff();
+      if (ops.length === 0) return;
+      void onApplyAutofix(ops, "BITEK");
+    };
+  });
   const handledSeq = useRef(0);
   useEffect(() => {
     if (!pending || pending.seq <= handledSeq.current) return;
@@ -286,7 +359,130 @@ export function StudioMixStep({
     else onBitekAction(pendingAction);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per dispatched action
   }, [pending]);
+  const [manual, setManual] = useState<ManualIssue | null>(null);
+  const dismissedManual = useRef(new Set<string>());
+  const mixBaseline = useRef<Parameters<typeof watchMixManual>[0]["baseline"]>(null);
+  const applyManualRef = useRef<(issue: ManualIssue) => void>(() => {});
+  useEffect(() => {
+    if (!result || stale) return;
+    const vocal = doc.tracks.find((t) => t.trackRole === "lead_vocal");
+    const beatTrack = doc.tracks.find((t) => t.trackRole === "beat" || t.trackRole === "instrument");
+    mixBaseline.current = {
+      vocalVsBeatLu: result.metrics.vocalVsBeatLu,
+      vocalGainDb: vocal?.gainDb ?? 0,
+      beatGainDb: beatTrack?.gainDb ?? 0,
+      masterTruePeakDbtp: result.metrics.master.truePeakDbtp,
+      tracks: result.metrics.tracks.map((t) => ({
+        id: t.trackId,
+        samplePeakDbfs: t.samplePeakDbfs,
+        gainDb: doc.tracks.find((d) => d.id === t.trackId)?.gainDb ?? 0,
+      })),
+    };
+  }, [result, stale, doc]);
+  const manualSig = doc.tracks.map((t) => `${t.id}:${t.gainDb}:${t.pan}:${t.muted}:${JSON.stringify(t.effectsChain)}`).join("|");
+  const manualSeen = useRef<string | null>(null);
+  useEffect(() => {
+    if (manualSeen.current === null) {
+      manualSeen.current = manualSig;
+      return;
+    }
+    if (manualSeen.current === manualSig) return;
+    const timer = window.setTimeout(() => {
+      manualSeen.current = manualSig;
+      const tracks: WatchTrack[] = doc.tracks.map((t) => {
+        const eq = t.effectsChain.effects.find((e) => e.type === "eq" && e.enabled);
+        const bands = eq && eq.type === "eq" ? [eq.params.low.gainDb, eq.params.mid.gainDb, eq.params.high.gainDb] : [];
+        const extreme = bands.reduce((a, b) => (Math.abs(b) > Math.abs(a) ? b : a), 0);
+        const comp = t.effectsChain.effects.find((e) => e.type === "compressor" && e.enabled);
+        return {
+          id: t.id,
+          name: t.name,
+          role: t.trackRole,
+          gainDb: t.gainDb,
+          pan: t.pan,
+          muted: t.muted,
+          hasAudio: doc.clips.some((c) => c.trackId === t.id && c.durationMs > 0),
+          eqGainDb: Math.abs(extreme) >= 12 ? extreme : null,
+          compressorRatio: comp && comp.type === "compressor" ? comp.params.ratio : null,
+        };
+      });
+      const issue = watchMixManual({ lang: locale === "en" ? "en" : "pl", tracks, baseline: mixBaseline.current });
+      if (!issue || dismissedManual.current.has(issue.key)) {
+        setManual((cur) => (cur && dismissedManual.current.has(cur.key) ? null : cur));
+        return;
+      }
+      setManual(issue);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [manualSig, doc, locale]);
+  useEffect(() => {
+    applyManualRef.current = (issue) => {
+      dismissedManual.current.add(issue.key);
+      setManual(null);
+      const fix = issue.fix;
+      if (!fix || !onApplyAutofix) return;
+      if (fix.kind === "controls") {
+        void onApplyAutofix([{
+          op: "set_track_controls",
+          trackId: fix.trackId,
+          ...(fix.gainDb !== undefined ? { gainDb: fix.gainDb } : {}),
+          ...(fix.pan !== undefined ? { pan: fix.pan } : {}),
+          ...(fix.muted !== undefined ? { muted: fix.muted } : {}),
+        }], "BITEK");
+        return;
+      }
+      if (fix.kind !== "eqFlat" && fix.kind !== "compressorEase") return;
+      const track = doc.tracks.find((t) => t.id === fix.trackId);
+      if (!track) return;
+      const effects = track.effectsChain.effects.map((e) => {
+        if (fix.kind === "eqFlat" && e.type === "eq") {
+          return { ...e, params: { low: { ...e.params.low, gainDb: 0 }, mid: { ...e.params.mid, gainDb: 0 }, high: { ...e.params.high, gainDb: 0 } } };
+        }
+        if (fix.kind === "compressorEase" && e.type === "compressor") return { ...e, params: { ...e.params, ratio: 3 } };
+        return e;
+      });
+      void onApplyAutofix([{ op: "set_track_fx", trackId: track.id, effectsChain: { ...track.effectsChain, effects } }], "BITEK");
+    };
+  });
   const bubble = useMemo<BitekBubble>(() => {
+    if (manual) {
+      return {
+        key: `manual-${manual.key}`,
+        mood: "alert",
+        text: manual.text,
+        actions: [
+          {
+            id: "poprawSam",
+            label: tBitek("akcja.poprawSam"),
+            onClick: () => {
+              dismissedManual.current.add(manual.key);
+              setManual(null);
+            },
+          },
+          ...(manual.fix
+            ? [{ id: "zrobZaMnie", label: tBitek("akcja.zrobZaMnie"), primary: true, onClick: () => applyManualRef.current(manual) }]
+            : []),
+        ],
+      };
+    }
+    if (handoff) {
+      const db = Math.round(handoff.peakDb);
+      const vocalExists = doc.tracks.some(
+        (t) =>
+          (t.trackRole === "lead_vocal" || t.trackRole === "adlib" || t.trackRole === "double" || t.trackRole === "backing") &&
+          doc.clips.some((c) => c.trackId === t.id && c.durationMs > 0),
+      );
+      return {
+        key: `handoff-${handoff.issue}-${handoff.at}`,
+        mood: "alert",
+        text: vocalExists
+          ? tBitek(handoff.issue === "quiet" ? "msg.handoffQuiet" : "msg.handoffClip", { db })
+          : tBitek("msg.handoffMissing"),
+        actions: vocalExists
+          ? [{ id: "applyHandoff", label: tBitek("akcja.applyHandoff"), primary: true, onClick: () => applyHandoffRef.current() }]
+          : [],
+      };
+    }
     if (fixing) return { key: `fixing-${fixing}`, mood: "thinking", text: t("poprawTrwa") };
     if (panel?.kind === "done") {
       const notes = panel.notes.map((n) => t(`autofix.notes.${n.key}`, localizeParams(n.params, locale)));
@@ -327,7 +523,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);

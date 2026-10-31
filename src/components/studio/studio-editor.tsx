@@ -138,6 +138,7 @@ import {
   studioUndoShortcut,
   takeStudioRedo,
   takeStudioUndo,
+  type MasterSessionSnap,
   type StudioUndoEntry,
   type StudioUndoHistory,
   type StudioUndoOp,
@@ -476,6 +477,7 @@ function StudioEditorInner({
   const [recToolsBubble, setRecToolsBubble] = useState<BitekBubble | null>(null);
   const masterChatContextRef = useRef<(() => BitekClientContext) | null>(null);
   const masterApplyRef = useRef<((key: "loudness" | "bright" | "bass" | "width" | "squash", value: number) => void) | null>(null);
+  const masterSessionRef = useRef<{ apply: (snap: MasterSessionSnap) => void } | null>(null);
   const [bitekBubbleUi, setBitekBubbleUi] = useState<BitekBubbleState | null>(null);
   const bitekBubbleState = bitekBubbleUi ?? parseBitekBubbleState(bitekStore.messages);
   const saveBitekBubbleState = (next: BitekBubbleState) => {
@@ -701,6 +703,13 @@ function StudioEditorInner({
     setUndoHistory(next);
   }
 
+  function commitMasterSession(before: MasterSessionSnap, after: MasterSessionSnap): void {
+    recordUndo({
+      undo: { kind: "master_session", snap: before },
+      redo: { kind: "master_session", snap: after },
+    });
+  }
+
   function committedClip(clipId: string): StudioClipDto | undefined {
     return committedDocRef.current.clips.find((c) => c.id === clipId);
   }
@@ -773,6 +782,12 @@ function StudioEditorInner({
         const ops = op.ops.map((o) => ("trackId" in o ? { ...o, trackId: r(o.trackId) } : o));
         if (ops.some((o) => "trackId" in o && !committedDocRef.current.tracks.some((t) => t.id === o.trackId))) return false;
         void persistMixWorkingOps(ops, null);
+        return true;
+      }
+      case "master_session": {
+        const apply = masterSessionRef.current?.apply;
+        if (!apply) return false;
+        apply(op.snap);
         return true;
       }
     }
@@ -3038,6 +3053,8 @@ function StudioEditorInner({
           onBitekBubble={setMasterBubble}
           chatContextRef={masterChatContextRef}
           applyRef={masterApplyRef}
+          onCommitMasterSession={commitMasterSession}
+          sessionRef={masterSessionRef}
         />
       ) : studioStep === "mix" ? (
         <StudioMixStep

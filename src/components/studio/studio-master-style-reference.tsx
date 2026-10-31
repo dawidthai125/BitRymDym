@@ -44,6 +44,7 @@ export function StudioMasterStyleReference({
   styleIntensity,
   onStyle,
   onStyleIntensity,
+  onStyleIntensityPhase,
   refState,
   onRefState,
   refIntensity,
@@ -55,6 +56,8 @@ export function StudioMasterStyleReference({
   styleIntensity: number;
   onStyle: (s: MasterStyleId | null) => void;
   onStyleIntensity: (v: number) => void;
+  /** Pointer drag of the style intensity slider: one undo at the end, not per tick. */
+  onStyleIntensityPhase?: (phase: "start" | "end") => void;
   refState: MasterReferenceState;
   onRefState: (s: MasterReferenceState) => void;
   refIntensity: number;
@@ -152,7 +155,7 @@ export function StudioMasterStyleReference({
         {style ? (
           <label className="flex items-center gap-2 text-sm" htmlFor={`${ids}-si`}>
             <span className="shrink-0">{t("styl.intensywnosc")}</span>
-            <input id={`${ids}-si`} type="range" min={0} max={100} step={5} value={styleIntensity} onChange={(e) => onStyleIntensity(Number(e.target.value))} className="min-h-9 flex-1 accent-[var(--brd-amber)]" data-testid="studio-master-style-intensity" aria-valuetext={`${styleIntensity}%`} />
+            <input id={`${ids}-si`} type="range" min={0} max={100} step={5} value={styleIntensity} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onStyleIntensityPhase?.("start"); }} onPointerUp={() => onStyleIntensityPhase?.("end")} onPointerCancel={() => onStyleIntensityPhase?.("end")} onChange={(e) => onStyleIntensity(Number(e.target.value))} className="min-h-9 flex-1 accent-[var(--brd-amber)]" data-testid="studio-master-style-intensity" aria-valuetext={`${styleIntensity}%`} />
             <output className="w-11 text-right font-mono">{styleIntensity}%</output>
           </label>
         ) : null}

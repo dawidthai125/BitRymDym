@@ -1,9 +1,11 @@
+import { validateBitekJobs } from "./jobs";
 import {
   BITEK_LIMITS,
   BITEK_MASTER_REF,
   BITEK_MASTER_SETTINGS,
   BITEK_TUNE_ROLES,
   type BitekChatContext,
+  type BitekJob,
   type BitekMasterSetting,
   type BitekProposal,
   type BitekTuneLevel,
@@ -155,16 +157,23 @@ function validateMasterProposals(raw: unknown[], ctx: BitekChatContext): BitekPr
     if (seen.has(key)) continue;
     const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
     if (!Number.isFinite(n)) continue;
+    const requested = Math.round(n * 2) / 2;
     const v = Math.round(Math.min(3, Math.max(-3, n)) * 2) / 2;
     if (v === cur[key]) continue;
     seen.add(key);
     const name = ctx.lang === "pl" ? "Całość" : "Whole song";
+    const clamped = key === "loudness" && requested !== v;
+    const clampWhy = clamped
+      ? ctx.lang === "pl"
+        ? `Ustawiam suwak na ${fmtStep(v)}, nie na ${fmtStep(requested)}, bo kończy się na ${fmtStep(v > 0 ? 3 : -3)}.`
+        : `I'm setting the fader to ${fmtStep(v)}, not ${fmtStep(requested)}, because it stops at ${fmtStep(v > 0 ? 3 : -3)}.`
+      : null;
     out.push({
       trackRef: BITEK_MASTER_REF,
       param: key,
       value: v,
       label: `${name}: ${MASTER_LABEL[ctx.lang][key]} ${fmtStep(cur[key])} \u2192 ${fmtStep(v)}`,
-      why: pickBitekWhy(why, ctx.lang) ?? buildBitekProposalWhy(null, key, v, ctx.lang, cur[key]),
+      why: clampWhy ?? pickBitekWhy(why, ctx.lang) ?? buildBitekProposalWhy(null, key, v, ctx.lang, cur[key]),
     });
   }
   return out;
@@ -182,7 +191,7 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
     if (!p || typeof p !== "object") continue;
     const { trackRef, param, value, why } = p as Record<string, unknown>;
     const track = typeof trackRef === "string" ? byRef.get(trackRef) : undefined;
-    if (!track || typeof trackRef !== "string") continue;
+    if (!track || typeof trackRef !== "string" || track.hasAudio === false) continue;
     const key = `${trackRef}:${String(param)}`;
     if (seen.has(key)) continue;
     let v: number | boolean;
@@ -221,12 +230,14 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
 export function parseBitekModelOutput(
   text: string,
   ctx: BitekChatContext,
-): { reply: string; proposals: BitekProposal[]; backToMix?: boolean } | null {
-  const obj = extractJsonObject(text) as { reply?: unknown; proposals?: unknown; backToMix?: unknown } | null;
+): { reply: string; proposals: BitekProposal[]; jobs?: BitekJob[]; backToMix?: boolean } | null {
+  const obj = extractJsonObject(text) as { reply?: unknown; proposals?: unknown; jobs?: unknown; backToMix?: unknown } | null;
   if (obj && typeof obj.reply === "string" && obj.reply.trim()) {
+    const jobs = validateBitekJobs(obj.jobs, ctx);
     return {
       reply: obj.reply.trim().slice(0, BITEK_LIMITS.replyMaxChars),
       proposals: validateProposals(obj.proposals, ctx),
+      ...(jobs.length ? { jobs } : {}),
       ...(ctx.step === "master" && obj.backToMix === true ? { backToMix: true } : {}),
     };
   }
