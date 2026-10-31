@@ -11,6 +11,14 @@ import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 
 export const STUDIO_UNDO_HISTORY_LIMIT = 100;
 
+/** Loudness, tone, style and target — local to the mastering step, not the mix document. */
+export type MasterSessionSnap = {
+  settings: { loudness: number; bright: number; bass: number; width: number; squash: number };
+  target: string;
+  style: string | null;
+  styleIntensity: number;
+};
+
 export type StudioUndoOp =
   | { kind: "track"; trackId: string; patch: Record<string, unknown> }
   | { kind: "master"; patch: { masterGainDb?: number; masterPan?: number } }
@@ -28,6 +36,8 @@ export type StudioUndoOp =
   | { kind: "master_fx"; chain: StudioFxChainV1 }
   /** Stage 2 — BITEK auto-fix batch, replayed atomically via mix-working/apply. */
   | { kind: "mix_ops"; ops: MixWorkingOp[] }
+  /** Mastering session (loudness, tone, style, target). Local to the master step, not the mix document. */
+  | { kind: "master_session"; snap: MasterSessionSnap }
   | StudioStructuralUndoOp;
 
 export type StudioUndoEntry = { undo: StudioUndoOp; redo: StudioUndoOp };

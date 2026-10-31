@@ -23,6 +23,7 @@ import { DEFAULT_MASTER_INTENSITY, DEFAULT_MASTER_SETTINGS, DEFAULT_REFERENCE_IN
 import { buildMasterVerdict, type MasterCard } from "@/lib/studio/master/verdict";
 import { decodeMixAnalysisInput } from "@/lib/studio/mix-analysis/client";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
+import type { MasterSessionSnap } from "@/lib/studio/studio-undo-history";
 
 type Tier = "FREE" | "BRONZE" | "SILVER" | "GOLD";
 type Option = { kind: DeliverKind; format: DeliverFormat; enabled: boolean };
@@ -55,6 +56,8 @@ export function StudioMasterStep({
   onBitekBubble,
   chatContextRef,
   applyRef,
+  onCommitMasterSession,
+  sessionRef,
   initialState,
 }: {
   doc: StudioProjectDocument;
@@ -64,6 +67,10 @@ export function StudioMasterStep({
   chatContextRef?: { current: (() => BitekClientContext) | null };
   /** BITEK chat → apply a whole-song setting proposal. */
   applyRef?: { current: ((key: MasterSettingKey, value: number) => void) | null };
+  /** One editor undo entry per mastering gesture. Absent in tests that don't mount the editor. */
+  onCommitMasterSession?: (before: MasterSessionSnap, after: MasterSessionSnap) => void;
+  /** Editor undo/redo writes the snap back without recording another entry. */
+  sessionRef?: { current: { apply: (snap: MasterSessionSnap) => void } | null };
   /** Tests/screenshots only. */
   initialState?: { target?: MasterTargetId; style?: MasterStyleId };
 }) {
@@ -206,8 +213,98 @@ export function StudioMasterStep({
     if (sm.phase === "done") setSm({ phase: "idle" });
     setApproved(false);
   };
+  const sessionLive = useRef<MasterSessionSnap>({
+    settings: { ...DEFAULT_MASTER_SETTINGS },
+    target: initialState?.target ?? "streaming",
+    style: initialState?.style ?? null,
+    styleIntensity: DEFAULT_MASTER_INTENSITY,
+  });
+  const commitSessionRef = useRef(onCommitMasterSession);
+  const intensityBefore = useRef<MasterSessionSnap | null>(null);
+  useEffect(() => {
+    commitSessionRef.current = onCommitMasterSession;
+    if (intensityBefore.current) return;
+    sessionLive.current = {
+      settings: { ...settings },
+      target,
+      style,
+      styleIntensity,
+    };
+  });
+  const cloneSession = (snap: MasterSessionSnap): MasterSessionSnap => ({
+    settings: { ...snap.settings },
+    target: snap.target,
+    style: snap.style,
+    styleIntensity: snap.styleIntensity,
+  });
+  const commitSession = (before: MasterSessionSnap, after: MasterSessionSnap) => {
+    sessionLive.current = after;
+    commitSessionRef.current?.(cloneSession(before), cloneSession(after));
+  };
   const step = (key: MasterSettingKey, value: number) => {
-    setSettings((s) => clampMasterSettings({ ...s, [key]: value }));
+    const before = cloneSession(sessionLive.current);
+    const settingsNext = clampMasterSettings({ ...before.settings, [key]: value });
+    setSettings(settingsNext);
+    invalidate();
+    commitSession(before, { ...before, settings: settingsNext });
+  };
+  const replaceSettings = (nextSettings: MasterSettings) => {
+    const before = cloneSession(sessionLive.current);
+    const settingsNext = clampMasterSettings(nextSettings);
+    setSettings(settingsNext);
+    invalidate();
+    commitSession(before, { ...before, settings: { ...settingsNext } });
+  };
+  const chooseTarget = (id: MasterTargetId): boolean => {
+    const before = cloneSession(sessionLive.current);
+    if (before.target === id) return false;
+    setTarget(id);
+    invalidate();
+    commitSession(before, { ...before, target: id });
+    return true;
+  };
+  const chooseStyle = (next: MasterStyleId | null) => {
+    const before = cloneSession(sessionLive.current);
+    setStyle(next);
+    invalidate();
+    commitSession(before, { ...before, style: next });
+  };
+  const onIntensity = (value: number) => {
+    const before = intensityBefore.current ? null : cloneSession(sessionLive.current);
+    const after = { ...sessionLive.current, styleIntensity: value, settings: { ...sessionLive.current.settings } };
+    sessionLive.current = after;
+    setStyleIntensity(value);
+    invalidate();
+    if (before) commitSessionRef.current?.(before, cloneSession(after));
+  };
+  const onIntensityPhase = (phase: "start" | "end") => {
+    if (phase === "start") {
+      intensityBefore.current = cloneSession(sessionLive.current);
+      return;
+    }
+    const before = intensityBefore.current;
+    intensityBefore.current = null;
+    if (!before) return;
+    commitSessionRef.current?.(before, cloneSession(sessionLive.current));
+  };
+  const applySession = (snap: MasterSessionSnap) => {
+    const settingsNext = clampMasterSettings(snap.settings);
+    const targetNext: MasterTargetId = isMasterTargetId(snap.target)
+      ? snap.target
+      : isMasterTargetId(sessionLive.current.target)
+        ? sessionLive.current.target
+        : "streaming";
+    const styleNext = isMasterStyleId(snap.style) ? snap.style : null;
+    sessionLive.current = {
+      settings: { ...settingsNext },
+      target: targetNext,
+      style: styleNext,
+      styleIntensity: snap.styleIntensity,
+    };
+    setSettings(settingsNext);
+    setTarget(targetNext);
+    setStyle(styleNext);
+    setStyleIntensity(snap.styleIntensity);
     invalidate();
   };
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
@@ -224,7 +321,16 @@ export function StudioMasterStep({
     };
   });
   const stepRef = useRef(step);
-  stepRef.current = step;
+  const sessionApi = useRef({ replaceSettings, chooseTarget, applySession });
+  useEffect(() => {
+    stepRef.current = step;
+    sessionApi.current = { replaceSettings, chooseTarget, applySession };
+    if (!sessionRef) return;
+    sessionRef.current = { apply: (snap) => sessionApi.current.applySession(snap) };
+    return () => {
+      sessionRef.current = null;
+    };
+  });
   const getChatContext = useCallback((): BitekClientContext => {
     const cur = latest.current;
     const base = buildBitekClientContext({
@@ -247,27 +353,16 @@ export function StudioMasterStep({
     }
     return {
       ...base,
-      applyMasterStyle: (style: BitekMasterStyle) => {
-        const settings = latest.current.settings;
-        const next = applyMasterStyle(settings, style, DEFAULT_MASTER_INTENSITY);
-        let changed = false;
-        for (const key of MASTER_SETTING_KEYS) {
-          if (next[key] !== settings[key]) {
-            stepRef.current(key, next[key]);
-            changed = true;
-          }
-        }
+      applyMasterStyle: (styleId: BitekMasterStyle) => {
+        const settingsNow = sessionLive.current.settings;
+        const next = applyMasterStyle(settingsNow, styleId, DEFAULT_MASTER_INTENSITY);
+        const changed = MASTER_SETTING_KEYS.some((key) => next[key] !== settingsNow[key]);
+        if (changed) sessionApi.current.replaceSettings(next);
         return changed;
       },
-      applyMasterTarget: (next: BitekMasterTarget) => {
-        if (latest.current.target === next) return false;
-        setTarget(next);
-        if (sm.phase === "done") setSm({ phase: "idle" });
-        setApproved(false);
-        return true;
-      },
+      applyMasterTarget: (next: BitekMasterTarget) => sessionApi.current.chooseTarget(next),
     };
-  }, [doc, locale, sm.phase]);
+  }, [doc, locale]);
   useEffect(() => {
     if (!chatContextRef) return;
     chatContextRef.current = getChatContext;
@@ -496,7 +591,7 @@ export function StudioMasterStep({
               {MASTER_TARGET_IDS.map((id) => (
                 <label key={id} className={`flex cursor-pointer flex-col gap-0.5 rounded-[2px] border p-2 text-sm ${target === id ? "border-[var(--brd-ink)] bg-[var(--brd-recess)]" : "border-[var(--brd-line)] bg-[var(--brd-paper)]"}`}>
                   <span className="flex items-center gap-2">
-                    <input type="radio" name="studio-master-target" value={id} checked={target === id} onChange={() => { setTarget(id); if (sm.phase === "done") setSm({ phase: "idle" }); setApproved(false); }} data-testid={`studio-master-target-${id}`} />
+                    <input type="radio" name="studio-master-target" value={id} checked={target === id} onChange={() => chooseTarget(id)} data-testid={`studio-master-target-${id}`} />
                     <span className="font-semibold">{t(`cele.${id}.nazwa`)}</span>
                   </span>
                   <span className="font-mono text-xs">{t("celWartosci", { lufs: fmtN(MASTER_TARGETS[id].lufs, 0), tp: fmtN(MASTER_TARGETS[id].tp, 1) })}</span>
@@ -509,7 +604,7 @@ export function StudioMasterStep({
           <section aria-labelledby="studio-master-settings-title" className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <h3 id="studio-master-settings-title" className="brd-display text-base">{t("ustawieniaTytul")}</h3>
-              <Button type="button" size="sm" variant="ghost" className="min-h-9" onClick={() => setSettings(DEFAULT_MASTER_SETTINGS)}>{t("reset")}</Button>
+              <Button type="button" size="sm" variant="ghost" className="min-h-9" onClick={() => replaceSettings(DEFAULT_MASTER_SETTINGS)}>{t("reset")}</Button>
             </div>
             <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-5">
               {MASTER_SETTING_KEYS.map((k) => {
@@ -532,8 +627,9 @@ export function StudioMasterStep({
             projectId={projectId}
             style={style}
             styleIntensity={styleIntensity}
-            onStyle={(v) => { setStyle(v); invalidate(); }}
-            onStyleIntensity={(v) => { setStyleIntensity(v); invalidate(); }}
+            onStyle={chooseStyle}
+            onStyleIntensity={onIntensity}
+            onStyleIntensityPhase={onIntensityPhase}
             refState={refState}
             onRefState={(v) => { setRefState(v); invalidate(); }}
             refIntensity={refIntensity}

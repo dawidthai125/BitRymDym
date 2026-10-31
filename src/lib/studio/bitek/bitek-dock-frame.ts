@@ -5,6 +5,8 @@ export const BITEK_FRAME_KEY = "brd.bitek.dockFrame.v1";
 export const BITEK_CHAT_MIN = { w: 280, h: 220 };
 export const BITEK_CHAT_MAX = { w: 560, h: 640 };
 export const BITEK_FRAME_MARGIN = 8;
+/** Gap + avatar under the chat, so the whole dock stays on screen. */
+export const BITEK_DOCK_CHROME = 96;
 
 export type BitekFrame = { x: number; y: number; w: number; h: number };
 export type BitekViewport = { w: number; h: number };
@@ -65,27 +67,30 @@ function intersects(a: BitekRect, b: BitekRect): boolean {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+function fitSpan(value: number, min: number, max: number): number {
+  const lo = Math.min(min, max);
+  return Math.min(max, Math.max(lo, value));
+}
+
+/** Pull a saved or dragged frame fully inside the viewport, shrinking it when the screen is smaller. */
 export function clampBitekFrame(
   frame: BitekFrame,
   viewport: BitekViewport,
   options: { recording?: boolean; mobile?: boolean } = {},
 ): BitekFrame {
   const margin = BITEK_FRAME_MARGIN;
-  const maxW = Math.min(BITEK_CHAT_MAX.w, Math.max(BITEK_CHAT_MIN.w, viewport.w - margin * 2));
-  const maxH = Math.min(BITEK_CHAT_MAX.h, Math.max(BITEK_CHAT_MIN.h, viewport.h - margin * 2));
-  const w = Math.min(maxW, Math.max(BITEK_CHAT_MIN.w, frame.w));
-  const h = Math.min(maxH, Math.max(BITEK_CHAT_MIN.h, frame.h));
-  let x = Math.min(viewport.w - margin - 48, Math.max(margin, frame.x));
-  let y = Math.min(viewport.h - margin - 48, Math.max(margin, frame.y));
+  const chrome = BITEK_DOCK_CHROME;
+  const maxW = Math.max(1, viewport.w - margin * 2);
+  const maxH = Math.max(1, viewport.h - margin * 2 - chrome);
+  const w = Math.min(BITEK_CHAT_MAX.w, fitSpan(frame.w, BITEK_CHAT_MIN.w, maxW));
+  const h = Math.min(BITEK_CHAT_MAX.h, fitSpan(frame.h, BITEK_CHAT_MIN.h, maxH));
+  const x = Math.min(Math.max(margin, frame.x), viewport.w - margin - w);
+  let y = Math.min(Math.max(margin, frame.y), viewport.h - margin - h - chrome);
   if (options.recording) {
     const stop = floatingStopRect(viewport);
-    if (stop && intersects({ x, y, w: Math.min(w, 280), h: 72 }, stop)) {
-      y = Math.max(margin, stop.y - 80);
-    }
+    const box = { x, y, w, h: h + chrome };
+    if (stop && intersects(box, stop)) y = Math.max(margin, stop.y - box.h - margin);
   }
-  if (options.mobile) {
-    x = margin;
-    y = Math.min(y, viewport.h - margin - 64);
-  }
+  if (options.mobile) return { x: margin, y, w: Math.min(w, viewport.w - margin * 2), h };
   return { x, y, w, h };
 }

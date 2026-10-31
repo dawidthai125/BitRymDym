@@ -34,6 +34,15 @@ export const BITEK_AUTO_COLLAPSE_MS = 6000;
 export const BITEK_AUTO_COLLAPSE_MOBILE_ACTIONS_MS = 9000;
 const MOBILE_QUERY = "(max-width: 1023.98px)";
 
+function subscribeViewport(onStoreChange: () => void): () => void {
+  window.addEventListener("resize", onStoreChange);
+  return () => window.removeEventListener("resize", onStoreChange);
+}
+
+function readViewport(): { w: number; h: number } {
+  return { w: window.innerWidth, h: window.innerHeight };
+}
+
 export const BITEK_MOOD_SRC: Record<BitekMood, string> = {
   happy: "/bitek/bitek-happy.webp",
   thinking: "/bitek/bitek-thinking.webp",
@@ -85,8 +94,12 @@ export function StudioBitekDock({
     return () => mq.removeEventListener("change", on);
   }, []);
   const storedFrame = useSyncExternalStore(subscribeBitekFrame, readBitekFrame, () => null);
+  const viewportNow = useSyncExternalStore(subscribeViewport, readViewport, () => null);
   const [liveFrame, setLiveFrame] = useState<BitekFrame | null | undefined>(undefined);
   const frame = liveFrame === undefined ? storedFrame : liveFrame;
+  const fitted = frame && viewportNow
+    ? clampBitekFrame(frame, viewportNow, { recording, mobile: isMobile })
+    : frame;
   const dragRef = useRef<{ x: number; y: number; left: number; top: number; w: number; h: number; moved: boolean; mode: "move" | "resize" } | null>(null);
   const liveRef = useRef<BitekFrame | null>(null);
   const suppressClick = useRef(false);
@@ -140,8 +153,8 @@ export function StudioBitekDock({
       y: event.clientY,
       left: rect.left,
       top: rect.top,
-      w: frame?.w ?? chat?.width ?? 384,
-      h: frame?.h ?? chat?.height ?? 420,
+      w: fitted?.w ?? chat?.width ?? 384,
+      h: fitted?.h ?? chat?.height ?? 420,
       moved: false,
       mode,
     };
@@ -175,16 +188,19 @@ export function StudioBitekDock({
     remember(clampBitekFrame({
       x: rect.left + dx,
       y: rect.top + dy,
-      w: frame?.w ?? 384,
-      h: frame?.h ?? 420,
+      w: fitted?.w ?? 384,
+      h: fitted?.h ?? 420,
     }, viewport(), { recording, mobile: isMobile }));
   };
   useEffect(() => {
     const onResize = () => {
       const current = readBitekFrame();
       if (!current) return;
-      writeBitekFrame(clampBitekFrame(current, viewport(), { recording, mobile: isMobile }));
+      const next = clampBitekFrame(current, viewport(), { recording, mobile: isMobile });
+      if (next.x === current.x && next.y === current.y && next.w === current.w && next.h === current.h) return;
+      writeBitekFrame(next);
     };
+    onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [recording, isMobile]);
@@ -254,9 +270,9 @@ export function StudioBitekDock({
       data-mood={mood}
       data-placement={placement.hidden ? "hidden" : placement.side}
       hidden={placement.hidden}
-      style={frame ? { left: frame.x, top: frame.y, right: "auto", bottom: "auto" } : undefined}
+      style={fitted ? { left: fitted.x, top: fitted.y, right: "auto", bottom: "auto" } : undefined}
       className={`pointer-events-none fixed z-40 flex flex-col gap-2 ${
-        frame
+        fitted
           ? "items-start"
           : `bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5 ${placement.side === "left" ? "left-3 items-start lg:left-5" : "right-3 items-end lg:right-5"}`
       }`}
@@ -269,9 +285,9 @@ export function StudioBitekDock({
           aria-modal="false"
           aria-labelledby={chatTitleId}
           data-testid="studio-bitek-chat-panel"
-          style={isMobile || !frame ? undefined : { width: frame.w, height: frame.h }}
+          style={isMobile || !fitted ? undefined : { width: fitted.w, height: fitted.h }}
           className={`bitek-pop pointer-events-auto relative flex flex-col gap-2 overflow-y-auto rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-2xl ${
-            isMobile ? "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]" : frame ? "" : "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]"
+            isMobile ? "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]" : fitted ? "" : "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]"
           }`}
         >
           <header
