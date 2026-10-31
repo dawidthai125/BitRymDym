@@ -1,4 +1,7 @@
+import { MASTER_TARGETS } from "@/lib/studio/master/targets";
+
 import { validateBitekJobs } from "./jobs";
+import { resolveMasterLoudness } from "./master-loudness";
 import { validateProposals } from "./proposals";
 import {
   BITEK_MASTER_REF,
@@ -125,6 +128,11 @@ const TARGET_ASK: { re: RegExp; id: BitekMasterTarget }[] = [
   { re: /klub|club/, id: "club" },
 ];
 
+const TARGET_NAME: Record<"pl" | "en", Record<BitekMasterTarget, string>> = {
+  pl: { streaming: "streamingu", youtube: "YouTube", headphones: "słuchawek", club: "klubu" },
+  en: { streaming: "streaming", youtube: "YouTube", headphones: "headphones", club: "club" },
+};
+
 /** Switch the mastering loudness target. Null when the message is not that ask. */
 export function bitekMasterTargetChat(message: string, ctx: BitekChatContext): BitekChatResult | null {
   const m = norm(message);
@@ -133,23 +141,44 @@ export function bitekMasterTargetChat(message: string, ctx: BitekChatContext): B
   const id = TARGET_ASK.find((t) => t.re.test(m))?.id;
   if (!id) return null;
   const pl = ctx.lang === "pl";
-  if (ctx.master.target === id) {
+  const measured = ctx.analysis?.masterIntegratedLufs;
+  const peak = ctx.analysis?.masterTruePeakDbtp ?? null;
+  const jobs = ctx.master.target === id ? [] : validateBitekJobs([{ kind: "masterTarget", target: id }], ctx);
+  if (measured === null || measured === undefined || !Number.isFinite(measured)) {
+    if (!jobs.length) {
+      return {
+        provider: "rules",
+        reply: pl
+          ? "Ten cel już jest wybrany. Nie mam pomiaru LUFS, więc nie zgaduję, o ile LU podnieść. Zrób master, wtedy powiem z liczb."
+          : "That target is already selected. I don't have a LUFS measurement, so I won't guess the step. Make the master and I'll use the numbers.",
+        proposals: [],
+      };
+    }
     return {
       provider: "rules",
       reply: pl
-        ? "Ten cel już jest wybrany. Sam plik mastera robisz przyciskiem „Zrób master”. Mogę jeszcze zrobić całość głośniej, jaśniej albo zmienić styl."
-        : "That target is already selected. You make the master file with “Make master”. I can still make the whole song louder, brighter, or change the style.",
+        ? `Przełączę cel na ${jobs[0]!.label.replace(/^Cel: /, "")}. Nie mam jeszcze pomiaru LUFS, więc nie podaję kroku w LU. Kliknij „Zastosuj”.`
+        : `I'll switch the target to ${jobs[0]!.label.replace(/^Target: /, "")}. I don't have a LUFS measurement yet, so I won't quote a LU step. Hit Apply.`,
       proposals: [],
+      jobs,
     };
   }
-  const jobs = validateBitekJobs([{ kind: "masterTarget", target: id }], ctx);
-  if (!jobs.length) return null;
+  const decision = resolveMasterLoudness({
+    measuredLufs: measured,
+    targetLufs: MASTER_TARGETS[id].lufs,
+    truePeakDb: peak !== null && Number.isFinite(peak) ? peak : null,
+    ceilingDb: MASTER_TARGETS[id].tp,
+    currentOffset: ctx.master.settings.loudness,
+    lang: ctx.lang,
+    targetName: TARGET_NAME[ctx.lang][id],
+  });
+  const proposals = decision.changesKnob
+    ? validateProposals([{ trackRef: BITEK_MASTER_REF, param: "loudness", value: decision.offset, label: "" }], ctx)
+    : [];
   return {
     provider: "rules",
-    reply: pl
-      ? `Przełączę cel na ${jobs[0]!.label.replace(/^Cel: /, "")}. Kliknij „Zastosuj”. Plik mastera i tak zrobisz przyciskiem „Zrób master”.`
-      : `I'll switch the target to ${jobs[0]!.label.replace(/^Target: /, "")}. Hit Apply. You still make the master file with “Make master”.`,
-    proposals: [],
-    jobs,
+    reply: decision.reply,
+    proposals,
+    ...(jobs.length ? { jobs } : {}),
   };
 }

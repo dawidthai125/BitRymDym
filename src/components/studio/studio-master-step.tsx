@@ -210,9 +210,10 @@ export function StudioMasterStep({
     invalidate();
   };
   const useReference = !!refState.gate?.allowed && refState.reference?.status === "ready";
-  const latest = useRef({ settings, target, verdict });
+  const measured = preview?.metrics ?? mix?.metrics ?? null;
+  const latest = useRef({ settings, target, verdict, measured });
   useEffect(() => {
-    latest.current = { settings, target, verdict };
+    latest.current = { settings, target, verdict, measured };
   });
   useEffect(() => {
     if (!applyRef) return;
@@ -231,6 +232,18 @@ export function StudioMasterStep({
       step: "master",
       master: { target: cur.target, settings: cur.settings, cards: (cur.verdict?.cards ?? []).map((c) => ({ id: c.id, status: c.status, value: c.value })) },
     });
+    if (cur.measured && Number.isFinite(cur.measured.lufs)) {
+      base.context = {
+        ...base.context,
+        analysis: {
+          overall: "na",
+          stale: false,
+          cards: [],
+          masterIntegratedLufs: cur.measured.lufs,
+          masterTruePeakDbtp: Number.isFinite(cur.measured.truePeakDb) ? cur.measured.truePeakDb : null,
+        },
+      };
+    }
     return {
       ...base,
       applyMasterStyle: (style: BitekMasterStyle) => {
