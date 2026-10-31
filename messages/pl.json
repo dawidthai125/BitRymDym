@@ -2259,7 +2259,9 @@
         "calibrate": "Kalibruj",
         "manualLatency": "Ustawię ręcznie",
         "fixInMix": "Popraw w mixie",
-        "applyHandoff": "Zastosuj poprawkę"
+        "applyHandoff": "Zastosuj poprawkę",
+        "poprawSam": "Popraw sam",
+        "zrobZaMnie": "Zrób to za mnie"
       },
       "msg": {
         "recording": "Nagrywam. Skup się na wykonaniu — suwaków tu nie ruszam.",
@@ -2344,6 +2346,9 @@
         "otworzCzat": "Otwórz czat z BITKIEM",
         "aria": "BITEK — Twój producent",
         "ariaNagranie": "BITEK — pomoc przy nagraniu",
+        "resetPozycji": "Wróć w róg",
+        "rozmiar": "Zmień rozmiar czatu",
+        "przesun": "Przesuń BITKA strzałkami. Podwójne kliknięcie wraca w róg.",
         "minimalizuj": "Zwiń dymek",
         "zamknij": "Zamknij dymek",
         "ukryjSzczegoly": "Ukryj szczegóły",

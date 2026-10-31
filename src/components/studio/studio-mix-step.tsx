@@ -13,6 +13,7 @@ import {
   subscribeBitekRecordHandoff,
   type BitekRecordHandoff,
 } from "@/lib/studio/bitek/record-handoff";
+import { watchMixManual, type ManualIssue, type WatchTrack } from "@/lib/studio/bitek/manual-watch";
 import { Button } from "@/components/ui/button";
 import { bitekRulesGuide, type BitekAction, type BitekAnalysisState } from "@/lib/studio/bitek/bitek-guide";
 import {
@@ -358,7 +359,112 @@ export function StudioMixStep({
     else onBitekAction(pendingAction);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per dispatched action
   }, [pending]);
+  const [manual, setManual] = useState<ManualIssue | null>(null);
+  const dismissedManual = useRef(new Set<string>());
+  const mixBaseline = useRef<Parameters<typeof watchMixManual>[0]["baseline"]>(null);
+  const applyManualRef = useRef<(issue: ManualIssue) => void>(() => {});
+  useEffect(() => {
+    if (!result || stale) return;
+    const vocal = doc.tracks.find((t) => t.trackRole === "lead_vocal");
+    const beatTrack = doc.tracks.find((t) => t.trackRole === "beat" || t.trackRole === "instrument");
+    mixBaseline.current = {
+      vocalVsBeatLu: result.metrics.vocalVsBeatLu,
+      vocalGainDb: vocal?.gainDb ?? 0,
+      beatGainDb: beatTrack?.gainDb ?? 0,
+      masterTruePeakDbtp: result.metrics.master.truePeakDbtp,
+      tracks: result.metrics.tracks.map((t) => ({
+        id: t.trackId,
+        samplePeakDbfs: t.samplePeakDbfs,
+        gainDb: doc.tracks.find((d) => d.id === t.trackId)?.gainDb ?? 0,
+      })),
+    };
+  }, [result, stale, doc]);
+  const manualSig = doc.tracks.map((t) => `${t.id}:${t.gainDb}:${t.pan}:${t.muted}:${JSON.stringify(t.effectsChain)}`).join("|");
+  const manualSeen = useRef<string | null>(null);
+  useEffect(() => {
+    if (manualSeen.current === null) {
+      manualSeen.current = manualSig;
+      return;
+    }
+    if (manualSeen.current === manualSig) return;
+    const timer = window.setTimeout(() => {
+      manualSeen.current = manualSig;
+      const tracks: WatchTrack[] = doc.tracks.map((t) => {
+        const eq = t.effectsChain.effects.find((e) => e.type === "eq" && e.enabled);
+        const bands = eq && eq.type === "eq" ? [eq.params.low.gainDb, eq.params.mid.gainDb, eq.params.high.gainDb] : [];
+        const extreme = bands.reduce((a, b) => (Math.abs(b) > Math.abs(a) ? b : a), 0);
+        const comp = t.effectsChain.effects.find((e) => e.type === "compressor" && e.enabled);
+        return {
+          id: t.id,
+          name: t.name,
+          role: t.trackRole,
+          gainDb: t.gainDb,
+          pan: t.pan,
+          muted: t.muted,
+          hasAudio: doc.clips.some((c) => c.trackId === t.id && c.durationMs > 0),
+          eqGainDb: Math.abs(extreme) >= 12 ? extreme : null,
+          compressorRatio: comp && comp.type === "compressor" ? comp.params.ratio : null,
+        };
+      });
+      const issue = watchMixManual({ lang: locale === "en" ? "en" : "pl", tracks, baseline: mixBaseline.current });
+      if (!issue || dismissedManual.current.has(issue.key)) {
+        setManual((cur) => (cur && dismissedManual.current.has(cur.key) ? null : cur));
+        return;
+      }
+      setManual(issue);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [manualSig, doc, locale]);
+  useEffect(() => {
+    applyManualRef.current = (issue) => {
+      dismissedManual.current.add(issue.key);
+      setManual(null);
+      const fix = issue.fix;
+      if (!fix || !onApplyAutofix) return;
+      if (fix.kind === "controls") {
+        void onApplyAutofix([{
+          op: "set_track_controls",
+          trackId: fix.trackId,
+          ...(fix.gainDb !== undefined ? { gainDb: fix.gainDb } : {}),
+          ...(fix.pan !== undefined ? { pan: fix.pan } : {}),
+          ...(fix.muted !== undefined ? { muted: fix.muted } : {}),
+        }], "BITEK");
+        return;
+      }
+      if (fix.kind !== "eqFlat" && fix.kind !== "compressorEase") return;
+      const track = doc.tracks.find((t) => t.id === fix.trackId);
+      if (!track) return;
+      const effects = track.effectsChain.effects.map((e) => {
+        if (fix.kind === "eqFlat" && e.type === "eq") {
+          return { ...e, params: { low: { ...e.params.low, gainDb: 0 }, mid: { ...e.params.mid, gainDb: 0 }, high: { ...e.params.high, gainDb: 0 } } };
+        }
+        if (fix.kind === "compressorEase" && e.type === "compressor") return { ...e, params: { ...e.params, ratio: 3 } };
+        return e;
+      });
+      void onApplyAutofix([{ op: "set_track_fx", trackId: track.id, effectsChain: { ...track.effectsChain, effects } }], "BITEK");
+    };
+  });
   const bubble = useMemo<BitekBubble>(() => {
+    if (manual) {
+      return {
+        key: `manual-${manual.key}`,
+        mood: "alert",
+        text: manual.text,
+        actions: [
+          {
+            id: "poprawSam",
+            label: tBitek("akcja.poprawSam"),
+            onClick: () => {
+              dismissedManual.current.add(manual.key);
+              setManual(null);
+            },
+          },
+          ...(manual.fix
+            ? [{ id: "zrobZaMnie", label: tBitek("akcja.zrobZaMnie"), primary: true, onClick: () => applyManualRef.current(manual) }]
+            : []),
+        ],
+      };
+    }
     if (handoff) {
       const db = Math.round(handoff.peakDb);
       const vocalExists = doc.tracks.some(
@@ -417,7 +523,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);

@@ -2259,7 +2259,9 @@
         "calibrate": "Calibrate",
         "manualLatency": "I'll set it by hand",
         "fixInMix": "Fix in the mix",
-        "applyHandoff": "Apply the fix"
+        "applyHandoff": "Apply the fix",
+        "poprawSam": "I'll fix it myself",
+        "zrobZaMnie": "Do it for me"
       },
       "msg": {
         "recording": "Recording. Focus on the performance — I won't touch the faders here.",
@@ -2344,6 +2346,9 @@
         "otworzCzat": "Open chat with BITEK",
         "aria": "BITEK — your producer",
         "ariaNagranie": "BITEK — recording helper",
+        "resetPozycji": "Back to the corner",
+        "rozmiar": "Resize the chat",
+        "przesun": "Move BITEK with the arrow keys. Double-click returns him to the corner.",
         "minimalizuj": "Minimize bubble",
         "zamknij": "Close bubble",
         "ukryjSzczegoly": "Hide details",

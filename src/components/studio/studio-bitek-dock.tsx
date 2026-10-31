@@ -1,9 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  clampBitekFrame,
+  readBitekFrame,
+  subscribeBitekFrame,
+  writeBitekFrame,
+  type BitekFrame,
+} from "@/lib/studio/bitek/bitek-dock-frame";
 import { bitekDockPlacement } from "@/lib/studio/bitek-dock-placement";
 
 export type BitekMood = "happy" | "thinking" | "alert" | "done";
@@ -77,6 +84,12 @@ export function StudioBitekDock({
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
+  const storedFrame = useSyncExternalStore(subscribeBitekFrame, readBitekFrame, () => null);
+  const [liveFrame, setLiveFrame] = useState<BitekFrame | null | undefined>(undefined);
+  const frame = liveFrame === undefined ? storedFrame : liveFrame;
+  const dragRef = useRef<{ x: number; y: number; left: number; top: number; w: number; h: number; moved: boolean; mode: "move" | "resize" } | null>(null);
+  const liveRef = useRef<BitekFrame | null>(null);
+  const suppressClick = useRef(false);
   const placement = bitekDockPlacement({
     recording,
     recordContext,
@@ -86,6 +99,7 @@ export function StudioBitekDock({
   const bubble = recordContext && incomingBubble?.hero ? null : incomingBubble;
   const t = useTranslations("studio.bitek.dock");
   const bubbleId = useId();
+  const dragHintId = useId();
   const chatTitleId = useId();
   const avatarRef = useRef<HTMLButtonElement | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
@@ -112,6 +126,68 @@ export function StudioBitekDock({
     bubble && bubble.key !== dismissedKey && (minimized || autoCollapsed || !bubbleAllowed),
   );
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const viewport = () => ({ w: window.innerWidth, h: window.innerHeight });
+  const remember = (next: BitekFrame | null) => {
+    setLiveFrame(next);
+    writeBitekFrame(next);
+  };
+  const beginPointer = (event: ReactPointerEvent, mode: "move" | "resize") => {
+    if (event.button !== 0 || !rootRef.current) return;
+    const rect = rootRef.current.getBoundingClientRect();
+    const chat = chatRef.current?.getBoundingClientRect();
+    dragRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      left: rect.left,
+      top: rect.top,
+      w: frame?.w ?? chat?.width ?? 384,
+      h: frame?.h ?? chat?.height ?? 420,
+      moved: false,
+      mode,
+    };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  };
+  const movePointer = (event: ReactPointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 6) drag.moved = true;
+    if (!drag.moved) return;
+    const next = drag.mode === "resize"
+      ? clampBitekFrame({ x: drag.left, y: drag.top, w: drag.w + dx, h: drag.h + dy }, viewport(), { recording, mobile: isMobile })
+      : clampBitekFrame({ x: drag.left + dx, y: drag.top + dy, w: drag.w, h: drag.h }, viewport(), { recording, mobile: isMobile });
+    liveRef.current = next;
+    setLiveFrame(next);
+  };
+  const endPointer = () => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag?.moved) return;
+    suppressClick.current = true;
+    if (liveRef.current) writeBitekFrame(liveRef.current);
+    setLiveFrame(undefined);
+  };
+  const resetFrame = () => remember(null);
+  const nudge = (dx: number, dy: number) => {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    remember(clampBitekFrame({
+      x: rect.left + dx,
+      y: rect.top + dy,
+      w: frame?.w ?? 384,
+      h: frame?.h ?? 420,
+    }, viewport(), { recording, mobile: isMobile }));
+  };
+  useEffect(() => {
+    const onResize = () => {
+      const current = readBitekFrame();
+      if (!current) return;
+      writeBitekFrame(clampBitekFrame(current, viewport(), { recording, mobile: isMobile }));
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [recording, isMobile]);
   const hasActions = Boolean(visible?.actions?.length);
   const autoCollapseKey = visible && !visible.hero && (!hasActions || isMobile) ? visible.key : null;
 
@@ -178,10 +254,14 @@ export function StudioBitekDock({
       data-mood={mood}
       data-placement={placement.hidden ? "hidden" : placement.side}
       hidden={placement.hidden}
-      className={`pointer-events-none fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex flex-col gap-2 lg:bottom-5 ${
-        placement.side === "left" ? "left-3 items-start lg:left-5" : "right-3 items-end lg:right-5"
+      style={frame ? { left: frame.x, top: frame.y, right: "auto", bottom: "auto" } : undefined}
+      className={`pointer-events-none fixed z-40 flex flex-col gap-2 ${
+        frame
+          ? "items-start"
+          : `bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5 ${placement.side === "left" ? "left-3 items-start lg:left-5" : "right-3 items-end lg:right-5"}`
       }`}
     >
+      <span id={dragHintId} className="sr-only">{t("przesun")}</span>
       {chatOpen && !recordContext ? (
         <div
           ref={chatRef}
@@ -189,10 +269,24 @@ export function StudioBitekDock({
           aria-modal="false"
           aria-labelledby={chatTitleId}
           data-testid="studio-bitek-chat-panel"
-          className="bitek-pop pointer-events-auto flex max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2 overflow-y-auto rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-2xl"
+          style={isMobile || !frame ? undefined : { width: frame.w, height: frame.h }}
+          className={`bitek-pop pointer-events-auto relative flex flex-col gap-2 overflow-y-auto rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-2xl ${
+            isMobile ? "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]" : frame ? "" : "max-h-[min(70vh,36rem)] w-[min(24rem,calc(100vw-1.5rem))]"
+          }`}
         >
-          <header className="flex items-center gap-2">
+          <header
+            className="flex cursor-grab items-center gap-2 active:cursor-grabbing"
+            data-testid="studio-bitek-drag"
+            onPointerDown={(event) => beginPointer(event, "move")}
+            onPointerMove={movePointer}
+            onPointerUp={endPointer}
+            onPointerCancel={endPointer}
+            onDoubleClick={resetFrame}
+          >
             <p id={chatTitleId} className="brd-display min-w-0 flex-1 text-base leading-none">{t("czatTytul")}</p>
+            <Button type="button" size="sm" variant="ghost" className="min-h-9" aria-label={t("resetPozycji")} data-testid="studio-bitek-reset" onClick={resetFrame}>
+              ↺
+            </Button>
             <Button
               type="button"
               size="sm"
@@ -209,6 +303,18 @@ export function StudioBitekDock({
             </Button>
           </header>
           {chat}
+          {isMobile ? null : (
+            <button
+              type="button"
+              data-testid="studio-bitek-resize"
+              aria-label={t("rozmiar")}
+              className="absolute right-1 bottom-1 size-8 cursor-nwse-resize rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)]"
+              onPointerDown={(event) => beginPointer(event, "resize")}
+              onPointerMove={movePointer}
+              onPointerUp={endPointer}
+              onPointerCancel={endPointer}
+            />
+          )}
         </div>
       ) : null}
 
@@ -332,11 +438,31 @@ export function StudioBitekDock({
           data-testid="studio-bitek-avatar"
           data-mood={mood}
           aria-label={recordContext ? t("ariaNagranie") : chatOpen ? t("zamknijCzat") : t("otworzCzat")}
+          aria-describedby={dragHintId}
           aria-expanded={recordContext ? Boolean(visible) : chatOpen}
-          className={`bitek-avatar relative grid place-items-center rounded-full border-2 border-[var(--brd-amber)] bg-[#0d0b08] shadow-xl ${
+          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+          className={`bitek-avatar relative grid cursor-grab place-items-center rounded-full border-2 border-[var(--brd-amber)] bg-[#0d0b08] shadow-xl active:cursor-grabbing ${
             placement.compact ? "size-11 lg:size-12" : "size-14 lg:size-20"
           }`}
+          onPointerDown={(event) => beginPointer(event, "move")}
+          onPointerMove={movePointer}
+          onPointerUp={endPointer}
+          onPointerCancel={endPointer}
+          onDoubleClick={resetFrame}
+          onKeyDown={(event) => {
+            const step = event.shiftKey ? 32 : 16;
+            if (event.key === "ArrowLeft") nudge(-step, 0);
+            else if (event.key === "ArrowRight") nudge(step, 0);
+            else if (event.key === "ArrowUp") nudge(0, -step);
+            else if (event.key === "ArrowDown") nudge(0, step);
+            else return;
+            event.preventDefault();
+          }}
           onClick={() => {
+            if (suppressClick.current) {
+              suppressClick.current = false;
+              return;
+            }
             if (recordContext) {
               setAutoCollapsedKey(null);
               if (bubble) setForcedKey(bubble.key);

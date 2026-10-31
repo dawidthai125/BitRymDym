@@ -12,6 +12,7 @@ import { StudioYoutubeVideo } from "@/components/studio/studio-youtube-video";
 import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import type { BitekMasterStyle, BitekMasterTarget } from "@/lib/studio/bitek/chat/types";
+import { watchMasterManual, type ManualIssue } from "@/lib/studio/bitek/manual-watch";
 import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
@@ -380,7 +381,66 @@ export function StudioMasterStep({
     ...("pct" in l ? { pct: l.pct } : {}),
   })) : null), [refReport, t, locale]);
   const worst: MasterCard | null = verdict?.cards.find((c) => c.status === "red") ?? verdict?.cards.find((c) => c.status === "yellow") ?? null;
+  const [manual, setManual] = useState<ManualIssue | null>(null);
+  const dismissedManual = useRef(new Set<string>());
+  const masterSeen = useRef<string | null>(null);
+  const masterSig = `${target}:${settings.loudness}:${previewFresh?.metrics.truePeakDb ?? ""}`;
+  useEffect(() => {
+    if (masterSeen.current === null) {
+      masterSeen.current = masterSig;
+      return;
+    }
+    if (masterSeen.current === masterSig) return;
+    const timer = window.setTimeout(() => {
+      masterSeen.current = masterSig;
+      const issue = previewFresh
+        ? watchMasterManual({
+            lang: locale === "en" ? "en" : "pl",
+            measuredLufs: previewFresh.metrics.lufs,
+            truePeakDb: previewFresh.metrics.truePeakDb,
+            targetLufs: MASTER_TARGETS[target].lufs,
+            ceilingDb: MASTER_TARGETS[target].tp,
+            loudness: settings.loudness,
+          })
+        : null;
+      if (!issue || dismissedManual.current.has(issue.key)) {
+        setManual((cur) => (cur && dismissedManual.current.has(cur.key) ? null : cur));
+        return;
+      }
+      setManual(issue);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [masterSig, previewFresh, locale, target, settings.loudness]);
   const bubble = useMemo<BitekBubble>(() => {
+    if (manual) {
+      return {
+        key: `manual-${manual.key}`,
+        mood: "alert",
+        text: manual.text,
+        actions: [
+          {
+            id: "poprawSam",
+            label: tBitek("akcja.poprawSam"),
+            onClick: () => {
+              dismissedManual.current.add(manual.key);
+              setManual(null);
+            },
+          },
+          ...(manual.fix?.kind === "masterLoudness"
+            ? [{
+                id: "zrobZaMnie",
+                label: tBitek("akcja.zrobZaMnie"),
+                primary: true,
+                onClick: () => {
+                  dismissedManual.current.add(manual.key);
+                  setManual(null);
+                  if (manual.fix?.kind === "masterLoudness") stepRef.current("loudness", manual.fix.value);
+                },
+              }]
+            : []),
+        ],
+      };
+    }
     const back = { id: "backToMix", label: tBitek("akcja.backToMix"), onClick: () => setPendingBack((n) => n + 1) };
     let mood: BitekMood = "happy";
     let text: string;
@@ -395,7 +455,7 @@ export function StudioMasterStep({
     else if (worst?.status === "red") [mood, text, key] = ["alert", t("bitek.problem", { card: t(`cards.${worst.id}.title`) }), `m-red-${worst.id}`];
     else [mood, text, key] = ["happy", t("bitek.gotowy"), "m-ready"];
     return { key, mood, text, details: mix && !approved ? [t("bitek.wrocInfo"), ...(sm.phase === "unavailable" ? [t("bitek.niedostepny")] : [])] : undefined, actions: approved ? [] : [back] };
-  }, [renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master, refLines]);
+  }, [manual, renderFailed, mix, approved, sm.phase, target, worst, t, tBitek, prog.master, refLines]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
