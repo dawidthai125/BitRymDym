@@ -1,7 +1,9 @@
+import { groundBitekResult } from "./ground";
 import { bitekRulesChat } from "./intents";
-import { bitekMasterRulesChat, classifyMasterRequest } from "./master-intents";
+import { bitekMasterRulesChat, bitekMasterStyleChat, bitekMasterTargetChat, classifyMasterRequest } from "./master-intents";
 import { buildBitekSystemPrompt, isBitekWrongLanguage } from "./prompt";
 import { parseBitekModelOutput } from "./proposals";
+import { bitekRecordHelper } from "./record-helper";
 import { resolveBitekRelative } from "./relative";
 import { BitekProviderError, type BitekLlmProvider } from "./providers";
 import { BITEK_LIMITS, type BitekChatContext, type BitekChatResult, type BitekChatTurn } from "./types";
@@ -23,18 +25,27 @@ export async function runBitekChatChain(params: {
 }): Promise<BitekChatResult> {
   const now = params.now ?? Date.now;
   const t0 = now();
+  // Recording: helper only. No mix faders, no model that can invent a vocal.
+  if (params.context.step === "record") {
+    params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
+    return bitekRecordHelper(params.message, params.context);
+  }
   // Conversational follow-up on the last applied change ("więcej", "za dużo", "cofnij") — deterministic.
   const relative = resolveBitekRelative(params.message, params.context);
   if (relative) {
     params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
-    return relative;
+    return groundBitekResult(relative, params.context);
   }
-  // Mastering: single-track asks deterministically go back to Mix; everything else goes through the LLM chain (rules are the fallback).
+  // Mastering: single-track asks, style presets and measured loudness targets are deterministic.
+  // Open questions still go through the LLM; rules are the fallback.
   if (params.context.step === "master") {
+    const style = bitekMasterStyleChat(params.message, params.context);
+    const target = style ? null : bitekMasterTargetChat(params.message, params.context);
     const scope = classifyMasterRequest(params.message);
-    if (scope.kind === "track") {
+    const decided = style ?? target ?? (scope.kind === "track" ? bitekMasterRulesChat(params.message, params.context, scope) : null);
+    if (decided) {
       params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
-      return bitekMasterRulesChat(params.message, params.context, scope);
+      return decided;
     }
   }
   const attempts: BitekChainLog["attempts"] = [];
@@ -56,10 +67,16 @@ export async function runBitekChatChain(params: {
       const text = await p.complete(messages, controller.signal);
       const parsed = parseBitekModelOutput(text, params.context);
       if (!parsed) throw new BitekProviderError("bad_response");
-      if (isBitekWrongLanguage(parsed.reply, params.context.lang)) throw new BitekProviderError("wrong_lang");
+      let result = groundBitekResult({ provider: p.id, ...parsed }, params.context);
+      // Model chatted but did not name a real action — use the deterministic mix plan when it has one.
+      if (params.context.step === "mix" && result.proposals.length === 0 && !result.jobs?.length) {
+        const rules = bitekRulesChat(params.message, params.context);
+        if (rules.proposals.length > 0 || (rules.jobs && rules.jobs.length > 0)) result = { ...rules, provider: p.id };
+      }
+      if (isBitekWrongLanguage(result.reply, params.context.lang)) throw new BitekProviderError("wrong_lang");
       attempts.push({ id: p.id, outcome: "ok", ms: now() - started });
       params.log?.({ provider: p.id, ms: now() - t0, attempts });
-      return { provider: p.id, ...parsed };
+      return result;
     } catch (e) {
       const kind = e instanceof BitekProviderError ? e.kind : "error";
       const status = e instanceof BitekProviderError ? e.status : undefined;
@@ -72,5 +89,5 @@ export async function runBitekChatChain(params: {
   const result =
     params.context.step === "master" ? bitekMasterRulesChat(params.message, params.context) : bitekRulesChat(params.message, params.context);
   params.log?.({ provider: "rules", ms: now() - t0, attempts });
-  return result;
+  return groundBitekResult(result, params.context);
 }

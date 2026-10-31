@@ -13,7 +13,8 @@ import {
   type BitekDecision,
   type BitekStoredChange,
 } from "@/lib/studio/bitek/chat/decisions";
-import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekMasterSetting, type BitekProposal, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
+import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
+import { addStudioFxToChain } from "@/lib/studio/studio-fx-chain";
 import { bitekTuneChain } from "@/lib/studio/bitek/chat/tune-apply";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import type { PremiumTier } from "@/types/premium";
@@ -26,7 +27,7 @@ export type BitekApplyProposal = (trackId: string, patch: Record<string, number 
 
 type Entry =
   | { id: string; role: "user"; content: string }
-  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; note: boolean; backToMix: boolean };
+  | { id: string; role: "assistant"; content: string; provider: BitekChatResult["provider"] | null; proposals: BitekProposal[]; jobs: BitekJob[]; note: boolean; backToMix: boolean };
 
 function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
   const out: Entry[] = [];
@@ -36,13 +37,14 @@ function entriesFromStore(messages: readonly BitekStoredMessage[]): Entry[] {
       out.push({ id: m.id, role: "user", content: m.content });
       continue;
     }
-    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[]; backToMix?: boolean };
+    const meta = m.meta as { provider?: BitekChatResult["provider"]; proposals?: BitekProposal[]; jobs?: BitekJob[]; backToMix?: boolean };
     out.push({
       id: m.id,
       role: "assistant",
       content: m.content,
       provider: m.kind === "chat" ? (meta.provider ?? "rules") : null,
       proposals: m.kind === "chat" && Array.isArray(meta.proposals) ? meta.proposals : [],
+      jobs: m.kind === "chat" && Array.isArray(meta.jobs) ? meta.jobs : [],
       note: m.kind !== "chat",
       backToMix: m.kind === "chat" && meta.backToMix === true,
     });
@@ -136,7 +138,12 @@ export function StudioBitekChat({
           role: "assistant",
           kind: "chat",
           content: json.reply as string,
-          meta: { provider: json.provider ?? "rules", proposals: Array.isArray(json.proposals) ? json.proposals : [], ...(json.backToMix ? { backToMix: true } : {}) },
+          meta: {
+            provider: json.provider ?? "rules",
+            proposals: Array.isArray(json.proposals) ? json.proposals : [],
+            ...(Array.isArray(json.jobs) && json.jobs.length ? { jobs: json.jobs } : {}),
+            ...(json.backToMix ? { backToMix: true } : {}),
+          },
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -199,6 +206,68 @@ export function StudioBitekChat({
     const kept = prev && prev.decision !== "undone" ? prev.changes.filter((c) => c.i !== index) : [];
     const changes = [...kept, { i: index, target, param: p.param, from, to: p.value }];
     recordDecision(entry.id, "applied", changes, changes.map((c) => entry.proposals[c.i]?.label ?? p.label));
+  }
+
+  async function applyJob(job: BitekJob) {
+    const client = getContext();
+    if (job.kind === "mixFix") {
+      if (!client.applyMixFix) {
+        setError(t("nieDaSie"));
+        return;
+      }
+      const res = await client.applyMixFix(job.fixes);
+      if (!res.ok) {
+        setError(res.reason === "empty" ? t("juzJest") : res.reason === "no-analysis" ? t("bezPomiaru") : t("nieDaSie"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
+    if (job.kind === "masterStyle") {
+      if (!client.applyMasterStyle || !client.applyMasterStyle(job.style)) {
+        setError(t("juzJest"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
+    if (job.kind === "masterTarget") {
+      if (!client.applyMasterTarget?.(job.target)) {
+        setError(t("juzJest"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
+    if (job.kind === "trackFx") {
+      const trackId = client.trackIdByRef[job.trackRef];
+      const chain = trackId ? client.effectsChainByTrackId[trackId] : undefined;
+      const track = client.context.tracks.find((t) => t.ref === job.trackRef);
+      if (!trackId || !chain || !onApplyFxOps || !track || track.hasAudio === false) {
+        setError(t("nieDaSie"));
+        return;
+      }
+      if (chain.effects.some((e) => e.type === job.effect && e.enabled)) {
+        setError(t("juzJest"));
+        return;
+      }
+      let next;
+      try {
+        next = addStudioFxToChain(chain, job.effect, "track");
+      } catch {
+        setError(t("nieDaSie"));
+        return;
+      }
+      const ok = await onApplyFxOps([{ op: "set_track_fx", trackId, effectsChain: next }], `BITEK: ${job.label}`);
+      if (!ok) {
+        setError(t("nieDaSie"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
+    const _never: never = job;
+    return _never;
   }
 
   function keep(entry: Extract<Entry, { role: "assistant" }>) {
@@ -271,6 +340,25 @@ export function StudioBitekChat({
                     onKeep={() => keep(e)}
                     onUndo={() => undo(e)}
                   />
+                </ul>
+              ) : null}
+              {e.jobs.length ? (
+                <ul className="flex flex-col gap-1.5">
+                  {e.jobs.map((job) => (
+                    <li key={`${job.kind}-${job.label}`} className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs">{job.label}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="min-h-9"
+                        disabled={disabled}
+                        data-testid="studio-bitek-job"
+                        onClick={() => void applyJob(job)}
+                      >
+                        {t("zastosuj")}
+                      </Button>
+                    </li>
+                  ))}
                 </ul>
               ) : null}
               {e.backToMix && onBackToMix ? (

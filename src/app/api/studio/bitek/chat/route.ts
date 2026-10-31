@@ -96,6 +96,7 @@ export async function POST(request: Request) {
             meta: {
               provider: result.provider,
               proposals: result.proposals,
+              ...(result.jobs?.length ? { jobs: result.jobs } : {}),
               ...(result.backToMix ? { backToMix: true } : {}),
               ...(result.relative ? { relative: result.relative } : {}),
             },

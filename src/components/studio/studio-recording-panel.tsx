@@ -44,6 +44,8 @@ import {
   type RecToolsMode,
 } from "@/components/studio/studio-recording-tools";
 import type { BitekBubble } from "@/components/studio/studio-bitek-dock";
+import { setBitekLiveTakeLevel } from "@/lib/studio/bitek/live-take-level";
+import { requestStudioGoMix, saveBitekRecordHandoff, takeIssueFromPeak } from "@/lib/studio/bitek/record-handoff";
 import { runLatencyCalibration } from "@/lib/studio/recording/calibration-runner";
 import {
   CLAP_CALIBRATION,
@@ -467,9 +469,53 @@ export function StudioRecordingPanel({
   useEffect(() => {
     bitekReportRef.current = onBitekBubble;
   });
+  const takePeakRef = useRef<{ peakDb: number; clipping: boolean } | null>(null);
+  const prevRecPhase = useRef(state.phase);
+  const [takeIssue, setTakeIssue] = useState<{ issue: "quiet" | "clip"; peakDb: number } | null>(null);
+  useEffect(() => {
+    const prev = prevRecPhase.current;
+    prevRecPhase.current = state.phase;
+    if (state.phase === "RECORDING") {
+      const db = mic.peakDb;
+      if (!Number.isFinite(db) || db <= -90) return;
+      const latched = takePeakRef.current;
+      takePeakRef.current = {
+        peakDb: Math.max(latched?.peakDb ?? -100, db),
+        clipping: Boolean(latched?.clipping) || mic.level === "clip" || db >= -1,
+      };
+      return;
+    }
+    if (prev !== "RECORDING") return;
+    const latched = takePeakRef.current;
+    takePeakRef.current = null;
+    if (!latched) return;
+    setBitekLiveTakeLevel(projectId, latched);
+    const issue = takeIssueFromPeak(latched.peakDb, latched.clipping);
+    setTakeIssue(issue ? { issue, peakDb: latched.peakDb } : null);
+  }, [state.phase, mic.peakDb, mic.level, projectId]);
   useEffect(() => {
     const report = bitekReportRef.current;
     if (!report) return;
+    if (takeIssue) {
+      const db = Math.round(takeIssue.peakDb);
+      report({
+        key: `rec-take-${takeIssue.issue}-${db}`,
+        mood: "alert",
+        text: tBitek(takeIssue.issue === "quiet" ? "msg.takeQuiet" : "msg.takeClip", { db }),
+        actions: [
+          {
+            id: "fixInMix",
+            label: tBitek("akcja.fixInMix"),
+            primary: true,
+            onClick: () => {
+              saveBitekRecordHandoff({ projectId, issue: takeIssue.issue, peakDb: takeIssue.peakDb, at: Date.now() });
+              requestStudioGoMix();
+            },
+          },
+        ],
+      });
+      return;
+    }
     const w = latency.warning;
     if (!w) {
       report(null);
@@ -498,7 +544,7 @@ export function StudioRecordingPanel({
       ],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- primitives only; avoids a render loop with the editor
-  }, [latency.warning, latency.deviceKey, latency.baseMs]);
+  }, [latency.warning, latency.deviceKey, latency.baseMs, takeIssue, projectId]);
   useEffect(() => () => bitekReportRef.current?.(null), []);
 
   useEffect(() => {

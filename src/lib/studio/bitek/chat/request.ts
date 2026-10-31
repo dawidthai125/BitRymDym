@@ -6,6 +6,7 @@ import {
   type BitekChatContext,
   type BitekChatTurn,
   type BitekMasterSetting,
+  type BitekTakeLevel,
   type BitekTuneLevel,
 } from "./types";
 
@@ -16,6 +17,25 @@ const num = (v: unknown, lo: number, hi: number, d = 0) =>
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 const ROLES = new Set(["lead_vocal", "adlib", "double", "backing", "beat", "instrument", "other"]);
 const STATUSES = new Set(["green", "yellow", "red", "na"]);
+const FX = new Set(["eq", "compressor", "limiter", "reverb", "delay", "highpass", "deesser", "gate"]);
+
+function finiteInt(v: unknown, max: number): number | undefined {
+  if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.min(max, Math.round(v));
+}
+
+function effectList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((e): e is string => typeof e === "string" && FX.has(e)).slice(0, 8);
+}
+
+function takeLevelOf(v: unknown): BitekTakeLevel | null {
+  if (!v || typeof v !== "object") return null;
+  const r = v as Record<string, unknown>;
+  if (typeof r.peakDb !== "number" || !Number.isFinite(r.peakDb)) return null;
+  const peakDb = Math.max(-100, Math.min(6, r.peakDb));
+  return { peakDb, clipping: r.clipping === true || peakDb >= -1 };
+}
 
 /** lastChange: ≤ maxProposals entries whose ref exists in this context and whose values fit the param. */
 export function parseBitekLastChange(raw: unknown, refs: ReadonlySet<string>, step: BitekChatContext["step"]): BitekChange[] | null {
@@ -67,6 +87,9 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
   const tracks = Array.isArray(c.tracks)
     ? c.tracks.slice(0, BITEK_LIMITS.maxTracks).map((t, i) => {
         const r = (t ?? {}) as Record<string, unknown>;
+        const clipCount = finiteInt(r.clipCount, 99);
+        const durationMs = finiteInt(r.durationMs, 86_400_000);
+        const effects = effectList(r.effects);
         return {
           ref: `t${i + 1}`,
           name: str(r.name, BITEK_LIMITS.trackNameMaxChars),
@@ -74,6 +97,11 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
           gainDb: num(r.gainDb, BITEK_LIMITS.gainDbMin, BITEK_LIMITS.gainDbMax),
           pan: num(r.pan, -1, 1),
           muted: r.muted === true,
+          ...(r.solo === true ? { solo: true } : {}),
+          ...(r.hasAudio === true || r.hasAudio === false ? { hasAudio: r.hasAudio } : {}),
+          ...(clipCount !== undefined ? { clipCount } : {}),
+          ...(durationMs !== undefined ? { durationMs } : {}),
+          ...(effects.length ? { effects } : {}),
           ...(r.tune === 0 || r.tune === 1 || r.tune === 2 ? { tune: r.tune as BitekTuneLevel } : {}),
         };
       })
@@ -126,6 +154,7 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
         tracks,
         analysis,
         ...(master ? { master } : {}),
+        ...(step === "record" ? { takeLevel: takeLevelOf(c.takeLevel) } : {}),
         lastChange: parseBitekLastChange(c.lastChange, new Set(tracks.map((t) => t.ref)), step),
       },
     },

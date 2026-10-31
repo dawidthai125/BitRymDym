@@ -1,9 +1,11 @@
+import { validateBitekJobs } from "./jobs";
 import {
   BITEK_LIMITS,
   BITEK_MASTER_REF,
   BITEK_MASTER_SETTINGS,
   BITEK_TUNE_ROLES,
   type BitekChatContext,
+  type BitekJob,
   type BitekMasterSetting,
   type BitekProposal,
   type BitekTuneLevel,
@@ -182,7 +184,7 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
     if (!p || typeof p !== "object") continue;
     const { trackRef, param, value, why } = p as Record<string, unknown>;
     const track = typeof trackRef === "string" ? byRef.get(trackRef) : undefined;
-    if (!track || typeof trackRef !== "string") continue;
+    if (!track || typeof trackRef !== "string" || track.hasAudio === false) continue;
     const key = `${trackRef}:${String(param)}`;
     if (seen.has(key)) continue;
     let v: number | boolean;
@@ -221,12 +223,14 @@ export function validateProposals(raw: unknown, ctx: BitekChatContext): BitekPro
 export function parseBitekModelOutput(
   text: string,
   ctx: BitekChatContext,
-): { reply: string; proposals: BitekProposal[]; backToMix?: boolean } | null {
-  const obj = extractJsonObject(text) as { reply?: unknown; proposals?: unknown; backToMix?: unknown } | null;
+): { reply: string; proposals: BitekProposal[]; jobs?: BitekJob[]; backToMix?: boolean } | null {
+  const obj = extractJsonObject(text) as { reply?: unknown; proposals?: unknown; jobs?: unknown; backToMix?: unknown } | null;
   if (obj && typeof obj.reply === "string" && obj.reply.trim()) {
+    const jobs = validateBitekJobs(obj.jobs, ctx);
     return {
       reply: obj.reply.trim().slice(0, BITEK_LIMITS.replyMaxChars),
       proposals: validateProposals(obj.proposals, ctx),
+      ...(jobs.length ? { jobs } : {}),
       ...(ctx.step === "master" && obj.backToMix === true ? { backToMix: true } : {}),
     };
   }

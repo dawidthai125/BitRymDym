@@ -14,7 +14,39 @@ export type BitekTrackContext = {
   muted: boolean;
   /** BRD Tune on this track: 0 off, 1 natural, 2 hard / custom (vocal roles only). */
   tune?: BitekTuneLevel;
+  /**
+   * False when the track has no clip with duration (empty lane).
+   * Omitted only for older clients — treated as unknown, not as "has audio".
+   */
+  hasAudio?: boolean;
+  clipCount?: number;
+  durationMs?: number;
+  solo?: boolean;
+  /** Enabled effect types except tune (tune is the numeric field above). */
+  effects?: string[];
 };
+
+/** Measured input peak from the take that just finished (recording helper only). */
+export type BitekTakeLevel = { peakDb: number; clipping: boolean };
+
+export const BITEK_MIX_FIXES = ["gain", "balance", "compression", "eq", "deesser", "denoise", "panorama", "space"] as const;
+export type BitekMixFixId = (typeof BITEK_MIX_FIXES)[number];
+
+export const BITEK_TRACK_FX = ["eq", "compressor", "highpass", "deesser", "gate"] as const;
+export type BitekTrackFx = (typeof BITEK_TRACK_FX)[number];
+
+export const BITEK_MASTER_STYLES = ["warm", "bright", "loud", "dynamic"] as const;
+export type BitekMasterStyle = (typeof BITEK_MASTER_STYLES)[number];
+
+/** One confirmed action. Labels are built on the server, never taken from model text. */
+export const BITEK_MASTER_TARGETS = ["streaming", "youtube", "headphones", "club"] as const;
+export type BitekMasterTarget = (typeof BITEK_MASTER_TARGETS)[number];
+
+export type BitekJob =
+  | { kind: "mixFix"; fixes: BitekMixFixId[]; label: string }
+  | { kind: "trackFx"; trackRef: string; effect: BitekTrackFx; label: string }
+  | { kind: "masterStyle"; style: BitekMasterStyle; label: string }
+  | { kind: "masterTarget"; target: BitekMasterTarget; label: string };
 
 export type BitekTuneLevel = 0 | 1 | 2;
 /** Track roles BITEK may tune (pitch correction is a vocal effect). */
@@ -44,6 +76,8 @@ export type BitekChatContext = {
     settings: Record<BitekMasterSetting, number>;
     cards: BitekCardContext[];
   };
+  /** Recording only: peak measured on the mic during the last take. Absent = no measurement. */
+  takeLevel?: BitekTakeLevel | null;
 };
 
 /** Whole-track macro settings BITEK may propose in Mastering (-3..3 steps). */
@@ -78,6 +112,8 @@ export type BitekChatResult = {
   provider: BitekProviderId;
   reply: string;
   proposals: BitekProposal[];
+  /** Real actions (FX, measured balance, mastering style). Empty/omitted = chat only. */
+  jobs?: BitekJob[];
   /** Mastering: the request was about a single track — offer "Back to Mix". */
   backToMix?: boolean;
   /** Set when the answer was a relative follow-up to the last change. */

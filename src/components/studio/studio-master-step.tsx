@@ -11,6 +11,7 @@ import { StudioListenLinks } from "@/components/studio/studio-listen-links";
 import { StudioYoutubeVideo } from "@/components/studio/studio-youtube-video";
 import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+import type { BitekMasterStyle, BitekMasterTarget } from "@/lib/studio/bitek/chat/types";
 import { LockedAction } from "@/components/plans/locked-action";
 import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
@@ -220,7 +221,9 @@ export function StudioMasterStep({
       applyRef.current = null;
     };
   });
-  const getChatContext = useCallback(() => {
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const getChatContext = useCallback((): BitekClientContext => {
     const cur = latest.current;
     const base = buildBitekClientContext({
       doc,
@@ -228,8 +231,29 @@ export function StudioMasterStep({
       step: "master",
       master: { target: cur.target, settings: cur.settings, cards: (cur.verdict?.cards ?? []).map((c) => ({ id: c.id, status: c.status, value: c.value })) },
     });
-    return base;
-  }, [doc, locale]);
+    return {
+      ...base,
+      applyMasterStyle: (style: BitekMasterStyle) => {
+        const settings = latest.current.settings;
+        const next = applyMasterStyle(settings, style, DEFAULT_MASTER_INTENSITY);
+        let changed = false;
+        for (const key of MASTER_SETTING_KEYS) {
+          if (next[key] !== settings[key]) {
+            stepRef.current(key, next[key]);
+            changed = true;
+          }
+        }
+        return changed;
+      },
+      applyMasterTarget: (next: BitekMasterTarget) => {
+        if (latest.current.target === next) return false;
+        setTarget(next);
+        if (sm.phase === "done") setSm({ phase: "idle" });
+        setApproved(false);
+        return true;
+      },
+    };
+  }, [doc, locale, sm.phase]);
   useEffect(() => {
     if (!chatContextRef) return;
     chatContextRef.current = getChatContext;

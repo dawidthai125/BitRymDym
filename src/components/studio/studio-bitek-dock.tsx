@@ -40,7 +40,7 @@ export const BITEK_MOOD_SRC: Record<BitekMood, string> = {
  * space in the page layout.
  */
 export function StudioBitekDock({
-  bubble,
+  bubble: incomingBubble,
   mood,
   minimized,
   dismissedKey,
@@ -83,6 +83,7 @@ export function StudioBitekDock({
     inspectorSheetOpen,
     narrow: isMobile,
   });
+  const bubble = recordContext && incomingBubble?.hero ? null : incomingBubble;
   const t = useTranslations("studio.bitek.dock");
   const bubbleId = useId();
   const chatTitleId = useId();
@@ -94,8 +95,9 @@ export function StudioBitekDock({
   const autoCollapsed = Boolean(bubble && autoCollapsedKey === bubble.key);
   /** User tapped the pill in record context — show that bubble anyway (dock is on the left). */
   const [forcedKey, setForcedKey] = useState<string | null>(null);
+  const takeHint = Boolean(bubble?.key.startsWith("rec-take-"));
   const bubbleAllowed =
-    placement.bubble || Boolean(!placement.hidden && bubble && forcedKey === bubble.key);
+    placement.bubble || takeHint || Boolean(!placement.hidden && bubble && forcedKey === bubble.key);
   const visible =
     bubble &&
     bubble.key !== dismissedKey &&
@@ -149,10 +151,10 @@ export function StudioBitekDock({
     chatRef.current?.querySelector<HTMLInputElement>("input")?.focus();
   }, [chatOpen]);
 
-  // Recording started / sheet opened while chatting → close the chat, never cover controls.
+  // Recording started / sheet opened / record step → close the producer chat.
   useEffect(() => {
-    if (placement.hidden && chatOpen) onChatOpenChange(false);
-  }, [placement.hidden, chatOpen, onChatOpenChange]);
+    if ((placement.hidden || recordContext) && chatOpen) onChatOpenChange(false);
+  }, [placement.hidden, recordContext, chatOpen, onChatOpenChange]);
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -172,6 +174,7 @@ export function StudioBitekDock({
     <div
       ref={rootRef}
       data-testid="studio-bitek-dock"
+      data-stage={recordContext ? "record" : "studio"}
       data-mood={mood}
       data-placement={placement.hidden ? "hidden" : placement.side}
       hidden={placement.hidden}
@@ -179,7 +182,7 @@ export function StudioBitekDock({
         placement.side === "left" ? "left-3 items-start lg:left-5" : "right-3 items-end lg:right-5"
       }`}
     >
-      {chatOpen ? (
+      {chatOpen && !recordContext ? (
         <div
           ref={chatRef}
           role="dialog"
@@ -289,16 +292,18 @@ export function StudioBitekDock({
                   {a.label}
                 </Button>
               ))}
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="min-h-9"
-                data-testid="studio-bitek-open-chat"
-                onClick={() => onChatOpenChange(true)}
-              >
-                {t("pogadaj")}
-              </Button>
+              {recordContext ? null : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="min-h-9"
+                  data-testid="studio-bitek-open-chat"
+                  onClick={() => onChatOpenChange(true)}
+                >
+                  {t("pogadaj")}
+                </Button>
+              )}
               <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">— BITEK</span>
             </div>
           </div>
@@ -326,12 +331,21 @@ export function StudioBitekDock({
           type="button"
           data-testid="studio-bitek-avatar"
           data-mood={mood}
-          aria-label={chatOpen ? t("zamknijCzat") : t("otworzCzat")}
-          aria-expanded={chatOpen}
+          aria-label={recordContext ? t("ariaNagranie") : chatOpen ? t("zamknijCzat") : t("otworzCzat")}
+          aria-expanded={recordContext ? Boolean(visible) : chatOpen}
           className={`bitek-avatar relative grid place-items-center rounded-full border-2 border-[var(--brd-amber)] bg-[#0d0b08] shadow-xl ${
             placement.compact ? "size-11 lg:size-12" : "size-14 lg:size-20"
           }`}
-          onClick={() => onChatOpenChange(!chatOpen)}
+          onClick={() => {
+            if (recordContext) {
+              setAutoCollapsedKey(null);
+              if (bubble) setForcedKey(bubble.key);
+              onMinimizedChange(false);
+              onChatOpenChange(false);
+              return;
+            }
+            onChatOpenChange(!chatOpen);
+          }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- static tiny asset */}
           <img src={BITEK_MOOD_SRC[mood]} alt="" width={80} height={80} className="size-full rounded-full" />
