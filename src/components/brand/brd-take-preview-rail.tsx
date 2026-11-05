@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
+import { BrdPlaybackTools } from "@/components/player/brd-playback-tools";
 import { createTakePreviewGraph } from "@/lib/audio/take-preview-graph";
 import { peaksFromAudioBlob } from "@/lib/audio/peaks-from-buffer";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
@@ -58,10 +59,18 @@ export function BrdTakePreviewRail({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(takeDurationSeconds ?? 0);
   const [takePeaks, setTakePeaks] = useState<number[] | null>(null);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [loop, setLoop] = useState(false);
+  const [rate, setRate] = useState(1);
+  const [beatMix, setBeatMix] = useState(0.85);
+  const [takeMix, setTakeMix] = useState(1);
+  const loopRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     if (!takeBlob) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- drop peaks when the blob goes away
       setTakePeaks(null);
       return;
     }
@@ -138,6 +147,18 @@ export function BrdTakePreviewRail({
   }, [beatId, takePreviewUrl, takeDurationSeconds]);
 
   useEffect(() => {
+    loopRef.current = loop;
+  }, [loop]);
+
+  useEffect(() => {
+    graphRef.current?.setListen({
+      beat: muted ? 0 : volume * beatMix,
+      take: muted ? 0 : volume * takeMix,
+      rate,
+    });
+  }, [muted, volume, beatMix, takeMix, rate, ready]);
+
+  useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => {
       const g = graphRef.current;
@@ -146,6 +167,11 @@ export function BrdTakePreviewRail({
       setDuration(g.getDuration());
       const beatEl = beatRef.current;
       if (beatEl && beatEl.ended) {
+        if (loopRef.current) {
+          g.seek(0);
+          void g.play();
+          return;
+        }
         g.pause();
         setPlaying(false);
       }
@@ -240,7 +266,7 @@ export function BrdTakePreviewRail({
         />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <BrdAudioPlayButton
           playing={playing}
           loading={loading}
@@ -250,14 +276,34 @@ export function BrdTakePreviewRail({
           onClick={() => void onToggle()}
           aria-label={tl(playing ? tr("pauzaPodgladu") : tr("odtworzPodglad"))}
         />
-        <p className="text-sm text-[var(--brd-ink-soft)]">
-          {tl(ready
-            ? tr("bitNagranie")
-            : takePreviewUrl
-              ? tr("ladowaniePodgladu")
-              : tr("brakUrlPodgladu"))}
-        </p>
+        <BrdPlaybackTools
+          volume={volume}
+          muted={muted}
+          loop={loop}
+          rate={rate}
+          disabled={!ready}
+          onVolume={setVolume}
+          onMuted={setMuted}
+          onLoop={setLoop}
+          onRate={setRate}
+        >
+          <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-[var(--brd-mute)]">
+            <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">{tr("glosnoscBitu")}</span>
+            <input type="range" min={0} max={1} step={0.01} value={beatMix} disabled={!ready} aria-label={tr("glosnoscBitu")} onChange={(event) => setBeatMix(Number(event.target.value))} className="brd-scrub h-11" />
+          </label>
+          <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-[var(--brd-mute)]">
+            <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">{tr("glosnoscNagrania")}</span>
+            <input type="range" min={0} max={1} step={0.01} value={takeMix} disabled={!ready} aria-label={tr("glosnoscNagrania")} onChange={(event) => setTakeMix(Number(event.target.value))} className="brd-scrub h-11" />
+          </label>
+        </BrdPlaybackTools>
       </div>
+      <p className="text-sm text-[var(--brd-ink-soft)]">
+        {tl(ready
+          ? tr("bitNagranie")
+          : takePreviewUrl
+            ? tr("ladowaniePodgladu")
+            : tr("brakUrlPodgladu"))}
+      </p>
 
       {error ? (
         <p className="text-sm text-[var(--brd-danger)]" role="alert">

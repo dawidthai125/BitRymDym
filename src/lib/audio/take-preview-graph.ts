@@ -9,6 +9,8 @@ export type TakePreviewGraph = {
   seek: (time: number) => void;
   getCurrentTime: () => number;
   getDuration: () => number;
+  /** Beat and vocal gains are 0..1. Rate is the shared listen speed. */
+  setListen: (input: { beat: number; take: number; rate: number }) => void;
   dispose: () => void;
 };
 
@@ -60,6 +62,14 @@ export function createTakePreviewGraph(params: {
       return beatEl.currentTime || takeEl.currentTime || 0;
     },
     getDuration: duration,
+    setListen({ beat, take, rate }) {
+      const gain = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1);
+      const speed = Number.isFinite(rate) ? Math.min(1.25, Math.max(0.75, rate)) : 1;
+      beatEl.volume = gain(beat);
+      takeEl.volume = gain(take);
+      beatEl.playbackRate = speed;
+      takeEl.playbackRate = speed;
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
