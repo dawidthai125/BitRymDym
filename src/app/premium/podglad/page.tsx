@@ -5,6 +5,8 @@ import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { PremiumCheckoutForm } from "@/components/premium/premium-checkout-form";
 import { PremiumReturnView, type ReturnState } from "@/components/premium/premium-return-view";
 import { AppShell } from "@/components/site/app-shell";
+import { readPlanPaymentsAvailable } from "@/config/plan-policy";
+import { isP24Configured } from "@/lib/payments/p24-config";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Podgląd płatności", robots: { index: false, follow: false } };
@@ -17,11 +19,14 @@ const RETURN_STATES: Record<string, ReturnState> = {
 };
 
 /**
- * Local UI preview. Production always 404s. Dev needs P24_UI_PREVIEW=1.
+ * Local UI preview. 404 unless payments are available (same gate as /premium
+ * checkout), this is not production, and P24_UI_PREVIEW=1.
  * `?stan=pending|paid|failed|skipped` shows the return page.
  */
 export default async function PaymentPreviewPage({ searchParams }: { searchParams?: Promise<{ stan?: string }> }) {
-  if (process.env.NODE_ENV === "production" || process.env.P24_UI_PREVIEW !== "1") notFound();
+  if (!readPlanPaymentsAvailable() || !isP24Configured() || process.env.NODE_ENV === "production" || process.env.P24_UI_PREVIEW !== "1") {
+    notFound();
+  }
   const params = searchParams ? await searchParams : {};
   const state = params.stan ? RETURN_STATES[params.stan] : undefined;
   if (params.stan) {

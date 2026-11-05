@@ -17,6 +17,7 @@ import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
 export type WebhookOutcome =
   | { status: 200; body: { ok: true; result: "granted" | "skipped" | "already" | "ignored" } }
   | { status: 400; body: { ok: false } }
+  | { status: 403; body: { ok: false; code: "PAYMENTS_OFF" } }
   | { status: 503; body: { ok: false } };
 
 type OrderRow = {
@@ -67,7 +68,8 @@ function receiptLine(write: GrantWrite): string {
 
 export async function handleP24Webhook(body: unknown, now = new Date()): Promise<WebhookOutcome> {
   const config = readP24Config();
-  if (!config) return { status: 503, body: { ok: false } };
+  // Closed checkout, same code as POST /api/payments/p24/checkout. Not an ack and not a retryable outage.
+  if (!config) return { status: 403, body: { ok: false, code: "PAYMENTS_OFF" } };
 
   const note = parseP24Notification(body);
   if (!note || !notificationSignValid(note, config.crc)) {
