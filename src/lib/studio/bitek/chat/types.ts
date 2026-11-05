@@ -46,13 +46,14 @@ export type BitekJob =
   | { kind: "mixFix"; fixes: BitekMixFixId[]; label: string }
   | { kind: "trackFx"; trackRef: string; effect: BitekTrackFx; label: string }
   | { kind: "masterStyle"; style: BitekMasterStyle; label: string }
-  | { kind: "masterTarget"; target: BitekMasterTarget; label: string };
+  | { kind: "masterTarget"; target: BitekMasterTarget; label: string }
+  | { kind: "masterClarity"; patch: Partial<Record<BitekMasterSetting, number>>; label: string };
 
 export type BitekTuneLevel = 0 | 1 | 2;
 /** Track roles BITEK may tune (pitch correction is a vocal effect). */
 export const BITEK_TUNE_ROLES: readonly string[] = ["lead_vocal", "adlib", "double", "backing"];
 
-export type BitekCardContext = { id: string; status: string; value?: string | null };
+export type BitekCardContext = { id: string; status: string; value?: string | null; note?: string | null };
 
 export type BitekChatContext = {
   lang: BitekLang;

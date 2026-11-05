@@ -24,6 +24,22 @@ function finiteInt(v: unknown, max: number): number | undefined {
   return Math.min(max, Math.round(v));
 }
 
+function cardNote(v: unknown): string | null {
+  const s = str(v, 24).toLowerCase();
+  return /^[a-z]{2,16}(:[a-z]{2,12})?$/.test(s) ? s : null;
+}
+
+function readCard(x: unknown): { id: string; status: string; value: string | null; note?: string } {
+  const r = (x ?? {}) as Record<string, unknown>;
+  const note = cardNote(r.note);
+  return {
+    id: str(r.id, 24).replace(/[^a-z_]/gi, ""),
+    status: typeof r.status === "string" && STATUSES.has(r.status) ? r.status : "na",
+    value: str(r.value, 24) || null,
+    ...(note ? { note } : {}),
+  };
+}
+
 function effectList(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
   return v.filter((e): e is string => typeof e === "string" && FX.has(e)).slice(0, 8);
@@ -112,14 +128,7 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
       ? {
           overall: typeof a.overall === "string" && STATUSES.has(a.overall) ? a.overall : "na",
           stale: a.stale === true,
-          cards: (Array.isArray(a.cards) ? a.cards : []).slice(0, 16).map((x) => {
-            const r = (x ?? {}) as Record<string, unknown>;
-            return {
-              id: str(r.id, 24).replace(/[^a-z_]/gi, ""),
-              status: typeof r.status === "string" && STATUSES.has(r.status) ? r.status : "na",
-              value: str(r.value, 24) || null,
-            };
-          }),
+          cards: (Array.isArray(a.cards) ? a.cards : []).slice(0, 16).map(readCard),
           masterIntegratedLufs: typeof a.masterIntegratedLufs === "number" && Number.isFinite(a.masterIntegratedLufs) ? a.masterIntegratedLufs : null,
           masterTruePeakDbtp: typeof a.masterTruePeakDbtp === "number" && Number.isFinite(a.masterTruePeakDbtp) ? a.masterTruePeakDbtp : null,
         }
@@ -133,14 +142,7 @@ export function parseBitekChatRequest(body: unknown): { ok: true; value: BitekCh
           settings: Object.fromEntries(
             BITEK_MASTER_SETTINGS.map((k) => [k, Math.round(num((mm.settings as Record<string, unknown> | undefined)?.[k], -3, 3) * 2) / 2]),
           ) as Record<BitekMasterSetting, number>,
-          cards: (Array.isArray(mm.cards) ? mm.cards : []).slice(0, 12).map((x) => {
-            const r = (x ?? {}) as Record<string, unknown>;
-            return {
-              id: str(r.id, 24).replace(/[^a-z_]/gi, ""),
-              status: typeof r.status === "string" && STATUSES.has(r.status) ? r.status : "na",
-              value: str(r.value, 24) || null,
-            };
-          }),
+          cards: (Array.isArray(mm.cards) ? mm.cards : []).slice(0, 12).map(readCard),
         }
       : null;
   return {

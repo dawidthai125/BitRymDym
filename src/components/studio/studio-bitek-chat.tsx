@@ -231,6 +231,14 @@ export function StudioBitekChat({
       store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
       return;
     }
+    if (job.kind === "masterClarity") {
+      if (!client.applyMasterClarity?.(job.patch)) {
+        setError(t("juzJest"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
     if (job.kind === "masterTarget") {
       if (!client.applyMasterTarget?.(job.target)) {
         setError(t("juzJest"));

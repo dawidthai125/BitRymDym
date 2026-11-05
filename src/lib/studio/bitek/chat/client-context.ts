@@ -9,6 +9,7 @@ import {
   BITEK_TUNE_ROLES,
   type BitekChatContext,
   type BitekLang,
+  type BitekMasterSetting,
   type BitekMasterStyle,
   type BitekMasterTarget,
   type BitekMixFixId,
@@ -35,6 +36,8 @@ export type BitekClientContext = {
   applyMixFix?: (fixes: BitekMixFixId[]) => Promise<BitekMixFixResult>;
   /** Mastering step only: apply a whole-song style through the existing setting controls. */
   applyMasterStyle?: (style: BitekMasterStyle) => boolean;
+  /** Mastering step only: one measured tone and clarity patch. */
+  applyMasterClarity?: (patch: Partial<Record<BitekMasterSetting, number>>) => boolean;
   /** Mastering step only: switch the loudness target (streaming, youtube, headphones, club). */
   applyMasterTarget?: (target: BitekMasterTarget) => boolean;
 };

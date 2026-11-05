@@ -1,4 +1,5 @@
 import {
+  BITEK_MASTER_SETTINGS,
   BITEK_MASTER_STYLES,
   BITEK_MASTER_TARGETS,
   BITEK_MIX_FIXES,
@@ -7,6 +8,7 @@ import {
   type BitekChatContext,
   type BitekJob,
   type BitekLang,
+  type BitekMasterSetting,
   type BitekMasterStyle,
   type BitekMasterTarget,
   type BitekMixFixId,
@@ -61,6 +63,11 @@ function isTarget(v: unknown): v is BitekMasterTarget {
   return typeof v === "string" && (BITEK_MASTER_TARGETS as readonly string[]).includes(v);
 }
 
+const TONE_NAME: Record<BitekLang, Record<BitekMasterSetting, string>> = {
+  pl: { loudness: "głośność", bright: "góra", bass: "dół", width: "szerokość", squash: "kompresja" },
+  en: { loudness: "loudness", bright: "top", bass: "low end", width: "width", squash: "compression" },
+};
+
 const TARGET_NAME: Record<BitekLang, Record<BitekMasterTarget, string>> = {
   pl: { streaming: "streaming (−14 LUFS)", youtube: "YouTube (−14 LUFS)", headphones: "słuchawki (−16 LUFS)", club: "klub (−9 LUFS)" },
   en: { streaming: "streaming (−14 LUFS)", youtube: "YouTube (−14 LUFS)", headphones: "headphones (−16 LUFS)", club: "club (−9 LUFS)" },
@@ -81,7 +88,7 @@ export function validateBitekJobs(raw: unknown, ctx: BitekChatContext): BitekJob
       const fixes: BitekMixFixId[] = [];
       const list = Array.isArray(r.fixes) ? r.fixes : [];
       for (const f of list) {
-        if (fixes.length >= 4 || !isFix(f) || fixes.includes(f)) continue;
+        if (fixes.length >= 6 || !isFix(f) || fixes.includes(f)) continue;
         fixes.push(f);
       }
       if (!fixes.length) continue;
@@ -114,6 +121,27 @@ export function validateBitekJobs(raw: unknown, ctx: BitekChatContext): BitekJob
         kind: "masterStyle",
         style: r.style,
         label: lang === "pl" ? `Styl masteringu: ${STYLE_NAME.pl[r.style]}` : `Mastering style: ${STYLE_NAME.en[r.style]}`,
+      });
+      continue;
+    }
+    if (r.kind === "masterClarity") {
+      if (ctx.step !== "master" || !ctx.master || !r.patch || typeof r.patch !== "object") continue;
+      const raw = r.patch as Record<string, unknown>;
+      const patch: Partial<Record<BitekMasterSetting, number>> = {};
+      for (const key of BITEK_MASTER_SETTINGS) {
+        const v = raw[key];
+        if (typeof v !== "number" || !Number.isFinite(v)) continue;
+        const next = Math.round(Math.min(3, Math.max(-3, v)) * 2) / 2;
+        if (next === ctx.master.settings[key]) continue;
+        patch[key] = next;
+      }
+      const keys = BITEK_MASTER_SETTINGS.filter((key) => patch[key] !== undefined);
+      if (!keys.length) continue;
+      const names = keys.map((key) => TONE_NAME[lang][key]).join(", ");
+      out.push({
+        kind: "masterClarity",
+        patch,
+        label: lang === "pl" ? `Brzmienie i czystość: ${names}` : `Tone and clarity: ${names}`,
       });
       continue;
     }

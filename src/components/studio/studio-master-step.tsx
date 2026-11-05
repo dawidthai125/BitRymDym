@@ -338,7 +338,16 @@ export function StudioMasterStep({
       doc,
       lang: locale === "en" ? "en" : "pl",
       step: "master",
-      master: { target: cur.target, settings: cur.settings, cards: (cur.verdict?.cards ?? []).map((c) => ({ id: c.id, status: c.status, value: c.value })) },
+      master: {
+        target: cur.target,
+        settings: cur.settings,
+        cards: (cur.verdict?.cards ?? []).map((c) => ({
+          id: c.id,
+          status: c.status,
+          value: c.value,
+          note: typeof c.params.band === "string" ? `${c.messageKey}:${c.params.band}` : c.messageKey,
+        })),
+      },
     });
     if (cur.measured && Number.isFinite(cur.measured.lufs)) {
       base.context = {
@@ -357,6 +366,13 @@ export function StudioMasterStep({
       applyMasterStyle: (styleId: BitekMasterStyle) => {
         const settingsNow = sessionLive.current.settings;
         const next = applyMasterStyle(settingsNow, styleId, DEFAULT_MASTER_INTENSITY);
+        const changed = MASTER_SETTING_KEYS.some((key) => next[key] !== settingsNow[key]);
+        if (changed) sessionApi.current.replaceSettings(next);
+        return changed;
+      },
+      applyMasterClarity: (patch) => {
+        const settingsNow = sessionLive.current.settings;
+        const next = clampMasterSettings({ ...settingsNow, ...patch });
         const changed = MASTER_SETTING_KEYS.some((key) => next[key] !== settingsNow[key]);
         if (changed) sessionApi.current.replaceSettings(next);
         return changed;

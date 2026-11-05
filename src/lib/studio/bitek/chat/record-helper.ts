@@ -2,7 +2,7 @@ import type { BitekChatContext, BitekChatResult, BitekLang } from "./types";
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l");
 
-const CHANGE = /glosniej|ciszej|podglos|scisz|podkrec|\beq\b|kompres|panoram|\bpan\b|balans|master|stroj|autotun|wyrówn|wyrown|popraw/;
+const CHANGE = /glosniej|ciszej|podglos|scisz|podkrec|\beq\b|kompres|panoram|\bpan\b|balans|master|stroj|autotun|wyrown|popraw|brzmien|czyst|wyrazn|selektywn|klarown/;
 
 const T: Record<BitekLang, {
   defer: string;

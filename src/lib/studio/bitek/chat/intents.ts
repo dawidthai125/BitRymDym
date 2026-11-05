@@ -58,6 +58,8 @@ const T = {
     noTrack: "Nie widzę takiej ścieżki w Twoim projekcie. Nadaj ścieżkom role (np. Wokal główny, Adlib), wtedy wiem, co komu ustawić.",
     empty: (n: string) => `Ścieżka „${n}” jest pusta — nie ma na niej nagrania. Nagraj ją albo wgraj audio, a dopiero potem ruszę głośność.`,
     needAnalysis: "Najpierw kliknij „Analizuj mix”. Bez świeżego pomiaru nie ruszam suwaków ani EQ.",
+    clarity: "Poprawię brzmienie i czystość z pomiaru: tylko to, co odstaje. Kliknij „Zastosuj” i posłuchaj.",
+    alreadyClean: "Pomiar nie pokazuje problemu z brzmieniem ani czystością. Nic nie ruszam.",
     already: (n: string) => `Na „${n}” ten efekt już jest włączony. Nic nie dubluję.`,
     generic: (worst: string | null) =>
       worst
@@ -76,6 +78,8 @@ const T = {
     noTrack: "I can't find that track in your project. Give your tracks roles (e.g. Lead vocal, Adlib) so I know what to set where.",
     empty: (n: string) => `“${n}” is empty — nothing is recorded on it. Record or upload audio before I touch the level.`,
     needAnalysis: "Click “Analyze mix” first. I won't move faders or EQ without a fresh measurement.",
+    clarity: "I'll fix tone and clarity from the measurement: only what is off. Hit Apply and listen.",
+    alreadyClean: "The measurement shows no tone or clarity problem. I won't move anything.",
     already: (n: string) => `That effect is already on “${n}”. I won't add a second one.`,
     generic: (worst: string | null) =>
       worst
@@ -146,6 +150,28 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
       [],
       [{ kind: "mixFix", fixes, label: "" }],
     );
+  }
+
+  const CLARITY = /brzmien|czyst|czysc|wyczysc|wyrazn|selektywn|klarown|clarity|cleaner|clearer|\btone\b/;
+  const CLARITY_ORDER: BitekMixFixId[] = ["deesser", "denoise", "eq", "balance", "compression", "gain"];
+  if (has(m, CLARITY)) {
+    if (!ctx.analysis || ctx.analysis.stale) return done(tx.needAnalysis);
+    const wanted = new Set<BitekMixFixId>();
+    for (const card of ctx.analysis.cards) {
+      if (card.status !== "red" && card.status !== "yellow") continue;
+      if (!(card.id in MIX_CARD_FIXES)) continue;
+      for (const fix of MIX_CARD_FIXES[card.id as MixCardId]) {
+        if ((CLARITY_ORDER as readonly string[]).includes(fix)) wanted.add(fix);
+      }
+    }
+    let fixes = CLARITY_ORDER.filter((fix) => wanted.has(fix));
+    const vocals = byRole(ctx, ["lead_vocal", "adlib", "double", "backing"]);
+    if (fixes.includes("balance") && !vocals.length) {
+      if (fixes.length === 1) return missing(["lead_vocal"]);
+      fixes = fixes.filter((fix) => fix !== "balance");
+    }
+    if (!fixes.length) return done(tx.alreadyClean);
+    return done(tx.clarity, [], [{ kind: "mixFix", fixes, label: "" }]);
   }
 
   const FX_ASK: { re: RegExp; effect: BitekTrackFx }[] = [
