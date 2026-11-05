@@ -7,6 +7,13 @@ import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-do
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import type { BitekMixFixId } from "@/lib/studio/bitek/chat/types";
 import {
+  autoMixMasterMaterial,
+  clearAutoMixHandoff,
+  nextAutoMixStep,
+  readAutoMixHandoff,
+  saveAutoMasterHandoff,
+} from "@/lib/studio/bitek/auto-mix-master";
+import {
   clearBitekRecordHandoff,
   gainDbForTakePeak,
   readBitekRecordHandoff,
@@ -96,9 +103,15 @@ export function StudioMixStep({
   onBitekNote,
   chatContextRef,
   onGoMaster,
+  onListen,
+  autoEnabled = false,
 }: {
   /** Stage 3 — enter Mastering with the current (approved) mix. */
   onGoMaster?: () => void;
+  /** Transport play — the mixed song, after the auto mix. */
+  onListen?: () => void;
+  /** Gold switch is on. Off for every other plan, even if a flag was planted. */
+  autoEnabled?: boolean;
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
   onBack: () => void;
@@ -146,6 +159,42 @@ export function StudioMixStep({
     applyAutofixRef.current = onApplyAutofix;
   });
   const canAutofix = Boolean(onApplyAutofix);
+  const [autoPhase, setAutoPhase] = useState<"run" | "ask" | "stay" | null>(null);
+  const goMasterRef = useRef(onGoMaster);
+  const listenRef = useRef(onListen);
+  useEffect(() => {
+    goMasterRef.current = onGoMaster;
+    listenRef.current = onListen;
+  });
+  const beginAutoMix = () => {
+    clearBitekRecordHandoff();
+    setFailure(null);
+    setPanel(null);
+    setAutoPhase("run");
+  };
+  const beginAutoRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    beginAutoRef.current = beginAutoMix;
+  });
+  useEffect(() => {
+    if (!autoEnabled) {
+      clearAutoMixHandoff();
+      return;
+    }
+    let live = true;
+    const id = window.setTimeout(() => {
+      if (!live || !readAutoMixHandoff(doc.project.id)) return;
+      clearAutoMixHandoff();
+      clearBitekRecordHandoff();
+      setFailure(null);
+      setPanel(null);
+      setAutoPhase("run");
+    }, 0);
+    return () => {
+      live = false;
+      window.clearTimeout(id);
+    };
+  }, [autoEnabled, doc.project.id]);
 
   const analyze = useCallback(async () => {
     abortRef.current?.abort();
@@ -359,6 +408,58 @@ export function StudioMixStep({
     else onBitekAction(pendingAction);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per dispatched action
   }, [pending]);
+  const autoLock = useRef(false);
+  useEffect(() => {
+    // Auto mix advances when analysis or a fix round finishes.
+    /* eslint-disable react-hooks/set-state-in-effect -- same dispatch pattern as the bubble actions above */
+    if (autoPhase !== "run") return;
+    if (autoLock.current || reanalyzeRef.current) return;
+    if (failure || panel?.kind === "error") {
+      setAutoPhase("stay");
+      return;
+    }
+    if (panel?.kind === "nothing") {
+      setAbListen("after");
+      setAutoPhase("ask");
+      return;
+    }
+    const fresh = Boolean(result && !stale);
+    const opsLeft = fresh && result
+      ? planMixAutofix({
+          doc,
+          metrics: result.metrics,
+          verdict: result.verdict,
+          fixes: MIX_AUTOFIX_ALL,
+          createId: () => "x",
+        }).ops.length
+      : 0;
+    const step = nextAutoMixStep({
+      hasFreshAnalysis: fresh,
+      running,
+      fixing: Boolean(fixing),
+      canApply: canAutofix,
+      opsLeft,
+      fixSeq,
+      failed: false,
+    });
+    if (step === "wait") return;
+    if (step === "stop") {
+      setAutoPhase("stay");
+      return;
+    }
+    if (step === "ask") {
+      setAbListen("after");
+      setAutoPhase("ask");
+      return;
+    }
+    autoLock.current = true;
+    const job = step === "analyze" ? analyze() : runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"));
+    void job.finally(() => {
+      autoLock.current = false;
+    });
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis / fix round
+  }, [autoPhase, result, stale, running, fixing, fixSeq, failure, panel, canAutofix, doc, analyze, t]);
   const [manual, setManual] = useState<ManualIssue | null>(null);
   const dismissedManual = useRef(new Set<string>());
   const mixBaseline = useRef<Parameters<typeof watchMixManual>[0]["baseline"]>(null);
@@ -445,6 +546,30 @@ export function StudioMixStep({
     };
   });
   const bubble = useMemo<BitekBubble>(() => {
+    if (autoPhase === "run") {
+      return { key: "auto-mix-run", mood: "thinking", text: tBitek("msg.autoMixTrwa") };
+    }
+    if (autoPhase === "ask") {
+      return {
+        key: "auto-mix-ask",
+        mood: "done",
+        text: tBitek("msg.autoMixGotowy"),
+        actions: [
+          { id: "autoListen", label: tBitek("akcja.autoListen"), onClick: () => listenRef.current?.() },
+          {
+            id: "autoMasterTak",
+            label: tBitek("akcja.autoMasterTak"),
+            primary: true,
+            onClick: () => {
+              saveAutoMasterHandoff(doc.project.id);
+              setAutoPhase("stay");
+              goMasterRef.current?.();
+            },
+          },
+          { id: "autoMasterNie", label: tBitek("akcja.autoMasterNie"), onClick: () => setAutoPhase("stay") },
+        ],
+      };
+    }
     if (manual) {
       return {
         key: `manual-${manual.key}`,
@@ -481,6 +606,15 @@ export function StudioMixStep({
         actions: vocalExists
           ? [{ id: "applyHandoff", label: tBitek("akcja.applyHandoff"), primary: true, onClick: () => applyHandoffRef.current() }]
           : [],
+      };
+    }
+    const autoMaterial = autoMixMasterMaterial({ beatId: doc.project.beatId, tracks: doc.tracks, clips: doc.clips });
+    if (autoEnabled && autoPhase === null && autoMaterial.ready && !running && !fixing) {
+      return {
+        key: "auto-mix-offer",
+        mood: "done",
+        text: tBitek("msg.autoReady"),
+        actions: [{ id: "autoMix", label: tBitek("akcja.autoMix"), primary: true, onClick: () => beginAutoRef.current() }],
       };
     }
     if (fixing) return { key: `fixing-${fixing}`, mood: "thinking", text: t("poprawTrwa") };
@@ -523,7 +657,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, autoEnabled]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);

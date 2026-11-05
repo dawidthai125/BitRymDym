@@ -2308,7 +2308,11 @@
         "fixInMix": "Popraw w mixie",
         "applyHandoff": "Zastosuj poprawkę",
         "poprawSam": "Popraw sam",
-        "zrobZaMnie": "Zrób to za mnie"
+        "zrobZaMnie": "Zrób to za mnie",
+        "autoMix": "Zrób mix",
+        "autoListen": "Posłuchaj mixu",
+        "autoMasterTak": "Zrób mastering",
+        "autoMasterNie": "Zostaw mix"
       },
       "msg": {
         "recording": "Nagrywam. Skup się na wykonaniu — suwaków tu nie ruszam.",
@@ -2348,7 +2352,13 @@
         "liveHot": "Nagrywasz za głośno. Odsuń się trochę od mikrofonu i trzymaj ten sam poziom.",
         "liveQuiet": "Za cicho. Podejdź bliżej mikrofonu i nagrywaj pewniej.",
         "liveUneven": "Poziom skacze. Nagrywaj równiej — ta sama odległość od mikrofonu przez całą frazę.",
-        "liveOffbeat": "Nie łapiesz się w bit. Słuchaj stopy i wchodź na raz."
+        "liveOffbeat": "Nie łapiesz się w bit. Słuchaj stopy i wchodź na raz.",
+        "autoNeedBoth": "Do auto mixu potrzebuję bitu i nagranego wokalu. Najpierw wybierz bit, potem nagraj wokal.",
+        "autoNeedVocal": "Bit jest. Nagraj surowy wokal — jak będzie gotowy, jednym kliknięciem zmiksuję całość.",
+        "autoNeedBeat": "Wokal jest. Wybierz bit, wtedy mogę zmiksować numer.",
+        "autoReady": "Wokal i bit są. Kliknij, a zmiksuję całość — poprawię wszystko, co da się poprawić z pomiaru.",
+        "autoMixTrwa": "Miksuję. Poprawiam wszystko, co da się poprawić z pomiaru.",
+        "autoMixGotowy": "Mix gotowy. Posłuchaj go. Zrobić mastering?"
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",
@@ -2411,7 +2421,9 @@
         "powitanieKrok2": "Głośność, panorama, EQ, kompresja i balans z pomiaru — każdą zmianę zatwierdzasz przyciskiem.",
         "powitanieKrok3": "W masteringu ustawiam całość: głośność, barwę i styl. Cofniesz to przez Ctrl+Z.",
         "zaczynamy": "Zaczynamy",
-        "gotowy": "Jestem tu. Kliknij mnie, jak będziesz czegoś potrzebować."
+        "gotowy": "Jestem tu. Kliknij mnie, jak będziesz czegoś potrzebować.",
+        "autoMixMaster": "BITEK AUTO MIX-MASTERING",
+        "autoMixMasterOpis": "Po Twoim kliknięciu sam robi mix, daje odsłuch i pyta, czy zrobić mastering."
       }
     },
     "masterStep": {

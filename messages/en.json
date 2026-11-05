@@ -2308,7 +2308,11 @@
         "fixInMix": "Fix in the mix",
         "applyHandoff": "Apply the fix",
         "poprawSam": "I'll fix it myself",
-        "zrobZaMnie": "Do it for me"
+        "zrobZaMnie": "Do it for me",
+        "autoMix": "Mix it",
+        "autoListen": "Listen to the mix",
+        "autoMasterTak": "Master it",
+        "autoMasterNie": "Keep the mix"
       },
       "msg": {
         "recording": "Recording. Focus on the performance — I won't touch the faders here.",
@@ -2348,7 +2352,13 @@
         "liveHot": "You're recording too loud. Back off the mic a little and keep the same level.",
         "liveQuiet": "Too quiet. Move closer to the mic and commit to the vocal.",
         "liveUneven": "The level is jumping. Record more evenly — stay the same distance from the mic.",
-        "liveOffbeat": "You're missing the beat. Listen for the kick and come in on the one."
+        "liveOffbeat": "You're missing the beat. Listen for the kick and come in on the one.",
+        "autoNeedBoth": "Auto mix needs a beat and a recorded vocal. Choose a beat first, then record the vocal.",
+        "autoNeedVocal": "The beat is in. Record a raw vocal — once it's there, one click mixes the whole song.",
+        "autoNeedBeat": "The vocal is in. Choose a beat and I can mix the song.",
+        "autoReady": "Vocal and beat are ready. Click and I'll mix the whole song — everything the measurement can fix.",
+        "autoMixTrwa": "Mixing. I'm fixing everything the measurement can fix.",
+        "autoMixGotowy": "Mix is ready. Have a listen. Master it?"
       },
       "chat": {
         "inputLabel": "Message to BITEK",
@@ -2411,7 +2421,9 @@
         "powitanieKrok2": "Level, pan, EQ, compression and balance from the measurement — you confirm every change.",
         "powitanieKrok3": "In mastering I set the whole song: loudness, tone and style. Undo with Ctrl+Z.",
         "zaczynamy": "Let's go",
-        "gotowy": "I'm here. Click me when you need something."
+        "gotowy": "I'm here. Click me when you need something.",
+        "autoMixMaster": "BITEK AUTO MIX-MASTERING",
+        "autoMixMasterOpis": "After you click, BITEK mixes, plays it back, and asks before mastering."
       }
     },
     "masterStep": {
