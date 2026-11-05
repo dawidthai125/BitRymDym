@@ -151,6 +151,7 @@ export function StudioRecordingPanel({
   onLocalRecoveryChanged,
   recoverySavedKey = 0,
   embedded = false,
+  simple = false,
   /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
   preferredTrackId = null,
   lastScratchClipId,
@@ -188,6 +189,8 @@ export function StudioRecordingPanel({
   recoverySavedKey?: number;
   /** Phase 1 — denser chrome when hosted inside Inspector. */
   embedded?: boolean;
+  /** Record-step simple view: mic, record, import, keep or discard. */
+  simple?: boolean;
   preferredTrackId?: string | null;
   /** Editor SSOT — scratch clip survives panel unmount. */
   lastScratchClipId: string | null;
@@ -2125,6 +2128,7 @@ export function StudioRecordingPanel({
           : "space-y-3 rounded border border-[var(--brd-line)] bg-[var(--brd-bg)] p-3"
       }
       aria-label={tr("nagrywanieWStudio")}
+      data-record-density={simple ? "simple" : "full"}
     >
       {/* rec-live-ui — mobile only (< lg): always-visible Stop while capturing, same path as
           the 2nd REC press (stop + upload). Portal: escapes the scrolling inspector sheet. */}
@@ -2190,6 +2194,7 @@ export function StudioRecordingPanel({
         </select>
       </label>
 
+      {!simple ? (
       <StudioLatencyCard
         latency={latency}
         calibration={calibration}
@@ -2198,7 +2203,9 @@ export function StudioRecordingPanel({
         onCancel={() => calibAbortRef.current?.abort()}
         openSignal={latencyOpenSignal}
       />
+      ) : null}
 
+      {!simple ? (
       <StudioRecModeCard
         mode={recMode}
         onMode={chooseRecMode}
@@ -2212,7 +2219,9 @@ export function StudioRecordingPanel({
         disabled={busy && state.phase !== "READY"}
         lockedReason={null}
       />
+      ) : null}
 
+      {!simple ? (
       <StudioLyricsCard
         projectId={projectId}
         getPlayheadMs={transport.getPlayheadMs}
@@ -2220,9 +2229,11 @@ export function StudioRecordingPanel({
         loopStartMs={section?.startMs ?? null}
         punchLine={recMode === "punch" && lines.length ? Math.min(punchLine, lines.length - 1) : null}
       />
+      ) : null}
 
       <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />
 
+      {!simple ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
           {tr("countInPunch")}
@@ -2286,6 +2297,7 @@ export function StudioRecordingPanel({
           </p>
         ) : null}
       </div>
+      ) : null}
 
       {showWorkflow ? (
         <div
@@ -2349,6 +2361,8 @@ export function StudioRecordingPanel({
         </div>
       ) : null}
 
+      {!simple ? (
+      <>
       <StudioTakeLanesCard
         lanes={trackLanes}
         busy={lanesBusy || captureActive}
@@ -2367,7 +2381,10 @@ export function StudioRecordingPanel({
           {laneMessage}
         </p>
       ) : null}
+      </>
+      ) : null}
 
+      {!simple ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
           {tr("katalogKlipStudio")}
@@ -2541,6 +2558,8 @@ export function StudioRecordingPanel({
         />
       </div>
 
+      ) : null}
+
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
         <p className="text-xs text-[var(--brd-mute)]">{tr("zrodloNagrywania")}</p>
@@ -2650,6 +2669,7 @@ export function StudioRecordingPanel({
         </div>
       </div>
 
+      {!simple ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("odsluch")}</p>
         {outputDevices.pickerEnabled ? (
@@ -2684,6 +2704,7 @@ export function StudioRecordingPanel({
           </p>
         ) : null}
       </div>
+      ) : null}
 
       {contextError || state.error || workflowError ? (
         <p className="text-sm text-destructive" role="alert">
