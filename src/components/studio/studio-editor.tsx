@@ -85,6 +85,7 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
+import { studioRecordView } from "@/lib/studio/studio-record-view";
 import {
   buildTimelineRulerTicks,
   clearClipSelection,
@@ -342,6 +343,8 @@ function StudioEditorInner({
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
   const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
+  /** Record step: simple (record, arrange, export) until the user opens full view. */
+  const [recordFullView, setRecordFullView] = useState(false);
   // After a reload: an approved master for the unchanged mix reopens Mastering (with downloads).
   const restoreProjectId = doc.project.id;
   useEffect(() => {
@@ -459,8 +462,10 @@ function StudioEditorInner({
       : null;
   const snapPreset = snapPresetFromConfig(snapConfig);
   const recordingContextActive = recordingLocked || inspectorPreferRecord;
+  const recordSimple =
+    studioRecordView({ step: studioStep, fullView: recordFullView }) === "simple";
   const inspectorContext = deriveStudioInspectorContext({
-    recordingActive: recordingContextActive,
+    recordingActive: recordingContextActive || recordSimple,
     selectedClipId: activeSelectedId,
     selectedTrackId: activeSelectedTrackId,
   });
@@ -2335,7 +2340,8 @@ function StudioEditorInner({
         role="tablist"
         aria-label={tr("inspector")}
         data-testid="studio-inspector-visual-tabs"
-        className="grid grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2"
+        hidden={recordSimple}
+        className={`${recordSimple ? "hidden" : "grid"} grid-cols-4 gap-1 border-b border-[var(--brd-line)] pb-2`}
       >
         {(
           [
@@ -2401,9 +2407,11 @@ function StudioEditorInner({
           </button>
         ))}
       </div>
-      <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-        {tInspector(inspectorContext)}
-      </p>
+      {recordSimple ? null : (
+        <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          {tInspector(inspectorContext)}
+        </p>
+      )}
 
       {inspectorContext === "record" ? (
         <StudioRecordingPanel
@@ -2414,7 +2422,8 @@ function StudioEditorInner({
           recordRequest={transportRecordRequest}
           onRecordRequestHandled={() => setTransportRecordRequest(0)}
           tracks={doc.tracks}
-          embedded
+          embedded={!recordSimple}
+          simple={recordSimple}
           preferredTrackId={activeSelectedTrackId}
           lastScratchClipId={lastScratchClipId}
           onLastScratchClipIdChange={setLastScratchClipId}
@@ -2775,6 +2784,7 @@ function StudioEditorInner({
       data-testid="studio-daw-shell"
       data-studio-shell="true"
       data-studio-visual-parity="v2"
+      data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
       className="flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden max-lg:pb-[var(--bitek-dock-h,0px)]"
     >
       <header
@@ -2808,6 +2818,28 @@ function StudioEditorInner({
         </ol>
         {studioStep === "record" ? (
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={recordFullView ? "default" : "outline"}
+              className="min-h-11 px-3"
+              data-testid="studio-record-full-view"
+              aria-pressed={recordFullView}
+              disabled={recordingLocked}
+              title={tMix("pelnyWidokOpis")}
+              onClick={() => {
+                const next = !recordFullView;
+                setRecordFullView(next);
+                if (next) {
+                  setInspectorPreferRecord(true);
+                  if (!inspectorDesktopRail) openInspectorOverlay();
+                } else {
+                  setFxPanel(null);
+                }
+              }}
+            >
+              {recordFullView ? tMix("prostyWidok") : tMix("pelnyWidok")}
+            </Button>
             <span id="studio-go-mix-hint" className="hidden text-xs text-[var(--brd-mute)] sm:inline">
               {tMix("przejdzDoMixuOpis")}
             </span>
@@ -3071,6 +3103,55 @@ function StudioEditorInner({
         />
       ) : (
         <>
+      {recordSimple ? (
+        <div data-testid="studio-record-simple" className="flex flex-col gap-2">
+          {inspectorContent}
+          {selectedClip && !recordingLocked ? (
+            <div className="flex flex-wrap items-center gap-2" data-testid="studio-record-simple-clip">
+              {confirmDelete ? (
+                <>
+                  <p className="text-sm text-[var(--brd-ink)]">{tMix("usunNagraniePytanie")}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="min-h-11 px-3"
+                    disabled={pending}
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    {tr("anuluj")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    className="min-h-11 px-3"
+                    data-testid="studio-record-simple-delete"
+                    disabled={pending}
+                    onClick={() => {
+                      deleteSelectedClip();
+                      setConfirmDelete(false);
+                    }}
+                  >
+                    {tr("usun")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 px-3"
+                  disabled={pending}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  {tMix("usunNagranie")}
+                </Button>
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : (
       <StudioEditToolbar
         timelineMode={timelineMode}
         recordingLocked={recordingLocked}
@@ -3125,6 +3206,7 @@ function StudioEditorInner({
           );
         }}
       />
+      )}
 
       <div className="flex min-h-0 flex-col gap-3 xl:flex-row xl:items-stretch">
         <div className="min-w-0 flex-1">
@@ -3214,6 +3296,8 @@ function StudioEditorInner({
                       }}
                     />
                   </div>
+                  {!recordSimple ? (
+                  <>
                   <div className="flex min-h-9 min-w-0 items-center gap-0.5 sm:min-h-11">
                     <label
                       className="studio-track-role relative flex h-7 min-w-0 flex-1 items-center"
@@ -3343,6 +3427,8 @@ function StudioEditorInner({
                     />
                     </div>
                   </div>
+                  </>
+                  ) : null}
                   </div>
                   <StudioTrackLevelMeter trackId={track.id} />
                 </div>
@@ -3379,6 +3465,7 @@ function StudioEditorInner({
           />
         </div>
 
+        {!recordSimple ? (
         <aside
           data-testid="studio-inspector-desktop"
           data-studio-inspector="desktop"
@@ -3388,12 +3475,13 @@ function StudioEditorInner({
         >
           {inspectorDesktopRail ? inspectorContent : null}
         </aside>
+        ) : null}
       </div>
         </>
       )}
 
       <StudioInspectorOverlay
-        open={inspectorOverlayOpen && !inspectorDesktopRail}
+        open={inspectorOverlayOpen && !inspectorDesktopRail && !recordSimple}
         context={inspectorContext}
         panelId={inspectorPanelId}
         onClose={closeInspectorOverlay}
@@ -3407,7 +3495,7 @@ function StudioEditorInner({
         {inspectorContent}
       </StudioInspectorOverlay>
 
-      {studioStep !== "master" ? (
+      {studioStep !== "master" && !recordSimple ? (
       <>
       <StudioMixerDockChrome
         expanded={Boolean(inspectorDesktopRail && mixerOpen)}
