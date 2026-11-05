@@ -32,30 +32,30 @@ describe("P1 Sample Policy matrix — getSamplePolicy", () => {
     expect(p.canDownloadOwnTake).toBe(false);
   });
 
-  it("BRONZE: 60s / 36h / 5 / 5 / false", () => {
+  it("BRONZE: 60s / 36h / 5 ready / 2 a day / false", () => {
     const p = getSamplePolicy({ actor: "BRONZE", beatDurationSeconds: BEAT });
     expect(p.maxRecordingSeconds).toBe(60);
     expect(p.ttlSeconds).toBe(36 * 60 * 60);
     expect(p.activeReadyCap).toBe(5);
-    expect(p.dailySessionLimit).toBe(5);
+    expect(p.dailySessionLimit).toBe(2);
     expect(p.canDownloadOwnTake).toBe(false);
   });
 
-  it("SILVER: 120s / 60h / 7 / 7 / false", () => {
+  it("SILVER: 120s / 60h / 7 ready / 3 a day / false", () => {
     const p = getSamplePolicy({ actor: "SILVER", beatDurationSeconds: BEAT });
     expect(p.maxRecordingSeconds).toBe(120);
     expect(p.ttlSeconds).toBe(60 * 60 * 60);
     expect(p.activeReadyCap).toBe(7);
-    expect(p.dailySessionLimit).toBe(7);
+    expect(p.dailySessionLimit).toBe(3);
     expect(p.canDownloadOwnTake).toBe(false);
   });
 
-  it("GOLD: 180s / 84h / 10 / 10 / true", () => {
+  it("GOLD: 180s / 84h / 10 ready / 5 a day / true", () => {
     const p = getSamplePolicy({ actor: "GOLD", beatDurationSeconds: BEAT });
     expect(p.maxRecordingSeconds).toBe(180);
     expect(p.ttlSeconds).toBe(84 * 60 * 60);
     expect(p.activeReadyCap).toBe(10);
-    expect(p.dailySessionLimit).toBe(10);
+    expect(p.dailySessionLimit).toBe(5);
     expect(p.canDownloadOwnTake).toBe(true);
   });
 

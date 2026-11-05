@@ -319,6 +319,8 @@
         "waznosc": "Recording valid {h} h",
         "projekty": "{p, plural, one {# project} other {# projects}} · {t, plural, one {# recording track} other {# recording tracks}} (+ beat)",
         "mastery": "{n} masters a month",
+        "widokProsty": "Simple recording view",
+        "widokPelny": "Advanced studio, with a switch to the simple view",
         "pobieranie": "Downloads up to {q}",
         "bezPobierania": "No downloads (listen only)",
         "referencja": {
@@ -336,6 +338,14 @@
         "WAV_PRO": "WAV 24-bit",
         "WAV_MASTER": "WAV 24-bit / 48 kHz"
       },
+      "widok": {
+        "prosty": "simple",
+        "pelny": "advanced"
+      },
+      "pakietyTytul": "Buy extra recordings or masters",
+      "pakietyLead": "A one-off pack. It is used only after the plan allowance and stays until you use it.",
+      "pakietTake": "Pack of {n} recordings — {cena}",
+      "pakietMaster": "Pack of {n} masters — {cena}",
       "referencja": {
         "none": "—",
         "addon": "add-on",
@@ -348,6 +358,7 @@
         "take": "Take length",
         "sekundy": "{n} s",
         "sesje": "Recordings a day",
+        "widok": "Studio view",
         "waznosc": "Recording validity",
         "godziny": "{n} h",
         "projekty": "Studio projects",
@@ -365,7 +376,8 @@
       },
       "przypis": {
         "gosc": "Without an account: a {s}-second preview of every beat. Recording, downloads and Studio need an account.",
-        "narzedzia": "Latency calibration, section loop, takes and comping are for everyone signed in — within their plan's limits.",
+        "narzedzia": "Free and Bronze record in the simple view, with no switch. Silver and Gold have the advanced studio and can switch it to the simple view.",
+        "pakiety": "Recording packs and master packs are a one-off purchase. They apply after the plan allowance and stay until you use them.",
         "mastery": "Masters are counted per calendar month (Polish time). A failed master does not count.",
         "free": "Free does not download beats or finished files — listen only; the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
         "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
@@ -405,6 +417,11 @@
         "dodatekTytul": "I'll add reference mastering",
         "dodatekOpis": "One month of the add-on on Silver. Gold includes it. On Free and Bronze this add-on unlocks nothing.",
         "dodatekPrzycisk": "Add reference mastering",
+        "pakietTytul": "I'll add recordings or masters",
+        "pakietOpis": "One payment, not every month. The plan allowance is used first, then the pack. It stays on the account until you use it.",
+        "pakietTake": "10 recordings",
+        "pakietMaster": "5 masters",
+        "pakietPrzycisk": "Buy this pack",
         "blok": {
           "DOWNGRADE": "A lower plan waits until the higher one ends.",
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
@@ -434,6 +451,7 @@
         "naglowek": "You're back from Przelewy24",
         "czekam": "I'm waiting for Przelewy24 to confirm. When the payment arrives, I'll turn the plan on. You can stay on this page.",
         "gotowe": "The payment arrived. I turned on {co} until {data}.",
+        "pakietGotowy": "The payment arrived. I added {co}. They stay until you use them.",
         "pominiete": "I have the payment, but I didn't change the plan: {powod}",
         "nieudane": "This payment didn't go through. I didn't turn anything on.",
         "brak": "I can't find this order on your account.",
@@ -441,7 +459,9 @@
         "bezDaty": "the end of the period is on the account",
         "produkt": {
           "referencja": "reference mastering",
-          "plan": "the plan"
+          "plan": "the plan",
+          "take": "{n} extra recordings",
+          "master": "{n} extra masters"
         },
         "powod": {
           "perpetual": "you already have access with no end date and I won't shorten it.",
@@ -2075,6 +2095,7 @@
       "pelnyWidok": "Full view",
       "prostyWidok": "Simple view",
       "pelnyWidokOpis": "Inspector, mixer, and edit tools.",
+      "widokUproszczonyPlan": "Simple view. The advanced studio is on Silver and Gold.",
       "usunNagranie": "Delete recording",
       "usunNagraniePytanie": "Delete this recording from the timeline?",
       "wrocDoNagrania": "Back to recording",

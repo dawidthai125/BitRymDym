@@ -1,14 +1,22 @@
+import type { PremiumTier } from "@/types/premium";
+
 export type StudioSurfaceStep = "record" | "mix" | "master";
 
+/** Silver and Gold open the advanced studio. Free and Bronze stay on the simple record surface. */
+export function studioAdvancedRecordAllowed(tier: PremiumTier | null | undefined): boolean {
+  return tier === "SILVER" || tier === "GOLD";
+}
+
 /**
- * Record step opens in the amateur surface (record, arrange, export).
- * Full view restores the inspector, mixer and edit tools.
- * Mix and mastering are unchanged.
+ * Record step: simple unless this plan may use the advanced surface and the user asked for it.
+ * Mix and mastering stay on the full surface for every plan.
  */
 export function studioRecordView(input: {
   step: StudioSurfaceStep;
   fullView: boolean;
+  advancedAllowed?: boolean;
 }): "simple" | "full" {
-  if (input.step === "record" && input.fullView !== true) return "simple";
-  return "full";
+  if (input.step !== "record") return "full";
+  if (input.advancedAllowed === false) return "simple";
+  return input.fullView === true ? "full" : "simple";
 }

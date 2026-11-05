@@ -11,6 +11,8 @@ import { randomUUID } from "node:crypto";
 
 import { AuthError } from "@/lib/auth/session";
 import { decideDeliver, DELIVER_WEEKLY_LIMIT, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
+import { masterQuotaWithCredits } from "@/lib/studio/quota-credits";
 import { monthlyMasterLimit, warsawMonthWindow, type MasterQuota } from "@/lib/studio/studio-plan-limits";
 import { clampIntensity, clampMasterSettings, DEFAULT_MASTER_INTENSITY, isMasterStyleId, isMasterTargetId, type MasterStyleId } from "@/lib/studio/master/targets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -36,7 +38,9 @@ async function masterMonthUsage(admin: Admin, ownerId: string, tier: PremiumTier
   const { count, error } = await admin.from("studio_master_jobs").select("id", { count: "exact", head: true })
     .eq("owner_id", ownerId).eq("kind", "master").gte("created_at", startIso).not("status", "in", "(failed,cancelled)");
   check(error);
-  return { used: count ?? 0, monthLimit: monthlyMasterLimit(tier), resetAt: resetIso };
+  const used = count ?? 0;
+  const credits = await studioQuotaRemaining(ownerId, "master");
+  return { used, monthLimit: masterQuotaWithCredits(used, monthlyMasterLimit(tier), credits), resetAt: resetIso };
 }
 function check(e: { code?: string; message?: string } | null) {
   if (!e) return;

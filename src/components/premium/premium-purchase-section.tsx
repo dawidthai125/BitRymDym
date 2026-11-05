@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { PLAN_ADDON_PRICE_PLN, PLAN_POLICY, type PaidTier } from "@/config/plan-policy";
+import { PLAN_ADDON_PRICE_PLN, PLAN_PACK_CATALOG, PLAN_POLICY, type PaidTier, type PlanPack } from "@/config/plan-policy";
 import { PremiumCheckoutForm } from "@/components/premium/premium-checkout-form";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -61,6 +61,7 @@ export async function PremiumPurchaseSection() {
       locale={lang}
       prices={prices}
       addonPrice={format.format(PLAN_ADDON_PRICE_PLN.reference_mastering.monthlyPln)}
+      packPrices={Object.fromEntries((["take", "master"] as const).map((pack) => [pack, format.format(PLAN_PACK_CATALOG[pack].pricePln)])) as Record<PlanPack, string>}
       tierBlock={context && !readFailed ? tierBlocks(plan, addon, now) : { BRONZE: null, SILVER: null, GOLD: null }}
       addonBlock={context && !readFailed ? checkoutBlock({ kind: "addon", addon: "reference_mastering", period: "month" }, plan, addon, now) : null}
       currentLine={currentLine}

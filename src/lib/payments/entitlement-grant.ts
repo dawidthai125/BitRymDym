@@ -19,8 +19,8 @@
  * - source on the row we write is `purchase`.
  */
 
-import type { PaidTier } from "@/config/plan-policy";
-import { referenceMasteringForTier } from "@/config/plan-policy";
+import type { PaidTier, PlanPack } from "@/config/plan-policy";
+import { PLAN_PACK_CATALOG, referenceMasteringForTier } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
 import type { BillingPeriod, CheckoutProduct } from "@/lib/payments/money";
@@ -53,6 +53,7 @@ export type GrantWrite =
       expectedPresent: boolean;
       expectedEndsAt: string | null;
     }
+  | { action: "pack"; pack: PlanPack; units: number }
   | { action: "skip"; note: "perpetual" | "downgrade" | "addon_perpetual" };
 
 export function addBillingPeriod(from: Date, period: BillingPeriod): Date {
@@ -85,6 +86,7 @@ function laterInstant(now: Date, iso: string | null): Date {
 }
 
 export function checkoutBlock(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date): CheckoutBlock | null {
+  if (product.kind === "pack") return null;
   if (product.kind === "addon") {
     const live = isLivePaid(plan, now);
     const tier: PremiumTier = live ? plan.tier : "FREE";
@@ -102,6 +104,9 @@ export function checkoutBlock(product: CheckoutProduct, plan: PlanSnapshot, addo
 }
 
 export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date): GrantWrite {
+  if (product.kind === "pack") {
+    return { action: "pack", pack: product.pack, units: PLAN_PACK_CATALOG[product.pack].units };
+  }
   if (product.kind === "addon") {
     if (addon && addon.endsAt === null) return { action: "skip", note: "addon_perpetual" };
     const base = addon ? laterInstant(now, addon.endsAt) : now;
@@ -150,7 +155,7 @@ export type SettleResult =
   | { kind: "granted" | "skipped"; write: GrantWrite; nextPlan: PlanSnapshot; nextAddon: AddonSnapshot };
 
 function applyWrite(plan: PlanSnapshot, addon: AddonSnapshot, write: GrantWrite): { plan: PlanSnapshot; addon: AddonSnapshot } {
-  if (write.action === "skip") return { plan, addon };
+  if (write.action === "skip" || write.action === "pack") return { plan, addon };
   if (write.action === "plan") {
     return { plan: { tier: write.tier, active: true, expiresAt: write.expiresAt }, addon };
   }

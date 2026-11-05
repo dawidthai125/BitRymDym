@@ -154,6 +154,13 @@ describe("catalog amounts", () => {
     expect(priceGrosz({ kind: "plan", tier: "GOLD", period: "month" })).toBe(4999);
     expect(priceGrosz({ kind: "plan", tier: "GOLD", period: "year" })).toBe(39900);
     expect(priceGrosz({ kind: "addon", addon: "reference_mastering", period: "month" })).toBe(1499);
+    expect(priceGrosz({ kind: "pack", pack: "take" })).toBe(999);
+    expect(priceGrosz({ kind: "pack", pack: "master" })).toBe(1499);
+    expect(parseCheckoutProduct({ kind: "pack", pack: "take", units: 999, amount: 1 })).toEqual({ kind: "pack", pack: "take" });
+    expect(parseCheckoutProduct({ kind: "pack", pack: "gold" })).toBeNull();
+    expect(grantWrite({ kind: "pack", pack: "take" }, null, null, NOW)).toEqual({ action: "pack", pack: "take", units: 10 });
+    expect(grantWrite({ kind: "pack", pack: "master" }, null, null, NOW)).toEqual({ action: "pack", pack: "master", units: 5 });
+    expect(checkoutBlock({ kind: "pack", pack: "take" }, null, null, NOW)).toBeNull();
     const parsed = parseCheckoutProduct({ kind: "plan", tier: "GOLD", period: "year", amount: 1, currency: "EUR" });
     expect(parsed).toEqual({ kind: "plan", tier: "GOLD", period: "year" });
     expect(parsed ? priceGrosz(parsed) : 0).toBe(39900);

@@ -157,11 +157,11 @@ describe("Recording Wave 4 — anti-abuse caps (Sample Policy)", () => {
     });
     expect(getSamplePolicy({ actor: "SILVER", beatDurationSeconds: 60 })).toMatchObject({
       activeReadyCap: 7,
-      dailySessionLimit: 7,
+      dailySessionLimit: 3,
     });
     expect(getSamplePolicy({ actor: "GOLD", beatDurationSeconds: 60 })).toMatchObject({
       activeReadyCap: 10,
-      dailySessionLimit: 10,
+      dailySessionLimit: 5,
     });
   });
 });

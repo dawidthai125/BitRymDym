@@ -26,6 +26,7 @@ type OrderRow = {
   product_kind: string;
   plan_tier: string | null;
   addon: string | null;
+  pack: string | null;
   period: string;
   amount_grosz: number;
   currency: string;
@@ -37,7 +38,9 @@ function orderLedger(row: OrderRow): OrderLedger | null {
   const product = parseCheckoutProduct(
     row.product_kind === "plan"
       ? { kind: "plan", tier: row.plan_tier, period: row.period }
-      : { kind: "addon", addon: row.addon, period: row.period },
+      : row.product_kind === "pack"
+        ? { kind: "pack", pack: row.pack }
+        : { kind: "addon", addon: row.addon, period: row.period },
   );
   if (!product) return null;
   if (row.status !== "pending" && row.status !== "paid" && row.status !== "failed") return null;
@@ -61,6 +64,10 @@ function polishWhen(iso: string): string {
 function receiptLine(write: GrantWrite): string {
   if (write.action === "plan") return `Tu BITEK. Włączyłem ${write.tier} do ${polishWhen(write.expiresAt)}.`;
   if (write.action === "addon") return `Tu BITEK. Włączyłem mastering z referencją do ${polishWhen(write.endsAt)}.`;
+  if (write.action === "pack") {
+    const what = write.pack === "take" ? "nagrań" : "masterów";
+    return `Tu BITEK. Dodałem ${write.units} ${what}. Zostają, aż je wykorzystasz.`;
+  }
   if (write.note === "downgrade") return "Tu BITEK. Wpłata doszła, ale niższego planu nie włączam, dopóki wyższy trwa.";
   if (write.note === "addon_perpetual") return "Tu BITEK. Wpłata doszła, ale bezterminowego dodatku nie skracam.";
   return "Tu BITEK. Wpłata doszła, ale bezterminowego planu nie skracam.";
@@ -88,7 +95,14 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
   if (loaded.error) return { status: 503, body: { ok: false } };
   if (!loaded.data) return { status: 200, body: { ok: true, result: "ignored" } };
 
-  const order = orderLedger(loaded.data as OrderRow);
+  const row = loaded.data as Omit<OrderRow, "pack"> & { pack?: string | null };
+  let pack: string | null = null;
+  if (row.product_kind === "pack") {
+    const extra = await admin.from("payment_orders").select("pack").eq("session_id", note.sessionId).maybeSingle();
+    if (extra.error || !extra.data) return { status: 503, body: { ok: false } };
+    pack = (extra.data as { pack?: string | null }).pack ?? null;
+  }
+  const order = orderLedger({ ...row, pack });
   if (!order) return { status: 503, body: { ok: false } };
 
   const userId = (loaded.data as OrderRow).user_id;
@@ -124,14 +138,24 @@ export async function handleP24Webhook(body: unknown, now = new Date()): Promise
   });
   if (!verified) return { status: 503, body: { ok: false } };
 
-  const applied = await admin.rpc("apply_p24_purchase", {
-    p_session_id: note.sessionId,
-    p_amount: order.amountGrosz,
-    p_currency: "PLN",
-    p_p24_order_id: note.orderId,
-    p_statement: note.statement,
-    p_write: settled.write,
-  });
+  const applied = settled.write.action === "pack"
+    ? await admin.rpc("grant_p24_quota_pack", {
+        p_session_id: note.sessionId,
+        p_amount: order.amountGrosz,
+        p_currency: "PLN",
+        p_p24_order_id: note.orderId,
+        p_statement: note.statement,
+        p_pack: settled.write.pack,
+        p_units: settled.write.units,
+      })
+    : await admin.rpc("apply_p24_purchase", {
+        p_session_id: note.sessionId,
+        p_amount: order.amountGrosz,
+        p_currency: "PLN",
+        p_p24_order_id: note.orderId,
+        p_statement: note.statement,
+        p_write: settled.write,
+      });
   if (applied.error) {
     console.error("[p24] grant rpc failed", { sessionId: note.sessionId });
     return { status: 503, body: { ok: false } };
