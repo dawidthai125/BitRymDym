@@ -5,6 +5,7 @@
  */
 
 import { PLAN_POLICY } from "@/config/plan-policy";
+import { masterQuotaWithCredits } from "@/lib/studio/quota-credits";
 import type { PremiumTier } from "@/types/premium";
 
 export type PlanUsageItemId =
@@ -57,9 +58,14 @@ export function buildPlanUsage(params: {
   counts: PlanUsageCounts;
   monthResetAt: string;
   now: Date;
+  /** Unused one-off packs. Zero keeps the plan cap. */
+  takeCredits?: number;
+  masterCredits?: number;
 }): PlanUsage {
   const p = PLAN_POLICY[params.tier];
   const c = params.counts;
+  const takeCredits = params.takeCredits ?? 0;
+  const masterCredits = params.masterCredits ?? 0;
   const dayReset = nextUtcMidnightIso(params.now);
   const canDownloadFiles = p.downloads.qualities.length > 0;
   return {
@@ -94,7 +100,7 @@ export function buildPlanUsage(params: {
       {
         id: "recordingsToday",
         used: c.takesToday,
-        limit: p.recording.sessionsPerDay,
+        limit: masterQuotaWithCredits(c.takesToday, p.recording.sessionsPerDay, takeCredits),
         period: "day",
         locked: false,
         resetAt: dayReset,
@@ -110,7 +116,7 @@ export function buildPlanUsage(params: {
       {
         id: "masters",
         used: c.mastersMonth,
-        limit: p.mastering.mastersPerMonth,
+        limit: masterQuotaWithCredits(c.mastersMonth, p.mastering.mastersPerMonth, masterCredits),
         period: "month",
         locked: false,
         resetAt: params.monthResetAt,

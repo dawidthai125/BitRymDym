@@ -31,4 +31,20 @@ describe("plan usage model (header badge)", () => {
   it("next UTC midnight", () => {
     expect(nextUtcMidnightIso(new Date("2026-12-31T23:59:59Z"))).toBe("2027-01-01T00:00:00.000Z");
   });
+
+  it("unused take and master packs raise the caps the header shows", () => {
+    const u = buildPlanUsage({
+      tier: "FREE",
+      counts,
+      monthResetAt: "x",
+      now,
+      takeCredits: 10,
+      masterCredits: 5,
+    });
+    const by = Object.fromEntries(u.items.map((i) => [i.id, i]));
+    expect(by.recordingsToday).toMatchObject({ used: 1, limit: 11 });
+    expect(isPlanItemExhausted(by.recordingsToday!)).toBe(false);
+    expect(by.masters).toMatchObject({ used: 3, limit: 8 });
+    expect(isPlanItemExhausted(by.masters!)).toBe(false);
+  });
 });

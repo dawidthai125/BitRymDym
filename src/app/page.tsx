@@ -100,6 +100,11 @@ export default async function HomePage() {
                 <Link href="/beats" className={ctaPrimary}>
                   {t("przegladajBity")}
                 </Link>
+                {session ? (
+                  <Link href="/studio" className={ctaSecondary}>
+                    {t("otworzStudio")}
+                  </Link>
+                ) : null}
                 <Link href="#jak-to-dziala" className={ctaSecondary}>
                   {t("jakToDziala")}
                 </Link>
@@ -252,10 +257,15 @@ export default async function HomePage() {
             <p className="mx-auto mt-5 max-w-[34ch] font-[family-name:var(--font-display)] text-xl italic text-tape-cream-soft">
               {t("potemKontoNagranieI")}
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link href="/beats" className={ctaPrimary}>
                 {t("otworzKatalog")}
               </Link>
+              {session ? (
+                <Link href="/studio" className={ctaSecondary}>
+                  {t("otworzStudio")}
+                </Link>
+              ) : null}
             </div>
           </div>
         </section>

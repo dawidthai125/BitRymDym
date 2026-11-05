@@ -7,10 +7,18 @@ import { LEGAL_PATHS } from "@/lib/legal/legal-config";
 
 export function SiteFooter() {
   const t = useTranslations("common.legal");
+  const nav = useTranslations("nav.items");
+  const menu = useTranslations("nav.siteMainNav");
   return (
     <footer className="border-t border-[var(--brd-line)] px-4 py-6 sm:px-6">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-sm text-[var(--brd-ink-soft)]">
         <span>© {siteConfig.name}</span>
+        <nav aria-label={menu("glowneMenu")} className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link href="/beats" className="underline-offset-4 hover:underline">{nav("beats")}</Link>
+          <Link href="/studio" className="underline-offset-4 hover:underline">{nav("studio")}</Link>
+          <Link href="/about" className="underline-offset-4 hover:underline">{nav("about")}</Link>
+          <Link href="/premium" className="underline-offset-4 hover:underline">{nav("premium")}</Link>
+        </nav>
         <nav aria-label={t("nawigacja")} className="flex flex-wrap gap-x-4 gap-y-1">
           <Link href={LEGAL_PATHS.terms} className="underline-offset-4 hover:underline">{t("regulamin")}</Link>
           <Link href={LEGAL_PATHS.privacy} className="underline-offset-4 hover:underline">{t("prywatnosc")}</Link>
