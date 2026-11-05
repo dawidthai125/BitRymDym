@@ -3,13 +3,23 @@
  * The checkout body has no amount field; callers must use these functions.
  */
 
-import { PAID_TIERS, PLAN_ADDON_PRICE_PLN, PLAN_POLICY, type PaidTier, type PlanAddon } from "@/config/plan-policy";
+import {
+  isPlanPack,
+  PAID_TIERS,
+  PLAN_ADDON_PRICE_PLN,
+  PLAN_PACK_CATALOG,
+  PLAN_POLICY,
+  type PaidTier,
+  type PlanAddon,
+  type PlanPack,
+} from "@/config/plan-policy";
 
 export type BillingPeriod = "month" | "year";
 
 export type CheckoutProduct =
   | { kind: "plan"; tier: PaidTier; period: BillingPeriod }
-  | { kind: "addon"; addon: PlanAddon; period: "month" };
+  | { kind: "addon"; addon: PlanAddon; period: "month" }
+  | { kind: "pack"; pack: PlanPack };
 
 /** IEEE-safe: 14.99 * 100 is not an integer, Math.round yields 1499. */
 export function plnToGrosz(pln: number): number {
@@ -24,6 +34,9 @@ export function plnToGrosz(pln: number): number {
 }
 
 export function priceGrosz(product: CheckoutProduct): number {
+  if (product.kind === "pack") {
+    return plnToGrosz(PLAN_PACK_CATALOG[product.pack].pricePln);
+  }
   if (product.kind === "addon") {
     if (product.period !== "month" || product.addon !== "reference_mastering") {
       throw new Error("PRICE_INVALID");
@@ -49,6 +62,9 @@ export function parseCheckoutProduct(input: unknown): CheckoutProduct | null {
   }
   if (row.kind === "addon" && row.addon === "reference_mastering") {
     return { kind: "addon", addon: "reference_mastering", period: "month" };
+  }
+  if (row.kind === "pack" && isPlanPack(row.pack)) {
+    return { kind: "pack", pack: row.pack };
   }
   return null;
 }

@@ -34,7 +34,7 @@ describe("Recording Wave 1 — take foundation (unit)", () => {
     expect(ANON_TAKE_TTL_SECONDS).toBe(2 * 60 * 60);
     expect(RECORDING_ANTI_ABUSE.BEGINNER_RAPPER.maxActiveReady).toBe(3);
     expect(RECORDING_ANTI_ABUSE.BEGINNER_RAPPER.maxSessionsPerUtcDay).toBe(1);
-    expect(RECORDING_ANTI_ABUSE.LEGEND_RAPPER.maxSessionsPerUtcDay).toBe(10);
+    expect(RECORDING_ANTI_ABUSE.LEGEND_RAPPER.maxSessionsPerUtcDay).toBe(5);
   });
 
   it("builds canonical user take object key", () => {

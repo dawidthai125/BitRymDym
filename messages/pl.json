@@ -319,6 +319,8 @@
         "waznosc": "Nagranie ważne {h} h",
         "projekty": "{p, plural, one {# projekt} few {# projekty} many {# projektów} other {# projektu}} · {t, plural, one {# ścieżka nagrań} few {# ścieżki nagrań} many {# ścieżek nagrań} other {# ścieżki nagrań}} (+ bit)",
         "mastery": "{n} masterów w miesiącu",
+        "widokProsty": "Uproszczony widok nagrania",
+        "widokPelny": "Zaawansowane studio, z przełącznikiem na uproszczony",
         "pobieranie": "Pobieranie do {q}",
         "bezPobierania": "Bez pobierania (tylko odsłuch)",
         "referencja": {
@@ -336,6 +338,14 @@
         "WAV_PRO": "WAV 24-bit",
         "WAV_MASTER": "WAV 24-bit / 48 kHz"
       },
+      "widok": {
+        "prosty": "uproszczony",
+        "pelny": "zaawansowany"
+      },
+      "pakietyTytul": "Dokup nagrania albo mastery",
+      "pakietyLead": "Jednorazowy pakiet. Schodzi dopiero po limicie planu i zostaje, aż go wykorzystasz.",
+      "pakietTake": "Pakiet {n} nagrań — {cena}",
+      "pakietMaster": "Pakiet {n} masterów — {cena}",
       "referencja": {
         "none": "—",
         "addon": "dodatek",
@@ -348,6 +358,7 @@
         "take": "Długość take'a",
         "sekundy": "{n} s",
         "sesje": "Nagrania dziennie",
+        "widok": "Widok studia",
         "waznosc": "Ważność nagrania",
         "godziny": "{n} h",
         "projekty": "Projekty Studio",
@@ -365,7 +376,8 @@
       },
       "przypis": {
         "gosc": "Bez konta: odsłuch {s} s każdego bitu. Nagrywanie, pobieranie i Studio wymagają konta.",
-        "narzedzia": "Kalibracja opóźnienia, pętla sekcji, take'i i comping są dla każdego zalogowanego — w limitach jego planu.",
+        "narzedzia": "Free i Bronze nagrywają w uproszczonym widoku, bez przełącznika. Silver i Gold mają zaawansowane studio i mogą przełączyć je na uproszczone.",
+        "pakiety": "Pakiet nagrań i pakiet masterów kupujesz raz. Doliczają się po limicie planu i zostają, aż je wykorzystasz.",
         "mastery": "Mastery liczymy w miesiącu kalendarzowym (czas polski). Nieudany master się nie liczy.",
         "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
@@ -405,6 +417,11 @@
         "dodatekTytul": "Dokupuję mastering z referencją",
         "dodatekOpis": "Miesiąc dodatku na Silver. Na Gold masz to w cenie, na Free i Bronze ten dodatek nic nie odblokuje.",
         "dodatekPrzycisk": "Dokupuję referencję",
+        "pakietTytul": "Dokupuję nagrania albo mastery",
+        "pakietOpis": "Jednorazowo, nie co miesiąc. Najpierw schodzi limit planu, potem pakiet. Zostaje na koncie, aż go wykorzystasz.",
+        "pakietTake": "10 nagrań",
+        "pakietMaster": "5 masterów",
+        "pakietPrzycisk": "Dokupuję pakiet",
         "blok": {
           "DOWNGRADE": "Niższy plan poczeka, aż skończy się wyższy.",
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
@@ -434,6 +451,7 @@
         "naglowek": "Wracasz z Przelewy24",
         "czekam": "Czekam na potwierdzenie z Przelewy24. Jak wpłata dojdzie, włączę plan. Możesz zostać na tej stronie.",
         "gotowe": "Wpłata doszła. Włączyłem {co} do {data}.",
+        "pakietGotowy": "Wpłata doszła. Dodałem {co}. Zostają, aż je wykorzystasz.",
         "pominiete": "Wpłatę mam, ale planu nie zmieniłem: {powod}",
         "nieudane": "Ta płatność nie doszła. Nic nie włączyłem.",
         "brak": "Nie znajduję tego zamówienia na Twoim koncie.",
@@ -441,7 +459,9 @@
         "bezDaty": "koniec okresu jest na koncie",
         "produkt": {
           "referencja": "mastering z referencją",
-          "plan": "plan"
+          "plan": "plan",
+          "take": "{n} dodatkowych nagrań",
+          "master": "{n} dodatkowych masterów"
         },
         "powod": {
           "perpetual": "masz już dostęp bez końca i nie skracam go.",
@@ -2075,6 +2095,7 @@
       "pelnyWidok": "Pełny widok",
       "prostyWidok": "Prosty widok",
       "pelnyWidokOpis": "Inspektor, mikser i narzędzia edycji.",
+      "widokUproszczonyPlan": "Uproszczony widok. Zaawansowane studio jest w Silver i Gold.",
       "usunNagranie": "Usuń nagranie",
       "usunNagraniePytanie": "Usunąć to nagranie z osi?",
       "wrocDoNagrania": "Wróć do nagrywania",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
+import { PLAN_PACK_CATALOG } from "@/config/plan-policy";
 import { PremiumReturnView, type ReturnState } from "@/components/premium/premium-return-view";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -15,6 +16,7 @@ type OrderRow = {
   product_kind: string;
   plan_tier: string | null;
   addon: string | null;
+  pack: string | null;
   status: string;
   grant_status: string;
   grant_note: string | null;
@@ -58,7 +60,13 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
     if (error) {
       state = { status: "pending" };
     } else if (data) {
-      const row = data as OrderRow;
+      const row = data as Omit<OrderRow, "pack">;
+      let pack: string | null = null;
+      if (row.product_kind === "pack") {
+        const extra = await admin.from("payment_orders").select("pack").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
+        pack = extra.error || !extra.data ? null : ((extra.data as { pack?: string | null }).pack ?? null);
+      }
+      const full = { ...row, pack };
       if (row.status === "failed") state = { status: "failed" };
       else if (row.status === "pending") state = { status: "pending" };
       else if (row.status === "paid" && row.grant_status === "skipped") {
@@ -67,8 +75,14 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
           : "perpetual";
         state = { status: "skipped", reason };
       } else if (row.status === "paid" && row.grant_status === "granted") {
-        const product = row.product_kind === "addon" ? t("produkt.referencja") : (row.plan_tier ?? t("produkt.plan"));
-        const until = row.granted_until ? formatWhen(row.granted_until, locale) : t("bezDaty");
+        const product = row.product_kind === "addon"
+          ? t("produkt.referencja")
+          : row.product_kind === "pack"
+            ? t(full.pack === "master" ? "produkt.master" : "produkt.take", {
+                n: full.pack === "master" ? PLAN_PACK_CATALOG.master.units : PLAN_PACK_CATALOG.take.units,
+              })
+            : (row.plan_tier ?? t("produkt.plan"));
+        const until = row.product_kind === "pack" ? null : row.granted_until ? formatWhen(row.granted_until, locale) : t("bezDaty");
         state = { status: "paid", product, until };
       }
     }

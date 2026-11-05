@@ -71,9 +71,9 @@ describe("plan policy SSOT (Owner 2026-10-29)", () => {
     expect(Object.values(DELIVER_WEEKLY_LIMIT).every((v) => v === null)).toBe(true);
   });
 
-  it("projects 3 / 10 / 25 / 50, masters a month 8 / 30 / 80 / 200", () => {
+  it("projects 3 / 10 / 25 / 50, masters a month 2 / 5 / 10 / 20", () => {
     expect(PREMIUM_TIERS.map((t) => PLAN_POLICY[t].studio.maxProjects)).toEqual([3, 10, 25, 50]);
-    expect(PREMIUM_TIERS.map((t) => PLAN_POLICY[t].mastering.mastersPerMonth)).toEqual([8, 30, 80, 200]);
+    expect(PREMIUM_TIERS.map((t) => PLAN_POLICY[t].mastering.mastersPerMonth)).toEqual([2, 5, 10, 20]);
   });
 
   it("every limit grows (or stays) with the plan — Gold keeps files the longest", () => {

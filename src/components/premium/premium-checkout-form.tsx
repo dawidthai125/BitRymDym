@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
 import { PurchaseConsent } from "@/components/legal/consent-checkbox";
-import type { PaidTier } from "@/config/plan-policy";
+import type { PaidTier, PlanPack } from "@/config/plan-policy";
 import type { CheckoutBlock } from "@/lib/payments/entitlement-grant";
 import { isP24Redirect } from "@/lib/payments/p24-url";
 
@@ -28,6 +28,7 @@ export function PremiumCheckoutForm({
   locale,
   prices,
   addonPrice,
+  packPrices,
   tierBlock,
   addonBlock,
   currentLine,
@@ -38,6 +39,7 @@ export function PremiumCheckoutForm({
   locale: "pl" | "en";
   prices: Record<PaidTier, { month: string; year: string }>;
   addonPrice: string;
+  packPrices: Record<PlanPack, string>;
   tierBlock: Record<PaidTier, CheckoutBlock | null>;
   addonBlock: CheckoutBlock | null;
   currentLine: string | null;
@@ -47,19 +49,24 @@ export function PremiumCheckoutForm({
   const [tier, setTier] = useState<PaidTier>(TIERS.find((item) => tierBlock[item] === null) ?? "GOLD");
   const [period, setPeriod] = useState<"month" | "year">("month");
   const [consent, setConsent] = useState({ acceptTerms: false, immediatePerformance: false });
-  const [pending, setPending] = useState<"plan" | "addon" | null>(null);
+  const [pending, setPending] = useState<"plan" | "addon" | PlanPack | null>(null);
   const [error, setError] = useState<Code | null>(null);
 
   const planBlocked = tierBlock[tier];
   const consentOk = consent.acceptTerms && consent.immediatePerformance;
 
-  async function pay(product: { kind: "plan"; tier: PaidTier; period: "month" | "year" } | { kind: "addon"; addon: "reference_mastering" }) {
+  async function pay(
+    product:
+      | { kind: "plan"; tier: PaidTier; period: "month" | "year" }
+      | { kind: "addon"; addon: "reference_mastering" }
+      | { kind: "pack"; pack: PlanPack },
+  ) {
     setError(null);
     if (!consentOk) {
       setError("CONSENT");
       return;
     }
-    setPending(product.kind === "plan" ? "plan" : "addon");
+    setPending(product.kind === "plan" ? "plan" : product.kind === "addon" ? "addon" : product.pack);
     try {
       const response = await fetch("/api/payments/p24/checkout", {
         method: "POST",
@@ -176,6 +183,32 @@ export function PremiumCheckoutForm({
           </BrdButton>
         ) : null}
       </form>
+
+      <div className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6">
+        <h3 className="text-base font-semibold">{t("pakietTytul")}</h3>
+        <p className="max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("pakietOpis")}</p>
+        {(["take", "master"] as const).map((pack) => (
+          <form
+            key={pack}
+            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!loggedIn || readFailed || pending) return;
+              void pay({ kind: "pack", pack });
+            }}
+          >
+            <p className="text-sm">
+              {t(pack === "take" ? "pakietTake" : "pakietMaster")}
+              <span className="ml-2 font-mono">{packPrices[pack]}</span>
+            </p>
+            {loggedIn ? (
+              <BrdButton type="submit" variant="secondary" disabled={readFailed || pending !== null || !consentOk} data-testid={`premium-pack-${pack}`}>
+                {pending === pack ? t("czekam") : t("pakietPrzycisk")}
+              </BrdButton>
+            ) : null}
+          </form>
+        ))}
+      </div>
     </div>
   );
 }

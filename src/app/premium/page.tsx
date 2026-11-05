@@ -8,12 +8,14 @@ import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-regi
 import { AppShell } from "@/components/site/app-shell";
 import {
   GUEST_POLICY,
+  PLAN_PACK_CATALOG,
   PLAN_POLICY,
   PLAN_TRIAL_DAYS,
   readPlanPaymentsAvailable,
   yearlySavingPercent,
   type PlanDownloadQuality,
 } from "@/config/plan-policy";
+import { studioAdvancedRecordAllowed } from "@/lib/studio/studio-record-view";
 import { PremiumPurchaseSection } from "@/components/premium/premium-purchase-section";
 import { isP24Configured } from "@/lib/payments/p24-config";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
@@ -44,6 +46,7 @@ export default function PremiumPage() {
   const rows: { id: string; label: string; cell: (tier: PremiumTier) => string }[] = [
     { id: "take", label: tr("tab.take"), cell: (x) => tr("tab.sekundy", { n: PLAN_POLICY[x].recording.maxTakeSeconds }) },
     { id: "sesje", label: tr("tab.sesje"), cell: (x) => String(PLAN_POLICY[x].recording.sessionsPerDay) },
+    { id: "widok", label: tr("tab.widok"), cell: (x) => tr(studioAdvancedRecordAllowed(x) ? "widok.pelny" : "widok.prosty") },
     { id: "waznosc", label: tr("tab.waznosc"), cell: (x) => tr("tab.godziny", { n: hours(PLAN_POLICY[x].recording.takeTtlSeconds) }) },
     { id: "projekty", label: tr("tab.projekty"), cell: (x) => String(PLAN_POLICY[x].studio.maxProjects) },
     { id: "sciezki", label: tr("tab.sciezki"), cell: (x) => String(PLAN_POLICY[x].studio.maxRecordingTracks) },
@@ -109,6 +112,7 @@ export default function PremiumPage() {
                     </div>
                     <ul className="flex flex-col gap-1 text-sm leading-snug">
                       <li>{tr("karta.take", { s: p.recording.maxTakeSeconds, n: p.recording.sessionsPerDay })}</li>
+                      <li>{tr(studioAdvancedRecordAllowed(tier) ? "karta.widokPelny" : "karta.widokProsty")}</li>
                       <li>{tr("karta.waznosc", { h: hours(p.recording.takeTtlSeconds) })}</li>
                       <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxRecordingTracks })}</li>
                       <li>{tr("karta.mastery", { n: p.mastering.mastersPerMonth })}</li>
@@ -120,6 +124,15 @@ export default function PremiumPage() {
                   </li>
                 );
               })}
+            </ul>
+          </section>
+
+          <section className="mt-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] p-4" aria-labelledby="premium-packs" data-testid="premium-packs">
+            <h2 id="premium-packs" className="brd-display text-xl font-semibold tracking-tight">{tr("pakietyTytul")}</h2>
+            <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{tr("pakietyLead")}</p>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
+              <li>{tr("pakietTake", { n: PLAN_PACK_CATALOG.take.units, cena: money.format(PLAN_PACK_CATALOG.take.pricePln) })}</li>
+              <li>{tr("pakietMaster", { n: PLAN_PACK_CATALOG.master.units, cena: money.format(PLAN_PACK_CATALOG.master.pricePln) })}</li>
             </ul>
           </section>
 
@@ -151,6 +164,7 @@ export default function PremiumPage() {
             <ul className="mt-3 space-y-1 text-xs leading-relaxed text-[var(--brd-mute)]">
               <li>{tr("przypis.gosc", { s: GUEST_POLICY.previewSeconds })}</li>
               <li>{tr("przypis.narzedzia")}</li>
+              <li>{tr("przypis.pakiety")}</li>
               <li>{tr("przypis.mastery")}</li>
               <li>{tr("przypis.free")}</li>
               <li>{tr("przypis.upgrade")}</li>

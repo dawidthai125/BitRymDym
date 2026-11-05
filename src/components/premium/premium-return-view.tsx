@@ -7,7 +7,7 @@ import { AppShell } from "@/components/site/app-shell";
 
 export type ReturnState =
   | { status: "pending" }
-  | { status: "paid"; product: string; until: string }
+  | { status: "paid"; product: string; until: string | null }
   | { status: "skipped"; reason: "perpetual" | "downgrade" | "addon_perpetual" }
   | { status: "failed" }
   | { status: "missing" };
@@ -17,7 +17,9 @@ export function PremiumReturnView({ state }: { state: ReturnState }) {
   const pending = state.status === "pending";
   let body = t("brak");
   if (state.status === "pending") body = t("czekam");
-  if (state.status === "paid") body = t("gotowe", { co: state.product, data: state.until });
+  if (state.status === "paid") {
+    body = state.until ? t("gotowe", { co: state.product, data: state.until }) : t("pakietGotowy", { co: state.product });
+  }
   if (state.status === "skipped") body = t("pominiete", { powod: t(`powod.${state.reason}`) });
   if (state.status === "failed") body = t("nieudane");
 

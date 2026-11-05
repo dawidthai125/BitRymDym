@@ -17,8 +17,8 @@ describe("Studio plan limits", () => {
   });
 
   it("master quota per month", () => {
-    expect(monthlyMasterLimit("FREE")).toBe(8);
-    expect(monthlyMasterLimit("GOLD")).toBe(200);
+    expect(monthlyMasterLimit("FREE")).toBe(2);
+    expect(monthlyMasterLimit("GOLD")).toBe(20);
     expect(masterQuotaLeft({ used: 9, monthLimit: 8, resetAt: "" })).toBe(0);
     expect(masterQuotaLeft({ used: 3, monthLimit: 8, resetAt: "" })).toBe(5);
   });

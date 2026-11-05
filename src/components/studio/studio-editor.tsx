@@ -85,7 +85,7 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
-import { studioRecordView } from "@/lib/studio/studio-record-view";
+import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
   buildTimelineRulerTicks,
   clearClipSelection,
@@ -343,8 +343,8 @@ function StudioEditorInner({
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
   const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
-  /** Record step: simple (record, arrange, export) until the user opens full view. */
-  const [recordFullView, setRecordFullView] = useState(false);
+  /** Silver/Gold start in the advanced studio. Free/Bronze cannot leave the simple record surface. */
+  const [recordFullView, setRecordFullView] = useState(() => studioAdvancedRecordAllowed(trackCapacity.premiumTier));
   // After a reload: an approved master for the unchanged mix reopens Mastering (with downloads).
   const restoreProjectId = doc.project.id;
   useEffect(() => {
@@ -462,8 +462,9 @@ function StudioEditorInner({
       : null;
   const snapPreset = snapPresetFromConfig(snapConfig);
   const recordingContextActive = recordingLocked || inspectorPreferRecord;
+  const advancedRecord = studioAdvancedRecordAllowed(trackCapacity.premiumTier);
   const recordSimple =
-    studioRecordView({ step: studioStep, fullView: recordFullView }) === "simple";
+    studioRecordView({ step: studioStep, fullView: recordFullView, advancedAllowed: advancedRecord }) === "simple";
   const inspectorContext = deriveStudioInspectorContext({
     recordingActive: recordingContextActive || recordSimple,
     selectedClipId: activeSelectedId,
@@ -2818,28 +2819,34 @@ function StudioEditorInner({
         </ol>
         {studioStep === "record" ? (
           <div className="ml-auto flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant={recordFullView ? "default" : "outline"}
-              className="min-h-11 px-3"
-              data-testid="studio-record-full-view"
-              aria-pressed={recordFullView}
-              disabled={recordingLocked}
-              title={tMix("pelnyWidokOpis")}
-              onClick={() => {
-                const next = !recordFullView;
-                setRecordFullView(next);
-                if (next) {
-                  setInspectorPreferRecord(true);
-                  if (!inspectorDesktopRail) openInspectorOverlay();
-                } else {
-                  setFxPanel(null);
-                }
-              }}
-            >
-              {recordFullView ? tMix("prostyWidok") : tMix("pelnyWidok")}
-            </Button>
+            {advancedRecord ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={recordFullView ? "default" : "outline"}
+                className="min-h-11 px-3"
+                data-testid="studio-record-full-view"
+                aria-pressed={recordFullView}
+                disabled={recordingLocked}
+                title={tMix("pelnyWidokOpis")}
+                onClick={() => {
+                  const next = !recordFullView;
+                  setRecordFullView(next);
+                  if (next) {
+                    setInspectorPreferRecord(true);
+                    if (!inspectorDesktopRail) openInspectorOverlay();
+                  } else {
+                    setFxPanel(null);
+                  }
+                }}
+              >
+                {recordFullView ? tMix("prostyWidok") : tMix("pelnyWidok")}
+              </Button>
+            ) : (
+              <span className="max-w-[18rem] text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-simple-only">
+                {tMix("widokUproszczonyPlan")}
+              </span>
+            )}
             <span id="studio-go-mix-hint" className="hidden text-xs text-[var(--brd-mute)] sm:inline">
               {tMix("przejdzDoMixuOpis")}
             </span>

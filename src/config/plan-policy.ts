@@ -177,7 +177,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       studioRecordingTools: true,
     },
     studio: { maxProjects: 3, maxRecordingTracks: 1 },
-    mastering: { mastersPerMonth: 8, referenceMastering: "none" },
+    mastering: { mastersPerMonth: 2, referenceMastering: "none" },
     downloads: {
       qualities: [],
       projectZip: false,
@@ -199,13 +199,13 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     sharing: { listenLinksActive: 3 },
     recording: {
       maxTakeSeconds: 60,
-      sessionsPerDay: 5,
+      sessionsPerDay: 2,
       takeTtlSeconds: 36 * H,
       maxActiveReady: 5,
       studioRecordingTools: true,
     },
     studio: { maxProjects: 10, maxRecordingTracks: 2 },
-    mastering: { mastersPerMonth: 30, referenceMastering: "none" },
+    mastering: { mastersPerMonth: 5, referenceMastering: "none" },
     downloads: {
       qualities: ["MP3_128"],
       projectZip: false,
@@ -227,13 +227,13 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     sharing: { listenLinksActive: null },
     recording: {
       maxTakeSeconds: 120,
-      sessionsPerDay: 7,
+      sessionsPerDay: 3,
       takeTtlSeconds: 60 * H,
       maxActiveReady: 7,
       studioRecordingTools: true,
     },
     studio: { maxProjects: 25, maxRecordingTracks: 4 },
-    mastering: { mastersPerMonth: 80, referenceMastering: "addon" },
+    mastering: { mastersPerMonth: 10, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
       projectZip: false,
@@ -255,13 +255,13 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     sharing: { listenLinksActive: null },
     recording: {
       maxTakeSeconds: 180,
-      sessionsPerDay: 10,
+      sessionsPerDay: 5,
       takeTtlSeconds: 84 * H,
       maxActiveReady: 10,
       studioRecordingTools: true,
     },
     studio: { maxProjects: 50, maxRecordingTracks: 7 },
-    mastering: { mastersPerMonth: 200, referenceMastering: "included" },
+    mastering: { mastersPerMonth: 20, referenceMastering: "included" },
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
       projectZip: true,
@@ -349,6 +349,23 @@ export type PlanAddon = (typeof PLAN_ADDONS)[number];
 export const PLAN_ADDON_PRICE_PLN: Record<PlanAddon, { monthlyPln: number }> = {
   reference_mastering: { monthlyPln: 14.99 },
 };
+
+/**
+ * One-off packs. Units are added to a server balance and spent only after the
+ * plan allowance for that day (takes) or Warsaw month (masters). Not a subscription.
+ * Charged only when checkout is enabled.
+ */
+export const PLAN_PACKS = ["take", "master"] as const;
+export type PlanPack = (typeof PLAN_PACKS)[number];
+
+export const PLAN_PACK_CATALOG: Record<PlanPack, { units: number; pricePln: number }> = {
+  take: { units: 10, pricePln: 9.99 },
+  master: { units: 5, pricePln: 14.99 },
+};
+
+export function isPlanPack(value: unknown): value is PlanPack {
+  return value === "take" || value === "master";
+}
 
 export type ReferenceMasteringGate =
   | { allowed: true; via: "plan" | "addon" }

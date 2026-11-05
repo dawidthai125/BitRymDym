@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { getCurrentProfile } from "@/lib/auth/session";
+import { withTakeCredits } from "@/lib/studio/quota-credits";
+import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
 import { resolveRecordingEligibility } from "@/lib/takes/recording-eligibility-service";
 import { takeApiErrorResponse } from "@/lib/takes/api-error";
 
@@ -18,20 +21,29 @@ export async function POST(request: Request) {
     }
 
     const decision = await resolveRecordingEligibility({ beatId: body.beatId });
+    let withPack = decision;
+    try {
+      const profile = await getCurrentProfile();
+      if (profile) {
+        withPack = withTakeCredits(decision, await studioQuotaRemaining(profile.userId, "take"));
+      }
+    } catch {
+      withPack = decision;
+    }
     return NextResponse.json({
       success: true,
-      allowed: decision.allowed,
-      code: decision.code,
-      message: decision.message,
-      maxRecordingSeconds: decision.maxRecordingSeconds,
-      actor: decision.actor,
-      premiumTier: decision.premiumTier,
-      dailySessionsUsed: decision.dailySessionsUsed,
-      dailySessionLimit: decision.dailySessionLimit,
-      activeReadyUsed: decision.activeReadyUsed,
-      activeReadyCap: decision.activeReadyCap,
-      upgradeHintTier: decision.upgradeHintTier,
-      upgradeHintMessage: decision.upgradeHintMessage,
+      allowed: withPack.allowed,
+      code: withPack.code,
+      message: withPack.message,
+      maxRecordingSeconds: withPack.maxRecordingSeconds,
+      actor: withPack.actor,
+      premiumTier: withPack.premiumTier,
+      dailySessionsUsed: withPack.dailySessionsUsed,
+      dailySessionLimit: withPack.dailySessionLimit,
+      activeReadyUsed: withPack.activeReadyUsed,
+      activeReadyCap: withPack.activeReadyCap,
+      upgradeHintTier: withPack.upgradeHintTier,
+      upgradeHintMessage: withPack.upgradeHintMessage,
     });
   } catch (error) {
     return takeApiErrorResponse(error);

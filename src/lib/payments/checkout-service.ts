@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { AuthContext } from "@/lib/auth/types";
-import { readPlanPaymentsAvailable, type PaidTier } from "@/config/plan-policy";
+import { PLAN_PACK_CATALOG, readPlanPaymentsAvailable, type PaidTier } from "@/config/plan-policy";
 import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentValid, type PurchaseConsentInput } from "@/lib/legal/legal-config";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -29,6 +29,13 @@ const HOUR_MS = 60 * 60 * 1000;
 const PENDING_LIMIT = 5;
 
 export function p24Description(product: CheckoutProduct, locale: "pl" | "en"): string {
+  if (product.kind === "pack") {
+    const units = PLAN_PACK_CATALOG[product.pack].units;
+    if (product.pack === "take") {
+      return locale === "en" ? `BitRymDym pack, ${units} extra recordings` : `BitRymDym pakiet, ${units} dodatkowych nagrań`;
+    }
+    return locale === "en" ? `BitRymDym pack, ${units} extra masters` : `BitRymDym pakiet, ${units} dodatkowych masterów`;
+  }
   if (product.kind === "addon") {
     return locale === "en"
       ? "BitRymDym reference mastering, 1 month"
@@ -99,7 +106,7 @@ export async function startCheckout(input: {
     product_kind: product.kind,
     plan_tier: product.kind === "plan" ? product.tier : null,
     addon: product.kind === "addon" ? product.addon : null,
-    period: product.period,
+    ...(product.kind === "pack" ? { pack: product.pack, period: "once" } : { period: product.period }),
     amount_grosz: amountGrosz,
     currency: "PLN",
     buyer_email: email,
