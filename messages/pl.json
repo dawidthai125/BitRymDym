@@ -89,6 +89,8 @@
       "bitNagranie": "Bit + nagranie",
       "ladowaniePodgladu": "Ładowanie podglądu…",
       "brakUrlPodgladu": "Brak URL podglądu",
+      "glosnoscBitu": "Głośność bitu",
+      "glosnoscNagrania": "Głośność nagrania",
       "brakDostepuDoBitu": "Brak dostępu do bitu.",
       "nieUdaloSiePrzygotowac": "Nie udało się przygotować podglądu."
     },
@@ -108,6 +110,14 @@
       "glosnosc": "Głośność",
       "postep": "Postęp",
       "audioEngineMissing": "Brak silnika audio."
+    },
+    "playbackTools": {
+      "glosnosc": "Głośność",
+      "wycisz": "Wycisz",
+      "wlacz": "Włącz dźwięk",
+      "petla": "Pętla",
+      "petlaOn": "Pętla włączona",
+      "tempo": "Prędkość odsłuchu {rate}"
     },
     "playerProvider": {
       "nieUdaloSieOdtworzyc": "Nie udało się odtworzyć audio.",
@@ -2323,7 +2333,11 @@
         "songLimit": "Utwór może mieć max {max} — dalej już nie nagram. Przytnij albo idź do miksu.",
         "latencyBluetooth": "Masz słuchawki Bluetooth — wokal może się spóźniać. Skalibruję to w 7 sekund.",
         "latencyHigh": "Widzę {ms} ms opóźnienia. Skalibrujmy, żeby wokal siedział w bicie.",
-        "latencyDetail": "Kliki przez głośnik albo klaskanie w rytm. Możesz też ustawić ręcznie."
+        "latencyDetail": "Kliki przez głośnik albo klaskanie w rytm. Możesz też ustawić ręcznie.",
+        "liveHot": "Nagrywasz za głośno. Odsuń się trochę od mikrofonu i trzymaj ten sam poziom.",
+        "liveQuiet": "Za cicho. Podejdź bliżej mikrofonu i nagrywaj pewniej.",
+        "liveUneven": "Poziom skacze. Nagrywaj równiej — ta sama odległość od mikrofonu przez całą frazę.",
+        "liveOffbeat": "Nie łapiesz się w bit. Słuchaj stopy i wchodź na raz."
       },
       "chat": {
         "inputLabel": "Wiadomość do BITKA",

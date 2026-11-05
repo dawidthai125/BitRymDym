@@ -32,6 +32,14 @@ type MountPlayerValue = {
   seek: (time: number) => void;
   close: () => void;
   setSuppressed: (value: boolean) => void;
+  volume: number;
+  muted: boolean;
+  loop: boolean;
+  playbackRate: number;
+  setVolume: (volume: number) => void;
+  setMuted: (muted: boolean) => void;
+  setLoop: (loop: boolean) => void;
+  setPlaybackRate: (rate: number) => void;
 };
 
 const MountPlayerContext = createContext<MountPlayerValue | null>(null);
@@ -77,6 +85,14 @@ export function MountPlayerProvider({ children }: { children: ReactNode }) {
       seek: () => forbiddenAudioAction("seek"),
       close: () => forbiddenAudioAction("close"),
       setSuppressed: () => undefined,
+      volume: 1,
+      muted: false,
+      loop: false,
+      playbackRate: 1,
+      setVolume: () => undefined,
+      setMuted: () => undefined,
+      setLoop: () => undefined,
+      setPlaybackRate: () => undefined,
     }),
     [],
   );

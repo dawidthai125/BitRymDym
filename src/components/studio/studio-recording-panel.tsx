@@ -44,6 +44,7 @@ import {
   type RecToolsMode,
 } from "@/components/studio/studio-recording-tools";
 import type { BitekBubble } from "@/components/studio/studio-bitek-dock";
+import { decideLiveTakeCoach, type LiveCoachCue, type LiveCoachSample } from "@/lib/studio/bitek/live-take-coach";
 import { setBitekLiveTakeLevel } from "@/lib/studio/bitek/live-take-level";
 import { requestStudioGoMix, saveBitekRecordHandoff, takeIssueFromPeak } from "@/lib/studio/bitek/record-handoff";
 import { runLatencyCalibration } from "@/lib/studio/recording/calibration-runner";
@@ -475,18 +476,56 @@ export function StudioRecordingPanel({
   const takePeakRef = useRef<{ peakDb: number; clipping: boolean } | null>(null);
   const prevRecPhase = useRef(state.phase);
   const [takeIssue, setTakeIssue] = useState<{ issue: "quiet" | "clip"; peakDb: number } | null>(null);
+  const coachSamplesRef = useRef<LiveCoachSample[]>([]);
+  const coachLastRef = useRef<{ cue: LiveCoachCue | null; at: number }>({ cue: null, at: 0 });
+  const [liveCue, setLiveCue] = useState<LiveCoachCue | null>(null);
+  const hasBeat = transport.hasBeat;
+  const tempoBpm = transport.tempoBpm;
+  const getPlayheadMs = transport.getPlayheadMs;
   useEffect(() => {
     const prev = prevRecPhase.current;
     prevRecPhase.current = state.phase;
     if (state.phase === "RECORDING") {
-      const db = mic.peakDb;
-      if (!Number.isFinite(db) || db <= -90) return;
-      const latched = takePeakRef.current;
-      takePeakRef.current = {
-        peakDb: Math.max(latched?.peakDb ?? -100, db),
-        clipping: Boolean(latched?.clipping) || mic.level === "clip" || db >= -1,
-      };
+      const linear = Math.max(mic.peak, mic.windowPeak);
+      const db = linear > 0 ? 20 * Math.log10(Math.min(1, linear)) : -100;
+      if (Number.isFinite(db) && db > -90) {
+        const latched = takePeakRef.current;
+        takePeakRef.current = {
+          peakDb: Math.max(latched?.peakDb ?? -100, db),
+          clipping: Boolean(latched?.clipping) || mic.level === "clip" || db >= -1,
+        };
+      }
+      if (Number.isFinite(db)) {
+        const now = Date.now();
+        const samples = coachSamplesRef.current;
+        samples.push({
+          atMs: now,
+          peakDb: db,
+          playheadMs: hasBeat ? getPlayheadMs() : null,
+        });
+        const cutoff = now - 5000;
+        while (samples.length > 0 && (samples[0]?.atMs ?? 0) < cutoff) samples.shift();
+        const decision = decideLiveTakeCoach({
+          samples,
+          nowMs: now,
+          bpm: tempoBpm,
+          lastCue: coachLastRef.current.cue,
+          lastCueAtMs: coachLastRef.current.at || null,
+        });
+        if (decision.ready && decision.clear) {
+          coachLastRef.current = { cue: null, at: now };
+          setLiveCue(null);
+        } else if (decision.speak && decision.cue) {
+          coachLastRef.current = { cue: decision.cue, at: now };
+          setLiveCue(decision.cue);
+        }
+      }
       return;
+    }
+    if (coachSamplesRef.current.length || coachLastRef.current.cue) {
+      coachSamplesRef.current = [];
+      coachLastRef.current = { cue: null, at: 0 };
+      setLiveCue(null);
     }
     if (prev !== "RECORDING") return;
     const latched = takePeakRef.current;
@@ -495,10 +534,19 @@ export function StudioRecordingPanel({
     setBitekLiveTakeLevel(projectId, latched);
     const issue = takeIssueFromPeak(latched.peakDb, latched.clipping);
     setTakeIssue(issue ? { issue, peakDb: latched.peakDb } : null);
-  }, [state.phase, mic.peakDb, mic.level, projectId]);
+  }, [state.phase, mic.peak, mic.peakDb, mic.windowPeak, mic.level, projectId, hasBeat, tempoBpm, getPlayheadMs]);
   useEffect(() => {
     const report = bitekReportRef.current;
     if (!report) return;
+    if (state.phase === "RECORDING" && liveCue) {
+      const liveKey = liveCue === "hot" ? "msg.liveHot" : liveCue === "quiet" ? "msg.liveQuiet" : liveCue === "uneven" ? "msg.liveUneven" : "msg.liveOffbeat";
+      report({
+        key: `rec-live-${liveCue}`,
+        mood: "alert",
+        text: tBitek(liveKey),
+      });
+      return;
+    }
     if (takeIssue) {
       const db = Math.round(takeIssue.peakDb);
       report({
@@ -547,7 +595,7 @@ export function StudioRecordingPanel({
       ],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- primitives only; avoids a render loop with the editor
-  }, [latency.warning, latency.deviceKey, latency.baseMs, takeIssue, projectId]);
+  }, [latency.warning, latency.deviceKey, latency.baseMs, takeIssue, projectId, liveCue, state.phase]);
   useEffect(() => () => bitekReportRef.current?.(null), []);
 
   useEffect(() => {
@@ -2232,6 +2280,12 @@ export function StudioRecordingPanel({
       ) : null}
 
       <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />
+      {state.phase === "RECORDING" && liveCue ? (
+        <p role="status" data-testid="studio-live-coach" data-cue={liveCue} className="border-l-2 border-l-[var(--brd-amber)] pl-2 text-sm">
+          <span className="font-semibold">BITEK: </span>
+          {tBitek(liveCue === "hot" ? "msg.liveHot" : liveCue === "quiet" ? "msg.liveQuiet" : liveCue === "uneven" ? "msg.liveUneven" : "msg.liveOffbeat")}
+        </p>
+      ) : null}
 
       {!simple ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">

@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { BrdAudioDeck } from "@/components/player/brd-audio-deck";
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/studio-job-progress";
 import { Button } from "@/components/ui/button";
@@ -698,7 +699,7 @@ export function StudioMasterStep({
               <section aria-labelledby="studio-master-final-title" data-testid="studio-master-final" className="flex flex-col gap-2 rounded-[2px] border border-[var(--brd-line)] border-l-4 border-l-[var(--brd-green)] bg-[var(--brd-paper)] p-3">
                 <h3 id="studio-master-final-title" className="brd-display text-lg">{t("finalTytul")}</h3>
                 <p className="text-sm">{t("finalOpis")}</p>
-                {sm.url ? <audio controls preload="metadata" src={sm.url} className="w-full" data-testid="studio-master-final-audio" /> : null}
+                {sm.url ? <BrdAudioDeck src={sm.url} title={t("finalTytul")} testId="studio-master-final-audio" seed={`master:${projectId}`} /> : null}
                 {sm.metrics?.after ? (
                   <p className="font-mono text-xs">
                     {fmtN(Number(sm.metrics.after.lufs))} LUFS · {fmtN(Number(sm.metrics.after.truePeakDb))} dBTP · LRA {fmtN(Number(sm.metrics.after.lra))} LU

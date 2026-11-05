@@ -20,6 +20,7 @@ import {
 import { Waveform } from "@/components/brand/waveform";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
+import { BrdPlaybackTools } from "@/components/player/brd-playback-tools";
 import { requestBeatAudioAccessAction } from "@/lib/beats/audio-actions";
 import {
   formatDurationSeconds,
@@ -63,6 +64,8 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
     const expiresAtRef = useRef<string | null>(null);
     const [hasSource, setHasSource] = useState(false);
     const [controlsLocked, setControlsLocked] = useState(false);
+    const [loop, setLoop] = useState(false);
+    const [rate, setRate] = useState(1);
     const [state, dispatch] = useReducer(
       reducePlayback,
       undefined,
@@ -127,7 +130,9 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
       if (!audio) return;
       audio.volume = state.volume;
       audio.muted = state.muted;
-    }, [state.volume, state.muted]);
+      audio.loop = loop;
+      audio.playbackRate = rate;
+    }, [state.volume, state.muted, loop, rate]);
 
     async function ensureSignedUrl(): Promise<string> {
       const expiresAt = expiresAtRef.current;
@@ -382,35 +387,17 @@ export const PlaybackShell = forwardRef<PlaybackShellHandle, PlaybackShellProps>
             aria-label={tl(isPlayLabel(state.phase) ? t("odtworz") : "Pauza")}
           />
 
-          <button
-            type="button"
-            onClick={() => dispatch({ type: "MUTE", muted: !state.muted })}
-            aria-pressed={state.muted}
-            aria-label={tl(state.muted ? t("wlaczDzwiek") : "Wycisz")}
+          <BrdPlaybackTools
+            volume={state.volume}
+            muted={state.muted}
+            loop={loop}
+            rate={rate}
             disabled={controlsLocked}
-            className="inline-flex min-h-11 items-center border border-[var(--brd-audio-line)] px-3 text-sm text-[var(--brd-ink-soft)] outline-none hover:border-[var(--brd-ink)] hover:text-[var(--brd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--brd-green-soft)] disabled:opacity-45"
-          >
-            {tl(state.muted ? "Wyciszony" : t("dzwiek"))}
-          </button>
-
-          <label className="ml-auto flex min-w-[8rem] max-w-[12rem] flex-1 flex-col gap-2 text-[var(--brd-mute)]">
-            <span className="brd-meta text-[10px] uppercase tracking-[0.14em]">
-              {t("glosnosc")}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={state.volume}
-              disabled={controlsLocked}
-              onChange={(event) =>
-                dispatch({ type: "VOLUME", volume: Number(event.target.value) })
-              }
-              aria-label={t("glosnosc")}
-              className="brd-scrub h-11"
-            />
-          </label>
+            onVolume={(volume) => dispatch({ type: "VOLUME", volume })}
+            onMuted={(muted) => dispatch({ type: "MUTE", muted })}
+            onLoop={setLoop}
+            onRate={setRate}
+          />
         </div>
 
         {/* Accessible seek fallback */}

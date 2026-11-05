@@ -1,20 +1,11 @@
 "use client";
 
+import { BrdAudioDeck } from "@/components/player/brd-audio-deck";
+
 /**
- * Gaps P1 — listen-only player: native controls without the download item,
- * no context menu. A deterrent only — anything a browser can play can be recorded.
+ * Share-link player. Branded deck, no native bar, no download.
+ * Anything a browser can play can still be recorded — this only removes the easy button.
  */
 export function ListenPlayer({ src, label }: { src: string; label: string }) {
-  return (
-    <audio
-      data-testid="listen-player"
-      aria-label={label}
-      className="w-full"
-      controls
-      controlsList="nodownload noplaybackrate"
-      preload="none"
-      src={src}
-      onContextMenu={(e) => e.preventDefault()}
-    />
-  );
+  return <BrdAudioDeck src={src} title={label} testId="listen-player" />;
 }

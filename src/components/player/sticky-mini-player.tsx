@@ -11,6 +11,7 @@ import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
 import { BrdAudioTime } from "@/components/brand/brd-audio-meta";
 import { Waveform } from "@/components/brand/waveform";
+import { BrdPlaybackTools } from "@/components/player/brd-playback-tools";
 import { usePlayer } from "@/components/player/player-provider";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { playbackProgressRatio } from "@/lib/player/playback-progress";
@@ -33,6 +34,14 @@ export function StickyMiniPlayer() {
     toggle,
     seek,
     close,
+    volume,
+    muted,
+    loop,
+    playbackRate,
+    setVolume,
+    setMuted,
+    setLoop,
+    setPlaybackRate,
   } = usePlayer();
   const pathname = usePathname();
 
@@ -54,7 +63,8 @@ export function StickyMiniPlayer() {
       role="region"
       aria-label={t("odtwarzacz")}
     >
-      <div className="mx-auto flex max-w-[var(--brd-max-public)] items-center gap-2.5 px-[max(1rem,env(safe-area-inset-left))] py-2 pr-[max(1rem,env(safe-area-inset-right))] sm:gap-3">
+      <div className="mx-auto flex max-w-[var(--brd-max-public)] flex-col gap-1 px-[max(1rem,env(safe-area-inset-left))] py-2 pr-[max(1rem,env(safe-area-inset-right))]">
+      <div className="flex items-center gap-2.5 sm:gap-3">
         <BrdAudioPlayButton
           playing={playing}
           loading={loading}
@@ -119,6 +129,17 @@ export function StickyMiniPlayer() {
             <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
           </svg>
         </button>
+      </div>
+      <BrdPlaybackTools
+        volume={volume}
+        muted={muted}
+        loop={loop}
+        rate={playbackRate}
+        onVolume={setVolume}
+        onMuted={setMuted}
+        onLoop={setLoop}
+        onRate={setPlaybackRate}
+      />
       </div>
       {error ? (
         <p className="px-4 pb-2 text-xs text-[var(--brd-danger)]" role="alert">

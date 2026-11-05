@@ -28,6 +28,7 @@ import {
 import { GuestPreviewPrompt } from "@/components/player/guest-preview-prompt";
 import { GUEST_POLICY } from "@/config/plan-policy";
 import { shouldRestartFromStart } from "@/lib/player/playback-progress";
+import { clampPlaybackGain } from "@/lib/player/playback-tools";
 
 export type PlayerTrack = {
   beatId: string;
@@ -61,6 +62,14 @@ type PlayerContextValue = {
   seek: (time: number) => void;
   close: () => void;
   setSuppressed: (value: boolean) => void;
+  volume: number;
+  muted: boolean;
+  loop: boolean;
+  playbackRate: number;
+  setVolume: (volume: number) => void;
+  setMuted: (muted: boolean) => void;
+  setLoop: (loop: boolean) => void;
+  setPlaybackRate: (rate: number) => void;
   /** Guests: server-set preview cap (GUEST_POLICY.previewSeconds); null = full. */
   previewLimitSeconds: number | null;
   /** True after a guest hit the preview cap (sign-in prompt is shown). */
@@ -109,6 +118,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [previewEnded, setPreviewEnded] = useState(false);
   /** Guest asked for a beat that has no server-side 20 s preview yet. */
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
+  const [volume, setVolumeState] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [loop, setLoopState] = useState(false);
+  const [playbackRate, setPlaybackRateState] = useState(1);
 
   // Keep ended/restart fallback in sync without writing refs during render.
   useEffect(() => {
@@ -178,6 +191,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+    audio.muted = muted;
+    audio.loop = loop;
+    audio.playbackRate = playbackRate;
+  }, [volume, muted, loop, playbackRate]);
 
   const ensureUrl = useCallback(async (beatId: string): Promise<string> => {
     const expired =
@@ -406,6 +428,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPreviewUnavailable(false);
   }, []);
 
+  const setVolume = useCallback((next: number) => {
+    setVolumeState(clampPlaybackGain(next));
+  }, []);
+  const setPlaybackRate = useCallback((next: number) => {
+    if (!Number.isFinite(next)) return;
+    setPlaybackRateState(Math.min(1.25, Math.max(0.75, next)));
+  }, []);
+
   const value = useMemo(
     () => ({
       track,
@@ -420,6 +450,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       seek,
       close,
       setSuppressed,
+      volume,
+      muted,
+      loop,
+      playbackRate,
+      setVolume,
+      setMuted,
+      setLoop: setLoopState,
+      setPlaybackRate,
       previewLimitSeconds,
       previewEnded,
       dismissPreviewPrompt,
@@ -436,6 +474,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggle,
       seek,
       close,
+      volume,
+      muted,
+      loop,
+      playbackRate,
+      setVolume,
+      setPlaybackRate,
       previewLimitSeconds,
       previewEnded,
       dismissPreviewPrompt,
