@@ -1,4 +1,4 @@
-import { MASTER_TARGETS } from "@/lib/studio/master/targets";
+import { MASTER_TARGETS, isMasterTargetId } from "@/lib/studio/master/targets";
 
 import { validateBitekJobs } from "./jobs";
 import { resolveMasterLoudness } from "./master-loudness";
@@ -181,4 +181,43 @@ export function bitekMasterTargetChat(message: string, ctx: BitekChatContext): B
     proposals,
     ...(jobs.length ? { jobs } : {}),
   };
+}
+
+const AUTO_MASTER_ASK = /profesjonaln|automatyczn|\bauto\b|auto ?master|zmasteruj|zrob (mi )?(master|mastering)|jak w cryo|cryo|\bnova\b/;
+
+/**
+ * "Zrób profesjonalny master" — one plain-language ask for the whole song: measure-driven
+ * loudness to the current target, with the same knob limits as manual loudness asks.
+ * Null when the message is not that ask or the message is about a single track.
+ */
+export function bitekMasterAutoChat(message: string, ctx: BitekChatContext): BitekChatResult | null {
+  if (!ctx.master || !AUTO_MASTER_ASK.test(norm(message))) return null;
+  if (classifyMasterRequest(message).kind === "track") return null;
+  const pl = ctx.lang === "pl";
+  if (!isMasterTargetId(ctx.master.target)) return null;
+  const id: BitekMasterTarget = ctx.master.target;
+  const measured = ctx.analysis?.masterIntegratedLufs;
+  if (measured === null || measured === undefined || !Number.isFinite(measured)) {
+    return {
+      provider: "rules",
+      reply: pl
+        ? "Automatyczny master dobieram po pomiarze. Zrób master, a potem zmierzę LUFS i ustawię głośność pod wybrany cel."
+        : "I tune automatic mastering from a measurement. Make the master first, then I'll measure LUFS and set the loudness for the chosen target.",
+      proposals: [],
+    };
+  }
+  const peak = ctx.analysis?.masterTruePeakDbtp ?? null;
+  const decision = resolveMasterLoudness({
+    measuredLufs: measured,
+    targetLufs: MASTER_TARGETS[id].lufs,
+    truePeakDb: peak !== null && Number.isFinite(peak) ? peak : null,
+    ceilingDb: MASTER_TARGETS[id].tp,
+    currentOffset: ctx.master.settings.loudness,
+    lang: ctx.lang,
+    targetName: TARGET_NAME[ctx.lang][id],
+  });
+  const proposals = decision.changesKnob
+    ? validateProposals([{ trackRef: BITEK_MASTER_REF, param: "loudness", value: decision.offset, label: "" }], ctx)
+    : [];
+  return { provider: "rules", reply: decision.reply, proposals };
 }
