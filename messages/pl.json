@@ -2,11 +2,11 @@
   "common": {
     "aboutPage": {
       "metaTitle": "O BitRymDym",
-      "metaDescription": "Platforma do bitów, nagrań i tworzenia numerów.",
+      "metaDescription": "Bity, nagranie i Studio. BITEK proponuje mix i mastering po Twojej prośbie.",
       "oBitrymdym": "O BitRymDym",
       "bitGlosStudio": "Bit. Głos. Studio.",
-      "bitrymdymToMiejsceW": "BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz swój głos i rozwijasz numery — bez zbędnego szumu.",
-      "dlaProducentowRaperowI": "Dla producentów, raperów i twórców, którzy chcą wracać tu codziennie: odsłuchać, nagrać, wrócić do studia.",
+      "bitrymdymToMiejsceW": "BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz głos i składasz numer w Studio. BITEK proponuje mix i mastering — stosujesz je, gdy chcesz.",
+      "dlaProducentowRaperowI": "Dla producentów, raperów i twórców, którzy chcą wracać tu codziennie: odsłuchać, nagrać i dopracować brzmienie.",
       "przegladajBity": "Przeglądaj bity",
       "zalozKonto": "Załóż konto"
     },
@@ -1285,7 +1285,8 @@
       "nagranie": "nagranie",
       "studio": "Studio",
       "dlaRapera": "dla rapera.",
-      "znajdzBeatNagrajWers": "Znajdź beat, nagraj wers, złóż numer w Studio. Dla ludzi, którzy chcą szybko przejść od pomysłu do nagrania — bez zbędnego szumu.",
+      "znajdzBeatNagrajWers": "Znajdź beat, nagraj wers i poproś BITEK-a o mix oraz mastering. Zmianę zatwierdzasz sam.",
+      "otworzStudio": "Otwórz Studio",
       "przegladajBity": "Przeglądaj bity",
       "jakToDziala": "Jak to działa",
       "posluchajZKatalogu": "Posłuchaj z katalogu",
@@ -1294,13 +1295,13 @@
       "katalogOtwartyOdRazu": "Katalog otwarty od razu. Nagranie i Studio — po założeniu konta, na bicie ze statusem opublikowanym.",
       "wiecejLimitu": "Więcej limitu,",
       "gdyTegoPotrzebujesz": "gdy tego potrzebujesz",
-      "premiumFreeGoldPodnosi": "Premium (Free → Gold) podnosi limity pobrań, ścieżek w Studio, czas nagrania i jakość eksportu. Uprawnienia już działają —",
-      "bezSamodzielnegoZakupuW": "bez samodzielnego zakupu w aplikacji",
-      "szczegolyHoldICo": ". Szczegóły, HOLD i co jest dopiero planowane — na stronie Premium.",
+      "premiumFreeGoldPodnosi": "Plany Free–Gold ustawiają długość nagrania, liczbę ścieżek, mastery w miesiącu i widok studia. Limity już działają —",
+      "bezSamodzielnegoZakupuW": "zakupu w aplikacji jeszcze nie ma",
+      "szczegolyHoldICo": ". Ceny i pakiety dodatkowych nagrań oraz masterów są na stronie Premium.",
       "szczegolyPremium": "Szczegóły Premium",
       "zalozKonto": "Załóż konto",
       "zacznijOdKatalogu": "Zacznij od katalogu",
-      "potemKontoNagranieI": "Potem konto, nagranie i Studio — w tej kolejności.",
+      "potemKontoNagranieI": "Potem konto, nagranie, mix z BITEK-iem i mastering.",
       "otworzKatalog": "Otwórz katalog",
       "consts": {
         "bezKonta": "Bez konta",
@@ -1311,7 +1312,7 @@
         "naStronieBituAlbo": "Na stronie bitu albo w Studio. Czas nagrania zależy od poziomu Premium na koncie (i od długości bitu).",
         "wymagaKonta": "Wymaga konta",
         "zlozNumerWStudio": "Złóż numer w Studio",
-        "projektySciezkiMiksI": "Projekty, ścieżki, miks i eksport w jednym miejscu. Ile ścieżek dostaniesz — zależy od Premium.",
+        "projektySciezkiMiksI": "Nagrywasz, tniesz fragmenty, a BITEK proponuje mix i mastering. Wchodzą dopiero po Twojej zgodzie.",
         "wybierzBit": "Wybierz bit",
         "wejdzWKatalogOdsluchaj": "Wejdź w katalog, odsłuchaj i wybierz opublikowany beat.",
         "zalozKonto": "Załóż konto",
@@ -1319,7 +1320,7 @@
         "nagrajWers": "Nagraj wers",
         "naStronieBituAlbo2": "Na stronie bitu albo w Studio — tylko na opublikowanym bicie, w limicie Premium na koncie.",
         "dopracujWStudio": "Dopracuj w Studio",
-        "ulozSciezkiMiksujI": "Ułóż ścieżki, miksuj i eksportuj. Wyższy Premium = więcej ścieżek i lepszy eksport."
+        "ulozSciezkiMiksujI": "Potnij nagranie i ułóż je na osi. BITEK poprawia brzmienie w mixie i masterze, gdy o to poprosisz."
       },
       "and": "i"
     },
