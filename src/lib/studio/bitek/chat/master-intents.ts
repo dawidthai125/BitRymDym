@@ -1,6 +1,7 @@
 import { MASTER_TARGETS, isMasterTargetId } from "@/lib/studio/master/targets";
 
 import { validateBitekJobs } from "./jobs";
+import { planMasterClarity, type MasterClarityMove } from "./master-clarity";
 import { resolveMasterLoudness } from "./master-loudness";
 import { validateProposals } from "./proposals";
 import {
@@ -180,6 +181,88 @@ export function bitekMasterTargetChat(message: string, ctx: BitekChatContext): B
     reply: decision.reply,
     proposals,
     ...(jobs.length ? { jobs } : {}),
+  };
+}
+
+const CLARITY_ASK = /brzmien|czyst|czysc|wyczysc|wyrazn|selektywn|klarown|clarity|cleaner|clearer|\btone\b/;
+
+const CLARITY_WHY: Record<"pl" | "en", Record<MasterClarityMove["reason"], string>> = {
+  pl: {
+    harsh: "zdejmę górę, bo jest za ostro",
+    dark: "dodam górę, bo numer jest ciemny",
+    boomy: "odejmę dół, bo dudni",
+    weak: "dołożę dół, bo jest go za mało",
+    mud: "odejmę dół, bo dół środka jest zamulony",
+    thin: "dołożę dół, bo dół środka jest cienki",
+    squashed: "poluzuję kompresję, żeby numer oddychał",
+    wide: "zwężę stereo, bo rozjeżdża się na boki",
+    phase: "ściągnę szerokość do środka, bo faza się gryzie",
+    loudness: "ustawię głośność pod cel, limiter pilnuje szczytu",
+  },
+  en: {
+    harsh: "I'll take the top down, it's harsh",
+    dark: "I'll add top, the song is dark",
+    boomy: "I'll pull the low end, it booms",
+    weak: "I'll add low end, there isn't enough",
+    mud: "I'll pull the low end, the low middle is muddy",
+    thin: "I'll add low end, the low middle is thin",
+    squashed: "I'll ease the compression so the song breathes",
+    wide: "I'll narrow the stereo, it's too wide",
+    phase: "I'll pull the width toward the centre, the phase is fighting",
+    loudness: "I'll set the loudness to the target, the limiter holds the peak",
+  },
+};
+
+/** "Popraw brzmienie i czystość" — one measured master patch, only after the user asks. */
+export function bitekMasterClarityChat(message: string, ctx: BitekChatContext): BitekChatResult | null {
+  if (!ctx.master || !CLARITY_ASK.test(norm(message))) return null;
+  if (classifyMasterRequest(message).kind === "track") return null;
+  const pl = ctx.lang === "pl";
+  const targetId = isMasterTargetId(ctx.master.target) ? ctx.master.target : "streaming";
+  const plan = planMasterClarity({
+    settings: ctx.master.settings,
+    cards: ctx.master.cards,
+    measuredLufs: ctx.analysis?.masterIntegratedLufs ?? null,
+    truePeakDb: ctx.analysis?.masterTruePeakDbtp ?? null,
+    target: ctx.master.target,
+    lang: ctx.lang,
+    targetName: TARGET_NAME[ctx.lang][targetId],
+  });
+  const patch = Object.fromEntries(plan.moves.map((move) => [move.key, move.value]));
+  const jobs = plan.moves.length ? validateBitekJobs([{ kind: "masterClarity", patch, label: "" }], ctx) : [];
+  const why = plan.moves.map((move) => CLARITY_WHY[ctx.lang][move.reason]).join(pl ? ", " : "; ");
+  const mix =
+    plan.mixBand === "muddy"
+      ? pl
+        ? " Środek pasma jest zamulony — to poprawię w mixie, suwakiem mastera tego nie zdejmę."
+        : " The middle is muddy. I'll fix that in Mix. The master shelf can't reach it."
+      : plan.mixBand === "thin"
+        ? pl
+          ? " Środek pasma jest cienki — to dołożę w mixie."
+          : " The middle is thin. I'll add that in Mix."
+        : "";
+  if (!jobs.length && !plan.mixBand) {
+    return {
+      provider: "rules",
+      reply: pl
+        ? "Pomiar nie pokazuje problemu z brzmieniem ani czystością. Nic nie ruszam."
+        : "The measurement shows no tone or clarity problem. I won't move anything.",
+      proposals: [],
+    };
+  }
+  const reply = jobs.length
+    ? pl
+      ? `Dopasuję brzmienie do pomiaru: ${why}. Kliknij „Zastosuj”.${mix}`
+      : `I'll match the tone to the measurement: ${why}. Hit Apply.${mix}`
+    : pl
+      ? `W masterze tego nie ruszę.${mix}`
+      : `I won't move the master for this.${mix}`;
+  return {
+    provider: "rules",
+    reply,
+    proposals: [],
+    ...(jobs.length ? { jobs } : {}),
+    ...(plan.mixBand ? { backToMix: true } : {}),
   };
 }
 

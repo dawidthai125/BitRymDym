@@ -1,6 +1,6 @@
 import { groundBitekResult } from "./ground";
 import { bitekRulesChat } from "./intents";
-import { bitekMasterAutoChat, bitekMasterRulesChat, bitekMasterStyleChat, bitekMasterTargetChat, classifyMasterRequest } from "./master-intents";
+import { bitekMasterAutoChat, bitekMasterClarityChat, bitekMasterRulesChat, bitekMasterStyleChat, bitekMasterTargetChat, classifyMasterRequest } from "./master-intents";
 import { buildBitekSystemPrompt, isBitekWrongLanguage } from "./prompt";
 import { parseBitekModelOutput } from "./proposals";
 import { bitekRecordHelper } from "./record-helper";
@@ -42,7 +42,8 @@ export async function runBitekChatChain(params: {
     const style = bitekMasterStyleChat(params.message, params.context);
     const target = style ? null : bitekMasterTargetChat(params.message, params.context);
     const scope = classifyMasterRequest(params.message);
-    const decided = style ?? target ?? bitekMasterAutoChat(params.message, params.context) ?? (scope.kind === "track" ? bitekMasterRulesChat(params.message, params.context, scope) : null);
+    const clarity = style || target ? null : bitekMasterClarityChat(params.message, params.context);
+    const decided = style ?? target ?? clarity ?? bitekMasterAutoChat(params.message, params.context) ?? (scope.kind === "track" ? bitekMasterRulesChat(params.message, params.context, scope) : null);
     if (decided) {
       params.log?.({ provider: "rules", ms: now() - t0, attempts: [] });
       return decided;
