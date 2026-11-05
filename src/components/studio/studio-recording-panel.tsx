@@ -14,6 +14,7 @@ import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
 import { StudioLyricsCard } from "@/components/studio/studio-lyrics-card";
+import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
 import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
@@ -2773,7 +2774,9 @@ export function StudioRecordingPanel({
       ) : null}
 
       {!showWorkflow ? (
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="flex w-full flex-col gap-2">
+          <StudioQuotaLine />
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
             size="sm"
@@ -2835,6 +2838,7 @@ export function StudioRecordingPanel({
               {tr("anuluj")}
             </Button>
           )}
+          </div>
         </div>
       ) : null}
 
