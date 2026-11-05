@@ -175,9 +175,9 @@ export function PlanBadge({ userKey }: { userKey: string }) {
         </span>
         {usage ? (
           <span className="hidden items-center gap-2 lg:inline-flex" data-testid="plan-badge-chips">
-            {chip("beatDownloads", t("chipPobrania"))}
+            {chip("recordingsToday", t("pozycja.recordingsToday"))}
             <span aria-hidden className="text-[var(--brd-line)]">·</span>
-            {chip("projects", t("chipProjekty"))}
+            {chip("masters", t("pozycja.masters"))}
           </span>
         ) : null}
       </button>

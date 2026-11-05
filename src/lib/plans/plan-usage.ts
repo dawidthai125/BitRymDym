@@ -1,5 +1,6 @@
 import "server-only";
 
+import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
 import { warsawMonthWindow } from "@/lib/studio/studio-plan-limits";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildPlanUsage, type PlanUsage } from "@/lib/plans/plan-usage-model";
@@ -35,7 +36,7 @@ export async function loadPlanUsage(params: {
   const month = warsawMonthWindow(now);
   const head = { count: "exact" as const, head: true };
 
-  const [downloads, exports, projects, takesToday, activeTakes, masters] =
+  const [downloads, exports, projects, takesToday, activeTakes, masters, takeCredits, masterCredits] =
     await Promise.all([
       admin.from("beat_download_events").select("id", head).eq("user_id", params.userId).gte("created_at", dayStart),
       admin.from("studio_download_usage").select("owner_id", head).eq("owner_id", params.userId).gte("created_at", weekStart),
@@ -43,12 +44,16 @@ export async function loadPlanUsage(params: {
       admin.from("takes").select("id", head).eq("owner_id", params.userId).gte("created_at", dayStart),
       admin.from("takes").select("id", head).eq("owner_id", params.userId).eq("status", "READY").is("deleted_at", null).gt("expires_at", nowIso),
       admin.from("studio_master_jobs").select("id", head).eq("owner_id", params.userId).eq("kind", "master").gte("created_at", month.startIso).not("status", "in", "(failed,cancelled)"),
+      studioQuotaRemaining(params.userId, "take"),
+      studioQuotaRemaining(params.userId, "master"),
     ]);
 
   return buildPlanUsage({
     tier: params.tier,
     now,
     monthResetAt: month.resetIso,
+    takeCredits,
+    masterCredits,
     counts: {
       beatDownloadsToday: countOf(downloads as HeadResult),
       studioExportsWeek: countOf(exports as HeadResult),

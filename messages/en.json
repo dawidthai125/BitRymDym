@@ -2,11 +2,11 @@
   "common": {
     "aboutPage": {
       "metaTitle": "About BitRymDym",
-      "metaDescription": "A platform for beats, recordings and building tracks.",
+      "metaDescription": "Beats, recording and Studio. BITEK suggests a mix and a master when you ask.",
       "oBitrymdym": "About BitRymDym",
       "bitGlosStudio": "Beat. Voice. Studio.",
-      "bitrymdymToMiejsceW": "BitRymDym is where you find beats, record your voice and develop your tracks — without the noise.",
-      "dlaProducentowRaperowI": "For producers, rappers and creators who want to come back every day: listen, record, get back to the studio.",
+      "bitrymdymToMiejsceW": "BitRymDym is where you find beats, record your voice and build a track in Studio. BITEK suggests a mix and a master — you apply them when you want.",
+      "dlaProducentowRaperowI": "For producers, rappers and creators who want to come back every day: listen, record and shape the sound.",
       "przegladajBity": "Browse beats",
       "zalozKonto": "Create account"
     },
@@ -1285,7 +1285,8 @@
       "nagranie": "recording",
       "studio": "Studio",
       "dlaRapera": "for rappers.",
-      "znajdzBeatNagrajWers": "Find a beat, record a verse, build a track in the Studio. For people who want to get from idea to recording fast — without the noise.",
+      "znajdzBeatNagrajWers": "Find a beat, record a verse and ask BITEK for a mix and a master. You approve each change.",
+      "otworzStudio": "Open Studio",
       "przegladajBity": "Browse beats",
       "jakToDziala": "How it works",
       "posluchajZKatalogu": "Listen from the catalogue",
@@ -1294,13 +1295,13 @@
       "katalogOtwartyOdRazu": "The catalogue is open right away. Recording and the Studio — after you create an account, on a beat with published status.",
       "wiecejLimitu": "More limits,",
       "gdyTegoPotrzebujesz": "when you need them",
-      "premiumFreeGoldPodnosi": "Premium (Free → Gold) raises the limits on downloads, Studio tracks, recording time and export quality. The permissions already work —",
-      "bezSamodzielnegoZakupuW": "without self-service purchase in the app",
-      "szczegolyHoldICo": ". Details, HOLD and what is still only planned — on the Premium page.",
+      "premiumFreeGoldPodnosi": "Free to Gold sets recording length, track count, masters per month and the Studio view. The limits already apply —",
+      "bezSamodzielnegoZakupuW": "there is no in-app purchase yet",
+      "szczegolyHoldICo": ". Prices and extra recording and master packs are on the Premium page.",
       "szczegolyPremium": "Premium details",
       "zalozKonto": "Create account",
       "zacznijOdKatalogu": "Start with the catalogue",
-      "potemKontoNagranieI": "Then an account, a recording and the Studio — in that order.",
+      "potemKontoNagranieI": "Then an account, a recording, a mix with BITEK and a master.",
       "otworzKatalog": "Open the catalogue",
       "consts": {
         "bezKonta": "No account needed",
@@ -1311,7 +1312,7 @@
         "naStronieBituAlbo": "On the beat page or in Studio. Recording time depends on your account''s Premium tier (and the beat''s length).",
         "wymagaKonta": "Requires an account",
         "zlozNumerWStudio": "Put a track together in Studio",
-        "projektySciezkiMiksI": "Projects, tracks, mixing and export in one place. How many tracks you get depends on Premium.",
+        "projektySciezkiMiksI": "You record, cut pieces, and BITEK suggests a mix and a master. They apply only after you agree.",
         "wybierzBit": "Pick a beat",
         "wejdzWKatalogOdsluchaj": "Open the catalog, listen and pick a published beat.",
         "zalozKonto": "Create an account",
@@ -1319,7 +1320,7 @@
         "nagrajWers": "Record a verse",
         "naStronieBituAlbo2": "On the beat page or in Studio — only on a published beat, within your account''s Premium limit.",
         "dopracujWStudio": "Polish it in Studio",
-        "ulozSciezkiMiksujI": "Arrange tracks, mix and export. Higher Premium = more tracks and better export."
+        "ulozSciezkiMiksujI": "Cut the recording and place it on the timeline. BITEK improves the sound in the mix and the master when you ask."
       },
       "and": "and"
     },
