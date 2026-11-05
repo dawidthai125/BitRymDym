@@ -47,6 +47,7 @@ import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
+import { StudioFragmentTools } from "@/components/studio/studio-fragment-tools";
 import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
@@ -85,6 +86,7 @@ import type {
   StudioTrackDto,
 } from "@/lib/studio/studio-types";
 import { formatStudioTimeMs } from "@/lib/studio/studio-time";
+import { beatDurationMs } from "@/lib/studio/studio-daw-clock";
 import { studioAdvancedRecordAllowed, studioRecordView } from "@/lib/studio/studio-record-view";
 import {
   buildTimelineRulerTicks,
@@ -334,6 +336,8 @@ function StudioEditorInner({
     createDefaultSnapConfig(),
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
+  /** Fragment bar confirm. Separate from the inspector and the simple-view delete. */
+  const [fragmentConfirmDelete, setFragmentConfirmDelete] = useState(false);
   /** Phase 5 — pending track delete confirmation (track id). */
   const [confirmDeleteTrackId, setConfirmDeleteTrackId] = useState<
     string | null
@@ -1956,10 +1960,25 @@ function StudioEditorInner({
     });
   }
 
+  function nudgeSelectedBy(deltaMs: number): void {
+    if (!selectedClip || recordingLocked || pending) return;
+    const next = nudgeClipTimelineStartMs({
+      timelineStartMs: selectedClip.timelineStartMs,
+      durationMs: selectedClip.durationMs,
+      timelineLengthMs: length,
+      deltaMs,
+    });
+    if (next === selectedClip.timelineStartMs) return;
+    setMode("edit");
+    setFragmentConfirmDelete(false);
+    persistClipMove(selectedClip.id, next, { applySnapGrid: false });
+  }
+
   function splitSelectedAtPlayhead(): void {
     const clipId = selectedClip?.id;
     if (!clipId) return;
     setError(null);
+    setFragmentConfirmDelete(false);
     const atTimelineMs = getPlayheadMs();
     const beforeSplit = committedClip(clipId);
     enqueuePersist(async () => {
@@ -2079,17 +2098,19 @@ function StudioEditorInner({
           shiftKey: event.shiftKey,
           altKey: event.altKey,
         });
-        const next = nudgeClipTimelineStartMs({
-          timelineStartMs: selectedClip.timelineStartMs,
-          durationMs: selectedClip.durationMs,
-          timelineLengthMs: length,
-          deltaMs: sign * step,
-        });
-        if (next === selectedClip.timelineStartMs) return;
-        // Nudge bypasses snap — micro-timing (±1 / ±10 / ±20 ms).
-        persistClipMove(selectedClip.id, next, {
-          applySnapGrid: false,
-        });
+        nudgeSelectedBy(sign * step);
+        return;
+      }
+
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        if (!selectedClip) return;
+        event.preventDefault();
+        deleteSelectedClip();
         return;
       }
 
@@ -2184,6 +2205,7 @@ function StudioEditorInner({
               });
             }
             setConfirmDelete(false);
+            setFragmentConfirmDelete(false);
           },
         };
       } catch {
@@ -2902,6 +2924,37 @@ function StudioEditorInner({
         }}
         canUndo={undoHistory.past.length > 0 && !recordingLocked}
         canRedo={undoHistory.future.length > 0 && !recordingLocked}
+        showFragmentTools={studioStep === "record"}
+        fragmentEnabled={Boolean(selectedClip) && !recordingLocked}
+        fragmentConfirmDelete={fragmentConfirmDelete}
+        onFragmentSplit={() => {
+          setMode("edit");
+          splitSelectedAtPlayhead();
+        }}
+        onFragmentTrimStart={() => {
+          setFragmentConfirmDelete(false);
+          setMode("edit");
+          clipEditHandlers.onTrimLeftToPlayhead();
+        }}
+        onFragmentTrimEnd={() => {
+          setFragmentConfirmDelete(false);
+          setMode("edit");
+          clipEditHandlers.onTrimRightToPlayhead();
+        }}
+        onFragmentNudge={(direction) => {
+          nudgeSelectedBy(direction * beatDurationMs(doc.project.tempoBpm, doc.project.timeSignatureDen));
+        }}
+        onFragmentDuplicate={() => {
+          setFragmentConfirmDelete(false);
+          setMode("edit");
+          duplicateSelectedClip();
+        }}
+        onFragmentAskDelete={() => setFragmentConfirmDelete(true)}
+        onFragmentDelete={() => {
+          deleteSelectedClip();
+          setFragmentConfirmDelete(false);
+        }}
+        onFragmentCancelDelete={() => setFragmentConfirmDelete(false)}
         onUndo={undoStudioEdit}
         onRedo={redoStudioEdit}
       />
@@ -3454,6 +3507,7 @@ function StudioEditorInner({
               if (clip) setSelectedTrackId(clip.trackId);
               setMode("edit");
               setConfirmDelete(false);
+              setFragmentConfirmDelete(false);
             }}
             scrollContainerRef={timelineScrollRef}
             onZoomAroundViewport={(nextPxPerMs, viewportOffsetPx) => {
@@ -4098,6 +4152,17 @@ function StudioTransportBar({
   onMasterGainCommit,
   canUndo,
   canRedo,
+  showFragmentTools,
+  fragmentEnabled,
+  fragmentConfirmDelete,
+  onFragmentSplit,
+  onFragmentTrimStart,
+  onFragmentTrimEnd,
+  onFragmentNudge,
+  onFragmentDuplicate,
+  onFragmentAskDelete,
+  onFragmentDelete,
+  onFragmentCancelDelete,
   onUndo,
   onRedo,
 }: {
@@ -4120,6 +4185,17 @@ function StudioTransportBar({
   onMasterGainCommit: (gainDb: number) => void;
   canUndo: boolean;
   canRedo: boolean;
+  showFragmentTools: boolean;
+  fragmentEnabled: boolean;
+  fragmentConfirmDelete: boolean;
+  onFragmentSplit: () => void;
+  onFragmentTrimStart: () => void;
+  onFragmentTrimEnd: () => void;
+  onFragmentNudge: (direction: -1 | 1) => void;
+  onFragmentDuplicate: () => void;
+  onFragmentAskDelete: () => void;
+  onFragmentDelete: () => void;
+  onFragmentCancelDelete: () => void;
   onUndo: () => void;
   onRedo: () => void;
 }) {
@@ -4410,6 +4486,22 @@ function StudioTransportBar({
           getExpectedDocumentVersion={getExpectedDocumentVersion}
         />
       </div>
+      {showFragmentTools ? (
+        <StudioFragmentTools
+          enabled={fragmentEnabled}
+          pending={pending}
+          confirmDelete={fragmentConfirmDelete}
+          onSplit={onFragmentSplit}
+          onTrimStart={onFragmentTrimStart}
+          onTrimEnd={onFragmentTrimEnd}
+          onNudgeLeft={() => onFragmentNudge(-1)}
+          onNudgeRight={() => onFragmentNudge(1)}
+          onDuplicate={onFragmentDuplicate}
+          onAskDelete={onFragmentAskDelete}
+          onDelete={onFragmentDelete}
+          onCancelDelete={onFragmentCancelDelete}
+        />
+      ) : null}
       {noBeat ? (
         <p
           className="mt-1 text-[11px] text-[var(--brd-mute)]"

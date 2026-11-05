@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
  * Preview via DOM; one CAS commit on pointer up.
  */
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 
 import { StudioClipWaveform } from "@/components/studio/studio-clip-waveform";
 import type { StudioClipDto } from "@/lib/studio/studio-types";
@@ -88,6 +88,7 @@ export function StudioClipLaneItem({
 
   const shellRef = useRef<HTMLDivElement | null>(null);
   const readoutRef = useRef<HTMLDivElement | null>(null);
+  const bodyGestureRef = useRef<{ originClientX: number; moved: boolean } | null>(null);
   const dragRef = useRef<{
     kind: DragKind;
     originClientX: number;
@@ -220,6 +221,46 @@ export function StudioClipLaneItem({
     hideReadout();
   }
 
+  function onBodyPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    bodyGestureRef.current = { originClientX: event.clientX, moved: false };
+    onSelectClip(clip.id);
+  }
+
+  function onBodyPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const gesture = bodyGestureRef.current;
+    if (!gesture) return;
+    if (!gesture.moved && Math.abs(event.clientX - gesture.originClientX) < 6) return;
+    if (!gesture.moved) {
+      gesture.moved = true;
+      beginDrag("move", gesture.originClientX);
+    }
+    updateDrag(event.clientX);
+  }
+
+  function onBodyPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    const gesture = bodyGestureRef.current;
+    bodyGestureRef.current = null;
+    if (!gesture) return;
+    if (gesture.moved) {
+      endDrag();
+      return;
+    }
+    const shell = shellRef.current;
+    if (!shell) return;
+    const localX = Math.max(0, event.clientX - shell.getBoundingClientRect().left);
+    const timelineMs = clip.timelineStartMs + pxToMs(localX, density);
+    const end = clip.timelineStartMs + clip.durationMs;
+    onSeek(Math.min(end, Math.max(clip.timelineStartMs, timelineMs)));
+  }
+
+  function onBodyPointerCancel() {
+    bodyGestureRef.current = null;
+    if (dragRef.current) cancelDrag();
+  }
+
   return (
     <div
       ref={shellRef}
@@ -292,7 +333,16 @@ export function StudioClipLaneItem({
         />
       ) : null}
 
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded">
+      <div
+        className={`relative min-h-0 min-w-0 flex-1 overflow-hidden rounded ${
+          editEnabled ? "cursor-grab touch-none" : ""
+        }`}
+        data-studio-clip-body={editEnabled ? clip.id : undefined}
+        onPointerDown={editEnabled ? onBodyPointerDown : undefined}
+        onPointerMove={editEnabled ? onBodyPointerMove : undefined}
+        onPointerUp={editEnabled ? onBodyPointerUp : undefined}
+        onPointerCancel={editEnabled ? onBodyPointerCancel : undefined}
+      >
         <StudioClipWaveform
           clip={clip}
           widthPx={Math.max(1, width - (editEnabled ? 8 : 0))}
@@ -301,7 +351,7 @@ export function StudioClipLaneItem({
           interactionLocked={interactionLocked}
           resolveSourceUrl={resolveSourceUrl}
           onTimelineMs={
-            seekEnabled || editEnabled
+            seekEnabled
               ? (timelineMs) => {
                   onSelectClip(clip.id);
                   onSeek(timelineMs);
