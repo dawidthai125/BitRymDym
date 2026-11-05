@@ -384,6 +384,14 @@ export function masterStylesForTier(tier: PremiumTier): boolean {
   return PLAN_POLICY[tier].mastering.mastersPerMonth > 0;
 }
 
+/**
+ * BITEK AUTO MIX-MASTERING. Gold only.
+ * A stored flag on a lower plan must not turn this on — callers re-check the tier.
+ */
+export function bitekAutoMixMasterForTier(tier: PremiumTier): boolean {
+  return tier === "GOLD";
+}
+
 export function takeTtlSecondsForTier(tier: PremiumTier): number {
   return PLAN_POLICY[tier].recording.takeTtlSeconds;
 }

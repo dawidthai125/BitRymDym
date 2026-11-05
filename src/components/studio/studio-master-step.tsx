@@ -11,7 +11,9 @@ import { StudioMasterReport } from "@/components/studio/studio-change-report";
 import { StudioListenLinks } from "@/components/studio/studio-listen-links";
 import { StudioYoutubeVideo } from "@/components/studio/studio-youtube-video";
 import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
+import { clearAutoMasterHandoff, nextAutoMasterStep, readAutoMasterHandoff } from "@/lib/studio/bitek/auto-mix-master";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
+import { planMasterClarity } from "@/lib/studio/bitek/chat/master-clarity";
 import type { BitekMasterStyle, BitekMasterTarget } from "@/lib/studio/bitek/chat/types";
 import { watchMasterManual, type ManualIssue } from "@/lib/studio/bitek/manual-watch";
 import { LockedAction } from "@/components/plans/locked-action";
@@ -60,6 +62,7 @@ export function StudioMasterStep({
   onCommitMasterSession,
   sessionRef,
   initialState,
+  autoPipeline = false,
 }: {
   doc: StudioProjectDocument;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
@@ -74,6 +77,8 @@ export function StudioMasterStep({
   sessionRef?: { current: { apply: (snap: MasterSessionSnap) => void } | null };
   /** Tests/screenshots only. */
   initialState?: { target?: MasterTargetId; style?: MasterStyleId };
+  /** Gold auto switch was on when the user agreed to mastering. */
+  autoPipeline?: boolean;
 }) {
   const t = useTranslations("studio.masterStep");
   const tBitek = useTranslations("studio.bitek");
@@ -93,6 +98,8 @@ export function StudioMasterStep({
   const effective = useMemo(() => applyMasterStyle(settings, style, styleIntensity), [settings, style, styleIntensity]);
   const [preview, setPreview] = useState<{ stereo: Stereo; metrics: MasterMetrics; key: string } | null>(null);
   const [server, setServer] = useState<ServerState>({ available: true, tier: null, options: [], usage: null, masters: null });
+  const [serverLoaded, setServerLoaded] = useState(false);
+  const [autoArmed, setAutoArmed] = useState(false);
   const [sm, setSm] = useState<ServerMaster>({ phase: "idle" });
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -129,9 +136,17 @@ export function StudioMasterStep({
     void fetch(`/api/studio/projects/${projectId}/master`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (!live || !j) return;
+        if (!live) return;
+        if (!j) {
+          setServerLoaded(true);
+          return;
+        }
         setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: j.usage ?? null, masters: j.masters ?? null });
-        if (j.available === false) return setSm({ phase: "unavailable" });
+        if (j.available === false) {
+          setSm({ phase: "unavailable" });
+          setServerLoaded(true);
+          return;
+        }
         // Restore an approved master for the current mix (after reload / coming back later).
         const a = j.approved as { id?: string; target?: string | null; status?: string; settings?: Record<string, number> | null; style?: string | null; styleIntensity?: number | null } | null | undefined;
         if (a?.id && a.status === "succeeded") {
@@ -151,14 +166,42 @@ export function StudioMasterStep({
               setSm((cur) => (cur.phase === "idle" ? { phase: "done", jobId: id, url, metrics: (job.job.metrics as { after?: Record<string, unknown> }) ?? null } : cur));
               setApproved(true);
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => {
+              if (live) setServerLoaded(true);
+            });
+          return;
         }
+        setServerLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (live) setServerLoaded(true);
+      });
     return () => {
       live = false;
     };
   }, [projectId]);
+
+  const autoPhase = useRef<"off" | "clarity" | "commit" | "done">("off");
+  const autoOwnsBubble = useRef(false);
+  useEffect(() => {
+    if (!autoPipeline) {
+      clearAutoMasterHandoff();
+      return;
+    }
+    let live = true;
+    const id = window.setTimeout(() => {
+      if (!live || autoPhase.current !== "off" || !readAutoMasterHandoff(projectId)) return;
+      autoPhase.current = "clarity";
+      autoOwnsBubble.current = true;
+      clearAutoMasterHandoff();
+      setAutoArmed(true);
+    }, 0);
+    return () => {
+      live = false;
+      window.clearTimeout(id);
+    };
+  }, [autoPipeline, projectId]);
 
   // 3) Approximate browser preview whenever target/settings change.
   useEffect(() => {
@@ -504,6 +547,7 @@ export function StudioMasterStep({
     }
     if (masterSeen.current === masterSig) return;
     const timer = window.setTimeout(() => {
+      if (autoOwnsBubble.current) return;
       masterSeen.current = masterSig;
       const issue = previewFresh
         ? watchMasterManual({
@@ -579,6 +623,51 @@ export function StudioMasterStep({
   const limitReached = server.usage?.weekLimit != null && server.usage.used >= server.usage.weekLimit;
   const mastersLeft = server.masters ? Math.max(0, server.masters.monthLimit - server.masters.used) : null;
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale === "en" ? "en-GB" : "pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" });
+
+  useEffect(() => {
+    if (!autoArmed || autoPhase.current === "off" || autoPhase.current === "done") return;
+    const freshPreview = previewFresh;
+    const plan = freshPreview && verdict
+      ? planMasterClarity({
+          settings,
+          cards: verdict.cards.map((card) => ({
+            id: card.id,
+            status: card.status,
+            value: card.value,
+            note: typeof card.params.band === "string" ? `${card.messageKey}:${card.params.band}` : card.messageKey,
+          })),
+          measuredLufs: Number.isFinite(freshPreview.metrics.lufs) ? freshPreview.metrics.lufs : null,
+          truePeakDb: Number.isFinite(freshPreview.metrics.truePeakDb) ? freshPreview.metrics.truePeakDb : null,
+          target,
+          lang: locale === "en" ? "en" : "pl",
+          targetName: target,
+        })
+      : null;
+    const decision = nextAutoMasterStep({
+      phase: autoPhase.current === "commit" ? "commit" : "clarity",
+      mixReady: Boolean(mix),
+      previewFresh: Boolean(freshPreview),
+      serverLoaded,
+      blocked: sm.phase !== "idle" || mastersLeft === 0,
+      hasClarityMoves: Boolean(plan && plan.moves.length > 0),
+    });
+    if (decision === "wait") return;
+    if (decision === "stop") {
+      autoPhase.current = "done";
+      return;
+    }
+    if (decision === "apply-clarity" && plan) {
+      autoPhase.current = "commit";
+      const next = { ...sessionLive.current.settings };
+      for (const move of plan.moves) next[move.key] = move.value;
+      sessionApi.current.replaceSettings(next);
+      return;
+    }
+    autoPhase.current = "done";
+    void makeMaster();
+    // makeMaster closes over the settings of this render. The ref phase stops a second run.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one render after the preview is fresh
+  }, [autoArmed, mix, previewFresh, verdict, serverLoaded, sm.phase, mastersLeft, settings, target, locale]);
 
   return (
     <div data-testid="studio-master-step" className="flex flex-col gap-3 pb-64 lg:pb-48">

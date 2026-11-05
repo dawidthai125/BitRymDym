@@ -14,6 +14,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
@@ -158,6 +159,15 @@ import {
 import { StudioBitekChat } from "@/components/studio/studio-bitek-chat";
 import { StudioBitekDock, type BitekBubble, type BitekMood } from "@/components/studio/studio-bitek-dock";
 import { useBitekProject } from "@/components/studio/use-bitek-project";
+import { bitekAutoMixMasterForTier } from "@/config/plan-policy";
+import {
+  autoMixMasterMaterial,
+  autoMixRecordOffer,
+  readBitekAutoMixMaster,
+  saveAutoMixHandoff,
+  subscribeBitekAutoMixMaster,
+  writeBitekAutoMixMaster,
+} from "@/lib/studio/bitek/auto-mix-master";
 import { bitekRulesGuide, type BitekAction } from "@/lib/studio/bitek/bitek-guide";
 import { parseBitekBubbleState, type BitekBubbleState } from "@/lib/studio/bitek/store/messages";
 import type { BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
@@ -477,6 +487,12 @@ function StudioEditorInner({
 
   // Stage 2b — BITEK the raccoon: per-project memory, bubble + chat overlay.
   const tBitek = useTranslations("studio.bitek");
+  const autoMixMasterAllowed = bitekAutoMixMasterForTier(trackCapacity.premiumTier);
+  const autoOn = useSyncExternalStore(
+    subscribeBitekAutoMixMaster,
+    () => readBitekAutoMixMaster(trackCapacity.premiumTier),
+    () => false,
+  );
   const bitekStore = useBitekProject(doc.project.id);
   const [bitekChatOpen, setBitekChatOpen] = useState(false);
   const [bitekChatBusy, setBitekChatBusy] = useState(false);
@@ -527,6 +543,47 @@ function StudioEditorInner({
           ? [{ id: "goMix", label: tBitek("akcja.goMix"), primary: true, onClick: () => onRecordBitekAction("goMix") }]
           : [],
       };
+    }
+    const material = autoMixMasterMaterial({
+      beatId: doc.project.beatId,
+      tracks: doc.tracks,
+      clips: doc.clips,
+    });
+    const offer = autoMixRecordOffer({
+      enabled: autoOn,
+      recording: recordingLocked,
+      vocal: material.vocal,
+      beat: material.beat,
+    });
+    if (offer !== "hidden") {
+      const text =
+        offer === "ready"
+          ? tBitek("msg.autoReady")
+          : offer === "need-vocal"
+            ? tBitek("msg.autoNeedVocal")
+            : offer === "need-beat"
+              ? tBitek("msg.autoNeedBeat")
+              : tBitek("msg.autoNeedBoth");
+      const actions: BitekBubble["actions"] =
+        offer === "ready"
+          ? [{
+              id: "autoMix",
+              label: tBitek("akcja.autoMix"),
+              primary: true,
+              onClick: () => {
+                saveAutoMixHandoff(doc.project.id);
+                setStudioStep("mix");
+              },
+            }]
+          : offer === "need-beat"
+            ? [{ id: "chooseBeat", label: tBitek("akcja.chooseBeat"), primary: true, onClick: () => onRecordBitekAction("chooseBeat") }]
+            : offer === "need-vocal"
+              ? [{ id: "record", label: tBitek("akcja.record"), primary: true, onClick: () => onRecordBitekAction("record") }]
+              : [
+                  { id: "chooseBeat", label: tBitek("akcja.chooseBeat"), primary: true, onClick: () => onRecordBitekAction("chooseBeat") },
+                  { id: "record", label: tBitek("akcja.record"), onClick: () => onRecordBitekAction("record") },
+                ];
+      return { key: `auto-offer-${offer}`, mood: offer === "ready" ? "done" : "alert", text, actions };
     }
     const msgs = bitekRulesGuide({ step: "record", recording: recordingLocked, ...bitekBase, analysis: { status: "idle" } });
     const first = msgs[0];
@@ -3116,6 +3173,7 @@ function StudioEditorInner({
         recording={recordingLocked}
         recordContext={studioStep === "record" || recordingContextActive}
         inspectorSheetOpen={inspectorOverlayOpen && !inspectorDesktopRail}
+        autoMixMaster={autoMixMasterAllowed ? { enabled: autoOn, onChange: writeBitekAutoMixMaster } : null}
         chat={
           <StudioBitekChat
             projectId={doc.project.id}
@@ -3147,10 +3205,13 @@ function StudioEditorInner({
           applyRef={masterApplyRef}
           onCommitMasterSession={commitMasterSession}
           sessionRef={masterSessionRef}
+          autoPipeline={autoOn}
         />
       ) : studioStep === "mix" ? (
         <StudioMixStep
           onGoMaster={() => setStudioStep("master")}
+          onListen={() => transport.play()}
+          autoEnabled={autoOn}
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
           onBack={() => setStudioStep("record")}
