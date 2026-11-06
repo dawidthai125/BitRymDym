@@ -39,8 +39,16 @@ function subscribeViewport(onStoreChange: () => void): () => void {
   return () => window.removeEventListener("resize", onStoreChange);
 }
 
+// useSyncExternalStore needs a stable snapshot: return the same object until the size changes,
+// otherwise every read looks like a store change and React re-renders in a loop (error #185).
+let viewportSnapshot: { w: number; h: number } | null = null;
 function readViewport(): { w: number; h: number } {
-  return { w: window.innerWidth, h: window.innerHeight };
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (!viewportSnapshot || viewportSnapshot.w !== w || viewportSnapshot.h !== h) {
+    viewportSnapshot = { w, h };
+  }
+  return viewportSnapshot;
 }
 
 export const BITEK_MOOD_SRC: Record<BitekMood, string> = {
