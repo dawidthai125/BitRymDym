@@ -9,9 +9,13 @@ import { canUseBeatInStudio } from "@/lib/beats/usage/beat-usage-policy";
 import { randomUUID } from "crypto";
 
 import {
+  STEM_AUDIO_MAX_BYTES,
+  STEM_MAX_SECONDS,
+  STEM_USER_ACTIVE_CAP,
   TAKE_AUDIO_BUCKET,
   TAKE_AUDIO_MAX_BYTES,
 } from "@/config/recording";
+import { maxStemsForTier } from "@/config/plan-policy";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import { probeAudioDurationFromBytes } from "@/lib/beats/audio-duration";
@@ -130,7 +134,7 @@ async function loadTakeOwnedOrThrow(params: {
   const { data, error } = await admin
     .from("takes")
     .select(
-      "id, owner_id, beat_id, status, object_key, storage_bucket, content_type, recording_max_seconds_snapshot, expires_at, deleted_at, duration_seconds, byte_size",
+      "id, owner_id, beat_id, status, object_key, storage_bucket, content_type, recording_max_seconds_snapshot, expires_at, deleted_at, duration_seconds, byte_size, is_stem",
     )
     .eq("id", params.takeId)
     .maybeSingle();
@@ -319,13 +323,15 @@ export async function finalizeTakeRecordingFor(
       byteSize: take.byte_size as number,
       contentType: take.content_type as string,
     });
-    const { hookTakeReadyAuth } = await import(
-      "@/lib/creator-progress/award-hooks"
-    );
-    await hookTakeReadyAuth({
-      ownerUserId: context.userId,
-      takeId: swap.takeId,
-    });
+    if (take.is_stem !== true) {
+      const { hookTakeReadyAuth } = await import(
+        "@/lib/creator-progress/award-hooks"
+      );
+      await hookTakeReadyAuth({
+        ownerUserId: context.userId,
+        takeId: swap.takeId,
+      });
+    }
     return {
       takeId: swap.takeId,
       beatId: swap.beatId,
@@ -388,8 +394,10 @@ export async function finalizeTakeRecordingFor(
     throw new AuthError("FORBIDDEN", "Take audio object missing.");
   }
 
+  const isStem = take.is_stem === true;
+  const maxBytes = isStem ? STEM_AUDIO_MAX_BYTES : TAKE_AUDIO_MAX_BYTES;
   const bytes = new Uint8Array(await blob.arrayBuffer());
-  if (bytes.byteLength <= 0 || bytes.byteLength > TAKE_AUDIO_MAX_BYTES) {
+  if (bytes.byteLength <= 0 || bytes.byteLength > maxBytes) {
     await admin
       .from("takes")
       .update({
@@ -404,6 +412,7 @@ export async function finalizeTakeRecordingFor(
   const meta = validateTakeUploadMeta({
     contentType: declaredType,
     byteSize: bytes.byteLength,
+    maxBytes,
   });
   if (!meta.ok) {
     await admin
@@ -464,13 +473,16 @@ export async function finalizeTakeRecordingFor(
     throw e;
   }
 
-  const { hookTakeReadyAuth } = await import(
-    "@/lib/creator-progress/award-hooks"
-  );
-  await hookTakeReadyAuth({
-    ownerUserId: context.userId,
-    takeId: swap.takeId,
-  });
+  // Stems are imported files, not performances: no creator XP.
+  if (!isStem) {
+    const { hookTakeReadyAuth } = await import(
+      "@/lib/creator-progress/award-hooks"
+    );
+    await hookTakeReadyAuth({
+      ownerUserId: context.userId,
+      takeId: swap.takeId,
+    });
+  }
 
   return {
     takeId: swap.takeId,
@@ -487,4 +499,126 @@ export async function finalizeTakeRecording(params: {
 }): Promise<TakeFinalizeResult> {
   const context = await requireUser();
   return finalizeTakeRecordingFor(context, params);
+}
+
+export type StemSessionParams = { projectId: string; contentType: string; byteSize: number };
+
+/**
+ * Silver/Gold: signed upload session for one stem (an imported audio file for a project track).
+ * The plan decides the per-project cap; the DB enforces it (claim_stem_take_session) so parallel
+ * uploads cannot overshoot. Stems do not use the daily recording limit.
+ */
+export async function createStemUploadSessionFor(
+  context: AuthContext,
+  params: StemSessionParams,
+): Promise<TakeSignedUploadSession> {
+  const meta = validateTakeUploadMeta({
+    contentType: params.contentType,
+    byteSize: params.byteSize,
+    maxBytes: STEM_AUDIO_MAX_BYTES,
+  });
+  if (!meta.ok) throw new AuthError("FORBIDDEN", meta.errors.join("; "));
+
+  const product = await resolveProductEntitlementForAuthContext(context);
+  const maxStems = maxStemsForTier(product.premiumTier);
+  if (maxStems < 1) {
+    throw new AuthError("FORBIDDEN", "Import stemów jest od planu Silver.");
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: project, error: projectError } = await admin
+    .from("studio_projects")
+    .select("id, beat_id")
+    .eq("id", params.projectId)
+    .eq("owner_id", context.userId)
+    .maybeSingle();
+  if (projectError) throw new Error(projectError.message);
+  if (!project) throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+  const beatId = (project as { beat_id?: string | null }).beat_id ?? null;
+  if (!beatId) {
+    throw new AuthError("FORBIDDEN", "Najpierw wybierz bit w projekcie.");
+  }
+
+  const beat = await loadBeatOrThrow(beatId);
+  const activeRecordGrant = await hasActiveRecordGrant({ beatId, granteeUserId: context.userId });
+  if (
+    !canUseBeatInStudio(beatUsageSubjectFromRow(beat), {
+      userId: context.userId,
+      hasActiveGrant: activeRecordGrant,
+    }).allowed
+  ) {
+    throw new AuthError("FORBIDDEN", BEAT_RECORD_NOT_ALLOWED);
+  }
+
+  // Same retention as the plan's takes.
+  let policy: SamplePolicy;
+  try {
+    ({ policy } = assertTakeRecordAccess({
+      context,
+      beat: { id: beat.id as string, status: beat.status as string, durationSeconds: beat.duration_seconds as number },
+      premiumTier: product.premiumTier,
+      overrides: await loadSamplePolicyDurationOverrides(),
+      activeRecordGrant,
+    }));
+  } catch (e) {
+    mapTakeAuthz(e);
+  }
+
+  const takeId = randomUUID();
+  const objectKey = buildUserTakeObjectKey({ ownerId: context.userId, takeId });
+  const expiresAt = new Date(Date.now() + policy!.ttlSeconds * 1000).toISOString();
+
+  const { error: claimError } = await admin.rpc("claim_stem_take_session", {
+    p_owner_id: context.userId,
+    p_project_id: params.projectId,
+    p_beat_id: beatId,
+    p_take_id: takeId,
+    p_object_key: objectKey,
+    p_content_type: meta.contentType,
+    p_byte_size: params.byteSize,
+    p_beat_duration_seconds: beat.duration_seconds,
+    p_beat_bpm: beat.bpm ?? null,
+    p_expires_at: expiresAt,
+    p_max_stems: maxStems,
+    p_max_user_stems: Math.max(STEM_USER_ACTIVE_CAP, maxStems),
+  });
+  if (claimError) {
+    const code = claimError.message.toUpperCase();
+    if (code.includes("STEM_PROJECT_CAP")) {
+      throw new AuthError("FORBIDDEN", `Limit stemów w projekcie (${maxStems}) osiągnięty.`);
+    }
+    if (code.includes("STEM_USER_CAP")) {
+      throw new AuthError("FORBIDDEN", "Za dużo stemów na koncie. Usuń stare projekty albo stemy.");
+    }
+    if (code.includes("STEM_PROJECT_INVALID")) {
+      throw new AuthError("NOT_FOUND", "Projekt nie został znaleziony.");
+    }
+    throw new Error(claimError.message);
+  }
+
+  const { data: signed, error: signError } = await admin.storage
+    .from(TAKE_AUDIO_BUCKET)
+    .createSignedUploadUrl(objectKey);
+  if (signError || !signed) {
+    await admin.from("takes").update({ status: "FAILED", failure_reason: "SIGNED_UPLOAD_URL_FAILED" }).eq("id", takeId);
+    throw new Error(signError?.message ?? "Failed to create stem upload URL.");
+  }
+
+  return {
+    takeId,
+    beatId,
+    objectKey,
+    path: signed.path,
+    token: signed.token,
+    signedUrl: signed.signedUrl,
+    contentType: meta.contentType,
+    declaredByteSize: params.byteSize,
+    maxRecordingSeconds: STEM_MAX_SECONDS,
+    expiresAt,
+  };
+}
+
+export async function createStemUploadSession(params: StemSessionParams): Promise<TakeSignedUploadSession> {
+  const context = await requireUser();
+  return createStemUploadSessionFor(context, params);
 }

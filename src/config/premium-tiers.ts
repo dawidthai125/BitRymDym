@@ -27,7 +27,7 @@ export type PremiumTierLimits = {
   artifactQuotaBytes: number;
   /**
    * Max studio_tracks rows per project (BEAT counts; Master does not).
-   * plan-policy maxRecordingTracks + 1 Bit: FREE 2 / BRONZE 3 / SILVER 5 / GOLD 8 (Bronze = 2 recording + Bit).
+   * plan-policy maxRecordingTracks + 1 Bit: FREE 2 / BRONZE 3 / SILVER 9 / GOLD 17 (Bronze = 2 recording + Bit).
    */
   studioMaxTracks: number;
   priority: PremiumPriority;

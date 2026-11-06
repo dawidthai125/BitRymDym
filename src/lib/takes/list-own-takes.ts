@@ -121,6 +121,8 @@ export async function listOwnTakesFor(
       "id, title, beat_id, recording_mode, status, created_at, expires_at, deleted_at, duration_seconds",
     )
     .eq("owner_id", context.userId)
+    // The recording archive lists vocal takes; stems live in their project.
+    .eq("is_stem", false)
     .order("created_at", { ascending: false })
     .limit(limit);
 

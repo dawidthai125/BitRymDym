@@ -11,6 +11,7 @@ import {
   GUEST_POLICY,
   LISTEN_LINK_DB_MAX_DAYS,
   maxRecordingTracksForTier,
+  maxStemsForTier,
   minimumTierForQuality,
   PLAN_PAYMENTS_AVAILABLE,
   readPlanPaymentsAvailable,
@@ -112,9 +113,12 @@ describe("plan policy SSOT (Owner 2026-10-29)", () => {
     expect(GUEST_POLICY).toEqual({ studio: false, recording: false, beatDownloadsPerDay: 0, previewSeconds: 20 });
   });
 
-  it("recording tracks per project 1 / 2 / 4 / 7 (beat not counted); beat downloads a day 0 / 10 / 25 / 50", () => {
-    expect(PREMIUM_TIERS.map(maxRecordingTracksForTier)).toEqual([1, 2, 4, 7]);
-    expect(PREMIUM_TIERS.map((t) => PREMIUM_TIER_MATRIX[t].studioMaxTracks)).toEqual([2, 3, 5, 8]);
+  it("recording tracks per project 1 / 2 / 8 / 16 (beat not counted); beat downloads a day 0 / 10 / 25 / 50", () => {
+    expect(PREMIUM_TIERS.map(maxRecordingTracksForTier)).toEqual([1, 2, 8, 16]);
+    // Stem import is Silver (8) and Gold (16); never more stems than tracks.
+    expect(PREMIUM_TIERS.map(maxStemsForTier)).toEqual([0, 0, 8, 16]);
+    for (const t of PREMIUM_TIERS) expect(maxStemsForTier(t)).toBeLessThanOrEqual(maxRecordingTracksForTier(t));
+    expect(PREMIUM_TIERS.map((t) => PREMIUM_TIER_MATRIX[t].studioMaxTracks)).toEqual([2, 3, 9, 17]);
     expect(PREMIUM_TIERS.map(beatDownloadsPerDayForTier)).toEqual([0, 10, 25, 50]);
     expect(PREMIUM_TIERS.map((t) => PREMIUM_TIER_MATRIX[t].downloadsDaily)).toEqual([0, 10, 25, 50]);
   });
