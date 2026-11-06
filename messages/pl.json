@@ -376,6 +376,8 @@
         "godziny": "{n} h",
         "projekty": "Projekty Studio",
         "sciezki": "Ścieżki nagrań w projekcie (bit się nie liczy)",
+        "stemy": "Import stemów (gotowe pliki WAV/MP3 jako ścieżki)",
+        "stemyIle": "do {n} w projekcie",
         "mastery": "Mastery / miesiąc",
         "pobieranie": "Pobieranie gotowych plików",
         "doJakosci": "do {q}",

@@ -376,6 +376,8 @@
         "godziny": "{n} h",
         "projekty": "Studio projects",
         "sciezki": "Recording tracks per project (beat not counted)",
+        "stemy": "Stem import (ready WAV/MP3 files as tracks)",
+        "stemyIle": "up to {n} per project",
         "mastery": "Masters / month",
         "pobieranie": "Finished-file downloads",
         "doJakosci": "up to {q}",
