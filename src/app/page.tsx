@@ -191,6 +191,21 @@ export default async function HomePage() {
             >
               {t("jakToDziala")}
             </h2>
+            <figure className="mt-8 max-w-4xl">
+              <video
+                controls
+                playsInline
+                preload="metadata"
+                poster="/promo/jak-to-dziala-poster.jpg"
+                aria-label={t("promoFilm")}
+                className="aspect-video w-full rounded-[var(--tape-r-panel)] border border-tape-line-strong bg-tape-soot"
+              >
+                <source src="/promo/jak-to-dziala.mp4" type="video/mp4" />
+              </video>
+              <figcaption className="mt-3 max-w-[60ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
+                {t("promoPodpis")}
+              </figcaption>
+            </figure>
             <ol className="mt-10 grid gap-y-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4 lg:gap-x-0">
               {STEPS.map((s, i) => (
                 <li key={s.t} className="relative lg:pr-8">
