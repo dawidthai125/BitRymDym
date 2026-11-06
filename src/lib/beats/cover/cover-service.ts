@@ -11,6 +11,7 @@ import {
   coverStatusForDecision,
   type CoverModerationOutcome,
 } from "@/lib/beats/cover/cover-decision";
+import { assertCoverIsDistinct } from "@/lib/beats/cover/cover-distinct";
 import { processCoverImage } from "@/lib/beats/cover/cover-image";
 import { moderateCoverImage } from "@/lib/beats/cover/cover-moderation";
 import { BeatRequestError } from "@/lib/beats/request-error";
@@ -167,6 +168,24 @@ export async function uploadOwnBeatCover(
   }
 
   const admin = createSupabaseAdminClient();
+  const distinct = await assertCoverIsDistinct(admin, {
+    ownerId: context.userId,
+    excludeBeatId: beatId,
+    bytes: processed.full,
+  }).catch(async (error: unknown) => {
+    if (error instanceof BeatRequestError) {
+      await auditCover({
+        context,
+        targetUserId: context.userId,
+        beatId,
+        oldStatus: row.cover_status,
+        newStatus: "auto_rejected",
+        metadata: { automatic: true, reason: "duplicate_cover" },
+      });
+    }
+    throw error;
+  });
+
   const stem = `${context.userId}/${beatId}/${randomUUID()}`;
   const fullPath = `${stem}-full.webp`;
   const thumbPath = `${stem}-thumb.webp`;
@@ -193,7 +212,7 @@ export async function uploadOwnBeatCover(
       cover_path: fullPath,
       cover_thumb_path: thumbPath,
       cover_status: coverStatus,
-      cover_moderation: moderationSnapshot(moderation),
+      cover_moderation: { ...moderationSnapshot(moderation), dhash: distinct.dhash },
       cover_rejection_reason: null,
       cover_updated_at: new Date().toISOString(),
     })

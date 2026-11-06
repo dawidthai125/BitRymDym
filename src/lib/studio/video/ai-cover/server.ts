@@ -13,6 +13,7 @@ import sharp from "sharp";
 
 import { AuthError } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
+import { assertCoverIsDistinct } from "@/lib/beats/cover/cover-distinct";
 import { uploadOwnBeatCover } from "@/lib/beats/cover/cover-service";
 import { BeatRequestError } from "@/lib/beats/request-error";
 import { warsawDayStartIso } from "@/lib/studio/cleanup/cleanup-server";
@@ -146,6 +147,7 @@ export async function generateAiCover(p: { ownerId: string; projectId: string; t
   let filtered: Awaited<ReturnType<typeof filterVideoImage>>;
   try {
     filtered = await filterVideoImage(await toAspect(chain.image, p.aspect));
+    await assertCoverIsDistinct(admin, { ownerId: p.ownerId, bytes: Buffer.from(filtered.image) });
   } catch (e) {
     await finish({ status: "image_rejected", provider: chain.provider, attempts });
     if (e instanceof BeatRequestError) return { ok: false, error: "image_rejected", message: e.message };

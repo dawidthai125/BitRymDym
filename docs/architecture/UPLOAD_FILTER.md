@@ -14,7 +14,7 @@ Status: implementacja w gałęziach `feat/upload-filter-db` → `feat/upload-fil
 5. Odwołanie: właściciel `request_beat_auto_check_appeal`; moderator `override_beat_auto_check` (log w `beat_moderation_decisions`, `auto_check_override`), bit wraca do `PENDING_REVIEW`.
 
 ## Brak klucza AcoustID
-`ACOUSTID_CLIENT_KEY` pusty → provider `acoustid` = `not_configured`, check działa dalej na własnym katalogu + wokalu. Check nigdy nie przechodzi bez własnego katalogu i detekcji wokalu.
+`ACOUSTID_CLIENT_KEY` pusty → provider `acoustid` = `not_configured`, check działa dalej na własnym katalogu + wokalu. Check nigdy nie przechodzi bez własnego katalogu i detekcji wokalu. Gdy klucz jest ustawiony, błąd albo timeout AcoustID zostawia bit w `PENDING_REVIEW` (`error`) — to nie jest wynik „brak trafienia”. Moderator może puścić sprawdzanie jeszcze raz.
 
 ## Providerzy (pluggable)
 `src/lib/beats/auto-check/providers.ts` — interfejs `RecognitionProvider { name, required, recognize(ctx) }`. Nowy provider = nowa fabryka + dopisanie do listy w `worker.ts`. Zewnętrzni providerzy są `required: false` i muszą zwracać `not_configured` bez klucza.

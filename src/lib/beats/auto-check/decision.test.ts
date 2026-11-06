@@ -78,8 +78,18 @@ describe("decideAutoCheck", () => {
     expect(v.summaryPl).toBe(AUTO_CHECK_MESSAGES_PL.error);
   });
 
-  it("optional provider error does not block pass", () => {
-    const v = decideAutoCheck({ recognition: [own(), acoustid({ outcome: "error" })], vocal: vocal() });
-    expect(v.status).toBe("passed");
+  it("AcoustID error or timeout does not pass; a missing key still does", () => {
+    const http = decideAutoCheck({
+      recognition: [own(), acoustid({ outcome: "error", errorCode: "acoustid_http_500" })],
+      vocal: vocal(),
+    });
+    expect(http).toMatchObject({ status: "error", errorCode: "acoustid_http_500" });
+    const timeout = decideAutoCheck({
+      recognition: [own(), acoustid({ outcome: "timeout", errorCode: "acoustid_timeout" })],
+      vocal: vocal(),
+    });
+    expect(timeout).toMatchObject({ status: "error", errorCode: "acoustid_timeout" });
+    const bare = decideAutoCheck({ recognition: [own(), acoustid({ outcome: "error" })], vocal: vocal() });
+    expect(bare).toMatchObject({ status: "error", errorCode: "acoustid_fetch" });
   });
 });

@@ -105,8 +105,17 @@ export function decideAutoCheck(input: {
   const requiredFailed = recognition.some(
     (p) => p.required && (p.outcome === "error" || p.outcome === "timeout"),
   );
-  if (!ownRan || requiredFailed || vocal.outcome !== "ok" || ratio === null) {
-    const code = vocal.outcome === "timeout" ? "timeout" : vocal.errorCode ?? own.errorCode ?? "provider_error";
+  // AcoustID with a key must actually answer. A timeout or HTTP error is not
+  // "no match". Missing key stays not_configured and does not block.
+  const acoustidFailed = recognition.find(
+    (p) => p.provider === "acoustid" && (p.outcome === "error" || p.outcome === "timeout"),
+  );
+  if (!ownRan || requiredFailed || acoustidFailed || vocal.outcome !== "ok" || ratio === null) {
+    const code = acoustidFailed
+      ? acoustidFailed.errorCode ?? "acoustid_fetch"
+      : vocal.outcome === "timeout"
+        ? "timeout"
+        : vocal.errorCode ?? own.errorCode ?? "provider_error";
     return { ...base, status: "error", errorCode: code, summaryPl: AUTO_CHECK_MESSAGES_PL.error };
   }
   return { ...base, status: "passed", errorCode: null, summaryPl: AUTO_CHECK_MESSAGES_PL.passed };
