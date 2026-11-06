@@ -301,7 +301,7 @@ export function StudioRecordingPanel({
       projectId,
     ],
   );
-  /** Stem import: add a named SAMPLE track (server: two CAS steps), then show it in the editor. */
+  /** Stem import: add a named SAMPLE track (server: up to three CAS steps), then show it in the editor. */
   const createStemTrack = useCallback(
     async (input: { name: string; role: string }): Promise<{ ok: true; trackId: string } | { ok: false; message: string }> => {
       let createdId: string | null = null;
