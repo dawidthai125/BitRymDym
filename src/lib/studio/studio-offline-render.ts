@@ -12,6 +12,7 @@
  */
 
 import { trackParamAt } from "@/lib/studio/studio-automation";
+import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { AUDIO_CODEC, AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS } from "@/config/audio-render";
 import type { DecodedPcmStereo } from "@/lib/audio/render-decode";
 import {
@@ -462,14 +463,38 @@ export async function renderStudioDocumentOffline(
       break;
     }
   }
+  const anySolo = document.tracks.some((t) => t.solo);
+  const hasAudibleMidi = document.tracks.some(
+    (t) => (t.midi?.notes.length ?? 0) > 0 && trackGraphParams(t, anySolo).gain > 0,
+  );
   if (
     !anyVoice &&
+    !hasAudibleMidi &&
     interpretStudioSessionAtPlayhead(document, Math.max(0, probeEndMs - 1))
       .voices.length === 0
   ) {
     throw new StudioOfflineRenderError(
       "STUDIO_RENDER_EMPTY_SESSION",
       "No audible TAKE/BEAT_REF voices on the Studio timeline.",
+    );
+  }
+
+  const midiByTrack = document.tracks.map((track) => {
+    const notes = track.midi?.notes ?? [];
+    if (notes.length === 0 || !track.midi) return null;
+    return renderMidiNotes({
+      notes,
+      instrument: track.midi.instrument,
+      sampleRate: STUDIO_OFFLINE_RENDER_SAMPLE_RATE,
+      durationMs,
+    });
+  });
+  let midiBytes = 0;
+  for (const pcm of midiByTrack) if (pcm) midiBytes += pcm.byteLength;
+  if (outputBytes + fxStateBytes + midiBytes > maxTotalPcmBytes) {
+    throw new StudioOfflineRenderError(
+      "STUDIO_RENDER_MEMORY_CAP",
+      `Output + FX + MIDI ${outputBytes + fxStateBytes + midiBytes} bytes exceeds maxTotalPcmBytes ${maxTotalPcmBytes}.`,
     );
   }
 
@@ -490,12 +515,12 @@ export async function renderStudioDocumentOffline(
     assertValidPcm(pcm, ck);
     const srcBytes = checkedPcmBytes(pcm.frames, pcm.channels);
     if (
-      outputBytes + fxStateBytes + cachedSourcesBytes + srcBytes >
+      outputBytes + fxStateBytes + midiBytes + cachedSourcesBytes + srcBytes >
       maxTotalPcmBytes
     ) {
       throw new StudioOfflineRenderError(
         "STUDIO_RENDER_MEMORY_CAP",
-        `Total PCM ${outputBytes + fxStateBytes + cachedSourcesBytes + srcBytes} bytes exceeds maxTotalPcmBytes ${maxTotalPcmBytes}.`,
+        `Total PCM ${outputBytes + fxStateBytes + midiBytes + cachedSourcesBytes + srcBytes} bytes exceeds maxTotalPcmBytes ${maxTotalPcmBytes}.`,
       );
     }
     cachedSourcesBytes += srcBytes;
@@ -585,6 +610,9 @@ export async function renderStudioDocumentOffline(
       const track = document.tracks[ti]!;
       let tl = busL[ti] ?? 0;
       let tr = busR[ti] ?? 0;
+      const midiSample = midiByTrack[ti]?.[i] ?? 0;
+      tl += midiSample;
+      tr += midiSample;
       const fx = trackFx.get(track.id);
       if (fx) {
         const wet = fx.process({ left: tl, right: tr });

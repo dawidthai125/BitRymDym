@@ -28,6 +28,7 @@ export function studioEngineDocumentFromProject(
       solo: t.solo,
       effectsChain: t.effectsChain,
       automation: t.automation,
+      midi: t.midi,
     })),
     clips: doc.clips
       .filter((c) => {

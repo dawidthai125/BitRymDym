@@ -1,4 +1,5 @@
 import { AutomationValidationError, hasAutomation, parseAutomationForWrite, readAutomation, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import { hasMidi, MidiValidationError, parseMidiForWrite, readMidi, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { studioAdvancedRecordAllowed } from "@/lib/studio/studio-record-view";
 import "server-only";
 
@@ -126,6 +127,8 @@ type TrackRow = {
   effects_chain?: unknown | null;
   /** Migration 20261106180000; absent before it is applied. */
   automation?: unknown | null;
+  /** Migration 20261106190000; absent before it is applied. */
+  midi?: unknown | null;
 };
 
 type ClipRow = {
@@ -183,6 +186,7 @@ function mapTrack(row: TrackRow): StudioTrackDto {
     outputRoute: row.output_route,
     effectsChain: readStudioFxChain(row.effects_chain, "track"),
     automation: readAutomation(row.automation),
+    midi: readMidi(row.midi),
   };
 }
 
@@ -1120,6 +1124,47 @@ export async function applyStudioTrackAutomation(
   input: Parameters<typeof applyStudioTrackAutomationFor>[1],
 ): Promise<{ automation: StudioAutomationV1; documentVersion: number }> {
   return applyStudioTrackAutomationFor(await requireUser(), input);
+}
+
+/**
+ * Replace a track's MIDI notes (CAS on the document version).
+ * Strict validation here; the DB only guards type, size, and empty → NULL.
+ */
+export async function applyStudioTrackMidiFor(
+  context: AuthContext,
+  input: { projectId: string; trackId: string; expectedDocumentVersion: unknown; midi: unknown },
+): Promise<{ midi: StudioMidiV1; documentVersion: number }> {
+  await assertOwnsProject(context, input.projectId);
+  let midi: StudioMidiV1;
+  try {
+    midi = parseMidiForWrite(input.midi);
+  } catch (e) {
+    if (e instanceof MidiValidationError) throw new AuthError("FORBIDDEN", e.message);
+    throw e;
+  }
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_midi", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+    // No notes = no MIDI (NULL keeps old rows and new ones identical).
+    p_midi: hasMidi(midi) ? midi : null,
+  });
+  if (error) {
+    if (/TRACK_NOT_FOUND/.test(error.message)) throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    throw new Error(error.message);
+  }
+  const casRow = (data as Array<{ document_version: number }> | null)?.[0] ?? null;
+  if (!casRow) throw new StudioFxCasConflictError();
+  return { midi, documentVersion: num(casRow.document_version) };
+}
+
+export async function applyStudioTrackMidi(
+  input: Parameters<typeof applyStudioTrackMidiFor>[1],
+): Promise<{ midi: StudioMidiV1; documentVersion: number }> {
+  return applyStudioTrackMidiFor(await requireUser(), input);
 }
 
 export async function updateStudioTrackControls(
