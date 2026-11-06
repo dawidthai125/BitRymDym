@@ -123,7 +123,7 @@ export async function commitYoutubeVideo(p: {
   ownerId: string; projectId: string; tier: PremiumTier; source: unknown; imageId?: unknown; title?: unknown; artist?: unknown;
 }): Promise<{ ok: true; jobId: string } | Deny> {
   if (!youtubeVideoAllowed(p.tier)) return { ok: false, error: "tier_video" };
-  // No E3 worker for youtube_video yet → never queue a job nobody will process.
+  // The poller renders kind youtube_video. The flag stays off until that host runs this code.
   if (!youtubeVideoRenderEnabled()) return { ok: false, error: "video_soon", message: "Wideo MP4 niedostępne — wkrótce." };
   const admin = createSupabaseAdminClient();
   const proj = await project(admin, p.ownerId, p.projectId);
