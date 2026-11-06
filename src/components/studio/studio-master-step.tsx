@@ -11,6 +11,7 @@ import { StudioMasterReport } from "@/components/studio/studio-change-report";
 import { StudioListenLinks } from "@/components/studio/studio-listen-links";
 import { StudioYoutubeVideo } from "@/components/studio/studio-youtube-video";
 import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
+import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 import { clearAutoMasterHandoff, nextAutoMasterStep, readAutoMasterHandoff } from "@/lib/studio/bitek/auto-mix-master";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
 import { planMasterClarity } from "@/lib/studio/bitek/chat/master-clarity";
@@ -473,6 +474,7 @@ export function StudioMasterStep({
       if (commit.available === false) return setSm({ phase: "unavailable" });
       if (commit.masters) setServer((s) => ({ ...s, masters: commit.masters }));
       if (!commit.ok) return setSm({ phase: "failed", code: String(commit.error ?? "commit") });
+      requestPlanUsageRefresh();
       // The reference is single-use: E3 deletes it right after this master.
       if (useReference) setRefState((r) => ({ ...r, reference: null }));
       setSm({ phase: "working", jobId: prep.jobId });
@@ -509,6 +511,7 @@ export function StudioMasterStep({
       const commit = await post({ action: "commit", jobId, documentVersion: doc.project.documentVersion });
       if (commit.json.usage) setServer((s) => ({ ...s, usage: { used: commit.json.usage.used, weekLimit: commit.json.usage.week_limit ?? null, resetAt: commit.json.usage.reset_at ?? null } }));
       if (!commit.json.ok) return setDl({ key, status: commit.status === 429 ? "limit" : "error" });
+      requestPlanUsageRefresh();
       const done = await pollJob(jobId, "dl");
       if (done.status !== "succeeded" || !done.url) return setDl({ key, status: "error" });
       const a = document.createElement("a");

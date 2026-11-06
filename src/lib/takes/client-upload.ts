@@ -5,6 +5,7 @@
  * P2: optional replaceTakeId for explicit sample replacement.
  */
 
+import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { toUserFacingError } from "@/lib/ui/user-errors";
@@ -215,6 +216,8 @@ async function runTakeUploadTransport(params: {
     stage: "SESSION_CREATED",
     takeId: sessionJson.takeId,
   });
+  // The day counter counts the row created with the session.
+  requestPlanUsageRefresh();
 
   const supabase = createSupabaseBrowserClient();
   const { error: uploadError } = await supabase.storage
