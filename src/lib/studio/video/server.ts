@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 
 import { BEAT_COVER_BUCKET } from "@/config/beat-covers";
 import { AuthError } from "@/lib/auth/session";
+import { assertCoverIsDistinct } from "@/lib/beats/cover/cover-distinct";
 import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { BEAT_USAGE_COLUMNS, beatUsageSubjectFromRow } from "@/lib/beats/usage/beat-usage-server";
 import { canViewBeat, isBeatOwner } from "@/lib/beats/usage/beat-usage-policy";
@@ -113,6 +114,7 @@ export async function uploadYoutubeImage(p: { ownerId: string; projectId: string
   const admin = createSupabaseAdminClient();
   await project(admin, p.ownerId, p.projectId);
   const img = await filterVideoImage(p.bytes);
+  await assertCoverIsDistinct(admin, { ownerId: p.ownerId, bytes: Buffer.from(img.image) });
   const imageId = randomUUID();
   const key = youtubeImageKey(p.ownerId, p.projectId, imageId);
   const { error } = await admin.storage.from(ARTIFACTS).upload(key, img.image, { contentType: "image/jpeg", upsert: false });
