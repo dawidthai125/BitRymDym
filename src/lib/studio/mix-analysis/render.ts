@@ -7,6 +7,7 @@
  * reflects the processed sound. Unsupported chains fall back to dry.
  */
 
+import { automationLane, clampAutomationValue, createLaneEvaluator, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import type { StudioTrackRole } from "@/config/studio";
 import {
   buildStudioOfflineFxChain,
@@ -40,6 +41,8 @@ export type MixAnalysisTrack = {
   solo: boolean;
   /** Raw track FX chain (JSONB v1). Omitted / empty = dry. */
   effectsChain?: unknown;
+  /** Silver/Gold gain / pan envelopes; absent = static gainDb / pan. */
+  automation?: StudioAutomationV1;
 };
 
 export type MixAnalysisInput = {
@@ -143,6 +146,22 @@ export function stereoPanBuffer(left: Float32Array, right: Float32Array, mono: b
   }
 }
 
+/** Per-sample gain (linear) and pan evaluators for a track: constants when it has no automation. */
+function trackStrip(track: MixAnalysisTrack, sr: number): { gainAt: (n: number) => number; panAt: (n: number) => number; automated: boolean } {
+  const gLane = automationLane(track.automation, "gainDb");
+  const pLane = automationLane(track.automation, "pan");
+  const tg = dbToLin(track.gainDb);
+  if (!gLane && !pLane) return { gainAt: () => tg, panAt: () => track.pan, automated: false };
+  const gEval = gLane ? createLaneEvaluator(gLane.points, track.gainDb) : null;
+  const pEval = pLane ? createLaneEvaluator(pLane.points, track.pan) : null;
+  const msPerSample = 1000 / sr;
+  return {
+    gainAt: gEval ? (n) => dbToLin(clampAutomationValue("gainDb", gEval(n * msPerSample))) : () => tg,
+    panAt: pEval ? (n) => clampAutomationValue("pan", pEval(n * msPerSample)) : () => track.pan,
+    automated: true,
+  };
+}
+
 export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, anySolo: boolean): RenderedTrack {
   const sr = input.sampleRate;
   const len = Math.max(1, Math.round((input.lengthMs / 1000) * sr));
@@ -150,9 +169,9 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
   const right = new Float32Array(len);
   const activeRanges: Array<[number, number]> = [];
   const audible = !track.muted && (!anySolo || track.solo);
-  const tg = dbToLin(track.gainDb);
+  const strip = trackStrip(track, sr);
   const fx = analysisFxChain(track.effectsChain, "track", sr);
-  if (fx) return renderTrackWithFx(input, track, audible, tg, fx);
+  if (fx) return renderTrackWithFx(input, track, audible, strip, fx);
   for (const clip of input.clips) {
     if (clip.trackId !== track.id || clip.muted || clip.durationMs < 1) continue;
     const src = input.sources[clip.sourceKey];
@@ -165,7 +184,7 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
     const off = Math.round((clip.sourceOffsetMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
     const fo = Math.round((Math.max(0, clip.fadeOutMs) / 1000) * sr);
-    const cg = dbToLin(clip.gainDb) * tg;
+    const cg = dbToLin(clip.gainDb);
     const end = Math.min(len, start + dur, start + (c0.length - off));
     if (end <= start) continue;
     activeRanges.push([Math.max(0, start), end]);
@@ -173,10 +192,10 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
       const k = n - start;
       const si = off + k;
       if (si < 0) continue;
-      let g = cg;
+      let g = cg * strip.gainAt(n);
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
-      const [pl, pr] = stereoPan(c0[si] * g, c1[si] * g, mono, track.pan);
+      const [pl, pr] = stereoPan(c0[si] * g, c1[si] * g, mono, strip.panAt(n));
       left[n] += pl;
       right[n] += pr;
     }
@@ -189,7 +208,7 @@ function renderTrackWithFx(
   input: MixAnalysisInput,
   track: MixAnalysisTrack,
   audible: boolean,
-  tg: number,
+  strip: { gainAt: (n: number) => number; panAt: (n: number) => number; automated: boolean },
   fx: StudioOfflineFxChainHandle,
 ): RenderedTrack {
   const sr = input.sampleRate;
@@ -211,7 +230,7 @@ function renderTrackWithFx(
     const off = Math.round((clip.sourceOffsetMs / 1000) * sr);
     const fi = Math.round((Math.max(0, clip.fadeInMs) / 1000) * sr);
     const fo = Math.round((Math.max(0, clip.fadeOutMs) / 1000) * sr);
-    const cg = dbToLin(clip.gainDb) * tg;
+    const cg = dbToLin(clip.gainDb);
     const end = Math.min(len, start + dur, start + (c0.length - off));
     if (end <= start) continue;
     activeRanges.push([Math.max(0, start), end]);
@@ -219,7 +238,7 @@ function renderTrackWithFx(
       const k = n - start;
       const si = off + k;
       if (si < 0) continue;
-      let g = cg;
+      let g = cg * strip.gainAt(n);
       if (fi > 0 && k < fi) g *= k / fi;
       if (fo > 0 && dur - k <= fo) g *= Math.max(0, (dur - k) / fo);
       left[n] += c0[si] * g;
@@ -230,7 +249,17 @@ function renderTrackWithFx(
   // Reverb (stereo IR) turns a mono strip stereo before the panner.
   const stereoFx = fx.processors.some((p) => p.type === "reverb" && p.status === "IMPLEMENTED");
   const mono = allMono && !stereoFx;
-  stereoPanBuffer(left, right, mono, track.pan);
+  if (strip.automated) {
+    // Pan automation after the FX: per-sample pan, same law as stereoPan.
+    const len2 = Math.min(left.length, right.length);
+    for (let n = 0; n < len2; n++) {
+      const [pl, pr] = stereoPan(left[n], right[n], mono, strip.panAt(n));
+      left[n] = pl;
+      right[n] = pr;
+    }
+  } else {
+    stereoPanBuffer(left, right, mono, track.pan);
+  }
   return { track, left, right, activeRanges, audible };
 }
 

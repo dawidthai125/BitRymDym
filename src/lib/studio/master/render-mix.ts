@@ -20,7 +20,7 @@ export function prepareMixInput(input: MixAnalysisInput, opts: RenderMixOptions 
         masterEffectsChain: undefined,
         tracks: input.tracks
           .filter((t) => !opts.onlyTrackId || t.id === opts.onlyTrackId)
-          .map((t) => ({ ...t, gainDb: 0, pan: 0, solo: false, muted: opts.onlyTrackId ? false : t.muted, effectsChain: undefined })),
+          .map((t) => ({ ...t, gainDb: 0, pan: 0, solo: false, muted: opts.onlyTrackId ? false : t.muted, effectsChain: undefined, automation: undefined })),
       }
     : input;
 }

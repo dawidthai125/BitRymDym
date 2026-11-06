@@ -11,6 +11,8 @@ import {
   gainDbToLinearVolume,
 } from "@/lib/studio/studio-beat-audio";
 
+import { automationLane, trackParamAt, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
+
 export type StudioEngineTrack = {
   id: string;
   gainDb: number;
@@ -18,6 +20,8 @@ export type StudioEngineTrack = {
   muted: boolean;
   solo: boolean;
   effectsChain?: unknown;
+  /** Silver/Gold gain / pan envelopes (see studio-automation.ts). */
+  automation?: StudioAutomationV1;
 };
 
 export type StudioEngineClip = {
@@ -153,5 +157,70 @@ export function masterGraphParams(document: Pick<
   return {
     gain: gainDbToLinearVolume(document.masterGainDb),
     pan: normalizePan(document.masterPan),
+  };
+}
+
+export type TrackParamSchedule = {
+  /** Value at `playheadMs` (now). */
+  start: number;
+  /** Ramp targets after now: `atMs` from now, then linear ramp to `value`. */
+  events: { atMs: number; value: number }[];
+};
+
+/**
+ * Silver/Gold automation as Web Audio events, from the playhead on. Pure (no AudioParam), so the schedule can be
+ * unit-tested and compared with the offline renderers. Gain is sampled densely inside a segment because the
+ * envelope is linear in dB while a Web Audio ramp is linear in amplitude; pan is linear in both, so its points are enough.
+ * Mute / solo keep winning: an inaudible track is a flat 0.
+ */
+export function trackAutomationSchedule(
+  track: StudioEngineTrack,
+  anySolo: boolean,
+  playheadMs: number,
+  opts: { stepMs?: number; maxEvents?: number } = {},
+): { gain: TrackParamSchedule | null; pan: TrackParamSchedule | null } {
+  const stepMs = Math.max(10, opts.stepMs ?? 50);
+  const maxEvents = Math.max(16, opts.maxEvents ?? 3000);
+  const auto = track.automation;
+  const gainLane = automationLane(auto, "gainDb");
+  const panLane = automationLane(auto, "pan");
+  const audible = isTrackAudible({ muted: track.muted, solo: track.solo, anySolo });
+
+  const build = (
+    lane: { points: readonly { t: number; v: number }[] },
+    param: "gainDb" | "pan",
+    staticValue: number,
+    convert: (v: number) => number,
+    subdivide: boolean,
+  ): TrackParamSchedule => {
+    const value = (t: number) => convert(trackParamAt(auto, param, t, staticValue));
+    const start = value(playheadMs);
+    const events: { atMs: number; value: number }[] = [];
+    let prev = playheadMs;
+    const future = lane.points.filter((p) => p.t > playheadMs);
+    const segments = Math.max(1, future.length);
+    const perSegment = Math.max(1, Math.floor(maxEvents / segments));
+    for (const p of future) {
+      if (subdivide && Math.abs(value(p.t) - value(prev)) > 1e-4) {
+        const span = p.t - prev;
+        const steps = Math.min(perSegment, Math.max(1, Math.ceil(span / stepMs)));
+        for (let k = 1; k < steps; k++) {
+          const t = prev + (span * k) / steps;
+          events.push({ atMs: t - playheadMs, value: value(t) });
+        }
+      }
+      events.push({ atMs: p.t - playheadMs, value: value(p.t) });
+      prev = p.t;
+    }
+    return { start, events };
+  };
+
+  return {
+    gain: gainLane
+      ? audible
+        ? build(gainLane, "gainDb", track.gainDb, gainDbToLinearVolume, true)
+        : { start: 0, events: [] }
+      : null,
+    pan: panLane ? build(panLane, "pan", track.pan, normalizePan, false) : null,
   };
 }

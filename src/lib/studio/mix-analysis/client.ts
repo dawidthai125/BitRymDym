@@ -92,6 +92,7 @@ export function buildMixAnalysisSkeleton(
       // Track/master FX from the mix step (EQ, comp, de-esser, reverb/delay…): the
       // analysis, the browser preview and the E3 render all hear the processed sound.
       effectsChain: t.effectsChain,
+      automation: t.automation,
     })),
     masterEffectsChain: doc.project.masterFxChain,
     clips,

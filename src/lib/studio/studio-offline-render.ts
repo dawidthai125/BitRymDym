@@ -11,6 +11,7 @@
  * Limiter/reverb are NOT True Peak. Reverb IR buffers count toward PCM budget.
  */
 
+import { trackParamAt } from "@/lib/studio/studio-automation";
 import { AUDIO_CODEC, AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS } from "@/config/audio-render";
 import type { DecodedPcmStereo } from "@/lib/audio/render-decode";
 import {
@@ -590,7 +591,16 @@ export async function renderStudioDocumentOffline(
         tl = wet.left;
         tr = wet.right;
       }
-      const tp = trackGraphParams(track, cachedInterp.anySolo);
+      const tp = trackGraphParams(
+        track.automation
+          ? {
+              ...track,
+              gainDb: trackParamAt(track.automation, "gainDb", tMs, track.gainDb),
+              pan: trackParamAt(track.automation, "pan", tMs, track.pan),
+            }
+          : track,
+        cachedInterp.anySolo,
+      );
       const withTrack = applyLinearGainPanSample(tl, tr, tp.gain, tp.pan);
       left += withTrack.left;
       right += withTrack.right;
