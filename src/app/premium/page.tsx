@@ -51,6 +51,7 @@ export default function PremiumPage() {
     { id: "waznosc", label: tr("tab.waznosc"), cell: (x) => tr("tab.godziny", { n: hours(PLAN_POLICY[x].recording.takeTtlSeconds) }) },
     { id: "projekty", label: tr("tab.projekty"), cell: (x) => String(PLAN_POLICY[x].studio.maxProjects) },
     { id: "sciezki", label: tr("tab.sciezki"), cell: (x) => String(PLAN_POLICY[x].studio.maxRecordingTracks) },
+    { id: "stemy", label: tr("tab.stemy"), cell: (x) => (PLAN_POLICY[x].studio.maxStems > 0 ? tr("tab.stemyIle", { n: PLAN_POLICY[x].studio.maxStems }) : "—") },
     { id: "mastery", label: tr("tab.mastery"), cell: (x) => String(PLAN_POLICY[x].mastering.mastersPerMonth) },
     {
       id: "pobieranie",
