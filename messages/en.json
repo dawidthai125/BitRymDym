@@ -427,7 +427,7 @@
         "raw": "Raw file of your own recording: {plan} only, up to {n} downloads a day.",
         "nuty": "Volume and pan automation and MIDI notes (sine, square, saw) are on every plan. The pitch note editor is Gold only.",
         "znak": "The master preview has the spoken “Bit Rym Dym” watermark on every plan. It mixes in every several seconds.",
-        "referencja": "Reference mastering is live: included in Gold, a paid add-on in Silver. Buying the add-on online — coming soon; until then we enable it manually (team@bitrymdym.pl).",
+        "referencja": "Reference mastering is live: included in Gold, a paid add-on in Silver. Buying the add-on online — coming soon; until then we enable it manually (dawid.thai@int.pl).",
         "referencjaKup": "Reference mastering is live: included in Gold, a paid monthly add-on on Silver."
       },
       "wPrzygotowaniu": "In the works",

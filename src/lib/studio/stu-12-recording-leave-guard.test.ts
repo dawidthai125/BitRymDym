@@ -224,7 +224,7 @@ describe("STU-12 A — active capture blocks standard app navigation", () => {
       ["/beats", { download: "" }, {}],
       ["#timeline", {}, {}],
       ["/studio/p/project-1#mixer", {}, {}],
-      ["mailto:team@bitrymdym.pl", {}, {}],
+      ["mailto:dawid.thai@int.pl", {}, {}],
     ];
     for (const [href, attrs, init] of cases) {
       const { win, intents } = setup();

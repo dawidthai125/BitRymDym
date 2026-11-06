@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { PLAN_ADDON_PRICE_PLN, type ReferenceMasteringGate } from "@/config/plan-policy";
+import { OPERATOR } from "@/lib/legal/legal-config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { validateReferenceUpload, type ReferenceUploadError } from "@/lib/studio/master/reference";
 import { MASTER_STYLE_IDS, PART_BYTES_FOR_REFERENCE, REFERENCE_MAX_SECONDS, type MasterStyleId } from "@/lib/studio/master/targets";
@@ -12,7 +13,7 @@ import { MASTER_STYLE_IDS, PART_BYTES_FOR_REFERENCE, REFERENCE_MAX_SECONDS, type
 export type MasterReferenceView = { id: string; fileName: string; format: "mp3" | "wav"; durationMs: number; byteSize: number; status: "pending" | "ready"; expiresAt: string };
 export type MasterReferenceState = { loaded: boolean; available: boolean; gate: ReferenceMasteringGate | null; reference: MasterReferenceView | null };
 
-const CONTACT = "team@bitrymdym.pl";
+const CONTACT = OPERATOR.email;
 const BUCKET = "audio-artifacts";
 
 /** Duration from the file's metadata (no full decode — a 10-minute WAV stays cheap on phones). */
