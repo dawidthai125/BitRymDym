@@ -16,6 +16,7 @@ export const PRIVACY: LegalDoc = {
       "Treści: wgrane Bity, okładki, Nagrania (Twój głos lub instrument), projekty Studia, teksty, utwory referencyjne do masteringu, wygenerowane miksy, mastery i wideo.",
       "Aktywność: odsłuchy, pobrania, polubienia, linki do odsłuchu i liczba ich odtworzeń, historia moderacji i odwołań.",
       "Dane techniczne: adres IP, typ przeglądarki, logi serwera i błędów, identyfikatory sesji w plikach cookie.",
+      "Odcisk dźwięku wgrywanego Bitu (chromaprint) i jego czas trwania. Sam plik audio do usługi AcoustID nie trafia.",
       "Wiadomości: treść pytań do asystenta BITEK, opisy okładek AI, korespondencja z nami.",
       "Po uruchomieniu płatności: dane do rozliczeń (adres e-mail Konta, identyfikator zamówienia, kwota, waluta, okres i historia transakcji). Danych kart płatniczych nie przechowujemy — obsługuje je PayPro S.A. z siedzibą w Poznaniu (Przelewy24), który przetwarza dane płatnicze jako odrębny administrator.",
     ] }, `Serwis jest przeznaczony dla osób, które ukończyły ${MINIMUM_AGE} lat — młodsze osoby nie mogą zakładać Konta. Jeśli dowiemy się, że Konto założyła osoba poniżej tego wieku, usuniemy je wraz z danymi.`] },
@@ -28,7 +29,7 @@ export const PRIVACY: LegalDoc = {
       ["Reklamacje, dochodzenie i obrona roszczeń", "art. 6 ust. 1 lit. f"],
     ] } }, "Nie wysyłamy marketingu i nie używamy narzędzi analitycznych ani reklamowych. Jeśli to się zmieni, poprosimy o zgodę."] },
     { id: "p4", h: "4. Automatyczna moderacja", blocks: [
-      "Okładki i wybrane grafiki oceniamy automatycznie modelem AI (np. nagość, przemoc, treści nienawistne), a pliki audio — automatycznymi testami technicznymi. Wysoki wynik może spowodować automatyczne odrzucenie publikacji. Masz prawo do interwencji człowieka: odwołanie z poziomu „Moje bity” rozpatruje moderator. Możesz też przedstawić swoje stanowisko i zakwestionować decyzję.",
+      "Okładki i wybrane grafiki oceniamy automatycznie modelem AI (np. nagość, przemoc, treści nienawistne). Plik audio Bitu porównujemy z własnym katalogiem, a do AcoustID wysyłamy wyłącznie odcisk dźwięku i czas trwania. Wysoki wynik może spowodować automatyczne odrzucenie publikacji. Masz prawo do interwencji człowieka: odwołanie z poziomu „Moje bity” rozpatruje moderator. Możesz też przedstawić swoje stanowisko i zakwestionować decyzję.",
     ] },
     { id: "p5", h: "5. Odbiorcy danych (podmioty przetwarzające)", blocks: [
       "Powierzamy dane wyłącznie w zakresie potrzebnym do danej funkcji, na podstawie umów powierzenia (DPA):",
@@ -41,12 +42,14 @@ export const PRIVACY: LegalDoc = {
         ["Cloudflare (Workers AI)", "generowanie okładek AI — tylko opis tekstowy", "USA / globalnie"],
         ["Resend", "wysyłka e-maili (gdy włączone)", "USA"],
         ["PayPro S.A. (Przelewy24), Poznań", "płatności — odrębny administrator danych płatniczych", "UE (Polska)"],
+        ["AcoustID (api.acoustid.org)", "odcisk dźwięku i czas trwania wgrywanego Bitu; plik audio zostaje u nas", "serwer usługi AcoustID"],
       ] } },
       "Do dostawców AI nie wysyłamy Twojego e-maila ani hasła. Opisy okładek przed wysłaniem są filtrowane; nie wpisuj w nich danych osobowych. Przekazanie danych poza EOG odbywa się na podstawie decyzji Komisji Europejskiej (EU-US Data Privacy Framework) lub standardowych klauzul umownych (art. 46 RODO). Kopię zabezpieczeń możesz uzyskać, pisząc do nas.",
       "Opublikowane Bity, ksywka i okładki są widoczne publicznie. Link do odsłuchu działa dla każdego, kto go otrzyma — do wygaśnięcia lub wyłączenia.",
     ] },
     { id: "p6", h: "6. Jak długo przechowujemy dane", blocks: [{ list: [
       "Konto i opublikowane treści — do usunięcia Konta; po usunięciu kasujemy je bez zbędnej zwłoki (kopie zapasowe wygasają w cyklu dostawcy).",
+      "Nagranie (głos lub instrument) — Free 24 godziny, Bronze 36 godzin, Silver 60 godzin, Gold 84 godziny; potem jest usuwane automatycznie. To krócej niż pliki robocze Studia.",
       "Pliki robocze Studia (miksy, mastery, eksporty, wideo) — zależnie od Planu: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni; potem są usuwane automatycznie.",
       "Utwór referencyjny do masteringu — usuwany zaraz po zakończeniu zadania.",
       "Linki do odsłuchu — do wygaśnięcia (maksymalnie zgodnie z Planem) lub wyłączenia.",
@@ -60,7 +63,7 @@ export const PRIVACY: LegalDoc = {
       "Podanie danych jest dobrowolne, ale bez adresu e-mail i hasła nie założysz Konta.",
     ] },
     { id: "p8", h: "8. Pliki cookie i pamięć przeglądarki", blocks: [
-      `Używamy wyłącznie plików niezbędnych do działania Serwisu (logowanie, bezpieczeństwo, język, motyw). Szczegóły: Polityka cookies (${LEGAL_PATHS.cookies}).`,
+      `Cookie służą tylko do działania Serwisu: logowanie, bezpieczeństwo i język. Motyw, szkice i tymczasowe nagranie są w pamięci przeglądarki, nie w cookie. Szczegóły: Polityka cookies (${LEGAL_PATHS.cookies}).`,
     ] },
     { id: "p9", h: "9. Zmiany", blocks: ["O istotnych zmianach poinformujemy e-mailem lub w Serwisie. Aktualna wersja jest zawsze pod tym adresem."] },
   ],

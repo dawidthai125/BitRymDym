@@ -16,12 +16,16 @@ export const COOKIES: LegalDoc = {
       ["brd_tk_aid", "dawne nagrania bez konta (losowy identyfikator)", "do 2 godzin"],
       ["NEXT_LOCALE", "wybrany język", "do zmiany"],
     ] } }] },
-    { id: "c2", h: "2. Pamięć przeglądarki (localStorage)", blocks: [{ list: [
-      "Motyw jasny / ciemny.",
-      "Szkic tekstu w Studiu i zapasowa historia czatu BITEK — tylko na Twoim urządzeniu.",
-    ] }] },
+    { id: "c2", h: "2. Pamięć przeglądarki", blocks: [
+      "To nie są pliki cookie. Zostają na Twoim urządzeniu i nie wysyłamy ich do analityki.",
+      { list: [
+        "localStorage: motyw jasny albo ciemny; szkic tekstu w Studiu; zapasowa historia czatu BITEK; położenie okna BITEK; wyłącznik automatycznego miksu i mastera.",
+        "sessionStorage (znika po zamknięciu karty): czat BITEK w tej karcie; skrót limitów Planu na około minutę; wskazówka głośności nagrania przekazywana do miksu; znacznik trwającego automatycznego miksu albo mastera.",
+        "IndexedDB, baza brd-take-recovery: kawałki trwającego nagrania, żeby dało się je dokończyć po zerwaniu połączenia. To nie jest kopia na naszym serwerze. Po wysłaniu nagrania albo po wyczyszczeniu danych strony ta baza znika.",
+      ] },
+    ] },
     { id: "c3", h: "3. Zarządzanie", blocks: [
-      "Możesz usunąć lub zablokować pliki cookie w ustawieniach przeglądarki; bez cookie sesji logowanie nie zadziała. Jeśli kiedyś dodamy narzędzia analityczne lub marketingowe, najpierw poprosimy o zgodę.",
+      "Możesz usunąć lub zablokować pliki cookie, localStorage, sessionStorage i IndexedDB w ustawieniach przeglądarki. Bez cookie sesji logowanie nie zadziała. Wyłączenie IndexedDB może przerwać dokańczanie nagrania po zerwaniu. Jeśli kiedyś dodamy narzędzia analityczne lub marketingowe, najpierw poprosimy o zgodę.",
     ] },
   ],
 };

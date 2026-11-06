@@ -18,9 +18,13 @@ describe("legal documents", () => {
   it("final documents: no placeholders left, operator data + 16+ age filled", () => {
     for (const d of [TERMS, PRIVACY, COOKIES]) expect(text(d).match(PLACEHOLDER_RE) ?? []).toEqual([]);
     expect(LEGAL_PLACEHOLDERS).toEqual([]);
-    expect(TERMS_VERSION).toBe("2026-11-01");
+    expect(TERMS_VERSION).toBe("2026-11-07");
     const all = text(TERMS) + text(PRIVACY);
-    for (const s of ["8952035524", "dawid.thai@int.pl", "1 listopada 2026", "PayPro S.A.", "Poznaniu", "12 miesięcy"]) expect(all).toContain(s);
+    for (const s of ["8952035524", "dawid.thai@int.pl", "7 listopada 2026", "PayPro S.A.", "Poznaniu", "12 miesięcy", "AcoustID", "Bit Rym Dym", "24 godziny", "84 godziny"]) expect(all).toContain(s);
+    expect(text(PRIVACY)).not.toContain("język, motyw");
+    expect(text(COOKIES)).toContain("brd-take-recovery");
+    expect(text(COOKIES)).toContain("sessionStorage");
+    expect(text(TERMS) + text(PRIVACY) + text(COOKIES)).not.toContain("team@bitrymdym.pl");
     expect(all).not.toMatch(/Tpay|Krajowy Integrator/i);
     expect(text(TERMS)).toContain("ukończyła 16 lat");
     expect(text(PRIVACY)).toContain("ukończyły 16 lat");

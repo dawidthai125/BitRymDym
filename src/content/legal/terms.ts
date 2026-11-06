@@ -25,7 +25,8 @@ export const TERMS: LegalDoc = {
     { id: "s3", h: "§ 3. Rodzaje usług", blocks: [
       "Usługodawca świadczy drogą elektroniczną usługi: przeglądanie i odsłuch katalogu Bitów; prowadzenie Konta; Studio (nagrywanie, edycja, miks, mastering, eksport); publikacja Bitów Użytkowników po moderacji; prywatne linki do odsłuchu; generowanie okładek i wideo (w tym z pomocą narzędzi AI); asystent BITEK; powiadomienia e-mail.",
       "Umowa o prowadzenie Konta zostaje zawarta na czas nieoznaczony z chwilą potwierdzenia adresu e-mail. Korzystanie z katalogu bez Konta jest możliwe w zakresie udostępnionym publicznie.",
-      "Zakres funkcji i limity (m.in. czas przechowywania plików w Studiu: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni) opisuje strona Premium. Funkcje oznaczone jako testowe mogą się zmieniać.",
+      "Zakres funkcji i limity opisuje strona Premium. Pliki robocze Studia (miksy, mastery, eksporty, wideo) trzymamy: Free 2 dni, Bronze 7 dni, Silver 30 dni, Gold 45 dni. Nagranie (głos lub instrument) znika wcześniej: Free 24 godziny, Bronze 36 godzin, Silver 60 godzin, Gold 84 godziny. Funkcje oznaczone jako testowe mogą się zmieniać.",
+      "Podgląd mastera w Studiu ma głosowy znak wodny „Bit Rym Dym”, mieszany co kilkanaście sekund. Czystego mastera nie odtwarzamy w przeglądarce. Dostajesz go tylko przez zatwierdzone pobranie, w limicie Planu.",
     ] },
     { id: "s4", h: "§ 4. Wymagania techniczne", blocks: [
       "Aktualna przeglądarka (Chrome, Edge, Firefox, Safari) z włączoną obsługą JavaScript i plików cookie niezbędnych do logowania, dostęp do internetu, aktywny adres e-mail; do nagrywania — mikrofon i zgoda przeglądarki na jego użycie.",
@@ -40,6 +41,7 @@ export const TERMS: LegalDoc = {
       "Użytkownik oświadcza, że ma prawa do Treści Użytkownika (w tym do sampli, wokali i okładek) i że ich publikacja nie narusza praw osób trzecich ani prawa.",
       "Zakazane jest dodawanie treści bezprawnych, w szczególności naruszających prawa autorskie lub pokrewne, wizerunek, dobra osobiste, nawołujących do przemocy lub nienawiści, pornograficznych, z udziałem małoletnich w kontekście seksualnym, spamu i złośliwego kodu.",
       "Bity Użytkowników i okładki przechodzą moderację: automatyczną (m.in. analiza obrazu przez model AI, kontrola techniczna pliku) oraz ręczną przez moderatora. Automatyczna ocena może skutkować odrzuceniem; Użytkownik może się od niej odwołać — odwołanie rozpatruje człowiek.",
+      "Wgrany Bit porównujemy z katalogiem Serwisu. Do usługi AcoustID wysyłamy tylko odcisk dźwięku (chromaprint) i czas trwania, bez pliku audio, żeby wychwycić cudze nagranie. Szczegóły odbiorcy są w Polityce prywatności.",
       "Usługodawca może odmówić publikacji, ukryć lub usunąć treść, a w razie poważnych lub powtarzających się naruszeń zablokować Konto. Decyzję wraz z uzasadnieniem przekazuje Użytkownikowi (np. w Serwisie lub e-mailem), chyba że prawo tego zabrania.",
       "Zgłoszenia treści bezprawnych (także przez osoby bez Konta) można wysyłać na " + O.email + ", podając adres treści, uzasadnienie, dane zgłaszającego i oświadczenie o dobrej wierze. Usługodawca rozpatruje je bez zbędnej zwłoki (zgodnie z aktem o usługach cyfrowych — DSA).",
     ] },
@@ -60,7 +62,7 @@ export const TERMS: LegalDoc = {
       "Plan Free jest bezpłatny. Ceny Planów płatnych i Dodatków podane w Serwisie są cenami brutto w złotych. Do czasu uruchomienia płatności ceny mają charakter informacyjny.",
       "Po uruchomieniu płatności: umowa o Plan płatny zostaje zawarta z chwilą opłacenia zamówienia, na wybrany okres (miesiąc lub rok); umowa o Dodatek — na miesiąc. Płatność jest jednorazowa: Serwis nie zapisuje karty i nie pobiera kolejnych opłat sam. Płatności obsługuje PayPro S.A. z siedzibą w Poznaniu (Przelewy24) jako odrębny administrator danych płatniczych. Przed zapłatą Użytkownik zobaczy łączną cenę i okres. Przedłużenie tego samego Planu biegnie od końca opłaconego okresu. Wyższy Plan zaczyna się od razu, bez przeliczania niewykorzystanych dni niższego; niższego Planu nie kupi się, dopóki wyższy trwa.",
       "Konsument może odstąpić od umowy w ciągu 14 dni od jej zawarcia bez podania przyczyny. Jeżeli Konsument zażąda rozpoczęcia świadczenia przed upływem tego terminu i przyjmie do wiadomości utratę prawa odstąpienia (treści cyfrowe dostarczane natychmiast), prawo odstąpienia wygasa zgodnie z art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta; dla usług cyfrowych świadczonych w sposób ciągły obowiązują zasady art. 35 tej ustawy.",
-      "Pliki w Studiu są przechowywane przez okres zależny od Planu (§ 3 ust. 3). Po jego upływie lub po zmianie Planu na niższy pliki mogą zostać usunięte — Użytkownik powinien je wcześniej pobrać.",
+      "Pliki robocze Studia są przechowywane przez okres z § 3. Nagranie ma krótszy termin, też z § 3. Po upływie terminu lub po zmianie Planu na niższy pliki mogą zostać usunięte — Użytkownik powinien je wcześniej pobrać.",
     ] },
     { id: "s10", h: "§ 10. Odpowiedzialność i dostępność", blocks: [
       "Usługodawca dokłada starań, by Serwis działał nieprzerwanie, ale może go czasowo ograniczyć (np. prace techniczne, tryb serwisowy). Serwis nie jest usługą archiwizacji — Użytkownik powinien przechowywać kopie swoich plików.",

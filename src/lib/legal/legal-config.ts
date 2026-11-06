@@ -4,11 +4,11 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-01";
-export const PRIVACY_VERSION = "2026-11-01";
+export const TERMS_VERSION = "2026-11-07";
+export const PRIVACY_VERSION = "2026-11-07";
 
 /** Effective date shown in the documents (matches the versions above). */
-export const LEGAL_EFFECTIVE_DATE = "1 listopada 2026 r.";
+export const LEGAL_EFFECTIVE_DATE = "7 listopada 2026 r.";
 
 export const LEGAL_PATHS = { terms: "/regulamin", privacy: "/polityka-prywatnosci", cookies: "/cookies" } as const;
 
