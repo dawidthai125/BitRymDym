@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { StudioAiLyricsPanel } from "@/components/studio/studio-ai-lyrics-panel";
 import { Button } from "@/components/ui/button";
+import { mergeAiLyrics } from "@/lib/studio/lyrics/ai-lyrics";
 import {
   LYRICS_LIMITS,
   emptyLyricsDoc,
@@ -277,6 +279,7 @@ export function StudioLyricsCard({
           <p className={`text-right text-[11px] ${chars > LYRICS_LIMITS.maxTotalChars ? "text-red-600" : "text-[var(--brd-mute)]"}`}>
             {t("licznik", { n: chars, max: LYRICS_LIMITS.maxTotalChars })}
           </p>
+          <StudioAiLyricsPanel projectId={projectId} currentText={text} onInsert={(generated, how) => onText(mergeAiLyrics(text, generated, how))} />
         </div>
       ) : null}
 
