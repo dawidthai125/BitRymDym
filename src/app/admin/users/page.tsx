@@ -199,7 +199,9 @@ export default async function AdminUsersPage({
                   {result.rows.map((row) => (
                     <tr key={row.id}>
                       <td className="px-3 py-3 font-medium">
-                        {tl(row.displayName?.trim() || t("uzytkownik"))}
+                        <Link href={`/admin/users/${row.id}`} className="hover:text-[var(--brd-green)]">
+                          {tl(row.displayName?.trim() || t("uzytkownik"))}
+                        </Link>
                       </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
                         {tl(row.email ?? "—")}

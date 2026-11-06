@@ -26,11 +26,11 @@ export function dhashHex(gray: Uint8Array, width: number, height: number): strin
   if (width < 2 || height < 1 || gray.length < width * height) {
     throw new Error("dhash sample is too small");
   }
-  let bits = 0n;
+  let bits = BigInt(0);
   let i = 0;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width - 1 && i < COVER_DHASH_BITS; x++) {
-      if (gray[y * width + x]! > gray[y * width + x + 1]!) bits |= 1n << BigInt(i);
+      if (gray[y * width + x]! > gray[y * width + x + 1]!) bits |= BigInt(1) << BigInt(i);
       i++;
     }
   }
@@ -55,8 +55,8 @@ export function hammingHex(a: string, b: string): number {
   let x = BigInt(`0x${a}`) ^ BigInt(`0x${b}`);
   let n = 0;
   while (x) {
-    n += Number(x & 1n);
-    x >>= 1n;
+    n += Number(x & BigInt(1));
+    x >>= BigInt(1);
   }
   return n;
 }

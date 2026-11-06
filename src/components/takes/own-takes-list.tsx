@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { StatusPill } from "@/components/brand/chrome";
 import { Button } from "@/components/ui/button";
 import { TakeDownloadMenu } from "@/components/takes/take-download-menu";
 import type { OwnTakeListItem } from "@/lib/takes/list-own-takes";
@@ -48,7 +49,14 @@ async function fetchSignedUrl(
   return json.url;
 }
 
-export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
+export function OwnTakesList({
+  items,
+  variant = "archive",
+}: {
+  items: OwnTakeListItem[];
+  /** Dashboard rows keep the status visible and play in place. */
+  variant?: "archive" | "dashboard";
+}) {
   const tl = useLibText();
   const t = useTranslations("studio.ownTakesList");
   const tag = intlTag(resolveLocale(useLocale()));
@@ -57,13 +65,16 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState("");
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [playUrl, setPlayUrl] = useState<string | null>(null);
 
   async function onPreview(take: OwnTakeListItem) {
     setError(null);
     setBusyId(take.id);
     try {
       const url = await fetchSignedUrl("/api/takes/preview", take.id);
-      window.open(url, "_blank", "noopener,noreferrer");
+      setPlayingId(take.id);
+      setPlayUrl(url);
     } catch (e) {
       setError(
         toUserFacingTakeUploadError(
@@ -158,10 +169,12 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
           {tl(error)}
         </p>
       ) : null}
-      <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
-        {items.length}{" "}
-        {tl(items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów")} {t("dziennikSesji")}
-      </p>
+      {variant === "archive" ? (
+        <p className="brd-meta text-[10px] uppercase tracking-[0.14em] text-[var(--brd-mute)]">
+          {items.length}{" "}
+          {tl(items.length === 1 ? "wpis" : items.length < 5 ? "wpisy" : "wpisów")} {t("dziennikSesji")}
+        </p>
+      ) : null}
       <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
         {items.map((take, index) => {
           const busy = busyId === take.id;
@@ -172,13 +185,15 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
           return (
             <li
               key={take.id}
-              className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between"
+              className="flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between"
             >
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
-                    #{tl(String(items.length - index).padStart(2, "0"))}
-                  </span>
+                  {variant === "archive" ? (
+                    <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
+                      #{tl(String(items.length - index).padStart(2, "0"))}
+                    </span>
+                  ) : null}
                   {editingId === take.id ? (
                     <div className="flex w-full flex-wrap gap-2">
                       <input
@@ -248,6 +263,9 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <StatusPill tone={take.displayStatus === "READY" ? "ok" : "neutral"}>
+                  {tl(labelTakeStatus(take.displayStatus))}
+                </StatusPill>
                 {editingId !== take.id && take.displayStatus !== "DELETED" ? (
                   <Button
                     type="button"
@@ -260,7 +278,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                       setTitleDraft(take.title ?? "");
                     }}
                   >
-                    {t("tytul")}
+                    {t("edytuj")}
                   </Button>
                 ) : null}
                 {take.canPreview ? (
@@ -272,7 +290,7 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                     className="min-h-11"
                     onClick={() => void onPreview(take)}
                   >
-                    {tl(busy && busyId === take.id ? "…" : t("podglad"))}
+                    {tl(busy && busyId === take.id ? "…" : t("posluchaj"))}
                   </Button>
                 ) : null}
                 {showDownload && take.displayStatus === "READY" ? (
@@ -296,6 +314,9 @@ export function OwnTakesList({ items }: { items: OwnTakeListItem[] }) {
                   </Button>
                 ) : null}
               </div>
+              {playingId === take.id && playUrl ? (
+                <audio className="w-full" controls autoPlay preload="none" src={playUrl} />
+              ) : null}
             </li>
           );
         })}

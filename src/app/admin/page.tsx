@@ -14,6 +14,7 @@ import { BrdLink } from "@/components/brand/brd-button";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { canAccessAdminNav, canAccessModerationNav } from "@/lib/auth/permissions";
 import { listPlatformBeatsForAdmin } from "@/lib/beats/service";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatDurationSeconds } from "@/lib/beats/public";
 import { labelAudioReady, labelBeatStatus } from "@/lib/ui/labels";
 
@@ -37,6 +38,17 @@ export default async function AdminIndexPage() {
 
   const beats = showPlatform ? await listPlatformBeatsForAdmin() : [];
   const readyCount = beats.filter((b) => b.activeMasterReady).length;
+  let takeCount = "—";
+  let exportCount = "—";
+  if (showPlatform) {
+    const admin = createSupabaseAdminClient();
+    const [takes, jobs] = await Promise.all([
+      admin.from("takes").select("id", { count: "exact", head: true }).eq("is_stem", false).neq("status", "DELETED"),
+      admin.from("studio_master_jobs").select("id", { count: "exact", head: true }),
+    ]);
+    if (!takes.error && takes.count != null) takeCount = String(takes.count);
+    if (!jobs.error && jobs.count != null) exportCount = String(jobs.count);
+  }
 
   return (
     <main className="pb-16">
@@ -61,8 +73,8 @@ export default async function AdminIndexPage() {
         <div className="mb-10 grid grid-cols-2 gap-px border border-[var(--brd-line)] bg-[var(--brd-line)] sm:grid-cols-4">
           <AdminStat label={t("bity")} value={String(beats.length)} />
           <AdminStat label={t("gotoweAudio")} value={String(readyCount)} />
-          <AdminStat label={t("nagrania")} value="—" />
-          <AdminStat label={t("eksporty")} value="—" />
+          <AdminStat label={t("nagrania")} value={takeCount} />
+          <AdminStat label={t("eksporty")} value={exportCount} />
         </div>
 
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
@@ -162,22 +174,19 @@ export default async function AdminIndexPage() {
                   meta={t("trybPracMeta")}
                 />
                 <AdminLink
-                  href="/admin"
+                  href="/admin/users"
                   title={t("nagrania")}
-                  meta={t("wkrotce2")}
-                  soon
+                  meta={t("wProfiluUzytkownika")}
                 />
                 <AdminLink
-                  href="/admin"
+                  href="/admin/users"
                   title={t("eksporty")}
-                  meta={t("wkrotce2")}
-                  soon
+                  meta={t("wProfiluUzytkownika")}
                 />
                 <AdminLink
-                  href="/admin"
+                  href="/admin/site"
                   title={t("ustawienia")}
-                  meta={t("wkrotce2")}
-                  soon
+                  meta={t("trybPracMeta")}
                 />
               </ul>
             </div>

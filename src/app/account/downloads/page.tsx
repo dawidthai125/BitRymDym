@@ -3,15 +3,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site/site-header";
-import {
-  MAIN_CONTENT_ID,
-  MAIN_CONTENT_LANDMARK_CLASS,
-} from "@/components/site/skip-to-main";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { listMyDownloadHistory } from "@/lib/downloads/history";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
-import { cn } from "@/lib/utils";
 import { intlTag, resolveLocale } from "@/i18n/config";
 
 function formatDownloadedAt(iso: string, tag = "pl-PL"): string {
@@ -51,16 +45,7 @@ export default async function MyDownloadsPage() {
   const items = await listMyDownloadHistory();
 
   return (
-    <div className="min-h-dvh bg-[var(--brd-paper)] text-[var(--brd-ink)]">
-      <SiteHeader />
-      <main
-        id={MAIN_CONTENT_ID}
-        tabIndex={-1}
-        className={cn(
-          "mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10",
-          MAIN_CONTENT_LANDMARK_CLASS,
-        )}
-      >
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10">
         <div className="space-y-2">
           <Link
             href="/account"
@@ -104,6 +89,5 @@ export default async function MyDownloadsPage() {
           </ul>
         )}
       </main>
-    </div>
   );
 }

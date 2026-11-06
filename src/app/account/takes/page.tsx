@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
-import { AppShell } from "@/components/site/app-shell";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listOwnTakes } from "@/lib/takes/list-own-takes";
 
@@ -29,7 +28,6 @@ export default async function AccountTakesPage() {
   const takes = await listOwnTakes();
 
   return (
-    <AppShell tone="studio">
       <main
         data-brd-surface="control-room"
         className="min-h-[calc(100dvh-4.5rem)] pb-16"
@@ -65,6 +63,5 @@ export default async function AccountTakesPage() {
           </div>
         </PageFrame>
       </main>
-    </AppShell>
   );
 }

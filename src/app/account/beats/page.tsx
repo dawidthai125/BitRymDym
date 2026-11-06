@@ -8,7 +8,6 @@ import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, StatusPill } from "@/components/brand/chrome";
 import { UserBeatActions } from "@/components/beats/user-beat-actions";
 import { BeatGrantsPanel } from "@/components/grants/beat-grants-panel";
-import { AppShell } from "@/components/site/app-shell";
 import {
   canAccessAdminNav,
   canAccessCommunityUpload,
@@ -68,7 +67,6 @@ export default async function AccountBeatsPage() {
       : null;
 
   return (
-    <AppShell tone="studio">
       <main className="pb-16">
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--brd-line)] pb-6">
@@ -198,6 +196,5 @@ export default async function AccountBeatsPage() {
           </Link>
         </PageFrame>
       </main>
-    </AppShell>
   );
 }
