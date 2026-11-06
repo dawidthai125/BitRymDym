@@ -5,6 +5,10 @@ import { describe, expect, it } from "vitest";
 
 describe("homepage Jak to działa promo film", () => {
   const page = readFileSync(join(process.cwd(), "src/app/page.tsx"), "utf8");
+  const film = readFileSync(
+    join(process.cwd(), "src/components/home/home-promo-film.tsx"),
+    "utf8",
+  );
   const section = page.slice(
     page.indexOf('id="jak-to-dziala"'),
     page.indexOf('aria-labelledby="home-premium"'),
@@ -12,22 +16,31 @@ describe("homepage Jak to działa promo film", () => {
 
   it("sits under the heading and above the steps, click to play", () => {
     const heading = section.indexOf("<h2");
-    const video = section.indexOf("<video");
+    const player = section.indexOf("<HomePromoFilm");
     const steps = section.indexOf("<ol");
     expect(heading).toBeGreaterThanOrEqual(0);
-    expect(video).toBeGreaterThan(heading);
-    expect(steps).toBeGreaterThan(video);
-    expect(section).toContain('src="/promo/jak-to-dziala.mp4"');
-    expect(section).toContain('type="video/mp4"');
-    expect(section).toContain("controls");
-    expect(section).toContain("playsInline");
-    expect(section).toContain('preload="metadata"');
-    expect(section).toContain('poster="/promo/jak-to-dziala-poster.jpg"');
-    expect(section).toContain('aria-label="Film: bit, nagranie, studio"');
-    expect(section).toContain(
+    expect(player).toBeGreaterThan(heading);
+    expect(steps).toBeGreaterThan(player);
+    expect(film).toContain('src="/promo/jak-to-dziala.mp4"');
+    expect(film).toContain('type="video/mp4"');
+    expect(film).toContain("controls");
+    expect(film).toContain("playsInline");
+    expect(film).toContain('preload="metadata"');
+    expect(film).toContain('poster="/promo/jak-to-dziala-poster.jpg"');
+    expect(film).toContain("Film: bit, nagranie, studio");
+    expect(film).toContain(
       "Bit, nagranie i studio. BITEK wchodzi do mixu i masteru dopiero, gdy o to poprosisz.",
     );
-    expect(section).not.toMatch(/\bautoPlay\b|\bautoplay\b/);
+    expect(film).toContain("BRD · Film");
+    expect(film).toContain("Leci");
+    expect(`${section}\n${film}`).not.toMatch(/\bautoPlay\b|\bautoplay\b/);
+  });
+
+  it("pauses the catalog when the film starts, and the film when a beat plays", () => {
+    expect(film).toContain('phase === "playing"');
+    expect(film).toContain("player.toggle()");
+    expect(film).toContain("video.pause()");
+    expect(film).toContain('aria-hidden="true"');
   });
 
   it("ships a real mp4 and a jpeg poster", () => {
@@ -44,12 +57,40 @@ describe("homepage Jak to działa promo film", () => {
   it("keeps the caption in Polish and English", () => {
     const pl = JSON.parse(
       readFileSync(join(process.cwd(), "messages/pl.json"), "utf8"),
-    ) as { home: { page: { promoFilm: string; promoPodpis: string } } };
+    ) as {
+      home: {
+        page: {
+          promoFilm: string;
+          promoPodpis: string;
+          promoDeck: string;
+          promoLeci: string;
+          promoStop: string;
+        };
+      };
+    };
     const en = JSON.parse(
       readFileSync(join(process.cwd(), "messages/en.json"), "utf8"),
-    ) as { home: { page: { promoFilm: string; promoPodpis: string } } };
-    expect(pl.home.page.promoFilm.length).toBeGreaterThan(0);
-    expect(en.home.page.promoFilm.length).toBeGreaterThan(0);
+    ) as {
+      home: {
+        page: {
+          promoFilm: string;
+          promoPodpis: string;
+          promoDeck: string;
+          promoLeci: string;
+          promoStop: string;
+        };
+      };
+    };
+    for (const key of [
+      "promoFilm",
+      "promoPodpis",
+      "promoDeck",
+      "promoLeci",
+      "promoStop",
+    ] as const) {
+      expect(pl.home.page[key].length, key).toBeGreaterThan(0);
+      expect(en.home.page[key].length, key).toBeGreaterThan(0);
+    }
     expect(pl.home.page.promoPodpis).toMatch(/BITEK/);
     expect(en.home.page.promoPodpis).toMatch(/BITEK/);
   });
