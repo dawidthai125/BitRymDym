@@ -508,10 +508,10 @@
         "bityUdostepnione": "Bity udostępnione",
         "bityNaKtorychMasz": "Bity, na których masz aktywne udostępnienie do nagrania.",
         "premiumLimity": "Premium — limity",
-        "informacjaOPoziomachI": "Informacja o poziomach i limitach. Zakup jest na stronie Premium, gdy płatności są włączone."
-      },
-      "powiadomieniaEMail": "Powiadomienia e-mail",
-      "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie"
+        "informacjaOPoziomachI": "Informacja o poziomach i limitach. Zakup jest na stronie Premium, gdy płatności są włączone.",
+        "powiadomieniaEMail": "Powiadomienia e-mail",
+        "moderacjaMasterMp4": "Moderacja, gotowy master i MP4, wypisanie"
+      }
     },
     "accountBeatEditPage": {
       "metaTitle": "Edytuj bit",
