@@ -49,7 +49,9 @@ export default async function PaymentPreviewPage({ searchParams }: { searchParam
               GOLD: { month: "49,99 zł", year: "399 zł" },
             }}
             addonPrice="14,99 zł"
-            packPrices={{ take: "9,99 zł", master: "14,99 zł" }}
+            packPrices={{ take: "9,99 zł", master: "14,99 zł", youtube: "9,99 zł" }}
+            youtubeUnits={2}
+            youtubeBlock={null}
             tierBlock={{ BRONZE: "DOWNGRADE", SILVER: null, GOLD: null }}
             addonBlock={null}
             currentLine="Masz Silver do 30 listopada 2026."

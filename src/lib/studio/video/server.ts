@@ -14,7 +14,7 @@ import { beatCoverUrl } from "@/lib/beats/cover/cover-url";
 import { BEAT_USAGE_COLUMNS, beatUsageSubjectFromRow } from "@/lib/beats/usage/beat-usage-server";
 import { canViewBeat, isBeatOwner } from "@/lib/beats/usage/beat-usage-policy";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
-import { warsawDayStartIso } from "@/lib/studio/cleanup/cleanup-server";
+import { youtubePackOffer, youtubeVideosPerWeekForTier } from "@/config/plan-policy";
 import { approvedMaster, getStudioJob, StudioMasterUnavailable } from "@/lib/studio/master/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { BeatCoverStatus } from "@/types/domain";
@@ -22,7 +22,7 @@ import type { PremiumTier } from "@/types/premium";
 
 import { filterVideoImage } from "./image";
 import {
-  cleanVideoText, decideYoutubeVideo, youtubeImageKey, youtubeVideoAllowed, youtubeVideoRenderEnabled, YT_VIDEO_PER_DAY,
+  cleanVideoText, decideYoutubeVideo, warsawWeekStartIso, youtubeImageKey, youtubeVideoAllowed, youtubeVideoRenderEnabled,
   type YoutubeVideoDeny, type YoutubeVideoSpec,
 } from "./youtube-video";
 
@@ -64,11 +64,19 @@ async function projectBeatCover(admin: Admin, ownerId: string, beatId: string | 
   return url ? { beatId, key: row.cover_path, url } : null;
 }
 
-async function usedToday(admin: Admin, ownerId: string): Promise<number> {
+async function usedThisWeek(admin: Admin, ownerId: string): Promise<number> {
   const { count, error } = await admin.from("studio_master_jobs").select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId).eq("kind", "youtube_video").gte("created_at", warsawDayStartIso()).not("status", "in", "(failed,cancelled)");
+    .eq("owner_id", ownerId).eq("kind", "youtube_video").gte("created_at", warsawWeekStartIso()).not("status", "in", "(failed,cancelled)");
   check(error);
   return count ?? 0;
+}
+
+async function youtubeCredits(admin: Admin, ownerId: string): Promise<number> {
+  const { data, error } = await admin.from("studio_quota_credits").select("remaining").eq("user_id", ownerId).eq("kind", "youtube").maybeSingle();
+  if (missing(error)) return 0;
+  check(error);
+  const left = (data as { remaining?: number } | null)?.remaining;
+  return typeof left === "number" && left > 0 ? left : 0;
 }
 
 /** UI state: plan gate, approved master, beat cover, today's count and the latest video (with its URL). */
@@ -87,7 +95,12 @@ export async function getYoutubeVideoState(p: { ownerId: string; projectId: stri
   const latest = data ? await getStudioJob({ ownerId: p.ownerId, projectId: p.projectId, jobId: String((data as { id: string }).id) }) : null;
   return {
     available: true as const, rendering, allowed, approved: !!approved, cover: cover ? { url: cover.url } : null, title: proj.title,
-    latest, usage: { used: await usedToday(admin, p.ownerId), perDay: YT_VIDEO_PER_DAY },
+    latest, usage: {
+      used: await usedThisWeek(admin, p.ownerId),
+      perWeek: youtubeVideosPerWeekForTier(p.tier),
+      credits: await youtubeCredits(admin, p.ownerId),
+      pack: youtubePackOffer(p.tier),
+    },
   };
 }
 
@@ -138,15 +151,24 @@ export async function commitYoutubeVideo(p: {
   }
   const d = decideYoutubeVideo({ tier: p.tier, approved: !!approved?.result_object_key, source: p.source, hasImage: !!image });
   if (!d.allowed) return { ok: false, error: d.reason };
-  if ((await usedToday(admin, p.ownerId)) >= YT_VIDEO_PER_DAY) return { ok: false, error: "daily_limit" };
   const spec: YoutubeVideoSpec = { source: p.source as YoutubeVideoSpec["source"], image: image!, title: cleanVideoText(p.title), artist: cleanVideoText(p.artist) };
   const jobId = randomUUID();
-  const { error } = await admin.from("studio_master_jobs").insert({
-    id: jobId, project_id: p.projectId, owner_id: p.ownerId, kind: "youtube_video", output_format: "MP4",
-    source_artifact_id: approved!.id, source_document_version: approved!.source_document_version,
-    video: spec,
+  const { data, error } = await admin.rpc("enqueue_studio_youtube_video", {
+    p_job_id: jobId,
+    p_project_id: p.projectId,
+    p_owner_id: p.ownerId,
+    p_source_artifact_id: approved!.id,
+    p_source_document_version: approved!.source_document_version,
+    p_video: spec,
+    p_week_start: warsawWeekStartIso(),
+    p_week_limit: youtubeVideosPerWeekForTier(p.tier),
   });
-  if (error && (error.code === "23514" || missing(error))) throw new StudioMasterUnavailable("video_missing");
+  if (error && (error.code === "23514" || missing(error) || error.code === "PGRST202" || error.code === "42883")) {
+    throw new StudioMasterUnavailable("video_missing");
+  }
   check(error);
+  const result = (data as { result?: string } | null)?.result;
+  if (result === "limit") return { ok: false, error: "weekly_limit" };
+  if (result !== "ok") throw new StudioMasterUnavailable("video_missing");
   return { ok: true, jobId };
 }

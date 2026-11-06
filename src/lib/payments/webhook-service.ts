@@ -65,7 +65,7 @@ function receiptLine(write: GrantWrite): string {
   if (write.action === "plan") return `Tu BITEK. Włączyłem ${write.tier} do ${polishWhen(write.expiresAt)}.`;
   if (write.action === "addon") return `Tu BITEK. Włączyłem mastering z referencją do ${polishWhen(write.endsAt)}.`;
   if (write.action === "pack") {
-    const what = write.pack === "take" ? "nagrań" : "masterów";
+    const what = write.pack === "take" ? "nagrań" : write.pack === "youtube" ? "wideo MP4" : "masterów";
     return `Tu BITEK. Dodałem ${write.units} ${what}. Zostają, aż je wykorzystasz.`;
   }
   if (write.note === "downgrade") return "Tu BITEK. Wpłata doszła, ale niższego planu nie włączam, dopóki wyższy trwa.";

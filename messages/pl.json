@@ -352,10 +352,13 @@
         "prosty": "uproszczony",
         "pelny": "zaawansowany"
       },
-      "pakietyTytul": "Dokup nagrania albo mastery",
-      "pakietyLead": "Jednorazowy pakiet. Schodzi dopiero po limicie planu i zostaje, aż go wykorzystasz.",
+      "pakietyTytul": "Dokup nagrania, mastery albo wideo",
+      "pakietyLead": "Jednorazowy pakiet. Nagrania i mastery schodzą po limicie planu. Wideo MP4: Gold ma 2 na tydzień, a kolejne 2 kupuje za 9,99 zł. Bronze i Silver kupują pojedyncze wideo.",
       "pakietTake": "Pakiet {n} nagrań — {cena}",
       "pakietMaster": "Pakiet {n} masterów — {cena}",
+      "pakietYoutubeGold": "Gold: {n} wideo MP4 — {cena}",
+      "pakietYoutubeSilver": "Silver: 1 wideo MP4 — {cena}",
+      "pakietYoutubeBronze": "Bronze: 1 wideo MP4 — {cena}",
       "referencja": {
         "none": "—",
         "addon": "dodatek",
@@ -379,6 +382,8 @@
         "brakPobierania": "🔒 brak",
         "projektZip": "Projekt (ZIP ścieżek)",
         "wideoYt": "Wideo MP4 pod YouTube",
+        "wideoYtTydzien": "{n} / tydzień",
+        "wideoYtJednorazowo": "jednorazowo {cena}",
         "przechowywanie": "Przechowywanie plików",
         "dni": "{n} dni",
         "referencja": "Mastering z referencją",
@@ -387,7 +392,7 @@
       "przypis": {
         "gosc": "Bez konta: odsłuch {s} s każdego bitu. Nagrywanie, pobieranie i Studio wymagają konta.",
         "narzedzia": "Free i Bronze nagrywają w uproszczonym widoku, bez przełącznika. Silver i Gold mają zaawansowane studio i mogą przełączyć je na uproszczone.",
-        "pakiety": "Pakiet nagrań i pakiet masterów kupujesz raz. Doliczają się po limicie planu i zostają, aż je wykorzystasz.",
+        "pakiety": "Pakiet nagrań i pakiet masterów kupujesz raz. Doliczają się po limicie planu i zostają, aż je wykorzystasz. Wideo MP4: Gold ma 2 na tydzień (od poniedziałku, czas polski) i może dokupić 2 za 9,99 zł. Bronze kupuje 1 za 24,99 zł, Silver 1 za 14,99 zł. Nieudane wideo się nie liczy.",
         "mastery": "Mastery liczymy w miesiącu kalendarzowym (czas polski). Nieudany master się nie liczy.",
         "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
@@ -428,16 +433,18 @@
         "dodatekOpis": "Miesiąc dodatku na Silver. Na Gold masz to w cenie, na Free i Bronze ten dodatek nic nie odblokuje.",
         "dodatekPrzycisk": "Dokupuję referencję",
         "pakietTytul": "Dokupuję nagrania albo mastery",
-        "pakietOpis": "Jednorazowo, nie co miesiąc. Najpierw schodzi limit planu, potem pakiet. Zostaje na koncie, aż go wykorzystasz.",
+        "pakietOpis": "Jednorazowo, nie co miesiąc. Nagrania i mastery schodzą po limicie planu. Wideo MP4 na Gold: najpierw 2 w tygodniu, potem pakiet 2 sztuk. Na Bronze i Silver tylko kupione sztuki.",
         "pakietTake": "10 nagrań",
         "pakietMaster": "5 masterów",
+        "pakietYoutube": "{n} wideo MP4",
         "pakietPrzycisk": "Dokupuję pakiet",
         "blok": {
           "DOWNGRADE": "Niższy plan poczeka, aż skończy się wyższy.",
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
           "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
-          "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go."
+          "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go.",
+          "PACK_NEEDS_PAID": "Wideo MP4 dokupisz na Bronze, Silver albo Gold."
         },
         "blad": {
           "PAYMENTS_OFF": "Płatności są jeszcze wyłączone.",
@@ -452,7 +459,8 @@
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
           "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
-          "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go."
+          "ADDON_PERPETUAL": "Dodatek jest bez końca — nie skracam go.",
+          "PACK_NEEDS_PAID": "Wideo MP4 dokupisz na Bronze, Silver albo Gold."
         }
       },
       "returnPage": {
@@ -471,7 +479,8 @@
           "referencja": "mastering z referencją",
           "plan": "plan",
           "take": "{n} dodatkowych nagrań",
-          "master": "{n} dodatkowych masterów"
+          "master": "{n} dodatkowych masterów",
+          "youtube": "{n} wideo MP4 pod YouTube"
         },
         "powod": {
           "perpetual": "masz już dostęp bez końca i nie skracam go.",
@@ -3043,7 +3052,7 @@
       "tytul": "Wideo MP4 pod YouTube",
       "opis": "Gotowy utwór (zatwierdzony master) + obraz → plik 1920×1080 (H.264 + AAC), gotowy do wrzucenia na YouTube.",
       "bitek": "Złożę Twój master i obraz w jedno wideo 1920×1080. Obraz nie jest przycinany — dopasuję go i wypełnię tło jego rozmytą wersją.",
-      "tylkoGold": "Wideo MP4 pod YouTube jest w planie Gold.",
+      "tylkoGold": "Wideo MP4 pod YouTube jest od Bronze. Gold ma 2 na tydzień. Bronze i Silver kupują pojedyncze.",
       "zobaczPlany": "Zobacz plany",
       "najpierwZatwierdz": "Najpierw zatwierdź master — wideo powstaje z gotowego utworu.",
       "zrodloTytul": "Obraz",
@@ -3067,8 +3076,11 @@
       "brakObrazu": "Wybierz obraz, żeby zobaczyć podgląd.",
       "zrob": "Zrób wideo MP4",
       "trwa": "Robię wideo…",
-      "licznik": "Dziś: {used} / {limit} wideo",
-      "limit": "Na dziś wykorzystano limit wideo. Spróbuj jutro.",
+      "licznik": "W tym tygodniu: {used} / {limit}",
+      "pakietZostalo": "Z pakietu: {n}",
+      "kupPakiet": "Dokup {n} za {cena}",
+      "limit": "Na ten tydzień wykorzystano 2 wideo. Dokup pakiet albo poczekaj do poniedziałku.",
+      "limitJednorazowo": "W tym planie wideo jest jednorazowe. Dokup je, a potem zrób plik.",
       "gotowe": "Wideo gotowe.",
       "pobierz": "Pobierz MP4",
       "blad": "Nie udało się zrobić wideo ({code}).",

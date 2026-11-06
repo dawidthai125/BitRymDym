@@ -20,7 +20,7 @@
  */
 
 import type { PaidTier, PlanPack } from "@/config/plan-policy";
-import { PLAN_PACK_CATALOG, referenceMasteringForTier } from "@/config/plan-policy";
+import { PLAN_PACK_CATALOG, referenceMasteringForTier, youtubePackOffer, youtubeUnitsForGrosz } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
 import type { BillingPeriod, CheckoutProduct } from "@/lib/payments/money";
@@ -35,7 +35,7 @@ export type PlanSnapshot = {
 
 export type AddonSnapshot = { endsAt: string | null } | null;
 
-export type CheckoutBlock = "DOWNGRADE" | "PERPETUAL" | "ADDON_INCLUDED" | "ADDON_NEEDS_SILVER" | "ADDON_PERPETUAL";
+export type CheckoutBlock = "DOWNGRADE" | "PERPETUAL" | "ADDON_INCLUDED" | "ADDON_NEEDS_SILVER" | "ADDON_PERPETUAL" | "PACK_NEEDS_PAID";
 
 export type GrantWrite =
   | {
@@ -54,7 +54,7 @@ export type GrantWrite =
       expectedEndsAt: string | null;
     }
   | { action: "pack"; pack: PlanPack; units: number }
-  | { action: "skip"; note: "perpetual" | "downgrade" | "addon_perpetual" };
+  | { action: "skip"; note: "perpetual" | "downgrade" | "addon_perpetual" | "pack_amount" };
 
 export function addBillingPeriod(from: Date, period: BillingPeriod): Date {
   const months = period === "year" ? 12 : 1;
@@ -86,7 +86,10 @@ function laterInstant(now: Date, iso: string | null): Date {
 }
 
 export function checkoutBlock(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date): CheckoutBlock | null {
-  if (product.kind === "pack") return null;
+  if (product.kind === "pack") {
+    if (product.pack !== "youtube") return null;
+    return isLivePaid(plan, now) && youtubePackOffer(plan.tier) ? null : "PACK_NEEDS_PAID";
+  }
   if (product.kind === "addon") {
     const live = isLivePaid(plan, now);
     const tier: PremiumTier = live ? plan.tier : "FREE";
@@ -103,8 +106,13 @@ export function checkoutBlock(product: CheckoutProduct, plan: PlanSnapshot, addo
   return null;
 }
 
-export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date): GrantWrite {
+export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date, amountGrosz?: number): GrantWrite {
   if (product.kind === "pack") {
+    if (product.pack === "youtube") {
+      const units = youtubeUnitsForGrosz(amountGrosz ?? 0);
+      if (!units) return { action: "skip", note: "pack_amount" };
+      return { action: "pack", pack: "youtube", units };
+    }
     return { action: "pack", pack: product.pack, units: PLAN_PACK_CATALOG[product.pack].units };
   }
   if (product.kind === "addon") {
@@ -187,7 +195,7 @@ export function settleVerifiedNotification(input: {
   if (notification.currency !== "PLN" || order.currency !== "PLN") return { kind: "rejected", code: "currency" };
   if (notification.amountGrosz !== order.amountGrosz) return { kind: "rejected", code: "amount" };
 
-  const write = grantWrite(order.product, input.plan, input.addon, input.now);
+  const write = grantWrite(order.product, input.plan, input.addon, input.now, order.amountGrosz);
   const next = applyWrite(input.plan, input.addon, write);
   if (write.action === "skip") {
     return { kind: "skipped", write, nextPlan: next.plan, nextAddon: next.addon };
