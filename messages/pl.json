@@ -2805,7 +2805,39 @@
       "mniejsze": "Mniejszy tekst",
       "domyslnaSekcja": "Tekst",
       "pokaz": "Pokaż tekst",
-      "ukryj": "Ukryj tekst"
+      "ukryj": "Ukryj tekst",
+      "ai": {
+        "tytul": "Pisanie z AI",
+        "odSilver": "Generator tekstów jest od planu Silver.",
+        "zobaczPlany": "Zobacz plany",
+        "niedostepne": "Generator tekstów jest teraz niedostępny. Spróbuj za kilka minut albo napisz tekst sam.",
+        "limitDzienny": "Na dziś limit generowań wyczerpany. Wróci jutro.",
+        "licznik": "Dziś: {used}/{max}",
+        "tryb": "Tryb pisania",
+        "tryby": {
+          "keywords": "Ze słów kluczowych",
+          "continue": "Dokończ tekst",
+          "verse": "Dokończ zwrotkę"
+        },
+        "opis": {
+          "keywords": "Podaj temat albo słowa kluczowe. Ułożę tekst z rymami.",
+          "continue": "Wklej początek tekstu. Dopiszę dalszy ciąg w tym samym stylu.",
+          "verse": "Wklej kawałek zwrotki. Dokończę ją i dopasuję rymy."
+        },
+        "placeholder": {
+          "keywords": "np. nocna zmiana, miasto, wracam do domu, bez snu",
+          "continue": "Pierwsze linijki tekstu…",
+          "verse": "Kilka linijek zwrotki…"
+        },
+        "napisz": "Napisz tekst",
+        "pisze": "Piszę…",
+        "znaki": "{n}/{max} znaków",
+        "szkic": "Propozycja BITKA",
+        "dopisz": "Dopisz do tekstu",
+        "zamien": "Zastąp tekst",
+        "odrzuc": "Odrzuć",
+        "uwaga": "To szkic. Edytuj go, jak chcesz, zanim nagrasz."
+      }
     },
     "vocalPresets": {
       "tytul": "Presety brzmienia wokalu",

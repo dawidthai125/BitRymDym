@@ -2805,7 +2805,39 @@
       "mniejsze": "Smaller text",
       "domyslnaSekcja": "Lyrics",
       "pokaz": "Show lyrics",
-      "ukryj": "Hide lyrics"
+      "ukryj": "Hide lyrics",
+      "ai": {
+        "tytul": "Write with AI",
+        "odSilver": "The lyrics generator is on the Silver plan and up.",
+        "zobaczPlany": "See plans",
+        "niedostepne": "The lyrics generator is unavailable right now. Try again in a few minutes or write the text yourself.",
+        "limitDzienny": "You used today's generations. They come back tomorrow.",
+        "licznik": "Today: {used}/{max}",
+        "tryb": "Writing mode",
+        "tryby": {
+          "keywords": "From keywords",
+          "continue": "Continue the text",
+          "verse": "Finish the verse"
+        },
+        "opis": {
+          "keywords": "Give a topic or keywords. I will write lyrics with rhymes.",
+          "continue": "Paste the start of your lyrics. I will continue in the same style.",
+          "verse": "Paste part of a verse. I will finish it and match the rhymes."
+        },
+        "placeholder": {
+          "keywords": "e.g. night shift, the city, heading home, no sleep",
+          "continue": "The first lines of your lyrics…",
+          "verse": "A few lines of a verse…"
+        },
+        "napisz": "Write lyrics",
+        "pisze": "Writing…",
+        "znaki": "{n}/{max} characters",
+        "szkic": "BITEK's draft",
+        "dopisz": "Add to my text",
+        "zamien": "Replace my text",
+        "odrzuc": "Discard",
+        "uwaga": "This is a draft. Edit it however you like before you record."
+      }
     },
     "vocalPresets": {
       "tytul": "Vocal sound presets",
