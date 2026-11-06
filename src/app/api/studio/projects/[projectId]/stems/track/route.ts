@@ -14,7 +14,7 @@ type RouteContext = { params: Promise<{ projectId: string }> };
 
 /**
  * POST { expectedDocumentVersion, name?, trackRole? } — Silver/Gold: add a SAMPLE track for an imported
- * stem and name it after the file (two CAS steps, one response). Plan capacity is enforced by addStudioTrack.
+ * stem and name it after the file (up to three CAS steps, one response). Plan capacity is enforced by addStudioTrack.
  * → { track, documentVersion }.
  */
 export async function POST(request: Request, context: RouteContext) {
@@ -41,13 +41,25 @@ export async function POST(request: Request, context: RouteContext) {
     if (!name && !role) {
       return NextResponse.json({ success: true, track: added.track, documentVersion: added.documentVersion });
     }
-    const named = await updateStudioTrackControls({
-      projectId,
-      trackId: added.track.id,
-      expectedDocumentVersion: added.documentVersion,
-      name: name || undefined,
-      trackRole: role,
-    });
+    // The service treats a role change as its own write (it ignores the name then): name first, role second.
+    let current = added;
+    if (name) {
+      current = await updateStudioTrackControls({
+        projectId,
+        trackId: added.track.id,
+        expectedDocumentVersion: current.documentVersion,
+        name,
+      });
+    }
+    if (role) {
+      current = await updateStudioTrackControls({
+        projectId,
+        trackId: added.track.id,
+        expectedDocumentVersion: current.documentVersion,
+        trackRole: role,
+      });
+    }
+    const named = current;
     return NextResponse.json({ success: true, track: named.track, documentVersion: named.documentVersion });
   } catch (error) {
     return studioApiErrorResponse(error);
