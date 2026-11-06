@@ -182,8 +182,8 @@ export function mapGetUserMediaFailure(error: unknown): {
   };
 }
 
-/** Ask the browser for a short capture buffer. It may ignore the hint. */
-const LOW_LATENCY_AUDIO: MediaTrackConstraints = { latency: { ideal: 0.01 } };
+/** Ask the browser for a short capture buffer. It may ignore the hint. DOM lib here omits `latency`. */
+const LOW_LATENCY_AUDIO = { latency: { ideal: 0.01 } } as unknown as MediaTrackConstraints;
 
 /** Constraints for preferred device; null/empty → system default, still with the latency hint. */
 export function buildAudioTrackConstraints(
