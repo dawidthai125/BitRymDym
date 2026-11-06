@@ -19,6 +19,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
 import { downloadFilename, partsOf } from "./parts";
+import { masterPlaybackChoice, masterPreviewEnforced, previewKeyFor } from "./preview";
 import { outputExt, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 import { isStudioJobStage, type StudioJobStage } from "./progress";
 import { referenceGateFor } from "./reference-server";
@@ -262,9 +263,24 @@ export async function getStudioJob(p: { ownerId: string; projectId: string; jobI
     const fmt = String(row.output_format);
     const ext = /\.(\w+)$/.exec(row.result_object_key)?.[1] ?? outputExt(fmt as StudioMasterOutputFormat);
     filename = downloadFilename((proj as { title?: string } | null)?.title, deliverLabel(row), fmt, ext);
-    const keys = await objectParts(admin, row.result_object_key);
+    let keys = await objectParts(admin, row.result_object_key);
+    let playbackOnly = false;
+    if (row.kind === "master") {
+      // The studio plays the watermarked preview; the clean master FLAC is only served after approval, and
+      // real downloads go through the approved, quota-counted transcode jobs.
+      const previewKey = previewKeyFor(row.result_object_key);
+      const previewKeys = previewKey ? await objectParts(admin, previewKey) : [];
+      const choice = masterPlaybackChoice({ previewExists: previewKeys.length > 0, approved: row.approved_at != null, enforce: masterPreviewEnforced() });
+      if (choice === "preview") {
+        keys = previewKeys;
+        playbackOnly = true;
+        filename = null;
+      } else if (choice === "none") {
+        keys = [];
+      }
+    }
     if (keys.length === 1) {
-      const { data: s } = await admin.storage.from(BUCKET).createSignedUrl(keys[0], 600, { download: filename });
+      const { data: s } = await admin.storage.from(BUCKET).createSignedUrl(keys[0], 600, playbackOnly || !filename ? undefined : { download: filename });
       downloadUrl = s?.signedUrl ?? null;
     } else if (keys.length > 1) {
       const { data: s } = await admin.storage.from(BUCKET).createSignedUrls(keys, 600);

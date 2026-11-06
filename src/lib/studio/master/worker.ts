@@ -23,6 +23,8 @@ import { outputExt, planStudioMasterJob, studioMasterJobPrefix, type StudioMaste
 import { partCount, partName, partsOf, PART_BYTES } from "./parts";
 import { studioJobProgress, type StudioJobStage } from "./progress";
 import { REFERENCE_COLUMNS, deleteStudioReferenceById, type StudioReferenceRow } from "./reference-store";
+import { previewKeyFor, previewMixArgs, tagCycleArgs } from "./preview";
+import { PREVIEW_TAG_WAV_BASE64 } from "./preview-tag";
 import { renderMixStereo } from "./render-mix";
 import { renderMixStereoParallel } from "./render-mix-parallel";
 import { stemFileName } from "./render-io";
@@ -340,6 +342,24 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
     const contentType = ext === "mp4" ? "video/mp4" : ext === "zip" ? "application/zip" : ext === "mp3" ? "audio/mpeg" : ext === "flac" ? "audio/flac" : "audio/wav";
     progress.report("upload");
     const parts = await uploadFile(resultKey, cur, contentType, (f) => progress.report("upload", f));
+    // Master jobs also get a watermarked preview: the studio plays it instead of the clean file until approval.
+    // Best effort — a missing preview never fails the master (the API then withholds the clean file).
+    if (job.kind === "master") {
+      const previewKey = previewKeyFor(resultKey);
+      if (previewKey) {
+        try {
+          const tag = path.join(dir, "tag.wav");
+          const cycle = path.join(dir, "tag15.wav");
+          const preview = path.join(dir, "master_preview.mp3");
+          await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
+          await runCapture(resolveFfmpegBin(), tagCycleArgs(tag, cycle), { timeoutMs: 60_000 });
+          await runCapture(resolveFfmpegBin(), previewMixArgs(cur, cycle, preview), { timeoutMs: Math.min(cfg.timeoutMs, 300_000) });
+          await uploadFile(previewKey, preview, "audio/mpeg");
+        } catch {
+          /* preview is optional */
+        }
+      }
+    }
     timing.totalMs = Date.now() - t0;
     metrics = { ...(metrics ?? {}), parts, bytes: (await stat(cur)).size, timing, maxRssMb: Math.round(process.resourceUsage().maxRSS / 1024) };
     status = "succeeded";
