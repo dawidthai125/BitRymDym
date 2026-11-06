@@ -64,6 +64,11 @@ describe("AI lyrics — output", () => {
     expect(parseAiLyricsOutput('{"text":"  "}')).toBeNull();
     expect(parseAiLyricsOutput("")).toBeNull();
   });
+  it("rejects degenerate repetition so the next provider is tried", () => {
+    expect(parseAiLyricsOutput("[Zwrotka 1]\nserce wciąż wciąż wciąż wciąż bije")).toBeNull();
+    expect(parseAiLyricsOutput("a b c\nraz dwa\nraz dwa\nraz dwa\nraz dwa")).toBeNull();
+    expect(parseAiLyricsOutput("[Zwrotka 1]\nMiasto śpi, a ja wracam\nPo nocnej zmianie do domu")).not.toBeNull();
+  });
   it("caps long output at a line boundary", () => {
     const lines = Array.from({ length: 400 }, (_, i) => `linijka numer ${i}`).join("\n");
     const out = parseAiLyricsOutput(lines)!;
