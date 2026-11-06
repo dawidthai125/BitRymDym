@@ -1,3 +1,5 @@
+import { AutomationValidationError, hasAutomation, parseAutomationForWrite, readAutomation, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import { studioAdvancedRecordAllowed } from "@/lib/studio/studio-record-view";
 import "server-only";
 
 import {
@@ -122,6 +124,8 @@ type TrackRow = {
   input_device_hint: string | null;
   output_route: string;
   effects_chain?: unknown | null;
+  /** Migration 20261106180000; absent before it is applied. */
+  automation?: unknown | null;
 };
 
 type ClipRow = {
@@ -178,6 +182,7 @@ function mapTrack(row: TrackRow): StudioTrackDto {
     inputDeviceHint: row.input_device_hint,
     outputRoute: row.output_route,
     effectsChain: readStudioFxChain(row.effects_chain, "track"),
+    automation: readAutomation(row.automation),
   };
 }
 
@@ -1070,6 +1075,51 @@ async function setStudioTrackRoleFor(
     track: mapTrack(refreshed as TrackRow),
     documentVersion: num(casRow.document_version),
   };
+}
+
+/**
+ * Silver/Gold — replace a track's gain/pan automation (CAS on the document version).
+ * Strict validation here; the DB only guards type and size.
+ */
+export async function applyStudioTrackAutomationFor(
+  context: AuthContext,
+  input: { projectId: string; trackId: string; expectedDocumentVersion: unknown; automation: unknown },
+): Promise<{ automation: StudioAutomationV1; documentVersion: number }> {
+  await assertOwnsProject(context, input.projectId);
+  const product = await resolveProductEntitlementForAuthContext(context);
+  if (!studioAdvancedRecordAllowed(product.premiumTier)) {
+    throw new AuthError("FORBIDDEN", "Automatyka jest od planu Silver.");
+  }
+  let automation: StudioAutomationV1;
+  try {
+    automation = parseAutomationForWrite(input.automation);
+  } catch (e) {
+    if (e instanceof AutomationValidationError) throw new AuthError("FORBIDDEN", e.message);
+    throw e;
+  }
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_automation", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_track_id: input.trackId,
+    p_expected: expected,
+    // No lanes = no automation (NULL keeps old rows and new ones identical).
+    p_automation: hasAutomation(automation) ? automation : null,
+  });
+  if (error) {
+    if (/TRACK_NOT_FOUND/.test(error.message)) throw new AuthError("NOT_FOUND", "Ścieżka nie została znaleziona.");
+    throw new Error(error.message);
+  }
+  const casRow = (data as Array<{ document_version: number }> | null)?.[0] ?? null;
+  if (!casRow) throw new StudioFxCasConflictError();
+  return { automation, documentVersion: num(casRow.document_version) };
+}
+
+export async function applyStudioTrackAutomation(
+  input: Parameters<typeof applyStudioTrackAutomationFor>[1],
+): Promise<{ automation: StudioAutomationV1; documentVersion: number }> {
+  return applyStudioTrackAutomationFor(await requireUser(), input);
 }
 
 export async function updateStudioTrackControls(
