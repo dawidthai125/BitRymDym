@@ -5,7 +5,7 @@ import "server-only";
  * ffprobe image size + audio length → one 1920×1080 PNG frame → H.264/AAC MP4.
  */
 import { spawn } from "node:child_process";
-import { access, writeFile } from "node:fs/promises";
+import { access, copyFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { resolveFfmpegBin, resolveFfprobeBin, runCapture } from "@/lib/audio/native-ffmpeg";
@@ -16,13 +16,31 @@ const FONT_CANDIDATES = [
   "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
   "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
   "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+  "C:\\Windows\\Fonts\\arialbd.ttf",
+  "C:\\Windows\\Fonts\\segoeuib.ttf",
 ];
 
-async function fontFile(): Promise<string> {
+/** drawtext fontfile= splits on ":" and safePath allows only [\w/.-]. */
+const FONT_PATH_OK = /^[\w/.-]+$/;
+
+function ffmpegPath(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
+async function fontFile(dir: string): Promise<string> {
   const fromEnv = process.env.STUDIO_VIDEO_FONT_FILE?.trim();
   for (const f of [fromEnv, ...FONT_CANDIDATES]) {
     if (!f) continue;
-    try { await access(f); return f; } catch { /* next */ }
+    try {
+      await access(f);
+      if (FONT_PATH_OK.test(f)) return f;
+      const dest = ffmpegPath(path.join(dir, "font.ttf"));
+      if (!FONT_PATH_OK.test(dest)) throw new Error("video_font_missing");
+      await copyFile(f, dest);
+      return dest;
+    } catch (err) {
+      if (err instanceof Error && err.message === "video_font_missing") throw err;
+    }
   }
   throw new Error("video_font_missing");
 }
@@ -72,12 +90,12 @@ export async function renderYoutubeVideo(p: {
   p.onStage?.("render", 0);
   const [img, durationS] = await Promise.all([probeImage(p.image, 30_000), probeDurationS(p.audio, 30_000)]);
   const layout = youtubeFrameLayout(img, { title: p.title, artist: p.artist });
-  const titleFile = p.title ? path.join(p.dir, "title.txt") : null;
-  const artistFile = p.artist ? path.join(p.dir, "artist.txt") : null;
+  const titleFile = p.title ? ffmpegPath(path.join(p.dir, "title.txt")) : null;
+  const artistFile = p.artist ? ffmpegPath(path.join(p.dir, "artist.txt")) : null;
   if (titleFile) await writeFile(titleFile, p.title!, "utf8");
   if (artistFile) await writeFile(artistFile, p.artist!, "utf8");
-  const frame = path.join(p.dir, "frame.png");
-  const font = layout.mode === "fit" && (titleFile || artistFile) ? await fontFile() : "/dev/null";
+  const frame = ffmpegPath(path.join(p.dir, "frame.png"));
+  const font = layout.mode === "fit" && (titleFile || artistFile) ? await fontFile(p.dir) : "/dev/null";
   await runCapture(resolveFfmpegBin(), youtubeFrameArgs({ image: p.image, out: frame, layout, fontFile: font, titleFile, artistFile }), { timeoutMs: 60_000 });
   const frameMs = Date.now() - t0;
   p.onStage?.("render", 1);
