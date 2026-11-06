@@ -1628,6 +1628,8 @@
       "metrum": "Metrum",
       "odswiez": "Odśwież",
       "wybierzBitAbyOdblokowac": "Wybierz bit, aby odblokować odtwarzanie i nagrywanie.",
+      "automatykaGlosnosc": "Automatyka głośności",
+      "automatykaPan": "Automatyka pan",
       "osCzasuProjektu": "Oś czasu projektu",
       "sciezki": "Ścieżki",
       "osCzasuTrybNagrywania": "Oś czasu — tryb nagrywania",
@@ -2778,6 +2780,17 @@
         "SILVER": "Silver",
         "GOLD": "Gold"
       }
+    },
+    "automation": {
+      "glosnosc": "Głośność",
+      "pan": "Pan",
+      "srodek": "środek",
+      "wyczysc": "Wyczyść",
+      "gotowe": "Gotowe",
+      "licznik": "Punktów: {n}",
+      "podpowiedz": "Kliknij linię, żeby dodać punkt. Przeciągnij punkt, dwuklik usuwa.",
+      "aria": "Obwiednia automatyki: {param}",
+      "punkt": "Punkt {n}: {v}"
     },
     "stemImport": {
       "tytul": "Importuj stemy",

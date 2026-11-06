@@ -1628,6 +1628,8 @@
       "metrum": "Time signature",
       "odswiez": "Refresh",
       "wybierzBitAbyOdblokowac": "Choose a beat to unlock playback and recording.",
+      "automatykaGlosnosc": "Volume automation",
+      "automatykaPan": "Pan automation",
       "osCzasuProjektu": "Project timeline",
       "sciezki": "Tracks",
       "osCzasuTrybNagrywania": "Timeline — recording mode",
@@ -2778,6 +2780,17 @@
         "SILVER": "Silver",
         "GOLD": "Gold"
       }
+    },
+    "automation": {
+      "glosnosc": "Volume",
+      "pan": "Pan",
+      "srodek": "centre",
+      "wyczysc": "Clear",
+      "gotowe": "Done",
+      "licznik": "Points: {n}",
+      "podpowiedz": "Click the line to add a point. Drag a point, double-click removes it.",
+      "aria": "Automation envelope: {param}",
+      "punkt": "Point {n}: {v}"
     },
     "stemImport": {
       "tytul": "Import stems",

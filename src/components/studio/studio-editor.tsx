@@ -44,8 +44,10 @@ import {
   StudioMixerDockChrome,
   StudioMixerOverlay,
 } from "@/components/studio/studio-mixer-shell";
+import { StudioAutomationLane } from "@/components/studio/studio-automation-lane";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { maxStemsForTier } from "@/config/plan-policy";
+import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
@@ -357,6 +359,8 @@ function StudioEditorInner({
   >(null);
   /** Phase 6 — open ⋮ menu for a non-BEAT track. */
   const [trackMenuId, setTrackMenuId] = useState<string | null>(null);
+  /** Silver/Gold: which track / parameter has its automation envelope open on the timeline. */
+  const [automationEdit, setAutomationEdit] = useState<{ trackId: string; param: AutomationParam } | null>(null);
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
   const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
@@ -1362,6 +1366,48 @@ function StudioEditorInner({
               tracks: prev.tracks.map((t) =>
                 t.id === trackId ? track : t,
               ),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  /** Silver/Gold: replace a track's gain / pan automation (CAS). Shows the new envelope at once, then confirms. */
+  function saveTrackAutomation(trackId: string, automation: StudioAutomationV1): void {
+    setError(null);
+    setDoc((prev) => ({ ...prev, tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, automation } : t)) }));
+    enqueuePersist(async () => {
+      try {
+        const expected = docRef.current.project.documentVersion;
+        const res = await fetch(`/api/studio/projects/${docRef.current.project.id}/tracks/${trackId}/automation`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expectedDocumentVersion: expected, automation }),
+        });
+        const json = (await res.json()) as { success?: boolean; automation?: StudioAutomationV1; documentVersion?: number; error?: string; code?: string };
+        if (!res.ok || !json.automation || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? tr("nieUdaloSieZaktualizowac"),
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        const saved = json.automation;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, automation: saved } : t)),
             }));
           },
         };
@@ -3066,6 +3112,40 @@ function StudioEditorInner({
           >
             {tr("duplikuj")}
           </Button>
+          {studioAdvancedRecordAllowed(trackCapacity.premiumTier) ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11"
+                role="menuitem"
+                data-testid="studio-track-automation-gain"
+                disabled={recordingLocked || pending}
+                onClick={() => {
+                  setAutomationEdit({ trackId: trackMenuTrack.id, param: "gainDb" });
+                  setTrackMenuId(null);
+                }}
+              >
+                {tr("automatykaGlosnosc")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-11"
+                role="menuitem"
+                data-testid="studio-track-automation-pan"
+                disabled={recordingLocked || pending}
+                onClick={() => {
+                  setAutomationEdit({ trackId: trackMenuTrack.id, param: "pan" });
+                  setTrackMenuId(null);
+                }}
+              >
+                {tr("automatykaPan")}
+              </Button>
+            </>
+          ) : null}
           <Button
             type="button"
             size="sm"
@@ -3348,6 +3428,23 @@ function StudioEditorInner({
             mode={timelineMode}
             interactionLocked={recordingLocked}
             selectedClipId={activeSelectedId}
+            renderLaneOverlay={(track) =>
+              automationEdit && automationEdit.trackId === track.id ? (
+                <StudioAutomationLane
+                  trackId={track.id}
+                  automation={track.automation}
+                  staticValue={automationEdit.param === "gainDb" ? track.gainDb : track.pan}
+                  param={automationEdit.param}
+                  timelineLengthMs={length}
+                  pxPerMs={pxPerMs}
+                  laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
+                  disabled={recordingLocked || pending}
+                  onChangeParam={(param) => setAutomationEdit({ trackId: track.id, param })}
+                  onClose={() => setAutomationEdit(null)}
+                  onCommit={(next) => saveTrackAutomation(track.id, next)}
+                />
+              ) : null
+            }
             renderTrackHeader={(track, index) => {
               const isSelected = activeSelectedTrackId === track.id;
               const isBeat = track.trackType === "BEAT";
@@ -4604,6 +4701,7 @@ function StudioTimeline({
   interactionLocked = false,
   selectedClipId,
   renderTrackHeader,
+  renderLaneOverlay,
   scrollContainerRef,
   onZoomAroundViewport,
   resolveClipSourceUrl,
@@ -4621,6 +4719,8 @@ function StudioTimeline({
   interactionLocked?: boolean;
   selectedClipId: string | null;
   renderTrackHeader?: (track: StudioTrackDto, index: number) => ReactNode;
+  /** Silver/Gold automation editor drawn over a track's lane (null = nothing). */
+  renderLaneOverlay?: (track: StudioTrackDto) => ReactNode;
   scrollContainerRef?: { current: HTMLDivElement | null };
   onZoomAroundViewport?: (nextPxPerMs: number, viewportOffsetPx: number) => void;
   resolveClipSourceUrl: (clip: StudioClipDto) => Promise<string | null>;
@@ -4835,6 +4935,7 @@ function StudioTimeline({
                       pxPerMs={density}
                       laneHeightPx={STUDIO_DAW_LANE_HEIGHT_PX}
                     />
+                    {renderLaneOverlay ? renderLaneOverlay(track) : null}
                   </div>
                 );
               })}
