@@ -19,6 +19,7 @@ import {
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
 import { BrdCheckbox } from "@/components/brand/brd-checkbox";
 import { STUDIO_PROJECT_LIST_PAGE_SIZE } from "@/config/studio";
+import { requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 import type { StudioProjectSummary } from "@/lib/studio/studio-types";
 import { formatStudioListDurationMs } from "@/lib/studio/studio-time";
 import { intlTag, resolveLocale } from "@/i18n/config";
@@ -308,6 +309,7 @@ export function StudioProjectList({
     }
     setProjects((prev) => [json.document!.project, ...prev]);
     setPage(0);
+    requestPlanUsageRefresh();
     router.push(`/studio/p/${json.document.project.id}`);
   }
 
@@ -363,6 +365,7 @@ export function StudioProjectList({
           return next;
         });
         setDeleteTarget(null);
+        requestPlanUsageRefresh();
         router.refresh();
       } catch (e) {
         setDeleteError(
@@ -389,9 +392,11 @@ export function StudioProjectList({
         setProjects((prev) => prev.filter((p) => !deleted.includes(p.id)));
         setSelectedIds(new Set());
         setBulkDeleteOpen(false);
+        requestPlanUsageRefresh();
         router.refresh();
       } catch (e) {
         if (deleted.length > 0) {
+          requestPlanUsageRefresh();
           setProjects((prev) => prev.filter((p) => !deleted.includes(p.id)));
           setSelectedIds((prev) => {
             const next = new Set(prev);

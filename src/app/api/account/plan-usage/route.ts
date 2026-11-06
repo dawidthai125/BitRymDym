@@ -8,7 +8,9 @@ export const runtime = "nodejs";
 
 /**
  * GET /api/account/plan-usage — plan badge + limits for the header.
- * Limits from plan-policy, usage from head-only counts. Private 30 s cache.
+ * Limits from plan-policy, usage from head-only counts.
+ * The browser must not keep this response: a take or master in the same tab
+ * asks for a fresh copy.
  */
 export async function GET() {
   const context = await getCurrentProfile();
@@ -26,7 +28,7 @@ export async function GET() {
     });
     return NextResponse.json(
       { success: true, usage },
-      { headers: { "Cache-Control": "private, max-age=30" } },
+      { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch {
     return NextResponse.json(

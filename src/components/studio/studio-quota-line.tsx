@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { PlanUsageItem } from "@/lib/plans/plan-usage-model";
+import { fetchPlanUsage, PLAN_USAGE_REFRESH_EVENT } from "@/lib/plans/plan-usage-refresh";
 
 type Pair = { used: number; limit: number };
 
@@ -23,17 +24,21 @@ export function StudioQuotaLine() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/account/plan-usage", { credentials: "same-origin" })
-      .then(async (response) => (response.ok ? response.json() : null))
-      .then((json: { usage?: { items?: PlanUsageItem[] } } | null) => {
-        if (!alive || !json?.usage?.items) return;
-        const takes = pairOf(json.usage.items, "recordingsToday");
-        const masters = pairOf(json.usage.items, "masters");
-        if (takes && masters) setRow({ takes, masters });
-      })
-      .catch(() => undefined);
+    const load = () => {
+      void fetchPlanUsage()
+        .then((usage) => {
+          if (!alive || !usage) return;
+          const takes = pairOf(usage.items, "recordingsToday");
+          const masters = pairOf(usage.items, "masters");
+          if (takes && masters) setRow({ takes, masters });
+        })
+        .catch(() => undefined);
+    };
+    load();
+    window.addEventListener(PLAN_USAGE_REFRESH_EVENT, load);
     return () => {
       alive = false;
+      window.removeEventListener(PLAN_USAGE_REFRESH_EVENT, load);
     };
   }, []);
 

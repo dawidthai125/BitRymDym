@@ -9,8 +9,16 @@ import {
   type PlanUsage,
   type PlanUsageItem,
 } from "@/lib/plans/plan-usage-model";
+import {
+  fetchPlanUsage,
+  PLAN_USAGE_REFRESH_EVENT,
+  readPlanUsageCache,
+  writePlanUsageCache,
+} from "@/lib/plans/plan-usage-refresh";
 import { cn } from "@/lib/utils";
 import type { PremiumTier } from "@/types/premium";
+
+export { invalidatePlanUsageCache, requestPlanUsageRefresh } from "@/lib/plans/plan-usage-refresh";
 
 const TIER_LABEL: Record<PremiumTier, string> = {
   FREE: "Free",
@@ -26,44 +34,10 @@ const TIER_CLASS: Record<PremiumTier, string> = {
   GOLD: "border-[#b8901f] text-[#9a7712] dark:text-[#e4c25a]",
 };
 
-const CACHE_MS = 60_000;
-const cacheKey = (userKey: string) => `brd.planUsage.v1.${userKey}`;
-
-function readCache(userKey: string): PlanUsage | null {
-  try {
-    const raw = sessionStorage.getItem(cacheKey(userKey));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { at: number; usage: PlanUsage };
-    if (Date.now() - parsed.at > CACHE_MS) return null;
-    return parsed.usage;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(userKey: string, usage: PlanUsage) {
-  try {
-    sessionStorage.setItem(cacheKey(userKey), JSON.stringify({ at: Date.now(), usage }));
-  } catch {
-    /* private mode — no cache */
-  }
-}
-
-/** Drop the cached limits (after a download, new project, master…). */
-export function invalidatePlanUsageCache() {
-  try {
-    for (let i = sessionStorage.length - 1; i >= 0; i--) {
-      const k = sessionStorage.key(i);
-      if (k?.startsWith("brd.planUsage.")) sessionStorage.removeItem(k);
-    }
-  } catch {
-    /* ignore */
-  }
-}
-
 /**
  * Header plan badge + limits popover (Owner 2026-10-29). One request to
  * /api/account/plan-usage (server: plan-policy + usage), cached 60 s per tab.
+ * A take, master, or project change drops that cache and loads again.
  */
 export function PlanBadge({ userKey }: { userKey: string }) {
   const t = useTranslations("common.planUsage");
@@ -76,26 +50,36 @@ export function PlanBadge({ userKey }: { userKey: string }) {
 
   useEffect(() => {
     let alive = true;
-    const cached = readCache(userKey);
-    if (cached) {
-      // Cached read is external state (sessionStorage) — sync once on mount.
-      queueMicrotask(() => alive && setUsage(cached));
-      return () => {
-        alive = false;
-      };
-    }
-    fetch("/api/account/plan-usage", { credentials: "same-origin" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(String(r.status));
-        const json = (await r.json()) as { usage?: PlanUsage };
-        if (!json.usage) throw new Error("no_usage");
-        if (!alive) return;
-        writeCache(userKey, json.usage);
-        setUsage(json.usage);
-      })
-      .catch(() => alive && setFailed(true));
+    const load = (ignoreCache: boolean) => {
+      if (!ignoreCache) {
+        const cached = readPlanUsageCache(userKey);
+        if (cached) {
+          // Cached read is external state (sessionStorage) — sync once on mount.
+          queueMicrotask(() => alive && setUsage(cached));
+          return;
+        }
+      }
+      void fetchPlanUsage()
+        .then((next) => {
+          if (!alive) return;
+          if (!next) {
+            if (!ignoreCache) setFailed(true);
+            return;
+          }
+          writePlanUsageCache(userKey, next);
+          setFailed(false);
+          setUsage(next);
+        })
+        .catch(() => {
+          if (alive && !ignoreCache) setFailed(true);
+        });
+    };
+    load(false);
+    const onRefresh = () => load(true);
+    window.addEventListener(PLAN_USAGE_REFRESH_EVENT, onRefresh);
     return () => {
       alive = false;
+      window.removeEventListener(PLAN_USAGE_REFRESH_EVENT, onRefresh);
     };
   }, [userKey]);
 
