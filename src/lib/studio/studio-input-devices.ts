@@ -182,15 +182,18 @@ export function mapGetUserMediaFailure(error: unknown): {
   };
 }
 
-/** Constraints for preferred device; null/empty → system default. */
+/** Ask the browser for a short capture buffer. It may ignore the hint. */
+const LOW_LATENCY_AUDIO: MediaTrackConstraints = { latency: { ideal: 0.01 } };
+
+/** Constraints for preferred device; null/empty → system default, still with the latency hint. */
 export function buildAudioTrackConstraints(
   selectedDeviceId: string | null,
-): MediaTrackConstraints | true {
+): MediaTrackConstraints {
   if (!selectedDeviceId || selectedDeviceId.trim() === "") {
-    return true;
+    return { ...LOW_LATENCY_AUDIO };
   }
   // Prefer ideal over exact so stale ids can soft-fail into browser choice.
-  return { deviceId: { ideal: selectedDeviceId.trim() } };
+  return { ...LOW_LATENCY_AUDIO, deviceId: { ideal: selectedDeviceId.trim() } };
 }
 
 export type AcquireMicStreamResult =

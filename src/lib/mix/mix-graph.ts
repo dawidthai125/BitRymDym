@@ -299,7 +299,7 @@ export function createMixPreviewGraph(params: {
   AudioContextCtor?: typeof AudioContext;
 }): MixGraphHandles {
   const Ctor = params.AudioContextCtor ?? window.AudioContext;
-  const ctx = new Ctor();
+  const ctx = new Ctor({ latencyHint: "interactive" });
   const stages = describeMixGraphStages(params.parameters);
 
   const beatSource = ctx.createMediaElementSource(params.beatEl);

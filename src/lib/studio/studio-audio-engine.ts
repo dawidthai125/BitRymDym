@@ -299,7 +299,12 @@ export function createBrowserStudioAudioEngineHost(): StudioAudioEngineHost {
       if (!Ctor) {
         throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
       }
-      return new Ctor() as unknown as StudioAudioContextLike;
+      // Smallest stable buffer the browser will give. Older webkit builds reject the option.
+      try {
+        return new Ctor({ latencyHint: "interactive" }) as unknown as StudioAudioContextLike;
+      } catch {
+        return new Ctor() as unknown as StudioAudioContextLike;
+      }
     },
     createMediaElement() {
       const el = document.createElement("audio");
