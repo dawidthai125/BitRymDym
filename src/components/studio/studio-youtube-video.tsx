@@ -14,7 +14,7 @@ import {
 } from "@/lib/studio/video/youtube-video";
 import type { PremiumTier } from "@/types/premium";
 
-type JobLike = { job?: { status?: string; stage?: unknown; progress?: unknown; errorCode?: string | null }; downloadUrl?: string | null; downloadParts?: string[] | null; filename?: string | null };
+type JobLike = { job?: { status?: string; stage?: unknown; progress?: unknown; errorCode?: string | null }; downloadUrl?: string | null; playUrl?: string | null; downloadParts?: string[] | null; filename?: string | null };
 type State = {
   available: boolean; rendering?: boolean; allowed?: boolean; approved?: boolean; cover?: { url: string } | null; title?: string;
   latest?: JobLike | null; usage?: { used: number; perWeek: number; credits: number; pack: { units: number; pricePln: number } | null } | null;
@@ -27,16 +27,19 @@ type AiRun = { status: "idle" | "working" | "ok" | "error"; imageId?: string; ur
 type Run =
   | { phase: "idle" }
   | { phase: "working" }
-  | { phase: "done"; url: string; filename: string | null }
+  | { phase: "done"; url: string; downloadUrl: string; filename: string | null }
   | { phase: "error"; code: string };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function resultUrl(j: JobLike): Promise<string | null> {
-  if (j.downloadUrl) return j.downloadUrl;
+async function resultUrls(j: JobLike): Promise<{ play: string; download: string } | null> {
+  const play = j.playUrl || j.downloadUrl;
+  if (play) return { play, download: j.downloadUrl || play };
   if (!j.downloadParts?.length) return null;
   const blob = await joinParts(j.downloadParts, "video/mp4");
-  return blob ? URL.createObjectURL(blob) : null;
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
+  return { play: url, download: url };
 }
 
 /** 16:9 preview that mirrors the worker frame layout (youtubeFrameLayout) in % of 1920×1080. */
@@ -116,8 +119,8 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       if (!titleTouched.current && j.title) setTitle(j.title);
       if (!j.cover) setSource("upload");
       if (j.latest?.job?.status === "succeeded") {
-        const url = await resultUrl(j.latest);
-        if (live && url) setRun({ phase: "done", url, filename: j.latest.filename ?? null });
+        const urls = await resultUrls(j.latest);
+        if (live && urls) setRun({ phase: "done", url: urls.play, downloadUrl: urls.download, filename: j.latest.filename ?? null });
       }
     }).catch(() => {});
     return () => { live = false; };
@@ -179,8 +182,8 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       const st = j?.job?.status;
       if (j?.job) setProg((p) => (st === "succeeded" ? { stage: "done", progress: 100 } : jobProgressOf(j.job!, p)));
       if (st === "succeeded") {
-        const url = await resultUrl(j!);
-        return url ? { phase: "done", url, filename: j!.filename ?? null } : { phase: "error", code: "no_file" };
+        const urls = await resultUrls(j!);
+        return urls ? { phase: "done", url: urls.play, downloadUrl: urls.download, filename: j!.filename ?? null } : { phase: "error", code: "no_file" };
       }
       if (st === "failed" || st === "cancelled") return { phase: "error", code: j?.job?.errorCode ?? st };
       await sleep(i < 90 ? 1000 : 3000);
@@ -332,7 +335,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
               {run.phase === "working" ? t("trwa") : t("zrob")}
             </Button>
             {run.phase === "done" ? (
-              <a href={run.url} download={run.filename ?? "youtube.mp4"} className="inline-flex min-h-10 items-center font-semibold underline underline-offset-4" data-testid="studio-yt-download">⬇ {t("pobierz")}</a>
+              <a href={run.downloadUrl} download={run.filename ?? "youtube.mp4"} className="inline-flex min-h-10 items-center font-semibold underline underline-offset-4" data-testid="studio-yt-download">⬇ {t("pobierz")}</a>
             ) : null}
             {state?.usage && state.usage.perWeek > 0 ? <span className={`text-xs ${limitReached ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>{t("licznik", { used: state.usage.used, limit: state.usage.perWeek })}</span> : null}
             {state?.usage && state.usage.credits > 0 ? <span className="text-xs text-[var(--brd-mute)]">{t("pakietZostalo", { n: state.usage.credits })}</span> : null}

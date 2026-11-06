@@ -257,6 +257,8 @@ export async function getStudioJob(p: { ownerId: string; projectId: string; jobI
   if (!data) throw new AuthError("NOT_FOUND", "not_found");
   const row = data as Record<string, unknown>;
   let downloadUrl: string | null = null;
+  /** Player URL. YouTube omits Content-Disposition: attachment, which blocks the in-page <video>. */
+  let playUrl: string | null = null;
   let downloadParts: string[] | null = null;
   let filename: string | null = null;
   if (row.status === "succeeded" && typeof row.result_object_key === "string") {
@@ -280,13 +282,23 @@ export async function getStudioJob(p: { ownerId: string; projectId: string; jobI
       }
     }
     if (keys.length === 1) {
-      const { data: s } = await admin.storage.from(BUCKET).createSignedUrl(keys[0], 600, playbackOnly || !filename ? undefined : { download: filename });
-      downloadUrl = s?.signedUrl ?? null;
+      const downloadName = !playbackOnly && filename ? filename : null;
+      if (row.kind === "youtube_video" && downloadName) {
+        const [play, dl] = await Promise.all([
+          admin.storage.from(BUCKET).createSignedUrl(keys[0], 600),
+          admin.storage.from(BUCKET).createSignedUrl(keys[0], 600, { download: downloadName }),
+        ]);
+        playUrl = play.data?.signedUrl ?? null;
+        downloadUrl = dl.data?.signedUrl ?? playUrl;
+      } else {
+        const { data: s } = await admin.storage.from(BUCKET).createSignedUrl(keys[0], 600, downloadName ? { download: downloadName } : undefined);
+        downloadUrl = s?.signedUrl ?? null;
+      }
     } else if (keys.length > 1) {
       const { data: s } = await admin.storage.from(BUCKET).createSignedUrls(keys, 600);
       downloadParts = (s ?? []).map((x) => x.signedUrl ?? "");
       if (downloadParts.length !== keys.length || downloadParts.some((u) => !u)) downloadParts = null;
     }
   }
-  return { job: view(row), downloadUrl, downloadParts, filename };
+  return { job: view(row), downloadUrl, playUrl, downloadParts, filename };
 }

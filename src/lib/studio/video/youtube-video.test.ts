@@ -125,4 +125,14 @@ describe("MP4 render kill switch (no E3 youtube_video worker yet)", () => {
     expect(gate).toBeLessThan(body.indexOf("createSupabaseAdminClient()"));
     expect(gate).toBeLessThan(body.indexOf(".rpc("));
   });
+  it("player URL is separate from the attachment download", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/lib/studio/master/server.ts", "utf8");
+    const body = src.slice(src.indexOf("export async function getStudioJob"));
+    expect(body).toContain("row.kind === \"youtube_video\"");
+    expect(body).toContain("playUrl");
+    const ui = readFileSync("src/components/studio/studio-youtube-video.tsx", "utf8");
+    expect(ui).toContain("j.playUrl || j.downloadUrl");
+    expect(ui).toContain("run.downloadUrl");
+  });
 });
