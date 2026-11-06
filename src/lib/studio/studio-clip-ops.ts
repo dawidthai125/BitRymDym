@@ -183,7 +183,7 @@ export function trimClipLeftToPlayhead(params: {
     params.playheadMs <= params.clip.timelineStartMs ||
     params.playheadMs >= end
   ) {
-    throw new Error("Playhead musi być wewnątrz klipu, aby przyciąć początek.");
+    throw new Error("Głowica musi być wewnątrz klipu, aby przyciąć początek.");
   }
   return trimClipLeft({
     clip: params.clip,
@@ -206,7 +206,7 @@ export function trimClipRightToPlayhead(params: {
     params.playheadMs <= params.clip.timelineStartMs ||
     params.playheadMs >= end
   ) {
-    throw new Error("Playhead musi być wewnątrz klipu, aby przyciąć koniec.");
+    throw new Error("Głowica musi być wewnątrz klipu, aby przyciąć koniec.");
   }
   return trimClipRight({
     clip: params.clip,
@@ -258,4 +258,16 @@ export function splitClipGeometry(params: {
   assertClipPlacement({ ...left, timelineLengthMs: params.timelineLengthMs });
   assertClipPlacement({ ...right, timelineLengthMs: params.timelineLengthMs });
   return { left, right };
+}
+
+/** True when the playhead is strictly inside the clip (valid for split and trim). */
+export function playheadInsideClip(
+  clip: { timelineStartMs: number; durationMs: number } | null | undefined,
+  playheadMs: number,
+): boolean {
+  if (!clip) return false;
+  return (
+    playheadMs > clip.timelineStartMs &&
+    playheadMs < clip.timelineStartMs + clip.durationMs
+  );
 }

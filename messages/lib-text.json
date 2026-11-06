@@ -1446,11 +1446,11 @@
   "en": "Music platform — beats, recordings, mixing and a community catalog."
  },
  {
-  "src": "Playhead musi być wewnątrz klipu, aby przyciąć koniec.",
+  "src": "Głowica musi być wewnątrz klipu, aby przyciąć koniec.",
   "en": "The playhead must be inside the clip to trim the end."
  },
  {
-  "src": "Playhead musi być wewnątrz klipu, aby przyciąć początek.",
+  "src": "Głowica musi być wewnątrz klipu, aby przyciąć początek.",
   "en": "The playhead must be inside the clip to trim the start."
  },
  {
@@ -3074,5 +3074,13 @@
  {
   "src": "Zaakceptuj Regulamin i Politykę prywatności, aby założyć konto.",
   "en": "Accept the Terms and Privacy policy to create an account."
+ },
+ {
+  "src": "Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć początek.",
+  "en": "Place the playhead inside the selected clip to trim the start."
+ },
+ {
+  "src": "Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć koniec.",
+  "en": "Place the playhead inside the selected clip to trim the end."
  }
 ]

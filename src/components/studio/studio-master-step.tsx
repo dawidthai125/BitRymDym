@@ -479,6 +479,8 @@ export function StudioMasterStep({
       if (useReference) setRefState((r) => ({ ...r, reference: null }));
       setSm({ phase: "working", jobId: prep.jobId });
       const done = await pollJob(prep.jobId, "master");
+      // A failed or cancelled master is not counted by the server; refresh so the counter drops back.
+      requestPlanUsageRefresh();
       if (done.status !== "succeeded") return setSm({ phase: "failed", code: done.code ?? "failed" });
       setSm({ phase: "done", jobId: prep.jobId, url: done.url, metrics: (done.metrics as { after?: Record<string, unknown> }) ?? null });
     } catch {
@@ -798,7 +800,7 @@ export function StudioMasterStep({
                     {t("masteryLimit")}{" "}
                     {server.tier !== "GOLD" ? <a href="/premium" className="underline underline-offset-4">{t("zobaczPlany")}</a> : null}
                   </p>
-                ) : sm.phase === "failed" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("masterBlad", { code: sm.code })}</p> : null}
+                ) : sm.phase === "failed" ? <p role="alert" data-error-code={sm.code} className="text-sm text-[var(--brd-rec)]">{t("masterBlad")}</p> : null}
                 {sm.phase === "unavailable" ? <p role="status" data-testid="studio-master-unavailable" className="text-sm">{t("serwerNiedostepny")}</p> : null}
               </div>
             ) : null}
