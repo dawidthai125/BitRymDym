@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import enMessages from "../../../messages/en.json";
 import plMessages from "../../../messages/pl.json";
 import { join } from "node:path";
 
@@ -80,8 +81,30 @@ describe("settings hub (navigation only)", () => {
       join(process.cwd(), "src/app/account/page.tsx"),
       "utf8",
     );
-    for (const id of ["profil", "security", "danger"] as const) {
+    for (const id of ["profil", "security", "powiadomienia", "danger"] as const) {
       expect(account).toContain(`id="${id}"`);
+    }
+  });
+
+  it("resolves every hub label from consts in Polish and English", () => {
+    const hub = src.slice(
+      src.indexOf("const SETTINGS_HUB_LINKS"),
+      src.indexOf("] as const"),
+    );
+    const keys = [
+      ...hub.matchAll(/(?:group|title|description): "([^"]+)"/g),
+    ].map((match) => match[1]);
+    expect(keys).toContain("powiadomieniaEMail");
+    expect(keys).toContain("moderacjaMasterMp4");
+    const plConsts = plMessages.account.settingsPage.consts;
+    const enConsts = enMessages.account.settingsPage.consts;
+    for (const key of keys) {
+      const pl = plConsts[key as keyof typeof plConsts];
+      const en = enConsts[key as keyof typeof enConsts];
+      expect(typeof pl, key).toBe("string");
+      expect(typeof en, key).toBe("string");
+      expect(pl.length, key).toBeGreaterThan(0);
+      expect(en.length, key).toBeGreaterThan(0);
     }
   });
 });

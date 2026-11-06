@@ -508,10 +508,10 @@
         "bityUdostepnione": "Shared beats",
         "bityNaKtorychMasz": "Beats you have active recording access to.",
         "premiumLimity": "Premium — limits",
-        "informacjaOPoziomachI": "Information about tiers and limits. Purchase is on the Premium page when payments are on."
-      },
-      "powiadomieniaEMail": "E-mail notifications",
-      "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe"
+        "informacjaOPoziomachI": "Information about tiers and limits. Purchase is on the Premium page when payments are on.",
+        "powiadomieniaEMail": "E-mail notifications",
+        "moderacjaMasterMp4": "Moderation, master and MP4 ready, unsubscribe"
+      }
     },
     "accountBeatEditPage": {
       "metaTitle": "Edit beat",
