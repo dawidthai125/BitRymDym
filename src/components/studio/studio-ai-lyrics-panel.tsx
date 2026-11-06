@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-import { AI_LYRICS_LIMITS, type AiLyricsMode } from "@/lib/studio/lyrics/ai-lyrics";
+import { AI_LYRICS_LIMITS, AI_LYRICS_STYLES, type AiLyricsMode, type AiLyricsStyle } from "@/lib/studio/lyrics/ai-lyrics";
 
 type State =
   | { kind: "loading" }
@@ -27,6 +27,7 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
   const id = useId();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [mode, setMode] = useState<AiLyricsMode>("keywords");
+  const [style, setStyle] = useState<AiLyricsStyle | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
       const res = await fetch(`/api/studio/projects/${projectId}/lyrics/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, text: input }),
+        body: JSON.stringify({ mode, text: input, ...(style ? { style } : {}) }),
       });
       const j = (await res.json().catch(() => ({}))) as {
         text?: string;
@@ -126,6 +127,17 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
         {(["keywords", "continue", "verse"] as const).map((m) => (
           <Button key={m} type="button" size="sm" variant={mode === m ? "default" : "outline"} className="min-h-9" aria-pressed={mode === m} onClick={() => pickMode(m)}>
             {t(`tryby.${m}`)}
+          </Button>
+        ))}
+      </div>
+      <div role="group" aria-label={t("styl")} className="flex flex-wrap items-center gap-1">
+        <span className="text-[11px] text-[var(--brd-mute)]">{t("styl")}:</span>
+        <Button type="button" size="sm" variant={style === null ? "default" : "outline"} className="h-8 min-h-8 px-2 text-[11px]" aria-pressed={style === null} onClick={() => setStyle(null)}>
+          {t("stylBrak")}
+        </Button>
+        {AI_LYRICS_STYLES.map((s) => (
+          <Button key={s} type="button" size="sm" variant={style === s ? "default" : "outline"} className="h-8 min-h-8 px-2 text-[11px]" aria-pressed={style === s} onClick={() => setStyle(s)}>
+            {t(`style.${s}`)}
           </Button>
         ))}
       </div>

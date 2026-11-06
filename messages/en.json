@@ -2814,13 +2814,16 @@
         "limitDzienny": "You used today's generations. They come back tomorrow.",
         "licznik": "Today: {used}/{max}",
         "tryb": "Writing mode",
+        "styl": "Style",
+        "stylBrak": "No style",
+        "style": { "rap": "Rap", "trap": "Trap", "drill": "Drill", "boombap": "Boom bap", "refleksyjny": "Reflective", "melodyjny": "Melodic" },
         "tryby": {
-          "keywords": "From keywords",
+          "keywords": "From my description",
           "continue": "Continue the text",
           "verse": "Finish the verse"
         },
         "opis": {
-          "keywords": "Give a topic or keywords. I will write lyrics with rhymes.",
+          "keywords": "Describe the topic in your own words or give keywords. I will write lyrics with rhymes.",
           "continue": "Paste the start of your lyrics. I will continue in the same style.",
           "verse": "Paste part of a verse. I will finish it and match the rhymes."
         },
