@@ -25,6 +25,8 @@ import {
   type StudioEngineTrack,
 } from "@/lib/studio/studio-audio-schedule";
 import { automationLane, automationSignature } from "@/lib/studio/studio-automation";
+import { MASTER_RENDER_SAMPLE_RATE } from "@/lib/studio/master/client";
+import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
 import type {
@@ -159,6 +161,8 @@ export type StudioAudioContextLike = StudioFxGraphContext & {
   /** Chromium — optional AudioContext output routing (AUD-01). */
   setSinkId?(sinkId: string): Promise<void>;
   sinkId?: string;
+  /** Present on a real AudioContext. MIDI PCM is rendered at this rate. */
+  sampleRate?: number;
 };
 
 export type StudioAudioEngineHost = {
@@ -382,6 +386,9 @@ export class StudioAudioEngine {
     new Map();
   private tracks = new Map<string, TrackGraph>();
   private voices = new Map<string, Voice>();
+  /** One BufferSource per track with notes, into that track's strip (gain / pan / mute). */
+  private midiSources: StudioBufferSourceLike[] = [];
+  private midiSig = "";
   private document: StudioEngineDocument | null = null;
   /** Document as given (before BRD Tune latency compensation). */
   private rawDocument: StudioEngineDocument | null = null;
@@ -1135,6 +1142,7 @@ export class StudioAudioEngine {
   }
 
   dispose(): void {
+    this.haltMidiSources();
     for (const entry of this.tuneBakes.values()) {
       entry.abort.abort();
       if (entry.url) this.host.revokeUrl?.(entry.url);
@@ -1879,6 +1887,7 @@ export class StudioAudioEngine {
   ): Promise<void> {
     if (!this.document || !this.ctx) return;
     this.syncGraphParams();
+    this.syncMidiPlayback(playheadMs, shouldPlay);
     const plans = planVoicesAtPlayhead(this.document, playheadMs);
     const wanted = new Set(plans.map((p) => p.clipId));
 
@@ -2089,7 +2098,80 @@ export class StudioAudioEngine {
     return voice;
   }
 
+  private haltMidiSources(): void {
+    const sources = this.midiSources;
+    this.midiSources = [];
+    this.midiSig = "";
+    for (const source of sources) {
+      try {
+        source.onended = null;
+        source.stop();
+      } catch {
+        /* already stopped */
+      }
+      try {
+        source.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+    }
+  }
+
+  /**
+   * Schedule rendered note PCM on each track input of this AudioContext.
+   * Mute / solo / gain / pan stay on the track strip. Replanned only when the clock epoch or the notes change.
+   */
+  private syncMidiPlayback(playheadMs: number, shouldPlay: boolean): void {
+    const ctx = this.ctx;
+    const document = this.document;
+    if (!shouldPlay || this.lifecycle !== "playing" || !ctx || !document || !this.epoch) {
+      this.haltMidiSources();
+      return;
+    }
+    const sr = ctx.sampleRate && ctx.sampleRate > 0 ? ctx.sampleRate : MASTER_RENDER_SAMPLE_RATE;
+    const body = document.tracks
+      .map((t) => {
+        const notes = t.midi?.notes ?? [];
+        if (!t.midi || notes.length === 0) return `${t.id}:`;
+        return `${t.id}:${t.midi.instrument}:${notes.map((n) => `${n.t}.${n.dur}.${n.pitch}.${n.vel}`).join(",")}`;
+      })
+      .join("|");
+    const sig = `${this.epoch.epochContextTime}|${this.epoch.epochPlayheadMs}|${sr}|${body}`;
+    if (sig === this.midiSig) return;
+    this.haltMidiSources();
+    this.midiSig = sig;
+    if (!ctx.createBuffer || !ctx.createBufferSource) return;
+    for (const track of document.tracks) {
+      const notes = track.midi?.notes ?? [];
+      if (!track.midi || notes.length === 0) continue;
+      const pcm = renderMidiNotes({
+        notes,
+        instrument: track.midi.instrument,
+        sampleRate: sr,
+        durationMs: document.timelineLengthMs,
+      });
+      if (pcm.length === 0) continue;
+      try {
+        const buffer = ctx.createBuffer(1, pcm.length, sr);
+        buffer.getChannelData(0).set(pcm);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.ensureTrackGraph(track.id).input);
+        const offset = Math.max(0, playheadMs / 1000);
+        if (offset >= buffer.duration) {
+          source.disconnect();
+          continue;
+        }
+        this.midiSources.push(source);
+        source.start(ctx.currentTime, offset);
+      } catch {
+        /* context cannot schedule this buffer */
+      }
+    }
+  }
+
   private pauseAllTimelineVoices(): void {
+    this.haltMidiSources();
     for (const voice of this.voices.values()) {
       if (voice.role !== "timeline") continue;
       this.stopBufferSource(voice);

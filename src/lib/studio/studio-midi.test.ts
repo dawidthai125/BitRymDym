@@ -1,6 +1,34 @@
 import { describe, expect, it } from "vitest";
 
-import { cleanMidiNotes, midiHz, renderMidiNotes } from "./studio-midi";
+import { cleanMidiNotes, emptyMidi, hasMidi, midiHz, MidiValidationError, parseMidiForWrite, renderMidiNotes } from "./studio-midi";
+
+describe("studio midi parser", () => {
+  const code = (raw: unknown) => {
+    try {
+      parseMidiForWrite(raw);
+      return "ok";
+    } catch (e) {
+      return e instanceof MidiValidationError ? e.code : "other";
+    }
+  };
+  it("drops bad notes and rejects an unknown instrument", () => {
+    const parsed = parseMidiForWrite({
+      v: 1,
+      instrument: "square",
+      notes: [
+        { t: 0, dur: 100, pitch: 60, vel: 0.5 },
+        { t: 0, dur: 10, pitch: 200, vel: 1 },
+        { t: -1, dur: 10, pitch: 60, vel: 1 },
+      ],
+    });
+    expect(parsed.notes).toEqual([{ t: 0, dur: 100, pitch: 60, vel: 0.5 }]);
+    expect(parsed.instrument).toBe("square");
+    expect(code({ v: 1, instrument: "noise", notes: [] })).toBe("bad_instrument");
+    expect(code({ v: 1, instrument: "sine", notes: Array.from({ length: 513 }, () => ({ t: 0, dur: 10, pitch: 60, vel: 1 })) })).toBe("too_many_notes");
+    expect(hasMidi(parseMidiForWrite(null))).toBe(false);
+    expect(parseMidiForWrite({ v: 1, instrument: "sine", notes: [] })).toEqual(emptyMidi());
+  });
+});
 
 describe("studio midi", () => {
   it("maps MIDI 69 to 440 Hz", () => {

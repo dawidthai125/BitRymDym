@@ -75,7 +75,12 @@ export function buildMixAnalysisSkeleton(
       fadeOutMs: c.fadeOutMs,
     });
   }
-  const contentEnd = clips.reduce((m, c) => Math.max(m, c.timelineStartMs + c.durationMs), 0);
+  const midiEnd = doc.tracks.reduce((max, t) => {
+    const notes = t.midi?.notes ?? [];
+    for (const n of notes) max = Math.max(max, n.t + n.dur);
+    return max;
+  }, 0);
+  const contentEnd = Math.max(clips.reduce((m, c) => Math.max(m, c.timelineStartMs + c.durationMs), 0), midiEnd);
   return {
     sampleRate,
     lengthMs: Math.min(MIX_ANALYSIS_MAX_LENGTH_MS, Math.max(1000, Math.min(doc.project.timelineLengthMs || contentEnd, contentEnd || 1000))),
@@ -93,6 +98,7 @@ export function buildMixAnalysisSkeleton(
       // analysis, the browser preview and the E3 render all hear the processed sound.
       effectsChain: t.effectsChain,
       automation: t.automation,
+      midi: t.midi,
     })),
     masterEffectsChain: doc.project.masterFxChain,
     clips,

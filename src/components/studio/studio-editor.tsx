@@ -48,6 +48,7 @@ import { StudioAutomationLane } from "@/components/studio/studio-automation-lane
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { maxStemsForTier } from "@/config/plan-policy";
 import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import { emptyMidi, hasMidi, midiPhraseAt, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
@@ -254,6 +255,7 @@ export function StudioEditor({
           solo: t.solo,
           effectsChain: m.effectsChain,
           automation: m.automation,
+          midi: m.midi,
         };
       }),
       // Drop stale BEAT_REF from the engine graph (defense before planVoices).
@@ -316,6 +318,7 @@ function StudioEditorInner({
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioEditor");
+  const { playheadMs } = useStudioTransportPlayhead();
   const tInspector = useTranslations("studio.inspectorTitle");
   const trRole = useTranslations("studio.trackRole");
   const [error, setError] = useState<string | null>(null);
@@ -1408,6 +1411,48 @@ function StudioEditorInner({
               ...prev,
               project: { ...prev.project, documentVersion },
               tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, automation: saved } : t)),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
+  /** Replace a track's MIDI notes (CAS). Empty notes clear the column. */
+  function saveTrackMidi(trackId: string, midi: StudioMidiV1): void {
+    setError(null);
+    setDoc((prev) => ({ ...prev, tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, midi } : t)) }));
+    enqueuePersist(async () => {
+      try {
+        const expected = docRef.current.project.documentVersion;
+        const res = await fetch(`/api/studio/projects/${docRef.current.project.id}/tracks/${trackId}/midi`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expectedDocumentVersion: expected, midi }),
+        });
+        const json = (await res.json()) as { success?: boolean; midi?: StudioMidiV1; documentVersion?: number; error?: string; code?: string };
+        if (!res.ok || !json.midi || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? tr("nieUdaloSieZaktualizowac"),
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(json.error ?? FX_CHAIN_CONFLICT_UI_PL);
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        const saved = json.midi;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, midi: saved } : t)),
             }));
           },
         };
@@ -3146,6 +3191,37 @@ function StudioEditorInner({
               </Button>
             </>
           ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            role="menuitem"
+            data-testid="studio-track-midi-phrase"
+            disabled={recordingLocked || pending || hasMidi(trackMenuTrack.midi)}
+            onClick={() => {
+              if (hasMidi(trackMenuTrack.midi)) return;
+              saveTrackMidi(trackMenuTrack.id, midiPhraseAt(playheadMs));
+              setTrackMenuId(null);
+            }}
+          >
+            {tr("nuty")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            role="menuitem"
+            data-testid="studio-track-midi-clear"
+            disabled={recordingLocked || pending || !hasMidi(trackMenuTrack.midi)}
+            onClick={() => {
+              saveTrackMidi(trackMenuTrack.id, emptyMidi());
+              setTrackMenuId(null);
+            }}
+          >
+            {tr("usunNuty")}
+          </Button>
           <Button
             type="button"
             size="sm"

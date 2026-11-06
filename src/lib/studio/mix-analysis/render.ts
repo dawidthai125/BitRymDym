@@ -8,6 +8,7 @@
  */
 
 import { automationLane, clampAutomationValue, createLaneEvaluator, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import { renderMidiNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import type { StudioTrackRole } from "@/config/studio";
 import {
   buildStudioOfflineFxChain,
@@ -43,6 +44,8 @@ export type MixAnalysisTrack = {
   effectsChain?: unknown;
   /** Silver/Gold gain / pan envelopes; absent = static gainDb / pan. */
   automation?: StudioAutomationV1;
+  /** Timeline notes (ms from 0). Mixed like clip audio: mute, solo, gain, pan. */
+  midi?: StudioMidiV1;
 };
 
 export type MixAnalysisInput = {
@@ -162,6 +165,45 @@ function trackStrip(track: MixAnalysisTrack, sr: number): { gainAt: (n: number) 
   };
 }
 
+/** Overlap-add is inside renderMidiNotes. Gain here; pan now or later (FX path pans the whole bus). */
+function addRenderedMidi(
+  input: MixAnalysisInput,
+  track: MixAnalysisTrack,
+  left: Float32Array,
+  right: Float32Array,
+  activeRanges: Array<[number, number]>,
+  strip: { gainAt: (n: number) => number; panAt: (n: number) => number },
+  panNow: boolean,
+): void {
+  const midi = track.midi;
+  if (!midi || midi.notes.length === 0) return;
+  const pcm = renderMidiNotes({
+    notes: midi.notes,
+    instrument: midi.instrument,
+    sampleRate: input.sampleRate,
+    durationMs: input.lengthMs,
+  });
+  const nMax = Math.min(left.length, right.length, pcm.length);
+  let start = -1;
+  let end = 0;
+  for (let n = 0; n < nMax; n++) {
+    const s = pcm[n];
+    if (s === 0) continue;
+    if (start < 0) start = n;
+    end = n + 1;
+    const g = s * strip.gainAt(n);
+    if (panNow) {
+      const [pl, pr] = stereoPan(g, g, true, strip.panAt(n));
+      left[n] += pl;
+      right[n] += pr;
+    } else {
+      left[n] += g;
+      right[n] += g;
+    }
+  }
+  if (start >= 0) activeRanges.push([start, end]);
+}
+
 export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, anySolo: boolean): RenderedTrack {
   const sr = input.sampleRate;
   const len = Math.max(1, Math.round((input.lengthMs / 1000) * sr));
@@ -200,6 +242,7 @@ export function renderTrack(input: MixAnalysisInput, track: MixAnalysisTrack, an
       right[n] += pr;
     }
   }
+  addRenderedMidi(input, track, left, right, activeRanges, strip, true);
   return { track, left, right, activeRanges, audible };
 }
 
@@ -245,6 +288,7 @@ function renderTrackWithFx(
       right[n] += c1[si] * g;
     }
   }
+  addRenderedMidi(input, track, left, right, activeRanges, strip, false);
   if (activeRanges.length > 0) applyFxInPlace(fx, left, right);
   // Reverb (stereo IR) turns a mono strip stereo before the panner.
   const stereoFx = fx.processors.some((p) => p.type === "reverb" && p.status === "IMPLEMENTED");

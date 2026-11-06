@@ -80,7 +80,8 @@ export async function loadServerMixInput(p: { ownerId: string; projectId: string
       }
     }),
   );
-  if (Object.keys(sources).length === 0) throw new Error("no_audio");
+  const hasNotes = skeleton.tracks.some((t) => (t.midi?.notes.length ?? 0) > 0);
+  if (Object.keys(sources).length === 0 && !hasNotes) throw new Error("no_audio");
   const { sourceClips: _unused, ...rest } = skeleton;
   void _unused;
   return { doc, input: { ...rest, sources }, decodeMs: Date.now() - t0 };

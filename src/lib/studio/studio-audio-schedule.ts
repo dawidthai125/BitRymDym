@@ -12,6 +12,7 @@ import {
 } from "@/lib/studio/studio-beat-audio";
 
 import { automationLane, trackParamAt, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 
 export type StudioEngineTrack = {
   id: string;
@@ -22,6 +23,8 @@ export type StudioEngineTrack = {
   effectsChain?: unknown;
   /** Silver/Gold gain / pan envelopes (see studio-automation.ts). */
   automation?: StudioAutomationV1;
+  /** Timeline notes rendered by studio-midi.ts. Absent/empty = silence. */
+  midi?: StudioMidiV1;
 };
 
 export type StudioEngineClip = {

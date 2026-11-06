@@ -1630,6 +1630,8 @@
       "wybierzBitAbyOdblokowac": "Choose a beat to unlock playback and recording.",
       "automatykaGlosnosc": "Volume automation",
       "automatykaPan": "Pan automation",
+      "nuty": "Notes",
+      "usunNuty": "Remove notes",
       "osCzasuProjektu": "Project timeline",
       "sciezki": "Tracks",
       "osCzasuTrybNagrywania": "Timeline — recording mode",

@@ -1,4 +1,5 @@
 import type { StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 import type {
   StudioClipSourceKind,
   StudioProjectStatus,
@@ -37,6 +38,8 @@ export type StudioTrackDto = {
   effectsChain: StudioFxChainV1;
   /** Silver/Gold gain and pan envelopes; absent/empty = static gain and pan. */
   automation?: StudioAutomationV1;
+  /** Instrument notes on the project timeline. Absent/empty = no notes. */
+  midi?: StudioMidiV1;
 };
 
 export type StudioClipDto = {
