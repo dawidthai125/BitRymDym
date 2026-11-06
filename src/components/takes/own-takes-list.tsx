@@ -185,15 +185,23 @@ export function OwnTakesList({
           return (
             <li
               key={take.id}
-              className="flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between"
+              className={
+                variant === "dashboard"
+                  ? "flex flex-col gap-3 py-4"
+                  : "flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between"
+              }
             >
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   {variant === "archive" ? (
                     <span className="brd-meta text-[10px] tabular-nums text-[var(--brd-amber)]">
                       #{tl(String(items.length - index).padStart(2, "0"))}
                     </span>
-                  ) : null}
+                  ) : (
+                    <StatusPill tone={take.displayStatus === "READY" ? "ok" : "neutral"}>
+                      {tl(labelTakeStatus(take.displayStatus))}
+                    </StatusPill>
+                  )}
                   {editingId === take.id ? (
                     <div className="flex w-full flex-wrap gap-2">
                       <input
@@ -232,10 +240,14 @@ export function OwnTakesList({
                   )}
                 </div>
                 <p className="text-sm text-[var(--brd-ink-soft)]">
-                  {tl(take.authorDisplayName
-                    ? t("autor", { v0: take.authorDisplayName })
-                    : t("autor2"))}
-                  {" · "}
+                  {variant === "archive" ? (
+                    <>
+                      {tl(take.authorDisplayName
+                        ? t("autor", { v0: take.authorDisplayName })
+                        : t("autor2"))}
+                      {" · "}
+                    </>
+                  ) : null}
                   {t("bit")}{" "}
                   {take.beatTitle ? (
                     <Link
@@ -247,25 +259,31 @@ export function OwnTakesList({
                   ) : (
                     <span>{tl(take.beatId.slice(0, 8))}</span>
                   )}
-                </p>
-                <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
-                  {tl(labelTakeStatus(take.displayStatus))}
-                  {" · "}
-                  {tl(labelRecordingMode(take.recordingMode))}
-                  {tl(take.durationSeconds != null
+                  {take.durationSeconds != null
                     ? ` · ${formatDurationSeconds(take.durationSeconds)}`
-                    : "")}
+                    : ""}
                 </p>
-                <p className="brd-meta text-[10px] text-[var(--brd-mute)]">
-                  {t("utworzono")}{" "}{tl(formatWhen(take.createdAt, tag))}
-                  {" · "}
-                  {t("wygasa")}{" "}{tl(formatWhen(take.expiresAt, tag))}
-                </p>
+                {variant === "archive" ? (
+                  <>
+                    <p className="brd-meta text-[11px] uppercase tracking-[0.12em] text-[var(--brd-mute)]">
+                      {tl(labelTakeStatus(take.displayStatus))}
+                      {" · "}
+                      {tl(labelRecordingMode(take.recordingMode))}
+                    </p>
+                    <p className="brd-meta text-[10px] text-[var(--brd-mute)]">
+                      {t("utworzono")}{" "}{tl(formatWhen(take.createdAt, tag))}
+                      {" · "}
+                      {t("wygasa")}{" "}{tl(formatWhen(take.expiresAt, tag))}
+                    </p>
+                  </>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
-                <StatusPill tone={take.displayStatus === "READY" ? "ok" : "neutral"}>
-                  {tl(labelTakeStatus(take.displayStatus))}
-                </StatusPill>
+                {variant === "archive" ? (
+                  <StatusPill tone={take.displayStatus === "READY" ? "ok" : "neutral"}>
+                    {tl(labelTakeStatus(take.displayStatus))}
+                  </StatusPill>
+                ) : null}
                 {editingId !== take.id && take.displayStatus !== "DELETED" ? (
                   <Button
                     type="button"
@@ -315,7 +333,7 @@ export function OwnTakesList({
                 ) : null}
               </div>
               {playingId === take.id && playUrl ? (
-                <audio className="w-full" controls autoPlay preload="none" src={playUrl} />
+                <audio className="w-full basis-full" controls autoPlay preload="none" src={playUrl} />
               ) : null}
             </li>
           );

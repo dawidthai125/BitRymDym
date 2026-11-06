@@ -18,7 +18,9 @@ export default async function AccountLayout({
     <AppShell tone="studio">
       <PageFrame className="pt-8">
         <AccountSectionNav
+          label={tr("twojeStudio")}
           items={[
+            { href: "/account", label: tr("pulpit") },
             { href: "/account/takes", label: tr("mojeNagrania") },
             { href: "/account/beats", label: tr("mojeBity") },
             { href: "/account/downloads", label: tr("eksportyIPobrania") },
