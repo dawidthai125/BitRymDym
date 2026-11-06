@@ -17,6 +17,8 @@ export class BitekProviderError extends Error {
 
 export interface BitekLlmProvider {
   id: Exclude<BitekProviderId, "rules">;
+  /** Model name, for diagnostics only. */
+  model?: string;
   timeoutMs: number;
   /** Use the short system prompt (small self-hosted model). */
   compactPrompt?: boolean;
@@ -35,12 +37,14 @@ export function openAiCompatibleProvider(opts: {
   timeoutMs: number;
   jsonMode?: boolean;
   maxTokens?: number;
+  temperature?: number;
   reasoningEffort?: "low" | "medium" | "high";
   fetchFn?: FetchFn;
 }): BitekLlmProvider {
   const f = opts.fetchFn ?? fetch;
   return {
     id: opts.id,
+    model: opts.model,
     timeoutMs: opts.timeoutMs,
     async complete(messages, signal) {
       let res: Response;
@@ -51,7 +55,7 @@ export function openAiCompatibleProvider(opts: {
           body: JSON.stringify({
             model: opts.model,
             messages,
-            temperature: 0.4,
+            temperature: opts.temperature ?? 0.4,
             max_tokens: opts.maxTokens ?? 400,
             ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
             ...(opts.reasoningEffort ? { reasoning_effort: opts.reasoningEffort } : {}),
@@ -135,6 +139,32 @@ export function bitekProvidersFromEnv(
   // E3 = self-hosted model reached via the DB queue (bitek_llm_jobs), never directly.
   if ((env.BITEK_E3_QUEUE_ENABLED ?? "").trim().toLowerCase() === "true" && opts.e3Queue) {
     list.push(opts.e3Queue());
+  }
+  return list;
+}
+
+/**
+ * Providers for lyrics: stronger models and a higher temperature than BITEK chat (creative text, longer output).
+ * Order: Groq large → Gemini Flash → Gemini Flash-Lite → Groq small. A model that does not exist for the key just
+ * fails fast and the next one is tried. Models are overridable by env.
+ */
+export function lyricsProvidersFromEnv(env: Env = process.env, fetchFn?: FetchFn): BitekLlmProvider[] {
+  const list: BitekLlmProvider[] = [];
+  const groq = (model: string, effort: "low" | "medium" | "high") =>
+    env.GROQ_API_KEY
+      ? openAiCompatibleProvider({ id: "groq", baseUrl: "https://api.groq.com/openai/v1", apiKey: env.GROQ_API_KEY, model, reasoningEffort: effort, maxTokens: 2200, temperature: 0.85, timeoutMs: 20000, jsonMode: true, fetchFn })
+      : null;
+  const gemini = (model: string) =>
+    env.GEMINI_API_KEY
+      ? openAiCompatibleProvider({ id: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", apiKey: env.GEMINI_API_KEY, model, reasoningEffort: "low", maxTokens: 2200, temperature: 0.9, timeoutMs: 20000, jsonMode: true, fetchFn })
+      : null;
+  for (const p of [
+    groq(env.LYRICS_GROQ_MODEL || "openai/gpt-oss-120b", "medium"),
+    gemini(env.LYRICS_GEMINI_MODEL || "gemini-3.5-flash"),
+    gemini(env.BITEK_GEMINI_MODEL || "gemini-3.5-flash-lite"),
+    groq(env.BITEK_GROQ_MODEL || "openai/gpt-oss-20b", "low"),
+  ]) {
+    if (p) list.push(p);
   }
   return list;
 }

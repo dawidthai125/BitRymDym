@@ -24,7 +24,7 @@ describe("AI lyrics — plan gate", () => {
 describe("AI lyrics — input", () => {
   it("accepts the three modes and trims", () => {
     for (const mode of ["keywords", "continue", "verse"]) {
-      expect(validateAiLyricsInput(mode, "  noc, miasto  ")).toEqual({ ok: true, mode, text: "noc, miasto" });
+      expect(validateAiLyricsInput(mode, "  noc, miasto  ")).toEqual({ ok: true, mode, text: "noc, miasto", style: null, bpm: null });
     }
   });
   it("rejects unknown mode, non-string, too short and too long", () => {
@@ -36,7 +36,14 @@ describe("AI lyrics — input", () => {
   });
   it("drops control characters", () => {
     const r = validateAiLyricsInput("keywords", "noc\u0000\u0007 miasto");
-    expect(r).toEqual({ ok: true, mode: "keywords", text: "noc miasto" });
+    expect(r).toEqual({ ok: true, mode: "keywords", text: "noc miasto", style: null, bpm: null });
+  });
+});
+
+describe("AI lyrics — style and tempo", () => {
+  it("keeps a known style and a sane tempo, drops the rest", () => {
+    expect(validateAiLyricsInput("keywords", "noc miasto", "drill", 91.6)).toMatchObject({ ok: true, style: "drill", bpm: 92 });
+    expect(validateAiLyricsInput("keywords", "noc miasto", "<script>", 5)).toMatchObject({ ok: true, style: null, bpm: null });
   });
 });
 

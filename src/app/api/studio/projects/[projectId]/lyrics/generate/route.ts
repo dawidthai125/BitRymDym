@@ -6,8 +6,8 @@ import { generateAiLyrics, getAiLyricsState } from "@/lib/studio/lyrics/ai-lyric
 import { masterErrorResponse, readJson, tierOf } from "../../master/_shared";
 
 export const runtime = "nodejs";
-/** Groq (8 s) + Gemini (10 s) plus slack. */
-export const maxDuration = 60;
+/** First draft (up to a few providers at 20 s) plus up to two rhyme repairs. */
+export const maxDuration = 120;
 type RouteContext = { params: Promise<{ projectId: string }> };
 
 const STATUS: Record<string, number> = { tier_lyrics: 403, bad_request: 400, daily_limit: 429, ai_unavailable: 503 };
@@ -25,7 +25,7 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 /**
- * POST {mode:"keywords"|"continue"|"verse", text} — Silver+ → {text, used, perDay}.
+ * POST {mode:"keywords"|"continue"|"verse", text, style?} — Silver+ → {text, used, perDay}.
  * Below Silver → 403 tier_lyrics + upsell; daily cap → 429; all providers down → 503 ai_unavailable.
  */
 export async function POST(request: Request, context: RouteContext) {
@@ -34,7 +34,7 @@ export async function POST(request: Request, context: RouteContext) {
     const auth = await requireUser();
     const body = await readJson(request);
     if (!body) return NextResponse.json({ success: false, error: "bad_request" }, { status: 400 });
-    const r = await generateAiLyrics({ ownerId: auth.userId, projectId, tier: await tierOf(auth), mode: body.mode, text: body.text });
+    const r = await generateAiLyrics({ ownerId: auth.userId, projectId, tier: await tierOf(auth), mode: body.mode, text: body.text, style: body.style });
     if (!r.ok) return NextResponse.json({ success: false, ...r, ...(r.error === "tier_lyrics" ? { upsell: "/premium" } : {}) }, { status: STATUS[r.error] ?? 400 });
     return NextResponse.json({ success: true, ...r });
   } catch (error) {

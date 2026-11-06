@@ -2814,13 +2814,16 @@
         "limitDzienny": "Na dziś limit generowań wyczerpany. Wróci jutro.",
         "licznik": "Dziś: {used}/{max}",
         "tryb": "Tryb pisania",
+        "styl": "Styl",
+        "stylBrak": "Bez stylu",
+        "style": { "rap": "Rap", "trap": "Trap", "drill": "Drill", "boombap": "Boom bap", "refleksyjny": "Refleksyjny", "melodyjny": "Melodyjny" },
         "tryby": {
-          "keywords": "Ze słów kluczowych",
+          "keywords": "Z mojego opisu",
           "continue": "Dokończ tekst",
           "verse": "Dokończ zwrotkę"
         },
         "opis": {
-          "keywords": "Podaj temat albo słowa kluczowe. Ułożę tekst z rymami.",
+          "keywords": "Opisz temat własnymi słowami albo podaj słowa kluczowe. Ułożę tekst z rymami.",
           "continue": "Wklej początek tekstu. Dopiszę dalszy ciąg w tym samym stylu.",
           "verse": "Wklej kawałek zwrotki. Dokończę ją i dopasuję rymy."
         },
