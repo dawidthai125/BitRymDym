@@ -1,3 +1,4 @@
+import type { StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import type {
   StudioClipSourceKind,
   StudioProjectStatus,
@@ -34,6 +35,8 @@ export type StudioTrackDto = {
   inputDeviceHint: string | null;
   outputRoute: string;
   effectsChain: StudioFxChainV1;
+  /** Silver/Gold gain and pan envelopes; absent/empty = static gain and pan. */
+  automation?: StudioAutomationV1;
 };
 
 export type StudioClipDto = {
