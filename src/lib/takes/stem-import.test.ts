@@ -55,3 +55,13 @@ describe("stem import — stems never count as recordings", () => {
     expect(src).not.toMatch(/objectKey|ownerId|bucket/);
   });
 });
+
+describe("stem import — project delete leaves no orphan files", () => {
+  it("a BEFORE DELETE trigger turns stems into DELETED takes for the janitor", () => {
+    const sql = read("supabase/migrations/20261106170000_studio_stems_release_on_project_delete.sql");
+    expect(sql).toContain("before delete on public.studio_projects");
+    expect(sql).toContain("status = 'DELETED'");
+    expect(sql).toContain("stem_project_id = null");
+    expect(sql).toContain("or status = 'DELETED'");
+  });
+});
