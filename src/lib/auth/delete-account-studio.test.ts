@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * Regression: deleting an account whose Studio project had recorded tracks
  * failed at step "takes_delete" (studio_clips FK SET NULL vs source_xor_chk → 23514).
  */
-const read = (rel: string) => readFileSync(join(process.cwd(), rel), "utf8");
+const read = (rel: string) => readFileSync(join(process.cwd(), rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("account deletion with Studio projects", () => {
   const del = read("src/lib/auth/delete-account.ts");
