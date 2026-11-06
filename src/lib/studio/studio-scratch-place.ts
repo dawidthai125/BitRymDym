@@ -140,3 +140,98 @@ export async function copyCatalogAndPlaceStudioClip(
         : input.catalogAssetId,
   };
 }
+
+export type OwnedSamplePlaceInput = {
+  projectId: string;
+  sampleId: string;
+  trackId: string;
+  timelineStartMs: number;
+  expectedDocumentVersion: number;
+};
+
+/**
+ * Owner sample (or a moderated catalog sample) → private TAKE → Studio clip.
+ * Reuses POST /api/studio/samples/:id/copy and POST …/record/place.
+ */
+export async function placeOwnedStudioSample(
+  input: OwnedSamplePlaceInput,
+  fetchImpl: FetchLike = fetch,
+): Promise<CatalogCopyPlaceResult> {
+  if (!input.projectId || !input.sampleId || !input.trackId) {
+    return {
+      ok: false,
+      status: 400,
+      error: "projectId, sampleId i trackId są wymagane.",
+    };
+  }
+  if (!Number.isInteger(input.timelineStartMs) || input.timelineStartMs < 0) {
+    return {
+      ok: false,
+      status: 400,
+      error: "timelineStartMs musi być nieujemną liczbą całkowitą.",
+    };
+  }
+
+  const copyRes = await fetchImpl(`/api/studio/samples/${input.sampleId}/copy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ projectId: input.projectId }),
+  });
+  const copyBody = (await copyRes.json().catch(() => null)) as {
+    takeId?: unknown;
+    reusedExisting?: unknown;
+    message?: unknown;
+    error?: unknown;
+  } | null;
+  if (!copyRes.ok || typeof copyBody?.takeId !== "string") {
+    return {
+      ok: false,
+      status: copyRes.status || 500,
+      error: readErrorMessage(copyBody, "Nie udało się przygotować sampla."),
+    };
+  }
+
+  const placeRes = await fetchImpl(
+    `/api/studio/projects/${input.projectId}/record/place`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        trackId: input.trackId,
+        takeId: copyBody.takeId,
+        timelineStartMs: input.timelineStartMs,
+        expectedDocumentVersion: input.expectedDocumentVersion,
+      }),
+    },
+  );
+  const placeBody = (await placeRes.json().catch(() => null)) as {
+    clip?: StudioClipDto;
+    documentVersion?: unknown;
+    reusedExisting?: unknown;
+    message?: unknown;
+    error?: unknown;
+  } | null;
+  if (!placeRes.ok || !placeBody?.clip) {
+    return {
+      ok: false,
+      status: placeRes.status || 500,
+      error: readErrorMessage(
+        placeBody,
+        "Sampel jest gotowy, ale nie udało się umieścić klipu w Studio.",
+      ),
+    };
+  }
+
+  return {
+    ok: true,
+    takeId: copyBody.takeId,
+    clip: placeBody.clip,
+    documentVersion:
+      typeof placeBody.documentVersion === "number"
+        ? placeBody.documentVersion
+        : input.expectedDocumentVersion,
+    reusedExistingCopy: Boolean(copyBody.reusedExisting),
+    reusedExistingClip: Boolean(placeBody.reusedExisting),
+    catalogAssetId: input.sampleId,
+  };
+}
