@@ -2155,10 +2155,10 @@ export class StudioAudioEngine {
         const buffer = ctx.createBuffer(1, pcm.length, sr);
         buffer.getChannelData(0).set(pcm);
         const source = ctx.createBufferSource();
-        source.buffer = buffer;
+        source.buffer = buffer as StudioAudioBufferLike;
         source.connect(this.ensureTrackGraph(track.id).input);
         const offset = Math.max(0, playheadMs / 1000);
-        if (offset >= buffer.duration) {
+        if (offset >= pcm.length / sr) {
           source.disconnect();
           continue;
         }
