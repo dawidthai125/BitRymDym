@@ -45,6 +45,7 @@ import {
   StudioMixerOverlay,
 } from "@/components/studio/studio-mixer-shell";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
+import { maxStemsForTier } from "@/config/plan-policy";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
@@ -2509,6 +2510,8 @@ function StudioEditorInner({
           tracks={doc.tracks}
           embedded={!recordSimple}
           simple={recordSimple}
+          stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
+          trackLimit={maxTracks}
           preferredTrackId={activeSelectedTrackId}
           lastScratchClipId={lastScratchClipId}
           onLastScratchClipIdChange={setLastScratchClipId}

@@ -281,3 +281,23 @@ export async function finalizeAnonTakeRecordingUpload(
 ): Promise<TakeUploadTransportResult> {
   return postTakeFinalize("/api/takes/anon/finalize", takeId);
 }
+
+/**
+ * Silver/Gold stem: session (per project) → direct upload → finalize. Stems are takes flagged
+ * `is_stem` server-side, so they skip the daily recording limit.
+ */
+export async function uploadStemBlob(params: {
+  projectId: string;
+  blob: Blob;
+  contentType: string;
+  onStage?: (stage: TakeUploadStage) => void | Promise<void>;
+}): Promise<TakeUploadTransportResult> {
+  return runTakeUploadTransport({
+    beatId: "",
+    blob: params.blob,
+    contentType: params.contentType,
+    onStage: params.onStage,
+    sessionPath: `/api/studio/projects/${encodeURIComponent(params.projectId)}/stems/session`,
+    finalizePath: "/api/takes/finalize",
+  });
+}

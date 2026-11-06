@@ -14,6 +14,7 @@ import { StudioMarkersPanel } from "@/components/studio/studio-markers-panel";
 import { StudioScratchPanel } from "@/components/studio/studio-scratch-panel";
 import { useStudioTransport } from "@/components/studio/studio-transport-provider";
 import { StudioLyricsCard } from "@/components/studio/studio-lyrics-card";
+import { StudioStemImport } from "@/components/studio/studio-stem-import";
 import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
 import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
@@ -165,6 +166,8 @@ export function StudioRecordingPanel({
   onDocumentReplaced,
   recordRequest = 0,
   onRecordRequestHandled,
+  stemLimit = 0,
+  trackLimit = 0,
 }: {
   projectId: string;
   /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
@@ -210,6 +213,10 @@ export function StudioRecordingPanel({
    */
   recordRequest?: number;
   onRecordRequestHandled?: () => void;
+  /** Plan stems per project (0 = stem import is not in the plan, the card is hidden). */
+  stemLimit?: number;
+  /** Plan track cap (Bit not counted) — free slots for imported stems. */
+  trackLimit?: number;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
@@ -293,6 +300,99 @@ export function StudioRecordingPanel({
       persistVersionTip,
       projectId,
     ],
+  );
+  /** Stem import: add a named SAMPLE track (server: two CAS steps), then show it in the editor. */
+  const createStemTrack = useCallback(
+    async (input: { name: string; role: string }): Promise<{ ok: true; trackId: string } | { ok: false; message: string }> => {
+      let createdId: string | null = null;
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const response = await fetch(`/api/studio/projects/${projectId}/stems/track`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedDocumentVersion: persistVersionTip.expected(),
+              name: input.name,
+              trackRole: input.role,
+            }),
+          });
+          const body = (await response.json().catch(() => null)) as {
+            track?: StudioTrackDto;
+            documentVersion?: number;
+            error?: string;
+            message?: string;
+            code?: string;
+          } | null;
+          if (!response.ok || !body?.track) {
+            return classifyPersistHttpFailure({
+              status: response.status,
+              message: body?.message || body?.error || "Nie udało się dodać ścieżki.",
+              code: body?.code,
+            });
+          }
+          const version = ackDocumentVersion(body.documentVersion);
+          return {
+            ok: true as const,
+            documentVersion: version,
+            apply: () => {
+              createdId = body.track!.id;
+              setLocalTracks((current) => [...current, body.track!]);
+              onTrackCreated?.(body.track!, version);
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure("Nie udało się dodać ścieżki.");
+        }
+      });
+      return result.ok && createdId ? { ok: true, trackId: createdId } : { ok: false, message: result.ok ? "Nie udało się dodać ścieżki." : result.message };
+    },
+    [ackDocumentVersion, enqueuePersistAsync, onTrackCreated, persistVersionTip, projectId],
+  );
+
+  /** Stem import: put the READY take on its track at 0 ms. */
+  const placeStemTake = useCallback(
+    async (input: { trackId: string; takeId: string }): Promise<{ ok: true } | { ok: false; message: string }> => {
+      const result = await enqueuePersistAsync(async () => {
+        try {
+          const response = await fetch(`/api/studio/projects/${projectId}/record/place`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              trackId: input.trackId,
+              takeId: input.takeId,
+              timelineStartMs: 0,
+              expectedDocumentVersion: persistVersionTip.expected(),
+            }),
+          });
+          const body = (await response.json().catch(() => null)) as {
+            clip?: StudioClipDto;
+            documentVersion?: number;
+            reusedExisting?: boolean;
+            error?: string;
+            code?: string;
+          } | null;
+          if (!response.ok || !body?.clip) {
+            return classifyPersistHttpFailure({
+              status: response.status,
+              message: body?.error || "Nie udało się położyć stemu na osi.",
+              code: body?.code,
+            });
+          }
+          const version = ackDocumentVersion(body.documentVersion);
+          return {
+            ok: true as const,
+            documentVersion: version,
+            apply: () => {
+              if (!body.reusedExisting) onClipCreated(body.clip!, version, { keepRecordPanel: true });
+            },
+          };
+        } catch {
+          return classifyPersistNetworkFailure("Nie udało się położyć stemu na osi.");
+        }
+      });
+      return result.ok ? { ok: true } : { ok: false, message: result.message };
+    },
+    [ackDocumentVersion, enqueuePersistAsync, onClipCreated, persistVersionTip, projectId],
   );
   const trackChoices =
     recordableTracks.length > 0 ? recordableTracks : tracks;
@@ -2287,6 +2387,17 @@ export function StudioRecordingPanel({
         loopStartMs={section?.startMs ?? null}
         punchLine={recMode === "punch" && lines.length ? Math.min(punchLine, lines.length - 1) : null}
       />
+      ) : null}
+
+      {!simple && stemLimit > 0 ? (
+        <StudioStemImport
+          projectId={projectId}
+          freeSlots={Math.max(0, trackLimit - recordableTracks.length)}
+          stemLimit={stemLimit}
+          createStemTrack={createStemTrack}
+          placeStemTake={placeStemTake}
+          disabled={isRecordingBusy(state.phase)}
+        />
       ) : null}
 
       <StudioCountdown beatsLeft={countdown} label={tRec("wejscieZa")} />

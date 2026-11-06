@@ -2777,6 +2777,25 @@
         "GOLD": "Gold"
       }
     },
+    "stemImport": {
+      "tytul": "Import stems",
+      "limit": "up to {n} tracks on your plan",
+      "opis": "Pick several WAV or MP3 files at once (up to 4 minutes, up to 48 MB). Each one lands on its own track from the start of the timeline, and I guess the role from the file name.",
+      "wybierz": "Choose files",
+      "importuje": "Importing…",
+      "brakMiejsca": "No free tracks in this project. Remove a track to add a stem.",
+      "wolne": "Free tracks: {n}",
+      "stan": {
+        "queued": "waiting",
+        "uploading": "uploading…",
+        "track": "adding track…",
+        "placing": "placing on the timeline…",
+        "done": "done"
+      },
+      "podsumowanie": "Imported {done} of {total}.",
+      "blad": "Could not import the file.",
+      "brakSciezki": "Could not add the track."
+    },
     "lyrics": {
       "tytul": "Lyrics",
       "opis": "Mark sections in brackets, e.g. [Verse 1]. While recording I highlight the section you are reading.",

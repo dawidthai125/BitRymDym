@@ -2777,6 +2777,25 @@
         "GOLD": "Gold"
       }
     },
+    "stemImport": {
+      "tytul": "Importuj stemy",
+      "limit": "do {n} ścieżek w planie",
+      "opis": "Wybierz kilka plików WAV lub MP3 naraz (do 4 minut, do 48 MB). Każdy trafi na osobną ścieżkę od początku osi, a rolę podpowiem z nazwy pliku.",
+      "wybierz": "Wybierz pliki",
+      "importuje": "Importuję…",
+      "brakMiejsca": "Nie ma wolnych ścieżek w projekcie. Usuń ścieżkę, żeby dodać stem.",
+      "wolne": "Wolnych ścieżek: {n}",
+      "stan": {
+        "queued": "czeka",
+        "uploading": "wysyłam…",
+        "track": "dodaję ścieżkę…",
+        "placing": "kładę na osi…",
+        "done": "gotowe"
+      },
+      "podsumowanie": "Zaimportowano {done} z {total}.",
+      "blad": "Nie udało się zaimportować pliku.",
+      "brakSciezki": "Nie udało się dodać ścieżki."
+    },
     "lyrics": {
       "tytul": "Tekst",
       "opis": "Sekcje oznacz w nawiasach, np. [Zwrotka 1]. W trakcie nagrywania podświetlę sekcję, którą czytasz.",
