@@ -17,6 +17,8 @@ export function normalizeTakeContentType(raw: string): string | null {
 export function validateTakeUploadMeta(params: {
   contentType: string;
   byteSize: number;
+  /** Size cap; vocal takes use TAKE_AUDIO_MAX_BYTES, stems a bigger one. */
+  maxBytes?: number;
 }): { ok: true; contentType: string } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   const contentType = normalizeTakeContentType(params.contentType);
@@ -29,8 +31,8 @@ export function validateTakeUploadMeta(params: {
     params.byteSize <= 0
   ) {
     errors.push("byteSize must be a positive integer");
-  } else if (params.byteSize > TAKE_AUDIO_MAX_BYTES) {
-    errors.push(`byteSize must be at most ${TAKE_AUDIO_MAX_BYTES}`);
+  } else if (params.byteSize > (params.maxBytes ?? TAKE_AUDIO_MAX_BYTES)) {
+    errors.push(`byteSize must be at most ${params.maxBytes ?? TAKE_AUDIO_MAX_BYTES}`);
   }
   if (errors.length > 0 || !contentType) {
     return { ok: false, errors };

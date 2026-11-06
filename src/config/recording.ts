@@ -15,6 +15,15 @@ export const RECORDING_GLOBAL_MAX_SECONDS = 180;
 /** Interim take object size cap (20 MiB). */
 export const TAKE_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 
+/** Stem (imported track) object size cap: a 4-minute 44.1 kHz 16-bit stereo WAV is ~42 MB. */
+export const STEM_AUDIO_MAX_BYTES = 48 * 1024 * 1024;
+
+/** Stem length cap (seconds); vocal takes stay at RECORDING_GLOBAL_MAX_SECONDS. */
+export const STEM_MAX_SECONDS = 240;
+
+/** Imported stems a user may keep at once, all projects (bounds storage; the plan caps per project). */
+export const STEM_USER_ACTIVE_CAP = 64;
+
 /**
  * STU-14 — max age of a browser-local (IndexedDB) copy of an unsaved Studio
  * recording. Older copies are deleted on the next Studio visit.

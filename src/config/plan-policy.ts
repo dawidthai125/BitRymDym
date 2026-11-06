@@ -97,6 +97,12 @@ export type PlanPolicy = {
      * tracks; only adding / duplicating is blocked (DB: count >= p_max_tracks).
      */
     maxRecordingTracks: number;
+    /**
+     * Imported stems per project (they are tracks too, so they also count toward
+     * maxRecordingTracks). 0 = no stem import. Owner 2026-11-06: Silver 8, Gold 16
+     * (browser memory: ~90 MB per decoded 4-min stereo stem; 32 needs a server mixdown).
+     */
+    maxStems: number;
   };
   mastering: {
     /** E3 master jobs per calendar month (Europe/Warsaw); failed/cancelled do not count. */
@@ -180,7 +186,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 3,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 3, maxRecordingTracks: 1 },
+    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0 },
     mastering: { mastersPerMonth: 2, referenceMastering: "none" },
     downloads: {
       qualities: [],
@@ -208,7 +214,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 5,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 10, maxRecordingTracks: 2 },
+    studio: { maxProjects: 10, maxRecordingTracks: 2, maxStems: 0 },
     mastering: { mastersPerMonth: 5, referenceMastering: "none" },
     downloads: {
       qualities: ["MP3_128"],
@@ -236,7 +242,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 7,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 25, maxRecordingTracks: 4 },
+    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8 },
     mastering: { mastersPerMonth: 10, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
@@ -264,7 +270,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 10,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 50, maxRecordingTracks: 7 },
+    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16 },
     mastering: { mastersPerMonth: 20, referenceMastering: "included" },
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
@@ -328,6 +334,11 @@ export function youtubeVideosPerWeekForTier(tier: PremiumTier): number {
 /** True when the plan itself includes YouTube MP4s (Gold). Buying a pack is separate. */
 export function youtubeVideoForTier(tier: PremiumTier): boolean {
   return youtubeVideosPerWeekForTier(tier) > 0;
+}
+
+/** Stems per project for the plan (0 = stem import is not part of the plan). */
+export function maxStemsForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].studio.maxStems;
 }
 
 export function maxRecordingTracksForTier(tier: PremiumTier): number {

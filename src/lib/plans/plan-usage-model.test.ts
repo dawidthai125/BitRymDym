@@ -19,12 +19,12 @@ describe("plan usage model (header badge)", () => {
     expect(isPlanItemExhausted(by.beatDownloads!)).toBe(false);
   });
 
-  it("Gold: downloads open, files without cap, 7 recording tracks", () => {
+  it("Gold: downloads open, files without cap, 16 recording tracks", () => {
     const u = buildPlanUsage({ tier: "GOLD", counts, monthResetAt: "x", now });
     const by = Object.fromEntries(u.items.map((i) => [i.id, i]));
     expect(by.beatDownloads).toMatchObject({ limit: 50, locked: false });
     expect(by.studioExports).toMatchObject({ limit: null, locked: false });
-    expect(by.tracks!.limit).toBe(7);
+    expect(by.tracks!.limit).toBe(16);
     expect(by.masters).toMatchObject({ used: 3, limit: 20, resetAt: "x" });
   });
 

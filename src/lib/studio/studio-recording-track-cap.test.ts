@@ -13,7 +13,7 @@ describe("recording-track cap (Bit not counted)", () => {
   it("RPC row cap = plan recording tracks + Bit rows", () => {
     expect(studioTrackRowCap({ maxRecordingTracks: maxRecordingTracksForTier("FREE"), beatTrackCount: 1 })).toBe(2);
     expect(studioTrackRowCap({ maxRecordingTracks: maxRecordingTracksForTier("FREE"), beatTrackCount: 0 })).toBe(1);
-    expect(studioTrackRowCap({ maxRecordingTracks: maxRecordingTracksForTier("GOLD"), beatTrackCount: 1 })).toBe(8);
+    expect(studioTrackRowCap({ maxRecordingTracks: maxRecordingTracksForTier("GOLD"), beatTrackCount: 1 })).toBe(17);
     expect(() => studioTrackRowCap({ maxRecordingTracks: 0, beatTrackCount: 1 })).toThrow();
   });
 

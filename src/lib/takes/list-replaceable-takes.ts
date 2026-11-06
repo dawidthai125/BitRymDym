@@ -45,6 +45,7 @@ export async function listReplaceableTakesFor(
     .from("takes")
     .select("id, beat_id, duration_seconds, created_at, expires_at, status, deleted_at")
     .eq("owner_id", context.userId)
+    .eq("is_stem", false)
     .eq("status", "READY")
     .is("deleted_at", null)
     .gt("expires_at", new Date().toISOString())

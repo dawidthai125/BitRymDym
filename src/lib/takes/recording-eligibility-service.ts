@@ -48,6 +48,8 @@ async function countOwnerSessionsToday(ownerId: string): Promise<number> {
     .from("takes")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", ownerId)
+    // Stems are imported tracks, not recording sessions.
+    .eq("is_stem", false)
     .gte("created_at", dayStart);
   if (error) throw new Error(error.message);
   return count ?? 0;
@@ -60,6 +62,7 @@ async function countOwnerActiveReady(ownerId: string): Promise<number> {
     .from("takes")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", ownerId)
+    .eq("is_stem", false)
     .eq("status", "READY")
     .is("deleted_at", null)
     .gt("expires_at", nowIso);
