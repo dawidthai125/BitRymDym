@@ -152,7 +152,7 @@ export function lyricsProvidersFromEnv(env: Env = process.env, fetchFn?: FetchFn
   const list: BitekLlmProvider[] = [];
   const groq = (model: string, effort: "low" | "medium" | "high") =>
     env.GROQ_API_KEY
-      ? openAiCompatibleProvider({ id: "groq", baseUrl: "https://api.groq.com/openai/v1", apiKey: env.GROQ_API_KEY, model, reasoningEffort: effort, maxTokens: 2200, temperature: 0.85, timeoutMs: 20000, jsonMode: true, fetchFn })
+      ? openAiCompatibleProvider({ id: "groq", baseUrl: "https://api.groq.com/openai/v1", apiKey: env.GROQ_API_KEY, model, reasoningEffort: effort, maxTokens: 2200, temperature: 0.85, timeoutMs: 20000, jsonMode: false, fetchFn })
       : null;
   const gemini = (model: string) =>
     env.GEMINI_API_KEY
