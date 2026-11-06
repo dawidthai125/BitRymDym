@@ -1,14 +1,44 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { HomePromoFilm } from "@/components/home/home-promo-film";
 import { HomeTracklist } from "@/components/home/home-tracklist";
 import { TapeDeck } from "@/components/home/tape-deck";
 import { AppShell } from "@/components/site/app-shell";
+import {
+  GUEST_POLICY,
+  PLAN_POLICY,
+  yearlySavingPercent,
+  type PlanDownloadQuality,
+} from "@/config/plan-policy";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
 import { presentBeats } from "@/lib/ui/demo-beats";
+import type { PremiumTier } from "@/types/premium";
+
+const HOME_TIERS: PremiumTier[] = ["FREE", "BRONZE", "SILVER", "GOLD"];
+const TIER_LABEL: Record<PremiumTier, string> = {
+  FREE: "Free",
+  BRONZE: "Bronze",
+  SILVER: "Silver",
+  GOLD: "Gold",
+};
+const QUALITY_ORDER: PlanDownloadQuality[] = [
+  "WAV_MASTER",
+  "WAV_PRO",
+  "WAV_COMPAT",
+  "MP3_320",
+  "MP3_256",
+  "MP3_192",
+  "MP3_128",
+];
+
+function bestQuality(tier: PremiumTier): PlanDownloadQuality | null {
+  const qualities = PLAN_POLICY[tier].downloads.qualities;
+  return QUALITY_ORDER.find((quality) => qualities.includes(quality)) ?? null;
+}
 
 /**
  * Home — design v3 "Nocna sesja" (prototype).
@@ -34,24 +64,7 @@ const CAPABILITIES = [
   },
 ] as const;
 
-const STEPS = [
-  {
-    t: "wybierzBit",
-    d: "wejdzWKatalogOdsluchaj",
-  },
-  {
-    t: "zalozKonto",
-    d: "doNagraniaIStudio",
-  },
-  {
-    t: "nagrajWers",
-    d: "naStronieBituAlbo2",
-  },
-  {
-    t: "dopracujWStudio",
-    d: "ulozSciezkiMiksujI",
-  },
-] as const;
+
 
 const wrap =
   "mx-auto w-full max-w-[var(--brd-max-wide)] px-[max(var(--brd-gutter),env(safe-area-inset-left))]";
@@ -65,7 +78,156 @@ const ctaSecondary =
 export default async function HomePage() {
   const t = await getTranslations("home.page");
   const tc = await getTranslations("home.page.consts");
+  const locale = await getLocale();
+  const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", {
+    style: "currency",
+    currency: "PLN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
   const session = await getCurrentProfile();
+  const steps = [
+    { title: tc("wybierzBit"), body: t("krokBit", { s: GUEST_POLICY.previewSeconds }) },
+    { title: tc("zalozKonto"), body: tc("doNagraniaIStudio") },
+    {
+      title: tc("nagrajWers"),
+      body: t("krokNagranie", {
+        free: PLAN_POLICY.FREE.recording.maxTakeSeconds,
+        gold: PLAN_POLICY.GOLD.recording.maxTakeSeconds,
+      }),
+    },
+    {
+      title: tc("dopracujWStudio"),
+      body: t("krokStudio", { gold: PLAN_POLICY.GOLD.studio.maxRecordingTracks }),
+    },
+    {
+      title: tc("stemy"),
+      body: t("krokStemy", {
+        silver: PLAN_POLICY.SILVER.studio.maxStems,
+        gold: PLAN_POLICY.GOLD.studio.maxStems,
+      }),
+    },
+    { title: tc("automatykaNuty"), body: tc("krokAutomatyka") },
+    { title: tc("mixIMaster"), body: tc("krokMix") },
+    {
+      title: tc("oddajPlik"),
+      body: t("krokPlik", { gold: PLAN_POLICY.GOLD.downloads.youtubeVideosPerWeek }),
+    },
+  ];
+  const planRows: { id: string; label: string; cell: (tier: PremiumTier) => string }[] = [
+    {
+      id: "cena",
+      label: t("planCena"),
+      cell: (tier) => {
+        const price = PLAN_POLICY[tier].price;
+        if (price.monthlyPln == null) return t("planCenaFree");
+        const save = yearlySavingPercent(price);
+        const monthly = money.format(price.monthlyPln);
+        const yearly = money.format(price.yearlyPln ?? 0);
+        return save
+          ? t("planCenaPlatna", { m: monthly, y: yearly, n: save })
+          : `${monthly}`;
+      },
+    },
+    {
+      id: "take",
+      label: t("planDlugosc"),
+      cell: (tier) => t("planSekundy", { n: PLAN_POLICY[tier].recording.maxTakeSeconds }),
+    },
+    {
+      id: "sesje",
+      label: t("planSesje"),
+      cell: (tier) => String(PLAN_POLICY[tier].recording.sessionsPerDay),
+    },
+    {
+      id: "sciezki",
+      label: t("planSciezki"),
+      cell: (tier) => String(PLAN_POLICY[tier].studio.maxRecordingTracks),
+    },
+    {
+      id: "stemy",
+      label: t("planStemy"),
+      cell: (tier) => {
+        const stems = PLAN_POLICY[tier].studio.maxStems;
+        return stems > 0 ? String(stems) : "—";
+      },
+    },
+    {
+      id: "projekty",
+      label: t("planProjekty"),
+      cell: (tier) => String(PLAN_POLICY[tier].studio.maxProjects),
+    },
+    {
+      id: "mastery",
+      label: t("planMastery"),
+      cell: (tier) => String(PLAN_POLICY[tier].mastering.mastersPerMonth),
+    },
+    {
+      id: "pobieranie",
+      label: t("planPobieranie"),
+      cell: (tier) => {
+        const quality = bestQuality(tier);
+        return quality ? t(`jakosc.${quality}`) : t("planBrak");
+      },
+    },
+    {
+      id: "yt",
+      label: t("planYt"),
+      cell: (tier) => {
+        const perWeek = PLAN_POLICY[tier].downloads.youtubeVideosPerWeek;
+        return perWeek > 0 ? t("planYtTydzien", { n: perWeek }) : "—";
+      },
+    },
+    {
+      id: "ref",
+      label: t("planReferencja"),
+      cell: (tier) => t(`planRef.${PLAN_POLICY[tier].mastering.referenceMastering}`),
+    },
+    {
+      id: "presety",
+      label: t("planPresety"),
+      cell: (tier) => {
+        const presets = PLAN_POLICY[tier].tools.vocalPresets;
+        if (presets.roleSets) return t("planPresetyRole", { n: presets.maxOwn });
+        return presets.maxOwn > 0 ? String(presets.maxOwn) : "—";
+      },
+    },
+    {
+      id: "nuty",
+      label: t("planEdytorNut"),
+      cell: (tier) => (PLAN_POLICY[tier].tools.pitchCorrection.manualNotes ? t("planTak") : "—"),
+    },
+    {
+      id: "czyszczenie",
+      label: t("planCzyszczenie"),
+      cell: (tier) => String(PLAN_POLICY[tier].tools.vocalCleanup.perDay),
+    },
+    {
+      id: "linki",
+      label: t("planLinki"),
+      cell: (tier) => {
+        const links = PLAN_POLICY[tier].sharing.listenLinksActive;
+        return links == null ? t("planBezLimitu") : String(links);
+      },
+    },
+    {
+      id: "bitek",
+      label: t("planBitek"),
+      cell: (tier) =>
+        t(PLAN_POLICY[tier].tools.bitekMemory === "project" ? "planBitekProjekt" : "planBitekSesja"),
+    },
+    {
+      id: "waznosc",
+      label: t("planWaznosc"),
+      cell: (tier) =>
+        t("planGodziny", { n: Math.round(PLAN_POLICY[tier].recording.takeTtlSeconds / 3600) }),
+    },
+    {
+      id: "retencja",
+      label: t("planRetencja"),
+      cell: (tier) => t("planDni", { n: PLAN_POLICY[tier].retentionDays }),
+    },
+  ];
   const beats = presentBeats(
     (await listPublishedBeats()).map(toPublicCatalogItem),
   );
@@ -194,8 +356,8 @@ export default async function HomePage() {
             </h2>
             <HomePromoFilm />
             <ol className="mt-10 grid gap-y-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4 lg:gap-x-0">
-              {STEPS.map((s, i) => (
-                <li key={s.t} className="relative lg:pr-8">
+              {steps.map((step, i) => (
+                <li key={step.title} className="relative lg:pr-8">
                   <div aria-hidden="true" className="mb-4 flex items-center gap-3">
                     <span className="size-3 rounded-full border-2 border-tape-amber bg-tape-soot" />
                     <span className="h-px flex-1 bg-[repeating-linear-gradient(90deg,var(--tape-line-strong)_0_6px,transparent_6px_10px)]" />
@@ -204,10 +366,10 @@ export default async function HomePage() {
                     {i + 1}
                   </p>
                   <h3 className="mt-3 font-poster text-2xl font-bold uppercase leading-none text-tape-cream">
-                    {tc(s.t)}
+                    {step.title}
                   </h3>
-                  <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
-                    {tc(s.d)}
+                  <p className="mt-2 max-w-[36ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
+                    {step.body}
                   </p>
                 </li>
               ))}
@@ -216,25 +378,58 @@ export default async function HomePage() {
         </section>
 
         {/* PREMIUM — the one neon sign */}
-        <section aria-labelledby="home-premium" className="border-b border-tape-line bg-[#0a0807]">
-          <div className={`${wrap} grid gap-8 py-[var(--tape-section-y)] lg:grid-cols-12 lg:items-center`}>
-            <div className="lg:col-span-7">
-              <h2
-                id="home-premium"
-                className="font-poster text-[length:var(--tape-text-xl)] font-black uppercase leading-[0.9] text-tape-cream"
-              >
-                {t("wiecejLimitu")}{" "}
-                <span className="tape-neon-sign">{t("gdyTegoPotrzebujesz")}</span>
-              </h2>
-              <p className="mt-5 max-w-[56ch] text-base leading-relaxed text-tape-cream-soft">
-                {t("premiumFreeGoldPodnosi")}{" "}
-                <strong className="font-semibold text-tape-cream">
-                  {t("bezSamodzielnegoZakupuW")}
-                </strong>
-                {t("szczegolyHoldICo")}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
+        <section id="premium" aria-labelledby="home-premium" className="border-b border-tape-line bg-[#0a0807]">
+          <div className={`${wrap} py-[var(--tape-section-y)]`}>
+            <h2
+              id="home-premium"
+              className="font-poster text-[length:var(--tape-text-xl)] font-black uppercase leading-[0.9] text-tape-cream"
+            >
+              {t("wiecejLimitu")}{" "}
+              <span className="tape-neon-sign">{t("gdyTegoPotrzebujesz")}</span>
+            </h2>
+            <p className="mt-5 max-w-[68ch] text-base leading-relaxed text-tape-cream-soft">
+              {t("premiumFreeGoldPodnosi")}{" "}
+              <strong className="font-semibold text-tape-cream">
+                {t("bezSamodzielnegoZakupuW")}
+              </strong>
+              {t("szczegolyHoldICo")}
+            </p>
+            <OverflowXScrollRegion className="mt-8 overflow-x-auto border border-tape-line" ariaLabel={t("planTabelaAria")}>
+              <table className="w-full min-w-[44rem] text-left text-sm text-tape-cream" data-testid="home-plan-board">
+                <caption className="sr-only">{t("planTabelaAria")}</caption>
+                <thead className="border-b border-tape-line bg-tape-panel">
+                  <tr>
+                    <th scope="col" className="px-3 py-3 font-mono text-xs uppercase tracking-[0.14em] text-tape-amber">
+                      {t("planCo")}
+                    </th>
+                    {HOME_TIERS.map((tier) => (
+                      <th key={tier} scope="col" className="px-3 py-3 font-poster text-xl uppercase text-tape-cream">
+                        {TIER_LABEL[tier]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {planRows.map((row) => (
+                    <tr key={row.id} className="border-b border-tape-line last:border-0">
+                      <th scope="row" className="px-3 py-2.5 font-medium text-tape-cream">
+                        {row.label}
+                      </th>
+                      {HOME_TIERS.map((tier) => (
+                        <td key={tier} className="px-3 py-2.5 text-tape-cream-soft">
+                          {row.cell(tier)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </OverflowXScrollRegion>
+            <ul className="mt-4 max-w-[72ch] space-y-2 text-sm leading-relaxed text-tape-cream-soft">
+              <li>{t("planWspolne")}</li>
+              <li>{t("planGosc", { s: GUEST_POLICY.previewSeconds })}</li>
+            </ul>
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/premium" className={ctaPrimary}>
                 {t("szczegolyPremium")}
               </Link>

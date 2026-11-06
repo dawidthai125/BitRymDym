@@ -75,6 +75,42 @@ export default function PremiumPage() {
     { id: "przechowywanie", label: tr("tab.przechowywanie"), cell: (x) => tr("tab.dni", { n: PLAN_POLICY[x].retentionDays }) },
     { id: "referencja", label: tr("tab.referencja"), cell: (x) => tr(`referencja.${PLAN_POLICY[x].mastering.referenceMastering}`) },
     { id: "bity", label: tr("tab.bity"), cell: (x) => (PLAN_POLICY[x].downloads.beatsPerDay > 0 ? String(PLAN_POLICY[x].downloads.beatsPerDay) : tr("tab.brakPobierania")) },
+    { id: "aktywne", label: tr("tab.aktywne"), cell: (x) => String(PLAN_POLICY[x].recording.maxActiveReady) },
+    {
+      id: "presety",
+      label: tr("tab.presety"),
+      cell: (x) => {
+        const presets = PLAN_POLICY[x].tools.vocalPresets;
+        if (presets.roleSets) return tr("tab.presetyRole", { n: presets.maxOwn });
+        return presets.maxOwn > 0 ? tr("tab.presetyIle", { n: presets.maxOwn }) : tr("tab.presetyBrak");
+      },
+    },
+    {
+      id: "pitch",
+      label: tr("tab.pitch"),
+      cell: (x) => {
+        const pitch = PLAN_POLICY[x].tools.pitchCorrection;
+        if (pitch.manualNotes) return tr("tab.pitchNotes");
+        if (pitch.custom) return tr("tab.pitchCustom");
+        return tr("tab.pitchNatural");
+      },
+    },
+    { id: "czyszczenie", label: tr("tab.czyszczenie"), cell: (x) => String(PLAN_POLICY[x].tools.vocalCleanup.perDay) },
+    {
+      id: "linki",
+      label: tr("tab.linki"),
+      cell: (x) => {
+        const links = PLAN_POLICY[x].sharing.listenLinksActive;
+        return links == null ? tr("tab.linkiBezLimitu") : String(links);
+      },
+    },
+    {
+      id: "bitek",
+      label: tr("tab.bitek"),
+      cell: (x) => tr(PLAN_POLICY[x].tools.bitekMemory === "project" ? "tab.bitekProjekt" : "tab.bitekSesja"),
+    },
+    { id: "nuty", label: tr("tab.nuty"), cell: () => tr("tab.nutyWszystkie") },
+    { id: "znak", label: tr("tab.znakWodny"), cell: () => tr("tab.znakWodnyTak") },
   ];
 
   return (
@@ -127,7 +163,11 @@ export default function PremiumPage() {
                       <li>{tr("karta.waznosc", { h: hours(p.recording.takeTtlSeconds) })}</li>
                       <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxRecordingTracks })}</li>
                       <li>{tr("karta.mastery", { n: p.mastering.mastersPerMonth })}</li>
+                      <li>{p.studio.maxStems > 0 ? tr("karta.stemy", { n: p.studio.maxStems }) : tr("karta.stemyBrak")}</li>
                       <li>{bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
+                      {p.downloads.youtubeVideosPerWeek > 0 ? <li>{tr("karta.yt", { n: p.downloads.youtubeVideosPerWeek })}</li> : null}
+                      <li>{tr(p.tools.pitchCorrection.manualNotes ? "karta.nutyEdytor" : "karta.nuty")}</li>
+                      <li>{tr("karta.znak")}</li>
                       {p.mastering.referenceMastering === "addon" ? <li>{tr(paymentsOn ? "karta.referencja.addonKup" : "karta.referencja.addon")}</li> : null}
                       {p.mastering.referenceMastering === "included" ? <li>{tr("karta.referencja.included")}</li> : null}
                     </ul>
@@ -183,6 +223,8 @@ export default function PremiumPage() {
               <li>{tr("przypis.free")}</li>
               <li>{tr("przypis.upgrade")}</li>
               <li>{tr("przypis.raw", { n: OWN_TAKE_RAW_DOWNLOADS_DAILY, plan: LABEL[TIERS.find((x) => PLAN_POLICY[x].downloads.ownTakeRaw) ?? "GOLD"] })}</li>
+              <li>{tr("przypis.nuty")}</li>
+              <li>{tr("przypis.znak")}</li>
             </ul>
           </section>
 

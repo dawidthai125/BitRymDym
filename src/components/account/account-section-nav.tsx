@@ -6,14 +6,19 @@ import { usePathname } from "next/navigation";
 /** Persistent profile sections. The account layout keeps this mounted while the page under it changes. */
 export function AccountSectionNav({
   items,
+  label,
 }: {
   items: readonly { href: string; label: string }[];
+  label: string;
 }) {
   const path = usePathname();
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Profil">
+    <nav className="flex flex-wrap gap-2" aria-label={label}>
       {items.map((item) => {
-        const on = path === item.href || path.startsWith(`${item.href}/`);
+        const on =
+          item.href === "/account"
+            ? path === "/account"
+            : path === item.href || path.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.href}

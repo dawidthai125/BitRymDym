@@ -61,44 +61,75 @@ export default async function AdminUserDeskPage({
           </div>
         </header>
 
-        <DeskList title={t("projekty")} empty={t("brakProjektow")} rows={desk.projects.map((row) => ({
-          id: row.id,
-          title: row.title || row.id.slice(0, 8),
-          meta: row.status ?? "—",
-        }))} />
-        <DeskList title={t("bityOsoby")} empty={t("brakBitowOsoby")} rows={desk.beats.map((row) => ({
-          id: row.id,
-          href: row.ownershipType === "PLATFORM" ? `/admin/beats/${row.id}` : `/admin/moderation/${row.id}`,
-          title: row.title || row.id.slice(0, 8),
-          meta: `${row.status ?? "—"} · ${row.ownershipType ?? ""}`,
-        }))} />
+        <DeskList
+          title={t("projekty")}
+          note={t("projektyPodglad")}
+          empty={t("brakProjektow")}
+          rows={desk.projects.map((row) => ({
+            id: row.id,
+            title: row.title || row.id.slice(0, 8),
+            meta: [row.status ?? "—", day(row.updatedAt)].filter(Boolean).join(" · "),
+          }))}
+        />
+        <DeskList
+          title={t("bityOsoby")}
+          note={t("bityGdzie")}
+          empty={t("brakBitowOsoby")}
+          rows={desk.beats.map((row) => ({
+            id: row.id,
+            href: beatDeskHref(row),
+            title: row.title || row.id.slice(0, 8),
+            meta: `${row.status ?? "—"} · ${row.ownershipType ?? ""}`,
+          }))}
+        />
         <DeskList title={t("nagraniaOsoby")} empty={t("brakNagranOsoby")} rows={desk.takes.map((row) => ({
           id: row.id,
           title: row.title || row.id.slice(0, 8),
-          meta: row.status ?? "—",
+          meta: [row.status ?? "—", day(row.createdAt)].filter(Boolean).join(" · "),
         }))} />
         <DeskList title={t("eksportyOsoby")} empty={t("brakEksportow")} rows={desk.exports.map((row) => ({
           id: row.id,
           title: row.kind || row.id.slice(0, 8),
-          meta: row.status ?? "—",
+          meta: [row.status ?? "—", day(row.createdAt)].filter(Boolean).join(" · "),
         }))} />
       </PageFrame>
     </main>
   );
 }
 
+function day(iso: string | null): string {
+  return iso ? iso.slice(0, 10) : "";
+}
+
+/** Moderation only loads USER beats in review or approved. Published beats open in the catalogue. */
+function beatDeskHref(row: {
+  id: string;
+  status: string | null;
+  ownershipType: string | null;
+}): string | undefined {
+  if (row.ownershipType === "PLATFORM") return `/admin/beats/${row.id}`;
+  if (row.ownershipType === "USER" && (row.status === "PENDING_REVIEW" || row.status === "APPROVED")) {
+    return `/admin/moderation/${row.id}`;
+  }
+  if (row.status === "PUBLISHED") return `/beat/${row.id}`;
+  return undefined;
+}
+
 function DeskList({
   title,
+  note,
   empty,
   rows,
 }: {
   title: string;
+  note?: string;
   empty: string;
   rows: { id: string; title: string; meta: string; href?: string }[];
 }) {
   return (
     <section className="mt-8">
       <SectionLabel className="mb-3">{title}</SectionLabel>
+      {note ? <p className="mb-3 max-w-[62ch] text-sm text-[var(--brd-mute)]">{note}</p> : null}
       {rows.length === 0 ? (
         <p className="text-sm text-[var(--brd-mute)]">{empty}</p>
       ) : (
