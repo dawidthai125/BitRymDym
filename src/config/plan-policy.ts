@@ -113,8 +113,12 @@ export type PlanPolicy = {
     qualities: readonly PlanDownloadQuality[];
     /** Whole project as ZIP of stems. */
     projectZip: boolean;
-    /** YouTube MP4 (approved master + beat cover / own filtered graphic, 1920×1080) — Owner 2026-10-30: GOLD. */
-    youtubeVideo: boolean;
+    /**
+     * YouTube MP4 included per Europe/Warsaw week (Monday 00:00).
+     * Gold: 2. Bronze and Silver: 0 — they buy a one-off pack. Free: 0 and cannot buy.
+     * Failed and cancelled jobs do not count. Extra videos spend studio_quota_credits kind youtube.
+     */
+    youtubeVideosPerWeek: number;
     /** Own raw take download. */
     ownTakeRaw: boolean;
     /** Catalogue beat downloads per UTC day. 0 = listen only (button locked). */
@@ -181,7 +185,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: [],
       projectZip: false,
-      youtubeVideo: false,
+      youtubeVideosPerWeek: 0,
       ownTakeRaw: false,
       beatsPerDay: 0,
     },
@@ -209,7 +213,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: ["MP3_128"],
       projectZip: false,
-      youtubeVideo: false,
+      youtubeVideosPerWeek: 0,
       ownTakeRaw: false,
       beatsPerDay: 10,
     },
@@ -237,7 +241,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
       projectZip: false,
-      youtubeVideo: false,
+      youtubeVideosPerWeek: 0,
       ownTakeRaw: false,
       beatsPerDay: 25,
     },
@@ -265,7 +269,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
       projectZip: true,
-      youtubeVideo: true,
+      youtubeVideosPerWeek: 2,
       ownTakeRaw: true,
       beatsPerDay: 50,
     },
@@ -317,8 +321,13 @@ export function minimumTierFor(test: (policy: PlanPolicy) => boolean): PremiumTi
   return "GOLD";
 }
 
+export function youtubeVideosPerWeekForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].downloads.youtubeVideosPerWeek;
+}
+
+/** True when the plan itself includes YouTube MP4s (Gold). Buying a pack is separate. */
 export function youtubeVideoForTier(tier: PremiumTier): boolean {
-  return PLAN_POLICY[tier].downloads.youtubeVideo;
+  return youtubeVideosPerWeekForTier(tier) > 0;
 }
 
 export function maxRecordingTracksForTier(tier: PremiumTier): number {
@@ -355,16 +364,40 @@ export const PLAN_ADDON_PRICE_PLN: Record<PlanAddon, { monthlyPln: number }> = {
  * plan allowance for that day (takes) or Warsaw month (masters). Not a subscription.
  * Charged only when checkout is enabled.
  */
-export const PLAN_PACKS = ["take", "master"] as const;
+export const PLAN_PACKS = ["take", "master", "youtube"] as const;
 export type PlanPack = (typeof PLAN_PACKS)[number];
 
-export const PLAN_PACK_CATALOG: Record<PlanPack, { units: number; pricePln: number }> = {
+/** Take and master packs have one price. YouTube price depends on the live plan. */
+export const PLAN_PACK_CATALOG: Record<Exclude<PlanPack, "youtube">, { units: number; pricePln: number }> = {
   take: { units: 10, pricePln: 9.99 },
   master: { units: 5, pricePln: 14.99 },
 };
 
+/**
+ * One-off YouTube MP4 pack. Not a subscription.
+ * Gold buys 2 more for 9.99. Silver buys 1 for 14.99. Bronze buys 1 for 24.99.
+ * The charged amount decides how many units the webhook grants.
+ */
+export const YOUTUBE_PACK_OFFERS = {
+  BRONZE: { units: 1, pricePln: 24.99 },
+  SILVER: { units: 1, pricePln: 14.99 },
+  GOLD: { units: 2, pricePln: 9.99 },
+} as const;
+
+export function youtubePackOffer(tier: PremiumTier | null | undefined): { units: number; pricePln: number } | null {
+  if (tier === "BRONZE" || tier === "SILVER" || tier === "GOLD") return YOUTUBE_PACK_OFFERS[tier];
+  return null;
+}
+
+/** Units granted for a paid YouTube pack. Tied to the charged grosz, not the tier at webhook time. */
+export function youtubeUnitsForGrosz(amountGrosz: number): number | null {
+  if (amountGrosz === 999) return 2;
+  if (amountGrosz === 1499 || amountGrosz === 2499) return 1;
+  return null;
+}
+
 export function isPlanPack(value: unknown): value is PlanPack {
-  return value === "take" || value === "master";
+  return value === "take" || value === "master" || value === "youtube";
 }
 
 export type ReferenceMasteringGate =

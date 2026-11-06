@@ -10,6 +10,7 @@ import {
   GUEST_POLICY,
   PLAN_PACK_CATALOG,
   PLAN_POLICY,
+  youtubePackOffer,
   PLAN_TRIAL_DAYS,
   readPlanPaymentsAvailable,
   yearlySavingPercent,
@@ -60,7 +61,16 @@ export default function PremiumPage() {
       },
     },
     { id: "projektZip", label: tr("tab.projektZip"), cell: (x) => (PLAN_POLICY[x].downloads.projectZip ? "✓" : "—") },
-    { id: "wideoYt", label: tr("tab.wideoYt"), cell: (x) => (PLAN_POLICY[x].downloads.youtubeVideo ? "✓" : "—") },
+    {
+      id: "wideoYt",
+      label: tr("tab.wideoYt"),
+      cell: (x) => {
+        const perWeek = PLAN_POLICY[x].downloads.youtubeVideosPerWeek;
+        if (perWeek > 0) return tr("tab.wideoYtTydzien", { n: perWeek });
+        const offer = youtubePackOffer(x);
+        return offer ? tr("tab.wideoYtJednorazowo", { cena: money.format(offer.pricePln) }) : "—";
+      },
+    },
     { id: "przechowywanie", label: tr("tab.przechowywanie"), cell: (x) => tr("tab.dni", { n: PLAN_POLICY[x].retentionDays }) },
     { id: "referencja", label: tr("tab.referencja"), cell: (x) => tr(`referencja.${PLAN_POLICY[x].mastering.referenceMastering}`) },
     { id: "bity", label: tr("tab.bity"), cell: (x) => (PLAN_POLICY[x].downloads.beatsPerDay > 0 ? String(PLAN_POLICY[x].downloads.beatsPerDay) : tr("tab.brakPobierania")) },
@@ -133,6 +143,9 @@ export default function PremiumPage() {
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed">
               <li>{tr("pakietTake", { n: PLAN_PACK_CATALOG.take.units, cena: money.format(PLAN_PACK_CATALOG.take.pricePln) })}</li>
               <li>{tr("pakietMaster", { n: PLAN_PACK_CATALOG.master.units, cena: money.format(PLAN_PACK_CATALOG.master.pricePln) })}</li>
+              <li>{tr("pakietYoutubeGold", { n: 2, cena: money.format(9.99) })}</li>
+              <li>{tr("pakietYoutubeSilver", { cena: money.format(14.99) })}</li>
+              <li>{tr("pakietYoutubeBronze", { cena: money.format(24.99) })}</li>
             </ul>
           </section>
 

@@ -1,26 +1,49 @@
 import { describe, expect, it } from "vitest";
 
-import { PLAN_POLICY, youtubeVideoForTier } from "@/config/plan-policy";
+import { PLAN_POLICY, youtubePackOffer, youtubeUnitsForGrosz, youtubeVideoForTier } from "@/config/plan-policy";
 
 import {
-  cleanVideoText, decideYoutubeVideo, ffmpegProgressFraction, isYoutubeVideoSpec, youtubeEncodeArgs, youtubeFrameArgs,
-  youtubeFrameLayout, youtubeImageKey, youtubeVideoAllowed, YT_VIDEO_H,
+  cleanVideoText, decideYoutubeVideo, ffmpegProgressFraction, isYoutubeVideoSpec, warsawWeekStartIso, youtubeEncodeArgs, youtubeFrameArgs,
+  youtubeFrameLayout, youtubeImageKey, youtubeVideoAllowed, youtubeVideoQuota, YT_VIDEO_H,
 } from "./youtube-video";
 
 const U = "11111111-1111-4111-8111-111111111111";
 
 describe("YouTube MP4 — plan gate", () => {
-  it("only Gold has it", () => {
-    expect(["FREE", "BRONZE", "SILVER", "GOLD"].map((t) => PLAN_POLICY[t as "GOLD"].downloads.youtubeVideo)).toEqual([false, false, false, true]);
+  it("Gold includes 2 a week; Bronze and Silver buy one; Free cannot", () => {
+    expect(["FREE", "BRONZE", "SILVER", "GOLD"].map((t) => PLAN_POLICY[t as "GOLD"].downloads.youtubeVideosPerWeek)).toEqual([0, 0, 0, 2]);
     expect(youtubeVideoForTier("GOLD")).toBe(true);
+    expect(youtubeVideoForTier("SILVER")).toBe(false);
     expect(youtubeVideoAllowed(null)).toBe(false);
+    expect(youtubeVideoAllowed("FREE")).toBe(false);
+    expect(youtubeVideoAllowed("BRONZE")).toBe(true);
+    expect(youtubePackOffer("GOLD")).toEqual({ units: 2, pricePln: 9.99 });
+    expect(youtubePackOffer("SILVER")).toEqual({ units: 1, pricePln: 14.99 });
+    expect(youtubePackOffer("BRONZE")).toEqual({ units: 1, pricePln: 24.99 });
+    expect(youtubePackOffer("FREE")).toBeNull();
+    expect(youtubeUnitsForGrosz(999)).toBe(2);
+    expect(youtubeUnitsForGrosz(1499)).toBe(1);
+    expect(youtubeUnitsForGrosz(2499)).toBe(1);
+    expect(youtubeUnitsForGrosz(1)).toBeNull();
   });
-  it("plan is checked before anything else (lower plans always get the upsell)", () => {
-    expect(decideYoutubeVideo({ tier: "SILVER", approved: false, source: "x", hasImage: false })).toEqual({ allowed: false, reason: "tier_video" });
+  it("uses the weekly allowance before a pack credit", () => {
+    expect(youtubeVideoQuota({ tier: "GOLD", usedThisWeek: 1, credits: 0 })).toEqual({ allowed: true, via: "plan" });
+    expect(youtubeVideoQuota({ tier: "GOLD", usedThisWeek: 2, credits: 0 })).toEqual({ allowed: false, reason: "weekly_limit" });
+    expect(youtubeVideoQuota({ tier: "GOLD", usedThisWeek: 2, credits: 2 })).toEqual({ allowed: true, via: "credit" });
+    expect(youtubeVideoQuota({ tier: "BRONZE", usedThisWeek: 0, credits: 0 })).toEqual({ allowed: false, reason: "weekly_limit" });
+    expect(youtubeVideoQuota({ tier: "SILVER", usedThisWeek: 0, credits: 1 })).toEqual({ allowed: true, via: "credit" });
+  });
+  it("starts the week on Monday 00:00 Europe/Warsaw", () => {
+    expect(warsawWeekStartIso(new Date("2026-11-06T12:00:00Z"))).toBe("2026-11-01T23:00:00.000Z");
+    expect(warsawWeekStartIso(new Date("2026-07-01T21:30:00Z"))).toBe("2026-06-28T22:00:00.000Z");
+  });
+  it("plan is checked before anything else (Free always gets the upsell)", () => {
+    expect(decideYoutubeVideo({ tier: "FREE", approved: false, source: "x", hasImage: false })).toEqual({ allowed: false, reason: "tier_video" });
+    expect(decideYoutubeVideo({ tier: "SILVER", approved: false, source: "cover", hasImage: true })).toEqual({ allowed: false, reason: "not_approved" });
     expect(decideYoutubeVideo({ tier: "GOLD", approved: true, source: "x", hasImage: true })).toEqual({ allowed: false, reason: "bad_request" });
     expect(decideYoutubeVideo({ tier: "GOLD", approved: false, source: "cover", hasImage: true })).toEqual({ allowed: false, reason: "not_approved" });
     expect(decideYoutubeVideo({ tier: "GOLD", approved: true, source: "upload", hasImage: false })).toEqual({ allowed: false, reason: "image_missing" });
-    expect(decideYoutubeVideo({ tier: "GOLD", approved: true, source: "cover", hasImage: true })).toEqual({ allowed: true });
+    expect(decideYoutubeVideo({ tier: "BRONZE", approved: true, source: "cover", hasImage: true })).toEqual({ allowed: true });
   });
 });
 
@@ -100,6 +123,6 @@ describe("MP4 render kill switch (no E3 youtube_video worker yet)", () => {
     const gate = body.indexOf("youtubeVideoRenderEnabled()");
     expect(gate).toBeGreaterThan(0);
     expect(gate).toBeLessThan(body.indexOf("createSupabaseAdminClient()"));
-    expect(gate).toBeLessThan(body.indexOf(".insert("));
+    expect(gate).toBeLessThan(body.indexOf(".rpc("));
   });
 });

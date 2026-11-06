@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
-import { PLAN_PACK_CATALOG } from "@/config/plan-policy";
+import { PLAN_PACK_CATALOG, youtubeUnitsForGrosz } from "@/config/plan-policy";
 import { PremiumReturnView, type ReturnState } from "@/components/premium/premium-return-view";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -62,9 +62,11 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
     } else if (data) {
       const row = data as Omit<OrderRow, "pack">;
       let pack: string | null = null;
+      let amountGrosz: number | null = null;
       if (row.product_kind === "pack") {
-        const extra = await admin.from("payment_orders").select("pack").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
+        const extra = await admin.from("payment_orders").select("pack, amount_grosz").eq("session_id", sessionId).eq("user_id", context.userId).maybeSingle();
         pack = extra.error || !extra.data ? null : ((extra.data as { pack?: string | null }).pack ?? null);
+        amountGrosz = extra.error || !extra.data ? null : ((extra.data as { amount_grosz?: number | null }).amount_grosz ?? null);
       }
       const full = { ...row, pack };
       if (row.status === "failed") state = { status: "failed" };
@@ -78,8 +80,8 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
         const product = row.product_kind === "addon"
           ? t("produkt.referencja")
           : row.product_kind === "pack"
-            ? t(full.pack === "master" ? "produkt.master" : "produkt.take", {
-                n: full.pack === "master" ? PLAN_PACK_CATALOG.master.units : PLAN_PACK_CATALOG.take.units,
+            ? t(full.pack === "master" ? "produkt.master" : full.pack === "youtube" ? "produkt.youtube" : "produkt.take", {
+                n: full.pack === "master" ? PLAN_PACK_CATALOG.master.units : full.pack === "youtube" ? (youtubeUnitsForGrosz(amountGrosz ?? 0) ?? 1) : PLAN_PACK_CATALOG.take.units,
               })
             : (row.plan_tier ?? t("produkt.plan"));
         const until = row.product_kind === "pack" ? null : row.granted_until ? formatWhen(row.granted_until, locale) : t("bezDaty");

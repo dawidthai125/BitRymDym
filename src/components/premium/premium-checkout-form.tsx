@@ -29,6 +29,8 @@ export function PremiumCheckoutForm({
   prices,
   addonPrice,
   packPrices,
+  youtubeUnits,
+  youtubeBlock,
   tierBlock,
   addonBlock,
   currentLine,
@@ -40,6 +42,8 @@ export function PremiumCheckoutForm({
   prices: Record<PaidTier, { month: string; year: string }>;
   addonPrice: string;
   packPrices: Record<PlanPack, string>;
+  youtubeUnits: number;
+  youtubeBlock: CheckoutBlock | null;
   tierBlock: Record<PaidTier, CheckoutBlock | null>;
   addonBlock: CheckoutBlock | null;
   currentLine: string | null;
@@ -187,27 +191,31 @@ export function PremiumCheckoutForm({
       <div className="flex flex-col gap-3 border-t border-[var(--brd-line)] pt-6">
         <h3 className="text-base font-semibold">{t("pakietTytul")}</h3>
         <p className="max-w-[62ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{t("pakietOpis")}</p>
-        {(["take", "master"] as const).map((pack) => (
+        {(["take", "master", "youtube"] as const).map((pack) => {
+          const blocked = pack === "youtube" ? youtubeBlock : null;
+          return (
           <form
             key={pack}
             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!loggedIn || readFailed || pending) return;
+              if (!loggedIn || readFailed || pending || blocked) return;
               void pay({ kind: "pack", pack });
             }}
           >
             <p className="text-sm">
-              {t(pack === "take" ? "pakietTake" : "pakietMaster")}
-              <span className="ml-2 font-mono">{packPrices[pack]}</span>
+              {pack === "youtube" ? t("pakietYoutube", { n: youtubeUnits }) : t(pack === "take" ? "pakietTake" : "pakietMaster")}
+              {packPrices[pack] ? <span className="ml-2 font-mono">{packPrices[pack]}</span> : null}
             </p>
+            {blocked ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${blocked}`)}</p> : null}
             {loggedIn ? (
-              <BrdButton type="submit" variant="secondary" disabled={readFailed || pending !== null || !consentOk} data-testid={`premium-pack-${pack}`}>
+              <BrdButton type="submit" variant="secondary" disabled={!!blocked || readFailed || pending !== null || !consentOk} data-testid={`premium-pack-${pack}`}>
                 {pending === pack ? t("czekam") : t("pakietPrzycisk")}
               </BrdButton>
             ) : null}
           </form>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

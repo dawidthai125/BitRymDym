@@ -6,7 +6,7 @@ import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentValid, type PurchaseCons
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-import { checkoutBlock, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
+import { checkoutBlock, isLivePaid, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
 import { parseCheckoutProduct, priceGrosz, type CheckoutProduct } from "@/lib/payments/money";
 import { registerP24Transaction } from "@/lib/payments/p24-client";
 import { readP24Config } from "@/lib/payments/p24-config";
@@ -30,6 +30,9 @@ const PENDING_LIMIT = 5;
 
 export function p24Description(product: CheckoutProduct, locale: "pl" | "en"): string {
   if (product.kind === "pack") {
+    if (product.pack === "youtube") {
+      return locale === "en" ? "BitRymDym pack, YouTube MP4" : "BitRymDym pakiet, wideo MP4 pod YouTube";
+    }
     const units = PLAN_PACK_CATALOG[product.pack].units;
     if (product.pack === "take") {
       return locale === "en" ? `BitRymDym pack, ${units} extra recordings` : `BitRymDym pakiet, ${units} dodatkowych nagrań`;
@@ -86,7 +89,8 @@ export async function startCheckout(input: {
   const block = checkoutBlock(product, plan, addon, now);
   if (block) return { ok: false, code: block };
 
-  const amountGrosz = priceGrosz(product);
+  const buyerTier = isLivePaid(plan, now) ? plan.tier : "FREE";
+  const amountGrosz = priceGrosz(product, buyerTier);
   const admin = createSupabaseAdminClient();
   const since = new Date(now.getTime() - HOUR_MS).toISOString();
   const pending = await admin

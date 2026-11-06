@@ -21,7 +21,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
 import { filterVideoImage } from "../image";
-import { youtubeImageKey, youtubeVideoAllowed } from "../youtube-video";
+import { youtubeImageKey } from "../youtube-video";
 
 import { memoryProviderState, runAiImageChain, type ProviderStateStore } from "./chain";
 import { AI_COVER_MESSAGES, AI_COVER_PROVIDER_TIMEOUT_MS, AI_COVER_SIZE, aiCoverEnabled, aiCoverPerDay, isAiCoverAspect, type AiCoverAspect } from "./config";
@@ -86,7 +86,7 @@ export async function aiCoversUsedToday(admin: Admin, ownerId: string): Promise<
 }
 
 export async function getAiCoverState(p: { ownerId: string; projectId: string; tier: PremiumTier }) {
-  if (!youtubeVideoAllowed(p.tier) || !aiCoverEnabled()) return null;
+  if (p.tier !== "GOLD" || !aiCoverEnabled()) return null;
   const admin = createSupabaseAdminClient();
   const proj = await project(admin, p.ownerId, p.projectId);
   const used = await aiCoversUsedToday(admin, p.ownerId).catch((e) => (e instanceof StudioMasterUnavailable ? null : Promise.reject(e)));
@@ -109,7 +109,7 @@ async function toAspect(img: Buffer, aspect: AiCoverAspect): Promise<Buffer> {
 export async function generateAiCover(p: { ownerId: string; projectId: string; tier: PremiumTier; prompt: unknown; aspect: unknown }):
   Promise<{ ok: true; imageId: string; previewUrl: string | null; width: number; height: number; provider: AiProviderId; used: number; perDay: number } | AiCoverDeny> {
   if (!aiCoverEnabled()) throw new StudioMasterUnavailable("ai_cover_off");
-  if (!youtubeVideoAllowed(p.tier)) return { ok: false, error: "tier_video" };
+  if (p.tier !== "GOLD") return { ok: false, error: "tier_video" };
   if (!isAiCoverAspect(p.aspect)) return { ok: false, error: "bad_request" };
   const rules = checkPromptRules(p.prompt);
   if (!rules.ok) return { ok: false, error: rules.reason === "too_short" || rules.reason === "too_long" ? "bad_request" : "prompt_rejected", message: rules.message };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { LockedAction } from "@/components/plans/locked-action";
@@ -17,7 +17,7 @@ import type { PremiumTier } from "@/types/premium";
 type JobLike = { job?: { status?: string; stage?: unknown; progress?: unknown; errorCode?: string | null }; downloadUrl?: string | null; downloadParts?: string[] | null; filename?: string | null };
 type State = {
   available: boolean; rendering?: boolean; allowed?: boolean; approved?: boolean; cover?: { url: string } | null; title?: string;
-  latest?: JobLike | null; usage?: { used: number; perDay: number } | null;
+  latest?: JobLike | null; usage?: { used: number; perWeek: number; credits: number; pack: { units: number; pricePln: number } | null } | null;
   /** Gold AI cover generator (null = off / table missing). */
   ai?: { available: boolean; used?: number; perDay?: number; ownBeat?: boolean } | null;
 };
@@ -89,6 +89,8 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   initialState?: State;
 }) {
   const t = useTranslations("studio.youtubeVideo");
+  const locale = useLocale();
+  const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", { style: "currency", currency: "PLN", minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const uid = useId();
   const allowed = youtubeVideoAllowed(tier);
   const [state, setState] = useState<State | null>(initialState ?? null);
@@ -199,7 +201,11 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       if (!r.ok || !j.jobId) return setRun({ phase: "error", code: String(j.error ?? r.status) });
       const out = await poll(j.jobId);
       setRun(out);
-      if (out.phase === "done") setState((s) => (s?.usage ? { ...s, usage: { ...s.usage, used: s.usage.used + 1 } } : s));
+      if (out.phase === "done") setState((s) => {
+        if (!s?.usage) return s;
+        if (s.usage.used < s.usage.perWeek) return { ...s, usage: { ...s.usage, used: s.usage.used + 1 } };
+        return { ...s, usage: { ...s.usage, credits: Math.max(0, s.usage.credits - 1) } };
+      });
     } catch {
       setRun({ phase: "error", code: "network" });
     }
@@ -211,7 +217,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   const aiState = state?.ai ?? null;
   const aiLimit = !!aiState?.perDay && (aiState.used ?? 0) >= aiState.perDay;
   const aiPromptLen = aiPrompt.trim().length;
-  const limitReached = !!state?.usage && state.usage.used >= state.usage.perDay;
+  const limitReached = !!state?.usage && state.usage.used >= state.usage.perWeek && state.usage.credits <= 0;
   const canMake = allowed && approved && !!imageUrl && run.phase !== "working" && !limitReached && state?.available !== false && state?.rendering !== false;
   const shownTitle = showText ? cleanVideoText(title) : null;
   const shownArtist = showText ? cleanVideoText(artist) : null;
@@ -220,7 +226,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
     <section aria-labelledby={`${uid}-title`} data-testid="studio-youtube-video" data-tier={tier ?? "guest"} className="flex flex-col gap-3 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3">
       <div className="flex flex-wrap items-baseline gap-2">
         <h3 id={`${uid}-title`} className="brd-display text-lg">{t("tytul")}</h3>
-        <span className="rounded-[2px] border border-[var(--brd-amber)] px-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">Gold</span>
+        <span className="rounded-[2px] border border-[var(--brd-amber)] px-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">{allowed && tier ? tier : "Gold"}</span>
       </div>
       <p className="text-sm">{t("opis")}</p>
 
@@ -328,12 +334,18 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
             {run.phase === "done" ? (
               <a href={run.url} download={run.filename ?? "youtube.mp4"} className="inline-flex min-h-10 items-center font-semibold underline underline-offset-4" data-testid="studio-yt-download">⬇ {t("pobierz")}</a>
             ) : null}
-            {state?.usage ? <span className={`text-xs ${limitReached ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>{t("licznik", { used: state.usage.used, limit: state.usage.perDay })}</span> : null}
+            {state?.usage && state.usage.perWeek > 0 ? <span className={`text-xs ${limitReached ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}>{t("licznik", { used: state.usage.used, limit: state.usage.perWeek })}</span> : null}
+            {state?.usage && state.usage.credits > 0 ? <span className="text-xs text-[var(--brd-mute)]">{t("pakietZostalo", { n: state.usage.credits })}</span> : null}
           </div>
           {run.phase === "working" && prog ? <JobProgressBar value={prog} label={t(`etap.${prog.stage}`)} ariaLabel={t("postepAria")} testId="studio-yt-progress" /> : null}
           {run.phase === "done" ? <p role="status" className="text-sm">{t("gotowe")}</p> : null}
-          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "daily_limit" ? t("limit") : t("blad", { code: run.code })}</p> : null}
-          {limitReached && run.phase !== "error" ? <p role="status" className="text-sm">{t("limit")}</p> : null}
+          {run.phase === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{run.code === "unavailable" ? t("niedostepne") : run.code === "video_soon" ? t("wkrotce") : run.code === "weekly_limit" || run.code === "daily_limit" ? t(state?.usage?.perWeek ? "limit" : "limitJednorazowo") : t("blad", { code: run.code })}</p> : null}
+          {limitReached && run.phase !== "error" ? (
+            <p role="status" className="text-sm">
+              {t(state?.usage?.perWeek ? "limit" : "limitJednorazowo")}
+              {state?.usage?.pack ? <> <a href="/premium" className="font-semibold underline underline-offset-4">{t("kupPakiet", { n: state.usage.pack.units, cena: money.format(state.usage.pack.pricePln) })}</a></> : null}
+            </p>
+          ) : null}
         </>
       )}
     </section>

@@ -7,15 +7,14 @@
  * already in storage (nothing big goes up from a phone), AAC encoding in WebCodecs is
  * missing on Firefox, Chrome on Linux and older iOS Safari.
  */
-import { youtubeVideoForTier } from "@/config/plan-policy";
+import { youtubeVideosPerWeekForTier } from "@/config/plan-policy";
+import { warsawLocalInputToIso } from "@/lib/site/warsaw-datetime";
 import type { PremiumTier } from "@/types/premium";
 
 export const YT_VIDEO_W = 1920;
 export const YT_VIDEO_H = 1080;
 export const YT_VIDEO_FPS = 24;
 export const YT_VIDEO_TEXT_MAX = 80;
-/** Video jobs per Warsaw day (each one is a few CPU-minutes on E3). */
-export const YT_VIDEO_PER_DAY = 20;
 /** Own graphic upload (same checks as beat covers; aspect is kept, not cropped). */
 export const YT_VIDEO_IMAGE_MAX_PX = 2560;
 
@@ -29,11 +28,45 @@ export type YoutubeVideoSpec = {
   artist: string | null;
 };
 
+/** Bronze, Silver and Gold can open the panel. Free cannot. A render still needs the weekly allowance or a pack credit. */
 export function youtubeVideoAllowed(tier: PremiumTier | null | undefined): boolean {
-  return !!tier && youtubeVideoForTier(tier);
+  return tier === "BRONZE" || tier === "SILVER" || tier === "GOLD";
 }
 
-export type YoutubeVideoDeny = "tier_video" | "not_approved" | "bad_request" | "image_missing" | "daily_limit" | "video_soon";
+export function youtubeVideosPerWeek(tier: PremiumTier): number {
+  return youtubeVideosPerWeekForTier(tier);
+}
+
+export type YoutubeVideoDeny = "tier_video" | "not_approved" | "bad_request" | "image_missing" | "weekly_limit" | "daily_limit" | "video_soon";
+
+/** Plan allowance first, then one pack credit. */
+export function youtubeVideoQuota(p: { tier: PremiumTier; usedThisWeek: number; credits: number }):
+  { allowed: true; via: "plan" | "credit" } | { allowed: false; reason: "weekly_limit" } {
+  const cap = youtubeVideosPerWeek(p.tier);
+  const used = Number.isFinite(p.usedThisWeek) ? Math.max(0, Math.floor(p.usedThisWeek)) : 0;
+  if (used < cap) return { allowed: true, via: "plan" };
+  const credits = Number.isFinite(p.credits) ? Math.max(0, Math.floor(p.credits)) : 0;
+  if (credits > 0) return { allowed: true, via: "credit" };
+  return { allowed: false, reason: "weekly_limit" };
+}
+
+const WEEKDAY_INDEX: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+
+/** Monday 00:00 Europe/Warsaw as an ISO instant. */
+export function warsawWeekStartIso(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Warsaw", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const index = WEEKDAY_INDEX[get("weekday")] ?? 0;
+  const monday = new Date(Date.UTC(Number(get("year")), Number(get("month")) - 1, Number(get("day")) - index));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const local = `${monday.getUTCFullYear()}-${pad(monday.getUTCMonth() + 1)}-${pad(monday.getUTCDate())}T00:00`;
+  const iso = warsawLocalInputToIso(local);
+  if (!iso) throw new Error("week_start");
+  return iso;
+}
+
 
 /**
  * Kill switch for the MP4 render: jobs are only queued when an E3 worker that knows
@@ -47,7 +80,7 @@ export function youtubeVideoRenderEnabled(env: Record<string, string | undefined
 /** Server gate (UI mirrors it). Order: plan first, so lower plans always get the upsell. */
 export function decideYoutubeVideo(p: { tier: PremiumTier | null; approved: boolean; source: unknown; hasImage: boolean }):
   { allowed: true } | { allowed: false; reason: YoutubeVideoDeny } {
-  if (!youtubeVideoAllowed(p.tier)) return { allowed: false, reason: "tier_video" };
+  if (!p.tier || !youtubeVideoAllowed(p.tier)) return { allowed: false, reason: "tier_video" };
   if (p.source !== "cover" && p.source !== "upload") return { allowed: false, reason: "bad_request" };
   if (!p.approved) return { allowed: false, reason: "not_approved" };
   if (!p.hasImage) return { allowed: false, reason: "image_missing" };

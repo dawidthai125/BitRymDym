@@ -9,10 +9,12 @@ import {
   PLAN_ADDON_PRICE_PLN,
   PLAN_PACK_CATALOG,
   PLAN_POLICY,
+  youtubePackOffer,
   type PaidTier,
   type PlanAddon,
   type PlanPack,
 } from "@/config/plan-policy";
+import type { PremiumTier } from "@/types/premium";
 
 export type BillingPeriod = "month" | "year";
 
@@ -33,8 +35,13 @@ export function plnToGrosz(pln: number): number {
   return grosz;
 }
 
-export function priceGrosz(product: CheckoutProduct): number {
+export function priceGrosz(product: CheckoutProduct, buyerTier?: PremiumTier | null): number {
   if (product.kind === "pack") {
+    if (product.pack === "youtube") {
+      const offer = youtubePackOffer(buyerTier ?? null);
+      if (!offer) throw new Error("PRICE_INVALID");
+      return plnToGrosz(offer.pricePln);
+    }
     return plnToGrosz(PLAN_PACK_CATALOG[product.pack].pricePln);
   }
   if (product.kind === "addon") {

@@ -130,7 +130,7 @@ describe("webhook idempotency", () => {
 });
 
 describe("checkout copy", () => {
-  const blocks = ["DOWNGRADE", "PERPETUAL", "ADDON_INCLUDED", "ADDON_NEEDS_SILVER", "ADDON_PERPETUAL"] as const;
+  const blocks = ["DOWNGRADE", "PERPETUAL", "ADDON_INCLUDED", "ADDON_NEEDS_SILVER", "ADDON_PERPETUAL", "PACK_NEEDS_PAID"] as const;
   const errors = ["PAYMENTS_OFF", "CONSENT", "EMAIL", "INVALID", "RATE", "PROVIDER", "ORIGIN", "LOGIN", ...blocks] as const;
 
   it("has a Polish and English line for every block and error", () => {
@@ -161,6 +161,14 @@ describe("catalog amounts", () => {
     expect(grantWrite({ kind: "pack", pack: "take" }, null, null, NOW)).toEqual({ action: "pack", pack: "take", units: 10 });
     expect(grantWrite({ kind: "pack", pack: "master" }, null, null, NOW)).toEqual({ action: "pack", pack: "master", units: 5 });
     expect(checkoutBlock({ kind: "pack", pack: "take" }, null, null, NOW)).toBeNull();
+    expect(checkoutBlock({ kind: "pack", pack: "youtube" }, null, null, NOW)).toBe("PACK_NEEDS_PAID");
+    expect(checkoutBlock({ kind: "pack", pack: "youtube" }, { tier: "GOLD", active: true, expiresAt: null }, null, NOW)).toBeNull();
+    expect(priceGrosz({ kind: "pack", pack: "youtube" }, "GOLD")).toBe(999);
+    expect(priceGrosz({ kind: "pack", pack: "youtube" }, "SILVER")).toBe(1499);
+    expect(priceGrosz({ kind: "pack", pack: "youtube" }, "BRONZE")).toBe(2499);
+    expect(grantWrite({ kind: "pack", pack: "youtube" }, null, null, NOW, 999)).toEqual({ action: "pack", pack: "youtube", units: 2 });
+    expect(grantWrite({ kind: "pack", pack: "youtube" }, null, null, NOW, 2499)).toEqual({ action: "pack", pack: "youtube", units: 1 });
+    expect(grantWrite({ kind: "pack", pack: "youtube" }, { tier: "BRONZE", active: true, expiresAt: null }, null, NOW, 999)).toEqual({ action: "pack", pack: "youtube", units: 2 });
     const parsed = parseCheckoutProduct({ kind: "plan", tier: "GOLD", period: "year", amount: 1, currency: "EUR" });
     expect(parsed).toEqual({ kind: "plan", tier: "GOLD", period: "year" });
     expect(parsed ? priceGrosz(parsed) : 0).toBe(39900);

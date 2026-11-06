@@ -352,10 +352,13 @@
         "prosty": "simple",
         "pelny": "advanced"
       },
-      "pakietyTytul": "Buy extra recordings or masters",
-      "pakietyLead": "A one-off pack. It is used only after the plan allowance and stays until you use it.",
+      "pakietyTytul": "Buy extra recordings, masters or video",
+      "pakietyLead": "A one-off pack. Recordings and masters are used after the plan allowance. YouTube MP4: Gold includes 2 a week and can buy 2 more for 9.99 PLN. Bronze and Silver buy a single video.",
       "pakietTake": "Pack of {n} recordings — {cena}",
       "pakietMaster": "Pack of {n} masters — {cena}",
+      "pakietYoutubeGold": "Gold: {n} YouTube MP4s — {cena}",
+      "pakietYoutubeSilver": "Silver: 1 YouTube MP4 — {cena}",
+      "pakietYoutubeBronze": "Bronze: 1 YouTube MP4 — {cena}",
       "referencja": {
         "none": "—",
         "addon": "add-on",
@@ -379,6 +382,8 @@
         "brakPobierania": "🔒 none",
         "projektZip": "Project (ZIP of tracks)",
         "wideoYt": "YouTube MP4 video",
+        "wideoYtTydzien": "{n} / week",
+        "wideoYtJednorazowo": "one-off {cena}",
         "przechowywanie": "File storage",
         "dni": "{n} days",
         "referencja": "Reference mastering",
@@ -387,7 +392,7 @@
       "przypis": {
         "gosc": "Without an account: a {s}-second preview of every beat. Recording, downloads and Studio need an account.",
         "narzedzia": "Free and Bronze record in the simple view, with no switch. Silver and Gold have the advanced studio and can switch it to the simple view.",
-        "pakiety": "Recording packs and master packs are a one-off purchase. They apply after the plan allowance and stay until you use them.",
+        "pakiety": "Recording packs and master packs are a one-off purchase. They apply after the plan allowance and stay until you use them. YouTube MP4: Gold includes 2 a week (from Monday, Polish time) and can buy 2 more for 9.99 PLN. Bronze buys 1 for 24.99 PLN, Silver 1 for 14.99 PLN. A failed video does not count.",
         "mastery": "Masters are counted per calendar month (Polish time). A failed master does not count.",
         "free": "Free does not download beats or finished files — listen only; the buttons are visible but locked. With more than 3 projects nothing disappears, you just can't start a new one.",
         "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
@@ -428,16 +433,18 @@
         "dodatekOpis": "One month of the add-on on Silver. Gold includes it. On Free and Bronze this add-on unlocks nothing.",
         "dodatekPrzycisk": "Add reference mastering",
         "pakietTytul": "I'll add recordings or masters",
-        "pakietOpis": "One payment, not every month. The plan allowance is used first, then the pack. It stays on the account until you use it.",
+        "pakietOpis": "One payment, not every month. Recordings and masters are used after the plan allowance. On Gold, YouTube MP4 uses the 2 a week first, then a pack of 2. On Bronze and Silver only purchased videos.",
         "pakietTake": "10 recordings",
         "pakietMaster": "5 masters",
+        "pakietYoutube": "{n} YouTube MP4s",
         "pakietPrzycisk": "Buy this pack",
         "blok": {
           "DOWNGRADE": "A lower plan waits until the higher one ends.",
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
           "ADDON_INCLUDED": "On Gold, reference mastering is included.",
           "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
-          "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it."
+          "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it.",
+          "PACK_NEEDS_PAID": "You can buy a YouTube MP4 on Bronze, Silver or Gold."
         },
         "blad": {
           "PAYMENTS_OFF": "Payments are still off.",
@@ -452,7 +459,8 @@
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
           "ADDON_INCLUDED": "On Gold, reference mastering is included.",
           "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
-          "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it."
+          "ADDON_PERPETUAL": "The add-on has no end date — I won't shorten it.",
+          "PACK_NEEDS_PAID": "You can buy a YouTube MP4 on Bronze, Silver or Gold."
         }
       },
       "returnPage": {
@@ -471,7 +479,8 @@
           "referencja": "reference mastering",
           "plan": "the plan",
           "take": "{n} extra recordings",
-          "master": "{n} extra masters"
+          "master": "{n} extra masters",
+          "youtube": "{n} YouTube MP4 videos"
         },
         "powod": {
           "perpetual": "you already have access with no end date and I won't shorten it.",
@@ -3043,7 +3052,7 @@
       "tytul": "YouTube MP4 video",
       "opis": "Finished track (approved master) + an image → a 1920×1080 file (H.264 + AAC), ready to upload to YouTube.",
       "bitek": "I'll put your master and the image together into one 1920×1080 video. The image is never cropped — I fit it and fill the background with a blurred copy.",
-      "tylkoGold": "YouTube MP4 video is in the Gold plan.",
+      "tylkoGold": "YouTube MP4 starts at Bronze. Gold includes 2 a week. Bronze and Silver buy single videos.",
       "zobaczPlany": "See plans",
       "najpierwZatwierdz": "Approve the master first — the video is made from the finished track.",
       "zrodloTytul": "Image",
@@ -3067,8 +3076,11 @@
       "brakObrazu": "Choose an image to see the preview.",
       "zrob": "Make MP4 video",
       "trwa": "Making the video…",
-      "licznik": "Today: {used} / {limit} videos",
-      "limit": "Today's video limit is used up. Try tomorrow.",
+      "licznik": "This week: {used} / {limit}",
+      "pakietZostalo": "From the pack: {n}",
+      "kupPakiet": "Buy {n} for {cena}",
+      "limit": "This week's 2 videos are used. Buy a pack or wait until Monday.",
+      "limitJednorazowo": "On this plan a video is a one-off. Buy one, then make the file.",
       "gotowe": "Video ready.",
       "pobierz": "Download MP4",
       "blad": "Could not make the video ({code}).",
