@@ -106,7 +106,8 @@ describe("account page wiring", () => {
       join(process.cwd(), "src/app/account/page.tsx"),
       "utf8",
     );
-    expect(src).toMatch(/listOwnTakes\(\s*\{\s*includeDeleted:\s*false\s*\}\s*\)/);
+    expect(src).toMatch(/includeDeleted:\s*false/);
+    expect(src).toMatch(/limit:\s*5/);
     expect(src).toMatch(/takeRecentNonDeletedTakes\(\s*takes\s*,\s*5\s*\)/);
     expect(src).not.toMatch(/\.slice\(\s*0\s*,\s*5\s*\)\.filter/);
   });

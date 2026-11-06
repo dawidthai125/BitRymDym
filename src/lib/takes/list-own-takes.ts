@@ -89,6 +89,23 @@ function resolveDisplayStatus(row: {
  * Owner-only list. Default includes expired/deleted for lifecycle UX (`/account/takes`).
  * Download flags from server entitlement SSOT only — never client-spoofable.
  */
+/** Active (not deleted) take counts for the profile stats. Does not load entitlement. */
+export async function countOwnActiveTakes(userId: string): Promise<{ total: number; ready: number }> {
+  const admin = createSupabaseAdminClient();
+  const base = () =>
+    admin
+      .from("takes")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId)
+      .eq("is_stem", false)
+      .neq("status", "DELETED")
+      .is("deleted_at", null);
+  const [all, ready] = await Promise.all([base(), base().eq("status", "READY")]);
+  if (all.error) throw new Error(all.error.message);
+  if (ready.error) throw new Error(ready.error.message);
+  return { total: all.count ?? 0, ready: ready.count ?? 0 };
+}
+
 export async function listOwnTakesFor(
   context: AuthContext,
   options: ListOwnTakesOptions = {},

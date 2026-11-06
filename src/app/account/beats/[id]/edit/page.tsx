@@ -5,7 +5,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { PageFrame, StatusPill } from "@/components/brand/chrome";
 import { OwnerBeatEditForm } from "@/components/beats/owner-beat-edit-form";
-import { AppShell } from "@/components/site/app-shell";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError } from "@/lib/auth/session";
 import { isOwnerEditableStatus } from "@/lib/beats/owner-edit-policy";
@@ -37,7 +36,6 @@ export default async function AccountBeatEditPage({ params }: PageProps) {
   }
 
   return (
-    <AppShell tone="studio">
       <main className="pb-16">
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="flex flex-col gap-3 border-b border-[var(--brd-line)] pb-6">
@@ -90,6 +88,5 @@ export default async function AccountBeatEditPage({ params }: PageProps) {
           />
         </PageFrame>
       </main>
-    </AppShell>
   );
 }

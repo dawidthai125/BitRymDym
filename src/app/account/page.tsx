@@ -8,7 +8,6 @@ import { BrdButton, BrdLink } from "@/components/brand/brd-button";
 import {
   PageFrame,
   SectionLabel,
-  StatusPill,
 } from "@/components/brand/chrome";
 import {
   ChangeEmailForm,
@@ -20,7 +19,7 @@ import { NotificationPreferencesForm } from "@/components/account/notification-p
 import { notifyEnv } from "@/lib/email/notify/config";
 import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { AppShell } from "@/components/site/app-shell";
+import { OwnTakesList } from "@/components/takes/own-takes-list";
 import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
@@ -33,15 +32,11 @@ import { getCurrentProfile, getSessionUser } from "@/lib/auth/session";
 import { formatProfileWithUserNumber } from "@/lib/auth/types";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import {
+  countOwnActiveTakes,
   listOwnTakes,
   takeRecentNonDeletedTakes,
 } from "@/lib/takes/list-own-takes";
-import { formatDurationSeconds } from "@/lib/beats/public";
-import {
-  labelAccountLevel,
-  labelRecordingMode,
-  labelTakeStatus,
-} from "@/lib/ui/labels";
+import { labelAccountLevel } from "@/lib/ui/labels";
 
 /**
  * Artist Studio — action space, not a developer debug panel.
@@ -93,13 +88,17 @@ export default async function AccountPage({
   // Profile surface: exclude soft-deleted at query (not slice-then-filter).
   // /account/takes keeps includeDeleted default for lifecycle visibility.
   let takes: Awaited<ReturnType<typeof listOwnTakes>> = [];
+  let takeCounts = { total: 0, ready: 0 };
   try {
-    takes = await listOwnTakes({ includeDeleted: false });
+    [takes, takeCounts] = await Promise.all([
+      listOwnTakes({ includeDeleted: false, limit: 5 }),
+      countOwnActiveTakes(context.userId),
+    ]);
   } catch {
     takes = [];
   }
   const recentTakes = takeRecentNonDeletedTakes(takes, 5);
-  const readyCount = takes.filter((t) => t.displayStatus === "READY").length;
+  const readyCount = takeCounts.ready;
   const displayName =
     context.profile.displayName?.trim() || tr("tworca");
   const userNumberLabel =
@@ -131,7 +130,6 @@ export default async function AccountPage({
   }
 
   return (
-    <AppShell tone="studio">
       <main className="pb-16">
         <PageFrame className="py-10 sm:py-14">
           <header className="mb-10 grid gap-6 border-b border-[var(--brd-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -182,13 +180,6 @@ export default async function AccountPage({
             </div>
           ) : null}
 
-          <div className="mb-10 flex flex-wrap gap-2">
-            <StudioChip href="/account/takes" label={tr("mojeNagrania")} />
-            <StudioChip href="/account/beats" label={tr("mojeBity")} />
-            <StudioChip href="/account/downloads" label={tr("eksportyIPobrania")} />
-            <StudioChip href="/account/shared" label={tr("udostepnione")} />
-          </div>
-
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.85fr)]">
             <section className="space-y-4">
               <div className="flex items-baseline justify-between gap-3">
@@ -214,35 +205,7 @@ export default async function AccountPage({
                   </div>
                 </div>
               ) : (
-                <ul className="divide-y divide-[var(--brd-line)] border-y border-[var(--brd-line)]">
-                  {recentTakes.map((take) => (
-                    <li
-                      key={take.id}
-                      className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                    >
-                      <div className="min-w-0 space-y-2">
-                        <p className="brd-display truncate text-lg font-semibold">
-                          {tl(take.beatTitle || "Bit")}
-                        </p>
-                        <p className="flex gap-3 text-sm text-[var(--brd-mute)]">
-                          <span>{tl(labelRecordingMode(take.recordingMode))}</span>
-                          <span className="brd-data text-[var(--brd-ink-soft)]">
-                            {tl(take.durationSeconds != null
-                              ? formatDurationSeconds(take.durationSeconds)
-                              : "—")}
-                          </span>
-                        </p>
-                      </div>
-                      <StatusPill
-                        tone={
-                          take.displayStatus === "READY" ? "ok" : "neutral"
-                        }
-                      >
-                        {tl(labelTakeStatus(take.displayStatus))}
-                      </StatusPill>
-                    </li>
-                  ))}
-                </ul>
+                <OwnTakesList items={recentTakes} variant="dashboard" />
               )}
 
               <section className="pt-8">
@@ -309,7 +272,7 @@ export default async function AccountPage({
                 </dl>
 
                 <dl className="grid grid-cols-2 gap-3 text-sm">
-                  <Stat label={tr("nagrania")} value={String(takes.length)} />
+                  <Stat label={tr("nagrania")} value={String(takeCounts.total)} />
                   <Stat label={tr("gotowe")} value={String(readyCount)} />
                 </dl>
 
@@ -392,19 +355,6 @@ export default async function AccountPage({
           </div>
         </PageFrame>
       </main>
-    </AppShell>
-  );
-}
-
-function StudioChip({ href, label }: { href: string; label: string }) {
-  const tl = useLibText();
-  return (
-    <Link
-      href={href}
-      className="inline-flex min-h-11 items-center border border-[var(--brd-line)] px-4 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-green)] hover:text-[var(--brd-green)]"
-    >
-      {tl(label)}
-    </Link>
   );
 }
 
