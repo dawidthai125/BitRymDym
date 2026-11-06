@@ -50,6 +50,7 @@ import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
 import { StudioFragmentTools } from "@/components/studio/studio-fragment-tools";
 import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
+import { playheadInsideClip } from "@/lib/studio/studio-clip-ops";
 import type { StudioClipEditCommit } from "@/lib/studio/studio-clip-edit-preview";
 import { StudioToggleChip } from "@/components/studio/studio-toggle-chip";
 import { StudioTrackMeter } from "@/components/studio/studio-track-meter";
@@ -2394,16 +2395,20 @@ function StudioEditorInner({
       });
     },
     onTrimLeftToPlayhead: () => {
-      patchClip({
-        op: "trim_left_to_playhead",
-        playheadMs: getPlayheadMs(),
-      });
+      const playheadMs = getPlayheadMs();
+      if (!playheadInsideClip(selectedClip, playheadMs)) {
+        setStatus(tl("Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć początek."));
+        return;
+      }
+      patchClip({ op: "trim_left_to_playhead", playheadMs });
     },
     onTrimRightToPlayhead: () => {
-      patchClip({
-        op: "trim_right_to_playhead",
-        playheadMs: getPlayheadMs(),
-      });
+      const playheadMs = getPlayheadMs();
+      if (!playheadInsideClip(selectedClip, playheadMs)) {
+        setStatus(tl("Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć koniec."));
+        return;
+      }
+      patchClip({ op: "trim_right_to_playhead", playheadMs });
     },
     onSplit: () => {
       splitSelectedAtPlayhead();

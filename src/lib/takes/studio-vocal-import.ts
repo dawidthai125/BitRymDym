@@ -78,3 +78,54 @@ export function gateStudioVocalImportFile(file: {
     byteSize: file.size,
   };
 }
+
+/** Message shown when an imported file is longer than the beat's take cap. */
+export const STUDIO_VOCAL_IMPORT_TOO_LONG_MESSAGE =
+  "Plik jest za długi względem limitu nagrania dla tego bitu.";
+
+/** Pure check: true only when the duration is known and exceeds the cap. */
+export function isStudioVocalImportTooLong(
+  durationSeconds: number | null,
+  maxRecordingSeconds: number,
+): boolean {
+  if (durationSeconds === null || !Number.isFinite(durationSeconds)) return false;
+  if (!Number.isFinite(maxRecordingSeconds) || maxRecordingSeconds <= 0) return false;
+  return Math.ceil(durationSeconds) > Math.floor(maxRecordingSeconds);
+}
+
+/**
+ * Reads duration from file metadata in the browser. Returns null when it cannot
+ * be read in time; the server still validates, this only avoids reserving a take.
+ */
+export function probeStudioVocalImportDurationSeconds(
+  file: Blob,
+  timeoutMs = 5000,
+): Promise<number | null> {
+  if (typeof document === "undefined" || typeof URL === "undefined") {
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = document.createElement("audio");
+    let done = false;
+    const finish = (value: number | null) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      audio.removeAttribute("src");
+      audio.load();
+      URL.revokeObjectURL(url);
+      resolve(value);
+    };
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () =>
+      finish(
+        Number.isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : null,
+      );
+    audio.onerror = () => finish(null);
+    audio.src = url;
+  });
+}

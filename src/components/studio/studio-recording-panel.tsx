@@ -109,6 +109,9 @@ import {
 import {
   STUDIO_VOCAL_IMPORT_ACCEPT,
   gateStudioVocalImportFile,
+  isStudioVocalImportTooLong,
+  probeStudioVocalImportDurationSeconds,
+  STUDIO_VOCAL_IMPORT_TOO_LONG_MESSAGE,
 } from "@/lib/takes/studio-vocal-import";
 import {
   TakeRecoveryLeaseLostError,
@@ -1910,6 +1913,12 @@ export function StudioRecordingPanel({
         elig.maxRecordingSeconds > 0
       ) {
         setMaxSeconds(Math.floor(elig.maxRecordingSeconds));
+        // Check length before reserving a take, so a rejected file does not use the daily limit.
+        const importSeconds = await probeStudioVocalImportDurationSeconds(file);
+        if (isStudioVocalImportTooLong(importSeconds, elig.maxRecordingSeconds)) {
+          setWorkflowError(STUDIO_VOCAL_IMPORT_TOO_LONG_MESSAGE);
+          return;
+        }
       }
 
       const startMs = transport.state.playheadMs;

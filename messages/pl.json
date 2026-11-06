@@ -2483,7 +2483,7 @@
       "zrobMaster": "Zrób master",
       "masterTrwa": "Robię master na serwerze…",
       "masterKolejka": "Czekam w kolejce…",
-      "masterBlad": "Master się nie udał ({code}). Spróbuj jeszcze raz.",
+      "masterBlad": "Master się nie udał. Spróbuj jeszcze raz.",
       "serwerNiedostepny": "Serwerowy mastering nie jest jeszcze włączony. Podgląd działa, pobieranie pojawi się po włączeniu.",
       "uploadBlad": "Nie udało się wysłać mixu na serwer.",
       "finalTytul": "Posłuchaj gotowego numeru",
