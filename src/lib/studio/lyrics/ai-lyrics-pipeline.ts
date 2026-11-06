@@ -24,17 +24,27 @@ export type LyricsPipelineResult = {
   /** Share of line pairs that rhyme (0..1). */
   rhyme: number;
   repairs: number;
+  /** One entry per model call, for tuning: which model, how long, and what came back. */
+  trace: LyricsTraceEntry[];
 };
+
+export type LyricsTraceEntry = { model: string; ms: number; result: "ok" | "unusable" | "error"; kind?: string };
 
 type Messages = { role: "system" | "user"; content: string }[];
 
-async function ask(provider: BitekLlmProvider, messages: Messages): Promise<string | null> {
+async function ask(provider: BitekLlmProvider, messages: Messages, trace: LyricsTraceEntry[]): Promise<string | null> {
+  const started = Date.now();
+  const note = (result: LyricsTraceEntry["result"], kind?: string) =>
+    trace.push({ model: `${provider.id}:${provider.model ?? "?"}`, ms: Date.now() - started, result, ...(kind ? { kind } : {}) });
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), provider.timeoutMs + 2000);
   try {
-    return parseAiLyricsOutput(await provider.complete(messages, ctrl.signal));
+    const text = parseAiLyricsOutput(await provider.complete(messages, ctrl.signal));
+    note(text ? "ok" : "unusable");
+    return text;
   } catch (e) {
     if (!(e instanceof BitekProviderError)) throw e;
+    note("error", `${e.kind}${e.status ? ` ${e.status}` : ""}${e.code ? ` ${e.code}` : ""}`);
     return null;
   } finally {
     clearTimeout(timer);
@@ -50,10 +60,11 @@ export async function runLyricsPipeline(p: {
 }): Promise<LyricsPipelineResult | null> {
   const now = p.now ?? Date.now;
   const drafts: string[] = [];
+  const trace: LyricsTraceEntry[] = [];
   let first: { provider: BitekLlmProvider; index: number } | null = null;
 
   for (let i = 0; i < p.providers.length; i++) {
-    const text = await ask(p.providers[i], buildAiLyricsMessages(p.input));
+    const text = await ask(p.providers[i], buildAiLyricsMessages(p.input), trace);
     if (text) {
       drafts.push(text);
       first = { provider: p.providers[i], index: i };
@@ -74,7 +85,7 @@ export async function runLyricsPipeline(p: {
     const order: BitekLlmProvider[] = [source, ...p.providers.filter((_, i) => i !== firstIndex)];
     let fixed: string | null = null;
     for (const provider of order) {
-      fixed = await ask(provider, messages);
+      fixed = await ask(provider, messages, trace);
       if (fixed) {
         source = provider;
         break;
@@ -91,5 +102,6 @@ export async function runLyricsPipeline(p: {
     model: source.model ?? null,
     rhyme: rhymeReport(best.text).score,
     repairs,
+    trace,
   };
 }

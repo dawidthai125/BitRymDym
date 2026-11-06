@@ -14,7 +14,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
 import { AI_LYRICS_MESSAGES, aiLyricsPerDay, validateAiLyricsInput } from "./ai-lyrics";
-import { runLyricsPipeline } from "./ai-lyrics-pipeline";
+import { runLyricsPipeline, type LyricsPipelineResult } from "./ai-lyrics-pipeline";
 
 type Admin = ReturnType<typeof createSupabaseAdminClient>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,7 +25,7 @@ export type AiLyricsDeny = {
   error: "tier_lyrics" | "bad_request" | "daily_limit" | "ai_unavailable";
   message?: string;
 };
-export type AiLyricsOk = { ok: true; text: string; used: number; perDay: number; rhyme: number; repairs: number; model: string | null };
+export type AiLyricsOk = { ok: true; text: string; used: number; perDay: number; rhyme: number; repairs: number; model: string | null; trace: LyricsPipelineResult["trace"] };
 
 /** Ownership check; returns the project tempo (BPM) for the prompt. */
 async function assertOwner(admin: Admin, ownerId: string, projectId: string): Promise<number | null> {
@@ -108,5 +108,5 @@ export async function generateAiLyrics(p: {
     return { ok: false, error: "ai_unavailable", message: AI_LYRICS_MESSAGES.unavailable };
   }
   await finish({ status: "ok", provider: result.provider.slice(0, 20) });
-  return { ok: true, text: result.text, used: used + 1, perDay, rhyme: Math.round(result.rhyme * 100) / 100, repairs: result.repairs, model: result.model };
+  return { ok: true, text: result.text, used: used + 1, perDay, rhyme: Math.round(result.rhyme * 100) / 100, repairs: result.repairs, model: result.model, trace: result.trace };
 }
