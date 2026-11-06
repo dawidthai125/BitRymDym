@@ -18,10 +18,14 @@ import type { StudioAudioErrorCode } from "@/lib/studio/studio-audio-errors";
 import {
   masterGraphParams,
   planVoicesAtPlayhead,
+  trackAutomationSchedule,
   trackGraphParams,
   type StudioEngineClip,
   type StudioEngineDocument,
+  type StudioEngineTrack,
 } from "@/lib/studio/studio-audio-schedule";
+import { automationLane, automationSignature } from "@/lib/studio/studio-automation";
+import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
 import type {
   StudioResolvedSource,
@@ -207,6 +211,9 @@ type TrackGraph = {
   pan: PannerLike;
   fx: StudioTrackFxHandle | null;
   fingerprint: string;
+  /** Gain / pan automation last scheduled: its signature, audibility and the clock epoch it was planned for. */
+  autoSig?: string;
+  autoEpoch?: unknown;
 };
 
 type Voice = {
@@ -1480,6 +1487,55 @@ export class StudioAudioEngine {
     }
   }
 
+  /**
+   * Track gain / pan. Static tracks set the value as before. Tracks with automation are scheduled as AudioParam
+   * events from the playhead — only when the plan changes (play, seek, document, mute / solo), never on every
+   * clock tick, because a static write would wipe the ramps.
+   */
+  private syncTrackStrip(graph: TrackGraph, track: StudioEngineTrack, anySolo: boolean): void {
+    const ctx = this.ctx;
+    const staticParams = trackGraphParams(track, anySolo);
+    const wantsAutomation = automationLane(track.automation, "gainDb") !== null || automationLane(track.automation, "pan") !== null;
+    if (!wantsAutomation || !ctx) {
+      if (graph.autoSig !== undefined) {
+        graph.autoSig = undefined;
+        graph.autoEpoch = undefined;
+        graph.gain.gain.cancelScheduledValues?.(ctx?.currentTime ?? 0);
+        graph.pan.pan.cancelScheduledValues?.(ctx?.currentTime ?? 0);
+      }
+      graph.gain.gain.value = staticParams.gain;
+      graph.pan.pan.value = staticParams.pan;
+      return;
+    }
+    const playing = this.lifecycle === "playing" && this.epoch !== null;
+    const audible = isTrackAudible({ muted: track.muted, solo: track.solo, anySolo });
+    const sig = `${automationSignature(track.automation)}|${track.gainDb}|${track.pan}|${audible ? 1 : 0}`;
+    const epoch = playing ? this.epoch : null;
+    if (graph.autoSig === sig && graph.autoEpoch === epoch) return;
+    graph.autoSig = sig;
+    graph.autoEpoch = epoch;
+    const playhead = playing
+      ? playheadMsFromContextClock({ epoch: this.epoch!, contextTime: ctx.currentTime, timelineLengthMs: this.document?.timelineLengthMs ?? 0 })
+      : 0;
+    const plan = trackAutomationSchedule(track, anySolo, playhead);
+    const now = ctx.currentTime;
+    const apply = (param: ParamValue, schedule: { start: number; events: { atMs: number; value: number }[] } | null, staticValue: number) => {
+      param.cancelScheduledValues?.(now);
+      if (!schedule) {
+        param.value = staticValue;
+        return;
+      }
+      if (!playing || !param.setValueAtTime || !param.linearRampToValueAtTime) {
+        param.value = schedule.start;
+        return;
+      }
+      param.setValueAtTime(schedule.start, now);
+      for (const e of schedule.events) param.linearRampToValueAtTime(e.value, now + e.atMs / 1000);
+    };
+    apply(graph.gain.gain, plan.gain, staticParams.gain);
+    apply(graph.pan.pan, plan.pan, staticParams.pan);
+  }
+
   private syncGraphParams(): void {
     if (
       !this.ctx ||
@@ -1500,9 +1556,7 @@ export class StudioAudioEngine {
     for (const track of this.document.tracks) {
       seen.add(track.id);
       const graph = this.ensureTrackGraph(track.id);
-      const params = trackGraphParams(track, anySolo);
-      graph.gain.gain.value = params.gain;
-      graph.pan.pan.value = params.pan;
+      this.syncTrackStrip(graph, track, anySolo);
       this.syncTrackFx(track.id, track.effectsChain);
     }
     for (const [id, graph] of this.tracks) {

@@ -27,6 +27,7 @@ export function studioEngineDocumentFromProject(
       muted: t.muted,
       solo: t.solo,
       effectsChain: t.effectsChain,
+      automation: t.automation,
     })),
     clips: doc.clips
       .filter((c) => {

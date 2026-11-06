@@ -251,6 +251,7 @@ export function StudioEditor({
           muted: t.muted,
           solo: t.solo,
           effectsChain: m.effectsChain,
+          automation: m.automation,
         };
       }),
       // Drop stale BEAT_REF from the engine graph (defense before planVoices).

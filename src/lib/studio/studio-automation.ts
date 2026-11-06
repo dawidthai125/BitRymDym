@@ -156,3 +156,42 @@ export function trackParamAt(a: StudioAutomationV1 | null | undefined, param: Au
   const lane = automationLane(a, param);
   return lane ? clampAutomationValue(param, evalAutomation(lane.points, tMs, staticValue)) : staticValue;
 }
+
+/**
+ * Fast evaluator for sample-by-sample renderers: remembers the segment of the last call, so a forward
+ * sweep is O(1) per sample (a jump backwards or far ahead falls back to a binary search).
+ * Returns exactly what evalAutomation would.
+ */
+export function createLaneEvaluator(points: readonly AutomationPoint[] | null | undefined, fallback: number): (tMs: number) => number {
+  if (!points || points.length === 0) return () => fallback;
+  const pts = points;
+  const n = pts.length;
+  let i = 0; // current segment is [i, i + 1]
+  return (tMs: number): number => {
+    if (n === 1 || tMs <= pts[0].t) return pts[0].v;
+    if (tMs >= pts[n - 1].t) return pts[n - 1].v;
+    if (tMs < pts[i].t || tMs >= pts[i + 1].t) {
+      if (i + 2 < n && tMs >= pts[i + 1].t && tMs < pts[i + 2].t) {
+        i += 1;
+      } else {
+        let lo = 0;
+        let hi = n - 1;
+        while (hi - lo > 1) {
+          const mid = (lo + hi) >> 1;
+          if (pts[mid].t <= tMs) lo = mid;
+          else hi = mid;
+        }
+        i = lo;
+      }
+    }
+    const a = pts[i];
+    const b = pts[i + 1];
+    return a.v + ((b.v - a.v) * (tMs - a.t)) / (b.t - a.t);
+  };
+}
+
+/** Stable signature of a track's automation (re-plan only when it really changed). */
+export function automationSignature(a: StudioAutomationV1 | null | undefined): string {
+  if (!hasAutomation(a)) return "";
+  return a!.lanes.map((l) => `${l.param}:${l.points.map((p) => `${p.t},${p.v}`).join(";")}`).join("|");
+}
