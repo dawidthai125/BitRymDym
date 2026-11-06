@@ -125,8 +125,9 @@ describe("P5.8 permission / error mapping", () => {
   });
 
   it("builds ideal constraints for preferred device", () => {
-    expect(buildAudioTrackConstraints(null)).toBe(true);
+    expect(buildAudioTrackConstraints(null)).toEqual({ latency: { ideal: 0.01 } });
     expect(buildAudioTrackConstraints("abc")).toEqual({
+      latency: { ideal: 0.01 },
       deviceId: { ideal: "abc" },
     });
   });

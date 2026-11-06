@@ -75,7 +75,7 @@ export function useMicAnalyser(
 
     async function start() {
       try {
-        ctx = new AudioContext();
+        ctx = new AudioContext({ latencyHint: "interactive" });
         if (ctx.state === "suspended") await ctx.resume();
         if (cancelled || !stream) return;
 
