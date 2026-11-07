@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, reviewPlayedNotes } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -137,6 +137,18 @@ describe("studio midi", () => {
       durationMs: 400,
     });
     expect(guitar.some((sample) => Math.abs(sample) > 0.05)).toBe(true);
+  });
+
+  it("tells BITEK when a line is short, stuck, leaping, or ready", () => {
+    const note = (pitch: number) => ({ t: 0, dur: 100, pitch, vel: 0.8 });
+    expect(reviewPlayedNotes(null)).toBeNull();
+    expect(reviewPlayedNotes({ v: 1, instrument: "sine", notes: [note(60)] })).toBeNull();
+    expect(reviewPlayedNotes({ v: 1, instrument: "piano", notes: [note(60), note(62)] })?.code).toBe("short");
+    expect(reviewPlayedNotes({ v: 1, instrument: "piano", notes: [note(60), note(60), note(60), note(60)] })?.code).toBe("same");
+    expect(reviewPlayedNotes({ v: 1, instrument: "guitar", notes: [note(52), note(64), note(52), note(64)] })?.code).toBe("leap");
+    expect(reviewPlayedNotes({ v: 1, instrument: "piano", notes: [note(60), note(64), note(67), note(72)] })?.code).toBe("line-ok");
+    expect(reviewPlayedNotes({ v: 1, instrument: "drums", notes: [note(36), note(36)] })?.code).toBe("drums-one");
+    expect(reviewPlayedNotes({ v: 1, instrument: "drums", notes: [note(36), note(38), note(42), note(36)] })?.code).toBe("drums-ok");
   });
 
   it("sets a short fade on one edge and keeps the other", () => {

@@ -211,6 +211,31 @@ export function appendPlayedNote(input: {
   return { ok: true, midi: { v: MIDI_VERSION, instrument: input.instrument, notes: next } };
 }
 
+export type PlayedNoteReviewCode = "short" | "same" | "leap" | "drums-one" | "drums-ok" | "line-ok";
+
+/** What BITEK can say about notes played on the keys. Empty and other instruments stay quiet. */
+export function reviewPlayedNotes(
+  midi: StudioMidiV1 | null | undefined,
+): { code: PlayedNoteReviewCode; count: number } | null {
+  if (!midi || midi.notes.length === 0) return null;
+  if (midi.instrument !== "piano" && midi.instrument !== "guitar" && midi.instrument !== "bass" && midi.instrument !== "drums") {
+    return null;
+  }
+  const count = midi.notes.length;
+  if (midi.instrument === "drums") {
+    const pieces = new Set(midi.notes.map((note) => (note.pitch <= 37 ? "kick" : note.pitch <= 40 ? "snare" : "hat")));
+    if (pieces.size < 2) return { code: "drums-one", count };
+    return { code: count >= 4 ? "drums-ok" : "short", count };
+  }
+  if (count < 4) return { code: "short", count };
+  const pitches = midi.notes.map((note) => note.pitch);
+  if (pitches.every((pitch) => pitch === pitches[0])) return { code: "same", count };
+  for (let i = 1; i < pitches.length; i++) {
+    if (Math.abs(pitches[i]! - pitches[i - 1]!) > 7) return { code: "leap", count };
+  }
+  return { code: "line-ok", count };
+}
+
 /** One bar: kick on 1 and 3, snare on 2 and 4, hat on every eighth. */
 export function drumPatternAt(playheadMs: number, bpm: number): StudioMidiV1 {
   const start = atPlayhead(playheadMs);

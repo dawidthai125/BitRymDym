@@ -48,7 +48,7 @@ import { StudioAutomationLane } from "@/components/studio/studio-automation-lane
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { maxStemsForTier } from "@/config/plan-policy";
 import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
-import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, type StudioMidiV1 } from "@/lib/studio/studio-midi";
+import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlayedNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
@@ -555,6 +555,10 @@ function StudioEditorInner({
           : [],
       };
     }
+    const keysTrack =
+      doc.tracks.find((track) => track.id === activeSelectedTrackId && reviewPlayedNotes(track.midi)) ??
+      doc.tracks.find((track) => reviewPlayedNotes(track.midi));
+    const keysReview = keysTrack ? reviewPlayedNotes(keysTrack.midi) : null;
     const material = autoMixMasterMaterial({
       beatId: doc.project.beatId,
       tracks: doc.tracks,
@@ -566,6 +570,22 @@ function StudioEditorInner({
       vocal: material.vocal,
       beat: material.beat,
     });
+    if (offer !== "ready" && !recordingLocked && keysTrack && keysReview) {
+      const ok = keysReview.code === "line-ok" || keysReview.code === "drums-ok";
+      const msgKey =
+        keysReview.code === "short" ? "keysShort"
+        : keysReview.code === "same" ? "keysSame"
+        : keysReview.code === "leap" ? "keysLeap"
+        : keysReview.code === "drums-one" ? "keysDrumsOne"
+        : keysReview.code === "drums-ok" ? "keysDrumsOk"
+        : "keysLineOk";
+      return {
+        key: `keys-${keysTrack.id}-${keysReview.code}-${keysReview.count}`,
+        mood: ok ? "done" : "thinking",
+        text: tBitek(`msg.${msgKey}`, { count: keysReview.count }),
+        actions: [],
+      };
+    }
     if (offer !== "hidden") {
       const text =
         offer === "ready"
