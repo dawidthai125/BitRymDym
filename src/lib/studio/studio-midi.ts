@@ -182,8 +182,11 @@ export function bassLineAt(playheadMs: number, bpm: number): StudioMidiV1 {
 
 /**
  * One click while key-record is on. The first note snaps to the beat at the playhead.
- * The next click is one beat later, in the project tempo. A different instrument
- * does not wipe notes that are already on the track.
+ * Without `sinceMs`, the next click is one grid step later.
+ * With `sinceMs` (milliseconds since the previous click), the note lands on the
+ * grid the way the player timed it: a very short gap stays on the same beat (a chord),
+ * a longer gap leaves the rest. Drums use an eighth-note grid when `gridBeats` is 0.5.
+ * A different instrument does not wipe notes that are already on the track.
  */
 export function appendPlayedNote(input: {
   midi: StudioMidiV1 | null | undefined;
@@ -191,6 +194,8 @@ export function appendPlayedNote(input: {
   pitch: number;
   playheadMs: number;
   bpm: number;
+  sinceMs?: number;
+  gridBeats?: number;
 }): { ok: true; midi: StudioMidiV1 } | { ok: false; reason: "other" | "full" | "range" } {
   const current = input.midi && input.midi.notes.length > 0 ? input.midi : null;
   if (current && current.instrument !== input.instrument) return { ok: false, reason: "other" };
@@ -200,9 +205,14 @@ export function appendPlayedNote(input: {
   const notes = current?.notes ?? [];
   if (notes.length >= MIDI_LIMITS.maxNotes) return { ok: false, reason: "full" };
   const beat = quarterMs(input.bpm);
+  const grid = Math.max(1, Math.round(beat * (input.gridBeats === 0.5 ? 0.5 : 1)));
   const dur = Math.max(1, Math.round(beat * (input.instrument === "drums" ? 0.45 : 0.9)));
   const last = notes[notes.length - 1];
-  const t = last ? last.t + beat : Math.floor(atPlayhead(input.playheadMs) / beat) * beat;
+  let t = last ? last.t + grid : Math.floor(atPlayhead(input.playheadMs) / beat) * beat;
+  if (last && typeof input.sinceMs === "number" && Number.isFinite(input.sinceMs) && input.sinceMs >= 0) {
+    t = last.t + Math.round(input.sinceMs / grid) * grid;
+  }
+  if (notes.some((note) => note.t === t && note.pitch === input.pitch)) t += grid;
   const next = keepOnTimeline([
     ...notes,
     { t, dur, pitch: input.pitch, vel: input.instrument === "drums" ? 0.9 : 0.8 },

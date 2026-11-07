@@ -130,6 +130,33 @@ describe("studio midi", () => {
       bpm: 120,
     });
     expect(blocked.ok).toBe(false);
+    const chord = appendPlayedNote({
+      midi: first.ok ? first.midi : null,
+      instrument: "piano",
+      pitch: 64,
+      playheadMs: 0,
+      bpm: 120,
+      sinceMs: 40,
+    });
+    expect(chord.ok && chord.midi.notes.map((n) => n.t)).toEqual([0, 0]);
+    const rested = appendPlayedNote({
+      midi: first.ok ? first.midi : null,
+      instrument: "piano",
+      pitch: 67,
+      playheadMs: 0,
+      bpm: 120,
+      sinceMs: 1000,
+    });
+    expect(rested.ok && rested.midi.notes.map((n) => n.t)).toEqual([0, 1000]);
+    const hats = appendPlayedNote({
+      midi: { v: 1, instrument: "drums", notes: [{ t: 0, dur: 200, pitch: 42, vel: 0.9 }] },
+      instrument: "drums",
+      pitch: 42,
+      playheadMs: 0,
+      bpm: 120,
+      gridBeats: 0.5,
+    });
+    expect(hats.ok && hats.midi.notes.map((n) => n.t)).toEqual([0, 250]);
     const guitar = renderMidiNotes({
       notes: [{ t: 0, dur: 400, pitch: 64, vel: 1 }],
       instrument: "guitar",
