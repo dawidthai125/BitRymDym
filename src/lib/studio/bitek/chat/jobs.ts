@@ -15,11 +15,11 @@ import {
   type BitekTrackFx,
 } from "./types";
 
-const VOCAL_ONLY: readonly BitekTrackFx[] = ["compressor", "highpass", "deesser", "gate"];
+const VOCAL_ONLY: readonly BitekTrackFx[] = ["compressor", "highpass", "deesser", "gate", "harmony"];
 
 const FX_NAME: Record<BitekLang, Record<BitekTrackFx, string>> = {
-  pl: { eq: "EQ", compressor: "kompresor", highpass: "filtr dolny", deesser: "de-esser", gate: "bramka" },
-  en: { eq: "EQ", compressor: "compressor", highpass: "low cut", deesser: "de-esser", gate: "gate" },
+  pl: { eq: "EQ", compressor: "kompresor", highpass: "filtr dolny", deesser: "de-esser", gate: "bramka", harmony: "harmonię" },
+  en: { eq: "EQ", compressor: "compressor", highpass: "low cut", deesser: "de-esser", gate: "gate", harmony: "harmony" },
 };
 
 const FIX_NAME: Record<BitekLang, Record<BitekMixFixId, string>> = {
@@ -142,6 +142,15 @@ export function validateBitekJobs(raw: unknown, ctx: BitekChatContext): BitekJob
         kind: "masterClarity",
         patch,
         label: lang === "pl" ? `Brzmienie i czystość: ${names}` : `Tone and clarity: ${names}`,
+      });
+      continue;
+    }
+    if (r.kind === "vocalCleanup") {
+      if (ctx.step !== "mix") continue;
+      if (!ctx.tracks.some((t) => BITEK_TUNE_ROLES.includes(t.role) && t.hasAudio !== false)) continue;
+      out.push({
+        kind: "vocalCleanup",
+        label: lang === "pl" ? "Zdejmij szum i pogłos pokoju z wokalu" : "Clean noise and room reverb off the vocal",
       });
       continue;
     }

@@ -11,6 +11,7 @@ import {
   type StudioFxDeesserParams,
   type StudioFxGateParams,
   type StudioFxTuneParams,
+  type StudioFxHarmonyParams,
   type StudioFxRiderParams,
   type StudioFxSaturateParams,
   type StudioFxHighpassParams,
@@ -35,6 +36,7 @@ import {
   linearQToWebAudioDb,
   LR4_SECTION_Q,
 } from "@/lib/studio/studio-fx-stage2-dsp";
+import { createHarmonyNode } from "@/lib/studio/mix-analysis/harmony-worklet";
 import { createRiderNode } from "@/lib/studio/mix-analysis/rider-worklet";
 import { toTuneCoreParams } from "@/lib/studio/tune/tune";
 import { createTuneNode } from "@/lib/studio/tune/tune-worklet";
@@ -622,6 +624,23 @@ function buildTuneSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): Bui
   });
 }
 
+function buildHarmonySlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const params = effect.params as StudioFxHarmonyParams;
+  const node = createHarmonyNode(ctx, params);
+  if (!node) return buildWireSlot(ctx, { status: "ready", effect });
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    input.connect(node as unknown as StudioFxConnectable);
+    node.connect(wet);
+    return {
+      nodes: [node as unknown as StudioFxConnectable],
+      names: ["worklet-brd-harmony"],
+      apply(next) {
+        node.port.postMessage({ params: next.params as StudioFxHarmonyParams });
+      },
+    };
+  });
+}
+
 function buildRiderSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
   const params = effect.params as StudioFxRiderParams;
   const node = createRiderNode(ctx, params);
@@ -653,6 +672,7 @@ function tryBuildProcessSlot(
   if (effect.type === "deesser") return buildDeesserSlot(ctx, effect);
   if (effect.type === "gate") return buildGateSlot(ctx, effect);
   if (effect.type === "tune") return buildTuneSlot(ctx, effect);
+  if (effect.type === "harmony") return buildHarmonySlot(ctx, effect);
   if (effect.type === "rider") return buildRiderSlot(ctx, effect);
   if (effect.type === "saturate") return buildSaturateSlot(ctx, effect);
   if (effect.type === "pocket") return buildWireSlot(ctx, { status: "ready", effect });

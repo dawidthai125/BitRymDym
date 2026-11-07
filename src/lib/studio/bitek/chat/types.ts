@@ -32,7 +32,7 @@ export type BitekTakeLevel = { peakDb: number; clipping: boolean };
 export const BITEK_MIX_FIXES = ["gain", "balance", "compression", "eq", "deesser", "denoise", "panorama", "space"] as const;
 export type BitekMixFixId = (typeof BITEK_MIX_FIXES)[number];
 
-export const BITEK_TRACK_FX = ["eq", "compressor", "highpass", "deesser", "gate"] as const;
+export const BITEK_TRACK_FX = ["eq", "compressor", "highpass", "deesser", "gate", "harmony"] as const;
 export type BitekTrackFx = (typeof BITEK_TRACK_FX)[number];
 
 export const BITEK_MASTER_STYLES = ["warm", "bright", "loud", "dynamic"] as const;
@@ -47,7 +47,8 @@ export type BitekJob =
   | { kind: "trackFx"; trackRef: string; effect: BitekTrackFx; label: string }
   | { kind: "masterStyle"; style: BitekMasterStyle; label: string }
   | { kind: "masterTarget"; target: BitekMasterTarget; label: string }
-  | { kind: "masterClarity"; patch: Partial<Record<BitekMasterSetting, number>>; label: string };
+  | { kind: "masterClarity"; patch: Partial<Record<BitekMasterSetting, number>>; label: string }
+  | { kind: "vocalCleanup"; label: string };
 
 export type BitekTuneLevel = 0 | 1 | 2;
 /** Track roles BITEK may tune (pitch correction is a vocal effect). */

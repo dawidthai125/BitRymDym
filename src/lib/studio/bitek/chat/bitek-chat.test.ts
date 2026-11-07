@@ -161,6 +161,11 @@ describe("rules intents", () => {
     expect(bitekRulesChat("więcej pogłosu na adlibach", ctx).proposals).toEqual([]);
     expect(bitekRulesChat("louder vocal", { ...ctx, lang: "en" }).reply).toMatch(/Apply/);
   });
+
+  it("noise starts vocal cleanup and harmony is a track effect", () => {
+    expect(bitekRulesChat("usuń szum z wokalu", ctx).jobs?.[0]).toMatchObject({ kind: "vocalCleanup" });
+    expect(bitekRulesChat("dodaj harmonię", ctx).jobs?.[0]).toMatchObject({ kind: "trackFx", trackRef: "t2", effect: "harmony" });
+  });
 });
 
 describe("providers", () => {

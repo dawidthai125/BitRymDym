@@ -14,6 +14,7 @@ import {
   type BitekStoredChange,
 } from "@/lib/studio/bitek/chat/decisions";
 import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
+import { emitStudioTakeSourceChanged } from "@/lib/studio/cleanup/cleanup-events";
 import { addStudioFxToChain } from "@/lib/studio/studio-fx-chain";
 import { bitekTuneChain } from "@/lib/studio/bitek/chat/tune-apply";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
@@ -242,6 +243,70 @@ export function StudioBitekChat({
     if (job.kind === "masterTarget") {
       if (!client.applyMasterTarget?.(job.target)) {
         setError(t("juzJest"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
+    if (job.kind === "vocalCleanup") {
+      const ids = client.vocalTakeIds.slice(0, 2);
+      if (!ids.length) {
+        setError(t("szumPusto"));
+        return;
+      }
+      const base = `/api/studio/projects/${projectId}/cleanup`;
+      const wanted = new Map<string, string | null>();
+      for (const takeId of ids) {
+        const res = await fetch(base, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ takeId, settings: { noise: 0.7, reverb: 0.35 } }),
+        });
+        const body = (await res.json().catch(() => null)) as { error?: string; job?: { id?: string } } | null;
+        if (body?.error === "daily_limit" || res.status === 429) {
+          if (!wanted.size) setError(t("szumLimit"));
+          break;
+        }
+        if (body?.error === "in_progress") {
+          wanted.set(takeId, null);
+          continue;
+        }
+        if (!res.ok || !body?.job?.id) {
+          if (!wanted.size) setError(t("nieDaSie"));
+          break;
+        }
+        wanted.set(takeId, body.job.id);
+      }
+      if (!wanted.size) return;
+      const deadline = Date.now() + 45000;
+      const done = new Set<string>();
+      let applied = 0;
+      while (Date.now() < deadline) {
+        const list = (await fetch(base).then((r) => r.json()).catch(() => null)) as { jobs?: { id: string; takeId: string; status: string; applied: boolean }[] } | null;
+        const jobs = list?.jobs ?? [];
+        let pending = false;
+        let seen = 0;
+        for (const [takeId, jobId] of wanted) {
+          const job = jobId ? jobs.find((j) => j.id === jobId) : jobs.find((j) => j.takeId === takeId);
+          if (!job) continue;
+          seen += 1;
+          if (job.status === "queued" || job.status === "running") pending = true;
+          if (job.status !== "succeeded" || job.applied || done.has(job.id)) continue;
+          const patch = await fetch(base, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ takeId: job.takeId, jobId: job.id }),
+          });
+          if (!patch.ok) continue;
+          done.add(job.id);
+          emitStudioTakeSourceChanged(job.takeId);
+          applied += 1;
+        }
+        if (seen === wanted.size && !pending) break;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      if (!applied) {
+        setError(t("nieDaSie"));
         return;
       }
       store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });

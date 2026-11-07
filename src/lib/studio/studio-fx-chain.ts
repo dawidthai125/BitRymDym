@@ -24,6 +24,8 @@ export const STUDIO_FX_TYPES = [
   "tune",
   /** Vocal rider: quiet words up, loud words down. Track only. Not a LUFS preset. */
   "rider",
+  /** Quiet fifth below and minor third above. Track only. The lead stays in front. */
+  "harmony",
   /** Vocal warmth. Track only. */
   "saturate",
   /** Rap pocket: section level, beat-mid duck, hook double. Track only. The slot itself is dry; renderMixStereo applies it. */
@@ -103,6 +105,8 @@ export type StudioFxTuneParams = {
   amount: number;
 };
 
+export type StudioFxHarmonyParams = { amount: number };
+
 export type StudioFxRiderParams = {
   /** 0 = dry, 1 = full ride toward the phrase. */
   amount: number;
@@ -160,6 +164,7 @@ export type StudioFxParamsByType = {
   gate: StudioFxGateParams;
   tune: StudioFxTuneParams;
   rider: StudioFxRiderParams;
+  harmony: StudioFxHarmonyParams;
   saturate: StudioFxSaturateParams;
   pocket: StudioFxPocketParams;
 };
@@ -187,6 +192,7 @@ export type StudioFxInstance =
       notes?: StudioTuneNoteEdit[];
     }
   | { id: string; type: "rider"; enabled: boolean; params: StudioFxRiderParams }
+  | { id: string; type: "harmony"; enabled: boolean; params: StudioFxHarmonyParams }
   | { id: string; type: "saturate"; enabled: boolean; params: StudioFxSaturateParams }
   | { id: string; type: "pocket"; enabled: boolean; params: StudioFxPocketParams };
 
@@ -266,6 +272,7 @@ const DEESSER_KEYS = new Set(["frequencyHz", "thresholdDb", "ratio"]);
 const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "releaseMs"]);
 const TUNE_KEYS = new Set(["keyRoot", "scale", "retuneMs", "amount"]);
 const RIDER_KEYS = new Set(["amount", "maxBoostDb", "maxCutDb"]);
+const HARMONY_KEYS = new Set(["amount"]);
 const SATURATE_KEYS = new Set(["drive", "mix"]);
 const POCKET_KEYS = new Set(["verseDb", "hookDb", "depth", "doubleMs", "doubleCents", "doubleDb"]);
 
@@ -276,6 +283,7 @@ export const STUDIO_FX_STAGE2_RANGES = {
   gate: { thresholdDb: [-90, -20], rangeDb: [0, 40], releaseMs: [10, 1000] },
   tune: { keyRoot: [0, 11], scale: [0, 2], retuneMs: [0, 400], amount: [0, 1] },
   rider: { amount: [0, 1], maxBoostDb: [0, 12], maxCutDb: [0, 12] },
+  harmony: { amount: [0, 1] },
   saturate: { drive: [0, 1], mix: [0, 1] },
   pocket: { verseDb: [-12, 6], hookDb: [-12, 6], depth: [0, 1], doubleMs: [15, 25], doubleCents: [0, 25], doubleDb: [-24, -6] },
 } as const;
@@ -303,6 +311,7 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     // Natural style (Free) — chromatic until a key is known.
     tune: { keyRoot: 0, scale: 2, retuneMs: 100, amount: 0.85 },
     rider: { amount: 0.65, maxBoostDb: 6, maxCutDb: 6 },
+    harmony: { amount: 0.7 },
     saturate: { drive: 0.35, mix: 0.55 },
     pocket: { verseDb: -1.5, hookDb: 0, depth: 0.55, doubleMs: 20, doubleCents: 12, doubleDb: -14 },
   };
@@ -322,6 +331,7 @@ export const STUDIO_FX_REGISTRY: Record<
   gate: { track: true, master: true },
   tune: { track: true, master: false },
   rider: { track: true, master: false },
+  harmony: { track: true, master: false },
   saturate: { track: true, master: false },
   pocket: { track: true, master: false },
 };
@@ -566,6 +576,14 @@ function parseEffect(
       type,
       enabled: o.enabled,
       params: parseRanged(o.params, STUDIO_FX_DEFAULTS.gate, GATE_KEYS, STUDIO_FX_STAGE2_RANGES.gate),
+    };
+  }
+  if (type === "harmony") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.harmony, HARMONY_KEYS, STUDIO_FX_STAGE2_RANGES.harmony),
     };
   }
   if (type === "rider") {
@@ -921,6 +939,10 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
       slider("amount", "Siła", 0, 1, 0.01, ""),
     ],
   },
+  harmony: {
+    labelPl: "Harmonia",
+    params: [slider("amount", "Ilość", 0, 1, 0.01, "")],
+  },
   rider: {
     labelPl: "Wyrównanie wokalu",
     params: [
@@ -1048,6 +1070,8 @@ export function createStudioFxInstance(
       return { id, type, enabled: true, params: defaultStudioFxParams("tune") };
     case "rider":
       return { id, type, enabled: true, params: defaultStudioFxParams("rider") };
+    case "harmony":
+      return { id, type, enabled: true, params: defaultStudioFxParams("harmony") };
     case "saturate":
       return { id, type, enabled: true, params: defaultStudioFxParams("saturate") };
     case "pocket":

@@ -15,6 +15,7 @@
  * - bypass / skip slots: passthrough (matches live dry/wire audible path)
  */
 
+import { VocalHarmonyCore } from "@/lib/studio/mix-analysis/vocal-harmony";
 import { VocalLevelCore } from "@/lib/studio/mix-analysis/vocal-level";
 import {
   interpretStudioFxChainForPlayback,
@@ -630,6 +631,31 @@ export function createTuneProcessorAtRate(
   };
 }
 
+function createHarmonyProcessor(
+  effect: Extract<StudioFxInstance, { type: "harmony" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const core = new VocalHarmonyCore(sampleRate, effect.params);
+  return {
+    type: "harmony",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: 32,
+    process(sample) {
+      const left = new Float32Array([sample.left]);
+      const right = new Float32Array([sample.right]);
+      core.processBlock(left, right, left, right, 1);
+      return { left: left[0]!, right: right[0]! };
+    },
+    processBuffer(left, right) {
+      core.processBlock(left, right, left, right, left.length);
+    },
+    reset() {
+      core.reset();
+    },
+  };
+}
+
 function createRiderProcessor(
   effect: Extract<StudioFxInstance, { type: "rider" }>,
   sampleRate: number,
@@ -709,6 +735,9 @@ function buildProcessorForReady(
   }
   if (effect.type === "tune") {
     return createTuneProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "harmony") {
+    return createHarmonyProcessor(effect, sampleRate);
   }
   if (effect.type === "rider") {
     return createRiderProcessor(effect, sampleRate);

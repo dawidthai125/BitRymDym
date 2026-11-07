@@ -174,6 +174,34 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
     return done(tx.clarity, [], [{ kind: "mixFix", fixes, label: "" }]);
   }
 
+  const CLEAN = /szum|odszum|hiss|\bnoise\b|wyczysc wokal|usun szum/;
+  if (has(m, CLEAN) && !has(m, BEAT)) {
+    const vocals = byRole(ctx, [...BITEK_TUNE_ROLES]);
+    if (!vocals.length) return missing([...BITEK_TUNE_ROLES]);
+    return done(
+      ctx.lang === "pl"
+        ? "Puszczę czyszczenie szumu i pogłosu pokoju na wokalu. Kliknij „Zastosuj”. To liczy się do dziennego limitu czyszczenia."
+        : "I'll clean noise and room reverb off the vocal. Hit Apply. This uses today's cleanup limit.",
+      [],
+      [{ kind: "vocalCleanup", label: "" }],
+    );
+  }
+
+  const HARMONY = /harmoni|harmony|tercj|kwint/;
+  if (has(m, HARMONY)) {
+    const target = byRole(ctx, ["lead_vocal"]);
+    if (!target.length) return missing(["lead_vocal"]);
+    const track = target[0]!;
+    if (track.effects?.includes("harmony")) return done(tx.already(track.name));
+    return done(
+      ctx.lang === "pl"
+        ? `Dodam cichą harmonię na ${track.name}: kwinta w dół i tercja w górę. Kliknij „Zastosuj”.`
+        : `I'll add a quiet harmony on ${track.name}: a fifth below and a third above. Hit Apply.`,
+      [],
+      [{ kind: "trackFx", trackRef: track.ref, effect: "harmony", label: "" }],
+    );
+  }
+
   const FX_ASK: { re: RegExp; effect: BitekTrackFx }[] = [
     { re: /de-?ess|sybil|sycz/, effect: "deesser" },
     { re: /kompres|compressor/, effect: "compressor" },

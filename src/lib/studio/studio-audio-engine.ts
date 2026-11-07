@@ -65,6 +65,7 @@ import {
   type StudioMeterSnapshot,
 } from "@/lib/studio/studio-meter";
 import { compensateStudioTuneLatency, enabledTuneCount } from "@/lib/studio/tune/tune";
+import { ensureHarmonyWorklet, isHarmonyWorkletReady } from "@/lib/studio/mix-analysis/harmony-worklet";
 import { ensureRiderWorklet, isRiderWorkletReady } from "@/lib/studio/mix-analysis/rider-worklet";
 import { ensureTuneWorklet, isTuneWorkletReady } from "@/lib/studio/tune/tune-worklet";
 import {
@@ -782,7 +783,7 @@ export class StudioAudioEngine {
       this.setLifecycle("ready");
       if (this.rawDocument) {
         this.withTuneCompensation(this.rawDocument);
-        this.ensureRiderWorklet(this.rawDocument);
+        this.ensurePreviewWorklets(this.rawDocument);
       }
       if (this.preferredSinkId != null) {
         void this.applyPreferredSinkId();
@@ -927,7 +928,7 @@ export class StudioAudioEngine {
 
   setDocument(rawDocument: StudioEngineDocument): void {
     this.rawDocument = rawDocument;
-    this.ensureRiderWorklet(rawDocument);
+    this.ensurePreviewWorklets(rawDocument);
     const document = this.withTuneCompensation(this.withTuneBakes(rawDocument));
     this.document = document;
     const clipIds = new Set(document.clips.map((c) => c.id));
@@ -1680,19 +1681,29 @@ export class StudioAudioEngine {
    * offline render). Only once the worklet is live; until then tune is a dry
    * wire and nothing is shifted. Kicks off the worklet load when needed.
    */
-  /** Loads the rider worklet once. Until then the slot is dry. Zero latency, so clips stay put. */
-  private ensureRiderWorklet(document: StudioEngineDocument): void {
+  /** Loads rider and harmony worklets once. Until then those slots are dry. */
+  private ensurePreviewWorklets(document: StudioEngineDocument): void {
+    this.loadInsertWorklet(document, "rider", isRiderWorkletReady, ensureRiderWorklet);
+    this.loadInsertWorklet(document, "harmony", isHarmonyWorkletReady, ensureHarmonyWorklet);
+  }
+
+  private loadInsertWorklet(
+    document: StudioEngineDocument,
+    type: string,
+    isReady: (ctx: object) => boolean,
+    ensure: (ctx: object) => Promise<boolean>,
+  ): void {
     const ctx = this.ctx;
     if (!ctx) return;
     const needs = document.tracks.some((t) => {
       const effects = (t.effectsChain as { effects?: { type?: string; enabled?: boolean }[] } | null)?.effects;
-      return Array.isArray(effects) && effects.some((e) => e.type === "rider" && e.enabled !== false);
+      return Array.isArray(effects) && effects.some((e) => e.type === type && e.enabled !== false);
     });
-    if (!needs || isRiderWorkletReady(ctx)) return;
-    void ensureRiderWorklet(ctx).then((ok) => {
+    if (!needs || isReady(ctx)) return;
+    void ensure(ctx).then((ok) => {
       if (!ok || this.ctx !== ctx || this.lifecycle === "disposed") return;
       for (const graph of this.tracks.values()) {
-        if (!graph.fx?.inspect().some((slot) => slot.type === "rider")) continue;
+        if (!graph.fx?.inspect().some((slot) => slot.type === type)) continue;
         graph.fx.dispose();
         graph.fx = null;
         graph.fingerprint = "";

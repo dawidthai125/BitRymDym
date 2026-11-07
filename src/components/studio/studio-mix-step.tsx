@@ -781,6 +781,19 @@ export function StudioMixStep({
                   size="sm"
                   className="min-h-9 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
+                  aria-describedby="studio-mix-harmony-hint"
+                  data-testid="studio-mix-harmony"
+                  onClick={() => void runFix(["harmony"], "harmony", t("harmonia"))}
+                >
+                  {fixing === "harmony" ? t("poprawTrwa") : t("harmonia")}
+                </Button>
+              ) : null}
+              {onApplyAutofix ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-9 w-full sm:w-auto"
+                  disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-rider-hint"
                   data-testid="studio-mix-rider"
                   onClick={() => void runFix(["rider"], "rider", t("wyrownanie"))}
@@ -802,6 +815,7 @@ export function StudioMixStep({
                 </Button>
               ) : null}
               <span id="studio-mix-pocket-hint" className="sr-only">{t("kieszenOpis")}</span>
+              <span id="studio-mix-harmony-hint" className="sr-only">{t("harmoniaOpis")}</span>
               <span id="studio-mix-rider-hint" className="sr-only">{t("wyrownanieOpis")}</span>
               <span id="studio-mix-fix-all-hint" className="sr-only">{t("poprawWszystkoOpis")}</span>
             </div>

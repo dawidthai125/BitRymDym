@@ -46,7 +46,7 @@ export const MIX_AUTOFIX_IDS = [
 export type MixAutofixId = (typeof MIX_AUTOFIX_IDS)[number];
 
 /** Pocket and the vocal rider are separate buttons. They are not part of „Popraw wszystko”. */
-export type MixPlanFixId = MixAutofixId | "pocket" | "rider";
+export type MixPlanFixId = MixAutofixId | "pocket" | "rider" | "harmony";
 
 /** Which fixes a card's „Popraw” runs. `stereo` has no automatic fix. */
 export const MIX_CARD_FIXES: Record<MixCardId, readonly MixAutofixId[]> = {
@@ -79,6 +79,7 @@ const FX_ORDER: readonly StudioFxType[] = [
   "highpass",
   "gate",
   "tune",
+  "harmony",
   "eq",
   "rider",
   "compressor",
@@ -418,6 +419,7 @@ const RUNNERS: Record<MixPlanFixId, (ctx: Ctx) => void> = {
   space: fixSpace,
   pocket: fixPocket,
   rider: fixRider,
+  harmony: fixHarmony,
 };
 
 function fixPocket(ctx: Ctx): void {
@@ -460,6 +462,23 @@ function fixRider(ctx: Ctx): void {
   if (changed) note(ctx, "rider", {});
 }
 
+function fixHarmony(ctx: Ctx): void {
+  const leads = ctx.state.tracks.filter((t) => t.role === "lead_vocal");
+  if (leads.length === 0) return;
+  let changed = false;
+  for (const t of leads) {
+    const before = JSON.stringify(t.chain);
+    const next = upsertFx(t.chain, "harmony", (p) => p, ctx.createId);
+    if (!next) {
+      note(ctx, "chainFull", { track: t.name });
+      continue;
+    }
+    t.chain = next;
+    if (JSON.stringify(t.chain) !== before) changed = true;
+  }
+  if (changed) note(ctx, "harmony", {});
+}
+
 /** Effective BPM for sync (project tempo, sane fallback). */
 export function autofixBpm(doc: StudioProjectDocument): number {
   const bpm = doc.project.tempoBpm;
@@ -495,7 +514,7 @@ export function planMixAutofix(params: {
     createId: params.createId ?? (() => crypto.randomUUID()),
     notes: [],
   };
-  const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider"] as const).filter((id) => params.fixes.includes(id));
+  const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony"] as const).filter((id) => params.fixes.includes(id));
   const unchanged: MixPlanFixId[] = [];
   for (const id of order) {
     const before = ctx.notes.length;

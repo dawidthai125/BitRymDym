@@ -32,6 +32,8 @@ export type BitekClientContext = {
   trackIdByRef: Record<string, string>;
   /** Stays in the browser: current FX chain per real track id (BRD Tune proposals). */
   effectsChainByTrackId: Record<string, StudioFxChainV1>;
+  /** Vocal takes in this project. Stays in the browser. Used to queue the existing cleanup. */
+  vocalTakeIds: string[];
   /** Mix step only: plan measured fixes and apply them through the existing mix-working path. */
   applyMixFix?: (fixes: BitekMixFixId[]) => Promise<BitekMixFixResult>;
   /** Mastering step only: apply a whole-song style through the existing setting controls. */
@@ -63,6 +65,19 @@ export function buildBitekClientContext(params: {
 }): BitekClientContext {
   const trackIdByRef: Record<string, string> = {};
   const effectsChainByTrackId: Record<string, StudioFxChainV1> = {};
+  const vocalTakeIds: string[] = [];
+  const seenTakes = new Set<string>();
+  const leadFirst = [...params.doc.clips].sort((a, b) => {
+    const role = (id: string) => params.doc.tracks.find((t) => t.id === id)?.trackRole;
+    return (role(a.trackId) === "lead_vocal" ? 0 : 1) - (role(b.trackId) === "lead_vocal" ? 0 : 1);
+  });
+  for (const clip of leadFirst) {
+    if (clip.sourceKind !== "TAKE" || !clip.sourceTakeId || seenTakes.has(clip.sourceTakeId)) continue;
+    const role = params.doc.tracks.find((t) => t.id === clip.trackId)?.trackRole ?? "";
+    if (!BITEK_TUNE_ROLES.includes(role)) continue;
+    seenTakes.add(clip.sourceTakeId);
+    vocalTakeIds.push(clip.sourceTakeId);
+  }
   const tracks = params.doc.tracks.map((t, i) => {
     const ref = `t${i + 1}`;
     trackIdByRef[ref] = t.id;
@@ -93,6 +108,7 @@ export function buildBitekClientContext(params: {
   return {
     trackIdByRef,
     effectsChainByTrackId,
+    vocalTakeIds,
     context: {
       lang: params.lang,
       step: params.step,
