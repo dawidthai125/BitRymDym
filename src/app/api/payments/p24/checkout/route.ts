@@ -5,6 +5,8 @@ import { AuthError, requireUser } from "@/lib/auth/session";
 import { startCheckout } from "@/lib/payments/checkout-service";
 import { isP24Configured } from "@/lib/payments/p24-config";
 import { isP24Redirect } from "@/lib/payments/p24-url";
+import { isPayuConfigured, readPayuConfig } from "@/lib/payments/payu-config";
+import { customerIpFromForwarded, isPayuRedirectFor } from "@/lib/payments/payu-url";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const runtime = "nodejs";
@@ -28,8 +30,13 @@ function localeOf(value: unknown): "pl" | "en" {
 }
 
 export async function POST(request: Request) {
-  if (!readPlanPaymentsAvailable() || !isP24Configured()) {
+  const payu = isPayuConfigured();
+  if (!readPlanPaymentsAvailable() || (!payu && !isP24Configured())) {
     return NextResponse.json({ ok: false, code: "PAYMENTS_OFF" }, { status: 403, headers: { "cache-control": "no-store" } });
+  }
+  const customerIp = customerIpFromForwarded(request.headers.get("x-forwarded-for"));
+  if (payu && !customerIp) {
+    return NextResponse.json({ ok: false, code: "PROVIDER" }, { status: 502, headers: { "cache-control": "no-store" } });
   }
   if (!sameOrigin(request)) {
     return NextResponse.json({ ok: false, code: "ORIGIN" }, { status: 403, headers: { "cache-control": "no-store" } });
@@ -58,12 +65,16 @@ export async function POST(request: Request) {
 
   const locale = localeOf(body && typeof body === "object" ? (body as { locale?: unknown }).locale : null);
   try {
-    const result = await startCheckout({ context, body, locale });
+    const result = await startCheckout({ context, body, locale, customerIp: customerIp ?? undefined });
     if (!result.ok) {
       const status = result.code === "RATE" ? 429 : result.code === "PROVIDER" ? 502 : 400;
       return NextResponse.json({ ok: false, code: result.code }, { status, headers: { "cache-control": "no-store" } });
     }
-    if (!isP24Redirect(result.redirectUrl)) {
+    const payuConfig = payu ? readPayuConfig() : null;
+    const redirectOk = payuConfig
+      ? isPayuRedirectFor(result.redirectUrl, payuConfig.sandbox)
+      : isP24Redirect(result.redirectUrl);
+    if (!redirectOk) {
       return NextResponse.json({ ok: false, code: "PROVIDER" }, { status: 502, headers: { "cache-control": "no-store" } });
     }
     return NextResponse.json({ ok: true, redirectUrl: result.redirectUrl }, { headers: { "cache-control": "no-store" } });

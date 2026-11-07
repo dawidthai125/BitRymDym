@@ -10,6 +10,9 @@ import { checkoutBlock, isLivePaid, type AddonSnapshot, type CheckoutBlock, type
 import { parseCheckoutProduct, priceGrosz, type CheckoutProduct } from "@/lib/payments/money";
 import { registerP24Transaction } from "@/lib/payments/p24-client";
 import { readP24Config } from "@/lib/payments/p24-config";
+import { registerPayuOrder } from "@/lib/payments/payu-client";
+import { readPayuConfig } from "@/lib/payments/payu-config";
+import { isCustomerIp } from "@/lib/payments/payu-url";
 import { loadAddonSnapshot, loadPlanSnapshot } from "@/lib/payments/snapshots";
 
 export type CheckoutCode =
@@ -67,10 +70,13 @@ export async function startCheckout(input: {
   context: AuthContext;
   body: unknown;
   locale: "pl" | "en";
+  customerIp?: string;
   now?: Date;
 }): Promise<CheckoutResult> {
-  const config = readP24Config();
-  if (!readPlanPaymentsAvailable() || !config) return { ok: false, code: "PAYMENTS_OFF" };
+  const payu = readPayuConfig();
+  const config = payu ? null : readP24Config();
+  if (!readPlanPaymentsAvailable() || (!payu && !config)) return { ok: false, code: "PAYMENTS_OFF" };
+  if (payu && !isCustomerIp(input.customerIp ?? "")) return { ok: false, code: "PROVIDER" };
 
   const row = input.body && typeof input.body === "object" ? (input.body as Record<string, unknown>) : null;
   const product = parseCheckoutProduct(row?.product);
@@ -107,6 +113,7 @@ export async function startCheckout(input: {
   const inserted = await admin.from("payment_orders").insert({
     user_id: input.context.userId,
     session_id: sessionId,
+    provider: payu ? "payu" : "p24",
     product_kind: product.kind,
     plan_tier: product.kind === "plan" ? product.tier : null,
     addon: product.kind === "addon" ? product.addon : null,
@@ -122,15 +129,27 @@ export async function startCheckout(input: {
   }).select("id").maybeSingle();
   if (inserted.error || !inserted.data) return { ok: false, code: "PROVIDER" };
 
-  const registered = await registerP24Transaction(config, {
-    sessionId,
-    amountGrosz,
-    description: p24Description(product, input.locale),
-    email,
-    language: input.locale,
-    urlReturn: `${origin}/premium/return/${sessionId}`,
-    urlStatus: `${origin}/api/webhooks/p24`,
-  });
+  const description = p24Description(product, input.locale);
+  const registered = payu
+    ? await registerPayuOrder(payu, {
+        sessionId,
+        amountGrosz,
+        description,
+        email,
+        language: input.locale,
+        customerIp: input.customerIp ?? "",
+        continueUrl: `${origin}/premium/return/${sessionId}`,
+        notifyUrl: `${origin}/api/webhooks/payu`,
+      })
+    : await registerP24Transaction(config!, {
+        sessionId,
+        amountGrosz,
+        description,
+        email,
+        language: input.locale,
+        urlReturn: `${origin}/premium/return/${sessionId}`,
+        urlStatus: `${origin}/api/webhooks/p24`,
+      });
   if ("error" in registered) {
     await admin.from("payment_orders").update({ status: "failed" }).eq("session_id", sessionId).eq("status", "pending");
     return { ok: false, code: "PROVIDER" };

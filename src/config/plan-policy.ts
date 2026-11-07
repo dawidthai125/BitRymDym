@@ -8,8 +8,9 @@
  * deliver policy, master quota, project limit) derives its numbers from here
  * and the server enforces them — the UI only mirrors.
  *
- * Payments: one-off Przelewy24 checkout (no card on file). The buy buttons stay
- * hidden until PLAN_PAYMENTS_AVAILABLE is on and the P24 env is set. Prices
+ * Payments: one-off checkout. PayU is the default provider. Przelewy24 is
+ * used only when PayU env is absent. No card on file. Buy buttons stay hidden
+ * until PLAN_PAYMENTS_AVAILABLE is on and that provider's env is set. Prices
  * below are the gross PLN amounts the server charges — the client never
  * supplies an amount.
  */
@@ -455,7 +456,7 @@ const PAYMENTS_ON = new Set(["1", "true", "yes", "on"]);
 
 /**
  * Checkout flag. Default off, so prices stay display-only until this is set
- * in the environment (and P24 credentials exist — see isP24Configured).
+ * in the environment (and PayU or P24 credentials exist).
  * Read at request time; a Vercel change still needs a redeploy because Next
  * inlines server env at build.
  */
