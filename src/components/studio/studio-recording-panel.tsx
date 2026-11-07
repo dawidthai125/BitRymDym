@@ -16,7 +16,9 @@ import { useStudioTransport } from "@/components/studio/studio-transport-provide
 import { StudioLyricsCard } from "@/components/studio/studio-lyrics-card";
 import { StudioStemImport } from "@/components/studio/studio-stem-import";
 import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
+import { StudioPlayKeys } from "@/components/studio/studio-play-keys";
 import { StudioSampleDesk } from "@/components/studio/studio-sample-desk";
+import type { StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { placeOwnedStudioSample } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
@@ -169,6 +171,7 @@ export function StudioRecordingPanel({
   onRecordRequestHandled,
   stemLimit = 0,
   trackLimit = 0,
+  onSaveTrackMidi,
 }: {
   projectId: string;
   /** Phase 7.1.6 — read docRef version at executor start (not stale prop). */
@@ -218,6 +221,8 @@ export function StudioRecordingPanel({
   stemLimit?: number;
   /** Plan track cap (Bit not counted) — free slots for imported stems. */
   trackLimit?: number;
+  /** Key clicks become MIDI notes on the armed track. */
+  onSaveTrackMidi?: (trackId: string, midi: StudioMidiV1) => void;
 }) {
   const tl = useLibText();
   const tr = useTranslations("studio.studioRecordingPanel");
@@ -2558,6 +2563,15 @@ export function StudioRecordingPanel({
       </>
       ) : null}
 
+      <StudioPlayKeys
+        disabled={!trackId || Boolean(workflowBusy)}
+        midi={tracks.find((track) => track.id === trackId)?.midi ?? null}
+        bpm={transport.tempoBpm}
+        getPlayheadMs={transport.getPlayheadMs}
+        onCommit={(next) => {
+          if (trackId) onSaveTrackMidi?.(trackId, next);
+        }}
+      />
       <StudioSampleDesk
         trackId={trackId}
         disabled={Boolean(workflowBusy)}

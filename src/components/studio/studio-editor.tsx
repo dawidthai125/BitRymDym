@@ -2605,6 +2605,7 @@ function StudioEditorInner({
           simple={recordSimple}
           stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
           trackLimit={maxTracks}
+          onSaveTrackMidi={saveTrackMidi}
           preferredTrackId={activeSelectedTrackId}
           lastScratchClipId={lastScratchClipId}
           onLastScratchClipIdChange={setLastScratchClipId}

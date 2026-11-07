@@ -14,6 +14,7 @@ export const MIDI_INSTRUMENTS = [
   "saw",
   "piano",
   "bass",
+  "guitar",
   "lead",
   "pad",
   "pluck",
@@ -24,18 +25,21 @@ export type MidiInstrument = (typeof MIDI_INSTRUMENTS)[number];
 
 const MIDI_INSTRUMENT_SET: ReadonlySet<string> = new Set(MIDI_INSTRUMENTS);
 
-type TonalInstrument = "piano" | "bass" | "lead" | "pad" | "pluck" | "brass";
+type TonalInstrument = "piano" | "bass" | "guitar" | "lead" | "pad" | "pluck" | "brass";
 
 function isTonalInstrument(instrument: MidiInstrument): instrument is TonalInstrument {
   return (
     instrument === "piano" ||
     instrument === "bass" ||
+    instrument === "guitar" ||
     instrument === "lead" ||
     instrument === "pad" ||
     instrument === "pluck" ||
     instrument === "brass"
   );
 }
+
+export type PlayKeyInstrument = "piano" | "guitar" | "bass" | "drums";
 
 export type MidiNote = { t: number; dur: number; pitch: number; vel: number };
 
@@ -174,6 +178,37 @@ export function bassLineAt(playheadMs: number, bpm: number): StudioMidiV1 {
     vel: 0.85,
   }));
   return { v: MIDI_VERSION, instrument: "bass", notes: keepOnTimeline(notes) };
+}
+
+/**
+ * One click while key-record is on. The first note snaps to the beat at the playhead.
+ * The next click is one beat later, in the project tempo. A different instrument
+ * does not wipe notes that are already on the track.
+ */
+export function appendPlayedNote(input: {
+  midi: StudioMidiV1 | null | undefined;
+  instrument: PlayKeyInstrument;
+  pitch: number;
+  playheadMs: number;
+  bpm: number;
+}): { ok: true; midi: StudioMidiV1 } | { ok: false; reason: "other" | "full" | "range" } {
+  const current = input.midi && input.midi.notes.length > 0 ? input.midi : null;
+  if (current && current.instrument !== input.instrument) return { ok: false, reason: "other" };
+  if (!Number.isInteger(input.pitch) || input.pitch < MIDI_LIMITS.pitch.min || input.pitch > MIDI_LIMITS.pitch.max) {
+    return { ok: false, reason: "range" };
+  }
+  const notes = current?.notes ?? [];
+  if (notes.length >= MIDI_LIMITS.maxNotes) return { ok: false, reason: "full" };
+  const beat = quarterMs(input.bpm);
+  const dur = Math.max(1, Math.round(beat * (input.instrument === "drums" ? 0.45 : 0.9)));
+  const last = notes[notes.length - 1];
+  const t = last ? last.t + beat : Math.floor(atPlayhead(input.playheadMs) / beat) * beat;
+  const next = keepOnTimeline([
+    ...notes,
+    { t, dur, pitch: input.pitch, vel: input.instrument === "drums" ? 0.9 : 0.8 },
+  ]);
+  if (next.length === notes.length) return { ok: false, reason: "range" };
+  return { ok: true, midi: { v: MIDI_VERSION, instrument: input.instrument, notes: next } };
 }
 
 /** One bar: kick on 1 and 3, snare on 2 and 4, hat on every eighth. */

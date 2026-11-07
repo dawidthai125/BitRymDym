@@ -37,6 +37,7 @@ export const SAMPLE_INSTRUMENTS = [
   { id: "lead", kind: "instrument" },
   { id: "pad", kind: "instrument" },
   { id: "pluck", kind: "instrument" },
+  { id: "guitar", kind: "instrument" },
   { id: "brass", kind: "instrument" },
   { id: "kick", kind: "effect" },
   { id: "snare", kind: "effect" },

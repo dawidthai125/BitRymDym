@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -109,6 +109,34 @@ describe("studio midi", () => {
     expect(drums.notes.filter((n) => n.pitch === 36)).toHaveLength(2);
     expect(drums.notes.filter((n) => n.pitch === 38)).toHaveLength(2);
     expect(drums.notes.filter((n) => n.pitch === 42)).toHaveLength(8);
+  });
+
+  it("records key clicks on the beat and refuses a second instrument", () => {
+    const first = appendPlayedNote({ midi: null, instrument: "piano", pitch: 60, playheadMs: 150, bpm: 120 });
+    expect(first.ok && first.midi.notes.map((n) => n.t)).toEqual([0]);
+    const second = appendPlayedNote({
+      midi: first.ok ? first.midi : null,
+      instrument: "piano",
+      pitch: 64,
+      playheadMs: 0,
+      bpm: 120,
+    });
+    expect(second.ok && second.midi.notes.map((n) => n.t)).toEqual([0, 500]);
+    const blocked = appendPlayedNote({
+      midi: second.ok ? second.midi : null,
+      instrument: "guitar",
+      pitch: 52,
+      playheadMs: 0,
+      bpm: 120,
+    });
+    expect(blocked.ok).toBe(false);
+    const guitar = renderMidiNotes({
+      notes: [{ t: 0, dur: 400, pitch: 64, vel: 1 }],
+      instrument: "guitar",
+      sampleRate: 8000,
+      durationMs: 400,
+    });
+    expect(guitar.some((sample) => Math.abs(sample) > 0.05)).toBe(true);
   });
 
   it("sets a short fade on one edge and keeps the other", () => {

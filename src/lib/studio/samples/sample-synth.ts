@@ -89,6 +89,15 @@ function renderVoice(
         Math.sin(2 * Math.PI * hz * 1.005 * t) * 0.28 +
         Math.sin(2 * Math.PI * hz * 0.5 * t) * 0.2;
       sample *= env;
+    } else if (instrument === "guitar") {
+      const env = Math.exp(-t * 2.2);
+      const bite = Math.exp(-t * 16);
+      sample =
+        Math.sin(2 * Math.PI * hz * t) * 0.42 +
+        Math.sin(2 * Math.PI * hz * 2 * t) * 0.16 * bite +
+        Math.sin(2 * Math.PI * hz * 3 * t) * 0.07 * bite +
+        nextNoise() * bite * 0.07;
+      sample *= env;
     } else if (instrument === "pluck") {
       const env = Math.exp(-t * 6);
       sample = Math.sin(2 * Math.PI * hz * t) * env + nextNoise() * env * 0.15;
