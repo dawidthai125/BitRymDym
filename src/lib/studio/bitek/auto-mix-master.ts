@@ -134,6 +134,28 @@ export function nextAutoMixStep(input: {
   return "fix";
 }
 
+export type SongStep = "wait" | "analyze" | "fix" | "ask" | "stop";
+
+/**
+ * One amateur pass: measure, apply the Nova fixes once, then ask about mastering.
+ * It does not spend a master credit by itself.
+ */
+export function nextSongStep(input: {
+  failed: boolean;
+  running: boolean;
+  fixing: boolean;
+  hasFreshAnalysis: boolean;
+  canApply: boolean;
+  fixed: boolean;
+}): SongStep {
+  if (input.failed) return "stop";
+  if (input.running || input.fixing) return "wait";
+  if (!input.hasFreshAnalysis) return "analyze";
+  if (!input.canApply) return "stop";
+  if (!input.fixed) return "fix";
+  return "ask";
+}
+
 export type AutoMasterStep = "wait" | "apply-clarity" | "master" | "stop";
 
 /**

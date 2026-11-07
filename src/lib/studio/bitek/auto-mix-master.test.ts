@@ -11,6 +11,7 @@ import {
   clearAutoMixHandoff,
   nextAutoMasterStep,
   nextAutoMixStep,
+  nextSongStep,
   readAutoMixHandoff,
   readBitekAutoMixMaster,
   saveAutoMixHandoff,
@@ -92,6 +93,16 @@ describe("BITEK auto mix-mastering", () => {
     expect(nextAutoMasterStep({ ...ready, hasClarityMoves: false })).toBe("master");
     expect(nextAutoMasterStep({ ...ready, phase: "commit" })).toBe("master");
     expect(nextAutoMasterStep({ ...ready, blocked: true })).toBe("stop");
+  });
+
+  it("makes the song in one measured pass, then asks before mastering", () => {
+    const base = { failed: false, running: false, fixing: false, hasFreshAnalysis: false, canApply: true, fixed: false };
+    expect(nextSongStep({ ...base, running: true })).toBe("wait");
+    expect(nextSongStep(base)).toBe("analyze");
+    expect(nextSongStep({ ...base, hasFreshAnalysis: true })).toBe("fix");
+    expect(nextSongStep({ ...base, hasFreshAnalysis: true, canApply: false })).toBe("stop");
+    expect(nextSongStep({ ...base, hasFreshAnalysis: true, fixed: true })).toBe("ask");
+    expect(nextSongStep({ ...base, failed: true })).toBe("stop");
   });
 
   it("keeps the one-shot mix handoff on this project only", () => {

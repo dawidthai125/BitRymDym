@@ -3027,7 +3027,13 @@ function StudioEditorInner({
               </span>
             )}
             <span id="studio-go-mix-hint" className="hidden text-xs text-[var(--brd-mute)] sm:inline">
-              {tMix("przejdzDoMixuOpis")}
+              {autoMixMasterMaterial({
+                beatId: doc.project.beatId,
+                tracks: doc.tracks,
+                clips: doc.clips,
+              }).ready
+                ? tMix("przejdzDoMixuUtwor")
+                : tMix("przejdzDoMixuOpis")}
             </span>
             <Button
               type="button"

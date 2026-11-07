@@ -10,6 +10,7 @@ import {
   autoMixMasterMaterial,
   clearAutoMixHandoff,
   nextAutoMixStep,
+  nextSongStep,
   readAutoMixHandoff,
   saveAutoMasterHandoff,
 } from "@/lib/studio/bitek/auto-mix-master";
@@ -186,6 +187,8 @@ export function StudioMixStep({
   });
   const canAutofix = Boolean(onApplyAutofix);
   const [autoPhase, setAutoPhase] = useState<"run" | "ask" | "stay" | null>(null);
+  const [songPhase, setSongPhase] = useState<"run" | "ask" | "stay" | null>(null);
+  const songFixed = useRef(false);
   const goMasterRef = useRef(onGoMaster);
   const listenRef = useRef(onListen);
   useEffect(() => {
@@ -562,6 +565,37 @@ export function StudioMixStep({
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis / fix round
   }, [autoPhase, result, stale, running, fixing, fixSeq, failure, panel, canAutofix, doc, analyze, t]);
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- same one-tick dispatch as the Gold auto mix above */
+    if (songPhase !== "run") return;
+    if (autoLock.current) return;
+    const step = nextSongStep({
+      failed: Boolean(failure || panel?.kind === "error"),
+      running,
+      fixing: Boolean(fixing),
+      hasFreshAnalysis: Boolean(result && !stale),
+      canApply: canAutofix,
+      fixed: songFixed.current,
+    });
+    if (step === "wait") return;
+    if (step === "stop") {
+      setSongPhase("stay");
+      return;
+    }
+    if (step === "ask") {
+      setAbListen("after");
+      setSongPhase("ask");
+      return;
+    }
+    autoLock.current = true;
+    const job = step === "analyze" ? analyze() : runFix(NOVA_PASS_FIXES, "nova", t("zrobUtwor"));
+    if (step === "fix") songFixed.current = true;
+    void Promise.resolve(job).finally(() => {
+      autoLock.current = false;
+    });
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis or the single Nova pass
+  }, [songPhase, result, stale, running, fixing, failure, panel, canAutofix, analyze, t]);
   const [manual, setManual] = useState<ManualIssue | null>(null);
   const dismissedManual = useRef(new Set<string>());
   const mixBaseline = useRef<Parameters<typeof watchMixManual>[0]["baseline"]>(null);
@@ -648,12 +682,12 @@ export function StudioMixStep({
     };
   });
   const bubble = useMemo<BitekBubble>(() => {
-    if (autoPhase === "run") {
-      return { key: "auto-mix-run", mood: "thinking", text: tBitek("msg.autoMixTrwa") };
+    if (autoPhase === "run" || songPhase === "run") {
+      return { key: songPhase === "run" ? "song-run" : "auto-mix-run", mood: "thinking", text: tBitek("msg.autoMixTrwa") };
     }
-    if (autoPhase === "ask") {
+    if (autoPhase === "ask" || songPhase === "ask") {
       return {
-        key: "auto-mix-ask",
+        key: songPhase === "ask" ? "song-ask" : "auto-mix-ask",
         mood: "done",
         text: tBitek("msg.autoMixGotowy"),
         actions: [
@@ -759,7 +793,7 @@ export function StudioMixStep({
       details: [...msgs.slice(1).map((m) => tBitek(`msg.${m.key}`, m.params ?? {})), ...(result ? [] : [t("opis")])],
       actions,
     };
-  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, autoEnabled]);
+  }, [manual, handoff, doc, fixing, panel, fixSeq, verdict, locale, t, tBitek, running, bitekBase, analysisState, failure, stale, canAutofix, result, autofixExhausted, autoPhase, songPhase, autoEnabled]);
   useEffect(() => {
     onBitekBubble?.(bubble);
   }, [bubble, onBitekBubble]);
@@ -788,9 +822,28 @@ export function StudioMixStep({
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
+            {autoMixMasterMaterial({ beatId: doc.project.beatId, tracks: doc.tracks, clips: doc.clips }).ready && onApplyAutofix ? (
+              <Button
+                type="button"
+                size="lg"
+                className="min-h-11 px-4"
+                disabled={running || Boolean(fixing) || songPhase === "run" || autoPhase === "run"}
+                title={t("zrobUtworOpis")}
+                data-testid="studio-mix-make-song"
+                onClick={() => {
+                  songFixed.current = false;
+                  setFailure(null);
+                  setPanel(null);
+                  setSongPhase("run");
+                }}
+              >
+                {songPhase === "run" ? t("poprawTrwa") : t("zrobUtwor")}
+              </Button>
+            ) : null}
             <Button
               type="button"
               size="lg"
+              variant="outline"
               className="min-h-11 px-4"
               disabled={running}
               onClick={() => void analyze()}
