@@ -58,6 +58,8 @@ export type MixAnalysisInput = {
   sources: Record<string, MixAnalysisSource>;
   /** Raw master FX chain (JSONB v1). Applied before master gain/pan. */
   masterEffectsChain?: unknown;
+  /** Verse / hook points. The rap pocket reads them at mix sum. */
+  markers?: Array<{ kind: "verse" | "hook"; positionMs: number }>;
 };
 
 /** Offline FX chain for analysis; any failure → null (dry, never throws). */

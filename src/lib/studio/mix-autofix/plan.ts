@@ -45,6 +45,9 @@ export const MIX_AUTOFIX_IDS = [
 
 export type MixAutofixId = (typeof MIX_AUTOFIX_IDS)[number];
 
+/** Pocket is a separate button. It is not part of „Popraw wszystko”. */
+export type MixPlanFixId = MixAutofixId | "pocket";
+
 /** Which fixes a card's „Popraw” runs. `stereo` has no automatic fix. */
 export const MIX_CARD_FIXES: Record<MixCardId, readonly MixAutofixId[]> = {
   loudness: ["gain"],
@@ -81,6 +84,8 @@ const FX_ORDER: readonly StudioFxType[] = [
   "deesser",
   "delay",
   "reverb",
+  "saturate",
+  "pocket",
   "limiter",
 ];
 
@@ -91,11 +96,11 @@ export type MixAutofixNote = {
 };
 
 export type MixAutofixPlan = {
-  fixes: MixAutofixId[];
+  fixes: MixPlanFixId[];
   ops: MixWorkingOp[];
   notes: MixAutofixNote[];
   /** Fixes that had nothing to change (for "already fine" copy). */
-  unchanged: MixAutofixId[];
+  unchanged: MixPlanFixId[];
 };
 
 type TrackState = {
@@ -401,7 +406,7 @@ function fixSpace(ctx: Ctx): void {
   }
 }
 
-const RUNNERS: Record<MixAutofixId, (ctx: Ctx) => void> = {
+const RUNNERS: Record<MixPlanFixId, (ctx: Ctx) => void> = {
   gain: fixGain,
   balance: fixBalance,
   compression: fixCompression,
@@ -410,7 +415,31 @@ const RUNNERS: Record<MixAutofixId, (ctx: Ctx) => void> = {
   denoise: fixDenoise,
   panorama: fixPanorama,
   space: fixSpace,
+  pocket: fixPocket,
 };
+
+function fixPocket(ctx: Ctx): void {
+  const leads = ctx.state.tracks.filter((t) => t.role === "lead_vocal");
+  if (leads.length === 0) return;
+  let changed = false;
+  for (const t of leads) {
+    const before = JSON.stringify(t.chain);
+    const sat = upsertFx(t.chain, "saturate", (p) => p, ctx.createId);
+    if (!sat) {
+      note(ctx, "chainFull", { track: t.name });
+      continue;
+    }
+    const pocket = upsertFx(sat, "pocket", (p) => p, ctx.createId);
+    if (!pocket) {
+      t.chain = sat;
+      note(ctx, "chainFull", { track: t.name });
+      continue;
+    }
+    t.chain = pocket;
+    if (JSON.stringify(t.chain) !== before) changed = true;
+  }
+  if (changed) note(ctx, "pocket", {});
+}
 
 /** Effective BPM for sync (project tempo, sane fallback). */
 export function autofixBpm(doc: StudioProjectDocument): number {
@@ -422,7 +451,7 @@ export function planMixAutofix(params: {
   doc: StudioProjectDocument;
   metrics: MixMetrics;
   verdict: MixVerdict;
-  fixes: readonly MixAutofixId[];
+  fixes: readonly MixPlanFixId[];
   createId?: () => string;
 }): MixAutofixPlan {
   const { doc, metrics, verdict } = params;
@@ -447,8 +476,8 @@ export function planMixAutofix(params: {
     createId: params.createId ?? (() => crypto.randomUUID()),
     notes: [],
   };
-  const order = MIX_AUTOFIX_IDS.filter((id) => params.fixes.includes(id));
-  const unchanged: MixAutofixId[] = [];
+  const order = ([...MIX_AUTOFIX_IDS, "pocket"] as const).filter((id) => params.fixes.includes(id));
+  const unchanged: MixPlanFixId[] = [];
   for (const id of order) {
     const before = ctx.notes.length;
     RUNNERS[id](ctx);

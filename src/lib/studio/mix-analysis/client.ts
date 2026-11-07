@@ -101,6 +101,7 @@ export function buildMixAnalysisSkeleton(
       midi: t.midi,
     })),
     masterEffectsChain: doc.project.masterFxChain,
+    markers: (doc.markers ?? []).map((m) => ({ kind: m.kind, positionMs: m.positionMs })),
     clips,
     sourceClips,
   };

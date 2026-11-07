@@ -11,6 +11,7 @@ import {
   type StudioFxDeesserParams,
   type StudioFxGateParams,
   type StudioFxTuneParams,
+  type StudioFxSaturateParams,
   type StudioFxHighpassParams,
   type StudioFxDelayParams,
   type StudioFxEqParams,
@@ -631,7 +632,37 @@ function tryBuildProcessSlot(
   if (effect.type === "deesser") return buildDeesserSlot(ctx, effect);
   if (effect.type === "gate") return buildGateSlot(ctx, effect);
   if (effect.type === "tune") return buildTuneSlot(ctx, effect);
+  if (effect.type === "saturate") return buildSaturateSlot(ctx, effect);
+  if (effect.type === "pocket") return buildWireSlot(ctx, { status: "ready", effect });
   return buildDelaySlot(ctx, effect);
+}
+
+function saturateCurve(drive: number): Float32Array {
+  const n = 1024;
+  const curve = new Float32Array(n);
+  const k = 1 + Math.min(1, Math.max(0, drive)) * 12;
+  const norm = Math.tanh(k);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.tanh(x * k) / norm;
+  }
+  return curve;
+}
+
+function buildSaturateSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  if (!ctx.createWaveShaper) return buildWireSlot(ctx, { status: "bypass", effect });
+  const shaper = ctx.createWaveShaper();
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    input.connect(shaper);
+    shaper.connect(wet);
+    const apply = (fx: StudioFxInstance) => {
+      const p = fx.params as StudioFxSaturateParams;
+      shaper.curve = saturateCurve(p.drive);
+      wet.gain.value = p.mix;
+    };
+    apply(effect);
+    return { nodes: [shaper], names: ["waveshaper"], apply };
+  });
 }
 
 function structureKey(plan: StudioFxPlaybackPlan): string {

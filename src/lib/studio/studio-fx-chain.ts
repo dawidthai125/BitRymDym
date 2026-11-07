@@ -22,6 +22,10 @@ export const STUDIO_FX_TYPES = [
   "gate",
   /** Gaps P0 #1 — vocal pitch correction to the beat key (track only). */
   "tune",
+  /** Vocal warmth. Track only. */
+  "saturate",
+  /** Rap pocket: section level, beat-mid duck, hook double. Track only. The slot itself is dry; renderMixStereo applies it. */
+  "pocket",
 ] as const;
 
 export type StudioFxType = (typeof STUDIO_FX_TYPES)[number];
@@ -97,6 +101,24 @@ export type StudioFxTuneParams = {
   amount: number;
 };
 
+export type StudioFxSaturateParams = {
+  /** 0 = clean, 1 = hard. */
+  drive: number;
+  /** Wet amount 0..1. */
+  mix: number;
+};
+
+/** Numbers the mix sum reads. The insert itself does not change the live wire. */
+export type StudioFxPocketParams = {
+  verseDb: number;
+  hookDb: number;
+  /** How far beat mids duck under the vocal, 0..1. */
+  depth: number;
+  doubleMs: number;
+  doubleCents: number;
+  doubleDb: number;
+};
+
 /**
  * Gold manual note correction (BRD Tune note editor). One edited note on the
  * TRACK timeline: startMs/endMs, target pitch as fractional MIDI (cents =
@@ -128,6 +150,8 @@ export type StudioFxParamsByType = {
   deesser: StudioFxDeesserParams;
   gate: StudioFxGateParams;
   tune: StudioFxTuneParams;
+  saturate: StudioFxSaturateParams;
+  pocket: StudioFxPocketParams;
 };
 
 export type StudioFxInstance =
@@ -151,7 +175,9 @@ export type StudioFxInstance =
       params: StudioFxTuneParams;
       /** Gold manual notes (optional; absent = automatic tuning only). */
       notes?: StudioTuneNoteEdit[];
-    };
+    }
+  | { id: string; type: "saturate"; enabled: boolean; params: StudioFxSaturateParams }
+  | { id: string; type: "pocket"; enabled: boolean; params: StudioFxPocketParams };
 
 export type StudioFxChainV1 = {
   schemaVersion: 1;
@@ -228,6 +254,8 @@ const HIGHPASS_KEYS = new Set(["frequencyHz", "q"]);
 const DEESSER_KEYS = new Set(["frequencyHz", "thresholdDb", "ratio"]);
 const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "releaseMs"]);
 const TUNE_KEYS = new Set(["keyRoot", "scale", "retuneMs", "amount"]);
+const SATURATE_KEYS = new Set(["drive", "mix"]);
+const POCKET_KEYS = new Set(["verseDb", "hookDb", "depth", "doubleMs", "doubleCents", "doubleDb"]);
 
 /** Stage 2 — parameter ranges (single source for parsers + UI sliders). */
 export const STUDIO_FX_STAGE2_RANGES = {
@@ -235,6 +263,8 @@ export const STUDIO_FX_STAGE2_RANGES = {
   deesser: { frequencyHz: [4000, 10000], thresholdDb: [-60, 0], ratio: [1, 20] },
   gate: { thresholdDb: [-90, -20], rangeDb: [0, 40], releaseMs: [10, 1000] },
   tune: { keyRoot: [0, 11], scale: [0, 2], retuneMs: [0, 400], amount: [0, 1] },
+  saturate: { drive: [0, 1], mix: [0, 1] },
+  pocket: { verseDb: [-12, 6], hookDb: [-12, 6], depth: [0, 1], doubleMs: [15, 25], doubleCents: [0, 25], doubleDb: [-24, -6] },
 } as const;
 
 export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] } =
@@ -259,6 +289,8 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     gate: { thresholdDb: -55, rangeDb: 12, releaseMs: 150 },
     // Natural style (Free) — chromatic until a key is known.
     tune: { keyRoot: 0, scale: 2, retuneMs: 100, amount: 0.85 },
+    saturate: { drive: 0.35, mix: 0.55 },
+    pocket: { verseDb: -1.5, hookDb: 0, depth: 0.55, doubleMs: 20, doubleCents: 12, doubleDb: -14 },
   };
 
 /** Where an effect may be inserted. Pitch correction is per-voice → track only. */
@@ -275,6 +307,8 @@ export const STUDIO_FX_REGISTRY: Record<
   deesser: { track: true, master: true },
   gate: { track: true, master: true },
   tune: { track: true, master: false },
+  saturate: { track: true, master: false },
+  pocket: { track: true, master: false },
 };
 
 function invalid(detail?: string): never {
@@ -517,6 +551,22 @@ function parseEffect(
       type,
       enabled: o.enabled,
       params: parseRanged(o.params, STUDIO_FX_DEFAULTS.gate, GATE_KEYS, STUDIO_FX_STAGE2_RANGES.gate),
+    };
+  }
+  if (type === "saturate") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.saturate, SATURATE_KEYS, STUDIO_FX_STAGE2_RANGES.saturate),
+    };
+  }
+  if (type === "pocket") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.pocket, POCKET_KEYS, STUDIO_FX_STAGE2_RANGES.pocket),
     };
   }
   if (type === "tune") {
@@ -848,6 +898,24 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
       slider("amount", "Siła", 0, 1, 0.01, ""),
     ],
   },
+  saturate: {
+    labelPl: "Saturacja",
+    params: [
+      slider("drive", "Nasycenie", 0, 1, 0.01, ""),
+      slider("mix", "Ilość", 0, 1, 0.01, ""),
+    ],
+  },
+  pocket: {
+    labelPl: "Kieszeń rapu",
+    params: [
+      slider("verseDb", "Zwrotka", -12, 6, 0.1, "dB"),
+      slider("hookDb", "Refren", -12, 6, 0.1, "dB"),
+      slider("depth", "Ustępowanie bitu", 0, 1, 0.01, ""),
+      slider("doubleMs", "Dubel · opóźnienie", 15, 25, 1, "ms"),
+      slider("doubleCents", "Dubel · centy", 0, 25, 1, "ct"),
+      slider("doubleDb", "Dubel · poziom", -24, -6, 0.5, "dB"),
+    ],
+  },
 };
 
 export const FX_CHAIN_CONFLICT_UI_PL =
@@ -947,6 +1015,10 @@ export function createStudioFxInstance(
       return { id, type, enabled: true, params: defaultStudioFxParams("gate") };
     case "tune":
       return { id, type, enabled: true, params: defaultStudioFxParams("tune") };
+    case "saturate":
+      return { id, type, enabled: true, params: defaultStudioFxParams("saturate") };
+    case "pocket":
+      return { id, type, enabled: true, params: defaultStudioFxParams("pocket") };
   }
 }
 

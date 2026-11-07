@@ -2412,6 +2412,8 @@
           "na": "No sound to check."
         }
       },
+      "kieszen": "Rap pocket",
+      "kieszenOpis": "Vocal saturation, verse in the pocket, hook closer, beat mids duck, double on the hook only.",
       "poprawWszystko": "Fix everything",
       "poprawWszystkoOpis": "BITEK fixes volume, balance, EQ, sibilance, compression, noise and panning, and adds space in time with the beat.",
       "poprawAria": "Fix: {title}",
@@ -2440,10 +2442,16 @@
           "przed": "Before",
           "po": "After",
           "opis": "You're hearing: {version}. Switching doesn't change your saved mix.",
-          "aria": "Listen before and after BITEK's fixes"
+          "aria": "Listen before and after BITEK's fixes",
+          "suchy": "Dry",
+          "mix": "Mix",
+          "master": "Master",
+          "listenAria": "Dry, mix, or master",
+          "listenOpis": "Dry is the vocal and beat with no effects. Mix is this step. Master is the mastered file, including a reference tone match if you uploaded one."
         },
         "notes": {
           "chainFull": "“{track}” already has 8 effects, so I didn't add anything there.",
+          "pocket": "The vocal got saturation and a pocket: verse back, hook closer, the beat's mids duck, and a quiet double on the hook.",
           "gainClipTrack": "I turned “{track}” down {db} dB because it was clipping. Now it has headroom.",
           "gainTrimTrack": "I turned “{track}” down {db} dB so it doesn't hit zero.",
           "gainMasterDown": "I turned the whole mix down {db} dB to leave headroom for mastering.",

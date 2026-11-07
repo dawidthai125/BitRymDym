@@ -629,6 +629,28 @@ export function createTuneProcessorAtRate(
   };
 }
 
+function createSaturateProcessor(
+  effect: Extract<StudioFxInstance, { type: "saturate" }>,
+): StudioOfflineFxProcessor {
+  const drive = effect.params.drive;
+  const mix = effect.params.mix;
+  const k = 1 + drive * 12;
+  const norm = Math.tanh(k);
+  const shape = (x: number) => (Math.tanh(x * k) / norm) * mix + x * (1 - mix);
+  return {
+    type: "saturate",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: 0,
+    process(sample) {
+      return { left: shape(sample.left), right: shape(sample.right) };
+    },
+    reset() {
+      /* stateless */
+    },
+  };
+}
+
 function buildProcessorForReady(
   effect: StudioFxInstance,
   sampleRate: number,
@@ -659,6 +681,12 @@ function buildProcessorForReady(
   }
   if (effect.type === "tune") {
     return createTuneProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "saturate") {
+    return createSaturateProcessor(effect);
+  }
+  if (effect.type === "pocket") {
+    return wireProcessor("BYPASS", effect.id, "pocket");
   }
   throw new StudioOfflineFxError(
     "STUDIO_OFFLINE_FX_UNSUPPORTED",

@@ -6,6 +6,7 @@
  * or pan, no master chain), peak-normalised to -1 dBFS.
  */
 
+import { applyRapPocket } from "@/lib/studio/mix-analysis/rap-pocket";
 import { analysisFxChain, applyFxInPlace, type MixAnalysisInput, renderTrack, stereoPanBuffer } from "@/lib/studio/mix-analysis/render";
 
 import type { Stereo } from "./dsp";
@@ -54,12 +55,17 @@ export function renderMixStereo(input: MixAnalysisInput, opts: RenderMixOptions 
   const right = new Float32Array(len);
   const src = prepareMixInput(input, opts);
   const anySolo = src.tracks.some((t) => t.solo);
+  const rendered: Array<{ role: string; effectsChain?: unknown; left: Float32Array; right: Float32Array }> = [];
   for (const t of src.tracks) {
     const r = renderTrack(src, t, anySolo);
     if (!r.audible || r.activeRanges.length === 0) continue;
+    rendered.push({ role: t.role, effectsChain: t.effectsChain, left: r.left, right: r.right });
+  }
+  if (!opts.raw) applyRapPocket(rendered, src.sampleRate, src.lengthMs, src.markers ?? []);
+  for (const r of rendered) {
     for (let i = 0; i < len; i++) {
-      left[i] += r.left[i];
-      right[i] += r.right[i];
+      left[i] += r.left[i]!;
+      right[i] += r.right[i]!;
     }
   }
   return finishMixStereo(src, left, right, opts);

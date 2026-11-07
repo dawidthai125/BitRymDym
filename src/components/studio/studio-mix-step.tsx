@@ -30,12 +30,14 @@ import {
 import type { MixMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type { MixCard, MixCardStatus, MixVerdict } from "@/lib/studio/mix-analysis/verdict";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
+import { emptyStudioFxChain } from "@/lib/studio/studio-fx-chain";
 import {
   MIX_AUTOFIX_ALL,
   MIX_CARD_FIXES,
   planMixAutofix,
   type MixAutofixId,
   type MixAutofixNote,
+  type MixPlanFixId,
 } from "@/lib/studio/mix-autofix/plan";
 import type { MixWorkingOp } from "@/lib/studio/mix-working/mix-working-types";
 import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
@@ -144,6 +146,7 @@ export function StudioMixStep({
   const [fixSeq, setFixSeq] = useState(0);
   const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null; metricsBefore: MixMetrics | null } | null>(null);
   const [abMode, setAbMode] = useState<"before" | "after">("after");
+  const [listenMode, setListenMode] = useState<"dry" | "mix" | "master">("mix");
   const reanalyzeRef = useRef<{ fromSig: string } | null>(null);
   const reportRef = useRef(false);
   const abOverrideRef = useRef(onAbOverride);
@@ -243,6 +246,21 @@ export function StudioMixStep({
     if (abEnded) onAbOverride?.(null);
   }, [abEnded, onAbOverride]);
 
+  const setLevelListen = (mode: "dry" | "mix" | "master") => {
+    if (!onAbOverride || mode === "master") return;
+    setListenMode(mode);
+    if (mode === "dry") {
+      const empty = emptyStudioFxChain();
+      onAbOverride({
+        ...doc,
+        project: { ...doc.project, masterGainDb: 0, masterPan: 0, masterFxChain: empty },
+        tracks: doc.tracks.map((t) => ({ ...t, gainDb: 0, pan: 0, solo: false, effectsChain: empty, automation: undefined })),
+      });
+      return;
+    }
+    onAbOverride(null);
+  };
+
   const setAbListen = (mode: "before" | "after") => {
     const ab = abLive;
     if (!ab) return;
@@ -250,7 +268,7 @@ export function StudioMixStep({
     onAbOverride?.(mode === "before" ? ab.before : null);
   };
 
-  const runFix = async (fixes: readonly MixAutofixId[], key: string, summary: string) => {
+  const runFix = async (fixes: readonly MixPlanFixId[], key: string, summary: string) => {
     const applyAutofix = applyAutofixRef.current;
     if (!result || !applyAutofix || fixing || running || stale) return;
     const plan = planMixAutofix({
@@ -750,6 +768,19 @@ export function StudioMixStep({
                   size="sm"
                   className="min-h-9 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
+                  aria-describedby="studio-mix-pocket-hint"
+                  data-testid="studio-mix-pocket"
+                  onClick={() => void runFix(["pocket"], "pocket", t("kieszen"))}
+                >
+                  {fixing === "pocket" ? t("poprawTrwa") : t("kieszen")}
+                </Button>
+              ) : null}
+              {onApplyAutofix ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-9 w-full sm:w-auto"
+                  disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-fix-all-hint"
                   data-testid="studio-mix-fix-all"
                   onClick={() => void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"))}
@@ -757,7 +788,34 @@ export function StudioMixStep({
                   {fixing === "all" ? t("poprawTrwa") : t("poprawWszystko")}
                 </Button>
               ) : null}
+              <span id="studio-mix-pocket-hint" className="sr-only">{t("kieszenOpis")}</span>
               <span id="studio-mix-fix-all-hint" className="sr-only">{t("poprawWszystkoOpis")}</span>
+            </div>
+          ) : null}
+
+          {onAbOverride ? (
+            <div
+              role="group"
+              aria-label={t("autofix.ab.listenAria")}
+              data-testid="studio-mix-listen"
+              className="flex flex-wrap items-center gap-2 rounded-[2px] border border-[var(--brd-line)] bg-[var(--brd-paper)] p-2"
+            >
+              {(["dry", "mix", "master"] as const).map((mode) => (
+                <Button
+                  key={mode}
+                  type="button"
+                  size="sm"
+                  variant={listenMode === mode ? "default" : "outline"}
+                  aria-pressed={listenMode === mode}
+                  className="min-h-9"
+                  disabled={mode === "master"}
+                  data-testid={`studio-mix-listen-${mode}`}
+                  onClick={() => setLevelListen(mode)}
+                >
+                  {t(`autofix.ab.${mode === "dry" ? "suchy" : mode}`)}
+                </Button>
+              ))}
+              <span className="text-xs text-[var(--brd-mute)]">{t("autofix.ab.listenOpis")}</span>
             </div>
           ) : null}
 
