@@ -47,7 +47,7 @@ export default async function SampleCatalogPage({
                 <li id={sample.id} key={sample.id} className="border-b border-[var(--brd-line)] pb-4">
                   <p className="text-base text-[var(--brd-ink)]">{sample.title}</p>
                   <p className="text-sm text-[var(--brd-mute)]">
-                    {sample.author} · {secondsLabel(sample.durationMs)}
+                    {t("by", { name: sample.author })} · {secondsLabel(sample.durationMs)}
                     {sample.instrument ? ` · ${sample.instrument}` : ""}
                   </p>
                   {session ? <SampleListen id={sample.id} /> : (

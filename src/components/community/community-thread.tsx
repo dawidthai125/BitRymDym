@@ -17,6 +17,7 @@ type Props = {
   signedIn: boolean;
   own: boolean;
   enabled: boolean;
+  commentsOpen: boolean;
   average: number | null;
   count: number;
   mine: number | null;
@@ -75,13 +76,21 @@ export function CommunityThread(props: Props) {
     if (payload.result === "ok") {
       setComments((current) => [
         ...current,
-        { id: `local-${current.length}`, author: "—", body: body.trim(), createdAt: new Date().toISOString() },
+        { id: `local-${current.length}`, author: t("you"), body: body.trim(), createdAt: new Date().toISOString() },
       ]);
       setBody("");
       setNote(t("saved"));
       return;
     }
-    setNote(payload.result === "limit" ? t("limit") : payload.result === "off" ? off("off") : t("invalid"));
+    setNote(
+      payload.result === "limit"
+        ? t("limit")
+        : payload.result === "closed"
+          ? t("commentsOff")
+          : payload.result === "off"
+            ? off("off")
+            : t("invalid"),
+    );
   }
 
   if (!props.enabled) {
@@ -91,7 +100,7 @@ export function CommunityThread(props: Props) {
   return (
     <section aria-labelledby={`community-${props.targetId}`} className="mt-8 space-y-4 border-t border-[var(--brd-line)] pt-4">
       <h2 id={`community-${props.targetId}`} className="font-poster text-lg font-bold uppercase tracking-[0.08em]">
-        {t("comments")}
+        {props.commentsOpen ? t("comments") : t("rate")}
       </h2>
       <p className="text-sm text-[var(--brd-ink-soft)]">
         {average != null ? t("average", { score: average.toFixed(1), count }) : t("empty")}
@@ -120,7 +129,8 @@ export function CommunityThread(props: Props) {
         </p>
       )}
       {props.own ? <p className="text-sm text-[var(--brd-mute)]">{t("own")}</p> : null}
-      {props.signedIn ? (
+      {props.commentsOpen ? null : <p className="text-sm text-[var(--brd-mute)]">{t("commentsOff")}</p>}
+      {props.commentsOpen && props.signedIn ? (
         <form onSubmit={(event) => void sendComment(event)} className="space-y-2">
           <label className="block text-sm" htmlFor={`comment-${props.targetId}`}>{t("comment")}</label>
           <textarea
@@ -137,7 +147,7 @@ export function CommunityThread(props: Props) {
         </form>
       ) : null}
       {note ? <p role="status" className="text-sm">{note}</p> : null}
-      {comments.length > 0 ? (
+      {props.commentsOpen && comments.length > 0 ? (
         <ul className="space-y-3">
           {comments.map((comment) => (
             <li key={comment.id} className="border-b border-[var(--brd-line)] pb-3">

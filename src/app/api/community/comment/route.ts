@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ result: "invalid" }, { status: 400 });
     }
     const result = await commentTarget(auth.userId, kind, body.id, body.body);
-    const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "limit" ? 429 : result === "off" ? 503 : 400;
+    const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "closed" ? 403 : result === "limit" ? 429 : result === "off" ? 503 : 400;
     return NextResponse.json({ result }, { status });
   } catch (error) {
     if (error instanceof AuthError) {

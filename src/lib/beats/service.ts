@@ -466,11 +466,12 @@ export async function patchOwnUserBeatAfterAuthz(params: {
     throw new BeatRequestError(validated.errors.join("; "));
   }
 
+  const { allowComments, ...listedSettings } = params.settings ?? {};
   const { data: updatedRows, error } = await admin
     .from("beats")
     .update({
       ...toBeatMetadataPayload(validated.value),
-      ...toOwnerSettingsPayload(params.settings ?? {}),
+      ...toOwnerSettingsPayload(listedSettings),
     })
     .eq("id", params.beatId)
     .eq("owner_id", context.userId)
@@ -488,6 +489,19 @@ export async function patchOwnUserBeatAfterAuthz(params: {
     includeRejectionReason: true,
   });
 
+  let commentsSaved = false;
+  if (allowComments !== undefined) {
+    const flag = await admin
+      .from("beats")
+      .update({ allow_comments: allowComments })
+      .eq("id", params.beatId)
+      .eq("owner_id", context.userId)
+      .eq("ownership_type", "USER");
+    const missingFlag = (flag.error?.message ?? "").toLowerCase().includes("allow_comments");
+    if (flag.error && !missingFlag) throw new Error(flag.error.message);
+    commentsSaved = !flag.error;
+  }
+
   if (isOwnerEditAudited(beat.status)) {
     const diff = diffBeatMetadataForAudit(beat, updated);
     const settingsChanged: Record<string, { from: unknown; to: unknown }> = {};
@@ -495,6 +509,9 @@ export async function patchOwnUserBeatAfterAuthz(params: {
       if (beat[k] !== updated[k]) {
         settingsChanged[k] = { from: beat[k] ?? null, to: updated[k] ?? null };
       }
+    }
+    if (commentsSaved) {
+      settingsChanged.allowComments = { from: null, to: allowComments };
     }
     if (diff.changed.length > 0 || Object.keys(settingsChanged).length > 0) {
       const { error: auditError } = await admin.from("admin_audit_events").insert({
@@ -518,6 +535,22 @@ export async function patchOwnUserBeatAfterAuthz(params: {
     }
   }
   return updated;
+}
+
+/** Side read. Null means the comment column is not on this database yet. */
+export async function loadOwnerCommentSwitch(beatId: string): Promise<boolean | null> {
+  if (!isUuid(beatId)) return null;
+  let admin: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    admin = createSupabaseAdminClient();
+  } catch {
+    return null;
+  }
+  const loaded = await admin.from("beats").select("id, allow_comments").eq("id", beatId).maybeSingle();
+  const message = (loaded.error?.message ?? "").toLowerCase();
+  if (loaded.error && message.includes("allow_comments")) return null;
+  if (loaded.error || !loaded.data) return null;
+  return (loaded.data as { allow_comments?: boolean }).allow_comments !== false;
 }
 
 /** Owner edit page loader: own USER beat incl. private fields. */

@@ -40,5 +40,10 @@ describe("owner edit policy", () => {
     expect(parseOwnerBeatSettings({ allowDownload: "yes" }).ok).toBe(false);
     expect(parseOwnerBeatSettings([]).ok).toBe(false);
     expect(parseOwnerBeatSettings(undefined)).toEqual({ ok: true, value: {} });
+    expect(parseOwnerBeatSettings({ allowComments: false })).toEqual({
+      ok: true,
+      value: { allowComments: false },
+    });
+    expect(toOwnerSettingsPayload({ allowComments: false })).toEqual({});
   });
 });

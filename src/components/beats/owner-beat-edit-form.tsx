@@ -29,6 +29,8 @@ export type OwnerBeatEditInitial = {
   visibility: BeatVisibility;
   allowDownload: boolean;
   allowStudioUse: boolean;
+  /** Null while the comment column is missing. */
+  allowComments: boolean | null;
   coverStatus: BeatCoverStatus;
   coverUpdatedAt: string | null;
   coverRejectionReason: string | null;
@@ -60,6 +62,7 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
   const [visibility, setVisibility] = useState<BeatVisibility>(initial.visibility);
   const [allowDownload, setAllowDownload] = useState(initial.allowDownload);
   const [allowStudioUse, setAllowStudioUse] = useState(initial.allowStudioUse);
+  const [allowComments, setAllowComments] = useState(initial.allowComments !== false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const detected = parseDetectedKey(initial.keyDetected);
@@ -95,7 +98,12 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
           .split(",")
           .map((x) => x.trim())
           .filter(Boolean),
-        settings: { visibility, allowDownload, allowStudioUse },
+        settings: {
+          visibility,
+          allowDownload,
+          allowStudioUse,
+          ...(initial.allowComments !== null ? { allowComments } : {}),
+        },
       });
       if (!result.success) {
         setMessage({ tone: "error", text: result.error ?? t("bladZapisu") });
@@ -336,6 +344,17 @@ export function OwnerBeatEditForm({ initial }: { initial: OwnerBeatEditInitial }
               <span className="block text-xs text-[var(--brd-mute)]">{t("pozwolStudioOpis")}</span>
             </span>
           </label>
+          {initial.allowComments === null ? (
+            <p className="text-xs text-[var(--brd-mute)]">{t("komentarzeCzekaja")}</p>
+          ) : (
+            <label className="flex min-h-11 items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-1" checked={allowComments} onChange={(e) => setAllowComments(e.target.checked)} disabled={disabled} />
+              <span>
+                <span className="block font-medium">{t("komentarze")}</span>
+                <span className="block text-xs text-[var(--brd-mute)]">{t("komentarzeOpis")}</span>
+              </span>
+            </label>
+          )}
         </section>
 
         {message ? (

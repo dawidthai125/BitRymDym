@@ -29,6 +29,9 @@ type SampleDto = {
   catalogAssetId: string | null;
   moderationNote: string | null;
   mine: boolean;
+  publicListing?: boolean | null;
+  allowComments?: boolean | null;
+  shareReady?: boolean;
 };
 
 export function StudioSampleDesk({
@@ -209,6 +212,24 @@ export function StudioSampleDesk({
     }
     setStatus(action === "submit" ? tr("sampleWyslano") : tr("sampleUsunieto"));
     void load("mine");
+  }
+
+  async function share(sample: SampleDto, patch: { publicListing?: boolean; allowComments?: boolean }) {
+    setBusyId(sample.id);
+    setError(null);
+    const response = await fetch(`/api/studio/samples/${sample.id}/share`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    const body = (await response.json().catch(() => null)) as { message?: string; sample?: SampleDto } | null;
+    setBusyId(null);
+    if (!response.ok || !body?.sample) {
+      setError(body?.message || tr("sampleBlad"));
+      return;
+    }
+    setSamples((current) => current.map((item) => (item.id === sample.id ? { ...item, ...body.sample } : item)));
+    setStatus(tr("sampleZapisano"));
   }
 
   async function previewSaved(sampleId: string) {
@@ -399,16 +420,19 @@ export function StudioSampleDesk({
                   {tr("sampleDodajNaSciezke")}
                 </Button>
                 {sample.mine && (sample.status === "PRIVATE" || sample.status === "REJECTED") ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="min-h-11 w-full"
-                    variant="secondary"
-                    disabled={busyId === sample.id}
-                    onClick={() => void mutate(sample.id, "submit")}
-                  >
-                    {tr("sampleWyslij")}
-                  </Button>
+                  <div className="col-span-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="min-h-11 w-full"
+                      variant="secondary"
+                      disabled={busyId === sample.id}
+                      onClick={() => void mutate(sample.id, "submit")}
+                    >
+                      {tr("sampleWyslij")}
+                    </Button>
+                    <p className="mt-1 text-[11px] text-[var(--brd-mute)]">{tr("sampleWyslijOpis")}</p>
+                  </div>
                 ) : null}
                 {sample.mine && (sample.status === "PRIVATE" || sample.status === "REJECTED") ? (
                   <Button
@@ -421,6 +445,39 @@ export function StudioSampleDesk({
                   >
                     {tr("sampleUsun")}
                   </Button>
+                ) : null}
+                {sample.mine && sample.status === "PUBLISHED" && sample.shareReady === false ? (
+                  <p className="col-span-2 text-[11px] text-[var(--brd-mute)]">{tr("sampleUdostepnianieCzeka")}</p>
+                ) : null}
+                {sample.mine && sample.status === "PUBLISHED" && sample.shareReady ? (
+                  <div className="col-span-2 space-y-2">
+                    <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        checked={sample.publicListing === true}
+                        disabled={busyId === sample.id}
+                        onChange={(event) => void share(sample, { publicListing: event.target.checked })}
+                      />
+                      <span>
+                        <span className="block font-medium">{tr("samplePubliczny")}</span>
+                        <span className="block text-[var(--brd-mute)]">{tr("samplePublicznyOpis")}</span>
+                      </span>
+                    </label>
+                    <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        checked={sample.allowComments !== false}
+                        disabled={busyId === sample.id || sample.publicListing !== true}
+                        onChange={(event) => void share(sample, { allowComments: event.target.checked })}
+                      />
+                      <span>
+                        <span className="block font-medium">{tr("sampleKomentarze")}</span>
+                        <span className="block text-[var(--brd-mute)]">{tr("sampleKomentarzeOpis")}</span>
+                      </span>
+                    </label>
+                  </div>
                 ) : null}
               </div>
             </li>

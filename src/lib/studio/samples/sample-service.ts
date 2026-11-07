@@ -23,6 +23,7 @@ import {
   SAMPLE_INVALID,
   SAMPLE_NOT_FOUND,
   SAMPLE_PROJECT_NO_BEAT,
+  SAMPLE_SHARE_OFF,
   SAMPLE_TABLE_UNAVAILABLE,
   STUDIO_SAMPLES_TABLE,
   buildUserSampleObjectKey,
@@ -56,6 +57,10 @@ export type StudioSampleDto = {
   catalogAssetId: string | null;
   moderationNote: string | null;
   mine: boolean;
+  /** Null until the share columns exist. */
+  publicListing: boolean | null;
+  allowComments: boolean | null;
+  shareReady: boolean;
 };
 
 type SampleRow = {
@@ -105,7 +110,39 @@ function toDto(row: SampleRow, viewerId: string): StudioSampleDto {
     catalogAssetId: row.catalog_asset_id,
     moderationNote: row.owner_id === viewerId ? row.moderation_note : null,
     mine: row.owner_id === viewerId,
+    publicListing: null,
+    allowComments: null,
+    shareReady: false,
   };
+}
+
+function shareColumnMissing(error: { message?: string } | null, column: string): boolean {
+  const message = (error?.message ?? "").toLowerCase();
+  return (
+    message.includes(column) &&
+    (message.includes("does not exist") || message.includes("schema cache") || message.includes("could not find"))
+  );
+}
+
+async function attachShareFlags(admin: AdminClient, samples: StudioSampleDto[]): Promise<StudioSampleDto[]> {
+  if (samples.length === 0) return samples;
+  const loaded = await admin
+    .from(STUDIO_SAMPLES_TABLE)
+    .select("id, public_listing, allow_comments")
+    .in("id", samples.map((sample) => sample.id));
+  if (loaded.error) return samples;
+  const flags = new Map(
+    ((loaded.data ?? []) as Array<{ id: string; public_listing?: boolean; allow_comments?: boolean }>).map((row) => [row.id, row]),
+  );
+  return samples.map((sample) => {
+    const flag = flags.get(sample.id);
+    return {
+      ...sample,
+      shareReady: true,
+      publicListing: flag?.public_listing === true,
+      allowComments: flag ? flag.allow_comments !== false : true,
+    };
+  });
 }
 
 function mapThrown(error: unknown): SampleFailure {
@@ -150,7 +187,7 @@ export async function listMyStudioSamples(
   if (error) return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
   return {
     ok: true,
-    samples: ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId)),
+    samples: await attachShareFlags(admin, ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId))),
   };
 }
 
@@ -170,7 +207,7 @@ export async function listPublishedStudioSamples(
   if (error) return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
   return {
     ok: true,
-    samples: ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId)),
+    samples: await attachShareFlags(admin, ((data ?? []) as SampleRow[]).map((row) => toDto(row, context.userId))),
   };
 }
 
@@ -355,6 +392,46 @@ export async function submitStudioSample(
     .single();
   if (error || !data) return { ok: false, error: SAMPLE_COPY_FAILED };
   return { ok: true, sample: toDto(data as SampleRow, context.userId) };
+}
+
+/** Author switch after moderation. Does not skip review. */
+export async function updateStudioSampleShare(
+  context: AuthContext,
+  sampleId: string,
+  input: { publicListing?: boolean; allowComments?: boolean },
+  admin: AdminClient = createSupabaseAdminClient(),
+): Promise<SampleSuccess<{ sample: StudioSampleDto }> | SampleFailure> {
+  if (!isSampleUuid(sampleId)) return { ok: false, error: SAMPLE_NOT_FOUND };
+  const listing = input.publicListing;
+  const comments = input.allowComments;
+  if (typeof listing !== "boolean" && typeof comments !== "boolean") {
+    return { ok: false, error: SAMPLE_INVALID, details: ["share flag is required"] };
+  }
+  const row = await loadOwnedOrPublic(admin, sampleId);
+  if (row === "missing") return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
+  if (!row) return { ok: false, error: SAMPLE_NOT_FOUND };
+  if (row.owner_id !== context.userId) return { ok: false, error: SAMPLE_FORBIDDEN };
+  if (row.status !== "PUBLISHED") {
+    return { ok: false, error: SAMPLE_INVALID, details: ["public listing starts after moderation"] };
+  }
+  const patch: Record<string, boolean | string> = { updated_at: new Date().toISOString() };
+  if (typeof listing === "boolean") patch.public_listing = listing;
+  if (typeof comments === "boolean") patch.allow_comments = comments;
+  const updated = await admin
+    .from(STUDIO_SAMPLES_TABLE)
+    .update(patch)
+    .eq("id", row.id)
+    .eq("owner_id", context.userId)
+    .eq("status", "PUBLISHED");
+  if (
+    updated.error &&
+    (shareColumnMissing(updated.error, "public_listing") || shareColumnMissing(updated.error, "allow_comments"))
+  ) {
+    return { ok: false, error: SAMPLE_SHARE_OFF };
+  }
+  if (updated.error) return { ok: false, error: SAMPLE_COPY_FAILED };
+  const [sample] = await attachShareFlags(admin, [toDto(row, context.userId)]);
+  return { ok: true, sample: sample ?? toDto(row, context.userId) };
 }
 
 export async function signStudioSamplePlayback(
@@ -632,18 +709,35 @@ export async function reviewStudioSample(
     }
     return { ok: false, error: SAMPLE_COPY_FAILED, details: ["catalog row was not saved"] };
   }
-  const updated = await admin
+  const publishedAt = new Date().toISOString();
+  const publishedPatch = {
+    status: "PUBLISHED",
+    catalog_asset_id: catalogAssetId,
+    public_listing: true,
+    moderation_note: note,
+    reviewed_by: reviewer.userId,
+    reviewed_at: publishedAt,
+    updated_at: publishedAt,
+  };
+  let updated = await admin
     .from(STUDIO_SAMPLES_TABLE)
-    .update({
-      status: "PUBLISHED",
-      catalog_asset_id: catalogAssetId,
-      moderation_note: note,
-      reviewed_by: reviewer.userId,
-      reviewed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    .update(publishedPatch)
     .eq("id", row.id)
     .eq("status", "PENDING_REVIEW");
+  if (updated.error && shareColumnMissing(updated.error, "public_listing")) {
+    updated = await admin
+      .from(STUDIO_SAMPLES_TABLE)
+      .update({
+        status: publishedPatch.status,
+        catalog_asset_id: publishedPatch.catalog_asset_id,
+        moderation_note: publishedPatch.moderation_note,
+        reviewed_by: publishedPatch.reviewed_by,
+        reviewed_at: publishedPatch.reviewed_at,
+        updated_at: publishedPatch.updated_at,
+      })
+      .eq("id", row.id)
+      .eq("status", "PENDING_REVIEW");
+  }
   if (updated.error) {
     await admin.from("catalog_assets").delete().eq("id", catalogAssetId);
     await admin.storage.from(BEAT_AUDIO_BUCKET).remove([catalogKey]);

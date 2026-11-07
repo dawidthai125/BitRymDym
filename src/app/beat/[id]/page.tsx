@@ -192,13 +192,14 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
             <ShareButtons url={absoluteUrl(getSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />
           </div>
-          {thread ? (
+          {thread?.found ? (
             <CommunityThread
               kind="beat"
               targetId={beat.id}
               signedIn={Boolean(session)}
               own={thread.own}
               enabled={thread.enabled}
+              commentsOpen={thread.commentsOpen}
               average={thread.average}
               count={thread.count}
               mine={thread.mine}

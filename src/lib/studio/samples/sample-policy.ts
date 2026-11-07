@@ -50,6 +50,7 @@ export const SAMPLE_INSTRUMENTS = [
 export type SampleInstrumentId = (typeof SAMPLE_INSTRUMENTS)[number]["id"];
 
 export const SAMPLE_TABLE_UNAVAILABLE = "SAMPLE_TABLE_UNAVAILABLE";
+export const SAMPLE_SHARE_OFF = "SAMPLE_SHARE_OFF";
 export const SAMPLE_NOT_FOUND = "SAMPLE_NOT_FOUND";
 export const SAMPLE_FORBIDDEN = "SAMPLE_FORBIDDEN";
 export const SAMPLE_RIGHTS_REQUIRED = "SAMPLE_RIGHTS_REQUIRED";
@@ -241,6 +242,8 @@ export function sampleUserMessage(error: string): string {
   switch (error) {
     case SAMPLE_TABLE_UNAVAILABLE:
       return "Katalog sampli nie jest jeszcze włączony.";
+    case SAMPLE_SHARE_OFF:
+      return "Przełącznik katalogu włączy się po aktualizacji bazy.";
     case SAMPLE_RIGHTS_REQUIRED:
       return "Zaznacz, że masz prawo do tego dźwięku.";
     case SAMPLE_CAP:

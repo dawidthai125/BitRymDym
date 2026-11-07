@@ -8,7 +8,7 @@ import { OwnerBeatEditForm } from "@/components/beats/owner-beat-edit-form";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError } from "@/lib/auth/session";
 import { isOwnerEditableStatus } from "@/lib/beats/owner-edit-policy";
-import { getOwnUserBeatForEdit } from "@/lib/beats/service";
+import { getOwnUserBeatForEdit, loadOwnerCommentSwitch } from "@/lib/beats/service";
 import { beatStatusLabelPl, beatStatusTone } from "@/lib/beats/status-labels";
 import type { Beat } from "@/types/domain";
 
@@ -77,6 +77,7 @@ export default async function AccountBeatEditPage({ params }: PageProps) {
               visibility: beat.visibility ?? "public",
               allowDownload: beat.allowDownload !== false,
               allowStudioUse: beat.allowStudioUse !== false,
+              allowComments: await loadOwnerCommentSwitch(beat.id),
               coverStatus: beat.coverStatus ?? "none",
               coverUpdatedAt: beat.coverUpdatedAt ?? null,
               coverRejectionReason: beat.coverRejectionReason ?? null,

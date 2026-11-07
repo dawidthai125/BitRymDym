@@ -8,6 +8,7 @@ import { CommunityThread } from "@/components/community/community-thread";
 type Loaded = {
   enabled: boolean;
   own: boolean;
+  commentsOpen?: boolean;
   average: number | null;
   count: number;
   mine: number | null;
@@ -40,6 +41,7 @@ export function SampleTalk({ id, signedIn }: { id: string; signedIn: boolean }) 
           signedIn={signedIn}
           own={loaded.own}
           enabled={loaded.enabled}
+          commentsOpen={loaded.commentsOpen !== false}
           average={loaded.average}
           count={loaded.count}
           mine={loaded.mine}

@@ -16,9 +16,7 @@ export function resolvePublicAuthor(params: {
   if (params.ownershipType === "USER") {
     const fromProfile = params.ownerDisplayName?.trim();
     if (fromProfile) return fromProfile;
-    if (!params.ownerId) {
-      return params.producer?.trim() || ANONYMIZED_PUBLIC_AUTHOR;
-    }
+    return params.producer?.trim() || ANONYMIZED_PUBLIC_AUTHOR;
   }
-  return params.producer?.trim() || "—";
+  return params.producer?.trim() || "BitRymDym";
 }

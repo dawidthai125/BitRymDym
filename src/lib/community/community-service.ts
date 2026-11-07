@@ -18,7 +18,9 @@ import {
   type TargetKind,
 } from "@/lib/community/ranking-policy";
 import { claimCommunityReward } from "@/lib/community/reward-apply";
+import { canCommentPublic, publicAuthorName } from "@/lib/community/share-policy";
 import { loadPlanSnapshot } from "@/lib/payments/snapshots";
+import { ANONYMIZED_PUBLIC_AUTHOR } from "@/lib/auth/display-name";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const RATINGS = "community_ratings";
@@ -68,6 +70,8 @@ export type Thread = {
   enabled: boolean;
   found: boolean;
   own: boolean;
+  /** False when the author turned comments off. Ratings stay. */
+  commentsOpen: boolean;
   average: number | null;
   count: number;
   mine: number | null;
@@ -93,10 +97,20 @@ type Work = {
   ownerId: string | null;
   author: string;
   ownership: "PLATFORM" | "USER";
+  allowComments: boolean;
   kind?: string;
   instrument?: string | null;
   durationMs?: number;
 };
+
+function shareColumnMissing(error: DbError, column: string): boolean {
+  if (!error) return false;
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    message.includes(column) &&
+    (message.includes("does not exist") || message.includes("schema cache") || message.includes("could not find"))
+  );
+}
 
 function missingCommunity(error: DbError): boolean {
   if (!error) return false;
@@ -129,17 +143,34 @@ async function authorNames(ownerIds: string[]): Promise<Map<string, string | nul
   }
 }
 
+async function beatCommentFlags(ids: string[]): Promise<Map<string, boolean> | null> {
+  const admin = adminOrNull();
+  if (!admin || ids.length === 0) return null;
+  const flags = new Map<string, boolean>();
+  for (let index = 0; index < ids.length; index += 100) {
+    const loaded = await admin.from("beats").select("id, allow_comments").in("id", ids.slice(index, index + 100));
+    if (shareColumnMissing(loaded.error, "allow_comments")) return null;
+    if (loaded.error) return new Map(ids.map((id) => [id, false]));
+    for (const row of (loaded.data ?? []) as Array<{ id: string; allow_comments?: boolean }>) {
+      flags.set(row.id, row.allow_comments !== false);
+    }
+  }
+  return flags;
+}
+
 async function publishedWorks(kind: TargetKind): Promise<Work[]> {
   if (kind === "beat") {
     const beats = await listPublishedBeats();
     const names = await authorNames(
       beats.filter((beat) => beat.ownershipType === "USER" && beat.ownerId).map((beat) => beat.ownerId as string),
     );
+    const flags = await beatCommentFlags(beats.map((beat) => beat.id));
     return beats.map((beat) => ({
       id: beat.id,
       title: beat.title,
       ownerId: beat.ownerId,
       ownership: beat.ownershipType === "USER" ? "USER" : "PLATFORM",
+      allowComments: flags?.get(beat.id) ?? true,
       author: resolvePublicAuthor({
         ownershipType: beat.ownershipType,
         ownerId: beat.ownerId,
@@ -150,12 +181,21 @@ async function publishedWorks(kind: TargetKind): Promise<Work[]> {
   }
   const admin = adminOrNull();
   if (!admin) return [];
-  const loaded = await admin
+  const flagged = await admin
     .from("studio_samples")
-    .select("id, owner_id, title, kind, instrument, duration_ms")
+    .select("id, owner_id, title, kind, instrument, duration_ms, public_listing, allow_comments")
     .eq("status", "PUBLISHED")
     .order("created_at", { ascending: false })
     .limit(200);
+  const flagsMissing = shareColumnMissing(flagged.error, "public_listing") || shareColumnMissing(flagged.error, "allow_comments");
+  const loaded = flagsMissing
+    ? await admin
+        .from("studio_samples")
+        .select("id, owner_id, title, kind, instrument, duration_ms")
+        .eq("status", "PUBLISHED")
+        .order("created_at", { ascending: false })
+        .limit(200)
+    : flagged;
   if (loaded.error) return [];
   const rows = (loaded.data ?? []) as Array<{
     id: string;
@@ -164,18 +204,25 @@ async function publishedWorks(kind: TargetKind): Promise<Work[]> {
     kind: string;
     instrument: string | null;
     duration_ms: number;
+    public_listing?: boolean;
+    allow_comments?: boolean;
   }>;
   const names = await authorNames(rows.map((row) => row.owner_id));
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    ownerId: row.owner_id,
-    ownership: "USER" as const,
-    author: names.get(row.owner_id)?.trim() || "—",
-    kind: row.kind,
-    instrument: row.instrument,
-    durationMs: Number(row.duration_ms),
-  }));
+  return rows.flatMap((row) => {
+    const listed = flagsMissing ? true : row.public_listing === true;
+    if (!listed) return [];
+    return [{
+      id: row.id,
+      title: row.title,
+      ownerId: row.owner_id,
+      ownership: "USER" as const,
+      allowComments: flagsMissing ? true : row.allow_comments !== false,
+      author: publicAuthorName({ ownership: "USER", displayName: names.get(row.owner_id) }),
+      kind: row.kind,
+      instrument: row.instrument,
+      durationMs: Number(row.duration_ms),
+    }];
+  });
 }
 
 export async function listPublicSamples(source: CatalogSource): Promise<PublicSampleCard[]> {
@@ -292,7 +339,7 @@ export async function readBoard(kind: TargetKind, periodKind: PeriodKind, now = 
         place: row.place,
         targetId: row.targetId,
         title: work?.title ?? "—",
-        author: work?.author ?? "—",
+        author: work?.author ?? ANONYMIZED_PUBLIC_AUTHOR,
         score: row.score,
         count: row.count,
         prize: prizeLabel(prize ? { place: prize.place, tier: prize.tier, days: prize.days, mode: prize.mode } : undefined),
@@ -310,18 +357,31 @@ async function findWork(kind: TargetKind, id: string): Promise<Work | null> {
 }
 
 export async function loadThread(kind: TargetKind, id: string, viewerId: string | null): Promise<Thread> {
-  const blank: Thread = { enabled: false, found: false, own: false, average: null, count: 0, mine: null, comments: [] };
+  const blank: Thread = {
+    enabled: false,
+    found: false,
+    own: false,
+    commentsOpen: false,
+    average: null,
+    count: 0,
+    mine: null,
+    comments: [],
+  };
   if (!isUuid(id)) return { ...blank, enabled: true };
   const work = await findWork(kind, id);
   if (!work) return { ...blank, enabled: true };
+  const commentsOpen = canCommentPublic({ published: true, listed: true, allowComments: work.allowComments });
+  const own = viewerId !== null && viewerId === work.ownerId;
   const admin = adminOrNull();
-  if (!admin) return { ...blank, found: true, own: viewerId !== null && viewerId === work.ownerId };
+  if (!admin) return { ...blank, found: true, own, commentsOpen };
   const [ratings, comments] = await Promise.all([
     admin.from(RATINGS).select("user_id, stars").eq("target_kind", kind).eq("target_id", id),
-    admin.from(COMMENTS).select("id, user_id, body, created_at").eq("target_kind", kind).eq("target_id", id).order("created_at", { ascending: false }).limit(40),
+    commentsOpen
+      ? admin.from(COMMENTS).select("id, user_id, body, created_at").eq("target_kind", kind).eq("target_id", id).order("created_at", { ascending: false }).limit(40)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (missingCommunity(ratings.error) || missingCommunity(comments.error)) {
-    return { ...blank, found: true, own: viewerId !== null && viewerId === work.ownerId };
+    return { ...blank, found: true, own, commentsOpen };
   }
   const votes = ((ratings.data ?? []) as Array<{ user_id: string; stars: number }>)
     .filter((row) => row.user_id !== work.ownerId);
@@ -333,13 +393,14 @@ export async function loadThread(kind: TargetKind, id: string, viewerId: string 
   return {
     enabled: true,
     found: true,
-    own: viewerId !== null && viewerId === work.ownerId,
+    own,
+    commentsOpen,
     average,
     count,
     mine: mine == null ? null : Number(mine),
     comments: commentRows.map((row) => ({
       id: row.id,
-      author: names.get(row.user_id)?.trim() || "—",
+      author: publicAuthorName({ ownership: "USER", displayName: names.get(row.user_id) }),
       body: row.body,
       createdAt: row.created_at,
     })),
@@ -362,12 +423,13 @@ export async function rateTarget(userId: string, kind: TargetKind, id: string, s
   return "ok";
 }
 
-export async function commentTarget(userId: string, kind: TargetKind, id: string, body: unknown): Promise<"ok" | "missing" | "invalid" | "limit" | "off"> {
+export async function commentTarget(userId: string, kind: TargetKind, id: string, body: unknown): Promise<"ok" | "missing" | "closed" | "invalid" | "limit" | "off"> {
   const text = cleanComment(body);
   if (!text || text.length > COMMENT_MAX) return "invalid";
   if (!isUuid(id)) return "invalid";
   const work = await findWork(kind, id);
   if (!work) return "missing";
+  if (!canCommentPublic({ published: true, listed: true, allowComments: work.allowComments })) return "closed";
   const admin = adminOrNull();
   if (!admin) return "off";
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();

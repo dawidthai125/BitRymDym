@@ -1347,7 +1347,10 @@
       "udostepnianie": "Udostępnianie",
       "widocznosc": "Widoczność",
       "publiczny": "Publiczny katalog",
-      "publicznyOpis": "Bit widać w katalogu ogólnym (po publikacji).",
+      "publicznyOpis": "Po publikacji bit wchodzi do katalogu, rankingu i można go oceniać.",
+      "komentarze": "Komentarze",
+      "komentarzeOpis": "Działają tylko w katalogu publicznym. Oceny zostają, gdy komentarze są wyłączone.",
+      "komentarzeCzekaja": "Wyłącznik komentarzy włączy się po aktualizacji bazy.",
       "prywatny": "Prywatny (mój katalog)",
       "prywatnyOpis": "Widzisz go tylko Ty i osoby, którym dasz dostęp.",
       "pozwolPobierac": "Pozwól pobierać",
@@ -2064,6 +2067,12 @@
       "sampleZapisz": "Zapisz sampel",
       "sampleDodajNaSciezke": "Dodaj na ścieżkę",
       "sampleWyslij": "Do moderacji",
+      "sampleWyslijOpis": "Po akceptacji sampel wchodzi do katalogu publicznego. Potem możesz go stamtąd zdjąć.",
+      "samplePubliczny": "Katalog publiczny",
+      "samplePublicznyOpis": "Po moderacji sampel jest w katalogu, rankingu i można go oceniać. Możesz to wyłączyć bez ponownej moderacji.",
+      "sampleKomentarze": "Komentarze",
+      "sampleKomentarzeOpis": "Tylko przy publicznym katalogu. Oceny zostają.",
+      "sampleUdostepnianieCzeka": "Przełącznik katalogu włączy się po aktualizacji bazy.",
       "sampleUsun": "Usuń",
       "samplePusty": "Nie ma jeszcze sampli.",
       "sampleLadowanie": "Wczytywanie…",
@@ -3526,7 +3535,7 @@
   },
   "community": {
     "pitch": "Oceń bit albo sampel. Trzy pierwsze miejsca tygodnia dostają dni premium (7, 3 i 1). Miesiąc daje cały pakiet: 1. Gold, 2. Silver, 3. Bronze. Nagrodę włączasz sam, kiedy chcesz, w profilu → Nagrody.",
-    "rules": "Tydzień i miesiąc liczą się według czasu Warszawa. Jedna ocena na bit albo sampel, w tym okresie, w którym padła. Swojego nie oceniasz. Nagroda od trzech różnych osób. BitRymDym zostaje na tablicy, ale nagrodę bierze autor. To dni albo miesiąc premium, nie pieniądze. Nie da się jej dołożyć do premium bez daty końca.",
+    "rules": "Tydzień i miesiąc liczą się według czasu Warszawa. Jedna ocena na bit albo sampel, w tym okresie, w którym padła. Swojego nie oceniasz. Nagroda od trzech różnych osób. BitRymDym zostaje na tablicy, ale nagrodę bierze autor. To dni albo miesiąc premium, nie pieniądze. Nie da się jej dołożyć do premium bez daty końca. Autor wybiera katalog publiczny. Tylko wtedy utwór jest w rankingu i ludzie mogą go oceniać. Komentarze można wyłączyć.",
     "off": "Oceny i ranking włączą się po aktualizacji bazy. Katalog już działa.",
     "shelf": {
       "aria": "Katalog i ranking",
@@ -3546,7 +3555,8 @@
       "samplesEmptyBrd": "BitRymDym nie wrzucił jeszcze własnych sampli. Poniżej są sample ludzi, po moderacji.",
       "samplesEmptyUser": "Publiczny katalog sampli jest jeszcze pusty. Zapisany sampel wchodzi tu po moderacji.",
       "listen": "Odsłuch",
-      "signInListen": "Zaloguj się, żeby odsłuchać"
+      "signInListen": "Zaloguj się, żeby odsłuchać",
+      "by": "Autor: {name}"
     },
     "rank": {
       "week": "Tydzień",
@@ -3574,7 +3584,9 @@
       "average": "{score} · {count} ocen",
       "comments": "Komentarze",
       "limit": "Za dużo komentarzy w tej godzinie.",
-      "invalid": "Komentarz ma mieć od 1 do 500 znaków."
+      "invalid": "Komentarz ma mieć od 1 do 500 znaków.",
+      "commentsOff": "Autor wyłączył komentarze.",
+      "you": "Ty"
     },
     "rewards": {
       "title": "Nagrody",

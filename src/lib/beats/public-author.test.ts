@@ -37,6 +37,25 @@ describe("resolvePublicAuthor (OTD-ACCOUNT-02)", () => {
     ).toBe(ANONYMIZED_PUBLIC_AUTHOR);
   });
 
+  it("names a platform beat and a user with no ksywka", () => {
+    expect(
+      resolvePublicAuthor({
+        ownershipType: "PLATFORM",
+        ownerId: null,
+        producer: null,
+        ownerDisplayName: null,
+      }),
+    ).toBe("BitRymDym");
+    expect(
+      resolvePublicAuthor({
+        ownershipType: "USER",
+        ownerId: "u1",
+        producer: null,
+        ownerDisplayName: null,
+      }),
+    ).toBe(ANONYMIZED_PUBLIC_AUTHOR);
+  });
+
   it("keeps PLATFORM producer as-is", () => {
     expect(
       resolvePublicAuthor({
