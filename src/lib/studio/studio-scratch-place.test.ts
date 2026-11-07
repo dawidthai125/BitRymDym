@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
-import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
+import {
+  copyCatalogAndPlaceStudioClip,
+  placeOwnedStudioSample,
+} from "@/lib/studio/studio-scratch-place";
 
 const CLIP = {
   id: "clip-1",
@@ -123,9 +126,42 @@ describe("copyCatalogAndPlaceStudioClip", () => {
       join(process.cwd(), "src/components/studio/studio-recording-panel.tsx"),
       "utf8",
     );
-    expect(panel).toMatch(/copyCatalogAndPlaceStudioClip/);
+    expect(panel).toMatch(/placeOwnedStudioSample/);
+    expect(panel).toMatch(/StudioSampleDesk/);
     expect(panel).toMatch(/StudioScratchPanel/);
     expect(panel).not.toMatch(/new StudioAudioEngine/);
     expect(panel).not.toMatch(/new AudioContext/);
+  });
+});
+
+describe("placeOwnedStudioSample", () => {
+  it("copies the owner sample then uses the existing place route", async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (url === "/api/studio/samples/sample-1/copy") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ takeId: "take-1", reusedExisting: false }),
+        };
+      }
+      expect(url).toBe("/api/studio/projects/proj-1/record/place");
+      return {
+        ok: true,
+        status: 201,
+        json: async () => ({ clip: CLIP, documentVersion: 8, reusedExisting: false }),
+      };
+    });
+    const result = await placeOwnedStudioSample(
+      {
+        projectId: "proj-1",
+        sampleId: "sample-1",
+        trackId: "track-1",
+        timelineStartMs: 1200,
+        expectedDocumentVersion: 7,
+      },
+      fetchImpl as unknown as typeof fetch,
+    );
+    expect(result.ok).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

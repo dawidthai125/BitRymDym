@@ -82,7 +82,7 @@ describe("P5.6 auto-place decoupling", () => {
   it("READY_TAKE Keep block sits above catalog chrome and asks for Zachowaj", () => {
     const panel = readFileSync(panelPath, "utf8");
     const workflowIdx = panel.indexOf('aria-label="Przebieg nagrania w Studio"');
-    const catalogIdx = panel.indexOf("Katalog → klip Studio");
+    const catalogIdx = panel.indexOf("<StudioSampleDesk");
     expect(workflowIdx).toBeGreaterThan(-1);
     expect(catalogIdx).toBeGreaterThan(workflowIdx);
     expect(panel).toMatch(

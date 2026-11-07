@@ -97,6 +97,14 @@ export default async function AdminLayout({
               {t("moderacja")}
             </Link>
           ) : null}
+          {showModeration ? (
+            <Link
+              href="/admin/samples"
+              className="inline-flex min-h-11 items-center px-2 hover:text-[var(--brd-ink)]"
+            >
+              {t("sample")}
+            </Link>
+          ) : null}
           {showPlatform ? (
             <Link
               href="/admin/users"

@@ -16,7 +16,8 @@ import { useStudioTransport } from "@/components/studio/studio-transport-provide
 import { StudioLyricsCard } from "@/components/studio/studio-lyrics-card";
 import { StudioStemImport } from "@/components/studio/studio-stem-import";
 import { StudioQuotaLine } from "@/components/studio/studio-quota-line";
-import { copyCatalogAndPlaceStudioClip } from "@/lib/studio/studio-scratch-place";
+import { StudioSampleDesk } from "@/components/studio/studio-sample-desk";
+import { placeOwnedStudioSample } from "@/lib/studio/studio-scratch-place";
 import { useMicAnalyser } from "@/hooks/use-mic-analyser";
 import { useStudioInputDevices } from "@/hooks/use-studio-input-devices";
 import { useStudioOutputDevices } from "@/hooks/use-studio-output-devices";
@@ -433,8 +434,6 @@ export function StudioRecordingPanel({
   const [punchOutMs, setPunchOutMs] = useState(4000);
   const [countInActive, setCountInActive] = useState(false);
   const [monitorOn, setMonitorOn] = useState(false);
-  const [catalogAssetId, setCatalogAssetId] = useState("");
-  const [catalogBusy, setCatalogBusy] = useState(false);
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const takeWorkflowRef = useRef<HTMLDivElement | null>(null);
@@ -2559,82 +2558,58 @@ export function StudioRecordingPanel({
       </>
       ) : null}
 
-      {!simple ? (
-      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
-        <p className="text-xs font-medium text-[var(--brd-ink)]">
-          {tr("katalogKlipStudio")}
-        </p>
-        <label className="block text-xs text-[var(--brd-mute)]">
-          {tr("idSampleKatalogu")}
-          <input
-            className="mt-1 w-full rounded border border-[var(--brd-line)] bg-transparent px-2 py-2 text-sm text-[var(--brd-ink)]"
-            value={catalogAssetId}
-            onChange={(event) => setCatalogAssetId(event.target.value.trim())}
-            aria-label={tr("idSampleKatalogu")}
-            autoComplete="off"
-            disabled={catalogBusy || Boolean(workflowBusy)}
-          />
-        </label>
-        <Button
-          type="button"
-          size="sm"
-          className="min-h-11 w-full"
-          disabled={
-            catalogBusy ||
-            Boolean(workflowBusy) ||
-            !catalogAssetId ||
-            !trackId
+      <StudioSampleDesk
+        trackId={trackId}
+        disabled={Boolean(workflowBusy)}
+        onPlace={async (sampleId) => {
+          if (!trackId) {
+            return { ok: false as const, message: tr("sampleBrakSciezki") };
           }
-          onClick={() => {
-            void (async () => {
-              if (!trackId || !catalogAssetId) return;
-              setCatalogBusy(true);
-              setCatalogMessage(null);
-              setWorkflowError(null);
-              const result = await enqueuePersistAsync(async () => {
-                const placed = await copyCatalogAndPlaceStudioClip({
-                  projectId,
-                  catalogAssetId,
-                  trackId,
-                  timelineStartMs: Math.floor(transport.getPlayheadMs()),
-                  expectedDocumentVersion: persistVersionTip.expected(),
-                });
-                if (!placed.ok) {
-                  return classifyPersistHttpFailure({
-                    status: placed.status,
-                    message: placed.error,
+          setCatalogMessage(null);
+          setWorkflowError(null);
+          const result = await enqueuePersistAsync(async () => {
+            const placed = await placeOwnedStudioSample({
+              projectId,
+              sampleId,
+              trackId,
+              timelineStartMs: Math.floor(transport.getPlayheadMs()),
+              expectedDocumentVersion: persistVersionTip.expected(),
+            });
+            if (!placed.ok) {
+              return classifyPersistHttpFailure({
+                status: placed.status,
+                message: placed.error,
+              });
+            }
+            const documentVersion = persistVersionTip.applyAck(
+              placed.documentVersion,
+            );
+            return {
+              ok: true as const,
+              documentVersion,
+              apply: () => {
+                if (!placed.reusedExistingClip) {
+                  onClipCreated(placed.clip, documentVersion, {
+                    keepRecordPanel: true,
                   });
                 }
-                const documentVersion = persistVersionTip.applyAck(
-                  placed.documentVersion,
+                onLastScratchClipIdChange(placed.clip.id);
+                setCatalogMessage(
+                  placed.reusedExistingCopy
+                    ? tr("uzytoIstniejacejKopiiTake")
+                    : tr("skopiowanoSampleIUmieszczono"),
                 );
-                return {
-                  ok: true as const,
-                  documentVersion,
-                  apply: () => {
-                    if (!placed.reusedExistingClip) {
-                      onClipCreated(placed.clip, documentVersion, {
-                        keepRecordPanel: true,
-                      });
-                    }
-                    onLastScratchClipIdChange(placed.clip.id);
-                    setCatalogMessage(
-                      placed.reusedExistingCopy
-                        ? tr("uzytoIstniejacejKopiiTake")
-                        : tr("skopiowanoSampleIUmieszczono"),
-                    );
-                  },
-                };
-              });
-              if (!result.ok) {
-                setWorkflowError(result.message);
-              }
-              setCatalogBusy(false);
-            })();
-          }}
-        >
-          {tl(catalogBusy ? tr("kopiowanie") : tr("kopiujIUmiescNa"))}
-        </Button>
+              },
+            };
+          });
+          if (!result.ok) {
+            return { ok: false as const, message: result.message };
+          }
+          return { ok: true as const };
+        }}
+      />
+      {!simple ? (
+      <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         {catalogMessage ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
             {tl(catalogMessage)}
