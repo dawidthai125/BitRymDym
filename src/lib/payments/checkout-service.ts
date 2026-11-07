@@ -2,11 +2,11 @@ import "server-only";
 
 import type { AuthContext } from "@/lib/auth/types";
 import { PLAN_PACK_CATALOG, readPlanPaymentsAvailable, type PaidTier } from "@/config/plan-policy";
-import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentValid, type PurchaseConsentInput } from "@/lib/legal/legal-config";
+import { PRIVACY_VERSION, TERMS_VERSION, purchaseConsentCovers, type PurchaseConsentInput } from "@/lib/legal/legal-config";
 import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-import { checkoutBlock, isLivePaid, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
+import { checkoutBlock, isLivePaid, planStartsLater, type AddonSnapshot, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
 import { parseCheckoutProduct, priceGrosz, type CheckoutProduct } from "@/lib/payments/money";
 import { registerP24Transaction } from "@/lib/payments/p24-client";
 import { readP24Config } from "@/lib/payments/p24-config";
@@ -82,7 +82,6 @@ export async function startCheckout(input: {
   const product = parseCheckoutProduct(row?.product);
   if (!product) return { ok: false, code: "INVALID" };
   const consent = parsePurchaseConsent(row?.consent);
-  if (!consent || !purchaseConsentValid(consent)) return { ok: false, code: "CONSENT" };
 
   const email = input.context.email?.trim() ?? "";
   if (!email.includes("@") || email.length > 320) return { ok: false, code: "EMAIL" };
@@ -92,6 +91,7 @@ export async function startCheckout(input: {
     loadPlanSnapshot(input.context.userId),
     loadAddonSnapshot(input.context.userId),
   ]);
+  if (!consent || !purchaseConsentCovers(consent, planStartsLater(product, plan, now))) return { ok: false, code: "CONSENT" };
   const block = checkoutBlock(product, plan, addon, now);
   if (block) return { ok: false, code: block };
 

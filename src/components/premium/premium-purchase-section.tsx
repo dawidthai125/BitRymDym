@@ -72,6 +72,10 @@ export async function PremiumPurchaseSection() {
       tierBlock={context && !readFailed ? tierBlocks(plan, addon, now) : { BRONZE: null, SILVER: null, GOLD: null }}
       addonBlock={context && !readFailed ? checkoutBlock({ kind: "addon", addon: "reference_mastering", period: "month" }, plan, addon, now) : null}
       currentLine={currentLine}
+      nextLine={live?.pendingTier && live.expiresAt && live.pendingExpiresAt
+        ? tr("maszNastepny", { plan: live.pendingTier, start: formatDate(live.expiresAt, lang), koniec: formatDate(live.pendingExpiresAt, lang) })
+        : null}
+      livePlan={live}
       readFailed={readFailed}
     />
   );

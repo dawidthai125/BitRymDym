@@ -52,9 +52,11 @@ export default async function PaymentPreviewPage({ searchParams }: { searchParam
             packPrices={{ take: "9,99 zł", master: "14,99 zł", youtube: "9,99 zł" }}
             youtubeUnits={2}
             youtubeBlock={null}
-            tierBlock={{ BRONZE: "DOWNGRADE", SILVER: null, GOLD: null }}
+            tierBlock={{ BRONZE: null, SILVER: null, GOLD: null }}
             addonBlock={null}
-            currentLine="Masz Silver do 30 listopada 2026."
+            currentLine="Masz aktywny Silver do 30 listopada 2026."
+            nextLine={null}
+            livePlan={{ tier: "SILVER", active: true, expiresAt: "2026-11-30T00:00:00.000Z" }}
             readFailed={false}
           />
         </PageFrame>

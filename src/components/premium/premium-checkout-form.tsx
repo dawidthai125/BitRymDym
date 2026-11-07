@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { BrdButton, BrdLink } from "@/components/brand/brd-button";
 import { PurchaseConsent } from "@/components/legal/consent-checkbox";
 import type { PaidTier, PlanPack } from "@/config/plan-policy";
-import type { CheckoutBlock } from "@/lib/payments/entitlement-grant";
+import { planChangeKind, type CheckoutBlock, type PlanSnapshot } from "@/lib/payments/entitlement-grant";
 import { isP24Redirect } from "@/lib/payments/p24-url";
 import { isPayuRedirect } from "@/lib/payments/payu-url";
 
@@ -35,6 +35,8 @@ export function PremiumCheckoutForm({
   tierBlock,
   addonBlock,
   currentLine,
+  nextLine,
+  livePlan,
   readFailed,
 }: {
   loggedIn: boolean;
@@ -48,6 +50,8 @@ export function PremiumCheckoutForm({
   tierBlock: Record<PaidTier, CheckoutBlock | null>;
   addonBlock: CheckoutBlock | null;
   currentLine: string | null;
+  nextLine: string | null;
+  livePlan: PlanSnapshot;
   readFailed: boolean;
 }) {
   const t = useTranslations("account.premiumPage.checkout");
@@ -58,7 +62,13 @@ export function PremiumCheckoutForm({
   const [error, setError] = useState<Code | null>(null);
 
   const planBlocked = tierBlock[tier];
-  const consentOk = consent.acceptTerms && consent.immediatePerformance;
+  const change = planChangeKind(livePlan, tier, new Date());
+  const startsLater = change === "later";
+  function changeFor(item: PaidTier) {
+    return planChangeKind(livePlan, item, new Date());
+  }
+  const consentOk = consent.acceptTerms && (startsLater || consent.immediatePerformance);
+  const nowConsentOk = consent.acceptTerms && consent.immediatePerformance;
 
   async function pay(
     product:
@@ -101,8 +111,10 @@ export function PremiumCheckoutForm({
           <li>{t("regulaPrzedluzenie")}</li>
           <li>{t("regulaWyzszy")}</li>
           <li>{t("regulaNizszy")}</li>
+          <li>{t("regulaKolejka")}</li>
         </ul>
         {currentLine ? <p className="mt-3 text-sm font-medium text-[var(--brd-ink)]">{currentLine}</p> : null}
+        {nextLine ? <p className="mt-1 text-sm text-[var(--brd-ink)]">{nextLine}</p> : null}
         {readFailed ? <p role="alert" className="mt-3 text-sm text-[var(--brd-rec)]">{t("nieSprawdze")}</p> : null}
       </div>
 
@@ -132,7 +144,11 @@ export function PremiumCheckoutForm({
                   />
                   <span>
                     <span className="font-medium">{item}</span>
-                    {blocked ? <span className="mt-0.5 block text-xs text-[var(--brd-mute)]">{t(`blok.${blocked}`)}</span> : null}
+                    {blocked ? <span className="mt-0.5 block text-xs text-[var(--brd-mute)]">{t(`blok.${blocked}`)}</span> : (
+                      <span className="mt-0.5 block text-xs text-[var(--brd-mute)]">
+                        {changeFor(item) === "extend" ? t("przedluzasz") : changeFor(item) === "upgrade" ? t("odRazu") : changeFor(item) === "later" ? t("odDnia") : null}
+                      </span>
+                    )}
                   </span>
                 </label>
               );
@@ -157,13 +173,13 @@ export function PremiumCheckoutForm({
           <span className="text-sm text-[var(--brd-mute)]"> {period === "month" ? t("zaMiesiac") : t("zaRok")}</span>
         </p>
 
-        <PurchaseConsent value={consent} onChange={setConsent} />
+        <PurchaseConsent value={consent} onChange={setConsent} startsLater={startsLater} />
 
         {error ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t(`blad.${error}`)}</p> : null}
 
         {loggedIn ? (
           <BrdButton type="submit" disabled={!!planBlocked || readFailed || pending !== null || !consentOk} data-testid="premium-checkout-submit">
-            {pending === "plan" ? t("czekam") : t("place")}
+            {pending === "plan" ? t("czekam") : change === "extend" ? t("placePrzedluz") : change === "upgrade" ? t("placeWyzej") : change === "later" ? t("placeNizej") : t("place")}
           </BrdButton>
         ) : (
           <BrdLink href={signInHref} data-testid="premium-checkout-signin">{t("zalogujSie")}</BrdLink>
@@ -183,7 +199,7 @@ export function PremiumCheckoutForm({
         <p className="font-mono text-xl">{addonPrice}<span className="text-sm text-[var(--brd-mute)]"> {t("zaMiesiac")}</span></p>
         {addonBlock ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${addonBlock}`)}</p> : null}
         {loggedIn ? (
-          <BrdButton type="submit" variant="secondary" disabled={!!addonBlock || readFailed || pending !== null || !consentOk} data-testid="premium-addon-submit">
+          <BrdButton type="submit" variant="secondary" disabled={!!addonBlock || readFailed || pending !== null || !nowConsentOk} data-testid="premium-addon-submit">
             {pending === "addon" ? t("czekam") : t("dodatekPrzycisk")}
           </BrdButton>
         ) : null}
@@ -210,7 +226,7 @@ export function PremiumCheckoutForm({
             </p>
             {blocked ? <p className="text-sm text-[var(--brd-mute)]">{t(`blok.${blocked}`)}</p> : null}
             {loggedIn ? (
-              <BrdButton type="submit" variant="secondary" disabled={!!blocked || readFailed || pending !== null || !consentOk} data-testid={`premium-pack-${pack}`}>
+              <BrdButton type="submit" variant="secondary" disabled={!!blocked || readFailed || pending !== null || !nowConsentOk} data-testid={`premium-pack-${pack}`}>
                 {pending === pack ? t("czekam") : t("pakietPrzycisk")}
               </BrdButton>
             ) : null}

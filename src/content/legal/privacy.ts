@@ -12,7 +12,7 @@ export const PRIVACY: LegalDoc = {
       `Administratorem danych jest ${O.name}, ${O.address}, NIP ${O.nip} („my”). Kontakt w sprawach danych: ${O.privacyEmail}. Nie wyznaczyliśmy inspektora ochrony danych.`,
     ] },
     { id: "p2", h: "2. Jakie dane przetwarzamy", blocks: [{ list: [
-      "Konto: adres e-mail, zaszyfrowane hasło (przechowuje je dostawca uwierzytelniania), ksywka, numer użytkownika, Plan, data rejestracji, wersja zaakceptowanego Regulaminu i Polityki.",
+      "Konto: adres e-mail, zaszyfrowane hasło (przechowuje je dostawca uwierzytelniania), ksywka, numer użytkownika, Plan, data końca Planu, nazwa i data końca zaplanowanego następnego Planu (jeśli został opłacony), data rejestracji, wersja zaakceptowanego Regulaminu i Polityki.",
       "Treści: wgrane Bity, okładki, Nagrania (Twój głos lub instrument), projekty Studia, teksty, utwory referencyjne do masteringu, wygenerowane miksy, mastery i wideo.",
       "Aktywność: odsłuchy, pobrania, polubienia, linki do odsłuchu i liczba ich odtworzeń, historia moderacji i odwołań.",
       "Dane techniczne: adres IP, typ przeglądarki, logi serwera i błędów, identyfikatory sesji w plikach cookie.",

@@ -67,12 +67,16 @@ function polishWhen(iso: string): string {
 
 function receiptLine(write: GrantWrite): string {
   if (write.action === "plan") return `Tu BITEK. Włączyłem ${write.tier} do ${polishWhen(write.expiresAt)}.`;
+  if (write.action === "schedule") {
+    return `Tu BITEK. ${write.pendingTier} włączy się ${polishWhen(write.expectedExpiresAt)} i potrwa do ${polishWhen(write.pendingExpiresAt)}. Do tego dnia zostaje ${write.expectedTier}.`;
+  }
   if (write.action === "addon") return `Tu BITEK. Włączyłem mastering z referencją do ${polishWhen(write.endsAt)}.`;
   if (write.action === "pack") {
     const what = write.pack === "take" ? "nagrań" : write.pack === "youtube" ? "wideo MP4" : "masterów";
     return `Tu BITEK. Dodałem ${write.units} ${what}. Zostają, aż je wykorzystasz.`;
   }
   if (write.note === "downgrade") return "Tu BITEK. Wpłata doszła, ale niższego planu nie włączam, dopóki wyższy trwa.";
+  if (write.note === "pending_plan") return "Tu BITEK. Wpłata doszła, ale inny niższy plan jest już zaplanowany. Napisz na dawid.thai@int.pl, to oddam tę wpłatę przez PayU.";
   if (write.note === "addon_perpetual") return "Tu BITEK. Wpłata doszła, ale bezterminowego dodatku nie skracam.";
   return "Tu BITEK. Wpłata doszła, ale bezterminowego planu nie skracam.";
 }

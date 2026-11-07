@@ -10,6 +10,7 @@ import {
   type PremiumTierLimits,
 } from "@/config/premium-tiers";
 import {
+  foldDuePremium,
   isPremiumEntitlementActive,
   type PremiumEntitlementSnapshot,
 } from "@/lib/audio/effective-entitlement";
@@ -101,8 +102,9 @@ export function resolveProductEntitlement(params: {
     params.premium != null && params.premium.userId === params.userId
       ? params.premium
       : null;
+  const effectivePremium = foldDuePremium(premiumMatchesUser, nowMs) ?? null;
 
-  const active = isPremiumEntitlementActive(premiumMatchesUser, nowMs);
+  const active = isPremiumEntitlementActive(effectivePremium, nowMs);
   const stored =
     premiumMatchesUser && isPremiumTier(premiumMatchesUser.tier)
       ? premiumMatchesUser.tier
@@ -111,7 +113,7 @@ export function resolveProductEntitlement(params: {
         : null;
 
   const premiumTier = active
-    ? storedTierOrLegacySilver(premiumMatchesUser, nowMs)
+    ? storedTierOrLegacySilver(effectivePremium, nowMs)
     : "FREE";
 
   const limits = limitsForPremiumTier(premiumTier);
@@ -127,7 +129,7 @@ export function resolveProductEntitlement(params: {
     premiumTier,
     premiumActive: premiumTier !== "FREE",
     premiumSource: active ? (premiumMatchesUser?.source ?? null) : null,
-    premiumExpiresAt: premiumMatchesUser?.expiresAt ?? null,
+    premiumExpiresAt: active ? (effectivePremium?.expiresAt ?? null) : (premiumMatchesUser?.expiresAt ?? null),
     storedPremiumTier: stored,
     capabilities,
     limits,

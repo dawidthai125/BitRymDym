@@ -47,17 +47,63 @@ describe("entitlement extension", () => {
     expect(write).toMatchObject({ action: "plan", expiresAt: "2027-12-01T00:00:00.000Z" });
   });
 
-  it("starts a higher tier now and does not credit leftover days", () => {
+  it("starts a higher tier now and adds the time left on the lower plan", () => {
     const plan: PlanSnapshot = { tier: "BRONZE", active: true, expiresAt: "2026-12-01T00:00:00.000Z" };
     const write = grantWrite({ kind: "plan", tier: "GOLD", period: "month" }, plan, null, NOW);
-    expect(write).toMatchObject({ action: "plan", tier: "GOLD", expiresAt: "2026-07-15T12:00:00.000Z" });
+    const leftover = Date.parse("2026-12-01T00:00:00.000Z") - NOW.getTime();
+    const expiresAt = new Date(addBillingPeriod(NOW, "month").getTime() + leftover).toISOString();
+    expect(write).toMatchObject({ action: "plan", tier: "GOLD", expiresAt, pendingTier: null });
     expect(checkoutBlock({ kind: "plan", tier: "GOLD", period: "month" }, plan, null, NOW)).toBeNull();
   });
 
-  it("refuses a downgrade at checkout and skips it if a webhook arrives anyway", () => {
+  it("queues a lower plan from the current end and refuses a second, different one", () => {
     const plan: PlanSnapshot = { tier: "GOLD", active: true, expiresAt: "2026-12-01T00:00:00.000Z" };
-    expect(checkoutBlock({ kind: "plan", tier: "BRONZE", period: "month" }, plan, null, NOW)).toBe("DOWNGRADE");
-    expect(grantWrite({ kind: "plan", tier: "BRONZE", period: "month" }, plan, null, NOW)).toEqual({ action: "skip", note: "downgrade" });
+    expect(checkoutBlock({ kind: "plan", tier: "BRONZE", period: "month" }, plan, null, NOW)).toBeNull();
+    expect(grantWrite({ kind: "plan", tier: "BRONZE", period: "month" }, plan, null, NOW)).toMatchObject({
+      action: "schedule",
+      pendingTier: "BRONZE",
+      pendingExpiresAt: "2027-01-01T00:00:00.000Z",
+      expectedExpiresAt: "2026-12-01T00:00:00.000Z",
+    });
+    const queued: PlanSnapshot = { ...plan, pendingTier: "BRONZE", pendingExpiresAt: "2027-01-01T00:00:00.000Z" };
+    expect(grantWrite({ kind: "plan", tier: "BRONZE", period: "month" }, queued, null, NOW)).toMatchObject({
+      action: "schedule",
+      pendingExpiresAt: "2027-02-01T00:00:00.000Z",
+    });
+    expect(checkoutBlock({ kind: "plan", tier: "SILVER", period: "month" }, queued, null, NOW)).toBe("PENDING_PLAN");
+    expect(grantWrite({ kind: "plan", tier: "SILVER", period: "month" }, queued, null, NOW)).toEqual({ action: "skip", note: "pending_plan" });
+  });
+
+  it("keeps a queued plan's length when the current plan is extended", () => {
+    const plan: PlanSnapshot = {
+      tier: "SILVER",
+      active: true,
+      expiresAt: "2026-12-01T00:00:00.000Z",
+      pendingTier: "BRONZE",
+      pendingExpiresAt: "2027-01-01T00:00:00.000Z",
+    };
+    expect(grantWrite({ kind: "plan", tier: "SILVER", period: "month" }, plan, null, NOW)).toMatchObject({
+      action: "plan",
+      expiresAt: "2027-01-01T00:00:00.000Z",
+      pendingTier: "BRONZE",
+      pendingExpiresAt: "2027-02-01T00:00:00.000Z",
+    });
+  });
+
+  it("treats a due queue as the current plan", () => {
+    const plan: PlanSnapshot = {
+      tier: "GOLD",
+      active: true,
+      expiresAt: "2026-06-01T00:00:00.000Z",
+      pendingTier: "SILVER",
+      pendingExpiresAt: "2026-08-01T00:00:00.000Z",
+    };
+    expect(grantWrite({ kind: "plan", tier: "SILVER", period: "month" }, plan, null, NOW)).toMatchObject({
+      action: "plan",
+      tier: "SILVER",
+      expiresAt: "2026-09-01T00:00:00.000Z",
+      pendingTier: null,
+    });
   });
 
   it("does not replace a perpetual admin grant with a finite date", () => {
@@ -130,7 +176,7 @@ describe("webhook idempotency", () => {
 });
 
 describe("checkout copy", () => {
-  const blocks = ["DOWNGRADE", "PERPETUAL", "ADDON_INCLUDED", "ADDON_NEEDS_SILVER", "ADDON_PERPETUAL", "PACK_NEEDS_PAID"] as const;
+  const blocks = ["PENDING_PLAN", "PERPETUAL", "ADDON_INCLUDED", "ADDON_NEEDS_SILVER", "ADDON_PERPETUAL", "PACK_NEEDS_PAID"] as const;
   const errors = ["PAYMENTS_OFF", "CONSENT", "EMAIL", "INVALID", "RATE", "PROVIDER", "ORIGIN", "LOGIN", ...blocks] as const;
 
   it("has a Polish and English line for every block and error", () => {
