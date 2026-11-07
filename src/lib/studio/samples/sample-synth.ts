@@ -67,17 +67,19 @@ function renderVoice(
     const t = i / sampleRate;
     let sample = 0;
     if (instrument === "piano") {
-      const env = Math.exp(-t * 3.2);
+      const env = Math.exp(-t * 2.6);
+      const hammer = t < 0.008 ? (1 - t / 0.008) * nextNoise() * 0.22 : 0;
       sample =
-        Math.sin(2 * Math.PI * hz * t) * 0.62 +
-        Math.sin(2 * Math.PI * hz * 2 * t) * 0.22 * Math.exp(-t * 4) +
-        Math.sin(2 * Math.PI * hz * 3 * t) * 0.1 * Math.exp(-t * 6) +
-        Math.sin(2 * Math.PI * hz * 4.01 * t) * 0.06 * Math.exp(-t * 8);
-      sample *= env;
+        Math.sin(2 * Math.PI * hz * t) * 0.7 +
+        Math.sin(2 * Math.PI * hz * 2 * t) * 0.2 * Math.exp(-t * 5) +
+        Math.sin(2 * Math.PI * hz * 3 * t) * 0.08 * Math.exp(-t * 7) +
+        hammer;
+      sample = Math.tanh(sample * 1.15) * env;
     } else if (instrument === "bass") {
-      const env = Math.min(1, t / 0.02) * Math.exp(-t * 1.4);
-      const phase = (hz * t) % 1;
-      sample = (Math.sin(2 * Math.PI * hz * t) * 0.75 + (2 * phase - 1) * 0.18) * env;
+      const env = Math.min(1, t / 0.012) * Math.exp(-t * 1.15);
+      const sub = Math.sin(2 * Math.PI * hz * t);
+      const mid = Math.sin(2 * Math.PI * hz * 2 * t) * Math.exp(-t * 5);
+      sample = Math.tanh(sub * 1.05 + mid * 0.28) * env;
     } else if (instrument === "lead") {
       const env = Math.min(1, t / 0.03) * Math.exp(-t * 0.7);
       const phase = (hz * t) % 1;
@@ -90,14 +92,14 @@ function renderVoice(
         Math.sin(2 * Math.PI * hz * 0.5 * t) * 0.2;
       sample *= env;
     } else if (instrument === "guitar") {
-      const env = Math.exp(-t * 2.2);
-      const bite = Math.exp(-t * 16);
+      const env = Math.exp(-t * 2.4);
+      const bite = Math.exp(-t * 18);
       sample =
-        Math.sin(2 * Math.PI * hz * t) * 0.42 +
-        Math.sin(2 * Math.PI * hz * 2 * t) * 0.16 * bite +
-        Math.sin(2 * Math.PI * hz * 3 * t) * 0.07 * bite +
-        nextNoise() * bite * 0.07;
-      sample *= env;
+        Math.sin(2 * Math.PI * hz * t) * 0.48 +
+        Math.sin(2 * Math.PI * hz * 2 * t) * 0.2 * bite +
+        Math.sin(2 * Math.PI * hz * 3 * t) * 0.08 * bite +
+        nextNoise() * bite * 0.16;
+      sample = Math.tanh(sample * 1.3) * env;
     } else if (instrument === "pluck") {
       const env = Math.exp(-t * 6);
       sample = Math.sin(2 * Math.PI * hz * t) * env + nextNoise() * env * 0.15;
@@ -106,15 +108,20 @@ function renderVoice(
       const phase = (hz * t) % 1;
       sample = (2 * phase - 1) * env * 0.4 + Math.sin(2 * Math.PI * hz * t) * env * 0.25;
     } else if (instrument === "kick") {
-      const freq = 140 * Math.exp(-t * 10) + 42;
-      const env = Math.exp(-t * 8);
-      sample = Math.sin(2 * Math.PI * freq * t) * env;
+      const freq = 165 * Math.exp(-t * 32) + 46;
+      const env = Math.exp(-t * 7);
+      const click = t < 0.004 ? (1 - t / 0.004) * nextNoise() : 0;
+      sample = Math.tanh(Math.sin(2 * Math.PI * freq * t) * env * 1.35 + click * 0.7);
     } else if (instrument === "snare") {
-      const env = Math.exp(-t * 10);
-      sample = nextNoise() * env * 0.7 + Math.sin(2 * Math.PI * 180 * t) * env * 0.35;
+      const noiseEnv = Math.exp(-t * 16);
+      const body = Math.exp(-t * 10);
+      sample =
+        nextNoise() * noiseEnv * 0.9 +
+        Math.sin(2 * Math.PI * 180 * t) * body * 0.5 +
+        Math.sin(2 * Math.PI * 320 * t) * body * 0.18;
     } else if (instrument === "hat") {
-      const env = Math.exp(-t * 28);
-      sample = nextNoise() * env * 0.55;
+      const env = Math.exp(-t * 42);
+      sample = (nextNoise() - nextNoise()) * env * 0.55;
     } else if (instrument === "impact") {
       const env = Math.exp(-t * 4);
       sample = nextNoise() * env * 0.45 + Math.sin(2 * Math.PI * 55 * t) * env * 0.5;

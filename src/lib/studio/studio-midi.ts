@@ -20,6 +20,7 @@ export const MIDI_INSTRUMENTS = [
   "pluck",
   "brass",
   "drums",
+  "scratch",
 ] as const;
 export type MidiInstrument = (typeof MIDI_INSTRUMENTS)[number];
 
@@ -261,6 +262,65 @@ export function drumPatternAt(playheadMs: number, bpm: number): StudioMidiV1 {
   return { v: MIDI_VERSION, instrument: "drums", notes: keepOnTimeline(notes) };
 }
 
+/**
+ * One bar of turntable-style scratches on this track, in the project tempo.
+ * Pitch 60 is a baby scratch, 67 is a shorter chirp. An existing scratch line
+ * keeps its notes and gains this bar. Another instrument is left untouched.
+ */
+export function scratchPatternAt(
+  playheadMs: number,
+  bpm: number,
+  existing?: StudioMidiV1 | null,
+): StudioMidiV1 {
+  const start = atPlayhead(playheadMs);
+  const beat = quarterMs(bpm);
+  const baby = Math.max(1, Math.round(beat * 0.62));
+  const chirp = Math.max(1, Math.round(beat * 0.28));
+  const bar: MidiNote[] = [
+    { t: start + beat, dur: baby, pitch: 60, vel: 0.92 },
+    { t: start + beat * 2 + Math.round(beat * 0.5), dur: chirp, pitch: 67, vel: 0.8 },
+    { t: start + beat * 3, dur: baby, pitch: 60, vel: 0.92 },
+  ];
+  const prev = existing && existing.instrument === "scratch" ? existing.notes : [];
+  return { v: MIDI_VERSION, instrument: "scratch", notes: keepOnTimeline([...prev, ...bar]).slice(0, MIDI_LIMITS.maxNotes) };
+}
+
+/** A short record-like tone read forward and back, so a note sounds like a scratch. */
+function renderScratchNote(length: number, sampleRate: number, pitch: number): Float32Array {
+  const out = new Float32Array(length);
+  if (length <= 0 || sampleRate <= 0) return out;
+  const recordLen = Math.max(8, Math.floor(sampleRate * 0.16));
+  const record = new Float32Array(recordLen);
+  let x = (Math.round(pitch) * 1103515245 + 12345) >>> 0 || 1;
+  const nextNoise = () => {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return ((x >>> 0) / 4294967296) * 2 - 1;
+  };
+  for (let i = 0; i < recordLen; i++) {
+    const t = i / sampleRate;
+    const env = Math.sin((Math.PI * i) / recordLen);
+    record[i] =
+      (Math.sin(2 * Math.PI * 190 * t) * 0.3 +
+        Math.sin(2 * Math.PI * 680 * t) * 0.34 +
+        Math.sin(2 * Math.PI * 1320 * t) * 0.16 +
+        nextNoise() * 0.12) *
+      env;
+  }
+  const passes = pitch >= 64 ? 4 : 2;
+  for (let i = 0; i < length; i++) {
+    const u = i / length;
+    const cycle = (u * passes) % 1;
+    const forward = Math.floor(u * passes) % 2 === 0;
+    const dir = forward ? cycle : 1 - cycle;
+    const pos = Math.min(recordLen - 1, Math.floor(dir * (recordLen - 1)));
+    const gate = pitch >= 64 ? (Math.sin(u * passes * Math.PI * 2) > 0 ? 1 : 0.12) : 1;
+    out[i] = (record[pos] ?? 0) * gate * 0.9;
+  }
+  return out;
+}
+
 function wave(instrument: MidiInstrument, phase: number): number {
   const p = phase - Math.floor(phase);
   if (instrument === "square") return p < 0.5 ? 1 : -1;
@@ -288,6 +348,14 @@ export function renderMidiNotes(input: {
     const end = Math.min(length, Math.floor(((note.t + note.dur) / 1000) * sr));
     const span = end - start;
     if (span <= 0) continue;
+    if (input.instrument === "scratch") {
+      const voice = renderScratchNote(span, sr, note.pitch);
+      const gain = note.vel * 0.85;
+      for (let i = 0; i < voice.length && start + i < out.length; i++) {
+        out[start + i] += (voice[i] ?? 0) * gain;
+      }
+      continue;
+    }
     if (input.instrument === "drums" || isTonalInstrument(input.instrument)) {
       const piece = input.instrument === "drums"
         ? note.pitch <= 37 ? "kick" : note.pitch <= 40 ? "snare" : "hat"

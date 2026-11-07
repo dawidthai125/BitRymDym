@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, reviewPlayedNotes } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, reviewPlayedNotes, scratchPatternAt } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -164,6 +164,24 @@ describe("studio midi", () => {
       durationMs: 400,
     });
     expect(guitar.some((sample) => Math.abs(sample) > 0.05)).toBe(true);
+  });
+
+  it("drops a scratch bar on the track and keeps an older scratch bar", () => {
+    const bar = scratchPatternAt(100, 120);
+    expect(bar.instrument).toBe("scratch");
+    expect(bar.notes.length).toBe(3);
+    expect(bar.notes[0]?.t).toBe(600);
+    const again = scratchPatternAt(2000, 120, bar);
+    expect(again.notes.length).toBe(6);
+    expect(scratchPatternAt(0, 120, { v: 1, instrument: "piano", notes: [{ t: 0, dur: 100, pitch: 60, vel: 0.8 }] }).notes.length).toBe(3);
+    const pcm = renderMidiNotes({
+      notes: bar.notes,
+      instrument: "scratch",
+      sampleRate: 8000,
+      durationMs: 2500,
+    });
+    expect(pcm.some((sample) => Math.abs(sample) > 0.05)).toBe(true);
+    expect(parseMidiForWrite(bar).instrument).toBe("scratch");
   });
 
   it("tells BITEK when a line is short, stuck, leaping, or ready", () => {

@@ -9,6 +9,7 @@ import {
   appendPlayedNote,
   renderMidiNotes,
   reviewPlayedNotes,
+  scratchPatternAt,
   type PlayKeyInstrument,
   type StudioMidiV1,
 } from "@/lib/studio/studio-midi";
@@ -206,8 +207,11 @@ export function StudioPlayKeys({
     hit(pitch, now);
   }
 
+  const scratchOn = midi?.instrument === "scratch" && midi.notes.length > 0;
   const review = reviewPlayedNotes(midi);
-  const reviewKey = !review
+  const reviewKey = scratchOn
+    ? "keysScratch"
+    : !review
     ? "keysIdle"
     : review.code === "short"
       ? "keysShort"
@@ -220,7 +224,7 @@ export function StudioPlayKeys({
             : review.code === "drums-ok"
               ? "keysDrumsOk"
               : "keysLineOk";
-  const mood: BitekMood = review?.code === "line-ok" || review?.code === "drums-ok" ? "done" : review ? "thinking" : "happy";
+  const mood: BitekMood = review?.code === "line-ok" || review?.code === "drums-ok" || scratchOn ? "done" : review ? "thinking" : "happy";
   const played = new Set(locked === instrument ? (midi?.notes.map((note) => note.pitch) ?? []) : []);
   const pianoBase = 60;
 
@@ -266,6 +270,25 @@ export function StudioPlayKeys({
         onClick={() => setArmed((value) => !value)}
       >
         {armed ? tr("klawiszeStop") : tr("klawiszeNagrywaj")}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="min-h-11 w-full"
+        disabled={disabled || locked !== null}
+        title={tr("klawiszeOpis")}
+        data-testid="studio-play-keys-scratch"
+        onClick={() => {
+          if (locked) {
+            setNotice(tr("klawiszeInny"));
+            return;
+          }
+          setNotice(null);
+          onCommit(scratchPatternAt(getPlayheadMs(), bpm, midiRef.current));
+        }}
+      >
+        {tr("klawiszeSkrecz")}
       </Button>
       {instrument === "drums" ? (
         <div className="relative mx-auto h-56 max-w-sm rounded-xl bg-[var(--brd-ink)]" data-testid="studio-play-drums">
