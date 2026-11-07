@@ -7,7 +7,7 @@
  */
 
 import { applyRapPocket } from "@/lib/studio/mix-analysis/rap-pocket";
-import { analysisFxChain, applyFxInPlace, type MixAnalysisInput, renderTrack, stereoPanBuffer } from "@/lib/studio/mix-analysis/render";
+import { analysisFxChain, applyFxInPlace, type MixAnalysisInput, type MixAnalysisTrack, renderTrack, stereoPanBuffer } from "@/lib/studio/mix-analysis/render";
 
 import type { Stereo } from "./dsp";
 
@@ -49,18 +49,32 @@ export function finishMixStereo(src: MixAnalysisInput, left: Float32Array, right
   return { left, right, sampleRate: sr };
 }
 
+type CollectedTrack = {
+  id: string;
+  name: string;
+  role: string;
+  effectsChain?: unknown;
+  left: Float32Array;
+  right: Float32Array;
+};
+
+function renderAudibleTracks(src: MixAnalysisInput): CollectedTrack[] {
+  const anySolo = src.tracks.some((t) => t.solo);
+  const rendered: CollectedTrack[] = [];
+  for (const t of src.tracks) {
+    const r = renderTrack(src, t, anySolo);
+    if (!r.audible || r.activeRanges.length === 0) continue;
+    rendered.push({ id: t.id, name: t.name, role: t.role, effectsChain: t.effectsChain, left: r.left, right: r.right });
+  }
+  return rendered;
+}
+
 export function renderMixStereo(input: MixAnalysisInput, opts: RenderMixOptions = {}): Stereo {
   const len = mixLength(input);
   const left = new Float32Array(len);
   const right = new Float32Array(len);
   const src = prepareMixInput(input, opts);
-  const anySolo = src.tracks.some((t) => t.solo);
-  const rendered: Array<{ role: string; effectsChain?: unknown; left: Float32Array; right: Float32Array }> = [];
-  for (const t of src.tracks) {
-    const r = renderTrack(src, t, anySolo);
-    if (!r.audible || r.activeRanges.length === 0) continue;
-    rendered.push({ role: t.role, effectsChain: t.effectsChain, left: r.left, right: r.right });
-  }
+  const rendered = renderAudibleTracks(src);
   if (!opts.raw) applyRapPocket(rendered, src.sampleRate, src.lengthMs, src.markers ?? []);
   for (const r of rendered) {
     for (let i = 0; i < len; i++) {
@@ -69,4 +83,25 @@ export function renderMixStereo(input: MixAnalysisInput, opts: RenderMixOptions 
     }
   }
   return finishMixStereo(src, left, right, opts);
+}
+
+export type MixStem = { id: string; name: string; audio: Stereo };
+
+/**
+ * One stereo file per track after track FX, gain, pan and the rap pocket.
+ * Mute and solo match the mix. Master FX, master gain and master pan stay off
+ * so a stem is not a second copy of the mastered song.
+ */
+export function renderMixStems(input: MixAnalysisInput): MixStem[] {
+  const src = prepareMixInput(input, {});
+  const rendered = renderAudibleTracks(src);
+  applyRapPocket(rendered, src.sampleRate, src.lengthMs, src.markers ?? []);
+  const byId = new Map(rendered.map((r) => [r.id, r]));
+  const len = mixLength(src);
+  return src.tracks.map((t) => stemOrSilence(t, byId.get(t.id), len, src.sampleRate));
+}
+
+function stemOrSilence(t: MixAnalysisTrack, hit: CollectedTrack | undefined, len: number, sampleRate: number): MixStem {
+  if (hit) return { id: t.id, name: t.name, audio: { left: hit.left, right: hit.right, sampleRate } };
+  return { id: t.id, name: t.name, audio: { left: new Float32Array(len), right: new Float32Array(len), sampleRate } };
 }

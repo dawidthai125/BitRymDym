@@ -139,6 +139,11 @@ export type PocketTrack = {
   right: Float32Array;
 };
 
+/** True when a lead vocal carries an enabled pocket slot. The parallel sum cannot duck per track, so that mix stays in-process. */
+export function mixHasRapPocket(tracks: readonly { role: string; effectsChain?: unknown }[]): boolean {
+  return tracks.some((t) => t.role === "lead_vocal" && readPocketParams(t.effectsChain) !== null);
+}
+
 /** In place, on already-rendered track buffers, before they are summed. */
 export function applyRapPocket(tracks: readonly PocketTrack[], sampleRate: number, lengthMs: number, markers: readonly PocketMarker[]): void {
   const leads = tracks.filter((t) => t.role === "lead_vocal" && readPocketParams(t.effectsChain));

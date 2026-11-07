@@ -389,7 +389,7 @@
         "pobieranie": "Pobieranie gotowych plików",
         "doJakosci": "do {q}",
         "brakPobierania": "🔒 brak",
-        "projektZip": "Projekt (ZIP ścieżek)",
+        "projektZip": "Projekt (ZIP: suche i mix)",
         "wideoYt": "Wideo MP4 pod YouTube",
         "wideoYtTydzien": "{n} / tydzień",
         "wideoYtJednorazowo": "jednorazowo {cena}",
@@ -2684,7 +2684,7 @@
         "mix": "Twój mix bez masteringu.",
         "master": "Gotowy numer po masteringu.",
         "raw": "Suma ścieżek bez efektów i bez zmian AI.",
-        "project": "Wszystkie ścieżki w jednym pliku ZIP."
+        "project": "Każda ścieżka dwa razy: sucha oraz po miksie (głośność, panorama, efekty, kieszeń). Bez masteringu."
       },
       "format": {
         "MP3_128": "MP3 128",

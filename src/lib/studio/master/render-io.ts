@@ -31,8 +31,9 @@ export function parseDecodedWav(buf: Buffer, shared = false): MixAnalysisSource 
   throw new Error("decode_format");
 }
 
-/** Stem file name inside the Projekt zip: NN-safe-name.wav. */
-export function stemFileName(index: number, trackName: string): string {
+/** Stem file name inside the Projekt zip: NN-safe-name.wav, or NN-safe-name-mix.wav after the mix. */
+export function stemFileName(index: number, trackName: string, kind: "dry" | "mix" = "dry"): string {
   const slug = trackName.toLowerCase().replace(/ł/g, "l").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
-  return `${String(index).padStart(2, "0")}-${slug || "track"}.wav`;
+  const base = `${String(index).padStart(2, "0")}-${slug || "track"}`;
+  return kind === "mix" ? `${base}-mix.wav` : `${base}.wav`;
 }

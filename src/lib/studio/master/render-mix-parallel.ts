@@ -12,6 +12,7 @@ import { availableParallelism } from "node:os";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 
+import { mixHasRapPocket } from "@/lib/studio/mix-analysis/rap-pocket";
 import type { MixAnalysisInput } from "@/lib/studio/mix-analysis/render";
 
 import type { Stereo } from "./dsp";
@@ -48,7 +49,8 @@ export async function renderMixStereoParallel(
 ): Promise<Stereo> {
   const src = prepareMixInput(input, opts);
   const n = Math.min(threads, src.tracks.length);
-  if (n <= 1) {
+  // Pocket ducks one track from another. The thread sum drops each buffer on arrival, so that mix stays in-process.
+  if (n <= 1 || (!opts.raw && mixHasRapPocket(src.tracks))) {
     const out = renderMixStereo(input, opts);
     onProgress?.(1);
     return out;

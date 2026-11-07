@@ -389,7 +389,7 @@
         "pobieranie": "Finished-file downloads",
         "doJakosci": "up to {q}",
         "brakPobierania": "🔒 none",
-        "projektZip": "Project (ZIP of tracks)",
+        "projektZip": "Project (ZIP: dry and mix)",
         "wideoYt": "YouTube MP4 video",
         "wideoYtTydzien": "{n} / week",
         "wideoYtJednorazowo": "one-off {cena}",
@@ -2684,7 +2684,7 @@
         "mix": "Your mix without mastering.",
         "master": "The finished, mastered song.",
         "raw": "Sum of tracks with no effects and no AI changes.",
-        "project": "All tracks in one ZIP file."
+        "project": "Each track twice: dry, and after the mix (level, pan, effects, pocket). No mastering."
       },
       "format": {
         "MP3_128": "MP3 128",

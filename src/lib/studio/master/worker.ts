@@ -25,7 +25,7 @@ import { studioJobProgress, type StudioJobStage } from "./progress";
 import { REFERENCE_COLUMNS, deleteStudioReferenceById, type StudioReferenceRow } from "./reference-store";
 import { previewKeyFor, previewMixArgs, tagCycleArgs } from "./preview";
 import { PREVIEW_TAG_WAV_BASE64 } from "./preview-tag";
-import { renderMixStereo } from "./render-mix";
+import { renderMixStems, renderMixStereo } from "./render-mix";
 import { renderMixStereoParallel } from "./render-mix-parallel";
 import { stemFileName } from "./render-io";
 import { assertServerDocVersion, loadServerMixInput, writeWavFloat } from "./server-render";
@@ -278,10 +278,17 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
         if (job.kind === "project_zip") {
           const stemsDir = path.join(dir, "stems");
           await mkdir(stemsDir);
+          const total = Math.max(1, input.tracks.length);
           let n = 0;
           for (const tr of input.tracks) {
-            await writeWavFloat(path.join(stemsDir, stemFileName(++n, tr.name)), renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }));
-            progress.report("render", n / input.tracks.length);
+            await writeWavFloat(path.join(stemsDir, stemFileName(++n, tr.name, "dry")), renderMixStereo(input, { raw: true, normalize: false, onlyTrackId: tr.id }));
+            progress.report("render", n / (total * 2));
+          }
+          const mixed = renderMixStems(input);
+          n = 0;
+          for (const stem of mixed) {
+            await writeWavFloat(path.join(stemsDir, stemFileName(++n, stem.name, "mix")), stem.audio);
+            progress.report("render", (total + n) / (total * 2));
           }
           cur = stemsDir;
         } else {
