@@ -20,6 +20,7 @@ import { VoiceShiftCore } from "@/lib/studio/mix-analysis/voice-shift";
 import { VocalLevelCore } from "@/lib/studio/mix-analysis/vocal-level";
 import {
   interpretStudioFxChainForPlayback,
+  saturateWetSample,
   type StudioFxInstance,
   type StudioFxPlaybackPlan,
   type StudioFxType,
@@ -714,9 +715,7 @@ function createSaturateProcessor(
 ): StudioOfflineFxProcessor {
   const drive = effect.params.drive;
   const mix = effect.params.mix;
-  const k = 1 + drive * 12;
-  const norm = Math.tanh(k);
-  const shape = (x: number) => (Math.tanh(x * k) / norm) * mix + x * (1 - mix);
+  const shape = (x: number) => saturateWetSample(x, drive) * mix + x * (1 - mix);
   return {
     type: "saturate",
     effectId: effect.id,

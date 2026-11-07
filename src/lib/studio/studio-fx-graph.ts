@@ -6,6 +6,7 @@
 import type { StudioAudioErrorCode } from "@/lib/studio/studio-audio-errors";
 import {
   interpretStudioFxChainForPlayback,
+  saturateWetSample,
   studioFxPlaybackFingerprint,
   type StudioFxCompressorParams,
   type StudioFxDeesserParams,
@@ -719,14 +720,13 @@ function tryBuildProcessSlot(
   return buildDelaySlot(ctx, effect);
 }
 
-function saturateCurve(drive: number): Float32Array {
+function saturateCurve(drive: number, mix: number): Float32Array {
   const n = 1024;
   const curve = new Float32Array(n);
-  const k = 1 + Math.min(1, Math.max(0, drive)) * 12;
-  const norm = Math.tanh(k);
+  const wet = Math.min(1, Math.max(0, mix));
   for (let i = 0; i < n; i++) {
     const x = (i / (n - 1)) * 2 - 1;
-    curve[i] = Math.tanh(x * k) / norm;
+    curve[i] = saturateWetSample(x, drive) * wet + x * (1 - wet);
   }
   return curve;
 }
@@ -739,8 +739,7 @@ function buildSaturateSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance):
     shaper.connect(wet);
     const apply = (fx: StudioFxInstance) => {
       const p = fx.params as StudioFxSaturateParams;
-      shaper.curve = saturateCurve(p.drive);
-      wet.gain.value = p.mix;
+      shaper.curve = saturateCurve(p.drive, p.mix);
     };
     apply(effect);
     return { nodes: [shaper], names: ["waveshaper"], apply };

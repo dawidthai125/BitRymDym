@@ -201,6 +201,34 @@ describe("stage 2 offline DSP (E3 render path)", () => {
       "gate:BYPASS",
     ]);
   });
+
+  it("saturate keeps a moderate vocal near its own level", () => {
+    const chain = buildStudioOfflineFxChain(
+      {
+        schemaVersion: 1,
+        effects: [
+          {
+            id: ID,
+            type: "saturate",
+            enabled: true,
+            params: { drive: 0.35, mix: 0.55 },
+          },
+        ],
+      },
+      "track",
+      SR,
+    );
+    const proc = chain?.processors[0];
+    expect(proc?.status).toBe("IMPLEMENTED");
+    if (!proc) return;
+    const amp = 0.3;
+    const one = proc.process({ left: amp, right: amp }).left;
+    const rms = sineRms(proc, 440, amp);
+    const delta = db(rms / (amp / Math.SQRT2));
+    expect(one).toBeLessThan(amp);
+    expect(delta).toBeLessThan(0.5);
+    expect(delta).toBeGreaterThan(-3);
+  });
 });
 
 type Node = {

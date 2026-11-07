@@ -49,6 +49,15 @@ describe("manual mix watch", () => {
     expect(issue?.fix).toEqual({ kind: "controls", trackId: "v", gainDb: 0.5 });
   });
 
+  it("stays quiet when the measurement is hot but the faders did not move", () => {
+    const issue = watchMixManual({
+      lang: "pl",
+      tracks: [vocal(), beat()],
+      baseline: { vocalVsBeatLu: 11.2, vocalGainDb: 0, beatGainDb: 0, masterTruePeakDbtp: -1, tracks: [] },
+    });
+    expect(issue).toBeNull();
+  });
+
   it("flags the only vocal when it is muted, and an extreme lead pan", () => {
     const muted = watchMixManual({ lang: "pl", tracks: [vocal({ muted: true }), beat()], baseline: null });
     expect(muted?.key).toBe("mute-vocal");

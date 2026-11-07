@@ -75,7 +75,7 @@ export function watchMixManual(input: WatchMixInput): ManualIssue | null {
   const base = input.baseline;
   if (base && vocal) {
     const peak = base.tracks.find((t) => t.id === vocal.id);
-    if (peak && Number.isFinite(peak.samplePeakDbfs)) {
+    if (peak && Number.isFinite(peak.samplePeakDbfs) && Math.abs(vocal.gainDb - peak.gainDb) >= 0.5) {
       const projected = peak.samplePeakDbfs + (vocal.gainDb - peak.gainDb);
       if (projected > -1) {
         const back = round1(Math.max(-24, vocal.gainDb - (projected - -6)));
@@ -89,8 +89,15 @@ export function watchMixManual(input: WatchMixInput): ManualIssue | null {
       }
     }
     const beatTrack = beat(input.tracks);
-    if (base.vocalVsBeatLu !== null && beatTrack && Number.isFinite(base.vocalVsBeatLu)) {
-      const projected = round1(base.vocalVsBeatLu + (vocal.gainDb - base.vocalGainDb) - (beatTrack.gainDb - base.beatGainDb));
+    const vocalMove = vocal.gainDb - base.vocalGainDb;
+    const beatMove = beatTrack ? beatTrack.gainDb - base.beatGainDb : 0;
+    if (
+      base.vocalVsBeatLu !== null &&
+      beatTrack &&
+      Number.isFinite(base.vocalVsBeatLu) &&
+      (Math.abs(vocalMove) >= 0.5 || Math.abs(beatMove) >= 0.5)
+    ) {
+      const projected = round1(base.vocalVsBeatLu + vocalMove - beatMove);
       if (projected < -6 || projected > 6) {
         const delta = round1(1.5 - projected);
         const next = round1(Math.min(12, Math.max(-24, vocal.gainDb + delta)));

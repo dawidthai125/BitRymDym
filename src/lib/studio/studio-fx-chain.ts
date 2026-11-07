@@ -325,6 +325,16 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     pocket: { verseDb: -1.5, hookDb: 0, depth: 0.55, doubleMs: 20, doubleCents: 12, doubleDb: -14 },
   };
 
+/**
+ * Wet saturator. Quiet audio stays near unity (slope at 0 is 1).
+ * Full-scale peaks fold. Drive 0 is tanh(x).
+ */
+export function saturateWetSample(x: number, drive: number): number {
+  const d = Math.min(1, Math.max(0, drive));
+  const k = 1 + d * 12;
+  return Math.tanh(x * k) / k;
+}
+
 /** Where an effect may be inserted. Pitch correction is per-voice → track only. */
 export const STUDIO_FX_REGISTRY: Record<
   StudioFxType,
