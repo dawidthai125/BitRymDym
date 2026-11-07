@@ -8,6 +8,7 @@ import { BITEK_MOOD_SRC, type BitekMood } from "@/components/studio/studio-bitek
 import {
   appendPlayedNote,
   renderMidiNotes,
+  renderMidiSampleWav,
   reviewPlayedNotes,
   scratchPatternAt,
   type PlayKeyInstrument,
@@ -156,6 +157,9 @@ export function StudioPlayKeys({
   const [instrument, setInstrument] = useState<PlayKeyInstrument>("piano");
   const [armed, setArmed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [sampleRights, setSampleRights] = useState(false);
+  const [sampleBusy, setSampleBusy] = useState(false);
+  const [sampleSaved, setSampleSaved] = useState<string | null>(null);
   const [down, setDown] = useState<number | null>(null);
   const midiRef = useRef(midi);
   const lastWall = useRef<number | null>(null);
@@ -205,6 +209,54 @@ export function StudioPlayKeys({
       return;
     }
     hit(pitch, now);
+  }
+
+  async function saveSample() {
+    const line = midiRef.current;
+    setSampleSaved(null);
+    if (!line || line.notes.length === 0) {
+      setNotice(tr("sampleBrakNuty"));
+      return;
+    }
+    if (!sampleRights) {
+      setNotice(tr("samplePrawaWymagane"));
+      return;
+    }
+    const wav = renderMidiSampleWav(line);
+    if (!wav) {
+      setNotice(tr("sampleBlad"));
+      return;
+    }
+    const tonal = line.instrument === "piano" || line.instrument === "guitar" || line.instrument === "bass";
+    const name = tr(
+      line.instrument === "scratch"
+        ? "klawiszeSkrecz"
+        : line.instrument === "drums"
+          ? "klawiszeBeben"
+          : line.instrument === "guitar"
+            ? "klawiszeGitara"
+            : line.instrument === "bass"
+              ? "klawiszeBas"
+              : "klawiszeFortepian",
+    );
+    setSampleBusy(true);
+    setNotice(null);
+    const form = new FormData();
+    const copy = new Uint8Array(wav.bytes.byteLength);
+    copy.set(wav.bytes);
+    form.set("file", new File([copy.buffer], "linia.wav", { type: "audio/wav" }));
+    form.set("title", name);
+    form.set("kind", tonal ? "instrument" : "effect");
+    form.set("instrument", tonal ? line.instrument : "");
+    form.set("rightsAccepted", "1");
+    const response = await fetch("/api/studio/samples", { method: "POST", body: form });
+    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    setSampleBusy(false);
+    if (!response.ok) {
+      setNotice(body?.message || tr("sampleBlad"));
+      return;
+    }
+    setSampleSaved(tr("sampleZapisano"));
   }
 
   const scratchOn = midi?.instrument === "scratch" && midi.notes.length > 0;
@@ -290,6 +342,31 @@ export function StudioPlayKeys({
       >
         {tr("klawiszeSkrecz")}
       </Button>
+      <label className="flex min-h-11 items-start gap-2 text-xs text-[var(--brd-ink)]">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={sampleRights}
+          onChange={(event) => setSampleRights(event.target.checked)}
+        />
+        <span>{tr("samplePrawa")}</span>
+      </label>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="min-h-11 w-full"
+        disabled={sampleBusy || !midi || midi.notes.length === 0}
+        data-testid="studio-play-keys-save-sample"
+        onClick={() => void saveSample()}
+      >
+        {sampleBusy ? tr("zapisywanie") : tr("sampleZapiszLinie")}
+      </Button>
+      {sampleSaved ? (
+        <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
+          {sampleSaved}
+        </p>
+      ) : null}
       {instrument === "drums" ? (
         <div className="relative mx-auto h-56 max-w-sm rounded-xl bg-[var(--brd-ink)]" data-testid="studio-play-drums">
           {PADS.map((pad) => {

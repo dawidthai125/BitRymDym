@@ -104,6 +104,8 @@ export type PlanPolicy = {
      * (browser memory: ~90 MB per decoded 4-min stereo stem; 32 needs a server mixdown).
      */
     maxStems: number;
+    /** Private samples kept in the user's catalog. Published ones count too. */
+    maxSamples: number;
   };
   mastering: {
     /** E3 master jobs per calendar month (Europe/Warsaw); failed/cancelled do not count. */
@@ -187,7 +189,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 3,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0 },
+    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0, maxSamples: 5 },
     mastering: { mastersPerMonth: 2, referenceMastering: "none" },
     downloads: {
       qualities: [],
@@ -215,7 +217,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 5,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 10, maxRecordingTracks: 2, maxStems: 0 },
+    studio: { maxProjects: 10, maxRecordingTracks: 2, maxStems: 0, maxSamples: 20 },
     mastering: { mastersPerMonth: 5, referenceMastering: "none" },
     downloads: {
       qualities: ["MP3_128"],
@@ -243,7 +245,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 7,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8 },
+    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8, maxSamples: 50 },
     mastering: { mastersPerMonth: 10, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
@@ -271,7 +273,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 10,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16 },
+    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16, maxSamples: 100 },
     mastering: { mastersPerMonth: 20, referenceMastering: "included" },
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
@@ -295,6 +297,10 @@ export const GUEST_POLICY = {
   beatDownloadsPerDay: 0,
   previewSeconds: 20,
 } as const;
+
+export function maxSamplesForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].studio.maxSamples;
+}
 
 export function planPolicy(tier: PremiumTier): PlanPolicy {
   return PLAN_POLICY[tier];

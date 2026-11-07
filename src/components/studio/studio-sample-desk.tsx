@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export function StudioSampleDesk({
   const [title, setTitle] = useState("");
   const [rights, setRights] = useState(false);
   const [uploadKind, setUploadKind] = useState<SampleKind>("effect");
+  const [quota, setQuota] = useState<string | null>(null);
 
   const load = useCallback(async (scope: "mine" | "catalog") => {
     setLoading(true);
@@ -61,20 +62,23 @@ export function StudioSampleDesk({
     const body = (await response.json().catch(() => null)) as {
       samples?: SampleDto[];
       message?: string;
+      cap?: number;
+      owned?: number;
     } | null;
     setLoading(false);
     if (!response.ok || !body?.samples) {
       setSamples([]);
+      setQuota(null);
       setError(body?.message || tr("sampleBlad"));
       return;
     }
     setSamples(body.samples);
+    setQuota(
+      scope === "mine" && typeof body.cap === "number"
+        ? tr("sampleLimit", { n: body.owned ?? body.samples.length, cap: body.cap })
+        : null,
+    );
   }, [tr]);
-
-  useEffect(() => {
-    if (tab === "create") return;
-    void load(tab);
-  }, [tab, load]);
 
   function instrumentLabel(id: string | null): string {
     if (!id || !isSampleInstrumentId(id)) return "";
@@ -142,6 +146,7 @@ export function StudioSampleDesk({
     }
     setStatus(tr("sampleZapisano"));
     setTab("mine");
+    void load("mine");
   }
 
   async function onUploadFile(file: File | null) {
@@ -168,6 +173,7 @@ export function StudioSampleDesk({
     }
     setStatus(tr("sampleZapisano"));
     setTab("mine");
+    void load("mine");
   }
 
   async function place(sampleId: string) {
@@ -225,6 +231,7 @@ export function StudioSampleDesk({
     <div className="space-y-2 rounded border border-[var(--brd-line)] p-2" data-testid="studio-sample-desk">
       <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("katalogKlipStudio")}</p>
       <p className="text-[11px] text-[var(--brd-mute)]">{tr("sampleLead")}</p>
+      {quota ? <p className="text-[11px] text-[var(--brd-mute)]">{quota}</p> : null}
       <div className="grid grid-cols-3 gap-1">
         {(["create", "mine", "catalog"] as const).map((item) => (
           <Button
@@ -233,7 +240,10 @@ export function StudioSampleDesk({
             size="sm"
             className="min-h-11 w-full"
             variant={tab === item ? "default" : "secondary"}
-            onClick={() => setTab(item)}
+            onClick={() => {
+              setTab(item);
+              if (item !== "create") void load(item);
+            }}
           >
             {tr(item === "create" ? "sampleUtworz" : item === "mine" ? "sampleMoje" : "sampleKatalog")}
           </Button>

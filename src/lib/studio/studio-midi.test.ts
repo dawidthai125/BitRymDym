@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, reviewPlayedNotes, scratchPatternAt } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, scratchPatternAt } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -182,6 +182,9 @@ describe("studio midi", () => {
     });
     expect(pcm.some((sample) => Math.abs(sample) > 0.05)).toBe(true);
     expect(parseMidiForWrite(bar).instrument).toBe("scratch");
+    const wav = renderMidiSampleWav(bar);
+    expect(wav && String.fromCharCode(...wav.bytes.slice(0, 4))).toBe("RIFF");
+    expect(wav && wav.durationMs).toBeGreaterThanOrEqual(1000);
   });
 
   it("tells BITEK when a line is short, stuck, leaping, or ready", () => {

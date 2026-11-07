@@ -151,6 +151,7 @@ describe("studio sample service", () => {
         rightsAccepted: false,
         bytes: wav(),
         declaredContentType: "audio/wav",
+        cap: 5,
       },
       adminFor(state) as never,
       SAMPLE_ID,

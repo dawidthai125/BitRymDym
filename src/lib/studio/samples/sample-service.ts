@@ -143,7 +143,7 @@ export async function listMyStudioSamples(
     .select(SELECT_ROW)
     .eq("owner_id", context.userId)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
   if (error && isMissingRelation(error)) {
     return { ok: false, error: SAMPLE_TABLE_UNAVAILABLE };
   }
@@ -213,6 +213,7 @@ export async function createStudioSample(
     rightsAccepted: boolean;
     bytes: Uint8Array;
     declaredContentType: string;
+    cap: number;
   },
   admin: AdminClient = createSupabaseAdminClient(),
   sampleId: string = crypto.randomUUID(),
@@ -246,6 +247,7 @@ export async function createStudioSample(
   const gate = evaluateSampleCreate({
     rightsAccepted: input.rightsAccepted,
     ownedCount: count ?? 0,
+    cap: input.cap,
   });
   if (!gate.ok) return gate;
 

@@ -53,6 +53,7 @@ export default function PremiumPage() {
     { id: "projekty", label: tr("tab.projekty"), cell: (x) => String(PLAN_POLICY[x].studio.maxProjects) },
     { id: "sciezki", label: tr("tab.sciezki"), cell: (x) => String(PLAN_POLICY[x].studio.maxRecordingTracks) },
     { id: "stemy", label: tr("tab.stemy"), cell: (x) => (PLAN_POLICY[x].studio.maxStems > 0 ? tr("tab.stemyIle", { n: PLAN_POLICY[x].studio.maxStems }) : "—") },
+    { id: "sample", label: tr("tab.sample"), cell: (x) => String(PLAN_POLICY[x].studio.maxSamples) },
     { id: "mastery", label: tr("tab.mastery"), cell: (x) => String(PLAN_POLICY[x].mastering.mastersPerMonth) },
     {
       id: "pobieranie",
@@ -165,6 +166,7 @@ export default function PremiumPage() {
                       <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxRecordingTracks })}</li>
                       <li>{tr("karta.mastery", { n: p.mastering.mastersPerMonth })}</li>
                       <li>{p.studio.maxStems > 0 ? tr("karta.stemy", { n: p.studio.maxStems }) : tr("karta.stemyBrak")}</li>
+                      <li>{tr("karta.sample", { n: p.studio.maxSamples })}</li>
                       <li>{bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
                       {p.downloads.youtubeVideosPerWeek > 0 ? <li>{tr("karta.yt", { n: p.downloads.youtubeVideosPerWeek })}</li> : null}
                       <li>{tr(p.tools.pitchCorrection.manualNotes ? "karta.nutyEdytor" : "karta.nuty")}</li>

@@ -153,6 +153,11 @@ export default async function HomePage() {
       },
     },
     {
+      id: "sample",
+      label: t("planSample"),
+      cell: (tier) => String(PLAN_POLICY[tier].studio.maxSamples),
+    },
+    {
       id: "projekty",
       label: t("planProjekty"),
       cell: (tier) => String(PLAN_POLICY[tier].studio.maxProjects),

@@ -6,7 +6,8 @@
 
 export const STUDIO_SAMPLES_TABLE = "studio_samples";
 
-export const SAMPLE_MAX_COUNT = 30;
+/** Hard ceiling. A plan cap is lower and is what the user actually hits. */
+export const SAMPLE_MAX_COUNT = 100;
 export const SAMPLE_MAX_BYTES = 8 * 1024 * 1024;
 export const SAMPLE_MIN_MS = 1000;
 export const SAMPLE_MAX_MS = 30_000;
@@ -130,6 +131,7 @@ export function evaluateSampleAudioMeta(input: {
 export function evaluateSampleCreate(input: {
   rightsAccepted: boolean;
   ownedCount: number;
+  cap: number;
 }):
   | { ok: true }
   | {
@@ -144,7 +146,8 @@ export function evaluateSampleCreate(input: {
       details: ["rights confirmation is required"],
     };
   }
-  if (!Number.isInteger(input.ownedCount) || input.ownedCount >= SAMPLE_MAX_COUNT) {
+  const cap = Math.min(SAMPLE_MAX_COUNT, input.cap);
+  if (!Number.isInteger(input.cap) || input.cap < 1 || !Number.isInteger(input.ownedCount) || input.ownedCount >= cap) {
     return {
       ok: false,
       error: SAMPLE_CAP,
@@ -241,7 +244,7 @@ export function sampleUserMessage(error: string): string {
     case SAMPLE_RIGHTS_REQUIRED:
       return "Zaznacz, że masz prawo do tego dźwięku.";
     case SAMPLE_CAP:
-      return "Masz już 30 sampli. Usuń prywatny, żeby dodać kolejny.";
+      return "Limit sampli Twojego planu jest pełny. Usuń prywatny, żeby dodać kolejny.";
     case SAMPLE_PROJECT_NO_BEAT:
       return "Najpierw wybierz bit w projekcie.";
     case SAMPLE_FORBIDDEN:

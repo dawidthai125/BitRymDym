@@ -26,16 +26,17 @@ describe("studio sample policy", () => {
     expect(sampleObjectKeyMatches(ID, `catalog/${ID}/original.bin`)).toBe(false);
   });
 
-  it("requires rights and stops at 30 samples", () => {
-    expect(evaluateSampleCreate({ rightsAccepted: false, ownedCount: 0 })).toMatchObject({
+  it("requires rights and stops at the plan cap", () => {
+    expect(evaluateSampleCreate({ rightsAccepted: false, ownedCount: 0, cap: 5 })).toMatchObject({
       ok: false,
       error: SAMPLE_RIGHTS_REQUIRED,
     });
-    expect(evaluateSampleCreate({ rightsAccepted: true, ownedCount: 30 })).toMatchObject({
+    expect(evaluateSampleCreate({ rightsAccepted: true, ownedCount: 5, cap: 5 })).toMatchObject({
       ok: false,
       error: SAMPLE_CAP,
     });
-    expect(evaluateSampleCreate({ rightsAccepted: true, ownedCount: 29 }).ok).toBe(true);
+    expect(evaluateSampleCreate({ rightsAccepted: true, ownedCount: 4, cap: 5 }).ok).toBe(true);
+    expect(evaluateSampleCreate({ rightsAccepted: true, ownedCount: 20, cap: 100 }).ok).toBe(true);
   });
 
   it("rejects audio outside 1–30 seconds and 8 MB", () => {

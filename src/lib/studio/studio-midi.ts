@@ -1,4 +1,4 @@
-import { renderInstrumentVoice } from "@/lib/studio/samples/sample-synth";
+import { encodePcm16Wav, renderInstrumentVoice, SAMPLE_RATE } from "@/lib/studio/samples/sample-synth";
 
 /**
  * Studio instrument notes. Pure render shared by the browser preview and a later server mix:
@@ -383,4 +383,19 @@ export function renderMidiNotes(input: {
   }
   for (let i = 0; i < length; i++) out[i] = Math.max(-1, Math.min(1, out[i]));
   return out;
+}
+
+/** A played line as a WAV sample, 1–30 s, so it can sit in the user's catalog. */
+export function renderMidiSampleWav(midi: StudioMidiV1): { bytes: Uint8Array; durationMs: number } | null {
+  if (!midi.notes.length) return null;
+  const end = midi.notes.reduce((max, note) => Math.max(max, note.t + note.dur), 0);
+  const durationMs = Math.min(30_000, Math.max(1000, Math.ceil(end)));
+  const pcm = renderMidiNotes({
+    notes: midi.notes,
+    instrument: midi.instrument,
+    sampleRate: SAMPLE_RATE,
+    durationMs,
+  });
+  if (pcm.length === 0) return null;
+  return { bytes: encodePcm16Wav(pcm, SAMPLE_RATE), durationMs };
 }

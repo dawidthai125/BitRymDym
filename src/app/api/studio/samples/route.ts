@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { maxSamplesForTier } from "@/config/plan-policy";
 import {
   SAMPLE_INVALID,
   SAMPLE_MAX_BYTES,
@@ -42,7 +44,13 @@ export async function GET(request: Request) {
         ? await listPublishedStudioSamples(auth)
         : await listMyStudioSamples(auth);
     if (!result.ok) return failure(result.error, result.details);
-    return NextResponse.json({ samples: result.samples });
+    if (scope === "catalog") return NextResponse.json({ samples: result.samples });
+    const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
+    return NextResponse.json({
+      samples: result.samples,
+      cap: maxSamplesForTier(tier),
+      owned: result.samples.length,
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       return failure(error.code);
@@ -68,6 +76,7 @@ export async function POST(request: Request) {
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const sampleKind: SampleKind = kind === "effect" ? "effect" : "instrument";
+    const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
     const result = await createStudioSample(auth, {
       title: typeof title === "string" ? title : "",
       kind: sampleKind,
@@ -75,6 +84,7 @@ export async function POST(request: Request) {
       rightsAccepted: rights === "1" || rights === "true",
       bytes,
       declaredContentType: file.type || "application/octet-stream",
+      cap: maxSamplesForTier(tier),
     });
     if (!result.ok) return failure(result.error, result.details);
     return NextResponse.json({ sample: result.sample });
