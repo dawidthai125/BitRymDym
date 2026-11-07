@@ -2,6 +2,7 @@ import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
 import { PageFrame } from "@/components/brand/chrome";
+import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { AppShell } from "@/components/site/app-shell";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
@@ -16,17 +17,18 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 type BeatsPageProps = {
-  searchParams?: Promise<{ q?: string }>;
+  searchParams?: Promise<{ q?: string; zrodlo?: string }>;
 };
 
-/**
- * Fala 3.1 — marketplace catalog polish. Home remains frozen.
- */
 export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps) {
   const tl = await getLibText();
   const t = await getTranslations("beats.beatsPage");
+  const catalog = await getTranslations("community.catalog");
   const params = searchParams ? await searchParams : {};
-  const raw = (await listPublishedBeats()).map(toPublicCatalogItem);
+  const source = params.zrodlo === "user" ? "USER" : "PLATFORM";
+  const raw = (await listPublishedBeats())
+    .filter((beat) => beat.ownershipType === source)
+    .map(toPublicCatalogItem);
   const beats = presentBeats(raw);
   const initialQuery =
     typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
@@ -35,6 +37,8 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
         <PageFrame width="wide" className="py-5 sm:py-6">
+          <CommunityShelf current="beats" />
+          <CommunitySource kind="beats" source={source === "USER" ? "user" : "brd"} />
           <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b-4 border-[var(--brd-ink)] pb-4 pt-4 sm:pt-8">
             <div className="min-w-0 space-y-1">
               <h1 className="brd-display text-[length:var(--tape-text-xl)] leading-[0.88]">
@@ -55,7 +59,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             <div className="border border-[var(--brd-line)] px-5 py-12 text-center">
               <p className="brd-display text-xl font-semibold">{t("cicho")}</p>
               <p className="mt-2 text-sm text-[var(--brd-mute)]">
-                {t("nieMaJeszczeOpublikowanych")}
+                {source === "USER" ? catalog("emptyUser") : catalog("emptyBrd")}
               </p>
             </div>
           ) : (

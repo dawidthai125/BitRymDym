@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
+import { CommunityShelf } from "@/components/community/community-shelf";
+import { CommunityThread } from "@/components/community/community-thread";
 import { PageFrame } from "@/components/brand/chrome";
 import { ShareButtons } from "@/components/share/share-buttons";
 import type { LockReason } from "@/components/plans/locked-action";
@@ -13,6 +15,7 @@ import { hasRole } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { toPublicBeatDetail, toPublicCatalogItem } from "@/lib/beats/public";
 import { getPublishedBeat, listPublishedBeats } from "@/lib/beats/service";
+import { loadThread } from "@/lib/community/community-service";
 import { getBeatAudioPublicInfo } from "@/lib/beats/audio-service";
 import { hasAudioCapability } from "@/lib/audio/effective-entitlement";
 import { resolveAudioEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
@@ -146,6 +149,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     }
   }
 
+  const thread = await loadThread("beat", beat.id, viewerId).catch(() => null);
   const related = presentBeats(
     (await listPublishedBeats())
       .map(toPublicCatalogItem)
@@ -157,8 +161,9 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
     <AppShell tone="public">
       <main data-surface="tape" className="tape-grain">
         <PageFrame className="py-6 sm:py-8">
+          <CommunityShelf current="beats" />
           <Link
-            href="/beats"
+            href="/beats?zrodlo=brd"
             className="inline-flex min-h-11 items-center text-sm text-[var(--brd-mute)] hover:text-[var(--brd-ink)]"
           >
             {tr("katalog")}
@@ -187,6 +192,19 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
           <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
             <ShareButtons url={absoluteUrl(getSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />
           </div>
+          {thread ? (
+            <CommunityThread
+              kind="beat"
+              targetId={beat.id}
+              signedIn={Boolean(session)}
+              own={thread.own}
+              enabled={thread.enabled}
+              average={thread.average}
+              count={thread.count}
+              mine={thread.mine}
+              comments={thread.comments}
+            />
+          ) : null}
         </PageFrame>
       </main>
     </AppShell>

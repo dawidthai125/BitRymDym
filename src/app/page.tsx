@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { HomePromoFilm } from "@/components/home/home-promo-film";
+import { CommunityShelf } from "@/components/community/community-shelf";
 import { HomeTracklist } from "@/components/home/home-tracklist";
 import { TapeDeck } from "@/components/home/tape-deck";
 import { AppShell } from "@/components/site/app-shell";
@@ -233,6 +234,7 @@ export default async function HomePage() {
       cell: (tier) => t("planDni", { n: PLAN_POLICY[tier].retentionDays }),
     },
   ];
+  const community = await getTranslations("community");
   const beats = presentBeats(
     (await listPublishedBeats()).map(toPublicCatalogItem),
   );
@@ -287,6 +289,10 @@ export default async function HomePage() {
         {/* CATALOG — side A tracklist */}
         <section aria-labelledby="home-katalog" className="border-b border-tape-line">
           <div className={`${wrap} py-[var(--tape-section-y)]`}>
+            <CommunityShelf current="beats" tone="tape" />
+            <p className="mb-6 max-w-prose text-sm leading-relaxed text-tape-cream-soft sm:text-base">
+              {community("pitch")}
+            </p>
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b-4 border-tape-cream pb-3">
               <h2
                 id="home-katalog"

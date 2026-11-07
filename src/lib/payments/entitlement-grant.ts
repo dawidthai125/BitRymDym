@@ -82,6 +82,10 @@ export type GrantWrite =
   | { action: "pack"; pack: PlanPack; units: number }
   | { action: "skip"; note: "perpetual" | "downgrade" | "pending_plan" | "addon_perpetual" | "pack_amount" };
 
+export function addDays(from: Date, days: number): Date {
+  return new Date(from.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
 export function addBillingPeriod(from: Date, period: BillingPeriod): Date {
   const months = period === "year" ? 12 : 1;
   const year = from.getUTCFullYear();
@@ -192,6 +196,65 @@ export function checkoutBlock(product: CheckoutProduct, plan: PlanSnapshot, addo
   return null;
 }
 
+/**
+ * Apply a finite plan window. `span` is the purchased or rewarded length
+ * measured from the same base the checkout uses. Perpetual rows are never
+ * replaced. A different cheaper plan already queued is refused.
+ */
+export function grantPlanFor(
+  plan: PlanSnapshot,
+  tier: PaidTier,
+  span: (base: Date) => Date,
+  now: Date,
+): Extract<GrantWrite, { action: "plan" | "schedule" | "skip" }> {
+  const current = withDuePlan(plan, now);
+  const live = isLivePaid(current, now);
+  if (live && current.expiresAt === null) return { action: "skip", note: "perpetual" };
+
+  const queued = pendingFields(current);
+  const expected = {
+    expectedPresent: current !== null && current.active === true,
+    expectedTier: current?.tier ?? null,
+    expectedActive: current ? current.active : null,
+    expectedExpiresAt: current?.expiresAt ?? null,
+    expectedPendingTier: queued.pendingTier,
+    expectedPendingExpiresAt: queued.pendingExpiresAt,
+  };
+
+  if (live && current.expiresAt && RANK[current.tier] > RANK[tier]) {
+    if (queued.pendingTier && queued.pendingTier !== tier) return { action: "skip", note: "pending_plan" };
+    const base = queued.pendingTier === tier && queued.pendingExpiresAt
+      ? new Date(queued.pendingExpiresAt)
+      : new Date(current.expiresAt);
+    return {
+      action: "schedule",
+      pendingTier: tier,
+      pendingExpiresAt: span(base).toISOString(),
+      expectedPresent: true,
+      expectedTier: current.tier,
+      expectedActive: true,
+      expectedExpiresAt: current.expiresAt,
+      expectedPendingTier: queued.pendingTier,
+      expectedPendingExpiresAt: queued.pendingExpiresAt,
+    };
+  }
+
+  const upgraded = live && current.expiresAt && RANK[tier] > RANK[current.tier];
+  const base = live && current.tier === tier ? laterInstant(now, current.expiresAt) : now;
+  const periodEnd = span(base);
+  const leftoverMs = upgraded && current?.expiresAt ? Math.max(0, Date.parse(current.expiresAt) - now.getTime()) : 0;
+  const expiresAt = new Date(periodEnd.getTime() + (Number.isFinite(leftoverMs) ? leftoverMs : 0));
+  const pending = shiftPending(current, expiresAt);
+  return {
+    action: "plan",
+    tier,
+    expiresAt: expiresAt.toISOString(),
+    pendingTier: pending.pendingTier,
+    pendingExpiresAt: pending.pendingExpiresAt,
+    ...expected,
+  };
+}
+
 export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: AddonSnapshot, now: Date, amountGrosz?: number): GrantWrite {
   if (product.kind === "pack") {
     if (product.pack === "youtube") {
@@ -212,52 +275,7 @@ export function grantWrite(product: CheckoutProduct, plan: PlanSnapshot, addon: 
     };
   }
 
-  const current = withDuePlan(plan, now);
-  const live = isLivePaid(current, now);
-  if (live && current.expiresAt === null) return { action: "skip", note: "perpetual" };
-
-  const queued = pendingFields(current);
-  const expected = {
-    expectedPresent: current !== null && current.active === true,
-    expectedTier: current?.tier ?? null,
-    expectedActive: current ? current.active : null,
-    expectedExpiresAt: current?.expiresAt ?? null,
-    expectedPendingTier: queued.pendingTier,
-    expectedPendingExpiresAt: queued.pendingExpiresAt,
-  };
-
-  if (live && current.expiresAt && RANK[current.tier] > RANK[product.tier]) {
-    if (queued.pendingTier && queued.pendingTier !== product.tier) return { action: "skip", note: "pending_plan" };
-    const base = queued.pendingTier === product.tier && queued.pendingExpiresAt
-      ? new Date(queued.pendingExpiresAt)
-      : new Date(current.expiresAt);
-    return {
-      action: "schedule",
-      pendingTier: product.tier,
-      pendingExpiresAt: addBillingPeriod(base, product.period).toISOString(),
-      expectedPresent: true,
-      expectedTier: current.tier,
-      expectedActive: true,
-      expectedExpiresAt: current.expiresAt,
-      expectedPendingTier: queued.pendingTier,
-      expectedPendingExpiresAt: queued.pendingExpiresAt,
-    };
-  }
-
-  const upgraded = live && current.expiresAt && RANK[product.tier] > RANK[current.tier];
-  const base = live && current.tier === product.tier ? laterInstant(now, current.expiresAt) : now;
-  const periodEnd = addBillingPeriod(base, product.period);
-  const leftoverMs = upgraded && current?.expiresAt ? Math.max(0, Date.parse(current.expiresAt) - now.getTime()) : 0;
-  const expiresAt = new Date(periodEnd.getTime() + (Number.isFinite(leftoverMs) ? leftoverMs : 0));
-  const pending = shiftPending(current, expiresAt);
-  return {
-    action: "plan",
-    tier: product.tier,
-    expiresAt: expiresAt.toISOString(),
-    pendingTier: pending.pendingTier,
-    pendingExpiresAt: pending.pendingExpiresAt,
-    ...expected,
-  };
+  return grantPlanFor(plan, product.tier, (base) => addBillingPeriod(base, product.period), now);
 }
 
 export type OrderLedger = {

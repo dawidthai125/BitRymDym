@@ -15,6 +15,8 @@ import {
   DeleteAccountForm,
 } from "@/components/auth/auth-forms";
 import { DisplayNameForm } from "@/components/auth/display-name-form";
+import { CommunityShelf } from "@/components/community/community-shelf";
+import { RewardDesk } from "@/components/community/reward-desk";
 import { NotificationPreferencesForm } from "@/components/account/notification-preferences-form";
 import { notifyEnv } from "@/lib/email/notify/config";
 import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
@@ -149,6 +151,8 @@ export default async function AccountPage({
             </div>
           </header>
 
+          <CommunityShelf current="none" />
+
           {claimBanner === "ok" ? (
             <div
               className="mb-8 border border-[var(--brd-line)] bg-[var(--brd-paper)] px-4 py-3 text-sm text-[var(--brd-ink)]"
@@ -279,6 +283,8 @@ export default async function AccountPage({
                 <DisplayNameForm
                   initialDisplayName={context.profile.displayName ?? ""}
                 />
+
+                <RewardDesk userId={context.userId} />
 
                 <div>
                   <SectionLabel className="mb-2">{tr("twojPlan")}</SectionLabel>

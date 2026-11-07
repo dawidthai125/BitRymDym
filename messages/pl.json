@@ -3524,6 +3524,74 @@
     "niedostepnyTytul": "Ten link nie działa",
     "niedostepnyOpis": "Link wygasł, został wyłączony przez autora albo jest niepoprawny."
   },
+  "community": {
+    "pitch": "Oceń bit albo sampel. Trzy pierwsze miejsca tygodnia dostają dni premium (7, 3 i 1). Miesiąc daje cały pakiet: 1. Gold, 2. Silver, 3. Bronze. Nagrodę włączasz sam, kiedy chcesz, w profilu → Nagrody.",
+    "rules": "Tydzień i miesiąc liczą się według czasu Warszawa. Jedna ocena na bit albo sampel, w tym okresie, w którym padła. Swojego nie oceniasz. Nagroda od trzech różnych osób. BitRymDym zostaje na tablicy, ale nagrodę bierze autor. To dni albo miesiąc premium, nie pieniądze. Nie da się jej dołożyć do premium bez daty końca.",
+    "off": "Oceny i ranking włączą się po aktualizacji bazy. Katalog już działa.",
+    "shelf": {
+      "aria": "Katalog i ranking",
+      "beats": "Katalog bitów",
+      "beatRank": "Ranking bitów",
+      "samples": "Katalog sampli",
+      "sampleRank": "Ranking sampli"
+    },
+    "source": {
+      "aria": "Czyje utwory",
+      "brd": "BitRymDym",
+      "user": "Użytkownicy"
+    },
+    "catalog": {
+      "emptyBrd": "W katalogu BitRymDym jest jeszcze cicho.",
+      "emptyUser": "Użytkownicy nie opublikowali jeszcze bitów.",
+      "samplesEmptyBrd": "BitRymDym nie wrzucił jeszcze własnych sampli. Poniżej są sample ludzi, po moderacji.",
+      "samplesEmptyUser": "Publiczny katalog sampli jest jeszcze pusty. Zapisany sampel wchodzi tu po moderacji.",
+      "listen": "Odsłuch",
+      "signInListen": "Zaloguj się, żeby odsłuchać"
+    },
+    "rank": {
+      "week": "Tydzień",
+      "month": "Miesiąc",
+      "empty": "W tym okresie nikt jeszcze nie ocenił.",
+      "open": "Ten okres jeszcze trwa. Nagrody pojawią się po jego końcu.",
+      "bitWeek": "Bit zeszłego tygodnia",
+      "bitMonth": "Bit zeszłego miesiąca",
+      "sampleWeek": "Sampel zeszłego tygodnia",
+      "sampleMonth": "Sampel zeszłego miesiąca",
+      "votes": "{count} ocen · {score}",
+      "prizeDays": "{days} dni premium",
+      "prizeTier": "{tier} na miesiąc",
+      "needsVotes": "Nagroda od 3 różnych ocen.",
+      "place": "{place}. miejsce"
+    },
+    "thread": {
+      "rate": "Ocena",
+      "comment": "Komentarz",
+      "send": "Wyślij",
+      "signIn": "Zaloguj się, żeby ocenić i napisać.",
+      "empty": "Jeszcze bez komentarzy. Pierwszy zostaje na tablicy.",
+      "saved": "Zapisane.",
+      "own": "Swojego bitu albo sampla nie oceniasz. Komentarz możesz zostawić.",
+      "average": "{score} · {count} ocen",
+      "comments": "Komentarze",
+      "limit": "Za dużo komentarzy w tej godzinie.",
+      "invalid": "Komentarz ma mieć od 1 do 500 znaków."
+    },
+    "rewards": {
+      "title": "Nagrody",
+      "lead": "Wygrywasz miejsce i nagroda czeka. Włączasz ją tutaj, kiedy chcesz. Tydzień dokłada dni do obecnego planu, a jak planu nie masz — włącza Bronze na te dni. Miesiąc to cały pakiet. Niższy pakiet przy wyższym planie startuje, gdy wyższy się skończy.",
+      "empty": "Nie masz jeszcze nagród. Oceń czyjeś bity i sample, a swoje opublikuj.",
+      "claim": "Włącz nagrodę",
+      "claimed": "Włączona",
+      "ok": "Nagroda włączona.",
+      "perpetual": "Masz premium bez daty końca. Tej nagrody nie da się dołożyć.",
+      "pending_plan": "Masz już inny niższy plan w kolejce. Napisz na dawid.thai@int.pl, jeśli chcesz to rozstrzygnąć.",
+      "conflict": "Plan zmienił się w tej samej chwili. Odśwież i spróbuj jeszcze raz.",
+      "wait": "Odbieranie już trwa. Odśwież za chwilę.",
+      "already": "Ta nagroda jest już włączona.",
+      "off": "Nagrody włączą się po aktualizacji bazy.",
+      "place": "{place}. miejsce · {when}"
+    }
+  },
   "maintenance": {
     "page": {
       "metaTitle": "Trwają prace — BitRymDym",

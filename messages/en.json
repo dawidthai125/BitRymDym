@@ -3524,6 +3524,74 @@
     "niedostepnyTytul": "This link doesn't work",
     "niedostepnyOpis": "The link has expired, was switched off by the artist, or is invalid."
   },
+  "community": {
+    "pitch": "Rate a beat or a sample. The weekly top three get extra premium days (7, 3 and 1). The month gives a full package: 1st Gold, 2nd Silver, 3rd Bronze. You turn the prize on yourself, whenever you want, under Profile → Rewards.",
+    "rules": "The week and the month follow Europe/Warsaw. One rating per beat or sample, counted in the period when it was cast. You cannot rate your own. A prize needs three different people. BitRymDym stays on the board, and the prize goes to the author. It is premium time, not cash. It cannot be added to a premium plan with no end date.",
+    "off": "Ratings and the ranking turn on after the database update. The catalogue already works.",
+    "shelf": {
+      "aria": "Catalogue and ranking",
+      "beats": "Beat catalogue",
+      "beatRank": "Beat ranking",
+      "samples": "Sample catalogue",
+      "sampleRank": "Sample ranking"
+    },
+    "source": {
+      "aria": "Whose work",
+      "brd": "BitRymDym",
+      "user": "People"
+    },
+    "catalog": {
+      "emptyBrd": "The BitRymDym catalogue is still quiet.",
+      "emptyUser": "People have not published beats yet.",
+      "samplesEmptyBrd": "BitRymDym has not published its own samples yet. People''s samples show up after moderation.",
+      "samplesEmptyUser": "The public sample catalogue is still empty. A saved sample appears here after moderation.",
+      "listen": "Listen",
+      "signInListen": "Sign in to listen"
+    },
+    "rank": {
+      "week": "Week",
+      "month": "Month",
+      "empty": "Nobody has rated anything in this period yet.",
+      "open": "This period is still open. Prizes appear after it ends.",
+      "bitWeek": "Last week''s beat",
+      "bitMonth": "Last month''s beat",
+      "sampleWeek": "Last week''s sample",
+      "sampleMonth": "Last month''s sample",
+      "votes": "{count} ratings · {score}",
+      "prizeDays": "{days} premium days",
+      "prizeTier": "{tier} for a month",
+      "needsVotes": "A prize needs 3 different ratings.",
+      "place": "Place {place}"
+    },
+    "thread": {
+      "rate": "Rating",
+      "comment": "Comment",
+      "send": "Send",
+      "signIn": "Sign in to rate and comment.",
+      "empty": "No comments yet. The first one stays on the board.",
+      "saved": "Saved.",
+      "own": "You cannot rate your own beat or sample. You can still comment.",
+      "average": "{score} · {count} ratings",
+      "comments": "Comments",
+      "limit": "Too many comments this hour.",
+      "invalid": "A comment needs 1 to 500 characters."
+    },
+    "rewards": {
+      "title": "Rewards",
+      "lead": "Win a place and the prize waits. Turn it on here whenever you want. A week adds days to your current plan, or starts Bronze for those days if you have none. A month is a full package. A lower package waits until a higher plan ends.",
+      "empty": "No prizes yet. Rate other people's beats and samples, and publish your own.",
+      "claim": "Turn on prize",
+      "claimed": "Turned on",
+      "ok": "Prize turned on.",
+      "perpetual": "Your premium has no end date. This prize cannot be added to it.",
+      "pending_plan": "Another lower plan is already queued. Write to dawid.thai@int.pl if you want that settled.",
+      "conflict": "The plan changed at the same moment. Refresh and try again.",
+      "wait": "A claim is already running. Refresh in a moment.",
+      "already": "This prize is already on.",
+      "off": "Rewards turn on after the database update.",
+      "place": "Place {place} · {when}"
+    }
+  },
   "maintenance": {
     "page": {
       "metaTitle": "Under maintenance — BitRymDym",
