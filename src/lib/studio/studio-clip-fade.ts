@@ -57,6 +57,21 @@ export function normalizeFades(
   return { fadeInMs: Fi2, fadeOutMs: Fo2 };
 }
 
+/** Short edge fade. About 8% of the clip, between 20 ms and 800 ms. */
+export function fadeEdgePreset(
+  durationMs: number,
+  edge: "in" | "out",
+  current: { fadeInMs: number; fadeOutMs: number },
+): StudioNormalizedFades {
+  const D = Number.isFinite(durationMs) ? Math.trunc(durationMs) : 0;
+  const want = D <= 0 ? 0 : Math.min(800, Math.max(20, Math.floor(D * 0.08)));
+  return normalizeFades(
+    edge === "in" ? want : current.fadeInMs,
+    edge === "out" ? want : current.fadeOutMs,
+    D,
+  );
+}
+
 /**
  * Design Freeze §8.2 — envelope at local clip time t.
  * Active window is 0 ≤ t < D. Outside → 0. Result clamped to [0, 1].

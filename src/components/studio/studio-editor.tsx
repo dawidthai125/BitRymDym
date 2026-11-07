@@ -48,7 +48,8 @@ import { StudioAutomationLane } from "@/components/studio/studio-automation-lane
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
 import { maxStemsForTier } from "@/config/plan-policy";
 import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
-import { emptyMidi, hasMidi, midiPhraseAt, type StudioMidiV1 } from "@/lib/studio/studio-midi";
+import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, type StudioMidiV1 } from "@/lib/studio/studio-midi";
+import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
@@ -3112,6 +3113,11 @@ function StudioEditorInner({
           setMode("edit");
           duplicateSelectedClip();
         }}
+        onFragmentFade={(edge) => {
+          if (!selectedClip) return;
+          const next = fadeEdgePreset(selectedClip.durationMs, edge, selectedClip);
+          saveClipFades(next.fadeInMs, next.fadeOutMs);
+        }}
         onFragmentAskDelete={() => setFragmentConfirmDelete(true)}
         onFragmentDelete={() => {
           deleteSelectedClip();
@@ -3205,13 +3211,48 @@ function StudioEditorInner({
             role="menuitem"
             data-testid="studio-track-midi-phrase"
             disabled={recordingLocked || pending || hasMidi(trackMenuTrack.midi)}
+            title={tr("melodiaOpis")}
             onClick={() => {
               if (hasMidi(trackMenuTrack.midi)) return;
               saveTrackMidi(trackMenuTrack.id, midiPhraseAt(playheadMs));
               setTrackMenuId(null);
             }}
           >
-            {tr("nuty")}
+            {tr("melodia")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            role="menuitem"
+            data-testid="studio-track-midi-bass"
+            disabled={recordingLocked || pending || hasMidi(trackMenuTrack.midi)}
+            title={tr("basOpis")}
+            onClick={() => {
+              if (hasMidi(trackMenuTrack.midi)) return;
+              saveTrackMidi(trackMenuTrack.id, bassLineAt(playheadMs, doc.project.tempoBpm));
+              setTrackMenuId(null);
+            }}
+          >
+            {tr("bas")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            role="menuitem"
+            data-testid="studio-track-midi-drums"
+            disabled={recordingLocked || pending || hasMidi(trackMenuTrack.midi)}
+            title={tr("perkusjaOpis")}
+            onClick={() => {
+              if (hasMidi(trackMenuTrack.midi)) return;
+              saveTrackMidi(trackMenuTrack.id, drumPatternAt(playheadMs, doc.project.tempoBpm));
+              setTrackMenuId(null);
+            }}
+          >
+            {tr("perkusja")}
           </Button>
           <Button
             type="button"
@@ -4409,6 +4450,7 @@ function StudioTransportBar({
   onFragmentTrimEnd,
   onFragmentNudge,
   onFragmentDuplicate,
+  onFragmentFade,
   onFragmentAskDelete,
   onFragmentDelete,
   onFragmentCancelDelete,
@@ -4442,6 +4484,7 @@ function StudioTransportBar({
   onFragmentTrimEnd: () => void;
   onFragmentNudge: (direction: -1 | 1) => void;
   onFragmentDuplicate: () => void;
+  onFragmentFade: (edge: "in" | "out") => void;
   onFragmentAskDelete: () => void;
   onFragmentDelete: () => void;
   onFragmentCancelDelete: () => void;
@@ -4746,6 +4789,8 @@ function StudioTransportBar({
           onNudgeLeft={() => onFragmentNudge(-1)}
           onNudgeRight={() => onFragmentNudge(1)}
           onDuplicate={onFragmentDuplicate}
+          onFadeIn={() => onFragmentFade("in")}
+          onFadeOut={() => onFragmentFade("out")}
           onAskDelete={onFragmentAskDelete}
           onDelete={onFragmentDelete}
           onCancelDelete={onFragmentCancelDelete}

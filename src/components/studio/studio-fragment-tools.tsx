@@ -14,6 +14,8 @@ type StudioFragmentToolsProps = {
   onNudgeLeft: () => void;
   onNudgeRight: () => void;
   onDuplicate: () => void;
+  onFadeIn: () => void;
+  onFadeOut: () => void;
   onAskDelete: () => void;
   onDelete: () => void;
   onCancelDelete: () => void;
@@ -33,6 +35,8 @@ export function StudioFragmentTools({
   onNudgeLeft,
   onNudgeRight,
   onDuplicate,
+  onFadeIn,
+  onFadeOut,
   onAskDelete,
   onDelete,
   onCancelDelete,
@@ -141,6 +145,30 @@ export function StudioFragmentTools({
             onClick={onDuplicate}
           >
             {t("powiel")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 px-3"
+            data-testid="studio-fragment-fade-in"
+            disabled={locked}
+            title={t("wejscieOpis")}
+            onClick={onFadeIn}
+          >
+            {t("wejscie")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-h-11 px-3"
+            data-testid="studio-fragment-fade-out"
+            disabled={locked}
+            title={t("zejscieOpis")}
+            onClick={onFadeOut}
+          >
+            {t("zejscie")}
           </Button>
           <Button
             type="button"

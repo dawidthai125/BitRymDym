@@ -1,3 +1,5 @@
+import { renderInstrumentVoice } from "@/lib/studio/samples/sample-synth";
+
 /**
  * Studio instrument notes. Pure render shared by the browser preview and a later server mix:
  * one definition of the sample at time t. No I/O, no AudioContext.
@@ -6,8 +8,34 @@
  * vel is 0..1. Before the note and after it ends the sample is 0.
  */
 
-export const MIDI_INSTRUMENTS = ["sine", "square", "saw"] as const;
+export const MIDI_INSTRUMENTS = [
+  "sine",
+  "square",
+  "saw",
+  "piano",
+  "bass",
+  "lead",
+  "pad",
+  "pluck",
+  "brass",
+  "drums",
+] as const;
 export type MidiInstrument = (typeof MIDI_INSTRUMENTS)[number];
+
+const MIDI_INSTRUMENT_SET: ReadonlySet<string> = new Set(MIDI_INSTRUMENTS);
+
+type TonalInstrument = "piano" | "bass" | "lead" | "pad" | "pluck" | "brass";
+
+function isTonalInstrument(instrument: MidiInstrument): instrument is TonalInstrument {
+  return (
+    instrument === "piano" ||
+    instrument === "bass" ||
+    instrument === "lead" ||
+    instrument === "pad" ||
+    instrument === "pluck" ||
+    instrument === "brass"
+  );
+}
 
 export type MidiNote = { t: number; dur: number; pitch: number; vel: number };
 
@@ -22,7 +50,7 @@ export function midiHz(pitch: number): number {
 }
 
 export function isMidiInstrument(v: unknown): v is MidiInstrument {
-  return v === "sine" || v === "square" || v === "saw";
+  return typeof v === "string" && MIDI_INSTRUMENT_SET.has(v);
 }
 
 /** Drop bad notes. Same millisecond and pitch: the later note replaces the earlier one. */
@@ -108,17 +136,59 @@ export function readMidi(raw: unknown): StudioMidiV1 {
   }
 }
 
-/** C E G C, 400 ms, 40 ms gaps, sine, velocity 0.8, starting at the playhead. */
+function quarterMs(bpm: number): number {
+  const safe = Number.isFinite(bpm) ? Math.min(240, Math.max(40, bpm)) : 120;
+  return Math.round(60_000 / safe);
+}
+
+function atPlayhead(playheadMs: number): number {
+  return Math.max(0, Math.round(Number.isFinite(playheadMs) ? playheadMs : 0));
+}
+
+function keepOnTimeline(notes: MidiNote[]): MidiNote[] {
+  return notes.filter((note) => note.t >= 0 && note.t + note.dur <= MIDI_LIMITS.maxTimeMs);
+}
+
+/** C E G C on piano, 400 ms, 40 ms gaps, velocity 0.8, from the playhead. */
 export function midiPhraseAt(playheadMs: number): StudioMidiV1 {
-  const start = Math.max(0, Math.round(Number.isFinite(playheadMs) ? playheadMs : 0));
+  const start = atPlayhead(playheadMs);
   const dur = 400;
   const gap = 40;
   const pitches = [60, 64, 67, 72] as const;
   return {
     v: MIDI_VERSION,
-    instrument: "sine",
-    notes: pitches.map((pitch, i) => ({ t: start + i * (dur + gap), dur, pitch, vel: 0.8 })),
+    instrument: "piano",
+    notes: keepOnTimeline(pitches.map((pitch, i) => ({ t: start + i * (dur + gap), dur, pitch, vel: 0.8 }))),
   };
+}
+
+/** C2 / G2 on the beat, one bar, from the playhead. */
+export function bassLineAt(playheadMs: number, bpm: number): StudioMidiV1 {
+  const start = atPlayhead(playheadMs);
+  const beat = quarterMs(bpm);
+  const dur = Math.max(1, Math.round(beat * 0.85));
+  const notes = [0, 1, 2, 3].map((i) => ({
+    t: start + i * beat,
+    dur,
+    pitch: i % 2 === 0 ? 36 : 43,
+    vel: 0.85,
+  }));
+  return { v: MIDI_VERSION, instrument: "bass", notes: keepOnTimeline(notes) };
+}
+
+/** One bar: kick on 1 and 3, snare on 2 and 4, hat on every eighth. */
+export function drumPatternAt(playheadMs: number, bpm: number): StudioMidiV1 {
+  const start = atPlayhead(playheadMs);
+  const beat = quarterMs(bpm);
+  const step = Math.max(1, Math.round(beat / 2));
+  const notes: MidiNote[] = [];
+  for (let i = 0; i < 8; i++) {
+    const t = start + i * step;
+    notes.push({ t, dur: Math.max(1, Math.round(step * 0.9)), pitch: 42, vel: 0.45 });
+    if (i % 4 === 0) notes.push({ t, dur: Math.max(1, Math.round(beat * 0.5)), pitch: 36, vel: 0.9 });
+    if (i % 4 === 2) notes.push({ t, dur: Math.max(1, Math.round(beat * 0.4)), pitch: 38, vel: 0.75 });
+  }
+  return { v: MIDI_VERSION, instrument: "drums", notes: keepOnTimeline(notes) };
 }
 
 function wave(instrument: MidiInstrument, phase: number): number {
@@ -146,8 +216,25 @@ export function renderMidiNotes(input: {
   for (const note of input.notes) {
     const start = Math.floor((note.t / 1000) * sr);
     const end = Math.min(length, Math.floor(((note.t + note.dur) / 1000) * sr));
-    const hz = midiHz(note.pitch);
     const span = end - start;
+    if (span <= 0) continue;
+    if (input.instrument === "drums" || isTonalInstrument(input.instrument)) {
+      const piece = input.instrument === "drums"
+        ? note.pitch <= 37 ? "kick" : note.pitch <= 40 ? "snare" : "hat"
+        : input.instrument;
+      const voice = renderInstrumentVoice({
+        instrument: piece,
+        hz: midiHz(note.pitch),
+        length: span,
+        sampleRate: sr,
+      });
+      const gain = note.vel * (input.instrument === "drums" ? 0.8 : 0.7);
+      for (let i = 0; i < voice.length && start + i < out.length; i++) {
+        out[start + i] += voice[i] * gain;
+      }
+      continue;
+    }
+    const hz = midiHz(note.pitch);
     for (let i = start; i < end; i++) {
       const k = i - start;
       let env = 1;

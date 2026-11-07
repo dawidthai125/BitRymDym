@@ -119,6 +119,20 @@ function renderVoice(
   return out;
 }
 
+/** One note, any length. The sample saver still clamps its own files to 1–30 s. */
+export function renderInstrumentVoice(input: {
+  instrument: SampleInstrumentId;
+  hz: number;
+  length: number;
+  sampleRate: number;
+}): Float32Array {
+  const length = Math.floor(input.length);
+  if (length <= 0 || !Number.isFinite(input.sampleRate) || input.sampleRate <= 0) {
+    return new Float32Array(0);
+  }
+  return renderVoice(input.instrument, input.hz, length, input.sampleRate);
+}
+
 export function renderInstrumentSample(input: {
   instrument: SampleInstrumentId;
   midi: number;
