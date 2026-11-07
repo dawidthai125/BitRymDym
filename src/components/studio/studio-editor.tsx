@@ -871,6 +871,13 @@ function StudioEditorInner({
         if (!committedClip(op.clipId)) return false;
         saveClipMute(op.muted, { ...quiet, clipId: op.clipId });
         return true;
+      case "clip_scratch":
+        if (!committedClip(op.clipId)) return false;
+        saveClipScratch(
+          { clipId: op.clipId, cueMs: op.cueMs, reverse: op.reverse, rate: op.rate },
+          quiet,
+        );
+        return true;
       case "track_fx":
       case "master_fx":
         if (op.kind === "track_fx" && !committedDocRef.current.tracks.some((t) => t.id === op.trackId)) return false;
@@ -2132,6 +2139,88 @@ function StudioEditorInner({
     });
   }
 
+  /** Saved reverse on the selected clip. Reuses scratch CAS. No new column. */
+  function saveClipScratch(
+    next: { clipId: string; cueMs: number; reverse: boolean; rate: number },
+    opts?: { history?: boolean },
+  ) {
+    const clipId = next.clipId;
+    setError(null);
+    const record = opts?.history !== false;
+    enqueuePersist(async () => {
+      const beforeClip = committedClip(clipId);
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              op: "set_scratch",
+              cueMs: next.cueMs,
+              reverse: next.reverse,
+              rate: next.rate,
+              expectedDocumentVersion: docRef.current.project.documentVersion,
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          success?: boolean;
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (!res.ok || !json.clip || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? tr("nieUdaloSieOdwrocic"),
+            code: json.code,
+          });
+          if (failure.kind === "conflict") setError(json.error ?? tr("nieUdaloSieOdwrocic"));
+          else if (!failure.retryable) setError(failure.message);
+          return failure;
+        }
+        const saved = json.clip;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            if (record && beforeClip) {
+              recordUndo({
+                undo: {
+                  kind: "clip_scratch",
+                  clipId,
+                  cueMs: beforeClip.scratchCueMs ?? 0,
+                  reverse: Boolean(beforeClip.scratchReverse),
+                  rate: beforeClip.scratchRate ?? 1,
+                },
+                redo: {
+                  kind: "clip_scratch",
+                  clipId,
+                  cueMs: saved.scratchCueMs ?? next.cueMs,
+                  reverse: Boolean(saved.scratchReverse),
+                  rate: saved.scratchRate ?? next.rate,
+                },
+              });
+            }
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: {
+                ...prev.project,
+                documentVersion,
+              },
+              clips: prev.clips.map((c) => (c.id === saved.id ? saved : c)),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
   function nudgeSelectedBy(deltaMs: number): void {
     if (!selectedClip || recordingLocked || pending) return;
     const next = nudgeClipTimelineStartMs({
@@ -3138,6 +3227,17 @@ function StudioEditorInner({
           if (!selectedClip) return;
           const next = fadeEdgePreset(selectedClip.durationMs, edge, selectedClip);
           saveClipFades(next.fadeInMs, next.fadeOutMs);
+        }}
+        fragmentReverseOn={Boolean(selectedClip?.scratchReverse)}
+        onFragmentReverse={() => {
+          if (!selectedClip) return;
+          setFragmentConfirmDelete(false);
+          saveClipScratch({
+            clipId: selectedClip.id,
+            cueMs: selectedClip.scratchCueMs ?? 0,
+            reverse: !selectedClip.scratchReverse,
+            rate: selectedClip.scratchRate ?? 1,
+          });
         }}
         onFragmentAskDelete={() => setFragmentConfirmDelete(true)}
         onFragmentDelete={() => {
@@ -4472,6 +4572,8 @@ function StudioTransportBar({
   onFragmentNudge,
   onFragmentDuplicate,
   onFragmentFade,
+  fragmentReverseOn,
+  onFragmentReverse,
   onFragmentAskDelete,
   onFragmentDelete,
   onFragmentCancelDelete,
@@ -4506,6 +4608,8 @@ function StudioTransportBar({
   onFragmentNudge: (direction: -1 | 1) => void;
   onFragmentDuplicate: () => void;
   onFragmentFade: (edge: "in" | "out") => void;
+  fragmentReverseOn: boolean;
+  onFragmentReverse: () => void;
   onFragmentAskDelete: () => void;
   onFragmentDelete: () => void;
   onFragmentCancelDelete: () => void;
@@ -4812,6 +4916,8 @@ function StudioTransportBar({
           onDuplicate={onFragmentDuplicate}
           onFadeIn={() => onFragmentFade("in")}
           onFadeOut={() => onFragmentFade("out")}
+          reverseOn={fragmentReverseOn}
+          onReverse={onFragmentReverse}
           onAskDelete={onFragmentAskDelete}
           onDelete={onFragmentDelete}
           onCancelDelete={onFragmentCancelDelete}

@@ -130,6 +130,66 @@ export function toggleScratchReverse(
   };
 }
 
+/** Live jog is driving this clip, so persisted reverse must not start a second buffer. */
+export function scratchJogOwnsClip(input: {
+  clipId: string;
+  liveClipId: string | null;
+  liveReverse: boolean;
+  liveRate: number;
+}): boolean {
+  const driving = input.liveReverse || input.liveRate !== 1;
+  if (!driving) return false;
+  if (!input.liveClipId) return true;
+  return input.liveClipId === input.clipId;
+}
+
+/** Source second heard at this clip position. Same map the export bake uses. */
+export function persistedReverseHeardSec(input: {
+  sourceOffsetMs: number;
+  localMs: number;
+  cueMs: number;
+  rate: number;
+  sourceDurationMs: number;
+}): number {
+  return (
+    resolveScratchSourceMs({
+      sourceOffsetMs: input.sourceOffsetMs,
+      localMs: input.localMs,
+      approved: {
+        cueMs: input.cueMs,
+        reverse: true,
+        rate: input.rate,
+      },
+      sourceDurationMs: input.sourceDurationMs,
+    }) / 1000
+  );
+}
+
+/** How far a reversed buffer has walked since it started. */
+export function persistedReverseCoastSec(input: {
+  anchorHeardSec: number;
+  elapsedSec: number;
+  rate: number;
+}): number {
+  const elapsed = Number.isFinite(input.elapsedSec) ? Math.max(0, input.elapsedSec) : 0;
+  return input.anchorHeardSec - elapsed * clampScratchRate(input.rate);
+}
+
+/** Restart only when the playhead left the buffer. A normal tick stays inside this window. */
+export const PERSISTED_REVERSE_COAST_SEC = 0.08;
+
+export function persistedReverseShouldRestart(input: {
+  bufferRunning: boolean;
+  coastHeardSec: number;
+  targetHeardSec: number;
+  toleranceSec?: number;
+}): boolean {
+  if (!input.bufferRunning) return true;
+  if (!Number.isFinite(input.coastHeardSec) || !Number.isFinite(input.targetHeardSec)) return true;
+  const tolerance = input.toleranceSec ?? PERSISTED_REVERSE_COAST_SEC;
+  return Math.abs(input.coastHeardSec - input.targetHeardSec) > tolerance;
+}
+
 export function setScratchRate(
   live: StudioScratchLiveState,
   rate: number,

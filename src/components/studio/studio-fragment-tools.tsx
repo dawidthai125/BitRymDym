@@ -16,6 +16,8 @@ type StudioFragmentToolsProps = {
   onDuplicate: () => void;
   onFadeIn: () => void;
   onFadeOut: () => void;
+  reverseOn: boolean;
+  onReverse: () => void;
   onAskDelete: () => void;
   onDelete: () => void;
   onCancelDelete: () => void;
@@ -37,6 +39,8 @@ export function StudioFragmentTools({
   onDuplicate,
   onFadeIn,
   onFadeOut,
+  reverseOn,
+  onReverse,
   onAskDelete,
   onDelete,
   onCancelDelete,
@@ -169,6 +173,20 @@ export function StudioFragmentTools({
             onClick={onFadeOut}
           >
             {t("zejscie")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className={`min-h-11 px-3 ${reverseOn ? "border-[var(--brd-ink)] bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
+            data-testid="studio-fragment-reverse"
+            disabled={locked}
+            aria-pressed={reverseOn}
+            title={t("odwrocFragmentOpis")}
+            aria-label={reverseOn ? t("odwrocFragmentWlaczone") : t("odwrocFragment")}
+            onClick={onReverse}
+          >
+            {t("odwrocFragment")}
           </Button>
           <Button
             type="button"

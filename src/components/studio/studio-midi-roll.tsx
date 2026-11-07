@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 
 import {
   ROLL_STEPS,
+  rollBarSpan,
+  rollPage,
   rollPitches,
   rollWindow,
   toggleGridNote,
@@ -46,6 +48,8 @@ export function StudioMidiRoll({
   const [anchor, setAnchor] = useState(0);
   const pitches = rollPitches(instrument);
   const { origin, stepMs } = rollWindow(anchor, bpm);
+  const bars = rollBarSpan(origin, bpm);
+  const atEnd = rollPage(origin, 1, bpm) === origin;
   const notes = midi && midi.instrument === instrument ? midi.notes : [];
 
   function on(pitch: number, step: number): boolean {
@@ -76,14 +80,37 @@ export function StudioMidiRoll({
           <p className="text-sm font-medium text-[var(--brd-ink)]">{tr("klawiszeRolka")}</p>
           <p className="text-xs text-[var(--brd-mute)]">{tr("klawiszeRolkaOpis")}</p>
         </div>
-        <button
-          type="button"
-          className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4"
-          disabled={disabled}
-          onClick={() => setAnchor(getPlayheadMs())}
-        >
-          {tr("klawiszePrzyGlowicy")}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4"
+            data-testid="studio-midi-roll-prev"
+            disabled={disabled || origin === 0}
+            onClick={() => setAnchor(rollPage(origin, -1, bpm))}
+          >
+            {tr("klawiszePoprzednie")}
+          </button>
+          <p className="text-xs text-[var(--brd-mute)]" data-testid="studio-midi-roll-bars">
+            {tr("klawiszeTakty", { from: bars.fromBar, to: bars.toBar })}
+          </p>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4"
+            data-testid="studio-midi-roll-next"
+            disabled={disabled || atEnd}
+            onClick={() => setAnchor(rollPage(origin, 1, bpm))}
+          >
+            {tr("klawiszeNastepne")}
+          </button>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4"
+            disabled={disabled}
+            onClick={() => setAnchor(getPlayheadMs())}
+          >
+            {tr("klawiszePrzyGlowicy")}
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <div className="min-w-[36rem] space-y-1" role="group" aria-label={tr("klawiszeRolka")}>

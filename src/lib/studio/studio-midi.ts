@@ -225,11 +225,39 @@ export function appendPlayedNote(input: {
 /** Two bars of eighth notes, anchored on the bar that contains the playhead. */
 export const ROLL_STEPS = 16;
 
+export function rollStepMs(bpm: number): number {
+  return Math.max(1, Math.round(quarterMs(bpm) / 2));
+}
+
+export function rollWindowMs(bpm: number, steps = ROLL_STEPS): number {
+  return rollStepMs(bpm) * steps;
+}
+
+/** Snap down to a page. The page must start at 0 or later and end by maxTimeMs. */
+export function clampRollOrigin(originMs: number, bpm: number, steps = ROLL_STEPS): number {
+  const windowMs = rollWindowMs(bpm, steps);
+  if (!(windowMs > 0) || windowMs > MIDI_LIMITS.maxTimeMs) return 0;
+  const raw = Number.isFinite(originMs) ? originMs : 0;
+  const snapped = Math.floor(Math.max(0, raw) / windowMs) * windowMs;
+  const last = Math.floor((MIDI_LIMITS.maxTimeMs - windowMs) / windowMs) * windowMs;
+  return Math.min(snapped, last);
+}
+
+export function rollPage(originMs: number, direction: -1 | 1, bpm: number, steps = ROLL_STEPS): number {
+  return clampRollOrigin(originMs + direction * rollWindowMs(bpm, steps), bpm, steps);
+}
+
+export function rollBarSpan(originMs: number, bpm: number): { fromBar: number; toBar: number } {
+  const origin = clampRollOrigin(originMs, bpm);
+  const fromBar = Math.floor(origin / (rollStepMs(bpm) * 8)) + 1;
+  return { fromBar, toBar: fromBar + 1 };
+}
+
 export function rollWindow(playheadMs: number, bpm: number, steps = ROLL_STEPS): { origin: number; stepMs: number } {
-  const stepMs = Math.max(1, Math.round(quarterMs(bpm) / 2));
-  const window = stepMs * steps;
-  const origin = Math.floor(atPlayhead(playheadMs) / window) * window;
-  return { origin, stepMs };
+  const stepMs = rollStepMs(bpm);
+  const windowMs = rollWindowMs(bpm, steps);
+  const raw = Math.floor(atPlayhead(playheadMs) / windowMs) * windowMs;
+  return { origin: clampRollOrigin(raw, bpm, steps), stepMs };
 }
 
 export function rollPitches(instrument: PlayKeyInstrument): number[] {

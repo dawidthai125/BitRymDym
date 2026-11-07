@@ -11,6 +11,10 @@ import {
   clampScratchCueMs,
   clampScratchRate,
   resolveScratchSourceMs,
+  persistedReverseCoastSec,
+  persistedReverseHeardSec,
+  persistedReverseShouldRestart,
+  scratchJogOwnsClip,
   defaultScratchLiveState,
   releaseScratchJog,
   scratchJogRateDeltaFromMove,
@@ -130,5 +134,70 @@ describe("studio-scratch-state", () => {
         sourceDurationMs: 1000,
       }),
     ).toBeCloseTo(750, 3);
+  });
+
+  it("plays a saved reverse from the end and coasts until the playhead jumps", () => {
+    expect(
+      scratchJogOwnsClip({
+        clipId: "clip",
+        liveClipId: "clip",
+        liveReverse: false,
+        liveRate: 1,
+      }),
+    ).toBe(false);
+    expect(
+      scratchJogOwnsClip({
+        clipId: "clip",
+        liveClipId: "other",
+        liveReverse: true,
+        liveRate: 1,
+      }),
+    ).toBe(false);
+    expect(
+      scratchJogOwnsClip({
+        clipId: "clip",
+        liveClipId: null,
+        liveReverse: false,
+        liveRate: 1.5,
+      }),
+    ).toBe(true);
+
+    const heard = persistedReverseHeardSec({
+      sourceOffsetMs: 0,
+      localMs: 0,
+      cueMs: 0,
+      rate: 1,
+      sourceDurationMs: 1000,
+    });
+    expect(heard).toBeCloseTo(1, 3);
+    const later = persistedReverseHeardSec({
+      sourceOffsetMs: 0,
+      localMs: 250,
+      cueMs: 0,
+      rate: 1,
+      sourceDurationMs: 1000,
+    });
+    expect(persistedReverseCoastSec({ anchorHeardSec: heard, elapsedSec: 0.25, rate: 1 })).toBeCloseTo(later, 3);
+    expect(
+      persistedReverseShouldRestart({
+        bufferRunning: true,
+        coastHeardSec: later,
+        targetHeardSec: later,
+      }),
+    ).toBe(false);
+    expect(
+      persistedReverseShouldRestart({
+        bufferRunning: true,
+        coastHeardSec: later,
+        targetHeardSec: 0.1,
+      }),
+    ).toBe(true);
+    expect(
+      persistedReverseShouldRestart({
+        bufferRunning: false,
+        coastHeardSec: later,
+        targetHeardSec: later,
+      }),
+    ).toBe(true);
   });
 });

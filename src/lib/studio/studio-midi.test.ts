@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, scratchPatternAt, toggleGridNote } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, clampRollOrigin, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, rollBarSpan, rollPage, rollStepMs, scratchPatternAt, toggleGridNote } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -218,6 +218,27 @@ describe("studio midi", () => {
         bpm: 120,
       }),
     ).toEqual({ ok: false, reason: "other" });
+  });
+
+  it("pages two bars at a time and stays inside the timeline", () => {
+    expect(rollPage(0, -1, 120)).toBe(0);
+    expect(rollPage(0, 1, 120)).toBe(4000);
+    const placed = toggleGridNote({
+      midi: null,
+      instrument: "piano",
+      pitch: 60,
+      step: 0,
+      playheadMs: 4000,
+      bpm: 120,
+    });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+    expect(placed.midi.notes).toEqual([{ t: 4000, dur: 225, pitch: 60, vel: 0.8 }]);
+    expect(rollBarSpan(0, 120)).toEqual({ fromBar: 1, toBar: 2 });
+    expect(rollBarSpan(4000, 120)).toEqual({ fromBar: 3, toBar: 4 });
+    const end = clampRollOrigin(3_600_001, 120);
+    expect(end + 16 * rollStepMs(120)).toBeLessThanOrEqual(3_600_000);
+    expect(rollPage(end, 1, 120)).toBe(end);
   });
 
   it("tells BITEK when a line is short, stuck, leaping, or ready", () => {

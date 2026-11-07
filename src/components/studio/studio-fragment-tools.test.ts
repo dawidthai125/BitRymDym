@@ -20,6 +20,10 @@ describe("timeline fragment tools", () => {
     expect(tools).toContain('data-testid="studio-fragment-trim-start"');
     expect(tools).toContain('data-testid="studio-fragment-trim-end"');
     expect(tools).toContain('data-testid="studio-fragment-duplicate"');
+    expect(tools).toContain('data-testid="studio-fragment-reverse"');
+    expect(tools).toContain("aria-pressed={reverseOn}");
+    expect(editor).toContain("onFragmentReverse");
+    expect(editor).toContain('op: "set_scratch"');
     expect(editor).toContain("fragmentConfirmDelete");
     expect(editor).toContain("onFragmentDuplicate");
     const lane = readFileSync(join(process.cwd(), "src/components/studio/studio-clip-lane.tsx"), "utf8");

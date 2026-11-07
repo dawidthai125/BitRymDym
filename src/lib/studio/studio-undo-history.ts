@@ -32,6 +32,7 @@ export type StudioUndoOp =
   | { kind: "clip_fades"; clipId: string; fadeInMs: number; fadeOutMs: number }
   | { kind: "clip_gain"; clipId: string; gainDb: number }
   | { kind: "clip_mute"; clipId: string; muted: boolean }
+  | { kind: "clip_scratch"; clipId: string; cueMs: number; reverse: boolean; rate: number }
   | { kind: "track_fx"; trackId: string; chain: StudioFxChainV1 }
   | { kind: "master_fx"; chain: StudioFxChainV1 }
   /** Stage 2 — BITEK auto-fix batch, replayed atomically via mix-working/apply. */

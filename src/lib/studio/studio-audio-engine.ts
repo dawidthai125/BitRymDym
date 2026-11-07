@@ -29,6 +29,13 @@ import { MASTER_RENDER_SAMPLE_RATE } from "@/lib/studio/master/client";
 import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
+import {
+  clampScratchRate,
+  persistedReverseCoastSec,
+  persistedReverseHeardSec,
+  persistedReverseShouldRestart,
+  scratchJogOwnsClip,
+} from "@/lib/studio/studio-scratch-state";
 import type {
   StudioResolvedSource,
   StudioSourceAdapterRegistry,
@@ -247,6 +254,10 @@ type Voice = {
   reversedBuffer: StudioAudioBufferLike | null;
   bufferSource: StudioBufferSourceLike | null;
   scratchReverse: boolean;
+  /** Where a persisted reverse buffer started, so a normal tick does not restart it. */
+  reverseAnchor: { heardSec: number; contextTime: number; rate: number } | null;
+  reverseLoad: boolean;
+  reverseToken: number;
 };
 
 const PREVIEW_VOICE_ID = "__studio_preview__";
@@ -888,7 +899,7 @@ export class StudioAudioEngine {
     return this.ctx.decodeAudioData(await response.arrayBuffer());
   }
 
-  private startReversedBufferSource(voice: Voice, rate: number): boolean {
+  private startReversedBufferSource(voice: Voice, rate: number, heardSec?: number): boolean {
     if (!this.ctx?.createBufferSource) return false;
     const buffer = voice.reversedBuffer ?? voice.decodedBuffer;
     if (!buffer) return false;
@@ -904,16 +915,17 @@ export class StudioAudioEngine {
       source.playbackRate.value = rate;
       source.connect(voice.clipGain);
       const duration = buffer.duration || 0;
-      const offset = Math.max(
-        0,
-        Math.min(duration, duration - Math.max(0, voice.element.currentTime)),
-      );
+      const heard = heardSec ?? Math.max(0, voice.element.currentTime);
+      const offset = Math.max(0, Math.min(duration, duration - Math.max(0, heard)));
       source.start(0, offset);
       source.onended = () => {
         if (voice.bufferSource === source) voice.bufferSource = null;
       };
       voice.bufferSource = source;
       voice.scratchReverse = true;
+      if (heardSec != null) {
+        voice.reverseAnchor = { heardSec, contextTime: this.ctx.currentTime, rate };
+      }
       return true;
     } catch {
       return false;
@@ -924,6 +936,7 @@ export class StudioAudioEngine {
     const source = voice.bufferSource;
     voice.bufferSource = null;
     voice.scratchReverse = false;
+    voice.reverseAnchor = null;
     if (!source) return;
     try {
       source.onended = null;
@@ -1147,6 +1160,9 @@ export class StudioAudioEngine {
       reversedBuffer: null,
       bufferSource: null,
       scratchReverse: false,
+      reverseAnchor: null,
+      reverseLoad: false,
+      reverseToken: 0,
     });
 
     try {
@@ -2033,6 +2049,7 @@ export class StudioAudioEngine {
     for (const [clipId, voice] of this.voices) {
       if (voice.role !== "timeline") continue;
       if (!wanted.has(clipId)) {
+        this.stopBufferSource(voice);
         voice.element.pause();
       }
     }
@@ -2044,7 +2061,14 @@ export class StudioAudioEngine {
       const voice = await this.ensureTimelineVoice(clip);
       if (!voice) continue;
       this.applyClipFade(voice, clip, playheadMs, shouldPlay);
-      if (Math.abs(voice.element.currentTime - plan.sourceOffsetSeconds) > 0.04) {
+      const jogOwns = scratchJogOwnsClip({
+        clipId: clip.id,
+        liveClipId: this.scratchLive.clipId,
+        liveReverse: this.scratchLive.reverse,
+        liveRate: this.scratchLive.rate,
+      });
+      const persistedReverse = Boolean(clip.scratchReverse) && !jogOwns;
+      if (!persistedReverse && Math.abs(voice.element.currentTime - plan.sourceOffsetSeconds) > 0.04) {
         voice.element.currentTime = plan.sourceOffsetSeconds;
       }
       if (!shouldPlay) {
@@ -2052,8 +2076,18 @@ export class StudioAudioEngine {
         voice.element.pause();
         continue;
       }
-      if (voice.scratchReverse || voice.bufferSource) {
+      if (jogOwns) {
+        if (voice.scratchReverse || voice.bufferSource) continue;
+      } else if (persistedReverse) {
+        this.holdPersistedReverse(voice, clip, playheadMs);
+        try {
+          voice.element.pause();
+        } catch {
+          /* ignore */
+        }
         continue;
+      } else if (voice.scratchReverse || voice.bufferSource) {
+        this.stopBufferSource(voice);
       }
       if (voice.element.paused) {
         try {
@@ -2067,6 +2101,73 @@ export class StudioAudioEngine {
         }
       }
     }
+  }
+
+  /** Saved reverse on an ordinary clip. The scratch jog keeps its own path. */
+  private holdPersistedReverse(voice: Voice, clip: StudioEngineClip, playheadMs: number): void {
+    const target = this.heardSecForPersistedReverse(voice, clip, playheadMs);
+    const anchor = voice.reverseAnchor;
+    const coast = anchor && this.ctx
+      ? persistedReverseCoastSec({
+          anchorHeardSec: anchor.heardSec,
+          elapsedSec: this.ctx.currentTime - anchor.contextTime,
+          rate: anchor.rate,
+        })
+      : target ?? 0;
+    const running = Boolean(voice.bufferSource && voice.scratchReverse && anchor);
+    if (target != null && target <= 0 && !running) return;
+    const restart = target == null || persistedReverseShouldRestart({
+      bufferRunning: running,
+      coastHeardSec: coast,
+      targetHeardSec: target ?? coast,
+    });
+    if (!restart || voice.reverseLoad) return;
+    voice.reverseLoad = true;
+    voice.reverseToken += 1;
+    const token = voice.reverseToken;
+    void this.ensureDecodedBuffer(voice).then((ok) => {
+      voice.reverseLoad = false;
+      if (!ok || voice.disposed || voice.reverseToken !== token || !this.ctx) return;
+      if (
+        scratchJogOwnsClip({
+          clipId: voice.clipId,
+          liveClipId: this.scratchLive.clipId,
+          liveReverse: this.scratchLive.reverse,
+          liveRate: this.scratchLive.rate,
+        })
+      ) {
+        return;
+      }
+      const fresh = this.document?.clips.find((item) => item.id === voice.clipId);
+      if (!fresh?.scratchReverse) return;
+      const playhead = this.epoch
+        ? playheadMsFromContextClock({
+            epoch: this.epoch,
+            contextTime: this.ctx.currentTime,
+            timelineLengthMs: this.document?.timelineLengthMs ?? 0,
+          })
+        : playheadMs;
+      const heard = this.heardSecForPersistedReverse(voice, fresh, playhead);
+      if (heard == null) return;
+      const freshRate = clampScratchRate(fresh.scratchRate ?? 1);
+      this.startReversedBufferSource(voice, freshRate, heard);
+    });
+  }
+
+  private heardSecForPersistedReverse(
+    voice: Voice,
+    clip: StudioEngineClip,
+    playheadMs: number,
+  ): number | null {
+    const durationSec = voice.decodedBuffer?.duration ?? voice.reversedBuffer?.duration ?? 0;
+    if (!(durationSec > 0)) return null;
+    return persistedReverseHeardSec({
+      sourceOffsetMs: clip.sourceOffsetMs,
+      localMs: Math.max(0, playheadMs - clip.timelineStartMs),
+      cueMs: clip.scratchCueMs ?? 0,
+      rate: clip.scratchRate ?? 1,
+      sourceDurationMs: durationSec * 1000,
+    });
   }
 
   /** P6.7.1 — apply/hold/schedule fade on existing Clip GainNode only. */
@@ -2227,6 +2328,9 @@ export class StudioAudioEngine {
       reversedBuffer: null,
       bufferSource: null,
       scratchReverse: false,
+      reverseAnchor: null,
+      reverseLoad: false,
+      reverseToken: 0,
     };
     this.voices.set(clip.id, voice);
     if (this.scratchLive.reverse || this.scratchLive.rate !== 1) {
