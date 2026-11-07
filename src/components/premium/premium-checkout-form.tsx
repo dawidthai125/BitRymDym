@@ -8,6 +8,7 @@ import { PurchaseConsent } from "@/components/legal/consent-checkbox";
 import type { PaidTier, PlanPack } from "@/config/plan-policy";
 import type { CheckoutBlock } from "@/lib/payments/entitlement-grant";
 import { isP24Redirect } from "@/lib/payments/p24-url";
+import { isPayuRedirect } from "@/lib/payments/payu-url";
 
 const TIERS: PaidTier[] = ["BRONZE", "SILVER", "GOLD"];
 
@@ -78,7 +79,7 @@ export function PremiumCheckoutForm({
         body: JSON.stringify({ product, consent, locale }),
       });
       const payload = (await response.json()) as { ok?: boolean; code?: Code; redirectUrl?: string };
-      if (!response.ok || !payload.ok || !payload.redirectUrl || !isP24Redirect(payload.redirectUrl)) {
+      if (!response.ok || !payload.ok || !payload.redirectUrl || (!isP24Redirect(payload.redirectUrl) && !isPayuRedirect(payload.redirectUrl))) {
         setError(payload.code ?? "PROVIDER");
         setPending(null);
         return;

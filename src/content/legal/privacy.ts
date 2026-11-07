@@ -18,7 +18,7 @@ export const PRIVACY: LegalDoc = {
       "Dane techniczne: adres IP, typ przeglądarki, logi serwera i błędów, identyfikatory sesji w plikach cookie.",
       "Odcisk dźwięku wgrywanego Bitu (chromaprint) i jego czas trwania. Sam plik audio do usługi AcoustID nie trafia.",
       "Wiadomości: treść pytań do asystenta BITEK, opisy okładek AI, korespondencja z nami.",
-      "Po uruchomieniu płatności: dane do rozliczeń (adres e-mail Konta, identyfikator zamówienia, kwota, waluta, okres i historia transakcji). Danych kart płatniczych nie przechowujemy — obsługuje je PayPro S.A. z siedzibą w Poznaniu (Przelewy24), który przetwarza dane płatnicze jako odrębny administrator.",
+      "Po uruchomieniu płatności: dane do rozliczeń (adres e-mail Konta, identyfikator zamówienia, kwota, waluta, okres i historia transakcji). Danych kart płatniczych nie przechowujemy — obsługuje je PayU S.A. z siedzibą w Poznaniu, który przetwarza dane płatnicze jako odrębny administrator.",
     ] }, `Serwis jest przeznaczony dla osób, które ukończyły ${MINIMUM_AGE} lat — młodsze osoby nie mogą zakładać Konta. Jeśli dowiemy się, że Konto założyła osoba poniżej tego wieku, usuniemy je wraz z danymi.`] },
     { id: "p3", h: "3. Cele i podstawy prawne", blocks: [{ table: { head: ["Cel", "Podstawa (RODO)"], rows: [
       ["Prowadzenie Konta, Studio, przechowywanie i przetwarzanie Twoich plików, linki do odsłuchu, eksport", "art. 6 ust. 1 lit. b — umowa"],
@@ -41,7 +41,7 @@ export const PRIVACY: LegalDoc = {
         ["Groq", "asystent BITEK, kontrola i doprecyzowanie opisów okładek AI", "USA"],
         ["Cloudflare (Workers AI)", "generowanie okładek AI — tylko opis tekstowy", "USA / globalnie"],
         ["Resend", "wysyłka e-maili (gdy włączone)", "USA"],
-        ["PayPro S.A. (Przelewy24), Poznań", "płatności — odrębny administrator danych płatniczych", "UE (Polska)"],
+        ["PayU S.A., Poznań", "płatności — odrębny administrator danych płatniczych", "UE (Polska)"],
         ["AcoustID (api.acoustid.org)", "odcisk dźwięku i czas trwania wgrywanego Bitu; plik audio zostaje u nas", "serwer usługi AcoustID"],
       ] } },
       "Do dostawców AI nie wysyłamy Twojego e-maila ani hasła. Opisy okładek przed wysłaniem są filtrowane; nie wpisuj w nich danych osobowych. Przekazanie danych poza EOG odbywa się na podstawie decyzji Komisji Europejskiej (EU-US Data Privacy Framework) lub standardowych klauzul umownych (art. 46 RODO). Kopię zabezpieczeń możesz uzyskać, pisząc do nas.",

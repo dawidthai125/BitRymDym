@@ -19,6 +19,7 @@ import {
 import { studioAdvancedRecordAllowed } from "@/lib/studio/studio-record-view";
 import { PremiumPurchaseSection } from "@/components/premium/premium-purchase-section";
 import { isP24Configured } from "@/lib/payments/p24-config";
+import { isPayuConfigured } from "@/lib/payments/payu-config";
 import { OWN_TAKE_RAW_DOWNLOADS_DAILY } from "@/config/recording";
 import type { PremiumTier } from "@/types/premium";
 
@@ -42,7 +43,7 @@ export default function PremiumPage() {
   const locale = useLocale();
   const money = new Intl.NumberFormat(locale === "en" ? "en-GB" : "pl-PL", { style: "currency", currency: "PLN", minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const hours = (s: number) => Math.round(s / 3600);
-  const paymentsOn = readPlanPaymentsAvailable() && isP24Configured();
+  const paymentsOn = readPlanPaymentsAvailable() && (isPayuConfigured() || isP24Configured());
 
   const rows: { id: string; label: string; cell: (tier: PremiumTier) => string }[] = [
     { id: "take", label: tr("tab.take"), cell: (x) => tr("tab.sekundy", { n: PLAN_POLICY[x].recording.maxTakeSeconds }) },
