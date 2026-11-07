@@ -52,10 +52,11 @@ describe("P6.1 registry", () => {
       "deesser",
       "gate",
       "tune",
+      "rider",
       "saturate",
       "pocket",
     ]);
-    const trackOnly = new Set(["tune", "saturate", "pocket"]);
+    const trackOnly = new Set(["tune", "rider", "saturate", "pocket"]);
     for (const type of STUDIO_FX_TYPES) {
       expect(STUDIO_FX_REGISTRY[type]).toEqual({ track: true, master: !trackOnly.has(type) });
     }

@@ -15,6 +15,7 @@
  * - bypass / skip slots: passthrough (matches live dry/wire audible path)
  */
 
+import { VocalLevelCore } from "@/lib/studio/mix-analysis/vocal-level";
 import {
   interpretStudioFxChainForPlayback,
   type StudioFxInstance,
@@ -629,6 +630,33 @@ export function createTuneProcessorAtRate(
   };
 }
 
+function createRiderProcessor(
+  effect: Extract<StudioFxInstance, { type: "rider" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const core = new VocalLevelCore(sampleRate, effect.params);
+  return {
+    type: "rider",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: 16,
+    process(sample) {
+      const left = new Float32Array([sample.left]);
+      const right = new Float32Array([sample.right]);
+      core.processBlock(left, right, left, right, 1);
+      return { left: left[0]!, right: right[0]! };
+    },
+    processBuffer(left, right) {
+      core.processBlock(left, right, left, right, left.length);
+    },
+    reset() {
+      core.fast = 0;
+      core.slow = 0;
+      core.gain = 1;
+    },
+  };
+}
+
 function createSaturateProcessor(
   effect: Extract<StudioFxInstance, { type: "saturate" }>,
 ): StudioOfflineFxProcessor {
@@ -681,6 +709,9 @@ function buildProcessorForReady(
   }
   if (effect.type === "tune") {
     return createTuneProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "rider") {
+    return createRiderProcessor(effect, sampleRate);
   }
   if (effect.type === "saturate") {
     return createSaturateProcessor(effect);

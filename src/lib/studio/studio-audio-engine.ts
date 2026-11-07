@@ -65,6 +65,7 @@ import {
   type StudioMeterSnapshot,
 } from "@/lib/studio/studio-meter";
 import { compensateStudioTuneLatency, enabledTuneCount } from "@/lib/studio/tune/tune";
+import { ensureRiderWorklet, isRiderWorkletReady } from "@/lib/studio/mix-analysis/rider-worklet";
 import { ensureTuneWorklet, isTuneWorkletReady } from "@/lib/studio/tune/tune-worklet";
 import {
   bakedPlaybackChain,
@@ -779,7 +780,10 @@ export class StudioAudioEngine {
       this.masterAnalyser.connect(this.ctx.destination);
       this.setLifecycle("initialized");
       this.setLifecycle("ready");
-      if (this.rawDocument) this.withTuneCompensation(this.rawDocument);
+      if (this.rawDocument) {
+        this.withTuneCompensation(this.rawDocument);
+        this.ensureRiderWorklet(this.rawDocument);
+      }
       if (this.preferredSinkId != null) {
         void this.applyPreferredSinkId();
       }
@@ -923,6 +927,7 @@ export class StudioAudioEngine {
 
   setDocument(rawDocument: StudioEngineDocument): void {
     this.rawDocument = rawDocument;
+    this.ensureRiderWorklet(rawDocument);
     const document = this.withTuneCompensation(this.withTuneBakes(rawDocument));
     this.document = document;
     const clipIds = new Set(document.clips.map((c) => c.id));
@@ -1675,6 +1680,27 @@ export class StudioAudioEngine {
    * offline render). Only once the worklet is live; until then tune is a dry
    * wire and nothing is shifted. Kicks off the worklet load when needed.
    */
+  /** Loads the rider worklet once. Until then the slot is dry. Zero latency, so clips stay put. */
+  private ensureRiderWorklet(document: StudioEngineDocument): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const needs = document.tracks.some((t) => {
+      const effects = (t.effectsChain as { effects?: { type?: string; enabled?: boolean }[] } | null)?.effects;
+      return Array.isArray(effects) && effects.some((e) => e.type === "rider" && e.enabled !== false);
+    });
+    if (!needs || isRiderWorkletReady(ctx)) return;
+    void ensureRiderWorklet(ctx).then((ok) => {
+      if (!ok || this.ctx !== ctx || this.lifecycle === "disposed") return;
+      for (const graph of this.tracks.values()) {
+        if (!graph.fx?.inspect().some((slot) => slot.type === "rider")) continue;
+        graph.fx.dispose();
+        graph.fx = null;
+        graph.fingerprint = "";
+      }
+      if (this.rawDocument) this.setDocument(this.rawDocument);
+    });
+  }
+
   private withTuneCompensation(document: StudioEngineDocument): StudioEngineDocument {
     const ctx = this.ctx;
     if (!ctx || !document.tracks.some((t) => enabledTuneCount(t.effectsChain) > 0)) return document;

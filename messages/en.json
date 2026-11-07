@@ -2414,6 +2414,8 @@
       },
       "kieszen": "Rap pocket",
       "kieszenOpis": "Vocal saturation, verse in the pocket, hook closer, beat mids duck, double on the hook only.",
+      "wyrownanie": "Level the vocal",
+      "wyrownanieOpis": "Quiet words come up toward the loud ones. The pause stays quiet.",
       "poprawWszystko": "Fix everything",
       "poprawWszystkoOpis": "BITEK fixes volume, balance, EQ, sibilance, compression, noise and panning, and adds space in time with the beat.",
       "poprawAria": "Fix: {title}",
@@ -2452,6 +2454,7 @@
         "notes": {
           "chainFull": "“{track}” already has 8 effects, so I didn't add anything there.",
           "pocket": "The vocal got saturation and a pocket: verse back, hook closer, the beat's mids duck, and a quiet double on the hook.",
+          "rider": "I leveled the vocal: quiet words up, loud words down, and the pause stays quiet.",
           "gainClipTrack": "I turned “{track}” down {db} dB because it was clipping. Now it has headroom.",
           "gainTrimTrack": "I turned “{track}” down {db} dB so it doesn't hit zero.",
           "gainMasterDown": "I turned the whole mix down {db} dB to leave headroom for mastering.",
