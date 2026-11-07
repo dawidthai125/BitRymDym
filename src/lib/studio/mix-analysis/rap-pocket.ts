@@ -1,8 +1,8 @@
 /**
  * Rap pocket on a finished beat.
  * Applied once in the mix sum (renderMixStereo), after per-track FX.
- * The "pocket" FX slot is a dry wire in the live graph; these numbers
- * are the processors the master actually hears.
+ * Live preview is the pocket worklet. These numbers are what the master
+ * still applies in the mix sum (split-band beat duck included).
  *
  * Verse sits back. Hook is closer. Beat mids duck under the vocal.
  * Hook only: a 20 ms copy, a few cents up, quiet.

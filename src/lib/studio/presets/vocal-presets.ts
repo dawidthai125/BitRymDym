@@ -233,6 +233,11 @@ export class FxPresetValidationError extends Error {
   }
 }
 
+/** True only when the owner marked this stored payload for the exchange. */
+export function payloadListed(raw: unknown): boolean {
+  return !!raw && typeof raw === "object" && !Array.isArray(raw) && (raw as { listed?: unknown }).listed === true;
+}
+
 export function parseFxPresetName(raw: unknown): string {
   if (typeof raw !== "string") throw new FxPresetValidationError("nazwa");
   const name = raw.replace(/[\u0000-\u001f\u007f]/g, "").trim();

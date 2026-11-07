@@ -26,9 +26,11 @@ export const STUDIO_FX_TYPES = [
   "rider",
   /** Quiet fifth below and minor third above. Track only. The lead stays in front. */
   "harmony",
+  /** Pitch character of the same voice: lower, higher, or a phone band. Track only. */
+  "voice",
   /** Vocal warmth. Track only. */
   "saturate",
-  /** Rap pocket: section level, beat-mid duck, hook double. Track only. The slot itself is dry; renderMixStereo applies it. */
+  /** Rap pocket: section level, beat-mid duck, hook double. Track only. Live preview is the worklet; renderMixStereo still applies the pocket. */
   "pocket",
 ] as const;
 
@@ -106,6 +108,8 @@ export type StudioFxTuneParams = {
 };
 
 export type StudioFxHarmonyParams = { amount: number };
+/** 0 lower, 1 higher, 2 phone. mix 0 is dry. */
+export type StudioFxVoiceParams = { color: number; mix: number };
 
 export type StudioFxRiderParams = {
   /** 0 = dry, 1 = full ride toward the phrase. */
@@ -121,7 +125,7 @@ export type StudioFxSaturateParams = {
   mix: number;
 };
 
-/** Numbers the mix sum reads. The insert itself does not change the live wire. */
+/** Numbers the live worklet and the mix sum both read. */
 export type StudioFxPocketParams = {
   verseDb: number;
   hookDb: number;
@@ -165,6 +169,7 @@ export type StudioFxParamsByType = {
   tune: StudioFxTuneParams;
   rider: StudioFxRiderParams;
   harmony: StudioFxHarmonyParams;
+  voice: StudioFxVoiceParams;
   saturate: StudioFxSaturateParams;
   pocket: StudioFxPocketParams;
 };
@@ -193,6 +198,7 @@ export type StudioFxInstance =
     }
   | { id: string; type: "rider"; enabled: boolean; params: StudioFxRiderParams }
   | { id: string; type: "harmony"; enabled: boolean; params: StudioFxHarmonyParams }
+  | { id: string; type: "voice"; enabled: boolean; params: StudioFxVoiceParams }
   | { id: string; type: "saturate"; enabled: boolean; params: StudioFxSaturateParams }
   | { id: string; type: "pocket"; enabled: boolean; params: StudioFxPocketParams };
 
@@ -273,6 +279,7 @@ const GATE_KEYS = new Set(["thresholdDb", "rangeDb", "releaseMs"]);
 const TUNE_KEYS = new Set(["keyRoot", "scale", "retuneMs", "amount"]);
 const RIDER_KEYS = new Set(["amount", "maxBoostDb", "maxCutDb"]);
 const HARMONY_KEYS = new Set(["amount"]);
+const VOICE_KEYS = new Set(["color", "mix"]);
 const SATURATE_KEYS = new Set(["drive", "mix"]);
 const POCKET_KEYS = new Set(["verseDb", "hookDb", "depth", "doubleMs", "doubleCents", "doubleDb"]);
 
@@ -284,6 +291,7 @@ export const STUDIO_FX_STAGE2_RANGES = {
   tune: { keyRoot: [0, 11], scale: [0, 2], retuneMs: [0, 400], amount: [0, 1] },
   rider: { amount: [0, 1], maxBoostDb: [0, 12], maxCutDb: [0, 12] },
   harmony: { amount: [0, 1] },
+  voice: { color: [0, 2], mix: [0, 1] },
   saturate: { drive: [0, 1], mix: [0, 1] },
   pocket: { verseDb: [-12, 6], hookDb: [-12, 6], depth: [0, 1], doubleMs: [15, 25], doubleCents: [0, 25], doubleDb: [-24, -6] },
 } as const;
@@ -312,6 +320,7 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     tune: { keyRoot: 0, scale: 2, retuneMs: 100, amount: 0.85 },
     rider: { amount: 0.65, maxBoostDb: 6, maxCutDb: 6 },
     harmony: { amount: 0.7 },
+    voice: { color: 0, mix: 1 },
     saturate: { drive: 0.35, mix: 0.55 },
     pocket: { verseDb: -1.5, hookDb: 0, depth: 0.55, doubleMs: 20, doubleCents: 12, doubleDb: -14 },
   };
@@ -332,6 +341,7 @@ export const STUDIO_FX_REGISTRY: Record<
   tune: { track: true, master: false },
   rider: { track: true, master: false },
   harmony: { track: true, master: false },
+  voice: { track: true, master: false },
   saturate: { track: true, master: false },
   pocket: { track: true, master: false },
 };
@@ -584,6 +594,14 @@ function parseEffect(
       type,
       enabled: o.enabled,
       params: parseRanged(o.params, STUDIO_FX_DEFAULTS.harmony, HARMONY_KEYS, STUDIO_FX_STAGE2_RANGES.harmony),
+    };
+  }
+  if (type === "voice") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.voice, VOICE_KEYS, STUDIO_FX_STAGE2_RANGES.voice),
     };
   }
   if (type === "rider") {
@@ -943,6 +961,13 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
     labelPl: "Harmonia",
     params: [slider("amount", "Ilość", 0, 1, 0.01, "")],
   },
+  voice: {
+    labelPl: "Zmiana głosu",
+    params: [
+      slider("color", "Kolor", 0, 2, 1, ""),
+      slider("mix", "Ilość", 0, 1, 0.01, ""),
+    ],
+  },
   rider: {
     labelPl: "Wyrównanie wokalu",
     params: [
@@ -1072,6 +1097,8 @@ export function createStudioFxInstance(
       return { id, type, enabled: true, params: defaultStudioFxParams("rider") };
     case "harmony":
       return { id, type, enabled: true, params: defaultStudioFxParams("harmony") };
+    case "voice":
+      return { id, type, enabled: true, params: defaultStudioFxParams("voice") };
     case "saturate":
       return { id, type, enabled: true, params: defaultStudioFxParams("saturate") };
     case "pocket":

@@ -165,6 +165,8 @@ describe("rules intents", () => {
   it("noise starts vocal cleanup and harmony is a track effect", () => {
     expect(bitekRulesChat("usuń szum z wokalu", ctx).jobs?.[0]).toMatchObject({ kind: "vocalCleanup" });
     expect(bitekRulesChat("dodaj harmonię", ctx).jobs?.[0]).toMatchObject({ kind: "trackFx", trackRef: "t2", effect: "harmony" });
+    expect(bitekRulesChat("zmień głos", ctx).jobs?.[0]).toMatchObject({ kind: "trackFx", effect: "voice" });
+    expect(bitekRulesChat("zrób jak Nova", ctx).jobs?.[0]).toMatchObject({ kind: "novaPass" });
   });
 });
 
@@ -249,6 +251,8 @@ describe("BITEK voice — user's private producer, first person (stage 2)", () =
       expect(buildBitekStaticPrefix("pl", { compact })).toMatch(/prywatny producent/);
       expect(buildBitekStaticPrefix("en", { compact })).toMatch(/private producer/);
       expect(buildBitekStaticPrefix("en", { compact })).toMatch(/first person/);
+      expect(buildBitekStaticPrefix("pl", { persona: "engineer" })).toMatch(/realizatora/);
+      expect(buildBitekStaticPrefix("pl", { persona: "engineer" })).not.toMatch(/prywatny producent/);
     }
   });
   it("rule replies speak as BITEK (I'll / Podkręcę)", () => {

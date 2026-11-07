@@ -12,6 +12,8 @@ import {
   type StudioFxGateParams,
   type StudioFxTuneParams,
   type StudioFxHarmonyParams,
+  type StudioFxVoiceParams,
+  type StudioFxPocketParams,
   type StudioFxRiderParams,
   type StudioFxSaturateParams,
   type StudioFxHighpassParams,
@@ -37,6 +39,8 @@ import {
   LR4_SECTION_Q,
 } from "@/lib/studio/studio-fx-stage2-dsp";
 import { createHarmonyNode } from "@/lib/studio/mix-analysis/harmony-worklet";
+import { createPocketNode, postPocketSlot } from "@/lib/studio/mix-analysis/pocket-worklet";
+import { createVoiceNode } from "@/lib/studio/mix-analysis/voice-worklet";
 import { createRiderNode } from "@/lib/studio/mix-analysis/rider-worklet";
 import { toTuneCoreParams } from "@/lib/studio/tune/tune";
 import { createTuneNode } from "@/lib/studio/tune/tune-worklet";
@@ -641,6 +645,23 @@ function buildHarmonySlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): 
   });
 }
 
+function buildVoiceSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const params = effect.params as StudioFxVoiceParams;
+  const node = createVoiceNode(ctx, params);
+  if (!node) return buildWireSlot(ctx, { status: "ready", effect });
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    input.connect(node as unknown as StudioFxConnectable);
+    node.connect(wet);
+    return {
+      nodes: [node as unknown as StudioFxConnectable],
+      names: ["worklet-brd-voice"],
+      apply(next) {
+        node.port.postMessage({ params: next.params as StudioFxVoiceParams });
+      },
+    };
+  });
+}
+
 function buildRiderSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
   const params = effect.params as StudioFxRiderParams;
   const node = createRiderNode(ctx, params);
@@ -660,6 +681,24 @@ function buildRiderSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): Bu
   });
 }
 
+/** Until the worklet loads, a dry wire (status ready) so playback is not gated. */
+function buildPocketSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const params = effect.params as StudioFxPocketParams;
+  const node = createPocketNode(ctx, params);
+  if (!node) return buildWireSlot(ctx, { status: "ready", effect });
+  return buildShellSlot(ctx, effect, (input, wet) => {
+    input.connect(node as unknown as StudioFxConnectable);
+    node.connect(wet);
+    return {
+      nodes: [node as unknown as StudioFxConnectable],
+      names: ["worklet-brd-pocket"],
+      apply(next) {
+        postPocketSlot(node.port, next.params as StudioFxPocketParams);
+      },
+    };
+  });
+}
+
 function tryBuildProcessSlot(
   ctx: StudioFxGraphContext,
   effect: StudioFxInstance,
@@ -673,9 +712,10 @@ function tryBuildProcessSlot(
   if (effect.type === "gate") return buildGateSlot(ctx, effect);
   if (effect.type === "tune") return buildTuneSlot(ctx, effect);
   if (effect.type === "harmony") return buildHarmonySlot(ctx, effect);
+  if (effect.type === "voice") return buildVoiceSlot(ctx, effect);
   if (effect.type === "rider") return buildRiderSlot(ctx, effect);
   if (effect.type === "saturate") return buildSaturateSlot(ctx, effect);
-  if (effect.type === "pocket") return buildWireSlot(ctx, { status: "ready", effect });
+  if (effect.type === "pocket") return buildPocketSlot(ctx, effect);
   return buildDelaySlot(ctx, effect);
 }
 

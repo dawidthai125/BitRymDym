@@ -45,8 +45,8 @@ export const MIX_AUTOFIX_IDS = [
 
 export type MixAutofixId = (typeof MIX_AUTOFIX_IDS)[number];
 
-/** Pocket and the vocal rider are separate buttons. They are not part of „Popraw wszystko”. */
-export type MixPlanFixId = MixAutofixId | "pocket" | "rider" | "harmony";
+/** Pocket, rider, harmony and voice are separate buttons. They are not part of „Popraw wszystko”. */
+export type MixPlanFixId = MixAutofixId | "pocket" | "rider" | "harmony" | "voice";
 
 /** Which fixes a card's „Popraw” runs. `stereo` has no automatic fix. */
 export const MIX_CARD_FIXES: Record<MixCardId, readonly MixAutofixId[]> = {
@@ -64,6 +64,9 @@ export const MIX_CARD_FIXES: Record<MixCardId, readonly MixAutofixId[]> = {
 /** „Popraw wszystko” — everything incl. BPM-synced space. */
 export const MIX_AUTOFIX_ALL: readonly MixAutofixId[] = MIX_AUTOFIX_IDS;
 
+/** What „Jak Nova” turns: measured fixes plus the existing pocket and rider. Harmony stays a separate button. */
+export const NOVA_PASS_FIXES: readonly MixPlanFixId[] = [...MIX_AUTOFIX_ALL, "pocket", "rider"];
+
 export const MIX_AUTOFIX_TARGETS = {
   masterPeakDbtp: -6,
   trackPeakDbfs: -6,
@@ -79,6 +82,7 @@ const FX_ORDER: readonly StudioFxType[] = [
   "highpass",
   "gate",
   "tune",
+  "voice",
   "harmony",
   "eq",
   "rider",
@@ -420,6 +424,7 @@ const RUNNERS: Record<MixPlanFixId, (ctx: Ctx) => void> = {
   pocket: fixPocket,
   rider: fixRider,
   harmony: fixHarmony,
+  voice: fixVoice,
 };
 
 function fixPocket(ctx: Ctx): void {
@@ -460,6 +465,23 @@ function fixRider(ctx: Ctx): void {
     if (JSON.stringify(t.chain) !== before) changed = true;
   }
   if (changed) note(ctx, "rider", {});
+}
+
+function fixVoice(ctx: Ctx): void {
+  const leads = ctx.state.tracks.filter((t) => t.role === "lead_vocal");
+  if (leads.length === 0) return;
+  let changed = false;
+  for (const t of leads) {
+    const before = JSON.stringify(t.chain);
+    const next = upsertFx(t.chain, "voice", (p) => p, ctx.createId);
+    if (!next) {
+      note(ctx, "chainFull", { track: t.name });
+      continue;
+    }
+    t.chain = next;
+    if (JSON.stringify(t.chain) !== before) changed = true;
+  }
+  if (changed) note(ctx, "voice", {});
 }
 
 function fixHarmony(ctx: Ctx): void {
@@ -514,7 +536,7 @@ export function planMixAutofix(params: {
     createId: params.createId ?? (() => crypto.randomUUID()),
     notes: [],
   };
-  const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony"] as const).filter((id) => params.fixes.includes(id));
+  const order = ([...MIX_AUTOFIX_IDS, "pocket", "rider", "harmony", "voice"] as const).filter((id) => params.fixes.includes(id));
   const unchanged: MixPlanFixId[] = [];
   for (const id of order) {
     const before = ctx.notes.length;

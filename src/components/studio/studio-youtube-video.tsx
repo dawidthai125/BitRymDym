@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { joinParts } from "@/lib/studio/master/client";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { AI_COVER_ASPECTS, AI_COVER_PROMPT_MAX, AI_COVER_PROMPT_MIN, type AiCoverAspect } from "@/lib/studio/video/ai-cover/config";
+import { MOOD_COVERS } from "@/lib/studio/video/ai-cover/moods";
 import {
   cleanVideoText, YT_VIDEO_H, YT_VIDEO_TEXT_MAX, YT_VIDEO_W, youtubeFrameLayout, youtubeVideoAllowed, type YoutubeVideoSource,
 } from "@/lib/studio/video/youtube-video";
@@ -272,6 +273,19 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
                 ) : null}
                 {source === "ai" ? (
                   <div className="flex flex-col gap-2 pl-6" data-testid="studio-yt-ai">
+                    <div role="group" aria-label={t("ai.nastroj")} className="flex flex-wrap gap-1.5" data-testid="studio-yt-moods">
+                      {MOOD_COVERS.map((mood) => (
+                        <button
+                          key={mood.id}
+                          type="button"
+                          className="min-h-9 rounded-[2px] border border-[var(--brd-line)] px-2 text-xs"
+                          data-testid={`studio-yt-mood-${mood.id}`}
+                          onClick={() => setAiPrompt(mood.prompt)}
+                        >
+                          {t(`ai.nastroje.${mood.id}`)}
+                        </button>
+                      ))}
+                    </div>
                     <label className="flex flex-col gap-1 text-sm">
                       {t("ai.opisLabel")}
                       <textarea value={aiPrompt} maxLength={AI_COVER_PROMPT_MAX} rows={3} placeholder={t("ai.placeholder")} onChange={(e) => setAiPrompt(e.currentTarget.value)} data-testid="studio-yt-ai-prompt" className="rounded-[2px] border border-[var(--brd-line)] bg-transparent px-2 py-1.5" />

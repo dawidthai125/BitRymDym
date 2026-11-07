@@ -16,6 +16,7 @@
  */
 
 import { VocalHarmonyCore } from "@/lib/studio/mix-analysis/vocal-harmony";
+import { VoiceShiftCore } from "@/lib/studio/mix-analysis/voice-shift";
 import { VocalLevelCore } from "@/lib/studio/mix-analysis/vocal-level";
 import {
   interpretStudioFxChainForPlayback,
@@ -631,6 +632,31 @@ export function createTuneProcessorAtRate(
   };
 }
 
+function createVoiceProcessor(
+  effect: Extract<StudioFxInstance, { type: "voice" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const core = new VoiceShiftCore(sampleRate, effect.params);
+  return {
+    type: "voice",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: 32,
+    process(sample) {
+      const left = new Float32Array([sample.left]);
+      const right = new Float32Array([sample.right]);
+      core.processBlock(left, right, left, right, 1);
+      return { left: left[0]!, right: right[0]! };
+    },
+    processBuffer(left, right) {
+      core.processBlock(left, right, left, right, left.length);
+    },
+    reset() {
+      core.reset();
+    },
+  };
+}
+
 function createHarmonyProcessor(
   effect: Extract<StudioFxInstance, { type: "harmony" }>,
   sampleRate: number,
@@ -738,6 +764,9 @@ function buildProcessorForReady(
   }
   if (effect.type === "harmony") {
     return createHarmonyProcessor(effect, sampleRate);
+  }
+  if (effect.type === "voice") {
+    return createVoiceProcessor(effect, sampleRate);
   }
   if (effect.type === "rider") {
     return createRiderProcessor(effect, sampleRate);

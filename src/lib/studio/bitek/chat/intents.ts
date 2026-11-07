@@ -174,6 +174,34 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
     return done(tx.clarity, [], [{ kind: "mixFix", fixes, label: "" }]);
   }
 
+  const NOVA = /nova|krec pokret|pokretl|dopasuj jak|rob jak nova|jak nova/;
+  if (has(m, NOVA)) {
+    if (!ctx.analysis || ctx.analysis.stale) return done(tx.needAnalysis);
+    if (!ctx.tracks.some((t) => t.hasAudio !== false)) return done(tx.generic(null));
+    return done(
+      ctx.lang === "pl"
+        ? "Ustawię mix tymi samymi poprawkami co Nova: pomiar, kieszeń i wyrównanie wokalu. Harmonia zostaje osobno. Kliknij „Zastosuj”."
+        : "I'll set the mix with the same moves as Nova: the measurement, the pocket and vocal level. Harmony stays separate. Hit Apply.",
+      [],
+      [{ kind: "novaPass", label: "" }],
+    );
+  }
+
+  const VOICE = /zmien glos|zmiana glosu|barwa glosu|inny glos|voice changer|\bvoice\b/;
+  if (has(m, VOICE)) {
+    const target = byRole(ctx, ["lead_vocal"]);
+    if (!target.length) return missing(["lead_vocal"]);
+    const track = target[0]!;
+    if (track.effects?.includes("voice")) return done(tx.already(track.name));
+    return done(
+      ctx.lang === "pl"
+        ? `Zmienię barwę ${track.name}: niżej, wyżej albo pasmo telefonu. To ten sam głos. Kliknij „Zastosuj”.`
+        : `I'll change the color of ${track.name}: lower, higher, or a phone band. Same voice. Hit Apply.`,
+      [],
+      [{ kind: "trackFx", trackRef: track.ref, effect: "voice", label: "" }],
+    );
+  }
+
   const CLEAN = /szum|odszum|hiss|\bnoise\b|wyczysc wokal|usun szum/;
   if (has(m, CLEAN) && !has(m, BEAT)) {
     const vocals = byRole(ctx, [...BITEK_TUNE_ROLES]);

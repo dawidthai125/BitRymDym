@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { memoryProviderState, runAiImageChain } from "./chain";
 import { aiCoverEnabled, aiCoverPerDay } from "./config";
+import { MOOD_COVERS } from "./moods";
 import { checkPromptRules, matchPromptRule } from "./prompt-rules";
 import { AiImageError, aiImageProvidersFromEnv, cloudflareProvider, nextUtcMidnight, retryAfterMs, type AiImageProvider } from "./providers";
 import { screenAiCoverPrompt } from "./screen";
@@ -95,6 +96,9 @@ describe("AI cover prompt rules", () => {
   ])("blocks %s", (p, cat) => {
     expect(matchPromptRule(p)).toBe(cat);
     expect(checkPromptRules(p).ok).toBe(false);
+  });
+  it("mood covers pass the prompt rules", () => {
+    for (const mood of MOOD_COVERS) expect(checkPromptRules(mood.prompt).ok).toBe(true);
   });
   it("length limits", () => {
     expect(checkPromptRules("ab")).toMatchObject({ ok: false, reason: "too_short" });

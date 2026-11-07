@@ -5,6 +5,8 @@ import type { StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
 import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-types";
 import { tuneStyleOf } from "@/lib/studio/tune/tune";
 
+import type { MixPlanFixId } from "@/lib/studio/mix-autofix/plan";
+
 import {
   BITEK_TUNE_ROLES,
   type BitekChatContext,
@@ -12,7 +14,6 @@ import {
   type BitekMasterSetting,
   type BitekMasterStyle,
   type BitekMasterTarget,
-  type BitekMixFixId,
   type BitekTuneLevel,
 } from "./types";
 
@@ -35,7 +36,7 @@ export type BitekClientContext = {
   /** Vocal takes in this project. Stays in the browser. Used to queue the existing cleanup. */
   vocalTakeIds: string[];
   /** Mix step only: plan measured fixes and apply them through the existing mix-working path. */
-  applyMixFix?: (fixes: BitekMixFixId[]) => Promise<BitekMixFixResult>;
+  applyMixFix?: (fixes: readonly MixPlanFixId[]) => Promise<BitekMixFixResult>;
   /** Mastering step only: apply a whole-song style through the existing setting controls. */
   applyMasterStyle?: (style: BitekMasterStyle) => boolean;
   /** Mastering step only: one measured tone and clarity patch. */

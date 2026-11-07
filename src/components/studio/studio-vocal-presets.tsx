@@ -84,7 +84,31 @@ export function useFxPresets() {
     if (res?.ok) setState((s) => ({ ...s, presets: s.presets.filter((p) => p.id !== id) }));
   }, []);
 
-  return { ...state, create, remove };
+  const publish = useCallback(async (id: string) => {
+    const res = await fetch(`/api/studio/fx-presets/${id}`, { method: "POST" }).catch(() => null);
+    return Boolean(res?.ok);
+  }, []);
+
+  const market = useCallback(async () => {
+    const res = await fetch("/api/studio/fx-presets/market").catch(() => null);
+    const json = (await res?.json().catch(() => null)) as { presets?: OwnFxPreset[] } | null;
+    return res?.ok && Array.isArray(json?.presets) ? json.presets : [];
+  }, []);
+
+  const copyListed = useCallback(async (id: string) => {
+    const res = await fetch("/api/studio/fx-presets/market", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    }).catch(() => null);
+    const json = (await res?.json().catch(() => null)) as { preset?: OwnFxPreset } | null;
+    if (!res?.ok || !json?.preset) return null;
+    const preset = json.preset;
+    setState((s) => ({ ...s, presets: [preset, ...s.presets] }));
+    return preset;
+  }, []);
+
+  return { ...state, create, remove, publish, market, copyListed };
 }
 
 function PlanLock({ label, testId }: { label: string; testId: string }) {
@@ -172,6 +196,7 @@ export function StudioVocalPresetPicker({
   const t = useTranslations("studio.vocalPresets");
   const store = useFxPresets();
   const [message, setMessage] = useState<string | null>(null);
+  const [listed, setListed] = useState<{ id: string; name: string }[]>([]);
   const own = store.presets.filter((p) => p.kind === "chain");
   const canSave = store.access.maxOwn > 0;
   const full = store.presets.length >= store.access.maxOwn;
@@ -233,6 +258,18 @@ export function StudioVocalPresetPicker({
                   >
                     {p.name}
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="min-h-9"
+                    onClick={async () => {
+                      const ok = await store.publish(p.id);
+                      setMessage(ok ? t("wystawiono") : t("bladZapisu"));
+                    }}
+                  >
+                    {t("wystaw")}
+                  </Button>
                   <Button type="button" size="sm" variant="ghost" className="min-h-9" aria-label={t("usunAria", { name: p.name })} onClick={() => void store.remove(p.id)}>
                     {t("usun")}
                   </Button>
@@ -256,6 +293,36 @@ export function StudioVocalPresetPicker({
             )}
           </>
         )}
+      </div>
+      <div className="space-y-1.5" data-testid="studio-preset-market">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-xs font-medium text-[var(--brd-ink)]">{t("gielda")}</h4>
+          <Button type="button" size="sm" variant="outline" className="min-h-9" onClick={async () => setListed(await store.market())}>
+            {t("gielda")}
+          </Button>
+        </div>
+        <p className="text-[11px] text-[var(--brd-mute)]">{t("gieldaOpis")}</p>
+        {listed.length === 0 ? <p className="text-xs text-[var(--brd-mute)]">{t("gieldaPusto")}</p> : null}
+        <ul className="flex flex-col gap-1">
+          {listed.map((p) => (
+            <li key={p.id} className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-9"
+                disabled={!canSave}
+                onClick={async () => {
+                  const copied = await store.copyListed(p.id);
+                  setMessage(copied ? t("skopiowano", { name: copied.name }) : t("bladZapisu"));
+                }}
+              >
+                {t("kopiuj")}
+              </Button>
+            </li>
+          ))}
+        </ul>
       </div>
       {message ? (
         <p role="status" className="text-[11px] text-[var(--brd-mute)]">

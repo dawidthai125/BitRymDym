@@ -10,6 +10,7 @@ import type { PremiumTier } from "@/types/premium";
 import {
   parseFxPresetName,
   parseFxPresetPayload,
+  payloadListed,
   type FxPresetKind,
   type FxPresetPayload,
   type OwnFxPreset,
@@ -137,6 +138,72 @@ export async function createFxPreset(
   const preset = mapRow(data as Record<string, unknown>);
   if (!preset) throw new Error("Nie udało się zapisać presetu.");
   return preset;
+}
+
+export type ListedFxPreset = { id: string; name: string; kind: FxPresetKind; payload: FxPresetPayload };
+
+/** Presets whose owner set listed. No owner id leaves this function. */
+export async function listListedFxPresets(): Promise<ListedFxPreset[]> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_fx_presets")
+    .select("id, name, kind, payload")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) {
+    if (isFxPresetStoreMissing(error)) return [];
+    throw new Error(error.message);
+  }
+  const out: ListedFxPreset[] = [];
+  for (const row of data ?? []) {
+    const raw = row as Record<string, unknown>;
+    if (!payloadListed(raw.payload)) continue;
+    try {
+      const parsed = parseFxPresetPayload(raw.kind, raw.payload);
+      out.push({ id: String(raw.id), name: String(raw.name), kind: parsed.kind, payload: parsed.payload });
+    } catch {
+      continue;
+    }
+    if (out.length >= 40) break;
+  }
+  return out;
+}
+
+/** Owner marks one of their presets. listed is stored after the chain is parsed. */
+export async function publishFxPreset(context: AuthContext, presetId: string): Promise<void> {
+  if (!UUID.test(presetId)) throw new AuthError("NOT_FOUND", "Preset nie został znaleziony.");
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_fx_presets")
+    .select("id, kind, payload")
+    .eq("id", presetId)
+    .eq("owner_id", context.userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new AuthError("NOT_FOUND", "Preset nie został znaleziony.");
+  const row = data as Record<string, unknown>;
+  const parsed = parseFxPresetPayload(row.kind, row.payload);
+  const { error: up } = await admin
+    .from("studio_fx_presets")
+    .update({ payload: { ...parsed.payload, listed: true } })
+    .eq("id", presetId)
+    .eq("owner_id", context.userId);
+  if (up) throw new Error(up.message);
+}
+
+/** Copy a listed preset into the caller's own rows. The copy is not listed. */
+export async function copyListedFxPreset(context: AuthContext, presetId: string): Promise<OwnFxPreset> {
+  if (!UUID.test(presetId)) throw new AuthError("NOT_FOUND", "Preset nie został znaleziony.");
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("studio_fx_presets")
+    .select("name, kind, payload")
+    .eq("id", presetId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const row = data as Record<string, unknown> | null;
+  if (!row || !payloadListed(row.payload)) throw new AuthError("NOT_FOUND", "Preset nie został znaleziony.");
+  return createFxPreset(context, { name: row.name, kind: row.kind, payload: row.payload });
 }
 
 export async function deleteFxPreset(context: AuthContext, presetId: string): Promise<void> {

@@ -15,11 +15,11 @@ import {
   type BitekTrackFx,
 } from "./types";
 
-const VOCAL_ONLY: readonly BitekTrackFx[] = ["compressor", "highpass", "deesser", "gate", "harmony"];
+const VOCAL_ONLY: readonly BitekTrackFx[] = ["compressor", "highpass", "deesser", "gate", "harmony", "voice"];
 
 const FX_NAME: Record<BitekLang, Record<BitekTrackFx, string>> = {
-  pl: { eq: "EQ", compressor: "kompresor", highpass: "filtr dolny", deesser: "de-esser", gate: "bramka", harmony: "harmonię" },
-  en: { eq: "EQ", compressor: "compressor", highpass: "low cut", deesser: "de-esser", gate: "gate", harmony: "harmony" },
+  pl: { eq: "EQ", compressor: "kompresor", highpass: "filtr dolny", deesser: "de-esser", gate: "bramka", harmony: "harmonię", voice: "zmianę głosu" },
+  en: { eq: "EQ", compressor: "compressor", highpass: "low cut", deesser: "de-esser", gate: "gate", harmony: "harmony", voice: "a voice color" },
 };
 
 const FIX_NAME: Record<BitekLang, Record<BitekMixFixId, string>> = {
@@ -142,6 +142,15 @@ export function validateBitekJobs(raw: unknown, ctx: BitekChatContext): BitekJob
         kind: "masterClarity",
         patch,
         label: lang === "pl" ? `Brzmienie i czystość: ${names}` : `Tone and clarity: ${names}`,
+      });
+      continue;
+    }
+    if (r.kind === "novaPass") {
+      if (ctx.step !== "mix" || !ctx.analysis || ctx.analysis.stale) continue;
+      if (!ctx.tracks.some((t) => t.hasAudio !== false)) continue;
+      out.push({
+        kind: "novaPass",
+        label: lang === "pl" ? "Ustaw mix jak Nova: pomiar, kieszeń i wyrównanie" : "Set the mix like Nova: measurement, pocket and level",
       });
       continue;
     }

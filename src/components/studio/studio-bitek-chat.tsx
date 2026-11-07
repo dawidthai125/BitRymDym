@@ -13,6 +13,7 @@ import {
   type BitekDecision,
   type BitekStoredChange,
 } from "@/lib/studio/bitek/chat/decisions";
+import { NOVA_PASS_FIXES } from "@/lib/studio/mix-autofix/plan";
 import { BITEK_LIMITS, BITEK_MASTER_REF, type BitekChatResult, type BitekJob, type BitekMasterSetting, type BitekProposal, type BitekTuneLevel } from "@/lib/studio/bitek/chat/types";
 import { emitStudioTakeSourceChanged } from "@/lib/studio/cleanup/cleanup-events";
 import { addStudioFxToChain } from "@/lib/studio/studio-fx-chain";
@@ -87,6 +88,7 @@ export function StudioBitekChat({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [engineer, setEngineer] = useState(false);
   const listRef = useRef<HTMLOListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -118,7 +120,7 @@ export function StudioBitekChat({
       const res = await fetch("/api/studio/bitek/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history, context: { ...context, lastChange }, projectId }),
+        body: JSON.stringify({ message, history, context: { ...context, lastChange, ...(engineer ? { persona: "engineer" } : {}) }, projectId }),
       });
       if (res.status === 429) {
         setError(t("limit"));
@@ -211,6 +213,19 @@ export function StudioBitekChat({
 
   async function applyJob(job: BitekJob) {
     const client = getContext();
+    if (job.kind === "novaPass") {
+      if (!client.applyMixFix) {
+        setError(t("nieDaSie"));
+        return;
+      }
+      const res = await client.applyMixFix(NOVA_PASS_FIXES);
+      if (!res.ok) {
+        setError(res.reason === "empty" ? t("juzJest") : res.reason === "no-analysis" ? t("bezPomiaru") : t("nieDaSie"));
+        return;
+      }
+      store.append([{ kind: "note", content: t("zastosowano") }], { localOnly: store.memory === "session" });
+      return;
+    }
     if (job.kind === "mixFix") {
       if (!client.applyMixFix) {
         setError(t("nieDaSie"));
@@ -358,7 +373,18 @@ export function StudioBitekChat({
 
   return (
     <div className="flex flex-col gap-2" data-testid="studio-bitek-chat">
-      <p className="text-xs text-[var(--brd-mute)]">{t("info")}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-[var(--brd-mute)]">{t("info")}</p>
+        <button
+          type="button"
+          aria-pressed={engineer}
+          data-testid="studio-bitek-engineer"
+          className={`min-h-9 rounded-[2px] border px-2 text-xs ${engineer ? "border-[var(--brd-amber)]" : "border-[var(--brd-line)]"}`}
+          onClick={() => setEngineer((v) => !v)}
+        >
+          {engineer ? t("realizatorWlaczony") : t("realizator")}
+        </button>
+      </div>
       <ol
         ref={listRef}
         aria-live="polite"

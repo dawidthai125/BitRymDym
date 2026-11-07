@@ -66,6 +66,14 @@ import {
 } from "@/lib/studio/studio-meter";
 import { compensateStudioTuneLatency, enabledTuneCount } from "@/lib/studio/tune/tune";
 import { ensureHarmonyWorklet, isHarmonyWorkletReady } from "@/lib/studio/mix-analysis/harmony-worklet";
+import {
+  ensurePocketWorklet,
+  isPocketWorkletReady,
+  pocketBeatTrackIds,
+  postPocketPlayhead,
+  readPocketSidechain,
+} from "@/lib/studio/mix-analysis/pocket-worklet";
+import { ensureVoiceWorklet, isVoiceWorkletReady } from "@/lib/studio/mix-analysis/voice-worklet";
 import { ensureRiderWorklet, isRiderWorkletReady } from "@/lib/studio/mix-analysis/rider-worklet";
 import { ensureTuneWorklet, isTuneWorkletReady } from "@/lib/studio/tune/tune-worklet";
 import {
@@ -215,6 +223,8 @@ type TrackGraph = {
   input: GainLike;
   gain: GainLike;
   pan: PannerLike;
+  /** Broadband beat trim. Sits before pan so the track meter can keep pan's outputs. */
+  pocketDuck: GainLike | null;
   fx: StudioTrackFxHandle | null;
   fingerprint: string;
   /** Gain / pan automation last scheduled: its signature, audibility and the clock epoch it was planned for. */
@@ -397,6 +407,8 @@ export class StudioAudioEngine {
   private lifecycle: StudioAudioEngineLifecycle = "created";
   private epoch: StudioClockEpoch | null = null;
   private tickId: number | null = null;
+  /** Smoothed broadband trim for BEAT_REF tracks. 1 = no duck. */
+  private pocketDuckLevel = 1;
   private lastSyncCheckMs = 0;
   private failedClips = new Set<string>();
   /** BRD Tune live bakes: clip bake key → entry. */
@@ -1018,6 +1030,8 @@ export class StudioAudioEngine {
     // Start meter reader immediately on Play (≤12 Hz), before async voice sync.
     this.startMetering();
     await this.syncVoices(playheadMs, true);
+    postPocketPlayhead(playheadMs);
+    this.applyPocketBeatDuck();
     this.startClock();
   }
 
@@ -1032,6 +1046,7 @@ export class StudioAudioEngine {
       });
     }
     this.stopClock();
+    postPocketPlayhead(playheadMs);
     this.pauseAllTimelineVoices();
     // Hold fade envelope at current position — cancel forward ramps (P6.7.1).
     this.applyTimelineClipFades(playheadMs, false);
@@ -1060,6 +1075,8 @@ export class StudioAudioEngine {
       this.stopMetering({ reset: false });
     }
     await this.syncVoices(playheadMs, shouldPlay);
+    postPocketPlayhead(playheadMs);
+    this.applyPocketBeatDuck();
     if (shouldPlay) {
       this.startClock();
     }
@@ -1074,6 +1091,7 @@ export class StudioAudioEngine {
     this.stopMetering({ reset: true });
     this.epoch = null;
     this.setLifecycle("stopped");
+    postPocketPlayhead(0);
     this.listener.onPlayhead(0);
   }
 
@@ -1180,6 +1198,7 @@ export class StudioAudioEngine {
         graph.fx?.dispose();
         graph.input.disconnect();
         graph.gain.disconnect();
+        graph.pocketDuck?.disconnect();
         graph.pan.disconnect();
       } catch {
         /* already disconnected */
@@ -1228,6 +1247,8 @@ export class StudioAudioEngine {
         contextTime: this.ctx.currentTime,
         timelineLengthMs: this.document.timelineLengthMs,
       });
+      postPocketPlayhead(playhead);
+      this.applyPocketBeatDuck();
       this.listener.onPlayhead(playhead);
       if (playhead >= this.document.timelineLengthMs) {
         this.pauseAllTimelineVoices();
@@ -1588,6 +1609,7 @@ export class StudioAudioEngine {
         graph.fx?.dispose();
         graph.input.disconnect();
         graph.gain.disconnect();
+        graph.pocketDuck?.disconnect();
         graph.pan.disconnect();
       } catch {
         /* ignore */
@@ -1598,6 +1620,7 @@ export class StudioAudioEngine {
       this.ensureTrackMeterAttached();
     }
     this.syncTrackLevelTaps();
+    this.syncPocketDucks();
   }
 
   private ensureTrackGraph(trackId: string): TrackGraph {
@@ -1616,11 +1639,88 @@ export class StudioAudioEngine {
       input,
       gain,
       pan,
+      pocketDuck: null,
       fx: null,
       fingerprint: "",
     };
     this.tracks.set(trackId, graph);
     return graph;
+  }
+
+  /**
+   * Broadband trim on beat tracks only, between track gain and pan.
+   * Does not disconnect pan, so ensureTrackMeterAttached keeps the meter.
+   * Split-band mid duck stays in renderMixStereo.
+   */
+  private syncPocketDucks(): void {
+    if (!this.ctx || !this.document) return;
+    const beatIds = pocketBeatTrackIds(this.document.clips);
+    for (const [id, graph] of this.tracks) {
+      if (beatIds.has(id)) this.ensurePocketDuck(graph);
+      else this.clearPocketDuck(graph);
+    }
+  }
+
+  private ensurePocketDuck(graph: TrackGraph): void {
+    if (graph.pocketDuck || !this.ctx) return;
+    let duck: GainLike;
+    try {
+      duck = this.ctx.createGain();
+      duck.gain.value = this.pocketDuckLevel;
+    } catch {
+      return;
+    }
+    try {
+      graph.gain.disconnect(graph.pan);
+      graph.gain.connect(duck);
+      duck.connect(graph.pan);
+    } catch {
+      try {
+        graph.gain.connect(graph.pan);
+      } catch {
+        /* original edge already gone */
+      }
+      try {
+        duck.disconnect();
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    graph.pocketDuck = duck;
+  }
+
+  private clearPocketDuck(graph: TrackGraph): void {
+    const duck = graph.pocketDuck;
+    if (!duck) return;
+    graph.pocketDuck = null;
+    try {
+      graph.gain.disconnect(duck);
+    } catch {
+      /* ignore */
+    }
+    try {
+      duck.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      graph.gain.connect(graph.pan);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private applyPocketBeatDuck(): void {
+    if (!this.document) return;
+    const side = readPocketSidechain();
+    const target = 1 - side.depth * Math.min(1, Math.max(0, side.key) * 3);
+    this.pocketDuckLevel += (target - this.pocketDuckLevel) * 0.45;
+    const beatIds = pocketBeatTrackIds(this.document.clips);
+    for (const id of beatIds) {
+      const duck = this.tracks.get(id)?.pocketDuck;
+      if (duck) duck.gain.value = this.pocketDuckLevel;
+    }
   }
 
   /**
@@ -1681,10 +1781,12 @@ export class StudioAudioEngine {
    * offline render). Only once the worklet is live; until then tune is a dry
    * wire and nothing is shifted. Kicks off the worklet load when needed.
    */
-  /** Loads rider and harmony worklets once. Until then those slots are dry. */
+  /** Loads rider, harmony, voice and pocket worklets once. Until then those slots are dry. */
   private ensurePreviewWorklets(document: StudioEngineDocument): void {
     this.loadInsertWorklet(document, "rider", isRiderWorkletReady, ensureRiderWorklet);
     this.loadInsertWorklet(document, "harmony", isHarmonyWorkletReady, ensureHarmonyWorklet);
+    this.loadInsertWorklet(document, "voice", isVoiceWorkletReady, ensureVoiceWorklet);
+    this.loadInsertWorklet(document, "pocket", isPocketWorkletReady, ensurePocketWorklet);
   }
 
   private loadInsertWorklet(

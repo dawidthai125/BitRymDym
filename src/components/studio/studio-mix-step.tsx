@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 
 import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-dock";
 import { buildBitekClientContext, type BitekClientContext } from "@/lib/studio/bitek/chat/client-context";
-import type { BitekMixFixId } from "@/lib/studio/bitek/chat/types";
+import { audioToMidiNotes, downsampleMono, pickMidiTrackId } from "@/lib/studio/mix-analysis/audio-to-midi";
 import {
   autoMixMasterMaterial,
   clearAutoMixHandoff,
@@ -34,6 +34,7 @@ import { emptyStudioFxChain } from "@/lib/studio/studio-fx-chain";
 import {
   MIX_AUTOFIX_ALL,
   MIX_CARD_FIXES,
+  NOVA_PASS_FIXES,
   planMixAutofix,
   type MixAutofixId,
   type MixAutofixNote,
@@ -44,6 +45,7 @@ import { useProjectBeatKey } from "@/components/studio/studio-tune-panel";
 import { StudioVocalSetsCard } from "@/components/studio/studio-vocal-presets";
 import { StudioChangeReport } from "@/components/studio/studio-change-report";
 import { StudioVocalCleanup } from "@/components/studio/studio-vocal-cleanup";
+import { publishPocketMarkers } from "@/lib/studio/mix-analysis/pocket-worklet";
 
 export type MixAutofixApply = (
   ops: MixWorkingOp[],
@@ -140,8 +142,29 @@ export function StudioMixStep({
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  useEffect(() => {
+    try {
+      const markers = (doc.markers ?? []).filter((m) => m.kind === "verse" || m.kind === "hook");
+      publishPocketMarkers(markers);
+    } catch {
+      /* marker publish must not break the mix step */
+    }
+  }, [doc.markers]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        publishPocketMarkers([]);
+      } catch {
+        /* unmount stays quiet */
+      }
+    };
+  }, []);
+
   // Stage 2 — auto-fix state
   const [fixing, setFixing] = useState<string | null>(null);
+  const [midiBusy, setMidiBusy] = useState(false);
+  const [midiNote, setMidiNote] = useState<string | null>(null);
   const [panel, setPanel] = useState<FixPanel | null>(null);
   const [fixSeq, setFixSeq] = useState(0);
   const [ab, setAb] = useState<{ before: StudioProjectDocument; afterSig: string | null; metricsBefore: MixMetrics | null } | null>(null);
@@ -299,6 +322,67 @@ export function StudioMixStep({
     onBitekNote?.(t("autofix.historia", { summary }), { notes: texts });
   };
 
+  async function notesFromVocal() {
+    if (midiBusy) return;
+    const lead = doc.tracks.find((track) => track.trackRole === "lead_vocal");
+    const clip = lead
+      ? doc.clips.find((item) => item.trackId === lead.id && item.sourceKind === "TAKE" && item.sourceTakeId)
+      : undefined;
+    const trackId = pickMidiTrackId(
+      doc.tracks.map((track) => ({ id: track.id, role: track.trackRole, noteCount: track.midi?.notes.length ?? 0 })),
+    );
+    if (!clip?.sourceTakeId) {
+      setMidiNote(t("nutkiPusto"));
+      return;
+    }
+    if (!trackId) {
+      setMidiNote(t("nutkiBrak"));
+      return;
+    }
+    setMidiBusy(true);
+    setMidiNote(null);
+    try {
+      const prev = await fetch("/api/takes/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ takeId: clip.sourceTakeId }),
+      }).then((res) => res.json()).catch(() => null);
+      if (!prev?.url) {
+        setMidiNote(t("nutkiPusto"));
+        return;
+      }
+      const bytes = await fetch(prev.url).then((res) => res.arrayBuffer());
+      const audioCtx = new AudioContext();
+      const audio = await audioCtx.decodeAudioData(bytes.slice(0));
+      await audioCtx.close();
+      const channel = audio.getChannelData(0);
+      const cap = Math.min(channel.length, Math.floor(audio.sampleRate * 45));
+      const small = downsampleMono(channel.subarray(0, cap), audio.sampleRate, 8000);
+      const notes = audioToMidiNotes(small, 8000, clip.timelineStartMs);
+      if (!notes.length) {
+        setMidiNote(t("nutkiPusto"));
+        return;
+      }
+      const put = await fetch(`/api/studio/projects/${doc.project.id}/tracks/${trackId}/midi`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedDocumentVersion: doc.project.documentVersion,
+          midi: { v: 1, instrument: "sine", notes },
+        }),
+      });
+      if (!put.ok) {
+        setMidiNote(t("nutkiPusto"));
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setMidiNote(t("nutkiPusto"));
+    } finally {
+      setMidiBusy(false);
+    }
+  }
+
   const analysisState = useMemo<BitekAnalysisState>(
     () =>
       running
@@ -330,7 +414,7 @@ export function StudioMixStep({
     });
     return {
       ...base,
-      applyMixFix: async (fixes: BitekMixFixId[]) => {
+      applyMixFix: async (fixes) => {
         const snap = latest.current;
         const apply = applyAutofixRef.current;
         if (!snap.result || snap.stale) return { ok: false, reason: "no-analysis" };
@@ -750,6 +834,21 @@ export function StudioMixStep({
             </p>
           ) : null}
 
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-9"
+              disabled={midiBusy}
+              data-testid="studio-mix-midi"
+              onClick={() => void notesFromVocal()}
+            >
+              {midiBusy ? t("poprawTrwa") : t("nutki")}
+            </Button>
+            {midiNote ? <p role="status" className="text-xs text-[var(--brd-mute)]">{midiNote}</p> : null}
+          </div>
+
           {verdict ? (
             <div
               role="status"
@@ -807,6 +906,45 @@ export function StudioMixStep({
                   size="sm"
                   className="min-h-9 w-full sm:w-auto"
                   disabled={Boolean(fixing) || running || stale}
+                  aria-describedby="studio-mix-space-hint"
+                  data-testid="studio-mix-space"
+                  onClick={() => void runFix(["space"], "space", t("poglos"))}
+                >
+                  {fixing === "space" ? t("poprawTrwa") : t("poglos")}
+                </Button>
+              ) : null}
+              {onApplyAutofix ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-9 w-full sm:w-auto"
+                  disabled={Boolean(fixing) || running || stale}
+                  aria-describedby="studio-mix-voice-hint"
+                  data-testid="studio-mix-voice"
+                  onClick={() => void runFix(["voice"], "voice", t("glos"))}
+                >
+                  {fixing === "voice" ? t("poprawTrwa") : t("glos")}
+                </Button>
+              ) : null}
+              {onApplyAutofix ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-9 w-full sm:w-auto"
+                  disabled={Boolean(fixing) || running || stale}
+                  aria-describedby="studio-mix-nova-hint"
+                  data-testid="studio-mix-nova"
+                  onClick={() => void runFix(NOVA_PASS_FIXES, "nova", t("nova"))}
+                >
+                  {fixing === "nova" ? t("poprawTrwa") : t("nova")}
+                </Button>
+              ) : null}
+              {onApplyAutofix ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-h-9 w-full sm:w-auto"
+                  disabled={Boolean(fixing) || running || stale}
                   aria-describedby="studio-mix-fix-all-hint"
                   data-testid="studio-mix-fix-all"
                   onClick={() => void runFix(MIX_AUTOFIX_ALL, "all", t("autofix.historiaWszystko"))}
@@ -817,6 +955,9 @@ export function StudioMixStep({
               <span id="studio-mix-pocket-hint" className="sr-only">{t("kieszenOpis")}</span>
               <span id="studio-mix-harmony-hint" className="sr-only">{t("harmoniaOpis")}</span>
               <span id="studio-mix-rider-hint" className="sr-only">{t("wyrownanieOpis")}</span>
+              <span id="studio-mix-space-hint" className="sr-only">{t("poglosOpis")}</span>
+              <span id="studio-mix-voice-hint" className="sr-only">{t("glosOpis")}</span>
+              <span id="studio-mix-nova-hint" className="sr-only">{t("novaOpis")}</span>
               <span id="studio-mix-fix-all-hint" className="sr-only">{t("poprawWszystkoOpis")}</span>
             </div>
           ) : null}
