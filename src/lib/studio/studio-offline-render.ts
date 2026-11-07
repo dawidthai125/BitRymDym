@@ -12,6 +12,7 @@
  */
 
 import { trackParamAt } from "@/lib/studio/studio-automation";
+import type { AcousticBank } from "@/lib/studio/acoustic-bank";
 import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { AUDIO_CODEC, AUDIO_RENDER_MAX_SOURCE_DURATION_SECONDS } from "@/config/audio-render";
 import type { DecodedPcmStereo } from "@/lib/audio/render-decode";
@@ -155,6 +156,8 @@ export type StudioOfflineRenderOptions = {
    * Public total PCM budget (output + cached sources). Default = MAX_TOTAL_PCM_BYTES.
    */
   maxTotalPcmBytes?: number;
+  /** Recorded piano, guitar, and bass. Absent keeps the synthesizer. */
+  acousticBank?: AcousticBank | null;
 };
 
 function keyForVoice(voice: {
@@ -487,6 +490,7 @@ export async function renderStudioDocumentOffline(
       instrument: track.midi.instrument,
       sampleRate: STUDIO_OFFLINE_RENDER_SAMPLE_RATE,
       durationMs,
+      bank: options.acousticBank,
     });
   });
   let midiBytes = 0;

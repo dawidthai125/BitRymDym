@@ -143,6 +143,7 @@ describe("SFM-3A offline FX contract", () => {
       "highpass",
       "limiter",
       "reverb",
+      "spectrum",
       "tune",
     ]);
   });
@@ -274,6 +275,37 @@ describe("SFM-3B EQ biquad / adapter", () => {
     // 6 dB ≈ ×2 linear amplitude → ×4 power; allow algorithm settle tolerance.
     expect(rmsBoost / rmsCut).toBeGreaterThan(3.2);
     expect(rmsBoost).toBeGreaterThan(rmsCut);
+  });
+
+  it("raises a 1.2 kHz sine when that spectrum band is up", () => {
+    const flat = defaultStudioFxParams("spectrum");
+    const up = defaultStudioFxParams("spectrum");
+    up.b3 = 12;
+    const chain = (params: typeof flat): StudioFxChainV1 => ({
+      schemaVersion: 1,
+      effects: [{
+        id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        type: "spectrum",
+        enabled: true,
+        params,
+      }],
+    });
+    const quiet = buildStudioOfflineFxChain(chain(flat), "track", SR);
+    const loud = buildStudioOfflineFxChain(chain(up), "track", SR);
+    expect(quiet && loud).toBeTruthy();
+    let sumQuiet = 0;
+    let sumLoud = 0;
+    const frames = SR;
+    for (let i = 0; i < frames; i++) {
+      const x = 0.2 * Math.sin((2 * Math.PI * 1200 * i) / SR);
+      const q = quiet!.process({ left: x, right: x }).left;
+      const l = loud!.process({ left: x, right: x }).left;
+      if (i > frames * 0.1) {
+        sumQuiet += q * q;
+        sumLoud += l * l;
+      }
+    }
+    expect(sumLoud).toBeGreaterThan(sumQuiet * 2);
   });
 
   it("stereo channels stay independent under asymmetric input", () => {

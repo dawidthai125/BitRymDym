@@ -21,8 +21,11 @@ import { VocalLevelCore } from "@/lib/studio/mix-analysis/vocal-level";
 import {
   interpretStudioFxChainForPlayback,
   saturateWetSample,
+  STUDIO_SPECTRUM_HZ,
+  STUDIO_SPECTRUM_Q,
   type StudioFxInstance,
   type StudioFxPlaybackPlan,
+  type StudioFxSpectrumParams,
   type StudioFxType,
 } from "@/lib/studio/studio-fx-chain";
 import {
@@ -74,6 +77,7 @@ export const STUDIO_OFFLINE_FX_ENGINE = "studio-offline-fx-v1" as const;
 /** Effects with a ready (enabled) offline DSP path. */
 export const STUDIO_OFFLINE_FX_IMPLEMENTED: ReadonlySet<StudioFxType> = new Set([
   "eq",
+  "spectrum",
   "compressor",
   "limiter",
   "delay",
@@ -182,6 +186,43 @@ type EqBandRuntime = {
   coeffs: BiquadCoeffs;
   state: StereoBiquadState;
 };
+
+function createSpectrumProcessorAtRate(
+  effect: Extract<StudioFxInstance, { type: "spectrum" }>,
+  sampleRate: number,
+): StudioOfflineFxProcessor {
+  const params = effect.params;
+  const bands: EqBandRuntime[] = STUDIO_SPECTRUM_HZ.map((hz, index) => {
+    const key = `b${index}` as keyof StudioFxSpectrumParams;
+    return {
+      coeffs: computeBiquadCoeffs("peaking", sampleRate, hz, params[key], STUDIO_SPECTRUM_Q),
+      state: createStereoBiquadState(),
+    };
+  });
+  return {
+    type: "spectrum",
+    effectId: effect.id,
+    status: "IMPLEMENTED",
+    stateBytes: STEREO_BIQUAD_STATE_BYTES * bands.length,
+    process(sample) {
+      let { left, right } = sample;
+      for (const band of bands) {
+        const out = processStereoBiquadSample(left, right, band.coeffs, band.state);
+        left = out.left;
+        right = out.right;
+      }
+      return { left, right };
+    },
+    processBuffer(left, right) {
+      const coeffs = bands.map((band) => band.coeffs);
+      processBiquadCascadeBuffer(left, coeffs, bands.map((band) => band.state.left));
+      processBiquadCascadeBuffer(right, coeffs, bands.map((band) => band.state.right));
+    },
+    reset() {
+      for (const band of bands) band.state = createStereoBiquadState();
+    },
+  };
+}
 
 export function createEqProcessorAtRate(
   effect: Extract<StudioFxInstance, { type: "eq" }>,
@@ -736,6 +777,9 @@ function buildProcessorForReady(
 ): StudioOfflineFxProcessor {
   if (effect.type === "eq") {
     return createEqProcessorAtRate(effect, sampleRate);
+  }
+  if (effect.type === "spectrum") {
+    return createSpectrumProcessorAtRate(effect, sampleRate);
   }
   if (effect.type === "compressor") {
     return createCompressorProcessorAtRate(effect, sampleRate);

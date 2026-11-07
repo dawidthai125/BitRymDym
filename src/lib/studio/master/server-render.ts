@@ -8,6 +8,7 @@ import "server-only";
  * match by construction; only decoding/resampling differs (ffmpeg vs WebAudio).
  */
 import { readFile, rm, writeFile } from "node:fs/promises";
+import { loadAcousticBankFromPublic } from "@/lib/studio/acoustic-bank-node";
 import path from "node:path";
 
 import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
@@ -84,7 +85,7 @@ export async function loadServerMixInput(p: { ownerId: string; projectId: string
   if (Object.keys(sources).length === 0 && !hasNotes) throw new Error("no_audio");
   const { sourceClips: _unused, ...rest } = skeleton;
   void _unused;
-  return { doc, input: { ...rest, sources }, decodeMs: Date.now() - t0 };
+  return { doc, input: { ...rest, sources, acousticBank: await loadAcousticBankFromPublic() }, decodeMs: Date.now() - t0 };
 }
 
 /** Float32 stereo WAV on disk (lossless hand-off to master.py / ffmpeg, never uploaded). */

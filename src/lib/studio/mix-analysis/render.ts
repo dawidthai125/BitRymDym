@@ -8,6 +8,7 @@
  */
 
 import { automationLane, clampAutomationValue, createLaneEvaluator, type StudioAutomationV1 } from "@/lib/studio/studio-automation";
+import type { AcousticBank } from "@/lib/studio/acoustic-bank";
 import { renderMidiNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import type { StudioTrackRole } from "@/config/studio";
 import {
@@ -60,6 +61,8 @@ export type MixAnalysisInput = {
   masterEffectsChain?: unknown;
   /** Verse / hook points. The rap pocket reads them at mix sum. */
   markers?: Array<{ kind: "verse" | "hook"; positionMs: number }>;
+  /** Recorded piano, guitar, and bass. Absent keeps the synthesizer. */
+  acousticBank?: AcousticBank | null;
 };
 
 /** Offline FX chain for analysis; any failure → null (dry, never throws). */
@@ -184,6 +187,7 @@ function addRenderedMidi(
     instrument: midi.instrument,
     sampleRate: input.sampleRate,
     durationMs: input.lengthMs,
+    bank: input.acousticBank,
   });
   const nMax = Math.min(left.length, right.length, pcm.length);
   let start = -1;

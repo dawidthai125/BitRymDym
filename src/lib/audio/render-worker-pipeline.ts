@@ -6,6 +6,8 @@
 
 import "server-only";
 
+import { loadAcousticBankFromPublic } from "@/lib/studio/acoustic-bank-node";
+
 import {
   AUDIO_ARTIFACTS_BUCKET,
   AUDIO_CODEC,
@@ -463,6 +465,7 @@ export async function runAlreadyClaimedStudioExportWorkerJob(
         document: engineDocument,
         resolvePcm,
         exportDurationMs: durationPlan.exportDurationMs,
+        acousticBank: await loadAcousticBankFromPublic(),
       });
     } catch (e) {
       if (e instanceof StudioOfflineRenderError) {

@@ -1,0 +1,21 @@
+These notes are dedicated to the public domain under CC0 1.0.
+The legal text is LICENSE.txt. Commercial use is allowed. No attribution is required.
+BitRymDym keeps this note so the source of each file stays clear.
+
+Piano: Yamaha upright, velocity 1, round-robin 1, notes C2 C3 C4 C5.
+Source: https://github.com/sgossner/VCSL
+Path: Chordophones/Zithers/Upright Piano, Yamaha/Sustains/
+Files were mixed to mono, kept at 44100 Hz, and cut to at most 8 seconds.
+C5 was already shorter, so it was not padded.
+
+Bass: Maton JB4 fretless, finger, long, neck pickup, C2 and C3.
+Source: https://github.com/cleary/samples-flbass
+Same conversion. Cut to at most 12 seconds.
+
+Guitar: Fender, clean bridge pickup, the small FreePats set.
+Source: https://github.com/freepats/electric-guitar-FSBS-clean
+samples/bridge/small/
+Same conversion. Loop points from EGuitarFSBS-clean bridge small 20260807.sfz,
+scaled to 44100 Hz. Notes without a loop are cut to at most 4 seconds.
+
+Nothing here is a Demucs weight, a MusDB stem, or a Steinberg VST.

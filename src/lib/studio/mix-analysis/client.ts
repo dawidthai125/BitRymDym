@@ -5,6 +5,7 @@
  */
 
 import { STUDIO_MAX_SONG_MS } from "@/config/studio";
+import { preloadAcousticBank } from "@/lib/studio/acoustic-load";
 import { computeMixMetrics, type MixMetrics } from "@/lib/studio/mix-analysis/metrics";
 import type {
   MixAnalysisClip,
@@ -193,7 +194,7 @@ export async function decodeMixAnalysisInput(params: {
   if (Object.keys(sources).length === 0) return null;
   const { sourceClips: _unused, ...rest } = skeleton;
   void _unused;
-  return { ...rest, sources };
+  return { ...rest, sources, acousticBank: await preloadAcousticBank() };
 }
 
 /**
@@ -236,7 +237,11 @@ export async function runStudioMixAnalysis(params: {
     if (Object.keys(sources).length === 0) return { ok: false, reason: "decode_failed" };
     const { sourceClips: _unused, ...rest } = skeleton;
     void _unused;
-    const metrics = await runInWorker({ ...rest, sources }, (f) => progress(0.4 + 0.6 * f), controller.signal);
+    const metrics = await runInWorker(
+      { ...rest, sources, acousticBank: await preloadAcousticBank() },
+      (f) => progress(0.4 + 0.6 * f),
+      controller.signal,
+    );
     return { ok: true, metrics, verdict: buildMixVerdict(metrics), elapsedMs: Date.now() - started };
   } catch {
     if (controller.signal.aborted) return { ok: false, reason: timedOut ? "timeout" : "aborted" };

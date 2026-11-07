@@ -20,6 +20,9 @@ import {
   type StudioFxHighpassParams,
   type StudioFxDelayParams,
   type StudioFxEqParams,
+  STUDIO_SPECTRUM_HZ,
+  STUDIO_SPECTRUM_Q,
+  type StudioFxSpectrumParams,
   type StudioFxInstance,
   type StudioFxLimiterParams,
   type StudioFxPlaybackPlan,
@@ -197,6 +200,59 @@ function createImpulse(ctx: StudioFxGraphContext, decaySeconds: number): BufferL
     Math.random,
   );
   return buffer;
+}
+
+function applySpectrum(filters: BiquadLike[], params: StudioFxSpectrumParams): void {
+  filters.forEach((filter, index) => {
+    filter.type = "peaking";
+    filter.frequency.value = STUDIO_SPECTRUM_HZ[index] ?? 1000;
+    filter.Q.value = STUDIO_SPECTRUM_Q;
+    const key = `b${index}` as keyof StudioFxSpectrumParams;
+    filter.gain.value = params[key];
+  });
+}
+
+function buildSpectrumSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
+  const input = ctx.createGain();
+  const output = ctx.createGain();
+  const dry = ctx.createGain();
+  const wet = ctx.createGain();
+  const filters = STUDIO_SPECTRUM_HZ.map(() => ctx.createBiquadFilter());
+  input.connect(dry);
+  dry.connect(output);
+  let previous: StudioFxConnectable = input;
+  for (const filter of filters) {
+    previous.connect(filter);
+    previous = filter;
+  }
+  previous.connect(wet);
+  wet.connect(output);
+  const params = effect.params as StudioFxSpectrumParams;
+  applySpectrum(filters, params);
+  setBypassGains(dry, wet, effect.enabled);
+  return {
+    input,
+    output,
+    inspect: {
+      type: "spectrum",
+      id: effect.id,
+      mode: effect.enabled ? "process" : "bypass",
+      nodes: filters.map(() => "biquad-peaking"),
+    },
+    apply(slot) {
+      if (slot.status === "skip") {
+        setBypassGains(dry, wet, false);
+        this.inspect.mode = "bypass";
+        return;
+      }
+      applySpectrum(filters, slot.effect.params as StudioFxSpectrumParams);
+      setBypassGains(dry, wet, slot.status === "ready");
+      this.inspect.mode = slot.status === "ready" ? "process" : "bypass";
+    },
+    dispose() {
+      for (const node of [input, output, dry, wet, ...filters]) disconnectQuiet(node);
+    },
+  };
 }
 
 function buildEqSlot(ctx: StudioFxGraphContext, effect: StudioFxInstance): BuiltSlot {
@@ -705,6 +761,7 @@ function tryBuildProcessSlot(
   effect: StudioFxInstance,
 ): BuiltSlot {
   if (effect.type === "eq") return buildEqSlot(ctx, effect);
+  if (effect.type === "spectrum") return buildSpectrumSlot(ctx, effect);
   if (effect.type === "compressor") return buildCompressorSlot(ctx, effect);
   if (effect.type === "limiter") return buildLimiterSlot(ctx, effect);
   if (effect.type === "reverb") return buildReverbSlot(ctx, effect);

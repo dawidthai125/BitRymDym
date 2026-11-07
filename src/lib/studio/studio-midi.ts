@@ -1,3 +1,4 @@
+import { acousticVoice, type AcousticBank } from "@/lib/studio/acoustic-bank";
 import { encodePcm16Wav, renderInstrumentVoice, SAMPLE_RATE } from "@/lib/studio/samples/sample-synth";
 
 /**
@@ -413,6 +414,8 @@ export function renderMidiNotes(input: {
   instrument: MidiInstrument;
   sampleRate: number;
   durationMs: number;
+  /** Recorded notes. Absent or empty keeps the synthesizer. */
+  bank?: AcousticBank | null;
 }): Float32Array {
   const sr = input.sampleRate;
   const length = Math.max(0, Math.floor((input.durationMs / 1000) * sr));
@@ -433,10 +436,11 @@ export function renderMidiNotes(input: {
       continue;
     }
     if (input.instrument === "drums" || isTonalInstrument(input.instrument)) {
+      const recorded = acousticVoice(input.bank, input.instrument, note.pitch, span, sr);
       const piece = input.instrument === "drums"
         ? note.pitch <= 37 ? "kick" : note.pitch <= 40 ? "snare" : "hat"
         : input.instrument;
-      const voice = renderInstrumentVoice({
+      const voice = recorded ?? renderInstrumentVoice({
         instrument: piece,
         hz: midiHz(note.pitch),
         length: span,
@@ -462,7 +466,10 @@ export function renderMidiNotes(input: {
 }
 
 /** A played line as a WAV sample, 1–30 s, so it can sit in the user's catalog. */
-export function renderMidiSampleWav(midi: StudioMidiV1): { bytes: Uint8Array; durationMs: number } | null {
+export function renderMidiSampleWav(
+  midi: StudioMidiV1,
+  bank?: AcousticBank | null,
+): { bytes: Uint8Array; durationMs: number } | null {
   if (!midi.notes.length) return null;
   const end = midi.notes.reduce((max, note) => Math.max(max, note.t + note.dur), 0);
   const durationMs = Math.min(30_000, Math.max(1000, Math.ceil(end)));
@@ -471,6 +478,7 @@ export function renderMidiSampleWav(midi: StudioMidiV1): { bytes: Uint8Array; du
     instrument: midi.instrument,
     sampleRate: SAMPLE_RATE,
     durationMs,
+    bank,
   });
   if (pcm.length === 0) return null;
   return { bytes: encodePcm16Wav(pcm, SAMPLE_RATE), durationMs };

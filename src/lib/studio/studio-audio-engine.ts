@@ -26,6 +26,7 @@ import {
 } from "@/lib/studio/studio-audio-schedule";
 import { automationLane, automationSignature } from "@/lib/studio/studio-automation";
 import { MASTER_RENDER_SAMPLE_RATE } from "@/lib/studio/master/client";
+import { peekAcousticBank, preloadAcousticBank } from "@/lib/studio/acoustic-load";
 import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
@@ -444,6 +445,11 @@ export class StudioAudioEngine {
     this.registry = params.registry;
     this.listener = params.listener;
     this.host = params.host ?? createBrowserStudioAudioEngineHost();
+    if (typeof window !== "undefined") {
+      void preloadAcousticBank().then(() => {
+        this.midiSig = "";
+      });
+    }
   }
 
   /**
@@ -2379,7 +2385,7 @@ export class StudioAudioEngine {
         return `${t.id}:${t.midi.instrument}:${notes.map((n) => `${n.t}.${n.dur}.${n.pitch}.${n.vel}`).join(",")}`;
       })
       .join("|");
-    const sig = `${this.epoch.epochContextTime}|${this.epoch.epochPlayheadMs}|${sr}|${body}`;
+    const sig = `${this.epoch.epochContextTime}|${this.epoch.epochPlayheadMs}|${sr}|${peekAcousticBank() ? "rec" : "syn"}|${body}`;
     if (sig === this.midiSig) return;
     this.haltMidiSources();
     this.midiSig = sig;
@@ -2392,6 +2398,7 @@ export class StudioAudioEngine {
         instrument: track.midi.instrument,
         sampleRate: sr,
         durationMs: document.timelineLengthMs,
+        bank: peekAcousticBank(),
       });
       if (pcm.length === 0) continue;
       try {

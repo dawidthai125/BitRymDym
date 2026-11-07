@@ -44,6 +44,7 @@ describe("P6.1 registry", () => {
   it("lists Studio-owned types (P6 five + stage 2 + tune); tune is track-only", () => {
     expect([...STUDIO_FX_TYPES]).toEqual([
       "eq",
+      "spectrum",
       "compressor",
       "limiter",
       "reverb",

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { BITEK_MOOD_SRC, type BitekMood } from "@/components/studio/studio-bitek-dock";
 import { StudioMidiRoll } from "@/components/studio/studio-midi-roll";
+import { peekAcousticBank, preloadAcousticBank } from "@/lib/studio/acoustic-load";
 import {
   appendPlayedNote,
   renderMidiNotes,
@@ -64,6 +65,7 @@ function previewNote(instrument: PlayKeyInstrument, pitch: number): void {
     instrument,
     sampleRate: 44100,
     durationMs: 900,
+    bank: peekAcousticBank(),
   });
   if (!previewCtx || previewCtx.state === "closed") previewCtx = new AudioContext();
   const ctx = previewCtx;
@@ -169,6 +171,9 @@ export function StudioPlayKeys({
     midiRef.current = midi;
   }, [midi]);
   useEffect(() => {
+    void preloadAcousticBank();
+  }, []);
+  useEffect(() => {
     if (!armed || !midi || midi.notes.length === 0) lastWall.current = null;
   }, [armed, midi]);
 
@@ -223,7 +228,7 @@ export function StudioPlayKeys({
       setNotice(tr("samplePrawaWymagane"));
       return;
     }
-    const wav = renderMidiSampleWav(line);
+    const wav = renderMidiSampleWav(line, peekAcousticBank());
     if (!wav) {
       setNotice(tr("sampleBlad"));
       return;

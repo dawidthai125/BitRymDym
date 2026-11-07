@@ -10,6 +10,8 @@ export const STUDIO_FX_CHAIN_MAX_EFFECTS = 8 as const;
 
 export const STUDIO_FX_TYPES = [
   "eq",
+  /** Fixed-band spectrum: each slider is the gain of one frequency. */
+  "spectrum",
   "compressor",
   "limiter",
   "reverb",
@@ -48,6 +50,20 @@ export type StudioFxEqParams = {
   low: StudioFxEqBand;
   mid: StudioFxEqBand;
   high: StudioFxEqBand;
+};
+
+/** Graphic spectrum. Frequencies stay fixed; the user moves only the gain. */
+export const STUDIO_SPECTRUM_HZ = [80, 200, 500, 1200, 3000, 6000, 12000] as const;
+export const STUDIO_SPECTRUM_Q = 1.2;
+
+export type StudioFxSpectrumParams = {
+  b0: number;
+  b1: number;
+  b2: number;
+  b3: number;
+  b4: number;
+  b5: number;
+  b6: number;
 };
 
 export type StudioFxCompressorParams = {
@@ -159,6 +175,7 @@ export const STUDIO_TUNE_NOTE_RANGES = {
 
 export type StudioFxParamsByType = {
   eq: StudioFxEqParams;
+  spectrum: StudioFxSpectrumParams;
   compressor: StudioFxCompressorParams;
   limiter: StudioFxLimiterParams;
   reverb: StudioFxReverbParams;
@@ -176,6 +193,7 @@ export type StudioFxParamsByType = {
 
 export type StudioFxInstance =
   | { id: string; type: "eq"; enabled: boolean; params: StudioFxEqParams }
+  | { id: string; type: "spectrum"; enabled: boolean; params: StudioFxSpectrumParams }
   | {
       id: string;
       type: "compressor";
@@ -282,6 +300,7 @@ const HARMONY_KEYS = new Set(["amount"]);
 const VOICE_KEYS = new Set(["color", "mix"]);
 const SATURATE_KEYS = new Set(["drive", "mix"]);
 const POCKET_KEYS = new Set(["verseDb", "hookDb", "depth", "doubleMs", "doubleCents", "doubleDb"]);
+const SPECTRUM_KEYS = new Set(["b0", "b1", "b2", "b3", "b4", "b5", "b6"]);
 
 /** Stage 2 — parameter ranges (single source for parsers + UI sliders). */
 export const STUDIO_FX_STAGE2_RANGES = {
@@ -294,6 +313,7 @@ export const STUDIO_FX_STAGE2_RANGES = {
   voice: { color: [0, 2], mix: [0, 1] },
   saturate: { drive: [0, 1], mix: [0, 1] },
   pocket: { verseDb: [-12, 6], hookDb: [-12, 6], depth: [0, 1], doubleMs: [15, 25], doubleCents: [0, 25], doubleDb: [-24, -6] },
+  spectrum: { b0: [-24, 24], b1: [-24, 24], b2: [-24, 24], b3: [-24, 24], b4: [-24, 24], b5: [-24, 24], b6: [-24, 24] },
 } as const;
 
 export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] } =
@@ -303,6 +323,7 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
       mid: { frequencyHz: 1000, gainDb: 0, q: 1 },
       high: { frequencyHz: 8000, gainDb: 0, q: 0.7 },
     },
+    spectrum: { b0: 0, b1: 0, b2: 0, b3: 0, b4: 0, b5: 0, b6: 0 },
     compressor: {
       thresholdDb: -24,
       ratio: 3,
@@ -341,6 +362,7 @@ export const STUDIO_FX_REGISTRY: Record<
   { track: true; master: boolean }
 > = {
   eq: { track: true, master: true },
+  spectrum: { track: true, master: true },
   compressor: { track: true, master: true },
   limiter: { track: true, master: true },
   reverb: { track: true, master: true },
@@ -573,6 +595,14 @@ function parseEffect(
   const type = o.type;
   if (type === "eq") {
     return { id, type, enabled: o.enabled, params: parseEqParams(o.params) };
+  }
+  if (type === "spectrum") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.spectrum, SPECTRUM_KEYS, STUDIO_FX_STAGE2_RANGES.spectrum),
+    };
   }
   if (type === "highpass") {
     return {
@@ -904,6 +934,18 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
       slider("high.q", "Góra · Q", 0.1, 12, 0.1, "Q"),
     ],
   },
+  spectrum: {
+    labelPl: "Widmo",
+    params: [
+      slider("b0", "80 Hz", -24, 24, 0.5, "dB"),
+      slider("b1", "200 Hz", -24, 24, 0.5, "dB"),
+      slider("b2", "500 Hz", -24, 24, 0.5, "dB"),
+      slider("b3", "1.2 kHz", -24, 24, 0.5, "dB"),
+      slider("b4", "3 kHz", -24, 24, 0.5, "dB"),
+      slider("b5", "6 kHz", -24, 24, 0.5, "dB"),
+      slider("b6", "12 kHz", -24, 24, 0.5, "dB"),
+    ],
+  },
   compressor: {
     labelPl: "Kompresor",
     params: [
@@ -1067,6 +1109,8 @@ export function createStudioFxInstance(
   switch (type) {
     case "eq":
       return { id, type, enabled: true, params: defaultStudioFxParams("eq") };
+    case "spectrum":
+      return { id, type, enabled: true, params: defaultStudioFxParams("spectrum") };
     case "compressor":
       return {
         id,

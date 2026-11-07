@@ -14,6 +14,7 @@ import {
 import { RenderJobDomainError } from "@/lib/audio/render-job-core";
 import { toStudioExportRenderPcm } from "@/lib/audio/render-worker-pipeline";
 import { authorizeStudioExportSourcesForDocument } from "@/lib/audio/studio-export-source-resolution";
+import { loadAcousticBankFromPublic } from "@/lib/studio/acoustic-bank-node";
 import { studioEngineDocumentFromProject } from "@/lib/studio/studio-engine-document-from-project";
 import { planStudioExportDuration } from "@/lib/studio/studio-export-fx-post-roll";
 import {
@@ -113,6 +114,7 @@ export async function bakeSfmMasterPcmFromResolvedPcm(
       document: engineDocument,
       resolvePcm,
       exportDurationMs: durationPlan.exportDurationMs,
+      acousticBank: await loadAcousticBankFromPublic(),
     });
   } catch (error) {
     if (error instanceof StudioOfflineRenderError) {

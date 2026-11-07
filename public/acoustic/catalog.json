@@ -1,0 +1,137 @@
+{
+  "notes": [
+    {
+      "instrument": "piano",
+      "root": 36,
+      "file": "piano-c2.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "piano",
+      "root": 48,
+      "file": "piano-c3.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "piano",
+      "root": 60,
+      "file": "piano-c4.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "piano",
+      "root": 72,
+      "file": "piano-c5.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "bass",
+      "root": 36,
+      "file": "bass-c2.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "bass",
+      "root": 48,
+      "file": "bass-c3.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "guitar",
+      "root": 36,
+      "file": "guitar-36.wav",
+      "loopStart": 657845,
+      "loopEnd": 883503
+    },
+    {
+      "instrument": "guitar",
+      "root": 41,
+      "file": "guitar-41.wav",
+      "loopStart": 701254,
+      "loopEnd": 879471
+    },
+    {
+      "instrument": "guitar",
+      "root": 45,
+      "file": "guitar-45.wav",
+      "loopStart": 566379,
+      "loopEnd": 677450
+    },
+    {
+      "instrument": "guitar",
+      "root": 48,
+      "file": "guitar-48.wav",
+      "loopStart": 488769,
+      "loopEnd": 551879
+    },
+    {
+      "instrument": "guitar",
+      "root": 52,
+      "file": "guitar-52.wav",
+      "loopStart": 205029,
+      "loopEnd": 314605
+    },
+    {
+      "instrument": "guitar",
+      "root": 55,
+      "file": "guitar-55.wav",
+      "loopStart": 329236,
+      "loopEnd": 388720
+    },
+    {
+      "instrument": "guitar",
+      "root": 59,
+      "file": "guitar-59.wav",
+      "loopStart": 262912,
+      "loopEnd": 370979
+    },
+    {
+      "instrument": "guitar",
+      "root": 64,
+      "file": "guitar-64.wav",
+      "loopStart": 216555,
+      "loopEnd": 310777
+    },
+    {
+      "instrument": "guitar",
+      "root": 67,
+      "file": "guitar-67.wav",
+      "loopStart": 208236,
+      "loopEnd": 265522
+    },
+    {
+      "instrument": "guitar",
+      "root": 71,
+      "file": "guitar-71.wav",
+      "loopStart": 201253,
+      "loopEnd": 255851
+    },
+    {
+      "instrument": "guitar",
+      "root": 74,
+      "file": "guitar-74.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "guitar",
+      "root": 80,
+      "file": "guitar-80.wav",
+      "loopStart": null,
+      "loopEnd": null
+    },
+    {
+      "instrument": "guitar",
+      "root": 85,
+      "file": "guitar-85.wav",
+      "loopStart": null,
+      "loopEnd": null
+    }
+  ]
+}
