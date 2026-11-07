@@ -42,6 +42,9 @@ export type PremiumEntitlementSnapshot = {
    * W2-A stored tier. Missing/invalid + active → treated as SILVER (legacy).
    */
   tier?: PremiumTier | null;
+  /** Cheaper plan paid ahead. It starts when `expiresAt` is reached. */
+  pendingTier?: PremiumTier | null;
+  pendingExpiresAt?: string | null;
 };
 
 export type EffectiveAudioEntitlement = {
@@ -66,6 +69,26 @@ export class AudioEntitlementError extends Error {
     this.name = "AudioEntitlementError";
     this.code = code;
   }
+}
+
+function isPaidTier(tier: PremiumTier | null | undefined): tier is "BRONZE" | "SILVER" | "GOLD" {
+  return tier === "BRONZE" || tier === "SILVER" || tier === "GOLD";
+}
+
+/**
+ * A queued cheaper plan becomes the current plan once the paid higher plan
+ * has ended and the queue itself has not. Callers keep using one expiry.
+ */
+export function foldDuePremium<T extends PremiumEntitlementSnapshot>(
+  row: T | null | undefined,
+  nowMs: number,
+): T | null | undefined {
+  if (!row?.active || !row.expiresAt || !row.pendingExpiresAt || !isPaidTier(row.pendingTier)) return row;
+  const expiry = new Date(row.expiresAt).getTime();
+  const pendingEnd = new Date(row.pendingExpiresAt).getTime();
+  if (!Number.isFinite(expiry) || !Number.isFinite(pendingEnd) || expiry > nowMs) return row;
+  if (pendingEnd <= nowMs) return { ...row, pendingTier: null, pendingExpiresAt: null };
+  return { ...row, tier: row.pendingTier, expiresAt: row.pendingExpiresAt, pendingTier: null, pendingExpiresAt: null };
 }
 
 /**

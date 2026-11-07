@@ -194,7 +194,9 @@
       "zgodaRejestracja": "Akceptuję <regulamin>Regulamin</regulamin> i zapoznałem(-am) się z <prywatnosc>Polityką prywatności</prywatnosc>.",
       "zakupRegulamin": "Akceptuję <regulamin>Regulamin</regulamin> (jednorazowa płatność za wybrany okres, bez zapisu karty).",
       "zakupNatychmiast": "Żądam rozpoczęcia świadczenia przed upływem 14 dni na odstąpienie od umowy i przyjmuję do wiadomości, że w przypadku treści cyfrowych tracę prawo odstąpienia z chwilą ich dostarczenia.",
-      "zakupWymagane": "Zaznacz obie zgody, aby przejść do płatności."
+      "zakupWymagane": "Zaznacz obie zgody, aby przejść do płatności.",
+      "zakupPozniej": "Ten niższy plan włączy się dopiero w dniu końca obecnego. Przez 14 dni od zapłaty, nie później niż do jego startu, możesz odstąpić mailem na adres z regulaminu.",
+      "zakupWymaganePozniej": "Zaznacz zgodę na regulamin, aby przejść do płatności."
     },
     "share": {
       "tytul": "Udostępnij",
@@ -445,9 +447,17 @@
         "lead": "Płatność jest jednorazowa. Nie zapisuję karty i sam nie pobieram następnej. BLIK, przelew, karta i portfele są na stronie PayU.",
         "regulaJednorazowo": "Płacisz raz za miesiąc albo za rok. Odnowienie to nowe zamówienie, nie subskrypcja.",
         "regulaPrzedluzenie": "Ten sam plan przedłużam od końca opłaconego okresu — albo od teraz, jeśli już się skończył.",
-        "regulaWyzszy": "Wyższy plan zaczynam od razu. Dni z niższego planu przepadają — nie przeliczam ich.",
-        "regulaNizszy": "Niższego planu nie sprzedam, dopóki wyższy jeszcze trwa.",
-        "maszDo": "Masz {plan} do {data}.",
+        "regulaWyzszy": "Wyższy plan włączam od razu i doliczam do niego czas, który został na obecnym. Dzień za dzień, bez przeliczania ceny.",
+        "regulaNizszy": "Niższy plan możesz opłacić od razu. Włączy się sam w dniu końca droższego, na opłacony miesiąc albo rok. Do tej chwili zostaje droższy.",
+        "regulaKolejka": "Jeden zaplanowany niższy plan. Drugi zakup tego samego go przedłuża. Innego tańszego nie przyjmę, dopóki ten nie wystartuje. Przedłużenie albo podwyższenie przesuwa jego start.",
+        "maszDo": "Masz aktywny {plan} do {data}.",
+        "maszNastepny": "Od {start} włączy się {plan} i potrwa do {koniec}.",
+        "przedluzasz": "Przedłużasz ten plan",
+        "odRazu": "Włączy się od razu, doliczam pozostały czas",
+        "odDnia": "Włączy się po obecnym planie",
+        "placePrzedluz": "Przedłużam przez PayU",
+        "placeWyzej": "Przechodzę wyżej przez PayU",
+        "placeNizej": "Planuję niższy przez PayU",
         "maszBeztermin": "Masz {plan} bez końca — płatności za ten plan nie przyjmę.",
         "nieSprawdze": "Nie sprawdzę teraz Twojego planu. Odśwież stronę, zanim zapłacisz.",
         "plan": "Plan",
@@ -469,7 +479,7 @@
         "pakietYoutube": "{n} wideo MP4",
         "pakietPrzycisk": "Dokupuję pakiet",
         "blok": {
-          "DOWNGRADE": "Niższy plan poczeka, aż skończy się wyższy.",
+          "PENDING_PLAN": "Masz już zaplanowany inny niższy plan. Poczeka, aż wystartuje.",
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
           "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
@@ -485,7 +495,7 @@
           "PROVIDER": "PayU nie przyjął zamówienia. Nic nie pobrałem — spróbuj jeszcze raz.",
           "ORIGIN": "To żądanie nie przyszło ze strony BitRymDym.",
           "LOGIN": "Zaloguj się, to otworzę płatność.",
-          "DOWNGRADE": "Niższego planu nie sprzedam, dopóki wyższy jeszcze trwa.",
+          "PENDING_PLAN": "Inny niższy plan jest już zaplanowany. Tego nie przyjmę, dopóki tamten nie wystartuje.",
           "PERPETUAL": "Masz dostęp bez końca — nie skracam go płatnością.",
           "ADDON_INCLUDED": "Na Gold masz referencję w cenie.",
           "ADDON_NEEDS_SILVER": "Ten dodatek włączam tylko na Silver.",
@@ -499,6 +509,7 @@
         "naglowek": "Wracasz z PayU",
         "czekam": "Czekam na potwierdzenie z PayU. Jak wpłata dojdzie, włączę plan. Możesz zostać na tej stronie.",
         "gotowe": "Wpłata doszła. Włączyłem {co} do {data}.",
+        "zaplanowane": "Wpłata doszła. {co} włączy się po obecnym planie i potrwa do {data}.",
         "pakietGotowy": "Wpłata doszła. Dodałem {co}. Zostają, aż je wykorzystasz.",
         "pominiete": "Wpłatę mam, ale planu nie zmieniłem: {powod}",
         "nieudane": "Ta płatność nie doszła. Nic nie włączyłem.",
@@ -515,6 +526,7 @@
         "powod": {
           "perpetual": "masz już dostęp bez końca i nie skracam go.",
           "downgrade": "wyższy plan jeszcze trwa, a niższego nie włączam w jego trakcie.",
+          "pending_plan": "inny niższy plan jest już zaplanowany. Napisz, to oddam tę wpłatę przez PayU.",
           "addon_perpetual": "dodatek jest bez końca i nie skracam go."
         }
       }

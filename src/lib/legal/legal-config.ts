@@ -4,8 +4,8 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-07";
-export const PRIVACY_VERSION = "2026-11-07";
+export const TERMS_VERSION = "2026-11-07.2";
+export const PRIVACY_VERSION = "2026-11-07.2";
 
 /** Effective date shown in the documents (matches the versions above). */
 export const LEGAL_EFFECTIVE_DATE = "7 listopada 2026 r.";
@@ -44,4 +44,9 @@ export function signupConsent(now = new Date()): LegalConsent {
 export type PurchaseConsentInput = { acceptTerms: boolean; immediatePerformance: boolean };
 export function purchaseConsentValid(c: PurchaseConsentInput): boolean {
   return c.acceptTerms === true && c.immediatePerformance === true;
+}
+
+/** A cheaper plan that starts later does not ask for immediate performance. */
+export function purchaseConsentCovers(c: PurchaseConsentInput, startsLater: boolean): boolean {
+  return c.acceptTerms === true && (startsLater || c.immediatePerformance === true);
 }

@@ -23,7 +23,13 @@ type PremiumEntitlementRow = {
   source: string;
   expires_at: string | null;
   tier: string | null;
+  pending_tier: string | null;
+  pending_expires_at: string | null;
 };
+
+function paidPending(tier: string | null): PremiumEntitlementSnapshot["pendingTier"] {
+  return tier === "BRONZE" || tier === "SILVER" || tier === "GOLD" ? tier : null;
+}
 
 function mapPremiumRow(row: PremiumEntitlementRow): PremiumEntitlementSnapshot {
   return {
@@ -32,6 +38,8 @@ function mapPremiumRow(row: PremiumEntitlementRow): PremiumEntitlementSnapshot {
     source: row.source,
     expiresAt: row.expires_at,
     tier: isPremiumTier(row.tier) ? row.tier : null,
+    pendingTier: paidPending(row.pending_tier),
+    pendingExpiresAt: typeof row.pending_expires_at === "string" ? row.pending_expires_at : null,
   };
 }
 
@@ -46,7 +54,7 @@ export async function loadPremiumEntitlementSnapshot(
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("premium_entitlements")
-    .select("user_id, active, source, expires_at, tier")
+    .select("user_id, active, source, expires_at, tier, pending_tier, pending_expires_at")
     .eq("user_id", userId)
     .eq("active", true)
     .maybeSingle();

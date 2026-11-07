@@ -72,7 +72,7 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
       if (row.status === "failed") state = { status: "failed" };
       else if (row.status === "pending") state = { status: "pending" };
       else if (row.status === "paid" && row.grant_status === "skipped") {
-        const reason = row.grant_note === "downgrade" || row.grant_note === "addon_perpetual" || row.grant_note === "perpetual"
+        const reason = row.grant_note === "downgrade" || row.grant_note === "pending_plan" || row.grant_note === "addon_perpetual" || row.grant_note === "perpetual"
           ? row.grant_note
           : "perpetual";
         state = { status: "skipped", reason };
@@ -85,7 +85,7 @@ export default async function PremiumReturnPage({ params }: { params: Promise<{ 
               })
             : (row.plan_tier ?? t("produkt.plan"));
         const until = row.product_kind === "pack" ? null : row.granted_until ? formatWhen(row.granted_until, locale) : t("bezDaty");
-        state = { status: "paid", product, until };
+        state = { status: "paid", product, until, scheduled: row.grant_note === "schedule" };
       }
     }
   } catch {

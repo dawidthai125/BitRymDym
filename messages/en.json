@@ -194,7 +194,9 @@
       "zgodaRejestracja": "I accept the <regulamin>Terms</regulamin> and have read the <prywatnosc>Privacy policy</prywatnosc>.",
       "zakupRegulamin": "I accept the <regulamin>Terms</regulamin> (one-off payment for the selected period, no card stored).",
       "zakupNatychmiast": "I request that performance starts before the 14-day withdrawal period ends and I acknowledge that for digital content I lose the right of withdrawal once it is delivered.",
-      "zakupWymagane": "Tick both boxes to continue to payment."
+      "zakupWymagane": "Tick both boxes to continue to payment.",
+      "zakupPozniej": "This lower plan starts only when the current one ends. For 14 days after payment, and no later than its start, you can withdraw by email to the address in the terms.",
+      "zakupWymaganePozniej": "Tick the terms box to continue to payment."
     },
     "share": {
       "tytul": "Share",
@@ -445,9 +447,17 @@
         "lead": "The payment is one-off. I don't store the card and I don't charge the next period myself. BLIK, transfer, card and wallets are on the PayU page.",
         "regulaJednorazowo": "You pay once for a month or a year. Renewing means a new order, not a subscription.",
         "regulaPrzedluzenie": "I extend the same plan from the end of the paid period — or from now, if it has already ended.",
-        "regulaWyzszy": "A higher plan starts now. Days left on the lower plan are not credited.",
-        "regulaNizszy": "I won't sell a lower plan while a higher one is still running.",
-        "maszDo": "You have {plan} until {data}.",
+        "regulaWyzszy": "A higher plan starts now, and the time left on the current plan is added to it. Day for day, not converted by price.",
+        "regulaNizszy": "You can pay for a lower plan now. It starts on its own the day the higher one ends, for the month or year you paid. Until then the higher plan stays.",
+        "regulaKolejka": "One scheduled lower plan. Buying that same plan again extends it. I won't take a different cheaper plan until this one starts. Extending or upgrading moves its start.",
+        "maszDo": "You have active {plan} until {data}.",
+        "maszNastepny": "From {start}, {plan} starts and runs until {koniec}.",
+        "przedluzasz": "You are extending this plan",
+        "odRazu": "Starts now, and I add the time left",
+        "odDnia": "Starts after the current plan",
+        "placePrzedluz": "Extend with PayU",
+        "placeWyzej": "Move up with PayU",
+        "placeNizej": "Schedule the lower plan with PayU",
         "maszBeztermin": "You have {plan} with no end date — I won't take a payment for that plan.",
         "nieSprawdze": "I can't check your plan right now. Refresh the page before you pay.",
         "plan": "Plan",
@@ -469,7 +479,7 @@
         "pakietYoutube": "{n} YouTube MP4s",
         "pakietPrzycisk": "Buy this pack",
         "blok": {
-          "DOWNGRADE": "A lower plan waits until the higher one ends.",
+          "PENDING_PLAN": "Another lower plan is already scheduled. It waits until that one starts.",
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
           "ADDON_INCLUDED": "On Gold, reference mastering is included.",
           "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
@@ -485,7 +495,7 @@
           "PROVIDER": "PayU didn't accept the order. I didn't charge anything — try again.",
           "ORIGIN": "That request didn't come from the BitRymDym site.",
           "LOGIN": "Sign in and I'll open the payment.",
-          "DOWNGRADE": "I won't sell a lower plan while a higher one is still running.",
+          "PENDING_PLAN": "A different lower plan is already scheduled. I won't take this one until that plan starts.",
           "PERPETUAL": "You already have access with no end date — a payment won't shorten it.",
           "ADDON_INCLUDED": "On Gold, reference mastering is included.",
           "ADDON_NEEDS_SILVER": "I turn this add-on on only for Silver.",
@@ -499,6 +509,7 @@
         "naglowek": "You're back from PayU",
         "czekam": "I'm waiting for PayU to confirm. When the payment arrives, I'll turn the plan on. You can stay on this page.",
         "gotowe": "The payment arrived. I turned on {co} until {data}.",
+        "zaplanowane": "The payment arrived. {co} starts after the current plan and runs until {data}.",
         "pakietGotowy": "The payment arrived. I added {co}. They stay until you use them.",
         "pominiete": "I have the payment, but I didn't change the plan: {powod}",
         "nieudane": "This payment didn't go through. I didn't turn anything on.",
@@ -515,6 +526,7 @@
         "powod": {
           "perpetual": "you already have access with no end date and I won't shorten it.",
           "downgrade": "a higher plan is still running, and I don't switch on a lower one during it.",
+          "pending_plan": "another lower plan is already scheduled. Write to us and I'll return this payment through PayU.",
           "addon_perpetual": "the add-on has no end date and I won't shorten it."
         }
       }

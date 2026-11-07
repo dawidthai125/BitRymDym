@@ -28,19 +28,33 @@ export function SignupConsentCheckbox() {
  * Purchase consent. The server accepts the order only when `purchaseConsentValid`
  * is true and stores TERMS_VERSION + timestamp on the payment row.
  */
-export function PurchaseConsent({ value, onChange }: { value: { acceptTerms: boolean; immediatePerformance: boolean }; onChange: (v: { acceptTerms: boolean; immediatePerformance: boolean }) => void }) {
+export function PurchaseConsent({
+  value,
+  onChange,
+  startsLater = false,
+}: {
+  value: { acceptTerms: boolean; immediatePerformance: boolean };
+  onChange: (v: { acceptTerms: boolean; immediatePerformance: boolean }) => void;
+  /** Cheaper plan that starts when the current one ends. Immediate performance is not asked. */
+  startsLater?: boolean;
+}) {
   const t = useTranslations("common.legal");
+  const ready = value.acceptTerms && (startsLater || value.immediatePerformance);
   return (
     <fieldset className="flex flex-col gap-1 text-sm" data-testid="purchase-consent">
       <label className="flex min-h-11 items-center gap-1">
         <BrdCheckbox name="acceptTerms" checked={value.acceptTerms} onChange={(e) => onChange({ ...value, acceptTerms: e.target.checked })} data-testid="purchase-accept-terms" />
         <span>{t.rich("zakupRegulamin", { regulamin: (c) => <Link href={LEGAL_PATHS.terms} target="_blank" className={linkCls}>{c}</Link> })}</span>
       </label>
-      <label className="flex min-h-11 items-center gap-1">
-        <BrdCheckbox name="immediatePerformance" checked={value.immediatePerformance} onChange={(e) => onChange({ ...value, immediatePerformance: e.target.checked })} data-testid="purchase-immediate" />
-        <span>{t("zakupNatychmiast")}</span>
-      </label>
-      {!(value.acceptTerms && value.immediatePerformance) ? <p className="text-[var(--brd-mute)]">{t("zakupWymagane")}</p> : null}
+      {startsLater ? (
+        <p className="text-[var(--brd-ink-soft)]">{t("zakupPozniej")}</p>
+      ) : (
+        <label className="flex min-h-11 items-center gap-1">
+          <BrdCheckbox name="immediatePerformance" checked={value.immediatePerformance} onChange={(e) => onChange({ ...value, immediatePerformance: e.target.checked })} data-testid="purchase-immediate" />
+          <span>{t("zakupNatychmiast")}</span>
+        </label>
+      )}
+      {!ready ? <p className="text-[var(--brd-mute)]">{t(startsLater ? "zakupWymaganePozniej" : "zakupWymagane")}</p> : null}
     </fieldset>
   );
 }
