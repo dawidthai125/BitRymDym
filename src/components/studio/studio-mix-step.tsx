@@ -566,7 +566,6 @@ export function StudioMixStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis / fix round
   }, [autoPhase, result, stale, running, fixing, fixSeq, failure, panel, canAutofix, doc, analyze, t]);
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- same one-tick dispatch as the Gold auto mix above */
     if (songPhase !== "run") return;
     if (autoLock.current) return;
     const step = nextSongStep({
@@ -593,7 +592,6 @@ export function StudioMixStep({
     void Promise.resolve(job).finally(() => {
       autoLock.current = false;
     });
-    /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one tick per analysis or the single Nova pass
   }, [songPhase, result, stale, running, fixing, failure, panel, canAutofix, analyze, t]);
   const [manual, setManual] = useState<ManualIssue | null>(null);
