@@ -18,14 +18,14 @@ export const PRIVACY: LegalDoc = {
       "Dane techniczne: adres IP, typ przeglądarki, logi serwera i błędów, identyfikatory sesji w plikach cookie.",
       "Odcisk dźwięku wgrywanego Bitu (chromaprint) i jego czas trwania. Sam plik audio do usługi AcoustID nie trafia.",
       "Wiadomości: treść pytań do asystenta BITEK, opisy okładek AI, korespondencja z nami.",
-      "Po uruchomieniu płatności: dane do rozliczeń (adres e-mail Konta, identyfikator zamówienia, kwota, waluta, okres i historia transakcji). Danych kart płatniczych nie przechowujemy — obsługuje je PayU S.A. z siedzibą w Poznaniu, który przetwarza dane płatnicze jako odrębny administrator.",
+      "Dane do rozliczeń: adres e-mail Konta, identyfikator zamówienia, kwota, waluta, okres i historia transakcji. Danych kart płatniczych nie przechowujemy — obsługuje je PayU S.A. z siedzibą w Poznaniu, który przetwarza dane płatnicze jako odrębny administrator.",
     ] }, `Serwis jest przeznaczony dla osób, które ukończyły ${MINIMUM_AGE} lat — młodsze osoby nie mogą zakładać Konta. Jeśli dowiemy się, że Konto założyła osoba poniżej tego wieku, usuniemy je wraz z danymi.`] },
     { id: "p3", h: "3. Cele i podstawy prawne", blocks: [{ table: { head: ["Cel", "Podstawa (RODO)"], rows: [
       ["Prowadzenie Konta, Studio, przechowywanie i przetwarzanie Twoich plików, linki do odsłuchu, eksport", "art. 6 ust. 1 lit. b — umowa"],
       ["Moderacja Bitów i okładek (automatyczna i ręczna), przeciwdziałanie nadużyciom, bezpieczeństwo, limity", "art. 6 ust. 1 lit. f — prawnie uzasadniony interes; art. 6 ust. 1 lit. c — obowiązki z aktu o usługach cyfrowych"],
       ["Wiadomości e-mail o koncie i usłudze (potwierdzenie, reset hasła, wynik moderacji, gotowy master / MP4)", "art. 6 ust. 1 lit. b i f; powiadomienia możesz wyłączyć w ustawieniach"],
       ["Funkcje AI na Twoje żądanie (BITEK, okładki AI)", "art. 6 ust. 1 lit. b — umowa"],
-      ["Rozliczenia i księgowość (po uruchomieniu płatności)", "art. 6 ust. 1 lit. c — przepisy podatkowe i rachunkowe"],
+      ["Rozliczenia i księgowość", "art. 6 ust. 1 lit. c — przepisy podatkowe i rachunkowe"],
       ["Reklamacje, dochodzenie i obrona roszczeń", "art. 6 ust. 1 lit. f"],
     ] } }, "Nie wysyłamy marketingu i nie używamy narzędzi analitycznych ani reklamowych. Jeśli to się zmieni, poprosimy o zgodę."] },
     { id: "p4", h: "4. Automatyczna moderacja", blocks: [
@@ -55,7 +55,7 @@ export const PRIVACY: LegalDoc = {
       "Linki do odsłuchu — do wygaśnięcia (maksymalnie zgodnie z Planem) lub wyłączenia.",
       "Historia moderacji i zgłoszeń — przez czas istnienia treści i do 3 lat po jej usunięciu (ustalenie, dochodzenie lub obrona roszczeń — m.in. art. 442¹ Kodeksu cywilnego; obowiązki z aktu o usługach cyfrowych), a gdy toczy się konkretne postępowanie lub spór — do jego zakończenia.",
       "Logi techniczne (serwera, błędów i bezpieczeństwa, w tym adresy IP) — nie dłużej niż 12 miesięcy, potem są usuwane lub anonimizowane. Dłużej tylko wtedy, gdy są potrzebne do wyjaśnienia konkretnego incydentu bezpieczeństwa lub roszczenia — do jego zakończenia.",
-      "Dane rozliczeniowe — 5 lat od końca roku podatkowego (po uruchomieniu płatności).",
+      "Dane rozliczeniowe — 5 lat od końca roku podatkowego.",
     ] }] },
     { id: "p7", h: "7. Twoje prawa", blocks: [
       "Masz prawo do: dostępu do danych i ich kopii, sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia danych, sprzeciwu wobec przetwarzania opartego na prawnie uzasadnionym interesie, a także do niepodlegania decyzji opartej wyłącznie na zautomatyzowanym przetwarzaniu (pkt 4). Konto i dane usuniesz samodzielnie w ustawieniach.",
