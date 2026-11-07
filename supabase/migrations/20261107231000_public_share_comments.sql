@@ -1,5 +1,5 @@
 -- Author listing and the comment switch.
--- NOT applied. A separate Owner GO is required.
+-- Applied on BitRymDym (rzzxrgcdogkybkiidqgw) 2026-11-07 after Owner GO.
 -- Private work stays out of the catalogue. Comments apply only while it is public.
 
 alter table public.beats

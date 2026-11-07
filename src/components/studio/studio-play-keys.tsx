@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { BITEK_MOOD_SRC, type BitekMood } from "@/components/studio/studio-bitek-dock";
+import { StudioMidiRoll } from "@/components/studio/studio-midi-roll";
 import {
   appendPlayedNote,
   renderMidiNotes,
@@ -311,6 +312,19 @@ export function StudioPlayKeys({
           </Button>
         ))}
       </div>
+      <StudioMidiRoll
+        disabled={disabled}
+        instrument={locked ?? instrument}
+        midi={midi}
+        bpm={bpm}
+        getPlayheadMs={getPlayheadMs}
+        onCommit={(next) => {
+          midiRef.current = next;
+          setNotice(null);
+          onCommit(next);
+        }}
+        onRejected={(reason) => setNotice(reason === "other" ? tr("klawiszeInny") : tr("klawiszePelne"))}
+      />
       <Button
         type="button"
         size="sm"

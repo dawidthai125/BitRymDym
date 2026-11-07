@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, scratchPatternAt } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, scratchPatternAt, toggleGridNote } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -185,6 +185,39 @@ describe("studio midi", () => {
     const wav = renderMidiSampleWav(bar);
     expect(wav && String.fromCharCode(...wav.bytes.slice(0, 4))).toBe("RIFF");
     expect(wav && wav.durationMs).toBeGreaterThanOrEqual(1000);
+  });
+
+  it("toggles one eighth on the piano roll without wiping another instrument", () => {
+    const placed = toggleGridNote({
+      midi: null,
+      instrument: "piano",
+      pitch: 60,
+      step: 0,
+      playheadMs: 0,
+      bpm: 120,
+    });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+    expect(placed.midi.notes).toEqual([{ t: 0, dur: 225, pitch: 60, vel: 0.8 }]);
+    const off = toggleGridNote({
+      midi: placed.midi,
+      instrument: "piano",
+      pitch: 60,
+      step: 0,
+      playheadMs: 0,
+      bpm: 120,
+    });
+    expect(off.ok && off.midi.notes).toEqual([]);
+    expect(
+      toggleGridNote({
+        midi: { v: 1, instrument: "guitar", notes: [{ t: 0, dur: 100, pitch: 64, vel: 0.8 }] },
+        instrument: "piano",
+        pitch: 60,
+        step: 1,
+        playheadMs: 0,
+        bpm: 120,
+      }),
+    ).toEqual({ ok: false, reason: "other" });
   });
 
   it("tells BITEK when a line is short, stuck, leaping, or ready", () => {

@@ -222,6 +222,54 @@ export function appendPlayedNote(input: {
   return { ok: true, midi: { v: MIDI_VERSION, instrument: input.instrument, notes: next } };
 }
 
+/** Two bars of eighth notes, anchored on the bar that contains the playhead. */
+export const ROLL_STEPS = 16;
+
+export function rollWindow(playheadMs: number, bpm: number, steps = ROLL_STEPS): { origin: number; stepMs: number } {
+  const stepMs = Math.max(1, Math.round(quarterMs(bpm) / 2));
+  const window = stepMs * steps;
+  const origin = Math.floor(atPlayhead(playheadMs) / window) * window;
+  return { origin, stepMs };
+}
+
+export function rollPitches(instrument: PlayKeyInstrument): number[] {
+  if (instrument === "drums") return [42, 38, 36];
+  if (instrument === "bass") return [43, 40, 38, 36, 33, 31, 28];
+  if (instrument === "guitar") return [64, 62, 60, 59, 57, 55, 52, 50];
+  return [72, 71, 69, 67, 65, 64, 62, 60];
+}
+
+/** Click a cell: remove the note in that eighth, or add one. Does not wipe another instrument. */
+export function toggleGridNote(input: {
+  midi: StudioMidiV1 | null | undefined;
+  instrument: PlayKeyInstrument;
+  pitch: number;
+  step: number;
+  playheadMs: number;
+  bpm: number;
+}): { ok: true; midi: StudioMidiV1 } | { ok: false; reason: "other" | "full" | "range" } {
+  const current = input.midi && input.midi.notes.length > 0 ? input.midi : null;
+  if (current && current.instrument !== input.instrument) return { ok: false, reason: "other" };
+  if (!Number.isInteger(input.pitch) || input.pitch < MIDI_LIMITS.pitch.min || input.pitch > MIDI_LIMITS.pitch.max) {
+    return { ok: false, reason: "range" };
+  }
+  if (!Number.isInteger(input.step) || input.step < 0 || input.step >= ROLL_STEPS) {
+    return { ok: false, reason: "range" };
+  }
+  const { origin, stepMs } = rollWindow(input.playheadMs, input.bpm);
+  const t = origin + input.step * stepMs;
+  const notes = current?.notes ?? [];
+  const kept = notes.filter((note) => !(note.pitch === input.pitch && note.t >= t && note.t < t + stepMs));
+  if (kept.length !== notes.length) {
+    return { ok: true, midi: { v: MIDI_VERSION, instrument: input.instrument, notes: kept } };
+  }
+  if (notes.length >= MIDI_LIMITS.maxNotes) return { ok: false, reason: "full" };
+  const dur = Math.max(1, Math.round(stepMs * (input.instrument === "drums" ? 0.45 : 0.9)));
+  const next = keepOnTimeline([...notes, { t, dur, pitch: input.pitch, vel: input.instrument === "drums" ? 0.9 : 0.8 }]);
+  if (next.length === notes.length) return { ok: false, reason: "range" };
+  return { ok: true, midi: { v: MIDI_VERSION, instrument: input.instrument, notes: next } };
+}
+
 export type PlayedNoteReviewCode = "short" | "same" | "leap" | "drums-one" | "drums-ok" | "line-ok";
 
 /** What BITEK can say about notes played on the keys. Empty and other instruments stay quiet. */

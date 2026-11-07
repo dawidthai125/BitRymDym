@@ -1,5 +1,5 @@
 -- Community ratings, comments and claimable ranking prizes.
--- NOT applied. A separate Owner GO is required before this reaches production.
+-- Applied on BitRymDym (rzzxrgcdogkybkiidqgw) 2026-11-07 after Owner GO.
 -- The app fail-closes while these tables are absent.
 -- Writes are service_role only. A prize never inserts a perpetual premium row.
 
