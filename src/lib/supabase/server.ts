@@ -1,8 +1,19 @@
+import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "server-only";
 
+import { userAccessBearer } from "@/lib/supabase/access-bearer";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
+
+export async function requestUserAccessBearer(): Promise<string | null> {
+  try {
+    const headerList = await headers();
+    return userAccessBearer(headerList.get("authorization"));
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Server Supabase client (cookie-aware).
@@ -16,6 +27,18 @@ export async function createSupabaseServerClient() {
     throw new Error(
       "Supabase server client requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
     );
+  }
+
+  const bearer = await requestUserAccessBearer();
+  if (bearer) {
+    return createClient(url, anonKey, {
+      global: { headers: { Authorization: `Bearer ${bearer}` } },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
 
   const cookieStore = await cookies();

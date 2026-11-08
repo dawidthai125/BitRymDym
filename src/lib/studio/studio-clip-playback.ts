@@ -5,6 +5,8 @@
  * Identity (stretch 1, 0 cents) returns the same samples.
  */
 
+import { resolveScratchSourceMs } from "@/lib/studio/studio-scratch-state";
+
 export const CLIP_STRETCH_MIN = 0.5;
 export const CLIP_STRETCH_MAX = 2;
 export const CLIP_PITCH_CENTS_MIN = -1200;
@@ -166,4 +168,31 @@ export function bakedTimelineMs(params: {
   const offset = Number.isFinite(params.sourceOffsetMs) ? params.sourceOffsetMs : 0;
   const local = Number.isFinite(params.localMs) ? params.localMs : 0;
   return offset * stretch + local;
+}
+
+/**
+ * Read position in a stretch and pitch bake when the clip is also reversed.
+ * The bake already holds stretch and pitch. Reverse walks that bake backward.
+ * Stretch 1 matches resolveScratchSourceMs on the original file.
+ */
+export function bakedReverseTimelineMs(params: {
+  sourceOffsetMs: number;
+  localMs: number;
+  stretch: number;
+  cueMs: number;
+  rate: number;
+  bakedDurationMs: number;
+}): number {
+  const stretch = clampClipPlayback({ stretch: params.stretch, pitchCents: 0 }).stretch;
+  const cue = Number.isFinite(params.cueMs) ? params.cueMs : 0;
+  return resolveScratchSourceMs({
+    sourceOffsetMs: (Number.isFinite(params.sourceOffsetMs) ? params.sourceOffsetMs : 0) * stretch,
+    localMs: params.localMs,
+    approved: {
+      cueMs: cue * stretch,
+      reverse: true,
+      rate: params.rate,
+    },
+    sourceDurationMs: params.bakedDurationMs,
+  });
 }

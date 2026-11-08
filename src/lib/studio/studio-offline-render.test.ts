@@ -1236,6 +1236,46 @@ describe("SFM-2.1 numerical geometry / mix", () => {
     expect(identityFirst).toBeLessThan(0.05);
   });
 
+  it("reverses a slowed clip from the baked tail, not the raw file", async () => {
+    const sr = STUDIO_OFFLINE_RENDER_SAMPLE_RATE;
+    const frames = 800;
+    const interleaved = new Float32Array(frames * 2);
+    for (let i = 0; i < frames; i++) {
+      const v = i / frames;
+      interleaved[i * 2] = v;
+      interleaved[i * 2 + 1] = v;
+    }
+    const pcm = { sampleRate: sr, channels: 2 as const, frames, interleaved };
+    const base = {
+      id: "c1",
+      trackId: "t1",
+      sourceKind: "TAKE" as const,
+      sourceTakeId: "take-1",
+      durationMs: 10,
+      scratchRate: 1,
+      scratchCueMs: 0,
+      stretchRatio: 2,
+    };
+    const render = (scratchReverse: boolean) => renderStudioDocumentOffline({
+      document: doc({
+        timelineLengthMs: 10,
+        tracks: [track({ id: "t1" })],
+        clips: [clip({ ...base, scratchReverse })],
+      }),
+      resolvePcm: resolverFromMap({ "TAKE:take-1": pcm }),
+    });
+    const reversed = await render(true);
+    const forward = await render(false);
+    const mean = (samples: Float32Array, n: number) => {
+      let sum = 0;
+      const count = Math.min(n, samples.length / 2);
+      for (let i = 0; i < count; i++) sum += samples[i * 2] ?? 0;
+      return sum / count;
+    };
+    expect(mean(reversed.interleaved, 200)).toBeGreaterThan(0.4);
+    expect(mean(forward.interleaved, 200)).toBeLessThan(0.15);
+  });
+
   it("encodes approved Scratch bake to WAV with RIFF/WAVE duration", async () => {
     const sr = STUDIO_OFFLINE_RENDER_SAMPLE_RATE;
     const frames = sr;

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { resolveScratchSourceMs } from "./studio-scratch-state";
 import {
+  bakedReverseTimelineMs,
   bakedTimelineMs,
   clampClipPlayback,
   clipPlaybackIdentity,
@@ -39,5 +41,32 @@ describe("studio clip playback", () => {
 
   it("maps the source offset into the slowed bake", () => {
     expect(bakedTimelineMs({ sourceOffsetMs: 1000, localMs: 10, stretch: 2 })).toBe(2010);
+  });
+
+  it("reverses a slowed bake and matches plain reverse when stretch is 1", () => {
+    const plain = resolveScratchSourceMs({
+      sourceOffsetMs: 0,
+      localMs: 100,
+      approved: { cueMs: 0, reverse: true, rate: 1 },
+      sourceDurationMs: 1000,
+    });
+    expect(bakedReverseTimelineMs({
+      sourceOffsetMs: 0,
+      localMs: 100,
+      stretch: 1,
+      cueMs: 0,
+      rate: 1,
+      bakedDurationMs: 1000,
+    })).toBe(plain);
+    const slowed = bakedReverseTimelineMs({
+      sourceOffsetMs: 0,
+      localMs: 100,
+      stretch: 2,
+      cueMs: 0,
+      rate: 1,
+      bakedDurationMs: 2000,
+    });
+    expect(slowed).toBeGreaterThan(plain);
+    expect(slowed).toBeCloseTo(2000 - 1e-6 - 100, 5);
   });
 });

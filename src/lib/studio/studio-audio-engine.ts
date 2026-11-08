@@ -31,6 +31,7 @@ import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
 import {
+  bakedReverseTimelineMs,
   bakedTimelineMs,
   clampClipPlayback,
   clipPlaybackIdentity,
@@ -922,9 +923,14 @@ export class StudioAudioEngine {
     return this.ctx.decodeAudioData(await response.arrayBuffer());
   }
 
-  private startReversedBufferSource(voice: Voice, rate: number, heardSec?: number): boolean {
+  private startReversedBufferSource(
+    voice: Voice,
+    rate: number,
+    heardSec?: number,
+    bufferOverride?: StudioAudioBufferLike,
+  ): boolean {
     if (!this.ctx?.createBufferSource) return false;
-    const buffer = voice.reversedBuffer ?? voice.decodedBuffer;
+    const buffer = bufferOverride ?? voice.reversedBuffer ?? voice.decodedBuffer;
     if (!buffer) return false;
     this.stopBufferSource(voice);
     try {
@@ -2328,7 +2334,7 @@ export class StudioAudioEngine {
     }
   }
 
-  /** Stretch and pitch baked once, then played from a buffer. Reverse stays on its own path. */
+  /** Stretch and pitch baked once, then played from a buffer. Reverse of that bake is a separate start. */
   private holdPersistedPlayback(
     voice: Voice,
     clip: StudioEngineClip,
@@ -2403,8 +2409,19 @@ export class StudioAudioEngine {
     }
   }
 
-  /** Saved reverse on an ordinary clip. The scratch jog keeps its own path. */
+  /** Saved reverse on an ordinary clip. Stretch and pitch bake first, then this buffer is reversed. The scratch jog keeps its own path. */
   private holdPersistedReverse(voice: Voice, clip: StudioEngineClip, playheadMs: number): void {
+    const playback = clampClipPlayback({
+      stretch: clip.stretchRatio ?? 1,
+      pitchCents: clip.pitchCents ?? 0,
+    });
+    const shaped = !clipPlaybackIdentity(playback);
+    const sig = shaped ? `${playback.stretch}|${playback.pitchCents}|rev` : "";
+    if (shaped && voice.playbackSig !== sig) {
+      voice.playbackSig = sig;
+      voice.playbackBuffer = null;
+      this.stopBufferSource(voice);
+    }
     const target = this.heardSecForPersistedReverse(voice, clip, playheadMs);
     const anchor = voice.reverseAnchor;
     const coast = anchor && this.ctx
@@ -2447,11 +2464,47 @@ export class StudioAudioEngine {
             timelineLengthMs: this.document?.timelineLengthMs ?? 0,
           })
         : playheadMs;
-      const heard = this.heardSecForPersistedReverse(voice, fresh, playhead);
+      const heardClip = fresh;
+      const heardPlayback = clampClipPlayback({
+        stretch: heardClip.stretchRatio ?? 1,
+        pitchCents: heardClip.pitchCents ?? 0,
+      });
+      const shapedNow = !clipPlaybackIdentity(heardPlayback);
+      const buffer = shapedNow ? this.bakeReversedPlayback(voice, heardPlayback) : undefined;
+      if (shapedNow && !buffer) return;
+      if (buffer) voice.playbackBuffer = buffer;
+      const heard = this.heardSecForPersistedReverse(voice, heardClip, playhead);
       if (heard == null) return;
-      const freshRate = clampScratchRate(fresh.scratchRate ?? 1);
-      this.startReversedBufferSource(voice, freshRate, heard);
+      const freshRate = clampScratchRate(heardClip.scratchRate ?? 1);
+      this.startReversedBufferSource(voice, freshRate, heard, buffer);
     });
+  }
+
+  /** Stretch and pitch first, then reverse that bake. The jog still uses the raw reversed buffer. */
+  private bakeReversedPlayback(
+    voice: Voice,
+    playback: { stretch: number; pitchCents: number },
+  ): StudioAudioBufferLike | null {
+    if (!this.ctx || !voice.decodedBuffer) return null;
+    const decoded = voice.decodedBuffer;
+    const channels = Math.max(1, decoded.numberOfChannels);
+    const left = renderClipPlaybackMono(decoded.getChannelData(0), playback);
+    const right = channels > 1
+      ? renderClipPlaybackMono(decoded.getChannelData(1), playback)
+      : left;
+    const length = Math.min(left.length, right.length);
+    if (length < 1 || !this.ctx.createBuffer) return null;
+    const raw = this.ctx.createBuffer(channels > 1 ? 2 : 1, length, decoded.sampleRate);
+    raw.getChannelData(0).set(left.subarray(0, length));
+    if (channels > 1) raw.getChannelData(1).set(right.subarray(0, length));
+    const baked: StudioAudioBufferLike = {
+      numberOfChannels: raw.numberOfChannels,
+      length: raw.length,
+      sampleRate: raw.sampleRate,
+      duration: raw.length / decoded.sampleRate,
+      getChannelData: (channel) => raw.getChannelData(channel),
+    };
+    return reverseStudioAudioBuffer(this.ctx, baked);
   }
 
   private heardSecForPersistedReverse(
@@ -2459,14 +2512,31 @@ export class StudioAudioEngine {
     clip: StudioEngineClip,
     playheadMs: number,
   ): number | null {
-    const durationSec = voice.decodedBuffer?.duration ?? voice.reversedBuffer?.duration ?? 0;
-    if (!(durationSec > 0)) return null;
+    const playback = clampClipPlayback({
+      stretch: clip.stretchRatio ?? 1,
+      pitchCents: clip.pitchCents ?? 0,
+    });
+    const rawDurationSec = voice.decodedBuffer?.duration ?? voice.reversedBuffer?.duration ?? 0;
+    const bakedDurationSec = voice.playbackBuffer?.duration
+      ?? (rawDurationSec > 0 ? rawDurationSec * playback.stretch : 0);
+    if (!clipPlaybackIdentity(playback)) {
+      if (!(bakedDurationSec > 0)) return null;
+      return bakedReverseTimelineMs({
+        sourceOffsetMs: clip.sourceOffsetMs,
+        localMs: Math.max(0, playheadMs - clip.timelineStartMs),
+        stretch: playback.stretch,
+        cueMs: clip.scratchCueMs ?? 0,
+        rate: clip.scratchRate ?? 1,
+        bakedDurationMs: bakedDurationSec * 1000,
+      }) / 1000;
+    }
+    if (!(rawDurationSec > 0)) return null;
     return persistedReverseHeardSec({
       sourceOffsetMs: clip.sourceOffsetMs,
       localMs: Math.max(0, playheadMs - clip.timelineStartMs),
       cueMs: clip.scratchCueMs ?? 0,
       rate: clip.scratchRate ?? 1,
-      sourceDurationMs: durationSec * 1000,
+      sourceDurationMs: rawDurationSec * 1000,
     });
   }
 

@@ -13,7 +13,7 @@ import {
   type AuthContext,
   type ProfileRow,
 } from "@/lib/auth/types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, requestUserAccessBearer } from "@/lib/supabase/server";
 import type { SystemRole } from "@/types/domain";
 import type { PermissionKey } from "@/types/permissions";
 
@@ -63,7 +63,10 @@ export async function getSessionUser() {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.getUser();
+  const bearer = await requestUserAccessBearer();
+  const { data, error } = bearer
+    ? await supabase.auth.getUser(bearer)
+    : await supabase.auth.getUser();
   if (error || !data.user) {
     return null;
   }

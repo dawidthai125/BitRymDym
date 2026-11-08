@@ -36,6 +36,26 @@ def tone(seconds: float = 0.1, rate: int = RATE, freq: float = 440.0) -> list[in
     ]
 
 
+def resample_pcm16(samples: list[int], from_rate: int, to_rate: int) -> list[int]:
+    if from_rate == to_rate:
+        return samples
+    if from_rate < 1 or to_rate < 1 or not samples:
+        raise ValueError("resample")
+    out_len = max(1, int(round(len(samples) * to_rate / from_rate)))
+    if len(samples) == 1:
+        return [samples[0]] * out_len
+    out: list[int] = []
+    last = len(samples) - 1
+    for i in range(out_len):
+        pos = i * last / max(1, out_len - 1)
+        left = int(pos)
+        right = min(last, left + 1)
+        mix = pos - left
+        value = round(samples[left] * (1 - mix) + samples[right] * mix)
+        out.append(max(-32768, min(32767, int(value))))
+    return out
+
+
 def self_test(path: Path) -> None:
     samples = tone()
     write_pcm16_wav(path, samples)
@@ -44,6 +64,9 @@ def self_test(path: Path) -> None:
             raise SystemExit("wav header mismatch")
         if handle.getnframes() != len(samples):
             raise SystemExit("wav length mismatch")
+    slowed = resample_pcm16([0, 1000, 2000, 3000], 2, 4)
+    if len(slowed) != 8:
+        raise SystemExit("resample length mismatch")
     path.unlink(missing_ok=True)
 
 

@@ -22,6 +22,7 @@ import {
 } from "@/lib/studio/studio-audio-schedule";
 import { effectiveClipGain } from "@/lib/studio/studio-clip-fade";
 import {
+  bakedReverseTimelineMs,
   bakedTimelineMs,
   clampClipPlayback,
   clipPlaybackIdentity,
@@ -272,17 +273,48 @@ function readSourceSample(
   };
 }
 
+function readFrameAtMs(
+  pcm: DecodedPcmStereo,
+  ms: number,
+): { left: number; right: number } {
+  const srcFrame = Math.floor((ms / 1000) * STUDIO_OFFLINE_RENDER_SAMPLE_RATE);
+  if (srcFrame < 0 || srcFrame >= pcm.frames) return { left: 0, right: 0 };
+  const i = srcFrame * 2;
+  return { left: pcm.interleaved[i] ?? 0, right: pcm.interleaved[i + 1] ?? 0 };
+}
+
 function readBakedSample(
   pcm: DecodedPcmStereo,
   sourceOffsetMs: number,
   localMs: number,
   stretch: number,
 ): { left: number; right: number } {
-  const ms = bakedTimelineMs({ sourceOffsetMs, localMs, stretch });
-  const srcFrame = Math.floor((ms / 1000) * STUDIO_OFFLINE_RENDER_SAMPLE_RATE);
-  if (srcFrame < 0 || srcFrame >= pcm.frames) return { left: 0, right: 0 };
-  const i = srcFrame * 2;
-  return { left: pcm.interleaved[i] ?? 0, right: pcm.interleaved[i + 1] ?? 0 };
+  return readFrameAtMs(pcm, bakedTimelineMs({ sourceOffsetMs, localMs, stretch }));
+}
+
+/** Stretch and pitch are already in `baked`. Reverse walks that buffer. */
+function readBakedReverseSample(
+  baked: DecodedPcmStereo,
+  sourceOffsetMs: number,
+  localMs: number,
+  stretch: number,
+  scratch?: {
+    scratchCueMs?: number;
+    scratchRate?: number;
+  },
+): { left: number; right: number } {
+  const bakedDurationMs = (baked.frames / STUDIO_OFFLINE_RENDER_SAMPLE_RATE) * 1000;
+  return readFrameAtMs(
+    baked,
+    bakedReverseTimelineMs({
+      sourceOffsetMs,
+      localMs,
+      stretch,
+      cueMs: scratch?.scratchCueMs ?? 0,
+      rate: scratch?.scratchRate ?? 1,
+      bakedDurationMs,
+    }),
+  );
 }
 
 function peakAndRms(interleaved: Float32Array): { peakAbs: number; rms: number } {
@@ -634,19 +666,24 @@ export async function renderStudioDocumentOffline(
 
       const clip = clipById.get(voice.clipId);
       const baked = clip ? playbackPcm.get(clip.id) : undefined;
-      const sample = baked
-        ? readBakedSample(
+      const localMs = clip ? tMs - clip.timelineStartMs : tMs - playheadMsFloor;
+      const sourceOffsetMs = clip?.sourceOffsetMs ?? voice.sourceOffsetMs;
+      const sample = baked && clip?.scratchReverse
+        ? readBakedReverseSample(
             baked,
-            clip?.sourceOffsetMs ?? voice.sourceOffsetMs,
-            clip ? tMs - clip.timelineStartMs : 0,
-            clip?.stretchRatio ?? 1,
+            sourceOffsetMs,
+            localMs,
+            clip.stretchRatio ?? 1,
+            clip,
           )
-        : readSourceSample(
-        pcm,
-        clip?.sourceOffsetMs ?? voice.sourceOffsetMs,
-        clip ? tMs - clip.timelineStartMs : tMs - playheadMsFloor,
-        clip,
-      );
+        : baked
+          ? readBakedSample(
+              baked,
+              sourceOffsetMs,
+              localMs,
+              clip?.stretchRatio ?? 1,
+            )
+          : readSourceSample(pcm, sourceOffsetMs, localMs, clip);
       if (!sample) continue;
       const clipGain = clip
         ? effectiveClipGain(clip, tMs)

@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { userAccessBearer } from "@/lib/supabase/access-bearer";
+
 import {
   createMaintenanceStateCache,
   decideMaintenance,
@@ -120,7 +122,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data, error } = await supabase.auth.getUser();
+  const bearer = userAccessBearer(request.headers.get("authorization"));
+  const { data, error } = bearer
+    ? await supabase.auth.getUser(bearer)
+    : await supabase.auth.getUser();
 
   // ── Maintenance mode ("Trwają prace") — admin toggle in /admin/site ──────
   const state: MaintenanceState = await maintenanceCache.get(async () => {
