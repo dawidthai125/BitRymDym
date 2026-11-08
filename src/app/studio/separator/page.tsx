@@ -1,6 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -24,9 +21,6 @@ export default async function StudioSeparatorPage() {
   }
 
   const projects = await listStudioProjects();
-  const configured =
-    Boolean(process.env.DEMUCS_PYTHON?.trim()) &&
-    existsSync(path.join(process.cwd(), "scripts", "studio", "separate_stems.py"));
 
   return (
     <AppShell tone="studio">
@@ -40,11 +34,10 @@ export default async function StudioSeparatorPage() {
             <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Separator</h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
               Rozcina utwór na wokal, bębny, bas i resztę. Wagi Demucs zostają na hoście
-              workerów, nie w aplikacji.
+              workerów, nie w aplikacji. Kolejka nie tworzy plików sama.
             </p>
           </header>
           <StudioSeparatorPanel
-            configured={configured}
             projects={projects.map((project) => ({ id: project.id, title: project.title }))}
           />
           <Link

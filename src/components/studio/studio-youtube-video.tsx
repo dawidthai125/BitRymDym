@@ -145,12 +145,11 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
     }
   }
 
-  async function listenToFile(file: File | undefined) {
-    if (!file) return;
+  async function listenToBuffer(bytes: ArrayBuffer) {
     setListenNote(null);
+    const ctx = new AudioContext();
     try {
-      const ctx = new AudioContext();
-      const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+      const decoded = await ctx.decodeAudioData(bytes);
       const channel = decoded.getChannelData(0);
       const frames = Math.min(channel.length, Math.floor(decoded.sampleRate * 20));
       const samples = new Float32Array(frames);
@@ -158,7 +157,34 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       const heard = coverPromptFromAudio(audioFeaturesFromPcm(samples, decoded.sampleRate));
       setAiPrompt(heard.prompt);
       setListenNote(t(`ai.nastroje.${heard.moodId}`));
+    } finally {
       await ctx.close().catch(() => undefined);
+    }
+  }
+
+  async function listenToFile(file: File | undefined) {
+    if (!file) return;
+    try {
+      await listenToBuffer(await file.arrayBuffer());
+    } catch {
+      setListenNote(t("ai.sluchBlad"));
+    }
+  }
+
+  async function listenToProject() {
+    try {
+      const res = await fetch(`/api/studio/projects/${projectId}/analysis-audio`);
+      const json = (await res.json().catch(() => ({}))) as { url?: string };
+      if (!res.ok || !json.url) {
+        setListenNote(t("ai.zeSluchuProjektuBrak"));
+        return;
+      }
+      const audio = await fetch(json.url);
+      if (!audio.ok) {
+        setListenNote(t("ai.sluchBlad"));
+        return;
+      }
+      await listenToBuffer(await audio.arrayBuffer());
     } catch {
       setListenNote(t("ai.sluchBlad"));
     }
@@ -310,7 +336,11 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
                     <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" onClick={() => listenRef.current?.click()} data-testid="studio-yt-ai-listen">
                       {t("ai.zeSluchu")}
                     </Button>
+                    <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" onClick={() => void listenToProject()} data-testid="studio-yt-ai-listen-project">
+                      {t("ai.zeSluchuProjektu")}
+                    </Button>
                     <p className="text-xs text-[var(--brd-mute)]">{t("ai.zeSluchuInfo")}</p>
+                    <p className="text-xs text-[var(--brd-mute)]">{t("ai.zeSluchuProjektuInfo")}</p>
                     {listenNote ? <p role="status" className="text-xs">{listenNote}</p> : null}
                     <div role="group" aria-label={t("ai.nastroj")} className="flex flex-wrap gap-1.5" data-testid="studio-yt-moods">
                       {MOOD_COVERS.map((mood) => (

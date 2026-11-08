@@ -1,29 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ProjectOpt = { id: string; title: string };
+type StemName = "vocals" | "drums" | "bass" | "other";
+type Job = {
+  id: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  errorCode: string | null;
+  stems: Partial<Record<StemName, string>> | null;
+};
 
-const OFF =
-  "Separator jest wyłączony, dopóki host nie poda DEMUCS_PYTHON. Wagi nie są w aplikacji.";
+const LABELS: Record<StemName, string> = {
+  vocals: "Wokal",
+  drums: "Bębny",
+  bass: "Bas",
+  other: "Reszta",
+};
 
-export function StudioSeparatorPanel({
-  projects,
-  configured,
-}: {
-  projects: ProjectOpt[];
-  configured: boolean;
-}) {
+const QUEUED =
+  "Zgłoszenie jest w kolejce. Pliki powstaną dopiero, gdy na hoście działa worker z DEMUCS_PYTHON. Samo przyjęcie nie jest rozcięciem.";
+
+export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(configured ? null : OFF);
+  const [note, setNote] = useState<string | null>(null);
+  const [job, setJob] = useState<Job | null>(null);
+
+  useEffect(() => {
+    if (!projectId) return;
+    let live = true;
+    void fetch(`/api/studio/separate?projectId=${encodeURIComponent(projectId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { job?: Job | null } | null) => {
+        if (live) setJob(json?.job ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [projectId]);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!configured) {
-      setNote(OFF);
-      return;
-    }
+    if (!projectId) return;
     setBusy(true);
     setNote(null);
     try {
@@ -33,12 +53,15 @@ export function StudioSeparatorPanel({
         body: JSON.stringify({ projectId }),
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string; accepted?: boolean };
-      if (res.status === 503 || json.error === "separator_unconfigured") {
-        setNote(OFF);
-      } else if (res.status === 202 && json.accepted === true) {
-        setNote("Przyjęte. Rozcięcie robi host workerów, nie ta aplikacja. Nie powstają tu pliki audio.");
+      if (res.status === 202 && json.accepted === true) {
+        setNote(QUEUED);
+        setJob({ id: "pending", status: "queued", errorCode: null, stems: null });
+      } else if (res.status === 409) {
+        setNote("To zgłoszenie już czeka albo jest w trakcie.");
       } else if (res.status === 404) {
-        setNote("Nie ma takiego projektu albo nie należy do Ciebie.");
+        setNote("Nie ma zatwierdzonego mastera ani bitu w tym projekcie.");
+      } else if (res.status === 503) {
+        setNote("Kolejka separatora nie jest jeszcze włączona w bazie.");
       } else {
         setNote("Nie udało się przyjąć zgłoszenia.");
       }
@@ -70,12 +93,31 @@ export function StudioSeparatorPanel({
       </label>
       <button
         type="submit"
-        disabled={busy || !configured || !projectId}
+        disabled={busy || !projectId}
         className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
       >
         {busy ? "Wysyłanie…" : "Oddaj do rozcięcia"}
       </button>
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
+      {job?.status === "queued" || job?.status === "running" ? (
+        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{QUEUED}</p>
+      ) : null}
+      {job?.status === "failed" ? (
+        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">Rozcięcie nie doszło do końca ({job.errorCode ?? "błąd"}).</p>
+      ) : null}
+      {job?.status === "succeeded" && job.stems ? (
+        <ul className="flex flex-col gap-2 text-sm">
+          {(Object.keys(LABELS) as StemName[]).map((name) =>
+            job.stems?.[name] ? (
+              <li key={name}>
+                <a href={job.stems[name]} className="underline-offset-4 hover:underline">
+                  {LABELS[name]}
+                </a>
+              </li>
+            ) : null,
+          )}
+        </ul>
+      ) : null}
     </form>
   );
 }

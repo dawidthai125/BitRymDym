@@ -131,6 +131,7 @@ export async function applyStudioCleanupOverrides(takes: Record<string, Authoriz
   for (const r of (data ?? []) as { take_id: string; result_object_key: string | null }[]) {
     const ref = takes[r.take_id];
     if (!ref || !r.result_object_key) continue;
-    takes[r.take_id] = { ...ref, storageBucket: BUCKET, objectKey: r.result_object_key, contentType: "audio/flac", byteSize: null };
+    const wav = r.result_object_key.endsWith(".wav");
+    takes[r.take_id] = { ...ref, storageBucket: BUCKET, objectKey: r.result_object_key, contentType: wav ? "audio/wav" : "audio/flac", byteSize: null };
   }
 }

@@ -3316,6 +3316,8 @@ function StudioEditorInner({
       {selectedClip ? (
         <StudioClipSpectrogram
           clipId={selectedClip.id}
+          projectId={doc.project.id}
+          takeId={selectedClip.sourceKind === "TAKE" ? selectedClip.sourceTakeId : null}
           resolveUrl={() => resolveClipSourceUrl(selectedClip)}
         />
       ) : null}

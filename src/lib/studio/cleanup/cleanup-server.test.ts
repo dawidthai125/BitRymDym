@@ -42,6 +42,13 @@ describe("cleanup server", () => {
     expect(calls).toEqual(expect.arrayContaining(["owner_id=owner-1", "status=succeeded", "applied=true"]));
   });
 
+  it("wav cleanup result stays audio/wav", async () => {
+    rows.splice(0, rows.length, { take_id: T1, result_object_key: `studio-cleanup/o/${T1}/j.wav` });
+    const takes = { [T1]: ref(T1) };
+    await applyStudioCleanupOverrides(takes, "owner-1");
+    expect(takes[T1]).toMatchObject({ contentType: "audio/wav", objectKey: `studio-cleanup/o/${T1}/j.wav` });
+  });
+
   it("missing table → no-op (feature not deployed)", async () => {
     tableError = { code: "42P01" };
     const takes = { [T1]: ref(T1) };
