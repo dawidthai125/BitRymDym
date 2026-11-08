@@ -6,9 +6,10 @@ Mix and master stay on the site. This program does not load VST plugins.
 
 from __future__ import annotations
 
-import ctypes
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tkinter as tk
 import urllib.error
@@ -16,74 +17,127 @@ import urllib.request
 from pathlib import Path
 
 from account_upload import SITE, upload_vocal, SiteClient
-from record_wav import RATE, resample_pcm16, write_pcm16_wav
+from record_wav import write_pcm16_wav
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
-ALIAS = "brdrec"
 
 
-def mci(command: str) -> None:
-    winmm = ctypes.windll.winmm
-    error = winmm.mciSendStringW(command, None, 0, None)
-    if error:
-        message = ctypes.create_unicode_buffer(256)
-        winmm.mciGetErrorStringW(error, message, 256)
-        raise RuntimeError(message.value or f"mci {error}")
+def ffmpeg_exe() -> str:
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    root = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Packages"
+    matches = sorted(root.glob("Gyan.FFmpeg*/ffmpeg-*/bin/ffmpeg.exe"))
+    if not matches:
+        raise RuntimeError("Brak ffmpeg. Bez niego mikrofon Intel się nie otworzy.")
+    return str(matches[-1])
 
 
-def close_alias() -> None:
-    try:
-        mci(f"close {ALIAS}")
-    except RuntimeError:
+def audio_devices(exe: str) -> list[str]:
+    proc = subprocess.run(
+        [exe, "-hide_banner", "-list_devices", "true", "-f", "dshow", "-i", "dummy"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    names: list[str] = []
+    for line in f"{proc.stdout}\n{proc.stderr}".splitlines():
+        if "(audio)" not in line:
+            continue
+        start = line.find('"')
+        end = line.rfind('"')
+        if start >= 0 and end > start:
+            names.append(line[start + 1 : end])
+    mics = [name for name in names if "microphone" in name.lower() or "mikrofon" in name.lower()]
+    ordered = mics + [name for name in names if name not in mics]
+    if not ordered:
+        raise RuntimeError("Windows nie pokazał mikrofonu.")
+    return ordered
+
+
+def start_capture(path: Path, device: str) -> subprocess.Popen[bytes]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return subprocess.Popen(
+        [
+            ffmpeg_exe(),
+            "-hide_banner",
+            "-y",
+            "-f",
+            "dshow",
+            "-i",
+            f"audio={device}",
+            "-ac",
+            "1",
+            "-ar",
+            "48000",
+            "-c:a",
+            "pcm_s16le",
+            str(path),
+        ],
+        stdin=subprocess.PIPE,
+    )
+
+
+def stop_capture(proc: subprocess.Popen[bytes]) -> None:
+    if proc.poll() is not None:
         return
-
-
-def open_mic() -> int:
-    last: Exception | None = None
-    for rate in (RATE, 44_100):
-        close_alias()
+    if proc.stdin:
         try:
-            mci(f"open new type waveaudio alias {ALIAS}")
-            mci(f"set {ALIAS} bitspersample 16 channels 1 samplespersec {rate}")
-            return rate
-        except RuntimeError as error:
-            last = error
-            close_alias()
-    raise last or RuntimeError("Mikrofon jest niedostępny.")
-
-
-def normalize_saved_wav(path: Path, captured_rate: int) -> None:
-    if captured_rate == RATE:
-        return
-    import wave
-
-    with wave.open(str(path), "rb") as handle:
-        raw = handle.readframes(handle.getnframes())
-        width = handle.getsampwidth()
-        channels = handle.getnchannels()
-    if width != 2 or channels != 1:
-        raise RuntimeError("Nagranie nie jest mono 16-bit.")
-    import struct
-
-    samples = list(struct.unpack("<" + "h" * (len(raw) // 2), raw))
-    write_pcm16_wav(path, resample_pcm16(samples, captured_rate, RATE), RATE)
+            proc.stdin.write(b"q")
+            proc.stdin.close()
+        except OSError:
+            proc.terminate()
+    try:
+        proc.wait(timeout=8)
+    except subprocess.TimeoutExpired:
+        proc.terminate()
+        proc.wait(timeout=5)
 
 
 def record_seconds(path: Path, seconds: float) -> None:
     if seconds <= 0:
         raise ValueError("Czas nagrania musi być większy od zera.")
-    rate = open_mic()
-    try:
-        mci(f"record {ALIAS}")
-        import time
+    exe = ffmpeg_exe()
+    device = audio_devices(exe)[0]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    proc = subprocess.run(
+        [
+            exe,
+            "-hide_banner",
+            "-y",
+            "-f",
+            "dshow",
+            "-i",
+            f"audio={device}",
+            "-t",
+            str(seconds),
+            "-ac",
+            "1",
+            "-ar",
+            "48000",
+            "-c:a",
+            "pcm_s16le",
+            str(path),
+        ],
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0 or not path.exists() or path.stat().st_size < 1000:
+        raise RuntimeError("Mikrofon nie oddał WAV.")
 
-        time.sleep(seconds)
-        mci(f"stop {ALIAS}")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        mci(f'save {ALIAS} "{path}"')
-    finally:
-        close_alias()
-    normalize_saved_wav(path, rate)
+
+def load_bootstrap() -> dict[str, object]:
+    request = urllib.request.Request(
+        f"{SITE}/api/desktop/bootstrap",
+        headers={"Accept": "application/json", "User-Agent": "BitRymDymRecorder"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict) or not payload.get("supabaseUrl") or not payload.get("anonKey"):
+        raise RuntimeError("Strona nie oddała publicznego klienta.")
+    return payload
 
 
 def supabase_password_grant(url: str, anon_key: str, email: str, password: str) -> dict[str, str]:
@@ -134,30 +188,34 @@ class RecorderWindow:
     def __init__(self) -> None:
         self.root = tk.Tk()
         self.root.title("BitRymDym nagrywarka")
-        self.root.geometry("460x360")
+        self.root.geometry("520x340")
         self.recording = False
-        self.capture_rate = RATE
+        self.capture: subprocess.Popen[bytes] | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
-        self.status = tk.StringVar(value="Zaloguj się tym samym kontem co na stronie.")
+        self.public_url = ""
+        self.public_key = ""
+        self.beats: list[tuple[str, str]] = []
+        self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
         self.email = tk.Entry(self.root, width=42)
         self.password = tk.Entry(self.root, width=42, show="*")
-        self.supabase_url = tk.Entry(self.root, width=42)
-        self.anon_key = tk.Entry(self.root, width=42, show="*")
         self.title_box = tk.Entry(self.root, width=42)
-        self.beat_box = tk.Entry(self.root, width=42)
+        self.beat_var = tk.StringVar()
         self.title_box.insert(0, "Nagranie z komputera")
         saved = load_session()
         if saved:
             self.email.insert(0, saved.get("email", ""))
-            self.supabase_url.insert(0, saved.get("supabaseUrl", ""))
-            self.anon_key.insert(0, saved.get("anonKey", ""))
+            self.public_url = saved.get("supabaseUrl", "")
+            self.public_key = saved.get("anonKey", "")
             self.status.set("Jest zapisana sesja tego konta.")
+        self._load_public()
         self._row("E-mail", self.email)
         self._row("Hasło", self.password)
-        self._row("Adres Supabase", self.supabase_url)
-        self._row("Klucz publiczny", self.anon_key)
         self._row("Tytuł", self.title_box)
-        self._row("Id bitu", self.beat_box)
+        labels = [label for _beat_id, label in self.beats] or ["Brak bitu"]
+        if not self.beat_var.get():
+            self.beat_var.set(labels[0])
+        self.beat_menu = tk.OptionMenu(self.root, self.beat_var, *labels)
+        self._row("Bit", self.beat_menu)
         bar = tk.Frame(self.root)
         bar.pack(pady=8)
         tk.Button(bar, text="Zaloguj", command=self.sign_in).pack(side="left", padx=4)
@@ -171,6 +229,34 @@ class RecorderWindow:
         tk.Label(frame, text=label, width=16, anchor="w").pack(side="left")
         widget.pack(side="left")
 
+    def _load_public(self) -> None:
+        try:
+            payload = load_bootstrap()
+            self.public_url = str(payload["supabaseUrl"])
+            self.public_key = str(payload["anonKey"])
+            raw = payload.get("beats")
+            self.beats = []
+            if isinstance(raw, list):
+                for beat in raw:
+                    if isinstance(beat, dict) and beat.get("id") and beat.get("title"):
+                        bpm = beat.get("bpm")
+                        label = str(beat["title"])
+                        if isinstance(bpm, int) and bpm > 0:
+                            label = f"{label} ({bpm} BPM)"
+                        self.beats.append((str(beat["id"]), label))
+            if self.beats:
+                self.beat_var.set(self.beats[0][1])
+                self.status.set("Wybierz bit, zaloguj się i nagraj.")
+        except Exception as error:
+            self.status.set(str(error))
+
+    def selected_beat_id(self) -> str:
+        label = self.beat_var.get()
+        for beat_id, beat_label in self.beats:
+            if beat_label == label:
+                return beat_id
+        raise RuntimeError("Najpierw wybierz bit.")
+
     def token(self) -> str:
         saved = load_session()
         token = saved.get("accessToken") if saved else None
@@ -180,15 +266,17 @@ class RecorderWindow:
 
     def sign_in(self) -> None:
         try:
+            if not self.public_url or not self.public_key:
+                self._load_public()
             grant = supabase_password_grant(
-                self.supabase_url.get().strip(),
-                self.anon_key.get().strip(),
+                self.public_url,
+                self.public_key,
                 self.email.get().strip(),
                 self.password.get(),
             )
             save_session(
-                self.supabase_url.get().strip(),
-                self.anon_key.get().strip(),
+                self.public_url,
+                self.public_key,
                 self.email.get().strip(),
                 grant,
             )
@@ -199,35 +287,38 @@ class RecorderWindow:
 
     def arm(self) -> None:
         try:
-            self.capture_rate = open_mic()
-            mci(f"record {ALIAS}")
+            if self.capture:
+                stop_capture(self.capture)
+            device = audio_devices(ffmpeg_exe())[0]
+            self.capture = start_capture(self.wav_path, device)
             self.recording = True
             self.status.set("Nagrywam z mikrofonu. Stop wyśle WAV na konto.")
         except Exception as error:
             self.recording = False
-            close_alias()
+            self.capture = None
             self.status.set(str(error))
 
     def stop_and_send(self) -> None:
         try:
-            if not self.recording:
+            if not self.recording or not self.capture:
                 raise RuntimeError("Najpierw naciśnij Nagraj.")
-            mci(f"stop {ALIAS}")
-            self.wav_path.parent.mkdir(parents=True, exist_ok=True)
-            mci(f'save {ALIAS} "{self.wav_path}"')
-            close_alias()
+            stop_capture(self.capture)
+            self.capture = None
             self.recording = False
-            normalize_saved_wav(self.wav_path, self.capture_rate)
+            if not self.wav_path.exists() or self.wav_path.stat().st_size < 1000:
+                raise RuntimeError("Nagranie jest puste.")
             project = upload_vocal(
                 SiteClient(SITE, self.token()),
                 title=self.title_box.get().strip(),
-                beat_id=self.beat_box.get().strip(),
+                beat_id=self.selected_beat_id(),
                 wav_path=self.wav_path,
             )
             self.status.set(f"Projekt jest na koncie. Otwórz go na stronie. Id: {project}")
         except Exception as error:
             self.recording = False
-            close_alias()
+            if self.capture:
+                stop_capture(self.capture)
+                self.capture = None
             self.status.set(str(error))
 
     def run(self) -> None:
@@ -245,6 +336,8 @@ if __name__ == "__main__":
     if "--self-test" in sys.argv:
         self_test_wav_roundtrip()
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
+        record_seconds(target, 0.4)
+        target.unlink(missing_ok=True)
         print("recorder self-test ok")
     else:
         # Keep the WAV writer available for a silent tone when the mic is closed.
