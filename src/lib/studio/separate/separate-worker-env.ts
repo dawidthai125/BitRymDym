@@ -37,6 +37,14 @@ export function demucsStemFile(outdir: string, inputBase: string, stem: StemName
   return path.join(outdir, "htdemucs", inputBase, `${stem}.wav`);
 }
 
-export function separateObjectKey(ownerId: string, jobId: string, stem: StemName): string {
-  return `separate/${ownerId}/${jobId}/${stem}.wav`;
+export function separateObjectKey(ownerId: string, jobId: string, stem: StemName, ext: "wav" | "flac" = "wav"): string {
+  return `separate/${ownerId}/${jobId}/${stem}.${ext}`;
+}
+
+/** Extension of the project audio object. Never a path. */
+export function separateSourceExt(key: string): string {
+  const base = key.split("/").pop() ?? "";
+  const match = /\.([a-z0-9]{1,8})$/i.exec(base);
+  const ext = match?.[1]?.toLowerCase() ?? "bin";
+  return /^[a-z0-9]+$/.test(ext) ? ext : "bin";
 }

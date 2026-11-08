@@ -80,16 +80,61 @@ export async function prepareClipNoiseUpload(p: { ownerId: string; projectId: st
   return { ok: true as const, jobId, bucket: BUCKET, path: key, token: data.token };
 }
 
+async function listedSize(key: string): Promise<number | null> {
+  const slash = key.lastIndexOf("/");
+  if (slash <= 0) return null;
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.storage.from(BUCKET).list(key.slice(0, slash), { search: key.slice(slash + 1), limit: 10 });
+  if (error || !data) return null;
+  const hit = data.find((item) => item.name === key.slice(slash + 1));
+  const size = (hit?.metadata as { size?: unknown } | undefined)?.size;
+  const n = typeof size === "number" ? size : Number(size);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+async function readPrefix(response: Response, max: number): Promise<Uint8Array> {
+  if (!response.body) {
+    const all = new Uint8Array(await response.arrayBuffer());
+    return all.subarray(0, max);
+  }
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let got = 0;
+  while (got < max) {
+    const step = await reader.read();
+    if (step.done || !step.value) break;
+    chunks.push(step.value);
+    got += step.value.byteLength;
+  }
+  await reader.cancel().catch(() => undefined);
+  const out = new Uint8Array(Math.min(max, got));
+  let offset = 0;
+  for (const chunk of chunks) {
+    const take = Math.min(chunk.byteLength, out.length - offset);
+    out.set(chunk.subarray(0, take), offset);
+    offset += take;
+    if (offset >= out.length) break;
+  }
+  return out;
+}
+
 async function objectHead(key: string): Promise<{ bytes: Uint8Array; total: number } | null> {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.storage.from(BUCKET).createSignedUrl(key, 60);
   if (error || !data?.signedUrl) return null;
-  const response = await fetch(data.signedUrl, { headers: { Range: "bytes=0-4095" } });
+  const response = await fetch(data.signedUrl, { headers: { Range: "bytes=0-127" } });
   if (!response.ok && response.status !== 206) return null;
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const bytes = await readPrefix(response, 128);
   const range = response.headers.get("content-range");
   const matched = range ? /\/(\d+)\s*$/.exec(range) : null;
-  const total = matched ? Number(matched[1]) : Number(response.headers.get("content-length") ?? bytes.byteLength);
+  const headerTotal = matched
+    ? Number(matched[1])
+    : response.status === 200
+      ? Number(response.headers.get("content-length"))
+      : Number.NaN;
+  const listed = await listedSize(key);
+  const total = listed ?? (Number.isFinite(headerTotal) ? headerTotal : Number.NaN);
+  if (!Number.isFinite(total)) return null;
   return { bytes, total };
 }
 

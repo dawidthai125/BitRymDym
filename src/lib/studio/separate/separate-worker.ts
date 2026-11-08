@@ -5,12 +5,14 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { resolveFfmpegBin, runCapture } from "@/lib/audio/native-ffmpeg";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import {
   demucsStemFile,
   SEPARATE_MAX_BYTES,
   separateObjectKey,
+  separateSourceExt,
   STEM_NAMES,
   type SeparatorWorkerConfig,
   type StemName,
@@ -45,6 +47,26 @@ async function complete(cfg: RunConfig, jobId: string, status: "succeeded" | "fa
   if (error) throw new Error(`complete_failed:${error.code ?? "?"}`);
 }
 
+/** Keep a Demucs wav when it fits the bucket. Otherwise store 16-bit FLAC. */
+async function packStem(
+  cfg: RunConfig,
+  dir: string,
+  name: StemName,
+  wavPath: string,
+): Promise<{ file: string; ext: "wav" | "flac"; contentType: string }> {
+  const info = await stat(wavPath);
+  if (info.size <= SEPARATE_MAX_BYTES) return { file: wavPath, ext: "wav", contentType: "audio/wav" };
+  const flac = path.join(dir, `${name}.flac`);
+  await runCapture(
+    resolveFfmpegBin(),
+    ["-hide_banner", "-loglevel", "error", "-y", "-i", wavPath, "-c:a", "flac", "-sample_fmt", "s16", flac],
+    { timeoutMs: Math.min(cfg.timeoutMs, 180_000) },
+  );
+  const packed = await stat(flac);
+  if (packed.size <= 44 || packed.size > SEPARATE_MAX_BYTES) throw new Error("too_large");
+  return { file: flac, ext: "flac", contentType: "audio/flac" };
+}
+
 function runScript(cfg: RunConfig, src: string, outdir: string): Promise<number> {
   return new Promise((resolve, reject) => {
     const child = spawn(cfg.python, [cfg.scriptPath, src, outdir], {
@@ -77,19 +99,29 @@ export async function runSeparateJob(cfg: RunConfig, job: ClaimedSeparateJob): P
     const admin = createSupabaseAdminClient();
     const { data: blob, error } = await admin.storage.from(job.source_bucket).download(job.source_key);
     if (error || !blob) throw new Error("input_missing");
+    const raw = path.join(dir, `input.${separateSourceExt(job.source_key)}`);
     const src = path.join(dir, "source.wav");
     const outdir = path.join(dir, "out");
-    await writeFile(src, Buffer.from(await blob.arrayBuffer()));
+    await writeFile(raw, Buffer.from(await blob.arrayBuffer()));
+    await runCapture(
+      resolveFfmpegBin(),
+      ["-hide_banner", "-loglevel", "error", "-y", "-i", raw, "-vn", "-ar", "44100", "-ac", "2", "-c:a", "pcm_s16le", src],
+      { timeoutMs: Math.min(cfg.timeoutMs, 180_000) },
+    );
     const code = await runScript(cfg, src, outdir);
     if (code === 3) throw new Error("separator_unconfigured");
     if (code !== 0) throw new Error("demucs_failed");
     const stems: Record<string, string> = {};
     for (const name of STEM_NAMES) {
-      const file = demucsStemFile(outdir, "source", name);
-      const info = await stat(file).catch(() => null);
-      if (!info || info.size <= 44 || info.size > SEPARATE_MAX_BYTES) throw new Error(info && info.size > SEPARATE_MAX_BYTES ? "too_large" : "stems_missing");
-      const key = separateObjectKey(job.owner_id, job.id, name as StemName);
-      const { error: upErr } = await admin.storage.from(BUCKET).upload(key, await readFile(file), { contentType: "audio/wav", upsert: true });
+      const produced = demucsStemFile(outdir, "source", name);
+      const info = await stat(produced).catch(() => null);
+      if (!info || info.size <= 44) throw new Error("stems_missing");
+      const packed = await packStem(cfg, dir, name, produced);
+      const key = separateObjectKey(job.owner_id, job.id, name, packed.ext);
+      const { error: upErr } = await admin.storage.from(BUCKET).upload(key, await readFile(packed.file), {
+        contentType: packed.contentType,
+        upsert: true,
+      });
       if (upErr) throw new Error("upload_failed");
       uploaded.push(key);
       stems[name] = key;
@@ -97,7 +129,9 @@ export async function runSeparateJob(cfg: RunConfig, job: ClaimedSeparateJob): P
     await complete(cfg, job.id, "succeeded", stems, null);
     return "succeeded";
   } catch (error) {
-    const code = error instanceof Error ? error.message.slice(0, 60) : "unknown";
+    const raw = error instanceof Error ? error.message : "unknown";
+    const known = ["bad_job", "bad_bucket", "bad_key", "input_missing", "separator_unconfigured", "demucs_failed", "stems_missing", "too_large", "upload_failed", "timeout"];
+    const code = known.includes(raw) ? raw : "worker_failed";
     if (uploaded.length > 0) {
       await createSupabaseAdminClient().storage.from(BUCKET).remove(uploaded).catch(() => undefined);
     }

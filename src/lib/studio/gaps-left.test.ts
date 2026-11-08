@@ -4,8 +4,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { measureBeatWindow } from "@/lib/studio/analysis/measure";
+import { countsTowardCleanupQuota } from "@/lib/studio/cleanup/cleanup-core";
 import { decideNoiseSave } from "@/lib/studio/noise-decision";
-import { decideSeparatorWorker, demucsStemFile, separateObjectKey } from "@/lib/studio/separate/separate-worker-env";
+import { decideSeparatorWorker, demucsStemFile, separateObjectKey, separateSourceExt } from "@/lib/studio/separate/separate-worker-env";
 import { applyNoiseProfile, noiseProfileFromSelection } from "@/lib/studio/studio-clip-noise";
 import { encodeMonoWav16, readCanonicalWavInfo } from "@/lib/studio/studio-wav-mono";
 
@@ -58,6 +59,16 @@ describe("remaining studio gaps", () => {
     expect(run).toMatchObject({ action: "run", python: "/opt/demucs/bin/python", workerRef: "studio-separate-7" });
     expect(demucsStemFile("/tmp/out", "source", "vocals")).toBe(path.join("/tmp/out", "htdemucs", "source", "vocals.wav"));
     expect(separateObjectKey("owner", "job", "bass")).toBe("separate/owner/job/bass.wav");
+    expect(separateObjectKey("owner", "job", "bass", "flac")).toBe("separate/owner/job/bass.flac");
+    expect(separateSourceExt("beats/a/master.MP3")).toBe("mp3");
+    expect(separateSourceExt("no-ext")).toBe("bin");
+    expect(separateSourceExt("../secret.wav")).toBe("wav");
+  });
+
+  it("a saved noise profile does not spend the vocal cleanup quota", () => {
+    expect(countsTowardCleanupQuota({ source: "clip_noise" })).toBe(false);
+    expect(countsTowardCleanupQuota({ noise: 0.6, reverb: 0.4 })).toBe(true);
+    expect(countsTowardCleanupQuota(null)).toBe(true);
   });
 
   it("separate migration lets only service_role write", () => {
@@ -66,5 +77,8 @@ describe("remaining studio gaps", () => {
     expect(sql).toMatch(/grant execute on function public\.enqueue_studio_separate_job\(uuid, uuid, text, text, text\) to service_role/);
     expect(sql).not.toMatch(/grant execute on function public\.enqueue_studio_separate_job[\s\S]*to authenticated/);
     expect(sql).toMatch(/studio_separate_jobs_active_uq/);
+    const quota = readFileSync(path.join(process.cwd(), "supabase/migrations/20261108160000_studio_cleanup_quota_ignores_clip_noise.sql"), "utf8");
+    expect(quota).toMatch(/clip_noise/);
+    expect(quota).toMatch(/revoke all on function public\.enqueue_studio_cleanup_job/);
   });
 });

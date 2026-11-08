@@ -27,19 +27,29 @@ export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
   const [note, setNote] = useState<string | null>(null);
   const [job, setJob] = useState<Job | null>(null);
 
+  const waiting = job?.status === "queued" || job?.status === "running";
+
   useEffect(() => {
     if (!projectId) return;
     let live = true;
-    void fetch(`/api/studio/separate?projectId=${encodeURIComponent(projectId)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json: { job?: Job | null } | null) => {
-        if (live) setJob(json?.job ?? null);
-      })
-      .catch(() => undefined);
-    return () => {
+    const load = () => {
+      void fetch(`/api/studio/separate?projectId=${encodeURIComponent(projectId)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json: { job?: Job | null } | null) => {
+          if (live) setJob(json?.job ?? null);
+        })
+        .catch(() => undefined);
+    };
+    load();
+    if (!waiting) return () => {
       live = false;
     };
-  }, [projectId]);
+    const timer = window.setInterval(load, 4000);
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+    };
+  }, [projectId, waiting]);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -54,7 +64,6 @@ export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string; accepted?: boolean };
       if (res.status === 202 && json.accepted === true) {
-        setNote(QUEUED);
         setJob({ id: "pending", status: "queued", errorCode: null, stems: null });
       } else if (res.status === 409) {
         setNote("To zgłoszenie już czeka albo jest w trakcie.");

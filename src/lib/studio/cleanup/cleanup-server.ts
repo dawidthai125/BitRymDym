@@ -11,7 +11,7 @@ import type { AuthorizedRenderSourceRef } from "@/lib/audio/render-source-core";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
-import { clampCleanupSettings, type CleanupMetrics, type CleanupSettings } from "./cleanup-core";
+import { clampCleanupSettings, countsTowardCleanupQuota, type CleanupMetrics, type CleanupSettings } from "./cleanup-core";
 
 const BUCKET = "audio-artifacts";
 const SIGNED_SECONDS = 600;
@@ -63,10 +63,12 @@ export async function listCleanupJobs(p: { ownerId: string; projectId: string; t
   const { data, error } = await admin.from("studio_cleanup_jobs").select(COLS).eq("owner_id", p.ownerId).eq("project_id", p.projectId)
     .order("created_at", { ascending: false }).limit(50);
   check(error);
-  const { count, error: cErr } = await admin.from("studio_cleanup_jobs").select("id", { count: "exact", head: true })
+  const { data: today, error: cErr } = await admin.from("studio_cleanup_jobs").select("settings")
     .eq("owner_id", p.ownerId).gte("created_at", warsawDayStartIso()).not("status", "in", "(failed,cancelled)");
   check(cErr);
-  return { available: true as const, perDay, usedToday: count ?? 0, jobs: (data ?? []).map(view) };
+  const usedToday = (today ?? []).filter((row) => countsTowardCleanupQuota((row as { settings: unknown }).settings)).length;
+  const jobs = (data ?? []).filter((row) => countsTowardCleanupQuota((row as { settings: unknown }).settings)).map((row) => view(row as Record<string, unknown>));
+  return { available: true as const, perDay, usedToday, jobs };
 }
 
 export type EnqueueCleanupResult = { ok: true; job: CleanupJobView } | { ok: false; error: "not_found" | "take_unavailable" | "in_progress" | "daily_limit" };

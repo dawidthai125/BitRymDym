@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { StudioClipInspect } from "@/components/studio/studio-clip-inspect";
+import { emitStudioTakeSourceChanged } from "@/lib/studio/cleanup/cleanup-events";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { applyNoiseProfile, noiseProfileFromSelection } from "@/lib/studio/studio-clip-noise";
 import { encodeMonoWav16 } from "@/lib/studio/studio-wav-mono";
@@ -153,6 +154,7 @@ function StudioClipSpectrogramBody({
         setHeard(commit.error === "truncated" ? "Plik był krótszy niż nagranie. Nie podmieniam go." : "Nie udało się zapisać czyszczenia.");
         return;
       }
+      emitStudioTakeSourceChanged(takeId);
       setHeard("Zapisane. Odtwarzanie użyje oczyszczonego nagrania w pełnej długości.");
     } catch {
       setHeard("Nie udało się zapisać czyszczenia.");

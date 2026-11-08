@@ -29,6 +29,12 @@ const T60 = 0.5;
 const TD_SECONDS = 0.05;
 const EPS = 1e-12;
 
+/** Spectrogram saves reuse the cleanup row but must not spend the vocal-cleanup day quota. */
+export function countsTowardCleanupQuota(settings: unknown): boolean {
+  if (!settings || typeof settings !== "object") return true;
+  return (settings as { source?: unknown }).source !== "clip_noise";
+}
+
 export function clampCleanupSettings(raw: unknown): CleanupSettings {
   const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const c = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : d);
