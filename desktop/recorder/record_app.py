@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tkinter as tk
+import tkinter.font as tkfont
 import webbrowser
 from datetime import datetime
 from tkinter import filedialog
@@ -26,8 +27,8 @@ from desk import max_take_seconds, read_prefs, studio_url, tail_peak_db, wav_sec
 from own_fx import FX, build_chain, display_tier, limits_from_usage
 from record_wav import write_pcm16_wav
 
-# tokens.css dark tape deck. Fonts are the site fallbacks installed on Windows:
-# Georgia for Source Serif 4, Arial Narrow for Big Shoulders, Consolas for IBM Plex Mono.
+# tokens.css dark tape deck. Families match src/app/layout.tsx.
+# ExtraBold is the poster face (Big Shoulders 800). Fallbacks are the site stack.
 PAPER = "#0e0c0a"
 PANEL = "#17130f"
 RACK = "#211b15"
@@ -46,6 +47,19 @@ FONT_POSTER = "Arial Narrow"
 FONT_DISPLAY = "Georgia"
 FONT_UI = "Segoe UI"
 FONT_META = "Consolas"
+
+
+def bind_site_fonts(root: tk.Misc) -> None:
+    global FONT_POSTER, FONT_DISPLAY, FONT_UI, FONT_META
+    names = set(tkfont.families(root))
+
+    def pick(name: str, fallback: str) -> str:
+        return name if name in names else fallback
+
+    FONT_DISPLAY = pick("Source Serif 4", "Georgia")
+    FONT_UI = pick("Schibsted Grotesk", "Segoe UI")
+    FONT_META = pick("IBM Plex Mono", "Consolas")
+    FONT_POSTER = pick("Big Shoulders ExtraBold", "Arial Narrow")
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
 PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json"
@@ -254,6 +268,7 @@ def load_session() -> dict[str, str] | None:
 class RecorderWindow:
     def __init__(self) -> None:
         self.root = tk.Tk()
+        bind_site_fonts(self.root)
         if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
             self.root.withdraw()
         self.root.title("BitRymDym")
