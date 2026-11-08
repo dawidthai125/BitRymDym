@@ -15,6 +15,19 @@ from typing import Any
 SITE = "https://www.bitrymdym.pl"
 
 
+def signed_put_headers(upload_token: str) -> dict[str, str]:
+    """Storage wants the signed upload token, not the account access token."""
+    headers = {"Content-Type": "audio/wav", "x-upsert": "false"}
+    token = upload_token.strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def is_unauthorized(error: BaseException) -> bool:
+    return "-> 401" in str(error)
+
+
 def vocal_track_id(document: dict[str, Any]) -> str:
     tracks = document.get("tracks")
     if not isinstance(tracks, list):
@@ -86,12 +99,12 @@ class SiteClient:
             raise RuntimeError("Strona nie oddała adresu nagrania.")
         return payload
 
-    def put_wav(self, signed_url: str, wav: bytes) -> None:
+    def put_wav(self, signed_url: str, wav: bytes, upload_token: str) -> None:
         request = urllib.request.Request(
             signed_url,
             data=wav,
             method="PUT",
-            headers={"Content-Type": "audio/wav", "Authorization": f"Bearer {self.access_token}"},
+            headers=signed_put_headers(upload_token),
         )
         try:
             with urllib.request.urlopen(request, timeout=120) as response:
@@ -132,7 +145,7 @@ def upload_vocal(
         raise ValueError("Plik WAV jest pusty.")
     document = client.create_project(title, beat_id)
     session = client.open_take(beat_id, len(wav))
-    client.put_wav(str(session["signedUrl"]), wav)
+    client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
     take_id = str(session["takeId"])
     client.finalize(take_id)
     duration_ms = max(1, int((len(wav) - 44) / 2 / 48_000 * 1000))
@@ -158,3 +171,25 @@ def upload_vocal(
         except RuntimeError as error:
             raise RuntimeError(f"Wokal jest na koncie ({pid}). Efekty nie weszły: {error}") from None
     return pid
+
+
+def self_test() -> None:
+    headers = signed_put_headers("signed-token")
+    if headers.get("Authorization") != "Bearer signed-token":
+        raise SystemExit("token wrzutki")
+    if headers.get("Content-Type") != "audio/wav" or headers.get("x-upsert") != "false":
+        raise SystemExit("nagłówki wrzutki")
+    if "Authorization" in signed_put_headers("  "):
+        raise SystemExit("pusty token wrzutki")
+    user = "aaa.bbb.ccc"
+    if user in headers["Authorization"]:
+        raise SystemExit("token konta na wrzutce")
+    if not is_unauthorized(RuntimeError("GET /api/account/plan-usage -> 401 no")):
+        raise SystemExit("401")
+    if is_unauthorized(RuntimeError("GET /api/account/plan-usage -> 403 no")):
+        raise SystemExit("403")
+    print("upload self-test ok")
+
+
+if __name__ == "__main__":
+    self_test()

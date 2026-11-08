@@ -78,6 +78,18 @@ def read_prefs(path: Path) -> dict[str, Any]:
     return out
 
 
+def list_saved_takes(folder: Path, limit: int = 12) -> list[Path]:
+    if limit < 1 or not folder.is_dir():
+        return []
+    found = [
+        path
+        for path in folder.glob("ujecie-*.wav")
+        if path.is_file() and path.stat().st_size >= 1000
+    ]
+    found.sort(key=lambda path: path.stat().st_mtime)
+    return found[-limit:]
+
+
 def write_prefs(path: Path, prefs: dict[str, Any]) -> None:
     clean = {key: prefs[key] for key in PREF_KEYS if key in prefs}
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -108,6 +120,19 @@ def self_test() -> None:
     prefs_path.unlink(missing_ok=True)
     if studio_url("https://www.bitrymdym.pl", "p1") != "https://www.bitrymdym.pl/studio/p/p1":
         raise SystemExit("adres studia")
+    takes = folder / "takes"
+    takes.mkdir(parents=True, exist_ok=True)
+    small = takes / "ujecie-small.wav"
+    big = takes / "ujecie-big.wav"
+    other = takes / "not-a-take.wav"
+    small.write_bytes(b"x" * 20)
+    big.write_bytes(b"x" * 1000)
+    other.write_bytes(b"x" * 1000)
+    saved = list_saved_takes(takes, limit=12)
+    if saved != [big]:
+        raise SystemExit("lista ujęć")
+    for path in (small, big, other, prefs_path):
+        path.unlink(missing_ok=True)
     print("desk self-test ok")
 
 

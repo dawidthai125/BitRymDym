@@ -22,8 +22,16 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from account_upload import SITE, upload_vocal, SiteClient
-from desk import max_take_seconds, read_prefs, studio_url, tail_peak_db, wav_seconds, write_prefs
+from account_upload import SITE, is_unauthorized, upload_vocal, SiteClient
+from desk import (
+    list_saved_takes,
+    max_take_seconds,
+    read_prefs,
+    studio_url,
+    tail_peak_db,
+    wav_seconds,
+    write_prefs,
+)
 from own_fx import FX, build_chain, display_tier, limits_from_usage
 from record_wav import write_pcm16_wav
 
@@ -60,6 +68,21 @@ def bind_site_fonts(root: tk.Misc) -> None:
     FONT_UI = pick("Schibsted Grotesk", "Segoe UI")
     FONT_META = pick("IBM Plex Mono", "Consolas")
     FONT_POSTER = pick("Big Shoulders ExtraBold", "Arial Narrow")
+
+
+def load_user_fonts() -> None:
+    if os.name != "nt":
+        return
+    folder = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "Windows" / "Fonts"
+    if not folder.is_dir():
+        return
+    import ctypes
+
+    add = ctypes.windll.gdi32.AddFontResourceW
+    for path in folder.glob("*.ttf"):
+        if path.name.startswith(("SourceSerif4", "SchibstedGrotesk", "BigShoulders", "IBMPlexMono")):
+            add(str(path))
+
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
 PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json"
@@ -265,19 +288,41 @@ def load_session() -> dict[str, str] | None:
     return {str(key): str(value) for key, value in raw.items()}
 
 
+def supabase_refresh_grant(url: str, anon_key: str, refresh_token: str) -> dict[str, str]:
+    body = json.dumps({"refresh_token": refresh_token}).encode("utf-8")
+    request = urllib.request.Request(
+        f"{url.rstrip('/')}/auth/v1/token?grant_type=refresh_token",
+        data=body,
+        method="POST",
+        headers={"apikey": anon_key, "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.") from error
+    token = payload.get("access_token")
+    if not isinstance(token, str) or token.count(".") != 2:
+        raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.")
+    return {"access_token": token, "refresh_token": str(payload.get("refresh_token") or refresh_token)}
+
+
 class RecorderWindow:
     def __init__(self) -> None:
+        load_user_fonts()
         self.root = tk.Tk()
         bind_site_fonts(self.root)
         if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
             self.root.withdraw()
         self.root.title("BitRymDym")
-        self.root.geometry("760x980")
-        self.root.minsize(720, 860)
+        self.root.geometry("760x720")
+        self.root.minsize(640, 520)
         self.root.configure(bg=PAPER)
         self.recording = False
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
+        self._build_scroll()
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.local_beat: Path | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
         self.takes: list[Path] = []
@@ -317,13 +362,45 @@ class RecorderWindow:
         self._paint_lamp()
         self._draw_meter(-96.0)
         self._load_prefs()
+        self._load_saved_takes()
         self._read_plan()
         if self.status_boot:
             self.status.set(self.status_boot)
 
+    def _build_scroll(self) -> None:
+        self.canvas = tk.Canvas(self.root, bg=PAPER, highlightthickness=0)
+        self.scrollbar = tk.Scrollbar(self.root, command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.page = tk.Frame(self.canvas, bg=PAPER)
+        self.page_id = self.canvas.create_window((0, 0), window=self.page, anchor="nw")
+        self.page.bind("<Configure>", self._sync_scroll)
+        self.canvas.bind("<Configure>", self._fit_page)
+        self.canvas.bind("<MouseWheel>", self._on_wheel)
+        self.page.bind("<MouseWheel>", self._on_wheel)
+
+    def _sync_scroll(self, _event: object = None) -> None:
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _fit_page(self, event: tk.Event) -> None:
+        self.canvas.itemconfigure(self.page_id, width=event.width)
+
+    def _on_wheel(self, event: tk.Event) -> None:
+        self.canvas.yview_scroll(int(-event.delta / 120), "units")
+
+    def _on_close(self) -> None:
+        self._cancel_tick()
+        self._stop_monitor()
+        if self.capture:
+            stop_capture(self.capture)
+            self.capture = None
+        self.recording = False
+        self.root.destroy()
+
     def _build_deck(self) -> None:
         tk.Label(
-            self.root,
+            self.page,
             text="NAGRYWARKA",
             bg=PAPER,
             fg=MUTE,
@@ -331,18 +408,18 @@ class RecorderWindow:
             anchor="w",
         ).pack(fill="x", padx=18, pady=(12, 0))
         tk.Label(
-            self.root,
+            self.page,
             text="BitRymDym",
             bg=PAPER,
             fg=INK,
             font=(FONT_DISPLAY, 28, "italic"),
             anchor="w",
         ).pack(fill="x", padx=18)
-        rule = tk.Frame(self.root, bg=AMBER, height=3)
+        rule = tk.Frame(self.page, bg=AMBER, height=3)
         rule.pack_propagate(False)
         rule.pack(fill="x", padx=18, pady=(2, 8))
         deck = tk.Frame(
-            self.root,
+            self.page,
             bg=PANEL,
             highlightbackground=LINE_STRONG,
             highlightthickness=1,
@@ -498,7 +575,7 @@ class RecorderWindow:
         self.lamp_text.configure(text="NAGRYWA" if self.recording else "STOP")
 
     def _build_account(self, saved: dict[str, str] | None) -> None:
-        block = tk.Frame(self.root, bg=PAPER)
+        block = tk.Frame(self.page, bg=PAPER)
         block.pack(fill="x", padx=18, pady=(10, 0))
         tk.Label(
             block,
@@ -537,7 +614,7 @@ class RecorderWindow:
 
     def _build_effects(self) -> None:
         tk.Label(
-            self.root,
+            self.page,
             textvariable=self.plan_text,
             bg=PAPER,
             fg=SOFT,
@@ -547,14 +624,14 @@ class RecorderWindow:
             justify="left",
         ).pack(fill="x", padx=18, pady=(8, 2))
         tk.Label(
-            self.root,
+            self.page,
             text="EFEKTY  ·  SŁYCHAĆ JE W STUDIU. TU NIE MA WTYCZEK VST.",
             bg=PAPER,
             fg=MUTE,
             font=(FONT_META, 9),
             anchor="w",
         ).pack(fill="x", padx=18)
-        rack = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
+        rack = tk.Frame(self.page, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
         rack.pack(fill="x", padx=18, pady=6)
         columns = [tk.Frame(rack, bg=PANEL), tk.Frame(rack, bg=PANEL)]
         columns[0].pack(side="left", fill="both", expand=True, padx=8, pady=6)
@@ -577,16 +654,20 @@ class RecorderWindow:
             ).pack(fill="x", anchor="w")
 
     def _build_transport(self) -> None:
-        bar = tk.Frame(self.root, bg=PAPER)
-        bar.pack(pady=8)
+        bar = tk.Frame(self.page, bg=PAPER)
+        bar.pack(pady=(8, 2))
         self._button(bar, "Zaloguj", self.sign_in, AMBER, ON_AMBER).pack(side="left", padx=4)
-        self._button(bar, "Stop", self.stop_take, RACK, INK).pack(side="left", padx=4)
-        self._button(bar, "Wyślij", self.send_selected, AMBER, ON_AMBER).pack(side="left", padx=4)
-        self._button(bar, "Stop i wyślij", self.stop_and_send, AMBER, ON_AMBER).pack(side="left", padx=4)
-        self.open_button = self._button(bar, "Studio", self.open_studio, RACK, INK)
+        self._button(bar, "Wyloguj", self.sign_out, RACK, INK).pack(side="left", padx=4)
+        self._button(bar, "Odśwież bity", self.reload_beats, RACK, INK).pack(side="left", padx=4)
+        bar2 = tk.Frame(self.page, bg=PAPER)
+        bar2.pack(pady=(2, 8))
+        self._button(bar2, "Stop", self.stop_take, RACK, INK).pack(side="left", padx=4)
+        self._button(bar2, "Wyślij", self.send_selected, AMBER, ON_AMBER).pack(side="left", padx=4)
+        self._button(bar2, "Stop i wyślij", self.stop_and_send, AMBER, ON_AMBER).pack(side="left", padx=4)
+        self.open_button = self._button(bar2, "Studio", self.open_studio, RACK, INK)
         self.open_button.pack(side="left", padx=4)
         self.take_list = tk.Listbox(
-            self.root,
+            self.page,
             height=4,
             bg=RACK,
             fg=INK,
@@ -599,7 +680,7 @@ class RecorderWindow:
         )
         self.take_list.pack(fill="x", padx=18, pady=4)
         tk.Label(
-            self.root,
+            self.page,
             textvariable=self.status,
             wraplength=700,
             justify="left",
@@ -608,7 +689,7 @@ class RecorderWindow:
             font=(FONT_UI, 10),
         ).pack(fill="x", padx=18, pady=8)
         tk.Label(
-            self.root,
+            self.page,
             text="Nuty zostają w studio na stronie. Miks i master też.",
             bg=PAPER,
             fg=SOFT,
@@ -749,7 +830,7 @@ class RecorderWindow:
             self.clock.set("0.0 s / 30 s")
             return
         try:
-            payload = SiteClient(SITE, token).plan_usage()
+            payload = self._client().plan_usage()
             tier, cap, side = limits_from_usage(payload)
         except Exception as error:
             self.tier = "FREE"
@@ -777,6 +858,66 @@ class RecorderWindow:
         if not token:
             raise RuntimeError("Najpierw się zaloguj.")
         return token
+
+    def _client(self) -> SiteClient:
+        client = SiteClient(SITE, self.token())
+        try:
+            client.plan_usage()
+        except RuntimeError as error:
+            if not is_unauthorized(error):
+                raise
+            client = SiteClient(SITE, self._refresh())
+            client.plan_usage()
+        return client
+
+    def _refresh(self) -> str:
+        saved = load_session()
+        refresh = saved.get("refreshToken") if saved else ""
+        if not saved or not refresh or not saved.get("supabaseUrl") or not saved.get("anonKey"):
+            raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.")
+        grant = supabase_refresh_grant(saved["supabaseUrl"], saved["anonKey"], refresh)
+        save_session(saved["supabaseUrl"], saved["anonKey"], saved.get("email", ""), grant)
+        return grant["access_token"]
+
+    def _fill_menu(self, menu: tk.OptionMenu, variable: tk.StringVar, labels: list[str]) -> None:
+        choices = menu["menu"]
+        choices.delete(0, "end")
+        for label in labels:
+            choices.add_command(label=label, command=lambda value=label: variable.set(value))
+        if variable.get() not in labels and labels:
+            variable.set(labels[0])
+
+    def reload_beats(self) -> None:
+        current = self.beat_var.get()
+        self._load_public()
+        labels = [label for _beat_id, label in self.beats] or ["Brak bitu"]
+        if current in labels:
+            self.beat_var.set(current)
+        self._fill_menu(self.beat_menu, self.beat_var, labels)
+        self._sync_cassette()
+        self.status.set(f"Lista bitów: {len(self.beats)}.")
+
+    def sign_out(self) -> None:
+        email = self.email.get().strip()
+        SESSION.parent.mkdir(parents=True, exist_ok=True)
+        SESSION.write_text(
+            json.dumps(
+                {
+                    "supabaseUrl": self.public_url,
+                    "anonKey": self.public_key,
+                    "email": email,
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.tier = "FREE"
+        self.project_id = ""
+        self._read_plan()
+        self.status.set("Wylogowano na tym komputerze.")
+
+    def _load_saved_takes(self) -> None:
+        for path in list_saved_takes(TAKES):
+            self._add_take(path)
 
     def sign_in(self) -> None:
         try:
@@ -852,6 +993,8 @@ class RecorderWindow:
         self._tick_id = self.root.after(200, self._tick)
 
     def _add_take(self, path: Path) -> None:
+        if path in self.takes:
+            return
         self.takes.append(path)
         self.take_list.insert("end", path.name)
         self.take_list.selection_clear(0, "end")
@@ -912,11 +1055,14 @@ class RecorderWindow:
         return self.wav_path
 
     def _upload(self, path: Path) -> None:
+        title = self.title_box.get().strip()
+        if not title:
+            raise RuntimeError("Wpisz tytuł.")
         picked = self.selected_fx()
         chain = build_chain(picked, self.tier)
         project = upload_vocal(
-            SiteClient(SITE, self.token()),
-            title=self.title_box.get().strip(),
+            self._client(),
+            title=title,
             beat_id=self.selected_beat_id(),
             wav_path=path,
             chain=chain,
@@ -932,7 +1078,7 @@ class RecorderWindow:
             self._cancel_tick()
             self._stop_monitor()
             TAKES.mkdir(parents=True, exist_ok=True)
-            stamp = datetime.now().strftime("%H%M%S")
+            stamp = datetime.now().strftime("%H%M%S%f")
             self.wav_path = TAKES / f"ujecie-{stamp}.wav"
             self.capture = start_capture(self.wav_path, self.selected_device())
             if self.local_beat:
