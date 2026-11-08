@@ -652,10 +652,51 @@
       "moderacja": "Moderacja",
       "sample": "Sample",
       "uzytkownicy": "Użytkownicy",
+      "platnosci": "Płatności",
       "politykaNagran": "Polityka nagrań",
       "nowyBit": "Nowy bit",
       "katalog": "Katalog",
       "trybPrac": "Tryb prac"
+    },
+    "adminPaymentsPage": {
+      "tytul": "Historia płatności",
+      "opis": "Zakupy przez PayU. Widać kto kupił, za ile, na jaki okres i kiedy. Godziny są warszawskie.",
+      "blad": "Nie udało się odczytać zakupów.",
+      "pusto": "Jeszcze nikt nie kupił.",
+      "kiedy": "Kiedy",
+      "oplacono": "Opłacono",
+      "kto": "Kto",
+      "co": "Co",
+      "kwota": "Kwota",
+      "okres": "Okres",
+      "status": "Status",
+      "doKiedy": "Dostęp do",
+      "plan": "Plan {tier}",
+      "dodatek": "Mastering z referencją",
+      "nieznane": "Nieznane",
+      "strony": "Strony historii",
+      "nowsze": "Nowsze",
+      "starsze": "Starsze",
+      "pakiet": {
+        "take": "10 nagrań",
+        "master": "5 masterów",
+        "youtube": "Wideo MP4"
+      },
+      "okresy": {
+        "month": "Miesiąc",
+        "year": "Rok",
+        "once": "Jednorazowo"
+      },
+      "statusy": {
+        "pending": "Czeka na wpłatę",
+        "paid": "Opłacone",
+        "failed": "Nieudane"
+      },
+      "nadanie": {
+        "pending": "Plan jeszcze nie nadany",
+        "granted": "Nadane",
+        "skipped": "Pominięte"
+      }
     },
     "adminSamplesPage": {
       "metaTitle": "Sample · Administrator",

@@ -22,7 +22,7 @@
 | OD-01 | Dokładny stack frontendowy | §44 | scaffold aplikacji, player UI | **CLOSED / ACCEPTED** — 2026-09-25 |
 | OD-02 | Dokładny stack backendowy (application server) | §44 | API, walidacja serwerowa | **CLOSED / ACCEPTED** — 2026-09-25 |
 | OD-03 | Architektura infrastruktury Supabase | §5, §9, §44 | Auth, Storage, schemat DB | **CLOSED / ACCEPTED** — 2026-09-25 |
-| OD-04 | Operator płatności | §15, §44 | Faza 4 — Payments | OPEN |
+| OD-04 | Operator płatności | §15, §44 | Faza 4 — Payments | **CLOSED / ACCEPTED** — 2026-11-08 · PayU · checkout na produkcji |
 | OD-05 | Limit pobrań — użytkownik anonimowy | §13 | Download limits | **CLOSED / ACCEPTED** — 2026-09-26 (Phase 1.8A interim) |
 | OD-06 | Limit pobrań — użytkownik zalogowany | §13 | Download limits | **CLOSED / ACCEPTED** — 2026-09-26 (Phase 1.8A interim) |
 | OD-07 | Ceny Premium | §15, §48 | Faza 4 | OPEN |
@@ -191,7 +191,6 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 
 | ID | Temat | Blokuje |
 |----|--------|---------|
-| OD-04 | Operator płatności | Faza 4 |
 | OD-07 | Ceny Premium | Faza 4 |
 | OD-09 | Nazwy poziomów konta | Profile / billing labels |
 | OD-10 | Nazwy głosowania | Faza 2 |
@@ -223,7 +222,7 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 
 **Studio Final Mix — nadal OPEN po ACCEPT OD-SFM-ID-01…04 + OD-SFM-ID-06 + OD-SFM-ID-07:**
 
-- Payment **provider** for 7,99 slot — **OD-04 OPEN** (slot product rules ACCEPTED under OD-SFM-14; multi-AVAILABLE ACCEPTED OD-SFM-ID-03). **Do not close.**
+- Operator płatności planu, dodatku i pakietów to **PayU** (OD-04 **CLOSED** 2026-11-08). Slot 7,99 z tej macierzy miksu nadal nie jest osobnym produktem w checkout. Reguły slotu zostają przy OD-SFM-14.
 - **OD-SFM-ID-05** — Expand `granted_qualities` after plan **upgrade** without new daily/slot? (until CLOSED: **strict snapshot** at FIRST_GRANT). **Do not close.**
 - **OD-SFM-WORKER-ORPHAN-TIMEOUT** — Recovery for process kill / SIGTERM grace exceed / claim CONFLICT orphans left `RUNNING` (**OPEN**; **≠** KIND_OUT reject). **Do not close** without separate Owner GO.
 - **Note (2026-10-16, recovery stage 18):** **OD-SFM-WORKER-KIND-REJECT** implementation is in `main` history @ **`69e50d0`** (ancestor of current tip **`5212933`**, parent **`81c2496`**), including repo migration `20261016120000_sfm_reject_executor_job_kind.sql`. Decision stays open for operational verification. The migration file in Git is not a verified database apply. Live CAS/concurrency **NOT CONFIRMED**. Staging E2E **NOT CONFIRMED**. Runtime flag, poller activity, and Contabo **NOT RE-VERIFIED IN THIS STAGE**. **≠** production-verified close. Dedicated poller commit **`d3c99e3`** remains ancestry, not the current tip.
@@ -235,7 +234,7 @@ Note: **OD-SA-07** (Mix artifacts) ≠ **OD-SA-07-01…16** (backup design) ≠ 
 ## Uwagi implementacyjne (bez zamrażania wartości OPEN)
 
 - Limity pobrań muszą być **konfigurowalne** (`anonymous_daily_download_limit`, `user_daily_download_limit`, `premium_daily_download_limit`) — nie hardcodowane (§13). Wartości startowe Phase 1.8A: **OD-05 = 2**, **OD-06 = 4**, **OD-17 = signed-URL issuance** (CLOSED interim); config SSOT: `src/config/downloads.ts`. Premium limit nadal później.
-- Feature flags płatności startują jako **wyłączone** (§14–15).
+- Feature flags płatności startowały jako wyłączone (§14–15). Od 2026-11-08 produkcja ma włączony checkout PayU (`PLAN_PAYMENTS_AVAILABLE`). Historia zakupów jest w `/admin/platnosci`.
 - **Supabase Auth jest zatwierdzone** (OD-03 CLOSED) — nie traktować już jako „preferencji roboczej”.
 - Signup default: `role = USER`, `account_level = BEGINNER_RAPPER` (**OD-19 CLOSED**).
 - First ADMIN: manual / operator-controlled only — **no** auto first-user admin (**OD-20 CLOSED**).

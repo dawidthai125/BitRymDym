@@ -299,6 +299,6 @@ Nie zwracać raw DB / storage errors użytkownikowi (wzorzec I.17 public failure
 ## 11. Non-goals
 
 - Implementacja SQL w tym pliku.
-- Wybór Stripe/P24/etc. (OD-04).
+- Wybór operatora płatności. Zamknięty osobno: PayU (OD-04, 2026-11-08). Ten kontrakt miksu go nie wdraża.
 - Zmiana AuthZ E3 MIX happy-path poza fail-closed split SFM rows.
 - Client-side „trust me I have grant”.

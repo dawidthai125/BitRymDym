@@ -10,6 +10,17 @@ Otwarte pozycje: [OPEN_DECISIONS.md](./OPEN_DECISIONS.md).
 
 ## Wpisy
 
+### Płatności — operator PayU, checkout włączony
+
+| Pole | Wartość |
+|------|---------|
+| Decision / gate | OD-04 — operator płatności |
+| Status | **CLOSED / ACCEPTED** |
+| Date | 2026-11-08 |
+| Documents | `src/lib/payments/` · `src/app/admin/platnosci/page.tsx` · `docs/ssot/MASTER_SSOT_v0.1.md` §15 |
+
+Owner potwierdził, że płatności na produkcji idą przez PayU. Host to `https://secure.payu.com`. Checkout sprzedaje plan, dodatek masteringu z referencją oraz pakiety. Historia kto, za ile, na jaki okres i kiedy jest w panelu administratora pod `/admin/platnosci`.
+
 ### Plany — Gold 45 dni przechowywania, Bronze 2 ścieżki (bez Bitu)
 
 | Pole | Wartość |

@@ -424,7 +424,8 @@ V1 IMPLEMENTATION             = COMPLETE · PRODUCTION VERIFIED — GREEN · CLO
 CREATOR PROGRESS W2-B         = PRODUCTION VERIFIED WITH NON-BLOCKING FINDING @ d86b4df
   P2-2 / P2-3 / P2-4 (W2-B debt) = OPEN
   Mix / Render live           = DEFERRED
-OD-04 / OD-07                 = OPEN (payments / Premium prices)
+OD-04                         = CLOSED 2026-11-08 — PayU, checkout na produkcji
+OD-07                         = ceny używane w checkout są w plan-policy; rejestr decyzji nadal ma OD-07 osobno
 FAR-01                        = NOT CLOSED (ops contaminated soak — not product NEXT)
 ```
 

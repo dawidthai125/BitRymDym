@@ -118,7 +118,7 @@ OD-SFM-ID-01…04 ACCEPTED (docs)
 | S07 | Webhook duplikat | jedna row payment_ref | D |
 | S08 | Refund przed upsert | fail-closed strategia z RPC contract | D |
 | S09 | Parallel consume jednego AVAILABLE | jeden winner | D |
-| S10 | Real Stripe/P24 | **OUT** aż OD-04 CLOSED | — |
+| S10 | Realna wpłata PayU w tej macierzy miksu | **OUT** — checkout PayU jest osobno, OD-04 CLOSED 2026-11-08 | — |
 | S11 | Dwa AVAILABLE tego samego dnia (OD-SFM-ID-03) | obie rows legal; claim zużywa jedną | I D |
 | S12 | Trzy AVAILABLE + dwa claimy | dwa CONSUMED + jeden AVAILABLE left | D |
 | S13 | Double-consume same slot id | drugi DENY / no-op | D |

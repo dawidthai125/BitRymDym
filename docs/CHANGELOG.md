@@ -6,6 +6,12 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-08 — PayU jest operatorem płatności, historia zakupów w panelu
+
+**Status:** decyzja Ownera · checkout PayU był już na produkcji · historia `/admin/platnosci` dochodzi w tym wpisie · **≠ Product GREEN**
+**Decyzja:** OD-04 zamknięte. Operator to PayU. Dokumenty żywe nie wskazują już innego operatora.
+**Kod:** odczyt `payment_orders` tylko dla administratora z `payments.view`.
+
 ## 2026-10-29 — Mobile Studio layout (timeline fit + track hit targets)
 
 **Status:** kod **SHIPPED** · vitest stu-07 + p7-1-1 + narrow-lane fit **PASS** · Owner mobile UI smoke **NOT VERIFIED** this tip until deploy · **≠ Product GREEN** · **≠ PRODUCTION VERIFIED**

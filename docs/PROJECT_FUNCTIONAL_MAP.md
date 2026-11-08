@@ -51,7 +51,7 @@ Legenda statusów wiersza: **DONE** · **PARTIAL** · **OPEN** · **HOLD** · **
 | Export / unlock jakość | ladder `PREMIUM_RETENTION_DAYS` / export policy | download/unlock gates | **PARTIAL** · OD-04/07 **OPEN** |
 | Retencja artefaktów | FREE 48h · BRONZE 7d · SILVER 30d · **GOLD 28d prod** (Owner 2026-10-25); 90d design-only | matrix + export days | **ZGODNE** kod↔decyzja · worker **HOLD** |
 | Premium Retention worker | cron/janitor | lokalne WIP · **nie** w `vercel.json` | **HOLD** |
-| Self-serve ceny/płatności | — | brak checkout | **OPEN** (OD-04/OD-07) |
+| Self-serve ceny/płatności | ceny w `plan-policy.ts` | checkout PayU na `/premium` | **LIVE** od 2026-11-08 (OD-04 CLOSED) · historia `/admin/platnosci` |
 
 ---
 

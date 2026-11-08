@@ -59,9 +59,9 @@ npm run build
 
 Skopiuj `.env.example` → `.env.local`. Nie commituj sekretów. Nie commituj `.agents/` / `.cursor/` / `skills-lock.json`.
 
-**Zaimplementowane (prod):** Auth · Profiles · Roles · Permissions · Account levels · Platform + community beats · private `beat-audio` · Access Gate · PlaybackShell · Downloads · BPM V1 · signed beat audio transport · Recording Waves 1–4 (takes, entitlement, retention, janitor, Moje próbki).
+**Zaimplementowane (prod):** Auth · Profiles · Roles · Permissions · Account levels · Platform + community beats · private `beat-audio` · Access Gate · PlaybackShell · Downloads · BPM V1 · signed beat audio transport · Recording Waves 1–4 (takes, entitlement, retention, janitor, Moje próbki) · checkout PayU (plan, dodatek, pakiety) · historia zakupów `/admin/platnosci`.
 
-**NOT IMPLEMENTED:** Anonymous QT · shared grants · MIX/EXPORT · track publish from recording · payments/Premium catalog · messaging · voting · comments product.
+**NOT IMPLEMENTED:** Anonymous QT · shared grants · MIX/EXPORT · track publish from recording · messaging · voting · comments product.
 
 ## Testy
 

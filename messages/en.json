@@ -652,10 +652,51 @@
       "moderacja": "Moderation",
       "sample": "Samples",
       "uzytkownicy": "Users",
+      "platnosci": "Payments",
       "politykaNagran": "Recording policy",
       "nowyBit": "New beat",
       "katalog": "Catalogue",
       "trybPrac": "Maintenance"
+    },
+    "adminPaymentsPage": {
+      "tytul": "Payment history",
+      "opis": "Purchases through PayU. It shows who bought, for how much, for which period, and when. Times are Warsaw time.",
+      "blad": "The purchases could not be read.",
+      "pusto": "Nobody has bought anything yet.",
+      "kiedy": "When",
+      "oplacono": "Paid",
+      "kto": "Who",
+      "co": "What",
+      "kwota": "Amount",
+      "okres": "Period",
+      "status": "Status",
+      "doKiedy": "Access until",
+      "plan": "{tier} plan",
+      "dodatek": "Reference mastering",
+      "nieznane": "Unknown",
+      "strony": "History pages",
+      "nowsze": "Newer",
+      "starsze": "Older",
+      "pakiet": {
+        "take": "10 recordings",
+        "master": "5 masters",
+        "youtube": "MP4 video"
+      },
+      "okresy": {
+        "month": "Month",
+        "year": "Year",
+        "once": "One-off"
+      },
+      "statusy": {
+        "pending": "Waiting for payment",
+        "paid": "Paid",
+        "failed": "Failed"
+      },
+      "nadanie": {
+        "pending": "Plan not granted yet",
+        "granted": "Granted",
+        "skipped": "Skipped"
+      }
     },
     "adminSamplesPage": {
       "metaTitle": "Samples · Admin",

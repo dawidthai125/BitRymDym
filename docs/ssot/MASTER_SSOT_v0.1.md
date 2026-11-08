@@ -508,21 +508,11 @@ Administrator powinien docelowo móc je włączać i wyłączać z panelu admini
 
 # 15. SYSTEM PŁATNOŚCI
 
-System płatności jest planowany, ale początkowo nieaktywny.
+System płatności był na starcie projektu planowany jako nieaktywny.
 
-Przyszłe funkcje mogą obejmować:
+Od 2026-11-08 (OD-04, decyzja Ownera) płatności są włączone. Operator to PayU, host produkcyjny `https://secure.payu.com`. Checkout sprzedaje plan na miesiąc albo rok, dodatek masteringu z referencją oraz pakiety nagrań, masterów i wideo MP4. Kwoty są w `src/config/plan-policy.ts`. Historia zakupów dla administratora jest pod `/admin/platnosci`.
 
-1. zwiększenie limitów pobierania,
-2. konta Premium,
-3. jednorazowy zakup konkretnego bitu.
-
-Operator płatności:
-
-```text
-DECISION REQUIRED
-```
-
-Nie implementować aktywnych płatności bez wyraźnej decyzji Product Ownera.
+Przyszłe funkcje mogą nadal obejmować jednorazowy zakup konkretnego bitu. Tego zakupu nie ma.
 
 ---
 
