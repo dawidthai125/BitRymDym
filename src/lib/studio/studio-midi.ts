@@ -261,11 +261,21 @@ export function rollWindow(playheadMs: number, bpm: number, steps = ROLL_STEPS):
   return { origin: clampRollOrigin(raw, bpm, steps), stepMs };
 }
 
-export function rollPitches(instrument: PlayKeyInstrument): number[] {
-  if (instrument === "drums") return [42, 38, 36];
-  if (instrument === "bass") return [43, 40, 38, 36, 33, 31, 28];
-  if (instrument === "guitar") return [64, 62, 60, 59, 57, 55, 52, 50];
-  return [72, 71, 69, 67, 65, 64, 62, 60];
+export function rollPitches(instrument: PlayKeyInstrument, octaveShift = 0): number[] {
+  const base =
+    instrument === "drums"
+      ? [42, 38, 36]
+      : instrument === "bass"
+        ? [43, 40, 38, 36, 33, 31, 28]
+        : instrument === "guitar"
+          ? [64, 62, 60, 59, 57, 55, 52, 50]
+          : [72, 71, 69, 67, 65, 64, 62, 60];
+  if (instrument === "drums" || octaveShift === 0) return base;
+  const shift = Math.trunc(octaveShift) * 12;
+  const moved = base
+    .map((pitch) => pitch + shift)
+    .filter((pitch) => pitch >= MIDI_LIMITS.pitch.min && pitch <= MIDI_LIMITS.pitch.max);
+  return moved.length > 0 ? moved : base;
 }
 
 /** Click a cell: remove the note in that eighth, or add one. Does not wipe another instrument. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendPlayedNote, bassLineAt, clampRollOrigin, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, rollBarSpan, rollPage, rollStepMs, scratchPatternAt, toggleGridNote } from "./studio-midi";
+import { appendPlayedNote, bassLineAt, clampRollOrigin, cleanMidiNotes, drumPatternAt, emptyMidi, hasMidi, midiHz, midiPhraseAt, MidiValidationError, parseMidiForWrite, renderMidiNotes, renderMidiSampleWav, reviewPlayedNotes, rollBarSpan, rollPage, rollPitches, rollStepMs, scratchPatternAt, toggleGridNote } from "./studio-midi";
 import { fadeEdgePreset } from "./studio-clip-fade";
 
 describe("studio midi parser", () => {
@@ -185,6 +185,14 @@ describe("studio midi", () => {
     const wav = renderMidiSampleWav(bar);
     expect(wav && String.fromCharCode(...wav.bytes.slice(0, 4))).toBe("RIFF");
     expect(wav && wav.durationMs).toBeGreaterThanOrEqual(1000);
+  });
+
+  it("shifts the piano roll by an octave and leaves drums in place", () => {
+    expect(rollPitches("piano", 0)).toEqual([72, 71, 69, 67, 65, 64, 62, 60]);
+    expect(rollPitches("piano", 1)).toEqual([84, 83, 81, 79, 77, 76, 74, 72]);
+    expect(rollPitches("piano", -1)).toEqual([60, 59, 57, 55, 53, 52, 50, 48]);
+    expect(rollPitches("drums", 2)).toEqual([42, 38, 36]);
+    expect(rollPitches("piano", 20)).toEqual([72, 71, 69, 67, 65, 64, 62, 60]);
   });
 
   it("toggles one eighth on the piano roll without wiping another instrument", () => {

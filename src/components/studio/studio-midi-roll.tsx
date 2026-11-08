@@ -46,7 +46,8 @@ export function StudioMidiRoll({
 }) {
   const tr = useTranslations("studio.studioRecordingPanel");
   const [anchor, setAnchor] = useState(0);
-  const pitches = rollPitches(instrument);
+  const [octave, setOctave] = useState(0);
+  const pitches = rollPitches(instrument, octave);
   const { origin, stepMs } = rollWindow(anchor, bpm);
   const bars = rollBarSpan(origin, bpm);
   const atEnd = rollPage(origin, 1, bpm) === origin;
@@ -109,6 +110,24 @@ export function StudioMidiRoll({
             onClick={() => setAnchor(getPlayheadMs())}
           >
             {tr("klawiszePrzyGlowicy")}
+          </button>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4"
+            data-testid="studio-midi-roll-octave-down"
+            disabled={disabled || instrument === "drums" || octave <= -2}
+            onClick={() => setOctave((value) => Math.max(-2, value - 1))}
+          >
+            {tr("klawiszeOktawaNizej")}
+          </button>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4"
+            data-testid="studio-midi-roll-octave-up"
+            disabled={disabled || instrument === "drums" || octave >= 2}
+            onClick={() => setOctave((value) => Math.min(2, value + 1))}
+          >
+            {tr("klawiszeOktawaWyzej")}
           </button>
         </div>
       </div>
