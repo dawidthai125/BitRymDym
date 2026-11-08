@@ -8,6 +8,7 @@ stay on the site. This program does not load VST plugins.
 from __future__ import annotations
 
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -25,15 +26,26 @@ from desk import max_take_seconds, read_prefs, studio_url, tail_peak_db, wav_sec
 from own_fx import FX, build_chain, display_tier, limits_from_usage
 from record_wav import write_pcm16_wav
 
+# tokens.css dark tape deck. Fonts are the site fallbacks installed on Windows:
+# Georgia for Source Serif 4, Arial Narrow for Big Shoulders, Consolas for IBM Plex Mono.
 PAPER = "#0e0c0a"
 PANEL = "#17130f"
 RACK = "#211b15"
 INK = "#f1e7d3"
 SOFT = "#cdbfa6"
+MUTE = "#9e8f78"
 AMBER = "#f2a93b"
-ON_AMBER = "#0a0807"
+AMBER_SOFT = "#f7bb5c"
+AMBER_DEEP = "#b9761e"
+ON_AMBER = "#1a1006"
 LINE = "#3a3028"
-REC = "#ff5a46"
+LINE_STRONG = "#5c4c3c"
+REC = "#ff4b36"
+REC_DEEP = "#8d2418"
+FONT_POSTER = "Arial Narrow"
+FONT_DISPLAY = "Georgia"
+FONT_UI = "Segoe UI"
+FONT_META = "Consolas"
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
 PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json"
@@ -245,7 +257,8 @@ class RecorderWindow:
         if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
             self.root.withdraw()
         self.root.title("BitRymDym")
-        self.root.geometry("720x960")
+        self.root.geometry("760x980")
+        self.root.minsize(720, 860)
         self.root.configure(bg=PAPER)
         self.recording = False
         self.capture: subprocess.Popen[bytes] | None = None
@@ -273,75 +286,227 @@ class RecorderWindow:
         )
         self.clock = tk.StringVar(value="0.0 s / 30 s")
         self.device_var = tk.StringVar(value=self.devices[0] if self.devices else "Brak mikrofonu")
-        self.email = self._entry(show="")
-        self.password = self._entry(show="*")
-        self.title_box = self._entry(show="")
         self.beat_var = tk.StringVar()
-        self.title_box.insert(0, "Nagranie z komputera")
         saved = load_session()
         if saved:
-            self.email.insert(0, saved.get("email", ""))
             self.public_url = saved.get("supabaseUrl", "")
             self.public_key = saved.get("anonKey", "")
             self.status.set("Jest zapisana sesja tego konta.")
         self._load_public()
-        head = tk.Label(
+        self._build_deck()
+        self._build_account(saved if isinstance(saved, dict) else None)
+        self._build_effects()
+        self._build_transport()
+        self.beat_var.trace_add("write", lambda *_args: self._sync_cassette())
+        self._sync_cassette()
+        self._paint_lamp()
+        self._draw_meter(-96.0)
+        self._load_prefs()
+        self._read_plan()
+        if self.status_boot:
+            self.status.set(self.status_boot)
+
+    def _build_deck(self) -> None:
+        tk.Label(
+            self.root,
+            text="NAGRYWARKA",
+            bg=PAPER,
+            fg=MUTE,
+            font=(FONT_META, 9),
+            anchor="w",
+        ).pack(fill="x", padx=18, pady=(12, 0))
+        tk.Label(
             self.root,
             text="BitRymDym",
             bg=PAPER,
-            fg=AMBER,
-            font=("Segoe UI", 18, "bold"),
+            fg=INK,
+            font=(FONT_DISPLAY, 28, "italic"),
+            anchor="w",
+        ).pack(fill="x", padx=18)
+        rule = tk.Frame(self.root, bg=AMBER, height=3)
+        rule.pack_propagate(False)
+        rule.pack(fill="x", padx=18, pady=(2, 8))
+        deck = tk.Frame(
+            self.root,
+            bg=PANEL,
+            highlightbackground=LINE_STRONG,
+            highlightthickness=1,
+        )
+        deck.pack(fill="x", padx=18)
+        face = tk.Frame(deck, bg=PANEL)
+        face.pack(fill="x", padx=14, pady=(10, 6))
+        tk.Label(
+            face,
+            text="DECK A",
+            bg=PANEL,
+            fg=SOFT,
+            font=(FONT_POSTER, 14, "bold"),
+        ).pack(side="left")
+        side = tk.Frame(face, bg=PANEL)
+        side.pack(side="right")
+        lamp_row = tk.Frame(side, bg=PANEL)
+        lamp_row.pack(anchor="e")
+        self.lamp = tk.Canvas(lamp_row, width=12, height=12, bg=PANEL, highlightthickness=0)
+        self.lamp.pack(side="left", padx=(0, 6))
+        self.lamp_text = tk.Label(
+            lamp_row,
+            text="STOP",
+            bg=PANEL,
+            fg=MUTE,
+            font=(FONT_META, 9),
+        )
+        self.lamp_text.pack(side="left")
+        tk.Label(
+            side,
+            textvariable=self.clock,
+            bg=PANEL,
+            fg=INK,
+            font=(FONT_META, 12),
+        ).pack(anchor="e")
+        shell = tk.Frame(deck, bg="#2a221a", highlightbackground="#4a3d30", highlightthickness=1)
+        shell.pack(fill="x", padx=14, pady=(4, 8))
+        paper = tk.Frame(shell, bg=INK)
+        paper.pack(fill="x", padx=12, pady=12)
+        head = tk.Frame(paper, bg=INK)
+        head.pack(fill="x", padx=10, pady=(8, 0))
+        ink_rule = tk.Frame(paper, bg=ON_AMBER, height=2)
+        ink_rule.pack_propagate(False)
+        ink_rule.pack(fill="x", padx=10, pady=(4, 0))
+        tk.Label(
+            head,
+            text="STRONA A",
+            bg=INK,
+            fg=ON_AMBER,
+            font=(FONT_POSTER, 12, "bold"),
+        ).pack(side="left")
+        self.cassette_meta = tk.Label(
+            head,
+            text="—",
+            bg=INK,
+            fg=ON_AMBER,
+            font=(FONT_META, 9),
+        )
+        self.cassette_meta.pack(side="right")
+        self.cassette_title = tk.Label(
+            paper,
+            text="Katalog czeka",
+            bg=INK,
+            fg=ON_AMBER,
+            font=(FONT_DISPLAY, 18, "italic"),
             anchor="w",
         )
-        head.pack(fill="x", padx=16, pady=(14, 0))
+        self.cassette_title.pack(fill="x", padx=10, pady=(4, 0))
         tk.Label(
-            self.root,
-            text="Nagranie wokalu na bit. Miks i master zostają na stronie.",
-            bg=PAPER,
-            fg=SOFT,
-            font=("Segoe UI", 10),
+            paper,
+            text="BITRYMDYM",
+            bg=INK,
+            fg=ON_AMBER,
+            font=(FONT_META, 9),
             anchor="w",
-        ).pack(fill="x", padx=16, pady=(0, 8))
-        self._row("E-mail", self.email)
-        self._row("Hasło", self.password)
-        self._row("Tytuł", self.title_box)
+        ).pack(fill="x", padx=10)
+        window = tk.Canvas(
+            paper,
+            width=560,
+            height=58,
+            bg="#17120d",
+            highlightthickness=2,
+            highlightbackground=ON_AMBER,
+        )
+        window.pack(fill="x", padx=36, pady=(6, 10))
+        self._draw_reels(window)
+        transport = tk.Frame(deck, bg=PANEL)
+        transport.pack(fill="x", padx=14, pady=(0, 12))
+        self._build_vu(transport)
+        self._button(transport, "Nagraj", self.arm, REC, INK).pack(side="right", padx=(12, 0))
+
+    def _vu_point(self, level: float, radius: float) -> tuple[float, float]:
+        rad = math.radians(210 + max(0.0, min(1.0, level)) * 120)
+        return (120 + math.cos(rad) * radius, 66 + math.sin(rad) * radius)
+
+    def _build_vu(self, parent: tk.Widget) -> None:
+        self.meter = tk.Canvas(
+            parent,
+            width=240,
+            height=72,
+            bg="#efe0bd",
+            highlightthickness=1,
+            highlightbackground=LINE_STRONG,
+        )
+        self.meter.pack(side="left")
+        for index in range(11):
+            outer = self._vu_point(index / 10, 50)
+            inner = self._vu_point(index / 10, 40 if index % 5 else 36)
+            self.meter.create_line(
+                *inner,
+                *outer,
+                fill="#d0381f" if index > 7 else "#2a1d10",
+                width=2,
+            )
+        self.meter.create_text(
+            120,
+            54,
+            text="VU",
+            fill="#2a1d10",
+            font=(FONT_POSTER, 11, "bold"),
+        )
+
+    def _draw_reels(self, canvas: tk.Canvas) -> None:
+        canvas.create_rectangle(150, 22, 410, 36, fill="#3b2c1d", outline="")
+        for cx in (100, 460):
+            canvas.create_oval(cx - 22, 6, cx + 22, 50, outline=INK, width=2)
+            canvas.create_oval(cx - 5, 23, cx + 5, 33, fill=INK, outline="")
+            for step in range(6):
+                rad = math.radians(step * 60)
+                canvas.create_line(
+                    cx + math.cos(rad) * 8,
+                    28 + math.sin(rad) * 8,
+                    cx + math.cos(rad) * 18,
+                    28 + math.sin(rad) * 18,
+                    fill=INK,
+                    width=2,
+                )
+
+    def _sync_cassette(self) -> None:
+        label = self.beat_var.get().strip() or "Katalog czeka"
+        title = label
+        meta = "—"
+        if label.endswith(")") and " (" in label:
+            title, meta = label.rsplit(" (", 1)
+            meta = meta[:-1]
+        self.cassette_title.configure(text=title)
+        self.cassette_meta.configure(text=meta)
+
+    def _paint_lamp(self) -> None:
+        self.lamp.delete("all")
+        color = REC if self.recording else LINE_STRONG
+        self.lamp.create_oval(1, 1, 11, 11, fill=color, outline=color)
+        self.lamp_text.configure(text="NAGRYWA" if self.recording else "STOP")
+
+    def _build_account(self, saved: dict[str, str] | None) -> None:
+        block = tk.Frame(self.root, bg=PAPER)
+        block.pack(fill="x", padx=18, pady=(10, 0))
+        tk.Label(
+            block,
+            text="KONTO",
+            bg=PAPER,
+            fg=MUTE,
+            font=(FONT_META, 9),
+            anchor="w",
+        ).pack(fill="x")
+        self.email = self._entry(self._row(block, "E-mail"), "")
+        self.password = self._entry(self._row(block, "Hasło"), "*")
+        self.title_box = self._entry(self._row(block, "Tytuł"), "")
+        self.title_box.insert(0, "Nagranie z komputera")
+        if saved:
+            self.email.insert(0, saved.get("email", ""))
         labels = [label for _beat_id, label in self.beats] or ["Brak bitu"]
         if not self.beat_var.get():
             self.beat_var.set(labels[0])
-        self.beat_menu = tk.OptionMenu(self.root, self.beat_var, *labels)
-        self.beat_menu.configure(
-            bg=RACK,
-            fg=INK,
-            activebackground=PANEL,
-            activeforeground=INK,
-            highlightthickness=0,
-            font=("Segoe UI", 10),
-        )
-        self._row("Bit", self.beat_menu)
+        self.beat_menu = self._menu(self._row(block, "Bit"), self.beat_var, labels)
         device_labels = self.devices or ["Brak mikrofonu"]
-        self.device_menu = tk.OptionMenu(self.root, self.device_var, *device_labels)
-        self.device_menu.configure(
-            bg=RACK,
-            fg=INK,
-            activebackground=PANEL,
-            activeforeground=INK,
-            highlightthickness=0,
-            font=("Segoe UI", 10),
-        )
-        self._row("Mikrofon", self.device_menu)
-        clock_row = tk.Frame(self.root, bg=PAPER)
-        clock_row.pack(fill="x", padx=16, pady=4)
-        tk.Label(
-            clock_row,
-            textvariable=self.clock,
-            bg=PAPER,
-            fg=INK,
-            font=("Segoe UI", 12, "bold"),
-        ).pack(side="left")
-        self.meter = tk.Canvas(clock_row, width=220, height=14, bg=RACK, highlightthickness=0)
-        self.meter.pack(side="left", padx=12)
-        hear = tk.Frame(self.root, bg=PAPER)
-        hear.pack(fill="x", padx=16, pady=2)
+        self.device_menu = self._menu(self._row(block, "Mikrofon"), self.device_var, device_labels)
+        hear = tk.Frame(block, bg=PAPER)
+        hear.pack(fill="x", pady=(6, 0))
         self._button(hear, "Odsłuch z dysku", self.pick_local, RACK, INK).pack(side="left")
         self.local_label = tk.StringVar(value="Bez pliku nagrywasz w ciszy. Bit z listy i tak idzie na konto.")
         tk.Label(
@@ -349,33 +514,33 @@ class RecorderWindow:
             textvariable=self.local_label,
             bg=PAPER,
             fg=SOFT,
-            font=("Segoe UI", 9),
+            font=(FONT_UI, 9),
             anchor="w",
             wraplength=460,
             justify="left",
         ).pack(side="left", padx=8)
+
+    def _build_effects(self) -> None:
         tk.Label(
             self.root,
             textvariable=self.plan_text,
             bg=PAPER,
             fg=SOFT,
-            font=("Segoe UI", 10),
+            font=(FONT_UI, 10),
             anchor="w",
-            wraplength=640,
+            wraplength=700,
             justify="left",
-        ).pack(fill="x", padx=16, pady=(8, 2))
+        ).pack(fill="x", padx=18, pady=(8, 2))
         tk.Label(
             self.root,
-            text="Efekty na ścieżce wokalu. Słychać je w studiu. Tu nie ma wtyczek VST.",
+            text="EFEKTY  ·  SŁYCHAĆ JE W STUDIU. TU NIE MA WTYCZEK VST.",
             bg=PAPER,
-            fg=INK,
-            font=("Segoe UI", 10),
+            fg=MUTE,
+            font=(FONT_META, 9),
             anchor="w",
-            wraplength=640,
-            justify="left",
-        ).pack(fill="x", padx=16)
+        ).pack(fill="x", padx=18)
         rack = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
-        rack.pack(fill="x", padx=16, pady=8)
+        rack.pack(fill="x", padx=18, pady=6)
         columns = [tk.Frame(rack, bg=PANEL), tk.Frame(rack, bg=PANEL)]
         columns[0].pack(side="left", fill="both", expand=True, padx=8, pady=6)
         columns[1].pack(side="left", fill="both", expand=True, padx=8, pady=6)
@@ -392,13 +557,14 @@ class RecorderWindow:
                 selectcolor=RACK,
                 activebackground=PANEL,
                 activeforeground=AMBER,
-                font=("Segoe UI", 10),
+                font=(FONT_UI, 10),
                 anchor="w",
             ).pack(fill="x", anchor="w")
+
+    def _build_transport(self) -> None:
         bar = tk.Frame(self.root, bg=PAPER)
         bar.pack(pady=8)
         self._button(bar, "Zaloguj", self.sign_in, AMBER, ON_AMBER).pack(side="left", padx=4)
-        self._button(bar, "Nagraj", self.arm, REC, INK).pack(side="left", padx=4)
         self._button(bar, "Stop", self.stop_take, RACK, INK).pack(side="left", padx=4)
         self._button(bar, "Wyślij", self.send_selected, AMBER, ON_AMBER).pack(side="left", padx=4)
         self._button(bar, "Stop i wyślij", self.stop_and_send, AMBER, ON_AMBER).pack(side="left", padx=4)
@@ -414,34 +580,30 @@ class RecorderWindow:
             highlightthickness=1,
             highlightbackground=LINE,
             relief="flat",
-            font=("Segoe UI", 10),
+            font=(FONT_UI, 10),
         )
-        self.take_list.pack(fill="x", padx=16, pady=4)
+        self.take_list.pack(fill="x", padx=18, pady=4)
         tk.Label(
             self.root,
             textvariable=self.status,
-            wraplength=640,
+            wraplength=700,
             justify="left",
             bg=PAPER,
             fg=INK,
-            font=("Segoe UI", 10),
-        ).pack(fill="x", padx=16, pady=8)
+            font=(FONT_UI, 10),
+        ).pack(fill="x", padx=18, pady=8)
         tk.Label(
             self.root,
-            text="Nuty zostają w studio na stronie.",
+            text="Nuty zostają w studio na stronie. Miks i master też.",
             bg=PAPER,
             fg=SOFT,
-            font=("Segoe UI", 9),
+            font=(FONT_UI, 9),
             anchor="w",
-        ).pack(fill="x", padx=16)
-        self._load_prefs()
-        self._read_plan()
-        if self.status_boot:
-            self.status.set(self.status_boot)
+        ).pack(fill="x", padx=18)
 
-    def _entry(self, show: str) -> tk.Entry:
-        return tk.Entry(
-            self.root,
+    def _entry(self, parent: tk.Widget, show: str) -> tk.Entry:
+        box = tk.Entry(
+            parent,
             width=42,
             show=show,
             bg=RACK,
@@ -451,37 +613,69 @@ class RecorderWindow:
             highlightthickness=1,
             highlightbackground=LINE,
             highlightcolor=AMBER,
-            font=("Segoe UI", 10),
+            font=(FONT_UI, 10),
         )
+        box.pack(side="left", fill="x", expand=True, ipady=4)
+        return box
 
-    def _button(self, parent: tk.Widget, text: str, command: object, bg: str, fg: str) -> tk.Button:
-        return tk.Button(
-            parent,
-            text=text,
+    def _menu(self, parent: tk.Widget, variable: tk.StringVar, labels: list[str]) -> tk.OptionMenu:
+        menu = tk.OptionMenu(parent, variable, *labels)
+        menu.configure(
+            bg=RACK,
+            fg=INK,
+            activebackground=PANEL,
+            activeforeground=INK,
+            highlightthickness=0,
+            font=(FONT_UI, 10),
+            relief="flat",
+        )
+        menu.pack(side="left", fill="x")
+        menu["menu"].configure(
+            bg=RACK,
+            fg=INK,
+            activebackground=AMBER,
+            activeforeground=ON_AMBER,
+            font=(FONT_UI, 10),
+            relief="flat",
+        )
+        return menu
+
+    def _button(self, parent: tk.Widget, text: str, command: object, bg: str, fg: str) -> tk.Frame:
+        solid = bg in (AMBER, REC)
+        edge = AMBER_DEEP if bg == AMBER else REC_DEEP if bg == REC else LINE_STRONG
+        shell = tk.Frame(parent, bg=edge)
+        tk.Button(
+            shell,
+            text=text.upper(),
             command=command,
             bg=bg,
             fg=fg,
-            activebackground=bg,
+            activebackground=AMBER_SOFT if bg == AMBER else bg,
             activeforeground=fg,
             relief="flat",
-            padx=14,
-            pady=6,
-            font=("Segoe UI", 10, "bold"),
-        )
+            bd=0,
+            padx=12,
+            pady=7,
+            font=(FONT_POSTER, 13, "bold"),
+            cursor="hand2",
+        ).pack(fill="x", pady=(0, 3) if solid else (1, 1), padx=0 if solid else 1)
+        return shell
 
-    def _row(self, label: str, widget: tk.Widget) -> None:
-        frame = tk.Frame(self.root, bg=PAPER)
-        frame.pack(fill="x", padx=16, pady=2)
+    def _row(self, parent: tk.Widget, label: str) -> tk.Frame:
+        frame = tk.Frame(parent, bg=PAPER)
+        frame.pack(fill="x", pady=3)
         tk.Label(
             frame,
-            text=label,
-            width=16,
+            text=label.upper(),
+            width=14,
             anchor="w",
             bg=PAPER,
-            fg=SOFT,
-            font=("Segoe UI", 10),
+            fg=MUTE,
+            font=(FONT_META, 9),
         ).pack(side="left")
-        widget.pack(side="left")
+        slot = tk.Frame(frame, bg=PAPER)
+        slot.pack(side="left", fill="x", expand=True)
+        return slot
 
     def _load_public(self) -> None:
         try:
@@ -620,11 +814,10 @@ class RecorderWindow:
 
     def _draw_meter(self, db: float) -> None:
         level = max(0.0, min(1.0, (db + 60.0) / 60.0))
-        width = int(220 * level)
-        color = REC if db > -3 else AMBER
-        self.meter.delete("bar")
-        if width > 0:
-            self.meter.create_rectangle(0, 0, width, 14, fill=color, width=0, tags="bar")
+        tip = self._vu_point(level, 48)
+        self.meter.delete("needle")
+        self.meter.create_line(120, 66, tip[0], tip[1], fill=ON_AMBER, width=2, tags="needle")
+        self._paint_lamp()
 
     def _tick(self) -> None:
         if not self.recording:
@@ -695,6 +888,7 @@ class RecorderWindow:
             stop_capture(self.capture)
             self.capture = None
         self.recording = False
+        self._paint_lamp()
         if not self.wav_path.exists() or self.wav_path.stat().st_size < 1000:
             raise RuntimeError("Nagranie jest puste.")
         self._add_take(self.wav_path)
@@ -737,6 +931,7 @@ class RecorderWindow:
             self.capture = None
             self._cancel_tick()
             self._stop_monitor()
+            self._paint_lamp()
             self.status.set(str(error))
 
     def stop_take(self) -> None:
@@ -752,6 +947,7 @@ class RecorderWindow:
             if self.capture:
                 stop_capture(self.capture)
                 self.capture = None
+            self._paint_lamp()
             self.status.set(str(error))
 
     def send_selected(self) -> None:
@@ -765,6 +961,7 @@ class RecorderWindow:
             if self.capture:
                 stop_capture(self.capture)
                 self.capture = None
+            self._paint_lamp()
             self.status.set(str(error))
 
     def stop_and_send(self) -> None:
