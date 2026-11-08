@@ -2470,13 +2470,13 @@ export class StudioAudioEngine {
         pitchCents: heardClip.pitchCents ?? 0,
       });
       const shapedNow = !clipPlaybackIdentity(heardPlayback);
-      const buffer = shapedNow ? this.bakeReversedPlayback(voice, heardPlayback) : undefined;
-      if (shapedNow && !buffer) return;
-      if (buffer) voice.playbackBuffer = buffer;
+      const baked = shapedNow ? this.bakeReversedPlayback(voice, heardPlayback) : null;
+      if (shapedNow && !baked) return;
+      if (baked) voice.playbackBuffer = baked;
       const heard = this.heardSecForPersistedReverse(voice, heardClip, playhead);
       if (heard == null) return;
       const freshRate = clampScratchRate(heardClip.scratchRate ?? 1);
-      this.startReversedBufferSource(voice, freshRate, heard, buffer);
+      this.startReversedBufferSource(voice, freshRate, heard, baked ?? undefined);
     });
   }
 
