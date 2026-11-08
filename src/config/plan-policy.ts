@@ -69,6 +69,11 @@ export type PlanPolicy = {
     };
     /** Vocal cleanup (noise + room reverb reduction, E3 job) — gaps P1 #5. Takes per Warsaw day. */
     vocalCleanup: { perDay: number };
+    /**
+     * AI lyrics helper per Europe/Warsaw day. Owner 2026-11-08: Free 1, Bronze 5,
+     * Silver 10, Gold 30. The notepad itself stays on every plan (`lyrics`).
+     */
+    aiLyricsPerDay: number;
   };
   /** Private listen links to the approved master (gaps P1) — no download, expiring, revocable. */
   sharing: {
@@ -106,6 +111,20 @@ export type PlanPolicy = {
     maxStems: number;
     /** Private samples kept in the user's catalog. Published ones count too. */
     maxSamples: number;
+    /**
+     * Effects kept in one chain. The absolute product cap stays 12.
+     * Owner 2026-11-08: Free and Bronze 4, Silver and Gold 12.
+     */
+    maxFxEffects: number;
+    /**
+     * Human engineer requests per Europe/Warsaw month. 0 = the form is locked.
+     * Owner 2026-11-08: Silver 1, Gold 4. Answers stay human.
+     */
+    engineerRequestsPerMonth: number;
+    /** Non-zero clip pitch in cents. Stretch and a reset to 0 stay on every plan. */
+    clipPitch: boolean;
+    /** Sidechain duck under the beat. Existing audio keeps playing; a new write is blocked. */
+    sidechain: boolean;
   };
   mastering: {
     /** E3 master jobs per calendar month (Europe/Warsaw); failed/cancelled do not count. */
@@ -180,6 +199,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
       pitchCorrection: { natural: true, custom: false, manualNotes: false },
       vocalCleanup: { perDay: 1 },
+      aiLyricsPerDay: 1,
     },
     sharing: { listenLinksActive: 1 },
     recording: {
@@ -189,7 +209,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 3,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0, maxSamples: 5 },
+    studio: { maxProjects: 3, maxRecordingTracks: 1, maxStems: 0, maxSamples: 5, maxFxEffects: 4, engineerRequestsPerMonth: 0, clipPitch: false, sidechain: false },
     mastering: { mastersPerMonth: 2, referenceMastering: "none" },
     downloads: {
       qualities: [],
@@ -208,6 +228,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       vocalPresets: { builtIn: true, maxOwn: 0, roleSets: false },
       pitchCorrection: { natural: true, custom: false, manualNotes: false },
       vocalCleanup: { perDay: 5 },
+      aiLyricsPerDay: 5,
     },
     sharing: { listenLinksActive: 3 },
     recording: {
@@ -217,7 +238,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 5,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 10, maxRecordingTracks: 2, maxStems: 0, maxSamples: 20 },
+    studio: { maxProjects: 10, maxRecordingTracks: 2, maxStems: 0, maxSamples: 20, maxFxEffects: 4, engineerRequestsPerMonth: 0, clipPitch: false, sidechain: false },
     mastering: { mastersPerMonth: 5, referenceMastering: "none" },
     downloads: {
       qualities: ["MP3_128"],
@@ -236,6 +257,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       vocalPresets: { builtIn: true, maxOwn: 20, roleSets: false },
       pitchCorrection: { natural: true, custom: true, manualNotes: false },
       vocalCleanup: { perDay: 15 },
+      aiLyricsPerDay: 10,
     },
     sharing: { listenLinksActive: null },
     recording: {
@@ -245,7 +267,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 7,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8, maxSamples: 50 },
+    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8, maxSamples: 50, maxFxEffects: 12, engineerRequestsPerMonth: 1, clipPitch: true, sidechain: true },
     mastering: { mastersPerMonth: 10, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
@@ -264,6 +286,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       vocalPresets: { builtIn: true, maxOwn: 50, roleSets: true },
       pitchCorrection: { natural: true, custom: true, manualNotes: true },
       vocalCleanup: { perDay: 30 },
+      aiLyricsPerDay: 30,
     },
     sharing: { listenLinksActive: null },
     recording: {
@@ -273,7 +296,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 10,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16, maxSamples: 100 },
+    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16, maxSamples: 100, maxFxEffects: 12, engineerRequestsPerMonth: 4, clipPitch: true, sidechain: true },
     mastering: { mastersPerMonth: 20, referenceMastering: "included" },
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
@@ -346,6 +369,31 @@ export function youtubeVideoForTier(tier: PremiumTier): boolean {
 /** Stems per project for the plan (0 = stem import is not part of the plan). */
 export function maxStemsForTier(tier: PremiumTier): number {
   return PLAN_POLICY[tier].studio.maxStems;
+}
+
+/** Stem files from „Rozetnij bit” follow the stem-import plan: Silver and Gold. */
+export function separatorFilesForTier(tier: PremiumTier): boolean {
+  return maxStemsForTier(tier) > 0;
+}
+
+export function maxFxEffectsForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].studio.maxFxEffects;
+}
+
+export function engineerRequestsPerMonthForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].studio.engineerRequestsPerMonth;
+}
+
+export function clipPitchForTier(tier: PremiumTier): boolean {
+  return PLAN_POLICY[tier].studio.clipPitch;
+}
+
+export function sidechainForTier(tier: PremiumTier): boolean {
+  return PLAN_POLICY[tier].studio.sidechain;
+}
+
+export function aiLyricsPerDayForTier(tier: PremiumTier): number {
+  return PLAN_POLICY[tier].tools.aiLyricsPerDay;
 }
 
 export function maxRecordingTracksForTier(tier: PremiumTier): number {

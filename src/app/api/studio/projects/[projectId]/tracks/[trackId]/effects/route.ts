@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { fxPresetErrorResponse } from "@/lib/studio/presets/fx-presets-http";
 import { updateStudioTrackEffectsChain } from "@/lib/studio/studio-service";
+import { assertFxWritesAllowed } from "@/lib/studio/plan-feature-gate-server";
 import { assertTuneChainsAllowedForUser } from "@/lib/studio/tune/tune-gate-server";
 
 export const runtime = "nodejs";
@@ -20,6 +21,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     };
     // Plan gate: BRD Tune hard/custom style is Silver+ (403 PLAN_FEATURE_LOCKED).
     await assertTuneChainsAllowedForUser([body.chain]);
+    await assertFxWritesAllowed([{ raw: body.chain, projectId, trackId }]);
     const result = await updateStudioTrackEffectsChain({
       projectId,
       trackId,

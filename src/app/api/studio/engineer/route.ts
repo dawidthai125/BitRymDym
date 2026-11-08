@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/session";
+import { assertEngineerRequestAllowed, engineerQuotaForUser } from "@/lib/studio/plan-feature-gate-server";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -20,7 +21,8 @@ export async function GET() {
     if (error) {
       return NextResponse.json({ error: "save_failed" }, { status: 500 });
     }
-    return NextResponse.json({ requests: data ?? [] });
+    const quota = await engineerQuotaForUser(auth);
+    return NextResponse.json({ requests: data ?? [], quota: { limit: quota.limit, used: quota.used } });
   } catch (error) {
     return studioApiErrorResponse(error);
   }
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
     if (body.length < 4 || body.length > 2000) {
       return NextResponse.json({ error: "bad_request" }, { status: 400 });
     }
+    await assertEngineerRequestAllowed(auth);
 
     const admin = createSupabaseAdminClient();
     const { error } = await admin.from("studio_engineer_requests").insert({

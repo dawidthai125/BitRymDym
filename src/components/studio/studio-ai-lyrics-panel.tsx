@@ -118,8 +118,7 @@ export function StudioAiLyricsPanel({ projectId, currentText, onInsert }: Props)
     <section data-testid="studio-ai-lyrics" aria-labelledby={`${id}-t`} className="space-y-2 rounded border border-[var(--brd-line)] p-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 id={`${id}-t`} className="text-xs font-medium">
-          {t("tytul")}{" "}
-          <span className="ml-1 rounded bg-[var(--brd-ink)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--brd-paper)]">SILVER+</span>
+          {t("tytul")}
         </h4>
         <span className="text-[11px] text-[var(--brd-mute)]">{t("licznik", { used: state.used, max: state.perDay })}</span>
       </div>

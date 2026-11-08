@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type ProjectOpt = { id: string; title: string };
@@ -21,7 +22,7 @@ const LABELS: Record<StemName, string> = {
 const QUEUED =
   "Jest w kolejce. Pliki pojawią się, gdy rozcinanie się skończy. Samo kliknięcie jeszcze ich nie daje.";
 
-export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
+export function StudioSeparatorPanel({ projects, canEnqueue }: { projects: ProjectOpt[]; canEnqueue: boolean }) {
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -53,7 +54,7 @@ export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!projectId) return;
+    if (!projectId || !canEnqueue) return;
     setBusy(true);
     setNote(null);
     try {
@@ -71,6 +72,8 @@ export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
         setNote("Nie ma zatwierdzonego mastera ani bitu w tym projekcie.");
       } else if (res.status === 503) {
         setNote("Rozcinanie jest chwilowo wyłączone.");
+      } else if (res.status === 403) {
+        setNote("Pliki z rozcięcia są od Silver.");
       } else {
         setNote("Nie udało się przyjąć zgłoszenia.");
       }
@@ -100,13 +103,22 @@ export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
           ))}
         </select>
       </label>
-      <button
-        type="submit"
-        disabled={busy || !projectId}
-        className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
-      >
-        {busy ? "Wysyłanie…" : "Oddaj do rozcięcia"}
-      </button>
+      {canEnqueue ? (
+        <button
+          type="submit"
+          disabled={busy || !projectId}
+          className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
+        >
+          {busy ? "Wysyłanie…" : "Oddaj do rozcięcia"}
+        </button>
+      ) : (
+        <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
+          Pliki są od Silver.{" "}
+          <Link href="/premium" className="underline underline-offset-4">
+            Zobacz plany
+          </Link>
+        </p>
+      )}
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
       {job?.status === "queued" || job?.status === "running" ? (
         <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{QUEUED}</p>

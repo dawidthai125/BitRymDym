@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { bitekMemoryForTier, type BitekMemoryAccess } from "@/config/plan-policy";
+import { bitekMemoryForTier, sidechainForTier, type BitekMemoryAccess } from "@/config/plan-policy";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
@@ -49,10 +49,9 @@ export async function POST(request: Request) {
   const projectId = typeof (body as { projectId?: unknown }).projectId === "string" ? (body as { projectId: string }).projectId : null;
   let history = parsed.value.history;
   let stored = false;
+  const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
   let memory: BitekMemoryAccess = "session";
-  if (projectId) {
-    memory = bitekMemoryForTier((await resolveProductEntitlementForAuthContext(auth)).premiumTier);
-  }
+  if (projectId) memory = bitekMemoryForTier(tier);
   if (projectId && memory === "project") {
     try {
       const store = await listBitekMessages({ ownerId: userId, projectId });
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const result = await runBitekChatChain({
+  let result = await runBitekChatChain({
     providers: bitekProvidersFromEnv(process.env, undefined, {
       e3Queue: () =>
         bitekQueueProvider({
@@ -79,6 +78,17 @@ export async function POST(request: Request) {
     // Metadata only — no message content, no user id.
     log: (entry) => console.info(JSON.stringify({ event: "bitek_chat", quota: quota.source, ...entry })),
   });
+  if (!sidechainForTier(tier)) {
+    const jobs = (result.jobs ?? []).filter((job) => !(job.kind === "trackFx" && job.effect === "sidechain"));
+    if (jobs.length !== (result.jobs ?? []).length) {
+      const lang = parsed.value.context.lang;
+      result = {
+        ...result,
+        jobs,
+        reply: jobs.length > 0 ? result.reply : lang === "en" ? "Ducking under the beat starts on Silver." : "Ściszanie pod bit jest od Silver.",
+      };
+    }
+  }
   let persisted = false;
   let messageIds: { user: string; assistant: string } | undefined;
   if (projectId && stored) {

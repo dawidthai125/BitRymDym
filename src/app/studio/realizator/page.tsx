@@ -3,15 +3,20 @@ import { redirect } from "next/navigation";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
+import { PLAN_POLICY } from "@/config/plan-policy";
 import { StudioEngineerForm } from "@/components/studio/studio-engineer-form";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { engineerQuotaForUser } from "@/lib/studio/plan-feature-gate-server";
 
 export const metadata = { title: "Napisz do realizatora" };
 
 export default async function StudioEngineerPage() {
+  let quota = { limit: 0, used: 0 };
   try {
-    await requireUser();
+    const auth = await requireUser();
+    const row = await engineerQuotaForUser(auth);
+    quota = { limit: row.limit, used: row.used };
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect(signInPathWithNext("/studio/realizator"));
@@ -31,9 +36,11 @@ export default async function StudioEngineerPage() {
             <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Napisz do realizatora</h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
               Piszesz do żywego człowieka. Nikt tu nie odpowiada z automatu.
+              Silver: {PLAN_POLICY.SILVER.studio.engineerRequestsPerMonth} pytanie w miesiącu.
+              Gold: {PLAN_POLICY.GOLD.studio.engineerRequestsPerMonth}.
             </p>
           </header>
-          <StudioEngineerForm />
+          <StudioEngineerForm quota={quota} />
           <Link
             href="/studio"
             className="text-sm text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline"

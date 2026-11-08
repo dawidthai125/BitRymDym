@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type EngineerRequest = {
@@ -10,12 +11,15 @@ type EngineerRequest = {
   created_at: string | null;
 };
 
-export function StudioEngineerForm() {
+export function StudioEngineerForm({ quota: initialQuota }: { quota: { limit: number; used: number } }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [requests, setRequests] = useState<EngineerRequest[] | null>(null);
   const [listError, setListError] = useState(false);
+  const [quota, setQuota] = useState(initialQuota);
+  const locked = quota.limit <= 0;
+  const full = !locked && quota.used >= quota.limit;
 
   async function loadRequests() {
     try {
@@ -24,13 +28,16 @@ export function StudioEngineerForm() {
         setListError(true);
         return;
       }
-      const payload = (await res.json()) as { requests?: unknown };
+      const payload = (await res.json()) as { requests?: unknown; quota?: { limit?: unknown; used?: unknown } };
       if (!Array.isArray(payload.requests)) {
         setListError(true);
         return;
       }
       setListError(false);
       setRequests(payload.requests as EngineerRequest[]);
+      if (typeof payload.quota?.limit === "number" && typeof payload.quota.used === "number") {
+        setQuota({ limit: payload.quota.limit, used: payload.quota.used });
+      }
     } catch {
       setListError(true);
     }
@@ -43,6 +50,7 @@ export function StudioEngineerForm() {
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (locked || full) return;
     setBusy(true);
     setNote(null);
     try {
@@ -59,6 +67,9 @@ export function StudioEngineerForm() {
         setNote("Zaloguj się, żeby wysłać zgłoszenie.");
       } else if (res.status === 400) {
         setNote("Treść musi mieć od 4 do 2000 znaków.");
+      } else if (res.status === 403) {
+        setNote(quota.limit <= 0 ? "Pytania do realizatora są od Silver." : "W tym miesiącu limit pytań jest wykorzystany.");
+        setQuota((prev) => ({ ...prev, used: Math.max(prev.used, prev.limit) }));
       } else {
         setNote("Nie udało się zapisać zgłoszenia.");
       }
@@ -71,6 +82,14 @@ export function StudioEngineerForm() {
 
   return (
     <div className="flex max-w-lg flex-col gap-8">
+    {locked ? (
+      <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
+        Pytania do realizatora są od Silver.{" "}
+        <Link href="/premium" className="underline underline-offset-4">
+          Zobacz plany
+        </Link>
+      </p>
+    ) : (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm text-[var(--brd-ink-soft)]">
         Co ma zrobić realizator
@@ -82,18 +101,22 @@ export function StudioEngineerForm() {
           maxLength={2000}
           required
           rows={6}
+          disabled={full}
           className="border border-[var(--brd-line)] bg-transparent px-3 py-2 text-[var(--brd-ink)]"
         />
       </label>
+      <p className="text-sm text-[var(--brd-ink-soft)]">W tym miesiącu: {quota.used} z {quota.limit}.</p>
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || full}
         className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
       >
         {busy ? "Wysyłanie…" : "Wyślij do kolejki"}
       </button>
+      {full ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">W tym miesiącu limit jest wykorzystany.</p> : null}
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
     </form>
+    )}
     <section className="flex flex-col gap-3">
       <h2 className="text-sm text-[var(--brd-ink-soft)]">Twoje zgłoszenia</h2>
       {listError ? (

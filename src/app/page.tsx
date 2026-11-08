@@ -154,6 +154,39 @@ export default async function HomePage() {
       },
     },
     {
+      id: "rozciecie",
+      label: t("planRozciecie"),
+      cell: (tier) => (PLAN_POLICY[tier].studio.maxStems > 0 ? t("planTak") : "—"),
+    },
+    {
+      id: "realizator",
+      label: t("planRealizator"),
+      cell: (tier) => {
+        const n = PLAN_POLICY[tier].studio.engineerRequestsPerMonth;
+        return n > 0 ? String(n) : "—";
+      },
+    },
+    {
+      id: "teksty",
+      label: t("planTeksty"),
+      cell: (tier) => String(PLAN_POLICY[tier].tools.aiLyricsPerDay),
+    },
+    {
+      id: "wysokosc",
+      label: t("planWysokosc"),
+      cell: (tier) => (PLAN_POLICY[tier].studio.clipPitch ? t("planTak") : "—"),
+    },
+    {
+      id: "sciszanie",
+      label: t("planSciszanie"),
+      cell: (tier) => (PLAN_POLICY[tier].studio.sidechain ? t("planTak") : "—"),
+    },
+    {
+      id: "efekty",
+      label: t("planEfekty"),
+      cell: (tier) => String(PLAN_POLICY[tier].studio.maxFxEffects),
+    },
+    {
       id: "sample",
       label: t("planSample"),
       cell: (tier) => String(PLAN_POLICY[tier].studio.maxSamples),
@@ -438,6 +471,18 @@ export default async function HomePage() {
             </OverflowXScrollRegion>
             <ul className="mt-4 max-w-[72ch] space-y-2 text-sm leading-relaxed text-tape-cream-soft">
               <li>{t("planWspolne")}</li>
+              <li>
+                {t("planBramki", {
+                  silverEng: PLAN_POLICY.SILVER.studio.engineerRequestsPerMonth,
+                  goldEng: PLAN_POLICY.GOLD.studio.engineerRequestsPerMonth,
+                  freeLyrics: PLAN_POLICY.FREE.tools.aiLyricsPerDay,
+                  bronzeLyrics: PLAN_POLICY.BRONZE.tools.aiLyricsPerDay,
+                  silverLyrics: PLAN_POLICY.SILVER.tools.aiLyricsPerDay,
+                  goldLyrics: PLAN_POLICY.GOLD.tools.aiLyricsPerDay,
+                  shortFx: PLAN_POLICY.FREE.studio.maxFxEffects,
+                  longFx: PLAN_POLICY.SILVER.studio.maxFxEffects,
+                })}
+              </li>
               <li>{t("planGosc", { s: GUEST_POLICY.previewSeconds })}</li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">

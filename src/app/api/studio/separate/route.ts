@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { AuthError, requireUser } from "@/lib/auth/session";
+import { assertSeparatorEnqueueAllowed } from "@/lib/studio/plan-feature-gate-server";
 import { enqueueSeparateJob, latestSeparateJob } from "@/lib/studio/separate/separate-server";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => null)) as { projectId?: unknown } | null;
     const projectId = typeof body?.projectId === "string" ? body.projectId.trim() : "";
     if (!PROJECT_ID.test(projectId)) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+    await assertSeparatorEnqueueAllowed();
     const result = await enqueueSeparateJob(auth.userId, projectId);
     if (!result.ok && result.error === "no_audio") return NextResponse.json({ error: "no_audio" }, { status: 404 });
     if (!result.ok && result.error === "in_progress") return NextResponse.json({ error: "in_progress" }, { status: 409 });

@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 
 import { PageFrame } from "@/components/brand/chrome";
 import { AppShell } from "@/components/site/app-shell";
+import { separatorFilesForTier } from "@/config/plan-policy";
 import { StudioSeparatorPanel } from "@/components/studio/studio-separator-panel";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listStudioProjects } from "@/lib/studio/studio-service";
@@ -11,8 +13,11 @@ import { listStudioProjects } from "@/lib/studio/studio-service";
 export const metadata = { title: "Rozetnij bit" };
 
 export default async function StudioSeparatorPage() {
+  let canEnqueue = false;
   try {
-    await requireUser();
+    const auth = await requireUser();
+    const tier = (await resolveProductEntitlementForAuthContext(auth)).premiumTier;
+    canEnqueue = separatorFilesForTier(tier);
   } catch (error) {
     if (error instanceof AuthError && error.code === "UNAUTHENTICATED") {
       redirect(signInPathWithNext("/studio/separator"));
@@ -33,11 +38,12 @@ export default async function StudioSeparatorPage() {
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
             <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Rozetnij bit</h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Dzieli bit na wokal, bębny, bas i resztę. Trwa to chwilę u nas.
-              Samo kliknięcie jeszcze nie daje plików.
+              Dzieli bit na wokal, bębny, bas i resztę. Pliki dostajesz od Silver.
+              Samo kliknięcie jeszcze ich nie daje.
             </p>
           </header>
           <StudioSeparatorPanel
+            canEnqueue={canEnqueue}
             projects={projects.map((project) => ({ id: project.id, title: project.title }))}
           />
           <Link

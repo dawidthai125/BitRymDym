@@ -14,7 +14,7 @@ import {
   defaultStudioTrackRole,
   isStudioTrackRole,
 } from "@/config/studio";
-import { maxProjectsForTier, maxRecordingTracksForTier } from "@/config/plan-policy";
+import { clipPitchForTier, maxProjectsForTier, maxRecordingTracksForTier, minimumTierFor } from "@/config/plan-policy";
 import {
   BEAT_USAGE_COLUMNS,
   assertBeatStudioUse,
@@ -26,7 +26,10 @@ import {
   resolveFadesAfterTrim,
   resolveStudioClipFadesForWrite,
 } from "@/lib/studio/studio-clip-fade";
+import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { parseClipPlaybackWrite } from "@/lib/studio/studio-clip-playback";
+import { clipPitchChangeAllowed } from "@/lib/studio/plan-feature-gates";
+import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
 import {
   parseStudioClipGainDb,
   parseStudioClipMuted,
@@ -84,7 +87,6 @@ import {
   parseStudioMasterGainDb,
   parseStudioMasterPan,
 } from "@/lib/studio/studio-master-mix";
-import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   isStudioProjectExportHistoryFkViolation,
@@ -1958,6 +1960,18 @@ export async function updateStudioClipPlaybackFor(
 ): Promise<{ clip: StudioClipDto; documentVersion: number }> {
   const { clip } = await loadOwnedClip(context, input.projectId, input.clipId);
   const playback = parseClipPlaybackWrite({ stretch: input.stretch, pitchCents: input.pitchCents });
+  const storedCents = clip.pitch_cents == null ? 0 : Math.round(num(clip.pitch_cents));
+  if (!clipPitchChangeAllowed("FREE", playback.pitchCents, storedCents)) {
+    const tier = (await resolveProductEntitlementForAuthContext(context)).premiumTier;
+    if (!clipPitchForTier(tier) || !clipPitchChangeAllowed(tier, playback.pitchCents, storedCents)) {
+      throw new StudioPlanFeatureError(
+        "clip_pitch",
+        tier,
+        minimumTierFor((policy) => policy.studio.clipPitch),
+        "Wysokość klipu jest od planu Silver. Tempo zostaje na każdym planie.",
+      );
+    }
+  }
   const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("studio_cas_apply_clip_playback", {

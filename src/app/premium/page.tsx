@@ -53,6 +53,19 @@ export default function PremiumPage() {
     { id: "projekty", label: tr("tab.projekty"), cell: (x) => String(PLAN_POLICY[x].studio.maxProjects) },
     { id: "sciezki", label: tr("tab.sciezki"), cell: (x) => String(PLAN_POLICY[x].studio.maxRecordingTracks) },
     { id: "stemy", label: tr("tab.stemy"), cell: (x) => (PLAN_POLICY[x].studio.maxStems > 0 ? tr("tab.stemyIle", { n: PLAN_POLICY[x].studio.maxStems }) : "—") },
+    { id: "rozciecie", label: tr("tab.rozciecie"), cell: (x) => (PLAN_POLICY[x].studio.maxStems > 0 ? tr("tab.znakWodnyTak") : "—") },
+    {
+      id: "realizator",
+      label: tr("tab.realizator"),
+      cell: (x) => {
+        const n = PLAN_POLICY[x].studio.engineerRequestsPerMonth;
+        return n > 0 ? tr("tab.naMiesiac", { n }) : "—";
+      },
+    },
+    { id: "teksty", label: tr("tab.teksty"), cell: (x) => String(PLAN_POLICY[x].tools.aiLyricsPerDay) },
+    { id: "wysokosc", label: tr("tab.wysokosc"), cell: (x) => (PLAN_POLICY[x].studio.clipPitch ? tr("tab.znakWodnyTak") : "—") },
+    { id: "sciszanie", label: tr("tab.sciszanie"), cell: (x) => (PLAN_POLICY[x].studio.sidechain ? tr("tab.znakWodnyTak") : "—") },
+    { id: "efekty", label: tr("tab.efekty"), cell: (x) => String(PLAN_POLICY[x].studio.maxFxEffects) },
     { id: "sample", label: tr("tab.sample"), cell: (x) => String(PLAN_POLICY[x].studio.maxSamples) },
     { id: "mastery", label: tr("tab.mastery"), cell: (x) => String(PLAN_POLICY[x].mastering.mastersPerMonth) },
     {
@@ -166,6 +179,11 @@ export default function PremiumPage() {
                       <li>{tr("karta.projekty", { p: p.studio.maxProjects, t: p.studio.maxRecordingTracks })}</li>
                       <li>{tr("karta.mastery", { n: p.mastering.mastersPerMonth })}</li>
                       <li>{p.studio.maxStems > 0 ? tr("karta.stemy", { n: p.studio.maxStems }) : tr("karta.stemyBrak")}</li>
+                      <li>{p.studio.maxStems > 0 ? tr("karta.rozciecie") : tr("karta.rozciecieBrak")}</li>
+                      <li>{p.studio.engineerRequestsPerMonth > 0 ? tr("karta.realizator", { n: p.studio.engineerRequestsPerMonth }) : tr("karta.realizatorBrak")}</li>
+                      <li>{tr("karta.teksty", { n: p.tools.aiLyricsPerDay })}</li>
+                      <li>{tr("karta.efekty", { n: p.studio.maxFxEffects })}</li>
+                      <li>{p.studio.clipPitch ? tr("karta.wysokosc") : tr("karta.tempo")}</li>
                       <li>{tr("karta.sample", { n: p.studio.maxSamples })}</li>
                       <li>{bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
                       {p.downloads.youtubeVideosPerWeek > 0 ? <li>{tr("karta.yt", { n: p.downloads.youtubeVideosPerWeek })}</li> : null}
@@ -227,6 +245,18 @@ export default function PremiumPage() {
               <li>{tr("przypis.upgrade")}</li>
               <li>{tr("przypis.raw", { n: OWN_TAKE_RAW_DOWNLOADS_DAILY, plan: LABEL[TIERS.find((x) => PLAN_POLICY[x].downloads.ownTakeRaw) ?? "GOLD"] })}</li>
               <li>{tr("przypis.nuty")}</li>
+              <li>
+                {tr("przypis.bramki", {
+                  silverEng: PLAN_POLICY.SILVER.studio.engineerRequestsPerMonth,
+                  goldEng: PLAN_POLICY.GOLD.studio.engineerRequestsPerMonth,
+                  freeLyrics: PLAN_POLICY.FREE.tools.aiLyricsPerDay,
+                  bronzeLyrics: PLAN_POLICY.BRONZE.tools.aiLyricsPerDay,
+                  silverLyrics: PLAN_POLICY.SILVER.tools.aiLyricsPerDay,
+                  goldLyrics: PLAN_POLICY.GOLD.tools.aiLyricsPerDay,
+                  shortFx: PLAN_POLICY.FREE.studio.maxFxEffects,
+                  longFx: PLAN_POLICY.SILVER.studio.maxFxEffects,
+                })}
+              </li>
               <li>{tr("przypis.znak")}</li>
             </ul>
           </section>

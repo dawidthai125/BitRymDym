@@ -5,6 +5,7 @@ import { parseClientMixRevisionMeta } from "@/lib/studio/mix-working/mix-working
 import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
 import { fxPresetErrorResponse } from "@/lib/studio/presets/fx-presets-http";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
+import { assertFxWritesAllowed, fxWritesFromMixOps } from "@/lib/studio/plan-feature-gate-server";
 import { assertTuneChainsAllowedForUser, tuneChainsInMixOps } from "@/lib/studio/tune/tune-gate-server";
 
 export const runtime = "nodejs";
@@ -33,6 +34,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     // Plan gate: BRD Tune hard/custom style is Silver+ (403 PLAN_FEATURE_LOCKED).
     await assertTuneChainsAllowedForUser(tuneChainsInMixOps(body.ops));
+    await assertFxWritesAllowed(fxWritesFromMixOps(projectId, body.ops));
     const result = await applyStudioMixWorkingOps({
       projectId,
       expectedDocumentVersion: body.expectedDocumentVersion,

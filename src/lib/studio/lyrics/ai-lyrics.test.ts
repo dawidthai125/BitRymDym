@@ -13,10 +13,10 @@ import {
 import { LYRICS_LIMITS } from "./lyrics";
 
 describe("AI lyrics — plan gate", () => {
-  it("is Silver and Gold only, Gold gets more", () => {
-    expect(aiLyricsPerDay("FREE")).toBe(0);
-    expect(aiLyricsPerDay("BRONZE")).toBe(0);
-    expect(aiLyricsPerDay("SILVER")).toBeGreaterThan(0);
+  it("gives Free one try, Bronze a real cap, and Gold more than Silver", () => {
+    expect(aiLyricsPerDay("FREE")).toBe(1);
+    expect(aiLyricsPerDay("BRONZE")).toBe(5);
+    expect(aiLyricsPerDay("SILVER")).toBe(10);
     expect(aiLyricsPerDay("GOLD")).toBeGreaterThan(aiLyricsPerDay("SILVER"));
   });
 });

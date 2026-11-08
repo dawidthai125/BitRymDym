@@ -21,6 +21,8 @@ type StudioFragmentToolsProps = {
   onReverse: () => void;
   stretch?: number;
   pitchCents?: number;
+  /** Non-zero pitch is Silver+. Tempo and a reset to 0 stay available. */
+  pitchLocked?: boolean;
   onPlayback?: (next: { stretch: number; pitchCents: number }) => void;
   onAskDelete: () => void;
   onDelete: () => void;
@@ -47,6 +49,7 @@ export function StudioFragmentTools({
   onReverse,
   stretch = 1,
   pitchCents = 0,
+  pitchLocked = false,
   onPlayback,
   onAskDelete,
   onDelete,
@@ -232,13 +235,27 @@ export function StudioFragmentTools({
                   max={1200}
                   step={100}
                   value={pitchLocal}
-                  disabled={locked}
+                  disabled={locked || pitchLocked}
                   aria-label="Wysokość klipu, tempo zostaje"
+                  title={pitchLocked ? "Wysokość od Silver. Tempo zostaje." : undefined}
                   data-testid="studio-fragment-pitch"
                   onChange={(event) => setPitchLocal(Number(event.target.value))}
                   onPointerUp={(event) => onPlayback({ stretch: stretchLocal, pitchCents: Number(event.currentTarget.value) })}
                 />
               </label>
+              {pitchLocked && pitchLocal !== 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 px-3"
+                  disabled={locked}
+                  data-testid="studio-fragment-pitch-reset"
+                  onClick={() => onPlayback({ stretch: stretchLocal, pitchCents: 0 })}
+                >
+                  Wyzeruj wysokość
+                </Button>
+              ) : null}
             </>
           ) : null}
           <Button

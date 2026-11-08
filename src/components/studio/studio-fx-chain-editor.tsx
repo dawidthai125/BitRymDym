@@ -69,6 +69,10 @@ type StudioFxChainEditorProps = {
   vocalPresets?: { bpm: number };
   /** Track chains: the track's clips (BRD Tune note editor, Gold). */
   trackClips?: readonly NoteEditorClip[];
+  /** Plan cap. Defaults to the absolute product cap. */
+  maxEffects?: number;
+  /** Sidechain duck is Silver+. */
+  allowSidechain?: boolean;
 };
 
 function formatParam(value: number, unit: string): string {
@@ -91,6 +95,8 @@ export function StudioFxChainEditor({
   title,
   vocalPresets,
   trackClips,
+  maxEffects = STUDIO_FX_CHAIN_MAX_EFFECTS,
+  allowSidechain = true,
 }: StudioFxChainEditorProps) {
   const tl = useLibText();
   const t = useTranslations("studio.studioFxChainEditor");
@@ -176,6 +182,8 @@ export function StudioFxChainEditor({
   }
 
   async function onAdd(type: StudioFxType) {
+    if (chain.effects.length >= maxEffects) return;
+    if (type === "sidechain" && !allowSidechain) return;
     setAddOpen(false);
     try {
       let next = addStudioFxToChain(chain, type, role);
@@ -254,7 +262,7 @@ export function StudioFxChainEditor({
     await commit(next);
   }
 
-  const atMax = chain.effects.length >= STUDIO_FX_CHAIN_MAX_EFFECTS;
+  const atMax = chain.effects.length >= maxEffects;
   const heading =
     title ??
     (role === "master" ? t("masterEfekty") : t("sciezkaEfekty"));
@@ -478,7 +486,7 @@ export function StudioFxChainEditor({
           </Button>
           {addOpen ? (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {STUDIO_FX_TYPES.filter((type) => STUDIO_FX_REGISTRY[type][role]).map((type) => (
+              {STUDIO_FX_TYPES.filter((type) => STUDIO_FX_REGISTRY[type][role] && (type !== "sidechain" || allowSidechain)).map((type) => (
                 <li key={type}>
                   <Button
                     type="button"
@@ -496,7 +504,7 @@ export function StudioFxChainEditor({
           ) : null}
           {atMax ? (
             <p className="text-xs text-[var(--brd-mute)]">
-              {t("limit")}{" "}{STUDIO_FX_CHAIN_MAX_EFFECTS} {t("efektow")}
+              {t("limit")}{" "}{maxEffects} {t("efektow")}
             </p>
           ) : null}
         </div>

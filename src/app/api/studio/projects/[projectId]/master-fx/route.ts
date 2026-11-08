@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { assertFxWritesAllowed } from "@/lib/studio/plan-feature-gate-server";
 import { studioApiErrorResponse } from "@/lib/studio/studio-api-error";
 import { updateStudioMasterFxChain } from "@/lib/studio/studio-service";
 
@@ -15,6 +16,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       expectedDocumentVersion?: unknown;
       chain?: unknown;
     };
+    await assertFxWritesAllowed([{ raw: body.chain, projectId, trackId: null }]);
     const result = await updateStudioMasterFxChain({
       projectId,
       expectedDocumentVersion: body.expectedDocumentVersion,

@@ -22,7 +22,17 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export class StudioPlanFeatureError extends Error {
   readonly code = "PLAN_FEATURE_LOCKED" as const;
   constructor(
-    readonly feature: "fx_presets_save" | "fx_presets_sets" | "fx_presets_limit" | "pitch_correction_custom" | "pitch_correction_notes",
+    readonly feature:
+      | "fx_presets_save"
+      | "fx_presets_sets"
+      | "fx_presets_limit"
+      | "pitch_correction_custom"
+      | "pitch_correction_notes"
+      | "clip_pitch"
+      | "sidechain"
+      | "fx_chain_length"
+      | "separator"
+      | "engineer",
     readonly tier: PremiumTier,
     readonly requiredTier: PremiumTier,
     message: string,

@@ -1,8 +1,9 @@
 /**
- * Silver+ — AI lyrics helper. Pure model shared by the route, the server module and the card:
+ * AI lyrics helper. Pure model shared by the route, the server module and the card:
  * input rules, daily caps, the prompt (and the rhyme-repair prompt) and cleaning of the model output.
- * No I/O here.
+ * No I/O here. Daily caps live in plan-policy (Owner 2026-11-08).
  */
+import { aiLyricsPerDayForTier } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
 import { rhymeReport, type RhymeReport } from "./rhyme";
@@ -37,11 +38,9 @@ export const AI_LYRICS_LIMITS = {
 export const AI_LYRICS_RHYME_TARGET = 0.7;
 export const AI_LYRICS_MAX_REPAIRS = 2;
 
-/** Silver and Gold only; Gold gets the bigger daily cap. */
+/** Per Europe/Warsaw day. Free gets one try. Gold stays above Silver. */
 export function aiLyricsPerDay(tier: PremiumTier): number {
-  if (tier === "GOLD") return 30;
-  if (tier === "SILVER") return 10;
-  return 0;
+  return aiLyricsPerDayForTier(tier);
 }
 
 export const AI_LYRICS_MESSAGES = {

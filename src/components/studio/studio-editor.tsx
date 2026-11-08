@@ -46,7 +46,7 @@ import {
 } from "@/components/studio/studio-mixer-shell";
 import { StudioAutomationLane } from "@/components/studio/studio-automation-lane";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
-import { maxStemsForTier } from "@/config/plan-policy";
+import { clipPitchForTier, maxFxEffectsForTier, maxStemsForTier, sidechainForTier } from "@/config/plan-policy";
 import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlayedNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
@@ -3299,6 +3299,7 @@ function StudioEditorInner({
         }}
         fragmentStretch={selectedClip?.stretchRatio ?? 1}
         fragmentPitchCents={selectedClip?.pitchCents ?? 0}
+        fragmentPitchLocked={!clipPitchForTier(trackCapacity.premiumTier)}
         onFragmentPlayback={(next) => {
           if (!selectedClip) return;
           saveClipPlayback(selectedClip.id, next);
@@ -4068,6 +4069,8 @@ function StudioEditorInner({
           <StudioFxChainEditor
             role="master"
             projectId={doc.project.id}
+            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
+            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
             chain={doc.project.masterFxChain}
             getExpectedDocumentVersion={expectedDocumentVersion}
             enqueuePersistAsync={enqueuePersistAsync}
@@ -4094,6 +4097,8 @@ function StudioEditorInner({
             role="track"
             projectId={doc.project.id}
             trackId={fxPanel.trackId}
+            maxEffects={maxFxEffectsForTier(trackCapacity.premiumTier)}
+            allowSidechain={sidechainForTier(trackCapacity.premiumTier)}
             chain={
               doc.tracks.find((t) => t.id === fxPanel.trackId)?.effectsChain ?? {
                 schemaVersion: 1,
@@ -4649,6 +4654,7 @@ function StudioTransportBar({
   onFragmentReverse,
   fragmentStretch,
   fragmentPitchCents,
+  fragmentPitchLocked,
   onFragmentPlayback,
   onFragmentAskDelete,
   onFragmentDelete,
@@ -4688,6 +4694,7 @@ function StudioTransportBar({
   onFragmentReverse: () => void;
   fragmentStretch: number;
   fragmentPitchCents: number;
+  fragmentPitchLocked: boolean;
   onFragmentPlayback: (next: { stretch: number; pitchCents: number }) => void;
   onFragmentAskDelete: () => void;
   onFragmentDelete: () => void;
@@ -4999,6 +5006,7 @@ function StudioTransportBar({
           onReverse={onFragmentReverse}
           stretch={fragmentStretch}
           pitchCents={fragmentPitchCents}
+          pitchLocked={fragmentPitchLocked}
           onPlayback={onFragmentPlayback}
           onAskDelete={onFragmentAskDelete}
           onDelete={onFragmentDelete}

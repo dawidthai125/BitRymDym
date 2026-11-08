@@ -46,6 +46,19 @@ export function studioApiErrorResponse(error: unknown): NextResponse {
       { status: 403 },
     );
   }
+  if (error instanceof Error && error.name === "StudioPlanFeatureError") {
+    const locked = error as Error & { code?: string; feature?: string; tier?: string; requiredTier?: string };
+    return NextResponse.json(
+      {
+        error: locked.message,
+        code: locked.code ?? "PLAN_FEATURE_LOCKED",
+        feature: locked.feature,
+        tier: locked.tier,
+        requiredTier: locked.requiredTier,
+      },
+      { status: 403 },
+    );
+  }
   if (error instanceof StudioFxChainError) {
     return NextResponse.json(
       { error: error.message, code: error.code },
