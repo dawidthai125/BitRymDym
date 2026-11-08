@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tkinter as tk
+from tkinter import filedialog
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -43,6 +44,43 @@ def ffmpeg_exe() -> str:
     if not matches:
         raise RuntimeError("Brak ffmpeg. Bez niego mikrofon Intel się nie otworzy.")
     return str(matches[-1])
+
+
+def ffplay_exe() -> str | None:
+    found = shutil.which("ffplay")
+    if found:
+        return found
+    sibling = Path(ffmpeg_exe()).with_name("ffplay.exe")
+    if sibling.exists():
+        return str(sibling)
+    return None
+
+
+def monitor_argv(exe: str, path: Path) -> list[str]:
+    return [exe, "-nodisp", "-autoexit", "-loglevel", "error", str(path)]
+
+
+def start_monitor(path: Path) -> subprocess.Popen[bytes] | None:
+    exe = ffplay_exe()
+    if exe is None or not path.exists():
+        return None
+    return subprocess.Popen(
+        monitor_argv(exe, path),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def stop_monitor(proc: subprocess.Popen[bytes] | None) -> None:
+    if proc is None or proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=3)
 
 
 def audio_devices(exe: str) -> list[str]:
@@ -202,10 +240,12 @@ class RecorderWindow:
         if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
             self.root.withdraw()
         self.root.title("BitRymDym")
-        self.root.geometry("680x760")
+        self.root.geometry("680x820")
         self.root.configure(bg=PAPER)
         self.recording = False
         self.capture: subprocess.Popen[bytes] | None = None
+        self.monitor: subprocess.Popen[bytes] | None = None
+        self.local_beat: Path | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
         self.public_url = ""
         self.public_key = ""
@@ -259,6 +299,20 @@ class RecorderWindow:
             font=("Segoe UI", 10),
         )
         self._row("Bit", self.beat_menu)
+        hear = tk.Frame(self.root, bg=PAPER)
+        hear.pack(fill="x", padx=16, pady=2)
+        self._button(hear, "Odsłuch z dysku", self.pick_local, RACK, INK).pack(side="left")
+        self.local_label = tk.StringVar(value="Bez pliku nagrywasz w ciszy. Bit z listy i tak idzie na konto.")
+        tk.Label(
+            hear,
+            textvariable=self.local_label,
+            bg=PAPER,
+            fg=SOFT,
+            font=("Segoe UI", 9),
+            anchor="w",
+            wraplength=460,
+            justify="left",
+        ).pack(side="left", padx=8)
         tk.Label(
             self.root,
             textvariable=self.plan_text,
@@ -471,23 +525,43 @@ class RecorderWindow:
         except Exception as error:
             self.status.set(str(error))
 
+    def pick_local(self) -> None:
+        picked = filedialog.askopenfilename(
+            title="Bit do odsłuchu",
+            filetypes=[("Audio", "*.wav *.mp3"), ("Wszystkie", "*.*")],
+        )
+        if not picked:
+            return
+        self.local_beat = Path(picked)
+        self.local_label.set(self.local_beat.name)
+
+    def _stop_monitor(self) -> None:
+        stop_monitor(self.monitor)
+        self.monitor = None
+
     def arm(self) -> None:
         try:
             if self.capture:
                 stop_capture(self.capture)
+            self._stop_monitor()
             device = audio_devices(ffmpeg_exe())[0]
             self.capture = start_capture(self.wav_path, device)
+            if self.local_beat:
+                self.monitor = start_monitor(self.local_beat)
             self.recording = True
-            self.status.set("Nagrywam z mikrofonu. Stop wyśle WAV na konto.")
+            heard = " Odsłuch z dysku leci." if self.monitor else ""
+            self.status.set(f"Nagrywam z mikrofonu.{heard} Stop wyśle WAV na konto.")
         except Exception as error:
             self.recording = False
             self.capture = None
+            self._stop_monitor()
             self.status.set(str(error))
 
     def stop_and_send(self) -> None:
         try:
             if not self.recording or not self.capture:
                 raise RuntimeError("Najpierw naciśnij Nagraj.")
+            self._stop_monitor()
             stop_capture(self.capture)
             self.capture = None
             self.recording = False
@@ -506,6 +580,7 @@ class RecorderWindow:
             self.status.set(f"Projekt jest na koncie. Otwórz go na stronie.{fx_note} Id: {project}")
         except Exception as error:
             self.recording = False
+            self._stop_monitor()
             if self.capture:
                 stop_capture(self.capture)
                 self.capture = None
@@ -527,6 +602,9 @@ if __name__ == "__main__":
         from own_fx import self_test as fx_self_test
 
         fx_self_test()
+        argv = monitor_argv("ffplay", Path("bit.wav"))
+        if "-nodisp" not in argv or argv[-1] != "bit.wav":
+            raise SystemExit("odsłuch")
         self_test_wav_roundtrip()
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
         record_seconds(target, 0.4)
