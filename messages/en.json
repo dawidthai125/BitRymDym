@@ -2460,7 +2460,7 @@
         "na": "N/A"
       },
       "popraw": "Fix",
-      "poprawWkrotce": "Automatic fixes are coming soon.",
+      "poprawWkrotce": "Mix fixes are in this step.",
       "przejdzDoMasteringu": "Go to Mastering",
       "masteringZablokowany": "Fix the red items first.",
       "masteringWkrotce": "Your mix is ready. Mastering is the next step.",
@@ -2678,7 +2678,7 @@
         "mixRecheck": "After fixing, click “Analyze again”.",
         "mixHasYellow": "No red items. {count, plural, one {One thing is} other {# things are}} still worth polishing.",
         "mixAllGreen": "All good! The vocal sits well on the beat.",
-        "mixReadyForMaster": "You can go on to mastering. That step is coming soon.",
+        "mixReadyForMaster": "You can go on to mastering.",
         "fix": {
           "clipping": "Clipping: pull the clipping track's volume down 3–6 dB. If the recording itself clips, record that part quieter.",
           "balance": "Vocal vs beat: move the vocal or beat volume until the vocal is 0–3 LU above the beat.",
