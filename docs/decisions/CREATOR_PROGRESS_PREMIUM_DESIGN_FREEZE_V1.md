@@ -295,7 +295,7 @@ Public informational: Rank, Experience, thresholds, how to earn, anti-abuse, Ran
 
 ### `/premium`
 Public informational: Free/Bronze/Silver/Gold, matrix, Mix/Master/Render/Storage/Recording/Downloads/retention, monthly/yearly offer display, FAQ.  
-CTA: **„Wkrótce”** / waitlist only — **no checkout**.
+CTA w tym freeze (2026-10): **„Wkrótce”** / waitlist only — **no checkout**. Od 2026-11-08 strona `/premium` ma checkout PayU. Ten akapit nie opisuje żywej strony.
 
 ---
 

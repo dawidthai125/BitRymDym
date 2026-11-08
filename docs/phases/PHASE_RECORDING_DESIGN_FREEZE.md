@@ -108,7 +108,7 @@ RECORDING POLICY (max seconds, retention, caps, download_own_take, …)
 | Payments in Recording V1? | **No** |
 | Entitlement resolver | Central module; no scattered `if (accountLevel === …)` in UI |
 
-**V1 effective policy** uses Account Level only (Premium overlay = no-op until payments GO).
+**V1 effective policy** uses Account Level only (Premium overlay = no-op until payments GO). Od 2026-11-08 checkout PayU jest włączony. To zdanie opisuje kontrakt V1 nagrywania, nie stan strony.
 
 ---
 

@@ -1422,7 +1422,7 @@ Extended downloads
 Premium Full Take
 ```
 
-Płatności początkowo pozostają wyłączone.
+Płatności początkowo pozostają wyłączone. Stan od 2026-11-08: PayU jest włączone (OD-04). Zdanie wyżej opisuje start projektu.
 
 ---
 

@@ -40,7 +40,7 @@ Temporary recordings
 | 3 | Współpraca | beat requests, DM, sharing, notifications |
 | 4 | Premium | payments, extended downloads, Full Take |
 
-Uwaga: schema/permissions mogą być przygotowane pod przyszłość, ale **aktywne płatności i Premium pozostają wyłączone** (§14–15, §48).
+Uwaga (start fazy): schema/permissions mogą być przygotowane pod przyszłość, a wtedy aktywne płatności i Premium były wyłączone (§14–15, §48). Od 2026-11-08 produkcja ma włączony checkout PayU.
 
 ---
 

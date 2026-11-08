@@ -8,9 +8,11 @@
  * deliver policy, master quota, project limit) derives its numbers from here
  * and the server enforces them — the UI only mirrors.
  *
- * Payments: one-off checkout. PayU is the default provider. Przelewy24 is
- * used only when PayU env is absent. No card on file. Buy buttons stay hidden
- * until PLAN_PAYMENTS_AVAILABLE is on and that provider's env is set. Prices
+ * Payments: one-off checkout. PayU is the default provider and has been on
+ * in production since 2026-11-08 (secure.payu.com). Przelewy24 is used only
+ * when PayU env is absent. No card on file. Buy buttons stay hidden until
+ * PLAN_PAYMENTS_AVAILABLE is on and that provider's env is set. Do not tell
+ * users that checkout is missing or that prices are only planned. Prices
  * below are the gross PLN amounts the server charges — the client never
  * supplies an amount.
  */

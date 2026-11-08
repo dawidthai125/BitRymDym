@@ -32,14 +32,14 @@
 | Pobieranie | signed URL + limity + audit | §12–13 |
 | Quick Take | BEGINNER max 30 s; retention by account level; **anon delivery NOT SHIPPED** (D02 decision unchanged) | §18–21 · freeze · Waves 1–4 CLOSED |
 | Full Take (PRO/LEGEND V1) | ≤ długość bitu ≤ 180 s; PRO 10 dni · LEGEND 30 dni | §22–23 · OD-REC-04/05 |
-| Feature flags płatności | wyłączone na start; Premium = future overlay | §14–15 · D04 hybrid |
+| Feature flags płatności | PayU włączone od 2026-11-08 (`PLAN_PAYMENTS_AVAILABLE`); przycisk znika tylko bez flagi albo kluczy operatora | §14–15 · D04 hybrid |
 | Bezpieczeństwo | krytyczne reguły tylko po stronie serwera | §39 |
 
 ---
 
 ## Nadal OPEN (nie zamrażać)
 
-Codec, watermark, mix, limity liczbowe, payments, visual identity itd. — [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md) (OD-04–OD-18).
+Codec, watermark, mix, limity liczbowe, visual identity itd. — [OPEN_DECISIONS.md](../decisions/OPEN_DECISIONS.md). Płatności PayU są włączone od 2026-11-08 (OD-04 zamknięte).
 
 ---
 

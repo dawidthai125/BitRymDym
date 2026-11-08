@@ -268,7 +268,7 @@ W2-B Design Contract: [W2B_PREMIUM_ENFORCEMENT_DESIGN_CONTRACT.md](./W2B_PREMIUM
 - Download runtime SSOT (live): ANON = `PREMIUM_ANON_DOWNLOADS_DAILY`; USER = `entitlement.limits.downloadsDaily`. Legacy `DOWNLOAD_LIMIT_ANON_DAILY` / `USER_DAILY_DOWNLOAD_LIMIT` = unused / FREE mirror (not reserve authority). MODERATOR uses USER download limits (**intentional**).
 - **NON-BLOCKING FINDING:** Production E2E verified server/RPC/signed-URL path; full browser/UI Server Action journey was not exercised.
 - Mix / Render live jobs = **DEFERRED — SEPARATE VERIFICATION** (not W2-B download blocker).
-- **OD-04** / **OD-07** remain **OPEN**. Billing deferred.
+- **OD-04 CLOSED** 2026-11-08. Checkout PayU jest włączony. Wpis „remain OPEN / billing deferred” z 2026-10-04 jest historią.
 - **Recording Premium overlay numbers** remain **OPEN / DEFERRED**.
 - **Gold 90d** = **DESIGN ONLY / DEFERRED**. Artifact janitor = **DEFERRED**.
 - **P2-1** = **VERIFIED RESOLVED** (Owner Implementation Review).

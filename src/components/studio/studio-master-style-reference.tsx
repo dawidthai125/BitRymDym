@@ -175,6 +175,9 @@ export function StudioMasterStyleReference({
             <div data-testid="studio-master-reference-addon" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] pl-2 text-sm">
               <p>{t("referencja.dodatek", { price })}</p>
               <p>
+                <a className="font-semibold underline underline-offset-4" href="/premium">{t("zobaczPlany")}</a>
+              </p>
+              <p>
                 {t("referencja.dodatekKontakt")}{" "}
                 <a className="font-semibold underline underline-offset-4" href={`mailto:${CONTACT}?subject=${encodeURIComponent(t("referencja.mailTemat"))}`}>{CONTACT}</a>
               </p>

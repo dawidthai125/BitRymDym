@@ -548,7 +548,7 @@ Repo + production @ `d86b4df` / DB `20261003221811`: `tier` (FREE/BRONZE/SILVER/
 | Later Storage waves (03–06, 08–11) | **NOT STARTED** | — | — | janitor · orphan delete · migration · optional |
 | Later E3 product expansions (STEMS etc.) | **NOT SELECTED** | — | — | **Do not auto-start** |
 | Track publishing from recording | NOT IMPLEMENTED | — | Future | |
-| Payments / Premium catalog product | OUT OF SCOPE / NOT IMPLEMENTED | — | OD-04/07 OPEN · **OD-08 CLOSED** | Billing deferred · no checkout/UI |
+| Payments / Premium catalog product | **LIVE** od 2026-11-08 | PayU `secure.payu.com` · `/premium` · historia `/admin/platnosci` | OD-04 **CLOSED** · **OD-08 CLOSED** | Checkout sprzedaje plan, dodatek referencji i pakiety. Stary wpis „no checkout” jest nieaktualny. |
 | **CREATOR PROGRESS W2-A** Premium foundation | **CLOSED / PRODUCTION VERIFIED WITH FINDINGS** @ `6ee3255` | Prod DB `20261003221811` · deploy Ready | OK | [closeout](./audits/CREATOR_PROGRESS_W2A_CLOSEOUT.md) · tiers FREE/BRONZE/SILVER/GOLD · live tiers NOT VERIFIED (0 rows) · Gold 90d DESIGN ONLY · P2 OPEN |
 | **CREATOR PROGRESS W2-B** Premium Enforcement | **PRODUCTION VERIFIED WITH NON-BLOCKING FINDING** @ `d86b4df` | Ready · `dpl_2wk8MJjcP5vwPR9w5hUqLmei6oGG` | OK | [implementation](./audits/CREATOR_PROGRESS_W2B_IMPLEMENTATION.md) · ANON/FREE/BRONZE/SILVER/GOLD E2E PASS · OD-17 PASS · P2-1 **VERIFIED RESOLVED** · P2-2/3/4 OPEN · Mix/Render DEFERRED · Gold 90d / janitor / billing / UI / overlay out |
 | Messaging / voting / comments product | NOT IMPLEMENTED | — | SSOT future; OD-10/11 OPEN | Permission rows may exist |

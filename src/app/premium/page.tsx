@@ -189,7 +189,7 @@ export default function PremiumPage() {
                       {p.downloads.youtubeVideosPerWeek > 0 ? <li>{tr("karta.yt", { n: p.downloads.youtubeVideosPerWeek })}</li> : null}
                       <li>{tr(p.tools.pitchCorrection.manualNotes ? "karta.nutyEdytor" : "karta.nuty")}</li>
                       <li>{tr("karta.znak")}</li>
-                      {p.mastering.referenceMastering === "addon" ? <li>{tr(paymentsOn ? "karta.referencja.addonKup" : "karta.referencja.addon")}</li> : null}
+                      {p.mastering.referenceMastering === "addon" ? <li>{tr("karta.referencja.addonKup")}</li> : null}
                       {p.mastering.referenceMastering === "included" ? <li>{tr("karta.referencja.included")}</li> : null}
                     </ul>
                     <p className="mt-auto text-xs text-[var(--brd-mute)]">{tier === "FREE" ? tr("freeStopka") : PLAN_TRIAL_DAYS === 0 ? tr("bezOkresuProbnego") : null}</p>
@@ -261,27 +261,9 @@ export default function PremiumPage() {
             </ul>
           </section>
 
-          <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-soon">
-            <h2 id="premium-soon" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">{tr("wPrzygotowaniu")}</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-relaxed text-[var(--brd-ink-soft)]">
-              {paymentsOn ? null : (
-                <li>
-                  <span className="font-medium text-[var(--brd-ink)]">{tr("platnosciTytul")}</span>
-                  {" — "}
-                  {tr("platnosciPlan")}
-                </li>
-              )}
-              <li>
-                <span className="font-medium text-[var(--brd-ink)]">{tr("referencjaTytul")}</span>
-                {" — "}
-                {tr(paymentsOn ? "przypis.referencjaKup" : "przypis.referencja")}
-              </li>
-            </ul>
-          </section>
-
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-how">
             <h2 id="premium-how" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">{tr("jakDostacPremiumDzis")}</h2>
-            <p className="mt-4 max-w-[60ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{tr(paymentsOn ? "poziomGdyPlatnosci" : "poziomNadajeSiePo")}</p>
+            <p className="mt-4 max-w-[60ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">{tr("poziomGdyPlatnosci")}</p>
             <div className="mt-6 flex flex-wrap gap-2">
               <BrdLink href="/beats">{tr("idzDoKatalogu")}</BrdLink>
               <BrdLink href="/sign-up" variant="secondary">{tr("zalozKonto")}</BrdLink>
