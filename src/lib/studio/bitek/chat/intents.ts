@@ -122,6 +122,39 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
     );
   }
 
+  const CLOSE = /blizej|intymn|na przod|intimate|closer|in your face/;
+  const PUNCH = /punch|uderz|mocniej bit|bit mocniej|kick mocniej/;
+  if ((has(m, CLOSE) && !has(m, BEAT)) || (has(m, VOCAL) && has(m, CLOSE))) {
+    const target = byRole(ctx, ["lead_vocal"]);
+    if (!target.length) return missing(["lead_vocal"]);
+    return done(
+      ctx.lang === "pl"
+        ? "Przysunę wokal o 2 dB. Jak za dużo, napisz „mniej” albo cofnij."
+        : "I'll bring the vocal 2 dB closer. If it's too much, say less or undo.",
+      target.slice(0, BITEK_LIMITS.maxProposals).map((t) => ({
+        trackRef: t.ref,
+        param: "gainDb" as const,
+        value: clampGain(t.gainDb + 2),
+        label: "",
+      })),
+    );
+  }
+  if (has(m, PUNCH)) {
+    const target = byRole(ctx, ["beat"]);
+    if (!target.length) return missing(["beat"]);
+    return done(
+      ctx.lang === "pl"
+        ? "Podniosę bit o 2 dB. Kolejna prośba dokłada się do tej."
+        : "I'll raise the beat 2 dB. The next ask stacks on this one.",
+      target.slice(0, BITEK_LIMITS.maxProposals).map((t) => ({
+        trackRef: t.ref,
+        param: "gainDb" as const,
+        value: clampGain(t.gainDb + 2),
+        label: "",
+      })),
+    );
+  }
+
   if (has(m, REVERB)) return done(tx.reverb);
 
   const FIX_ALL = /popraw wszystko|napraw mix|fix everything|fix the mix|popraw mix/;
@@ -236,11 +269,16 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
     { re: /high-?pass|filtr dol|low cut/, effect: "highpass" },
     { re: /\bgate\b|bramk|odszum/, effect: "gate" },
     { re: /\beq\b|equaliz|korekc/, effect: "eq" },
+    { re: /sidechain|ustepow|kick na bas|bas pod kick/, effect: "sidechain" },
   ];
   const fx = FX_ASK.find((f) => f.re.test(m));
   if (fx) {
     const onBeat = fx.effect === "eq" && has(m, BEAT) && !has(m, VOCAL);
-    const roles = onBeat ? ["beat", "instrument"] : [...BITEK_TUNE_ROLES];
+    const roles = fx.effect === "sidechain"
+      ? ["instrument"]
+      : onBeat
+        ? ["beat", "instrument"]
+        : [...BITEK_TUNE_ROLES];
     const target = byRole(ctx, roles);
     if (!target.length) return missing(roles);
     const track = target[0]!;

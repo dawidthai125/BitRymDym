@@ -29,6 +29,7 @@ export function studioEngineDocumentFromProject(
       effectsChain: t.effectsChain,
       automation: t.automation,
       midi: t.midi,
+      trackType: t.trackType,
     })),
     clips: doc.clips
       .filter((c) => {
@@ -54,6 +55,8 @@ export function studioEngineDocumentFromProject(
         scratchCueMs: c.scratchCueMs,
         scratchReverse: c.scratchReverse,
         scratchRate: c.scratchRate,
+        stretchRatio: c.stretchRatio,
+        pitchCents: c.pitchCents,
       })),
   };
 }

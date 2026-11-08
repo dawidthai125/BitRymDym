@@ -7,6 +7,7 @@ import {
   updateStudioClipGain,
   updateStudioClipGeometry,
   updateStudioClipMute,
+  updateStudioClipPlayback,
   updateStudioClipScratch,
   type StudioClipGeometryPatch,
 } from "@/lib/studio/studio-service";
@@ -30,7 +31,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         | "set_fades"
         | "set_gain"
         | "set_mute"
-        | "set_scratch";
+        | "set_scratch"
+        | "set_playback";
       timelineStartMs?: number;
       durationMs?: number;
       sourceOffsetMs?: number;
@@ -43,6 +45,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       cueMs?: unknown;
       reverse?: unknown;
       rate?: unknown;
+      stretch?: unknown;
+      pitchCents?: unknown;
       expectedDocumentVersion?: unknown;
     };
 
@@ -81,6 +85,21 @@ export async function PATCH(request: Request, context: RouteContext) {
         clipId,
         expectedDocumentVersion: body.expectedDocumentVersion,
         muted: body.muted,
+      });
+      return NextResponse.json({
+        success: true,
+        clip: result.clip,
+        documentVersion: result.documentVersion,
+      });
+    }
+
+    if (body.op === "set_playback") {
+      const result = await updateStudioClipPlayback({
+        projectId,
+        clipId,
+        expectedDocumentVersion: body.expectedDocumentVersion,
+        stretch: body.stretch,
+        pitchCents: body.pitchCents,
       });
       return NextResponse.json({
         success: true,

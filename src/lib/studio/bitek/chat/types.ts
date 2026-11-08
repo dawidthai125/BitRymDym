@@ -32,7 +32,7 @@ export type BitekTakeLevel = { peakDb: number; clipping: boolean };
 export const BITEK_MIX_FIXES = ["gain", "balance", "compression", "eq", "deesser", "denoise", "panorama", "space"] as const;
 export type BitekMixFixId = (typeof BITEK_MIX_FIXES)[number];
 
-export const BITEK_TRACK_FX = ["eq", "compressor", "highpass", "deesser", "gate", "harmony", "voice"] as const;
+export const BITEK_TRACK_FX = ["eq", "compressor", "highpass", "deesser", "gate", "harmony", "voice", "sidechain"] as const;
 export type BitekTrackFx = (typeof BITEK_TRACK_FX)[number];
 
 export const BITEK_MASTER_STYLES = ["warm", "bright", "loud", "dynamic"] as const;

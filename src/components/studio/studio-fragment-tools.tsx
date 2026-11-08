@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,9 @@ type StudioFragmentToolsProps = {
   onFadeOut: () => void;
   reverseOn: boolean;
   onReverse: () => void;
+  stretch?: number;
+  pitchCents?: number;
+  onPlayback?: (next: { stretch: number; pitchCents: number }) => void;
   onAskDelete: () => void;
   onDelete: () => void;
   onCancelDelete: () => void;
@@ -41,12 +45,27 @@ export function StudioFragmentTools({
   onFadeOut,
   reverseOn,
   onReverse,
+  stretch = 1,
+  pitchCents = 0,
+  onPlayback,
   onAskDelete,
   onDelete,
   onCancelDelete,
 }: StudioFragmentToolsProps) {
   const t = useTranslations("studio.studioEditor");
   const locked = !enabled || pending;
+  const [stretchLocal, setStretchLocal] = useState(stretch);
+  const [pitchLocal, setPitchLocal] = useState(pitchCents);
+  const [seenStretch, setSeenStretch] = useState(stretch);
+  const [seenPitch, setSeenPitch] = useState(pitchCents);
+  if (stretch !== seenStretch) {
+    setSeenStretch(stretch);
+    setStretchLocal(stretch);
+  }
+  if (pitchCents !== seenPitch) {
+    setSeenPitch(pitchCents);
+    setPitchLocal(pitchCents);
+  }
 
   return (
     <div
@@ -188,6 +207,40 @@ export function StudioFragmentTools({
           >
             {t("odwrocFragment")}
           </Button>
+          {onPlayback ? (
+            <>
+              <label className="inline-flex min-h-11 items-center gap-2 px-1 text-xs">
+                Tempo
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2}
+                  step={0.05}
+                  value={stretchLocal}
+                  disabled={locked}
+                  aria-label="Tempo klipu, wysokość zostaje"
+                  data-testid="studio-fragment-stretch"
+                  onChange={(event) => setStretchLocal(Number(event.target.value))}
+                  onPointerUp={(event) => onPlayback({ stretch: Number(event.currentTarget.value), pitchCents: pitchLocal })}
+                />
+              </label>
+              <label className="inline-flex min-h-11 items-center gap-2 px-1 text-xs">
+                Wysokość
+                <input
+                  type="range"
+                  min={-1200}
+                  max={1200}
+                  step={100}
+                  value={pitchLocal}
+                  disabled={locked}
+                  aria-label="Wysokość klipu w centach, tempo zostaje"
+                  data-testid="studio-fragment-pitch"
+                  onChange={(event) => setPitchLocal(Number(event.target.value))}
+                  onPointerUp={(event) => onPlayback({ stretch: stretchLocal, pitchCents: Number(event.currentTarget.value) })}
+                />
+              </label>
+            </>
+          ) : null}
           <Button
             type="button"
             size="sm"

@@ -60,6 +60,10 @@ export type StudioClipDto = {
   scratchCueMs?: number;
   scratchReverse?: boolean;
   scratchRate?: number;
+  /** 1 = original length. 2 = half speed, same pitch. */
+  stretchRatio?: number;
+  /** Semitone cents. 0 = original pitch. Length stays with stretch. */
+  pitchCents?: number;
 };
 
 export type StudioProjectDocument = {

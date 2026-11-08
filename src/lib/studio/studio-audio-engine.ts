@@ -31,6 +31,12 @@ import { renderMidiNotes } from "@/lib/studio/studio-midi";
 import { isTrackAudible } from "@/lib/studio/studio-track-ops";
 import { applyClipFadeGainParam } from "@/lib/studio/studio-clip-fade";
 import {
+  bakedTimelineMs,
+  clampClipPlayback,
+  clipPlaybackIdentity,
+  renderClipPlaybackMono,
+} from "@/lib/studio/studio-clip-playback";
+import {
   clampScratchRate,
   persistedReverseCoastSec,
   persistedReverseHeardSec,
@@ -47,6 +53,7 @@ import {
 } from "@/lib/studio/studio-voice-identity";
 import {
   interpretStudioFxChainForPlayback,
+  sidechainParamsOf,
   studioFxPlaybackFingerprint,
 } from "@/lib/studio/studio-fx-chain";
 import {
@@ -233,6 +240,10 @@ type TrackGraph = {
   pan: PannerLike;
   /** Broadband beat trim. Sits before pan so the track meter can keep pan's outputs. */
   pocketDuck: GainLike | null;
+  /** User sidechain. Sits after pan (or after the selected-track meter) and before the sum. */
+  sidechainDuck: GainLike | null;
+  /** Parallel tap on a BEAT track that is not itself sidechained. */
+  sidechainKey: AnalyserLike | null;
   fx: StudioTrackFxHandle | null;
   fingerprint: string;
   /** Gain / pan automation last scheduled: its signature, audibility and the clock epoch it was planned for. */
@@ -259,6 +270,9 @@ type Voice = {
   reverseAnchor: { heardSec: number; contextTime: number; rate: number } | null;
   reverseLoad: boolean;
   reverseToken: number;
+  playbackSig: string;
+  playbackBuffer: StudioAudioBufferLike | null;
+  playbackLoad: boolean;
 };
 
 const PREVIEW_VOICE_ID = "__studio_preview__";
@@ -421,6 +435,9 @@ export class StudioAudioEngine {
   private tickId: number | null = null;
   /** Smoothed broadband trim for BEAT_REF tracks. 1 = no duck. */
   private pocketDuckLevel = 1;
+  private sidechainEnv = new Map<string, number>();
+  private sidechainLastMs = 0;
+  private sidechainKeyData: Float32Array | null = null;
   private lastSyncCheckMs = 0;
   private failedClips = new Set<string>();
   /** BRD Tune live bakes: clip bake key → entry. */
@@ -1051,6 +1068,7 @@ export class StudioAudioEngine {
     await this.syncVoices(playheadMs, true);
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
+    this.applySidechain();
     this.startClock();
   }
 
@@ -1096,6 +1114,7 @@ export class StudioAudioEngine {
     await this.syncVoices(playheadMs, shouldPlay);
     postPocketPlayhead(playheadMs);
     this.applyPocketBeatDuck();
+    this.applySidechain();
     if (shouldPlay) {
       this.startClock();
     }
@@ -1169,6 +1188,9 @@ export class StudioAudioEngine {
       reverseAnchor: null,
       reverseLoad: false,
       reverseToken: 0,
+      playbackSig: "",
+      playbackBuffer: null,
+      playbackLoad: false,
     });
 
     try {
@@ -1221,12 +1243,15 @@ export class StudioAudioEngine {
         graph.input.disconnect();
         graph.gain.disconnect();
         graph.pocketDuck?.disconnect();
+        graph.sidechainDuck?.disconnect();
+        graph.sidechainKey?.disconnect();
         graph.pan.disconnect();
       } catch {
         /* already disconnected */
       }
     }
     this.tracks.clear();
+    this.sidechainEnv.clear();
     try {
       this.masterFx?.dispose();
       this.masterInput?.disconnect();
@@ -1271,6 +1296,7 @@ export class StudioAudioEngine {
       });
       postPocketPlayhead(playhead);
       this.applyPocketBeatDuck();
+      this.applySidechain();
       this.listener.onPlayhead(playhead);
       if (playhead >= this.document.timelineLengthMs) {
         this.pauseAllTimelineVoices();
@@ -1434,7 +1460,7 @@ export class StudioAudioEngine {
             /* ignore */
           }
           try {
-            graph.pan.connect(this.masterInput);
+            graph.pan.connect(graph.sidechainDuck ?? this.masterInput);
           } catch {
             /* ignore */
           }
@@ -1461,9 +1487,10 @@ export class StudioAudioEngine {
     } catch {
       /* ignore */
     }
+    const sum = graph.sidechainDuck ?? this.masterInput;
     try {
       graph.pan.connect(this.trackAnalyser);
-      this.trackAnalyser.connect(this.masterInput);
+      this.trackAnalyser.connect(sum);
     } catch {
       // Restore dry path if wiring fails mid-way.
       try {
@@ -1479,7 +1506,7 @@ export class StudioAudioEngine {
       this.idleTrackAnalyser = this.trackAnalyser;
       this.trackAnalyser = null;
       try {
-        graph.pan.connect(this.masterInput);
+        graph.pan.connect(sum);
       } catch {
         /* ignore */
       }
@@ -1507,7 +1534,7 @@ export class StudioAudioEngine {
         /* ignore */
       }
       try {
-        graph.pan.connect(this.masterInput);
+        graph.pan.connect(graph.sidechainDuck ?? this.masterInput);
       } catch {
         /* ignore */
       }
@@ -1632,6 +1659,8 @@ export class StudioAudioEngine {
         graph.input.disconnect();
         graph.gain.disconnect();
         graph.pocketDuck?.disconnect();
+        graph.sidechainDuck?.disconnect();
+        graph.sidechainKey?.disconnect();
         graph.pan.disconnect();
       } catch {
         /* ignore */
@@ -1643,6 +1672,7 @@ export class StudioAudioEngine {
     }
     this.syncTrackLevelTaps();
     this.syncPocketDucks();
+    this.syncSidechain();
   }
 
   private ensureTrackGraph(trackId: string): TrackGraph {
@@ -1662,6 +1692,8 @@ export class StudioAudioEngine {
       gain,
       pan,
       pocketDuck: null,
+      sidechainDuck: null,
+      sidechainKey: null,
       fx: null,
       fingerprint: "",
     };
@@ -1742,6 +1774,179 @@ export class StudioAudioEngine {
     for (const id of beatIds) {
       const duck = this.tracks.get(id)?.pocketDuck;
       if (duck) duck.gain.value = this.pocketDuckLevel;
+    }
+  }
+
+  /** Beat-bus key into a gain after the track pan. Export uses the same depth curve. */
+  private syncSidechain(): void {
+    if (!this.ctx || !this.document || !this.masterInput) return;
+    const live = new Set<string>();
+    for (const track of this.document.tracks) {
+      const graph = this.tracks.get(track.id);
+      if (!graph) continue;
+      const params = sidechainParamsOf(
+        track.effectsChain as { effects?: { type: string; enabled: boolean; params?: unknown }[] } | null,
+      );
+      if (params) {
+        this.ensureSidechainDuck(track.id, graph);
+        live.add(track.id);
+      } else {
+        this.clearSidechainDuck(track.id, graph);
+      }
+      if (track.trackType === "BEAT" && !params) this.ensureSidechainKey(graph);
+      else this.clearSidechainKey(graph);
+    }
+    for (const id of this.sidechainEnv.keys()) {
+      if (!live.has(id)) this.sidechainEnv.delete(id);
+    }
+  }
+
+  private ensureSidechainDuck(trackId: string, graph: TrackGraph): void {
+    if (graph.sidechainDuck || !this.ctx || !this.masterInput) return;
+    let duck: GainLike;
+    try {
+      duck = this.ctx.createGain();
+      duck.gain.value = 1;
+      duck.connect(this.masterInput);
+    } catch {
+      return;
+    }
+    const metered = this.trackMeterTargetId === trackId && this.trackAnalyser;
+    try {
+      if (metered && this.trackAnalyser) {
+        try {
+          this.trackAnalyser.disconnect(this.masterInput);
+        } catch {
+          /* not on the sum */
+        }
+        this.trackAnalyser.connect(duck);
+      } else {
+        try {
+          graph.pan.disconnect(this.masterInput);
+        } catch {
+          /* already moved */
+        }
+        graph.pan.connect(duck);
+      }
+    } catch {
+      try {
+        duck.disconnect();
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    graph.sidechainDuck = duck;
+  }
+
+  private clearSidechainDuck(trackId: string, graph: TrackGraph): void {
+    const duck = graph.sidechainDuck;
+    if (!duck || !this.masterInput) return;
+    graph.sidechainDuck = null;
+    const metered = this.trackMeterTargetId === trackId && this.trackAnalyser;
+    if (metered && this.trackAnalyser) {
+      try {
+        this.trackAnalyser.disconnect(duck);
+      } catch {
+        /* ignore */
+      }
+      try {
+        this.trackAnalyser.connect(this.masterInput);
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        graph.pan.disconnect(duck);
+      } catch {
+        /* ignore */
+      }
+      try {
+        graph.pan.connect(this.masterInput);
+      } catch {
+        /* ignore */
+      }
+    }
+    try {
+      duck.disconnect();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private ensureSidechainKey(graph: TrackGraph): void {
+    if (!this.ctx) return;
+    if (!graph.sidechainKey) {
+      try {
+        const analyser = this.ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0;
+        graph.sidechainKey = analyser;
+      } catch {
+        return;
+      }
+    }
+    try {
+      graph.pan.connect(graph.sidechainKey);
+    } catch {
+      /* metering tap must not break playback */
+    }
+  }
+
+  private clearSidechainKey(graph: TrackGraph): void {
+    const analyser = graph.sidechainKey;
+    if (!analyser) return;
+    graph.sidechainKey = null;
+    try {
+      graph.pan.disconnect(analyser);
+    } catch {
+      /* ignore */
+    }
+    try {
+      analyser.disconnect();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private applySidechain(): void {
+    if (!this.document) return;
+    const now = this.host.nowMs();
+    const dt = this.sidechainLastMs > 0 ? Math.min(100, Math.max(1, now - this.sidechainLastMs)) : 16;
+    this.sidechainLastMs = now;
+    let key = 0;
+    for (const track of this.document.tracks) {
+      if (track.trackType !== "BEAT") continue;
+      const params = sidechainParamsOf(
+        track.effectsChain as { effects?: { type: string; enabled: boolean; params?: unknown }[] } | null,
+      );
+      if (params) continue;
+      const analyser = this.tracks.get(track.id)?.sidechainKey;
+      if (!analyser) continue;
+      const bins = analyser.fftSize || 256;
+      if (!this.sidechainKeyData || this.sidechainKeyData.length !== bins) {
+        this.sidechainKeyData = new Float32Array(bins);
+      }
+      try {
+        analyser.getFloatTimeDomainData(this.sidechainKeyData);
+      } catch {
+        continue;
+      }
+      const peak = samplePeakFromTimeDomain(this.sidechainKeyData);
+      if (peak > key) key = peak;
+    }
+    for (const track of this.document.tracks) {
+      const params = sidechainParamsOf(
+        track.effectsChain as { effects?: { type: string; enabled: boolean; params?: unknown }[] } | null,
+      );
+      const duck = this.tracks.get(track.id)?.sidechainDuck;
+      if (!params || !duck) continue;
+      const prev = this.sidechainEnv.get(track.id) ?? 0;
+      const follow = key > prev ? params.attackMs : params.releaseMs;
+      const coeff = 1 - Math.exp(-dt / Math.max(1, follow));
+      const env = prev + (key - prev) * coeff;
+      this.sidechainEnv.set(track.id, env);
+      duck.gain.value = 1 - params.depth * Math.min(1, env * 2);
     }
   }
 
@@ -2074,6 +2279,20 @@ export class StudioAudioEngine {
         liveRate: this.scratchLive.rate,
       });
       const persistedReverse = Boolean(clip.scratchReverse) && !jogOwns;
+      const playback = clampClipPlayback({
+        stretch: clip.stretchRatio ?? 1,
+        pitchCents: clip.pitchCents ?? 0,
+      });
+      const persistedPlayback = !clipPlaybackIdentity(playback) && !jogOwns && !persistedReverse;
+      if (persistedPlayback) {
+        this.holdPersistedPlayback(voice, clip, playheadMs, playback);
+        try {
+          voice.element.pause();
+        } catch {
+          /* element stays paused while the baked buffer plays */
+        }
+        continue;
+      }
       if (!persistedReverse && Math.abs(voice.element.currentTime - plan.sourceOffsetSeconds) > 0.04) {
         voice.element.currentTime = plan.sourceOffsetSeconds;
       }
@@ -2106,6 +2325,81 @@ export class StudioAudioEngine {
           });
         }
       }
+    }
+  }
+
+  /** Stretch and pitch baked once, then played from a buffer. Reverse stays on its own path. */
+  private holdPersistedPlayback(
+    voice: Voice,
+    clip: StudioEngineClip,
+    playheadMs: number,
+    playback: { stretch: number; pitchCents: number },
+  ): void {
+    const sig = `${playback.stretch}|${playback.pitchCents}`;
+    if (voice.playbackSig !== sig) {
+      voice.playbackSig = sig;
+      voice.playbackBuffer = null;
+      this.stopBufferSource(voice);
+    }
+    if (voice.bufferSource && voice.playbackBuffer) return;
+    if (voice.playbackLoad || !this.ctx?.createBuffer) return;
+    voice.playbackLoad = true;
+    const token = sig;
+    void this.ensureDecodedBuffer(voice).then((ok) => {
+      voice.playbackLoad = false;
+      if (!ok || voice.disposed || voice.playbackSig !== token || !this.ctx || !voice.decodedBuffer) return;
+      const decoded = voice.decodedBuffer;
+      const channels = Math.max(1, decoded.numberOfChannels);
+      const left = renderClipPlaybackMono(decoded.getChannelData(0), playback);
+      const right = channels > 1
+        ? renderClipPlaybackMono(decoded.getChannelData(1), playback)
+        : left;
+      const length = Math.min(left.length, right.length);
+      if (length < 1) return;
+      const raw = this.ctx.createBuffer(channels > 1 ? 2 : 1, length, decoded.sampleRate);
+      raw.getChannelData(0).set(left.subarray(0, length));
+      if (channels > 1) raw.getChannelData(1).set(right.subarray(0, length));
+      const buffer: StudioAudioBufferLike = {
+        numberOfChannels: raw.numberOfChannels,
+        length: raw.length,
+        sampleRate: raw.sampleRate,
+        duration: raw.length / decoded.sampleRate,
+        getChannelData: (channel) => raw.getChannelData(channel),
+      };
+      voice.playbackBuffer = buffer;
+      const localMs = Math.max(0, playheadMs - clip.timelineStartMs);
+      const heardMs = bakedTimelineMs({
+        sourceOffsetMs: clip.sourceOffsetMs,
+        localMs,
+        stretch: playback.stretch,
+      });
+      this.startPlainBuffer(voice, buffer, heardMs / 1000);
+    });
+  }
+
+  private startPlainBuffer(voice: Voice, buffer: StudioAudioBufferLike, offsetSec: number): boolean {
+    if (!this.ctx?.createBufferSource) return false;
+    this.stopBufferSource(voice);
+    try {
+      voice.element.pause();
+    } catch {
+      /* element stays paused */
+    }
+    try {
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = 1;
+      source.connect(voice.clipGain);
+      const duration = buffer.duration || 0;
+      const offset = Math.max(0, Math.min(duration, offsetSec));
+      source.start(0, offset);
+      source.onended = () => {
+        if (voice.bufferSource === source) voice.bufferSource = null;
+      };
+      voice.bufferSource = source;
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -2337,6 +2631,9 @@ export class StudioAudioEngine {
       reverseAnchor: null,
       reverseLoad: false,
       reverseToken: 0,
+      playbackSig: "",
+      playbackBuffer: null,
+      playbackLoad: false,
     };
     this.voices.set(clip.id, voice);
     if (this.scratchLive.reverse || this.scratchLive.rate !== 1) {

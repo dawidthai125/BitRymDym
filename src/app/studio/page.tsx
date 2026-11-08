@@ -68,6 +68,24 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
 
           <div className="flex flex-wrap gap-4 text-sm">
             <Link
+              href="/studio/separator"
+              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+            >
+              Separator
+            </Link>
+            <Link
+              href="/studio/optymalizator"
+              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+            >
+              Optymalizator bitu
+            </Link>
+            <Link
+              href="/studio/realizator"
+              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
+            >
+              Realizator
+            </Link>
+            <Link
               href="/account/takes"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >

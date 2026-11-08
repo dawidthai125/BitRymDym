@@ -3453,6 +3453,9 @@
           "street": "Street",
           "calm": "Calm"
         },
+        "zeSluchu": "Pick a mood from the audio",
+        "zeSluchuInfo": "You upload a piece of the song. Brightness and loudness pick one existing mood and fill its prompt. This does not draw a cover from the melody.",
+        "sluchBlad": "Could not read that recording.",
         "generuj": "Generate cover",
         "generuje": "Generating the cover… (up to about a minute)",
         "ponownie": "Generate again",

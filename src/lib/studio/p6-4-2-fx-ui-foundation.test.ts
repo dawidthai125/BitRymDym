@@ -128,7 +128,7 @@ describe("P6.4.2 shared chain mutations", () => {
     );
   });
 
-  it("refuses add beyond max 8", () => {
+  it("refuses add beyond the effect cap", () => {
     let chain = emptyStudioFxChain();
     for (let n = 0; n < STUDIO_FX_CHAIN_MAX_EFFECTS; n++) {
       chain = addStudioFxToChain(
@@ -141,7 +141,7 @@ describe("P6.4.2 shared chain mutations", () => {
     }
     expect(() =>
       addStudioFxToChain(chain, "delay", "track", () => FIXED_IDS[0]!),
-    ).toThrow(/8/);
+    ).toThrow(/12/);
   });
 
   it("CAS version propagation model for chain commit", () => {

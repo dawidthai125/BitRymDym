@@ -17,7 +17,7 @@ const num = (v: unknown, lo: number, hi: number, d = 0) =>
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 const ROLES = new Set(["lead_vocal", "adlib", "double", "backing", "beat", "instrument", "other"]);
 const STATUSES = new Set(["green", "yellow", "red", "na"]);
-const FX = new Set(["eq", "spectrum", "compressor", "limiter", "reverb", "delay", "highpass", "deesser", "gate", "harmony", "voice", "rider", "saturate", "pocket"]);
+const FX = new Set(["eq", "spectrum", "compressor", "limiter", "reverb", "delay", "highpass", "deesser", "gate", "harmony", "voice", "rider", "saturate", "pocket", "sidechain"]);
 
 function finiteInt(v: unknown, max: number): number | undefined {
   if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return undefined;

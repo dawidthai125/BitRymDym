@@ -53,6 +53,7 @@ import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
 import { TakeRecordingRecoveryBanner } from "@/components/takes/take-recording-recovery-banner";
 import { StudioExportControl } from "@/components/studio/studio-export-control";
 import { StudioEditToolbar } from "@/components/studio/studio-edit-toolbar";
+import { StudioClipSpectrogram } from "@/components/studio/studio-clip-spectrogram";
 import { StudioFragmentTools } from "@/components/studio/studio-fragment-tools";
 import { StudioMixRevisionHistoryControl } from "@/components/studio/studio-mix-revision-history-control";
 import { playheadInsideClip } from "@/lib/studio/studio-clip-ops";
@@ -257,6 +258,7 @@ export function StudioEditor({
           effectsChain: m.effectsChain,
           automation: m.automation,
           midi: m.midi,
+          trackType: t.trackType,
         };
       }),
       // Drop stale BEAT_REF from the engine graph (defense before planVoices).
@@ -281,6 +283,11 @@ export function StudioEditor({
           muted: c.muted,
           fadeInMs: c.fadeInMs,
           fadeOutMs: c.fadeOutMs,
+          scratchCueMs: c.scratchCueMs,
+          scratchReverse: c.scratchReverse,
+          scratchRate: c.scratchRate,
+          stretchRatio: c.stretchRatio,
+          pitchCents: c.pitchCents,
         })),
       };
     },
@@ -2139,6 +2146,57 @@ function StudioEditorInner({
     });
   }
 
+  function saveClipPlayback(clipId: string, next: { stretch: number; pitchCents: number }) {
+    setError(null);
+    enqueuePersist(async () => {
+      try {
+        const res = await fetch(
+          `/api/studio/projects/${docRef.current.project.id}/clips/${clipId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              op: "set_playback",
+              stretch: next.stretch,
+              pitchCents: next.pitchCents,
+              expectedDocumentVersion: docRef.current.project.documentVersion,
+            }),
+          },
+        );
+        const json = (await res.json()) as {
+          clip?: StudioClipDto;
+          documentVersion?: number;
+          error?: string;
+          code?: string;
+        };
+        if (!res.ok || !json.clip || typeof json.documentVersion !== "number") {
+          const failure = classifyPersistHttpFailure({
+            status: res.status,
+            message: json.error ?? "Nie udało się zapisać tempa klipu.",
+            code: json.code,
+          });
+          if (!failure.retryable || failure.kind === "conflict") setError(failure.message);
+          return failure;
+        }
+        const saved = json.clip;
+        const documentVersion = json.documentVersion;
+        return {
+          ok: true as const,
+          documentVersion,
+          apply: () => {
+            applyPersistedDoc((prev) => ({
+              ...prev,
+              project: { ...prev.project, documentVersion },
+              clips: prev.clips.map((c) => (c.id === saved.id ? saved : c)),
+            }));
+          },
+        };
+      } catch {
+        return classifyPersistNetworkFailure();
+      }
+    });
+  }
+
   /** Saved reverse on the selected clip. Reuses scratch CAS. No new column. */
   function saveClipScratch(
     next: { clipId: string; cueMs: number; reverse: boolean; rate: number },
@@ -3239,6 +3297,12 @@ function StudioEditorInner({
             rate: selectedClip.scratchRate ?? 1,
           });
         }}
+        fragmentStretch={selectedClip?.stretchRatio ?? 1}
+        fragmentPitchCents={selectedClip?.pitchCents ?? 0}
+        onFragmentPlayback={(next) => {
+          if (!selectedClip) return;
+          saveClipPlayback(selectedClip.id, next);
+        }}
         onFragmentAskDelete={() => setFragmentConfirmDelete(true)}
         onFragmentDelete={() => {
           deleteSelectedClip();
@@ -3248,6 +3312,13 @@ function StudioEditorInner({
         onUndo={undoStudioEdit}
         onRedo={redoStudioEdit}
       />
+
+      {selectedClip ? (
+        <StudioClipSpectrogram
+          clipId={selectedClip.id}
+          resolveUrl={() => resolveClipSourceUrl(selectedClip)}
+        />
+      ) : null}
 
       <StudioBeatPicker
         projectId={doc.project.id}
@@ -4574,6 +4645,9 @@ function StudioTransportBar({
   onFragmentFade,
   fragmentReverseOn,
   onFragmentReverse,
+  fragmentStretch,
+  fragmentPitchCents,
+  onFragmentPlayback,
   onFragmentAskDelete,
   onFragmentDelete,
   onFragmentCancelDelete,
@@ -4610,6 +4684,9 @@ function StudioTransportBar({
   onFragmentFade: (edge: "in" | "out") => void;
   fragmentReverseOn: boolean;
   onFragmentReverse: () => void;
+  fragmentStretch: number;
+  fragmentPitchCents: number;
+  onFragmentPlayback: (next: { stretch: number; pitchCents: number }) => void;
   onFragmentAskDelete: () => void;
   onFragmentDelete: () => void;
   onFragmentCancelDelete: () => void;
@@ -4918,6 +4995,9 @@ function StudioTransportBar({
           onFadeOut={() => onFragmentFade("out")}
           reverseOn={fragmentReverseOn}
           onReverse={onFragmentReverse}
+          stretch={fragmentStretch}
+          pitchCents={fragmentPitchCents}
+          onPlayback={onFragmentPlayback}
           onAskDelete={onFragmentAskDelete}
           onDelete={onFragmentDelete}
           onCancelDelete={onFragmentCancelDelete}

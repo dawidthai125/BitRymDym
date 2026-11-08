@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { joinParts } from "@/lib/studio/master/client";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { AI_COVER_ASPECTS, AI_COVER_PROMPT_MAX, AI_COVER_PROMPT_MIN, type AiCoverAspect } from "@/lib/studio/video/ai-cover/config";
+import { audioFeaturesFromPcm, coverPromptFromAudio } from "@/lib/studio/video/ai-cover/listen";
 import { MOOD_COVERS } from "@/lib/studio/video/ai-cover/moods";
 import {
   cleanVideoText, YT_VIDEO_H, YT_VIDEO_TEXT_MAX, YT_VIDEO_W, youtubeFrameLayout, youtubeVideoAllowed, type YoutubeVideoSource,
@@ -102,6 +103,8 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAspect, setAiAspect] = useState<AiCoverAspect>("16:9");
   const [ai, setAi] = useState<AiRun>({ status: "idle" });
+  const [listenNote, setListenNote] = useState<string | null>(null);
+  const listenRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<{ status: "idle" | "checking" | "ok" | "error"; imageId?: string; url?: string; message?: string }>({ status: "idle" });
   const [showText, setShowText] = useState(true);
   const [title, setTitle] = useState(initialState?.title ?? "");
@@ -139,6 +142,25 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
       else setUpload({ status: "error", message: typeof j.message === "string" ? j.message : t("grafikaBlad") });
     } catch {
       setUpload({ status: "error", message: t("grafikaBlad") });
+    }
+  }
+
+  async function listenToFile(file: File | undefined) {
+    if (!file) return;
+    setListenNote(null);
+    try {
+      const ctx = new AudioContext();
+      const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+      const channel = decoded.getChannelData(0);
+      const frames = Math.min(channel.length, Math.floor(decoded.sampleRate * 20));
+      const samples = new Float32Array(frames);
+      samples.set(channel.subarray(0, frames));
+      const heard = coverPromptFromAudio(audioFeaturesFromPcm(samples, decoded.sampleRate));
+      setAiPrompt(heard.prompt);
+      setListenNote(t(`ai.nastroje.${heard.moodId}`));
+      await ctx.close().catch(() => undefined);
+    } catch {
+      setListenNote(t("ai.sluchBlad"));
     }
   }
 
@@ -273,6 +295,23 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
                 ) : null}
                 {source === "ai" ? (
                   <div className="flex flex-col gap-2 pl-6" data-testid="studio-yt-ai">
+                    <input
+                      ref={listenRef}
+                      type="file"
+                      accept="audio/*"
+                      className="sr-only"
+                      data-testid="studio-yt-ai-listen-file"
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        e.currentTarget.value = "";
+                        void listenToFile(file);
+                      }}
+                    />
+                    <Button type="button" size="sm" variant="outline" className="min-h-9 self-start" onClick={() => listenRef.current?.click()} data-testid="studio-yt-ai-listen">
+                      {t("ai.zeSluchu")}
+                    </Button>
+                    <p className="text-xs text-[var(--brd-mute)]">{t("ai.zeSluchuInfo")}</p>
+                    {listenNote ? <p role="status" className="text-xs">{listenNote}</p> : null}
                     <div role="group" aria-label={t("ai.nastroj")} className="flex flex-wrap gap-1.5" data-testid="studio-yt-moods">
                       {MOOD_COVERS.map((mood) => (
                         <button

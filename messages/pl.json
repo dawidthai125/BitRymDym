@@ -3453,6 +3453,9 @@
           "street": "Ulica",
           "calm": "Spokój"
         },
+        "zeSluchu": "Dobierz nastrój ze słuchu",
+        "zeSluchuInfo": "Wgrywasz fragment utworu. Z jasności i głośności wybieram jeden z nastrojów i wstawiam jego opis. To nie rysuje okładki z melodii.",
+        "sluchBlad": "Nie udało się odczytać tego nagrania.",
         "generuj": "Wygeneruj okładkę",
         "generuje": "Generuję okładkę… (do ok. minuty)",
         "ponownie": "Wygeneruj ponownie",

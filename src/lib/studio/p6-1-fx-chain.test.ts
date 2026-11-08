@@ -58,8 +58,9 @@ describe("P6.1 registry", () => {
       "voice",
       "saturate",
       "pocket",
+      "sidechain",
     ]);
-    const trackOnly = new Set(["tune", "rider", "harmony", "voice", "saturate", "pocket"]);
+    const trackOnly = new Set(["tune", "rider", "harmony", "voice", "saturate", "pocket", "sidechain"]);
     for (const type of STUDIO_FX_TYPES) {
       expect(STUDIO_FX_REGISTRY[type]).toEqual({ track: true, master: !trackOnly.has(type) });
     }
@@ -209,8 +210,8 @@ describe("P6.1 invalid payloads", () => {
     ).toThrow(StudioFxChainError);
   });
 
-  it("rejects more than 8 effects without partial accept", () => {
-    const effects = Array.from({ length: 9 }, (_, i) =>
+  it("rejects more than the effect cap without partial accept", () => {
+    const effects = Array.from({ length: STUDIO_FX_CHAIN_MAX_EFFECTS + 1 }, (_, i) =>
       eqEffect({
         id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(i + 1).padStart(12, "0")}`,
       }),
@@ -218,7 +219,7 @@ describe("P6.1 invalid payloads", () => {
     expect(effects).toHaveLength(STUDIO_FX_CHAIN_MAX_EFFECTS + 1);
     expect(() =>
       parseStudioFxChainForWrite({ schemaVersion: 1, effects }, { role: "track" }),
-    ).toThrow(/max 8/);
+    ).toThrow(/max 12/);
   });
 
   it("rejects extra top-level keys and duplicate ids", () => {

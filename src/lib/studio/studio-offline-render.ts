@@ -21,6 +21,13 @@ import {
   type StudioEngineDocument,
 } from "@/lib/studio/studio-audio-schedule";
 import { effectiveClipGain } from "@/lib/studio/studio-clip-fade";
+import {
+  bakedTimelineMs,
+  clampClipPlayback,
+  clipPlaybackIdentity,
+  renderClipPlaybackStereo,
+} from "@/lib/studio/studio-clip-playback";
+import { sidechainParamsOf } from "@/lib/studio/studio-fx-chain";
 import { compensateStudioTuneLatency } from "@/lib/studio/tune/tune";
 import {
   buildStudioOfflineFxChain,
@@ -263,6 +270,19 @@ function readSourceSample(
     left: pcm.interleaved[i] ?? 0,
     right: pcm.interleaved[i + 1] ?? 0,
   };
+}
+
+function readBakedSample(
+  pcm: DecodedPcmStereo,
+  sourceOffsetMs: number,
+  localMs: number,
+  stretch: number,
+): { left: number; right: number } {
+  const ms = bakedTimelineMs({ sourceOffsetMs, localMs, stretch });
+  const srcFrame = Math.floor((ms / 1000) * STUDIO_OFFLINE_RENDER_SAMPLE_RATE);
+  if (srcFrame < 0 || srcFrame >= pcm.frames) return { left: 0, right: 0 };
+  const i = srcFrame * 2;
+  return { left: pcm.interleaved[i] ?? 0, right: pcm.interleaved[i + 1] ?? 0 };
 }
 
 function peakAndRms(interleaved: Float32Array): { peakAbs: number; rms: number } {
@@ -541,6 +561,29 @@ export async function renderStudioDocumentOffline(
     }
   }
 
+  const playbackPcm = new Map<string, DecodedPcmStereo>();
+  for (const clip of document.clips) {
+    const playback = clampClipPlayback({
+      stretch: clip.stretchRatio ?? 1,
+      pitchCents: clip.pitchCents ?? 0,
+    });
+    if (clipPlaybackIdentity(playback)) continue;
+    const key = keyForVoice(clip);
+    if (!key) continue;
+    const pcm = pcmCache.get(sourceCacheKey(key));
+    if (!pcm) continue;
+    const baked = renderClipPlaybackStereo(
+      { frames: pcm.frames, interleaved: pcm.interleaved },
+      playback,
+    );
+    playbackPcm.set(clip.id, {
+      sampleRate: pcm.sampleRate,
+      channels: 2,
+      frames: baked.frames,
+      interleaved: baked.interleaved,
+    });
+  }
+
   // Allocate output only after duration + memory + FX gates.
   const interleaved = new Float32Array(frames * 2);
   const clipById = new Map(document.clips.map((c) => [c.id, c]));
@@ -551,6 +594,10 @@ export async function renderStudioDocumentOffline(
 
   let cachedMs = -1;
   let cachedInterp = interpretStudioSessionAtPlayhead(document, 0);
+  const sidechain = document.tracks.map((track) =>
+    sidechainParamsOf(track.effectsChain as { effects?: { type: string; enabled: boolean; params?: unknown }[] } | null),
+  );
+  const sideEnv = new Float64Array(document.tracks.length);
 
   for (let i = 0; i < frames; i++) {
     const tMs = (i / STUDIO_OFFLINE_RENDER_SAMPLE_RATE) * 1000;
@@ -586,7 +633,15 @@ export async function renderStudioDocumentOffline(
       }
 
       const clip = clipById.get(voice.clipId);
-      const sample = readSourceSample(
+      const baked = clip ? playbackPcm.get(clip.id) : undefined;
+      const sample = baked
+        ? readBakedSample(
+            baked,
+            clip?.sourceOffsetMs ?? voice.sourceOffsetMs,
+            clip ? tMs - clip.timelineStartMs : 0,
+            clip?.stretchRatio ?? 1,
+          )
+        : readSourceSample(
         pcm,
         clip?.sourceOffsetMs ?? voice.sourceOffsetMs,
         clip ? tMs - clip.timelineStartMs : tMs - playheadMsFloor,
@@ -608,6 +663,13 @@ export async function renderStudioDocumentOffline(
       busR[ti] += withClip.right;
     }
 
+    let sideKey = 0;
+    for (let ti = 0; ti < document.tracks.length; ti++) {
+      if (sidechain[ti]) continue;
+      if (document.tracks[ti]?.trackType !== "BEAT") continue;
+      sideKey = Math.max(sideKey, Math.abs(busL[ti] ?? 0), Math.abs(busR[ti] ?? 0));
+    }
+
     let left = 0;
     let right = 0;
     for (let ti = 0; ti < document.tracks.length; ti++) {
@@ -622,6 +684,15 @@ export async function renderStudioDocumentOffline(
         const wet = fx.process({ left: tl, right: tr });
         tl = wet.left;
         tr = wet.right;
+      }
+      const sc = sidechain[ti];
+      if (sc) {
+        const followMs = sideKey > (sideEnv[ti] ?? 0) ? sc.attackMs : sc.releaseMs;
+        const coeff = 1 - Math.exp(-1 / ((STUDIO_OFFLINE_RENDER_SAMPLE_RATE * Math.max(1, followMs)) / 1000));
+        sideEnv[ti] = (sideEnv[ti] ?? 0) + (sideKey - (sideEnv[ti] ?? 0)) * coeff;
+        const duck = 1 - sc.depth * Math.min(1, (sideEnv[ti] ?? 0) * 2);
+        tl *= duck;
+        tr *= duck;
       }
       const tp = trackGraphParams(
         track.automation

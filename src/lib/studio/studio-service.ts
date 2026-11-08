@@ -26,6 +26,7 @@ import {
   resolveFadesAfterTrim,
   resolveStudioClipFadesForWrite,
 } from "@/lib/studio/studio-clip-fade";
+import { parseClipPlaybackWrite } from "@/lib/studio/studio-clip-playback";
 import {
   parseStudioClipGainDb,
   parseStudioClipMuted,
@@ -148,6 +149,8 @@ type ClipRow = {
   scratch_cue_ms?: number | null;
   scratch_reverse?: boolean | null;
   scratch_rate?: number | string | null;
+  pitch_cents?: number | null;
+  stretch_ratio?: number | string | null;
 };
 
 function num(value: number | string): number {
@@ -205,6 +208,8 @@ function mapClip(row: ClipRow): StudioClipDto {
     muted: row.muted,
     fadeInMs: row.fade_in_ms,
     fadeOutMs: row.fade_out_ms,
+    stretchRatio: row.stretch_ratio == null ? 1 : num(row.stretch_ratio),
+    pitchCents: row.pitch_cents == null ? 0 : Math.round(num(row.pitch_cents)),
     ...mapStudioClipScratchFields(row),
   };
 }
@@ -600,7 +605,7 @@ export async function attachBeatToStudioProjectFor(
     const { data: existingClips, error: clipsLoadError } = await admin
       .from("studio_clips")
       .select(
-        "id, track_id, source_kind, source_take_id, source_beat_id, source_artifact_id, timeline_start_ms, duration_ms, source_offset_ms, gain_db, muted, fade_in_ms, fade_out_ms",
+        "id, track_id, source_kind, source_take_id, source_beat_id, source_artifact_id, timeline_start_ms, duration_ms, source_offset_ms, gain_db, muted, fade_in_ms, fade_out_ms, pitch_cents, stretch_ratio",
       )
       .eq("track_id", beatTrack.id);
     if (clipsLoadError) throw new Error(clipsLoadError.message);
@@ -959,7 +964,7 @@ export async function updateStudioTrackControlsFor(
       ops: [op],
     });
 
-    let documentVersion = applied.documentVersion;
+    const documentVersion = applied.documentVersion;
 
     if (hasStructural) {
       // Rare combined PATCH: structural fields after allowlisted bump (new CAS).
@@ -1939,6 +1944,53 @@ export async function updateStudioClipScratchFor(
     }),
     documentVersion: applied.documentVersion,
   };
+}
+
+export async function updateStudioClipPlaybackFor(
+  context: AuthContext,
+  input: {
+    projectId: string;
+    clipId: string;
+    expectedDocumentVersion: unknown;
+    stretch: unknown;
+    pitchCents: unknown;
+  },
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  const { clip } = await loadOwnedClip(context, input.projectId, input.clipId);
+  const playback = parseClipPlaybackWrite({ stretch: input.stretch, pitchCents: input.pitchCents });
+  const expected = parseExpectedDocumentVersion(input.expectedDocumentVersion);
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("studio_cas_apply_clip_playback", {
+    p_project_id: input.projectId,
+    p_owner_id: context.userId,
+    p_clip_id: input.clipId,
+    p_expected: expected,
+    p_stretch_ratio: playback.stretch,
+    p_pitch_cents: playback.pitchCents,
+  });
+  if (error) {
+    if (/CLIP_NOT_FOUND/i.test(error.message)) {
+      throw new AuthError("NOT_FOUND", "Klip nie został znaleziony.");
+    }
+    throw new Error(error.message);
+  }
+  const rows = (data as Array<{ document_version: number }> | null) ?? [];
+  const row = rows[0];
+  if (!row) throw new StudioFxCasConflictError();
+  return {
+    clip: mapClip({
+      ...clip,
+      stretch_ratio: playback.stretch,
+      pitch_cents: playback.pitchCents,
+    }),
+    documentVersion: num(row.document_version),
+  };
+}
+
+export async function updateStudioClipPlayback(
+  input: Parameters<typeof updateStudioClipPlaybackFor>[1],
+): Promise<{ clip: StudioClipDto; documentVersion: number }> {
+  return updateStudioClipPlaybackFor(await requireUser(), input);
 }
 
 export async function updateStudioClipScratch(

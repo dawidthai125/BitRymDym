@@ -774,6 +774,7 @@ function tryBuildProcessSlot(
   if (effect.type === "rider") return buildRiderSlot(ctx, effect);
   if (effect.type === "saturate") return buildSaturateSlot(ctx, effect);
   if (effect.type === "pocket") return buildPocketSlot(ctx, effect);
+  if (effect.type === "sidechain") return buildWireSlot(ctx, { status: "ready", effect });
   return buildDelaySlot(ctx, effect);
 }
 

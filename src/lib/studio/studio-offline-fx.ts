@@ -820,6 +820,9 @@ function buildProcessorForReady(
   if (effect.type === "pocket") {
     return wireProcessor("BYPASS", effect.id, "pocket");
   }
+  if (effect.type === "sidechain") {
+    return wireProcessor("BYPASS", effect.id, "sidechain");
+  }
   throw new StudioOfflineFxError(
     "STUDIO_OFFLINE_FX_UNSUPPORTED",
     `Offline FX type is not implemented.`,

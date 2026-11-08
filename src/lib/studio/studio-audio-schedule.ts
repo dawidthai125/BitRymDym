@@ -25,6 +25,8 @@ export type StudioEngineTrack = {
   automation?: StudioAutomationV1;
   /** Timeline notes rendered by studio-midi.ts. Absent/empty = silence. */
   midi?: StudioMidiV1;
+  /** BEAT keys the sidechain. Optional on older fixtures. */
+  trackType?: string;
 };
 
 export type StudioEngineClip = {
@@ -44,6 +46,10 @@ export type StudioEngineClip = {
   scratchCueMs?: number;
   scratchReverse?: boolean;
   scratchRate?: number;
+  /** 0.5..2. 1 keeps the source length. Independent of pitch. */
+  stretchRatio?: number;
+  /** -1200..1200. Independent of stretch. */
+  pitchCents?: number;
 };
 
 export type StudioEngineDocument = {

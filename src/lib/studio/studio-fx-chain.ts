@@ -6,7 +6,7 @@
  */
 
 export const STUDIO_FX_CHAIN_SCHEMA_VERSION = 1 as const;
-export const STUDIO_FX_CHAIN_MAX_EFFECTS = 8 as const;
+export const STUDIO_FX_CHAIN_MAX_EFFECTS = 12 as const;
 
 export const STUDIO_FX_TYPES = [
   "eq",
@@ -34,6 +34,8 @@ export const STUDIO_FX_TYPES = [
   "saturate",
   /** Rap pocket: section level, beat-mid duck, hook double. Track only. Live preview is the worklet; renderMixStereo still applies the pocket. */
   "pocket",
+  /** Kick/beat ducks this track. Depth 0 is off. Track only. */
+  "sidechain",
 ] as const;
 
 export type StudioFxType = (typeof STUDIO_FX_TYPES)[number];
@@ -152,6 +154,13 @@ export type StudioFxPocketParams = {
   doubleDb: number;
 };
 
+/** Beat-keyed duck. The beat track is the key. This track is the destination. */
+export type StudioFxSidechainParams = {
+  depth: number;
+  attackMs: number;
+  releaseMs: number;
+};
+
 /**
  * Gold manual note correction (BRD Tune note editor). One edited note on the
  * TRACK timeline: startMs/endMs, target pitch as fractional MIDI (cents =
@@ -189,6 +198,7 @@ export type StudioFxParamsByType = {
   voice: StudioFxVoiceParams;
   saturate: StudioFxSaturateParams;
   pocket: StudioFxPocketParams;
+  sidechain: StudioFxSidechainParams;
 };
 
 export type StudioFxInstance =
@@ -218,7 +228,8 @@ export type StudioFxInstance =
   | { id: string; type: "harmony"; enabled: boolean; params: StudioFxHarmonyParams }
   | { id: string; type: "voice"; enabled: boolean; params: StudioFxVoiceParams }
   | { id: string; type: "saturate"; enabled: boolean; params: StudioFxSaturateParams }
-  | { id: string; type: "pocket"; enabled: boolean; params: StudioFxPocketParams };
+  | { id: string; type: "pocket"; enabled: boolean; params: StudioFxPocketParams }
+  | { id: string; type: "sidechain"; enabled: boolean; params: StudioFxSidechainParams };
 
 export type StudioFxChainV1 = {
   schemaVersion: 1;
@@ -300,6 +311,7 @@ const HARMONY_KEYS = new Set(["amount"]);
 const VOICE_KEYS = new Set(["color", "mix"]);
 const SATURATE_KEYS = new Set(["drive", "mix"]);
 const POCKET_KEYS = new Set(["verseDb", "hookDb", "depth", "doubleMs", "doubleCents", "doubleDb"]);
+const SIDECHAIN_KEYS = new Set(["depth", "attackMs", "releaseMs"]);
 const SPECTRUM_KEYS = new Set(["b0", "b1", "b2", "b3", "b4", "b5", "b6"]);
 
 /** Stage 2 — parameter ranges (single source for parsers + UI sliders). */
@@ -313,6 +325,7 @@ export const STUDIO_FX_STAGE2_RANGES = {
   voice: { color: [0, 2], mix: [0, 1] },
   saturate: { drive: [0, 1], mix: [0, 1] },
   pocket: { verseDb: [-12, 6], hookDb: [-12, 6], depth: [0, 1], doubleMs: [15, 25], doubleCents: [0, 25], doubleDb: [-24, -6] },
+  sidechain: { depth: [0, 1], attackMs: [1, 80], releaseMs: [20, 400] },
   spectrum: { b0: [-24, 24], b1: [-24, 24], b2: [-24, 24], b3: [-24, 24], b4: [-24, 24], b5: [-24, 24], b6: [-24, 24] },
 } as const;
 
@@ -344,6 +357,7 @@ export const STUDIO_FX_DEFAULTS: { [K in StudioFxType]: StudioFxParamsByType[K] 
     voice: { color: 0, mix: 1 },
     saturate: { drive: 0.35, mix: 0.55 },
     pocket: { verseDb: -1.5, hookDb: 0, depth: 0.55, doubleMs: 20, doubleCents: 12, doubleDb: -14 },
+    sidechain: { depth: 0.65, attackMs: 8, releaseMs: 140 },
   };
 
 /**
@@ -376,6 +390,7 @@ export const STUDIO_FX_REGISTRY: Record<
   voice: { track: true, master: false },
   saturate: { track: true, master: false },
   pocket: { track: true, master: false },
+  sidechain: { track: true, master: false },
 };
 
 function invalid(detail?: string): never {
@@ -668,6 +683,14 @@ function parseEffect(
       params: parseRanged(o.params, STUDIO_FX_DEFAULTS.pocket, POCKET_KEYS, STUDIO_FX_STAGE2_RANGES.pocket),
     };
   }
+  if (type === "sidechain") {
+    return {
+      id,
+      type,
+      enabled: o.enabled,
+      params: parseRanged(o.params, STUDIO_FX_DEFAULTS.sidechain, SIDECHAIN_KEYS, STUDIO_FX_STAGE2_RANGES.sidechain),
+    };
+  }
   if (type === "tune") {
     const params = parseRanged(o.params, STUDIO_FX_DEFAULTS.tune, TUNE_KEYS, STUDIO_FX_STAGE2_RANGES.tune);
     params.keyRoot = Math.round(params.keyRoot);
@@ -744,7 +767,7 @@ export function parseStudioFxChainForWrite(
   assertKeys(o, CHAIN_KEYS, "chain");
   if (o.schemaVersion !== STUDIO_FX_CHAIN_SCHEMA_VERSION) unsupported();
   if (!Array.isArray(o.effects)) invalid("effects");
-  if (o.effects.length > STUDIO_FX_CHAIN_MAX_EFFECTS) invalid("max 8");
+  if (o.effects.length > STUDIO_FX_CHAIN_MAX_EFFECTS) invalid(`max ${STUDIO_FX_CHAIN_MAX_EFFECTS}`);
   const createId = options.createId ?? (() => crypto.randomUUID());
   const effects = o.effects.map((item, index) =>
     parseEffect(item, index, createId),
@@ -1035,6 +1058,14 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
       slider("mix", "Ilość", 0, 1, 0.01, ""),
     ],
   },
+  sidechain: {
+    labelPl: "Sidechain",
+    params: [
+      slider("depth", "Głębokość", 0, 1, 0.01, ""),
+      slider("attackMs", "Atak", 1, 80, 1, "ms"),
+      slider("releaseMs", "Powrót", 20, 400, 1, "ms"),
+    ],
+  },
   pocket: {
     labelPl: "Kieszeń rapu",
     params: [
@@ -1053,6 +1084,15 @@ export const FX_CHAIN_CONFLICT_UI_PL =
 
 export function studioFxLabelPl(type: StudioFxType): string {
   return STUDIO_FX_UI_META[type].labelPl;
+}
+
+/** Enabled sidechain on a track, or null. The key is the beat bus, not a picked track. */
+export function sidechainParamsOf(chain: { effects?: readonly { type: string; enabled: boolean; params?: unknown }[] } | null | undefined): StudioFxSidechainParams | null {
+  const hit = chain?.effects?.find((e) => e.enabled && e.type === "sidechain");
+  if (!hit || hit.type !== "sidechain") return null;
+  const params = hit.params;
+  if (!params || typeof params !== "object") return STUDIO_FX_DEFAULTS.sidechain;
+  return params as StudioFxSidechainParams;
 }
 
 /** Compact Mix entry label: count + optional bypass hint (P6.4.3). */
@@ -1157,6 +1197,8 @@ export function createStudioFxInstance(
       return { id, type, enabled: true, params: defaultStudioFxParams("saturate") };
     case "pocket":
       return { id, type, enabled: true, params: defaultStudioFxParams("pocket") };
+    case "sidechain":
+      return { id, type, enabled: true, params: defaultStudioFxParams("sidechain") };
   }
 }
 
@@ -1208,7 +1250,7 @@ export function addStudioFxToChain(
   createId: () => string = () => crypto.randomUUID(),
 ): StudioFxChainV1 {
   if (chain.effects.length >= STUDIO_FX_CHAIN_MAX_EFFECTS) {
-    throw new StudioFxChainError("FX_CHAIN_INVALID", "Maksymalnie 8 efektów.");
+    throw new StudioFxChainError("FX_CHAIN_INVALID", `Maksymalnie ${STUDIO_FX_CHAIN_MAX_EFFECTS} efektów.`);
   }
   if (role === "master" && !STUDIO_FX_REGISTRY[type].master) invalid("track-only effect on master");
   const effect = createStudioFxInstance(type, createId);
