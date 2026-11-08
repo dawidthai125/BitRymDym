@@ -1,0 +1,31 @@
+# BitRymDym - studio stem separator poller (repository artifact).
+# Runs beside bitrymdym-e3-worker-poll. Do not restart that unit.
+# Kill switch: SEPARATOR_ENABLED (missing/false -> exit 0, no claim).
+# Weights stay in the worker HOME cache. HF_HUB_OFFLINE blocks downloads.
+# Env file /etc/bitrymdym-e3-worker/separate.env (no secrets):
+#   SEPARATOR_ENABLED=true
+#   DEMUCS_PYTHON=/opt/bitrymdym-e3-worker/.venv-demucs/bin/python
+
+[Unit]
+Description=BitRymDym studio stem separator poller
+After=network-online.target
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+WorkingDirectory=/opt/bitrymdym-e3-worker
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+EnvironmentFile=/etc/bitrymdym-e3-worker/separate.env
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+Environment=HF_HUB_OFFLINE=1
+Environment=TRANSFORMERS_OFFLINE=1
+ExecStart=/usr/bin/npm run separate:worker:poll
+Restart=on-failure
+RestartSec=30
+# Demucs on CPU. Cap this unit so the E3 poller keeps the machine.
+MemoryMax=3500M
+CPUQuota=150%
+Nice=15
+
+[Install]
+WantedBy=multi-user.target
