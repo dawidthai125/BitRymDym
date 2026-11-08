@@ -1,7 +1,8 @@
 """Windows recorder. Mic to WAV, then the existing account, site, and project.
 
-Run: python desktop/recorder/record_app.py
-Mix and master stay on the site. This program does not load VST plugins.
+Run from this folder: python record_app.py
+Effects are the site chain, saved on the vocal track. Mix, master, and notes
+stay on the site. This program does not load VST plugins.
 """
 
 from __future__ import annotations
@@ -17,7 +18,18 @@ import urllib.request
 from pathlib import Path
 
 from account_upload import SITE, upload_vocal, SiteClient
+from own_fx import FX, build_chain, display_tier, limits_from_usage
 from record_wav import write_pcm16_wav
+
+PAPER = "#0e0c0a"
+PANEL = "#17130f"
+RACK = "#211b15"
+INK = "#f1e7d3"
+SOFT = "#cdbfa6"
+AMBER = "#f2a93b"
+ON_AMBER = "#0a0807"
+LINE = "#3a3028"
+REC = "#ff5a46"
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
 
@@ -187,18 +199,24 @@ def load_session() -> dict[str, str] | None:
 class RecorderWindow:
     def __init__(self) -> None:
         self.root = tk.Tk()
-        self.root.title("BitRymDym nagrywarka")
-        self.root.geometry("520x340")
+        if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
+            self.root.withdraw()
+        self.root.title("BitRymDym")
+        self.root.geometry("680x760")
+        self.root.configure(bg=PAPER)
         self.recording = False
         self.capture: subprocess.Popen[bytes] | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
         self.public_url = ""
         self.public_key = ""
         self.beats: list[tuple[str, str]] = []
+        self.tier = "FREE"
+        self.fx_vars: dict[str, tk.IntVar] = {}
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
-        self.email = tk.Entry(self.root, width=42)
-        self.password = tk.Entry(self.root, width=42, show="*")
-        self.title_box = tk.Entry(self.root, width=42)
+        self.plan_text = tk.StringVar(value="Plan: zaloguj się. Do tego czasu 4 efekty, bez sidechain.")
+        self.email = self._entry(show="")
+        self.password = self._entry(show="*")
+        self.title_box = self._entry(show="")
         self.beat_var = tk.StringVar()
         self.title_box.insert(0, "Nagranie z komputera")
         saved = load_session()
@@ -208,6 +226,23 @@ class RecorderWindow:
             self.public_key = saved.get("anonKey", "")
             self.status.set("Jest zapisana sesja tego konta.")
         self._load_public()
+        head = tk.Label(
+            self.root,
+            text="BitRymDym",
+            bg=PAPER,
+            fg=AMBER,
+            font=("Segoe UI", 18, "bold"),
+            anchor="w",
+        )
+        head.pack(fill="x", padx=16, pady=(14, 0))
+        tk.Label(
+            self.root,
+            text="Nagranie wokalu na bit. Miks i master zostają na stronie.",
+            bg=PAPER,
+            fg=SOFT,
+            font=("Segoe UI", 10),
+            anchor="w",
+        ).pack(fill="x", padx=16, pady=(0, 8))
         self._row("E-mail", self.email)
         self._row("Hasło", self.password)
         self._row("Tytuł", self.title_box)
@@ -215,18 +250,122 @@ class RecorderWindow:
         if not self.beat_var.get():
             self.beat_var.set(labels[0])
         self.beat_menu = tk.OptionMenu(self.root, self.beat_var, *labels)
+        self.beat_menu.configure(
+            bg=RACK,
+            fg=INK,
+            activebackground=PANEL,
+            activeforeground=INK,
+            highlightthickness=0,
+            font=("Segoe UI", 10),
+        )
         self._row("Bit", self.beat_menu)
-        bar = tk.Frame(self.root)
+        tk.Label(
+            self.root,
+            textvariable=self.plan_text,
+            bg=PAPER,
+            fg=SOFT,
+            font=("Segoe UI", 10),
+            anchor="w",
+            wraplength=640,
+            justify="left",
+        ).pack(fill="x", padx=16, pady=(8, 2))
+        tk.Label(
+            self.root,
+            text="Efekty na ścieżce wokalu. Słychać je w studiu. Tu nie ma wtyczek VST.",
+            bg=PAPER,
+            fg=INK,
+            font=("Segoe UI", 10),
+            anchor="w",
+            wraplength=640,
+            justify="left",
+        ).pack(fill="x", padx=16)
+        rack = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
+        rack.pack(fill="x", padx=16, pady=8)
+        columns = [tk.Frame(rack, bg=PANEL), tk.Frame(rack, bg=PANEL)]
+        columns[0].pack(side="left", fill="both", expand=True, padx=8, pady=6)
+        columns[1].pack(side="left", fill="both", expand=True, padx=8, pady=6)
+        for index, (fx_id, label) in enumerate(FX):
+            var = tk.IntVar(value=0)
+            self.fx_vars[fx_id] = var
+            tk.Checkbutton(
+                columns[0 if index < 8 else 1],
+                text=label,
+                variable=var,
+                command=lambda picked=fx_id: self._on_fx(picked),
+                bg=PANEL,
+                fg=INK,
+                selectcolor=RACK,
+                activebackground=PANEL,
+                activeforeground=AMBER,
+                font=("Segoe UI", 10),
+                anchor="w",
+            ).pack(fill="x", anchor="w")
+        bar = tk.Frame(self.root, bg=PAPER)
         bar.pack(pady=8)
-        tk.Button(bar, text="Zaloguj", command=self.sign_in).pack(side="left", padx=4)
-        tk.Button(bar, text="Nagraj", command=self.arm).pack(side="left", padx=4)
-        tk.Button(bar, text="Stop i wyślij", command=self.stop_and_send).pack(side="left", padx=4)
-        tk.Label(self.root, textvariable=self.status, wraplength=420, justify="left").pack(pady=8)
+        self._button(bar, "Zaloguj", self.sign_in, AMBER, ON_AMBER).pack(side="left", padx=4)
+        self._button(bar, "Nagraj", self.arm, REC, INK).pack(side="left", padx=4)
+        self._button(bar, "Stop i wyślij", self.stop_and_send, AMBER, ON_AMBER).pack(side="left", padx=4)
+        tk.Label(
+            self.root,
+            textvariable=self.status,
+            wraplength=640,
+            justify="left",
+            bg=PAPER,
+            fg=INK,
+            font=("Segoe UI", 10),
+        ).pack(fill="x", padx=16, pady=8)
+        tk.Label(
+            self.root,
+            text="Nuty zostają w studio na stronie.",
+            bg=PAPER,
+            fg=SOFT,
+            font=("Segoe UI", 9),
+            anchor="w",
+        ).pack(fill="x", padx=16)
+        self._read_plan()
+
+    def _entry(self, show: str) -> tk.Entry:
+        return tk.Entry(
+            self.root,
+            width=42,
+            show=show,
+            bg=RACK,
+            fg=INK,
+            insertbackground=AMBER,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=LINE,
+            highlightcolor=AMBER,
+            font=("Segoe UI", 10),
+        )
+
+    def _button(self, parent: tk.Widget, text: str, command: object, bg: str, fg: str) -> tk.Button:
+        return tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=bg,
+            fg=fg,
+            activebackground=bg,
+            activeforeground=fg,
+            relief="flat",
+            padx=14,
+            pady=6,
+            font=("Segoe UI", 10, "bold"),
+        )
 
     def _row(self, label: str, widget: tk.Widget) -> None:
-        frame = tk.Frame(self.root)
-        frame.pack(fill="x", padx=12, pady=2)
-        tk.Label(frame, text=label, width=16, anchor="w").pack(side="left")
+        frame = tk.Frame(self.root, bg=PAPER)
+        frame.pack(fill="x", padx=16, pady=2)
+        tk.Label(
+            frame,
+            text=label,
+            width=16,
+            anchor="w",
+            bg=PAPER,
+            fg=SOFT,
+            font=("Segoe UI", 10),
+        ).pack(side="left")
         widget.pack(side="left")
 
     def _load_public(self) -> None:
@@ -249,6 +388,52 @@ class RecorderWindow:
                 self.status.set("Wybierz bit, zaloguj się i nagraj.")
         except Exception as error:
             self.status.set(str(error))
+
+    def selected_fx(self) -> list[str]:
+        return [fx_id for fx_id, _label in FX if self.fx_vars[fx_id].get()]
+
+    def _on_fx(self, picked: str) -> None:
+        try:
+            build_chain(self.selected_fx(), self.tier)
+        except ValueError as error:
+            text = str(error)
+            drop = "sidechain" if "Sidechain" in text and self.fx_vars["sidechain"].get() else picked
+            if drop in self.fx_vars:
+                self.fx_vars[drop].set(0)
+            self.status.set(text)
+
+    def _fit_plan(self) -> None:
+        for _ in range(len(FX)):
+            try:
+                build_chain(self.selected_fx(), self.tier)
+                return
+            except ValueError as error:
+                selected = self.selected_fx()
+                if not selected:
+                    self.status.set(str(error))
+                    return
+                drop = "sidechain" if "Sidechain" in str(error) else selected[-1]
+                self.fx_vars[drop].set(0)
+                self.status.set(str(error))
+
+    def _read_plan(self) -> None:
+        saved = load_session()
+        token = saved.get("accessToken") if saved else None
+        if not token:
+            self.tier = "FREE"
+            self.plan_text.set("Plan: zaloguj się. Do tego czasu 4 efekty, bez sidechain.")
+            return
+        try:
+            payload = SiteClient(SITE, token).plan_usage()
+            tier, cap, side = limits_from_usage(payload)
+        except Exception as error:
+            self.tier = "FREE"
+            self.plan_text.set(str(error))
+            return
+        self.tier = tier
+        side_note = "sidechain jest w planie" if side else "sidechain od Silver"
+        self.plan_text.set(f"Plan {display_tier(tier)}. Efekty na ścieżce: {cap}. {side_note}.")
+        self._fit_plan()
 
     def selected_beat_id(self) -> str:
         label = self.beat_var.get()
@@ -281,6 +466,7 @@ class RecorderWindow:
                 grant,
             )
             self.password.delete(0, "end")
+            self._read_plan()
             self.status.set("Zalogowano. Nagraj wokal, potem wyślij na konto.")
         except Exception as error:
             self.status.set(str(error))
@@ -307,13 +493,17 @@ class RecorderWindow:
             self.recording = False
             if not self.wav_path.exists() or self.wav_path.stat().st_size < 1000:
                 raise RuntimeError("Nagranie jest puste.")
+            picked = self.selected_fx()
+            chain = build_chain(picked, self.tier)
             project = upload_vocal(
                 SiteClient(SITE, self.token()),
                 title=self.title_box.get().strip(),
                 beat_id=self.selected_beat_id(),
                 wav_path=self.wav_path,
+                chain=chain,
             )
-            self.status.set(f"Projekt jest na koncie. Otwórz go na stronie. Id: {project}")
+            fx_note = f" Efekty: {len(picked)}." if picked else ""
+            self.status.set(f"Projekt jest na koncie. Otwórz go na stronie.{fx_note} Id: {project}")
         except Exception as error:
             self.recording = False
             if self.capture:
@@ -334,6 +524,9 @@ def self_test_wav_roundtrip() -> None:
 
 if __name__ == "__main__":
     if "--self-test" in sys.argv:
+        from own_fx import self_test as fx_self_test
+
+        fx_self_test()
         self_test_wav_roundtrip()
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
         record_seconds(target, 0.4)

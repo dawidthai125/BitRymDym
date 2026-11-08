@@ -107,6 +107,16 @@ class SiteClient:
     def place(self, project: str, body: dict[str, Any]) -> dict[str, Any]:
         return self._json("POST", f"/api/studio/projects/{project}/record/place", body)
 
+    def plan_usage(self) -> dict[str, Any]:
+        return self._json("GET", "/api/account/plan-usage")
+
+    def apply_track_fx(self, project: str, track_id: str, version: int, chain: dict[str, Any]) -> dict[str, Any]:
+        return self._json(
+            "PATCH",
+            f"/api/studio/projects/{project}/tracks/{track_id}/effects",
+            {"expectedDocumentVersion": version, "chain": chain},
+        )
+
 
 def upload_vocal(
     client: SiteClient,
@@ -115,6 +125,7 @@ def upload_vocal(
     beat_id: str,
     wav_path: Path,
     playhead_ms: int = 0,
+    chain: dict[str, Any] | None = None,
 ) -> str:
     wav = wav_path.read_bytes()
     if len(wav) < 45:
@@ -125,7 +136,7 @@ def upload_vocal(
     take_id = str(session["takeId"])
     client.finalize(take_id)
     duration_ms = max(1, int((len(wav) - 44) / 2 / 48_000 * 1000))
-    client.place(
+    placed = client.place(
         project_id(document),
         {
             "trackId": vocal_track_id(document),
@@ -136,4 +147,14 @@ def upload_vocal(
             "expectedDocumentVersion": document_version(document),
         },
     )
-    return project_id(document)
+    pid = project_id(document)
+    effects = chain.get("effects") if isinstance(chain, dict) else None
+    if isinstance(effects, list) and effects:
+        version = placed.get("documentVersion")
+        if not isinstance(version, int):
+            raise RuntimeError(f"Wokal jest na koncie ({pid}). Strona nie oddała wersji do efektów.")
+        try:
+            client.apply_track_fx(pid, vocal_track_id(document), version, chain or {})
+        except RuntimeError as error:
+            raise RuntimeError(f"Wokal jest na koncie ({pid}). Efekty nie weszły: {error}") from None
+    return pid
