@@ -37,6 +37,11 @@ yarn-error.log*
 # local probe dumps, gate directories, and browser session files
 /scripts/_tmp_*
 
+# Windows recorder installer output (ffmpeg and the setup file stay off git)
+/desktop/recorder/build/
+/desktop/recorder/dist/
+/desktop/recorder/installer/output/
+
 # supabase CLI local temp
 supabase/.temp/
 

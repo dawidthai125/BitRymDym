@@ -13,12 +13,18 @@ from typing import Any
 
 
 TAKE_SECONDS = {"FREE": 30, "BRONZE": 60, "SILVER": 120, "GOLD": 180}
+# plan-policy studio.maxRecordingTracks. The Bit lane is not a recording track.
+RECORDING_TRACKS = {"FREE": 1, "BRONZE": 2, "SILVER": 8, "GOLD": 16}
 RATE = 48_000
 PREF_KEYS = ("device", "title", "effects", "beat")
 
 
 def max_take_seconds(tier: str) -> int:
     return TAKE_SECONDS.get(tier, TAKE_SECONDS["FREE"])
+
+
+def max_recording_tracks(tier: str) -> int:
+    return RECORDING_TRACKS.get(tier, RECORDING_TRACKS["FREE"])
 
 
 def wav_seconds(size: int) -> float:
@@ -99,7 +105,9 @@ def write_prefs(path: Path, prefs: dict[str, Any]) -> None:
 def self_test() -> None:
     if [max_take_seconds(tier) for tier in ("FREE", "BRONZE", "SILVER", "GOLD")] != [30, 60, 120, 180]:
         raise SystemExit("czas nagrania")
-    if max_take_seconds("NOPE") != 30:
+    if [max_recording_tracks(tier) for tier in ("FREE", "BRONZE", "SILVER", "GOLD")] != [1, 2, 8, 16]:
+        raise SystemExit("ścieżki nagrań")
+    if max_take_seconds("NOPE") != 30 or max_recording_tracks("NOPE") != 1:
         raise SystemExit("nieznany plan")
     if abs(wav_seconds(44 + RATE * 2) - 1.0) > 0.001:
         raise SystemExit("sekundy WAV")
