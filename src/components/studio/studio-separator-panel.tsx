@@ -19,7 +19,7 @@ const LABELS: Record<StemName, string> = {
 };
 
 const QUEUED =
-  "Zgłoszenie jest w kolejce. Pliki powstaną dopiero, gdy na hoście działa worker z DEMUCS_PYTHON. Samo przyjęcie nie jest rozcięciem.";
+  "Jest w kolejce. Pliki pojawią się, gdy rozcinanie się skończy. Samo kliknięcie jeszcze ich nie daje.";
 
 export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
@@ -70,7 +70,7 @@ export function StudioSeparatorPanel({ projects }: { projects: ProjectOpt[] }) {
       } else if (res.status === 404) {
         setNote("Nie ma zatwierdzonego mastera ani bitu w tym projekcie.");
       } else if (res.status === 503) {
-        setNote("Kolejka separatora nie jest jeszcze włączona w bazie.");
+        setNote("Rozcinanie jest chwilowo wyłączone.");
       } else {
         setNote("Nie udało się przyjąć zgłoszenia.");
       }

@@ -53,7 +53,7 @@ export function StudioEngineerForm() {
       });
       if (res.status === 201) {
         setBody("");
-        setNote("Zapisane jako otwarte. Nikt tu nie odpowiada automatycznie.");
+        setNote("Wysłane. Odpowie człowiek, nie automat.");
         await loadRequests();
       } else if (res.status === 401) {
         setNote("Zaloguj się, żeby wysłać zgłoszenie.");

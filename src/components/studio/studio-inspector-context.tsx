@@ -52,7 +52,7 @@ export function studioInspectorOverlayCloseBlocked(input: {
 }
 
 export const STUDIO_INSPECTOR_CLOSE_BLOCKED_PL =
-  "Nie można zamknąć Inspectora, dopóki trwa nagrywanie lub zapisywanie take'a.";
+  "Nie można zamknąć inspektora, dopóki trwa nagrywanie albo zapis.";
 
 export function studioInspectorContextTitle(
   context: StudioInspectorContext,

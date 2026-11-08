@@ -2,10 +2,10 @@
   "common": {
     "aboutPage": {
       "metaTitle": "O BitRymDym",
-      "metaDescription": "Bity, nagranie i Studio. BITEK proponuje mix i mastering po Twojej prośbie.",
+      "metaDescription": "Bity, nagranie i Studio. BITEK proponuje miks i mastering po Twojej prośbie.",
       "oBitrymdym": "O BitRymDym",
       "bitGlosStudio": "Bit. Głos. Studio.",
-      "bitrymdymToMiejsceW": "BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz głos i składasz numer w Studio. BITEK proponuje mix i mastering — stosujesz je, gdy chcesz.",
+      "bitrymdymToMiejsceW": "BitRymDym to miejsce, w którym znajdujesz bity, nagrywasz głos i składasz numer w Studio. BITEK proponuje miks i mastering — stosujesz je, gdy chcesz.",
       "dlaProducentowRaperowI": "Dla producentów, raperów i twórców, którzy chcą wracać tu codziennie: odsłuchać, nagrać i dopracować brzmienie.",
       "przegladajBity": "Przeglądaj bity",
       "zalozKonto": "Załóż konto"
@@ -328,7 +328,7 @@
       "bezOkresuProbnego": "Bez okresu próbnego. Rezygnujesz kiedy chcesz.",
       "freeStopka": "Bez karty. Nagrania ważne 24 h.",
       "karta": {
-        "take": "Take do {s} s · {n, plural, one {# nagranie} few {# nagrania} many {# nagrań} other {# nagrania}} dziennie",
+        "take": "Nagranie do {s} s · {n, plural, one {# nagranie} few {# nagrania} many {# nagrań} other {# nagrania}} dziennie",
         "waznosc": "Nagranie ważne {h} h",
         "projekty": "{p, plural, one {# projekt} few {# projekty} many {# projektów} other {# projektu}} · {t, plural, one {# ścieżka nagrań} few {# ścieżki nagrań} many {# ścieżek nagrań} other {# ścieżki nagrań}} (+ bit)",
         "mastery": "{n} masterów w miesiącu",
@@ -340,8 +340,8 @@
         "stemyBrak": "Bez importu stemów",
         "sample": "Sampel w katalogu: do {n}",
         "yt": "Wideo YouTube: {n} / tydzień",
-        "nuty": "Automatyka głośności i panoramy oraz nuty MIDI",
-        "nutyEdytor": "Automatyka, nuty MIDI i edytor nut korekty",
+        "nuty": "Głośność, panorama i nuty",
+        "nutyEdytor": "Głośność, panorama, nuty i edytor wysokości",
         "znak": "Podgląd mastera ze znakiem wodnym",
         "referencja": {
           "addon": "Mastering z referencją — płatny dodatek (zakup online wkrótce)",
@@ -378,7 +378,7 @@
       "porownanieAria": "Porównanie limitów planów Free, Bronze, Silver i Gold",
       "tab": {
         "co": "Co",
-        "take": "Długość take'a",
+        "take": "Długość nagrania",
         "sekundy": "{n} s",
         "sesje": "Nagrania dziennie",
         "widok": "Widok studia",
@@ -416,7 +416,7 @@
         "bitek": "Pamięć BITEK-a",
         "bitekSesja": "sesja",
         "bitekProjekt": "projekt",
-        "nuty": "Nuty MIDI i automatyka",
+        "nuty": "Nuty i głośność na osi czasu",
         "nutyWszystkie": "na każdym planie",
         "znakWodny": "Podgląd ze znakiem wodnym",
         "znakWodnyTak": "tak"
@@ -429,7 +429,7 @@
         "free": "Free nie pobiera bitów ani gotowych plików — tylko odsłuch; przyciski są widoczne, ale zablokowane. Przy więcej niż 3 projektach nic nie znika, tylko nowego nie założysz.",
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
         "raw": "Surowy plik własnego nagrania: tylko {plan}, do {n} pobrań dziennie.",
-        "nuty": "Automatyka głośności i panoramy oraz nuty MIDI (pianino, gitara, bas, perkusja, a także sinus, kwadrat i piła) są na każdym planie. Edytor nut korekty wysokości jest tylko w Gold.",
+        "nuty": "Głośność i panorama na osi czasu oraz nuty (pianino, gitara, bas, perkusja, a także gładki, ostry i brzęczący dźwięk) są na każdym planie. Edytor nut, którym korygujesz wysokość, jest tylko w Gold.",
         "znak": "Podgląd mastera ma znak wodny głosowy „Bit Rym Dym” na każdym planie. Miesza się co kilkanaście sekund.",
         "referencja": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek. Zakup dodatku online — wkrótce; do tego czasu włączamy go ręcznie (dawid.thai@int.pl).",
         "referencjaKup": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek na miesiąc."
@@ -439,7 +439,7 @@
       "platnosciPlan": "miesięcznie albo rocznie, bez okresu próbnego. Do tego czasu plan nadaje administrator.",
       "referencjaTytul": "Mastering z referencją",
       "jakDostacPremiumDzis": "Jak dostać Premium dziś",
-      "poziomNadajeSiePo": "Plan nadaje się na koncie przez panel administracyjny (ze śladem zmian). Kiedy ruszą płatności, ta strona dostanie przycisk zakupu.",
+      "poziomNadajeSiePo": "Plan włącza Dawid ręcznie, dopóki nie ma płatności. Jak płatności ruszą, ta strona dostanie przycisk zakupu.",
       "poziomGdyPlatnosci": "Plan kupujesz powyżej, na miesiąc albo na rok. Administrator nadal może nadać plan ręcznie — ze śladem zmian.",
       "idzDoKatalogu": "Idź do katalogu",
       "zalozKonto": "Załóż konto",
@@ -1374,7 +1374,7 @@
       "przegladajBity": "Przeglądaj bity",
       "jakToDziala": "Jak to działa",
       "promoFilm": "Film: bit, nagranie, studio",
-      "promoPodpis": "Bit, nagranie i studio. BITEK wchodzi do mixu i masteru dopiero, gdy o to poprosisz.",
+      "promoPodpis": "Bit, nagranie i studio. BITEK wchodzi do miksu i masteru dopiero, gdy o to poprosisz.",
       "promoDeck": "BRD · Film",
       "promoLeci": "Leci",
       "promoStop": "Stop",
@@ -1384,7 +1384,7 @@
       "katalogOtwartyOdRazu": "Katalog otwarty od razu. Nagranie i Studio — po założeniu konta, na bicie ze statusem opublikowanym.",
       "wiecejLimitu": "Więcej limitu,",
       "gdyTegoPotrzebujesz": "gdy tego potrzebujesz",
-      "premiumFreeGoldPodnosi": "Free, Bronze, Silver i Gold. Tabela poniżej bierze działające limity: nagranie, ścieżki, stemy, mastery, pobranie, wideo, presety i linki —",
+      "premiumFreeGoldPodnosi": "Free, Bronze, Silver i Gold. Niżej masz limity, które naprawdę działają: nagranie, ścieżki, stemy, mastery, pobranie, wideo, presety i linki —",
       "bezSamodzielnegoZakupuW": "zakupu w aplikacji jeszcze nie ma",
       "szczegolyHoldICo": ". Ceny są docelowe. Pełne pakiety są na stronie Premium.",
       "krokBit": "Katalog jest otwarty. Bez konta słyszysz {s} s każdego bitu.",
@@ -1429,7 +1429,7 @@
       "planRetencja": "Przechowywanie plików",
       "planDni": "{n} dni",
       "planTabelaAria": "Porównanie planów Free, Bronze, Silver i Gold",
-      "planWspolne": "Na każdym planie: automatyka głośności i panoramy, nuty MIDI (sinus, kwadrat, piła) oraz podgląd mastera ze znakiem wodnym głosowym „Bit Rym Dym”.",
+      "planWspolne": "Na każdym planie: głośność i panorama na osi czasu, nuty (gładki, ostry i brzęczący dźwięk) oraz podgląd mastera ze znakiem wodnym „Bit Rym Dym”.",
       "planGosc": "Bez konta: {s} s podglądu każdego bitu. Nagranie, pobieranie i Studio wymagają konta.",
       "jakosc": {
         "MP3_128": "MP3 128",
@@ -1454,15 +1454,15 @@
         "naStronieBituAlbo": "Na stronie bitu albo w Studio. Czas nagrania zależy od poziomu Premium na koncie (i od długości bitu).",
         "wymagaKonta": "Wymaga konta",
         "zlozNumerWStudio": "Złóż numer w Studio",
-        "projektySciezkiMiksI": "Nagrywasz, tniesz, od Silver dokładasz stemy, na każdym planie rysujesz automatykę i nuty MIDI. BITEK wchodzi do mixu i masteru dopiero po Twojej zgodzie.",
+        "projektySciezkiMiksI": "Nagrywasz, tniesz, od Silver dokładasz stemy, na każdym planie rysujesz głośność i nuty. BITEK wchodzi do miksu i masteru dopiero po Twojej zgodzie.",
         "stemy": "Stemy",
         "automatykaNuty": "Automatyka i nuty",
-        "krokAutomatyka": "Głośność i panorama na osi czasu oraz nuty MIDI: sinus, kwadrat i piła. Działają na każdym planie.",
-        "mixIMaster": "Mix i master",
-        "krokMix": "BITEK proponuje mix i mastering dopiero, gdy o to poprosisz. Podgląd mastera ma znak wodny u wszystkich. Referencja jest dodatkiem na Silver i w cenie Gold.",
+        "krokAutomatyka": "Głośność i panorama na osi czasu oraz nuty: gładki, ostry i brzęczący dźwięk. Działają na każdym planie.",
+        "mixIMaster": "Miks i master",
+        "krokMix": "BITEK proponuje miks i mastering dopiero, gdy o to poprosisz. Podgląd mastera ma znak wodny u wszystkich. Referencja jest dodatkiem na Silver i w cenie Gold.",
         "oddajPlik": "Oddaj plik",
         "wybierzBit": "Wybierz bit",
-        "wejdzWKatalogOdsluchaj": "Wejdź w katalog, odsłuchaj i wybierz opublikowany beat.",
+        "wejdzWKatalogOdsluchaj": "Wejdź w katalog, odsłuchaj i wybierz opublikowany bit.",
         "zalozKonto": "Załóż konto",
         "doNagraniaIStudio": "Do nagrania i Studio potrzebujesz konta. Sam katalog możesz przeglądać od razu.",
         "nagrajWers": "Nagraj wers",
@@ -1496,7 +1496,7 @@
     "studioPage": {
       "metaTitle": "Studio",
       "twojeProjekty": "Twoje projekty",
-      "nocnaDeskaOtworzProjekt": "Nocna deska — otwórz projekt, wróć do miksu albo usuń stare szkice. Szybkie nagranie nadal jest na stronie bitu.",
+      "nocnaDeskaOtworzProjekt": "Otwórz projekt, wróć do miksu albo skasuj stare szkice. Szybkie nagranie nadal jest na stronie bitu.",
       "archiwumNagran": "Archiwum nagrań",
       "konto": "← Konto"
     },
@@ -1514,16 +1514,16 @@
       "eqSrodek": "EQ: środek",
       "eqGora": "EQ: góra",
       "progKompresora": "Próg kompresora",
-      "poziomReverbu": "Poziom reverbu",
-      "poziomDelay": "Poziom delay",
+      "poziomReverbu": "Poziom pogłosu",
+      "poziomDelay": "Poziom echa",
       "masterPodstawowy": "Master podstawowy",
       "glosnoscMasteraDb": "Głośność mastera (dB)",
       "ochronaPrzedPrzesterem": "Ochrona przed przesterem",
       "progLimitera": "Próg limitera",
-      "celGlosnosciLufs": "Cel głośności (LUFS)",
+      "celGlosnosciLufs": "Cel głośności",
       "proMix": "Pro Mix",
       "zablokowane": "· zablokowane",
-      "proEqMultibandI": "Pro EQ, multiband i de-esser — Premium",
+      "proEqMultibandI": "Dokładniejsza korekta, osobne pasma i ściszenie syków — Premium",
       "proLancuchAktywny": "Pro łańcuch aktywny",
       "wlaczLancuchEfektowPro": "Włącz łańcuch efektów Pro",
       "proMixWymagaAktywnego": "Pro Mix wymaga aktywnego Premium.",
@@ -1564,7 +1564,7 @@
       "nieUdaloSieUtworzyc2": "Nie udało się utworzyć eksportu.",
       "statusEksportuNiedostepny": "Status eksportu niedostępny.",
       "export": "Eksport: {v0}.",
-      "exportTimeoutCzekajNa": "Przekroczono czas eksportu (oczekiwanie na zewnętrzny worker).",
+      "exportTimeoutCzekajNa": "Eksport trwa dłużej niż zwykle. Poczekaj.",
       "pobieranieNiedostepne": "Pobieranie niedostępne.",
       "nieUdaloSiePobrac": "Nie udało się pobrać pliku.",
       "nieUdaloSieZapisac": "Nie udało się zapisać parametrów."
@@ -1619,7 +1619,7 @@
     },
     "studioEditor": {
       "persistNiedostepny": "Zapis jest niedostępny.",
-      "nieUdaloSieZapisac": "Nie udało się zapisać geometrii klipu.",
+      "nieUdaloSieZapisac": "Nie udało się zapisać cięcia.",
       "nieUdaloSieZaktualizowac": "Nie udało się zaktualizować ścieżki.",
       "nieUdaloSieZapisac2": "Nie udało się zapisać Master.",
       "nieUdaloSieZmienic": "Nie udało się zmienić kolejności.",
@@ -2459,8 +2459,8 @@
           "title": "Szum tła",
           "na": "Za mało nagranego wokalu, żeby ocenić szum.",
           "ok": "Tło jest czyste.",
-          "some": "Słychać lekki szum w „{track}” ({db} dBFS).",
-          "loud": "W „{track}” słychać wyraźny szum pokoju ({db} dBFS)."
+          "some": "Słychać lekki szum w „{track}” ({db} dB).",
+          "loud": "W „{track}” słychać wyraźny szum pokoju ({db} dB)."
         },
         "stereo": {
           "title": "Stereo",
@@ -2589,7 +2589,7 @@
         "recording": "Nagrywam. Skup się na wykonaniu — suwaków tu nie ruszam.",
         "chooseBeat": "Cześć! Zacznij od wyboru bitu, na którym nagrasz wokal.",
         "recordVocal": "Bit jest. Nagraj wokal — jak będzie za cicho albo przesterowany, powiem. Suwaków tu nie ruszam.",
-        "readyForMix": "Masz {count, plural, one {# nagranie} few {# nagrania} other {# nagrań}}. Jak przejdziesz do mixu, sprawdzę poziomy i poprawię je z Tobą.",
+        "readyForMix": "Masz {count, plural, one {# nagranie} few {# nagrania} other {# nagrań}}. Jak przejdziesz do miksu, sprawdzę poziomy i poprawię je z Tobą.",
         "keysIdle": "Włącz nagrywanie i kliknij klawisz. Powiem, czy linia trzyma się blisko.",
         "keysShort": "Masz {count, plural, one {# nutę} few {# nuty} other {# nut}}. Dołóż jeszcze kilka, żebym usłyszał frazę.",
         "keysSame": "Trzymasz jedną nutę. Kliknij sąsiedni klawisz, linia ruszy.",
@@ -3529,7 +3529,7 @@
     }
   },
   "meta": {
-    "siteDescription": "Platforma muzyczna — bity, nagrania, mix i społecznościowy katalog.",
+    "siteDescription": "Platforma muzyczna — bity, nagrania, miks i społecznościowy katalog.",
     "ogLocale": "pl_PL"
   },
   "language": {

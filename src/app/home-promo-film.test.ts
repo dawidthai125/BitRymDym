@@ -29,7 +29,7 @@ describe("homepage Jak to działa promo film", () => {
     expect(film).toContain('poster="/promo/jak-to-dziala-poster.jpg"');
     expect(film).toContain("Film: bit, nagranie, studio");
     expect(film).toContain(
-      "Bit, nagranie i studio. BITEK wchodzi do mixu i masteru dopiero, gdy o to poprosisz.",
+      "Bit, nagranie i studio. BITEK wchodzi do miksu i masteru dopiero, gdy o to poprosisz.",
     );
     expect(film).toContain("BRD · Film");
     expect(film).toContain("Leci");

@@ -233,7 +233,7 @@ export function StudioFragmentTools({
                   step={100}
                   value={pitchLocal}
                   disabled={locked}
-                  aria-label="Wysokość klipu w centach, tempo zostaje"
+                  aria-label="Wysokość klipu, tempo zostaje"
                   data-testid="studio-fragment-pitch"
                   onChange={(event) => setPitchLocal(Number(event.target.value))}
                   onPointerUp={(event) => onPlayback({ stretch: stretchLocal, pitchCents: Number(event.currentTarget.value) })}

@@ -7,7 +7,7 @@ import { StudioEngineerForm } from "@/components/studio/studio-engineer-form";
 import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 
-export const metadata = { title: "Realizator" };
+export const metadata = { title: "Napisz do realizatora" };
 
 export default async function StudioEngineerPage() {
   try {
@@ -28,9 +28,9 @@ export default async function StudioEngineerPage() {
       >
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
-            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Realizator</h1>
+            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Napisz do realizatora</h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Kolejka do człowieka. To nie jest czat. Nie ma tu automatycznej odpowiedzi.
+              Piszesz do żywego człowieka. Nikt tu nie odpowiada z automatu.
             </p>
           </header>
           <StudioEngineerForm />

@@ -71,19 +71,19 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
               href="/studio/separator"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Separator
+              Rozetnij bit
             </Link>
             <Link
               href="/studio/optymalizator"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Optymalizator bitu
+              Sprawdź głośność
             </Link>
             <Link
               href="/studio/realizator"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >
-              Realizator
+              Napisz do realizatora
             </Link>
             <Link
               href="/account/takes"

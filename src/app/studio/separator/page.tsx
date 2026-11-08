@@ -8,7 +8,7 @@ import { signInPathWithNext } from "@/lib/auth/next-path";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { listStudioProjects } from "@/lib/studio/studio-service";
 
-export const metadata = { title: "Separator" };
+export const metadata = { title: "Rozetnij bit" };
 
 export default async function StudioSeparatorPage() {
   try {
@@ -31,10 +31,10 @@ export default async function StudioSeparatorPage() {
       >
         <PageFrame className="flex flex-col gap-8 py-10 sm:py-12">
           <header className="space-y-2 border-b border-[var(--brd-line)] pb-6">
-            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Separator</h1>
+            <h1 className="brd-display text-4xl tracking-tight sm:text-6xl">Rozetnij bit</h1>
             <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">
-              Rozcina utwór na wokal, bębny, bas i resztę. Wagi Demucs zostają na hoście
-              workerów, nie w aplikacji. Kolejka nie tworzy plików sama.
+              Dzieli bit na wokal, bębny, bas i resztę. Trwa to chwilę u nas.
+              Samo kliknięcie jeszcze nie daje plików.
             </p>
           </header>
           <StudioSeparatorPanel

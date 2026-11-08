@@ -12,7 +12,7 @@
 
 export const STUDIO_LEAVE_GUARD_TITLE_PL = "Trwa nagrywanie";
 export const STUDIO_LEAVE_GUARD_BODY_PL =
-  "Trwa nagrywanie lub zapisywanie take'a. Jeśli teraz opuścisz Studio, nagrywanie zostanie przerwane, a niezapisany take może przepaść.";
+  "Trwa nagrywanie albo zapis. Jeśli teraz wyjdziesz ze studia, nagranie się urwie, a niezapisany kawałek może przepaść.";
 export const STUDIO_LEAVE_GUARD_STAY_PL = "Zostań w Studio";
 export const STUDIO_LEAVE_GUARD_LEAVE_PL = "Opuść Studio";
 

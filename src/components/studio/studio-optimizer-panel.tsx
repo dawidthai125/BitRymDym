@@ -27,7 +27,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       }
       const audioRes = await fetch(json.url);
       if (!audioRes.ok) {
-        setNote("Nie udało się odczytać audio projektu.");
+        setNote("Nie udało się odczytać nagrania z projektu.");
         return;
       }
       const ctx = new AudioContext();
@@ -39,7 +39,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
       await ctx.close().catch(() => undefined);
       setMeasure(measureBeatWindow(samples, decoded.sampleRate));
     } catch {
-      setNote("Nie udało się zmierzyć audio.");
+      setNote("Nie udało się sprawdzić głośności.");
     } finally {
       setBusy(false);
     }
@@ -69,7 +69,7 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
         disabled={busy || !projectId}
         className="w-fit border border-[var(--brd-line)] px-3 py-2 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-amber)] disabled:opacity-50"
       >
-        {busy ? "Mierzę…" : "Zmierz bit"}
+        {busy ? "Sprawdzam…" : "Sprawdź głośność"}
       </button>
       {note ? <p className="max-w-prose text-sm text-[var(--brd-ink-soft)]">{note}</p> : null}
       {measure ? <Measurement measure={measure} /> : null}
@@ -80,18 +80,17 @@ export function StudioOptimizerPanel({ projects }: { projects: ProjectOpt[] }) {
 function Measurement({ measure }: { measure: BeatMeasure }) {
   const peak = measure.peakDb.toFixed(1);
   const rms = measure.rmsDb.toFixed(1);
-  const hz = Math.round(measure.centroidHz);
-  let advice = `Szczyt ${peak} dBFS, RMS ${rms} dBFS, środek ${hz} Hz. Zostawiam plik bez zmian.`;
+  let advice = `Najgłośniejszy moment ${peak} dB, średnio ${rms} dB. Plik zostaje bez zmian.`;
   if (measure.suggestion === "hot") {
-    advice = `Szczyt ${peak} dBFS. Ścisz bit o około ${measure.lowerByDb} dB, żeby wokal miał miejsce. Plik zostaje bez zmian.`;
+    advice = `Bit jest za głośny. Ścisz go o około ${measure.lowerByDb} dB, żeby wokal miał miejsce. Plik zostaje bez zmian.`;
   } else if (measure.suggestion === "quiet") {
-    advice = `Bit jest cichy (${peak} dBFS). Nie podbijam go sam.`;
+    advice = `Bit jest cichy. Sam go nie podgłaśniam.`;
   } else if (measure.suggestion === "mud") {
-    advice = `Środek ciężkości ${hz} Hz. Dużo dołu. Mniej basu albo sidechain zrobi kieszeń na wokal. Plik zostaje bez zmian.`;
+    advice = `Dużo basu. Ścisz bas, żeby było słychać słowa. Plik zostaje bez zmian.`;
   }
   return (
     <div className="max-w-prose space-y-2 text-sm text-[var(--brd-ink-soft)]" data-testid="studio-optimizer-measure">
-      <p>Szczyt {peak} dBFS · RMS {rms} dBFS · środek {hz} Hz</p>
+      <p>Najgłośniej {peak} dB · średnio {rms} dB</p>
       <p>{advice}</p>
     </div>
   );
