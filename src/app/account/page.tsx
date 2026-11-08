@@ -22,6 +22,7 @@ import { notifyEnv } from "@/lib/email/notify/config";
 import { DEFAULT_PREFERENCES, readPreferences } from "@/lib/email/notify/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { OwnTakesList } from "@/components/takes/own-takes-list";
+import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { formatAccountPlanDisplay } from "@/lib/account/account-plan-display";
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { ConsumeEmailChangeNotice } from "@/components/auth/consume-email-change-notice";
@@ -100,6 +101,12 @@ export default async function AccountPage({
     takes = [];
   }
   const recentTakes = takeRecentNonDeletedTakes(takes, 5);
+  let favoriteCount = 0;
+  try {
+    favoriteCount = (await listFavoriteBeatIds(context.userId)).length;
+  } catch {
+    favoriteCount = 0;
+  }
   const readyCount = takeCounts.ready;
   const displayName =
     context.profile.displayName?.trim() || tr("tworca");
@@ -226,6 +233,11 @@ export default async function AccountPage({
                     meta={tr("twojePobrania")}
                   />
                   <LibraryRow
+                    href="/account/favorites"
+                    title={tr("ulubione")}
+                    meta={tr("zapisanych", { v0: favoriteCount })}
+                  />
+                  <LibraryRow
                     href="/account/beats"
                     title={tr("mojeBity")}
                     meta={tr("wgraneIWModeracji")}
@@ -318,10 +330,13 @@ export default async function AccountPage({
                   </BrdButton>
                 </form>
               </section>
+            </aside>
+          </div>
 
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
               <section
                 id="security"
-                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5"
+                className="scroll-mt-24 space-y-4 border border-[var(--brd-line)] p-5 lg:col-span-2"
               >
                 <SectionLabel>{tr("bezpieczenstwo")}</SectionLabel>
                 {emailChangeStatus ? (
@@ -357,7 +372,6 @@ export default async function AccountPage({
                 <SectionLabel>{tr("usuwanieKonta")}</SectionLabel>
                 <DeleteAccountForm />
               </section>
-            </aside>
           </div>
         </PageFrame>
       </main>

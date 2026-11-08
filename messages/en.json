@@ -29,8 +29,11 @@
     "beatCatalogRow": {
       "wyrozniony": "Featured",
       "przebieg": "Waveform: {v0}",
-      "dodajDoUlubionychWkrotce": "Add to favourites (coming soon)",
-      "ulubioneWkrotce": "Favourites — coming soon"
+      "dodajDoUlubionych": "Add to favourites",
+      "usunZUlubionych": "Remove from favourites",
+      "ulubioneZapisane": "Saved in favourites",
+      "dodajDoUlubionychWkrotce": "Add to favourites",
+      "ulubioneWkrotce": "Favourites"
     },
     "beatsCatalogClient": {
       "szukajBitow": "Search beats",
@@ -262,6 +265,8 @@
       "mojeBity": "My beats",
       "eksportyIPobrania": "Exports and downloads",
       "udostepnione": "Shared",
+      "ulubione": "Favourites",
+      "zapisanych": "{v0} saved",
       "ostatnieNagrania": "Recent recordings",
       "wszystkie": "All →",
       "jeszczeCicho": "Still quiet.",
@@ -921,7 +926,10 @@
       "przywrocDoWersjiRoboczej": "Restore to draft",
       "opublikowano": "Published.",
       "zarchiwizowano": "Archived.",
-      "przywroconoDoWersjiRoboczej": "Restored to draft."
+      "przywroconoDoWersjiRoboczej": "Restored to draft.",
+      "potwierdzamUsuniecie": "I confirm this beat should be removed for good. A beat used in a recording cannot be deleted — archive it instead.",
+      "usunBit": "Delete beat",
+      "usuwanie": "Deleting…"
     },
     "adminMetadataForm": {
       "tytul": "Title *",
@@ -1214,7 +1222,10 @@
       "metaTitle": "Favourites",
       "biblioteka": "Library",
       "ulubione": "Favourites",
-      "listaUlubionychBitowPojawi": "The list of favourite beats will arrive in the next version. For now you can go back to the catalogue and the studio.",
+      "opis": "Beats you saved with the heart in the catalogue.",
+      "pusto": "You have no saved beats yet.",
+      "usun": "Remove",
+      "listaUlubionychBitowPojawi": "Beats you saved with the heart in the catalogue.",
       "przegladajBity": "Browse beats →"
     },
     "libraryPage": {
@@ -1227,7 +1238,8 @@
       "udostepnione": "Shared",
       "twojeNagrania": "Your recordings",
       "pobraneBity": "Downloaded beats",
-      "wkrotce": "Coming soon",
+      "zapisaneBity": "Saved beats",
+      "wkrotce": "Saved beats",
       "bityOdInnych": "Beats from others"
     },
     "autoCheckCard": {

@@ -1024,14 +1024,78 @@ export async function archiveBeat(beatId: string): Promise<Beat> {
   return transitionBeatStatus(beatId, "ARCHIVED");
 }
 
+export const BEAT_DELETE_IN_USE =
+  "Ten bit jest użyty w nagraniu, miksie albo projekcie. Zarchiwizuj go, zamiast kasować.";
+
 export async function deleteBeat(beatId: string): Promise<void> {
   await requireAdminPlatformOps();
   await requirePermission("beats.delete");
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("beats").delete().eq("id", beatId);
-  if (error) {
-    throw new Error(error.message);
+  if (!isUuid(beatId)) throw new AuthError("NOT_FOUND", "No such beat.");
+  const admin = createSupabaseAdminClient();
+
+  const blockers = await Promise.all([
+    admin.from("takes").select("id", { head: true, count: "exact" }).eq("beat_id", beatId),
+    admin.from("mix_sessions").select("id", { head: true, count: "exact" }).eq("beat_id", beatId),
+    admin
+      .from("studio_clips")
+      .select("id", { head: true, count: "exact" })
+      .eq("source_beat_id", beatId),
+  ]);
+  for (const row of blockers) {
+    if (row.error) throw new Error(row.error.message);
+    if ((row.count ?? 0) > 0) throw new AuthError("CONFLICT", BEAT_DELETE_IN_USE);
   }
+
+  const assets = await admin
+    .from("beat_audio_assets")
+    .select("object_key, storage_bucket")
+    .eq("beat_id", beatId);
+  if (assets.error) throw new Error(assets.error.message);
+
+  const basis = await admin.from("beat_rights_basis").select("id").eq("beat_id", beatId);
+  if (basis.error) throw new Error(basis.error.message);
+  const basisIds = (basis.data ?? []).map((row) => String((row as { id: string }).id));
+  if (basisIds.length > 0) {
+    const unlinked = await admin
+      .from("beat_rights_basis")
+      .update({ revokes_basis_id: null })
+      .in("revokes_basis_id", basisIds);
+    if (unlinked.error) throw new Error(unlinked.error.message);
+  }
+
+  for (const table of [
+    "beat_auto_checks",
+    "beat_audio_fingerprints",
+    "beat_moderation_decisions",
+    "beat_rights_reviews",
+    "beat_rights_basis",
+    "beat_download_events",
+    "beat_download_reservations",
+  ] as const) {
+    const removed = await admin.from(table).delete().eq("beat_id", beatId);
+    if (removed.error) throw new Error(removed.error.message);
+  }
+
+  const byBucket = new Map<string, string[]>();
+  for (const row of assets.data ?? []) {
+    const key = (row as { object_key?: string | null }).object_key;
+    const bucket = (row as { storage_bucket?: string | null }).storage_bucket;
+    if (!key || !bucket) continue;
+    const list = byBucket.get(bucket) ?? [];
+    list.push(key);
+    byBucket.set(bucket, list);
+  }
+  for (const [bucket, keys] of byBucket) {
+    const removed = await admin.storage.from(bucket).remove(keys);
+    if (removed.error) {
+      console.error("[beats] storage remove failed:", removed.error.message);
+    }
+  }
+
+  const assetRows = await admin.from("beat_audio_assets").delete().eq("beat_id", beatId);
+  if (assetRows.error) throw new Error(assetRows.error.message);
+  const beat = await admin.from("beats").delete().eq("id", beatId);
+  if (beat.error) throw new Error(beat.error.message);
 }
 
 export async function listPublishedBeats(): Promise<Beat[]> {

@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { AdminBeatDelete } from "@/components/admin/admin-beat-delete";
 import { Button } from "@/components/ui/button";
 import {
   archiveBeatAction,
@@ -155,6 +156,7 @@ export function AdminLifecycleControls({
           </Button>
         ) : null}
       </div>
+      <AdminBeatDelete beatId={beatId} redirectTo="/admin/beats" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
+import { AdminBeatDelete } from "@/components/admin/admin-beat-delete";
 import { AdminMetadataForm } from "@/components/admin/admin-metadata-form";
 import type { Beat } from "@/types/domain";
 
@@ -76,6 +77,7 @@ export function AdminBeatQuickEdit({
                 setOpen(false);
               }}
             />
+            <AdminBeatDelete beatId={beat.id} />
           </div>
         </div>
       ) : null}

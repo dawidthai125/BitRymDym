@@ -29,8 +29,11 @@
     "beatCatalogRow": {
       "wyrozniony": "Wyróżniony",
       "przebieg": "Przebieg: {v0}",
-      "dodajDoUlubionychWkrotce": "Dodaj do ulubionych (wkrótce)",
-      "ulubioneWkrotce": "Ulubione — wkrótce"
+      "dodajDoUlubionych": "Dodaj do ulubionych",
+      "usunZUlubionych": "Usuń z ulubionych",
+      "ulubioneZapisane": "Zapisane w ulubionych",
+      "dodajDoUlubionychWkrotce": "Dodaj do ulubionych",
+      "ulubioneWkrotce": "Ulubione"
     },
     "beatsCatalogClient": {
       "szukajBitow": "Szukaj bitów",
@@ -262,6 +265,8 @@
       "mojeBity": "Moje bity",
       "eksportyIPobrania": "Eksporty i pobrania",
       "udostepnione": "Udostępnione",
+      "ulubione": "Ulubione",
+      "zapisanych": "{v0} zapisanych",
       "ostatnieNagrania": "Ostatnie nagrania",
       "wszystkie": "Wszystkie →",
       "jeszczeCicho": "Jeszcze cicho.",
@@ -921,7 +926,10 @@
       "przywrocDoWersjiRoboczej": "Przywróć do wersji roboczej",
       "opublikowano": "Opublikowano.",
       "zarchiwizowano": "Zarchiwizowano.",
-      "przywroconoDoWersjiRoboczej": "Przywrócono do wersji roboczej."
+      "przywroconoDoWersjiRoboczej": "Przywrócono do wersji roboczej.",
+      "potwierdzamUsuniecie": "Potwierdzam, że ten bit ma zniknąć na stałe. Bitu użytego w nagraniu nie da się skasować — wtedy zostaje archiwum.",
+      "usunBit": "Usuń bit",
+      "usuwanie": "Usuwanie…"
     },
     "adminMetadataForm": {
       "tytul": "Tytuł *",
@@ -1214,7 +1222,10 @@
       "metaTitle": "Ulubione",
       "biblioteka": "Biblioteka",
       "ulubione": "Ulubione",
-      "listaUlubionychBitowPojawi": "Lista ulubionych bitów pojawi się w kolejnej wersji. Na razie możesz wracać do katalogu i studia.",
+      "opis": "Bity, które zapisałeś sercem w katalogu.",
+      "pusto": "Nie masz jeszcze zapisanych bitów.",
+      "usun": "Usuń",
+      "listaUlubionychBitowPojawi": "Bity, które zapisałeś sercem w katalogu.",
       "przegladajBity": "Przeglądaj bity →"
     },
     "libraryPage": {
@@ -1227,7 +1238,8 @@
       "udostepnione": "Udostępnione",
       "twojeNagrania": "Twoje nagrania",
       "pobraneBity": "Pobrane bity",
-      "wkrotce": "Wkrótce",
+      "zapisaneBity": "Zapisane bity",
+      "wkrotce": "Zapisane bity",
       "bityOdInnych": "Bity od innych"
     },
     "autoCheckCard": {

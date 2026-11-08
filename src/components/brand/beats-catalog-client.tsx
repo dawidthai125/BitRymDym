@@ -71,6 +71,8 @@ export function beatsCatalogResultStatusMessage(
 type BeatsCatalogClientProps = {
   beats: PresentedBeat[];
   initialQuery?: string;
+  favoriteIds?: readonly string[];
+  signedIn?: boolean;
 };
 
 /**
@@ -80,6 +82,8 @@ type BeatsCatalogClientProps = {
 export function BeatsCatalogClient({
   beats,
   initialQuery = "",
+  favoriteIds = [],
+  signedIn = false,
 }: BeatsCatalogClientProps) {
   const tl = useLibText();
   const t = useTranslations("common.beatsCatalogClient");
@@ -301,6 +305,8 @@ export function BeatsCatalogClient({
                     key={beat.id}
                     beat={beat}
                     featured={index === 0}
+                    favorited={favoriteIds.includes(beat.id)}
+                    signedIn={signedIn}
                   />
                 ))}
               </ul>

@@ -29,9 +29,9 @@ export default async function LibraryPage() {
             <LibLink href="/studio/recordings" title={t("nagrania")} meta={t("twojeNagrania")} />
             <LibLink href="/library/downloads" title={t("pobrane")} meta={t("pobraneBity")} />
             <LibLink
-              href="/library/favorites"
+              href="/account/favorites"
               title={t("ulubione")}
-              meta={t("wkrotce")}
+              meta={t("zapisaneBity")}
             />
             <LibLink href="/account/shared" title={t("udostepnione")} meta={t("bityOdInnych")} />
           </ul>

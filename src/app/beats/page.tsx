@@ -4,8 +4,10 @@ import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
 import { AppShell } from "@/components/site/app-shell";
+import { listFavoriteBeatIds } from "@/lib/beats/favorites";
 import { toPublicCatalogItem } from "@/lib/beats/public";
 import { listPublishedBeats } from "@/lib/beats/service";
+import { getCurrentProfile } from "@/lib/auth/session";
 import { presentBeats } from "@/lib/ui/demo-beats";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
@@ -29,6 +31,8 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const raw = (await listPublishedBeats())
     .filter((beat) => beat.ownershipType === source)
     .map(toPublicCatalogItem);
+  const session = await getCurrentProfile();
+  const favoriteIds = session ? await listFavoriteBeatIds(session.userId) : [];
   const beats = presentBeats(raw);
   const initialQuery =
     typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
@@ -63,7 +67,12 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
               </p>
             </div>
           ) : (
-            <BeatsCatalogClient beats={beats} initialQuery={initialQuery} />
+            <BeatsCatalogClient
+              beats={beats}
+              initialQuery={initialQuery}
+              favoriteIds={favoriteIds}
+              signedIn={session != null}
+            />
           )}
         </PageFrame>
       </main>

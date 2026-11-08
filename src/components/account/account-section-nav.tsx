@@ -13,7 +13,7 @@ export function AccountSectionNav({
 }) {
   const path = usePathname();
   return (
-    <nav className="flex flex-wrap gap-2" aria-label={label}>
+    <nav className="flex gap-2 overflow-x-auto pb-1" aria-label={label}>
       {items.map((item) => {
         const on =
           item.href === "/account"
@@ -27,8 +27,8 @@ export function AccountSectionNav({
             aria-current={on ? "page" : undefined}
             className={
               on
-                ? "inline-flex min-h-11 items-center border border-[var(--brd-green)] px-4 text-sm text-[var(--brd-green)]"
-                : "inline-flex min-h-11 items-center border border-[var(--brd-line)] px-4 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-green)] hover:text-[var(--brd-green)]"
+                ? "inline-flex min-h-11 shrink-0 items-center border border-[var(--brd-green)] px-4 text-sm text-[var(--brd-green)]"
+                : "inline-flex min-h-11 shrink-0 items-center border border-[var(--brd-line)] px-4 text-sm text-[var(--brd-ink)] hover:border-[var(--brd-green)] hover:text-[var(--brd-green)]"
             }
           >
             {item.label}

@@ -5,6 +5,10 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { toggleBeatFavoriteAction } from "@/lib/beats/favorite-actions";
 
 import { BeatArtwork } from "@/components/brand/beat-artwork";
 import { BrdAudioPlayButton } from "@/components/brand/brd-audio-play-button";
@@ -19,6 +23,8 @@ type BeatCatalogRowProps = {
   beat: PresentedBeat;
   featured?: boolean;
   className?: string;
+  favorited?: boolean;
+  signedIn?: boolean;
 };
 
 /**
@@ -29,9 +35,17 @@ export function BeatCatalogRow({
   beat,
   featured = false,
   className,
+  favorited = false,
+  signedIn = false,
 }: BeatCatalogRowProps) {
   const tl = useLibText();
   const t = useTranslations("common.beatCatalogRow");
+  const router = useRouter();
+  const [saved, setSaved] = useState(favorited);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setSaved(favorited);
+  }, [favorited]);
   const {
     track,
     phase,
@@ -76,9 +90,25 @@ export function BeatCatalogRow({
     seek(ratio * max);
   }
 
-  function onFavorite(e: React.MouseEvent) {
+  async function onFavorite(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (!signedIn) {
+      router.push("/sign-in");
+      return;
+    }
+    if (saving) return;
+    const next = !saved;
+    setSaved(next);
+    setSaving(true);
+    const result = await toggleBeatFavoriteAction(beat.id);
+    setSaving(false);
+    if ("error" in result) {
+      if (result.error === "auth") router.push("/sign-in");
+      setSaved(!next);
+      return;
+    }
+    setSaved(result.favorited);
   }
 
   return (
@@ -156,11 +186,13 @@ export function BeatCatalogRow({
           <button
             type="button"
             onClick={onFavorite}
-            className="inline-flex size-11 items-center justify-center text-[var(--brd-mute)] transition-colors hover:text-[var(--brd-ink)]"
-            aria-label={t("dodajDoUlubionychWkrotce")}
-            title={t("ulubioneWkrotce")}
+            aria-label={t(saved ? "usunZUlubionych" : "dodajDoUlubionych")}
+            aria-pressed={saved}
+            title={t(saved ? "ulubioneZapisane" : "dodajDoUlubionych")}
+            disabled={saving}
+            className={`inline-flex size-11 items-center justify-center transition-colors hover:text-[var(--brd-ink)] ${saved ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}
           >
-            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </button>
           <BrdAudioPlayButton
             playing={playing}
@@ -233,11 +265,13 @@ export function BeatCatalogRow({
           <button
             type="button"
             onClick={onFavorite}
-            className="inline-flex size-11 shrink-0 items-center justify-center text-[var(--brd-mute)]"
-            aria-label={t("dodajDoUlubionychWkrotce")}
-            title={t("ulubioneWkrotce")}
+            className={`inline-flex size-11 shrink-0 items-center justify-center ${saved ? "text-[var(--brd-rec)]" : "text-[var(--brd-mute)]"}`}
+            aria-label={t(saved ? "usunZUlubionych" : "dodajDoUlubionych")}
+            aria-pressed={saved}
+            title={t(saved ? "ulubioneZapisane" : "dodajDoUlubionych")}
+            disabled={saving}
           >
-            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4"><path d="M8 14s-5.5-3.4-5.5-7.3A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
           </button>
         </div>
       </div>
