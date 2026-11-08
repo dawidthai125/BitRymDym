@@ -13,12 +13,15 @@ import shutil
 import subprocess
 import sys
 import tkinter as tk
+import webbrowser
+from datetime import datetime
 from tkinter import filedialog
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 from account_upload import SITE, upload_vocal, SiteClient
+from desk import max_take_seconds, read_prefs, studio_url, tail_peak_db, wav_seconds, write_prefs
 from own_fx import FX, build_chain, display_tier, limits_from_usage
 from record_wav import write_pcm16_wav
 
@@ -33,6 +36,8 @@ LINE = "#3a3028"
 REC = "#ff5a46"
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
+PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json"
+TAKES = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "takes"
 
 
 def ffmpeg_exe() -> str:
@@ -240,20 +245,34 @@ class RecorderWindow:
         if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
             self.root.withdraw()
         self.root.title("BitRymDym")
-        self.root.geometry("680x820")
+        self.root.geometry("720x960")
         self.root.configure(bg=PAPER)
         self.recording = False
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
         self.local_beat: Path | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
+        self.takes: list[Path] = []
+        self.project_id = ""
+        self._tick_id: str | None = None
+        self.devices: list[str] = []
+        try:
+            self.devices = audio_devices(ffmpeg_exe())
+        except Exception as error:
+            self.status_boot = str(error)
+        else:
+            self.status_boot = ""
         self.public_url = ""
         self.public_key = ""
         self.beats: list[tuple[str, str]] = []
         self.tier = "FREE"
         self.fx_vars: dict[str, tk.IntVar] = {}
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
-        self.plan_text = tk.StringVar(value="Plan: zaloguj się. Do tego czasu 4 efekty, bez sidechain.")
+        self.plan_text = tk.StringVar(
+            value="Plan: zaloguj się. Do tego czasu 4 efekty, nagranie do 30 s, bez sidechain."
+        )
+        self.clock = tk.StringVar(value="0.0 s / 30 s")
+        self.device_var = tk.StringVar(value=self.devices[0] if self.devices else "Brak mikrofonu")
         self.email = self._entry(show="")
         self.password = self._entry(show="*")
         self.title_box = self._entry(show="")
@@ -299,6 +318,28 @@ class RecorderWindow:
             font=("Segoe UI", 10),
         )
         self._row("Bit", self.beat_menu)
+        device_labels = self.devices or ["Brak mikrofonu"]
+        self.device_menu = tk.OptionMenu(self.root, self.device_var, *device_labels)
+        self.device_menu.configure(
+            bg=RACK,
+            fg=INK,
+            activebackground=PANEL,
+            activeforeground=INK,
+            highlightthickness=0,
+            font=("Segoe UI", 10),
+        )
+        self._row("Mikrofon", self.device_menu)
+        clock_row = tk.Frame(self.root, bg=PAPER)
+        clock_row.pack(fill="x", padx=16, pady=4)
+        tk.Label(
+            clock_row,
+            textvariable=self.clock,
+            bg=PAPER,
+            fg=INK,
+            font=("Segoe UI", 12, "bold"),
+        ).pack(side="left")
+        self.meter = tk.Canvas(clock_row, width=220, height=14, bg=RACK, highlightthickness=0)
+        self.meter.pack(side="left", padx=12)
         hear = tk.Frame(self.root, bg=PAPER)
         hear.pack(fill="x", padx=16, pady=2)
         self._button(hear, "Odsłuch z dysku", self.pick_local, RACK, INK).pack(side="left")
@@ -358,7 +399,24 @@ class RecorderWindow:
         bar.pack(pady=8)
         self._button(bar, "Zaloguj", self.sign_in, AMBER, ON_AMBER).pack(side="left", padx=4)
         self._button(bar, "Nagraj", self.arm, REC, INK).pack(side="left", padx=4)
+        self._button(bar, "Stop", self.stop_take, RACK, INK).pack(side="left", padx=4)
+        self._button(bar, "Wyślij", self.send_selected, AMBER, ON_AMBER).pack(side="left", padx=4)
         self._button(bar, "Stop i wyślij", self.stop_and_send, AMBER, ON_AMBER).pack(side="left", padx=4)
+        self.open_button = self._button(bar, "Studio", self.open_studio, RACK, INK)
+        self.open_button.pack(side="left", padx=4)
+        self.take_list = tk.Listbox(
+            self.root,
+            height=4,
+            bg=RACK,
+            fg=INK,
+            selectbackground=AMBER,
+            selectforeground=ON_AMBER,
+            highlightthickness=1,
+            highlightbackground=LINE,
+            relief="flat",
+            font=("Segoe UI", 10),
+        )
+        self.take_list.pack(fill="x", padx=16, pady=4)
         tk.Label(
             self.root,
             textvariable=self.status,
@@ -376,7 +434,10 @@ class RecorderWindow:
             font=("Segoe UI", 9),
             anchor="w",
         ).pack(fill="x", padx=16)
+        self._load_prefs()
         self._read_plan()
+        if self.status_boot:
+            self.status.set(self.status_boot)
 
     def _entry(self, show: str) -> tk.Entry:
         return tk.Entry(
@@ -475,7 +536,8 @@ class RecorderWindow:
         token = saved.get("accessToken") if saved else None
         if not token:
             self.tier = "FREE"
-            self.plan_text.set("Plan: zaloguj się. Do tego czasu 4 efekty, bez sidechain.")
+            self.plan_text.set("Plan: zaloguj się. Do tego czasu 4 efekty, nagranie do 30 s, bez sidechain.")
+            self.clock.set("0.0 s / 30 s")
             return
         try:
             payload = SiteClient(SITE, token).plan_usage()
@@ -486,7 +548,11 @@ class RecorderWindow:
             return
         self.tier = tier
         side_note = "sidechain jest w planie" if side else "sidechain od Silver"
-        self.plan_text.set(f"Plan {display_tier(tier)}. Efekty na ścieżce: {cap}. {side_note}.")
+        seconds = max_take_seconds(tier)
+        self.plan_text.set(
+            f"Plan {display_tier(tier)}. Efekty na ścieżce: {cap}. Nagranie do {seconds} s. {side_note}."
+        )
+        self.clock.set(f"0.0 s / {seconds} s")
         self._fit_plan()
 
     def selected_beat_id(self) -> str:
@@ -539,52 +605,176 @@ class RecorderWindow:
         stop_monitor(self.monitor)
         self.monitor = None
 
+    def selected_device(self) -> str:
+        name = self.device_var.get()
+        if name in self.devices:
+            return name
+        if self.devices:
+            return self.devices[0]
+        raise RuntimeError("Windows nie pokazał mikrofonu.")
+
+    def _cancel_tick(self) -> None:
+        if self._tick_id:
+            self.root.after_cancel(self._tick_id)
+            self._tick_id = None
+
+    def _draw_meter(self, db: float) -> None:
+        level = max(0.0, min(1.0, (db + 60.0) / 60.0))
+        width = int(220 * level)
+        color = REC if db > -3 else AMBER
+        self.meter.delete("bar")
+        if width > 0:
+            self.meter.create_rectangle(0, 0, width, 14, fill=color, width=0, tags="bar")
+
+    def _tick(self) -> None:
+        if not self.recording:
+            return
+        seconds = wav_seconds(self.wav_path.stat().st_size) if self.wav_path.exists() else 0.0
+        cap = max_take_seconds(self.tier)
+        self.clock.set(f"{seconds:.1f} s / {cap} s")
+        self._draw_meter(tail_peak_db(self.wav_path))
+        if seconds >= cap:
+            try:
+                self._finish_take()
+            except Exception as error:
+                self.status.set(str(error))
+                return
+            self.status.set(f"Plan {display_tier(self.tier)} kończy nagranie po {cap} s. Ujęcie jest na liście.")
+            return
+        self._tick_id = self.root.after(200, self._tick)
+
+    def _add_take(self, path: Path) -> None:
+        self.takes.append(path)
+        self.take_list.insert("end", path.name)
+        self.take_list.selection_clear(0, "end")
+        self.take_list.selection_set("end")
+
+    def selected_take(self) -> Path:
+        picked = self.take_list.curselection()
+        if not picked:
+            raise RuntimeError("Najpierw nagraj ujęcie.")
+        return self.takes[int(picked[0])]
+
+    def _save_prefs(self) -> None:
+        write_prefs(
+            PREFS,
+            {
+                "device": self.device_var.get(),
+                "title": self.title_box.get().strip(),
+                "effects": self.selected_fx(),
+                "beat": self.beat_var.get(),
+            },
+        )
+
+    def _load_prefs(self) -> None:
+        try:
+            prefs = read_prefs(PREFS)
+        except (OSError, json.JSONDecodeError):
+            return
+        title = prefs.get("title")
+        if isinstance(title, str) and title:
+            self.title_box.delete(0, "end")
+            self.title_box.insert(0, title)
+        device = prefs.get("device")
+        if isinstance(device, str) and device in self.devices:
+            self.device_var.set(device)
+        beat = prefs.get("beat")
+        labels = [label for _beat_id, label in self.beats]
+        if isinstance(beat, str) and beat in labels:
+            self.beat_var.set(beat)
+        effects = prefs.get("effects")
+        if isinstance(effects, list):
+            for fx_id, var in self.fx_vars.items():
+                var.set(1 if fx_id in effects else 0)
+            self._fit_plan()
+
+    def _finish_take(self) -> Path:
+        self._cancel_tick()
+        self._stop_monitor()
+        if self.capture:
+            stop_capture(self.capture)
+            self.capture = None
+        self.recording = False
+        if not self.wav_path.exists() or self.wav_path.stat().st_size < 1000:
+            raise RuntimeError("Nagranie jest puste.")
+        self._add_take(self.wav_path)
+        self._save_prefs()
+        self.clock.set(f"{wav_seconds(self.wav_path.stat().st_size):.1f} s / {max_take_seconds(self.tier)} s")
+        return self.wav_path
+
+    def _upload(self, path: Path) -> None:
+        picked = self.selected_fx()
+        chain = build_chain(picked, self.tier)
+        project = upload_vocal(
+            SiteClient(SITE, self.token()),
+            title=self.title_box.get().strip(),
+            beat_id=self.selected_beat_id(),
+            wav_path=path,
+            chain=chain,
+        )
+        self.project_id = project
+        fx_note = f" Efekty: {len(picked)}." if picked else ""
+        self.status.set(f"Projekt jest na koncie.{fx_note} Id: {project}")
+
     def arm(self) -> None:
         try:
             if self.capture:
                 stop_capture(self.capture)
+            self._cancel_tick()
             self._stop_monitor()
-            device = audio_devices(ffmpeg_exe())[0]
-            self.capture = start_capture(self.wav_path, device)
+            TAKES.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now().strftime("%H%M%S")
+            self.wav_path = TAKES / f"ujecie-{stamp}.wav"
+            self.capture = start_capture(self.wav_path, self.selected_device())
             if self.local_beat:
                 self.monitor = start_monitor(self.local_beat)
             self.recording = True
             heard = " Odsłuch z dysku leci." if self.monitor else ""
-            self.status.set(f"Nagrywam z mikrofonu.{heard} Stop wyśle WAV na konto.")
+            self.status.set(f"Nagrywam z mikrofonu.{heard} Stop zostawia ujęcie na liście.")
+            self._tick()
         except Exception as error:
             self.recording = False
             self.capture = None
+            self._cancel_tick()
             self._stop_monitor()
             self.status.set(str(error))
 
-    def stop_and_send(self) -> None:
+    def stop_take(self) -> None:
         try:
             if not self.recording or not self.capture:
                 raise RuntimeError("Najpierw naciśnij Nagraj.")
-            self._stop_monitor()
-            stop_capture(self.capture)
-            self.capture = None
-            self.recording = False
-            if not self.wav_path.exists() or self.wav_path.stat().st_size < 1000:
-                raise RuntimeError("Nagranie jest puste.")
-            picked = self.selected_fx()
-            chain = build_chain(picked, self.tier)
-            project = upload_vocal(
-                SiteClient(SITE, self.token()),
-                title=self.title_box.get().strip(),
-                beat_id=self.selected_beat_id(),
-                wav_path=self.wav_path,
-                chain=chain,
-            )
-            fx_note = f" Efekty: {len(picked)}." if picked else ""
-            self.status.set(f"Projekt jest na koncie. Otwórz go na stronie.{fx_note} Id: {project}")
+            self._finish_take()
+            self.status.set("Ujęcie jest na liście. Wyślij wrzuca je na konto.")
         except Exception as error:
+            self._cancel_tick()
             self.recording = False
             self._stop_monitor()
             if self.capture:
                 stop_capture(self.capture)
                 self.capture = None
             self.status.set(str(error))
+
+    def send_selected(self) -> None:
+        try:
+            path = self._finish_take() if self.recording else self.selected_take()
+            self._upload(path)
+        except Exception as error:
+            self._cancel_tick()
+            self.recording = False
+            self._stop_monitor()
+            if self.capture:
+                stop_capture(self.capture)
+                self.capture = None
+            self.status.set(str(error))
+
+    def stop_and_send(self) -> None:
+        self.send_selected()
+
+    def open_studio(self) -> None:
+        if not self.project_id:
+            self.status.set("Najpierw wyślij ujęcie.")
+            return
+        webbrowser.open(studio_url(SITE, self.project_id))
 
     def run(self) -> None:
         self.root.mainloop()
@@ -601,6 +791,9 @@ if __name__ == "__main__":
     if "--self-test" in sys.argv:
         from own_fx import self_test as fx_self_test
 
+        from desk import self_test as desk_self_test
+
+        desk_self_test()
         fx_self_test()
         argv = monitor_argv("ffplay", Path("bit.wav"))
         if "-nodisp" not in argv or argv[-1] != "bit.wav":
