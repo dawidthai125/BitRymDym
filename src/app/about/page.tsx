@@ -32,6 +32,9 @@ export default function AboutPage() {
           </div>
           <div className="mt-8 flex flex-wrap gap-2">
             <BrdLink href="/beats">{t("przegladajBity")}</BrdLink>
+            <BrdLink href="/nagrywarka" variant="secondary">
+              {t("programWindows")}
+            </BrdLink>
             <BrdLink href="/sign-up" variant="secondary">
               {t("zalozKonto")}
             </BrdLink>

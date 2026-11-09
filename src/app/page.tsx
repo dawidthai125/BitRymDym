@@ -376,6 +376,16 @@ export default async function HomePage() {
                       <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-tape-cream-soft sm:text-base">
                         {tc(c.body)}
                       </p>
+                      {c.title === "nagrajWersNaBicie" ? (
+                        <p className="mt-2">
+                          <Link
+                            href="/nagrywarka"
+                            className="text-sm text-tape-amber underline-offset-4 hover:underline"
+                          >
+                            {tc("otworzNagrywarke")}
+                          </Link>
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <span className="tape-rack-screw self-end" aria-hidden="true" />

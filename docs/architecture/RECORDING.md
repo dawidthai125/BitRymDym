@@ -1,5 +1,7 @@
 # Recording / Quick Take — architecture index
 
+Nagrywarka Windows to osobna droga, nie ten Quick Take. Opis produktu: [WINDOWS_NAGRYWARKA.md](../WINDOWS_NAGRYWARKA.md). Strona: `/nagrywarka`. Poniższy indeks zostaje przy nagraniu w przeglądarce.
+
 **Status:** Design Freeze **LOCKED** · Wave 1–5 **CLOSED** · D02 **SHIPPED / PRODUCTION VERIFIED** @ `e98ba52` · **P3 COMPLETE / PRODUCTION VERIFIED — GREEN** @ `dabbc936` · **Fala 3.5.1 CLOSED / SHIPPED / PRODUCTION VERIFIED — GREEN** @ `c690831` (verify baseline `75bd80f`) · production app GREEN
 
 **Canonical freeze:** [PHASE_RECORDING_DESIGN_FREEZE.md](../phases/PHASE_RECORDING_DESIGN_FREEZE.md)  

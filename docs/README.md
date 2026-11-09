@@ -15,7 +15,8 @@
 7. [decisions/DECISION_LOG.md](./decisions/DECISION_LOG.md) — decyzje zamknięte
 8. [phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md](./phases/PHASE_COMMUNITY_UPLOAD_DESIGN_FREEZE.md) — Community EPIC **CLOSED**
 9. [phases/PHASE_RECORDING_DESIGN_FREEZE.md](./phases/PHASE_RECORDING_DESIGN_FREEZE.md) — Recording freeze **LOCKED** · Waves 1–5 **CLOSED / PRODUCTION VERIFIED**
-10. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
+10. [WINDOWS_NAGRYWARKA.md](./WINDOWS_NAGRYWARKA.md) — program Windows obok nagrania w przeglądarce. To opis produktu, nie drugi master.
+11. Dokumentacja konkretnego feature’a — dopiero po wyborze EPIC przez Ownera
 
 **Przed implementacją przeczytaj:** FINAL COLD START + MASTER_HANDOFF + PROJECT_STATE + SSOT + właściwą architekturę + OPEN_DECISIONS + [AGENTS.md](../AGENTS.md). Zwykły zlecony zakres realizuj według polityki autonomii w `AGENTS.md`. Osobna zgoda zostaje przy nowym epiku i bramkach bezpieczeństwa, nie przy każdym commicie, pushu ani standardowym deployu.
 
