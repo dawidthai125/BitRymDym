@@ -80,12 +80,6 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
               Sprawdź głośność
             </Link>
             <Link
-              href="/studio/realizator"
-              className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
-            >
-              Napisz do realizatora
-            </Link>
-            <Link
               href="/nagrywarka"
               className="text-[var(--brd-mute)] underline-offset-4 hover:text-[var(--brd-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brd-amber)]"
             >

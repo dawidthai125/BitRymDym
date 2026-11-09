@@ -88,7 +88,6 @@ export function StudioBitekChat({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [engineer, setEngineer] = useState(false);
   const listRef = useRef<HTMLOListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -120,7 +119,7 @@ export function StudioBitekChat({
       const res = await fetch("/api/studio/bitek/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history, context: { ...context, lastChange, ...(engineer ? { persona: "engineer" } : {}) }, projectId }),
+        body: JSON.stringify({ message, history, context: { ...context, lastChange }, projectId }),
       });
       if (res.status === 429) {
         setError(t("limit"));
@@ -373,18 +372,7 @@ export function StudioBitekChat({
 
   return (
     <div className="flex flex-col gap-2" data-testid="studio-bitek-chat">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-[var(--brd-mute)]">{t("info")}</p>
-        <button
-          type="button"
-          aria-pressed={engineer}
-          data-testid="studio-bitek-engineer"
-          className={`min-h-9 rounded-[2px] border px-2 text-xs ${engineer ? "border-[var(--brd-amber)]" : "border-[var(--brd-line)]"}`}
-          onClick={() => setEngineer((v) => !v)}
-        >
-          {engineer ? t("realizatorWlaczony") : t("realizator")}
-        </button>
-      </div>
+      <p className="text-xs text-[var(--brd-mute)]">{t("info")}</p>
       <ol
         ref={listRef}
         aria-live="polite"

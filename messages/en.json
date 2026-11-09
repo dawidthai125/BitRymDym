@@ -48,7 +48,7 @@
         "Gain in dB and left or right are not written into the file that goes to the account. On the site you set them in Studio, with clip edits, automation and notes.",
         "It does not draw notes. The piano roll stays in Studio on the site.",
         "It does not run the BITEK mix, the master, master approval, stem split, lyrics, cover, video or a listen link. Those stay on the site.",
-        "It does not write the engineer reply. You send that question from the site.",
+        "Bitek does the mix and the master on the site. The app does not run them.",
         "Pitch other than zero and sidechain start at Silver, the same as on the site.",
         "Speakers next to an open microphone bleed into the take. Headphones are required for a clean take."
       ],
@@ -68,7 +68,7 @@
         "You cut clips and set volume, pan, automation and notes.",
         "You hear effects in the site mix. From Silver you also get pitch other than zero, sidechain and splitting a beat into stems.",
         "You ask BITEK for a mix and a master. BITEK does that itself. The master preview carries the Bit Rym Dym watermark. You approve the master.",
-        "You send an engineer question from the site. A person writes the reply, not an automatic system.",
+        "You ask Bitek in Studio for the mix, then the master. There is no separate mailbox to a person.",
         "Export, a private listen link, a cover and video stay on the site.",
         "You upload your own beat on the site. The app does not publish it."
       ],
@@ -390,7 +390,7 @@
       "metaDescription": "BitRymDym plans: Free, Bronze, Silver and Gold. Prices and limits for recording, projects, masters and downloads — in one place.",
       "premium": "Premium",
       "naglowek": "Record for free. Pay when the track is ready to go out.",
-      "lead": "Free is enough to try a beat, record a verse and make a master. Higher plans add longer recordings, stem files from splitting a beat, questions to the engineer, clip pitch, stems, downloads, YouTube video, your own presets, the note editor and reference mastering.",
+      "lead": "Free is enough to try a beat, record a verse and make a master. Higher plans add longer recordings, stem files from splitting a beat, clip pitch, stems, downloads, YouTube video, your own presets, the note editor and reference mastering.",
       "platnosciWkrotce": "PayU checkout is on.",
       "platnosciOpis": "You buy the plan, the reference add-on and packs on this page, one-time for a month or a year. The button shows when the operator keys are set.",
       "plany": "Plans",
@@ -524,7 +524,7 @@
         "upgrade": "After moving to a higher plan, recordings that are still alive get the new plan's validity.",
         "raw": "Raw file of your own recording: {plan} only, up to {n} downloads a day.",
         "nuty": "Volume and pan on the timeline, and notes (piano, guitar, bass, drums, plus a smooth, sharp and buzzy tone) are on every plan. The clip pitch slider starts on Silver. Clip tempo stays on every plan. The note-by-note pitch editor is Gold only.",
-        "bramki": "Stem files from splitting a beat start on Silver. A question to the engineer: Silver {silverEng} a month, Gold {goldEng}. AI lyrics: Free {freeLyrics} a day, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ducking under the beat and {longFx} effects at once start on Silver. Free and Bronze get {shortFx}. The loudness check and natural pitch correction stay on every plan.",
+        "bramki": "Stem files from splitting a beat start on Silver. AI lyrics: Free {freeLyrics} a day, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ducking under the beat and {longFx} effects at once start on Silver. Free and Bronze get {shortFx}. The loudness check and natural pitch correction stay on every plan. Bitek does the mix and the master.",
         "znak": "The master preview has the spoken “Bit Rym Dym” watermark on every plan. It mixes in every several seconds.",
         "referencja": "Reference mastering is live: included in Gold, a paid monthly add-on on Silver. You buy it with PayU on the Premium page.",
         "referencjaKup": "Reference mastering is live: included in Gold, a paid monthly add-on on Silver."
@@ -1579,7 +1579,7 @@
       "planDni": "{n} days",
       "planTabelaAria": "Comparison of Free, Bronze, Silver and Gold",
       "planWspolne": "On every plan: volume and pan on the timeline, clip tempo, notes (a smooth, sharp and buzzy tone) and a master preview with the spoken “Bit Rym Dym” watermark.",
-      "planBramki": "Stem files from splitting a beat start on Silver. A question to the engineer: Silver {silverEng} a month, Gold {goldEng}. AI lyrics: Free {freeLyrics} a day, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ducking under the beat and {longFx} effects at once start on Silver. Free and Bronze get {shortFx}. The loudness check and natural pitch correction stay on every plan.",
+      "planBramki": "Stem files from splitting a beat start on Silver. AI lyrics: Free {freeLyrics} a day, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ducking under the beat and {longFx} effects at once start on Silver. Free and Bronze get {shortFx}. The loudness check and natural pitch correction stay on every plan. Bitek does the mix and the master.",
       "planGosc": "Without an account: {s} s of each beat. Recording, downloads and Studio need an account.",
       "jakosc": {
         "MP3_128": "MP3 128",

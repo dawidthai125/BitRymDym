@@ -159,14 +159,6 @@ export default async function HomePage() {
       cell: (tier) => (PLAN_POLICY[tier].studio.maxStems > 0 ? t("planTak") : "—"),
     },
     {
-      id: "realizator",
-      label: t("planRealizator"),
-      cell: (tier) => {
-        const n = PLAN_POLICY[tier].studio.engineerRequestsPerMonth;
-        return n > 0 ? String(n) : "—";
-      },
-    },
-    {
       id: "teksty",
       label: t("planTeksty"),
       cell: (tier) => String(PLAN_POLICY[tier].tools.aiLyricsPerDay),
@@ -483,8 +475,6 @@ export default async function HomePage() {
               <li>{t("planWspolne")}</li>
               <li>
                 {t("planBramki", {
-                  silverEng: PLAN_POLICY.SILVER.studio.engineerRequestsPerMonth,
-                  goldEng: PLAN_POLICY.GOLD.studio.engineerRequestsPerMonth,
                   freeLyrics: PLAN_POLICY.FREE.tools.aiLyricsPerDay,
                   bronzeLyrics: PLAN_POLICY.BRONZE.tools.aiLyricsPerDay,
                   silverLyrics: PLAN_POLICY.SILVER.tools.aiLyricsPerDay,

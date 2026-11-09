@@ -1,7 +1,6 @@
 import "server-only";
 
 import {
-  engineerRequestsPerMonthForTier,
   maxFxEffectsForTier,
   minimumTierFor,
   separatorFilesForTier,
@@ -10,7 +9,6 @@ import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premiu
 import { requireUser } from "@/lib/auth/session";
 import type { AuthContext } from "@/lib/auth/types";
 import { StudioPlanFeatureError } from "@/lib/studio/presets/fx-presets-server";
-import { warsawMonthWindow } from "@/lib/studio/studio-plan-limits";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PremiumTier } from "@/types/premium";
 
@@ -105,36 +103,4 @@ export async function assertSeparatorEnqueueAllowed(): Promise<void> {
   );
 }
 
-export async function countEngineerRequestsThisMonth(ownerId: string, now = new Date()): Promise<number> {
-  const { startIso } = warsawMonthWindow(now);
-  const admin = createSupabaseAdminClient();
-  const { count, error } = await admin
-    .from("studio_engineer_requests")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId)
-    .gte("created_at", startIso);
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
 
-export async function engineerQuotaForUser(auth: AuthContext, now = new Date()): Promise<{ limit: number; used: number; tier: PremiumTier }> {
-  const tier = await tierFor(auth);
-  const limit = engineerRequestsPerMonthForTier(tier);
-  const used = limit > 0 ? await countEngineerRequestsThisMonth(auth.userId, now) : 0;
-  return { limit, used, tier };
-}
-
-export async function assertEngineerRequestAllowed(auth: AuthContext): Promise<{ limit: number; used: number }> {
-  const quota = await engineerQuotaForUser(auth);
-  if (quota.limit <= 0 || quota.used >= quota.limit) {
-    throw new StudioPlanFeatureError(
-      "engineer",
-      quota.tier,
-      minimumTierFor((policy) => policy.studio.engineerRequestsPerMonth > 0),
-      quota.limit <= 0
-        ? "Pytania do realizatora są od planu Silver."
-        : "W tym miesiącu limit pytań do realizatora jest wykorzystany.",
-    );
-  }
-  return { limit: quota.limit, used: quota.used };
-}

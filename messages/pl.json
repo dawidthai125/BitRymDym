@@ -48,7 +48,7 @@
         "Głośność w dB i lewo albo prawo nie są wpisywane w plik wysyłany na konto. Na stronie ustawiasz je w studio, razem z cięciem klipu, automatyką i nutami.",
         "Nie rysuje nut. Pianino i nuty są w studio na stronie.",
         "Nie robi miksu BITEK, masteringu, zatwierdzenia mastera, stema, tekstu, okładki, wideo ani linku odsłuchu. To jest na stronie.",
-        "Nie pisze odpowiedzi realizatora. Pytanie też wysyłasz ze strony.",
+        "Miks i master robi Bitek na stronie. Program ich nie liczy.",
         "Strojenie inne niż zero i sidechain działają od Silver, tak samo jak na stronie.",
         "Głośniki przy włączonym mikrofonie wchodzą do nagrania. Do czystego ujęcia potrzebne są słuchawki."
       ],
@@ -68,7 +68,7 @@
         "Tniesz klipy, ustawiasz głośność, panoramę, automatykę i nuty.",
         "Słyszysz efekty w miksie strony. Od Silver dochodzą strojenie inne niż zero, sidechain i rozcinanie bitu na stemy.",
         "Prosisz BITEK o miks i mastering. BITEK robi to sam. Podgląd mastera ma znak wodny Bit Rym Dym. Master zatwierdzasz ty.",
-        "Pytanie do realizatora wysyłasz ze strony. Odpowiedź pisze człowiek, nie automat.",
+        "Miks, a potem master, prosisz Bitka w studio. Osobnej skrzynki do człowieka nie ma.",
         "Eksport, prywatny link odsłuchu, okładka i wideo są na stronie.",
         "Własny bit wrzucasz na stronie. Program go nie publikuje."
       ],
@@ -390,7 +390,7 @@
       "metaDescription": "Plany BitRymDym: Free, Bronze, Silver i Gold. Ceny, limity nagrań, projektów, masterów i pobierania — w jednym miejscu.",
       "premium": "Premium",
       "naglowek": "Nagrywasz za darmo. Płacisz, kiedy kawałek ma wyjść.",
-      "lead": "Free wystarczy, żeby sprawdzić bit, nagrać zwrotkę i zrobić master. Wyżej dochodzą dłuższe nagrania, pliki z rozcięcia bitu, pytania do realizatora, wysokość klipu, stemy, pobieranie, wideo na YouTube, własne presety, edytor nut i referencja.",
+      "lead": "Free wystarczy, żeby sprawdzić bit, nagrać zwrotkę i zrobić master. Wyżej dochodzą dłuższe nagrania, pliki z rozcięcia bitu, wysokość klipu, stemy, pobieranie, wideo na YouTube, własne presety, edytor nut i referencja.",
       "platnosciWkrotce": "Płatności PayU są włączone.",
       "platnosciOpis": "Plan, dodatek referencji i pakiety kupujesz na tej stronie, jednorazowo na miesiąc albo na rok. Przycisk jest, gdy są klucze operatora.",
       "plany": "Plany",
@@ -524,7 +524,7 @@
         "upgrade": "Po przejściu na wyższy plan nagrania, które jeszcze żyją, dostają ważność nowego planu.",
         "raw": "Surowy plik własnego nagrania: tylko {plan}, do {n} pobrań dziennie.",
         "nuty": "Głośność i panorama na osi czasu oraz nuty (pianino, gitara, bas, perkusja, a także gładki, ostry i brzęczący dźwięk) są na każdym planie. Suwak wysokości klipu jest od Silver. Tempo klipu zostaje na każdym planie. Edytor nut, którym korygujesz wysokość słowo po słowie, jest tylko w Gold.",
-        "bramki": "Pliki z rozcięcia bitu są od Silver. Pytanie do realizatora: Silver {silverEng} w miesiącu, Gold {goldEng}. Teksty z AI: Free {freeLyrics} dziennie, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ściszanie pod bit i {longFx} efektów naraz są od Silver. Free i Bronze mają {shortFx}. Sprawdzenie głośności i naturalna korekta zostają u wszystkich.",
+        "bramki": "Pliki z rozcięcia bitu są od Silver. Teksty z AI: Free {freeLyrics} dziennie, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ściszanie pod bit i {longFx} efektów naraz są od Silver. Free i Bronze mają {shortFx}. Sprawdzenie głośności i naturalna korekta zostają u wszystkich. Miks i master robi Bitek.",
         "znak": "Podgląd mastera ma znak wodny głosowy „Bit Rym Dym” na każdym planie. Miesza się co kilkanaście sekund.",
         "referencja": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek na miesiąc. Kupujesz go przez PayU na stronie Premium.",
         "referencjaKup": "Mastering z referencją działa: w Gold w cenie, w Silver jako płatny dodatek na miesiąc."
@@ -1579,7 +1579,7 @@
       "planDni": "{n} dni",
       "planTabelaAria": "Porównanie planów Free, Bronze, Silver i Gold",
       "planWspolne": "Na każdym planie: głośność i panorama na osi czasu, tempo klipu, nuty (gładki, ostry i brzęczący dźwięk) oraz podgląd mastera ze znakiem wodnym „Bit Rym Dym”.",
-      "planBramki": "Pliki z rozcięcia bitu są od Silver. Pytanie do realizatora: Silver {silverEng} w miesiącu, Gold {goldEng}. Teksty z AI: Free {freeLyrics} dziennie, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ściszanie pod bit i {longFx} efektów naraz są od Silver. Free i Bronze mają {shortFx}. Sprawdzenie głośności i naturalna korekta zostają u wszystkich.",
+      "planBramki": "Pliki z rozcięcia bitu są od Silver. Teksty z AI: Free {freeLyrics} dziennie, Bronze {bronzeLyrics}, Silver {silverLyrics}, Gold {goldLyrics}. Ściszanie pod bit i {longFx} efektów naraz są od Silver. Free i Bronze mają {shortFx}. Sprawdzenie głośności i naturalna korekta zostają u wszystkich. Miks i master robi Bitek.",
       "planGosc": "Bez konta: {s} s podglądu każdego bitu. Nagranie, pobieranie i Studio wymagają konta.",
       "jakosc": {
         "MP3_128": "MP3 128",

@@ -31,7 +31,7 @@ Mac nagrywa tylko w przeglądarce.
 - Odsłuch idzie na domyślne wyjście Windows. Nie ma osobnego wyboru słuchawek i głośników i nie ma dwóch miksów naraz.
 - W trakcie nagrania nie podaje własnego głosu do słuchawek. Głośniki przy mikrofonie wchodzą w ujęcie.
 - Nie rysuje nut. Nie robi miksu BITEK, masteringu, zatwierdzenia mastera, stemów, tekstu, okładki, wideo ani linku odsłuchu.
-- Nie pisze odpowiedzi realizatora.
+- Nie ma skrzynki do człowieka. Miks i master robi Bitek na stronie.
 - Strojenie inne niż zero i sidechain są od Silver, tak jak na stronie.
 
 ## Limity

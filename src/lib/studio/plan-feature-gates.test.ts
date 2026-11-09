@@ -13,8 +13,8 @@ describe("studio plan gates", () => {
     expect(PLAN_POLICY.FREE.studio.maxFxEffects).toBe(4);
     expect(PLAN_POLICY.BRONZE.studio.maxFxEffects).toBe(4);
     expect(PLAN_POLICY.SILVER.studio.maxFxEffects).toBe(12);
-    expect(PLAN_POLICY.GOLD.studio.engineerRequestsPerMonth).toBe(4);
-    expect(PLAN_POLICY.SILVER.studio.engineerRequestsPerMonth).toBe(1);
+    expect(PLAN_POLICY.GOLD.studio.engineerRequestsPerMonth).toBe(0);
+    expect(PLAN_POLICY.SILVER.studio.engineerRequestsPerMonth).toBe(0);
     expect(PLAN_POLICY.FREE.studio.engineerRequestsPerMonth).toBe(0);
     expect(PLAN_POLICY.SILVER.studio.clipPitch).toBe(true);
     expect(PLAN_POLICY.BRONZE.studio.sidechain).toBe(false);

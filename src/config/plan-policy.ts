@@ -119,8 +119,8 @@ export type PlanPolicy = {
      */
     maxFxEffects: number;
     /**
-     * Human engineer requests per Europe/Warsaw month. 0 = the form is locked.
-     * Owner 2026-11-08: Silver 1, Gold 4. Answers stay human.
+     * Human engineer mailbox. Owner 2026-11-09: off on every plan.
+     * Mix, then master, stays with Bitek. Kept at 0 so old reads do not revive it.
      */
     engineerRequestsPerMonth: number;
     /** Non-zero clip pitch in cents. Stretch and a reset to 0 stay on every plan. */
@@ -269,7 +269,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 7,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8, maxSamples: 50, maxFxEffects: 12, engineerRequestsPerMonth: 1, clipPitch: true, sidechain: true },
+    studio: { maxProjects: 25, maxRecordingTracks: 8, maxStems: 8, maxSamples: 50, maxFxEffects: 12, engineerRequestsPerMonth: 0, clipPitch: true, sidechain: true },
     mastering: { mastersPerMonth: 10, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
@@ -298,7 +298,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
       maxActiveReady: 10,
       studioRecordingTools: true,
     },
-    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16, maxSamples: 100, maxFxEffects: 12, engineerRequestsPerMonth: 4, clipPitch: true, sidechain: true },
+    studio: { maxProjects: 50, maxRecordingTracks: 16, maxStems: 16, maxSamples: 100, maxFxEffects: 12, engineerRequestsPerMonth: 0, clipPitch: true, sidechain: true },
     mastering: { mastersPerMonth: 20, referenceMastering: "included" },
     downloads: {
       qualities: [...PLAN_DOWNLOAD_QUALITIES],
@@ -380,10 +380,6 @@ export function separatorFilesForTier(tier: PremiumTier): boolean {
 
 export function maxFxEffectsForTier(tier: PremiumTier): number {
   return PLAN_POLICY[tier].studio.maxFxEffects;
-}
-
-export function engineerRequestsPerMonthForTier(tier: PremiumTier): number {
-  return PLAN_POLICY[tier].studio.engineerRequestsPerMonth;
 }
 
 export function clipPitchForTier(tier: PremiumTier): boolean {
