@@ -285,8 +285,8 @@ export function bitekRulesChat(message: string, ctx: BitekChatContext): BitekCha
     if (track.effects?.includes(fx.effect)) return done(tx.already(track.name));
     return done(
       ctx.lang === "pl"
-        ? `Dodam to na ${track.name}. Kliknij „Zastosuj” — wejdzie w łańcuch efektów, cofniesz przez Ctrl+Z.`
-        : `I'll add it on ${track.name}. Hit Apply — it goes on the effect chain, undo with Ctrl+Z.`,
+        ? `Dodam to na ${track.name}. Kliknij „Zastosuj”. Wejdzie do efektów tej ścieżki. Cofniesz przez Ctrl+Z.`
+        : `I'll add it on ${track.name}. Hit Apply. It goes on this track's effects. Undo with Ctrl+Z.`,
       [],
       [{ kind: "trackFx", trackRef: track.ref, effect: fx.effect, label: "" }],
     );

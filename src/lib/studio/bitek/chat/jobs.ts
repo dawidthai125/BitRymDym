@@ -18,8 +18,8 @@ import {
 const VOCAL_ONLY: readonly BitekTrackFx[] = ["compressor", "highpass", "deesser", "gate", "harmony", "voice"];
 
 const FX_NAME: Record<BitekLang, Record<BitekTrackFx, string>> = {
-  pl: { eq: "EQ", compressor: "kompresor", highpass: "filtr dolny", deesser: "de-esser", gate: "bramka", harmony: "harmonię", voice: "zmianę głosu", sidechain: "sidechain od bitu" },
-  en: { eq: "EQ", compressor: "compressor", highpass: "low cut", deesser: "de-esser", gate: "gate", harmony: "harmony", voice: "a voice color", sidechain: "sidechain from the beat" },
+  pl: { eq: "EQ", compressor: "wyrównanie głośności", highpass: "obcięcie dołu", deesser: "ściszenie syków", gate: "wyciszenie szumu", harmony: "harmonię", voice: "zmianę głosu", sidechain: "ściszanie pod bit" },
+  en: { eq: "EQ", compressor: "level smoothing", highpass: "a low cut", deesser: "less harsh esses", gate: "noise quieting", harmony: "harmony", voice: "a voice color", sidechain: "ducking under the beat" },
 };
 
 const FIX_NAME: Record<BitekLang, Record<BitekMixFixId, string>> = {

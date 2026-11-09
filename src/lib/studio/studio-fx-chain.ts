@@ -252,7 +252,7 @@ export class StudioFxChainError extends Error {
 
 const FX_INVALID_PL =
   "Nie udało się zapisać efektów. Sprawdź parametry i spróbuj ponownie.";
-const FX_UNSUPPORTED_PL = "Ten łańcuch efektów nie jest obsługiwany.";
+const FX_UNSUPPORTED_PL = "Tych efektów nie da się tu użyć.";
 
 export const FX_CHAIN_VERSION_CONFLICT_PL =
   "Projekt został zmieniony. Odśwież Studio i spróbuj ponownie.";
@@ -946,19 +946,19 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
   eq: {
     labelPl: "EQ",
     params: [
-      slider("low.frequencyHz", "Bass · częstotliwość", 20, 500, 1, "Hz"),
-      slider("low.gainDb", "Bass · głośność", -12, 12, 0.1, "dB"),
-      slider("low.q", "Bass · Q", 0.1, 12, 0.1, "Q"),
+      slider("low.frequencyHz", "Dół · częstotliwość", 20, 500, 1, "Hz"),
+      slider("low.gainDb", "Dół · głośność", -12, 12, 0.1, "dB"),
+      slider("low.q", "Dół · szerokość", 0.1, 12, 0.1, ""),
       slider("mid.frequencyHz", "Środek · częstotliwość", 200, 5000, 1, "Hz"),
       slider("mid.gainDb", "Środek · głośność", -12, 12, 0.1, "dB"),
-      slider("mid.q", "Środek · Q", 0.1, 18, 0.1, "Q"),
+      slider("mid.q", "Środek · szerokość", 0.1, 18, 0.1, ""),
       slider("high.frequencyHz", "Góra · częstotliwość", 2000, 20000, 1, "Hz"),
       slider("high.gainDb", "Góra · głośność", -12, 12, 0.1, "dB"),
-      slider("high.q", "Góra · Q", 0.1, 12, 0.1, "Q"),
+      slider("high.q", "Góra · szerokość", 0.1, 12, 0.1, ""),
     ],
   },
   spectrum: {
-    labelPl: "Widmo",
+    labelPl: "Pasma",
     params: [
       slider("b0", "80 Hz", -24, 24, 0.5, "dB"),
       slider("b1", "200 Hz", -24, 24, 0.5, "dB"),
@@ -970,20 +970,20 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
     ],
   },
   compressor: {
-    labelPl: "Kompresor",
+    labelPl: "Wyrównaj głośność",
     params: [
-      slider("thresholdDb", "Próg", -60, 0, 0.5, "dB"),
-      slider("ratio", "Stopień kompresji", 1, 20, 0.1, ":1"),
-      slider("attackMs", "Atak", 0, 200, 1, "ms"),
-      slider("releaseMs", "Zwolnienie", 10, 2000, 1, "ms"),
-      slider("makeupDb", "Wyrównanie", -12, 12, 0.1, "dB"),
+      slider("thresholdDb", "Od jakiej głośności", -60, 0, 0.5, "dB"),
+      slider("ratio", "Jak mocno ściska", 1, 20, 0.1, ":1"),
+      slider("attackMs", "Jak szybko łapie", 0, 200, 1, "ms"),
+      slider("releaseMs", "Jak szybko puszcza", 10, 2000, 1, "ms"),
+      slider("makeupDb", "Dociągnij głośność", -12, 12, 0.1, "dB"),
     ],
   },
   limiter: {
-    labelPl: "Limiter",
+    labelPl: "Pułap głośności",
     params: [
-      slider("thresholdDb", "Próg", -24, 0, 0.1, "dB"),
-      slider("ceilingDb", "Sufit", -6, 0, 0.1, "dB"),
+      slider("thresholdDb", "Od jakiej głośności", -24, 0, 0.1, "dB"),
+      slider("ceilingDb", "Nie głośniej niż", -6, 0, 0.1, "dB"),
     ],
   },
   reverb: {
@@ -994,34 +994,34 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
     ],
   },
   delay: {
-    labelPl: "Delay",
+    labelPl: "Echo",
     params: [
-      slider("mix", "Poziom efektu", 0, 1, 0.01, ""),
-      slider("timeMs", "Czas", 1, 2000, 1, "ms"),
-      slider("feedback", "Sprzężenie", 0, 0.95, 0.01, ""),
+      slider("mix", "Ile echa", 0, 1, 0.01, ""),
+      slider("timeMs", "Po jakim czasie", 1, 2000, 1, "ms"),
+      slider("feedback", "Ile razy wraca", 0, 0.95, 0.01, ""),
     ],
   },
   highpass: {
-    labelPl: "Filtr górnoprzepustowy",
+    labelPl: "Obetnij dół",
     params: [
-      slider("frequencyHz", "Częstotliwość odcięcia", 20, 500, 1, "Hz"),
-      slider("q", "Q", 0.1, 2, 0.01, "Q"),
+      slider("frequencyHz", "Od ilu Hz", 20, 500, 1, "Hz"),
+      slider("q", "Ostrość", 0.1, 2, 0.01, ""),
     ],
   },
   deesser: {
-    labelPl: "De-esser",
+    labelPl: "Ścisz syki",
     params: [
-      slider("frequencyHz", "Częstotliwość sybilantów", 4000, 10000, 10, "Hz"),
-      slider("thresholdDb", "Próg", -60, 0, 0.5, "dB"),
-      slider("ratio", "Stopień kompresji", 1, 20, 0.1, ":1"),
+      slider("frequencyHz", "Gdzie są syki", 4000, 10000, 10, "Hz"),
+      slider("thresholdDb", "Od jakiej głośności", -60, 0, 0.5, "dB"),
+      slider("ratio", "Jak mocno", 1, 20, 0.1, ":1"),
     ],
   },
   gate: {
-    labelPl: "Bramka szumów",
+    labelPl: "Wycisz szum",
     params: [
-      slider("thresholdDb", "Próg", -90, -20, 0.5, "dB"),
-      slider("rangeDb", "Maks. tłumienie", 0, 40, 0.5, "dB"),
-      slider("releaseMs", "Wygładzanie", 10, 1000, 1, "ms"),
+      slider("thresholdDb", "Od jakiej głośności", -90, -20, 0.5, "dB"),
+      slider("rangeDb", "Jak mocno wycisza", 0, 40, 0.5, "dB"),
+      slider("releaseMs", "Jak szybko wraca", 10, 1000, 1, "ms"),
     ],
   },
   // Key/scale use dedicated pickers (StudioTunePanel); sliders = Silver+ controls.
@@ -1052,22 +1052,22 @@ export const STUDIO_FX_UI_META: { [K in StudioFxType]: StudioFxUiTypeMeta } = {
     ],
   },
   saturate: {
-    labelPl: "Saturacja",
+    labelPl: "Ciepło",
     params: [
-      slider("drive", "Nasycenie", 0, 1, 0.01, ""),
-      slider("mix", "Ilość", 0, 1, 0.01, ""),
+      slider("drive", "Jak mocno", 0, 1, 0.01, ""),
+      slider("mix", "Ile tego słychać", 0, 1, 0.01, ""),
     ],
   },
   sidechain: {
-    labelPl: "Sidechain",
+    labelPl: "Ścisz pod bit",
     params: [
-      slider("depth", "Głębokość", 0, 1, 0.01, ""),
-      slider("attackMs", "Atak", 1, 80, 1, "ms"),
-      slider("releaseMs", "Powrót", 20, 400, 1, "ms"),
+      slider("depth", "Jak mocno", 0, 1, 0.01, ""),
+      slider("attackMs", "Jak szybko cichnie", 1, 80, 1, "ms"),
+      slider("releaseMs", "Jak szybko wraca", 20, 400, 1, "ms"),
     ],
   },
   pocket: {
-    labelPl: "Kieszeń rapu",
+    labelPl: "Miejsce na rap",
     params: [
       slider("verseDb", "Zwrotka", -12, 6, 0.1, "dB"),
       slider("hookDb", "Refren", -12, 6, 0.1, "dB"),

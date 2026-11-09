@@ -114,7 +114,7 @@ describe("stage 2 FX contract", () => {
   });
 
   it("has UI meta (PL labels) for each new type", () => {
-    expect(STUDIO_FX_UI_META.highpass.labelPl).toBe("Filtr górnoprzepustowy");
+    expect(STUDIO_FX_UI_META.highpass.labelPl).toBe("Obetnij dół");
     expect(STUDIO_FX_UI_META.deesser.params.map((p) => p.path)).toEqual([
       "frequencyHz",
       "thresholdDb",

@@ -1784,8 +1784,8 @@
   "en": "This user already has active access."
  },
  {
-  "src": "Ten łańcuch efektów nie jest obsługiwany.",
-  "en": "This effect chain is not supported."
+  "src": "Tych efektów nie da się tu użyć.",
+  "en": "These effects cannot be used here."
  },
  {
   "src": "To już jest zrobione: nie zalogujesz się na nie ponownie.",
@@ -2273,8 +2273,8 @@
   "en": "on"
  },
  {
-  "src": "Łańcuch efektów nie jest obsługiwany. Ścieżka gra bez efektów.",
-  "en": "The effect chain is not supported. The track plays without effects."
+  "src": "Tych efektów nie da się tu puścić. Ścieżka gra bez nich.",
+  "en": "These effects cannot play here. The track plays without them."
  },
  {
   "src": "Ścieżka",
@@ -3086,5 +3086,137 @@
  {
   "src": "Ustaw głowicę wewnątrz zaznaczonego fragmentu, aby przyciąć koniec.",
   "en": "Place the playhead inside the selected clip to trim the end."
+ },
+ {
+  "src": "Ścisz pod bit",
+  "en": "Duck under the beat"
+ },
+ {
+  "src": "Obetnij dół",
+  "en": "Cut the low end"
+ },
+ {
+  "src": "Ścisz syki",
+  "en": "Quiet the harsh s sounds"
+ },
+ {
+  "src": "Echo",
+  "en": "Echo"
+ },
+ {
+  "src": "Pułap głośności",
+  "en": "Loudness cap"
+ },
+ {
+  "src": "Ciepło",
+  "en": "Warmth"
+ },
+ {
+  "src": "Miejsce na rap",
+  "en": "Room for the rap"
+ },
+ {
+  "src": "Pasma",
+  "en": "Bands"
+ },
+ {
+  "src": "Wyrównaj głośność",
+  "en": "Even out the volume"
+ },
+ {
+  "src": "Wycisz szum",
+  "en": "Quiet the noise"
+ },
+ {
+  "src": "Jak mocno",
+  "en": "How much"
+ },
+ {
+  "src": "Jak szybko cichnie",
+  "en": "How fast it dips"
+ },
+ {
+  "src": "Jak szybko wraca",
+  "en": "How fast it comes back"
+ },
+ {
+  "src": "Od ilu Hz",
+  "en": "From which Hz"
+ },
+ {
+  "src": "Ostrość",
+  "en": "Sharpness"
+ },
+ {
+  "src": "Gdzie są syki",
+  "en": "Where the harsh s sounds are"
+ },
+ {
+  "src": "Od jakiej głośności",
+  "en": "From what volume"
+ },
+ {
+  "src": "Jak mocno wycisza",
+  "en": "How hard it mutes"
+ },
+ {
+  "src": "Ile razy wraca",
+  "en": "How many times it repeats"
+ },
+ {
+  "src": "Jak mocno ściska",
+  "en": "How hard it squeezes"
+ },
+ {
+  "src": "Jak szybko łapie",
+  "en": "How fast it grabs"
+ },
+ {
+  "src": "Jak szybko puszcza",
+  "en": "How fast it lets go"
+ },
+ {
+  "src": "Nie głośniej niż",
+  "en": "Not louder than"
+ },
+ {
+  "src": "Dociągnij głośność",
+  "en": "Bring the volume back"
+ },
+ {
+  "src": "Ile echa",
+  "en": "How much echo"
+ },
+ {
+  "src": "Po jakim czasie",
+  "en": "After how long"
+ },
+ {
+  "src": "Ile tego słychać",
+  "en": "How much of it you hear"
+ },
+ {
+  "src": "Dół · częstotliwość",
+  "en": "Low · frequency"
+ },
+ {
+  "src": "Dół · głośność",
+  "en": "Low · volume"
+ },
+ {
+  "src": "Dół · szerokość",
+  "en": "Low · width"
+ },
+ {
+  "src": "Środek · szerokość",
+  "en": "Mid · width"
+ },
+ {
+  "src": "Góra · szerokość",
+  "en": "High · width"
+ },
+ {
+  "src": "Efekty na ścieżce",
+  "en": "Effects on the track"
  }
 ]

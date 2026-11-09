@@ -36,7 +36,7 @@ const USER_FACING_PL: Record<StudioAudioErrorCode, string> = {
   AUDIO_FX_INVALID_PARAMS:
     "Pominięto efekt z niepoprawnymi parametrami. Pozostałe ścieżki grają dalej.",
   AUDIO_FX_CHAIN_UNSUPPORTED:
-    "Łańcuch efektów nie jest obsługiwany. Ścieżka gra bez efektów.",
+    "Tych efektów nie da się tu puścić. Ścieżka gra bez nich.",
   AUDIO_FX_NODE_FAILED:
     "Nie udało się wstawić efektu. Ścieżka gra dalej.",
 };

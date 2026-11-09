@@ -17,21 +17,21 @@ SIDECHAIN = {"FREE": False, "BRONZE": False, "SILVER": True, "GOLD": True}
 
 FX: list[tuple[str, str]] = [
     ("eq", "EQ"),
-    ("spectrum", "Widmo"),
-    ("compressor", "Kompresor"),
-    ("limiter", "Limiter"),
+    ("spectrum", "Pasma"),
+    ("compressor", "Wyrównaj głośność"),
+    ("limiter", "Pułap głośności"),
     ("reverb", "Pogłos"),
-    ("delay", "Delay"),
-    ("highpass", "Filtr górnoprzepustowy"),
-    ("deesser", "De-esser"),
-    ("gate", "Bramka szumów"),
+    ("delay", "Echo"),
+    ("highpass", "Obetnij dół"),
+    ("deesser", "Ścisz syki"),
+    ("gate", "Wycisz szum"),
     ("tune", "Strojenie wokalu"),
     ("rider", "Wyrównanie wokalu"),
     ("harmony", "Harmonia"),
     ("voice", "Zmiana głosu"),
-    ("saturate", "Saturacja"),
-    ("pocket", "Kieszeń rapu"),
-    ("sidechain", "Sidechain"),
+    ("saturate", "Ciepło"),
+    ("pocket", "Miejsce na rap"),
+    ("sidechain", "Ścisz pod bit"),
 ]
 
 DEFAULTS: dict[str, dict[str, Any]] = {
@@ -97,7 +97,7 @@ def build_chain(types: list[str], tier: str) -> dict[str, Any]:
         if fx_type in seen:
             raise ValueError("Każdy efekt raz.")
         if fx_type == "sidechain" and not side_ok:
-            raise ValueError("Sidechain jest od Silver.")
+            raise ValueError("Ściszanie pod bit jest od Silver.")
         seen.add(fx_type)
         effect_id = str(uuid.uuid4())
         effects.append(
@@ -153,7 +153,7 @@ def self_test() -> None:
         raise SystemExit("odczyt planu")
     if limits_from_usage({})[0] != "FREE":
         raise SystemExit("pusty plan")
-    if _LABELS["pocket"] != "Kieszeń rapu":
+    if _LABELS["pocket"] != "Miejsce na rap" or _LABELS["sidechain"] != "Ścisz pod bit":
         raise SystemExit("etykieta")
     print("fx self-test ok")
 

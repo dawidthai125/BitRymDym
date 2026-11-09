@@ -66,7 +66,7 @@ export async function assertFxWritesAllowed(writes: readonly FxWriteTarget[]): P
       "fx_chain_length",
       tier,
       minimumTierFor((policy) => policy.studio.maxFxEffects > maxFxEffectsForTier("FREE")),
-      `Na tym planie maks. ${decision.cap} efektów. Dłuższy łańcuch jest od Silver.`,
+      `Na tym planie maks. ${decision.cap} efektów. Więcej efektów naraz jest od Silver.`,
     );
   }
 }

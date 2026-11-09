@@ -560,7 +560,7 @@ class RecorderWindow:
         self.gate_status = tk.StringVar(value="Łączę ze stroną.")
         self.status = tk.StringVar(value="Ładuję listę bitów ze strony.")
         self.plan_text = tk.StringVar(
-            value="Plan: zaloguj się. Do tego czasu 1 ścieżka wokalu, 4 efekty, nagranie do 30 s, bez sidechain."
+            value="Plan: zaloguj się. Do tego czasu 1 ścieżka wokalu, 4 efekty, nagranie do 30 s, bez ściszania pod bit."
         )
         self.clock = tk.StringVar(value="0.0 s / 30 s")
         self.device_var = tk.StringVar(value=self.devices[0] if self.devices else "Brak mikrofonu")
@@ -2087,7 +2087,7 @@ class RecorderWindow:
             build_chain(self.selected_fx(), self.tier)
         except ValueError as error:
             text = str(error)
-            drop = "sidechain" if "Sidechain" in text and self.fx_vars["sidechain"].get() else picked
+            drop = "sidechain" if "Ściszanie pod bit" in text and self.fx_vars["sidechain"].get() else picked
             if drop in self.fx_vars:
                 self.fx_vars[drop].set(0)
             self.status.set(text)
@@ -2105,7 +2105,7 @@ class RecorderWindow:
                     self.status.set(str(error))
                     self._sync_fx_button()
                     return
-                drop = "sidechain" if "Sidechain" in str(error) else selected[-1]
+                drop = "sidechain" if "Ściszanie pod bit" in str(error) else selected[-1]
                 self.fx_vars[drop].set(0)
                 self.status.set(str(error))
         self._sync_fx_button()
@@ -2116,7 +2116,7 @@ class RecorderWindow:
         if not token:
             self.tier = "FREE"
             self.plan_text.set(
-                "Plan: zaloguj się. Do tego czasu 1 ścieżka wokalu, 4 efekty, nagranie do 30 s, bez sidechain."
+                "Plan: zaloguj się. Do tego czasu 1 ścieżka wokalu, 4 efekty, nagranie do 30 s, bez ściszania pod bit."
             )
             self.clock.set("0.0 s / 30 s")
             self._sync_add_button()
@@ -2130,7 +2130,7 @@ class RecorderWindow:
             self._sync_add_button()
             return
         self.tier = tier
-        side_note = "sidechain jest w planie" if side else "sidechain od Silver"
+        side_note = "ściszanie pod bit jest w planie" if side else "ściszanie pod bit od Silver"
         seconds = max_take_seconds(tier)
         tracks = max_recording_tracks(tier)
         self.plan_text.set(

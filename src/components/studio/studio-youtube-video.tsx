@@ -45,7 +45,7 @@ async function resultUrls(j: JobLike): Promise<{ play: string; download: string 
 }
 
 /** 16:9 preview that mirrors the worker frame layout (youtubeFrameLayout) in % of 1920×1080. */
-function FramePreview({ src, title, artist, label, empty }: { src: string | null; title: string | null; artist: string | null; label: string; empty: string }) {
+function FramePreview({ src, title, artist, label, empty, format }: { src: string | null; title: string | null; artist: string | null; label: string; empty: string; format: string }) {
   // Natural size of the image currently shown (keyed by src, so a new image starts blank).
   const [size, setSize] = useState<{ src: string; w: number; h: number } | null>(null);
   const layout = size && size.src === src ? youtubeFrameLayout(size, { title, artist }) : null;
@@ -80,7 +80,7 @@ function FramePreview({ src, title, artist, label, empty }: { src: string | null
           <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-white/70">{empty}</p>
         )}
       </div>
-      <figcaption className="text-xs text-[var(--brd-mute)]">{label} · 1920×1080 · H.264 + AAC</figcaption>
+      <figcaption className="text-xs text-[var(--brd-mute)]">{label} · {format}</figcaption>
     </figure>
   );
 }
@@ -409,7 +409,7 @@ export function StudioYoutubeVideo({ projectId, tier, approved, initialState }: 
               {run.phase === "done" ? (
                 <video controls preload="metadata" src={run.url} className="aspect-video w-full rounded-[2px] border border-[var(--brd-line)] bg-black" data-testid="studio-yt-result" />
               ) : (
-                <FramePreview src={imageUrl} title={shownTitle} artist={shownArtist} label={t("podglad")} empty={t("brakObrazu")} />
+                <FramePreview src={imageUrl} title={shownTitle} artist={shownArtist} label={t("podglad")} empty={t("brakObrazu")} format={t("formatOpis")} />
               )}
             </div>
           </div>
