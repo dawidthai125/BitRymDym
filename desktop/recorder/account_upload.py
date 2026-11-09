@@ -16,12 +16,28 @@ SITE = "https://www.bitrymdym.pl"
 
 
 def signed_put_headers(upload_token: str) -> dict[str, str]:
-    """Storage wants the signed upload token, not the account access token."""
-    headers = {"Content-Type": "audio/wav", "x-upsert": "false"}
+    """PUT goes to the signed URL. That URL already has the upload token.
+
+    Authorization on this request is checked as an account JWT. The upload
+    token is not one, so a Bearer here makes storage reject the WAV.
+    The account access token stays on the site routes, not on this PUT.
+    """
+    if not isinstance(upload_token, str):
+        raise TypeError("token wrzutki")
+    return {"Content-Type": "audio/wav", "x-upsert": "false"}
+
+
+def put_target(signed_url: str, upload_token: str) -> str:
+    """Keep a token that is already in the signed URL. Add it only when missing."""
     token = upload_token.strip()
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    return headers
+    if not token or "token=" in signed_url:
+        return signed_url
+    from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+    parts = urlsplit(signed_url)
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    query.append(("token", token))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 def is_unauthorized(error: BaseException) -> bool:
@@ -130,7 +146,7 @@ class SiteClient:
 
     def put_wav(self, signed_url: str, wav: bytes, upload_token: str) -> None:
         request = urllib.request.Request(
-            signed_url,
+            put_target(signed_url, upload_token),
             data=wav,
             method="PUT",
             headers=signed_put_headers(upload_token),
@@ -257,15 +273,21 @@ def upload_vocal(
 
 def self_test() -> None:
     headers = signed_put_headers("signed-token")
-    if headers.get("Authorization") != "Bearer signed-token":
+    if "Authorization" in headers or "authorization" in {key.lower() for key in headers}:
         raise SystemExit("token wrzutki")
     if headers.get("Content-Type") != "audio/wav" or headers.get("x-upsert") != "false":
         raise SystemExit("nagłówki wrzutki")
     if "Authorization" in signed_put_headers("  "):
         raise SystemExit("pusty token wrzutki")
     user = "aaa.bbb.ccc"
-    if user in headers["Authorization"]:
+    if user in json.dumps(headers):
         raise SystemExit("token konta na wrzutce")
+    kept = put_target("https://example.invalid/put?token=already", "other")
+    if kept != "https://example.invalid/put?token=already":
+        raise SystemExit("adres wrzutki")
+    added = put_target("https://example.invalid/put", "signed-token")
+    if "token=" not in added or "Authorization" in added:
+        raise SystemExit("brak tokenu w adresie")
     try:
         playback_target({"url": "http://example.invalid/beat"})
     except RuntimeError as error:
