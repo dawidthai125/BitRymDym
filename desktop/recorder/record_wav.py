@@ -5,6 +5,7 @@ The site still does mix and master. This file does not load VST plugins.
 
 from __future__ import annotations
 
+import array
 import math
 import struct
 import sys
@@ -56,6 +57,63 @@ def resample_pcm16(samples: list[int], from_rate: int, to_rate: int) -> list[int
     return out
 
 
+def read_mono16(path: Path) -> tuple[int, array.array]:
+    """PCM from the data chunk. A LIST header before the samples is skipped."""
+    with wave.open(str(path), "rb") as handle:
+        if handle.getnchannels() != 1 or handle.getsampwidth() != 2:
+            raise ValueError("mono16")
+        rate = handle.getframerate() or RATE
+        raw = handle.readframes(handle.getnframes())
+    if len(raw) < 4:
+        raise ValueError("empty")
+    samples = array.array("h")
+    samples.frombytes(raw[: len(raw) // 2 * 2])
+    return rate, samples
+
+
+def replace_mono16(path: Path, samples: array.array, rate: int = RATE) -> None:
+    if len(samples) < 2:
+        raise ValueError("short")
+    temporary = path.with_suffix(".cut.wav")
+    with wave.open(str(temporary), "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(rate)
+        handle.writeframes(samples.tobytes())
+    temporary.replace(path)
+
+
+def edit_span(samples: array.array, rate: int, start: float, end: float, mode: str) -> array.array:
+    """Audacity-style span: cut, trim, silence, fade-in, fade-out."""
+    if end < start:
+        start, end = end, start
+    total = len(samples)
+    begin = max(0, min(total, int(start * rate)))
+    stop = max(0, min(total, int(end * rate)))
+    if stop - begin < max(1, rate // 20):
+        raise ValueError("span")
+    if mode == "trim":
+        out = samples[begin:stop]
+    elif mode == "cut":
+        out = samples[:begin] + samples[stop:]
+    elif mode == "silence":
+        out = samples[:begin] + array.array("h", [0]) * (stop - begin) + samples[stop:]
+    elif mode in {"fade-in", "fade-out"}:
+        out = array.array("h", samples)
+        span = stop - begin
+        for index in range(span):
+            if mode == "fade-in":
+                gain = index / span
+            else:
+                gain = 1 - (index + 1) / span
+            out[begin + index] = int(out[begin + index] * gain)
+    else:
+        raise ValueError("mode")
+    if len(out) < 2:
+        raise ValueError("short")
+    return out
+
+
 def self_test(path: Path) -> None:
     samples = tone()
     write_pcm16_wav(path, samples)
@@ -67,6 +125,24 @@ def self_test(path: Path) -> None:
     slowed = resample_pcm16([0, 1000, 2000, 3000], 2, 4)
     if len(slowed) != 8:
         raise SystemExit("resample length mismatch")
+    path.unlink(missing_ok=True)
+    body = array.array("h", [1000] * 4800 + [2000] * 4800)
+    write_pcm16_wav(path, list(body[:4]))
+    # rewrite a known span with the editor, then read it back
+    replace_mono16(path, body)
+    _rate, loaded = read_mono16(path)
+    trimmed = edit_span(loaded, RATE, 0.1, 0.15, "trim")
+    if len(trimmed) != 2400 or trimmed[0] != 2000:
+        raise SystemExit("trim")
+    silenced = edit_span(loaded, RATE, 0.0, 0.05, "silence")
+    if silenced[0] != 0 or silenced[4800] != 2000:
+        raise SystemExit("silence")
+    faded = edit_span(loaded, RATE, 0.0, 0.05, "fade-in")
+    if faded[0] != 0 or faded[-1] != 2000:
+        raise SystemExit("fade")
+    cut = edit_span(loaded, RATE, 0.0, 0.1, "cut")
+    if len(cut) != 4800 or cut[0] != 2000:
+        raise SystemExit("cut")
     path.unlink(missing_ok=True)
 
 

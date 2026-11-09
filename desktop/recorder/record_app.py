@@ -7,12 +7,14 @@ stay on the site. This program does not load VST plugins.
 
 from __future__ import annotations
 
+import ctypes
 import json
 import math
 import os
 import shutil
 import subprocess
 import sys
+import threading
 import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
@@ -25,9 +27,11 @@ from pathlib import Path
 
 from account_upload import SITE, is_unauthorized, playback_target, upload_vocals, SiteClient
 from desk import (
+    fold_peaks,
     list_saved_takes,
     max_recording_tracks,
     max_take_seconds,
+    read_file_range,
     read_prefs,
     studio_url,
     tail_peak_db,
@@ -35,7 +39,7 @@ from desk import (
     write_prefs,
 )
 from own_fx import FX, build_chain, display_tier, limits_from_usage
-from record_wav import write_pcm16_wav
+from record_wav import edit_span, read_mono16, replace_mono16, write_pcm16_wav
 
 # tokens.css dark tape deck. Families match src/app/layout.tsx.
 # ExtraBold is the poster face (Big Shoulders 800). Fallbacks are the site stack.
@@ -90,6 +94,19 @@ def brand_file(name: str) -> Path | None:
         if path.is_file():
             return path
     return None
+
+
+def dpi_scale() -> float:
+    """Window sizes are in physical pixels. At 150% a 520 px window clips the login."""
+    if os.name != "nt":
+        return 1.0
+    try:
+        dpi = int(ctypes.windll.user32.GetDpiForSystem())
+    except Exception:
+        return 1.0
+    if dpi < 96:
+        return 1.0
+    return dpi / 96
 
 
 def windows_app_id() -> None:
@@ -158,11 +175,131 @@ def ffplay_exe() -> str | None:
     return None
 
 
+# Device default is often hundreds of ms and shifts the vocal late against the beat.
+MIC_BUFFER_MS = 20
+
+
 def monitor_argv(exe: str, target: str | Path, limit_seconds: int | None = None) -> list[str]:
-    argv = [exe, "-nodisp", "-autoexit", "-loglevel", "error"]
+    remote = "://" in str(target)
+    argv = [
+        exe,
+        "-nodisp",
+        "-autoexit",
+        "-loglevel",
+        "error",
+        "-fflags",
+        "nobuffer",
+        "-flags",
+        "low_delay",
+        "-probesize",
+        "32768" if remote else "32",
+        "-analyzeduration",
+        "0",
+        "-sync",
+        "ext",
+    ]
     if isinstance(limit_seconds, int) and limit_seconds > 0:
         argv.extend(["-t", str(limit_seconds)])
     argv.append(str(target))
+    return argv
+
+
+def quiet_kwargs() -> dict[str, object]:
+    """ffmpeg and ffplay are console programs. A windowed app otherwise pops a black console."""
+    if os.name != "nt":
+        return {}
+    info = subprocess.STARTUPINFO()
+    info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    info.wShowWindow = subprocess.SW_HIDE
+    return {"creationflags": subprocess.CREATE_NO_WINDOW, "startupinfo": info}
+
+
+def start_mix(ffmpeg: str, ffplay: str, argv: list[str]) -> tuple[subprocess.Popen[bytes], subprocess.Popen[bytes]]:
+    """One mix to the default Windows output. The beat URL is not written to disk."""
+    feed = subprocess.Popen(
+        argv,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        **quiet_kwargs(),
+    )
+    play = subprocess.Popen(
+        monitor_argv(ffplay, "pipe:0"),
+        stdin=feed.stdout,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        **quiet_kwargs(),
+    )
+    if feed.stdout is not None:
+        feed.stdout.close()
+    return feed, play
+
+
+def beat_ceiling(ffmpeg: str, target: str, seconds: int = 12) -> float | None:
+    """Peak of the listen stream, 0..1. Nothing is saved."""
+    proc = subprocess.run(
+        [ffmpeg, "-hide_banner", "-t", str(seconds), "-i", target, "-af", "volumedetect", "-f", "null", "-"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        check=False,
+        **quiet_kwargs(),
+    )
+    text = proc.stderr.decode("utf-8", "replace") if proc.stderr else ""
+    for line in text.splitlines():
+        if "max_volume:" not in line:
+            continue
+        raw = line.split("max_volume:", 1)[1].strip().split()[0]
+        if raw in {"-inf", "inf"}:
+            return None
+        try:
+            db = float(raw)
+        except ValueError:
+            return None
+        return max(0.0, min(1.0, 10 ** (db / 20)))
+    return None
+
+
+def pan_gains(pan: float) -> tuple[float, float]:
+    """-1 is the left channel, +1 is the right. Center keeps both at the same level."""
+    bounded = max(-1.0, min(1.0, pan))
+    angle = (bounded + 1.0) * math.pi / 4.0
+    return math.cos(angle), math.sin(angle)
+
+
+def mix_argv(
+    ffmpeg: str,
+    beat: str | None,
+    vocals: list[tuple[Path, float, float]],
+    limit: int | None,
+) -> list[str]:
+    argv = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
+    stems: list[tuple[float, float]] = []
+    if beat:
+        if isinstance(limit, int) and limit > 0:
+            argv.extend(["-t", str(limit)])
+        argv.extend(["-i", beat])
+        stems.append((0.85, 0.0))
+    for path, gain_db, pan in vocals:
+        argv.extend(["-i", str(path)])
+        stems.append((max(0.0, min(4.0, 10 ** (gain_db / 20))), pan))
+    if not stems:
+        raise RuntimeError("Najpierw nagraj wokal albo wybierz bit.")
+    bodies: list[str] = []
+    tags: list[str] = []
+    for index, (volume, pan) in enumerate(stems):
+        left, right = pan_gains(pan)
+        tag = f"a{index}"
+        bodies.append(
+            f"[{index}:a]aformat=channel_layouts=mono,volume={volume:.4f},"
+            f"pan=stereo|c0={left:.4f}*c0|c1={right:.4f}*c0[{tag}]"
+        )
+        tags.append(f"[{tag}]")
+    if len(tags) == 1:
+        graph = bodies[0][: -len(tags[0])] + "[out]"
+    else:
+        graph = ";".join(bodies) + f";{''.join(tags)}amix=inputs={len(tags)}:duration=longest:normalize=0[out]"
+    argv.extend(["-filter_complex", graph, "-map", "[out]", "-f", "wav", "pipe:1"])
     return argv
 
 
@@ -177,6 +314,7 @@ def start_monitor(target: str | Path, limit_seconds: int | None = None) -> subpr
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        **quiet_kwargs(),
     )
 
 
@@ -199,6 +337,7 @@ def audio_devices(exe: str) -> list[str]:
         encoding="utf-8",
         errors="replace",
         check=False,
+        **quiet_kwargs(),
     )
     names: list[str] = []
     for line in f"{proc.stdout}\n{proc.stderr}".splitlines():
@@ -215,26 +354,42 @@ def audio_devices(exe: str) -> list[str]:
     return ordered
 
 
+def capture_argv(exe: str, device: str, path: Path, seconds: float | None = None) -> list[str]:
+    argv = [
+        exe,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-f",
+        "dshow",
+        "-audio_buffer_size",
+        str(MIC_BUFFER_MS),
+        "-rtbufsize",
+        "64k",
+        "-i",
+        f"audio={device}",
+        "-ac",
+        "1",
+        "-ar",
+        "48000",
+        "-c:a",
+        "pcm_s16le",
+    ]
+    if seconds is not None:
+        argv.extend(["-t", str(seconds)])
+    argv.append(str(path))
+    return argv
+
+
 def start_capture(path: Path, device: str) -> subprocess.Popen[bytes]:
     path.parent.mkdir(parents=True, exist_ok=True)
     return subprocess.Popen(
-        [
-            ffmpeg_exe(),
-            "-hide_banner",
-            "-y",
-            "-f",
-            "dshow",
-            "-i",
-            f"audio={device}",
-            "-ac",
-            "1",
-            "-ar",
-            "48000",
-            "-c:a",
-            "pcm_s16le",
-            str(path),
-        ],
+        capture_argv(ffmpeg_exe(), device, path),
         stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        **quiet_kwargs(),
     )
 
 
@@ -261,26 +416,10 @@ def record_seconds(path: Path, seconds: float) -> None:
     device = audio_devices(exe)[0]
     path.parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.run(
-        [
-            exe,
-            "-hide_banner",
-            "-y",
-            "-f",
-            "dshow",
-            "-i",
-            f"audio={device}",
-            "-t",
-            str(seconds),
-            "-ac",
-            "1",
-            "-ar",
-            "48000",
-            "-c:a",
-            "pcm_s16le",
-            str(path),
-        ],
+        capture_argv(exe, device, path, seconds),
         capture_output=True,
         check=False,
+        **quiet_kwargs(),
     )
     if proc.returncode != 0 or not path.exists() or path.stat().st_size < 1000:
         raise RuntimeError("Mikrofon nie oddał WAV.")
@@ -370,16 +509,35 @@ class RecorderWindow:
         if os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
             self.root.withdraw()
         self.root.title("BitRymDym")
-        self.root.geometry("480x740")
         self.root.minsize(420, 640)
         self.root.configure(bg=PAPER)
+        self._borderless = os.environ.get("BITRYMDYM_UI_SMOKE") != "1" and os.name == "nt"
+        self._frameless_on = False
+        self._zoomed = False
+        self._restore_geo = ""
         self._images: list[tk.PhotoImage] = []
+        self.shell = tk.Frame(self.root, bg=PAPER, highlightthickness=1, highlightbackground=LINE_STRONG)
+        self.shell.pack(fill="both", expand=True)
+        if self._borderless:
+            self._build_chrome()
+            if os.environ.get("BITRYMDYM_FRAME_CHECK") == "1":
+                self.root.attributes("-alpha", 0)
+        else:
+            self.root.geometry("480x740")
         self._apply_icon()
         self.recording = False
+        self._arming = False
+        self._arm_token = 0
+        self._wave_cols: list[float] = []
+        self._wave_end = 44
+        self._wave_for: Path | None = None
+        self._beat_shown = 0.0
         self.vocals: list[dict[str, object]] = []
         self.armed = 0
         self.capture: subprocess.Popen[bytes] | None = None
         self.monitor: subprocess.Popen[bytes] | None = None
+        self.mix_feed: subprocess.Popen[bytes] | None = None
+        self._beat_ceiling: float | None = None
         self._build_scroll()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.local_beat: Path | None = None
@@ -454,9 +612,9 @@ class RecorderWindow:
 
     def _build_scroll(self) -> None:
         self._style_scroll()
-        self.canvas = tk.Canvas(self.root, bg=PAPER, highlightthickness=0, bd=0)
+        self.canvas = tk.Canvas(self.shell, bg=PAPER, highlightthickness=0, bd=0)
         self.scrollbar = ttk.Scrollbar(
-            self.root,
+            self.shell,
             command=self.canvas.yview,
             style="Brd.Vertical.TScrollbar",
         )
@@ -504,6 +662,127 @@ class RecorderWindow:
         self._images.append(image)
         self.root.iconphoto(True, image)
 
+    def _build_chrome(self) -> None:
+        """No Windows title bar. The soot bar is the app frame."""
+        self.root.overrideredirect(True)
+        self._frameless_on = True
+        bar = tk.Frame(self.shell, bg=PAPER, height=40)
+        bar.pack(side="top", fill="x")
+        bar.pack_propagate(False)
+        self.chrome = bar
+        mark = self._fit_image("cassette-mark.png", 22, 22)
+        if mark is not None:
+            badge = tk.Label(bar, image=mark, bg=PAPER)
+            badge.pack(side="left", padx=(12, 6))
+            badge.bind("<Button-1>", self._drag_start)
+            badge.bind("<B1-Motion>", self._drag_move)
+        title = tk.Label(bar, text="BitRymDym", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 14, "italic"))
+        title.pack(side="left")
+        self._chrome_button(bar, "×", self._on_close, REC)
+        self._chrome_button(bar, "□", self._toggle_zoom, RACK)
+        self._chrome_button(bar, "–", self._minimize, RACK)
+        for widget in (bar, title):
+            widget.bind("<Button-1>", self._drag_start)
+            widget.bind("<B1-Motion>", self._drag_move)
+            widget.bind("<Double-Button-1>", lambda _event: self._toggle_zoom())
+        rule = tk.Frame(self.shell, bg=AMBER, height=2)
+        rule.pack(side="top", fill="x")
+        rule.pack_propagate(False)
+        grip = tk.Frame(self.shell, bg=AMBER_DEEP, cursor="size_nw_se", width=14, height=14)
+        grip.place(relx=1.0, rely=1.0, anchor="se")
+        grip.bind("<Button-1>", self._resize_start)
+        grip.bind("<B1-Motion>", self._resize_move)
+        self.root.bind("<Map>", self._on_map)
+        self.root.after(50, self._own_taskbar)
+
+    def _chrome_button(self, parent: tk.Widget, text: str, command: object, hover: str) -> None:
+        label = tk.Label(parent, text=text, bg=PAPER, fg=INK, width=3, font=(FONT_UI, 13), cursor="hand2")
+        label.pack(side="right")
+        label.bind("<Enter>", lambda _event: label.configure(bg=hover, fg=INK))
+        label.bind("<Leave>", lambda _event: label.configure(bg=PAPER, fg=INK))
+        label.bind("<Button-1>", lambda _event: command())
+
+    def _window_hwnd(self) -> int:
+        self.root.update_idletasks()
+        child = int(self.root.winfo_id())
+        parent = int(ctypes.windll.user32.GetParent(child) or 0)
+        return parent or child
+
+    def _own_taskbar(self) -> None:
+        if not self._borderless or os.name != "nt":
+            return
+        user32 = ctypes.windll.user32
+        get_long = user32.GetWindowLongPtrW
+        set_long = user32.SetWindowLongPtrW
+        get_long.restype = ctypes.c_longlong
+        get_long.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        set_long.restype = ctypes.c_longlong
+        set_long.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_longlong]
+        hwnd = self._window_hwnd()
+        style = get_long(hwnd, -20)
+        style = (style & ~0x80) | 0x40000
+        set_long(hwnd, -20, style)
+        user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x27)
+        self.root.lift()
+
+    def _on_map(self, event: tk.Event) -> None:
+        if event.widget is not self.root or not self._borderless:
+            return
+        if str(self.root.state()) == "iconic":
+            return
+        if self._frameless_on:
+            return
+        self.root.overrideredirect(True)
+        self._frameless_on = True
+        self.root.after(10, self._own_taskbar)
+
+    def _drag_start(self, event: tk.Event) -> None:
+        self._drag_dx = event.x_root - self.root.winfo_x()
+        self._drag_dy = event.y_root - self.root.winfo_y()
+
+    def _drag_move(self, event: tk.Event) -> None:
+        if self._zoomed:
+            return
+        x = event.x_root - self._drag_dx
+        y = event.y_root - self._drag_dy
+        self.root.geometry(f"+{x}+{y}")
+
+    def _resize_start(self, event: tk.Event) -> None:
+        self._resize_x = event.x_root
+        self._resize_y = event.y_root
+        self._resize_w = self.root.winfo_width()
+        self._resize_h = self.root.winfo_height()
+
+    def _resize_move(self, event: tk.Event) -> None:
+        self._zoomed = False
+        width = max(self.root.minsize()[0], self._resize_w + event.x_root - self._resize_x)
+        height = max(self.root.minsize()[1], self._resize_h + event.y_root - self._resize_y)
+        self.root.geometry(f"{width}x{height}")
+
+    def _minimize(self) -> None:
+        self._frameless_on = False
+        self.root.overrideredirect(False)
+        self.root.iconify()
+
+    def _toggle_zoom(self) -> None:
+        if self._zoomed:
+            if self._restore_geo:
+                self.root.geometry(self._restore_geo)
+            self._zoomed = False
+            return
+        self._restore_geo = self.root.geometry()
+        self.root.update_idletasks()
+        width = self.root.winfo_screenwidth()
+        height = max(640, self.root.winfo_screenheight() - 48)
+        self.root.geometry(f"{width}x{height}+0+0")
+        self._zoomed = True
+
+    def _place_window(self, width: int, height: int) -> None:
+        self.root.update_idletasks()
+        x = max(0, (self.root.winfo_screenwidth() - width) // 2)
+        y = max(0, (self.root.winfo_screenheight() - height) // 2 - 24)
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
+
     def _fit_copy(self, event: tk.Event) -> None:
         if event.widget is not self.root:
             return
@@ -519,16 +798,23 @@ class RecorderWindow:
         self.scrollbar.pack_forget()
         self.canvas.pack_forget()
         self.gate.pack(fill="both", expand=True)
-        self.root.minsize(420, 640)
-        if self.root.winfo_width() > 640:
+        scale = dpi_scale()
+        self.root.minsize(int(420 * scale), int(640 * scale))
+        if self._borderless:
+            self._place_window(int(520 * scale), int(760 * scale))
+        elif self.root.winfo_width() > 640:
             self.root.geometry("480x740")
 
     def show_studio(self) -> None:
         self.gate.pack_forget()
         self.scrollbar.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
-        self.root.minsize(720, 640)
-        self.root.geometry("880x780")
+        scale = dpi_scale()
+        self.root.minsize(int(720 * scale), int(640 * scale))
+        if self._borderless:
+            self._place_window(int(980 * scale), int(820 * scale))
+        else:
+            self.root.geometry("880x780")
         email = self.email.get().strip()
         self.account_line.set(f"Konto: {email}" if email else "Konto")
 
@@ -548,7 +834,7 @@ class RecorderWindow:
         return label
 
     def _build_gate(self, saved: dict[str, str] | None) -> None:
-        self.gate = tk.Frame(self.root, bg=PAPER)
+        self.gate = tk.Frame(self.shell, bg=PAPER)
         card = tk.Frame(self.gate, bg=PAPER)
         card.pack(expand=True, fill="x", padx=36, pady=24)
         logo = self._fit_image("logo-light.png", 320, 92)
@@ -594,6 +880,7 @@ class RecorderWindow:
         ).pack(anchor="w", pady=(12, 0))
 
     def _on_close(self) -> None:
+        self._arm_token += 1
         self._cancel_tick()
         self._stop_monitor()
         if self.capture:
@@ -716,7 +1003,7 @@ class RecorderWindow:
     def _lane(self, parent: tk.Widget) -> tk.Canvas:
         canvas = tk.Canvas(
             parent,
-            height=56,
+            height=96,
             bg="#120e0b",
             highlightthickness=1,
             highlightbackground=LINE,
@@ -729,13 +1016,13 @@ class RecorderWindow:
     def _build_tracks(self, parent: tk.Widget) -> None:
         stack = tk.Frame(parent, bg=PANEL)
         stack.pack(fill="x", padx=14, pady=(0, 12))
-        self.ruler = tk.Canvas(stack, height=18, bg=PAPER, highlightthickness=0, bd=0)
-        self.ruler.pack(fill="x", padx=(92, 0))
+        self.ruler = tk.Canvas(stack, height=22, bg=PAPER, highlightthickness=0, bd=0)
+        self.ruler.pack(fill="x", padx=(210, 0))
         self.ruler.bind("<Configure>", lambda _event: self._paint_lanes())
 
         beat = tk.Frame(stack, bg=PANEL)
         beat.pack(fill="x", pady=(4, 2))
-        beat_meta = tk.Frame(beat, bg=PANEL, width=92)
+        beat_meta = tk.Frame(beat, bg=PANEL, width=210)
         beat_meta.pack(side="left", fill="y")
         beat_meta.pack_propagate(False)
         tk.Label(beat_meta, text="BIT", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 13, "bold")).pack(anchor="w")
@@ -751,7 +1038,7 @@ class RecorderWindow:
         bar.pack(fill="x", pady=(6, 0))
         self._button(bar, "Nagraj", self.arm, REC, INK).pack(side="left", padx=(0, 6))
         self._button(bar, "Stop", self.stop_take, RACK, INK).pack(side="left", padx=(0, 6))
-        self._button(bar, "Graj ujęcie", self.preview_take, RACK, INK).pack(side="left", padx=(0, 6))
+        self._button(bar, "Graj miks", self.preview_mix, AMBER, ON_AMBER).pack(side="left", padx=(0, 6))
         add_shell = self._button(bar, "Dodaj ścieżkę", self._add_lane_clicked, RACK, INK)
         add_shell.pack(side="left")
         self.add_button = add_shell.winfo_children()[0]
@@ -759,12 +1046,12 @@ class RecorderWindow:
         self._sync_add_button()
         tk.Label(
             stack,
-            text="Przy nagraniu bit ze strony leci w słuchawkach. Program go nie zapisuje. Mikrofon pisze na uzbrojoną ścieżkę. Dodaj ścieżkę staje na limicie planu.",
+            text="Przeciągnij po fali i w ED wytnij, zostaw, wycisz albo zrób fade. ED ustawia dB i lewo albo prawo. M wycisza, S zostawia solo. Graj miks składa bit i słyszane ujęcia. Bit nie jest zapisywany. Czerwień: przester albo głośniej niż bit.",
             bg=PANEL,
             fg=SOFT,
             font=(FONT_UI, 9),
             anchor="w",
-            wraplength=640,
+            wraplength=900,
             justify="left",
         ).pack(fill="x", pady=(6, 0))
 
@@ -807,19 +1094,87 @@ class RecorderWindow:
         index = len(self.vocals)
         name = "WOKAL" if index == 0 else f"WOKAL {index + 1}"
         row = tk.Frame(self.vocal_host, bg=PANEL)
-        row.pack(fill="x", pady=(2, 2))
-        meta = tk.Frame(row, bg=PANEL, width=92)
+        row.pack(fill="x", pady=(4, 4))
+        meta = tk.Frame(row, bg=PANEL, width=210)
         meta.pack(side="left", fill="y")
         meta.pack_propagate(False)
         label = tk.Label(meta, text=name, bg=PANEL, fg=REC, font=(FONT_POSTER, 12, "bold"), anchor="w")
         label.pack(anchor="w", fill="x")
+        tools = tk.Frame(meta, bg=PANEL)
+        tools.pack(fill="x", pady=(4, 0))
+        lane: dict[str, object] = {
+            "name": name,
+            "frame": row,
+            "label": label,
+            "canvas": None,
+            "path": None,
+            "muted": False,
+            "solo": False,
+            "gain_db": 0.0,
+            "pan": 0.0,
+            "sel": None,
+        }
+        mute = tk.Button(
+            tools,
+            text="M",
+            command=lambda slot=lane: self._toggle_mute(slot),
+            bg=RACK,
+            fg=SOFT,
+            relief="flat",
+            bd=0,
+            padx=6,
+            pady=2,
+            font=(FONT_POSTER, 11, "bold"),
+        )
+        mute.pack(side="left", padx=(0, 4))
+        solo = tk.Button(
+            tools,
+            text="S",
+            command=lambda slot=lane: self._toggle_solo(slot),
+            bg=RACK,
+            fg=SOFT,
+            relief="flat",
+            bd=0,
+            padx=6,
+            pady=2,
+            font=(FONT_POSTER, 11, "bold"),
+        )
+        solo.pack(side="left", padx=(0, 4))
+        lane["solo_button"] = solo
+        tk.Button(
+            tools,
+            text="ED",
+            command=lambda slot=lane: self._edit_lane(slot),
+            bg=RACK,
+            fg=INK,
+            relief="flat",
+            bd=0,
+            padx=6,
+            pady=2,
+            font=(FONT_POSTER, 11, "bold"),
+        ).pack(side="left", padx=(0, 4))
+        tk.Button(
+            tools,
+            text="X",
+            command=lambda slot=lane: self._remove_lane(slot),
+            bg=RACK,
+            fg=REC,
+            relief="flat",
+            bd=0,
+            padx=6,
+            pady=2,
+            font=(FONT_POSTER, 11, "bold"),
+        ).pack(side="left")
+        lane["mute_button"] = mute
         canvas = self._lane(row)
-        lane: dict[str, object] = {"name": name, "frame": row, "label": label, "canvas": canvas, "path": None}
+        lane["canvas"] = canvas
         self.vocals.append(lane)
         if index == 0:
             self.vocal_lane = canvas
-        label.bind("<Button-1>", lambda _event, slot=index: self._arm_lane(slot))
-        canvas.bind("<Button-1>", lambda _event, slot=index: self._arm_lane(slot))
+        label.bind("<Button-1>", lambda _event, slot=lane: self._arm_lane(self.vocals.index(slot)))
+        canvas.bind("<ButtonPress-1>", lambda event, slot=lane: self._select_down(slot, event))
+        canvas.bind("<B1-Motion>", lambda event, slot=lane: self._select_drag(slot, event))
+        canvas.bind("<ButtonRelease-1>", lambda event, slot=lane: self._select_up(slot, event))
         self._mark_armed()
 
     def _add_lane_clicked(self) -> None:
@@ -841,9 +1196,18 @@ class RecorderWindow:
         self._sync_scroll()
         self.status.set(f"Ścieżka {self.vocals[self.armed]['name']} jest uzbrojona. Plan mieści {cap}.")
 
+    def _heard(self, lane: dict[str, object]) -> bool:
+        if lane.get("muted"):
+            return False
+        if any(item.get("solo") for item in self.vocals) and not lane.get("solo"):
+            return False
+        return True
+
     def _lane_paths(self) -> list[Path]:
         paths: list[Path] = []
         for lane in self.vocals:
+            if not self._heard(lane):
+                continue
             path = lane.get("path")
             if isinstance(path, Path) and path.exists() and path.stat().st_size >= 1000:
                 paths.append(path)
@@ -857,7 +1221,11 @@ class RecorderWindow:
         if self.recording and self.wav_path.exists():
             playhead = wav_seconds(self.wav_path.stat().st_size)
         self._paint_ruler(cap)
-        self._paint_lane(self.beat_lane, cap, 0.0, AMBER, self.local_beat is not None, playhead)
+        beat_on = self.recording and (self.monitor is not None or self.local_beat is not None)
+        if beat_on:
+            self._beat_shown = playhead
+        shown = self._beat_shown
+        self._paint_lane(self.beat_lane, cap, shown, AMBER, shown > 0, shown)
         for index, lane in enumerate(self.vocals):
             canvas = lane.get("canvas")
             if not isinstance(canvas, tk.Canvas):
@@ -866,7 +1234,19 @@ class RecorderWindow:
             seconds = wav_seconds(path.stat().st_size) if isinstance(path, Path) and path.exists() else 0.0
             here = self.recording and index == self.armed
             head = playhead if here else seconds
-            self._paint_lane(canvas, cap, seconds if not here else playhead, REC, seconds > 0 or here, head)
+            peaks = self._vocal_peaks(path, canvas.winfo_width(), cap) if isinstance(path, Path) and path.exists() else None
+            self._paint_lane(
+                canvas,
+                cap,
+                seconds if not here else playhead,
+                REC,
+                seconds > 0 or here,
+                head,
+                peaks,
+                bool(lane.get("muted")),
+                self._beat_ceiling,
+                lane.get("sel") if isinstance(lane.get("sel"), tuple) else None,
+            )
 
     def _paint_ruler(self, cap: int) -> None:
         canvas = self.ruler
@@ -882,6 +1262,27 @@ class RecorderWindow:
             canvas.create_text(x + 2, 2, text=str(mark), fill=MUTE, anchor="nw", font=(FONT_META, 8))
             mark += step
 
+    def _vocal_peaks(self, path: Path, width: int, cap: int) -> list[float]:
+        columns = max(width, 2)
+        if self._wave_for != path or len(self._wave_cols) != columns:
+            self._wave_for = path
+            self._wave_cols = [0.0] * columns
+            self._wave_end = 44
+        try:
+            size = path.stat().st_size
+        except OSError:
+            return self._wave_cols
+        start = self._wave_end
+        if size - start >= 2:
+            # Half a second per tick. A full 180 s scan in Python would freeze the window.
+            length = min(size - start, 48_000)
+            if not self.recording:
+                length = size - start
+            pcm = read_file_range(path, start, length)
+            fold_peaks(self._wave_cols, pcm, max(0, (start - 44) // 2), max(1, cap) * 48_000)
+            self._wave_end = start + (len(pcm) // 2) * 2
+        return self._wave_cols
+
     def _paint_lane(
         self,
         canvas: tk.Canvas,
@@ -890,15 +1291,43 @@ class RecorderWindow:
         color: str,
         filled: bool,
         head_seconds: float,
+        peaks: list[float] | None = None,
+        muted: bool = False,
+        beat_ceiling: float | None = None,
+        selection: tuple[float, float] | None = None,
     ) -> None:
         canvas.delete("all")
         width = max(canvas.winfo_width(), 2)
         height = max(canvas.winfo_height(), 2)
-        if filled:
+        mid = height / 2
+        if filled and not peaks:
             end = width if block_seconds <= 0 else max(8, int(width * min(block_seconds / cap, 1.0)))
-            canvas.create_rectangle(0, 8, end, height - 8, fill=color, outline="")
+            canvas.create_rectangle(0, mid - 4, end, mid + 4, fill=color, outline="")
+        if peaks:
+            hot = beat_ceiling * 1.25 if beat_ceiling else None
+            for index, level in enumerate(peaks):
+                if level <= 0.02:
+                    continue
+                x = int(index * width / max(len(peaks), 1))
+                half = max(1, int((height / 2 - 4) * min(level, 1.0)))
+                if muted:
+                    ink = MUTE
+                elif level >= 0.98 or (hot is not None and level > hot):
+                    ink = REC
+                elif level >= 0.7:
+                    ink = AMBER
+                else:
+                    ink = "#3ddc97"
+                canvas.create_line(x, mid - half, x, mid + half, fill=ink, width=3)
+        if selection and cap > 0:
+            left, right = selection
+            x1 = int(width * max(0.0, min(left, cap)) / cap)
+            x2 = int(width * max(0.0, min(right, cap)) / cap)
+            if x2 < x1:
+                x1, x2 = x2, x1
+            canvas.create_rectangle(x1, 1, max(x2, x1 + 2), height - 1, outline=AMBER, width=2)
         x = int(width * min(max(head_seconds, 0.0) / cap, 1.0))
-        canvas.create_line(x, 0, x, height, fill=INK, width=2)
+        canvas.create_line(x, 0, x, height, fill=INK, width=1)
 
     def _safe_listen_error(self, error: BaseException) -> str:
         text = str(error)
@@ -946,6 +1375,288 @@ class RecorderWindow:
         if isinstance(path, Path) and path.exists() and path.stat().st_size >= 1000:
             return path
         return None
+
+    def _seconds_at(self, canvas: tk.Canvas, x: int) -> float:
+        cap = max(1, max_take_seconds(self.tier))
+        width = max(canvas.winfo_width(), 2)
+        return max(0.0, min(float(cap), x / width * cap))
+
+    def _select_down(self, lane: dict[str, object], event: tk.Event) -> None:
+        if lane in self.vocals:
+            self._arm_lane(self.vocals.index(lane))
+        start = self._seconds_at(event.widget, event.x)
+        lane["sel"] = (start, start)
+        self._paint_lanes()
+
+    def _select_drag(self, lane: dict[str, object], event: tk.Event) -> None:
+        current = lane.get("sel")
+        if not isinstance(current, tuple) or not current:
+            return
+        lane["sel"] = (float(current[0]), self._seconds_at(event.widget, event.x))
+        self._paint_lanes()
+
+    def _select_up(self, lane: dict[str, object], event: tk.Event) -> None:
+        current = lane.get("sel")
+        if not isinstance(current, tuple) or not current:
+            return
+        start = float(current[0])
+        end = self._seconds_at(event.widget, event.x)
+        if abs(end - start) < 0.08:
+            lane["sel"] = None
+            self._paint_lanes()
+            return
+        lane["sel"] = (min(start, end), max(start, end))
+        self._paint_lanes()
+        self.status.set(f"Zaznaczenie {lane['sel'][0]:.2f}–{lane['sel'][1]:.2f} s. ED tnie ten fragment.")
+
+    def _toggle_mute(self, lane: dict[str, object]) -> None:
+        lane["muted"] = not bool(lane.get("muted"))
+        button = lane.get("mute_button")
+        if isinstance(button, tk.Button):
+            button.configure(fg=REC if lane["muted"] else SOFT, text="M·" if lane["muted"] else "M")
+        self._paint_lanes()
+        name = lane.get("name")
+        self.status.set(f"{name} wyciszona." if lane["muted"] else f"{name} wraca do miksu.")
+
+    def _toggle_solo(self, lane: dict[str, object]) -> None:
+        lane["solo"] = not bool(lane.get("solo"))
+        button = lane.get("solo_button")
+        if isinstance(button, tk.Button):
+            button.configure(fg=AMBER if lane["solo"] else SOFT, text="S·" if lane["solo"] else "S")
+        self._paint_lanes()
+        name = lane.get("name")
+        self.status.set(f"Solo: {name}." if lane["solo"] else f"{name} bez solo.")
+
+    def _span(self, lane: dict[str, object]) -> tuple[float, float]:
+        selection = lane.get("sel")
+        if not isinstance(selection, tuple) or len(selection) != 2:
+            raise RuntimeError("Przeciągnij po fali, żeby zaznaczyć fragment.")
+        start, end = float(selection[0]), float(selection[1])
+        if abs(end - start) < 0.08:
+            raise RuntimeError("Zaznaczenie jest za krótkie.")
+        return min(start, end), max(start, end)
+
+    def _rewrite_take(self, lane: dict[str, object], mode: str) -> None:
+        if self.recording:
+            raise RuntimeError("Najpierw Stop.")
+        path = lane.get("path")
+        if not isinstance(path, Path) or not path.exists():
+            raise RuntimeError("Najpierw nagraj ujęcie na tej ścieżce.")
+        start, end = self._span(lane)
+        rate, samples = read_mono16(path)
+        edited = edit_span(samples, rate, start, end, mode)
+        replace_mono16(path, edited, rate)
+        self._wave_for = None
+        lane["sel"] = None
+        self._paint_lanes()
+
+    def _edit_lane(self, lane: dict[str, object]) -> None:
+        if self.recording:
+            self.status.set("Najpierw Stop.")
+            return
+        box = tk.Toplevel(self.root)
+        box.title("Ścieżka")
+        box.configure(bg=PANEL)
+        box.resizable(False, False)
+        name = tk.StringVar(value=str(lane.get("name") or "Wokal"))
+        gain = tk.DoubleVar(value=float(lane.get("gain_db") or 0.0))
+        pan = tk.DoubleVar(value=float(lane.get("pan") or 0.0) * 100.0)
+        tk.Label(box, text="Nazwa", bg=PANEL, fg=SOFT, font=(FONT_UI, 9)).pack(anchor="w", padx=12, pady=(10, 0))
+        tk.Entry(
+            box,
+            textvariable=name,
+            bg=RACK,
+            fg=INK,
+            insertbackground=INK,
+            relief="flat",
+            font=(FONT_UI, 12),
+        ).pack(fill="x", padx=12, pady=4)
+        tk.Label(box, text="Głośność, dB", bg=PANEL, fg=SOFT, font=(FONT_UI, 9)).pack(anchor="w", padx=12)
+        tk.Scale(
+            box,
+            from_=-36,
+            to=12,
+            resolution=0.5,
+            orient="horizontal",
+            variable=gain,
+            bg=PANEL,
+            fg=INK,
+            highlightthickness=0,
+            troughcolor=RACK,
+        ).pack(fill="x", padx=12)
+        tk.Label(box, text="Kanał: lewo −100, środek 0, prawo +100", bg=PANEL, fg=SOFT, font=(FONT_UI, 9)).pack(
+            anchor="w", padx=12
+        )
+        tk.Scale(
+            box,
+            from_=-100,
+            to=100,
+            resolution=1,
+            orient="horizontal",
+            variable=pan,
+            bg=PANEL,
+            fg=INK,
+            highlightthickness=0,
+            troughcolor=RACK,
+        ).pack(fill="x", padx=12)
+        actions = tk.Frame(box, bg=PANEL)
+        actions.pack(fill="x", padx=12, pady=(4, 0))
+
+        def run(mode: str, label: str) -> None:
+            try:
+                self._rewrite_take(lane, mode)
+            except RuntimeError as error:
+                self.status.set(str(error))
+                return
+            except ValueError as error:
+                code = str(error)
+                if code in {"span", "short"}:
+                    self.status.set("Zaznaczenie jest poza ujęciem.")
+                elif code in {"mono16", "empty"}:
+                    self.status.set("Cięcie działa na mono 16-bit.")
+                else:
+                    self.status.set("Nie dało się zapisać cięcia.")
+                return
+            except OSError:
+                self.status.set("Nie dało się zapisać cięcia.")
+                return
+            self.status.set(f"{label}. Plik ujęcia jest już zmieniony.")
+
+        for mode, button_text, done in (
+            ("cut", "Wytnij", "Wycięte"),
+            ("trim", "Zostaw", "Zostawiony fragment"),
+            ("silence", "Wycisz", "Wyciszony fragment"),
+            ("fade-in", "Fade in", "Fade in"),
+            ("fade-out", "Fade out", "Fade out"),
+        ):
+            tk.Button(
+                actions,
+                text=button_text,
+                command=lambda picked=mode, word=done: run(picked, word),
+                bg=RACK,
+                fg=INK,
+                relief="flat",
+                bd=0,
+                padx=8,
+                pady=4,
+                font=(FONT_UI, 9),
+            ).pack(side="left", padx=(0, 4), pady=4)
+
+        def save() -> None:
+            text = name.get().strip() or str(lane.get("name") or "Wokal")
+            lane["name"] = text
+            lane["gain_db"] = float(gain.get())
+            lane["pan"] = max(-1.0, min(1.0, float(pan.get()) / 100.0))
+            label = lane.get("label")
+            if isinstance(label, tk.Label):
+                label.configure(text=text)
+            side = "lewo" if lane["pan"] < -0.05 else "prawo" if lane["pan"] > 0.05 else "środek"
+            box.destroy()
+            self._paint_lanes()
+            self.status.set(f"{text}: {float(lane['gain_db']):+.1f} dB, {side}.")
+
+        self._button(box, "Zapisz", save, AMBER, ON_AMBER).pack(fill="x", padx=12, pady=12)
+
+    def _remove_lane(self, lane: dict[str, object]) -> None:
+        if self.recording:
+            self.status.set("Najpierw Stop.")
+            return
+        if lane not in self.vocals:
+            return
+        if len(self.vocals) == 1:
+            lane["path"] = None
+            lane["muted"] = False
+            lane["solo"] = False
+            lane["gain_db"] = 0.0
+            lane["pan"] = 0.0
+            lane["sel"] = None
+            button = lane.get("mute_button")
+            if isinstance(button, tk.Button):
+                button.configure(fg=SOFT, text="M")
+            solo = lane.get("solo_button")
+            if isinstance(solo, tk.Button):
+                solo.configure(fg=SOFT, text="S")
+            self._paint_lanes()
+            self.status.set("Ujęcie zdjęte. Ścieżka zostaje, bo plan ma co najmniej jedną.")
+            return
+        index = self.vocals.index(lane)
+        frame = lane.get("frame")
+        if isinstance(frame, tk.Frame):
+            frame.destroy()
+        self.vocals.pop(index)
+        if self.armed >= len(self.vocals):
+            self.armed = len(self.vocals) - 1
+        self._mark_armed()
+        self._sync_add_button()
+        self._paint_lanes()
+        self.status.set("Ścieżka usunięta.")
+
+    def _mix_sources(self) -> list[tuple[Path, float, float]]:
+        found: list[tuple[Path, float, float]] = []
+        for lane in self.vocals:
+            if not self._heard(lane):
+                continue
+            path = lane.get("path")
+            if isinstance(path, Path) and path.exists() and path.stat().st_size >= 1000:
+                found.append(
+                    (path, float(lane.get("gain_db") or 0.0), float(lane.get("pan") or 0.0))
+                )
+        return found
+
+    def preview_mix(self) -> None:
+        try:
+            if self.recording or self._arming:
+                raise RuntimeError("Najpierw Stop.")
+            vocals = self._mix_sources()
+            has_beat = self.local_beat is not None
+            if not has_beat:
+                try:
+                    has_beat = bool(self.selected_beat_id())
+                except RuntimeError:
+                    has_beat = False
+            if not vocals and not has_beat:
+                raise RuntimeError("Najpierw nagraj wokal na ścieżkę.")
+            self._stop_monitor()
+            self.status.set("Składam miks. Bit ze strony nie jest zapisywany.")
+            threading.Thread(target=self._play_mix, args=(vocals,), daemon=True).start()
+        except Exception as error:
+            self.status.set(self._safe_listen_error(error))
+
+    def _play_mix(self, vocals: list[tuple[Path, float, float]]) -> None:
+        beat: str | None = None
+        limit: int | None = None
+        note = "Miks gra na domyślnym wyjściu Windows."
+        try:
+            target, limit, heard = self._beat_listen()
+            if target is not None:
+                beat = target
+                note = heard
+        except Exception as error:
+            if self.local_beat is not None:
+                beat = str(self.local_beat)
+                note = "Odsłuch strony niedostępny. Gra plik z dysku."
+            elif not vocals:
+                self.root.after(0, lambda: self.status.set(self._safe_listen_error(error)))
+                return
+        ffmpeg = ffmpeg_exe()
+        play = ffplay_exe()
+        if play is None:
+            self.root.after(0, lambda: self.status.set("Brak ffplay. Bez niego nie ma odsłuchu."))
+            return
+        if beat is not None:
+            ceiling = beat_ceiling(ffmpeg, beat)
+            if ceiling is not None:
+                self._beat_ceiling = ceiling
+                self.root.after(0, self._paint_lanes)
+        try:
+            argv = mix_argv(ffmpeg, beat, vocals, limit)
+            feed, monitor = start_mix(ffmpeg, play, argv)
+        except Exception as error:
+            self.root.after(0, lambda: self.status.set(self._safe_listen_error(error)))
+            return
+        self.mix_feed = feed
+        self.monitor = monitor
+        self.root.after(0, lambda: self.status.set(note))
 
     def preview_take(self) -> None:
         try:
@@ -1548,7 +2259,9 @@ class RecorderWindow:
 
     def _stop_monitor(self) -> None:
         stop_monitor(self.monitor)
+        stop_monitor(self.mix_feed)
         self.monitor = None
+        self.mix_feed = None
 
     def selected_device(self) -> str:
         name = self.device_var.get()
@@ -1573,11 +2286,15 @@ class RecorderWindow:
     def _tick(self) -> None:
         if not self.recording:
             return
-        seconds = wav_seconds(self.wav_path.stat().st_size) if self.wav_path.exists() else 0.0
-        cap = max_take_seconds(self.tier)
-        self.clock.set(f"{seconds:.1f} s / {cap} s")
-        self._draw_meter(tail_peak_db(self.wav_path))
-        self._paint_lanes()
+        try:
+            seconds = wav_seconds(self.wav_path.stat().st_size) if self.wav_path.exists() else 0.0
+            cap = max_take_seconds(self.tier)
+            self.clock.set(f"{seconds:.1f} s / {cap} s")
+            self._draw_meter(tail_peak_db(self.wav_path))
+            self._paint_lanes()
+        except Exception:
+            seconds = 0.0
+            cap = max_take_seconds(self.tier)
         if seconds >= cap:
             try:
                 self._finish_take()
@@ -1675,6 +2392,29 @@ class RecorderWindow:
         self.status.set(f"Projekt jest na koncie. Ścieżki wokalu: {len(paths)}.{fx_note} Id: {project}")
 
     def arm(self) -> None:
+        if self.recording or self._arming:
+            return
+        if not self.vocals:
+            self.status.set("Brak ścieżki wokalu.")
+            return
+        self._arming = True
+        self._arm_token += 1
+        token = self._arm_token
+        self.status.set("Łączę odsłuch bitu. Okno zostaje.")
+        threading.Thread(target=self._prepare_listen, args=(token,), daemon=True).start()
+
+    def _prepare_listen(self, token: int) -> None:
+        try:
+            heard = self._beat_listen()
+        except Exception as error:
+            heard = (None, None, self._safe_listen_error(error))
+        self.root.after(0, lambda result=heard, mark=token: self._begin_take(mark, result))
+
+    def _begin_take(self, token: int, heard: tuple[str | None, int | None, str]) -> None:
+        if token != self._arm_token:
+            self._arming = False
+            return
+        target, limit, note = heard
         try:
             if self.capture:
                 stop_capture(self.capture)
@@ -1685,17 +2425,18 @@ class RecorderWindow:
             TAKES.mkdir(parents=True, exist_ok=True)
             stamp = datetime.now().strftime("%H%M%S%f")
             path = TAKES / f"ujecie-{stamp}.wav"
-            target, limit, heard = self._beat_listen()
             self.capture = start_capture(path, self.selected_device())
             self.wav_path = path
+            self._wave_for = None
+            self._beat_shown = 0.0
             self.vocals[self.armed]["path"] = path
             if target is not None:
                 self.monitor = start_monitor(target, limit)
                 if self.monitor is None:
-                    heard = "Brak ffplay. Nagranie idzie bez odsłuchu."
+                    note = "Brak ffplay. Nagranie idzie bez odsłuchu."
             self.recording = True
             name = self.vocals[self.armed]["name"]
-            self.status.set(f"Nagrywam {name}. {heard}")
+            self.status.set(f"Nagrywam {name}. {note}")
             self._paint_lanes()
             self._tick()
         except Exception as error:
@@ -1705,9 +2446,17 @@ class RecorderWindow:
             self._stop_monitor()
             self._paint_lamp()
             self.status.set(self._safe_listen_error(error))
+        finally:
+            self._arming = False
 
     def stop_take(self) -> None:
         try:
+            if self._arming and not self.recording:
+                self._arm_token += 1
+                self._arming = False
+                self._stop_monitor()
+                self.status.set("Odsłuch przerwany.")
+                return
             if not self.recording or not self.capture:
                 raise RuntimeError("Najpierw naciśnij Nagraj.")
             self._finish_take()
@@ -1770,11 +2519,26 @@ if __name__ == "__main__":
         desk_self_test()
         fx_self_test()
         argv = monitor_argv("ffplay", Path("bit.wav"))
-        if "-nodisp" not in argv or argv[-1] != "bit.wav" or "-t" in argv:
+        if "-nodisp" not in argv or argv[-1] != "bit.wav" or "-t" in argv or "nobuffer" not in argv:
             raise SystemExit("odsłuch")
         limited = monitor_argv("ffplay", "https://example.invalid/listen", 20)
-        if limited[-3:] != ["-t", "20", "https://example.invalid/listen"]:
+        if limited[-3:] != ["-t", "20", "https://example.invalid/listen"] or "32768" not in limited:
             raise SystemExit("limit odsłuchu")
+        mic = capture_argv("ffmpeg", "Mic", Path("a.wav"))
+        if mic[mic.index("-audio_buffer_size") + 1] != "20":
+            raise SystemExit("bufor mikrofonu")
+        flags = quiet_kwargs()
+        if os.name == "nt" and flags.get("creationflags") != subprocess.CREATE_NO_WINDOW:
+            raise SystemExit("konsola")
+        left, right = pan_gains(-1.0)
+        if abs(left - 1.0) > 0.001 or abs(right) > 0.001:
+            raise SystemExit("pan lewo")
+        hard_right = pan_gains(1.0)
+        if abs(hard_right[0]) > 0.001 or abs(hard_right[1] - 1.0) > 0.001:
+            raise SystemExit("pan prawo")
+        graph = " ".join(mix_argv("ffmpeg", None, [(Path("wokal.wav"), 6.0, 1.0)], None))
+        if "wokal.wav" not in graph or "volume=" not in graph or "pan=stereo" not in graph:
+            raise SystemExit("miks")
         self_test_wav_roundtrip()
         target = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-selftest.wav"
         record_seconds(target, 0.4)

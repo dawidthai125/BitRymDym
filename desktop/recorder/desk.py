@@ -6,8 +6,12 @@ This file does not play audio and does not talk to the site.
 
 from __future__ import annotations
 
+import array
+import ctypes
 import json
 import math
+import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +50,52 @@ def peak_db(pcm: bytes) -> float:
     return 20.0 * math.log10(peak / 32768.0)
 
 
+def read_file_range(path: Path, start: int, length: int) -> bytes:
+    """Read while another process writes the WAV. A normal open can stall the window."""
+    if length <= 0 or start < 0 or not path.exists():
+        return b""
+    if os.name != "nt":
+        with path.open("rb") as handle:
+            handle.seek(start)
+            return handle.read(length)
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateFileW.restype = ctypes.c_void_p
+    kernel.CreateFileW.argtypes = [
+        ctypes.c_wchar_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+    ]
+    kernel.SetFilePointerEx.argtypes = [ctypes.c_void_p, ctypes.c_longlong, ctypes.c_void_p, ctypes.c_uint32]
+    kernel.SetFilePointerEx.restype = ctypes.c_int
+    kernel.ReadFile.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+        ctypes.POINTER(ctypes.c_uint32),
+        ctypes.c_void_p,
+    ]
+    kernel.ReadFile.restype = ctypes.c_int
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel.CloseHandle.restype = ctypes.c_int
+    handle = kernel.CreateFileW(str(path), 0x80000000, 7, None, 3, 0x80, None)
+    if not handle or handle == ctypes.c_void_p(-1).value:
+        return b""
+    try:
+        if not kernel.SetFilePointerEx(handle, start, None, 0):
+            return b""
+        buf = ctypes.create_string_buffer(length)
+        got = ctypes.c_uint32(0)
+        if not kernel.ReadFile(handle, buf, length, ctypes.byref(got), None):
+            return b""
+        return buf.raw[: got.value]
+    finally:
+        kernel.CloseHandle(handle)
+
+
 def tail_peak_db(path: Path, samples: int = 4800) -> float:
     if not path.exists():
         return -96.0
@@ -53,9 +103,29 @@ def tail_peak_db(path: Path, samples: int = 4800) -> float:
     if size <= 44:
         return -96.0
     byte_count = min(size - 44, samples * 2)
-    with path.open("rb") as handle:
-        handle.seek(size - byte_count)
-        return peak_db(handle.read(byte_count))
+    return peak_db(read_file_range(path, size - byte_count, byte_count))
+
+
+def fold_peaks(columns: list[float], pcm: bytes, first_sample: int, total_samples: int) -> None:
+    """Fold new PCM into fixed columns. Stride keeps a long take off the UI thread."""
+    width = len(columns)
+    usable = len(pcm) - (len(pcm) % 2)
+    if width < 1 or usable < 2 or total_samples <= 0:
+        return
+    samples = array.array("h")
+    samples.frombytes(pcm[:usable])
+    if sys.byteorder != "little":
+        samples.byteswap()
+    count = len(samples)
+    hop = max(1, count // (width * 8))
+    index = 0
+    while index < count:
+        column = int((first_sample + index) * width / total_samples)
+        if 0 <= column < width:
+            level = abs(samples[index]) / 32768.0
+            if level > columns[column]:
+                columns[column] = level
+        index += hop
 
 
 def studio_url(site: str, project: str) -> str:
@@ -128,6 +198,16 @@ def self_test() -> None:
     prefs_path.unlink(missing_ok=True)
     if studio_url("https://www.bitrymdym.pl", "p1") != "https://www.bitrymdym.pl/studio/p/p1":
         raise SystemExit("adres studia")
+    cols = [0.0, 0.0, 0.0, 0.0]
+    loud = (20000).to_bytes(2, "little", signed=True) + (0).to_bytes(2, "little", signed=True)
+    fold_peaks(cols, loud * 4, 0, 800)
+    if cols[0] < 0.5 or any(level > 0.01 for level in cols[1:]):
+        raise SystemExit(f"fala {cols}")
+    probe = folder / "range.bin"
+    probe.write_bytes(b"abcdefghij")
+    if read_file_range(probe, 2, 3) != b"cde":
+        raise SystemExit("odczyt")
+    probe.unlink(missing_ok=True)
     takes = folder / "takes"
     takes.mkdir(parents=True, exist_ok=True)
     small = takes / "ujecie-small.wav"
