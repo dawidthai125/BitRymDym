@@ -6,12 +6,12 @@
  */
 import pl from "../../messages/pl.json";
 
-type Tree = { [k: string]: string | Tree };
+type Tree = { [k: string]: string | string[] | Tree };
 
 function lookup(key: string): string | undefined {
-  let o: string | Tree | undefined = pl as Tree;
+  let o: string | string[] | Tree | undefined = pl as Tree;
   for (const p of key.split(".")) {
-    if (!o || typeof o !== "object") return undefined;
+    if (!o || typeof o !== "object" || Array.isArray(o)) return undefined;
     o = o[p];
   }
   return typeof o === "string" ? o : undefined;

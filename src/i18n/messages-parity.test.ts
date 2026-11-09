@@ -6,15 +6,15 @@ import en from "../../messages/en.json";
 import pl from "../../messages/pl.json";
 import { DEFAULT_LOCALE, LOCALES, resolveLocale } from "@/i18n/config";
 
-type Tree = { [k: string]: string | Tree };
+type Tree = { [k: string]: string | string[] | Tree };
 
 function flatten(o: Tree, prefix = ""): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(o).flatMap(([k, v]) =>
-      typeof v === "string"
-        ? [[prefix + k, v]]
-        : Object.entries(flatten(v, `${prefix}${k}.`)),
-    ),
+    Object.entries(o).flatMap(([k, v]) => {
+      if (typeof v === "string") return [[prefix + k, v]];
+      if (Array.isArray(v)) return v.map((item, index) => [`${prefix}${k}.${index}`, item]);
+      return Object.entries(flatten(v, `${prefix}${k}.`));
+    }),
   );
 }
 
