@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { BrdLink } from "@/components/brand/brd-button";
 import { AppShell } from "@/components/site/app-shell";
+import { signInPathWithNext } from "@/lib/auth/next-path";
+import { getSessionUser } from "@/lib/auth/session";
 import { PLAN_POLICY } from "@/config/plan-policy";
 import type { PremiumTier } from "@/types/premium";
 
@@ -27,6 +29,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 
 export default async function RecorderPage() {
   const t = await getTranslations("common.recorderPage");
+  const signedIn = (await getSessionUser()) != null;
   const can = lines(t.raw("can"));
   const cannot = lines(t.raw("cannot"));
   const steps = lines(t.raw("steps"));
@@ -43,13 +46,17 @@ export default async function RecorderPage() {
           <p className="mt-6 text-[var(--brd-ink-soft)] leading-relaxed">{t("lead")}</p>
 
           <div className="mt-8 flex flex-wrap gap-2">
-            <a
-              href={RECORDER_SETUP_URL}
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center rounded-[var(--brd-radius,10px)] bg-[var(--brd-amber)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-on-amber,#1a1006)]"
-            >
-              {t("download")}
-            </a>
+            {signedIn ? (
+              <a
+                href={RECORDER_SETUP_URL}
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center rounded-[var(--brd-radius,10px)] bg-[var(--brd-amber)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-on-amber,#1a1006)]"
+              >
+                {t("download")}
+              </a>
+            ) : (
+              <BrdLink href={signInPathWithNext("/nagrywarka")}>{t("downloadNeedAccount")}</BrdLink>
+            )}
             <BrdLink href="/studio" variant="secondary">
               {t("openStudio")}
             </BrdLink>

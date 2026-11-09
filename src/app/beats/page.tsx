@@ -1,5 +1,6 @@
 import { getLibText } from "@/i18n/get-lib-text";
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 import { BeatsCatalogClient } from "@/components/brand/beats-catalog-client";
 import { PageFrame } from "@/components/brand/chrome";
 import { CommunityShelf, CommunitySource } from "@/components/community/community-shelf";
@@ -55,7 +56,8 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
               </p>
             </div>
             <p className="max-w-xs pb-1 font-[family-name:var(--font-display)] text-lg italic leading-snug text-[var(--brd-ink-soft)]">
-              {t("czystaListaBitowBez")}
+              {t("czystaListaBitowBez")}{" "}
+              <Link href="/nagrywarka" className="underline underline-offset-4">{t("programWindows")}</Link>
             </p>
           </header>
 

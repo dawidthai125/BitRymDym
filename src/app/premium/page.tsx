@@ -129,6 +129,10 @@ export default function PremiumPage() {
             {tr("naglowek")}
           </h1>
           <p className="mt-4 max-w-[52ch] text-[0.95rem] leading-relaxed text-[var(--brd-ink-soft)]">{tr("lead")}</p>
+          <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-[var(--brd-ink-soft)]">
+            {tr("programLinia")}{" "}
+            <Link href="/nagrywarka" className="underline underline-offset-4">{tr("programLink")}</Link>
+          </p>
           {paymentsOn ? (
             <PremiumPurchaseSection />
           ) : (

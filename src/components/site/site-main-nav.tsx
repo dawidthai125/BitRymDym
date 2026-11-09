@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/beats", label: "beats" },
+  { href: "/nagrywarka", label: "recorder" },
   { href: "/about", label: "about" },
   { href: "/studio", label: "studio" },
   { href: "/premium", label: "premium" },

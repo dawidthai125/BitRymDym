@@ -211,8 +211,9 @@ export default async function AccountPage({
                   <p className="mt-2 text-sm text-[var(--brd-mute)]">
                     {tr("wybierzBitINagraj")}
                   </p>
-                  <div className="mt-6">
+                  <div className="mt-6 flex flex-wrap gap-2">
                     <BrdLink href="/beats">{tr("idzDoKatalogu")}</BrdLink>
+                    <BrdLink href="/nagrywarka" variant="secondary">{tr("programWindows")}</BrdLink>
                   </div>
                 </div>
               ) : (

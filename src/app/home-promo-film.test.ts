@@ -27,12 +27,10 @@ describe("homepage Jak to działa promo film", () => {
     expect(film).toContain("playsInline");
     expect(film).toContain('preload="metadata"');
     expect(film).toContain('poster="/promo/jak-to-dziala-poster.jpg"');
-    expect(film).toContain("Film: bit, nagranie, studio");
-    expect(film).toContain(
-      "Bit, nagranie i studio. BITEK wchodzi do miksu i masteru dopiero, gdy o to poprosisz.",
-    );
-    expect(film).toContain("BRD · Film");
-    expect(film).toContain("Leci");
+    expect(film).toContain('aria-label={t("promoFilm")}');
+    expect(film).toContain("{t(\"promoPodpis\")}");
+    expect(film).toContain("{t(\"promoDeck\")}");
+    expect(film).toContain("{t(\"promoLeci\")}");
     expect(`${section}\n${film}`).not.toMatch(/\bautoPlay\b|\bautoplay\b/);
   });
 
@@ -92,6 +90,8 @@ describe("homepage Jak to działa promo film", () => {
       expect(en.home.page[key].length, key).toBeGreaterThan(0);
     }
     expect(pl.home.page.promoPodpis).toMatch(/BITEK/);
+    expect(pl.home.page.promoPodpis).toMatch(/Windows/);
+    expect(pl.home.page.promoPodpis).toMatch(/Mac/);
     expect(en.home.page.promoPodpis).toMatch(/BITEK/);
   });
 });

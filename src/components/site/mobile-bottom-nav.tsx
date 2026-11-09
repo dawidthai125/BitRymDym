@@ -21,6 +21,7 @@ const itemsAuth = [
 
 const itemsGuest = [
   { href: "/beats", label: "beats" },
+  { href: "/nagrywarka", label: "recorder" },
   { href: "/about", label: "about" },
   { href: "/sign-in", label: "signIn" },
 ] as const;

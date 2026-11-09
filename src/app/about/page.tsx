@@ -29,6 +29,9 @@ export default function AboutPage() {
             <p>
               {t("dlaProducentowRaperowI")}
             </p>
+            <p>
+              {t("programAkapit")}
+            </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-2">
             <BrdLink href="/beats">{t("przegladajBity")}</BrdLink>
