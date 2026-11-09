@@ -45,6 +45,7 @@ export default async function RecorderPage() {
           <div className="mt-8 flex flex-wrap gap-2">
             <a
               href={RECORDER_SETUP_URL}
+              rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center rounded-[var(--brd-radius,10px)] bg-[var(--brd-amber)] px-4 font-poster text-base font-bold uppercase tracking-[0.08em] text-[var(--brd-on-amber,#1a1006)]"
             >
               {t("download")}
