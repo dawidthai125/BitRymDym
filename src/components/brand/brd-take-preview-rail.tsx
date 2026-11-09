@@ -104,6 +104,7 @@ export function BrdTakePreviewRail({
         const access = await requestBeatAudioAccessAction({
           beatId,
           purpose: PUBLIC_PLAYBACK_PURPOSE,
+          previewOnly: true,
         });
         if (!access.success || !access.url) {
           throw new Error(access.error || tr("brakDostepuDoBitu"));

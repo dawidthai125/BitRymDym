@@ -11,6 +11,7 @@ describe("desktop beat playback route", () => {
 
   it("asks the existing gate for PLAYBACK and not DOWNLOAD", () => {
     expect(src).toMatch(/purpose:\s*"PLAYBACK"/);
+    expect(src).not.toMatch(/previewOnly/);
     expect(src).not.toMatch(/purpose:\s*"DOWNLOAD"/);
     expect(src).not.toMatch(/createSignedUrl/);
     expect(src).toContain("requestBeatAudioAccess");

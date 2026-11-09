@@ -118,4 +118,17 @@ describe("guest beat preview gate (server-enforced)", () => {
     expect(state.signedKeys).toEqual(["platform/b1/m1/master.bin"]);
     expect(state.purposesQueried).not.toContain("PREVIEW");
   });
+
+  it("signed-in catalog listen signs only PREVIEW and keeps the 20 s cap", async () => {
+    state.profile = { userId: "u1", profile: { role: "USER" } };
+    const r = await requestBeatAudioAccess({
+      beatId: "b1",
+      purpose: "PLAYBACK",
+      previewOnly: true,
+    });
+    expect(r.assetId).toBe("p1");
+    expect(r.previewLimitSeconds).toBe(20);
+    expect(state.signedKeys).toEqual(["platform/b1/p1/preview.bin"]);
+    expect(state.purposesQueried).toEqual(["PREVIEW"]);
+  });
 });

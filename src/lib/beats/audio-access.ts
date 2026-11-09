@@ -44,9 +44,9 @@ export type BeatAudioAccessResult = {
   assetId: string;
   remainingToday?: number;
   /**
-   * Guests only (GUEST_POLICY.previewSeconds): the URL points at the 20 s
-   * PREVIEW asset (server-enforced); the player also stops here and asks to
-   * sign in. Signed-in users get full playback (undefined).
+   * 20 s PREVIEW asset (GUEST_POLICY.previewSeconds). Set for guests and for
+   * catalog or take-rail listen (`previewOnly`). Studio, the recording page,
+   * and the Windows program leave this empty and may use the full MASTER.
    */
   previewLimitSeconds?: number;
 };
@@ -209,6 +209,8 @@ async function loadBeatForAccess(params: {
 export async function requestBeatAudioAccess(params: {
   beatId: string;
   purpose: AudioAccessPurpose;
+  /** Catalog and the take-preview rail. Never studio, recording, or the program. */
+  previewOnly?: boolean;
 }): Promise<BeatAudioAccessResult> {
   if (!isAudioAccessPurpose(params.purpose)) {
     throw new AuthError("FORBIDDEN", "Invalid access purpose.");
@@ -287,21 +289,40 @@ export async function requestBeatAudioAccess(params: {
     }
   }
 
-  // Guests (no session) never receive the full file: 20 s PREVIEW only.
+  // Guests never receive the full file. Catalog and the take-preview rail
+  // pass previewOnly and stay on the 20 s PREVIEW. Studio, the recording
+  // page, and the Windows program omit it and may fall back to MASTER.
+  if (params.previewOnly === true && params.purpose !== "PLAYBACK") {
+    throw new AuthError("FORBIDDEN", "Invalid access purpose.");
+  }
   const guestPreview =
     params.purpose === "PLAYBACK" && (actor === "ANON" || !profileContext);
-  const asset = guestPreview
-    ? await resolveGuestPreviewAsset(params.beatId)
-    : await resolveActiveAsset({
-        beatId: params.beatId,
-        purpose: params.purpose,
-      });
+  const shortListen = guestPreview || params.previewOnly === true;
+  let asset: BeatAudioAssetRow;
+  if (shortListen) {
+    try {
+      asset = await resolveGuestPreviewAsset(params.beatId);
+    } catch (error) {
+      if (params.previewOnly === true && profileContext) {
+        throw new AuthError("NOT_FOUND", "Short preview is not ready.");
+      }
+      throw error;
+    }
+  } else {
+    asset = await resolveActiveAsset({
+      beatId: params.beatId,
+      purpose: params.purpose,
+    });
+  }
 
   if (asset.beat_id !== params.beatId) {
     throw new AuthError("FORBIDDEN", "Asset/beat relation mismatch.");
   }
-  if (guestPreview && asset.purpose !== "PREVIEW") {
-    throw new AuthError("UNAUTHENTICATED", BEAT_PREVIEW_LOGIN_REQUIRED);
+  if (shortListen && asset.purpose !== "PREVIEW") {
+    throw new AuthError(
+      profileContext ? "NOT_FOUND" : "UNAUTHENTICATED",
+      profileContext ? "Short preview is not ready." : BEAT_PREVIEW_LOGIN_REQUIRED,
+    );
   }
 
   let reservationId: string | null = null;
@@ -383,7 +404,7 @@ export async function requestBeatAudioAccess(params: {
     beatId: params.beatId,
     assetId: asset.id,
     remainingToday,
-    ...(guestPreview
+    ...(shortListen
       ? { previewLimitSeconds: GUEST_POLICY.previewSeconds }
       : {}),
   };

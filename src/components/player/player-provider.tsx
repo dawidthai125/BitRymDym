@@ -227,6 +227,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const result = await requestBeatAudioAccessAction({
       beatId,
       purpose: PUBLIC_PLAYBACK_PURPOSE,
+      previewOnly: true,
     });
     if (!result.success && result.code === "PREVIEW_UNAVAILABLE") {
       throw new GuestPreviewUnavailableError();

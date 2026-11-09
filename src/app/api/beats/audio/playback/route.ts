@@ -14,8 +14,10 @@ export const runtime = "nodejs";
 const FORBIDDEN = ["purpose", "objectKey", "ownerId", "bucket", "assetId"] as const;
 
 /**
- * Logged-in catalog listen. PLAYBACK only, same gate as the site player.
- * DOWNLOAD stays on the beat-detail action. No storage key in the body or the answer.
+ * Windows-program listen. Signed-in PLAYBACK falls back to the full MASTER.
+ * Guests still get the 20 s PREVIEW from the same gate. The catalog player
+ * asks for the short file on its own call. DOWNLOAD stays on the beat-detail
+ * action. No storage key in the body or the answer.
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {

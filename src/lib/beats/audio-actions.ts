@@ -64,6 +64,8 @@ function catchAudio(
 export async function requestBeatAudioAccessAction(params: {
   beatId: string;
   purpose: string;
+  /** Catalog listen. Studio must omit this so the session can use MASTER. */
+  previewOnly?: boolean;
 }): Promise<AudioActionState> {
   try {
     if (!isAudioAccessPurpose(params.purpose)) {
@@ -75,6 +77,7 @@ export async function requestBeatAudioAccessAction(params: {
     const result = await requestBeatAudioAccess({
       beatId: params.beatId,
       purpose: params.purpose as AudioAccessPurpose,
+      previewOnly: params.previewOnly === true,
     });
     return {
       error: null,

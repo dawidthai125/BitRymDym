@@ -38,6 +38,7 @@ import {
   claimRenderJobAsWorker,
   type RenderJobRecord,
 } from "@/lib/audio/render-job-service";
+import { readObjectCache, writeObjectCache } from "@/lib/audio/object-disk-cache";
 import {
   decodeRenderSourceToStereoPcm,
   renderDecodeErrorCode,
@@ -219,6 +220,8 @@ async function downloadSourceBytes(params: {
   bucket: string;
   objectKey: string;
 }): Promise<Uint8Array> {
+  const cached = await readObjectCache(params.bucket, params.objectKey);
+  if (cached) return cached;
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.storage
     .from(params.bucket)
@@ -230,7 +233,9 @@ async function downloadSourceBytes(params: {
     );
   }
   const ab = await data.arrayBuffer();
-  return new Uint8Array(ab);
+  const bytes = new Uint8Array(ab);
+  await writeObjectCache(params.bucket, params.objectKey, bytes);
+  return bytes;
 }
 
 async function failRunningJob(
