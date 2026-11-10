@@ -122,7 +122,25 @@ describe("admin users W1 read model", () => {
     expect(row.rank).toBe("PRO_RAPPER");
     expect(row.userNumber).toBe(1);
     expect(row.premiumTier).toBe("GOLD");
+    expect(row.premiumPrize).toBe(false);
     expect(row.premiumExpiresAt).toBe("2027-01-01T00:00:00.000Z");
+  });
+
+  it("marks a live ranking Gold as GOLD(N) for the admin list", () => {
+    const row = assembleAdminUserRow({
+      profile: profile(),
+      email: null,
+      premium: {
+        userId: "user-1",
+        active: true,
+        source: "work_prize",
+        expiresAt: "2027-11-07T00:00:00.000Z",
+        tier: "GOLD",
+      },
+      nowMs: Date.parse("2026-11-07T00:00:00.000Z"),
+    });
+    expect(row.premiumTier).toBe("GOLD");
+    expect(row.premiumPrize).toBe(true);
   });
 
   it("treats missing entitlement as FREE without inventing premium_active SSOT", () => {

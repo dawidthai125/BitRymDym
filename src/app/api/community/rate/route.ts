@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { engageKind } from "@/lib/catalog/catalog-policy";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { rateTarget } from "@/lib/community/community-service";
-import type { TargetKind } from "@/lib/community/ranking-policy";
 
 export const runtime = "nodejs";
 
-function kindOf(value: unknown): TargetKind | null {
-  return value === "beat" || value === "sample" ? value : null;
+function kindOf(value: unknown) {
+  return engageKind(value);
 }
 
 export async function POST(request: Request) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ result: "invalid" }, { status: 400 });
     }
     const result = await rateTarget(auth.userId, kind, body.id, Number(body.stars));
-    const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "off" ? 503 : 400;
+    const status = result === "ok" ? 200 : result === "missing" ? 404 : result === "closed" ? 403 : result === "off" ? 503 : 400;
     return NextResponse.json({ result }, { status });
   } catch (error) {
     if (error instanceof AuthError) {

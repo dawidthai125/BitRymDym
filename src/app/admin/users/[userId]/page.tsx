@@ -38,7 +38,7 @@ export default async function AdminUserDeskPage({
         <header className="mt-4 space-y-2 border-b border-[var(--brd-line)] pb-6">
           <h1 className="brd-display text-3xl font-semibold">{user.displayName?.trim() || t("uzytkownik")}</h1>
           <p className="text-sm text-[var(--brd-ink-soft)]">
-            {user.email ?? "—"} · #{user.userNumber ?? "—"} · {user.role} · {user.premiumTier}
+            {user.email ?? "—"} · #{user.userNumber ?? "—"} · {user.role} · {user.premiumPrize ? "GOLD(N)" : user.premiumTier}
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <AdminUsersManageDialog

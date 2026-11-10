@@ -8,6 +8,7 @@ import type { BitekBubble, BitekMood } from "@/components/studio/studio-bitek-do
 import { StudioJobProgressBar as JobProgressBar } from "@/components/studio/studio-job-progress";
 import { Button } from "@/components/ui/button";
 import { StudioMasterReport } from "@/components/studio/studio-change-report";
+import { CatalogPublishPanel } from "@/components/studio/catalog-publish-panel";
 import { StudioListenLinks } from "@/components/studio/studio-listen-links";
 import { StudioYoutubeVideo } from "@/components/studio/studio-youtube-video";
 import { StudioMasterStyleReference, type MasterReferenceState } from "@/components/studio/studio-master-style-reference";
@@ -833,6 +834,10 @@ export function StudioMasterStep({
                 )}
                 {approved ? <StudioListenLinks projectId={projectId} /> : null}
               </section>
+            ) : null}
+
+            {approved && sm.phase === "done" ? (
+              <CatalogPublishPanel projectId={projectId} masterJobId={sm.jobId} defaultTitle={doc.project.title} />
             ) : null}
 
             {approved ? (

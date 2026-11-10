@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 
+import { engageKind } from "@/lib/catalog/catalog-policy";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { loadThread } from "@/lib/community/community-service";
-import type { TargetKind } from "@/lib/community/ranking-policy";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const raw = url.searchParams.get("kind");
-  const kind: TargetKind | null = raw === "beat" || raw === "sample" ? raw : null;
+  const kind = engageKind(raw);
   const id = url.searchParams.get("id") ?? "";
   if (!kind) return NextResponse.json({ result: "invalid" }, { status: 400 });
   const session = await getCurrentProfile();

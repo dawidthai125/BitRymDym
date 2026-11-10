@@ -23,7 +23,7 @@ import { parseAdminUsersQuery } from "@/lib/admin/users-query";
 import { AuthError, getCurrentProfile } from "@/lib/auth/session";
 import {
   labelCreatorRank,
-  labelPremiumTier,
+  labelPremiumPlan,
   labelSystemRole,
 } from "@/lib/ui/labels";
 import { intlTag, resolveLocale } from "@/i18n/config";
@@ -211,7 +211,7 @@ export default async function AdminUsersPage({
                       </td>
                       <td className="px-3 py-3">{tl(labelCreatorRank(row.rank))}</td>
                       <td className="px-3 py-3">
-                        {tl(labelPremiumTier(row.premiumTier))}
+                        {tl(labelPremiumPlan(row.premiumTier, row.premiumPrize))}
                       </td>
                       <td className="px-3 py-3 text-[var(--brd-ink-soft)]">
                         {tl(row.premiumTier === "FREE"

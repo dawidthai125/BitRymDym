@@ -17,6 +17,7 @@ import {
   type PeriodWindow,
   type TargetKind,
 } from "@/lib/community/ranking-policy";
+import { findLiveCatalogWork } from "@/lib/catalog/catalog-service";
 import { claimCommunityReward } from "@/lib/community/reward-apply";
 import { canCommentPublic, publicAuthorName } from "@/lib/community/share-policy";
 import { loadPlanSnapshot } from "@/lib/payments/snapshots";
@@ -70,8 +71,10 @@ export type Thread = {
   enabled: boolean;
   found: boolean;
   own: boolean;
-  /** False when the author turned comments off. Ratings stay. */
+  /** False when the author turned comments off. Beat and sample ratings stay. */
   commentsOpen: boolean;
+  /** False only for a finished track whose owner left ratings off. */
+  ratingsOpen: boolean;
   average: number | null;
   count: number;
   mine: number | null;
@@ -98,6 +101,8 @@ type Work = {
   author: string;
   ownership: "PLATFORM" | "USER";
   allowComments: boolean;
+  /** Absent means ratings stay open, which is the beat and sample rule. */
+  allowRatings?: boolean;
   kind?: string;
   instrument?: string | null;
   durationMs?: number;
@@ -158,7 +163,8 @@ async function beatCommentFlags(ids: string[]): Promise<Map<string, boolean> | n
   return flags;
 }
 
-async function publishedWorks(kind: TargetKind): Promise<Work[]> {
+async function publishedWorks(kind: TargetKind | "work"): Promise<Work[]> {
+  if (kind === "work") return [];
   if (kind === "beat") {
     const beats = await listPublishedBeats();
     const names = await authorNames(
@@ -351,17 +357,31 @@ export async function readBoard(kind: TargetKind, periodKind: PeriodKind, now = 
   };
 }
 
-async function findWork(kind: TargetKind, id: string): Promise<Work | null> {
+async function findWork(kind: TargetKind | "work", id: string): Promise<Work | null> {
+  if (kind === "work") {
+    const card = await findLiveCatalogWork(id);
+    if (!card) return null;
+    return {
+      id: card.id,
+      title: card.title,
+      ownerId: card.ownerId,
+      author: card.author,
+      ownership: "USER",
+      allowComments: card.allowComments,
+      allowRatings: card.allowRatings,
+    };
+  }
   const works = await publishedWorks(kind);
   return works.find((work) => work.id === id) ?? null;
 }
 
-export async function loadThread(kind: TargetKind, id: string, viewerId: string | null): Promise<Thread> {
+export async function loadThread(kind: TargetKind | "work", id: string, viewerId: string | null): Promise<Thread> {
   const blank: Thread = {
     enabled: false,
     found: false,
     own: false,
     commentsOpen: false,
+    ratingsOpen: false,
     average: null,
     count: 0,
     mine: null,
@@ -371,17 +391,20 @@ export async function loadThread(kind: TargetKind, id: string, viewerId: string 
   const work = await findWork(kind, id);
   if (!work) return { ...blank, enabled: true };
   const commentsOpen = canCommentPublic({ published: true, listed: true, allowComments: work.allowComments });
+  const ratingsOpen = work.allowRatings !== false;
   const own = viewerId !== null && viewerId === work.ownerId;
   const admin = adminOrNull();
-  if (!admin) return { ...blank, found: true, own, commentsOpen };
+  if (!admin) return { ...blank, found: true, own, commentsOpen, ratingsOpen };
   const [ratings, comments] = await Promise.all([
-    admin.from(RATINGS).select("user_id, stars").eq("target_kind", kind).eq("target_id", id),
+    ratingsOpen
+      ? admin.from(RATINGS).select("user_id, stars").eq("target_kind", kind).eq("target_id", id)
+      : Promise.resolve({ data: [], error: null }),
     commentsOpen
       ? admin.from(COMMENTS).select("id, user_id, body, created_at").eq("target_kind", kind).eq("target_id", id).order("created_at", { ascending: false }).limit(40)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (missingCommunity(ratings.error) || missingCommunity(comments.error)) {
-    return { ...blank, found: true, own, commentsOpen };
+    return { ...blank, found: true, own, commentsOpen, ratingsOpen };
   }
   const votes = ((ratings.data ?? []) as Array<{ user_id: string; stars: number }>)
     .filter((row) => row.user_id !== work.ownerId);
@@ -395,6 +418,7 @@ export async function loadThread(kind: TargetKind, id: string, viewerId: string 
     found: true,
     own,
     commentsOpen,
+    ratingsOpen,
     average,
     count,
     mine: mine == null ? null : Number(mine),
@@ -407,10 +431,11 @@ export async function loadThread(kind: TargetKind, id: string, viewerId: string 
   };
 }
 
-export async function rateTarget(userId: string, kind: TargetKind, id: string, stars: number): Promise<"ok" | "own" | "missing" | "invalid" | "off"> {
+export async function rateTarget(userId: string, kind: TargetKind | "work", id: string, stars: number): Promise<"ok" | "own" | "missing" | "invalid" | "off" | "closed"> {
   if (!isUuid(id) || !Number.isInteger(stars) || stars < 1 || stars > 5) return "invalid";
   const work = await findWork(kind, id);
   if (!work) return "missing";
+  if (work.allowRatings === false) return "closed";
   if (work.ownerId === userId) return "own";
   const admin = adminOrNull();
   if (!admin) return "off";
@@ -423,7 +448,7 @@ export async function rateTarget(userId: string, kind: TargetKind, id: string, s
   return "ok";
 }
 
-export async function commentTarget(userId: string, kind: TargetKind, id: string, body: unknown): Promise<"ok" | "missing" | "closed" | "invalid" | "limit" | "off"> {
+export async function commentTarget(userId: string, kind: TargetKind | "work", id: string, body: unknown): Promise<"ok" | "missing" | "closed" | "invalid" | "limit" | "off"> {
   const text = cleanComment(body);
   if (!text || text.length > COMMENT_MAX) return "invalid";
   if (!isUuid(id)) return "invalid";

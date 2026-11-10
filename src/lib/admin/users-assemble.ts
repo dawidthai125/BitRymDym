@@ -27,6 +27,8 @@ export type AdminUserRow = {
   rank: CreatorRank;
   premiumTier: PremiumTier;
   premiumExpiresAt: string | null;
+  /** Live Gold bought by a ranking prize, shown as GOLD(N). */
+  premiumPrize: boolean;
 };
 
 export function assembleAdminUserRow(params: {
@@ -53,6 +55,7 @@ export function assembleAdminUserRow(params: {
     premiumTier: product.premiumTier,
     premiumExpiresAt:
       product.premiumTier === "FREE" ? null : product.premiumExpiresAt,
+    premiumPrize: product.premiumSource === "work_prize" && product.premiumTier === "GOLD",
   };
 }
 

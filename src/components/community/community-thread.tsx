@@ -12,12 +12,14 @@ type ThreadComment = {
 };
 
 type Props = {
-  kind: "beat" | "sample";
+  kind: "beat" | "sample" | "work";
   targetId: string;
   signedIn: boolean;
   own: boolean;
   enabled: boolean;
   commentsOpen: boolean;
+  /** Beat and sample pages leave this unset. Ratings stay open. */
+  ratingsOpen?: boolean;
   average: number | null;
   count: number;
   mine: number | null;
@@ -27,6 +29,7 @@ type Props = {
 export function CommunityThread(props: Props) {
   const t = useTranslations("community.thread");
   const off = useTranslations("community");
+  const ratingsOpen = props.ratingsOpen !== false;
   const [stars, setStars] = useState(props.mine);
   const [count, setCount] = useState(props.count);
   const [average, setAverage] = useState(props.average);
@@ -59,7 +62,15 @@ export function CommunityThread(props: Props) {
       setNote(t("saved"));
       return;
     }
-    setNote(payload.result === "own" ? t("own") : payload.result === "off" ? off("off") : t("invalid"));
+    setNote(
+      payload.result === "own"
+        ? (props.kind === "work" ? t("ownWork") : t("own"))
+        : payload.result === "closed"
+          ? t("ratingsOff")
+          : payload.result === "off"
+            ? off("off")
+            : t("invalid"),
+    );
   }
 
   async function sendComment(event: FormEvent) {
@@ -100,12 +111,16 @@ export function CommunityThread(props: Props) {
   return (
     <section aria-labelledby={`community-${props.targetId}`} className="mt-8 space-y-4 border-t border-[var(--brd-line)] pt-4">
       <h2 id={`community-${props.targetId}`} className="font-poster text-lg font-bold uppercase tracking-[0.08em]">
-        {props.commentsOpen ? t("comments") : t("rate")}
+        {props.commentsOpen ? t("comments") : ratingsOpen ? t("rate") : t("closed")}
       </h2>
-      <p className="text-sm text-[var(--brd-ink-soft)]">
-        {average != null ? t("average", { score: average.toFixed(1), count }) : t("empty")}
-      </p>
-      {props.signedIn ? (
+      {ratingsOpen ? (
+        <p className="text-sm text-[var(--brd-ink-soft)]">
+          {average != null ? t("average", { score: average.toFixed(1), count }) : t("empty")}
+        </p>
+      ) : props.commentsOpen ? (
+        <p className="text-sm text-[var(--brd-mute)]">{t("ratingsOff")}</p>
+      ) : null}
+      {ratingsOpen && props.signedIn ? (
         <fieldset className="flex flex-wrap items-center gap-2" disabled={busy || props.own}>
           <legend className="sr-only">{t("rate")}</legend>
           {[1, 2, 3, 4, 5].map((value) => (
@@ -123,13 +138,13 @@ export function CommunityThread(props: Props) {
             </label>
           ))}
         </fieldset>
-      ) : (
+      ) : !props.signedIn && (ratingsOpen || props.commentsOpen) ? (
         <p className="text-sm">
           <Link href="/sign-in" className="underline underline-offset-4">{t("signIn")}</Link>
         </p>
-      )}
-      {props.own ? <p className="text-sm text-[var(--brd-mute)]">{t("own")}</p> : null}
-      {props.commentsOpen ? null : <p className="text-sm text-[var(--brd-mute)]">{t("commentsOff")}</p>}
+      ) : null}
+      {props.own && ratingsOpen ? <p className="text-sm text-[var(--brd-mute)]">{props.kind === "work" ? t("ownWork") : t("own")}</p> : null}
+      {!props.commentsOpen && ratingsOpen ? <p className="text-sm text-[var(--brd-mute)]">{t("commentsOff")}</p> : null}
       {props.commentsOpen && props.signedIn ? (
         <form onSubmit={(event) => void sendComment(event)} className="space-y-2">
           <label className="block text-sm" htmlFor={`comment-${props.targetId}`}>{t("comment")}</label>

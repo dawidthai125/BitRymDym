@@ -37,6 +37,17 @@ describe("formatAccountPlanDisplay", () => {
     expect(display.summary).not.toContain("Początkujący raper");
   });
 
+  it("marks a ranking prize as GOLD(N)", () => {
+    const display = formatAccountPlanDisplay({
+      premiumTier: "GOLD",
+      premiumActive: true,
+      premiumExpiresAt: "2027-11-07T12:00:00.000Z",
+      prize: true,
+    });
+    expect(display.tierLabel).toBe("GOLD(N)");
+    expect(display.summary).toContain("pakiet z nagrody");
+  });
+
   it("shows Free when no active Premium row", () => {
     const product = resolveProductEntitlement({
       userId: "u-free",

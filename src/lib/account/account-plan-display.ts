@@ -10,6 +10,8 @@ export type AccountPlanDisplayInput = {
   premiumTier: PremiumTier;
   premiumActive: boolean;
   premiumExpiresAt: string | null;
+  /** True when the live Gold row is the ranking prize. */
+  prize?: boolean;
   /** True when entitlement load failed — do not claim a verified plan. */
   loadError?: boolean;
 };
@@ -58,7 +60,8 @@ export function formatAccountPlanDisplay(
     input.premiumActive && input.premiumTier !== "FREE"
       ? input.premiumTier
       : "FREE";
-  const tierLabel = labelPremiumTier(effectiveTier);
+  const prize = input.prize === true && effectiveTier === "GOLD";
+  const tierLabel = prize ? "GOLD(N)" : labelPremiumTier(effectiveTier);
 
   if (effectiveTier === "FREE") {
     return {
@@ -76,7 +79,9 @@ export function formatAccountPlanDisplay(
 
   return {
     tierLabel,
-    summary: `${tierLabel} — aktywny plan Premium${expirySuffix}.`,
+    summary: prize
+      ? `${tierLabel} — pakiet z nagrody rankingu${expirySuffix}.`
+      : `${tierLabel} — aktywny plan Premium${expirySuffix}.`,
     premiumActive: true,
     verified: true,
   };

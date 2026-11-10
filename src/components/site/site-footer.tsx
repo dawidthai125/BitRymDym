@@ -19,6 +19,8 @@ export function SiteFooter() {
           <Link href="/ranking" className="underline-offset-4 hover:underline">{shelf("beatRank")}</Link>
           <Link href="/sampel?zrodlo=user" className="underline-offset-4 hover:underline">{shelf("samples")}</Link>
           <Link href="/ranking/sampel" className="underline-offset-4 hover:underline">{shelf("sampleRank")}</Link>
+          <Link href="/utwory" className="underline-offset-4 hover:underline">{shelf("works")}</Link>
+          <Link href="/ranking/utwor" className="underline-offset-4 hover:underline">{shelf("workRank")}</Link>
           <Link href="/studio" className="underline-offset-4 hover:underline">{nav("studio")}</Link>
           <Link href="/nagrywarka" className="underline-offset-4 hover:underline">{nav("recorder")}</Link>
           <Link href="/about" className="underline-offset-4 hover:underline">{nav("about")}</Link>

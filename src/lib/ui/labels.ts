@@ -143,6 +143,12 @@ export function labelPremiumTier(tier: string): string {
   }
 }
 
+/** GOLD(N) is a ranking prize. The plan limits stay Gold. */
+export function labelPremiumPlan(tier: string, prize = false): string {
+  if (prize && tier === "GOLD") return "GOLD(N)";
+  return labelPremiumTier(tier);
+}
+
 export function labelAudioReady(ready: boolean): string {
   return ready ? "Gotowy" : "Brak audio";
 }

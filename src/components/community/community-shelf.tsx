@@ -8,6 +8,8 @@ const TABS = [
   { id: "beatRank", href: "/ranking", label: "beatRank" },
   { id: "samples", href: "/sampel?zrodlo=user", label: "samples" },
   { id: "sampleRank", href: "/ranking/sampel", label: "sampleRank" },
+  { id: "works", href: "/utwory", label: "works" },
+  { id: "workRank", href: "/ranking/utwor", label: "workRank" },
 ] as const;
 
 export type CommunityTab = (typeof TABS)[number]["id"];

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { engageKind } from "@/lib/catalog/catalog-policy";
 import { AuthError, requireUser } from "@/lib/auth/session";
 import { commentTarget } from "@/lib/community/community-service";
-import type { TargetKind } from "@/lib/community/ranking-policy";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     const auth = await requireUser();
     const body = (await request.json()) as { kind?: unknown; id?: unknown; body?: unknown };
-    const kind: TargetKind | null = body.kind === "beat" || body.kind === "sample" ? body.kind : null;
+    const kind = engageKind(body.kind);
     if (!kind || typeof body.id !== "string") {
       return NextResponse.json({ result: "invalid" }, { status: 400 });
     }

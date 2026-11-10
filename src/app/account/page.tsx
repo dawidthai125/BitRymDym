@@ -16,6 +16,7 @@ import {
 } from "@/components/auth/auth-forms";
 import { DisplayNameForm } from "@/components/auth/display-name-form";
 import { CommunityShelf } from "@/components/community/community-shelf";
+import { WorkPrizeDesk } from "@/components/account/work-prize-desk";
 import { RewardDesk } from "@/components/community/reward-desk";
 import { NotificationPreferencesForm } from "@/components/account/notification-preferences-form";
 import { notifyEnv } from "@/lib/email/notify/config";
@@ -128,6 +129,7 @@ export default async function AccountPage({
       premiumTier: product.premiumTier,
       premiumActive: product.premiumActive,
       premiumExpiresAt: product.premiumExpiresAt,
+      prize: product.premiumSource === "work_prize",
     });
   } catch {
     planDisplay = formatAccountPlanDisplay({
@@ -315,6 +317,8 @@ export default async function AccountPage({
                     {tl(planDisplay.summary)}
                   </p>
                 </div>
+
+                <WorkPrizeDesk userId={context.userId} />
 
                 {showAdminNav ? (
                   <Link
