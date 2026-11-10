@@ -174,8 +174,9 @@ describe("providers", () => {
   it("builds the chain only from configured env, in order", () => {
     expect(bitekProvidersFromEnv({}).map((p) => p.id)).toEqual([]);
     expect(
-      bitekProvidersFromEnv({ GEMINI_API_KEY: "g", GROQ_API_KEY: "k", BITEK_E3_QUEUE_ENABLED: "true" }, undefined, { e3Queue: () => ({ id: "e3", timeoutMs: 1, complete: async () => "" }) }).map((p) => p.id),
-    ).toEqual(["groq", "gemini", "e3"]);
+      bitekProvidersFromEnv({ XAI_API_KEY: "x", GEMINI_API_KEY: "g", GROQ_API_KEY: "k", BITEK_E3_QUEUE_ENABLED: "true" }, undefined, { e3Queue: () => ({ id: "e3", timeoutMs: 1, complete: async () => "" }) }).map((p) => p.id),
+    ).toEqual(["xai", "groq", "gemini", "e3"]);
+    expect(bitekProvidersFromEnv({ GROQ_API_KEY: "k" }).map((p) => p.id)).toEqual(["groq"]);
     expect(bitekProvidersFromEnv({ BITEK_E3_QUEUE_ENABLED: "false" }, undefined, { e3Queue: () => ({ id: "e3", timeoutMs: 1, complete: async () => "" }) })).toEqual([]);
   });
 

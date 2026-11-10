@@ -2,7 +2,7 @@ import "server-only";
 
 /**
  * AI lyrics: ownership check → daily cap (reserve a slot) → provider chain
- * (Groq → Gemini, same keys as BITEK) → cleaned text. The text is never stored; the ledger keeps lengths only.
+ * (xAI → Groq → Gemini, same keys as BITEK) → cleaned text. The text is never stored; the ledger keeps lengths only.
  */
 import { randomUUID } from "node:crypto";
 

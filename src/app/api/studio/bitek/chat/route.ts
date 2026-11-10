@@ -19,7 +19,7 @@ import { appendBitekMessages, listBitekMessages } from "@/lib/studio/bitek/store
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/** BITEK chat — signed-in users only; provider chain Groq → Gemini → E3 (DB queue) → rules. */
+/** BITEK chat — signed-in users only; provider chain xAI → Groq → Gemini → E3 (DB queue) → rules. */
 export async function POST(request: Request) {
   let userId: string;
   let auth: AuthContext;

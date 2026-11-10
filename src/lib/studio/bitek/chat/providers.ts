@@ -95,8 +95,8 @@ export function openAiCompatibleProvider(opts: {
 }
 
 /**
- * Order: Groq → Gemini Flash → E3 (self-hosted, via DB queue) → rules (caller).
- * A provider is configured only when its env vars are present.
+ * Order: xAI → Groq → Gemini → E3 (self-hosted, via DB queue) → rules (caller).
+ * One provider at a time. A provider is configured only when its env var is present.
  */
 export function bitekProvidersFromEnv(
   env: Env = process.env,
@@ -104,6 +104,20 @@ export function bitekProvidersFromEnv(
   opts: { e3Queue?: () => BitekLlmProvider } = {},
 ): BitekLlmProvider[] {
   const list: BitekLlmProvider[] = [];
+  if (env.XAI_API_KEY) {
+    list.push(
+      openAiCompatibleProvider({
+        id: "xai",
+        baseUrl: "https://api.x.ai/v1",
+        apiKey: env.XAI_API_KEY,
+        model: env.BITEK_XAI_MODEL || "grok-4.7",
+        maxTokens: 900,
+        timeoutMs: 20000,
+        jsonMode: true,
+        fetchFn,
+      }),
+    );
+  }
   if (env.GROQ_API_KEY) {
     list.push(
       openAiCompatibleProvider({
@@ -130,7 +144,7 @@ export function bitekProvidersFromEnv(
         model: env.BITEK_GEMINI_MODEL || "gemini-3.5-flash-lite",
         reasoningEffort: "low",
         maxTokens: 900,
-        timeoutMs: 10000,
+        timeoutMs: 20000,
         jsonMode: true,
         fetchFn,
       }),
@@ -145,11 +159,24 @@ export function bitekProvidersFromEnv(
 
 /**
  * Providers for lyrics: stronger models and a higher temperature than BITEK chat (creative text, longer output).
- * Order: Groq large → Gemini Flash → Gemini Flash-Lite → Groq small. A model that does not exist for the key just
+ * Order: xAI → Groq large → Gemini Flash → Gemini Flash-Lite → Groq small. A model that does not exist for the key just
  * fails fast and the next one is tried. Models are overridable by env.
  */
 export function lyricsProvidersFromEnv(env: Env = process.env, fetchFn?: FetchFn): BitekLlmProvider[] {
   const list: BitekLlmProvider[] = [];
+  const xai = env.XAI_API_KEY
+    ? openAiCompatibleProvider({
+        id: "xai",
+        baseUrl: "https://api.x.ai/v1",
+        apiKey: env.XAI_API_KEY,
+        model: env.LYRICS_XAI_MODEL || env.BITEK_XAI_MODEL || "grok-4.7",
+        maxTokens: 2200,
+        temperature: 0.85,
+        timeoutMs: 20000,
+        jsonMode: false,
+        fetchFn,
+      })
+    : null;
   const groq = (model: string, effort: "low" | "medium" | "high") =>
     env.GROQ_API_KEY
       ? openAiCompatibleProvider({ id: "groq", baseUrl: "https://api.groq.com/openai/v1", apiKey: env.GROQ_API_KEY, model, reasoningEffort: effort, maxTokens: 2200, temperature: 0.85, timeoutMs: 20000, jsonMode: false, fetchFn })
@@ -159,6 +186,7 @@ export function lyricsProvidersFromEnv(env: Env = process.env, fetchFn?: FetchFn
       ? openAiCompatibleProvider({ id: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", apiKey: env.GEMINI_API_KEY, model, reasoningEffort: "low", maxTokens: 2200, temperature: 0.9, timeoutMs: 20000, jsonMode: true, fetchFn })
       : null;
   for (const p of [
+    xai,
     groq(env.LYRICS_GROQ_MODEL || "openai/gpt-oss-120b", "medium"),
     gemini(env.LYRICS_GEMINI_MODEL || "gemini-3.5-flash"),
     gemini(env.BITEK_GEMINI_MODEL || "gemini-3.5-flash-lite"),

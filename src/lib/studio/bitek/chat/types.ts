@@ -111,7 +111,7 @@ export type BitekChange = {
   to: number | boolean;
 };
 
-export type BitekProviderId = "groq" | "gemini" | "e3" | "rules";
+export type BitekProviderId = "xai" | "groq" | "gemini" | "e3" | "rules";
 
 export type BitekChatResult = {
   provider: BitekProviderId;

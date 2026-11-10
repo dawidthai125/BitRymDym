@@ -4,7 +4,7 @@
 
 ## Gdzie E3 jest w łańcuchu
 
-`/api/studio/bitek/chat` (Vercel, Node) → Groq → Gemini Flash → **E3** → reguły (BITEK v1).
+`/api/studio/bitek/chat` (Vercel, Node) → xAI → Groq → Gemini → **E3** → reguły (BITEK v1).
 E3 jest trzecim stopniem — używany tylko, gdy oba darmowe API odmówią (429/5xx/timeout).
 
 ## Połączenie Vercel ↔ E3: kolejka w bazie (decyzja Ownera 2026-10-29)
