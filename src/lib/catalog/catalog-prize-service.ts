@@ -37,6 +37,10 @@ type PrizeRow = {
   paused_used_at: string | null;
 };
 
+function isHeldTier(value: string | null | undefined): value is "BRONZE" | "SILVER" {
+  return value === "BRONZE" || value === "SILVER";
+}
+
 function missingRelation(error: DbError): boolean {
   if (!error) return false;
   const message = (error.message ?? "").toLowerCase();
@@ -156,10 +160,10 @@ export async function loadWorkPrizeDesk(userId: string, now = new Date()): Promi
   if (held.error) return empty;
   const holdRow = held.data as PrizeRow | null;
   const paused = holdRow?.paused_tier;
-  const holdTier = paused === "BRONZE" || paused === "SILVER" ? paused : null;
-  const hold = holdTier && holdRow?.paused_ms
-    ? { tier: holdTier, days: wholeDays(Number(holdRow.paused_ms)) }
-    : null;
+  const hold: WorkPrizeDesk["hold"] =
+    isHeldTier(paused) && holdRow?.paused_ms
+      ? { tier: paused, days: wholeDays(Number(holdRow.paused_ms)) }
+      : null;
 
   return {
     enabled: true,
