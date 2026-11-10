@@ -155,7 +155,8 @@ export async function loadWorkPrizeDesk(userId: string, now = new Date()): Promi
     .maybeSingle();
   if (held.error) return empty;
   const holdRow = held.data as PrizeRow | null;
-  const holdTier = holdRow?.paused_tier === "BRONZE" || holdRow?.paused_tier === "SILVER" ? holdRow.paused_tier : null;
+  const paused = holdRow?.paused_tier;
+  const holdTier = paused === "BRONZE" || paused === "SILVER" ? paused : null;
   const hold = holdTier && holdRow?.paused_ms
     ? { tier: holdTier, days: wholeDays(Number(holdRow.paused_ms)) }
     : null;
@@ -194,7 +195,7 @@ export async function activateWorkPrize(userId: string, accept: boolean, now = n
   return codeOf(applied.data);
 }
 
-export async function resumeWorkPlan(userId: string, accept: boolean, now = new Date()): Promise<PrizeCode> {
+export async function resumeWorkPlan(userId: string, accept: boolean): Promise<PrizeCode> {
   if (accept !== true) return "invalid";
   const admin = adminOrNull();
   if (!admin) return "off";
