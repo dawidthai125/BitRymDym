@@ -1,0 +1,18 @@
+[Unit]
+Description=BitRymDym beat audio cache
+After=network-online.target
+
+[Service]
+User=bitrymdym-e3
+Group=bitrymdym-e3
+Environment=HOME=/var/lib/bitrymdym-e3-worker
+Environment=BITRYMDYM_AUDIO_EDGE_PORT=8092
+Environment=BITRYMDYM_OBJECT_CACHE_DIR=/var/lib/bitrymdym-e3-worker/.cache/bitrymdym-objects
+EnvironmentFile=/etc/bitrymdym-e3-worker/worker.env
+ExecStart=/usr/bin/node /opt/bitrymdym-audio-edge/audio-edge-server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+edge.bitrymdym.pl {
+	reverse_proxy 127.0.0.1:8092
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+	}
+}

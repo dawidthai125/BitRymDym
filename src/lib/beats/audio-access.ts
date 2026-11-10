@@ -1,6 +1,7 @@
 import "server-only";
 
 import { GUEST_POLICY } from "@/config/plan-policy";
+import { rewriteThroughAudioEdge } from "@/lib/audio/audio-edge";
 import type { BeatOwnershipType, BeatStatus, SystemRole } from "@/types/domain";
 import {
   AuthError,
@@ -398,7 +399,7 @@ export async function requestBeatAudioAccess(params: {
   mapBeatAudioAssetRow(asset);
 
   return {
-    url: signed.signedUrl,
+    url: rewriteThroughAudioEdge(signed.signedUrl),
     expiresAt,
     purpose: params.purpose,
     beatId: params.beatId,
@@ -469,7 +470,7 @@ export async function requestPlatformBeatOpsExport(params: {
   ).toISOString();
 
   return {
-    url: signed.signedUrl,
+    url: rewriteThroughAudioEdge(signed.signedUrl),
     expiresAt,
     beatId: params.beatId,
     assetId: asset.id,
