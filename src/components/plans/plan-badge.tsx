@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import {
   isPlanItemExhausted,
@@ -99,15 +99,17 @@ export function PlanBadge({ userKey }: { userKey: string }) {
     };
   }, [open]);
 
-  useEffect(() => {
+  // Before paint, so a full load does not flash the plain line while the badge
+  // is still empty. The tab cache covers that gap; the fetched usage replaces it.
+  useLayoutEffect(() => {
     const root = document.documentElement;
-    const tierName = usage?.tier;
+    const tierName = usage?.tier ?? readPlanUsageCache(userKey)?.tier;
     if (!tierName) return;
     root.dataset.brdTier = tierName;
     return () => {
       if (root.dataset.brdTier === tierName) delete root.dataset.brdTier;
     };
-  }, [usage]);
+  }, [usage, userKey]);
 
   if (failed && !usage) return null;
 
