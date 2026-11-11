@@ -80,7 +80,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="hidden text-xs text-[var(--brd-ink-soft)] sm:inline">
+      <span className="hidden text-xs text-[var(--brd-ink-soft)] min-[1400px]:inline">
         {t("motyw")}
       </span>
       <span className="font-medium text-[var(--brd-ink)]">{tl(label)}</span>

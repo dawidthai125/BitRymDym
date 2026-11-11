@@ -28,7 +28,10 @@ export function SiteMainNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden items-center lg:flex" aria-label={t("glowneMenu")}>
+    <nav
+      className="hidden min-w-0 flex-wrap items-center lg:flex"
+      aria-label={t("glowneMenu")}
+    >
       {items.map((item) => {
         const active = isSiteNavHrefActive(pathname, item.href);
         return (
@@ -38,6 +41,7 @@ export function SiteMainNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               siteNavLinkClass,
+              "lg:px-1.5 lg:tracking-[0.08em] min-[1400px]:px-2.5 min-[1400px]:tracking-[0.1em]",
               active &&
                 "text-[var(--brd-ink)] underline decoration-[var(--brd-green)]",
             )}

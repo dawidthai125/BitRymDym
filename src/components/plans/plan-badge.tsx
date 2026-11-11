@@ -99,6 +99,16 @@ export function PlanBadge({ userKey }: { userKey: string }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const tierName = usage?.tier;
+    if (!tierName) return;
+    root.dataset.brdTier = tierName;
+    return () => {
+      if (root.dataset.brdTier === tierName) delete root.dataset.brdTier;
+    };
+  }, [usage]);
+
   if (failed && !usage) return null;
 
   const tier = usage?.tier ?? null;

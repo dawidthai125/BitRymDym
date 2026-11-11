@@ -208,7 +208,7 @@ export default function PremiumPage() {
 
           <section className="mt-10 border-t border-[var(--brd-line)] pt-8" aria-labelledby="premium-compare">
             <h2 id="premium-compare" className="brd-display text-xl font-semibold tracking-tight sm:text-2xl">{tr("porownanie")}</h2>
-            <OverflowXScrollRegion className="mt-4 overflow-x-auto border border-[var(--brd-line)]" ariaLabel={tr("porownanieAria")}>
+            <OverflowXScrollRegion className="mt-4 overflow-x-auto border border-[var(--brd-tier-line)]" ariaLabel={tr("porownanieAria")}>
               <table className="w-full min-w-[40rem] text-left text-sm" data-testid="premium-compare-table">
                 <caption className="sr-only">{tr("porownanieAria")}</caption>
                 <thead className="border-b border-[var(--brd-line)] bg-[var(--brd-paper-deep)]/50">

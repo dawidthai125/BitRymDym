@@ -32,6 +32,8 @@
   --brd-mute: #5c635c;
   --brd-warm-gray: #8a8478;
   --brd-line: #c8bfb0;
+  /* Plan metal is a 1px edge. Free and guests stay on --brd-line. */
+  --brd-tier-line: var(--brd-line);
   --brd-line-strong: #a89f90;
 
   /* Brand green */
@@ -214,6 +216,14 @@ html[data-theme="dark"] {
   --ring: var(--brd-amber);
   --brd-surface: var(--brd-paper);
 }
+
+/* Quieter than the badge fill so a full-width edge does not glare. */
+html[data-brd-tier="BRONZE"] { --brd-tier-line: #a0643a; }
+html[data-brd-tier="SILVER"] { --brd-tier-line: #6e7882; }
+html[data-brd-tier="GOLD"] { --brd-tier-line: #9a7712; }
+html[data-theme="dark"][data-brd-tier="BRONZE"] { --brd-tier-line: #a0643a; }
+html[data-theme="dark"][data-brd-tier="SILVER"] { --brd-tier-line: #9aa3ad; }
+html[data-theme="dark"][data-brd-tier="GOLD"] { --brd-tier-line: #c4a15a; }
 
 html[data-theme="light"] {
   color-scheme: light;
