@@ -26,7 +26,7 @@
       "windowsLead": "Logujesz się tym samym adresem co na stronie. Program bierze opublikowane bity z katalogu i nagrywa tylko mikrofon.",
       "canTitle": "Co można w programie",
       "can": [
-        "Zalogować się na istniejące konto i wylogować. Hasło nie jest zapisywane w pliku ustawień.",
+        "Zalogować się na istniejące konto i wylogować. Hasło nie jest zapisywane w pliku ustawień. Sesja leży w pliku zaszyfrowanym kluczem Twojego konta Windows, a wylogowanie kończy ją też na serwerze.",
         "Wybrać opublikowany bit. W trakcie nagrania bit leci jako odsłuch i nie jest zapisywany na dysk.",
         "Gdy odsłuch strony nie wstanie, można podać własny plik WAV albo MP3. To tylko zapasowy odsłuch.",
         "Nagrać mikrofon do zwykłego pliku WAV, jeden kanał, w tej samej jakości co strona. Program łapie głos na bieżąco.",
@@ -38,7 +38,9 @@
         "Odsłuchać bit razem ze słyszanymi ujęciami. Wyciszona ścieżka i ścieżka bez solo, gdy solo jest włączone, nie wchodzą do tego odsłuchu i nie jadą na konto.",
         "Wybrać mikrofon, jeśli Windows pokazuje więcej niż jeden.",
         "Zaznaczyć efekty z listy strony, do limitu planu. Po wysłaniu zapisują się na ścieżce wokalu. Samo brzmienie liczy studio na stronie. Puste zaznaczenie nie wysyła efektów.",
-        "Wysłać ujęcia jako projekt na konto i otworzyć ten projekt w studio."
+        "Sprawdzić mikrofon przed nagraniem przyciskiem Próba mikrofonu: pasek poziomu i podpowiedź, czy jest za cicho, dobrze albo za głośno. Nic się przy tym nie zapisuje.",
+        "Po Stop dostać ocenę ujęcia (przester, prawie cisza, cicho albo dobry poziom) i ostrzeżenie, gdy mikrofon zgubił próbki albo zniknął w trakcie nagrania.",
+        "Wysłać ujęcia jako projekt na konto i otworzyć ten projekt w studio. Wysyłka idzie w tle. Gdy sieć się urwie, kolejne Wyślij dokończy ten sam projekt, nawet po ponownym uruchomieniu programu."
       ],
       "cannotTitle": "Czego program nie robi",
       "cannot": [
@@ -57,7 +59,7 @@
       "stepsTitle": "Jak nagrać w programie",
       "steps": [
         "Załóż konto na stronie, zaloguj się, pobierz instalator, otwórz skrót i zaloguj się w programie tym samym adresem.",
-        "Wybierz bit. Załóż słuchawki. Sprawdź, czy wskaźnik mikrofonu rusza się, gdy mówisz.",
+        "Wybierz bit. Załóż słuchawki. Naciśnij Próba mikrofonu i sprawdź, czy poziom jest dobry, gdy mówisz.",
         "Naciśnij Nagraj, potem Stop. Plik zostaje na tym komputerze, w danych programu.",
         "Popraw falę w ED. Ustaw dB i kanał. Graj miks słychać na domyślnym wyjściu.",
         "Wyślij. Dokończ numer w studio na stronie: ułóż klipy, efekty, miks i master."

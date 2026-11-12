@@ -26,7 +26,7 @@
       "windowsLead": "You sign in with the same address as on the site. The app loads published beats and records only the microphone.",
       "canTitle": "What the app can do",
       "can": [
-        "Sign in to an existing account and sign out. The password is not stored in the settings file.",
+        "Sign in to an existing account and sign out. The password is not stored in the settings file. The session sits in a file encrypted with your Windows account key, and signing out also ends it on the server.",
         "Pick a published beat. During recording the beat is monitor-only and is not saved to disk.",
         "If site playback does not start, you can point at your own WAV or MP3. That file is only a fallback monitor.",
         "Record the microphone to a plain WAV file, one channel, at the same quality as the site. The app catches the voice as you go.",
@@ -38,7 +38,9 @@
         "Play the beat with the vocal lanes that are heard. A muted lane, and a lane without solo while any solo is on, is left out of that mix and is not uploaded.",
         "Choose the microphone when Windows lists more than one.",
         "Tick effects from the site list, up to the plan limit. After upload they are stored on the vocal track. The site studio is what you hear. An empty selection sends no effects.",
-        "Upload the takes as a project on the account and open that project in Studio."
+        "Check the microphone before recording with Mic test: a level bar and a hint (too quiet, good, too loud). Nothing is saved.",
+        "After Stop, get a take rating (clipping, near silence, quiet, or good level) and a warning when the mic dropped samples or vanished mid-take.",
+        "Upload the takes as a project on the account and open that project in Studio. The upload runs in the background. If the network drops, the next Send finishes the same project, even after restarting the program."
       ],
       "cannotTitle": "What the app does not do",
       "cannot": [
@@ -57,7 +59,7 @@
       "stepsTitle": "How to record in the app",
       "steps": [
         "Create an account on the site, sign in, download the installer, open the shortcut and sign in to the app with the same address.",
-        "Pick a beat. Put on headphones. Check that the meter moves when you speak.",
+        "Pick a beat. Put on headphones. Press Mic test and check that the level is good when you speak.",
         "Press Record, then Stop. The file stays on this computer, in the app data.",
         "Fix the wave in ED. Set dB and pan. Play mix uses the default output.",
         "Send. Finish the song in Studio on the site: clips, effects, mix and master."
