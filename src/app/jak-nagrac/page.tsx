@@ -6,6 +6,7 @@ import { LicenseSummary } from "@/components/site/license-summary";
 import { BrdLink } from "@/components/brand/brd-button";
 import { PageFrame, SectionLabel } from "@/components/brand/chrome";
 import { PLAN_POLICY } from "@/config/plan-policy";
+import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/studio/deliver/policy";
 
 export async function generateMetadata(): Promise<import("next").Metadata> {
   const t = await getTranslations("common.howToPage");
@@ -18,6 +19,7 @@ export default function HowToRecordPage() {
   const t = useTranslations("common.howToPage");
   const download = (tier: (typeof PLANS)[number]) => {
     const q = PLAN_POLICY[tier].downloads.qualities;
+    if (tier === "FREE" && freeWatermarkDownloadEnabled()) return t("pobranieZnak", { n: FREE_WATERMARK_PER_DAY });
     if (q.length === 0) return t("pobranieBrak");
     const top = q[q.length - 1];
     if (top.startsWith("WAV")) return t("pobranieWav");

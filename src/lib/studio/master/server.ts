@@ -10,7 +10,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { AuthError } from "@/lib/auth/session";
-import { decideDeliver, DELIVER_WEEKLY_LIMIT, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { decideDeliver, DELIVER_WEEKLY_LIMIT, FREE_WATERMARK_PER_DAY, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
 import { masterQuotaWithCredits } from "@/lib/studio/quota-credits";
 import { monthlyMasterLimit, warsawMonthWindow, type MasterQuota } from "@/lib/studio/studio-plan-limits";
@@ -228,6 +228,13 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   const format = p.format as DeliverFormat;
   if (kind === "master" && !approved?.result_object_key) return { ok: false as const, error: "not_approved" };
   if (kind !== "master" && versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
+  if (d.allowed && d.watermark) {
+    // Free watermark downloads: 3 per rolling 24 h (counted from the usage log; the RPC keeps a 7-day backstop).
+    const since = new Date(Date.now() - 864e5).toISOString();
+    const { count, error: ce } = await admin.from("studio_download_usage").select("id", { count: "exact", head: true }).eq("owner_id", p.ownerId).gte("created_at", since);
+    check(ce);
+    if ((count ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit" };
+  }
   const { data: q, error: qe } = await admin.rpc("consume_studio_download", {
     p_owner_id: p.ownerId, p_project_id: p.projectId, p_kind: kind, p_format: format, p_tier: p.tier, p_week_limit: d.weeklyLimit,
   });
@@ -237,6 +244,8 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   const { error } = await admin.from("studio_master_jobs").insert({
     id: p.jobId, project_id: p.projectId, owner_id: p.ownerId, kind: JOB_FOR[kind], source_document_version: documentVersion,
     source_artifact_id: kind === "master" ? approved!.id : null, output_format: format as StudioMasterOutputFormat,
+    // The E3 worker mixes the voice watermark into this encode (fails closed if it cannot).
+    ...(d.watermark ? { settings: { watermark: 1 } } : {}),
   });
   check(error);
   return { ok: true as const, jobId: p.jobId, usage: quota };

@@ -55,10 +55,25 @@ export function minimumTierForDeliverFormat(format: DeliverFormat): PremiumTier 
  */
 export const DELIVER_WEEKLY_LIMIT: Record<PremiumTier, number | null> = { FREE: null, BRONZE: null, SILVER: null, GOLD: null };
 
+/**
+ * Owner 2026-11-12: Free may download an MP3 128 with the voice watermark (a mix with their own recording, never the
+ * clean Bit). 3 per rolling 24 h. The switch stays OFF until the E3 worker that applies the watermark is deployed:
+ * an old worker would encode a clean file. Set STUDIO_FREE_WATERMARK_DOWNLOAD=1 only after the worker update.
+ */
+export const FREE_WATERMARK_PER_DAY = 3;
+/** Backstop on the rolling 7-day RPC counter (3 × 7); the 24 h cap is enforced in code. */
+export const FREE_WATERMARK_WEEK_BACKSTOP = FREE_WATERMARK_PER_DAY * 7;
+export const FREE_WATERMARK_KINDS = ["mix", "master"] as const satisfies readonly DeliverKind[];
+
+export function freeWatermarkDownloadEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  const v = (env.STUDIO_FREE_WATERMARK_DOWNLOAD ?? "").trim().toLowerCase();
+  return v === "1" || v === "true";
+}
+
 export type DeliverDenyReason = "login" | "not_approved" | "tier_format" | "tier_project" | "bad_request";
 
 export type DeliverDecision =
-  | { allowed: true; weeklyLimit: number | null }
+  | { allowed: true; weeklyLimit: number | null; watermark?: true }
   | { allowed: false; reason: DeliverDenyReason };
 
 export function decideDeliver(params: {
@@ -66,6 +81,8 @@ export function decideDeliver(params: {
   kind: unknown;
   format: unknown;
   approved: boolean;
+  /** Test hook; default reads STUDIO_FREE_WATERMARK_DOWNLOAD. */
+  freeWatermark?: boolean;
 }): DeliverDecision {
   if (!params.tier) return { allowed: false, reason: "login" };
   if (!isDeliverKind(params.kind) || !isDeliverFormat(params.format)) return { allowed: false, reason: "bad_request" };
@@ -76,16 +93,25 @@ export function decideDeliver(params: {
     return { allowed: true, weeklyLimit: DELIVER_WEEKLY_LIMIT[params.tier] };
   }
   if (params.format === "ZIP") return { allowed: false, reason: "bad_request" };
+  if (
+    params.tier === "FREE" &&
+    params.format === "MP3_128" &&
+    (FREE_WATERMARK_KINDS as readonly string[]).includes(params.kind) &&
+    (params.freeWatermark ?? freeWatermarkDownloadEnabled())
+  ) {
+    return { allowed: true, weeklyLimit: FREE_WATERMARK_WEEK_BACKSTOP, watermark: true };
+  }
   if (!DELIVER_AUDIO_FORMATS_BY_TIER[params.tier].includes(params.format)) return { allowed: false, reason: "tier_format" };
   return { allowed: true, weeklyLimit: DELIVER_WEEKLY_LIMIT[params.tier] };
 }
 
 /** Rows for the UI: every option is visible, `enabled` mirrors decideDeliver (minus quota). */
-export function deliverOptions(tier: PremiumTier | null): { kind: DeliverKind; format: DeliverFormat; enabled: boolean }[] {
-  const rows: { kind: DeliverKind; format: DeliverFormat; enabled: boolean }[] = [];
+export function deliverOptions(tier: PremiumTier | null): { kind: DeliverKind; format: DeliverFormat; enabled: boolean; watermark?: boolean }[] {
+  const rows: { kind: DeliverKind; format: DeliverFormat; enabled: boolean; watermark?: boolean }[] = [];
   for (const kind of ["mix", "master", "raw"] as const) {
     for (const format of ["MP3_128", "MP3_192", "MP3_320", "WAV_24"] as const) {
-      rows.push({ kind, format, enabled: decideDeliver({ tier, kind, format, approved: true }).allowed });
+      const d = decideDeliver({ tier, kind, format, approved: true });
+      rows.push({ kind, format, enabled: d.allowed, ...(d.allowed && d.watermark ? { watermark: true } : {}) });
     }
   }
   rows.push({ kind: "project", format: "ZIP", enabled: decideDeliver({ tier, kind: "project", format: "ZIP", approved: true }).allowed });

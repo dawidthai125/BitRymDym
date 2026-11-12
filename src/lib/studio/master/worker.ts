@@ -338,7 +338,17 @@ export async function runStudioMasterJob(cfg: RunConfig, job: ClaimedMasterJob):
         cur = out;
       } else if (s.op === "ffmpeg") {
         progress.report("encode");
-        await runCapture(resolveFfmpegBin(), ["-hide_banner", "-loglevel", "error", "-y", "-i", cur, ...s.args, out], { timeoutMs: cfg.timeoutMs });
+        if (job.settings?.watermark === 1) {
+          // Free download: the voice watermark is mixed into the file. Fails closed — never a clean fallback.
+          if (job.output_format !== "MP3_128" || path.extname(out) !== ".mp3") throw new Error("watermark_format");
+          const tag = path.join(dir, "wm_tag.wav");
+          const cycle = path.join(dir, "wm_tag15.wav");
+          await writeFile(tag, Buffer.from(PREVIEW_TAG_WAV_BASE64, "base64"));
+          await runCapture(resolveFfmpegBin(), tagCycleArgs(tag, cycle), { timeoutMs: 60_000 });
+          await runCapture(resolveFfmpegBin(), previewMixArgs(cur, cycle, out), { timeoutMs: cfg.timeoutMs });
+        } else {
+          await runCapture(resolveFfmpegBin(), ["-hide_banner", "-loglevel", "error", "-y", "-i", cur, ...s.args, out], { timeoutMs: cfg.timeoutMs });
+        }
         cur = out;
       } else {
         await copyFile(cur, out);

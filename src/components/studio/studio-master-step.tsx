@@ -31,7 +31,7 @@ import type { StudioClipDto, StudioProjectDocument } from "@/lib/studio/studio-t
 import type { MasterSessionSnap } from "@/lib/studio/studio-undo-history";
 
 type Tier = "FREE" | "BRONZE" | "SILVER" | "GOLD";
-type Option = { kind: DeliverKind; format: DeliverFormat; enabled: boolean };
+type Option = { kind: DeliverKind; format: DeliverFormat; enabled: boolean; watermark?: boolean };
 type ServerState = {
   available: boolean;
   tier: Tier | null;
@@ -888,11 +888,14 @@ export function StudioMasterStep({
                               return (
                                 <Button key={format} type="button" size="sm" variant={enabled ? "default" : "outline"} className="min-h-9" disabled={!enabled || dl?.status === "working"} title={lockedLabel ?? undefined} aria-label={`${t("formatAria", { kind: t(`pobierz.${kind}`), format: t(`format.${format}`) })}${lockedLabel ? ` — ${lockedLabel}` : ""}`} data-testid={`studio-master-dl-${key}`} data-enabled={enabled} onClick={() => void deliver(kind, format)}>
                                   {!opt?.enabled ? "🔒 " : ""}
-                                  {dl?.key === key && dl.status === "working" ? t("przygotowuje") : t(`format.${format}`)}
+                                  {dl?.key === key && dl.status === "working" ? t("przygotowuje") : opt?.watermark ? `${t(`format.${format}`)} · ${t("zeZnakiem")}` : t(`format.${format}`)}
                                 </Button>
                               );
                             })}
                           </div>
+                          {kind !== "project" && rows.some((f) => server.options.find((o) => o.kind === kind && o.format === f)?.watermark) ? (
+                            <p className="basis-full text-[11px] text-[var(--brd-mute)]" data-testid="studio-master-watermark-note">{t("znakInfo")}</p>
+                          ) : null}
                           {kind === "project" && !server.options.find((o) => o.kind === "project")?.enabled ? <span className="text-xs text-[var(--brd-mute)]">{t("tylkoGold")}</span> : null}
                         </li>
                       );
