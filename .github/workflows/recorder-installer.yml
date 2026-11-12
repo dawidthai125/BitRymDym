@@ -1,10 +1,13 @@
 name: recorder-installer
 
-# Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie.
+# Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie albo tagiem recorder-v*.
 # Czcionki i ffmpeg nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
 # Wynik to artefakt BitRymDym-Setup.exe + suma SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
 
 on:
+  push:
+    tags:
+      - "recorder-v*"
   workflow_dispatch:
     inputs:
       base_installer_url:
@@ -39,7 +42,7 @@ jobs:
 
       - name: Czcionki i ffmpeg z poprzedniego instalatora
         env:
-          BASE_URL: ${{ inputs.base_installer_url }}
+          BASE_URL: ${{ inputs.base_installer_url || 'https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe' }}
         run: |
           $base = Join-Path $env:RUNNER_TEMP "base"
           Invoke-WebRequest -Uri $env:BASE_URL -OutFile (Join-Path $env:RUNNER_TEMP "base.exe")
