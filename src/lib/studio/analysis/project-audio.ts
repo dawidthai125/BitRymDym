@@ -1,6 +1,7 @@
 import "server-only";
 
 import { BEAT_AUDIO_BUCKET } from "@/lib/beats/audio-validation";
+import { previewKeyFor } from "@/lib/studio/master/preview";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -39,14 +40,27 @@ export async function projectAnalysisObject(ownerId: string, projectId: string):
   return { kind: "beat", bucket: BEAT_AUDIO_BUCKET, key: beatKey };
 }
 
+/**
+ * Owner rule: the clean master leaves the server only through the approved, quota-counted download (Free gets the
+ * watermarked MP3 there). The browser analysis therefore gets the watermarked master preview, never the FLAC.
+ * Pure: the object the browser may be signed for, or null (fail closed).
+ */
+export function clientAnalysisObject(source: ProjectAudioObject): { bucket: string; key: string } | null {
+  if (source.kind !== "master") return { bucket: source.bucket, key: source.key };
+  const previewKey = previewKeyFor(source.key);
+  return previewKey ? { bucket: source.bucket, key: previewKey } : null;
+}
+
 export async function signProjectAnalysisAudio(
   ownerId: string,
   projectId: string,
 ): Promise<{ url: string; kind: ProjectAudioObject["kind"] } | null> {
   const source = await projectAnalysisObject(ownerId, projectId);
   if (!source) return null;
+  const target = clientAnalysisObject(source);
+  if (!target) return null;
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.storage.from(source.bucket).createSignedUrl(source.key, SIGNED_SECONDS);
+  const { data, error } = await admin.storage.from(target.bucket).createSignedUrl(target.key, SIGNED_SECONDS);
   if (error || !data?.signedUrl) return null;
   return { url: data.signedUrl, kind: source.kind };
 }
