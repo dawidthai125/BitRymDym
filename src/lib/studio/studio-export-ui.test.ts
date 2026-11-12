@@ -497,7 +497,7 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
       /mapped\.phase === "SUCCEEDED" && !mapped\.artifactId/,
     );
     expect(control).toMatch(
-      /Eksport zakończony, ale artefakt nie jest jeszcze dostępny/,
+      /Plik jest zrobiony, ale jeszcze go nie ma do pobrania/,
     );
     expect(control).toMatch(/unavailableWithTrackedJob/);
     expect(control).toMatch(
@@ -525,7 +525,7 @@ describe("STUDIO_EXPORT Stage I — control + editor wiring", () => {
     expect(control).toMatch(/function applyRecoveredJob/);
     expect(control).toMatch(/setJobId\(mapped\.jobId\)/);
     const recoveredUnavailable = control.match(
-      /setJobId\(mapped\.jobId\)[\s\S]{0,400}?Eksport zakończony, ale artefakt nie jest jeszcze dostępny/,
+      /setJobId\(mapped\.jobId\)[\s\S]{0,400}?Plik jest zrobiony, ale jeszcze go nie ma do pobrania/,
     )?.[0] ?? "";
     expect(recoveredUnavailable.length).toBeGreaterThan(0);
     expect(recoveredUnavailable).not.toMatch(/setJobId\(null\)/);

@@ -63,6 +63,6 @@ describe("A3.5 Mix Working complete history — gateway contracts", () => {
       /data-testid="studio-mix-history-migration-notice"/,
     );
     expect(control).toMatch(/data-brd-mix-history-migration-notice="a35"/);
-    expect(control).toMatch(/parametry miksu/);
+    expect(control).toMatch(/starsze ustawienia miksu/);
   });
 });

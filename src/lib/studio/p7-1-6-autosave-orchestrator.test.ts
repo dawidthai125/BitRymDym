@@ -488,7 +488,7 @@ describe("P7.1.6 CAS completeness source contracts", () => {
     expect(editor).toMatch(/onCommit=\{\(next\) => \{[\s\S]*onSaveGain\(next\)/);
     expect(editor).toMatch(/onSaveFades\(next, draftFadeOut\)/);
     expect(editor).toMatch(/aria-label="Zapisz teraz głośność klipu"/);
-    expect(editor).toMatch(/aria-label="Zapisz teraz fade"/);
+    expect(editor).toMatch(/aria-label="Zapisz teraz ciche wejście i zejście"/);
     expect(editor).not.toMatch(/aria-label="Zapisz głośność klipu"/);
     expect(editor).not.toMatch(/aria-label="Zapisz fade"/);
   });

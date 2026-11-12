@@ -212,8 +212,8 @@ describe("A3 Mix Working revision UI — control + editor wiring", () => {
       /data-testid="studio-mix-history-migration-notice"/,
     );
     expect(control).toMatch(/data-brd-mix-history-migration-notice="a35"/);
-    expect(control).toMatch(/Historia obejmuje parametry miksu/);
-    expect(control).toMatch(/starsze ścieżki edytora/);
+    expect(control).toMatch(/Tu są starsze ustawienia miksu: głośność, lewo i prawo, wyciszenie, solo i efekty/);
+    expect(control).toMatch(/Starsze zmiany, sprzed tej listy, mogą się nie pokazać/);
     expect(control).not.toMatch(/featureFlag.*migration-notice/i);
     expect(control).not.toMatch(/setTimeout\([^)]*migration/i);
   });
@@ -240,9 +240,9 @@ describe("A3 Mix Working revision UI — control + editor wiring", () => {
   it("uses dialog focus helpers and Polish restore copy", () => {
     expect(control).toMatch(/handleStudioDialogKeydown/);
     expect(control).toMatch(/getStudioDialogFocusable/);
-    expect(control).toMatch(/Przywrócić tę rewizję miksu\?/);
+    expect(control).toMatch(/Przywrócić tę wersję miksu\?/);
     expect(control).toMatch(/Anuluj/);
-    expect(control).toMatch(/nie przywraca plików audio/);
+    expect(control).toMatch(/Nie wracam plików dźwięku ani mastera/);
   });
 
   it("refetches project document after restore via existing API", () => {

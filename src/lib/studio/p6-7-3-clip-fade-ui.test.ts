@@ -46,17 +46,17 @@ const mix = readFileSync(
 describe("P6.7.3 ClipEditPanel fade controls (source)", () => {
   it("renders Fade In and Fade Out in ClipEditPanel", () => {
     expect(editor).toMatch(/function ClipEditPanel/);
-    expect(editor).toMatch(/ariaLabel="Fade In"/);
-    expect(editor).toMatch(/ariaLabel="Fade Out"/);
-    expect(editor).toMatch(/label="Fade In"/);
-    expect(editor).toMatch(/label="Fade Out"/);
-    expect(editor).toMatch(/aria-label="Fade klipu"/);
+    expect(editor).toMatch(/ariaLabel="Ciche wejście"/);
+    expect(editor).toMatch(/ariaLabel="Ciche zejście"/);
+    expect(editor).toMatch(/label="Ciche wejście"/);
+    expect(editor).toMatch(/label="Ciche zejście"/);
+    expect(editor).toMatch(/aria-label="Ciche wejście i zejście"/);
   });
 
   it("shows current fade values from clip DTO", () => {
     expect(editor).toMatch(/formatStudioTimeMs\(clip\.fadeInMs\)/);
     expect(editor).toMatch(/formatStudioTimeMs\(clip\.fadeOutMs\)/);
-    expect(editor).toMatch(/Aktualnie: Fade In/);
+    expect(editor).toMatch(/Teraz, ciche wejście/);
   });
 
   it("allows changing Fade In / Fade Out via local drafts", () => {
@@ -69,10 +69,10 @@ describe("P6.7.3 ClipEditPanel fade controls (source)", () => {
 
   it("ClipEditPanel works without a selected clip (no fade section required)", () => {
     expect(editor).toMatch(
-      /Wybierz klip, aby edytować: głośność, wyciszenie, fade/,
+      /Wybierz klip\. Potem ustawisz głośność, wyciszenie, ciche wejście i zejście/,
     );
-    const emptyIdx = editor.indexOf("Wybierz klip, aby edytować");
-    const fadeSectionIdx = editor.indexOf('aria-label="Fade klipu"');
+    const emptyIdx = editor.indexOf("Wybierz klip. Potem ustawisz");
+    const fadeSectionIdx = editor.indexOf('aria-label="Ciche wejście i zejście"');
     expect(emptyIdx).toBeGreaterThan(-1);
     expect(fadeSectionIdx).toBeGreaterThan(emptyIdx);
   });
@@ -202,12 +202,12 @@ describe("P6.7.3 save / CAS integration", () => {
   });
 
   it("P7.1.6 fade auto-commit on pointerup; Zapisz teraz is manual flush", () => {
-    expect(editor).toMatch(/aria-label="Zapisz teraz fade"/);
+    expect(editor).toMatch(/aria-label="Zapisz teraz ciche wejście i zejście"/);
     expect(editor).toMatch(/Zapisz teraz/);
     expect(editor).toMatch(/onSaveFades\(next, draftFadeOut\)/);
     expect(editor).toMatch(/onSaveFades\(draftFadeIn, draftFadeOut\)/);
-    expect(editor).toMatch(/ariaLabel="Fade In"/);
-    expect(editor).toMatch(/ariaLabel="Fade Out"/);
+    expect(editor).toMatch(/ariaLabel="Ciche wejście"/);
+    expect(editor).toMatch(/ariaLabel="Ciche zejście"/);
     expect(editor).toMatch(/onFlushPersist/);
     expect(editor).toMatch(/disabled=\{pending \|\| !fadeDirty\}/);
   });
@@ -222,7 +222,7 @@ describe("P6.7.3 UX helpers", () => {
       /function studioClipFadesOverlapHint[\s\S]*normalizeFades/,
     );
     expect(editor).toMatch(/studioClipFadesOverlapHint/);
-    expect(editor).toMatch(/zostaną znormalizowane/);
+    expect(editor).toMatch(/Przy zapisie skrócę je, żeby się mieściły/);
   });
 });
 
@@ -236,7 +236,7 @@ describe("P6.7.3 mobile + architecture guards", () => {
 
   it("mobile layout guard: min-w-0, min-h-11 fade targets, safe-area", () => {
     expect(editor).toMatch(/min-w-0 space-y-3 rounded border/);
-    expect(editor).toMatch(/aria-label="Zapisz teraz fade"/);
+    expect(editor).toMatch(/aria-label="Zapisz teraz ciche wejście i zejście"/);
     expect(editor).toMatch(/min-h-11 w-full min-w-0/);
     // Phase 1 DAW — safe-area clearance moved to project page shell.
     expect(editor).toMatch(/studio-daw-shell/);
