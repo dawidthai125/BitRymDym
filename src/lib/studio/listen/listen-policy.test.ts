@@ -52,3 +52,18 @@ describe("listen links — policy", () => {
     expect(keys(pl.listen).sort()).toEqual(keys(en.listen).sort());
   });
 });
+
+import { listenPlayKey } from "./listen-policy";
+describe("listenPlayKey (Free hears only the watermarked file)", () => {
+  const key = "u/p/out/master.flac";
+  it("Free and unknown plan get the preview, never the clean master", () => {
+    expect(listenPlayKey(key, "FREE")).toBe("u/p/out/master_preview.mp3");
+    expect(listenPlayKey(key, null)).toBe("u/p/out/master_preview.mp3");
+  });
+  it("Free with a non-flac key gets nothing (fail closed)", () => {
+    expect(listenPlayKey("u/p/out/master.bin", "FREE")).toBeNull();
+  });
+  it("paid plans keep the approved master", () => {
+    expect(listenPlayKey(key, "GOLD")).toBe(key);
+  });
+});

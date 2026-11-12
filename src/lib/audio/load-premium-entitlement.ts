@@ -95,3 +95,22 @@ export async function resolveProductEntitlementForAuthContext(
     nowMs,
   });
 }
+
+/** Same as above for a user id without a session (public routes acting on the owner's plan). Throws on a lookup error. */
+export async function resolveProductEntitlementForUserId(userId: string, nowMs?: number): Promise<ProductEntitlement> {
+  const { data, error } = await createSupabaseAdminClient()
+    .from("profiles")
+    .select("account_level, experience_total")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !data) throw new Error("owner_profile_lookup");
+  const row = data as { account_level: AuthContext["profile"]["accountLevel"]; experience_total: number | null };
+  const premium = await loadPremiumEntitlementSnapshot(userId);
+  return resolveProductEntitlement({
+    userId,
+    accountLevel: row.account_level,
+    experienceTotal: typeof row.experience_total === "number" ? Math.max(0, Math.floor(row.experience_total)) : 0,
+    premium,
+    nowMs,
+  });
+}

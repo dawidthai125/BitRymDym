@@ -9,6 +9,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { listenLinksForTier } from "@/config/plan-policy";
+import { resolveProductEntitlementForUserId } from "@/lib/audio/load-premium-entitlement";
 import { AuthError } from "@/lib/auth/session";
 import { partsOf } from "@/lib/studio/master/parts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -22,6 +23,7 @@ import {
   LISTEN_TOKEN_RE,
   listenDayOptions,
   listenLinkState,
+  listenPlayKey,
   listenTokenFor,
   type ListenLinkState,
 } from "./listen-policy";
@@ -141,18 +143,21 @@ export type ResolvedListenLink = { linkId: string; title: string; expiresAt: str
 export async function resolveListenToken(token: string): Promise<ResolvedListenLink | null> {
   if (!LISTEN_TOKEN_RE.test(token)) return null;
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.from("studio_listen_links").select("id, title, expires_at, revoked_at, master_job_id")
+  const { data, error } = await admin.from("studio_listen_links").select("id, title, expires_at, revoked_at, master_job_id, owner_id")
     .eq("token_hash", await hashListenToken(token)).maybeSingle();
   if (error) {
     if (missing(error)) return null;
     throw new Error("listen_db");
   }
-  const link = data as { id: string; title: string; expires_at: string; revoked_at: string | null; master_job_id: string } | null;
+  const link = data as { id: string; title: string; expires_at: string; revoked_at: string | null; master_job_id: string; owner_id: string } | null;
   if (!link || listenLinkState({ expiresAt: link.expires_at, revokedAt: link.revoked_at }) !== "active") return null;
   const { data: job } = await admin.from("studio_master_jobs").select("result_object_key, status, approved_at, project_id").eq("id", link.master_job_id).maybeSingle();
   const j = job as { result_object_key: string | null; status: string; approved_at: string | null; project_id?: string | null } | null;
   if (!j?.result_object_key || j.status !== "succeeded" || !j.approved_at) return null;
-  return { linkId: link.id, title: link.title, expiresAt: link.expires_at, objectKey: j.result_object_key, projectId: j.project_id ?? null };
+  const tier = await resolveProductEntitlementForUserId(link.owner_id).then((e) => e.premiumTier, () => null);
+  const objectKey = listenPlayKey(j.result_object_key, tier);
+  if (!objectKey) return null;
+  return { linkId: link.id, title: link.title, expiresAt: link.expires_at, objectKey, projectId: j.project_id ?? null };
 }
 
 /** Sliding-window rate limit (per link and per hashed client IP). Fails closed on DB errors. */

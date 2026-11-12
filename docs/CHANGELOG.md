@@ -6,6 +6,16 @@ Format: data, zakres, skrót.
 
 ---
 
+## 2026-11-12 — SESSION_BRIDGE §4 archive (batch 31, room for listen-linki Free)
+
+**Status:** documentation · stałe GO Owner · archiwizacja 3 najstarszych living `EXECUTED` (`STUDIO-SAMPLE-TAB` · `STUDIO-PLAY-INPUT` · `GO-SB-ARCHIVE-26`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany
+
+### SESSION_BRIDGE archive (przeniesione wiersze)
+
+| 2026-11-12 | STUDIO-SAMPLE-TAB | Zakładka Sample i porządek nagrania | EXECUTED | PASS | GO Owner: sample osobną zakładką, opcje nie w kupie. Zakładka Sample: instrumenty, biurko sampli, nowa ścieżka sample. Nagranie na starcie: ścieżka, mikrofon, nagraj. Pełny widok: Ustawienia, Ujęcia, Scratch. Widok uproszczony bez instrumentów. Testy widoku, place i workflow 31/31, eslint i tsc czyste. Sacred PRESERVE. ≠ Product GREEN. | studio-editor.tsx · studio-recording-panel.tsx | _(ten commit)_ | NEXT: układ osi i miksera tylko po GO. NOT VERIFIED: klik na www, dźwięk instrumentu, kontroler MIDI |
+| 2026-11-12 | STUDIO-PLAY-INPUT | Klawiatura i MIDI na instrumentach Studia | EXECUTED | PASS | GO Owner „Tak”. Widok uproszczony zostaje uproszczonym nagraniem (Free/Bronze na stałe, Silver/Gold przełącznik); panel instrumentów nadal jest w tym widoku. Gra z klawiatury komputera (fokus na panelu) i Web MIDI idzie tą samą ścieżką co klik. Bez nowej bazy. Testy `studio-play-input` 9/9 i `studio-record-view` 7/7, eslint i `tsc --noEmit` czyste. Sacred PRESERVE. ≠ Product GREEN. | src/lib/studio/studio-play-input.ts · studio-play-keys.tsx | _(ten commit)_ | NEXT: schować instrumenty z widoku uproszczonego tylko po GO. NOT VERIFIED: kontroler MIDI u Ownera, dźwięk podglądu w przeglądarce |
+| 2026-11-12 | GO-SB-ARCHIVE-26 | Archiwizacja §4 → CHANGELOG (room for klawiatura i MIDI w Studiu) | EXECUTED | PASS | Stałe GO Owner („nowe wpisy zastępują najstarsze”). Przeniesiono 3 najstarsze `EXECUTED` (`GO-SB-ARCHIVE-22` · `SCRATCH-JOG-MOBILE` · `GO-SB-ARCHIVE-21`) → CHANGELOG archive. `P-NEXT-10` BLOCKED zachowany. | docs/CHANGELOG.md · SESSION_BRIDGE §4 | _(ten commit)_ | NEXT: wpisy do 15 |
+
 ## 2026-11-12 — SESSION_BRIDGE §4 archive (batch 30, room for czysty bit)
 
 **Status:** documentation · stałe GO Owner · archiwizacja 3 najstarszych living `EXECUTED` (`TESTY-INTEGRATION` · `GO-SB-ARCHIVE-25` · `TESTY-MEDIA`) → `### SESSION_BRIDGE archive` · `P-NEXT-10` BLOCKED zachowany

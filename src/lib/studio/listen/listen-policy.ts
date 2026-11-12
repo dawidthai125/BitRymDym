@@ -4,6 +4,7 @@
  * expiring, revocable. Only sha256(token) is stored server-side.
  */
 import { listenLinksForTier } from "@/config/plan-policy";
+import { previewKeyFor } from "@/lib/studio/master/preview";
 import type { PremiumTier } from "@/types/premium";
 
 /** 24 random bytes → 32 url-safe chars. */
@@ -63,4 +64,13 @@ export type ListenLinkState = "active" | "expired" | "revoked";
 export function listenLinkState(l: { expiresAt: string; revokedAt: string | null }, now = Date.now()): ListenLinkState {
   if (l.revokedAt) return "revoked";
   return Date.parse(l.expiresAt) > now ? "active" : "expired";
+}
+
+/**
+ * Which object a listen link plays (owner rule 2026-11-12: Free gets only the watermarked file).
+ * Free (or an unknown plan: fail closed) → the watermarked `master_preview.mp3`, never the clean FLAC; no preview → null.
+ * Paid plans keep the clean approved master (they may download it anyway).
+ */
+export function listenPlayKey(masterKey: string, tier: PremiumTier | null): string | null {
+  return tier === null || tier === "FREE" ? previewKeyFor(masterKey) : masterKey;
 }

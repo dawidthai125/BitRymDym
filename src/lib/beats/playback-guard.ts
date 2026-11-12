@@ -12,6 +12,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 export const PLAYBACK_MAX_PER_HOUR = 60;
 export const PLAYBACK_MAX_DISTINCT_BEATS_PER_HOUR = 12;
 const HOUR_MS = 3_600_000;
+/** Log retention (Owner GO 2026-11-12): rows older than this are deleted, at most ~1 in PURGE_EVERY writes. */
+export const PLAYBACK_LOG_RETENTION_DAYS = 30;
+const PURGE_EVERY = 50;
 
 export type PlaybackLogRow = { beat_id: string; created_at: string };
 
@@ -36,7 +39,10 @@ export async function checkFullPlaybackAllowed(userId: string, beatId: string): 
       .order("created_at", { ascending: false })
       .limit(PLAYBACK_MAX_PER_HOUR + 1);
     if (error) return { allowed: true }; // table missing or transient error: never break the Studio
-    return decidePlaybackGuard((data as PlaybackLogRow[] | null) ?? [], beatId);
+    const decision = decidePlaybackGuard((data as PlaybackLogRow[] | null) ?? [], beatId);
+    // Alarm: a user hitting the limit is a scraping signal; visible in Vercel runtime logs (search "playback_guard_denied").
+    if (!decision.allowed) console.warn(`playback_guard_denied reason=${decision.reason} user=${userId}`);
+    return decision;
   } catch {
     return { allowed: true };
   }
@@ -44,7 +50,12 @@ export async function checkFullPlaybackAllowed(userId: string, beatId: string): 
 
 export async function logFullPlayback(userId: string, beatId: string, assetId: string): Promise<void> {
   try {
-    await createSupabaseAdminClient().from("beat_audio_playback_log").insert({ user_id: userId, beat_id: beatId, asset_id: assetId });
+    const admin = createSupabaseAdminClient();
+    await admin.from("beat_audio_playback_log").insert({ user_id: userId, beat_id: beatId, asset_id: assetId });
+    if (Math.random() < 1 / PURGE_EVERY) {
+      const cutoff = new Date(Date.now() - PLAYBACK_LOG_RETENTION_DAYS * 86_400_000).toISOString();
+      await admin.from("beat_audio_playback_log").delete().lt("created_at", cutoff);
+    }
   } catch {
     /* logging must never break playback */
   }
