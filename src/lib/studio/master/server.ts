@@ -23,6 +23,7 @@ import { masterPlaybackChoice, masterPreviewEnforced, previewKeyFor } from "./pr
 import { outputExt, type StudioMasterJobKind, type StudioMasterOutputFormat } from "./job-plan";
 import { isStudioJobStage, type StudioJobStage } from "./progress";
 import { referenceGateFor } from "./reference-server";
+import { projectHasOwnContent } from "@/lib/studio/master/own-content";
 
 const BUCKET = "audio-artifacts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -141,6 +142,7 @@ export async function commitStudioMaster(p: { ownerId: string; projectId: string
   const admin = createSupabaseAdminClient();
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
   if (versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
+  if (!(await projectHasOwnContent(admin, p.projectId))) return { ok: false as const, error: "no_own_track" };
   if (referenceId) {
     // Gold: in the plan; Silver: only with the add-on; Free/Bronze: locked (server decides, UI mirrors).
     const gate = await referenceGateFor(admin, p.ownerId, p.tier);
@@ -194,6 +196,7 @@ const JOB_FOR: Record<DeliverKind, StudioMasterJobKind> = { mix: "transcode", ma
 export async function prepareStudioDeliver(p: { ownerId: string; projectId: string; tier: PremiumTier; kind: unknown; format: unknown }) {
   const admin = createSupabaseAdminClient();
   await assertOwner(admin, p.ownerId, p.projectId);
+  if (!(await projectHasOwnContent(admin, p.projectId))) return { ok: false as const, error: "no_own_track" };
   const approved = await approvedMaster(admin, p.ownerId, p.projectId);
   const d = decideDeliver({ tier: p.tier, kind: p.kind, format: p.format, approved: !!approved });
   if (!d.allowed) return { ok: false as const, error: d.reason };
@@ -217,6 +220,7 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   if (!UUID.test(p.jobId)) throw new AuthError("FORBIDDEN", "bad_request");
   const admin = createSupabaseAdminClient();
   const { documentVersion } = await assertOwner(admin, p.ownerId, p.projectId);
+  if (!(await projectHasOwnContent(admin, p.projectId))) return { ok: false as const, error: "no_own_track" };
   const approved = await approvedMaster(admin, p.ownerId, p.projectId);
   const d = decideDeliver({ tier: p.tier, kind: p.kind, format: p.format, approved: !!approved });
   if (!d.allowed) return { ok: false as const, error: d.reason };

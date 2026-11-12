@@ -801,6 +801,8 @@ export function StudioMasterStep({
                     {t("masteryLimit")}{" "}
                     {server.tier !== "GOLD" ? <a href="/premium" className="underline underline-offset-4">{t("zobaczPlany")}</a> : null}
                   </p>
+                ) : sm.phase === "failed" && sm.code === "no_own_track" ? (
+                  <p role="alert" data-testid="studio-master-no-own-track" className="text-sm text-[var(--brd-rec)]">{t("masterBezNagrania")}</p>
                 ) : sm.phase === "failed" ? <p role="alert" data-error-code={sm.code} className="text-sm text-[var(--brd-rec)]">{t("masterBlad")}</p> : null}
                 {sm.phase === "unavailable" ? <p role="status" data-testid="studio-master-unavailable" className="text-sm">{t("serwerNiedostepny")}</p> : null}
               </div>

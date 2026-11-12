@@ -2989,6 +2989,7 @@
       "masterTrwa": "Robię master na serwerze…",
       "masterKolejka": "Czekam w kolejce…",
       "masterBlad": "Master się nie udał. Spróbuj jeszcze raz.",
+      "masterBezNagrania": "Dodaj własne nagranie, sample lub nuty. Sam bit nie jest do miksu, masteringu ani pobrania.",
       "serwerNiedostepny": "Serwerowy mastering nie jest jeszcze włączony. Podgląd działa, pobieranie pojawi się po włączeniu.",
       "uploadBlad": "Nie udało się wysłać mixu na serwer.",
       "finalTytul": "Posłuchaj gotowego numeru",

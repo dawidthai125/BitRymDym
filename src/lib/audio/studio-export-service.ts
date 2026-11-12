@@ -44,6 +44,7 @@ import {
   serializeMixParameters,
 } from "@/lib/mix/params";
 import { getStudioProjectDocumentFor } from "@/lib/studio/studio-service";
+import { projectHasOwnContent } from "@/lib/studio/master/own-content";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { RenderJobStatus, RenderJobTier } from "@/types/domain";
 
@@ -271,6 +272,14 @@ export async function createStudioExportJobFor(
     throw new RenderJobDomainError(
       "Document version conflict — expectedDocumentVersion does not match.",
       "CONFLICT",
+    );
+  }
+
+  // Owner rule: no export of the clean Bit. Needs a recording, stem/sample or instrument notes.
+  if (!(await projectHasOwnContent(admin, input.projectId))) {
+    throw new RenderJobDomainError(
+      "Dodaj własne nagranie, sample lub nuty. Sam bit nie jest do pobrania.",
+      "INVALID",
     );
   }
 

@@ -2989,6 +2989,7 @@
       "masterTrwa": "Mastering on the server…",
       "masterKolejka": "Waiting in the queue…",
       "masterBlad": "Mastering failed. Try again.",
+      "masterBezNagrania": "Add your own recording, samples or notes. The beat alone cannot be mixed, mastered or downloaded.",
       "serwerNiedostepny": "Server mastering isn't enabled yet. The preview works; downloads appear once it's on.",
       "uploadBlad": "Couldn't upload the mix to the server.",
       "finalTytul": "Listen to the finished song",
