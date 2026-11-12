@@ -46,3 +46,23 @@ describe("jak-nagrac vs home: no duplicated steps", () => {
     expect(read("src/app/page.tsx")).toContain('id="jak-to-dziala"');
   });
 });
+
+describe("simple record view: pick the best take", () => {
+  const panel = read("src/components/studio/studio-recording-panel.tsx");
+  it("list is open by default in the simple view, same-beat takes only, numbered, max 6", () => {
+    expect(panel).toContain("useState(simple)");
+    expect(panel).toContain("filter((t) => t.sameBeat)");
+    expect(panel).toContain(".slice(0, 6)");
+    expect(panel).toContain('tr("ujecieNr"');
+  });
+  it("reloads after a take is kept or discarded (phase/takeId signature)", () => {
+    expect(panel).toContain("simpleTakeSig");
+  });
+  it("copy exists in PL and EN", () => {
+    for (const m of [pl, en]) {
+      expect(read("messages/pl.json")).toContain("ujecieNr");
+      expect(read("messages/en.json")).toContain("ujecieNr");
+      void m;
+    }
+  });
+});

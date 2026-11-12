@@ -433,7 +433,7 @@ export function StudioRecordingPanel({
   const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [workflowBusy, setWorkflowBusy] = useState<WorkflowActionBusy>(null);
   const [keptMessage, setKeptMessage] = useState<string | null>(null);
-  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(simple);
   const [libraryTakes, setLibraryTakes] = useState<StudioPlaceableTakeDto[]>([]);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [libraryLoading, setLibraryLoading] = useState(false);
@@ -2289,6 +2289,20 @@ export function StudioRecordingPanel({
 
   const workflowDisabled = Boolean(workflowBusy);
   const visiblePane = showWorkflow ? "take" : recordPane;
+  // Simple view: the user picks the best take from a short numbered list of this Bit's takes.
+  const simpleTakes = simple
+    ? libraryTakes
+        .filter((t) => t.sameBeat)
+        .map((t, i, all) => ({ ...t, n: all.length - i }))
+        .slice(0, 6)
+    : null;
+  const simpleTakeSig = state.phase === "IDLE" || state.phase === "READY_TAKE" ? `${state.phase}:${state.takeId ?? ""}` : null;
+  useEffect(() => {
+    if (!simple || samplesMode || simpleTakeSig === null) return;
+    const timer = setTimeout(() => void loadLibraryTakes(), 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simple, samplesMode, simpleTakeSig, projectId]);
   const setupOpen = !simple && !samplesMode && visiblePane === "setup";
   const lanesOpen = !simple && !samplesMode && visiblePane === "lanes";
   const scratchOpen = !simple && !samplesMode && visiblePane === "scratch";
@@ -3030,7 +3044,13 @@ export function StudioRecordingPanel({
           onClick={() => void onToggleLibrary()}
           aria-expanded={libraryOpen}
         >
-          {tl(libraryOpen ? tr("mojeTakeI") : tr("mojeTakeI2"))}
+          {tl(
+            simple
+              ? `${libraryOpen ? "▾" : "▸"} ${tr("ujeciaTytul")}`
+              : libraryOpen
+                ? tr("mojeTakeI")
+                : tr("mojeTakeI2"),
+          )}
         </Button>
         {libraryOpen ? (
           <div className="space-y-2" aria-label={tr("listaReadyTake")}>
@@ -3044,17 +3064,22 @@ export function StudioRecordingPanel({
             ) : null}
             {!libraryLoading && libraryTakes.length === 0 && !libraryError ? (
               <p className="text-xs text-[var(--brd-mute)]">
-                {tr("brakGotowychNagranDo")}
+                {simple ? tr("brakUjecDoWyboru") : tr("brakGotowychNagranDo")}
+              </p>
+            ) : null}
+            {simple && libraryOpen ? (
+              <p className="text-[11px] text-[var(--brd-mute)]" data-testid="studio-record-simple-takes-hint">
+                {tr("ujeciaWskazowka")}
               </p>
             ) : null}
             <ul className="max-h-48 space-y-2 overflow-y-auto">
-              {libraryTakes.map((take) => (
+              {(simpleTakes ?? libraryTakes).map((take) => (
                 <li
                   key={take.id}
                   className="rounded border border-[var(--brd-line)] p-2"
                 >
                   <p className="text-sm text-[var(--brd-ink)]">
-                    {tl(take.displayTitle)}
+                    {tl(simple && "n" in take ? tr("ujecieNr", { n: (take as { n: number }).n }) : take.displayTitle)}
                     {!take.sameBeat ? (
                       <span className="ml-1 text-[11px] text-[var(--brd-mute)]">
                         {tr("innyBit")}
@@ -3065,6 +3090,7 @@ export function StudioRecordingPanel({
                     {tl(take.durationSeconds != null
                       ? `${take.durationSeconds.toFixed(1)}s`
                       : "—")}
+                    {simple ? ` · ${new Date(take.createdAt).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}` : ""}
                     {" · "}
                     {tr("playhead")}{" "}{tl(formatStudioTimeMs(transport.state.playheadMs))}
                   </p>
@@ -3077,7 +3103,7 @@ export function StudioRecordingPanel({
                       disabled={libraryBusyId === take.id}
                       onClick={() => void onLibraryPreview(take.id)}
                     >
-                      {tr("odtworz")}
+                      {simple ? tr("posluchajUjecia") : tr("odtworz")}
                     </Button>
                     <Button
                       type="button"
@@ -3090,7 +3116,7 @@ export function StudioRecordingPanel({
                       }
                       onClick={() => void onLibraryPlace(take, false)}
                     >
-                      {tr("umiescWStudio")}
+                      {simple ? tr("uzyjUjecia") : tr("umiescWStudio")}
                     </Button>
                     <Button
                       type="button"
@@ -3104,7 +3130,7 @@ export function StudioRecordingPanel({
                       }
                       onClick={() => void onLibraryPlace(take, true)}
                     >
-                      {tr("zastap")}
+                      {simple ? tr("zamienUjecie") : tr("zastap")}
                     </Button>
                   </div>
                 </li>
