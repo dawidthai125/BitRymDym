@@ -27,10 +27,19 @@ describe("homepage Jak to działa promo film", () => {
     expect(film).toContain("playsInline");
     expect(film).toContain('preload="metadata"');
     expect(film).toContain('poster="/promo/jak-to-dziala-poster.jpg"');
-    expect(film).toContain('aria-label={t("promoFilm")}');
-    expect(film).toContain("{t(\"promoPodpis\")}");
-    expect(film).toContain("{t(\"promoDeck\")}");
-    expect(film).toContain("{t(\"promoLeci\")}");
+    // Source reads are resolved by src/test/intl-test-mocks.ts: t("key") may arrive as the pl copy.
+    const copy = JSON.parse(
+      readFileSync(join(process.cwd(), "messages/pl.json"), "utf8"),
+    ).home.page as Record<string, string>;
+    const wired = (key: string) =>
+      film.includes(`{t("${key}")}`) || film.includes(copy[key]);
+    expect(
+      film.includes('aria-label={t("promoFilm")}') ||
+        film.includes(`aria-label="${copy.promoFilm}"`),
+    ).toBe(true);
+    expect(wired("promoPodpis")).toBe(true);
+    expect(wired("promoDeck")).toBe(true);
+    expect(wired("promoLeci")).toBe(true);
     expect(`${section}\n${film}`).not.toMatch(/\bautoPlay\b|\bautoplay\b/);
   });
 

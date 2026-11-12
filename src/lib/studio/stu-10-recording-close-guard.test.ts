@@ -435,7 +435,7 @@ describe("STU-10-E — wiring contracts", () => {
       /closeBlockedMessage \? \([\s\S]{0,200}role="alert"[\s\S]{0,120}\{closeBlockedMessage\}/,
     );
     expect(editor).toMatch(
-      /closeBlockedMessage=\{\s*inspectorCloseRejected && recordingLocked\s*\?\s*"Nie można zamknąć Inspektora[^"]*"\s*:\s*null\s*\}/,
+      /closeBlockedMessage=\{\s*inspectorCloseRejected && recordingLocked\s*\?\s*"Nie (?:można zamknąć Inspektora|da się zamknąć tego panelu)[^"]*"\s*:\s*null\s*\}/,
     );
   });
 

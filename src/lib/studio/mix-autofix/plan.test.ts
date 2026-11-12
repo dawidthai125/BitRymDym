@@ -12,7 +12,12 @@ import {
   upsertFx,
 } from "@/lib/studio/mix-autofix/plan";
 import { validateMixWorkingOps } from "@/lib/studio/mix-working/mix-working-ops";
-import { emptyStudioFxChain, parseStudioFxChainForWrite, type StudioFxChainV1 } from "@/lib/studio/studio-fx-chain";
+import {
+  emptyStudioFxChain,
+  parseStudioFxChainForWrite,
+  STUDIO_FX_CHAIN_MAX_EFFECTS,
+  type StudioFxChainV1,
+} from "@/lib/studio/studio-fx-chain";
 import type { StudioProjectDocument, StudioTrackDto } from "@/lib/studio/studio-types";
 import type { StudioTrackRole } from "@/config/studio";
 import { readFileSync } from "node:fs";
@@ -289,11 +294,12 @@ describe("Stage 2 autofix — parameters from metrics", () => {
     expect(again.ops.filter((o) => o.op === "set_track_fx")).toEqual([]);
   });
 
-  it("respects the 8-effect limit and tells the user", () => {
+  it("respects the chain effect limit and tells the user", () => {
+    // Product cap is STUDIO_FX_CHAIN_MAX_EFFECTS (12 since the 2026-11-08 plan change; it was 8 before).
     const full: StudioFxChainV1 = {
       schemaVersion: 1,
-      effects: Array.from({ length: 8 }, (_, i) => ({
-        id: `00000000-0000-4000-9000-00000000000${i}`,
+      effects: Array.from({ length: STUDIO_FX_CHAIN_MAX_EFFECTS }, (_, i) => ({
+        id: `00000000-0000-4000-9000-${String(i).padStart(12, "0")}`,
         type: "limiter" as const,
         enabled: false,
         params: { thresholdDb: -1, ceilingDb: -0.3 },

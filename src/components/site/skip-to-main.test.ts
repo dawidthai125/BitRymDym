@@ -41,13 +41,19 @@ describe("skip-to-main (WCAG 2.4.1)", () => {
     expect(headerIdx).toBeGreaterThan(skipIdx);
   });
 
+  it("account pages get the skip target from AppShell in account/layout.tsx", () => {
+    const layout = readFileSync(join(root, "src/app/account/layout.tsx"), "utf8");
+    expect(layout).toContain("<AppShell");
+    for (const rel of ["src/app/account/downloads/page.tsx", "src/app/account/shared/page.tsx"]) {
+      expect(readFileSync(join(root, rel), "utf8"), rel).not.toContain("<SiteHeader");
+    }
+  });
+
   it("every SiteHeader surface wires MAIN_CONTENT_ID exactly once per render branch", () => {
     const files = [
       "src/components/site/app-shell.tsx",
       "src/app/admin/layout.tsx",
       "src/app/beat/[id]/not-found.tsx",
-      "src/app/account/downloads/page.tsx",
-      "src/app/account/shared/page.tsx",
       "src/app/beats/upload/page.tsx",
     ] as const;
 

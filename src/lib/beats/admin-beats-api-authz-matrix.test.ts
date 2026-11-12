@@ -163,6 +163,8 @@ function fakeStorage(client: "server" | "admin") {
 }
 
 vi.mock("@/lib/supabase/server", () => ({
+  // session.ts reads the bearer first; these cookie-session tests have none.
+  requestUserAccessBearer: async () => null,
   createSupabaseServerClient: async () => ({
     auth: {
       getUser: async () => ({

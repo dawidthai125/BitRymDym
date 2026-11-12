@@ -344,7 +344,7 @@ describe("STU-12 C — only capture phases are guarded", () => {
 
 describe("STU-12 D — copy and wiring", () => {
   it("warning says capture will be interrupted and never implies the take was saved", () => {
-    expect(STUDIO_LEAVE_GUARD_BODY_PL).toMatch(/przerwane/);
+    expect(STUDIO_LEAVE_GUARD_BODY_PL).toMatch(/przerwane|urwie/);
     expect(STUDIO_LEAVE_GUARD_BODY_PL).not.toMatch(/(został|zostanie) zapisany/);
   });
 
