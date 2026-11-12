@@ -20,7 +20,7 @@
       "lead": "Konto, plan i limity są te same. Program Windows nagrywa wokal przy komputerze. Strona układa numer, miks i master. Regulamin strony obejmuje też program, bo korzysta z tego samego konta.",
       "download": "Pobierz na Windows",
       "downloadNeedAccount": "Zaloguj się, żeby pobrać",
-      "downloadNote": "Do pobrania i do logowania w programie potrzebne jest konto na stronie. Instalator jest na Windows. Nie trzeba uprawnień administratora. Skrót nazywa się BitRymDym. Na Maca i Apple wersja jest wkrótce. Do tego czasu na Macu nagrywasz w przeglądarce.",
+      "downloadNote": "Do pobrania i do logowania w programie potrzebne jest konto na stronie. Instalator jest na Windows. Nie trzeba uprawnień administratora. Skrót nazywa się BitRymDym. Instalator zawiera ffmpeg i ffplay, więc odsłuch bitu działa bez dodatkowych programów. Na Maca i Apple wersja jest wkrótce. Do tego czasu na Macu nagrywasz w przeglądarce.",
       "openStudio": "Otwórz studio",
       "windowsTitle": "Program Windows",
       "windowsLead": "Logujesz się tym samym adresem co na stronie. Program bierze opublikowane bity z katalogu i nagrywa tylko mikrofon.",

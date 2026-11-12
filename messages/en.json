@@ -20,7 +20,7 @@
       "lead": "The account, plan and limits are the same. The Windows app records a vocal on the computer. The site arranges the song, the mix and the master. The site terms cover the app, because it uses the same account.",
       "download": "Download for Windows",
       "downloadNeedAccount": "Sign in to download",
-      "downloadNote": "Downloading and signing in to the app both need an account on the site. The installer is for Windows. It does not need an administrator. The shortcut is named BitRymDym. A Mac and Apple version is coming soon. Until then, on a Mac you record in the browser.",
+      "downloadNote": "Downloading and signing in to the app both need an account on the site. The installer is for Windows. It does not need an administrator. The shortcut is named BitRymDym. The installer includes ffmpeg and ffplay, so beat monitoring works without extra programs. A Mac and Apple version is coming soon. Until then, on a Mac you record in the browser.",
       "openStudio": "Open Studio",
       "windowsTitle": "Windows app",
       "windowsLead": "You sign in with the same address as on the site. The app loads published beats and records only the microphone.",
