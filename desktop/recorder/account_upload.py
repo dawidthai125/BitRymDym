@@ -6,10 +6,11 @@ No new API, no second studio, no master. The bearer is the user access token.
 from __future__ import annotations
 
 import json
+import socket
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 SITE = "https://www.bitrymdym.pl"
@@ -38,6 +39,17 @@ def put_target(signed_url: str, upload_token: str) -> str:
     query = parse_qsl(parts.query, keep_blank_values=True)
     query.append(("token", token))
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+
+
+NETWORK_ERRORS = (urllib.error.URLError, TimeoutError, ConnectionError, socket.timeout, OSError)
+
+
+def network_message(error: BaseException) -> str:
+    """Plain Polish text for a dropped connection. No URL, no socket detail."""
+    reason = getattr(error, "reason", error)
+    if isinstance(reason, (TimeoutError, socket.timeout)):
+        return "Strona nie odpowiada na czas. Sprawdź internet i spróbuj jeszcze raz."
+    return "Brak połączenia ze stroną. Sprawdź internet i spróbuj jeszcze raz."
 
 
 def is_unauthorized(error: BaseException) -> bool:
@@ -123,6 +135,8 @@ class SiteClient:
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", "replace")[:300]
             raise RuntimeError(f"{method} {path} -> {error.code} {detail}") from None
+        except NETWORK_ERRORS as error:
+            raise RuntimeError(network_message(error)) from None
         if not isinstance(payload, dict):
             raise RuntimeError(f"{method} {path} nie zwróciło obiektu.")
         return payload
@@ -158,6 +172,8 @@ class SiteClient:
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", "replace")[:300]
             raise RuntimeError(f"Wrzutka WAV -> {error.code} {detail}") from None
+        except NETWORK_ERRORS as error:
+            raise RuntimeError(network_message(error)) from None
 
     def finalize(self, take_id: str) -> None:
         self._json("POST", "/api/takes/finalize", {"takeId": take_id})
@@ -207,8 +223,14 @@ def upload_vocals(
     wav_paths: list[Path],
     playhead_ms: int = 0,
     chain: dict[str, Any] | None = None,
+    progress: Callable[[str], None] | None = None,
 ) -> str:
     """One project. The site already creates Bit plus the first vocal track."""
+
+    def say(text: str) -> None:
+        if progress is not None:
+            progress(text)
+
     if not wav_paths:
         raise ValueError("Najpierw nagraj wokal.")
     blobs: list[bytes] = []
@@ -217,15 +239,18 @@ def upload_vocals(
         if len(wav) < 45:
             raise ValueError("Plik WAV jest pusty.")
         blobs.append(wav)
+    say("Tworzę projekt na koncie.")
     document = client.create_project(title, beat_id)
     pid = project_id(document)
     try:
         version = document_version(document)
         track_ids = [vocal_track_id(document)]
         for _extra in range(1, len(blobs)):
+            say(f"Dodaję ścieżkę wokalu {_extra + 1} z {len(blobs)}.")
             added_id, version = client.add_vocal_track(pid, version)
             track_ids.append(added_id)
-        for track_id, wav in zip(track_ids, blobs, strict=True):
+        for number, (track_id, wav) in enumerate(zip(track_ids, blobs, strict=True), start=1):
+            say(f"Wysyłam ścieżkę {number} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
             session = client.open_take(beat_id, len(wav))
             client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
             take_id = str(session["takeId"])
@@ -244,6 +269,7 @@ def upload_vocals(
             version = _version(placed)
         fx = _effect_chain(chain)
         if fx is not None:
+            say("Zapisuję efekty na ścieżkach.")
             for track_id in track_ids:
                 patched = client.apply_track_fx(pid, track_id, version, fx)
                 version = _version(patched)
@@ -304,6 +330,11 @@ def self_test() -> None:
         raise SystemExit("401")
     if is_unauthorized(RuntimeError("GET /api/account/plan-usage -> 403 no")):
         raise SystemExit("403")
+    leaked = network_message(urllib.error.URLError("getaddrinfo failed 10.0.0.1"))
+    if "getaddrinfo" in leaked or "10.0.0.1" in leaked or "połączenia" not in leaked:
+        raise SystemExit("komunikat sieci")
+    if "na czas" not in network_message(TimeoutError("timed out")):
+        raise SystemExit("komunikat limitu czasu")
     _self_test_two_vocals()
     print("upload self-test ok")
 
@@ -356,7 +387,17 @@ def _self_test_two_vocals() -> None:
     second.write_bytes(b"R" * 96)
     fake = _FakeSite()
     chain = {"schemaVersion": 1, "effects": [{"id": "e", "type": "eq"}]}
-    project = upload_vocals(fake, title="Utwór", beat_id="beat-1", wav_paths=[first, second], chain=chain)  # type: ignore[arg-type]
+    steps: list[str] = []
+    project = upload_vocals(
+        fake,  # type: ignore[arg-type]
+        title="Utwór",
+        beat_id="beat-1",
+        wav_paths=[first, second],
+        chain=chain,
+        progress=steps.append,
+    )
+    if steps[0] != "Tworzę projekt na koncie." or not any("ścieżkę 2 z 2" in step for step in steps):
+        raise SystemExit(f"postęp {steps}")
     if project != "p1":
         raise SystemExit("projekt")
     kinds = [item[0] for item in fake.calls if isinstance(item, tuple)]

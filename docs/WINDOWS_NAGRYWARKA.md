@@ -15,7 +15,7 @@ Mac nagrywa tylko w przeglądarce.
 
 - Logowanie tym samym kontem. Hasło nie trafia do pliku ustawień.
 - Katalog opublikowanych bitów. Odsłuch ze strony nie zapisuje bitu. Własny WAV albo MP3 jest tylko zapasowym odsłuchem.
-- Nagranie mikrofonu: mono, 16 bit, 48 kHz, bufor 20 ms, DirectShow. Bez WASAPI, ASIO i bez obietnicy zerowego opóźnienia.
+- Nagranie mikrofonu: mono, 16 bit, 48 kHz, bufor urządzenia 20 ms, bufor czasu rzeczywistego ffmpeg 256 kB (nie dodaje opóźnienia, a chroni przed gubieniem próbek), DirectShow. Bez WASAPI, ASIO i bez obietnicy zerowego opóźnienia.
 - Ścieżki wokalu do limitu planu. Bit się nie liczy. Jedna ścieżka trzyma jedno ujęcie.
 - Fala, M, S, X. Ostatniej ścieżki nie usuwa, tylko czyści ujęcie.
 - Zaznaczenie fali i ED: wytnij, zostaw, wycisz, fade in, fade out. To zapisuje się w pliku WAV.
@@ -23,7 +23,12 @@ Mac nagrywa tylko w przeglądarce.
 - Wyciszenie i solo decydują, które ujęcia słychać i które jadą na konto.
 - Wybór mikrofonu, gdy Windows pokazuje więcej niż jeden.
 - Zaznaczone efekty strony zapisują się na ścieżce po wysłaniu. Brzmienie liczy studio. Program nie liczy DSP i nie ładuje VST.
-- Wysyłka tworzy projekt studia.
+- Wysyłka tworzy projekt studia. Idzie w tle: okno zostaje żywe, pasek stanu pokazuje kroki (projekt, ścieżka N z M, efekty), a Wyślij i Stop i wyślij są zablokowane do końca (nie powstanie drugi projekt). Zamknięcie okna w trakcie wysyłki pyta o potwierdzenie.
+- Po Stop program ocenia ujęcie jednym zdaniem: przester, prawie cisza, cicho albo poziom OK, oraz ostrzega, gdy mikrofon zgubił próbki. To tylko wskazówka, wysyłki nie blokuje.
+- Gdy mikrofon zniknie w trakcie nagrania (odłączony albo zajęty), program kończy nagranie, zostawia na liście to, co się zapisało, i podaje przyczynę z Windows.
+- Błędy sieci są po polsku (brak połączenia, brak odpowiedzi na czas), bez adresów i szczegółów gniazd. Logowanie rozróżnia zły e-mail lub hasło, zbyt wiele prób i niedostępny serwer.
+- Wyloguj kończy też sesję na serwerze, więc zapisany token odświeżania przestaje działać.
+- Sieć dla odsłuchu bitu i miksu idzie poza wątkiem okna (okno nie zamarza przy słabym internecie).
 
 ## Czego program nie robi
 

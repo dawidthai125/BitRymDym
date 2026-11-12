@@ -172,6 +172,49 @@ def write_prefs(path: Path, prefs: dict[str, Any]) -> None:
     path.write_text(json.dumps(clean), encoding="utf-8")
 
 
+def scan_capture_log(text: str) -> tuple[int, str]:
+    """(dropped-buffer warnings, last fatal line) from the ffmpeg capture log."""
+    drops = 0
+    fatal = ""
+    for line in text.splitlines():
+        low = line.lower()
+        if "too full" in low or "dropping" in low:
+            drops += 1
+        elif line.strip() and any(
+            key in low for key in ("could not", "error opening", "i/o error", "access is denied", "cannot")
+        ):
+            fatal = line.strip()
+    return drops, fatal
+
+
+def level_text(db: float) -> str:
+    return f"{db:.0f} dB".replace("-", "−")
+
+
+def quality_note(peak_db_value: float, clipped: int, drops: int = 0) -> str:
+    """One plain sentence about the take, from the peak, clipped samples, and mic drops."""
+    parts: list[str] = []
+    if drops > 0:
+        parts.append(
+            f"Mikrofon zgubił próbki ({drops} razy). Zamknij ciężkie programy i nagraj ten fragment jeszcze raz."
+        )
+    if clipped >= 3 or peak_db_value >= -0.3:
+        parts.append(
+            f"Przester (szczyt {level_text(peak_db_value)}). Zmniejsz głośność mikrofonu w Windows i nagraj jeszcze raz."
+        )
+    elif peak_db_value < -45:
+        parts.append(
+            f"Prawie cisza (szczyt {level_text(peak_db_value)}). Sprawdź, czy wybrany jest właściwy mikrofon i czy nie jest wyciszony."
+        )
+    elif peak_db_value < -24:
+        parts.append(
+            f"Cicho (szczyt {level_text(peak_db_value)}). Zbliż się do mikrofonu albo podnieś jego poziom w Windows."
+        )
+    else:
+        parts.append(f"Poziom OK (szczyt {level_text(peak_db_value)}).")
+    return " ".join(parts)
+
+
 def self_test() -> None:
     if [max_take_seconds(tier) for tier in ("FREE", "BRONZE", "SILVER", "GOLD")] != [30, 60, 120, 180]:
         raise SystemExit("czas nagrania")
@@ -221,6 +264,18 @@ def self_test() -> None:
         raise SystemExit("lista ujęć")
     for path in (small, big, other, prefs_path):
         path.unlink(missing_ok=True)
+    if scan_capture_log("[dshow @ 0x1] real-time buffer [Mic] too full or near too full - dropping frames!\nok")[0] != 1:
+        raise SystemExit("log: gubienie próbek")
+    if "Could not run graph" not in scan_capture_log("x\nCould not run graph (incorrect device)")[1]:
+        raise SystemExit("log: błąd")
+    if scan_capture_log("plain line")[0] != 0:
+        raise SystemExit("log: czysty")
+    if not quality_note(-0.1, 10).startswith("Przester") or "Prawie cisza" not in quality_note(-60, 0):
+        raise SystemExit("ocena: skrajne")
+    if not quality_note(-30, 0).startswith("Cicho") or not quality_note(-12, 0).startswith("Poziom OK"):
+        raise SystemExit("ocena: środek")
+    if "zgubił próbki (2 razy)" not in quality_note(-12, 0, drops=2):
+        raise SystemExit("ocena: próbki")
     print("desk self-test ok")
 
 

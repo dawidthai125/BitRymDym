@@ -71,6 +71,15 @@ def read_mono16(path: Path) -> tuple[int, array.array]:
     return rate, samples
 
 
+def take_stats(path: Path) -> tuple[float, int, float]:
+    """(peak dBFS, clipped samples, seconds). C-speed array calls: fine for a 180 s take."""
+    rate, samples = read_mono16(path)
+    peak = max(max(samples), -min(samples))
+    clipped = samples.count(32767) + samples.count(-32768)
+    db = -96.0 if peak <= 0 else 20.0 * math.log10(min(peak, 32768) / 32768.0)
+    return db, clipped, len(samples) / rate
+
+
 def replace_mono16(path: Path, samples: array.array, rate: int = RATE) -> None:
     if len(samples) < 2:
         raise ValueError("short")
@@ -143,6 +152,14 @@ def self_test(path: Path) -> None:
     cut = edit_span(loaded, RATE, 0.0, 0.1, "cut")
     if len(cut) != 4800 or cut[0] != 2000:
         raise SystemExit("cut")
+    hot = array.array("h", [0, 32767, -32768, 32767, 5])
+    replace_mono16(path, hot)
+    db, clipped, seconds = take_stats(path)
+    if clipped != 3 or db < -0.01 or abs(seconds - 5 / RATE) > 1e-9:
+        raise SystemExit(f"take_stats {db} {clipped} {seconds}")
+    replace_mono16(path, array.array("h", [0] * 100))
+    if take_stats(path)[0] != -96.0:
+        raise SystemExit("take_stats cisza")
     path.unlink(missing_ok=True)
 
 

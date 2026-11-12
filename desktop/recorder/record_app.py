@@ -20,14 +20,24 @@ import tkinter.font as tkfont
 import tkinter.ttk as ttk
 import webbrowser
 from datetime import datetime
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import urllib.error
 import urllib.request
 from pathlib import Path
 
-from account_upload import SITE, is_unauthorized, playback_target, upload_vocals, SiteClient
+from account_upload import (
+    NETWORK_ERRORS,
+    SITE,
+    SiteClient,
+    is_unauthorized,
+    network_message,
+    playback_target,
+    upload_vocals,
+)
 from desk import (
     fold_peaks,
+    quality_note,
+    scan_capture_log,
     list_saved_takes,
     max_recording_tracks,
     max_take_seconds,
@@ -39,7 +49,7 @@ from desk import (
     write_prefs,
 )
 from own_fx import FX, build_chain, display_tier, limits_from_usage
-from record_wav import edit_span, read_mono16, replace_mono16, write_pcm16_wav
+from record_wav import edit_span, read_mono16, replace_mono16, take_stats, write_pcm16_wav
 
 # tokens.css dark tape deck. Families match src/app/layout.tsx.
 # ExtraBold is the poster face (Big Shoulders 800). Fallbacks are the site stack.
@@ -177,6 +187,9 @@ def ffplay_exe() -> str | None:
 
 # Device default is often hundreds of ms and shifts the vocal late against the beat.
 MIC_BUFFER_MS = 20
+# Max backlog before ffmpeg drops mic frames. 64k was under 0.7 s at 48 kHz mono and
+# lost samples when the PC stalled; a larger cap does not add latency (the 20 ms device buffer does).
+MIC_RTBUF = "256k"
 
 
 def monitor_argv(exe: str, target: str | Path, limit_seconds: int | None = None) -> list[str]:
@@ -366,7 +379,7 @@ def capture_argv(exe: str, device: str, path: Path, seconds: float | None = None
         "-audio_buffer_size",
         str(MIC_BUFFER_MS),
         "-rtbufsize",
-        "64k",
+        MIC_RTBUF,
         "-i",
         f"audio={device}",
         "-ac",
@@ -382,15 +395,35 @@ def capture_argv(exe: str, device: str, path: Path, seconds: float | None = None
     return argv
 
 
+def capture_log_path(path: Path) -> Path:
+    return path.with_suffix(".log")
+
+
 def start_capture(path: Path, device: str) -> subprocess.Popen[bytes]:
     path.parent.mkdir(parents=True, exist_ok=True)
-    return subprocess.Popen(
-        capture_argv(ffmpeg_exe(), device, path),
-        stdin=subprocess.PIPE,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        **quiet_kwargs(),
-    )
+    # ffmpeg errors go to a file: dropped mic frames and a dead device are visible afterwards.
+    with capture_log_path(path).open("wb") as log:
+        return subprocess.Popen(
+            capture_argv(ffmpeg_exe(), device, path),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=log,
+            **quiet_kwargs(),
+        )
+
+
+def read_capture_log(path: Path, remove: bool = True) -> tuple[int, str]:
+    log = capture_log_path(path)
+    try:
+        text = log.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return 0, ""
+    if remove:
+        try:
+            log.unlink()
+        except OSError:
+            pass
+    return scan_capture_log(text)
 
 
 def stop_capture(proc: subprocess.Popen[bytes]) -> None:
@@ -430,8 +463,13 @@ def load_bootstrap() -> dict[str, object]:
         f"{SITE}/api/desktop/bootstrap",
         headers={"Accept": "application/json", "User-Agent": "BitRymDymRecorder"},
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        raise RuntimeError(f"Strona nie oddała danych logowania (kod {error.code}). Spróbuj za chwilę.") from None
+    except NETWORK_ERRORS as error:
+        raise RuntimeError(network_message(error)) from None
     if not isinstance(payload, dict) or not payload.get("supabaseUrl") or not payload.get("anonKey"):
         raise RuntimeError("Strona nie oddała publicznego klienta.")
     return payload
@@ -449,7 +487,13 @@ def supabase_password_grant(url: str, anon_key: str, email: str, password: str) 
         with urllib.request.urlopen(request, timeout=30) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        raise RuntimeError("Logowanie nie weszło. Sprawdź e-mail i hasło.") from error
+        if error.code == 429:
+            raise RuntimeError("Za dużo prób logowania. Poczekaj minutę i spróbuj jeszcze raz.") from None
+        if error.code in (400, 401, 403, 422):
+            raise RuntimeError("Logowanie nie weszło. Sprawdź e-mail i hasło.") from None
+        raise RuntimeError(f"Serwer logowania nie odpowiada (kod {error.code}). Spróbuj za chwilę.") from None
+    except NETWORK_ERRORS as error:
+        raise RuntimeError(network_message(error)) from None
     token = payload.get("access_token")
     if not isinstance(token, str) or token.count(".") != 2:
         raise RuntimeError("Konto nie oddało tokenu.")
@@ -493,11 +537,36 @@ def supabase_refresh_grant(url: str, anon_key: str, refresh_token: str) -> dict[
         with urllib.request.urlopen(request, timeout=30) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.") from error
+        if error.code in (400, 401, 403, 422):
+            raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.") from None
+        raise RuntimeError(f"Serwer logowania nie odpowiada (kod {error.code}). Spróbuj za chwilę.") from None
+    except NETWORK_ERRORS as error:
+        raise RuntimeError(network_message(error)) from None
     token = payload.get("access_token")
     if not isinstance(token, str) or token.count(".") != 2:
         raise RuntimeError("Sesja wygasła. Zaloguj się jeszcze raz.")
     return {"access_token": token, "refresh_token": str(payload.get("refresh_token") or refresh_token)}
+
+
+def supabase_logout(url: str, anon_key: str, access_token: str) -> bool:
+    """Ends this session on the server so the saved refresh token stops working. Best effort."""
+    if not url or not anon_key or not access_token:
+        return False
+    request = urllib.request.Request(
+        f"{url.rstrip('/')}/auth/v1/logout",
+        data=b"{}",
+        method="POST",
+        headers={
+            "apikey": anon_key,
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10):
+            return True
+    except Exception:
+        return False
 
 
 class RecorderWindow:
@@ -527,6 +596,8 @@ class RecorderWindow:
         self._apply_icon()
         self.recording = False
         self._arming = False
+        self._uploading = False
+        self._take_note = ""
         self._arm_token = 0
         self._wave_cols: list[float] = []
         self._wave_end = 44
@@ -793,6 +864,9 @@ class RecorderWindow:
         caption = getattr(self, "local_caption", None)
         if caption is not None:
             caption.configure(wraplength=max(160, width - 190))
+        hint = getattr(self, "lane_hint", None)
+        if hint is not None:
+            hint.configure(wraplength=max(200, width - 70))
 
     def show_gate(self) -> None:
         self.scrollbar.pack_forget()
@@ -880,6 +954,11 @@ class RecorderWindow:
         ).pack(anchor="w", pady=(12, 0))
 
     def _on_close(self) -> None:
+        if self._uploading and not messagebox.askyesno(
+            "BitRymDym",
+            "Wysyłka na konto jeszcze trwa. Jeśli zamkniesz program teraz, projekt na koncie może zostać niepełny. Zamknąć mimo to?",
+        ):
+            return
         self._arm_token += 1
         self._cancel_tick()
         self._stop_monitor()
@@ -1044,7 +1123,7 @@ class RecorderWindow:
         self.add_button = add_shell.winfo_children()[0]
         self._build_vu(bar)
         self._sync_add_button()
-        tk.Label(
+        self.lane_hint = tk.Label(
             stack,
             text="Przeciągnij po fali i w ED wytnij, zostaw, wycisz albo zrób fade. ED ustawia dB i lewo albo prawo. M wycisza, S zostawia solo. Graj miks składa bit i słyszane ujęcia. Bit nie jest zapisywany. Czerwień: przester albo głośniej niż bit.",
             bg=PANEL,
@@ -1053,7 +1132,8 @@ class RecorderWindow:
             anchor="w",
             wraplength=900,
             justify="left",
-        ).pack(fill="x", pady=(6, 0))
+        )
+        self.lane_hint.pack(fill="x", pady=(6, 0))
 
     def _track_cap(self) -> int:
         return max_recording_tracks(self.tier)
@@ -1337,10 +1417,22 @@ class RecorderWindow:
             return "Strona nie oddała odsłuchu."
         return text
 
-    def _beat_listen(self) -> tuple[str | None, int | None, str]:
-        """Site PLAYBACK first. A local file is only the fallback. Nothing is saved."""
+    def _beat_id_or_empty(self) -> str:
+        """Read the beat choice on the Tk thread. Worker threads must not touch Tk variables."""
         try:
-            payload = self._client().playback(self.selected_beat_id())
+            return self.selected_beat_id()
+        except RuntimeError:
+            return ""
+
+    def _beat_listen(self, beat_id: str) -> tuple[str | None, int | None, str]:
+        """Site PLAYBACK first. A local file is only the fallback. Nothing is saved.
+
+        Network call: run it off the Tk thread. beat_id is read by the caller.
+        """
+        try:
+            if not beat_id:
+                raise RuntimeError("Najpierw wybierz bit.")
+            payload = self._client().playback(beat_id)
             url, limit = playback_target(payload)
             note = (
                 f"Podgląd strony: {limit} s. Program nie zapisuje bitu."
@@ -1358,9 +1450,26 @@ class RecorderWindow:
             if self.recording:
                 raise RuntimeError("Najpierw Stop. Odsłuch bitu i tak leci w trakcie nagrania.")
             self._stop_monitor()
-            target, limit, note = self._beat_listen()
+            self.status.set("Łączę odsłuch bitu. Okno zostaje.")
+            threading.Thread(target=self._prepare_preview, args=(self._beat_id_or_empty(),), daemon=True).start()
+        except Exception as error:
+            self.status.set(self._safe_listen_error(error))
+
+    def _prepare_preview(self, beat_id: str) -> None:
+        try:
+            heard = self._beat_listen(beat_id)
+        except Exception as error:
+            heard = (None, None, self._safe_listen_error(error))
+        self.root.after(0, lambda result=heard: self._start_preview(result))
+
+    def _start_preview(self, heard: tuple[str | None, int | None, str]) -> None:
+        try:
+            if self.recording:
+                return
+            target, limit, note = heard
             if target is None:
                 raise RuntimeError(note)
+            self._stop_monitor()
             self.monitor = start_monitor(target, limit)
             if self.monitor is None:
                 raise RuntimeError("Brak ffplay. Bez niego nie ma odsłuchu.")
@@ -1618,16 +1727,18 @@ class RecorderWindow:
                 raise RuntimeError("Najpierw nagraj wokal na ścieżkę.")
             self._stop_monitor()
             self.status.set("Składam miks. Bit ze strony nie jest zapisywany.")
-            threading.Thread(target=self._play_mix, args=(vocals,), daemon=True).start()
+            threading.Thread(
+                target=self._play_mix, args=(vocals, self._beat_id_or_empty()), daemon=True
+            ).start()
         except Exception as error:
             self.status.set(self._safe_listen_error(error))
 
-    def _play_mix(self, vocals: list[tuple[Path, float, float]]) -> None:
+    def _play_mix(self, vocals: list[tuple[Path, float, float]], beat_id: str) -> None:
         beat: str | None = None
         limit: int | None = None
         note = "Miks gra na domyślnym wyjściu Windows."
         try:
-            target, limit, heard = self._beat_listen()
+            target, limit, heard = self._beat_listen(beat_id)
             if target is not None:
                 beat = target
                 note = heard
@@ -1931,11 +2042,14 @@ class RecorderWindow:
         )
         grid = tk.Frame(self.page, bg=PAPER)
         grid.pack(fill="x", padx=14, pady=(8, 4))
+        self.send_buttons: list[tk.Widget] = []
         for index, (text, command, bg, fg) in enumerate(items):
             shell = self._button(grid, text, command, bg, fg)
             shell.grid(row=index // 2, column=index % 2, sticky="ew", padx=4, pady=4)
             if text == "Studio":
                 self.open_button = shell
+            if text in ("Wyślij", "Stop i wyślij"):
+                self.send_buttons.append(shell)
         grid.columnconfigure(0, weight=1)
         grid.columnconfigure(1, weight=1)
         self.take_list = tk.Listbox(
@@ -2028,6 +2142,7 @@ class RecorderWindow:
             fg=fg,
             activebackground=AMBER_SOFT if bg == AMBER else bg,
             activeforeground=fg,
+            disabledforeground=MUTE,
             relief="flat",
             bd=0,
             padx=12,
@@ -2194,7 +2309,17 @@ class RecorderWindow:
         self.status.set(f"Lista bitów: {len(self.beats)}.")
 
     def sign_out(self) -> None:
+        if self._uploading:
+            self.status.set("Wysyłka trwa. Wyloguj po jej końcu.")
+            return
         email = self.email.get().strip()
+        old = load_session()
+        if old and old.get("accessToken"):
+            threading.Thread(
+                target=supabase_logout,
+                args=(old.get("supabaseUrl", ""), old.get("anonKey", ""), old["accessToken"]),
+                daemon=True,
+            ).start()
         SESSION.parent.mkdir(parents=True, exist_ok=True)
         SESSION.write_text(
             json.dumps(
@@ -2286,6 +2411,9 @@ class RecorderWindow:
     def _tick(self) -> None:
         if not self.recording:
             return
+        if self.capture is not None and self.capture.poll() is not None:
+            self._capture_died()
+            return
         try:
             seconds = wav_seconds(self.wav_path.stat().st_size) if self.wav_path.exists() else 0.0
             cap = max_take_seconds(self.tier)
@@ -2301,7 +2429,10 @@ class RecorderWindow:
             except Exception as error:
                 self.status.set(str(error))
                 return
-            self.status.set(f"Plan {display_tier(self.tier)} kończy nagranie po {cap} s. Ujęcie jest na liście.")
+            self.status.set(
+                f"Plan {display_tier(self.tier)} kończy nagranie po {cap} s. Ujęcie jest na liście."
+                + (f" {self._take_note}" if self._take_note else "")
+            )
             return
         self._tick_id = self.root.after(200, self._tick)
 
@@ -2367,9 +2498,41 @@ class RecorderWindow:
         self._add_take(self.wav_path)
         self._save_prefs()
         self.clock.set(f"{wav_seconds(self.wav_path.stat().st_size):.1f} s / {max_take_seconds(self.tier)} s")
+        self._take_note = self._rate_take(self.wav_path)
         return self.wav_path
 
+    def _rate_take(self, path: Path) -> str:
+        """One sentence on level, clipping, and mic drops. Never blocks sending."""
+        drops, _fatal = read_capture_log(path)
+        try:
+            db, clipped, _seconds = take_stats(path)
+        except Exception:
+            return ""
+        return quality_note(db, clipped, drops)
+
+    def _capture_died(self) -> None:
+        """ffmpeg ended by itself: mic unplugged, taken by another program, or Windows closed it."""
+        path = self.wav_path
+        _drops, fatal = read_capture_log(path, remove=False)
+        self._cancel_tick()
+        self._stop_monitor()
+        self.capture = None
+        self.recording = False
+        self._paint_lamp()
+        reason = "Mikrofon przestał oddawać dźwięk (odłączony albo zajęty przez inny program)."
+        if path.exists() and path.stat().st_size >= 1000:
+            self._add_take(path)
+            self._paint_lanes()
+            reason += " Do tej chwili ujęcie jest zapisane na liście."
+        elif fatal:
+            reason += f" Windows: {fatal[:120]}"
+        read_capture_log(path)
+        self.status.set(reason)
+
     def _upload(self, paths: list[Path]) -> None:
+        """Checks on the Tk thread, then the transfer runs in a worker so the window stays alive."""
+        if self._uploading:
+            raise RuntimeError("Wysyłka już trwa.")
         title = self.title_box.get().strip()
         if not title:
             raise RuntimeError("Wpisz tytuł.")
@@ -2380,16 +2543,60 @@ class RecorderWindow:
             )
         picked = self.selected_fx()
         chain = build_chain(picked, self.tier)
-        project = upload_vocals(
-            self._client(),
-            title=title,
-            beat_id=self.selected_beat_id(),
-            wav_paths=paths,
-            chain=chain,
-        )
+        beat_id = self.selected_beat_id()
+        self._uploading = True
+        self._sync_send_buttons()
+        self.status.set("Wysyłam na konto. Okno zostaje, nie zamykaj programu.")
+        threading.Thread(
+            target=self._run_upload,
+            args=(title, beat_id, list(paths), chain, len(picked)),
+            daemon=True,
+        ).start()
+
+    def _upload_say(self, text: str) -> None:
+        self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
+
+    def _run_upload(
+        self,
+        title: str,
+        beat_id: str,
+        paths: list[Path],
+        chain: dict[str, object],
+        fx_count: int,
+    ) -> None:
+        try:
+            project = upload_vocals(
+                self._client(),
+                title=title,
+                beat_id=beat_id,
+                wav_paths=paths,
+                chain=chain,
+                progress=self._upload_say,
+            )
+        except Exception as error:
+            message = str(error)
+            self.root.after(0, lambda: self._upload_done(None, len(paths), fx_count, message))
+            return
+        self.root.after(0, lambda: self._upload_done(project, len(paths), fx_count, ""))
+
+    def _upload_done(self, project: str | None, tracks: int, fx_count: int, error: str) -> None:
+        self._uploading = False
+        self._sync_send_buttons()
+        if project is None:
+            self.status.set(error or "Wysyłka się nie udała.")
+            return
         self.project_id = project
-        fx_note = f" Efekty: {len(picked)}." if picked else ""
-        self.status.set(f"Projekt jest na koncie. Ścieżki wokalu: {len(paths)}.{fx_note} Id: {project}")
+        fx_note = f" Efekty: {fx_count}." if fx_count else ""
+        self.status.set(f"Projekt jest na koncie. Ścieżki wokalu: {tracks}.{fx_note} Id: {project}")
+
+    def _sync_send_buttons(self) -> None:
+        """Wyślij and Stop i wyślij stay greyed out until the transfer ends (no double project)."""
+        for shell in getattr(self, "send_buttons", []):
+            try:
+                inner = shell.winfo_children()[0]
+                inner.configure(state="disabled" if self._uploading else "normal")
+            except Exception:
+                pass
 
     def arm(self) -> None:
         if self.recording or self._arming:
@@ -2401,11 +2608,13 @@ class RecorderWindow:
         self._arm_token += 1
         token = self._arm_token
         self.status.set("Łączę odsłuch bitu. Okno zostaje.")
-        threading.Thread(target=self._prepare_listen, args=(token,), daemon=True).start()
+        threading.Thread(
+            target=self._prepare_listen, args=(token, self._beat_id_or_empty()), daemon=True
+        ).start()
 
-    def _prepare_listen(self, token: int) -> None:
+    def _prepare_listen(self, token: int, beat_id: str) -> None:
         try:
-            heard = self._beat_listen()
+            heard = self._beat_listen(beat_id)
         except Exception as error:
             heard = (None, None, self._safe_listen_error(error))
         self.root.after(0, lambda result=heard, mark=token: self._begin_take(mark, result))
@@ -2461,7 +2670,11 @@ class RecorderWindow:
                 raise RuntimeError("Najpierw naciśnij Nagraj.")
             self._finish_take()
             self._paint_lanes()
-            self.status.set("Ujęcie jest na ścieżce. Wyślij wrzuca nagrane ścieżki na jedno konto.")
+            self.status.set(
+                "Ujęcie jest na ścieżce. "
+                + (f"{self._take_note} " if self._take_note else "")
+                + "Wyślij wrzuca nagrane ścieżki na jedno konto."
+            )
         except Exception as error:
             self._cancel_tick()
             self.recording = False
@@ -2473,6 +2686,9 @@ class RecorderWindow:
             self.status.set(str(error))
 
     def send_selected(self) -> None:
+        if self._uploading:
+            self.status.set("Wysyłka już trwa. Poczekaj na koniec.")
+            return
         try:
             if self.recording:
                 self._finish_take()
@@ -2527,6 +2743,10 @@ if __name__ == "__main__":
         mic = capture_argv("ffmpeg", "Mic", Path("a.wav"))
         if mic[mic.index("-audio_buffer_size") + 1] != "20":
             raise SystemExit("bufor mikrofonu")
+        if mic[mic.index("-rtbufsize") + 1] != MIC_RTBUF:
+            raise SystemExit("bufor czasu rzeczywistego")
+        if capture_log_path(Path("x/ujecie-1.wav")) != Path("x/ujecie-1.log"):
+            raise SystemExit("log mikrofonu")
         flags = quiet_kwargs()
         if os.name == "nt" and flags.get("creationflags") != subprocess.CREATE_NO_WINDOW:
             raise SystemExit("konsola")
