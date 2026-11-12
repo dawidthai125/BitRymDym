@@ -375,6 +375,8 @@ function StudioEditorInner({
   const [recordingLocked, setRecordingLocked] = useState(false);
   /** Stage 1 — Studio steps: record → mix (→ mastering, soon). */
   const [studioStep, setStudioStep] = useState<"record" | "mix" | "master">("record");
+  /** Sample tab sits beside Nagranie. It is not a mix or mastering step. */
+  const [sampleTab, setSampleTab] = useState(false);
   /** Silver/Gold start in the advanced studio. Free/Bronze cannot leave the simple record surface. */
   const [recordFullView, setRecordFullView] = useState(() => studioAdvancedRecordAllowed(trackCapacity.premiumTier));
   // After a reload: an approved master for the unchanged mix reopens Mastering (with downloads).
@@ -384,7 +386,10 @@ function StudioEditorInner({
     void fetch(`/api/studio/projects/${restoreProjectId}/master`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (live && j?.approved?.id) setStudioStep((cur) => (cur === "record" ? "master" : cur));
+        if (live && j?.approved?.id) {
+          setSampleTab(false);
+          setStudioStep((cur) => (cur === "record" ? "master" : cur));
+        }
       })
       .catch(() => {});
     return () => {
@@ -495,7 +500,9 @@ function StudioEditorInner({
   const snapPreset = snapPresetFromConfig(snapConfig);
   const recordingContextActive = recordingLocked || inspectorPreferRecord;
   const advancedRecord = studioAdvancedRecordAllowed(trackCapacity.premiumTier);
+  const onSampleTab = sampleTab && studioStep === "record";
   const recordSimple =
+    onSampleTab ||
     studioRecordView({ step: studioStep, fullView: recordFullView, advancedAllowed: advancedRecord }) === "simple";
   const inspectorContext = deriveStudioInspectorContext({
     recordingActive: recordingContextActive || recordSimple,
@@ -535,7 +542,10 @@ function StudioEditorInner({
     bitekStore.append([{ kind: "welcome", content: tBitek("dock.powitanie") }]);
   }, [bitekStore, tBitek]);
   const onRecordBitekAction = (action: BitekAction) => {
-    if (action === "goMix" && canGoMix) setStudioStep("mix");
+    if (action === "goMix" && canGoMix) {
+      setSampleTab(false);
+      setStudioStep("mix");
+    }
     if (action === "chooseBeat") setBeatPickerOpen(true);
     if (action === "record") {
       setInspectorPreferRecord(true);
@@ -610,6 +620,7 @@ function StudioEditorInner({
               primary: true,
               onClick: () => {
                 saveAutoMixHandoff(doc.project.id);
+                setSampleTab(false);
                 setStudioStep("mix");
               },
             }]
@@ -2770,6 +2781,7 @@ function StudioEditorInner({
           tracks={doc.tracks}
           embedded={!recordSimple}
           simple={recordSimple}
+          samplesMode={onSampleTab}
           stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
           trackLimit={maxTracks}
           onSaveTrackMidi={saveTrackMidi}
@@ -3134,6 +3146,7 @@ function StudioEditorInner({
       data-studio-shell="true"
       data-studio-visual-parity="v2"
       data-record-view={studioStep === "record" ? (recordSimple ? "simple" : "full") : undefined}
+      data-studio-tab={onSampleTab ? "samples" : studioStep}
       className="flex min-h-[calc(100dvh-7rem)] flex-col gap-0.5 overflow-x-hidden max-lg:pb-[var(--bitek-dock-h,0px)]"
     >
       <header
@@ -3151,7 +3164,41 @@ function StudioEditorInner({
         className="flex flex-wrap items-center gap-2 border-b border-[var(--brd-line)] py-1"
       >
         <ol className="flex flex-wrap items-center gap-1 text-xs uppercase tracking-[0.12em]">
-          {(["record", "mix", "master"] as const).map((s, i) => (
+          <li>
+            <button
+              type="button"
+              data-testid="studio-tab-record"
+              aria-current={studioStep === "record" && !onSampleTab ? "step" : undefined}
+              className={
+                studioStep === "record" && !onSampleTab
+                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)]"
+                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)]"
+              }
+              onClick={() => setSampleTab(false)}
+            >
+              1. {tMix("krokNagranie")}
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              data-testid="studio-tab-samples"
+              aria-current={onSampleTab ? "page" : undefined}
+              disabled={recordingLocked}
+              className={
+                onSampleTab
+                  ? "min-h-11 rounded-[2px] bg-[var(--brd-ink)] px-2 py-1 text-[var(--brd-paper)] disabled:opacity-50"
+                  : "min-h-11 rounded-[2px] px-2 py-1 text-[var(--brd-mute)] disabled:opacity-50"
+              }
+              onClick={() => {
+                if (studioStep !== "record") setStudioStep("record");
+                setSampleTab(true);
+              }}
+            >
+              {tMix("krokSample")}
+            </button>
+          </li>
+          {(["mix", "master"] as const).map((s, i) => (
             <li
               key={s}
               aria-current={studioStep === s ? "step" : undefined}
@@ -3161,13 +3208,13 @@ function StudioEditorInner({
                   : "px-2 py-1 text-[var(--brd-mute)]"
               }
             >
-              {i + 1}. {s === "record" ? tMix("krokNagranie") : s === "mix" ? tMix("krokMix") : tMix("krokMastering")}
+              {i + 2}. {s === "mix" ? tMix("krokMix") : tMix("krokMastering")}
             </li>
           ))}
         </ol>
         {studioStep === "record" ? (
           <div className="ml-auto flex items-center gap-2">
-            {advancedRecord ? (
+            {onSampleTab ? null : advancedRecord ? (
               <Button
                 type="button"
                 size="sm"
@@ -3211,7 +3258,10 @@ function StudioEditorInner({
               data-testid="studio-go-mix"
               aria-describedby="studio-go-mix-hint"
               disabled={!canGoMix}
-              onClick={() => setStudioStep("mix")}
+              onClick={() => {
+                setSampleTab(false);
+                setStudioStep("mix");
+              }}
             >
               {tMix("przejdzDoMixu")} →
             </Button>
@@ -3594,7 +3644,10 @@ function StudioEditorInner({
             onApplyProposal={applyBitekProposal}
             onApplyFxOps={async (ops, description) => (await applyMixAutofix(ops, description)).ok}
             onApplyMasterProposal={(key, value) => masterApplyRef.current?.(key, value)}
-            onBackToMix={studioStep === "master" ? () => setStudioStep("mix") : undefined}
+            onBackToMix={studioStep === "master" ? () => {
+              setSampleTab(false);
+              setStudioStep("mix");
+            } : undefined}
             disabled={recordingLocked || pending}
             store={bitekStore}
             onBusyChange={setBitekChatBusy}
@@ -3606,7 +3659,10 @@ function StudioEditorInner({
         <StudioMasterStep
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
-          onBackToMix={() => setStudioStep("mix")}
+          onBackToMix={() => {
+            setSampleTab(false);
+            setStudioStep("mix");
+          }}
           onBitekBubble={setMasterBubble}
           chatContextRef={masterChatContextRef}
           applyRef={masterApplyRef}
@@ -3616,12 +3672,18 @@ function StudioEditorInner({
         />
       ) : studioStep === "mix" ? (
         <StudioMixStep
-          onGoMaster={() => setStudioStep("master")}
+          onGoMaster={() => {
+            setSampleTab(false);
+            setStudioStep("master");
+          }}
           onListen={() => transport.play()}
           autoEnabled={autoOn}
           doc={doc}
           resolveClipSourceUrl={resolveClipSourceUrl}
-          onBack={() => setStudioStep("record")}
+          onBack={() => {
+            setSampleTab(false);
+            setStudioStep("record");
+          }}
           bitekBase={bitekBase}
           onApplyAutofix={applyMixAutofix}
           onAbOverride={onMixAbOverride}

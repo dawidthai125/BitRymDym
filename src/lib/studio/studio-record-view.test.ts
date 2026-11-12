@@ -56,12 +56,15 @@ describe("record simple surface wiring", () => {
   it("hides comping, punch, latency and catalog in the simple recording panel", () => {
     expect(panel).toMatch(/simple = false/);
     expect(panel).toMatch(/data-record-density=\{simple \? "simple" : "full"\}/);
-    expect(panel).toMatch(/\{!simple \? \(\s*<StudioLatencyCard/);
-    expect(panel).toMatch(/\{!simple \? \(\s*<StudioRecModeCard/);
-    expect(panel).toMatch(/\{!simple \? \(\s*<StudioLyricsCard/);
-    expect(panel).toMatch(/\{!simple \? \(\s*<>\s*<StudioTakeLanesCard/);
-    expect(panel).toMatch(/\{!simple \? \(\s*<div[\s\S]*?StudioMarkersPanel/);
-    expect(panel).toMatch(/\{!simple \? \(\s*<div[\s\S]*?outputDevices\.pickerEnabled/);
+    expect(panel).toMatch(/setupOpen \? \(\s*<StudioLatencyCard/);
+    expect(panel).toMatch(/setupOpen \? \(\s*<StudioRecModeCard/);
+    expect(panel).toMatch(/setupOpen \? \(\s*<StudioLyricsCard/);
+    expect(panel).toMatch(/lanesOpen \? \(\s*<>\s*<StudioTakeLanesCard/);
+    expect(panel).toMatch(/scratchOpen[\s\S]*StudioMarkersPanel/);
+    expect(panel).toMatch(/setupOpen \? \(\s*<div[\s\S]*?outputDevices\.pickerEnabled/);
+    expect(panel).toMatch(/samplesMode \? \(\s*<>\s*<StudioPlayKeys/);
+    expect(editor).toMatch(/data-testid="studio-tab-samples"/);
+    expect(editor).toMatch(/samplesMode=\{onSampleTab\}/);
     expect(panel).toMatch(/void prepareMicrophone\(\)/);
     expect(panel).toMatch(/importFileInputRef/);
   });

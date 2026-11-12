@@ -161,6 +161,7 @@ export function StudioRecordingPanel({
   recoverySavedKey = 0,
   embedded = false,
   simple = false,
+  samplesMode = false,
   /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
   preferredTrackId = null,
   lastScratchClipId,
@@ -203,6 +204,8 @@ export function StudioRecordingPanel({
   embedded?: boolean;
   /** Record-step simple view: mic, record, import, keep or discard. */
   simple?: boolean;
+  /** Sample tab: instruments and the sample desk, without the microphone. */
+  samplesMode?: boolean;
   preferredTrackId?: string | null;
   /** Editor SSOT — scratch clip survives panel unmount. */
   lastScratchClipId: string | null;
@@ -465,6 +468,7 @@ export function StudioRecordingPanel({
   const [testerStream, setTesterStream] = useState<MediaStream | null>(null);
   const [testerError, setTesterError] = useState<string | null>(null);
   const [advancedMicOpen, setAdvancedMicOpen] = useState(false);
+  const [recordPane, setRecordPane] = useState<"take" | "setup" | "lanes" | "scratch">("take");
   /** Blocks tester re-acquire while arming recorder (closes dual-stream window). */
   const [captureArming, setCaptureArming] = useState(false);
   const captureArmingRef = useRef(false);
@@ -2281,6 +2285,11 @@ export function StudioRecordingPanel({
     !trackId;
 
   const workflowDisabled = Boolean(workflowBusy);
+  const visiblePane = showWorkflow ? "take" : recordPane;
+  const setupOpen = !simple && !samplesMode && visiblePane === "setup";
+  const lanesOpen = !simple && !samplesMode && visiblePane === "lanes";
+  const scratchOpen = !simple && !samplesMode && visiblePane === "scratch";
+  const takeOpen = !samplesMode && (simple || visiblePane === "take");
 
   return (
     <section
@@ -2312,7 +2321,7 @@ export function StudioRecordingPanel({
         : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-[var(--brd-ink)]">
-          {tr("nagrywanie")}
+          {samplesMode ? tr("sampleTytul") : tr("nagrywanie")}
         </h2>
         {state.phase === "RECORDING" ? (
           <div className="space-y-0.5 text-right">
@@ -2336,6 +2345,45 @@ export function StudioRecordingPanel({
         )}
       </div>
 
+      {samplesMode ? (
+        <p className="text-sm text-[var(--brd-ink)]" data-testid="studio-samples-lead">
+          {tr("sampleZakladkaOpis")}
+        </p>
+      ) : null}
+      {!simple && !samplesMode ? (
+        <div className="grid grid-cols-4 gap-1" role="tablist" aria-label={tr("nagrywanie")} data-testid="studio-record-panes">
+          {(
+            [
+              ["take", "recPaneNagraj"],
+              ["setup", "recPaneUstawienia"],
+              ["lanes", "recPaneUjecia"],
+              ["scratch", "recPaneScratch"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={visiblePane === id}
+              data-testid={`studio-record-pane-${id}`}
+              className={`min-h-11 rounded border px-1 text-[10px] font-medium uppercase tracking-[0.08em] ${
+                visiblePane === id
+                  ? "border-[var(--brd-green)] bg-[color-mix(in_srgb,var(--brd-bg)_80%,var(--brd-green)_20%)] text-[var(--brd-ink)]"
+                  : "border-[var(--brd-line)] bg-[var(--brd-paper)] text-[var(--brd-mute)]"
+              }`}
+              onClick={() => setRecordPane(id)}
+            >
+              {tr(label)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {takeOpen ? (
+        <p className="text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-start">
+          {tr("zacznijTutaj")}
+        </p>
+      ) : null}
+
       <label className="block text-xs text-[var(--brd-mute)]">
         {tr("sciezka")}
         <select
@@ -2356,7 +2404,7 @@ export function StudioRecordingPanel({
         </select>
       </label>
 
-      {!simple ? (
+      {setupOpen ? (
       <StudioLatencyCard
         latency={latency}
         calibration={calibration}
@@ -2367,7 +2415,7 @@ export function StudioRecordingPanel({
       />
       ) : null}
 
-      {!simple ? (
+      {setupOpen ? (
       <StudioRecModeCard
         mode={recMode}
         onMode={chooseRecMode}
@@ -2383,7 +2431,7 @@ export function StudioRecordingPanel({
       />
       ) : null}
 
-      {!simple ? (
+      {setupOpen ? (
       <StudioLyricsCard
         projectId={projectId}
         getPlayheadMs={transport.getPlayheadMs}
@@ -2393,7 +2441,7 @@ export function StudioRecordingPanel({
       />
       ) : null}
 
-      {!simple && stemLimit > 0 ? (
+      {setupOpen && stemLimit > 0 ? (
         <StudioStemImport
           projectId={projectId}
           freeSlots={Math.max(0, trackLimit - recordableTracks.length)}
@@ -2412,7 +2460,7 @@ export function StudioRecordingPanel({
         </p>
       ) : null}
 
-      {!simple ? (
+      {setupOpen ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">
           {tr("countInPunch")}
@@ -2478,7 +2526,7 @@ export function StudioRecordingPanel({
       </div>
       ) : null}
 
-      {showWorkflow ? (
+      {!samplesMode && showWorkflow ? (
         <div
           ref={takeWorkflowRef}
           className="space-y-2 rounded border border-[var(--brd-line)] p-2"
@@ -2540,7 +2588,7 @@ export function StudioRecordingPanel({
         </div>
       ) : null}
 
-      {!simple ? (
+      {lanesOpen ? (
       <>
       <StudioTakeLanesCard
         lanes={trackLanes}
@@ -2563,6 +2611,8 @@ export function StudioRecordingPanel({
       </>
       ) : null}
 
+      {samplesMode ? (
+      <>
       <StudioPlayKeys
         disabled={!trackId || Boolean(workflowBusy)}
         midi={tracks.find((track) => track.id === trackId)?.midi ?? null}
@@ -2622,7 +2672,9 @@ export function StudioRecordingPanel({
           return { ok: true as const };
         }}
       />
-      {!simple ? (
+      </>
+      ) : null}
+      {samplesMode || scratchOpen ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         {catalogMessage ? (
           <p className="text-xs text-[var(--brd-ink-soft)]" role="status">
@@ -2641,6 +2693,7 @@ export function StudioRecordingPanel({
           >
             {tl(trackCreateBusy === "SAMPLE" ? tr("dodawanie") : tr("dodajSample"))}
           </Button>
+          {samplesMode ? null : (
           <Button
             type="button"
             size="sm"
@@ -2652,7 +2705,10 @@ export function StudioRecordingPanel({
           >
             {tl(trackCreateBusy === "SCRATCH" ? tr("dodawanie") : tr("dodajScratch"))}
           </Button>
+          )}
         </div>
+        {samplesMode ? null : (
+        <>
         <StudioMarkersPanel
           projectId={projectId}
           getExpectedDocumentVersion={persistVersionTip.expected}
@@ -2720,10 +2776,13 @@ export function StudioRecordingPanel({
             })();
           }}
         />
+        </>
+        )}
       </div>
 
       ) : null}
 
+      {takeOpen ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("mikrofon")}</p>
         <p className="text-xs text-[var(--brd-mute)]">{tr("zrodloNagrywania")}</p>
@@ -2832,8 +2891,9 @@ export function StudioRecordingPanel({
           )}
         </div>
       </div>
+      ) : null}
 
-      {!simple ? (
+      {setupOpen ? (
       <div className="space-y-2 rounded border border-[var(--brd-line)] p-2">
         <p className="text-xs font-medium text-[var(--brd-ink)]">{tr("odsluch")}</p>
         {outputDevices.pickerEnabled ? (
@@ -2882,7 +2942,7 @@ export function StudioRecordingPanel({
         </p>
       ) : null}
 
-      {!showWorkflow ? (
+      {takeOpen && !showWorkflow ? (
         <div className="flex w-full flex-col gap-2">
           <StudioQuotaLine />
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -2951,6 +3011,7 @@ export function StudioRecordingPanel({
         </div>
       ) : null}
 
+      {takeOpen ? (
       <div className="space-y-2 border-t border-[var(--brd-line)] pt-2">
         <Button
           type="button"
@@ -3049,10 +3110,13 @@ export function StudioRecordingPanel({
           </div>
         ) : null}
       </div>
+      ) : null}
 
+      {samplesMode ? null : (
       <p className="text-[11px] text-[var(--brd-mute)]">
         {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
       </p>
+      )}
     </section>
   );
 }
