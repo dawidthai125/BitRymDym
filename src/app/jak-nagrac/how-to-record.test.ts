@@ -36,3 +36,13 @@ describe("jak-nagrac + licence summary", () => {
     expect(read("src/components/studio/studio-editor.tsx")).toContain("PLAN_POLICY[trackCapacity.premiumTier].recording.sessionsPerDay");
   });
 });
+
+describe("jak-nagrac vs home: no duplicated steps", () => {
+  it("guide points to the home section instead of repeating the steps", () => {
+    const page = read("src/app/jak-nagrac/page.tsx");
+    expect(page).toContain('href="/#jak-to-dziala"');
+    expect(page).not.toContain("krok1");
+    expect(read("src/app/page.tsx")).toContain("/jak-nagrac");
+    expect(read("src/app/page.tsx")).toContain('id="jak-to-dziala"');
+  });
+});

@@ -420,6 +420,11 @@ export default async function HomePage() {
                 </li>
               ))}
             </ol>
+            <p className="mt-8 text-sm text-tape-cream-soft sm:text-base">
+              <Link href="/jak-nagrac" className="underline underline-offset-4 hover:text-tape-cream" data-testid="home-limits-license-link">
+                {t("limityILicencja")}
+              </Link>
+            </p>
           </div>
         </section>
 

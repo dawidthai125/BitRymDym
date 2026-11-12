@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/site/app-shell";
@@ -30,15 +31,18 @@ export default function HowToRecordPage() {
           <h1 className="brd-display mt-2 text-4xl font-semibold tracking-tight">{t("tytul")}</h1>
           <p className="mt-4 text-[var(--brd-ink-soft)] leading-relaxed">{t("wstep")}</p>
 
-          <ol className="mt-8 space-y-4" data-testid="how-to-steps">
-            {(["krok1", "krok2", "krok3", "krok4"] as const).map((k, i) => (
-              <li key={k} className="rounded border border-[var(--brd-line)] p-4">
-                <p className="text-xs text-[var(--brd-mute)]">{t("krokNr", { n: i + 1 })}</p>
-                <h2 className="text-lg font-medium text-[var(--brd-ink)]">{t(`${k}.tytul`)}</h2>
-                <p className="mt-1 text-sm text-[var(--brd-ink-soft)]">{t(`${k}.opis`)}</p>
-              </li>
+          <p className="mt-4 text-sm">
+            <Link href="/#jak-to-dziala" className="underline underline-offset-4" data-testid="how-to-overview-link">
+              {t("przegladLink")}
+            </Link>
+          </p>
+
+          <h2 className="mt-8 text-xl font-medium text-[var(--brd-ink)]">{t("wskazowkiTytul")}</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--brd-ink-soft)]" data-testid="how-to-tips">
+            {(["w1", "w2", "w3", "w4"] as const).map((k) => (
+              <li key={k}>{t(`wskazowki.${k}`)}</li>
             ))}
-          </ol>
+          </ul>
 
           <h2 className="mt-10 text-xl font-medium text-[var(--brd-ink)]">{t("planyTytul")}</h2>
           <div className="mt-3 overflow-x-auto">
