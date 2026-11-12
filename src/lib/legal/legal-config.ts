@@ -4,7 +4,7 @@
  * LEGAL_PLACEHOLDERS (legal.test.ts enforces that none remain).
  * Bump a version whenever the text changes materially (stored with each consent).
  */
-export const TERMS_VERSION = "2026-11-07.2";
+export const TERMS_VERSION = "2026-11-12.1";
 export const PRIVACY_VERSION = "2026-11-07.2";
 
 /** Effective date shown in the documents (matches the versions above). */

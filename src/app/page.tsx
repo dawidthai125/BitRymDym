@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/studio/deliver/policy";
 
 import { OverflowXScrollRegion } from "@/components/brand/overflow-x-scroll-region";
 import { HomePromoFilm } from "@/components/home/home-promo-film";
@@ -112,7 +113,7 @@ export default async function HomePage() {
     { title: tc("mixIMaster"), body: tc("krokMix") },
     {
       title: tc("oddajPlik"),
-      body: t("krokPlik", { gold: PLAN_POLICY.GOLD.downloads.youtubeVideosPerWeek }),
+      body: t(freeWatermarkDownloadEnabled() ? "krokPlikZnak" : "krokPlik", { gold: PLAN_POLICY.GOLD.downloads.youtubeVideosPerWeek, n: FREE_WATERMARK_PER_DAY }),
     },
   ];
   const planRows: { id: string; label: string; cell: (tier: PremiumTier) => string }[] = [

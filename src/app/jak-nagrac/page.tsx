@@ -76,6 +76,12 @@ export default function HowToRecordPage() {
           </div>
           <p className="mt-2 text-xs text-[var(--brd-mute)]">{t("planyUwaga")}</p>
 
+          {freeWatermarkDownloadEnabled() ? (
+            <p className="mt-4 rounded border border-[var(--brd-line)] p-3 text-sm text-[var(--brd-ink-soft)]" data-testid="how-to-watermark-note">
+              {t("znakNota", { n: FREE_WATERMARK_PER_DAY })}
+            </p>
+          ) : null}
+
           <LicenseSummary className="mt-10" />
 
           <div className="mt-8 flex flex-wrap gap-2">

@@ -66,3 +66,15 @@ describe("simple record view: pick the best take", () => {
     }
   });
 });
+
+describe("Free watermark copy (flag-driven)", () => {
+  it("premium, home and guide switch on the same flag", () => {
+    for (const f of ["src/app/premium/page.tsx", "src/app/page.tsx", "src/app/jak-nagrac/page.tsx"]) {
+      expect(read(f)).toContain("freeWatermarkDownloadEnabled()");
+    }
+  });
+  it("terms §7 carries the Free watermark clause and the version moved", () => {
+    expect(read("src/content/legal/terms.ts")).toContain("Plik ze znakiem wodnym (Plan Free");
+    expect(read("src/lib/legal/legal-config.ts")).toContain('TERMS_VERSION = "2026-11-12.1"');
+  });
+});

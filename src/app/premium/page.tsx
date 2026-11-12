@@ -1,3 +1,4 @@
+import { FREE_WATERMARK_PER_DAY, freeWatermarkDownloadEnabled } from "@/lib/studio/deliver/policy";
 import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -64,6 +65,7 @@ export default function PremiumPage() {
       id: "pobieranie",
       label: tr("tab.pobieranie"),
       cell: (x) => {
+        if (x === "FREE" && freeWatermarkDownloadEnabled()) return tr("tab.zeZnakiem", { n: FREE_WATERMARK_PER_DAY });
         const q = bestQuality(x);
         return q ? tr("tab.doJakosci", { q: tr(`jakosc.${q}`) }) : tr("tab.brakPobierania");
       },
@@ -180,7 +182,7 @@ export default function PremiumPage() {
                       <li>{tr("karta.efekty", { n: p.studio.maxFxEffects })}</li>
                       <li>{p.studio.clipPitch ? tr("karta.wysokosc") : tr("karta.tempo")}</li>
                       <li>{tr("karta.sample", { n: p.studio.maxSamples })}</li>
-                      <li>{bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
+                      <li>{tier === "FREE" && freeWatermarkDownloadEnabled() ? tr("karta.pobranieZnak", { n: FREE_WATERMARK_PER_DAY }) : bestQuality(tier) ? tr("karta.pobieranie", { q: tr(`jakosc.${bestQuality(tier)!}`) }) : `🔒 ${tr("karta.bezPobierania")}`}</li>
                       {p.downloads.youtubeVideosPerWeek > 0 ? <li>{tr("karta.yt", { n: p.downloads.youtubeVideosPerWeek })}</li> : null}
                       <li>{tr(p.tools.pitchCorrection.manualNotes ? "karta.nutyEdytor" : "karta.nuty")}</li>
                       <li>{tr("karta.znak")}</li>
