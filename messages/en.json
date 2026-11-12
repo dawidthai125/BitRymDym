@@ -40,6 +40,7 @@
         "Tick effects from the site list, up to the plan limit. After upload they are stored on the vocal track. The site studio is what you hear. An empty selection sends no effects.",
         "Check the microphone before recording with Mic test: a level bar and a hint (too quiet, good, too loud). Nothing is saved.",
         "After Stop, get a take rating (clipping, near silence, quiet, or good level) and a warning when the mic dropped samples or vanished mid-take.",
+        "Check by itself whether a new version exists (at start and every 6 hours). When you click Update it downloads the installer, verifies its signature and checksum, and installs it. Nothing happens during recording or an upload. A build without this feature (older than 2026.11.12.2) needs one manual install.",
         "Upload the takes as a project on the account and open that project in Studio. The upload runs in the background. If the network drops, the next Send finishes the same project, even after restarting the program."
       ],
       "cannotTitle": "What the app does not do",

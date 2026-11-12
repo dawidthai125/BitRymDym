@@ -40,6 +40,7 @@
         "Zaznaczyć efekty z listy strony, do limitu planu. Po wysłaniu zapisują się na ścieżce wokalu. Samo brzmienie liczy studio na stronie. Puste zaznaczenie nie wysyła efektów.",
         "Sprawdzić mikrofon przed nagraniem przyciskiem Próba mikrofonu: pasek poziomu i podpowiedź, czy jest za cicho, dobrze albo za głośno. Nic się przy tym nie zapisuje.",
         "Po Stop dostać ocenę ujęcia (przester, prawie cisza, cicho albo dobry poziom) i ostrzeżenie, gdy mikrofon zgubił próbki albo zniknął w trakcie nagrania.",
+        "Sam sprawdzać, czy jest nowa wersja (przy starcie i co 6 godzin). Na Twoje kliknięcie Zaktualizuj pobiera instalator, sprawdza podpis i sumę kontrolną i instaluje. Nic nie dzieje się w trakcie nagrania ani wysyłki. Wersję bez tej funkcji (wcześniejszą niż 2026.11.12.2) zainstalujesz raz ręcznie.",
         "Wysłać ujęcia jako projekt na konto i otworzyć ten projekt w studio. Wysyłka idzie w tle. Gdy sieć się urwie, kolejne Wyślij dokończy ten sam projekt, nawet po ponownym uruchomieniu programu."
       ],
       "cannotTitle": "Czego program nie robi",
