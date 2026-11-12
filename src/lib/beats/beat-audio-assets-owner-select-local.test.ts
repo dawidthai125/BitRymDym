@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { resolveIntegrationEnv } from "@/test/integration-env";
+import { seedOwnerSelectVisualFixtures } from "@/test/publish-user-beat";
 
 const integration =
   process.env.BEAT_AUDIO_OWNER_SELECT_LOCAL_TEST === "1"
@@ -166,6 +167,7 @@ WHERE id = ${psqlLiteral(beatId)}::uuid;
   });
 
   it("owner SELECT works; peer/anon isolated on non-PUBLISHED; PUBLISHED catalog intact", () => {
+    seedOwnerSelectVisualFixtures();
     const publishedTitle = "Visual Fixture — Published Local Only";
     const nonPublishedTitle = "Visual Fixture — Local Only";
 

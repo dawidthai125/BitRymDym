@@ -15,6 +15,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import {
   createIntegrationFixtures,
   type IntegrationFixtures,
@@ -160,7 +161,7 @@ async function seedPublishedBeat(
     title: `P4V Beat ${beatId.slice(0, 6)}`,
     bpm: 120,
     duration_seconds: durationSeconds,
-    status: "PUBLISHED",
+    status: "DRAFT",
     tags: [],
   });
   if (beatErr) throw new Error(beatErr.message);
@@ -182,6 +183,7 @@ async function seedPublishedBeat(
     created_by: ownerId,
   });
   if (assetErr) throw new Error(assetErr.message);
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
   return { beatId, assetId, objectKey };
 }
 
@@ -269,12 +271,9 @@ describe.runIf(live)("P4 live verification", () => {
         expect(item?.beatTitle).toBeTruthy();
         expect(item?.canPreview).toBe(true);
         expect(item?.canDownloadRaw).toBe(false);
-        expect(item?.downloadLadder.map((i) => i.unlocked)).toEqual([
-          true,
-          false,
-          false,
-          false,
-        ]);
+        expect(item?.downloadLadder.map((i) => i.unlocked)).toEqual(
+          buildTakeExportLadder("FREE").map((i) => i.unlocked),
+        );
 
         expect(buildTakeExportLadder("FREE").map((i) => i.unlocked)).toEqual([
           false,

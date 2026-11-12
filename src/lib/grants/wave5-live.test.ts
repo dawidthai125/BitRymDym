@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import {
   createIntegrationFixtures,
   type IntegrationFixtures,
@@ -94,7 +95,7 @@ async function makePublishedUserBeat(
     title: `W5 Grant ${beatId.slice(0, 8)}`,
     bpm: 120,
     duration_seconds: 30,
-    status: "PUBLISHED",
+    status: "DRAFT",
   });
   expect(beatErr).toBeNull();
 
@@ -128,6 +129,7 @@ async function makePublishedUserBeat(
     created_by: ownerId,
   });
   expect(assetErr).toBeNull();
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
 
   return beatId;
 }

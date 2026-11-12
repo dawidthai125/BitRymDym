@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import {
   createIntegrationFixtures,
   type IntegrationFixtures,
@@ -27,6 +28,7 @@ import {
 import {
   createAnonTakeRecordingSessionFor,
   finalizeAnonTakeRecordingFor,
+  GUEST_RECORDING_DISABLED_MESSAGE,
 } from "@/lib/takes/anon-take-transport";
 import { TakeClaimError } from "@/lib/takes/claim-errors";
 import {
@@ -161,7 +163,7 @@ async function seedPublishedBeatWithMaster(
         title: "D02 recording target",
         bpm: 120,
         duration_seconds: opts?.durationSeconds ?? 30,
-        status: opts?.status ?? "PUBLISHED",
+        status: "DRAFT",
         tags: [],
       })
     ).error,
@@ -192,6 +194,9 @@ async function seedPublishedBeatWithMaster(
     ).error,
   ).toBeNull();
 
+  if ((opts?.status ?? "PUBLISHED") === "PUBLISHED") {
+    publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
+  }
   return { beatId, assetId, objectKey };
 }
 
@@ -220,6 +225,15 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   afterAll(() => fixtures!.cleanup(), 120_000);
 
   it("happy path session → upload → finalize → preview; replay finalize idempotent", async () => {
+    // Owner 2026-10-29: guests cannot record. The steps below stay for the day that flips.
+    await expect(
+      createAnonTakeRecordingSessionFor(freshHash(), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "seed");
     const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
@@ -253,6 +267,14 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   }, 120_000);
 
   it("IDOR: token mismatch / cross-take / owner preview DENY; no download module", async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(freshHash(), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "idor");
     const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
@@ -309,6 +331,14 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   }, 60_000);
 
   it("finalize after expiry DENY; preview after expiry DENY", async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(freshHash(), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "exp");
     const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
@@ -360,6 +390,14 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   }, 120_000);
 
   it("concurrent PENDING race → one ALLOW one CONCURRENT_SESSION", async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(freshHash(), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "race");
     const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
@@ -396,6 +434,14 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
   }, 120_000);
 
   it("READY cap race (maxActiveReady=1) and 3/day cap", async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(freshHash(), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "caps");
     const { beatId } = await seedPublishedBeatWithMaster(admin, owner.userId, bytes, { durationSeconds: 15 },
     );
@@ -487,6 +533,15 @@ describe.runIf(live)("Recording D02 — live anonymous QT", () => {
         objectKey: "anon/evil/takes/x/mic.bin",
       }),
     ).rejects.toBeInstanceOf(AuthError);
+
+    await expect(
+      createAnonTakeRecordingSessionFor(hash, {
+        beatId: a.beatId,
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
 
     const s1 = await createAnonTakeRecordingSessionFor(hash, {
       beatId: a.beatId,

@@ -8,6 +8,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
@@ -16,6 +17,7 @@ import { TakeClaimError } from "@/lib/takes/claim-errors";
 import {
   createAnonTakeRecordingSessionFor,
   finalizeAnonTakeRecordingFor,
+  GUEST_RECORDING_DISABLED_MESSAGE,
 } from "@/lib/takes/anon-take-transport";
 import { hashAnonymousTakeToken } from "@/lib/takes/token-hash";
 import {
@@ -101,7 +103,7 @@ async function seedBeat(
   const { error: bErr } = await admin.from("beats").insert({
     id: beatId,
     title: `P2 Replace ${beatId.slice(0, 6)}`,
-    status: "PUBLISHED",
+    status: "DRAFT",
     ownership_type: "USER",
     owner_id: ownerId,
     duration_seconds: durationSeconds,
@@ -126,6 +128,7 @@ async function seedBeat(
     created_by: ownerId,
   });
   if (aErr) throw aErr;
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
   return { beatId, assetId, objectKey };
 }
 
@@ -172,6 +175,9 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
     createdBeatIds.push(beatB);
 
     const readyIds: string[] = [];
+    // FREE is 1 session per UTC day and 3 active READY. Move each new row off
+    // today so the loop can fill the ready cap, which is the gate under test.
+    const yesterday = new Date(Date.now() - 36 * 3600_000).toISOString();
     for (let i = 0; i < 3; i++) {
       const s = await createTakeRecordingSessionFor(owner.context, {
         beatId,
@@ -182,11 +188,14 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
       const ready = await finalizeTakeRecordingFor(owner.context, { takeId: s.takeId });
       expect(ready.status).toBe("READY");
       readyIds.push(s.takeId);
+      const { error: dayErr } = await admin
+        .from("takes")
+        .update({ created_at: yesterday })
+        .eq("id", s.takeId);
+      expect(dayErr).toBeNull();
     }
 
-    // Free UTC-day session budget so ACTIVE_READY_CAP is the gate under test
-    // (FREE: sessions/day === activeReady === 3).
-    const yesterday = new Date(Date.now() - 36 * 3600_000).toISOString();
+    // Free UTC-day session budget so ACTIVE_READY_CAP is the gate under test.
     await admin
       .from("takes")
       .update({ created_at: yesterday })
@@ -258,6 +267,15 @@ describe.runIf(live)("P2 — explicit sample replace live", () => {
   it(
     "anonymous replace own READY; foreign hash DENY; abandon keeps old READY",
     async () => {
+    // Guests cannot record (Owner 2026-10-29). Replace flow below is unreachable.
+    await expect(
+      createAnonTakeRecordingSessionFor(hashAnonymousTakeToken(randomBytes(32).toString("hex")), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: bytes.byteLength,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "anonseed");
     createdUserIds.push(owner.userId);
     const { beatId } = await seedBeat(admin, owner.userId, bytes, 15);

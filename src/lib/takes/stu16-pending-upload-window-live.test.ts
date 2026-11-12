@@ -16,6 +16,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import {
@@ -23,6 +24,7 @@ import {
   TAKE_PENDING_UPLOAD_WINDOW_SECONDS,
 } from "@/config/recording";
 import type { AuthContext } from "@/lib/auth/types";
+import { buildUserBeatAudioObjectKey } from "@/lib/beats/audio-validation";
 import { buildAnonTakeObjectKey, buildUserTakeObjectKey } from "@/lib/takes/object-key";
 import { finalizeTakeRecordingFor } from "@/lib/takes/take-transport";
 import {
@@ -234,10 +236,37 @@ describe.runIf(live)("STU-16 PENDING_UPLOAD server upload window", () => {
       title: `STU16 Beat ${beatId.slice(0, 6)}`,
       bpm: 120,
       duration_seconds: 60,
-      status: "PUBLISHED",
+      status: "DRAFT",
       tags: [],
     });
     if (beatErr) throw new Error(beatErr.message);
+    const assetId = randomUUID();
+    const objectKey = buildUserBeatAudioObjectKey({
+      ownerId: ownerA,
+      beatId,
+      assetId,
+      purpose: "MASTER",
+    });
+    fixtures.trackObject("beat-audio", objectKey);
+    const { error: upErr } = await admin.storage.from("beat-audio").upload(objectKey, bytes, {
+      contentType: "audio/wav",
+      upsert: false,
+    });
+    if (upErr) throw new Error(upErr.message);
+    const { error: assetErr } = await admin.from("beat_audio_assets").insert({
+      id: assetId,
+      beat_id: beatId,
+      purpose: "MASTER",
+      status: "READY",
+      is_active: true,
+      storage_bucket: "beat-audio",
+      object_key: objectKey,
+      content_type: "audio/wav",
+      byte_size: bytes.byteLength,
+      created_by: ownerA,
+    });
+    if (assetErr) throw new Error(assetErr.message);
+    publishDraftUserBeat({ beatId, ownerId: ownerA, assetId, bytes });
   }, 60_000);
 
   afterAll(async () => {

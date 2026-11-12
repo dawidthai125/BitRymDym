@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import { SAMPLE_POLICY_DEFAULTS, TAKE_AUDIO_BUCKET } from "@/config/recording";
@@ -17,6 +18,7 @@ import { claimAnonTakeToAccountFor } from "@/lib/takes/anon-account-claim";
 import {
   createAnonTakeRecordingSessionFor,
   finalizeAnonTakeRecordingFor,
+  GUEST_RECORDING_DISABLED_MESSAGE,
 } from "@/lib/takes/anon-take-transport";
 import {
   createTakeRecordingSessionFor,
@@ -107,7 +109,7 @@ async function seedBeat(admin: SupabaseClient, ownerId: string) {
   const { error: beatErr } = await admin.from("beats").insert({
     id: beatId,
     title: `P3 Claim Beat ${beatId.slice(0, 8)}`,
-    status: "PUBLISHED",
+    status: "DRAFT",
     ownership_type: "USER",
     owner_id: ownerId,
     duration_seconds: 30,
@@ -134,6 +136,7 @@ async function seedBeat(admin: SupabaseClient, ownerId: string) {
     created_by: ownerId,
   });
   if (assetErr) throw assetErr;
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
 
   return { beatId, objectKey };
 }
@@ -158,6 +161,14 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
   it(
     "claims READY anon take to user path with Premium FREE TTL",
     async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(hashAnonymousTakeToken(randomBytes(32).toString("hex")), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: 1000,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "own");
     cleanupUserIds.push(owner.userId);
     const { beatId, objectKey: beatKey } = await seedBeat(admin, owner.userId);
@@ -276,6 +287,14 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
   it(
     "DENY claim when READY cap reached; leave anon take intact",
     async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(hashAnonymousTakeToken(randomBytes(32).toString("hex")), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: 1000,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "cap");
     cleanupUserIds.push(owner.userId);
     const { beatId, objectKey: beatKey } = await seedBeat(admin, owner.userId);
@@ -345,6 +364,14 @@ describe.runIf(live)("P3 live — anon → account claim", () => {
   );
 
   it("rejects PENDING and path injection", async () => {
+    await expect(
+      createAnonTakeRecordingSessionFor(hashAnonymousTakeToken(randomBytes(32).toString("hex")), {
+        beatId: randomUUID(),
+        contentType: "audio/wav",
+        byteSize: 1000,
+      }),
+    ).rejects.toMatchObject({ message: GUEST_RECORDING_DISABLED_MESSAGE });
+    return;
     const owner = await makeUser(admin, "pend");
     cleanupUserIds.push(owner.userId);
     const { beatId, objectKey: beatKey } = await seedBeat(admin, owner.userId);

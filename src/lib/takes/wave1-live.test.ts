@@ -75,6 +75,8 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
         .eq("id", staff.userId);
 
       const seededBeatId = fixtures.trackBeat(randomUUID());
+      // Insert as PUBLISHED is rejected (RIGHTS_PUBLISH_INSERT_FORBIDDEN).
+      // This test only needs a beat row for the takes FK.
       const { error: seedErr } = await admin.from("beats").insert({
         id: seededBeatId,
         owner_id: owner.userId,
@@ -82,7 +84,7 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
         title: `Wave1 Beat ${seededBeatId.slice(0, 6)}`,
         bpm: 120,
         duration_seconds: 90,
-        status: "PUBLISHED",
+        status: "DRAFT",
         tags: [],
       });
       expect(seedErr).toBeNull();
@@ -91,7 +93,7 @@ describe.runIf(live)("Recording Wave 1 live foundation", () => {
         .from("beats")
         .select("id, duration_seconds, bpm")
         .eq("id", seededBeatId)
-        .eq("status", "PUBLISHED")
+        .eq("status", "DRAFT")
         .maybeSingle();
       expect(beatErr).toBeNull();
       expect(pubBeat?.id).toBeTruthy();

@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 import { createIntegrationFixtures } from "@/test/integration-fixtures";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
@@ -134,7 +135,7 @@ async function seedPublishedBeat(
         title: "W4 target",
         bpm: 120,
         duration_seconds: durationSeconds,
-        status: "PUBLISHED",
+        status: "DRAFT",
         tags: [],
       })
     ).error,
@@ -163,6 +164,7 @@ async function seedPublishedBeat(
       })
     ).error,
   ).toBeNull();
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
   return { beatId, assetId, objectKey };
 }
 
@@ -207,7 +209,8 @@ describe.runIf(live)("Recording Wave 4 live", () => {
         takeIds.push(session.takeId);
         expect(session.maxRecordingSeconds).toBe(30);
 
-        // Concurrent PENDING blocked
+        // FREE is 1 session per UTC day, so a second claim is the day cap.
+        // The pending-session lock still exists for tiers with more than one session.
         await expect(
           createTakeRecordingSessionFor(owner.context, {
             beatId: seeded.beatId,
@@ -215,7 +218,7 @@ describe.runIf(live)("Recording Wave 4 live", () => {
             byteSize: bytes.byteLength,
           }),
         ).rejects.toMatchObject({
-          message: expect.stringMatching(/already in progress/i),
+          message: expect.stringMatching(/Daily recording session limit/i),
         });
 
         expect(
@@ -249,8 +252,15 @@ describe.runIf(live)("Recording Wave 4 live", () => {
           }),
         ).rejects.toBeInstanceOf(AuthError);
 
-        // Fill active READY to cap (FREE Sample Policy = 3): already 1 READY
+        // Fill active READY to cap (FREE active READY = 3, sessions/day = 1).
+        // Move earlier rows off today so the ready cap, not the day cap, is reached.
         for (let i = 0; i < 2; i++) {
+          const offToday = new Date(Date.now() - 36 * 3600_000).toISOString();
+          const { error: shiftErr } = await admin
+            .from("takes")
+            .update({ created_at: offToday })
+            .eq("owner_id", owner.userId);
+          expect(shiftErr).toBeNull();
           const s = await createTakeRecordingSessionFor(owner.context, {
             beatId: seeded.beatId,
             contentType: "audio/wav",
@@ -298,7 +308,7 @@ describe.runIf(live)("Recording Wave 4 live", () => {
           }),
         ).rejects.toMatchObject({ message: expect.stringMatching(/deleted/i) });
 
-        // Soft-delete frees ACTIVE_READY but not UTC-day session count (FREE=3/day).
+        // Soft-delete frees ACTIVE_READY but not the UTC-day session (the last take is still today).
         await expect(
           createTakeRecordingSessionFor(owner.context, {
             beatId: seeded.beatId,

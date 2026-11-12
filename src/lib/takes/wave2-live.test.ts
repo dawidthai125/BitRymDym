@@ -10,6 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
@@ -103,7 +104,7 @@ async function seedPublishedBeatWithMaster(
         title: "W2 recording target",
         bpm: 120,
         duration_seconds: 30,
-        status: "PUBLISHED",
+        status: "DRAFT",
         tags: [],
       })
     ).error,
@@ -134,7 +135,18 @@ async function seedPublishedBeatWithMaster(
     ).error,
   ).toBeNull();
 
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
   return { beatId, assetId, objectKey };
+}
+
+/** FREE is 1 session per UTC day. Move this user's takes off today so the next claim is not SESSION_DAY_CAP. */
+async function releaseUtcDaySessions(admin: SupabaseClient, ownerId: string) {
+  const yesterday = new Date(Date.now() - 36 * 3600_000).toISOString();
+  const { error } = await admin
+    .from("takes")
+    .update({ created_at: yesterday })
+    .eq("owner_id", ownerId);
+  expect(error).toBeNull();
 }
 
 describe.runIf(live)("Recording Wave 2 live transport + security", () => {
@@ -296,6 +308,8 @@ describe.runIf(live)("Recording Wave 2 live transport + security", () => {
 
       // M — expired take DENY finalize
       // Constraint: expires_at > created_at — backdate both timestamps.
+      // FREE allows one new session per UTC day; the READY take above used it.
+      await releaseUtcDaySessions(admin, userA.userId);
       const expiredSession = await createTakeRecordingSessionFor(
         userA.context,
         {
@@ -331,7 +345,9 @@ describe.runIf(live)("Recording Wave 2 live transport + security", () => {
         .single();
       expect(expiredStatus!.status).toBe("EXPIRED");
 
-      // Missing object finalize → FAILED
+      // Missing object finalize → FAILED. The expired claim still counts for today
+      // until its created_at leaves the UTC day.
+      await releaseUtcDaySessions(admin, userA.userId);
       const missingSession = await createTakeRecordingSessionFor(
         userA.context,
         {
@@ -447,7 +463,9 @@ describe.runIf(live)("Recording Wave 2 live transport + security", () => {
       expect(failed!.status).toBe("FAILED");
       expect(failed!.failure_reason).toBe("DURATION_PROBE_FAILED");
 
-      // Max duration: shrink snapshot then upload long fixture
+      // Max duration: shrink snapshot then upload long fixture.
+      // The failed probe above already used today's FREE session.
+      await releaseUtcDaySessions(admin, user.userId);
       const session2 = await createTakeRecordingSessionFor(user.context, {
         beatId: seeded.beatId,
         contentType: "audio/wav",

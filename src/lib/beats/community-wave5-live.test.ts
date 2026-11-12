@@ -1,7 +1,7 @@
 /**
  * Live E2E — Community Wave 5: submit cooldown + full community loop closeout.
  */
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { attestUserMaster, markAutoCheckPassed, publishPlatformDraft } from "@/test/publish-user-beat";
 import {
   createIntegrationFixtures,
   type IntegrationFixtures,
@@ -114,14 +115,24 @@ describe.runIf(live)("Community Wave 5 live closeout E2E", () => {
           })
         ).error,
       ).toBeNull();
+      const platformAssetId = randomUUID();
+      const platformSum = createHash("sha256").update(bytes).digest("hex");
       expect(
         (
-          await admin
-            .from("beats")
-            .update({ status: "PUBLISHED" })
-            .eq("id", platformBeatId)
+          await admin.from("beat_audio_assets").insert({
+            id: platformAssetId,
+            beat_id: platformBeatId,
+            purpose: "MASTER",
+            status: "READY",
+            object_key: `platform/${platformBeatId}/${platformAssetId}/master.bin`,
+            content_type: "audio/wav",
+            byte_size: bytes.byteLength,
+            checksum_sha256: platformSum,
+            is_active: true,
+          })
         ).error,
       ).toBeNull();
+      publishPlatformDraft(platformBeatId, mod.userId);
 
       expect(
         (
@@ -281,6 +292,7 @@ describe.runIf(live)("Community Wave 5 live closeout E2E", () => {
         ).error,
       ).toBeNull();
 
+      markAutoCheckPassed(beatId);
       expect(
         (
           await mod.client
@@ -299,6 +311,7 @@ describe.runIf(live)("Community Wave 5 live closeout E2E", () => {
         ).data,
       ).toBeNull();
 
+      attestUserMaster(beatId, owner.userId);
       expect(
         (
           await mod.client

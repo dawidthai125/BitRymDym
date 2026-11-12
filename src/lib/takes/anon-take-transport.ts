@@ -159,6 +159,9 @@ export async function createAnonTakeRecordingSessionFor(
   } catch (e) {
     mapTakeAuthz(e);
   }
+  // Public entry already checks this. The For seam must too, or tests and
+  // any internal caller skip the owner rule (guests cannot record).
+  assertGuestRecordingEnabled();
 
   const meta = validateTakeUploadMeta({
     contentType: params.contentType,

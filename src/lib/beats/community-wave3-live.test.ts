@@ -10,6 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { markAutoCheckPassed } from "@/test/publish-user-beat";
 
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -226,7 +227,8 @@ describe.runIf(live)("Community Wave 3 live RLS + E2E", () => {
         .eq("id", beatId);
       expect(resubmitErr).toBeNull();
 
-      // MOD approve
+      // MOD approve (auto-check must already be cleared for this master)
+      markAutoCheckPassed(beatId);
       const { error: approveErr } = await mod.client
         .from("beats")
         .update({ status: "APPROVED", rejection_reason: null })

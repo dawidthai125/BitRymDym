@@ -10,6 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { attestUserMaster, markAutoCheckPassed } from "@/test/publish-user-beat";
 
 import type { AuthContext } from "@/lib/auth/types";
 import {
@@ -142,6 +143,7 @@ describe.runIf(live)("Community Wave 4 live publish E2E", () => {
         ).error,
       ).toBeNull();
 
+      markAutoCheckPassed(beatId);
       expect(
         (
           await mod.client
@@ -177,6 +179,7 @@ describe.runIf(live)("Community Wave 4 live publish E2E", () => {
       expect(modMetaErr).not.toBeNull();
 
       // MOD publish PASS
+      attestUserMaster(beatId, owner.userId);
       const { error: publishErr } = await mod.client
         .from("beats")
         .update({ status: "PUBLISHED", rejection_reason: null })

@@ -11,6 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
+import { scrubLocalBeatFixtures } from "@/test/publish-user-beat";
 
 type StorageObject = { bucket: string; key: string };
 
@@ -88,6 +89,7 @@ export function createIntegrationFixtures(admin: SupabaseClient): IntegrationFix
       );
       await run("delete takes", problems, admin.from("takes").delete().in("id", takeIds));
     }
+    scrubLocalBeatFixtures(beatIds, userIds);
     if (beatIds.length > 0) {
       for (const table of [
         "beat_download_events",

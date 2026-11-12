@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
 import { applyIntegrationEnv, resolveIntegrationEnv } from "@/test/integration-env";
+import { publishDraftUserBeat } from "@/test/publish-user-beat";
 
 import { TAKE_AUDIO_BUCKET } from "@/config/recording";
 import { AuthError } from "@/lib/auth/session";
@@ -102,7 +103,7 @@ async function seedPublishedBeat(
         title: "W3 preview target",
         bpm: 120,
         duration_seconds: 30,
-        status: "PUBLISHED",
+        status: "DRAFT",
         tags: [],
       })
     ).error,
@@ -131,6 +132,7 @@ async function seedPublishedBeat(
       })
     ).error,
   ).toBeNull();
+  publishDraftUserBeat({ beatId, ownerId, assetId, bytes });
   return { beatId, assetId, objectKey };
 }
 
