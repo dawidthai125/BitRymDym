@@ -12,6 +12,8 @@ export type ProjectAudioObject = {
   kind: "master" | "beat";
   bucket: string;
   key: string;
+  /** Set for kind "beat": lets the client path swap the full file for the short preview. */
+  beatId?: string;
 };
 
 type Admin = ReturnType<typeof createSupabaseAdminClient>;
@@ -37,18 +39,33 @@ export async function projectAnalysisObject(ownerId: string, projectId: string):
   if (!row.beat_id || !UUID.test(row.beat_id)) return null;
   const beatKey = await beatObjectKey(admin, row.beat_id);
   if (!beatKey) return null;
-  return { kind: "beat", bucket: BEAT_AUDIO_BUCKET, key: beatKey };
+  return { kind: "beat", bucket: BEAT_AUDIO_BUCKET, key: beatKey, beatId: row.beat_id };
 }
 
 /**
  * Owner rule: the clean master leaves the server only through the approved, quota-counted download (Free gets the
  * watermarked MP3 there). The browser analysis therefore gets the watermarked master preview, never the FLAC.
- * Pure: the object the browser may be signed for, or null (fail closed).
+ * Pure: the master object the browser may be signed for, or null (fail closed). Beats get the 20 s preview.
  */
 export function clientAnalysisObject(source: ProjectAudioObject): { bucket: string; key: string } | null {
-  if (source.kind !== "master") return { bucket: source.bucket, key: source.key };
+  // Beats are never handed to the browser through analysis: see previewBeatObjectKey (20 s PREVIEW asset).
+  if (source.kind !== "master") return null;
   const previewKey = previewKeyFor(source.key);
   return previewKey ? { bucket: source.bucket, key: previewKey } : null;
+}
+
+/** The server-rendered 20 s PREVIEW asset of a beat (what guests hear), or null. */
+async function previewBeatObjectKey(admin: Admin, beatId: string): Promise<string | null> {
+  const { data, error } = await admin
+    .from("beat_audio_assets")
+    .select("object_key")
+    .eq("beat_id", beatId)
+    .eq("purpose", "PREVIEW")
+    .eq("is_active", true)
+    .eq("status", "READY")
+    .maybeSingle();
+  if (error) throw new Error("project_audio_beat_preview");
+  return (data as { object_key?: string } | null)?.object_key ?? null;
 }
 
 export async function signProjectAnalysisAudio(
@@ -57,9 +74,13 @@ export async function signProjectAnalysisAudio(
 ): Promise<{ url: string; kind: ProjectAudioObject["kind"] } | null> {
   const source = await projectAnalysisObject(ownerId, projectId);
   if (!source) return null;
-  const target = clientAnalysisObject(source);
-  if (!target) return null;
   const admin = createSupabaseAdminClient();
+  let target = clientAnalysisObject(source);
+  if (!target && source.kind === "beat" && source.beatId) {
+    const previewKey = await previewBeatObjectKey(admin, source.beatId);
+    target = previewKey ? { bucket: BEAT_AUDIO_BUCKET, key: previewKey } : null;
+  }
+  if (!target) return null;
   const { data, error } = await admin.storage.from(target.bucket).createSignedUrl(target.key, SIGNED_SECONDS);
   if (error || !data?.signedUrl) return null;
   return { url: data.signedUrl, kind: source.kind };

@@ -21,7 +21,8 @@ export type SeparateJobView = {
 export async function enqueueSeparateJob(ownerId: string, projectId: string) {
   if (!UUID.test(projectId)) return { ok: false as const, error: "bad_request" };
   const source = await projectAnalysisObject(ownerId, projectId);
-  if (!source) return { ok: false as const, error: "no_audio" };
+  // Owner rule 2026-11-12: nobody gets stems of the clean Bit. Only an approved master (Bit + own recording) is split.
+  if (!source || source.kind !== "master") return { ok: false as const, error: "no_audio" };
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("enqueue_studio_separate_job", {
     p_owner: ownerId,

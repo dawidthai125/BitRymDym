@@ -12,13 +12,20 @@ describe("analysis-audio never hands the browser the clean master", () => {
     expect(clientAnalysisObject({ ...master, key: "studio-master/u/p/j/out/master.flac.part1" })).toBeNull();
     expect(clientAnalysisObject({ ...master, key: "studio-master/u/p/j/out/transcode.mp3" })).toBeNull();
   });
-  it("beat (no master yet) is unchanged", () => {
-    const beat = { kind: "beat" as const, bucket: "beat-audio", key: "k" };
-    expect(clientAnalysisObject(beat)).toEqual({ bucket: "beat-audio", key: "k" });
+  it("beat (no master yet) → never the full file; the route swaps in the 20 s PREVIEW asset", () => {
+    const beat = { kind: "beat" as const, bucket: "beat-audio", key: "k", beatId: "b" };
+    expect(clientAnalysisObject(beat)).toBeNull();
+    const src = readFileSync("src/lib/studio/analysis/project-audio.ts", "utf8");
+    expect(src).toContain('.eq("purpose", "PREVIEW")');
+    expect(src).toContain("previewBeatObjectKey(admin, source.beatId)");
+  });
+  it("separator: only an approved master is split, never the Bit alone", () => {
+    const sep = readFileSync("src/lib/studio/separate/separate-server.ts", "utf8");
+    expect(sep).toContain('source.kind !== "master"');
   });
   it("the route signs only what clientAnalysisObject returns", () => {
     const src = readFileSync("src/lib/studio/analysis/project-audio.ts", "utf8");
-    expect(src).toContain("const target = clientAnalysisObject(source);");
+    expect(src).toContain("let target = clientAnalysisObject(source);");
     expect(src).toContain("createSignedUrl(target.key, SIGNED_SECONDS)");
   });
 });
