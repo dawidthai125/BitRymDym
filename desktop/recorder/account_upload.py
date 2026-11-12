@@ -9,6 +9,7 @@ import json
 import socket
 import urllib.error
 import urllib.request
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
@@ -215,6 +216,48 @@ def _effect_chain(chain: dict[str, Any] | None) -> dict[str, Any] | None:
     return None
 
 
+@dataclass
+class UploadState:
+    """Where a send stopped. It holds no token, only ids and file paths, so it can live on disk."""
+
+    project_id: str
+    beat_id: str
+    title: str
+    version: int
+    wav_paths: list[str]
+    track_ids: list[str] = field(default_factory=list)
+    placed: int = 0
+    fx_done: int = 0
+
+    def to_json(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_json(cls, raw: object) -> "UploadState | None":
+        if not isinstance(raw, dict):
+            return None
+        try:
+            paths = [str(item) for item in raw["wav_paths"]]
+            state = cls(
+                project_id=str(raw["project_id"]),
+                beat_id=str(raw["beat_id"]),
+                title=str(raw["title"]),
+                version=int(raw["version"]),
+                wav_paths=paths,
+                track_ids=[str(item) for item in raw.get("track_ids", [])],
+                placed=int(raw.get("placed", 0)),
+                fx_done=int(raw.get("fx_done", 0)),
+            )
+        except (KeyError, TypeError, ValueError):
+            return None
+        if not state.project_id or not paths or state.placed > len(paths) or state.fx_done > len(paths):
+            return None
+        return state
+
+    def summary(self) -> str:
+        return f"projekt {self.project_id}: {self.placed} z {len(self.wav_paths)} ścieżek"
+
+
 def upload_vocals(
     client: SiteClient,
     *,
@@ -224,12 +267,22 @@ def upload_vocals(
     playhead_ms: int = 0,
     chain: dict[str, Any] | None = None,
     progress: Callable[[str], None] | None = None,
+    resume: UploadState | None = None,
+    on_state: Callable[[UploadState], None] | None = None,
 ) -> str:
-    """One project. The site already creates Bit plus the first vocal track."""
+    """One project. The site already creates Bit plus the first vocal track.
+
+    With resume the send continues the same project from the first track that is not placed yet
+    (and the first effect not applied yet). No second project, no duplicate tracks.
+    """
 
     def say(text: str) -> None:
         if progress is not None:
             progress(text)
+
+    def saved(item: UploadState) -> None:
+        if on_state is not None:
+            on_state(item)
 
     if not wav_paths:
         raise ValueError("Najpierw nagraj wokal.")
@@ -239,42 +292,62 @@ def upload_vocals(
         if len(wav) < 45:
             raise ValueError("Plik WAV jest pusty.")
         blobs.append(wav)
-    say("Tworzę projekt na koncie.")
-    document = client.create_project(title, beat_id)
-    pid = project_id(document)
+    if resume is not None and [str(path) for path in wav_paths] != resume.wav_paths:
+        raise ValueError("Ścieżki do wysłania nie zgadzają się z przerwaną wysyłką.")
+    if resume is None:
+        say("Tworzę projekt na koncie.")
+        document = client.create_project(title, beat_id)
+        state = UploadState(
+            project_id=project_id(document),
+            beat_id=beat_id,
+            title=title,
+            version=document_version(document),
+            wav_paths=[str(path) for path in wav_paths],
+            track_ids=[vocal_track_id(document)],
+        )
+        saved(state)
+    else:
+        say(f"Dokańczam wysyłkę: {resume.summary()}.")
+        state = resume
+    pid = state.project_id
     try:
-        version = document_version(document)
-        track_ids = [vocal_track_id(document)]
-        for _extra in range(1, len(blobs)):
-            say(f"Dodaję ścieżkę wokalu {_extra + 1} z {len(blobs)}.")
-            added_id, version = client.add_vocal_track(pid, version)
-            track_ids.append(added_id)
-        for number, (track_id, wav) in enumerate(zip(track_ids, blobs, strict=True), start=1):
-            say(f"Wysyłam ścieżkę {number} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-            session = client.open_take(beat_id, len(wav))
+        while len(state.track_ids) < len(blobs):
+            say(f"Dodaję ścieżkę wokalu {len(state.track_ids) + 1} z {len(blobs)}.")
+            added_id, state.version = client.add_vocal_track(pid, state.version)
+            state.track_ids.append(added_id)
+            saved(state)
+        for index in range(state.placed, len(blobs)):
+            wav = blobs[index]
+            say(f"Wysyłam ścieżkę {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
+            session = client.open_take(state.beat_id, len(wav))
             client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
             take_id = str(session["takeId"])
             client.finalize(take_id)
             placed = client.place(
                 pid,
                 {
-                    "trackId": track_id,
+                    "trackId": state.track_ids[index],
                     "takeId": take_id,
                     "timelineStartMs": playhead_ms,
                     "sourceOffsetMs": 0,
                     "durationMs": wav_duration_ms(wav),
-                    "expectedDocumentVersion": version,
+                    "expectedDocumentVersion": state.version,
                 },
             )
-            version = _version(placed)
+            state.version = _version(placed)
+            state.placed = index + 1
+            saved(state)
         fx = _effect_chain(chain)
         if fx is not None:
-            say("Zapisuję efekty na ścieżkach.")
-            for track_id in track_ids:
-                patched = client.apply_track_fx(pid, track_id, version, fx)
-                version = _version(patched)
+            if state.fx_done < len(blobs):
+                say("Zapisuję efekty na ścieżkach.")
+            for index in range(state.fx_done, len(blobs)):
+                patched = client.apply_track_fx(pid, state.track_ids[index], state.version, fx)
+                state.version = _version(patched)
+                state.fx_done = index + 1
+                saved(state)
     except RuntimeError as error:
-        raise RuntimeError(f"Projekt {pid} jest na koncie. {error}") from None
+        raise RuntimeError(f"Projekt {pid} jest na koncie ({state.placed} z {len(blobs)} ścieżek). {error}") from None
     return pid
 
 
@@ -336,6 +409,7 @@ def self_test() -> None:
     if "na czas" not in network_message(TimeoutError("timed out")):
         raise SystemExit("komunikat limitu czasu")
     _self_test_two_vocals()
+    _self_test_resume()
     print("upload self-test ok")
 
 
@@ -417,6 +491,69 @@ def _self_test_two_vocals() -> None:
     one_kinds = [item[0] for item in one.calls if isinstance(item, tuple)]
     if "add" in one_kinds or one_kinds[-1] != "place":
         raise SystemExit("jeden wokal")
+    first.unlink(missing_ok=True)
+    second.unlink(missing_ok=True)
+
+
+def _self_test_resume() -> None:
+    folder = Path(__import__("os").environ.get("TEMP", ".")) / "bitrymdym-upload-resume"
+    folder.mkdir(parents=True, exist_ok=True)
+    first = folder / "a.wav"
+    second = folder / "b.wav"
+    first.write_bytes(b"R" * 48)
+    second.write_bytes(b"R" * 96)
+
+    class Flaky(_FakeSite):
+        failures = 1
+
+        def put_wav(self, signed_url: str, wav: bytes, upload_token: str) -> None:
+            if len(wav) == 96 and self.failures:
+                self.failures -= 1
+                raise RuntimeError(network_message(OSError("x")))
+            super().put_wav(signed_url, wav, upload_token)
+
+    site = Flaky()
+    last: list[UploadState] = []
+    chain = {"schemaVersion": 1, "effects": [{"id": "e", "type": "eq"}]}
+    try:
+        upload_vocals(site, title="T", beat_id="b1", wav_paths=[first, second], chain=chain, on_state=last.append)  # type: ignore[arg-type]
+    except RuntimeError as error:
+        if "1 z 2" not in str(error) or "Projekt p1" not in str(error):
+            raise SystemExit(f"komunikat przerwanej wysyłki: {error}") from error
+    else:
+        raise SystemExit("wysyłka miała się przerwać")
+    state = last[-1]
+    if state.placed != 1 or len(state.track_ids) != 2 or state.fx_done != 0:
+        raise SystemExit(f"stan przerwania {state}")
+    restored = UploadState.from_json(json.loads(json.dumps(state.to_json())))
+    if restored is None or restored != state:
+        raise SystemExit("zapis stanu")
+    for bad in (None, {}, {"project_id": "", "beat_id": "b", "title": "t", "version": 1, "wav_paths": ["x"]},
+                {"project_id": "p", "beat_id": "b", "title": "t", "version": 1, "wav_paths": ["x"], "placed": 3}):
+        if UploadState.from_json(bad) is not None:
+            raise SystemExit(f"zły stan przyjęty {bad}")
+    steps: list[str] = []
+    project = upload_vocals(
+        site,  # type: ignore[arg-type]
+        title="T",
+        beat_id="b1",
+        wav_paths=[first, second],
+        chain=chain,
+        progress=steps.append,
+        resume=restored,
+        on_state=last.append,
+    )
+    kinds = [item[0] for item in site.calls if isinstance(item, tuple)]
+    if project != "p1" or kinds.count("create") != 1 or kinds.count("add") != 1 or kinds.count("place") != 2 or kinds.count("fx") != 2:
+        raise SystemExit(f"wznowienie powieliło kroki {kinds}")
+    if not steps[0].startswith("Dokańczam wysyłkę") or last[-1].placed != 2 or last[-1].fx_done != 2:
+        raise SystemExit(f"wznowienie: postęp {steps} {last[-1]}")
+    try:
+        upload_vocals(site, title="T", beat_id="b1", wav_paths=[first], resume=restored)  # type: ignore[arg-type]
+    except ValueError:
+        pass
+    else:
+        raise SystemExit("inne ścieżki nie mogą wznowić cudzej wysyłki")
     first.unlink(missing_ok=True)
     second.unlink(missing_ok=True)
 

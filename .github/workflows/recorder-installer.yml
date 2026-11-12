@@ -1,0 +1,111 @@
+name: recorder-installer
+
+# Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie.
+# Czcionki i ffmpeg nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
+# Wynik to artefakt BitRymDym-Setup.exe + suma SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_installer_url:
+        description: "Poprzedni instalator (źródło czcionek i ffmpeg)"
+        default: "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Testy modułów programu (Windows, w tym DPAPI)
+        working-directory: desktop/recorder
+        run: |
+          $env:TEMP = $env:RUNNER_TEMP
+          python record_wav.py "$env:RUNNER_TEMP\t.wav"; if ($LASTEXITCODE) { throw "record_wav" }
+          python desk.py;            if ($LASTEXITCODE) { throw "desk" }
+          python account_upload.py;  if ($LASTEXITCODE) { throw "account_upload" }
+          python own_fx.py;          if ($LASTEXITCODE) { throw "own_fx" }
+
+      - name: Czcionki i ffmpeg z poprzedniego instalatora
+        env:
+          BASE_URL: ${{ inputs.base_installer_url }}
+        run: |
+          $base = Join-Path $env:RUNNER_TEMP "base"
+          Invoke-WebRequest -Uri $env:BASE_URL -OutFile (Join-Path $env:RUNNER_TEMP "base.exe")
+          $p = Start-Process (Join-Path $env:RUNNER_TEMP "base.exe") -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$base" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "poprzedni instalator: kod $($p.ExitCode)" }
+          Get-ChildItem $base | Select-Object Name, Length | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
+          if (-not (Test-Path (Join-Path $base "ffmpeg.exe"))) { throw "w poprzednim instalatorze brak ffmpeg.exe" }
+          if (-not (Test-Path (Join-Path $base "fonts"))) { throw "w poprzednim instalatorze brak katalogu fonts" }
+          $extras = Join-Path $env:RUNNER_TEMP "extras"
+          New-Item -ItemType Directory -Force $extras | Out-Null
+          Get-ChildItem $base | Where-Object { $_.Name -notin @("BitRymDym.exe","_internal","brd-cassette.ico") -and $_.Name -notlike "unins*" } |
+            ForEach-Object { Copy-Item $_.FullName $extras -Recurse -Force }
+          Get-ChildItem $extras | Select-Object Name | Format-Table -AutoSize | Out-String | Write-Host
+
+      - name: PyInstaller
+        working-directory: desktop/recorder
+        run: |
+          python -m pip install --upgrade pip pyinstaller
+          pyinstaller BitRymDym.spec --noconfirm
+          if ($LASTEXITCODE) { throw "pyinstaller" }
+          Copy-Item "$env:RUNNER_TEMP\extras\*" "dist\BitRymDym" -Recurse -Force
+          Get-ChildItem "dist\BitRymDym" | Select-Object Name, Length | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
+
+      - name: Smoke exe z katalogu dist
+        working-directory: desktop/recorder
+        run: |
+          $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
+          Remove-Item $note -ErrorAction SilentlyContinue
+          $env:BITRYMDYM_UI_SMOKE = "1"
+          $p = Start-Process "dist\BitRymDym\BitRymDym.exe" -PassThru
+          if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "smoke: program nie zakończył się w 90 s" }
+          if (-not (Test-Path $note)) { throw "smoke: brak pliku wyniku" }
+          Get-Content $note | Write-Host
+          if ((Get-Content $note -Raw) -notmatch "ffmpeg=") { throw "smoke: brak ffmpeg w wyniku" }
+
+      - name: Inno Setup
+        working-directory: desktop/recorder
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc "installer\BitRymDym.iss"
+          if ($LASTEXITCODE) { throw "iscc" }
+          $exe = "installer\output\BitRymDym-Setup.exe"
+          (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower() + "  BitRymDym-Setup.exe" | Out-File "installer\output\BitRymDym-Setup.exe.sha256" -Encoding ascii
+          Get-ChildItem installer\output | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
+
+      - name: Cicha instalacja nowego instalatora i smoke zainstalowanej wersji
+        working-directory: desktop/recorder
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "new"
+          $p = Start-Process "installer\output\BitRymDym-Setup.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$dir" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "nowy instalator: kod $($p.ExitCode)" }
+          foreach ($need in "BitRymDym.exe","ffmpeg.exe","fonts") { if (-not (Test-Path (Join-Path $dir $need))) { throw "po instalacji brak: $need" } }
+          $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
+          Remove-Item $note -ErrorAction SilentlyContinue
+          $env:BITRYMDYM_UI_SMOKE = "1"
+          $q = Start-Process (Join-Path $dir "BitRymDym.exe") -PassThru
+          if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "smoke po instalacji: czas" }
+          if (-not (Test-Path $note)) { throw "smoke po instalacji: brak wyniku" }
+          Get-Content $note | Write-Host
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BitRymDym-Setup
+          path: |
+            desktop/recorder/installer/output/BitRymDym-Setup.exe
+            desktop/recorder/installer/output/BitRymDym-Setup.exe.sha256
+          retention-days: 7
+          if-no-files-found: error

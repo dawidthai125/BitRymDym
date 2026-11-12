@@ -7,13 +7,14 @@ This file does not play audio and does not talk to the site.
 from __future__ import annotations
 
 import array
+import base64
 import ctypes
 import json
 import math
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 TAKE_SECONDS = {"FREE": 30, "BRONZE": 60, "SILVER": 120, "GOLD": 180}
@@ -188,7 +189,8 @@ def scan_capture_log(text: str) -> tuple[int, str]:
 
 
 def level_text(db: float) -> str:
-    return f"{db:.0f} dB".replace("-", "−")
+    rounded = round(db)
+    return f"{rounded} dB".replace("-", "−") if rounded else "0 dB"
 
 
 def quality_note(peak_db_value: float, clipped: int, drops: int = 0) -> str:
@@ -213,6 +215,106 @@ def quality_note(peak_db_value: float, clipped: int, drops: int = 0) -> str:
     else:
         parts.append(f"Poziom OK (szczyt {level_text(peak_db_value)}).")
     return " ".join(parts)
+
+
+SESSION_ENTROPY = b"BitRymDym.desktop-session.v2"
+SECRET_KEYS = ("accessToken", "refreshToken")
+
+
+class _Blob(ctypes.Structure):
+    _fields_ = [("cbData", ctypes.c_uint32), ("pbData", ctypes.c_void_p)]
+
+
+def _blob_of(data: bytes) -> tuple[_Blob, Any]:
+    buffer = ctypes.create_string_buffer(data, len(data))
+    return _Blob(len(data), ctypes.cast(buffer, ctypes.c_void_p)), buffer
+
+
+def _dpapi(call: str, data: bytes, entropy: bytes) -> bytes:
+    """CryptProtectData / CryptUnprotectData for the current Windows user. Windows only."""
+    crypt = ctypes.windll.crypt32  # type: ignore[attr-defined]
+    kernel = ctypes.windll.kernel32  # type: ignore[attr-defined]
+    kernel.LocalFree.argtypes = [ctypes.c_void_p]
+    source, keep_a = _blob_of(data)
+    extra, keep_b = _blob_of(entropy)
+    out = _Blob()
+    UI_FORBIDDEN = 0x1
+    if call == "protect":
+        ok = crypt.CryptProtectData(
+            ctypes.byref(source), None, ctypes.byref(extra), None, None, UI_FORBIDDEN, ctypes.byref(out)
+        )
+    else:
+        ok = crypt.CryptUnprotectData(
+            ctypes.byref(source), None, ctypes.byref(extra), None, None, UI_FORBIDDEN, ctypes.byref(out)
+        )
+    _ = (keep_a, keep_b)
+    if not ok:
+        raise OSError("DPAPI")
+    try:
+        return ctypes.string_at(out.pbData, out.cbData)
+    finally:
+        kernel.LocalFree(out.pbData)
+
+
+def dpapi_protect(data: bytes, entropy: bytes = b"") -> bytes:
+    return _dpapi("protect", data, entropy)
+
+
+def dpapi_unprotect(blob: bytes, entropy: bytes = b"") -> bytes:
+    return _dpapi("unprotect", blob, entropy)
+
+
+def seal_session(
+    session: dict[str, str],
+    protect: Callable[[bytes, bytes], bytes] | None = None,
+) -> dict[str, str]:
+    """File form of the session. Tokens go into one DPAPI blob that only this Windows user can open.
+
+    Without DPAPI (not Windows, or the call fails) the tokens stay plain, as before. Nothing is lost.
+    """
+    if protect is None and os.name == "nt":
+        protect = dpapi_protect
+    secret = {key: session[key] for key in SECRET_KEYS if session.get(key)}
+    if protect is None or not secret:
+        return dict(session)
+    try:
+        blob = protect(json.dumps(secret).encode("utf-8"), SESSION_ENTROPY)
+    except Exception:
+        return dict(session)
+    public = {key: value for key, value in session.items() if key not in SECRET_KEYS}
+    return {**public, "sealed": base64.b64encode(blob).decode("ascii"), "format": "dpapi-v1"}
+
+
+def open_session(
+    raw: dict[str, Any],
+    unprotect: Callable[[bytes, bytes], bytes] | None = None,
+) -> tuple[dict[str, str] | None, bool]:
+    """(session, needs_reseal). A sealed file that cannot be opened counts as signed out."""
+    if "sealed" in raw:
+        if unprotect is None and os.name == "nt":
+            unprotect = dpapi_unprotect
+        if unprotect is None:
+            return None, False
+        try:
+            secret = json.loads(unprotect(base64.b64decode(str(raw["sealed"])), SESSION_ENTROPY).decode("utf-8"))
+        except Exception:
+            return None, False
+        merged = {str(k): str(v) for k, v in raw.items() if k not in ("sealed", "format")}
+        merged.update({str(k): str(v) for k, v in secret.items() if k in SECRET_KEYS})
+        return merged, False
+    plain = {str(k): str(v) for k, v in raw.items()}
+    return plain, bool(plain.get("accessToken"))
+
+
+def probe_hint(peak_db_value: float) -> str:
+    """Mic check before recording, from the peak of the last few seconds."""
+    if peak_db_value < -50:
+        return "Prawie nic nie słychać. Sprawdź, czy wybrany jest właściwy mikrofon i czy nie jest wyciszony."
+    if peak_db_value < -24:
+        return "Za cicho. Zbliż się do mikrofonu albo podnieś jego poziom w Windows."
+    if peak_db_value > -3:
+        return "Za głośno, grozi przesterem. Zmniejsz poziom mikrofonu w Windows."
+    return "Dobrze. Z takim poziomem możesz nagrywać."
 
 
 def self_test() -> None:
@@ -276,6 +378,48 @@ def self_test() -> None:
         raise SystemExit("ocena: środek")
     if "zgubił próbki (2 razy)" not in quality_note(-12, 0, drops=2):
         raise SystemExit("ocena: próbki")
+    xor = lambda data, entropy: bytes(b ^ 0x5A for b in data) + entropy[:1]  # noqa: E731
+    unxor = lambda blob, entropy: bytes(b ^ 0x5A for b in blob[:-1])  # noqa: E731
+    plain_session = {
+        "supabaseUrl": "https://s.example",
+        "anonKey": "anon",
+        "email": "a@b.pl",
+        "accessToken": "aaa.bbb.ccc",
+        "refreshToken": "refresh-secret",
+    }
+    sealed = seal_session(plain_session, xor)
+    text = json.dumps(sealed)
+    if "aaa.bbb.ccc" in text or "refresh-secret" in text or sealed.get("format") != "dpapi-v1":
+        raise SystemExit("sesja: tokeny jawne po zaszyfrowaniu")
+    if sealed.get("email") != "a@b.pl" or sealed.get("supabaseUrl") != "https://s.example":
+        raise SystemExit("sesja: pola publiczne")
+    opened, again = open_session(sealed, unxor)
+    if opened != plain_session or again:
+        raise SystemExit(f"sesja: odczyt {opened}")
+    legacy, reseal = open_session(plain_session, unxor)
+    if legacy != plain_session or not reseal:
+        raise SystemExit("sesja: stary plik jawny ma wymagać zaszyfrowania")
+    broken = dict(sealed, sealed="not-base64-@@@")
+    if open_session(broken, unxor)[0] is not None:
+        raise SystemExit("sesja: uszkodzony plik ma oznaczać wylogowanie")
+    if open_session(sealed, lambda blob, entropy: (_ for _ in ()).throw(OSError("inny użytkownik")))[0] is not None:
+        raise SystemExit("sesja: inny użytkownik Windows")
+    if seal_session({"email": "x"}, xor) != {"email": "x"}:
+        raise SystemExit("sesja: bez tokenów nic się nie zmienia")
+    if seal_session(plain_session, lambda data, entropy: (_ for _ in ()).throw(OSError("x")))["accessToken"] != "aaa.bbb.ccc":
+        raise SystemExit("sesja: awaria DPAPI ma zostawić jawny zapis, nie gubić sesji")
+    if level_text(-0.2) != "0 dB" or level_text(-12.4) != "−12 dB":
+        raise SystemExit("zapis poziomu")
+    if not probe_hint(-70).startswith("Prawie nic") or not probe_hint(-30).startswith("Za cicho"):
+        raise SystemExit("próba mikrofonu: cisza")
+    if not probe_hint(-1).startswith("Za głośno") or not probe_hint(-12).startswith("Dobrze"):
+        raise SystemExit("próba mikrofonu: głośno")
+    if os.name == "nt":
+        sample = b"token-" + os.urandom(8)
+        if dpapi_unprotect(dpapi_protect(sample, SESSION_ENTROPY), SESSION_ENTROPY) != sample:
+            raise SystemExit("DPAPI: obieg")
+        if dpapi_protect(sample, SESSION_ENTROPY) == sample:
+            raise SystemExit("DPAPI: dane niezaszyfrowane")
     print("desk self-test ok")
 
 

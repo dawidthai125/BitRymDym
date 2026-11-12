@@ -28,6 +28,9 @@ Mac nagrywa tylko w przeglądarce.
 - Gdy mikrofon zniknie w trakcie nagrania (odłączony albo zajęty), program kończy nagranie, zostawia na liście to, co się zapisało, i podaje przyczynę z Windows.
 - Błędy sieci są po polsku (brak połączenia, brak odpowiedzi na czas), bez adresów i szczegółów gniazd. Logowanie rozróżnia zły e-mail lub hasło, zbyt wiele prób i niedostępny serwer.
 - Wyloguj kończy też sesję na serwerze, więc zapisany token odświeżania przestaje działać.
+- Tokeny sesji leżą w `%APPDATA%\BitRymDym\desktop-session.json` zaszyfrowane Windows DPAPI (tylko to konto Windows je otworzy). E-mail i adres strony zostają jawne. Stary plik z jawnymi tokenami jest zaszyfrowany przy pierwszym wczytaniu. Gdy DPAPI zawiedzie, program zapisuje jawnie jak dawniej, żeby nie gubić sesji. Plik z innego konta Windows liczy się jako wylogowanie.
+- Wznowienie wysyłki: stan przerwanej wysyłki (id projektu, wersja, ścieżki, ile ścieżek i efektów jest gotowych) leży w `%APPDATA%\BitRymDym\desktop-upload.json`, bez tokenów. Kolejne Wyślij dokańcza ten sam projekt od pierwszej niewysłanej ścieżki (nie tworzy drugiego), także po ponownym uruchomieniu programu, o ile pliki WAV nadal są. Inne ścieżki niż w przerwanej wysyłce porzucają ten stan i zaczynają nowy projekt.
+- Próba mikrofonu: osobny przycisk pod wyborem mikrofonu. Otwiera mikrofon bez nagrywania ujęcia (plik tymczasowy jest kasowany), pokazuje poziom, szczyt z ostatnich 3 s i podpowiedź (prawie cisza, za cicho, dobrze, za głośno). Sama się kończy po 60 s i przed nagraniem.
 - Sieć dla odsłuchu bitu i miksu idzie poza wątkiem okna (okno nie zamarza przy słabym internecie).
 
 ## Czego program nie robi
@@ -44,6 +47,8 @@ Mac nagrywa tylko w przeglądarce.
 Free 30 s i 1 ścieżka, Bronze 60 s i 2, Silver 120 s i 8, Gold 180 s i 16. Efekty 4 / 4 / 12 / 12. Stemy 0 / 0 / 8 / 16. Bit nie zajmuje ścieżki nagrania.
 
 ## Instalator
+
+Budowa: workflow GitHub Actions `recorder-installer` (`.github/workflows/recorder-installer.yml`, uruchamiany ręcznie). Na runnerze Windows odpala testy modułów (w tym DPAPI), pobiera czcionki i ffmpeg z poprzedniego instalatora, buduje PyInstaller, sprawdza exe w trybie smoke, kompiluje Inno Setup i instaluje wynik po cichu, żeby sprawdzić zainstalowaną wersję. Wynik to artefakt `BitRymDym-Setup` z sumą SHA-256. Wersja jest w `installer/BitRymDym.iss` (`AppVersion`). Wgranie: AWS CLI v2 na endpoint R2 konta kt, klucze z Vault OpenBot; przed nadpisaniem poprzedni plik zostaje pod kluczem z wersją (`bitrymdym/BitRymDym-Setup-<wersja>.exe`).
 
 Publiczny plik: `https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe`
 

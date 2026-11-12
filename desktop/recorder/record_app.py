@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
@@ -29,6 +30,7 @@ from account_upload import (
     NETWORK_ERRORS,
     SITE,
     SiteClient,
+    UploadState,
     is_unauthorized,
     network_message,
     playback_target,
@@ -38,11 +40,15 @@ from desk import (
     fold_peaks,
     quality_note,
     scan_capture_log,
+    level_text,
     list_saved_takes,
     max_recording_tracks,
     max_take_seconds,
+    open_session,
+    probe_hint,
     read_file_range,
     read_prefs,
+    seal_session,
     studio_url,
     tail_peak_db,
     wav_seconds,
@@ -154,6 +160,7 @@ def load_user_fonts() -> None:
 
 SESSION = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-session.json"
 PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json"
+PENDING = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-upload.json"
 TAKES = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "takes"
 
 
@@ -501,28 +508,63 @@ def supabase_password_grant(url: str, anon_key: str, email: str, password: str) 
 
 
 def save_session(url: str, anon_key: str, email: str, grant: dict[str, str]) -> None:
+    """Tokens are sealed with Windows DPAPI (only this Windows user can read them)."""
     SESSION.parent.mkdir(parents=True, exist_ok=True)
-    SESSION.write_text(
-        json.dumps(
-            {
-                "supabaseUrl": url,
-                "anonKey": anon_key,
-                "email": email,
-                "accessToken": grant["access_token"],
-                "refreshToken": grant["refresh_token"],
-            }
-        ),
-        encoding="utf-8",
-    )
+    session = {
+        "supabaseUrl": url,
+        "anonKey": anon_key,
+        "email": email,
+        "accessToken": grant["access_token"],
+        "refreshToken": grant["refresh_token"],
+    }
+    SESSION.write_text(json.dumps(seal_session(session)), encoding="utf-8")
 
 
 def load_session() -> dict[str, str] | None:
     if not SESSION.exists():
         return None
-    raw = json.loads(SESSION.read_text(encoding="utf-8"))
-    if not isinstance(raw, dict) or not raw.get("accessToken"):
+    try:
+        raw = json.loads(SESSION.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
         return None
-    return {str(key): str(value) for key, value in raw.items()}
+    if not isinstance(raw, dict):
+        return None
+    session, reseal = open_session(raw)
+    if session is None or not session.get("accessToken"):
+        return None
+    if reseal and os.name == "nt":
+        # An older plain file: seal it now so the tokens stop sitting in the clear.
+        try:
+            SESSION.write_text(json.dumps(seal_session(session)), encoding="utf-8")
+        except OSError:
+            pass
+    return session
+
+
+def load_pending() -> UploadState | None:
+    """A send that stopped half way. Only usable while its WAV files are still on disk."""
+    try:
+        state = UploadState.from_json(json.loads(PENDING.read_text(encoding="utf-8")))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if state is None or not all(Path(item).is_file() for item in state.wav_paths):
+        return None
+    return state
+
+
+def save_pending(state: UploadState) -> None:
+    try:
+        PENDING.parent.mkdir(parents=True, exist_ok=True)
+        PENDING.write_text(json.dumps(state.to_json()), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def clear_pending() -> None:
+    try:
+        PENDING.unlink()
+    except OSError:
+        pass
 
 
 def supabase_refresh_grant(url: str, anon_key: str, refresh_token: str) -> dict[str, str]:
@@ -597,6 +639,13 @@ class RecorderWindow:
         self.recording = False
         self._arming = False
         self._uploading = False
+        self._pending: UploadState | None = load_pending()
+        self._probing = False
+        self._probe_proc: subprocess.Popen[bytes] | None = None
+        self._probe_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-probe.wav"
+        self._probe_started = 0.0
+        self._probe_hist: list[tuple[float, float]] = []
+        self._probe_after: str | None = None
         self._take_note = ""
         self._arm_token = 0
         self._wave_cols: list[float] = []
@@ -864,6 +913,9 @@ class RecorderWindow:
         caption = getattr(self, "local_caption", None)
         if caption is not None:
             caption.configure(wraplength=max(160, width - 190))
+        probe_note = getattr(self, "probe_label", None)
+        if probe_note is not None:
+            probe_note.configure(wraplength=max(160, width - 330))
         hint = getattr(self, "lane_hint", None)
         if hint is not None:
             hint.configure(wraplength=max(200, width - 70))
@@ -891,6 +943,11 @@ class RecorderWindow:
             self.root.geometry("880x780")
         email = self.email.get().strip()
         self.account_line.set(f"Konto: {email}" if email else "Konto")
+        if self._pending is not None:
+            self.status.set(
+                f"Poprzednia wysyłka nie skończyła się ({self._pending.summary()}). "
+                "Naciśnij Wyślij, żeby ją dokończyć."
+            )
 
     def _open_site(self, path: str) -> None:
         webbrowser.open(f"{SITE}{path}")
@@ -961,6 +1018,7 @@ class RecorderWindow:
             return
         self._arm_token += 1
         self._cancel_tick()
+        self._stop_probe()
         self._stop_monitor()
         if self.capture:
             stop_capture(self.capture)
@@ -1852,6 +1910,25 @@ class RecorderWindow:
         self._build_beat_picker(block, labels)
         device_labels = self.devices or ["Brak mikrofonu"]
         self.device_menu = self._menu(self._row(block, "Mikrofon"), self.device_var, device_labels)
+        probe = tk.Frame(block, bg=PAPER)
+        probe.pack(fill="x", pady=(6, 0))
+        probe_shell = self._button(probe, "Próba mikrofonu", self.toggle_mic_test, RACK, INK)
+        probe_shell.pack(side="left")
+        self.probe_button = probe_shell.winfo_children()[0]
+        self.probe_meter = tk.Canvas(probe, width=120, height=12, bg=RACK, highlightthickness=0, bd=0)
+        self.probe_meter.pack(side="left", padx=(8, 0))
+        self.probe_var = tk.StringVar(value="Powiedz coś do mikrofonu. Pasek pokaże, czy poziom jest dobry.")
+        self.probe_label = tk.Label(
+            probe,
+            textvariable=self.probe_var,
+            bg=PAPER,
+            fg=SOFT,
+            font=(FONT_UI, 9),
+            anchor="w",
+            wraplength=300,
+            justify="left",
+        )
+        self.probe_label.pack(side="left", padx=8)
         hear = tk.Frame(block, bg=PAPER)
         hear.pack(fill="x", pady=(6, 0))
         self._button(hear, "Odsłuch z dysku", self.pick_local, RACK, INK).pack(side="left")
@@ -2533,25 +2610,44 @@ class RecorderWindow:
         """Checks on the Tk thread, then the transfer runs in a worker so the window stays alive."""
         if self._uploading:
             raise RuntimeError("Wysyłka już trwa.")
-        title = self.title_box.get().strip()
-        if not title:
-            raise RuntimeError("Wpisz tytuł.")
-        cap = self._track_cap()
-        if len(paths) > cap:
-            raise RuntimeError(
-                f"Plan {display_tier(self.tier)} mieści {cap} ścieżek wokalu, a nagrane są {len(paths)}."
-            )
+        resume: UploadState | None = None
+        dropped = ""
+        if self._pending is not None:
+            if [str(path) for path in paths] == self._pending.wav_paths:
+                resume = self._pending
+            else:
+                self._pending = None
+                clear_pending()
+                dropped = "Przerwana wcześniej wysyłka została porzucona (są inne ścieżki). "
         picked = self.selected_fx()
         chain = build_chain(picked, self.tier)
-        beat_id = self.selected_beat_id()
+        if resume is not None:
+            title, beat_id = resume.title, resume.beat_id
+        else:
+            title = self.title_box.get().strip()
+            if not title:
+                raise RuntimeError("Wpisz tytuł.")
+            cap = self._track_cap()
+            if len(paths) > cap:
+                raise RuntimeError(
+                    f"Plan {display_tier(self.tier)} mieści {cap} ścieżek wokalu, a nagrane są {len(paths)}."
+                )
+            beat_id = self.selected_beat_id()
         self._uploading = True
         self._sync_send_buttons()
-        self.status.set("Wysyłam na konto. Okno zostaje, nie zamykaj programu.")
+        self.status.set(
+            dropped + ("Dokańczam przerwaną wysyłkę. " if resume else "Wysyłam na konto. ")
+            + "Okno zostaje, nie zamykaj programu."
+        )
         threading.Thread(
             target=self._run_upload,
-            args=(title, beat_id, list(paths), chain, len(picked)),
+            args=(title, beat_id, list(paths), chain, len(picked), resume),
             daemon=True,
         ).start()
+
+    def _remember_state(self, state: UploadState) -> None:
+        self._pending = state
+        save_pending(state)
 
     def _upload_say(self, text: str) -> None:
         self.root.after(0, lambda: self.status.set(text) if self._uploading else None)
@@ -2563,6 +2659,7 @@ class RecorderWindow:
         paths: list[Path],
         chain: dict[str, object],
         fx_count: int,
+        resume: UploadState | None = None,
     ) -> None:
         try:
             project = upload_vocals(
@@ -2572,6 +2669,8 @@ class RecorderWindow:
                 wav_paths=paths,
                 chain=chain,
                 progress=self._upload_say,
+                resume=resume,
+                on_state=self._remember_state,
             )
         except Exception as error:
             message = str(error)
@@ -2583,8 +2682,11 @@ class RecorderWindow:
         self._uploading = False
         self._sync_send_buttons()
         if project is None:
-            self.status.set(error or "Wysyłka się nie udała.")
+            hint = " Naciśnij Wyślij, żeby dokończyć." if self._pending is not None else ""
+            self.status.set((error or "Wysyłka się nie udała.") + hint)
             return
+        self._pending = None
+        clear_pending()
         self.project_id = project
         fx_note = f" Efekty: {fx_count}." if fx_count else ""
         self.status.set(f"Projekt jest na koncie. Ścieżki wokalu: {tracks}.{fx_note} Id: {project}")
@@ -2598,9 +2700,86 @@ class RecorderWindow:
             except Exception:
                 pass
 
+    def toggle_mic_test(self) -> None:
+        """Level check before recording: the mic is opened on its own, nothing is kept."""
+        if self._probing:
+            self._stop_probe("Próba zakończona.")
+            return
+        try:
+            if self.recording or self._arming:
+                raise RuntimeError("Najpierw Stop.")
+            self._stop_monitor()
+            device = self.selected_device()
+            self._probe_proc = start_capture(self._probe_path, device)
+        except Exception as error:
+            self.probe_var.set(str(error))
+            return
+        self._probing = True
+        self._probe_started = time.monotonic()
+        self._probe_hist = []
+        self.probe_button.configure(text="STOP PRÓBY")
+        self.probe_var.set("Słucham mikrofonu. Powiedz coś albo zaśpiewaj.")
+        self._probe_tick()
+
+    def _probe_tick(self) -> None:
+        if not self._probing:
+            return
+        proc = self._probe_proc
+        if proc is None or proc.poll() is not None:
+            _drops, fatal = read_capture_log(self._probe_path, remove=False)
+            reason = "Mikrofon nie odpowiada (zajęty przez inny program albo odłączony)."
+            self._stop_probe(reason + (f" Windows: {fatal[:100]}" if fatal else ""))
+            return
+        now = time.monotonic()
+        if now - self._probe_started > 60:
+            self._stop_probe("Próba skończyła się po 60 s.")
+            return
+        db = tail_peak_db(self._probe_path)
+        self._probe_hist = [(t, v) for t, v in self._probe_hist if now - t <= 3.0] + [(now, db)]
+        peak = max(v for _t, v in self._probe_hist)
+        self._draw_probe(db, peak)
+        self.probe_var.set(f"Poziom {level_text(db)}, szczyt {level_text(peak)}. {probe_hint(peak)}")
+        self._probe_after = self.root.after(120, self._probe_tick)
+
+    def _draw_probe(self, db: float, peak: float) -> None:
+        meter = self.probe_meter
+        meter.delete("all")
+        width = int(meter.cget("width"))
+        level = max(0.0, min(1.0, (db + 60.0) / 60.0))
+        hold = max(0.0, min(1.0, (peak + 60.0) / 60.0))
+        meter.create_rectangle(0, 0, int(width * level), 12, fill=REC if level > 0.95 else AMBER, outline="")
+        meter.create_line(int(width * hold), 0, int(width * hold), 12, fill=INK)
+
+    def _stop_probe(self, message: str = "") -> None:
+        if self._probe_after:
+            try:
+                self.root.after_cancel(self._probe_after)
+            except Exception:
+                pass
+            self._probe_after = None
+        proc, self._probe_proc = self._probe_proc, None
+        if proc is not None:
+            try:
+                stop_capture(proc)
+            except Exception:
+                pass
+        for leftover in (self._probe_path, capture_log_path(self._probe_path)):
+            try:
+                leftover.unlink()
+            except OSError:
+                pass
+        was = self._probing
+        self._probing = False
+        if was:
+            self.probe_button.configure(text="PRÓBA MIKROFONU")
+            self.probe_meter.delete("all")
+        if message:
+            self.probe_var.set(message)
+
     def arm(self) -> None:
         if self.recording or self._arming:
             return
+        self._stop_probe()
         if not self.vocals:
             self.status.set("Brak ścieżki wokalu.")
             return
@@ -2693,6 +2872,8 @@ class RecorderWindow:
             if self.recording:
                 self._finish_take()
             paths = self._lane_paths()
+            if not paths and self._pending is not None:
+                paths = [Path(item) for item in self._pending.wav_paths]
             if not paths:
                 raise RuntimeError("Najpierw nagraj wokal na ścieżkę.")
             self._upload(paths)
