@@ -32,10 +32,45 @@ def max_recording_tracks(tier: str) -> int:
     return RECORDING_TRACKS.get(tier, RECORDING_TRACKS["FREE"])
 
 
-def wav_seconds(size: int) -> float:
-    if size <= 44:
+def wav_data_offset(head: bytes) -> int | None:
+    """Where the PCM starts in a WAV. ffmpeg writes a LIST chunk (78 byte header), Python's wave writes 44.
+
+    None while the header is still being written (not enough bytes yet). Not a RIFF/WAVE file: 44, as before.
+    """
+    if len(head) < 12:
+        return None
+    if head[:4] != b"RIFF" or head[8:12] != b"WAVE":
+        return 44
+    index = 12
+    while index + 8 <= len(head):
+        size = int.from_bytes(head[index + 4 : index + 8], "little")
+        if head[index : index + 4] == b"data":
+            return index + 8
+        index += 8 + size + (size & 1)
+    return None
+
+
+def wav_data_offset_of(path: Path) -> int | None:
+    try:
+        return wav_data_offset(read_file_range(path, 0, 4096))
+    except OSError:
+        return None
+
+
+def wav_seconds(size: int, offset: int = 44) -> float:
+    if size <= offset:
         return 0.0
-    return (size - 44) / 2 / RATE
+    return (size - offset) / 2 / RATE
+
+
+def file_seconds(path: Path) -> float:
+    """Length of a mono 48 kHz 16-bit WAV on disk, with the real header size (also while ffmpeg is still writing)."""
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return 0.0
+    offset = wav_data_offset_of(path)
+    return wav_seconds(size, offset if offset is not None else 44)
 
 
 def peak_db(pcm: bytes) -> float:
@@ -101,9 +136,10 @@ def tail_peak_db(path: Path, samples: int = 4800) -> float:
     if not path.exists():
         return -96.0
     size = path.stat().st_size
-    if size <= 44:
+    offset = wav_data_offset_of(path)
+    if offset is None or size <= offset:
         return -96.0
-    byte_count = min(size - 44, samples * 2)
+    byte_count = min(size - offset, samples * 2)
     return peak_db(read_file_range(path, size - byte_count, byte_count))
 
 
@@ -420,6 +456,29 @@ def self_test() -> None:
             raise SystemExit("DPAPI: obieg")
         if dpapi_protect(sample, SESSION_ENTROPY) == sample:
             raise SystemExit("DPAPI: dane niezaszyfrowane")
+    # WAV header: ffmpeg writes a LIST chunk (78 B), Python's wave writes 44, a half-written header is None
+    ffmpeg_head = (
+        b"RIFF" + (78 - 8 + 4000).to_bytes(4, "little") + b"WAVE"
+        + b"fmt " + (16).to_bytes(4, "little") + bytes(16)
+        + b"LIST" + (26).to_bytes(4, "little") + b"INFO" + b"ISFT" + (14).to_bytes(4, "little") + b"Lavf61.7.100\x00\x00" + b"data" + (4000).to_bytes(4, "little")
+    )
+    if wav_data_offset(ffmpeg_head) != 78 or wav_data_offset(ffmpeg_head[:60]) is not None:
+        raise SystemExit(f"nagłówek ffmpeg: {wav_data_offset(ffmpeg_head)}")
+    plain_head = b"RIFF" + (36).to_bytes(4, "little") + b"WAVEfmt " + (16).to_bytes(4, "little") + bytes(16) + b"data" + (0).to_bytes(4, "little")
+    if wav_data_offset(plain_head) != 44 or wav_data_offset(b"x" * 100) != 44 or wav_data_offset(b"RIF") is not None:
+        raise SystemExit("nagłówek 44 / nie-RIFF / krótki")
+    hot = (30000).to_bytes(2, "little", signed=True) * 24
+    quiet_pcm = bytes(9600)
+    take = folder / "ffmpeg-like.wav"
+    take.write_bytes(ffmpeg_head + quiet_pcm)
+    if tail_peak_db(take) > -90.0:
+        raise SystemExit("ogon ciszy: nagłówek ffmpeg wzięty za próbki")
+    if abs(file_seconds(take) - len(quiet_pcm) / 2 / RATE) > 1e-9:
+        raise SystemExit("czas pliku z nagłówkiem ffmpeg")
+    take.write_bytes(ffmpeg_head + quiet_pcm + hot)
+    if tail_peak_db(take) < -1.0:
+        raise SystemExit("ogon z sygnałem")
+    take.unlink(missing_ok=True)
     print("desk self-test ok")
 
 

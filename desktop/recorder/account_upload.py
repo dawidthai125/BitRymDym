@@ -13,6 +13,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+from desk import wav_data_offset
+
 
 SITE = "https://www.bitrymdym.pl"
 
@@ -76,7 +78,8 @@ def vocal_track_ids(document: dict[str, Any]) -> list[str]:
 
 
 def wav_duration_ms(wav: bytes) -> int:
-    return max(1, int((len(wav) - 44) / 2 / 48_000 * 1000))
+    offset = wav_data_offset(wav[:4096]) or 44
+    return max(1, int((len(wav) - offset) / 2 / 48_000 * 1000))
 
 
 def playback_target(payload: dict[str, Any]) -> tuple[str, int | None]:
@@ -408,6 +411,12 @@ def self_test() -> None:
         raise SystemExit("komunikat sieci")
     if "na czas" not in network_message(TimeoutError("timed out")):
         raise SystemExit("komunikat limitu czasu")
+    head = (
+        b"RIFF" + (4000 + 70).to_bytes(4, "little") + b"WAVEfmt " + (16).to_bytes(4, "little") + bytes(16)
+        + b"LIST" + (26).to_bytes(4, "little") + bytes(26) + b"data" + (96000).to_bytes(4, "little")
+    )
+    if wav_duration_ms(head + bytes(96000)) != 1000 or wav_duration_ms(b"R" * 48) != 1:
+        raise SystemExit("czas WAV z nagłówkiem ffmpeg (78 B)")
     _self_test_two_vocals()
     _self_test_resume()
     print("upload self-test ok")

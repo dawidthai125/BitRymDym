@@ -31,6 +31,7 @@ Mac nagrywa tylko w przeglądarce.
 - Tokeny sesji leżą w `%APPDATA%\BitRymDym\desktop-session.json` zaszyfrowane Windows DPAPI (tylko to konto Windows je otworzy). E-mail i adres strony zostają jawne. Stary plik z jawnymi tokenami jest zaszyfrowany przy pierwszym wczytaniu. Gdy DPAPI zawiedzie, program zapisuje jawnie jak dawniej, żeby nie gubić sesji. Plik z innego konta Windows liczy się jako wylogowanie.
 - Wznowienie wysyłki: stan przerwanej wysyłki (id projektu, wersja, ścieżki, ile ścieżek i efektów jest gotowych) leży w `%APPDATA%\BitRymDym\desktop-upload.json`, bez tokenów. Kolejne Wyślij dokańcza ten sam projekt od pierwszej niewysłanej ścieżki (nie tworzy drugiego), także po ponownym uruchomieniu programu, o ile pliki WAV nadal są. Inne ścieżki niż w przerwanej wysyłce porzucają ten stan i zaczynają nowy projekt.
 - Pasek aktualizacji i numer wersji w stopce: patrz sekcja Aktualizacje.
+- Nagłówek WAV: program czyta prawdziwy początek danych (ffmpeg dopisuje blok LIST, nagłówek ma 78 B, a nie 44). Dzięki temu czas ujęcia i czas wysyłki są dokładne, a początek fali nie dostaje fałszywego szczytu z tekstu nagłówka.
 - Próba mikrofonu: osobny przycisk pod wyborem mikrofonu. Otwiera mikrofon bez nagrywania ujęcia (plik tymczasowy jest kasowany), pokazuje poziom, szczyt z ostatnich 3 s i podpowiedź (prawie cisza, za cicho, dobrze, za głośno). Sama się kończy po 60 s i przed nagraniem.
 - Sieć dla odsłuchu bitu i miksu idzie poza wątkiem okna (okno nie zamarza przy słabym internecie).
 

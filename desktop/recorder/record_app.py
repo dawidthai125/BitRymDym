@@ -52,6 +52,7 @@ from desk import (
     seal_session,
     studio_url,
     tail_peak_db,
+    wav_data_offset_of,
     wav_seconds,
     write_prefs,
 )
@@ -667,7 +668,7 @@ class RecorderWindow:
         self._take_note = ""
         self._arm_token = 0
         self._wave_cols: list[float] = []
-        self._wave_end = 44
+        self._wave_end = 0
         self._wave_for: Path | None = None
         self._beat_shown = 0.0
         self.vocals: list[dict[str, object]] = []
@@ -1376,7 +1377,7 @@ class RecorderWindow:
         cap = max(1, max_take_seconds(self.tier))
         playhead = 0.0
         if self.recording and self.wav_path.exists():
-            playhead = wav_seconds(self.wav_path.stat().st_size)
+            playhead = file_seconds(self.wav_path)
         self._paint_ruler(cap)
         beat_on = self.recording and (self.monitor is not None or self.local_beat is not None)
         if beat_on:
@@ -1388,7 +1389,7 @@ class RecorderWindow:
             if not isinstance(canvas, tk.Canvas):
                 continue
             path = lane.get("path")
-            seconds = wav_seconds(path.stat().st_size) if isinstance(path, Path) and path.exists() else 0.0
+            seconds = file_seconds(path) if isinstance(path, Path) and path.exists() else 0.0
             here = self.recording and index == self.armed
             head = playhead if here else seconds
             peaks = self._vocal_peaks(path, canvas.winfo_width(), cap) if isinstance(path, Path) and path.exists() else None
@@ -1424,19 +1425,22 @@ class RecorderWindow:
         if self._wave_for != path or len(self._wave_cols) != columns:
             self._wave_for = path
             self._wave_cols = [0.0] * columns
-            self._wave_end = 44
+            self._wave_end = 0
         try:
             size = path.stat().st_size
         except OSError:
             return self._wave_cols
-        start = self._wave_end
+        offset = wav_data_offset_of(path)
+        if offset is None:
+            return self._wave_cols
+        start = max(self._wave_end, offset)
         if size - start >= 2:
             # Half a second per tick. A full 180 s scan in Python would freeze the window.
             length = min(size - start, 48_000)
             if not self.recording:
                 length = size - start
             pcm = read_file_range(path, start, length)
-            fold_peaks(self._wave_cols, pcm, max(0, (start - 44) // 2), max(1, cap) * 48_000)
+            fold_peaks(self._wave_cols, pcm, max(0, (start - offset) // 2), max(1, cap) * 48_000)
             self._wave_end = start + (len(pcm) // 2) * 2
         return self._wave_cols
 
@@ -2511,7 +2515,7 @@ class RecorderWindow:
             self._capture_died()
             return
         try:
-            seconds = wav_seconds(self.wav_path.stat().st_size) if self.wav_path.exists() else 0.0
+            seconds = file_seconds(self.wav_path) if self.wav_path.exists() else 0.0
             cap = max_take_seconds(self.tier)
             self.clock.set(f"{seconds:.1f} s / {cap} s")
             self._draw_meter(tail_peak_db(self.wav_path))
@@ -2593,7 +2597,7 @@ class RecorderWindow:
             raise RuntimeError("Nagranie jest puste.")
         self._add_take(self.wav_path)
         self._save_prefs()
-        self.clock.set(f"{wav_seconds(self.wav_path.stat().st_size):.1f} s / {max_take_seconds(self.tier)} s")
+        self.clock.set(f"{file_seconds(self.wav_path):.1f} s / {max_take_seconds(self.tier)} s")
         self._take_note = self._rate_take(self.wav_path)
         return self.wav_path
 
