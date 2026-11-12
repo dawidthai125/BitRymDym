@@ -34,6 +34,7 @@ import {
 import { resolveProductEntitlementForAuthContext } from "@/lib/audio/load-premium-entitlement";
 import { canDownloadBeatByOwnerChoice } from "@/lib/beats/usage/beat-usage-policy";
 import { hasActiveRecordGrant } from "@/lib/grants/beat-access-grants";
+import { checkFullPlaybackAllowed, logFullPlayback } from "@/lib/beats/playback-guard";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -357,6 +358,21 @@ export async function requestBeatAudioAccess(params: {
     }
   }
 
+  // Full-file playback for signed-in users (Studio / recording / Windows program): rate-limited and logged.
+  // Staff and the beat's owner are exempt; short previews are not counted.
+  const guardFullPlayback =
+    params.purpose === "PLAYBACK" &&
+    !shortListen &&
+    !!profileContext &&
+    actor === "USER" &&
+    beat.ownerId !== profileContext.userId;
+  if (guardFullPlayback && profileContext) {
+    const guard = await checkFullPlaybackAllowed(profileContext.userId, params.beatId);
+    if (!guard.allowed) {
+      throw new AuthError("FORBIDDEN", "Playback request limit reached. Try again in a while.");
+    }
+  }
+
   const ttl = signedUrlTtlSeconds(params.purpose);
   const admin = createSupabaseAdminClient();
   const { data: signed, error: signedError } = await admin.storage
@@ -393,6 +409,10 @@ export async function requestBeatAudioAccess(params: {
         userId: profileContext.profile.id,
       });
     }
+  }
+
+  if (guardFullPlayback && profileContext) {
+    await logFullPlayback(profileContext.userId, params.beatId, asset.id);
   }
 
   const expiresAt = new Date(Date.now() + ttl * 1000).toISOString();
