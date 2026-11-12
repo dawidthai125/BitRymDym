@@ -2,7 +2,7 @@
 ; ffmpeg is the GPL full shared build from GyanD/codexffmpeg (see the workflow). Its LICENSE is copied beside the exe
 ; as FFMPEG-LICENSE.txt. The program prefers these copies over anything on PATH.
 
-#define AppVersion "2026.11.12.1"
+#define AppVersion "2026.11.12.2"
 
 [Setup]
 AppId={{7C2E9A41-6B18-4E5D-9F03-1A8D4C6E2B70}
@@ -18,6 +18,8 @@ OutputBaseFilename=BitRymDym-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=yes
+RestartApplications=no
 SetupIconFile=..\assets\cassette.ico
 UninstallDisplayIcon={app}\brd-cassette.ico
 ArchitecturesAllowed=x64compatible
@@ -36,3 +38,11 @@ Name: "{userstartmenu}\BitRymDym"; Filename: "{app}\BitRymDym.exe"; IconFilename
 
 [Run]
 Filename: "{app}\BitRymDym.exe"; Description: "Otwórz BitRymDym"; Flags: nowait postinstall skipifsilent
+; Self-update (updater.py runs this setup with /SILENT /UPDATE=1): start the new build when the setup ends.
+Filename: "{app}\BitRymDym.exe"; Flags: nowait runasoriginaluser; Check: IsUpdate
+
+[Code]
+function IsUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;

@@ -30,6 +30,7 @@ Mac nagrywa tylko w przeglądarce.
 - Wyloguj kończy też sesję na serwerze, więc zapisany token odświeżania przestaje działać.
 - Tokeny sesji leżą w `%APPDATA%\BitRymDym\desktop-session.json` zaszyfrowane Windows DPAPI (tylko to konto Windows je otworzy). E-mail i adres strony zostają jawne. Stary plik z jawnymi tokenami jest zaszyfrowany przy pierwszym wczytaniu. Gdy DPAPI zawiedzie, program zapisuje jawnie jak dawniej, żeby nie gubić sesji. Plik z innego konta Windows liczy się jako wylogowanie.
 - Wznowienie wysyłki: stan przerwanej wysyłki (id projektu, wersja, ścieżki, ile ścieżek i efektów jest gotowych) leży w `%APPDATA%\BitRymDym\desktop-upload.json`, bez tokenów. Kolejne Wyślij dokańcza ten sam projekt od pierwszej niewysłanej ścieżki (nie tworzy drugiego), także po ponownym uruchomieniu programu, o ile pliki WAV nadal są. Inne ścieżki niż w przerwanej wysyłce porzucają ten stan i zaczynają nowy projekt.
+- Pasek aktualizacji i numer wersji w stopce: patrz sekcja Aktualizacje.
 - Próba mikrofonu: osobny przycisk pod wyborem mikrofonu. Otwiera mikrofon bez nagrywania ujęcia (plik tymczasowy jest kasowany), pokazuje poziom, szczyt z ostatnich 3 s i podpowiedź (prawie cisza, za cicho, dobrze, za głośno). Sama się kończy po 60 s i przed nagraniem.
 - Sieć dla odsłuchu bitu i miksu idzie poza wątkiem okna (okno nie zamarza przy słabym internecie).
 
@@ -45,6 +46,18 @@ Mac nagrywa tylko w przeglądarce.
 ## Limity
 
 Free 30 s i 1 ścieżka, Bronze 60 s i 2, Silver 120 s i 8, Gold 180 s i 16. Efekty 4 / 4 / 12 / 12. Stemy 0 / 0 / 8 / 16. Bit nie zajmuje ścieżki nagrania.
+
+## Aktualizacje (samoaktualizacja programu)
+
+Program (od wersji 2026.11.12.2) sprawdza w tle przy starcie i co 6 godzin plik `https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/latest.json`. Gdy jest nowsza wersja, na dole okna pojawia się pasek „Jest nowa wersja … ZAKTUALIZUJ / Później”. Zaktualizuj pobiera instalator z postępem, sprawdza go i uruchamia (`/SILENT /UPDATE=1`), program się zamyka, a instalator uruchamia nową wersję. Nic nie dzieje się w trakcie nagrania, próby mikrofonu ani wysyłki (program każe najpierw skończyć). Starsze wersje bez tej funkcji (2026.11.12.1 i wcześniejsze) trzeba raz zainstalować ręcznie.
+
+Bezpieczeństwo: `latest.json` jest podpisany Ed25519 (klucz prywatny w Vault OpenBot jako `BITRYMDYM_UPDATE_SIGNING_KEY`, publiczny w `desktop/recorder/updater.py`). Podpis obejmuje wersję, SHA-256, rozmiar i adres instalatora. Program instaluje tylko, gdy podpis się zgadza, wersja jest nowsza, adres jest https pod `.../bitrymdym/`, a pobrany plik ma dokładnie podpisany rozmiar i sumę. Sama podmiana pliku w buckecie nie wystarczy. Wyłączenie: zmienna `BITRYMDYM_NO_UPDATE=1`.
+
+Publikacja nowego buildu (kolejność ma znaczenie, `latest.json` na końcu):
+1. podbij `APP_VERSION` w `updater.py` i `AppVersion` w `installer/BitRymDym.iss` (CI sprawdza zgodność), commit, tag `recorder-v<wersja>`;
+2. pobierz artefakt z workflow, sprawdź SHA-256;
+3. R2: kopia poprzedniego `BitRymDym-Setup.exe` pod klucz z jego wersją, wgraj `BitRymDym-Setup-<wersja>.exe` i `BitRymDym-Setup.exe` (+ `.sha256`);
+4. `python installer/publish_manifest.py --installer <plik> --version <wersja> --key <ścieżka klucza z Vault> --out latest.json --notes "…"` i wgraj `latest.json` jako `bitrymdym/latest.json` z `Cache-Control: no-cache`.
 
 ## Instalator
 

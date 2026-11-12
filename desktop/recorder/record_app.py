@@ -26,6 +26,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import updater
 from account_upload import (
     NETWORK_ERRORS,
     SITE,
@@ -653,6 +654,10 @@ class RecorderWindow:
         self._arming = False
         self._uploading = False
         self._pending: UploadState | None = load_pending()
+        self._update: updater.Update | None = None
+        self._update_ready: Path | None = None
+        self._update_busy = False
+        self._update_dismissed = False
         self._probing = False
         self._probe_proc: subprocess.Popen[bytes] | None = None
         self._probe_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-mic-probe.wav"
@@ -672,6 +677,7 @@ class RecorderWindow:
         self.mix_feed: subprocess.Popen[bytes] | None = None
         self._beat_ceiling: float | None = None
         self._build_scroll()
+        self._build_update_bar()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.local_beat: Path | None = None
         self.wav_path = Path(os.environ.get("TEMP", ".")) / "bitrymdym-vocal.wav"
@@ -2167,7 +2173,7 @@ class RecorderWindow:
         self.status_label.pack(fill="x", padx=18, pady=8)
         self.foot_label = tk.Label(
             self.page,
-            text="Nuty zostają w studio na stronie. Miks i master też.",
+            text=f"Nuty zostają w studio na stronie. Miks i master też. Wersja {updater.APP_VERSION}.",
             bg=PAPER,
             fg=SOFT,
             font=(FONT_UI, 9),
@@ -2713,6 +2719,114 @@ class RecorderWindow:
             except Exception:
                 pass
 
+    def _build_update_bar(self) -> None:
+        """Bottom strip, shown only when a newer signed build exists. Visible on every screen."""
+        bar = tk.Frame(self.root, bg=RACK, highlightthickness=1, highlightbackground=AMBER)
+        self.update_bar = bar
+        self.update_var = tk.StringVar()
+        self.update_label = tk.Label(
+            bar, textvariable=self.update_var, bg=RACK, fg=INK, font=(FONT_UI, 10), anchor="w", justify="left", wraplength=520
+        )
+        self.update_label.pack(side="left", fill="x", expand=True, padx=12, pady=8)
+        self.update_later = tk.Button(
+            bar, text="Później", command=self._dismiss_update, bg=RACK, fg=SOFT, activebackground=RACK,
+            activeforeground=INK, relief="flat", bd=0, padx=10, pady=4, font=(FONT_UI, 10), cursor="hand2",
+        )
+        self.update_later.pack(side="right", padx=(0, 10))
+        self.update_now = tk.Button(
+            bar, text="ZAKTUALIZUJ", command=self._apply_update, bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT,
+            activeforeground=ON_AMBER, disabledforeground=MUTE, relief="flat", bd=0, padx=14, pady=4,
+            font=(FONT_POSTER, 12, "bold"), cursor="hand2",
+        )
+        self.update_now.pack(side="right", padx=8)
+        bar.bind("<Configure>", lambda event: self.update_label.configure(wraplength=max(200, event.width - 230)))
+
+    def _start_update_check(self) -> None:
+        """Quiet check in the background: at start and every 6 hours. Failures are ignored."""
+        if os.environ.get("BITRYMDYM_NO_UPDATE") == "1" or os.environ.get("BITRYMDYM_UI_SMOKE") == "1":
+            return
+        threading.Thread(target=self._update_worker, daemon=True).start()
+        self.root.after(6 * 3600 * 1000, self._start_update_check)
+
+    def _update_worker(self) -> None:
+        update = updater.check_for_update()
+        if update is not None:
+            self.root.after(0, lambda: self._offer_update(update))
+
+    def _offer_update(self, update: updater.Update) -> None:
+        if self._update_dismissed or self._update_busy:
+            return
+        self._update = update
+        notes = f" {update.notes}" if update.notes else ""
+        self.update_var.set(f"Jest nowa wersja {update.version} (masz {updater.APP_VERSION}).{notes}")
+        self.update_now.configure(state="normal")
+        if not self.update_bar.winfo_manager():
+            self.update_bar.pack(side="bottom", fill="x", before=self.shell)
+
+    def _dismiss_update(self) -> None:
+        if self._update_busy:
+            return
+        self._update_dismissed = True
+        self.update_bar.pack_forget()
+
+    def _busy_for_update(self) -> bool:
+        return self.recording or self._arming or self._uploading or self._probing
+
+    def _apply_update(self) -> None:
+        if self._update is None or self._update_busy:
+            return
+        if self._busy_for_update():
+            self.update_var.set("Najpierw skończ nagranie, próbę mikrofonu albo wysyłkę, potem naciśnij Zaktualizuj.")
+            return
+        if self._update_ready is not None and self._update_ready.is_file():
+            self._launch_update(self._update_ready)
+            return
+        self._update_busy = True
+        self.update_now.configure(state="disabled")
+        self.update_later.configure(state="disabled")
+        self.update_var.set("Pobieram nową wersję: 0%")
+        threading.Thread(target=self._download_update, args=(self._update,), daemon=True).start()
+
+    def _download_update(self, update: updater.Update) -> None:
+        def progress(done: int, total: int) -> None:
+            self.root.after(0, lambda: self.update_var.set(f"Pobieram nową wersję: {done * 100 // max(1, total)}%"))
+
+        try:
+            path = updater.download(update, Path(os.environ.get("TEMP", ".")) / "BitRymDym-update", progress)
+        except NETWORK_ERRORS as error:
+            message = network_message(error)
+        except ValueError:
+            message = "Pobrany plik nie przeszedł sprawdzenia (rozmiar lub suma). Nie instaluję. Spróbuj później."
+        except Exception:
+            message = "Nie udało się pobrać aktualizacji. Spróbuj później."
+        else:
+            self.root.after(0, lambda: self._launch_update(path))
+            return
+        self.root.after(0, lambda: self._update_failed(message))
+
+    def _update_failed(self, message: str) -> None:
+        self._update_busy = False
+        self.update_now.configure(state="normal")
+        self.update_later.configure(state="normal")
+        self.update_var.set(f"{message} Instalator jest też na stronie /nagrywarka.")
+
+    def _launch_update(self, path: Path) -> None:
+        if self._busy_for_update():
+            self._update_ready = path
+            self._update_busy = False
+            self.update_now.configure(state="normal")
+            self.update_later.configure(state="normal")
+            self.update_var.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
+            return
+        try:
+            updater.start_installer(path)
+        except OSError:
+            self._update_failed("Nie udało się uruchomić instalatora.")
+            return
+        self._update_busy = True
+        self.update_var.set("Instaluję nową wersję. Program zamknie się i uruchomi sam.")
+        self.root.after(700, self._on_close)
+
     def toggle_mic_test(self) -> None:
         """Level check before recording: the mic is opened on its own, nothing is kept."""
         if self._probing:
@@ -2910,6 +3024,7 @@ class RecorderWindow:
         webbrowser.open(studio_url(SITE, self.project_id))
 
     def run(self) -> None:
+        self.root.after(3000, self._start_update_check)
         self.root.mainloop()
 
 

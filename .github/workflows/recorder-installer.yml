@@ -43,6 +43,11 @@ jobs:
           python desk.py;            if ($LASTEXITCODE) { throw "desk" }
           python account_upload.py;  if ($LASTEXITCODE) { throw "account_upload" }
           python own_fx.py;          if ($LASTEXITCODE) { throw "own_fx" }
+          python test_updater.py;    if ($LASTEXITCODE) { throw "updater" }
+          $app = (Select-String -Path updater.py -Pattern 'APP_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          $iss = (Select-String -Path installer\BitRymDym.iss -Pattern '#define AppVersion "([^"]+)"').Matches[0].Groups[1].Value
+          if ($app -ne $iss) { throw "wersja programu ($app) różni się od AppVersion w .iss ($iss)" }
+          "wersja programu i instalatora: $app" | Write-Host
 
       - name: Czcionki i ffmpeg z poprzedniego instalatora
         env:
@@ -136,6 +141,14 @@ jobs:
           $installed | Write-Host
           if ($installed -notmatch "ffplay=" -or $installed -match "ffplay=None") { throw "po instalacji program nie widzi ffplay" }
           if ($installed -notmatch "\\new\\ffmpeg\.exe" -or $installed -notmatch "\\new\\ffplay\.exe") { throw "po instalacji program nie używa dołączonego ffmpeg/ffplay" }
+          # Ścieżka samoaktualizacji: instalator z tymi samymi argumentami co updater.py (/UPDATE=1) ma uruchomić program.
+          Remove-Item $note -ErrorAction SilentlyContinue
+          $env:BITRYMDYM_UI_SMOKE = "1"
+          $u = Start-Process "installer\output\BitRymDym-Setup.exe" -ArgumentList "/SILENT","/SUPPRESSMSGBOXES","/NORESTART","/UPDATE=1","/DIR=$dir" -Wait -PassThru
+          if ($u.ExitCode -ne 0) { throw "aktualizacja: kod $($u.ExitCode)" }
+          for ($i = 0; $i -lt 40 -and -not (Test-Path $note); $i++) { Start-Sleep -Seconds 2 }
+          if (-not (Test-Path $note)) { throw "aktualizacja (/UPDATE=1) nie uruchomiła programu po instalacji" }
+          "aktualizacja /UPDATE=1: program uruchomiony po instalacji" | Write-Host
 
       - uses: actions/upload-artifact@v4
         with:
