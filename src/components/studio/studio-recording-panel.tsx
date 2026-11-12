@@ -161,6 +161,7 @@ export function StudioRecordingPanel({
   recoverySavedKey = 0,
   embedded = false,
   simple = false,
+  planLimits = null,
   samplesMode = false,
   /** Phase 7.1.3 — Studio selection SSOT; no third track store. */
   preferredTrackId = null,
@@ -204,6 +205,8 @@ export function StudioRecordingPanel({
   embedded?: boolean;
   /** Record-step simple view: mic, record, import, keep or discard. */
   simple?: boolean;
+  /** Plan limits shown under the record button (from plan-policy, server enforces). */
+  planLimits?: { sessionsPerDay: number; retentionDays: number } | null;
   /** Sample tab: instruments and the sample desk, without the microphone. */
   samplesMode?: boolean;
   preferredTrackId?: string | null;
@@ -3115,6 +3118,14 @@ export function StudioRecordingPanel({
       {samplesMode ? null : (
       <p className="text-[11px] text-[var(--brd-mute)]">
         {tr("limit")}{" "}{maxSeconds}{tr("sIstniejaceLimityKonta")}
+      </p>
+      )}
+      {samplesMode || !planLimits ? null : (
+      <p className="text-[11px] text-[var(--brd-mute)]" data-testid="studio-record-plan-limits">
+        {tr("limityPlanu", {
+          sessions: planLimits.sessionsPerDay,
+          days: planLimits.retentionDays,
+        })}
       </p>
       )}
     </section>

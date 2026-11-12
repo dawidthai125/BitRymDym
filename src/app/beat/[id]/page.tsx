@@ -7,6 +7,7 @@ import { BeatDetailClient } from "@/app/beat/[id]/beat-detail-client";
 import { CommunityShelf } from "@/components/community/community-shelf";
 import { CommunityThread } from "@/components/community/community-thread";
 import { PageFrame } from "@/components/brand/chrome";
+import { LicenseSummary } from "@/components/site/license-summary";
 import { ShareButtons } from "@/components/share/share-buttons";
 import type { LockReason } from "@/components/plans/locked-action";
 import { AppShell } from "@/components/site/app-shell";
@@ -189,6 +190,7 @@ export default async function BeatDetailPage({ params }: BeatDetailPageProps) {
               related={related}
             />
           </div>
+          <LicenseSummary className="mt-6 border-t border-[var(--brd-line)] pt-4" />
           <div className="mt-6 border-t border-[var(--brd-line)] pt-4">
             <ShareButtons url={absoluteUrl(getSiteUrl(), `/beat/${detail.id}`)} text={`${presented.title} — BitRymDym`} testId="beat-share" />
           </div>

@@ -23,6 +23,7 @@ export function SiteFooter() {
           <Link href="/ranking/utwor" className="underline-offset-4 hover:underline">{shelf("workRank")}</Link>
           <Link href="/studio" className="underline-offset-4 hover:underline">{nav("studio")}</Link>
           <Link href="/nagrywarka" className="underline-offset-4 hover:underline">{nav("recorder")}</Link>
+          <Link href="/jak-nagrac" className="underline-offset-4 hover:underline">{nav("howTo")}</Link>
           <Link href="/about" className="underline-offset-4 hover:underline">{nav("about")}</Link>
           <Link href="/premium" className="underline-offset-4 hover:underline">{nav("premium")}</Link>
         </nav>

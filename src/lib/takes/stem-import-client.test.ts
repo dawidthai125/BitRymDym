@@ -61,7 +61,7 @@ describe("stem import — wiring", () => {
   const read = (p: string) => readFileSync(p, "utf8");
   it("card is hidden below Silver and in the simple view", () => {
     const panel = read("src/components/studio/studio-recording-panel.tsx");
-    expect(panel).toContain("!simple && stemLimit > 0");
+    expect(panel).toContain("setupOpen && stemLimit > 0");
     const editor = read("src/components/studio/studio-editor.tsx");
     expect(editor).toContain("stemLimit={maxStemsForTier(trackCapacity.premiumTier)}");
   });

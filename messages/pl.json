@@ -1,5 +1,51 @@
 {
   "common": {
+    "licenseSummary": {
+      "tytul": "Co wolno zrobić z utworem na naszym bicie",
+      "opis": "Skrót regulaminu §7. Utwór to bit razem z Twoim nagraniem.",
+      "kolumnaCo": "Działanie",
+      "kolumnaStatus": "Zasada",
+      "wolno": "Wolno",
+      "zgoda": "Tylko za naszą zgodą",
+      "wiersz": {
+        "publikacja": "Publikacja i rozpowszechnianie utworu",
+        "streaming": "Streaming i wideo (np. Spotify, YouTube, TikTok), także przez dystrybutora",
+        "monetyzacja": "Zarabianie na utworze",
+        "kredyt": "Warunek: podpis autora bitu, np. „prod. [ksywka] / BitRymDym”",
+        "contentId": "Zgłoszenie do systemów typu Content ID",
+        "reklama": "Użycie w reklamie, filmie, serialu lub grze",
+        "sprzedazBitu": "Sprzedaż lub udostępnianie samego bitu (bez Twojego nagrania)",
+        "autorstwo": "Podawanie się za autora bitu"
+      },
+      "stopka": "To skrót. Obowiązuje pełny tekst:",
+      "regulamin": "regulamin"
+    },
+    "howToPage": {
+      "metaTitle": "Jak nagrać utwór na BitRymDym",
+      "metaDescription": "Bit, nagranie, miks i pobranie w czterech krokach. Limity planów i zasady licencji.",
+      "etykieta": "Jak to działa",
+      "tytul": "Jak nagrać utwór",
+      "wstep": "Cztery kroki od bitu do gotowego pliku. Wszystko zrobisz w przeglądarce albo w programie na Windows.",
+      "krokNr": "Krok {n}",
+      "krok1": { "tytul": "Wybierz bit", "opis": "Przeglądaj katalog, posłuchaj, sprawdź BPM i tonację. Wybrany bit otwierasz w Studio." },
+      "krok2": { "tytul": "Nagraj wokal", "opis": "W Studio wybierz mikrofon i naciśnij Nagraj. Nie podoba Ci się ujęcie? Użyj „Nagraj ponownie”. Dobre ujęcie zachowaj." },
+      "krok3": { "tytul": "Miks i mastering", "opis": "Bitek proponuje miks i mastering po Twojej prośbie. Odsłuchaj wynik i zdecyduj, czy go zostawić." },
+      "krok4": { "tytul": "Pobierz i publikuj", "opis": "Pobranie gotowego pliku zależy od planu (tabela niżej). Przy publikacji pamiętaj o podpisie autora bitu." },
+      "planyTytul": "Limity planów",
+      "kolPlan": "Plan",
+      "kolUjecie": "Długość ujęcia",
+      "kolSesje": "Sesje na dobę",
+      "kolPliki": "Pliki trzymamy",
+      "kolPobranie": "Pobranie gotowego pliku",
+      "sekundy": "do {n} s",
+      "dni": "{n} dni",
+      "pobranieBrak": "brak",
+      "pobranieMp3": "MP3 do {q}",
+      "pobranieWav": "MP3 i WAV",
+      "planyUwaga": "Sesje liczymy w dobie UTC. Wartości pochodzą z aktualnych limitów planów.",
+      "przegladajBity": "Przeglądaj bity",
+      "zobaczPlany": "Zobacz plany"
+    },
     "aboutPage": {
       "metaTitle": "O BitRymDym",
       "metaDescription": "Bity, nagranie i Studio. BITEK proponuje miks i mastering po Twojej prośbie.",
@@ -2351,6 +2397,7 @@
       "zastap": "Zastąp",
       "limit": "Limit:",
       "sIstniejaceLimityKonta": "s · istniejące limity konta i TTL pozostają w mocy. Usunięcie klipu nie usuwa nagrania źródłowego.",
+      "limityPlanu": "Sesji nagrywania na dobę: {sessions} (liczone w UTC) · pliki z nagrań trzymamy {days} dni. Zachowaj ujęcie, które chcesz mieć na stałe.",
       "nieUdaloSiePrzygotowac": "Nie udało się przygotować nagrywania w Studio.",
       "nieUdaloSieSprawdzic": "Nie udało się sprawdzić limitu nagrań.",
       "nieMozeszTerazNagrywac": "Nie możesz teraz nagrywać.",
@@ -3697,6 +3744,7 @@
     "items": {
       "beats": "Bity",
       "about": "O nas",
+      "howTo": "Jak nagrać",
       "studio": "Studio",
       "recorder": "Nagrywarka",
       "premium": "Premium",

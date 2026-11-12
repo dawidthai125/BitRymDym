@@ -46,7 +46,7 @@ import {
 } from "@/components/studio/studio-mixer-shell";
 import { StudioAutomationLane } from "@/components/studio/studio-automation-lane";
 import { StudioRecordingPanel } from "@/components/studio/studio-recording-panel";
-import { clipPitchForTier, maxFxEffectsForTier, maxStemsForTier, sidechainForTier } from "@/config/plan-policy";
+import { PLAN_POLICY, clipPitchForTier, maxFxEffectsForTier, maxStemsForTier, sidechainForTier } from "@/config/plan-policy";
 import type { AutomationParam, StudioAutomationV1 } from "@/lib/studio/studio-automation";
 import { bassLineAt, drumPatternAt, emptyMidi, hasMidi, midiPhraseAt, reviewPlayedNotes, type StudioMidiV1 } from "@/lib/studio/studio-midi";
 import { fadeEdgePreset } from "@/lib/studio/studio-clip-fade";
@@ -2781,6 +2781,10 @@ function StudioEditorInner({
           tracks={doc.tracks}
           embedded={!recordSimple}
           simple={recordSimple}
+          planLimits={{
+            sessionsPerDay: PLAN_POLICY[trackCapacity.premiumTier].recording.sessionsPerDay,
+            retentionDays: PLAN_POLICY[trackCapacity.premiumTier].retentionDays,
+          }}
           samplesMode={onSampleTab}
           stemLimit={maxStemsForTier(trackCapacity.premiumTier)}
           trackLimit={maxTracks}

@@ -1,5 +1,51 @@
 {
   "common": {
+    "licenseSummary": {
+      "tytul": "What you may do with a track made on our beat",
+      "opis": "A short version of terms §7. A track is the beat plus your recording.",
+      "kolumnaCo": "Action",
+      "kolumnaStatus": "Rule",
+      "wolno": "Allowed",
+      "zgoda": "Only with our permission",
+      "wiersz": {
+        "publikacja": "Publishing and distributing the track",
+        "streaming": "Streaming and video (e.g. Spotify, YouTube, TikTok), also via a distributor",
+        "monetyzacja": "Earning money from the track",
+        "kredyt": "Condition: credit the beat author, e.g. “prod. [name] / BitRymDym”",
+        "contentId": "Registering with systems such as Content ID",
+        "reklama": "Use in an ad, film, series or game",
+        "sprzedazBitu": "Selling or sharing the beat alone (without your recording)",
+        "autorstwo": "Claiming authorship of the beat"
+      },
+      "stopka": "This is a summary. The full text applies:",
+      "regulamin": "terms"
+    },
+    "howToPage": {
+      "metaTitle": "How to record a track on BitRymDym",
+      "metaDescription": "Beat, recording, mix and download in four steps. Plan limits and licence rules.",
+      "etykieta": "How it works",
+      "tytul": "How to record a track",
+      "wstep": "Four steps from a beat to a finished file. You can do it all in the browser or in the Windows app.",
+      "krokNr": "Step {n}",
+      "krok1": { "tytul": "Pick a beat", "opis": "Browse the catalogue, listen, check BPM and key. Open the chosen beat in Studio." },
+      "krok2": { "tytul": "Record your vocal", "opis": "In Studio pick a microphone and press Record. Not happy with a take? Use “Record again”. Keep the good one." },
+      "krok3": { "tytul": "Mix and master", "opis": "Bitek suggests a mix and master when you ask. Listen and decide whether to keep it." },
+      "krok4": { "tytul": "Download and publish", "opis": "Downloading the finished file depends on your plan (table below). When you publish, credit the beat author." },
+      "planyTytul": "Plan limits",
+      "kolPlan": "Plan",
+      "kolUjecie": "Take length",
+      "kolSesje": "Sessions per day",
+      "kolPliki": "Files kept",
+      "kolPobranie": "Finished-file download",
+      "sekundy": "up to {n} s",
+      "dni": "{n} days",
+      "pobranieBrak": "none",
+      "pobranieMp3": "MP3 up to {q}",
+      "pobranieWav": "MP3 and WAV",
+      "planyUwaga": "Sessions are counted per UTC day. Values come from the current plan limits.",
+      "przegladajBity": "Browse beats",
+      "zobaczPlany": "See plans"
+    },
     "aboutPage": {
       "metaTitle": "About BitRymDym",
       "metaDescription": "Beats, recording and Studio. BITEK suggests a mix and a master when you ask.",
@@ -2351,6 +2397,7 @@
       "zastap": "Replace",
       "limit": "Limit:",
       "sIstniejaceLimityKonta": "s · existing account limits and TTL still apply. Deleting a clip does not delete the source recording.",
+      "limityPlanu": "Recording sessions per day: {sessions} (UTC) · recording files are kept for {days} days. Keep the take you want to hold on to.",
       "nieUdaloSiePrzygotowac": "Could not prepare recording in the Studio.",
       "nieUdaloSieSprawdzic": "Could not check the recording limit.",
       "nieMozeszTerazNagrywac": "You cannot record right now.",
@@ -3697,6 +3744,7 @@
     "items": {
       "beats": "Beats",
       "about": "About",
+      "howTo": "How to record",
       "studio": "Studio",
       "recorder": "Recorder",
       "premium": "Premium",
