@@ -16,6 +16,7 @@ import {
   type PlayKeyInstrument,
   type StudioMidiV1,
 } from "@/lib/studio/studio-midi";
+import { bindMidiNoteOns, computerKeyPitch, octaveNudge } from "@/lib/studio/studio-play-input";
 
 const CHOICES: PlayKeyInstrument[] = ["piano", "guitar", "bass", "drums"];
 
@@ -164,18 +165,67 @@ export function StudioPlayKeys({
   const [sampleBusy, setSampleBusy] = useState(false);
   const [sampleSaved, setSampleSaved] = useState<string | null>(null);
   const [down, setDown] = useState<number | null>(null);
+  const [octave, setOctave] = useState(0);
+  const [midiNames, setMidiNames] = useState<string[] | null>(null);
+  const [midiError, setMidiError] = useState<"missing" | "denied" | null>(null);
+  const [midiBusy, setMidiBusy] = useState(false);
   const midiRef = useRef(midi);
   const lastWall = useRef<number | null>(null);
   const skipClick = useRef(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const instrumentRef = useRef(instrument);
+  const octaveRef = useRef(octave);
+  const hitRef = useRef<(pitch: number, now: number) => void>(() => {});
+  const midiOff = useRef<(() => void) | null>(null);
+  const midiGen = useRef(0);
   useEffect(() => {
     midiRef.current = midi;
   }, [midi]);
+  useEffect(() => {
+    instrumentRef.current = instrument;
+  }, [instrument]);
+  useEffect(() => {
+    octaveRef.current = octave;
+  }, [octave]);
   useEffect(() => {
     void preloadAcousticBank();
   }, []);
   useEffect(() => {
     if (!armed || !midi || midi.notes.length === 0) lastWall.current = null;
   }, [armed, midi]);
+  useEffect(() => {
+    const root = panelRef.current;
+    if (!root) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+      }
+      const surface = instrumentRef.current;
+      const nudge = octaveNudge(event.code);
+      if (nudge && surface !== "drums") {
+        event.preventDefault();
+        event.stopPropagation();
+        setOctave((value) => Math.max(-3, Math.min(3, value + nudge)));
+        return;
+      }
+      const pitch = computerKeyPitch(event.code, surface, octaveRef.current);
+      if (pitch == null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      hitRef.current(pitch, performance.now());
+    }
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, []);
+  useEffect(
+    () => () => {
+      midiOff.current?.();
+    },
+    [],
+  );
 
   const locked = midi && midi.notes.length > 0 && isPlayKey(midi.instrument) ? midi.instrument : null;
 
@@ -203,6 +253,9 @@ export function StudioPlayKeys({
     setNotice(null);
     onCommit(next.midi);
   }
+  useEffect(() => {
+    hitRef.current = hit;
+  });
 
   function press(pitch: number, now: number) {
     skipClick.current = true;
@@ -215,6 +268,40 @@ export function StudioPlayKeys({
       return;
     }
     hit(pitch, now);
+  }
+
+  async function connectMidi() {
+    setMidiError(null);
+    if (!navigator.requestMIDIAccess) {
+      setMidiError("missing");
+      return;
+    }
+    const gen = ++midiGen.current;
+    setMidiBusy(true);
+    try {
+      const access = await navigator.requestMIDIAccess({ sysex: false });
+      if (gen !== midiGen.current || !panelRef.current) return;
+      midiOff.current?.();
+      let stopNotes = () => {};
+      const rebind = () => {
+        stopNotes();
+        const inputs = [...access.inputs.values()];
+        setMidiNames(inputs.map((input) => input.name || "MIDI"));
+        stopNotes = bindMidiNoteOns(inputs, () => instrumentRef.current, (pitch) => {
+          hitRef.current(pitch, performance.now());
+        });
+      };
+      rebind();
+      access.addEventListener("statechange", rebind);
+      midiOff.current = () => {
+        access.removeEventListener("statechange", rebind);
+        stopNotes();
+      };
+    } catch {
+      setMidiError("denied");
+    } finally {
+      if (gen === midiGen.current) setMidiBusy(false);
+    }
   }
 
   async function saveSample() {
@@ -287,7 +374,18 @@ export function StudioPlayKeys({
   const pianoBase = 60;
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-sm" data-testid="studio-play-keys">
+    <div
+      ref={panelRef}
+      tabIndex={0}
+      onPointerDown={(event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.closest("button, a, input, select, textarea, label")) return;
+        event.currentTarget.focus();
+      }}
+      className="space-y-3 rounded-2xl border border-[var(--brd-line)] bg-[var(--brd-paper)] p-3 shadow-sm outline-none focus-within:ring-2 focus-within:ring-[var(--brd-green)]"
+      data-testid="studio-play-keys"
+    >
       <div className="flex items-start gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element -- same static BITEK asset as the dock */}
         <img src={BITEK_MOOD_SRC[mood]} alt="" width={48} height={48} className="h-12 w-12 shrink-0 rounded-full" />
@@ -297,8 +395,60 @@ export function StudioPlayKeys({
             {tBitek(`msg.${reviewKey}`, { count: review?.count ?? 0 })}
           </p>
           <p className="mt-1 text-xs leading-snug text-[var(--brd-mute)]">{tr("klawiszeOpis")}</p>
+          <p className="mt-1 text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-play-keys-input">
+            {tr(instrument === "drums" ? "klawiszeSterowanieBeben" : "klawiszeSterowanie")}
+          </p>
         </div>
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {instrument === "drums" ? null : (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 px-3"
+              data-testid="studio-play-octave-down"
+              onClick={() => setOctave((value) => Math.max(-3, value - 1))}
+            >
+              {tr("klawiszeOktawaNizej")}
+            </Button>
+            <span className="text-xs text-[var(--brd-mute)]" data-testid="studio-play-octave">
+              {tr("klawiszeOktawa", { n: octave > 0 ? `+${octave}` : String(octave) })}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 px-3"
+              data-testid="studio-play-octave-up"
+              onClick={() => setOctave((value) => Math.min(3, value + 1))}
+            >
+              {tr("klawiszeOktawaWyzej")}
+            </Button>
+          </>
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-11 px-3"
+          data-testid="studio-play-midi"
+          disabled={midiBusy}
+          onClick={() => void connectMidi()}
+        >
+          {tr("klawiszeMidi")}
+        </Button>
+      </div>
+      {midiError ? (
+        <p className="text-xs text-[var(--brd-warn)]" role="status">
+          {tr(midiError === "missing" ? "klawiszeMidiBrak" : "klawiszeMidiOdmowa")}
+        </p>
+      ) : midiNames ? (
+        <p className="text-xs text-[var(--brd-mute)]" role="status" data-testid="studio-play-midi-status">
+          {midiNames.length > 0 ? tr("klawiszeMidiPodlaczono", { name: midiNames.join(", ") }) : tr("klawiszeMidiCzeka")}
+        </p>
+      ) : null}
       <div className="grid grid-cols-4 gap-1" role="group" aria-label={tr("klawisze")}>
         {CHOICES.map((id) => (
           <Button
@@ -402,7 +552,10 @@ export function StudioPlayKeys({
                 }}
                 onClick={() => pressClick(pad.pitch, performance.now())}
               >
-                {tr(pad.label)}
+                <span className="flex flex-col items-center leading-tight">
+                  <span>{tr(pad.label)}</span>
+                  <span className="font-mono text-[10px] opacity-80">{pad.id === "kick" ? "Z" : pad.id === "snare" ? "X" : "C"}</span>
+                </span>
               </button>
             );
           })}
