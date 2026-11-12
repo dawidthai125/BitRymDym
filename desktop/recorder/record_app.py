@@ -182,14 +182,27 @@ def ffmpeg_exe() -> str:
     return str(picked)
 
 
+def find_tool(name: str, folders: list[Path], on_path: str | None) -> str | None:
+    """A copy next to the program wins, so the installed app does not depend on what else is on this PC."""
+    for folder in folders:
+        candidate = folder / f"{name}.exe"
+        if candidate.is_file():
+            return str(candidate)
+    return on_path
+
+
+NO_FFPLAY = "Brak ffplay. Zainstaluj program jeszcze raz (ffplay jest w instalatorze) albo dodaj ffplay do PATH."
+
+
 def ffplay_exe() -> str | None:
-    found = shutil.which("ffplay")
-    if found:
-        return found
-    sibling = Path(ffmpeg_exe()).with_name("ffplay.exe")
-    if sibling.exists():
-        return str(sibling)
-    return None
+    folders = [app_dir()]
+    try:
+        folders.append(Path(ffmpeg_exe()).parent)
+    except RuntimeError:
+        pass
+    root = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Packages"
+    folders.extend(sorted(path.parent for path in root.glob("Gyan.FFmpeg*/ffmpeg-*/bin/ffplay.exe")))
+    return find_tool("ffplay", folders, shutil.which("ffplay"))
 
 
 # Device default is often hundreds of ms and shifts the vocal late against the beat.
@@ -1530,7 +1543,7 @@ class RecorderWindow:
             self._stop_monitor()
             self.monitor = start_monitor(target, limit)
             if self.monitor is None:
-                raise RuntimeError("Brak ffplay. Bez niego nie ma odsłuchu.")
+                raise RuntimeError(NO_FFPLAY)
             self.status.set(note)
         except Exception as error:
             self.status.set(self._safe_listen_error(error))
@@ -1810,7 +1823,7 @@ class RecorderWindow:
         ffmpeg = ffmpeg_exe()
         play = ffplay_exe()
         if play is None:
-            self.root.after(0, lambda: self.status.set("Brak ffplay. Bez niego nie ma odsłuchu."))
+            self.root.after(0, lambda: self.status.set(NO_FFPLAY))
             return
         if beat is not None:
             ceiling = beat_ceiling(ffmpeg, beat)
@@ -1835,7 +1848,7 @@ class RecorderWindow:
             self._stop_monitor()
             self.monitor = start_monitor(path)
             if self.monitor is None:
-                raise RuntimeError("Brak ffplay.")
+                raise RuntimeError(NO_FFPLAY)
             name = self.vocals[self.armed]["name"] if self._armed_take() else path.name
             self.status.set(f"Ujęcie gra: {name}.")
         except Exception as error:
@@ -2821,7 +2834,7 @@ class RecorderWindow:
             if target is not None:
                 self.monitor = start_monitor(target, limit)
                 if self.monitor is None:
-                    note = "Brak ffplay. Nagranie idzie bez odsłuchu."
+                    note = NO_FFPLAY + " Nagranie idzie bez odsłuchu."
             self.recording = True
             name = self.vocals[self.armed]["name"]
             self.status.set(f"Nagrywam {name}. {note}")
@@ -2928,6 +2941,15 @@ if __name__ == "__main__":
             raise SystemExit("bufor czasu rzeczywistego")
         if capture_log_path(Path("x/ujecie-1.wav")) != Path("x/ujecie-1.log"):
             raise SystemExit("log mikrofonu")
+        with __import__("tempfile").TemporaryDirectory() as raw_dir:
+            folder = Path(raw_dir)
+            if find_tool("ffplay", [folder], "C:/path/ffplay.exe") != "C:/path/ffplay.exe":
+                raise SystemExit("ffplay: brak obok programu ma wrócić do PATH")
+            (folder / "ffplay.exe").write_bytes(b"x")
+            if find_tool("ffplay", [folder], "C:/path/ffplay.exe") != str(folder / "ffplay.exe"):
+                raise SystemExit("ffplay: kopia obok programu ma wygrać z PATH")
+            if find_tool("ffplay", [folder / "none"], None) is not None:
+                raise SystemExit("ffplay: nic nie ma być None")
         flags = quiet_kwargs()
         if os.name == "nt" and flags.get("creationflags") != subprocess.CREATE_NO_WINDOW:
             raise SystemExit("konsola")
@@ -2968,6 +2990,7 @@ if __name__ == "__main__":
                     f"beats={len(window.beats)}",
                     f"fx={len(window.fx_vars)}",
                     f"ffmpeg={ffmpeg_exe()}",
+                    f"ffplay={ffplay_exe()}",
                     f"gate={window.gate.winfo_manager()}",
                     f"icon={1 if brand_file('cassette.png') else 0}",
                     f"logo={1 if brand_file('logo-light.png') else 0}",

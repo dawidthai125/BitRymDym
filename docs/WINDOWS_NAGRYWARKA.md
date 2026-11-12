@@ -48,6 +48,8 @@ Free 30 s i 1 ścieżka, Bronze 60 s i 2, Silver 120 s i 8, Gold 180 s i 16. Efe
 
 ## Instalator
 
+Instalator zawiera `ffmpeg.exe`, `ffplay.exe` i ich biblioteki DLL (GPL, build full shared z GyanD/codexffmpeg, wersja przypięta w workflow, licencja jako `FFMPEG-LICENSE.txt`). Program używa kopii obok siebie przed tym, co jest na PATH. ffplay jest potrzebny do odsłuchu bitu i miksu w słuchawkach; bez niego nagranie szłoby bez odsłuchu (stąd komunikat „Brak ffplay…”). Workflow sprawdza, że ffplay i ffmpeg (z DirectShow) działają oraz że zainstalowany program je widzi.
+
 Budowa: workflow GitHub Actions `recorder-installer` (`.github/workflows/recorder-installer.yml`, uruchamiany ręcznie). Na runnerze Windows odpala testy modułów (w tym DPAPI), pobiera czcionki i ffmpeg z poprzedniego instalatora, buduje PyInstaller, sprawdza exe w trybie smoke, kompiluje Inno Setup i instaluje wynik po cichu, żeby sprawdzić zainstalowaną wersję. Wynik to artefakt `BitRymDym-Setup` z sumą SHA-256. Wersja jest w `installer/BitRymDym.iss` (`AppVersion`). Wgranie: AWS CLI v2 na endpoint R2 konta kt, klucze z Vault OpenBot; przed nadpisaniem poprzedni plik zostaje pod kluczem z wersją (`bitrymdym/BitRymDym-Setup-<wersja>.exe`).
 
 Publiczny plik: `https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe`

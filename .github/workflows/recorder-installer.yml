@@ -1,7 +1,8 @@
 name: recorder-installer
 
 # Buduje instalator Windows nagrywarki (PyInstaller + Inno Setup). Uruchamiany ręcznie albo tagiem recorder-v*.
-# Czcionki i ffmpeg nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
+# Czcionki nie leżą w repo: bierze je z poprzedniego instalatora (cicha instalacja na runnerze).
+# ffmpeg i ffplay (GPL, build full shared) pobiera z GyanD/codexffmpeg w przypiętej wersji.
 # Wynik to artefakt BitRymDym-Setup.exe + suma SHA-256. Wgranie na R2 robi właściciel (docs/WINDOWS_NAGRYWARKA.md).
 
 on:
@@ -11,8 +12,11 @@ on:
   workflow_dispatch:
     inputs:
       base_installer_url:
-        description: "Poprzedni instalator (źródło czcionek i ffmpeg)"
+        description: "Poprzedni instalator (źródło czcionek)"
         default: "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/BitRymDym-Setup.exe"
+      ffmpeg_tag:
+        description: "Wersja ffmpeg (GyanD/codexffmpeg, build full shared z ffplay)"
+        default: "9.0.2"
 
 permissions:
   contents: read
@@ -49,13 +53,35 @@ jobs:
           $p = Start-Process (Join-Path $env:RUNNER_TEMP "base.exe") -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$base" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "poprzedni instalator: kod $($p.ExitCode)" }
           Get-ChildItem $base | Select-Object Name, Length | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
-          if (-not (Test-Path (Join-Path $base "ffmpeg.exe"))) { throw "w poprzednim instalatorze brak ffmpeg.exe" }
           if (-not (Test-Path (Join-Path $base "fonts"))) { throw "w poprzednim instalatorze brak katalogu fonts" }
           $extras = Join-Path $env:RUNNER_TEMP "extras"
           New-Item -ItemType Directory -Force $extras | Out-Null
           Get-ChildItem $base | Where-Object { $_.Name -notin @("BitRymDym.exe","_internal","brd-cassette.ico") -and $_.Name -notlike "unins*" } |
             ForEach-Object { Copy-Item $_.FullName $extras -Recurse -Force }
           Get-ChildItem $extras | Select-Object Name | Format-Table -AutoSize | Out-String | Write-Host
+
+      - name: ffmpeg i ffplay (Gyan full, shared)
+        env:
+          FFMPEG_TAG: ${{ inputs.ffmpeg_tag || '9.0.2' }}
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "ffmpeg.zip"
+          Invoke-WebRequest -Uri "https://github.com/GyanD/codexffmpeg/releases/download/$env:FFMPEG_TAG/ffmpeg-$env:FFMPEG_TAG-full_build-shared.zip" -OutFile $zip
+          $out = Join-Path $env:RUNNER_TEMP "ffmpeg"
+          Expand-Archive $zip $out -Force
+          $root = (Get-ChildItem $out -Directory | Select-Object -First 1).FullName
+          $extras = Join-Path $env:RUNNER_TEMP "extras"
+          Remove-Item (Join-Path $extras "ffmpeg.exe") -ErrorAction SilentlyContinue
+          foreach ($exe in "ffmpeg.exe","ffplay.exe") {
+            if (-not (Test-Path "$root\bin\$exe")) { throw "w buildzie ffmpeg brak $exe" }
+            Copy-Item "$root\bin\$exe" $extras -Force
+          }
+          Copy-Item "$root\bin\*.dll" $extras -Force
+          if (Test-Path "$root\LICENSE") { Copy-Item "$root\LICENSE" (Join-Path $extras "FFMPEG-LICENSE.txt") -Force }
+          & "$extras\ffmpeg.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
+          & "$extras\ffplay.exe" -hide_banner -version | Select-Object -First 1 | Write-Host
+          $dev = & "$extras\ffmpeg.exe" -hide_banner -devices 2>&1 | Out-String
+          if ($dev -notmatch "dshow") { throw "ffmpeg bez dshow (mikrofon)" }
+          Get-ChildItem $extras | Measure-Object Length -Sum | ForEach-Object { "extras: $($_.Count) plików, $([math]::Round($_.Sum/1MB)) MB" } | Write-Host
 
       - name: PyInstaller
         working-directory: desktop/recorder
@@ -76,7 +102,9 @@ jobs:
           if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "smoke: program nie zakończył się w 90 s" }
           if (-not (Test-Path $note)) { throw "smoke: brak pliku wyniku" }
           Get-Content $note | Write-Host
-          if ((Get-Content $note -Raw) -notmatch "ffmpeg=") { throw "smoke: brak ffmpeg w wyniku" }
+          $text = Get-Content $note -Raw
+          if ($text -notmatch "ffmpeg=") { throw "smoke: brak ffmpeg w wyniku" }
+          if ($text -notmatch "ffplay=" -or $text -match "ffplay=None") { throw "smoke: program nie widzi ffplay" }
 
       - name: Inno Setup
         working-directory: desktop/recorder
@@ -95,14 +123,19 @@ jobs:
           $dir = Join-Path $env:RUNNER_TEMP "new"
           $p = Start-Process "installer\output\BitRymDym-Setup.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$dir" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "nowy instalator: kod $($p.ExitCode)" }
-          foreach ($need in "BitRymDym.exe","ffmpeg.exe","fonts") { if (-not (Test-Path (Join-Path $dir $need))) { throw "po instalacji brak: $need" } }
+          foreach ($need in "BitRymDym.exe","ffmpeg.exe","ffplay.exe","FFMPEG-LICENSE.txt","fonts") { if (-not (Test-Path (Join-Path $dir $need))) { throw "po instalacji brak: $need" } }
+          & (Join-Path $dir "ffplay.exe") -hide_banner -version | Select-Object -First 1 | Write-Host
+          & (Join-Path $dir "ffmpeg.exe") -hide_banner -version | Select-Object -First 1 | Write-Host
           $note = Join-Path $env:TEMP "bitrymdym-exe-smoke.txt"
           Remove-Item $note -ErrorAction SilentlyContinue
           $env:BITRYMDYM_UI_SMOKE = "1"
           $q = Start-Process (Join-Path $dir "BitRymDym.exe") -PassThru
           if (-not $q.WaitForExit(90000)) { $q.Kill(); throw "smoke po instalacji: czas" }
           if (-not (Test-Path $note)) { throw "smoke po instalacji: brak wyniku" }
-          Get-Content $note | Write-Host
+          $installed = Get-Content $note -Raw
+          $installed | Write-Host
+          if ($installed -notmatch "ffplay=" -or $installed -match "ffplay=None") { throw "po instalacji program nie widzi ffplay" }
+          if ($installed -notmatch "\\new\\ffmpeg\.exe" -or $installed -notmatch "\\new\\ffplay\.exe") { throw "po instalacji program nie używa dołączonego ffmpeg/ffplay" }
 
       - uses: actions/upload-artifact@v4
         with:
