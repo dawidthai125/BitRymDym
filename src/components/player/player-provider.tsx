@@ -266,9 +266,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     sessionKeyRef.current = sessionKey;
 
-    const { objectUrl } = await loadSessionAudioFromUrl(sessionKey, result.url, {
-      enabled: true,
-    });
+    // The byte copy is only an egress optimisation. If the cross-origin fetch
+    // fails (CORS, edge hiccup, network), stream the signed URL directly instead
+    // of surfacing "Błąd sieci" for a file the <audio> element can still play.
+    let objectUrl: string | null = null;
+    try {
+      ({ objectUrl } = await loadSessionAudioFromUrl(sessionKey, result.url, {
+        enabled: true,
+      }));
+    } catch {
+      sessionKeyRef.current = null;
+    }
     const playable = objectUrl ?? result.url;
     if (audio.src !== playable) {
       audio.src = playable;
