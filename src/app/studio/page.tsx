@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { PageFrame } from "@/components/brand/chrome";
+import { RecorderSessionCard } from "@/components/studio/recorder-session-card";
 import { StudioProjectList } from "@/components/studio/studio-project-list";
 import { AppShell } from "@/components/site/app-shell";
 import { maxProjectsForTier } from "@/config/plan-policy";
@@ -59,6 +60,8 @@ export default async function StudioProjectsPage({ searchParams }: PageProps) {
               {t("nocnaDeskaOtworzProjekt")}
             </p>
           </header>
+
+          <RecorderSessionCard tier={tier} />
 
           <StudioProjectList
             initialProjects={projects}

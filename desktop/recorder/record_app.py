@@ -1,9 +1,8 @@
-"""Windows recording studio. Audacity-style tracks: catalog beat, vocal tracks up to the plan limit.
+"""Windows recording studio. Audacity-style tracks.
 
-Run from this folder: python record_app.py
-Record from the cursor with the beat and the other tracks in the headphones, edit clips on the
-timeline (select, delete, cut, copy, paste, split, move), then Gotowe: send to the site Studio
-(mix and master there) or, in Gold, save stems. No VST, no external listen links.
+After login the account picks Studio Online (catalog beat, plan track cap, send to the site)
+or Studio Offline (Gold: own beat file, 16 vocal tracks + 8 doubles/adlibs, no upload).
+Offline writes dry stems and sesja.brd.json. Mix and master stay on the site. No VST.
 """
 
 from __future__ import annotations
@@ -32,6 +31,7 @@ import urllib.request
 from pathlib import Path
 
 import updater
+import offline_session
 from account_upload import (
     NETWORK_ERRORS,
     SITE,
@@ -188,6 +188,7 @@ PREFS = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-prefs.json
 PENDING = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-upload.json"
 TAKES = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "takes"
 DESK = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja.json"
+DESK_OFFLINE = Path(os.environ.get("APPDATA", ".")) / "BitRymDym" / "desktop-sesja-offline.json"
 
 
 @dataclass
@@ -200,6 +201,8 @@ class Track:
     muted: bool = False
     solo: bool = False
     gain_db: float = 0.0
+    pan: float = 0.0
+    role: str = "wokal"
 
 
 def clock_text(seconds: float) -> str:
@@ -755,7 +758,7 @@ class RecorderWindow:
         self._restore_geo = ""
         self._images: list[tk.PhotoImage] = []
         self.ui = dpi_scale()
-        self.lane_h = int(118 * self.ui)
+        self.lane_h = int(152 * self.ui)
         self.head_w = int(250 * self.ui)
         self.clip_bar = int(17 * self.ui)
         self.shell = tk.Frame(self.root, bg=PAPER, highlightthickness=1, highlightbackground=LINE_STRONG)
@@ -797,6 +800,10 @@ class RecorderWindow:
         self.view = 0.0
         self.beat_muted = False
         self.beat_gain_db = 0.0
+        self.studio_mode = "online"
+        self.local_beat_path = ""
+        self.local_beat_seconds = 0.0
+        self.studio_kicker = tk.StringVar(value="STUDIO ONLINE")
         self.undo_stack: list[tuple[list[Track], int]] = []
         self.clipboard: list[Clip] = []
         self._drag: dict[str, object] | None = None
@@ -848,6 +855,7 @@ class RecorderWindow:
             self.status.set("Jest zapisana sesja tego konta.")
         self._build_update_bar()
         self._build_gate(saved if isinstance(saved, dict) else None)
+        self._build_modes()
         self._load_public()
         self._build_studio()
         self.beat_var.trace_add("write", lambda *_args: self._beat_changed())
@@ -881,6 +889,10 @@ class RecorderWindow:
         return "break"
 
     def _on_wheel(self, event: tk.Event) -> str | None:
+        if self.modes.winfo_manager():
+            step = int(-event.delta / 120) or (-1 if event.delta < 0 else 1)
+            self.modes_canvas.yview_scroll(step, "units")
+            return "break"
         if not self.studio.winfo_manager() or isinstance(event.widget, tk.Listbox):
             return None
         step = int(-event.delta / 120) or (-1 if event.delta < 0 else 1)
@@ -904,6 +916,7 @@ class RecorderWindow:
 
     def show_gate(self) -> None:
         self.studio.pack_forget()
+        self.modes.pack_forget()
         self.gate.pack(fill="both", expand=True)
         scale = dpi_scale()
         self.root.minsize(int(420 * scale), int(640 * scale))
@@ -914,6 +927,7 @@ class RecorderWindow:
 
     def show_studio(self) -> None:
         self.gate.pack_forget()
+        self.modes.pack_forget()
         self.studio.pack(fill="both", expand=True)
         scale = dpi_scale()
         self.root.minsize(int(760 * scale), int(560 * scale))
@@ -933,6 +947,27 @@ class RecorderWindow:
             )
         self.root.after(50, self._paint_all)
         self.root.after(300, self._warm_listen)
+
+    def show_modes(self) -> None:
+        self.gate.pack_forget()
+        self.studio.pack_forget()
+        self.modes.pack(fill="both", expand=True)
+        scale = dpi_scale()
+        self.root.minsize(int(420 * scale), int(640 * scale))
+        width = int(560 * scale)
+        height = min(self.root.winfo_screenheight() - 40, int(920 * scale))
+        if self._borderless:
+            self._place_window(width, max(int(640 * scale), height))
+        else:
+            self.root.geometry(f"{width}x{max(640, height)}")
+        email = self.email.get().strip()
+        self.mode_account.set(email or "Konto")
+        if self.tier == "GOLD":
+            self.offline_enter.configure(text="WEJDŹ", bg=AMBER, fg=ON_AMBER)
+        else:
+            self.offline_enter.configure(text="TO JEST PREMIUM GOLD", bg=RACK, fg=SOFT)
+        self.modes_canvas.update_idletasks()
+        self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all"))
 
     def _on_close(self) -> None:
         if self._uploading and not messagebox.askyesno(
@@ -984,9 +1019,11 @@ class RecorderWindow:
         top = tk.Frame(self.studio, bg=PAPER)
         top.pack(fill="x", padx=12, pady=(8, 0))
         tk.Label(top, text="BitRymDym", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 20, "italic")).pack(side="left")
-        tk.Label(top, text="STUDIO NAGRAŃ", bg=PAPER, fg=AMBER, font=(FONT_META, 9)).pack(side="left", padx=(10, 0), pady=(8, 0))
+        tk.Label(top, textvariable=self.studio_kicker, bg=PAPER, fg=AMBER, font=(FONT_META, 9)).pack(side="left", padx=(10, 0), pady=(8, 0))
         self._tool(top, "WYLOGUJ", self.sign_out, SOFT).pack(side="right")
         self._tool(top, "NOWY PROJEKT", self.new_project, SOFT).pack(side="right", padx=(0, 6))
+        self._tool(top, "ZMIEŃ STUDIO", self.back_to_modes, SOFT).pack(side="right", padx=(0, 6))
+        self.load_session_button = self._tool(top, "WCZYTAJ SESJĘ", self.load_offline_pack, SOFT)
         tk.Label(top, textvariable=self.account_line, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(side="right", padx=10)
         rule = tk.Frame(self.studio, bg=AMBER, height=2)
         rule.pack_propagate(False)
@@ -1128,6 +1165,16 @@ class RecorderWindow:
         scale.set(value)
         return scale
 
+    def _pan_scale(self, parent: tk.Widget, pan: float, command: Callable[[float], None]) -> tk.Scale:
+        """Slider is -100..100 so the thumb lands on whole steps. Stored pan is -1..1."""
+        scale = tk.Scale(
+            parent, from_=-100, to=100, resolution=1, orient="horizontal", showvalue=False, length=int(110 * self.ui),
+            bg=PANEL, fg=INK, troughcolor=RACK, highlightthickness=0, sliderlength=int(14 * self.ui), width=int(9 * self.ui),
+            bd=0, activebackground=AMBER, command=lambda raw: command(float(raw)),
+        )
+        scale.set(max(-100.0, min(100.0, pan * 100)))
+        return scale
+
     def _build_beat_row(self) -> None:
         row, head, lane = self._row_frame(self.row_host)
         top = tk.Frame(head, bg=PANEL)
@@ -1141,7 +1188,8 @@ class RecorderWindow:
         gain.pack(fill="x", padx=8, pady=(4, 0))
         tk.Label(gain, text="dB", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
         self.beat_gain_label = tk.Label(gain, text="+0", bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=3)
-        self._gain_scale(gain, self.beat_gain_db, self._set_beat_gain).pack(side="left", padx=4)
+        self.beat_gain_scale = self._gain_scale(gain, self.beat_gain_db, self._set_beat_gain)
+        self.beat_gain_scale.pack(side="left", padx=4)
         self.beat_gain_label.pack(side="left")
         self.beat_lane = lane
         lane.bind("<Button-1>", lambda event: self._lane_click_plain(event))
@@ -1175,8 +1223,14 @@ class RecorderWindow:
         gain_label = tk.Label(gain, text=f"{track.gain_db:+.0f}", bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=3)
         self._gain_scale(gain, track.gain_db, lambda value, slot=track: self._set_gain(slot, value)).pack(side="left", padx=4)
         gain_label.pack(side="left")
+        balance = tk.Frame(head, bg=PANEL)
+        balance.pack(fill="x", padx=8, pady=(2, 0))
+        tk.Label(balance, text="L R", bg=PANEL, fg=MUTE, font=(FONT_META, 8)).pack(side="left")
+        pan_label = tk.Label(balance, text=offline_session.pan_text(track.pan), bg=PANEL, fg=SOFT, font=(FONT_META, 8), width=9, anchor="w")
+        self._pan_scale(balance, track.pan, lambda value, slot=track: self._set_pan(slot, value)).pack(side="left", padx=4)
+        pan_label.pack(side="left")
         widgets: dict[str, object] = {
-            "row": row, "head": head, "lane": lane, "name": name, "rec": rec, "mute": mute, "solo": solo, "gain": gain_label,
+            "row": row, "head": head, "lane": lane, "name": name, "rec": rec, "mute": mute, "solo": solo, "gain": gain_label, "pan": pan_label,
         }
         self.rows.append(widgets)
         name.bind("<Double-Button-1>", lambda _e, slot=track: self.rename_track(slot))
@@ -1221,9 +1275,19 @@ class RecorderWindow:
         self.beat_mute.configure(bg=AMBER if self.beat_muted else RACK, fg=ON_AMBER if self.beat_muted else SOFT)
 
     def _sync_add_button(self) -> None:
-        cap = self._track_cap()
-        have = len(self.tracks)
-        text = f"LIMIT ŚCIEŻEK {have}/{cap}" if have >= cap else f"+ DODAJ ŚCIEŻKĘ {have}/{cap}"
+        if self.studio_mode == "offline":
+            vocals = sum(1 for track in self.tracks if track.role != "podbicie")
+            extras = sum(1 for track in self.tracks if track.role == "podbicie")
+            if vocals < offline_session.OFFLINE_VOCALS:
+                text = f"+ WOKAL {vocals}/{offline_session.OFFLINE_VOCALS}"
+            elif extras < offline_session.OFFLINE_EXTRAS:
+                text = f"+ PODBICIE {extras}/{offline_session.OFFLINE_EXTRAS}"
+            else:
+                text = "LIMIT 16 WOKALI + 8 PODBIĆ"
+        else:
+            cap = self._track_cap()
+            have = len(self.tracks)
+            text = f"LIMIT ŚCIEŻEK {have}/{cap}" if have >= cap else f"+ DODAJ ŚCIEŻKĘ {have}/{cap}"
         self.add_button.configure(text=text)
 
     def _paint_lamp(self) -> None:
@@ -1234,6 +1298,16 @@ class RecorderWindow:
     # ---- tracks -----------------------------------------------------------
 
     def _new_track(self) -> Track:
+        if self.studio_mode == "offline":
+            vocals = sum(1 for track in self.tracks if track.role != "podbicie")
+            extras = sum(1 for track in self.tracks if track.role == "podbicie")
+            if vocals >= offline_session.OFFLINE_VOCALS:
+                return Track(
+                    name=f"Podbicie {extras + 1}",
+                    color=TRACK_COLORS[(offline_session.OFFLINE_VOCALS + extras) % len(TRACK_COLORS)],
+                    role="podbicie",
+                )
+            return Track(name=f"Wokal {vocals + 1}", color=TRACK_COLORS[vocals % len(TRACK_COLORS)], role="wokal")
         index = len(self.tracks)
         return Track(name=f"Wokal {index + 1}", color=TRACK_COLORS[index % len(TRACK_COLORS)])
 
@@ -1255,7 +1329,10 @@ class RecorderWindow:
             return
         cap = self._track_cap()
         if len(self.tracks) >= cap:
-            self.status.set(f"Plan {display_tier(self.tier)} mieści {cap} ścieżek nagrania. Bit się nie liczy.")
+            if self.studio_mode == "offline":
+                self.status.set("Studio Offline mieści 16 wokali i 8 podbić albo adlibów. Bit się nie liczy.")
+            else:
+                self.status.set(f"Plan {display_tier(self.tier)} mieści {cap} ścieżek nagrania. Bit się nie liczy.")
             return
         self._push_undo()
         self.tracks.append(self._new_track())
@@ -1335,7 +1412,19 @@ class RecorderWindow:
             if isinstance(label, tk.Label):
                 label.configure(text=f"{value:+.0f}")
 
+    def _set_pan(self, track: Track, slider: float) -> None:
+        value = offline_session.clamp_pan(slider / 100.0)
+        if abs(track.pan - value) > 1e-9:
+            self._touched = True
+        track.pan = value
+        if track in self.tracks:
+            label = self.rows[self.tracks.index(track)].get("pan")
+            if isinstance(label, tk.Label):
+                label.configure(text=offline_session.pan_text(value))
+
     def _set_beat_gain(self, value: float) -> None:
+        if abs(self.beat_gain_db - value) > 1e-9:
+            self._touched = True
         self.beat_gain_db = value
         self.beat_gain_label.configure(text=f"{value:+.0f}")
 
@@ -1349,13 +1438,16 @@ class RecorderWindow:
 
     def _warm_listen(self) -> None:
         """Fetch the beat listen address ahead, so NAGRAJ and GRAJ start without the network wait."""
-        if not self.studio.winfo_manager() or self.beat_muted:
+        if self.studio_mode == "offline" or not self.studio.winfo_manager() or self.beat_muted:
             return
         beat_id = self._beat_id_or_empty()
         if beat_id:
             threading.Thread(target=self._beat_listen, args=(beat_id,), daemon=True).start()
 
     def _beat_meta(self) -> tuple[str, int, float]:
+        if self.studio_mode == "offline":
+            name = offline_session.file_title(self.local_beat_path) if self.local_beat_path else ""
+            return (name, 0, self.local_beat_seconds)
         try:
             beat_id = self.selected_beat_id()
         except RuntimeError:
@@ -1365,8 +1457,9 @@ class RecorderWindow:
     def _sync_beat_button(self) -> None:
         title, bpm, seconds = self._beat_meta()
         if not title:
-            self.beat_button.configure(text="Wybierz bit z katalogu ▾")
-            self.beat_name.configure(text="Wybierz bit z katalogu")
+            empty = "Własny bit z pliku ▾" if self.studio_mode == "offline" else "Wybierz bit z katalogu ▾"
+            self.beat_button.configure(text=empty)
+            self.beat_name.configure(text=empty[:-2] if empty.endswith(" ▾") else empty)
             return
         short = title if len(title) <= 34 else title[:33] + "…"
         self.beat_button.configure(text=f"{short} ▾")
@@ -1375,6 +1468,9 @@ class RecorderWindow:
 
     def pick_beat(self) -> None:
         if self._busy():
+            return
+        if self.studio_mode == "offline":
+            self._pick_local_beat()
             return
         box = tk.Toplevel(self.root)
         box.title("Katalog bitów")
@@ -1418,6 +1514,44 @@ class RecorderWindow:
         self._tool(row, "ODŚWIEŻ LISTĘ", lambda: (self.reload_beats(), fill()), INK).pack(side="left")
         fill()
         search.focus_set()
+
+    def _pick_local_beat(self) -> None:
+        path = filedialog.askopenfilename(
+            title="Własny bit",
+            filetypes=[
+                ("Audio", "*.wav *.mp3 *.flac *.m4a *.aac *.ogg *.aiff *.aif"),
+                ("Wszystkie pliki", "*.*"),
+            ],
+        )
+        if not path:
+            return
+        self.local_beat_path = path
+        self.local_beat_seconds = 0.0
+        self.beat_var.set(offline_session.file_title(path))
+        self._save_desk()
+        self._sync_beat_button()
+        self._paint_all()
+        self.status.set("Bit z pliku zostaje na tym komputerze. Program nie sprawdza licencji i nie wysyła go na stronę.")
+        threading.Thread(target=self._probe_local_beat, args=(path,), daemon=True).start()
+
+    def _probe_local_beat(self, path: str) -> None:
+        seconds = 0.0
+        try:
+            seconds = offline_session.probe_media_seconds(ffmpeg_exe(), Path(path))
+        except Exception:
+            seconds = 0.0
+
+        def apply() -> None:
+            if self.local_beat_path != path:
+                return
+            self.local_beat_seconds = seconds
+            self._save_desk()
+            self._sync_beat_button()
+            self._paint_all()
+            if seconds > 0:
+                self.status.set(f"Bit z pliku: {offline_session.clock_text(seconds)}. Zostaje u Ciebie, nie jedzie na stronę.")
+
+        self.root.after(0, apply)
 
     def _load_public(self) -> None:
         try:
@@ -1569,7 +1703,12 @@ class RecorderWindow:
         height = canvas.winfo_height()
         title, bpm, seconds = self._beat_meta()
         if not title:
-            canvas.create_text(12, height / 2, text="Wybierz bit z katalogu (przycisk BIT u góry).", fill=MUTE, anchor="w", font=(FONT_UI, 10))
+            hint = (
+                "Wybierz własny bit z pliku (przycisk BIT u góry)."
+                if self.studio_mode == "offline"
+                else "Wybierz bit z katalogu (przycisk BIT u góry)."
+            )
+            canvas.create_text(12, height / 2, text=hint, fill=MUTE, anchor="w", font=(FONT_UI, 10))
             return
         end = seconds if seconds > 0 else self._length()
         x1 = max(0.0, self._x(0.0))
@@ -1927,49 +2066,62 @@ class RecorderWindow:
 
     # ---- desk autosave ------------------------------------------------------
 
+    def _desk_path(self) -> Path:
+        return DESK_OFFLINE if self.studio_mode == "offline" else DESK
+
     def _save_desk(self) -> None:
         self._touched = True
-        data = {
+        data: dict[str, object] = {
             "beat": self.beat_var.get(),
             "title": self.title_var.get(),
             "armed": self.armed,
+            "beatMuted": self.beat_muted,
+            "beatGainDb": self.beat_gain_db,
             "tracks": [
                 {
                     "name": track.name,
+                    "role": track.role,
                     "muted": track.muted,
                     "solo": track.solo,
                     "gain_db": track.gain_db,
+                    "pan": track.pan,
                     "clips": [clip.to_json() for clip in track.clips],
                 }
                 for track in self.tracks
             ],
         }
+        if self.studio_mode == "offline":
+            data["localBeat"] = self.local_beat_path
+            data["localBeatSeconds"] = self.local_beat_seconds
         try:
-            DESK.parent.mkdir(parents=True, exist_ok=True)
-            DESK.write_text(json.dumps(data), encoding="utf-8")
+            path = self._desk_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(data), encoding="utf-8")
         except OSError:
             pass
 
     def _restore_desk(self) -> None:
         self.tracks = []
+        self.local_beat_path = ""
+        self.local_beat_seconds = 0.0
         try:
-            raw = json.loads(DESK.read_text(encoding="utf-8"))
+            raw = json.loads(self._desk_path().read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             raw = {}
         rows = raw.get("tracks") if isinstance(raw, dict) else None
         lost = 0
+        cap = offline_session.offline_track_cap() if self.studio_mode == "offline" else 16
         if isinstance(rows, list):
-            for item in rows[:16]:
+            for item in rows[:cap]:
                 if not isinstance(item, dict):
                     continue
                 track = self._new_track()
                 track.name = str(item.get("name") or track.name)[:40]
+                track.role = "podbicie" if item.get("role") == "podbicie" else "wokal"
                 track.muted = bool(item.get("muted"))
                 track.solo = bool(item.get("solo"))
-                try:
-                    track.gain_db = max(-24.0, min(12.0, float(item.get("gain_db") or 0.0)))
-                except (TypeError, ValueError):
-                    track.gain_db = 0.0
+                track.gain_db = offline_session.clamp_gain(item.get("gain_db"))
+                track.pan = offline_session.clamp_pan(item.get("pan"))
                 for entry in item.get("clips") or []:
                     clip = Clip.from_json(entry)
                     if clip is None:
@@ -1989,7 +2141,26 @@ class RecorderWindow:
             armed = raw.get("armed")
             if isinstance(armed, int):
                 self.armed = armed
+            if isinstance(raw.get("beatMuted"), bool):
+                self.beat_muted = bool(raw["beatMuted"])
+            self.beat_gain_db = offline_session.clamp_gain(raw.get("beatGainDb"))
+            if self.studio_mode == "offline":
+                local = raw.get("localBeat")
+                if isinstance(local, str):
+                    self.local_beat_path = local
+                    self.beat_var.set(offline_session.file_title(local) if local else "")
+                seconds = raw.get("localBeatSeconds")
+                if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
+                    self.local_beat_seconds = max(0.0, float(seconds))
+            else:
+                beat = raw.get("beat")
+                if isinstance(beat, str) and beat in [label for _beat_id, label in self.beats]:
+                    self.beat_var.set(beat)
+        if hasattr(self, "beat_gain_scale"):
+            self.beat_gain_scale.set(self.beat_gain_db)
+            self.beat_gain_label.configure(text=f"{self.beat_gain_db:+.0f}")
         self._rebuild_rows()
+        self._sync_beat_button()
         self._touched = False
         clips = sum(len(track.clips) for track in self.tracks)
         if clips:
@@ -2026,9 +2197,16 @@ class RecorderWindow:
         self.focus = 0
         self._audio.clear()
         self._peaks.clear()
+        if self.studio_mode == "offline":
+            self.local_beat_path = ""
+            self.local_beat_seconds = 0.0
+            self.beat_var.set("")
         self._rebuild_rows()
         self._save_desk()
-        self.status.set("Nowy projekt. Wybierz bit i nagraj.")
+        if self.studio_mode == "offline":
+            self.status.set("Nowy projekt offline. Wybierz własny bit z pliku i nagraj.")
+        else:
+            self.status.set("Nowy projekt. Wybierz bit i nagraj.")
 
     def _save_prefs(self) -> None:
         try:
@@ -2069,37 +2247,40 @@ class RecorderWindow:
             self._sync_add_button()
             return
         self.tier = tier
-        stems = "stemy: tak" if tier == "GOLD" else "stemy: od Gold"
-        self.plan_text.set(
-            f"Plan {display_tier(tier)}: {max_recording_tracks(tier)} ścieżek, ujęcie do {max_take_seconds(tier)} s, {stems}."
-        )
+        if self.studio_mode == "offline":
+            self.plan_text.set("Gold · 16 wokali + 8 podbić i adlibów. Czysta nagrywka, bez miksu i masteringu.")
+        else:
+            stems = "stemy: tak" if tier == "GOLD" else "stemy: od Gold"
+            self.plan_text.set(
+                f"Plan {display_tier(tier)}: {max_recording_tracks(tier)} ścieżek, ujęcie do {max_take_seconds(tier)} s, {stems}."
+            )
         self._sync_add_button()
         self._paint_all()
 
     # ---- play and record -------------------------------------------------------
 
-    def _mix_plan(self, start: float, skip: int | None) -> list[tuple[list[Clip], float]]:
+    def _mix_plan(self, start: float, skip: int | None) -> list[tuple[list[Clip], float, float]]:
         any_solo = any(track.solo for track in self.tracks)
-        found: list[tuple[list[Clip], float]] = []
+        found: list[tuple[list[Clip], float, float]] = []
         for index, track in enumerate(self.tracks):
             if index == skip or not self._heard(track, any_solo):
                 continue
             if track_end(track.clips) > start + 0.01:
-                found.append((list(track.clips), track.gain_db))
+                found.append((list(track.clips), track.gain_db, track.pan))
         return found
 
-    def _render_for_play(self, plan: list[tuple[list[Clip], float]], start: float) -> list[tuple[Path, float, float]]:
+    def _render_for_play(self, plan: list[tuple[list[Clip], float, float]], start: float) -> list[tuple[Path, float, float]]:
         """Heard tracks from the cursor to their end, as temp WAVs for ffmpeg. Runs off the Tk thread."""
         folder = Path(os.environ.get("TEMP", ".")) / "bitrymdym-play"
         folder.mkdir(parents=True, exist_ok=True)
         out: list[tuple[Path, float, float]] = []
-        for number, (clips, gain_db) in enumerate(plan):
+        for number, (clips, gain_db, pan) in enumerate(plan):
             samples = render(clips, start, track_end(clips), self._load)
             if len(samples) < 2:
                 continue
             path = folder / f"tor-{number}.wav"
             replace_mono16(path, samples)
-            out.append((path, gain_db, 0.0))
+            out.append((path, gain_db, pan))
         return out
 
     def toggle_play(self) -> None:
@@ -2117,24 +2298,38 @@ class RecorderWindow:
         self.stop()
         start = self.sel[1] if self.sel is not None else self.cursor
         plan = self._mix_plan(start, None)
-        beat_id = "" if self.beat_muted else self._beat_id_or_empty()
-        if not plan and not beat_id:
+        beat_id, local = self._play_beat()
+        local_ok = bool(local) and Path(local).is_file()
+        if not plan and not beat_id and not local_ok:
             self.status.set("Nie ma czego grać od tego miejsca: bit wyciszony albo nie wybrany, ścieżki puste.")
             return
         self._play_token += 1
         token = self._play_token
         self._arming = True
         self.status.set("Składam odsłuch od kursora…")
-        threading.Thread(target=self._prepare_play, args=(token, start, plan, beat_id, None), daemon=True).start()
+        threading.Thread(target=self._prepare_play, args=(token, start, plan, beat_id, local, None), daemon=True).start()
+
+    def _play_beat(self) -> tuple[str, str]:
+        """(catalog id, local file). Offline never asks the site for a beat."""
+        if self.beat_muted:
+            return "", ""
+        if self.studio_mode == "offline":
+            return "", self.local_beat_path
+        return self._beat_id_or_empty(), ""
 
     def _prepare_play(
-        self, token: int, start: float, plan: list[tuple[list[Clip], float]], beat_id: str, record_to: Path | None
+        self, token: int, start: float, plan: list[tuple[list[Clip], float, float]], beat_id: str, local: str, record_to: Path | None
     ) -> None:
         heard: tuple[str | None, int | None, str] = (None, None, "")
         vocals: list[tuple[Path, float, float]] = []
         error = ""
         try:
-            if beat_id:
+            if local:
+                if Path(local).is_file():
+                    heard = (local, None, "")
+                else:
+                    heard = (None, None, "Nie ma pliku bitu na dysku. Wskaż go jeszcze raz.")
+            elif beat_id:
                 heard = self._beat_listen(beat_id)
             vocals = self._render_for_play(plan, start)
         except Exception as problem:
@@ -2220,14 +2415,14 @@ class RecorderWindow:
         self.rec_start = self.sel[1] if self.sel is not None else self.cursor
         self.sel = None
         plan = self._mix_plan(self.rec_start, self.rec_track)
-        beat_id = "" if self.beat_muted else self._beat_id_or_empty()
+        beat_id, local = self._play_beat()
         TAKES.mkdir(parents=True, exist_ok=True)
         path = TAKES / f"ujecie-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}.wav"
         self._play_token += 1
         token = self._play_token
         self._arming = True
         self.status.set("Przygotowuję nagranie: bit i pozostałe ścieżki…")
-        threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, path), daemon=True).start()
+        threading.Thread(target=self._prepare_play, args=(token, self.rec_start, plan, beat_id, local, path), daemon=True).start()
 
     def stop(self) -> None:
         if self._arming:
@@ -2372,6 +2567,9 @@ class RecorderWindow:
             return
         if self.playing:
             self.stop()
+        if self.studio_mode == "offline":
+            self._open_done_offline()
+            return
         clips, skipped, used = self._send_list()
         box = tk.Toplevel(self.root)
         box.title("Gotowe")
@@ -2462,7 +2660,218 @@ class RecorderWindow:
                 starts.append(int(round(begin * 1000)))
         return paths, slots, starts
 
+    def _open_done_offline(self) -> None:
+        clips = sum(len(track.clips) for track in self.tracks)
+        vocals = sum(1 for track in self.tracks if track.role != "podbicie" and track.clips)
+        extras = sum(1 for track in self.tracks if track.role == "podbicie" and track.clips)
+        beat = offline_session.file_title(self.local_beat_path) if self.local_beat_path else "nie wybrany"
+        box = tk.Toplevel(self.root)
+        box.title("Gotowe")
+        box.configure(bg=PANEL)
+        box.transient(self.root)
+        box.resizable(False, False)
+        tk.Label(box, text="Gotowe · Offline", bg=PANEL, fg=INK, font=(FONT_DISPLAY, 20, "italic")).pack(anchor="w", padx=16, pady=(12, 2))
+        summary = (
+            f"Bit z pliku: {beat}. "
+            f"Z nagraniem: {count_word(vocals, 'wokal', 'wokale', 'wokali')}, "
+            f"{count_word(extras, 'podbicie', 'podbicia', 'podbić')}."
+        )
+        tk.Label(box, text=summary, bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=460, justify="left").pack(anchor="w", padx=16)
+        tk.Label(box, text="TYTUŁ", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=16, pady=(10, 0))
+        tk.Entry(
+            box, textvariable=self.title_var, bg=RACK, fg=INK, insertbackground=AMBER, relief="flat", font=(FONT_UI, 11), width=48,
+        ).pack(fill="x", padx=16, ipady=4)
+
+        def save() -> None:
+            box.destroy()
+            self.save_offline_pack()
+
+        button = self._tool(box, "ZAPISZ STEMY I SESJĘ", save, ON_AMBER, AMBER, 14)
+        button.pack(fill="x", padx=16, pady=(14, 2))
+        if clips == 0:
+            button.configure(state="disabled")
+        tk.Label(
+            box,
+            text=(
+                "Stemy to osobne pliki WAV ścieżek, czysta nagrywka od 0:00, bez bitu i bez miksu. "
+                "Obok nich leży sesja.brd.json: kolejność, miejsce na osi, czas, głośność i balans lewo–prawo. "
+                "Na stronę stąd nic nie idzie."
+            ),
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 9), wraplength=460, justify="left",
+        ).pack(anchor="w", padx=16, pady=(4, 0))
+        tk.Label(
+            box, text=offline_session.RIGHTS_NOTE, bg=PANEL, fg=MUTE, font=(FONT_UI, 9), wraplength=460, justify="left",
+        ).pack(anchor="w", padx=16, pady=(8, 0))
+        self._tool(box, "WRÓĆ DO EDYCJI", box.destroy, SOFT).pack(anchor="e", padx=16, pady=14)
+
+    def save_offline_pack(self) -> None:
+        if self.studio_mode != "offline":
+            return
+        if self.tier != "GOLD":
+            self.status.set("Zapis sesji offline jest w planie Premium Gold.")
+            return
+        if self._exporting:
+            return
+        used = [track for track in self.tracks if track.clips]
+        if not used:
+            self.status.set("Najpierw nagraj ścieżkę.")
+            return
+        folder = filedialog.askdirectory(title="Folder na stemy i sesję")
+        if not folder:
+            return
+        title = self.title_var.get().strip() or "Nagranie"
+        end = max((track_end(track.clips) for track in used), default=0.0)
+        end = max(end, self.local_beat_seconds)
+        rows: list[dict[str, object]] = []
+        for track in used:
+            rows.append(
+                {
+                    "name": track.name,
+                    "role": track.role,
+                    "gain_db": track.gain_db,
+                    "pan": track.pan,
+                    "muted": track.muted,
+                    "solo": track.solo,
+                    "clips": [{"start": clip.start, "in": clip.src_in, "out": clip.src_out, "end": clip.end} for clip in track.clips],
+                }
+            )
+        document = offline_session.build_session(
+            title=title,
+            beat_file_name=self.local_beat_path,
+            beat_seconds=self.local_beat_seconds,
+            beat_gain_db=self.beat_gain_db,
+            beat_muted=self.beat_muted,
+            tracks=rows,
+            saved_at=datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
+        built = document.get("tracks")
+        if not isinstance(built, list) or len(built) != len(used):
+            self.status.set("Nie dało się złożyć pliku sesji.")
+            return
+        jobs: list[tuple[str, list[Clip], float]] = []
+        for item, track in zip(built, used):
+            if not isinstance(item, dict) or not item.get("stem"):
+                self.status.set("Nie dało się złożyć pliku sesji.")
+                return
+            jobs.append((str(item["stem"]), list(track.clips), end))
+        self._exporting = True
+        self._save_desk()
+        self.status.set("Zapisuję stemy i sesję…")
+        threading.Thread(target=self._run_offline_pack, args=(Path(folder), document, jobs), daemon=True).start()
+
+    def _run_offline_pack(self, folder: Path, document: dict[str, object], jobs: list[tuple[str, list[Clip], float]]) -> None:
+        written: list[str] = []
+        error = ""
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            for stem, clips, end in jobs:
+                samples = render(clips, 0.0, end, self._load)
+                target = folder / stem
+                replace_mono16(target, samples)
+                written.append(target.name)
+            offline_session.write_session(folder, document)
+        except Exception as problem:
+            error = str(problem) or "zapis"
+
+        def done() -> None:
+            self._exporting = False
+            if error:
+                self.status.set(f"Sesja: zapisane {len(written)} stemów, potem błąd ({error[:80]}).")
+                return
+            self.status.set(
+                f"Zapisane: {len(written)} stemów i {offline_session.FILE_NAME} w {folder}. "
+                "Bit nie jest w tym folderze. Na www.bitrymdym.pl → Studio wczytaj sesję, utwórz projekt i w Gold wrzuć stemy."
+            )
+
+        self.root.after(0, done)
+
+    def load_offline_pack(self) -> None:
+        if self.studio_mode != "offline" or self._busy() or self._exporting:
+            return
+        path = filedialog.askopenfilename(
+            title="Sesja z programu",
+            filetypes=[("Sesja BitRymDym", "*.json"), ("Wszystkie pliki", "*.*")],
+        )
+        if not path:
+            return
+        try:
+            raw = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            self.status.set("Nie dało się odczytać pliku sesji.")
+            return
+        document = offline_session.parse_session(raw)
+        if document is None:
+            self.status.set("To nie jest sesja BitRymDym (sesja.brd.json).")
+            return
+        tracks = document.get("tracks")
+        if not isinstance(tracks, list) or not tracks:
+            self.status.set("W sesji nie ma ścieżek z nagraniem.")
+            return
+        have = sum(len(track.clips) for track in self.tracks)
+        if have and not messagebox.askyesno("BitRymDym", "Wczytać sesję? Ścieżki teraz na ekranie zejdą z programu (pliki nagrań na dysku zostają)."):
+            return
+        folder = Path(path).parent
+        loaded: list[Track] = []
+        missing = 0
+        for item in tracks:
+            if not isinstance(item, dict):
+                continue
+            stem = str(item.get("stem") or "")
+            wav = folder / stem
+            if not wav.is_file():
+                missing += 1
+                continue
+            seconds = file_seconds(wav)
+            if seconds < 0.05:
+                missing += 1
+                continue
+            track = Track(
+                name=str(item.get("name") or "Ścieżka")[:40],
+                color=TRACK_COLORS[len(loaded) % len(TRACK_COLORS)],
+                role="podbicie" if item.get("role") == "podbicie" else "wokal",
+                gain_db=offline_session.clamp_gain(item.get("gainDb")),
+                pan=offline_session.clamp_pan(item.get("pan")),
+                muted=bool(item.get("muted")),
+                solo=bool(item.get("solo")),
+                clips=[Clip(str(wav), 0.0, 0.0, round(seconds, 4))],
+            )
+            loaded.append(track)
+        if not loaded:
+            self.status.set("Obok pliku sesji nie ma stemów WAV. Trzymaj je w jednym folderze.")
+            return
+        self._push_undo()
+        self.tracks = loaded
+        self.sel = None
+        self.cursor = 0.0
+        self.view = 0.0
+        self.armed = 0
+        self.focus = 0
+        title = document.get("title")
+        if isinstance(title, str) and title.strip():
+            self.title_var.set(title)
+        beat = document.get("beat")
+        beat_name = ""
+        if isinstance(beat, dict):
+            beat_name = str(beat.get("fileName") or "")
+            self.beat_gain_db = offline_session.clamp_gain(beat.get("gainDb"))
+            self.beat_muted = bool(beat.get("muted"))
+            if isinstance(beat.get("durationSeconds"), (int, float)):
+                self.local_beat_seconds = max(0.0, float(beat["durationSeconds"]))
+        self.local_beat_path = ""
+        self.beat_var.set("")
+        if hasattr(self, "beat_gain_scale"):
+            self.beat_gain_scale.set(self.beat_gain_db)
+            self.beat_gain_label.configure(text=f"{self.beat_gain_db:+.0f}")
+        self._rebuild_rows()
+        self._save_desk()
+        extra = f" Brak {missing} plików obok sesji." if missing else ""
+        named = f" Bit z sesji nazywa się „{beat_name}” — wskaż ten plik jeszcze raz, do paczki go nie dodajemy." if beat_name else ""
+        self.status.set(f"Wczytane stemy od 0:00. Głośność i balans są na ścieżkach.{extra}{named}")
+
     def send_to_studio(self) -> None:
+        if self.studio_mode == "offline":
+            self.status.set("Studio Offline nie wysyła na stronę. Zapisz stemy i sesję, potem wrzuć je w Studio na www.bitrymdym.pl.")
+            return
         if self._uploading:
             self.status.set("Wysyłka już trwa.")
             return
@@ -2544,6 +2953,9 @@ class RecorderWindow:
         webbrowser.open(studio_url(SITE, project))
 
     def export_stems(self) -> None:
+        if self.studio_mode == "offline":
+            self.save_offline_pack()
+            return
         if self.tier != "GOLD":
             self.status.set("Stemy z programu są w planie Gold.")
             return
@@ -2803,7 +3215,105 @@ class RecorderWindow:
             justify="left",
         ).pack(anchor="w", pady=(12, 0))
 
+    def _build_modes(self) -> None:
+        self.modes = tk.Frame(self.shell, bg=PAPER)
+        self.modes_canvas = tk.Canvas(self.modes, bg=PAPER, highlightthickness=0, bd=0)
+        scroll = ttk.Scrollbar(self.modes, command=self.modes_canvas.yview, style="Brd.Vertical.TScrollbar")
+        self.modes_canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.modes_canvas.pack(side="left", fill="both", expand=True)
+        inner = tk.Frame(self.modes_canvas, bg=PAPER)
+        window = self.modes_canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>", lambda _event: self.modes_canvas.configure(scrollregion=self.modes_canvas.bbox("all")))
+        self.modes_canvas.bind("<Configure>", lambda event: self.modes_canvas.itemconfigure(window, width=event.width))
+        card = tk.Frame(inner, bg=PAPER)
+        card.pack(fill="x", padx=28, pady=18)
+        tk.Label(card, text="Gdzie nagrywasz?", bg=PAPER, fg=INK, font=(FONT_DISPLAY, 22, "italic")).pack(anchor="w")
+        self.mode_account = tk.StringVar(value="")
+        tk.Label(card, textvariable=self.mode_account, bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(2, 10))
+
+        online = tk.Frame(card, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
+        online.pack(fill="x", pady=(0, 10))
+        tk.Label(online, text="STUDIO ONLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(anchor="w", padx=14, pady=(12, 2))
+        tk.Label(
+            online,
+            text="Bit z katalogu strony. Ścieżki według planu. Na końcu możesz wrzucić nagranie do Studia. Miks i mastering są na stronie.",
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=460, justify="left",
+        ).pack(anchor="w", padx=14, pady=(0, 8))
+        self._tool(online, "WEJDŹ", lambda: self.choose_mode("online"), ON_AMBER, AMBER, 14).pack(anchor="w", padx=14, pady=(0, 12))
+
+        offline = tk.Frame(card, bg=PANEL, highlightthickness=1, highlightbackground=AMBER_DEEP)
+        offline.pack(fill="x", pady=(0, 10))
+        tk.Label(offline, text="STUDIO OFFLINE", bg=PANEL, fg=AMBER, font=(FONT_POSTER, 16, "bold")).pack(anchor="w", padx=14, pady=(12, 0))
+        tk.Label(offline, text="PREMIUM GOLD", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=14)
+        tk.Label(
+            offline,
+            text=(
+                "Własny bit z pliku. 16 ścieżek wokalu i 8 na podbicia i adliby. "
+                "Czysta nagrywka i prosta edycja ścieżek. Bez automatycznego miksu i masteringu. "
+                "Program nie wysyła nagrania na stronę. Zapisujesz u siebie stemy (osobne WAV-y ścieżek) i plik sesji."
+            ),
+            bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=460, justify="left",
+        ).pack(anchor="w", padx=14, pady=(6, 8))
+        self.offline_enter = tk.Button(
+            offline, text="WEJDŹ", command=lambda: self.choose_mode("offline"),
+            bg=AMBER, fg=ON_AMBER, activebackground=AMBER_SOFT, activeforeground=ON_AMBER,
+            relief="flat", bd=0, padx=12, pady=6, font=(FONT_POSTER, 14, "bold"), cursor="hand2",
+        )
+        self.offline_enter.pack(anchor="w", padx=14, pady=(0, 12))
+
+        tk.Label(card, text="PRAWA", bg=PAPER, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", pady=(6, 2))
+        tk.Label(
+            card, text=offline_session.RIGHTS_NOTE, bg=PAPER, fg=SOFT, font=(FONT_UI, 10), wraplength=480, justify="left",
+        ).pack(anchor="w")
+        links = tk.Frame(card, bg=PAPER)
+        links.pack(anchor="w", pady=(10, 4))
+        self._link(links, "Studio na stronie", "/studio").pack(side="left")
+        self._link(links, "Premium", "/premium").pack(side="left", padx=(14, 0))
+        self.mode_status = tk.StringVar(value="")
+        tk.Label(card, textvariable=self.mode_status, bg=PAPER, fg=INK, font=(FONT_UI, 10), wraplength=480, justify="left").pack(anchor="w", pady=(8, 0))
+        self._tool(card, "WYLOGUJ", self.sign_out, SOFT).pack(anchor="w", pady=(12, 0))
+
+    def choose_mode(self, mode: str) -> None:
+        if mode == "offline" and self.tier != "GOLD":
+            self.mode_status.set("Studio Offline jest w planie Premium Gold.")
+            return
+        if mode not in ("online", "offline"):
+            return
+        if mode != self.studio_mode:
+            if self._touched:
+                self._save_desk()
+            self.studio_mode = mode
+            self._restore_desk()
+        self._apply_mode_chrome()
+        self.show_studio()
+
+    def back_to_modes(self) -> None:
+        if self._busy() or self._uploading or self._exporting:
+            return
+        if self.playing:
+            self.stop()
+        if self._touched:
+            self._save_desk()
+        self.show_modes()
+
+    def _apply_mode_chrome(self) -> None:
+        if self.studio_mode == "offline":
+            self.studio_kicker.set("STUDIO OFFLINE")
+            self.plan_text.set("Gold · 16 wokali + 8 podbić i adlibów. Czysta nagrywka, bez miksu i masteringu.")
+            if not self.load_session_button.winfo_manager():
+                self.load_session_button.pack(side="right", padx=(0, 6))
+        else:
+            self.studio_kicker.set("STUDIO ONLINE")
+            self.load_session_button.pack_forget()
+            self._read_plan()
+        self._sync_beat_button()
+        self._sync_add_button()
+        self._paint_all()
+
     def _track_cap(self) -> int:
+        if self.studio_mode == "offline":
+            return offline_session.offline_track_cap()
         return max_recording_tracks(self.tier)
 
     def _safe_listen_error(self, error: BaseException) -> str:
@@ -2984,9 +3494,9 @@ class RecorderWindow:
             same_account = bool(saved and saved.get("accessToken") and saved.get("email") == email)
             if password == "" and same_account:
                 self._read_plan()
-                self.status.set("Zalogowano. Wybierz bit, uzbrój ścieżkę (●) i NAGRAJ. Na końcu GOTOWE.")
+                self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
                 self.gate_status.set("")
-                self.show_studio()
+                self.show_modes()
                 return
             if not email or not password:
                 raise RuntimeError("Wpisz e-mail i hasło.")
@@ -2996,9 +3506,9 @@ class RecorderWindow:
             save_session(self.public_url, self.public_key, email, grant)
             self.password.delete(0, "end")
             self._read_plan()
-            self.status.set("Zalogowano. Wybierz bit, uzbrój ścieżkę (●) i NAGRAJ. Na końcu GOTOWE.")
+            self.status.set("Zalogowano. Wybierz Studio Online albo Studio Offline.")
             self.gate_status.set("")
-            self.show_studio()
+            self.show_modes()
         except Exception as error:
             self.status.set(str(error))
             self.gate_status.set(str(error))
@@ -3228,9 +3738,12 @@ if __name__ == "__main__":
 
         from timeline import self_test as timeline_self_test
 
+        from offline_session import self_test as offline_self_test
+
         desk_self_test()
         fx_self_test()
         timeline_self_test()
+        offline_self_test()
         argv = monitor_argv("ffplay", Path("bit.wav"))
         if "-nodisp" not in argv or argv[-1] != "bit.wav" or "-t" in argv or "nobuffer" not in argv:
             raise SystemExit("odsłuch")
