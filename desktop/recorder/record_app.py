@@ -214,6 +214,26 @@ def shade(color: str, factor: float) -> str:
     return "#" + "".join(f"{max(0, min(255, int(part * factor))):02x}" for part in parts)
 
 
+_INSTANCE_LOCK: object = None
+
+
+def single_instance() -> bool:
+    """One recorder per Windows user. A second window would overwrite the first one's tracks on close."""
+    global _INSTANCE_LOCK
+    if os.name != "nt":
+        return True
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateMutexW.restype = ctypes.c_void_p
+    kernel.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
+    _INSTANCE_LOCK = kernel.CreateMutexW(None, False, "Local\\BitRymDym.Nagrywarka")
+    if ctypes.get_last_error() != 183:  # ERROR_ALREADY_EXISTS
+        return True
+    ctypes.windll.user32.MessageBoxW(
+        None, "Program BitRymDym jest już otwarty. Przełącz się na jego okno na pasku zadań.", "BitRymDym", 0x40
+    )
+    return False
+
+
 def count_word(count: int, one: str, few: str, many: str) -> str:
     """Polish plural: 1 ścieżka, 2 ścieżki, 5 ścieżek, 22 ścieżki."""
     if count == 1:
@@ -780,6 +800,8 @@ class RecorderWindow:
         self.undo_stack: list[tuple[list[Track], int]] = []
         self.clipboard: list[Clip] = []
         self._drag: dict[str, object] | None = None
+        # Only a window that changed something writes the desk on close (no stale overwrite).
+        self._touched = False
         self._audio: dict[str, array.array] = {}
         self._peaks: dict[str, list[float]] = {}
         self._listen_cache: tuple[str, float, tuple[str | None, int | None, str]] | None = None
@@ -929,7 +951,8 @@ class RecorderWindow:
             if self.recording:
                 self._keep_take()
         self.recording = False
-        self._save_desk()
+        if self._touched:
+            self._save_desk()
         self.root.destroy()
 
     # ---- layout ---------------------------------------------------------------
@@ -1304,6 +1327,8 @@ class RecorderWindow:
         self.status.set("Bit wyciszony: nie gra przy nagrywaniu i odsłuchu." if self.beat_muted else "Bit gra.")
 
     def _set_gain(self, track: Track, value: float) -> None:
+        if abs(track.gain_db - value) > 1e-9:
+            self._touched = True
         track.gain_db = value
         if track in self.tracks:
             label = self.rows[self.tracks.index(track)].get("gain")
@@ -1903,6 +1928,7 @@ class RecorderWindow:
     # ---- desk autosave ------------------------------------------------------
 
     def _save_desk(self) -> None:
+        self._touched = True
         data = {
             "beat": self.beat_var.get(),
             "title": self.title_var.get(),
@@ -1964,6 +1990,7 @@ class RecorderWindow:
             if isinstance(armed, int):
                 self.armed = armed
         self._rebuild_rows()
+        self._touched = False
         clips = sum(len(track.clips) for track in self.tracks)
         if clips:
             self.status.set(
@@ -3271,4 +3298,6 @@ if __name__ == "__main__":
     else:
         # Keep the WAV writer available for a silent tone when the mic is closed.
         _ = write_pcm16_wav
+        if not single_instance():
+            raise SystemExit(0)
         RecorderWindow().run()
