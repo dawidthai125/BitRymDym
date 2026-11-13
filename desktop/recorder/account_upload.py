@@ -234,6 +234,8 @@ class UploadState:
     # Timeline mode: wav_paths are clips. track_of[i] is the vocal track, starts_ms[i] the place.
     track_of: list[int] = field(default_factory=list)
     starts_ms: list[int] = field(default_factory=list)
+    # Timeline mode sends every take first and makes the project only after that.
+    take_ids: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -255,16 +257,21 @@ class UploadState:
                 fx_done=int(raw.get("fx_done", 0)),
                 track_of=[int(item) for item in raw.get("track_of", [])],
                 starts_ms=[int(item) for item in raw.get("starts_ms", [])],
+                take_ids=[str(item) for item in raw.get("take_ids", [])],
             )
         except (KeyError, TypeError, ValueError):
             return None
-        if not state.project_id or not paths or state.placed > len(paths) or state.fx_done > len(paths):
+        if not paths or state.placed > len(paths) or state.fx_done > len(paths) or len(state.take_ids) > len(paths):
+            return None
+        if not state.project_id and not state.track_of:
             return None
         if state.track_of and (len(state.track_of) != len(paths) or len(state.starts_ms) != len(paths)):
             return None
         return state
 
     def summary(self) -> str:
+        if self.track_of and not self.project_id:
+            return f"wysłane nagrania: {len(self.take_ids)} z {len(self.wav_paths)}, projektu jeszcze nie ma"
         noun = "klipów" if self.track_of else "ścieżek"
         return f"projekt {self.project_id}: {self.placed} z {len(self.wav_paths)} {noun}"
 
@@ -317,6 +324,8 @@ def upload_vocals(
     track_count = max(lanes) + 1
     clip_mode = track_of is not None
     noun = "klip" if clip_mode else "ścieżkę"
+    if clip_mode:
+        return _upload_timeline(client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume)
     if resume is None:
         say("Tworzę projekt na koncie.")
         document = client.create_project(title, beat_id)
@@ -375,6 +384,100 @@ def upload_vocals(
         unit = "klipów" if clip_mode else "ścieżek"
         raise RuntimeError(f"Projekt {pid} jest na koncie ({state.placed} z {len(blobs)} {unit}). {error}") from None
     return pid
+
+
+def _upload_timeline(
+    client: SiteClient,
+    title: str,
+    beat_id: str,
+    wav_paths: list[Path],
+    blobs: list[bytes],
+    lanes: list[int],
+    starts: list[int],
+    chain: dict[str, Any] | None,
+    say: Callable[[str], None],
+    saved: Callable[[UploadState], None],
+    resume: UploadState | None,
+) -> str:
+    """Takes first, project after. A refused take (daily limit) leaves no empty project behind."""
+    state = resume or UploadState(
+        project_id="",
+        beat_id=beat_id,
+        title=title,
+        version=0,
+        wav_paths=[str(path) for path in wav_paths],
+        track_of=list(lanes),
+        starts_ms=list(starts),
+    )
+    track_count = max(lanes) + 1
+    try:
+        for index in range(len(state.take_ids), len(blobs)):
+            wav = blobs[index]
+            say(f"Wysyłam nagranie {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
+            session = client.open_take(state.beat_id, len(wav))
+            client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
+            take_id = str(session["takeId"])
+            client.finalize(take_id)
+            state.take_ids.append(take_id)
+            saved(state)
+    except RuntimeError as error:
+        raise RuntimeError(
+            f"Projekt nie powstał (wysłane nagrania: {len(state.take_ids)} z {len(blobs)}). {error}"
+        ) from None
+    if not state.project_id:
+        say("Tworzę projekt na koncie.")
+        document = client.create_project(state.title, state.beat_id)
+        state.project_id = project_id(document)
+        state.version = document_version(document)
+        state.track_ids = [vocal_track_id(document)]
+        saved(state)
+    pid = state.project_id
+    try:
+        while len(state.track_ids) < track_count:
+            say(f"Dodaję ścieżkę wokalu {len(state.track_ids) + 1} z {track_count}.")
+            added_id, state.version = client.add_vocal_track(pid, state.version)
+            state.track_ids.append(added_id)
+            saved(state)
+        for index in range(state.placed, len(blobs)):
+            say(f"Układam nagranie {index + 1} z {len(blobs)} na osi czasu.")
+            placed = client.place(
+                pid,
+                {
+                    "trackId": state.track_ids[lanes[index]],
+                    "takeId": state.take_ids[index],
+                    "timelineStartMs": starts[index],
+                    "sourceOffsetMs": 0,
+                    "durationMs": wav_duration_ms(blobs[index]),
+                    "expectedDocumentVersion": state.version,
+                },
+            )
+            state.version = _version(placed)
+            state.placed = index + 1
+            saved(state)
+        fx = _effect_chain(chain)
+        if fx is not None:
+            for index in range(state.fx_done, track_count):
+                patched = client.apply_track_fx(pid, state.track_ids[index], state.version, fx)
+                state.version = _version(patched)
+                state.fx_done = index + 1
+                saved(state)
+    except RuntimeError as error:
+        raise RuntimeError(f"Projekt {pid} jest na koncie ({state.placed} z {len(blobs)} nagrań ułożonych). {error}") from None
+    return pid
+
+
+def friendly_upload_error(text: str) -> str:
+    """Site limit codes in plain Polish. Other text stays as it is."""
+    if "SESSION_DAY_CAP" in text:
+        head = text.split(" POST ", 1)[0].split(" Wrzutka", 1)[0].strip()
+        return (
+            f"{head} Dzienny limit wysyłek nagrań w Twoim planie jest na dziś wyczerpany "
+            "(każda ścieżka z nagraniem to jedna wysyłka). Spróbuj jutro albo wyślij mniej ścieżek."
+        ).strip()
+    if "ACTIVE_READY_CAP" in text:
+        head = text.split(" POST ", 1)[0].strip()
+        return f"{head} Masz za dużo gotowych nagrań czekających na koncie. Użyj ich w Studio albo usuń stare.".strip()
+    return text
 
 
 def upload_vocal(
@@ -609,7 +712,7 @@ def _self_test_clips() -> None:
         on_state=last.append,
     )
     kinds = [item[0] for item in fake.calls if isinstance(item, tuple)]
-    if kinds.count("add") != 1 or kinds.count("place") != 3:
+    if kinds.count("add") != 1 or kinds.count("place") != 3 or kinds.index("create") < max(i for i, k in enumerate(kinds) if k == "fin"):
         raise SystemExit(f"klipy: kroki {kinds}")
     placed = [(item[2], item[4]) for item in fake.calls if isinstance(item, tuple) and item[0] == "place"]
     if placed != [("v0", 0), ("v0", 4000), ("v1", 1500)]:
@@ -623,6 +726,28 @@ def _self_test_clips() -> None:
         pass
     else:
         raise SystemExit("klipy: zła liczba")
+
+    class Capped(_FakeSite):
+        def open_take(self, beat_id: str, byte_size: int) -> dict[str, Any]:
+            if sum(1 for item in self.calls if isinstance(item, tuple) and item[0] == "take") >= 1:
+                raise RuntimeError('POST /api/takes/session -> 403 {"code":"SESSION_DAY_CAP"}')
+            return super().open_take(beat_id, byte_size)
+
+    capped = Capped()
+    states: list[UploadState] = []
+    try:
+        upload_vocals(capped, title="x", beat_id="b", wav_paths=clips, track_of=[0, 0, 1], starts_ms=[0, 1, 2], on_state=states.append)  # type: ignore[arg-type]
+    except RuntimeError as error:
+        message = friendly_upload_error(str(error))
+        if "Projekt nie powstał" not in message or "Dzienny limit" not in message or "POST" in message:
+            raise SystemExit(f"limit: komunikat {message}") from error
+    else:
+        raise SystemExit("limit: wysyłka miała stanąć")
+    if any(item[0] == "create" for item in capped.calls if isinstance(item, tuple)):
+        raise SystemExit("limit: pusty projekt powstał")
+    waiting = UploadState.from_json(json.loads(json.dumps(states[-1].to_json())))
+    if waiting is None or waiting.project_id or waiting.take_ids != states[-1].take_ids:
+        raise SystemExit("limit: stan przed projektem")
     for clip in clips:
         clip.unlink(missing_ok=True)
 

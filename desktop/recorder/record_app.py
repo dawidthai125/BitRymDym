@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import array
 import ctypes
+import hashlib
 import json
 import math
 import os
@@ -36,6 +37,7 @@ from account_upload import (
     SITE,
     SiteClient,
     UploadState,
+    friendly_upload_error,
     is_unauthorized,
     network_message,
     playback_target,
@@ -67,7 +69,6 @@ from timeline import (
     carve,
     clip_at,
     clip_key,
-    clip_samples,
     extract,
     ordered,
     place,
@@ -220,6 +221,17 @@ def count_word(count: int, one: str, few: str, many: str) -> str:
     if count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
         return f"{count} {few}"
     return f"{count} {many}"
+
+
+def group_for_takes(clips: list[Clip], cap: float) -> list[list[Clip]]:
+    """Consecutive clips of one track, joined while the span fits in one take of the plan."""
+    groups: list[list[Clip]] = []
+    for clip in clips:
+        if groups and max(item.end for item in groups[-1]) - groups[-1][0].start <= cap and clip.end - groups[-1][0].start <= cap:
+            groups[-1].append(clip)
+        else:
+            groups.append([clip])
+    return groups
 
 
 def listen_valid_for(expires_at: object, now: datetime | None = None) -> float:
@@ -2380,19 +2392,34 @@ class RecorderWindow:
             stem_button.configure(state="disabled")
         _ = bpm
 
-    def _render_clip_files(self, clips: list[tuple[int, Clip]]) -> list[Path]:
+    def _render_clip_files(self, clips: list[tuple[int, Clip]]) -> tuple[list[Path], list[int], list[int]]:
+        """One WAV per track (gaps are silence), split only where a track is longer than one take.
+
+        Every WAV is one recording send on the site, and the plan allows a few per day.
+        """
         folder = TAKES / "wysylka"
         folder.mkdir(parents=True, exist_ok=True)
+        cap = float(max_take_seconds(self.tier))
+        by_slot: dict[int, list[Clip]] = {}
+        for slot, clip in clips:
+            by_slot.setdefault(slot, []).append(clip)
         paths: list[Path] = []
-        for _slot, clip in clips:
-            path = folder / f"klip-{clip_key(clip)}.wav"
-            if not path.is_file():
-                samples = clip_samples(clip, self._load)
-                if len(samples) < 2:
-                    raise RuntimeError("Jeden z klipów jest pusty.")
-                replace_mono16(path, samples)
-            paths.append(path)
-        return paths
+        slots: list[int] = []
+        starts: list[int] = []
+        for slot in sorted(by_slot):
+            for group in group_for_takes(ordered(by_slot[slot]), cap):
+                begin, end = group[0].start, max(clip.end for clip in group)
+                name = "-".join(clip_key(clip) for clip in group) + f"-{begin:.3f}"
+                path = folder / f"tor-{hashlib.sha1(name.encode('utf-8')).hexdigest()[:16]}.wav"
+                if not path.is_file():
+                    samples = render(group, begin, end, self._load)
+                    if len(samples) < 2:
+                        raise RuntimeError("Jedna ze ścieżek jest pusta.")
+                    replace_mono16(path, samples)
+                paths.append(path)
+                slots.append(slot)
+                starts.append(int(round(begin * 1000)))
+        return paths, slots, starts
 
     def send_to_studio(self) -> None:
         if self._uploading:
@@ -2429,7 +2456,7 @@ class RecorderWindow:
 
     def _run_upload(self, title: str, beat_id: str, clips: list[tuple[int, Clip]]) -> None:
         try:
-            paths = self._render_clip_files(clips)
+            paths, slots, starts = self._render_clip_files(clips)
             resume = self._pending if self._pending is not None and self._pending.wav_paths == [str(path) for path in paths] else None
             if self._pending is not None and resume is None:
                 self._pending = None
@@ -2441,8 +2468,8 @@ class RecorderWindow:
                 title=title,
                 beat_id=beat_id,
                 wav_paths=paths,
-                track_of=[slot for slot, _clip in clips],
-                starts_ms=[int(round(clip.start * 1000)) for _slot, clip in clips],
+                track_of=slots,
+                starts_ms=starts,
                 progress=self._upload_say,
                 resume=resume,
                 on_state=self._remember_state,
@@ -2458,7 +2485,7 @@ class RecorderWindow:
         self.done_button.configure(state="normal")
         if project is None:
             hint = " Gotowe i Wrzuć do Studia dokończy wysyłkę." if self._pending is not None else ""
-            self.status.set(self._safe_listen_error(RuntimeError(error or "Wysyłka się nie udała.")) + hint)
+            self.status.set(friendly_upload_error(self._safe_listen_error(RuntimeError(error or "Wysyłka się nie udała."))) + hint)
             return
         self._pending = None
         clear_pending()
@@ -3187,6 +3214,10 @@ if __name__ == "__main__":
         if clock_text(75.5) != "1:15.50" or shade("#ff8000", 0.5) != "#7f4000" or safe_name("a/b c") != "a-b-c" or count_word(22, "a", "b", "c") != "22 b":
             raise SystemExit("pomocnicze")
         from datetime import timezone
+
+        joined = group_for_takes([Clip("a", 0, 0, 10), Clip("a", 20, 10, 15), Clip("b", 175, 0, 10)], 180.0)
+        if [len(group) for group in joined] != [2, 1]:
+            raise SystemExit(f"grupy wysyłki {joined}")
 
         moment = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
         if listen_valid_for("2026-01-01T12:05:00Z", moment) != 270.0 or listen_valid_for(None) != 45.0 or listen_valid_for("x") != 45.0:
