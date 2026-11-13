@@ -138,7 +138,7 @@ export function StudioMasterStep({
   const [sm, setSm] = useState<ServerMaster>({ phase: "idle" });
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
-  const [dl, setDl] = useState<{ key: string; status: "working" | "done" | "error" | "limit"; reason?: "daily_limit" | "weekly_limit" } | null>(null);
+  const [dl, setDl] = useState<{ key: string; status: "working" | "done" | "error" | "limit"; reason?: "daily_limit" | "weekly_limit" | "song_day_limit"; songLimit?: number } | null>(null);
   /** Live E3 progress of the running master / download job (stage + overall %). */
   const [prog, setProg] = useState<{ master: JobProgress | null; dl: JobProgress | null }>({ master: null, dl: null });
   const [ab, setAb] = useState<"mix" | "master">("master");
@@ -547,8 +547,9 @@ export function StudioMasterStep({
       const commit = await post({ action: "commit", jobId, documentVersion: doc.project.documentVersion });
       if (commit.json.usage) setServer((s) => ({ ...s, usage: readUsage(commit.json.usage) }));
       if (!commit.json.ok) {
-        const reason = commit.json.error === "daily_limit" || commit.json.error === "weekly_limit" ? commit.json.error : undefined;
-        return setDl({ key, status: commit.status === 429 ? "limit" : "error", reason });
+        const reason = commit.json.error === "daily_limit" || commit.json.error === "weekly_limit" || commit.json.error === "song_day_limit" ? commit.json.error : undefined;
+        const songLimit = typeof commit.json.songs?.limit === "number" ? commit.json.songs.limit : undefined;
+        return setDl({ key, status: commit.status === 429 ? "limit" : "error", reason, songLimit });
       }
       requestPlanUsageRefresh();
       const done = await pollJob(jobId, "dl");
@@ -667,8 +668,8 @@ export function StudioMasterStep({
   const dailyReached = usage?.dailyLimit != null && (usage.dailyUsed ?? 0) >= usage.dailyLimit;
   const weekReached = usage?.weekLimit != null && usage.used >= usage.weekLimit;
   const limitReached = dailyReached || weekReached;
-  const exhausted: "day" | "week" | null = dl?.status === "limit"
-    ? (dl.reason === "daily_limit" ? "day" : "week")
+  const exhausted: "day" | "week" | "songs" | null = dl?.status === "limit"
+    ? (dl.reason === "song_day_limit" ? "songs" : dl.reason === "daily_limit" ? "day" : "week")
     : dailyReached ? "day" : weekReached ? "week" : null;
   const resetIso = dailyReached && weekReached
     ? laterReset(usage?.dailyResetAt, usage?.resetAt)
@@ -959,6 +960,7 @@ export function StudioMasterStep({
                 {dl?.status === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("pobierzBlad")}</p> : null}
                 {exhausted === "day" ? <p role="status" className="text-sm">{t("limitWyczerpanyDoba", { n: usage?.dailyLimit ?? FREE_WATERMARK_PER_DAY })}</p> : null}
                 {exhausted === "week" ? <p role="status" className="text-sm">{t("limitWyczerpany")}</p> : null}
+                {exhausted === "songs" ? <p role="status" className="text-sm">{t("limitUtworowDoba", { n: dl?.songLimit ?? 0 })}</p> : null}
               </section>
             ) : null}
             {approved && server.tier ? <StudioYoutubeVideo projectId={projectId} tier={server.tier} approved /> : null}

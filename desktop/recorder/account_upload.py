@@ -185,6 +185,10 @@ class SiteClient:
     def place(self, project: str, body: dict[str, Any]) -> dict[str, Any]:
         return self._json("POST", f"/api/studio/projects/{project}/record/place", body)
 
+    def desktop_send(self, spend: bool) -> dict[str, Any]:
+        """Daily "Wrzuć do Studia" counter of the Windows recorder. spend=False only reads it."""
+        return self._json("POST" if spend else "GET", "/api/desktop/studio-send")
+
     def plan_usage(self) -> dict[str, Any]:
         return self._json("GET", "/api/account/plan-usage")
 
@@ -236,6 +240,8 @@ class UploadState:
     starts_ms: list[int] = field(default_factory=list)
     # Timeline mode sends every take first and makes the project only after that.
     take_ids: list[str] = field(default_factory=list)
+    # Windows recorder daily send (POST /api/desktop/studio-send), spent once per send.
+    send_id: str = ""
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -258,6 +264,7 @@ class UploadState:
                 track_of=[int(item) for item in raw.get("track_of", [])],
                 starts_ms=[int(item) for item in raw.get("starts_ms", [])],
                 take_ids=[str(item) for item in raw.get("take_ids", [])],
+                send_id=str(raw.get("send_id") or ""),
             )
         except (KeyError, TypeError, ValueError):
             return None
@@ -289,6 +296,7 @@ def upload_vocals(
     on_state: Callable[[UploadState], None] | None = None,
     track_of: list[int] | None = None,
     starts_ms: list[int] | None = None,
+    send_id: str = "",
 ) -> str:
     """One project.
 
@@ -325,7 +333,7 @@ def upload_vocals(
     clip_mode = track_of is not None
     noun = "klip" if clip_mode else "ścieżkę"
     if clip_mode:
-        return _upload_timeline(client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume)
+        return _upload_timeline(client, title, beat_id, wav_paths, blobs, lanes, starts, chain, say, saved, resume, send_id)
     if resume is None:
         say("Tworzę projekt na koncie.")
         document = client.create_project(title, beat_id)
@@ -398,8 +406,9 @@ def _upload_timeline(
     say: Callable[[str], None],
     saved: Callable[[UploadState], None],
     resume: UploadState | None,
+    send_id: str = "",
 ) -> str:
-    """Takes first, project after. A refused take (daily limit) leaves no empty project behind."""
+    """One recorder send: project, tracks, then each take uploaded and placed at once."""
     state = resume or UploadState(
         project_id="",
         beat_id=beat_id,
@@ -408,22 +417,11 @@ def _upload_timeline(
         wav_paths=[str(path) for path in wav_paths],
         track_of=list(lanes),
         starts_ms=list(starts),
+        send_id=send_id,
     )
     track_count = max(lanes) + 1
-    try:
-        for index in range(len(state.take_ids), len(blobs)):
-            wav = blobs[index]
-            say(f"Wysyłam nagranie {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
-            session = client.open_take(state.beat_id, len(wav))
-            client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
-            take_id = str(session["takeId"])
-            client.finalize(take_id)
-            state.take_ids.append(take_id)
-            saved(state)
-    except RuntimeError as error:
-        raise RuntimeError(
-            f"Projekt nie powstał (wysłane nagrania: {len(state.take_ids)} z {len(blobs)}). {error}"
-        ) from None
+    # Project first, then take by take: each take is placed at once, so loose READY takes
+    # never pile up against the plan's active-take cap. The daily limit is the send itself.
     if not state.project_id:
         say("Tworzę projekt na koncie.")
         document = client.create_project(state.title, state.beat_id)
@@ -439,7 +437,15 @@ def _upload_timeline(
             state.track_ids.append(added_id)
             saved(state)
         for index in range(state.placed, len(blobs)):
-            say(f"Układam nagranie {index + 1} z {len(blobs)} na osi czasu.")
+            wav = blobs[index]
+            if len(state.take_ids) <= index:
+                say(f"Wysyłam nagranie {index + 1} z {len(blobs)} ({len(wav) / 1_000_000:.1f} MB).")
+                session = client.open_take(state.beat_id, len(wav))
+                client.put_wav(str(session["signedUrl"]), wav, str(session.get("token") or ""))
+                take_id = str(session["takeId"])
+                client.finalize(take_id)
+                state.take_ids.append(take_id)
+                saved(state)
             placed = client.place(
                 pid,
                 {
@@ -447,7 +453,7 @@ def _upload_timeline(
                     "takeId": state.take_ids[index],
                     "timelineStartMs": starts[index],
                     "sourceOffsetMs": 0,
-                    "durationMs": wav_duration_ms(blobs[index]),
+                    "durationMs": wav_duration_ms(wav),
                     "expectedDocumentVersion": state.version,
                 },
             )
@@ -468,6 +474,8 @@ def _upload_timeline(
 
 def friendly_upload_error(text: str) -> str:
     """Site limit codes in plain Polish. Other text stays as it is."""
+    if "desktop_send_limit" in text:
+        return "Na dziś wysyłki do Studia z programu są wykorzystane. Nagrania zostają w programie; wyślij je jutro."
     if "SESSION_DAY_CAP" in text:
         head = text.split(" POST ", 1)[0].split(" Wrzutka", 1)[0].strip()
         return (
@@ -694,6 +702,13 @@ def _self_test_resume() -> None:
     second.unlink(missing_ok=True)
 
 
+_CLIP_STATES: list[dict[str, Any]] = []
+
+
+def states_first(_fake: object) -> dict[str, Any]:
+    return dict(_CLIP_STATES[0])
+
+
 def _self_test_clips() -> None:
     folder = Path(__import__("os").environ.get("TEMP", ".")) / "bitrymdym-upload-clips"
     folder.mkdir(parents=True, exist_ok=True)
@@ -702,6 +717,7 @@ def _self_test_clips() -> None:
         clip.write_bytes(b"R" * 48)
     fake = _FakeSite()
     last: list[UploadState] = []
+    _CLIP_STATES.clear()
     upload_vocals(
         fake,  # type: ignore[arg-type]
         title="Klipy",
@@ -712,11 +728,12 @@ def _self_test_clips() -> None:
         on_state=last.append,
     )
     kinds = [item[0] for item in fake.calls if isinstance(item, tuple)]
-    if kinds.count("add") != 1 or kinds.count("place") != 3 or kinds.index("create") < max(i for i, k in enumerate(kinds) if k == "fin"):
+    if kinds.count("add") != 1 or kinds.count("place") != 3 or kinds.index("create") > kinds.index("take") or kinds[kinds.index("fin") + 1] != "place":
         raise SystemExit(f"klipy: kroki {kinds}")
     placed = [(item[2], item[4]) for item in fake.calls if isinstance(item, tuple) and item[0] == "place"]
     if placed != [("v0", 0), ("v0", 4000), ("v1", 1500)]:
         raise SystemExit(f"klipy: ułożenie {placed}")
+    _CLIP_STATES.append(last[-1].to_json())
     restored = UploadState.from_json(json.loads(json.dumps(last[-1].to_json())))
     if restored is None or restored.track_of != [0, 0, 1] or restored.starts_ms != [0, 4000, 1500]:
         raise SystemExit("klipy: zapis stanu")
@@ -727,27 +744,11 @@ def _self_test_clips() -> None:
     else:
         raise SystemExit("klipy: zła liczba")
 
-    class Capped(_FakeSite):
-        def open_take(self, beat_id: str, byte_size: int) -> dict[str, Any]:
-            if sum(1 for item in self.calls if isinstance(item, tuple) and item[0] == "take") >= 1:
-                raise RuntimeError('POST /api/takes/session -> 403 {"code":"SESSION_DAY_CAP"}')
-            return super().open_take(beat_id, byte_size)
-
-    capped = Capped()
-    states: list[UploadState] = []
-    try:
-        upload_vocals(capped, title="x", beat_id="b", wav_paths=clips, track_of=[0, 0, 1], starts_ms=[0, 1, 2], on_state=states.append)  # type: ignore[arg-type]
-    except RuntimeError as error:
-        message = friendly_upload_error(str(error))
-        if "Projekt nie powstał" not in message or "Dzienny limit" not in message or "POST" in message:
-            raise SystemExit(f"limit: komunikat {message}") from error
-    else:
-        raise SystemExit("limit: wysyłka miała stanąć")
-    if any(item[0] == "create" for item in capped.calls if isinstance(item, tuple)):
-        raise SystemExit("limit: pusty projekt powstał")
-    waiting = UploadState.from_json(json.loads(json.dumps(states[-1].to_json())))
-    if waiting is None or waiting.project_id or waiting.take_ids != states[-1].take_ids:
-        raise SystemExit("limit: stan przed projektem")
+    if "Na dziś wysyłki" not in friendly_upload_error('POST /api/desktop/studio-send -> 429 {"error":"desktop_send_limit"}'):
+        raise SystemExit("limit wysyłek: komunikat")
+    state = UploadState.from_json({**states_first(fake), "send_id": "s1"})
+    if state is None or state.send_id != "s1":
+        raise SystemExit("limit wysyłek: zapis send_id")
     for clip in clips:
         clip.unlink(missing_ok=True)
 

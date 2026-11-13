@@ -31,7 +31,9 @@ describe("stem import — limits", () => {
 
 describe("stem import — stems never count as recordings", () => {
   it("every recording counter filters is_stem", () => {
-    expect(read("src/lib/plans/plan-usage.ts").match(/eq\("is_stem", false\)/g)?.length).toBe(2);
+    // Active takes filter stems; "Nagrania" today counts finished songs (no stems there) since 2026-11-13.
+    expect(read("src/lib/plans/plan-usage.ts").match(/eq\("is_stem", false\)/g)?.length).toBe(1);
+    expect(read("src/lib/plans/plan-usage.ts")).toContain('from("studio_song_completions")');
     expect(read("src/lib/takes/recording-eligibility-service.ts").match(/eq\("is_stem", false\)/g)?.length).toBe(2);
     expect(read("src/lib/takes/list-own-takes.ts")).toContain('.eq("is_stem", false)');
     expect(read("src/lib/takes/list-replaceable-takes.ts")).toContain('.eq("is_stem", false)');

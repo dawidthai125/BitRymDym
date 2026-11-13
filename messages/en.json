@@ -3042,6 +3042,7 @@
       "licznikReset": "Next download from {date}",
       "limitWyczerpany": "You've used this week's free download.",
       "limitWyczerpanyDoba": "You've used today's {n} free downloads.",
+      "limitUtworowDoba": "You've finished today's songs ({n} on your plan). Download this one tomorrow or with a recording pack. Songs you already downloaded stay unlimited.",
       "przygotowuje": "Preparing the file…",
       "gotowyPlik": "File ready — download starting.",
       "pobierzBlad": "Couldn't prepare the file.",

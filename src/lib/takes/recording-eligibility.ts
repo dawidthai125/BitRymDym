@@ -33,6 +33,9 @@ export type RecordingEligibilityDecision = {
   upgradeHintMessage: string | null;
 };
 
+/** Off since 2026-11-13. The code stays for the anonymous/legacy callers and tests. */
+const DAILY_TAKE_CAP_ACTIVE = false;
+
 const NEXT_TIER: Record<Exclude<SamplePolicy["actor"], "ANONYMOUS">, PremiumTier | null> =
   {
     FREE: "BRONZE",
@@ -130,7 +133,9 @@ export function decideRecordingEligibility(params: {
     };
   }
 
-  if (sessionsToday >= policy.dailySessionLimit) {
+  // Owner 2026-11-13: takes are not limited per day any more. The daily number of
+  // recordings is spent on a finished song (first master download, claim_song_completion).
+  if (DAILY_TAKE_CAP_ACTIVE && sessionsToday >= policy.dailySessionLimit) {
     const soft = polishCapMessage({
       code: "SESSION_DAY_CAP",
       actor: policy.actor,

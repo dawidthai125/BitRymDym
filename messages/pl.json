@@ -3042,6 +3042,7 @@
       "licznikReset": "Kolejne pobranie od {date}",
       "limitWyczerpany": "Wykorzystałeś darmowe pobranie w tym tygodniu.",
       "limitWyczerpanyDoba": "Wykorzystałeś {n} darmowe pobrania na dobę.",
+      "limitUtworowDoba": "Na dziś gotowe utwory są wykorzystane ({n} w Twoim planie). Ten utwór pobierzesz jutro albo z pakietem nagrań. Już pobrane utwory pobierasz bez limitu.",
       "przygotowuje": "Przygotowuję plik…",
       "gotowyPlik": "Plik gotowy — pobieranie się zaczyna.",
       "pobierzBlad": "Nie udało się przygotować pliku.",

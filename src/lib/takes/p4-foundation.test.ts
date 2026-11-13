@@ -31,18 +31,18 @@ describe("P4.1 decideRecordingEligibility", () => {
     expect(d.maxRecordingSeconds).toBe(30);
   });
 
-  it("denies SESSION_DAY_CAP", () => {
+  it("does not deny on takes per day (Owner 2026-11-13: finished songs count instead)", () => {
     const policy = getSamplePolicy({ actor: "FREE", beatDurationSeconds: beat });
     const d = decideRecordingEligibility({
       beatStatus: "PUBLISHED",
       policy,
       premiumTier: "FREE",
-      sessionsToday: policy.dailySessionLimit,
+      sessionsToday: policy.dailySessionLimit + 5,
       activeReadyCount: 0,
     });
-    expect(d.allowed).toBe(false);
-    expect(d.code).toBe("SESSION_DAY_CAP");
-    expect(d.upgradeHintTier).toBe("BRONZE");
+    expect(d.allowed).toBe(true);
+    expect(d.code).toBe("ALLOWED");
+    expect(d.dailySessionsUsed).toBe(policy.dailySessionLimit + 5);
   });
 
   it("denies ACTIVE_READY_CAP", () => {

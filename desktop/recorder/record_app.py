@@ -2384,6 +2384,20 @@ class RecorderWindow:
         if skipped:
             summary += f" Wyciszone (M albo bez S) nie jadą: {skipped}."
         tk.Label(box, text=summary, bg=PANEL, fg=SOFT, font=(FONT_UI, 10), wraplength=440, justify="left").pack(anchor="w", padx=16)
+        sends = tk.StringVar(value="Wysyłki do Studia dziś: sprawdzam…")
+        tk.Label(box, textvariable=sends, bg=PANEL, fg=AMBER, font=(FONT_META, 9)).pack(anchor="w", padx=16, pady=(4, 0))
+
+        def read_sends() -> None:
+            try:
+                info = self._client().desktop_send(False)
+                text = f"Wysyłki do Studia dziś: {info.get('used')} z {info.get('limit')} (plan {display_tier(self.tier)})."
+                if not info.get("allowed"):
+                    text += " Limit na dziś wykorzystany."
+            except Exception:
+                text = "Wysyłki do Studia dziś: nie udało się sprawdzić."
+            self.root.after(0, lambda: sends.set(text) if box.winfo_exists() else None)
+
+        threading.Thread(target=read_sends, daemon=True).start()
         tk.Label(box, text="TYTUŁ", bg=PANEL, fg=MUTE, font=(FONT_META, 9)).pack(anchor="w", padx=16, pady=(10, 0))
         tk.Entry(
             box, textvariable=self.title_var, bg=RACK, fg=INK, insertbackground=AMBER, relief="flat", font=(FONT_UI, 11), width=44,
@@ -2490,13 +2504,22 @@ class RecorderWindow:
                 clear_pending()
             if resume is not None:
                 title, beat_id = resume.title, resume.beat_id
+            client = self._client()
+            send_id = resume.send_id if resume is not None and resume.send_id else ""
+            if not send_id:
+                # One daily "Wrzuć do Studia" of the Windows recorder, spent before anything is sent.
+                self._upload_say("Sprawdzam dzienny limit wysyłek do Studia.")
+                claimed = client.desktop_send(True)
+                send_id = str(claimed.get("sendId") or "")
+                self._upload_say(f"Wysyłka {claimed.get('used')} z {claimed.get('limit')} na dziś.")
             project = upload_vocals(
-                self._client(),
+                client,
                 title=title,
                 beat_id=beat_id,
                 wav_paths=paths,
                 track_of=slots,
                 starts_ms=starts,
+                send_id=send_id,
                 progress=self._upload_say,
                 resume=resume,
                 on_state=self._remember_state,

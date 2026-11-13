@@ -10,6 +10,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { AuthError } from "@/lib/auth/session";
+import { PLAN_POLICY } from "@/config/plan-policy";
 import { decideDeliver, DELIVER_WEEKLY_LIMIT, FREE_WATERMARK_PER_DAY, FREE_WATERMARK_WEEK_BACKSTOP, freeWatermarkDownloadEnabled, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
 import { masterQuotaWithCredits } from "@/lib/studio/quota-credits";
@@ -266,6 +267,15 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   // Free watermark: 3 per rolling 24 h. The RPC keeps the 7-day backstop (21).
   const wm = d.watermark ? await freeWatermarkUsage(admin, p.ownerId) : null;
   if (wm && (wm.dailyUsed ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit", usage: wm };
+  if (kind === "master") {
+    // Owner 2026-11-13: the first master download of a project is one finished song (daily plan number).
+    const { data: s, error: se } = await admin.rpc("claim_song_completion", {
+      p_owner_id: p.ownerId, p_project_id: p.projectId, p_max_per_utc_day: PLAN_POLICY[p.tier].recording.sessionsPerDay,
+    });
+    check(se);
+    const song = (Array.isArray(s) ? s[0] : s) as { allowed: boolean; used: number; day_limit: number } | null;
+    if (!song?.allowed) return { ok: false as const, error: "song_day_limit", songs: { used: song?.used ?? 0, limit: song?.day_limit ?? 0 } };
+  }
   const { data: q, error: qe } = await admin.rpc("consume_studio_download", {
     p_owner_id: p.ownerId, p_project_id: p.projectId, p_kind: kind, p_format: format, p_tier: p.tier, p_week_limit: d.weeklyLimit,
   });
