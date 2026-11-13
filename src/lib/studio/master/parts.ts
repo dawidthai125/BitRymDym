@@ -36,7 +36,22 @@ export function slugTitle(title: string | null | undefined): string {
 const FMT_TAG: Record<string, string> = { MP3_128: "128", MP3_192: "192", MP3_320: "320", WAV_24: "wav24", WAV_FLOAT: "wav", ZIP: "", MP4: "1080p" };
 
 /** moj-numer_master_320.mp3 / moj-numer_projekt.zip / moj-numer_youtube_1080p.mp4 */
-export function downloadFilename(title: string | null | undefined, kind: string, format: string, ext: string): string {
+/** Session-export tag: `97bpm` and `Amin` (sharp → "sharp", major → "maj", minor → "min"); empty when unknown. */
+export function sessionMetaTag(meta: { bpm?: number | null; key?: string | null; scale?: string | null } | undefined): string {
+  if (!meta) return "";
+  const parts: string[] = [];
+  const bpm = Number(meta.bpm);
+  if (Number.isFinite(bpm) && bpm >= 30 && bpm <= 300) parts.push(`${Math.round(bpm)}bpm`);
+  const key = (meta.key ?? "").trim().replace(/#/g, "sharp").replace(/[^A-Za-z0-9]/g, "");
+  if (key) {
+    const scale = /^min/i.test(meta.scale ?? "") ? "min" : /^maj/i.test(meta.scale ?? "") ? "maj" : "";
+    parts.push(`${key}${scale}`);
+  }
+  return parts.join("_");
+}
+
+export function downloadFilename(title: string | null | undefined, kind: string, format: string, ext: string, meta?: { bpm?: number | null; key?: string | null; scale?: string | null }): string {
   const tag = FMT_TAG[format] ?? format.toLowerCase();
-  return `${slugTitle(title)}_${kind}${tag ? `_${tag}` : ""}.${ext}`;
+  const session = kind === "projekt" ? sessionMetaTag(meta) : "";
+  return `${slugTitle(title)}_${kind}${tag ? `_${tag}` : ""}${session ? `_${session}` : ""}.${ext}`;
 }

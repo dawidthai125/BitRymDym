@@ -29,7 +29,8 @@ describe("Studio deliver policy", () => {
     expect(d("GOLD", "master", "WAV_24").allowed).toBe(true);
   });
   it("project zip: visible for all, enabled only for Gold", () => {
-    expect(d("SILVER", "project", "ZIP")).toEqual({ allowed: false, reason: "tier_project" });
+    expect(d("BRONZE", "project", "ZIP")).toEqual({ allowed: false, reason: "tier_project" });
+    expect(d("SILVER", "project", "ZIP").allowed).toBe(true);
     expect(d("GOLD", "project", "ZIP").allowed).toBe(true);
     expect(d("GOLD", "project", "WAV_24")).toEqual({ allowed: false, reason: "bad_request" });
     expect(d("GOLD", "master", "ZIP")).toEqual({ allowed: false, reason: "bad_request" });

@@ -273,7 +273,7 @@ export const PLAN_POLICY: Record<PremiumTier, PlanPolicy> = withDerivedSharing({
     mastering: { mastersPerMonth: 10, referenceMastering: "addon" },
     downloads: {
       qualities: ["MP3_128", "MP3_192", "MP3_256"],
-      projectZip: false,
+      projectZip: true,
       youtubeVideosPerWeek: 0,
       ownTakeRaw: false,
       beatsPerDay: 25,

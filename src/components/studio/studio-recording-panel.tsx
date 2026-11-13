@@ -6,6 +6,7 @@ import { useLibText } from "@/i18n/use-lib-text";
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 
 import { BrdInputMonitor } from "@/components/brand/brd-input-monitor";
@@ -2397,7 +2398,10 @@ export function StudioRecordingPanel({
       ) : null}
       {takeOpen ? (
         <p className="text-xs leading-snug text-[var(--brd-mute)]" data-testid="studio-record-start">
-          {tr("zacznijTutaj")}
+          {tr("zacznijTutaj")}{" "}
+          <Link href="/jak-nagrac" className="underline" data-testid="studio-record-how-it-works">
+            {tr("jakToDziala")}
+          </Link>
         </p>
       ) : null}
 

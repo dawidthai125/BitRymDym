@@ -264,7 +264,7 @@ export async function getStudioJob(p: { ownerId: string; projectId: string; jobI
   if (!UUID.test(p.jobId)) throw new AuthError("NOT_FOUND", "not_found");
   const admin = createSupabaseAdminClient();
   await assertOwner(admin, p.ownerId, p.projectId);
-  const { data: proj } = await admin.from("studio_projects").select("title").eq("id", p.projectId).maybeSingle();
+  const { data: proj } = await admin.from("studio_projects").select("title, tempo_bpm, beat_id").eq("id", p.projectId).maybeSingle();
   const { data, error } = await admin.from("studio_master_jobs").select("*").eq("id", p.jobId).eq("owner_id", p.ownerId).eq("project_id", p.projectId).maybeSingle();
   check(error);
   if (!data) throw new AuthError("NOT_FOUND", "not_found");
@@ -277,7 +277,15 @@ export async function getStudioJob(p: { ownerId: string; projectId: string; jobI
   if (row.status === "succeeded" && typeof row.result_object_key === "string") {
     const fmt = String(row.output_format);
     const ext = /\.(\w+)$/.exec(row.result_object_key)?.[1] ?? outputExt(fmt as StudioMasterOutputFormat);
-    filename = downloadFilename((proj as { title?: string } | null)?.title, deliverLabel(row), fmt, ext);
+    const pj = proj as { title?: string; tempo_bpm?: number | string | null; beat_id?: string | null } | null;
+    let meta: { bpm?: number | null; key?: string | null; scale?: string | null } | undefined;
+    if (row.kind === "project_zip") {
+      // Session export: BPM from the project, key from its beat (both optional, name falls back without them).
+      const { data: beat } = pj?.beat_id ? await admin.from("beats").select("key, scale").eq("id", pj.beat_id).maybeSingle() : { data: null };
+      const b = beat as { key?: string | null; scale?: string | null } | null;
+      meta = { bpm: pj?.tempo_bpm == null ? null : Number(pj.tempo_bpm), key: b?.key ?? null, scale: b?.scale ?? null };
+    }
+    filename = downloadFilename(pj?.title, deliverLabel(row), fmt, ext, meta);
     let keys = await objectParts(admin, row.result_object_key);
     let playbackOnly = false;
     if (row.kind === "master") {

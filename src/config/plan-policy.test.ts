@@ -138,7 +138,7 @@ describe("one export policy (Premium downloads = Studio deliverables)", () => {
     expect(minimumTierForDeliverFormat("MP3_192")).toBe("SILVER");
     expect(minimumTierForDeliverFormat("MP3_320")).toBe("GOLD");
     expect(minimumTierForDeliverFormat("WAV_24")).toBe("GOLD");
-    expect(minimumTierForDeliverFormat("ZIP")).toBe("GOLD");
+    expect(minimumTierForDeliverFormat("ZIP")).toBe("SILVER");
     expect(minimumTierForQuality("MP3_256")).toBe("SILVER");
   });
   it("Studio deliver policy has no hard-coded tier ladder of its own", () => {

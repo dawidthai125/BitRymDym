@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<import("next").Metadata> {
 }
 
 type BeatsPageProps = {
-  searchParams?: Promise<{ q?: string; zrodlo?: string }>;
+  searchParams?: Promise<{ q?: string; zrodlo?: string; katalog?: string }>;
 };
 
 export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps) {
@@ -29,6 +29,7 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
   const catalog = await getTranslations("community.catalog");
   const params = searchParams ? await searchParams : {};
   const source = params.zrodlo === "user" ? "USER" : "PLATFORM";
+  const paid = params.katalog === "platny";
   const raw = (await listPublishedBeats())
     .filter((beat) => beat.ownershipType === source)
     .map(toPublicCatalogItem);
@@ -61,7 +62,30 @@ export default async function BeatsCatalogPage({ searchParams }: BeatsPageProps)
             </p>
           </header>
 
-          {beats.length === 0 ? (
+          <nav aria-label={t("katalogiAria")} className="mb-5 flex flex-wrap gap-2" data-testid="beats-catalog-tabs">
+            <Link
+              href="/beats"
+              aria-current={paid ? undefined : "page"}
+              className={`border-2 border-[var(--brd-ink)] px-4 py-2 text-sm font-semibold ${paid ? "" : "bg-[var(--brd-ink)] text-[var(--brd-paper)]"}`}
+            >
+              {t("darmowyKatalog")}
+            </Link>
+            <Link
+              href="/beats?katalog=platny"
+              aria-current={paid ? "page" : undefined}
+              className={`border-2 border-[var(--brd-ink)] px-4 py-2 text-sm font-semibold ${paid ? "bg-[var(--brd-ink)] text-[var(--brd-paper)]" : ""}`}
+            >
+              {t("platnyKatalog")}
+            </Link>
+          </nav>
+
+          {paid ? (
+            <div className="border border-[var(--brd-line)] px-5 py-12 text-center" data-testid="beats-paid-catalog">
+              <p className="brd-display text-xl font-semibold">{t("platnyTytul")}</p>
+              <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--brd-mute)]">{t("platnyOpis")}</p>
+              <p className="mt-3 text-sm font-semibold">{t("platnyWkrotce")}</p>
+            </div>
+          ) : beats.length === 0 ? (
             <div className="border border-[var(--brd-line)] px-5 py-12 text-center">
               <p className="brd-display text-xl font-semibold">{t("cicho")}</p>
               <p className="mt-2 text-sm text-[var(--brd-mute)]">
