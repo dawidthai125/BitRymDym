@@ -2,7 +2,7 @@
 ; ffmpeg is the GPL full shared build from GyanD/codexffmpeg (see the workflow). Its LICENSE is copied beside the exe
 ; as FFMPEG-LICENSE.txt. The program prefers these copies over anything on PATH.
 
-#define AppVersion "2026.11.13.6"
+#define AppVersion "2026.11.13.7"
 
 [Setup]
 AppId={{7C2E9A41-6B18-4E5D-9F03-1A8D4C6E2B70}
@@ -50,4 +50,23 @@ Filename: "{app}\BitRymDym.exe"; Flags: nowait runasoriginaluser; Check: IsUpdat
 function IsUpdate: Boolean;
 begin
   Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;
+
+{ The app starts setup and then exits. Do not delete its files until that process is gone. }
+function InitializeSetup(): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  for I := 1 to 40 do
+  begin
+    if not CheckForMutexes('Local\BitRymDym.Nagrywarka') then
+    begin
+      Sleep(1000);
+      Exit;
+    end;
+    Sleep(500);
+  end;
+  SuppressibleMsgBox('BitRymDym nadal jest włączony. Zamknij BitRymDym.exe w Menedżerze zadań i uruchom instalator jeszcze raz.', mbError, MB_OK, IDOK);
+  Result := False;
 end;

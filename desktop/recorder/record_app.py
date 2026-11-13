@@ -3119,13 +3119,18 @@ class RecorderWindow:
             self.update_var.set("Aktualizacja jest pobrana. Skończ nagranie albo wysyłkę i naciśnij Zaktualizuj.")
             return
         try:
-            updater.start_installer(path)
+            updater.schedule_installer(path)
         except OSError:
             self._update_failed("Nie udało się uruchomić instalatora.")
             return
         self._update_busy = True
         self.update_var.set("Instaluję nową wersję. Program zamknie się i uruchomi sam.")
-        self.root.after(700, self._on_close)
+        self.root.after(100, self._exit_for_update)
+
+    def _exit_for_update(self) -> None:
+        """Leave for real, so the installer is not deleting files the old process still holds."""
+        self._on_close()
+        os._exit(0)
 
     def toggle_mic_test(self) -> None:
         """Level check before recording: the mic is opened on its own, nothing is kept."""

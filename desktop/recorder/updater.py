@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-APP_VERSION = "2026.11.13.6"
+APP_VERSION = "2026.11.13.7"
 
 R2_BASE = "https://pub-8c6908a0590848aeb53ab34c2317d857.r2.dev/bitrymdym/"
 MANIFEST_URL = R2_BASE + "latest.json"
@@ -243,6 +243,37 @@ def start_installer(path: Path) -> subprocess.Popen[bytes]:
     )
 
 
+def installer_after_exit_command(path: Path) -> str:
+    """PowerShell: wait until BitRymDym.exe is gone, then run the installer.
+
+    Deleting the program folder while that exe is still open makes Windows drop the new
+    copy when the old process finally quits. The update bar then comes back, and another
+    try can leave no program at all.
+    """
+    quoted = "'" + str(path).replace("'", "''") + "'"
+    return (
+        "while (Get-Process -Name 'BitRymDym' -ErrorAction SilentlyContinue) "
+        "{ Start-Sleep -Milliseconds 300 }; "
+        f"Start-Process -FilePath {quoted} "
+        "-ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/UPDATE=1'"
+    )
+
+
+def schedule_installer(path: Path) -> subprocess.Popen[bytes]:
+    """On Windows, install only after this process has exited. Elsewhere, start it now."""
+    if os.name != "nt":
+        return start_installer(path)
+    flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    return subprocess.Popen(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", installer_after_exit_command(path)],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=flags,
+        close_fds=True,
+    )
+
+
 def sign_manifest(
     version: str, sha256: str, size: int, url: str, notes: str, sign: Callable[[bytes], bytes]
 ) -> dict[str, object]:
@@ -280,6 +311,9 @@ def self_test() -> None:
         raise SystemExit(f"zła wersja przyjęta {bad!r}")
     if installer_argv(Path("a.exe"))[-1] != "/UPDATE=1" or "/SILENT" not in installer_argv(Path("a.exe")):
         raise SystemExit("argumenty instalatora")
+    waited = installer_after_exit_command(Path(r"C:\Temp\BitRymDym-Setup-2026.11.13.7.exe"))
+    if "Get-Process -Name 'BitRymDym'" not in waited or "/UPDATE=1" not in waited or "BitRymDym-Setup-2026.11.13.7.exe" not in waited:
+        raise SystemExit("instalator ma ruszyć dopiero po zejściu procesu")
     print("updater self-test ok")
 
 
