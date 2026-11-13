@@ -50,8 +50,8 @@ export function minimumTierForDeliverFormat(format: DeliverFormat): PremiumTier 
 }
 
 /**
- * null = unlimited (still logged in studio_download_usage). No plan has a
- * weekly file cap any more (Free cannot download at all).
+ * null = unlimited (still logged in studio_download_usage). Paid plans have no weekly file cap.
+ * Free watermark downloads use FREE_WATERMARK_WEEK_BACKSTOP; the 24 h cap is separate.
  */
 export const DELIVER_WEEKLY_LIMIT: Record<PremiumTier, number | null> = { FREE: null, BRONZE: null, SILVER: null, GOLD: null };
 

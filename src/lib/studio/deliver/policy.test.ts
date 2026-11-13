@@ -73,5 +73,16 @@ describe("Free watermark download (Owner 2026-11-12)", () => {
     const server = readFileSync("src/lib/studio/master/server.ts", "utf8");
     expect(server).toContain("settings: { watermark: 1 }");
     expect(server).toContain('error: "daily_limit"');
+    expect(server).toContain("dailyUsed");
+    const ui = readFileSync("src/components/studio/studio-master-step.tsx", "utf8");
+    expect(ui).toContain('error === "daily_limit"');
+    expect(ui).toContain('t("limitWyczerpanyDoba"');
+    expect(ui).toContain('t("freeZeZnakiem"');
+    expect(ui).toContain('t("freeBezPobierania")');
+    expect(ui).toContain('t("licznikDoba"');
+    expect(ui).toContain('t("licznikFree"');
+    const premium = readFileSync("src/app/premium/page.tsx", "utf8");
+    expect(premium).toContain('tr("przypis.freeZnak"');
+    expect(premium).toContain('tr("przypis.free")');
   });
 });

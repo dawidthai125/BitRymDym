@@ -10,7 +10,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { AuthError } from "@/lib/auth/session";
-import { decideDeliver, DELIVER_WEEKLY_LIMIT, FREE_WATERMARK_PER_DAY, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { decideDeliver, DELIVER_WEEKLY_LIMIT, FREE_WATERMARK_PER_DAY, FREE_WATERMARK_WEEK_BACKSTOP, freeWatermarkDownloadEnabled, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { studioQuotaRemaining } from "@/lib/studio/quota-credits-read";
 import { masterQuotaWithCredits } from "@/lib/studio/quota-credits";
 import { monthlyMasterLimit, warsawMonthWindow, type MasterQuota } from "@/lib/studio/studio-plan-limits";
@@ -92,6 +92,35 @@ const view = (r: Record<string, unknown>): MasterJobView => ({
     ? { intensity: clampIntensity(r.reference_intensity, 100) } : null,
 });
 
+type DownloadUsage = {
+  used: number;
+  weekLimit: number | null;
+  resetAt: string | null;
+  /** Set only for the Free watermark cap (3 / 24 h, 21 / 7 d). */
+  dailyUsed?: number;
+  dailyLimit?: number;
+  dailyResetAt?: string | null;
+};
+
+/** Rolling 24 h and 7-day counts. The oldest row in each window sets when one slot frees. */
+async function freeWatermarkUsage(admin: Admin, ownerId: string): Promise<DownloadUsage> {
+  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const { data: u, error: ue } = await admin.from("studio_download_usage").select("created_at").eq("owner_id", ownerId).gte("created_at", since).order("created_at");
+  check(ue);
+  const rows = (u ?? []) as { created_at: string }[];
+  const dayCut = Date.now() - 864e5;
+  const day = rows.filter((r) => new Date(String(r.created_at)).getTime() >= dayCut);
+  const plus = (iso: string, ms: number) => new Date(new Date(iso).getTime() + ms).toISOString();
+  return {
+    used: rows.length,
+    weekLimit: FREE_WATERMARK_WEEK_BACKSTOP,
+    resetAt: rows[0] ? plus(String(rows[0].created_at), 7 * 864e5) : null,
+    dailyUsed: day.length,
+    dailyLimit: FREE_WATERMARK_PER_DAY,
+    dailyResetAt: day[0] ? plus(String(day[0].created_at), 864e5) : null,
+  };
+}
+
 /** Latest master job (+ approved one), the download counter and the monthly master quota. */
 export async function getStudioMasterState(p: { ownerId: string; projectId: string; tier: PremiumTier }) {
   const admin = createSupabaseAdminClient();
@@ -105,18 +134,24 @@ export async function getStudioMasterState(p: { ownerId: string; projectId: stri
   // Only an approval that still matches the current mix counts (same rule as delivery).
   const valid = await approvedMaster(admin, p.ownerId, p.projectId);
   const approved = valid ? rows.find((r) => r.id === valid.id) ?? null : null;
-  const limit = DELIVER_WEEKLY_LIMIT[p.tier];
-  let used = 0;
-  let resetAt: string | null = null;
-  if (limit !== null) {
-    const since = new Date(Date.now() - 7 * 864e5).toISOString();
-    const { data: u, error: ue } = await admin.from("studio_download_usage").select("created_at").eq("owner_id", p.ownerId).gte("created_at", since).order("created_at");
-    check(ue);
-    used = u?.length ?? 0;
-    if (u?.[0]) resetAt = new Date(new Date(String(u[0].created_at)).getTime() + 7 * 864e5).toISOString();
+  let usage: DownloadUsage;
+  if (p.tier === "FREE" && freeWatermarkDownloadEnabled()) {
+    usage = await freeWatermarkUsage(admin, p.ownerId);
+  } else {
+    const limit = DELIVER_WEEKLY_LIMIT[p.tier];
+    let used = 0;
+    let resetAt: string | null = null;
+    if (limit !== null) {
+      const since = new Date(Date.now() - 7 * 864e5).toISOString();
+      const { data: u, error: ue } = await admin.from("studio_download_usage").select("created_at").eq("owner_id", p.ownerId).gte("created_at", since).order("created_at");
+      check(ue);
+      used = u?.length ?? 0;
+      if (u?.[0]) resetAt = new Date(new Date(String(u[0].created_at)).getTime() + 7 * 864e5).toISOString();
+    }
+    usage = { used, weekLimit: limit, resetAt };
   }
   const masters = await masterMonthUsage(admin, p.ownerId, p.tier);
-  return { available: true as const, latest, approved: approved ? view(approved) : null, usage: { used, weekLimit: limit, resetAt }, masters };
+  return { available: true as const, latest, approved: approved ? view(approved) : null, usage, masters };
 }
 
 /** Phase 1 of a master: job id + upload URL for the approved mix (browser-rendered WAV). */
@@ -228,19 +263,18 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
   const format = p.format as DeliverFormat;
   if (kind === "master" && !approved?.result_object_key) return { ok: false as const, error: "not_approved" };
   if (kind !== "master" && versionMismatch(p.documentVersion, documentVersion)) return { ok: false as const, error: "doc_changed" };
-  if (d.allowed && d.watermark) {
-    // Free watermark downloads: 3 per rolling 24 h (counted from the usage log; the RPC keeps a 7-day backstop).
-    const since = new Date(Date.now() - 864e5).toISOString();
-    const { count, error: ce } = await admin.from("studio_download_usage").select("id", { count: "exact", head: true }).eq("owner_id", p.ownerId).gte("created_at", since);
-    check(ce);
-    if ((count ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit" };
-  }
+  // Free watermark: 3 per rolling 24 h. The RPC keeps the 7-day backstop (21).
+  const wm = d.watermark ? await freeWatermarkUsage(admin, p.ownerId) : null;
+  if (wm && (wm.dailyUsed ?? 0) >= FREE_WATERMARK_PER_DAY) return { ok: false as const, error: "daily_limit", usage: wm };
   const { data: q, error: qe } = await admin.rpc("consume_studio_download", {
     p_owner_id: p.ownerId, p_project_id: p.projectId, p_kind: kind, p_format: format, p_tier: p.tier, p_week_limit: d.weeklyLimit,
   });
   check(qe);
   const quota = (Array.isArray(q) ? q[0] : q) as { allowed: boolean; used: number; week_limit: number | null; reset_at: string | null };
-  if (!quota?.allowed) return { ok: false as const, error: "weekly_limit", usage: quota };
+  const withDay = (bump: boolean) => (wm && quota
+    ? { ...quota, daily_used: (wm.dailyUsed ?? 0) + (bump ? 1 : 0), daily_limit: wm.dailyLimit ?? FREE_WATERMARK_PER_DAY, daily_reset_at: wm.dailyResetAt ?? null }
+    : quota);
+  if (!quota?.allowed) return { ok: false as const, error: "weekly_limit", usage: withDay(false) };
   const { error } = await admin.from("studio_master_jobs").insert({
     id: p.jobId, project_id: p.projectId, owner_id: p.ownerId, kind: JOB_FOR[kind], source_document_version: documentVersion,
     source_artifact_id: kind === "master" ? approved!.id : null, output_format: format as StudioMasterOutputFormat,
@@ -248,7 +282,7 @@ export async function commitStudioDeliver(p: { ownerId: string; projectId: strin
     ...(d.watermark ? { settings: { watermark: 1 } } : {}),
   });
   check(error);
-  return { ok: true as const, jobId: p.jobId, usage: quota };
+  return { ok: true as const, jobId: p.jobId, usage: withDay(true) };
 }
 
 function deliverLabel(row: Record<string, unknown>): string {

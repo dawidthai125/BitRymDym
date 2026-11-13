@@ -42,4 +42,11 @@ describe("homepage plans and how it works", () => {
       expect(typeof en.home.page[key]).toBe("string");
     }
   });
+
+  it("Free download cell follows the watermark flag", () => {
+    expect(page).toContain('tier === "FREE" && freeWatermarkDownloadEnabled()');
+    expect(page).toContain("MP3 ze znakiem, {n} na dobę");
+    expect(String(pl.home.page.planPobieranieZnak)).toBe("MP3 ze znakiem, {n} na dobę");
+    expect(String(en.home.page.planPobieranieZnak)).toBe("MP3 with watermark, {n} per day");
+  });
 });

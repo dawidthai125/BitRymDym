@@ -19,7 +19,7 @@ import { planMasterClarity } from "@/lib/studio/bitek/chat/master-clarity";
 import type { BitekMasterStyle, BitekMasterTarget } from "@/lib/studio/bitek/chat/types";
 import { watchMasterManual, type ManualIssue } from "@/lib/studio/bitek/manual-watch";
 import { LockedAction } from "@/components/plans/locked-action";
-import { minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
+import { FREE_WATERMARK_PER_DAY, minimumTierForDeliverFormat, type DeliverFormat, type DeliverKind } from "@/lib/studio/deliver/policy";
 import { jobProgressOf, type JobProgress } from "@/lib/studio/master/progress";
 import { joinParts, MASTER_RENDER_SAMPLE_RATE, renderApprovedMix, renderMasterPreview, stereoToAudioBuffer } from "@/lib/studio/master/client";
 import type { MasterMetrics, Stereo } from "@/lib/studio/master/dsp";
@@ -32,14 +32,47 @@ import type { MasterSessionSnap } from "@/lib/studio/studio-undo-history";
 
 type Tier = "FREE" | "BRONZE" | "SILVER" | "GOLD";
 type Option = { kind: DeliverKind; format: DeliverFormat; enabled: boolean; watermark?: boolean };
+type Usage = {
+  used: number;
+  weekLimit: number | null;
+  resetAt: string | null;
+  dailyUsed?: number;
+  dailyLimit?: number;
+  dailyResetAt?: string | null;
+};
 type ServerState = {
   available: boolean;
   tier: Tier | null;
   options: Option[];
-  usage: { used: number; weekLimit: number | null; resetAt: string | null } | null;
+  usage: Usage | null;
   /** Plan quota: masters this calendar month (server-enforced). */
   masters: { used: number; monthLimit: number; resetAt: string } | null;
 };
+/** GET sends camelCase; the deliver commit sends the RPC's snake_case plus daily_*. */
+function readUsage(raw: unknown): Usage | null {
+  if (!raw || typeof raw !== "object") return null;
+  const u = raw as Record<string, unknown>;
+  const week = u.weekLimit ?? u.week_limit;
+  const reset = u.resetAt ?? u.reset_at;
+  const dailyLimit = u.dailyLimit ?? u.daily_limit;
+  const dailyUsed = u.dailyUsed ?? u.daily_used;
+  const dailyReset = u.dailyResetAt ?? u.daily_reset_at;
+  return {
+    used: Number(u.used ?? 0),
+    weekLimit: week == null ? null : Number(week),
+    resetAt: reset == null ? null : String(reset),
+    ...(dailyLimit == null ? {} : {
+      dailyUsed: Number(dailyUsed ?? 0),
+      dailyLimit: Number(dailyLimit),
+      dailyResetAt: dailyReset == null ? null : String(dailyReset),
+    }),
+  };
+}
+function laterReset(a?: string | null, b?: string | null): string | null {
+  if (!a) return b ?? null;
+  if (!b) return a;
+  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+}
 type ServerMaster =
   | { phase: "idle" }
   | { phase: "working"; jobId: string | null }
@@ -105,7 +138,7 @@ export function StudioMasterStep({
   const [sm, setSm] = useState<ServerMaster>({ phase: "idle" });
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
-  const [dl, setDl] = useState<{ key: string; status: "working" | "done" | "error" | "limit" } | null>(null);
+  const [dl, setDl] = useState<{ key: string; status: "working" | "done" | "error" | "limit"; reason?: "daily_limit" | "weekly_limit" } | null>(null);
   /** Live E3 progress of the running master / download job (stage + overall %). */
   const [prog, setProg] = useState<{ master: JobProgress | null; dl: JobProgress | null }>({ master: null, dl: null });
   const [ab, setAb] = useState<"mix" | "master">("master");
@@ -143,7 +176,7 @@ export function StudioMasterStep({
           setServerLoaded(true);
           return;
         }
-        setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: j.usage ?? null, masters: j.masters ?? null });
+        setServer({ available: j.available !== false, tier: j.tier ?? null, options: Array.isArray(j.options) ? j.options : [], usage: readUsage(j.usage), masters: j.masters ?? null });
         if (j.available === false) {
           setSm({ phase: "unavailable" });
           setServerLoaded(true);
@@ -512,8 +545,11 @@ export function StudioMasterStep({
       if (!prep.json.ok) return setDl({ key, status: prep.status === 429 ? "limit" : "error" });
       const jobId = String(prep.json.jobId);
       const commit = await post({ action: "commit", jobId, documentVersion: doc.project.documentVersion });
-      if (commit.json.usage) setServer((s) => ({ ...s, usage: { used: commit.json.usage.used, weekLimit: commit.json.usage.week_limit ?? null, resetAt: commit.json.usage.reset_at ?? null } }));
-      if (!commit.json.ok) return setDl({ key, status: commit.status === 429 ? "limit" : "error" });
+      if (commit.json.usage) setServer((s) => ({ ...s, usage: readUsage(commit.json.usage) }));
+      if (!commit.json.ok) {
+        const reason = commit.json.error === "daily_limit" || commit.json.error === "weekly_limit" ? commit.json.error : undefined;
+        return setDl({ key, status: commit.status === 429 ? "limit" : "error", reason });
+      }
       requestPlanUsageRefresh();
       const done = await pollJob(jobId, "dl");
       if (done.status !== "succeeded" || !done.url) return setDl({ key, status: "error" });
@@ -626,7 +662,17 @@ export function StudioMasterStep({
   const fmtN = (n: number, d = 1) => (Number.isFinite(n) ? n.toLocaleString(locale === "en" ? "en-US" : "pl-PL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "−∞");
   const signed = (n: number) => (n > 0 ? `+${fmtN(n, n % 1 ? 1 : 0)}` : n < 0 ? `−${fmtN(-n, n % 1 ? 1 : 0)}` : "0");
   const plan = server.tier ? t(`plany.${server.tier}`) : null;
-  const limitReached = server.usage?.weekLimit != null && server.usage.used >= server.usage.weekLimit;
+  const usage = server.usage;
+  const freeWatermark = server.options.some((o) => o.watermark);
+  const dailyReached = usage?.dailyLimit != null && (usage.dailyUsed ?? 0) >= usage.dailyLimit;
+  const weekReached = usage?.weekLimit != null && usage.used >= usage.weekLimit;
+  const limitReached = dailyReached || weekReached;
+  const exhausted: "day" | "week" | null = dl?.status === "limit"
+    ? (dl.reason === "daily_limit" ? "day" : "week")
+    : dailyReached ? "day" : weekReached ? "week" : null;
+  const resetIso = dailyReached && weekReached
+    ? laterReset(usage?.dailyResetAt, usage?.resetAt)
+    : dailyReached ? (usage?.dailyResetAt ?? null) : weekReached ? (usage?.resetAt ?? null) : null;
   const mastersLeft = server.masters ? Math.max(0, server.masters.monthLimit - server.masters.used) : null;
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale === "en" ? "en-GB" : "pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" });
 
@@ -851,14 +897,20 @@ export function StudioMasterStep({
                 {!server.tier ? <p className="text-sm">{t("gosc")}</p> : null}
                 {server.tier === "FREE" ? (
                   <p data-testid="studio-master-dl-free" role="status" className="flex flex-col gap-1 border-l-4 border-l-[var(--brd-amber)] bg-[var(--brd-paper)] px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                    <span>{t("freeBezPobierania")}</span>
+                    <span>{freeWatermark ? t("freeZeZnakiem", { n: FREE_WATERMARK_PER_DAY }) : t("freeBezPobierania")}</span>
                     <a href="/premium" className="font-semibold underline underline-offset-4">{t("zobaczPlany")}</a>
                   </p>
                 ) : null}
-                {server.tier && server.usage?.weekLimit != null ? (
+                {usage?.dailyLimit != null ? (
                   <p data-testid="studio-master-dl-counter" className={`text-sm ${limitReached ? "text-[var(--brd-rec)]" : ""}`}>
-                    {t("licznikFree", { used: server.usage.used, limit: server.usage.weekLimit })}
-                    {limitReached && server.usage.resetAt ? ` · ${t("licznikReset", { date: new Date(server.usage.resetAt).toLocaleDateString(locale === "en" ? "en-GB" : "pl-PL", { timeZone: "Europe/Warsaw" }) })}` : ""}
+                    {t("licznikDoba", { used: usage.dailyUsed ?? 0, limit: usage.dailyLimit })}
+                    {usage.weekLimit != null ? ` · ${t("licznikFree", { used: usage.used, limit: usage.weekLimit })}` : ""}
+                    {resetIso ? ` · ${t("licznikReset", { date: fmtDate(resetIso) })}` : ""}
+                  </p>
+                ) : server.tier && usage?.weekLimit != null ? (
+                  <p data-testid="studio-master-dl-counter" className={`text-sm ${limitReached ? "text-[var(--brd-rec)]" : ""}`}>
+                    {t("licznikFree", { used: usage.used, limit: usage.weekLimit })}
+                    {resetIso ? ` · ${t("licznikReset", { date: fmtDate(resetIso) })}` : ""}
                   </p>
                 ) : null}
                 {server.tier ? (
@@ -905,7 +957,8 @@ export function StudioMasterStep({
                 {dl?.status === "working" && prog.dl ? <JobProgressBar value={prog.dl} label={t(`etap.${prog.dl.stage}`)} ariaLabel={t("postepAria")} testId="studio-master-dl-progress" /> : null}
                 {dl?.status === "done" ? <p role="status" className="text-sm">{t("gotowyPlik")}</p> : null}
                 {dl?.status === "error" ? <p role="alert" className="text-sm text-[var(--brd-rec)]">{t("pobierzBlad")}</p> : null}
-                {dl?.status === "limit" || (limitReached && server.tier) ? <p role="status" className="text-sm">{t("limitWyczerpany")}</p> : null}
+                {exhausted === "day" ? <p role="status" className="text-sm">{t("limitWyczerpanyDoba", { n: usage?.dailyLimit ?? FREE_WATERMARK_PER_DAY })}</p> : null}
+                {exhausted === "week" ? <p role="status" className="text-sm">{t("limitWyczerpany")}</p> : null}
               </section>
             ) : null}
             {approved && server.tier ? <StudioYoutubeVideo projectId={projectId} tier={server.tier} approved /> : null}

@@ -198,6 +198,7 @@ export default async function HomePage() {
       id: "pobieranie",
       label: t("planPobieranie"),
       cell: (tier) => {
+        if (tier === "FREE" && freeWatermarkDownloadEnabled()) return t("planPobieranieZnak", { n: FREE_WATERMARK_PER_DAY });
         const quality = bestQuality(tier);
         return quality ? t(`jakosc.${quality}`) : t("planBrak");
       },

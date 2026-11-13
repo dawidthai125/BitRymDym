@@ -238,7 +238,7 @@ export default function PremiumPage() {
               <li>{tr("przypis.narzedzia")}</li>
               <li>{tr("przypis.pakiety")}</li>
               <li>{tr("przypis.mastery")}</li>
-              <li>{tr("przypis.free")}</li>
+              <li>{freeWatermarkDownloadEnabled() ? tr("przypis.freeZnak", { n: FREE_WATERMARK_PER_DAY }) : tr("przypis.free")}</li>
               <li>{tr("przypis.upgrade")}</li>
               <li>{tr("przypis.raw", { n: OWN_TAKE_RAW_DOWNLOADS_DAILY, plan: LABEL[TIERS.find((x) => PLAN_POLICY[x].downloads.ownTakeRaw) ?? "GOLD"] })}</li>
               <li>{tr("przypis.nuty")}</li>
